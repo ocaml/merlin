@@ -14,7 +14,7 @@
 
 (* The parser definition *)
 %{
-  open Outline
+  open Outline_utils
 %}
 (* Tokens *)
 

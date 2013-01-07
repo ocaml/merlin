@@ -15,7 +15,7 @@
 (* The lexical analyzer *)
 
 val init : unit -> unit
-val token: Lexing.lexbuf -> Parser.token
+val token: Lexing.lexbuf -> Outline_parser.token
 val skip_sharp_bang: Lexing.lexbuf -> unit
 
 type error =
@@ -40,4 +40,4 @@ val in_string : unit -> bool;;
 
 val print_warnings : bool ref
 val comments : unit -> (string * Location.t) list
-val token_with_comments : Lexing.lexbuf -> Parser.token
+val token_with_comments : Lexing.lexbuf -> Outline_parser.token

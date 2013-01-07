@@ -17,7 +17,7 @@ let enter () =
 
 let leave () =
   (if !nesting <= 0
-   then failwith "Outline.leave: invalid nesting");
+   then failwith "Outline_utils.leave: invalid nesting");
   decr nesting
 
 let emit_top c pos =

@@ -17,7 +17,7 @@
 {
 open Lexing
 open Misc
-open Parser
+open Outline_parser
 
 type error =
   | Illegal_character of char

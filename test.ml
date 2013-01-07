@@ -1,5 +1,5 @@
 let token_to_string =
-  let open Parser in function
+  let open Outline_parser in function
     | AMPERAMPER -> "AMPERAMPER"
     | AMPERSAND -> "AMPERSAND"
     | AND -> "AND"
@@ -147,9 +147,9 @@ let parse_with ?token parser lexer buf =
   try
     let () = parser wrap buf in
     Parsing.clear_parser ();
-    None, !tokens, Outline.Done
+    None, !tokens, Outline_utils.Done
   with
-    | Outline.Chunk (c,p) ->
+    | Outline_utils.Chunk (c,p) ->
         begin
           Parsing.clear_parser ();
           match !tokens with
@@ -166,6 +166,6 @@ let parse_with ?token parser lexer buf =
 let _ =
   let buf = Lexing.from_channel stdin in
   let lookahead, tokens, chunk =
-    parse_with Parser.implementation Lexer.token buf
+    parse_with Outline_parser.implementation Outline_lexer.token buf
   in
   List.iter (fun tok -> print_string (token_to_string tok); print_char ' ') tokens
