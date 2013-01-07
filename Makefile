@@ -1,5 +1,5 @@
 all:
-	ocamlbuild test.byte
+	ocamlbuild -use-ocamlfind test.byte
 
 clean:
 	ocamlbuild -clean
