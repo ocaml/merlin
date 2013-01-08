@@ -13,6 +13,7 @@ type chunk =
   | Definition
   | Rollback
   | Done
+  | Unterminated
 (* | Partial_expr of context_delimiter list
    | Partial_module of context_delimiter list*)
 

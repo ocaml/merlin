@@ -4,6 +4,7 @@ type chunk =
   | Definition
   | Rollback
   | Done
+  | Unterminated
 
 exception Chunk of chunk * Lexing.position
 
