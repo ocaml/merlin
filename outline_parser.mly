@@ -209,9 +209,9 @@ The precedences must be listed from low to high.
 (* Entry points *)
 
 implementation:
-    structure EOF                        { () }
-  | END                                  { emit_top Leave_module (Parsing.rhs_end_pos 1) }
+  | top_structure EOF                    { () }
   | AND                                  { emit_top Rollback (Parsing.rhs_end_pos 0) }
+  | EOF                                  { () }
 ;
 interface:
     signature EOF                        { () }
@@ -225,6 +225,7 @@ toplevel_phrase:
 top_structure:
     structure_item                       { () }
   | structure_item top_structure         { () }
+  | END                                  { emit_top Leave_module (Parsing.rhs_end_pos 1) }
 ;
 use_file:
     use_file_tail                        { () }

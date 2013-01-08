@@ -1,123 +1,26 @@
-let token_to_string =
-  let open Outline_parser in function
-    | AMPERAMPER -> "AMPERAMPER"
-    | AMPERSAND -> "AMPERSAND"
-    | AND -> "AND"
-    | AS -> "AS"
-    | ASSERT -> "ASSERT"
-    | BACKQUOTE -> "BACKQUOTE"
-    | BANG -> "BANG"
-    | BAR -> "BAR"
-    | BARBAR -> "BARBAR"
-    | BARRBRACKET -> "BARRBRACKET"
-    | BEGIN -> "BEGIN"
-    | CHAR c -> "CHAR(" ^ String.escaped (String.make 1 c) ^ ")"
-    | CLASS -> "CLASS"
-    | COLON -> "COLON"
-    | COLONCOLON -> "COLONCOLON"
-    | COLONEQUAL -> "COLONEQUAL"
-    | COLONGREATER -> "COLONGREATER"
-    | COMMA -> "COMMA"
-    | CONSTRAINT -> "CONSTRAINT"
-    | DO -> "DO"
-    | DONE -> "DONE"
-    | DOT -> "DOT"
-    | DOTDOT -> "DOTDOT"
-    | DOWNTO -> "DOWNTO"
-    | ELSE -> "ELSE"
-    | END -> "END"
-    | EOF -> "EOF"
-    | EQUAL -> "EQUAL"
-    | EXCEPTION -> "EXCEPTION"
-    | EXTERNAL -> "EXTERNAL"
-    | FALSE -> "FALSE"
-    | FLOAT s -> "FLOAT(" ^ String.escaped s ^ ")"
-    | FOR -> "FOR"
-    | FUN -> "FUN"
-    | FUNCTION -> "FUNCTION"
-    | FUNCTOR -> "FUNCTOR"
-    | GREATER -> "GREATER"
-    | GREATERRBRACE -> "GREATERRBRACE"
-    | GREATERRBRACKET -> "GREATERRBRACKET"
-    | IF -> "IF"
-    | IN -> "IN"
-    | INCLUDE -> "INCLUDE"
-    | INFIXOP0 s -> "INFIXOP0(" ^ String.escaped s ^ ")"
-    | INFIXOP1 s -> "INFIXOP1(" ^ String.escaped s ^ ")"
-    | INFIXOP2 s -> "INFIXOP2(" ^ String.escaped s ^ ")"
-    | INFIXOP3 s -> "INFIXOP3(" ^ String.escaped s ^ ")"
-    | INFIXOP4 s -> "INFIXOP4(" ^ String.escaped s ^ ")"
-    | INHERIT -> "INHERIT"
-    | INITIALIZER -> "INITIALIZER"
-    | INT s -> "INT(" ^ string_of_int s ^ ")"
-    | INT32 s -> "INT32(" ^ Int32.to_string s ^ ")"
-    | INT64 s -> "INT64(" ^ Int64.to_string s ^ ")"
-    | LABEL s -> "LABEL(" ^ String.escaped s ^ ")"
-    | LAZY -> "LAZY"
-    | LBRACE -> "LBRACE"
-    | LBRACELESS -> "LBRACELESS"
-    | LBRACKET -> "LBRACKET"
-    | LBRACKETBAR -> "LBRACKETBAR"
-    | LBRACKETLESS -> "LBRACKETLESS"
-    | LBRACKETGREATER -> "LBRACKETGREATER"
-    | LESS -> "LESS"
-    | LESSMINUS -> "LESSMINUS"
-    | LET -> "LET"
-    | LIDENT s -> "LIDENT(" ^ String.escaped s ^ ")"
-    | LPAREN -> "LPAREN"
-    | MATCH -> "MATCH"
-    | METHOD -> "METHOD"
-    | MINUS -> "MINUS"
-    | MINUSDOT -> "MINUSDOT"
-    | MINUSGREATER -> "MINUSGREATER"
-    | MODULE -> "MODULE"
-    | MUTABLE -> "MUTABLE"
-    | NATIVEINT s -> "NATIVEINT(" ^ Nativeint.to_string s ^ ")"
-    | NEW -> "NEW"
-    | OBJECT -> "OBJECT"
-    | OF -> "OF"
-    | OPEN -> "OPEN"
-    | OPTLABEL s -> "OPTLABEL(" ^ String.escaped s ^ ")"
-    | OR -> "OR"
-    | PLUS -> "PLUS"
-    | PLUSDOT -> "PLUSDOT"
-    | PREFIXOP s -> "PREFIXOP(" ^ String.escaped s ^ ")"
-    | PRIVATE -> "PRIVATE"
-    | QUESTION -> "QUESTION"
-    | QUESTIONQUESTION -> "QUESTIONQUESTION"
-    | QUOTE -> "QUOTE"
-    | RBRACE -> "RBRACE"
-    | RBRACKET -> "RBRACKET"
-    | REC -> "REC"
-    | RPAREN -> "RPAREN"
-    | SEMI -> "SEMI"
-    | SEMISEMI -> "SEMISEMI"
-    | SHARP -> "SHARP"
-    | SIG -> "SIG"
-    | STAR -> "STAR"
-    | STRING s -> "STRING(" ^ String.escaped s ^ ")"
-    | STRUCT -> "STRUCT"
-    | THEN -> "THEN"
-    | TILDE -> "TILDE"
-    | TO -> "TO"
-    | TRUE -> "TRUE"
-    | TRY -> "TRY"
-    | TYPE -> "TYPE"
-    | UIDENT s -> "UIDENT(" ^ String.escaped s ^ ")"
-    | UNDERSCORE -> "UNDERSCORE"
-    | VAL -> "VAL"
-    | VIRTUAL -> "VIRTUAL"
-    | WHEN -> "WHEN"
-    | WHILE -> "WHILE"
-    | WITH -> "WITH"
-    | COMMENT (s,_) -> "COMMENT(" ^ String.escaped s ^ ")"
+let parse_with history parser lexer buf =
+  let history' = ref history in
+  try
+    let () = parser (History.wrap history' lexer) buf in
+    Parsing.clear_parser ();
+    !history', Outline_utils.Done
+  with
+    | Outline_utils.Chunk (c,p) ->
+        begin
+          Parsing.clear_parser ();
+          let history =
+            if p <> buf.Lexing.lex_curr_p
+            then (prerr_endline "refill";
+                  snd (History.backward !history'))
+            else !history'
+          in
+          history, c
+        end
+    | exn ->
+        Parsing.clear_parser ();
+        raise exn
 
-let wrap f lb =
-  let t = (f lb) in
-  print_endline (token_to_string t);
-  t
-
-let parse_with ?token parser lexer buf =
+(*let parse_with ?token parser lexer buf =
   let tokens = ref [] in
   let fake_token = ref token in
   let fake_position = ref None in
@@ -161,11 +64,32 @@ let parse_with ?token parser lexer buf =
         end
     | exn ->
         Parsing.clear_parser ();
-        raise exn
-  
+        raise exn*)
+(* val refold : ('a -> 'a option) -> 'a -> 'a *)
+let rec refold f a =
+  match f a with
+    | Some a' -> refold f a'
+    | None    -> a
+
 let _ =
   let buf = Lexing.from_channel stdin in
-  let lookahead, tokens, chunk =
-    parse_with Outline_parser.implementation Outline_lexer.token buf
+  let parse history =
+    parse_with history Outline_parser.implementation Outline_lexer.token buf
   in
-  List.iter (fun tok -> print_string (token_to_string tok); print_char ' ') tokens
+  let rec loop history =
+    let history', chunk = parse history in
+    let before, after = History.split history' in
+    ignore (refold
+              (fun h -> match History.backward h with
+                | Some (t,_,_), h' ->
+                    Printf.printf "%s " (Outline_token.to_string t);
+                    
+                    Some h'
+                | None, h' ->
+                    None
+              ) history');
+    Printf.printf "\n%!";
+    loop after
+  in
+  loop History.empty
+  (*List.iter (fun tok -> print_string (Outline_token.to_string tok); print_char ' ') tokens*)
