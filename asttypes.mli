@@ -10,34 +10,36 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: lexer.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id: asttypes.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
 
-(* The lexical analyzer *)
+(* Auxiliary a.s.t. types used by parsetree and typedtree. *)
 
-val init : unit -> unit
-val token: Lexing.lexbuf -> Chunk_parser.token
-val skip_sharp_bang: Lexing.lexbuf -> unit
+type constant =
+    Const_int of int
+  | Const_char of char
+  | Const_string of string
+  | Const_float of string
+  | Const_int32 of int32
+  | Const_int64 of int64
+  | Const_nativeint of nativeint
 
-type error =
-  | Illegal_character of char
-  | Illegal_escape of string
-  | Unterminated_comment of Location.t
-  | Unterminated_string
-  | Unterminated_string_in_comment of Location.t
-  | Keyword_as_label of string
-  | Literal_overflow of string
-;;
+type rec_flag = Nonrecursive | Recursive | Default
 
-exception Error of error * Location.t
+type direction_flag = Upto | Downto
 
-open Format
+type private_flag = Private | Public
 
-val report_error: formatter -> error -> unit
+type mutable_flag = Immutable | Mutable
 
-val in_comment : unit -> bool;;
-val in_string : unit -> bool;;
+type virtual_flag = Virtual | Concrete
 
+type override_flag = Override | Fresh
 
-val print_warnings : bool ref
-val comments : unit -> (string * Location.t) list
-val token_with_comments : Lexing.lexbuf -> Chunk_parser.token
+type closed_flag = Closed | Open
+
+type label = string
+
+type 'a loc = 'a Location.loc = {
+  txt : 'a;
+  loc : Location.t;
+}

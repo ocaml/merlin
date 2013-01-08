@@ -10,34 +10,15 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: lexer.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id: longident.mli 11156 2011-07-27 14:17:02Z doligez $ *)
 
-(* The lexical analyzer *)
+(* Long identifiers, used in parsetree. *)
 
-val init : unit -> unit
-val token: Lexing.lexbuf -> Chunk_parser.token
-val skip_sharp_bang: Lexing.lexbuf -> unit
+type t =
+    Lident of string
+  | Ldot of t * string
+  | Lapply of t * t
 
-type error =
-  | Illegal_character of char
-  | Illegal_escape of string
-  | Unterminated_comment of Location.t
-  | Unterminated_string
-  | Unterminated_string_in_comment of Location.t
-  | Keyword_as_label of string
-  | Literal_overflow of string
-;;
-
-exception Error of error * Location.t
-
-open Format
-
-val report_error: formatter -> error -> unit
-
-val in_comment : unit -> bool;;
-val in_string : unit -> bool;;
-
-
-val print_warnings : bool ref
-val comments : unit -> (string * Location.t) list
-val token_with_comments : Lexing.lexbuf -> Chunk_parser.token
+val flatten: t -> string list
+val last: t -> string
+val parse: string -> t

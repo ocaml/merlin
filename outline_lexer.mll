@@ -17,7 +17,7 @@
 {
 open Lexing
 open Misc
-open Outline_parser
+open Chunk_parser
 
 type error =
   | Illegal_character of char
@@ -557,5 +557,4 @@ and skip_sharp_bang = parse
     is_in_string := false;
     last_comments := [];
     comment_start_loc := []
-
 }

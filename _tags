@@ -1,3 +1,5 @@
 true: use_menhir, use_ocamlfind, use_menhir_table
 
 true: package(menhirLib)
+
+<outline_parser.*>: ext_tokens

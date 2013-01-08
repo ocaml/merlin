@@ -1,5 +1,8 @@
-let to_string =
-  let open Outline_parser in function
+type token = Chunk_parser.token 
+type 't result = 't History.t * Outline_utils.chunk * 't History.t
+
+let token_to_string =
+  let open Chunk_parser in function
     | AMPERAMPER -> "AMPERAMPER"
     | AMPERSAND -> "AMPERSAND"
     | AND -> "AND"
@@ -111,3 +114,47 @@ let to_string =
     | WHILE -> "WHILE"
     | WITH -> "WITH"
     | COMMENT (s,_) -> "COMMENT(" ^ String.escaped s ^ ")"
+
+let parse_with history ~parser ~lexer buf =
+  let origin = History.current_pos history in
+  let history' = ref history in
+  let chunk_content h =
+    let open History in
+    (* Drop end of history *)
+    let end_of_chunk, _ = split h in
+    let at_origin = seek (this_position origin) end_of_chunk in
+    (* Drop beginning of history *)
+    let _, chunk_content = split at_origin in
+    chunk_content
+  in
+  try
+    let () = parser (History.wrap history' lexer) buf in
+    (* Parsing.clear_parser (); *)
+    let history = !history' in
+    history, Outline_utils.Done, chunk_content history
+  with
+    | Outline_utils.Chunk (c,p) ->
+        begin
+          (* Parsing.clear_parser (); *)
+          let history =
+            if p <> buf.Lexing.lex_curr_p
+            then (prerr_endline "refill";
+                  snd (History.backward !history'))
+            else !history'
+          in
+          history, c, chunk_content history
+        end
+    | Sys.Break ->
+        begin
+          (* Parsing.clear_parser (); *)
+          let history = !history' in
+          History.(seek (this_position origin) history),
+          Outline_utils.Unterminated,
+          History.empty
+        end
+    (*| exn ->
+        (* Parsing.clear_parser (); *)
+        raise exn*)
+
+let parse history buf =
+  parse_with history ~parser:Outline_parser.implementation ~lexer:Outline_lexer.token buf

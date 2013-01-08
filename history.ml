@@ -63,8 +63,8 @@ let seek_pos prj cmp ({ prev ; next } as history) =
 let seek_start cmp = seek_pos (fun (_,p,_) -> p) cmp
 let seek cmp = seek_pos (fun (_,_,p) -> p) cmp
   
-(*let first_pos { stat = { first } } = first
-let last_pos { stat = { last } } = last*)
+let first_pos { stat = { first } } = first
+let last_pos { stat = { last } } = last
 (*let next_pos = function
   | { next = (_,_,p) :: _ } -> p
   | _ -> zero_pos*)
@@ -105,3 +105,8 @@ let backward = function
       Some p, { history with prev = ps ; next = p :: next }
   | history -> None, history
 
+let insert (_,start,curr as tok) = function
+  | { prev = [] ; next = [] } ->
+      { prev = [tok] ; next = [] ; stat = { first = start ; last = curr } }
+  | { prev ; next = [] } ->
+      { prev = [tok] ; next = [] ; stat = { first = start ; last = curr } }
