@@ -1,24 +1,39 @@
-type position = Lexing.position
-type position_compare = position -> int
 type 'a t
 
 val empty : 'a t
-val wrap : 'a t ref -> (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a)
 
-(*val seek_start : (position -> int) -> 'a t -> 'a t*)
-val first_pos : 'a t -> position
-val last_pos  : 'a t -> position
-val current_pos : 'a t -> position
+val of_list : 'a list -> 'a t
 
-val this_position : position -> position_compare
-val this_offset   : int -> position_compare
-val seek : position_compare -> 'a t -> 'a t
+val seek : ('a -> int) -> 'a t -> 'a t
+val seek_offset : int -> 'a t -> 'a t
 
 val split : 'a t -> 'a t * 'a t
 
-(*val drop_next : 'a t -> 'a t * 'a list*)
- 
-val forward  : 'a t -> ('a * position * position) option * 'a t
-val backward : 'a t -> ('a * position * position) option * 'a t
+val prev : 'a t -> 'a option
+val prevs : 'a t -> 'a list
+val next : 'a t -> 'a option
+val nexts : 'a t -> 'a list
 
-val insert : ('a * position * position) -> 'a t -> 'a t
+val offset : 'a t -> int
+
+val forward  : 'a t -> ('a * 'a t) option 
+val backward : 'a t -> ('a * 'a t) option 
+
+val insert : 'a -> 'a t -> 'a t
+val remove_current : 'a t -> 'a option * 'a t
+val modify_current : ('a -> 'a) -> 'a t -> 'a t
+
+type pos = Lexing.position
+type 'a loc = 'a * pos * pos
+
+val wrap_lexer : 'a loc t ref -> (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a)
+
+val current_pos : ?default:Lexing.position -> 'a loc t -> pos
+val seek_pos : pos -> 'a loc t -> 'a loc t
+
+type 'a sync
+
+val sync_origin : 'a sync
+val sync_point : 'a t -> 'a sync
+
+val sync : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t * 'b t

@@ -1,112 +1,137 @@
-type position = Lexing.position
-type position_compare = position -> int
-type 'a token = 'a * position * position
+type pos = Lexing.position
+type 'a t = { prev : 'a list ; next : 'a list ; pos : int }
 
-type stat = { first : position ; last : position }
+let empty = { prev = [] ; next = [] ; pos = 0 }
 
-type 'a t = { prev : 'a token list ; next : 'a token list ; stat : stat }
+let of_list next = { empty with next }
 
-let zero_pos = Lexing.({ pos_bol = 0 ; pos_cnum = 0 ; pos_lnum = 0 ; pos_fname = "" })
+let split { prev ; next ; pos } =
+  { prev ; next = [] ; pos }, { prev = [] ; next; pos = 0 }
 
-let empty = { prev = [] ; next = [] ; stat = { first = zero_pos ; last = zero_pos } }
+let prev = function
+  | { prev = p :: _ } -> Some p
+  | _ -> None
 
-let wrap r f buf =
-  match !r with
-    | { prev ; next = (t,s,c as tok) :: ns } as history ->
-        buf.Lexing.lex_start_p <- s;
-        buf.Lexing.lex_curr_p <- c;
-        r := { history with prev = tok :: prev ; next = ns };
-        t
-    | { prev ; stat } as history ->
-        (if stat.last <> zero_pos then
-            buf.Lexing.lex_curr_p <- stat.last);
-        let t = f buf in
-        let first =
-          if stat.first = zero_pos
-          then buf.Lexing.lex_start_p
-          else stat.first
-        in
-        r := { history with
-          prev = (t, buf.Lexing.lex_start_p, buf.Lexing.lex_curr_p) :: prev;
-          stat = { first ; last = buf.Lexing.lex_curr_p } };
-        t
+let prevs { prev } = prev
+ 
+let next = function
+  | { next = n :: _ } -> Some n
+  | _ -> None
 
-let seek_forward prj cmp =
-  let rec aux prev next =
-    match next with
-      | t :: next' when cmp (prj t) > 0 ->
-          aux (t :: prev) next'
-      | _ -> prev, next
-  in
-  aux
+let nexts { next } = next
 
-let seek_backward prj cmp =
-  let rec aux prev next =
-    match prev with
-      | t :: prev' when cmp (prj t) < 0 ->
-          aux prev' (t :: next)
-      | _ -> prev, next
-  in
-  aux
-
-let seek_pos prj cmp ({ prev ; next } as history) =
-  let prev', next' =
-    match prev, next with
-      | (t :: prev'), next when cmp (prj t) < 0 ->
-          seek_backward prj cmp prev' (t :: next)
-      | prev, (t :: next') when cmp (prj t) > 0 ->
-          seek_forward prj cmp (t :: prev) next
-      | x -> x
-  in
-  { history with prev = prev' ; next = next' }
-
-let seek_start cmp = seek_pos (fun (_,p,_) -> p) cmp
-let seek cmp = seek_pos (fun (_,_,p) -> p) cmp
+let offset { pos } = pos
   
-let first_pos { stat = { first } } = first
-let last_pos { stat = { last } } = last
-(*let next_pos = function
-  | { next = (_,_,p) :: _ } -> p
-  | _ -> zero_pos*)
-
-let current_pos = function
-  | { prev = (_,_,p) :: _ } -> p
-  | _ -> zero_pos
-
-let this_position p1 p2 =
-  compare p1.Lexing.pos_cnum p2.Lexing.pos_cnum
-
-let this_offset p1 p2 =
-  compare p1 p2.Lexing.pos_cnum
-
-(*let drop_next = function
-  | { prev = (_,_,last) :: _ ; next ; stat = { first } } ->
-      { prev ; next = [] ; stat = { first ; last } }, next
-  | { prev = [] ; next } ->
-      { prev = [] ; next = [] ; stat = empty.stat }, next*)
-
-let split = function
-  | { prev = [] ; next = _ } as a -> empty, a
-  | { prev = _ ; next = [] } as a -> a, empty
-  | { prev = (_,_,last') :: _ ;
-      next = (_,first',_) :: _ ;
-      stat = { first ; last }
-    } as history ->
-      { prev = history.prev ; next = [] ; stat = { first ; last = last' } },
-      { prev = [] ; next = history.next ; stat = { first = first' ; last } }
+let seek_offset offset h =
+  let diff = offset - h.pos in
+  let rec shift count lx ly =
+    match count, lx, ly with
+      | n, (x :: xs), ys when n < 0 -> shift (succ n) xs (x :: ys)
+      | n, xs, (y :: ys) when n > 0 -> shift (pred n) (y :: xs) ys
+      | n, xs, ys -> n, xs, ys
+  in
+  let diff', prev, next = shift diff h.prev h.next in
+  { prev ; next ; pos = offset - diff' }
+    
 
 let forward = function
-  | { prev ; next = n :: ns } as history ->
-      Some n, { history with prev = n :: prev ; next = ns }
-  | history -> None, history
+  | { prev ; next = n :: ns ; pos } ->
+      Some (n, { prev = n :: prev ; next = ns ; pos = succ pos })
+  | history -> None
 
 let backward = function
-  | { prev = p :: ps ; next } as history ->
-      Some p, { history with prev = ps ; next = p :: next }
-  | history -> None, history
+  | { prev = p :: ps ; next ; pos } ->
+      Some (p, { prev = ps ; next = p :: next ; pos = pred pos })
+  | history -> None
 
-let insert (_,start,curr as tok) = function
-  | { prev = [] ; next = [] } ->
-      { prev = [tok] ; next = [] ; stat = { first = start ; last = curr } }
-  | { prev ; next = [] } ->
-      { prev = [tok] ; next = [] ; stat = { first = start ; last = curr } }
+let insert p { pos ; prev ; next } =
+  { prev = p :: prev ; next ; pos = succ pos }
+
+let remove_current = function
+  | { prev = p :: ps ; next ; pos } ->
+      Some p, { prev = ps ; next ; pos = pred pos }
+  | x -> None, x
+
+let modify_current f = function
+  | { prev = p :: ps ; next ; pos } ->
+      { prev = (f p) :: ps ; next ; pos }
+  | x -> x
+
+let seek_forward cmp =
+  let rec aux prev next pos =
+    match next with
+      | t :: next' when cmp t > 0 ->
+          aux (t :: prev) next' (succ pos)
+      | _ -> prev, next, pos
+  in
+  aux
+
+let seek_backward cmp =
+  let rec aux prev next pos =
+    match prev with
+      | t :: prev' when cmp t < 0 ->
+          aux prev' (t :: next) (pred pos)
+      | _ -> prev, next, pos
+  in
+  aux
+
+let seek cmp { prev ; next ; pos } =
+  let prev', next', pos' =
+    match prev, next with
+      | (t :: prev'), next when cmp t < 0 ->
+          seek_backward cmp prev' (t :: next) (pred pos)
+      | prev, (t :: next') when cmp t > 0 ->
+          seek_forward cmp (t :: prev) next (succ pos)
+      | _ -> prev, next, pos
+  in
+  { prev = prev' ; next = next' ; pos = pos' }
+
+(* val wrap : ('a * pos * pos) t ref -> (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a) *)
+type 'a loc = 'a * pos * pos
+
+let wrap_lexer r f buf =
+  match forward !r with
+    | Some ((t,s,c), r') ->
+        buf.Lexing.lex_start_p <- s;
+        buf.Lexing.lex_curr_p <- c;
+        r := r';
+        t
+    | None ->
+        (match prev !r with
+          | Some (_,_,p) -> buf.Lexing.lex_curr_p <- p
+          | None -> ());
+        let t = f buf in
+        r := insert (t,buf.Lexing.lex_start_p,buf.Lexing.lex_curr_p) !r;
+        t
+
+let current_pos ?(default=Lexing.dummy_pos) hist =
+  match prev hist with
+    | Some (_,_,p) -> p
+    | _ -> default
+
+let seek_pos pos =
+  seek (fun (_,_,p) -> compare pos.Lexing.pos_cnum p.Lexing.pos_cnum)
+
+type 'a sync = (int * 'a) option
+
+let sync_origin = None
+
+let (>>=) = function
+  | None   -> fun _ -> None
+  | Some a -> fun f -> f a
+
+let sync_point h =
+  prev h >>= fun a -> Some (offset h, a)
+
+let rec sync f ah bh =
+  let point = prev bh >>= f in
+  let found = point >>=
+    fun (off,a) ->
+    let ah' = seek_offset off ah in
+    prev ah' >>= function
+      | a' when a' == a -> Some (ah', bh)
+      | _ -> backward bh >>= fun (_,bh') -> Some (sync f ah' bh')
+  in
+  match found with
+    | Some a -> a
+    | None   -> seek_offset 0 ah, seek_offset 0 bh

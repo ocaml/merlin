@@ -1,4 +1,3 @@
-type token = Chunk_parser.token 
 type 't result = 't History.t * Outline_utils.chunk * 't History.t
 
 let token_to_string =
@@ -122,13 +121,13 @@ let parse_with history ~parser ~lexer buf =
     let open History in
     (* Drop end of history *)
     let end_of_chunk, _ = split h in
-    let at_origin = seek (this_position origin) end_of_chunk in
+    let at_origin = seek_pos origin end_of_chunk in
     (* Drop beginning of history *)
     let _, chunk_content = split at_origin in
-    chunk_content
+    History.nexts chunk_content
   in
   try
-    let () = parser (History.wrap history' lexer) buf in
+    let () = parser (History.wrap_lexer history' lexer) buf in
     (* Parsing.clear_parser (); *)
     let history = !history' in
     history, Outline_utils.Done, chunk_content history
@@ -139,7 +138,9 @@ let parse_with history ~parser ~lexer buf =
           let history =
             if p <> buf.Lexing.lex_curr_p
             then (prerr_endline "refill";
-                  snd (History.backward !history'))
+                  match History.backward !history' with
+                    | Some (_,h) -> h
+                    | None -> !history')
             else !history'
           in
           history, c, chunk_content history
@@ -148,13 +149,27 @@ let parse_with history ~parser ~lexer buf =
         begin
           (* Parsing.clear_parser (); *)
           let history = !history' in
-          History.(seek (this_position origin) history),
+          History.(seek_pos origin history),
           Outline_utils.Unterminated,
-          History.empty
+          []
         end
     (*| exn ->
         (* Parsing.clear_parser (); *)
         raise exn*)
 
-let parse history buf =
-  parse_with history ~parser:Outline_parser.implementation ~lexer:Outline_lexer.token buf
+type token = Chunk_parser.token History.loc  
+
+let parse_step history buf =
+  parse_with history
+    ~parser:Outline_parser.implementation
+    ~lexer:Outline_lexer.token
+    buf
+
+let parse (history,chunks) buf =
+  match parse_step history buf with
+    | history', Outline_utils.Rollback, data ->
+        history', History.modify_current (fun (c,l) -> (c, l @ data)) chunks
+    | history', Outline_utils.Unterminated, _ ->
+        history', chunks
+    | history', chunk, data ->
+        history', History.insert (chunk,data) chunks

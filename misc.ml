@@ -224,3 +224,8 @@ let thd3 (_,_,x) = x
 let fst4 (x, _, _, _) = x
 let snd4 (_,x,_, _) = x
 let thd4 (_,_,x,_) = x
+
+let rec refold f a =
+  match f a with
+    | Some a' -> refold f a'
+    | None    -> a

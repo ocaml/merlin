@@ -1,11 +1,15 @@
-type token = Chunk_parser.token 
-type 't result = 't History.t * Outline_utils.chunk * 't History.t
+val token_to_string : Chunk_parser.token -> string
 
-val token_to_string : token -> string
-
-val parse_with : 't History.t ->
+val parse_with : 't History.loc History.t ->
   parser:((Lexing.lexbuf -> 't) -> Lexing.lexbuf -> unit) ->
     lexer:(Lexing.lexbuf -> 't) ->
-     Lexing.lexbuf -> 't result
+      Lexing.lexbuf -> 
+  't History.loc History.t * Outline_utils.chunk * 't History.loc list
 
-val parse : token History.t -> Lexing.lexbuf -> token result
+type token = Chunk_parser.token History.loc  
+
+val parse_step : token History.t -> Lexing.lexbuf ->
+  token History.t * Outline_utils.chunk * token list
+
+val parse : token History.t * (Outline_utils.chunk * token list) History.t ->
+  Lexing.lexbuf -> token History.t * (Outline_utils.chunk * token list) History.t

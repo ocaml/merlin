@@ -1,7 +1,9 @@
-type t =
+type item =
   | Root
-  | Definition of Parsetree.structure_item * t
-  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * t
+  | Definition of Parsetree.structure_item * item
+  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item
+type token = Chunk_parser.token History.loc
+type t = (Outline_utils.chunk * token list) History.sync * item
 
 exception Malformed_module
 exception Invalid_chunk
@@ -28,10 +30,10 @@ let print_toks f a =
   print_endline (Outline.token_to_string t);
   t
 
-let append chunk tokens t =
+let append_step chunk tokens t =
   match chunk with
     | Outline_utils.Enter_module ->
-        let lexer = History.wrap (ref tokens)
+        let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fail_lexer)
         in
         let lexer = print_toks lexer in
@@ -47,7 +49,7 @@ let append chunk tokens t =
         let rec gather_defs defs = function
           | Root -> raise Malformed_module
           | Definition (d,t) -> gather_defs (d :: defs) t
-          | Module_opening (start,s,m,t) ->
+          | Module_opening (loc,s,m,t) ->
               let open Parsetree in
               let rec subst_structure e =
                 let pmod_desc = match e.pmod_desc with
@@ -61,14 +63,18 @@ let append chunk tokens t =
                 in
                 { e with pmod_desc }
               in
+              let loc = match tokens with
+                  | (_,_,p) :: _ -> { loc with Location.loc_end = p }
+                  | [] -> loc
+              in
               Definition ({ pstr_desc = Pstr_module (s, subst_structure m);
-                            pstr_loc  = { start with Location.loc_end = History.last_pos tokens } },
+                            pstr_loc  = loc },
                           t)
         in
         gather_defs [] t
     | Outline_utils.Definition ->
         (* run structure_item parser on tokens, appending EOF *)
-        let lexer = History.wrap (ref tokens)
+        let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
         in
         let lexer = print_toks lexer in
@@ -77,4 +83,23 @@ let append chunk tokens t =
        t
     | _ -> raise Invalid_chunk
 
-let append_history chunk data : Outline_utils.chunk -> Chunk_parser.token History.t -> t History.t -> t History.t 
+let append chunks history =
+  (* Find last synchronisation point *)
+  let chunks, history = History.sync fst chunks history in
+  (* Drop out of sync items *)
+  let history, out_of_sync = History.split history in
+  (* Process last items *) 
+  let last_sync,item = match History.prev history with
+    | None -> History.sync_origin, empty
+    | Some item -> item
+  in
+  let rec aux chunks (history,item as acc) =
+    match History.forward chunks with
+      | None -> acc
+      | Some ((chunk,data),chunks') ->
+          let item = append_step chunk data item in
+          let history = History.insert (History.sync_point chunks', item) history in
+          aux chunks' (history,item)
+  in
+  let history,item = aux chunks (history,item) in
+  history
