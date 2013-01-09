@@ -1,4 +1,4 @@
-type chunk =
+type kind =
   | Enter_module
   | Leave_module
   | Definition
@@ -6,7 +6,7 @@ type chunk =
   | Done
   | Unterminated
 
-exception Chunk of chunk * Lexing.position
+exception Chunk of kind * Lexing.position
 
 let nesting = ref 0
 

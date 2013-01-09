@@ -1,9 +1,11 @@
-type item =
+type item_desc =
   | Root
-  | Definition of Parsetree.structure_item * item
-  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item
-type token = Chunk_parser.token History.loc
-type t = (Outline_utils.chunk * token list) History.sync * item
+  | Definition of Parsetree.structure_item * item_desc
+  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item_desc
+
+type item = Outline.Chunked.sync * item_desc
+type sync = item History.sync
+type t = item History.t
 
 exception Malformed_module
 exception Invalid_chunk
@@ -27,7 +29,7 @@ let fake_tokens tokens f =
 
 let print_toks f a =
   let t = f a in
-  print_endline (Outline.token_to_string t);
+  print_endline (Outline.Raw.token_to_string t);
   t
 
 let append_step chunk tokens t =
@@ -93,13 +95,13 @@ let append chunks history =
     | None -> History.sync_origin, empty
     | Some item -> item
   in
-  let rec aux chunks (history,item as acc) =
+  let rec aux chunks history item =
     match History.forward chunks with
-      | None -> acc
-      | Some ((chunk,data),chunks') ->
+      | None -> history, item
+      | Some ((_,chunk,data),chunks') ->
           let item = append_step chunk data item in
           let history = History.insert (History.sync_point chunks', item) history in
-          aux chunks' (history,item)
+          aux chunks' history item
   in
-  let history,item = aux chunks (history,item) in
+  let history,item = aux chunks history item in
   history

@@ -1,15 +1,16 @@
-type item =
+type item_desc =
   | Root
-  | Definition of Parsetree.structure_item * item
-  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item
+  | Definition of Parsetree.structure_item * item_desc
+  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item_desc
 
-type token = Chunk_parser.token History.loc
-type t = (Outline_utils.chunk * token list) History.sync * item
+type item = Outline.Chunked.sync * item_desc
+type sync = item History.sync
+type t = item History.t
 
 exception Malformed_module
 exception Invalid_chunk
 
-val empty : item
-val append_step : Outline_utils.chunk -> token list -> item -> item
+val empty : item_desc
+val append_step : Outline_utils.kind -> Outline.Raw.item list -> item_desc -> item_desc
 
-val append : (Outline_utils.chunk * token list) History.t -> t History.t -> t History.t
+val append : Outline.Chunked.t -> t -> t

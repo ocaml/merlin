@@ -22,16 +22,19 @@ let nexts { next } = next
 
 let offset { pos } = pos
   
-let seek_offset offset h =
-  let diff = offset - h.pos in
+let move amount h =
   let rec shift count lx ly =
     match count, lx, ly with
       | n, (x :: xs), ys when n < 0 -> shift (succ n) xs (x :: ys)
       | n, xs, (y :: ys) when n > 0 -> shift (pred n) (y :: xs) ys
       | n, xs, ys -> n, xs, ys
   in
-  let diff', prev, next = shift diff h.prev h.next in
-  { prev ; next ; pos = offset - diff' }
+  let diff, prev, next = shift amount h.prev h.next in
+  let moved = amount - diff in
+  { prev ; next ; pos = h.pos + moved }
+  
+let seek_offset offset h =
+  move (offset - h.pos) h
     
 
 let forward = function

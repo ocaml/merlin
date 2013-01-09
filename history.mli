@@ -4,8 +4,10 @@ val empty : 'a t
 
 val of_list : 'a list -> 'a t
 
+val move : int -> 'a t -> 'a t
 val seek : ('a -> int) -> 'a t -> 'a t
 val seek_offset : int -> 'a t -> 'a t
+
 
 val split : 'a t -> 'a t * 'a t
 
