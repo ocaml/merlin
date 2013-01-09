@@ -8,9 +8,12 @@ type kind =
 
 exception Chunk of kind * Lexing.position
 
+let filter_first = ref 0
 let nesting = ref 0
 
-let reset () =
+let reset ~rollback () =
+  filter_first := rollback;
+  Printf.printf "rollback = %d\n" rollback;
   nesting := 0
 
 let enter () =
@@ -23,4 +26,11 @@ let leave () =
 
 let emit_top c pos =
   prerr_endline "emit";
-  if !nesting = 0 then raise (Chunk (c,pos))
+  if !nesting = 0 then
+    begin
+      if !filter_first < 0
+      then failwith "Outline_utils.emit_top: invalid filter_first"
+      else if !filter_first = 0
+      then raise (Chunk (c,pos))
+      else decr filter_first
+    end

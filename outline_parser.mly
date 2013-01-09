@@ -210,7 +210,7 @@ The precedences must be listed from low to high.
 
 implementation:
   | top_structure EOF                    { () }
-  | AND                                  { emit_top Rollback (Parsing.rhs_end_pos 0) }
+  | AND                                  { emit_top Rollback $endpos }
   | EOF                                  { () }
 ;
 interface:
@@ -225,7 +225,7 @@ toplevel_phrase:
 top_structure:
     structure_item                       { () }
   | structure_item top_structure         { () }
-  | END                                  { emit_top Leave_module (Parsing.rhs_end_pos 1) }
+  | END                                  { emit_top Leave_module $endpos }
 ;
 use_file:
     use_file_tail                        { () }
@@ -244,7 +244,7 @@ use_file_tail:
 (* Module expressions *)
 
 emit_enter:
-  { emit_top Enter_module (Parsing.rhs_end_pos 0) }
+  { emit_top Enter_module $endpos }
 
 module_expr:
     mod_longident
@@ -295,29 +295,29 @@ structure_tail:
 ;
 structure_item:
     LET rec_flag let_bindings
-      { emit_top Definition (Parsing.rhs_end_pos 2) }
+      { emit_top Definition $endpos }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
-      { emit_top Definition (Parsing.rhs_end_pos 6) }
+      { emit_top Definition $endpos }
   | TYPE type_declarations
-      { emit_top Definition (Parsing.rhs_end_pos 2) }
+      { emit_top Definition $endpos }
   | EXCEPTION UIDENT constructor_arguments
-      { emit_top Definition (Parsing.rhs_end_pos 3) }
+      { emit_top Definition $endpos }
   | EXCEPTION UIDENT EQUAL constr_longident
-      { emit_top Definition (Parsing.rhs_end_pos 4) }
+      { emit_top Definition $endpos }
   | MODULE UIDENT module_binding
-      { emit_top Definition (Parsing.rhs_end_pos 3) }
+      { emit_top Definition $endpos }
   | MODULE REC module_rec_bindings
-      { emit_top Definition (Parsing.rhs_end_pos 3) }
+      { emit_top Definition $endpos }
   | MODULE TYPE ident EQUAL module_type
-      { emit_top Definition (Parsing.rhs_end_pos 5) }
+      { emit_top Definition $endpos }
   | OPEN mod_longident
-      { emit_top Definition (Parsing.rhs_end_pos 2) }
+      { emit_top Definition $endpos }
   | CLASS class_declarations
-      { emit_top Definition (Parsing.rhs_end_pos 2) }
+      { emit_top Definition $endpos }
   | CLASS TYPE class_type_declarations
-      { emit_top Definition (Parsing.rhs_end_pos 2) }
+      { emit_top Definition $endpos }
   | INCLUDE module_expr
-      { emit_top Definition (Parsing.rhs_end_pos 2) }
+      { emit_top Definition $endpos }
 ;
 module_binding:
     EQUAL module_expr

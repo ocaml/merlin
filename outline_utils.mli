@@ -8,8 +8,9 @@ type kind =
 
 exception Chunk of kind * Lexing.position
 
+val filter_first : int ref
 val nesting : int ref
-val reset : unit -> unit
+val reset : rollback:int -> unit -> unit
 
 val enter : unit -> unit
 val leave : unit -> unit

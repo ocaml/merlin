@@ -27,10 +27,10 @@ let fake_tokens tokens f =
           t
       | _ -> f lexbuf
 
-let print_toks f a =
+(*let print_toks f a =
   let t = f a in
-  print_endline (Outline.Raw.token_to_string t);
-  t
+  print_endline (Chunk_parser_utils.token_to_string t);
+  t*)
 
 let append_step chunk tokens t =
   match chunk with
@@ -38,7 +38,7 @@ let append_step chunk tokens t =
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fail_lexer)
         in
-        let lexer = print_toks lexer in
+        (*let lexer = print_toks lexer in*)
         let open Parsetree in
         begin match Chunk_parser.top_structure_item lexer (Lexing.from_string "") with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
@@ -79,7 +79,7 @@ let append_step chunk tokens t =
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
         in
-        let lexer = print_toks lexer in
+        (*let lexer = print_toks lexer in*)
         Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
     | Outline_utils.Done | Outline_utils.Unterminated ->
        t
@@ -98,7 +98,7 @@ let append chunks history =
   let rec aux chunks history item =
     match History.forward chunks with
       | None -> history, item
-      | Some ((_,chunk,data),chunks') ->
+      | Some ((_,(filter,chunk,data)),chunks') ->
           let item = append_step chunk data item in
           let history = History.insert (History.sync_point chunks', item) history in
           aux chunks' history item
