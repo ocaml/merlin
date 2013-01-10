@@ -27,18 +27,13 @@ let fake_tokens tokens f =
           t
       | _ -> f lexbuf
 
-(*let print_toks f a =
-  let t = f a in
-  print_endline (Chunk_parser_utils.token_to_string t);
-  t*)
-
 let append_step chunk tokens t =
   match chunk with
     | Outline_utils.Enter_module ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fail_lexer)
         in
-        (*let lexer = print_toks lexer in*)
+        let lexer = Chunk_parser_utils.print_tokens lexer in
         let open Parsetree in
         begin match Chunk_parser.top_structure_item lexer (Lexing.from_string "") with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
@@ -79,7 +74,7 @@ let append_step chunk tokens t =
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
         in
-        (*let lexer = print_toks lexer in*)
+        let lexer = Chunk_parser_utils.print_tokens lexer in
         Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
     | Outline_utils.Done | Outline_utils.Unterminated ->
        t

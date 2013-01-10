@@ -111,3 +111,8 @@ let token_to_string =
     | WHILE -> "WHILE"
     | WITH -> "WITH"
     | COMMENT (s,_) -> "COMMENT(" ^ String.escaped s ^ ")"
+
+let print_tokens f a =
+  let t = f a in
+  print_endline (token_to_string t);
+  t

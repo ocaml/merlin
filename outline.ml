@@ -8,11 +8,6 @@ struct
   type t = item History.t 
 end
 
-let print_token f buf =
-  let t = f buf in
-  Printf.printf "%s\n%!" (Chunk_parser_utils.token_to_string t);
-  t
-
 let parse_with history ~parser ~lexer buf =
   let origin = History.current_pos history in
   let history' = ref history in
@@ -30,7 +25,7 @@ let parse_with history ~parser ~lexer buf =
       | Chunk_parser.EOF -> false
       | _ -> true
     in
-    let () = parser (print_token (History.wrap_lexer ~filter history' lexer)) buf in
+    let () = parser (Chunk_parser_utils.print_tokens (History.wrap_lexer ~filter history' lexer)) buf in
     let history = !history' in
     history, Outline_utils.Done, chunk_content history
   with
@@ -39,7 +34,7 @@ let parse_with history ~parser ~lexer buf =
           let history = !history' in
           let history = match History.backward history with
             | Some ((t,_,p'), history) when p <> p' -> 
-                Printf.printf "refill(%s) %d : %d\n" (Chunk_parser_utils.token_to_string t) p.Lexing.pos_cnum p'.Lexing.pos_cnum; history
+                print_endline "refill"; history
             | _ -> history
           in  
           history, c, chunk_content history
@@ -72,7 +67,7 @@ let rec parse ?rollback (history,chunks) buf =
   match parse_step ?rollback history buf with
     | history', (_, (_, Outline_utils.Rollback, _)) ->
         let chunks', rollback =
-          match History.backward (History.move (-1) chunks) with
+          match History.backward chunks with
             | Some ((_, (rollback, _, _)), chunks') -> chunks', rollback
             | None -> chunks, 0
         in
