@@ -130,6 +130,10 @@ let (>>=) = function
 let sync_point h =
   prev h >>= fun a -> Some (offset h, a)
 
+let sync_item = function
+  | None -> None
+  | Some (_,a) -> Some a
+
 let rec sync f ah bh =
   let point = prev bh >>= f in
   let found = point >>=

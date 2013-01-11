@@ -92,6 +92,10 @@ let append chunks history =
   (* Drop out of sync items *)
   let history, out_of_sync = History.split history in
   (* Process last items *) 
+  let item = match History.prev history with
+    | Some (last_sync, t) -> t
+    | None -> Root
+  in
   let rec aux chunks history item =
     match History.forward chunks with
       | None -> history, None, item
@@ -102,5 +106,5 @@ let append chunks history =
                 let history = History.insert (History.sync_point chunks', item) history in
                 aux chunks' history item
   in
-  let history, directive, item = aux chunks history Root in
+  let history, directive, item = aux chunks history item in
   directive, history
