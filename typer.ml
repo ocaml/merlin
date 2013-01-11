@@ -38,6 +38,7 @@ let sync chunks t =
     match History.forward chunks with
       | None -> t, env, exns
       | Some ((_,chunk_item),chunks') ->
+          print_endline "SYNC TYPER";
           let env, exns = append_step chunk_item env exns in
           let t = History.insert (History.sync_point chunks', env, exns) t in
           aux chunks' t env exns

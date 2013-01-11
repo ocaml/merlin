@@ -78,6 +78,7 @@ let rec parse ?rollback (history,chunks) buf =
             | Some ((_, (rollback, _, _, _)), chunks') -> chunks', rollback
             | None -> chunks, 0
         in
+        print_endline "SYNC PARSER";
         let history', chunks' = History.sync fst history' chunks' in
         let chunks', _ = History.split chunks' in
         parse ~rollback:(rollback + 1) (history',chunks') buf

@@ -33,7 +33,7 @@ let append_step chunk tokens t =
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fail_lexer)
         in
-        let lexer = Chunk_parser_utils.print_tokens lexer in
+        (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
         let open Parsetree in
         begin match Chunk_parser.top_structure_item lexer (Lexing.from_string "") with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
@@ -74,7 +74,7 @@ let append_step chunk tokens t =
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
         in
-        let lexer = Chunk_parser_utils.print_tokens lexer in
+        (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
         Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ ->
        t
@@ -83,14 +83,11 @@ let append_step chunk tokens t =
 
 let append chunks history =
   (* Find last synchronisation point *)
+  print_endline "SYNC PARSER";
   let chunks, history = History.sync fst chunks history in
   (* Drop out of sync items *)
   let history, out_of_sync = History.split history in
   (* Process last items *) 
-  let last_sync,item = match History.prev history with
-    | None -> History.sync_origin, empty
-    | Some item -> item
-  in
   let rec aux chunks history item =
     match History.forward chunks with
       | None -> history, item
@@ -99,5 +96,5 @@ let append chunks history =
           let history = History.insert (History.sync_point chunks', item) history in
           aux chunks' history item
   in
-  let history,item = aux chunks history item in
+  let history,item = aux chunks history Root in
   history
