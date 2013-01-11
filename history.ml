@@ -92,7 +92,7 @@ let seek cmp { prev ; next ; pos } =
 (* val wrap : ('a * pos * pos) t ref -> (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a) *)
 type 'a loc = 'a * pos * pos
 
-let wrap_lexer ?(filter=fun _-> true) r f buf =
+let wrap_lexer ?(filter=fun _-> true) ?(bufpos = ref None) r f buf =
   let t = match forward !r with
     | Some ((t,s,c), r') ->
         buf.Lexing.lex_start_p <- s;
@@ -100,12 +100,13 @@ let wrap_lexer ?(filter=fun _-> true) r f buf =
         r := r';
         t
     | None ->
-        (match prev !r with
-          | Some (_,_,p) -> buf.Lexing.lex_curr_p <- p
+        (match !bufpos with
+          | Some p -> buf.Lexing.lex_curr_p <- p
           | None -> ());
         let t = f buf in
-        if filter t
-        then (r := insert (t,buf.Lexing.lex_start_p,buf.Lexing.lex_curr_p) !r);
+        if filter t then 
+          r := insert (t,buf.Lexing.lex_start_p,buf.Lexing.lex_curr_p) !r;
+        bufpos := Some buf.Lexing.lex_curr_p;
         t
   in
   t

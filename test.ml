@@ -20,6 +20,7 @@ let unexpected_argument s =
 
 let main_loop () =
   let buf = Lexing.from_channel stdin in
+  let bufpos = ref None in
   let rec loop tokens chunks parsed envs =
     (match History.prev chunks with
       | Some (_,(_,_,_,exns)) -> print_endline (String.concat ", " (List.map Printexc.to_string exns))
@@ -27,9 +28,15 @@ let main_loop () =
     (match History.prev envs with
       | Some (_,_,exns) -> print_endline (String.concat ", " (List.map Printexc.to_string exns))
       | None -> ());
+    (match !bufpos with
+      | Some p ->
+          Lexing.(Printf.printf "position: %d:%d @%d"
+                    p.pos_lnum (p.pos_cnum - p.pos_bol) p.pos_cnum)
+      | None -> ());
     Printf.printf "> %!";
-    let tokens,chunks = Outline.parse (tokens,chunks) buf in
-    let parsed = Chunk.append chunks parsed in
+    let tokens,chunks = Outline.parse ~bufpos (tokens,chunks) buf in
+    let directive, parsed = Chunk.append chunks parsed in
+    (* Process directives *)
     let envs = Typer.sync parsed envs in
     loop tokens chunks parsed envs
   in

@@ -13,8 +13,8 @@ sig
   type t = item History.t 
 end
 
-val parse_step : ?rollback:int -> ?exns:exn list -> Raw.t -> Lexing.lexbuf ->
-  Raw.t * Chunked.item
+val parse_step : ?rollback:int -> ?bufpos:Lexing.position option ref -> ?exns:exn list ->
+  Raw.t -> Lexing.lexbuf -> Raw.t * Chunked.item
 
-val parse : ?rollback:int -> Raw.t * Chunked.t ->
-  Lexing.lexbuf -> Raw.t * Chunked.t
+val parse : ?rollback:int -> ?bufpos:Lexing.position option ref ->
+  Raw.t * Chunked.t -> Lexing.lexbuf -> Raw.t * Chunked.t

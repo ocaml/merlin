@@ -6,7 +6,7 @@ struct
   type t = item History.t 
 end
 
-let parse_with history ~parser ~lexer buf =
+let parse_with history ~parser ~lexer ?bufpos buf =
   let origin = History.current_pos history in
   let history' = ref history in
   let chunk_content h =
@@ -23,7 +23,7 @@ let parse_with history ~parser ~lexer buf =
       | Chunk_parser.EOF -> false
       | _ -> true
     in
-    let () = parser (Chunk_parser_utils.print_tokens (History.wrap_lexer ~filter history' lexer)) buf in
+    let () = parser (Chunk_parser_utils.print_tokens (History.wrap_lexer ~filter ?bufpos history' lexer)) buf in
     let history = !history' in
     history, Outline_utils.Done, chunk_content history
   with
@@ -31,7 +31,7 @@ let parse_with history ~parser ~lexer buf =
         begin
           let history = !history' in
           let history = match History.backward history with
-            | Some ((t,_,p'), history) when p < p' -> 
+            | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) -> 
                 print_endline "refill"; history
             | _ -> history
           in  
@@ -54,24 +54,24 @@ struct
   type t = item History.t 
 end
 
-let parse_step ?(rollback=0) ?(exns=[]) history buf =
+let parse_step ?(rollback=0) ?bufpos ?(exns=[]) history buf =
   Outline_utils.reset ~rollback ();
   let history', kind, tokens = parse_with history
     ~parser:Outline_parser.implementation
     ~lexer:Outline_lexer.token
-    buf
+    ?bufpos buf
   in
   let exns = match kind with
     | Outline_utils.Exception exn -> exn :: exns | _ -> exns
   in
   history', (History.sync_point history', (rollback, kind, tokens, exns))
 
-let rec parse ?rollback (history,chunks) buf =
+let rec parse ?rollback ?bufpos (history,chunks) buf =
   let exns = match History.prev chunks with
     | Some (_,(_,_,_,exns)) -> exns
     | None -> []
   in
-  match parse_step ?rollback ~exns history buf with
+  match parse_step ?rollback ?bufpos ~exns history buf with
     | history', (_, (_, Outline_utils.Rollback, _, _)) ->
         let chunks', rollback =
           match History.backward chunks with
@@ -81,7 +81,7 @@ let rec parse ?rollback (history,chunks) buf =
         print_endline "SYNC PARSER";
         let history', chunks' = History.sync fst history' chunks' in
         let chunks', _ = History.split chunks' in
-        parse ~rollback:(rollback + 1) (history',chunks') buf
+        parse ~rollback:(rollback + 1) ?bufpos (history',chunks') buf
     | history', (_, (_, Outline_utils.Unterminated, _, _)) ->
         history', chunks
     | history', item ->

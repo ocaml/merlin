@@ -6,6 +6,7 @@ type item_desc =
 type item = Outline.Chunked.sync * item_desc
 type sync = item History.sync
 type t = item History.t
+type directive = string * Parsetree.directive_argument
 
 exception Malformed_module
 exception Invalid_chunk
@@ -37,7 +38,7 @@ let append_step chunk tokens t =
         let open Parsetree in
         begin match Chunk_parser.top_structure_item lexer (Lexing.from_string "") with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-              Module_opening (pstr_loc, s, m, t)
+              None, Module_opening (pstr_loc, s, m, t)
           | _ -> assert false
         end
         (* run structure_item parser on tokens, appending END EOF *)
@@ -68,18 +69,21 @@ let append_step chunk tokens t =
                             pstr_loc  = loc },
                           t)
         in
-        gather_defs [] t
+        None, gather_defs [] t
     | Outline_utils.Definition ->
         (* run structure_item parser on tokens, appending EOF *)
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
         in
         (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
-        Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
-    | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ ->
-       t
+        None, Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
+    | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> None, t
     | Outline_utils.Rollback -> raise Invalid_chunk
-    | Outline_utils.Directive -> failwith "FIXME"
+    | Outline_utils.Directive ->
+        let lexer = History.wrap_lexer (ref (History.of_list tokens))
+          (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
+        in
+        Some (Chunk_parser.top_directive lexer (Lexing.from_string "")), t
 
 let append chunks history =
   (* Find last synchronisation point *)
@@ -90,11 +94,13 @@ let append chunks history =
   (* Process last items *) 
   let rec aux chunks history item =
     match History.forward chunks with
-      | None -> history, item
+      | None -> history, None, item
       | Some ((_,(filter,chunk,data,exns)),chunks') ->
-          let item = append_step chunk data item in
-          let history = History.insert (History.sync_point chunks', item) history in
-          aux chunks' history item
+          match append_step chunk data item with
+            | (Some _ as directive), item -> history, directive, item
+            | None, item ->
+                let history = History.insert (History.sync_point chunks', item) history in
+                aux chunks' history item
   in
-  let history,item = aux chunks history Root in
-  history
+  let history, directive, item = aux chunks history Root in
+  directive, history
