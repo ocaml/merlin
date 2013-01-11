@@ -52,6 +52,21 @@ struct
   type item = Raw.sync * (int * Outline_utils.kind * Raw.item list * exn list)
   type sync = item History.sync
   type t = item History.t 
+
+  let seek p t =
+    let open Lexing in
+    History.seek (fun (_,(_,_,l,_)) ->
+      match l with
+        | (_,start,_) :: _ when start.pos_cnum > p.pos_cnum -> -1
+        | (_,_,curr) :: _ when curr.pos_cnum > p.pos_cnum -> 0
+        | x :: xs ->
+            let (_,_,curr) = List.fold_left (fun _ a -> a) x xs in
+            if curr.pos_cnum > p.pos_cnum
+            then 0
+            else 1
+        | [] -> 0
+        | _ -> 1
+    ) t
 end
 
 let parse_step ?(rollback=0) ?bufpos ?(exns=[]) history buf =

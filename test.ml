@@ -20,7 +20,7 @@ let unexpected_argument s =
 
 let main_loop () =
   let buf = Lexing.from_channel stdin in
-  let bufpos = ref None in
+  let bufpos = ref (Some buf.Lexing.lex_curr_p) in
   let rec loop tokens chunks parsed envs =
     (match History.prev chunks with
       | Some (_,(_,_,_,exns)) -> print_endline (String.concat ", " (List.map Printexc.to_string exns))
@@ -34,11 +34,17 @@ let main_loop () =
                     p.pos_lnum (p.pos_cnum - p.pos_bol) p.pos_cnum)
       | None -> ());
     Printf.printf "> %!";
+    let prevpos = !bufpos in
     let tokens,chunks = Outline.parse ~bufpos (tokens,chunks) buf in
-    let directive, parsed = Chunk.append chunks parsed in
-    (* Process directives *)
-    let envs = Typer.sync parsed envs in
-    loop tokens chunks parsed envs
+    match Chunk.append chunks parsed with
+      | None, parsed ->
+          (* Process directives *)
+          let envs = Typer.sync parsed envs in
+          loop tokens chunks parsed envs
+      | Some directive, parsed ->
+          bufpos := prevpos;
+          failwith "FIXME: handle directives";
+          loop tokens chunks parsed envs
   in
   loop History.empty History.empty History.empty History.empty
 
