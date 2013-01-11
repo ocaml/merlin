@@ -212,6 +212,8 @@ implementation:
   | top_structure EOF                    { () }
   | AND                                  { emit_top Rollback $endpos }
   | EOF                                  { () }
+  | SEMISEMI                             { () }
+  | toplevel_directive                   { emit_top Directive $endpos }
 ;
 interface:
     signature EOF                        { () }

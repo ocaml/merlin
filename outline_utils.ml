@@ -5,6 +5,8 @@ type kind =
   | Rollback
   | Done
   | Unterminated
+  | Directive
+  | Exception of exn
 
 exception Chunk of kind * Lexing.position
 

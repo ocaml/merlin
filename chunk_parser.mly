@@ -479,8 +479,10 @@ The precedences must be listed from low to high.
 %type <Parsetree.toplevel_phrase> toplevel_phrase
 %start use_file                         /* for the #use directive */
 %type <Parsetree.toplevel_phrase list> use_file
-%start top_structure_item                   /* extension, ocaml-ty */
+%start top_structure_item               /* extension, ocaml-ty */
 %type <Parsetree.structure_item> top_structure_item
+%start top_directive                    /* extension, ocaml-ty */
+%type <string * Parsetree.directive_argument> top_directive
 %start any_longident
 %type <Longident.t> any_longident
 %%
@@ -1754,17 +1756,26 @@ any_longident:
   | LPAREN RPAREN                               { Lident "()" }
   | FALSE                                       { Lident "false" }
   | TRUE                                        { Lident "true" }
+;
 
 /* Toplevel directives */
+toplevel_ident:
+    val_ident                                   { Lident $1 }
+  | mod_ext_longident DOT val_ident             { Ldot($1, $3) }
+  | mod_ext_longident                           { $1 }
+;
+
+top_directive:
+    SHARP ident                 { ($2, Pdir_none) }
+  | SHARP ident STRING          { ($2, Pdir_string $3) }
+  | SHARP ident INT             { ($2, Pdir_int $3) }
+  | SHARP ident toplevel_ident  { ($2, Pdir_ident $3) }
+  | SHARP ident FALSE           { ($2, Pdir_bool false) }
+  | SHARP ident TRUE            { ($2, Pdir_bool true) }
+;
 
 toplevel_directive:
-    SHARP ident                 { Ptop_dir($2, Pdir_none) }
-  | SHARP ident STRING          { Ptop_dir($2, Pdir_string $3) }
-  | SHARP ident INT             { Ptop_dir($2, Pdir_int $3) }
-  | SHARP ident val_longident   { Ptop_dir($2, Pdir_ident $3) }
-  | SHARP ident FALSE           { Ptop_dir($2, Pdir_bool false) }
-  | SHARP ident TRUE            { Ptop_dir($2, Pdir_bool true) }
-;
+  top_directive { let name, dir = $1 in Ptop_dir (name, dir) }
 
 /* Miscellaneous */
 

@@ -21,17 +21,16 @@ let unexpected_argument s =
 let main_loop () =
   let buf = Lexing.from_channel stdin in
   let rec loop tokens chunks parsed envs =
+    (match History.prev chunks with
+      | Some (_,(_,_,_,exns)) -> print_endline (String.concat ", " (List.map Printexc.to_string exns))
+      | None -> ());
+    (match History.prev envs with
+      | Some (_,_,exns) -> print_endline (String.concat ", " (List.map Printexc.to_string exns))
+      | None -> ());
+    Printf.printf "> %!";
     let tokens,chunks = Outline.parse (tokens,chunks) buf in
     let parsed = Chunk.append chunks parsed in
     let envs = Typer.sync parsed envs in
-    (*let chunks = Chunk.append_step chunk data chunks in
-    ignore (Misc.refold (fun h -> match History.backward h with
-      | Some ((t,_,_), h') ->
-          Printf.printf "%s " (Outline.token_to_string t);
-          Some h'
-      | None -> None
-    ) history);*)
-    Printf.printf "\n%!";
     loop tokens chunks parsed envs
   in
   loop History.empty History.empty History.empty History.empty
@@ -72,6 +71,7 @@ end);;
 
 let main () =
   Arg.parse Options.list unexpected_argument "TODO";
+  Compile.init_path();
   set_paths ();
   main_loop ()
 
