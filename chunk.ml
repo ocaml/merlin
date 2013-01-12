@@ -80,11 +80,6 @@ let append_step chunk tokens t =
         None, Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> None, t
     | Outline_utils.Rollback -> raise Invalid_chunk
-    | Outline_utils.Directive ->
-        let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-        in
-        Some (Chunk_parser.top_directive lexer (Lexing.from_string "")), t
 
 let append chunks history =
   (* Find last synchronisation point *)

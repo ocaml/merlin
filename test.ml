@@ -1,18 +1,175 @@
-module Json = Yojson.Basic
-
-let set_paths =
-  (* Add whatever -I options have been specified on the command line,
+(* Add whatever -I options have been specified on the command line,
      but keep the directories that user code linked in with ocamlmktop
      may have added to load_path. *)
+let default_build_paths =
   let open Config in
-  let default_load_path = ref [] in
-  fun () -> match !default_load_path with
-    | [] ->
-        load_path := !load_path @ [Filename.concat standard_library "camlp4"];
-        load_path := "" :: (List.rev !Clflags.include_dirs @ !load_path);
-        default_load_path := !load_path
-    | path -> load_path := path
+  lazy (List.rev !Clflags.include_dirs @ !load_path @ [Filename.concat standard_library "camlp4"])
 
+let set_default_path () =
+  Config.load_path := Lazy.force default_build_paths
+
+let source_path = ref []
+
+type state = {
+  pos      : Lexing.position;
+  tokens   : Outline.Raw.t;
+  outlines : Outline.Chunked.t;
+  chunks   : Chunk.t;
+  envs     : Typer.t;
+}
+ 
+let initial_state = {
+  pos      = Lexing.((from_string "").lex_curr_p);
+  tokens   = History.empty;
+  outlines = History.empty;
+  chunks   = History.empty;
+  envs     = History.empty;
+}
+
+let commands = Hashtbl.create 17
+
+let main_loop () =
+  let input  = Json.stream_from_channel stdin in
+  let output =
+    let out_json = Json.to_channel stdout in
+    fun json ->
+      out_json json;
+      print_newline ()
+  in
+  try
+    let rec loop state =
+      let state, answer =
+        try match Stream.next input with
+          | `List (`String command :: args) ->
+                let handler =
+                  try Hashtbl.find commands command
+                  with Not_found -> failwith "unknown command"
+                in
+                handler state args
+          | _ -> failwith "malformed command"
+        with
+          | Failure s -> state, `List [`String "failure"; `String s]
+          | Stream.Failure as exn -> raise exn
+          | exn -> state, `List [`String "exception"; `String (Printexc.to_string exn)]
+      in
+      output answer;
+      loop state
+    in
+    loop initial_state
+  with Stream.Failure -> ()
+
+let pos_to_json pos =
+  Lexing.(`Assoc ["line", `Int pos.pos_lnum;
+                  "col", `Int (pos.pos_cnum - pos.pos_bol);
+                  "offset", `Int pos.pos_cnum])
+let return_position p = `List [`String "position" ; pos_to_json p]
+
+let invalid_arguments () = failwith "invalid arguments"
+
+type command = state -> Json.json list -> state * Json.json 
+ 
+let command_line state = function
+  | [] -> state, return_position state.pos
+  | _ -> invalid_arguments ()
+
+let command_seek state = function
+  | [`Assoc props] ->
+      let pos =
+        try match List.assoc "offset" props with
+          | `Int i -> `Offset i
+          | _ -> invalid_arguments () 
+        with Not_found ->
+        try match List.assoc "line" props, List.assoc "col" props with
+          | `Int line, `Int col -> `Line (line, col)
+          | _ -> invalid_arguments ()
+        with Not_found -> invalid_arguments ()
+      in
+      let outlines =
+        match pos with
+          | `Offset o -> Outline.Chunked.seek_offset o state.outlines
+          | `Line (l,c) -> Outline.Chunked.seek_line (l,c) state.outlines
+      in
+      let outlines, _ = History.split outlines in
+      let tokens, outlines = History.sync fst state.tokens outlines in
+      let tokens, _ = History.split tokens in
+      let _, chunks = Chunk.append outlines state.chunks in
+      let envs = Typer.sync chunks state.envs in
+      let pos =
+        match Outline.Chunked.last_position outlines with
+          | Some p -> p
+          | None -> initial_state.pos
+      in
+      { tokens ; outlines ; chunks ; envs ; pos},
+      return_position pos
+  | _ -> invalid_arguments ()
+
+let command_reset state = function
+  | [] -> initial_state, return_position initial_state.pos
+  | _ -> invalid_arguments ()
+
+
+(* Path management *)
+let command_which state = function
+  | [`String s] -> 
+      let filename =
+        try
+          Misc.find_in_path_uncap !source_path s
+        with Not_found ->
+          Misc.find_in_path_uncap !Config.load_path s
+      in
+      state, `String filename
+  | _ -> invalid_arguments ()
+
+let command_path ~reset r state = function
+  | [ `String "list" ] ->
+      state, `List (List.map (fun s -> `String s) !r)
+  | [ `String "add" ; `String s ] ->
+      let d = Misc.expand_directory Config.standard_library s in
+      r := d :: !r;
+      state, `Bool true
+  | [ `String "remove" ; `String s ] ->
+      let d = Misc.expand_directory Config.standard_library s in
+      r := List.filter (fun d' -> d' <> d) !r;
+      state, `Bool true
+  | [ `String "reset" ] ->
+      r := Lazy.force reset;
+      state, `Bool true
+  | _ -> invalid_arguments ()
+
+let command_cd state = function
+  | [`String s] ->
+      Sys.chdir s;
+      state, (`Bool true)
+  | _ -> invalid_arguments ()
+
+let _ = List.iter (fun (a,b) -> Hashtbl.add commands a b) [
+  "line",  (command_line  :> command);
+  "seek",  (command_seek  :> command);
+  "reset", (command_reset :> command);
+  "cd",    (command_cd    :> command);
+  "which", (command_which :> command);
+  "source_path", (command_path ~reset:default_build_paths source_path :> command);
+  "build_path",  (command_path ~reset:(lazy []) Config.load_path :> command);
+]
+
+(* Directives we want :
+   - #line : current position
+   - #seek "{line:int,col:int}" : set position to line, col
+   - #seek "int"   : set position to offset
+   response : {line:int,col:int,offset:int}, nearest position that could be recovered
+   - #which "module.{ml,mli}" : find file with given name
+   response : /path/to/module.{ml,mli}
+   - #reset : reset to initial state
+
+   - #source_path "path"
+   - #build_path "path"
+   - #remove_source_path "path"
+   - #remove_build_path "path"
+   - #clear_source_path
+   - #clear_build_path
+   Next : browsing
+*)
+  
 let print_version () =
   Printf.printf "The Outliner toplevel, version %s\n" Sys.ocaml_version;
   exit 0
@@ -23,158 +180,6 @@ let print_version_num () =
 
 let unexpected_argument s =
   failwith ("Unexpected argument:" ^ s)
-
-let source_path = ref []
-
-let main_loop () =
-  let buf = Lexing.from_channel stdin in
-  let initialpos = buf.Lexing.lex_curr_p in
-  let goteof = ref true in
-  let rec loop bufpos oldtokens oldchunks parsed envs =
-    (*(match History.prev oldchunks with
-      | Some (_,(_,_,_,exns)) -> prerr_endline (String.concat ", " (List.map Printexc.to_string exns))
-      | None -> ());
-    (match History.prev envs with
-      | Some (_,_,exns) -> prerr_endline (String.concat ", " (List.map Printexc.to_string exns))
-      | None -> ());*)
-    (let p = !bufpos in
-     Lexing.(Printf.eprintf "position: %d:%d @%d%!"
-               p.pos_lnum (p.pos_cnum - p.pos_bol) p.pos_cnum));
-    let tokens = if !goteof
-      then
-        begin
-          Printf.printf "> %!";
-          goteof := false;
-          fst (History.split oldtokens)
-        end
-      else
-        oldtokens
-    in
-    let prevpos = !bufpos in
-    let tokens,chunks = Outline.parse ~bufpos ~goteof (oldtokens,oldchunks) buf in
-    match Chunk.append chunks parsed with
-      | None, parsed ->
-          (* Process directives *)
-          let envs = Typer.sync parsed envs in
-          loop bufpos tokens chunks parsed envs
-      | Some directive, parsed ->
-          let pos_to_json pos =
-            Lexing.(`Assoc ["line", `Int pos.pos_lnum;
-                            "col", `Int (pos.pos_cnum - pos.pos_bol);
-                            "offset", `Int pos.pos_cnum])
-          in
-          bufpos := prevpos;
-          let tokens,chunks = oldtokens,oldchunks in
-          let default = (tokens, chunks, parsed, envs) in
-          let (tokens, chunks, parsed, envs), result =
-          let directive, arg = directive in
-          let arg = match arg with
-            | Parsetree.Pdir_none -> `Null
-            | Parsetree.Pdir_int i -> `Int i
-            | Parsetree.Pdir_bool b  -> `Bool b
-            | Parsetree.Pdir_ident i -> `Ident i
-            | Parsetree.Pdir_string s -> (Json.from_string s :> [ `Ident of Longident.t | Json.json ])
-          in
-          match directive, arg with
-            | "line", `Null -> default,
-              pos_to_json prevpos
-            | "seek", json ->
-                let chunks = (match json with
-                  | `Int i -> Outline.Chunked.seek_offset i chunks
-                  | `Assoc l ->
-                      (match List.assoc "line" l, List.assoc "col" l with
-                        | `Int line, `Int col -> 
-                            Outline.Chunked.seek_line (line,col) chunks
-                        | _, _ -> failwith "Invalid argument")
-                  | _ -> failwith "Invalid argument")
-                in
-                let chunks, _ = History.split chunks in
-                let tokens, chunks = History.sync fst tokens chunks in
-                let tokens, _ = History.split tokens in
-                let _, parsed = Chunk.append chunks parsed in
-                let envs = Typer.sync parsed envs in
-                let pos = match Outline.Chunked.last_position chunks with Some p -> p | None -> initialpos in
-                bufpos := pos;
-                (tokens, chunks, parsed, envs),
-                pos_to_json pos
-            | "reset", `Null ->
-                bufpos := initialpos;
-                (History.empty,History.empty,History.empty,History.empty),
-              (`Null)
-
-              (* Path management *)
-            | "which", `String name -> default,
-              (let filename =
-                 try
-                   Misc.find_in_path_uncap !source_path name
-                 with Not_found ->
-                   Misc.find_in_path_uncap !Config.load_path name
-               in
-               (`String filename))
-
-            | "source_path", `Null -> default,
-              (`List (List.map (fun s -> `String s) !source_path))
-            | "build_path", `Null -> default,
-              (`List (List.map (fun s -> `String s) !Config.load_path))
-
-            | "source_path", `String s ->
-                let d = Misc.expand_directory Config.standard_library s in
-                source_path := d :: !source_path;
-                default, `Bool true
-                  
-            | "build_path", `String s ->
-                let d = Misc.expand_directory Config.standard_library s in
-                Config.load_path := d :: !Config.load_path;
-                default, `Bool true
-
-            | "remove_source_path", `String s ->
-                let d = Misc.expand_directory Config.standard_library s in
-                source_path := List.filter (fun d' -> d' <> d) !source_path;
-                default, `Bool true
-
-            | "remove_build_path", `String s ->
-                let d = Misc.expand_directory Config.standard_library s in
-                Config.load_path := List.filter (fun d' -> d' <> d) !Config.load_path;
-                default, `Bool true
-
-            | "clear_source_path", `Null ->
-                source_path := [];
-                default, `Bool true
-
-            | "clear_build_path", `Null ->
-                set_paths ();
-                default, `Bool true
-
-            | "cd", `String s ->
-                Sys.chdir s;
-                default, `Bool true
-                
-            | _ -> failwith "Unknown directive (FIXME)"
-          in
-          Json.to_channel stdout result;
-          print_newline ();
-          loop bufpos tokens chunks parsed envs
-            
-  (* Directives we want :
-     - #line : current position
-     - #seek "{line:int,col:int}" : set position to line, col
-     - #seek "int"   : set position to offset
-     response : {line:int,col:int,offset:int}, nearest position that could be recovered
-     - #which "module.{ml,mli}" : find file with given name
-     response : /path/to/module.{ml,mli}
-     - #reset : reset to initial state
-
-     - #source_path "path"
-     - #build_path "path"
-     - #remove_source_path "path"
-     - #remove_build_path "path"
-     - #clear_source_path
-     - #clear_build_path
-     Next : browsing
-  *)
-  in
-  loop (ref initialpos) History.empty History.empty History.empty History.empty
-  
 
 module Options = Main_args.Make_bytetop_options (struct
   let set r () = r := true
@@ -212,8 +217,8 @@ end);;
 
 let main () =
   Arg.parse Options.list unexpected_argument "TODO";
-  Compile.init_path();
-  set_paths ();
+  Compile.init_path ();
+  set_default_path ();
   main_loop ()
 
 let _ = main ()
