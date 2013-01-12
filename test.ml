@@ -67,7 +67,22 @@ let return_position p = `List [`String "position" ; pos_to_json p]
 let invalid_arguments () = failwith "invalid arguments"
 
 type command = state -> Json.json list -> state * Json.json 
- 
+
+let command_tell state = function
+  | [`String source] ->
+      let bufpos = ref state.pos in
+      let tokens, outlines =
+        Outline.parse ~bufpos ~goteof:(ref false)
+          (state.tokens,state.outlines)
+          (Lexing.from_string source)
+      in
+      let chunks = Chunk.append outlines state.chunks in
+      (* Process directives *)
+      let envs = Typer.sync chunks state.envs in
+      { tokens ; outlines ; chunks ; envs ; pos = !bufpos},
+      `Bool true
+  | _ -> invalid_arguments ()
+
 let command_line state = function
   | [] -> state, return_position state.pos
   | _ -> invalid_arguments ()
@@ -92,7 +107,7 @@ let command_seek state = function
       let outlines, _ = History.split outlines in
       let tokens, outlines = History.sync fst state.tokens outlines in
       let tokens, _ = History.split tokens in
-      let _, chunks = Chunk.append outlines state.chunks in
+      let chunks = Chunk.append outlines state.chunks in
       let envs = Typer.sync chunks state.envs in
       let pos =
         match Outline.Chunked.last_position outlines with
@@ -143,6 +158,7 @@ let command_cd state = function
   | _ -> invalid_arguments ()
 
 let _ = List.iter (fun (a,b) -> Hashtbl.add commands a b) [
+  "tell",  (command_tell  :> command);
   "line",  (command_line  :> command);
   "seek",  (command_seek  :> command);
   "reset", (command_reset :> command);
