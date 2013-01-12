@@ -15,7 +15,7 @@ let nesting = ref 0
 
 let reset ~rollback () =
   filter_first := rollback;
-  Printf.printf "rollback = %d\n" rollback;
+  Printf.eprintf "rollback = %d\n%!" rollback;
   nesting := 0
 
 let enter () =

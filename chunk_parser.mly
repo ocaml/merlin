@@ -1765,7 +1765,7 @@ toplevel_ident:
   | mod_ext_longident                           { $1 }
 ;
 
-top_directive:
+toplevel_directive_:
     SHARP ident                 { ($2, Pdir_none) }
   | SHARP ident STRING          { ($2, Pdir_string $3) }
   | SHARP ident INT             { ($2, Pdir_int $3) }
@@ -1774,8 +1774,12 @@ top_directive:
   | SHARP ident TRUE            { ($2, Pdir_bool true) }
 ;
 
+top_directive:
+  toplevel_directive_ EOF { $1 }
+;
+
 toplevel_directive:
-  top_directive { let name, dir = $1 in Ptop_dir (name, dir) }
+  toplevel_directive_ { let name, dir = $1 in Ptop_dir (name, dir) }
 
 /* Miscellaneous */
 

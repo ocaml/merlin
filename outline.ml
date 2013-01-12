@@ -6,7 +6,7 @@ struct
   type t = item History.t 
 end
 
-let parse_with history ~parser ~lexer ?bufpos buf =
+let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
   let origin = History.current_pos history in
   let history' = ref history in
   let chunk_content h =
@@ -20,7 +20,7 @@ let parse_with history ~parser ~lexer ?bufpos buf =
   in
   try
     let filter = function
-      | Chunk_parser.EOF -> false
+      | Chunk_parser.EOF -> goteof := true; false
       | _ -> true
     in
     let () = parser (Chunk_parser_utils.print_tokens (History.wrap_lexer ~filter ?bufpos history' lexer)) buf in
@@ -32,7 +32,7 @@ let parse_with history ~parser ~lexer ?bufpos buf =
           let history = !history' in
           let history = match History.backward history with
             | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) -> 
-                print_endline "refill"; history
+                prerr_endline "refill"; history
             | _ -> history
           in  
           history, c, chunk_content history
@@ -53,51 +53,68 @@ struct
   type sync = item History.sync
   type t = item History.t 
 
-  let seek p t =
+  let last_curr = List.fold_left (fun _ (_,_,curr) -> curr)
+
+  let rec last_position t =
+    match History.backward t with
+      | Some ((_,(_,_,(_,_,curr) :: xs, _)),_) -> Some (last_curr curr xs)
+      | None -> None
+      | _ -> failwith "Outline.Chunked.last_position: Invalid Chunked.t"
+
+  let seek cmp t =
     let open Lexing in
     History.seek (fun (_,(_,_,l,_)) ->
       match l with
-        | (_,start,_) :: _ when start.pos_cnum > p.pos_cnum -> -1
-        | (_,_,curr) :: _ when curr.pos_cnum > p.pos_cnum -> 0
-        | x :: xs ->
-            let (_,_,curr) = List.fold_left (fun _ a -> a) x xs in
-            if curr.pos_cnum > p.pos_cnum
-            then 0
-            else 1
-        | [] -> 0
+        | (_,start,_) :: _ when cmp start < 0 -> -1
+        | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
+        | [] -> failwith "Outline.Chunked.seek: Invalid Chunked.t"
         | _ -> 1
     ) t
+
+  let seek_line (line,col) =
+    Lexing.(seek (fun pos ->
+      match compare line pos.pos_lnum with
+        | 0 -> compare col (pos.pos_cnum - pos.pos_bol)
+        | n -> n))
+
+  let seek_offset offset =
+    seek (fun pos -> compare offset pos.Lexing.pos_cnum)
 end
 
-let parse_step ?(rollback=0) ?bufpos ?(exns=[]) history buf =
+let parse_step ?(rollback=0) ?bufpos ?(exns=[]) ~goteof history buf =
   Outline_utils.reset ~rollback ();
   let history', kind, tokens = parse_with history
     ~parser:Outline_parser.implementation
     ~lexer:Outline_lexer.token
-    ?bufpos buf
+    ?bufpos ~goteof buf
   in
   let exns = match kind with
     | Outline_utils.Exception exn -> exn :: exns | _ -> exns
   in
-  history', (History.sync_point history', (rollback, kind, tokens, exns))
+  history',
+  (match tokens with
+    | [] -> None
+    | _ -> Some (History.sync_point history', (rollback, kind, tokens, exns)))
 
-let rec parse ?rollback ?bufpos (history,chunks) buf =
+let rec parse ?rollback ?bufpos ~goteof (history,chunks) buf =
   let exns = match History.prev chunks with
     | Some (_,(_,_,_,exns)) -> exns
     | None -> []
   in
-  match parse_step ?rollback ?bufpos ~exns history buf with
-    | history', (_, (_, Outline_utils.Rollback, _, _)) ->
+  match parse_step ?rollback ?bufpos ~exns ~goteof history buf with
+    | history', Some (_, (_, Outline_utils.Rollback, _, _)) ->
         let chunks', rollback =
           match History.backward chunks with
             | Some ((_, (rollback, _, _, _)), chunks') -> chunks', rollback
             | None -> chunks, 0
         in
-        print_endline "SYNC PARSER";
+        prerr_endline "SYNC PARSER";
         let history', chunks' = History.sync fst history' chunks' in
         let chunks', _ = History.split chunks' in
-        parse ~rollback:(rollback + 1) ?bufpos (history',chunks') buf
-    | history', (_, (_, Outline_utils.Unterminated, _, _)) ->
+        parse ~rollback:(rollback + 1) ?bufpos ~goteof (history',chunks') buf
+    | history', Some (_, (_, Outline_utils.Unterminated, _, _)) ->
         history', chunks
-    | history', item ->
+    | history', Some item ->
         history', History.insert item chunks
+    | history', None ->
+        history', chunks

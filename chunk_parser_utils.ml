@@ -114,5 +114,5 @@ let token_to_string =
 
 let print_tokens f a =
   let t = f a in
-  print_endline (token_to_string t);
+  prerr_endline (token_to_string t);
   t

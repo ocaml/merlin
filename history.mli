@@ -28,7 +28,7 @@ val modify_current : ('a -> 'a) -> 'a t -> 'a t
 type pos = Lexing.position
 type 'a loc = 'a * pos * pos
 
-val wrap_lexer : ?filter:('a -> bool) -> ?bufpos:Lexing.position option ref ->
+val wrap_lexer : ?filter:('a -> bool) -> ?bufpos:Lexing.position ref ->
   'a loc t ref -> (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a)
 
 val current_pos : ?default:Lexing.position -> 'a loc t -> pos

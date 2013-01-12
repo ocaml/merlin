@@ -16,8 +16,9 @@ let rec append_step ~stop_at chunk_item env exns =
   match chunk_item with
     | Chunk.Root -> env, exns
     | _ when stop_at chunk_item -> env, exns
-    (* Not handled *)
-    | Chunk.Module_opening (_,_,_,t) -> append_step ~stop_at t env exns
+    | Chunk.Module_opening (_,_,_,t) ->
+        (* Not handled *)
+        append_step ~stop_at t env exns
     | Chunk.Definition (d,t) ->
         let env, exns = append_step ~stop_at t env exns in
         try
@@ -44,7 +45,7 @@ let sync chunks t =
     match History.forward chunks with
       | None -> t, env, exns
       | Some ((_,chunk_item),chunks') ->
-          print_endline "SYNC TYPER";
+          prerr_endline "SYNC TYPER";
           let env, exns = append_step ~stop_at chunk_item env exns in 
           let t = History.insert (History.sync_point chunks', env, exns) t in
           aux chunks' t env exns

@@ -12,12 +12,14 @@ sig
   type sync = item History.sync
   type t = item History.t 
 
-  val seek : Lexing.position -> t -> t
+  val last_position : t -> Lexing.position option
+  val seek_line : int * int -> t -> t
+  val seek_offset : int -> t -> t
 end
 
-val parse_step : ?rollback:int -> ?bufpos:Lexing.position option ref -> ?exns:exn list ->
-  Raw.t -> Lexing.lexbuf -> Raw.t * Chunked.item
+val parse_step : ?rollback:int -> ?bufpos:Lexing.position ref -> ?exns:exn list -> goteof:bool ref ->
+  Raw.t -> Lexing.lexbuf -> Raw.t * Chunked.item option
 
-val parse : ?rollback:int -> ?bufpos:Lexing.position option ref ->
+val parse : ?rollback:int -> ?bufpos:Lexing.position ref -> goteof:bool ref ->
   Raw.t * Chunked.t -> Lexing.lexbuf -> Raw.t * Chunked.t
 

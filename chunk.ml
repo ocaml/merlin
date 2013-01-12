@@ -32,7 +32,7 @@ let append_step chunk tokens t =
   match chunk with
     | Outline_utils.Enter_module ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fail_lexer)
+          (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] eof_lexer)
         in
         (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
         let open Parsetree in
@@ -73,7 +73,7 @@ let append_step chunk tokens t =
     | Outline_utils.Definition ->
         (* run structure_item parser on tokens, appending EOF *)
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
+          (fake_tokens [Chunk_parser.EOF, 0] eof_lexer)
         in
         (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
         None, Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
@@ -81,13 +81,12 @@ let append_step chunk tokens t =
     | Outline_utils.Rollback -> raise Invalid_chunk
     | Outline_utils.Directive ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.EOF, 0] fail_lexer)
+          (fake_tokens [Chunk_parser.EOF, 0] eof_lexer)
         in
         Some (Chunk_parser.top_directive lexer (Lexing.from_string "")), t
 
 let append chunks history =
   (* Find last synchronisation point *)
-  print_endline "SYNC PARSER";
   let chunks, history = History.sync fst chunks history in
   (* Drop out of sync items *)
   let history, out_of_sync = History.split history in
@@ -100,11 +99,16 @@ let append chunks history =
     match History.forward chunks with
       | None -> history, None, item
       | Some ((_,(filter,chunk,data,exns)),chunks') ->
-          match append_step chunk data item with
-            | (Some _ as directive), item -> history, directive, item
-            | None, item ->
+          prerr_endline "SYNC PARSER";
+          match
+            try Some (append_step chunk data item)
+            with Syntaxerr.Error _ -> None
+          with              
+            | Some ((Some _ as directive), item) -> history, directive, item
+            | Some (None, item) ->
                 let history = History.insert (History.sync_point chunks', item) history in
                 aux chunks' history item
+            | None -> aux chunks' history item
   in
   let history, directive, item = aux chunks history item in
   directive, history
