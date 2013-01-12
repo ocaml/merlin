@@ -253,22 +253,22 @@ module_expr:
       { () }
   | STRUCT emit_enter structure END
       { () }
-  | STRUCT emit_enter structure error
-      { () }
+  (* | STRUCT emit_enter structure error
+      { () } *)
   | FUNCTOR LPAREN UIDENT COLON module_type RPAREN MINUSGREATER module_expr
       { () }
   | module_expr LPAREN module_expr RPAREN
       { () }
-  | module_expr LPAREN module_expr error
-      { () }
+  (* | module_expr LPAREN module_expr error
+      { () } *)
   | LPAREN module_expr COLON module_type RPAREN
       { () }
-  | LPAREN module_expr COLON module_type error
-      { () }
+  (* | LPAREN module_expr COLON module_type error
+      { () } *)
   | LPAREN module_expr RPAREN
       { () }
-  | LPAREN module_expr error
-      { () }
+  (* | LPAREN module_expr error
+      { () } *)
   | LPAREN VAL expr RPAREN
       { () }
   | LPAREN VAL expr COLON package_type RPAREN
@@ -277,12 +277,12 @@ module_expr:
       { () }
   | LPAREN VAL expr COLONGREATER package_type RPAREN
       { () }
-  | LPAREN VAL expr COLON error
-      { () }
-  | LPAREN VAL expr COLONGREATER error
-      { () }
-  | LPAREN VAL expr error
-      { () }
+  (* | LPAREN VAL expr COLON error
+      { () } *)
+  (* | LPAREN VAL expr COLONGREATER error
+      { () } *)
+  (* | LPAREN VAL expr error
+      { () } *)
 ;
 structure:
     structure_tail                              { () }
@@ -344,8 +344,8 @@ module_type:
       { () }
   | SIG signature END
       { () }
-  | SIG signature error
-      { () }
+  (* | SIG signature error
+      { () } *)
   | FUNCTOR LPAREN UIDENT COLON module_type RPAREN MINUSGREATER module_type
       %prec below_WITH
       { () }
@@ -355,8 +355,8 @@ module_type:
       { () }
   | LPAREN module_type RPAREN
       { () }
-  | LPAREN module_type error
-      { () }
+  (* | LPAREN module_type error
+      { () } *)
 ;
 signature:
     (* empty *)                                 { () }
@@ -449,16 +449,16 @@ class_simple_expr:
       { () }
   | OBJECT class_structure END
       { () }
-  | OBJECT class_structure error
-      { () }
+  (* | OBJECT class_structure error
+      { () } *)
   | LPAREN class_expr COLON class_type RPAREN
       { () }
-  | LPAREN class_expr COLON class_type error
-      { () }
+  (* | LPAREN class_expr COLON class_type error
+      { () } *)
   | LPAREN class_expr RPAREN
       { () }
-  | LPAREN class_expr error
-      { () }
+  (* | LPAREN class_expr error
+      { () } *)
 ;
 class_structure:
     class_self_pattern class_fields
@@ -549,8 +549,8 @@ class_signature:
       { () }
   | OBJECT class_sig_body END
       { () }
-  | OBJECT class_sig_body error
-      { () }
+  (* | OBJECT class_sig_body error
+      { () } *)
 ;
 class_sig_body:
     class_self_type class_sig_fields
@@ -683,8 +683,8 @@ expr:
       { () }
   | TRY seq_expr WITH opt_bar match_cases
       { () }
-  | TRY seq_expr WITH error
-      { () }
+  (* | TRY seq_expr WITH error
+      { () } *)
   | expr_comma_list %prec below_COMMA
       { () }
   | constr_longident simple_expr %prec below_SHARP
@@ -759,8 +759,8 @@ expr:
       { () }
   | OBJECT class_structure END
       { () }
-  | OBJECT class_structure error
-      { () }
+  (* | OBJECT class_structure error
+      { () } *)
 ;
 simple_expr:
     val_longident
@@ -773,48 +773,48 @@ simple_expr:
       { () }
   | LPAREN seq_expr RPAREN
       { () }
-  | LPAREN seq_expr error
-      { () }
+  (* | LPAREN seq_expr error
+      { () } *)
   | BEGIN seq_expr END
       { () }
   | BEGIN END
       { () }
-  | BEGIN seq_expr error
-      { () }
+  (* | BEGIN seq_expr error
+      { () } *)
   | LPAREN seq_expr type_constraint RPAREN
       { () }
   | simple_expr DOT label_longident
       { () }
   | mod_longident DOT LPAREN seq_expr RPAREN
       { () }
-  | mod_longident DOT LPAREN seq_expr error
-      { () }
+  (* | mod_longident DOT LPAREN seq_expr error
+      { () } *)
   | simple_expr DOT LPAREN seq_expr RPAREN
       { () }
-  | simple_expr DOT LPAREN seq_expr error
-      { () }
+  (* | simple_expr DOT LPAREN seq_expr error
+      { () } *)
   | simple_expr DOT LBRACKET seq_expr RBRACKET
       { () }
-  | simple_expr DOT LBRACKET seq_expr error
-      { () }
+  (* | simple_expr DOT LBRACKET seq_expr error
+      { () } *)
   | simple_expr DOT LBRACE expr RBRACE
       { () }
-  | simple_expr DOT LBRACE expr_comma_list error
-      { () }
+  (* | simple_expr DOT LBRACE expr_comma_list error
+      { () } *)
   | LBRACE record_expr RBRACE
       { () }
-  | LBRACE record_expr error
-      { () }
+  (* | LBRACE record_expr error
+      { () } *)
   | LBRACKETBAR expr_semi_list opt_semi BARRBRACKET
       { () }
-  | LBRACKETBAR expr_semi_list opt_semi error
-      { () }
+  (* | LBRACKETBAR expr_semi_list opt_semi error
+      { () } *)
   | LBRACKETBAR BARRBRACKET
       { () }
   | LBRACKET expr_semi_list opt_semi RBRACKET
       { () }
-  | LBRACKET expr_semi_list opt_semi error
-      { () }
+  (* | LBRACKET expr_semi_list opt_semi error
+      { () } *)
   | PREFIXOP simple_expr
       { () }
   | BANG simple_expr
@@ -823,8 +823,8 @@ simple_expr:
       { () }
   | LBRACELESS field_expr_list opt_semi GREATERRBRACE
       { () }
-  | LBRACELESS field_expr_list opt_semi error
-      { () }
+  (* | LBRACELESS field_expr_list opt_semi error
+      { () } *)
   | LBRACELESS GREATERRBRACE
       { () }
   | simple_expr SHARP label
@@ -833,8 +833,8 @@ simple_expr:
       { () }
   | LPAREN MODULE enter module_expr leave COLON package_type RPAREN
       { () }
-  | LPAREN MODULE enter module_expr leave COLON error
-      { () }
+  (* | LPAREN MODULE enter module_expr leave COLON error
+      { () } *)
 ;
 enter:
   { enter () }
@@ -990,32 +990,32 @@ simple_pattern:
       { () }
   | LBRACE lbl_pattern_list RBRACE
       { () }
-  | LBRACE lbl_pattern_list error
-      { () }
+  (* | LBRACE lbl_pattern_list error
+      { () } *)
   | LBRACKET pattern_semi_list opt_semi RBRACKET
       { () }
-  | LBRACKET pattern_semi_list opt_semi error
-      { () }
+  (* | LBRACKET pattern_semi_list opt_semi error
+      { () } *)
   | LBRACKETBAR pattern_semi_list opt_semi BARRBRACKET
       { () }
   | LBRACKETBAR BARRBRACKET
       { () }
-  | LBRACKETBAR pattern_semi_list opt_semi error
-      { () }
+  (* | LBRACKETBAR pattern_semi_list opt_semi error
+      { () } *)
   | LPAREN pattern RPAREN
       { () }
-  | LPAREN pattern error
-      { () }
+  (* | LPAREN pattern error
+      { () } *)
   | LPAREN pattern COLON core_type RPAREN
       { () }
-  | LPAREN pattern COLON core_type error
-      { () }
+  (* | LPAREN pattern COLON core_type error
+      { () } *)
   | LPAREN MODULE UIDENT RPAREN
       { () }
   | LPAREN MODULE UIDENT COLON package_type RPAREN
       { () }
-  | LPAREN MODULE UIDENT COLON package_type error
-      { () }
+  (* | LPAREN MODULE UIDENT COLON package_type error
+      { () } *)
 ;
 
 pattern_comma_list:

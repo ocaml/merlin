@@ -15,6 +15,7 @@ let empty = Root
 
 let eof_lexer _ = Chunk_parser.EOF
 let fail_lexer _ = failwith "lexer ended"
+let fallback_lexer = eof_lexer
 
 let fake_tokens tokens f =
   let tokens = ref tokens in
@@ -32,7 +33,7 @@ let append_step chunk tokens t =
   match chunk with
     | Outline_utils.Enter_module ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] eof_lexer)
+          (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
         in
         (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
         let open Parsetree in
@@ -73,7 +74,7 @@ let append_step chunk tokens t =
     | Outline_utils.Definition ->
         (* run structure_item parser on tokens, appending EOF *)
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.EOF, 0] eof_lexer)
+          (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
         None, Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
@@ -81,7 +82,7 @@ let append_step chunk tokens t =
     | Outline_utils.Rollback -> raise Invalid_chunk
     | Outline_utils.Directive ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.EOF, 0] eof_lexer)
+          (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         Some (Chunk_parser.top_directive lexer (Lexing.from_string "")), t
 

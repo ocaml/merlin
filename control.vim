@@ -1,19 +1,42 @@
 if !has('python')
-    echo "Error: Required vim compiled with +python"
-    finish
+  echo "Error: Required vim compiled with +python"
+  finish
 endif
 
 python <<EOF
 import vim
 import json
+import os
 import pexpect
 
-outliner = pexpect.spawn('outliner')
+class spawn(pexpect.spawn):
+  def __init(self, command):
+    super(spawn, self).__init__(command)
+  def send(self, s):
+    r,w,e = self.__select([self.child_fd], [self.child_fd], [])
+    while True:
+      r,w,e = self.__select([self.child_fd], [self.child_fd], [])
+      if w:
+        break
+      self.buffer = self.buffer + os.read(self.child_fd, 16384)
+    return pexpect.spawn.send(self,s)
+  def read_nonblocking(self, size = 1, timeout = -1):
+    try:
+      return super(spawn, self).read_nonblocking(size, timeout)
+    except pexpect.EOF, e:
+      raise pexpect.TIMEOUT ('Ugly workaround pexpect bug')
+
+outliner = spawn('outliner')
+outliner.delaybeforesend = 0
 outliner.setecho(False)
 outliner.expect('> ')
 
+def split(input, size):
+	return [input[start:start+size] for start in range(0, len(input), size)]
+
 def send_text(content):
-  outliner.sendline(content)
+  for chunk in split(content, 16384):
+    outliner.sendline(chunk)
   outliner.sendeof()
   outliner.expect('> ')
   return outliner.before
@@ -37,6 +60,7 @@ def seek_current():
   to_line, to_col = cw.cursor
   effective_pos = send_command("#seek", {'line' : to_line, 'col': to_col})
   line, col = effective_pos['line'], effective_pos['col']
+  # pexpect sucks
   send_text(cb[line-1][col:] + "\n" + "\n".join(cb[line:to_line-1]))
 
 reset_buffer()
