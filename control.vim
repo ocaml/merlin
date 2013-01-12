@@ -4,64 +4,36 @@ if !has('python')
 endif
 
 python <<EOF
-import vim
+import subprocess
 import json
-import os
-import pexpect
+import vim
 
-class spawn(pexpect.spawn):
-  def __init(self, command):
-    super(spawn, self).__init__(command)
-  def send(self, s):
-    r,w,e = self.__select([self.child_fd], [self.child_fd], [])
-    while True:
-      r,w,e = self.__select([self.child_fd], [self.child_fd], [])
-      if w:
-        break
-      self.buffer = self.buffer + os.read(self.child_fd, 16384)
-    return pexpect.spawn.send(self,s)
-  def read_nonblocking(self, size = 1, timeout = -1):
-    try:
-      return super(spawn, self).read_nonblocking(size, timeout)
-    except pexpect.EOF, e:
-      raise pexpect.TIMEOUT ('Ugly workaround pexpect bug')
-
-outliner = spawn('outliner')
-outliner.delaybeforesend = 0
-outliner.setecho(False)
-outliner.expect('> ')
-
-def split(input, size):
-	return [input[start:start+size] for start in range(0, len(input), size)]
-
-def send_text(content):
-  for chunk in split(content, 16384):
-    outliner.sendline(chunk)
-  outliner.sendeof()
-  outliner.expect('> ')
-  return outliner.before
+outliner = subprocess.Popen(["outliner"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
 
 def send_command(cmd, arg=None):
   if arg != None:
-    cmd = cmd + ' ' + json.dumps(json.dumps(arg))
-  line = send_text(cmd)
-  print line
+    cmd = [cmd,arg]
+  else:
+    cmd = [cmd]
+  json.dump(cmd, outliner.stdin)
+  line = outliner.stdout.readline()
   return json.loads(line)
 
 def reset_buffer():
-  return send_command("#reset")
+  return send_command("reset")
 
 def find_file(name):
-  return send_command('#which', name)
+  return send_command('which', name)
 
 def seek_current():
   cb = vim.current.buffer
   cw = vim.current.window
   to_line, to_col = cw.cursor
-  effective_pos = send_command("#seek", {'line' : to_line, 'col': to_col})
-  line, col = effective_pos['line'], effective_pos['col']
-  # pexpect sucks
-  send_text(cb[line-1][col:] + "\n" + "\n".join(cb[line:to_line-1]))
+  effective_pos = send_command("seek", {'line' : to_line, 'col': to_col})
+  print effective_pos
+  position = effective_pos[1]
+  line, col = position['line'], position['col']
+  send_command("tell", cb[line-1][col:] + "\n" + "\n".join(cb[line:to_line-1]) + "\n")
 
 reset_buffer()
 EOF

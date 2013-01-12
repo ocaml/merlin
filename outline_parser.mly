@@ -256,15 +256,15 @@ module_expr:
       { () } *)
   | FUNCTOR LPAREN UIDENT COLON module_type RPAREN MINUSGREATER module_expr
       { () }
-  | module_expr LPAREN module_expr RPAREN
+  | module_expr LPAREN enter module_expr leave RPAREN
       { () }
   (* | module_expr LPAREN module_expr error
       { () } *)
-  | LPAREN module_expr COLON module_type RPAREN
+  | LPAREN enter module_expr leave COLON module_type RPAREN
       { () }
   (* | LPAREN module_expr COLON module_type error
       { () } *)
-  | LPAREN module_expr RPAREN
+  | LPAREN enter module_expr leave RPAREN
       { () }
   (* | LPAREN module_expr error
       { () } *)
@@ -350,7 +350,7 @@ module_type:
       { () }
   | module_type WITH with_constraints
       { () }
-  | MODULE TYPE OF module_expr
+  | MODULE TYPE OF enter module_expr leave
       { () }
   | LPAREN module_type RPAREN
       { () }

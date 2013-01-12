@@ -66,21 +66,41 @@ let return_position p = `List [`String "position" ; pos_to_json p]
 
 let invalid_arguments () = failwith "invalid arguments"
 
+let lex_string ?(offset=0) string =
+  let pos = ref offset in
+  let len = String.length string in
+  Lexing.from_function
+    begin fun buf size ->
+      let count = min (len - !pos) size in
+      if count <= 0 then 0
+      else begin
+        pos := !pos + count;
+        String.blit string !pos buf 0 count;
+        count
+      end
+    end
+
 type command = state -> Json.json list -> state * Json.json 
 
 let command_tell state = function
   | [`String source] ->
-      let bufpos = ref state.pos in
-      let tokens, outlines =
-        Outline.parse ~bufpos ~goteof:(ref false)
-          (state.tokens,state.outlines)
-          (Lexing.from_string source)
+      let goteof = ref false in
+      let lexbuf = Lexing.from_string source in
+      let rec loop state =
+        let bufpos = ref state.pos in
+        let tokens, outlines =
+          Outline.parse ~bufpos ~goteof
+            (state.tokens,state.outlines)
+            lexbuf
+        in
+        let chunks = Chunk.append outlines state.chunks in
+        let envs = Typer.sync chunks state.envs in
+        let state = { tokens ; outlines ; chunks ; envs ; pos = !bufpos} in
+        if !goteof
+        then state
+        else loop state
       in
-      let chunks = Chunk.append outlines state.chunks in
-      (* Process directives *)
-      let envs = Typer.sync chunks state.envs in
-      { tokens ; outlines ; chunks ; envs ; pos = !bufpos},
-      `Bool true
+      loop state, `Bool true
   | _ -> invalid_arguments ()
 
 let command_line state = function
