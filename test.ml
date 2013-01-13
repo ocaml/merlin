@@ -39,6 +39,15 @@ let main_loop () =
   try
     let rec loop state =
       let state, answer =
+        let exns =
+          (match History.prev state.outlines with
+            | Some (_,(_,_,_,exns)) -> exns
+            | None -> []) @
+          (match History.prev state.envs with
+            | Some (_,_,exns) -> exns
+            | None -> [])
+        in
+        List.iter (fun exn -> prerr_endline (Printexc.to_string exn)) exns;
         try match Stream.next input with
           | `List (`String command :: args) ->
                 let handler =
@@ -90,8 +99,7 @@ let command_tell state = function
         let bufpos = ref state.pos in
         let tokens, outlines =
           Outline.parse ~bufpos ~goteof
-            (state.tokens,state.outlines)
-            lexbuf
+            (state.tokens,state.outlines) lexbuf
         in
         let chunks = Chunk.append outlines state.chunks in
         let envs = Typer.sync chunks state.envs in
@@ -101,6 +109,28 @@ let command_tell state = function
         else loop state
       in
       loop state, `Bool true
+  | _ -> invalid_arguments ()
+
+let command_typeof state = function
+  | [`String expr] ->
+      let lexbuf = Lexing.from_string expr in
+      let env = Typer.env state.envs in
+      let expression = Chunk_parser.top_expr Outline_lexer.token lexbuf in
+      let (str, sg, _) =
+        Typemod.type_toplevel_phrase env
+          Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
+      in
+      (*let sg' = Typemod.simplify_signature sg in*)
+      let open Typedtree in
+      begin match str.str_items with
+        | [ { str_desc = Tstr_eval exp }] ->
+            let buffer = Buffer.create 16 in
+            let ppf = Format.formatter_of_buffer buffer in
+            Printtyp.type_scheme ppf exp.exp_type;
+            Format.pp_print_flush ppf ();
+            state, (`List [`String "type" ; `String (Buffer.contents buffer)] :> Json.json)
+        | _ -> failwith "unhandled expression"
+      end
   | _ -> invalid_arguments ()
 
 let command_line state = function
@@ -186,6 +216,8 @@ let _ = List.iter (fun (a,b) -> Hashtbl.add commands a b) [
   "which", (command_which :> command);
   "source_path", (command_path ~reset:default_build_paths source_path :> command);
   "build_path",  (command_path ~reset:(lazy []) Config.load_path :> command);
+
+  "typeof", (command_typeof :> command);
 ]
 
 (* Directives we want :

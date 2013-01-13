@@ -481,8 +481,8 @@ The precedences must be listed from low to high.
 %type <Parsetree.toplevel_phrase list> use_file
 %start top_structure_item               /* extension, ocaml-ty */
 %type <Parsetree.structure_item> top_structure_item
-%start top_directive                    /* extension, ocaml-ty */
-%type <string * Parsetree.directive_argument> top_directive
+%start top_expr                        /* extension, ocaml-ty */
+%type <Parsetree.expression> top_expr
 %start any_longident
 %type <Longident.t> any_longident
 %%
@@ -500,6 +500,9 @@ toplevel_phrase:
   | seq_expr SEMISEMI                    { Ptop_def[ghstrexp $1] }
   | toplevel_directive SEMISEMI          { $1 }
   | EOF                                  { raise End_of_file }
+;
+top_expr:
+  | seq_expr EOF { $1 }
 ;
 top_structure:
     structure_item                       { [$1] }

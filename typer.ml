@@ -2,15 +2,12 @@ type item = Chunk.sync * Env.t * exn list
 type sync = item History.sync
 type t = item History.t
 
-let initial_env =
-  let initial = ref None in
-  fun () ->
-    match !initial with
-      | Some env -> env
-      | None ->
-          let env = Compile.initial_env () in
-          initial := Some env;
-          env
+let initial_env = Lazy.from_fun Compile.initial_env
+
+let env t =
+  match History.prev t with
+    | None -> Lazy.force initial_env
+    | Some (_,env,_) -> env
 
 let rec append_step ~stop_at chunk_item env exns =
   match chunk_item with
@@ -33,7 +30,7 @@ let sync chunks t =
   let t, out_of_sync = History.split t in
   (* Process last items *)
   let (last_sync,env,exns) = match History.prev t with
-    | None -> (History.sync_origin, initial_env (), [])
+    | None -> (History.sync_origin, Lazy.force initial_env, [])
     | Some item -> item
   in
   let stop_at =
