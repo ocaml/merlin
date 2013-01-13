@@ -112,7 +112,7 @@ let token_to_string =
     | WITH -> "WITH"
     | COMMENT (s,_) -> "COMMENT(" ^ String.escaped s ^ ")"
 
-let print_tokens f a =
+let print_tokens ?(who="") f a =
   let t = f a in
-  prerr_endline (token_to_string t);
+  Printf.eprintf "%s:%s, %!" who (token_to_string t);
   t

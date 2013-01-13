@@ -13,9 +13,24 @@ let rec append_step ~stop_at chunk_item env exns =
   match chunk_item with
     | Chunk.Root -> env, exns
     | _ when stop_at chunk_item -> env, exns
-    | Chunk.Module_opening (_,_,_,t) ->
-        (* Not handled *)
-        append_step ~stop_at t env exns
+    | Chunk.Module_opening (_,_,pmod,t) ->
+        let env, exns = append_step ~stop_at t env exns in
+        begin try
+          let open Typedtree in
+              let rec find_structure md =
+                match md.mod_desc with
+                  | Tmod_structure _ -> Some md
+                  | Tmod_functor (_,_,_,md) -> find_structure md
+                  | Tmod_constraint (md,_,_,_) -> Some md
+                  | _ -> None
+              in
+              let tymod = Typemod.type_module env pmod in
+              match find_structure tymod with
+                | None -> env, exns
+                | Some md -> md.mod_env, exns
+          with exn -> env, (exn :: exns)
+        end
+
     | Chunk.Definition (d,t) ->
         let env, exns = append_step ~stop_at t env exns in
         try

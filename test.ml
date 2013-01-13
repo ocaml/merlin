@@ -31,6 +31,9 @@ let initial_state = {
 let commands = Hashtbl.create 17
 
 let main_loop () =
+  let logger = open_out "/home/def/outliner.log" in
+  let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
+  let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
   let input  = Json.stream_from_channel stdin in
   let output =
     let out_json = Json.to_channel stdout in
@@ -41,16 +44,7 @@ let main_loop () =
   try
     let rec loop state =
       let state, answer =
-        let exns =
-          (match History.prev state.outlines with
-            | Some (_,(_,_,_,exns)) -> exns
-            | None -> []) @
-          (match History.prev state.envs with
-            | Some (_,_,exns) -> exns
-            | None -> [])
-        in
-        List.iter (fun exn -> prerr_endline (Printexc.to_string exn)) exns;
-        try match Stream.next input with
+        try match log_input (Stream.next input) with
           | `List (`String command :: args) ->
                 let handler =
                   try Hashtbl.find commands command
@@ -63,17 +57,13 @@ let main_loop () =
           | Stream.Failure as exn -> raise exn
           | exn -> state, `List [`String "exception"; `String (Printexc.to_string exn)]
       in
-      output answer;
+      output (log_output answer);
       loop state
     in
     loop initial_state
   with Stream.Failure -> ()
 
-let pos_to_json pos =
-  Lexing.(`Assoc ["line", `Int pos.pos_lnum;
-                  "col", `Int (pos.pos_cnum - pos.pos_bol);
-                  "offset", `Int pos.pos_cnum])
-let return_position p = `List [`String "position" ; pos_to_json p]
+let return_position p = `List [`String "position" ; Outline_utils.pos_to_json p]
 
 let invalid_arguments () = failwith "invalid arguments"
 
@@ -161,8 +151,13 @@ let command_seek state = function
           | `Line (l,c) -> Outline.Chunked.seek_line (l,c) state.outlines
       in
       let tokens, outlines = History.sync fst state.tokens outlines in
-      let _, chunks = History.sync fst outlines state.chunks in
-      let _, envs = History.sync Misc.fst3 chunks state.envs in
+      let pos =
+        match Outline.Chunked.last_position outlines with
+          | Some p -> p
+          | None -> initial_state.pos
+      in
+      let outlines, chunks = History.sync_backward fst outlines state.chunks in
+      let chunks, envs = History.sync_backward Misc.fst3 chunks state.envs in
       let pos =
         match Outline.Chunked.last_position outlines with
           | Some p -> p
@@ -206,13 +201,11 @@ let command_seek state = function
         in
         { tokens ; outlines ; chunks ; envs ; pos ; synced = false },
         return_position pos
-
   | _ -> invalid_arguments ()
 
 let command_reset state = function
   | [] -> initial_state, return_position initial_state.pos
   | _ -> invalid_arguments ()
-
 
 (* Path management *)
 let command_which state = function
@@ -248,6 +241,25 @@ let command_cd state = function
       state, (`Bool true)
   | _ -> invalid_arguments ()
 
+(* Reporting *)      
+let command_report_errors state = function
+  | [] ->
+      let exns =
+        (match History.prev state.outlines with
+          | Some (_,(_,_,_,exns)) -> exns
+          | None -> []) @
+          (match History.prev state.envs with
+            | Some (_,_,exns) -> exns
+            | None -> [])
+      in
+      state, `List [`String "errors" ; `List (Error_report.to_jsons exns) ]
+  | _ -> invalid_arguments ()
+
+(* Browsing *)
+(*let command_complete state = function
+  | [`String "expression" ; `String base] ->
+  | _ -> invalid_arguments ()*)
+  
 let _ = List.iter (fun (a,b) -> Hashtbl.add commands a b) [
   "tell",  (command_tell  :> command);
   "line",  (command_line  :> command);
@@ -257,8 +269,8 @@ let _ = List.iter (fun (a,b) -> Hashtbl.add commands a b) [
   "which", (command_which :> command);
   "source_path", (command_path ~reset:default_build_paths source_path :> command);
   "build_path",  (command_path ~reset:(lazy []) Config.load_path :> command);
-
   "typeof", (command_typeof :> command);
+  "report_errors", (command_report_errors :> command);
 ]
 
 (* Directives we want :

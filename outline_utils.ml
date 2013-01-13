@@ -35,3 +35,8 @@ let emit_top c pos =
       then raise (Chunk (c,pos))
       else decr filter_first
     end
+
+let pos_to_json pos =
+  Lexing.(`Assoc ["line", `Int pos.pos_lnum;
+                  "col", `Int (pos.pos_cnum - pos.pos_bol);
+                  "offset", `Int pos.pos_cnum])

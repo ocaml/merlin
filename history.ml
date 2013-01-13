@@ -149,6 +149,22 @@ let rec sync f ah bh =
     | Some a -> a
     | None   -> seek_offset 0 ah, seek_offset 0 bh
 
+let rec sync_backward f ah bh =
+  let point = prev bh >>= f in
+  let found = point >>=
+    fun (off,a) ->
+    let ah' = if off <= offset ah
+      then seek_offset off ah
+      else ah
+    in
+    prev ah' >>= function
+      | a' when a' == a -> Some (ah', bh)
+      | _ -> backward bh >>= fun (_,bh') -> Some (sync f ah' bh')
+  in
+  match found with
+    | Some a -> a
+    | None   -> seek_offset 0 ah, seek_offset 0 bh
+
 let sync_right_forward f ah bh =
   let off = offset ah in
   let rec loop bh =

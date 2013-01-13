@@ -29,7 +29,6 @@ def seek_current():
   #print effective_pos
   position = effective_pos[1]
   line, col = position['line'], position['col']
-  send_command("tell", cb[line-1][col:] + "\n" + "\n".join(cb[line:to_line-1]) + "\n")
 
 # [HACK] Don't know how to hook into vim to detect modified lines:
 # keep a shadow cache of synced lines
@@ -43,23 +42,22 @@ def sync_buffer():
   to_line = min(to_line + cw.height, len(cb))
 
   line = 0
-  for line in range(0,min(to_line-1,len(cache))):
+  for line in range(0,min(to_line,len(cache))-1):
     if cb[line] != cache[line]:
       break
   if line == 0:
     send_command("reset")
-    cache[:to_line-1] = cb[:to_line-1]
-    send_command("tell", "\n".join(cb[:to_line-1]) + "\n")
+    content = cb[:to_line]
+    cache[:to_line] = content
+    send_command("tell", "\n".join(content))
   else:
-    line = line + 1
-
-    effective_pos = send_command("seek", "position", {'line' : line, 'col': 0})
+    effective_pos = send_command("seek", "position", {'line' : line+1, 'col': 0})
     position = effective_pos[1]
-    line, col = position['line'], position['col']
-    send_command("tell", cb[line-1][col:] + "\n" + "\n".join(cb[line:to_line-1]) + "\n")
+    line, col = position['line']-1, position['col']-1
+    send_command("tell", cb[line][col+1:] + "\n" + "\n".join(cb[line+1:to_line]))
 
-    del cache[line-1:]
-    cache[line-1:to_line-1] = cb[line-1:to_line-1]
+    del cache[line:]
+    cache[line:to_line] = cb[line:to_line]
 
   # Now we are synced, come back to environment around cursor
   seek_current()
@@ -112,10 +110,38 @@ endfunction
 
 command! -nargs=1 ML call FindFile("ml",<q-args>)
 command! -nargs=1 MLI call FindFile("mli",<q-args>)
-command! -nargs=0 TypeOf call TypeOf(substitute(substitute(expand("<cWORD>"),")*$","",""), "^(*", "", ""))
+command! -nargs=0 TypeOf call TypeOf(substitute(substitute(expand("<cWORD>"),"[;:)]*$","",""), "^[;:(]*", "", ""))
 command! -range -nargs=0 TypeOfSel call TypeOfSel()
 command! -nargs=* OLinerSourcePath call OLinerPath("source_path", <q-args>)
 command! -nargs=* OLinerBuildPath call OLinerPath("build_path", <q-args>)
+
+function! SyntaxCheckers_omlet_GetLocList()
+  let l:errors = []
+  python <<EOF
+sync_buffer()
+
+errors = send_command("report_errors")[1]
+bufnr = vim.current.buffer.number
+
+nr = 0
+for error in errors:
+  ty = 'w'
+  if error['type'] == 'type':
+    ty = 'e'
+  vim.command("let l:error = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
+    (bufnr
+    ,error['start']['line']
+    ,error['start']['col'] + 1
+    ,nr
+    ,error['message'].replace("'", "''")
+    ,ty
+    #'subtype':'%s', #error['in'].replace("'", "''") plus-tard peut être.
+    ))
+  nr = nr + 1
+  vim.command("call add(l:errors, l:error)")
+EOF
+  return l:errors 
+endfunction
 
 map <LocalLeader>t :TypeOf
 vmap <LocalLeader>t :TypeOfSel

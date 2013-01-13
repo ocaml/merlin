@@ -23,7 +23,9 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
       | Chunk_parser.EOF -> goteof := true; false
       | _ -> true
     in
-    let () = parser (Chunk_parser_utils.print_tokens (History.wrap_lexer ~filter ?bufpos history' lexer)) buf in
+    let lexer = History.wrap_lexer ~filter ?bufpos history' lexer in
+    (*let lexer = Chunk_parser_utils.print_tokens ~who:"outline" lexer in*)
+    let () = parser lexer buf in
     let history = !history' in
     history, Outline_utils.Done, chunk_content history
   with
@@ -56,20 +58,25 @@ struct
   let last_curr = List.fold_left (fun _ (_,_,curr) -> curr)
 
   let rec last_position t =
-    match History.backward t with
-      | Some ((_,(_,_,(_,_,curr) :: xs, _)),_) -> Some (last_curr curr xs)
+    match History.prev t with
+      | Some (_,(_,_,(_,_,curr) :: xs, _)) -> Some (last_curr curr xs)
       | None -> None
       | _ -> failwith "Outline.Chunked.last_position: Invalid Chunked.t"
 
   let seek cmp t =
     let open Lexing in
-    History.seek (fun (_,(_,_,l,_)) ->
-      match l with
-        | (_,start,_) :: _ when cmp start < 0 -> -1
-        | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
-        | [] -> failwith "Outline.Chunked.seek: Invalid Chunked.t"
-        | _ -> 1
-    ) t
+    let t =
+      History.seek begin fun (_,(_,_,l,_)) ->
+        match l with
+          | (_,start,_) :: _ when cmp start < 0 -> -1
+          | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
+          | [] -> failwith "Outline.Chunked.seek: Invalid Chunked.t"
+          | _ -> 1
+      end t
+    in
+    match History.backward t with
+      | Some (_,t) -> t
+      | None -> t
 
   let seek_line (line,col) =
     Lexing.(seek (fun pos ->

@@ -16,3 +16,5 @@ val reset : rollback:int -> unit -> unit
 val enter : unit -> unit
 val leave : unit -> unit
 val emit_top : kind -> Lexing.position -> unit
+
+val pos_to_json : Lexing.position -> Json.json
