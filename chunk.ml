@@ -28,7 +28,7 @@ let fake_tokens tokens f =
           t
       | _ -> f lexbuf
 
-let append_step chunk tokens t =
+let sync_step chunk tokens t =
   match chunk with
     | Outline_utils.Enter_module ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
@@ -80,7 +80,7 @@ let append_step chunk tokens t =
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> t
     | Outline_utils.Rollback -> raise Invalid_chunk
 
-let append chunks history =
+let sync chunks history =
   (* Find last synchronisation point *)
   let chunks, history = History.sync fst chunks history in
   (* Drop out of sync items *)
@@ -96,7 +96,7 @@ let append chunks history =
       | Some ((_,(filter,chunk,data,exns)),chunks') ->
           prerr_endline "SYNC PARSER";
           match
-            try Some (append_step chunk data item)
+            try Some (sync_step chunk data item)
             with Syntaxerr.Error _ -> None
           with              
             | Some item ->

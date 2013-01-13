@@ -148,3 +148,29 @@ let rec sync f ah bh =
   match found with
     | Some a -> a
     | None   -> seek_offset 0 ah, seek_offset 0 bh
+
+let sync_right_forward f ah bh =
+  let off = offset ah in
+  let rec loop bh =
+    match forward bh with
+      | Some (item,bh') ->
+          let off' = match f item with
+            | None -> 0
+            | Some (off',_) -> off'
+          in
+          if off' < off
+          then loop bh'
+          else bh'
+      | _ -> bh
+  in
+  match backward bh with
+    | Some (_,bh') -> loop bh'
+    | None -> loop bh
+
+let sync_left_forward f ah bh =
+  let off =
+    match prev bh >>= f with
+      | None -> 0
+      | Some (off,_) -> off
+  in
+  seek_offset off ah

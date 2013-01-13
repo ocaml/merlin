@@ -16,6 +16,7 @@ type state = {
   outlines : Outline.Chunked.t;
   chunks   : Chunk.t;
   envs     : Typer.t;
+  synced   : bool;
 }
  
 let initial_state = {
@@ -24,6 +25,7 @@ let initial_state = {
   outlines = History.empty;
   chunks   = History.empty;
   envs     = History.empty;
+  synced   = true;
 }
 
 let commands = Hashtbl.create 17
@@ -97,13 +99,17 @@ let command_tell state = function
       let lexbuf = Lexing.from_string source in
       let rec loop state =
         let bufpos = ref state.pos in
+        let tokens = if state.synced
+          then state.tokens
+          else fst (History.split state.tokens)
+        in
         let tokens, outlines =
           Outline.parse ~bufpos ~goteof
-            (state.tokens,state.outlines) lexbuf
+            (tokens,state.outlines) lexbuf
         in
-        let chunks = Chunk.append outlines state.chunks in
+        let chunks = Chunk.sync outlines state.chunks in
         let envs = Typer.sync chunks state.envs in
-        let state = { tokens ; outlines ; chunks ; envs ; pos = !bufpos} in
+        let state = { tokens ; outlines ; chunks ; envs ; pos = !bufpos ; synced = true } in
         if !goteof
         then state
         else loop state
@@ -138,10 +144,10 @@ let command_line state = function
   | _ -> invalid_arguments ()
 
 let command_seek state = function
-  | [`Assoc props] ->
+  | [`String "position" ; `Assoc props] ->
       let pos =
         try match List.assoc "offset" props with
-          | `Int i -> `Offset i
+          | `Int i -> failwith "FIXME: offsets are computed incorrectly"; `Offset i
           | _ -> invalid_arguments () 
         with Not_found ->
         try match List.assoc "line" props, List.assoc "col" props with
@@ -154,18 +160,53 @@ let command_seek state = function
           | `Offset o -> Outline.Chunked.seek_offset o state.outlines
           | `Line (l,c) -> Outline.Chunked.seek_line (l,c) state.outlines
       in
-      let outlines, _ = History.split outlines in
       let tokens, outlines = History.sync fst state.tokens outlines in
-      let tokens, _ = History.split tokens in
-      let chunks = Chunk.append outlines state.chunks in
-      let envs = Typer.sync chunks state.envs in
+      let _, chunks = History.sync fst outlines state.chunks in
+      let _, envs = History.sync Misc.fst3 chunks state.envs in
       let pos =
         match Outline.Chunked.last_position outlines with
           | Some p -> p
           | None -> initial_state.pos
       in
-      { tokens ; outlines ; chunks ; envs ; pos},
+      { tokens ; outlines ; chunks ; envs ; pos ; synced = false },
       return_position pos
+  | [`String "end_of_definition"] ->
+      failwith "TODO"
+  | [`String "maximize_scope"] ->
+        let rec find_end_of_module (depth,outlines) =
+          if depth = 0 then (0,outlines)
+          else
+          match History.forward outlines with
+            | None -> (depth,outlines)
+            | Some ((_,(_,Outline_utils.Leave_module,_,_)),outlines') ->
+                find_end_of_module (pred depth, outlines')
+            | Some ((_,(_,Outline_utils.Enter_module,_,_)),outlines') ->
+                find_end_of_module (succ depth, outlines')
+            | Some (_,outlines') -> find_end_of_module (depth,outlines')
+        in
+        let rec loop outlines =
+          match History.forward outlines with
+            | None -> outlines
+            | Some ((_,(_,Outline_utils.Leave_module,_,_)),_) ->
+                outlines
+            | Some ((_,(_,Outline_utils.Enter_module,_,_)),outlines') ->
+                (match find_end_of_module (1,outlines') with
+                  | (0,outlines'') -> outlines''
+                  | _ -> outlines)
+            | Some (_,outlines') -> loop outlines'
+        in 
+        let outlines = loop state.outlines in
+        let tokens = History.sync_left_forward fst state.tokens outlines in
+        let chunks = History.sync_right_forward fst outlines state.chunks in
+        let envs   = History.sync_right_forward Misc.fst3 chunks state.envs in
+        let pos =
+          match Outline.Chunked.last_position outlines with
+            | Some p -> p
+            | None -> initial_state.pos
+        in
+        { tokens ; outlines ; chunks ; envs ; pos ; synced = false },
+        return_position pos
+
   | _ -> invalid_arguments ()
 
 let command_reset state = function

@@ -41,3 +41,5 @@ val sync_point : 'a t -> 'a sync
 val sync_item : 'a sync -> 'a option
   
 val sync : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t * 'b t
+val sync_right_forward : ('b -> 'a sync) -> 'a t -> 'b t -> 'b t
+val sync_left_forward : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t

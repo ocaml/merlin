@@ -11,6 +11,6 @@ exception Malformed_module
 exception Invalid_chunk
 
 val empty : item_desc
-val append_step : Outline_utils.kind -> Outline.Raw.item list -> item_desc -> item_desc
+val sync_step : Outline_utils.kind -> Outline.Raw.item list -> item_desc -> item_desc
 
-val append : Outline.Chunked.t -> t -> t
+val sync : Outline.Chunked.t -> t -> t
