@@ -32,6 +32,10 @@ let to_json = function
       let ppf, to_string = ppf_to_string () in
       Typedecl.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
+  | Typemod.Error (loc, e) ->
+      let ppf, to_string = ppf_to_string () in
+      Typemod.report_error ppf e;
+      Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Syntaxerr.Error e ->
       let ppf, to_string = ppf_to_string () in
       Syntaxerr.report_error ppf e;

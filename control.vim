@@ -38,26 +38,30 @@ def sync_buffer():
   cb = vim.current.buffer
   cw = vim.current.window
   to_line, to_col = cw.cursor
-  # hack : append the height of the window to parse definitions around cursor
-  to_line = min(to_line + cw.height, len(cb))
+  # hack : append the height of the window to parse definitions near cursor
+  to_line = min(to_line + 80, len(cb))
+  send_command("reset")
+  content = cb[:to_line]
+  cache[:to_line] = content
+  send_command("tell", "\n".join(content))
 
-  line = 0
-  for line in range(0,min(to_line,len(cache))-1):
-    if cb[line] != cache[line]:
-      break
-  if line == 0:
-    send_command("reset")
-    content = cb[:to_line]
-    cache[:to_line] = content
-    send_command("tell", "\n".join(content))
-  else:
-    effective_pos = send_command("seek", "position", {'line' : line+1, 'col': 0})
-    position = effective_pos[1]
-    line, col = position['line']-1, position['col']-1
-    send_command("tell", cb[line][col+1:] + "\n" + "\n".join(cb[line+1:to_line]))
+  #line = 0
+  #for line in range(0,min(to_line,len(cache))-1):
+  #  if cb[line] != cache[line]:
+  #    break
+  #if line == 0:
+  #  send_command("reset")
+  #  content = cb[:to_line]
+  #  cache[:to_line] = content
+  #  send_command("tell", "\n".join(content))
+  #else:
+  #  effective_pos = send_command("seek", "position", {'line' : line+1, 'col': 0})
+  #  position = effective_pos[1]
+  #  line, col = position['line']-1, position['col']-1
+  #  send_command("tell", cb[line][col+1:] + "\n" + "\n".join(cb[line+1:to_line]))
 
-    del cache[line:]
-    cache[line:to_line] = cb[line:to_line]
+  #  del cache[line:]
+  #  cache[line:to_line] = cb[line:to_line]
 
   # Now we are synced, come back to environment around cursor
   seek_current()

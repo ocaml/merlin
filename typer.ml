@@ -17,17 +17,37 @@ let rec append_step ~stop_at chunk_item env exns =
         let env, exns = append_step ~stop_at t env exns in
         begin try
           let open Typedtree in
-              let rec find_structure md =
-                match md.mod_desc with
-                  | Tmod_structure _ -> Some md
-                  | Tmod_functor (_,_,_,md) -> find_structure md
-                  | Tmod_constraint (md,_,_,_) -> Some md
-                  | _ -> None
-              in
-              let tymod = Typemod.type_module env pmod in
-              match find_structure tymod with
-                | None -> env, exns
-                | Some md -> md.mod_env, exns
+          let open Parsetree in
+          let rec filter_constraint md =
+            let update f = function
+              | None -> None
+              | Some md' -> Some (f md') 
+            in
+            match md.pmod_desc with
+              | Pmod_structure _ -> Some md
+              | Pmod_functor (a,b,md) ->
+                  update
+                    (fun md' -> {md with pmod_desc = Pmod_functor (a,b,md')})
+                    (filter_constraint md)
+              | Pmod_constraint (md,_) ->
+                  update (fun x -> x) (filter_constraint md)
+              | _ -> None
+          in
+          let pmod = match filter_constraint pmod with
+            | Some pmod' -> pmod'
+            | None -> pmod
+          in
+          let rec find_structure md =
+            match md.mod_desc with
+              | Tmod_structure _ -> Some md
+              | Tmod_functor (_,_,_,md) -> find_structure md
+              | Tmod_constraint (md,_,_,_) -> Some md
+              | _ -> None
+          in
+          let tymod = Typemod.type_module env pmod in
+          match find_structure tymod with
+            | None -> env, exns
+            | Some md -> md.mod_env, exns
           with exn -> env, (exn :: exns)
         end
 
