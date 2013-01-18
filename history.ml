@@ -159,7 +159,7 @@ let rec sync_backward f ah bh =
     in
     prev ah' >>= function
       | a' when a' == a -> Some (ah', bh)
-      | _ -> backward bh >>= fun (_,bh') -> Some (sync f ah' bh')
+      | _ -> backward bh >>= fun (_,bh') -> Some (sync_backward f ah' bh')
   in
   match found with
     | Some a -> a

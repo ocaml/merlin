@@ -24,7 +24,7 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
       | _ -> true
     in
     let lexer = History.wrap_lexer ~filter ?bufpos history' lexer in
-    (*let lexer = Chunk_parser_utils.print_tokens ~who:"outline" lexer in*)
+    let lexer = Chunk_parser_utils.print_tokens ~who:"outline" lexer in
     let () = parser lexer buf in
     let history = !history' in
     history, Outline_utils.Done, chunk_content history

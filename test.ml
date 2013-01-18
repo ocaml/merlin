@@ -89,16 +89,19 @@ let command_tell state = function
       let lexbuf = Lexing.from_string source in
       let rec loop state =
         let bufpos = ref state.pos in
-        let tokens = if state.synced
-          then state.tokens
-          else fst (History.split state.tokens)
+        let tokens, outlines, chunks, envs = if state.synced
+          then state.tokens, state.outlines, state.chunks, state.envs
+          else fst (History.split state.tokens), 
+               fst (History.split state.outlines), 
+               fst (History.split state.chunks), 
+               fst (History.split state.envs)
         in
         let tokens, outlines =
           Outline.parse ~bufpos ~goteof
-            (tokens,state.outlines) lexbuf
+            (tokens,outlines) lexbuf
         in
-        let chunks = Chunk.sync outlines state.chunks in
-        let envs = Typer.sync chunks state.envs in
+        let chunks = Chunk.sync outlines chunks in
+        let envs = Typer.sync chunks envs in
         let state = { tokens ; outlines ; chunks ; envs ; pos = !bufpos ; synced = true } in
         if !goteof
         then state
@@ -151,11 +154,6 @@ let command_seek state = function
           | `Line (l,c) -> Outline.Chunked.seek_line (l,c) state.outlines
       in
       let tokens, outlines = History.sync fst state.tokens outlines in
-      let pos =
-        match Outline.Chunked.last_position outlines with
-          | Some p -> p
-          | None -> initial_state.pos
-      in
       let outlines, chunks = History.sync_backward fst outlines state.chunks in
       let chunks, envs = History.sync_backward Misc.fst3 chunks state.envs in
       let pos =

@@ -80,29 +80,29 @@ let sync_step chunk tokens t =
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> t
     | Outline_utils.Rollback -> raise Invalid_chunk
 
-let sync chunks history =
+let sync outlines chunks =
   (* Find last synchronisation point *)
-  let chunks, history = History.sync fst chunks history in
+  let outlines, chunks = History.sync fst outlines chunks in
   (* Drop out of sync items *)
-  let history, out_of_sync = History.split history in
+  let chunks, out_of_sync = History.split chunks in
   (* Process last items *) 
-  let item = match History.prev history with
+  let item = match History.prev chunks with
     | Some (last_sync, t) -> t
     | None -> Root
   in
-  let rec aux chunks history item =
-    match History.forward chunks with
-      | None -> history, item
-      | Some ((_,(filter,chunk,data,exns)),chunks') ->
+  let rec aux outlines chunks item =
+    match History.forward outlines with
+      | None -> chunks, item
+      | Some ((_,(filter,chunk,data,exns)),outlines') ->
           prerr_endline "SYNC PARSER";
           match
             try Some (sync_step chunk data item)
             with Syntaxerr.Error _ -> None
           with              
             | Some item ->
-                let history = History.insert (History.sync_point chunks', item) history in
-                aux chunks' history item
-            | None -> aux chunks' history item
+                let chunks = History.insert (History.sync_point outlines', item) chunks in
+                aux outlines' chunks item
+            | None -> aux outlines' chunks item
   in
-  let history, item = aux chunks history item in
-  history
+  let chunks, item = aux outlines chunks item in
+  chunks
