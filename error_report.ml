@@ -1,11 +1,3 @@
-let ppf_to_string () =
-  let b = Buffer.create 32 in
-  let ppf = Format.formatter_of_buffer b in
-  ppf,
-  (fun () ->
-    Format.pp_print_flush ppf ();
-    Buffer.contents b)
-
 let format ~valid ~where ?loc msg =
   let content = ["valid", `Bool valid; "message", `String msg] in
   let content =
@@ -21,23 +13,23 @@ let format ~valid ~where ?loc msg =
 
 let to_json = function
   | Typecore.Error (loc, e) ->
-      let ppf, to_string = ppf_to_string () in
+      let ppf, to_string = Outline_utils.ppf_to_string () in
       Typecore.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typetexp.Error (loc, e) ->
-      let ppf, to_string = ppf_to_string () in
+      let ppf, to_string = Outline_utils.ppf_to_string () in
       Typetexp.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typedecl.Error (loc, e) ->
-      let ppf, to_string = ppf_to_string () in
+      let ppf, to_string = Outline_utils.ppf_to_string () in
       Typedecl.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typemod.Error (loc, e) ->
-      let ppf, to_string = ppf_to_string () in
+      let ppf, to_string = Outline_utils.ppf_to_string () in
       Typemod.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Syntaxerr.Error e ->
-      let ppf, to_string = ppf_to_string () in
+      let ppf, to_string = Outline_utils.ppf_to_string () in
       Syntaxerr.report_error ppf e;
       let loc = match e with
         | Syntaxerr.Unclosed (loc,_,loc',_) ->

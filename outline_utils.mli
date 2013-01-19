@@ -18,3 +18,6 @@ val leave : unit -> unit
 val emit_top : kind -> Lexing.position -> unit
 
 val pos_to_json : Lexing.position -> Json.json
+val pos_of_json : Json.json -> [ `Line of (int * int) ]
+
+val ppf_to_string : unit -> Format.formatter * (unit -> string)

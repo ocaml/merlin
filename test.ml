@@ -12,7 +12,7 @@ let source_path = ref []
 
 type state = {
   pos      : Lexing.position;
-  tokens   : Outline.token History.t;
+  tokens   : Outline.token list;
   outlines : Outline.t;
   chunks   : Chunk.t;
   envs     : Typer.t;
@@ -20,7 +20,7 @@ type state = {
  
 let initial_state = {
   pos      = Lexing.((from_string "").lex_curr_p);
-  tokens   = History.empty;
+  tokens   = [];
   outlines = History.empty;
   chunks   = History.empty;
   envs     = History.empty;
@@ -44,7 +44,7 @@ let main_loop () =
       let state, answer =
         try match log_input (Stream.next input) with
           | `List (`String command :: args) ->
-                let handler =
+                let handler, _ =
                   try Hashtbl.find commands command
                   with Not_found -> failwith "unknown command"
                 in
@@ -53,7 +53,10 @@ let main_loop () =
         with
           | Failure s -> state, `List [`String "failure"; `String s]
           | Stream.Failure as exn -> raise exn
-          | exn -> state, `List [`String "exception"; `String (Printexc.to_string exn)]
+          | exn -> 
+              match Error_report.to_json exn with
+                | None -> state, `List [`String "exception"; `String (Printexc.to_string exn)]
+                | Some json -> state, `List [`String "error" ; json ]
       in
       output (log_output answer);
       loop state
@@ -81,8 +84,9 @@ let lex_string ?(offset=0) string =
 
 type command = state -> Json.json list -> state * Json.json 
 
-let command_tell state = function
+let command_tell : command = fun state -> function
   | [`String source] ->
+      Env.reset_missing_cmis ();
       let goteof = ref false in
       let lexbuf = Lexing.from_string source in
       let rec loop state =
@@ -94,12 +98,12 @@ let command_tell state = function
         in
         let tokens, outlines =
           Outline.parse ~bufpos ~goteof
-            state.tokens outlines lexbuf
+            (History.of_list state.tokens) outlines lexbuf
         in
         let chunks = Chunk.sync outlines chunks in
         let envs = Typer.sync chunks envs in
         let state = {
-          tokens = snd (History.split tokens);
+          tokens = History.nexts tokens;
           outlines ; chunks ; envs ; pos = !bufpos
         } in
         if !goteof
@@ -109,8 +113,8 @@ let command_tell state = function
       loop state, `Bool true
   | _ -> invalid_arguments ()
 
-let command_typeof state = function
-  | [`String expr] ->
+let command_type : command = fun state -> function
+  | [`String "expression"; `String expr] ->
       let lexbuf = Lexing.from_string expr in
       let env = Typer.env state.envs in
       let expression = Chunk_parser.top_expr Outline_lexer.token lexbuf in
@@ -122,36 +126,36 @@ let command_typeof state = function
       let open Typedtree in
       begin match str.str_items with
         | [ { str_desc = Tstr_eval exp }] ->
-            let buffer = Buffer.create 16 in
-            let ppf = Format.formatter_of_buffer buffer in
+            let ppf, to_string = Outline_utils.ppf_to_string () in
             Printtyp.type_scheme ppf exp.exp_type;
-            Format.pp_print_flush ppf ();
-            state, (`List [`String "type" ; `String (Buffer.contents buffer)] :> Json.json)
+            state, (`List [`String "type" ; `String (to_string ())] :> Json.json)
         | _ -> failwith "unhandled expression"
       end
+
+  | [`String "at" ; jpos] ->
+    let `Line (ln,cl) = Outline_utils.pos_of_json jpos in
+    let env = Typer.env state.envs in
+    let sum = Env.summary env in
+    begin
+      match Browse.summary_at ln cl sum with
+        | None -> raise Not_found
+        | Some sum ->
+      match Browse.signature_of_summary sum with
+        | None -> raise Not_found
+        | Some sg -> 
+            let ppf, to_string = Outline_utils.ppf_to_string () in
+            Printtyp.signature ppf [sg];
+            state, `List [`String "type" ; `String (to_string ())]
+    end
+
   | _ -> invalid_arguments ()
 
-let command_line state = function
-  | [] -> state, return_position state.pos
-  | _ -> invalid_arguments ()
-
-let command_seek state = function
-  | [`String "position" ; `Assoc props] ->
-      let pos =
-        try match List.assoc "offset" props with
-          | `Int i -> failwith "FIXME: offsets are computed incorrectly"; `Offset i
-          | _ -> invalid_arguments ()
-        with Not_found ->
-        try match List.assoc "line" props, List.assoc "col" props with
-          | `Int line, `Int col -> `Line (line, col)
-          | _ -> invalid_arguments ()
-        with Not_found -> invalid_arguments ()
-      in
-      let outlines =
-        match pos with
-          | `Offset o -> Outline.seek_offset o state.outlines
-          | `Line (l,c) -> Outline.seek_line (l,c) state.outlines
-      in
+let command_seek : command = fun state -> function
+  | [`String "position"] ->
+      state, return_position state.pos
+  | [`String "position" ; jpos] ->
+      let `Line (l,c) = Outline_utils.pos_of_json jpos in
+      let outlines = Outline.seek_line (l,c) state.outlines in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
       let chunks, envs = History.Sync.rewind Misc.fst3 chunks state.envs in
       let pos =
@@ -159,7 +163,7 @@ let command_seek state = function
           | Some p -> p
           | None -> initial_state.pos
       in
-      { tokens = History.empty ; outlines ; chunks ; envs ; pos },
+      { tokens = [] ; outlines ; chunks ; envs ; pos },
       return_position pos
   | [`String "end_of_definition"] ->
       failwith "TODO"
@@ -194,16 +198,16 @@ let command_seek state = function
             | Some p -> p
             | None -> initial_state.pos
         in
-        { tokens = History.empty ; outlines ; chunks ; envs ; pos },
+        { tokens = [] ; outlines ; chunks ; envs ; pos },
         return_position pos
   | _ -> invalid_arguments ()
 
-let command_reset state = function
+let command_reset : command = fun state -> function
   | [] -> initial_state, return_position initial_state.pos
   | _ -> invalid_arguments ()
 
 (* Path management *)
-let command_which state = function
+let command_which : command = fun state -> function
   | [`String s] -> 
       let filename =
         try
@@ -214,30 +218,41 @@ let command_which state = function
       state, `String filename
   | _ -> invalid_arguments ()
 
-let command_path ~reset r state = function
+let command_path pathes : command = fun state -> function
   | [ `String "list" ] ->
-      state, `List (List.map (fun s -> `String s) !r)
-  | [ `String "add" ; `String s ] ->
-      let d = Misc.expand_directory Config.standard_library s in
+      state, `List [ `String "variables"; `List (List.map (fun (s,_) -> `String s) pathes)]
+  | [ `String "list" ; `String path ] ->
+      let r,_ = List.assoc path pathes in
+      state, `List [ `String path; `List (List.map (fun s -> `String s) !r)]
+  | [ `String "add" ; `String path ; `String d ] ->
+      let r,_ = List.assoc path pathes in
+      let d = Misc.expand_directory Config.standard_library d in
       r := d :: !r;
       state, `Bool true
-  | [ `String "remove" ; `String s ] ->
+  | [ `String "remove" ; `String path; `String s ] ->
+      let r,_ = List.assoc path pathes in
       let d = Misc.expand_directory Config.standard_library s in
       r := List.filter (fun d' -> d' <> d) !r;
       state, `Bool true
   | [ `String "reset" ] ->
+      List.iter
+        (fun (_,(r,reset)) -> r := Lazy.force reset)
+        pathes;
+      state, `Bool true
+  | [ `String "reset" ; `String path ] ->
+      let r,reset = List.assoc path pathes in
       r := Lazy.force reset;
       state, `Bool true
   | _ -> invalid_arguments ()
 
-let command_cd state = function
+let command_cd : command = fun state -> function
   | [`String s] ->
       Sys.chdir s;
       state, (`Bool true)
   | _ -> invalid_arguments ()
 
 (* Reporting *)      
-let command_report_errors state = function
+let command_errors : command = fun state -> function
   | [] ->
       let exns =
         (match History.prev state.outlines with
@@ -250,22 +265,58 @@ let command_report_errors state = function
       state, `List [`String "errors" ; `List (Error_report.to_jsons exns) ]
   | _ -> invalid_arguments ()
 
+let command_dump : command = fun state -> function
+  | [`String "env"] ->
+      let sg = Browse.signature_of_env (Typer.env state.envs) in
+      let aux item =
+        let ppf, to_string = Outline_utils.ppf_to_string () in
+        Printtyp.signature ppf [item];
+        let content = to_string () in
+        let ppf, to_string = Outline_utils.ppf_to_string () in
+        match Browse.signature_loc item with
+          | Some loc ->
+              Location.print_loc ppf loc;
+              let loc = to_string () in
+              `List [`String loc ; `String content]
+          | None -> `String content
+      in
+      state, `List [`String "env" ; `List (List.map aux sg)]
+  | _ -> invalid_arguments ()
+
 (* Browsing *)
-(*let command_complete state = function
+(*let command_complete : command = fun state -> function
   | [`String "expression" ; `String base] ->
   | _ -> invalid_arguments ()*)
-  
-let _ = List.iter (fun (a,b) -> Hashtbl.add commands a b) [
-  "tell",  (command_tell  :> command);
-  "line",  (command_line  :> command);
-  "seek",  (command_seek  :> command);
-  "reset", (command_reset :> command);
-  "cd",    (command_cd    :> command);
-  "which", (command_which :> command);
-  "source_path", (command_path ~reset:default_build_paths source_path :> command);
-  "build_path",  (command_path ~reset:(lazy []) Config.load_path :> command);
-  "typeof", (command_typeof :> command);
-  "report_errors", (command_report_errors :> command);
+ 
+let command_help : command = fun state -> function
+  | [] -> 
+      let helps = Hashtbl.fold (fun cmd (_,doc) cmds -> (cmd,doc) :: cmds) commands [] in
+      state, `List [`String "help" ; `Assoc helps ]
+  | _ -> invalid_arguments ()
+
+let _ = List.iter (fun (a,b,c) -> Hashtbl.add commands a (b,c))
+[
+  "tell",  command_tell,
+    `String "TODO";
+  "seek",  command_seek,
+    `String "TODO";
+  "reset", command_reset,
+    `String "TODO";
+  "cd",    command_cd,
+    `String "TODO";
+  "which", command_which,
+    `String "TODO";
+  "path",  command_path ["build",  (Config.load_path,default_build_paths);
+                         "source", (source_path, lazy [])],
+    `String "TODO";
+  "type",  command_type,
+    `String "TODO";
+  "errors", command_errors,
+    `String "TODO";
+  "dump", command_dump,
+    `String "TODO";
+  "help", command_help,
+    `String "List every command with synopsis and small description";
 ]
 
 let print_version () =

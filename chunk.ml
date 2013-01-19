@@ -1,6 +1,6 @@
 type item_desc =
   | Root
-  | Definition of Parsetree.structure_item * item_desc
+  | Definition of Parsetree.structure_item Location.loc * item_desc
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item_desc
 
 type item = Outline.sync * item_desc
@@ -35,7 +35,9 @@ let sync_step chunk tokens t =
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
         in
         let open Parsetree in
-        begin match Chunk_parser.top_structure_item lexer (Lexing.from_string "") with
+        begin match 
+          (Chunk_parser.top_structure_item lexer (Lexing.from_string "")).Location.txt
+        with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
               Module_opening (pstr_loc, s, m, t)
           | _ -> assert false
@@ -45,7 +47,7 @@ let sync_step chunk tokens t =
         (* reconstitute module from t *)
         let rec gather_defs defs = function
           | Root -> raise Malformed_module
-          | Definition (d,t) -> gather_defs (d :: defs) t
+          | Definition (d,t) -> gather_defs (d.Location.txt :: defs) t
           | Module_opening (loc,s,m,t) ->
               let open Parsetree in
               let rec subst_structure e =
@@ -64,9 +66,10 @@ let sync_step chunk tokens t =
                   | (_,_,p) :: _ -> { loc with Location.loc_end = p }
                   | [] -> loc
               in
-              Definition ({ pstr_desc = Pstr_module (s, subst_structure m);
-                            pstr_loc  = loc },
-                          t)
+              Definition (Location.mkloc {
+                pstr_desc = Pstr_module (s, subst_structure m);
+                pstr_loc  = loc
+              } loc, t)
         in
         gather_defs [] t
     | Outline_utils.Definition ->

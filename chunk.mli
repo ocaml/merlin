@@ -1,6 +1,6 @@
 type item_desc =
   | Root
-  | Definition of Parsetree.structure_item * item_desc
+  | Definition of Parsetree.structure_item Location.loc * item_desc
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item_desc
 
 type item = Outline.sync * item_desc

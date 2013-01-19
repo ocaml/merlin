@@ -95,7 +95,7 @@ def sync_buffer():
   max_line = min(to_line + 80, len(cb))
 
   (last_changes, sync) = find_changes(last_changes)
-  print sync
+  #print sync
   if sync != None:
     sync_line = find_line(sync)
     if sync_line != None:
@@ -141,11 +141,18 @@ function! OLinerPath(var,path)
 path = vim.eval("a:path")
 #send_command('#cd', vim.eval("getcwd()"))
 if path == "":
-  for path in send_command(vim.eval("a:var"), "list"):
+  for path in send_command("path", "list", vim.eval("a:var")):
     if path != "":
       print path
 else:
-  send_command(vim.eval("a:var"), ["add", vim.eval("a:path")])
+  send_command("path", "add", vim.eval("a:var"), vim.eval("a:path"))
+EOF
+endfunction
+
+function! OLinerCommand(...)
+  python <<EOF
+args = vim.eval("a:000")
+print send_command(*args)
 EOF
 endfunction
 
@@ -153,8 +160,14 @@ function! TypeOf(expr)
   python <<EOF
 sync_buffer()
 expr = vim.eval("a:expr")
-ty = send_command("typeof", expr)
-print (expr + " : " + ty[1])
+ty = send_command("type", "expression", expr)
+if ty[0] == "type":
+  print (expr + " : " + ty[1])
+elif ty[0] == "error":
+  print (expr + " : " + ty[1]['message'])
+else:
+  print ty
+
 EOF
 endfunction
 
@@ -164,17 +177,18 @@ endfunction
 
 command! -nargs=1 ML call FindFile("ml",<q-args>)
 command! -nargs=1 MLI call FindFile("mli",<q-args>)
-command! -nargs=0 TypeOf call TypeOf(substitute(substitute(expand("<cWORD>"),"[;:)]*$","",""), "^[;:(]*", "", ""))
+command! -nargs=0 TypeOf call TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
 command! -range -nargs=0 TypeOfSel call TypeOfSel()
-command! -nargs=* OLinerSourcePath call OLinerPath("source_path", <q-args>)
-command! -nargs=* OLinerBuildPath call OLinerPath("build_path", <q-args>)
+command! -nargs=* OLiner call OLinerCommand(<f-args>)
+command! -nargs=* OLinerSource call OLinerPath("source", <q-args>)
+command! -nargs=* OLinerBuild call OLinerPath("build", <q-args>)
 
 function! SyntaxCheckers_omlet_GetLocList()
   let l:errors = []
   python <<EOF
 sync_buffer()
 
-errors = send_command("report_errors")[1]
+errors = send_command("errors")[1]
 bufnr = vim.current.buffer.number
 
 nr = 0

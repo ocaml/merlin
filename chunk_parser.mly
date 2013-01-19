@@ -488,7 +488,7 @@ The precedences must be listed from low to high.
 %start use_file                         /* for the #use directive */
 %type <Parsetree.toplevel_phrase list> use_file
 %start top_structure_item               /* extension, ocaml-ty */
-%type <Parsetree.structure_item> top_structure_item
+%type <Parsetree.structure_item Location.loc> top_structure_item
 %start top_expr                        /* extension, ocaml-ty */
 %type <Parsetree.expression> top_expr
 %start any_longident
@@ -584,7 +584,7 @@ structure_tail:
   | structure_item structure_tail               { $1 :: $2 }
 ;
 top_structure_item:
-  | structure_item EOF { $1 }
+  | structure_item EOF { mkloc ($1) (symbol_rloc $startpos($1) $endpos($1)) }
 
 structure_item:
     LET rec_flag let_bindings

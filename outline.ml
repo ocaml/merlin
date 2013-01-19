@@ -53,7 +53,7 @@ let rec last_position t =
   match History.prev t with
     | Some (_,_,(_,_,curr) :: xs, _) -> Some (last_curr curr xs)
     | None -> None
-    | _ -> failwith "Outline.Chunked.last_position: Invalid Chunked.t"
+    | _ -> failwith "Outline.last_position: Invalid t"
 
 let seek cmp t =
   let open Lexing in
@@ -62,7 +62,7 @@ let seek cmp t =
       match l with
         | (_,start,_) :: _ when cmp start < 0 -> -1
         | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
-        | [] -> failwith "Outline.Chunked.seek: Invalid Chunked.t"
+        | [] -> failwith "Outline.seek: Invalid t"
         | _ -> 1
     end t
   in

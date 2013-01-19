@@ -54,7 +54,7 @@ let rec append_step ~stop_at chunk_item env exns =
     | Chunk.Definition (d,t) ->
         let env, exns = append_step ~stop_at t env exns in
         try
-          let _,_,env = Typemod.type_toplevel_phrase env [d] in
+          let _,_,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
           env, exns
         with exn -> env, (exn :: exns)
 
