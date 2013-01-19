@@ -8,6 +8,10 @@ let of_list next = { empty with next }
 let split { prev ; next ; pos } =
   { prev ; next = [] ; pos }, { prev = [] ; next; pos = 0 }
 
+let cutoff = function
+  | { next = [] } as h -> h
+  | h -> { h with next = [] }
+
 let prev = function
   | { prev = p :: _ } -> Some p
   | _ -> None
@@ -50,12 +54,12 @@ let backward = function
 let insert p { pos ; prev ; next } =
   { prev = p :: prev ; next ; pos = succ pos }
 
-let remove_current = function
+let remove = function
   | { prev = p :: ps ; next ; pos } ->
-      Some p, { prev = ps ; next ; pos = pred pos }
-  | x -> None, x
+      Some (p, { prev = ps ; next ; pos = pred pos })
+  | x -> None
 
-let modify_current f = function
+let modify f = function
   | { prev = p :: ps ; next ; pos } ->
       { prev = (f p) :: ps ; next ; pos }
   | x -> x
@@ -123,70 +127,73 @@ let seek_pos pos =
 
 type 'a sync = (int * 'a) option
 
-let sync_origin = None
-
-let (>>=) = function
-  | None   -> fun _ -> None
-  | Some a -> fun f -> f a
-
-let sync_point h =
-  prev h >>= fun a -> Some (offset h, a)
-
-let sync_item = function
-  | None -> None
-  | Some (_,a) -> Some a
-
-let rec sync f ah bh =
-  let point = prev bh >>= f in
-  let found = point >>=
-    fun (off,a) ->
-    let ah' = seek_offset off ah in
-    prev ah' >>= function
-      | a' when a' == a -> Some (ah', bh)
-      | _ -> backward bh >>= fun (_,bh') -> Some (sync f ah' bh')
-  in
-  match found with
-    | Some a -> a
-    | None   -> seek_offset 0 ah, seek_offset 0 bh
-
-let rec sync_backward f ah bh =
-  let point = prev bh >>= f in
-  let found = point >>=
-    fun (off,a) ->
-    let ah' = if off <= offset ah
-      then seek_offset off ah
-      else ah
+module Sync =
+struct
+  let origin = None
+  
+  let (>>=) = function
+    | None   -> fun _ -> None
+    | Some a -> fun f -> f a
+  
+  let at h =
+    prev h >>= fun a -> Some (offset h, a)
+  
+  let item = function
+    | None -> None
+    | Some (_,a) -> Some a
+  
+  let rec nearest f ah bh =
+    let point = prev bh >>= f in
+    let found = point >>=
+      fun (off,a) ->
+      let ah' = seek_offset off ah in
+      prev ah' >>= function
+        | a' when a' == a -> Some (ah', bh)
+        | _ -> backward bh >>= fun (_,bh') -> Some (nearest f ah' bh')
     in
-    prev ah' >>= function
-      | a' when a' == a -> Some (ah', bh)
-      | _ -> backward bh >>= fun (_,bh') -> Some (sync_backward f ah' bh')
-  in
-  match found with
-    | Some a -> a
-    | None   -> seek_offset 0 ah, seek_offset 0 bh
-
-let sync_right_forward f ah bh =
-  let off = offset ah in
-  let rec loop bh =
-    match forward bh with
-      | Some (item,bh') ->
-          let off' = match f item with
-            | None -> 0
-            | Some (off',_) -> off'
-          in
-          if off' < off
-          then loop bh'
-          else bh'
-      | _ -> bh
-  in
-  match backward bh with
-    | Some (_,bh') -> loop bh'
-    | None -> loop bh
-
-let sync_left_forward f ah bh =
-  let off =
-    match prev bh >>= f with
-      | None -> 0
-      | Some (off,_) -> off
-  in
-  seek_offset off ah
+    match found with
+      | Some a -> a
+      | None   -> seek_offset 0 ah, seek_offset 0 bh
+  
+  let rec rewind f ah bh =
+    let point = prev bh >>= f in
+    let found = point >>=
+      fun (off,a) ->
+      let ah' = if off <= offset ah
+        then seek_offset off ah
+        else ah
+      in
+      prev ah' >>= function
+        | a' when a' == a -> Some (ah', bh)
+        | _ -> backward bh >>= fun (_,bh') -> Some (rewind f ah' bh')
+    in
+    match found with
+      | Some a -> a
+      | None   -> seek_offset 0 ah, seek_offset 0 bh
+  
+  let right f ah bh =
+    let off = offset ah in
+    let rec loop bh =
+      match forward bh with
+        | Some (item,bh') ->
+            let off' = match f item with
+              | None -> 0
+              | Some (off',_) -> off'
+            in
+            if off' < off
+            then loop bh'
+            else bh'
+        | _ -> bh
+    in
+    match backward bh with
+      | Some (_,bh') -> loop bh'
+      | None -> loop bh
+  
+  let left f ah bh =
+    let off =
+      match prev bh >>= f with
+        | None -> 0
+        | Some (off,_) -> off
+    in
+    seek_offset off ah
+end

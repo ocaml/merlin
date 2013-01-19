@@ -12,11 +12,10 @@ let source_path = ref []
 
 type state = {
   pos      : Lexing.position;
-  tokens   : Outline.Raw.t;
-  outlines : Outline.Chunked.t;
+  tokens   : Outline.token History.t;
+  outlines : Outline.t;
   chunks   : Chunk.t;
   envs     : Typer.t;
-  synced   : bool;
 }
  
 let initial_state = {
@@ -25,7 +24,6 @@ let initial_state = {
   outlines = History.empty;
   chunks   = History.empty;
   envs     = History.empty;
-  synced   = true;
 }
 
 let commands = Hashtbl.create 17
@@ -89,20 +87,21 @@ let command_tell state = function
       let lexbuf = Lexing.from_string source in
       let rec loop state =
         let bufpos = ref state.pos in
-        let tokens, outlines, chunks, envs = if state.synced
-          then state.tokens, state.outlines, state.chunks, state.envs
-          else fst (History.split state.tokens), 
-               fst (History.split state.outlines), 
-               fst (History.split state.chunks), 
-               fst (History.split state.envs)
+        let outlines, chunks, envs = 
+          (History.cutoff state.outlines), 
+          (History.cutoff state.chunks), 
+          (History.cutoff state.envs)
         in
         let tokens, outlines =
           Outline.parse ~bufpos ~goteof
-            (tokens,outlines) lexbuf
+            state.tokens outlines lexbuf
         in
         let chunks = Chunk.sync outlines chunks in
         let envs = Typer.sync chunks envs in
-        let state = { tokens ; outlines ; chunks ; envs ; pos = !bufpos ; synced = true } in
+        let state = {
+          tokens = snd (History.split tokens);
+          outlines ; chunks ; envs ; pos = !bufpos
+        } in
         if !goteof
         then state
         else loop state
@@ -141,7 +140,7 @@ let command_seek state = function
       let pos =
         try match List.assoc "offset" props with
           | `Int i -> failwith "FIXME: offsets are computed incorrectly"; `Offset i
-          | _ -> invalid_arguments () 
+          | _ -> invalid_arguments ()
         with Not_found ->
         try match List.assoc "line" props, List.assoc "col" props with
           | `Int line, `Int col -> `Line (line, col)
@@ -150,18 +149,17 @@ let command_seek state = function
       in
       let outlines =
         match pos with
-          | `Offset o -> Outline.Chunked.seek_offset o state.outlines
-          | `Line (l,c) -> Outline.Chunked.seek_line (l,c) state.outlines
+          | `Offset o -> Outline.seek_offset o state.outlines
+          | `Line (l,c) -> Outline.seek_line (l,c) state.outlines
       in
-      let tokens, outlines = History.sync fst state.tokens outlines in
-      let outlines, chunks = History.sync_backward fst outlines state.chunks in
-      let chunks, envs = History.sync_backward Misc.fst3 chunks state.envs in
+      let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
+      let chunks, envs = History.Sync.rewind Misc.fst3 chunks state.envs in
       let pos =
-        match Outline.Chunked.last_position outlines with
+        match Outline.last_position outlines with
           | Some p -> p
           | None -> initial_state.pos
       in
-      { tokens ; outlines ; chunks ; envs ; pos ; synced = false },
+      { tokens = History.empty ; outlines ; chunks ; envs ; pos },
       return_position pos
   | [`String "end_of_definition"] ->
       failwith "TODO"
@@ -171,33 +169,32 @@ let command_seek state = function
           else
           match History.forward outlines with
             | None -> (depth,outlines)
-            | Some ((_,(_,Outline_utils.Leave_module,_,_)),outlines') ->
+            | Some ((_,Outline_utils.Leave_module,_,_),outlines') ->
                 find_end_of_module (pred depth, outlines')
-            | Some ((_,(_,Outline_utils.Enter_module,_,_)),outlines') ->
+            | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
                 find_end_of_module (succ depth, outlines')
             | Some (_,outlines') -> find_end_of_module (depth,outlines')
         in
         let rec loop outlines =
           match History.forward outlines with
             | None -> outlines
-            | Some ((_,(_,Outline_utils.Leave_module,_,_)),_) ->
+            | Some ((_,Outline_utils.Leave_module,_,_),_) ->
                 outlines
-            | Some ((_,(_,Outline_utils.Enter_module,_,_)),outlines') ->
+            | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
                 (match find_end_of_module (1,outlines') with
                   | (0,outlines'') -> outlines''
                   | _ -> outlines)
             | Some (_,outlines') -> loop outlines'
         in 
         let outlines = loop state.outlines in
-        let tokens = History.sync_left_forward fst state.tokens outlines in
-        let chunks = History.sync_right_forward fst outlines state.chunks in
-        let envs   = History.sync_right_forward Misc.fst3 chunks state.envs in
+        let chunks = History.Sync.right fst outlines state.chunks in
+        let envs   = History.Sync.right Misc.fst3 chunks state.envs in
         let pos =
-          match Outline.Chunked.last_position outlines with
+          match Outline.last_position outlines with
             | Some p -> p
             | None -> initial_state.pos
         in
-        { tokens ; outlines ; chunks ; envs ; pos ; synced = false },
+        { tokens = History.empty ; outlines ; chunks ; envs ; pos },
         return_position pos
   | _ -> invalid_arguments ()
 
@@ -244,7 +241,7 @@ let command_report_errors state = function
   | [] ->
       let exns =
         (match History.prev state.outlines with
-          | Some (_,(_,_,_,exns)) -> exns
+          | Some (_,_,_,exns) -> exns
           | None -> []) @
           (match History.prev state.envs with
             | Some (_,_,exns) -> exns
@@ -271,24 +268,6 @@ let _ = List.iter (fun (a,b) -> Hashtbl.add commands a b) [
   "report_errors", (command_report_errors :> command);
 ]
 
-(* Directives we want :
-   - #line : current position
-   - #seek "{line:int,col:int}" : set position to line, col
-   - #seek "int"   : set position to offset
-   response : {line:int,col:int,offset:int}, nearest position that could be recovered
-   - #which "module.{ml,mli}" : find file with given name
-   response : /path/to/module.{ml,mli}
-   - #reset : reset to initial state
-
-   - #source_path "path"
-   - #build_path "path"
-   - #remove_source_path "path"
-   - #remove_build_path "path"
-   - #clear_source_path
-   - #clear_build_path
-   Next : browsing
-*)
-  
 let print_version () =
   Printf.printf "The Outliner toplevel, version %s\n" Sys.ocaml_version;
   exit 0

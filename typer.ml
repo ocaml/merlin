@@ -60,16 +60,16 @@ let rec append_step ~stop_at chunk_item env exns =
 
 let sync chunks t =
   (* Find last synchronisation point *)
-  let chunks, t = History.sync (fun (a,_,_) -> a) chunks t in
+  let chunks, t = History.Sync.nearest (fun (a,_,_) -> a) chunks t in
   (* Drop out of sync items *)
   let t, out_of_sync = History.split t in
   (* Process last items *)
   let (last_sync,env,exns) = match History.prev t with
-    | None -> (History.sync_origin, Lazy.force initial_env, [])
+    | None -> (History.Sync.origin, Lazy.force initial_env, [])
     | Some item -> item
   in
   let stop_at =
-    match History.sync_item last_sync with
+    match History.Sync.item last_sync with
       | None -> fun _ -> false
       | Some (_,b) -> (==) b
   in
@@ -79,7 +79,7 @@ let sync chunks t =
       | Some ((_,chunk_item),chunks') ->
           prerr_endline "SYNC TYPER";
           let env, exns = append_step ~stop_at chunk_item env exns in 
-          let t = History.insert (History.sync_point chunks', env, exns) t in
+          let t = History.insert (History.Sync.at chunks', env, exns) t in
           aux chunks' t env exns
   in
   let t, env, exns = aux chunks t env exns in

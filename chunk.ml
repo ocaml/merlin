@@ -3,7 +3,7 @@ type item_desc =
   | Definition of Parsetree.structure_item * item_desc
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item_desc
 
-type item = Outline.Chunked.sync * item_desc
+type item = Outline.sync * item_desc
 type sync = item History.sync
 type t = item History.t
 
@@ -82,7 +82,7 @@ let sync_step chunk tokens t =
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
-  let outlines, chunks = History.sync fst outlines chunks in
+  let outlines, chunks = History.Sync.nearest fst outlines chunks in
   (* Drop out of sync items *)
   let chunks, out_of_sync = History.split chunks in
   (* Process last items *) 
@@ -93,14 +93,14 @@ let sync outlines chunks =
   let rec aux outlines chunks item =
     match History.forward outlines with
       | None -> chunks, item
-      | Some ((_,(filter,chunk,data,exns)),outlines') ->
+      | Some ((filter,chunk,data,exns),outlines') ->
           prerr_endline "SYNC PARSER";
           match
             try Some (sync_step chunk data item)
             with Syntaxerr.Error _ -> None
           with              
             | Some item ->
-                let chunks = History.insert (History.sync_point outlines', item) chunks in
+                let chunks = History.insert (History.Sync.at outlines', item) chunks in
                 aux outlines' chunks item
             | None -> aux outlines' chunks item
   in
