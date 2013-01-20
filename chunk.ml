@@ -78,8 +78,9 @@ let sync_step chunk tokens t =
           (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         let lexer = Chunk_parser_utils.print_tokens ~who:"chunk" lexer in
-        (* let lexer = Chunk_parser_utils.print_tokens lexer in *)
-        Definition (Chunk_parser.top_structure_item lexer (Lexing.from_string ""), t)
+        let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
+        Definition (def, t)
+
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> t
     | Outline_utils.Rollback -> raise Invalid_chunk
 

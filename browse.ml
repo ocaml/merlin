@@ -1,3 +1,7 @@
+let (>>=) a f = match a with
+  | Some a' -> f a'
+  | None -> None
+
 let to_linecol pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 
 let compare_loc pos loc =
@@ -26,27 +30,6 @@ let union_loc_opt a b = match a,b with
   | (Some _ as l), None | None, (Some _ as l) -> l
   | Some a, Some b -> Some (union_loc a b)
 
-let summary_prev =
-  let open Env in function
-  | Env_empty -> None 
-  | Env_open (s,_) | Env_value (s,_,_)
-  | Env_type (s,_,_) | Env_exception (s,_,_)
-  | Env_module (s,_,_) | Env_modtype (s,_,_)
-  | Env_class (s,_,_) | Env_cltype (s,_,_) ->
-    Some s
-
-let signature_of_summary =
-  let open Env in
-  let open Types in function
-  | Env_value (_,i,v)      -> Some (Sig_value (i,v))
-  | Env_type (_,i,t)       -> Some (Sig_type (i,t,Trec_not))
-  | Env_exception (_,i,e)  -> Some (Sig_exception (i,e))
-  | Env_module (_,i,m)     -> Some (Sig_module (i,m,Trec_not))
-  | Env_modtype (_,i,m)    -> Some (Sig_modtype (i,m))
-  | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
-  | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
-  | Env_open _ | Env_empty -> None 
-
 let rec signature_loc = 
   let open Types in
   let rec mod_loc = function
@@ -58,6 +41,7 @@ let rec signature_loc =
           | x :: xs -> (match signature_loc x with 
                         | (Some _ as v) -> v
                         | None -> find_first xs)
+          | [] -> None
         in 
         let a = find_first s and b = find_first (List.rev s) in
         union_loc_opt a b
@@ -71,58 +55,85 @@ let rec signature_loc =
   | Sig_class (i,c,_) -> failwith "TODO: handling classes"
   | Sig_class_type (i,c,_) -> failwith "TODO: handling classes"
 
-let (>>=) a f = match a with
-  | Some a' -> f a'
-  | None -> None
+module Env =
+struct
+  let summary_prev =
+    let open Env in function
+    | Env_empty -> None 
+    | Env_open (s,_) | Env_value (s,_,_)
+    | Env_type (s,_,_) | Env_exception (s,_,_)
+    | Env_module (s,_,_) | Env_modtype (s,_,_)
+    | Env_class (s,_,_) | Env_cltype (s,_,_) ->
+      Some s
+  
+  let signature_of_summary =
+    let open Env in
+    let open Types in function
+    | Env_value (_,i,v)      -> Some (Sig_value (i,v))
+    | Env_type (_,i,t)       -> Some (Sig_type (i,t,Trec_not))
+    | Env_exception (_,i,e)  -> Some (Sig_exception (i,e))
+    | Env_module (_,i,m)     -> Some (Sig_module (i,m,Trec_not))
+    | Env_modtype (_,i,m)    -> Some (Sig_modtype (i,m))
+    | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
+    | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
+    | Env_open _ | Env_empty -> None 
+  
+  
+  let summary_at line col sum =
+    let cmp = compare_loc (line,col) in
+    let rec aux sum =
+      match signature_of_summary sum >>= signature_loc with
+        | None -> summary_prev sum >>= aux
+        | Some loc ->
+      match cmp loc with
+        | x when x < 0 -> None
+        | 0 -> Some sum
+        | x -> summary_prev sum >>= aux
+    in
+    aux sum
+  
+  let signature_of_env env =
+    let open Types in
+    let sg = ref [] in
+    let append item = sg := item :: !sg in
+    let initial_summary = Env.summary (Lazy.force Typer.initial_env) in
+    let rec aux summary =
+      if summary == initial_summary
+      then ()
+      else
+      match summary with
+      | Env.Env_empty -> ()
+      | Env.Env_value (s,i,v) ->
+          append (Sig_value (i,v));
+          aux s
+      | Env.Env_type (s,i,t) ->
+          append (Sig_type (i,t,Trec_not)); (* Trec_not == bluff, FIXME *)
+          aux s
+      | Env.Env_exception (s,i,e) ->
+          append (Sig_exception (i,e));
+          aux s
+      | Env.Env_module (s,i,m) ->
+          append (Sig_module (i,m,Trec_not));
+          aux s
+      | Env.Env_modtype (s,i,mt) ->
+          append (Sig_modtype (i,mt));
+          aux s
+      | Env.Env_class (s,i,c) ->
+          append (Sig_class (i,c,Trec_not));
+          aux s
+      | Env.Env_cltype (s,i,ct) ->
+          append (Sig_class_type (i,ct,Trec_not));
+          aux s
+      | Env.Env_open (s,p) ->
+          aux s
+    in
+    let summary = Env.summary env in
+    aux summary;
+    Typemod.simplify_signature (!sg)
+end
 
-let summary_at line col sum =
-  let cmp = compare_loc (line,col) in
-  let rec aux sum =
-    match signature_of_summary sum >>= signature_loc with
-      | None -> summary_prev sum >>= aux
-      | Some loc ->
-    match cmp loc with
-      | x when x < 0 -> None
-      | 0 -> Some sum
-      | x -> summary_prev sum >>= aux
-  in
-  aux sum
+module Typedtree =
+struct
+    
 
-let signature_of_env env =
-  let open Types in
-  let sg = ref [] in
-  let append item = sg := item :: !sg in
-  let initial_summary = Env.summary (Lazy.force Typer.initial_env) in
-  let rec aux summary =
-    if summary == initial_summary
-    then ()
-    else
-    match summary with
-    | Env.Env_empty -> ()
-    | Env.Env_value (s,i,v) ->
-        append (Sig_value (i,v));
-        aux s
-    | Env.Env_type (s,i,t) ->
-        append (Sig_type (i,t,Trec_not)); (* Trec_not == bluff, FIXME *)
-        aux s
-    | Env.Env_exception (s,i,e) ->
-        append (Sig_exception (i,e));
-        aux s
-    | Env.Env_module (s,i,m) ->
-        append (Sig_module (i,m,Trec_not));
-        aux s
-    | Env.Env_modtype (s,i,mt) ->
-        append (Sig_modtype (i,mt));
-        aux s
-    | Env.Env_class (s,i,c) ->
-        append (Sig_class (i,c,Trec_not));
-        aux s
-    | Env.Env_cltype (s,i,ct) ->
-        append (Sig_class_type (i,ct,Trec_not));
-        aux s
-    | Env.Env_open (s,p) ->
-        aux s
-  in
-  let summary = Env.summary env in
-  aux summary;
-  Typemod.simplify_signature (!sg)
+end

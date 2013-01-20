@@ -15,7 +15,7 @@ type state = {
   tokens   : Outline.token list;
   outlines : Outline.t;
   chunks   : Chunk.t;
-  envs     : Typer.t;
+  types     : Typer.t;
 }
  
 let initial_state = {
@@ -23,7 +23,7 @@ let initial_state = {
   tokens   = [];
   outlines = History.empty;
   chunks   = History.empty;
-  envs     = History.empty;
+  types    = History.empty;
 }
 
 let commands = Hashtbl.create 17
@@ -91,20 +91,20 @@ let command_tell : command = fun state -> function
       let lexbuf = Lexing.from_string source in
       let rec loop state =
         let bufpos = ref state.pos in
-        let outlines, chunks, envs = 
+        let outlines, chunks, types = 
           (History.cutoff state.outlines), 
           (History.cutoff state.chunks), 
-          (History.cutoff state.envs)
+          (History.cutoff state.types)
         in
         let tokens, outlines =
           Outline.parse ~bufpos ~goteof
             (History.of_list state.tokens) outlines lexbuf
         in
         let chunks = Chunk.sync outlines chunks in
-        let envs = Typer.sync chunks envs in
+        let types = Typer.sync chunks types in
         let state = {
           tokens = History.nexts tokens;
-          outlines ; chunks ; envs ; pos = !bufpos
+          outlines ; chunks ; types ; pos = !bufpos
         } in
         if !goteof
         then state
@@ -113,10 +113,12 @@ let command_tell : command = fun state -> function
       loop state, `Bool true
   | _ -> invalid_arguments ()
 
+exception Found of Types.signature_item
+
 let command_type : command = fun state -> function
   | [`String "expression"; `String expr] ->
       let lexbuf = Lexing.from_string expr in
-      let env = Typer.env state.envs in
+      let env = Typer.env state.types in
       let expression = Chunk_parser.top_expr Outline_lexer.token lexbuf in
       let (str, sg, _) =
         Typemod.type_toplevel_phrase env
@@ -134,18 +136,24 @@ let command_type : command = fun state -> function
 
   | [`String "at" ; jpos] ->
     let `Line (ln,cl) = Outline_utils.pos_of_json jpos in
-    let env = Typer.env state.envs in
-    let sum = Env.summary env in
+    let trees = Typer.trees state.types in
     begin
-      match Browse.summary_at ln cl sum with
-        | None -> raise Not_found
-        | Some sum ->
-      match Browse.signature_of_summary sum with
-        | None -> raise Not_found
-        | Some sg -> 
-            let ppf, to_string = Outline_utils.ppf_to_string () in
-            Printtyp.signature ppf [sg];
-            state, `List [`String "type" ; `String (to_string ())]
+      try
+        List.iter begin fun (tstr,tsg) ->
+          List.iter begin fun sg ->
+          match Browse.signature_loc sg with
+            | Some loc when Browse.compare_loc (ln,cl) loc < 0 ->
+                raise Not_found
+            | Some loc when Browse.compare_loc (ln,cl) loc = 0 ->
+                raise (Found sg)
+            | _ -> ()
+          end tsg
+        end trees;
+        raise Not_found
+      with Found sg -> 
+        let ppf, to_string = Outline_utils.ppf_to_string () in
+        Printtyp.signature ppf [sg];
+        state, `List [`String "type" ; `String (to_string ())]
     end
 
   | _ -> invalid_arguments ()
@@ -157,13 +165,13 @@ let command_seek : command = fun state -> function
       let `Line (l,c) = Outline_utils.pos_of_json jpos in
       let outlines = Outline.seek_line (l,c) state.outlines in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
-      let chunks, envs = History.Sync.rewind Misc.fst3 chunks state.envs in
+      let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =
         match Outline.last_position outlines with
           | Some p -> p
           | None -> initial_state.pos
       in
-      { tokens = [] ; outlines ; chunks ; envs ; pos },
+      { tokens = [] ; outlines ; chunks ; types ; pos },
       return_position pos
   | [`String "end_of_definition"] ->
       failwith "TODO"
@@ -192,13 +200,13 @@ let command_seek : command = fun state -> function
         in 
         let outlines = loop state.outlines in
         let chunks = History.Sync.right fst outlines state.chunks in
-        let envs   = History.Sync.right Misc.fst3 chunks state.envs in
+        let types  = History.Sync.right fst chunks state.types in
         let pos =
           match Outline.last_position outlines with
             | Some p -> p
             | None -> initial_state.pos
         in
-        { tokens = [] ; outlines ; chunks ; envs ; pos },
+        { tokens = [] ; outlines ; chunks ; types ; pos },
         return_position pos
   | _ -> invalid_arguments ()
 
@@ -258,8 +266,8 @@ let command_errors : command = fun state -> function
         (match History.prev state.outlines with
           | Some (_,_,_,exns) -> exns
           | None -> []) @
-          (match History.prev state.envs with
-            | Some (_,_,exns) -> exns
+          (match History.prev state.types with
+            | Some (_,(_,_,exns)) -> exns
             | None -> [])
       in
       state, `List [`String "errors" ; `List (Error_report.to_jsons exns) ]
@@ -267,7 +275,23 @@ let command_errors : command = fun state -> function
 
 let command_dump : command = fun state -> function
   | [`String "env"] ->
-      let sg = Browse.signature_of_env (Typer.env state.envs) in
+      let sg = Browse.Env.signature_of_env (Typer.env state.types) in
+      let aux item =
+        let ppf, to_string = Outline_utils.ppf_to_string () in
+        Printtyp.signature ppf [item];
+        let content = to_string () in
+        let ppf, to_string = Outline_utils.ppf_to_string () in
+        match Browse.signature_loc item with
+          | Some loc ->
+              Location.print_loc ppf loc;
+              let loc = to_string () in
+              `List [`String loc ; `String content]
+          | None -> `String content
+      in
+      state, `List [`String "env" ; `List (List.map aux sg)]
+  | [`String "sig"] ->
+      let trees = Typer.trees state.types in
+      let sg = List.flatten (List.map snd trees) in
       let aux item =
         let ppf, to_string = Outline_utils.ppf_to_string () in
         Printtyp.signature ppf [item];

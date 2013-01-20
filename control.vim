@@ -55,7 +55,7 @@ def find_changes(previous = None):
       count = count + 1
     return (changes, changes[count:])
   except ValueError, e:
-    return (changes, changes) 
+    return (changes, None) 
 
 def find_line(changes):
   if changes == None:
