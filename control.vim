@@ -175,6 +175,51 @@ function! TypeOfSel()
   call TypeOf(Get_visual_selection())
 endfunction
 
+function! MLComplete(findstart,base)
+  if a:findstart
+    " Locate the start of the item, including ".", "->" and "[...]".
+    let line = getline('.')
+    let start = col('.') - 1
+    let lastword = -1
+    while start > 0
+      if line[start - 1] =~ '\w'
+        let start -= 1
+      elseif line[start - 1] =~ '\.'
+        if lastword == -1
+          let lastword = start
+        endif
+        let start -= 1
+      else
+        break
+      endif
+    endwhile
+    " Return the column of the last word, which is going to be changed.
+    " Remember the text that comes before it in s:prepended.
+    if lastword == -1
+      let s:prepended = ''
+      return start
+    endif
+    let s:prepended = strpart(line, start, lastword - start)
+    return lastword
+  endif
+  
+  let base = s:prepended . a:base
+  let l:props = []
+  python <<EOF
+sync_buffer()
+props = send_command("complete","prefix",vim.eval("base"))
+for prop in props:
+  vim.command("let l:prop = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+    (prop['name'].replace("'", "''")
+    ,prop['desc'].replace("'", "''")
+    ,prop['info'].replace("'", "''")
+    ,prop['kind'][:1].replace("'", "''")
+    ))
+  vim.command("call add(l:props, l:prop)")
+EOF
+  return {'words': l:props, 'refresh':'always'}
+endfunction
+
 command! -nargs=1 ML call FindFile("ml",<q-args>)
 command! -nargs=1 MLI call FindFile("mli",<q-args>)
 command! -nargs=0 TypeOf call TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))

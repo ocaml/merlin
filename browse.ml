@@ -55,6 +55,17 @@ let rec signature_loc =
   | Sig_class (i,c,_) -> failwith "TODO: handling classes"
   | Sig_class_type (i,c,_) -> failwith "TODO: handling classes"
 
+let signature_ident = 
+  let open Types in function
+  | Sig_value (i,_)
+  | Sig_type (i,_,_)
+  | Sig_exception (i,_)
+  | Sig_modtype (i,_)
+  | Sig_module (i,_,_)
+  | Sig_modtype (i,_)
+  | Sig_class (i,_,_)
+  | Sig_class_type (i,_,_) -> i
+
 module Env =
 struct
   let summary_prev =

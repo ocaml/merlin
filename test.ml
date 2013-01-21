@@ -15,7 +15,7 @@ type state = {
   tokens   : Outline.token list;
   outlines : Outline.t;
   chunks   : Chunk.t;
-  types     : Typer.t;
+  types    : Typer.t;
 }
  
 let initial_state = {
@@ -29,9 +29,11 @@ let initial_state = {
 let commands = Hashtbl.create 17
 
 let main_loop () =
-  let logger = open_out "/home/def/outliner.log" in
+  (*let logger = open_out "/home/def/outliner.log" in
   let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
-  let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
+  let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in*)
+  let log_input json = json in
+  let log_output json = json in
   let input  = Json.stream_from_channel stdin in
   let output =
     let out_json = Json.to_channel stdout in
@@ -156,6 +158,73 @@ let command_type : command = fun state -> function
         state, `List [`String "type" ; `String (to_string ())]
     end
 
+  | _ -> invalid_arguments ()
+
+let command_complete : command = fun state -> function
+  | [`String "prefix" ; `String prefix] ->
+    begin
+      let has_prefix p =
+        let l = String.length p in
+        fun s ->
+          let l' = String.length s in
+          (l' >= l) && (String.sub s 0 l = p)
+      in
+      let env = Typer.env state.types in
+      let fmt name path ty =
+        let ident = Ident.create (Path.last path) in
+        let ppf, to_string = Outline_utils.ppf_to_string () in
+        let kind =
+          match ty with
+          | `Value v -> Printtyp.value_description ident ppf v; "value"
+          | `Cons c  -> "constructor"
+          | `Mod m   -> Printtyp.modtype ppf m; "module"
+        in
+        let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
+        `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
+      in
+      let find ?path prefix compl =
+        let valid = has_prefix prefix in
+        let compl = [] in
+        let compl = Env.fold_values
+          (fun name path v compl ->
+             if valid name then (fmt name path (`Value v)) :: compl else compl)
+          path env compl
+        in
+        let compl = Env.fold_constructors
+          (fun name path v compl ->
+             if valid name then (fmt name path (`Cons v)) :: compl else compl)
+          path env compl
+        in
+        let compl = Env.fold_modules
+          (fun name path v compl ->
+             if valid name then (fmt name path (`Mod v)) :: compl else compl)
+          path env compl
+        in
+        compl
+      in
+      let compl =
+        try
+          match Longident.parse prefix with
+            | Longident.Ldot (path,prefix) -> find ~path prefix []
+            | Longident.Lident prefix -> find prefix []
+            | _ -> find prefix []
+        with Not_found -> []
+        (*if prefix = ""
+        then find "" []
+        else 
+          let rec try_find ?path prefix compl =
+            try find ?path prefix []
+            with Not_found ->
+            match path with
+              | Some (Longident.Ldot (path,prefix)) -> try_find ~path prefix compl
+              | Some (Longident.Lident prefix) -> try_find prefix compl
+              | _ -> []
+          in
+          let path = Longident.parse prefix in
+          try_find ~path "" []*)
+      in
+      state, `List (List.rev compl)
+    end 
   | _ -> invalid_arguments ()
 
 let command_seek : command = fun state -> function
@@ -308,9 +377,6 @@ let command_dump : command = fun state -> function
   | _ -> invalid_arguments ()
 
 (* Browsing *)
-(*let command_complete : command = fun state -> function
-  | [`String "expression" ; `String base] ->
-  | _ -> invalid_arguments ()*)
  
 let command_help : command = fun state -> function
   | [] -> 
@@ -334,6 +400,8 @@ let _ = List.iter (fun (a,b,c) -> Hashtbl.add commands a (b,c))
                          "source", (source_path, lazy [])],
     `String "TODO";
   "type",  command_type,
+    `String "TODO";
+  "complete", command_complete,
     `String "TODO";
   "errors", command_errors,
     `String "TODO";

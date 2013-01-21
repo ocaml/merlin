@@ -44,7 +44,7 @@ let to_json = function
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
   | exn -> 
       let zero = Lexing.({ pos_fname = "" ; pos_bol = 0 ; pos_lnum = 1 ; pos_cnum = 0 }) in
-      Some (format ~valid:false ~where:"unkwown" ~loc:Location.({loc_start = zero ; loc_end = zero ; loc_ghost = true }) (Printexc.to_string exn))
+      Some (format ~valid:false ~where:"unknown" ~loc:Location.({loc_start = zero ; loc_end = zero ; loc_ghost = true }) (Printexc.to_string exn))
 
 let rec list_filter_map f = function
   | [] -> []
