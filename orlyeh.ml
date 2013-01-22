@@ -31,7 +31,7 @@ let commands = Hashtbl.create 17
 let main_loop () =
   let log_input json = json in
   let log_output json = json in
-  let logger = open_out "/home/def/outliner.log" in
+  let logger = open_out "orlyeh.debug.log" in
   let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
   let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
   let input  = Json.stream_from_channel stdin in
@@ -432,7 +432,7 @@ let _ = List.iter (fun (a,b,c) -> Hashtbl.add commands a (b,c))
 ]
 
 let print_version () =
-  Printf.printf "The Outliner toplevel, version %s\n" Sys.ocaml_version;
+  Printf.printf "The O'R'lyeh toolkit, for Ocaml version %s\n" Sys.ocaml_version;
   exit 0
 
 let print_version_num () =

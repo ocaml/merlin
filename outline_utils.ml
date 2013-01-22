@@ -14,7 +14,7 @@ let nesting = ref 0
 
 let reset ~rollback () =
   filter_first := rollback;
-  Printf.eprintf "rollback = %d\n%!" rollback;
+  (*Printf.eprintf "rollback = %d\n%!" rollback;*)
   nesting := 0
 
 let enter () =
@@ -26,9 +26,8 @@ let leave () =
   decr nesting
 
 let emit_top c pos =
-  prerr_endline "emit";
-  if !nesting = 0 then
-    begin
+  (*prerr_endline "emit";*)
+  if !nesting = 0 then begin
       if !filter_first < 0
       then failwith "Outline_utils.emit_top: invalid filter_first"
       else if !filter_first = 0

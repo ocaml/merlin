@@ -22,9 +22,11 @@ def restart():
   except OSError as e:
     print("Failed to execute orlyeh. Please ensure that orlyeh binary is in path and is executable.")
     raise e
-restart()
 
 def send_command(*cmd):
+  global mainpipe
+  if mainpipe == None or mainpipe.returncode != None:
+    restart()
   json.dump(cmd, mainpipe.stdin)
   line = mainpipe.stdout.readline()
   return json.loads(line)
@@ -127,33 +129,35 @@ def sync_buffer():
 
   # reset if necessary
   current_buffer = (cb.name, cb.number)
-  if current_buffer != last_buffer:
-    last_changes = None
-    last_line = 0
+  if current_buffer == last_buffer:
+    (last_changes, sync) = find_changes(last_changes)
+    if sync != None:
+      sync_line = find_line(sync)
+      if sync_line != None:
+        last_line = min(last_line, sync_line)
+
+    if last_line <= max_line:
+      if last_line < 5:
+        content = cb[:max_line]
+        command_reset()
+        command_tell("\n".join(content))
+      else:
+        line, col = command_seek(last_line,0)
+        rest    = cb[line-1][col:]
+        content = cb[line:max_line]
+        command_tell(rest + "\n" + "\n".join(content))
+  else:
+    (last_changes, sync) = find_changes(None)
     last_buffer = current_buffer
+    content = cb[:max_line]
+    command_reset()
+    command_tell("\n".join(content))
 
-  (last_changes, sync) = find_changes(last_changes)
-  #print sync
-  if sync != None:
-    sync_line = find_line(sync)
-    if sync_line != None:
-      last_line = min(last_line, sync_line)
-
-  if last_line <= max_line:
-    if last_line < 5:
-      content = cb[:max_line]
-      command_reset()
-      command_tell("\n".join(content))
-    else:
-      line, col = command_seek(last_line,0)
-      rest    = cb[line-1][col:]
-      content = cb[line:max_line]
-      command_tell(rest + "\n" + "\n".join(content))
   last_line = max_line + 1
 
   # Now we are synced, come back to environment around cursor
   command_seek(to_line, to_col)
-  # Gather maximum of definitions after cursor without leaving current module
+  # Gather a maximum of definition after cursor without leaving current module
   command_seek_scope()
 
 def vim_complete(base, vimvar):

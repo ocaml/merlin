@@ -28,7 +28,7 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
           let history = !history' in
           let history = match History.backward history with
             | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) -> 
-                prerr_endline "refill"; history
+                (*prerr_endline "refill";*) history
             | _ -> history
           in  
           history, c, chunk_content history
@@ -106,7 +106,7 @@ let rec parse ?rollback ?bufpos ~goteof tokens chunks buf =
             | Some ((rollback, _, _, _), chunks') -> chunks', rollback
             | None -> chunks, 0
         in
-        prerr_endline "SYNC PARSER";
+        (*prerr_endline "SYNC PARSER";*)
         (*let tokens', chunks' = History.Sync.nearest fst tokens' chunks' in*)
         let chunks', _ = History.split chunks' in
         parse ~rollback:(rollback + 1) ?bufpos ~goteof tokens' chunks' buf

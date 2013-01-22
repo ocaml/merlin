@@ -82,7 +82,7 @@ let sync chunks t =
     match History.forward chunks with
       | None -> t, env, trees, exns
       | Some ((_,chunk_item),chunks') ->
-          prerr_endline "SYNC TYPER";
+          (*prerr_endline "SYNC TYPER";*)
           let env, trees, exns = append_step ~stop_at chunk_item env trees exns in 
           let t = History.insert (History.Sync.at chunks', (env, trees, exns)) t in
           aux chunks' t env trees exns

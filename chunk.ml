@@ -98,7 +98,7 @@ let sync outlines chunks =
     match History.forward outlines with
       | None -> chunks, item
       | Some ((filter,chunk,data,exns),outlines') ->
-          prerr_endline "SYNC PARSER";
+          (*prerr_endline "SYNC PARSER";*)
           match
             try Some (sync_step chunk data item)
             with Syntaxerr.Error _ -> None
