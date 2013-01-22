@@ -29,11 +29,11 @@ let initial_state = {
 let commands = Hashtbl.create 17
 
 let main_loop () =
-  (*let logger = open_out "/home/def/outliner.log" in
-  let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
-  let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in*)
   let log_input json = json in
   let log_output json = json in
+  let logger = open_out "/home/def/outliner.log" in
+  let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
+  let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
   let input  = Json.stream_from_channel stdin in
   let output =
     let out_json = Json.to_channel stdout in
@@ -322,6 +322,24 @@ let command_path pathes : command = fun state -> function
       state, `Bool true
   | _ -> invalid_arguments ()
 
+let list_filter_dup lst =
+  let tbl = Hashtbl.create 17 in
+  List.rev (List.fold_left (fun a b -> if Hashtbl.mem tbl b then a else (Hashtbl.add tbl b (); b :: a)) [] lst)
+
+let command_find : command = fun state -> function
+  | (`String "use" :: packages) ->
+      let packages = List.map
+        (function `String pkg -> pkg | _ -> invalid_arguments ())
+        packages
+      in
+      let packages = Findlib.package_deep_ancestors [] packages in
+      let path = List.map Findlib.package_directory packages in
+      Config.load_path := list_filter_dup (path @ !Config.load_path);
+      state, (`Bool true)
+  | [`String "list"] ->
+      state, `List (List.map (fun s -> `String s) (Fl_package_base.list_packages ()))
+  | _ -> invalid_arguments ()
+
 let command_cd : command = fun state -> function
   | [`String s] ->
       Sys.chdir s;
@@ -399,6 +417,8 @@ let _ = List.iter (fun (a,b,c) -> Hashtbl.add commands a (b,c))
   "path",  command_path ["build",  (Config.load_path,default_build_paths);
                          "source", (source_path, lazy [])],
     `String "TODO";
+  "find", command_find,
+    `String "TODO";
   "type",  command_type,
     `String "TODO";
   "complete", command_complete,
@@ -460,6 +480,7 @@ let main () =
   Arg.parse Options.list unexpected_argument "TODO";
   Compile.init_path ();
   set_default_path ();
+  Findlib.init ();
   main_loop ()
 
 let _ = main ()
