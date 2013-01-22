@@ -111,7 +111,12 @@ function! orlyeh#Register()
   vmap <buffer> <LocalLeader>t :TypeOfSel
 endfunction
 
+function! orlyeh#LoadProject()
+  py orlyeh.load_project(vim.eval("expand('%:p:h')"))
+endfunction
+
 command! -nargs=1 ML call orlyeh#FindFile("ml",<f-args>)
 command! -nargs=1 MLI call orlyeh#FindFile("mli",<f-args>)
 au FileType omlet call orlyeh#Register()
+au FileType omlet call orlyeh#LoadProject()
 

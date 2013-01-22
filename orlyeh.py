@@ -2,6 +2,7 @@ import subprocess
 import json
 import vim
 import re
+import os
 
 ######## COMMUNICATION
 
@@ -31,10 +32,24 @@ def send_command(*cmd):
   line = mainpipe.stdout.readline()
   return json.loads(line)
 
+######## BUFFER CACHE
+
+last_buffer = None
+last_changes = None
+last_line = 0
+
+def clear_cache():
+  global last_changes, last_line, last_buffer
+  last_buffer = None
+  last_changes = None
+  last_line = 0
+
 ######## BASIC COMMANDS
 
 def command_reset():
-  return send_command("reset")
+  r = send_command("reset")
+  clear_cache()
+  return r
 
 def command_tell(content):
   return send_command("tell", content)
@@ -114,10 +129,6 @@ def find_line(changes):
   if changes == []:
     return None
   return reduce(min, map((lambda (lin,col,txt): lin), changes))
-
-last_buffer = None
-last_changes = None
-last_line = 0
 
 def sync_buffer():
   global last_changes, last_line, last_buffer
@@ -209,6 +220,7 @@ def vim_type_expr(expr):
 
 def vim_reload():
   command_reset()
+  clear_cache()
   sync_buffer()
 
 def vim_restart():
@@ -218,3 +230,27 @@ def vim_which(name,ext):
   if ext:
     name = name + "." + ext
   return command_which(name)
+
+def load_project(directory,maxdepth=3):
+  fname = os.path.join(directory,".orlyeh") 
+  if os.path.exists(fname):
+    with open(fname,"r") as f:
+      for line in f:
+        split = line.split(None,1)
+        if split != []:
+          command = split[0]
+          tail = split[1]
+          if tail != "":
+            tail = os.path.join(directory,tail)
+          if command == "S":
+            send_command("path","source","add",tail)
+          elif command == "B":
+            send_command("path","build","add",tail)
+          elif command == "PKG":
+            command_find_use(*split[1].split())
+    command_reset()
+  elif maxdepth > 0:
+    (head, tail) = os.path.split(directory)
+    if head != "":
+      load_project(head,maxdepth - 1)
+
