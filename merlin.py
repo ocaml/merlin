@@ -19,9 +19,9 @@ def restart():
     except OSError:
       pass
   try:
-    mainpipe = subprocess.Popen(["orlyeh"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
+    mainpipe = subprocess.Popen(["ocamlmerlin"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
   except OSError as e:
-    print("Failed to execute orlyeh. Please ensure that orlyeh binary is in path and is executable.")
+    print("Failed to execute merlin. Please ensure that merlin binary is in path and is executable.")
     raise e
 
 def send_command(*cmd):
@@ -45,6 +45,9 @@ def clear_cache():
   last_line = 0
 
 ######## BASIC COMMANDS
+
+def command_refresh():
+  return send_command("refresh")
 
 def command_reset():
   r = send_command("reset")
@@ -133,11 +136,9 @@ def find_line(changes):
     return None
   return reduce(min, map((lambda (lin,col,txt): lin), changes))
 
-def sync_buffer():
+def sync_buffer_to(to_line, to_col):
   global last_changes, last_line, last_buffer
   cb = vim.current.buffer
-  cw = vim.current.window
-  to_line, to_col = cw.cursor
   # hack : append the height of the window to parse definitions near cursor
   max_line = min(to_line + 80, len(cb))
 
@@ -173,6 +174,14 @@ def sync_buffer():
   command_seek(to_line, to_col)
   # Gather a maximum of definition after cursor without leaving current module
   command_seek_scope()
+
+def sync_buffer():
+  cw = vim.current.window
+  to_line, to_col = cw.cursor
+  sync_buffer_to(to_line, to_col)
+
+def sync_full_buffer():
+  sync_buffer_to(len(vim.current.buffer),0)
 
 def vim_complete(base, vimvar):
   vim.command("let %s = []" % vimvar)
@@ -221,11 +230,18 @@ def vim_type_expr(expr):
   elif ty[0] == "error":
     print (expr + " : " + ty[1]['message'])
 
+# Resubmit current buffer
 def vim_reload():
   command_reset()
   clear_cache()
   sync_buffer()
 
+# Reload changed cmi files then retype all definitions
+def vim_refresh():
+  command_refresh()
+  sync_buffer()
+
+# Spawn a fresh new process
 def vim_restart():
   restart()
 
@@ -241,7 +257,7 @@ def vim_which_ext(ext,vimvar):
     vim.command("call add(%s, '%s')" % (vimvar, f))
 
 def load_project(directory,maxdepth=3):
-  fname = os.path.join(directory,".orlyeh") 
+  fname = os.path.join(directory,".merlin") 
   if os.path.exists(fname):
     with open(fname,"r") as f:
       for line in f:

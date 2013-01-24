@@ -31,7 +31,7 @@ let commands = Hashtbl.create 17
 let main_loop () =
   (*let log_input json = json in
   let log_output json = json in*)
-  let logger = open_out "orlyeh.debug.log" in
+  let logger = open_out "merlin.debug.log" in
   let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
   let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
   let input  = Json.stream_from_channel stdin in
@@ -177,7 +177,7 @@ let command_complete : command = fun state -> function
           match ty with
           | `Value v -> Printtyp.value_description ident ppf v; "value"
           | `Cons c  -> "constructor"
-          | `Mod m   -> Printtyp.modtype ppf m; "module"
+          | `Mod m   -> (*Printtyp.modtype ppf m;*) "module"
         in
         let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
         `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
@@ -282,6 +282,14 @@ let command_seek : command = fun state -> function
 let command_reset : command = fun state -> function
   | [] -> initial_state, return_position initial_state.pos
   | _ -> invalid_arguments ()
+
+let command_refresh : command = fun state -> function
+  | [] -> 
+      Env.reset_cache ();
+      let types = Typer.sync state.chunks History.empty in
+      { state with types }, `Bool true
+  | _ -> invalid_arguments ()
+
 
 (* Path management *)
 let command_which : command = fun state -> function
@@ -430,6 +438,8 @@ let _ = List.iter (fun (a,b,c) -> Hashtbl.add commands a (b,c))
     `String "TODO";
   "reset", command_reset,
     `String "TODO";
+  "refresh", command_refresh,
+    `String "TODO";
   "cd",    command_cd,
     `String "TODO";
   "which", command_which,
@@ -452,7 +462,7 @@ let _ = List.iter (fun (a,b,c) -> Hashtbl.add commands a (b,c))
 ]
 
 let print_version () =
-  Printf.printf "The O'R'lyeh toolkit, for Ocaml version %s\n" Sys.ocaml_version;
+  Printf.printf "The Merlin toolkit for Ocaml version %s\n" Sys.ocaml_version;
   exit 0
 
 let print_version_num () =

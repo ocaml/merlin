@@ -1,6 +1,5 @@
-
 all: fake-ocamlbuild
-	ocamlbuild -use-ocamlfind orlyeh.native
+	ocamlbuild -use-ocamlfind ocamlmerlin.native
 
 clean:
 	ocamlbuild -clean
