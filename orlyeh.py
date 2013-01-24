@@ -54,8 +54,11 @@ def command_reset():
 def command_tell(content):
   return send_command("tell", content)
 
-def command_which(name):
-  return send_command('which', name)
+def command_which_file(name):
+  return send_command('which', 'path', name)
+
+def command_which_with_ext(ext):
+  return send_command('which', 'with_ext', ext)
 
 def command_find_use(*packages):
   return send_command('find', 'use', *packages)
@@ -229,7 +232,13 @@ def vim_restart():
 def vim_which(name,ext):
   if ext:
     name = name + "." + ext
-  return command_which(name)
+  return command_which_file(name)
+
+def vim_which_ext(ext,vimvar):
+  files = command_which_with_ext(ext)
+  vim.command("let %s = []" % vimvar)
+  for f in sorted(set(files)):
+    vim.command("call add(%s, '%s')" % (vimvar, f))
 
 def load_project(directory,maxdepth=3):
   fname = os.path.join(directory,".orlyeh") 
@@ -243,9 +252,9 @@ def load_project(directory,maxdepth=3):
           if tail != "":
             tail = os.path.join(directory,tail)
           if command == "S":
-            send_command("path","source","add",tail)
+            send_command("path","add","source",tail.strip())
           elif command == "B":
-            send_command("path","build","add",tail)
+            send_command("path","add","build",tail.strip())
           elif command == "PKG":
             command_find_use(*split[1].split())
     command_reset()

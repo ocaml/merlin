@@ -40,6 +40,18 @@ function! orlyeh#PackageList(ArgLead, CmdLine, CursorPos)
   return join(l:pkgs, "\n")
 endfunction
 
+function! orlyeh#MLList(ArgLead, CmdLine, CursorPos)
+  let l:files = []
+  py orlyeh.vim_which_ext(".ml", "l:files")
+  return join(l:files, "\n")
+endfunction
+
+function! orlyeh#MLIList(ArgLead, CmdLine, CursorPos)
+  let l:files = []
+  py orlyeh.vim_which_ext(".mli", "l:files")
+  return join(l:files, "\n")
+endfunction
+
 function! orlyeh#Use(...)
   py orlyeh.command_find_use(*vim.eval("a:000"))
   py orlyeh.vim_reload()
@@ -115,8 +127,8 @@ function! orlyeh#LoadProject()
   py orlyeh.load_project(vim.eval("expand('%:p:h')"))
 endfunction
 
-command! -nargs=1 ML call orlyeh#FindFile("ml",<f-args>)
-command! -nargs=1 MLI call orlyeh#FindFile("mli",<f-args>)
+command! -nargs=1 -complete=custom,orlyeh#MLList ML call orlyeh#FindFile("ml",<f-args>)
+command! -nargs=1 -complete=custom,orlyeh#MLIList MLI call orlyeh#FindFile("mli",<f-args>)
 au FileType omlet call orlyeh#Register()
 au FileType omlet call orlyeh#LoadProject()
 

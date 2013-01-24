@@ -29,8 +29,8 @@ let initial_state = {
 let commands = Hashtbl.create 17
 
 let main_loop () =
-  let log_input json = json in
-  let log_output json = json in
+  (*let log_input json = json in
+  let log_output json = json in*)
   let logger = open_out "orlyeh.debug.log" in
   let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
   let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
@@ -285,7 +285,7 @@ let command_reset : command = fun state -> function
 
 (* Path management *)
 let command_which : command = fun state -> function
-  | [`String s] -> 
+  | [`String "path" ; `String s] -> 
       let filename =
         try
           Misc.find_in_path_uncap !source_path s
@@ -293,6 +293,26 @@ let command_which : command = fun state -> function
           Misc.find_in_path_uncap !Config.load_path s
       in
       state, `String filename
+  | [`String "with_ext" ; `String ext] ->
+      let results =
+        List.fold_left 
+        begin fun results dir -> 
+          try
+            Array.fold_left 
+            begin fun results file -> 
+              if Filename.check_suffix file ext
+              then let name = Filename.chop_extension file in
+                begin
+                  (if String.length name > 1 then
+                     name.[0] <- Char.uppercase name.[0]);
+                  `String name :: results
+                end
+              else results
+            end results (Sys.readdir dir)
+          with Sys_error _ -> results 
+        end [] !source_path
+      in
+      state, `List results
   | _ -> invalid_arguments ()
 
 let command_path pathes : command = fun state -> function
