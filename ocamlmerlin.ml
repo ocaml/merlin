@@ -104,11 +104,10 @@ let command_tell : command = fun state -> function
         in
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
-        let state = {
-          tokens = History.nexts tokens;
-          outlines ; chunks ; types ; pos = !bufpos
-        } in
-        if !goteof
+        let tokens = History.nexts tokens in
+        let pos = !bufpos in
+        let state' = { tokens ; outlines ; chunks ; types ; pos } in
+        if !goteof || state.tokens == state'.tokens
         then state
         else loop state
       in
@@ -385,7 +384,7 @@ let command_errors : command = fun state -> function
             | Some (_,(_,_,exns)) -> exns
             | None -> [])
       in
-      state, `List [`String "errors" ; `List (Error_report.to_jsons exns) ]
+      state, `List [`String "errors" ; `List (Error_report.to_jsons (List.rev exns)) ]
   | _ -> invalid_arguments ()
 
 let command_dump : command = fun state -> function

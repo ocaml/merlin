@@ -152,7 +152,7 @@ def sync_buffer_to(to_line, to_col):
         last_line = min(last_line, sync_line)
 
     if last_line <= max_line:
-      if last_line < 5:
+      if last_line <= 1:
         content = cb[:max_line]
         command_reset()
         command_tell("\n".join(content))
@@ -162,10 +162,10 @@ def sync_buffer_to(to_line, to_col):
         content = cb[line:max_line]
         command_tell(rest + "\n" + "\n".join(content))
   else:
+    command_reset()
     (last_changes, sync) = find_changes(None)
     last_buffer = current_buffer
     content = cb[:max_line]
-    command_reset()
     command_tell("\n".join(content))
 
   last_line = max_line + 1
