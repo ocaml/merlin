@@ -1,4 +1,5 @@
-type item = Chunk.sync * (Env.t * (Typedtree.structure * Types.signature) list * exn list)
+type state = Env.t * (Typedtree.structure * Types.signature) list * exn list
+type item = Chunk.sync * (state * state list)
 type sync = item History.sync
 type t = item History.t
 
@@ -7,19 +8,25 @@ let initial_env = Lazy.from_fun Compile.initial_env
 let env t =
   match History.prev t with
     | None -> Lazy.force initial_env
-    | Some (_,(env,_,_)) -> env
+    | Some (_,((env,_,_),_)) -> env
 
 let trees t =
   match History.prev t with
     | None -> []
-    | Some (_,(_,trees,_)) -> trees
+    | Some (_,((_,trees,_),_)) -> trees
 
-let rec append_step ~stop_at chunk_item env trees exns =
+let exns t =
+  match History.prev t with
+    | None -> []
+    | Some (_,((_,_,exns),_)) -> exns
+
+let rec append_step ~stop_at chunk_item env trees exns stack =
   match chunk_item with
-    | Chunk.Root -> env, trees, exns
-    | _ when stop_at chunk_item -> env, trees, exns
+    | Chunk.Root -> env, trees, exns, stack
+    | _ when stop_at chunk_item -> env, trees, exns, stack
     | Chunk.Module_opening (_,_,pmod,t) ->
-        let env, trees, exns = append_step ~stop_at t env trees exns in
+        let env, trees, exns, stack = append_step ~stop_at t env trees exns stack in
+        let stack = (env, trees, exns) :: stack in
         begin try
           let open Typedtree in
           let open Parsetree in
@@ -51,17 +58,33 @@ let rec append_step ~stop_at chunk_item env trees exns =
           in
           let tymod = Typemod.type_module env pmod in
           match find_structure tymod with
-            | None -> env, trees, exns
-            | Some md -> md.mod_env, trees, exns
-          with exn -> env, trees, (exn :: exns)
+            | None -> env, trees, exns, stack
+            | Some md -> md.mod_env, trees, exns, stack
+          with exn -> env, trees, (exn :: exns), stack
         end
 
     | Chunk.Definition (d,t) ->
-        let env, trees, exns = append_step ~stop_at t env trees exns in
-        try
-          let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
-          env, (tstr,tsg) :: trees, exns
-        with exn -> env, trees, (exn :: exns)
+        begin
+          let env, trees, exns, stack = append_step ~stop_at t env trees exns stack in
+          try
+            let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
+            env, (tstr,tsg) :: trees, exns, stack
+          with exn -> env, trees, (exn :: exns), stack
+        end
+
+    | Chunk.Module_closing (d,t) ->
+        begin
+          let env, trees, exns, stack = append_step ~stop_at t env trees exns stack in
+          let env, trees, exns, stack = match stack with
+            | (env, trees, exns) :: stack -> env, trees, exns, stack
+            | [] -> env, trees, exns, stack (* FIXME: should not happen, find why it happens *)
+          in
+          try
+            let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
+            env, (tstr,tsg) :: trees, exns, stack
+          with exn -> env, trees, (exn :: exns), stack
+        end
+
 
 let sync chunks t =
   (* Find last synchronisation point *)
@@ -69,8 +92,8 @@ let sync chunks t =
   (* Drop out of sync items *)
   let t = History.cutoff t in
   (* Process last items *)
-  let last_sync,(env,trees,exns) = match History.prev t with
-    | None -> History.Sync.origin, (Lazy.force initial_env, [], [])
+  let last_sync,((env,trees,exns),stack) = match History.prev t with
+    | None -> History.Sync.origin, ((Lazy.force initial_env, [], []), [])
     | Some item -> item
   in
   let stop_at =
@@ -78,14 +101,14 @@ let sync chunks t =
       | None -> fun _ -> false
       | Some (_,b) -> (==) b
   in
-  let rec aux chunks t env trees exns =
+  let rec aux chunks t env trees exns stack =
     match History.forward chunks with
-      | None -> t, env, trees, exns
+      | None -> t, env, trees, exns, stack
       | Some ((_,chunk_item),chunks') ->
           (*prerr_endline "SYNC TYPER";*)
-          let env, trees, exns = append_step ~stop_at chunk_item env trees exns in 
-          let t = History.insert (History.Sync.at chunks', (env, trees, exns)) t in
-          aux chunks' t env trees exns
+          let env, trees, exns, stack = append_step ~stop_at chunk_item env trees exns stack in 
+          let t = History.insert (History.Sync.at chunks', ((env, trees, exns), stack)) t in
+          aux chunks' t env trees exns stack
   in
-  let t, env, trees, exns = aux chunks t env trees exns in
+  let t, env, trees, exns, stack = aux chunks t env trees exns stack in
   t

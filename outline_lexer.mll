@@ -91,7 +91,13 @@ let keyword_table =
     "lxor", INFIXOP3("lxor");
     "lsl", INFIXOP4("lsl");
     "lsr", INFIXOP4("lsr");
-    "asr", INFIXOP4("asr")
+    "asr", INFIXOP4("asr");
+
+    (* HACK: lwt extensions *)
+    (* more general than raise_lwt/try_lwt, but
+       acceptable approximations ... *)
+    "raise_lwt", (LIDENT "raise");  
+    "try_lwt", TRY;
 ]
 
 (* To buffer string literals *)

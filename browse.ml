@@ -62,7 +62,6 @@ let signature_ident =
   | Sig_exception (i,_)
   | Sig_modtype (i,_)
   | Sig_module (i,_,_)
-  | Sig_modtype (i,_)
   | Sig_class (i,_,_)
   | Sig_class_type (i,_,_) -> i
 

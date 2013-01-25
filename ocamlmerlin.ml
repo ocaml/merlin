@@ -107,9 +107,9 @@ let command_tell : command = fun state -> function
         let tokens = History.nexts tokens in
         let pos = !bufpos in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !goteof || state.tokens == state'.tokens
-        then state
-        else loop state
+        if !goteof || state.tokens = state'.tokens
+        then state'
+        else loop state'
       in
       loop state, `Bool true
   | _ -> invalid_arguments ()
@@ -376,14 +376,7 @@ let command_cd : command = fun state -> function
 (* Reporting *)      
 let command_errors : command = fun state -> function
   | [] ->
-      let exns =
-        (match History.prev state.outlines with
-          | Some (_,_,_,exns) -> exns
-          | None -> []) @
-          (match History.prev state.types with
-            | Some (_,(_,_,exns)) -> exns
-            | None -> [])
-      in
+      let exns = Outline.exns state.outlines @ Typer.exns state.types in
       state, `List [`String "errors" ; `List (Error_report.to_jsons (List.rev exns)) ]
   | _ -> invalid_arguments ()
 
@@ -419,6 +412,8 @@ let command_dump : command = fun state -> function
           | None -> `String content
       in
       state, `List [`String "env" ; `List (List.map aux sg)]
+  | [`String "chunks"] ->
+      state, `List (List.rev_map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk (Chunk.item state.chunks)))
   | _ -> invalid_arguments ()
 
 (* Browsing *)

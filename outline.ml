@@ -94,11 +94,13 @@ let parse_step ?(rollback=0) ?bufpos ?(exns=[]) ~goteof history buf =
     | [] -> None
     | _ -> Some (rollback, kind, tokens, exns))
 
-let rec parse ?rollback ?bufpos ~goteof tokens chunks buf =
-  let exns = match History.prev chunks with
+let exns chunks =
+  match History.prev chunks with
     | Some (_,_,_,exns) -> exns
     | None -> []
-  in
+
+let rec parse ?rollback ?bufpos ~goteof tokens chunks buf =
+  let exns = exns chunks in
   match parse_step ?rollback ?bufpos ~exns ~goteof tokens buf with
     | tokens', Some (_, Outline_utils.Rollback, _, _) ->
         let chunks', rollback =

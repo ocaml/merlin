@@ -14,3 +14,4 @@ val parse_step : ?rollback:int -> ?bufpos:Lexing.position ref -> ?exns:exn list 
 val parse : ?rollback:int -> ?bufpos:Lexing.position ref -> goteof:bool ref ->
   token History.t -> t -> Lexing.lexbuf -> token History.t * t
 
+val exns : t -> exn list
