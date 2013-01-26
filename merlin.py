@@ -89,14 +89,7 @@ changes_pattern = re.compile('(>)?\s*(\d+)\s*(\d+)\s*(\d+)\s*(.*)$')
 def extract_change(match):
   return (int(match.group(3)),int(match.group(4)),match.group(5))
 
-# find_changes(state) returns a pair (new_state, to_sync)
-# Where:
-#  - state is None when first called and the new_state value
-#    returned by previous call after.
-#  - to_sync is the list of changes since last call, or None
-#    if the whole buffer have to be synced
-
-def find_changes(previous = None):
+def current_changes():
   # compute changes as a list of match objects
   vim.command("\nredir => changes_string\nsilent changes\nredir END")
   changes = vim.eval("changes_string").split("\n")
@@ -112,27 +105,28 @@ def find_changes(previous = None):
   # drop everything after cursor
   changes = changes[:position]
   # convert to canonical format (list of (line,col,contents) tuples)
-  changes = list(map(extract_change,changes))
+  return set(map(extract_change,changes))
+
+# find_changes(state) returns a pair (new_state, to_sync)
+# Where:
+#  - state is None when first called and the new_state value
+#    returned by previous call after.
+#  - to_sync is the list of changes since last call, or None
+#    if the whole buffer have to be synced
+
+def find_changes(previous = None):
+  changes = current_changes()
   if previous == None:
     return (changes, None)
-  if changes == []:
+  if len(changes) == 0:
     return (changes, [])
-  marker = changes[0]
-  # Find first common change in sync
-  try:
-    pos = previous.index(marker)
-    count = 1
-    maxcount = min(len(changes),len(previous) - pos)
-    while count < maxcount and changes[count] == previous[pos + count]:
-      count = count + 1
-    return (changes, changes[count:])
-  except ValueError as e:
-    return (changes, None) 
+
+  return (changes, changes.difference(previous))
 
 def find_line(changes):
   if changes == None:
     return 0
-  if changes == []:
+  if len(changes) == 0:
     return None
   return reduce(min, map((lambda (lin,col,txt): lin), changes))
 

@@ -2,7 +2,6 @@ type item_desc =
   | Root
   | Definition of Parsetree.structure_item Location.loc * item_desc
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item_desc
-  | Module_closing of Parsetree.structure_item Location.loc * item_desc
 
 type item = Outline.sync * item_desc
 type sync = item History.sync
@@ -23,7 +22,6 @@ let rec dump_chunk = function
   | Root -> ["root", 0]
   | Definition (d,t) -> ("definition", line d) :: dump_chunk t
   | Module_opening (l,s,_,t) -> ("opening " ^ s.Location.txt, line s) :: dump_chunk t
-  | Module_closing (d,t) -> ("closing", line d) :: dump_chunk t
 
 let fake_tokens tokens f =
   let tokens = ref tokens in
@@ -75,18 +73,10 @@ let sync_step chunk tokens t =
                   | (_,_,p) :: _ -> { loc with Location.loc_end = p }
                   | [] -> loc
               in
-              Module_closing (Location.mkloc {
+              Definition (Location.mkloc {
                 pstr_desc = Pstr_module (s, subst_structure m);
                 pstr_loc  = loc
               } loc, t)
-          | Module_closing (d,t) -> 
-              let rec exit_module = function
-                | Root -> Root
-                | Module_opening (_,_,_,t) -> t
-                | Definition (_,t) -> exit_module t
-                | Module_closing (_,t) -> exit_module (exit_module t)
-              in
-              gather_defs (d.Location.txt :: defs) (exit_module t)
         in
         gather_defs [] t
     | Outline_utils.Definition ->
@@ -108,7 +98,7 @@ let item chunks =
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
-  let outlines, chunks = History.Sync.nearest fst outlines chunks in
+  let outlines, chunks = History.Sync.rewind fst outlines chunks in
   (* Drop out of sync items *)
   let chunks, out_of_sync = History.split chunks in
   (* Process last items *) 

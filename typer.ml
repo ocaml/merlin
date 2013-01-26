@@ -72,23 +72,9 @@ let rec append_step ~stop_at chunk_item env trees exns stack =
           with exn -> env, trees, (exn :: exns), stack
         end
 
-    | Chunk.Module_closing (d,t) ->
-        begin
-          let env, trees, exns, stack = append_step ~stop_at t env trees exns stack in
-          let env, trees, exns, stack = match stack with
-            | (env, trees, exns) :: stack -> env, trees, exns, stack
-            | [] -> env, trees, exns, stack (* FIXME: should not happen, find why it happens *)
-          in
-          try
-            let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
-            env, (tstr,tsg) :: trees, exns, stack
-          with exn -> env, trees, (exn :: exns), stack
-        end
-
-
 let sync chunks t =
   (* Find last synchronisation point *)
-  let chunks, t = History.Sync.nearest fst chunks t in
+  let chunks, t = History.Sync.rewind fst chunks t in
   (* Drop out of sync items *)
   let t = History.cutoff t in
   (* Process last items *)
