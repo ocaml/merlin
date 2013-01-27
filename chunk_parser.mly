@@ -1014,88 +1014,88 @@ label_let_pattern:
     label_var
       { $1 }
   | label_var COLON core_type
-      { let (lab, pat) = $1 in (lab, mkpat $startpos($1) $endpos($1) (Ppat_constraint(pat, $3))) }
+      { let (lab, pat) = $1 in (lab, mkpat $startpos $endpos (Ppat_constraint(pat, $3))) }
 ;
 label_var:
-    LIDENT    { ($1, mkpat $startpos($1) $endpos($1) (Ppat_var (mkrhs $startpos($1) $endpos($1) $1))) }
+    LIDENT    { ($1, mkpat $startpos $endpos (Ppat_var (mkrhs $startpos($1) $endpos($1) $1))) }
 ;
 let_pattern:
     pattern
       { $1 }
   | pattern COLON core_type
-      { mkpat $startpos($1) $endpos($1) (Ppat_constraint($1, $3)) }
+      { mkpat $startpos $endpos (Ppat_constraint($1, $3)) }
 ;
 expr:
     simple_expr %prec below_SHARP
       { $1 }
   | simple_expr simple_labeled_expr_list
-      { mkexp $startpos($1) $endpos($1) (Pexp_apply($1, List.rev $2)) }
+      { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
   | LET rec_flag let_bindings IN seq_expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_let($2, List.rev $3, $5)) }
+      { mkexp $startpos $endpos (Pexp_let($2, List.rev $3, $5)) }
   | LET_LWT rec_flag let_bindings IN seq_expr
-      { let expr = mkexp $startpos($1) $endpos($1)
+      { let expr = mkexp $startpos $endpos
           (Pexp_let($2, List.rev_map (Fake.pat_app Fake.un_lwt) $3, $5)) in
         Fake.app Fake.in_lwt expr }
   | LET MODULE UIDENT module_binding IN seq_expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, $6)) }
+      { mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, $6)) }
   | LET OPEN mod_longident IN seq_expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, $5)) }
+      { mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, $5)) }
   | FUNCTION opt_bar match_cases
-      { mkexp $startpos($1) $endpos($1) (Pexp_function("", None, List.rev $3)) }
+      { mkexp $startpos $endpos (Pexp_function("", None, List.rev $3)) }
   | FUN labeled_simple_pattern fun_def
-      { let (l,o,p) = $2 in mkexp $startpos($1) $endpos($1) (Pexp_function(l, o, [p, $3])) }
+      { let (l,o,p) = $2 in mkexp $startpos $endpos (Pexp_function(l, o, [p, $3])) }
   | FUN LPAREN TYPE LIDENT RPAREN fun_def
-      { mkexp $startpos($1) $endpos($1) (Pexp_newtype($4, $6)) }
+      { mkexp $startpos $endpos (Pexp_newtype($4, $6)) }
   | MATCH seq_expr WITH opt_bar match_cases
-      { mkexp $startpos($1) $endpos($1) (Pexp_match($2, List.rev $5)) }
+      { mkexp $startpos $endpos (Pexp_match($2, List.rev $5)) }
   | MATCH_LWT seq_expr WITH opt_bar match_cases
-      { let expr = mkexp $startpos($1) $endpos($1)
+      { let expr = mkexp $startpos $endpos
           (Pexp_match(Fake.app Fake.un_lwt $2, List.rev $5)) in
         Fake.app Fake.in_lwt expr }
   | TRY seq_expr WITH opt_bar match_cases
-      { mkexp $startpos($1) $endpos($1) (Pexp_try($2, List.rev $5)) }
+      { mkexp $startpos $endpos (Pexp_try($2, List.rev $5)) }
   | TRY seq_expr WITH error
       { syntax_error() }
   | TRY_LWT seq_expr WITH opt_bar match_cases
-      { mkexp $startpos($1) $endpos($1) (Pexp_try(Fake.app Fake.in_lwt $2, List.rev $5)) }
+      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.in_lwt $2, List.rev $5)) }
   | TRY_LWT seq_expr FINALLY_LWT seq_expr
       { Fake.app (Fake.app Fake.finally' $2) $4 }
   | TRY_LWT seq_expr WITH error
       { syntax_error() }
   | TRY_LWT seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
-      { let expr = mkexp $startpos($1) $endpos($1)
+      { let expr = mkexp $startpos $endpos
           (Pexp_try (Fake.app Fake.in_lwt $2, List.rev $5)) in
         Fake.app (Fake.app Fake.finally' expr) $7 }
   | expr_comma_list %prec below_COMMA
-      { mkexp $startpos($1) $endpos($1) (Pexp_tuple(List.rev $1)) }
+      { mkexp $startpos $endpos (Pexp_tuple(List.rev $1)) }
   | constr_longident simple_expr %prec below_SHARP
-      { mkexp $startpos($1) $endpos($1) (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, Some $2, false)) }
+      { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, Some $2, false)) }
   | name_tag simple_expr %prec below_SHARP
-      { mkexp $startpos($1) $endpos($1) (Pexp_variant($1, Some $2)) }
+      { mkexp $startpos $endpos (Pexp_variant($1, Some $2)) }
   | IF seq_expr THEN expr ELSE expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_ifthenelse($2, $4, Some $6)) }
+      { mkexp $startpos $endpos (Pexp_ifthenelse($2, $4, Some $6)) }
   | IF seq_expr THEN expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_ifthenelse($2, $4, None)) }
+      { mkexp $startpos $endpos (Pexp_ifthenelse($2, $4, None)) }
   | WHILE seq_expr DO seq_expr DONE
-      { mkexp $startpos($1) $endpos($1) (Pexp_while($2, $4)) }
+      { mkexp $startpos $endpos (Pexp_while($2, $4)) }
   | WHILE_LWT seq_expr DO seq_expr DONE
-      { mkexp $startpos($1) $endpos($1) (Pexp_while(Fake.(app un_lwt $2), Fake.(app unit_lwt $4))) }
+      { mkexp $startpos $endpos (Pexp_while(Fake.(app un_lwt $2), Fake.(app unit_lwt $4))) }
   | FOR val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
-      { mkexp $startpos($1) $endpos($1) (Pexp_for(mkrhs $startpos($2) $endpos($2) $2, $4, $6, $5, $8)) }
+      { mkexp $startpos $endpos (Pexp_for(mkrhs $startpos($2) $endpos($2) $2, $4, $6, $5, $8)) }
   | FOR_LWT val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
-      { let expr = mkexp $startpos($1) $endpos($1)
+      { let expr = mkexp $startpos $endpos
           (Pexp_for(mkrhs $startpos($2) $endpos($2) $2,
             Fake.(app un_lwt $4),
             Fake.(app un_lwt $6), $5,
             Fake.(app unit_lwt $8))) in
         Fake.(app to_lwt expr) }
   | FOR_LWT pattern IN seq_expr DO seq_expr DONE
-      { mkexp $startpos($1) $endpos($1)
+      { mkexp $startpos $endpos
           (Pexp_let (Nonrecursive, [$2,Fake.(app un_stream $4)], Fake.(app unit_lwt $6))) }
   | expr COLONCOLON expr
-      { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos($1) $endpos($1) (Pexp_tuple[$1;$3])) (symbol_rloc $startpos($1) $endpos($1) ) }
+      { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) (symbol_rloc $startpos $endpos ) }
   | LPAREN COLONCOLON RPAREN LPAREN expr COMMA expr RPAREN
-      { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos($1) $endpos($1) (Pexp_tuple[$5;$7])) (symbol_rloc $startpos($1) $endpos($1) ) }
+      { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos $endpos (Pexp_tuple[$5;$7])) (symbol_rloc $startpos $endpos ) }
   | expr INFIXOP0 expr
       { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) $2 $3 }
   | expr INFIXOP1 expr
@@ -1137,37 +1137,39 @@ expr:
   | additive expr %prec prec_unary_plus
       { mkuplus $startpos($1) $endpos($1)  $1 $2 }
   | simple_expr DOT label_longident LESSMINUS expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_setfield($1, mkrhs $startpos($3) $endpos($3) $3, $5)) }
+      { mkexp $startpos $endpos (Pexp_setfield($1, mkrhs $startpos($3) $endpos($3) $3, $5)) }
   | simple_expr DOT LPAREN seq_expr RPAREN LESSMINUS expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_apply(ghexp $startpos($1) $endpos($1) (Pexp_ident(array_function "Array" "set")),
-                         ["",$1; "",$4; "",$7])) }
+      { mkexp $startpos $endpos
+          (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "Array" "set")),
+                      ["",$1; "",$4; "",$7])) }
   | simple_expr DOT LBRACKET seq_expr RBRACKET LESSMINUS expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_apply(ghexp $startpos($1) $endpos($1) (Pexp_ident(array_function "String" "set")),
-                         ["",$1; "",$4; "",$7])) }
+      { mkexp $startpos $endpos 
+          (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "String" "set")),
+                      ["",$1; "",$4; "",$7])) }
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
-      { bigarray_set $startpos($1) $endpos($1) $1 $4 $7 }
+      { bigarray_set $startpos($1) $endpos($7) $1 $4 $7 }
   | label LESSMINUS expr
-      { mkexp $startpos($1) $endpos($1) (Pexp_setinstvar(mkrhs $startpos($1) $endpos($1) $1, $3)) }
+      { mkexp $startpos $endpos (Pexp_setinstvar(mkrhs $startpos($1) $endpos($1) $1, $3)) }
   | ASSERT simple_expr %prec below_SHARP
-      { mkassert $startpos($1) $endpos($1)  $2 }
+      { mkassert $startpos $endpos  $2 }
   | LAZY simple_expr %prec below_SHARP
-      { mkexp $startpos($1) $endpos($1)  (Pexp_lazy ($2)) }
+      { mkexp $startpos $endpos  (Pexp_lazy ($2)) }
   | OBJECT class_structure END
-      { mkexp $startpos($1) $endpos($1)  (Pexp_object($2)) }
+      { mkexp $startpos $endpos  (Pexp_object($2)) }
   | OBJECT class_structure error
       { unclosed "object" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3) }
 ;
 simple_expr:
     val_longident
-      { mkexp $startpos($1) $endpos($1) (Pexp_ident (mkrhs $startpos($1) $endpos($1) $1)) }
+      { mkexp $startpos $endpos (Pexp_ident (mkrhs $startpos($1) $endpos($1) $1)) }
   | RAISE_LWT 
-      { mkexp $startpos($1) $endpos($1) (Pexp_ident (mkrhs $startpos($1) $endpos($1) Fake.raise_lwt')) }
+      { mkexp $startpos $endpos (Pexp_ident (mkrhs $startpos($1) $endpos($1) Fake.raise_lwt')) }
   | constant
-      { mkexp $startpos($1) $endpos($1) (Pexp_constant $1) }
+      { mkexp $startpos $endpos (Pexp_constant $1) }
   | constr_longident %prec prec_constant_constructor
-      { mkexp $startpos($1) $endpos($1) (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, None, false)) }
+      { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, None, false)) }
   | name_tag %prec prec_constant_constructor
-      { mkexp $startpos($1) $endpos($1) (Pexp_variant($1, None)) }
+      { mkexp $startpos $endpos (Pexp_variant($1, None)) }
   | LPAREN seq_expr RPAREN
       { reloc_exp $startpos($1) $endpos($1)  $2 }
   | LPAREN seq_expr error
