@@ -131,6 +131,14 @@
 %token WITH
 %token <string * Location.t> COMMENT
 
+%token LET_LWT
+%token RAISE_LWT
+%token TRY_LWT
+%token MATCH_LWT
+%token FINALLY_LWT
+%token FOR_LWT
+%token WHILE_LWT
+
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved
@@ -668,6 +676,8 @@ expr:
       { () }
   | LET rec_flag let_bindings IN seq_expr
       { () }
+  | LET_LWT rec_flag let_bindings IN seq_expr
+      { () }
   | LET MODULE UIDENT enter module_binding leave IN seq_expr
       { () }
   | LET OPEN mod_longident IN seq_expr
@@ -680,7 +690,15 @@ expr:
       { () }
   | MATCH seq_expr WITH opt_bar match_cases
       { () }
+  | MATCH_LWT seq_expr WITH opt_bar match_cases
+      { () }
   | TRY seq_expr WITH opt_bar match_cases
+      { () }
+  | TRY_LWT seq_expr WITH opt_bar match_cases
+      { () }
+  | TRY_LWT seq_expr FINALLY_LWT seq_expr
+      { () }
+  | TRY_LWT seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
       { () }
   (* | TRY seq_expr WITH error
       { () } *)
@@ -696,7 +714,13 @@ expr:
       { () }
   | WHILE seq_expr DO seq_expr DONE
       { () }
+  | WHILE_LWT seq_expr DO seq_expr DONE
+      { () }
   | FOR val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
+      { () }
+  | FOR_LWT val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
+      { () }
+  | FOR_LWT pattern IN seq_expr DO seq_expr DONE
       { () }
   | expr COLONCOLON expr
       { () }
@@ -763,6 +787,8 @@ expr:
 ;
 simple_expr:
     val_longident
+      { () }
+  | RAISE_LWT
       { () }
   | constant
       { () }

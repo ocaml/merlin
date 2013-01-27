@@ -111,6 +111,13 @@ let token_to_string =
     | WHILE -> "WHILE"
     | WITH -> "WITH"
     | COMMENT (s,_) -> "COMMENT(" ^ String.escaped s ^ ")"
+    | LET_LWT -> "LET_LWT"
+    | RAISE_LWT -> "RAISE_LWT"
+    | TRY_LWT -> "TRY_LWT"
+    | FINALLY_LWT -> "FINALLY_LWT"
+    | MATCH_LWT -> "MATCH_LWT"
+    | FOR_LWT -> "FOR_LWT"
+    | WHILE_LWT -> "WHILE_LWT"
 
 let print_tokens ?(who="") f a =
   let t = f a in

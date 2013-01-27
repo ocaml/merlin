@@ -94,10 +94,13 @@ let keyword_table =
     "asr", INFIXOP4("asr");
 
     (* HACK: lwt extensions *)
-    (* more general than raise_lwt/try_lwt, but
-       acceptable approximations ... *)
-    "raise_lwt", (LIDENT "raise");  
-    "try_lwt", TRY;
+    "lwt", LET_LWT;
+    "raise_lwt", RAISE_LWT;  
+    "try_lwt", TRY_LWT;
+    "match_lwt", MATCH_LWT;
+    "finally", FINALLY_LWT;
+    "for_lwt", FOR_LWT;
+    "while_lwt", WHILE_LWT;
 ]
 
 (* To buffer string literals *)

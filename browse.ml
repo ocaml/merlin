@@ -102,7 +102,7 @@ struct
     in
     aux sum
   
-  let signature_of_env env =
+  (*let signature_of_env env =
     let open Types in
     let sg = ref [] in
     let append item = sg := item :: !sg in
@@ -139,7 +139,7 @@ struct
     in
     let summary = Env.summary env in
     aux summary;
-    Typemod.simplify_signature (!sg)
+    Typemod.simplify_signature (!sg)*)
 end
 
 module Typedtree =

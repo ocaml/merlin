@@ -3,11 +3,15 @@ type item = Chunk.sync * state
 type sync = item History.sync
 type t = item History.t
 
-let initial_env = Lazy.from_fun Compile.initial_env
+let initial_env = 
+  let cenv = Lazy.from_fun Compile.initial_env in
+  fun () ->
+    let env = Lazy.force cenv in
+    Extensions.register env
 
 let value t =
   match History.prev t with
-    | None -> (Lazy.force initial_env, [], [])
+    | None -> (initial_env (), [], [])
     | Some (_,item) -> item
 
 let env   t = let v,_,_ = value t in v
