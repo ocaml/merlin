@@ -138,10 +138,11 @@ let command_type : command = fun state -> function
   | [`String "at" ; jpos] ->
     let `Line (ln,cl) = Outline_utils.pos_of_json jpos in
     let trees = Typer.trees state.types in
-    begin
-      try
-        List.iter begin fun (tstr,tsg) ->
-          List.iter begin fun sg ->
+    begin try
+      List.iter
+      begin fun (tstr,tsg) ->
+        List.iter
+        begin fun sg ->
           match Browse.signature_loc sg with
             | Some loc when Browse.compare_loc (ln,cl) loc < 0 ->
                 raise Not_found
@@ -380,7 +381,11 @@ let command_errors : command = fun state -> function
       state, `List [`String "errors" ; `List (Error_report.to_jsons (List.rev exns)) ]
   | _ -> invalid_arguments ()
 
-let command_dump : command = fun state -> function
+let command_dump : command =
+  (*let pr_item_desc item =
+    (List.rev_map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk item))
+  in*)
+  fun state -> function
   | [`String "env"] ->
       let sg = Browse.Env.signature_of_env (Typer.env state.types) in
       let aux item =
@@ -412,8 +417,11 @@ let command_dump : command = fun state -> function
           | None -> `String content
       in
       state, `List [`String "env" ; `List (List.map aux sg)]
-  | [`String "chunks"] ->
-      state, `List (List.rev_map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk (Chunk.item state.chunks)))
+  (*| [`String "chunks"] ->
+      state, `List (pr_item_desc (Chunk.item state.chunks))
+  | [`String "types" ; `String "chunks"] ->
+      state, `List (List.rev_map (fun item -> `List (pr_item_desc item))
+                                 (Typer.chunks state.types))*)
   | _ -> invalid_arguments ()
 
 (* Browsing *)

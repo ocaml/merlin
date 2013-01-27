@@ -1,7 +1,6 @@
 type item_desc =
-  | Root
-  | Definition of Parsetree.structure_item Location.loc * item_desc
-  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr * item_desc
+  | Definition of Parsetree.structure_item Location.loc
+  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
 
 type item = Outline.sync * item_desc
 type sync = item History.sync
@@ -10,18 +9,17 @@ type t = item History.t
 exception Malformed_module
 exception Invalid_chunk
 
-let empty = Root
-
 let eof_lexer _ = Chunk_parser.EOF
 let fail_lexer _ = failwith "lexer ended"
 let fallback_lexer = eof_lexer
 
 let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 
-let rec dump_chunk = function
-  | Root -> ["root", 0]
-  | Definition (d,t) -> ("definition", line d) :: dump_chunk t
-  | Module_opening (l,s,_,t) -> ("opening " ^ s.Location.txt, line s) :: dump_chunk t
+let dump_chunk = List.map
+  begin function
+  | Definition d -> ("definition", line d)
+  | Module_opening (l,s,_) -> ("opening " ^ s.Location.txt, line s)
+  end
 
 let fake_tokens tokens f =
   let tokens = ref tokens in
@@ -35,7 +33,7 @@ let fake_tokens tokens f =
           t
       | _ -> f lexbuf
 
-let sync_step chunk tokens t =
+let sync_step chunk tokens sync t =
   match chunk with
     | Outline_utils.Enter_module ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
@@ -46,39 +44,9 @@ let sync_step chunk tokens t =
           (Chunk_parser.top_structure_item lexer (Lexing.from_string "")).Location.txt
         with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-              Module_opening (pstr_loc, s, m, t)
+              History.insert (sync, Module_opening (pstr_loc, s, m)) t
           | _ -> assert false
         end
-        (* run structure_item parser on tokens, appending END EOF *)
-    | Outline_utils.Leave_module ->
-        (* reconstitute module from t *)
-        let rec gather_defs defs = function
-          | Root -> raise Malformed_module
-          | Definition (d,t) -> gather_defs (d.Location.txt :: defs) t
-          | Module_opening (loc,s,m,t) ->
-              let open Parsetree in
-              let rec subst_structure e =
-                let pmod_desc = match e.pmod_desc with
-                  | Pmod_structure _ ->
-                      Pmod_structure defs
-                  | Pmod_functor (s,t,e) ->
-                      Pmod_functor (s,t,subst_structure e)
-                  | Pmod_constraint (e,t) ->
-                      Pmod_constraint (subst_structure e, t)
-                  | Pmod_apply  _ | Pmod_unpack _ | Pmod_ident  _ -> assert false
-                in
-                { e with pmod_desc }
-              in
-              let loc = match tokens with
-                  | (_,_,p) :: _ -> { loc with Location.loc_end = p }
-                  | [] -> loc
-              in
-              Definition (Location.mkloc {
-                pstr_desc = Pstr_module (s, subst_structure m);
-                pstr_loc  = loc
-              } loc, t)
-        in
-        gather_defs [] t
     | Outline_utils.Definition ->
         (* run structure_item parser on tokens, appending EOF *)
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
@@ -86,15 +54,44 @@ let sync_step chunk tokens t =
         in
         let lexer = Chunk_parser_utils.print_tokens ~who:"chunk" lexer in
         let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-        Definition (def, t)
+        History.insert (sync, Definition def) t
 
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> t
     | Outline_utils.Rollback -> raise Invalid_chunk
 
-let item chunks = 
-  match History.prev chunks with
-    | Some (last_sync, t) -> t
-    | None -> Root
+    | Outline_utils.Leave_module ->
+        (* reconstitute module from t *)
+        let rec rewind_defs defs t =
+          match History.backward t with
+          | Some ((_,Definition d), t') -> rewind_defs (d.Location.txt :: defs) t'
+          | Some ((_,Module_opening (loc,s,m)), t') -> loc,s,m,defs,t'
+          | None -> raise Malformed_module
+        in
+        let loc,s,m,defs,t = rewind_defs [] t in
+        let open Parsetree in
+        let rec subst_structure e =
+          let pmod_desc = match e.pmod_desc with
+            | Pmod_structure _ ->
+                Pmod_structure defs
+            | Pmod_functor (s,t,e) ->
+                Pmod_functor (s,t,subst_structure e)
+            | Pmod_constraint (e,t) ->
+                Pmod_constraint (subst_structure e, t)
+            | Pmod_apply  _ | Pmod_unpack _ | Pmod_ident  _ -> assert false
+          in
+          { e with pmod_desc }
+        in
+        let loc = match tokens with
+            | (_,_,p) :: _ -> { loc with Location.loc_end = p }
+            | [] -> loc
+        in
+        History.insert
+          (sync,
+           Definition (Location.mkloc {
+             pstr_desc = Pstr_module (s, subst_structure m);
+             pstr_loc  = loc
+           } loc))
+          t
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
@@ -102,20 +99,16 @@ let sync outlines chunks =
   (* Drop out of sync items *)
   let chunks, out_of_sync = History.split chunks in
   (* Process last items *) 
-  let item = item chunks in
-  let rec aux outlines chunks item =
+  let rec aux outlines chunks =
     match History.forward outlines with
-      | None -> chunks, item
+      | None -> chunks
       | Some ((filter,chunk,data,exns),outlines') ->
           (*prerr_endline "SYNC PARSER";*)
           match
-            try Some (sync_step chunk data item)
+            try Some (sync_step chunk data (History.Sync.at outlines') chunks)
             with Syntaxerr.Error _ -> None
           with              
-            | Some item ->
-                let chunks = History.insert (History.Sync.at outlines', item) chunks in
-                aux outlines' chunks item
-            | None -> aux outlines' chunks item
+            | Some chunks -> aux outlines' chunks
+            | None -> aux outlines' chunks
   in
-  let chunks, item = aux outlines chunks item in
-  chunks
+  aux outlines chunks

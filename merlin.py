@@ -95,7 +95,7 @@ def current_changes():
   changes = vim.eval("changes_string").split("\n")
   changes = filter(None,map(changes_pattern.match,changes))
   if len(changes) == 0:
-    return (None, None)
+    return None
   # find current position in change list
   position = 0
   for change in changes:
