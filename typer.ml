@@ -18,7 +18,7 @@ let env   t = let v,_,_ = value t in v
 let trees t = let _,v,_ = value t in v
 let exns  t = let _,_,v = value t in v
 
-let rec append_step chunk_item sync t =
+let append_step chunks chunk_item t =
   let env, trees, exns = value t in
   match chunk_item with
     | Chunk.Module_opening (_,_,pmod) ->
@@ -53,18 +53,28 @@ let rec append_step chunk_item sync t =
           in
           let tymod = Typemod.type_module env pmod in
           match find_structure tymod with
-            | None -> t
-            | Some md -> History.insert (sync, (md.mod_env, trees, exns)) t
+            | None -> None
+            | Some md -> Some (md.mod_env, trees, exns)
         with exn -> 
-          History.insert (sync, (env, trees, exn :: exns)) t
+          Some (env, trees, exn :: exns)
         end
 
     | Chunk.Definition d ->
         begin try
           let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
-          History.insert (sync, (env, (tstr,tsg) :: trees, exns)) t
+          Some (env, (tstr,tsg) :: trees, exns)
         with exn -> 
-          History.insert (sync, (env, trees, exn :: exns)) t
+          Some (env, trees, exn :: exns)
+        end
+
+    | Chunk.Module_closing (d,offset) ->
+        begin try
+          let _, t = History.Sync.rewind fst (History.seek_offset offset chunks) t in
+          let env, trees, exns = value t in
+          let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
+          Some (env, (tstr,tsg) :: trees, exns)
+        with exn -> 
+          Some (env, trees, exn :: exns)
         end
 
 let sync chunks t =
@@ -77,7 +87,8 @@ let sync chunks t =
     match History.forward chunks with
       | None -> t
       | Some ((_,chunk_item),chunks') ->
-          let t = append_step chunk_item (History.Sync.at chunks') t in 
-          aux chunks' t
+          match append_step chunks chunk_item t with
+            | Some item -> aux chunks' (History.insert (History.Sync.at chunks', item) t)
+            | None -> aux chunks' t
   in
   aux chunks t

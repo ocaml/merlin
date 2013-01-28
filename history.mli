@@ -32,8 +32,9 @@ val prevs : 'a t -> 'a list
 val nexts : 'a t -> 'a list
 
 (** offset : "date", c'est-à-dire nombre d'éléments dans le passé *)
-val offset : 'a t -> int
-val seek_offset : int -> 'a t -> 'a t
+type offset = int
+val offset : 'a t -> offset
+val seek_offset : offset -> 'a t -> 'a t
 
 (** Se déplace d'une étape en avant, renvoie l'élément et l'historique décalé
   * s'il existe *)

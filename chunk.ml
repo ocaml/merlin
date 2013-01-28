@@ -1,6 +1,7 @@
 type item_desc =
   | Definition of Parsetree.structure_item Location.loc
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
+  | Module_closing of Parsetree.structure_item Location.loc * History.offset
 
 type item = Outline.sync * item_desc
 type sync = item History.sync
@@ -19,6 +20,7 @@ let dump_chunk = List.map
   begin function
   | Definition d -> ("definition", line d)
   | Module_opening (l,s,_) -> ("opening " ^ s.Location.txt, line s)
+  | Module_closing (d,offset) -> ("closing after " ^ string_of_int offset, line d)
   end
 
 let fake_tokens tokens f =
@@ -33,8 +35,8 @@ let fake_tokens tokens f =
           t
       | _ -> f lexbuf
 
-let sync_step chunk tokens sync t =
-  match chunk with
+let sync_step outline tokens t =
+  match outline with
     | Outline_utils.Enter_module ->
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
@@ -44,7 +46,7 @@ let sync_step chunk tokens sync t =
           (Chunk_parser.top_structure_item lexer (Lexing.from_string "")).Location.txt
         with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-              History.insert (sync, Module_opening (pstr_loc, s, m)) t
+              Some (Module_opening (pstr_loc, s, m))
           | _ -> assert false
         end
     | Outline_utils.Definition ->
@@ -54,9 +56,9 @@ let sync_step chunk tokens sync t =
         in
         let lexer = Chunk_parser_utils.print_tokens ~who:"chunk" lexer in
         let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-        History.insert (sync, Definition def) t
+        Some (Definition def)
 
-    | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> t
+    | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> None
     | Outline_utils.Rollback -> raise Invalid_chunk
 
     | Outline_utils.Leave_module ->
@@ -64,6 +66,8 @@ let sync_step chunk tokens sync t =
         let rec rewind_defs defs t =
           match History.backward t with
           | Some ((_,Definition d), t') -> rewind_defs (d.Location.txt :: defs) t'
+          | Some ((_,Module_closing (d,offset)), t') ->
+              rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
           | Some ((_,Module_opening (loc,s,m)), t') -> loc,s,m,defs,t'
           | None -> raise Malformed_module
         in
@@ -85,27 +89,30 @@ let sync_step chunk tokens sync t =
             | (_,_,p) :: _ -> { loc with Location.loc_end = p }
             | [] -> loc
         in
-        History.insert
-          (sync,
-           Definition (Location.mkloc {
-             pstr_desc = Pstr_module (s, subst_structure m);
-             pstr_loc  = loc
-           } loc))
-          t
+        Some (Module_closing (
+                Location.mkloc {
+                  pstr_desc = Pstr_module (s, subst_structure m);
+                  pstr_loc  = loc
+                } loc,
+                History.offset t
+             ))
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
   let outlines, chunks = History.Sync.rewind fst outlines chunks in
   (* Drop out of sync items *)
-  let chunks, out_of_sync = History.split chunks in
+  let chunks = History.cutoff chunks in
   (* Process last items *) 
   let rec aux outlines chunks =
     match History.forward outlines with
       | None -> chunks
-      | Some ((filter,chunk,data,exns),outlines') ->
+      | Some ((filter,outline,data,exns),outlines') ->
           (*prerr_endline "SYNC PARSER";*)
           match
-            try Some (sync_step chunk data (History.Sync.at outlines') chunks)
+            try 
+              match sync_step outline data chunks with
+                | Some chunk -> Some (History.insert (History.Sync.at outlines', chunk) chunks)
+                | None -> None
             with Syntaxerr.Error _ -> None
           with              
             | Some chunks -> aux outlines' chunks

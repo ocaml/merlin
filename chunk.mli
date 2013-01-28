@@ -1,15 +1,20 @@
 type item_desc =
   | Definition of Parsetree.structure_item Location.loc
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
+    (* Quand un module est refermé, il faut remonter en certain nombre de
+     * définitions dans l'historique (celle du module et des sous modules) :
+     * l'offset indique la dernière définition avant le Module_opening
+     * correspondant *)
+  | Module_closing of Parsetree.structure_item Location.loc * History.offset
 
-type item = Outline.sync * item_desc
-type sync = item History.sync
-type t = item History.t
+and item = Outline.sync * item_desc
+and sync = item History.sync
+and t = item History.t
 
 exception Malformed_module
 exception Invalid_chunk
 
-val sync_step : Outline_utils.kind -> Outline.token list -> Outline.sync -> t -> t
+val sync_step : Outline_utils.kind -> Outline.token list -> t -> item_desc option
 val sync : Outline.t -> t -> t
 
 val dump_chunk : item_desc list -> (string * int) list

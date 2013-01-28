@@ -24,6 +24,7 @@ let next = function
 
 let nexts { next } = next
 
+type offset = int
 let offset { pos } = pos
   
 let move amount h =
