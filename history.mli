@@ -1,7 +1,6 @@
-(** {1 Historique}
+(** {0 Historique}
   * Une sorte de zipper : maintient et synchronise des listes des différentes
   * version d'un objet.
-  * où curseur
   *)
 type 'a t
 

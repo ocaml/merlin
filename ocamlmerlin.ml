@@ -1,6 +1,42 @@
-(* Add whatever -I options have been specified on the command line,
-     but keep the directories that user code linked in with ocamlmktop
-     may have added to load_path. *)
+(** # Pipeline de Merlin
+  * 
+  * Le toplevel lit et écrit des objets JSON sur stdin/stdout.
+  * Chaque objet lu correspond à une commande au format suivant:
+  * ["nom_de_la_commande",arg1,arg2]
+  * Les arguments dépendent de la commande. La commande ["help"] liste les
+  * commandes reconnues.
+  * Le type d'objet renvoyé est propre à chaque commande (à nettoyer).
+  *
+  * ## Présentation rapide
+  * L'utilisation normale passe par la commande "tell" qui prend le code source
+  * en argument:
+  *   > ["tell","let foo = 42"]
+  *   < true
+  * La commande ["seek","position",{"line":int,"col":int}] permet de déplacer le
+  * curseur. Une session est composée d'une suite de tell/seek pour synchroniser
+  * le buffer avec l'éditeur, et de commande d'interrogations.
+  *
+  * ## Analyse incrémentale.
+  *
+  * La pipeline de traitement du code source est la suivante :
+  *   outline_lexer | outline_parser | chunk_parser | typer
+  * Aux détails d'implantation près :
+  *   outline_lexer  : Lexing.buffer -> Chunk_parser.token
+  *   outline_parser : Chunk_parser.token -> Outline_utils.kind * Chunk_parser.token list
+  *   chunk_parser   : Outline_utils.kind * Chunk_parser.token list -> Parsetree.structure
+  *   typer          : Parsetree.structure -> Env.t * Typedtree.structure
+  *
+  * La mise à jour incrémentale de ces traitements est implanté à l'aide des
+  * objets History.t
+  * L'historique est juste une liste avec un curseur qui délimite passé, version
+  * actuelle et futur éventuel.
+  * Le passé contient les constructions déjà validées (penser au surlignage de Coqide),
+  * avec l'élément directement à gauche du curseur identifiant la dernière définition,
+  * et le futur éventuel représente les définitions déjà analysées, qui seront
+  * jetées si la définition sous le curseur est modifiée.
+  *)
+
+(* Gestion des chemins *)
 let default_build_paths =
   let open Config in
   lazy (List.rev !Clflags.include_dirs @ !load_path @ [Filename.concat standard_library "camlp4"])
@@ -465,6 +501,7 @@ let _ = List.iter (fun (a,b,c) -> Hashtbl.add commands a (b,c))
     `String "List every command with synopsis and small description";
 ]
 
+(** Mimic other Caml tools, entry point *)
 let print_version () =
   Printf.printf "The Merlin toolkit for Ocaml version %s\n" Sys.ocaml_version;
   exit 0

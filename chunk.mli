@@ -10,7 +10,6 @@ exception Malformed_module
 exception Invalid_chunk
 
 val sync_step : Outline_utils.kind -> Outline.token list -> Outline.sync -> t -> t
-
 val sync : Outline.t -> t -> t
 
 val dump_chunk : item_desc list -> (string * int) list

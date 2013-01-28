@@ -1,0 +1,5 @@
+S .
+B _build
+PKG compiler-libs
+PKG findlib
+PKG yojson

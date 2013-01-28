@@ -1,0 +1,33 @@
+Installing Merlin
+=================
+
+Compilation
+-----------
+
+Needed: OCaml 4, ocamlfind, ocamlbuild, yojson, menhir
+
+Merlin requires OCaml >=4.00.1 (may work with newer versions, but it is tightly
+bound to compiler internals).
+Then ensures that "yojson" and "menhir" are installed and are registered in ocamlfind.
+
+$ make
+
+Don't panic if you encounters a lot of warnings. This is due to a workaround a bug in
+ocamlbuild not passing arguments to menhir.
+  ( http://caml.inria.fr/mantis/view.php?id=5763 )
+
+Installation
+------------
+
+Rename ocamlmerlin.native to ocamlmerlin and makes it accessible from the PATH.
+
+Setting-up vim
+--------------
+
+Once ocamlmerlin can be found in vim's PATH, just
+  :source merlin.vim
+
+How-to use
+==========
+
+TODO

@@ -1,3 +1,5 @@
+(* Maintient un environnement de type synchronisé avec un historique de chunks *)
+
 type state = Env.t * (Typedtree.structure * Types.signature) list * exn list
 type item = Chunk.sync * state
 type sync = item History.sync
