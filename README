@@ -12,8 +12,8 @@ Then ensures that "yojson" and "menhir" are installed and are registered in ocam
 
 $ make
 
-Don't panic if you encounters a lot of warnings. This is due to a workaround a bug in
-ocamlbuild not passing arguments to menhir.
+Don't panic if you encounters a lot of warnings. It's to workaround an ocamlbuild
+bug causing it to not pass arguments to menhir.
   ( http://caml.inria.fr/mantis/view.php?id=5763 )
 
 Installation

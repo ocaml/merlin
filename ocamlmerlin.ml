@@ -202,6 +202,47 @@ let command_type : command = fun state -> function
 
   | _ -> invalid_arguments ()
 
+let length_lessthan n l = 
+  let rec aux i = function
+    | _ :: xs when i < n -> aux (succ i) xs
+    | [] -> Some i
+    | _ -> None
+  in
+  aux 0 l
+
+let rec mod_smallerthan n m =
+  if n < 0 then None
+  else
+  let open Types in
+  match m with
+  | Mty_ident _ -> Some 1
+  | Mty_signature s ->
+      begin match length_lessthan n s with
+        | None -> None
+        | Some n' ->
+            List.fold_left
+            begin fun acc item ->
+              match acc, item with
+                | None, _ -> None
+                | Some n', _ when n' > n -> None
+                | Some n1, Sig_modtype (_,Modtype_manifest m)
+                | Some n1, Sig_module (_,m,_) ->
+                    (match mod_smallerthan (n - n1) m with
+                       | Some n2 -> Some (n1 + n2)
+                       | None -> None)
+                | Some n', _ -> Some (succ n')
+            end (Some 0) s
+      end
+  | Mty_functor (_,m1,m2) ->
+      begin
+        match mod_smallerthan n m1 with
+        | None -> None
+        | Some n1 ->
+        match mod_smallerthan (n - n1) m2 with
+        | None -> None
+        | Some n2 -> Some (n1 + n2)
+      end
+
 let command_complete : command = fun state -> function
   | [`String "prefix" ; `String prefix] ->
     begin
@@ -219,7 +260,12 @@ let command_complete : command = fun state -> function
           match ty with
           | `Value v -> Printtyp.value_description ident ppf v; "value"
           | `Cons c  -> "constructor"
-          | `Mod m   -> (if exact then Printtyp.modtype ppf m); "module"
+          | `Mod m   -> 
+              (if exact then
+                 match mod_smallerthan 200 m with
+                   | None -> ()
+                   | Some _ -> Printtyp.modtype ppf m
+              ); "module"
         in
         let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
         `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]

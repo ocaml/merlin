@@ -34,7 +34,7 @@ exception Chunk of kind * Lexing.position
   * - "let x = 5" : raise Chunk (Definition,_)
   * - "and …" : raise Chunk (Rollback,_)
   * - filter_first := 1
-  * - "let x = 5 and y = 5" : raise Chunk(Definition,_)
+  * - "let x = 5 and y = 6" : raise Chunk(Definition,_)
   * -            ^ une exception Chunk(Definition) est ignorée ici
   *                et filter_first décrémenté
   *)
