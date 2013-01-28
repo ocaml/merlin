@@ -388,7 +388,7 @@ let command_dump : command =
     (List.rev_map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk item))
   in*)
   fun state -> function
-  (*| [`String "env"] ->
+  | [`String "env"] ->
       let sg = Browse.Env.signature_of_env (Typer.env state.types) in
       let aux item =
         let ppf, to_string = Outline_utils.ppf_to_string () in
@@ -402,7 +402,7 @@ let command_dump : command =
               `List [`String loc ; `String content]
           | None -> `String content
       in
-      state, `List [`String "env" ; `List (List.map aux sg)]*)
+      state, `List [`String "env" ; `List (List.map aux sg)]
   | [`String "sig"] ->
       let trees = Typer.trees state.types in
       let sg = List.flatten (List.map snd trees) in

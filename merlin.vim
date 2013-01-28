@@ -112,6 +112,7 @@ endfunction
 
 function! merlin#Register()
   command! -buffer -nargs=0 TypeOf call merlin#TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
+  command! -buffer -nargs=0 TypeCursor py merlin.vim_type_cursor()
   command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath call merlin#Path("build", <q-args>)
@@ -120,8 +121,8 @@ function! merlin#Register()
   command! -buffer -nargs=0 Refresh  py merlin.vim_refresh()
   command! -buffer -complete=custom,merlin#PackageList -nargs=* Use  call merlin#Use(<f-args>)
   setlocal omnifunc=merlin#Complete
-  map <buffer> <LocalLeader>t :TypeOf
-  vmap <buffer> <LocalLeader>t :TypeOfSel
+  map <buffer> <LocalLeader>t :TypeOf<return>
+  vmap <buffer> <LocalLeader>t :TypeOfSel<return>
 endfunction
 
 function! merlin#LoadProject()

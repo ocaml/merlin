@@ -102,17 +102,15 @@ struct
     in
     aux sum
   
-  (*let signature_of_env env =
+  let signature_of_env env =
     let open Types in
     let sg = ref [] in
     let append item = sg := item :: !sg in
-    let initial_summary = Env.summary (Lazy.force Typer.initial_env) in
     let rec aux summary =
-      if summary == initial_summary
-      then ()
-      else
       match summary with
       | Env.Env_empty -> ()
+      (* Stop when encoutering extensions *)
+      | Env.Env_module (_,i,_) when i = Extensions.ident -> ()
       | Env.Env_value (s,i,v) ->
           append (Sig_value (i,v));
           aux s
@@ -139,7 +137,7 @@ struct
     in
     let summary = Env.summary env in
     aux summary;
-    Typemod.simplify_signature (!sg)*)
+    Typemod.simplify_signature (!sg)
 end
 
 module Typedtree =

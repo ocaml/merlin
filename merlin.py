@@ -170,8 +170,7 @@ def sync_buffer_to(to_line, to_col):
   command_seek_scope()
 
 def sync_buffer():
-  cw = vim.current.window
-  to_line, to_col = cw.cursor
+  to_line, to_col = vim.current.window.cursor
   sync_buffer_to(to_line, to_col)
 
 def sync_full_buffer():
@@ -184,7 +183,7 @@ def vim_complete(base, vimvar):
   for prop in props:
     vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
       (prop['name'].replace("'", "''")
-      ,prop['desc'].replace("'", "''")
+      ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
       ,prop['info'].replace("'", "''")
       ,prop['kind'][:1].upper().replace("'", "''")
       ))
@@ -223,6 +222,15 @@ def vim_type_expr(expr):
     print (expr + " : " + ty[1])
   elif ty[0] == "error":
     print (expr + " : " + ty[1]['message'])
+
+def vim_type_cursor():
+  to_line, to_col = vim.current.window.cursor
+  sync_buffer()
+  ty = send_command("type", "at", {'line':to_line,'col':to_col})
+  if ty[0] == "type":
+    print (ty[1])
+  elif ty[0] == "error":
+    print (ty[1]['message'])
 
 # Resubmit current buffer
 def vim_reload():

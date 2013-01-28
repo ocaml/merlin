@@ -29,6 +29,6 @@ let register env =
   let fakes, tops =
     List.split (List.map (fun (fake,top) -> try_type fake, try_type top) registry)
   in
-  let env = Env.add_module ident (Types.Mty_signature (List.concat fakes)) env in
   let env = Env.add_signature (List.concat tops) env in
+  let env = Env.add_module ident (Types.Mty_signature (List.concat fakes)) env in
   env
