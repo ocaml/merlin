@@ -65,11 +65,17 @@ let initial_state = {
 let commands = Hashtbl.create 17
 
 let main_loop () =
-  (*let log_input json = json in
-  let log_output json = json in*)
-  let logger = open_out "merlin.debug.log" in
-  let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
-  let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
+  let log_input, log_output =
+    try
+      let logger = open_out (Sys.getenv "MERLIN_LOG") in
+      let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
+      let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
+      log_input, log_output
+    with Not_found ->
+      let log_input json = json in
+      let log_output json = json in
+      log_input, log_output
+  in
   let input  = Json.stream_from_channel stdin in
   let output =
     let out_json = Json.to_channel stdout in
@@ -206,14 +212,14 @@ let command_complete : command = fun state -> function
           (l' >= l) && (String.sub s 0 l = p)
       in
       let env = Typer.env state.types in
-      let fmt name path ty =
+      let fmt ~exact name path ty =
         let ident = Ident.create (Path.last path) in
         let ppf, to_string = Outline_utils.ppf_to_string () in
         let kind =
           match ty with
           | `Value v -> Printtyp.value_description ident ppf v; "value"
           | `Cons c  -> "constructor"
-          | `Mod m   -> (*Printtyp.modtype ppf m;*) "module"
+          | `Mod m   -> (if exact then Printtyp.modtype ppf m); "module"
         in
         let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
         `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
@@ -225,17 +231,17 @@ let command_complete : command = fun state -> function
         let compl = [] in
         let compl = Env.fold_values
           (fun name path v compl ->
-             if valid name then (fmt name path (`Value v)) :: compl else compl)
+             if valid name then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl else compl)
           path env compl
         in
         let compl = Env.fold_constructors
           (fun name path v compl ->
-             if valid name then (fmt name path (`Cons v)) :: compl else compl)
+             if valid name then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl else compl)
           path env compl
         in
         let compl = Env.fold_modules
           (fun name path v compl ->
-             if valid name then (fmt name path (`Mod v)) :: compl else compl)
+             if valid name then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl else compl)
           path env compl
         in
         compl
