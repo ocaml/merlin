@@ -325,7 +325,8 @@ structure_item:
       { emit_top Definition $endpos }
   | CLASS TYPE class_type_declarations
       { emit_top Definition $endpos }
-  | INCLUDE module_expr
+      (*FIXME: Should be possible to handle INCLUDE interactively *)
+  | INCLUDE enter module_expr leave 
       { emit_top Definition $endpos }
 ;
 module_binding:

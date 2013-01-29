@@ -37,6 +37,7 @@ def send_command(*cmd):
 last_buffer = None
 last_changes = None
 last_line = 0
+shadow_buffer = []
 
 def clear_cache():
   global last_changes, last_line, last_buffer
@@ -99,7 +100,7 @@ def current_changes():
   # find current position in change list
   position = 0
   for change in changes:
-    position = position + 1
+    position += 1
     if change.group(1):
       break
   # drop everything after cursor
