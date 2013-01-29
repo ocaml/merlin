@@ -3,6 +3,7 @@ import json
 import vim
 import re
 import os
+from collections import Counter
 
 ######## COMMUNICATION
 
@@ -40,10 +41,11 @@ last_line = 0
 shadow_buffer = []
 
 def clear_cache():
-  global last_changes, last_line, last_buffer
+  global last_changes, last_line, last_buffer, shadow_buffer
   last_buffer = None
   last_changes = None
   last_line = 0
+  shadow_buffer = []
 
 ######## BASIC COMMANDS
 
@@ -106,7 +108,7 @@ def current_changes():
   # drop everything after cursor
   changes = changes[:position]
   # convert to canonical format (list of (line,col,contents) tuples)
-  return set(map(extract_change,changes))
+  return Counter(map(extract_change,changes))
 
 # find_changes(state) returns a pair (new_state, to_sync)
 # Where:
@@ -122,45 +124,62 @@ def find_changes(previous = None):
   if len(changes) == 0:
     return (changes, [])
 
-  return (changes, changes.difference(previous))
+  return (changes, (changes - previous).elements())
 
 def find_line(changes):
   if changes == None:
     return 0
-  if len(changes) == 0:
-    return None
-  return reduce(min, map((lambda (lin,col,txt): lin), changes))
+  if changes:
+    return (min(lin) for lin,col,txt in changes)
+  return None
 
 def sync_buffer_to(to_line, to_col):
-  global last_changes, last_line, last_buffer
+  global last_changes, last_line, last_buffer, shadow_buffer
   cb = vim.current.buffer
-  # hack : append the height of the window to parse definitions near cursor
-  max_line = min(to_line + 80, len(cb))
+  # hack : append some lines to parse definitions near cursor
+  max_line = min(to_line + 120, len(cb))
 
   # reset if necessary
   current_buffer = (cb.name, cb.number)
   if current_buffer == last_buffer:
     (last_changes, sync) = find_changes(last_changes)
+    # find changes
     if sync != None:
       sync_line = find_line(sync)
       if sync_line != None:
         last_line = min(last_line, sync_line)
 
+    # sync shadow buffer
+    last_line = min(last_line,len(shadow_buffer), len(cb))
+    # heuristic: find 3 equal lines in a row
+    in_a_row = 0
+    while last_line > 0 and in_a_row < 3:
+      last_line -= 1
+      if shadow_buffer[last_line] == cb[last_line]:
+        if shadow_buffer[last_line] != "":
+          in_a_row += 1
+      else:
+        in_a_row = 0
+    last_line += 1 + in_a_row
+
     if last_line <= max_line:
       if last_line <= 1:
         content = cb[:max_line]
+        shadow_buffer = content
         command_reset()
         command_tell("\n".join(content))
       else:
         line, col = command_seek(last_line,0)
         rest    = cb[line-1][col:]
         content = cb[line:max_line]
+        shadow_buffer[line-1:] = cb[line-1:max_line]
         command_tell(rest + "\n" + "\n".join(content))
   else:
     command_reset()
     (last_changes, sync) = find_changes(None)
     last_buffer = current_buffer
     content = cb[:max_line]
+    shadow_buffer = content
     command_tell("\n".join(content))
 
   last_line = max_line + 1
