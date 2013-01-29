@@ -129,8 +129,9 @@ def find_changes(previous = None):
 def find_line(changes):
   if changes == None:
     return 0
-  if changes:
-    return (min(lin) for lin,col,txt in changes)
+  lines = set(lin for lin,col,txt in changes) 
+  if lines:
+    return min(lines)
   return None
 
 def sync_buffer_to(to_line, to_col):
@@ -148,7 +149,6 @@ def sync_buffer_to(to_line, to_col):
       sync_line = find_line(sync)
       if sync_line != None:
         last_line = min(last_line, sync_line)
-
     # sync shadow buffer
     last_line = min(last_line,len(shadow_buffer), len(cb))
     # heuristic: find 3 equal lines in a row
@@ -161,7 +161,6 @@ def sync_buffer_to(to_line, to_col):
       else:
         in_a_row = 0
     last_line += 1 + in_a_row
-
     if last_line <= max_line:
       if last_line <= 1:
         content = cb[:max_line]
