@@ -13,6 +13,10 @@ au FileType omlet call merlin#Register()
 " file being edited or in a parent directory (max depth of 3).
 au FileType omlet call merlin#LoadProject()
 
+" Flush buffer and dependencies after :make
+" Note: reloading Core can take some time
+au QuickFixCmdPost * call merlin#Reload()
+
 " Enable Syntastic support
 " Note that Syntastic may come with a default mode for ocaml.
 " You may have to tweak your configuration accordingly.

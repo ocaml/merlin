@@ -111,16 +111,27 @@ function! merlin#SyntasticGetLocList()
   return l:errors 
 endfunction
 
+function! merlin#Restart()
+  py merlin.vim_restart()
+endfunction
+
+function! merlin#Reload()
+  py if merlin.vim_is_loaded(): merlin.vim_reload()
+endfunction
+
+function! merlin#ReloadBuffer()
+  py merlin.vim_reload_buffer()
+endfunction
+
 function! merlin#Register()
   command! -buffer -nargs=0 TypeOf call merlin#TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
   command! -buffer -nargs=0 TypeCursor py merlin.vim_type_cursor()
   command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
-  command! -buffer -nargs=? -complete=dir BuildPath call merlin#Path("build", <q-args>)
-  command! -buffer -nargs=0 Reload   py merlin.vim_reload()
-  command! -buffer -nargs=0 Restart  py merlin.vim_restart()
-  command! -buffer -nargs=0 Refresh  py merlin.vim_refresh()
-  command! -buffer -complete=custom,merlin#PackageList -nargs=* Use  call merlin#Use(<f-args>)
+  command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
+  command! -buffer -nargs=0 Reload       call merlin#Reload()
+  command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
+  command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
   setlocal omnifunc=merlin#Complete
   map <buffer> <LocalLeader>t :TypeOf<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>

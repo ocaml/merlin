@@ -345,39 +345,51 @@ let command_seek : command = fun state -> function
       return_position pos
   | [`String "end_of_definition"] ->
       failwith "TODO"
+  | [`String "end"] ->
+      let outlines = History.seek (fun _ -> 1) state.outlines in
+      let chunks = History.Sync.right fst outlines state.chunks in
+      let types  = History.Sync.right fst chunks state.types in
+      let pos =
+        match Outline.last_position outlines with
+          | Some p -> p
+          | None -> initial_state.pos
+      in
+      { tokens = [] ; outlines ; chunks ; types ; pos },
+      return_position pos
+
   | [`String "maximize_scope"] ->
-        let rec find_end_of_module (depth,outlines) =
-          if depth = 0 then (0,outlines)
-          else
-          match History.forward outlines with
-            | None -> (depth,outlines)
-            | Some ((_,Outline_utils.Leave_module,_,_),outlines') ->
-                find_end_of_module (pred depth, outlines')
-            | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
-                find_end_of_module (succ depth, outlines')
-            | Some (_,outlines') -> find_end_of_module (depth,outlines')
-        in
-        let rec loop outlines =
-          match History.forward outlines with
-            | None -> outlines
-            | Some ((_,Outline_utils.Leave_module,_,_),_) ->
-                outlines
-            | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
-                (match find_end_of_module (1,outlines') with
-                  | (0,outlines'') -> outlines''
-                  | _ -> outlines)
-            | Some (_,outlines') -> loop outlines'
-        in 
-        let outlines = loop state.outlines in
-        let chunks = History.Sync.right fst outlines state.chunks in
-        let types  = History.Sync.right fst chunks state.types in
-        let pos =
-          match Outline.last_position outlines with
-            | Some p -> p
-            | None -> initial_state.pos
-        in
-        { tokens = [] ; outlines ; chunks ; types ; pos },
-        return_position pos
+      let rec find_end_of_module (depth,outlines) =
+        if depth = 0 then (0,outlines)
+        else
+        match History.forward outlines with
+          | None -> (depth,outlines)
+          | Some ((_,Outline_utils.Leave_module,_,_),outlines') ->
+              find_end_of_module (pred depth, outlines')
+          | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
+              find_end_of_module (succ depth, outlines')
+          | Some (_,outlines') -> find_end_of_module (depth,outlines')
+      in
+      let rec loop outlines =
+        match History.forward outlines with
+          | None -> outlines
+          | Some ((_,Outline_utils.Leave_module,_,_),_) ->
+              outlines
+          | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
+              (match find_end_of_module (1,outlines') with
+                | (0,outlines'') -> outlines''
+                | _ -> outlines)
+          | Some (_,outlines') -> loop outlines'
+      in 
+      let outlines = loop state.outlines in
+      let chunks = History.Sync.right fst outlines state.chunks in
+      let types  = History.Sync.right fst chunks state.types in
+      let pos =
+        match Outline.last_position outlines with
+          | Some p -> p
+          | None -> initial_state.pos
+      in
+      { tokens = [] ; outlines ; chunks ; types ; pos },
+      return_position pos
   | _ -> invalid_arguments ()
 
 let command_reset : command = fun state -> function

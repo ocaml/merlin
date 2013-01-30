@@ -49,7 +49,7 @@ def clear_cache():
 
 ######## BASIC COMMANDS
 
-def command_refresh():
+def command_reload():
   return send_command("refresh")
 
 def command_reset():
@@ -79,6 +79,9 @@ def command_seek(line,col):
 
 def command_seek_scope():
   return send_command("seek", "maximize_scope")
+
+def command_seek_end():
+  return send_command("seek", "end")
 
 def command_complete(base):
   return send_command("complete","prefix",base)
@@ -252,15 +255,17 @@ def vim_type_cursor():
     print (ty[1]['message'])
 
 # Resubmit current buffer
-def vim_reload():
+def vim_reload_buffer():
   command_reset()
   clear_cache()
   sync_buffer()
 
 # Reload changed cmi files then retype all definitions
-def vim_refresh():
-  command_refresh()
-  sync_buffer()
+def vim_is_loaded():
+  return (mainpipe != None)
+
+def vim_reload():
+  command_reload()
 
 # Spawn a fresh new process
 def vim_restart():
