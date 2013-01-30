@@ -270,6 +270,8 @@ let command_complete : command = fun state -> function
                    | None -> ()
                    | Some _ -> Printtyp.modtype ppf m
               ); "module"
+          | `Typ t ->
+              Printtyp.type_declaration ident ppf t; "type"
         in
         let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
         `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
@@ -287,6 +289,11 @@ let command_complete : command = fun state -> function
         let compl = Env.fold_constructors
           (fun name path v compl ->
              if valid name then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl else compl)
+          path env compl
+        in
+        let compl = Env.fold_types
+          (fun name path v compl ->
+             if valid name then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl else compl)
           path env compl
         in
         let compl = Env.fold_modules

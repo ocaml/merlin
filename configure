@@ -1,15 +1,20 @@
 #!/bin/sh
 
 BIN_DIR=/usr/local/bin
+SHARE_DIR=/usr/local/share
 
 while [ -n "$1" ]; do
   case "$1" in
     --prefix)
       shift 1
       BIN_DIR="$1/bin"
+      SHARE_DIR="$1/share"
       ;;
-    --bin-dir)
+    --bindir)
       BIN_DIR="$1"
+      ;;
+    --sharedir)
+      SHARE_DIR="$1"
       ;;
   esac
   shift 1
@@ -19,17 +24,24 @@ cat <<END
 Merlin configuration
 --------------------
 
-Put "ocamlmerlin" binary in: $BIN_DIR
+Will install:
+  "ocamlmerlin" binary in: $BIN_DIR
+  vim mode in: $SHARE_DIR/ocamlmerlin/vim/
 
-Use ./configure [--prefix <dir> | --bin-dir <dir>] to adjust directories.
+You can use
+  ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>]
+to customize directories.
 END
 
-if [ -d "$BIN_DIR" ]; then
+if [ -d "$BIN_DIR"  -a -d "$SHARE_DIR" ]; then
   cat >Makefile.config <<END
 BIN_DIR=$BIN_DIR
+SHARE_DIR=$SHARE_DIR
 END
-  echo "Now, type 'make' to compile then 'make install' to install binary."
+  echo "Now, type 'make' to compile then 'make install'."
 else
-  echo "'$BIN_DIR' not found or not a directory. Please adjust configuration."
+  [ -d "$BIN_DIR" ] || echo "'$BIN_DIR' not found or not a directory."
+  [ -d "$SHARE_DIR" ] || echo "'$SHARE_DIR' not found or not a directory."
+  echo "Please check configuration."
   exit 1
 fi

@@ -22,7 +22,7 @@ def restart():
   try:
     mainpipe = subprocess.Popen(["ocamlmerlin"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
   except OSError as e:
-    print("Failed to execute merlin. Please ensure that merlin binary is in path and is executable.")
+    print("Failed to execute ocamlmerlin. Please ensure that ocamlmerlin binary is in path and is executable.")
     raise e
 
 def send_command(*cmd):

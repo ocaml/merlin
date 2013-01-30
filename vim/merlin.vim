@@ -29,6 +29,7 @@ if vim.eval("a:path") == "":
       print path
 else:
   path = vim.eval("fnamemodify(a:path,':p')")
+  print path
   merlin.send_command("path", "add", vim.eval("a:var"), vim.eval("a:path"))
 merlin.vim_reload()
 EOF
@@ -103,7 +104,7 @@ function! merlin#Complete(findstart,base)
   return {'words': l:props, 'refresh':'always'}
 endfunction
 
-function! SyntaxCheckers_omlet_GetLocList()
+function! merlin#SyntasticGetLocList()
   let l:errors = []
   py merlin.sync_full_buffer()
   py merlin.vim_loclist("l:errors")
@@ -131,6 +132,3 @@ endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList ML call merlin#FindFile("ml",<f-args>)
 command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile("mli",<f-args>)
-au FileType omlet call merlin#Register()
-au FileType omlet call merlin#LoadProject()
-
