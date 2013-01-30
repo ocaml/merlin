@@ -259,7 +259,11 @@ let command_complete : command = fun state -> function
         let kind =
           match ty with
           | `Value v -> Printtyp.value_description ident ppf v; "value"
-          | `Cons c  -> "constructor"
+          | `Cons c  -> 
+              Format.pp_print_string ppf name;
+              Format.pp_print_string ppf " : ";
+              Printtyp.type_expr ppf Types.({ level = 0 ; id = 0 ; desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple c.cstr_args}, c.cstr_res,Cok)});
+              "constructor"
           | `Mod m   -> 
               (if exact then
                  match mod_smallerthan 200 m with

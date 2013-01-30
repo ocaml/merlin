@@ -1,0 +1,35 @@
+#!/bin/sh
+
+BIN_DIR=/usr/local/bin
+
+while [ -n "$1" ]; do
+  case "$1" in
+    --prefix)
+      shift 1
+      BIN_DIR="$1/bin"
+      ;;
+    --bin-dir)
+      BIN_DIR="$1"
+      ;;
+  esac
+  shift 1
+done
+
+cat <<END
+Merlin configuration
+--------------------
+
+Put "ocamlmerlin" binary in: $BIN_DIR
+
+Use ./configure [--prefix <dir> | --bin-dir <dir>] to adjust directories.
+END
+
+if [ -d "$BIN_DIR" ]; then
+  cat >Makefile.config <<END
+BIN_DIR=$BIN_DIR
+END
+  echo "Now, type 'make' to compile then 'make install' to install binary."
+else
+  echo "'$BIN_DIR' not found or not a directory. Please adjust configuration."
+  exit 1
+fi
