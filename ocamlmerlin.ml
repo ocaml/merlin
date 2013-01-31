@@ -334,6 +334,10 @@ let command_seek : command = fun state -> function
   | [`String "position" ; jpos] ->
       let `Line (l,c) = Outline_utils.pos_of_json jpos in
       let outlines = Outline.seek_line (l,c) state.outlines in
+      let outlines = match History.backward outlines with
+        | Some ((_,Outline_utils.Partial_definitions _,_,_), o) -> o
+        | _ -> outlines
+      in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
       let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =

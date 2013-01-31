@@ -82,12 +82,10 @@ let get_offset, reset_get_offset =
 
 let enter_partial p =
   let offset = !get_offset p in
-  Printf.eprintf "enter_partial %d\n%!" offset;
   partial_definitions := (offset, []) :: !partial_definitions
 
 let leave_partial p =
   let end_offset = !get_offset p in
-  Printf.eprintf "leave_partial %d\n%!" end_offset;
   match !partial_definitions with
   | [] -> assert false
   | (start_offset,_) :: xs ->
@@ -99,7 +97,6 @@ let leave_partial p =
     partial_definitions := (prev_offset, def :: prev_defs) :: tail
 
 let commit_partial p =
-  prerr_endline "commit_partial";
   match !partial_definitions with
   | (start, def :: defs) :: tail ->
     partial_definitions := (start, defs) :: tail

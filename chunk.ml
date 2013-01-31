@@ -118,25 +118,12 @@ let sync_step outline tokens t =
           match defs, tokens with
             | _, [] -> []
             | (starto,endo) :: defs, _ ->
-                let original = (String.concat ":" 
-                     (List.map (fun (t,_,_) -> Chunk_parser_utils.token_to_string t) tokens)) 
-                in
                 let tokens = list_drop (starto - offset -1) tokens in
                 let def, tokens = list_split_n (endo - starto + 1) tokens in
-                let filtered = (String.concat ":" 
-                     (List.map (fun (t,_,_) -> Chunk_parser_utils.token_to_string t) def))
-                in
-                Printf.eprintf "span : %d-%d\n\t%s\n\t%s\n%!" starto endo original filtered;
                 def :: extract endo defs tokens
             | _ -> []
         in
         let defs = extract 0 defs tokens in
-        List.iter (fun tokens ->
-          let str = String.concat ", " 
-            (List.map (fun (t,_,_) -> Chunk_parser_utils.token_to_string t) tokens)
-          in
-          prerr_endline str;
-        ) defs;
         let parse_def tokens =
           let lexer = History.wrap_lexer (ref (History.of_list tokens))
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
