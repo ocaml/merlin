@@ -1,6 +1,9 @@
 (** {0 Outline parser}
   * Définititions auxiliaires utilisées par le parser d'outline *)
 
+type offset = History.offset
+type position = Lexing.position
+
 (** Les constructions du code source sont découpées en "chunk" de différentes
   * kinds. *)
 type kind =
@@ -11,6 +14,7 @@ type kind =
                   *         pour retrouver le /genre/ de définition *)
   | Done         (* EOF rencontré après une construction syntaxiquement correcte *)
   | Unterminated (* La construction syntaxique n'est pas terminée *)
+  | Partial_definitions of (offset * offset) list
   | Exception of exn (* Une exception est survenue dans le parser, à traiter en amont *)
 
 (** Le parser d'outline fonctionne par effet de bord :
@@ -25,7 +29,7 @@ type kind =
   * Le parser ne lève Chunk qu'après type, il faut réajouter le token type en
   * début de flux.
   *)
-exception Chunk of kind * Lexing.position
+exception Chunk of kind * position
 
 (** Si !filter_first > 0, le parser ne lève pas d'exception mais décrémente
   * filter_first. Cela permet d'implanter le rollback quand le code source est
@@ -57,15 +61,24 @@ val nesting : int ref
 val reset : rollback:int -> unit -> unit
 
 (** Augmente nesting *)
-val enter : unit -> unit
+val enter_sub : unit -> unit
 (** Décrémente nesting *)
-val leave : unit -> unit
+val leave_sub : unit -> unit
 (** Lève l'exception si !nesting = 0 et !filter_first = 0 *)
-val emit_top : kind -> Lexing.position -> unit
+val emit_top : kind -> position -> unit
+
+val partial_definitions : (offset * (offset * offset) list) list ref
+
+val get_offset : (position -> offset) ref
+val reset_get_offset : unit -> unit
+
+val enter_partial : position -> unit
+val leave_partial : position -> unit
+val commit_partial : position -> unit
 
 (** {0 Routines auxiliaires d'entrée/sortie } *)
 
-val pos_to_json : Lexing.position -> Json.json
+val pos_to_json : position -> Json.json
 val pos_of_json : Json.json -> [ `Line of (int * int) ]
 
 (** Simplifie la construction d'un formatter vers une chaîne *)

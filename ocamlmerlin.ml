@@ -495,9 +495,9 @@ let command_errors : command = fun state -> function
   | _ -> invalid_arguments ()
 
 let command_dump : command =
-  (*let pr_item_desc item =
-    (List.rev_map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk item))
-  in*)
+  let pr_item_desc items =
+    (List.map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk items))
+  in
   fun state -> function
   | [`String "env"] ->
       let sg = Browse.Env.signature_of_env (Typer.env state.types) in
@@ -530,9 +530,9 @@ let command_dump : command =
           | None -> `String content
       in
       state, `List [`String "env" ; `List (List.map aux sg)]
-  (*| [`String "chunks"] ->
-      state, `List (pr_item_desc (Chunk.item state.chunks))
-  | [`String "types" ; `String "chunks"] ->
+  | [`String "chunks"] ->
+      state, `List (pr_item_desc state.chunks)
+  (*| [`String "types" ; `String "chunks"] ->
       state, `List (List.rev_map (fun item -> `List (pr_item_desc item))
                                  (Typer.chunks state.types))*)
   | _ -> invalid_arguments ()

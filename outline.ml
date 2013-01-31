@@ -3,14 +3,20 @@ type token = Chunk_parser.token History.loc
 let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
   let origin = History.current_pos history in
   let history' = ref history in
+  Outline_utils.get_offset :=
+    (fun p ->
+       let history = match History.backward !history' with
+         | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) -> 
+             history
+         | _ -> history
+       in
+       History.offset history);
   let chunk_content h =
-    let open History in
     (* Drop end of history *)
-    let end_of_chunk, _ = split h in
-    let at_origin = seek_pos origin end_of_chunk in
+    let end_of_chunk = History.cutoff h in
+    let at_origin = History.seek_pos origin end_of_chunk in
     (* Drop beginning of history *)
-    let _, chunk_content = split at_origin in
-    History.nexts chunk_content
+    History.nexts at_origin
   in
   try
     let filter = function
@@ -28,7 +34,7 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
           let history = !history' in
           let history = match History.backward history with
             | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) -> 
-                (*prerr_endline "refill";*) history
+                history
             | _ -> history
           in  
           history, c, chunk_content history
@@ -40,7 +46,18 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
           Outline_utils.Unterminated,
           []
         end
-    | exn -> 
+    | Outline_parser.Error ->
+        begin
+          let defs = List.rev_map 
+            (fun (_,defs) -> List.rev defs) 
+            !Outline_utils.partial_definitions
+          in
+          let defs = List.flatten defs in
+          Outline_utils.partial_definitions := [];
+          let history = !history' in
+          history, Outline_utils.Partial_definitions defs, chunk_content history
+        end
+    | exn ->
         history, Outline_utils.Exception exn, []
 
 type item = int * Outline_utils.kind * token list * exn list
@@ -86,6 +103,7 @@ let parse_step ?(rollback=0) ?bufpos ?(exns=[]) ~goteof history buf =
     ~lexer:Outline_lexer.token
     ?bufpos ~goteof buf
   in
+  Outline_utils.reset_get_offset ();
   let exns = match kind with
     | Outline_utils.Exception exn -> exn :: exns | _ -> exns
   in

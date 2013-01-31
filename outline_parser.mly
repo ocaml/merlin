@@ -264,15 +264,15 @@ module_expr:
       { () } *)
   | FUNCTOR LPAREN UIDENT COLON module_type RPAREN MINUSGREATER module_expr
       { () }
-  | module_expr LPAREN enter module_expr leave RPAREN
+  | module_expr LPAREN enter_sub module_expr leave_sub RPAREN
       { () }
   (* | module_expr LPAREN module_expr error
       { () } *)
-  | LPAREN enter module_expr leave COLON module_type RPAREN
+  | LPAREN enter_sub module_expr leave_sub COLON module_type RPAREN
       { () }
   (* | LPAREN module_expr COLON module_type error
       { () } *)
-  | LPAREN enter module_expr leave RPAREN
+  | LPAREN enter_sub module_expr leave_sub RPAREN
       { () }
   (* | LPAREN module_expr error
       { () } *)
@@ -326,7 +326,7 @@ structure_item:
   | CLASS TYPE class_type_declarations
       { emit_top Definition $endpos }
       (*FIXME: Should be possible to handle INCLUDE interactively *)
-  | INCLUDE enter module_expr leave 
+  | INCLUDE enter_sub module_expr leave_sub 
       { emit_top Definition $endpos }
 ;
 module_binding:
@@ -359,7 +359,7 @@ module_type:
       { () }
   | module_type WITH with_constraints
       { () }
-  | MODULE TYPE OF enter module_expr leave
+  | MODULE TYPE OF enter_sub module_expr leave_sub
       { () }
   | LPAREN module_type RPAREN
       { () }
@@ -670,18 +670,27 @@ let_pattern:
   | pattern COLON core_type
       { () }
 ;
+
+(* Partially correct expressions support *)
+enter_partial:
+  | { enter_partial $startpos }
+leave_partial:
+  | { leave_partial $startpos }
+commit_partial:
+  | { commit_partial $startpos }
+
 expr:
     simple_expr %prec below_SHARP
       { () }
   | simple_expr simple_labeled_expr_list
       { () }
-  | LET rec_flag let_bindings IN seq_expr
+  | LET enter_partial rec_flag let_bindings leave_partial IN seq_expr commit_partial
       { () }
   | LET_LWT rec_flag let_bindings IN seq_expr
       { () }
-  | LET MODULE UIDENT enter module_binding leave IN seq_expr
+  | LET MODULE UIDENT enter_sub module_binding leave_sub IN seq_expr
       { () }
-  | LET OPEN mod_longident IN seq_expr
+  | LET OPEN enter_partial mod_longident leave_partial IN seq_expr commit_partial
       { () }
   | FUNCTION opt_bar match_cases
       { () }
@@ -855,17 +864,17 @@ simple_expr:
       { () }
   | simple_expr SHARP label
       { () }
-  | LPAREN MODULE enter module_expr leave RPAREN 
+  | LPAREN MODULE enter_sub module_expr leave_sub RPAREN 
       { () }
-  | LPAREN MODULE enter module_expr leave COLON package_type RPAREN
+  | LPAREN MODULE enter_sub module_expr leave_sub COLON package_type RPAREN
       { () }
-  (* | LPAREN MODULE enter module_expr leave COLON error
+  (* | LPAREN MODULE enter_sub module_expr leave_sub COLON error
       { () } *)
 ;
-enter:
-  { enter () }
-leave:
-  { leave () }
+enter_sub:
+  { enter_sub () }
+leave_sub:
+  { leave_sub () }
 
 simple_labeled_expr_list:
     labeled_simple_expr
