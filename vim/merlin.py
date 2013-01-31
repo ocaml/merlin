@@ -291,6 +291,8 @@ def load_project(directory,maxdepth=3):
         if split != []:
           command = split[0]
           tail = split[1]
+          if command and command[0] == '#':
+            continue
           if tail != "":
             tail = os.path.join(directory,tail)
           if command == "S":
