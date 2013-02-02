@@ -1,5 +1,10 @@
 S .
+S parsing
+S typing
+S utils
 B _build
-PKG compiler-libs
+B _build/parsing
+B _build/typing
+B _build/utils
 PKG findlib
 PKG yojson

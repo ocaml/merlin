@@ -220,14 +220,13 @@ def vim_loclist(vimvar):
     ty = 'w'
     if error['type'] == 'type':
       ty = 'e'
+    lnum = 1
+    col = 1
+    if error.has_key('start'):
+        lnum = error['start']['line']
+        lcol = error['start']['col'] + 1
     vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
-      (bufnr
-      ,error['start']['line']
-      ,error['start']['col'] + 1
-      ,nr
-      ,error['message'].replace("'", "''")
-      ,ty
-      ))
+        (bufnr, lnum, lcol, nr, error['message'].replace("'", "''"), ty))
     nr = nr + 1
     vim.command("call add(%s, l:tmp)" % vimvar)
 
