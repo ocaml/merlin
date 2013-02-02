@@ -1,5 +1,5 @@
 true: use_menhir, use_menhir_table
 
-true: package(menhirLib), package(compiler-libs.bytecomp), package(yojson), package(findlib)
+true: package(menhirLib), package(yojson), package(findlib)
 
 <outline_parser.*>: ext_tokens

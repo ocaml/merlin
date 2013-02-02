@@ -162,7 +162,7 @@ let command_type : command = fun state -> function
   | [`String "expression"; `String expr] ->
       let lexbuf = Lexing.from_string expr in
       let env = Typer.env state.types in
-      let expression = Chunk_parser.top_expr Outline_lexer.token lexbuf in
+      let expression = Chunk_parser.top_expr Lexer.token lexbuf in
       let (str, sg, _) =
         Typemod.type_toplevel_phrase env
           Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
@@ -626,9 +626,25 @@ module Options = Main_args.Make_bytetop_options (struct
   let anonymous s = unexpected_argument s
 end);;
 
+(* Initialize the search path.
+   The current directory is always searched first,
+   then the directories specified with the -I option (in command-line order),
+   then the standard library directory (unless the -nostdlib option is given).
+ *)
+
+let init_path () =
+  let dirs =
+    if !Clflags.use_threads then "+threads" :: !Clflags.include_dirs
+    else if !Clflags.use_vmthreads then "+vmthreads" :: !Clflags.include_dirs
+    else !Clflags.include_dirs in
+  let exp_dirs =
+    List.map (Misc.expand_directory Config.standard_library) dirs in
+  Config.load_path := "" :: List.rev_append exp_dirs (Clflags.std_include_dir ());
+  Env.reset_cache ()
+
 let main () =
   Arg.parse Options.list unexpected_argument "TODO";
-  Compile.init_path ();
+  init_path ();
   set_default_path ();
   Findlib.init ();
   main_loop ()

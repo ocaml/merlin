@@ -219,6 +219,7 @@ The precedences must be listed from low to high.
 implementation:
   | top_structure EOF                    { () }
   | AND                                  { emit_top Rollback $endpos }
+  | BAR                                  { emit_top Rollback $endpos }
   | EOF                                  { () }
   | SEMISEMI                             { () }
 ;

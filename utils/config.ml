@@ -10,14 +10,14 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: config.mlp 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id: config.mlbuild 12511 2012-05-30 13:29:48Z lefessan $ *)
 
 (***********************************************************************)
 (**                                                                   **)
 (**               WARNING WARNING WARNING                             **)
 (**                                                                   **)
 (** When you change this file, you must make the parallel change      **)
-(** in config.mlbuild                                                 **)
+(** in config.mlp                                                     **)
 (**                                                                   **)
 (***********************************************************************)
 
@@ -25,7 +25,9 @@
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 
-let standard_library_default = "/home/def/Local/opam/4.00.1+tk86/lib/ocaml"
+module C = Myocamlbuild_config
+
+let standard_library_default = C.libdir
 
 let standard_library =
   try
@@ -36,19 +38,28 @@ let standard_library =
   with Not_found ->
     standard_library_default
 
-let standard_runtime = "/home/def/Local/opam/4.00.1+tk86/bin/ocamlrun"
-let ccomp_type = "cc"
-let bytecomp_c_compiler = "gcc -fno-defer-pop -Wall -DUSE_INTERP_RESULT -D_FILE_OFFSET_BITS=64 -D_REENTRANT -fPIC"
-let bytecomp_c_libraries = "-lm  -ldl -lcurses -lpthread"
-let native_c_compiler = "gcc -Wall -DUSE_INTERP_RESULT -D_FILE_OFFSET_BITS=64 -D_REENTRANT"
-let native_c_libraries = "-lm  -ldl"
-let native_pack_linker = "ld -r  -o "
-let ranlib = "ranlib"
-let ar = "ar"
-let cc_profile = "-pg"
-let mkdll = "gcc -shared"
-let mkexe = "gcc"
-let mkmaindll = "gcc -shared"
+let windows =
+  match Sys.os_type with
+  | "Win32" -> true
+  |    _    -> false
+
+let sf = Printf.sprintf
+
+let standard_runtime =
+  if windows then "ocamlrun"
+  else C.bindir^"/ocamlrun"
+let ccomp_type = C.ccomptype
+let bytecomp_c_compiler = sf "%s %s %s" C.bytecc C.bytecccompopts C.sharedcccompopts
+let bytecomp_c_libraries = C.bytecclibs
+let native_c_compiler = sf "%s %s" C.nativecc C.nativecccompopts
+let native_c_libraries = C.nativecclibs
+let native_pack_linker = C.packld
+let ranlib = C.ranlibcmd
+let ar = C.arcmd
+let cc_profile = C.cc_profile
+let mkdll = C.mkdll
+let mkexe = C.mkexe
+let mkmaindll = C.mkmaindll
 
 let exec_magic_number = "Caml1999X008"
 and cmi_magic_number = "Caml1999I014"
@@ -74,17 +85,17 @@ let lazy_tag = 246
 let max_young_wosize = 256
 let stack_threshold = 256 (* see byterun/config.h *)
 
-let architecture = "amd64"
-let model = "default"
-let system = "linux"
+let architecture = C.arch
+let model = C.model
+let system = C.system
 
-let asm = "as"
-let asm_cfi_supported = true
+let asm = C.asm
+let asm_cfi_supported = C.asm_cfi_supported
 
-let ext_obj = ".o"
-let ext_asm = ".s"
-let ext_lib = ".a"
-let ext_dll = ".so"
+let ext_obj = C.ext_obj
+let ext_asm = C.ext_asm
+let ext_lib = C.ext_lib
+let ext_dll = C.ext_dll
 
 let default_executable_name =
   match Sys.os_type with
@@ -92,7 +103,7 @@ let default_executable_name =
   | "Win32" | "Cygwin" -> "camlprog.exe"
   | _ -> "camlprog"
 
-let systhread_supported = true;;
+let systhread_supported = C.systhread_support;;
 
 let print_config oc =
   let p name valu = Printf.fprintf oc "%s: %s\n" name valu in

@@ -2,7 +2,7 @@ let ident = Ident.create "_"
 
 let parse_sig str =
   let buf = Lexing.from_string str in
-  Chunk_parser.interface Outline_lexer.token buf
+  Chunk_parser.interface Lexer.token buf
 
 let type_sig env sg =
   let sg = Typemod.transl_signature env sg in

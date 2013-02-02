@@ -100,7 +100,7 @@ let parse_step ?(rollback=0) ?bufpos ?(exns=[]) ~goteof history buf =
   Outline_utils.reset ~rollback ();
   let history', kind, tokens = parse_with history
     ~parser:Outline_parser.implementation
-    ~lexer:Outline_lexer.token
+    ~lexer:Lexer.token
     ?bufpos ~goteof buf
   in
   Outline_utils.reset_get_offset ();

@@ -1,12 +1,11 @@
 include Makefile.config
 
 TARGET = ocamlmerlin.native
-FAKE_CMI = location asttypes longident parsetree clflags syntaxerr misc
 
 DISTNAME = ocamlmerlin-0.1
 DISTFILES = configure Makefile README _tags vim $(wildcard *.ml *.mli *.mly *.mll)
 
-OCAMLBUILD=ocamlbuild
+OCAMLBUILD=ocamlbuild -Is .,typing,parsing,utils
 OCAMLFIND=ocamlfind
 
 all: $(TARGET)

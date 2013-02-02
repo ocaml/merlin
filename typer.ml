@@ -3,8 +3,17 @@ type item = Chunk.sync * state
 type sync = item History.sync
 type t = item History.t
 
+let initial_env () =
+  Ident.reinit();
+  try
+    if !Clflags.nopervasives
+    then Env.initial
+    else Env.open_pers_signature "Pervasives" Env.initial
+  with Not_found ->
+    failwith "cannot open pervasives.cmi"
+
 let initial_env = 
-  let cenv = Lazy.from_fun Compile.initial_env in
+  let cenv = Lazy.from_fun initial_env in
   fun () ->
     let env = Lazy.force cenv in
     Extensions.register env
@@ -67,8 +76,17 @@ let append_step chunks chunk_item t =
           Some (env, trees, exn :: exns)
         end
 
-    | Chunk.Partial_definitions _ ->
-        None
+    | Chunk.Partial_definitions ds ->
+        let (_,trees,exns) =
+          List.fold_left
+          begin fun (env,trees,exns) d ->
+          try
+            let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
+            (env, (tstr,tsg) :: trees, exns)
+          with exn -> (env, trees, exn :: exns)
+          end (env,trees,exns) ds
+        in
+        Some (env, trees, exns)
 
     | Chunk.Module_closing (d,offset) ->
         begin try
