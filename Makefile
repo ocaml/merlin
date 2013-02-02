@@ -1,7 +1,7 @@
 include Makefile.config
 
 TARGET = ocamlmerlin.native
-FAKE_CMI = location,asttypes,longident,parsetree,clflags,syntaxerr,misc
+FAKE_CMI = location asttypes longident parsetree clflags syntaxerr misc
 
 DISTNAME = ocamlmerlin-0.1
 DISTFILES = configure Makefile README _tags vim $(wildcard *.ml *.mli *.mly *.mll)
@@ -28,7 +28,7 @@ distclean: clean
 
 fake-ocamlbuild:
 	mkdir -p _build/
-	ln -sf $$($(OCAMLFIND) query compiler-libs.bytecomp)/{$(FAKE_CMI)}.cmi _build/
+    for cmi in $(FAKE_CMI); do ln -sf $$($(OCAMLFIND) query compiler-libs.bytecomp)/$$cmi.cmi _build/
 
 
 install: $(TARGET)
