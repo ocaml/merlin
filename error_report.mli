@@ -1,4 +1,6 @@
 (** {0 Mise en forme d'exceptions pour le reporting} *)
+exception Warning of Location.t * string
+val reset_warnings : unit -> exn list
 
 (** Le format d'une exception reconnue est :
   * {message: string, type: string, valid:true,

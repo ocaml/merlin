@@ -133,6 +133,7 @@ let command_tell : command = fun state -> function
       Env.reset_missing_cmis ();
       let goteof = ref false in
       let lexbuf = Lexing.from_string source in
+      let _ = Error_report.reset_warnings () in
       let rec loop state =
         let bufpos = ref state.pos in
         let outlines, chunks, types = 
@@ -153,7 +154,15 @@ let command_tell : command = fun state -> function
         then state'
         else loop state'
       in
-      loop state, `Bool true
+      let state = loop state in
+      let w = Error_report.reset_warnings () in
+      let state =
+        { state with
+          outlines = History.modify
+            (fun (r,k,t,e) -> (r,k,t, w @ e))
+            state.outlines
+        } in
+      state, `Bool true
   | _ -> invalid_arguments ()
 
 exception Found of Types.signature_item
@@ -243,16 +252,49 @@ let rec mod_smallerthan n m =
         | Some n2 -> Some (n1 + n2)
       end
 
-let command_complete : command = fun state -> function
-  | [`String "prefix" ; `String prefix] ->
-    begin
-      let has_prefix p =
-        let l = String.length p in
-        fun s ->
-          let l' = String.length s in
-          (l' >= l) && (String.sub s 0 l = p)
+let command_complete : command =
+  let has_prefix p =
+    let l = String.length p in
+    fun s ->
+      let l' = String.length s in
+      (l' >= l) && (String.sub s 0 l = p)
+  in
+  let complete_in_env env prefix = 
+    let fmt ~exact name path ty =
+      let ident = Ident.create (Path.last path) in
+      let ppf, to_string = Outline_utils.ppf_to_string () in
+      let kind =
+        match ty with
+        | `Value v -> Printtyp.value_description ident ppf v; "value"
+        | `Cons c  -> 
+            Format.pp_print_string ppf name;
+            Format.pp_print_string ppf " : ";
+            Printtyp.type_expr ppf Types.({ level = 0 ; id = 0 ; desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple c.cstr_args}, c.cstr_res,Cok)});
+            "constructor"
+        | `Mod m   -> 
+            (if exact then
+               match mod_smallerthan 200 m with
+                 | None -> ()
+                 | Some _ -> Printtyp.modtype ppf m
+            ); "module"
+        | `Typ t ->
+            Printtyp.type_declaration ident ppf t; "type"
       in
-      let env = Typer.env state.types in
+      let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
+      `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
+    in
+    let find ?path prefix compl =
+      let valid = has_prefix prefix in
+      (* Hack to prevent extensions namespace to leak *)
+      let valid name = name <> "_" && valid name in
+      let compl = [] in
+      let compl = Env.fold_values
+        (fun name path v compl ->
+           if valid name then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl else compl)
+        path env compl
+      in
+      let compl = Env.fold_constructors
+        (fun name path v compl ->
       let fmt ~exact name path ty =
         let ident = Ident.create (Path.last path) in
         let ppf, to_string = Outline_utils.ppf_to_string () in
@@ -324,7 +366,38 @@ let command_complete : command = fun state -> function
           let path = Longident.parse prefix in
           try_find ~path "" []*)
       in
+           if valid name then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl else compl)
+        path env compl
+      in
+      let compl = Env.fold_types
+        (fun name path v compl ->
+           if valid name then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl else compl)
+        path env compl
+      in
+      let compl = Env.fold_modules
+        (fun name path v compl ->
+           if valid name then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl else compl)
+        path env compl
+      in
+      compl
+    in
+    try
+      match Longident.parse prefix with
+        | Longident.Ldot (path,prefix) -> find ~path prefix []
+        | Longident.Lident prefix -> find prefix []
+        | _ -> find prefix []
+    with Not_found -> []
+  in
+  fun state -> function
+  | [`String "prefix" ; `String prefix] ->
+    begin
+      let env = Typer.env state.types in
+      let compl = complete_in_env env prefix in
       state, `List (List.rev compl)
+    end 
+  | [`String "prefix" ; `String prefix ; `String "at" ; pos ] ->
+    begin
+      failwith "TODO"
     end 
   | _ -> invalid_arguments ()
 
