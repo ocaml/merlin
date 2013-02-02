@@ -67,6 +67,9 @@ let append_step chunks chunk_item t =
           Some (env, trees, exn :: exns)
         end
 
+    | Chunk.Partial_definitions _ ->
+        None
+
     | Chunk.Module_closing (d,offset) ->
         begin try
           let _, t = History.Sync.rewind fst (History.seek_offset offset chunks) t in
