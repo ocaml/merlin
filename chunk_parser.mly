@@ -616,8 +616,10 @@ top_expr:
   | seq_expr EOF { $1 }
 ;
 top_structure:
-    structure_item                       { [$1] }
-  | structure_item top_structure         { $1 :: $2 }
+    structure_item                        { [$1] }
+  | extended_structure_item               { $1 }
+  | structure_item top_structure          { $1 :: $2 }
+  | extended_structure_item top_structure { $1 @ $2 }
 ;
 use_file:
     use_file_tail                        { $1 }
@@ -690,6 +692,38 @@ structure_tail:
 top_structure_item:
   | structure_item EOF 
   { mkloc $1 (symbol_rloc $startpos $endpos) }
+;
+
+extended_structure_item:
+  | TYPE type_declarations WITH LIDENT
+      { 
+        let mk_sexp_funs ty =
+          let open Fake in
+          let sexp_of_ = {
+            ident = "sexp_of_" ^ ty ;
+            typesig = `Arrow (`Named ([], ty), `Named ([], "Sexplib.Sexp.t")) ;
+            body = `Fun (["t"], `App (`Ident "Obj.magic", `Ident "t")) ;
+          }
+          and _of_sexp = {
+            ident = ty ^ "_of_sexp" ;
+            typesig = `Arrow (`Named ([], "Sexplib.Sexp.t"), `Named ([], ty)) ;
+            body = `Fun (["x"], `App (`Ident "Obj.magic", `Ident "x")) ;
+          }
+          in
+          `Let [ sexp_of_ ; _of_sexp ]
+        in
+        match $4 with (* UGLY UGLY UGLY *) (* but temporary, hopefully *)
+        | "sexp" ->
+          let type_names = (* TODO: get optional type parameters *)
+            List.rev_map (fun (loc_name, _) -> loc_name.txt) $2
+          in
+          let funs = List.map mk_sexp_funs type_names in
+          let ast = List.map Fake.translate_to_str funs in
+          mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
+        | _ ->
+          (* unrecognized extension, ignore it *)
+          [ mkstr $startpos $endpos (Pstr_type(List.rev $2)) ]
+      }
 ;
 
 structure_item:

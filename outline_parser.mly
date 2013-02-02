@@ -233,9 +233,11 @@ toplevel_phrase:
   | EOF                                  { () }
 ;
 top_structure:
-    structure_item                       { () }
-  | structure_item top_structure         { () }
-  | END                                  { emit_top Leave_module $endpos }
+    structure_item                        { () }
+  | extended_structure_item               { () }
+  | structure_item top_structure          { () }
+  | extended_structure_item top_structure { () }
+  | END                                   { emit_top Leave_module $endpos }
 ;
 use_file:
     use_file_tail                        { () }
@@ -303,6 +305,12 @@ structure_tail:
   | SEMISEMI structure_item structure_tail      { () }
   | structure_item structure_tail               { () }
 ;
+
+extended_structure_item:
+  | TYPE type_declarations WITH LIDENT
+      { emit_top Definition $endpos }
+;
+
 structure_item:
     LET rec_flag let_bindings
       { emit_top Definition $endpos }
