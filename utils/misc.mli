@@ -122,3 +122,19 @@ val thd3: 'a * 'b * 'c -> 'c
 val fst4: 'a * 'b * 'c * 'd -> 'a
 val snd4: 'a * 'b * 'c * 'd -> 'b
 val thd4: 'a * 'b * 'c * 'd -> 'c
+
+        (* [ppf_to_string ()] gives a fresh formatter and a function to easily
+         * gets its content as a string *)
+val ppf_to_string : unit -> Format.formatter * (unit -> string)
+
+        (* [lex_strings s f] makes a lexing buffer from the string [s]
+         * (like a Lexer.from_string) and call [f] to refill the buffer *)
+val lex_strings : string -> (unit -> string) -> Lexing.lexbuf
+
+        (* [length_lessthan n l] returns
+         *   Some (List.length l) if List.length l <= n
+         *   None otherwise *)
+val length_lessthan : int -> 'a list -> int option
+
+        (* [has_prefix p s] returns true iff p is a prefix of s *)
+val has_prefix : string -> string -> bool

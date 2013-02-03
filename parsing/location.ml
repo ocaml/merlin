@@ -273,14 +273,7 @@ let print_warning loc ppf w =
 
 let warnings = ref []
 let prerr_warning loc w =
-  let ppf, to_string =
-    let b = Buffer.create 32 in
-    let ppf = Format.formatter_of_buffer b in
-    ppf,
-    (fun () ->
-      Format.pp_print_flush ppf ();
-      Buffer.contents b)
-  in
+  let ppf, to_string = Misc.ppf_to_string () in
   print_warning loc ppf w;
   warnings := (loc, to_string ()) :: !warnings
 ;;

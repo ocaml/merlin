@@ -95,7 +95,6 @@ let keyword_table =
 
     (* HACK: lwt extensions *)
     "lwt", LET_LWT;
-    "raise_lwt", RAISE_LWT;  
     "try_lwt", TRY_LWT;
     "match_lwt", MATCH_LWT;
     "finally", FINALLY_LWT;

@@ -11,7 +11,6 @@ let type_sig env sg =
 let ext_lwt =
   parse_sig
   "module Lwt : sig
-    val raise_lwt' : 'a -> 'b Lwt.t
     val un_lwt : 'a Lwt.t -> 'a
     val in_lwt : 'a Lwt.t -> 'a Lwt.t
     val to_lwt : 'a -> 'a Lwt.t
@@ -19,7 +18,9 @@ let ext_lwt =
     val un_stream : 'a Lwt_stream.t -> 'a
     val unit_lwt : unit Lwt.t -> unit Lwt.t
   end",
-  parse_sig "val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t"
+  parse_sig
+    "val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t
+     val raise_lwt : exn -> 'a Lwt.t"
 
 let registry = [ext_lwt]                       
 

@@ -132,7 +132,6 @@
 %token <string * Location.t> COMMENT
 
 %token LET_LWT
-%token RAISE_LWT
 %token TRY_LWT
 %token MATCH_LWT
 %token FINALLY_LWT
@@ -168,6 +167,7 @@ The precedences must be listed from low to high.
 %nonassoc LET                           (* above SEMI ( ...; let ... in ...) *)
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 (* below BAR  (match ... with ...) *)
+%nonassoc FINALLY_LWT
 %nonassoc AND             (* above WITH (module rec A: SIG with ... and ...) *)
 %nonassoc THEN                          (* below ELSE (if ... then ...) *)
 %nonassoc ELSE                          (* (if ... then ... else ...) *)
@@ -190,7 +190,6 @@ The precedences must be listed from low to high.
 %nonassoc prec_unary_minus prec_unary_plus (* unary - *)
 %nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
-%nonassoc below_SHARP
 %nonassoc SHARP                         (* simple_expr/toplevel_directive *)
 %nonassoc below_DOT
 %nonassoc DOT
@@ -206,12 +205,6 @@ The precedences must be listed from low to high.
 %type <unit> implementation
 %start interface                        (* for interface files *)
 %type <unit> interface
-%start toplevel_phrase                  (* for interactive use *)
-%type <unit> toplevel_phrase
-%start use_file                         (* for the #use directive *)
-%type <unit> use_file
-%start any_longident
-%type <unit> any_longident
 %%
 
 (* Entry points *)
@@ -226,29 +219,10 @@ implementation:
 interface:
     signature EOF                        { () }
 ;
-toplevel_phrase:
-    top_structure SEMISEMI               { () }
-  | seq_expr SEMISEMI                    { () }
-  | toplevel_directive SEMISEMI          { () }
-  | EOF                                  { () }
-;
 top_structure:
     structure_item                        { () }
   | structure_item top_structure          { () }
   | END                                   { emit_top Leave_module $endpos }
-;
-use_file:
-    use_file_tail                        { () }
-  | seq_expr use_file_tail               { () }
-;
-use_file_tail:
-    EOF                                         { () }
-  | SEMISEMI EOF                                { () }
-  | SEMISEMI seq_expr use_file_tail             { () }
-  | SEMISEMI structure_item use_file_tail       { () }
-  | SEMISEMI toplevel_directive use_file_tail   { () }
-  | structure_item use_file_tail                { () }
-  | toplevel_directive use_file_tail            { () }
 ;
 
 (* Module expressions *)
@@ -310,7 +284,7 @@ with_extension:
 ;
 
 structure_item:
-    LET rec_flag let_bindings
+    LET enter_partial rec_flag let_bindings commit_partial leave_partial
       { emit_top Definition $endpos }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { emit_top Definition $endpos }
@@ -681,23 +655,23 @@ let_pattern:
 (* Partially correct expressions support *)
 enter_partial:
   | { enter_partial $startpos }
-leave_partial:
-  | { leave_partial $startpos }
 commit_partial:
   | { commit_partial $startpos }
+leave_partial:
+  | { leave_partial () }
 
 expr:
-    simple_expr %prec below_SHARP
+    simple_expr
       { () }
   | simple_expr simple_labeled_expr_list
       { () }
-  | LET enter_partial rec_flag let_bindings leave_partial IN seq_expr commit_partial
+  | LET enter_partial rec_flag let_bindings commit_partial IN seq_expr leave_partial
       { () }
   | LET_LWT rec_flag let_bindings IN seq_expr
       { () }
   | LET MODULE UIDENT enter_sub module_binding leave_sub IN seq_expr
       { () }
-  | LET OPEN enter_partial mod_longident leave_partial IN seq_expr commit_partial
+  | LET OPEN enter_partial mod_longident commit_partial IN seq_expr leave_partial 
       { () }
   | FUNCTION opt_bar match_cases
       { () }
@@ -721,9 +695,9 @@ expr:
       { () } *)
   | expr_comma_list %prec below_COMMA
       { () }
-  | constr_longident simple_expr %prec below_SHARP
+  | constr_longident simple_expr
       { () }
-  | name_tag simple_expr %prec below_SHARP
+  | name_tag simple_expr
       { () }
   | IF seq_expr THEN expr ELSE expr
       { () }
@@ -793,9 +767,9 @@ expr:
       { () }
   | label LESSMINUS expr
       { () }
-  | ASSERT simple_expr %prec below_SHARP
+  | ASSERT simple_expr
       { () }
-  | LAZY simple_expr %prec below_SHARP
+  | LAZY simple_expr
       { () }
   | OBJECT class_structure END
       { () }
@@ -804,8 +778,6 @@ expr:
 ;
 simple_expr:
     val_longident
-      { () }
-  | RAISE_LWT
       { () }
   | constant
       { () }
@@ -890,19 +862,19 @@ simple_labeled_expr_list:
       { () }
 ;
 labeled_simple_expr:
-    simple_expr %prec below_SHARP
+    simple_expr
       { () }
   | label_expr
       { () }
 ;
 label_expr:
-    LABEL simple_expr %prec below_SHARP
+    LABEL simple_expr
       { () }
   | TILDE label_ident
       { () }
   | QUESTION label_ident
       { () }
-  | OPTLABEL simple_expr %prec below_SHARP
+  | OPTLABEL simple_expr
       { () }
 ;
 label_ident:
@@ -1247,9 +1219,9 @@ core_type2:
 ;
 
 simple_core_type:
-    simple_core_type2  %prec below_SHARP
+    simple_core_type2
       { () }
-  | LPAREN core_type_comma_list RPAREN %prec below_SHARP
+  | LPAREN core_type_comma_list RPAREN
       { () }
 ;
 simple_core_type2:
@@ -1466,31 +1438,6 @@ clty_longident:
 class_longident:
     LIDENT                                      { () }
   | mod_longident DOT LIDENT                    { () }
-;
-any_longident:
-    val_ident                                   { () }
-  | mod_ext_longident DOT val_ident             { () }
-  | mod_ext_longident                           { () }
-  | LBRACKET RBRACKET                           { () }
-  | LPAREN RPAREN                               { () }
-  | FALSE                                       { () }
-  | TRUE                                        { () }
-;
-
-(* Toplevel directives *)
-
-toplevel_ident:
-    val_ident                                   { () }
-  | mod_ext_longident DOT val_ident             { () }
-  | mod_ext_longident                           { () }
-;
-toplevel_directive:
-    SHARP ident                 { () }
-  | SHARP ident STRING          { () }
-  | SHARP ident INT             { () }
-  | SHARP ident toplevel_ident  { () }
-  | SHARP ident FALSE           { () }
-  | SHARP ident TRUE            { () }
 ;
 
 (* Miscellaneous *)

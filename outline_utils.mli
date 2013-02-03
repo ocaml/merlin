@@ -73,13 +73,6 @@ val get_offset : (position -> offset) ref
 val reset_get_offset : unit -> unit
 
 val enter_partial : position -> unit
-val leave_partial : position -> unit
 val commit_partial : position -> unit
+val leave_partial : unit -> unit
 
-(** {0 Routines auxiliaires d'entrée/sortie } *)
-
-val pos_to_json : position -> Json.json
-val pos_of_json : Json.json -> [ `Line of (int * int) ]
-
-(** Simplifie la construction d'un formatter vers une chaîne *)
-val ppf_to_string : unit -> Format.formatter * (unit -> string)

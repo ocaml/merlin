@@ -224,3 +224,64 @@ let thd3 (_,_,x) = x
 let fst4 (x, _, _, _) = x
 let snd4 (_,x,_, _) = x
 let thd4 (_,_,x,_) = x
+
+        (* [ppf_to_string ()] gives a fresh formatter and a function to easily
+         * gets its content as a string *)
+let ppf_to_string () =
+  let b = Buffer.create 32 in
+  let ppf = Format.formatter_of_buffer b in
+  ppf,
+  (fun () ->
+    Format.pp_print_flush ppf ();
+    Buffer.contents b)
+
+        (* [lex_strings s f] makes a lexing buffer from the string [s]
+         * (like a Lexer.from_string) and call [f] to refill the buffer *)
+let lex_strings source refill =
+  let pos = ref 0 in
+  let len = ref (String.length source) in
+  let source = ref source in
+  Lexing.from_function
+    begin fun buf size ->
+      let count = min (!len - !pos) size in
+      let count = 
+        if count <= 0 then
+        begin
+          source := refill ();
+          len := String.length !source;
+          pos := 0;
+          min !len size
+        end
+        else count
+      in
+      if count <= 0 then 0
+      else begin
+        String.blit !source !pos buf 0 count;
+        pos := !pos + count;
+        count
+      end
+    end
+
+        (* [length_lessthan n l] returns
+         *   Some (List.length l) if List.length l <= n
+         *   None otherwise *)
+let length_lessthan n l = 
+  let rec aux i = function
+    | _ :: xs when i < n -> aux (succ i) xs
+    | [] -> Some i
+    | _ -> None
+  in
+  aux 0 l
+
+       (* [has_prefix p s] returns true iff p is a prefix of s *)
+let has_prefix p =
+  let l = String.length p in fun s ->
+  let l' = String.length s in
+  (l' >= l) && 
+  (try
+     for i = 0 to pred l do
+       if s.[i] <> p.[i] then
+         raise Not_found
+     done;
+     true
+   with Not_found -> false)
