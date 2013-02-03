@@ -149,7 +149,6 @@ struct
     | `Let lst ->
       let p = Pstr_value (Nonrecursive, List.map translate_binding lst) in
       { pstr_desc = p ; pstr_loc = Location.none }
-(*     | _ -> failwith "not allowed at toplevel" (* hack to have it typing *) *)
 
   and translate_to_expr = function
     | `Let _ -> failwith "not allowed at this level"
