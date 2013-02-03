@@ -65,16 +65,13 @@ let initial_state = {
 let commands = Hashtbl.create 17
 
 let main_loop () =
-  let log_input, log_output =
+  let logger =
     try
       let logger = open_out (Sys.getenv "MERLIN_LOG") in
       let log_input json = Printf.fprintf logger "> %s\n%!" (Json.to_string json); json in
       let log_output json = Printf.fprintf logger "< %s\n%!" (Json.to_string json); json in
-      log_input, log_output
-    with Not_found ->
-      let log_input json = json in
-      let log_output json = json in
-      log_input, log_output
+      Some (log_input, log_output)
+    with Not_found -> None
   in
   let input  = Json.stream_from_channel stdin in
   let output =
@@ -83,16 +80,27 @@ let main_loop () =
       out_json json;
       print_newline ()
   in
+  let input, output as io =
+    match logger with
+      | None -> input, output
+      | Some (li,lo) ->
+          Stream.from
+          begin fun _ ->
+            try Some (li (Stream.next input))
+            with Stream.Failure -> None
+          end,
+          (fun out -> output (lo out))
+  in
   try
     let rec loop state =
       let state, answer =
-        try match log_input (Stream.next input) with
+        try match Stream.next input with
           | `List (`String command :: args) ->
                 let handler, _ =
                   try Hashtbl.find commands command
                   with Not_found -> failwith "unknown command"
                 in
-                handler state args
+                handler io state args
           | _ -> failwith "malformed command"
         with
           | Failure s -> state, `List [`String "failure"; `String s]
@@ -102,7 +110,7 @@ let main_loop () =
                 | None -> state, `List [`String "exception"; `String (Printexc.to_string exn)]
                 | Some json -> state, `List [`String "error" ; json ]
       in
-      output (log_output answer);
+      output answer;
       loop state
     in
     loop initial_state
@@ -112,27 +120,49 @@ let return_position p = `List [`String "position" ; Outline_utils.pos_to_json p]
 
 let invalid_arguments () = failwith "invalid arguments"
 
-let lex_string ?(offset=0) string =
+let lex_string ?(offset=0) source refill =
   let pos = ref offset in
-  let len = String.length string in
+  let len = ref (String.length source) in
+  let source = ref source in
   Lexing.from_function
     begin fun buf size ->
-      let count = min (len - !pos) size in
+      let count = min (!len - !pos) size in
+      let count = 
+        if count <= 0 then
+        begin
+          source := refill ();
+          len := String.length !source;
+          pos := 0;
+          min !len size
+        end
+        else count
+      in
       if count <= 0 then 0
       else begin
+        String.blit !source !pos buf 0 count;
         pos := !pos + count;
-        String.blit string !pos buf 0 count;
         count
       end
     end
 
-type command = state -> Json.json list -> state * Json.json 
+type command = Json.json Stream.t * (Json.json -> unit) -> state -> Json.json list -> state * Json.json 
 
-let command_tell : command = fun state -> function
+let command_tell : command = fun (i,o) state -> function
   | [`String source] ->
       Env.reset_missing_cmis ();
       let goteof = ref false in
-      let lexbuf = Lexing.from_string source in
+      let lexbuf = lex_string source
+        begin fun () ->
+          goteof := true;
+          o (`Bool false);
+          try begin match Stream.next i with
+            | `List [`String "tell" ; `String source] -> source
+            | `List [`String "tell" ; `Null ] -> ""
+            | _ -> invalid_arguments ()
+          end with
+            Stream.Failure -> invalid_arguments ()
+        end
+      in
       let _ = Error_report.reset_warnings () in
       let rec loop state =
         let bufpos = ref state.pos in
@@ -167,7 +197,7 @@ let command_tell : command = fun state -> function
 
 exception Found of Types.signature_item
 
-let command_type : command = fun state -> function
+let command_type : command = fun _ state -> function
   | [`String "expression"; `String expr] ->
       let lexbuf = Lexing.from_string expr in
       let env = Typer.env state.types in
@@ -388,7 +418,7 @@ let command_complete : command =
         | _ -> find prefix []
     with Not_found -> []
   in
-  fun state -> function
+  fun _ state -> function
   | [`String "prefix" ; `String prefix] ->
     begin
       let env = Typer.env state.types in
@@ -401,7 +431,7 @@ let command_complete : command =
     end 
   | _ -> invalid_arguments ()
 
-let command_seek : command = fun state -> function
+let command_seek : command = fun _ state -> function
   | [`String "position"] ->
       state, return_position state.pos
   | [`String "position" ; jpos] ->
@@ -469,11 +499,11 @@ let command_seek : command = fun state -> function
       return_position pos
   | _ -> invalid_arguments ()
 
-let command_reset : command = fun state -> function
+let command_reset : command = fun _ state -> function
   | [] -> initial_state, return_position initial_state.pos
   | _ -> invalid_arguments ()
 
-let command_refresh : command = fun state -> function
+let command_refresh : command = fun _ state -> function
   | [] -> 
       Env.reset_cache ();
       let types = Typer.sync state.chunks History.empty in
@@ -482,7 +512,7 @@ let command_refresh : command = fun state -> function
 
 
 (* Path management *)
-let command_which : command = fun state -> function
+let command_which : command = fun _ state -> function
   | [`String "path" ; `String s] -> 
       let filename =
         try
@@ -513,7 +543,7 @@ let command_which : command = fun state -> function
       state, `List results
   | _ -> invalid_arguments ()
 
-let command_path pathes : command = fun state -> function
+let command_path pathes : command = fun _ state -> function
   | [ `String "list" ] ->
       state, `List [ `String "variables"; `List (List.map (fun (s,_) -> `String s) pathes)]
   | [ `String "list" ; `String path ] ->
@@ -544,7 +574,7 @@ let list_filter_dup lst =
   let tbl = Hashtbl.create 17 in
   List.rev (List.fold_left (fun a b -> if Hashtbl.mem tbl b then a else (Hashtbl.add tbl b (); b :: a)) [] lst)
 
-let command_find : command = fun state -> function
+let command_find : command = fun _ state -> function
   | (`String "use" :: packages) ->
       let packages = List.map
         (function `String pkg -> pkg | _ -> invalid_arguments ())
@@ -558,14 +588,14 @@ let command_find : command = fun state -> function
       state, `List (List.map (fun s -> `String s) (Fl_package_base.list_packages ()))
   | _ -> invalid_arguments ()
 
-let command_cd : command = fun state -> function
+let command_cd : command = fun _ state -> function
   | [`String s] ->
       Sys.chdir s;
       state, (`Bool true)
   | _ -> invalid_arguments ()
 
 (* Reporting *)      
-let command_errors : command = fun state -> function
+let command_errors : command = fun _ state -> function
   | [] ->
       let exns = Outline.exns state.outlines @ Typer.exns state.types in
       state, `List [`String "errors" ; `List (Error_report.to_jsons (List.rev exns)) ]
@@ -575,7 +605,7 @@ let command_dump : command =
   let pr_item_desc items =
     (List.map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk items))
   in
-  fun state -> function
+  fun _ state -> function
   | [`String "env"] ->
       let sg = Browse.Env.signature_of_env (Typer.env state.types) in
       let aux item =
@@ -616,7 +646,7 @@ let command_dump : command =
 
 (* Browsing *)
  
-let command_help : command = fun state -> function
+let command_help : command = fun _ state -> function
   | [] -> 
       let helps = Hashtbl.fold (fun cmd (_,doc) cmds -> (cmd,doc) :: cmds) commands [] in
       state, `List [`String "help" ; `Assoc helps ]

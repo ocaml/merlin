@@ -58,7 +58,10 @@ def command_reset():
   return r
 
 def command_tell(content):
-  return send_command("tell", content)
+  if type(content) is list:
+    return send_command("tell", "\n".join(content) + "\n")
+  else:
+    return send_command("tell", content)
 
 def command_which_file(name):
   return send_command('which', 'path', name)
@@ -141,10 +144,12 @@ def sync_buffer_to(to_line, to_col):
   global last_changes, last_line, last_buffer, shadow_buffer
   cb = vim.current.buffer
   # hack : append some lines to parse definitions near cursor
-  max_line = min(to_line + 120, len(cb))
+  max_line = len(cb)
+  end_line = min(to_line, max_line)
 
   # reset if necessary
   current_buffer = (cb.name, cb.number)
+  content = None
   if current_buffer == last_buffer:
     (last_changes, sync) = find_changes(last_changes)
     # find changes
@@ -164,27 +169,32 @@ def sync_buffer_to(to_line, to_col):
       else:
         in_a_row = 0
     last_line += 1 + in_a_row
-    if last_line <= max_line:
+    if last_line <= end_line:
       if last_line <= 1:
-        content = cb[:max_line]
-        shadow_buffer = content
         command_reset()
-        command_tell("\n".join(content))
+        content = cb[:end_line]
+        shadow_buffer = content
       else:
         line, col = command_seek(last_line,0)
         rest    = cb[line-1][col:]
-        content = cb[line:max_line]
-        shadow_buffer[line-1:] = cb[line-1:max_line]
-        command_tell(rest + "\n" + "\n".join(content))
+        content = cb[line:end_line]
+        content.insert(0, rest)
+        shadow_buffer[line-1:] = cb[line-1:end_line]
   else:
     command_reset()
     (last_changes, sync) = find_changes(None)
     last_buffer = current_buffer
-    content = cb[:max_line]
+    content = cb[:end_line]
     shadow_buffer = content
-    command_tell("\n".join(content))
 
-  last_line = max_line + 1
+  while not command_tell(content):
+    if end_line < max_line:
+      next_end = min(max_line,end_line + 4)
+      content = cb[end_line:next_end]
+      end_line = next_end
+    else:
+      content = None
+  last_line = end_line + 1
 
   # Now we are synced, come back to environment around cursor
   command_seek(to_line, to_col)
