@@ -87,7 +87,7 @@ let command_which = Command.({
         with Not_found ->
           Misc.find_in_path_uncap !Config.load_path s
       in
-      state, [`String filename]
+      state, `String filename
   | [`String "with_ext" ; `String ext] ->
       let results =
         List.fold_left
@@ -107,7 +107,7 @@ let command_which = Command.({
           with Sys_error _ -> results
         end [] !source_path
       in
-      state, results
+      state, `List results
   | _ -> invalid_arguments ()
   end;
 })
@@ -119,29 +119,29 @@ let command_path pathes = Command.({
   handler =
   begin fun _ state -> function
   | [ `String "list" ] ->
-      state, (List.map (fun (s,_) -> `String s) pathes)
+      state, `List (List.map (fun (s,_) -> `String s) pathes)
   | [ `String "list" ; `String path ] ->
       let r,_ = List.assoc path pathes in
-      state, [ `String path; `List (List.map (fun s -> `String s) !r)]
+      state, `List (List.map (fun s -> `String s) !r)
   | [ `String "add" ; `String path ; `String d ] ->
       let r,_ = List.assoc path pathes in
       let d = Misc.expand_directory Config.standard_library d in
       r := d :: !r;
-      state, [`Bool true]
+      state, `Bool true
   | [ `String "remove" ; `String path; `String s ] ->
       let r,_ = List.assoc path pathes in
       let d = Misc.expand_directory Config.standard_library s in
       r := List.filter (fun d' -> d' <> d) !r;
-      state, [`Bool true]
+      state, `Bool true
   | [ `String "reset" ] ->
       List.iter
         (fun (_,(r,reset)) -> r := Lazy.force reset)
         pathes;
-      state, [`Bool true]
+      state, `Bool true
   | [ `String "reset" ; `String path ] ->
       let r,reset = List.assoc path pathes in
       r := Lazy.force reset;
-      state, [`Bool true]
+      state, `Bool true
   | _ -> invalid_arguments ()
   end;
 })
@@ -164,9 +164,9 @@ let command_find = Command.({
       let packages = Findlib.package_deep_ancestors [] packages in
       let path = List.map Findlib.package_directory packages in
       Config.load_path := list_filter_dup (path @ !Config.load_path);
-      state, [`Bool true]
+      state, `Bool true
   | [`String "list"] ->
-      state, List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ())
+      state, `List (List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ()))
   | _ -> invalid_arguments ()
   end;
 })

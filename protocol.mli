@@ -3,7 +3,7 @@ type io = Json.json Stream.t * (Json.json -> unit)
 val make : input:in_channel -> output:out_channel -> io
 val log  : dest:out_channel -> io -> io
 
-val return : Json.json list -> Json.json
+val return : Json.json -> Json.json
 val fail   : exn -> Json.json
 
 (* HACK. Break circular reference:

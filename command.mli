@@ -7,7 +7,7 @@ type state = {
 }
 val initial_state : state 
 
-type handler = Protocol.io -> state -> Json.json list -> state * Json.json list
+type handler = Protocol.io -> state -> Json.json list -> state * Json.json
 type t = { name : string ; handler : handler ; doc : string }
 val invalid_arguments : unit -> 'a
 

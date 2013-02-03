@@ -14,7 +14,7 @@ let initial_state = {
   types    = History.empty;
 }
 
-type handler = Protocol.io -> state -> Json.json list -> state * Json.json list
+type handler = Protocol.io -> state -> Json.json list -> state * Json.json
 type t = { name : string ; handler : handler ; doc : string }
 let invalid_arguments () = failwith "invalid arguments"
 
@@ -39,7 +39,7 @@ let command_tell = {
       let lexbuf = Misc.lex_strings source
         begin fun () ->
           goteof := true;
-          o (Protocol.return [`Bool false]);
+          o (Protocol.return (`Bool false));
           try begin match Stream.next i with
             | `List [`String "tell" ; `String "struct" ; `String source] -> source
             | `List [`String "tell" ; `String "struct" ; `Null ] -> ""
@@ -65,14 +65,14 @@ let command_tell = {
         let tokens = History.nexts tokens in
         let pos = !bufpos in
         let w = Error_report.reset_warnings () in
-        let outlines = History.modify (fun (r,k,t,e) -> (r,k,t, w @ e)) outlines in
+        let outlines = History.modify (fun outline -> Outline.({ outline with exns = w @ outline.exns })) outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
         if !goteof || state.tokens = state'.tokens
         then state'
         else loop state'
       in
       let state = loop state in
-      state, [`Bool true]
+      state, `Bool true
   | _ -> invalid_arguments ()
   end;
 }
@@ -103,7 +103,7 @@ let command_type = {
         | [ { str_desc = Tstr_eval exp }] ->
             let ppf, to_string = Misc.ppf_to_string () in
             Printtyp.type_scheme ppf exp.exp_type;
-            state, [`String (to_string ())]
+            state, `String (to_string ())
         | _ -> failwith "unhandled expression"
       end
 
@@ -127,7 +127,7 @@ let command_type = {
       with Found sg -> 
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [sg];
-        state, [`String (to_string ())]
+        state, `String (to_string ())
     end
 
   | _ -> invalid_arguments ()
@@ -241,7 +241,7 @@ let command_complete = {
     begin
       let env = Typer.env state.types in
       let compl = complete_in_env env prefix in
-      state, List.rev compl
+      state, `List (List.rev compl)
     end 
   | [`String "prefix" ; `String prefix ; `String "at" ; pos ] ->
     begin
@@ -259,13 +259,13 @@ let command_seek = {
   handler =
   begin fun _ state -> function
   | [`String "position"] ->
-      state, [Protocol.pos_to_json state.pos]
+      state, Protocol.pos_to_json state.pos
 
   | [`String "position" ; jpos] ->
       let l, c = Protocol.pos_of_json jpos in
       let outlines = Outline.seek_line (l,c) state.outlines in
       let outlines = match History.backward outlines with
-        | Some ((_,Outline_utils.Partial_definitions _,_,_), o) -> o
+        | Some ({ Outline.kind = Outline_utils.Partial_definitions _ }, o) -> o
         | _ -> outlines
       in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
@@ -276,7 +276,7 @@ let command_seek = {
           | None -> initial_state.pos
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
-      [Protocol.pos_to_json pos]
+      Protocol.pos_to_json pos
 
   | [`String "end_of_definition"] ->
       failwith "TODO"
@@ -291,7 +291,7 @@ let command_seek = {
           | None -> initial_state.pos
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
-      [Protocol.pos_to_json pos]
+      Protocol.pos_to_json pos
 
   | [`String "maximize_scope"] ->
       let rec find_end_of_module (depth,outlines) =
@@ -299,18 +299,18 @@ let command_seek = {
         else
         match History.forward outlines with
           | None -> (depth,outlines)
-          | Some ((_,Outline_utils.Leave_module,_,_),outlines') ->
+          | Some ({ Outline.kind = Outline_utils.Leave_module },outlines') ->
               find_end_of_module (pred depth, outlines')
-          | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
+          | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
               find_end_of_module (succ depth, outlines')
           | Some (_,outlines') -> find_end_of_module (depth,outlines')
       in
       let rec loop outlines =
         match History.forward outlines with
           | None -> outlines
-          | Some ((_,Outline_utils.Leave_module,_,_),_) ->
+          | Some ({ Outline.kind = Outline_utils.Leave_module },_) ->
               outlines
-          | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
+          | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
               (match find_end_of_module (1,outlines') with
                 | (0,outlines'') -> outlines''
                 | _ -> outlines)
@@ -325,7 +325,7 @@ let command_seek = {
           | None -> initial_state.pos
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
-      [Protocol.pos_to_json pos]
+      Protocol.pos_to_json pos
   | _ -> invalid_arguments ()
   end;
 }
@@ -338,7 +338,7 @@ let command_reset = {
   handler =
   begin fun _ state -> function
   | [] -> initial_state,
-          [Protocol.pos_to_json initial_state.pos]
+          Protocol.pos_to_json initial_state.pos
   | _ -> invalid_arguments ()
   end
 }
@@ -353,7 +353,7 @@ let command_refresh = {
   | [] -> 
       Env.reset_cache ();
       let types = Typer.sync state.chunks History.empty in
-      { state with types }, [`Bool true]
+      { state with types }, `Bool true
   | _ -> invalid_arguments ()
   end;
 }
@@ -366,7 +366,7 @@ let command_cd = {
   begin fun _ state -> function
   | [`String s] ->
       Sys.chdir s;
-      state, [`Bool true]
+      state, `Bool true
   | _ -> invalid_arguments ()
   end;
 }
@@ -379,7 +379,7 @@ let command_errors = {
   begin fun _ state -> function
   | [] ->
       let exns = Outline.exns state.outlines @ Typer.exns state.types in
-      state, (Error_report.to_jsons (List.rev exns))
+      state, `List (Error_report.to_jsons (List.rev exns))
   | _ -> invalid_arguments ()
   end;
 }
@@ -407,7 +407,7 @@ let command_dump = {
               `List [`String loc ; `String content]
           | None -> `String content
       in
-      state, [`String "env" ; `List (List.map aux sg)]
+      state, `List (List.map aux sg)
   | [`String "sig"] ->
       let trees = Typer.trees state.types in
       let sg = List.flatten (List.map snd trees) in
@@ -423,9 +423,9 @@ let command_dump = {
               `List [`String loc ; `String content]
           | None -> `String content
       in
-      state, [`String "env" ; `List (List.map aux sg)]
+      state, `List (List.map aux sg)
   | [`String "chunks"] ->
-      state, (pr_item_desc state.chunks)
+      state, `List (pr_item_desc state.chunks)
   (*| [`String "types" ; `String "chunks"] ->
       state, `List (List.rev_map (fun item -> `List (pr_item_desc item))
                                  (Typer.chunks state.types))*)
@@ -441,13 +441,13 @@ let command_help = {
   begin fun _ state -> function
   | [] -> 
       let helps = Hashtbl.fold (fun name { doc } cmds -> (name, `String doc) :: cmds) commands [] in
-      state, [`Assoc helps]
+      state, `Assoc helps
   | _ -> invalid_arguments ()
   end;
 }
 
-let _ = List.iter register
-  [ command_tell; command_seek; command_reset; command_refresh;
-    command_cd; command_type; command_complete;
-    command_errors; command_dump; command_help
-  ]
+let _ = List.iter register [
+  command_tell; command_seek; command_reset; command_refresh;
+  command_cd; command_type; command_complete;
+  command_errors; command_dump; command_help
+]
