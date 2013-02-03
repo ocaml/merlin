@@ -60,7 +60,12 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
     | exn ->
         history, Outline_utils.Exception exn, []
 
-type item = int * Outline_utils.kind * token list * exn list
+type item = { 
+  rollback   : int;
+  kind       : Outline_utils.kind;
+  tokens     : token list;
+  exns : exn list;
+}
 type sync = item History.sync
 type t = item History.t 
 
@@ -68,15 +73,15 @@ let last_curr = List.fold_left (fun _ (_,_,curr) -> curr)
 
 let rec last_position t =
   match History.prev t with
-    | Some (_,_,(_,_,curr) :: xs, _) -> Some (last_curr curr xs)
+    | Some { tokens = (_,_,curr) :: xs } -> Some (last_curr curr xs)
     | None -> None
     | _ -> failwith "Outline.last_position: Invalid t"
 
 let seek cmp t =
   let open Lexing in
   let t =
-    History.seek begin fun (_,_,l,_) ->
-      match l with
+    History.seek begin fun { tokens } ->
+      match tokens with
         | (_,start,_) :: _ when cmp start < 0 -> -1
         | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
         | [] -> failwith "Outline.seek: Invalid t"
@@ -110,27 +115,27 @@ let parse_step ?(rollback=0) ?bufpos ?(exns=[]) ~goteof history buf =
   history',
   (match tokens with
     | [] -> None
-    | _ -> Some (rollback, kind, tokens, exns))
+    | _ -> Some { rollback ; kind ; tokens ; exns })
 
 let exns chunks =
   match History.prev chunks with
-    | Some (_,_,_,exns) -> exns
+    | Some { exns } -> exns
     | None -> []
 
 let rec parse ?rollback ?bufpos ~goteof tokens chunks buf =
   let exns = exns chunks in
   match parse_step ?rollback ?bufpos ~exns ~goteof tokens buf with
-    | tokens', Some (_, Outline_utils.Rollback, _, _) ->
+    | tokens', Some { kind = Outline_utils.Rollback } ->
         let chunks', rollback =
           match History.backward chunks with
-            | Some ((rollback, _, _, _), chunks') -> chunks', rollback
+            | Some ({ rollback }, chunks') -> chunks', rollback
             | None -> chunks, 0
         in
         (*prerr_endline "SYNC PARSER";*)
         (*let tokens', chunks' = History.Sync.nearest fst tokens' chunks' in*)
         let chunks', _ = History.split chunks' in
         parse ~rollback:(rollback + 1) ?bufpos ~goteof tokens' chunks' buf
-    | tokens', Some (_, Outline_utils.Unterminated, _, _) ->
+    | tokens', Some { kind = Outline_utils.Unterminated } ->
         tokens', chunks
     | tokens', Some item ->
         tokens', History.insert item chunks

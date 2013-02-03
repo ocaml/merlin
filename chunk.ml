@@ -143,11 +143,11 @@ let sync outlines chunks =
   let rec aux outlines chunks =
     match History.forward outlines with
       | None -> chunks
-      | Some ((filter,outline,data,exns),outlines') ->
+      | Some ({ Outline.kind ; Outline.tokens },outlines') ->
           (*prerr_endline "SYNC PARSER";*)
           match
             try 
-              match sync_step outline data chunks with
+              match sync_step kind tokens chunks with
                 | Some chunk -> Some (History.insert (History.Sync.at outlines', chunk) chunks)
                 | None -> None
             with Syntaxerr.Error _ -> None

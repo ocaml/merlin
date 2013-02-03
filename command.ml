@@ -65,7 +65,7 @@ let command_tell = {
         let tokens = History.nexts tokens in
         let pos = !bufpos in
         let w = Error_report.reset_warnings () in
-        let outlines = History.modify (fun (r,k,t,e) -> (r,k,t, w @ e)) outlines in
+        let outlines = History.modify (fun outline -> Outline.({ outline with exns = w @ outline.exns })) outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
         if !goteof || state.tokens = state'.tokens
         then state'
@@ -265,7 +265,7 @@ let command_seek = {
       let l, c = Protocol.pos_of_json jpos in
       let outlines = Outline.seek_line (l,c) state.outlines in
       let outlines = match History.backward outlines with
-        | Some ((_,Outline_utils.Partial_definitions _,_,_), o) -> o
+        | Some ({ Outline.kind = Outline_utils.Partial_definitions _ }, o) -> o
         | _ -> outlines
       in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
@@ -299,18 +299,18 @@ let command_seek = {
         else
         match History.forward outlines with
           | None -> (depth,outlines)
-          | Some ((_,Outline_utils.Leave_module,_,_),outlines') ->
+          | Some ({ Outline.kind = Outline_utils.Leave_module },outlines') ->
               find_end_of_module (pred depth, outlines')
-          | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
+          | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
               find_end_of_module (succ depth, outlines')
           | Some (_,outlines') -> find_end_of_module (depth,outlines')
       in
       let rec loop outlines =
         match History.forward outlines with
           | None -> outlines
-          | Some ((_,Outline_utils.Leave_module,_,_),_) ->
+          | Some ({ Outline.kind = Outline_utils.Leave_module },_) ->
               outlines
-          | Some ((_,Outline_utils.Enter_module,_,_),outlines') ->
+          | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
               (match find_end_of_module (1,outlines') with
                 | (0,outlines'') -> outlines''
                 | _ -> outlines)
@@ -446,8 +446,8 @@ let command_help = {
   end;
 }
 
-let _ = List.iter register
-  [ command_tell; command_seek; command_reset; command_refresh;
-    command_cd; command_type; command_complete;
-    command_errors; command_dump; command_help
-  ]
+let _ = List.iter register [
+  command_tell; command_seek; command_reset; command_refresh;
+  command_cd; command_type; command_complete;
+  command_errors; command_dump; command_help
+]

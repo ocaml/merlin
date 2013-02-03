@@ -1,6 +1,12 @@
 type token = Chunk_parser.token History.loc
 
-type item = int * Outline_utils.kind * token list * exn list
+type item = { 
+  rollback   : int;
+  kind       : Outline_utils.kind;
+  tokens     : token list;
+  exns       : exn list;
+}
+
 type sync = item History.sync
 type t = item History.t 
 
