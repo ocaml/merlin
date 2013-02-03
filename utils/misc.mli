@@ -138,3 +138,14 @@ val length_lessthan : int -> 'a list -> int option
 
         (* [has_prefix p s] returns true iff p is a prefix of s *)
 val has_prefix : string -> string -> bool
+
+        (* [modules_in_path ~ext path] lists ocaml modules corresponding to
+         * filenames with extension [ext] in given [path]es.
+         * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
+         * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
+         * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
+val modules_in_path : ext:string -> string list -> string list
+
+        (* Remove duplicates from list *)
+val list_filter_dup : 'a list -> 'a list
+

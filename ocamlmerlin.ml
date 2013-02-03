@@ -44,9 +44,6 @@ let default_build_paths =
 let set_default_path () =
   Config.load_path := Lazy.force default_build_paths
 
-let source_path = ref []
- 
-
 let main_loop () =
   let io = Protocol.make ~input:stdin ~output:stdout in
   let input, output as io =
@@ -75,110 +72,52 @@ let main_loop () =
     loop Command.initial_state
   with Stream.Failure -> ()
 
-let command_which = Command.({ 
-  name = "which"; 
-  doc = "TODO";
-
-  handler = 
-  begin fun _ state -> function
-  | [`String "path" ; `String s] -> 
-      let filename =
-        try
-          Misc.find_in_path_uncap !source_path s
-        with Not_found ->
-          Misc.find_in_path_uncap !Config.load_path s
-      in
-      state, `String filename
-  | [`String "with_ext" ; `String ext] ->
-      let results =
-        List.fold_left 
-        begin fun results dir -> 
-          try
-            Array.fold_left 
-            begin fun results file -> 
-              if Filename.check_suffix file ext
-              then let name = Filename.chop_extension file in
-                begin
-                  (if String.length name > 1 then
-                     name.[0] <- Char.uppercase name.[0]);
-                  `String name :: results
-                end
-              else results
-            end results (Sys.readdir dir)
-          with Sys_error _ -> results 
-        end [] !source_path
-      in
-      state, `List results
-  | _ -> invalid_arguments ()
-  end;
-})
-
 let command_path pathes = Command.({
   name = "path";
   doc = "TODO";
 
   handler =
-  begin fun _ state -> function
-  | [ `String "list" ] ->
-      state, `List (List.map (fun (s,_) -> `String s) pathes)
-  | [ `String "list" ; `String path ] ->
-      let r,_ = List.assoc path pathes in
-      state, `List (List.map (fun s -> `String s) !r)
-  | [ `String "add" ; `String path ; `String d ] ->
-      let r,_ = List.assoc path pathes in
-      let d = Misc.expand_directory Config.standard_library d in
-      r := d :: !r;
-      state, `Bool true
-  | [ `String "remove" ; `String path; `String s ] ->
-      let r,_ = List.assoc path pathes in
-      let d = Misc.expand_directory Config.standard_library s in
-      r := List.filter (fun d' -> d' <> d) !r;
-      state, `Bool true
-  | [ `String "reset" ] ->
-      List.iter
-        (fun (_,(r,reset)) -> r := Lazy.force reset)
-        pathes;
-      state, `Bool true
-  | [ `String "reset" ; `String path ] ->
-      let r,reset = List.assoc path pathes in
-      r := Lazy.force reset;
-      state, `Bool true
-  | _ -> invalid_arguments ()
-  end;
-})
-
-let list_filter_dup lst =
-  let tbl = Hashtbl.create 17 in
-  List.rev (List.fold_left (fun a b -> if Hashtbl.mem tbl b then a else (Hashtbl.add tbl b (); b :: a)) [] lst)
-
-let command_find = Command.({
-  name = "find";
-  doc = "TODO"; 
-
-  handler =
-  begin fun _ state -> function
-  | (`String "use" :: packages) ->
-      let packages = List.map
-        (function `String pkg -> pkg | _ -> invalid_arguments ())
-        packages
-      in
-      let packages = Findlib.package_deep_ancestors [] packages in
-      let path = List.map Findlib.package_directory packages in
-      Config.load_path := list_filter_dup (path @ !Config.load_path);
-      state, `Bool true
-  | [`String "list"] ->
-      state, `List (List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ()))
-  | _ -> invalid_arguments ()
+  begin fun _ state arg->
+    match begin match arg with
+      | [ `String "list" ] ->
+          state, `List (List.map (fun (s,_) -> `String s) pathes)
+      | [ `String "list" ; `String path ] ->
+          let r,_ = List.assoc path pathes in
+          state, `List (List.map (fun s -> `String s) !r)
+      | [ `String "add" ; `String path ; `String d ] ->
+          let r,_ = List.assoc path pathes in
+          let d = Misc.expand_directory Config.standard_library d in
+          r := d :: !r;
+          state, `Bool true
+      | [ `String "remove" ; `String path; `String s ] ->
+          let r,_ = List.assoc path pathes in
+          let d = Misc.expand_directory Config.standard_library s in
+          r := List.filter (fun d' -> d' <> d) !r;
+          state, `Bool true
+      | [ `String "reset" ] ->
+          List.iter
+            (fun (_,(r,reset)) -> r := Lazy.force reset)
+            pathes;
+          state, `Bool true
+      | [ `String "reset" ; `String path ] ->
+          let r,reset = List.assoc path pathes in
+          r := Lazy.force reset;
+          state, `Bool true
+      | _ -> invalid_arguments ()
+    end with
+    | state, `Bool true as answer ->
+        reset_global_modules ();
+        answer
+    | answer -> answer
   end;
 })
 
 let _ =
   let command_path = command_path [
     "build",  (Config.load_path,default_build_paths);
-    "source", (source_path, lazy [])
+    "source", (Command.source_path, lazy [])
   ] in
-  List.iter Command.register
-  [ command_which ; command_find ; command_path ]
+  Command.register command_path 
 
 (** Mimic other Caml tools, entry point *)
 let print_version () =
@@ -246,6 +185,7 @@ let main () =
   Arg.parse Options.list unexpected_argument "TODO";
   init_path ();
   set_default_path ();
+  Command.reset_global_modules ();
   Findlib.init ();
   main_loop ()
 

@@ -286,3 +286,32 @@ let has_prefix p =
      done;
      true
    with Not_found -> false)
+
+        (* [modules_in_path ~ext path] lists ocaml modules corresponding to
+         * filenames with extension [ext] in given [path]es.
+         * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
+         * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
+         * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
+let modules_in_path ~ext path = 
+  let seen = Hashtbl.create 7 in
+  List.fold_left 
+  begin fun results dir -> 
+    try
+      Array.fold_left 
+      begin fun results file -> 
+        if Filename.check_suffix file ext
+        then let name = Filename.chop_extension file in
+             (if Hashtbl.mem seen name
+              then results
+              else 
+               (Hashtbl.add seen name (); String.capitalize name :: results))
+        else results
+      end results (Sys.readdir dir)
+    with Sys_error _ -> results 
+  end [] path
+
+        (* Remove duplicates from list *)
+let list_filter_dup lst =
+  let tbl = Hashtbl.create 17 in
+  List.rev (List.fold_left (fun a b -> if Hashtbl.mem tbl b then a else (Hashtbl.add tbl b (); b :: a)) [] lst)
+

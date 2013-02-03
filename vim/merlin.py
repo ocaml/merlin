@@ -247,7 +247,7 @@ def vim_complete(base, vimvar):
       (prop['name'].replace("'", "''")
       ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
       ,prop['info'].replace("'", "''")
-      ,prop['kind'][:1].upper().replace("'", "''")
+      ,prop['kind'][:1].replace("'", "''")
       ))
     vim.command("call add(%s, l:tmp)" % vimvar)
 

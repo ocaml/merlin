@@ -3,4 +3,5 @@ DONE Handle warnings properly
 - Handle arguments in partial let's
 - Traverse parse tree to find node nearest to a given location
 DONE In [type,expression], detect constructors and just print their definition
-- List modules on load path, even not loaded ones
+DONE List modules on load path, even not loaded ones
+- Move path management to a dedicated module

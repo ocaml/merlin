@@ -21,6 +21,14 @@ let invalid_arguments () = failwith "invalid arguments"
 let commands : (string,t) Hashtbl.t = Hashtbl.create 11
 let register cmd = Hashtbl.add commands cmd.name cmd
 
+(* FIXME: cleanup: move path management in a dedicated module *)
+let source_path = ref []
+let global_modules = ref (lazy [])
+
+let reset_global_modules () =
+  let paths = !Config.load_path in
+  global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
+
 let command_tell = {
   name = "tell";
 
@@ -179,26 +187,31 @@ let complete_in_env env prefix =
     let ppf, to_string = Misc.ppf_to_string () in
     let kind =
       match ty with
-      | `Value v -> Printtyp.value_description ident ppf v; "value"
+      | `Value v -> Printtyp.value_description ident ppf v; "Value"
       | `Cons c  -> 
           Format.pp_print_string ppf name;
           Format.pp_print_string ppf " : ";
           Browse.print_constructor ppf c;
-          "constructor"
+          "Constructor"
       | `Mod m   -> 
           (if exact then
              match mod_smallerthan 200 m with
                | None -> ()
                | Some _ -> Printtyp.modtype ppf m
-          ); "module"
+          ); "Module"
       | `Typ t ->
-          Printtyp.type_declaration ident ppf t; "type"
+          Printtyp.type_declaration ident ppf t; "Type"
     in
     let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
     `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
   in
+  let seen = Hashtbl.create 7 in
+  let uniq n = if Hashtbl.mem seen n
+    then false
+    else (Hashtbl.add seen n (); true)
+  in
   let find ?path prefix compl =
-    let valid = Misc.has_prefix prefix in
+    let valid n = Misc.has_prefix prefix n && uniq n in
     (* Hack to prevent extensions namespace to leak *)
     let valid name = name <> "_" && valid name in
     let compl = [] in
@@ -227,7 +240,18 @@ let complete_in_env env prefix =
   try
     match Longident.parse prefix with
       | Longident.Ldot (path,prefix) -> find ~path prefix []
-      | Longident.Lident prefix -> find prefix []
+      | Longident.Lident prefix ->
+          (* Add modules on path but not loaded *)
+          let compl = find prefix [] in
+          begin match Misc.length_lessthan 20 compl with
+            | Some _ -> List.fold_left
+              begin fun compl md -> 
+                if Misc.has_prefix prefix md && uniq md
+                then (`Assoc ["name", `String md ; "kind", `String "module"; "desc", `String "" ; "info", `String ""]) :: compl
+                else compl
+              end compl (Lazy.force !global_modules)
+            | None -> compl
+          end
       | _ -> find prefix []
   with Not_found -> []
 
@@ -357,6 +381,7 @@ let command_refresh = {
   handler =
   begin fun _ state -> function
   | [] -> 
+      reset_global_modules ();
       Env.reset_cache ();
       let types = Typer.sync state.chunks History.empty in
       { state with types }, `Bool true
@@ -439,6 +464,49 @@ let command_dump = {
   end;
 }
 
+let command_which = { 
+  name = "which"; 
+  doc = "TODO";
+
+  handler = 
+  begin fun _ state -> function
+  | [`String "path" ; `String s] -> 
+      let filename =
+        try
+          Misc.find_in_path_uncap !source_path s
+        with Not_found ->
+          Misc.find_in_path_uncap !Config.load_path s
+      in
+      state, `String filename
+  | [`String "with_ext" ; `String ext] ->
+      let results = Misc.modules_in_path ~ext !source_path in
+      state, `List (List.map (fun s -> `String s) results)
+  | _ -> invalid_arguments ()
+  end;
+}
+
+let command_find = {
+  name = "find";
+  doc = "TODO"; 
+
+  handler =
+  begin fun _ state -> function
+  | (`String "use" :: packages) ->
+      let packages = List.map
+        (function `String pkg -> pkg | _ -> invalid_arguments ())
+        packages
+      in
+      let packages = Findlib.package_deep_ancestors [] packages in
+      let path = List.map Findlib.package_directory packages in
+      Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
+      reset_global_modules ();
+      state, `Bool true
+  | [`String "list"] ->
+      state, `List (List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ()))
+  | _ -> invalid_arguments ()
+  end;
+}
+
 let command_help = {
   name = "help";
   doc = "List known commands with synopsis and small description";
@@ -446,7 +514,10 @@ let command_help = {
   handler =
   begin fun _ state -> function
   | [] -> 
-      let helps = Hashtbl.fold (fun name { doc } cmds -> (name, `String doc) :: cmds) commands [] in
+      let helps = Hashtbl.fold 
+        (fun name { doc } cmds -> (name, `String doc) :: cmds)
+        commands []
+      in
       state, `Assoc helps
   | _ -> invalid_arguments ()
   end;
@@ -455,5 +526,7 @@ let command_help = {
 let _ = List.iter register [
   command_tell; command_seek; command_reset; command_refresh;
   command_cd; command_type; command_complete;
-  command_errors; command_dump; command_help
+  command_errors; command_dump;
+  command_which; command_find;
+  command_help;
 ]

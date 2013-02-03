@@ -13,3 +13,6 @@ val invalid_arguments : unit -> 'a
 
 val commands : (string,t) Hashtbl.t
 val register : t -> unit
+
+val source_path : string list ref
+val reset_global_modules : unit -> unit
