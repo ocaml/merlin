@@ -20,6 +20,7 @@ let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 let dump_chunk t =
   List.map
   begin function
+  | _, Definitions [] -> assert false
   | _, Definitions (d :: _) -> ("definition", line d)
   | _, Module_opening (l,s,_) -> ("opening " ^ s.Location.txt, line s)
   | _, Module_closing (d,offset) -> ("closing after " ^ string_of_int offset, line d)
@@ -70,6 +71,7 @@ let sync_step outline tokens t =
         (* reconstitute module from t *)
         let rec rewind_defs defs t =
           match History.backward t with
+          | Some ((_, Definitions []), _) -> assert false
           | Some ((_,Definitions (d::_)), t') -> rewind_defs (d.Location.txt :: defs) t'
           | Some ((_,Partial_definitions _), t') -> rewind_defs defs t'
           | Some ((_,Module_closing (d,offset)), t') ->
