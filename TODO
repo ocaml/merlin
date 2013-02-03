@@ -5,3 +5,4 @@ DONE Handle warnings properly
 DONE In [type,expression], detect constructors and just print their definition
 DONE List modules on load path, even not loaded ones
 - Move path management to a dedicated module
+- Fix pretty printing of type variables
