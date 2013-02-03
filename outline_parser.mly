@@ -234,9 +234,7 @@ toplevel_phrase:
 ;
 top_structure:
     structure_item                        { () }
-  | extended_structure_item               { () }
   | structure_item top_structure          { () }
-  | extended_structure_item top_structure { () }
   | END                                   { emit_top Leave_module $endpos }
 ;
 use_file:
@@ -306,9 +304,9 @@ structure_tail:
   | structure_item structure_tail               { () }
 ;
 
-extended_structure_item:
-  | TYPE type_declarations WITH LIDENT
-      { emit_top Definition $endpos }
+with_extension:
+  | WITH LIDENT { () }
+  | { () }
 ;
 
 structure_item:
@@ -316,7 +314,7 @@ structure_item:
       { emit_top Definition $endpos }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { emit_top Definition $endpos }
-  | TYPE type_declarations
+  | TYPE type_declarations with_extension
       { emit_top Definition $endpos }
   | EXCEPTION UIDENT constructor_arguments
       { emit_top Definition $endpos }

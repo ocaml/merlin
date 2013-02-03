@@ -616,10 +616,8 @@ top_expr:
   | seq_expr EOF { $1 }
 ;
 top_structure:
-    structure_item                        { [$1] }
-  | extended_structure_item               { $1 }
-  | structure_item top_structure          { $1 :: $2 }
-  | extended_structure_item top_structure { $1 @ $2 }
+    structure_item                        { $1 }
+  | structure_item top_structure          { $1 @ $2 }
 ;
 use_file:
     use_file_tail                        { $1 }
@@ -629,9 +627,9 @@ use_file_tail:
     EOF                                         { [] }
   | SEMISEMI EOF                                { [] }
   | SEMISEMI seq_expr use_file_tail             { Ptop_def[ghstrexp $startpos $endpos  $2] :: $3 }
-  | SEMISEMI structure_item use_file_tail       { Ptop_def[$2] :: $3 }
+  | SEMISEMI structure_item use_file_tail       { Ptop_def($2) :: $3 }
   | SEMISEMI toplevel_directive use_file_tail   { $2 :: $3 }
-  | structure_item use_file_tail                { Ptop_def[$1] :: $2 }
+  | structure_item use_file_tail                { Ptop_def($1) :: $2 }
   | toplevel_directive use_file_tail            { $1 :: $2 }
 ;
 
@@ -685,18 +683,35 @@ structure_tail:
     /* empty */                                 { [] }
   | SEMISEMI                                    { [] }
   | SEMISEMI seq_expr structure_tail            { ghstrexp $startpos $endpos $2 :: $3 }
-  | SEMISEMI structure_item structure_tail      { $2 :: $3 }
-  | structure_item structure_tail               { $1 :: $2 }
+  | SEMISEMI structure_item structure_tail      { $2 @ $3 }
+  | structure_item structure_tail               { $1 @ $2 }
 ;
 
 top_structure_item:
   | structure_item EOF 
-  { mkloc $1 (symbol_rloc $startpos $endpos) }
+  { match $1 with
+    | [] -> assert false (* I don't like warnings *)
+    | [str] -> mkloc str (symbol_rloc $startpos $endpos)
+    | type_def :: _generated_funs -> mkloc type_def (symbol_rloc $startpos $endpos)
+  }
 ;
 
-extended_structure_item:
+structure_item:
+    LET rec_flag let_bindings
+      { match $3 with
+        | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
+            [mkstr $startpos $endpos (Pstr_eval exp)]
+        | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev $3))]
+      }
+  | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
+      { [mkstr $startpos $endpos
+          (Pstr_primitive (mkrhs $startpos($2) $endpos($2) $2, 
+            { pval_type = $4; pval_prim = $6; pval_loc = symbol_rloc $startpos $endpos }))]
+      }
+  | TYPE type_declarations
+      { [mkstr $startpos $endpos (Pstr_type(List.rev $2))] }
   | TYPE type_declarations WITH LIDENT
-      { 
+      {
         let mk_sexp_funs ty =
           let open Fake in
           let sexp_of_ = {
@@ -724,41 +739,25 @@ extended_structure_item:
           (* unrecognized extension, ignore it *)
           [ mkstr $startpos $endpos (Pstr_type(List.rev $2)) ]
       }
-;
-
-structure_item:
-    LET rec_flag let_bindings
-      { match $3 with
-        | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
-               mkstr $startpos $endpos (Pstr_eval exp)
-        | _ -> mkstr $startpos $endpos (Pstr_value($2, List.rev $3))
-      }
-  | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
-      { mkstr $startpos $endpos
-          (Pstr_primitive (mkrhs $startpos($2) $endpos($2) $2, 
-            { pval_type = $4; pval_prim = $6; pval_loc = symbol_rloc $startpos $endpos }))
-      }
-  | TYPE type_declarations
-      { mkstr $startpos $endpos (Pstr_type(List.rev $2)) }
   | EXCEPTION UIDENT constructor_arguments
-      { mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3)) }
+      { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | EXCEPTION UIDENT EQUAL constr_longident
-      { mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
-          mkloc $4 (rhs_loc $startpos($4) $endpos($4)))) }
+      { [mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
+          mkloc $4 (rhs_loc $startpos($4) $endpos($4))))] }
   | MODULE UIDENT module_binding
-      { mkstr $startpos $endpos (Pstr_module(mkrhs $startpos($2) $endpos($2) $2, $3)) }
+      { [mkstr $startpos $endpos (Pstr_module(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | MODULE REC module_rec_bindings
-      { mkstr $startpos $endpos (Pstr_recmodule(List.rev $3)) }
+      { [mkstr $startpos $endpos (Pstr_recmodule(List.rev $3))] }
   | MODULE TYPE ident EQUAL module_type
-      { mkstr $startpos $endpos (Pstr_modtype(mkrhs $startpos($3) $endpos($3) $3, $5)) }
+      { [mkstr $startpos $endpos (Pstr_modtype(mkrhs $startpos($3) $endpos($3) $3, $5))] }
   | OPEN mod_longident
-      { mkstr $startpos $endpos (Pstr_open (mkrhs $startpos($2) $endpos($2) $2)) }
+      { [mkstr $startpos $endpos (Pstr_open (mkrhs $startpos($2) $endpos($2) $2))] }
   | CLASS class_declarations
-      { mkstr $startpos $endpos (Pstr_class (List.rev $2)) }
+      { [mkstr $startpos $endpos (Pstr_class (List.rev $2))] }
   | CLASS TYPE class_type_declarations
-      { mkstr $startpos $endpos (Pstr_class_type (List.rev $3)) }
+      { [mkstr $startpos $endpos (Pstr_class_type (List.rev $3))] }
   | INCLUDE module_expr
-      { mkstr $startpos $endpos (Pstr_include $2) }
+      { [mkstr $startpos $endpos (Pstr_include $2)] }
 ;
 module_binding:
     EQUAL module_expr
