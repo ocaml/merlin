@@ -7,6 +7,7 @@ let app a b =
 let pat_app f (pat,expr) = pat, app f expr
 
 type type_scheme = [
+  | `Var   of string
   | `Arrow of type_scheme * type_scheme
   | `Named of type_scheme list * string
 ]
@@ -25,6 +26,8 @@ and binding = {
 }
 
 let rec translate_ts = function
+  | `Var ident ->
+    { ptyp_desc = Ptyp_var ident ; ptyp_loc = Location.none }
   | `Arrow (a, b) ->
     let a = translate_ts a in
     let b = translate_ts b in
@@ -47,6 +50,7 @@ and translate_to_str = function
   | `Let lst ->
     let p = Pstr_value (Asttypes.Nonrecursive, List.map translate_binding lst) in
     { pstr_desc = p ; pstr_loc = Location.none }
+  | _ -> failwith "not allowd at this level"
 
 and translate_to_expr = function
   | `Let _ -> failwith "not allowed at this level"
@@ -80,6 +84,43 @@ module Lwt = struct
   let raise_lwt' = prim_ident "Lwt.raise_lwt'"
 end
 
-module Sexp = struct
+module Sexp : sig
+  val make_funs : string Location.loc * Parsetree.type_declaration -> ast
+end = struct
   let t = `Named ([], "Sexplib.Sexp.t")
+
+  let format_params ~format_arg lst =
+    List.fold_right
+      (fun param (args, params) ->
+        match param with
+        | None -> (format_arg "_") :: args, `Var "_" :: params
+        | Some id -> id.Location.txt :: args, `Var id.Location.txt :: params)
+      lst
+      (["x"], [])
+
+  let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `Ident "x"))
+
+  let sexp_of_ (located_name, type_infos) =
+    let ty = located_name.Location.txt in
+    let args, params =
+      format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
+    in
+    {
+      ident = "sexp_of_" ^ ty ;
+      typesig = `Arrow (`Named (params, ty), t) ;
+      body = mk_fun ~args ;
+    }
+
+  let _of_sexp (located_name, type_infos) =
+    let ty = located_name.Location.txt in
+    let args, params =
+      format_params ~format_arg:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
+    in
+    {
+      ident = ty ^ "_of_sexp" ;
+      typesig = `Arrow (t, `Named (params, ty)) ;
+      body = mk_fun ~args ;
+    }
+
+  let make_funs ty = `Let [ sexp_of_ ty ; _of_sexp ty ]
 end

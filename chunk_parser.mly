@@ -595,27 +595,9 @@ structure_item:
       { [mkstr $startpos $endpos (Pstr_type(List.rev $2))] }
   | TYPE type_declarations WITH LIDENT
       {
-        let mk_sexp_funs ty =
-          let open Fake in
-          let sexp_of_ = {
-            ident = "sexp_of_" ^ ty ;
-            typesig = `Arrow (`Named ([], ty), Sexp.t) ;
-            body = `Fun (["t"], `App (`Ident "Obj.magic", `Ident "t")) ;
-          }
-          and _of_sexp = {
-            ident = ty ^ "_of_sexp" ;
-            typesig = `Arrow (Sexp.t, `Named ([], ty)) ;
-            body = `Fun (["x"], `App (`Ident "Obj.magic", `Ident "x")) ;
-          }
-          in
-          `Let [ sexp_of_ ; _of_sexp ]
-        in
         match $4 with (* UGLY UGLY UGLY *) (* but temporary, hopefully *)
         | "sexp" ->
-          let type_names = (* TODO: get optional type parameters *)
-            List.rev_map (fun (loc_name, _) -> loc_name.txt) $2
-          in
-          let funs = List.map mk_sexp_funs type_names in
+          let funs = List.map Fake.Sexp.make_funs $2 in
           let ast = List.map Fake.translate_to_str funs in
           mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
         | _ ->
