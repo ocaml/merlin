@@ -99,88 +99,6 @@ let ghpat startpos endpos d = { ppat_desc = d; ppat_loc = symbol_gloc startpos e
 let ghtyp startpos endpos d = { ptyp_desc = d; ptyp_loc = symbol_gloc startpos endpos };;
 
 (* Fake namespace support (extensions) *)
-module Fake =
-struct
-
-  let app a b =
-    let pexp_loc = { b.pexp_loc with Location.loc_ghost = true } in
-    { pexp_desc = Pexp_apply (a, ["", b]) ; pexp_loc }
-
-  let pat_app f (pat,expr) = pat, app f expr
-
-  type type_scheme = [
-    | `Arrow of type_scheme * type_scheme
-    | `Named of type_scheme list * string
-  ]
-
-  (* extend as needed *)
-  type ast = [
-    | `Let   of binding list
-    | `Fun   of string list * ast
-    | `App   of ast * ast
-    | `Ident of string
-  ]
-  and binding = {
-    ident   : string ;
-    typesig : type_scheme ;
-    body    : ast ;
-  }
-
-  let rec translate_ts = function
-    | `Arrow (a, b) ->
-      let a = translate_ts a in
-      let b = translate_ts b in
-      { ptyp_desc = Ptyp_arrow("", a, b) ; ptyp_loc = Location.none }
-    | `Named (params, id) ->
-      let id = Longident.parse id in
-      let params = List.map translate_ts params in
-      { ptyp_desc = Ptyp_constr (mknoloc id, params) ; ptyp_loc = Location.none }
-
-  let rec translate_binding { ident ; typesig ; body } =
-    let pat = { ppat_desc = Ppat_var (mknoloc ident) ; ppat_loc = Location.none } in
-    let typesig_opt = Some (translate_ts typesig) in
-    let body = translate_to_expr body in
-    (
-      pat,
-      { pexp_desc = Pexp_constraint (body, typesig_opt, None) ; pexp_loc = Location.none }
-    )
-
-  and translate_to_str = function
-    | `Let lst ->
-      let p = Pstr_value (Nonrecursive, List.map translate_binding lst) in
-      { pstr_desc = p ; pstr_loc = Location.none }
-
-  and translate_to_expr = function
-    | `Let _ -> failwith "not allowed at this level"
-    | `Fun (simple_patterns, body) ->
-      List.fold_right
-        (fun simple_pattern body ->
-          let patt = {
-            ppat_desc = Ppat_var (mknoloc simple_pattern) ;
-            ppat_loc = Location.none ;
-          } in
-          { pexp_desc = Pexp_function ("", None, [patt, body]) ; pexp_loc = Location.none })
-        simple_patterns
-        (translate_to_expr body)
-    | `App (f, x) -> app (translate_to_expr f) (translate_to_expr x)
-    | `Ident i ->
-      { pexp_desc = Pexp_ident (mknoloc (Longident.parse i)) ; pexp_loc = Location.none }
-
-  let prim_ident prim = Longident.parse ("_." ^ prim)
-  let prim prim = {
-    pexp_desc = Pexp_ident (Location.mknoloc (prim_ident prim));
-    pexp_loc = Location.none
-  }
-
-  let un_lwt = prim "Lwt.un_lwt"
-  let to_lwt = prim "Lwt.to_lwt"
-  let in_lwt = prim "Lwt.in_lwt"
-  let unit_lwt = prim "Lwt.unit_lwt"
-  let un_stream = prim "Lwt.un_stream"
-  let finally' = prim "Lwt.finally'"
-  let raise_lwt' = prim_ident "Lwt.raise_lwt'"
-end
-;;
 
 let mkassert startpos endpos  e =
   match e with
@@ -681,12 +599,12 @@ structure_item:
           let open Fake in
           let sexp_of_ = {
             ident = "sexp_of_" ^ ty ;
-            typesig = `Arrow (`Named ([], ty), `Named ([], "Sexplib.Sexp.t")) ;
+            typesig = `Arrow (`Named ([], ty), Sexp.t) ;
             body = `Fun (["t"], `App (`Ident "Obj.magic", `Ident "t")) ;
           }
           and _of_sexp = {
             ident = ty ^ "_of_sexp" ;
-            typesig = `Arrow (`Named ([], "Sexplib.Sexp.t"), `Named ([], ty)) ;
+            typesig = `Arrow (Sexp.t, `Named ([], ty)) ;
             body = `Fun (["x"], `App (`Ident "Obj.magic", `Ident "x")) ;
           }
           in
@@ -1092,8 +1010,8 @@ expr:
       { mkexp $startpos $endpos (Pexp_let($2, List.rev $3, $5)) }
   | LET_LWT rec_flag let_bindings IN seq_expr
       { let expr = mkexp $startpos $endpos
-          (Pexp_let($2, List.rev_map (Fake.pat_app Fake.un_lwt) $3, $5)) in
-        Fake.app Fake.in_lwt expr }
+          (Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, $5)) in
+        Fake.app Fake.Lwt.in_lwt expr }
   | LET MODULE UIDENT module_binding IN seq_expr
       { mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, $6)) }
   | LET OPEN mod_longident IN seq_expr
@@ -1108,22 +1026,22 @@ expr:
       { mkexp $startpos $endpos (Pexp_match($2, List.rev $5)) }
   | MATCH_LWT seq_expr WITH opt_bar match_cases
       { let expr = mkexp $startpos $endpos
-          (Pexp_match(Fake.app Fake.un_lwt $2, List.rev $5)) in
-        Fake.app Fake.in_lwt expr }
+          (Pexp_match(Fake.app Fake.Lwt.un_lwt $2, List.rev $5)) in
+        Fake.app Fake.Lwt.in_lwt expr }
   | TRY seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try($2, List.rev $5)) }
   | TRY seq_expr WITH error
       { syntax_error() }
   | TRY_LWT seq_expr WITH opt_bar match_cases
-      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.in_lwt $2, List.rev $5)) }
+      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) }
   | TRY_LWT seq_expr FINALLY_LWT seq_expr
-      { Fake.app (Fake.app Fake.finally' $2) $4 }
+      { Fake.app (Fake.app Fake.Lwt.finally' $2) $4 }
   | TRY_LWT seq_expr WITH error
       { syntax_error() }
   | TRY_LWT seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
       { let expr = mkexp $startpos $endpos
-          (Pexp_try (Fake.app Fake.in_lwt $2, List.rev $5)) in
-        Fake.app (Fake.app Fake.finally' expr) $7 }
+          (Pexp_try (Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) in
+        Fake.app (Fake.app Fake.Lwt.finally' expr) $7 }
   | expr_comma_list %prec below_COMMA
       { mkexp $startpos $endpos (Pexp_tuple(List.rev $1)) }
   | constr_longident simple_expr 
@@ -1137,19 +1055,19 @@ expr:
   | WHILE seq_expr DO seq_expr DONE
       { mkexp $startpos $endpos (Pexp_while($2, $4)) }
   | WHILE_LWT seq_expr DO seq_expr DONE
-      { mkexp $startpos $endpos (Pexp_while(Fake.(app un_lwt $2), Fake.(app unit_lwt $4))) }
+      { mkexp $startpos $endpos (Pexp_while(Fake.(app Lwt.un_lwt $2), Fake.(app Lwt.unit_lwt $4))) }
   | FOR val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
       { mkexp $startpos $endpos (Pexp_for(mkrhs $startpos($2) $endpos($2) $2, $4, $6, $5, $8)) }
   | FOR_LWT val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
       { let expr = mkexp $startpos $endpos
           (Pexp_for(mkrhs $startpos($2) $endpos($2) $2,
-            Fake.(app un_lwt $4),
-            Fake.(app un_lwt $6), $5,
-            Fake.(app unit_lwt $8))) in
-        Fake.(app to_lwt expr) }
+            Fake.(app Lwt.un_lwt $4),
+            Fake.(app Lwt.un_lwt $6), $5,
+            Fake.(app Lwt.unit_lwt $8))) in
+        Fake.(app Lwt.to_lwt expr) }
   | FOR_LWT pattern IN seq_expr DO seq_expr DONE
       { mkexp $startpos $endpos
-          (Pexp_let (Nonrecursive, [$2,Fake.(app un_stream $4)], Fake.(app unit_lwt $6))) }
+          (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
   | expr COLONCOLON expr
       { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) (symbol_rloc $startpos $endpos ) }
   | LPAREN COLONCOLON RPAREN LPAREN expr COMMA expr RPAREN

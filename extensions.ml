@@ -22,7 +22,7 @@ let ext_lwt =
     "val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t
      val raise_lwt : exn -> 'a Lwt.t"
 
-let registry = [ext_lwt]                       
+let registry = [ext_lwt]
 
 let register env =
   (* Log errors ? *)
