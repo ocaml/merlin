@@ -24,9 +24,12 @@ let log ~dest (input,output) =
 
 let return l = `List (`String "return" :: l)
 
+let error_catcher = ref (fun _ -> None)
 let fail = function
   | Failure s -> `List [`String "failure"; `String s]
-  | exn -> `List [`String "exception"; `String (Printexc.to_string exn)]
+  | exn -> match !error_catcher exn with
+      | Some error -> `List [`String "error"; error]
+      | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
 
 let pos_to_json pos =
   Lexing.(`Assoc ["line", `Int pos.pos_lnum;
@@ -41,3 +44,4 @@ let pos_of_json = function
     with Not_found -> failwith "Incorrect position"
     end
   | _ -> failwith "Incorrect position"
+
