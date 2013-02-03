@@ -675,23 +675,23 @@ let_pattern:
 (* Partially correct expressions support *)
 enter_partial:
   | { enter_partial $startpos }
-leave_partial:
-  | { leave_partial $startpos }
 commit_partial:
   | { commit_partial $startpos }
+leave_partial:
+  | { leave_partial () }
 
 expr:
     simple_expr %prec below_SHARP
       { () }
   | simple_expr simple_labeled_expr_list
       { () }
-  | LET enter_partial rec_flag let_bindings leave_partial IN seq_expr commit_partial
+  | LET enter_partial rec_flag let_bindings commit_partial IN seq_expr leave_partial
       { () }
   | LET_LWT rec_flag let_bindings IN seq_expr
       { () }
   | LET MODULE UIDENT enter_sub module_binding leave_sub IN seq_expr
       { () }
-  | LET OPEN enter_partial mod_longident leave_partial IN seq_expr commit_partial
+  | LET OPEN enter_partial mod_longident commit_partial IN seq_expr leave_partial 
       { () }
   | FUNCTION opt_bar match_cases
       { () }

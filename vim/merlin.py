@@ -5,6 +5,18 @@ import re
 import os
 from collections import Counter
 
+class Failure(Exception):
+  def __init__(self, value):
+      self.value = value
+  def __str__(self):
+    return repr(self.value)
+
+class Exception(Exception):
+  def __init__(self, value):
+      self.value = value
+  def __str__(self):
+    return repr(self.value)
+
 ######## COMMUNICATION
 
 mainpipe = None
@@ -31,7 +43,17 @@ def send_command(*cmd):
     restart()
   json.dump(cmd, mainpipe.stdin)
   line = mainpipe.stdout.readline()
-  return json.loads(line)
+  result = json.loads(line)
+  content = result[1:]
+  if len(content) == 1:
+    content = content[0]
+
+  if result[0] == "return":
+    return content
+  elif result[0] == "failure":
+    raise Failure(content)
+  elif result[0] == "exception":
+    raise Exception(content)
 
 ######## BUFFER CACHE
 
@@ -57,11 +79,11 @@ def command_reset():
   clear_cache()
   return r
 
-def command_tell(content):
+def command_tell_struct(content):
   if type(content) is list:
-    return send_command("tell", "\n".join(content) + "\n")
+    return send_command("tell", "struct", "\n".join(content) + "\n")
   else:
-    return send_command("tell", content)
+    return send_command("tell", "struct", content)
 
 def command_which_file(name):
   return send_command('which', 'path', name)
@@ -76,8 +98,7 @@ def command_find_list():
   return send_command('find', 'list')
 
 def command_seek(line,col):
-  effective_pos = send_command("seek", "position", {'line' : line, 'col': col})
-  position = effective_pos[1]
+  position = send_command("seek", "position", {'line' : line, 'col': col})
   return (position['line'], position['col'])
 
 def command_seek_scope():
@@ -187,14 +208,15 @@ def sync_buffer_to(to_line, to_col):
     content = cb[:end_line]
     shadow_buffer = content
 
-  while not command_tell(content):
-    if end_line < max_line:
-      next_end = min(max_line,end_line + 4)
-      content = cb[end_line:next_end]
-      end_line = next_end
-    else:
-      content = None
-  last_line = end_line + 1
+  if content != None:
+    while not command_tell_struct(content):
+      if end_line < max_line:
+        next_end = min(max_line,end_line + 4)
+        content = cb[end_line:next_end]
+        end_line = next_end
+      else:
+        content = None
+    last_line = end_line + 1
 
   # Now we are synced, come back to environment around cursor
   command_seek(to_line, to_col)
@@ -223,7 +245,7 @@ def vim_complete(base, vimvar):
 
 def vim_loclist(vimvar):
   vim.command("let %s = []" % vimvar)
-  errors = command_report_errors()[1]
+  errors = command_report_errors()
   bufnr = vim.current.buffer.number
   nr = 0
   for error in errors:
@@ -249,19 +271,13 @@ def vim_find_list(vimvar):
 def vim_type_expr(expr):
   sync_buffer()
   ty = send_command("type", "expression", expr)
-  if ty[0] == "type":
-    print (expr + " : " + ty[1])
-  elif ty[0] == "error":
-    print (expr + " : " + ty[1]['message'])
+  print (expr + " : " + ty)
 
 def vim_type_cursor():
   to_line, to_col = vim.current.window.cursor
   sync_buffer()
   ty = send_command("type", "at", {'line':to_line,'col':to_col})
-  if ty[0] == "type":
-    print (ty[1])
-  elif ty[0] == "error":
-    print (ty[1]['message'])
+  print (ty)
 
 # Resubmit current buffer
 def vim_reload_buffer():

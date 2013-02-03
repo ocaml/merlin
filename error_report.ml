@@ -11,8 +11,8 @@ let format ~valid ~where ?loc msg =
     match loc with
       | None -> content
       | Some loc ->
-        ("start", Outline_utils.pos_to_json loc.Location.loc_start) ::
-        ("end", Outline_utils.pos_to_json loc.Location.loc_end) ::
+        ("start", Protocol.pos_to_json loc.Location.loc_start) ::
+        ("end", Protocol.pos_to_json loc.Location.loc_end) ::
         content
   in
   let content = ("type", `String where) :: content in
@@ -20,27 +20,27 @@ let format ~valid ~where ?loc msg =
 
 let to_json = function
   | Typecore.Error (loc, e) ->
-      let ppf, to_string = Outline_utils.ppf_to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
       Typecore.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typetexp.Error (loc, e) ->
-      let ppf, to_string = Outline_utils.ppf_to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
       Typetexp.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typedecl.Error (loc, e) ->
-      let ppf, to_string = Outline_utils.ppf_to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
       Typedecl.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typemod.Error (loc, e) ->
-      let ppf, to_string = Outline_utils.ppf_to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
       Typemod.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Env.Error e ->
-      let ppf, to_string = Outline_utils.ppf_to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
       Env.report_error ppf e;
       Some (format ~valid:true ~where:"env" (to_string ()))
   | Syntaxerr.Error e ->
-      let ppf, to_string = Outline_utils.ppf_to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
       Syntaxerr.report_error ppf e;
       let loc = match e with
         | Syntaxerr.Unclosed (loc,_,loc',_) ->
