@@ -1,5 +1,5 @@
 type item_desc =
-  | Definition of Parsetree.structure_item Location.loc
+  | Definitions of Parsetree.structure_item Location.loc list
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
   | Partial_definitions of Parsetree.structure_item Location.loc list
@@ -20,7 +20,7 @@ let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 let dump_chunk t =
   List.map
   begin function
-  | _, Definition d -> ("definition", line d)
+  | _, Definitions (d :: _) -> ("definition", line d)
   | _, Module_opening (l,s,_) -> ("opening " ^ s.Location.txt, line s)
   | _, Module_closing (d,offset) -> ("closing after " ^ string_of_int offset, line d)
   | _, Partial_definitions [] -> ("empty partial_definitions", -1)
@@ -46,12 +46,13 @@ let sync_step outline tokens t =
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
         in
         let open Parsetree in
-        begin match 
-          (Chunk_parser.top_structure_item lexer (Lexing.from_string "")).Location.txt
-        with
-          | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-              Some (Module_opening (pstr_loc, s, m))
-          | _ -> assert false
+        let mod_str =
+          List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
+        in
+        begin match mod_str.Location.txt with
+        | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
+            Some (Module_opening (pstr_loc, s, m))
+        | _ -> assert false
         end
     | Outline_utils.Definition ->
         (* run structure_item parser on tokens, appending EOF *)
@@ -59,8 +60,8 @@ let sync_step outline tokens t =
           (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         let lexer = Chunk_parser_utils.print_tokens ~who:"chunk" lexer in
-        let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-        Some (Definition def)
+        let defs = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
+        Some (Definitions defs)
 
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> None
     | Outline_utils.Rollback -> raise Invalid_chunk
@@ -69,7 +70,7 @@ let sync_step outline tokens t =
         (* reconstitute module from t *)
         let rec rewind_defs defs t =
           match History.backward t with
-          | Some ((_,Definition d), t') -> rewind_defs (d.Location.txt :: defs) t'
+          | Some ((_,Definitions (d::_)), t') -> rewind_defs (d.Location.txt :: defs) t'
           | Some ((_,Partial_definitions _), t') -> rewind_defs defs t'
           | Some ((_,Module_closing (d,offset)), t') ->
               rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
@@ -129,8 +130,9 @@ let sync_step outline tokens t =
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
           in
           let lexer = Chunk_parser_utils.print_tokens ~who:"chunk:partial" lexer in
-          let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-          def
+          match Chunk_parser.top_structure_item lexer (Lexing.from_string "") with
+          | [def] -> def
+          | _ -> assert false (* we're never seing type definitions here *)
         in
         Some (Partial_definitions (List.map parse_def defs))
 
@@ -139,19 +141,19 @@ let sync outlines chunks =
   let outlines, chunks = History.Sync.rewind fst outlines chunks in
   (* Drop out of sync items *)
   let chunks = History.cutoff chunks in
-  (* Process last items *) 
+  (* Process last items *)
   let rec aux outlines chunks =
     match History.forward outlines with
       | None -> chunks
       | Some ((filter,outline,data,exns),outlines') ->
           (*prerr_endline "SYNC PARSER";*)
           match
-            try 
+            try
               match sync_step outline data chunks with
                 | Some chunk -> Some (History.insert (History.Sync.at outlines', chunk) chunks)
                 | None -> None
             with Syntaxerr.Error _ -> None
-          with              
+          with
             | Some chunks -> aux outlines' chunks
             | None -> aux outlines' chunks
   in

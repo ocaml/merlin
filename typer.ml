@@ -12,7 +12,7 @@ let initial_env () =
   with Not_found ->
     failwith "cannot open pervasives.cmi"
 
-let initial_env = 
+let initial_env =
   let cenv = Lazy.from_fun initial_env in
   fun () ->
     let env = Lazy.force cenv in
@@ -37,7 +37,7 @@ let append_step chunks chunk_item t =
           let rec filter_constraint md =
             let update f = function
               | None -> None
-              | Some md' -> Some (f md') 
+              | Some md' -> Some (f md')
             in
             match md.pmod_desc with
               | Pmod_structure _ -> Some md
@@ -64,17 +64,21 @@ let append_step chunks chunk_item t =
           match find_structure tymod with
             | None -> None
             | Some md -> Some (md.mod_env, trees, exns)
-        with exn -> 
+        with exn ->
           Some (env, trees, exn :: exns)
         end
 
-    | Chunk.Definition d ->
-        begin try
-          let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
-          Some (env, (tstr,tsg) :: trees, exns)
-        with exn -> 
-          Some (env, trees, exn :: exns)
-        end
+    | Chunk.Definitions ds ->
+        let (env,trees,exns) =
+          List.fold_left
+          begin fun (env,trees,exns) d ->
+          try
+            let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
+            (env, (tstr,tsg) :: trees, exns)
+          with exn -> (env, trees, exn :: exns)
+          end (env,trees,exns) ds
+        in
+        Some (env, trees, exns)
 
     | Chunk.Partial_definitions ds ->
         let (_,trees,exns) =
@@ -94,7 +98,7 @@ let append_step chunks chunk_item t =
           let env, trees, exns = value t in
           let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
           Some (env, (tstr,tsg) :: trees, exns)
-        with exn -> 
+        with exn ->
           Some (env, trees, exn :: exns)
         end
 

@@ -1,5 +1,5 @@
 type item_desc =
-  | Definition of Parsetree.structure_item Location.loc
+  | Definitions of Parsetree.structure_item Location.loc list
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
     (* Quand un module est refermé, il faut remonter en certain nombre de
      * définitions dans l'historique (celle du module et des sous modules) :

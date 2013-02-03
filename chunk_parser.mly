@@ -585,7 +585,7 @@ The precedences must be listed from low to high.
 %start interface                        (* for interface files *)
 %type <Parsetree.signature> interface
 %start top_structure_item               (* extension, ocaml-ty *)
-%type <Parsetree.structure_item Location.loc> top_structure_item
+%type <Parsetree.structure_item Location.loc list> top_structure_item
 %start top_expr                        (* extension, ocaml-ty *)
 %type <Parsetree.expression> top_expr
 %%
@@ -658,11 +658,7 @@ structure_tail:
 
 top_structure_item:
   | structure_item EOF 
-  { match $1 with
-    | [] -> assert false (* I don't like warnings *)
-    | [str] -> mkloc str (symbol_rloc $startpos $endpos)
-    | type_def :: _generated_funs -> mkloc type_def (symbol_rloc $startpos $endpos)
-  }
+      { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $1 }
 ;
 
 structure_item:
