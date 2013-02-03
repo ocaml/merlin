@@ -452,7 +452,6 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token <string * Location.t> COMMENT
 
 %token LET_LWT
-%token RAISE_LWT
 %token TRY_LWT
 %token MATCH_LWT
 %token FINALLY_LWT
@@ -488,6 +487,7 @@ The precedences must be listed from low to high.
 %nonassoc LET                           /* above SEMI ( ...; let ... in ...) */
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 /* below BAR  (match ... with ...) */
+%nonassoc FINALLY_LWT
 %nonassoc AND             /* above WITH (module rec A: SIG with ... and ...) */
 %nonassoc THEN                          /* below ELSE (if ... then ...) */
 %nonassoc ELSE                          /* (if ... then ... else ...) */
@@ -510,7 +510,6 @@ The precedences must be listed from low to high.
 %nonassoc prec_unary_minus prec_unary_plus /* unary - */
 %nonassoc prec_constant_constructor     /* cf. simple_expr (C versus C x) */
 %nonassoc prec_constr_appl              /* above AS BAR COLONCOLON COMMA */
-%nonassoc below_SHARP
 %nonassoc SHARP                         /* simple_expr/toplevel_directive */
 %nonassoc below_DOT
 %nonassoc DOT
@@ -526,16 +525,10 @@ The precedences must be listed from low to high.
 %type <Parsetree.structure> implementation
 %start interface                        /* for interface files */
 %type <Parsetree.signature> interface
-%start toplevel_phrase                  /* for interactive use */
-%type <Parsetree.toplevel_phrase> toplevel_phrase
-%start use_file                         /* for the #use directive */
-%type <Parsetree.toplevel_phrase list> use_file
 %start top_structure_item               /* extension, ocaml-ty */
 %type <Parsetree.structure_item Location.loc> top_structure_item
 %start top_expr                        /* extension, ocaml-ty */
 %type <Parsetree.expression> top_expr
-%start any_longident
-%type <Longident.t> any_longident
 %%
 
 /* Entry points */
@@ -546,31 +539,8 @@ implementation:
 interface:
     signature EOF                        { List.rev $1 }
 ;
-toplevel_phrase:
-    top_structure SEMISEMI               { Ptop_def $1 }
-  | seq_expr SEMISEMI                    { Ptop_def[ghstrexp $startpos $endpos  $1] }
-  | toplevel_directive SEMISEMI          { $1 }
-  | EOF                                  { raise End_of_file }
-;
 top_expr:
   | seq_expr EOF { $1 }
-;
-top_structure:
-    structure_item                       { [$1] }
-  | structure_item top_structure         { $1 :: $2 }
-;
-use_file:
-    use_file_tail                        { $1 }
-  | seq_expr use_file_tail               { Ptop_def[ghstrexp $startpos $endpos  $1] :: $2 }
-;
-use_file_tail:
-    EOF                                         { [] }
-  | SEMISEMI EOF                                { [] }
-  | SEMISEMI seq_expr use_file_tail             { Ptop_def[ghstrexp $startpos $endpos  $2] :: $3 }
-  | SEMISEMI structure_item use_file_tail       { Ptop_def[$2] :: $3 }
-  | SEMISEMI toplevel_directive use_file_tail   { $2 :: $3 }
-  | structure_item use_file_tail                { Ptop_def[$1] :: $2 }
-  | toplevel_directive use_file_tail            { $1 :: $2 }
 ;
 
 /* Module expressions */
@@ -1026,7 +996,7 @@ let_pattern:
       { mkpat $startpos $endpos (Ppat_constraint($1, $3)) }
 ;
 expr:
-    simple_expr %prec below_SHARP
+    simple_expr 
       { $1 }
   | simple_expr simple_labeled_expr_list
       { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
@@ -1068,9 +1038,9 @@ expr:
         Fake.app (Fake.app Fake.finally' expr) $7 }
   | expr_comma_list %prec below_COMMA
       { mkexp $startpos $endpos (Pexp_tuple(List.rev $1)) }
-  | constr_longident simple_expr %prec below_SHARP
+  | constr_longident simple_expr 
       { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, Some $2, false)) }
-  | name_tag simple_expr %prec below_SHARP
+  | name_tag simple_expr 
       { mkexp $startpos $endpos (Pexp_variant($1, Some $2)) }
   | IF seq_expr THEN expr ELSE expr
       { mkexp $startpos $endpos (Pexp_ifthenelse($2, $4, Some $6)) }
@@ -1150,9 +1120,9 @@ expr:
       { bigarray_set $startpos($1) $endpos($7) $1 $4 $7 }
   | label LESSMINUS expr
       { mkexp $startpos $endpos (Pexp_setinstvar(mkrhs $startpos($1) $endpos($1) $1, $3)) }
-  | ASSERT simple_expr %prec below_SHARP
+  | ASSERT simple_expr 
       { mkassert $startpos $endpos  $2 }
-  | LAZY simple_expr %prec below_SHARP
+  | LAZY simple_expr 
       { mkexp $startpos $endpos  (Pexp_lazy ($2)) }
   | OBJECT class_structure END
       { mkexp $startpos $endpos  (Pexp_object($2)) }
@@ -1162,8 +1132,6 @@ expr:
 simple_expr:
     val_longident
       { mkexp $startpos $endpos (Pexp_ident (mkrhs $startpos($1) $endpos($1) $1)) }
-  | RAISE_LWT 
-      { mkexp $startpos $endpos (Pexp_ident (mkrhs $startpos($1) $endpos($1) Fake.raise_lwt')) }
   | constant
       { mkexp $startpos $endpos (Pexp_constant $1) }
   | constr_longident %prec prec_constant_constructor
@@ -1245,19 +1213,19 @@ simple_labeled_expr_list:
       { $2 :: $1 }
 ;
 labeled_simple_expr:
-    simple_expr %prec below_SHARP
+    simple_expr 
       { ("", $1) }
   | label_expr
       { $1 }
 ;
 label_expr:
-    LABEL simple_expr %prec below_SHARP
+    LABEL simple_expr 
       { ($1, $2) }
   | TILDE label_ident
       { $2 }
   | QUESTION label_ident
       { ("?" ^ fst $2, snd $2) }
-  | OPTLABEL simple_expr %prec below_SHARP
+  | OPTLABEL simple_expr 
       { ("?" ^ $1, $2) }
 ;
 label_ident:
@@ -1626,9 +1594,9 @@ core_type2:
 ;
 
 simple_core_type:
-    simple_core_type2  %prec below_SHARP
+    simple_core_type2  
       { $1 }
-  | LPAREN core_type_comma_list RPAREN %prec below_SHARP
+  | LPAREN core_type_comma_list RPAREN 
       { match $2 with [sty] -> sty | _ -> raise Parsing.Parse_error }
 ;
 simple_core_type2:
@@ -1846,34 +1814,6 @@ class_longident:
     LIDENT                                      { Lident $1 }
   | mod_longident DOT LIDENT                    { Ldot($1, $3) }
 ;
-any_longident:
-    val_ident                                   { Lident $1 }
-  | mod_ext_longident DOT val_ident             { Ldot ($1, $3) }
-  | mod_ext_longident                           { $1 }
-  | LBRACKET RBRACKET                           { Lident "[]" }
-  | LPAREN RPAREN                               { Lident "()" }
-  | FALSE                                       { Lident "false" }
-  | TRUE                                        { Lident "true" }
-;
-
-/* Toplevel directives */
-toplevel_ident:
-    val_ident                                   { Lident $1 }
-  | mod_ext_longident DOT val_ident             { Ldot($1, $3) }
-  | mod_ext_longident                           { $1 }
-;
-
-toplevel_directive_:
-    SHARP ident                 { ($2, Pdir_none) }
-  | SHARP ident STRING          { ($2, Pdir_string $3) }
-  | SHARP ident INT             { ($2, Pdir_int $3) }
-  | SHARP ident toplevel_ident  { ($2, Pdir_ident $3) }
-  | SHARP ident FALSE           { ($2, Pdir_bool false) }
-  | SHARP ident TRUE            { ($2, Pdir_bool true) }
-;
-
-toplevel_directive:
-  toplevel_directive_ { let name, dir = $1 in Ptop_dir (name, dir) }
 
 /* Miscellaneous */
 

@@ -112,7 +112,6 @@ let token_to_string =
     | WITH -> "WITH"
     | COMMENT (s,_) -> "COMMENT(" ^ String.escaped s ^ ")"
     | LET_LWT -> "LET_LWT"
-    | RAISE_LWT -> "RAISE_LWT"
     | TRY_LWT -> "TRY_LWT"
     | FINALLY_LWT -> "FINALLY_LWT"
     | MATCH_LWT -> "MATCH_LWT"
