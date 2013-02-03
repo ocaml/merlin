@@ -65,6 +65,10 @@ let signature_ident =
   | Sig_class (i,_,_)
   | Sig_class_type (i,_,_) -> i
 
+let print_constructor ppf c = let open Types in match c.cstr_args with
+  | []-> Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = c.cstr_res.desc })
+  | args -> Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok)})
+
 module Env =
 struct
   let summary_prev =

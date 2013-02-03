@@ -227,9 +227,10 @@ let thd4 (_,_,x,_) = x
 
         (* [ppf_to_string ()] gives a fresh formatter and a function to easily
          * gets its content as a string *)
-let ppf_to_string () =
+let ppf_to_string ?(width=0) () =
   let b = Buffer.create 32 in
   let ppf = Format.formatter_of_buffer b in
+  Format.pp_set_margin ppf width;
   ppf,
   (fun () ->
     Format.pp_print_flush ppf ();

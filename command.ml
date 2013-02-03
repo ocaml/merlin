@@ -88,24 +88,30 @@ let command_type = {
     "['type','at',{'line':l,'col':c}] returns the type of the expression at given position(BUGGY)";
   ];
 
-  handler = begin fun _ state -> function
+  handler =
+  begin fun _ state -> function
   | [`String "expression"; `String expr] ->
       let lexbuf = Lexing.from_string expr in
       let env = Typer.env state.types in
-      let expression = Chunk_parser.top_expr Lexer.token lexbuf in
-      let (str, sg, _) =
-        Typemod.type_toplevel_phrase env
-          Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
-      in
-      (*let sg' = Typemod.simplify_signature sg in*)
-      let open Typedtree in
-      begin match str.str_items with
-        | [ { str_desc = Tstr_eval exp }] ->
-            let ppf, to_string = Misc.ppf_to_string () in
-            Printtyp.type_scheme ppf exp.exp_type;
-            state, `String (to_string ())
-        | _ -> failwith "unhandled expression"
-      end
+      let ppf, to_string = Misc.ppf_to_string () in
+      begin match Chunk_parser.top_expr Lexer.token lexbuf with
+        | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
+            let _, c = Env.lookup_constructor longident.Asttypes.txt env in
+            Browse.print_constructor ppf c
+        | expression ->
+          let (str, sg, _) =
+            Typemod.type_toplevel_phrase env
+              Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
+          in
+          (*let sg' = Typemod.simplify_signature sg in*)
+          let open Typedtree in
+          begin match str.str_items with
+            | [ { str_desc = Tstr_eval exp }] ->
+                Printtyp.type_scheme ppf exp.exp_type;
+            | _ -> failwith "unhandled expression"
+          end
+      end;
+      state, `String (to_string ())
 
   | [`String "at" ; jpos] ->
     let ln, cl = Protocol.pos_of_json jpos in
@@ -177,7 +183,7 @@ let complete_in_env env prefix =
       | `Cons c  -> 
           Format.pp_print_string ppf name;
           Format.pp_print_string ppf " : ";
-          Printtyp.type_expr ppf Types.({ level = 0 ; id = 0 ; desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple c.cstr_args}, c.cstr_res,Cok)});
+          Browse.print_constructor ppf c;
           "constructor"
       | `Mod m   -> 
           (if exact then

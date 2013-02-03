@@ -125,7 +125,7 @@ val thd4: 'a * 'b * 'c * 'd -> 'c
 
         (* [ppf_to_string ()] gives a fresh formatter and a function to easily
          * gets its content as a string *)
-val ppf_to_string : unit -> Format.formatter * (unit -> string)
+val ppf_to_string : ?width:int -> unit -> Format.formatter * (unit -> string)
 
         (* [lex_strings s f] makes a lexing buffer from the string [s]
          * (like a Lexer.from_string) and call [f] to refill the buffer *)
