@@ -1,18 +1,18 @@
-/***********************************************************************/
-/*                                                                     */
-/*                                OCaml                                */
-/*                                                                     */
-/*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         */
-/*                                                                     */
-/*  Copyright 1996 Institut National de Recherche en Informatique et   */
-/*  en Automatique.  All rights reserved.  This file is distributed    */
-/*  under the terms of the Q Public License version 1.0.               */
-/*                                                                     */
-/***********************************************************************/
+(***********************************************************************)
+(*                                                                     *)
+(*                                OCaml                                *)
+(*                                                                     *)
+(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
+(*                                                                     *)
+(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
+(*  en Automatique.  All rights reserved.  This file is distributed    *)
+(*  under the terms of the Q Public License version 1.0.               *)
+(*                                                                     *)
+(***********************************************************************)
 
-/* $Id: parser.mly 12800 2012-07-30 18:59:07Z doligez $ */
+(* $Id: parser.mly 12800 2012-07-30 18:59:07Z doligez $ *)
 
-/* The parser definition */
+(* The parser definition *)
 
 %{
 open Asttypes
@@ -336,7 +336,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 
 %}
 
-/* Tokens */
+(* Tokens *)
 
 %token AMPERAMPER
 %token AMPERSAND
@@ -417,7 +417,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token OPEN
 %token <string> OPTLABEL
 %token OR
-/* %token PARSER */
+(* %token PARSER *)
 %token PLUS
 %token PLUSDOT
 %token <string> PREFIXOP
@@ -458,7 +458,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token FOR_LWT
 %token WHILE_LWT
 
-/* Precedences and associativities.
+(* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved
 in favor of the first rule (in source file order).  A shift/reduce conflict
@@ -479,59 +479,59 @@ in all other cases, we define two precedences if needed to resolve
 conflicts.
 
 The precedences must be listed from low to high.
-*/
+*)
 
 %nonassoc IN
 %nonassoc below_SEMI
-%nonassoc SEMI                          /* below EQUAL ({lbl=...; lbl=...}) */
-%nonassoc LET                           /* above SEMI ( ...; let ... in ...) */
+%nonassoc SEMI                          (* below EQUAL ({lbl=...; lbl=...}) *)
+%nonassoc LET                           (* above SEMI ( ...; let ... in ...) *)
 %nonassoc below_WITH
-%nonassoc FUNCTION WITH                 /* below BAR  (match ... with ...) */
+%nonassoc FUNCTION WITH                 (* below BAR  (match ... with ...) *)
 %nonassoc FINALLY_LWT
-%nonassoc AND             /* above WITH (module rec A: SIG with ... and ...) */
-%nonassoc THEN                          /* below ELSE (if ... then ...) */
-%nonassoc ELSE                          /* (if ... then ... else ...) */
-%nonassoc LESSMINUS                     /* below COLONEQUAL (lbl <- x := e) */
-%right    COLONEQUAL                    /* expr (e := e := e) */
+%nonassoc AND             (* above WITH (module rec A: SIG with ... and ...) *)
+%nonassoc THEN                          (* below ELSE (if ... then ...) *)
+%nonassoc ELSE                          (* (if ... then ... else ...) *)
+%nonassoc LESSMINUS                     (* below COLONEQUAL (lbl <- x := e) *)
+%right    COLONEQUAL                    (* expr (e := e := e) *)
 %nonassoc AS
-%left     BAR                           /* pattern (p|p|p) */
+%left     BAR                           (* pattern (p|p|p) *)
 %nonassoc below_COMMA
-%left     COMMA                         /* expr/expr_comma_list (e,e,e) */
-%right    MINUSGREATER                  /* core_type2 (t -> t -> t) */
-%right    OR BARBAR                     /* expr (e || e || e) */
-%right    AMPERSAND AMPERAMPER          /* expr (e && e && e) */
+%left     COMMA                         (* expr/expr_comma_list (e,e,e) *)
+%right    MINUSGREATER                  (* core_type2 (t -> t -> t) *)
+%right    OR BARBAR                     (* expr (e || e || e) *)
+%right    AMPERSAND AMPERAMPER          (* expr (e && e && e) *)
 %nonassoc below_EQUAL
-%left     INFIXOP0 EQUAL LESS GREATER   /* expr (e OP e OP e) */
-%right    INFIXOP1                      /* expr (e OP e OP e) */
-%right    COLONCOLON                    /* expr (e :: e :: e) */
-%left     INFIXOP2 PLUS PLUSDOT MINUS MINUSDOT  /* expr (e OP e OP e) */
-%left     INFIXOP3 STAR                 /* expr (e OP e OP e) */
-%right    INFIXOP4                      /* expr (e OP e OP e) */
-%nonassoc prec_unary_minus prec_unary_plus /* unary - */
-%nonassoc prec_constant_constructor     /* cf. simple_expr (C versus C x) */
-%nonassoc prec_constr_appl              /* above AS BAR COLONCOLON COMMA */
-%nonassoc SHARP                         /* simple_expr/toplevel_directive */
+%left     INFIXOP0 EQUAL LESS GREATER   (* expr (e OP e OP e) *)
+%right    INFIXOP1                      (* expr (e OP e OP e) *)
+%right    COLONCOLON                    (* expr (e :: e :: e) *)
+%left     INFIXOP2 PLUS PLUSDOT MINUS MINUSDOT  (* expr (e OP e OP e) *)
+%left     INFIXOP3 STAR                 (* expr (e OP e OP e) *)
+%right    INFIXOP4                      (* expr (e OP e OP e) *)
+%nonassoc prec_unary_minus prec_unary_plus (* unary - *)
+%nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
+%nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
+%nonassoc SHARP                         (* simple_expr/toplevel_directive *)
 %nonassoc below_DOT
 %nonassoc DOT
-/* Finally, the first tokens of simple_expr are above everything else. */
+(* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
 
 
-/* Entry points */
+(* Entry points *)
 
-%start implementation                   /* for implementation files */
+%start implementation                   (* for implementation files *)
 %type <Parsetree.structure> implementation
-%start interface                        /* for interface files */
+%start interface                        (* for interface files *)
 %type <Parsetree.signature> interface
-%start top_structure_item               /* extension, ocaml-ty */
+%start top_structure_item               (* extension, ocaml-ty *)
 %type <Parsetree.structure_item Location.loc> top_structure_item
-%start top_expr                        /* extension, ocaml-ty */
+%start top_expr                        (* extension, ocaml-ty *)
 %type <Parsetree.expression> top_expr
 %%
 
-/* Entry points */
+(* Entry points *)
 
 implementation:
     structure EOF                        { $1 }
@@ -543,7 +543,7 @@ top_expr:
   | seq_expr EOF { $1 }
 ;
 
-/* Module expressions */
+(* Module expressions *)
 
 module_expr:
     mod_longident
@@ -590,7 +590,7 @@ structure:
   | seq_expr structure_tail                     { ghstrexp $startpos $endpos $1 :: $2 }
 ;
 structure_tail:
-    /* empty */                                 { [] }
+    (* empty *)                                 { [] }
   | SEMISEMI                                    { [] }
   | SEMISEMI seq_expr structure_tail            { ghstrexp $startpos $endpos $2 :: $3 }
   | SEMISEMI structure_item structure_tail      { $2 :: $3 }
@@ -653,7 +653,7 @@ module_rec_binding:
     { (mkrhs $startpos($1) $endpos($5) $1, $3, $5) }
 ;
 
-/* Module types */
+(* Module types *)
 
 module_type:
     mty_longident
@@ -675,7 +675,7 @@ module_type:
       { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3) }
 ;
 signature:
-    /* empty */                                 { [] }
+    (* empty *)                                 { [] }
   | signature signature_item                    { $2 :: $1 }
   | signature signature_item SEMISEMI           { $2 :: $1 }
 ;
@@ -722,7 +722,7 @@ module_rec_declaration:
     UIDENT COLON module_type                            { (mkrhs $startpos($1) $endpos($1) $1, $3) }
 ;
 
-/* Class expressions */
+(* Class expressions *)
 
 class_declarations:
     class_declarations AND class_declaration    { $3 :: $1 }
@@ -744,7 +744,7 @@ class_fun_binding:
       { let (l,o,p) = $1 in mkclass $startpos $endpos (Pcl_fun(l, o, p, $2)) }
 ;
 class_type_parameters:
-    /*empty*/                                   { [], symbol_gloc Lexing.dummy_pos Lexing.dummy_pos }
+    (*empty*)                                   { [], symbol_gloc Lexing.dummy_pos Lexing.dummy_pos }
   | LBRACKET type_parameter_list RBRACKET       { List.rev $2, symbol_rloc $startpos $endpos  }
 ;
 class_fun_def:
@@ -790,11 +790,11 @@ class_self_pattern:
       { reloc_pat $startpos $endpos  $2 }
   | LPAREN pattern COLON core_type RPAREN
       { mkpat $startpos $endpos (Ppat_constraint($2, $4)) }
-  | /* empty */
+  | (* empty *)
       { ghpat $startpos $endpos (Ppat_any) }
 ;
 class_fields:
-    /* empty */
+    (* empty *)
       { [] }
   | class_fields class_field
       { $2 :: $1 }
@@ -818,7 +818,7 @@ class_field:
 parent_binder:
     AS LIDENT
           { Some $2 }
-  | /* empty */
+  | (* empty *)
           { None }
 ;
 virtual_value:
@@ -854,7 +854,7 @@ concrete_method :
         mkloc $4 (rhs_loc $startpos($4) $endpos($4)), $3, $2, ghexp $startpos $endpos (Pexp_poly(exp, Some poly)) }
 ;
 
-/* Class types */
+(* Class types *)
 
 class_type:
     class_signature
@@ -886,11 +886,11 @@ class_sig_body:
 class_self_type:
     LPAREN core_type RPAREN
       { $2 }
-  | /* empty */
+  | (* empty *)
       { mktyp $startpos $endpos (Ptyp_any) }
 ;
 class_sig_fields:
-    /* empty */                                 { [] }
+    (* empty *)                                 { [] }
 | class_sig_fields class_sig_field     { $2 :: $1 }
 ;
 class_sig_field:
@@ -947,7 +947,7 @@ class_type_declaration:
          pci_loc = symbol_rloc $startpos $endpos } }
 ;
 
-/* Core expressions */
+(* Core expressions *)
 
 seq_expr:
   | expr        %prec below_SEMI  { $1 }
@@ -977,7 +977,7 @@ pattern_var:
   | UNDERSCORE        { mkpat $startpos $endpos  Ppat_any }
 ;
 opt_default:
-    /* empty */                         { None }
+    (* empty *)                         { None }
   | EQUAL seq_expr                      { Some $2 }
 ;
 label_let_pattern:
@@ -1317,7 +1317,7 @@ type_constraint:
   | COLONGREATER error                          { syntax_error() }
 ;
 
-/* Patterns */
+(* Patterns *)
 
 pattern:
     simple_pattern
@@ -1405,14 +1405,14 @@ lbl_pattern:
       { (mkrhs $startpos($1) $endpos($1) $1, pat_of_label $startpos($1) $endpos($1) $1 1) }
 ;
 
-/* Primitive declarations */
+(* Primitive declarations *)
 
 primitive_declaration:
     STRING                                      { [$1] }
   | STRING primitive_declaration                { $1 :: $2 }
 ;
 
-/* Type declarations */
+(* Type declarations *)
 
 type_declarations:
     type_declaration                            { [$1] }
@@ -1433,10 +1433,10 @@ type_declaration:
 ;
 constraints:
         constraints CONSTRAINT constrain        { $3 :: $1 }
-      | /* empty */                             { [] }
+      | (* empty *)                             { [] }
 ;
 type_kind:
-    /*empty*/
+    (*empty*)
       { (Ptype_abstract, Public, None) }
   | EQUAL core_type
       { (Ptype_abstract, Public, Some $2) }
@@ -1456,7 +1456,7 @@ type_kind:
       { (Ptype_record(List.rev $6), $4, Some $2) }
 ;
 optional_type_parameters:
-    /*empty*/                                   { [] }
+    (*empty*)                                   { [] }
   | optional_type_parameter                              { [$1] }
   | LPAREN optional_type_parameter_list RPAREN  { List.rev $2 }
 ;
@@ -1472,7 +1472,7 @@ optional_type_parameter_list:
 
 
 type_parameters:
-    /*empty*/                                   { [] }
+    (*empty*)                                   { [] }
   | type_parameter                              { [$1] }
   | LPAREN type_parameter_list RPAREN           { List.rev $2 }
 ;
@@ -1480,7 +1480,7 @@ type_parameter:
     type_variance QUOTE ident                   { mkrhs $startpos($3) $endpos($3) $3, $1 }
 ;
 type_variance:
-    /* empty */                                 { false, false }
+    (* empty *)                                 { false, false }
   | PLUS                                        { true, false }
   | MINUS                                       { false, true }
 ;
@@ -1500,12 +1500,12 @@ constructor_declaration:
 ;
 
 constructor_arguments:
-    /*empty*/                                   { [] }
+    (*empty*)                                   { [] }
   | OF core_type_list                           { List.rev $2 }
 ;
 
 generalized_constructor_arguments:
-    /*empty*/                                   { ([],None) }
+    (*empty*)                                   { ([],None) }
   | OF core_type_list                           { (List.rev $2,None) }
   | COLON core_type_list MINUSGREATER simple_core_type
                                                 { (List.rev $2,Some $4) }
@@ -1522,7 +1522,7 @@ label_declaration:
     mutable_flag label COLON poly_type          { (mkrhs $startpos($2) $endpos($2) $2, $1, $4, symbol_rloc $startpos $endpos ) }
 ;
 
-/* "with" constraints (additional type equations over signature components) */
+(* "with" constraints (additional type equations over signature components) *)
 
 with_constraints:
     with_constraint                             { [$1] }
@@ -1538,8 +1538,8 @@ with_constraint:
                          ptype_private = $4;
                          ptype_variance = variance;
                          ptype_loc = symbol_rloc $startpos $endpos }) }
-    /* used label_longident instead of type_longident to disallow
-       functor applications in type path */
+    (* used label_longident instead of type_longident to disallow
+       functor applications in type path *)
   | TYPE type_parameters label_longident COLONEQUAL core_type
       { let params, variance = List.split $2 in
         (mkrhs $startpos($3) $endpos($3) $3, Pwith_typesubst {ptype_params = List.map (fun x -> Some x) params;
@@ -1559,7 +1559,7 @@ with_type_binder:
   | EQUAL PRIVATE  { Private }
 ;
 
-/* Polymorphic types */
+(* Polymorphic types *)
 
 typevar_list:
         QUOTE ident                             { [$2] }
@@ -1572,7 +1572,7 @@ poly_type:
           { mktyp $startpos $endpos (Ptyp_poly(List.rev $1, $3)) }
 ;
 
-/* Core types */
+(* Core types *)
 
 core_type:
     core_type2
@@ -1622,10 +1622,10 @@ simple_core_type2:
       { mktyp $startpos $endpos (Ptyp_class(mkrhs $startpos($5) $endpos($5) $5, List.rev $2, $6)) }
   | LBRACKET tag_field RBRACKET
       { mktyp $startpos $endpos (Ptyp_variant([$2], true, None)) }
-/* PR#3835: this is not LR(1), would need lookahead=2
+(* PR#3835: this is not LR(1), would need lookahead=2
   | LBRACKET simple_core_type2 RBRACKET
       { mktyp $startpos $endpos (Ptyp_variant([$2], true, None)) }
-*/
+*)
   | LBRACKET BAR row_field_list RBRACKET
       { mktyp $startpos $endpos (Ptyp_variant(List.rev $3, true, None)) }
   | LBRACKET row_field BAR row_field_list RBRACKET
@@ -1668,7 +1668,7 @@ tag_field:
 ;
 opt_ampersand:
     AMPERSAND                                   { true }
-  | /* empty */                                 { false }
+  | (* empty *)                                 { false }
 ;
 amper_type_list:
     core_type                                   { [$1] }
@@ -1676,7 +1676,7 @@ amper_type_list:
 ;
 opt_present:
     LBRACKETGREATER name_tag_list RBRACKET      { List.rev $2 }
-  | /* empty */                                 { [] }
+  | (* empty *)                                 { [] }
 ;
 name_tag_list:
     name_tag                                    { [$1] }
@@ -1707,7 +1707,7 @@ label:
     LIDENT                                      { $1 }
 ;
 
-/* Constants */
+(* Constants *)
 
 constant:
     INT                                         { Const_int $1 }
@@ -1732,7 +1732,7 @@ signed_constant:
   | PLUS NATIVEINT                              { Const_nativeint $2 }
 ;
 
-/* Identifiers and long identifiers */
+(* Identifiers and long identifiers *)
 
 ident:
     UIDENT                                      { $1 }
@@ -1766,10 +1766,10 @@ operator:
 ;
 constr_ident:
     UIDENT                                      { $1 }
-/*  | LBRACKET RBRACKET                           { "[]" } */
+(*  | LBRACKET RBRACKET                           { "[]" } *)
   | LPAREN RPAREN                               { "()" }
   | COLONCOLON                                  { "::" }
-/*  | LPAREN COLONCOLON RPAREN                    { "::" } */
+(*  | LPAREN COLONCOLON RPAREN                    { "::" } *)
   | FALSE                                       { "false" }
   | TRUE                                        { "true" }
 ;
@@ -1815,13 +1815,13 @@ class_longident:
   | mod_longident DOT LIDENT                    { Ldot($1, $3) }
 ;
 
-/* Miscellaneous */
+(* Miscellaneous *)
 
 name_tag:
     BACKQUOTE ident                             { $2 }
 ;
 rec_flag:
-    /* empty */                                 { Nonrecursive }
+    (* empty *)                                 { Nonrecursive }
   | REC                                         { Recursive }
 ;
 direction_flag:
@@ -1829,27 +1829,27 @@ direction_flag:
   | DOWNTO                                      { Downto }
 ;
 private_flag:
-    /* empty */                                 { Public }
+    (* empty *)                                 { Public }
   | PRIVATE                                     { Private }
 ;
 mutable_flag:
-    /* empty */                                 { Immutable }
+    (* empty *)                                 { Immutable }
   | MUTABLE                                     { Mutable }
 ;
 virtual_flag:
-    /* empty */                                 { Concrete }
+    (* empty *)                                 { Concrete }
   | VIRTUAL                                     { Virtual }
 ;
 override_flag:
-    /* empty */                                 { Fresh }
+    (* empty *)                                 { Fresh }
   | BANG                                        { Override }
 ;
 opt_bar:
-    /* empty */                                 { () }
+    (* empty *)                                 { () }
   | BAR                                         { () }
 ;
 opt_semi:
-  | /* empty */                                 { () }
+  | (* empty *)                                 { () }
   | SEMI                                        { () }
 ;
 subtractive:
