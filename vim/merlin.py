@@ -44,9 +44,9 @@ def send_command(*cmd):
   json.dump(cmd, mainpipe.stdin)
   line = mainpipe.stdout.readline()
   result = json.loads(line)
-  content = result[1:]
-  if len(content) == 1:
-    content = content[0]
+  content = None
+  if len(result) == 2:
+    content = result[1]
 
   if result[0] == "return":
     return content

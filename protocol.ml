@@ -22,7 +22,7 @@ let log ~dest (input,output) =
   let output' json = output (log_output json) in
   input', output'
 
-let return l = `List (`String "return" :: l)
+let return l = `List [`String "return" ; l]
 
 let fail = function
   | Failure s -> `List [`String "failure"; `String s]
