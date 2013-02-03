@@ -11,6 +11,12 @@ class Failure(Exception):
   def __str__(self):
     return repr(self.value)
 
+class Error(Exception):
+  def __init__(self, value):
+      self.value = value
+  def __str__(self):
+    return repr(self.value)
+
 class Exception(Exception):
   def __init__(self, value):
       self.value = value
@@ -52,6 +58,8 @@ def send_command(*cmd):
     return content
   elif result[0] == "failure":
     raise Failure(content)
+  elif result[0] == "error":
+    raise Error(content)
   elif result[0] == "exception":
     raise Exception(content)
 
@@ -270,14 +278,20 @@ def vim_find_list(vimvar):
 
 def vim_type_expr(expr):
   sync_buffer()
-  ty = send_command("type", "expression", expr)
-  print (expr + " : " + ty)
+  try:
+    ty = send_command("type", "expression", expr)
+    print (expr + " : " + ty)
+  except Error as e:
+    print ("error : " + e.value['message'])
 
 def vim_type_cursor():
   to_line, to_col = vim.current.window.cursor
   sync_buffer()
-  ty = send_command("type", "at", {'line':to_line,'col':to_col})
-  print (ty)
+  try:
+    ty = send_command("type", "at", {'line':to_line,'col':to_col})
+    print (ty)
+  except Error as e:
+    print ("error : " + e.value['message'])
 
 # Resubmit current buffer
 def vim_reload_buffer():

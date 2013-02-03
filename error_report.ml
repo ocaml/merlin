@@ -66,3 +66,5 @@ let rec list_filter_map f = function
       | None    -> list_filter_map f xs
    
 let to_jsons list = list_filter_map to_json list
+
+let _ = Protocol.error_catcher := to_json
