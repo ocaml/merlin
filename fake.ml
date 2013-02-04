@@ -50,7 +50,6 @@ and translate_to_str = function
   | `Let lst ->
     let p = Pstr_value (Asttypes.Nonrecursive, List.map translate_binding lst) in
     { pstr_desc = p ; pstr_loc = Location.none }
-  | _ -> failwith "not allowd at this level"
 
 and translate_to_expr = function
   | `Let _ -> failwith "not allowed at this level"
@@ -85,7 +84,9 @@ module Lwt = struct
 end
 
 module Sexp : sig
-  val make_funs : string Location.loc * Parsetree.type_declaration -> ast
+  val make_funs :
+    string Location.loc * Parsetree.type_declaration
+    -> [ `Let of binding list ]
 end = struct
   let t = `Named ([], "Sexplib.Sexp.t")
 
