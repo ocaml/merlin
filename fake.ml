@@ -105,9 +105,13 @@ end = struct
     let args, params =
       format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
     in
+    let typesig =
+      List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
+        (`Arrow (`Named (params, ty), t))
+    in
     {
       ident = "sexp_of_" ^ ty ;
-      typesig = `Arrow (`Named (params, ty), t) ;
+      typesig ;
       body = mk_fun ~args ;
     }
 
@@ -116,9 +120,13 @@ end = struct
     let args, params =
       format_params ~format_arg:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
     in
+    let typesig =
+      List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
+        (`Arrow (t, `Named (params, ty)))
+    in
     {
       ident = ty ^ "_of_sexp" ;
-      typesig = `Arrow (t, `Named (params, ty)) ;
+      typesig ;
       body = mk_fun ~args ;
     }
 
