@@ -1,5 +1,14 @@
 open Parsetree
 
+let default_loc = function
+  | None -> Location.none
+  | Some loc -> loc
+
+let mkoptloc opt x =
+  match opt with
+  | None -> Location.mknoloc x
+  | Some l -> Location.mkloc x l
+
 let app a b =
   let pexp_loc = { b.pexp_loc with Location.loc_ghost = true } in
   { pexp_desc = Pexp_apply (a, ["", b]) ; pexp_loc }
@@ -25,47 +34,63 @@ and binding = {
   body    : ast ;
 }
 
-let rec translate_ts = function
+let rec translate_ts ?ghost_loc = function
   | `Var ident ->
-    { ptyp_desc = Ptyp_var ident ; ptyp_loc = Location.none }
+    { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc }
   | `Arrow (a, b) ->
     let a = translate_ts a in
     let b = translate_ts b in
-    { ptyp_desc = Ptyp_arrow("", a, b) ; ptyp_loc = Location.none }
+    { ptyp_desc = Ptyp_arrow("", a, b) ; ptyp_loc = default_loc ghost_loc }
   | `Named (params, id) ->
     let id = Longident.parse id in
     let params = List.map translate_ts params in
-    { ptyp_desc = Ptyp_constr (Location.mknoloc id, params) ; ptyp_loc = Location.none }
+    {
+      ptyp_desc = Ptyp_constr (mkoptloc ghost_loc id, params) ;
+      ptyp_loc = default_loc ghost_loc ;
+    }
 
-let rec translate_binding { ident ; typesig ; body } =
-  let pat = { ppat_desc = Ppat_var (Location.mknoloc ident) ; ppat_loc = Location.none } in
-  let typesig_opt = Some (translate_ts typesig) in
-  let body = translate_to_expr body in
-  (
-    pat,
-    { pexp_desc = Pexp_constraint (body, typesig_opt, None) ; pexp_loc = Location.none }
-  )
+let rec translate_binding ?ghost_loc { ident ; typesig ; body } =
+  let pat = {
+    ppat_desc = Ppat_var (mkoptloc ghost_loc ident) ;
+    ppat_loc = default_loc ghost_loc ;
+  }
+  in
+  let typesig_opt = Some (translate_ts ?ghost_loc typesig) in
+  let body = translate_to_expr ?ghost_loc body in
+  let pexp = {
+    pexp_desc = Pexp_constraint (body, typesig_opt, None) ;
+    pexp_loc = default_loc ghost_loc ;
+  }
+  in
+  (pat, pexp)
 
-and translate_to_str = function
+and translate_to_str ?ghost_loc = function
   | `Let lst ->
     let p = Pstr_value (Asttypes.Nonrecursive, List.map translate_binding lst) in
-    { pstr_desc = p ; pstr_loc = Location.none }
+    { pstr_desc = p ; pstr_loc = default_loc ghost_loc }
 
-and translate_to_expr = function
+and translate_to_expr ?ghost_loc = function
   | `Let _ -> failwith "not allowed at this level"
   | `Fun (simple_patterns, body) ->
     List.fold_right
       (fun simple_pattern body ->
         let patt = {
-          ppat_desc = Ppat_var (Location.mknoloc simple_pattern) ;
-          ppat_loc = Location.none ;
-        } in
-        { pexp_desc = Pexp_function ("", None, [patt, body]) ; pexp_loc = Location.none })
+          ppat_desc = Ppat_var (mkoptloc ghost_loc simple_pattern) ;
+          ppat_loc = default_loc ghost_loc ;
+        }
+        in
+        {
+          pexp_desc = Pexp_function ("", None, [patt, body]) ;
+          pexp_loc = default_loc ghost_loc ;
+        })
       simple_patterns
-      (translate_to_expr body)
-  | `App (f, x) -> app (translate_to_expr f) (translate_to_expr x)
-  | `Ident i ->
-    { pexp_desc = Pexp_ident (Location.mknoloc (Longident.parse i)) ; pexp_loc = Location.none }
+      (translate_to_expr ?ghost_loc body)
+  | `App (f, x) ->
+    app (translate_to_expr ?ghost_loc f) (translate_to_expr ?ghost_loc x)
+  | `Ident i -> {
+      pexp_desc = Pexp_ident (mkoptloc ghost_loc (Longident.parse i)) ;
+      pexp_loc = default_loc ghost_loc ;
+    }
 
 let prim_ident prim = Longident.parse ("_." ^ prim)
 let prim prim = {

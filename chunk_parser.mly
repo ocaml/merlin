@@ -597,8 +597,9 @@ structure_item:
       {
         match $4 with (* UGLY UGLY UGLY *) (* but temporary, hopefully *)
         | "sexp" ->
+          let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
           let funs = List.map Fake.Sexp.make_funs $2 in
-          let ast = List.map Fake.translate_to_str funs in
+          let ast = List.map (Fake.translate_to_str ?ghost_loc) funs in
           mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
         | _ ->
           (* unrecognized extension, ignore it *)
