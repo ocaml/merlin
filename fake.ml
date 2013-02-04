@@ -156,5 +156,10 @@ end = struct
       body = mk_fun ~args ;
     }
 
-  let make_funs ty = `Let [ sexp_of_ ty ; _of_sexp ty ]
+  let of_sexp__ ty =
+    let res = _of_sexp ty in
+    { res with ident = res.ident ^ "__" }
+
+  let make_funs ty =
+    `Let [ sexp_of_ ty ; _of_sexp ty ; of_sexp__ ty ] (* FIXME: factorisable *)
 end
