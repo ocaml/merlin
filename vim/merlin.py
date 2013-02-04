@@ -261,7 +261,7 @@ def vim_loclist(vimvar):
     if error['type'] == 'type':
       ty = 'e'
     lnum = 1
-    col = 1
+    lcol = 1
     if error.has_key('start'):
         lnum = error['start']['line']
         lcol = error['start']['col'] + 1

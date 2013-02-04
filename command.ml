@@ -202,7 +202,7 @@ let complete_in_env env prefix =
       | `Typ t ->
           Printtyp.type_declaration ident ppf t; "Type"
     in
-    let desc, info = match kind with "module" -> "", to_string () | _ -> to_string (), "" in
+    let desc, info = match kind with "Module" -> "", to_string () | _ -> to_string (), "" in
     `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
   in
   let seen = Hashtbl.create 7 in
@@ -243,12 +243,19 @@ let complete_in_env env prefix =
       | Longident.Lident prefix ->
           (* Add modules on path but not loaded *)
           let compl = find prefix [] in
-          begin match Misc.length_lessthan 20 compl with
+          begin match Misc.length_lessthan 30 compl with
             | Some _ -> List.fold_left
-              begin fun compl md -> 
-                if Misc.has_prefix prefix md && uniq md
-                then (`Assoc ["name", `String md ; "kind", `String "module"; "desc", `String "" ; "info", `String ""]) :: compl
-                else compl
+              begin fun compl modname ->
+                let default =
+                  `Assoc ["name", `String modname ; "kind", `String "module"; "desc", `String "" ; "info", `String ""]
+                in match modname with
+                | modname when modname = prefix && uniq modname ->
+                    (try let p, md = Env.lookup_module (Longident.Lident modname) env in
+                      fmt ~exact:true modname p (`Mod md) :: compl
+                    with Not_found -> default :: compl)
+                | modname when Misc.has_prefix prefix modname && uniq modname ->
+                  default :: compl
+                | _ -> compl
               end compl (Lazy.force !global_modules)
             | None -> compl
           end
