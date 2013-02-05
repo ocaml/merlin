@@ -120,7 +120,7 @@ let token_to_string =
 
 let print_tokens ?(who="") f a =
   let t = f a in
-  Printf.eprintf "%s:%s, %!" who (token_to_string t);
+  (*Printf.eprintf "%s:%s, %!" who (token_to_string t);*)
   t
 
 let rec re_sync lexer buf =
