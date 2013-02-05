@@ -65,7 +65,7 @@ let command_tell = {
           (History.cutoff state.types)
         in
         let tokens, outlines =
-          Outline.parse ~bufpos ~goteof
+          Outline.parse ~bufpos
             (History.of_list state.tokens) outlines lexbuf
         in
         let chunks = Chunk.sync outlines chunks in
@@ -75,7 +75,7 @@ let command_tell = {
         let w = Error_report.reset_warnings () in
         let outlines = History.modify (fun outline -> Outline.({ outline with exns = w @ outline.exns })) outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !goteof || state.tokens = state'.tokens
+        if state.tokens = state'.tokens
         then state'
         else loop state'
       in
