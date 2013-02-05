@@ -76,18 +76,6 @@ let append_step chunks chunk_item t =
           Some (env, trees, exn :: exns)
         end
 
-    | Chunk.Partial_definitions ds ->
-        let (_,trees,exns) =
-          List.fold_left
-          begin fun (env,trees,exns) d ->
-          try
-            let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
-            (env, (tstr,tsg) :: trees, exns)
-          with exn -> (env, trees, exn :: exns)
-          end (env,trees,exns) ds
-        in
-        Some (env, trees, exns)
-
     | Chunk.Module_closing (d,offset) ->
         begin try
           let _, t = History.Sync.rewind fst (History.seek_offset offset chunks) t in

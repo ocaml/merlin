@@ -6,7 +6,6 @@ type item_desc =
      * l'offset indique la dernière définition avant le Module_opening
      * correspondant *)
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
-  | Partial_definitions of Parsetree.structure_item Location.loc list
 
 and item = Outline.sync * item_desc
 and sync = item History.sync
