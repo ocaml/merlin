@@ -299,19 +299,19 @@ let command_seek = {
       state, Protocol.pos_to_json state.pos
 
   | [`String "position" ; jpos] ->
-      let l, c = Protocol.pos_of_json jpos in
+      let pos = Protocol.pos_of_json jpos in
+      let outlines = Outline.seek_before pos state.outlines in
       let rec rewind_errors o = match History.backward o with
         | Some ({ Outline.kind = Outline_utils.Syntax_error }, o) -> rewind_errors o
         | _ -> o
       in
-      let outlines = Outline.seek_line (l,c) state.outlines in
       let outlines = rewind_errors outlines in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
       let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =
-        match Outline.last_position outlines with
-          | Some p -> p
-          | None -> initial_state.pos
+        match Outline.location outlines with
+          | l when l = Location.none -> initial_state.pos
+          | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
       Protocol.pos_to_json pos
@@ -324,9 +324,9 @@ let command_seek = {
       let chunks = History.Sync.right fst outlines state.chunks in
       let types  = History.Sync.right fst chunks state.types in
       let pos =
-        match Outline.last_position outlines with
-          | Some p -> p
-          | None -> initial_state.pos
+        match Outline.location outlines with
+          | l when l = Location.none -> initial_state.pos
+          | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
       Protocol.pos_to_json pos
@@ -358,9 +358,9 @@ let command_seek = {
       let chunks = History.Sync.right fst outlines state.chunks in
       let types  = History.Sync.right fst chunks state.types in
       let pos =
-        match Outline.last_position outlines with
-          | Some p -> p
-          | None -> initial_state.pos
+        match Outline.location outlines with
+          | l when l = Location.none -> initial_state.pos
+          | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
       Protocol.pos_to_json pos

@@ -72,32 +72,41 @@ type t = item History.t
 
 let last_curr = List.fold_left (fun _ (_,_,curr) -> curr)
 
-let rec last_position t =
+let location t =
   match History.prev t with
-    | Some { tokens = (_,_,curr) :: xs } -> Some (last_curr curr xs)
-    | None -> None
-    | _ -> failwith "Outline.last_position: Invalid t"
+    | Some { tokens = ((_,loc_start,curr) :: xs) } ->
+        let loc_end = last_curr curr xs in
+        Location.({ loc_start ; loc_end = loc_end ; loc_ghost = false })
+    | None -> Location.none
+    | _ -> failwith "Outline.location: Invalid t"
 
 let seek cmp t =
   let open Lexing in
-  let t =
-    History.seek begin fun { tokens } ->
-      match tokens with
-        | (_,start,_) :: _ when cmp start < 0 -> -1
-        | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
-        | [] -> failwith "Outline.seek: Invalid t"
-        | _ -> 1
-    end t
+  let seek_func { tokens } = 
+    match tokens with
+      | (_,start,_) :: _ when cmp start < 0 -> -1
+      | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
+      | [] -> failwith "Outline.seek: Invalid t"
+      | _ -> 1
   in
-  match History.backward t with
-    | Some (_,t) -> t
-    | None -> t
+  History.seek seek_func (History.seek seek_func t)
 
-let seek_line (line,col) =
-  Lexing.(seek (fun pos ->
-    match compare line pos.pos_lnum with
-      | 0 -> compare col (pos.pos_cnum - pos.pos_bol)
-      | n -> n))
+let seek_before (line,col) t =
+  let cmp pos =
+    Lexing.(match compare line pos.pos_lnum with
+            | 0 -> compare col (pos.pos_cnum - pos.pos_bol)
+            | n -> n)
+  in
+  let t = seek cmp t in
+  let rec rewind t =
+    match location t with
+      | l when l = Location.none -> t
+      | l when cmp l.Location.loc_end > 0 -> t
+      | _ -> match History.backward t with
+          | Some (_,t') -> rewind t'
+          | None -> t
+  in
+  rewind t
 
 let seek_offset offset =
   seek (fun pos -> compare offset pos.Lexing.pos_cnum)

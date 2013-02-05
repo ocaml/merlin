@@ -10,8 +10,8 @@ type item = {
 type sync = item History.sync
 type t = item History.t 
 
-val last_position : t -> Lexing.position option
-val seek_line : int * int -> t -> t
+val location : t -> Location.t
+val seek_before : int * int -> t -> t
 val seek_offset : int -> t -> t
 
 val parse_step : ?rollback:int -> ?bufpos:Lexing.position ref -> ?exns:exn list ->
