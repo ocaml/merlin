@@ -14,7 +14,7 @@ type kind =
                   *         pour retrouver le /genre/ de définition *)
   | Done         (* EOF rencontré après une construction syntaxiquement correcte *)
   | Unterminated (* La construction syntaxique n'est pas terminée *)
-  | Partial_definitions of (offset * offset) list
+  | Syntax_error
   | Exception of exn (* Une exception est survenue dans le parser, à traiter en amont *)
 
 (** Le parser d'outline fonctionne par effet de bord :
@@ -66,13 +66,3 @@ val enter_sub : unit -> unit
 val leave_sub : unit -> unit
 (** Lève l'exception si !nesting = 0 et !filter_first = 0 *)
 val emit_top : kind -> position -> unit
-
-val partial_definitions : (offset * (offset * offset) list) list ref
-
-val get_offset : (position -> offset) ref
-val reset_get_offset : unit -> unit
-
-val enter_partial : position -> unit
-val commit_partial : position -> unit
-val leave_partial : unit -> unit
-

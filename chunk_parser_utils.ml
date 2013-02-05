@@ -122,3 +122,12 @@ let print_tokens ?(who="") f a =
   let t = f a in
   (*Printf.eprintf "%s:%s, %!" who (token_to_string t);*)
   t
+
+let rec re_sync lexer buf =
+  let open Chunk_parser in
+  match lexer buf with
+    | SEMISEMI | EOF -> 0
+    | INCLUDE | OPEN | LET | TYPE -> 1
+    | MODULE | END -> 2
+    | _ -> re_sync lexer buf
+

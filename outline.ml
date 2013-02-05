@@ -3,14 +3,6 @@ type token = Chunk_parser.token History.loc
 let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
   let origin = History.current_pos history in
   let history' = ref history in
-  Outline_utils.get_offset :=
-    (fun p ->
-       let history = match History.backward !history' with
-         | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) -> 
-             history
-         | _ -> history
-       in
-       History.offset history);
   let chunk_content h =
     (* Drop end of history *)
     let end_of_chunk = History.cutoff h in
@@ -18,12 +10,12 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
     (* Drop beginning of history *)
     History.nexts at_origin
   in
+  let filter = function
+    | Chunk_parser.EOF -> goteof := true; false
+    | _ -> true
+  in
+  let lexer = History.wrap_lexer ~filter ?bufpos history' lexer in
   try
-    let filter = function
-      | Chunk_parser.EOF -> goteof := true; false
-      | _ -> true
-    in
-    let lexer = History.wrap_lexer ~filter ?bufpos history' lexer in
     let lexer = Chunk_parser_utils.print_tokens ~who:"outline" lexer in
     let () = parser lexer buf in
     let history = !history' in
@@ -48,14 +40,24 @@ let parse_with history ~parser ~lexer ~goteof ?bufpos buf =
         end
     | Outline_parser.Error ->
         begin
-          let defs = List.rev_map 
-            (fun (_,defs) -> List.rev defs) 
-            !Outline_utils.partial_definitions
+          history' := History.move (-1) !history';
+          let rec aux () =
+            let count = Chunk_parser_utils.re_sync lexer buf in
+            history' := History.move (-1) !history';
+            let offset = History.offset !history' in
+            try
+              for i = 1 to count do
+                try ignore (parser lexer buf)
+                with Outline_utils.Chunk _ -> ()
+              done;
+              offset
+            with Outline_parser.Error -> aux ()
           in
-          let defs = List.flatten defs in
-          Outline_utils.partial_definitions := [];
-          let history = !history' in
-          history, Outline_utils.Partial_definitions defs, chunk_content history
+          let offset = aux () in
+          let history =
+            History.seek_offset offset !history'
+          in
+          history, Outline_utils.Syntax_error, chunk_content history
         end
     | exn ->
         history, Outline_utils.Exception exn, []
@@ -108,7 +110,6 @@ let parse_step ?(rollback=0) ?bufpos ?(exns=[]) ~goteof history buf =
     ~lexer:Lexer.token
     ?bufpos ~goteof buf
   in
-  Outline_utils.reset_get_offset ();
   let exns = match kind with
     | Outline_utils.Exception exn -> exn :: exns | _ -> exns
   in

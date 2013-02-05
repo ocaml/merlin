@@ -101,38 +101,8 @@ let sync_step outline tokens t =
                 } loc,
                 History.offset t
              ))
-    | Outline_utils.Partial_definitions defs ->
-        let rec list_drop n = function
-          | x :: xs when n > 0 -> list_drop (pred n) xs
-          | xs -> xs
-        in
-        let list_split_n n l =
-          let rec aux n acc = function
-            | x :: xs when n > 0 -> aux (pred n) (x :: acc) xs
-            | xs -> acc, xs
-          in
-          let acc, rest = aux n [] l in
-          (List.rev acc), rest
-        in
-        let rec extract offset defs tokens =
-          match defs, tokens with
-            | _, [] -> []
-            | (starto,endo) :: defs, _ ->
-                let tokens = list_drop (starto - offset -1) tokens in
-                let def, tokens = list_split_n (endo - starto + 1) tokens in
-                def :: extract endo defs tokens
-            | _ -> []
-        in
-        let defs = extract 0 defs tokens in
-        let parse_def tokens =
-          let lexer = History.wrap_lexer (ref (History.of_list tokens))
-            (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-          in
-          let lexer = Chunk_parser_utils.print_tokens ~who:"chunk:partial" lexer in
-          let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-          def
-        in
-        Some (Partial_definitions (List.map parse_def defs))
+    | Outline_utils.Syntax_error ->
+        None
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
