@@ -43,17 +43,17 @@ let command_tell = {
   | [`String "struct" ; `String source] ->
       Env.reset_missing_cmis ();
       ignore (Error_report.reset_warnings ());
-      let goteof = ref false in
       let lexbuf = Misc.lex_strings source
-        begin fun () ->
-          goteof := true;
-          o (Protocol.return (`Bool false));
-          try begin match Stream.next i with
-            | `List [`String "tell" ; `String "struct" ; `String source] -> source
-            | `List [`String "tell" ; `String "struct" ; `Null ] -> ""
-              (* FIXME: parser catch this Failure. It should not *)
-            | _ -> invalid_arguments ()
-          end with
+        begin let eot = ref false in fun () ->
+          if !eot then ""
+          else try 
+            o (Protocol.return (`Bool false));
+            match Stream.next i with
+              | `List [`String "tell" ; `String "struct" ; `String source] -> source
+              | `List [`String "tell" ; `String "struct" ; `Null ] -> eot := true; ""
+                (* FIXME: parser catch this Failure. It should not *)
+              | _ -> invalid_arguments ()
+          with
             Stream.Failure -> invalid_arguments ()
         end
       in
