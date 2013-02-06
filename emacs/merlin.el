@@ -89,7 +89,9 @@ If the timer is zero or negative, nothing is done."
 (defun merlin-ident-under-point ()
   "Returns the ident under point in the current buffer"
   (let ((x (bounds-of-thing-at-point 'symbol)))
-    (buffer-substring-no-properties (car x) (cdr x))))
+    (if x
+	(buffer-substring-no-properties (car x) (cdr x))
+      nil)))
 
 ;; PROCESS MANAGEMENT
 (defun merlin-make-buffer-name ()
@@ -217,6 +219,8 @@ If the timer is zero or negative, nothing is done."
 	(end (cdr (assoc 'end errors)))
 	(type (cdr (assoc 'type errors))))
     (goto-char (merlin-make-point beg))
+    ;; make the idle thread shut up
+    (setq merlin-idle-point (point))
     (merlin-error-highlight (merlin-make-point beg)
 		      (merlin-make-point end))
     (message "%s: %s" type message)
@@ -249,7 +253,6 @@ If the timer is zero or negative, nothing is done."
 with the current position where merlin stops. It updates the merlin state by doing two things:
 - either retract merlin's knowledge if `point' < `merlin-lock-point'
 - or send the region between `merlin-lock-point' and `point'"
-  (message "BATTLE %d %d" point merlin-lock-point)
   (if (< point merlin-lock-point)
       (progn 
 	(message "Going to retract your mother")
@@ -259,12 +262,11 @@ with the current position where merlin stops. It updates the merlin state by doi
       (merlin-flush-tell)
       (if (merlin-view-errors)
 	  (setq merlin-lock-point (point))
-	(merlin-seek merlin-lock-point)
-	)
-      ))
+	(let ((msg (current-message)))
+	  (merlin-seek merlin-lock-point)
+	  (message msg)))))
   (merlin-update-overlay)
-  )
-    
+)    
   
 (defun merlin-point ()
   "Tell merlin the lines up to the current point"
