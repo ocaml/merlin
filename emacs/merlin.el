@@ -153,7 +153,7 @@ If the timer is zero or negative, nothing is done."
 
 (defun merlin-is-long (s)
   "Returns true if its parameter is long, ie. contains a new line"
-  (string-match "\n" s))
+  (string-match "sig" s))
 ;; SPECIAL CASE OF COMMANDS
 (defun merlin-is-return (data)
   "Returns the actual data of a response or nil if there was an error"
