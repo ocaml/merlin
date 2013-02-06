@@ -171,9 +171,9 @@ struct
       | Tstr_type _ | Tstr_exn_rebind _ | Tstr_modtype _ | Tstr_open _ | Tstr_class _ | Tstr_class_type _ -> []
       | Tstr_include (m,_) -> [module_expr m]
 
-    and patterns ?pat_env pes = List.fold_left (fun ls (p,e) -> pattern ?pat_env p :: expression e :: ls) [] pes
+    and patterns ?pat_env pes = List.fold_left (fun ls (p,e) -> pattern (match pat_env with Some p -> p | _ -> e.exp_env) p :: expression e :: ls) [] pes
 
-    and pattern ?pat_env p = let pat_env = match pat_env with None -> p.pat_env | Some p -> p in T (p.pat_loc, pat_env, lazy [])
+    and pattern pat_env { pat_loc } = T (pat_loc, pat_env, lazy [])
 
     and expression { exp_desc ; exp_loc ; exp_env } =
       T (exp_loc, exp_env, lazy (expression_desc exp_desc))
