@@ -146,6 +146,9 @@ If the timer is zero or negative, nothing is done."
 ))
 
 
+(defun merlin-is-long (s)
+  "Returns true if its parameter is long, ie. contains a new line"
+  (string-match "\n" s))
 ;; SPECIAL CASE OF COMMANDS
 (defun merlin-is-return (data)
   "Returns the actual data of a response or nil if there was an error"
@@ -329,25 +332,25 @@ with the current position where merlin stops. It updates the merlin state by doi
   (let ((sexp (merlin-get-completion (merlin-ident-under-point))))
     (if (= (length (elt sexp 1)) 0)
 	nil
-      (elt (elt sexp 1) 0))))
+      (merlin-trim (elt (elt sexp 1) 0)))))
 
 (defun merlin-show-type-minibuffer ()
   (let ((ident (merlin-ident-under-point)))
     (let ((typ (merlin-type-of-expression ident)))
-      (if typ
-	  (message "val %s : %s" ident typ)))))
+      (if (and typ (not (merlin-is-long typ)))
+	  (message "%s : %s" ident typ)))))
 (defun merlin-show-type () 
   (interactive)
-  (let ((ans (merlin-get-type)))
-    (if (= (length ans) 0) 
+  (let ((ans (merlin-type-of-expression (merlin-ident-under-point))))
+    (if (not ans)
 	(message "nothing found for %s" (merlin-ident-under-point))
-      (if (string-equal (cdr (assoc 'kind ans)) "Value")
-	  (message "%s" (merlin-trim (cdr (assoc 'desc ans))))
+      (if (not (merlin-is-long ans))
+	  (message "%s : %s" (merlin-ident-under-point) ans)
 	(progn
 	  (display-buffer merlin-type-buffer)
 	  (with-current-buffer merlin-type-buffer
 	    (erase-buffer)
-	    (insert (cdr (assoc 'info ans)))))))))
+	    (insert ans)))))))
 
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
