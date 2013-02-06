@@ -288,21 +288,22 @@ with the current position where merlin stops. It updates the merlin state by doi
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
   (mapcar `(lambda (c) 
-	    (concat ,prefix
-		    (cdr (assoc 'name c)) 
-		    ": " 
-		    (cdr (assoc 'desc c))
-		    ))
+	     (if merlin-completion-types
+		 (format "%s%s: %s" ,prefix
+			 (cdr (assoc 'name c))
+			 (cdr (assoc 'desc c)))
+	       (concat ,prefix (cdr (assoc 'name c)))))
 	  (append l nil)))
 
 (defun merlin-source-action ()
   "Called when the user has pressed RET on a completion candidate. Remove the garbage"
-  (save-excursion
-    (let ((endpoint (point)))
-      (goto-char merlin-completion-point)
-      (search-forward ":")
-      (backward-char 1)
-      (delete-region (point) endpoint)))
+  (if merlin-completion-types
+      (save-excursion
+	(let ((endpoint (point)))
+	  (goto-char merlin-completion-point)
+	  (search-forward ":")
+	  (backward-char 1)
+	  (delete-region (point) endpoint))))
 )
 
 
@@ -340,29 +341,42 @@ with the current position where merlin stops. It updates the merlin state by doi
 	(elt ans 1)
       nil)))
   
-(defun merlin-get-type ()
-  (let ((sexp (merlin-get-completion (merlin-ident-under-point))))
-    (if (= (length (elt sexp 1)) 0)
-	nil
-      (merlin-trim (elt (elt sexp 1) 0)))))
-
-(defun merlin-show-type-minibuffer ()
-  (let ((ident (merlin-ident-under-point)))
-    (let ((typ (merlin-type-of-expression ident)))
-      (if (and typ (not (merlin-is-long typ)))
-	  (message "%s : %s" ident typ)))))
-(defun merlin-show-type () 
-  (interactive)
-  (let ((ans (merlin-type-of-expression (merlin-ident-under-point))))
-    (if (not ans)
-	(message "nothing found for %s" (merlin-ident-under-point))
-      (if (not (merlin-is-long ans))
-	  (message "%s : %s" (merlin-ident-under-point) ans)
+(defun merlin-show-type (name typ)
+  "Show the given type. If typ is nil, nothing is done"
+  (if typ
+      (if (not (merlin-is-long typ))
+	  (message "%s : %s" name typ)
 	(progn
 	  (display-buffer merlin-type-buffer)
 	  (with-current-buffer merlin-type-buffer
 	    (erase-buffer)
-	    (insert ans)))))))
+	    (insert typ))))))
+
+(defun merlin-show-type-of-region ()
+  "Show the type of the region"
+  (interactive)
+  (let ((exp (buffer-substring-no-properties 
+	       (region-beginning) 
+	       (region-end))))
+    (if exp
+	(merlin-show-type exp (merlin-type-of-expression exp)))))
+
+(defun merlin-show-type-of-point-quiet ()
+  "Show the type of the identifier under the point if it is short (a value)"
+  (let ((ident (merlin-ident-under-point)))
+    (if ident
+	(let ((typ (merlin-type-of-expression ident)))
+	  (if (and typ (not (merlin-is-long typ)))
+	      (message "%s : %s" ident typ))))))
+
+(defun merlin-show-type-of-point (arg) 
+  "Show the type of the identifier under the point. If it is called with a prefix argument, then show the type of the region."
+  (interactive "p")
+  (if (> arg 1)
+      (merlin-show-type-of-region)
+    (let ((ident (merlin-ident-under-point)))
+      (if ident
+	  (merlin-show-type ident (merlin-type-of-expression ident))))))
 
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
@@ -414,8 +428,8 @@ with the current position where merlin stops. It updates the merlin state by doi
 (defvar merlin-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c <C-return>") 'merlin-point)
-    (define-key map (kbd "C-c C-t") 'merlin-show-type)
-    (define-key map (kbd "C-c e") 'merlin-dump-env)
+    (define-key map (kbd "C-c C-t") 'merlin-show-type-of-point)
+    (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
     map
     ))
