@@ -252,16 +252,24 @@ If the timer is zero or negative, nothing is done."
 ;; Get the type of an element"
 (defun merlin-trim (s)
   (replace-regexp-in-string "\n\\'" "" s))
-(defun merlin-get-type () 
+(defun merlin-type-of-expression (exp)
+  "Get the type of an expression"
+  (let ((ans (merlin-send-command "type" (list "expression" exp))))
+    (if (string-equal (elt ans 0) "return")
+	(elt ans 1)
+      nil)))
+  
+(defun merlin-get-type (exp) 
   (let ((sexp (merlin-get-completion (merlin-ident-under-point))))
     (if (= (length (elt sexp 1)) 0)
 	nil
       (elt (elt sexp 1) 0))))
 
 (defun merlin-show-type-minibuffer ()
-  (let ((typ (merlin-get-type)))
-    (if (and typ (string-equal (cdr (assoc 'kind typ)) "Value"))
-	(message "%s" (merlin-trim (cdr (assoc 'desc typ)))))))
+  (let ((ident (merlin-ident-under-point)))
+    (let ((typ (merlin-type-of-expression ident)))
+      (if typ
+	  (message "val %s : %s" ident typ)))))
 (defun merlin-show-type () 
   (interactive)
   (let ((ans (merlin-get-type)))
