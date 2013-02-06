@@ -253,7 +253,9 @@ with the current position where merlin stops. It updates the merlin state by doi
       (merlin-tell-piece "struct" merlin-lock-point point)
       (merlin-flush-tell)
       (if (merlin-view-errors)
-	  (setq merlin-lock-point (point)))
+	  (setq merlin-lock-point (point))
+	(merlin-seek merlin-lock-point)
+	)
       ))
   (merlin-update-overlay)
   )
@@ -264,7 +266,9 @@ with the current position where merlin stops. It updates the merlin state by doi
   (interactive)
   (merlin-update-point (point))
 )
-
+(defun merlin-edit (start end length)
+  (if (< start merlin-lock-point)
+      (merlin-update-point start)))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
@@ -406,6 +410,7 @@ with the current position where merlin stops. It updates the merlin state by doi
     (auto-complete-mode)
     (set (make-local-variable 'merlin-lock-point) (point-min))
     (setq ac-sources '(merlin-ac-source))
+    (add-to-list 'after-change-functions 'merlin-edit)
     (set-process-query-on-exit-flag (merlin-get-process) nil)
     (merlin-parse)
     (if (> merlin-idle-delay 0.)
