@@ -55,6 +55,8 @@ let to_json = function
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
   | Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
+  | Chunk.Malformed_module loc ->
+      Some (format ~valid:true ~where:"warning" ~loc "Malformed module")
   | exn -> 
       let zero = Lexing.({ pos_fname = "" ; pos_bol = 0 ; pos_lnum = 1 ; pos_cnum = 0 }) in
       Some (format ~valid:false ~where:"unknown" ~loc:Location.({loc_start = zero ; loc_end = zero ; loc_ghost = true }) (Printexc.to_string exn))

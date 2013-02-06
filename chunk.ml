@@ -3,11 +3,11 @@ type item_desc =
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
 
-type item = Outline.sync * item_desc
+type item = Outline.sync * (item_desc, exn) Misc.sum
 type sync = item History.sync
 type t = item History.t
 
-exception Malformed_module
+exception Malformed_module of Location.t
 exception Invalid_chunk
 
 let eof_lexer _ = Chunk_parser.EOF
@@ -19,9 +19,10 @@ let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 let dump_chunk t =
   List.map
   begin function
-  | _, Definition d -> ("definition", line d)
-  | _, Module_opening (l,s,_) -> ("opening " ^ s.Location.txt, line s)
-  | _, Module_closing (d,offset) -> ("closing after " ^ string_of_int offset, line d)
+  | _, Misc.Inl (Definition d) -> ("definition", line d)
+  | _, Misc.Inl (Module_opening (l,s,_)) -> ("opening " ^ s.Location.txt, line s)
+  | _, Misc.Inl (Module_closing (d,offset)) -> ("closing after " ^ string_of_int offset, line d)
+  | _, Misc.Inr exn -> ("exception", -1)
   end (List.rev (History.prevs t) @ History.nexts t)
 
 let fake_tokens tokens f =
@@ -66,11 +67,14 @@ let sync_step outline tokens t =
         (* reconstitute module from t *)
         let rec rewind_defs defs t =
           match History.backward t with
-          | Some ((_,Definition d), t') -> rewind_defs (d.Location.txt :: defs) t'
-          | Some ((_,Module_closing (d,offset)), t') ->
+          | Some ((_,Misc.Inl (Definition d)), t') -> rewind_defs (d.Location.txt :: defs) t'
+          | Some ((_,Misc.Inl (Module_closing (d,offset))), t') ->
               rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
-          | Some ((_,Module_opening (loc,s,m)), t') -> loc,s,m,defs,t'
-          | None -> raise Malformed_module
+          | Some ((_,Misc.Inl (Module_opening (loc,s,m))), t') -> loc,s,m,defs,t'
+          | Some ((_,Misc.Inr _), t') -> rewind_defs defs t'
+          | None -> 
+              let p = (match tokens with (_,loc_start,loc_end) :: _ -> Location.({loc_start;loc_end;loc_ghost = false}) | _ -> Location.none) in
+              raise (Malformed_module p)
         in
         let loc,s,m,defs,t = rewind_defs [] t in
         let open Parsetree in
@@ -118,13 +122,13 @@ let sync outlines chunks =
     match History.forward outlines with
       | None -> chunks
       | Some ({ Outline.kind ; Outline.tokens },outlines') ->
-          (*prerr_endline "SYNC PARSER";*)
           match
             try 
               match sync_step kind tokens chunks with
-                | Some chunk -> Some (History.insert (History.Sync.at outlines', chunk) chunks)
+                | Some chunk -> Some (History.insert (History.Sync.at outlines', Misc.Inl chunk) chunks)
                 | None -> None
-            with Syntaxerr.Error _ -> None
+            with 
+              | exn -> Some (History.insert (History.Sync.at outlines', Misc.Inr exn) chunks)
           with              
             | Some chunks -> aux outlines' chunks
             | None -> aux outlines' chunks

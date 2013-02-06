@@ -30,7 +30,7 @@ let exns  t = let _,_,v = value t in v
 let append_step chunks chunk_item t =
   let env, trees, exns = value t in
   match chunk_item with
-    | Chunk.Module_opening (_,_,pmod) ->
+    | Misc.Inl (Chunk.Module_opening (_,_,pmod)) ->
         begin try
           let open Typedtree in
           let open Parsetree in
@@ -68,7 +68,7 @@ let append_step chunks chunk_item t =
           Some (env, trees, exn :: exns)
         end
 
-    | Chunk.Definition d ->
+    | Misc.Inl (Chunk.Definition d) ->
         begin try
           let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
           Some (env, (tstr,tsg) :: trees, exns)
@@ -76,7 +76,7 @@ let append_step chunks chunk_item t =
           Some (env, trees, exn :: exns)
         end
 
-    | Chunk.Module_closing (d,offset) ->
+    | Misc.Inl (Chunk.Module_closing (d,offset)) ->
         begin try
           let _, t = History.Sync.rewind fst (History.seek_offset offset chunks) t in
           let env, trees, exns = value t in
@@ -85,6 +85,9 @@ let append_step chunks chunk_item t =
         with exn -> 
           Some (env, trees, exn :: exns)
         end
+
+    | Misc.Inr exn ->
+          Some (env, trees, exn :: exns)
 
 let sync chunks t =
   (* Find last synchronisation point *)

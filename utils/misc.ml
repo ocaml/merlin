@@ -315,3 +315,9 @@ let list_filter_dup lst =
   let tbl = Hashtbl.create 17 in
   List.rev (List.fold_left (fun a b -> if Hashtbl.mem tbl b then a else (Hashtbl.add tbl b (); b :: a)) [] lst)
 
+        (* Usual either/sum type *)
+type ('a,'b) sum = Inl of 'a | Inr of 'b
+
+let sum f g = function
+  | Inl a -> f a
+  | Inr b -> g b
