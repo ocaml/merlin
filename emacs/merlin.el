@@ -190,15 +190,6 @@
 
 (ac-define-source "merlin" merlin-ac-source)
 
-(defun merlin-setup ()
-  "Sets up a buffer for use with merlin"
-  (interactive)
-  (merlin-start-process)
-  (auto-complete-mode)
-  (setq ac-sources '(merlin-ac-source))
-  (with-current-buffer merlin-type-buffer
-    (tuareg-mode))
-)
 (defun merlin-ident-under-point ()
   (let ((x (bounds-of-thing-at-point 'symbol)))
     (buffer-substring-no-properties (car x) (cdr x))))
@@ -218,10 +209,58 @@
 				    (erase-buffer)
 				    (insert (cdr (assoc 'info ans)))))
 ))))))
-(defun merlin-view-type ()
-  (interactive)
-  (merlin-complete-identifier
+
+;; .merlin
+(defun merlin-parse-line (l)
+  (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
+    (push words l)))
+(defun merlin-add-path (kind dir)
+  (message "%s ++ %s" kind dir)
+  (merlin-send-command "path" (list "add" kind dir) nil))
+
+(defun merlin-get-packages ()
+  (setq merlin-packages nil)
+  (merlin-send-command "find" '("list")
+		       '(lambda (output)
+			  (setq merlin-packages (append (elt output 1) nil))))
+  (sleep-for 0.05)
+  merlin-packages
+  )
+(defun merlin-use (pkg)
+  (interactive
+   (list (completing-read "Package to use:" (merlin-get-packages))))
+  (merlin-send-command "find" (list "use" pkg) nil))
+
+(defun merlin-handle-line (buffer words)
+  (with-current-buffer buffer
+    (cond
+     ((string-equal (elt words 0) "S") (merlin-add-path "source" (elt words 1)))
+     ((string-equal (elt words 0) "B") (merlin-add-path "build" (elt words 1)))
+     ((string-equal (elt words 0) "PKG") (merlin-use (elt words 1))))))
+(defun merlin-parse ()
+  (if (file-exists-p ".merlin")
+      (progn
+	(setq lines nil)
+	(setq buf (current-buffer))
+	(with-current-buffer (find-file ".merlin")
+	  (goto-char (point-min))
+	  (while (not (eq (point) (point-max)))
+	    (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
+	      (merlin-handle-line buf words)
+	      (forward-line)))))))
+      
+    
 ;; Mode definition
+(defun merlin-setup ()
+  "Sets up a buffer for use with merlin"
+  (interactive)
+  (merlin-start-process)
+  (auto-complete-mode)
+  (setq ac-sources '(merlin-ac-source))
+  (merlin-parse)
+  (with-current-buffer merlin-type-buffer
+    (tuareg-mode))
+)
 (define-minor-mode merlin-mode
   "Mode to use merlin tool inside OCaml tools."
   nil
