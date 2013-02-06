@@ -187,12 +187,27 @@ If the timer is zero or negative, nothing is done."
 
 (defun merlin-flush-tell ()
   "Flush merlin teller"
-  (merlin-send-command "tell" '("struct")))
+  (merlin-send-command "tell" '("struct" nil)))
 
 (defun merlin-tell-piece (mode start end)
-  "Tell part of the current buffer to merlin using `mode'"
   (merlin-tell-string mode (buffer-substring start end)))
 
+(defun merlin-tell-piece-split (mode start end)
+   "Tell part of the current buffer to merlin using `mode'"
+   (save-excursion
+     ;; tell lines 10 by 10
+     (goto-char start)
+     (forward-line 10)
+     (let ((temp start))
+       (while (< (point) end)
+	 (merlin-tell-piece mode temp (point))
+	 ;; at this point
+	 ;; you might be wondering
+	 ;; "yeah he got to send lines 10 by 10 because otherwise emacs (or json.el ?) can't handle that much data
+	 ;;  how comes this sordid computation can be right ?"
+	 (setq temp (point))
+	 (forward-line 10))
+       (merlin-tell-piece mode temp end))))
 (defun merlin-seek (point)
   "Seeks merlin's point to `point'"
   (let ((data 
@@ -259,12 +274,12 @@ with the current position where merlin stops. It updates the merlin state by doi
 	(message "Going to retract your mother")
 	(setq merlin-lock-point (merlin-retract-to point)))
     (progn
-      (merlin-tell-piece "struct" merlin-lock-point point)
+      (merlin-tell-piece-split "struct" merlin-lock-point point)
       (merlin-flush-tell)
       (if (merlin-view-errors)
 	  (setq merlin-lock-point (point))
 	(let ((msg (current-message)))
-	  (merlin-seek merlin-lock-point)
+	  (setq merlin-lock-point (merlin-seek merlin-lock-point))
 	  (message msg)))))
   (merlin-update-overlay)
 )    
