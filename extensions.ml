@@ -22,7 +22,13 @@ let ext_lwt =
     "val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t
      val raise_lwt : exn -> 'a Lwt.t"
 
-let registry = [ext_lwt]                       
+let ext_any =
+  parse_sig
+  "module Any : sig
+    val val' : 'a  
+  end",
+  []
+let registry = [ext_lwt;ext_any]                       
 
 let register env =
   (* Log errors ? *)

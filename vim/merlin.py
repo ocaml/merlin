@@ -188,16 +188,20 @@ def sync_buffer_to(to_line, to_col):
         last_line = min(last_line, sync_line)
     # sync shadow buffer
     last_line = min(last_line,len(shadow_buffer), len(cb))
+
     # heuristic: find 3 equal lines in a row
     in_a_row = 0
+    line_count = 0
     while last_line > 0 and in_a_row < 3:
       last_line -= 1
       if shadow_buffer[last_line] == cb[last_line]:
+        line_count += 1
         if shadow_buffer[last_line] != "":
           in_a_row += 1
       else:
         in_a_row = 0
-    last_line += 1 + in_a_row
+        line_count = 0
+    last_line += 1 + line_count
     if last_line <= end_line:
       if last_line <= 1:
         command_reset()

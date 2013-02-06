@@ -149,3 +149,6 @@ val modules_in_path : ext:string -> string list -> string list
         (* Remove duplicates from list *)
 val list_filter_dup : 'a list -> 'a list
 
+        (* Usual either/sum type *)
+type ('a,'b) sum = Inl of 'a | Inr of 'b
+val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c

@@ -6,13 +6,12 @@ type item_desc =
      * l'offset indique la dernière définition avant le Module_opening
      * correspondant *)
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
-  | Partial_definitions of Parsetree.structure_item Location.loc list
 
-and item = Outline.sync * item_desc
+and item = Outline.sync * (item_desc, exn) Misc.sum
 and sync = item History.sync
 and t = item History.t
 
-exception Malformed_module
+exception Malformed_module of Location.t
 exception Invalid_chunk
 
 val sync_step : Outline_utils.kind -> Outline.token list -> t -> item_desc option

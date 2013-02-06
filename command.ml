@@ -65,7 +65,7 @@ let command_tell = {
           (History.cutoff state.types)
         in
         let tokens, outlines =
-          Outline.parse ~bufpos ~goteof
+          Outline.parse ~bufpos
             (History.of_list state.tokens) outlines lexbuf
         in
         let chunks = Chunk.sync outlines chunks in
@@ -75,7 +75,7 @@ let command_tell = {
         let w = Error_report.reset_warnings () in
         let outlines = History.modify (fun outline -> Outline.({ outline with exns = w @ outline.exns })) outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !goteof || state.tokens = state'.tokens
+        if state.tokens = state'.tokens
         then state'
         else loop state'
       in
@@ -309,18 +309,19 @@ let command_seek = {
       state, Protocol.pos_to_json state.pos
 
   | [`String "position" ; jpos] ->
-      let l, c = Protocol.pos_of_json jpos in
-      let outlines = Outline.seek_line (l,c) state.outlines in
-      let outlines = match History.backward outlines with
-        | Some ({ Outline.kind = Outline_utils.Partial_definitions _ }, o) -> o
-        | _ -> outlines
+      let pos = Protocol.pos_of_json jpos in
+      let outlines = Outline.seek_before pos state.outlines in
+      let rec rewind_errors o = match History.backward o with
+        | Some ({ Outline.kind = Outline_utils.Syntax_error }, o) -> rewind_errors o
+        | _ -> o
       in
+      let outlines = rewind_errors outlines in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
       let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =
-        match Outline.last_position outlines with
-          | Some p -> p
-          | None -> initial_state.pos
+        match Outline.location outlines with
+          | l when l = Location.none -> initial_state.pos
+          | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
       Protocol.pos_to_json pos
@@ -333,9 +334,9 @@ let command_seek = {
       let chunks = History.Sync.right fst outlines state.chunks in
       let types  = History.Sync.right fst chunks state.types in
       let pos =
-        match Outline.last_position outlines with
-          | Some p -> p
-          | None -> initial_state.pos
+        match Outline.location outlines with
+          | l when l = Location.none -> initial_state.pos
+          | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
       Protocol.pos_to_json pos
@@ -367,9 +368,9 @@ let command_seek = {
       let chunks = History.Sync.right fst outlines state.chunks in
       let types  = History.Sync.right fst chunks state.types in
       let pos =
-        match Outline.last_position outlines with
-          | Some p -> p
-          | None -> initial_state.pos
+        match Outline.location outlines with
+          | l when l = Location.none -> initial_state.pos
+          | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
       Protocol.pos_to_json pos
