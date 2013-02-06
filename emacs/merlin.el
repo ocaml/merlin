@@ -122,13 +122,12 @@ If the timer is zero or negative, nothing is done."
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer"
-  (if (or
-       (not (accept-process-output (merlin-get-process) 0.1 nil nil))
-       (not merlin-ready))
-      (merlin-wait-for-answer)
-    (progn
-      (setq merlin-buffer nil)
-      (setq merlin-ready nil))))
+  (while (or
+	  (not (accept-process-output (merlin-get-process) 0.1 nil nil))
+	  (not merlin-ready))
+    t)
+  (setq merlin-buffer nil)
+  (setq merlin-ready nil))
 
 (defun merlin-start-process ()
   "Start the merlin process"
