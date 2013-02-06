@@ -43,6 +43,7 @@ let command_tell = {
   | [`String "struct" ; `String source] ->
       Env.reset_missing_cmis ();
       ignore (Error_report.reset_warnings ());
+      let eod = ref false in
       let lexbuf = Misc.lex_strings source
         begin let eot = ref false in fun () ->
           if !eot then ""
@@ -50,6 +51,8 @@ let command_tell = {
             o (Protocol.return (`Bool false));
             match Stream.next i with
               | `List [`String "tell" ; `String "struct" ; `String source] -> source
+              | `List [`String "tell" ; `String "end" ; `String source] -> eod := true; source
+              | `List [`String "tell" ; `String "end" ; `Null ] -> eod := true; eot := true; ""
               | `List [`String "tell" ; `String "struct" ; `Null ] -> eot := true; ""
                 (* FIXME: parser catch this Failure. It should not *)
               | _ -> invalid_arguments ()
@@ -75,7 +78,7 @@ let command_tell = {
         let w = Error_report.reset_warnings () in
         let outlines = History.modify (fun outline -> Outline.({ outline with exns = w @ outline.exns })) outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if state.tokens = state'.tokens
+        if !eod || state.tokens = state'.tokens
         then state'
         else loop state'
       in

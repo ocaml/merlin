@@ -87,11 +87,11 @@ def command_reset():
   clear_cache()
   return r
 
-def command_tell_struct(content):
+def command_tell(kind,content):
   if type(content) is list:
-    return send_command("tell", "struct", "\n".join(content) + "\n")
+    return send_command("tell", kind, "\n".join(content) + "\n")
   else:
-    return send_command("tell", "struct", content)
+    return send_command("tell", kind, content)
 
 def command_which_file(name):
   return send_command('which', 'path', name)
@@ -221,7 +221,9 @@ def sync_buffer_to(to_line, to_col):
     shadow_buffer = content
 
   if content != None:
-    while not command_tell_struct(content):
+    kind = "struct"
+    while not command_tell(kind,content):
+      kind = "end"
       if end_line < max_line:
         next_end = min(max_line,end_line + 4)
         content = cb[end_line:next_end]
