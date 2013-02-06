@@ -26,8 +26,10 @@
   "The merlin process associated to the current buffer")
 (defvar merlin-continuation nil
   "The callback to be called with the result of the next command")
-(defvar merlin-point nil
+(defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix)")
+(defvar merlin-lock-point nil
+  "Position up to which merlin knows about")
 (defvar merlin-result nil
   "Temporary variables to store command results")
 (defvar merlin-debug nil
@@ -41,6 +43,7 @@
 (defvar merlin-prefix nil "Merlin prefix")
 (defvar merlin-name nil "Merlin name")
 (defvar merlin-error-overlay nil "Merlin overlay used for errors")
+(defvar merlin-overlay nil "Merlin overlay used for the lock zone")
 (defvar merlin-buffer nil "Buffer for merlin input")
 (defvar merlin-ready nil "Is reception done?")
 (defvar merlin-idle-delay 0.50
@@ -60,13 +63,21 @@ If the timer is zero or negative, nothing is done."
   (let ((l (butlast (split-string ident "\\."))))
     (let ((s (mapconcat 'identity l ".")))
       (if (string-equal s "") s (concat s ".")))))
-(defun merlin-make-point (line col)
+(defun merlin-make-point (data)
   "Creates a point from a couple line / col"
   (save-excursion
     (beginning-of-line)
-    (goto-line line)
-    (forward-char col)
+    (goto-line (cdr (assoc 'line data)))
+    (forward-char (cdr (assoc 'col data)))
     (point)))
+
+(defun merlin-unmake-point (point)
+  "Destructs the given point to line / col"
+  (save-excursion
+    (goto-char point)
+    (list
+      (cons 'line (line-number-at-pos nil))
+      (cons 'col (current-column)))))
 
 (defun merlin-ident-under-point ()
   "Returns the ident under point in the current buffer"
@@ -131,15 +142,27 @@ If the timer is zero or negative, nothing is done."
 
 
 ;; SPECIAL CASE OF COMMANDS
+(defun merlin-is-return (data)
+  "Returns the actual data of a response or nil if there was an error"
+  (if (string-equal (elt data 0) "return")
+      (elt data 1)
+    nil))
+		    
 (defun merlin-rewind ()
+  (interactive)
   "Rewind the knowledge of merlin of the current buffer to zero"
-  (merlin-send-command "reset" nil))
+  (merlin-send-command "reset" nil)
+  (setq merlin-lock-point (point-min))
+  (merlin-update-overlay)
+)
 
 (defun merlin-dump-env ()
   "Dump the environment"
   (interactive)
+  (merlin-seek (point))
   (message "Env: %s"
-	   (append (elt (merlin-send-command "dump" '("env")) 1) nil)))
+	   (append (elt (merlin-send-command "dump" '("env")) 1) nil))
+  (merlin-seek merlin-lock-point))
 
 (defun merlin-get-completion (ident)
   "Returns the completion for ident `ident'"
@@ -157,6 +180,14 @@ If the timer is zero or negative, nothing is done."
   "Tell part of the current buffer to merlin using `mode'"
   (merlin-tell-string mode (buffer-substring start end)))
 
+(defun merlin-seek (point)
+  "Seeks merlin's point to `point'"
+  (let ((data 
+	 (merlin-is-return (merlin-send-command "seek" (list "position" (merlin-unmake-point point))))))
+    (merlin-make-point data)))
+    
+  
+
 
 ;; ERRORS
 (defun merlin-remove-error-overlay ()
@@ -172,14 +203,12 @@ If the timer is zero or negative, nothing is done."
 (defun merlin-handle-errors (errors)
   "Goes to the location of the first error and adds an overlay"
   (let ((message (cdr (assoc 'message errors)))
-	(lbeginning (cdr (assoc 'line (cdr (assoc 'start errors)))))
-	(cbeginning (cdr (assoc 'col (cdr (assoc 'start errors)))))
-	(lend (cdr (assoc 'line (cdr (assoc 'end errors)))))
-	(cend (cdr (assoc 'col (cdr (assoc 'end errors)))))
+	(beg (cdr (assoc 'start errors)))
+	(end (cdr (assoc 'end errors)))
 	(type (cdr (assoc 'type errors))))
-    (goto-char (merlin-make-point lbeginning cbeginning))
-    (merlin-error-highlight (merlin-make-point lbeginning cbeginning)
-		      (merlin-make-point lend cend))
+    (goto-char (merlin-make-point beg))
+    (merlin-error-highlight (merlin-make-point beg)
+		      (merlin-make-point end))
     (message "%s: %s" type message)
 ))
 
@@ -187,20 +216,48 @@ If the timer is zero or negative, nothing is done."
   "View the errors of the data that have been fed to merlin"
   (let ((output (merlin-send-command "errors" nil)))
     (if (> (length (elt output 1)) 0)
-	(merlin-handle-errors (elt (elt output 1) 0))
-      (message "ok"))))
+	(progn
+	  (merlin-handle-errors (elt (elt output 1) 0))
+	  nil)
+      (progn
+	(message "ok")
+	t))))
+ 
 
-(defun merlin-tell-previous-lines ()
-  "Tell merlin the lines up to the point"
+(defun merlin-retract-to (point)
+  "Retract merlin's view to `point'"
+  (merlin-seek point))
+
+(defun merlin-update-overlay ()
+  (if merlin-overlay
+      (delete-overlay merlin-overlay))
+  (setq merlin-overlay (make-overlay (point-min) merlin-lock-point))
+  (overlay-put merlin-overlay 'face 'merlin-locked-face))
+
+(defun merlin-update-point (point)
+  "Moves the merlin point to the given point. This functions compares its arguments
+with the current position where merlin stops. It updates the merlin state by doing two things:
+- either retract merlin's knowledge if `point' < `merlin-lock-point'
+- or send the region between `merlin-lock-point' and `point'"
+  (message "BATTLE %d %d" point merlin-lock-point)
+  (if (< point merlin-lock-point)
+      (progn 
+	(message "Going to retract your mother")
+	(setq merlin-lock-point (merlin-retract-to point)))
+    (progn
+      (merlin-tell-piece "struct" merlin-lock-point point)
+      (merlin-flush-tell)
+      (if (merlin-view-errors)
+	  (setq merlin-lock-point (point)))
+      ))
+  (merlin-update-overlay)
+  )
+    
+  
+(defun merlin-point ()
+  "Tell merlin the lines up to the current point"
   (interactive)
-  (merlin-rewind)
-  (save-excursion
-    (move-beginning-of-line nil)
-    (merlin-tell-piece "struct" (point-min) (point)))
-  (merlin-flush-tell)
-  (merlin-view-errors)
-  (setq merlin-overlay (make-overlay (point-min) (point)))
-  (overlay-put merlin-overlay 'face 'merlin-locked-face)
+  (merlin-update-point (point))
 )
 
 ;; COMPLETION
@@ -218,7 +275,7 @@ If the timer is zero or negative, nothing is done."
   "Called when the user has pressed RET on a completion candidate. Remove the garbage"
   (save-excursion
     (let ((endpoint (point)))
-      (goto-char merlin-point)
+      (goto-char merlin-completion-point)
       (search-forward ":")
       (backward-char 1)
       (delete-region (point) endpoint)))
@@ -236,7 +293,7 @@ If the timer is zero or negative, nothing is done."
   )
 
 (defun merlin-source-init ()
-  (setq merlin-point ac-point)
+  (setq merlin-completion-point ac-point)
   (merlin-complete-identifier ac-prefix))
   
 
@@ -323,34 +380,34 @@ If the timer is zero or negative, nothing is done."
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
       (cancel-timer merlin-idle-timer)
-    (if merlin-mode
+    (if (and merlin-mode (not merlin-debug))
 	(merlin-show-type-minibuffer))))
 
 ;; Mode definition
 (defvar merlin-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c <C-return>") 'merlin-tell-previous-lines)
+    (define-key map (kbd "C-c <C-return>") 'merlin-point)
     (define-key map (kbd "C-c C-t") 'merlin-show-type)
     (define-key map (kbd "C-c e") 'merlin-dump-env)
+    (define-key map (kbd "C-c C-r") 'merlin-rewind)
     map
     ))
 
 (defun merlin-setup ()
   "Sets up a buffer for use with merlin"
   (interactive)
-  (if (not merlin-mode)
-      (progn
-	(merlin-start-process)
-	(auto-complete-mode)
-	(setq ac-sources '(merlin-ac-source))
-	(merlin-parse)
-	(if (> merlin-idle-delay 0.)
-	    (setq merlin-idle-timer
-		  (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
-	(with-current-buffer merlin-type-buffer
-	  (tuareg-mode)))
-    
-)
+  (progn
+    (merlin-start-process)
+    (auto-complete-mode)
+    (set (make-local-variable 'merlin-lock-point) (point-min))
+    (setq ac-sources '(merlin-ac-source))
+    (set-process-query-on-exit-flag (merlin-get-process) nil)
+    (merlin-parse)
+    (if (> merlin-idle-delay 0.)
+	(setq merlin-idle-timer
+	      (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
+    (with-current-buffer merlin-type-buffer
+      (tuareg-mode))))
 (define-minor-mode merlin-mode
   "Mode to use merlin tool inside OCaml tools."
   nil
@@ -360,6 +417,7 @@ If the timer is zero or negative, nothing is done."
       (merlin-setup)
     (progn
       (process-send-eof (merlin-get-process))
+      (delete-process (merlin-get-process))
       (cancel-timer merlin-idle-timer)
       (delete-overlay merlin-overlay)
 )))
