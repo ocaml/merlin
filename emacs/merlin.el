@@ -43,6 +43,17 @@
 (defvar merlin-error-overlay nil "Merlin overlay used for errors")
 (defvar merlin-buffer nil "Buffer for merlin input")
 (defvar merlin-ready nil "Is reception done?")
+(defvar merlin-idle-delay 0.50
+  "Number of seconds of idle time to wait before printing the type of the ident under the point.
+If user input arrives before this interval of time has elapsed
+after the last input, no documentation will be printed.
+
+If the timer is zero or negative, nothing is done."
+)
+
+(defvar merlin-idle-timer nil
+  "The timer used to print the type of the expression under point")
+
 ;; UTILS
 (defun merlin-compute-prefix (ident)
   "Computes the prefix of an identifier. The prefix of Foo.bar is Foo. and the prefix of bar is \"\""
@@ -126,6 +137,7 @@
 
 (defun merlin-dump-env ()
   "Dump the environment"
+  (interactive)
   (message "Env: %s"
 	   (append (elt (merlin-send-command "dump" '("env")) 1) nil)))
 
@@ -195,7 +207,6 @@
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
   (mapcar `(lambda (c) 
-	    (message "IN HERE")
 	    (concat ,prefix
 		    (cdr (assoc 'name c)) 
 		    ": " 
@@ -239,19 +250,30 @@
 (ac-define-source "merlin" merlin-ac-source)
 
 ;; Get the type of an element"
+(defun merlin-trim (s)
+  (replace-regexp-in-string "\n\\'" "" s))
 (defun merlin-get-type () 
-  (interactive)
   (let ((sexp (merlin-get-completion (merlin-ident-under-point))))
-    (if (= (length (elt sexp 1)) 0) 
+    (if (= (length (elt sexp 1)) 0)
+	nil
+      (elt (elt sexp 1) 0))))
+
+(defun merlin-show-type-minibuffer ()
+  (let ((typ (merlin-get-type)))
+    (if (and typ (string-equal (cdr (assoc 'kind typ)) "Value"))
+	(message "%s" (merlin-trim (cdr (assoc 'desc typ)))))))
+(defun merlin-show-type () 
+  (interactive)
+  (let ((ans (merlin-get-type)))
+    (if (= (length ans) 0) 
 	(message "nothing found for %s" (merlin-ident-under-point))
-      (let ((ans (elt (elt sexp 1) 0)))
-	(if (string-equal (cdr (assoc 'kind ans)) "Value")
-	    (message "%s" (cdr (assoc 'desc ans)))
-	  (progn
-	    (display-buffer merlin-type-buffer)
-	    (with-current-buffer merlin-type-buffer
-	      (erase-buffer)
-	      (insert (cdr (assoc 'info ans))))))))))
+      (if (string-equal (cdr (assoc 'kind ans)) "Value")
+	  (message "%s" (merlin-trim (cdr (assoc 'desc ans))))
+	(progn
+	  (display-buffer merlin-type-buffer)
+	  (with-current-buffer merlin-type-buffer
+	    (erase-buffer)
+	    (insert (cdr (assoc 'info ans)))))))))
 
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
@@ -288,22 +310,48 @@
 	      (merlin-handle-line buf words)
 	      (forward-line))))
 	(switch-to-buffer buf))))
-    
+
+;; Idle 
+(defun merlin-idle-hook ()
+  (if (<= merlin-idle-delay 0.)
+      (cancel-timer merlin-idle-timer)
+    (if merlin-mode
+	(merlin-show-type-minibuffer))))
+
 ;; Mode definition
+(defvar merlin-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c <C-return>") 'merlin-tell-previous-lines)
+    (define-key map (kbd "C-c C-t") 'merlin-show-type)
+    (define-key map (kbd "C-c e") 'merlin-dump-env)
+    map
+    ))
+
 (defun merlin-setup ()
   "Sets up a buffer for use with merlin"
   (interactive)
-  (merlin-start-process)
-  (auto-complete-mode)
-  (setq ac-sources '(merlin-ac-source))
-  (merlin-parse)
-  (with-current-buffer merlin-type-buffer
-    (tuareg-mode))
+  (if (not merlin-mode)
+      (progn
+	(merlin-start-process)
+	(auto-complete-mode)
+	(setq ac-sources '(merlin-ac-source))
+	(merlin-parse)
+	(if (> merlin-idle-delay 0.)
+	    (setq merlin-idle-timer
+		  (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
+	(with-current-buffer merlin-type-buffer
+	  (tuareg-mode)))
+    
 )
 (define-minor-mode merlin-mode
   "Mode to use merlin tool inside OCaml tools."
   nil
   " merlin"
-  '(("\C-i" . merlin-tell-previous-lines)
-    ("\C-o" . merlin-get-type))
-  :after-hook 'merlin-setup)
+  :keymap merlin-mode-map
+  (if merlin-mode 
+      (merlin-setup)
+    (progn
+      (process-send-eof (merlin-get-process))
+      (cancel-timer merlin-idle-timer)
+      (delete-overlay merlin-overlay)
+)))
