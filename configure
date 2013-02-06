@@ -2,6 +2,32 @@
 
 BIN_DIR=/usr/local/bin
 SHARE_DIR=/usr/local/share
+
+if ! [ -x $(which ocamlfind) ]; then
+  echo "Ocamlfind is missing. Please install it."
+  exit 1
+fi
+
+EXIT=0
+check_package()
+{
+  if ocamlfind query "$1" >/dev/null; then
+    echo -e "Found $1\t\E[32mGOOD\E[m"
+  else
+    echo -en "\E[31mBAD\E[m $1 is missing\n\t"
+    echo "$2"
+    EXIT=1
+  fi
+}
+
+cat <<END
+Merlin configuration
+--------------------
+END
+
+check_package findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
+check_package yojson "Install yojson"
+check_package menhirLib "Please install menhir."
 STDLIB_DIR=$(ocamlfind printconf stdlib)
 
 while [ -n "$1" ]; do
@@ -27,14 +53,12 @@ while [ -n "$1" ]; do
 done
 
 cat <<END
-Merlin configuration
---------------------
 
 System config:
   OCaml standard library: $STDLIB_DIR
 
 Will install:
-  "ocamlmerlin" binary in: $BIN_DIR
+  ocamlmerlin binary in: $BIN_DIR
   vim mode in: $SHARE_DIR/ocamlmerlin/vim/
   
 To customize directories, use:
@@ -50,7 +74,11 @@ END
   cat >myocamlbuild_config.ml <<END
 let libdir = "$STDLIB_DIR";;
 END
-  echo "Now, type 'make' to compile then 'make install'."
+  if [ "$EXIT" -eq 0 ]; then
+    echo "Now, type 'make' to compile then 'make install'."
+  else
+    echo "Something bad happened. Check your configuration before trying to 'make'."
+  fi
 else
   [ -d "$BIN_DIR" ] || echo "'$BIN_DIR' not found or not a directory."
   [ -d "$SHARE_DIR" ] || echo "'$SHARE_DIR' not found or not a directory."
