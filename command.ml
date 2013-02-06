@@ -105,6 +105,19 @@ let command_type = {
       let lexbuf = Lexing.from_string expr in
       let env = Typer.env state.types in
       let ppf, to_string = Misc.ppf_to_string () in
+      let print_expr expression = 
+        let (str, sg, _) =
+          Typemod.type_toplevel_phrase env
+            Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
+        in
+        (*let sg' = Typemod.simplify_signature sg in*)
+        let open Typedtree in
+        begin match str.str_items with
+          | [ { str_desc = Tstr_eval exp }] ->
+              Printtyp.type_scheme ppf exp.exp_type;
+          | _ -> failwith "unhandled expression"
+        end
+      in
       begin match Chunk_parser.top_expr Lexer.token lexbuf with
         | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
           begin
@@ -119,18 +132,16 @@ let command_type = {
             with Not_found ->
               ()
           end
-        | expression ->
-          let (str, sg, _) =
-            Typemod.type_toplevel_phrase env
-              Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
-          in
-          (*let sg' = Typemod.simplify_signature sg in*)
-          let open Typedtree in
-          begin match str.str_items with
-            | [ { str_desc = Tstr_eval exp }] ->
-                Printtyp.type_scheme ppf exp.exp_type;
-            | _ -> failwith "unhandled expression"
+        | { Parsetree.pexp_desc = Parsetree.Pexp_ident longident } as e ->
+          begin
+            try print_expr e
+            with exn ->
+            try let p, t = Env.lookup_type longident.Asttypes.txt env in
+             Printtyp.type_declaration (Ident.create (Path.last p)) ppf t
+            with _ ->
+              raise exn 
           end
+        | e -> print_expr e
       end;
       state, `String (to_string ())
 
