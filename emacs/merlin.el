@@ -32,6 +32,8 @@
   "Position up to which merlin knows about")
 (defvar merlin-result nil
   "Temporary variables to store command results")
+(defvar merlin-completion-types t
+  "Prints the types of the variables during completion")
 (defvar merlin-debug nil
   "If true, logs the data sent and received from merlin")
 (defvar merlin-type-buffer
@@ -392,8 +394,11 @@ with the current position where merlin stops. It updates the merlin state by doi
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
       (cancel-timer merlin-idle-timer)
-    (if merlin-mode
-	(merlin-show-type-minibuffer))))
+    (if (and merlin-mode
+	     (not (eq (point) merlin-idle-point)))
+	(progn
+	  (merlin-show-type-of-point-quiet)
+	  (setq merlin-idle-point (point))))))
 
 ;; Mode definition
 (defvar merlin-mode-map
