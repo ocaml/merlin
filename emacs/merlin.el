@@ -28,10 +28,14 @@
   "The callback to be called with the result of the next command")
 (defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix)")
+(defvar merlin-idle-point nil
+  "Position of the last time we printed the type of point")
 (defvar merlin-lock-point nil
   "Position up to which merlin knows about")
 (defvar merlin-result nil
   "Temporary variables to store command results")
+(defvar merlin-completion-types t
+  "Prints the types of the variables during completion")
 (defvar merlin-debug nil
   "If true, logs the data sent and received from merlin")
 (defvar merlin-type-buffer
@@ -87,7 +91,9 @@ If the timer is zero or negative, nothing is done."
 (defun merlin-ident-under-point ()
   "Returns the ident under point in the current buffer"
   (let ((x (bounds-of-thing-at-point 'symbol)))
-    (buffer-substring-no-properties (car x) (cdr x))))
+    (if x
+	(buffer-substring-no-properties (car x) (cdr x))
+      nil)))
 
 ;; PROCESS MANAGEMENT
 (defun merlin-make-buffer-name ()
@@ -146,6 +152,9 @@ If the timer is zero or negative, nothing is done."
 ))
 
 
+(defun merlin-is-long (s)
+  "Returns true if its parameter is long, ie. contains a new line"
+  (string-match "\n" s))
 ;; SPECIAL CASE OF COMMANDS
 (defun merlin-is-return (data)
   "Returns the actual data of a response or nil if there was an error"
@@ -212,6 +221,8 @@ If the timer is zero or negative, nothing is done."
 	(end (cdr (assoc 'end errors)))
 	(type (cdr (assoc 'type errors))))
     (goto-char (merlin-make-point beg))
+    ;; make the idle thread shut up
+    (setq merlin-idle-point (point))
     (merlin-error-highlight (merlin-make-point beg)
 		      (merlin-make-point end))
     (message "%s: %s" type message)
@@ -244,7 +255,6 @@ If the timer is zero or negative, nothing is done."
 with the current position where merlin stops. It updates the merlin state by doing two things:
 - either retract merlin's knowledge if `point' < `merlin-lock-point'
 - or send the region between `merlin-lock-point' and `point'"
-  (message "BATTLE %d %d" point merlin-lock-point)
   (if (< point merlin-lock-point)
       (progn 
 	(message "Going to retract your mother")
@@ -253,37 +263,47 @@ with the current position where merlin stops. It updates the merlin state by doi
       (merlin-tell-piece "struct" merlin-lock-point point)
       (merlin-flush-tell)
       (if (merlin-view-errors)
-	  (setq merlin-lock-point (point)))
-      ))
+	  (setq merlin-lock-point (point))
+	(let ((msg (current-message)))
+	  (merlin-seek merlin-lock-point)
+	  (message msg)))))
   (merlin-update-overlay)
-  )
-    
+)    
   
 (defun merlin-point ()
   "Tell merlin the lines up to the current point"
   (interactive)
   (merlin-update-point (point))
 )
-
+(defun merlin-synchronize-point ()
+  "Synchronize emacs and merlin wrt point"
+  (interactive)
+  (setq merlin-point (merlin-make-point 
+		      (merlin-is-return (merlin-send-command "seek" '("position")))))
+  (merlin-update-overlay))
+(defun merlin-edit (start end length)
+  (if (< start merlin-lock-point)
+      (merlin-update-point start)))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
   (mapcar `(lambda (c) 
-	    (concat ,prefix
-		    (cdr (assoc 'name c)) 
-		    ": " 
-		    (cdr (assoc 'desc c))
-		    ))
+	     (if merlin-completion-types
+		 (format "%s%s: %s" ,prefix
+			 (cdr (assoc 'name c))
+			 (cdr (assoc 'desc c)))
+	       (concat ,prefix (cdr (assoc 'name c)))))
 	  (append l nil)))
 
 (defun merlin-source-action ()
   "Called when the user has pressed RET on a completion candidate. Remove the garbage"
-  (save-excursion
-    (let ((endpoint (point)))
-      (goto-char merlin-completion-point)
-      (search-forward ":")
-      (backward-char 1)
-      (delete-region (point) endpoint)))
+  (if merlin-completion-types
+      (save-excursion
+	(let ((endpoint (point)))
+	  (goto-char merlin-completion-point)
+	  (search-forward ":")
+	  (backward-char 1)
+	  (delete-region (point) endpoint))))
 )
 
 
@@ -321,29 +341,42 @@ with the current position where merlin stops. It updates the merlin state by doi
 	(elt ans 1)
       nil)))
   
-(defun merlin-get-type ()
-  (let ((sexp (merlin-get-completion (merlin-ident-under-point))))
-    (if (= (length (elt sexp 1)) 0)
-	nil
-      (elt (elt sexp 1) 0))))
-
-(defun merlin-show-type-minibuffer ()
-  (let ((ident (merlin-ident-under-point)))
-    (let ((typ (merlin-type-of-expression ident)))
-      (if typ
-	  (message "val %s : %s" ident typ)))))
-(defun merlin-show-type () 
-  (interactive)
-  (let ((ans (merlin-get-type)))
-    (if (= (length ans) 0) 
-	(message "nothing found for %s" (merlin-ident-under-point))
-      (if (string-equal (cdr (assoc 'kind ans)) "Value")
-	  (message "%s" (merlin-trim (cdr (assoc 'desc ans))))
+(defun merlin-show-type (name typ)
+  "Show the given type. If typ is nil, nothing is done"
+  (if typ
+      (if (not (merlin-is-long typ))
+	  (message "%s : %s" name typ)
 	(progn
 	  (display-buffer merlin-type-buffer)
 	  (with-current-buffer merlin-type-buffer
 	    (erase-buffer)
-	    (insert (cdr (assoc 'info ans)))))))))
+	    (insert typ))))))
+
+(defun merlin-show-type-of-region ()
+  "Show the type of the region"
+  (interactive)
+  (let ((exp (buffer-substring-no-properties 
+	       (region-beginning) 
+	       (region-end))))
+    (if exp
+	(merlin-show-type exp (merlin-type-of-expression exp)))))
+
+(defun merlin-show-type-of-point-quiet ()
+  "Show the type of the identifier under the point if it is short (a value)"
+  (let ((ident (merlin-ident-under-point)))
+    (if ident
+	(let ((typ (merlin-type-of-expression ident)))
+	  (if (and typ (not (merlin-is-long typ)))
+	      (message "%s : %s" ident typ))))))
+
+(defun merlin-show-type-of-point (arg) 
+  "Show the type of the identifier under the point. If it is called with a prefix argument, then show the type of the region."
+  (interactive "p")
+  (if (> arg 1)
+      (merlin-show-type-of-region)
+    (let ((ident (merlin-ident-under-point)))
+      (if ident
+	  (merlin-show-type ident (merlin-type-of-expression ident))))))
 
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
@@ -385,15 +418,18 @@ with the current position where merlin stops. It updates the merlin state by doi
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
       (cancel-timer merlin-idle-timer)
-    (if merlin-mode
-	(merlin-show-type-minibuffer))))
+    (if (and merlin-mode
+	     (not (eq (point) merlin-idle-point)))
+	(progn
+	  (merlin-show-type-of-point-quiet)
+	  (setq merlin-idle-point (point))))))
 
 ;; Mode definition
 (defvar merlin-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c <C-return>") 'merlin-point)
-    (define-key map (kbd "C-c C-t") 'merlin-show-type)
-    (define-key map (kbd "C-c e") 'merlin-dump-env)
+    (define-key map (kbd "C-c C-t") 'merlin-show-type-of-point)
+    (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
     map
     ))
@@ -406,6 +442,7 @@ with the current position where merlin stops. It updates the merlin state by doi
     (auto-complete-mode)
     (set (make-local-variable 'merlin-lock-point) (point-min))
     (setq ac-sources '(merlin-ac-source))
+    (add-to-list 'after-change-functions 'merlin-edit)
     (set-process-query-on-exit-flag (merlin-get-process) nil)
     (merlin-parse)
     (if (> merlin-idle-delay 0.)
