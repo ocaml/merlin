@@ -1,33 +1,70 @@
 ;; Mode for Merlin
 
 
+;; json is mandatory
+(require 'json)
+;; auto-complete is not
+(require 'auto-complete nil 'noerror)
 
+;;
+;; Variables
+;;
 (defvar merlin-command "ocamlmerlin"
-  "Merlin's command")
+  "The command for ocamlmerlin in your installation")
 
 (defvar merlin-process nil
-  "The process associated to the current buffer")
+  "The merlin process associated to the current buffer")
 (defvar merlin-continuation nil
   "The callback to be called with the result of the next command")
 (defvar merlin-point nil
-  "Stores the point of last completion")
+  "Stores the point of last completion (beginning of the prefix)")
+(defvar merlin-result nil
+  "Temporary variables to store command results")
+(defvar merlin-debug t
+  "If true, logs the data sent and received from merlin")
+(defvar merlin-type-buffer
+  (get-buffer-create "*merlin types*")
+  "The buffer to use to display types"
+  )
 
-(defvar merlin-debug t)
-(defvar merlin-type-buffer (get-buffer-create "*merlin types*"))
+(defvar merlin-cache nil "Merlin cache for completion")
+(defvar merlin-prefix nil "Merlin prefix")
+(defvar merlin-name nil "Merlin name")
+(defvar merlin-error-overlay nil "Merlin overlay used for errors")
 
+;; UTILS
+(defun merlin-compute-prefix (ident)
+  "Computes the prefix of an identifier. The prefix of Foo.bar is Foo. and the prefix of bar is \"\""
+  (let ((l (butlast (split-string ident "\\."))))
+    (let ((s (mapconcat 'identity l ".")))
+      (if (string-equal s "") s (concat s ".")))))
+(defun merlin-make-point (line col)
+  "Creates a point from a couple line / col"
+  (save-excursion
+    (beginning-of-line)
+    (goto-line line)
+    (forward-char col)
+    (point)))
+
+(defun merlin-ident-under-point ()
+  "Returns the ident under point in the current buffer"
+  (let ((x (bounds-of-thing-at-point 'symbol)))
+    (buffer-substring-no-properties (car x) (cdr x))))
+
+;; PROCESS MANAGEMENT
 (defun merlin-make-buffer-name ()
-  "The buffer name of the process for merlin"
+  "Returns the buffer name associated to the current buffer, for the merlin process"
   (concat "*"
 	  (buffer-file-name nil)
 	  " merlin *"))
 
 (defun merlin-make-process-name ()
-  "The process name of a buffer"
+  "Returns the process name for the current buffer"
   (concat "merlin-" (buffer-file-name nil)))
 
 (defun merlin-get-process ()
+  "Returns the process of the current buffer"
   merlin-process)
-;  (get-process (merlin-make-process-name)))
 
 (defun merlin-filter (process output)
   "The filter on merlin's output"
@@ -49,7 +86,6 @@
     (set (make-local-variable 'merlin-process) p)
     (set-process-filter p 'merlin-filter)))
 
-
 (defun merlin-send-command (name args callback)
   "Send a command to merlin. Callback is called with the sexp result of the command"
   (let ((string
@@ -62,24 +98,30 @@
     (process-send-string (merlin-get-process) string)
     (merlin-wait-for-answer)
 ))
-	
+
+(defun merlin-send-command-sync (name args)
+  "Same as `merlin-send-command' but is synchronous: it returns
+the result of the command"
+  (setq merlin-result nil)
+  (merlin-send-command name args '(lambda (output) (setq merlin-result output)))
+  (sleep-for 0.05)
+  merlin-result)
+
+
+;; SPECIAL CASE OF COMMANDS
 (defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero"
   (merlin-send-command "reset" nil nil))
 
-(defun merlin-make-point (line col)
-  "Creates a point from a couple line / col"
-  (save-excursion
-    (beginning-of-line)
-    (goto-line line)
-    (forward-char col)
-    (point)))
 (defun merlin-dump-env ()
   "Dump the environment"
   (merlin-send-command "dump" '("env")
 		       '(lambda (sexp) 
 			  (message "Env: %s" (append (elt sexp 1) nil)))))
 
+(defun merlin-get-completion (ident)
+  "Returns the completion for ident `ident'"
+  (merlin-send-command-sync "complete" (list "prefix" ident)))
 
 (defun merlin-tell-string (mode string)
   "Tell a string to merlin using `mode'"
@@ -91,25 +133,23 @@
 
 (defun merlin-tell-piece (mode start end)
   "Tell part of the current buffer to merlin using `mode'"
-  (merlin-tell-string mode 
-		      (buffer-substring start end)))
+  (merlin-tell-string mode (buffer-substring start end)))
 
 
-(defvar merlin-cache nil "Merlin cache for completion")
-(defvar merlin-prefix nil "Merlin prefix")
-(defvar merlin-name nil "Merlin name")
-(defvar merlin-overlay nil "Merlin overlay used for errors")
+;; ERRORS
+(defun merlin-remove-error-overlay ()
+  "Remove the error overlay"
+  (delete-overlay merlin-error-overlay))
 
-(defun merlin-remove-overlay ()
-  (delete-overlay merlin-overlay))
-
-(defun merlin-highlight (msg start end)
+(defun merlin-error-highlight (start end)
+  "Add an overlay between `start' and `end' for errors"
   (setq merlin-overlay
 	(make-overlay start end))
   (overlay-put merlin-overlay 'face 'next-error)
   (run-at-time "5 sec" nil 'merlin-remove-overlay)
   )
 (defun merlin-handle-errors (errors)
+  "Goes to the location of the first error and adds an overlay"
   (let ((message (cdr (assoc 'message errors)))
 	(lbeginning (cdr (assoc 'line (cdr (assoc 'start errors)))))
 	(cbeginning (cdr (assoc 'col (cdr (assoc 'start errors)))))
@@ -123,6 +163,7 @@
 ))
 
 (defun merlin-view-errors ()
+  "View the errors of the data that have been fed to merlin"
   (merlin-send-command "errors" nil
 		       '(lambda (output)
 			  (if (> (length (elt output 1)) 0)
@@ -130,6 +171,7 @@
 			    (message "ok")))))
 
 (defun merlin-tell-previous-lines ()
+  "Tell merlin the lines up to the point"
   (interactive)
   (merlin-rewind)
   (save-excursion
@@ -139,18 +181,19 @@
   (merlin-view-errors)
 )
 
-
-(defun merlin-extract-complete (l)
+;; COMPLETION
+(defun merlin-extract-complete (prefix l)
+  "Parses and format completion results"
   (mapcar '(lambda (c) 
-	     (concat merlin-prefix 
+	     (concat prefix
 		     (cdr (assoc 'name c)) 
 		     ": " 
 		     (cdr (assoc 'desc c))
 		     ))
 	  (append l nil)))
-;(cdr (assoc 'name c))
 
 (defun merlin-source-action ()
+  "Called when the user has pressed RET on a completion candidate. Remove the garbage"
   (save-excursion
     (let ((endpoint (point)))
       (goto-char merlin-point)
@@ -159,26 +202,16 @@
       (delete-region (point) endpoint)))
 )
 
-(defun merlin-compute-prefix (ident)
-  (let ((l (butlast (split-string ident "\\."))))
-    (let ((s (mapconcat 'identity l ".")))
-      (if (string-equal s "") s (concat s ".")))))
-	
+
     
 (defun merlin-complete-identifier (ident)
-  (setq merlin-prefix (merlin-compute-prefix ident))
-  (merlin-send-command "complete" (list "prefix" ident) 
-		       '(lambda (output)
-			  (setq merlin-cache 
-				(merlin-extract-complete (elt output 1)))
-			  )))
+  "Returns the formatted result of the completion of `ident'"
+  (setq merlin-cache
+	(merlin-extract-complete (merlin-compute-prefix ident) 
+			   (elt (merlin-get-completion ident) 1))))
 
 (defun merlin-source-init ()
-  (setq merlin-cache nil)
-  (setq merlin-point ac-point)
-  (merlin-complete-identifier ac-prefix)
-  (sleep-for 0.05)
-  merlin-cache)
+  (merlin-complete-identifier ac-prefix))
   
 
 (defvar merlin-ac-source
@@ -190,54 +223,45 @@
 
 (ac-define-source "merlin" merlin-ac-source)
 
-(defun merlin-ident-under-point ()
-  (let ((x (bounds-of-thing-at-point 'symbol)))
-    (buffer-substring-no-properties (car x) (cdr x))))
-
+;; Get the type of an element"
 (defun merlin-get-type () 
   (interactive)
-  (merlin-send-command "complete" (list "prefix" (merlin-ident-under-point))
-		       '(lambda (sexp)
-			  (if (= (length (elt sexp 1)) 0) 
-			      (message "nothing found for %s" (merlin-ident-under-point))
-			    (let ((ans (elt (elt sexp 1) 0)))
-			      (if (string-equal (cdr (assoc 'kind ans)) "Value")
-				  (message "%s" (cdr (assoc 'desc ans)))
-				(progn
-				  (display-buffer merlin-type-buffer)
-				  (with-current-buffer merlin-type-buffer
-				    (erase-buffer)
-				    (insert (cdr (assoc 'info ans)))))
-))))))
+  (let ((sexp (merlin-get-completion (merlin-ident-under-point))))
+    (if (= (length (elt sexp 1)) 0) 
+	(message "nothing found for %s" (merlin-ident-under-point))
+      (let ((ans (elt (elt sexp 1) 0)))
+	(if (string-equal (cdr (assoc 'kind ans)) "Value")
+	    (message "%s" (cdr (assoc 'desc ans)))
+	  (progn
+	    (display-buffer merlin-type-buffer)
+	    (with-current-buffer merlin-type-buffer
+	      (erase-buffer)
+	      (insert (cdr (assoc 'info ans))))))))))
 
-;; .merlin
-(defun merlin-parse-line (l)
-  (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
-    (push words l)))
+;; .merlin parsing
 (defun merlin-add-path (kind dir)
-  (message "%s ++ %s" kind dir)
+  "Adds an item to a path in merlin"
   (merlin-send-command "path" (list "add" kind dir) nil))
 
 (defun merlin-get-packages ()
+  "Get the list of available findlib package"
   (setq merlin-packages nil)
-  (merlin-send-command "find" '("list")
-		       '(lambda (output)
-			  (setq merlin-packages (append (elt output 1) nil))))
-  (sleep-for 0.05)
-  merlin-packages
-  )
+  (append (elt (merlin-send-command-sync "find" '("list")) 1) nil))
 (defun merlin-use (pkg)
+  "Use a package in the current session of merlin"
   (interactive
    (list (completing-read "Package to use:" (merlin-get-packages))))
   (merlin-send-command "find" (list "use" pkg) nil))
 
 (defun merlin-handle-line (buffer words)
+  "Handles a line in a .merlin file"
   (with-current-buffer buffer
     (cond
      ((string-equal (elt words 0) "S") (merlin-add-path "source" (elt words 1)))
      ((string-equal (elt words 0) "B") (merlin-add-path "build" (elt words 1)))
      ((string-equal (elt words 0) "PKG") (merlin-use (elt words 1))))))
 (defun merlin-parse ()
+  "Parses a .merlin"
   (if (file-exists-p ".merlin")
       (progn
 	(setq lines nil)
@@ -247,8 +271,8 @@
 	  (while (not (eq (point) (point-max)))
 	    (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
 	      (merlin-handle-line buf words)
-	      (forward-line)))))))
-      
+	      (forward-line))))
+	(switch-to-buffer buf))))
     
 ;; Mode definition
 (defun merlin-setup ()
