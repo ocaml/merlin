@@ -25,10 +25,10 @@ let ext_lwt =
 let ext_any =
   parse_sig
   "module Any : sig
-    val val' : 'a  
+    val val' : 'a
   end",
   []
-let registry = [ext_lwt;ext_any]                       
+let registry = [ext_lwt;ext_any]
 
 let register env =
   (* Log errors ? *)

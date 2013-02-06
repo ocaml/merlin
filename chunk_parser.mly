@@ -98,32 +98,6 @@ let ghexp startpos endpos d = { pexp_desc = d; pexp_loc = symbol_gloc startpos e
 let ghpat startpos endpos d = { ppat_desc = d; ppat_loc = symbol_gloc startpos endpos };;
 let ghtyp startpos endpos d = { ptyp_desc = d; ptyp_loc = symbol_gloc startpos endpos };;
 
-(* Fake namespace support (extensions) *)
-module Fake =
-struct
-  let prim_ident prim = Longident.parse ("_." ^ prim)
-  let prim prim = {
-    pexp_desc = Pexp_ident (Location.mknoloc (prim_ident prim));
-    pexp_loc = Location.none
-  }
-
-  let app a b =
-    let pexp_loc = { b.pexp_loc with Location.loc_ghost = true } in
-    { pexp_desc = Pexp_apply (a, ["", b]) ; pexp_loc }
-
-  let pat_app f (pat,expr) = pat, app f expr 
-
-  let any_val' = prim "Any.val'"
-  let un_lwt = prim "Lwt.un_lwt"
-  let to_lwt = prim "Lwt.to_lwt"
-  let in_lwt = prim "Lwt.in_lwt"
-  let unit_lwt = prim "Lwt.unit_lwt"
-  let un_stream = prim "Lwt.un_stream"
-  let finally' = prim "Lwt.finally'"
-  let raise_lwt' = prim_ident "Lwt.raise_lwt'"
-end
-;;
-
 let mkassert startpos endpos  e =
   match e with
   | {pexp_desc = Pexp_construct ({ txt = Lident "false" }, None , false);
@@ -527,7 +501,7 @@ The precedences must be listed from low to high.
 %start interface                        (* for interface files *)
 %type <Parsetree.signature> interface
 %start top_structure_item               (* extension, ocaml-ty *)
-%type <Parsetree.structure_item Location.loc> top_structure_item
+%type <Parsetree.structure_item Location.loc list> top_structure_item
 %start top_expr                        (* extension, ocaml-ty *)
 %type <Parsetree.expression> top_expr
 %%
@@ -594,48 +568,58 @@ structure_tail:
     (* empty *)                                 { [] }
   | SEMISEMI                                    { [] }
   | SEMISEMI seq_expr structure_tail            { ghstrexp $startpos $endpos $2 :: $3 }
-  | SEMISEMI structure_item structure_tail      { $2 :: $3 }
-  | structure_item structure_tail               { $1 :: $2 }
+  | SEMISEMI structure_item structure_tail      { $2 @ $3 }
+  | structure_item structure_tail               { $1 @ $2 }
 ;
 
 top_structure_item:
   | structure_item EOF 
-  { mkloc $1 (symbol_rloc $startpos $endpos) }
+      { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $1 }
 ;
+
+with_extensions:
+  | LIDENT COMMA with_extensions { $1 :: $3 }
+  | LIDENT { [$1] }
 
 structure_item:
     LET rec_flag let_bindings
       { match $3 with
         | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
-               mkstr $startpos $endpos (Pstr_eval exp)
-        | _ -> mkstr $startpos $endpos (Pstr_value($2, List.rev $3))
+            [mkstr $startpos $endpos (Pstr_eval exp)]
+        | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev $3))]
       }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
-      { mkstr $startpos $endpos
+      { [mkstr $startpos $endpos
           (Pstr_primitive (mkrhs $startpos($2) $endpos($2) $2, 
-            { pval_type = $4; pval_prim = $6; pval_loc = symbol_rloc $startpos $endpos }))
+            { pval_type = $4; pval_prim = $6; pval_loc = symbol_rloc $startpos $endpos }))]
       }
   | TYPE type_declarations
-      { mkstr $startpos $endpos (Pstr_type(List.rev $2)) }
+      { [mkstr $startpos $endpos (Pstr_type(List.rev $2))] }
+  | TYPE type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
+        let ast = Fake.TypeWith.generate_definitions ~ty:($2) ?ghost_loc $4 in
+        mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
+      }
   | EXCEPTION UIDENT constructor_arguments
-      { mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3)) }
+      { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | EXCEPTION UIDENT EQUAL constr_longident
-      { mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
-          mkloc $4 (rhs_loc $startpos($4) $endpos($4)))) }
+      { [mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
+          mkloc $4 (rhs_loc $startpos($4) $endpos($4))))] }
   | MODULE UIDENT module_binding
-      { mkstr $startpos $endpos (Pstr_module(mkrhs $startpos($2) $endpos($2) $2, $3)) }
+      { [mkstr $startpos $endpos (Pstr_module(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | MODULE REC module_rec_bindings
-      { mkstr $startpos $endpos (Pstr_recmodule(List.rev $3)) }
+      { [mkstr $startpos $endpos (Pstr_recmodule(List.rev $3))] }
   | MODULE TYPE ident EQUAL module_type
-      { mkstr $startpos $endpos (Pstr_modtype(mkrhs $startpos($3) $endpos($3) $3, $5)) }
+      { [mkstr $startpos $endpos (Pstr_modtype(mkrhs $startpos($3) $endpos($3) $3, $5))] }
   | OPEN mod_longident
-      { mkstr $startpos $endpos (Pstr_open (mkrhs $startpos($2) $endpos($2) $2)) }
+      { [mkstr $startpos $endpos (Pstr_open (mkrhs $startpos($2) $endpos($2) $2))] }
   | CLASS class_declarations
-      { mkstr $startpos $endpos (Pstr_class (List.rev $2)) }
+      { [mkstr $startpos $endpos (Pstr_class (List.rev $2))] }
   | CLASS TYPE class_type_declarations
-      { mkstr $startpos $endpos (Pstr_class_type (List.rev $3)) }
+      { [mkstr $startpos $endpos (Pstr_class_type (List.rev $3))] }
   | INCLUDE module_expr
-      { mkstr $startpos $endpos (Pstr_include $2) }
+      { [mkstr $startpos $endpos (Pstr_include $2)] }
 ;
 module_binding:
     EQUAL module_expr
@@ -1007,8 +991,8 @@ expr:
       { mkexp $startpos $endpos (Pexp_let($2, List.rev $3, Fake.any_val')) }
   | LET_LWT rec_flag let_bindings IN seq_expr
       { let expr = mkexp $startpos $endpos
-          (Pexp_let($2, List.rev_map (Fake.pat_app Fake.un_lwt) $3, $5)) in
-        Fake.app Fake.in_lwt expr }
+          (Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, $5)) in
+        Fake.app Fake.Lwt.in_lwt expr }
   | LET MODULE UIDENT module_binding IN seq_expr
       { mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, $6)) }
   | LET OPEN mod_longident IN seq_expr
@@ -1023,22 +1007,22 @@ expr:
       { mkexp $startpos $endpos (Pexp_match($2, List.rev $5)) }
   | MATCH_LWT seq_expr WITH opt_bar match_cases
       { let expr = mkexp $startpos $endpos
-          (Pexp_match(Fake.app Fake.un_lwt $2, List.rev $5)) in
-        Fake.app Fake.in_lwt expr }
+          (Pexp_match(Fake.app Fake.Lwt.un_lwt $2, List.rev $5)) in
+        Fake.app Fake.Lwt.in_lwt expr }
   | TRY seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try($2, List.rev $5)) }
   | TRY seq_expr WITH error
       { mkexp $startpos $endpos (Pexp_try($2, [])) }
   | TRY_LWT seq_expr WITH opt_bar match_cases
-      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.in_lwt $2, List.rev $5)) }
+      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) }
   | TRY_LWT seq_expr FINALLY_LWT seq_expr
-      { Fake.app (Fake.app Fake.finally' $2) $4 }
+      { Fake.app (Fake.app Fake.Lwt.finally' $2) $4 }
   | TRY_LWT seq_expr WITH error
-      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.in_lwt $2, [])) }
+      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, [])) }
   | TRY_LWT seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
       { let expr = mkexp $startpos $endpos
-          (Pexp_try (Fake.app Fake.in_lwt $2, List.rev $5)) in
-        Fake.app (Fake.app Fake.finally' expr) $7 }
+          (Pexp_try (Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) in
+        Fake.app (Fake.app Fake.Lwt.finally' expr) $7 }
   | expr_comma_list %prec below_COMMA
       { mkexp $startpos $endpos (Pexp_tuple(List.rev $1)) }
   | constr_longident simple_expr 
@@ -1052,19 +1036,19 @@ expr:
   | WHILE seq_expr DO seq_expr DONE
       { mkexp $startpos $endpos (Pexp_while($2, $4)) }
   | WHILE_LWT seq_expr DO seq_expr DONE
-      { mkexp $startpos $endpos (Pexp_while(Fake.(app un_lwt $2), Fake.(app unit_lwt $4))) }
+      { mkexp $startpos $endpos (Pexp_while(Fake.(app Lwt.un_lwt $2), Fake.(app Lwt.unit_lwt $4))) }
   | FOR val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
       { mkexp $startpos $endpos (Pexp_for(mkrhs $startpos($2) $endpos($2) $2, $4, $6, $5, $8)) }
   | FOR_LWT val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
       { let expr = mkexp $startpos $endpos
           (Pexp_for(mkrhs $startpos($2) $endpos($2) $2,
-            Fake.(app un_lwt $4),
-            Fake.(app un_lwt $6), $5,
-            Fake.(app unit_lwt $8))) in
-        Fake.(app to_lwt expr) }
+            Fake.(app Lwt.un_lwt $4),
+            Fake.(app Lwt.un_lwt $6), $5,
+            Fake.(app Lwt.unit_lwt $8))) in
+        Fake.(app Lwt.to_lwt expr) }
   | FOR_LWT pattern IN seq_expr DO seq_expr DONE
       { mkexp $startpos $endpos
-          (Pexp_let (Nonrecursive, [$2,Fake.(app un_stream $4)], Fake.(app unit_lwt $6))) }
+          (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
   | expr COLONCOLON expr
       { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) (symbol_rloc $startpos $endpos ) }
   | LPAREN COLONCOLON RPAREN LPAREN expr COMMA expr RPAREN

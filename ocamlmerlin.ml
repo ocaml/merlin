@@ -1,5 +1,5 @@
 (** # Pipeline de Merlin
-  * 
+  *
   * Le toplevel lit et écrit des objets JSON sur stdin/stdout.
   * Chaque objet lu correspond à une commande au format suivant:
   * ["nom_de_la_commande",arg1,arg2]
@@ -117,7 +117,7 @@ let _ =
     "build",  (Config.load_path,default_build_paths);
     "source", (Command.source_path, lazy [])
   ] in
-  Command.register command_path 
+  Command.register command_path
 
 (** Mimic other Caml tools, entry point *)
 let print_version () =

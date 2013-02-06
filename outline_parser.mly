@@ -220,9 +220,9 @@ interface:
     signature EOF                        { () }
 ;
 top_structure:
-    structure_item                       { () }
-  | structure_item top_structure         { () }
-  | END                                  { emit_top Leave_module $endpos }
+    structure_item                        { () }
+  | structure_item top_structure          { () }
+  | END                                   { emit_top Leave_module $endpos }
 ;
 
 (* Module expressions *)
@@ -277,12 +277,22 @@ structure_tail:
   | SEMISEMI structure_item structure_tail      { () }
   | structure_item structure_tail               { () }
 ;
+
+with_extension:
+  | WITH LIDENT comma_ext_list { () }
+  | { () }
+;
+
+comma_ext_list:
+  | COMMA LIDENT comma_ext_list { () }
+  | { () }
+
 structure_item:
     LET rec_flag let_bindings
       { emit_top Definition $endpos }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { emit_top Definition $endpos }
-  | TYPE type_declarations
+  | TYPE type_declarations with_extension
       { emit_top Definition $endpos }
   | EXCEPTION UIDENT constructor_arguments
       { emit_top Definition $endpos }
