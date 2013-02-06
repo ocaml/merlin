@@ -58,6 +58,11 @@ If the timer is zero or negative, nothing is done."
   "The timer used to print the type of the expression under point")
 
 ;; UTILS
+
+(defun merlin-debug (s)
+  (with-current-buffer (merlin-make-buffer-name)
+    (insert s)))
+
 (defun merlin-compute-prefix (ident)
   "Computes the prefix of an identifier. The prefix of Foo.bar is Foo. and the prefix of bar is \"\""
   (let ((l (butlast (split-string ident "\\."))))
@@ -105,7 +110,7 @@ If the timer is zero or negative, nothing is done."
   (let ((a (ignore-errors (json-read-from-string merlin-buffer))))
   (if a
       (progn
-	(if merlin-debug (message "%s" a))
+	(if merlin-debug (merlin-debug (format "< %s" merlin-buffer)))
 	(setq merlin-result a)
 	(setq merlin-ready t)))))
 
@@ -134,7 +139,7 @@ If the timer is zero or negative, nothing is done."
 	  (json-encode 
 	   (if args (append (list name) args) (list name)))
 	  "\n")))
-    (if merlin-debug (message string))
+    (if merlin-debug (merlin-debug (format "> %s" string)))
     (process-send-string (merlin-get-process) string)
     (merlin-wait-for-answer)
     merlin-result
@@ -174,7 +179,7 @@ If the timer is zero or negative, nothing is done."
 
 (defun merlin-flush-tell ()
   "Flush merlin teller"
-  (merlin-send-command "tell" '("struct" nil)))
+  (merlin-send-command "tell" '("struct")))
 
 (defun merlin-tell-piece (mode start end)
   "Tell part of the current buffer to merlin using `mode'"
@@ -316,7 +321,7 @@ with the current position where merlin stops. It updates the merlin state by doi
 	(elt ans 1)
       nil)))
   
-(defun merlin-get-type (exp) 
+(defun merlin-get-type ()
   (let ((sexp (merlin-get-completion (merlin-ident-under-point))))
     (if (= (length (elt sexp 1)) 0)
 	nil
@@ -380,7 +385,7 @@ with the current position where merlin stops. It updates the merlin state by doi
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
       (cancel-timer merlin-idle-timer)
-    (if (and merlin-mode (not merlin-debug))
+    (if merlin-mode
 	(merlin-show-type-minibuffer))))
 
 ;; Mode definition
