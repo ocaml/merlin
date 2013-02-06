@@ -12,6 +12,7 @@
 (defvar merlin-point nil
   "Stores the point of last completion")
 
+(defvar merlin-debug t)
 (defvar merlin-type-buffer (get-buffer-create "*merlin types*"))
 
 (defun merlin-make-buffer-name ()
@@ -30,6 +31,7 @@
 
 (defun merlin-filter (process output)
   "The filter on merlin's output"
+  (if merlin-debug (message output))
   (if merlin-continuation
       (let ((a (ignore-errors (json-read-from-string output))))
 	(if a (funcall merlin-continuation a)))))
@@ -55,7 +57,7 @@
 	  (json-encode 
 	   (if args (append (list name) args) (list name)))
 	  "\n")))
-;    (message string)
+    (if merlin-debug (message string))
     (set (make-local-variable 'merlin-continuation) callback)
     (process-send-string (merlin-get-process) string)
     (merlin-wait-for-answer)
