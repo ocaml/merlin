@@ -158,3 +158,13 @@ end = struct
 
   let make_funs ty = `Let [ sexp_of_ ty ; _of_sexp ty ]
 end
+
+module TypeWith = struct
+  let rec generate_definitions ~ty ?ghost_loc = function
+    | "sexp" :: rest ->
+      let funs = List.map Sexp.make_funs ty in
+      let ast = List.map (translate_to_str ?ghost_loc) funs in
+      ast @ (generate_definitions ~ty ?ghost_loc rest)
+    | _  :: rest -> generate_definitions ~ty ?ghost_loc rest
+    | [] -> []
+end

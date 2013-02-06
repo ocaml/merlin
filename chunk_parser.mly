@@ -579,6 +579,10 @@ top_structure_item:
       { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $1 }
 ;
 
+with_extensions:
+  | LIDENT COMMA with_extensions { $1 :: $3 }
+  | LIDENT { [$1] }
+
 structure_item:
     LET rec_flag let_bindings
       { match $3 with
@@ -593,17 +597,11 @@ structure_item:
       }
   | TYPE type_declarations
       { [mkstr $startpos $endpos (Pstr_type(List.rev $2))] }
-  | TYPE type_declarations WITH LIDENT
+  | TYPE type_declarations WITH with_extensions
       {
-        match $4 with (* UGLY UGLY UGLY *) (* but temporary, hopefully *)
-        | "sexp" ->
-          let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
-          let funs = List.map Fake.Sexp.make_funs $2 in
-          let ast = List.map (Fake.translate_to_str ?ghost_loc) funs in
-          mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
-        | _ ->
-          (* unrecognized extension, ignore it *)
-          [ mkstr $startpos $endpos (Pstr_type(List.rev $2)) ]
+        let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
+        let ast = Fake.TypeWith.generate_definitions ~ty:($2) ?ghost_loc $4 in
+        mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
       }
   | EXCEPTION UIDENT constructor_arguments
       { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }

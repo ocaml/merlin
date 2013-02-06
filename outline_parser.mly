@@ -279,9 +279,13 @@ structure_tail:
 ;
 
 with_extension:
-  | WITH LIDENT { () }
+  | WITH LIDENT comma_ext_list { () }
   | { () }
 ;
+
+comma_ext_list:
+  | COMMA LIDENT comma_ext_list { () }
+  | { () }
 
 structure_item:
     LET enter_partial rec_flag let_bindings commit_partial leave_partial
