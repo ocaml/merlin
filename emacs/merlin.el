@@ -20,7 +20,7 @@
   "Stores the point of last completion (beginning of the prefix)")
 (defvar merlin-result nil
   "Temporary variables to store command results")
-(defvar merlin-debug t
+(defvar merlin-debug nil
   "If true, logs the data sent and received from merlin")
 (defvar merlin-type-buffer
   (get-buffer-create "*merlin types*")
@@ -31,7 +31,8 @@
 (defvar merlin-prefix nil "Merlin prefix")
 (defvar merlin-name nil "Merlin name")
 (defvar merlin-error-overlay nil "Merlin overlay used for errors")
-
+(defvar merlin-buffer nil "Buffer for merlin input")
+(defvar merlin-ready nil "Is reception done?")
 ;; UTILS
 (defun merlin-compute-prefix (ident)
   "Computes the prefix of an identifier. The prefix of Foo.bar is Foo. and the prefix of bar is \"\""
@@ -68,15 +69,23 @@
 
 (defun merlin-filter (process output)
   "The filter on merlin's output"
-  (if merlin-debug (message output))
-  (if merlin-continuation
-      (let ((a (ignore-errors (json-read-from-string output))))
-	(if a (funcall merlin-continuation a)))))
+  (setq merlin-buffer (concat merlin-buffer output))
+  (let ((a (ignore-errors (json-read-from-string merlin-buffer))))
+  (if a
+      (progn
+	(if merlin-debug (message "%s" a))
+	(setq merlin-result a)
+	(setq merlin-ready t)))))
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer"
-  (if (not (accept-process-output (merlin-get-process) 0.1 nil nil))
-      (merlin-wait-for-answer)))
+  (if (or
+       (not (accept-process-output (merlin-get-process) 0.1 nil nil))
+       (not merlin-ready))
+      (merlin-wait-for-answer)
+    (progn
+      (setq merlin-buffer nil)
+      (setq merlin-ready nil))))
 
 (defun merlin-start-process ()
   "Start the merlin process"
@@ -86,50 +95,41 @@
     (set (make-local-variable 'merlin-process) p)
     (set-process-filter p 'merlin-filter)))
 
-(defun merlin-send-command (name args callback)
-  "Send a command to merlin. Callback is called with the sexp result of the command"
+(defun merlin-send-command (name args)
+  "Send a command to merlin. Returns the result"
   (let ((string
 	 (concat 
 	  (json-encode 
 	   (if args (append (list name) args) (list name)))
 	  "\n")))
     (if merlin-debug (message string))
-    (set (make-local-variable 'merlin-continuation) callback)
     (process-send-string (merlin-get-process) string)
     (merlin-wait-for-answer)
+    merlin-result
 ))
-
-(defun merlin-send-command-sync (name args)
-  "Same as `merlin-send-command' but is synchronous: it returns
-the result of the command"
-  (setq merlin-result nil)
-  (merlin-send-command name args '(lambda (output) (setq merlin-result output)))
-  (sleep-for 0.05)
-  merlin-result)
 
 
 ;; SPECIAL CASE OF COMMANDS
 (defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero"
-  (merlin-send-command "reset" nil nil))
+  (merlin-send-command "reset" nil))
 
 (defun merlin-dump-env ()
   "Dump the environment"
-  (merlin-send-command "dump" '("env")
-		       '(lambda (sexp) 
-			  (message "Env: %s" (append (elt sexp 1) nil)))))
+  (message "Env: %s"
+	   (append (elt (merlin-send-command "dump" '("env")) 1) nil)))
 
 (defun merlin-get-completion (ident)
   "Returns the completion for ident `ident'"
-  (merlin-send-command-sync "complete" (list "prefix" ident)))
+  (merlin-send-command "complete" (list "prefix" ident)))
 
 (defun merlin-tell-string (mode string)
   "Tell a string to merlin using `mode'"
-  (merlin-send-command "tell" (list "struct" string) nil))
+  (merlin-send-command "tell" (list "struct" string)))
 
 (defun merlin-flush-tell ()
   "Flush merlin teller"
-  (merlin-send-command "tell" '("struct" nil) nil))
+  (merlin-send-command "tell" '("struct" nil)))
 
 (defun merlin-tell-piece (mode start end)
   "Tell part of the current buffer to merlin using `mode'"
@@ -143,10 +143,9 @@ the result of the command"
 
 (defun merlin-error-highlight (start end)
   "Add an overlay between `start' and `end' for errors"
-  (setq merlin-overlay
-	(make-overlay start end))
-  (overlay-put merlin-overlay 'face 'next-error)
-  (run-at-time "5 sec" nil 'merlin-remove-overlay)
+  (setq merlin-error-overlay (make-overlay start end))
+  (overlay-put merlin-error-overlay 'face 'next-error)
+  (run-at-time "1 sec" nil 'merlin-remove-error-overlay)
   )
 (defun merlin-handle-errors (errors)
   "Goes to the location of the first error and adds an overlay"
@@ -157,18 +156,17 @@ the result of the command"
 	(cend (cdr (assoc 'col (cdr (assoc 'end errors)))))
 	(type (cdr (assoc 'type errors))))
     (goto-char (merlin-make-point lbeginning cbeginning))
-    (merlin-highlight message (merlin-make-point lbeginning cbeginning)
+    (merlin-error-highlight (merlin-make-point lbeginning cbeginning)
 		      (merlin-make-point lend cend))
     (message "%s: %s" type message)
 ))
 
 (defun merlin-view-errors ()
   "View the errors of the data that have been fed to merlin"
-  (merlin-send-command "errors" nil
-		       '(lambda (output)
-			  (if (> (length (elt output 1)) 0)
-			      (merlin-handle-errors (elt (elt output 1) 0))
-			    (message "ok")))))
+  (let ((output (merlin-send-command "errors" nil)))
+    (if (> (length (elt output 1)) 0)
+	(merlin-handle-errors (elt (elt output 1) 0))
+      (message "ok"))))
 
 (defun merlin-tell-previous-lines ()
   "Tell merlin the lines up to the point"
@@ -179,17 +177,20 @@ the result of the command"
     (merlin-tell-piece "struct" (point-min) (point)))
   (merlin-flush-tell)
   (merlin-view-errors)
+  (setq merlin-overlay (make-overlay (point-min) (point)))
+  (overlay-put merlin-overlay 'face 'merlin-locked-face)
 )
 
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
-  (mapcar '(lambda (c) 
-	     (concat prefix
-		     (cdr (assoc 'name c)) 
-		     ": " 
-		     (cdr (assoc 'desc c))
-		     ))
+  (mapcar `(lambda (c) 
+	    (message "IN HERE")
+	    (concat ,prefix
+		    (cdr (assoc 'name c)) 
+		    ": " 
+		    (cdr (assoc 'desc c))
+		    ))
 	  (append l nil)))
 
 (defun merlin-source-action ()
@@ -206,11 +207,15 @@ the result of the command"
     
 (defun merlin-complete-identifier (ident)
   "Returns the formatted result of the completion of `ident'"
+  (setq merlin-cache nil)
+  (merlin-extract-complete (merlin-compute-prefix ident) (elt (merlin-get-completion ident) 1))
   (setq merlin-cache
 	(merlin-extract-complete (merlin-compute-prefix ident) 
-			   (elt (merlin-get-completion ident) 1))))
+			   (elt (merlin-get-completion ident) 1)))
+  )
 
 (defun merlin-source-init ()
+  (setq merlin-point ac-point)
   (merlin-complete-identifier ac-prefix))
   
 
@@ -241,17 +246,17 @@ the result of the command"
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
   "Adds an item to a path in merlin"
-  (merlin-send-command "path" (list "add" kind dir) nil))
+  (merlin-send-command "path" (list "add" kind dir)))
 
 (defun merlin-get-packages ()
   "Get the list of available findlib package"
   (setq merlin-packages nil)
-  (append (elt (merlin-send-command-sync "find" '("list")) 1) nil))
+  (append (elt (merlin-send-command "find" '("list")) 1) nil))
 (defun merlin-use (pkg)
   "Use a package in the current session of merlin"
   (interactive
    (list (completing-read "Package to use:" (merlin-get-packages))))
-  (merlin-send-command "find" (list "use" pkg) nil))
+  (merlin-send-command "find" (list "use" pkg)))
 
 (defun merlin-handle-line (buffer words)
   "Handles a line in a .merlin file"
