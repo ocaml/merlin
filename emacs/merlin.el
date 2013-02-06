@@ -7,6 +7,16 @@
 (require 'auto-complete nil 'noerror)
 
 ;;
+;; Faces
+;;
+
+(defface merlin-locked-face
+  '((t :background "#eaf8ff"))
+  "Face for a region that merlin knows of."
+  :group 'merlin-faces)
+
+
+;;
 ;; Variables
 ;;
 (defvar merlin-command "ocamlmerlin"
