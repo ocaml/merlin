@@ -88,8 +88,6 @@ let command_tell = {
   end;
 }
 
-exception Found of Types.signature_item
-
 let command_type = {
   name = "type";
 
@@ -100,76 +98,91 @@ let command_type = {
   ];
 
   handler =
-  begin fun _ state -> function
+  let type_in_env env ppf expr =
+    let lexbuf = Lexing.from_string expr in
+    let print_expr expression = 
+      let (str, sg, _) =
+        Typemod.type_toplevel_phrase env
+          Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
+      in
+      (*let sg' = Typemod.simplify_signature sg in*)
+      let open Typedtree in
+      begin match str.str_items with
+        | [ { str_desc = Tstr_eval exp }] ->
+            Printtyp.type_scheme ppf exp.exp_type;
+        | _ -> failwith "unhandled expression"
+      end
+    in
+    begin match Chunk_parser.top_expr Lexer.token lexbuf with
+      | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
+        begin
+          try let _, c = Env.lookup_constructor longident.Asttypes.txt env in
+            Browse.print_constructor ppf c
+          with Not_found ->
+          try let _, m = Env.lookup_module longident.Asttypes.txt env in
+           Printtyp.modtype ppf m
+          with Not_found ->
+          try let p, m = Env.lookup_modtype longident.Asttypes.txt env in
+           Printtyp.modtype_declaration (Ident.create (Path.last p)) ppf m
+          with Not_found ->
+            ()
+        end
+      | { Parsetree.pexp_desc = Parsetree.Pexp_ident longident } as e ->
+        begin
+          try print_expr e
+          with exn ->
+          try let p, t = Env.lookup_type longident.Asttypes.txt env in
+           Printtyp.type_declaration (Ident.create (Path.last p)) ppf t
+          with _ ->
+            raise exn 
+        end
+      | e -> print_expr e
+    end
+  in fun _ state -> function
   | [`String "expression"; `String expr] ->
-      let lexbuf = Lexing.from_string expr in
       let env = Typer.env state.types in
       let ppf, to_string = Misc.ppf_to_string () in
-      let print_expr expression = 
-        let (str, sg, _) =
-          Typemod.type_toplevel_phrase env
-            Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
-        in
-        (*let sg' = Typemod.simplify_signature sg in*)
-        let open Typedtree in
-        begin match str.str_items with
-          | [ { str_desc = Tstr_eval exp }] ->
-              Printtyp.type_scheme ppf exp.exp_type;
-          | _ -> failwith "unhandled expression"
-        end
-      in
-      begin match Chunk_parser.top_expr Lexer.token lexbuf with
-        | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
-          begin
-            try let _, c = Env.lookup_constructor longident.Asttypes.txt env in
-              Browse.print_constructor ppf c
-            with Not_found ->
-            try let _, m = Env.lookup_module longident.Asttypes.txt env in
-             Printtyp.modtype ppf m
-            with Not_found ->
-            try let p, m = Env.lookup_modtype longident.Asttypes.txt env in
-             Printtyp.modtype_declaration (Ident.create (Path.last p)) ppf m
-            with Not_found ->
-              ()
-          end
-        | { Parsetree.pexp_desc = Parsetree.Pexp_ident longident } as e ->
-          begin
-            try print_expr e
-            with exn ->
-            try let p, t = Env.lookup_type longident.Asttypes.txt env in
-             Printtyp.type_declaration (Ident.create (Path.last p)) ppf t
-            with _ ->
-              raise exn 
-          end
-        | e -> print_expr e
-      end;
+      type_in_env env ppf expr;
       state, `String (to_string ())
 
-  | [`String "at" ; jpos] ->
-    let ln, cl = Protocol.pos_of_json jpos in
+  | [`String "expression"; `String expr; `String "at" ; jpos] ->
+    let open Browse.BTypedtree in
+    let pos = Protocol.pos_of_json jpos in
     let trees = Typer.trees state.types in
+    let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
+    let env = match env_near pos structures with
+      | Some env -> env
+      | None -> raise Not_found
+    in
+    let ppf, to_string = Misc.ppf_to_string () in
+    type_in_env env ppf expr;
+    state, `String (to_string ())
+
+  | [`String "at" ; jpos] ->
+    let cmp = Browse.compare_loc (Protocol.pos_of_json jpos) in
+    let trees = Typer.trees state.types in
+    let module A = struct exception Found of Types.signature_item end in
     begin try
       List.iter
       begin fun (tstr,tsg) ->
         List.iter
         begin fun sg ->
           match Browse.signature_loc sg with
-            | Some loc when Browse.compare_loc (ln,cl) loc < 0 ->
+            | Some loc when cmp loc < 0 ->
                 raise Not_found
-            | Some loc when Browse.compare_loc (ln,cl) loc = 0 ->
-                raise (Found sg)
+            | Some loc when cmp loc = 0 ->
+                raise (A.Found sg)
             | _ -> ()
           end tsg
         end trees;
         raise Not_found
-      with Found sg -> 
+      with A.Found sg -> 
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [sg];
         state, `String (to_string ())
     end
 
-  | _ -> invalid_arguments ()
-  end;
+  | _ -> invalid_arguments ();
 }
 
 let rec mod_smallerthan n m =
@@ -304,10 +317,18 @@ let command_complete = {
       let compl = complete_in_env env prefix in
       state, `List (List.rev compl)
     end 
-  | [`String "prefix" ; `String prefix ; `String "at" ; pos ] ->
-    begin
-      failwith "TODO"
-    end 
+  | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
+    let open Browse.BTypedtree in
+    let pos = Protocol.pos_of_json jpos in
+    let trees = Typer.trees state.types in
+    let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
+    let env = match env_near pos structures with
+      | Some env -> env
+      | None -> Typer.env state.types
+    in
+    let compl = complete_in_env env prefix in
+    state, `List (List.rev compl)
+
   | _ -> invalid_arguments ()
   end;
 }
@@ -457,7 +478,7 @@ let command_dump = {
   in
   fun _ state -> function
   | [`String "env"] ->
-      let sg = Browse.Env.signature_of_env (Typer.env state.types) in
+      let sg = Browse.BEnv.signature_of_env (Typer.env state.types) in
       let aux item =
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [item];

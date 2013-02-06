@@ -63,7 +63,7 @@ function! merlin#RawCommand(...)
 endfunction
 
 function! merlin#TypeOf(expr)
-  py merlin.vim_type_expr(vim.eval("a:expr"))
+  py merlin.vim_type_expr_cursor(vim.eval("a:expr"))
 endfunction
 
 function! merlin#TypeOfSel()
@@ -100,7 +100,7 @@ function! merlin#Complete(findstart,base)
   
   let base = s:prepended . a:base
   let l:props = []
-  py merlin.vim_complete(vim.eval("base"),"l:props")
+  py merlin.vim_complete_cursor(vim.eval("base"),"l:props")
   return {'words': l:props, 'refresh':'always'}
 endfunction
 

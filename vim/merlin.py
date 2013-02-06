@@ -116,7 +116,10 @@ def command_seek_end():
   return send_command("seek", "end")
 
 def command_complete(base):
-  return send_command("complete","prefix",base)
+  return send_command("complete", "prefix", base)
+
+def command_complete_cursor(base,line,col):
+  return send_command("complete", "prefix", base, "at", {'line' : line, 'col': col})
 
 def command_report_errors():
   return send_command("errors")
@@ -257,6 +260,20 @@ def vim_complete(base, vimvar):
       ))
     vim.command("call add(%s, l:tmp)" % vimvar)
 
+def vim_complete_cursor(base, vimvar):
+  vim.command("let %s = []" % vimvar)
+  line, col = vim.current.window.cursor
+  sync_buffer()
+  props = command_complete_cursor(base,line,col)
+  for prop in props:
+    vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+      (prop['name'].replace("'", "''")
+      ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
+      ,prop['info'].replace("'", "''")
+      ,prop['kind'][:1].replace("'", "''")
+      ))
+    vim.command("call add(%s, l:tmp)" % vimvar)
+
 def vim_loclist(vimvar):
   vim.command("let %s = []" % vimvar)
   errors = command_report_errors()
@@ -287,6 +304,15 @@ def vim_type_expr(expr):
   try:
     ty = send_command("type", "expression", expr)
     print (expr + " : " + ty)
+  except Error as e:
+    print ("error : " + e.value['message'])
+
+def vim_type_expr_cursor(expr):
+  to_line, to_col = vim.current.window.cursor
+  sync_buffer()
+  try:
+    ty = send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col})
+    print (ty)
   except Error as e:
     print ("error : " + e.value['message'])
 

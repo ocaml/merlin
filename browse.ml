@@ -14,16 +14,20 @@ let compare_loc pos loc =
 
 let union_loc a b =
   let open Location in
-  let loc_start = 
-    if to_linecol a.loc_start <= to_linecol b.loc_start
-    then a.loc_start
-    else b.loc_start
-  and loc_end =
-    if to_linecol a.loc_end <= to_linecol b.loc_end
-    then b.loc_end
-    else a.loc_end
-  in
-  { loc_start ; loc_end ; loc_ghost = a.loc_ghost && b.loc_ghost }
+  match a,b with
+  | a, { loc_ghost = true } -> a
+  | { loc_ghost = true }, b -> b
+  | a,b ->
+    let loc_start = 
+      if to_linecol a.loc_start <= to_linecol b.loc_start
+      then a.loc_start
+      else b.loc_start
+    and loc_end =
+      if to_linecol a.loc_end <= to_linecol b.loc_end
+      then b.loc_end
+      else a.loc_end
+    in
+    { loc_start ; loc_end ; loc_ghost = a.loc_ghost && b.loc_ghost }
 
 let union_loc_opt a b = match a,b with
   | None, None -> None
@@ -69,7 +73,7 @@ let print_constructor ppf c = let open Types in match c.cstr_args with
   | []-> Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = c.cstr_res.desc })
   | args -> Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok)})
 
-module Env =
+module BEnv =
 struct
   let summary_prev =
     let open Env in function
@@ -91,7 +95,6 @@ struct
     | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
     | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
     | Env_open _ | Env_empty -> None 
-  
   
   let summary_at line col sum =
     let cmp = compare_loc (line,col) in
@@ -142,10 +145,111 @@ struct
     let summary = Env.summary env in
     aux summary;
     Typemod.simplify_signature (!sg)
+
 end
 
-module Typedtree =
+module BTypedtree =
 struct
+  open Typedtree
+  module Envs =
+  struct
+    type t = T of Location.t * Env.t * t list Lazy.t
 
+    let rec structure { str_final_env ; str_items } =
+      List.map structure_item str_items 
+
+    and structure_item { str_desc ; str_loc ; str_env } =
+      T (str_loc, str_env, lazy (structure_item_desc str_desc))
+
+    and structure_item_desc = function
+      | Tstr_eval e -> [expression e]
+      | Tstr_value (_,pes) -> patterns pes
+      | Tstr_primitive (_,_,_) -> [] 
+      | Tstr_exception (_,_,_) -> []
+      | Tstr_module (_,_,m) -> [module_expr m]
+      | Tstr_recmodule ms -> List.map (fun (_,_,_,m) -> module_expr m) ms
+      | Tstr_type _ | Tstr_exn_rebind _ | Tstr_modtype _ | Tstr_open _ | Tstr_class _ | Tstr_class_type _ -> []
+      | Tstr_include (m,_) -> [module_expr m]
+
+    and patterns pes = List.map (fun (_,e) -> expression e) pes
+
+    and expression { exp_desc ; exp_loc ; exp_env } =
+      T (exp_loc, exp_env, lazy (expression_desc exp_desc))
+
+    and expression_desc = function
+      | Texp_ident (_,_,_) -> []
+      | Texp_constant _ -> []
+      | Texp_let (_,pes,e) -> expression e :: patterns pes
+      | Texp_function (_,pes,_) -> patterns pes
+      | Texp_apply (e,leso) -> expression e :: Misc.list_filter_map (function (_,Some e,_) -> Some (expression e) | _ -> None) leso
+      | Texp_match (e,pes,_) -> expression e :: patterns pes
+      | Texp_try (e,pes) -> expression e :: patterns pes
+      | Texp_tuple (es) -> List.map expression es
+      | Texp_construct (_,_,_,es,_) -> List.map expression es
+      | Texp_variant (_,Some e) -> [expression e]
+      | Texp_variant (_,None) -> []
+      | Texp_record (pldes,Some e) -> expression e :: List.map (fun (_,_,_,e) -> expression e) pldes
+      | Texp_record (pldes,None) -> List.map (fun (_,_,_,e) -> expression e) pldes
+      | Texp_array es -> List.map expression es
+      | Texp_assert ea
+      | Texp_lazy ea
+      | Texp_setinstvar (_,_,_,ea)
+      | Texp_send (ea, _, None) 
+      | Texp_field (ea,_,_,_) -> [expression ea]
+      | Texp_ifthenelse (ea,eb,None)
+      | Texp_setfield (ea,_,_,_,eb) 
+      | Texp_sequence (ea,eb)
+      | Texp_when (ea,eb)
+      | Texp_send (ea, _, Some eb) 
+      | Texp_while (ea,eb) -> [expression ea ; expression eb]
+      | Texp_for (_,_,ea,eb,_,ec)
+      | Texp_ifthenelse (ea,eb,Some ec) -> List.map expression [ea;eb;ec]
+      | Texp_override (_,ples) -> List.map (fun (_,_,e) -> expression e) ples
+      | Texp_letmodule (_,_,m,e) -> [expression e ; module_expr m ]
+      | Texp_assertfalse -> []
+      | Texp_pack m -> [module_expr m]
+      | Texp_new _
+      | Texp_instvar _
+      | Texp_object _ -> []
+
+    and module_expr { mod_env ; mod_desc ; mod_loc } =
+      T (mod_loc, mod_env, lazy (module_expr_desc mod_desc))
+
+    and module_expr_desc = function
+      | Tmod_ident _ -> []
+      | Tmod_structure s -> structure s
+      | Tmod_constraint (e,_,_,_)
+      | Tmod_functor (_,_,_,e) -> [module_expr e]
+      | Tmod_apply (e1,e2,_) -> [module_expr e1 ; module_expr e2]
+      | Tmod_unpack (e,_) -> [expression e]
+  end
+
+  let item_near pos nodes =
+    let better (Envs.T (l,_,_) as t) (Envs.T (l',_,_) as t') =
+      match
+        to_linecol l.Location.loc_end, 
+        to_linecol l'.Location.loc_end
+      with
+        | (l1,c1),(l2,c2) when (l2 > l1) || (l2 = l1 && c2 > c1) -> t'
+        | _ -> t
+    in
+    let cmp = compare_loc pos in
+    List.fold_left 
+    begin fun best (Envs.T (loc,env,_) as t) ->
+      match cmp loc, best with
+        | n, _ when n < 0 -> best
+        | n, None -> Some t
+        | n, Some t' -> Some (better t t')
+    end None nodes
+
+  let env_near pos envs =
+    let rec traverse (Envs.T (_,env,lazy childs)) =
+      match item_near pos childs with
+        | Some t' -> traverse t'
+        | None -> env
+    in
+    match item_near pos envs with
+      | Some t -> Some (traverse t)
+      | None -> None
 end
 
