@@ -171,7 +171,9 @@ struct
       | Tstr_type _ | Tstr_exn_rebind _ | Tstr_modtype _ | Tstr_open _ | Tstr_class _ | Tstr_class_type _ -> []
       | Tstr_include (m,_) -> [module_expr m]
 
-    and patterns pes = List.map (fun (_,e) -> expression e) pes
+    and patterns ?pat_env pes = List.fold_left (fun ls (p,e) -> pattern ?pat_env p :: expression e :: ls) [] pes
+
+    and pattern ?pat_env p = let pat_env = match pat_env with None -> p.pat_env | Some p -> p in T (p.pat_loc, pat_env, lazy [])
 
     and expression { exp_desc ; exp_loc ; exp_env } =
       T (exp_loc, exp_env, lazy (expression_desc exp_desc))
@@ -179,7 +181,7 @@ struct
     and expression_desc = function
       | Texp_ident (_,_,_) -> []
       | Texp_constant _ -> []
-      | Texp_let (_,pes,e) -> expression e :: patterns pes
+      | Texp_let (_,pes,e) -> expression e :: patterns ~pat_env:e.exp_env pes
       | Texp_function (_,pes,_) -> patterns pes
       | Texp_apply (e,leso) -> expression e :: Misc.list_filter_map (function (_,Some e,_) -> Some (expression e) | _ -> None) leso
       | Texp_match (e,pes,_) -> expression e :: patterns pes
