@@ -104,8 +104,18 @@ let command_type = {
       let ppf, to_string = Misc.ppf_to_string () in
       begin match Chunk_parser.top_expr Lexer.token lexbuf with
         | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
-            let _, c = Env.lookup_constructor longident.Asttypes.txt env in
-            Browse.print_constructor ppf c
+          begin
+            try let _, c = Env.lookup_constructor longident.Asttypes.txt env in
+              Browse.print_constructor ppf c
+            with Not_found ->
+            try let _, m = Env.lookup_module longident.Asttypes.txt env in
+             Printtyp.modtype ppf m
+            with Not_found ->
+            try let p, m = Env.lookup_modtype longident.Asttypes.txt env in
+             Printtyp.modtype_declaration (Ident.create (Path.last p)) ppf m
+            with Not_found ->
+              ()
+          end
         | expression ->
           let (str, sg, _) =
             Typemod.type_toplevel_phrase env
