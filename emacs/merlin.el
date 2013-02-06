@@ -116,7 +116,7 @@ If the timer is zero or negative, nothing is done."
   (let ((a (ignore-errors (json-read-from-string merlin-buffer))))
   (if a
       (progn
-	(if merlin-debug (merlin-debug (format "< %s" merlin-buffer)))
+	(if merlin-debug (merlin-debug (format "Received:\n%s\n----\n" merlin-buffer)))
 	(setq merlin-result a)
 	(setq merlin-ready t)))))
 
@@ -145,8 +145,8 @@ If the timer is zero or negative, nothing is done."
 	  (json-encode 
 	   (if args (append (list name) args) (list name)))
 	  "\n")))
-    (if merlin-debug (merlin-debug (format "> %s" string)))
     (process-send-string (merlin-get-process) string)
+    (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
     (merlin-wait-for-answer)
     merlin-result
 ))
