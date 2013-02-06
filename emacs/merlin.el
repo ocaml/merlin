@@ -28,6 +28,8 @@
   "The callback to be called with the result of the next command")
 (defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix)")
+(defvar merlin-idle-point nil
+  "Position of the last time we printed the type of point")
 (defvar merlin-lock-point nil
   "Position up to which merlin knows about")
 (defvar merlin-result nil
@@ -273,6 +275,12 @@ with the current position where merlin stops. It updates the merlin state by doi
   (interactive)
   (merlin-update-point (point))
 )
+(defun merlin-synchronize-point ()
+  "Synchronize emacs and merlin wrt point"
+  (interactive)
+  (setq merlin-point (merlin-make-point 
+		      (merlin-is-return (merlin-send-command "seek" '("position")))))
+  (merlin-update-overlay))
 (defun merlin-edit (start end length)
   (if (< start merlin-lock-point)
       (merlin-update-point start)))
