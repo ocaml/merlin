@@ -281,7 +281,7 @@ def vim_loclist(vimvar):
   nr = 0
   for error in errors:
     ty = 'w'
-    if error['type'] == 'type':
+    if error['type'] == 'type' or error['type'] == 'parser':
       ty = 'e'
     lnum = 1
     lcol = 1
