@@ -4,10 +4,15 @@ DONE Handle arguments in partial let's
 DONE In [type,expression], detect constructors and just print their definition
 DONE List modules on load path, even not loaded ones
 DONE Configure script: check for packages
-URGENT Traverse parse tree to find node nearest to a given location
+DONE Traverse parse tree to find node nearest to a given location
 - Write documentation: - External API
   - VIM mode
   - EMACS mode ?
   - Internal design
 - Move path management to a dedicated module
 - Fix pretty printing of type variables
+- Pretty(ugly)-print hacked parse-trees for debugging purposes
+- Hack typer : give type (forall a. a) to unbound values and ill-typed expressions
+  to extract as much information as possible.
+- Rework handling of errors and warnings
+- Editor integration : allow to retrieve definition boundary to improve synchronisation
