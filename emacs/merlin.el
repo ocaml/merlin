@@ -274,7 +274,6 @@ with the current position where merlin stops. It updates the merlin state by doi
 - or send the region between `merlin-lock-point' and `point'"
   (if (< point merlin-lock-point)
       (progn 
-	(message "Going to retract your mother")
 	(setq merlin-lock-point (merlin-retract-to point)))
     (progn
       (merlin-tell-piece-split "struct" merlin-lock-point point)
