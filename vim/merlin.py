@@ -314,14 +314,7 @@ def vim_type_expr_cursor(expr):
     ty = send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col})
     print (ty)
   except Error as e:
-    if e.value['message'].startswith("Unbound value"):
-      try:
-        ty = send_command("type", "expression", expr)
-        print (ty)
-      except Error as e:
-        print ("error : " + e.value['message'])
-    else:
-      print ("error : " + e.value['message'])
+    print ("error : " + e.value['message'])
 
 def vim_type_cursor():
   to_line, to_col = vim.current.window.cursor

@@ -155,25 +155,31 @@ struct
   struct
     type t = T of Location.t * Env.t * t list Lazy.t
 
+    let singleton l e = T (l,e,lazy [])
     let rec structure { str_final_env ; str_items } =
-      List.map structure_item str_items 
+      List.map (structure_item ~env:str_final_env) str_items 
 
-    and structure_item { str_desc ; str_loc ; str_env } =
-      T (str_loc, str_env, lazy (structure_item_desc str_desc))
+    and structure_item ~env { str_desc ; str_loc ; str_env } =
+      T (str_loc, str_env, lazy (structure_item_desc ~env str_desc))
 
-    and structure_item_desc = function
+    and structure_item_desc ~env = function
       | Tstr_eval e -> [expression e]
-      | Tstr_value (_,pes) -> patterns pes
+      | Tstr_value (_,pes) -> patterns ~env:env pes
       | Tstr_primitive (_,_,_) -> [] 
       | Tstr_exception (_,_,_) -> []
       | Tstr_module (_,_,m) -> [module_expr m]
       | Tstr_recmodule ms -> List.map (fun (_,_,_,m) -> module_expr m) ms
-      | Tstr_type _ | Tstr_exn_rebind _ | Tstr_modtype _ | Tstr_open _ | Tstr_class _ | Tstr_class_type _ -> []
+      | Tstr_type ilds -> List.map (fun (_,l,_) -> singleton l.Location.loc env) ilds
+      | Tstr_modtype (_,l,_) 
+      | Tstr_exn_rebind (_,l,_,_) -> [singleton l.Location.loc env]
+      | Tstr_open _ 
+      | Tstr_class _ 
+      | Tstr_class_type _ -> []
       | Tstr_include (m,_) -> [module_expr m]
 
-    and patterns ?pat_env pes = List.fold_left (fun ls (p,e) -> pattern (match pat_env with Some p -> p | _ -> e.exp_env) p :: expression e :: ls) [] pes
+    and patterns ?env pes = List.fold_left (fun ls (p,e) -> pattern (match env with Some p -> p | _ -> e.exp_env) p :: expression e :: ls) [] pes
 
-    and pattern pat_env { pat_loc } = T (pat_loc, pat_env, lazy [])
+    and pattern pat_env { pat_loc } = singleton pat_loc pat_env
 
     and expression { exp_desc ; exp_loc ; exp_env } =
       T (exp_loc, exp_env, lazy (expression_desc exp_desc))
@@ -181,7 +187,7 @@ struct
     and expression_desc = function
       | Texp_ident (_,_,_) -> []
       | Texp_constant _ -> []
-      | Texp_let (_,pes,e) -> expression e :: patterns ~pat_env:e.exp_env pes
+      | Texp_let (_,pes,e) -> expression e :: patterns ~env:e.exp_env pes
       | Texp_function (_,pes,_) -> patterns pes
       | Texp_apply (e,leso) -> expression e :: Misc.list_filter_map (function (_,Some e,_) -> Some (expression e) | _ -> None) leso
       | Texp_match (e,pes,_) -> expression e :: patterns pes
