@@ -24,8 +24,6 @@
 
 (defvar merlin-process nil
   "The merlin process associated to the current buffer")
-(defvar merlin-continuation nil
-  "The callback to be called with the result of the next command")
 (defvar merlin-continuous-feed nil
   "If set to t, each time you hit RET, the line is fed to merlin")
 
