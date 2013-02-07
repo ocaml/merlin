@@ -1,5 +1,7 @@
 type token = Chunk_parser.token History.loc
 
+exception Parse_error of Location.t
+
 let parse_with history ~parser ~lexer ?bufpos buf =
   let origin = History.current_pos history in
   let history' = ref history in
@@ -21,10 +23,10 @@ let parse_with history ~parser ~lexer ?bufpos buf =
         begin
           let history = !history' in
           let history = match History.backward history with
-            | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) -> 
+            | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) ->
                 history
             | _ -> history
-          in  
+          in
           history, c, chunk_content history
         end
     | Sys.Break ->
@@ -36,6 +38,16 @@ let parse_with history ~parser ~lexer ?bufpos buf =
         end
     | Outline_parser.Error ->
         begin
+          let loc = match History.prev history with
+            | Some (_prev_tok, _loc_start, loc_end) ->
+              Location.({ loc_start = loc_end ; loc_end ; loc_ghost=false })
+            | None ->
+              Location.({
+                loc_start = buf.Lexing.lex_start_p ;
+                loc_end   = buf.Lexing.lex_curr_p ;
+                loc_ghost = false ;
+              })
+          in
           history' := History.move (-1) !history';
           let lexer' who = Chunk_parser_utils.print_tokens ~who lexer in
           let rec aux () =
@@ -56,19 +68,19 @@ let parse_with history ~parser ~lexer ?bufpos buf =
           let history =
             History.seek_offset offset !history'
           in
-          history, Outline_utils.Syntax_error, chunk_content history
+          history, Outline_utils.Exception (Parse_error loc), chunk_content history
         end
     | exn ->
         history, Outline_utils.Exception exn, []
 
-type item = { 
+type item = {
   rollback   : int;
   kind       : Outline_utils.kind;
   tokens     : token list;
   exns : exn list;
 }
 type sync = item History.sync
-type t = item History.t 
+type t = item History.t
 
 let last_curr = List.fold_left (fun _ (_,_,curr) -> curr)
 
@@ -82,7 +94,7 @@ let location t =
 
 let seek cmp t =
   let open Lexing in
-  let seek_func { tokens } = 
+  let seek_func { tokens } =
     match tokens with
       | (_,start,_) :: _ when cmp start < 0 -> -1
       | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0

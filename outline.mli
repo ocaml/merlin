@@ -1,5 +1,7 @@
 type token = Chunk_parser.token History.loc
 
+exception Parse_error of Location.t
+
 type item = { 
   rollback   : int;
   kind       : Outline_utils.kind;

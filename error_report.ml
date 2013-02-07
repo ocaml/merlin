@@ -49,15 +49,17 @@ let to_json = function
                         loc_ghost = false;
                       })
         | Syntaxerr.Applicative_path loc -> loc
-        | Syntaxerr.Variable_in_scope (loc,_) -> loc 
-        | Syntaxerr.Other loc -> loc 
+        | Syntaxerr.Variable_in_scope (loc,_) -> loc
+        | Syntaxerr.Other loc -> loc
       in
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
+  | Outline.Parse_error loc ->
+      Some (format ~valid:true ~where:"parser" ~loc "Parse error")
   | Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
   | Chunk.Malformed_module loc ->
       Some (format ~valid:true ~where:"warning" ~loc "Malformed module")
-  | exn -> 
+  | exn ->
       let zero = Lexing.({ pos_fname = "" ; pos_bol = 0 ; pos_lnum = 1 ; pos_cnum = 0 }) in
       Some (format ~valid:false ~where:"unknown" ~loc:Location.({loc_start = zero ; loc_end = zero ; loc_ghost = true }) (Printexc.to_string exn))
 
@@ -66,7 +68,7 @@ let rec list_filter_map f = function
   | x :: xs -> match f x with
       | Some x' -> x' ::  list_filter_map f xs
       | None    -> list_filter_map f xs
-   
+
 let to_jsons list = list_filter_map to_json list
 
 let _ = Protocol.error_catcher := to_json
