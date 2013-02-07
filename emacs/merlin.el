@@ -11,7 +11,10 @@
 ;;
 
 (defface merlin-locked-face
-  '((t :background "#eaf8ff"))
+  '(
+    (((background light)) :background "#eaf8ff")
+    (((background dark)) :background "#222278")
+    )
   "Face for a region that merlin knows of."
   :group 'merlin-faces)
 
