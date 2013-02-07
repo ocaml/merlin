@@ -30,6 +30,10 @@
 (defvar merlin-continuous-feed nil
   "If set to t, each time you hit RET, the line is fed to merlin")
 
+(defvar merlin-pending-errors nil
+  "Pending errors")
+(defvar merlin-pending-errors-overlay nil
+  "Overlays for the pending errors")
 (defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix)")
 (defvar merlin-idle-point nil
@@ -222,6 +226,18 @@ If the timer is zero or negative, nothing is done."
 
 
 ;; ERRORS
+(defun merlin-next-error ()
+  "Jump to the next error"
+  (interactive)
+  (if merlin-pending-errors
+      (let ((err (pop merlin-pending-errors)))
+        (message "The error is: %s" err)
+        (goto-char (merlin-make-point (cdr (assoc 'start err))))
+        (merlin-error-highlight (merlin-make-point (cdr (assoc 'start err)))
+                                (merlin-make-point (cdr (assoc 'end err))))
+        (message (cdr (assoc 'message err))))
+    (message "no more errors")))
+
 (defun merlin-remove-error-overlay ()
   "Remove the error overlay"
   (delete-overlay merlin-error-overlay))
@@ -232,26 +248,45 @@ If the timer is zero or negative, nothing is done."
   (overlay-put merlin-error-overlay 'face 'next-error)
   (run-at-time "1 sec" nil 'merlin-remove-error-overlay)
   )
+;; (defun merlin-handle-errors (errors)
+;;   "Goes to the location of the first error and adds an overlay"
+;;   (let ((message (cdr (assoc 'message errors)))
+;; 	(beg (cdr (assoc 'start errors)))
+;; 	(end (cdr (assoc 'end errors)))
+;; 	(type (cdr (assoc 'type errors))))
+;;     (goto-char (merlin-make-point beg))
+;;     ;; make the idle thread shut up
+;;     (setq merlin-idle-point (point))
+;;     (merlin-error-highlight (merlin-make-point beg)
+;; 		      (merlin-make-point end))
+;;     (message "%s: %s" type message)
+;; ))
+
+(defun merlin-delete-error-overlays ()
+  "Removes error overlays"
+  (mapc '(lambda (over) (delete-overlay over)) merlin-pending-errors-overlay)
+  (setq merlin-pending-errors-overlay nil))
+
 (defun merlin-handle-errors (errors)
-  "Goes to the location of the first error and adds an overlay"
-  (let ((message (cdr (assoc 'message errors)))
-	(beg (cdr (assoc 'start errors)))
-	(end (cdr (assoc 'end errors)))
-	(type (cdr (assoc 'type errors))))
-    (goto-char (merlin-make-point beg))
-    ;; make the idle thread shut up
-    (setq merlin-idle-point (point))
-    (merlin-error-highlight (merlin-make-point beg)
-		      (merlin-make-point end))
-    (message "%s: %s" type message)
-))
+;  (setq merlin-error-overlay (make-overlay start end))
+;  (overlay-put merlin-error-overlay 'face 'next-error)
+  (merlin-delete-error-overlays)
+  (setq merlin-pending-errors (append errors nil))
+  (setq merlin-pending-errors-overlay 
+        (mapcar '(lambda (err)
+                   (let ((overlay (make-overlay
+                                   (merlin-make-point (cdr (assoc 'start err)))
+                                   (merlin-make-point (cdr (assoc 'end err))))))
+                     (overlay-put overlay 'face 'next-error)
+                     overlay)) errors))
+  (message "(pending error, use C-c C-x to jump)"))
 
 (defun merlin-view-errors ()
   "View the errors of the data that have been fed to merlin"
   (let ((output (merlin-send-command "errors" nil)))
     (if (> (length (elt output 1)) 0)
 	(progn
-	  (merlin-handle-errors (elt (elt output 1) 0))
+	  (merlin-handle-errors (elt output 1))
 	  nil)
       (progn
 	(message "ok")
@@ -273,11 +308,12 @@ If the timer is zero or negative, nothing is done."
 with the current position where merlin stops. It updates the merlin state by doing two things:
 - either retract merlin's knowledge if `point' < `merlin-lock-point'
 - or send the region between `merlin-lock-point' and `point'"
+  (merlin-delete-error-overlays)
   (setq merlin-lock-point (merlin-retract-to point))
   (merlin-tell-piece-split "struct" merlin-lock-point point)
   (merlin-flush-tell)
   (if (merlin-view-errors)
-      (setq merlin-lock-point (point))
+      (setq merlin-lock-point point)
     (let ((msg (current-message)))
       (setq merlin-lock-point (merlin-seek merlin-lock-point))
       (message msg)))
@@ -459,6 +495,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
     (define-key map (kbd "C-c <C-return>") 'merlin-point)
     (define-key map (kbd "C-c C-t") 'merlin-show-type-of-point)
     (define-key map (kbd "C-c l") 'merlin-use)
+    (define-key map (kbd "C-c C-x") 'merlin-next-error)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
     (define-key map (kbd "RET") 'merlin-enter)
     map
@@ -476,6 +513,8 @@ and if it fails, it uses `merlin-type-of-expression-global'"
     (set (make-local-variable 'merlin-idle-point) nil)
     (set (make-local-variable 'merlin-completion-point) nil)
     (set (make-local-variable 'merlin-ready) nil)
+    (set (make-local-variable 'merlin-pending-errors) nil)
+    (set (make-local-variable 'merlin-pending-errors-overlay) nil)
     (set (make-local-variable 'merlin-overlay) nil)
     (set (make-local-variable 'merlin-prefix) nil)
     (set (make-local-variable 'merlin-error-prefix) nil)
@@ -500,5 +539,6 @@ and if it fails, it uses `merlin-type-of-expression-global'"
       (delete-process (merlin-get-process))
       (cancel-timer merlin-idle-timer)
       (delete-overlay merlin-overlay)
+      (merlin-delete-error-overlays)
       (kill-buffer (merlin-make-buffer-name))
 )))
