@@ -179,7 +179,7 @@ If the timer is zero or negative, nothing is done."
 
 (defun merlin-get-completion (ident)
   "Returns the completion for ident `ident'"
-  (merlin-send-command "complete" (list "prefix" ident)))
+  (merlin-send-command "complete" (list "prefix" ident "at" (merlin-unmake-point (point)))))
 
 (defun merlin-tell-string (mode string)
   "Tell a string to merlin using `mode'"
@@ -348,13 +348,23 @@ with the current position where merlin stops. It updates the merlin state by doi
 ;; Get the type of an element"
 (defun merlin-trim (s)
   (replace-regexp-in-string "\n\\'" "" s))
+
+(defun merlin-type-of-expression-local (exp)
+  "Get the type of an expression inside the local context"
+  (merlin-is-return (merlin-send-command "type" 
+					 (list "expression" exp "at" (merlin-unmake-point (point))))))
+
+(defun merlin-type-of-expression-global (exp)
+  "Get the type of an expression globally"
+  (merlin-is-return (merlin-send-command "type" (list "expression" exp))))
+
+
 (defun merlin-type-of-expression (exp)
-  "Get the type of an expression"
-  (let ((ans (merlin-send-command "type" (list "expression" exp))))
-    (if (string-equal (elt ans 0) "return")
-	(elt ans 1)
-      nil)))
-  
+  "Get the type of an expression by using `merlin-type-of-expression-local',
+and if it fails, it uses `merlin-type-of-expression-global'"
+  (or
+   (merlin-type-of-expression-local exp)
+   (merlin-type-of-expression-global exp)))
 (defun merlin-show-type (name typ)
   "Show the given type. If typ is nil, nothing is done"
   (if typ
@@ -436,6 +446,7 @@ with the current position where merlin stops. It updates the merlin state by doi
 	     (not (eq (point) merlin-idle-point)))
 	(progn
 	  (merlin-show-type-of-point-quiet)
+	  (message "OK")
 	  (setq merlin-idle-point (point))))))
 
 ;; Mode definition
