@@ -50,7 +50,7 @@
 (defvar merlin-overlay nil "Merlin overlay used for the lock zone")
 (defvar merlin-buffer nil "Buffer for merlin input")
 (defvar merlin-ready nil "Is reception done?")
-(defvar merlin-idle-delay 0.50
+(defvar merlin-idle-delay 1.0
   "Number of seconds of idle time to wait before printing the type of the ident under the point.
 If user input arrives before this interval of time has elapsed
 after the last input, no documentation will be printed.
