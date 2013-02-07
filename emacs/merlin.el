@@ -26,6 +26,9 @@
   "The merlin process associated to the current buffer")
 (defvar merlin-continuation nil
   "The callback to be called with the result of the next command")
+(defvar merlin-continuous-feed nil
+  "If set to t, each time you hit RET, the line is fed to merlin")
+
 (defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix)")
 (defvar merlin-idle-point nil
@@ -446,9 +449,13 @@ and if it fails, it uses `merlin-type-of-expression-global'"
 	     (not (eq (point) merlin-idle-point)))
 	(progn
 	  (merlin-show-type-of-point-quiet)
-	  (message "OK")
 	  (setq merlin-idle-point (point))))))
 
+(defun merlin-enter ()
+  (interactive)
+  (newline)
+  (if merlin-continuous-feed
+      (merlin-point)))
 ;; Mode definition
 (defvar merlin-mode-map
   (let ((map (make-sparse-keymap)))
@@ -456,6 +463,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
     (define-key map (kbd "C-c C-t") 'merlin-show-type-of-point)
     (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
+    (define-key map (kbd "RET") 'merlin-enter)
     map
     ))
 
