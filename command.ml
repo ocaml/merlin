@@ -151,8 +151,8 @@ let command_type = {
     let pos = Protocol.pos_of_json jpos in
     let trees = Typer.trees state.types in
     let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
-    let env = match env_near pos structures with
-      | Some env -> env
+    let env = match browse_near pos structures with
+      | Some (env,_) -> env
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
@@ -160,28 +160,23 @@ let command_type = {
     state, `String (to_string ())
 
   | [`String "at" ; jpos] ->
-    let cmp = Browse.compare_loc (Protocol.pos_of_json jpos) in
+    let open Browse.BTypedtree in
+    let pos = Protocol.pos_of_json jpos in
     let trees = Typer.trees state.types in
-    let module A = struct exception Found of Types.signature_item end in
-    begin try
-      List.iter
-      begin fun (tstr,tsg) ->
-        List.iter
-        begin fun sg ->
-          match Browse.signature_loc sg with
-            | Some loc when cmp loc < 0 ->
-                raise Not_found
-            | Some loc when cmp loc = 0 ->
-                raise (A.Found sg)
-            | _ -> ()
-          end tsg
-        end trees;
-        raise Not_found
-      with A.Found sg ->
-        let ppf, to_string = Misc.ppf_to_string () in
-        Printtyp.signature ppf [sg];
-        state, `String (to_string ())
-    end
+    let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
+    let t = match browse_near pos structures with
+      | Some (_,t) -> t
+      | None -> raise Not_found
+    in
+    let ppf, to_string = Misc.ppf_to_string () in
+    begin match t with
+      | Envs.Other -> raise Not_found
+      | Envs.Expr e -> Printtyp.type_expr ppf e
+      | Envs.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
+      | Envs.Module m -> Printtyp.modtype ppf m
+      | Envs.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
+    end;
+    state, `String (to_string ())
 
   | _ -> invalid_arguments ();
 }
@@ -323,8 +318,8 @@ let command_complete = {
     let pos = Protocol.pos_of_json jpos in
     let trees = Typer.trees state.types in
     let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
-    let env = match env_near pos structures with
-      | Some env -> env
+    let env = match browse_near pos structures with
+      | Some (env,_) -> env
       | None -> Typer.env state.types
     in
     let compl = complete_in_env env prefix in

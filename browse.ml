@@ -18,7 +18,7 @@ let union_loc a b =
   | a, { loc_ghost = true } -> a
   | { loc_ghost = true }, b -> b
   | a,b ->
-    let loc_start = 
+    let loc_start =
       if to_linecol a.loc_start <= to_linecol b.loc_start
       then a.loc_start
       else b.loc_start
@@ -34,7 +34,7 @@ let union_loc_opt a b = match a,b with
   | (Some _ as l), None | None, (Some _ as l) -> l
   | Some a, Some b -> Some (union_loc a b)
 
-let rec signature_loc = 
+let rec signature_loc =
   let open Types in
   let rec mod_loc = function
     | Mty_ident _ -> None
@@ -42,11 +42,11 @@ let rec signature_loc =
         union_loc_opt (mod_loc m1) (mod_loc m2)
     | Mty_signature s ->
         let rec find_first = function
-          | x :: xs -> (match signature_loc x with 
+          | x :: xs -> (match signature_loc x with
                         | (Some _ as v) -> v
                         | None -> find_first xs)
           | [] -> None
-        in 
+        in
         let a = find_first s and b = find_first (List.rev s) in
         union_loc_opt a b
   in function
@@ -59,7 +59,7 @@ let rec signature_loc =
   | Sig_class (i,c,_) -> failwith "TODO: handling classes"
   | Sig_class_type (i,c,_) -> failwith "TODO: handling classes"
 
-let signature_ident = 
+let signature_ident =
   let open Types in function
   | Sig_value (i,_)
   | Sig_type (i,_,_)
@@ -77,13 +77,13 @@ module BEnv =
 struct
   let summary_prev =
     let open Env in function
-    | Env_empty -> None 
+    | Env_empty -> None
     | Env_open (s,_) | Env_value (s,_,_)
     | Env_type (s,_,_) | Env_exception (s,_,_)
     | Env_module (s,_,_) | Env_modtype (s,_,_)
     | Env_class (s,_,_) | Env_cltype (s,_,_) ->
       Some s
-  
+
   let signature_of_summary =
     let open Env in
     let open Types in function
@@ -94,8 +94,8 @@ struct
     | Env_modtype (_,i,m)    -> Some (Sig_modtype (i,m))
     | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
     | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
-    | Env_open _ | Env_empty -> None 
-  
+    | Env_open _ | Env_empty -> None
+
   let summary_at line col sum =
     let cmp = compare_loc (line,col) in
     let rec aux sum =
@@ -108,7 +108,7 @@ struct
         | x -> summary_prev sum >>= aux
     in
     aux sum
-  
+
   let signature_of_env env =
     let open Types in
     let sg = ref [] in
@@ -153,36 +153,49 @@ struct
   open Typedtree
   module Envs =
   struct
-    type t = T of Location.t * Env.t * t list Lazy.t
+    type kind =
+      | Type of Types.type_declaration
+      | Expr of Types.type_expr
+      | Module of Types.module_type
+      | Modtype of Types.modtype_declaration
+      | Other
 
-    let singleton l e = T (l,e,lazy [])
+    type t = T of Location.t * Env.t * kind * t list Lazy.t
+
+    let singleton ?(kind=Other) l e = T (l,e,kind,lazy [])
+
     let rec structure { str_final_env ; str_items } =
-      List.map (structure_item ~env:str_final_env) str_items 
+      List.map (structure_item ~env:str_final_env) str_items
 
     and structure_item ~env { str_desc ; str_loc ; str_env } =
-      T (str_loc, str_env, lazy (structure_item_desc ~env str_desc))
+      T (str_loc, str_env, Other, lazy (structure_item_desc ~env str_desc))
 
     and structure_item_desc ~env = function
       | Tstr_eval e -> [expression e]
       | Tstr_value (_,pes) -> patterns ~env:env pes
-      | Tstr_primitive (_,_,_) -> [] 
+      | Tstr_primitive (_,_,_) -> []
       | Tstr_exception (_,_,_) -> []
-      | Tstr_module (_,_,m) -> [module_expr m]
-      | Tstr_recmodule ms -> List.map (fun (_,_,_,m) -> module_expr m) ms
-      | Tstr_type ilds -> List.map (fun (_,l,_) -> singleton l.Location.loc env) ilds
-      | Tstr_modtype (_,l,_) 
+      | Tstr_module (_,_,m) -> [module_expr m] | Tstr_recmodule ms -> List.map (fun (_,_,_,m) -> module_expr m) ms
+      | Tstr_type ilds -> List.map (fun (_,l,{typ_type}) -> singleton ~kind:(Type typ_type) l.Location.loc env) ilds
+      | Tstr_modtype (_,l,_)
       | Tstr_exn_rebind (_,l,_,_) -> [singleton l.Location.loc env]
-      | Tstr_open _ 
-      | Tstr_class _ 
+      | Tstr_open _
+      | Tstr_class _
       | Tstr_class_type _ -> []
       | Tstr_include (m,_) -> [module_expr m]
 
-    and patterns ?env pes = List.fold_left (fun ls (p,e) -> pattern (match env with Some p -> p | _ -> e.exp_env) p :: expression e :: ls) [] pes
+    and patterns ?expr ?env pes = List.fold_left
+      begin fun ls (p,e) ->
+        let l = pattern (match expr with Some e -> e | None -> e)
+                        (match env with Some p -> p | _ -> e.exp_env) p
+        in
+        l :: expression e :: ls
+      end [] pes
 
-    and pattern pat_env { pat_loc } = singleton pat_loc pat_env
+    and pattern expr env { pat_loc } = singleton ~kind:(Expr expr.exp_type) pat_loc env
 
-    and expression { exp_desc ; exp_loc ; exp_env } =
-      T (exp_loc, exp_env, lazy (expression_desc exp_desc))
+    and expression { exp_desc ; exp_loc ; exp_type ; exp_env } =
+      T (exp_loc, exp_env, (Expr exp_type), lazy (expression_desc exp_desc))
 
     and expression_desc = function
       | Texp_ident (_,_,_) -> []
@@ -202,13 +215,13 @@ struct
       | Texp_assert ea
       | Texp_lazy ea
       | Texp_setinstvar (_,_,_,ea)
-      | Texp_send (ea, _, None) 
+      | Texp_send (ea, _, None)
       | Texp_field (ea,_,_,_) -> [expression ea]
       | Texp_ifthenelse (ea,eb,None)
-      | Texp_setfield (ea,_,_,_,eb) 
+      | Texp_setfield (ea,_,_,_,eb)
       | Texp_sequence (ea,eb)
       | Texp_when (ea,eb)
-      | Texp_send (ea, _, Some eb) 
+      | Texp_send (ea, _, Some eb)
       | Texp_while (ea,eb) -> [expression ea ; expression eb]
       | Texp_for (_,_,ea,eb,_,ec)
       | Texp_ifthenelse (ea,eb,Some ec) -> List.map expression [ea;eb;ec]
@@ -220,8 +233,8 @@ struct
       | Texp_instvar _
       | Texp_object _ -> []
 
-    and module_expr { mod_env ; mod_desc ; mod_loc } =
-      T (mod_loc, mod_env, lazy (module_expr_desc mod_desc))
+    and module_expr { mod_env ; mod_desc ; mod_type ; mod_loc } =
+      T (mod_loc, mod_env, (Module mod_type), lazy (module_expr_desc mod_desc))
 
     and module_expr_desc = function
       | Tmod_ident _ -> []
@@ -232,31 +245,31 @@ struct
       | Tmod_unpack (e,_) -> [expression e]
   end
 
-  let item_near pos nodes =
-    let better (Envs.T (l,_,_) as t) (Envs.T (l',_,_) as t') =
+  let browse_local_near pos nodes =
+    let better (Envs.T (l,_,_,_) as t) (Envs.T (l',_,_,_) as t') =
       match
-        to_linecol l.Location.loc_end, 
+        to_linecol l.Location.loc_end,
         to_linecol l'.Location.loc_end
       with
         | (l1,c1),(l2,c2) when (l2 > l1) || (l2 = l1 && c2 > c1) -> t'
         | _ -> t
     in
     let cmp = compare_loc pos in
-    List.fold_left 
-    begin fun best (Envs.T (loc,env,_) as t) ->
+    List.fold_left
+    begin fun best (Envs.T (loc,_,_,_) as t) ->
       match cmp loc, best with
         | n, _ when n < 0 -> best
         | n, None -> Some t
         | n, Some t' -> Some (better t t')
     end None nodes
 
-  let env_near pos envs =
-    let rec traverse (Envs.T (_,env,lazy childs)) =
-      match item_near pos childs with
+  let browse_near pos envs =
+    let rec traverse (Envs.T (_,env,t,lazy childs)) =
+      match browse_local_near pos childs with
         | Some t' -> traverse t'
-        | None -> env
+        | None -> (env,t)
     in
-    match item_near pos envs with
+    match browse_local_near pos envs with
       | Some t -> Some (traverse t)
       | None -> None
 end
