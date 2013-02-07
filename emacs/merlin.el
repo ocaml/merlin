@@ -325,12 +325,12 @@ with the current position where merlin stops. It updates the merlin state by doi
   (interactive)
   (merlin-update-point (point))
 )
-(defun merlin-synchronize-point ()
-  "Synchronize emacs and merlin wrt point"
+(defun merlin-check-synchronize ()
+  "If merlin point is before the end of line send everything up to the end of line"
   (interactive)
-  (setq merlin-point (merlin-make-point 
-		      (merlin-is-return (merlin-send-command "seek" '("position")))))
-  (merlin-update-overlay))
+  (if (> (point-at-eol) merlin-lock-point)
+      (merlin-update-point (point-at-eol))))
+
 (defun merlin-edit (start end length)
   (if (< start merlin-lock-point)
       (merlin-update-point start)))
@@ -353,7 +353,9 @@ with the current position where merlin stops. It updates the merlin state by doi
 	  (goto-char merlin-completion-point)
 	  (search-forward ":")
 	  (backward-char 1)
-	  (delete-region (point) endpoint))))
+	  (delete-region (point) endpoint))
+        ;; workaround for merlin-enter
+        (merlin-check-synchronize))))
 )
 
 
@@ -368,6 +370,7 @@ with the current position where merlin stops. It updates the merlin state by doi
   )
 
 (defun merlin-source-init ()
+  (merlin-check-synchronize)
   (setq merlin-completion-point ac-point)
   (merlin-complete-identifier ac-prefix))
   
@@ -423,6 +426,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
 
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
+  (merlin-check-synchronize)
   (let ((ident (merlin-ident-under-point)))
     (if ident
 	(let ((typ (merlin-type-of-expression ident)))
@@ -431,6 +435,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
 
 (defun merlin-show-type-of-point (arg) 
   "Show the type of the identifier under the point. If it is called with a prefix argument, then show the type of the region."
+  (merlin-check-synchronize)
   (interactive "p")
   (if (> arg 1)
       (merlin-show-type-of-region)
