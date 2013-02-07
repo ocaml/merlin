@@ -273,17 +273,14 @@ If the timer is zero or negative, nothing is done."
 with the current position where merlin stops. It updates the merlin state by doing two things:
 - either retract merlin's knowledge if `point' < `merlin-lock-point'
 - or send the region between `merlin-lock-point' and `point'"
-  (if (< point merlin-lock-point)
-      (progn 
-	(setq merlin-lock-point (merlin-retract-to point)))
-    (progn
-      (merlin-tell-piece-split "struct" merlin-lock-point point)
-      (merlin-flush-tell)
-      (if (merlin-view-errors)
-	  (setq merlin-lock-point (point))
-	(let ((msg (current-message)))
-	  (setq merlin-lock-point (merlin-seek merlin-lock-point))
-	  (message msg)))))
+  (setq merlin-lock-point (merlin-retract-to point))
+  (merlin-tell-piece-split "struct" merlin-lock-point point)
+  (merlin-flush-tell)
+  (if (merlin-view-errors)
+      (setq merlin-lock-point (point))
+    (let ((msg (current-message)))
+      (setq merlin-lock-point (merlin-seek merlin-lock-point))
+      (message msg)))
   (merlin-update-overlay)
 )    
   
