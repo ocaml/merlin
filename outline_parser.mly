@@ -214,7 +214,7 @@ implementation:
   | AND                                  { emit_top Rollback $endpos }
   | BAR                                  { emit_top Rollback $endpos }
   | EOF                                  { () }
-  | SEMISEMI                             { () }
+  | SEMISEMI                             { emit_top Done $endpos }
 ;
 interface:
     signature EOF                        { () }

@@ -43,17 +43,17 @@ let command_tell = {
   | [`String "struct" ; `String source] ->
       Env.reset_missing_cmis ();
       ignore (Error_report.reset_warnings ());
-      let eod = ref false in
+      let eod = ref false and eot = ref false in
       let lexbuf = Misc.lex_strings source
-        begin let eot = ref false in fun () ->
+        begin fun () ->
           if !eot then ""
           else try 
             o (Protocol.return (`Bool false));
             match Stream.next i with
               | `List [`String "tell" ; `String "struct" ; `String source] -> source
               | `List [`String "tell" ; `String "end" ; `String source] -> eod := true; source
-              | `List [`String "tell" ; `String "end" ; `Null ] -> eod := true; eot := true; ""
-              | `List [`String "tell" ; `String "struct" ; `Null ] -> eot := true; ""
+              | `List [`String "tell" ; `String "end" ; `Null] -> eod := true; eot := true; ""
+              | `List [`String "tell" ; `String "struct" ; `Null] -> eot := true; ""
                 (* FIXME: parser catch this Failure. It should not *)
               | _ -> invalid_arguments ()
           with
@@ -78,7 +78,8 @@ let command_tell = {
         let w = Error_report.reset_warnings () in
         let outlines = History.modify (fun outline -> Outline.({ outline with exns = w @ outline.exns })) outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !eod || state.tokens = state'.tokens
+          (if state.tokens = state'.tokens then List.iter (fun (i,_,_) -> prerr_endline (Chunk_parser_utils.token_to_string i)) state.tokens );
+        if !eod || (!eot && state.tokens = state'.tokens)
         then state'
         else loop state'
       in
