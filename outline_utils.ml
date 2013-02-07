@@ -8,7 +8,7 @@ type kind =
   | Rollback
   | Done
   | Unterminated
-  | Syntax_error
+  | Syntax_error of Location.t
   | Exception of exn
 
 exception Chunk of kind * position

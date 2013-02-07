@@ -104,7 +104,7 @@ let sync_step outline tokens t =
                 } loc,
                 History.offset t
              ))
-    | Outline_utils.Syntax_error ->
+    | Outline_utils.Syntax_error _loc ->
         (* Like Definition, but catch unhandler syntax errors, appending EOF *)
         try
           let lexer = History.wrap_lexer (ref (History.of_list tokens))

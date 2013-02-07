@@ -14,7 +14,7 @@ type kind =
                   *         pour retrouver le /genre/ de définition *)
   | Done         (* EOF rencontré après une construction syntaxiquement correcte *)
   | Unterminated (* La construction syntaxique n'est pas terminée *)
-  | Syntax_error
+  | Syntax_error of Location.t
   | Exception of exn (* Une exception est survenue dans le parser, à traiter en amont *)
 
 (** Le parser d'outline fonctionne par effet de bord :

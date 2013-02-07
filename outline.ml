@@ -68,7 +68,7 @@ let parse_with history ~parser ~lexer ?bufpos buf =
           let history =
             History.seek_offset offset !history'
           in
-          history, Outline_utils.Exception (Parse_error loc), chunk_content history
+          history, Outline_utils.Syntax_error loc, chunk_content history
         end
     | exn ->
         history, Outline_utils.Exception exn, []
@@ -131,7 +131,9 @@ let parse_step ?(rollback=0) ?bufpos ?(exns=[]) history buf =
     ?bufpos buf
   in
   let exns = match kind with
-    | Outline_utils.Exception exn -> exn :: exns | _ -> exns
+    | Outline_utils.Syntax_error loc -> Parse_error loc :: exns
+    | Outline_utils.Exception exn -> exn :: exns
+    | _ -> exns
   in
   history',
   (match tokens with

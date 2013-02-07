@@ -47,7 +47,7 @@ let command_tell = {
       let lexbuf = Misc.lex_strings source
         begin fun () ->
           if !eot then ""
-          else try 
+          else try
             o (Protocol.return (`Bool false));
             match Stream.next i with
               | `List [`String "tell" ; `String "struct" ; `String source] -> source
@@ -62,9 +62,9 @@ let command_tell = {
       in
       let rec loop state =
         let bufpos = ref state.pos in
-        let outlines, chunks, types = 
-          (History.cutoff state.outlines), 
-          (History.cutoff state.chunks), 
+        let outlines, chunks, types =
+          (History.cutoff state.outlines),
+          (History.cutoff state.chunks),
           (History.cutoff state.types)
         in
         let tokens, outlines =
@@ -101,7 +101,7 @@ let command_type = {
   handler =
   let type_in_env env ppf expr =
     let lexbuf = Lexing.from_string expr in
-    let print_expr expression = 
+    let print_expr expression =
       let (str, sg, _) =
         Typemod.type_toplevel_phrase env
           Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
@@ -135,7 +135,7 @@ let command_type = {
           try let p, t = Env.lookup_type longident.Asttypes.txt env in
            Printtyp.type_declaration (Ident.create (Path.last p)) ppf t
           with _ ->
-            raise exn 
+            raise exn
         end
       | e -> print_expr e
     end
@@ -177,7 +177,7 @@ let command_type = {
           end tsg
         end trees;
         raise Not_found
-      with A.Found sg -> 
+      with A.Found sg ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [sg];
         state, `String (to_string ())
@@ -219,19 +219,19 @@ let rec mod_smallerthan n m =
         | Some n2 -> Some (n1 + n2)
       end
 
-let complete_in_env env prefix = 
+let complete_in_env env prefix =
   let fmt ~exact name path ty =
     let ident = Ident.create (Path.last path) in
     let ppf, to_string = Misc.ppf_to_string () in
     let kind =
       match ty with
       | `Value v -> Printtyp.value_description ident ppf v; "Value"
-      | `Cons c  -> 
+      | `Cons c  ->
           Format.pp_print_string ppf name;
           Format.pp_print_string ppf " : ";
           Browse.print_constructor ppf c;
           "Constructor"
-      | `Mod m   -> 
+      | `Mod m   ->
           (if exact then
              match mod_smallerthan 200 m with
                | None -> ()
@@ -317,7 +317,7 @@ let command_complete = {
       let env = Typer.env state.types in
       let compl = complete_in_env env prefix in
       state, `List (List.rev compl)
-    end 
+    end
   | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
     let open Browse.BTypedtree in
     let pos = Protocol.pos_of_json jpos in
@@ -348,7 +348,7 @@ let command_seek = {
       let pos = Protocol.pos_of_json jpos in
       let outlines = Outline.seek_before pos state.outlines in
       let rec rewind_errors o = match History.backward o with
-        | Some ({ Outline.kind = Outline_utils.Syntax_error }, o) -> rewind_errors o
+        | Some ({ Outline.kind = Outline_utils.Syntax_error _loc }, o) -> rewind_errors o
         | _ -> o
       in
       let outlines = rewind_errors outlines in
@@ -399,7 +399,7 @@ let command_seek = {
                 | (0,outlines'') -> outlines''
                 | _ -> outlines)
           | Some (_,outlines') -> loop outlines'
-      in 
+      in
       let outlines = loop state.outlines in
       let chunks = History.Sync.right fst outlines state.chunks in
       let types  = History.Sync.right fst chunks state.types in
@@ -416,9 +416,9 @@ let command_seek = {
 
 let command_reset = {
   name = "reset";
-  
+
   doc = "TODO";
-  
+
   handler =
   begin fun _ state -> function
   | [] -> initial_state,
@@ -434,7 +434,7 @@ let command_refresh = {
 
   handler =
   begin fun _ state -> function
-  | [] -> 
+  | [] ->
       reset_global_modules ();
       Env.reset_cache ();
       let types = Typer.sync state.chunks History.empty in
@@ -446,8 +446,8 @@ let command_refresh = {
 let command_cd = {
   name = "cd";
   doc = "TODO";
-  
-  handler = 
+
+  handler =
   begin fun _ state -> function
   | [`String s] ->
       Sys.chdir s;
@@ -459,7 +459,7 @@ let command_cd = {
 let command_errors = {
   name = "errors";
   doc = "TODO";
-  
+
   handler =
   begin fun _ state -> function
   | [] ->
@@ -518,13 +518,13 @@ let command_dump = {
   end;
 }
 
-let command_which = { 
-  name = "which"; 
+let command_which = {
+  name = "which";
   doc = "TODO";
 
-  handler = 
+  handler =
   begin fun _ state -> function
-  | [`String "path" ; `String s] -> 
+  | [`String "path" ; `String s] ->
       let filename =
         try
           Misc.find_in_path_uncap !source_path s
@@ -541,7 +541,7 @@ let command_which = {
 
 let command_find = {
   name = "find";
-  doc = "TODO"; 
+  doc = "TODO";
 
   handler =
   begin fun _ state -> function
@@ -567,8 +567,8 @@ let command_help = {
 
   handler =
   begin fun _ state -> function
-  | [] -> 
-      let helps = Hashtbl.fold 
+  | [] ->
+      let helps = Hashtbl.fold
         (fun name { doc } cmds -> (name, `String doc) :: cmds)
         commands []
       in
