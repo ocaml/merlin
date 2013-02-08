@@ -275,7 +275,9 @@ let warnings = ref []
 let prerr_warning loc w =
   let ppf, to_string = Misc.ppf_to_string () in
   print_warning loc ppf w;
-  warnings := (loc, to_string ()) :: !warnings
+  match to_string () with
+    | "" -> ()
+    | s ->  warnings := (loc,s) :: !warnings
 ;;
 
 let echo_eof () =
