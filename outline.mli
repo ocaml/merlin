@@ -24,3 +24,4 @@ val parse : ?rollback:int -> ?bufpos:Lexing.position ref ->
   token History.t -> t -> Lexing.lexbuf -> token History.t * t
 
 val exns : t -> exn list
+val append_exns : exn list -> t -> t

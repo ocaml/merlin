@@ -147,6 +147,9 @@ let exns chunks =
     | Some { exns } -> exns
     | None -> []
 
+let append_exns exns =
+  History.modify (fun o -> { o with exns = exns @ o.exns })
+
 let rec parse ?rollback ?bufpos tokens chunks buf =
   let exns = exns chunks in
   match parse_step ?rollback ?bufpos ~exns tokens buf with

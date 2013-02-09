@@ -48,6 +48,8 @@ let env_at state pos_cursor =
         Typer.env types
     | _ -> env
 
+let exceptions_in state = Outline.exns state.outlines @ Typer.exns state.types
+
 let command_tell = {
   name = "tell";
 
@@ -95,7 +97,7 @@ let command_tell = {
         let tokens = History.nexts tokens in
         let pos = !bufpos in
         let w = Error_report.reset_warnings () in
-        let outlines = History.modify (fun outline -> Outline.({ outline with exns = w @ outline.exns })) outlines in
+        let outlines = Outline.append_exns w outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
           (if state.tokens = state'.tokens then List.iter (fun (i,_,_) -> prerr_endline (Chunk_parser_utils.token_to_string i)) state.tokens );
         if !eod || (!eot && state.tokens = state'.tokens)
@@ -158,7 +160,8 @@ let command_type = {
         end
       | e -> print_expr e
     end
-  in fun _ state -> function
+  in
+  begin fun _ state -> function
   | [`String "expression"; `String expr] ->
       let env = Typer.env state.types in
       let ppf, to_string = Misc.ppf_to_string () in
@@ -190,7 +193,8 @@ let command_type = {
     end;
     state, `String (to_string ())
 
-  | _ -> invalid_arguments ();
+  | _ -> invalid_arguments ()
+  end;
 }
 
 let rec mod_smallerthan n m =
@@ -421,8 +425,7 @@ let command_reset = {
 
   handler =
   begin fun _ state -> function
-  | [] -> initial_state,
-          Protocol.pos_to_json initial_state.pos
+  | [] -> initial_state, Protocol.pos_to_json initial_state.pos
   | _ -> invalid_arguments ()
   end
 }
@@ -449,9 +452,7 @@ let command_cd = {
 
   handler =
   begin fun _ state -> function
-  | [`String s] ->
-      Sys.chdir s;
-      state, `Bool true
+  | [`String s] -> Sys.chdir s; state, `Bool true
   | _ -> invalid_arguments ()
   end;
 }
@@ -462,9 +463,7 @@ let command_errors = {
 
   handler =
   begin fun _ state -> function
-  | [] ->
-      let exns = Outline.exns state.outlines @ Typer.exns state.types in
-      state, `List (Error_report.to_jsons (List.rev exns))
+  | [] -> state, `List (Error_report.to_jsons (exceptions_in state))
   | _ -> invalid_arguments ()
   end;
 }
@@ -474,10 +473,10 @@ let command_dump = {
   doc = "TODO";
 
   handler =
-  begin let pr_item_desc items =
+  let pr_item_desc items =
     (List.map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk items))
   in
-  fun _ state -> function
+  begin fun _ state -> function
   | [`String "env"] ->
       let sg = Browse.BEnv.signature_of_env (Typer.env state.types) in
       let aux item =
