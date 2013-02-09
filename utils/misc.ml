@@ -322,6 +322,9 @@ let rec list_filter_map f = function
       | Some x' -> x' :: list_filter_map f xs
       | None -> list_filter_map f xs
 
+        (* Concat and map at the same time *)
+let list_concat_map f l = List.flatten (List.map f l)
+
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
 

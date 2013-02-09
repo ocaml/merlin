@@ -300,3 +300,17 @@ let compare_pos pos loc =
   then 1
   else 0
 
+let union a b = match a,b with
+  | a, { loc_ghost = true } -> a
+  | { loc_ghost = true }, b -> b
+  | a,b ->
+    let loc_start =
+      if Misc.split_pos a.loc_start <= Misc.split_pos b.loc_start
+      then a.loc_start
+      else b.loc_start
+    and loc_end =
+      if Misc.split_pos a.loc_end <= Misc.split_pos b.loc_end
+      then b.loc_end
+      else a.loc_end
+    in
+    { loc_start ; loc_end ; loc_ghost = a.loc_ghost && b.loc_ghost }

@@ -29,12 +29,26 @@ let reset_global_modules () =
   let paths = !Config.load_path in
   global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
 
+(** Heuristic to find suitable environment to complete / type at given position.
+ *  1. Try to find environment near given cursor.
+ *  2. Check if there is an invalid construct between found env and cursor :
+ *    Case a.
+ *      > let x = valid_expr ||
+ *      The env found is the right most env from valid_expr, it's a correct
+ *      answer.
+ *    Case b.
+ *      > let x = valid_expr
+ *      > let y = invalid_construction||
+ *      In this case, the env found is the same as in case a, however it is
+ *      preferable to use env from enclosing module rather than an env from
+ *      inside x definition.
+ *)
 let env_at state pos_cursor =
-  let open Browse.BTypedtree in
-  let structures = List.flatten
-    (List.map (fun (str,sg) -> Envs.structure str) (Typer.trees state.types))
+  let structures = Misc.list_concat_map
+    (fun (str,sg) -> Browse.Envs.structure str)
+    (Typer.trees state.types)
   in
-  let pos_browsed, env = match browse_near pos_cursor structures with
+  let pos_browsed, env = match Browse.browse_near pos_cursor structures with
     | Some ({ Location.loc_end },env,_) -> loc_end, env
     | None -> raise Not_found
   in
@@ -48,7 +62,9 @@ let env_at state pos_cursor =
         Typer.env types
     | _ -> env
 
-let exceptions_in state = Outline.exns state.outlines @ Typer.exns state.types
+(* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
+let exceptions_in state =
+  Outline.exns state.outlines @ Typer.exns state.types
 
 let command_tell = {
   name = "tell";
@@ -175,21 +191,22 @@ let command_type = {
     state, `String (to_string ())
 
   | [`String "at" ; jpos] ->
-    let open Browse.BTypedtree in
     let pos = Protocol.pos_of_json jpos in
-    let trees = Typer.trees state.types in
-    let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
-    let t = match browse_near pos structures with
+    let structures = Misc.list_concat_map
+      (fun (str,sg) -> Browse.Envs.structure str)
+      (Typer.trees state.types)
+    in
+    let t = match Browse.browse_near pos structures with
       | Some (_,_,t) -> t
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
     begin match t with
-      | Envs.Other -> raise Not_found
-      | Envs.Expr e -> Printtyp.type_expr ppf e
-      | Envs.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
-      | Envs.Module m -> Printtyp.modtype ppf m
-      | Envs.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
+      | Browse.Envs.Other -> raise Not_found
+      | Browse.Envs.Expr e -> Printtyp.type_expr ppf e
+      | Browse.Envs.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
+      | Browse.Envs.Module m -> Printtyp.modtype ppf m
+      | Browse.Envs.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
     end;
     state, `String (to_string ())
 
@@ -478,7 +495,7 @@ let command_dump = {
   in
   begin fun _ state -> function
   | [`String "env"] ->
-      let sg = Browse.BEnv.signature_of_env (Typer.env state.types) in
+      let sg = Browse.Envs.signature_of_env (Typer.env state.types) in
       let aux item =
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [item];
@@ -494,7 +511,7 @@ let command_dump = {
       state, `List (List.map aux sg)
   | [`String "env" ; `String "at" ; jpos ] ->
     let env = env_at state (Protocol.pos_of_json jpos) in
-    let sg = Browse.BEnv.signature_of_env env in
+    let sg = Browse.Envs.signature_of_env env in
     let aux item =
       let ppf, to_string = Misc.ppf_to_string () in
       Printtyp.signature ppf [item];
@@ -526,9 +543,6 @@ let command_dump = {
       state, `List (List.map aux sg)
   | [`String "chunks"] ->
       state, `List (pr_item_desc state.chunks)
-  (*| [`String "types" ; `String "chunks"] ->
-      state, `List (List.rev_map (fun item -> `List (pr_item_desc item))
-                                 (Typer.chunks state.types))*)
   | _ -> invalid_arguments ()
   end;
 }
@@ -541,8 +555,7 @@ let command_which = {
   begin fun _ state -> function
   | [`String "path" ; `String s] ->
       let filename =
-        try
-          Misc.find_in_path_uncap !source_path s
+        try Misc.find_in_path_uncap !source_path s
         with Not_found ->
           Misc.find_in_path_uncap !Config.load_path s
       in

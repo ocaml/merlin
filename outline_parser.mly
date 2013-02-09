@@ -311,7 +311,7 @@ structure_item:
   | CLASS TYPE class_type_declarations
       { emit_top Definition $endpos }
       (*FIXME: Should be possible to handle INCLUDE interactively *)
-  | INCLUDE enter_sub module_expr leave_sub 
+  | INCLUDE enter_sub module_expr leave_sub
       { emit_top Definition $endpos }
 ;
 module_binding:
@@ -839,7 +839,7 @@ simple_expr:
       { () }
   | simple_expr SHARP label
       { () }
-  | LPAREN MODULE enter_sub module_expr leave_sub RPAREN 
+  | LPAREN MODULE enter_sub module_expr leave_sub RPAREN
       { () }
   | LPAREN MODULE enter_sub module_expr leave_sub COLON package_type RPAREN
       { () }
