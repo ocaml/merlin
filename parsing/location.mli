@@ -80,3 +80,5 @@ val show_filename: string -> string
 
 
 val absname: bool ref
+
+val compare_pos : Lexing.position -> t -> int

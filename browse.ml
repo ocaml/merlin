@@ -2,16 +2,6 @@ let (>>=) a f = match a with
   | Some a' -> f a'
   | None -> None
 
-let to_linecol pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
-
-let compare_loc pos loc =
-  let open Location in
-  if pos < to_linecol loc.loc_start
-  then -1
-  else if pos > to_linecol loc.loc_end
-  then 1
-  else 0
-
 let union_loc a b =
   let open Location in
   match a,b with
@@ -19,11 +9,11 @@ let union_loc a b =
   | { loc_ghost = true }, b -> b
   | a,b ->
     let loc_start =
-      if to_linecol a.loc_start <= to_linecol b.loc_start
+      if Misc.split_pos a.loc_start <= Misc.split_pos b.loc_start
       then a.loc_start
       else b.loc_start
     and loc_end =
-      if to_linecol a.loc_end <= to_linecol b.loc_end
+      if Misc.split_pos a.loc_end <= Misc.split_pos b.loc_end
       then b.loc_end
       else a.loc_end
     in
@@ -96,8 +86,8 @@ struct
     | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
     | Env_open _ | Env_empty -> None
 
-  let summary_at line col sum =
-    let cmp = compare_loc (line,col) in
+  let summary_at pos sum =
+    let cmp = Location.compare_pos pos in
     let rec aux sum =
       match signature_of_summary sum >>= signature_loc with
         | None -> summary_prev sum >>= aux
@@ -246,14 +236,11 @@ struct
 
   let browse_local_near pos nodes =
     let best_of (Envs.T (l,_,_,_) as t) (Envs.T (l',_,_,_) as t') =
-      match
-        to_linecol l.Location.loc_end,
-        to_linecol l'.Location.loc_end
-      with
-        | (l1,c1),(l2,c2) when (l2 > l1) || (l2 = l1 && c2 > c1) -> t'
-        | _ -> t
+      if Misc.compare_pos l.Location.loc_end l'.Location.loc_end < 0
+      then t'
+      else t
     in
-    let cmp = compare_loc pos in
+    let cmp = Location.compare_pos pos in
     List.fold_left
     begin fun best (Envs.T (loc,_,_,_) as t) ->
       match cmp loc, best with

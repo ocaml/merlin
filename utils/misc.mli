@@ -155,3 +155,8 @@ val list_filter_map : ('a -> 'b option) -> 'a list -> 'b list
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
 val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c
+
+        (* Manipulating Lexing.position *)
+val make_pos : int * int -> Lexing.position
+val split_pos : Lexing.position -> int * int
+val compare_pos : Lexing.position -> Lexing.position -> int

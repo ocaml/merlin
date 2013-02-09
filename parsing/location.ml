@@ -291,3 +291,12 @@ type 'a loc = {
 
 let mkloc txt loc = { txt ; loc }
 let mknoloc txt = mkloc txt none
+
+let compare_pos pos loc =
+  let pos = Misc.split_pos pos in
+  if pos < Misc.split_pos loc.loc_start
+  then -1
+  else if pos > Misc.split_pos loc.loc_end
+  then 1
+  else 0
+

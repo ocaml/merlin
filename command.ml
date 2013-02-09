@@ -29,24 +29,20 @@ let reset_global_modules () =
   let paths = !Config.load_path in
   global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
 
-let env_at state pos =
+let env_at state pos_cursor =
   let open Browse.BTypedtree in
   let structures = List.flatten
     (List.map (fun (str,sg) -> Envs.structure str) (Typer.trees state.types))
   in
-  let loc_end, env = match browse_near pos structures with
-    | Some (loc,env,_) -> loc.Location.loc_end, env
+  let pos_browsed, env = match browse_near pos_cursor structures with
+    | Some ({ Location.loc_end },env,_) -> loc_end, env
     | None -> raise Not_found
   in
   let open Lexing in
-  let outlines' = History.move 2 (Outline.seek_before pos state.outlines) in
+  let outlines' = History.move 2 (Outline.seek_before pos_cursor state.outlines) in
   match Outline.start outlines' with
-    | Some ({ pos_lnum ; pos_cnum ; pos_bol }) when
-       (pos_lnum > loc_end.pos_lnum || (pos_lnum = loc_end.pos_lnum && pos_cnum - pos_bol > loc_end.pos_cnum - loc_end.pos_bol)) &&
-       (pos_lnum < fst pos || (pos_lnum = fst pos && pos_cnum - pos_bol > snd pos))
-       (*(pos_lnum < (fst pos) || (pos_lnum = fst pos && pos_cnum - pos_bol <
-        * snd pos))*)
-      ->
+    | Some pos_next when
+       Misc.(compare_pos pos_next pos_browsed > 0 && compare_pos pos_cursor pos_next > 0) ->
         let _, chunks = History.Sync.rewind fst outlines' state.chunks in
         let _, types = History.Sync.rewind fst chunks state.types in
         Typer.env types

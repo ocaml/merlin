@@ -31,6 +31,9 @@ let fail = function
       | Some error -> `List [`String "error"; error]
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
 
+let make_pos (pos_lnum, pos_cnum) =
+  Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
+
 let pos_to_json pos =
   Lexing.(`Assoc ["line", `Int pos.pos_lnum;
                   "col", `Int (pos.pos_cnum - pos.pos_bol)])
@@ -39,7 +42,7 @@ let pos_to_json pos =
 let pos_of_json = function
   | `Assoc props ->
     begin try match List.assoc "line" props, List.assoc "col" props with
-      | `Int line, `Int col -> (line, col)
+      | `Int line, `Int col -> make_pos (line,col)
       | _ -> failwith "Incorrect position"
     with Not_found -> failwith "Incorrect position"
     end

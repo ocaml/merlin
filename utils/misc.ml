@@ -245,7 +245,7 @@ let lex_strings source refill =
   Lexing.from_function
     begin fun buf size ->
       let count = min (!len - !pos) size in
-      let count = 
+      let count =
         if count <= 0 then
         begin
           source := refill ();
@@ -266,7 +266,7 @@ let lex_strings source refill =
         (* [length_lessthan n l] returns
          *   Some (List.length l) if List.length l <= n
          *   None otherwise *)
-let length_lessthan n l = 
+let length_lessthan n l =
   let rec aux i = function
     | _ :: xs when i < n -> aux (succ i) xs
     | [] -> Some i
@@ -278,7 +278,7 @@ let length_lessthan n l =
 let has_prefix p =
   let l = String.length p in fun s ->
   let l' = String.length s in
-  (l' >= l) && 
+  (l' >= l) &&
   (try
      for i = 0 to pred l do
        if s.[i] <> p.[i] then
@@ -292,22 +292,22 @@ let has_prefix p =
          * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
          * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
          * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
-let modules_in_path ~ext path = 
+let modules_in_path ~ext path =
   let seen = Hashtbl.create 7 in
-  List.fold_left 
-  begin fun results dir -> 
+  List.fold_left
+  begin fun results dir ->
     try
-      Array.fold_left 
-      begin fun results file -> 
+      Array.fold_left
+      begin fun results file ->
         if Filename.check_suffix file ext
         then let name = Filename.chop_extension file in
              (if Hashtbl.mem seen name
               then results
-              else 
+              else
                (Hashtbl.add seen name (); String.capitalize name :: results))
         else results
       end results (Sys.readdir dir)
-    with Sys_error _ -> results 
+    with Sys_error _ -> results
   end [] path
 
         (* Remove duplicates from list *)
@@ -328,3 +328,15 @@ type ('a,'b) sum = Inl of 'a | Inr of 'b
 let sum f g = function
   | Inl a -> f a
   | Inr b -> g b
+
+        (* Manipulating Lexing.position *)
+
+let make_pos (pos_lnum, pos_cnum) =
+  Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
+
+let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
+
+let compare_pos p1 p2 =
+  compare (split_pos p1) (split_pos p2)
+
+

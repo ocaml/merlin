@@ -12,5 +12,6 @@ val fail   : exn -> Json.json
  *)
 val error_catcher : (exn -> Json.json option) ref
 
+val make_pos : int * int -> Lexing.position
 val pos_to_json : Lexing.position -> Json.json
-val pos_of_json : Json.json -> int * int
+val pos_of_json : Json.json -> Lexing.position

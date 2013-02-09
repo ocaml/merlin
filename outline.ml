@@ -109,12 +109,8 @@ let seek cmp t =
   in
   History.seek seek_func (History.seek seek_func t)
 
-let seek_before (line,col) t =
-  let cmp pos =
-    Lexing.(match compare line pos.pos_lnum with
-            | 0 -> compare col (pos.pos_cnum - pos.pos_bol)
-            | n -> n)
-  in
+let seek_before pos t =
+  let cmp = Misc.compare_pos pos in
   let t = seek cmp t in
   let rec rewind t =
     match location t with
