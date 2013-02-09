@@ -29,6 +29,29 @@ let reset_global_modules () =
   let paths = !Config.load_path in
   global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
 
+let env_at state pos =
+  let open Browse.BTypedtree in
+  let structures = List.flatten
+    (List.map (fun (str,sg) -> Envs.structure str) (Typer.trees state.types))
+  in
+  let loc_end, env = match browse_near pos structures with
+    | Some (loc,env,_) -> loc.Location.loc_end, env
+    | None -> raise Not_found
+  in
+  let open Lexing in
+  let outlines' = History.move 2 (Outline.seek_before pos state.outlines) in
+  match Outline.start outlines' with
+    | Some ({ pos_lnum ; pos_cnum ; pos_bol }) when
+       (pos_lnum > loc_end.pos_lnum || (pos_lnum = loc_end.pos_lnum && pos_cnum - pos_bol > loc_end.pos_cnum - loc_end.pos_bol)) &&
+       (pos_lnum < fst pos || (pos_lnum = fst pos && pos_cnum - pos_bol > snd pos))
+       (*(pos_lnum < (fst pos) || (pos_lnum = fst pos && pos_cnum - pos_bol <
+        * snd pos))*)
+      ->
+        let _, chunks = History.Sync.rewind fst outlines' state.chunks in
+        let _, types = History.Sync.rewind fst chunks state.types in
+        Typer.env types
+    | _ -> env
+
 let command_tell = {
   name = "tell";
 
@@ -147,14 +170,7 @@ let command_type = {
       state, `String (to_string ())
 
   | [`String "expression"; `String expr; `String "at" ; jpos] ->
-    let open Browse.BTypedtree in
-    let pos = Protocol.pos_of_json jpos in
-    let trees = Typer.trees state.types in
-    let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
-    let env = match browse_near pos structures with
-      | Some (env,_) -> env
-      | None -> raise Not_found
-    in
+    let env = env_at state (Protocol.pos_of_json jpos) in
     let ppf, to_string = Misc.ppf_to_string () in
     type_in_env env ppf expr;
     state, `String (to_string ())
@@ -165,7 +181,7 @@ let command_type = {
     let trees = Typer.trees state.types in
     let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
     let t = match browse_near pos structures with
-      | Some (_,t) -> t
+      | Some (_,_,t) -> t
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
@@ -314,14 +330,7 @@ let command_complete = {
       state, `List (List.rev compl)
     end
   | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
-    let open Browse.BTypedtree in
-    let pos = Protocol.pos_of_json jpos in
-    let trees = Typer.trees state.types in
-    let structures = List.flatten (List.map (fun (str,sg) -> Envs.structure str) trees) in
-    let env = match browse_near pos structures with
-      | Some (env,_) -> env
-      | None -> Typer.env state.types
-    in
+    let env = env_at state (Protocol.pos_of_json jpos) in
     let compl = complete_in_env env prefix in
     state, `List (List.rev compl)
 
@@ -488,6 +497,22 @@ let command_dump = {
           | None -> `String content
       in
       state, `List (List.map aux sg)
+  | [`String "env" ; `String "at" ; jpos ] ->
+    let env = env_at state (Protocol.pos_of_json jpos) in
+    let sg = Browse.BEnv.signature_of_env env in
+    let aux item =
+      let ppf, to_string = Misc.ppf_to_string () in
+      Printtyp.signature ppf [item];
+      let content = to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
+      match Browse.signature_loc item with
+        | Some loc ->
+            Location.print_loc ppf loc;
+            let loc = to_string () in
+            `List [`String loc ; `String content]
+        | None -> `String content
+    in
+    state, `List (List.map aux sg)
   | [`String "sig"] ->
       let trees = Typer.trees state.types in
       let sg = List.flatten (List.map snd trees) in

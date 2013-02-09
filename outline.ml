@@ -84,6 +84,12 @@ type t = item History.t
 
 let last_curr = List.fold_left (fun _ (_,_,curr) -> curr)
 
+let start t =
+  match History.prev t with
+    | Some { tokens = ((_,loc_start,_) :: _) } -> Some loc_start
+    | None -> None
+    | _ -> failwith "Outline.location: Invalid t"
+
 let location t =
   match History.prev t with
     | Some { tokens = ((_,loc_start,curr) :: xs) } ->

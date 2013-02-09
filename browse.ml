@@ -173,8 +173,7 @@ struct
     and structure_item_desc ~env = function
       | Tstr_eval e -> [expression e]
       | Tstr_value (_,pes) -> patterns ~env:env pes
-      | Tstr_primitive (_,_,_) -> []
-      | Tstr_exception (_,_,_) -> []
+      | Tstr_primitive (_,l,_) | Tstr_exception (_,l,_) -> [singleton l.Location.loc env]
       | Tstr_module (_,_,m) -> [module_expr m] | Tstr_recmodule ms -> List.map (fun (_,_,_,m) -> module_expr m) ms
       | Tstr_type ilds -> List.map (fun (_,l,{typ_type}) -> singleton ~kind:(Type typ_type) l.Location.loc env) ilds
       | Tstr_modtype (_,l,_)
@@ -246,7 +245,7 @@ struct
   end
 
   let browse_local_near pos nodes =
-    let better (Envs.T (l,_,_,_) as t) (Envs.T (l',_,_,_) as t') =
+    let best_of (Envs.T (l,_,_,_) as t) (Envs.T (l',_,_,_) as t') =
       match
         to_linecol l.Location.loc_end,
         to_linecol l'.Location.loc_end
@@ -260,17 +259,18 @@ struct
       match cmp loc, best with
         | n, _ when n < 0 -> best
         | n, None -> Some t
-        | n, Some t' -> Some (better t t')
+        | n, Some t' -> Some (best_of t t')
     end None nodes
 
   let browse_near pos envs =
-    let rec traverse (Envs.T (_,env,t,lazy childs)) =
+    let rec traverse (Envs.T (loc,env,t,lazy childs)) =
       match browse_local_near pos childs with
         | Some t' -> traverse t'
-        | None -> (env,t)
+        | None -> (loc,env,t)
     in
     match browse_local_near pos envs with
       | Some t -> Some (traverse t)
       | None -> None
+
 end
 

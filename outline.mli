@@ -2,7 +2,7 @@ type token = Chunk_parser.token History.loc
 
 exception Parse_error of Location.t
 
-type item = { 
+type item = {
   rollback   : int;
   kind       : Outline_utils.kind;
   tokens     : token list;
@@ -10,8 +10,9 @@ type item = {
 }
 
 type sync = item History.sync
-type t = item History.t 
+type t = item History.t
 
+val start : t -> Lexing.position option
 val location : t -> Location.t
 val seek_before : int * int -> t -> t
 val seek_offset : int -> t -> t

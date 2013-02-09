@@ -7,22 +7,17 @@
 
 " Activate merlin for given filetype
 au FileType omlet call merlin#Register()
+au FileType ocaml call merlin#Register()
 
 " Load merlin project 
 " A merlin project is a file named ".merlin" in the same directory of the
 " file being edited or in a parent directory (max depth of 3).
 au FileType omlet call merlin#LoadProject()
+au FileType ocaml call merlin#LoadProject()
 
 " Flush buffer and dependencies after :make
 " Note: reloading Core can take some time
 au QuickFixCmdPost * call merlin#Reload()
-
-" Enable Syntastic support
-" Note that Syntastic may come with a default mode for ocaml.
-" You may have to tweak your configuration accordingly.
-function! SyntaxCheckers_omlet_GetLocList()
-  return merlin#SyntasticGetLocList()
-endfunction
 
 " If the mode didn't work for you, ensure that ocamlmerlin binary can be found
 " in PATH. 
