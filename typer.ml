@@ -98,16 +98,22 @@ let sync chunks t =
     match History.forward chunks with
       | None -> t
       | Some ((_,(exns,chunk)),chunks') ->
-          let env, trees, exns' =
-            match
-              begin match chunk with
-                | Some c -> append_step chunks c t
-                | None -> None
-              end
-            with
+          let type_errs, (env, trees, exns') =
+            let type_errs, item = match chunk with
+              | Some c ->
+                  let errs, result =
+                    let process () = append_step chunks c t in
+                    let errors ()  = Types.catch_errors process in
+                    Misc.catch_join (Location.catch_warnings errors)
+                  in
+                  errs, Misc.sum raise (fun x -> x) result
+              | None -> [], None
+            in
+            type_errs,
+            match item with
               | Some result -> result
               | None -> value t
           in
-          History.(insert (Sync.at chunks', (env, trees, exns @ exns'))) t
+          History.(insert (Sync.at chunks', (env, trees, exns @ type_errs @ exns'))) t
   in
   aux chunks t
