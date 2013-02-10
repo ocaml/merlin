@@ -338,6 +338,14 @@ let sum f g = function
   | Inl a -> f a
   | Inr b -> g b
 
+let sum_join = function
+  | Inl a | Inr (Inl a) -> Inl a
+  | Inr c -> c
+
+let catch_join (exns, r) = match r with
+  | Inl e -> (exns, Inl e)
+  | Inr (exns', r') -> (exns @ exns'), r'
+
         (* Manipulating Lexing.position *)
 
 let make_pos (pos_lnum, pos_cnum) =

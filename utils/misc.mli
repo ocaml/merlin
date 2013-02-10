@@ -162,6 +162,10 @@ val list_drop_while : ('a -> bool) -> 'a list -> 'a list
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
 val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c
+val sum_join : ('a,('a,'c) sum) sum -> ('a,'c) sum
+
+        (* Join for catch pattern (writer and error monad) *)
+val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b) sum
 
         (* Manipulating Lexing.position *)
 val make_pos : int * int -> Lexing.position
