@@ -9,9 +9,6 @@ type t = item History.t
 
 exception Malformed_module of Location.t
 exception Invalid_chunk
-exception Warning of Location.t * string
-
-let wrap_warnings = List.rev_map (fun (l,s) -> Warning (l,s))
 
 let eof_lexer _ = Chunk_parser.EOF
 let fail_lexer _ = failwith "lexer ended"
@@ -130,8 +127,8 @@ let sync outlines chunks =
       | Some ({ Outline.kind ; Outline.tokens },outlines') ->
           let chunk =
             match Location.catch_warnings (fun () -> sync_step kind tokens chunks) with
-              | warnings, Misc.Inr item -> wrap_warnings warnings, item
-              | warnings, Misc.Inl exn -> exn :: wrap_warnings warnings, None
+              | warnings, Misc.Inr item -> warnings, item
+              | warnings, Misc.Inl exn -> exn :: warnings, None
           in
           let chunks' = History.(insert (Sync.at outlines', chunk) chunks) in
           aux outlines' chunks'

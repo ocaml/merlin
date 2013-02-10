@@ -14,7 +14,6 @@ and t = item History.t
 
 exception Malformed_module of Location.t
 exception Invalid_chunk
-exception Warning of Location.t * string
 
 val sync_step : Outline_utils.kind -> Outline.token list -> t -> item_desc option
 val sync : Outline.t -> t -> t

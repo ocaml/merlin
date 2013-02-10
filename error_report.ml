@@ -48,7 +48,7 @@ let strict_to_json = function
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
   | Outline.Parse_error loc ->
       Some (format ~valid:true ~where:"parser" ~loc "Parse error")
-  | Chunk.Warning (loc, msg) ->
+  | Location.Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
   | Chunk.Malformed_module loc ->
       Some (format ~valid:true ~where:"warning" ~loc "Malformed module")

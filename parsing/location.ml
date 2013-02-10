@@ -270,7 +270,9 @@ let print_warning loc ppf w =
   end
 ;;
 
-let warnings : (t * string) list ref option ref = ref None
+exception Warning of t * string
+
+let warnings : exn list ref option ref = ref None
 
 let prerr_warning loc w =
   match !warnings with
@@ -280,7 +282,7 @@ let prerr_warning loc w =
     print_warning loc ppf w;
     match to_string () with
       | "" -> ()
-      | s ->  l := (loc,s) :: !l
+      | s ->  l := Warning (loc,s) :: !l
 
 let catch_warnings f =
   let caught = ref [] in
