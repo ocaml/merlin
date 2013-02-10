@@ -1,10 +1,3 @@
-exception Warning of Location.t * string
-
-let reset_warnings () =
-  let result = List.map (fun (l,s) -> Warning (l,s)) !Location.warnings in
-  Location.warnings := [];
-  result
-
 let format ~valid ~where ?loc msg =
   let content = ["valid", `Bool valid; "message", `String msg] in
   let content =
@@ -55,7 +48,7 @@ let strict_to_json = function
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
   | Outline.Parse_error loc ->
       Some (format ~valid:true ~where:"parser" ~loc "Parse error")
-  | Warning (loc, msg) ->
+  | Chunk.Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
   | Chunk.Malformed_module loc ->
       Some (format ~valid:true ~where:"warning" ~loc "Malformed module")

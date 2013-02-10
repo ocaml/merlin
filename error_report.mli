@@ -1,6 +1,4 @@
 (** {0 Exception formatting for error reporting} *)
-exception Warning of Location.t * string
-val reset_warnings : unit -> exn list
 
 (** The format of reports for known exceptions is:
   *   {message: string, type: string, valid:true,

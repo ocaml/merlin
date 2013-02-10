@@ -30,7 +30,7 @@ let exns  t = let _,_,v = value t in v
 let append_step chunks chunk_item t =
   let env, trees, exns = value t in
   match chunk_item with
-    | Misc.Inl (Chunk.Module_opening (_,_,pmod)) ->
+    | Chunk.Module_opening (_,_,pmod) ->
         begin try
           let open Typedtree in
           let open Parsetree in
@@ -64,11 +64,10 @@ let append_step chunks chunk_item t =
           match find_structure tymod with
             | None -> None
             | Some md -> Some (md.mod_env, trees, exns)
-        with exn ->
-          Some (env, trees, exn :: exns)
+        with exn -> Some (env, trees, exn :: exns)
         end
 
-    | Misc.Inl (Chunk.Definitions ds) ->
+    | Chunk.Definitions ds ->
         let (env,trees,exns) =
           List.fold_left
           begin fun (env,trees,exns) d ->
@@ -80,18 +79,14 @@ let append_step chunks chunk_item t =
         in
         Some (env, trees, exns)
 
-    | Misc.Inl (Chunk.Module_closing (d,offset)) ->
+    | Chunk.Module_closing (d,offset) ->
         begin try
           let _, t = History.Sync.rewind fst (History.seek_offset offset chunks) t in
           let env, trees, exns = value t in
           let tstr,tsg,env = Typemod.type_structure env [d.Location.txt] d.Location.loc in
           Some (env, (tstr,tsg) :: trees, exns)
-        with exn ->
-          Some (env, trees, exn :: exns)
+        with exn -> Some (env, trees, exn :: exns)
         end
-
-    | Misc.Inr exn ->
-          Some (env, trees, exn :: exns)
 
 let sync chunks t =
   (* Find last synchronisation point *)
@@ -102,9 +97,17 @@ let sync chunks t =
   let rec aux chunks t =
     match History.forward chunks with
       | None -> t
-      | Some ((_,chunk_item),chunks') ->
-          match append_step chunks chunk_item t with
-            | Some item -> aux chunks' (History.insert (History.Sync.at chunks', item) t)
-            | None -> aux chunks' t
+      | Some ((_,(exns,chunk)),chunks') ->
+          let env, trees, exns' =
+            match
+              begin match chunk with
+                | Some c -> append_step chunks c t
+                | None -> None
+              end
+            with
+              | Some result -> result
+              | None -> value t
+          in
+          History.(insert (Sync.at chunks', (env, trees, exns @ exns'))) t
   in
   aux chunks t

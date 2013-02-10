@@ -3,12 +3,15 @@ type item_desc =
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
 
-type item = Outline.sync * (item_desc, exn) Misc.sum
+type item = Outline.sync * (exn list * item_desc option)
 type sync = item History.sync
 type t = item History.t
 
 exception Malformed_module of Location.t
 exception Invalid_chunk
+exception Warning of Location.t * string
+
+let wrap_warnings = List.rev_map (fun (l,s) -> Warning (l,s))
 
 let eof_lexer _ = Chunk_parser.EOF
 let fail_lexer _ = failwith "lexer ended"
@@ -19,11 +22,11 @@ let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 let dump_chunk t =
   List.map
   begin function
-  | _, Misc.Inl (Definitions []) -> assert false
-  | _, Misc.Inl (Definitions (d :: _)) -> ("definition", line d)
-  | _, Misc.Inl (Module_opening (l,s,_)) -> ("opening " ^ s.Location.txt, line s)
-  | _, Misc.Inl (Module_closing (d,offset)) -> ("closing after " ^ string_of_int offset, line d)
-  | _, Misc.Inr exn -> ("exception", -1)
+  | _, (_, Some (Definitions [])) -> assert false
+  | _, (_, Some (Definitions (d :: _))) -> ("definition", line d)
+  | _, (_, Some (Module_opening (l,s,_))) -> ("opening " ^ s.Location.txt, line s)
+  | _, (_, Some (Module_closing (d,offset))) -> ("closing after " ^ string_of_int offset, line d)
+  | _, (_, None) -> ("error", -1)
   end (List.rev (History.prevs t) @ History.nexts t)
 
 let fake_tokens tokens f =
@@ -69,13 +72,12 @@ let sync_step outline tokens t =
         (* reconstitute module from t *)
         let rec rewind_defs defs t =
           match History.backward t with
-          | Some ((_,Misc.Inl (Definitions [])), _) -> assert false
-          | Some ((_,Misc.Inl (Definitions lst)), t') ->
-            rewind_defs (List.map (fun d -> d.Location.txt) lst @ defs) t'
-          | Some ((_,Misc.Inl (Module_closing (d,offset))), t') ->
+          | Some ((_,(_,Some (Definitions []))), _) -> assert false
+          | Some ((_,(_,Some (Definitions (d::_)))), t') -> rewind_defs (d.Location.txt :: defs) t'
+          | Some ((_,(_,Some (Module_closing (d,offset)))), t') ->
               rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
-          | Some ((_,Misc.Inl (Module_opening (loc,s,m))), t') -> loc,s,m,defs,t'
-          | Some ((_,Misc.Inr _), t') -> rewind_defs defs t'
+          | Some ((_,(_,Some (Module_opening (loc,s,m)))), t') -> loc,s,m,defs,t'
+          | Some ((_,(_,None)), t') -> rewind_defs defs t'
           | None ->
               let p = (match tokens with (_,loc_start,loc_end) :: _ -> Location.({loc_start;loc_end;loc_ghost = false}) | _ -> Location.none) in
               raise (Malformed_module p)
@@ -126,16 +128,12 @@ let sync outlines chunks =
     match History.forward outlines with
       | None -> chunks
       | Some ({ Outline.kind ; Outline.tokens },outlines') ->
-          match
-            try
-              match sync_step kind tokens chunks with
-                | Some chunk -> Some (History.insert (History.Sync.at outlines', Misc.Inl chunk) chunks)
-                | None -> None
-            with
-              | exn -> Some (History.insert (History.Sync.at outlines', Misc.Inr exn) chunks)
-          with
-            | Some chunks -> aux outlines' chunks
-            | None -> aux outlines' chunks
+          let chunk =
+            match Location.catch_warnings (fun () -> sync_step kind tokens chunks) with
+              | warnings, Misc.Inr item -> wrap_warnings warnings, item
+              | warnings, Misc.Inl exn -> exn :: wrap_warnings warnings, None
+          in
+          let chunks' = History.(insert (Sync.at outlines', chunk) chunks) in
+          aux outlines' chunks'
   in
   aux outlines chunks
-

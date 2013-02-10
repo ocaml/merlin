@@ -82,7 +82,6 @@ let command_tell = {
   handler = begin fun (i,o) state -> function
   | [`String "struct" ; `String source] ->
       Env.reset_missing_cmis ();
-      ignore (Error_report.reset_warnings ());
       let eod = ref false and eot = ref false in
       let lexbuf = Misc.lex_strings source
         begin fun () ->
@@ -115,8 +114,6 @@ let command_tell = {
         let types = Typer.sync chunks types in
         let tokens = History.nexts tokens in
         let pos = !bufpos in
-        let w = Error_report.reset_warnings () in
-        let outlines = Outline.append_exns w outlines in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
           (if state.tokens = state'.tokens then List.iter (fun (i,_,_) -> prerr_endline (Chunk_parser_utils.token_to_string i)) state.tokens );
         if !eod || (!eot && state.tokens = state'.tokens)

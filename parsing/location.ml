@@ -270,13 +270,28 @@ let print_warning loc ppf w =
   end
 ;;
 
-let warnings = ref []
+let warnings : (t * string) list ref option ref = ref None
+
 let prerr_warning loc w =
-  let ppf, to_string = Misc.ppf_to_string () in
-  print_warning loc ppf w;
-  match to_string () with
-    | "" -> ()
-    | s ->  warnings := (loc,s) :: !warnings
+  match !warnings with
+  | None -> print_warning loc err_formatter w
+  | Some l ->
+    let ppf, to_string = Misc.ppf_to_string () in
+    print_warning loc ppf w;
+    match to_string () with
+      | "" -> ()
+      | s ->  l := (loc,s) :: !l
+
+let catch_warnings f =
+  let caught = ref [] in
+  let previous = !warnings in
+  warnings := Some caught;
+  let result =
+    try Misc.Inr (f())
+    with e -> Misc.Inl e
+  in
+  warnings := previous;
+  !caught, result
 ;;
 
 let echo_eof () =
