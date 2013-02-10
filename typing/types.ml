@@ -217,3 +217,20 @@ and rec_status =
     Trec_not                            (* not recursive *)
   | Trec_first                          (* first in a recursive group *)
   | Trec_next                           (* not first in a recursive group *)
+
+
+let catch_in : exn list ref option ref = ref None
+let raise_error exn =
+  match !catch_in with
+  | Some l -> l := exn :: !l
+  | None -> raise exn
+
+let catch_errors f =
+  let errors = ref [] in
+  catch_in := Some errors;
+  let result =
+    try Misc.Inr (f())
+    with e -> Misc.Inl e
+  in
+  catch_in := None;
+  !errors, result

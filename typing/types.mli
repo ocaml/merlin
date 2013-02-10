@@ -214,3 +214,6 @@ and rec_status =
     Trec_not                            (* not recursive *)
   | Trec_first                          (* first in a recursive group *)
   | Trec_next                           (* not first in a recursive group *)
+
+val raise_error : exn -> unit
+val catch_errors : (unit -> 'a) -> exn list * (exn, 'a) Misc.sum
