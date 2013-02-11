@@ -236,10 +236,10 @@ If the timer is zero or negative, nothing is done."
   (interactive)
   (if merlin-pending-errors
       (let ((err (pop merlin-pending-errors)))
-        (message "The error is: %s" err)
         (goto-char (merlin-make-point (cdr (assoc 'start err))))
         (merlin-error-highlight (merlin-make-point (cdr (assoc 'start err)))
                                 (merlin-make-point (cdr (assoc 'end err))))
+        (setq merlin-idle-point (point))
         (message (cdr (assoc 'message err))))
     (message "no more errors")))
 
