@@ -339,7 +339,7 @@ with the current position where merlin stops. It updates the merlin state by doi
 
 (defun merlin-edit (start end length)
   (if (< start merlin-lock-point)
-      (merlin-update-point start)))
+      (merlin-update-point start nil)))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
