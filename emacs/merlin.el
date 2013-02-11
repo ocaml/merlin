@@ -356,7 +356,6 @@ with the current position where merlin stops. It updates the merlin state by doi
 	  (delete-region (point) endpoint))
         ;; workaround for merlin-enter
         (merlin-check-synchronize))))
-)
 
 
     
