@@ -185,6 +185,11 @@ If the timer is zero or negative, nothing is done."
 	   (append (elt (merlin-send-command "dump" '("env")) 1) nil))
   (merlin-seek merlin-lock-point))
 
+(defun merlin-refresh ()
+  "Refreshes merlin cmis"
+  (interactive)
+  (merlin-send-command "refresh" nil))
+
 (defun merlin-get-completion (ident)
   "Returns the completion for ident `ident'"
   (merlin-send-command "complete" (list "prefix" ident "at" (merlin-unmake-point (point)))))
@@ -508,6 +513,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
     (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-x") 'merlin-next-error)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
+    (define-key map (kbd "C-c C-u") 'merlin-refresh)
     (define-key map (kbd "RET") 'merlin-enter)
     map
     ))
