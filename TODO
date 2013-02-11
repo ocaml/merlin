@@ -16,3 +16,4 @@ DONE Traverse parse tree to find node nearest to a given location
   to extract as much information as possible.
 - Rework handling of errors and warnings
 - Editor integration : allow to retrieve definition boundary to improve synchronisation
+- Use inotify to detect cmi changes.
