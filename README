@@ -10,22 +10,28 @@ Merlin requires OCaml >=4.00.1 (may work with newer versions, but it is tightly
 bound to compiler internals).
 Then ensures that "yojson" and "menhir" are installed and are registered in ocamlfind.
 
-$ make
+  $ make
 
-Don't panic if you encounters a lot of warnings. It's to workaround an ocamlbuild
-bug causing it to not pass arguments to menhir.
-  ( http://caml.inria.fr/mantis/view.php?id=5763 )
 
 Installation
 ------------
 
-Rename ocamlmerlin.native to ocamlmerlin and makes it accessible from the PATH.
+If you don't get any error in above step:
+
+  $ make install 
 
 Setting-up vim
---------------
+==============
 
-Once ocamlmerlin can be found in vim's PATH, just
-  :source merlin.vim
+First, makes sure that ocamlmerlin binary can be found in PATH.
+Then take a look at ./vim/ subdirectory:
+
+  autoload/
+    merlin.vim   -- main vim script
+    merlin.py    -- helper script needed by merlin.vim
+                    (has to be in the same directory)
+  syntax\_checkers/ -- integration with syntastic  
+
 
 Emacs interface
 ===============
