@@ -48,19 +48,22 @@ let env_at state pos_cursor =
     (fun (str,sg) -> Browse.Envs.structure str)
     (Typer.trees state.types)
   in
-  let pos_browsed, env = match Browse.browse_near pos_cursor structures with
-    | Some ({ Location.loc_end },env,_) -> loc_end, env
-    | None -> raise Not_found
-  in
-  let open Lexing in
   let outlines' = History.move 2 (Outline.seek_before pos_cursor state.outlines) in
-  match Outline.start outlines' with
-    | Some pos_next when
-       Misc.(compare_pos pos_next pos_browsed > 0 && compare_pos pos_cursor pos_next > 0) ->
-        let _, chunks = History.Sync.rewind fst outlines' state.chunks in
-        let _, types = History.Sync.rewind fst chunks state.types in
-        Typer.env types
-    | _ -> env
+  try
+    let pos_browsed, env = match Browse.browse_near pos_cursor structures with
+      | Some ({ Location.loc_end },env,_) -> loc_end, env
+      | None -> raise Not_found
+    in
+    let open Lexing in
+    match Outline.start outlines' with
+      | Some pos_next when
+         Misc.(compare_pos pos_next pos_browsed > 0 && compare_pos pos_cursor pos_next > 0) ->
+           raise Not_found
+      | _ -> env
+  with Not_found ->
+    let _, chunks = History.Sync.rewind fst outlines' state.chunks in
+    let _, types = History.Sync.rewind fst chunks state.types in
+    Typer.env types
 
 (* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
 let exceptions_in state =
