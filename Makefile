@@ -9,7 +9,7 @@ OCAMLBUILD=ocamlbuild -Is .,typing,parsing,utils
 OCAMLFIND=ocamlfind
 
 all: $(TARGET)
-	
+
 $(TARGET): fake-ocamlbuild
 	$(OCAMLBUILD) -use-ocamlfind $@
 
@@ -34,8 +34,12 @@ install: $(TARGET)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install -dv $(SHARE_DIR)/ocamlmerlin/vim
 	install emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
-	for file in vim/*; do install $$file $(SHARE_DIR)/ocamlmerlin/vim ; done
+	for file in vim/*; do \
+	  if test -f $$file; then install $$file $(SHARE_DIR)/ocamlmerlin/vim ; \
+	  else install -d $$file $(SHARE_DIR)/ocamlmerlin/vim;\
+	  fi;\
+	done
 	@echo "Consult $(SHARE_DIR)/ocamlmerlin/vim/merlin.conf.vim to setup vim mode."
 
 uninstall:
-	rm -rf $(SHARE_DIR)/ocamlmerlin
+	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
