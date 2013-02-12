@@ -10,8 +10,10 @@ OCAMLFIND=ocamlfind
 
 all: $(TARGET)
 
-$(TARGET): fake-ocamlbuild
+$(TARGET):
 	$(OCAMLBUILD) -use-ocamlfind $@
+
+.PHONY: $(TARGET) all clean dist distclean install uninstall
 
 clean:
 	$(OCAMLBUILD) -clean
@@ -24,11 +26,6 @@ dist:
 
 distclean: clean
 	rm -f Makefile.config $(DISTNAME).tar.gz
-
-fake-ocamlbuild:
-	mkdir -p _build/
-	for cmi in $(FAKE_CMI); do ln -sf $$($(OCAMLFIND) query compiler-libs.bytecomp)/$$cmi.cmi _build/ ; done
-
 
 install: $(TARGET)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
