@@ -28,11 +28,13 @@ distclean: clean
 	rm -f Makefile.config $(DISTNAME).tar.gz
 
 install: $(TARGET)
+	install -dv $(BIN_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install -dv $(SHARE_DIR)/ocamlmerlin/vim
-	install emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
+	install -dv $(SHARE_DIR)/emacs/site-lisp
+	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	for file in vim/*; do \
-	  if test -f $$file; then install $$file $(SHARE_DIR)/ocamlmerlin/vim ; \
+	  if test -f $$file; then install -m 644 $$file $(SHARE_DIR)/ocamlmerlin/vim ; \
 	  else install -d $$file $(SHARE_DIR)/ocamlmerlin/vim;\
 	  fi;\
 	done
