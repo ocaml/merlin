@@ -559,3 +559,6 @@ and if it fails, it uses `merlin-type-of-expression-global'"
       (merlin-delete-error-overlays)
       (kill-buffer (merlin-make-buffer-name))
 )))
+
+
+(provide 'merlin)

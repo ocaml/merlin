@@ -33,6 +33,7 @@ fake-ocamlbuild:
 install: $(TARGET)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install -dv $(SHARE_DIR)/ocamlmerlin/vim
+	install emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	for file in vim/*; do install $$file $(SHARE_DIR)/ocamlmerlin/vim ; done
 	@echo "Consult $(SHARE_DIR)/ocamlmerlin/vim/merlin.conf.vim to setup vim mode."
 
