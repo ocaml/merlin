@@ -7,7 +7,7 @@ Compilation
 Needed: OCaml 4, ocamlfind, ocamlbuild, yojson, menhir
 
 Merlin requires OCaml >=4.00.1 (may work with newer versions, but it is tightly
-bound to compiler internals).
+bound to compiler internals).  
 Then ensures that "yojson" and "menhir" are installed and are registered in
 ocamlfind.
 
@@ -25,15 +25,15 @@ Setting-up vim
 ==============
 
 Makes sure that ocamlmerlin binary can be found in PATH.
-After installation, you can find the vim mode files in:
+After installation, you can find the vim mode files in:  
   $SHARE\_DIR/ocamlmerlin/vim
 
 The vim subdirectory can be used as a pathogen bundle or directly added to vim
 RUNTIME PATH.
 
-Then take a look at:
-  $SHARE\_DIR/ocamlmerlin/vim/merlin.conf.vim
-for a sample configuration. Modify it according to your needs / setup.
+Then take a look at:  
+  $SHARE\_DIR/ocamlmerlin/vim/merlin.conf.vim  
+for a sample configuration. Modify it according to your needs.
 
 Files:
 - merlin.conf.vim -- sample configuration
@@ -51,38 +51,38 @@ Features
 Omnicompletion should be available out-of-box.
 When editing an ml file, the following commands are available:
 
-:SourcePath
+**:SourcePath**  
   List directories to look into to find ml/mli files
-:BuildPath
+  
+**:BuildPath**  
   List directories to look into to find cmi files
 
-:SourcePath <p>
-:BuildPath <p>
+**:SourcePath** \<p\> **:BuildPath** \<p\>  
   Add directory to path
 
-:Use
+**:Use**  
   Load a findlib package (with completion) by adjusting buildpath to find
   files from package.
 
-:ML
-:MLI
-  Quick switch to a local source file (with completion)
-  For instance, given moduleA.ml and moduleB.mli in source path, use:
-    :ML ModuleA
+**:ML** **:MLI**  
+  Quick switch to a local source file (with completion).  
+  For instance, given moduleA.ml and moduleB.mli in source path, use:  
+    :ML ModuleA  
     :MLI ModuleB
 
+**:TypeOf**  
+  Return type of identifier under cursor
 
-:TypeOf
-  Return type of word under cursor
-:TypeCursor
+**:TypeCursor**  
   Return type of AST node under cursor (heuristic).
-:TypeSel
+
+**:TypeSel**  
   In visual mode, return type of selected expression.
 
-By default, TypeOf (resp. TypeSel) is bound to <LocalLeader>t in normal
+By default, TypeOf (resp. TypeSel) is bound to \<LocalLeader\>t in normal
 (resp. visual) mode.
 
-Now you may be interested by  *Merlin project* and *Extensions* sections.
+Now you may be interested by *Merlin project* and *Extensions* sections.
 
 Emacs interface
 ===============
@@ -92,7 +92,7 @@ minor-mode that is supposed to be used on top of tuareg-mode.
 
 To install it, just M-x load-file /wherever/merlin.el. To use it, you will need
 
-- json.el (available by package.el)
+- json.el (available by package.el)  
 - auto-complete-mode (morally optional, available by package.el)
 
 Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. It
@@ -124,9 +124,9 @@ When loading a ml file in your editor, merlin mode will search a file named
 
 The ".merlin" allows you to integrate merlin with your project.
 Each line of this file begin with a command name followed by one argument:
-- S <src-dir>: add a source directory, used to find \*.ml / \*.mli files
-- B <build-dir>: add a build directory, used to find \*.cmi files
-- PKG <findlib-pkg>: load a findlib package and its dependencies in merlin
+- S \<src-dir\>: add a source directory, used to find \*.ml / \*.mli files
+- B \<build-dir\>: add a build directory, used to find \*.cmi files
+- PKG \<findlib-pkg\>: load a findlib package and its dependencies in merlin
 
 Directory are either absolute or relative to the directory containing ".merlin"
 file.
@@ -137,13 +137,13 @@ Extensions
 Merlin doesn't support (nor plan to support) Camlp4. However, a few common
 extensions are hardcoded:
 
-Lwt
+Lwt  
   Support for lwt, match\_lwt, try\_lwt / finally, for\_lwt, while\_lwt,
-  if\_lwt and raise\_lwt.
+  if\_lwt and raise\_lwt.  
   You need to add lwt package (with ":Use lwt" or "PKG lwt" in .merlin) for
   this to work, and it may be necessary to reload buffer for this change to
   take effect.
 
-Sexp / Bin\_prot
-  Preliminary support for "with sexp" notation.
+Sexp / Bin\_prot  
+  Preliminary support for "with sexp" notation.  
   You need to add sexplib and/or bin\_prot packages.
