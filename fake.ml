@@ -27,6 +27,7 @@ type ast = [
   | `Fun   of string list * ast
   | `App   of ast * ast
   | `Ident of string
+  | `Val   of string * type_scheme (* TODO: use something similar to [binding] type? *)
 ]
 and binding = {
   ident   : string ;
@@ -48,6 +49,16 @@ let rec translate_ts ?ghost_loc = function
       ptyp_desc = Ptyp_constr (mkoptloc ghost_loc id, params) ;
       ptyp_loc = default_loc ghost_loc ;
     }
+
+let translate_declaration ?ghost_loc = function
+  | `Val (id, sign) ->
+    let pval_ty = {
+      pval_type = translate_ts ?ghost_loc sign ;
+      pval_prim = [] ;
+      pval_loc  = default_loc ghost_loc ;
+    } in
+    let psig_desc = Psig_value (mkoptloc ghost_loc id, pval_ty) in
+    { psig_desc ; psig_loc = default_loc ghost_loc }
 
 let rec translate_binding ?ghost_loc { ident ; typesig ; body } =
   let pat = {
@@ -71,6 +82,7 @@ and translate_to_str ?ghost_loc = function
 
 and translate_to_expr ?ghost_loc = function
   | `Let _ -> failwith "not allowed at this level"
+  | `Val _ -> failwith "clearly not allowed here" (* TODO: refine [ast] *)
   | `Fun (simple_patterns, body) ->
     List.fold_right
       (fun simple_pattern body ->
@@ -111,10 +123,18 @@ module Lwt = struct
 end
 
 module Sexp : sig
-  val make_funs :
-    string Location.loc * Parsetree.type_declaration
-    -> [ `Let of binding list ]
+  type ty = string Location.loc * Parsetree.type_declaration
+
+  module Struct : sig
+    val make_funs : ty -> [ `Let of binding list ]
+  end
+
+  module Sig : sig
+    val make_decls : ty -> [ `Val of string * type_scheme ] list
+  end
 end = struct
+  type ty = string Location.loc * Parsetree.type_declaration
+
   let t = `Named ([], "Sexplib.Sexp.t")
 
   let format_params ~format_arg lst =
@@ -126,47 +146,83 @@ end = struct
       lst
       (["x"], [])
 
-  let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `Ident "x"))
+  module Struct = struct
+    let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `Ident "x"))
 
-  let sexp_of_ (located_name, type_infos) =
-    let ty = located_name.Location.txt in
-    let args, params =
-      format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
-    in
-    let typesig =
-      List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
-        (`Arrow (`Named (params, ty), t))
-    in
-    {
-      ident = "sexp_of_" ^ ty ;
-      typesig ;
-      body = mk_fun ~args ;
-    }
+    let sexp_of_ (located_name, type_infos) =
+      let ty = located_name.Location.txt in
+      let args, params =
+        format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
+      in
+      let typesig =
+        List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
+          (`Arrow (`Named (params, ty), t))
+      in
+      {
+        ident = "sexp_of_" ^ ty ;
+        typesig ;
+        body = mk_fun ~args ;
+      }
 
-  let _of_sexp (located_name, type_infos) =
-    let ty = located_name.Location.txt in
-    let args, params =
-      format_params ~format_arg:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
-    in
-    let typesig =
-      List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
-        (`Arrow (t, `Named (params, ty)))
-    in
-    {
-      ident = ty ^ "_of_sexp" ;
-      typesig ;
-      body = mk_fun ~args ;
-    }
+    let _of_sexp (located_name, type_infos) =
+      let ty = located_name.Location.txt in
+      let args, params =
+        format_params ~format_arg:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
+      in
+      let typesig =
+        List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
+          (`Arrow (t, `Named (params, ty)))
+      in
+      {
+        ident = ty ^ "_of_sexp" ;
+        typesig ;
+        body = mk_fun ~args ;
+      }
 
-  let make_funs ty = `Let [ sexp_of_ ty ; _of_sexp ty ]
+    let make_funs ty = `Let [ sexp_of_ ty ; _of_sexp ty ]
+  end
+
+  module Sig = struct
+    let sexp_of_ (located_name, type_infos) =
+      let ty = located_name.Location.txt in
+      let _args, params =
+        format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
+      in
+      let typesig =
+        List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
+          (`Arrow (`Named (params, ty), t))
+      in
+      `Val ("sexp_of_" ^ ty, typesig)
+
+    let _of_sexp (located_name, type_infos) =
+      let ty = located_name.Location.txt in
+      let _args, params =
+        format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
+      in
+      let typesig =
+        List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
+          (`Arrow (`Named (params, ty), t))
+      in
+      `Val ("sexp_of_" ^ ty, typesig)
+
+    let make_decls ty = [ sexp_of_ ty ; _of_sexp ty ]
+  end
 end
 
 module TypeWith = struct
   let rec generate_definitions ~ty ?ghost_loc = function
     | "sexp" :: rest ->
-      let funs = List.map Sexp.make_funs ty in
+      let funs = List.map Sexp.Struct.make_funs ty in
       let ast = List.map (translate_to_str ?ghost_loc) funs in
       ast @ (generate_definitions ~ty ?ghost_loc rest)
     | _  :: rest -> generate_definitions ~ty ?ghost_loc rest
+    | [] -> []
+
+  let rec generate_sigs ~ty ?ghost_loc = function
+    | "sexp" :: rest ->
+      let sigs = List.concat (List.map Sexp.Sig.make_decls ty) in
+      let ast = List.map (translate_declaration ?ghost_loc) sigs in
+      ast @ (generate_sigs ~ty ?ghost_loc rest)
+    | _ :: rest -> generate_sigs ~ty ?ghost_loc rest
     | [] -> []
 end

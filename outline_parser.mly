@@ -361,7 +361,7 @@ signature_item:
       { () }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { () }
-  | TYPE type_declarations
+  | TYPE type_declarations with_extension
       { () }
   | EXCEPTION UIDENT constructor_arguments
       { () }

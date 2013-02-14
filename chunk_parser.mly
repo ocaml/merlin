@@ -661,36 +661,42 @@ module_type:
 ;
 signature:
     (* empty *)                                 { [] }
-  | signature signature_item                    { $2 :: $1 }
-  | signature signature_item SEMISEMI           { $2 :: $1 }
+  | signature signature_item                    { $2 @ $1 }
+  | signature signature_item SEMISEMI           { $2 @ $1 }
 ;
 signature_item:
     VAL val_ident COLON core_type
-      { mksig $startpos $endpos (Psig_value(mkrhs $startpos($2) $endpos($2) $2, {pval_type = $4; pval_prim = [];
-          pval_loc = symbol_rloc $startpos $endpos })) }
+      { [mksig $startpos $endpos (Psig_value(mkrhs $startpos($2) $endpos($2) $2, {pval_type = $4; pval_prim = [];
+          pval_loc = symbol_rloc $startpos $endpos }))] }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
-      { mksig $startpos $endpos (Psig_value(mkrhs $startpos($2) $endpos($2) $2, {pval_type = $4; pval_prim = $6;
-          pval_loc = symbol_rloc $startpos $endpos })) }
+      { [mksig $startpos $endpos (Psig_value(mkrhs $startpos($2) $endpos($2) $2, {pval_type = $4; pval_prim = $6;
+          pval_loc = symbol_rloc $startpos $endpos }))] }
   | TYPE type_declarations
-      { mksig $startpos $endpos (Psig_type(List.rev $2)) }
+      { [ mksig $startpos $endpos (Psig_type(List.rev $2)) ] }
+  | TYPE type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
+        let decls = Fake.TypeWith.generate_sigs ~ty:($2) ?ghost_loc $4 in
+        mksig $startpos $endpos (Psig_type(List.rev $2)) :: decls
+      }
   | EXCEPTION UIDENT constructor_arguments
-      { mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3)) }
+      { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | MODULE UIDENT module_declaration
-      { mksig $startpos $endpos (Psig_module(mkrhs $startpos($2) $endpos($2) $2, $3)) }
+      { [mksig $startpos $endpos (Psig_module(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | MODULE REC module_rec_declarations
-      { mksig $startpos $endpos (Psig_recmodule(List.rev $3)) }
+      { [mksig $startpos $endpos (Psig_recmodule(List.rev $3))] }
   | MODULE TYPE ident
-      { mksig $startpos $endpos (Psig_modtype(mkrhs $startpos($3) $endpos($3) $3, Pmodtype_abstract)) }
+      { [mksig $startpos $endpos (Psig_modtype(mkrhs $startpos($3) $endpos($3) $3, Pmodtype_abstract))] }
   | MODULE TYPE ident EQUAL module_type
-      { mksig $startpos $endpos (Psig_modtype(mkrhs $startpos($3) $endpos($3) $3, Pmodtype_manifest $5)) }
+      { [mksig $startpos $endpos (Psig_modtype(mkrhs $startpos($3) $endpos($3) $3, Pmodtype_manifest $5))] }
   | OPEN mod_longident
-      { mksig $startpos $endpos (Psig_open (mkrhs $startpos($2) $endpos($2) $2)) }
+      { [mksig $startpos $endpos (Psig_open (mkrhs $startpos($2) $endpos($2) $2))] }
   | INCLUDE module_type
-      { mksig $startpos $endpos (Psig_include $2) }
+      { [mksig $startpos $endpos (Psig_include $2)] }
   | CLASS class_descriptions
-      { mksig $startpos $endpos (Psig_class (List.rev $2)) }
+      { [mksig $startpos $endpos (Psig_class (List.rev $2))] }
   | CLASS TYPE class_type_declarations
-      { mksig $startpos $endpos (Psig_class_type (List.rev $3)) }
+      { [mksig $startpos $endpos (Psig_class_type (List.rev $3))] }
 ;
 
 module_declaration:
