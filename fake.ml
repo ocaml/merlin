@@ -39,12 +39,12 @@ let rec translate_ts ?ghost_loc = function
   | `Var ident ->
     { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc }
   | `Arrow (a, b) ->
-    let a = translate_ts a in
-    let b = translate_ts b in
+    let a = translate_ts ?ghost_loc a in
+    let b = translate_ts ?ghost_loc b in
     { ptyp_desc = Ptyp_arrow("", a, b) ; ptyp_loc = default_loc ghost_loc }
   | `Named (params, id) ->
     let id = Longident.parse id in
-    let params = List.map translate_ts params in
+    let params = List.map (translate_ts ?ghost_loc) params in
     {
       ptyp_desc = Ptyp_constr (mkoptloc ghost_loc id, params) ;
       ptyp_loc = default_loc ghost_loc ;
