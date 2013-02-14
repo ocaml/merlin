@@ -11,7 +11,7 @@ bound to compiler internals).
 Then ensures that "yojson" and "menhir" are installed and are registered in
 ocamlfind.
 
-  $ make
+    $ make
 
 
 Installation
@@ -19,7 +19,7 @@ Installation
 
 If you don't get any error in step above:
 
-  $ make install 
+    $ make install 
 
 Setting-up vim
 ==============
@@ -67,8 +67,9 @@ When editing an ml file, the following commands are available:
 **:ML** **:MLI**  
   Quick switch to a local source file (with completion).  
   For instance, given moduleA.ml and moduleB.mli in source path, use:  
-    :ML ModuleA  
-    :MLI ModuleB
+
+      :ML ModuleA  
+      :MLI ModuleB
 
 **:TypeOf**  
   Return type of identifier under cursor
