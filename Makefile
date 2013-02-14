@@ -3,7 +3,7 @@ include Makefile.config
 TARGET = ocamlmerlin.native
 
 DISTNAME = ocamlmerlin-0.1
-DISTFILES = configure Makefile README _tags vim $(wildcard *.ml *.mli *.mly *.mll)
+DISTFILES = configure Makefile README _tags vim emacs $(wildcard *.ml *.mli *.mly *.mll)
 
 OCAMLBUILD=ocamlbuild -Is .,typing,parsing,utils
 OCAMLFIND=ocamlfind
@@ -33,12 +33,8 @@ install: $(TARGET)
 	install -dv $(SHARE_DIR)/ocamlmerlin/vim
 	install -dv $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
-	for file in vim/*; do \
-	  if test -f $$file; then install -m 644 $$file $(SHARE_DIR)/ocamlmerlin/vim ; \
-	  else install -d $$file $(SHARE_DIR)/ocamlmerlin/vim;\
-	  fi;\
-	done
-	@echo "Consult $(SHARE_DIR)/ocamlmerlin/vim/merlin.conf.vim to setup vim mode."
+	cp -R vim/ $(SHARE_DIR)/ocamlmerlin/vim
+	@echo "Consult $(SHARE_DIR)/ocamlmerlin/vim/plugin/merlin.vim to setup vim mode."
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
