@@ -12,10 +12,9 @@ EXIT=0
 check_package()
 {
   if ocamlfind query "$1" >/dev/null; then
-    echo -e "Found $1\t\E[32mGOOD\E[m"
+    printf "Found $1\t\E[32mGOOD\E[m\n"
   else
-    echo -en "\E[31mBAD\E[m $1 is missing\n\t"
-    echo "$2"
+    printf "\E[31mBAD\E[m $1 is missing\n\t$2\n"
     EXIT=1
   fi
 }
