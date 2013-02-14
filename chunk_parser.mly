@@ -677,7 +677,7 @@ signature_item:
       {
         let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
         let decls = Fake.TypeWith.generate_sigs ~ty:($2) ?ghost_loc $4 in
-        mksig $startpos $endpos (Psig_type(List.rev $2)) :: decls
+        decls @ [mksig $startpos $endpos (Psig_type(List.rev $2))]
       }
   | EXCEPTION UIDENT constructor_arguments
       { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }

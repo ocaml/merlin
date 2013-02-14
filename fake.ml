@@ -197,13 +197,14 @@ end = struct
     let _of_sexp (located_name, type_infos) =
       let ty = located_name.Location.txt in
       let _args, params =
-        format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
+        format_params ~format_arg:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
       in
       let typesig =
-        List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
-          (`Arrow (`Named (params, ty), t))
+        List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
+          (`Arrow (t, `Named (params, ty)))
       in
-      `Val ("sexp_of_" ^ ty, typesig)
+      `Val (ty ^ "_of_sexp", typesig)
+
 
     let make_decls ty = [ sexp_of_ ty ; _of_sexp ty ]
   end
@@ -221,7 +222,7 @@ module TypeWith = struct
   let rec generate_sigs ~ty ?ghost_loc = function
     | "sexp" :: rest ->
       let sigs = List.concat (List.map Sexp.Sig.make_decls ty) in
-      let ast = List.map (translate_declaration ?ghost_loc) sigs in
+      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
       ast @ (generate_sigs ~ty ?ghost_loc rest)
     | _ :: rest -> generate_sigs ~ty ?ghost_loc rest
     | [] -> []
