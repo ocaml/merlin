@@ -68,11 +68,18 @@ def catch_and_print(f, msg=None):
     return f()
   except Error as e:
     if msg: print(msg)
-    else: print(str(e))
+    else:
+      print(e.value['message'])
   except Exception as e:
     if msg: print(msg)
     else:
       msg = str(e)
+      if re.search('Chunk_parser.Error',msg):
+        print ("error: Cannot parse")
+        return None
+      elif re.search('Not_found',msg):
+        print ("error: Not found")
+        return None
       m = re.search('Fl_package_base.No_such_package\("(([^"]|\\")*)", "(([^"]|\\")*)"\)',msg)
       if m:
         if m.group(3) != "":
@@ -319,29 +326,20 @@ def vim_find_list(vimvar):
 
 def vim_type_expr(expr):
   sync_buffer()
-  try:
-    ty = send_command("type", "expression", expr)
-    print (expr + " : " + ty)
-  except Error as e:
-    print ("error : " + e.value['message'])
+  ty = catch_and_print(lambda: send_command("type", "expression", expr))
+  if ty: print (expr + " : " + ty)
 
 def vim_type_expr_cursor(expr):
   to_line, to_col = vim.current.window.cursor
   sync_buffer()
-  try:
-    ty = send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col})
-    print (ty)
-  except Error as e:
-    print ("error : " + e.value['message'])
+  ty = catch_and_print(lambda: send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col}))
+  if ty: print(ty)
 
 def vim_type_cursor():
   to_line, to_col = vim.current.window.cursor
   sync_buffer()
-  try:
-    ty = send_command("type", "at", {'line':to_line,'col':to_col})
-    print (ty)
-  except Error as e:
-    print ("error : " + e.value['message'])
+  ty = catch_and_print(lambda: send_command("type", "at", {'line':to_line,'col':to_col}))
+  if ty: print(ty)
 
 # Resubmit current buffer
 def vim_reload_buffer():
