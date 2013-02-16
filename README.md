@@ -42,8 +42,9 @@ Files:
   - merlin.vim   -- main vim script
   - merlin.py    -- helper script needed by merlin.vim
                     (has to be in the same directory)
-- syntax\_checkers/ -- integration with syntastic (ocaml or omlet)
-                    -- set g:syntastic_ocaml_checkers = ['merlin']
+- syntax\_checkers/  
+                    -- integration with syntastic (ocaml or omlet)  
+                    -- set g:syntastic_ocaml_checkers = ['merlin']  
                     --  or g:syntastic_omlet_checkers = ['merlin']
 
 Features
