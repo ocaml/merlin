@@ -63,6 +63,24 @@ def send_command(*cmd):
   elif result[0] == "exception":
     raise Exception(content)
 
+def catch_and_print(f, msg=None):
+  try:
+    return f()
+  except Error as e:
+    if msg: print(msg)
+    else: print(str(e))
+  except Exception as e:
+    if msg: print(msg)
+    else:
+      msg = str(e)
+      m = re.search('Fl_package_base.No_such_package\("(([^"]|\\")*)", "(([^"]|\\")*)"\)',msg)
+      if m:
+        if m.group(3) != "":
+          print ("error: Unknown package '%s' (%s)" % (m.group(1), m.group(3)))
+        else:
+          print ("error: Unknown package '%s'" % m.group(1))
+        return None
+      print(msg)
 ######## BUFFER CACHE
 
 last_buffer = None
@@ -353,6 +371,9 @@ def vim_which_ext(ext,vimvar):
   for f in sorted(set(files)):
     vim.command("call add(%s, '%s')" % (vimvar, f))
 
+def vim_use(*args):
+  catch_and_print(lambda: command_find_use(*args))
+
 def load_project(directory,maxdepth=3):
   fname = os.path.join(directory,".merlin") 
   if os.path.exists(fname):
@@ -371,10 +392,9 @@ def load_project(directory,maxdepth=3):
           elif command == "B":
             send_command("path","add","build",tail.strip())
           elif command == "PKG":
-            command_find_use(*split[1].split())
+            catch_and_print(lambda: command_find_use(*split[1].split()))
     command_reset()
   elif maxdepth > 0:
     (head, tail) = os.path.split(directory)
     if head != "":
       load_project(head,maxdepth - 1)
-

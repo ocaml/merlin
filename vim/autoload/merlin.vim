@@ -54,7 +54,7 @@ function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
 endfunction
 
 function! merlin#Use(...)
-  py merlin.command_find_use(*vim.eval("a:000"))
+  py merlin.vim_use(*vim.eval("a:000"))
   py merlin.vim_reload()
 endfunction
 
