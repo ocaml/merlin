@@ -11,6 +11,7 @@ bound to compiler internals).
 Then ensures that "yojson" and "menhir" are installed and are registered in
 ocamlfind.
 
+    $ ./configure
     $ make
 
 
@@ -32,7 +33,7 @@ The vim subdirectory can be used as a pathogen bundle or directly added to vim
 RUNTIME PATH.
 
 Then take a look at:  
-  $SHARE\_DIR/ocamlmerlin/vim/merlin.conf.vim  
+  $SHARE\_DIR/ocamlmerlin/vim/plugin/merlin.vim  
 for a sample configuration. Modify it according to your needs.
 
 Files:
