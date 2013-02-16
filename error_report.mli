@@ -11,5 +11,11 @@ val reset_warnings : unit -> exn list
   * Une exception non reconnue :
   * {message: ''Printexc.to_string'', valid:false}
   *)
-val to_json : exn -> Json.json option
+
+(* Ignore les exceptions non traitées *)
+val strict_to_json : exn -> Json.json option
+val strict_to_jsons : exn list -> Json.json list
+
+(* Mise en forme générique pour les exceptions inconnues *)
+val to_json : exn -> Json.json
 val to_jsons : exn list -> Json.json list
