@@ -1,65 +1,87 @@
 (** {0 Historique}
-  * Une sorte de zipper : maintient et synchronise des listes des différentes
-  * version d'un objet.
+  * A sort of zipper: maintains and synchronizes a list of different
+  * versions of an object (see ocamlmerlin.ml top comment).
   *)
 type 'a t
 
-(* Un historique vide *)
+(* The empty history *)
 val empty : 'a t
-(** Construit un historique à partir d'une liste.
-  * Le curseur est placé au début : les éléments de la liste représente le
-  * futur.
+
+(** Builds an history from a list.
+  * The cursor is set at the beginning: list elements are all in the
+  * potential future.
   *)
 val of_list : 'a list -> 'a t
 
-
-(** Découpe [--o--] en [--o] [o--] *)
+(** Splits [--o--] into [--o] [o--] *)
 val split : 'a t -> 'a t * 'a t
-(** Supprime le future : [--o--] en [--o] *)
+(** Cut-off the future : [--o--] to [--o] *)
 val cutoff : 'a t -> 'a t
 
-(** Élément à gauche du curseur
-  * (si la dernière opération est une insertion, la valeur insérée est retournée)
+(** Element to the left of the cursor
+  * (if last operation was an insertion, the inserted value is returned)
   *)
 val prev : 'a t -> 'a option
-(** Élément à droite du curseur
-  * (None le plus souvent)
+
+(** Élément to the right of the cursor
+  * (often None)
   *)
 val next : 'a t -> 'a option
-(** Renvoie le passé *)
+
+(** Past *)
 val prevs : 'a t -> 'a list
-(** Renvoie le futur *)
+
+(** Potential future *)
 val nexts : 'a t -> 'a list
 
-(** offset : "date", c'est-à-dire nombre d'éléments dans le passé *)
+(** offsets are "dates", a number of elements in the past *)
 type offset = int
 val offset : 'a t -> offset
 val seek_offset : offset -> 'a t -> 'a t
 
-(** Se déplace d'une étape en avant, renvoie l'élément et l'historique décalé
-  * s'il existe *)
+(** Moves one step in the future, returning the next element
+  * and shifted history (if they exist).
+  *
+  * If [forward t = Some (e, t')], then [next t = Some e = prev t'].
+ *)
+
 val forward  : 'a t -> ('a * 'a t) option 
-(** Se déplace d'une étape en arrière, renvoie l'élément et l'historique décalé
-  * s'il existe *)
+
+(** Moves one step in the past, returning the previous element
+  * and shifted history (if they exist).
+  *
+  * If [backward t = Some (e, t')] then [prev t = Some e = next t'].
+ *)
 val backward : 'a t -> ('a * 'a t) option 
-(** Se déplace d'un nombre arbitraire d'étape *)
+
+(** Moves an arbitrary number of steps.
+  *
+  * May stop early if it reaches an end of history.
+ *)
 val move : int -> 'a t -> 'a t
 
-(** Se déplace jusqu'à un élément particulier; le premier argument est une
-  * fonction de comparaison sur les éléments de l'historique. *)
+(** [seek cmp hist] returns a history such that, if [p] and [n] are
+  * the previous and next element of history, then both [cmp p >= 0] and
+  * [cmp n <= 0] hold.
+  *
+  * For example, [seek (fun p -> Pervasives.compare p0 p) hist] will
+  * move the history to the position [p0], if it exists.
+*)
 val seek : ('a -> int) -> 'a t -> 'a t
 
-(** Ajoute un élément à gauche du curseur :
+(** Adds an element to the left of the cursor:
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)
 val insert : 'a -> 'a t -> 'a t
-(** Supprime l'élément à gauche du curseur, si possible *)
+
+(** Removes and return the element to the left of the curser, if possible. *)
 val remove : 'a t -> ('a * 'a t) option
-(** Modifie l'élément à gauche du curseur *)
+
+(** Modifies the element to the left of the cursor. *)
 val modify : ('a -> 'a) -> 'a t -> 'a t
 
+(** {1 Synchronization} *)
 type 'a sync
 
-(** {1 Synchronisation} *)
 module Sync :
 sig
   val origin : 'a sync
@@ -67,13 +89,13 @@ sig
   val at : 'a t -> 'a sync
   val item : 'a sync -> 'a option
 
-  (* rewind : prj a b
-   * Remonte les historiques [a] et [b] jusqu'à trouver un point commun,
-   * l'origine éventuellement (offset 0)
-   *) 
+  (* [rewind prj a b] rewinds histories [a] and [b] until it finds
+   *  a meeting point, possibly as far as the origin (offset 0).
+   *)
   val rewind : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t * 'b t
-  (* nearest : prj a b 
-   * Trouve le point de [a] le plus du point actuel [b]
+
+  (* [nearest prj a b]
+   * Finds the point of [a] nearest to the current point of [b]
    *)
   val nearest : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t * 'b t
 
@@ -81,7 +103,7 @@ sig
   val right : ('b -> 'a sync) -> 'a t -> 'b t -> 'b t
 end
 
-(** {1 Misc: intégration au lexer} *)
+(** {1 Misc: integration with the lexer} *)
 type pos = Lexing.position
 type 'a loc = 'a * pos * pos
 
