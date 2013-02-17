@@ -1,10 +1,11 @@
 type item_desc =
   | Definitions of Parsetree.structure_item Location.loc list
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
-    (* Quand un module est refermé, il faut remonter en certain nombre de
-     * définitions dans l'historique (celle du module et des sous modules) :
-     * l'offset indique la dernière définition avant le Module_opening
-     * correspondant *)
+  (* When a module is closed, you have to rewind some number
+   * of definitions in the history (those of the module and
+   * its submodules); the offset indicates the last definition before
+   * the corresponding Module_opening.
+   *)
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
 
 and item = Outline.sync * (item_desc, exn) Misc.sum
