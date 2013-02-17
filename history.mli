@@ -39,35 +39,31 @@ type offset = int
 val offset : 'a t -> offset
 val seek_offset : offset -> 'a t -> 'a t
 
+(** Move forward while item under cursor satisfy predicate *)
+val seek_forward  : ('a -> bool) -> 'a t -> 'a t
+(** Move backward while item under cursor satisfy predicate *)
+val seek_backward : ('a -> bool) -> 'a t -> 'a t
+
 (** Moves one step in the future, returning the next element
   * and shifted history (if they exist).
   *
   * If [forward t = Some (e, t')], then [next t = Some e = prev t'].
  *)
 
-val forward  : 'a t -> ('a * 'a t) option 
+val forward  : 'a t -> ('a * 'a t) option
 
 (** Moves one step in the past, returning the previous element
   * and shifted history (if they exist).
   *
   * If [backward t = Some (e, t')] then [prev t = Some e = next t'].
  *)
-val backward : 'a t -> ('a * 'a t) option 
+val backward : 'a t -> ('a * 'a t) option
 
 (** Moves an arbitrary number of steps.
   *
   * May stop early if it reaches an end of history.
  *)
 val move : int -> 'a t -> 'a t
-
-(** [seek cmp hist] returns a history such that, if [p] and [n] are
-  * the previous and next element of history, then both [cmp p >= 0] and
-  * [cmp n <= 0] hold.
-  *
-  * For example, [seek (fun p -> Pervasives.compare p0 p) hist] will
-  * move the history to the position [p0], if it exists.
-*)
-val seek : ('a -> int) -> 'a t -> 'a t
 
 (** Adds an element to the left of the cursor:
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)

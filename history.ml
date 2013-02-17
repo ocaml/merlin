@@ -17,7 +17,7 @@ let prev = function
   | _ -> None
 
 let prevs { prev } = prev
- 
+
 let next = function
   | { next = n :: _ } -> Some n
   | _ -> None
@@ -26,7 +26,7 @@ let nexts { next } = next
 
 type offset = int
 let offset { pos } = pos
-  
+
 let move amount h =
   let rec shift count lx ly =
     match count, lx, ly with
@@ -37,10 +37,10 @@ let move amount h =
   let diff, prev, next = shift amount h.prev h.next in
   let moved = amount - diff in
   { prev ; next ; pos = h.pos + moved }
-  
+
 let seek_offset offset h =
   move (offset - h.pos) h
-    
+
 
 let forward = function
   | { prev ; next = n :: ns ; pos } ->
@@ -65,25 +65,37 @@ let modify f = function
       { prev = (f p) :: ps ; next ; pos }
   | x -> x
 
-let seek_forward cmp =
+let wrap_seek f { prev ; next ; pos } =
+  let prev, next, pos = f prev next pos in
+  { prev ; next ; pos }
+
+let seek_forward p =
   let rec aux prev next pos =
     match next with
-      | t :: next' when cmp t > 0 ->
+      | t :: next' when p t ->
           aux (t :: prev) next' (succ pos)
       | _ -> prev, next, pos
   in
-  aux
+  wrap_seek aux
 
-let seek_backward cmp =
+let seek_backward p =
   let rec aux prev next pos =
     match prev with
-      | t :: prev' when cmp t < 0 ->
+      | t :: prev' when p t ->
           aux prev' (t :: next) (pred pos)
       | _ -> prev, next, pos
   in
-  aux
+  wrap_seek aux
 
-let seek cmp { prev ; next ; pos } =
+(** [seek cmp hist] returns a history such that, if [p] and [n] are
+  * the previous and next element of history, then both [cmp p >= 0] and
+  * [cmp n <= 0] hold.
+  *
+  * For example, [seek (fun p -> Pervasives.compare p0 p) hist] will
+  * move the history to the position [p0], if it exists.
+*)
+(* val seek : ('a -> int) -> 'a t -> 'a t *)
+(*let seek cmp { prev ; next ; pos } =
   let prev', next', pos' =
     match prev, next with
       | (t :: prev'), next when cmp t < 0 ->
@@ -92,9 +104,8 @@ let seek cmp { prev ; next ; pos } =
           seek_forward cmp (t :: prev) next (succ pos)
       | _ -> prev, next, pos
   in
-  { prev = prev' ; next = next' ; pos = pos' }
+  { prev = prev' ; next = next' ; pos = pos' }*)
 
-(* val wrap : ('a * pos * pos) t ref -> (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a) *)
 type 'a loc = 'a * pos * pos
 
 let wrap_lexer ?(filter=fun _-> true) ?bufpos r f buf =
@@ -109,7 +120,7 @@ let wrap_lexer ?(filter=fun _-> true) ?bufpos r f buf =
           | Some p -> buf.Lexing.lex_curr_p <- !p
           | None -> ());
         let t = f buf in
-        if filter t then 
+        if filter t then
           r := insert (t,buf.Lexing.lex_start_p,buf.Lexing.lex_curr_p) !r;
         (match bufpos with
           | Some p -> p := buf.Lexing.lex_curr_p;
@@ -123,26 +134,32 @@ let current_pos ?(default=Lexing.dummy_pos) hist =
     | Some (_,_,p) -> p
     | _ -> default
 
-let seek_pos pos =
-  seek (fun (_,_,p) -> compare pos.Lexing.pos_cnum p.Lexing.pos_cnum)
+let seek_pos pos h =
+  let cmp (_,_,p) = compare pos.Lexing.pos_cnum p.Lexing.pos_cnum in
+  let go_backward item = cmp item < 0 in
+  let go_forward item = cmp item > 0 in
+  match backward h with
+  | Some (item,h') when go_backward item ->
+      seek_backward go_backward h'
+  | _ -> seek_forward go_forward h
 
 type 'a sync = (int * 'a) option
 
 module Sync =
 struct
   let origin = None
-  
+
   let (>>=) = function
     | None   -> fun _ -> None
     | Some a -> fun f -> f a
-  
+
   let at h =
     prev h >>= fun a -> Some (offset h, a)
-  
+
   let item = function
     | None -> None
     | Some (_,a) -> Some a
-  
+
   let rec nearest f ah bh =
     let point = prev bh >>= f in
     let found = point >>=
@@ -155,7 +172,7 @@ struct
     match found with
       | Some a -> a
       | None   -> seek_offset 0 ah, seek_offset 0 bh
-  
+
   let rec rewind f ah bh =
     let point = prev bh >>= f in
     let found = point >>=
@@ -171,7 +188,7 @@ struct
     match found with
       | Some a -> a
       | None   -> seek_offset 0 ah, seek_offset 0 bh
-  
+
   let right f ah bh =
     let off = offset ah in
     let rec loop bh =
@@ -189,7 +206,7 @@ struct
     match backward bh with
       | Some (_,bh') -> loop bh'
       | None -> loop bh
-  
+
   let left f ah bh =
     let off =
       match prev bh >>= f with

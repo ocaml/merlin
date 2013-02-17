@@ -390,7 +390,7 @@ let command_seek = {
       failwith "TODO"
 
   | [`String "end"] ->
-      let outlines = History.seek (fun _ -> 1) state.outlines in
+      let outlines = History.seek_forward (fun _ -> true) state.outlines in
       let chunks = History.Sync.right fst outlines state.chunks in
       let types  = History.Sync.right fst chunks state.types in
       let pos =

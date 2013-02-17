@@ -107,7 +107,9 @@ let seek cmp t =
       | [] -> failwith "Outline.seek: Invalid t"
       | _ -> 1
   in
-  History.seek seek_func (History.seek seek_func t)
+  let go_forward t = seek_func t > 0 in
+  let go_backward t = seek_func t < 0 in
+  History.seek_backward go_backward (History.seek_forward go_forward t)
 
 let seek_before pos t =
   let cmp = Misc.compare_pos pos in
