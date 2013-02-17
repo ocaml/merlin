@@ -14,6 +14,17 @@ type kind =
 exception Chunk of kind * position
 
 let filter_first = ref 0
+
+(** Used to ignore first-class modules.
+  * The construct "let module = … in " allows to define a module
+  * locally inside a definition, but our outline parser cannot work
+  * inside a definition (it is either correct as a whole,
+  * or incorrect).
+  * [nesting] is incremented at the beginning of such constructions
+  * (here, [let module]) and decremented at its end (here, after the
+  * module expression is parsed).No module definition is reported
+  * while [!nesting > 0].
+  *)
 let nesting = ref 0
 
 let reset ~rollback () =

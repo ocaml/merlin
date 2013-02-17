@@ -44,26 +44,22 @@ exception Chunk of kind * position
   *)
 val filter_first : int ref
 
-(** Used to ignore first-class modules.
-  * The construct "let module = … in " allows to define a module
-  * locally inside a definition, but our outline parser cannot work
-  * inside a definition (it is either correct as a whole,
-  * or incorrect).
-  * [nesting] is incremented at the beginning of such constructions
-  * (here, [let module]) and decremented at its end (here, after the
-  * module expression is parsed).No module definition is reported
-  * while [!nesting > 0].
-  *) 
-val nesting : int ref
-
 (** Called to (re)initialize the parser.
   * filter_first := rollback; nesting := 0
   *)
 val reset : rollback:int -> unit -> unit
 
-(** Increments [nesting] *)
+(** Used to ignore first-class modules.
+  * The construct "let module = … in " allows to define a module
+  * locally inside a definition, but our outline parser cannot work
+  * inside a definition (it is either correct as a whole,
+  * or incorrect).
+  * After call to [enter_sub], such constructions are not reported
+  * until a call to its dual [leave_sub] is made.
+  *)
 val enter_sub : unit -> unit
 (** Decrements [nesting] *)
 val leave_sub : unit -> unit
-(** Sends [Chunk] only when [!nesting] is 0 and [!filter_first] is 0 *)
+(** Sends [Chunk] only when outside of any enter_sub/leave_sub
+  * and [!filter_first] is 0 *)
 val emit_top : kind -> position -> unit
