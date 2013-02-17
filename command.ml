@@ -372,11 +372,11 @@ let command_seek = {
   | [`String ("position" | "before") ; jpos] ->
       let pos = Protocol.pos_of_json jpos in
       let outlines = Outline.seek_before pos state.outlines in
-      let rec rewind_errors o = match History.backward o with
-        | Some ({ Outline.kind = Outline_utils.Syntax_error _loc }, o) -> rewind_errors o
-        | _ -> o
+      let outlines = History.seek_backward
+        (function { Outline.kind = Outline_utils.Syntax_error _loc } -> true
+                | _ -> false)
+        outlines
       in
-      let outlines = rewind_errors outlines in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
       let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =
