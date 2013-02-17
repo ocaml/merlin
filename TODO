@@ -19,3 +19,10 @@ DONE Traverse parse tree to find node nearest to a given location
 - Use inotify to detect cmi changes.
 - Handle mli files
 - Bugfix: « :TypeOf » on a label returns « error: Chunk_parser.Error »
+- Class are completely ignored in current release:
+  add support for object system.
+- When closing a module, merlin goes back to its opening then retype the
+  whole module in one pass. This triggers quadratic behavior with nested
+  modules.
+  We should manually reimplement "packing" of final typedtree / signature.
+  (This is a prerequesite for first class modules support).
