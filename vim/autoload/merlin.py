@@ -130,8 +130,8 @@ def command_find_use(*packages):
 def command_find_list():
   return send_command('find', 'list')
 
-def command_seek(line,col):
-  position = send_command("seek", "position", {'line' : line, 'col': col})
+def command_seek_before(line,col):
+  position = send_command("seek", "before", {'line' : line, 'col': col})
   return (position['line'], position['col'])
 
 def command_seek_scope():
@@ -236,7 +236,7 @@ def sync_buffer_to(to_line, to_col):
         content = cb[:end_line]
         shadow_buffer = content
       else:
-        line, col = command_seek(last_line,0)
+        line, col = command_seek_before(last_line,0)
         rest    = cb[line-1][col:]
         content = cb[line:end_line]
         content.insert(0, rest)
@@ -261,7 +261,7 @@ def sync_buffer_to(to_line, to_col):
     last_line = end_line + 1
 
   # Now we are synced, come back to environment around cursor
-  command_seek(to_line, to_col)
+  command_seek_before(to_line, to_col)
   # Gather a maximum of definition after cursor without leaving current module
   command_seek_scope()
 
