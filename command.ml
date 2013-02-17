@@ -368,7 +368,8 @@ let command_seek = {
   | [`String "position"] ->
       state, Protocol.pos_to_json state.pos
 
-  | [`String "position" ; jpos] ->
+    (* FIXME: Should seek position be renamed to "seek before" ? *)
+  | [`String ("position" | "before") ; jpos] ->
       let pos = Protocol.pos_of_json jpos in
       let outlines = Outline.seek_before pos state.outlines in
       let rec rewind_errors o = match History.backward o with
@@ -376,6 +377,23 @@ let command_seek = {
         | _ -> o
       in
       let outlines = rewind_errors outlines in
+      let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
+      let chunks, types = History.Sync.rewind fst chunks state.types in
+      let pos =
+        match Outline.location outlines with
+          | l when l = Location.none -> initial_state.pos
+          | p -> p.Location.loc_end
+      in
+      { tokens = [] ; outlines ; chunks ; types ; pos },
+      Protocol.pos_to_json pos
+
+  | [`String "exact" ; jpos] ->
+      let pos = Protocol.pos_of_json jpos in
+      let outlines = Outline.seek_before pos state.outlines in
+      let outlines = History.seek_forward
+        (fun item -> Misc.compare_pos pos (Outline.item_start item) > 0)
+        outlines
+      in
       let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
       let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =
@@ -436,6 +454,28 @@ let command_seek = {
       Protocol.pos_to_json pos
   | _ -> invalid_arguments ()
   end;
+}
+
+let command_boundary = {
+  name = "boundary";
+
+  doc = "TODO";
+
+  handler =
+  begin fun _ state -> function
+  | [] ->
+      let boundaries =
+        match Outline.location state.outlines with
+          | l when l = Location.none -> `Null
+          | { Location.loc_start ; Location.loc_end } ->
+              `List [
+                Protocol.pos_to_json loc_start;
+                Protocol.pos_to_json loc_end;
+              ]
+      in
+      state, boundaries
+  | _ -> invalid_arguments ()
+  end
 }
 
 let command_reset = {
@@ -610,7 +650,7 @@ let command_help = {
 
 let _ = List.iter register [
   command_tell; command_seek; command_reset; command_refresh;
-  command_cd; command_type; command_complete;
+  command_cd; command_type; command_complete; command_boundary;
   command_errors; command_dump;
   command_which; command_find;
   command_help;
