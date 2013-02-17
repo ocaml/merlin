@@ -329,17 +329,18 @@ def vim_type_expr(expr):
   ty = catch_and_print(lambda: send_command("type", "expression", expr))
   if ty: print (expr + " : " + ty)
 
-def vim_type_expr_cursor(expr):
-  to_line, to_col = vim.current.window.cursor
-  sync_buffer()
-  ty = catch_and_print(lambda: send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col}))
-  if ty: print(ty)
-
 def vim_type_cursor():
   to_line, to_col = vim.current.window.cursor
   sync_buffer()
   ty = catch_and_print(lambda: send_command("type", "at", {'line':to_line,'col':to_col}))
   if ty: print(ty)
+
+def vim_type_expr_cursor(expr):
+  to_line, to_col = vim.current.window.cursor
+  sync_buffer()
+  ty = catch_and_print(lambda: send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col}))
+  if ty: print(ty)
+  else: vim_type_cursor()
 
 # Resubmit current buffer
 def vim_reload_buffer():
