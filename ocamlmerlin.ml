@@ -1,42 +1,44 @@
-(** # Pipeline de Merlin
+(** # Merlin's pipeline
   *
-  * Le toplevel lit et écrit des objets JSON sur stdin/stdout.
-  * Chaque objet lu correspond à une commande au format suivant:
-  * ["nom_de_la_commande",arg1,arg2]
-  * Les arguments dépendent de la commande. La commande ["help"] liste les
-  * commandes reconnues.
-  * Le type d'objet renvoyé est propre à chaque commande (à nettoyer).
+  * The toplevel read and write JSON objects on stdin/stdout
+  * Each read object corresponds to a command in the following format:
+  *   ["nom_de_la_commande",arg1,arg2]
+  * Arguments are command-specific. The ["help"] command list existing
+  * commands.
+  * The type of answer is also command-specific (TODO clean).
   *
-  * ## Présentation rapide
-  * L'utilisation normale passe par la commande "tell" qui prend le code source
-  * en argument:
+  * ## Overview
+  * Normal usage relies on the "tell" command, whose parameter is
+  * source code:
   *   > ["tell","let foo = 42"]
   *   < true
-  * La commande ["seek","position",{"line":int,"col":int}] permet de déplacer le
-  * curseur. Une session est composée d'une suite de tell/seek pour synchroniser
-  * le buffer avec l'éditeur, et de commande d'interrogations.
+  * The command ["seek","position",{"line":int,"col":int}] moves the cursor.
+  * A session is a sequence of tell/seek commands that synchronize the
+  * buffer and the editor, and of query commands.
   *
-  * ## Analyse incrémentale.
+  * ## Incremental analysis
   *
-  * La pipeline de traitement du code source est la suivante :
+  * The source code analysis pipeline is as follows:
   *   outline_lexer | outline_parser | chunk_parser | typer
-  * Aux détails d'implantation près :
+  * Modulo some implementation details, we have:
   *   outline_lexer  : Lexing.buffer -> Chunk_parser.token
   *   outline_parser : Chunk_parser.token -> Outline_utils.kind * Chunk_parser.token list
   *   chunk_parser   : Outline_utils.kind * Chunk_parser.token list -> Parsetree.structure
   *   typer          : Parsetree.structure -> Env.t * Typedtree.structure
   *
-  * La mise à jour incrémentale de ces traitements est implanté à l'aide des
-  * objets History.t
-  * L'historique est juste une liste avec un curseur qui délimite passé, version
-  * actuelle et futur éventuel.
-  * Le passé contient les constructions déjà validées (penser au surlignage de Coqide),
-  * avec l'élément directement à gauche du curseur identifiant la dernière définition,
-  * et le futur éventuel représente les définitions déjà analysées, qui seront
-  * jetées si la définition sous le curseur est modifiée.
+  * Incremental update of those analyses is implemented through the
+  * History.t data. Such an history is a list zipper, the cursor
+  * position marking the split between "past", "present" and
+  * "potential future".
+  * The "past" is the list of already-validated definitions (you may
+  * think of the highlighted code in Coqide/ProofGeneral), with the
+  * element left of the cursor being the last known-good definition.
+  * The "potential future" is a list of definitions that have already
+  * been validated, but will be invalidated and thrown out if the
+  * definition under the cursor ("present") changes.
   *)
 
-(* Gestion des chemins *)
+(* Search path (-I) handling *)
 let default_build_paths =
   let open Config in
   lazy (List.rev !Clflags.include_dirs @ !load_path)
