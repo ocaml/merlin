@@ -153,7 +153,9 @@ end = struct
   end
 
   module Struct = struct
-    let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `Ident "x"))
+    (* I use "not" because it's in pervasives, so I'm sure it will be bound. (yep, that's
+     wacky) *)
+    let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `Ident "not"))
 
     let sexp_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
