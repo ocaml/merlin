@@ -335,15 +335,20 @@ with the current position where merlin stops. It updates the merlin state by doi
   (interactive)
   (merlin-update-point (point) view-errors-p)
 )
-(defun merlin-check-synchronize ()
+(defun merlin-check-synchronize (&optional clean)
   "If merlin point is before the end of line send everything up to the end of line"
   (interactive)
-  (if (> (point-at-eol) merlin-lock-point)
-      (merlin-update-point (point-at-eol) nil)))
+  (let ((p merlin-lock-point))
+    (if (> (point-at-eol) merlin-lock-point)
+        (merlin-update-point (point-at-eol) nil))
+    (if (and t (< merlin-lock-point p))
+        (merlin-update-point p nil))))
 
 (defun merlin-edit (start end length)
   (if (< start merlin-lock-point)
-      (merlin-update-point start nil)))
+      (progn
+        (message "muhaha")
+        (merlin-update-point start nil))))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
@@ -435,7 +440,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
 
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
-  (merlin-check-synchronize)
+  (merlin-check-synchronize t)
   (let ((ident (merlin-ident-under-point)))
     (if ident
 	(let ((typ (merlin-type-of-expression ident)))
