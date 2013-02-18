@@ -51,6 +51,10 @@
   "The buffer to use to display types"
   )
 
+(defvar merlin-favourite-caml-mode
+  'tuareg-mode
+  "The OCaml mode to use for the *merlin types* buffer")
+
 (defvar merlin-cache nil "Merlin cache for completion")
 (defvar merlin-prefix nil "Merlin prefix")
 (defvar merlin-name nil "Merlin name")
@@ -543,7 +547,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
 	(setq merlin-idle-timer
               (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
     (with-current-buffer merlin-type-buffer
-      (tuareg-mode))))
+      (funcall merlin-favourite-caml-mode))))
 (define-minor-mode merlin-mode
   "Mode to use merlin tool inside OCaml tools."
   nil
