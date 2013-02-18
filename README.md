@@ -1,5 +1,5 @@
-Installing Merlin
-=================
+Installing Merlin manually
+==========================
 
 Compilation
 -----------
@@ -21,6 +21,17 @@ Installation
 If you don't get any error in step above:
 
     $ make install 
+
+Installing Merlin with opam
+===========================
+
+Needed : [opam](http://opam.ocamlpro.com/doc/Advanced_Install.html),
+OCaml 4.00.1 (can be installed via opam typing `opam switch 4.00.1`).
+
+Then, just do :
+
+    $ opam remote add kiwi http://kiwi.iuwt.fr/~asmanur/opam/.git
+    $ opam install merlin
 
 Setting-up vim
 ==============
