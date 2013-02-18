@@ -203,6 +203,11 @@ end
 
 module Binprot = struct
 
+  let make_struct ~prefix ~typesig (located_name, ty_infos) =
+    let tyname = located_name.Location.txt in
+    let args = format_params ~f:(fun x -> prefix ^ x) ty_infos.ptype_params in
+    { ident = prefix ^ tyname ; typesig = typesig ; body = mk_fun ~args }
+
   module Sizer = struct
     let int = `Named ([], "int")
 
@@ -212,14 +217,8 @@ module Binprot = struct
         (`Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt), int))
 
     let make_struct ty =
-      let tyname = (fst ty).Location.txt in
-      let args = format_params ~f:(fun x -> "bin_size_" ^ x) (snd ty).ptype_params
-      in
-      {
-        ident = "bin_size_" ^ tyname ;
-        typesig = typesig ty ;
-        body = mk_fun ~args ;
-      }
+      let typesig = typesig ty in
+      make_struct ~prefix:"bin_size_" ~typesig ty
 
     let make_sig ty =
       let tyname = (fst ty).Location.txt in
@@ -245,14 +244,8 @@ module Binprot = struct
       List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
 
     let make_struct ty =
-      let tyname = (fst ty).Location.txt in
-      let args = format_params ~f:(fun x -> "bin_write_" ^ x) (snd ty).ptype_params
-      in
-      {
-        ident = "bin_write_" ^ tyname ;
-        typesig = typesig ty ;
-        body = mk_fun ~args ;
-      }
+      let typesig = typesig ty in
+      make_struct ~prefix:"bin_write_" ~typesig ty
 
     let make_sig ty =
       let tyname = (fst ty).Location.txt in
@@ -269,14 +262,8 @@ module Binprot = struct
         (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
 
     let make_struct ty =
-      let tyname = (fst ty).Location.txt in
-      let args = format_params ~f:(fun x -> "bin_writer_" ^ x) (snd ty).ptype_params
-      in
-      {
-        ident = "bin_writer_" ^ tyname ;
-        typesig = typesig ty ;
-        body = mk_fun ~args ;
-      }
+      let typesig = typesig ty in
+      make_struct ~prefix:"bin_writer_" ~typesig ty
 
     let make_sig ty =
       let tyname = (fst ty).Location.txt in
@@ -300,14 +287,8 @@ module Binprot = struct
       List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
 
     let make_struct ty =
-      let tyname = (fst ty).Location.txt in
-      let args = format_params ~f:(fun x -> "bin_read_" ^ x) (snd ty).ptype_params
-      in
-      {
-        ident = "bin_read_" ^ tyname ;
-        typesig = typesig ty ;
-        body = mk_fun ~args ;
-      }
+      let typesig = typesig ty in
+      make_struct ~prefix:"bin_read_" ~typesig ty
 
     let make_sig ty =
       let tyname = (fst ty).Location.txt in
@@ -324,14 +305,8 @@ module Binprot = struct
         (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.reader"))
 
     let make_struct ty =
-      let tyname = (fst ty).Location.txt in
-      let args = format_params ~f:(fun x -> "bin_read_" ^ x) (snd ty).ptype_params
-      in
-      {
-        ident = "bin_reader_" ^ tyname ;
-        typesig = typesig ty ;
-        body = mk_fun ~args ;
-      }
+      let typesig = typesig ty in
+      make_struct ~prefix:"bin_reader_" ~typesig ty
 
     let make_sig ty =
       let tyname = (fst ty).Location.txt in
