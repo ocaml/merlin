@@ -29,6 +29,7 @@ distclean: clean
 
 install: $(TARGET)
 	install -dv $(BIN_DIR)
+	install -dv $(SHARE_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install -dv $(SHARE_DIR)/ocamlmerlin/vim
 	install -dv $(SHARE_DIR)/emacs/site-lisp
