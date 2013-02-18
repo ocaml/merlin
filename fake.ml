@@ -137,45 +137,41 @@ end = struct
 
   let t = `Named ([], "Sexplib.Sexp.t")
 
-  let format_params ~format_arg lst =
-    List.fold_right
-      (fun param (args, params) ->
-        match param with
-        | None -> (format_arg "_") :: args, `Var "_" :: params
-        | Some id -> id.Location.txt :: args, `Var id.Location.txt :: params)
-      lst
-      (["x"], [])
+  let format_params ~f =
+    List.map (function None -> f "_" | Some id -> f id.Location.txt)
+
+  module TypeSig = struct
+    let sexp_of params ty =
+      let params = format_params ~f:(fun v -> `Var v) params in
+      List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
+        (`Arrow (`Named (params, ty), t))
+
+    let of_sexp params ty =
+      let params = format_params ~f:(fun v -> `Var v) params in
+      List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
+        (`Arrow (t, `Named (params, ty)))
+  end
 
   module Struct = struct
     let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `Ident "x"))
 
     let sexp_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let args, params =
-        format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
-      in
-      let typesig =
-        List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
-          (`Arrow (`Named (params, ty), t))
+      let args = format_params ~f:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
       in
       {
         ident = "sexp_of_" ^ ty ;
-        typesig ;
+        typesig = TypeSig.sexp_of type_infos.ptype_params ty;
         body = mk_fun ~args ;
       }
 
     let _of_sexp (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let args, params =
-        format_params ~format_arg:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
-      in
-      let typesig =
-        List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
-          (`Arrow (t, `Named (params, ty)))
+      let args = format_params ~f:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
       in
       {
         ident = ty ^ "_of_sexp" ;
-        typesig ;
+        typesig = TypeSig.of_sexp type_infos.ptype_params ty;
         body = mk_fun ~args ;
       }
 
@@ -185,24 +181,12 @@ end = struct
   module Sig = struct
     let sexp_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let _args, params =
-        format_params ~format_arg:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
-      in
-      let typesig =
-        List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
-          (`Arrow (`Named (params, ty), t))
-      in
+      let typesig = TypeSig.sexp_of type_infos.ptype_params ty in
       `Val ("sexp_of_" ^ ty, typesig)
 
     let _of_sexp (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let _args, params =
-        format_params ~format_arg:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
-      in
-      let typesig =
-        List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
-          (`Arrow (t, `Named (params, ty)))
-      in
+      let typesig = TypeSig.of_sexp type_infos.ptype_params ty in
       `Val (ty ^ "_of_sexp", typesig)
 
 
