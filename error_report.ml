@@ -64,8 +64,9 @@ let strict_to_json = function
 let to_json exn = match strict_to_json exn with
   | Some j -> j
   | None ->
-    let zero = Lexing.({ pos_fname = "" ; pos_bol = 0 ; pos_lnum = 1 ; pos_cnum = 0 }) in
-    format ~valid:false ~where:"unknown" ~loc:Location.({loc_start = zero ; loc_end = zero ; loc_ghost = true }) (Printexc.to_string exn)
+    let zero = { Lexing. pos_fname="" ; pos_bol=0 ; pos_lnum=1 ; pos_cnum=0 } in
+    let loc = { Location. loc_start=zero ; loc_end=zero ; loc_ghost=true } in
+    format ~valid:false ~where:"unknown" ~loc (Printexc.to_string exn)
 
 let rec list_filter_map f = function
   | [] -> []
