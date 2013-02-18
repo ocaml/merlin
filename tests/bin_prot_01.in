@@ -1,0 +1,5 @@
+["find", "use", "bin_prot"]
+["tell", "struct", "module Test_binprot = struct type 'a t = T with bin_io end"]
+["tell", "struct", null]
+["dump", "env"]
+
