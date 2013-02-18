@@ -144,7 +144,8 @@ If you find the types when completing noisy you can use
 in your .emacs
 
 
-Merlin project ==============
+Merlin project
+==============
 
 When loading a ml file in your editor, merlin mode will search a file named
 .merlin in the same directory or in the first two parent directories.
@@ -164,13 +165,19 @@ Extensions
 Merlin doesn't support (nor plan to support) Camlp4. However, a few common
 extensions are hardcoded:
 
-Lwt  
-  Support for lwt, match\_lwt, try\_lwt / finally, for\_lwt, while\_lwt,
-  if\_lwt and raise\_lwt.  
-  You need to add lwt package (with ":Use lwt" or "PKG lwt" in .merlin) for
-  this to work, and it may be necessary to reload buffer for this change to
-  take effect.
+Lwt
+---
 
-Sexp / Bin\_prot  
-  Preliminary support for "with sexp" notation.  
-  You need to add sexplib and/or bin\_prot packages.
+Support for lwt, match\_lwt, try\_lwt / finally, for\_lwt, while\_lwt,
+if\_lwt and raise\_lwt.  
+You need to add lwt package (with ":Use lwt" or "PKG lwt" in .merlin) for
+this to work, and it may be necessary to reload buffer for this change to
+take effect.
+
+type-conv
+---------
+
+A few syntax extensions based on type-conv are supported as well.
+Namely :
+- sexplib.syntax
+- binprot.syntax
