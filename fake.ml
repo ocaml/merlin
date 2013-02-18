@@ -25,7 +25,7 @@ let any_val' = prim "Any.val'"
 
 type type_scheme = [
   | `Var   of string
-  | `Arrow of type_scheme * type_scheme
+  | `Arrow of Asttypes.label * type_scheme * type_scheme
   | `Named of type_scheme list * string
 ]
 
@@ -47,10 +47,10 @@ and binding = {
 let rec translate_ts ?ghost_loc = function
   | `Var ident ->
     { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc }
-  | `Arrow (a, b) ->
+  | `Arrow (label, a, b) ->
     let a = translate_ts ?ghost_loc a in
     let b = translate_ts ?ghost_loc b in
-    { ptyp_desc = Ptyp_arrow("", a, b) ; ptyp_loc = default_loc ghost_loc }
+    { ptyp_desc = Ptyp_arrow(label, a, b) ; ptyp_loc = default_loc ghost_loc }
   | `Named (params, id) ->
     let id = Longident.parse id in
     let params = List.map (translate_ts ?ghost_loc) params in
@@ -125,6 +125,13 @@ module Lwt = struct
   let raise_lwt' = prim_ident "Lwt.raise_lwt'"
 end
 
+(* tools used in the next few modules *)
+let format_params ~f =
+  List.map (function None -> f "_" | Some id -> f id.Location.txt)
+
+let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `AnyVal))
+
+
 module Sexp : sig
   type ty = string Location.loc * Parsetree.type_declaration
 
@@ -140,24 +147,21 @@ end = struct
 
   let t = `Named ([], "Sexplib.Sexp.t")
 
-  let format_params ~f =
-    List.map (function None -> f "_" | Some id -> f id.Location.txt)
-
   module TypeSig = struct
+    let mk_arrow x y = `Arrow ("", x, y)
+
     let sexp_of params ty =
       let params = format_params ~f:(fun v -> `Var v) params in
-      List.fold_right (fun var acc -> `Arrow (`Arrow (var, t), acc)) params
-        (`Arrow (`Named (params, ty), t))
+      List.fold_right (fun var acc -> mk_arrow (mk_arrow var t) acc) params
+        (mk_arrow (`Named (params, ty)) t)
 
     let of_sexp params ty =
       let params = format_params ~f:(fun v -> `Var v) params in
-      List.fold_right (fun var acc -> `Arrow (`Arrow (t, var), acc)) params
-        (`Arrow (t, `Named (params, ty)))
+      List.fold_right (fun var acc -> mk_arrow (mk_arrow t var) acc) params
+        (mk_arrow t (`Named (params, ty)))
   end
 
   module Struct = struct
-    let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `AnyVal))
-
     let sexp_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
       let args = format_params ~f:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
@@ -197,13 +201,189 @@ end = struct
   end
 end
 
+module Binprot = struct
+
+  module Sizer = struct
+    let int = `Named ([], "int")
+
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      List.fold_right (fun v acc -> `Arrow ("", `Arrow ("", `Var v, int), acc)) params
+        (`Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt), int))
+
+    let make_struct ty =
+      let tyname = (fst ty).Location.txt in
+      let args = format_params ~f:(fun x -> "bin_size_" ^ x) (snd ty).ptype_params
+      in
+      {
+        ident = "bin_size_" ^ tyname ;
+        typesig = typesig ty ;
+        body = mk_fun ~args ;
+      }
+
+    let make_sig ty =
+      let tyname = (fst ty).Location.txt in
+      let typesig = typesig ty in
+      `Val ("bin_size_" ^ tyname, typesig)
+  end
+
+  module Write = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let acc =
+        `Arrow ("", `Named ([], "Bin_prot.Common.buf"),
+        `Arrow ("pos", `Named ([], "Bin_prot.Common.pos"),
+        `Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt),
+        `Named ([], "Bin_prot.Common.pos"))))
+      in
+      let make_var str =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Arrow ("", `Var str,
+        `Named ([], "Bin_prot.Unsafe_common.sptr"))))
+      in
+      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+
+    let make_struct ty =
+      let tyname = (fst ty).Location.txt in
+      let args = format_params ~f:(fun x -> "bin_write_" ^ x) (snd ty).ptype_params
+      in
+      {
+        ident = "bin_write_" ^ tyname ;
+        typesig = typesig ty ;
+        body = mk_fun ~args ;
+      }
+
+    let make_sig ty =
+      let tyname = (fst ty).Location.txt in
+      let typesig = typesig ty in
+      `Val ("bin_write_" ^ tyname, typesig)
+  end
+
+  module Writer = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> `Var x) ty_infos.ptype_params in
+      List.fold_right
+        (fun param acc -> `Arrow ("", `Named ([param], "Bin_prot.Type_class.writer"), acc))
+        params
+        (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
+
+    let make_struct ty =
+      let tyname = (fst ty).Location.txt in
+      let args = format_params ~f:(fun x -> "bin_writer_" ^ x) (snd ty).ptype_params
+      in
+      {
+        ident = "bin_writer_" ^ tyname ;
+        typesig = typesig ty ;
+        body = mk_fun ~args ;
+      }
+
+    let make_sig ty =
+      let tyname = (fst ty).Location.txt in
+      let typesig = typesig ty in
+      `Val ("bin_writer_" ^ tyname, typesig)
+  end
+
+  module Read = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let acc =
+        `Arrow ("", `Named ([], "Bin_prot.Common.buf"),
+        `Arrow ("pos_ref", `Named ([`Named ([], "Bin_prot.Common.pos")], "ref"),
+        `Named (List.map (fun x -> `Var x) params, name.Location.txt)))
+      in
+      let make_var str =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Var str))
+      in
+      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+
+    let make_struct ty =
+      let tyname = (fst ty).Location.txt in
+      let args = format_params ~f:(fun x -> "bin_read_" ^ x) (snd ty).ptype_params
+      in
+      {
+        ident = "bin_read_" ^ tyname ;
+        typesig = typesig ty ;
+        body = mk_fun ~args ;
+      }
+
+    let make_sig ty =
+      let tyname = (fst ty).Location.txt in
+      let typesig = typesig ty in
+      `Val ("bin_read_" ^ tyname, typesig)
+  end
+
+  module Reader = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> `Var x) ty_infos.ptype_params in
+      List.fold_right
+        (fun param acc -> `Arrow ("", `Named ([param], "Bin_prot.Type_class.reader"), acc))
+        params
+        (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.reader"))
+
+    let make_struct ty =
+      let tyname = (fst ty).Location.txt in
+      let args = format_params ~f:(fun x -> "bin_read_" ^ x) (snd ty).ptype_params
+      in
+      {
+        ident = "bin_reader_" ^ tyname ;
+        typesig = typesig ty ;
+        body = mk_fun ~args ;
+      }
+
+    let make_sig ty =
+      let tyname = (fst ty).Location.txt in
+      let typesig = typesig ty in
+      `Val ("bin_reader_" ^ tyname, typesig)
+  end
+end
+
 module TypeWith = struct
   let rec generate_definitions ~ty ?ghost_loc = function
     | "sexp" :: rest ->
       let funs = List.map Sexp.Struct.make_funs ty in
       let ast = List.map (translate_to_str ?ghost_loc) funs in
       ast @ (generate_definitions ~ty ?ghost_loc rest)
+
+    | "bin_write" :: rest ->
+      let funs =
+        let open Binprot in
+        List.map (fun ty ->
+          `Let [ Sizer.make_struct ty ; Write.make_struct ty ; Writer.make_struct ty ]
+        ) ty
+      in
+      let ast = List.map (translate_to_str ?ghost_loc) funs in
+      ast @ (generate_definitions ~ty ?ghost_loc rest)
+
+    | "bin_read" :: rest ->
+      let funs =
+        let open Binprot in
+        List.map (fun ty -> `Let [ Read.make_struct ty ; Reader.make_struct ty ]) ty
+      in
+      let ast = List.map (translate_to_str ?ghost_loc) funs in
+      ast @ (generate_definitions ~ty ?ghost_loc rest)
+
+
+    | "bin_io" :: rest ->
+      let funs =
+        let open Binprot in
+        List.map (fun ty ->
+          `Let [
+            Sizer.make_struct ty ;
+            Write.make_struct ty ;
+            Writer.make_struct ty ;
+            Read.make_struct ty ;
+            Reader.make_struct ty ;
+        ]
+        ) ty
+      in
+      let ast = List.map (translate_to_str ?ghost_loc) funs in
+      ast @ (generate_definitions ~ty ?ghost_loc rest)
+
     | _  :: rest -> generate_definitions ~ty ?ghost_loc rest
+
     | [] -> []
 
   let rec generate_sigs ~ty ?ghost_loc = function
@@ -211,6 +391,8 @@ module TypeWith = struct
       let sigs = List.concat (List.map Sexp.Sig.make_decls ty) in
       let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
       ast @ (generate_sigs ~ty ?ghost_loc rest)
+
     | _ :: rest -> generate_sigs ~ty ?ghost_loc rest
+
     | [] -> []
 end
