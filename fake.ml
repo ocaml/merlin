@@ -15,6 +15,14 @@ let app a b =
 
 let pat_app f (pat,expr) = pat, app f expr
 
+let prim_ident prim = Longident.parse ("_." ^ prim)
+let prim prim = {
+  pexp_desc = Pexp_ident (Location.mknoloc (prim_ident prim));
+  pexp_loc = Location.none
+}
+
+let any_val' = prim "Any.val'"
+
 type type_scheme = [
   | `Var   of string
   | `Arrow of type_scheme * type_scheme
@@ -27,6 +35,7 @@ type ast = [
   | `Fun   of string list * ast
   | `App   of ast * ast
   | `Ident of string
+  | `AnyVal (* wild card ident *)
   | `Val   of string * type_scheme (* TODO: use something similar to [binding] type? *)
 ]
 and binding = {
@@ -103,14 +112,8 @@ and translate_to_expr ?ghost_loc = function
       pexp_desc = Pexp_ident (mkoptloc ghost_loc (Longident.parse i)) ;
       pexp_loc = default_loc ghost_loc ;
     }
+  | `AnyVal -> any_val'
 
-let prim_ident prim = Longident.parse ("_." ^ prim)
-let prim prim = {
-  pexp_desc = Pexp_ident (Location.mknoloc (prim_ident prim));
-  pexp_loc = Location.none
-}
-
-let any_val' = prim "Any.val'"
 
 module Lwt = struct
   let un_lwt = prim "Lwt.un_lwt"
@@ -153,9 +156,7 @@ end = struct
   end
 
   module Struct = struct
-    (* I use "not" because it's in pervasives, so I'm sure it will be bound. (yep, that's
-     wacky) *)
-    let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `Ident "not"))
+    let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `AnyVal))
 
     let sexp_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
