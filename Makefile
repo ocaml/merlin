@@ -18,6 +18,9 @@ $(TARGET):
 clean:
 	$(OCAMLBUILD) -clean
 
+check: $(TARGET)
+	./test.sh
+
 dist:
 	mkdir $(DISTNAME)
 	cp -r $(DISTFILES) $(DISTNAME)
