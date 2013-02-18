@@ -96,7 +96,7 @@ minor-mode that is supposed to be used on top of tuareg-mode.
 To install it, just M-x load-file /wherever/merlin.el. To use it, you will need
 
 - json.el (available by package.el)  
-- auto-complete-mode (morally optional, available by package.el)
+- auto-complete-mode (morally optional, available by package.el and the MELPA repository)
 
 Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. It
 will spawn an instance of ocamlmerlin in a separate buffer.
@@ -113,14 +113,27 @@ argument (eg. C-u C-c C-t) it will give the type of the region.
 C-c l allows you to load a findlib package inside merlin. For a project, you
 should use a .merlin file.
 
-C-c C-r retracts the whole buffer.
+C-c C-r retracts the whole buffer. (Useful when merlin seems confused).
 
 Moreover, you have autocompletion with merlin (and for now only with merlin),
 and whenever you stay idle for one second you get the type of the ident under
 the point (modules are not displayed), pretty much like haskell-mode.
 
-Merlin project
-==============
+Auto-completion
+---------------
+
+If you have auto-complete-mode installed, merlin will use it to display
+completion. When you type the first three characters of an identifier it will
+show you the possible matches along with their types. You can then choose your
+match (or keep typing to refine) and then you should press RET to activate the match.
+If you find the types when completing noisy you can use
+
+(setq merlin-completion-types nil)
+
+in your .emacs
+
+
+Merlin project ==============
 
 When loading a ml file in your editor, merlin mode will search a file named
 .merlin in the same directory or in the first two parent directories.
