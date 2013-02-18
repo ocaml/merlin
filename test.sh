@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# ocamlmerlin must be in path
-
 if test -n "$1" ; then
     out=`mktemp`
-    ocamlmerlin < ./tests/$1.in  > $out
+    ./ocamlmerlin.native < ./tests/$1.in  > $out
     diff ./tests/$1.out $out
     rm $out
 else
@@ -12,12 +10,13 @@ else
         test_nb=`basename $file .in`
         temp_out=`mktemp`
         real_out=`echo "$file"|sed 's/\.in$/.out/'`
-        ocamlmerlin < $file  > $temp_out
+        ./ocamlmerlin.native < $file  > $temp_out
         diff $temp_out $real_out > /dev/null
         if [[ $? != 0 ]] ; then
-            echo "$test_nb: FAIL"
+            echo -e "$test_nb: \e[1;31mFAILED\e[0m"
+            echo "    run ./test.sh $test_nb to have more informations"
         else
-            echo "$test_nb: OK"
+            echo -e "$test_nb: \e[1;32mOK\e[0m"
         fi
         rm $temp_out
     done
