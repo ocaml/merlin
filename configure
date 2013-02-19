@@ -65,7 +65,7 @@ To customize directories, use:
 
 END
 
-if [ -d "$BIN_DIR"  -a -d "$SHARE_DIR" -a -d "$STDLIB_DIR" ]; then
+if [ -d "$STDLIB_DIR" ]; then
   cat >Makefile.config <<END
 BIN_DIR=$BIN_DIR
 SHARE_DIR=$SHARE_DIR
