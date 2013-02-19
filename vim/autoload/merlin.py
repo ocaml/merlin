@@ -342,8 +342,10 @@ def vim_type_expr_cursor(expr):
     ty = send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col})
     print(ty)
   except Exception:
+    print ("(approx) ", end="")
     vim_type_cursor()
   except Error:
+    print ("(approx) ", end="")
     vim_type_cursor()
 
 # Resubmit current buffer
