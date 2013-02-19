@@ -317,31 +317,28 @@ end
 
 module TypeWith = struct
   let rec generate_definitions ~ty ?ghost_loc = function
-    | "sexp" :: rest ->
+    | "sexp" ->
       let funs = List.map Sexp.Struct.make_funs ty in
-      let ast = List.map (translate_to_str ?ghost_loc) funs in
-      ast @ (generate_definitions ~ty ?ghost_loc rest)
+      List.map (translate_to_str ?ghost_loc) funs
 
-    | "bin_write" :: rest ->
+    | "bin_write" ->
       let funs =
         let open Binprot in
         List.map (fun ty ->
           `Let [ Sizer.make_struct ty ; Write.make_struct ty ; Writer.make_struct ty ]
         ) ty
       in
-      let ast = List.map (translate_to_str ?ghost_loc) funs in
-      ast @ (generate_definitions ~ty ?ghost_loc rest)
+      List.map (translate_to_str ?ghost_loc) funs
 
-    | "bin_read" :: rest ->
+    | "bin_read" ->
       let funs =
         let open Binprot in
         List.map (fun ty -> `Let [ Read.make_struct ty ; Reader.make_struct ty ]) ty
       in
-      let ast = List.map (translate_to_str ?ghost_loc) funs in
-      ast @ (generate_definitions ~ty ?ghost_loc rest)
+      List.map (translate_to_str ?ghost_loc) funs
 
 
-    | "bin_io" :: rest ->
+    | "bin_io" ->
       let funs =
         let open Binprot in
         List.map (fun ty ->
@@ -354,62 +351,55 @@ module TypeWith = struct
         ]
         ) ty
       in
-      let ast = List.map (translate_to_str ?ghost_loc) funs in
-      ast @ (generate_definitions ~ty ?ghost_loc rest)
+      List.map (translate_to_str ?ghost_loc) funs
 
-    | _  :: rest -> generate_definitions ~ty ?ghost_loc rest
+    | _unsupported_ext -> []
 
-    | [] -> []
+  let generate_definitions ~ty ?ghost_loc extensions =
+    Misc.list_concat_map (generate_definitions ~ty ?ghost_loc) extensions
 
   let rec generate_sigs ~ty ?ghost_loc = function
-    | "sexp" :: rest ->
-      let sigs = List.concat (List.map Sexp.Sig.make_decls ty) in
-      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
-      ast @ (generate_sigs ~ty ?ghost_loc rest)
+    | "sexp" ->
+      let sigs = Misc.list_concat_map Sexp.Sig.make_decls ty in
+      List.rev_map (translate_declaration ?ghost_loc) sigs
 
-    | "bin_write" :: rest ->
+    | "bin_write" ->
       let sigs =
         let open Binprot in
-        List.concat (
-          List.map (fun ty ->
-            [ Sizer.make_sig ty ; Write.make_sig ty ; Writer.make_sig ty ]
-          ) ty
-        )
+        Misc.list_concat_map
+          (fun ty ->
+            [ Sizer.make_sig ty ; Write.make_sig ty ; Writer.make_sig ty ])
+          ty
       in
-      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
-      ast @ (generate_sigs ~ty ?ghost_loc rest)
+      List.rev_map (translate_declaration ?ghost_loc) sigs
 
-    | "bin_read" :: rest ->
+    | "bin_read" ->
       let sigs =
         let open Binprot in
-        List.concat (
-          List.map (fun ty -> [ Read.make_sig ty ; Reader.make_sig ty ]) ty
-        )
+        Misc.list_concat_map
+          (fun ty -> [ Read.make_sig ty ; Reader.make_sig ty ]) ty
       in
-      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
-      ast @ (generate_sigs ~ty ?ghost_loc rest)
+      List.rev_map (translate_declaration ?ghost_loc) sigs
 
-
-    | "bin_io" :: rest ->
+    | "bin_io" ->
       let sigs =
         let open Binprot in
-        List.concat (
-          List.map (fun ty ->
+        Misc.list_concat_map
+          (fun ty ->
             [
               Sizer.make_sig ty ;
               Write.make_sig ty ;
               Writer.make_sig ty ;
               Read.make_sig ty ;
               Reader.make_sig ty ;
-            ]
-          ) ty
-        )
+            ])
+          ty
       in
-      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
-      ast @ (generate_sigs ~ty ?ghost_loc rest)
+      List.rev_map (translate_declaration ?ghost_loc) sigs
 
+    | _unsupported_ext -> []
 
-    | _ :: rest -> generate_sigs ~ty ?ghost_loc rest
+  let generate_sigs ~ty ?ghost_loc extensions =
+    Misc.list_concat_map (generate_sigs ~ty ?ghost_loc) extensions
 
-    | [] -> []
 end
