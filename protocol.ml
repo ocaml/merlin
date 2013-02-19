@@ -48,3 +48,7 @@ let pos_of_json = function
     end
   | _ -> failwith "Incorrect position"
 
+let with_location loc assoc =
+  `Assoc (("start", pos_to_json loc.Location.loc_start) ::
+          ("end",   pos_to_json loc.Location.loc_end) ::
+          assoc)

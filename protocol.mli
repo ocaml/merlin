@@ -15,3 +15,4 @@ val error_catcher : (exn -> Json.json option) ref
 val make_pos : int * int -> Lexing.position
 val pos_to_json : Lexing.position -> Json.json
 val pos_of_json : Json.json -> Lexing.position
+val with_location : Location.t -> (string * Json.json) list -> Json.json

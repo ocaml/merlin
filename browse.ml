@@ -263,9 +263,8 @@ let rec dump_envs envs =
       | Envs.Modtype _ -> "modtype"
       | Envs.Other -> "??"
     in
-    `Assoc [
-      "start", Protocol.pos_to_json l.Location.loc_start;
-      "end", Protocol.pos_to_json l.Location.loc_end;
+    Protocol.with_location l
+    [
       "kind", `String kind;
       "children", dump_envs children
     ]

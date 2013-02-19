@@ -219,11 +219,8 @@ let command_type = {
       | Browse.Envs.T (loc,_,Browse.Envs.Expr e,_) :: rest ->
           let ppf, to_string = Misc.ppf_to_string () in
           Printtyp.type_expr ppf e;
-          let item = `Assoc [
-            "start", Protocol.pos_to_json loc.Location.loc_start;
-            "end", Protocol.pos_to_json loc.Location.loc_end;
-            "type", `String (to_string ());
-          ] in
+          let item = Protocol.with_location loc ["type", `String (to_string ())]
+          in
           item :: aux rest
       | _ :: rest -> aux rest
       | [] -> []
