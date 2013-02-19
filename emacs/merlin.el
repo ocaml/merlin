@@ -100,9 +100,21 @@ If the timer is zero or negative, nothing is done."
       (cons 'line (line-number-at-pos nil))
       (cons 'col (current-column)))))
 
+(defun bounds-of-ocaml-atom-at-point ()
+  "Return the start and end points of an ocaml atom near point. An ocaml atom
+   is any string containing [a-zA-Z`.]"
+  (save-excursion
+    (skip-chars-backward "[a-zA-Z`.]")
+    (if (looking-at "[a-zA-Z`.]+")
+        (cons (point) (match-end 0)) ; returns the bounds
+      nil))) ; no atom at point
+
+(put 'ocamlatom 'bounds-of-thing-at-point
+     'bounds-of-ocaml-atom-at-point)
+
 (defun merlin-ident-under-point ()
   "Returns the ident under point in the current buffer"
-  (let ((x (bounds-of-thing-at-point 'symbol)))
+  (let ((x (bounds-of-thing-at-point 'ocamlatom)))
     (if x
 	(buffer-substring-no-properties (car x) (cdr x))
       nil)))
