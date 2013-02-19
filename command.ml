@@ -213,6 +213,28 @@ let command_type = {
     end;
     state, `String (to_string ())
 
+  | [`String "enclosing"; jpos] ->
+    let pos = Protocol.pos_of_json jpos in
+    let rec aux = function
+      | Browse.Envs.T (loc,_,Browse.Envs.Expr e,_) :: rest ->
+          let ppf, to_string = Misc.ppf_to_string () in
+          Printtyp.type_expr ppf e;
+          let item = `Assoc [
+            "start", Protocol.pos_to_json loc.Location.loc_start;
+            "end", Protocol.pos_to_json loc.Location.loc_end;
+            "type", `String (to_string ());
+          ] in
+          item :: aux rest
+      | _ :: rest -> aux rest
+      | [] -> []
+    in
+    let structures = Misc.list_concat_map
+      (fun (str,sg) -> Browse.Envs.structure str)
+      (Typer.trees state.types)
+    in
+    let path = Browse.browse_enclosing pos structures in
+    state, `List [`Int (List.length path); `List (aux path)]
+
   | _ -> invalid_arguments ()
   end;
 }
@@ -586,6 +608,12 @@ let command_dump = {
       state, `List (List.map aux sg)
   | [`String "chunks"] ->
       state, `List (pr_item_desc state.chunks)
+  | [`String "tree"] ->
+      let structures = Misc.list_concat_map
+        (fun (str,sg) -> Browse.Envs.structure str)
+        (Typer.trees state.types)
+      in
+      state, Browse.dump_envs structures
   | _ -> invalid_arguments ()
   end;
 }

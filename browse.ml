@@ -129,6 +129,9 @@ struct
 
   type t = T of Location.t * Env.t * kind * t list Lazy.t
 
+  let cmp_start (T (l1,_,_,_)) (T (l2,_,_,_)) =
+    Misc.compare_pos l1.Location.loc_start l2.Location.loc_end
+
   let singleton ?(kind=Other) l e = T (l,e,kind,lazy [])
 
   let rec structure { str_final_env ; str_items } =
@@ -227,8 +230,8 @@ let browse_local_near pos nodes =
   end None nodes
 
 let browse_near pos envs =
-  let rec traverse (Envs.T (loc,env,t,lazy childs)) =
-    match browse_local_near pos childs with
+  let rec traverse (Envs.T (loc,env,t,lazy children)) =
+    match browse_local_near pos children with
       | Some t' -> traverse t'
       | None -> (loc,env,t)
   in
@@ -236,3 +239,36 @@ let browse_near pos envs =
     | Some t -> Some (traverse t)
     | None -> None
 
+let browse_enclosing pos envs =
+  let not_enclosing (Envs.T (loc,_,_,_)) =
+    not (Location.compare_pos pos loc = 0)
+  in
+  let rec traverse (Envs.T (loc,env,t,lazy children)) results =
+    match browse_local_near pos children with
+      | Some t' -> traverse t' (t' :: results)
+      | None -> results
+  in
+  match browse_local_near pos envs with
+    | None -> []
+    | Some t -> 
+        let results = traverse t [t] in
+        Misc.list_drop_while not_enclosing results
+
+let rec dump_envs envs = 
+  let dump_env (Envs.T (l,_,k,lazy children)) =
+    let kind = match k with
+      | Envs.Type _ -> "type"
+      | Envs.Expr _ -> "expr"
+      | Envs.Module _ -> "module"
+      | Envs.Modtype _ -> "modtype"
+      | Envs.Other -> "??"
+    in
+    `Assoc [
+      "start", Protocol.pos_to_json l.Location.loc_start;
+      "end", Protocol.pos_to_json l.Location.loc_end;
+      "kind", `String kind;
+      "children", dump_envs children
+    ]
+  in
+  let envs = List.sort Envs.cmp_start envs in
+  `List (List.map dump_env envs)
