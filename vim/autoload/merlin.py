@@ -3,6 +3,7 @@ import json
 import vim
 import re
 import os
+import sys
 from collections import Counter
 
 class Failure(Exception):
@@ -342,10 +343,10 @@ def vim_type_expr_cursor(expr):
     ty = send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col})
     print(ty)
   except Exception:
-    print ("(approx) ", end="")
+    sys.stdout.write("(approx) ")
     vim_type_cursor()
   except Error:
-    print ("(approx) ", end="")
+    sys.stdout.write("(approx) ")
     vim_type_cursor()
 
 # Resubmit current buffer
