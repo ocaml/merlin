@@ -367,6 +367,48 @@ module TypeWith = struct
       let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
       ast @ (generate_sigs ~ty ?ghost_loc rest)
 
+    | "bin_write" :: rest ->
+      let sigs =
+        let open Binprot in
+        List.concat (
+          List.map (fun ty ->
+            [ Sizer.make_sig ty ; Write.make_sig ty ; Writer.make_sig ty ]
+          ) ty
+        )
+      in
+      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
+      ast @ (generate_sigs ~ty ?ghost_loc rest)
+
+    | "bin_read" :: rest ->
+      let sigs =
+        let open Binprot in
+        List.concat (
+          List.map (fun ty -> [ Read.make_sig ty ; Reader.make_sig ty ]) ty
+        )
+      in
+      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
+      ast @ (generate_sigs ~ty ?ghost_loc rest)
+
+
+    | "bin_io" :: rest ->
+      let sigs =
+        let open Binprot in
+        List.concat (
+          List.map (fun ty ->
+            [
+              Sizer.make_sig ty ;
+              Write.make_sig ty ;
+              Writer.make_sig ty ;
+              Read.make_sig ty ;
+              Reader.make_sig ty ;
+            ]
+          ) ty
+        )
+      in
+      let ast = List.rev_map (translate_declaration ?ghost_loc) sigs in
+      ast @ (generate_sigs ~ty ?ghost_loc rest)
+
+
     | _ :: rest -> generate_sigs ~ty ?ghost_loc rest
 
     | [] -> []
