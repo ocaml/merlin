@@ -333,7 +333,7 @@ def vim_type_cursor():
   to_line, to_col = vim.current.window.cursor
   sync_buffer()
   ty = catch_and_print(lambda: send_command("type", "at", {'line':to_line,'col':to_col}))
-  if ty: print(ty)
+  if ty: print(ty['type'])
 
 def vim_type_expr_cursor(expr):
   to_line, to_col = vim.current.window.cursor

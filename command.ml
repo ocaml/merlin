@@ -199,8 +199,8 @@ let command_type = {
       (fun (str,sg) -> Browse.Envs.structure str)
       (Typer.trees state.types)
     in
-    let t = match Browse.browse_near pos structures with
-      | Some (_,_,t) -> t
+    let t, loc = match Browse.browse_near pos structures with
+      | Some (loc,_,t) -> t, loc
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
@@ -211,7 +211,7 @@ let command_type = {
       | Browse.Envs.Module m -> Printtyp.modtype ppf m
       | Browse.Envs.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
     end;
-    state, `String (to_string ())
+    state, Protocol.with_location loc ["type", `String (to_string ())]
 
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
