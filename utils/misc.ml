@@ -325,6 +325,12 @@ let rec list_filter_map f = function
         (* Concat and map at the same time *)
 let list_concat_map f l = List.flatten (List.map f l)
 
+        (* Drop items from the beginning of the list until a predicate is no
+         * longer satisfied *)
+let rec list_drop_while p = function
+  | x :: xs when p x -> list_drop_while p xs
+  | xs -> xs
+
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
 
