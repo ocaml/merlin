@@ -37,7 +37,7 @@ install: $(TARGET)
 	install -dv $(SHARE_DIR)/ocamlmerlin/vim
 	install -dv $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
-	cp -R vim/ $(SHARE_DIR)/ocamlmerlin/vim
+	cp -R vim/* $(SHARE_DIR)/ocamlmerlin/vim/
 	@echo "Consult $(SHARE_DIR)/ocamlmerlin/vim/plugin/merlin.vim to setup vim mode."
 
 uninstall:
