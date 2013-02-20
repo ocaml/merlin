@@ -22,15 +22,16 @@ let rec signature_loc =
         in
         let a = find_first s and b = find_first (List.rev s) in
         union_loc_opt a b
-  in function
+  in
+  function
   | Sig_value (_,v)     -> Some v.val_loc
   | Sig_type (_,t,_)      -> Some t.type_loc
   | Sig_exception (_,e) -> Some e.exn_loc
   | Sig_modtype (_,Modtype_manifest m)
   | Sig_module (_,m,_)    -> mod_loc m
   | Sig_modtype (_,Modtype_abstract) -> None
-  | Sig_class (i,c,_) -> failwith "TODO: handling classes"
-  | Sig_class_type (i,c,_) -> failwith "TODO: handling classes"
+  | Sig_class (_,_,_)
+  | Sig_class_type (_,_,_) -> None
 
 let signature_ident =
   let open Types in function
@@ -42,14 +43,20 @@ let signature_ident =
   | Sig_class (i,_,_)
   | Sig_class_type (i,_,_) -> i
 
-let print_constructor ppf c = let open Types in match c.cstr_args with
-  | []-> Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = c.cstr_res.desc })
-  | args -> Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok)})
+let print_constructor ppf c =
+  let open Types in
+  match c.cstr_args with
+  | [] ->
+    Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = c.cstr_res.desc })
+  | args ->
+    let desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok) in
+    Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc  })
 
 module Envs =
 struct
   let summary_prev =
-    let open Env in function
+    let open Env in
+    function
     | Env_empty -> None
     | Env_open (s,_) | Env_value (s,_,_)
     | Env_type (s,_,_) | Env_exception (s,_,_)
@@ -59,7 +66,8 @@ struct
 
   let signature_of_summary =
     let open Env in
-    let open Types in function
+    let open Types in
+    function
     | Env_value (_,i,v)      -> Some (Sig_value (i,v))
     | Env_type (_,i,t)       -> Some (Sig_type (i,t,Trec_not))
     | Env_exception (_,i,e)  -> Some (Sig_exception (i,e))
@@ -125,6 +133,8 @@ struct
     | Expr of Types.type_expr
     | Module of Types.module_type
     | Modtype of Types.modtype_declaration
+    | Class of Ident.t * Types.class_declaration
+    | ClassType of Ident.t * Types.class_type_declaration
     | Other
 
   type t = T of Location.t * Env.t * kind * t list Lazy.t
@@ -141,16 +151,30 @@ struct
     T (str_loc, str_env, Other, lazy (structure_item_desc ~env str_desc))
 
   and structure_item_desc ~env = function
-    | Tstr_eval e -> [expression e]
-    | Tstr_value (_,pes) -> patterns ~env:env pes
-    | Tstr_primitive (_,l,_) | Tstr_exception (_,l,_) -> [singleton l.Location.loc env]
-    | Tstr_module (_,_,m) -> [module_expr m] | Tstr_recmodule ms -> List.map (fun (_,_,_,m) -> module_expr m) ms
-    | Tstr_type ilds -> List.map (fun (_,l,{typ_type}) -> singleton ~kind:(Type typ_type) l.Location.loc env) ilds
+    | Tstr_eval e            -> [expression e]
+    | Tstr_value (_,pes)     -> patterns ~env:env pes
+    | Tstr_primitive (_,l,_)
+    | Tstr_exception (_,l,_) -> [singleton l.Location.loc env]
+    | Tstr_module (_,_,m)    -> [module_expr m]
+    | Tstr_recmodule ms      -> List.map (fun (_,_,_,m) -> module_expr m) ms
+    | Tstr_type ilds ->
+      List.map
+        (fun (_,l,{typ_type}) -> singleton ~kind:(Type typ_type) l.Location.loc env)
+        ilds
     | Tstr_modtype (_,l,_)
     | Tstr_exn_rebind (_,l,_,_) -> [singleton l.Location.loc env]
-    | Tstr_open _
-    | Tstr_class _
-    | Tstr_class_type _ -> []
+    | Tstr_open _ -> []
+    | Tstr_class lst ->
+      List.map
+        (fun (cd, _, _) ->
+          (* FIXME: use [ci_id_object] ? *)
+          singleton ~kind:(Class (cd.ci_id_class, cd.ci_decl)) cd.ci_loc env)
+        lst
+    | Tstr_class_type lst ->
+      List.map
+        (fun (id,l,{ ci_type_decl }) ->
+          singleton ~kind:(ClassType (id, ci_type_decl)) l.Location.loc env)
+        lst
     | Tstr_include (m,_) -> [module_expr m]
 
   and patterns ?expr ?env pes = List.fold_left
@@ -161,7 +185,8 @@ struct
       l :: expression e :: ls
     end [] pes
 
-  and pattern expr env { pat_loc } = singleton ~kind:(Expr expr.exp_type) pat_loc env
+  and pattern expr env { pat_loc } =
+    singleton ~kind:(Expr expr.exp_type) pat_loc env
 
   and expression { exp_desc ; exp_loc ; exp_type ; exp_env } =
     T (exp_loc, exp_env, (Expr exp_type), lazy (expression_desc exp_desc))
@@ -250,17 +275,19 @@ let browse_enclosing pos envs =
   in
   match browse_local_near pos envs with
     | None -> []
-    | Some t -> 
+    | Some t ->
         let results = traverse t [t] in
         Misc.list_drop_while not_enclosing results
 
-let rec dump_envs envs = 
+let rec dump_envs envs =
   let dump_env (Envs.T (l,_,k,lazy children)) =
     let kind = match k with
       | Envs.Type _ -> "type"
       | Envs.Expr _ -> "expr"
       | Envs.Module _ -> "module"
       | Envs.Modtype _ -> "modtype"
+      | Envs.Class (_, _) -> "class"
+      | Envs.ClassType _ -> "class_type"
       | Envs.Other -> "??"
     in
     Protocol.with_location l

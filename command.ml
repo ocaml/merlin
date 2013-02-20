@@ -207,6 +207,9 @@ let command_type = {
       | Browse.Envs.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
       | Browse.Envs.Module m -> Printtyp.modtype ppf m
       | Browse.Envs.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
+      | Browse.Envs.Class (ident, cd) -> Printtyp.class_declaration ident ppf cd
+      | Browse.Envs.ClassType (ident, ctd) ->
+        Printtyp.cltype_declaration ident ppf ctd
     end;
     state, Protocol.with_location loc ["type", `String (to_string ())]
 
