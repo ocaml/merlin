@@ -55,6 +55,7 @@ val print_error: formatter -> t -> unit
 val print_error_cur_file: formatter -> unit
 val print_warning: t -> formatter -> Warnings.t -> unit
 
+val raise_warning : exn -> unit
 val prerr_warning : t -> Warnings.t -> unit
 exception Warning of t * string
 val catch_warnings : (unit -> 'a) -> exn list * (exn, 'a) Misc.sum

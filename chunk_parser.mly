@@ -189,11 +189,16 @@ let rec mkrangepat startpos endpos c1 c2 =
   reloc_pat startpos endpos (deep_mkrangepat startpos endpos c1 c2)
 
 let syntax_error () =
-  raise Syntaxerr.Escape_error
+  Location.raise_warning Syntaxerr.Escape_error
 
 let unclosed opening_name opstart opend closing_name clstart clend =
-  raise(Syntaxerr.Error(Syntaxerr.Unclosed(symbol_rloc opstart opend, opening_name,
+  Location.raise_warning (Syntaxerr.Error(Syntaxerr.Unclosed(symbol_rloc opstart opend, opening_name,
                                            symbol_rloc clstart clend, closing_name)))
+
+let check_constraint mkexp constr e =
+  match constr with
+    | (None,None) -> e
+    | (t,t') -> mkexp (Pexp_constraint(e, t, t'))
 
 let bigarray_function str name =
   mkloc (Ldot(Ldot(Lident "Bigarray", str), name)) Location.none
@@ -526,21 +531,25 @@ module_expr:
   | STRUCT structure END
       { mkmod $startpos $endpos (Pmod_structure($2)) }
   | STRUCT structure error
-      { mkmod $startpos $endpos (Pmod_structure($2)) }
+      { unclosed "struct" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3);
+        mkmod $startpos $endpos (Pmod_structure($2)) }
   | FUNCTOR LPAREN UIDENT COLON module_type RPAREN MINUSGREATER module_expr
       { mkmod $startpos $endpos (Pmod_functor(mkrhs $startpos($3) $endpos($3) $3, $5, $8)) }
   | module_expr LPAREN module_expr RPAREN
       { mkmod $startpos $endpos (Pmod_apply($1, $3)) }
   | module_expr LPAREN module_expr error
-      { mkmod $startpos $endpos (Pmod_apply($1, $3)) }
+      { unclosed "(" $startpos($2) $endpos($2)  ")" $startpos($4) $endpos($4);
+        mkmod $startpos $endpos (Pmod_apply($1, $3)) }
   | LPAREN module_expr COLON module_type RPAREN
       { mkmod $startpos $endpos (Pmod_constraint($2, $4)) }
   | LPAREN module_expr COLON module_type error
-      { mkmod $startpos $endpos (Pmod_constraint($2, $4)) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5);
+        mkmod $startpos $endpos (Pmod_constraint($2, $4)) }
   | LPAREN module_expr RPAREN
       { $2 }
   | LPAREN module_expr error
-      { $2 }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3);
+        $2 }
   | LPAREN VAL expr RPAREN
       { mkmod $startpos $endpos (Pmod_unpack $3) }
   | LPAREN VAL expr COLON package_type RPAREN
@@ -554,11 +563,14 @@ module_expr:
       { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_constraint($3, None, Some(ghtyp $startpos $endpos (Ptyp_package $5)))))) }
   | LPAREN VAL expr COLON error
-      { mkmod $startpos $endpos (Pmod_unpack $3) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5);
+        mkmod $startpos $endpos (Pmod_unpack $3) }
   | LPAREN VAL expr COLONGREATER error
-      { mkmod $startpos $endpos (Pmod_unpack $3) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5);
+        mkmod $startpos $endpos (Pmod_unpack $3) }
   | LPAREN VAL expr error
-      { mkmod $startpos $endpos (Pmod_unpack $3) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($4) $endpos($4);
+        mkmod $startpos $endpos (Pmod_unpack $3) }
 ;
 structure:
     structure_tail                              { $1 }
@@ -646,7 +658,8 @@ module_type:
   | SIG signature END
       { mkmty $startpos $endpos (Pmty_signature(List.rev $2)) }
   | SIG signature error
-      { mkmty $startpos $endpos (Pmty_signature(List.rev $2)) }
+      { unclosed "sig" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3);
+        mkmty $startpos $endpos (Pmty_signature(List.rev $2)) }
   | FUNCTOR LPAREN UIDENT COLON module_type RPAREN MINUSGREATER module_type
       %prec below_WITH
       { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos($3) $endpos($3) $3, $5, $8)) }
@@ -657,7 +670,8 @@ module_type:
   | LPAREN module_type RPAREN
       { $2 }
   | LPAREN module_type error
-      { $2 }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3);
+        $2 }
 ;
 signature:
     (* empty *)                                 { [] }
@@ -762,15 +776,18 @@ class_simple_expr:
   | OBJECT class_structure END
       { mkclass $startpos $endpos (Pcl_structure($2)) }
   | OBJECT class_structure error
-      { unclosed "object" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3) }
+      { unclosed "object" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3);
+        mkclass $startpos $endpos (Pcl_structure($2)) }
   | LPAREN class_expr COLON class_type RPAREN
       { mkclass $startpos $endpos (Pcl_constraint($2, $4)) }
   | LPAREN class_expr COLON class_type error
-      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5);
+        mkclass $startpos $endpos (Pcl_constraint($2, $4)) }
   | LPAREN class_expr RPAREN
       { $2 }
   | LPAREN class_expr error
-      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3);
+        $2 }
 ;
 class_structure:
     class_self_pattern class_fields
@@ -824,7 +841,7 @@ value:
       { mkrhs $startpos($3) $endpos($3) $3, $2, $1, $5 }
   | override_flag mutable_flag label type_constraint EQUAL seq_expr
       { mkrhs $startpos($3) $endpos($3) $3, $2, $1,
-        (let (t, t') = $4 in ghexp $startpos $endpos (Pexp_constraint($6, t, t'))) }
+        (check_constraint (ghexp $startpos $endpos) $4 $6) }
 ;
 virtual_method:
     METHOD override_flag PRIVATE VIRTUAL label COLON poly_type
@@ -867,7 +884,8 @@ class_signature:
   | OBJECT class_sig_body END
       { mkcty $startpos $endpos (Pcty_signature $2) }
   | OBJECT class_sig_body error
-      { unclosed "object" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3) }
+      { unclosed "object" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3);
+        mkcty $startpos $endpos (Pcty_signature $2) }
 ;
 class_sig_body:
     class_self_type class_sig_fields
@@ -1018,13 +1036,15 @@ expr:
   | TRY seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try($2, List.rev $5)) }
   | TRY seq_expr WITH error
-      { mkexp $startpos $endpos (Pexp_try($2, [])) }
+      { syntax_error();
+        mkexp $startpos $endpos (Pexp_try($2, [])) }
   | TRY_LWT seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) }
   | TRY_LWT seq_expr FINALLY_LWT seq_expr
       { Fake.app (Fake.app Fake.Lwt.finally' $2) $4 }
   | TRY_LWT seq_expr WITH error
-      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, [])) }
+      { syntax_error();
+        mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, [])) }
   | TRY_LWT seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
       { let expr = mkexp $startpos $endpos
           (Pexp_try (Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) in
@@ -1120,7 +1140,8 @@ expr:
   | OBJECT class_structure END
       { mkexp $startpos $endpos  (Pexp_object($2)) }
   | OBJECT class_structure error
-      { unclosed "object" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3) }
+      { unclosed "object" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3);
+        mkexp $startpos $endpos  (Pexp_object($2)) }
 ;
 simple_expr:
     val_longident
@@ -1134,51 +1155,60 @@ simple_expr:
   | LPAREN seq_expr RPAREN
       { reloc_exp $startpos $endpos  $2 }
   | LPAREN seq_expr error
-      { reloc_exp $startpos $endpos  $2 }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3);
+        reloc_exp $startpos $endpos  $2 }
   | BEGIN seq_expr END
       { reloc_exp $startpos $endpos  $2 }
   | BEGIN END
       { mkexp $startpos $endpos  (Pexp_construct (mkloc (Lident "()") (symbol_rloc $startpos $endpos), None, false)) }
   | BEGIN seq_expr error
-      { reloc_exp $startpos $endpos  $2 }
+      { unclosed "begin" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3);
+        reloc_exp $startpos $endpos  $2 }
   | LPAREN seq_expr type_constraint RPAREN
-      { let (t, t') = $3 in mkexp $startpos $endpos (Pexp_constraint($2, t, t')) }
+      { check_constraint (mkexp $startpos $endpos) $3 $2 }
   | simple_expr DOT label_longident
       { mkexp $startpos $endpos (Pexp_field($1, mkrhs $startpos($3) $endpos($3) $3)) }
   | mod_longident DOT LPAREN seq_expr RPAREN
       { mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, $4)) }
   | mod_longident DOT LPAREN seq_expr error
-      { mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, $4)) }
+      { unclosed "(" $startpos($3) $endpos($3) ")" $startpos($5) $endpos($5);
+        mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, $4)) }
   | simple_expr DOT LPAREN seq_expr RPAREN
       { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "Array" "get")),
                          ["",$1; "",$4])) }
   | simple_expr DOT LPAREN seq_expr error
-      { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "Array" "get")),
+      { unclosed "(" $startpos($3) $endpos($3) ")" $startpos($5) $endpos($5);
+        mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "Array" "get")),
                          ["",$1; "",$4])) }
   | simple_expr DOT LBRACKET seq_expr RBRACKET
       { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "String" "get")),
                          ["",$1; "",$4])) }
   | simple_expr DOT LBRACKET seq_expr error
-      { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "String" "get")),
+      { unclosed "[" $startpos($3) $endpos($3) "]" $startpos($5) $endpos($5);
+        mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "String" "get")),
                          ["",$1; "",$4])) }
   | simple_expr DOT LBRACE expr RBRACE
       { bigarray_get $startpos $endpos $1 $4 }
   | simple_expr DOT LBRACE expr error
-      { bigarray_get $startpos $endpos $1 $4 }
+      { unclosed "{" $startpos($3) $endpos($3) "}" $startpos($5) $endpos($5);
+        bigarray_get $startpos $endpos $1 $4 }
   | LBRACE record_expr RBRACE
       { let (exten, fields) = $2 in mkexp $startpos $endpos (Pexp_record(fields, exten)) }
   | LBRACE record_expr error
-      { let (exten, fields) = $2 in mkexp $startpos $endpos (Pexp_record(fields, exten)) }
+      { unclosed "{" $startpos($1) $endpos($1) "}" $startpos($3) $endpos($3);
+        let (exten, fields) = $2 in mkexp $startpos $endpos (Pexp_record(fields, exten)) }
   | LBRACKETBAR expr_semi_list opt_semi BARRBRACKET
       { mkexp $startpos $endpos (Pexp_array(List.rev $2)) }
   | LBRACKETBAR expr_semi_list opt_semi error
-      { mkexp $startpos $endpos (Pexp_array(List.rev $2)) }
+      { unclosed "[|" $startpos($1) $endpos($1) "|]" $startpos($4) $endpos($4);
+        mkexp $startpos $endpos (Pexp_array(List.rev $2)) }
   | LBRACKETBAR BARRBRACKET
       { mkexp $startpos $endpos (Pexp_array []) }
   | LBRACKET expr_semi_list opt_semi RBRACKET
       { reloc_exp $startpos $endpos  (mktailexp $startpos($1) $endpos($1)  (List.rev $2)) }
   | LBRACKET expr_semi_list opt_semi error
-      { reloc_exp $startpos $endpos  (mktailexp $startpos($1) $endpos($1)  (List.rev $2)) }
+      { unclosed "[" $startpos($1) $endpos($1) "]" $startpos($4) $endpos($4);
+        reloc_exp $startpos $endpos  (mktailexp $startpos($1) $endpos($1)  (List.rev $2)) }
   | PREFIXOP simple_expr
       { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) $1, ["",$2])) }
   | BANG simple_expr
@@ -1250,7 +1280,7 @@ fun_binding:
     strict_binding
       { $1 }
   | type_constraint EQUAL seq_expr
-      { let (t, t') = $1 in ghexp $startpos $endpos (Pexp_constraint($3, t, t')) }
+      { check_constraint (ghexp $startpos $endpos) $1 $3 }
 ;
 strict_binding:
     EQUAL seq_expr
@@ -1308,8 +1338,8 @@ type_constraint:
     COLON core_type                             { (Some $2, None) }
   | COLON core_type COLONGREATER core_type      { (Some $2, Some $4) }
   | COLONGREATER core_type                      { (None, Some $2) }
-  | COLON error                                 { syntax_error() }
-  | COLONGREATER error                          { syntax_error() }
+  | COLON error                                 { syntax_error(); (None, None) }
+  | COLONGREATER error                          { syntax_error(); (None, None) }
 ;
 
 (* Patterns *)
@@ -1352,31 +1382,37 @@ simple_pattern:
   | LBRACE lbl_pattern_list RBRACE
       { let (fields, closed) = $2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
   | LBRACE lbl_pattern_list error
-      { let (fields, closed) = $2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
+      { unclosed "{" $startpos($1) $endpos($1) "}" $startpos($3) $endpos($3);
+        let (fields, closed) = $2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
   | LBRACKET pattern_semi_list opt_semi RBRACKET
       { reloc_pat $startpos($1) $endpos($1)  (mktailpat $startpos($1) $endpos($1)  (List.rev $2)) }
   | LBRACKET pattern_semi_list opt_semi error
-      { reloc_pat $startpos($1) $endpos($1)  (mktailpat $startpos($1) $endpos($1)  (List.rev $2)) }
+      { unclosed "[" $startpos($1) $endpos($1) "]" $startpos($4) $endpos($4);
+        reloc_pat $startpos($1) $endpos($1)  (mktailpat $startpos($1) $endpos($1)  (List.rev $2)) }
   | LBRACKETBAR pattern_semi_list opt_semi BARRBRACKET
       { mkpat $startpos $endpos (Ppat_array(List.rev $2)) }
   | LBRACKETBAR BARRBRACKET
       { mkpat $startpos $endpos (Ppat_array []) }
   | LBRACKETBAR pattern_semi_list opt_semi error
-      { mkpat $startpos $endpos (Ppat_array(List.rev $2)) }
+      { unclosed "[|" $startpos($1) $endpos($1) "|]" $startpos($4) $endpos($4);
+        mkpat $startpos $endpos (Ppat_array(List.rev $2)) }
   | LPAREN pattern RPAREN
       { reloc_pat $startpos($1) $endpos($1)  $2 }
   | LPAREN pattern error
-      { reloc_pat $startpos($1) $endpos($1)  $2 }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3);
+        reloc_pat $startpos($1) $endpos($1)  $2 }
   | LPAREN pattern COLON core_type RPAREN
       { mkpat $startpos $endpos (Ppat_constraint($2, $4)) }
   | LPAREN pattern COLON core_type error
-      { mkpat $startpos $endpos (Ppat_constraint($2, $4)) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5);
+        mkpat $startpos $endpos (Ppat_constraint($2, $4)) }
   | LPAREN MODULE UIDENT RPAREN
       { mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)) }
   | LPAREN MODULE UIDENT COLON package_type RPAREN
       { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),ghtyp $startpos $endpos (Ptyp_package $5))) }
   | LPAREN MODULE UIDENT COLON package_type error
-      { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),ghtyp $startpos $endpos (Ptyp_package $5))) }
+      { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5);
+        mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),ghtyp $startpos $endpos (Ptyp_package $5))) }
 ;
 
 pattern_comma_list:

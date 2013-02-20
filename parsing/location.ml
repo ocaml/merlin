@@ -274,6 +274,11 @@ exception Warning of t * string
 
 let warnings : exn list ref option ref = ref None
 
+let raise_warning exn =
+  match !warnings with
+  | None -> raise exn
+  | Some l -> l := exn :: !l
+
 let prerr_warning loc w =
   match !warnings with
   | None -> print_warning loc err_formatter w
