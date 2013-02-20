@@ -128,9 +128,9 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
   (set var (make-overlay start end))
   (overlay-put (symbol-value var) 'face face)
   (if timer
-      (run-at-time timer nil '(lambda ()
-                                (delete-overlay (symbol-value var))
-                                (set var nil)))))
+      (run-at-time timer nil `(lambda ()
+                                (delete-overlay ,var)
+                                (set ,var nil)))))
       
 ;; PROCESS MANAGEMENT
 (defun merlin-make-buffer-name ()
