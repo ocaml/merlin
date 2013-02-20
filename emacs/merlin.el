@@ -103,10 +103,10 @@ If the timer is zero or negative, nothing is done."
 
 (defun bounds-of-ocaml-atom-at-point ()
   "Return the start and end points of an ocaml atom near point. An ocaml atom
-   is any string containing [a-zA-Z`.]"
+   is any string containing [a-z_0-9A-Z`.]"
   (save-excursion
-    (skip-chars-backward "[a-zA-Z`.]")
-    (if (looking-at "[a-zA-Z`.]+")
+    (skip-chars-backward "[a-z_0-9A-Z`.]")
+    (if (looking-at "[a-z_0-9A-Z`.]+")
         (cons (point) (match-end 0)) ; returns the bounds
       nil))) ; no atom at point
 
