@@ -260,28 +260,28 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 (defun merlin-tell-till-end-of-phrase ()
   "Tell merlin the buffer until the end of phrase.
 It proceeds by telling (with the end mode) each line until it returns true or until we are at the end of the buffer"
-  (save-excursion
-    (end-of-line)
-    (let ((temp-point (point))
+  (let ((temp-point (point))
         (end-p nil))
-      (forward-line 1)
-      (while (and (not end-p) (< (point) (point-max)))
-        (if (equal ;; this is not tautological since value is never nil
-             (merlin-is-return ;; tell end returned true => we are done
-              (merlin-tell-piece "end" temp-point (point)))
-             t)
-            (progn
-              (merlin-debug "OK BUDDY")
-              (setq end-p t))
+    (forward-line 1)
+    (while (and (not end-p) (< (point) (point-max)))
+      (if (equal ;; this is not tautological since value is never nil
+           (merlin-is-return ;; tell end returned true => we are done
+            (merlin-tell-piece "end" temp-point (point)))
+           t)
           (progn
+            (merlin-debug "OK BUDDY")
+            (setq end-p t))
+        (progn
             (setq temp-point (point))
             (forward-line 1)
             (end-of-line))))
-          ;; End of buffer
-          (if (not end-p)
-              (merlin-send-command "tell" '("end" nil)))
-          (merlin-get-position))))
-      
+    ;; End of buffer
+    (if (not end-p)
+        (progn
+          (merlin-send-command "tell" '("end" nil))
+          (merlin-get-position))
+      (merlin-retract-to (merlin-get-position)))))
+
       
       
   
@@ -310,19 +310,6 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   (overlay-put merlin-error-overlay 'face 'next-error)
   (run-at-time "1 sec" nil 'merlin-remove-error-overlay)
   )
-;; (defun merlin-handle-errors (errors)
-;;   "Goes to the location of the first error and adds an overlay"
-;;   (let ((message (cdr (assoc 'message errors)))
-;; 	(beg (cdr (assoc 'start errors)))
-;; 	(end (cdr (assoc 'end errors)))
-;; 	(type (cdr (assoc 'type errors))))
-;;     (goto-char (merlin-make-point beg))
-;;     ;; make the idle thread shut up
-;;     (setq merlin-idle-point (point))
-;;     (merlin-error-highlight (merlin-make-point beg)
-;; 		      (merlin-make-point end))
-;;     (message "%s: %s" type message)
-;; ))
 
 (defun merlin-delete-error-overlays ()
   "Removes error overlays"
@@ -330,8 +317,6 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   (setq merlin-pending-errors-overlay nil))
 
 (defun merlin-handle-errors (errors)
-;  (setq merlin-error-overlay (make-overlay start end))
-;  (overlay-put merlin-error-overlay 'face 'next-error)
   (merlin-delete-error-overlays)
   (setq merlin-pending-errors (append errors nil))
   (setq merlin-pending-errors-overlay 
@@ -366,43 +351,44 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   (setq merlin-overlay (make-overlay (point-min) merlin-lock-point))
   (overlay-put merlin-overlay 'face 'merlin-locked-face))
 
-(defun merlin-update-point (point view-errors-p)
-  "Moves the merlin point to around the given the given point. It proceeds as follows:
-- It retracts merlin from the point given in argument to get it to the last phrase ending.
-- It tells merlin the contents between the last phrase known to merlin and the argument
+(defun merlin-update-point (view-errors-p)
+  "Moves the merlin point to around the given the current
+point. It proceeds as follows: 
+
+- It retracts merlin from the point given in argument to get it
+to the last phrase ending.
+
+- It tells merlin the contents between the last phrase known to
+merlin and the argument
+
 - It continues until it finds the end of a phrase.
 
 The parameter `view-errors-p' controls whether we should care for errors"
   (merlin-delete-error-overlays)
-  (setq merlin-lock-point (merlin-retract-to point))
-  (merlin-tell-piece-split "struct" merlin-lock-point point)
-  (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
-  (if (not (merlin-view-errors view-errors-p))
-      (let ((msg (current-message)))
-        (setq merlin-lock-point (merlin-seek merlin-lock-point))
-        (message msg)))
-  (merlin-update-overlay)
+  (save-excursion
+    (end-of-line)
+    (setq merlin-lock-point (merlin-retract-to (point)))
+    (merlin-tell-piece-split "struct" merlin-lock-point (point))
+    (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
+    (if (not (merlin-view-errors view-errors-p))
+        (let ((msg (current-message)))
+          (setq merlin-lock-point (merlin-seek merlin-lock-point))
+          (message msg)))
+    (merlin-update-overlay))
 )    
   
-(defun merlin-point (view-errors-p)
-  "Tell merlin the lines up to the current point"
-  (interactive)
-  (merlin-update-point (point) view-errors-p)
-)
 (defun merlin-check-synchronize (&optional clean)
   "If merlin point is before the end of line send everything up to the end of line"
   (interactive)
   (let ((p merlin-lock-point))
     (if (> (point-at-eol) merlin-lock-point)
-        (merlin-update-point (point-at-eol) nil))
-    (if (and t (< merlin-lock-point p))
-        (merlin-update-point p nil))))
+        (merlin-update-point nil))))
 
 (defun merlin-edit (start end length)
   (if (< start merlin-lock-point)
       (progn
-        (message "muhaha")
-        (merlin-update-point start nil))))
+        (message "point: %d start! %d" (point) start)
+        (merlin-update-point nil))))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
@@ -530,7 +516,7 @@ overlay"
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
   (merlin-check-synchronize t)
-  (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) &optional t))
+  (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) t))
 
 (defun merlin-show-type-of-point (arg) 
   "Show the type of the identifier under the point. If it is called with a prefix argument, then show the type of the region."
@@ -591,11 +577,11 @@ overlay"
   (interactive)
   (newline)
   (if merlin-continuous-feed
-      (merlin-point nil))) 
+      (merlin-update-ppoint nil)))
 (defun merlin-to-point ()
   "Updates the merlin to the current point, reporting error"
   (interactive)
-  (merlin-point t))
+  (merlin-update-point t))
 
 ;; Mode definition
 (defvar merlin-mode-map
