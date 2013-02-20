@@ -59,6 +59,7 @@
 (defvar merlin-prefix nil "Merlin prefix")
 (defvar merlin-name nil "Merlin name")
 (defvar merlin-error-overlay nil "Merlin overlay used for errors")
+(defvar merlin-type-overlay nil "Merlin overlay used for type-checking")
 (defvar merlin-overlay nil "Merlin overlay used for the lock zone")
 (defvar merlin-buffer nil "Buffer for merlin input")
 (defvar merlin-ready nil "Is reception done?")
@@ -414,6 +415,25 @@ with the current position where merlin stops. It updates the merlin state by doi
 (defun merlin-trim (s)
   (replace-regexp-in-string "\n\\'" "" s))
 
+(defun merlin-type-of-expression-node ()
+  "Get the type of the node under point."
+  (let ((ret 
+         (merlin-is-return 
+          (merlin-send-command "type" (list "at" (merlin-unmake-point (point)))))))
+    (if ret
+        (let ((start (merlin-make-point (cdr (assoc 'start ret))))
+              (end (merlin-make-point (cdr (assoc 'end ret))))
+              (type (cdr (assoc 'type ret))))
+          (message "%s, %s, %s" start end type)
+          (if merlin-type-overlay (delete-overlay merlin-type-overlay))
+          (setq merlin-type-overlay (make-overlay start end))
+          (overlay-put merlin-type-overlay 'face 'next-error)
+          type))))
+          
+
+        
+    
+
 (defun merlin-type-of-expression-local (exp)
   "Get the type of an expression inside the local context"
   (merlin-is-return (merlin-send-command "type" 
@@ -429,6 +449,7 @@ with the current position where merlin stops. It updates the merlin state by doi
 and if it fails, it uses `merlin-type-of-expression-global'"
   (or
    (merlin-type-of-expression-local exp)
+   (merlin-type-of-expression-node)
    (merlin-type-of-expression-global exp)))
 (defun merlin-show-type (name typ)
   "Show the given type. If typ is nil, nothing is done"
