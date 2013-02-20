@@ -113,12 +113,6 @@ If the timer is zero or negative, nothing is done."
 (put 'ocamlatom 'bounds-of-thing-at-point
      'bounds-of-ocaml-atom-at-point)
 
-(defun merlin-ident-under-point ()
-  "Returns the ident under point in the current buffer"
-  (let ((x (bounds-of-thing-at-point 'ocamlatom)))
-    (if x
-	(buffer-substring-no-properties (car x) (cdr x))
-      nil)))
 ; overlay management
 (defun merlin-create-overlay (var start end face timer)
   "Creates an overlay in the current buffer starting at `start', ending at `end',
@@ -472,57 +466,71 @@ The parameter `view-errors-p' controls whether we should care for errors"
               (end (merlin-make-point (cdr (assoc 'end ret))))
               (type (cdr (assoc 'type ret))))
           (merlin-create-overlay 'merlin-type-overlay start end 'next-error "1 sec")
-          type))))
+          (cons (cons start end) type)))))
           
 
         
     
 
-(defun merlin-type-of-expression-local (exp)
+(defun merlin-type-of-expression-local (bounds exp)
   "Get the type of an expression inside the local context"
-  (merlin-is-return (merlin-send-command "type" 
-					 (list "expression" exp "at" (merlin-unmake-point (point))))))
+  (cons 
+   bounds
+   (merlin-is-return 
+    (merlin-send-command "type"
+                         (list "expression" exp "at" 
+                               (merlin-unmake-point (point)))))))
 
-(defun merlin-type-of-expression-global (exp)
+(defun merlin-type-of-expression-global (bounds exp)
   "Get the type of an expression globally"
-  (merlin-is-return (merlin-send-command "type" (list "expression" exp))))
+  (cons
+   bounds
+   (merlin-is-return (merlin-send-command "type" (list "expression" exp)))))
 
 
-(defun merlin-type-of-expression (exp)
-  "Get the type of an expression by using `merlin-type-of-expression-local',
-and if it fails, it uses `merlin-type-of-expression-global'"
+(defun merlin-type-of-expression (bounds exp)
+  "Get the type of `exp' whose bounds in the buffer is `bounds'. It uses three techniques to do so:
+- type at (node)
+- type-expression at (local)
+- type expression (global)"
   (or
    (merlin-type-of-expression-node)
-   (merlin-type-of-expression-local exp)
-   (merlin-type-of-expression-global exp)))
-(defun merlin-show-type (name typ)
-  "Show the given type. If typ is nil, nothing is done"
-  (if typ
-      (if (not (merlin-is-long typ))
-	  (message "%s : %s" name typ)
-	(progn
-	  (display-buffer merlin-type-buffer)
-	  (with-current-buffer merlin-type-buffer
-	    (erase-buffer)
-	    (insert typ))))))
+   (merlin-type-of-expression-local bounds exp)
+   (merlin-type-of-expression-global bounds exp)))
+
+(defun merlin-show-type (bounds &optional quiet)
+  "This functions shows the type of the expression inside
+`bounds' in the current buffer. If `quiet' is non nil then an
+overlay is displayed and module types are displayed in another
+buffer. Otherwise only value type are displayed, and without
+overlay"
+  (let ((result (merlin-type-of-expression bounds
+                                        (buffer-substring-no-properties 
+                                         (car bounds) (cdr bounds)))))
+    (if (not (merlin-is-long (cdr result)))
+        (progn
+          (if (not quiet)
+              (merlin-create-overlay 'merlin-type-overlay 
+                                     (caar result) (cdar result) 
+                                     'next-error "1 sec"))
+          (message "%s" (cdr result)))
+      (if (not quiet)
+          (progn
+            (display-buffer merlin-type-buffer)
+              (with-current-buffer merlin-type-buffer
+                (erase-buffer)
+                (insert (cdr result))))))))
+
 
 (defun merlin-show-type-of-region ()
   "Show the type of the region"
   (interactive)
-  (let ((exp (buffer-substring-no-properties 
-	       (region-beginning) 
-	       (region-end))))
-    (if exp
-	(merlin-show-type exp (merlin-type-of-expression exp)))))
+  (merlin-show-type ((region-beginning) . (region-end))))
 
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
   (merlin-check-synchronize t)
-  (let ((ident (merlin-ident-under-point)))
-    (if ident
-	(let ((typ (merlin-type-of-expression ident)))
-	  (if (and typ (not (merlin-is-long typ)))
-	      (message "%s : %s" ident typ))))))
+  (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) &optional t))
 
 (defun merlin-show-type-of-point (arg) 
   "Show the type of the identifier under the point. If it is called with a prefix argument, then show the type of the region."
@@ -530,9 +538,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
   (interactive "p")
   (if (> arg 1)
       (merlin-show-type-of-region)
-    (let ((ident (merlin-ident-under-point)))
-      (if ident
-	  (merlin-show-type ident (merlin-type-of-expression ident))))))
+    (merlin-show-type (bounds-of-thing-at-point 'ocamlatom))))
 
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
