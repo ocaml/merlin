@@ -225,12 +225,24 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 
 (defun merlin-tell-string (mode string)
   "Tell a string to merlin using `mode'"
-  (merlin-send-command "tell" (list "struct" string)))
+  (merlin-send-command "tell" (list mode string)))
 
 (defun merlin-flush-tell ()
   "Flush merlin teller"
   (merlin-send-command "tell" '("struct" nil)))
 
+(defun merlin-get-position ()
+  "Get the current position of merlin"
+  (merlin-make-point
+   (merlin-is-return
+    (merlin-send-command "seek" '("position")))))
+
+(defun merlin-seek (point)
+  "Seeks merlin's point to `point'"
+  (let ((data 
+	 (merlin-is-return (merlin-send-command "seek" (list "position" (merlin-unmake-point point))))))
+    (merlin-make-point data)))
+    
 (defun merlin-tell-piece (mode start end)
   (merlin-tell-string mode (buffer-substring start end)))
 
@@ -250,12 +262,34 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 	 (setq temp (point))
 	 (forward-line 10))
        (merlin-tell-piece mode temp end))))
-(defun merlin-seek (point)
-  "Seeks merlin's point to `point'"
-  (let ((data 
-	 (merlin-is-return (merlin-send-command "seek" (list "position" (merlin-unmake-point point))))))
-    (merlin-make-point data)))
-    
+
+(defun merlin-tell-till-end-of-phrase ()
+  "Tell merlin the buffer until the end of phrase.
+It proceeds by telling (with the end mode) each line until it returns true or until we are at the end of the buffer"
+  (save-excursion
+    (end-of-line)
+    (let ((temp-point (point))
+        (end-p nil))
+      (forward-line 1)
+      (while (and (not end-p) (< (point) (point-max)))
+        (if (equal ;; this is not tautological since value is never nil
+             (merlin-is-return ;; tell end returned true => we are done
+              (merlin-tell-piece "end" temp-point (point)))
+             t)
+            (progn
+              (merlin-debug "OK BUDDY")
+              (setq end-p t))
+          (progn
+            (setq temp-point (point))
+            (forward-line 1)
+            (end-of-line))))
+          ;; End of buffer
+          (if (not end-p)
+              (merlin-send-command "tell" '("end" nil)))
+          (merlin-get-position))))
+      
+      
+      
   
 
 
@@ -339,19 +373,20 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
   (overlay-put merlin-overlay 'face 'merlin-locked-face))
 
 (defun merlin-update-point (point view-errors-p)
-  "Moves the merlin point to the given point. This functions compares its arguments
-with the current position where merlin stops. It updates the merlin state by doing two things:
-- either retract merlin's knowledge if `point' < `merlin-lock-point'
-- or send the region between `merlin-lock-point' and `point'"
+  "Moves the merlin point to around the given the given point. It proceeds as follows:
+- It retracts merlin from the point given in argument to get it to the last phrase ending.
+- It tells merlin the contents between the last phrase known to merlin and the argument
+- It continues until it finds the end of a phrase.
+
+The parameter `view-errors-p' controls whether we should care for errors"
   (merlin-delete-error-overlays)
   (setq merlin-lock-point (merlin-retract-to point))
   (merlin-tell-piece-split "struct" merlin-lock-point point)
-  (merlin-flush-tell)
-  (if (merlin-view-errors view-errors-p)
-      (setq merlin-lock-point point)
-    (let ((msg (current-message)))
-      (setq merlin-lock-point (merlin-seek merlin-lock-point))
-      (message msg)))
+  (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
+  (if (not (merlin-view-errors view-errors-p))
+      (let ((msg (current-message)))
+        (setq merlin-lock-point (merlin-seek merlin-lock-point))
+        (message msg)))
   (merlin-update-overlay)
 )    
   
