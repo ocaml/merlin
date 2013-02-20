@@ -119,7 +119,19 @@ If the timer is zero or negative, nothing is done."
     (if x
 	(buffer-substring-no-properties (car x) (cdr x))
       nil)))
-
+; overlay management
+(defun merlin-create-overlay (var start end face timer)
+  "Creates an overlay in the current buffer starting at `start', ending at `end',
+using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to disappear after `timer' seconds
+`timer' is a string that can be understood by `run-at-time' (eg. \"1 sec\")"
+  (if (symbol-value var) (delete-overlay (symbol-value var)))
+  (set var (make-overlay start end))
+  (overlay-put (symbol-value var) 'face face)
+  (if timer
+      (run-at-time timer nil '(lambda ()
+                                (delete-overlay (symbol-value var))
+                                (set var nil)))))
+      
 ;; PROCESS MANAGEMENT
 (defun merlin-make-buffer-name ()
   "Returns the buffer name associated to the current buffer, for the merlin process"
@@ -424,10 +436,7 @@ with the current position where merlin stops. It updates the merlin state by doi
         (let ((start (merlin-make-point (cdr (assoc 'start ret))))
               (end (merlin-make-point (cdr (assoc 'end ret))))
               (type (cdr (assoc 'type ret))))
-          (message "%s, %s, %s" start end type)
-          (if merlin-type-overlay (delete-overlay merlin-type-overlay))
-          (setq merlin-type-overlay (make-overlay start end))
-          (overlay-put merlin-type-overlay 'face 'next-error)
+          (merlin-create-overlay 'merlin-type-overlay start end 'next-error "1 sec")
           type))))
           
 
@@ -574,6 +583,7 @@ and if it fails, it uses `merlin-type-of-expression-global'"
     (set (make-local-variable 'merlin-ready) nil)
     (set (make-local-variable 'merlin-pending-errors) nil)
     (set (make-local-variable 'merlin-pending-errors-overlay) nil)
+    (set (make-local-variable 'merlin-type-overlay) nil)
     (set (make-local-variable 'merlin-overlay) nil)
     (set (make-local-variable 'merlin-prefix) nil)
     (set (make-local-variable 'merlin-error-prefix) nil)
