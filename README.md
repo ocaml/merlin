@@ -58,6 +58,19 @@ Files:
                     -- set g:syntastic_ocaml_checkers = ['merlin']  
                     --  or g:syntastic_omlet_checkers = ['merlin']
 
+Alternatively you can install vim support using [Vundle](https://github.com/gmarik/vundle).
+Add the following to your .vimrc
+
+    Bundle 'def-lkb/merlin', {'rtp' : 'vim/'}
+
+Integration with [neocomplcache](https://github.com/Shougo/neocomplcache) 
+for automatic completion can be enabled with:
+
+    if !exists('g:neocomplcache_force_omni_patterns')
+      let g:neocomplcache_force_omni_patterns = {}
+    endif
+    let g:neocomplcache_force_omni_patterns.ocaml = '[^. *\t]\.\w*\|\h\w*|#'
+
 Features
 --------
 
