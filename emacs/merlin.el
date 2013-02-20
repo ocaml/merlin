@@ -492,8 +492,8 @@ The parameter `view-errors-p' controls whether we should care for errors"
   "Get the type of an expression by using `merlin-type-of-expression-local',
 and if it fails, it uses `merlin-type-of-expression-global'"
   (or
-   (merlin-type-of-expression-local exp)
    (merlin-type-of-expression-node)
+   (merlin-type-of-expression-local exp)
    (merlin-type-of-expression-global exp)))
 (defun merlin-show-type (name typ)
   "Show the given type. If typ is nil, nothing is done"
