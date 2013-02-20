@@ -395,6 +395,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (mapcar `(lambda (c) 
              (if merlin-completion-types
                  (popup-make-item (concat prefix (cdr (assoc 'name c)))
+                                  :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
                                   :summary (cdr (assoc 'desc c)))
                (cdr (assoc 'name c))))
 	  (append l nil)))
