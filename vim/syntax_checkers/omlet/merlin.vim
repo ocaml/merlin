@@ -3,7 +3,7 @@
 " :let g:syntastic_omlet_checkers=['merlin']
 
 function! SyntaxCheckers_omlet_merlin_IsAvailable()
-    return executable('omletmerlin')
+    return executable('ocamlmerlin')
 endfunction
 
 function! SyntaxCheckers_omlet_merlin_GetLocList()
