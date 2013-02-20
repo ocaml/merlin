@@ -163,19 +163,43 @@ struct
         ilds
     | Tstr_modtype (_,l,_)
     | Tstr_exn_rebind (_,l,_,_) -> [singleton l.Location.loc env]
-    | Tstr_open _ -> []
-    | Tstr_class lst ->
-      List.map
-        (fun (cd, _, _) ->
-          (* FIXME: use [ci_id_object] ? *)
-          singleton ~kind:(Class (cd.ci_id_class, cd.ci_decl)) cd.ci_loc env)
-        lst
+    | Tstr_open _               -> []
+    | Tstr_class lst            -> List.map (class_declaration ~env) lst
     | Tstr_class_type lst ->
       List.map
         (fun (id,l,{ ci_type_decl }) ->
           singleton ~kind:(ClassType (id, ci_type_decl)) l.Location.loc env)
         lst
     | Tstr_include (m,_) -> [module_expr m]
+
+  and class_declaration ~env (cd, _, _virtual_flag) =
+    let kind = Class (cd.ci_id_class, cd.ci_decl) in (* FIXME: use [ci_id_object] ? *)
+    match cd.ci_expr.cl_desc with
+    | Tcl_structure class_struct ->
+      let children = lazy (class_structure ~env class_struct) in
+      T (cd.ci_loc, env, kind, children)
+    (* TODO: extend *)
+    | _ -> singleton ~kind cd.ci_loc env
+
+  and class_structure ~env class_struct =
+    let pat = (* where is that pattern in the concret syntax? *)
+      let kind = Expr class_struct.cstr_pat.pat_type in
+      singleton ~kind class_struct.cstr_pat.pat_loc env
+    in
+    let fields = Misc.list_filter_map (class_field ~env) class_struct.cstr_fields in
+    pat :: fields
+
+  and class_field ~env { cf_desc ; cf_loc } =
+    match cf_desc with
+    | Tcf_val (_, _, _, _, kind, _)
+    | Tcf_meth (_, _, _, kind, _) ->
+      begin match kind with
+      | Tcfk_concrete e -> Some (expression e) (* FIXME: we get the type of the class
+      here, not of the method / field *)
+      | _ -> None
+      end
+    | _ -> None
+
 
   and patterns ?expr ?env pes = List.fold_left
     begin fun ls (p,e) ->
