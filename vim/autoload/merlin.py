@@ -300,12 +300,14 @@ def vim_complete_cursor(base, vimvar):
       ))
     vim.command("call add(%s, l:tmp)" % vimvar)
 
-def vim_loclist(vimvar):
+def vim_loclist(vimvar, ignore_warnings):
   vim.command("let %s = []" % vimvar)
   errors = command_report_errors()
   bufnr = vim.current.buffer.number
   nr = 0
   for error in errors:
+    if error['type'] == 'warning' and vim.eval(ignore_warnings) == 'true':
+        continue
     ty = 'w'
     if error['type'] == 'type' or error['type'] == 'parser':
       ty = 'e'

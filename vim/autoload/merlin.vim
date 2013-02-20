@@ -3,6 +3,13 @@ if !has('python')
   finish
 endif
 
+
+if !exists("g:merlin_ignore_warnings")
+    " strings are ugly, but at least I'm sure it's not converted in some weird
+    " value when passing it to python
+    let g:merlin_ignore_warnings = "false"
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import vim
 py sys.path.insert(0, vim.eval("s:current_dir"))
@@ -107,7 +114,7 @@ endfunction
 function! merlin#SyntasticGetLocList()
   let l:errors = []
   py merlin.sync_full_buffer()
-  py merlin.vim_loclist("l:errors")
+  py merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
   return l:errors 
 endfunction
 
