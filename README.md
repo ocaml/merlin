@@ -1,3 +1,5 @@
+![merlin completion in gvim](http://88.191.77.33/~rks/merlin-complete.png)
+
 Installing Merlin manually
 ==========================
 
@@ -194,3 +196,11 @@ A few syntax extensions based on type-conv are supported as well.
 Namely :
 - sexplib.syntax
 - binprot.syntax
+
+Screenshots
+===========
+
+![merlin typing in emacs](http://kiwi.iuwt.fr/~asmanur/compl.png)
+
+- [vim](http://88.191.77.33/~rks/merlin/)
+- [emacs](http://kiwi.iuwt.fr/~asmanur/blog/merlin/)
