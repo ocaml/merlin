@@ -393,31 +393,15 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
   (mapcar `(lambda (c) 
-	     (if merlin-completion-types
-		 (format "%s%s: %s" ,prefix
-			 (cdr (assoc 'name c))
-			 (cdr (assoc 'desc c)))
-	       (concat ,prefix (cdr (assoc 'name c)))))
+             (if merlin-completion-types
+                 (popup-make-item (concat prefix (cdr (assoc 'name c)))
+                                  :summary (cdr (assoc 'desc c)))
+               (cdr (assoc 'name c))))
 	  (append l nil)))
 
-(defun merlin-source-action ()
-  "Called when the user has pressed RET on a completion candidate. Remove the garbage"
-  (if merlin-completion-types
-      (save-excursion
-	(let ((endpoint (point)))
-	  (goto-char merlin-completion-point)
-	  (search-forward ":")
-	  (backward-char 1)
-	  (delete-region (point) endpoint))
-        ;; workaround for merlin-enter
-        (merlin-check-synchronize))))
-
-
-    
 (defun merlin-complete-identifier (ident)
   "Returns the formatted result of the completion of `ident'"
   (setq merlin-cache nil)
-  (merlin-extract-complete (merlin-compute-prefix ident) (elt (merlin-get-completion ident) 1))
   (setq merlin-cache
 	(merlin-extract-complete (merlin-compute-prefix ident) 
 			   (elt (merlin-get-completion ident) 1)))
@@ -432,7 +416,6 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defvar merlin-ac-source
   '((init . merlin-source-init)
     (candidates . (lambda () merlin-cache))
-    (action . merlin-source-action)
     (requires . 3)
     ))
 
