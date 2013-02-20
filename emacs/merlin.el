@@ -269,7 +269,6 @@ It proceeds by telling (with the end mode) each line until it returns true or un
             (merlin-tell-piece "end" temp-point (point)))
            t)
           (progn
-            (merlin-debug "OK BUDDY")
             (setq end-p t))
         (progn
             (setq temp-point (point))
@@ -370,10 +369,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (setq merlin-lock-point (merlin-retract-to (point)))
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
-    (if (not (merlin-view-errors view-errors-p))
-        (let ((msg (current-message)))
-          (setq merlin-lock-point (merlin-seek merlin-lock-point))
-          (message msg)))
+    (merlin-view-errors view-errors-p)
     (merlin-update-overlay))
 )    
   
