@@ -70,7 +70,8 @@ let sync_step outline tokens t =
         let rec rewind_defs defs t =
           match History.backward t with
           | Some ((_,(_,Some (Definitions []))), _) -> assert false
-          | Some ((_,(_,Some (Definitions (d::_)))), t') -> rewind_defs (d.Location.txt :: defs) t'
+          | Some ((_,(_,Some (Definitions lst))), t') -> 
+              rewind_defs (List.map (fun d -> d.Location.txt) lst @ defs) t'
           | Some ((_,(_,Some (Module_closing (d,offset)))), t') ->
               rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
           | Some ((_,(_,Some (Module_opening (loc,s,m)))), t') -> loc,s,m,defs,t'
