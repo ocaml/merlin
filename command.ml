@@ -280,6 +280,14 @@ let complete_in_env env prefix =
           Format.pp_print_string ppf " : ";
           Browse.print_constructor ppf c;
           "Constructor"
+      | `Label label_descr ->
+          let desc =
+            Types.(Tarrow ("", label_descr.lbl_res, label_descr.lbl_arg, Cok))
+          in
+          Format.pp_print_string ppf name;
+          Format.pp_print_string ppf " : ";
+          Printtyp.type_expr ppf { Types. level = 0 ; id = 0 ; desc } ;
+          "Label"
       | `Mod m   ->
           (if exact then
              match mod_smallerthan 200 m with
@@ -302,27 +310,48 @@ let complete_in_env env prefix =
     (* Hack to prevent extensions namespace to leak *)
     let valid name = name <> "_" && valid name in
     let compl = [] in
-    let compl = Env.fold_values
-      (fun name path v compl ->
-         if valid name then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl else compl)
-      path env compl
-    in
-    let compl = Env.fold_constructors
-      (fun name path v compl ->
-         if valid name then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl else compl)
-      path env compl
-    in
-    let compl = Env.fold_types
-      (fun name path v compl ->
-         if valid name then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl else compl)
-      path env compl
-    in
-    let compl = Env.fold_modules
-      (fun name path v compl ->
-         if valid name then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl else compl)
-      path env compl
-    in
-    compl
+    try
+      let compl = Env.fold_values
+        (fun name path v compl ->
+          if valid name then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl else compl)
+        path env compl
+      in
+      let compl = Env.fold_constructors
+        (fun name path v compl ->
+          if valid name then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl else compl)
+        path env compl
+      in
+      let compl = Env.fold_types
+        (fun name path v compl ->
+          if valid name then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl else compl)
+        path env compl
+      in
+      let compl = Env.fold_modules
+        (fun name path v compl ->
+          if valid name then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl else compl)
+        path env compl
+      in
+      compl
+    with
+    | exn ->
+      (* Our path might be [Real_path.record_value.] which would explain why the
+       * previous cases failed.
+       * So we try to remove the identifier name from the path, and we only look
+       * for a label name matching the given prefix. *)
+      begin match path with
+      | None -> raise exn
+      | Some long_ident ->
+        let path =
+          match long_ident with
+          | Longident.Lident _identifier -> None
+          | Longident.Ldot (path, _identifier) -> Some path
+          | _ -> Some long_ident
+        in
+        Env.fold_labels
+          (fun name path l compl ->
+            if valid name then (fmt ~exact:(name = prefix) name path (`Label l)) :: compl else compl)
+          path env compl
+      end
   in
   try
     match Longident.parse prefix with
