@@ -106,8 +106,10 @@ endfunction
 
 function! merlin#SyntasticGetLocList()
   let l:errors = []
-  py merlin.sync_full_buffer()
-  py merlin.vim_loclist("l:errors")
+  if expand('%:e') == 'ml'
+    py merlin.sync_full_buffer()
+    py merlin.vim_loclist("l:errors")
+  endif
   return l:errors 
 endfunction
 
