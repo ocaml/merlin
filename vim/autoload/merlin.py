@@ -354,7 +354,7 @@ def vim_type_expr_cursor(expr):
     sys.stdout.write("(approx) ")
     vim_type_cursor()
 
-def vim_type_enclosing():
+def vim_type_enclosing(vimvar):
   global enclosing_types
   global current_enclosing
   enclosing_types = [] # reset
@@ -364,7 +364,7 @@ def vim_type_enclosing():
   try:
     result = send_command("type", "enclosing", {'line':to_line,'col':to_col})
     enclosing_types = result[1] # indice 0 is the length
-    vim_next_enclosing()
+    vim_next_enclosing(vimvar)
   except Exception:
     sys.stdout.write("(approx) ")
     vim_type_cursor()
@@ -399,26 +399,24 @@ def make_matcher(start, stop):
     else:
         return hard_matcher(start, stop)
 
-def vim_next_enclosing():
+def vim_next_enclosing(vimvar):
     if enclosing_types != []:
         global current_enclosing
         if current_enclosing < len(enclosing_types) - 1:
             current_enclosing += 1
         tmp = enclosing_types[current_enclosing]
         matcher = make_matcher(tmp['start'], tmp['end'])
-        vim.command("match") # reset highlight
-        vim.command("match EnclosingExpr /{}/".format(matcher))
+        vim.command("let {} = matchadd('EnclosingExpr', '{}')".format(vimvar, matcher))
         print(tmp['type'])
 
-def vim_prev_enclosing():
+def vim_prev_enclosing(vimvar):
     if enclosing_types != []:
         global current_enclosing
         if current_enclosing > 0:
             current_enclosing -= 1
         tmp = enclosing_types[current_enclosing]
         matcher = make_matcher(tmp['start'], tmp['end'])
-        vim.command("match") # reset highlight
-        vim.command("match EnclosingExpr /{}/".format(matcher))
+        vim.command("let {} = matchadd('EnclosingExpr', '{}')".format(vimvar, matcher))
         print(tmp['type'])
 
 # Resubmit current buffer

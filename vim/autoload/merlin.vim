@@ -76,6 +76,28 @@ function! merlin#TypeOfSel()
   call merlin#TypeOf(s:get_visual_selection())
 endfunction
 
+function! merlin#StopHighlight()
+  if exists('w:enclosing_zone') && w:enclosing_zone != -1
+    call matchdelete(w:enclosing_zone)
+    let w:enclosing_zone = -1
+  endif
+endfunction
+
+function! merlin#TypeEnclosing()
+  call merlin#StopHighlight()
+  py merlin.vim_type_enclosing("w:enclosing_zone")
+endfunction
+
+function! merlin#NextEnclosing()
+  call merlin#StopHighlight()
+  py merlin.vim_next_enclosing("w:enclosing_zone")
+endfunction
+
+function! merlin#ShrinkEnclosing()
+  call merlin#StopHighlight()
+  py merlin.vim_shrinke_enclosing("w:enclosing_zone")
+endfunction
+
 function! merlin#Complete(findstart,base)
   if a:findstart
     " Locate the start of the item, including ".", "->" and "[...]".
@@ -133,10 +155,10 @@ endfunction
 
 function! merlin#Register()
   command! -buffer -nargs=0 TypeOf call merlin#TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
-  command! -buffer -nargs=0 TypeCursor py merlin.vim_type_cursor()
-  command! -buffer -nargs=0 TypeEnclosing py merlin.vim_type_enclosing()
-  command! -buffer -nargs=0 GrowEnclosing py merlin.vim_next_enclosing()
-  command! -buffer -nargs=0 ShrinkEnclosing py merlin.vim_prev_enclosing()
+  command! -buffer -nargs=0 TypeCursor call merlin.vim_type_cursor()
+  command! -buffer -nargs=0 TypeEnclosing call merlin#TypeEnclosing()
+  command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
+  command! -buffer -nargs=0 ShrinkEnclosing py merlin#ShrinkEnclosing()
   command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
