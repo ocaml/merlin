@@ -641,6 +641,7 @@ let command_find = {
 
   handler =
   begin fun _ state -> function
+  | [`String "use" ; `List packages]
   | (`String "use" :: packages) ->
       let packages = List.map
         (function `String pkg -> pkg | _ -> invalid_arguments ())
