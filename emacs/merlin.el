@@ -393,8 +393,9 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defun merlin-edit (start end length)
   (if (< start merlin-lock-point)
       (progn
-        (message "point: %d start! %d" (point) start)
-        (merlin-update-point nil))))
+        (message "im coming in out of this rain")
+        (setq merlin-lock-point (merlin-retract-to start))
+        (merlin-update-overlay))))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
