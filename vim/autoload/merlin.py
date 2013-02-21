@@ -363,8 +363,12 @@ def vim_type_enclosing(vimvar):
   sync_buffer()
   try:
     result = send_command("type", "enclosing", {'line':to_line,'col':to_col})
-    enclosing_types = result[1] # indice 0 is the length
-    vim_next_enclosing(vimvar)
+    enclosing_types = result[1]
+    if enclosing_types == []:
+        sys.stdout.write("(approx) ")
+        vim_type_cursor()
+    else:
+        vim_next_enclosing(vimvar)
   except Exception:
     sys.stdout.write("(approx) ")
     vim_type_cursor()
