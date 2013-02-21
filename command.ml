@@ -115,7 +115,6 @@ let command_tell = {
         let tokens = History.nexts tokens in
         let pos = !bufpos in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-          (if state.tokens = state'.tokens then List.iter (fun (i,_,_) -> prerr_endline (Chunk_parser_utils.token_to_string i)) state.tokens );
         if !eod || (!eot && state.tokens = state'.tokens)
         then state'
         else loop state'
