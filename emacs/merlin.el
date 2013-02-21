@@ -293,8 +293,13 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   (if merlin-pending-errors
       (let ((err (pop merlin-pending-errors)))
         (goto-char (merlin-make-point (cdr (assoc 'start err))))
-        (merlin-error-highlight (merlin-make-point (cdr (assoc 'start err)))
-                                (merlin-make-point (cdr (assoc 'end err))))
+        (if merlin-pending-errors-overlay
+            (delete-overlay (pop merlin-pending-errors-overlay)))
+        (merlin-create-overlay 'merlin-error-overlay 
+                               (merlin-make-point (cdr (assoc 'start err)))
+                               (merlin-make-point (cdr (assoc 'end err)))
+                               'next-error
+                               "2 sec")
         (setq merlin-idle-point (point))
         (if merlin-pending-errors
             (message "%s (%d more errors)" 
@@ -479,29 +484,30 @@ The parameter `view-errors-p' controls whether we should care for errors"
 overlay is displayed and module types are displayed in another
 buffer. Otherwise only value type are displayed, and without
 overlay"
-  (let ((result (merlin-type-of-expression bounds
-                                        (buffer-substring-no-properties 
-                                         (car bounds) (cdr bounds)))))
-    (cond
-     ((not (cdr result))
-      (if (not quiet)
-          (message "<no information>"))) ;; no types
-     ((and (not (merlin-is-long (cdr result)))
-          (not quiet))
-      (merlin-create-overlay 'merlin-type-overlay
-                             (caar result) (cdar result)
-                             'next-error "1 sec")
-      (message "%s" (cdr result)))
-     ((not (merlin-is-long (cdr result)))
-      (message "%s: %s"
-               (buffer-substring-no-properties (caar result) (cdar result))
-               (cdr result)))
-     ((not quiet)
-      (display-buffer merlin-type-buffer)
-      (with-current-buffer merlin-type-buffer
-        (erase-buffer)
-        (insert (cdr result)))))))
-
+  (if bounds
+      (let ((result (merlin-type-of-expression bounds
+                                               (buffer-substring-no-properties 
+                                                (car bounds) (cdr bounds)))))
+        (cond
+         ((not (cdr result))
+          (if (not quiet)
+              (message "<no information>"))) ;; no types
+         ((and (not (merlin-is-long (cdr result)))
+               (not quiet))
+          (merlin-create-overlay 'merlin-type-overlay
+                                 (caar result) (cdar result)
+                                 'next-error "1 sec")
+          (message "%s" (cdr result)))
+         ((not (merlin-is-long (cdr result)))
+          (message "%s: %s"
+                   (buffer-substring-no-properties (caar result) (cdar result))
+                   (cdr result)))
+         ((not quiet)
+          (display-buffer merlin-type-buffer)
+          (with-current-buffer merlin-type-buffer
+            (erase-buffer)
+            (insert (cdr result))))))))
+  
 
 (defun merlin-show-type-of-region ()
   "Show the type of the region"
