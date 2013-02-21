@@ -88,7 +88,7 @@ function! merlin#TypeEnclosing()
   py merlin.vim_type_enclosing("w:enclosing_zone")
 endfunction
 
-function! merlin#NextEnclosing()
+function! merlin#GrowEnclosing()
   call merlin#StopHighlight()
   py merlin.vim_next_enclosing("w:enclosing_zone")
 endfunction
