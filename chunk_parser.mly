@@ -1019,11 +1019,21 @@ expr:
       { let expr = reloc_exp $endpos($4) $endpos($5) $5 in
         let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
         Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) }
+  | LET_LWT rec_flag let_bindings IN error
+      { let expr = reloc_exp $endpos($4) $endpos($5) Fake.any_val' in
+        let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
+        Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) }
   | LET MODULE UIDENT module_binding IN seq_expr
       { let expr = reloc_exp $endpos($5) $endpos($6) $6 in
         mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
+  | LET MODULE UIDENT module_binding IN error
+      { let expr = reloc_exp $endpos($5) $endpos($6) Fake.any_val' in
+        mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
   | LET OPEN mod_longident IN seq_expr
       { let expr = reloc_exp $endpos($4) $endpos($5) $5 in
+        mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, expr)) }
+  | LET OPEN mod_longident IN error
+      { let expr = reloc_exp $endpos($4) $endpos($5) Fake.any_val' in
         mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, expr)) }
   | FUNCTION opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_function("", None, List.rev $3)) }
