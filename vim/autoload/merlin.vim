@@ -166,7 +166,9 @@ function! merlin#Register()
   command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
   command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
   setlocal omnifunc=merlin#Complete
-  map <buffer> <LocalLeader>t :TypeOf<return>
+  map <buffer> <LocalLeader>t :TypeEnclosing<return>
+  map <buffer> <LocalLeader>n :GrowEnclosing<return>
+  map <buffer> <LocalLeader>p :ShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
 endfunction
 
