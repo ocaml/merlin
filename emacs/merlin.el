@@ -36,6 +36,13 @@
   "Overlays for the pending errors")
 (defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix)")
+(defvar merlin-enclosing-overlay nil
+  "Stores the overlay during showing enclosing types")
+(defvar merlin-enclosing-types nil
+  "List containing the enclosing type")
+(defvar merlin-enclosing-offset nil
+  "Current offset in `merlin-enclosing-types'")
+
 (defvar merlin-idle-point nil
   "Position of the last time we printed the type of point")
 (defvar merlin-lock-point nil
@@ -473,7 +480,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (if (and bounds exp)
       (cons
        bounds
-       (merlin-is-return (merlin-send-command "type" (list "expression" exp)))))
+       (merlin-is-return (merlin-send-command "type" (list "expression" exp))))))
 
 
 (defun merlin-type-of-expression (bounds exp)
@@ -514,7 +521,7 @@ overlay"
       (display-buffer merlin-type-buffer)
       (with-current-buffer merlin-type-buffer
         (erase-buffer)
-        (insert (cdr result))))))))
+        (insert (cdr result)))))))
   
 
 (defun merlin-show-type-of-region ()
@@ -534,6 +541,57 @@ overlay"
   (if (> arg 1)
       (merlin-show-type-of-region)
     (merlin-show-type (bounds-of-thing-at-point 'ocamlatom))))
+
+;; ENCLOSING TYPES
+(defun merlin-type-enclosing ()
+  "If there is a selected type enclosing, kill it. Otherwise start a new session at point"
+  (interactive)
+  (if (not merlin-enclosing-types)
+      (let ((list
+             (mapcar
+              '(lambda (obj)
+                 (cons
+                  (cdr (assoc 'type obj))
+                  (merlin-make-bounds obj)))
+              (elt
+               (merlin-is-return
+                (merlin-send-command "type" (list "enclosing" (merlin-unmake-point (point)))))
+               1))))
+        (setq merlin-enclosing-types list)
+        (setq merlin-enclosing-offset -1))
+    (progn
+      (setq merlin-enclosing-types nil)
+      (setq merlin-enclosing-offset nil)
+      (delete-overlay merlin-enclosing-overlay)
+      (setq merlin-enclosing-overlay nil))))
+
+(defun merlin-type-enclosing-go ()
+  "Highlight the given corresponding enclosing data (of the form (type . bounds)"
+  (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
+    (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error nil)
+    (message "%s" (car data))))
+
+(defun merlin-type-enclosing-go-up ()
+  "Goes up in the enclosing type zipper."
+  (interactive)
+  (if merlin-enclosing-types
+      (if (> merlin-enclosing-offset (length merlin-enclosing-types))
+          (message "cannot go up")
+        (progn
+          (setq merlin-enclosing-offset (+ 1 merlin-enclosing-offset))
+          (merlin-type-enclosing-go)
+          ))))
+
+(defun merlin-type-enclosing-go-down ()
+  "Goes down in the enclosing type zipper."
+  (interactive)
+  (if merlin-enclosing-types
+      (if (<= merlin-enclosing-offset 0)
+          (message "cannot go down")
+        (progn
+          (setq merlin-enclosing-offset (- merlin-enclosing-offset 1))
+          (merlin-type-enclosing-go)
+          ))))
 
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
@@ -601,6 +659,9 @@ overlay"
     (define-key map (kbd "C-c C-x") 'merlin-next-error)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
     (define-key map (kbd "C-c C-u") 'merlin-refresh)
+    (define-key map (kbd "C-c C-f <C-return>") 'merlin-type-enclosing)
+    (define-key map (kbd "C-c C-f C-<up>") 'merlin-type-enclosing-go-up)
+    (define-key map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
     (define-key map (kbd "RET") 'merlin-enter)
     map
     ))
@@ -624,6 +685,9 @@ overlay"
     (set (make-local-variable 'merlin-overlay) nil)
     (set (make-local-variable 'merlin-prefix) nil)
     (set (make-local-variable 'merlin-error-prefix) nil)
+    (set (make-local-variable 'merlin-enclosing-overlay) nil)
+    (set (make-local-variable 'merlin-enclosing-types) nil)
+    (set (make-local-variable 'merlin-enclosing-offset) nil)
     (setq ac-sources '(merlin-ac-source))
     (add-to-list 'after-change-functions 'merlin-edit)
     (set-process-query-on-exit-flag (merlin-get-process) nil)
@@ -645,6 +709,7 @@ overlay"
       (delete-process (merlin-get-process))
       (cancel-timer merlin-idle-timer)
       (delete-overlay merlin-overlay)
+      (if merlin-enclosing-overlay merlin-enclosing-overlay)
       (merlin-delete-error-overlays)
       (kill-buffer (merlin-make-buffer-name))
 )))
