@@ -1010,17 +1010,21 @@ expr:
   | simple_expr simple_labeled_expr_list
       { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
   | LET rec_flag let_bindings IN seq_expr
-      { mkexp $startpos $endpos (Pexp_let($2, List.rev $3, $5)) }
+      { let expr = reloc_exp $endpos($4) $endpos($5) $5 in
+        mkexp $startpos $endpos (Pexp_let($2, List.rev $3, expr)) }
   | LET rec_flag let_bindings IN error
-      { mkexp $startpos $endpos (Pexp_let($2, List.rev $3, Fake.any_val')) }
+      { let expr = reloc_exp $endpos($4) $endpos($5) Fake.any_val' in
+        mkexp $startpos $endpos (Pexp_let($2, List.rev $3, expr)) }
   | LET_LWT rec_flag let_bindings IN seq_expr
-      { let expr = mkexp $startpos $endpos
-          (Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, $5)) in
-        Fake.app Fake.Lwt.in_lwt expr }
+      { let expr = reloc_exp $endpos($4) $endpos($5) $5 in
+        let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
+        Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) }
   | LET MODULE UIDENT module_binding IN seq_expr
-      { mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, $6)) }
+      { let expr = reloc_exp $endpos($5) $endpos($6) $6 in
+        mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
   | LET OPEN mod_longident IN seq_expr
-      { mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, $5)) }
+      { let expr = reloc_exp $endpos($4) $endpos($5) $5 in
+        mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, expr)) }
   | FUNCTION opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_function("", None, List.rev $3)) }
   | FUN labeled_simple_pattern fun_def
