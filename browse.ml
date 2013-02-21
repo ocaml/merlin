@@ -179,14 +179,12 @@ struct
 
   and patterns ?expr ?env pes = List.fold_left
     begin fun ls (p,e) ->
-      let l = pattern (match expr with Some e -> e | None -> e)
-                      (match env with Some p -> p | _ -> e.exp_env) p
+      let l =
+        singleton ~kind:(Expr p.pat_type) p.pat_loc
+          (match env with Some p -> p | _ -> e.exp_env)
       in
       l :: expression e :: ls
     end [] pes
-
-  and pattern expr env { pat_loc } =
-    singleton ~kind:(Expr expr.exp_type) pat_loc env
 
   and expression { exp_desc ; exp_loc ; exp_type ; exp_env } =
     T (exp_loc, exp_env, (Expr exp_type), lazy (expression_desc exp_desc))
@@ -196,7 +194,9 @@ struct
     | Texp_constant _ -> []
     | Texp_let (_,pes,e) -> expression e :: patterns ~env:e.exp_env pes
     | Texp_function (_,pes,_) -> patterns pes
-    | Texp_apply (e,leso) -> expression e :: Misc.list_filter_map (function (_,Some e,_) -> Some (expression e) | _ -> None) leso
+    | Texp_apply (e,leso) ->
+      let helper = function (_,Some e,_) -> Some (expression e) | _ -> None in
+      expression e :: Misc.list_filter_map helper leso
     | Texp_match (e,pes,_) -> expression e :: patterns pes
     | Texp_try (e,pes) -> expression e :: patterns pes
     | Texp_tuple (es) -> List.map expression es
