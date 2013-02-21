@@ -42,6 +42,8 @@
   "List containing the enclosing type")
 (defvar merlin-enclosing-offset nil
   "Current offset in `merlin-enclosing-types'")
+(defvar merlin-last-point-type nil
+  "Last position where the user hit C-c C-t")
 
 (defvar merlin-idle-point nil
   "Position of the last time we printed the type of point")
@@ -399,14 +401,15 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defun merlin-check-synchronize (&optional clean)
   "If merlin point is before the end of line send everything up to the end of line"
   (interactive)
-  (let ((p merlin-lock-point))
-    (if (> (point-at-eol) merlin-lock-point)
-        (merlin-update-point nil))))
+  (save-excursion
+    (previous-line 1)
+    (let ((p merlin-lock-point))
+      (if (> (point-at-eol) merlin-lock-point)
+          (merlin-update-point nil)))))
 
 (defun merlin-edit (start end length)
   (if (< start merlin-lock-point)
       (progn
-        (message "im coming in out of this rain")
         (setq merlin-lock-point (merlin-retract-to start))
         (merlin-update-overlay))))
 ;; COMPLETION
@@ -546,29 +549,37 @@ overlay"
 (defun merlin-type-enclosing ()
   "If there is a selected type enclosing, kill it. Otherwise start a new session at point"
   (interactive)
-  (if (not merlin-enclosing-types)
-      (let ((list
-             (mapcar
-              '(lambda (obj)
-                 (cons
-                  (cdr (assoc 'type obj))
-                  (merlin-make-bounds obj)))
-              (elt
+  (let ((list
+         (mapcar
+          '(lambda (obj)
+             (cons
+              (cdr (assoc 'type obj))
+              (merlin-make-bounds obj)))
+          (elt
                (merlin-is-return
                 (merlin-send-command "type" (list "enclosing" (merlin-unmake-point (point)))))
                1))))
-        (setq merlin-enclosing-types list)
-        (setq merlin-enclosing-offset -1))
+    (setq merlin-enclosing-types list)
+    (setq merlin-enclosing-offset -1)
+    (if merlin-enclosing-overlay (delete-overlay merlin-enclosing-overlay))
+    (setq merlin-enclosing-overlay nil)))
+
+(defun merlin-magic-show-type (arg)
+  "Performs true magic."
+  (interactive "p")
+  (if (equal merlin-last-point-type (point))
+      (if (> arg 1)
+          (merlin-type-enclosing-go-down)
+        (merlin-type-enclosing-go-up))
     (progn
-      (setq merlin-enclosing-types nil)
-      (setq merlin-enclosing-offset nil)
-      (delete-overlay merlin-enclosing-overlay)
-      (setq merlin-enclosing-overlay nil))))
+      (setq merlin-last-point-type (point))
+      (merlin-type-enclosing)
+      (merlin-type-enclosing-go-up))))
 
 (defun merlin-type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (type . bounds)"
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
-    (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error nil)
+    (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error "5 sec")
     (message "%s" (car data))))
 
 (defun merlin-type-enclosing-go-up ()
@@ -655,6 +666,7 @@ overlay"
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c <C-return>") 'merlin-to-point)
     (define-key map (kbd "C-c C-t") 'merlin-show-type-of-point)
+    (define-key map (kbd "C-c T") 'merlin-magic-show-type)
     (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-x") 'merlin-next-error)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
@@ -688,6 +700,7 @@ overlay"
     (set (make-local-variable 'merlin-enclosing-overlay) nil)
     (set (make-local-variable 'merlin-enclosing-types) nil)
     (set (make-local-variable 'merlin-enclosing-offset) nil)
+    (set (make-local-variable 'merlin-last-point-type) nil)
     (setq ac-sources '(merlin-ac-source))
     (add-to-list 'after-change-functions 'merlin-edit)
     (set-process-query-on-exit-flag (merlin-get-process) nil)
@@ -715,8 +728,8 @@ overlay"
             (process-send-eof (merlin-get-process))
             (delete-process (merlin-get-process))))
       (cancel-timer merlin-idle-timer)
-      (if merlin-overlay delete-overlay merlin-overlay)
-      (if merlin-enclosing-overlay merlin-enclosing-overlay)
+      (if merlin-overlay (delete-overlay merlin-overlay))
+      (if merlin-enclosing-overlay (delete-overlay merlin-enclosing-overlay))
       (merlin-delete-error-overlays)
       (if (get-buffer (merlin-make-buffer-name))
           (kill-buffer (merlin-make-buffer-name)))
