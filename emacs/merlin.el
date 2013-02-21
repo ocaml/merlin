@@ -419,7 +419,8 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (requires . 3)
     ))
 
-(ac-define-source "merlin" merlin-ac-source)
+(when (featurep 'auto-complete)
+  (ac-define-source "merlin" merlin-ac-source))
 
 ;; Get the type of an element"
 (defun merlin-trim (s)
@@ -584,7 +585,8 @@ overlay"
   (interactive)
   (progn
     (merlin-start-process)
-    (auto-complete-mode)
+    (when (featurep 'auto-complete)
+      (auto-complete-mode))
     (set (make-local-variable 'merlin-lock-point) (point-min))
     (set (make-local-variable 'merlin-buffer) nil)
     (set (make-local-variable 'merlin-result) nil)
