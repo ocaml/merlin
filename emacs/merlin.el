@@ -82,9 +82,10 @@ If the timer is zero or negative, nothing is done."
 
 (defun merlin-compute-prefix (ident)
   "Computes the prefix of an identifier. The prefix of Foo.bar is Foo. and the prefix of bar is \"\""
-  (let ((l (butlast (split-string ident "\\."))))
-    (let ((s (mapconcat 'identity l ".")))
-      (if (string-equal s "") s (concat s ".")))))
+  (let* ((l (butlast (split-string ident "\\.")))
+         (s (mapconcat 'identity l ".")))
+    (if (string-equal s "") s (concat s "."))))
+
 (defun merlin-make-point (data)
   "Creates a point from a couple line / col"
   (save-excursion
@@ -92,6 +93,12 @@ If the timer is zero or negative, nothing is done."
     (goto-line (cdr (assoc 'line data)))
     (forward-char (cdr (assoc 'col data)))
     (point)))
+(defun merlin-make-bounds (data)
+  "From a json object {\"start\": loc; \"end\": loc'}
+returns (loc . loc')"
+  (cons
+   (merlin-make-point (cdr (assoc 'start data)))
+   (merlin-make-point (cdr (assoc 'end data)))))
 
 (defun merlin-unmake-point (point)
   "Destructs the given point to line / col"
@@ -114,12 +121,12 @@ If the timer is zero or negative, nothing is done."
      'bounds-of-ocaml-atom-at-point)
 
 ; overlay management
-(defun merlin-create-overlay (var start end face timer)
+(defun merlin-create-overlay (var bounds face timer)
   "Creates an overlay in the current buffer starting at `start', ending at `end',
 using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to disappear after `timer' seconds
 `timer' is a string that can be understood by `run-at-time' (eg. \"1 sec\")"
   (if (symbol-value var) (delete-overlay (symbol-value var)))
-  (set var (make-overlay start end))
+  (set var (make-overlay (car bounds) (cdr bounds)))
   (overlay-put (symbol-value var) 'face face)
   (if timer
       (run-at-time timer nil `(lambda ()
@@ -296,8 +303,7 @@ It proceeds by telling (with the end mode) each line until it returns true or un
         (if merlin-pending-errors-overlay
             (delete-overlay (pop merlin-pending-errors-overlay)))
         (merlin-create-overlay 'merlin-error-overlay 
-                               (merlin-make-point (cdr (assoc 'start err)))
-                               (merlin-make-point (cdr (assoc 'end err)))
+                               (merlin-make-bounds err)
                                'next-error
                                "2 sec")
         (setq merlin-idle-point (point))
@@ -440,13 +446,12 @@ The parameter `view-errors-p' controls whether we should care for errors"
          (merlin-is-return 
           (merlin-send-command "type" (list "at" (merlin-unmake-point (point)))))))
     (if ret
-        (let ((start (merlin-make-point (cdr (assoc 'start ret))))
-              (end (merlin-make-point (cdr (assoc 'end ret))))
+        (let ((bounds (merlin-make-bounds ret))
               (type (cdr (assoc 'type ret))))
           (if (and
-               (>= start (point))
-               (<= (point) end))
-              (cons (cons start end) type)
+               (>= (car bounds) (point))
+               (<= (point) (cdr bounds)))
+              (cons bounds type)
             nil)))))
           
 
@@ -455,18 +460,20 @@ The parameter `view-errors-p' controls whether we should care for errors"
 
 (defun merlin-type-of-expression-local (bounds exp)
   "Get the type of an expression inside the local context"
-  (cons 
-   bounds
-   (merlin-is-return 
-    (merlin-send-command "type"
-                         (list "expression" exp "at" 
-                               (merlin-unmake-point (point)))))))
+  (if (and bounds exp)
+      (cons 
+       bounds
+       (merlin-is-return 
+        (merlin-send-command "type"
+                             (list "expression" exp "at" 
+                                   (merlin-unmake-point (point))))))))
 
 (defun merlin-type-of-expression-global (bounds exp)
   "Get the type of an expression globally"
-  (cons
-   bounds
-   (merlin-is-return (merlin-send-command "type" (list "expression" exp)))))
+  (if (and bounds exp)
+      (cons
+       bounds
+       (merlin-is-return (merlin-send-command "type" (list "expression" exp)))))
 
 
 (defun merlin-type-of-expression (bounds exp)
@@ -485,29 +492,29 @@ The parameter `view-errors-p' controls whether we should care for errors"
 overlay is displayed and module types are displayed in another
 buffer. Otherwise only value type are displayed, and without
 overlay"
-  (if bounds
-      (let ((result (merlin-type-of-expression bounds
-                                               (buffer-substring-no-properties 
-                                                (car bounds) (cdr bounds)))))
-        (cond
-         ((not (cdr result))
-          (if (not quiet)
-              (message "<no information>"))) ;; no types
-         ((and (not (merlin-is-long (cdr result)))
-               (not quiet))
-          (merlin-create-overlay 'merlin-type-overlay
-                                 (caar result) (cdar result)
-                                 'next-error "1 sec")
-          (message "%s" (cdr result)))
-         ((not (merlin-is-long (cdr result)))
-          (message "%s: %s"
-                   (buffer-substring-no-properties (caar result) (cdar result))
-                   (cdr result)))
-         ((not quiet)
-          (display-buffer merlin-type-buffer)
-          (with-current-buffer merlin-type-buffer
-            (erase-buffer)
-            (insert (cdr result))))))))
+  (let* ((substring (if bounds
+                       (buffer-substring-no-properties (car bounds)
+                                                       (cdr bounds))))
+         (result (merlin-type-of-expression bounds substring)))
+    (cond
+     ((not (cdr result))
+      (if (not quiet)
+          (message "<no information>"))) ;; no types
+     ((and (not (merlin-is-long (cdr result)))
+           (not quiet))
+      (merlin-create-overlay 'merlin-type-overlay
+                             (car result)
+                             'next-error "1 sec")
+      (message "%s" (cdr result)))
+     ((not (merlin-is-long (cdr result)))
+      (message "%s: %s"
+               (buffer-substring-no-properties (caar result) (cdar result))
+               (cdr result)))
+     ((not quiet)
+      (display-buffer merlin-type-buffer)
+      (with-current-buffer merlin-type-buffer
+        (erase-buffer)
+        (insert (cdr result))))))))
   
 
 (defun merlin-show-type-of-region ()
