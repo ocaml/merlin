@@ -372,7 +372,7 @@ def vim_type_enclosing():
     sys.stdout.write("(approx) ")
     vim_type_cursor()
 
-def make_matcher(start, stop):
+def easy_matcher(start, stop):
     startl = ""
     startc = ""
     if start['line'] > 0:
@@ -380,6 +380,24 @@ def make_matcher(start, stop):
     if start['col'] > 0:
         startc = "\%>{}c".format(start['col'])
     return '{}{}\%<{}l\%<{}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
+
+def hard_matcher(start, stop):
+    first_start = {'line' : start['line'], 'col' : start['col']}
+    first_stop =  {'line' : start['line'], 'col' : 4242}
+    first_line = easy_matcher(first_start, first_stop)
+    mid_start = {'line' : start['line']+1, 'col' : 0}
+    mid_stop =  {'line' : stop['line']-1 , 'col' : 4242}
+    middle = easy_matcher(mid_start, mid_stop)
+    last_start = {'line' : stop['line'], 'col' : 0}
+    last_stop =  {'line' : stop['line'], 'col' : stop['col']}
+    last_line = easy_matcher(last_start, last_stop)
+    return "{}\|{}\|{}".format(first_line, middle, last_line)
+
+def make_matcher(start, stop):
+    if start['line'] == stop['line']:
+        return easy_matcher(start, stop)
+    else:
+        return hard_matcher(start, stop)
 
 def vim_next_enclosing():
     if enclosing_types != []:
