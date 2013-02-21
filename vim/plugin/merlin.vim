@@ -23,3 +23,7 @@ au QuickFixCmdPost * call merlin#Reload()
 " in PATH. 
 " Most commands are accessible only from omlet/ocaml buffers, check from an
 " appropriate buffer if merlin.vim is effectively loaded.
+
+" If you are using syntastic and don't want warnings notified, set the following
+" variable to "true"
+let g:merlin_ignore_warnings = "false"
