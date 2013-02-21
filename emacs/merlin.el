@@ -703,15 +703,23 @@ overlay"
   " merlin"
   :keymap merlin-mode-map
   (if merlin-mode 
-      (merlin-setup)
+      (if (equal (file-name-extension (buffer-file-name))
+                 "ml")
+          (merlin-setup)
+        (progn
+          (message "merlin can only operate on ml files")
+          (merlin-mode -1)))
     (progn
-      (process-send-eof (merlin-get-process))
-      (delete-process (merlin-get-process))
+      (if merlin-process
+          (progn
+            (process-send-eof (merlin-get-process))
+            (delete-process (merlin-get-process))))
       (cancel-timer merlin-idle-timer)
-      (delete-overlay merlin-overlay)
+      (if merlin-overlay delete-overlay merlin-overlay)
       (if merlin-enclosing-overlay merlin-enclosing-overlay)
       (merlin-delete-error-overlays)
-      (kill-buffer (merlin-make-buffer-name))
+      (if (get-buffer (merlin-make-buffer-name))
+          (kill-buffer (merlin-make-buffer-name)))
 )))
 
 
