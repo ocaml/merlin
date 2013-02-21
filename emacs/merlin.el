@@ -296,7 +296,12 @@ It proceeds by telling (with the end mode) each line until it returns true or un
         (merlin-error-highlight (merlin-make-point (cdr (assoc 'start err)))
                                 (merlin-make-point (cdr (assoc 'end err))))
         (setq merlin-idle-point (point))
-        (message (cdr (assoc 'message err))))
+        (if merlin-pending-errors
+            (message "%s (%d more errors)" 
+                     (cdr (assoc 'message err))
+                     (length merlin-pending-errors)
+                     )
+          (message "%s" (cdr (assoc 'message err)))))
     (message "no more errors")))
 
 (defun merlin-remove-error-overlay ()
@@ -333,7 +338,7 @@ It proceeds by telling (with the end mode) each line until it returns true or un
     (if (> (length (elt output 1)) 0)
 	(progn
           (if view-errors-p
-              (merlin-handle-errors (elt output 1)))
+              (merlin-handle-errors (nreverse (append (elt output 1) nil))))
 	  nil)
       (progn
 	(message "ok")
