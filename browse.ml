@@ -194,8 +194,7 @@ struct
     | Tcf_val (_, _, _, _, kind, _)
     | Tcf_meth (_, _, _, kind, _) ->
       begin match kind with
-      | Tcfk_concrete e -> Some (expression e) (* FIXME: we get the type of the class
-      here, not of the method / field *)
+      | Tcfk_concrete e -> Some (expression e)
       | _ -> None
       end
     | _ -> None
