@@ -432,8 +432,11 @@ The parameter `view-errors-p' controls whether we should care for errors"
         (let ((start (merlin-make-point (cdr (assoc 'start ret))))
               (end (merlin-make-point (cdr (assoc 'end ret))))
               (type (cdr (assoc 'type ret))))
-          (merlin-create-overlay 'merlin-type-overlay start end 'next-error "1 sec")
-          (cons (cons start end) type)))))
+          (if (and
+               (>= start (point))
+               (<= (point) end))
+              (cons (cons start end) type)
+            nil)))))
           
 
         
@@ -474,25 +477,31 @@ overlay"
   (let ((result (merlin-type-of-expression bounds
                                         (buffer-substring-no-properties 
                                          (car bounds) (cdr bounds)))))
-    (if (not (merlin-is-long (cdr result)))
-        (progn
-          (if (not quiet)
-              (merlin-create-overlay 'merlin-type-overlay 
-                                     (caar result) (cdar result) 
-                                     'next-error "1 sec"))
-          (message "%s" (cdr result)))
+    (cond
+     ((not (cdr result))
       (if (not quiet)
-          (progn
-            (display-buffer merlin-type-buffer)
-              (with-current-buffer merlin-type-buffer
-                (erase-buffer)
-                (insert (cdr result))))))))
+          (message "<no information>"))) ;; no types
+     ((and (not (merlin-is-long (cdr result)))
+          (not quiet))
+      (merlin-create-overlay 'merlin-type-overlay
+                             (caar result) (cdar result)
+                             'next-error "1 sec")
+      (message "%s" (cdr result)))
+     ((not (merlin-is-long (cdr result)))
+      (message "%s: %s"
+               (buffer-substring-no-properties (caar result) (cdar result))
+               (cdr result)))
+     ((not quiet)
+      (display-buffer merlin-type-buffer)
+      (with-current-buffer merlin-type-buffer
+        (erase-buffer)
+        (insert (cdr result)))))))
 
 
 (defun merlin-show-type-of-region ()
   "Show the type of the region"
   (interactive)
-  (merlin-show-type ((region-beginning) . (region-end))))
+  (merlin-show-type (cons (region-beginning) (region-end))))
 
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
