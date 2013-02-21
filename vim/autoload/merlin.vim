@@ -3,7 +3,6 @@ if !has('python')
   finish
 endif
 
-
 if !exists("g:merlin_ignore_warnings")
     " strings are ugly, but at least I'm sure it's not converted in some weird
     " value when passing it to python
@@ -135,6 +134,9 @@ endfunction
 function! merlin#Register()
   command! -buffer -nargs=0 TypeOf call merlin#TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
   command! -buffer -nargs=0 TypeCursor py merlin.vim_type_cursor()
+  command! -buffer -nargs=0 TypeEnclosing py merlin.vim_type_enclosing()
+  command! -buffer -nargs=0 GrowEnclosing py merlin.vim_next_enclosing()
+  command! -buffer -nargs=0 ShrinkEnclosing py merlin.vim_prev_enclosing()
   command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)

@@ -6,6 +6,9 @@ import os
 import sys
 from collections import Counter
 
+enclosing_types = [] # nothing to see here
+current_enclosing = -1
+
 class Failure(Exception):
   def __init__(self, value):
       self.value = value
@@ -350,6 +353,55 @@ def vim_type_expr_cursor(expr):
   except Error:
     sys.stdout.write("(approx) ")
     vim_type_cursor()
+
+def vim_type_enclosing():
+  global enclosing_types
+  global current_enclosing
+  enclosing_types = [] # reset
+  current_enclosing = -1
+  to_line, to_col = vim.current.window.cursor
+  sync_buffer()
+  try:
+    result = send_command("type", "enclosing", {'line':to_line,'col':to_col})
+    enclosing_types = result[1] # indice 0 is the length
+    vim_next_enclosing()
+  except Exception:
+    sys.stdout.write("(approx) ")
+    vim_type_cursor()
+  except Error:
+    sys.stdout.write("(approx) ")
+    vim_type_cursor()
+
+def make_matcher(start, stop):
+    startl = ""
+    startc = ""
+    if start['line'] > 0:
+        startl = "\%>{}l".format(start['line'] - 1)
+    if start['col'] > 0:
+        startc = "\%>{}c".format(start['col'])
+    return '{}{}\%<{}l\%<{}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
+
+def vim_next_enclosing():
+    if enclosing_types != []:
+        global current_enclosing
+        if current_enclosing < len(enclosing_types) - 1:
+            current_enclosing += 1
+        tmp = enclosing_types[current_enclosing]
+        matcher = make_matcher(tmp['start'], tmp['end'])
+        vim.command("match") # reset highlight
+        vim.command("match EnclosingExpr /{}/".format(matcher))
+        print(tmp['type'])
+
+def vim_prev_enclosing():
+    if enclosing_types != []:
+        global current_enclosing
+        if current_enclosing > 0:
+            current_enclosing -= 1
+        tmp = enclosing_types[current_enclosing]
+        matcher = make_matcher(tmp['start'], tmp['end'])
+        vim.command("match") # reset highlight
+        vim.command("match EnclosingExpr /{}/".format(matcher))
+        print(tmp['type'])
 
 # Resubmit current buffer
 def vim_reload_buffer():

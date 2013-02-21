@@ -27,3 +27,6 @@ au QuickFixCmdPost * call merlin#Reload()
 " If you are using syntastic and don't want warnings notified, set the following
 " variable to "true"
 let g:merlin_ignore_warnings = "false"
+
+" Highlight the expression which type is given
+hi EnclosingExpr ctermbg=17 guibg=LightGreen
