@@ -214,22 +214,20 @@ let command_type = {
 
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
-    let rec aux = function
-      | Browse.Envs.T (loc,_,Browse.Envs.Expr e,_) :: rest ->
-          let ppf, to_string = Misc.ppf_to_string () in
-          Printtyp.type_expr ppf e;
-          let item = Protocol.with_location loc ["type", `String (to_string ())]
-          in
-          item :: aux rest
-      | _ :: rest -> aux rest
-      | [] -> []
+    let aux = function
+      | Browse.Envs.T (loc,_,Browse.Envs.Expr e,_) ->
+        let ppf, to_string = Misc.ppf_to_string () in
+        Printtyp.type_expr ppf e;
+        Some (Protocol.with_location loc ["type", `String (to_string ())])
+      | _ -> None
     in
     let structures = Misc.list_concat_map
       (fun (str,sg) -> Browse.Envs.structure str)
       (Typer.trees state.types)
     in
     let path = Browse.browse_enclosing pos structures in
-    state, `List [`Int (List.length path); `List (aux path)]
+    let result = Misc.list_filter_map aux path in
+    state, `List [`Int (List.length path); `List result]
 
   | _ -> invalid_arguments ()
   end;
