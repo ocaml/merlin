@@ -334,19 +334,25 @@ let complete_in_env env prefix =
       compl
     with
     | exn ->
-      (* Our path might be [Real_path.record_value.] which would explain why the
-       * previous cases failed.
-       * So we try to remove the identifier name from the path, and we only look
-       * for a label name matching the given prefix. *)
+      (* Our path might be of the form [Some_path.record.Real_path.prefix] which
+       * would explain why the previous cases failed.
+       * We only keep [Real_path] for our path. *)
+      let is_lowercase c = c = Char.lowercase c in
+      let rec keep_until_lowercase li =
+        let open Longident in
+        match li with
+        | Lident id when not (is_lowercase id.[0]) -> Some li
+        | Ldot (path, id) when not (is_lowercase id.[0]) ->
+          begin match keep_until_lowercase path with
+          | None -> Some (Lident id)
+          | Some path -> Some (Ldot (path, id))
+          end
+        | _ -> None
+      in
       begin match path with
-      | None -> raise exn
+      | None -> raise exn (* clearly the hypothesis is wrong here *)
       | Some long_ident ->
-        let path =
-          match long_ident with
-          | Longident.Lident _identifier -> None
-          | Longident.Ldot (path, _identifier) -> Some path
-          | _ -> Some long_ident
-        in
+        let path = keep_until_lowercase long_ident in
         Env.fold_labels
           (fun name path l compl ->
             if valid name then (fmt ~exact:(name = prefix) name path (`Label l)) :: compl else compl)
