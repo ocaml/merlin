@@ -95,7 +95,7 @@ endfunction
 
 function! merlin#ShrinkEnclosing()
   call merlin#StopHighlight()
-  py merlin.vim_shrinke_enclosing("w:enclosing_zone")
+  py merlin.vim_prev_enclosing("w:enclosing_zone")
 endfunction
 
 function! merlin#Complete(findstart,base)
@@ -153,6 +153,28 @@ function! merlin#ReloadBuffer()
   py merlin.vim_reload_buffer()
 endfunction
 
+" Copy-pasted from
+" https://github.com/ngn/dotfiles/blob/master/vim/autoload/ngn/common.vim
+function! merlin#setVisualSelection(a, b)
+" Save existing positions of marks 'a and 'b
+  let markASave = getpos("'a")
+  let markBSave = getpos("'b")
+" Move to a, enter visual mode, and move to b
+  call setpos("'a", [0, a:a[0], a:a[1], 0])
+  call setpos("'b", [0, a:b[0], a:b[1], 0])
+  normal! `av`b
+" Restore positions of marks 'a and 'b
+  call setpos("'a", markASave)
+  call setpos("'b", markBSave)
+endfunction
+
+function! merlin#Phrase()
+  let [l1, c1] = getpos("'<")[1:2]
+  let [l2, c2] = getpos("'>")[1:2]
+  py merlin.vim_selectphrase("l1","c1","l2","c2")
+  call merlin#setVisualSelection([l1,c1],[l2,c2])
+endfunction
+
 function! merlin#Register()
   command! -buffer -nargs=0 TypeOf call merlin#TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
   command! -buffer -nargs=0 TypeCursor call merlin.vim_type_cursor()
@@ -170,6 +192,7 @@ function! merlin#Register()
   map <buffer> <LocalLeader>n :GrowEnclosing<return>
   map <buffer> <LocalLeader>p :ShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
+  vmap <buffer> <TAB> :call merlin#Phrase()<return>
 endfunction
 
 function! merlin#LoadProject()

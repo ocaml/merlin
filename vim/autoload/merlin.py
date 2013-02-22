@@ -138,6 +138,10 @@ def command_seek_before(line,col):
   position = send_command("seek", "before", {'line' : line, 'col': col})
   return (position['line'], position['col'])
 
+def command_seek_exact(line,col):
+  position = send_command("seek", "exact", {'line' : line, 'col': col})
+  return (position['line'], position['col'])
+
 def command_seek_scope():
   return send_command("seek", "maximize_scope")
 
@@ -453,6 +457,35 @@ def vim_which_ext(ext,vimvar):
 
 def vim_use(*args):
   catch_and_print(lambda: command_find_use(*args))
+
+def vim_selectphrase(l1,c1,l2,c2):
+  vl1 = int(vim.eval(l1))
+  vc1 = int(vim.eval(c1))
+  vl2 = int(vim.eval(l2))
+  vc2 = int(vim.eval(c2))
+  sync_buffer_to(vl2,vc2)
+  command_seek_exact(vl2,vc2)
+  loc2 = send_command("boundary")
+  if vl2 != vl1 or vc2 != vc1:
+    command_seek_exact(vl1,vc1)
+    loc1 = send_command("boundary")
+  else:
+    loc1 = None
+
+  if loc2 == None:
+    return
+
+  vl1 = loc2[0]['line']
+  vc1 = loc2[0]['col']
+  vl2 = loc2[1]['line']
+  vc2 = loc2[1]['col']
+  if loc1 != None:
+    vl1 = min(loc1[0]['line'], vl1)
+    vc1 = min(loc1[0]['col'], vc1)
+    vl2 = max(loc1[1]['line'], vl2)
+    vc2 = max(loc1[1]['col'], vc2)
+  for (var,val) in [(l1,vl1),(l2,vl2),(c1,vc1),(c2,vc2)]:
+    vim.command("let %s = %d" % (var,val))
 
 def load_project(directory,maxdepth=3):
   fname = os.path.join(directory,".merlin") 
