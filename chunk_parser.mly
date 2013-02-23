@@ -32,9 +32,9 @@ let symbol_gloc startpos endpos =
     loc_end   = endpos;
     loc_ghost = true;
   })
-let mkloc = Location.mkloc  
-let mknoloc = Location.mknoloc  
-  
+let mkloc = Location.mkloc
+let mknoloc = Location.mknoloc
+
 let mktyp startpos endpos  d =
   { ptyp_desc = d; ptyp_loc = symbol_rloc startpos endpos  }
 let mkpat startpos endpos  d =
@@ -585,7 +585,7 @@ structure_tail:
 ;
 
 top_structure_item:
-  | structure_item EOF 
+  | structure_item EOF
       { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $1 }
 ;
 
@@ -602,7 +602,7 @@ structure_item:
       }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { [mkstr $startpos $endpos
-          (Pstr_primitive (mkrhs $startpos($2) $endpos($2) $2, 
+          (Pstr_primitive (mkrhs $startpos($2) $endpos($2) $2,
             { pval_type = $4; pval_prim = $6; pval_loc = symbol_rloc $startpos $endpos }))]
       }
   | TYPE type_declarations
@@ -1005,7 +1005,7 @@ let_pattern:
       { mkpat $startpos $endpos (Ppat_constraint($1, $3)) }
 ;
 expr:
-    simple_expr 
+    simple_expr
       { $1 }
   | simple_expr simple_labeled_expr_list
       { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
@@ -1065,9 +1065,9 @@ expr:
         Fake.app (Fake.app Fake.Lwt.finally' expr) $7 }
   | expr_comma_list %prec below_COMMA
       { mkexp $startpos $endpos (Pexp_tuple(List.rev $1)) }
-  | constr_longident simple_expr 
+  | constr_longident simple_expr
       { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, Some $2, false)) }
-  | name_tag simple_expr 
+  | name_tag simple_expr
       { mkexp $startpos $endpos (Pexp_variant($1, Some $2)) }
   | IF seq_expr THEN expr ELSE expr
       { mkexp $startpos $endpos (Pexp_ifthenelse($2, $4, Some $6)) }
@@ -1140,16 +1140,16 @@ expr:
           (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "Array" "set")),
                       ["",$1; "",$4; "",$7])) }
   | simple_expr DOT LBRACKET seq_expr RBRACKET LESSMINUS expr
-      { mkexp $startpos $endpos 
+      { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "String" "set")),
                       ["",$1; "",$4; "",$7])) }
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
       { bigarray_set $startpos($1) $endpos($7) $1 $4 $7 }
   | label LESSMINUS expr
       { mkexp $startpos $endpos (Pexp_setinstvar(mkrhs $startpos($1) $endpos($1) $1, $3)) }
-  | ASSERT simple_expr 
+  | ASSERT simple_expr
       { mkassert $startpos $endpos  $2 }
-  | LAZY simple_expr 
+  | LAZY simple_expr
       { mkexp $startpos $endpos  (Pexp_lazy ($2)) }
   | OBJECT class_structure END
       { mkexp $startpos $endpos  (Pexp_object($2)) }
@@ -1252,19 +1252,19 @@ simple_labeled_expr_list:
       { $2 :: $1 }
 ;
 labeled_simple_expr:
-    simple_expr 
+    simple_expr
       { ("", $1) }
   | label_expr
       { $1 }
 ;
 label_expr:
-    LABEL simple_expr 
+    LABEL simple_expr
       { ($1, $2) }
   | TILDE label_ident
       { $2 }
   | QUESTION label_ident
       { ("?" ^ fst $2, snd $2) }
-  | OPTLABEL simple_expr 
+  | OPTLABEL simple_expr
       { ("?" ^ $1, $2) }
 ;
 label_ident:
@@ -1639,9 +1639,9 @@ core_type2:
 ;
 
 simple_core_type:
-    simple_core_type2  
+    simple_core_type2
       { $1 }
-  | LPAREN core_type_comma_list RPAREN 
+  | LPAREN core_type_comma_list RPAREN
       { match $2 with [sty] -> sty | _ -> raise Parsing.Parse_error }
 ;
 simple_core_type2:
