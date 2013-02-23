@@ -89,8 +89,8 @@ When editing an ml file, the following commands are available:
   Add directory to path
 
 **:Use**  
-  Load a findlib package (with completion) by adjusting buildpath to find
-  files from package.
+  Load findlib packages (with completion) by adjusting buildpath to find
+  files from packages.
 
 **:ML** **:MLI**  
   Quick switch to a local source file (with completion).  
@@ -99,24 +99,24 @@ When editing an ml file, the following commands are available:
       :ML ModuleA  
       :MLI ModuleB
 
-**:TypeEnclosing**
+**:TypeEnclosing**  
   Return the type of the expression under the cursor.
   See also: `:GrowEnclosing` and `:ShrinkEnclosing`
 
 **:TypeSel**  
   In visual mode, return type of selected **expression**.
 
-**:GrowEnclosing**
+**:GrowEnclosing**  
   When `:TypeEnclosing` has been called, select the smallest expression
   containing the previously highlighted expression.
 
-**:ShrinkEnclosing**
+**:ShrinkEnclosing**  
   When `:GrowEnclosing` has been called, revert to the previously selected
   expression. (i.e. the largest expression, centered around the position where
   `:TypeEnclosing` was called, which is contained in the currently highlighted
   expression).
 
-By default, TypeEnclosing (resp. TypeSel) is bound to \<LocalLeader\>t in normal
+By default, `:TypeEnclosing` (resp. `:TypeSel`) is bound to `<LocalLeader>t` in normal
 (resp. visual) mode.
 
 Now you may be interested by *Merlin project* and *Extensions* sections.
