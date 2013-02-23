@@ -1259,13 +1259,13 @@ labeled_simple_expr:
 ;
 label_expr:
     LABEL simple_expr
-      { ($1, $2) }
+      { ($1, reloc_exp $startpos $endpos $2) }
   | TILDE label_ident
-      { $2 }
+      { (fst $2, reloc_exp $startpos $endpos (snd $2)) }
   | QUESTION label_ident
-      { ("?" ^ fst $2, snd $2) }
+      { ("?" ^ fst $2, reloc_exp $startpos $endpos (snd $2)) }
   | OPTLABEL simple_expr
-      { ("?" ^ $1, $2) }
+      { ("?" ^ $1, reloc_exp $startpos $endpos $2) }
 ;
 label_ident:
     LIDENT { ($1, mkexp $startpos $endpos (Pexp_ident(mkrhs $startpos($1) $endpos($1) (Lident $1)))) }
