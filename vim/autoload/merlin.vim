@@ -176,8 +176,8 @@ function! merlin#Phrase()
 endfunction
 
 function! merlin#Register()
+  " Deprecated, use TypeEnclosing
   command! -buffer -nargs=0 TypeOf call merlin#TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
-  command! -buffer -nargs=0 TypeCursor py merlin.vim_type_cursor()
   command! -buffer -nargs=0 TypeEnclosing call merlin#TypeEnclosing()
   command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
   command! -buffer -nargs=0 ShrinkEnclosing call merlin#ShrinkEnclosing()
