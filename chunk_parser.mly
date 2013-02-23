@@ -965,11 +965,21 @@ seq_expr:
 ;
 labeled_simple_pattern:
     QUESTION LPAREN label_let_pattern opt_default RPAREN
-      { ("?" ^ fst $3, $4, reloc_pat $startpos $endpos($3) (snd $3)) }
+      { match $4 with
+        | None -> ("?" ^ fst $3, None, reloc_pat $startpos $endpos (snd $3))
+        | Some e ->
+            let e' = reloc_exp $startpos($4) $endpos e in
+            ("?" ^ fst $3, Some e', reloc_pat $startpos $endpos($3) (snd $3))
+      }
   | QUESTION label_var
       { ("?" ^ fst $2, None, reloc_pat $startpos $endpos (snd $2)) }
   | OPTLABEL LPAREN let_pattern opt_default RPAREN
-      { ("?" ^ $1, $4, reloc_pat $startpos $endpos($3) $3) }
+      { match $4 with
+        | None -> ("?" ^ $1, None, reloc_pat $startpos $endpos $3)
+        | Some e ->
+            let e' = reloc_exp $startpos($4) $endpos e in
+            ("?" ^ $1, Some e', reloc_pat $startpos $endpos($3) $3)
+      }
   | OPTLABEL pattern_var
       { ("?" ^ $1, None, reloc_pat $startpos $endpos $2) }
   | TILDE LPAREN label_let_pattern RPAREN
