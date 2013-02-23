@@ -99,16 +99,24 @@ When editing an ml file, the following commands are available:
       :ML ModuleA  
       :MLI ModuleB
 
-**:TypeOf**  
-  Return type of identifier under cursor
-
-**:TypeCursor**  
-  Return type of AST node under cursor (heuristic).
+**:TypeEnclosing**
+  Return the type of the expression under the cursor.
+  See also: `:GrowEnclosing` and `:ShrinkEnclosing`
 
 **:TypeSel**  
-  In visual mode, return type of selected expression.
+  In visual mode, return type of selected **expression**.
 
-By default, TypeOf (resp. TypeSel) is bound to \<LocalLeader\>t in normal
+**:GrowEnclosing**
+  When `:TypeEnclosing` has been called, select the smallest expression
+  containing the previously highlighted expression.
+
+**:ShrinkEnclosing**
+  When `:GrowEnclosing` has been called, revert to the previously selected
+  expression. (i.e. the largest expression, centered around the position where
+  `:TypeEnclosing` was called, which is contained in the currently highlighted
+  expression).
+
+By default, TypeEnclosing (resp. TypeSel) is bound to \<LocalLeader\>t in normal
 (resp. visual) mode.
 
 Now you may be interested by *Merlin project* and *Extensions* sections.
