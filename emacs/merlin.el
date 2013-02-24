@@ -432,7 +432,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   )
 
 (defun merlin-source-init ()
-  (merlin-check-synchronize)
+  (setq merlin-idle-point (point))
   (setq merlin-completion-point ac-point)
   (merlin-complete-identifier ac-prefix))
   
