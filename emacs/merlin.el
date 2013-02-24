@@ -435,7 +435,12 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (setq merlin-idle-point (point))
   (setq merlin-completion-point ac-point)
   (merlin-complete-identifier ac-prefix))
-  
+
+(defun merlin-try-completion ()
+  "Try the merlin completion after having synchronized the point"
+  (interactive)
+  (merlin-check-synchronize)
+  (ac-complete-merlin))
 
 (defvar merlin-ac-source
   '((init . merlin-source-init)
@@ -670,6 +675,8 @@ overlay"
     (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-x") 'merlin-next-error)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
+    (define-key map (kbd "C-c C-u") 'merlin-refresh)
+    (define-key map (kbd "C-c TAB") 'merlin-try-completion)
     (define-key map (kbd "C-c C-u") 'merlin-refresh)
     (define-key map (kbd "C-c C-f <C-return>") 'merlin-type-enclosing)
     (define-key map (kbd "C-c C-f C-<up>") 'merlin-type-enclosing-go-up)
