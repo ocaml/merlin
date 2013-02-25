@@ -581,8 +581,13 @@ overlay"
     (setq merlin-enclosing-overlay nil)))
 
 (defun merlin-magic-show-type (arg)
-  "Performs true magic."
+  "Prints the type of the expression under point. If called several times at the same position,
+it will print types of bigger expressions around point (it will go up the ast). Called with a prefix argument, it will go down the AST"
   (interactive "p")
+  (save-excursion
+    (forward-line)
+    (merlin-check-synchronize))
+  (setq merlin-idle-point (point))
   (if (equal merlin-last-point-type (point))
       (if (> arg 1)
           (merlin-type-enclosing-go-down)
@@ -595,7 +600,8 @@ overlay"
 (defun merlin-type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (type . bounds)"
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
-    (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error "5 sec")
+    (if (cddr data)
+        (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error "5 sec"))
     (message "%s" (car data))))
 
 (defun merlin-type-enclosing-go-up ()
@@ -681,8 +687,8 @@ overlay"
 (defvar merlin-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c <C-return>") 'merlin-to-point)
-    (define-key map (kbd "C-c C-t") 'merlin-show-type-of-point)
-    (define-key map (kbd "C-c T") 'merlin-magic-show-type)
+    (define-key map (kbd "C-c C-t") 'merlin-magic-show-type)
+    (define-key map (kbd "C-c d") 'merlin-show-type-def)
     (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-x") 'merlin-next-error)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
