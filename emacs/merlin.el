@@ -522,8 +522,7 @@ overlay"
                              'next-error "1 sec")
       (message "%s" (cdr result)))
      ((not (merlin-is-long (cdr result)))
-      (message "%s: %s"
-               (buffer-substring-no-properties (caar result) (cdar result))
+      (message "%s"
                (cdr result)))
      ((not quiet)
       (display-buffer merlin-type-buffer)
@@ -547,7 +546,6 @@ overlay"
   "Show the type of the region"
   (interactive)
   (merlin-show-type (cons (region-beginning) (region-end))))
-
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
   (merlin-check-synchronize t)
