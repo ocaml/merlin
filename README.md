@@ -140,14 +140,20 @@ the buffer. To advance or retract the locked zone to the point, use C-c C-RET.
 Note that retraction can go before the point in case the point is not at the
 end of the last definition.
 
-You can use C-c C-t to show the type of the identifier under the point. If it
-is a module, its signature will be displayed in another buffer.  With a prefix
-argument (eg. C-u C-c C-t) it will give the type of the region.
+Main keybindings:
 
-C-c l allows you to load a findlib package inside merlin. For a project, you
-should use a .merlin file.
+- C-c l allows you to load a findlib package inside merlin. For a project you
+should use a .merlin file
 
-C-c C-r retracts the whole buffer. (Useful when merlin seems confused).
+- C-c C-t will show you the type of the expression under point. Further calls
+ will show the types of bigger expressions surrounding the point. C-u C-c C-t
+ will show type of smaller expression (only valid if you went up at least once)
+
+- C-c C-r retracts the whole buffer (useful when merlin seems confused)
+
+- C-c d will print the definition of the type of the expression underpoint if any
+
+- C-c TAB will synchronize and completes expression under point.
 
 Moreover, you have autocompletion with merlin (and for now only with merlin),
 and whenever you stay idle for one second you get the type of the ident under
