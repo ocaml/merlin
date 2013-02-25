@@ -485,7 +485,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
 
 (defun merlin-type-of-expression-global (bounds exp)
   "Get the type of an expression globally"
-  (if (and bounds exp)
+  (if exp
       (cons
        bounds
        (merlin-is-return (merlin-send-command "type" (list "expression" exp))))))
@@ -530,7 +530,18 @@ overlay"
       (with-current-buffer merlin-type-buffer
         (erase-buffer)
         (insert (cdr result)))))))
-  
+
+(defun merlin-show-type-def ()
+  "Prints the definition of the type of the term under point"
+  (interactive)
+  (setq merlin-idle-point (point))
+  (let* ((bounds (bounds-of-thing-at-point 'ocamlatom))
+         (result (merlin-type-of-expression bounds (buffer-substring-no-properties (car bounds) (cdr bounds))))
+         (typedef (cdr (merlin-type-of-expression-global nil (cdr result)))))
+    (if typedef
+        (message "%s" typedef)
+      (message "%s: <no information>" (cdr result)))))
+
 
 (defun merlin-show-type-of-region ()
   "Show the type of the region"
