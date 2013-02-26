@@ -238,7 +238,8 @@ def sync_buffer_to(to_line, to_col):
         in_a_row = 0
         line_count = 0
     last_line += 1 + line_count
-    if last_line <= end_line:
+    line, col = command_seek_before(last_line,0)
+    if line <= end_line:
       if last_line <= 1:
         command_reset()
         content = cb[:end_line]
