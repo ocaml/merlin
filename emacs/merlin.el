@@ -169,12 +169,15 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer"
-  (while (or
-	  (not (accept-process-output (merlin-get-process) 0.1 nil nil))
-	  (not merlin-ready))
-    t)
-  (setq merlin-buffer nil)
-  (setq merlin-ready nil))
+  (let ((times 0))
+    (while
+        (and (< times 20)
+             (or
+              (not (accept-process-output (merlin-get-process) 0.1 nil nil))
+              (not merlin-ready)))
+      (setq times (+ times 1)))
+    (setq merlin-buffer nil)
+    (setq merlin-ready nil)))
 
 (defun merlin-start-process ()
   "Start the merlin process"
@@ -192,6 +195,7 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 	   (if args (append (list name) args) (list name)))
 	  "\n")))
     (process-send-string (merlin-get-process) string)
+    (setq merlin-result nil)
     (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
     (merlin-wait-for-answer)
     merlin-result
