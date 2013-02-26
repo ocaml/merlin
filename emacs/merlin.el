@@ -580,7 +580,7 @@ overlay"
 
 (defun merlin-magic-show-type (arg)
   "Prints the type of the expression under point. If called several times at the same position,
-it will print types of bigger expressions around point (it will go up the ast). Called with a prefix argument, it will go down the AST"
+it will print types of bigger expressions around point (it will go up the ast). Called with a prefix argument, it will go down the AST. If there is no enclosing, falls back to `merlin-show-type-of-point'"
   (interactive "p")
   (save-excursion
     (forward-line)
@@ -593,7 +593,9 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (progn
       (setq merlin-last-point-type (point))
       (merlin-type-enclosing)
-      (merlin-type-enclosing-go-up))))
+      (if (not merlin-enclosing-types)
+          (merlin-show-type-of-point arg)
+        (merlin-type-enclosing-go-up)))))
 
 (defun merlin-type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (type . bounds)"
