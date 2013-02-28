@@ -9,12 +9,17 @@ if ! [ -x $(which ocamlfind) ]; then
 fi
 
 EXIT=0
+
+COL_CLEAR=$(tput sgr0)
+COL_RED=$(tput setf 4)
+COL_GREEN=$(tput setf 2)
+
 check_package()
 {
   if ocamlfind query "$1" >/dev/null; then
-    printf "Found $1\t\E[32mGOOD\E[m\n"
+    printf "Found $1\t${COL_GREEN}GOOD${COL_CLEAR}\n"
   else
-    printf "\E[31mBAD\E[m $1 is missing\n\t$2\n"
+    printf "${COL_RED}BAD${COL_CLEAR} $1 is missing\n\t$2\n"
     EXIT=1
   fi
 }
