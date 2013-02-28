@@ -4,7 +4,7 @@ import vim
 import re
 import os
 import sys
-from collections import Counter
+from itertools import groupby
 
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
@@ -179,7 +179,7 @@ def current_changes():
   # drop everything after cursor
   changes = changes[:position]
   # convert to canonical format (list of (line,col,contents) tuples)
-  return Counter(map(extract_change,changes))
+  return dict((k, len(list(v))) for k,v in groupby(sorted(map(extract_change,changes))))
 
 # find_changes(state) returns a pair (new_state, to_sync)
 # Where:
@@ -195,7 +195,7 @@ def find_changes(previous = None):
   if len(changes) == 0:
     return (changes, [])
 
-  return (changes, (changes - previous).elements())
+  return (changes, [k for (k,v) in changes.items() if k in previous and previous[k] < v])
 
 def find_line(changes):
   if changes == None:
@@ -239,6 +239,9 @@ def sync_buffer_to(to_line, to_col):
         line_count = 0
     last_line += 1 + line_count
     line, col = command_seek_before(last_line,0)
+    boundary = send_command("boundary")
+    if boundary:
+      line, col = boundary[0]['line'], boundary[0]['col']
     if line <= end_line:
       if last_line <= 1:
         command_reset()
