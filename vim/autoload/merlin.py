@@ -195,7 +195,7 @@ def find_changes(previous = None):
   if len(changes) == 0:
     return (changes, [])
 
-  return (changes, [k for (k,v) in changes.items() if k in previous and previous[k] < v])
+  return (changes, [k for (k,v) in changes.items() if not k in previous or previous[k] < v])
 
 def find_line(changes):
   if changes == None:
