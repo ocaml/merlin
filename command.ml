@@ -339,8 +339,8 @@ let complete_in_env env prefix =
       let rec keep_until_lowercase li =
         let open Longident in
         match li with
-        | Lident id when not (is_lowercase id.[0]) -> Some li
-        | Ldot (path, id) when not (is_lowercase id.[0]) ->
+        | Lident id when id <> "" && not (is_lowercase id.[0]) -> Some li
+        | Ldot (path, id) when id <> "" && not (is_lowercase id.[0]) ->
           begin match keep_until_lowercase path with
           | None -> Some (Lident id)
           | Some path -> Some (Ldot (path, id))
