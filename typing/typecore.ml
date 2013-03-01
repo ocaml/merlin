@@ -1579,10 +1579,10 @@ and type_expect ?in_function env sexp ty_expected =
          default;
       ] in
       let smatch = {
-        pexp_loc = loc;
+        pexp_loc = default_loc;
         pexp_desc =
           Pexp_match ({
-            pexp_loc = loc;
+            pexp_loc = default_loc;
             pexp_desc = Pexp_ident(mknoloc (Longident.Lident "*opt*"))
             },
             scases
@@ -1593,7 +1593,7 @@ and type_expect ?in_function env sexp ty_expected =
         pexp_desc =
          Pexp_function (
            l, None,
-           [ {ppat_loc = loc;
+           [ {ppat_loc = spat.ppat_loc;
               ppat_desc = Ppat_var (mknoloc "*opt*")},
              {pexp_loc = loc;
               pexp_desc = Pexp_let(Default, [spat, smatch], sbody);
