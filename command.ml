@@ -202,7 +202,7 @@ let command_type = {
     let ppf, to_string = Misc.ppf_to_string () in
     begin match t with
       | Browse.Envs.Other -> raise Not_found
-      | Browse.Envs.Expr e -> Printtyp.type_expr ppf e
+      | Browse.Envs.Expr e -> Printtyp.type_scheme ppf e
       | Browse.Envs.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
       | Browse.Envs.Module m -> Printtyp.modtype ppf m
       | Browse.Envs.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
@@ -217,7 +217,7 @@ let command_type = {
     let aux = function
       | Browse.Envs.T (loc,_,Browse.Envs.Expr e,_) ->
         let ppf, to_string = Misc.ppf_to_string () in
-        Printtyp.type_expr ppf e;
+        Printtyp.type_scheme ppf e;
         Some (Protocol.with_location loc ["type", `String (to_string ())])
       | _ -> None
     in
@@ -284,7 +284,7 @@ let complete_in_env env prefix =
           in
           Format.pp_print_string ppf name;
           Format.pp_print_string ppf " : ";
-          Printtyp.type_expr ppf { Types. level = 0 ; id = 0 ; desc } ;
+          Printtyp.type_scheme ppf (Btype.newgenty desc);
           "Label"
       | `Mod m   ->
           (if exact then
