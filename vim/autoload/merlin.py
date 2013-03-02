@@ -381,10 +381,10 @@ def easy_matcher(start, stop):
   startl = ""
   startc = ""
   if start['line'] > 0:
-    startl = "\%>{}l".format(start['line'] - 1)
+    startl = "\%>{0}l".format(start['line'] - 1)
   if start['col'] > 0:
-    startc = "\%>{}c".format(start['col'])
-  return '{}{}\%<{}l\%<{}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
+    startc = "\%>{0}c".format(start['col'])
+  return '{0}{1}\%<{2}l\%<{3}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
 
 def hard_matcher(start, stop):
   first_start = {'line' : start['line'], 'col' : start['col']}
@@ -396,7 +396,7 @@ def hard_matcher(start, stop):
   last_start = {'line' : stop['line'], 'col' : 0}
   last_stop =  {'line' : stop['line'], 'col' : stop['col']}
   last_line = easy_matcher(last_start, last_stop)
-  return "{}\|{}\|{}".format(first_line, middle, last_line)
+  return "{0}\|{1}\|{2}".format(first_line, middle, last_line)
 
 def make_matcher(start, stop):
   if start['line'] == stop['line']:
@@ -411,7 +411,7 @@ def vim_next_enclosing(vimvar):
         current_enclosing += 1
     tmp = enclosing_types[current_enclosing]
     matcher = make_matcher(tmp['start'], tmp['end'])
-    vim.command("let {} = matchadd('EnclosingExpr', '{}')".format(vimvar, matcher))
+    vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
     print(tmp['type'])
 
 def vim_prev_enclosing(vimvar):
@@ -421,7 +421,7 @@ def vim_prev_enclosing(vimvar):
       current_enclosing -= 1
     tmp = enclosing_types[current_enclosing]
     matcher = make_matcher(tmp['start'], tmp['end'])
-    vim.command("let {} = matchadd('EnclosingExpr', '{}')".format(vimvar, matcher))
+    vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
     print(tmp['type'])
 
 # Resubmit current buffer
