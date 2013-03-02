@@ -129,7 +129,11 @@ function! merlin#Complete(findstart,base)
   let base = s:prepended . a:base
   let l:props = []
   py merlin.vim_complete_cursor(vim.eval("base"),"l:props")
-  return {'words': l:props, 'refresh':'always'}
+  if v:version < 703
+    return l:props
+  else
+    return {'words': l:props, 'refresh': 'always'}
+  endif
 endfunction
 
 function! merlin#SyntasticGetLocList()
