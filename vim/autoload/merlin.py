@@ -407,22 +407,24 @@ def make_matcher(start, stop):
 def vim_next_enclosing(vimvar):
   if enclosing_types != []:
     global current_enclosing
-    if current_enclosing < len(enclosing_types) - 1:
+    if current_enclosing < len(enclosing_types):
         current_enclosing += 1
-    tmp = enclosing_types[current_enclosing]
-    matcher = make_matcher(tmp['start'], tmp['end'])
-    vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-    print(tmp['type'])
+    if current_enclosing < len(enclosing_types):
+      tmp = enclosing_types[current_enclosing]
+      matcher = make_matcher(tmp['start'], tmp['end'])
+      vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
+      print(tmp['type'])
 
 def vim_prev_enclosing(vimvar):
   if enclosing_types != []:
     global current_enclosing
-    if current_enclosing > 0:
+    if current_enclosing >= 0:
       current_enclosing -= 1
-    tmp = enclosing_types[current_enclosing]
-    matcher = make_matcher(tmp['start'], tmp['end'])
-    vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-    print(tmp['type'])
+    if current_enclosing >= 0:
+      tmp = enclosing_types[current_enclosing]
+      matcher = make_matcher(tmp['start'], tmp['end'])
+      vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
+      print(tmp['type'])
 
 # Resubmit current buffer
 def vim_reload_buffer():
