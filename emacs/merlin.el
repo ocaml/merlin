@@ -69,7 +69,8 @@
 (defvar merlin-name nil "Merlin name")
 (defvar merlin-error-overlay nil "Merlin overlay used for errors")
 (defvar merlin-type-overlay nil "Merlin overlay used for type-checking")
-(defvar merlin-overlay nil "Merlin overlay used for the lock zone")
+(defvar merlin-lock-zone-highlight-overlay nil "Overlay used for the lock zone highlighting")
+(defvar merlin-lock-zone-margin-overlay nil "Overlay used for the margin indicator of the lock zone")
 (defvar merlin-buffer nil "Buffer for merlin input")
 (defvar merlin-ready nil "Is reception done?")
 (defvar merlin-idle-delay 1.0
@@ -82,6 +83,16 @@ If the timer is zero or negative, nothing is done."
 
 (defvar merlin-idle-timer nil
   "The timer used to print the type of the expression under point")
+
+(defvar merlin-margin-lock "-"
+  "String put in the margin to signal the end of the locked zone")
+
+(defvar merlin-display-lock-zone '(margin)
+  "How to display the locked zone. It is a list of methods among:
+   - 'highlight: highlight the current locked zone
+   - 'margin: put a symbol (given by `merlin-margin-lock-string') in the margin
+     of the line where the zone ends")
+
 
 ;; UTILS
 
@@ -217,7 +228,7 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
   "Rewind the knowledge of merlin of the current buffer to zero"
   (merlin-send-command "reset" nil)
   (setq merlin-lock-point (point-min))
-  (merlin-update-overlay)
+  (merlin-update-lock-zone-display)
 )
 
 (defun merlin-dump-env ()
@@ -373,11 +384,31 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   "Retract merlin's view to `point'"
   (merlin-seek point))
 
-(defun merlin-update-overlay ()
-  (if merlin-overlay
-      (delete-overlay merlin-overlay))
-  (setq merlin-overlay (make-overlay (point-min) merlin-lock-point))
-  (overlay-put merlin-overlay 'face 'merlin-locked-face))
+(defun merlin-update-lock-zone-display ()
+  "Updates the locked zone display, according to `merlin-display-lock-zone'"
+  (mapc
+   '(lambda (x)
+      (case x
+        (margin (merlin-update-margin-lock-zone))
+        (highlight (merlin-update-highlight-lock-zone))))
+   merlin-display-lock-zone))
+
+(defun merlin-update-margin-lock-zone ()
+  (if merlin-lock-zone-margin-overlay
+      (delete-overlay merlin-lock-zone-margin-overlay))
+  (save-excursion
+    (goto-char merlin-lock-point)
+    (setq merlin-lock-zone-margin-overlay (make-overlay (point) (point)))
+    (set-window-margins nil 1)
+    (overlay-put merlin-lock-zone-margin-overlay 
+                 'before-string 
+                 (propertize " " 'display `((margin left-margin) ,merlin-margin-lock)))))
+
+(defun merlin-update-highlight-lock-zone ()
+  (if merlin-lock-zone-highlight-overlay
+      (delete-overlay merlin-lock-zone-highlight-overlay))
+  (setq merlin-lock-zone-highlight-overlay (make-overlay (point-min) merlin-lock-point))
+  (overlay-put merlin-lock-zone-highlight-overlay 'face 'merlin-locked-face))
 
 (defun merlin-update-point (view-errors-p)
   "Moves the merlin point to around the given the current
@@ -399,7 +430,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
     (merlin-view-errors view-errors-p)
-    (merlin-update-overlay))
+    (merlin-update-lock-zone-display))
 )    
   
 (defun merlin-check-synchronize (&optional clean)
@@ -415,7 +446,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (if (< start merlin-lock-point)
       (progn
         (setq merlin-lock-point (merlin-retract-to start))
-        (merlin-update-overlay))))
+        (merlin-update-lock-zone-display))))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
@@ -722,7 +753,8 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (set (make-local-variable 'merlin-pending-errors) nil)
     (set (make-local-variable 'merlin-pending-errors-overlay) nil)
     (set (make-local-variable 'merlin-type-overlay) nil)
-    (set (make-local-variable 'merlin-overlay) nil)
+    (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
+    (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
     (set (make-local-variable 'merlin-prefix) nil)
     (set (make-local-variable 'merlin-error-prefix) nil)
     (set (make-local-variable 'merlin-enclosing-overlay) nil)
@@ -760,7 +792,10 @@ it will print types of bigger expressions around point (it will go up the ast). 
             (process-send-eof (merlin-get-process))
             (delete-process (merlin-get-process))))
       (cancel-timer merlin-idle-timer)
-      (if merlin-overlay (delete-overlay merlin-overlay))
+      (if merlin-lock-zone-highlight-overlay
+          (delete-overlay merlin-lock-zone-highlight-overlay))
+      (if merlin-lock-zone-margin-overlay
+          (delete-overlay merlin-lock-zone-margin-overlay))
       (if merlin-enclosing-overlay (delete-overlay merlin-enclosing-overlay))
       (merlin-delete-error-overlays)
       (if (get-buffer (merlin-make-buffer-name))
