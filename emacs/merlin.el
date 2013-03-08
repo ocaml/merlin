@@ -744,11 +744,15 @@ it will print types of bigger expressions around point (it will go up the ast). 
   " merlin"
   :keymap merlin-mode-map
   (if merlin-mode 
-      (if (equal (file-name-extension (buffer-file-name))
-                 "ml")
+      (if (and
+           (buffer-file-name)
+           (equal (file-name-extension (buffer-file-name))
+                 "ml"))
           (merlin-setup)
         (progn
-          (message "merlin can only operate on ml files")
+          (if (buffer-file-name)
+              message "merlin can only operate on ml files"
+              nil)
           (merlin-mode -1)))
     (progn
       (if merlin-process
