@@ -745,7 +745,8 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (progn
     (merlin-start-process)
     (when (featurep 'auto-complete)
-      (auto-complete-mode))
+      (auto-complete-mode)
+      (add-to-list 'ac-sources 'merlin-ac-source))
     (set (make-local-variable 'merlin-lock-point) (point-min))
     (set (make-local-variable 'merlin-buffer) nil)
     (set (make-local-variable 'merlin-result) nil)
@@ -763,7 +764,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (set (make-local-variable 'merlin-enclosing-types) nil)
     (set (make-local-variable 'merlin-enclosing-offset) nil)
     (set (make-local-variable 'merlin-last-point-type) nil)
-    (add-to-list 'ac-sources 'merlin-ac-source)
     (add-to-list 'after-change-functions 'merlin-edit)
     (set-process-query-on-exit-flag (merlin-get-process) nil)
     (merlin-parse)
