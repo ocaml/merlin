@@ -9,23 +9,20 @@ from itertools import groupby
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
 
-class Failure(Exception):
+class MerlinExc(Exception):
   def __init__(self, value):
       self.value = value
   def __str__(self):
     return repr(self.value)
 
-class Error(Exception):
-  def __init__(self, value):
-      self.value = value
-  def __str__(self):
-    return repr(self.value)
+class Failure(MerlinExc):
+  pass
 
-class Exception(Exception):
-  def __init__(self, value):
-      self.value = value
-  def __str__(self):
-    return repr(self.value)
+class Error(MerlinExc):
+  pass
+
+class Exception(MerlinExc):
+  pass
 
 ######## COMMUNICATION
 
@@ -67,9 +64,9 @@ def send_command(*cmd):
   elif result[0] == "exception":
     raise Exception(content)
 
-def catch_and_print(f, msg=None):
+def try_print_error(e, msg=None):
   try:
-    return f()
+    raise e
   except Error as e:
     if msg: print(msg)
     else:
@@ -92,6 +89,13 @@ def catch_and_print(f, msg=None):
           print ("error: Unknown package '%s'" % m.group(1))
         return None
       print(msg)
+
+def catch_and_print(f, msg=None):
+  try:
+    return f()
+  except e:
+    try_print_error(e, msg=msg)
+
 ######## BUFFER CACHE
 
 last_buffer = None
@@ -337,31 +341,28 @@ def vim_find_list(vimvar):
   for pkg in pkgs:
     vim.command("call add(%s, '%s')" % (vimvar, pkg))
 
-def vim_type_expr(expr):
-  sync_buffer()
-  ty = catch_and_print(lambda: send_command("type", "expression", expr))
-  if ty: print (expr + " : " + ty)
-
-def vim_type_cursor():
+def vim_type(expr=None,is_approx=False):
   to_line, to_col = vim.current.window.cursor
-  sync_buffer()
-  ty = catch_and_print(lambda: send_command("type", "at", {'line':to_line,'col':to_col}))
-  if ty: print(ty['type'])
-
-def vim_type_expr_cursor(expr):
-  to_line, to_col = vim.current.window.cursor
-  sync_buffer()
+  cmd_at = ["at", {'line':to_line,'col':to_col}]
+  sync_buffer_to(to_line,to_col)
+  cmd_expr = ["expression", expr] if expr else []
   try:
-    ty = send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col})
-    print(ty)
-  except Exception:
-    sys.stdout.write("(approx) ")
-    vim_type_cursor()
-  except Error:
-    sys.stdout.write("(approx) ")
-    vim_type_cursor()
+    cmd = ["type"] + cmd_expr + cmd_at
+    ty = send_command(*cmd)
+    if isinstance(ty,dict):
+      if "type" in ty: ty = ty['type']
+      else: ty = str(ty)
+    if is_approx: sys.stdout.write("(approx) ")
+    if expr: print(expr + " : " + ty)
+    else: print(ty)
+  except MerlinExc as e:
+    if expr:
+      vim_type(expr=None,is_approx=True)
+    else:
+      try_print_error(e)
 
-def vim_type_enclosing(vimvar):
+# expr used as fallback in case type_enclosing fail
+def vim_type_enclosing(vimvar,expr=None):
   global enclosing_types
   global current_enclosing
   enclosing_types = [] # reset
