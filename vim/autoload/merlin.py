@@ -350,6 +350,9 @@ def vim_type(expr=None,is_approx=False):
     cmd = ["type"] + cmd_expr + cmd_at
     ty = send_command(*cmd)
     if is_approx: sys.stdout.write("(approx) ")
+    if isinstance(ty,dict):
+      if "type" in ty: ty = ty['type']
+      else: ty = str(ty)
     if expr: print(expr + " : " + ty)
     else: print(ty)
   except MerlinExc as e:
