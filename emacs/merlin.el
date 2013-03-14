@@ -19,6 +19,8 @@
   :group 'merlin-faces)
 
 
+
+
 ;;
 ;; Variables
 ;;
@@ -761,7 +763,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (set (make-local-variable 'merlin-enclosing-types) nil)
     (set (make-local-variable 'merlin-enclosing-offset) nil)
     (set (make-local-variable 'merlin-last-point-type) nil)
-    (setq ac-sources '(merlin-ac-source))
+    (add-to-list 'ac-sources 'merlin-ac-source)
     (add-to-list 'after-change-functions 'merlin-edit)
     (set-process-query-on-exit-flag (merlin-get-process) nil)
     (merlin-parse)
