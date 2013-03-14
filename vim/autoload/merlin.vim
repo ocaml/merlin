@@ -73,7 +73,7 @@ function! merlin#RawCommand(...)
 endfunction
 
 function! merlin#TypeOf(expr)
-  py merlin.vim_type(expr=vim.eval("a:expr"))
+  py merlin.vim_type_expr_cursor(vim.eval("a:expr"))
 endfunction
 
 function! merlin#TypeOfSel()
