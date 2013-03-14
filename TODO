@@ -6,6 +6,7 @@ DONE List modules on load path, even not loaded ones
 DONE Configure script: check for packages
 DONE Traverse parse tree to find node nearest to a given location
 DONE Editor integration : allow to retrieve definition boundary to improve synchronisation
+DONE Fix pretty printing of type variables
 WIP Rework handling of errors and warnings: generalize use of "catch" pattern
 WIP (in type-error branch) Hack typer: give type (forall a. a) to unbound values and ill-typed expressions
 - Write documentation:
@@ -14,7 +15,6 @@ WIP (in type-error branch) Hack typer: give type (forall a. a) to unbound values
   - EMACS mode ?
   - Internal design
 - Move path management to a dedicated module
-- Fix pretty printing of type variables
 - Pretty(ugly)-print hacked parse-trees for debugging purposes
   to extract as much information as possible.
 - Use inotify to detect cmi changes.

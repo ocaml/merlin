@@ -9,23 +9,20 @@ from itertools import groupby
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
 
-class Failure(Exception):
+class MerlinExc(Exception):
   def __init__(self, value):
       self.value = value
   def __str__(self):
     return repr(self.value)
 
-class Error(Exception):
-  def __init__(self, value):
-      self.value = value
-  def __str__(self):
-    return repr(self.value)
+class Failure(MerlinExc):
+  pass
 
-class Exception(Exception):
-  def __init__(self, value):
-      self.value = value
-  def __str__(self):
-    return repr(self.value)
+class Error(MerlinExc):
+  pass
+
+class Exception(MerlinExc):
+  pass
 
 ######## COMMUNICATION
 
@@ -67,9 +64,9 @@ def send_command(*cmd):
   elif result[0] == "exception":
     raise Exception(content)
 
-def catch_and_print(f, msg=None):
+def try_print_error(e, msg=None):
   try:
-    return f()
+    raise e
   except Error as e:
     if msg: print(msg)
     else:
@@ -92,6 +89,13 @@ def catch_and_print(f, msg=None):
           print ("error: Unknown package '%s'" % m.group(1))
         return None
       print(msg)
+
+def catch_and_print(f, msg=None):
+  try:
+    return f()
+  except e:
+    try_print_error(e, msg=msg)
+
 ######## BUFFER CACHE
 
 last_buffer = None
@@ -194,7 +198,6 @@ def find_changes(previous = None):
     return (changes, None)
   if len(changes) == 0:
     return (changes, [])
-
   return (changes, [k for (k,v) in changes.items() if not k in previous or previous[k] < v])
 
 def find_line(changes):
@@ -338,31 +341,25 @@ def vim_find_list(vimvar):
   for pkg in pkgs:
     vim.command("call add(%s, '%s')" % (vimvar, pkg))
 
-def vim_type_expr(expr):
-  sync_buffer()
-  ty = catch_and_print(lambda: send_command("type", "expression", expr))
-  if ty: print (expr + " : " + ty)
-
-def vim_type_cursor():
+def vim_type(expr=None,is_approx=False):
   to_line, to_col = vim.current.window.cursor
-  sync_buffer()
-  ty = catch_and_print(lambda: send_command("type", "at", {'line':to_line,'col':to_col}))
-  if ty: print(ty['type'])
-
-def vim_type_expr_cursor(expr):
-  to_line, to_col = vim.current.window.cursor
-  sync_buffer()
+  cmd_at = ["at", {'line':to_line,'col':to_col}]
+  sync_buffer_to(to_line,to_col)
+  cmd_expr = ["expression", expr] if expr else []
   try:
-    ty = send_command("type", "expression", expr, "at", {'line':to_line,'col':to_col})
-    print(ty)
-  except Exception:
-    sys.stdout.write("(approx) ")
-    vim_type_cursor()
-  except Error:
-    sys.stdout.write("(approx) ")
-    vim_type_cursor()
+    cmd = ["type"] + cmd_expr + cmd_at
+    ty = send_command(*cmd)
+    if is_approx: sys.stdout.write("(approx) ")
+    if expr: print(expr + " : " + ty)
+    else: print(ty)
+  except MerlinExc as e:
+    if expr:
+      vim_type(expr=None,is_approx=True)
+    else:
+      try_print_error(e)
 
-def vim_type_enclosing(vimvar):
+# expr used as fallback in case type_enclosing fail
+def vim_type_enclosing(vimvar,expr=None):
   global enclosing_types
   global current_enclosing
   enclosing_types = [] # reset
@@ -373,63 +370,60 @@ def vim_type_enclosing(vimvar):
     result = send_command("type", "enclosing", {'line':to_line,'col':to_col})
     enclosing_types = result[1]
     if enclosing_types == []:
-        sys.stdout.write("(approx) ")
-        vim_type_cursor()
+      vim_type(expr=expr, is_approx=True)
     else:
-        vim_next_enclosing(vimvar)
-  except Exception:
-    sys.stdout.write("(approx) ")
-    vim_type_cursor()
-  except Error:
-    sys.stdout.write("(approx) ")
-    vim_type_cursor()
+      vim_next_enclosing(vimvar)
+  except MerlinExc:
+    vim_type(expr=expr, is_approx=True)
 
 def easy_matcher(start, stop):
-    startl = ""
-    startc = ""
-    if start['line'] > 0:
-        startl = "\%>{0}l".format(start['line'] - 1)
-    if start['col'] > 0:
-        startc = "\%>{0}c".format(start['col'])
-    return '{0}{1}\%<{2}l\%<{3}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
+  startl = ""
+  startc = ""
+  if start['line'] > 0:
+    startl = "\%>{0}l".format(start['line'] - 1)
+  if start['col'] > 0:
+    startc = "\%>{0}c".format(start['col'])
+  return '{0}{1}\%<{2}l\%<{3}c'.format(startl, startc, stop['line'] + 1, stop['col'] + 1)
 
 def hard_matcher(start, stop):
-    first_start = {'line' : start['line'], 'col' : start['col']}
-    first_stop =  {'line' : start['line'], 'col' : 4242}
-    first_line = easy_matcher(first_start, first_stop)
-    mid_start = {'line' : start['line']+1, 'col' : 0}
-    mid_stop =  {'line' : stop['line']-1 , 'col' : 4242}
-    middle = easy_matcher(mid_start, mid_stop)
-    last_start = {'line' : stop['line'], 'col' : 0}
-    last_stop =  {'line' : stop['line'], 'col' : stop['col']}
-    last_line = easy_matcher(last_start, last_stop)
-    return "{0}\|{1}\|{2}".format(first_line, middle, last_line)
+  first_start = {'line' : start['line'], 'col' : start['col']}
+  first_stop =  {'line' : start['line'], 'col' : 4242}
+  first_line = easy_matcher(first_start, first_stop)
+  mid_start = {'line' : start['line']+1, 'col' : 0}
+  mid_stop =  {'line' : stop['line']-1 , 'col' : 4242}
+  middle = easy_matcher(mid_start, mid_stop)
+  last_start = {'line' : stop['line'], 'col' : 0}
+  last_stop =  {'line' : stop['line'], 'col' : stop['col']}
+  last_line = easy_matcher(last_start, last_stop)
+  return "{0}\|{1}\|{2}".format(first_line, middle, last_line)
 
 def make_matcher(start, stop):
-    if start['line'] == stop['line']:
-        return easy_matcher(start, stop)
-    else:
-        return hard_matcher(start, stop)
+  if start['line'] == stop['line']:
+    return easy_matcher(start, stop)
+  else:
+    return hard_matcher(start, stop)
 
 def vim_next_enclosing(vimvar):
-    if enclosing_types != []:
-        global current_enclosing
-        if current_enclosing < len(enclosing_types) - 1:
-            current_enclosing += 1
-        tmp = enclosing_types[current_enclosing]
-        matcher = make_matcher(tmp['start'], tmp['end'])
-        vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-        print(tmp['type'])
+  if enclosing_types != []:
+    global current_enclosing
+    if current_enclosing < len(enclosing_types):
+        current_enclosing += 1
+    if current_enclosing < len(enclosing_types):
+      tmp = enclosing_types[current_enclosing]
+      matcher = make_matcher(tmp['start'], tmp['end'])
+      vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
+      print(tmp['type'])
 
 def vim_prev_enclosing(vimvar):
-    if enclosing_types != []:
-        global current_enclosing
-        if current_enclosing > 0:
-            current_enclosing -= 1
-        tmp = enclosing_types[current_enclosing]
-        matcher = make_matcher(tmp['start'], tmp['end'])
-        vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-        print(tmp['type'])
+  if enclosing_types != []:
+    global current_enclosing
+    if current_enclosing >= 0:
+      current_enclosing -= 1
+    if current_enclosing >= 0:
+      tmp = enclosing_types[current_enclosing]
+      matcher = make_matcher(tmp['start'], tmp['end'])
+      vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
+      print(tmp['type'])
 
 # Resubmit current buffer
 def vim_reload_buffer():

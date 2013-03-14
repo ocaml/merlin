@@ -69,7 +69,8 @@
 (defvar merlin-name nil "Merlin name")
 (defvar merlin-error-overlay nil "Merlin overlay used for errors")
 (defvar merlin-type-overlay nil "Merlin overlay used for type-checking")
-(defvar merlin-overlay nil "Merlin overlay used for the lock zone")
+(defvar merlin-lock-zone-highlight-overlay nil "Overlay used for the lock zone highlighting")
+(defvar merlin-lock-zone-margin-overlay nil "Overlay used for the margin indicator of the lock zone")
 (defvar merlin-buffer nil "Buffer for merlin input")
 (defvar merlin-ready nil "Is reception done?")
 (defvar merlin-idle-delay 1.0
@@ -82,6 +83,16 @@ If the timer is zero or negative, nothing is done."
 
 (defvar merlin-idle-timer nil
   "The timer used to print the type of the expression under point")
+
+(defvar merlin-margin-lock "-"
+  "String put in the margin to signal the end of the locked zone")
+
+(defvar merlin-display-lock-zone '(margin)
+  "How to display the locked zone. It is a list of methods among:
+   - 'highlight: highlight the current locked zone
+   - 'margin: put a symbol (given by `merlin-margin-lock-string') in the margin
+     of the line where the zone ends")
+
 
 ;; UTILS
 
@@ -169,12 +180,15 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer"
-  (while (or
-	  (not (accept-process-output (merlin-get-process) 0.1 nil nil))
-	  (not merlin-ready))
-    t)
-  (setq merlin-buffer nil)
-  (setq merlin-ready nil))
+  (let ((times 0))
+    (while
+        (and (< times 20)
+             (or
+              (not (accept-process-output (merlin-get-process) 0.1 nil nil))
+              (not merlin-ready)))
+      (setq times (+ times 1)))
+    (setq merlin-buffer nil)
+    (setq merlin-ready nil)))
 
 (defun merlin-start-process ()
   "Start the merlin process"
@@ -192,6 +206,7 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 	   (if args (append (list name) args) (list name)))
 	  "\n")))
     (process-send-string (merlin-get-process) string)
+    (setq merlin-result nil)
     (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
     (merlin-wait-for-answer)
     merlin-result
@@ -213,7 +228,7 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
   "Rewind the knowledge of merlin of the current buffer to zero"
   (merlin-send-command "reset" nil)
   (setq merlin-lock-point (point-min))
-  (merlin-update-overlay)
+  (merlin-update-lock-zone-display)
 )
 
 (defun merlin-dump-env ()
@@ -369,11 +384,31 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   "Retract merlin's view to `point'"
   (merlin-seek point))
 
-(defun merlin-update-overlay ()
-  (if merlin-overlay
-      (delete-overlay merlin-overlay))
-  (setq merlin-overlay (make-overlay (point-min) merlin-lock-point))
-  (overlay-put merlin-overlay 'face 'merlin-locked-face))
+(defun merlin-update-lock-zone-display ()
+  "Updates the locked zone display, according to `merlin-display-lock-zone'"
+  (mapc
+   '(lambda (x)
+      (case x
+        (margin (merlin-update-margin-lock-zone))
+        (highlight (merlin-update-highlight-lock-zone))))
+   merlin-display-lock-zone))
+
+(defun merlin-update-margin-lock-zone ()
+  (if merlin-lock-zone-margin-overlay
+      (delete-overlay merlin-lock-zone-margin-overlay))
+  (save-excursion
+    (goto-char merlin-lock-point)
+    (setq merlin-lock-zone-margin-overlay (make-overlay (point) (point)))
+    (set-window-margins nil 1)
+    (overlay-put merlin-lock-zone-margin-overlay 
+                 'before-string 
+                 (propertize " " 'display `((margin left-margin) ,merlin-margin-lock)))))
+
+(defun merlin-update-highlight-lock-zone ()
+  (if merlin-lock-zone-highlight-overlay
+      (delete-overlay merlin-lock-zone-highlight-overlay))
+  (setq merlin-lock-zone-highlight-overlay (make-overlay (point-min) merlin-lock-point))
+  (overlay-put merlin-lock-zone-highlight-overlay 'face 'merlin-locked-face))
 
 (defun merlin-update-point (view-errors-p)
   "Moves the merlin point to around the given the current
@@ -395,7 +430,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
     (merlin-view-errors view-errors-p)
-    (merlin-update-overlay))
+    (merlin-update-lock-zone-display))
 )    
   
 (defun merlin-check-synchronize (&optional clean)
@@ -411,7 +446,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (if (< start merlin-lock-point)
       (progn
         (setq merlin-lock-point (merlin-retract-to start))
-        (merlin-update-overlay))))
+        (merlin-update-lock-zone-display))))
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
   "Parses and format completion results"
@@ -485,7 +520,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
 
 (defun merlin-type-of-expression-global (bounds exp)
   "Get the type of an expression globally"
-  (if (and bounds exp)
+  (if exp
       (cons
        bounds
        (merlin-is-return (merlin-send-command "type" (list "expression" exp))))))
@@ -522,21 +557,30 @@ overlay"
                              'next-error "1 sec")
       (message "%s" (cdr result)))
      ((not (merlin-is-long (cdr result)))
-      (message "%s: %s"
-               (buffer-substring-no-properties (caar result) (cdar result))
+      (message "%s"
                (cdr result)))
      ((not quiet)
       (display-buffer merlin-type-buffer)
       (with-current-buffer merlin-type-buffer
         (erase-buffer)
         (insert (cdr result)))))))
-  
+
+(defun merlin-show-type-def ()
+  "Prints the definition of the type of the term under point"
+  (interactive)
+  (setq merlin-idle-point (point))
+  (let* ((bounds (bounds-of-thing-at-point 'ocamlatom))
+         (result (merlin-type-of-expression bounds (buffer-substring-no-properties (car bounds) (cdr bounds))))
+         (typedef (cdr (merlin-type-of-expression-global nil (cdr result)))))
+    (if typedef
+        (message "%s" typedef)
+      (message "%s: <no information>" (cdr result)))))
+
 
 (defun merlin-show-type-of-region ()
   "Show the type of the region"
   (interactive)
   (merlin-show-type (cons (region-beginning) (region-end))))
-
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
   (merlin-check-synchronize t)
@@ -570,8 +614,13 @@ overlay"
     (setq merlin-enclosing-overlay nil)))
 
 (defun merlin-magic-show-type (arg)
-  "Performs true magic."
+  "Prints the type of the expression under point. If called several times at the same position,
+it will print types of bigger expressions around point (it will go up the ast). Called with a prefix argument, it will go down the AST. If there is no enclosing, falls back to `merlin-show-type-of-point'"
   (interactive "p")
+  (save-excursion
+    (forward-line)
+    (merlin-check-synchronize))
+  (setq merlin-idle-point (point))
   (if (equal merlin-last-point-type (point))
       (if (> arg 1)
           (merlin-type-enclosing-go-down)
@@ -579,12 +628,15 @@ overlay"
     (progn
       (setq merlin-last-point-type (point))
       (merlin-type-enclosing)
-      (merlin-type-enclosing-go-up))))
+      (if (not merlin-enclosing-types)
+          (merlin-show-type-of-point arg)
+        (merlin-type-enclosing-go-up)))))
 
 (defun merlin-type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (type . bounds)"
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
-    (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error "5 sec")
+    (if (cddr data)
+        (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error "5 sec"))
     (message "%s" (car data))))
 
 (defun merlin-type-enclosing-go-up ()
@@ -670,8 +722,8 @@ overlay"
 (defvar merlin-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c <C-return>") 'merlin-to-point)
-    (define-key map (kbd "C-c C-t") 'merlin-show-type-of-point)
-    (define-key map (kbd "C-c T") 'merlin-magic-show-type)
+    (define-key map (kbd "C-c C-t") 'merlin-magic-show-type)
+    (define-key map (kbd "C-c d") 'merlin-show-type-def)
     (define-key map (kbd "C-c l") 'merlin-use)
     (define-key map (kbd "C-c C-x") 'merlin-next-error)
     (define-key map (kbd "C-c C-r") 'merlin-rewind)
@@ -701,7 +753,8 @@ overlay"
     (set (make-local-variable 'merlin-pending-errors) nil)
     (set (make-local-variable 'merlin-pending-errors-overlay) nil)
     (set (make-local-variable 'merlin-type-overlay) nil)
-    (set (make-local-variable 'merlin-overlay) nil)
+    (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
+    (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
     (set (make-local-variable 'merlin-prefix) nil)
     (set (make-local-variable 'merlin-error-prefix) nil)
     (set (make-local-variable 'merlin-enclosing-overlay) nil)
@@ -723,11 +776,15 @@ overlay"
   " merlin"
   :keymap merlin-mode-map
   (if merlin-mode 
-      (if (equal (file-name-extension (buffer-file-name))
-                 "ml")
+      (if (and
+           (buffer-file-name)
+           (equal (file-name-extension (buffer-file-name))
+                 "ml"))
           (merlin-setup)
         (progn
-          (message "merlin can only operate on ml files")
+          (if (buffer-file-name)
+              message "merlin can only operate on ml files"
+              nil)
           (merlin-mode -1)))
     (progn
       (if merlin-process
@@ -735,7 +792,10 @@ overlay"
             (process-send-eof (merlin-get-process))
             (delete-process (merlin-get-process))))
       (cancel-timer merlin-idle-timer)
-      (if merlin-overlay (delete-overlay merlin-overlay))
+      (if merlin-lock-zone-highlight-overlay
+          (delete-overlay merlin-lock-zone-highlight-overlay))
+      (if merlin-lock-zone-margin-overlay
+          (delete-overlay merlin-lock-zone-margin-overlay))
       (if merlin-enclosing-overlay (delete-overlay merlin-enclosing-overlay))
       (merlin-delete-error-overlays)
       (if (get-buffer (merlin-make-buffer-name))

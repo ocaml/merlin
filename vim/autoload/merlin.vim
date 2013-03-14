@@ -23,6 +23,10 @@ function! s:get_visual_selection()
   return join(lines, "\n")
 endfunction
 
+function! merlin#WordUnderCursor()
+  return substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", "")
+endfunction
+
 function! merlin#FindFile(ext,file)
   py vim.command("e "+ merlin.vim_which(vim.eval("a:file"), vim.eval("a:ext")))
 endfunction
@@ -69,7 +73,7 @@ function! merlin#RawCommand(...)
 endfunction
 
 function! merlin#TypeOf(expr)
-  py merlin.vim_type_expr_cursor(vim.eval("a:expr"))
+  py merlin.vim_type(expr=vim.eval("a:expr"))
 endfunction
 
 function! merlin#TypeOfSel()
@@ -83,9 +87,9 @@ function! merlin#StopHighlight()
   endif
 endfunction
 
-function! merlin#TypeEnclosing()
+function! merlin#TypeEnclosing(expr)
   call merlin#StopHighlight()
-  py merlin.vim_type_enclosing("w:enclosing_zone")
+  py merlin.vim_type_enclosing("w:enclosing_zone",expr=vim.eval("a:expr"))
 endfunction
 
 function! merlin#GrowEnclosing()
@@ -181,8 +185,8 @@ endfunction
 
 function! merlin#Register()
   " Deprecated, use TypeEnclosing
-  command! -buffer -nargs=0 TypeOf call merlin#TypeOf(substitute(substitute(expand("<cWORD>"),"[;:),]*$","",""), "^[;:(,]*", "", ""))
-  command! -buffer -nargs=0 TypeEnclosing call merlin#TypeEnclosing()
+  command! -buffer -nargs=0 TypeOf call merlin#TypeOf(merlin#WordUnderCursor())
+  command! -buffer -nargs=0 TypeEnclosing call merlin#TypeEnclosing(merlin#WordUnderCursor())
   command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
   command! -buffer -nargs=0 ShrinkEnclosing call merlin#ShrinkEnclosing()
   command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
