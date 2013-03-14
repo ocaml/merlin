@@ -1478,6 +1478,27 @@ let rec type_exp env sexp =
  *)
 
 and type_expect ?in_function env sexp ty_expected =
+  try
+    type_expect' ?in_function env sexp ty_expected
+  with Error _ as exn ->
+    Types.raise_error exn;
+    let loc = sexp.pexp_loc in
+    {
+      exp_desc = Texp_ident
+        (Path.Pident (Ident.create "*type-error*"),
+         Location.mkloc (Longident.Lident "*type-error*") loc,
+         { Types.
+           val_type = ty_expected;
+           val_kind = Val_reg;
+           val_loc = loc
+         });
+      exp_loc = loc;
+      exp_extra = [];
+      exp_type = ty_expected;
+      exp_env = env
+    }
+
+and type_expect' ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in
   (* Record the expression type before unifying it with the expected type *)
   let rue exp =
