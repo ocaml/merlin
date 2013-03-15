@@ -538,6 +538,25 @@ The parameter `view-errors-p' controls whether we should care for errors"
    (merlin-type-of-expression-local bounds exp)
    (merlin-type-of-expression-global bounds exp)))
 
+
+(defun merlin-display-type (bounds type &optional quiet)
+  "Displays the type `type' of the the expression occuring at `bounds' in the current buffer.
+   If `quiet' is non nil, then an overlay and the merlin types can be used"
+  (if (not type)
+      (if (not quiet)
+          (message "<no information>"))
+    (progn
+      (if (not (merlin-is-long type))
+          (progn 
+            (message "%s" type)
+            (if (not quiet) 
+                (merlin-create-overlay 'merlin-type-overlay bounds 'highlight "1 sec")))
+        (when (not quiet)
+          (display-buffer merlin-type-buffer)
+          (with-current-buffer merlin-type-buffer
+            (erase-buffer)
+            (insert type)))))))
+          
 (defun merlin-show-type (bounds &optional quiet)
   "This functions shows the type of the expression inside
 `bounds' in the current buffer. If `quiet' is non nil then an
@@ -548,24 +567,7 @@ overlay"
                        (buffer-substring-no-properties (car bounds)
                                                        (cdr bounds))))
          (result (merlin-type-of-expression bounds substring)))
-    (cond
-     ((not (cdr result))
-      (if (not quiet)
-          (message "<no information>"))) ;; no types
-     ((and (not (merlin-is-long (cdr result)))
-           (not quiet))
-      (merlin-create-overlay 'merlin-type-overlay
-                             (car result)
-                             'next-error "1 sec")
-      (message "%s" (cdr result)))
-     ((not (merlin-is-long (cdr result)))
-      (message "%s"
-               (cdr result)))
-     ((not quiet)
-      (display-buffer merlin-type-buffer)
-      (with-current-buffer merlin-type-buffer
-        (erase-buffer)
-        (insert (cdr result)))))))
+    (merlin-display-type (car result) (cdr result) &optional quiet)))
 
 (defun merlin-show-type-def ()
   "Prints the definition of the type of the term under point"
@@ -574,9 +576,8 @@ overlay"
   (let* ((bounds (bounds-of-thing-at-point 'ocamlatom))
          (result (merlin-type-of-expression bounds (buffer-substring-no-properties (car bounds) (cdr bounds))))
          (typedef (cdr (merlin-type-of-expression-global nil (cdr result)))))
-    (if typedef
-        (message "%s" typedef)
-      (message "%s: <no information>" (cdr result)))))
+    (merlin-display-type bounds
+                         (if typedef typedef (concat (cdr result) ": <not an atomic type>")))))
 
 
 (defun merlin-show-type-of-region ()
@@ -627,19 +628,20 @@ it will print types of bigger expressions around point (it will go up the ast). 
       (if (> arg 1)
           (merlin-type-enclosing-go-down)
         (merlin-type-enclosing-go-up))
-    (progn
-      (setq merlin-last-point-type (point))
-      (merlin-type-enclosing)
-      (if (not merlin-enclosing-types)
-          (merlin-show-type-of-point arg)
-        (merlin-type-enclosing-go-up)))))
+    (if (> arg 1)
+        (merlin-show-type-of-region)
+      (progn
+        (setq merlin-last-point-type (point))
+        (merlin-type-enclosing)
+        (if (not merlin-enclosing-types)
+            (merlin-show-type-of-point arg)
+          (merlin-type-enclosing-go-up))))))
 
 (defun merlin-type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (type . bounds)"
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
     (if (cddr data)
-        (merlin-create-overlay 'merlin-enclosing-overlay (cdr data) 'next-error "5 sec"))
-    (message "%s" (car data))))
+        (merlin-display-type (cdr data) (car data)))))
 
 (defun merlin-type-enclosing-go-up ()
   "Goes up in the enclosing type zipper."
