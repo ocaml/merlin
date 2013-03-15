@@ -567,15 +567,18 @@ overlay"
                        (buffer-substring-no-properties (car bounds)
                                                        (cdr bounds))))
          (result (merlin-type-of-expression bounds substring)))
-    (merlin-display-type (car result) (cdr result) &optional quiet)))
+    (merlin-display-type (car result) (cdr result) quiet)))
 
+(defun merlin-get-type-codomain (type)
+  "Given a functional type, tries to return its codomain"
+  (car (last (split-string type " " nil))))
 (defun merlin-show-type-def ()
   "Prints the definition of the type of the term under point"
   (interactive)
   (setq merlin-idle-point (point))
   (let* ((bounds (bounds-of-thing-at-point 'ocamlatom))
          (result (merlin-type-of-expression bounds (buffer-substring-no-properties (car bounds) (cdr bounds))))
-         (typedef (cdr (merlin-type-of-expression-global nil (cdr result)))))
+         (typedef (cdr (merlin-type-of-expression-global nil (merlin-get-type-codomain (cdr result))))))
     (merlin-display-type bounds
                          (if typedef typedef (concat (cdr result) ": <not an atomic type>")))))
 
@@ -716,7 +719,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (interactive)
   (newline)
   (if merlin-continuous-feed
-      (merlin-update-ppoint nil)))
+      (merlin-update-point nil)))
 (defun merlin-to-point ()
   "Updates the merlin to the current point, reporting error"
   (interactive)
