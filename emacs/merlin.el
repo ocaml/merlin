@@ -143,6 +143,17 @@ returns (loc . loc')"
      'bounds-of-ocaml-atom-at-point)
 
 ; overlay management
+(defun merlin-put-margin-overlay (overlay s &optional face)
+  "Put a margin overlay inside `overlay', with face `face' and string `string'"
+  (set-window-margins nil 1)
+  (if face
+      (overlay-put overlay 'face face))
+  (overlay-put overlay
+               'before-string 
+               (propertize " " 'display 
+                           `((margin left-margin) ,s)
+                           )))
+
 (defun merlin-create-overlay (var bounds face timer)
   "Creates an overlay in the current buffer starting at `start', ending at `end',
 using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to disappear after `timer' seconds
@@ -365,7 +376,9 @@ It proceeds by telling (with the end mode) each line until it returns true or un
                    (let ((overlay (make-overlay
                                    (merlin-make-point (cdr (assoc 'start err)))
                                    (merlin-make-point (cdr (assoc 'end err))))))
-                     (overlay-put overlay 'face 'next-error)
+                     (if (string-match (cdr (assoc 'message err)) "^Warning")
+                         (merlin-put-margin-overlay overlay "!" compilation-error-face)
+                       (merlin-put-margin-overlay overlay "?" compilation-warning-face))
                      overlay)) errors))
   (message "(pending error, use C-c C-x to jump)"))
 
@@ -395,6 +408,7 @@ It proceeds by telling (with the end mode) each line until it returns true or un
         (highlight (merlin-update-highlight-lock-zone))))
    merlin-display-lock-zone))
 
+
 (defun merlin-update-margin-lock-zone ()
   (if merlin-lock-zone-margin-overlay
       (delete-overlay merlin-lock-zone-margin-overlay))
@@ -402,9 +416,8 @@ It proceeds by telling (with the end mode) each line until it returns true or un
     (goto-char merlin-lock-point)
     (setq merlin-lock-zone-margin-overlay (make-overlay (point) (point)))
     (set-window-margins nil 1)
-    (overlay-put merlin-lock-zone-margin-overlay 
-                 'before-string 
-                 (propertize " " 'display `((margin left-margin) ,merlin-margin-lock)))))
+    (merlin-put-margin-overlay merlin-lock-zone-margin-overlay
+                               merlin-margin-lock)))
 
 (defun merlin-update-highlight-lock-zone ()
   (if merlin-lock-zone-highlight-overlay
