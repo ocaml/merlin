@@ -65,13 +65,22 @@ If the timer is zero or negative, nothing is done."
 In particular you can specify nil, meaning that the locked zone is not represented at the screen"
   )
 
+(defvar merlin-automatically-garbage-processes t
+  "If set to t, deletes a process when it has no more users. If set to nil, keep it")
 
 ;; Internal variables
 
 
 ; Process / Reception related variables
 (defvar merlin-process nil
-  "The merlin process associated to the current buffer")
+  "The global merlin process.")
+(defvar merlin-local-process nil
+  "The local merlin process (buffer local in every process buffer)"
+)
+(defvar merlin-process-users nil
+  "Buffer that uses the process (local to a process buffer)")
+(defvar merlin-process-last-user nil
+  "Last buffer that used the process")
 (defvar merlin-result nil
   "Temporary variables to store command results")
 (defvar merlin-lock-zone-highlight-overlay nil 
@@ -120,7 +129,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defun merlin-debug (s)
   "If in debug-mode (controlled by `merlin-debug', outputs the given string
    on the buffer associated to the current merlin process"
-  (with-current-buffer (merlin-make-buffer-name)
+  (with-current-buffer (merlin-get-process-buffer-name)
     (insert s)))
 
 (defun merlin-compute-prefix (ident)
@@ -188,19 +197,19 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
                                 (set ,var nil)))))
       
 ;; PROCESS MANAGEMENT
-(defun merlin-make-buffer-name ()
-  "Returns the buffer name associated to the current buffer, for the merlin process"
-  (concat "*"
-	  (buffer-file-name nil)
-	  " merlin *"))
-
-(defun merlin-make-process-name ()
-  "Returns the process name for the current buffer"
-  (concat "merlin-" (buffer-file-name nil)))
-
 (defun merlin-get-process ()
   "Returns the process of the current buffer"
   merlin-process)
+
+(defun merlin-get-process-buffer-name ()
+  "Returns the buffer name of the merlin process associated to the current buffer"
+  "* merlin *")
+
+(defun merlin-get-process-name ()
+  "Returns the process name for the current buffer"
+  "merlin"
+  )
+
 
 (defun merlin-filter (process output)
   "The filter on merlin's output"
@@ -225,24 +234,74 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
     (setq merlin-ready nil)))
 
 (defun merlin-start-process ()
-  "Start the merlin process"
-  (let ((p (start-process (merlin-make-process-name)
-			 (merlin-make-buffer-name)
-			 merlin-command)))
-    (set (make-local-variable 'merlin-process) p)
-    (set-process-filter p 'merlin-filter)))
+  "Start the merlin process for the current buffer"
+  (let ((p (start-process (merlin-get-process-name)
+			 (merlin-get-process-buffer-name)
+			 merlin-command))
+        (name (buffer-name)))
+;; set the global process (for now)
+    (setq merlin-process p)
+    (set-process-query-on-exit-flag p nil)
+    (set-process-filter p 'merlin-filter)
+  ; don't forget to initialize temporary variable
+  (with-current-buffer (merlin-get-process-buffer-name)
+    (set (make-local-variable 'merlin-process-users) (list name))
+    (set (make-local-variable 'merlin-local-process) p)
+    (set (make-local-variable 'merlin-process-last-user) name)
+    )
+  ))
 
+(defun merlin-process-add-user ()
+  "Add the current buffer as an user for the merlin process"
+  (let ((name (buffer-name)))
+    (merlin-debug (format "Adding user: %s\n" name))
+    (with-current-buffer (merlin-get-process-buffer-name)
+      (push 'merlin-process-users name))
+    )
+)
+
+(defun merlin-is-last-user-p ()
+  "Returns whether the current buffer was the current user of its merlin process"
+  (let ((name (buffer-name)))
+    (with-current-buffer (merlin-get-process-buffer-name)
+      (equal merlin-process-last-user name))
+)
+)
+(defun merlin-kill-process ()
+  "Kills the merlin process inside the buffer"
+  (merlin-debug "Killing process ...")
+  (setq merlin-process nil)
+  (process-send-eof (merlin-get-process))
+  (delete-process (merlin-get-process))
+  (kill-buffer (merlin-get-process-buffer-name))
+)
+(defun merlin-process-remove-user ()
+  "Remove the current buffer as an user for the merlin process"
+  (let ((name (buffer-name)))
+    (merlin-debug (format "Remove user: %s.\n" name))
+    (with-current-buffer (merlin-get-process-buffer-name)
+      (merlin-debug (format "Remaining: %s.\n" merlin-process-users))
+      (setq merlin-process-users (delete name merlin-process-users))
+      (if (and (not merlin-process-users)
+               merlin-automatically-garbage-processes)
+          (merlin-kill-process))
+      )
+    )
+)
 (defun merlin-send-command (name args)
   "Send a command to merlin. Returns the result"
   (let ((string
 	 (concat 
-	  (json-encode 
-	   (if args (append (list name) args) (list name)))
-	  "\n")))
+	  (json-encode (if args (append (list name) args) (list name)))
+	  "\n"))
+        (name (buffer-name)))
     (process-send-string (merlin-get-process) string)
     (setq merlin-result nil)
     (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
     (merlin-wait-for-answer)
+    (with-current-buffer (merlin-get-process-buffer-name)
+      (setq merlin-process-last-user name)
+      )
     merlin-result
 ))
 
@@ -431,7 +490,7 @@ Moreover if `view-errors-p' is not nil, it will display them in the margin."
     (setq merlin-lock-zone-margin-overlay (make-overlay (point) (point)))
     (set-window-margins nil 1)
     (merlin-put-margin-overlay merlin-lock-zone-margin-overlay
-                               merlin-margin-lock)))
+                               merlin-margin-lock-string)))
 
 (defun merlin-update-highlight-lock-zone ()
   "Marks the position of the lock zone by highlighting the zone"
@@ -454,12 +513,14 @@ merlin and the argument
 
 The parameter `view-errors-p' controls whether we should care for errors"
   (merlin-delete-error-overlays)
+  (if (not (merlin-is-last-user-p))
+      (merlin-rewind))
   (save-excursion
     (setq merlin-lock-point (merlin-retract-to (point)))
     (end-of-line)
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
-    (merlin-view-errors view-errors-p)
+    (merlin-check-for-errors view-errors-p)
     (merlin-update-lock-zone-display))
 )    
   
@@ -637,7 +698,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (forward-line)
     (merlin-check-synchronize))
   (setq merlin-idle-point (point))
-  (if (equal merlin-last-point-type (point))
+  (if (and merlin-enclosing-types (equal merlin-last-point-type (point)))
       (if (> arg 1)
           (merlin-type-enclosing-go-down)
         (merlin-type-enclosing-go-up))
@@ -757,34 +818,34 @@ it will print types of bigger expressions around point (it will go up the ast). 
 (defun merlin-setup ()
   "Sets up a buffer for use with merlin"
   (interactive)
-  (progn
-    (merlin-start-process)
-    (when (featurep 'auto-complete)
-      (auto-complete-mode)
-      (add-to-list 'ac-sources 'merlin-ac-source))
-    (set (make-local-variable 'merlin-lock-point) (point-min))
-    (set (make-local-variable 'merlin-buffer) nil)
-    (set (make-local-variable 'merlin-result) nil)
-    (set (make-local-variable 'merlin-idle-point) nil)
-    (set (make-local-variable 'merlin-completion-point) nil)
-    (set (make-local-variable 'merlin-ready) nil)
-    (set (make-local-variable 'merlin-pending-errors) nil)
-    (set (make-local-variable 'merlin-pending-errors-overlay) nil)
-    (set (make-local-variable 'merlin-type-overlay) nil)
-    (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
-    (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
-    (set (make-local-variable 'merlin-error-prefix) nil)
-    (set (make-local-variable 'merlin-enclosing-types) nil)
-    (set (make-local-variable 'merlin-enclosing-offset) nil)
-    (set (make-local-variable 'merlin-last-point-type) nil)
-    (add-to-list 'after-change-functions 'merlin-edit)
-    (set-process-query-on-exit-flag (merlin-get-process) nil)
-    (merlin-parse)
-    (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
-	(setq merlin-idle-timer
-              (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
-    (with-current-buffer merlin-type-buffer
-      (funcall merlin-favourite-caml-mode))))
+  ; if there is not yet a buffer for the current buffer, create one
+  (if (not (merlin-get-process))
+      (merlin-start-process))
+  (when (featurep 'auto-complete)
+    (auto-complete-mode)
+    (add-to-list 'ac-sources 'merlin-ac-source))
+  (set (make-local-variable 'merlin-lock-point) (point-min))
+  (set (make-local-variable 'merlin-buffer) nil)
+  (set (make-local-variable 'merlin-result) nil)
+  (set (make-local-variable 'merlin-idle-point) nil)
+  (set (make-local-variable 'merlin-completion-point) nil)
+  (set (make-local-variable 'merlin-ready) nil)
+  (set (make-local-variable 'merlin-pending-errors) nil)
+  (set (make-local-variable 'merlin-pending-errors-overlay) nil)
+  (set (make-local-variable 'merlin-type-overlay) nil)
+  (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
+  (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
+  (set (make-local-variable 'merlin-error-prefix) nil)
+  (set (make-local-variable 'merlin-enclosing-types) nil)
+  (set (make-local-variable 'merlin-enclosing-offset) nil)
+  (set (make-local-variable 'merlin-last-point-type) nil)
+  (add-to-list 'after-change-functions 'merlin-edit)
+  (merlin-parse)
+  (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
+      (setq merlin-idle-timer
+            (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
+  (with-current-buffer merlin-type-buffer
+    (funcall merlin-favourite-caml-mode)))
 (define-minor-mode merlin-mode
   "Mode to use merlin tool inside OCaml tools."
   nil
@@ -798,23 +859,31 @@ it will print types of bigger expressions around point (it will go up the ast). 
           (merlin-setup)
         (progn
           (if (buffer-file-name)
-              message "merlin can only operate on ml files"
+              (message "merlin can only operate on ml files")
               nil)
           (merlin-mode -1)))
     (progn
-      (if merlin-process
-          (progn
-            (process-send-eof (merlin-get-process))
-            (delete-process (merlin-get-process))))
       (cancel-timer merlin-idle-timer)
       (if merlin-lock-zone-highlight-overlay
           (delete-overlay merlin-lock-zone-highlight-overlay))
       (if merlin-lock-zone-margin-overlay
           (delete-overlay merlin-lock-zone-margin-overlay))
       (merlin-delete-error-overlays)
-      (if (get-buffer (merlin-make-buffer-name))
-          (kill-buffer (merlin-make-buffer-name)))
+      (merlin-process-remove-user)
 )))
 
+(defun merlin-kill-buffer-hook ()
+  "Cleans the buffer being killed."
+  (if merlin-mode
+      (merlin-mode -1)))
+  
+(defun merlin-insinuate ()
+  "Initialize merlin."
+  (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook))
+                                      
+(defun merlin-kill-all-buffers ()
+  "Kill all the remaining buffers containing merlin processes"
+  (interactive)
+  (merlin-kill-process))
 
 (provide 'merlin)
