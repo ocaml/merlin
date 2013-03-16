@@ -72,8 +72,8 @@ In particular you can specify nil, meaning that the locked zone is not represent
 
 
 ; Process / Reception related variables
-(defvar merlin-process nil
-  "The global merlin process.")
+(defvar merlin-processes nil
+  "The global merlin process table. It lists the active instances of merlin")
 (defvar merlin-local-process nil
   "The local merlin process (buffer local in every process buffer)"
 )
@@ -197,17 +197,27 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
                                 (set ,var nil)))))
       
 ;; PROCESS MANAGEMENT
+
+(defun merlin-get-buffer-instance-name ()
+  "Returns the instance name of the current-projet.
+For now it is a constant function (every buffer shares the same instance)"
+  "")
 (defun merlin-get-process ()
   "Returns the process of the current buffer"
-  merlin-process)
+  merlin-local-process)
 
 (defun merlin-get-process-buffer-name ()
   "Returns the buffer name of the merlin process associated to the current buffer"
-  "* merlin *")
+  (format "* merlin %s *" (merlin-get-buffer-instance-name)))
+
+(defun merlin-get-process-variable (var)
+  "Returns the value of a variable (symbol) inside the process buffer"
+  (buffer-local-value var (get-buffer (merlin-get-process-buffer-name))))
+
 
 (defun merlin-get-process-name ()
   "Returns the process name for the current buffer"
-  "merlin"
+  (concat "merlin-" (merlin-get-buffer-instance-name))
   )
 
 
@@ -223,15 +233,16 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer"
-  (let ((times 0))
-    (while
-        (and (< times 20)
-             (or
-              (not (accept-process-output (merlin-get-process) 0.1 nil nil))
-              (not merlin-ready)))
-      (setq times (+ times 1)))
-    (setq merlin-buffer nil)
-    (setq merlin-ready nil)))
+  (with-current-buffer (merlin-get-process-buffer-name)
+    (let ((times 0))
+      (while
+          (and (< times 20)
+               (or
+                (not (accept-process-output (merlin-get-process) 0.1 nil nil))
+                (not merlin-ready)))
+        (setq times (+ times 1)))
+      (setq merlin-buffer nil)
+      (setq merlin-ready nil))))
 
 (defun merlin-start-process ()
   "Start the merlin process for the current buffer"
@@ -240,9 +251,10 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
 			 merlin-command))
         (name (buffer-name)))
 ;; set the global process (for now)
-    (setq merlin-process p)
+    (set (make-local-variable 'merlin-local-process) p)
     (set-process-query-on-exit-flag p nil)
     (set-process-filter p 'merlin-filter)
+    (push p merlin-processes)
   ; don't forget to initialize temporary variable
   (with-current-buffer (merlin-get-process-buffer-name)
     (set (make-local-variable 'merlin-process-users) (list name))
@@ -256,37 +268,34 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
   (let ((name (buffer-name)))
     (merlin-debug (format "Adding user: %s\n" name))
     (with-current-buffer (merlin-get-process-buffer-name)
-      (push 'merlin-process-users name))
+      (push name merlin-process-users))
     )
 )
 
 (defun merlin-is-last-user-p ()
   "Returns whether the current buffer was the current user of its merlin process"
-  (let ((name (buffer-name)))
-    (with-current-buffer (merlin-get-process-buffer-name)
-      (equal merlin-process-last-user name))
+  (equal (merlin-get-process-variable 'merlin-process-last-user)
+         (buffer-name))
 )
-)
-(defun merlin-kill-process ()
-  "Kills the merlin process inside the buffer"
-  (merlin-debug "Killing process ...")
-  (setq merlin-process nil)
-  (process-send-eof (merlin-get-process))
-  (delete-process (merlin-get-process))
-  (kill-buffer (merlin-get-process-buffer-name))
-)
+
 (defun merlin-process-remove-user ()
-  "Remove the current buffer as an user for the merlin process"
+  "Remove the current buffer as an user for the merlin process, and
+kill the process if required"
   (let ((name (buffer-name)))
-    (merlin-debug (format "Remove user: %s.\n" name))
     (with-current-buffer (merlin-get-process-buffer-name)
-      (merlin-debug (format "Remaining: %s.\n" merlin-process-users))
       (setq merlin-process-users (delete name merlin-process-users))
       (if (and (not merlin-process-users)
                merlin-automatically-garbage-processes)
           (merlin-kill-process))
       )
     )
+)
+(defun merlin-kill-process ()
+  "Kills the merlin process inside the buffer"
+  (setq merlin-processes (delete merlin-local-process merlin-processes))
+  (process-send-eof (merlin-get-process))
+  (delete-process (merlin-get-process))
+  (kill-buffer (merlin-get-process-buffer-name))
 )
 (defun merlin-send-command (name args)
   "Send a command to merlin. Returns the result"
@@ -298,11 +307,11 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
     (process-send-string (merlin-get-process) string)
     (setq merlin-result nil)
     (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
-    (merlin-wait-for-answer)
     (with-current-buffer (merlin-get-process-buffer-name)
       (setq merlin-process-last-user name)
+      (merlin-wait-for-answer)
+      merlin-result
       )
-    merlin-result
 ))
 
 
@@ -819,8 +828,12 @@ it will print types of bigger expressions around point (it will go up the ast). 
   "Sets up a buffer for use with merlin"
   (interactive)
   ; if there is not yet a buffer for the current buffer, create one
-  (if (not (merlin-get-process))
-      (merlin-start-process))
+  (if (not (get-buffer (merlin-get-process-buffer-name)))
+      (merlin-start-process)
+    (set (make-local-variable 'merlin-local-process)
+         (merlin-get-process-variable 'merlin-local-process)))
+  (merlin-process-add-user)
+
   (when (featurep 'auto-complete)
     (auto-complete-mode)
     (add-to-list 'ac-sources 'merlin-ac-source))
@@ -881,9 +894,11 @@ it will print types of bigger expressions around point (it will go up the ast). 
   "Initialize merlin."
   (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook))
                                       
-(defun merlin-kill-all-buffers ()
+(defun merlin-kill-all-processes ()
   "Kill all the remaining buffers containing merlin processes"
   (interactive)
-  (merlin-kill-process))
+  (mapc '(lambda (p)
+           (with-current-buffer (process-buffer p)
+             (merlin-kill-process)))))
 
 (provide 'merlin)
