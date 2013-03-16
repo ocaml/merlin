@@ -1,6 +1,6 @@
 ;; Mode for Merlin
 
-
+(require 'cl)
 ;; json is mandatory
 (require 'json)
 ;; auto-complete is not
@@ -61,6 +61,9 @@
   (get-buffer-create "*merlin types*")
   "The buffer to use to display types"
   )
+
+(defvar merlin-report-warnings t
+  "Should merlin care about warnings ?")
 
 (defvar merlin-favourite-caml-mode
   'tuareg-mode
@@ -368,6 +371,9 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   (mapc '(lambda (over) (delete-overlay over)) merlin-pending-errors-overlay)
   (setq merlin-pending-errors-overlay nil))
 
+(defun merlin-is-warning (msg)
+  "Tell if the given message is a warning"
+  (string-match "^Warning" msg))
 (defun merlin-handle-errors (errors)
   (merlin-delete-error-overlays)
   (setq merlin-pending-errors (append errors nil))
@@ -376,19 +382,22 @@ It proceeds by telling (with the end mode) each line until it returns true or un
                    (let ((overlay (make-overlay
                                    (merlin-make-point (cdr (assoc 'start err)))
                                    (merlin-make-point (cdr (assoc 'end err))))))
-                     (if (string-match (cdr (assoc 'message err)) "^Warning")
-                         (merlin-put-margin-overlay overlay "!" compilation-error-face)
-                       (merlin-put-margin-overlay overlay "?" compilation-warning-face))
+                     (if (merlin-is-warning (cdr (assoc 'message err)))
+                         (merlin-put-margin-overlay overlay "?" compilation-warning-face)
+                       (merlin-put-margin-overlay overlay "!" compilation-error-face))
                      overlay)) errors))
-  (message "(pending error, use C-c C-x to jump)"))
+  (message "(pending errors, use C-c C-x to jump)"))
 
 (defun merlin-view-errors (view-errors-p)
   "View the errors of the data that have been fed to merlin"
   (let ((output (merlin-send-command "errors" nil)))
     (if (> (length (elt output 1)) 0)
 	(progn
-          (if view-errors-p
-              (merlin-handle-errors (nreverse (append (elt output 1) nil))))
+          (when view-errors-p
+            (let ((errors (nreverse (append (elt output 1) nil))))
+              (if (not merlin-report-warnings)
+                  (delete-if (lambda (e) (merlin-is-warning (cdr (assoc 'message e)))) errors))
+              (merlin-handle-errors errors)))
 	  nil)
       (progn
 	(message "ok")
