@@ -196,6 +196,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
   command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
   command! -buffer -nargs=0 LoadProject call merlin#LoadProject()
+  command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
   setlocal omnifunc=merlin#Complete
   map <buffer> <LocalLeader>t :TypeEnclosing<return>
   map <buffer> <LocalLeader>n :GrowEnclosing<return>
@@ -210,7 +211,7 @@ endfunction
 
 function! merlin#EchoDotMerlin()
   if exists("b:dotmerlin")
-    echom "Using .merlin: " + b:dotmerlin
+    echom "Using .merlin: " . b:dotmerlin
   else
     echo "No .merlin found"
   endif
