@@ -423,9 +423,10 @@ It proceeds by telling (with the end mode) each line until it returns true or un
                                "2 sec")
         (setq merlin-idle-point (point))
         (if merlin-pending-errors
-            (message "%s (%d more errors)" 
+            (message "%s (%d more errors, use %s to go to the next)" 
                      (cdr (assoc 'message err))
                      (length merlin-pending-errors)
+                     (substitute-command-keys "\\[merlin-next-error]")
                      )
           (message "%s" (cdr (assoc 'message err)))))
     (message "no more errors")))
@@ -456,10 +457,15 @@ It proceeds by telling (with the end mode) each line until it returns true or un
                          (merlin-put-margin-overlay overlay "?" compilation-warning-face)
                        (merlin-put-margin-overlay overlay "!" compilation-error-face))
                      overlay)) errors))
-  (message "(pending errors, use C-c C-x to jump)"))
+  (message "(pending errors, use %s to jump)"
+           (substitute-command-keys "\\[merlin-next-error]")))
 
 (defun merlin-check-for-errors (view-errors-p)
   "Check for errors. It returns `t' if there were not any or nil if there were.
+
+
+
+
 Moreover if `view-errors-p' is not nil, it will display them in the margin."
   (let ((output (merlin-send-command "errors" nil)))
     (if (> (length (elt output 1)) 0)

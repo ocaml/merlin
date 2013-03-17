@@ -127,37 +127,69 @@ Emacs interface
 merlin comes with an emacs interface (file: emacs/merlin.el) that implements a
 minor-mode that is supposed to be used on top of tuareg-mode.
 
-To install it, just M-x load-file /wherever/merlin.el. To use it, you will need
+To get it working you only to load the file `emacs/merlin.el' of the distribution.
+
+If you installed through opam, a good thing to do is:
+
+    
+    (add-to-list 'load-path ".opam/4.00.1/share/emacs/site-lisp/")
+    (require 'merlin)
+
+
+To use it, you will need
 
 - json.el (available by package.el)  
 - auto-complete-mode (morally optional, available by package.el and the MELPA repository)
 
-Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. It
-will spawn an instance of ocamlmerlin in a separate buffer.
+Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. If you want merlin to be started on every ML buffer issue:
+
+    (add-hook 'tuareg-mode-hook 'merlin-mode)
+
+
+Features
+--------
 
 merlin implements a locked zone like proofgeneral to know what merlin knows of
 the buffer. To advance or retract the locked zone to the point, use C-c C-RET.
-Note that retraction can go before the point in case the point is not at the
-end of the last definition.
+Note that retraction can go before the point in case the point is not at the end
+of the last definition. Lock zone is by default shown using a marker in the
+margin of the last line of it. The behaviour is controlled by the variable
+`merlin-display-lock-zone'.
 
 Main keybindings:
 
 - C-c l allows you to load a findlib package inside merlin. For a project you
 should use a .merlin file
 
-- C-c C-t will show you the type of the expression under point. Further calls
- will show the types of bigger expressions surrounding the point. C-u C-c C-t
- will show type of smaller expression (only valid if you went up at least once)
+- C-c C-t will show you the type of the expression under point. The behaviour of
+  this is quite complex. It will:
+
+  - try to find the node of the typed AST the current point is in, and returns
+    this type. Further call to C-c C-t allow to go up (or down with a prefix
+    argument) in the AST
+
+  - try to type the ident under point within the local environment
+
+  - try to type the ident under point within the local environment.
+
+  Moreover, C-u C-c C-t is used to type the region (if there is no selected AST
+  node)
+
+- C-c C-x goes to the next error
+
+- C-c C-u refreshes merlin's cache (when you recompiled other files, might be
+  handy)
 
 - C-c C-r retracts the whole buffer (useful when merlin seems confused)
 
-- C-c d will print the definition of the type of the expression underpoint if any
+- C-c d will print the definition of the type of the expression underpoint if
+  any. If the type is compliated (eg. 'a -> 'a option) it will print the definition  of the codomain
 
 - C-c TAB will synchronize and completes expression under point.
 
-Moreover, you have autocompletion with merlin (and for now only with merlin),
+Moreover, you have autocompletion with merlin,
 and whenever you stay idle for one second you get the type of the ident under
-the point (modules are not displayed), pretty much like haskell-mode.
+the point (modules are not displayed).
 
 Auto-completion
 ---------------
@@ -171,6 +203,10 @@ If you find the types when completing noisy you can use
 (setq merlin-completion-types nil)
 
 in your .emacs
+
+Idle
+----
+By setting the variable merlin-idle-delay you can have the type of the expression under point displayed after doing nothing. The default timer is three seconds.
 
 
 Merlin project
