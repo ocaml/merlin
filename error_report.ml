@@ -50,6 +50,10 @@ let strict_to_json = function
         | Syntaxerr.Other loc -> loc
       in
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
+  | Lexer.Error (e,loc) ->
+      let ppf, to_string = Misc.ppf_to_string () in
+      Lexer.report_error ppf e;
+      Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
   | Outline.Parse_error loc ->
       Some (format ~valid:true ~where:"parser" ~loc "Parse error")
   | Location.Warning (loc, msg) ->

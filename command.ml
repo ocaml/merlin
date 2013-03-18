@@ -106,9 +106,11 @@ let command_tell = {
           (History.cutoff state.chunks),
           (History.cutoff state.types)
         in
+        let tokens = History.of_list state.tokens in
         let tokens, outlines =
-          Outline.parse ~bufpos
-            (History.of_list state.tokens) outlines lexbuf
+          try Outline.parse ~bufpos tokens outlines lexbuf
+          with Lexer.Error _ as exn ->
+            tokens, Outline.append_exns [exn] outlines
         in
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
