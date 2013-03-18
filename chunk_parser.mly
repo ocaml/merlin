@@ -188,8 +188,8 @@ let rec mkrangepat startpos endpos c1 c2 =
   if c1 = c2 then mkpat startpos endpos (Ppat_constant(Const_char c1)) else
   reloc_pat startpos endpos (deep_mkrangepat startpos endpos c1 c2)
 
-let syntax_error () =
-  Location.raise_warning Syntaxerr.Escape_error
+let syntax_error pos =
+  Location.raise_warning (Syntaxerr.Escape_error pos)
 
 let unclosed opening_name opstart opend closing_name clstart clend =
   Location.raise_warning (Syntaxerr.Error(Syntaxerr.Unclosed(symbol_rloc opstart opend, opening_name,
@@ -831,7 +831,7 @@ parent_binder:
 ;
 virtual_value:
     override_flag MUTABLE VIRTUAL label COLON core_type
-      { if $1 = Override then syntax_error ();
+      { if $1 = Override then syntax_error $startpos($1);
         mkloc $4 (rhs_loc $startpos($4) $endpos($4)), Mutable, $6 }
   | VIRTUAL mutable_flag label COLON core_type
       { mkrhs $startpos($3) $endpos($3) $3, $2, $5 }
@@ -845,10 +845,10 @@ value:
 ;
 virtual_method:
     METHOD override_flag PRIVATE VIRTUAL label COLON poly_type
-      { if $2 = Override then syntax_error ();
+      { if $2 = Override then syntax_error $startpos($2);
         mkloc $5 (rhs_loc $startpos($5) $endpos($5)), Private, $7 }
   | METHOD override_flag VIRTUAL private_flag label COLON poly_type
-      { if $2 = Override then syntax_error ();
+      { if $2 = Override then syntax_error $startpos($2);
         mkloc $5 (rhs_loc $startpos($5) $endpos($5)), $4, $7 }
 ;
 concrete_method :
@@ -1060,14 +1060,14 @@ expr:
   | TRY seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try($2, List.rev $5)) }
   | TRY seq_expr WITH error
-      { syntax_error();
+      { syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_try($2, [])) }
   | TRY_LWT seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) }
   | TRY_LWT seq_expr FINALLY_LWT seq_expr
       { Fake.app (Fake.app Fake.Lwt.finally' $2) $4 }
   | TRY_LWT seq_expr WITH error
-      { syntax_error();
+      { syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, [])) }
   | TRY_LWT seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
       { let expr = mkexp $startpos $endpos
@@ -1362,8 +1362,8 @@ type_constraint:
     COLON core_type                             { (Some $2, None) }
   | COLON core_type COLONGREATER core_type      { (Some $2, Some $4) }
   | COLONGREATER core_type                      { (None, Some $2) }
-  | COLON error                                 { syntax_error(); (None, None) }
-  | COLONGREATER error                          { syntax_error(); (None, None) }
+  | COLON error                                 { syntax_error $startpos($2); (None, None) }
+  | COLONGREATER error                          { syntax_error $startpos($2); (None, None) }
 ;
 
 (* Patterns *)
