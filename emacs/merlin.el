@@ -400,7 +400,7 @@ It proceeds by telling (with the end mode) each line until it returns true or un
     (if (not end-p)
         (progn
           (merlin-send-command "tell" '("end" nil))
-          (merlin-get-position))
+          (merlin-seek (merlin-get-position)))
       (merlin-retract-to (merlin-get-position)))))
 
       
@@ -536,7 +536,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
     (merlin-check-for-errors view-errors-p)
-    (merlin-update-lock-zone-display))
+    (merlin-update-lock-zone-display)
 )    
   
 (defun merlin-check-synchronize ()
