@@ -757,7 +757,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 ;; .merlin parsing
 (defun merlin-add-path (kind dir)
   "Adds an item to a path in merlin"
-  (merlin-send-command "path" (list "add" kind dir)))
+  (merlin-send-command "path" (list "add" kind (concat default-directory dir)))
 
 (defun merlin-get-packages ()
   "Get the list of available findlib package"
