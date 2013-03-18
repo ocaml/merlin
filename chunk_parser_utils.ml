@@ -127,7 +127,7 @@ let rec re_sync lexer buf =
   let open Chunk_parser in
   match lexer buf with
     | SEMISEMI | EOF -> 0
-    | INCLUDE | OPEN | LET | TYPE -> 1
+    | INCLUDE | OPEN | LET | TYPE | EXCEPTION -> 1
     | MODULE | END -> 2
     | _ -> re_sync lexer buf
 

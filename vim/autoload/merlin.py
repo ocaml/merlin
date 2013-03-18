@@ -507,6 +507,7 @@ def load_project(directory,maxdepth=3):
             send_command("path","add","build",tail.strip())
           elif command == "PKG":
             catch_and_print(lambda: command_find_use(*split[1].split()))
+      vim.command('let b:dotmerlin="%s"' % fname)
     command_reset()
   elif maxdepth > 0:
     (head, tail) = os.path.split(directory)

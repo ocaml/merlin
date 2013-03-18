@@ -23,6 +23,6 @@ type error =
   | Other of Location.t
 
 exception Error of error
-exception Escape_error
+exception Escape_error of Lexing.position
 
 val report_error: formatter -> error -> unit

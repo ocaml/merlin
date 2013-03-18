@@ -32,6 +32,10 @@ let strict_to_json = function
       let ppf, to_string = Misc.ppf_to_string () in
       Env.report_error ppf e;
       Some (format ~valid:true ~where:"env" (to_string ()))
+  | Syntaxerr.Escape_error pos ->
+      Some (format ~valid:true ~where:"parser"
+              ~loc:{ Location. loc_start = pos ; loc_end = pos ; loc_ghost = true }
+              "Syntax error")
   | Syntaxerr.Error e ->
       let ppf, to_string = Misc.ppf_to_string () in
       Syntaxerr.report_error ppf e;
@@ -46,6 +50,10 @@ let strict_to_json = function
         | Syntaxerr.Other loc -> loc
       in
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
+  | Lexer.Error (e,loc) ->
+      let ppf, to_string = Misc.ppf_to_string () in
+      Lexer.report_error ppf e;
+      Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
   | Outline.Parse_error loc ->
       Some (format ~valid:true ~where:"parser" ~loc "Parse error")
   | Location.Warning (loc, msg) ->
