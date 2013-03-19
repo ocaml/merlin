@@ -21,7 +21,7 @@ class Failure(MerlinExc):
 class Error(MerlinExc):
   pass
 
-class Exception(MerlinExc):
+class MerlinException(MerlinExc):
   pass
 
 ######## COMMUNICATION
@@ -62,7 +62,7 @@ def send_command(*cmd):
   elif result[0] == "error":
     raise Error(content)
   elif result[0] == "exception":
-    raise Exception(content)
+    raise MerlinException(content)
 
 def try_print_error(e, msg=None):
   try:
@@ -93,7 +93,7 @@ def try_print_error(e, msg=None):
 def catch_and_print(f, msg=None):
   try:
     return f()
-  except e:
+  except MerlinException as e:
     try_print_error(e, msg=msg)
 
 ######## BUFFER CACHE
