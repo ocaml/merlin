@@ -152,7 +152,7 @@ let rec mktailexp startpos endpos  = function
     [] ->
       ghexp startpos endpos (Pexp_construct(mkloc (Lident "[]") Location.none, None, false))
   | e1 :: el ->
-      let exp_el = mktailexp startpos endpos  el in
+      let exp_el = mktailexp e1.pexp_loc.Location.loc_end endpos el in
       let l = Location.({loc_start = e1.pexp_loc.loc_start;
                          loc_end = exp_el.pexp_loc.loc_end;
                          loc_ghost = true})
@@ -1229,10 +1229,10 @@ simple_expr:
   | LBRACKETBAR BARRBRACKET
       { mkexp $startpos $endpos (Pexp_array []) }
   | LBRACKET expr_semi_list opt_semi RBRACKET
-      { reloc_exp $startpos $endpos  (mktailexp $startpos($1) $endpos($1)  (List.rev $2)) }
+      { reloc_exp $startpos $endpos  (mktailexp $startpos $endpos (List.rev $2)) }
   | LBRACKET expr_semi_list opt_semi error
       { unclosed "[" $startpos($1) $endpos($1) "]" $startpos($4) $endpos($4);
-        reloc_exp $startpos $endpos  (mktailexp $startpos($1) $endpos($1)  (List.rev $2)) }
+        reloc_exp $startpos $endpos  (mktailexp $startpos $endpos (List.rev $2)) }
   | PREFIXOP simple_expr
       { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) $1, ["",$2])) }
   | BANG simple_expr
