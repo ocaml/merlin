@@ -13,8 +13,6 @@ type kind =
 
 exception Chunk of kind * position
 
-let filter_first = ref 0
-
 (** Used to ignore first-class modules.
   * The construct "let module = … in " allows to define a module
   * locally inside a definition, but our outline parser cannot work
@@ -27,9 +25,7 @@ let filter_first = ref 0
   *)
 let nesting = ref 0
 
-let reset ~rollback () =
-  filter_first := rollback;
-  nesting := 0
+let reset () = nesting := 0
 
 let enter_sub () =
   incr nesting
@@ -41,10 +37,5 @@ let leave_sub () =
 
 let emit_top c pos =
   (*prerr_endline "emit";*)
-  if !nesting = 0 then begin
-      if !filter_first < 0
-      then failwith "Outline_utils.emit_top: invalid filter_first"
-      else if !filter_first = 0
-      then raise (Chunk (c,pos))
-      else decr filter_first
-    end
+  if !nesting = 0 then
+    raise (Chunk (c,pos))
