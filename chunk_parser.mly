@@ -615,6 +615,8 @@ structure_item:
       }
   | EXCEPTION UIDENT constructor_arguments
       { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
+  | EXCEPTION UIDENT constructor_arguments WITH with_extensions
+      { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | EXCEPTION UIDENT EQUAL constr_longident
       { [mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
           mkloc $4 (rhs_loc $startpos($4) $endpos($4))))] }
@@ -694,6 +696,8 @@ signature_item:
         decls @ [mksig $startpos $endpos (Psig_type(List.rev $2))]
       }
   | EXCEPTION UIDENT constructor_arguments
+      { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
+  | EXCEPTION UIDENT constructor_arguments WITH with_extensions
       { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | MODULE UIDENT module_declaration
       { [mksig $startpos $endpos (Psig_module(mkrhs $startpos($2) $endpos($2) $2, $3))] }
