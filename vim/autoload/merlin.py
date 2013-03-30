@@ -319,6 +319,7 @@ def vim_loclist(vimvar, ignore_warnings):
   errors = command_report_errors()
   bufnr = vim.current.buffer.number
   nr = 0
+  errors.sort(key=lambda error: error['start']['line'])
   for error in errors:
     if error['type'] == 'warning' and vim.eval(ignore_warnings) == 'true':
         continue
