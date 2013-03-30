@@ -114,8 +114,16 @@ let command_tell = {
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
         let pos = !bufpos in
+          (* If token list didn't change, move forward anyway 
+           * to prevent getting stuck *)
+        let stuck = state.tokens = tokens in
+        let tokens =
+          if stuck
+          then (try List.tl tokens with _ -> tokens)
+          else tokens
+        in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !eod || (!eot && state.tokens = state'.tokens)
+        if !eod || (!eot && stuck)
         then state'
         else loop state'
       in
