@@ -101,16 +101,22 @@ let command_tell = {
       in
       let rec loop state =
         let bufpos = ref state.pos in
-        let outlines, chunks, types =
+        let tokens, outlines, chunks, types =
+          state.tokens,
           (History.cutoff state.outlines),
           (History.cutoff state.chunks),
           (History.cutoff state.types)
         in
-        let tokens, outlines =
-          try Outline.parse ~bufpos state.tokens outlines lexbuf
-          with Lexer.Error _ as exn ->
-            state.tokens, Outline.append_exns [exn] outlines
+        let exns, tokens, outlines =
+          match Location.catch_warnings 
+              (fun () -> Outline.parse ~bufpos tokens outlines lexbuf)
+          with
+          | warnings, Misc.Inr (tokens, outlines) -> 
+            warnings, tokens, outlines
+          | warnings, Misc.Inl exn -> 
+            exn :: warnings, tokens, outlines
         in
+        let outlines = Outline.append_exns exns outlines in
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
         let pos = !bufpos in
