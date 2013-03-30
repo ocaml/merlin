@@ -9,7 +9,7 @@ COMMANDS                                                     *merlin-commands*
 
 :SourcePath [dir]                                                *:SourcePath*
 
-When dir is given add the director to the list of directories where merlin
+When dir is given add the directory to the list of directories where merlin
 looks for ml[i] files.
 
 If no argument is given, it will list those directories.
@@ -38,17 +38,17 @@ For instance, given moduleA.ml and moduleB.mli in source path, use: >
 Highlights the expression under the cursor and prints its type.
 Use in conjunction with |:GrowEnclosing| and |:ShrinkEnclosing|.
 
-Bound on <LocalLeader>t by default in normal mode.
+Bound to <LocalLeader>t by default in normal mode.
 
 :TypeOfSel                                                        *:TypeOfSel*
 
 In visual mode, returns the type of the selected expression.
 
-Bound on <LocalLeader>t by default in visual mode.
+Bound to <LocalLeader>t by default in visual mode.
 
 :TypeOf                                                              *:TypeOf*
 
-Returns the time of the ident under the cursor.
+Returns the type of the ident under the cursor.
 
 :GrowEnclosing                                                *:GrowEnclosing*
 
