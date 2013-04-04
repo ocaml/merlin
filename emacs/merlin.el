@@ -682,7 +682,7 @@ overlay"
 (defun merlin-show-type-of-point (arg) 
   "Show the type of the identifier under the point. If it is called with a prefix argument, then show the type of the region."
   (interactive "p")
-  (merlin-check-synchronize)
+  (ignore-errors (merlin-check-synchronize))
   (if (> arg 1)
       (merlin-show-type-of-region)
     (merlin-show-type (bounds-of-thing-at-point 'ocamlatom))))
