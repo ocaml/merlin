@@ -536,8 +536,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
     (merlin-check-for-errors view-errors-p)
-    (merlin-update-lock-zone-display)
-)    
+    (merlin-update-lock-zone-display)))
   
 (defun merlin-check-synchronize ()
   "If merlin point is before the end of line send everything up to the end of line"
@@ -755,9 +754,9 @@ it will print types of bigger expressions around point (it will go up the ast). 
           ))))
 
 ;; .merlin parsing
-(defun merlin-add-path (kind dir)
+(defun merlin-add-path (kind dir dirname)
   "Adds an item to a path in merlin"
-  (merlin-send-command "path" (list "add" kind (concat default-directory dir)))
+  (merlin-send-command "path" (list "add" kind (concat dirname dir))))
 
 (defun merlin-get-packages ()
   "Get the list of available findlib package"
@@ -769,26 +768,35 @@ it will print types of bigger expressions around point (it will go up the ast). 
    (list (completing-read "Package to use:" (merlin-get-packages))))
   (merlin-send-command "find" (list "use" pkg)))
 
-(defun merlin-handle-line (buffer words)
+(defun merlin-handle-line (buffer words dirname)
   "Handles a line in a .merlin file"
   (with-current-buffer buffer
     (cond
-     ((string-equal (elt words 0) "S") (merlin-add-path "source" (elt words 1)))
-     ((string-equal (elt words 0) "B") (merlin-add-path "build" (elt words 1)))
+     ((string-equal (elt words 0) "S") (merlin-add-path "source" (elt words 1) dirname))
+     ((string-equal (elt words 0) "B") (merlin-add-path "build" (elt words 1) dirname))
      ((string-equal (elt words 0) "PKG") (merlin-use (elt words 1))))))
+(defun merlin-file-parse (filename)
+  "Parses a .merlin. It should exist"
+  (message "Parsing .merlin file %s" filename)
+  (setq lines nil)
+  (setq buf (current-buffer))
+  (with-current-buffer (find-file ".merlin")
+    (goto-char (point-min))
+    (while (not (eq (point) (point-max)))
+      (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
+        (merlin-handle-line buf words (file-name-directory filename))
+        (forward-line)))))
+
 (defun merlin-parse ()
-  "Parses a .merlin"
-  (if (file-exists-p ".merlin")
-      (progn
-	(setq lines nil)
-	(setq buf (current-buffer))
-	(with-current-buffer (find-file ".merlin")
-	  (goto-char (point-min))
-	  (while (not (eq (point) (point-max)))
-	    (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
-	      (merlin-handle-line buf words)
-	      (forward-line))))
-	(switch-to-buffer buf))))
+  "Parses all .merlin file lying beneath the current directory in the file system."
+  (setq dir default-directory)
+  (let ((buf (current-buffer)))
+    (while (not (string-equal dir "/"))
+      (when (file-exists-p (concat dir ".merlin") )
+        (merlin-file-parse (concat dir ".merlin")))
+      (setq dir (file-name-directory (directory-file-name dir))))
+    (switch-to-buffer buf)))
+    
 
 ;; Idle 
 (defun merlin-idle-hook ()
