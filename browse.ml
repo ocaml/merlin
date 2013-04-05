@@ -272,9 +272,12 @@ end
 
 let browse_local_near pos nodes =
   let best_of (Envs.T (l,_,_,_) as t) (Envs.T (l',_,_,_) as t') =
-    if Misc.compare_pos l.Location.loc_end l'.Location.loc_end < 0
-    then t'
-    else t
+    match
+      Misc.compare_pos l.Location.loc_start l'.Location.loc_start,
+      Misc.compare_pos l.Location.loc_end l'.Location.loc_end
+    with
+      | n, m when n <= 0 && m >= 0 -> t'
+      | _, _ -> t
   in
   let cmp = Location.compare_pos pos in
   List.fold_left
