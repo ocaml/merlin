@@ -1510,6 +1510,7 @@ and type_expect' ?in_function env sexp ty_expected =
     with (Typetexp.Error _ | Error _) as exn ->
       Types.raise_error exn;
       {
+        (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
         exp_desc = Texp_tuple [exp];
         exp_loc = loc;
         exp_extra = [];
