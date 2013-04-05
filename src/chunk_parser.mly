@@ -1,3 +1,4 @@
+
 (***********************************************************************)
 (*                                                                     *)
 (*                                OCaml                                *)
@@ -437,6 +438,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token FINALLY_LWT
 %token FOR_LWT
 %token WHILE_LWT
+%token JSNEW
 %token P4_QUOTATION
 
 (* Precedences and associativities.
@@ -497,7 +499,7 @@ The precedences must be listed from low to high.
 (* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION
+          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION JSNEW
 
 
 (* Entry points *)
@@ -1273,7 +1275,55 @@ simple_expr:
   | LPAREN MODULE module_expr COLON error
       { syntax_error $startpos($5);
         mkexp $startpos $endpos (Pexp_pack $3) }
-  | P4_QUOTATION { reloc_exp $startpos $endpos Fake.any_val' }
+  (* CamlP4 compatibility *)
+  | P4_QUOTATION
+      { reloc_exp $startpos $endpos Fake.any_val' }
+  (* Js_of_ocaml extension *)
+  | JSNEW simple_expr LPAREN RPAREN
+      { reloc_exp $startpos $endpos
+        Fake.(app Js.un_constr $2)
+      }
+  | JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
+      { let jsnew' = reloc_exp $startpos($1) $endpos($1) Fake.Js.un_constr in
+        let constr = reloc_exp $startpos($1) $endpos($2) Fake.(app jsnew' $2) in
+        reloc_exp $startpos $endpos
+        (List.fold_left
+           (fun constr arg -> 
+             reloc_exp constr.pexp_loc.Location.loc_start
+                       arg.pexp_loc.Location.loc_end
+             (Fake.app constr arg))
+           constr (List.rev $4))
+      }
+  | simple_expr SHARP SHARP label
+      { let inst = Fake.(app Js.un_js $1) in
+        let prop = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+        mkexp $startpos $endpos (Pexp_send(prop,"get"))
+      }
+  | simple_expr SHARP SHARP label LESSMINUS simple_expr
+      { let inst = Fake.(app Js.un_js $1) in
+        let prop = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
+        reloc_exp $startpos $endpos
+        Fake.(app setter $6)
+      }
+  | simple_expr SHARP SHARP label LPAREN RPAREN
+      { let inst = Fake.(app Js.un_js $1) in
+        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        Fake.(app Js.un_meth jsmeth)
+      }
+  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+      { let inst = Fake.(app Js.un_js $1) in
+        let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let jsmeth =
+          List.fold_left
+            (fun meth arg -> 
+              reloc_exp meth.pexp_loc.Location.loc_start
+                        arg.pexp_loc.Location.loc_end
+              (Fake.app meth arg))
+            meth (List.rev $6)
+        in
+        Fake.(app Js.un_meth jsmeth)
+      }
 ;
 simple_labeled_expr_list:
     labeled_simple_expr
@@ -1363,6 +1413,10 @@ match_action:
 expr_comma_list:
     expr_comma_list COMMA expr                  { $3 :: $1 }
   | expr COMMA expr                             { [$3; $1] }
+;
+expr_comma_opt_list:
+    expr_comma_opt_list COMMA expr              { $3 :: $1 }
+  | expr %prec COMMA                            { [$1] }
 ;
 record_expr:
     simple_expr WITH lbl_expr_list              { (Some $1, $3) }

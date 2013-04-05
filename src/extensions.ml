@@ -50,8 +50,9 @@ let ext_js : extension = "js",
   ["module Js : sig
       val un_js : 'a Js.t -> 'a
       val un_meth : 'a Js.meth -> 'a
+      val un_constr : 'a Js.constr -> 'a
     end"],
   []
 
-let registry = [ext_lwt;ext_any]
+let registry = [ext_lwt;ext_js;ext_any]
 

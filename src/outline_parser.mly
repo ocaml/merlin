@@ -137,6 +137,7 @@
 %token FINALLY_LWT
 %token FOR_LWT
 %token WHILE_LWT
+%token JSNEW
 %token P4_QUOTATION
 
 (* Precedences and associativities.
@@ -197,7 +198,7 @@ The precedences must be listed from low to high.
 (* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION
+          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION JSNEW 
 
 
 (* Entry points *)
@@ -853,7 +854,22 @@ simple_expr:
       { () }
   (* | LPAREN MODULE enter_sub module_expr leave_sub COLON error
       { () } *)
-  | P4_QUOTATION { () }
+  (* CamlP4 compatibility *)
+  | P4_QUOTATION
+      { () }
+  (* Js_of_ocaml extension *)
+  | JSNEW simple_expr LPAREN RPAREN
+      { () }
+  | JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
+      { () }
+  | simple_expr SHARP SHARP label
+      { () }
+  | simple_expr SHARP SHARP label LESSMINUS simple_expr
+      { () }
+  | simple_expr SHARP SHARP label LPAREN RPAREN
+      { () }
+  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+      { () }
 ;
 enter_sub:
   { enter_sub () }
@@ -936,6 +952,10 @@ match_action:
 expr_comma_list:
     expr_comma_list COMMA expr                  { () }
   | expr COMMA expr                             { () }
+;
+expr_comma_opt_list:
+    expr_comma_opt_list COMMA expr              { () }
+  | expr %prec COMMA                            { () }
 ;
 record_expr:
     simple_expr WITH lbl_expr_list              { () }

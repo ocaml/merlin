@@ -100,6 +100,9 @@ let keyword_table =
     "finally", FINALLY_LWT;
     "for_lwt", FOR_LWT;
     "while_lwt", WHILE_LWT;
+
+    (* HACK: js_of_ocaml extension *)
+    "jsnew", JSNEW;
 ]
 
 (* To buffer string literals *)

@@ -50,6 +50,13 @@ module Lwt : sig
   val raise_lwt' : Longident.t
 end
 
+(* Js extension *)
+module Js : sig
+  val un_js     : Parsetree.expression
+  val un_meth   : Parsetree.expression
+  val un_constr : Parsetree.expression
+end
+
 type tydecl = string Location.loc * Parsetree.type_declaration
 
 (* type-conv extension *)
