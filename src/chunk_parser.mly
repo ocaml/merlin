@@ -437,6 +437,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token FINALLY_LWT
 %token FOR_LWT
 %token WHILE_LWT
+%token P4_QUOTATION
 
 (* Precedences and associativities.
 
@@ -496,7 +497,7 @@ The precedences must be listed from low to high.
 (* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
+          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION
 
 
 (* Entry points *)
@@ -1272,6 +1273,7 @@ simple_expr:
   | LPAREN MODULE module_expr COLON error
       { syntax_error $startpos($5);
         mkexp $startpos $endpos (Pexp_pack $3) }
+  | P4_QUOTATION { reloc_exp $startpos $endpos Fake.any_val' }
 ;
 simple_labeled_expr_list:
     labeled_simple_expr

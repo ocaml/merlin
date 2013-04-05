@@ -373,6 +373,14 @@ rule token = parse
       { update_loc lexbuf name (int_of_string num) true 0;
         token lexbuf
       }
+
+  | "<" (":" identchar*)? ("@" identchar*)? "<"
+      { let start = lexbuf.lex_start_p in
+        p4_quotation lexbuf;
+        lexbuf.lex_start_p <- start;
+        P4_QUOTATION
+      }
+
   | "#"  { SHARP }
   | "&"  { AMPERSAND }
   | "&&" { AMPERAMPER }
@@ -550,6 +558,14 @@ and skip_sharp_bang = parse
        { update_loc lexbuf None 1 false 0 }
   | "" { () }
 
+and p4_quotation = parse
+  | "<" (":" identchar*)? ("@" identchar*)? "<"
+        { p4_quotation lexbuf }
+        (* FIXME: This is fake *)
+  | ">>" { () }
+  | eof { raise (Error (Unterminated_string, Location.none)) }
+  | _   { p4_quotation lexbuf }
+
 {
   let token_with_comments = token
 
@@ -566,3 +582,4 @@ and skip_sharp_bang = parse
     last_comments := [];
     comment_start_loc := []
 }
+

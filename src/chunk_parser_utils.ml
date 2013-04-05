@@ -147,6 +147,7 @@ let token_to_string =
     | MATCH_LWT -> "MATCH_LWT"
     | FOR_LWT -> "FOR_LWT"
     | WHILE_LWT -> "WHILE_LWT"
+    | P4_QUOTATION -> "P4_QUOTATION"
 
 let dump_lexer ?who f a =
   let t = f a in

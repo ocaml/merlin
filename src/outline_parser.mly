@@ -137,6 +137,7 @@
 %token FINALLY_LWT
 %token FOR_LWT
 %token WHILE_LWT
+%token P4_QUOTATION
 
 (* Precedences and associativities.
 
@@ -196,7 +197,7 @@ The precedences must be listed from low to high.
 (* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
+          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION
 
 
 (* Entry points *)
@@ -852,6 +853,7 @@ simple_expr:
       { () }
   (* | LPAREN MODULE enter_sub module_expr leave_sub COLON error
       { () } *)
+  | P4_QUOTATION { () }
 ;
 enter_sub:
   { enter_sub () }
