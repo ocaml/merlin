@@ -36,7 +36,12 @@
  * See [Typer.initial_env] for initial environment generation.
  *)
 
-type extension = string * string list * string list
+(* Private definitions are put in a fake module named "_" with the following
+ * ident. Use it to test or find private definition. *)
+val ident : Ident.t
 
-(* Known extensions *)
-val registry : extension list
+(* Register extensions in environment.
+ * If an extension fails to typecheck (e.g. it needs definitions from an
+ * external package not loaded), it is ignored and registration
+ * continue for other extensions. *)
+val register : Env.t -> Env.t
