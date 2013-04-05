@@ -1480,7 +1480,7 @@ let rec type_exp env sexp =
 and type_expect ?in_function env sexp ty_expected =
   try
     type_expect' ?in_function env sexp ty_expected
-  with Error _ as exn ->
+  with (Typetexp.Error _ | Error _) as exn ->
     Types.raise_error exn;
     let loc = sexp.pexp_loc in
     {
@@ -1504,8 +1504,18 @@ and type_expect' ?in_function env sexp ty_expected =
   let rue exp =
     Cmt_format.add_saved_type (Cmt_format.Partial_expression exp);
     Stypes.record (Stypes.Ti_expr exp);
-    unify_exp env exp (instance env ty_expected);
-    exp
+    try
+      unify_exp env exp (instance env ty_expected);
+      exp
+    with (Typetexp.Error _ | Error _) as exn ->
+      Types.raise_error exn;
+      {
+        exp_desc = Texp_tuple [exp];
+        exp_loc = loc;
+        exp_extra = [];
+        exp_type = ty_expected;
+        exp_env = env
+      } 
   in
   match sexp.pexp_desc with
   | Pexp_ident lid ->
