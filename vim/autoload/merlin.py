@@ -314,11 +314,17 @@ def vim_complete_cursor(base, vimvar):
       ))
     vim.command("call add(%s, l:tmp)" % vimvar)
 
+def error_start_line(error):
+  if 'start' in error and 'line' in error['start']:
+    return error['start']['line']
+  return -1
+
 def vim_loclist(vimvar, ignore_warnings):
   vim.command("let %s = []" % vimvar)
   errors = command_report_errors()
   bufnr = vim.current.buffer.number
   nr = 0
+  errors.sort(key=error_start_line)
   for error in errors:
     if error['type'] == 'warning' and vim.eval(ignore_warnings) == 'true':
         continue

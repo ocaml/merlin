@@ -31,23 +31,8 @@ type kind =
   *)
 exception Chunk of kind * position
 
-(** If [!filter_first > 0], the parser will not raise an exception but
-  * decrement [filter_first]. This allows to implement rollback when
-  * a source code is feed in several separate commands.
-  * For example "let x = 5" then "and y = 6" are analyzed as :
-  * - "let x = 5" : raise Chunk (Definition,_)
-  * - "and …" : raise Chunk (Rollback,_)
-  * - filter_first := 1
-  *   "let x = 5 and y = 6" : raise Chunk(Definition,_)
-  *              ^ no Chunk(Definition) is raised here and
-  *                filter_first is decremented
-  *)
-val filter_first : int ref
-
-(** Called to (re)initialize the parser.
-  * filter_first := rollback; nesting := 0
-  *)
-val reset : rollback:int -> unit -> unit
+(** Called to (re)initialize the parser. (nesting := 0) *)
+val reset : unit -> unit
 
 (** Used to ignore first-class modules.
   * The construct "let module = … in " allows to define a module
@@ -60,6 +45,5 @@ val reset : rollback:int -> unit -> unit
 val enter_sub : unit -> unit
 (** Decrements [nesting] *)
 val leave_sub : unit -> unit
-(** Sends [Chunk] only when outside of any enter_sub/leave_sub
-  * and [!filter_first] is 0 *)
+(** Sends [Chunk] only when outside of any enter_sub/leave_sub *)
 val emit_top : kind -> position -> unit

@@ -28,6 +28,20 @@ let ext_any =
     val val' : 'a
   end",
   []
+
+let ext_js =
+  parse_sig
+  "module Js : sig
+    val un_js : 'a Js.t -> 'a
+    val un_meth : 'a Js.meth -> 'a
+  end",
+  []
+  
+(* a##m         | (un_js a)#m#get
+   a##m <- e    | (un_js a)#m#set e
+   a##m (a,b,c) | un_meth ((un_js a)#m a b c …)
+   Js constructors : todo *)
+
 let registry = [ext_lwt;ext_any]
 
 let register env =

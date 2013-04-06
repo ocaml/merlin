@@ -63,7 +63,13 @@ let sync_step outline tokens t =
         Some (Definitions defs)
 
     | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> None
-    | Outline_utils.Rollback -> raise Invalid_chunk
+
+    (* Can now occurs here when a malformed module contains a definition that should have been
+     * rolled back but cannot, as in:
+     *   exception E
+     *   and X
+     *)
+    | Outline_utils.Rollback -> None
 
     | Outline_utils.Leave_module ->
         (* reconstitute module from t *)

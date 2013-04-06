@@ -100,23 +100,35 @@ let command_tell = {
       in
       let rec loop state =
         let bufpos = ref state.pos in
-        let outlines, chunks, types =
+        let tokens, outlines, chunks, types =
+          state.tokens,
           (History.cutoff state.outlines),
           (History.cutoff state.chunks),
           (History.cutoff state.types)
         in
-        let tokens = History.of_list state.tokens in
-        let tokens, outlines =
-          try Outline.parse ~bufpos tokens outlines lexbuf
-          with Lexer.Error _ as exn ->
-            tokens, Outline.append_exns [exn] outlines
+        let exns, tokens, outlines =
+          match Location.catch_warnings 
+              (fun () -> Outline.parse ~bufpos tokens outlines lexbuf)
+          with
+          | warnings, Misc.Inr (tokens, outlines) -> 
+            warnings, tokens, outlines
+          | warnings, Misc.Inl exn -> 
+            exn :: warnings, tokens, outlines
         in
+        let outlines = Outline.append_exns exns outlines in
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
-        let tokens = History.nexts tokens in
         let pos = !bufpos in
+          (* If token list didn't change, move forward anyway 
+           * to prevent getting stuck *)
+        let stuck = state.tokens = tokens in
+        let tokens =
+          if stuck
+          then (try List.tl tokens with _ -> tokens)
+          else tokens
+        in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !eod || (state.tokens = state'.tokens && !eot)
+        if !eod || (!eot && stuck)
         then state'
         else loop state'
       in

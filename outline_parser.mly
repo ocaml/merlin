@@ -213,6 +213,8 @@ implementation:
   | top_structure EOF                    { () }
   | AND                                  { emit_top Rollback $endpos }
   | BAR                                  { emit_top Rollback $endpos }
+  | ELSE                                 { emit_top Rollback $endpos }
+  | SEMI                                 { emit_top Rollback $endpos }
   | EOF                                  { () }
   | SEMISEMI                             { emit_top Done $endpos }
 ;
@@ -294,7 +296,7 @@ structure_item:
       { emit_top Definition $endpos }
   | TYPE type_declarations with_extension
       { emit_top Definition $endpos }
-  | EXCEPTION UIDENT constructor_arguments
+  | EXCEPTION UIDENT constructor_arguments with_extension
       { emit_top Definition $endpos }
   | EXCEPTION UIDENT EQUAL constr_longident
       { emit_top Definition $endpos }
@@ -363,7 +365,7 @@ signature_item:
       { () }
   | TYPE type_declarations with_extension
       { () }
-  | EXCEPTION UIDENT constructor_arguments
+  | EXCEPTION UIDENT constructor_arguments with_extension
       { () }
   | MODULE UIDENT module_declaration
       { () }

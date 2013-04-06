@@ -74,7 +74,6 @@ let parse_with history ~parser ~lexer ?bufpos buf =
         history, Outline_utils.Exception exn, []
 
 type item = {
-  rollback   : int;
   kind       : Outline_utils.kind;
   tokens     : token list;
   exns : exn list;
@@ -131,8 +130,8 @@ let seek_before pos t =
 let seek_offset offset =
   seek (fun pos -> compare offset pos.Lexing.pos_cnum)
 
-let parse_step ?(rollback=0) ?bufpos ?(exns=[]) history buf =
-  Outline_utils.reset ~rollback ();
+let parse_step ?bufpos ?(exns=[]) history buf =
+  Outline_utils.reset ();
   let history', kind, tokens = parse_with history
     ~parser:Outline_parser.implementation
     ~lexer:Lexer.token
@@ -146,7 +145,7 @@ let parse_step ?(rollback=0) ?bufpos ?(exns=[]) history buf =
   history',
   (match tokens with
     | [] -> None
-    | _ -> Some { rollback ; kind ; tokens ; exns })
+    | _ -> Some { kind ; tokens ; exns })
 
 let exns chunks =
   match History.prev chunks with
@@ -156,23 +155,29 @@ let exns chunks =
 let append_exns exns =
   History.modify (fun o -> { o with exns = exns @ o.exns })
 
-let rec parse ?rollback ?bufpos tokens chunks buf =
+let rec do_rollback next_tokens chunks =
+  match History.backward chunks with
+  | Some ({ tokens ; kind = Outline_utils.Rollback }, chunks') ->
+     do_rollback (tokens @ next_tokens) chunks'
+  | None -> next_tokens, chunks
+  | Some ({ tokens }, chunks') -> tokens @ next_tokens, chunks'
+
+let rec parse ?(can_rollback=true) ?bufpos tokens chunks buf =
   let exns = exns chunks in
-  match parse_step ?rollback ?bufpos ~exns tokens buf with
-    | tokens', Some { kind = Outline_utils.Rollback } ->
-        let chunks', rollback =
-          match History.backward chunks with
-            | Some ({ rollback }, chunks') -> chunks', rollback
-            | None -> chunks, 0
-        in
-        (*prerr_endline "SYNC PARSER";*)
-        (*let tokens', chunks' = History.Sync.nearest fst tokens' chunks' in*)
-        let chunks', _ = History.split chunks' in
-        parse ~rollback:(rollback + 1) ?bufpos tokens' chunks' buf
+  match parse_step ?bufpos ~exns (History.of_list tokens) buf with
+    | tokens', Some { kind = Outline_utils.Rollback } when can_rollback ->
+        let tokens = History.nexts (History.seek_offset 0 tokens') in
+        let tokens, chunks = do_rollback tokens chunks in
+        let chunks = History.cutoff chunks in
+        parse ~can_rollback:false ?bufpos tokens chunks buf
     | tokens', Some { kind = Outline_utils.Unterminated } ->
         tokens', chunks
     | tokens', Some item ->
         tokens', History.insert item chunks
     | tokens', None ->
         tokens', chunks
+
+let parse ?bufpos tokens chunks buf =
+  let tokens, chunks = parse ?bufpos tokens chunks buf in
+  History.nexts tokens, chunks
 
