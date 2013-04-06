@@ -1315,10 +1315,12 @@ strict_binding:
       { mkexp $startpos $endpos (Pexp_newtype($3, $5)) }
 ;
 match_cases:
-  | pattern error                               
-    { [$1, reloc_exp $startpos($2) $endpos($2) Fake.any_val'] }
   | pattern match_action                        { [$1, $2] }
   | match_cases BAR pattern match_action        { ($3, $4) :: $1 }
+  | match_cases BAR error
+    { (mkpat $startpos($3) $endpos($3) (Ppat_any), Fake.any_val') :: $1 }
+  | match_cases BAR pattern error               
+    { ($3, reloc_exp $startpos($4) $endpos($4) Fake.any_val') :: $1 }
 ;
 fun_def:
     match_action                                { $1 }
