@@ -271,15 +271,23 @@ struct
 end
 
 let browse_local_near pos nodes =
-  let best_of (Envs.T (l,_,_,_) as t) (Envs.T (l',_,_,_) as t') =
-    match
-      Misc.compare_pos l.Location.loc_start l'.Location.loc_start,
-      Misc.compare_pos l.Location.loc_end l'.Location.loc_end
-    with
-      | n, m when n <= 0 && m >= 0 -> t'
-      | _, _ -> t
-  in
   let cmp = Location.compare_pos pos in
+  let best_of (Envs.T (l,_,_,_) as t) (Envs.T (l',_,_,_) as t') =
+    match cmp l', cmp l with
+    | 0, 0 ->
+      (* Cursor is inside locations: select smaller one *)
+      if Misc.compare_pos l.Location.loc_end l'.Location.loc_end < 0
+      then t'
+      else t
+      (* Cursor inside one location, prefer it *)
+    | 0, _ -> t'
+    | _, 0 -> t
+    | _, _ ->
+      (* Cursor outside locations, select the rightmost one *)
+      if Misc.compare_pos l.Location.loc_end l'.Location.loc_end < 0
+      then t
+      else t'
+  in
   List.fold_left
   begin fun best (Envs.T (loc,_,_,_) as t) ->
     match cmp loc, best with
