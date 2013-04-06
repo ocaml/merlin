@@ -91,8 +91,7 @@ let command_tell = {
             match Stream.next i with
               | `List [`String "tell" ; `String "struct" ; `String source] -> source
               | `List [`String "tell" ; `String "end" ; `String source] -> eod := true; source
-              | `List [`String "tell" ; `String "end" ; `Null] -> eod := true; eot := true; ""
-              | `List [`String "tell" ; `String "struct" ; `Null] -> eot := true; ""
+              | `List [`String "tell" ; `String ("end"|"struct") ; `Null] -> eot := true; ""
                 (* FIXME: parser catch this Failure. It should not *)
               | _ -> invalid_arguments ()
           with
@@ -117,7 +116,7 @@ let command_tell = {
         let tokens = History.nexts tokens in
         let pos = !bufpos in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !eod || (!eot && state.tokens = state'.tokens)
+        if !eod || (state.tokens = state'.tokens && !eot)
         then state'
         else loop state'
       in
