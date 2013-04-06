@@ -1315,7 +1315,9 @@ strict_binding:
       { mkexp $startpos $endpos (Pexp_newtype($3, $5)) }
 ;
 match_cases:
-    pattern match_action                        { [$1, $2] }
+  | pattern error                               
+    { [$1, reloc_exp $startpos($2) $endpos($2) Fake.any_val'] }
+  | pattern match_action                        { [$1, $2] }
   | match_cases BAR pattern match_action        { ($3, $4) :: $1 }
 ;
 fun_def:
@@ -1326,7 +1328,9 @@ fun_def:
       { mkexp $startpos $endpos (Pexp_newtype($3, $5)) }
 ;
 match_action:
-    MINUSGREATER seq_expr                       { $2 }
+  | MINUSGREATER error                          
+      { reloc_exp $startpos($2) $endpos($2) Fake.any_val' }
+  | MINUSGREATER seq_expr                       { $2 }
   | WHEN seq_expr MINUSGREATER seq_expr         { mkexp $startpos $endpos (Pexp_when($2, $4)) }
 ;
 expr_comma_list:
