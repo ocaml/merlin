@@ -76,7 +76,6 @@ let main_loop () =
 
 let command_path pathes = Command.({
   name = "path";
-  doc = "TODO";
 
   handler =
   begin fun _ state arg->

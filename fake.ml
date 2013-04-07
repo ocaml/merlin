@@ -316,6 +316,8 @@ module Binprot = struct
 end
 
 module TypeWith = struct
+  type generator = string
+
   let rec generate_definitions ~ty ?ghost_loc = function
     | "sexp" ->
       let funs = List.map Sexp.Struct.make_funs ty in
@@ -403,3 +405,4 @@ module TypeWith = struct
     Misc.list_concat_map (generate_sigs ~ty ?ghost_loc) extensions
 
 end
+

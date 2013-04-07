@@ -1,3 +1,5 @@
+type extension = Parsetree.signature * Parsetree.signature
+
 let ident = Ident.create "_"
 
 let parse_sig str =
@@ -37,11 +39,6 @@ let ext_js =
   end",
   []
   
-(* a##m         | (un_js a)#m#get
-   a##m <- e    | (un_js a)#m#set e
-   a##m (a,b,c) | un_meth ((un_js a)#m a b c …)
-   Js constructors : todo *)
-
 let registry = [ext_lwt;ext_any]
 
 let register env =

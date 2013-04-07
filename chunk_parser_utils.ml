@@ -1,3 +1,5 @@
+type token = Chunk_parser.token
+
 let token_to_string =
   let open Chunk_parser in function
     | AMPERAMPER -> "AMPERAMPER"
@@ -118,9 +120,11 @@ let token_to_string =
     | FOR_LWT -> "FOR_LWT"
     | WHILE_LWT -> "WHILE_LWT"
 
-let print_tokens ?(who="") f a =
+let dump_lexer ?who f a =
   let t = f a in
-  (*Printf.eprintf "%s:%s, %!" who (token_to_string t);*)
+  (*Printf.eprintf "%s:%s, %!" 
+   (match who with Some w -> w | None -> "")
+   (token_to_string t);*)
   t
 
 let rec re_sync lexer buf =

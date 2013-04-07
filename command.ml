@@ -15,7 +15,7 @@ let initial_state = {
 }
 
 type handler = Protocol.io -> state -> Json.json list -> state * Json.json
-type t = { name : string ; handler : handler ; doc : string }
+type t = { name : string ; handler : handler }
 let invalid_arguments () = failwith "invalid arguments"
 
 let commands : (string,t) Hashtbl.t = Hashtbl.create 11
@@ -71,13 +71,6 @@ let exceptions_in state =
 
 let command_tell = {
   name = "tell";
-
-  doc = String.concat "\n" [
-    "Use ['tell','struct','...ocaml impl...'] to send source code from editor to merlin.";
-    "The command answers the boolean 'true' if parsing ended, 'false' if it needs more input.";
-    "In this case, the only allowed command is ['tell','struct','next source content'].";
-    "To interrupt the parser, run ['tell','struct',''] (meaning eof) or ['tell','struct',null].";
-  ];
 
   handler = begin fun (i,o) state -> function
   | [`String "struct" ; `String source] ->
@@ -140,12 +133,6 @@ let command_tell = {
 
 let command_type = {
   name = "type";
-
-  doc = String.concat "\n" [
-    "Returns the type of an expression as a string.";
-    "['type','expression','... ml expression'] tries to type expression in global env.";
-    "['type','at',{'line':l,'col':c}] returns the type of the expression at given position(BUGGY)";
-  ];
 
   handler =
   let type_in_env env ppf expr =
@@ -398,13 +385,6 @@ let complete_in_env env prefix =
 let command_complete = {
   name = "complete";
 
-  doc = String.concat "\n" [
-    "['complete','prefix','...identifier path...'] or";
-    "['complete','prefix','...identifier path...', 'at', {'line':l,'col':c}]";
-    "returns possible completions in global environement or in environment";
-    "surrounding given position for given prefix/path (path of the form: Module.ident)";
-  ];
-
   handler =
   begin fun _ state -> function
   | [`String "prefix" ; `String prefix] ->
@@ -424,8 +404,6 @@ let command_complete = {
 
 let command_seek = {
   name = "seek";
-
-  doc = "TODO";
 
   handler =
   begin fun _ state -> function
@@ -523,8 +501,6 @@ let command_seek = {
 let command_boundary = {
   name = "boundary";
 
-  doc = "TODO";
-
   handler =
   begin fun _ state -> function
   | [] ->
@@ -545,8 +521,6 @@ let command_boundary = {
 let command_reset = {
   name = "reset";
 
-  doc = "TODO";
-
   handler =
   begin fun _ state -> function
   | [] -> initial_state, Protocol.pos_to_json initial_state.pos
@@ -556,8 +530,6 @@ let command_reset = {
 
 let command_refresh = {
   name = "refresh";
-
-  doc = "TODO";
 
   handler =
   begin fun _ state -> function
@@ -572,7 +544,6 @@ let command_refresh = {
 
 let command_cd = {
   name = "cd";
-  doc = "TODO";
 
   handler =
   begin fun _ state -> function
@@ -583,7 +554,6 @@ let command_cd = {
 
 let command_errors = {
   name = "errors";
-  doc = "TODO";
 
   handler =
   begin fun _ state -> function
@@ -594,7 +564,6 @@ let command_errors = {
 
 let command_dump = {
   name = "dump";
-  doc = "TODO";
 
   handler =
   let pr_item_desc items =
@@ -662,7 +631,6 @@ let command_dump = {
 
 let command_which = {
   name = "which";
-  doc = "TODO";
 
   handler =
   begin fun _ state -> function
@@ -682,7 +650,6 @@ let command_which = {
 
 let command_find = {
   name = "find";
-  doc = "TODO";
 
   handler =
   begin fun _ state -> function
@@ -705,16 +672,15 @@ let command_find = {
 
 let command_help = {
   name = "help";
-  doc = "List known commands with synopsis and small description";
 
   handler =
   begin fun _ state -> function
   | [] ->
       let helps = Hashtbl.fold
-        (fun name { doc } cmds -> (name, `String doc) :: cmds)
+        (fun name _ cmds -> `String name :: cmds)
         commands []
       in
-      state, `Assoc helps
+      state, `List helps
   | _ -> invalid_arguments ()
   end;
 }

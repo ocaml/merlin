@@ -14,7 +14,7 @@ let parse_with history ~parser ~lexer ?bufpos buf =
   in
   let lexer = History.wrap_lexer ?bufpos history' lexer in
   try
-    let lexer = Chunk_parser_utils.print_tokens ~who:"outline" lexer in
+    let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in
     let history = !history' in
     history, Outline_utils.Done, chunk_content history
@@ -49,7 +49,7 @@ let parse_with history ~parser ~lexer ?bufpos buf =
               })
           in
           history' := History.move (-1) !history';
-          let lexer' who = Chunk_parser_utils.print_tokens ~who lexer in
+          let lexer' who = Chunk_parser_utils.dump_lexer ~who lexer in
           let rec aux () =
             let count = Chunk_parser_utils.re_sync (lexer' "re_sync") buf in
             history' := History.move (-1) !history';

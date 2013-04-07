@@ -58,7 +58,7 @@ let sync_step outline tokens t =
         let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
-        let lexer = Chunk_parser_utils.print_tokens ~who:"chunk" lexer in
+        let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
         let defs = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
         Some (Definitions defs)
 
@@ -117,7 +117,7 @@ let sync_step outline tokens t =
           let lexer = History.wrap_lexer (ref (History.of_list tokens))
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
           in
-          let lexer = Chunk_parser_utils.print_tokens ~who:"chunk" lexer in
+          let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
           let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
           Some (Definitions def)
         with _ -> None
