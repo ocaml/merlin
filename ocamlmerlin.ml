@@ -5,15 +5,30 @@
   *   ["nom_de_la_commande",arg1,arg2]
   * Arguments are command-specific. The ["help"] command list existing
   * commands.
-  * The type of answer is also command-specific (TODO clean).
+  * The type of answer is also command-specific following this convention:
+  * - ["return",result]
+  *   the command executed successfully, returning `result' json object
+  * - ["error",e]
+  *   the command was not able to do it's job, for instance due to wrong
+  *   assumptions, missing files, etc.
+  * - ["failure",string]
+  *   the command was not invoked correctly (for instance, trying to
+  *   execute unknown command, or passing invalid arguments, etc)
+  * - ["exception",string]
+  *   something bad or unexpected happened, this is probably a bug and
+  *   should have been caught as either an error or a failure.
+  *   Please report!
   *
   * ## Overview
+  *
   * Normal usage relies on the "tell" command, whose parameter is
   * source code:
-  *   > ["tell","let foo = 42"]
-  *   < true
-  * The command ["seek","position",{"line":int,"col":int}] moves the cursor.
-  * A session is a sequence of tell/seek commands that synchronize the
+  *   > ["tell","struct","let foo = 42"]  ; send buffer content
+  *   < ["return","false"]
+  *   > ["tell","struct",null]            ; signal end-of-buffer
+  *   > ["return","true"]
+  * The command ["seek","before",{"line":int,"col":int}] moves the cursor.
+  * A session is a sequence of tell/seek commands to synchronize the
   * buffer and the editor, and of query commands.
   *
   * ## Incremental analysis
@@ -32,10 +47,10 @@
   * "potential future".
   * The "past" is the list of already-validated definitions (you may
   * think of the highlighted code in Coqide/ProofGeneral), with the
-  * element left of the cursor being the last known-good definition.
+  * element at the left of the cursor being the last wellformed definition.
   * The "potential future" is a list of definitions that have already
   * been validated, but will be invalidated and thrown out if the
-  * definition under the cursor ("present") changes.
+  * definition under the cursor changes.
   *)
 
 (* Search path (-I) handling *)
