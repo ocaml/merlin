@@ -45,13 +45,13 @@ let reset_global_modules () =
  *)
 let env_at state pos_cursor =
   let structures = Misc.list_concat_map
-    (fun (str,sg) -> Browse.Envs.structure str)
+    (fun (str,sg) -> Browse.structure str)
     (Typer.trees state.types)
   in
   let outlines' = History.move 2 (Outline.seek_before pos_cursor state.outlines) in
   try
-    let pos_browsed, env = match Browse.browse_near pos_cursor structures with
-      | Some ({ Location.loc_end },env,_) -> loc_end, env
+    let pos_browsed, env = match Browse.near pos_cursor structures with
+      | Some { Browse. loc ; env } -> loc.Location.loc_end, env
       | None -> raise Not_found
     in
     let open Lexing in
@@ -154,7 +154,7 @@ let command_type = {
       | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
         begin
           try let _, c = Env.lookup_constructor longident.Asttypes.txt env in
-            Browse.print_constructor ppf c
+            Browse_misc.print_constructor ppf c
           with Not_found ->
           try let _, m = Env.lookup_module longident.Asttypes.txt env in
            Printtyp.modtype ppf m
@@ -192,22 +192,22 @@ let command_type = {
   | [`String "at" ; jpos] ->
     let pos = Protocol.pos_of_json jpos in
     let structures = Misc.list_concat_map
-      (fun (str,sg) -> Browse.Envs.structure str)
+      (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
     in
-    let t, loc = match Browse.browse_near pos structures with
-      | Some (loc,_,t) -> t, loc
+    let kind, loc = match Browse.near pos structures with
+      | Some { Browse. loc ; kind } -> kind, loc
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
-    begin match t with
-      | Browse.Envs.Other -> raise Not_found
-      | Browse.Envs.Expr e -> Printtyp.type_scheme ppf e
-      | Browse.Envs.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
-      | Browse.Envs.Module m -> Printtyp.modtype ppf m
-      | Browse.Envs.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
-      | Browse.Envs.Class (ident, cd) -> Printtyp.class_declaration ident ppf cd
-      | Browse.Envs.ClassType (ident, ctd) ->
+    begin match kind with
+      | Browse.Other -> raise Not_found
+      | Browse.Expr e -> Printtyp.type_scheme ppf e
+      | Browse.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
+      | Browse.Module m -> Printtyp.modtype ppf m
+      | Browse.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
+      | Browse.Class (ident, cd) -> Printtyp.class_declaration ident ppf cd
+      | Browse.ClassType (ident, ctd) ->
         Printtyp.cltype_declaration ident ppf ctd
     end;
     state, Protocol.with_location loc ["type", `String (to_string ())]
@@ -215,17 +215,17 @@ let command_type = {
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
     let aux = function
-      | Browse.Envs.T (loc,_,Browse.Envs.Expr e,_) ->
+      | { Browse. loc ; kind = Browse.Expr e } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.type_scheme ppf e;
         Some (Protocol.with_location loc ["type", `String (to_string ())])
       | _ -> None
     in
     let structures = Misc.list_concat_map
-      (fun (str,sg) -> Browse.Envs.structure str)
+      (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
     in
-    let path = Browse.browse_enclosing pos structures in
+    let path = Browse.enclosing pos structures in
     let result = Misc.list_filter_map aux path in
     state, `List [`Int (List.length path); `List result]
 
@@ -276,7 +276,7 @@ let complete_in_env env prefix =
       | `Cons c  ->
           Format.pp_print_string ppf name;
           Format.pp_print_string ppf " : ";
-          Browse.print_constructor ppf c;
+          Browse_misc.print_constructor ppf c;
           "Constructor"
       | `Label label_descr ->
           let desc =
@@ -567,13 +567,13 @@ let command_dump = {
   in
   begin fun _ state -> function
   | [`String "env"] ->
-      let sg = Browse.Envs.signature_of_env (Typer.env state.types) in
+      let sg = Browse_misc.signature_of_env (Typer.env state.types) in
       let aux item =
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [item];
         let content = to_string () in
         let ppf, to_string = Misc.ppf_to_string () in
-        match Browse.signature_loc item with
+        match Browse_misc.signature_loc item with
           | Some loc ->
               Location.print_loc ppf loc;
               let loc = to_string () in
@@ -583,13 +583,13 @@ let command_dump = {
       state, `List (List.map aux sg)
   | [`String "env" ; `String "at" ; jpos ] ->
     let env = env_at state (Protocol.pos_of_json jpos) in
-    let sg = Browse.Envs.signature_of_env env in
+    let sg = Browse_misc.signature_of_env env in
     let aux item =
       let ppf, to_string = Misc.ppf_to_string () in
       Printtyp.signature ppf [item];
       let content = to_string () in
       let ppf, to_string = Misc.ppf_to_string () in
-      match Browse.signature_loc item with
+      match Browse_misc.signature_loc item with
         | Some loc ->
             Location.print_loc ppf loc;
             let loc = to_string () in
@@ -605,7 +605,7 @@ let command_dump = {
         Printtyp.signature ppf [item];
         let content = to_string () in
         let ppf, to_string = Misc.ppf_to_string () in
-        match Browse.signature_loc item with
+        match Browse_misc.signature_loc item with
           | Some loc ->
               Location.print_loc ppf loc;
               let loc = to_string () in
@@ -617,10 +617,10 @@ let command_dump = {
       state, `List (pr_item_desc state.chunks)
   | [`String "tree"] ->
       let structures = Misc.list_concat_map
-        (fun (str,sg) -> Browse.Envs.structure str)
+        (fun (str,sg) -> Browse.structure str)
         (Typer.trees state.types)
       in
-      state, Browse.dump_envs structures
+      state, Browse_misc.dump_ts structures
   | _ -> invalid_arguments ()
   end;
 }
