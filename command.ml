@@ -410,8 +410,7 @@ let command_seek = {
   | [`String "position"] ->
       state, Protocol.pos_to_json state.pos
 
-    (* FIXME: Should seek position be renamed to "seek before" ? *)
-  | [`String ("position" | "before") ; jpos] ->
+  | [`String "before" ; jpos] ->
       let pos = Protocol.pos_of_json jpos in
       let outlines = Outline.seek_before pos state.outlines in
       let outlines = History.seek_backward
@@ -445,9 +444,6 @@ let command_seek = {
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
       Protocol.pos_to_json pos
-
-  | [`String "end_of_definition"] ->
-      failwith "TODO"
 
   | [`String "end"] ->
       let outlines = History.seek_forward (fun _ -> true) state.outlines in
