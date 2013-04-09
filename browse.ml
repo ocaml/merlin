@@ -17,6 +17,9 @@ type t = {
   nodes : t list Lazy.t
 }
 
+let dummy = { loc = Location.none ; env = Env.empty ;
+              context = Other; nodes = lazy [] }
+
 let singleton ?(context=Other) loc env = 
   { loc ; env ; context ; nodes = lazy [] }
 

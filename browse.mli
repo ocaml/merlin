@@ -25,6 +25,7 @@ type t = {
   nodes : t list Lazy.t
 }
 
+val dummy : t
 
 (* Build tree out of Typedtree fragment *)
 val structure   : Typedtree.structure   -> t list

@@ -43,7 +43,7 @@ let reset_global_modules () =
  *      preferable to use env from enclosing module rather than an env from
  *      inside x definition.
  *)
-let env_at state pos_cursor =
+let node_at state pos_cursor =
   let structures = Misc.list_concat_map
     (fun (str,sg) -> Browse.structure str)
     (Typer.trees state.types)
@@ -51,20 +51,21 @@ let env_at state pos_cursor =
   let cmp o = Misc.compare_pos pos_cursor (Outline.item_start o) in
   let outlines = History.seek_backward (fun o -> cmp o < 0) state.outlines in
   try
-    let pos_browsed, env = match Browse.deepest_before pos_cursor structures with
-      | Some { Browse. loc ; env } -> loc.Location.loc_end, env
+    let node, pos_node =
+      match Browse.nearest_before pos_cursor structures with
+      | Some ({ Browse.loc } as node) -> node, loc.Location.loc_end
       | None -> raise Not_found
     in
-    let open Lexing in
     match Outline.start outlines with
       | Some pos_next when
-         Misc.(compare_pos pos_next pos_browsed > 0 && compare_pos pos_cursor pos_next > 0) ->
+          Misc.(compare_pos pos_next pos_node > 0 &&
+                compare_pos pos_cursor pos_next > 0) ->
            raise Not_found
-      | _ -> env
+      | _ -> node
   with Not_found ->
     let _, chunks = History.Sync.rewind fst outlines state.chunks in
     let _, types = History.Sync.rewind fst chunks state.types in
-    Typer.env types
+    Browse.({ dummy with env = Typer.env types })
 
 (* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
 let exceptions_in state =
@@ -185,7 +186,7 @@ let command_type = {
       state, `String (to_string ())
 
   | [`String "expression"; `String expr; `String "at" ; jpos] ->
-    let env = env_at state (Protocol.pos_of_json jpos) in
+    let {Browse.env} = node_at state (Protocol.pos_of_json jpos) in
     let ppf, to_string = Misc.ppf_to_string () in
     type_in_env env ppf expr;
     state, `String (to_string ())
@@ -196,7 +197,7 @@ let command_type = {
       (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
     in
-    let kind, loc = match Browse.deepest_before pos structures with
+    let kind, loc = match Browse.nearest_before pos structures with
       | Some { Browse. loc ; context } -> context, loc
       | None -> raise Not_found
     in
@@ -395,7 +396,7 @@ let command_complete = {
       state, `List (List.rev compl)
     end
   | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
-    let env = env_at state (Protocol.pos_of_json jpos) in
+    let {Browse.env} = node_at state (Protocol.pos_of_json jpos) in
     let compl = complete_in_env env prefix in
     state, `List (List.rev compl)
 
@@ -583,7 +584,7 @@ let command_dump = {
       in
       state, `List (List.map aux sg)
   | [`String "env" ; `String "at" ; jpos ] ->
-    let env = env_at state (Protocol.pos_of_json jpos) in
+    let {Browse.env} = node_at state (Protocol.pos_of_json jpos) in
     let sg = Browse_misc.signature_of_env env in
     let aux item =
       let ppf, to_string = Misc.ppf_to_string () in
