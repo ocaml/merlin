@@ -3,7 +3,8 @@ type item_desc =
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
 
-type item = Outline.sync * (exn list * item_desc option)
+type step = (Outline_utils.kind, item_desc) Misc.sum
+type item = Outline.sync * (exn list * step)
 type sync = item History.sync
 type t = item History.t
 
@@ -17,13 +18,14 @@ let fallback_lexer = eof_lexer
 let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 
 let dump_chunk t =
+  let open Misc in
   List.map
   begin function
-  | _, (_, Some (Definitions [])) -> assert false
-  | _, (_, Some (Definitions (d :: _))) -> ("definition", line d)
-  | _, (_, Some (Module_opening (l,s,_))) -> ("opening " ^ s.Location.txt, line s)
-  | _, (_, Some (Module_closing (d,offset))) -> ("closing after " ^ string_of_int offset, line d)
-  | _, (_, None) -> ("error", -1)
+  | _, (_, Inr (Definitions [])) -> assert false
+  | _, (_, Inr (Definitions (d :: _))) -> ("definition", line d)
+  | _, (_, Inr (Module_opening (l,s,_))) -> ("opening " ^ s.Location.txt, line s)
+  | _, (_, Inr (Module_closing (d,offset))) -> ("closing after " ^ string_of_int offset, line d)
+  | _, (_, Inl _) -> ("other", -1)
   end (List.rev (History.prevs t) @ History.nexts t)
 
 let fake_tokens tokens f =
@@ -50,7 +52,7 @@ let sync_step outline tokens t =
         in
         begin match mod_str.Location.txt with
         | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-            Some (Module_opening (pstr_loc, s, m))
+            Misc.Inr (Module_opening (pstr_loc, s, m))
         | _ -> assert false
         end
     | Outline_utils.Definition ->
@@ -60,28 +62,29 @@ let sync_step outline tokens t =
         in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
         let defs = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-        Some (Definitions defs)
+        Misc.Inr (Definitions defs)
 
-    | Outline_utils.Done | Outline_utils.Unterminated | Outline_utils.Exception _ -> None
+      | Outline_utils.Done | Outline_utils.Unterminated |
+        Outline_utils.Exception _ | Outline_utils.Rollback -> 
+        Misc.Inl outline
 
     (* Can now occurs here when a malformed module contains a definition that should have been
      * rolled back but cannot, as in:
      *   exception E
      *   and X
      *)
-    | Outline_utils.Rollback -> None
 
     | Outline_utils.Leave_module ->
         (* reconstitute module from t *)
         let rec rewind_defs defs t =
           match History.backward t with
-          | Some ((_,(_,Some (Definitions []))), _) -> assert false
-          | Some ((_,(_,Some (Definitions lst))), t') -> 
+          | Some ((_,(_,Misc.Inr (Definitions []))), _) -> assert false
+          | Some ((_,(_,Misc.Inr (Definitions lst))), t') -> 
               rewind_defs (List.map (fun d -> d.Location.txt) lst @ defs) t'
-          | Some ((_,(_,Some (Module_closing (d,offset)))), t') ->
+          | Some ((_,(_,Misc.Inr (Module_closing (d,offset)))), t') ->
               rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
-          | Some ((_,(_,Some (Module_opening (loc,s,m)))), t') -> loc,s,m,defs,t'
-          | Some ((_,(_,None)), t') -> rewind_defs defs t'
+          | Some ((_,(_,Misc.Inr (Module_opening (loc,s,m)))), t') -> loc,s,m,defs,t'
+          | Some ((_,(_,Misc.Inl _)), t') -> rewind_defs defs t'
           | None ->
               let p = (match tokens with (_,loc_start,loc_end) :: _ -> Location.({loc_start;loc_end;loc_ghost = false}) | _ -> Location.none) in
               raise (Malformed_module p)
@@ -104,7 +107,7 @@ let sync_step outline tokens t =
             | (_,_,p) :: _ -> { loc with Location.loc_end = p }
             | [] -> loc
         in
-        Some (Module_closing (
+        Misc.Inr (Module_closing (
                 Location.mkloc {
                   pstr_desc = Pstr_module (s, subst_structure m);
                   pstr_loc  = loc
@@ -119,8 +122,9 @@ let sync_step outline tokens t =
           in
           let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
           let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-          Some (Definitions def)
-        with _ -> None
+          Misc.Inr (Definitions def)
+        with _ ->
+          Misc.Inl outline
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
@@ -134,8 +138,10 @@ let sync outlines chunks =
       | Some ({ Outline.kind ; Outline.tokens },outlines') ->
           let chunk =
             match Location.catch_warnings (fun () -> sync_step kind tokens chunks) with
-              | warnings, Misc.Inr item -> warnings, item
-              | warnings, Misc.Inl exn -> exn :: warnings, None
+            | warnings, Misc.Inr item ->
+              warnings, item
+            | warnings, Misc.Inl exn ->
+              exn :: warnings, Misc.Inl (Outline_utils.Exception exn)
           in
           let chunks' = History.(insert (Sync.at outlines', chunk) chunks) in
           aux outlines' chunks'

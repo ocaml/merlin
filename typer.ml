@@ -100,14 +100,14 @@ let sync chunks t =
       | Some ((_,(exns,chunk)),chunks') ->
           let type_errs, (env, trees, exns') =
             let type_errs, item = match chunk with
-              | Some c ->
+              | Misc.Inr c ->
                   let errs, result =
                     let process () = append_step chunks c t in
                     let errors ()  = Types.catch_errors process in
                     Misc.catch_join (Location.catch_warnings errors)
                   in
                   errs, Misc.sum raise (fun x -> x) result
-              | None -> [], None
+              | Misc.Inl _ -> [], None
             in
             type_errs,
             match item with
