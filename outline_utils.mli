@@ -16,6 +16,7 @@ type kind =
   | Syntax_error of Location.t
   | Exception of exn (* The parser raised an exception,
                       * to be handled by the caller *)
+val kind_to_string : kind -> string
 
 (** The outline parser proceeds by side-effects:
   * - most productions have no attached semantic action

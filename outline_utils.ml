@@ -13,6 +13,16 @@ type kind =
 
 exception Chunk of kind * position
 
+let kind_to_string = function
+  | Enter_module   -> "Enter_module"
+  | Leave_module   -> "Leave_module"
+  | Definition     -> "Definition"
+  | Rollback       -> "Rollback"
+  | Done           -> "Done"
+  | Unterminated   -> "Unterminated"
+  | Syntax_error _ -> "Syntax_error"
+  | Exception _    -> "Exception"
+
 (** Used to ignore first-class modules.
   * The construct "let module = … in " allows to define a module
   * locally inside a definition, but our outline parser cannot work

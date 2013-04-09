@@ -622,6 +622,17 @@ let command_dump = {
         (Typer.trees state.types)
       in
       state, Browse_misc.dump_ts structures
+  | [`String "outline"] ->
+      let outlines = History.prevs state.outlines in
+      let aux item =
+        let tokens =
+          List.map (fun (t,_,_) -> `String (Chunk_parser_utils.token_to_string t))
+            item.Outline.tokens
+        in
+        `List [`String (Outline_utils.kind_to_string item.Outline.kind);
+               `List tokens]
+      in
+      state, `List (List.rev_map aux outlines)
   | _ -> invalid_arguments ()
   end;
 }
