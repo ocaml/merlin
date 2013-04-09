@@ -121,7 +121,7 @@ let command_tell = {
           else tokens
         in
         let state' = { tokens ; outlines ; chunks ; types ; pos } in
-        if !eod || (!eot && stuck)
+        if !eod || (!eot && (stuck || tokens = []))
         then state'
         else loop state'
       in
