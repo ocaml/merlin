@@ -277,8 +277,8 @@ def sync_buffer_to(to_line, to_col):
 
   # Now we are synced, come back to environment around cursor
   command_seek_exact(to_line, to_col)
-  ## Gather a maximum of definition after cursor without leaving current module
-  #command_seek_scope()
+  # Gather a maximum of definition after cursor without leaving current module
+  command_seek_scope()
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
