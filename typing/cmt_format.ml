@@ -962,7 +962,7 @@ let read_cmi filename =
 
 let saved_types = ref []
 
-let add_saved_type b = saved_types := b :: !saved_types
+let add_saved_type b = () (* saved_types := b :: !saved_types *)
 let get_saved_types () = !saved_types
 let set_saved_types l = saved_types := l
 
