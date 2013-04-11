@@ -1,17 +1,9 @@
-type state = {
+type state = State.t = {
   pos      : Lexing.position;
   tokens   : Outline.token list;
   outlines : Outline.t;
   chunks   : Chunk.t;
   types    : Typer.t;
-}
-
-let initial_state = {
-  pos      = Lexing.({pos_fname = ""; pos_lnum = 1; pos_bol = 0; pos_cnum = 0});
-  tokens   = [];
-  outlines = History.empty;
-  chunks   = History.empty;
-  types    = History.empty;
 }
 
 type handler = Protocol.io -> state -> Json.json list -> state * Json.json
@@ -20,56 +12,6 @@ let invalid_arguments () = failwith "invalid arguments"
 
 let commands : (string,t) Hashtbl.t = Hashtbl.create 11
 let register cmd = Hashtbl.add commands cmd.name cmd
-
-(* FIXME: cleanup: move path management in a dedicated module *)
-let source_path = ref []
-let global_modules = ref (lazy [])
-
-let reset_global_modules () =
-  let paths = !Config.load_path in
-  global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
-
-(** Heuristic to find suitable environment to complete / type at given position.
- *  1. Try to find environment near given cursor.
- *  2. Check if there is an invalid construct between found env and cursor :
- *    Case a.
- *      > let x = valid_expr ||
- *      The env found is the right most env from valid_expr, it's a correct
- *      answer.
- *    Case b.
- *      > let x = valid_expr
- *      > let y = invalid_construction||
- *      In this case, the env found is the same as in case a, however it is
- *      preferable to use env from enclosing module rather than an env from
- *      inside x definition.
- *)
-let node_at state pos_cursor =
-  let structures = Misc.list_concat_map
-    (fun (str,sg) -> Browse.structure str)
-    (Typer.trees state.types)
-  in
-  let cmp o = Misc.compare_pos pos_cursor (Outline.item_start o) in
-  let outlines = History.seek_backward (fun o -> cmp o < 0) state.outlines in
-  try
-    let node, pos_node =
-      match Browse.nearest_before pos_cursor structures with
-      | Some ({ Browse.loc } as node) -> node, loc.Location.loc_end
-      | None -> raise Not_found
-    in
-    match Outline.start outlines with
-      | Some pos_next when
-          Misc.(compare_pos pos_next pos_node > 0 &&
-                compare_pos pos_cursor pos_next > 0) ->
-           raise Not_found
-      | _ -> node
-  with Not_found ->
-    let _, chunks = History.Sync.rewind fst outlines state.chunks in
-    let _, types = History.Sync.rewind fst chunks state.types in
-    Browse.({ dummy with env = Typer.env types })
-
-(* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
-let exceptions_in state =
-  Outline.exns state.outlines @ Typer.exns state.types
 
 let command_tell = {
   name = "tell";
@@ -84,11 +26,14 @@ let command_tell = {
           else try
             o (Protocol.return (`Bool false));
             match Stream.next i with
-              | `List [`String "tell" ; `String "struct" ; `String source] -> source
-              | `List [`String "tell" ; `String "end" ; `String source] -> eod := true; source
-              | `List [`String "tell" ; `String ("end"|"struct") ; `Null] -> eot := true; ""
-                (* FIXME: parser catch this Failure. It should not *)
-              | _ -> invalid_arguments ()
+            | `List [`String "tell" ; `String "struct" ; `String source] ->
+              source
+            | `List [`String "tell" ; `String "end" ; `String source] ->
+              eod := true; source
+            | `List [`String "tell" ; `String ("end"|"struct") ; `Null] ->
+              eot := true; ""
+            | _ -> (* FIXME: parser catch this Failure. It should not *)
+              invalid_arguments ()
           with
             Stream.Failure -> invalid_arguments ()
         end
@@ -186,7 +131,7 @@ let command_type = {
       state, `String (to_string ())
 
   | [`String "expression"; `String expr; `String "at" ; jpos] ->
-    let {Browse.env} = node_at state (Protocol.pos_of_json jpos) in
+    let {Browse.env} = State.node_at state (Protocol.pos_of_json jpos) in
     let ppf, to_string = Misc.ppf_to_string () in
     type_in_env env ppf expr;
     state, `String (to_string ())
@@ -235,171 +180,19 @@ let command_type = {
   end;
 }
 
-let rec mod_smallerthan n m =
-  if n < 0 then None
-  else
-  let open Types in
-  match m with
-  | Mty_ident _ -> Some 1
-  | Mty_signature s ->
-      begin match Misc.length_lessthan n s with
-        | None -> None
-        | Some n' ->
-            List.fold_left
-            begin fun acc item ->
-              match acc, item with
-                | None, _ -> None
-                | Some n', _ when n' > n -> None
-                | Some n1, Sig_modtype (_,Modtype_manifest m)
-                | Some n1, Sig_module (_,m,_) ->
-                    (match mod_smallerthan (n - n1) m with
-                       | Some n2 -> Some (n1 + n2)
-                       | None -> None)
-                | Some n', _ -> Some (succ n')
-            end (Some 0) s
-      end
-  | Mty_functor (_,m1,m2) ->
-      begin
-        match mod_smallerthan n m1 with
-        | None -> None
-        | Some n1 ->
-        match mod_smallerthan (n - n1) m2 with
-        | None -> None
-        | Some n2 -> Some (n1 + n2)
-      end
-
-let complete_in_env env prefix =
-  let fmt ~exact name path ty =
-    let ident = Ident.create (Path.last path) in
-    let ppf, to_string = Misc.ppf_to_string () in
-    let kind =
-      match ty with
-      | `Value v -> Printtyp.value_description ident ppf v; "Value"
-      | `Cons c  ->
-          Format.pp_print_string ppf name;
-          Format.pp_print_string ppf " : ";
-          Browse_misc.print_constructor ppf c;
-          "Constructor"
-      | `Label label_descr ->
-          let desc =
-            Types.(Tarrow ("", label_descr.lbl_res, label_descr.lbl_arg, Cok))
-          in
-          Format.pp_print_string ppf name;
-          Format.pp_print_string ppf " : ";
-          Printtyp.type_scheme ppf (Btype.newgenty desc);
-          "Label"
-      | `Mod m   ->
-          (if exact then
-             match mod_smallerthan 200 m with
-               | None -> ()
-               | Some _ -> Printtyp.modtype ppf m
-          ); "Module"
-      | `Typ t ->
-          Printtyp.type_declaration ident ppf t; "Type"
-    in
-    let desc, info = match kind with "Module" -> "", to_string () | _ -> to_string (), "" in
-    `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
-  in
-  let seen = Hashtbl.create 7 in
-  let uniq n = if Hashtbl.mem seen n
-    then false
-    else (Hashtbl.add seen n (); true)
-  in
-  let find ?path prefix compl =
-    let valid n = Misc.has_prefix prefix n && uniq n in
-    (* Hack to prevent extensions namespace to leak *)
-    let valid name = name <> "_" && valid name in
-    let compl = [] in
-    try
-      let compl = Env.fold_values
-        (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl else compl)
-        path env compl
-      in
-      let compl = Env.fold_constructors
-        (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl else compl)
-        path env compl
-      in
-      let compl = Env.fold_types
-        (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl else compl)
-        path env compl
-      in
-      let compl = Env.fold_modules
-        (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl else compl)
-        path env compl
-      in
-      compl
-    with
-    | exn ->
-      (* Our path might be of the form [Some_path.record.Real_path.prefix] which
-       * would explain why the previous cases failed.
-       * We only keep [Real_path] for our path. *)
-      let is_lowercase c = c = Char.lowercase c in
-      let rec keep_until_lowercase li =
-        let open Longident in
-        match li with
-        | Lident id when id <> "" && not (is_lowercase id.[0]) -> Some li
-        | Ldot (path, id) when id <> "" && not (is_lowercase id.[0]) ->
-          begin match keep_until_lowercase path with
-          | None -> Some (Lident id)
-          | Some path -> Some (Ldot (path, id))
-          end
-        | _ -> None
-      in
-      begin match path with
-      | None -> raise exn (* clearly the hypothesis is wrong here *)
-      | Some long_ident ->
-        let path = keep_until_lowercase long_ident in
-        Env.fold_labels
-          (fun name path l compl ->
-            if valid name then (fmt ~exact:(name = prefix) name path (`Label l)) :: compl else compl)
-          path env compl
-      end
-  in
-  try
-    match Longident.parse prefix with
-      | Longident.Ldot (path,prefix) -> find ~path prefix []
-      | Longident.Lident prefix ->
-          (* Add modules on path but not loaded *)
-          let compl = find prefix [] in
-          begin match Misc.length_lessthan 30 compl with
-            | Some _ -> List.fold_left
-              begin fun compl modname ->
-                let default =
-                  `Assoc ["name", `String modname ; "kind", `String "module"; "desc", `String "" ; "info", `String ""]
-                in match modname with
-                | modname when modname = prefix && uniq modname ->
-                    (try let p, md = Env.lookup_module (Longident.Lident modname) env in
-                      fmt ~exact:true modname p (`Mod md) :: compl
-                    with Not_found -> default :: compl)
-                | modname when Misc.has_prefix prefix modname && uniq modname ->
-                  default :: compl
-                | _ -> compl
-              end compl (Lazy.force !global_modules)
-            | None -> compl
-          end
-      | _ -> find prefix []
-  with Not_found -> []
-
 let command_complete = {
   name = "complete";
 
   handler =
   begin fun _ state -> function
   | [`String "prefix" ; `String prefix] ->
-    begin
-      let env = Typer.env state.types in
-      let compl = complete_in_env env prefix in
-      state, `List (List.rev compl)
-    end
-  | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
-    let {Browse.env} = node_at state (Protocol.pos_of_json jpos) in
-    let compl = complete_in_env env prefix in
+    let node = Browse.({dummy with env = Typer.env state.types}) in
+    let compl = State.node_complete node prefix in
     state, `List (List.rev compl)
-
+  | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
+    let node = State.node_at state (Protocol.pos_of_json jpos) in
+    let compl = State.node_complete node prefix in
+    state, `List (List.rev compl)
   | _ -> invalid_arguments ()
   end;
 }
@@ -424,7 +217,7 @@ let command_seek = {
       let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =
         match Outline.location outlines with
-          | l when l = Location.none -> initial_state.pos
+          | l when l = Location.none -> State.initial.pos
           | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
@@ -441,7 +234,7 @@ let command_seek = {
       let chunks, types = History.Sync.rewind fst chunks state.types in
       let pos =
         match Outline.location outlines with
-          | l when l = Location.none -> initial_state.pos
+          | l when l = Location.none -> State.initial.pos
           | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
@@ -453,7 +246,7 @@ let command_seek = {
       let types  = History.Sync.right fst chunks state.types in
       let pos =
         match Outline.location outlines with
-          | l when l = Location.none -> initial_state.pos
+          | l when l = Location.none -> State.initial.pos
           | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
@@ -487,7 +280,7 @@ let command_seek = {
       let types  = History.Sync.right fst chunks state.types in
       let pos =
         match Outline.location outlines with
-          | l when l = Location.none -> initial_state.pos
+          | l when l = Location.none -> State.initial.pos
           | p -> p.Location.loc_end
       in
       { tokens = [] ; outlines ; chunks ; types ; pos },
@@ -521,7 +314,7 @@ let command_reset = {
 
   handler =
   begin fun _ state -> function
-  | [] -> initial_state, Protocol.pos_to_json initial_state.pos
+  | [] -> State.initial, Protocol.pos_to_json State.initial.pos
   | _ -> invalid_arguments ()
   end
 }
@@ -532,10 +325,10 @@ let command_refresh = {
   handler =
   begin fun _ state -> function
   | [] ->
-      reset_global_modules ();
-      Env.reset_cache ();
-      let types = Typer.sync state.chunks History.empty in
-      { state with types }, `Bool true
+    State.reset_global_modules ();
+    Env.reset_cache ();
+    let types = Typer.sync state.chunks History.empty in
+    {state with types}, `Bool true
   | _ -> invalid_arguments ()
   end;
 }
@@ -555,7 +348,7 @@ let command_errors = {
 
   handler =
   begin fun _ state -> function
-  | [] -> state, `List (Error_report.to_jsons (exceptions_in state))
+  | [] -> state, `List (Error_report.to_jsons (State.exceptions state))
   | _ -> invalid_arguments ()
   end;
 }
@@ -584,7 +377,8 @@ let command_dump = {
       in
       state, `List (List.map aux sg)
   | [`String "env" ; `String "at" ; jpos ] ->
-    let {Browse.env} = node_at state (Protocol.pos_of_json jpos) in
+    let {Browse.env} = State.node_at state 
+        (Protocol.pos_of_json jpos) in
     let sg = Browse_misc.signature_of_env env in
     let aux item =
       let ppf, to_string = Misc.ppf_to_string () in
@@ -645,13 +439,13 @@ let command_which = {
   begin fun _ state -> function
   | [`String "path" ; `String s] ->
       let filename =
-        try Misc.find_in_path_uncap !source_path s
+        try Misc.find_in_path_uncap !State.source_path s
         with Not_found ->
           Misc.find_in_path_uncap !Config.load_path s
       in
       state, `String filename
   | [`String "with_ext" ; `String ext] ->
-      let results = Misc.modules_in_path ~ext !source_path in
+      let results = Misc.modules_in_path ~ext !State.source_path in
       state, `List (List.map (fun s -> `String s) results)
   | _ -> invalid_arguments ()
   end;
@@ -671,7 +465,7 @@ let command_find = {
       let packages = Findlib.package_deep_ancestors [] packages in
       let path = List.map Findlib.package_directory packages in
       Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
-      reset_global_modules ();
+      State.reset_global_modules ();
       state, `Bool true
   | [`String "list"] ->
       state, `List (List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ()))

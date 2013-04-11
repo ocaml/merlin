@@ -86,7 +86,7 @@ let main_loop () =
       output answer;
       loop state
     in
-    loop Command.initial_state
+    loop State.initial
   with Stream.Failure -> ()
 
 let command_path pathes = Command.({
@@ -122,8 +122,8 @@ let command_path pathes = Command.({
       | _ -> invalid_arguments ()
     end with
     | state, `Bool true as answer ->
-        reset_global_modules ();
-        answer
+      State.reset_global_modules ();
+      answer
     | answer -> answer
   end;
 })
@@ -131,7 +131,7 @@ let command_path pathes = Command.({
 let _ =
   let command_path = command_path [
     "build",  (Config.load_path,default_build_paths);
-    "source", (Command.source_path, lazy [])
+    "source", (State.source_path, lazy [])
   ] in
   Command.register command_path
 
@@ -201,7 +201,7 @@ let main () =
   Arg.parse Options.list unexpected_argument "TODO";
   init_path ();
   set_default_path ();
-  Command.reset_global_modules ();
+  State.reset_global_modules ();
   Findlib.init ();
   main_loop ()
 
