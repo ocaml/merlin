@@ -1,6 +1,6 @@
 open Typedtree
 
-type kind =
+type context =
   | Type of Types.type_declaration
   | Expr of Types.type_expr
   | Module of Types.module_type
@@ -13,18 +13,18 @@ type kind =
 type t = {
   loc : Location.t;
   env : Env.t;
-  kind : kind;
+  context : context;
   nodes : t list Lazy.t
 }
 
-let singleton ?(kind=Other) loc env = 
-  { loc ; env ; kind ; nodes = lazy [] }
+let singleton ?(context=Other) loc env = 
+  { loc ; env ; context ; nodes = lazy [] }
 
 let rec structure { str_final_env ; str_items } =
   List.map (structure_item ~env:str_final_env) str_items
 
 and structure_item ~env { str_desc ; str_loc ; str_env } =
-  { loc = str_loc ; env = str_env ; kind = Other ;
+  { loc = str_loc ; env = str_env ; context = Other ;
     nodes = lazy (structure_item_desc ~env str_desc) }
 
 and structure_item_desc ~env = function
@@ -36,7 +36,7 @@ and structure_item_desc ~env = function
   | Tstr_recmodule ms      -> List.map (fun (_,_,_,m) -> module_expr m) ms
   | Tstr_type ilds ->
     let aux (_,l,{typ_type}) =
-      singleton ~kind:(Type typ_type)
+      singleton ~context:(Type typ_type)
                 l.Location.loc env
     in
     List.map aux ilds
@@ -47,33 +47,33 @@ and structure_item_desc ~env = function
   | Tstr_class_type lst ->
     List.map
       (fun (id,l,{ ci_type_decl }) ->
-        singleton ~kind:(ClassType (id, ci_type_decl)) l.Location.loc env)
+        singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env)
       lst
   | Tstr_include (m,_) -> [module_expr m]
 
 and class_declaration ~env (cd, _, _virtual_flag) =
-  let kind = Class (cd.ci_id_class, cd.ci_decl) in
+  let context = Class (cd.ci_id_class, cd.ci_decl) in
   (* FIXME: use [ci_id_object] ? *)
   match cd.ci_expr.cl_desc with
   | Tcl_structure class_struct ->
     let nodes = lazy (class_structure ~env class_struct) in
-    { loc = cd.ci_loc ; env ; kind ; nodes }
+    { loc = cd.ci_loc ; env ; context ; nodes }
   (* TODO: extend *)
-  | _ -> singleton ~kind cd.ci_loc env
+  | _ -> singleton ~context cd.ci_loc env
 
 and class_structure ~env class_struct =
   let pat = (* where is that pattern in the concret syntax? *)
-    let kind = Expr class_struct.cstr_pat.pat_type in
-    singleton ~kind class_struct.cstr_pat.pat_loc env
+    let context = Expr class_struct.cstr_pat.pat_type in
+    singleton ~context class_struct.cstr_pat.pat_loc env
   in
   let fields = Misc.list_filter_map (class_field ~env) class_struct.cstr_fields in
   pat :: fields
 
 and class_field ~env { cf_desc ; cf_loc } =
   match cf_desc with
-  | Tcf_val (_, _, _, _, kind, _)
-  | Tcf_meth (_, _, _, kind, _) ->
-    begin match kind with
+  | Tcf_val (_, _, _, _, context, _)
+  | Tcf_meth (_, _, _, context, _) ->
+    begin match context with
     | Tcfk_concrete e -> Some (expression e)
     | _ -> None
     end
@@ -82,21 +82,22 @@ and class_field ~env { cf_desc ; cf_loc } =
 and patterns ?expr ?env pes = List.fold_left
   begin fun ls (p,e) ->
     let l =
-      singleton ~kind:(Expr p.pat_type) p.pat_loc
+      singleton ~context:(Expr p.pat_type) p.pat_loc
         (match env with Some p -> p | _ -> e.exp_env)
     in
     l :: expression e :: ls
   end [] pes
 
-and pattern expr env { pat_loc } = singleton ~kind:(Expr expr.exp_type) pat_loc env
+and pattern expr env { pat_loc } =
+  singleton ~context:(Expr expr.exp_type) pat_loc env
 
 and expression_extra t = function
-  | (Texp_open (_,_,env),loc) -> { loc ; env ; kind = Other ; nodes = lazy [t] }
+  | (Texp_open (_,_,env),loc) -> { loc ; env ; context = Other ; nodes = lazy [t] }
   | _ -> t
 
 and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
   List.fold_left expression_extra
-    { loc = exp_loc ; env = exp_env ; kind = Expr exp_type ;
+    { loc = exp_loc ; env = exp_env ; context = Expr exp_type ;
       nodes = lazy (expression_desc exp_desc) }
     exp_extra
 
@@ -139,7 +140,7 @@ and expression_desc = function
   | Texp_object _ -> []
 
 and module_expr { mod_env ; mod_desc ; mod_type ; mod_loc } =
-  { loc = mod_loc ; env = mod_env ; kind = Module mod_type ;
+  { loc = mod_loc ; env = mod_env ; context = Module mod_type ;
     nodes = lazy (module_expr_desc mod_desc) }
 
 and module_expr_desc = function
@@ -171,32 +172,43 @@ let local_near pos nodes =
   List.fold_left
   begin fun best t ->
     match cmp t.loc, best with
-      | n, _ when n < 0 -> best
-      | n, None -> Some t
-      | n, Some t' -> Some (best_of t t')
+    | n, _ when n < 0 -> best
+    | n, None -> Some t
+    | n, Some t' -> Some (best_of t t')
   end None nodes
 
-let near pos envs =
-  let rec traverse ({ nodes = lazy nodes } as t) =
+let is_enclosing pos { loc } =
+  (Location.compare_pos pos loc = 0)
+
+let traverse_branch pos tree =
+  let rec traverse { nodes = lazy nodes } acc =
     match local_near pos nodes with
-      | Some t' -> traverse t'
-      | None -> t
+    | Some t' -> traverse t' (t' :: acc) 
+    | None -> acc
   in
+  traverse tree [tree]
+
+let deepest_before pos envs =
   match local_near pos envs with
-    | Some t -> Some (traverse t)
-    | None -> None
+  | None -> None
+  | Some t -> Some (List.hd (traverse_branch pos t))
+
+let nearest_before pos envs =
+  match local_near pos envs with
+  | None -> None
+  | Some t -> 
+    let rec aux = function
+      | a :: b :: tail when is_enclosing pos b -> Some a
+      | [x] -> Some x
+      | [] -> None
+      | _ :: tail -> aux tail
+    in
+    aux (traverse_branch pos t)
 
 let enclosing pos envs =
-  let not_enclosing { loc } =
-    not (Location.compare_pos pos loc = 0)
-  in
-  let rec traverse { nodes = lazy nodes } results =
-    match local_near pos nodes with
-      | Some t' -> traverse t' (t' :: results)
-      | None -> results
-  in
+  let not_enclosing l = not (is_enclosing pos l) in
   match local_near pos envs with
-    | None -> []
-    | Some t ->
-        let results = traverse t [t] in
-        Misc.list_drop_while not_enclosing results
+  | None -> []
+  | Some t ->
+    let results = traverse_branch pos t in
+    Misc.list_drop_while not_enclosing results

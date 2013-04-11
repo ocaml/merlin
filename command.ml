@@ -51,7 +51,7 @@ let env_at state pos_cursor =
   let cmp o = Misc.compare_pos pos_cursor (Outline.item_start o) in
   let outlines = History.seek_backward (fun o -> cmp o < 0) state.outlines in
   try
-    let pos_browsed, env = match Browse.near pos_cursor structures with
+    let pos_browsed, env = match Browse.deepest_before pos_cursor structures with
       | Some { Browse. loc ; env } -> loc.Location.loc_end, env
       | None -> raise Not_found
     in
@@ -196,8 +196,8 @@ let command_type = {
       (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
     in
-    let kind, loc = match Browse.near pos structures with
-      | Some { Browse. loc ; kind } -> kind, loc
+    let kind, loc = match Browse.deepest_before pos structures with
+      | Some { Browse. loc ; context } -> context, loc
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
@@ -216,7 +216,7 @@ let command_type = {
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
     let aux = function
-      | { Browse. loc ; kind = Browse.Expr e } ->
+      | { Browse. loc ; context = Browse.Expr e } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.type_scheme ppf e;
         Some (Protocol.with_location loc ["type", `String (to_string ())])

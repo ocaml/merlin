@@ -126,8 +126,8 @@ let signature_of_env env =
   Typemod.simplify_signature (!sg)
 
 let rec dump_ts ts =
-  let dump_t { Browse. loc ; kind ; nodes = lazy nodes } =
-    let kind = match kind with
+  let dump_t { Browse. loc ; context ; nodes = lazy nodes } =
+    let kind = match context with
       | Browse.Type _ -> "type"
       | Browse.Expr _ -> "expr"
       | Browse.Module _ -> "module"

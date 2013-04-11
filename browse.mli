@@ -5,7 +5,7 @@
  *)
 
 (* Typedtree constructions recognized *)
-type kind =
+type context =
   | Type      of Types.type_declaration
   | Expr      of Types.type_expr
   | Module    of Types.module_type
@@ -21,7 +21,7 @@ type kind =
 type t = {
   loc : Location.t;
   env : Env.t;
-  kind : kind;
+  context : context;
   nodes : t list Lazy.t
 }
 
@@ -32,5 +32,22 @@ val expression  : Typedtree.expression  -> t
 val module_expr : Typedtree.module_expr -> t
 
 (* Navigate through tree *)
-val near : Lexing.position -> t list -> t option
+
+(* The deepest context inside or before the node, for instance, navigating
+ * through:
+ *    foo bar (baz :: tail) <cursor> 
+ * asking for node from cursor position will return context of "tail". *)
+val deepest_before : Lexing.position -> t list -> t option
+(* The nearest context inside or before the node, though stopping after
+ * leaving enclosing subtree. For instance, navigating
+ * through:
+ *    foo bar (baz :: tail) <cursor> 
+ * asking for node from cursor position will return context of the complete,
+ * application, since none of the arguments or the function expression will
+ * get us closer to cursor. *)
+val nearest_before : Lexing.position -> t list -> t option
+(* Return the path of nodes enclosing expression at cursor.
+ * For instance, navigating through:
+ *    f (g x<cursor>))
+ * will return the contexts of "x", "g x" then "f (g x)". *)
 val enclosing : Lexing.position -> t list -> t list
