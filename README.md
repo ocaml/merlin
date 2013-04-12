@@ -32,7 +32,6 @@ OCaml 4.00.1 (can be installed via opam typing `opam switch 4.00.1`).
 
 Then, just do :
 
-    $ opam remote add kiwi http://kiwi.iuwt.fr/~asmanur/opam/.git
     $ opam install merlin
 
 Setting-up vim
@@ -50,7 +49,7 @@ Then take a look at:
 for a sample configuration. Modify it according to your needs.
 
 Files:
-- merlin.conf.vim -- sample configuration
+- plugin/merlin.vim -- plugin entry point, adjust it if needed
 - autoload/
   - merlin.vim   -- main vim script
   - merlin.py    -- helper script needed by merlin.vim
