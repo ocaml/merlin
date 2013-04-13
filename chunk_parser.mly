@@ -106,8 +106,8 @@ let mkassert startpos endpos  e =
   | _ -> mkexp startpos endpos  (Pexp_assert (e))
 ;;
 
-let mkinfix startpos1 endpos1 arg1 startpos2 endpos2 name arg2 =
-  mkexp startpos1 endpos1 (Pexp_apply(mkoperator startpos2 endpos2 name, ["", arg1; "", arg2]))
+let mkinfix startpos endpos arg1 startpos2 endpos2 name arg2 =
+  mkexp startpos endpos (Pexp_apply(mkoperator startpos2 endpos2 name, ["", arg1; "", arg2]))
 
 let neg_float_string f =
   if String.length f > 0 && f.[0] = '-'
@@ -140,15 +140,15 @@ let mkuplus startpos endpos  name arg =
   | _ ->
       mkexp startpos endpos (Pexp_apply(mkoperator startpos endpos  ("~" ^ name), ["", arg]))
 
-let mkexp_cons startpos endpos args loc =
+let mkexp_cons args loc =
   {pexp_desc = Pexp_construct(mkloc (Lident "::") Location.none,
                               Some args, false); pexp_loc = loc}
 
-let mkpat_cons startpos endpos args loc =
+let mkpat_cons args loc =
   {ppat_desc = Ppat_construct(mkloc (Lident "::") Location.none,
                               Some args, false); ppat_loc = loc}
 
-let rec mktailexp startpos endpos  = function
+let rec mktailexp startpos endpos = function
     [] ->
       ghexp startpos endpos (Pexp_construct(mkloc (Lident "[]") Location.none, None, false))
   | e1 :: el ->
@@ -158,7 +158,7 @@ let rec mktailexp startpos endpos  = function
                          loc_ghost = true})
       in
       let arg = {pexp_desc = Pexp_tuple [e1; exp_el]; pexp_loc = l} in
-      mkexp_cons startpos endpos arg l
+      mkexp_cons arg l
 
 let rec mktailpat startpos endpos  = function
     [] ->
@@ -170,7 +170,7 @@ let rec mktailpat startpos endpos  = function
                          loc_ghost = true})
       in
       let arg = {ppat_desc = Ppat_tuple [p1; pat_pl]; ppat_loc = l} in
-      mkpat_cons startpos endpos arg l
+      mkpat_cons arg l
 
 let ghstrexp startpos endpos  e =
   { pstr_desc = Pstr_eval e; pstr_loc = {e.pexp_loc with Location.loc_ghost = true} }
@@ -1104,49 +1104,49 @@ expr:
       { mkexp $startpos $endpos
           (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
   | expr COLONCOLON expr
-      { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) (symbol_rloc $startpos $endpos ) }
+      { mkexp_cons (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) (symbol_rloc $startpos $endpos ) }
   | LPAREN COLONCOLON RPAREN LPAREN expr COMMA expr RPAREN
-      { mkexp_cons $startpos($1) $endpos($1) (ghexp $startpos $endpos (Pexp_tuple[$5;$7])) (symbol_rloc $startpos $endpos ) }
+      { mkexp_cons (ghexp $startpos $endpos (Pexp_tuple[$5;$7])) (symbol_rloc $startpos $endpos ) }
   | expr INFIXOP0 expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) $2 $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
   | expr INFIXOP1 expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) $2 $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
   | expr INFIXOP2 expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) $2 $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
   | expr INFIXOP3 expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) $2 $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
   | expr INFIXOP4 expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) $2 $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
   | expr PLUS expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "+" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "+" $3 }
   | expr PLUSDOT expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "+." $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "+." $3 }
   | expr MINUS expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "-" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "-" $3 }
   | expr MINUSDOT expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "-." $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "-." $3 }
   | expr STAR expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "*" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "*" $3 }
   | expr EQUAL expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "=" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "=" $3 }
   | expr LESS expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "<" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "<" $3 }
   | expr GREATER expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) ">" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) ">" $3 }
   | expr OR expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "or" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "or" $3 }
   | expr BARBAR expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "||" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "||" $3 }
   | expr AMPERSAND expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "&" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "&" $3 }
   | expr AMPERAMPER expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) "&&" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "&&" $3 }
   | expr COLONEQUAL expr
-      { mkinfix $startpos($1) $endpos($1) $1 $startpos($2) $endpos($2) ":=" $3 }
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) ":=" $3 }
   | subtractive expr %prec prec_unary_minus
-      { mkuminus $startpos($1) $endpos($1) $1 $2 }
+      { mkuminus $startpos $endpos $1 $2 }
   | additive expr %prec prec_unary_plus
-      { mkuplus $startpos($1) $endpos($1)  $1 $2 }
+      { mkuplus $startpos $endpos  $1 $2 }
   | simple_expr DOT label_longident LESSMINUS expr
       { mkexp $startpos $endpos (Pexp_setfield($1, mkrhs $startpos($3) $endpos($3) $3, $5)) }
   | simple_expr DOT LPAREN seq_expr RPAREN LESSMINUS expr
@@ -1390,9 +1390,9 @@ pattern:
   | name_tag pattern %prec prec_constr_appl
       { mkpat $startpos $endpos (Ppat_variant($1, Some $2)) }
   | pattern COLONCOLON pattern
-      { mkpat_cons $startpos $endpos (ghpat $startpos $endpos (Ppat_tuple[$1;$3])) (symbol_rloc $startpos $endpos ) }
+      { mkpat_cons (ghpat $startpos $endpos (Ppat_tuple[$1;$3])) (symbol_rloc $startpos $endpos ) }
   | LPAREN COLONCOLON RPAREN LPAREN pattern COMMA pattern RPAREN
-      { mkpat_cons $startpos $endpos (ghpat $startpos $endpos (Ppat_tuple[$5;$7])) (symbol_rloc $startpos $endpos ) }
+      { mkpat_cons (ghpat $startpos $endpos (Ppat_tuple[$5;$7])) (symbol_rloc $startpos $endpos ) }
   | pattern BAR pattern
       { mkpat $startpos $endpos (Ppat_or($1, $3)) }
   | LAZY simple_pattern
