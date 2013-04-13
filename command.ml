@@ -315,6 +315,10 @@ let command_reset = {
   handler =
   begin fun _ state -> function
   | [] -> State.initial, Protocol.pos_to_json State.initial.pos
+  | [`String "name"; `String pos_fname] ->
+    { State.initial with pos =
+      { State.initial.pos with Lexing.pos_fname } },
+    Protocol.pos_to_json State.initial.pos 
   | _ -> invalid_arguments ()
   end
 }

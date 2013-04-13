@@ -115,8 +115,11 @@ def clear_cache():
 def command_reload():
   return send_command("refresh")
 
-def command_reset():
-  r = send_command("reset")
+def command_reset(name=None):
+  if name:
+    r = send_command("reset","name",name)
+  else:
+    r = send_command("reset")
   clear_cache()
   return r
 
@@ -247,7 +250,7 @@ def sync_buffer_to(to_line, to_col):
       line, col = boundary[0]['line'], boundary[0]['col']
     if line <= end_line:
       if last_line <= 1:
-        command_reset()
+        command_reset(name=os.path.basename(cb.name))
         content = cb[:end_line]
         shadow_buffer = content
       else:
@@ -257,7 +260,7 @@ def sync_buffer_to(to_line, to_col):
         content.insert(0, rest)
         shadow_buffer[line-1:] = cb[line-1:end_line]
   else:
-    command_reset()
+    command_reset(name=os.path.basename(cb.name))
     (last_changes, sync) = find_changes(None)
     last_buffer = current_buffer
     content = cb[:end_line]
@@ -436,7 +439,6 @@ def vim_prev_enclosing(vimvar):
 
 # Resubmit current buffer
 def vim_reload_buffer():
-  command_reset()
   clear_cache()
   sync_buffer()
 
