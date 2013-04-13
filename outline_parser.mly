@@ -215,6 +215,11 @@ implementation:
   | BAR                                  { emit_top Rollback $endpos }
   | ELSE                                 { emit_top Rollback $endpos }
   | SEMI                                 { emit_top Rollback $endpos }
+
+  (*FIXME: check if this is stable… we could get stuck in an infinite loop…*)
+  | LIDENT                               { emit_top Rollback $endpos }
+  | UIDENT                               { emit_top Rollback $endpos }
+
   | EOF                                  { () }
   | SEMISEMI                             { emit_top Done $endpos }
 ;
