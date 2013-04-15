@@ -141,7 +141,7 @@ let rec parse ?(can_rollback=true) ?bufpos tokens chunks buf =
         let tokens, chunks = do_rollback tokens chunks in
         let chunks = History.cutoff chunks in
         parse ~can_rollback:false ?bufpos tokens chunks buf
-    | tokens', Some { kind = Outline_utils.Unterminated } ->
+    | tokens', Some { kind = (Outline_utils.Unterminated | Outline_utils.Done) } ->
         tokens', chunks
     | tokens', Some item ->
         tokens', History.insert item chunks
