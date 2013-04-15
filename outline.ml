@@ -101,35 +101,6 @@ let location t =
     | None -> Location.none
     | _ -> failwith "Outline.location: Invalid t"
 
-let seek cmp t =
-  let open Lexing in
-  let seek_func { tokens } =
-    match tokens with
-      | (_,start,_) :: _ when cmp start < 0 -> -1
-      | (_,_,curr) :: xs when cmp curr < 0 || cmp (last_curr curr xs) < 0 -> 0
-      | [] -> failwith "Outline.seek: Invalid t"
-      | _ -> 1
-  in
-  let go_forward t = seek_func t > 0 in
-  let go_backward t = seek_func t < 0 in
-  History.seek_backward go_backward (History.seek_forward go_forward t)
-
-let seek_before pos t =
-  let cmp = Misc.compare_pos pos in
-  let t = seek cmp t in
-  let rec rewind t =
-    match location t with
-      | l when l = Location.none -> t
-      | l when cmp l.Location.loc_end > 0 -> t
-      | _ -> match History.backward t with
-          | Some (_,t') -> rewind t'
-          | None -> t
-  in
-  rewind t
-
-let seek_offset offset =
-  seek (fun pos -> compare offset pos.Lexing.pos_cnum)
-
 let parse_step ?bufpos ?(exns=[]) history buf =
   Outline_utils.reset ();
   let history', kind, tokens = parse_with history

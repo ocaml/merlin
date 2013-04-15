@@ -14,8 +14,6 @@ type t = item History.t
 val item_start : item -> Lexing.position
 val start : t -> Lexing.position option
 val location : t -> Location.t
-val seek_before : Lexing.position -> t -> t
-val seek_offset : int -> t -> t
 
 val parse_step : ?bufpos:Lexing.position ref -> ?exns:exn list ->
   token History.t -> Lexing.lexbuf -> token History.t * item option

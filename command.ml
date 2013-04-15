@@ -203,88 +203,93 @@ let command_seek = {
   handler =
   begin fun _ state -> function
   | [`String "position"] ->
-      state, Protocol.pos_to_json state.pos
+    state, Protocol.pos_to_json state.pos
 
   | [`String "before" ; jpos] ->
+    let cmp = 
       let pos = Protocol.pos_of_json jpos in
-      let outlines = Outline.seek_before pos state.outlines in
-      let outlines = History.seek_backward
-        (function { Outline.kind = Outline_utils.Syntax_error _loc } -> true
-                | _ -> false)
-        outlines
-      in
-      let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
-      let chunks, types = History.Sync.rewind fst chunks state.types in
-      let pos =
-        match Outline.location outlines with
-          | l when l = Location.none -> State.initial.pos
-          | p -> p.Location.loc_end
-      in
-      { tokens = [] ; outlines ; chunks ; types ; pos },
-      Protocol.pos_to_json pos
+      fun o -> Misc.compare_pos pos (Outline.item_start o)
+    in
+    let outlines = state.outlines in
+    let outlines = History.seek_forward (fun i -> cmp i > 0) outlines in
+    let outlines = History.seek_backward
+      (function { Outline.kind = Outline_utils.Syntax_error _loc } -> true
+                | i -> cmp i < 0)
+      outlines
+    in
+    let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
+    let chunks, types = History.Sync.rewind fst chunks state.types in
+    let pos =
+      match Outline.location outlines with
+        | l when l = Location.none -> State.initial.pos
+        | p -> p.Location.loc_end
+    in
+    { tokens = [] ; outlines ; chunks ; types ; pos },
+    Protocol.pos_to_json pos
 
   | [`String "exact" ; jpos] ->
+    let cmp = 
       let pos = Protocol.pos_of_json jpos in
-      let outlines = Outline.seek_before pos state.outlines in
-      let outlines = History.seek_forward
-        (fun item -> Misc.compare_pos pos (Outline.item_start item) > 0)
-        outlines
-      in
-      let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
-      let chunks, types = History.Sync.rewind fst chunks state.types in
-      let pos =
-        match Outline.location outlines with
-          | l when l = Location.none -> State.initial.pos
-          | p -> p.Location.loc_end
-      in
-      { tokens = [] ; outlines ; chunks ; types ; pos },
-      Protocol.pos_to_json pos
+      fun o -> Misc.compare_pos pos (Outline.item_start o)
+    in
+    let outlines = state.outlines in
+    let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
+    let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
+    let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
+    let chunks, types    = History.Sync.rewind fst chunks   state.types  in
+    let pos =
+      match Outline.location outlines with
+      | l when l = Location.none -> State.initial.pos
+      | p -> p.Location.loc_end
+    in
+    { tokens = [] ; outlines ; chunks ; types ; pos },
+    Protocol.pos_to_json pos
 
   | [`String "end"] ->
-      let outlines = History.seek_forward (fun _ -> true) state.outlines in
-      let chunks = History.Sync.right fst outlines state.chunks in
-      let types  = History.Sync.right fst chunks state.types in
-      let pos =
-        match Outline.location outlines with
-          | l when l = Location.none -> State.initial.pos
-          | p -> p.Location.loc_end
-      in
-      { tokens = [] ; outlines ; chunks ; types ; pos },
-      Protocol.pos_to_json pos
+    let outlines = History.seek_forward (fun _ -> true) state.outlines in
+    let chunks = History.Sync.right fst outlines state.chunks in
+    let types  = History.Sync.right fst chunks state.types in
+    let pos =
+      match Outline.location outlines with
+      | l when l = Location.none -> State.initial.pos
+      | p -> p.Location.loc_end
+    in
+    { tokens = [] ; outlines ; chunks ; types ; pos },
+    Protocol.pos_to_json pos
 
   | [`String "maximize_scope"] ->
-      let rec find_end_of_module (depth,outlines) =
-        if depth = 0 then (0,outlines)
-        else
-        match History.forward outlines with
-          | None -> (depth,outlines)
-          | Some ({ Outline.kind = Outline_utils.Leave_module },outlines') ->
-              find_end_of_module (pred depth, outlines')
-          | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
-              find_end_of_module (succ depth, outlines')
-          | Some (_,outlines') -> find_end_of_module (depth,outlines')
-      in
-      let rec loop outlines =
-        match History.forward outlines with
-          | None -> outlines
-          | Some ({ Outline.kind = Outline_utils.Leave_module },_) ->
-              outlines
-          | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
-              (match find_end_of_module (1,outlines') with
-                | (0,outlines'') -> outlines''
-                | _ -> outlines)
-          | Some (_,outlines') -> loop outlines'
-      in
-      let outlines = loop state.outlines in
-      let chunks = History.Sync.right fst outlines state.chunks in
-      let types  = History.Sync.right fst chunks state.types in
-      let pos =
-        match Outline.location outlines with
-          | l when l = Location.none -> State.initial.pos
-          | p -> p.Location.loc_end
-      in
-      { tokens = [] ; outlines ; chunks ; types ; pos },
-      Protocol.pos_to_json pos
+    let rec find_end_of_module (depth,outlines) =
+      if depth = 0 then (0,outlines)
+      else
+      match History.forward outlines with
+      | None -> (depth,outlines)
+      | Some ({ Outline.kind = Outline_utils.Leave_module },outlines') ->
+          find_end_of_module (pred depth, outlines')
+      | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
+          find_end_of_module (succ depth, outlines')
+      | Some (_,outlines') -> find_end_of_module (depth,outlines')
+    in
+    let rec loop outlines =
+      match History.forward outlines with
+      | None -> outlines
+      | Some ({ Outline.kind = Outline_utils.Leave_module },_) ->
+          outlines
+      | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
+          (match find_end_of_module (1,outlines') with
+           | (0,outlines'') -> outlines''
+           | _ -> outlines)
+      | Some (_,outlines') -> loop outlines'
+    in
+    let outlines = loop state.outlines in
+    let chunks = History.Sync.right fst outlines state.chunks in
+    let types  = History.Sync.right fst chunks state.types in
+    let pos =
+      match Outline.location outlines with
+      | l when l = Location.none -> State.initial.pos
+      | p -> p.Location.loc_end
+    in
+    { tokens = [] ; outlines ; chunks ; types ; pos },
+    Protocol.pos_to_json pos
   | _ -> invalid_arguments ()
   end;
 }
