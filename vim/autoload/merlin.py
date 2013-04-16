@@ -64,6 +64,9 @@ def send_command(*cmd):
   elif result[0] == "exception":
     raise MerlinException(content)
 
+def dump(*cmd):
+  print(send_command('dump', *cmd))
+
 def try_print_error(e, msg=None):
   try:
     raise e
