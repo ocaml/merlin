@@ -1201,6 +1201,12 @@ simple_expr:
   | mod_longident DOT LPAREN seq_expr error
       { unclosed "(" $startpos($3) $endpos($3) ")" $startpos($5) $endpos($5);
         mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, $4)) }
+  | mod_longident DOT LPAREN error
+      { (* FIXME: Trigger warning *)
+        mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, reloc_exp $startpos($3) $endpos($4) Fake.any_val')) }
+  | mod_longident DOT LPAREN RPAREN
+      { (* FIXME: Trigger warning *)
+        mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, reloc_exp $startpos($3) $endpos($4) Fake.any_val')) }
   | simple_expr DOT LPAREN seq_expr RPAREN
       { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "Array" "get")),
                          ["",$1; "",$4])) }
