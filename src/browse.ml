@@ -156,21 +156,21 @@ and module_expr_desc = function
 
 let local_near pos nodes =
   let cmp = Location.compare_pos pos in
-  let best_of ({ loc = l1 } as t) ({ loc = l2 } as t') =
-    match cmp l2, cmp l1 with
+  let best_of ({ loc = l1 } as t1) ({ loc = l2 } as t2) =
+    match cmp l1, cmp l2 with
     | 0, 0 ->
-      (* Cursor is inside locations: select smaller one *)
-      if Misc.compare_pos l1.Location.loc_end l2.Location.loc_end < 0
-      then t'
-      else t
+      (* Cursor is inside locations: select larger one... not sure why :-) *)
+      if Location.(Misc.compare_pos l1.loc_end l2.loc_end) < 0
+      then t2
+      else t1
       (* Cursor inside one location, prefer it *)
-    | 0, _ -> t'
-    | _, 0 -> t
+    | 0, _ -> t1
+    | _, 0 -> t2
     | _, _ ->
       (* Cursor outside locations, select the rightmost one *)
-      if Misc.compare_pos l1.Location.loc_end l2.Location.loc_end < 0
-      then t
-      else t'
+      if Location.(Misc.compare_pos l1.loc_end l2.loc_end) < 0
+      then t2
+      else t1
   in
   List.fold_left
   begin fun best t ->
@@ -200,13 +200,15 @@ let nearest_before pos envs =
   match local_near pos envs with
   | None -> None
   | Some t -> 
+    let branch = traverse_branch pos t in
     let rec aux = function
       | a :: b :: tail when is_enclosing pos b -> Some a
-      | [x] -> Some x
+      (* No node matched: fallback to deepest before behavior *)
+      | [x] -> Some (List.hd branch)
       | [] -> None
       | _ :: tail -> aux tail
     in
-    aux (traverse_branch pos t)
+    aux branch
 
 let enclosing pos envs =
   let not_enclosing l = not (is_enclosing pos l) in

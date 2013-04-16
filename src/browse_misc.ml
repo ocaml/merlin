@@ -134,7 +134,7 @@ let rec dump_ts ts =
       | Browse.Modtype _ -> "modtype"
       | Browse.Class (_, _) -> "class"
       | Browse.ClassType _ -> "class_type"
-      | Browse.Other -> "??"
+      | Browse.Other -> "other"
     in
     Protocol.with_location loc
     [
