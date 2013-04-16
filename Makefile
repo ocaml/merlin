@@ -1,19 +1,23 @@
-include Makefile.config
+-include Makefile.config
 
 TARGET = ocamlmerlin.native
 
 DISTNAME = ocamlmerlin-0.1
 DISTFILES = configure Makefile README _tags vim emacs $(wildcard *.ml *.mli *.mly *.mll)
 
-OCAMLBUILD=ocamlbuild -Is .,typing,parsing,utils
+OCAMLBUILD=ocamlbuild -Is src,src/typing,src/parsing,src/utils
 OCAMLFIND=ocamlfind
 
 all: $(TARGET)
 
-$(TARGET):
+src/myocamlbuild_config.ml:
+	@echo "Please run ./configure"
+	@false
+
+$(TARGET): src/myocamlbuild_config.ml
 	$(OCAMLBUILD) -use-ocamlfind $@
 
-.PHONY: $(TARGET) all clean dist distclean install uninstall
+.PHONY: $(TARGET) all clean distclean install uninstall
 
 clean:
 	$(OCAMLBUILD) -clean
@@ -21,14 +25,8 @@ clean:
 check: $(TARGET)
 	./test.sh
 
-dist:
-	mkdir $(DISTNAME)
-	cp -r $(DISTFILES) $(DISTNAME)
-	tar cvzf $(DISTNAME).tar.gz $(DISTNAME)
-	rm -rf $(DISTNAME)
-
 distclean: clean
-	rm -f Makefile.config $(DISTNAME).tar.gz
+	rm -f Makefile.config src/myocamlbuild_config.ml
 
 install: $(TARGET)
 	install -dv $(BIN_DIR)
