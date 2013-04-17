@@ -189,16 +189,14 @@ return (LOC1 . LOC2)."
                            )))
 
 (defun merlin-create-overlay (var bounds face timer)
-  "Creates an overlay in the current buffer starting at `start', ending at `end',
-using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to disappear after `timer' seconds
-`timer' is a string that can be understood by `run-at-time' (eg. \"1 sec\")"
-  (if (symbol-value var) (delete-overlay (symbol-value var)))
-  (set var (make-overlay (car bounds) (cdr bounds)))
-  (overlay-put (symbol-value var) 'face face)
-  (if timer
-      (run-at-time timer nil `(lambda ()
-                                (delete-overlay ,var)
-                                (set ,var nil)))))
+  "Create an overlay on BOUNDS (of the form (START . END)).
+Give it FACE and store it in VAR. If TIMER is non-nil, the overlay is to disappear after TIMER seconds."
+  (let ((ol (or (symbol-value var)
+                (set var (make-overlay (point) (point))))))
+    (move-overlay ol (car bounds) (cdr bounds))
+    (overlay-put ol 'face face)
+    (if timer
+        (run-at-time timer nil #'delete-overlay ol))))
       
 ;; PROCESS MANAGEMENT
 
@@ -449,18 +447,20 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   (string-match "^Warning" msg))
 
 (defun merlin-display-errors-in-margin (errors)
-  "Given a list of errors, puts annotations in the margin corresponding to them"
+  "Given a list of ERRORS, put annotations in the margin corresponding to them."
   (merlin-delete-error-overlays)
   (setq merlin-pending-errors (append errors nil))
-  (setq merlin-pending-errors-overlay 
-        (mapcar '(lambda (err)
-                   (let ((overlay (make-overlay
-                                   (merlin-make-point (cdr (assoc 'start err)))
-                                   (merlin-make-point (cdr (assoc 'end err))))))
-                     (if (merlin-is-warning (cdr (assoc 'message err)))
-                         (merlin-put-margin-overlay overlay "?" compilation-warning-face)
-                       (merlin-put-margin-overlay overlay "!" compilation-error-face))
-                     overlay)) errors))
+  (setq merlin-pending-errors-overlays 
+        (mapcar (lambda (err)
+                  (let ((overlay (make-overlay
+                                  (merlin-make-point (cdr (assoc 'start err)))
+                                  (merlin-make-point (cdr (assoc 'end err))))))
+                    (if (merlin-warning-p (cdr (assoc 'message err)))
+                        (merlin-put-margin-overlay overlay "?" compilation-warning-face)
+                      (merlin-put-margin-overlay overlay "!" compilation-error-face))
+                     
+                    overlay)) 
+                errors))
   (message "(pending errors, use %s to jump)"
            (substitute-command-keys "\\[merlin-next-error]")))
 
@@ -486,14 +486,12 @@ Moreover if `view-errors-p' is not nil, it will display them in the margin."
   (merlin-seek point))
 
 (defun merlin-update-lock-zone-display ()
-  "Updates the locked zone display, according to `merlin-display-lock-zone', ie.
- iterates through it and call each method"
-  (mapc
-   '(lambda (x)
-      (case x
-        (margin (merlin-update-margin-lock-zone))
-        (highlight (merlin-update-highlight-lock-zone))))
-   merlin-display-lock-zone))
+  "Update the locked zone display, according to `merlin-display-lock-zone', ie.
+ iterates through it and call each method."
+  (dolist (x merlin-display-lock-zone)
+    (case x
+      (margin (merlin-update-margin-lock-zone))
+      (highlight (merlin-update-highlight-lock-zone)))))
 
 
 (defun merlin-update-margin-lock-zone ()
@@ -556,13 +554,13 @@ The parameter `view-errors-p' controls whether we should care for errors"
 
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
-  "Parses and format completion results"
-  (mapcar `(lambda (c) 
-             (if merlin-completion-types
-                 (popup-make-item (concat prefix (cdr (assoc 'name c)))
-                                  :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
-                                  :summary (cdr (assoc 'desc c)))
-               (cdr (assoc 'name c))))
+  "Parse and format completion results."
+  (mapcar (lambda (c) 
+            (if merlin-completion-types
+                (popup-make-item (concat prefix (cdr (assoc 'name c)))
+                                 :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
+                                 :summary (cdr (assoc 'desc c)))
+              (cdr (assoc 'name c))))
 	  (append l nil)))
 
 (defun merlin-complete-identifier (ident)
@@ -698,12 +696,12 @@ overlay."
   (interactive)
   (let ((list
          (mapcar
-          '(lambda (obj)
-             (cons
-              (cdr (assoc 'type obj))
-              (merlin-make-bounds obj)))
+          (lambda (obj)
+            (cons
+             (cdr (assoc 'type obj))
+             (merlin-make-bounds obj)))
           (elt
-               (merlin-is-return
+               (merlin-get-return-field
                 (merlin-send-command "type" (list "enclosing" (merlin-unmake-point (point)))))
                1))))
     (setq merlin-enclosing-types list)
@@ -781,27 +779,25 @@ it will print types of bigger expressions around point (it will go up the ast). 
      ((string-equal (elt words 0) "B") (merlin-add-path "build" (elt words 1) dirname))
      ((string-equal (elt words 0) "PKG") (merlin-use (elt words 1))))))
 (defun merlin-file-parse (filename)
-  "Parses a .merlin. It should exist"
+  "Parse a .merlin. It should exist."
   (message "Parsing .merlin file %s" filename)
-  (setq lines nil)
-  (setq buf (current-buffer))
-  (with-current-buffer (find-file ".merlin")
-    (goto-char (point-min))
-    (while (not (eq (point) (point-max)))
-      (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
-        (merlin-handle-line buf words (file-name-directory filename))
-        (forward-line)))))
+;;  (setq lines nil)
+  (let ((buf (current-buffer)))
+    (with-current-buffer (find-file-noselect ".merlin")
+      (goto-char (point-min))
+      (while (not (eq (point) (point-max)))
+        (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
+          (merlin-handle-line buf words (file-name-directory filename))
+          (forward-line))))))
 
 (defun merlin-parse ()
-  "Parses all .merlin file lying beneath the current directory in the file system."
-  (setq dir default-directory)
-  (let ((buf (current-buffer)))
-    (while (not (string-equal dir "/"))
+  "Parse all .merlin file lying beneath the current directory in the file system."
+  (let ((dir default-directory))
+    (while (not (string-equal dir "/")) ;; FIXME: Might loop for ever
       (when (file-exists-p (concat dir ".merlin") )
         (merlin-file-parse (concat dir ".merlin")))
       (setq dir (file-name-directory (directory-file-name dir))))
-    (switch-to-buffer buf)))
-    
+    ))    
 
 ;; Idle 
 (defun merlin-idle-hook ()
@@ -913,10 +909,10 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook))
                                       
 (defun merlin-kill-all-processes ()
-  "Kill all the remaining buffers containing merlin processes"
+  "Kill all the remaining buffers containing merlin processes."
   (interactive)
-  (mapc '(lambda (p)
-           (with-current-buffer (process-buffer p)
-             (merlin-kill-process)))))
+  (mapc (lambda (p)
+          (with-current-buffer (process-buffer p)
+            (merlin-kill-process)))))
 
 (provide 'merlin)
