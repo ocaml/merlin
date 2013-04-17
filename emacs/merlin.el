@@ -125,6 +125,8 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-idle-timer nil
   "The timer used to print the type of the expression under point.")
 
+(defvar merlin-use-auto-complete-mode nil
+  "If non nil, use `auto-complete-mode' in any buffer")
 
 
 
@@ -477,7 +479,7 @@ Moreover if `view-errors-p' is not nil, it will display them in the margin."
               (merlin-display-errors-in-margin errors)))
 	  nil)
       (progn
-	(message "ok")
+	(if view-errors-p (message "ok"))
 	t))))
  
 
@@ -570,7 +572,18 @@ The parameter `view-errors-p' controls whether we should care for errors"
 	(merlin-extract-complete (merlin-compute-prefix ident) 
 			   (elt (merlin-get-completion ident) 1)))
   )
-
+(defun merlin-get-completion-data (ident)
+  "Return the completion data for IDENT, that is a list of pairs (COMPLETION . TYPE)"
+  (let* ((prefix (merlin-compute-prefix ident))
+         (data (elt (merlin-get-completion ident) 1)))
+    (mapcar (lambda (c)
+            (cons
+             (concat prefix (cdr (assoc 'name c)))
+             (if (member (cdr (assoc 'kind c)) '("Module" "module"))
+                 ": <module>"
+               (replace-regexp-in-string "^[^:]+: " ": " (cdr (assoc 'desc c))))))
+            data)))
+                 
 ;; Vars from auto-complete
 (defvar ac-point)
 (defvar ac-prefix)
@@ -597,6 +610,46 @@ variable `merlin-cache')."
 
 (when (featurep 'auto-complete)
   (ac-define-source "merlin" merlin-ac-source))
+
+;; Usual completion
+(defun merlin-completion-at-point ()
+  (save-excursion
+    (merlin-check-synchronize))
+  (save-excursion
+    (skip-syntax-backward "w_.")
+    (let ((start (point)))
+      (skip-syntax-forward "w_.")
+      (list start (point)
+            (apply-partially #'merlin--completion-table start)))))
+
+(defvar merlin--completion-cache-state nil)
+(defvar merlin--completion-annotation-table nil
+  "Hold a table mapping completion candidates to their types")
+(make-variable-buffer-local 'merlin--completion-cache-state)
+(make-variable-buffer-local 'merlin--completion-annotation-table)
+
+
+(defun merlin-completion-annotate (s)
+  (cdr (assoc s merlin--completion-annotation-table)))
+(defun merlin--completion-table (start string pred action)
+  (message "We are called with action: %s" action)
+  (if (eq 'metadata action)
+      (when merlin-completion-types
+        '(metadata (annotation-function . merlin-completion-annotate)))
+    (unless (and merlin--completion-annotation-table
+                 (eq (car merlin--completion-cache-state) start)
+                 (string-prefix-p (cdr merlin--completion-cache-state)
+                                  string completion-ignore-case)
+                 (string-equal (merlin-compute-prefix string)
+                               (merlin-compute-prefix (cdr merlin--completion-cache-state))))
+      (message "Working..")
+      (save-excursion
+        (goto-char start)
+        (setq merlin--completion-annotation-table 
+              (merlin-get-completion-data string)))
+      (setq merlin--completion-cache-state (cons start string)))
+    (complete-with-action action merlin--completion-annotation-table string pred)))
+
 
 ;; Get the type of an element
 
@@ -849,9 +902,12 @@ it will print types of bigger expressions around point (it will go up the ast). 
          (merlin-get-process-variable 'merlin-local-process)))
   (merlin-process-add-user)
 
-  (when (featurep 'auto-complete)
-    (auto-complete-mode)
+  (when (and (fboundp 'auto-complete-mode)
+             merlin-use-auto-complete-mode)
+    (auto-complete-mode) 
     (add-to-list 'ac-sources 'merlin-ac-source))
+  (add-hook 'completion-at-point-functions
+            #'merlin-completion-at-point nil 'local)
   (set (make-local-variable 'merlin-lock-point) (point-min))
   (set (make-local-variable 'merlin-buffer) nil)
   (set (make-local-variable 'merlin-result) nil)
