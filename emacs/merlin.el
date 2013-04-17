@@ -579,9 +579,15 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (mapcar (lambda (c)
             (cons
              (concat prefix (cdr (assoc 'name c)))
-             (if (member (cdr (assoc 'kind c)) '("Module" "module"))
-                 ": <module>"
-               (replace-regexp-in-string "^[^:]+: " ": " (cdr (assoc 'desc c))))))
+             (cond
+              (
+               (member (cdr (assoc 'kind c)) '("Module" "module"))
+               ": <module>"
+               )
+              ((string-equal (cdr (assoc 'kind c)) "Type")
+               (format " [%s]" (cdr (assoc 'desc c))))
+              (t
+               (replace-regexp-in-string "^[^:]+: " ": " (cdr (assoc 'desc c)))))))
             data)))
                  
 ;; Vars from auto-complete
