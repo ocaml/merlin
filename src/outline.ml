@@ -87,6 +87,10 @@ let item_start = function
   | { tokens = ((_,loc_start,_) :: _) } -> loc_start
   | _ -> failwith "Outline.item_start: Invalid item"
 
+let item_end = function
+  | { tokens = ((_,loc_start,curr) :: xs) } -> last_curr curr xs
+  | _ -> failwith "Outline.item_start: Invalid item"
+
 let start t =
   match History.prev t with
     | Some { tokens = ((_,loc_start,_) :: _) } -> Some loc_start

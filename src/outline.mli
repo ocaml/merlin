@@ -12,6 +12,7 @@ type sync = item History.sync
 type t = item History.t
 
 val item_start : item -> Lexing.position
+val item_end   : item -> Lexing.position
 val start : t -> Lexing.position option
 val location : t -> Location.t
 

@@ -207,12 +207,13 @@ let command_seek = {
 
   | [`String "before" ; jpos] ->
     let pos = Protocol.pos_of_json jpos in
-    let cmp o = Misc.compare_pos pos (Outline.item_start o) in
+    let cmp_start o = Misc.compare_pos pos (Outline.item_start o) in
+    let cmp_end o = Misc.compare_pos pos (Outline.item_end o) in
     let outlines = state.outlines in
-    let outlines = History.seek_forward (fun i -> cmp i > 0) outlines in
+    let outlines = History.seek_forward (fun i -> cmp_start i > 0) outlines in
     let outlines = History.seek_backward
       (function { Outline.kind = Outline_utils.Syntax_error _loc } -> true
-                | i -> cmp i >= 0)
+                | i -> cmp_start i <= 0 || cmp_end i <= 0)
       outlines
     in
     let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
