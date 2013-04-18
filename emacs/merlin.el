@@ -1,5 +1,31 @@
+;; merlin.el --- Mode for Merlin, an OCaml scriptable toplevel.   -*- coding: utf-8 -*-
 
-;; Mode for Merlin
+;; Licensed under the MIT license.
+
+;; Author: Simon Castellan <simon.castellan@iuwt.fr>
+
+;; Created: 18 April 2013
+;; Version: 1.0
+;; Package-Requires: ((json))
+;; Keywords: ocaml languages
+;; URL: http://github.com/def-lkb/merlin
+
+;;; Commentary:
+;; Description:
+;; merlin-mode is an emacs interface to merlin, the OCaml scriptable toplevel. It allows you
+;; to perform queries such as getting the type of an expression, completion, and so on.
+
+;; Installation:
+;; You need merlin installed on your system (ocamlmerlin binary) for merlin-mode to work.
+
+;;; Usage
+;; merlin-mode allows you to send merlin commands from within an emacs
+;; buffer to use merlin capabilities. A bit like proofgeneral, you
+;; need to tell merlin about your code (with merlin-to-point), and
+;; then you can perform query to know the type of an expression:
+;; merlin will fetch it in the typed tree generated on the fly.
+
+;;;; Code:
 
 ;; json and cl are mandatory
 (require 'cl)
@@ -363,7 +389,7 @@ kill the process if required."
 (defun merlin-seek (point)
   "Seek merlin's point to POINT."
   (let ((data 
-	 (merlin-get-return-field (merlin-send-command "seek" (list "position" (merlin-unmake-point point))))))
+	 (merlin-get-return-field (merlin-send-command "seek" (list "before" (merlin-unmake-point point))))))
     (merlin-make-point data)))
     
 (defun merlin-tell-piece (mode start end)
@@ -695,7 +721,7 @@ variable `merlin-cache')."
       (if (not (merlin-is-long type))
           (progn 
             (message "%s" type)
-            (if (not quiet) 
+            (if (and (not quiet) bounds)
                 (merlin-create-overlay 'merlin-type-overlay bounds 'highlight "1 sec")))
         (when (not quiet)
           (display-buffer merlin-type-buffer)
@@ -936,9 +962,13 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (with-current-buffer merlin-type-buffer
     (funcall merlin-favourite-caml-mode)))
 (define-minor-mode merlin-mode
-  "Mode to use merlin tool inside OCaml tools."
+  "Minor mode for interacting with a merlin process.
+Runs a merlin process in the background (one for all merlin
+buffers) and perform queries on it.
+
+Short cuts:
+\\{merlin-mode-map}"
   nil
-  " merlin"
   :keymap merlin-mode-map
   (if merlin-mode 
       (if (and
