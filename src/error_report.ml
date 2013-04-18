@@ -54,8 +54,6 @@ let strict_to_json = function
       let ppf, to_string = Misc.ppf_to_string () in
       Lexer.report_error ppf e;
       Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
-  | Outline.Parse_error loc ->
-      Some (format ~valid:true ~where:"parser" ~loc "Parse error")
   | Location.Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
   | Chunk.Malformed_module loc ->

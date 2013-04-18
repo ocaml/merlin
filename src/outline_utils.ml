@@ -9,7 +9,6 @@ type kind =
   | Done
   | Unterminated
   | Syntax_error of Location.t
-  | Exception of exn
 
 exception Chunk of kind * position
 
@@ -21,7 +20,6 @@ let kind_to_string = function
   | Done           -> "Done"
   | Unterminated   -> "Unterminated"
   | Syntax_error _ -> "Syntax_error"
-  | Exception _    -> "Exception"
 
 (** Used to ignore first-class modules.
   * The construct "let module = … in " allows to define a module

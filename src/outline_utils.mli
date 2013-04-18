@@ -14,8 +14,7 @@ type kind =
   | Done         (* EOF found after a syntactically correct construction *)
   | Unterminated (* Unfinished syntactic construction *)
   | Syntax_error of Location.t
-  | Exception of exn (* The parser raised an exception,
-                      * to be handled by the caller *)
+
 val kind_to_string : kind -> string
 
 (** The outline parser proceeds by side-effects:

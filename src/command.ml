@@ -32,8 +32,7 @@ let command_tell = {
               eod := true; source
             | `List [`String "tell" ; `String ("end"|"struct") ; `Null] ->
               eot := true; ""
-            | _ -> (* FIXME: parser catch this Failure. It should not *)
-              invalid_arguments ()
+            | _ -> invalid_arguments ()
           with
             Stream.Failure -> invalid_arguments ()
         end
@@ -46,16 +45,9 @@ let command_tell = {
           (History.cutoff state.chunks),
           (History.cutoff state.types)
         in
-        let exns, tokens, outlines =
-          match Location.catch_warnings 
-              (fun () -> Outline.parse ~bufpos tokens outlines lexbuf)
-          with
-          | warnings, Misc.Inr (tokens, outlines) -> 
-            warnings, tokens, outlines
-          | warnings, Misc.Inl exn -> 
-            exn :: warnings, tokens, outlines
+        let tokens, outlines =
+          Outline.parse ~bufpos tokens outlines lexbuf
         in
-        let outlines = Outline.append_exns exns outlines in
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
         let pos = !bufpos in
@@ -207,13 +199,12 @@ let command_seek = {
 
   | [`String "before" ; jpos] ->
     let pos = Protocol.pos_of_json jpos in
-    let cmp_start o = Misc.compare_pos pos (Outline.item_start o) in
-    let cmp_end o = Misc.compare_pos pos (Outline.item_end o) in
+    let cmp o = Location.compare_pos pos (Outline.item_loc o) in
     let outlines = state.outlines in
-    let outlines = History.seek_forward (fun i -> cmp_start i > 0) outlines in
+    let outlines = History.seek_forward (fun i -> cmp i > 0) outlines in
     let outlines = History.seek_backward
-      (function { Outline.kind = Outline_utils.Syntax_error _loc } -> true
-                | i -> cmp_start i <= 0 || cmp_end i <= 0)
+      (function { Outline.kind = (Outline_utils.Syntax_error _ | Outline_utils.Unterminated)} -> true
+                | i -> cmp i <= 0)
       outlines
     in
     let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
@@ -227,10 +218,8 @@ let command_seek = {
     Protocol.pos_to_json pos
 
   | [`String "exact" ; jpos] ->
-    let cmp = 
-      let pos = Protocol.pos_of_json jpos in
-      fun o -> Misc.compare_pos pos (Outline.item_start o)
-    in
+    let pos = Protocol.pos_of_json jpos in
+    let cmp o = Location.compare_pos pos (Outline.item_loc o) in
     let outlines = state.outlines in
     let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
     let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
@@ -426,16 +415,22 @@ let command_dump = {
       in
       state, Browse_misc.dump_ts structures
   | [`String "outline"] ->
-      let outlines = History.prevs state.outlines in
-      let aux item =
-        let tokens =
-          List.map (fun (t,_,_) -> `String (Chunk_parser_utils.token_to_string t))
-            item.Outline.tokens
-        in
-        `List [`String (Outline_utils.kind_to_string item.Outline.kind);
-               `List tokens]
+    let outlines = History.prevs state.outlines in
+    let aux item =
+      let tokens =
+        List.map (fun (t,_,_) -> `String (Chunk_parser_utils.token_to_string t))
+          item.Outline.tokens
       in
-      state, `List (List.rev_map aux outlines)
+      `List [`String (Outline_utils.kind_to_string item.Outline.kind);
+             `List tokens]
+    in
+    state, `List (List.rev_map aux outlines) 
+
+
+  | [`String "exn"] ->
+    let exns = State.exceptions state in
+    state, `List (List.rev_map (fun e -> `String (Printexc.to_string e)) exns)
+
   | _ -> invalid_arguments ()
   end;
 }

@@ -44,7 +44,7 @@ let node_at state pos_cursor =
     (fun (str,sg) -> Browse.structure str)
     (Typer.trees state.types)
   in
-  let cmp o = Misc.compare_pos pos_cursor (Outline.item_start o) in
+  let cmp o = Location.compare_pos pos_cursor (Outline.item_loc o) in
   let outlines = History.seek_backward (fun o -> cmp o < 0) state.outlines in
   try
     let node, pos_node =
@@ -52,12 +52,12 @@ let node_at state pos_cursor =
       | Some ({ Browse.loc } as node) -> node, loc.Location.loc_end
       | None -> raise Not_found
     in
-    match Outline.start outlines with
-      | Some pos_next when
-          Misc.(compare_pos pos_next pos_node > 0 &&
-                compare_pos pos_cursor pos_next > 0) ->
-           raise Not_found
-      | _ -> node
+    match Outline.location outlines with
+    | { Location.loc_start } when
+        Misc.(compare_pos loc_start pos_node > 0 &&
+              compare_pos pos_cursor loc_start > 0) ->
+      raise Not_found
+    | _ -> node
   with Not_found ->
     let _, chunks = History.Sync.rewind fst outlines state.chunks in
     let _, types = History.Sync.rewind fst chunks state.types in

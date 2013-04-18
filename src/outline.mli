@@ -1,9 +1,8 @@
 type token = Chunk_parser.token History.loc
 
-exception Parse_error of Location.t
-
 type item = {
   kind       : Outline_utils.kind;
+  loc        : Location.t;
   tokens     : token list;
   exns       : exn list;
 }
@@ -11,9 +10,7 @@ type item = {
 type sync = item History.sync
 type t = item History.t
 
-val item_start : item -> Lexing.position
-val item_end   : item -> Lexing.position
-val start : t -> Lexing.position option
+val item_loc : item -> Location.t
 val location : t -> Location.t
 
 val parse_step : ?bufpos:Lexing.position ref -> ?exns:exn list ->

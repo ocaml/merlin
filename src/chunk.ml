@@ -42,89 +42,90 @@ let fake_tokens tokens f =
 
 let sync_step outline tokens t =
   match outline with
-    | Outline_utils.Enter_module ->
-        let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
-        in
-        let open Parsetree in
-        let mod_str =
-          List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
-        in
-        begin match mod_str.Location.txt with
-        | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-            Misc.Inr (Module_opening (pstr_loc, s, m))
-        | _ -> assert false
-        end
-    | Outline_utils.Definition ->
-        (* run structure_item parser on tokens, appending EOF *)
-        let lexer = History.wrap_lexer (ref (History.of_list tokens))
+  | Outline_utils.Enter_module ->
+    let lexer = History.wrap_lexer (ref (History.of_list tokens))
+        (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
+    in
+    let open Parsetree in
+    let mod_str =
+      List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
+    in
+    begin match mod_str.Location.txt with
+      | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
+        Misc.Inr (Module_opening (pstr_loc, s, m))
+      | _ -> assert false
+    end
+  | Outline_utils.Definition ->
+    (* run structure_item parser on tokens, appending EOF *)
+    let lexer = History.wrap_lexer (ref (History.of_list tokens))
+        (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
+    in
+    let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
+    let defs = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
+    Misc.Inr (Definitions defs)
+
+  | Outline_utils.Done
+  | Outline_utils.Unterminated
+  | Outline_utils.Rollback -> 
+    Misc.Inl outline
+
+  (* Can now occurs here when a malformed module contains a definition that should have been
+   * rolled back but cannot, as in:
+   *   exception E
+   *   and X
+  *)
+
+  | Outline_utils.Leave_module ->
+    (* reconstitute module from t *)
+    let rec rewind_defs defs t =
+      match History.backward t with
+      | Some ((_,(_,Misc.Inr (Definitions []))), _) -> assert false
+      | Some ((_,(_,Misc.Inr (Definitions lst))), t') -> 
+        rewind_defs (List.map (fun d -> d.Location.txt) lst @ defs) t'
+      | Some ((_,(_,Misc.Inr (Module_closing (d,offset)))), t') ->
+        rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
+      | Some ((_,(_,Misc.Inr (Module_opening (loc,s,m)))), t') -> loc,s,m,defs,t'
+      | Some ((_,(_,Misc.Inl _)), t') -> rewind_defs defs t'
+      | None ->
+        let p = (match tokens with (_,loc_start,loc_end) :: _ -> Location.({loc_start;loc_end;loc_ghost = false}) | _ -> Location.none) in
+        raise (Malformed_module p)
+    in
+    let loc,s,m,defs,t = rewind_defs [] t in
+    let open Parsetree in
+    let rec subst_structure e =
+      let pmod_desc = match e.pmod_desc with
+        | Pmod_structure _ ->
+          Pmod_structure defs
+        | Pmod_functor (s,t,e) ->
+          Pmod_functor (s,t,subst_structure e)
+        | Pmod_constraint (e,t) ->
+          Pmod_constraint (subst_structure e, t)
+        | Pmod_apply  _ | Pmod_unpack _ | Pmod_ident  _ -> assert false
+      in
+      { e with pmod_desc }
+    in
+    let loc = match tokens with
+      | (_,_,p) :: _ -> { loc with Location.loc_end = p }
+      | [] -> loc
+    in
+    Misc.Inr (Module_closing (
+        Location.mkloc {
+          pstr_desc = Pstr_module (s, subst_structure m);
+          pstr_loc  = loc
+        } loc,
+        History.offset t
+      ))
+  | Outline_utils.Syntax_error _loc ->
+    (* Like Definition, but catch unhandler syntax errors, appending EOF *)
+    try
+      let lexer = History.wrap_lexer (ref (History.of_list tokens))
           (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-        in
-        let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
-        let defs = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-        Misc.Inr (Definitions defs)
-
-      | Outline_utils.Done | Outline_utils.Unterminated |
-        Outline_utils.Exception _ | Outline_utils.Rollback -> 
-        Misc.Inl outline
-
-    (* Can now occurs here when a malformed module contains a definition that should have been
-     * rolled back but cannot, as in:
-     *   exception E
-     *   and X
-     *)
-
-    | Outline_utils.Leave_module ->
-        (* reconstitute module from t *)
-        let rec rewind_defs defs t =
-          match History.backward t with
-          | Some ((_,(_,Misc.Inr (Definitions []))), _) -> assert false
-          | Some ((_,(_,Misc.Inr (Definitions lst))), t') -> 
-              rewind_defs (List.map (fun d -> d.Location.txt) lst @ defs) t'
-          | Some ((_,(_,Misc.Inr (Module_closing (d,offset)))), t') ->
-              rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
-          | Some ((_,(_,Misc.Inr (Module_opening (loc,s,m)))), t') -> loc,s,m,defs,t'
-          | Some ((_,(_,Misc.Inl _)), t') -> rewind_defs defs t'
-          | None ->
-              let p = (match tokens with (_,loc_start,loc_end) :: _ -> Location.({loc_start;loc_end;loc_ghost = false}) | _ -> Location.none) in
-              raise (Malformed_module p)
-        in
-        let loc,s,m,defs,t = rewind_defs [] t in
-        let open Parsetree in
-        let rec subst_structure e =
-          let pmod_desc = match e.pmod_desc with
-            | Pmod_structure _ ->
-                Pmod_structure defs
-            | Pmod_functor (s,t,e) ->
-                Pmod_functor (s,t,subst_structure e)
-            | Pmod_constraint (e,t) ->
-                Pmod_constraint (subst_structure e, t)
-            | Pmod_apply  _ | Pmod_unpack _ | Pmod_ident  _ -> assert false
-          in
-          { e with pmod_desc }
-        in
-        let loc = match tokens with
-            | (_,_,p) :: _ -> { loc with Location.loc_end = p }
-            | [] -> loc
-        in
-        Misc.Inr (Module_closing (
-                Location.mkloc {
-                  pstr_desc = Pstr_module (s, subst_structure m);
-                  pstr_loc  = loc
-                } loc,
-                History.offset t
-             ))
-    | Outline_utils.Syntax_error _loc ->
-        (* Like Definition, but catch unhandler syntax errors, appending EOF *)
-        try
-          let lexer = History.wrap_lexer (ref (History.of_list tokens))
-            (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-          in
-          let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
-          let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-          Misc.Inr (Definitions def)
-        with _ ->
-          Misc.Inl outline
+      in
+      let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
+      let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
+      Misc.Inr (Definitions def)
+    with _ ->
+      Misc.Inl outline
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
@@ -135,13 +136,13 @@ let sync outlines chunks =
   let rec aux outlines chunks =
     match History.forward outlines with
       | None -> chunks
-      | Some ({ Outline.kind ; Outline.tokens },outlines') ->
+      | Some ({ Outline. kind ; tokens ; loc },outlines') ->
           let chunk =
             match Location.catch_warnings (fun () -> sync_step kind tokens chunks) with
             | warnings, Misc.Inr item ->
               warnings, item
             | warnings, Misc.Inl exn ->
-              exn :: warnings, Misc.Inl (Outline_utils.Exception exn)
+              exn :: warnings, Misc.Inl (Outline_utils.Syntax_error loc)
           in
           let chunks' = History.(insert (Sync.at outlines', chunk) chunks) in
           aux outlines' chunks'
