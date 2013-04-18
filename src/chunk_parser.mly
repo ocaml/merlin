@@ -1028,6 +1028,7 @@ expr:
         mkexp $startpos $endpos (Pexp_let($2, List.rev $3, expr)) }
   | LET rec_flag let_bindings IN error
       { let expr = reloc_exp $endpos($4) $endpos($5) Fake.any_val' in
+        syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_let($2, List.rev $3, expr)) }
   | LET_LWT rec_flag let_bindings IN seq_expr
       { let expr = reloc_exp $endpos($4) $endpos($5) $5 in
@@ -1036,18 +1037,21 @@ expr:
   | LET_LWT rec_flag let_bindings IN error
       { let expr = reloc_exp $endpos($4) $endpos($5) Fake.any_val' in
         let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
+        syntax_error $startpos($5);
         Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) }
   | LET MODULE UIDENT module_binding IN seq_expr
       { let expr = reloc_exp $endpos($5) $endpos($6) $6 in
         mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
   | LET MODULE UIDENT module_binding IN error
       { let expr = reloc_exp $endpos($5) $endpos($6) Fake.any_val' in
+        syntax_error $startpos($6);
         mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
   | LET OPEN mod_longident IN seq_expr
       { let expr = reloc_exp $endpos($4) $endpos($5) $5 in
         mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, expr)) }
   | LET OPEN mod_longident IN error
       { let expr = reloc_exp $endpos($4) $endpos($5) Fake.any_val' in
+        syntax_error $startpos($5);
         mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($3) $endpos($3) $3, expr)) }
   | FUNCTION opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_function("", None, List.rev $3)) }
@@ -1202,10 +1206,10 @@ simple_expr:
       { unclosed "(" $startpos($3) $endpos($3) ")" $startpos($5) $endpos($5);
         mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, $4)) }
   | mod_longident DOT LPAREN error
-      { (* FIXME: Trigger warning *)
+      { syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, reloc_exp $startpos($3) $endpos($4) Fake.any_val')) }
   | mod_longident DOT LPAREN RPAREN
-      { (* FIXME: Trigger warning *)
+      { syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_open(mkrhs $startpos($1) $endpos($1) $1, reloc_exp $startpos($3) $endpos($4) Fake.any_val')) }
   | simple_expr DOT LPAREN seq_expr RPAREN
       { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function "Array" "get")),
@@ -1252,7 +1256,8 @@ simple_expr:
   | LBRACELESS field_expr_list opt_semi GREATERRBRACE
       { mkexp $startpos $endpos (Pexp_override(List.rev $2)) }
   | LBRACELESS field_expr_list opt_semi error
-      { mkexp $startpos $endpos (Pexp_override(List.rev $2)) }
+      { syntax_error $startpos($4);
+        mkexp $startpos $endpos (Pexp_override(List.rev $2)) }
   | LBRACELESS GREATERRBRACE
       { mkexp $startpos $endpos (Pexp_override []) }
   | simple_expr SHARP label
@@ -1263,7 +1268,8 @@ simple_expr:
       { mkexp $startpos $endpos  (Pexp_constraint (ghexp $startpos $endpos  (Pexp_pack $3),
                                 Some (ghtyp $startpos $endpos  (Ptyp_package $5)), None)) }
   | LPAREN MODULE module_expr COLON error
-      { mkexp $startpos $endpos  (Pexp_pack $3) }
+      { syntax_error $startpos($5);
+        mkexp $startpos $endpos (Pexp_pack $3) }
 ;
 simple_labeled_expr_list:
     labeled_simple_expr
@@ -1328,9 +1334,11 @@ match_cases:
   | pattern match_action                        { [$1, $2] }
   | match_cases BAR pattern match_action        { ($3, $4) :: $1 }
   | match_cases BAR error
-    { (mkpat $startpos($3) $endpos($3) (Ppat_any), Fake.any_val') :: $1 }
+    { syntax_error $startpos($3);
+      (mkpat $startpos($3) $endpos($3) (Ppat_any), Fake.any_val') :: $1 }
   | match_cases BAR pattern error               
-    { ($3, reloc_exp $startpos($4) $endpos($4) Fake.any_val') :: $1 }
+    { syntax_error $startpos($4);
+      ($3, reloc_exp $startpos($4) $endpos($4) Fake.any_val') :: $1 }
 ;
 fun_def:
     match_action                                { $1 }
@@ -1341,7 +1349,8 @@ fun_def:
 ;
 match_action:
   | MINUSGREATER error                          
-      { reloc_exp $startpos($2) $endpos($2) Fake.any_val' }
+      { syntax_error $startpos($2);
+        reloc_exp $startpos($2) $endpos($2) Fake.any_val' }
   | MINUSGREATER seq_expr                       { $2 }
   | WHEN seq_expr MINUSGREATER seq_expr         { mkexp $startpos $endpos (Pexp_when($2, $4)) }
 ;
