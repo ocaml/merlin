@@ -813,6 +813,11 @@ it will print types of bigger expressions around point (it will go up the ast). 
             (merlin-show-type-of-point arg)
           (merlin-type-enclosing-go-up))))))
 
+(defun merlin-show-type-of-user-supplied-expression (s)
+  "Show the type of the expression S."
+  (interactive "sExpression:")
+  (merlin-display-type nil (merlin-type-of-expression s) nil))
+
 (defun merlin-type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (TYPE . BOUNDS)."
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
@@ -907,21 +912,54 @@ it will print types of bigger expressions around point (it will go up the ast). 
 
 ;; Mode definition
 (defvar merlin-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c <C-return>") 'merlin-to-point)
-    (define-key map (kbd "C-c C-t") 'merlin-magic-show-type)
-    (define-key map (kbd "C-c d") 'merlin-show-type-def)
-    (define-key map (kbd "C-c l") 'merlin-use)
-    (define-key map (kbd "C-c C-x") 'merlin-next-error)
-    (define-key map (kbd "C-c C-r") 'merlin-rewind)
-    (define-key map (kbd "C-c C-u") 'merlin-refresh)
-    (define-key map (kbd "C-c TAB") 'merlin-try-completion)
-    (define-key map (kbd "C-c C-u") 'merlin-refresh)
-    (define-key map (kbd "C-c C-f <C-return>") 'merlin-type-enclosing)
-    (define-key map (kbd "C-c C-f C-<up>") 'merlin-type-enclosing-go-up)
-    (define-key map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
-    (define-key map (kbd "RET") 'merlin-enter)
-    map
+  (let ((merlin-map (make-sparse-keymap))
+        (merlin-menu-map (make-sparse-keymap))
+        (merlin-show-type-map (make-sparse-keymap)))
+    (define-key merlin-map (kbd "C-c <C-return>") 'merlin-to-point)
+    (define-key merlin-map (kbd "C-c C-t") 'merlin-magic-show-type)
+    (define-key merlin-map (kbd "C-c d") 'merlin-show-type-def)
+    (define-key merlin-map (kbd "C-c l") 'merlin-use)
+    (define-key merlin-map (kbd "C-c C-x") 'merlin-next-error)
+    (define-key merlin-map (kbd "C-c C-r") 'merlin-rewind)
+    (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
+    (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
+    (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
+    (define-key merlin-map (kbd "C-c C-f <C-return>") 'merlin-type-enclosing)
+    (define-key merlin-map (kbd "C-c C-f C-<up>") 'merlin-type-enclosing-go-up)
+    (define-key merlin-map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
+    (define-key merlin-map (kbd "RET") 'merlin-enter)
+    (define-key merlin-menu-map [customize]
+      '("Customize merlin-mode" . merlin-customize))
+    (define-key merlin-menu-map [separator]
+      '("--"))
+    (define-key merlin-show-type-map [local]
+      '(menu-item "around the cursor" merlin-magic-show-type
+                  :help "Show the type of the smallest subexpression near cursor"))
+    (define-key merlin-show-type-map [region]
+      '(menu-item "of the region" merlin-show-type-of-region
+                  :help "Show the type of the region"))
+    (define-key merlin-show-type-map [exp]
+      '(menu-item "of an expression" merlin-show-type-of-user-supplied-expression
+                  :help "Input an expression and show its type"))
+    (define-key merlin-show-type-map [def]
+      '(menu-item "definition" merlin-show-type-def
+                  :help "Show the definition of the type of the expression near point"))
+    (define-key merlin-menu-map [showtype]
+      (cons "Show type..." merlin-show-type-map))
+    (define-key merlin-menu-map [point]
+      '(menu-item "Update point" merlin-to-point
+                  :help "Updates the part of the buffer merlin knows about"))
+    (define-key merlin-menu-map [rewind]
+      '(menu-item "Rewind" merlin-rewind
+                  :help "Rewind merlin to the beginning of the buffer"))
+    (define-key merlin-menu-map [use]
+      '(menu-item "Use a package" merlin-use
+                  :help "Use a findlib package."))
+    (define-key merlin-menu-map [refresh]
+      '(menu-item "Refresh" merlin-refresh
+                  :help "Refresh the cache of merlin (cmis in particular). Useful after a recompilation."))
+    (define-key merlin-map [menu-bar merlin] (cons "merlin" merlin-menu-map))
+    merlin-map
     ))
 
 (defun merlin-setup ()
