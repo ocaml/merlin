@@ -358,7 +358,7 @@ kill the process if required."
 (defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
-  (merlin-send-command "reset" nil)
+  (merlin-send-command "reset" (list "name" buffer-file-name))
   (setq merlin-lock-point (point-min))
   (merlin-update-lock-zone-display)
 )
