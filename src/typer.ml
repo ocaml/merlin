@@ -97,7 +97,7 @@ let sync chunks t =
   let rec aux chunks t =
     match History.forward chunks with
       | None -> t
-      | Some ((_,(exns,chunk)),chunks') ->
+      | Some ((_,(_,chunk)),chunks') ->
           let type_errs, (env, trees, exns') =
             let type_errs, item = match chunk with
               | Misc.Inr c ->
@@ -114,6 +114,6 @@ let sync chunks t =
               | Some result -> result
               | None -> value t
           in
-          History.(insert (Sync.at chunks', (env, trees, exns @ type_errs @ exns'))) t
+          History.(insert (Sync.at chunks', (env, trees, type_errs @ exns'))) t
   in
   aux chunks t

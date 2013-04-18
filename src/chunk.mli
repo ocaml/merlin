@@ -18,5 +18,6 @@ exception Invalid_chunk
 
 val sync_step : Outline_utils.kind -> Outline.token list -> t -> step
 val sync : Outline.t -> t -> t
+val exns : t -> exn list
 
 val dump_chunk : t -> (string * int) list

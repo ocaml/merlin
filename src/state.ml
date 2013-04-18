@@ -64,8 +64,10 @@ let node_at state pos_cursor =
     Browse.({ dummy with env = Typer.env types })
 
 (* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
-let exceptions state =
-  Outline.exns state.outlines @ Typer.exns state.types
+let exns state =
+  Outline.exns state.outlines
+  @ Chunk.exns state.chunks
+  @ Typer.exns state.types
 
 (* Check if module is smaller (= has less definition, counting nested ones)
  * than a particular threshold. Return (Some n) if module has size n, or None

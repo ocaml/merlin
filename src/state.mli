@@ -13,4 +13,4 @@ val reset_global_modules : unit -> unit
 val node_at : t -> Lexing.position -> Browse.t
 val node_complete : Browse.t -> string -> Json.json list
 
-val exceptions : t -> exn list
+val exns : t -> exn list

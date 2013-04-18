@@ -127,6 +127,10 @@ let sync_step outline tokens t =
     with _ ->
       Misc.Inl outline
 
+let exns h = match History.prev h with
+  | Some (_, (exns,_)) -> exns
+  | None -> []
+
 let sync outlines chunks =
   (* Find last synchronisation point *)
   let outlines, chunks = History.Sync.rewind fst outlines chunks in
@@ -137,12 +141,13 @@ let sync outlines chunks =
     match History.forward outlines with
       | None -> chunks
       | Some ({ Outline. kind ; tokens ; loc },outlines') ->
+          let exns = exns chunks in
           let chunk =
             match Location.catch_warnings (fun () -> sync_step kind tokens chunks) with
             | warnings, Misc.Inr item ->
-              warnings, item
+              warnings @ exns , item
             | warnings, Misc.Inl exn ->
-              exn :: warnings, Misc.Inl (Outline_utils.Syntax_error loc)
+              exn :: warnings @ exns, Misc.Inl (Outline_utils.Syntax_error loc)
           in
           let chunks' = History.(insert (Sync.at outlines', chunk) chunks) in
           aux outlines' chunks'

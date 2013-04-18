@@ -345,7 +345,7 @@ let command_errors = {
 
   handler =
   begin fun _ state -> function
-  | [] -> state, `List (Error_report.to_jsons (State.exceptions state))
+  | [] -> state, `List (Error_report.to_jsons (State.exns state))
   | _ -> invalid_arguments ()
   end;
 }
@@ -428,7 +428,7 @@ let command_dump = {
 
 
   | [`String "exn"] ->
-    let exns = State.exceptions state in
+    let exns = State.exns state in
     state, `List (List.rev_map (fun e -> `String (Printexc.to_string e)) exns)
 
   | _ -> invalid_arguments ()
