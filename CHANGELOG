@@ -1,0 +1,17 @@
+git version
+===========
+
+	emacs: Ported the completion to the usual `completion-at-point'
+	system, disabled auto-complete-mode-by-default
+
+	emacs: reset now tells merlin about the current buffer name
+
+	emacs: merlin-mode comes with a menu
+
+	emacs: improved documentation of the mode
+
+
+
+merlin 1.0
+==========
+First release
