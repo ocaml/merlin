@@ -103,12 +103,11 @@ for automatic completion can be enabled with: >
 
 Supertab ~
 
-People using Supertab can set: >
-    let g:SuperTabDefaultCompletionType = "<c-x><c-o>"
+People using Supertab can do: >
+    au FileType ocaml call SuperTabSetDefaultCompletionType("<c-x><c-o>")
 <
 
-Note: that is pretty basic, looking at |supertab| will teach you how to setup
-a better environment.
+As suggested in the Supertab documentation.
 
 Contact us ~
 

@@ -12,7 +12,7 @@ DONE (in type-error branch) Hack typer: give type (forall a. a) to unbound value
 - Prevent recording of type information (see Typecore.type_expect')
 - Write documentation:
   - External API
-  - VIM mode
+  DONE VIM mode
   - EMACS mode ?
   - Internal design
 - Move path management to a dedicated module
