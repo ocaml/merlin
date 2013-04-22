@@ -873,7 +873,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (message "Parsing .merlin file %s" filename)
 ;;  (setq lines nil)
   (let ((buf (current-buffer)))
-    (with-current-buffer (find-file-noselect ".merlin")
+    (with-current-buffer (find-file-noselect filename)
       (goto-char (point-min))
       (while (not (eq (point) (point-max)))
         (let ((words (split-string (buffer-substring-no-properties (point-at-bol) (point-at-eol)))))
@@ -882,7 +882,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 
 (defun merlin-parse ()
   "Parse all .merlin file lying beneath the current directory in the file system."
-  (let ((dir default-directory))
+  (let ((dir (expand-file-name default-directory)))
     (while (not (string-equal dir "/")) ;; FIXME: Might loop for ever
       (when (file-exists-p (concat dir ".merlin") )
         (merlin-file-parse (concat dir ".merlin")))
