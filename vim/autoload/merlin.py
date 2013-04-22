@@ -6,6 +6,8 @@ import os
 import sys
 from itertools import groupby
 
+flags = []
+
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
 
@@ -39,9 +41,17 @@ def restart():
     except OSError:
       pass
   try:
-    mainpipe = subprocess.Popen(["ocamlmerlin"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
+    command = ["ocamlmerlin"]
+    command.extend(flags)
+    mainpipe = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=None
+        )
   except OSError as e:
-    print("Failed to execute ocamlmerlin. Please ensure that ocamlmerlin binary is in path and is executable.")
+    print("Failed to execute ocamlmerlin. Please ensure that ocamlmerlin binary\
+            is in path and is executable.")
     raise e
 
 def send_command(*cmd):
@@ -469,6 +479,15 @@ def vim_which_ext(ext,vimvar):
 
 def vim_use(*args):
   catch_and_print(lambda: command_find_use(*args))
+
+def vim_clear_flags():
+  global flags
+  flags = []
+  restart()
+
+def vim_add_flags(*args):
+  flags.extend(args)
+  restart()
 
 def vim_selectphrase(l1,c1,l2,c2):
   vl1 = int(vim.eval(l1))

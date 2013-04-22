@@ -68,6 +68,19 @@ function! merlin#Use(...)
   py merlin.vim_reload()
 endfunction
 
+function! merlin#RelevantFlags(ArgLead, CmdLine, CursorPos)
+  let l:flags = [ "-rectypes", "-nostdlib", "-absname", "-w" ]
+  return join(l:flags, "\n")
+endfunction
+
+function! merlin#ClearFlags()
+  py merlin.vim_clear_flags()
+endfunction
+
+function! merlin#AddFlags(...)
+  py merlin.vim_add_flags(*vim.eval("a:000"))
+endfunction
+
 function! merlin#RawCommand(...)
   py print send_command(*vim.eval("a:000"))
 endfunction
@@ -196,6 +209,8 @@ function! merlin#Register()
   " Used only to debug synchronization, do not expose to end-user
   "command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
   command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
+  command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags call merlin#AddFlags(<f-args>)
+  command! -buffer -nargs=0 ClearFlags call merlin#ClearFlags()
   command! -buffer -nargs=0 LoadProject call merlin#LoadProject()
   command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
   setlocal omnifunc=merlin#Complete
