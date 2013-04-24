@@ -28,7 +28,7 @@ let error_catcher = ref (fun _ -> None)
 let fail = function
   | Failure s -> `List [`String "failure"; `String s]
   | exn -> match !error_catcher exn with
-      | Some error -> `List [`String "error"; error]
+      | Some (_,error) -> `List [`String "error"; error]
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
 
 let make_pos (pos_lnum, pos_cnum) =

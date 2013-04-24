@@ -10,7 +10,7 @@ val fail   : exn -> Json.json
  * Error_report uses Protocol to format error positions.
  * Protocol uses Error_report to format standard errors.
  *)
-val error_catcher : (exn -> Json.json option) ref
+val error_catcher : (exn -> (Location.t * Json.json) option) ref
 
 val make_pos : int * int -> Lexing.position
 val pos_to_json : Lexing.position -> Json.json

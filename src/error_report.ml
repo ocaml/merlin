@@ -9,7 +9,8 @@ let format ~valid ~where ?loc msg =
         content
   in
   let content = ("type", `String where) :: content in
-  `Assoc content
+  let loc = match loc with Some l -> l | None -> Location.none in
+  loc, `Assoc content
 
 let strict_to_json = function
   | Typecore.Error (loc, e) ->
@@ -73,7 +74,14 @@ let rec list_filter_map f = function
       | Some x' -> x' ::  list_filter_map f xs
       | None    -> list_filter_map f xs
 
-let strict_to_jsons list = list_filter_map strict_to_json list
-let to_jsons list = List.map to_json list
+let strict_to_jsons list = 
+  List.sort (fun (l1,_) (l2,_) ->
+      Location.(Misc.compare_pos l1.loc_start l2.loc_start))
+    (list_filter_map strict_to_json list)
+
+let to_jsons list = 
+  List.sort (fun (l1,_) (l2,_) ->
+      Location.(Misc.compare_pos l1.loc_start l2.loc_start))
+    (List.map to_json list)
 
 let _ = Protocol.error_catcher := strict_to_json

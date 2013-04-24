@@ -345,7 +345,8 @@ let command_errors = {
 
   handler =
   begin fun _ state -> function
-  | [] -> state, `List (Error_report.to_jsons (State.exns state))
+  | [] -> state, `List (List.map snd 
+                          (Error_report.to_jsons (State.exns state)))
   | _ -> invalid_arguments ()
   end;
 }

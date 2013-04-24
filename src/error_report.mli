@@ -11,9 +11,9 @@
   *)
 
 (* Ignore unknown exceptions *)
-val strict_to_json : exn -> Json.json option
-val strict_to_jsons : exn list -> Json.json list
+val strict_to_json : exn -> (Location.t * Json.json) option
+val strict_to_jsons : exn list -> (Location.t * Json.json) list
 
 (* Generic handling of unknown exceptions *)
-val to_json : exn -> Json.json
-val to_jsons : exn list -> Json.json list
+val to_json : exn -> Location.t * Json.json
+val to_jsons : exn list -> (Location.t * Json.json) list
