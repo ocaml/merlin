@@ -236,3 +236,7 @@ endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList ML call merlin#FindFile("ml",<f-args>)
 command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile("mli",<f-args>)
+
+" Flush buffer and dependencies after :make
+" Note: reloading Core can take some time
+au QuickFixCmdPost * call merlin#Reload()
