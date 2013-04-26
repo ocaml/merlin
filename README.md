@@ -132,14 +132,14 @@ To get it working you only to load the file `emacs/merlin.el' of the distributio
 If you installed through opam, a good thing to do is:
 
     
-    (add-to-list 'load-path ".opam/4.00.1/share/emacs/site-lisp/")
+    (add-to-list 'load-path "~/.opam/4.00.1/share/emacs/site-lisp/")
     (require 'merlin)
 
 
 To use it, you will need
 
 - json.el (available by package.el)  
-- auto-complete-mode (morally optional, available by package.el and the MELPA repository)
+- auto-complete-mode (optional, available by package.el and the MELPA repository)
 
 Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. If you want merlin to be started on every ML buffer issue:
 
@@ -185,29 +185,11 @@ should use a .merlin file
 - C-c d will print the definition of the type of the expression underpoint if
   any. If the type is compliated (eg. 'a -> 'a option) it will print the definition  of the codomain
 
-- C-c TAB will synchronize and completes expression under point.
+Moreover, you have regular auto-completion (M-TAB by default) using
+completion-at-point. There is auto-complete integration you can enable
+by setting merlin-use-auto-complete-mode to t:
 
-Moreover, you have autocompletion with merlin,
-and whenever you stay idle for one second you get the type of the ident under
-the point (modules are not displayed).
-
-Auto-completion
----------------
-
-If you have auto-complete-mode installed, merlin will use it to display
-completion. When you type the first three characters of an identifier it will
-show you the possible matches along with their types. You can then choose your
-match (or keep typing to refine) and then you should press RET to activate the match.
-If you find the types when completing noisy you can use
-
-(setq merlin-completion-types nil)
-
-in your .emacs
-
-Idle
-----
-By setting the variable merlin-idle-delay you can have the type of the expression under point displayed after doing nothing. The default timer is three seconds.
-
+  (setq merlin-use-auto-complete-mode t)
 
 Merlin project
 ==============

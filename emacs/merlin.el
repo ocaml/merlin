@@ -180,7 +180,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Create a point from a couple line / col."
   (save-excursion
     (beginning-of-line)
-    (goto-line (cdr (assoc 'line data)))
+    ;; goto-line
+    (goto-char (point-min))
+    (forward-line (1- (cdr (assoc 'line data))))
     (forward-char (cdr (assoc 'col data)))
     (point)))
 (defun merlin-make-bounds (data)
@@ -544,7 +546,7 @@ Moreover if `view-errors-p' is not nil, it will display them in the margin."
           (when view-errors-p
             (let ((errors (nreverse (append (elt output 1) nil))))
               (if (not merlin-report-warnings)
-                  (delete-if (lambda (e) (merlin-is-warning (cdr (assoc 'message e)))) errors))
+                  (delete-if (lambda (e) (merlin-warning-p (cdr (assoc 'message e)))) errors))
               (merlin-display-errors-in-margin errors)))
 	  nil)
       (progn
@@ -607,14 +609,14 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (merlin-check-for-errors view-errors-p)
     (merlin-update-lock-zone-display)))
   
-(defun merlin-check-synchronize ()
+(defun merlin-check-synchronize (&optional quiet)
   "If merlin point is before the end of line send everything up to the end of line."
   (interactive)
   (save-excursion
-    (previous-line 1)
+    (forward-line -1)
     (let ((p merlin-lock-point))
       (if (> (point-at-eol) merlin-lock-point)
-          (merlin-update-point nil)))))
+          (merlin-update-point quiet)))))
 
 (defun merlin-edit (start end length)
   "Called when an edit is make to retract the locked zone if it is needed."
@@ -656,7 +658,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
               ((string-equal (cdr (assoc 'kind c)) "Type")
                (format " [%s]" (cdr (assoc 'desc c))))
               (t
-               (replace-regexp-in-string "^[^:]+: " ": " (cdr (assoc 'desc c)))))))
+               (replace-regexp-in-string "^[^:]+:[ \n]+" ": " (cdr (assoc 'desc c)))))))
             data)))
                  
 ;; Vars from auto-complete
@@ -707,7 +709,6 @@ variable `merlin-cache')."
 (defun merlin-completion-annotate (s)
   (cdr (assoc s merlin--completion-annotation-table)))
 (defun merlin--completion-table (start string pred action)
-  (message "We are called with action: %s" action)
   (if (eq 'metadata action)
       (when merlin-completion-types
         '(metadata (annotation-function . merlin-completion-annotate)))
@@ -717,7 +718,6 @@ variable `merlin-cache')."
                                   string completion-ignore-case)
                  (string-equal (merlin-compute-prefix string)
                                (merlin-compute-prefix (cdr merlin--completion-cache-state))))
-      (message "Working..")
       (save-excursion
         (goto-char start)
         (setq merlin--completion-annotation-table 
@@ -807,7 +807,7 @@ overlay."
   (merlin-show-type (cons (region-beginning) (region-end))))
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)."
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) t))
 
 (defun merlin-show-type-of-point (arg) 
@@ -896,7 +896,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
 
 (defun merlin-get-packages ()
   "Get the list of available findlib package."
-  (setq merlin-packages nil)
   (append (elt (merlin-send-command "find" '("list")) 1) nil))
 (defun merlin-use (pkg)
   "Use a package in the current session of merlin."
@@ -1026,7 +1025,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 
   (when (and (fboundp 'auto-complete-mode)
              merlin-use-auto-complete-mode)
-    (auto-complete-mode) 
+    (auto-complete-mode 1)
     (add-to-list 'ac-sources 'merlin-ac-source))
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
@@ -1095,6 +1094,7 @@ Short cuts:
   (interactive)
   (mapc (lambda (p)
           (with-current-buffer (process-buffer p)
-            (merlin-kill-process)))))
+            (merlin-kill-process)))
+        merlin-processes))
 
 (provide 'merlin)
