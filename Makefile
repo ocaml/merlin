@@ -43,6 +43,13 @@ install: $(TARGET)
 	@echo "Add $(SHARE_DIR)/ocamlmerlin/vim to your runtime path, e.g.:"
 	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vim"
 	@echo 
+	@echo 
+	@echo "Quick setup for EMACS"
+	@echo "-------------------"
+	@echo "Add $(SHARE_DIR)/emacs/site-lisp to your runtime path, e.g.:"
+	@echo '  (add-to-list '"'"'load-path "$(SHARE_DIR)/emacs/site-lisp")'
+	@echo '  (require '"'"'merlin)'
+	@echo 'Then issue M-x merlin-mode in a ML buffer.'
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
