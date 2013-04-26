@@ -4,14 +4,17 @@ if !has('python')
 endif
 
 if !exists("g:merlin_ignore_warnings")
-    " strings are ugly, but at least I'm sure it's not converted in some weird
-    " value when passing it to python
-    let g:merlin_ignore_warnings = "false"
+  " strings are ugly, but at least I'm sure it's not converted in some weird
+  " value when passing it to python
+  let g:merlin_ignore_warnings = "false"
 endif
 
 let s:current_dir=expand("<sfile>:p:h")
-py import vim
-py sys.path.insert(0, vim.eval("s:current_dir"))
+py import sys, vim
+py if not vim.eval("s:current_dir") in sys.path:
+\    sys.path.append(vim.eval("s:current_dir"))
+
+call vimbufsync#init()
 py import merlin
 
 function! s:get_visual_selection()
@@ -231,7 +234,6 @@ function! merlin#EchoDotMerlin()
   else
     echo "No .merlin found"
   endif
-
 endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList ML call merlin#FindFile("ml",<f-args>)
