@@ -103,7 +103,7 @@ let command_path pathes = Command.({
       | [ `String "add" ; `String path ; `String d ] ->
           let r,_ = List.assoc path pathes in
           let d = Misc.expand_directory Config.standard_library d in
-          r := d :: !r;
+          if not (List.mem d !r) then r := d :: !r;
           state, `Bool true
       | [ `String "remove" ; `String path; `String s ] ->
           let r,_ = List.assoc path pathes in
