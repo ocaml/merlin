@@ -6,6 +6,9 @@ import os
 import sys
 from itertools import groupby
 
+import vimbufsync
+vimbufsync.check_version("0.1.0",who="merlin")
+
 flags = []
 
 enclosing_types = [] # nothing to see here
@@ -29,6 +32,7 @@ class MerlinException(MerlinExc):
 ######## COMMUNICATION
 
 mainpipe = None
+saved_sync = None
 def restart():
   global mainpipe
   if mainpipe:
@@ -109,31 +113,18 @@ def catch_and_print(f, msg=None):
   except MerlinException as e:
     try_print_error(e, msg=msg)
 
-######## BUFFER CACHE
-
-last_buffer = None
-last_changes = None
-last_line = 0
-shadow_buffer = []
-
-def clear_cache():
-  global last_changes, last_line, last_buffer, shadow_buffer
-  last_buffer = None
-  last_changes = None
-  last_line = 0
-  shadow_buffer = []
-
 ######## BASIC COMMANDS
 
 def command_reload():
   return send_command("refresh")
 
 def command_reset(name=None):
+  global saved_sync
   if name:
     r = send_command("reset","name",name)
   else:
     r = send_command("reset")
-  clear_cache()
+  saved_sync = None
   return r
 
 def command_tell(kind,content):
@@ -179,122 +170,41 @@ def command_report_errors():
 
 ######## BUFFER SYNCHRONIZATION
 
-changes_pattern = re.compile('(>)?\s*(\d+)\s*(\d+)\s*(\d+)\s*(.*)$')
-def extract_change(match):
-  return (int(match.group(3)),int(match.group(4)),match.group(5))
-
-def current_changes():
-  # compute changes as a list of match objects
-  vim.command("\nredir => changes_string\nsilent changes\nredir END")
-  changes = vim.eval("changes_string").split("\n")
-  changes = filter(None,map(changes_pattern.match,changes))
-  if len(changes) == 0:
-    return None
-  # find current position in change list
-  position = 0
-  for change in changes:
-    position += 1
-    if change.group(1):
-      break
-  # drop everything after cursor
-  changes = changes[:position]
-  # convert to canonical format (list of (line,col,contents) tuples)
-  return dict((k, len(list(v))) for k,v in groupby(sorted(map(extract_change,changes))))
-
-# find_changes(state) returns a pair (new_state, to_sync)
-# Where:
-#  - state is None when first called and the new_state value
-#    returned by previous call after.
-#  - to_sync is the list of changes since last call, or None
-#    if the whole buffer have to be synced
-
-def find_changes(previous = None):
-  changes = current_changes()
-  if previous == None:
-    return (changes, None)
-  if len(changes) == 0:
-    return (changes, [])
-  return (changes, [k for (k,v) in changes.items() if not k in previous or previous[k] < v])
-
-def find_line(changes):
-  if changes == None:
-    return 0
-  lines = set(lin for lin,col,txt in changes) 
-  if lines:
-    return min(lines)
-  return None
-
 def sync_buffer_to(to_line, to_col):
-  global last_changes, last_line, last_buffer, shadow_buffer
+  global saved_sync
+  curr_sync = vimbufsync.sync()
   cb = vim.current.buffer
-  # hack : append some lines to parse definitions near cursor
   max_line = len(cb)
   end_line = min(to_line, max_line)
 
-  # reset if necessary
-  current_buffer = (cb.name, cb.number)
-  content = None
-  if current_buffer == last_buffer:
-    (last_changes, sync) = find_changes(last_changes)
-    # find changes
-    if sync != None:
-      sync_line = find_line(sync)
-      if sync_line != None:
-        last_line = min(last_line, sync_line)
-    # sync shadow buffer
-    last_line = min(last_line,len(shadow_buffer), len(cb))
-
-    # heuristic: find 3 equal lines in a row
-    in_a_row = 0
-    line_count = 0
-    while last_line > 0 and in_a_row < 3:
-      last_line -= 1
-      if shadow_buffer[last_line] == cb[last_line]:
-        line_count += 1
-        if shadow_buffer[last_line] != "":
-          in_a_row += 1
-      else:
-        in_a_row = 0
-        line_count = 0
-    last_line += 1 + line_count
-    line, col = command_seek_before(last_line,0)
-    boundary = send_command("boundary")
-    if boundary:
-      line, col = boundary[0]['line'], boundary[0]['col']
-    if line <= end_line:
-      if last_line <= 1:
-        command_reset(name=os.path.basename(cb.name))
-        content = cb[:end_line]
-        shadow_buffer = content
-      else:
-        line, col = command_seek_before(last_line,0)
-        rest    = cb[line-1][col:]
-        content = cb[line:end_line]
-        content.insert(0, rest)
-        shadow_buffer[line-1:] = cb[line-1:end_line]
+  if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
+    line, col = saved_sync.pos()
+    line, col = command_seek_before(line, col)
+    if line <= 1:
+      command_reset(name=os.path.basename(cb.name))
+      content = cb[:end_line]
+    else:
+      rest    = cb[line-1][col:]
+      content = cb[line:end_line]
+      content.insert(0, rest)
   else:
     command_reset(name=os.path.basename(cb.name))
-    (last_changes, sync) = find_changes(None)
-    last_buffer = current_buffer
     content = cb[:end_line]
-    shadow_buffer = content
-
-  if content != None:
+  saved_sync = curr_sync
+  # Send content
+  if content:
     kind = "struct"
     while not command_tell(kind,content):
       kind = "end"
       if end_line < max_line:
-        next_end = min(max_line,end_line + 4)
+        next_end = min(max_line,end_line + 20)
         content = cb[end_line:next_end]
         end_line = next_end
       else:
         content = None
     last_line = end_line + 1
-
   # Now we are synced, come back to environment around cursor
   command_seek_exact(to_line, to_col)
-  ## Gather a maximum of definition after cursor without leaving current module
-  #command_seek_scope()
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
