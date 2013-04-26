@@ -101,6 +101,12 @@ In particular you can specify nil, meaning that the locked zone is not represent
 ;; Internal variables
 
 
+(defvar merlin--flags '("-rectypes" "-nostdlib" "-absname" "-w" )
+  "List of flags that can be passed to ocamlmerlin")
+
+(defvar merlin--current-flags nil
+  "The current list of flags to pass to ocamlmerlin")
+
 ; Process / Reception related variables
 (defvar merlin-processes nil
   "The global merlin process table. It lists the active instances of merlin.")
@@ -242,7 +248,8 @@ For now it is a constant function (every buffer shares the same instance)."
 
 (defun merlin-get-process-variable (var)
   "Return the value of a variable (symbol) inside the process buffer."
-  (buffer-local-value var (get-buffer (merlin-get-process-buffer-name))))
+  (when (get-buffer (merlin-get-process-buffer-name))
+    (buffer-local-value var (get-buffer (merlin-get-process-buffer-name)))))
 
 
 (defun merlin-get-process-name ()
@@ -274,12 +281,14 @@ For now it is a constant function (every buffer shares the same instance)."
       (setq merlin-buffer nil)
       (setq merlin-ready nil))))
 
-(defun merlin-start-process ()
-  "Start the merlin process for the current buffer."
-  (let ((p (start-process (merlin-get-process-name)
+(defun merlin-start-process (flags &optional users)
+  "Start the merlin process for the current buffer. FLAGS are a list of strings
+denoting the parameters to be passed to merlin. USERS can be used to set the users of this buffer. Return the process created"
+  (let ((p (apply #'start-process (merlin-get-process-name)
 			 (merlin-get-process-buffer-name)
-			 merlin-command))
+			 merlin-command flags) )
         (name (buffer-name)))
+    (merlin-debug (format "Running %s with flags %s\n" merlin-command flags))
 ;; set the global process (for now)
     (set (make-local-variable 'merlin-local-process) p)
     (set-process-query-on-exit-flag p nil)
@@ -287,12 +296,43 @@ For now it is a constant function (every buffer shares the same instance)."
     (push p merlin-processes)
   ; don't forget to initialize temporary variable
   (with-current-buffer (merlin-get-process-buffer-name)
-    (set (make-local-variable 'merlin-process-users) (list name))
+    (set (make-local-variable 'merlin-process-users) (cons name users))
     (set (make-local-variable 'merlin-local-process) p)
     (set (make-local-variable 'merlin-process-last-user) name)
     )
+  p
   ))
 
+(defun merlin-get-current-buffer-users ()
+  "Return the list of users of the merlin instance for this buffer"
+  (when (get-buffer (merlin-get-process-buffer-name))
+    (with-current-buffer (merlin-get-process-buffer-name)
+      merlin-process-users)))
+
+(defun merlin-restart-process ()
+  "Restart the merlin toplevel for this buffer, taking into account new flags."
+  (interactive)
+  (let ((users (merlin-get-current-buffer-users)))
+    (if (merlin-process-started-p)
+        (ignore-errors (merlin-kill-process)))
+    (setq merlin-local-process (merlin-start-process merlin--current-flags users))
+    (setq merlin-pending-errors nil)
+    (merlin-parse)
+    (merlin-to-point)))
+      
+(defun merlin-process-clear-flags ()
+  "Clear all flags set up to be passed to merlin. This sets `merlin--current-flags' to nil."
+  (interactive)
+  (setq merlin--current-flags nil))
+
+(defun merlin-process-add-flag (flag)
+  "Add a flag to `merlin--current-flags' to be used when starting ocamlmerlin."
+  (interactive
+   (list (completing-read "Flag to add: " merlin--flags)))
+  (add-to-list 'merlin--current-flags flag)
+  (message "Flag %s added. Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag)
+)
+    
 (defun merlin-process-add-user ()
   "Add the current buffer as an user for the merlin process."
   (let ((name (buffer-name)))
@@ -320,6 +360,9 @@ kill the process if required."
       )
     )
 )
+(defun merlin-process-started-p ()
+  "Returns non-nil if the merlin process for the current buffer is already started"
+   (get-buffer (merlin-get-process-buffer-name)))
 (defun merlin-kill-process ()
   "Kills the merlin process inside the buffer."
   (setq merlin-processes (delete merlin-local-process merlin-processes))
@@ -958,6 +1001,15 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (define-key merlin-menu-map [refresh]
       '(menu-item "Refresh" merlin-refresh
                   :help "Refresh the cache of merlin (cmis in particular). Useful after a recompilation."))
+    (define-key merlin-menu-map [addflag]
+      '(menu-item "Add a flag" merlin-process-add-flag
+                  :help "Add a flag to be passed to ocamlmerlin after restarting it."))
+    (define-key merlin-menu-map [clearflag]
+      '(menu-item "Clear flags" merlin-process-clear-flags
+                  :help "Clear all flags set up to be passed to ocamlmerlin."))
+    (define-key merlin-menu-map [restartmerlin]
+      '(menu-item "Restart merlin" merlin-restart-process
+                  :help "Restart merlin for the current buffer."))
     (define-key merlin-map [menu-bar merlin] (cons "merlin" merlin-menu-map))
     merlin-map
     ))
@@ -966,10 +1018,10 @@ it will print types of bigger expressions around point (it will go up the ast). 
   "Set up a buffer for use with merlin."
   (interactive)
   ; if there is not yet a buffer for the current buffer, create one
-  (if (not (get-buffer (merlin-get-process-buffer-name)))
-      (merlin-start-process)
-    (set (make-local-variable 'merlin-local-process)
-         (merlin-get-process-variable 'merlin-local-process)))
+  (when (not (merlin-process-started-p))
+      (merlin-start-process nil))
+  (set (make-local-variable 'merlin-local-process)
+       (merlin-get-process-variable 'merlin-local-process))
   (merlin-process-add-user)
 
   (when (and (fboundp 'auto-complete-mode)
