@@ -36,7 +36,13 @@ install: $(TARGET)
 	install -dv $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	cp -R vim/* $(SHARE_DIR)/ocamlmerlin/vim/
-	@echo "Consult $(SHARE_DIR)/ocamlmerlin/vim/plugin/merlin.vim to setup vim mode."
+	@echo
+	@echo 
+	@echo "Quick setup for VIM"
+	@echo "-------------------"
+	@echo "Add $(SHARE_DIR)/ocamlmerlin/vim to your runtime path, e.g.:"
+	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vim"
+	@echo 
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
