@@ -455,21 +455,26 @@ let command_which = {
   end;
 }
 
+let load_packages packages =
+  let packages = Findlib.package_deep_ancestors [] packages in
+  let path = List.map Findlib.package_directory packages in
+  Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
+  State.reset_global_modules ()
+
 let command_find = {
   name = "find";
 
   handler =
   begin fun _ state -> function
+      (* Recommended form *)
   | [`String "use" ; `List packages]
+      (* FIXME: Deprecated *)
   | (`String "use" :: packages) ->
       let packages = List.map
         (function `String pkg -> pkg | _ -> invalid_arguments ())
         packages
       in
-      let packages = Findlib.package_deep_ancestors [] packages in
-      let path = List.map Findlib.package_directory packages in
-      Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
-      State.reset_global_modules ();
+      load_packages packages;
       state, `Bool true
   | [`String "list"] ->
       state, `List (List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ()))

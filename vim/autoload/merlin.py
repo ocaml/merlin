@@ -425,23 +425,24 @@ def vim_selectphrase(l1,c1,l2,c2):
 def load_project(directory,maxdepth=3):
   fname = os.path.join(directory,".merlin") 
   if os.path.exists(fname):
-    with open(fname,"r") as f:
-      for line in f:
-        split = line.split(None,1)
-        if split != []:
-          command = split[0]
-          tail = split[1]
-          if command and command[0] == '#':
-            continue
-          if tail != "":
-            tail = os.path.join(directory,tail)
-          if command == "S":
-            send_command("path","add","source",tail.strip())
-          elif command == "B":
-            send_command("path","add","build",tail.strip())
-          elif command == "PKG":
-            catch_and_print(lambda: command_find_use(*split[1].split()))
-      vim.command('let b:dotmerlin="%s"' % fname)
+    #with open(fname,"r") as f:
+    #  for line in f:
+    #    split = line.split(None,1)
+    #    if split != []:
+    #      command = split[0]
+    #      tail = split[1]
+    #      if command and command[0] == '#':
+    #        continue
+    #      if tail != "":
+    #        tail = os.path.join(directory,tail)
+    #      if command == "S":
+    #        send_command("path","add","source",tail.strip())
+    #      elif command == "B":
+    #        send_command("path","add","build",tail.strip())
+    #      elif command == "PKG":
+    #        catch_and_print(lambda: command_find_use(*split[1].split()))
+    send_command("project","load",fname)
+    vim.command('let b:dotmerlin="%s"' % fname)
     command_reset()
   elif maxdepth > 0:
     (head, tail) = os.path.split(directory)

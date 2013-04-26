@@ -48,6 +48,9 @@ val find_in_path_uncap: string list -> string -> string
         (* Same, but search also for uncapitalized name, i.e.
            if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
            to match. *)
+val canonicalize_filename : ?cwd:string -> string -> string
+        (* Ensure that path is absolute (wrt to cwd), follow ".." and "." *)
+
 val remove_file: string -> unit
         (* Delete the given file if it exists. Never raise an error. *)
 val expand_directory: string -> string -> string

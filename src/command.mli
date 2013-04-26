@@ -4,3 +4,5 @@ val invalid_arguments : unit -> 'a
 
 val commands : (string,t) Hashtbl.t
 val register : t -> unit
+
+val load_packages : string list -> unit

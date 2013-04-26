@@ -89,6 +89,13 @@ let main_loop () =
     loop State.initial
   with Stream.Failure -> ()
 
+let path_add pathes var ?cwd path =
+  let r,_ = List.assoc var pathes in
+  let d = Misc.expand_directory Config.standard_library path in
+  let d = Misc.canonicalize_filename ?cwd d in
+  if not (List.mem d !r) then r := d :: !r
+
+
 let command_path pathes = Command.({
   name = "path";
 
@@ -96,29 +103,28 @@ let command_path pathes = Command.({
   begin fun _ state arg->
     match begin match arg with
       | [ `String "list" ] ->
-          state, `List (List.map (fun (s,_) -> `String s) pathes)
-      | [ `String "list" ; `String path ] ->
-          let r,_ = List.assoc path pathes in
-          state, `List (List.map (fun s -> `String s) !r)
-      | [ `String "add" ; `String path ; `String d ] ->
-          let r,_ = List.assoc path pathes in
-          let d = Misc.expand_directory Config.standard_library d in
-          if not (List.mem d !r) then r := d :: !r;
-          state, `Bool true
+        state, `List (List.map (fun (s,_) -> `String s) pathes)
+      | [ `String "list" ; `String var ] ->
+        let r,_ = List.assoc var pathes in
+        state, `List (List.map (fun s -> `String s) !r)
+      | [ `String "add" ; `String var ; `String path ] ->
+        path_add pathes var path;
+        state, `Bool true
       | [ `String "remove" ; `String path; `String s ] ->
-          let r,_ = List.assoc path pathes in
-          let d = Misc.expand_directory Config.standard_library s in
-          r := List.filter (fun d' -> d' <> d) !r;
-          state, `Bool true
+        let r,_ = List.assoc path pathes in
+        let d = Misc.expand_directory Config.standard_library s in
+        let d = Misc.canonicalize_filename d in
+        r := List.filter (fun d' -> d' <> d) !r;
+        state, `Bool true
       | [ `String "reset" ] ->
-          List.iter
-            (fun (_,(r,reset)) -> r := Lazy.force reset)
-            pathes;
-          state, `Bool true
+        List.iter
+          (fun (_,(r,reset)) -> r := Lazy.force reset)
+          pathes;
+        state, `Bool true
       | [ `String "reset" ; `String path ] ->
-          let r,reset = List.assoc path pathes in
-          r := Lazy.force reset;
-          state, `Bool true
+        let r,reset = List.assoc path pathes in
+        r := Lazy.force reset;
+        state, `Bool true
       | _ -> invalid_arguments ()
     end with
     | state, `Bool true as answer ->
@@ -128,12 +134,51 @@ let command_path pathes = Command.({
   end;
 })
 
-let _ =
-  let command_path = command_path [
+let path_add, command_path = 
+  let pathes = [
     "build",  (Config.load_path,default_build_paths);
     "source", (State.source_path, lazy [])
   ] in
-  Command.register command_path
+  path_add pathes, command_path pathes
+
+let command_project = Command.({
+  name = "project";
+
+  handler =
+  begin fun _ state -> function
+    | [ `String "load" ; `String path ] ->
+      let ic = open_in path in
+      begin try
+          let drop n s =
+            String.sub s n (String.length s- n) in
+          let rec aux () = 
+            let line = input_line ic in
+            if line = "" then ()
+            else if Misc.has_prefix "B " line then
+              path_add "build" (drop 2 line)
+            else if Misc.has_prefix "S " line then
+              path_add "source" (drop 2 line)
+            else if Misc.has_prefix "PKG " line then
+              (Command.load_packages (Misc.rev_split_words (drop 4 line)))
+            else if Misc.has_prefix "#" line then ()
+            else ();
+            aux ()
+          in
+          aux ()
+        with 
+        | End_of_file ->
+          close_in_noerr ic;
+          state, `Bool true
+        | exn -> 
+          close_in_noerr ic; raise exn
+      end 
+    | _ -> Command.invalid_arguments ()
+  end;
+})
+
+let () = 
+  Command.register command_path;
+  Command.register command_project
 
 (** Mimic other Caml tools, entry point *)
 let print_version () =

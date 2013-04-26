@@ -107,6 +107,33 @@ let remove_file filename =
   with Sys_error msg ->
     ()
 
+let canonicalize_filename ?cwd path =
+  let rec split path acc =
+    let dir = Filename.dirname path
+    and base = Filename.basename path in
+    if dir = path
+    then base :: acc
+    else split dir (base :: acc)
+  in
+  let parts = 
+    match split path [] with
+    | dot :: rest when dot = Filename.current_dir_name ->
+      split (match cwd with None -> Sys.getcwd () | Some c -> c) rest
+    | parts -> parts
+  in
+  let parts = List.filter ((<>) Filename.current_dir_name) parts in
+  let rec goup = function
+    | [] -> []
+    | head :: rest -> 
+      match goup rest with
+      | parent :: rest when parent = Filename.parent_dir_name -> rest
+      | rest -> head :: rest
+  in
+  match goup parts with
+  | root :: subs -> List.fold_left Filename.concat root subs
+  | [] -> ""
+
+
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
 
