@@ -147,6 +147,7 @@ let command_project = Command.({
   handler =
   begin fun _ state -> function
     | [ `String "load" ; `String path ] ->
+      let cwd = Filename.dirname path in
       let ic = open_in path in
       begin try
           let drop n s =
@@ -155,9 +156,9 @@ let command_project = Command.({
             let line = input_line ic in
             if line = "" then ()
             else if Misc.has_prefix "B " line then
-              path_add "build" (drop 2 line)
+              path_add "build" ~cwd (drop 2 line)
             else if Misc.has_prefix "S " line then
-              path_add "source" (drop 2 line)
+              path_add "source" ~cwd (drop 2 line)
             else if Misc.has_prefix "PKG " line then
               (Command.load_packages (Misc.rev_split_words (drop 4 line)))
             else if Misc.has_prefix "#" line then ()
