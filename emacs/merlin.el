@@ -672,11 +672,11 @@ overlay"
 (defun merlin-show-type-of-region ()
   "Show the type of the region"
   (interactive)
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-show-type (cons (region-beginning) (region-end))))
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) t))
 
 (defun merlin-show-type-of-point (arg) 
