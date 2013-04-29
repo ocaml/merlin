@@ -29,6 +29,10 @@ let strict_to_json = function
       let ppf, to_string = Misc.ppf_to_string () in
       Typemod.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
+  | Typeclass.Error (loc, e) ->
+      let ppf, to_string = Misc.ppf_to_string () in
+      Typeclass.report_error ppf e;
+      Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Env.Error e ->
       let ppf, to_string = Misc.ppf_to_string () in
       Env.report_error ppf e;
