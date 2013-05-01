@@ -330,6 +330,15 @@ module Binprot = struct
   end
 end
 
+module Cow = struct
+  let supported_extension ext = List.mem ext ["json"; "xml"; "html";]
+  let make_cow ~ext = 
+    let module M = Make_conv(struct
+        let t = `Named ([], "Cow." ^(String.capitalize ext)^ ".t")
+        let _name_ = ext
+    end) in (module M : Simple_conv_intf)
+end
+
 module TypeWith = struct
   type generator = string
 
@@ -369,6 +378,11 @@ module TypeWith = struct
         ) ty
       in
       List.map (translate_to_str ?ghost_loc) funs
+
+    | ext when Cow.supported_extension ext ->
+      let (module Cow) = Cow.make_cow ~ext in
+      let funs = List.map (fun ty -> Cow.Struct.make_funs ty) ty
+      in List.map (translate_to_str ?ghost_loc) funs
 
     | _unsupported_ext -> []
 
@@ -413,6 +427,11 @@ module TypeWith = struct
           ty
       in
       List.rev_map (translate_declaration ?ghost_loc) sigs
+
+    | ext when Cow.supported_extension ext ->
+      let (module Cow) = Cow.make_cow ~ext in
+      let sigs = Misc.list_concat_map (Cow.Sig.make_decls) ty
+      in List.rev_map (translate_declaration ?ghost_loc) sigs
 
     | _unsupported_ext -> []
 
