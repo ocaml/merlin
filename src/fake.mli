@@ -22,35 +22,40 @@ module Lwt : sig
   val raise_lwt' : Longident.t
 end
 
-(* Helpers for TypeWith *)
-type type_scheme = [
-  | `Var   of string
-  | `Arrow of Asttypes.label * type_scheme * type_scheme
-  | `Named of type_scheme list * string
-]
+(* Helpers; extend as needed *)
+module Ast : sig
+  type type_scheme = [
+    | `Var   of string
+    | `Arrow of Asttypes.label * type_scheme * type_scheme
+    | `Named of type_scheme list * string
+  ]
 
-(* extend as needed *)
-type ast = [
-  | `Let   of binding list
-  | `Fun   of string list * ast
-  | `App   of ast * ast
-  | `Ident of string
-  | `AnyVal (* wild card ident *)
-  | `Val   of string * type_scheme (* TODO: use something similar to [binding] type? *)
-]
-and binding = {
-  ident   : string ;
-  typesig : type_scheme ;
-  body    : ast ;
-}
+  type str_item = [
+    | `Let of expr binding
+  ]
+  and sig_item = [
+    | `Val of unit binding
+  ]
+  and expr = [
+    | `Fun   of string list * expr
+    | `App   of expr * expr
+    | `Ident of string
+    | `AnyVal (* wild card ident *)
+  ]
+  and 'a binding = {
+    ident   : string ;
+    typesig : type_scheme ;
+    body    : 'a ;
+  }
+end
 
 module Sexp : sig
   type ty = string Location.loc * Parsetree.type_declaration
   module Struct : sig
-    val make_funs : ty -> [ `Let of binding list ]
+    val make_funs : ty -> Ast.str_item list
   end
   module Sig : sig
-    val make_decls : ty -> [ `Val of string * type_scheme ] list
+    val make_decls : ty -> Ast.sig_item list
   end
 end
 

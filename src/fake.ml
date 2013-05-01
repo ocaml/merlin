@@ -23,26 +23,34 @@ let prim prim = {
 
 let any_val' = prim "Any.val'"
 
-type type_scheme = [
-  | `Var   of string
-  | `Arrow of Asttypes.label * type_scheme * type_scheme
-  | `Named of type_scheme list * string
-]
 
-(* extend as needed *)
-type ast = [
-  | `Let   of binding list
-  | `Fun   of string list * ast
-  | `App   of ast * ast
-  | `Ident of string
-  | `AnyVal (* wild card ident *)
-  | `Val   of string * type_scheme (* TODO: use something similar to [binding] type? *)
-]
-and binding = {
-  ident   : string ;
-  typesig : type_scheme ;
-  body    : ast ;
-}
+(* Helpers; extend as needed *)
+module Ast = struct
+  type type_scheme = [
+    | `Var   of string
+    | `Arrow of Asttypes.label * type_scheme * type_scheme
+    | `Named of type_scheme list * string
+  ]
+
+  type str_item = [
+    | `Let of expr binding
+  ]
+  and sig_item = [
+    | `Val of unit binding
+  ]
+  and expr = [
+    | `Fun   of string list * expr
+    | `App   of expr * expr
+    | `Ident of string
+    | `AnyVal (* wild card ident *)
+  ]
+  and 'a binding = {
+    ident   : string ;
+    typesig : type_scheme ;
+    body    : 'a ;
+  }
+end
+open Ast
 
 let rec translate_ts ?ghost_loc = function
   | `Var ident ->
@@ -59,14 +67,14 @@ let rec translate_ts ?ghost_loc = function
       ptyp_loc = default_loc ghost_loc ;
     }
 
-let translate_declaration ?ghost_loc = function
-  | `Val (id, sign) ->
+let translate_declaration ?ghost_loc : Ast.sig_item -> _  = function
+  | `Val { ident; typesig; _ } ->
     let pval_ty = {
-      pval_type = translate_ts ?ghost_loc sign ;
+      pval_type = translate_ts ?ghost_loc typesig ;
       pval_prim = [] ;
       pval_loc  = default_loc ghost_loc ;
     } in
-    let psig_desc = Psig_value (mkoptloc ghost_loc id, pval_ty) in
+    let psig_desc = Psig_value (mkoptloc ghost_loc ident, pval_ty) in
     { psig_desc ; psig_loc = default_loc ghost_loc }
 
 let rec translate_binding ?ghost_loc { ident ; typesig ; body } =
@@ -76,7 +84,7 @@ let rec translate_binding ?ghost_loc { ident ; typesig ; body } =
   }
   in
   let typesig_opt = Some (translate_ts ?ghost_loc typesig) in
-  let body = translate_to_expr ?ghost_loc body in
+  let body = translate_expr ?ghost_loc body in
   let pexp = {
     pexp_desc = Pexp_constraint (body, typesig_opt, None) ;
     pexp_loc = default_loc ghost_loc ;
@@ -84,14 +92,12 @@ let rec translate_binding ?ghost_loc { ident ; typesig ; body } =
   in
   (pat, pexp)
 
-and translate_to_str ?ghost_loc = function
+and translate_implementation ?ghost_loc : Ast.str_item -> _ = function
   | `Let lst ->
-    let p = Pstr_value (Asttypes.Nonrecursive, List.map translate_binding lst) in
+    let p = Pstr_value (Asttypes.Nonrecursive, [translate_binding lst]) in
     { pstr_desc = p ; pstr_loc = default_loc ghost_loc }
 
-and translate_to_expr ?ghost_loc = function
-  | `Let _ -> failwith "not allowed at this level"
-  | `Val _ -> failwith "clearly not allowed here" (* TODO: refine [ast] *)
+and translate_expr ?ghost_loc : Ast.expr -> _ = function
   | `Fun (simple_patterns, body) ->
     List.fold_right
       (fun simple_pattern body ->
@@ -105,9 +111,9 @@ and translate_to_expr ?ghost_loc = function
           pexp_loc = default_loc ghost_loc ;
         })
       simple_patterns
-      (translate_to_expr ?ghost_loc body)
+      (translate_expr ?ghost_loc body)
   | `App (f, x) ->
-    app (translate_to_expr ?ghost_loc f) (translate_to_expr ?ghost_loc x)
+    app (translate_expr ?ghost_loc f) (translate_expr ?ghost_loc x)
   | `Ident i -> {
       pexp_desc = Pexp_ident (mkoptloc ghost_loc (Longident.parse i)) ;
       pexp_loc = default_loc ghost_loc ;
@@ -135,10 +141,10 @@ let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `AnyVal))
 module type Simple_conv_intf = sig
   type ty = string Location.loc * Parsetree.type_declaration
   module Struct : sig
-    val make_funs : ty -> [ `Let of binding list ]
+    val make_funs : ty -> Ast.str_item list
   end
   module Sig : sig
-    val make_decls : ty -> [ `Val of string * type_scheme ] list
+    val make_decls : ty -> Ast.sig_item list
   end
 end
 
@@ -174,7 +180,7 @@ module Make_conv (Conv : Simple_conv) = struct
       let ty = located_name.Location.txt in
       let args = format_params ~f:(fun x -> _name_ ^ "_of_" ^ x) type_infos.ptype_params
       in
-      {
+      `Let {
         ident = _name_ ^ "_of_" ^ ty ;
         typesig = TypeSig.conv_of type_infos.ptype_params ty;
         body = mk_fun ~args ;
@@ -184,25 +190,33 @@ module Make_conv (Conv : Simple_conv) = struct
       let ty = located_name.Location.txt in
       let args = format_params ~f:(fun x -> x ^ "_of_" ^ _name_) type_infos.ptype_params
       in
-      {
+      `Let {
         ident = ty ^ "_of_" ^ _name_ ;
         typesig = TypeSig.of_conv type_infos.ptype_params ty;
         body = mk_fun ~args ;
       }
 
-    let make_funs ty = `Let [ conv_of_ ty ; _of_conv ty ]
+    let make_funs ty = [ conv_of_ ty ; _of_conv ty ]
   end
 
   module Sig = struct
     let conv_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
       let typesig = TypeSig.conv_of type_infos.ptype_params ty in
-      `Val (_name_ ^ "_of_" ^ ty, typesig)
+      `Val {
+        ident = _name_ ^ "_of_" ^ ty ;
+        typesig ;
+        body = () ;
+      }
 
     let _of_conv (located_name, type_infos) =
       let ty = located_name.Location.txt in
       let typesig = TypeSig.of_conv type_infos.ptype_params ty in
-      `Val (ty ^ "_of_" ^ _name_, typesig)
+      `Val {
+        ident = ty ^ "_of_" ^ _name_ ;
+        typesig ;
+        body = () ;
+      }
 
     let make_decls ty = [ conv_of_ ty ; _of_conv ty ]
   end
@@ -218,10 +232,18 @@ module Sexp = (Make_conv(Sexp_conv) : Simple_conv_intf)
 
 module Binprot = struct
 
-  let make_struct ~prefix ~typesig (located_name, ty_infos) =
+  let binding ~prefix ~typesig ty =
+    let (located_name, ty_infos) = ty in
     let tyname = located_name.Location.txt in
     let args = format_params ~f:(fun x -> prefix ^ x) ty_infos.ptype_params in
-    { ident = prefix ^ tyname ; typesig = typesig ; body = mk_fun ~args }
+    {
+      ident = prefix ^ tyname ;
+      typesig = typesig ty ;
+      body = mk_fun ~args ;
+    }
+
+  let struct_of binding = `Let binding
+  let sig_of binding = `Val { binding with body = () }
 
   module Sizer = struct
     let int = `Named ([], "int")
@@ -231,14 +253,10 @@ module Binprot = struct
       List.fold_right (fun v acc -> `Arrow ("", `Arrow ("", `Var v, int), acc)) params
         (`Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt), int))
 
-    let make_struct ty =
-      let typesig = typesig ty in
-      make_struct ~prefix:"bin_size_" ~typesig ty
+    let prefix = "bin_size_"
 
-    let make_sig ty =
-      let tyname = (fst ty).Location.txt in
-      let typesig = typesig ty in
-      `Val ("bin_size_" ^ tyname, typesig)
+    let make_struct ty = struct_of (binding ~prefix ~typesig ty)
+    let make_sig ty = sig_of (binding ~prefix ~typesig ty)
   end
 
   module Write = struct
@@ -258,14 +276,10 @@ module Binprot = struct
       in
       List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
 
-    let make_struct ty =
-      let typesig = typesig ty in
-      make_struct ~prefix:"bin_write_" ~typesig ty
+    let prefix = "bin_write_"
 
-    let make_sig ty =
-      let tyname = (fst ty).Location.txt in
-      let typesig = typesig ty in
-      `Val ("bin_write_" ^ tyname, typesig)
+    let make_struct ty = struct_of (binding ~prefix ~typesig ty)
+    let make_sig ty = sig_of (binding ~prefix ~typesig ty)
   end
 
   module Writer = struct
@@ -276,14 +290,10 @@ module Binprot = struct
         params
         (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
 
-    let make_struct ty =
-      let typesig = typesig ty in
-      make_struct ~prefix:"bin_writer_" ~typesig ty
-
-    let make_sig ty =
-      let tyname = (fst ty).Location.txt in
-      let typesig = typesig ty in
-      `Val ("bin_writer_" ^ tyname, typesig)
+    let prefix = "bin_writer_"
+  
+    let make_struct ty = struct_of (binding ~prefix ~typesig ty)
+    let make_sig ty = sig_of (binding ~prefix ~typesig ty)
   end
 
   module Read = struct
@@ -301,14 +311,10 @@ module Binprot = struct
       in
       List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
 
-    let make_struct ty =
-      let typesig = typesig ty in
-      make_struct ~prefix:"bin_read_" ~typesig ty
+    let prefix = "bin_read_"
 
-    let make_sig ty =
-      let tyname = (fst ty).Location.txt in
-      let typesig = typesig ty in
-      `Val ("bin_read_" ^ tyname, typesig)
+    let make_struct ty = struct_of (binding ~prefix ~typesig ty)
+    let make_sig ty = sig_of (binding ~prefix ~typesig ty)
   end
 
   module Reader = struct
@@ -319,14 +325,10 @@ module Binprot = struct
         params
         (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.reader"))
 
-    let make_struct ty =
-      let typesig = typesig ty in
-      make_struct ~prefix:"bin_reader_" ~typesig ty
+    let prefix = "bin_reader_"
 
-    let make_sig ty =
-      let tyname = (fst ty).Location.txt in
-      let typesig = typesig ty in
-      `Val ("bin_reader_" ^ tyname, typesig)
+    let make_struct ty = struct_of (binding ~prefix ~typesig ty)
+    let make_sig ty = sig_of (binding ~prefix ~typesig ty)
   end
 end
 
@@ -344,45 +346,45 @@ module TypeWith = struct
 
   let rec generate_definitions ~ty ?ghost_loc = function
     | "sexp" ->
-      let funs = List.map Sexp.Struct.make_funs ty in
-      List.map (translate_to_str ?ghost_loc) funs
+      let funs = Misc.list_concat_map Sexp.Struct.make_funs ty in
+      List.map (translate_implementation ?ghost_loc) funs
 
     | "bin_write" ->
       let funs =
         let open Binprot in
-        List.map (fun ty ->
-          `Let [ Sizer.make_struct ty ; Write.make_struct ty ; Writer.make_struct ty ]
+        Misc.list_concat_map (fun ty ->
+          [ Sizer.make_struct ty ; Write.make_struct ty ; Writer.make_struct ty ]
         ) ty
       in
-      List.map (translate_to_str ?ghost_loc) funs
+      List.map (translate_implementation ?ghost_loc) funs
 
     | "bin_read" ->
       let funs =
         let open Binprot in
-        List.map (fun ty -> `Let [ Read.make_struct ty ; Reader.make_struct ty ]) ty
+        Misc.list_concat_map (fun ty -> [ Read.make_struct ty ; Reader.make_struct ty ]) ty
       in
-      List.map (translate_to_str ?ghost_loc) funs
+      List.map (translate_implementation ?ghost_loc) funs
 
 
     | "bin_io" ->
       let funs =
         let open Binprot in
-        List.map (fun ty ->
-          `Let [
+        Misc.list_concat_map (fun ty ->
+          [
             Sizer.make_struct ty ;
             Write.make_struct ty ;
             Writer.make_struct ty ;
             Read.make_struct ty ;
             Reader.make_struct ty ;
-        ]
+          ]
         ) ty
       in
-      List.map (translate_to_str ?ghost_loc) funs
+      List.map (translate_implementation ?ghost_loc) funs
 
     | ext when Cow.supported_extension ext ->
       let module Cow = (val Cow.make_cow ~ext : Simple_conv_intf) in
-      let funs = List.map (fun ty -> Cow.Struct.make_funs ty) ty
-      in List.map (translate_to_str ?ghost_loc) funs
+      let funs = Misc.list_concat_map (fun ty -> Cow.Struct.make_funs ty) ty
+      in List.map (translate_implementation ?ghost_loc) funs
 
     | _unsupported_ext -> []
 
