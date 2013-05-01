@@ -43,18 +43,20 @@ After installation, you can find the vim mode files in:
   $SHARE\_DIR/ocamlmerlin/vim
 
 The vim subdirectory can be used as a pathogen bundle or directly added to vim
-RUNTIME PATH.
+RUNTIME PATH. For instance using runtime path, add this to your .vimrc:
+  :set rtp+=$SHARE\_DIR/ocamlmerlin/vim
 
 Then take a look at:  
   $SHARE\_DIR/ocamlmerlin/vim/plugin/merlin.vim  
 for a sample configuration. Modify it according to your needs.
 
 Files:
-- merlin.conf.vim -- sample configuration
 - autoload/
   - merlin.vim   -- main vim script
   - merlin.py    -- helper script needed by merlin.vim
                     (has to be in the same directory)
+- plugin/merlin.vim -- main configuration
+- ftplugin/      -- automatically enable merlin for some filetypes
 - syntax\_checkers/  
                     -- integration with syntastic (ocaml or omlet)  
                     -- set g:syntastic_ocaml_checkers = ['merlin']  
