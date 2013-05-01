@@ -380,7 +380,7 @@ module TypeWith = struct
       List.map (translate_to_str ?ghost_loc) funs
 
     | ext when Cow.supported_extension ext ->
-      let (module Cow) = Cow.make_cow ~ext in
+      let module Cow = (val Cow.make_cow ~ext : Simple_conv_intf) in
       let funs = List.map (fun ty -> Cow.Struct.make_funs ty) ty
       in List.map (translate_to_str ?ghost_loc) funs
 
@@ -429,7 +429,7 @@ module TypeWith = struct
       List.rev_map (translate_declaration ?ghost_loc) sigs
 
     | ext when Cow.supported_extension ext ->
-      let (module Cow) = Cow.make_cow ~ext in
+      let module Cow = (val Cow.make_cow ~ext : Simple_conv_intf) in
       let sigs = Misc.list_concat_map (Cow.Sig.make_decls) ty
       in List.rev_map (translate_declaration ?ghost_loc) sigs
 
