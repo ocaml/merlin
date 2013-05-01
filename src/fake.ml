@@ -132,74 +132,89 @@ let format_params ~f =
 let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `AnyVal))
 
 
-module Sexp : sig
+module type Simple_conv_intf = sig
   type ty = string Location.loc * Parsetree.type_declaration
-
   module Struct : sig
     val make_funs : ty -> [ `Let of binding list ]
   end
-
   module Sig : sig
     val make_decls : ty -> [ `Val of string * type_scheme ] list
   end
-end = struct
+end
+
+(** Sig to encode primitive type conv extensions like sexp or cow *)
+module type Simple_conv = sig
+  val t : [> `Named of 'a list * string]
+  val _name_ : string
+end
+
+module Make_conv (Conv : Simple_conv) = struct
   type ty = string Location.loc * Parsetree.type_declaration
 
-  let t = `Named ([], "Sexplib.Sexp.t")
+  include Conv
 
   module TypeSig = struct
     let mk_arrow x y = `Arrow ("", x, y)
 
-    let sexp_of params ty =
+    let named params ty = `Named (params, ty)
+
+    let conv_of params ty =
       let params = format_params ~f:(fun v -> `Var v) params in
       List.fold_right (fun var acc -> mk_arrow (mk_arrow var t) acc) params
-        (mk_arrow (`Named (params, ty)) t)
+        (mk_arrow (named params ty) t)
 
-    let of_sexp params ty =
+    let of_conv params ty =
       let params = format_params ~f:(fun v -> `Var v) params in
       List.fold_right (fun var acc -> mk_arrow (mk_arrow t var) acc) params
         (mk_arrow t (`Named (params, ty)))
   end
 
   module Struct = struct
-    let sexp_of_ (located_name, type_infos) =
+    let conv_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let args = format_params ~f:(fun x -> "sexp_of_" ^ x) type_infos.ptype_params
+      let args = format_params ~f:(fun x -> _name_ ^ "_of_" ^ x) type_infos.ptype_params
       in
       {
-        ident = "sexp_of_" ^ ty ;
-        typesig = TypeSig.sexp_of type_infos.ptype_params ty;
+        ident = _name_ ^ "_of_" ^ ty ;
+        typesig = TypeSig.conv_of type_infos.ptype_params ty;
         body = mk_fun ~args ;
       }
 
-    let _of_sexp (located_name, type_infos) =
+    let _of_conv (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let args = format_params ~f:(fun x -> x ^ "_of_sexp") type_infos.ptype_params
+      let args = format_params ~f:(fun x -> x ^ "_of_" ^ _name_) type_infos.ptype_params
       in
       {
-        ident = ty ^ "_of_sexp" ;
-        typesig = TypeSig.of_sexp type_infos.ptype_params ty;
+        ident = ty ^ "_of_" ^ _name_ ;
+        typesig = TypeSig.of_conv type_infos.ptype_params ty;
         body = mk_fun ~args ;
       }
 
-    let make_funs ty = `Let [ sexp_of_ ty ; _of_sexp ty ]
+    let make_funs ty = `Let [ conv_of_ ty ; _of_conv ty ]
   end
 
   module Sig = struct
-    let sexp_of_ (located_name, type_infos) =
+    let conv_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let typesig = TypeSig.sexp_of type_infos.ptype_params ty in
-      `Val ("sexp_of_" ^ ty, typesig)
+      let typesig = TypeSig.conv_of type_infos.ptype_params ty in
+      `Val (_name_ ^ "_of_" ^ ty, typesig)
 
-    let _of_sexp (located_name, type_infos) =
+    let _of_conv (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let typesig = TypeSig.of_sexp type_infos.ptype_params ty in
-      `Val (ty ^ "_of_sexp", typesig)
+      let typesig = TypeSig.of_conv type_infos.ptype_params ty in
+      `Val (ty ^ "_of_" ^ _name_, typesig)
 
-
-    let make_decls ty = [ sexp_of_ ty ; _of_sexp ty ]
+    let make_decls ty = [ conv_of_ ty ; _of_conv ty ]
   end
 end
+
+module Sexp_conv : Simple_conv = struct
+  let t = `Named ([], "Sexplib.Sexp.t")
+  let _name_ = "sexp"
+end
+
+(* only sealing Sexp for to copy make new Sexp identical to old Verbatim *)
+module Sexp = (Make_conv(Sexp_conv) : Simple_conv_intf)
 
 module Binprot = struct
 
