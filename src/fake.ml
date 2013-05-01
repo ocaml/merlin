@@ -137,28 +137,20 @@ let format_params ~f =
 
 let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `AnyVal))
 
+type tydecl = string Location.loc * Parsetree.type_declaration
 
+module type Type_conv_intf = sig
+  val make_struct : tydecl -> Ast.str_item list
+  val make_sig : tydecl -> Ast.sig_item list
+end
+
+(** Some extensions (sexp, cow) follow a very simple generation pattern *)
 module type Simple_conv_intf = sig
-  type ty = string Location.loc * Parsetree.type_declaration
-  module Struct : sig
-    val make_funs : ty -> Ast.str_item list
-  end
-  module Sig : sig
-    val make_decls : ty -> Ast.sig_item list
-  end
-end
-
-(** Sig to encode primitive type conv extensions like sexp or cow *)
-module type Simple_conv = sig
   val t : [> `Named of 'a list * string]
-  val _name_ : string
+  val name : string
 end
 
-module Make_conv (Conv : Simple_conv) = struct
-  type ty = string Location.loc * Parsetree.type_declaration
-
-  include Conv
-
+module Make_simple (Conv : Simple_conv_intf) = struct
   module TypeSig = struct
     let mk_arrow x y = `Arrow ("", x, y)
 
@@ -166,37 +158,39 @@ module Make_conv (Conv : Simple_conv) = struct
 
     let conv_of params ty =
       let params = format_params ~f:(fun v -> `Var v) params in
-      List.fold_right (fun var acc -> mk_arrow (mk_arrow var t) acc) params
-        (mk_arrow (named params ty) t)
+      List.fold_right (fun var acc -> mk_arrow (mk_arrow var Conv.t) acc) params
+        (mk_arrow (named params ty) Conv.t)
 
     let of_conv params ty =
       let params = format_params ~f:(fun v -> `Var v) params in
-      List.fold_right (fun var acc -> mk_arrow (mk_arrow t var) acc) params
-        (mk_arrow t (`Named (params, ty)))
+      List.fold_right (fun var acc -> mk_arrow (mk_arrow Conv.t var) acc) params
+        (mk_arrow Conv.t (`Named (params, ty)))
   end
 
   module Struct = struct
     let conv_of_ (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let args = format_params ~f:(fun x -> _name_ ^ "_of_" ^ x) type_infos.ptype_params
+      let args =
+        let f x = Conv.name ^ "_of_" ^ x in
+        format_params ~f type_infos.ptype_params
       in
       `Let {
-        ident = _name_ ^ "_of_" ^ ty ;
+        ident = Conv.name ^ "_of_" ^ ty ;
         typesig = TypeSig.conv_of type_infos.ptype_params ty;
         body = mk_fun ~args ;
       }
 
     let _of_conv (located_name, type_infos) =
       let ty = located_name.Location.txt in
-      let args = format_params ~f:(fun x -> x ^ "_of_" ^ _name_) type_infos.ptype_params
+      let args = format_params ~f:(fun x -> x ^ "_of_" ^ Conv.name) type_infos.ptype_params
       in
       `Let {
-        ident = ty ^ "_of_" ^ _name_ ;
+        ident = ty ^ "_of_" ^ Conv.name ;
         typesig = TypeSig.of_conv type_infos.ptype_params ty;
         body = mk_fun ~args ;
       }
 
-    let make_funs ty = [ conv_of_ ty ; _of_conv ty ]
+    let make ty = [ conv_of_ ty ; _of_conv ty ]
   end
 
   module Sig = struct
@@ -204,7 +198,7 @@ module Make_conv (Conv : Simple_conv) = struct
       let ty = located_name.Location.txt in
       let typesig = TypeSig.conv_of type_infos.ptype_params ty in
       `Val {
-        ident = _name_ ^ "_of_" ^ ty ;
+        ident = Conv.name ^ "_of_" ^ ty ;
         typesig ;
         body = () ;
       }
@@ -213,22 +207,30 @@ module Make_conv (Conv : Simple_conv) = struct
       let ty = located_name.Location.txt in
       let typesig = TypeSig.of_conv type_infos.ptype_params ty in
       `Val {
-        ident = ty ^ "_of_" ^ _name_ ;
+        ident = ty ^ "_of_" ^ Conv.name ;
         typesig ;
         body = () ;
       }
 
-    let make_decls ty = [ conv_of_ ty ; _of_conv ty ]
+    let make ty = [ conv_of_ ty ; _of_conv ty ]
   end
+
+  let make_struct ty = Struct.make ty
+  let make_sig ty = Sig.make ty
 end
 
-module Sexp_conv : Simple_conv = struct
+module Sexp = Make_simple(struct
   let t = `Named ([], "Sexplib.Sexp.t")
-  let _name_ = "sexp"
-end
+  let name = "sexp"
+end)
 
-(* only sealing Sexp for to copy make new Sexp identical to old Verbatim *)
-module Sexp = (Make_conv(Sexp_conv) : Simple_conv_intf)
+(* the Cow generators are parametrized by the extension name *)
+let cow_supported_extension ext = List.mem ext ["json"; "xml"; "html";] 
+module Make_cow (Ext : sig val name : string end) =
+  Make_simple(struct
+    let t = `Named ([], "Cow." ^(String.capitalize Ext.name)^ ".t")
+    let name = Ext.name
+  end)
 
 module Binprot = struct
 
@@ -332,21 +334,12 @@ module Binprot = struct
   end
 end
 
-module Cow = struct
-  let supported_extension ext = List.mem ext ["json"; "xml"; "html";]
-  let make_cow ~ext = 
-    let module M = Make_conv(struct
-        let t = `Named ([], "Cow." ^(String.capitalize ext)^ ".t")
-        let _name_ = ext
-    end) in (module M : Simple_conv_intf)
-end
-
 module TypeWith = struct
   type generator = string
 
   let rec generate_definitions ~ty ?ghost_loc = function
     | "sexp" ->
-      let funs = Misc.list_concat_map Sexp.Struct.make_funs ty in
+      let funs = Misc.list_concat_map Sexp.make_struct ty in
       List.map (translate_implementation ?ghost_loc) funs
 
     | "bin_write" ->
@@ -381,9 +374,9 @@ module TypeWith = struct
       in
       List.map (translate_implementation ?ghost_loc) funs
 
-    | ext when Cow.supported_extension ext ->
-      let module Cow = (val Cow.make_cow ~ext : Simple_conv_intf) in
-      let funs = Misc.list_concat_map (fun ty -> Cow.Struct.make_funs ty) ty
+    | ext when cow_supported_extension ext ->
+      let module Cow = Make_cow(struct let name = ext end) in
+      let funs = Misc.list_concat_map (fun ty -> Cow.make_struct ty) ty
       in List.map (translate_implementation ?ghost_loc) funs
 
     | _unsupported_ext -> []
@@ -393,7 +386,7 @@ module TypeWith = struct
 
   let rec generate_sigs ~ty ?ghost_loc = function
     | "sexp" ->
-      let sigs = Misc.list_concat_map Sexp.Sig.make_decls ty in
+      let sigs = Misc.list_concat_map Sexp.make_sig ty in
       List.rev_map (translate_declaration ?ghost_loc) sigs
 
     | "bin_write" ->
@@ -430,9 +423,9 @@ module TypeWith = struct
       in
       List.rev_map (translate_declaration ?ghost_loc) sigs
 
-    | ext when Cow.supported_extension ext ->
-      let module Cow = (val Cow.make_cow ~ext : Simple_conv_intf) in
-      let sigs = Misc.list_concat_map (Cow.Sig.make_decls) ty
+    | ext when cow_supported_extension ext ->
+      let module Cow = Make_cow(struct let name = ext end) in
+      let sigs = Misc.list_concat_map Cow.make_sig ty
       in List.rev_map (translate_declaration ?ghost_loc) sigs
 
     | _unsupported_ext -> []

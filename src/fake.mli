@@ -22,42 +22,7 @@ module Lwt : sig
   val raise_lwt' : Longident.t
 end
 
-(* Helpers; extend as needed *)
-module Ast : sig
-  type type_scheme = [
-    | `Var   of string
-    | `Arrow of Asttypes.label * type_scheme * type_scheme
-    | `Named of type_scheme list * string
-  ]
-
-  type str_item = [
-    | `Let of expr binding
-  ]
-  and sig_item = [
-    | `Val of unit binding
-  ]
-  and expr = [
-    | `Fun   of string list * expr
-    | `App   of expr * expr
-    | `Ident of string
-    | `AnyVal (* wild card ident *)
-  ]
-  and 'a binding = {
-    ident   : string ;
-    typesig : type_scheme ;
-    body    : 'a ;
-  }
-end
-
-module Sexp : sig
-  type ty = string Location.loc * Parsetree.type_declaration
-  module Struct : sig
-    val make_funs : ty -> Ast.str_item list
-  end
-  module Sig : sig
-    val make_decls : ty -> Ast.sig_item list
-  end
-end
+type tydecl = string Location.loc * Parsetree.type_declaration
 
 (* type-conv extension *)
 module TypeWith : sig
@@ -66,8 +31,8 @@ module TypeWith : sig
    * - bin_io, bin_read, bin_write.  *)
   type generator = string
 
-  val generate_definitions : ty:Sexp.ty list -> ?ghost_loc:Location.t ->
+  val generate_definitions : ty:tydecl list -> ?ghost_loc:Location.t ->
     generator list -> Parsetree.structure_item list
-  val generate_sigs : ty:Sexp.ty list -> ?ghost_loc:Location.t ->
+  val generate_sigs : ty:tydecl list -> ?ghost_loc:Location.t ->
     generator list -> Parsetree.signature_item list
 end
