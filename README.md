@@ -32,7 +32,6 @@ OCaml 4.00.1 (can be installed via opam typing `opam switch 4.00.1`).
 
 Then, just do :
 
-    $ opam remote add kiwi http://kiwi.iuwt.fr/~asmanur/opam/.git
     $ opam install merlin
 
 Setting-up vim
@@ -51,12 +50,12 @@ Then take a look at:
 for a sample configuration. Modify it according to your needs.
 
 Files:
+
+- plugin/merlin.vim -- sample configuration
 - autoload/
   - merlin.vim   -- main vim script
   - merlin.py    -- helper script needed by merlin.vim
                     (has to be in the same directory)
-- plugin/merlin.vim -- main configuration
-- ftplugin/      -- automatically enable merlin for some filetypes
 - syntax\_checkers/  
                     -- integration with syntastic (ocaml or omlet)  
                     -- set g:syntastic_ocaml_checkers = ['merlin']  
@@ -67,59 +66,16 @@ Add the following to your .vimrc
 
     Bundle 'def-lkb/merlin', {'rtp' : 'vim/'}
 
-Integration with [neocomplcache](https://github.com/Shougo/neocomplcache) 
-for automatic completion can be enabled with:
-
-    if !exists('g:neocomplcache_force_omni_patterns')
-      let g:neocomplcache_force_omni_patterns = {}
-    endif
-    let g:neocomplcache_force_omni_patterns.ocaml = '[^. *\t]\.\w*\|\h\w*|#'
-
-Features
---------
+Features and interaction with other plugins
+--------------------------------------------
 
 Omnicompletion should be available out-of-box.
-When editing an ml file, the following commands are available:
 
-**:SourcePath**  
-  List directories to look into to find ml/mli files
-  
-**:BuildPath**  
-  List directories to look into to find cmi files
-
-**:SourcePath** \<p\> **:BuildPath** \<p\>  
-  Add directory to path
-
-**:Use**  
-  Load findlib packages (with completion) by adjusting buildpath to find
-  files from packages.
-
-**:ML** **:MLI**  
-  Quick switch to a local source file (with completion).  
-  For instance, given moduleA.ml and moduleB.mli in source path, use:  
-
-      :ML ModuleA  
-      :MLI ModuleB
-
-**:TypeEnclosing**  
-  Return the type of the expression under the cursor.
-  See also: `:GrowEnclosing` and `:ShrinkEnclosing`
-
-**:TypeSel**  
-  In visual mode, return type of selected **expression**.
-
-**:GrowEnclosing**  
-  When `:TypeEnclosing` has been called, select the smallest expression
-  containing the previously highlighted expression.
-
-**:ShrinkEnclosing**  
-  When `:GrowEnclosing` has been called, revert to the previously selected
-  expression. (i.e. the largest expression, centered around the position where
-  `:TypeEnclosing` was called, which is contained in the currently highlighted
-  expression).
-
-By default, `:TypeEnclosing` (resp. `:TypeSel`) is bound to `<LocalLeader>t` in normal
-(resp. visual) mode.
+The documentation is accessible through `:h merlin.txt` and should provide all
+the necessary information on how to set-up merlin with other plugins (
+[Supertab](https://github.com/ervandew/supertab), 
+[neocomplcache](https://github.com/Shougo/neocomplcache)).
+It also lists, and explain, all the available commands.
 
 Now you may be interested by *Merlin project* and *Extensions* sections.
 
