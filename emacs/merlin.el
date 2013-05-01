@@ -193,8 +193,8 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
   (overlay-put (symbol-value var) 'face face)
   (if timer
       (run-at-time timer nil `(lambda ()
-                                (delete-overlay ,var)
-                                (set ,var nil)))))
+                                (when ,var (delete-overlay ,var)
+                                      (setq ,var nil))))))
       
 ;; PROCESS MANAGEMENT
 
