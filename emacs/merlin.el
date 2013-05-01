@@ -141,8 +141,8 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defun merlin-make-point (data)
   "Creates a point from a couple line / col"
   (save-excursion
-    (beginning-of-line)
-    (goto-line (cdr (assoc 'line data)))
+    (goto-char (point-min))
+    (forward-line (1- (cdr (assoc 'line data))))
     (forward-char (cdr (assoc 'col data)))
     (point)))
 (defun merlin-make-bounds (data)
