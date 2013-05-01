@@ -295,6 +295,8 @@ module TypeWith = struct
 
   let generate_bindings ~ty = function
     | "sexp" -> Misc.list_concat_map Sexp.bindings ty
+    | "sexp_of" -> List.map (fun ty -> Sexp.conv_of_ ty) ty
+    | "of_sexp" -> List.map (fun ty -> Sexp._of_conv ty) ty
 
     | "bin_write" ->
       let open Binprot in
