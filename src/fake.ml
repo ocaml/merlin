@@ -334,14 +334,3 @@ module TypeWith = struct
     let bindings = Misc.list_concat_map (generate_bindings ~ty) ext in
     List.map (sig_of_binding ?ghost_loc) bindings
 end
-
-
-
-
-
-
-
-
-
-
-
