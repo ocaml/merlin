@@ -13,7 +13,7 @@ let initial_env () =
     failwith "cannot open pervasives.cmi"
 
 let initial_env =
-  let cenv = Lazy.from_fun initial_env in
+  let cenv = Lazy.lazy_from_fun initial_env in
   fun () ->
     let env = Lazy.force cenv in
     Extensions.register env
