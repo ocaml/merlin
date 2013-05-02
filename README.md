@@ -253,3 +253,10 @@ Screenshots
 
 - [vim](http://88.191.77.33/~rks/merlin/)
 - [emacs](http://kiwi.iuwt.fr/~asmanur/blog/merlin/)
+
+Contact
+=======
+
+If you want to discuss or closely follow merlin development, you can subscribe to the mailing-list.
+
+Merlin mailing-list : [https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-commits](https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-commits).
