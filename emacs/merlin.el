@@ -908,7 +908,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (let ((dir (expand-file-name default-directory)))
     (while (not (string-equal dir "/")) ;; FIXME: Might loop for ever
       (when (file-exists-p (concat dir ".merlin"))
-        (merlin-send-command "projet" (list "load" (concat dir ".merlin"))))
+        (merlin-send-command "project" (list "load" (concat dir ".merlin"))))
       (setq dir (file-name-directory (directory-file-name dir))))
     ))    
 
