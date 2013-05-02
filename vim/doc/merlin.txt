@@ -105,9 +105,15 @@ Supertab ~
 
 People using Supertab can do: >
     au FileType ocaml call SuperTabSetDefaultCompletionType("<c-x><c-o>")
-<
 
 As suggested in the Supertab documentation.
+
+Another way to configure Supertab is to use: >
+    au FileType ocaml call SuperTabSetDefaultCompletionType("context")
+
+Which will attempt to use omni completion after a dot ad fallback to
+vim's regular word completion otherwise.
+
 
 Contact us ~
 

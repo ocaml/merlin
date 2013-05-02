@@ -4,7 +4,6 @@ import vim
 import re
 import os
 import sys
-from itertools import groupby
 
 import vimbufsync
 vimbufsync.check_version("0.1.0",who="merlin")
@@ -202,7 +201,6 @@ def sync_buffer_to(to_line, to_col):
         end_line = next_end
       else:
         content = None
-    last_line = end_line + 1
   # Now we are synced, come back to environment around cursor
   command_seek_exact(to_line, to_col)
 
@@ -356,7 +354,6 @@ def vim_prev_enclosing(vimvar):
 
 # Resubmit current buffer
 def vim_reload_buffer():
-  clear_cache()
   sync_buffer()
 
 # Reload changed cmi files then retype all definitions
@@ -448,3 +445,5 @@ def load_project(directory,maxdepth=3):
     (head, tail) = os.path.split(directory)
     if head != "":
       load_project(head,maxdepth - 1)
+
+# vim:tabstop=2:shiftwidth=2:softtabstop=2:set expandtab
