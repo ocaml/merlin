@@ -141,8 +141,8 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defun merlin-make-point (data)
   "Creates a point from a couple line / col"
   (save-excursion
-    (beginning-of-line)
-    (goto-line (cdr (assoc 'line data)))
+    (goto-char (point-min))
+    (forward-line (1- (cdr (assoc 'line data))))
     (forward-char (cdr (assoc 'col data)))
     (point)))
 (defun merlin-make-bounds (data)
@@ -193,8 +193,8 @@ using `face' and storing it in `var'. If `timer' is non-nil, the overlay is to d
   (overlay-put (symbol-value var) 'face face)
   (if timer
       (run-at-time timer nil `(lambda ()
-                                (delete-overlay ,var)
-                                (set ,var nil)))))
+                                (when ,var (delete-overlay ,var)
+                                      (setq ,var nil))))))
       
 ;; PROCESS MANAGEMENT
 
@@ -672,11 +672,11 @@ overlay"
 (defun merlin-show-type-of-region ()
   "Show the type of the region"
   (interactive)
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-show-type (cons (region-beginning) (region-end))))
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)"
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) t))
 
 (defun merlin-show-type-of-point (arg) 
