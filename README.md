@@ -259,4 +259,4 @@ Contact
 
 If you want to discuss or closely follow merlin development, you can subscribe to the mailing-list.
 
-Merlin mailing-list : [https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-commits](https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-commits).
+Merlin mailing-list : [https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-discuss](https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-discuss).
