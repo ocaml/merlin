@@ -951,8 +951,8 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (define-key merlin-map (kbd "C-c C-f C-<up>") 'merlin-type-enclosing-go-up)
     (define-key merlin-map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
     (define-key merlin-map (kbd "RET") 'merlin-enter)
-    (define-key merlin-menu-map [customize]
-      '("Customize merlin-mode" . merlin-customize))
+;;    (define-key merlin-menu-map [customize]
+;;      '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
       '("--"))
     (define-key merlin-show-type-map [local]
