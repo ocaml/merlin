@@ -164,7 +164,7 @@ let rec mktailpat startpos endpos  = function
     [] ->
       ghpat startpos endpos (Ppat_construct(mkloc (Lident "[]") Location.none, None, false))
   | p1 :: pl ->
-      let pat_pl = mktailpat startpos endpos  pl in
+      let pat_pl = mktailpat p1.ppat_loc.Location.loc_end endpos pl in
       let l = Location.({loc_start = p1.ppat_loc.loc_start;
                          loc_end = pat_pl.ppat_loc.loc_end;
                          loc_ghost = true})
@@ -1436,10 +1436,10 @@ simple_pattern:
       { unclosed "{" $startpos($1) $endpos($1) "}" $startpos($3) $endpos($3);
         let (fields, closed) = $2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
   | LBRACKET pattern_semi_list opt_semi RBRACKET
-      { reloc_pat $startpos($1) $endpos($1)  (mktailpat $startpos($1) $endpos($1)  (List.rev $2)) }
+      { reloc_pat $startpos $endpos  (mktailpat $startpos $endpos (List.rev $2)) }
   | LBRACKET pattern_semi_list opt_semi error
       { unclosed "[" $startpos($1) $endpos($1) "]" $startpos($4) $endpos($4);
-        reloc_pat $startpos($1) $endpos($1)  (mktailpat $startpos($1) $endpos($1)  (List.rev $2)) }
+        reloc_pat $startpos $endpos  (mktailpat $startpos $endpos (List.rev $2)) }
   | LBRACKETBAR pattern_semi_list opt_semi BARRBRACKET
       { mkpat $startpos $endpos (Ppat_array(List.rev $2)) }
   | LBRACKETBAR BARRBRACKET
@@ -1448,10 +1448,10 @@ simple_pattern:
       { unclosed "[|" $startpos($1) $endpos($1) "|]" $startpos($4) $endpos($4);
         mkpat $startpos $endpos (Ppat_array(List.rev $2)) }
   | LPAREN pattern RPAREN
-      { reloc_pat $startpos($1) $endpos($1)  $2 }
+      { reloc_pat $startpos $endpos $2 }
   | LPAREN pattern error
       { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($3) $endpos($3);
-        reloc_pat $startpos($1) $endpos($1)  $2 }
+        reloc_pat $startpos $endpos $2 }
   | LPAREN pattern COLON core_type RPAREN
       { mkpat $startpos $endpos (Ppat_constraint($2, $4)) }
   | LPAREN pattern COLON core_type error
@@ -1460,10 +1460,10 @@ simple_pattern:
   | LPAREN MODULE UIDENT RPAREN
       { mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)) }
   | LPAREN MODULE UIDENT COLON package_type RPAREN
-      { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),ghtyp $startpos $endpos (Ptyp_package $5))) }
+      { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),ghtyp $startpos($5) $endpos($5) (Ptyp_package $5))) }
   | LPAREN MODULE UIDENT COLON package_type error
       { unclosed "(" $startpos($1) $endpos($1) ")" $startpos($5) $endpos($5);
-        mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),ghtyp $startpos $endpos (Ptyp_package $5))) }
+        mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),ghtyp $startpos($5) $endpos($5) (Ptyp_package $5))) }
 ;
 
 pattern_comma_list:
