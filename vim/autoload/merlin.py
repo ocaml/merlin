@@ -184,7 +184,7 @@ def sync_buffer_to(to_line, to_col):
       command_reset(name=os.path.basename(cb.name))
       content = cb[:end_line]
     else:
-      rest    = cb[line-1][col:]
+      rest    = cb[line-1][col-1:]
       content = cb[line:end_line]
       content.insert(0, rest)
   else:
