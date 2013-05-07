@@ -1309,10 +1309,12 @@ let_binding:
     val_ident fun_binding
       { (mkpatvar $startpos $endpos $1, $2) }
   | val_ident COLON typevar_list DOT core_type EQUAL seq_expr
-      { (ghpat $startpos $endpos (Ppat_constraint(mkpatvar $startpos $endpos $1, ghtyp $startpos $endpos (Ptyp_poly($3,$5)))), $7) }
+    { (ghpat $startpos $endpos
+           (Ppat_constraint(mkpatvar $startpos($1) $endpos($1) $1,
+                            ghtyp $startpos($3) $endpos($5) (Ptyp_poly($3,$5)))), $7) }
   | val_ident COLON TYPE lident_list DOT core_type EQUAL seq_expr
-      { let exp, poly = wrap_type_annotation $startpos($1) $endpos($1) $4 $6 $8 in
-        (ghpat $startpos $endpos (Ppat_constraint(mkpatvar $startpos $endpos $1, poly)), exp) }
+      { let exp, poly = wrap_type_annotation $startpos($4) $endpos($8) $4 $6 $8 in
+        (ghpat $startpos $endpos (Ppat_constraint(mkpatvar $startpos($1) $endpos($1) $1, poly)), exp) }
   | pattern EQUAL seq_expr
       { ($1, $3) }
 ;
