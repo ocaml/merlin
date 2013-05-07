@@ -179,18 +179,23 @@ def sync_buffer_to(to_line, to_col):
 
   if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
     line, col = saved_sync.pos()
-    line, col = command_seek_before(line, col)
-    if line <= 1:
-      command_reset(name=os.path.basename(cb.name))
-      content = cb[:end_line]
+    line, col = command_seek_before(line, 0)
+    if line <= end_line:
+      if line <= 1:
+        command_reset(name=os.path.basename(cb.name))
+        content = cb[:end_line]
+      else:
+        rest    = cb[line-1][col:]
+        content = cb[line:end_line]
+        content.insert(0, rest)
+      saved_sync = curr_sync
     else:
-      rest    = cb[line-1][col-1:]
-      content = cb[line:end_line]
-      content.insert(0, rest)
+      content = None
   else:
     command_reset(name=os.path.basename(cb.name))
     content = cb[:end_line]
-  saved_sync = curr_sync
+    saved_sync = curr_sync
+
   # Send content
   if content:
     kind = "struct"
@@ -202,7 +207,6 @@ def sync_buffer_to(to_line, to_col):
         end_line = next_end
       else:
         content = None
-    last_line = end_line + 1
   # Now we are synced, come back to environment around cursor
   command_seek_exact(to_line, to_col)
 
