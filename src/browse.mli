@@ -8,6 +8,7 @@
 type context =
   | Type      of Types.type_declaration
   | Expr      of Types.type_expr
+  | Pattern of Types.type_expr
   | Module    of Types.module_type
   | Modtype   of Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration

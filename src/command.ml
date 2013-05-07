@@ -142,6 +142,7 @@ let command_type = {
     begin match kind with
       | Browse.Other -> raise Not_found
       | Browse.Expr e -> Printtyp.type_scheme ppf e
+      | Browse.Pattern e -> Printtyp.type_scheme ppf e
       | Browse.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
       | Browse.Module m -> Printtyp.modtype ppf m
       | Browse.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
@@ -154,7 +155,7 @@ let command_type = {
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
     let aux = function
-      | { Browse. loc ; context = Browse.Expr e } ->
+      | { Browse. loc ; context = (Browse.Expr e | Browse.Pattern e) } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.type_scheme ppf e;
         Some (Protocol.with_location loc ["type", `String (to_string ())])

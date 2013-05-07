@@ -130,6 +130,7 @@ let rec dump_ts ts =
     let kind = match context with
       | Browse.Type _ -> "type"
       | Browse.Expr _ -> "expr"
+      | Browse.Pattern _ -> "pattern"
       | Browse.Module _ -> "module"
       | Browse.Modtype _ -> "modtype"
       | Browse.Class (_, _) -> "class"

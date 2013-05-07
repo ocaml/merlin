@@ -3,6 +3,7 @@ open Typedtree
 type context =
   | Type of Types.type_declaration
   | Expr of Types.type_expr
+  | Pattern of Types.type_expr
   | Module of Types.module_type
   | Modtype of Types.modtype_declaration
   | Class of Ident.t * Types.class_declaration
@@ -20,8 +21,8 @@ type t = {
 let dummy = { loc = Location.none ; env = Env.empty ;
               context = Other; nodes = lazy [] }
 
-let singleton ?(context=Other) loc env = 
-  { loc ; env ; context ; nodes = lazy [] }
+let singleton ?(context=Other) ?(nodes=lazy []) loc env = 
+  { loc ; env ; context ; nodes }
 
 let rec structure { str_final_env ; str_items } =
   List.map (structure_item ~env:str_final_env) str_items
@@ -32,7 +33,7 @@ and structure_item ~env { str_desc ; str_loc ; str_env } =
 
 and structure_item_desc ~env = function
   | Tstr_eval e            -> [expression e]
-  | Tstr_value (_,pes)     -> patterns ~env:env pes
+  | Tstr_value (_,pes)     -> patterns ~env pes
   | Tstr_primitive (_,l,_)
   | Tstr_exception (_,l,_) -> [singleton l.Location.loc env]
   | Tstr_module (_,_,m)    -> [module_expr m]
@@ -82,20 +83,27 @@ and class_field ~env { cf_desc ; cf_loc } =
     end
   | _ -> None
 
-and patterns ?expr ?env pes = List.fold_left
+and patterns ?env pes = List.fold_left
   begin fun ls (p,e) ->
-    let l =
-      singleton ~context:(Expr p.pat_type) p.pat_loc
-        (match env with Some p -> p | _ -> e.exp_env)
-    in
+    let l = pattern ?env p in
     l :: expression e :: ls
   end [] pes
 
-and pattern expr env { pat_loc } =
-  singleton ~context:(Expr expr.exp_type) pat_loc env
+and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
+  let subpatterns = match pat_desc with
+    | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> []
+    | Tpat_alias (p,_,_) | Tpat_lazy p | Tpat_variant (_,Some p,_) -> [p]
+    | Tpat_array ps | Tpat_tuple ps | Tpat_construct (_,_,_,ps,_) -> ps
+    | Tpat_or (p1,p2,_) -> [p1;p2]
+    | Tpat_record (r,_) -> List.map (fun (_,_,_,p) -> p) r
+  in
+  singleton 
+    ~context:(Pattern pat_type)
+    ~nodes:(lazy (List.map (pattern ?env) subpatterns)) pat_loc 
+    (match env with Some e' -> e' | _ -> pat_env)
 
 and expression_extra t = function
-  | (Texp_open (_,_,env),loc) -> { loc ; env ; context = Other ; nodes = lazy [t] }
+  | Texp_open (_,_,env),loc -> { loc ; env ; context = Other ; nodes = lazy [t] }
   | _ -> t
 
 and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
