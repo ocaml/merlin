@@ -141,12 +141,15 @@ let command_type = {
     let ppf, to_string = Misc.ppf_to_string () in
     begin match kind with
       | Browse.Other -> raise Not_found
-      | Browse.Expr e -> Printtyp.type_scheme ppf e
-      | Browse.Pattern e -> Printtyp.type_scheme ppf e
-      | Browse.Type t -> Printtyp.type_declaration (Ident.create "_") ppf t
+      | Browse.Expr t | Browse.Pattern t | Browse.Type t ->
+        Printtyp.type_scheme ppf t
+      | Browse.TypeDecl (ident, t) ->
+        Printtyp.type_declaration ident ppf t
       | Browse.Module m -> Printtyp.modtype ppf m
-      | Browse.Modtype m -> Printtyp.modtype_declaration (Ident.create "_") ppf m
-      | Browse.Class (ident, cd) -> Printtyp.class_declaration ident ppf cd
+      | Browse.Modtype (ident, m) ->
+        Printtyp.modtype_declaration ident ppf m
+      | Browse.Class (ident, cd) ->
+        Printtyp.class_declaration ident ppf cd
       | Browse.ClassType (ident, ctd) ->
         Printtyp.cltype_declaration ident ppf ctd
     end;
@@ -155,9 +158,14 @@ let command_type = {
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
     let aux = function
-      | { Browse. loc ; context = (Browse.Expr e | Browse.Pattern e) } ->
+      | { Browse. loc ;
+          context = (Browse.Expr t | Browse.Pattern t | Browse.Type t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
-        Printtyp.type_scheme ppf e;
+        Printtyp.type_scheme ppf t;
+        Some (Protocol.with_location loc ["type", `String (to_string ())])
+      | { Browse. loc ; context = Browse.TypeDecl (id,t) } ->
+        let ppf, to_string = Misc.ppf_to_string () in
+        Printtyp.type_declaration id ppf t;
         Some (Protocol.with_location loc ["type", `String (to_string ())])
       | _ -> None
     in

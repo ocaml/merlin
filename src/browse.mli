@@ -6,11 +6,12 @@
 
 (* Typedtree constructions recognized *)
 type context =
-  | Type      of Types.type_declaration
   | Expr      of Types.type_expr
-  | Pattern of Types.type_expr
+  | Pattern   of Types.type_expr
+  | Type      of Types.type_expr
+  | TypeDecl  of Ident.t * Types.type_declaration
   | Module    of Types.module_type
-  | Modtype   of Types.modtype_declaration
+  | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
   | ClassType of Ident.t * Types.class_type_declaration
   | Other

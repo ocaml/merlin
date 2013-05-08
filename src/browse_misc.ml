@@ -129,6 +129,7 @@ let rec dump_ts ts =
   let dump_t { Browse. loc ; context ; nodes = lazy nodes } =
     let kind = match context with
       | Browse.Type _ -> "type"
+      | Browse.TypeDecl _ -> "type_decl"
       | Browse.Expr _ -> "expr"
       | Browse.Pattern _ -> "pattern"
       | Browse.Module _ -> "module"

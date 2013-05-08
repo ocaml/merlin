@@ -1,12 +1,13 @@
 open Typedtree
 
 type context =
-  | Type of Types.type_declaration
-  | Expr of Types.type_expr
-  | Pattern of Types.type_expr
-  | Module of Types.module_type
-  | Modtype of Types.modtype_declaration
-  | Class of Ident.t * Types.class_declaration
+  | Expr      of Types.type_expr
+  | Pattern   of Types.type_expr
+  | Type      of Types.type_expr
+  | TypeDecl  of Ident.t * Types.type_declaration
+  | Module    of Types.module_type
+  | Modtype   of Ident.t * Types.modtype_declaration
+  | Class     of Ident.t * Types.class_declaration
   | ClassType of Ident.t * Types.class_type_declaration
   | Other
 
@@ -39,10 +40,7 @@ and structure_item_desc ~env = function
   | Tstr_module (_,_,m)    -> [module_expr m]
   | Tstr_recmodule ms      -> List.map (fun (_,_,_,m) -> module_expr m) ms
   | Tstr_type ilds ->
-    let aux (_,l,{typ_type}) =
-      singleton ~context:(Type typ_type)
-                l.Location.loc env
-    in
+    let aux (id,_,ty) = type_declaration ~env id ty in
     List.map aux ilds
   | Tstr_modtype (_,l,_)
   | Tstr_exn_rebind (_,l,_,_) -> [singleton l.Location.loc env]
@@ -54,6 +52,30 @@ and structure_item_desc ~env = function
         singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env)
       lst
   | Tstr_include (m,_) -> [module_expr m]
+
+and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest } =
+  let nodes = match typ_manifest with
+    | None -> None
+    | Some c -> Some (lazy [core_type c])
+  in
+  singleton 
+    ~context:(TypeDecl (id,typ_type))
+    ?nodes
+    typ_loc env
+
+and core_type { ctyp_env ; ctyp_loc ; ctyp_desc ; ctyp_type } =
+  let subtypes = match ctyp_desc with
+    | Ttyp_any | Ttyp_var _ -> []
+    | Ttyp_arrow (_,t1,t2) -> [t1;t2]
+    | Ttyp_tuple ts | Ttyp_constr (_,_,ts) | Ttyp_class (_,_,ts,_) -> ts
+    | Ttyp_alias (t,_) | Ttyp_poly (_,t) -> [t]
+    | Ttyp_package _ | Ttyp_object _ | Ttyp_variant _ ->
+      (*FIXME: case-by-case*) []
+  in
+  singleton 
+    ~context:(Type ctyp_type)
+    ~nodes:(lazy (List.map core_type subtypes))
+             ctyp_loc ctyp_env
 
 and class_declaration ~env (cd, _, _virtual_flag) =
   let context = Class (cd.ci_id_class, cd.ci_decl) in
@@ -102,12 +124,19 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
     ~nodes:(lazy (List.map (pattern ?env) subpatterns)) pat_loc 
     (match env with Some e' -> e' | _ -> pat_env)
 
-and expression_extra t = function
+and expression_extra ~env t = function
   | Texp_open (_,_,env),loc -> { loc ; env ; context = Other ; nodes = lazy [t] }
+  | Texp_constraint (c1,c2), loc ->
+    let cs = match c1,c2 with
+      | Some c1, Some c2 -> [c1;c2] | Some c, _ | _, Some c -> [c] | _ -> []
+    in
+    { loc ; env ; context = Other ; nodes = lazy (t :: List.map core_type cs) } 
+  | Texp_poly (Some c), loc ->
+    { loc ; env ; context = Other ; nodes = lazy [core_type c ; t] } 
   | _ -> t
 
 and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
-  List.fold_left expression_extra
+  List.fold_left (expression_extra ~env:exp_env)
     { loc = exp_loc ; env = exp_env ; context = Expr exp_type ;
       nodes = lazy (expression_desc exp_desc) }
     exp_extra

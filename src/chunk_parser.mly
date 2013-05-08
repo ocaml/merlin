@@ -862,7 +862,7 @@ concrete_method :
       { mkloc $4 (rhs_loc $startpos($4) $endpos($4)), $3, $2, ghexp $startpos $endpos (Pexp_poly($8,Some $6)) }
   | METHOD override_flag private_flag label COLON TYPE lident_list
     DOT core_type EQUAL seq_expr
-      { let exp, poly = wrap_type_annotation $startpos $endpos $7 $9 $11 in
+      { let exp, poly = wrap_type_annotation $startpos($6) $endpos($9) $7 $9 $11 in
         mkloc $4 (rhs_loc $startpos($4) $endpos($4)), $3, $2, ghexp $startpos $endpos (Pexp_poly(exp, Some poly)) }
 ;
 
@@ -1307,14 +1307,14 @@ lident_list:
 ;
 let_binding:
     val_ident fun_binding
-      { (mkpatvar $startpos $endpos $1, $2) }
+      { (mkpatvar $startpos($1) $endpos($1) $1, $2) }
   | val_ident COLON typevar_list DOT core_type EQUAL seq_expr
-    { (ghpat $startpos $endpos
+    { (ghpat $startpos($1) $endpos($5)
            (Ppat_constraint(mkpatvar $startpos($1) $endpos($1) $1,
                             ghtyp $startpos($3) $endpos($5) (Ptyp_poly($3,$5)))), $7) }
   | val_ident COLON TYPE lident_list DOT core_type EQUAL seq_expr
-      { let exp, poly = wrap_type_annotation $startpos($4) $endpos($8) $4 $6 $8 in
-        (ghpat $startpos $endpos (Ppat_constraint(mkpatvar $startpos($1) $endpos($1) $1, poly)), exp) }
+      { let exp, poly = wrap_type_annotation $startpos($3) $endpos($6) $4 $6 $8 in
+        (ghpat $startpos($1) $endpos($6) (Ppat_constraint(mkpatvar $startpos($1) $endpos($1) $1, poly)), exp) }
   | pattern EQUAL seq_expr
       { ($1, $3) }
 ;
