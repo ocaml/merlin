@@ -114,6 +114,7 @@ let sync chunks t =
               | Some result -> result
               | None -> value t
           in
-          History.(insert (Sync.at chunks', (env, trees, type_errs @ exns'))) t
+          aux chunks'
+            (History.(insert (Sync.at chunks', (env, trees, type_errs @ exns'))) t)
   in
   aux chunks t
