@@ -215,6 +215,7 @@ function! merlin#Register()
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags call merlin#AddFlags(<f-args>)
   command! -buffer -nargs=0 ClearFlags call merlin#ClearFlags()
   command! -buffer -nargs=0 LoadProject call merlin#LoadProject()
+  command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
   setlocal omnifunc=merlin#Complete
   map <buffer> <LocalLeader>t :TypeEnclosing<return>
@@ -234,6 +235,16 @@ function! merlin#EchoDotMerlin()
   else
     echo "No .merlin found"
   endif
+endfunction
+
+function! merlin#GotoDotMerlin()
+    if exists("b:dotmerlin")
+        execute ":e" . b:dotmerlin
+    " TODO : it's plausible to create an empty one here instead by guessing
+    " where it should be located
+    else
+        echo "No .merlin found"
+    endif
 endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList ML call merlin#FindFile("ml",<f-args>)
