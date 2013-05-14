@@ -55,14 +55,24 @@ let sync_step outline tokens t =
         Misc.Inr (Module_opening (pstr_loc, s, m))
       | _ -> assert false
     end
-  | Outline_utils.Definition ->
-    (* run structure_item parser on tokens, appending EOF *)
-    let lexer = History.wrap_lexer (ref (History.of_list tokens))
-        (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-    in
-    let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
-    let defs = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-    Misc.Inr (Definitions defs)
+  | Outline_utils.Definition | Outline_utils.Syntax_error _ ->
+    let buf = Lexing.from_string "" in
+    begin try
+        (* run structure_item parser on tokens, appending EOF *)
+        let lexer = History.wrap_lexer (ref (History.of_list tokens))
+            (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
+        in
+        let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
+        let defs = Chunk_parser.top_structure_item lexer buf in
+        Misc.Inr (Definitions defs)
+      with Chunk_parser.Error ->
+        raise Syntaxerr.(
+            Error (Other { Location.  
+                           loc_start = buf.Lexing.lex_start_p;
+                           loc_end = buf.Lexing.lex_curr_p;
+                           loc_ghost = false
+                         }))
+    end
 
   | Outline_utils.Done
   | Outline_utils.Unterminated
@@ -115,17 +125,6 @@ let sync_step outline tokens t =
         } loc,
         History.offset t
       ))
-  | Outline_utils.Syntax_error _loc ->
-    (* Like Definition, but catch unhandler syntax errors, appending EOF *)
-    try
-      let lexer = History.wrap_lexer (ref (History.of_list tokens))
-          (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-      in
-      let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
-      let def = Chunk_parser.top_structure_item lexer (Lexing.from_string "") in
-      Misc.Inr (Definitions def)
-    with _ ->
-      Misc.Inl outline
 
 let exns h = match History.prev h with
   | Some (_, (exns,_)) -> exns
