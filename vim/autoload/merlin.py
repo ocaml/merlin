@@ -85,27 +85,27 @@ def try_print_error(e, msg=None):
   try:
     raise e
   except Error as e:
-    if msg: print(msg)
+    if msg: sys.stderr.write(msg)
     else:
-      print(e.value['message'])
+      sys.stderr.write(e.value['message'])
   except Exception as e:
-    if msg: print(msg)
+    if msg: sys.stderr.write(msg)
     else:
       msg = str(e)
       if re.search('Chunk_parser.Error',msg):
-        print ("error: Cannot parse")
+        sys.stderr.write ("error: Cannot parse")
         return None
       elif re.search('Not_found',msg):
-        print ("error: Not found")
+        sys.stderr.write ("error: Not found")
         return None
       m = re.search('Fl_package_base.No_such_package\("(([^"]|\\")*)", "(([^"]|\\")*)"\)',msg)
       if m:
         if m.group(3) != "":
-          print ("error: Unknown package '%s' (%s)" % (m.group(1), m.group(3)))
+          sys.stderr.write ("error: Unknown package '%s' (%s)" % (m.group(1), m.group(3)))
         else:
-          print ("error: Unknown package '%s'" % m.group(1))
+          sys.stderr.write ("error: Unknown package '%s'" % m.group(1))
         return None
-      print(msg)
+      sys.stderr.write(msg)
 
 def catch_and_print(f, msg=None):
   try:
@@ -429,23 +429,7 @@ def vim_selectphrase(l1,c1,l2,c2):
 def load_project(directory,maxdepth=3):
   fname = os.path.join(directory,".merlin") 
   if os.path.exists(fname):
-    #with open(fname,"r") as f:
-    #  for line in f:
-    #    split = line.split(None,1)
-    #    if split != []:
-    #      command = split[0]
-    #      tail = split[1]
-    #      if command and command[0] == '#':
-    #        continue
-    #      if tail != "":
-    #        tail = os.path.join(directory,tail)
-    #      if command == "S":
-    #        send_command("path","add","source",tail.strip())
-    #      elif command == "B":
-    #        send_command("path","add","build",tail.strip())
-    #      elif command == "PKG":
-    #        catch_and_print(lambda: command_find_use(*split[1].split()))
-    send_command("project","load",fname)
+    catch_and_print(lambda: send_command("project","load",fname))
     vim.command('let b:dotmerlin="%s"' % fname)
     command_reset()
   elif maxdepth > 0:
