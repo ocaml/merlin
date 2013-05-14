@@ -1,0 +1,7 @@
+["return",{"line":1,"col":0}]
+["return",false]
+["return",true]
+["return",{"line":19,"col":11}]
+["return",true]
+["return",{"line":19,"col":11}]
+["return",[{"type":"type","start":{"line":19,"col":10},"end":{"line":19,"col":11},"valid":true,"message":"This expression has type int but an expression was expected of type unit"}]]

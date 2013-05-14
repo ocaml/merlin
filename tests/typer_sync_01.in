@@ -1,0 +1,7 @@
+["reset","name","test.ml"]
+["tell","struct","let f () = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\nlet _ = ()\n    \nlet _ = f 5\n"]
+["tell","end",null]
+["seek","exact",{"line":19,"col":0}]
+["refresh"]
+["seek","exact",{"line":19,"col":0}]
+["errors"]
