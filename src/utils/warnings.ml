@@ -149,6 +149,8 @@ let error = Array.create (last_warning_number + 1) false;;
 
 let is_active x = active.(number x);;
 let is_error x = error.(number x);;
+let set_active x v = active.(number x) <- v;;
+let set_error x v = error.(number x) <- v;;
 
 let parse_opt flags s =
   let set i = flags.(i) <- true in

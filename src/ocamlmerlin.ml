@@ -244,6 +244,7 @@ let init_path () =
   Env.reset_cache ()
 
 let main () =
+  Warnings.set_active Warnings.Unused_argument false;
   Arg.parse Options.list unexpected_argument "TODO";
   init_path ();
   set_default_path ();
