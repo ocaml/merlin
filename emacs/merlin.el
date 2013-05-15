@@ -599,6 +599,7 @@ merlin and the argument
 
 The parameter `view-errors-p' controls whether we should care for errors"
   (merlin-delete-error-overlays)
+  (setq merlin-pending-errors nil)
   (if (not (merlin-is-last-user-p))
       (merlin-rewind))
   (save-excursion
