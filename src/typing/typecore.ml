@@ -1482,6 +1482,7 @@ and type_expect ?in_function env sexp ty_expected =
     type_expect' ?in_function env sexp ty_expected
   with (Typetexp.Error _ | Error _) as exn ->
     Types.raise_error exn;
+    Types.erroneous_type_register ty_expected;
     let loc = sexp.pexp_loc in
     {
       exp_desc = Texp_ident
@@ -1508,6 +1509,7 @@ and type_expect' ?in_function env sexp ty_expected =
       unify_exp env exp (instance env ty_expected);
       exp
     with (Typetexp.Error _ | Error _) as exn ->
+      Types.erroneous_type_register ty_expected;
       Types.raise_error exn;
       {
         (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
@@ -2537,7 +2539,8 @@ and type_application env funct sargs =
                     false
                 | _ -> true
               in
-              if ty_fun.level >= t1.level && not_identity funct.exp_desc then
+              if ty_fun.level >= t1.level && not_identity funct.exp_desc
+                 && not (Types.erroneous_type_check ty_fun) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
