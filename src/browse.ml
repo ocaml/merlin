@@ -9,6 +9,7 @@ type context =
   | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
   | ClassType of Ident.t * Types.class_type_declaration
+  | Method    of Types.type_expr * string
   | Other
 
 (* Typedtree navigation made easy *)
@@ -158,10 +159,16 @@ and expression_desc = function
   | Texp_record (pldes,Some e) -> expression e :: List.map (fun (_,_,_,e) -> expression e) pldes
   | Texp_record (pldes,None) -> List.map (fun (_,_,_,e) -> expression e) pldes
   | Texp_array es -> List.map expression es
+  | Texp_send (ea, m, eb') ->
+    let tail = match eb' with None -> [] | Some eb -> [expression eb] in
+    let m = meth ea m ea.exp_loc.Location.loc_end
+       (match eb' with None -> { Lexing. dummy_pos with Lexing.pos_lnum = max_int}
+                     | Some eb -> eb.exp_loc.Location.loc_start )
+    in
+    expression ea :: m :: tail
   | Texp_assert ea
   | Texp_lazy ea
   | Texp_setinstvar (_,_,_,ea)
-  | Texp_send (ea, _, None)
   | Texp_field (ea,_,_,_) -> [expression ea]
   | Texp_ifthenelse (ea,eb,None)
   | Texp_setfield (ea,_,_,_,eb)
@@ -190,6 +197,15 @@ and module_expr_desc = function
   | Tmod_functor (_,_,_,e) -> [module_expr e]
   | Tmod_apply (e1,e2,_) -> [module_expr e1 ; module_expr e2]
   | Tmod_unpack (e,_) -> [expression e]
+
+and meth obj name loc_start loc_end =
+  let name = match name with
+    | Typedtree.Tmeth_name s -> s
+    | Typedtree.Tmeth_val i -> Ident.name i
+  in
+  singleton ~context:(Method (obj.exp_type,name))
+    { Location. loc_start ; loc_end ; loc_ghost = false }
+    obj.exp_env
 
 let local_near pos nodes =
   let cmp = Location.compare_pos pos in

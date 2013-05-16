@@ -1262,6 +1262,8 @@ simple_expr:
       { mkexp $startpos $endpos (Pexp_override []) }
   | simple_expr SHARP label
       { mkexp $startpos $endpos (Pexp_send($1, $3)) }
+  | simple_expr SHARP error
+      { mkexp $startpos $endpos (Pexp_send($1, "")) }
   | LPAREN MODULE module_expr RPAREN
       { mkexp $startpos $endpos  (Pexp_pack $3) }
   | LPAREN MODULE module_expr COLON package_type RPAREN

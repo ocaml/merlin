@@ -152,6 +152,8 @@ let command_type = {
         Printtyp.class_declaration ident ppf cd
       | Browse.ClassType (ident, ctd) ->
         Printtyp.cltype_declaration ident ppf ctd
+      | Browse.Method (ident, m) ->
+        Format.pp_print_string ppf "FIXME: METHOD CALL"
     end;
     state, Protocol.with_location loc ["type", `String (to_string ())]
 
