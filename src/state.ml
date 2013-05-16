@@ -106,6 +106,44 @@ let rec mod_smallerthan n m =
       | Some n2 -> Some (n1 + n2)
     end
 
+(* List methods of an object.
+ * Code taken from [uTop](https://github.com/diml/utop
+ * with permission from Jeremie Dimino. *)
+let lookup_env f x env =
+  try Some (f x env)
+  with Not_found | Env.Error _ -> None
+
+let rec find_method env meth type_expr =
+  let open Types in
+  match type_expr.desc with
+  | Tfield (name, _, ty, _) when name = meth -> Some ty
+  | Tobject (type_expr, _) | Tpoly (type_expr, _)
+  | Tlink type_expr | Tfield (_, _, _, type_expr) ->
+    find_method env meth type_expr
+  | Tconstr (path, _, _) -> begin
+      match lookup_env Env.find_type path env with
+      | None | Some { type_manifest = None } -> None
+      | Some { type_manifest = Some type_expr } ->
+        find_method env meth type_expr
+    end
+  | _ -> None
+
+let rec methods_of_type env ?(acc=[]) type_expr =
+  let open Types in
+  match type_expr.desc with
+  | Tlink type_expr | Tobject (type_expr, _) | Tpoly (type_expr, _) ->
+    methods_of_type env ~acc type_expr
+  | Tfield (name, _, ty, rest) ->
+    methods_of_type env ~acc:((name,ty) :: acc) rest
+  | Tconstr (path, _, _) -> begin
+      match lookup_env Env.find_type path env with
+      | None | Some { type_manifest = None } -> acc
+      | Some { type_manifest = Some type_expr } ->
+        methods_of_type env ~acc type_expr
+    end
+  | _ -> acc
+
+(* Propose completion from a particular node *)
 let node_complete node prefix =
   let {Browse.env} = node in
   let fmt ~exact name path ty =
