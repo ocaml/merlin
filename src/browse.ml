@@ -137,54 +137,50 @@ and expression_extra ~env t = function
   | _ -> t
 
 and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
+  let expression_desc = function
+    | Texp_ident (_,_,_) -> []
+    | Texp_constant _ -> []
+    | Texp_let (_,pes,e) -> expression e :: patterns ~env:e.exp_env pes
+    | Texp_function (_,pes,_) -> patterns pes
+    | Texp_apply (e,leso) ->
+      let helper = function (_,Some e,_) -> Some (expression e) | _ -> None in
+      expression e :: Misc.list_filter_map helper leso
+    | Texp_match (e,pes,_) -> expression e :: patterns pes
+    | Texp_try (e,pes) -> expression e :: patterns pes
+    | Texp_tuple (es) -> List.map expression es
+    | Texp_construct (_,_,_,es,_) -> List.map expression es
+    | Texp_variant (_,Some e) -> [expression e]
+    | Texp_variant (_,None) -> []
+    | Texp_record (pldes,Some e) -> expression e :: List.map (fun (_,_,_,e) -> expression e) pldes
+    | Texp_record (pldes,None) -> List.map (fun (_,_,_,e) -> expression e) pldes
+    | Texp_array es -> List.map expression es
+    | Texp_send (ea, m, eb') ->
+      let tail = match eb' with None -> [] | Some eb -> [expression eb] in
+      let m = Location.(meth ea m ea.exp_loc.loc_end exp_loc.loc_end) in
+      expression ea :: m :: tail
+    | Texp_assert ea
+    | Texp_lazy ea
+    | Texp_setinstvar (_,_,_,ea)
+    | Texp_field (ea,_,_,_) -> [expression ea]
+    | Texp_ifthenelse (ea,eb,None)
+    | Texp_setfield (ea,_,_,_,eb)
+    | Texp_sequence (ea,eb)
+    | Texp_when (ea,eb)
+    | Texp_while (ea,eb) -> [expression ea ; expression eb]
+    | Texp_for (_,_,ea,eb,_,ec)
+    | Texp_ifthenelse (ea,eb,Some ec) -> List.map expression [ea;eb;ec]
+    | Texp_override (_,ples) -> List.map (fun (_,_,e) -> expression e) ples
+    | Texp_letmodule (_,_,m,e) -> [expression e ; module_expr m ]
+    | Texp_assertfalse -> []
+    | Texp_pack m -> [module_expr m]
+    | Texp_new _
+    | Texp_instvar _
+    | Texp_object _ -> []
+  in
   List.fold_left (expression_extra ~env:exp_env)
     { loc = exp_loc ; env = exp_env ; context = Expr exp_type ;
       nodes = lazy (expression_desc exp_desc) }
     exp_extra
-
-and expression_desc = function
-  | Texp_ident (_,_,_) -> []
-  | Texp_constant _ -> []
-  | Texp_let (_,pes,e) -> expression e :: patterns ~env:e.exp_env pes
-  | Texp_function (_,pes,_) -> patterns pes
-  | Texp_apply (e,leso) ->
-    let helper = function (_,Some e,_) -> Some (expression e) | _ -> None in
-    expression e :: Misc.list_filter_map helper leso
-  | Texp_match (e,pes,_) -> expression e :: patterns pes
-  | Texp_try (e,pes) -> expression e :: patterns pes
-  | Texp_tuple (es) -> List.map expression es
-  | Texp_construct (_,_,_,es,_) -> List.map expression es
-  | Texp_variant (_,Some e) -> [expression e]
-  | Texp_variant (_,None) -> []
-  | Texp_record (pldes,Some e) -> expression e :: List.map (fun (_,_,_,e) -> expression e) pldes
-  | Texp_record (pldes,None) -> List.map (fun (_,_,_,e) -> expression e) pldes
-  | Texp_array es -> List.map expression es
-  | Texp_send (ea, m, eb') ->
-    let tail = match eb' with None -> [] | Some eb -> [expression eb] in
-    let m = meth ea m ea.exp_loc.Location.loc_end
-       (match eb' with None -> { Lexing. dummy_pos with Lexing.pos_lnum = max_int}
-                     | Some eb -> eb.exp_loc.Location.loc_start )
-    in
-    expression ea :: m :: tail
-  | Texp_assert ea
-  | Texp_lazy ea
-  | Texp_setinstvar (_,_,_,ea)
-  | Texp_field (ea,_,_,_) -> [expression ea]
-  | Texp_ifthenelse (ea,eb,None)
-  | Texp_setfield (ea,_,_,_,eb)
-  | Texp_sequence (ea,eb)
-  | Texp_when (ea,eb)
-  | Texp_send (ea, _, Some eb)
-  | Texp_while (ea,eb) -> [expression ea ; expression eb]
-  | Texp_for (_,_,ea,eb,_,ec)
-  | Texp_ifthenelse (ea,eb,Some ec) -> List.map expression [ea;eb;ec]
-  | Texp_override (_,ples) -> List.map (fun (_,_,e) -> expression e) ples
-  | Texp_letmodule (_,_,m,e) -> [expression e ; module_expr m ]
-  | Texp_assertfalse -> []
-  | Texp_pack m -> [module_expr m]
-  | Texp_new _
-  | Texp_instvar _
-  | Texp_object _ -> []
 
 and module_expr { mod_env ; mod_desc ; mod_type ; mod_loc } =
   { loc = mod_loc ; env = mod_env ; context = Module mod_type ;
