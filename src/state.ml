@@ -183,29 +183,37 @@ let node_complete node prefix =
     else (Hashtbl.add seen n (); true)
   in
   let find ?path prefix compl =
-    let valid n = Misc.has_prefix prefix n && uniq n in
+    let valid tag n = Misc.has_prefix prefix n && uniq (tag,n) in
     (* Hack to prevent extensions namespace to leak *)
-    let valid name = name <> "_" && valid name in
+    let valid tag name = name <> "_" && valid tag name in
     let compl = [] in
     try
       let compl = Env.fold_values
         (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl else compl)
+          if valid `Value name
+          then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl 
+          else compl)
         path env compl
       in
       let compl = Env.fold_constructors
         (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl else compl)
+          if valid `Cons name 
+          then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl 
+          else compl)
         path env compl
       in
       let compl = Env.fold_types
         (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl else compl)
+          if valid `Typ name 
+          then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl 
+          else compl)
         path env compl
       in
       let compl = Env.fold_modules
         (fun name path v compl ->
-          if valid name then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl else compl)
+          if valid `Mod name 
+          then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl 
+          else compl)
         path env compl
       in
       compl
@@ -232,32 +240,48 @@ let node_complete node prefix =
         let path = keep_until_lowercase long_ident in
         Env.fold_labels
           (fun name path l compl ->
-            if valid name then (fmt ~exact:(name = prefix) name path (`Label l)) :: compl else compl)
+            if valid `Label name then (fmt ~exact:(name = prefix) name path (`Label l)) :: compl else compl)
           path env compl
       end
   in
-  try
-    match Longident.parse prefix with
-    | Longident.Ldot (path,prefix) -> find ~path prefix []
-    | Longident.Lident prefix ->
-      (* Add modules on path but not loaded *)
-      let compl = find prefix [] in
-      begin match Misc.length_lessthan 30 compl with
-      | Some _ -> List.fold_left
-        begin fun compl modname ->
-        let default =
-          `Assoc ["name", `String modname ; "kind", `String "module"; "desc", `String "" ; "info", `String ""]
-        in match modname with
-        | modname when modname = prefix && uniq modname ->
-            (try let p, md = Env.lookup_module (Longident.Lident modname) env in
-              fmt ~exact:true modname p (`Mod md) :: compl
-            with Not_found -> default :: compl)
-        | modname when Misc.has_prefix prefix modname && uniq modname ->
-          default :: compl
-        | _ -> compl
-        end compl (Lazy.force !global_modules)
-      | None -> compl
-      end
-    | _ -> find prefix []
-  with Not_found -> []
+  match node.Browse.context with
+  | Browse.Method (t,_) ->
+    let has_prefix (name,_) = Misc.has_prefix prefix name in
+    let methods = List.filter has_prefix (methods_of_type env t) in
+    List.map (fun (name,ty) ->
+      let ppf, to_string = Misc.ppf_to_string () in
+      Printtyp.type_scheme ppf ty;
+      `Assoc ["name", `String name ; "kind", `String "#" ;
+              "desc", `String (to_string ()) ;
+              "info", `String ""])
+      methods
+  | _ ->
+    try
+      match Longident.parse prefix with
+      | Longident.Ldot (path,prefix) -> find ~path prefix []
+      | Longident.Lident prefix ->
+        (* Add modules on path but not loaded *)
+        let compl = find prefix [] in
+        begin match Misc.length_lessthan 30 compl with
+        | Some _ -> List.fold_left
+          begin fun compl modname ->
+          let default = `Assoc [
+              "name", `String modname;
+              "kind", `String "module";
+              "desc", `String "" ;
+              "info", `String ""
+            ] in 
+          match modname with
+          | modname when modname = prefix && uniq (`Mod,modname) ->
+              (try let p, md = Env.lookup_module (Longident.Lident modname) env in
+                fmt ~exact:true modname p (`Mod md) :: compl
+              with Not_found -> default :: compl)
+          | modname when Misc.has_prefix prefix modname && uniq (`Mod,modname) ->
+            default :: compl
+          | _ -> compl
+          end compl (Lazy.force !global_modules)
+        | None -> compl
+        end
+      | _ -> find prefix []
+    with Not_found -> []
 
