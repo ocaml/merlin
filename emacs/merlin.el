@@ -405,6 +405,8 @@ kill the process if required."
   (interactive)
   (merlin-send-command "reset" (list "name" buffer-file-name))
   (setq merlin-lock-point (point-min))
+  (merlin-delete-error-overlays)
+  (setq merlin-pending-errors nil)
   (merlin-update-lock-zone-display)
 )
 
