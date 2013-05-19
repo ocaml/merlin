@@ -9,7 +9,7 @@ type context =
   | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
   | ClassType of Ident.t * Types.class_type_declaration
-  | Method    of Types.type_expr * string
+  | MethodCall of Types.type_expr * string
   | Other
 
 (* Typedtree navigation made easy *)
@@ -199,7 +199,7 @@ and meth obj name loc_start loc_end =
     | Typedtree.Tmeth_name s -> s
     | Typedtree.Tmeth_val i -> Ident.name i
   in
-  singleton ~context:(Method (obj.exp_type,name))
+  singleton ~context:(MethodCall (obj.exp_type,name))
     { Location. loc_start ; loc_end ; loc_ghost = false }
     obj.exp_env
 

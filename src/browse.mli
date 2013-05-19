@@ -14,7 +14,7 @@ type context =
   | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
   | ClassType of Ident.t * Types.class_type_declaration
-  | Method    of Types.type_expr * string
+  | MethodCall of Types.type_expr * string
   | Other
 
 (* The browse tree; lazyness is added to prevent building the

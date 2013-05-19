@@ -245,7 +245,7 @@ let node_complete node prefix =
       end
   in
   match node.Browse.context with
-  | Browse.Method (t,_) ->
+  | Browse.MethodCall (t,_) ->
     let has_prefix (name,_) = Misc.has_prefix prefix name in
     let methods = List.filter has_prefix (methods_of_type env t) in
     List.map (fun (name,ty) ->

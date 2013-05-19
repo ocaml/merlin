@@ -134,12 +134,12 @@ let command_type = {
       (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
     in
-    let kind, loc = match Browse.nearest_before pos structures with
-      | Some { Browse. loc ; context } -> context, loc
+    let node = match Browse.nearest_before pos structures with
+      | Some node -> node
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
-    begin match kind with
+    begin match node.Browse.context with
       | Browse.Other -> raise Not_found
       | Browse.Expr t | Browse.Pattern t | Browse.Type t ->
         Printtyp.type_scheme ppf t
@@ -152,10 +152,13 @@ let command_type = {
         Printtyp.class_declaration ident ppf cd
       | Browse.ClassType (ident, ctd) ->
         Printtyp.cltype_declaration ident ppf ctd
-      | Browse.Method (ident, m) ->
-        Format.pp_print_string ppf "FIXME: METHOD CALL"
+      | Browse.MethodCall (obj, m) ->
+        match State.find_method node.Browse.env m obj with
+        | Some t -> Printtyp.type_scheme ppf t
+        | None -> Format.pp_print_string ppf "Unknown method"
     end;
-    state, Protocol.with_location loc ["type", `String (to_string ())]
+    state, Protocol.with_location node.Browse.loc
+      ["type", `String (to_string ())]
 
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
