@@ -173,9 +173,9 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_letmodule (_,_,m,e) -> [expression e ; module_expr m ]
     | Texp_assertfalse -> []
     | Texp_pack m -> [module_expr m]
+    | Texp_object (cls,_) -> class_structure ~env:exp_env cls
     | Texp_new _
-    | Texp_instvar _
-    | Texp_object _ -> []
+    | Texp_instvar _ -> [] (*FIXME*)
   in
   List.fold_left (expression_extra ~env:exp_env)
     { loc = exp_loc ; env = exp_env ; context = Expr exp_type ;
