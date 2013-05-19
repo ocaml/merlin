@@ -27,7 +27,7 @@ If you don't get any error in step above:
 Installing Merlin with opam
 ===========================
 
-Needed : [opam](http://opam.ocamlpro.com/doc/Advanced_Install.html),
+Needed: [opam](http://opam.ocamlpro.com/doc/Advanced_Install.html),
 OCaml 4.00.1 (can be installed via opam typing `opam switch 4.00.1`).
 
 Then, just do :
@@ -42,12 +42,12 @@ Makes sure that ocamlmerlin binary can be found in PATH.
 The only setup needed is to have the following directories in
 vim runtime path (append this to your .vimrc):
 
-  :set rtp+=$SHARE\_DIR/ocamlmerlin/vim
-  :set rtp+=$SHARE\_DIR/ocamlmerlin/vimbufsync
+    :set rtp+=$SHARE\_DIR/ocamlmerlin/vim
+    :set rtp+=$SHARE\_DIR/ocamlmerlin/vimbufsync
 
-Then take a look at:  
-  $SHARE\_DIR/ocamlmerlin/vim/plugin/merlin.vim  
-for a sample configuration. You can modify it according to your needs.
+The default configuration can be seen in:  
+
+    $SHARE\_DIR/ocamlmerlin/vim/plugin/merlin.vim  
 
 Now you may be interested by *Features and interaction with other plugins*,
 *Merlin project* and *Extensions* sections.
@@ -87,8 +87,8 @@ Misc: description of plugin's files
                       -- set g:syntastic_ocaml_checkers = ['merlin']  
                       --  or g:syntastic_omlet_checkers = ['merlin']
 
-- $SHARE\_DIR/ocamlmerlin/vimbufsync
-  library needed by merlin vim mode to keep buffer synchronized
+- $SHARE\_DIR/ocamlmerlin/vimbufsync  
+              -- library needed by merlin vim mode to keep buffer synchronized
 
 
 Emacs interface
@@ -159,7 +159,7 @@ Moreover, you have regular auto-completion (M-TAB by default) using
 completion-at-point. There is auto-complete integration you can enable
 by setting merlin-use-auto-complete-mode to t:
 
-  (setq merlin-use-auto-complete-mode t)
+    (setq merlin-use-auto-complete-mode t)
 
 Merlin project
 ==============
