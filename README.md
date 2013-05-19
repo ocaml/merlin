@@ -42,12 +42,12 @@ Makes sure that ocamlmerlin binary can be found in PATH.
 The only setup needed is to have the following directories in
 vim runtime path (append this to your .vimrc):
 
-    :set rtp+=$SHARE\_DIR/ocamlmerlin/vim
-    :set rtp+=$SHARE\_DIR/ocamlmerlin/vimbufsync
+    :set rtp+=$SHARE_DIR/ocamlmerlin/vim
+    :set rtp+=$SHARE_DIR/ocamlmerlin/vimbufsync
 
 The default configuration can be seen in:  
 
-    $SHARE\_DIR/ocamlmerlin/vim/plugin/merlin.vim  
+    $SHARE_DIR/ocamlmerlin/vim/plugin/merlin.vim  
 
 Now you may be interested by *Features and interaction with other plugins*,
 *Merlin project* and *Extensions* sections.
