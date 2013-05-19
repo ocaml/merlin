@@ -38,33 +38,28 @@ Setting-up vim
 ==============
 
 Makes sure that ocamlmerlin binary can be found in PATH.
-After installation, you can find the vim mode files in:  
-  $SHARE\_DIR/ocamlmerlin/vim
 
-The vim subdirectory can be used as a pathogen bundle or directly added to vim
-RUNTIME PATH. For instance using runtime path, add this to your .vimrc:
+The only setup needed is to have the following directories in
+vim runtime path (append this to your .vimrc):
+
   :set rtp+=$SHARE\_DIR/ocamlmerlin/vim
+  :set rtp+=$SHARE\_DIR/ocamlmerlin/vimbufsync
 
 Then take a look at:  
   $SHARE\_DIR/ocamlmerlin/vim/plugin/merlin.vim  
-for a sample configuration. Modify it according to your needs.
+for a sample configuration. You can modify it according to your needs.
 
-Files:
+Now you may be interested by *Features and interaction with other plugins*,
+*Merlin project* and *Extensions* sections.
 
-- plugin/merlin.vim -- sample configuration
-- autoload/
-  - merlin.vim   -- main vim script
-  - merlin.py    -- helper script needed by merlin.vim
-                    (has to be in the same directory)
-- syntax\_checkers/  
-                    -- integration with syntastic (ocaml or omlet)  
-                    -- set g:syntastic_ocaml_checkers = ['merlin']  
-                    --  or g:syntastic_omlet_checkers = ['merlin']
+Using Vundle
+------------
 
 Alternatively you can install vim support using [Vundle](https://github.com/gmarik/vundle).
 Add the following to your .vimrc
 
     Bundle 'def-lkb/merlin', {'rtp' : 'vim/'}
+    Bundle 'def-lkb/vimbufsync'
 
 Features and interaction with other plugins
 --------------------------------------------
@@ -74,10 +69,27 @@ Omnicompletion should be available out-of-box.
 The documentation is accessible through `:h merlin.txt` and should provide all
 the necessary information on how to set-up merlin with other plugins (
 [Supertab](https://github.com/ervandew/supertab), 
-[neocomplcache](https://github.com/Shougo/neocomplcache)).
+[neocomplcache](https://github.com/Shougo/neocomplcache),
+[syntastic](https://github.com/scrooloose/syntastic)).
 It also lists, and explain, all the available commands.
 
-Now you may be interested by *Merlin project* and *Extensions* sections.
+Misc: description of plugin's files
+-----------------------------------
+
+- $SHARE\_DIR/ocamlmerlin/vim -- main vim plugin directory
+  - plugin/merlin.vim -- sample configuration
+  - autoload/
+    - merlin.vim   -- main vim script
+    - merlin.py    -- helper script needed by merlin.vim
+                      (has to be in the same directory)
+  - syntax\_checkers/  
+                      -- integration with syntastic (ocaml or omlet)  
+                      -- set g:syntastic_ocaml_checkers = ['merlin']  
+                      --  or g:syntastic_omlet_checkers = ['merlin']
+
+- $SHARE\_DIR/ocamlmerlin/vimbufsync
+  library needed by merlin vim mode to keep buffer synchronized
+
 
 Emacs interface
 ===============
