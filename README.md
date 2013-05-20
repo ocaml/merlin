@@ -24,6 +24,14 @@ If you don't get any error in step above:
 
     $ make install 
 
+Installation from git
+---------------------
+
+Don't forget to checkout submodules after pulling/cloning:
+
+    $ git submodule init
+    $ git submodule update
+
 Installing Merlin with opam
 ===========================
 
