@@ -38,20 +38,22 @@ install: $(TARGET)
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	cp -R vim/merlin/* $(SHARE_DIR)/ocamlmerlin/vim/
 	cp -R vim/vimbufsync/* $(SHARE_DIR)/ocamlmerlin/vimbufsync/
-	@echo
-	@echo 
-	@echo "Quick setup for VIM"
-	@echo "-------------------"
-	@echo "Add $(SHARE_DIR)/ocamlmerlin/vim and vimbufsync to your runtime path, e.g.:"
-	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vim"
-	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vimbufsync"
-	@echo 
-	@echo "Quick setup for EMACS"
-	@echo "-------------------"
-	@echo "Add $(SHARE_DIR)/emacs/site-lisp to your runtime path, e.g.:"
-	@echo '  (add-to-list '"'"'load-path "$(SHARE_DIR)/emacs/site-lisp")'
-	@echo '  (require '"'"'merlin)'
-	@echo 'Then issue M-x merlin-mode in a ML buffer.'
+	@echo >&2 
+	@echo >&2 "Quick setup for VIM"
+	@echo >&2 "-------------------"
+	@echo >&2 "Add $(SHARE_DIR)/ocamlmerlin/vim and vimbufsync to your runtime path, e.g.:"
+	@echo >&2 "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vim"
+	@echo >&2 "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vimbufsync"
+	@echo >&2 
+	@echo >&2 "Quick setup for EMACS"
+	@echo >&2 "-------------------"
+	@echo >&2 "Add $(SHARE_DIR)/emacs/site-lisp to your runtime path, e.g.:"
+	@echo >&2 '  (add-to-list '"'"'load-path "$(SHARE_DIR)/emacs/site-lisp")'
+	@echo >&2 '  (require '"'"'merlin)'
+	@echo >&2 'Then issue M-x merlin-mode in a ML buffer.'
+	@echo >&2
+	@echo >&2 'Take a look at https://github.com/def-lkb/merlin for more information.'
+	@echo >&2
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
