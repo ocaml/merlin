@@ -1,0 +1,117 @@
+*merlin.txt*	For Vim version 7.3 	Last change: 2013 March 30
+
+                                Merlin ~
+
+                Context sensitive completion for OCaml. ~
+
+==============================================================================
+COMMANDS                                                     *merlin-commands*
+
+:SourcePath [dir]                                                *:SourcePath*
+
+When dir is given add the directory to the list of directories where merlin
+looks for ml[i] files.
+
+If no argument is given, it will list those directories.
+
+:BuildPath [dir]                                                  *:BuildPath*
+
+Same as |:SourcePath| but for cmi files.
+
+:Use package [, package]*                                               *:Use*
+
+Loads findlib packages (with completion) by adjusting buildpath to find files
+from packages.
+
+Tab completion on packages name is provided.
+
+:ML[I]                                                                   *:ML*
+
+Quick switch to a source (resp. interface) file.
+For instance, given moduleA.ml and moduleB.mli in source path, use: >
+    :ML ModuleA
+    :MLI ModuleB
+<
+
+:TypeEnclosing                                                *:TypeEnclosing*
+
+Highlights the expression under the cursor and prints its type.
+Use in conjunction with |:GrowEnclosing| and |:ShrinkEnclosing|.
+
+Bound to <LocalLeader>t by default in normal mode.
+
+:TypeOfSel                                                        *:TypeOfSel*
+
+In visual mode, returns the type of the selected expression.
+
+Bound to <LocalLeader>t by default in visual mode.
+
+:TypeOf                                                              *:TypeOf*
+
+Returns the type of the ident under the cursor.
+
+:GrowEnclosing                                                *:GrowEnclosing*
+
+When |:TypeEnclosing| has been called, select the smallest expression
+containing the previously highlighted expression.
+
+:ShrinkEnclosing                                            *:ShrinkEnclosing*
+
+When |:GrowEnclosing| has been called, revert to the previously selected
+expression. (i.e. the largest expression, centered around the position where
+|:TypeEnclosing| was called, which is contained in the currently highlighted
+expression).
+
+==============================================================================
+OPTIONS                                                       *merlin-options*
+
+
+                                                    *'merlin_ignore_warnings'*
+Default: false.
+If you are using syntastic and don't want warnings notified, set the following
+variable to {"true"} >
+  let g:merlin_ignore_warnings = "false"
+<
+
+                                                         *merlin_highlighting*
+
+The |:TypeEnclosing| commands highlights the expression under the cursor, the
+related match group is {EnclosingExpr}. You can customize the highlighting
+with the |:highlight| command, e.g. >
+    hi EnclosingExpr ctermbg=17 guibg=LightGreen
+<
+
+==============================================================================
+EXTRAS                                                         *merlin-extras*
+
+Syntastic ~
+
+To use merlin with syntastic set the following option: >
+    let g:syntastic_ocaml_checkers=['merlin']
+<
+
+Neocomplcache ~
+
+Integration with [neocomplcache](https://github.com/Shougo/neocomplcache) 
+for automatic completion can be enabled with: >
+
+    if !exists('g:neocomplcache_force_omni_patterns')
+      let g:neocomplcache_force_omni_patterns = {}
+    endif
+    let g:neocomplcache_force_omni_patterns.ocaml = '[^. *\t]\.\w*\|\h\w*|#'
+<
+
+Supertab ~
+
+People using Supertab can do: >
+    au FileType ocaml call SuperTabSetDefaultCompletionType("<c-x><c-o>")
+<
+
+As suggested in the Supertab documentation.
+
+Contact us ~
+
+If you have any comment, question or bug to report, you can contact us through
+github : https://github.com/def-lkb/merlin/issues
+
+ vim:tw=78:et:ft=help:norl:

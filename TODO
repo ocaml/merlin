@@ -7,11 +7,12 @@ DONE Configure script: check for packages
 DONE Traverse parse tree to find node nearest to a given location
 DONE Editor integration : allow to retrieve definition boundary to improve synchronisation
 DONE Fix pretty printing of type variables
-WIP Rework handling of errors and warnings: generalize use of "catch" pattern
-WIP (in type-error branch) Hack typer: give type (forall a. a) to unbound values and ill-typed expressions
+DONE Rework handling of errors and warnings: generalize use of "catch" pattern
+DONE (in type-error branch) Hack typer: give type (forall a. a) to unbound values and ill-typed expressions
+- Prevent recording of type information (see Typecore.type_expect')
 - Write documentation:
   - External API
-  - VIM mode
+  DONE VIM mode
   - EMACS mode ?
   - Internal design
 - Move path management to a dedicated module

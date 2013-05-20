@@ -75,7 +75,7 @@ if [ -d "$STDLIB_DIR" ]; then
 BIN_DIR=$BIN_DIR
 SHARE_DIR=$SHARE_DIR
 END
-  cat >myocamlbuild_config.ml <<END
+  cat >src/myocamlbuild_config.ml <<END
 let libdir = "$STDLIB_DIR";;
 END
   if [ "$EXIT" -eq 0 ]; then

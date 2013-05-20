@@ -2,4 +2,4 @@ true: use_menhir, use_menhir_table
 
 true: package(menhirLib), package(yojson), package(findlib)
 
-<outline_parser.*>: ext_tokens
+<src/outline_parser.*>: ext_tokens

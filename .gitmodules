@@ -1,0 +1,3 @@
+[submodule "vim/vimbufsync"]
+	path = vim/vimbufsync
+	url = git://github.com/def-lkb/vimbufsync.git

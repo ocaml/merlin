@@ -27,7 +27,7 @@ If you don't get any error in step above:
 Installing Merlin with opam
 ===========================
 
-Needed : [opam](http://opam.ocamlpro.com/doc/Advanced_Install.html),
+Needed: [opam](http://opam.ocamlpro.com/doc/Advanced_Install.html),
 OCaml 4.00.1 (can be installed via opam typing `opam switch 4.00.1`).
 
 Then, just do :
@@ -38,87 +38,58 @@ Setting-up vim
 ==============
 
 Makes sure that ocamlmerlin binary can be found in PATH.
-After installation, you can find the vim mode files in:  
-  $SHARE\_DIR/ocamlmerlin/vim
 
-The vim subdirectory can be used as a pathogen bundle or directly added to vim
-RUNTIME PATH.
+The only setup needed is to have the following directories in
+vim runtime path (append this to your .vimrc):
 
-Then take a look at:  
-  $SHARE\_DIR/ocamlmerlin/vim/plugin/merlin.vim  
-for a sample configuration. Modify it according to your needs.
+    :set rtp+=$SHARE_DIR/ocamlmerlin/vim
+    :set rtp+=$SHARE_DIR/ocamlmerlin/vimbufsync
 
-Files:
-- plugin/merlin.vim -- plugin entry point, adjust it if needed
-- autoload/
-  - merlin.vim   -- main vim script
-  - merlin.py    -- helper script needed by merlin.vim
-                    (has to be in the same directory)
-- syntax\_checkers/  
-                    -- integration with syntastic (ocaml or omlet)  
-                    -- set g:syntastic_ocaml_checkers = ['merlin']  
-                    --  or g:syntastic_omlet_checkers = ['merlin']
+The default configuration can be seen in:  
+
+    $SHARE_DIR/ocamlmerlin/vim/plugin/merlin.vim  
+
+Now you may be interested by *Features and interaction with other plugins*,
+*Merlin project* and *Extensions* sections.
+
+Using Vundle
+------------
 
 Alternatively you can install vim support using [Vundle](https://github.com/gmarik/vundle).
 Add the following to your .vimrc
 
     Bundle 'def-lkb/merlin', {'rtp' : 'vim/'}
+    Bundle 'def-lkb/vimbufsync'
 
-Integration with [neocomplcache](https://github.com/Shougo/neocomplcache) 
-for automatic completion can be enabled with:
-
-    if !exists('g:neocomplcache_force_omni_patterns')
-      let g:neocomplcache_force_omni_patterns = {}
-    endif
-    let g:neocomplcache_force_omni_patterns.ocaml = '[^. *\t]\.\w*\|\h\w*|#'
-
-Features
---------
+Features and interaction with other plugins
+--------------------------------------------
 
 Omnicompletion should be available out-of-box.
-When editing an ml file, the following commands are available:
 
-**:SourcePath**  
-  List directories to look into to find ml/mli files
-  
-**:BuildPath**  
-  List directories to look into to find cmi files
+The documentation is accessible through `:h merlin.txt` and should provide all
+the necessary information on how to set-up merlin with other plugins (
+[Supertab](https://github.com/ervandew/supertab), 
+[neocomplcache](https://github.com/Shougo/neocomplcache),
+[syntastic](https://github.com/scrooloose/syntastic)).
+It also lists, and explain, all the available commands.
 
-**:SourcePath** \<p\> **:BuildPath** \<p\>  
-  Add directory to path
+Misc: description of plugin's files
+-----------------------------------
 
-**:Use**  
-  Load findlib packages (with completion) by adjusting buildpath to find
-  files from packages.
+- $SHARE\_DIR/ocamlmerlin/vim -- main vim plugin directory
+  - plugin/merlin.vim -- sample configuration
+  - autoload/
+    - merlin.vim   -- main vim script
+    - merlin.py    -- helper script needed by merlin.vim
+                      (has to be in the same directory)
+  - syntax\_checkers/  
+                      -- integration with syntastic (ocaml or omlet)  
+                      -- set g:syntastic_ocaml_checkers = ['merlin']  
+                      --  or g:syntastic_omlet_checkers = ['merlin']
 
-**:ML** **:MLI**  
-  Quick switch to a local source file (with completion).  
-  For instance, given moduleA.ml and moduleB.mli in source path, use:  
+- $SHARE\_DIR/ocamlmerlin/vimbufsync  
+              -- library needed by merlin vim mode to keep buffer synchronized
 
-      :ML ModuleA  
-      :MLI ModuleB
-
-**:TypeEnclosing**  
-  Return the type of the expression under the cursor.
-  See also: `:GrowEnclosing` and `:ShrinkEnclosing`
-
-**:TypeSel**  
-  In visual mode, return type of selected **expression**.
-
-**:GrowEnclosing**  
-  When `:TypeEnclosing` has been called, select the smallest expression
-  containing the previously highlighted expression.
-
-**:ShrinkEnclosing**  
-  When `:GrowEnclosing` has been called, revert to the previously selected
-  expression. (i.e. the largest expression, centered around the position where
-  `:TypeEnclosing` was called, which is contained in the currently highlighted
-  expression).
-
-By default, `:TypeEnclosing` (resp. `:TypeSel`) is bound to `<LocalLeader>t` in normal
-(resp. visual) mode.
-
-Now you may be interested by *Merlin project* and *Extensions* sections.
 
 Emacs interface
 ===============
@@ -131,14 +102,14 @@ To get it working you only to load the file `emacs/merlin.el' of the distributio
 If you installed through opam, a good thing to do is:
 
     
-    (add-to-list 'load-path ".opam/4.00.1/share/emacs/site-lisp/")
+    (add-to-list 'load-path "~/.opam/4.00.1/share/emacs/site-lisp/")
     (require 'merlin)
 
 
 To use it, you will need
 
 - json.el (available by package.el)  
-- auto-complete-mode (morally optional, available by package.el and the MELPA repository)
+- auto-complete-mode (optional, available by package.el and the MELPA repository)
 
 Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. If you want merlin to be started on every ML buffer issue:
 
@@ -184,29 +155,11 @@ should use a .merlin file
 - C-c d will print the definition of the type of the expression underpoint if
   any. If the type is compliated (eg. 'a -> 'a option) it will print the definition  of the codomain
 
-- C-c TAB will synchronize and completes expression under point.
+Moreover, you have regular auto-completion (M-TAB by default) using
+completion-at-point. There is auto-complete integration you can enable
+by setting merlin-use-auto-complete-mode to t:
 
-Moreover, you have autocompletion with merlin,
-and whenever you stay idle for one second you get the type of the ident under
-the point (modules are not displayed).
-
-Auto-completion
----------------
-
-If you have auto-complete-mode installed, merlin will use it to display
-completion. When you type the first three characters of an identifier it will
-show you the possible matches along with their types. You can then choose your
-match (or keep typing to refine) and then you should press RET to activate the match.
-If you find the types when completing noisy you can use
-
-(setq merlin-completion-types nil)
-
-in your .emacs
-
-Idle
-----
-By setting the variable merlin-idle-delay you can have the type of the expression under point displayed after doing nothing. The default timer is three seconds.
-
+    (setq merlin-use-auto-complete-mode t)
 
 Merlin project
 ==============
@@ -253,10 +206,3 @@ Screenshots
 
 - [vim](http://88.191.77.33/~rks/merlin/)
 - [emacs](http://kiwi.iuwt.fr/~asmanur/blog/merlin/)
-
-Contact
-=======
-
-If you want to discuss or closely follow merlin development, you can subscribe to the mailing-list.
-
-Merlin mailing-list : [https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-discuss](https://lists.ocamlcore.org/cgi-bin/listinfo/merlin-discuss).

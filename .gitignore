@@ -4,4 +4,4 @@ myocamlbuild_config.ml
 *.tar.gz
 *.native
 *.byte
-vim/autoload/merlin.pyc
+*.pyc
