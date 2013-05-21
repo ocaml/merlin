@@ -126,6 +126,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-buffer nil "Buffer for merlin input.")
 (defvar merlin-ready nil "If non-nil, the reception is done.")
 
+(defvar merlin-rewind-after-refresh t
+  "If non-nil, rewind the buffer after refresh")
+
 ; Errors related variables
 (defvar merlin-pending-errors nil
   "Pending errors.")
@@ -413,7 +416,11 @@ kill the process if required."
 (defun merlin-refresh ()
   "Refreshe merlin cmis."
   (interactive)
-  (merlin-send-command "refresh" nil))
+  (merlin-send-command "refresh" nil)
+  (when merlin-rewind-after-refresh
+    (merlin-rewind)))
+  
+
 
 (defun merlin-get-completion (ident)
   "Return the completion for ident IDENT."
