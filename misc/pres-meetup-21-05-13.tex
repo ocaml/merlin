@@ -1,0 +1,202 @@
+% Copyright 2013 Frederic Bour, all rights reserved
+\documentclass{beamer}
+
+\usepackage[french]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{default}
+\usepackage{tikz}
+
+\newcommand{\sectitle}{\frametitle{\insertsection}}
+
+\title{Merlin, un assistant pour OCaml}
+\author{Frédéric \bsc{Bour}}
+\date{\today}
+
+\usetheme{Warsaw}
+
+\AtBeginSection[] {
+  \begin{frame}[plain]
+    \frametitle{Plan}
+    \tableofcontents[currentsection]
+  \end{frame}
+  \addtocounter{framenumber}{-1}
+}
+
+\newcommand{\Simley}[1]{%
+\begin{tikzpicture}[scale=0.11]
+    \newcommand*{\SmileyRadius}{1.0}%
+    \draw [fill=brown!10] (0,0) circle (\SmileyRadius)% outside circle
+        %node [yshift=-0.22*\SmileyRadius cm] {\tiny #1}% uncomment this to see the smile factor
+        ;  
+
+    \pgfmathsetmacro{\eyeX}{0.5*\SmileyRadius*cos(30)}
+    \pgfmathsetmacro{\eyeY}{0.5*\SmileyRadius*sin(30)}
+    \draw [fill=cyan,draw=none] (\eyeX,\eyeY) circle (0.15cm);
+    \draw [fill=cyan,draw=none] (-\eyeX,\eyeY) circle (0.15cm);
+
+    \pgfmathsetmacro{\xScale}{2*\eyeX/180}
+    \pgfmathsetmacro{\yScale}{1.0*\eyeY}
+    \draw[color=red, domain=-\eyeX:\eyeX]   
+        plot ({\x},{
+            -0.1+#1*0.15 % shift the smiley as smile decreases
+            -#1*1.75*\yScale*(sin((\x+\eyeX)/\xScale))-\eyeY});
+\end{tikzpicture}%
+}%
+\newcommand{\smiley}{\Simley{0.5}}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% \begin{frame}{Table des matières}
+%   \tableofcontents
+% \end{frame}
+
+\section{Assistant intégré à l'éditeur}
+
+\subsection{Le toplevel standard}
+
+\begin{frame}
+  \sectitle
+
+  Solution actuelle : le toplevel.
+  \pause
+
+  \begin{itemize}
+    \item Effets de bord à l'évaluation
+      \pause
+    \item Phrases évaluées dans le désordre
+      \pause \\
+      (noms masqués, portée hasardeuse…)
+  \end{itemize}
+\end{frame}
+
+\subsection{Merlin}
+
+\begin{frame}
+  \sectitle
+
+  Ce qu'apporte Merlin.
+  \pause
+
+  \begin{itemize}
+    \item Un toplevel sans interprétation, seulement du typage.
+      \pause
+    \item Travail incrémental, dans l'ordre du document
+      (similaire à Proof-General).
+      \pause
+    \item Résilience aux erreurs de syntaxe et de type (expérimental).
+  \end{itemize}
+\end{frame}
+
+\section{Dans la pratique…}
+
+\subsection{Les avantages}
+
+\begin{frame}
+  \frametitle{Les avantages}
+
+  \begin{block}{Informations de typages}
+    \begin{itemize}
+      \item complétion au curseur, sensible à la portée courante
+        \pause
+      \item type des sous-expressions
+        \pause
+      \item nombreuses autres analyses possibles : les fondations sont là.
+        \pause
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Retour immédiat}
+    \begin{itemize}
+      \item annotation des erreurs directement dans l'éditeur
+        \pause
+      \item mais attention à ne pas se laisser distraire \smiley
+        \pause
+    \end{itemize}
+  \end{block}
+
+  Pas de mauvaise surprise : les règles de portée, typage, etc,
+  sont celles du compilateur.
+\end{frame}
+
+\subsection{Les limitations}
+
+\begin{frame}
+  \frametitle{Les limitations}
+  \begin{block}{Extensions de syntaxe}
+    \begin{itemize}
+      \item pas de prise en charge de Camlp4 !
+        \pause
+      \item mais support spécifique pour certaines extensions \\
+        (lwt, type-conv, …)
+        \pause
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Constructions difficiles à gérer}
+    \begin{itemize}
+      \item définitions récursives
+        \pause
+      \item modules de première classe, POO, etc.
+        \pause
+      \item[$\Rightarrow$] peu de retours sur ces constructions si le code n'est
+        pas valide
+    \end{itemize}
+  \end{block}
+
+\end{frame}
+
+\subsection{Fonctionnalités}
+
+\begin{frame}
+  \sectitle
+
+  Depuis Vim et Emacs :
+
+  \begin{itemize}
+    \item complétion,
+    \item typage,
+    \item annotation des erreurs,
+    \item intégration avec ocamlfind \\
+      {\small {\tt .merlin} pour les projets},
+    \item quelques extensions de syntaxe.
+  \end{itemize}
+
+\end{frame}
+
+\subsection{La suite}
+
+\begin{frame}
+  \frametitle{La suite}
+
+  Dans un futur plus ou moins proche :
+
+  \begin{itemize}
+    \item travail conséquent sur les erreurs de syntaxe,
+      \pause
+    \item coopération avec d'autres outils (e.g. spotter, ocamldoc),
+      \pause
+    \item plus d'extensions. \\
+      {\small js\_of\_ocaml dans une branche expérimentale}
+  \end{itemize}
+
+\end{frame}
+
+\section*{Démo}
+
+\begin{frame}
+ \sectitle
+ 
+ Merci pour votre attention. \\
+
+ Pour plus d'informations : {\tt http://github.com/def-lkb/merlin} \\
+
+ Et maintenant une petite démonstration…
+ 
+\end{frame}
+
+\end{document}
