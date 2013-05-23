@@ -913,15 +913,34 @@ it will print types of bigger expressions around point (it will go up the ast). 
    (list (completing-read "Package to use:" (merlin-get-packages))))
   (merlin-send-command "find" (list "use" pkg)))
 
-(defun merlin-feed-config-files ()
-  "Parse all .merlin file lying beneath the current directory in the file system."
+(defun merlin--project-load-file(file)
+  "Load a the merlin project file FILE."
+  (merlin-send-command "project" (list "load" file)))
+  
+(defun merlin--project-file-path()
+  "Return the project file closer to the current directory"
   (let ((dir (expand-file-name default-directory)))
-    (while (not (string-equal dir "/")) ;; FIXME: Might loop for ever
-      (when (file-exists-p (concat dir ".merlin"))
-        (merlin-send-command "project" (list "load" (concat dir ".merlin"))))
+    (while (and
+            (stringp dir)
+            (not (string-equal dir "/")) ;; FIXME: Might loop for ever
+            (not (file-exists-p (concat dir ".merlin"))))
       (setq dir (file-name-directory (directory-file-name dir))))
-    ))    
+    (concat dir ".merlin")))
 
+(defun merlin-reload-project-file ()
+  "(re)load the .merlin file corresponding to the current file."
+  (interactive)
+  (let ((file (merlin--project-file-path)))
+    (when file
+      (merlin-project--load-file file))))
+
+(defun merlin-goto-project-file ()
+  "Goto the merlin file corresponding to the current file."
+  (interactive)
+  (let ((file (merlin--project-file-path)))
+    (if file
+        (find-file-other-window file)
+      (message "No project file for the current buffer."))))
 ;; Idle 
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
@@ -1035,7 +1054,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-enclosing-offset) nil)
   (set (make-local-variable 'merlin-last-point-type) nil)
   (add-to-list 'after-change-functions 'merlin-edit)
-  (merlin-feed-config-files)
+  (merlin-reload-project-file)
   (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
       (setq merlin-idle-timer
             (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
