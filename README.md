@@ -99,6 +99,14 @@ Misc: description of plugin's files
               -- library needed by merlin vim mode to keep buffer synchronized
 
 
+Upgrading vim plugin from merlin 1.0
+------------------------------------
+
+Merlin plugin now relies on another vim helper called vimbufsync.
+If you installed from opam and/or archive, just make sure that vimbufsync is in vim runtime path:
+
+    :set rtp+=$SHARE_DIR/ocamlmerlin/vimbufsync
+
 Emacs interface
 ===============
 
