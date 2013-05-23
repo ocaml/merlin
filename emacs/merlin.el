@@ -736,6 +736,30 @@ variable `merlin-cache')."
     (complete-with-action action merlin--completion-annotation-table string pred)))
 
 
+;; Switch to ML file
+(defun merlin--list-by-ext (ext)
+  "Lists filenames ending by EXT in the path"
+  (append (merlin-get-return-field 
+           (merlin-send-command "which" (list "with_ext" ext)))
+          nil))
+
+(defun merlin--switch-to (name ext)
+  "Switch to NAME.EXT."
+  (let ((file
+         (merlin-get-return-field
+          (merlin-send-command "which" (list "path" (concat (downcase name) "." ext))))))
+    (if file (find-file-other-window file)
+      (message "No such file"))))
+(defun merlin-switch-to-ml (name)
+  "Switch to a ML file."
+  (interactive (list (completing-read "Module:" (merlin--list-by-ext "ml"))))
+  (merlin--switch-to name "ml"))
+
+(defun merlin-switch-to-mli (name)
+  "Switch to a MLI file."
+  (interactive (list (completing-read "Module:" (merlin--list-by-ext "mli"))))
+  (merlin--switch-to name "mli"))
+               
 ;; Get the type of an element
 
 (defun merlin-trim (s)
@@ -932,7 +956,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (interactive)
   (let ((file (merlin--project-file-path)))
     (when file
-      (merlin-project--load-file file))))
+      (merlin--project-load-file file))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
@@ -941,6 +965,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (if file
         (find-file-other-window file)
       (message "No project file for the current buffer."))))
+  
 ;; Idle 
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
