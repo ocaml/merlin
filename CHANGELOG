@@ -1,5 +1,5 @@
-git version
-===========
+merlin 1.1
+==========
 
 	emacs: Ported the completion to the usual `completion-at-point'
 	system, disabled auto-complete-mode-by-default
@@ -10,7 +10,11 @@ git version
 
 	emacs: improved documentation of the mode
 
+  backend: code cleanup
 
+  backend: method completion
+
+  vim plugin: refactored synchronization code out
 
 merlin 1.0
 ==========
