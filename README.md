@@ -24,6 +24,14 @@ If you don't get any error in step above:
 
     $ make install 
 
+Installation from git
+---------------------
+
+Don't forget to checkout submodules after pulling/cloning:
+
+    $ git submodule init
+    $ git submodule update
+
 Installing Merlin with opam
 ===========================
 
@@ -90,6 +98,14 @@ Misc: description of plugin's files
 - $SHARE\_DIR/ocamlmerlin/vimbufsync  
               -- library needed by merlin vim mode to keep buffer synchronized
 
+
+Upgrading vim plugin from merlin 1.0
+------------------------------------
+
+Merlin plugin now relies on another vim helper called vimbufsync.
+If you installed from opam and/or archive, just make sure that vimbufsync is in vim runtime path:
+
+    :set rtp+=$SHARE_DIR/ocamlmerlin/vimbufsync
 
 Emacs interface
 ===============

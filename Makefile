@@ -38,7 +38,6 @@ install: $(TARGET)
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	cp -R vim/merlin/* $(SHARE_DIR)/ocamlmerlin/vim/
 	cp -R vim/vimbufsync/* $(SHARE_DIR)/ocamlmerlin/vimbufsync/
-	@echo
 	@echo 
 	@echo "Quick setup for VIM"
 	@echo "-------------------"
@@ -52,6 +51,9 @@ install: $(TARGET)
 	@echo '  (add-to-list '"'"'load-path "$(SHARE_DIR)/emacs/site-lisp")'
 	@echo '  (require '"'"'merlin)'
 	@echo 'Then issue M-x merlin-mode in a ML buffer.'
+	@echo 
+	@echo 'Take a look at https://github.com/def-lkb/merlin for more information.'
+	@echo 
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
