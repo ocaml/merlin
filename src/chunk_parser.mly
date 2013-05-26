@@ -1266,7 +1266,8 @@ simple_expr:
   | simple_expr SHARP label
       { mkexp $startpos $endpos (Pexp_send($1, $3)) }
   | simple_expr SHARP error
-      { mkexp $startpos $endpos (Pexp_send($1, "")) }
+      { syntax_error $startpos($3);
+        mkexp $startpos $endpos (Pexp_send($1, "")) }
   | LPAREN MODULE module_expr RPAREN
       { mkexp $startpos $endpos  (Pexp_pack $3) }
   | LPAREN MODULE module_expr COLON package_type RPAREN
@@ -1309,6 +1310,12 @@ simple_expr:
   | simple_expr SHARP SHARP label LPAREN RPAREN
       { let inst = Fake.(app Js.un_js $1) in
         let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        Fake.(app Js.un_meth jsmeth)
+      }
+  | simple_expr SHARP SHARP error
+      { syntax_error $startpos($4);
+        let inst = Fake.(app Js.un_js $1) in
+        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, "")) in
         Fake.(app Js.un_meth jsmeth)
       }
   | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN

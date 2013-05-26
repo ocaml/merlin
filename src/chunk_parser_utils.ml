@@ -104,6 +104,7 @@ let token_to_string =
     | MUTABLE -> "MUTABLE"
     | NATIVEINT s -> "NATIVEINT(" ^ Nativeint.to_string s ^ ")"
     | NEW -> "NEW"
+    | JSNEW -> "JSNEW"
     | OBJECT -> "OBJECT"
     | OF -> "OF"
     | OPEN -> "OPEN"
