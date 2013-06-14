@@ -9,9 +9,9 @@
 
 \newcommand{\sectitle}{\frametitle{\insertsection}}
 
-\title{Merlin, un assistant pour OCaml}
+\title{Merlin, an OCaml assistant}
 \author{Frédéric \bsc{Bour}}
-\date{\today}
+\date{May 21, 2013}
 
 \usetheme{Warsaw}
 
@@ -55,22 +55,23 @@
 %   \tableofcontents
 % \end{frame}
 
-\section{Assistant intégré à l'éditeur}
+\section{An assistant in your editor}
 
-\subsection{Le toplevel standard}
+\subsection{The usual toplevel}
 
 \begin{frame}
   \sectitle
 
-  Solution actuelle : le toplevel.
+  The toplevel as a tool to interact with OCaml during edition.
+
   \pause
 
   \begin{itemize}
-    \item Effets de bord à l'évaluation
+    \item Side-effects when evaluating phrases
       \pause
-    \item Phrases évaluées dans le désordre
+    \item Phrases evaluated in arbitrary order
       \pause \\
-      (noms masqués, portée hasardeuse…)
+      (name shadowing, arbitrary scoping...)
   \end{itemize}
 \end{frame}
 
@@ -79,123 +80,127 @@
 \begin{frame}
   \sectitle
 
-  Ce qu'apporte Merlin.
+  Merlin improves on this situation.
   \pause
 
   \begin{itemize}
-    \item Un toplevel sans interprétation, seulement du typage.
+    \item Checks syntax and typing, but doesn't evaluate.
       \pause
-    \item Travail incrémental, dans l'ordre du document
-      (similaire à Proof-General).
+    \item Works incrementally, in document order
+      (if you know Coq, think of ``Proof-General for OCaml'').
       \pause
-    \item Résilience aux erreurs de syntaxe et de type (expérimental).
+    \item Resilient to syntax and typing errors (experimental).
   \end{itemize}
 \end{frame}
 
-\section{Dans la pratique…}
+\section{In practice}
 
-\subsection{Les avantages}
-
-\begin{frame}
-  \frametitle{Les avantages}
-
-  \begin{block}{Informations de typages}
-    \begin{itemize}
-      \item complétion au curseur, sensible à la portée courante
-        \pause
-      \item type des sous-expressions
-        \pause
-      \item nombreuses autres analyses possibles : les fondations sont là.
-        \pause
-    \end{itemize}
-  \end{block}
-
-  \begin{block}{Retour immédiat}
-    \begin{itemize}
-      \item annotation des erreurs directement dans l'éditeur
-        \pause
-      \item mais attention à ne pas se laisser distraire \smiley
-        \pause
-    \end{itemize}
-  \end{block}
-
-  Pas de mauvaise surprise : les règles de portée, typage, etc,
-  sont celles du compilateur.
-\end{frame}
-
-\subsection{Les limitations}
+\subsection{Upsides}
 
 \begin{frame}
-  \frametitle{Les limitations}
-  \begin{block}{Extensions de syntaxe}
+  \frametitle{Upsides}
+
+  \begin{block}{Typing information}
     \begin{itemize}
-      \item pas de prise en charge de Camlp4 !
+      \item completion at point, sensitive to the current typing environment
         \pause
-      \item mais support spécifique pour certaines extensions \\
-        (lwt, type-conv, …)
+      \item type of (sub)expressions at point
+        \pause
+      \item foundations are there for all kind of type-directed
+        feedback and analyses
         \pause
     \end{itemize}
   \end{block}
 
-  \begin{block}{Constructions difficiles à gérer}
+  \begin{block}{Instant feedback}
     \begin{itemize}
-      \item définitions récursives
+      \item Direct error feedback in the editor
         \pause
-      \item modules de première classe, POO, etc.
+      \item can be a distraction \smiley
         \pause
-      \item[$\Rightarrow$] peu de retours sur ces constructions si le code n'est
-        pas valide
     \end{itemize}
   \end{block}
 
+  No surprise: the scoping, typing rules are exactly those of the
+  compiler.
 \end{frame}
 
-\subsection{Fonctionnalités}
+\subsection{(Current) Limitations}
+
+\begin{frame}
+  \frametitle{(Current) Limitations}
+  \begin{block}{Syntax extensions}
+    \begin{itemize}
+      \item No support for camlp4 planned
+        \pause
+      \item but we hard-code quotations and specific extensions \\
+        (\texttt{lwt}, \texttt{type-conv}, ...)
+        \pause
+    \end{itemize}
+  \end{block}
+
+  \begin{block}{Hard language constructs}
+    \begin{itemize}
+      \item recursive definitions
+        \pause
+      \item first-class modules, OOP, etc.
+        \pause
+      \item[$\Rightarrow$] hard to provide feedback on those when code
+        is not valid
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+\subsection{Features}
 
 \begin{frame}
   \sectitle
 
-  Depuis Vim et Emacs :
+  From both Vim and Emacs :
 
   \begin{itemize}
-    \item complétion,
-    \item typage,
-    \item annotation des erreurs,
-    \item intégration avec ocamlfind \\
-      {\small {\tt .merlin} pour les projets},
-    \item quelques extensions de syntaxe.
+    \item identifier completion,
+    \item type feedback,
+    \item integrated error messages,
+    \item \texttt{ocamlfind} integration \\
+      {\small {\tt .merlin} file for projects},
+    \item a few syntax extensions.
   \end{itemize}
 
 \end{frame}
 
-\subsection{La suite}
+\subsection{The future}
 
 \begin{frame}
-  \frametitle{La suite}
+  \frametitle{The future}
 
-  Dans un futur plus ou moins proche :
+  Short- to long-term.
 
   \begin{itemize}
-    \item travail conséquent sur les erreurs de syntaxe,
+    \item work on handling of syntax errors
       \pause
-    \item coopération avec d'autres outils (e.g. spotter, ocamldoc),
+    \item coordination with other tools (\texttt{spotter}, \texttt{ocamldoc}),
       \pause
-    \item plus d'extensions. \\
-      {\small js\_of\_ocaml dans une branche expérimentale}
+    \item more extensions. \\
+      {\small \texttt{js\_of\_ocaml} in experimental branch}
   \end{itemize}
 
 \end{frame}
 
-\section*{Démo}
+\section*{Demo}
 
 \begin{frame}
  \sectitle
  
- Merci pour votre attention. \\
+ Thanks for your attention.
 
- Pour plus d'informations : {\tt http://github.com/def-lkb/merlin} \\
+ \vfill
 
- Et maintenant une petite démonstration…
+ For more information : {\tt http://github.com/def-lkb/merlin} 
+
+ \vfill
+
+ And now for a small demo...
  
 \end{frame}
 
