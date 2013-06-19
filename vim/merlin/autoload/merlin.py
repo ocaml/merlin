@@ -1,4 +1,5 @@
 import subprocess
+import signal
 import json
 import vim
 import re
@@ -51,7 +52,8 @@ def restart():
             command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=None
+            stderr=None,
+            preexec_fn = (lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
         )
   except OSError as e:
     print("Failed to execute ocamlmerlin. Please ensure that ocamlmerlin binary\
