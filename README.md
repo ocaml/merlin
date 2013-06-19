@@ -181,7 +181,7 @@ Merlin project
 ==============
 
 When loading a ml file in your editor, merlin mode will search a file named
-.merlin in the same directory or in the first two parent directories.
+.merlin in the same directory or in parent directories.
 
 The ".merlin" allows you to integrate merlin with your project.
 Each line of this file begin with a command name followed by one argument:
