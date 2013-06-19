@@ -109,11 +109,9 @@ let remove_file filename =
 
 let canonicalize_filename ?cwd path =
   let rec split path acc =
-    let dir = Filename.dirname path
-    and base = Filename.basename path in
-    if dir = path
-    then base :: acc
-    else split dir (base :: acc)
+    match Filename.dirname path, Filename.basename path with
+    | dir, base when dir = path -> base :: acc
+    | dir, base -> split dir (base :: acc)
   in
   let parts = 
     match split path [] with
@@ -121,18 +119,19 @@ let canonicalize_filename ?cwd path =
       split (match cwd with None -> Sys.getcwd () | Some c -> c) rest
     | parts -> parts
   in
-  let parts = List.filter ((<>) Filename.current_dir_name) parts in
-  let rec goup = function
-    | [] -> []
-    | head :: rest -> 
-      match goup rest with
-      | parent :: rest when parent = Filename.parent_dir_name -> rest
-      | rest -> head :: rest
+  let goup path = function 
+    | dir when dir = Filename.parent_dir_name ->
+      (match path with _ :: t -> t | [] -> [])
+    | dir when dir = Filename.current_dir_name ->
+      path
+    | dir -> dir :: path
   in
-  match goup parts with
-  | root :: subs -> List.fold_left Filename.concat root subs
-  | [] -> ""
-
+  let parts = List.rev (List.fold_left goup [] parts) in
+  let filename_concats = function
+    | [] -> ""
+    | root :: subs -> List.fold_left Filename.concat root subs
+  in
+  filename_concats parts
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
