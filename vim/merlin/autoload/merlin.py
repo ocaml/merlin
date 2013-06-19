@@ -426,7 +426,7 @@ def vim_selectphrase(l1,c1,l2,c2):
   for (var,val) in [(l1,vl1),(l2,vl2),(c1,vc1),(c2,vc2)]:
     vim.command("let %s = %d" % (var,val))
 
-def load_project(directory,maxdepth=3):
+def load_project(directory,maxdepth=10):
   fname = os.path.join(directory,".merlin") 
   if os.path.exists(fname):
     catch_and_print(lambda: send_command("project","load",fname))
