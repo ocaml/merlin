@@ -770,6 +770,14 @@ expr:
       { () }
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
       { () }
+  | simple_expr SHARP SHARP label
+      { () }
+  | simple_expr SHARP SHARP label LESSMINUS simple_expr
+      { () }
+  | simple_expr SHARP SHARP label LPAREN RPAREN
+      { () }
+  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+      { () }
   | label LESSMINUS expr
       { () }
   | ASSERT simple_expr
@@ -861,14 +869,6 @@ simple_expr:
   | JSNEW simple_expr LPAREN RPAREN
       { () }
   | JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
-      { () }
-  | simple_expr SHARP SHARP label
-      { () }
-  | simple_expr SHARP SHARP label LESSMINUS simple_expr
-      { () }
-  | simple_expr SHARP SHARP label LPAREN RPAREN
-      { () }
-  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
       { () }
 ;
 enter_sub:

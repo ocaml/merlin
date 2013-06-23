@@ -1166,6 +1166,46 @@ expr:
                       ["",$1; "",$4; "",$7])) }
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
       { bigarray_set $startpos($1) $endpos($7) $1 $4 $7 }
+
+  | simple_expr SHARP SHARP label
+      { let inst = Fake.(app Js.un_js $1) in
+        let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+        let prop = Fake.(app Js.un_prop field) in
+        mkexp $startpos $endpos (Pexp_send(prop,"get"))
+      }
+  | simple_expr SHARP SHARP label LESSMINUS expr
+      { let inst = Fake.(app Js.un_js $1) in
+        let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let prop = Fake.(app Js.un_prop field) in
+        let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
+        reloc_exp $startpos $endpos
+        Fake.(app setter $6)
+      }
+  | simple_expr SHARP SHARP label LPAREN RPAREN
+      { let inst = Fake.(app Js.un_js $1) in
+        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        Fake.(app Js.un_meth jsmeth)
+      }
+  | simple_expr SHARP SHARP error
+      { syntax_error $startpos($4);
+        let inst = Fake.(app Js.un_js $1) in
+        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, "")) in
+        Fake.(app Js.un_meth jsmeth)
+      }
+  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+      { let inst = Fake.(app Js.un_js $1) in
+        let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let jsmeth =
+          List.fold_left
+            (fun meth arg -> 
+              reloc_exp meth.pexp_loc.Location.loc_start
+                        arg.pexp_loc.Location.loc_end
+              (Fake.app meth arg))
+            meth (List.rev $6)
+        in
+        Fake.(app Js.un_meth jsmeth)
+      }
+
   | label LESSMINUS expr
       { mkexp $startpos $endpos (Pexp_setinstvar(mkrhs $startpos($1) $endpos($1) $1, $3)) }
   | ASSERT simple_expr
@@ -1294,44 +1334,6 @@ simple_expr:
                        arg.pexp_loc.Location.loc_end
              (Fake.app constr arg))
            constr (List.rev $4))
-      }
-  | simple_expr SHARP SHARP label
-      { let inst = Fake.(app Js.un_js $1) in
-        let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
-        let prop = Fake.(app Js.un_prop field) in
-        mkexp $startpos $endpos (Pexp_send(prop,"get"))
-      }
-  | simple_expr SHARP SHARP label LESSMINUS simple_expr
-      { let inst = Fake.(app Js.un_js $1) in
-        let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
-        let prop = Fake.(app Js.un_prop field) in
-        let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
-        reloc_exp $startpos $endpos
-        Fake.(app setter $6)
-      }
-  | simple_expr SHARP SHARP label LPAREN RPAREN
-      { let inst = Fake.(app Js.un_js $1) in
-        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
-        Fake.(app Js.un_meth jsmeth)
-      }
-  | simple_expr SHARP SHARP error
-      { syntax_error $startpos($4);
-        let inst = Fake.(app Js.un_js $1) in
-        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, "")) in
-        Fake.(app Js.un_meth jsmeth)
-      }
-  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
-      { let inst = Fake.(app Js.un_js $1) in
-        let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
-        let jsmeth =
-          List.fold_left
-            (fun meth arg -> 
-              reloc_exp meth.pexp_loc.Location.loc_start
-                        arg.pexp_loc.Location.loc_end
-              (Fake.app meth arg))
-            meth (List.rev $6)
-        in
-        Fake.(app Js.un_meth jsmeth)
       }
 ;
 simple_labeled_expr_list:
