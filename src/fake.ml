@@ -157,6 +157,7 @@ module Js = struct
   let un_js     = prim "Js.un_js"
   let un_meth   = prim "Js.un_meth"
   let un_constr = prim "Js.un_constr"
+  let un_prop   = prim "Js.un_prop"
 end
 
 (* tools used in the next few modules *)

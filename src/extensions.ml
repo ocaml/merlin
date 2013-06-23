@@ -51,6 +51,7 @@ let ext_js : extension = "js",
       val un_js : 'a Js.t -> 'a
       val un_meth : 'a Js.meth -> 'a
       val un_constr : 'a Js.constr -> 'a
+      val un_prop : 'a Js.gen_prop -> 'a
     end"],
   []
 

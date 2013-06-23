@@ -1297,12 +1297,14 @@ simple_expr:
       }
   | simple_expr SHARP SHARP label
       { let inst = Fake.(app Js.un_js $1) in
-        let prop = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+        let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+        let prop = Fake.(app Js.un_prop field) in
         mkexp $startpos $endpos (Pexp_send(prop,"get"))
       }
   | simple_expr SHARP SHARP label LESSMINUS simple_expr
       { let inst = Fake.(app Js.un_js $1) in
-        let prop = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let prop = Fake.(app Js.un_prop field) in
         let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
         reloc_exp $startpos $endpos
         Fake.(app setter $6)
