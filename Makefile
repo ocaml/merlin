@@ -29,12 +29,12 @@ distclean: clean
 	rm -f Makefile.config src/myocamlbuild_config.ml
 
 install: $(TARGET)
-	install -dv $(BIN_DIR)
-	install -dv $(SHARE_DIR)
+	install -d $(BIN_DIR)
+	install -d $(SHARE_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
-	install -dv $(SHARE_DIR)/ocamlmerlin/vim
-	install -dv $(SHARE_DIR)/ocamlmerlin/vimbufsync
-	install -dv $(SHARE_DIR)/emacs/site-lisp
+	install -d $(SHARE_DIR)/ocamlmerlin/vim
+	install -d $(SHARE_DIR)/ocamlmerlin/vimbufsync
+	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	cp -R vim/merlin/* $(SHARE_DIR)/ocamlmerlin/vim/
 	cp -R vim/vimbufsync/* $(SHARE_DIR)/ocamlmerlin/vimbufsync/
