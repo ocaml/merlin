@@ -13,11 +13,13 @@ A json-object having at least the fields:
 
     location <= {"start":position,"end":position}
 
-## Directory
+## Filenames
 
-A json-string representing a valid directory:
+Strings addressing file system objects:
 
-    directory = string
+    path = string, points any file or directory
+    directory = string, expected to name a directory
+    filename = string, expected to name a regular file
 
 # Buffer management
 
@@ -117,6 +119,11 @@ surrounding given position for given prefix/path (path of the form: Module.ident
 
 ### ["path","reset"]
 ### ["path","reset",var]
+
+## Project file
+
+### ["project","load",filename]
+### ["project","find",path]
 
 # Debug
 
