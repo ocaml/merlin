@@ -169,41 +169,65 @@ let path_add, command_path =
   ] in
   path_add pathes, command_path pathes
 
-let command_project = Command.({
-  name = "project";
-
-  handler =
-  begin fun _ state -> function
-    | [ `String "load" ; `String path ] ->
-      let cwd = Filename.dirname path in
-      let ic = open_in path in
-      begin try
-          let drop n s =
-            String.sub s n (String.length s- n) in
-          let rec aux () = 
-            let line = input_line ic in
-            if line = "" then ()
-            else if Misc.has_prefix "B " line then
-              path_add "build" ~cwd (drop 2 line)
-            else if Misc.has_prefix "S " line then
-              path_add "source" ~cwd (drop 2 line)
-            else if Misc.has_prefix "PKG " line then
-              (Command.load_packages (Misc.rev_split_words (drop 4 line)))
-            else if Misc.has_prefix "#" line then ()
-            else ();
-            aux ()
-          in
+let command_project = 
+  let load_dot_merlin path =  
+    let cwd = Filename.dirname path in
+    let ic = open_in path in
+    begin try
+        let drop n s =
+          String.sub s n (String.length s- n) in
+        let rec aux () = 
+          let line = input_line ic in
+          if line = "" then ()
+          else if Misc.has_prefix "B " line then
+            path_add "build" ~cwd (drop 2 line)
+          else if Misc.has_prefix "S " line then
+            path_add "source" ~cwd (drop 2 line)
+          else if Misc.has_prefix "PKG " line then
+            (Command.load_packages (Misc.rev_split_words (drop 4 line)))
+          else if Misc.has_prefix "#" line then ()
+          else ();
           aux ()
-        with 
-        | End_of_file ->
-          close_in_noerr ic;
-          state, `Bool true
-        | exn -> 
-          close_in_noerr ic; raise exn
-      end 
-    | _ -> Command.invalid_arguments ()
-  end;
-})
+        in
+        aux ()
+      with 
+      | End_of_file ->
+        close_in_noerr ic
+      | exn -> 
+        close_in_noerr ic; raise exn
+    end 
+  in
+  let find_dot_merlin state path =
+    let rec loop dir =
+      let fname = Filename.concat dir ".merlin" in
+      if Sys.file_exists fname
+      then Some fname
+      else
+        let parent = Filename.dirname dir in
+        if parent <> dir
+        then loop parent
+        else None
+    in
+    loop (Misc.canonicalize_filename path)
+  in
+  Command.({
+    name = "project";
+  
+    handler =
+    begin fun _ state -> function
+      | [ `String "load" ; `String path ] ->
+        load_dot_merlin path;
+        state, `Bool true
+      | [ `String "find" ; `String path ] ->
+        begin match find_dot_merlin state path with
+          | None -> state, `Bool false
+          | Some filename ->
+            load_dot_merlin filename;
+            state, `String filename
+        end
+      | _ -> Command.invalid_arguments ()
+    end;
+  })
 
 let () = 
   Command.register command_path;
