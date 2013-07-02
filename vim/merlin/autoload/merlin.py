@@ -46,7 +46,7 @@ def restart():
     except OSError:
       pass
   try:
-    command = ["ocamlmerlin"]
+    command = [vim.eval("merlin#FindOcamlMerlin()")]
     command.extend(flags)
     mainpipe = subprocess.Popen(
             command,
@@ -56,8 +56,8 @@ def restart():
             preexec_fn = (lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
         )
   except OSError as e:
-    print("Failed to execute ocamlmerlin. Please ensure that ocamlmerlin binary\
-            is in path and is executable.")
+    print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
+            is executable.")
     raise e
 
 def send_command(*cmd):

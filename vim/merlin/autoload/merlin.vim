@@ -1,3 +1,5 @@
+if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
+
 if !has('python')
   echo "Error: Required vim compiled with +python"
   finish
@@ -245,6 +247,21 @@ function! merlin#GotoDotMerlin()
     else
         echo "No .merlin found"
     endif
+endfunction
+
+function! merlin#FindOcamlMerlin()
+  if !has_key(s:c, 'ocamlmerlin_path')
+    let s:choices = filter(map(['ocamlmerlin','ocamlmerlin.native'], 's:c.merlin_home."/".v:val'), 'filereadable(v:val)')
+    if len(s:choices) > 0
+      let s:c.ocamlmerlin_path =  s:choices[0]
+    elseif executable('ocamlmerlin')
+      let s:c.ocamlmerlin_path = 'ocamlmerlin'
+    else
+      echoe "ocamlmerlin not found!"
+    endif
+    unlet s:choices
+  endif
+  return s:c.ocamlmerlin_path
 endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList ML call merlin#FindFile("ml",<f-args>)
