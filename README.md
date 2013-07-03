@@ -66,7 +66,7 @@ Using Vundle
 Alternatively you can install vim support using [Vundle](https://github.com/gmarik/vundle).
 Add the following to your .vimrc
 
-    Bundle 'def-lkb/merlin', {'rtp' : 'vim/'}
+    Bundle 'def-lkb/merlin', {'rtp': 'vim/merlin/'}
     Bundle 'def-lkb/vimbufsync'
 
 Features and interaction with other plugins
