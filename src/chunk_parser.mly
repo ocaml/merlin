@@ -588,6 +588,8 @@ structure_tail:
 ;
 
 top_structure_item:
+  | seq_expr EOF { [mkloc (ghstrexp $startpos $endpos $1) 
+                      (symbol_rloc $startpos $endpos)] }
   | structure_item EOF
       { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $1 }
 ;
