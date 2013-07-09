@@ -316,6 +316,19 @@ module Binprot = struct
 
     let binding ty = binding ~prefix ~typesig ty
   end
+
+  module Type_class = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> `Var x) ty_infos.ptype_params in
+      List.fold_right
+        (fun param acc -> `Arrow ("", `Named ([param], "Bin_prot.Type_class.t"), acc))
+        params
+        (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.t"))
+
+    let prefix = "bin_"
+
+    let binding ty = binding ~prefix ~typesig ty
+  end
 end
 
 module TypeWith = struct
@@ -347,6 +360,7 @@ module TypeWith = struct
           Writer.binding ty ;
           Read.binding ty ;
           Reader.binding ty ;
+          Type_class.binding ty ;
         ]
       ) ty
 
