@@ -5,7 +5,11 @@
 
 " If you are using syntastic and don't want warnings notified, set the following
 " variable to "true"
+
+if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 let g:merlin_ignore_warnings = "false"
+
+let s:c.merlin_home = expand('<sfile>:h:h:h:h')
 
 " Highlight the expression which type is given
 hi EnclosingExpr ctermbg=17 guibg=LightGreen
