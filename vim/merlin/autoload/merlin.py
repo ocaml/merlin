@@ -427,12 +427,12 @@ def vim_selectphrase(l1,c1,l2,c2):
     vim.command("let %s = %d" % (var,val))
 
 def load_project(directory):
-  fname = catch_and_print(lambda: send_command("project","find",directory))
+  fnames = catch_and_print(lambda: send_command("project","find",directory))
   # Compatibility with python3
   try:
     stringtype = basestring
   except NameError:
     stringtype = str
-  if isinstance(fname, stringtype):
-    vim.command('let b:dotmerlin="%s"' % fname)
+  if isinstance(fnames, list):
+    vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
   command_reset()

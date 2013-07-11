@@ -231,7 +231,7 @@ endfunction
 
 function! merlin#EchoDotMerlin()
   if exists("b:dotmerlin")
-    echom "Using .merlin: " . b:dotmerlin
+    echom "Using .merlin: " . join(b:dotmerlin, ', ')
   else
     echo "No .merlin found"
   endif
