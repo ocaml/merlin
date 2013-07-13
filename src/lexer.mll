@@ -103,6 +103,11 @@ let keyword_table =
 
     (* HACK: js_of_ocaml extension *)
     "jsnew", JSNEW;
+
+    (* HACK: pa_ounit extension *)
+    "TEST", OUNIT_TEST;
+    "TEST_UNIT", OUNIT_TEST_UNIT;
+    "TEST_MODULE", OUNIT_TEST_MODULE;
 ]
 
 (* To buffer string literals *)
@@ -293,7 +298,11 @@ rule token = parse
           with Not_found ->
             LIDENT s }
   | uppercase identchar *
-      { UIDENT(Lexing.lexeme lexbuf) }       (* No capitalized keywords *)
+      { let s = Lexing.lexeme lexbuf in (* Capitalized keywords for OUnit *)
+          try
+            Hashtbl.find keyword_table s
+          with Not_found ->
+            UIDENT s }
   | int_literal
       { try
           INT (cvt_int_literal (Lexing.lexeme lexbuf))
