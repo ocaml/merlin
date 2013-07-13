@@ -55,5 +55,12 @@ let ext_js : extension = "js",
     end"],
   []
 
-let registry = [ext_lwt;ext_js;ext_any]
+let ext_ounit : extension = "ounit",
+  ["module OUnit : sig
+      val force_bool : bool -> unit
+      val force_unit : unit -> unit
+    end"],
+  []
+
+let registry = [ext_lwt;ext_js;ext_any;ext_ounit]
 

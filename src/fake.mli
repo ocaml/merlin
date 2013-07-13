@@ -58,6 +58,13 @@ module Js : sig
   val un_prop   : Parsetree.expression
 end
 
+(* OUnit extension *)
+module OUnit : sig
+  val fresh_test_module_ident : unit -> string
+  val force_bool : Parsetree.expression
+  val force_unit : Parsetree.expression
+end
+
 type tydecl = string Location.loc * Parsetree.type_declaration
 
 (* type-conv extension *)

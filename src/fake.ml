@@ -160,6 +160,18 @@ module Js = struct
   let un_prop   = prim "Js.un_prop"
 end
 
+(* OUnit extension *)
+module OUnit = struct
+  let fresh_test_module_ident =
+    let counter = ref 0 in
+    fun () ->
+      incr counter;
+      ("_TEST_" ^ string_of_int !counter)
+
+  let force_bool = prim "OUnit.force_bool"
+  let force_unit = prim "OUnit.force_unit"
+end
+
 (* tools used in the next few modules *)
 let format_params ~f =
   List.map (function None -> f "_" | Some id -> f id.Location.txt)
