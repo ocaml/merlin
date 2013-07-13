@@ -440,6 +440,9 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token WHILE_LWT
 %token JSNEW
 %token P4_QUOTATION
+%token OUNIT_TEST
+%token OUNIT_TEST_UNIT
+%token OUNIT_TEST_MODULE
 
 (* Precedences and associativities.
 
@@ -639,6 +642,19 @@ structure_item:
       { [mkstr $startpos $endpos (Pstr_class_type (List.rev $3))] }
   | INCLUDE module_expr
       { [mkstr $startpos $endpos (Pstr_include $2)] }
+  | OUNIT_TEST option(STRING) EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_bool $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_unit $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
+      { let name = Fake.OUnit.fresh_test_module_ident () in
+        [mkstr $startpos $endpos
+           (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]
+      }
 ;
 module_binding:
     EQUAL module_expr

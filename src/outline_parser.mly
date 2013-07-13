@@ -139,6 +139,9 @@
 %token WHILE_LWT
 %token JSNEW
 %token P4_QUOTATION
+%token OUNIT_TEST
+%token OUNIT_TEST_UNIT
+%token OUNIT_TEST_MODULE
 
 (* Precedences and associativities.
 
@@ -321,6 +324,12 @@ structure_item:
       { emit_top Definition $endpos }
       (*FIXME: Should be possible to handle INCLUDE interactively *)
   | INCLUDE enter_sub module_expr leave_sub
+      { emit_top Definition $endpos }
+  | OUNIT_TEST option(STRING) EQUAL seq_expr
+      { emit_top Definition $endpos }
+  | OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
+      { emit_top Definition $endpos }
+  | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
       { emit_top Definition $endpos }
 ;
 module_binding:
