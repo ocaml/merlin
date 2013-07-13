@@ -214,7 +214,12 @@ let node_complete node prefix =
   let find ?path prefix compl =
     let valid tag n = Misc.has_prefix prefix n && uniq (tag,n) in
     (* Hack to prevent extensions namespace to leak *)
-    let valid tag name = name <> "_" && valid tag name in
+    let valid ?(uident=false) tag name = 
+      (if uident
+       then name <> "" && name.[0] <> '_'
+       else name <> "_")
+      && valid tag name 
+    in
     let compl = [] in
     try
       let compl = Env.fold_values
@@ -240,7 +245,7 @@ let node_complete node prefix =
       in
       let compl = Env.fold_modules
         (fun name path v compl ->
-          if valid `Mod name 
+          if valid ~uident:true `Mod name 
           then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl 
           else compl)
         path env compl
