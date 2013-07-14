@@ -100,6 +100,7 @@ let main_loop () =
       let state, answer =
         try match Stream.next input with
           | `List (`String command :: args) ->
+              let state = Command.prefilter_command command args state in
               let { Command.handler } =
                 try Hashtbl.find Command.commands command
                 with Not_found -> failwith "unknown command"

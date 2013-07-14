@@ -30,6 +30,7 @@ type handler = Protocol.io -> State.t -> Json.json list -> State.t * Json.json
 type t = { name : string ; handler : handler }
 val invalid_arguments : unit -> 'a
 
+val prefilter_command : string -> Json.json list -> State.t -> State.t
 val commands : (string,t) Hashtbl.t
 val register : t -> unit
 

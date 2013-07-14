@@ -368,6 +368,9 @@ let command_refresh = {
     Env.reset_cache ();
     let types = Typer.sync state.chunks History.empty in
     {state with types}, `Bool true
+  | [`String "quick"] ->
+    let state, changed = State.quick_refresh_modules state in
+    state, `Bool changed
   | _ -> invalid_arguments ()
   end;
 }
@@ -546,3 +549,23 @@ let _ = List.iter register [
   command_which; command_find;
   command_help;
 ]
+
+(** HACK: Set up signal handler to reload cmi files when USR1 is sent.
+ * This sets a global boolean. When executing a command later, the boolean is
+ * tested and if true, modified cmi files are reloaded (based on mtime).
+ *)
+let refresh_requested = ref false
+
+let prefilter_command cmd args state = match cmd with
+  | _ when not !refresh_requested -> state
+  | "refresh" -> 
+    refresh_requested := false; state
+  | "reset" -> 
+    refresh_requested := false;
+    fst State.(quick_refresh_modules initial)
+  | _ ->
+    refresh_requested := false;
+    fst State.(quick_refresh_modules state)
+
+let () = Sys.(set_signal sigusr1 
+                (Signal_handle (fun _ -> refresh_requested := true)))
