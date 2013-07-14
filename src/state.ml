@@ -54,6 +54,15 @@ let reset_global_modules () =
   let paths = !Config.load_path in
   global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
 
+(** Heuristic to speed-up reloading of CMI files that has changed *)
+let quick_refresh_modules state =
+  if Env.quick_reset_cache () then
+  begin
+    let types = Typer.sync state.chunks History.empty in
+    {state with types}, true
+  end
+  else state, false
+
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.
  *  2. Check if there is an invalid construct between found env and cursor :

@@ -37,6 +37,7 @@ val initial : t
 
 val source_path : string list ref
 val reset_global_modules : unit -> unit
+val quick_refresh_modules : t -> t * bool
 
 val node_at : t -> Lexing.position -> Browse.t
 val node_complete : Browse.t -> string -> Json.json list
