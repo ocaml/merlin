@@ -89,6 +89,22 @@ let default_build_paths =
 let set_default_path () =
   Config.load_path := Lazy.force default_build_paths
 
+let refresh_state_on_signal state f =
+  let previous =
+    Sys.(signal sigusr1 (Signal_handle (fun _ ->
+        try
+          state := fst (State.quick_refresh_modules !state)
+        with _ -> ()
+      )))
+  in
+  try
+    let r = f () in
+    ignore (Sys.(signal sigusr1 previous));
+    r
+  with exn ->
+    ignore (Sys.(signal sigusr1 previous));
+    raise exn
+
 let main_loop () =
   let io = Protocol.make ~input:stdin ~output:stdout in
   let input, output as io =
@@ -98,19 +114,23 @@ let main_loop () =
   try
     let rec loop state =
       let state, answer =
-        try match Stream.next input with
+        let state' = ref state in
+        try match
+          refresh_state_on_signal state' 
+            (fun () -> Stream.next input)
+        with
           | `List (`String command :: args) ->
-              let state = Command.prefilter_command command args state in
-              let { Command.handler } =
-                try Hashtbl.find Command.commands command
-                with Not_found -> failwith "unknown command"
-              in
-              let state, result = handler io state args in
-              state, Protocol.return result
+            let state = !state' in
+            let { Command.handler } =
+              try Hashtbl.find Command.commands command
+              with Not_found -> failwith "unknown command"
+            in
+            let state, result = handler io state args in
+            state, Protocol.return result
           | _ -> failwith "malformed command"
         with
           | Stream.Failure as exn -> raise exn
-          | exn -> state, Protocol.fail exn
+          | exn -> !state', Protocol.fail exn
       in
       output answer;
       loop state
@@ -301,6 +321,7 @@ let main () =
   set_default_path ();
   State.reset_global_modules ();
   Findlib.init ();
+  ignore Sys.(signal sigusr1 Signal_ignore);
   main_loop ()
 
 let _ = main ()
