@@ -29,6 +29,7 @@
 type t = {
   pos      : Lexing.position;
   tokens   : Outline.token list;
+  comments : Lexer.comment list;
   outlines : Outline.t;
   chunks   : Chunk.t;
   types    : Typer.t;

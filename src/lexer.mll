@@ -579,6 +579,8 @@ and p4_quotation = parse
   | _   { p4_quotation lexbuf }
 
 {
+  type comment = string * Location.t
+
   let token_with_comments = token
 
   let last_comments = ref []
@@ -589,6 +591,12 @@ and p4_quotation = parse
           token lexbuf
       | tok -> tok
   let comments () = List.rev !last_comments
+
+  let extract_comments () = 
+    let r = !last_comments in
+    last_comments := [];
+    r
+
   let init () =
     is_in_string := false;
     last_comments := [];

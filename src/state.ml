@@ -30,6 +30,7 @@
 type t = {
   pos      : Lexing.position;
   tokens   : Outline.token list;
+  comments : Lexer.comment list;
   outlines : Outline.t;
   chunks   : Chunk.t;
   types    : Typer.t;
@@ -38,6 +39,7 @@ type t = {
 let initial = {
   pos      = Lexing.({pos_fname = ""; pos_lnum = 1; pos_bol = 0; pos_cnum = 0});
   tokens   = [];
+  comments = [];
   outlines = History.empty;
   chunks   = History.empty;
   types    = History.empty;

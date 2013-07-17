@@ -39,5 +39,22 @@ val in_string : unit -> bool;;
 
 
 val print_warnings : bool ref
-val comments : unit -> (string * Location.t) list
+
+(* Comments are filtered out from the token rule and stored in a global
+   variable. *)
+type comment = string * Location.t
+
+(* Return all comments seen so far, in increasing order of location.
+ *)
+val comments : unit -> comment list
+
+(* Return the list of comments seen so far and clear the list so that later
+ * calls won't include them.
+ * Order is the reversed -- last comment is the first in the list.
+ * Used to get comments in a streaming way.
+ *)
+val extract_comments : unit -> comment list
+
+(* If you want to get the raw output, including comments, from the lexer, use
+   the [token_with_comments] entry point. *)
 val token_with_comments : Lexing.lexbuf -> Chunk_parser.token
