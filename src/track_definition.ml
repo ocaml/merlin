@@ -158,14 +158,24 @@ let from_string ~sources ~env path =
   sources_path := sources ;
   let ident = Longident.parse path in
   try
-    let path, val_desc = Env.lookup_value ident env in
-    if not (is_ghost val_desc.Types.val_loc) then
-      let fname = val_desc.Types.val_loc.Location.loc_start.Lexing.pos_fname in
+    let path, loc =
+      try
+        let path, val_desc = Env.lookup_value ident env in
+        path, val_desc.Types.val_loc
+      with Not_found ->
+      try
+        let path, typ_decl = Env.lookup_type ident env in
+        path, typ_decl.Types.type_loc
+      with Not_found ->
+        raise Not_found
+    in
+    if not (is_ghost loc) then
+      let fname = loc.Location.loc_start.Lexing.pos_fname in
       let full_path =
         try find_file ~ext:".ml" fname
         with Not_found -> fname
       in
-      Some (full_path, val_desc.Types.val_loc)
+      Some (full_path, loc)
     else
       match from_path path with
       | None -> None
