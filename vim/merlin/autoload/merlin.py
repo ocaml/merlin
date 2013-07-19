@@ -168,6 +168,9 @@ def command_complete_cursor(base,line,col):
 def command_report_errors():
   return send_command("errors")
 
+def command_locate(path):
+  return send_command("locate", path)
+
 ######## BUFFER SYNCHRONIZATION
 
 def sync_buffer_to(to_line, to_col):
@@ -290,6 +293,20 @@ def vim_type(expr=None,is_approx=False):
       vim_type(expr=None,is_approx=True)
     else:
       try_print_error(e)
+
+def vim_locate(path):
+  try:
+    pos_or_err = command_locate(path)
+    if not isinstance(pos_or_err, dict):
+      print(pos_or_err)
+    else:
+      fpath = pos_or_err['file']
+      l = pos_or_err['pos']['line']
+      c = pos_or_err['pos']['col']
+      vim.command(":split %s" % fpath)
+      vim.current.window.cursor = (l, c)
+  except MerlinExc as e:
+    try_print_error(e)
 
 # expr used as fallback in case type_enclosing fail
 def vim_type_enclosing(vimvar,expr=None):
