@@ -161,7 +161,10 @@ let from_string ~sources ~env path =
     let path, val_desc = Env.lookup_value ident env in
     if not (is_ghost val_desc.Types.val_loc) then
       let fname = val_desc.Types.val_loc.Location.loc_start.Lexing.pos_fname in
-      let full_path = find_file ~ext:".ml" fname in
+      let full_path =
+        try find_file ~ext:".ml" fname
+        with Not_found -> fname
+      in
       Some (full_path, val_desc.Types.val_loc)
     else
       match from_path path with
