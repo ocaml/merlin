@@ -1071,7 +1071,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (add-to-list 'ac-sources 'merlin-ac-source))
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
-  (setq (make-local-variable 'completion-extra-properties) '(:exit-function (lambda (s status) (message "haha: %s" status))))
+  (set (make-local-variable 'completion-extra-properties) '(:exit-function (lambda (s status) (message "haha: %s" status))))
   (set (make-local-variable 'merlin-lock-point) (point-min))
   (set (make-local-variable 'merlin-buffer) nil)
   (set (make-local-variable 'merlin-result) nil)
