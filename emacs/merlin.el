@@ -699,6 +699,11 @@ variable `merlin-cache')."
   (ac-define-source "merlin" merlin-ac-source))
 
 ;; Usual completion
+(defun merlin--completion-lookup (string state)
+  "Lookup the entry `STRING' inside the completion table."
+  (let ((ret (assoc string merlin--completion-annotation-table)))
+    (if ret
+        (message "%s%s" (car ret) (cdr ret)))))
 (defun merlin-completion-at-point ()
   (save-excursion
     (merlin-check-synchronize))
@@ -707,7 +712,9 @@ variable `merlin-cache')."
     (let ((start (point)))
       (skip-syntax-forward "w_.")
       (list start (point)
-            (apply-partially #'merlin--completion-table start)))))
+            (apply-partially #'merlin--completion-table start)
+            . (:exit-function #'merlin--completion-lookup)))))
+            
 
 (defvar merlin--completion-cache-state nil)
 (defvar merlin--completion-annotation-table nil
@@ -1064,6 +1071,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (add-to-list 'ac-sources 'merlin-ac-source))
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
+  (setq (make-local-variable 'completion-extra-properties) '(:exit-function (lambda (s status) (message "haha: %s" status))))
   (set (make-local-variable 'merlin-lock-point) (point-min))
   (set (make-local-variable 'merlin-buffer) nil)
   (set (make-local-variable 'merlin-result) nil)
@@ -1085,6 +1093,8 @@ it will print types of bigger expressions around point (it will go up the ast). 
             (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
   (with-current-buffer merlin-type-buffer
     (funcall merlin-favourite-caml-mode)))
+
+;;;###autoload
 (define-minor-mode merlin-mode
   "Minor mode for interacting with a merlin process.
 Runs a merlin process in the background (one for all merlin
