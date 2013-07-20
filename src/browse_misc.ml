@@ -124,7 +124,7 @@ let signature_of_env env =
     match summary with
     | Env.Env_empty -> ()
     (* Stop when encoutering extensions *)
-    | Env.Env_module (_,i,_) when i = Extensions.ident -> ()
+    | Env.Env_module (_,i,_) when i = Extensions_utils.ident -> ()
     | Env.Env_value (s,i,v) ->
         append (Sig_value (i,v));
         aux s

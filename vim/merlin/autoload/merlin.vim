@@ -151,7 +151,7 @@ function! merlin#Complete(findstart,base)
   let base = s:prepended . a:base
   let l:props = []
   py merlin.vim_complete_cursor(vim.eval("base"),"l:props")
-  if v:version < 703
+  if v:version <= 703
     return l:props
   else
     return {'words': l:props, 'refresh': 'always'}
@@ -233,7 +233,7 @@ endfunction
 
 function! merlin#EchoDotMerlin()
   if exists("b:dotmerlin")
-    echom "Using .merlin: " . b:dotmerlin
+    echom "Using .merlin: " . join(b:dotmerlin, ', ')
   else
     echo "No .merlin found"
   endif
@@ -241,7 +241,7 @@ endfunction
 
 function! merlin#GotoDotMerlin()
     if exists("b:dotmerlin")
-        execute ":e" . b:dotmerlin
+        execute ":e" . b:dotmerlin[0]
     " TODO : it's plausible to create an empty one here instead by guessing
     " where it should be located
     else

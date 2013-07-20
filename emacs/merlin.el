@@ -126,6 +126,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-buffer nil "Buffer for merlin input.")
 (defvar merlin-ready nil "If non-nil, the reception is done.")
 
+(defvar merlin-rewind-after-refresh t
+  "If non-nil, rewind the buffer after refresh")
+
 ; Errors related variables
 (defvar merlin-pending-errors nil
   "Pending errors.")
@@ -413,7 +416,11 @@ kill the process if required."
 (defun merlin-refresh ()
   "Refreshe merlin cmis."
   (interactive)
-  (merlin-send-command "refresh" nil))
+  (merlin-send-command "refresh" nil)
+  (when merlin-rewind-after-refresh
+    (merlin-rewind)))
+  
+
 
 (defun merlin-get-completion (ident)
   "Return the completion for ident IDENT."
@@ -692,6 +699,11 @@ variable `merlin-cache')."
   (ac-define-source "merlin" merlin-ac-source))
 
 ;; Usual completion
+(defun merlin--completion-lookup (string state)
+  "Lookup the entry `STRING' inside the completion table."
+  (let ((ret (assoc string merlin--completion-annotation-table)))
+    (if ret
+        (message "%s%s" (car ret) (cdr ret)))))
 (defun merlin-completion-at-point ()
   (save-excursion
     (merlin-check-synchronize))
@@ -700,7 +712,9 @@ variable `merlin-cache')."
     (let ((start (point)))
       (skip-syntax-forward "w_.")
       (list start (point)
-            (apply-partially #'merlin--completion-table start)))))
+            (apply-partially #'merlin--completion-table start)
+            . (:exit-function #'merlin--completion-lookup)))))
+            
 
 (defvar merlin--completion-cache-state nil)
 (defvar merlin--completion-annotation-table nil
@@ -729,6 +743,30 @@ variable `merlin-cache')."
     (complete-with-action action merlin--completion-annotation-table string pred)))
 
 
+;; Switch to ML file
+(defun merlin--list-by-ext (ext)
+  "Lists filenames ending by EXT in the path"
+  (append (merlin-get-return-field 
+           (merlin-send-command "which" (list "with_ext" ext)))
+          nil))
+
+(defun merlin--switch-to (name ext)
+  "Switch to NAME.EXT."
+  (let ((file
+         (merlin-get-return-field
+          (merlin-send-command "which" (list "path" (concat (downcase name) "." ext))))))
+    (if file (find-file-other-window file)
+      (message "No such file"))))
+(defun merlin-switch-to-ml (name)
+  "Switch to a ML file."
+  (interactive (list (completing-read "Module:" (merlin--list-by-ext "ml"))))
+  (merlin--switch-to name "ml"))
+
+(defun merlin-switch-to-mli (name)
+  "Switch to a MLI file."
+  (interactive (list (completing-read "Module:" (merlin--list-by-ext "mli"))))
+  (merlin--switch-to name "mli"))
+               
 ;; Get the type of an element
 
 (defun merlin-trim (s)
@@ -906,15 +944,35 @@ it will print types of bigger expressions around point (it will go up the ast). 
    (list (completing-read "Package to use:" (merlin-get-packages))))
   (merlin-send-command "find" (list "use" pkg)))
 
-(defun merlin-feed-config-files ()
-  "Parse all .merlin file lying beneath the current directory in the file system."
+(defun merlin--project-load-file(file)
+  "Load a the merlin project file FILE."
+  (merlin-send-command "project" (list "load" file)))
+  
+(defun merlin--project-file-path()
+  "Return the project file closer to the current directory"
   (let ((dir (expand-file-name default-directory)))
-    (while (not (string-equal dir "/")) ;; FIXME: Might loop for ever
-      (when (file-exists-p (concat dir ".merlin"))
-        (merlin-send-command "project" (list "load" (concat dir ".merlin"))))
+    (while (and
+            (stringp dir)
+            (not (string-equal dir "/")) ;; FIXME: Might loop for ever
+            (not (file-exists-p (concat dir ".merlin"))))
       (setq dir (file-name-directory (directory-file-name dir))))
-    ))    
+    (concat dir ".merlin")))
 
+(defun merlin-reload-project-file ()
+  "(re)load the .merlin file corresponding to the current file."
+  (interactive)
+  (let ((file (merlin--project-file-path)))
+    (when file
+      (merlin--project-load-file file))))
+
+(defun merlin-goto-project-file ()
+  "Goto the merlin file corresponding to the current file."
+  (interactive)
+  (let ((file (merlin--project-file-path)))
+    (if file
+        (find-file-other-window file)
+      (message "No project file for the current buffer."))))
+  
 ;; Idle 
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
@@ -1013,6 +1071,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (add-to-list 'ac-sources 'merlin-ac-source))
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
+  (setq (make-local-variable 'completion-extra-properties) '(:exit-function (lambda (s status) (message "haha: %s" status))))
   (set (make-local-variable 'merlin-lock-point) (point-min))
   (set (make-local-variable 'merlin-buffer) nil)
   (set (make-local-variable 'merlin-result) nil)
@@ -1028,12 +1087,14 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-enclosing-offset) nil)
   (set (make-local-variable 'merlin-last-point-type) nil)
   (add-to-list 'after-change-functions 'merlin-edit)
-  (merlin-feed-config-files)
+  (merlin-reload-project-file)
   (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
       (setq merlin-idle-timer
             (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
   (with-current-buffer merlin-type-buffer
     (funcall merlin-favourite-caml-mode)))
+
+;;;###autoload
 (define-minor-mode merlin-mode
   "Minor mode for interacting with a merlin process.
 Runs a merlin process in the background (one for all merlin

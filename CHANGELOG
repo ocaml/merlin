@@ -1,6 +1,15 @@
 merlin 1.1
 ==========
 
+  emacs: add ML, MLI and merlin-goto-project-file commands
+
+  extensions: merged support for ignoring P4_QUOTATION
+
+  extensions: merged support for js_of_ocaml syntax
+
+merlin 1.1
+==========
+
 	emacs: Ported the completion to the usual `completion-at-point'
 	system, disabled auto-complete-mode-by-default
 

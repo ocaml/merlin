@@ -141,6 +141,7 @@ let str_of_binding ?ghost_loc { ident; typesig; body } =
     pstr_loc = default_loc ghost_loc ;
   }
 
+(* Lwt extension *)
 module Lwt = struct
   let un_lwt = prim "Lwt.un_lwt"
   let to_lwt = prim "Lwt.to_lwt"
@@ -149,6 +150,26 @@ module Lwt = struct
   let un_stream = prim "Lwt.un_stream"
   let finally' = prim "Lwt.finally'"
   let raise_lwt' = prim_ident "Lwt.raise_lwt'"
+end
+
+(* Js extension *)
+module Js = struct
+  let un_js     = prim "Js.un_js"
+  let un_meth   = prim "Js.un_meth"
+  let un_constr = prim "Js.un_constr"
+  let un_prop   = prim "Js.un_prop"
+end
+
+(* OUnit extension *)
+module OUnit = struct
+  let fresh_test_module_ident =
+    let counter = ref 0 in
+    fun () ->
+      incr counter;
+      ("_TEST_" ^ string_of_int !counter)
+
+  let force_bool = prim "OUnit.force_bool"
+  let force_unit = prim "OUnit.force_unit"
 end
 
 (* tools used in the next few modules *)

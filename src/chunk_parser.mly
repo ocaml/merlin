@@ -1,3 +1,4 @@
+
 (***********************************************************************)
 (*                                                                     *)
 (*                                OCaml                                *)
@@ -437,6 +438,11 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token FINALLY_LWT
 %token FOR_LWT
 %token WHILE_LWT
+%token JSNEW
+%token P4_QUOTATION
+%token OUNIT_TEST
+%token OUNIT_TEST_UNIT
+%token OUNIT_TEST_MODULE
 
 (* Precedences and associativities.
 
@@ -496,7 +502,7 @@ The precedences must be listed from low to high.
 (* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
+          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION JSNEW
 
 
 (* Entry points *)
@@ -585,6 +591,8 @@ structure_tail:
 ;
 
 top_structure_item:
+  | seq_expr EOF { [mkloc (ghstrexp $startpos $endpos $1) 
+                      (symbol_rloc $startpos $endpos)] }
   | structure_item EOF
       { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $1 }
 ;
@@ -634,6 +642,19 @@ structure_item:
       { [mkstr $startpos $endpos (Pstr_class_type (List.rev $3))] }
   | INCLUDE module_expr
       { [mkstr $startpos $endpos (Pstr_include $2)] }
+  | OUNIT_TEST option(STRING) EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_bool $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_unit $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
+      { let name = Fake.OUnit.fresh_test_module_ident () in
+        [mkstr $startpos $endpos
+           (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]
+      }
 ;
 module_binding:
     EQUAL module_expr
@@ -1163,6 +1184,46 @@ expr:
                       ["",$1; "",$4; "",$7])) }
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
       { bigarray_set $startpos($1) $endpos($7) $1 $4 $7 }
+
+  | simple_expr SHARP SHARP label
+      { let inst = Fake.(app Js.un_js $1) in
+        let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+        let prop = Fake.(app Js.un_prop field) in
+        mkexp $startpos $endpos (Pexp_send(prop,"get"))
+      }
+  | simple_expr SHARP SHARP label LESSMINUS expr
+      { let inst = Fake.(app Js.un_js $1) in
+        let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let prop = Fake.(app Js.un_prop field) in
+        let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
+        reloc_exp $startpos $endpos
+        Fake.(app setter $6)
+      }
+  | simple_expr SHARP SHARP label LPAREN RPAREN
+      { let inst = Fake.(app Js.un_js $1) in
+        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        Fake.(app Js.un_meth jsmeth)
+      }
+  | simple_expr SHARP SHARP error
+      { syntax_error $startpos($4);
+        let inst = Fake.(app Js.un_js $1) in
+        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, "")) in
+        Fake.(app Js.un_meth jsmeth)
+      }
+  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+      { let inst = Fake.(app Js.un_js $1) in
+        let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let jsmeth =
+          List.fold_left
+            (fun meth arg -> 
+              reloc_exp meth.pexp_loc.Location.loc_start
+                        arg.pexp_loc.Location.loc_end
+              (Fake.app meth arg))
+            meth (List.rev $6)
+        in
+        Fake.(app Js.un_meth jsmeth)
+      }
+
   | label LESSMINUS expr
       { mkexp $startpos $endpos (Pexp_setinstvar(mkrhs $startpos($1) $endpos($1) $1, $3)) }
   | ASSERT simple_expr
@@ -1263,7 +1324,8 @@ simple_expr:
   | simple_expr SHARP label
       { mkexp $startpos $endpos (Pexp_send($1, $3)) }
   | simple_expr SHARP error
-      { mkexp $startpos $endpos (Pexp_send($1, "")) }
+      { syntax_error $startpos($3);
+        mkexp $startpos $endpos (Pexp_send($1, "")) }
   | LPAREN MODULE module_expr RPAREN
       { mkexp $startpos $endpos  (Pexp_pack $3) }
   | LPAREN MODULE module_expr COLON package_type RPAREN
@@ -1272,6 +1334,25 @@ simple_expr:
   | LPAREN MODULE module_expr COLON error
       { syntax_error $startpos($5);
         mkexp $startpos $endpos (Pexp_pack $3) }
+  (* CamlP4 compatibility *)
+  | P4_QUOTATION
+      { reloc_exp $startpos $endpos Fake.any_val' }
+  (* Js_of_ocaml extension *)
+  | JSNEW simple_expr LPAREN RPAREN
+      { reloc_exp $startpos $endpos
+        Fake.(app Js.un_constr $2)
+      }
+  | JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
+      { let jsnew' = reloc_exp $startpos($1) $endpos($1) Fake.Js.un_constr in
+        let constr = reloc_exp $startpos($1) $endpos($2) Fake.(app jsnew' $2) in
+        reloc_exp $startpos $endpos
+        (List.fold_left
+           (fun constr arg -> 
+             reloc_exp constr.pexp_loc.Location.loc_start
+                       arg.pexp_loc.Location.loc_end
+             (Fake.app constr arg))
+           constr (List.rev $4))
+      }
 ;
 simple_labeled_expr_list:
     labeled_simple_expr
@@ -1361,6 +1442,10 @@ match_action:
 expr_comma_list:
     expr_comma_list COMMA expr                  { $3 :: $1 }
   | expr COMMA expr                             { [$3; $1] }
+;
+expr_comma_opt_list:
+    expr_comma_opt_list COMMA expr              { $3 :: $1 }
+  | expr %prec COMMA                            { [$1] }
 ;
 record_expr:
     simple_expr WITH lbl_expr_list              { (Some $1, $3) }

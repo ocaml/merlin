@@ -29,6 +29,7 @@
 type state = State.t = {
   pos      : Lexing.position;
   tokens   : Outline.token list;
+  comments : Lexer.comment list;
   outlines : Outline.t;
   chunks   : Chunk.t;
   types    : Typer.t;
@@ -87,7 +88,7 @@ let command_tell = {
           then (try List.tl tokens with _ -> tokens)
           else tokens
         in
-        let state' = { tokens ; outlines ; chunks ; types ; pos } in
+        let state' = { tokens ; comments = [] ; outlines ; chunks ; types ; pos } in
         if !eod || (!eot && (stuck || tokens = []))
         then state'
         else loop state'
@@ -256,7 +257,7 @@ let command_seek = {
         | l when l = Location.none -> State.initial.pos
         | p -> p.Location.loc_end
     in
-    { tokens = [] ; outlines ; chunks ; types ; pos },
+    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
     Protocol.pos_to_json pos
 
   | [`String "exact" ; jpos] ->
@@ -272,7 +273,7 @@ let command_seek = {
       | l when l = Location.none -> State.initial.pos
       | p -> p.Location.loc_end
     in
-    { tokens = [] ; outlines ; chunks ; types ; pos },
+    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
     Protocol.pos_to_json pos
 
   | [`String "end"] ->
@@ -284,7 +285,7 @@ let command_seek = {
       | l when l = Location.none -> State.initial.pos
       | p -> p.Location.loc_end
     in
-    { tokens = [] ; outlines ; chunks ; types ; pos },
+    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
     Protocol.pos_to_json pos
 
   | [`String "maximize_scope"] ->
@@ -318,7 +319,7 @@ let command_seek = {
       | l when l = Location.none -> State.initial.pos
       | p -> p.Location.loc_end
     in
-    { tokens = [] ; outlines ; chunks ; types ; pos },
+    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
     Protocol.pos_to_json pos
   | _ -> invalid_arguments ()
   end;

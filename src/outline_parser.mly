@@ -137,6 +137,11 @@
 %token FINALLY_LWT
 %token FOR_LWT
 %token WHILE_LWT
+%token JSNEW
+%token P4_QUOTATION
+%token OUNIT_TEST
+%token OUNIT_TEST_UNIT
+%token OUNIT_TEST_MODULE
 
 (* Precedences and associativities.
 
@@ -196,7 +201,7 @@ The precedences must be listed from low to high.
 (* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
+          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION JSNEW 
 
 
 (* Entry points *)
@@ -319,6 +324,12 @@ structure_item:
       { emit_top Definition $endpos }
       (*FIXME: Should be possible to handle INCLUDE interactively *)
   | INCLUDE enter_sub module_expr leave_sub
+      { emit_top Definition $endpos }
+  | OUNIT_TEST option(STRING) EQUAL seq_expr
+      { emit_top Definition $endpos }
+  | OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
+      { emit_top Definition $endpos }
+  | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
       { emit_top Definition $endpos }
 ;
 module_binding:
@@ -768,6 +779,14 @@ expr:
       { () }
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
       { () }
+  | simple_expr SHARP SHARP label
+      { () }
+  | simple_expr SHARP SHARP label LESSMINUS simple_expr
+      { () }
+  | simple_expr SHARP SHARP label LPAREN RPAREN
+      { () }
+  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+      { () }
   | label LESSMINUS expr
       { () }
   | ASSERT simple_expr
@@ -852,6 +871,14 @@ simple_expr:
       { () }
   (* | LPAREN MODULE enter_sub module_expr leave_sub COLON error
       { () } *)
+  (* CamlP4 compatibility *)
+  | P4_QUOTATION
+      { () }
+  (* Js_of_ocaml extension *)
+  | JSNEW simple_expr LPAREN RPAREN
+      { () }
+  | JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
+      { () }
 ;
 enter_sub:
   { enter_sub () }
@@ -934,6 +961,10 @@ match_action:
 expr_comma_list:
     expr_comma_list COMMA expr                  { () }
   | expr COMMA expr                             { () }
+;
+expr_comma_opt_list:
+    expr_comma_opt_list COMMA expr              { () }
+  | expr %prec COMMA                            { () }
 ;
 record_expr:
     simple_expr WITH lbl_expr_list              { () }

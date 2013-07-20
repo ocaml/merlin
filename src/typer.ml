@@ -44,7 +44,7 @@ let initial_env =
   let cenv = Lazy.lazy_from_fun initial_env in
   fun () ->
     let env = Lazy.force cenv in
-    Extensions.register env
+    Extensions_utils.register env
 
 let value t =
   match History.prev t with

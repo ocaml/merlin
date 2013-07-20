@@ -100,6 +100,14 @@ let keyword_table =
     "finally", FINALLY_LWT;
     "for_lwt", FOR_LWT;
     "while_lwt", WHILE_LWT;
+
+    (* HACK: js_of_ocaml extension *)
+    "jsnew", JSNEW;
+
+    (* HACK: pa_ounit extension *)
+    "TEST", OUNIT_TEST;
+    "TEST_UNIT", OUNIT_TEST_UNIT;
+    "TEST_MODULE", OUNIT_TEST_MODULE;
 ]
 
 (* To buffer string literals *)
@@ -290,7 +298,11 @@ rule token = parse
           with Not_found ->
             LIDENT s }
   | uppercase identchar *
-      { UIDENT(Lexing.lexeme lexbuf) }       (* No capitalized keywords *)
+      { let s = Lexing.lexeme lexbuf in (* Capitalized keywords for OUnit *)
+          try
+            Hashtbl.find keyword_table s
+          with Not_found ->
+            UIDENT s }
   | int_literal
       { try
           INT (cvt_int_literal (Lexing.lexeme lexbuf))
@@ -373,6 +385,14 @@ rule token = parse
       { update_loc lexbuf name (int_of_string num) true 0;
         token lexbuf
       }
+
+  | "<" (":" identchar*)? ("@" identchar*)? "<"
+      { let start = lexbuf.lex_start_p in
+        p4_quotation lexbuf;
+        lexbuf.lex_start_p <- start;
+        P4_QUOTATION
+      }
+
   | "#"  { SHARP }
   | "&"  { AMPERSAND }
   | "&&" { AMPERAMPER }
@@ -550,7 +570,17 @@ and skip_sharp_bang = parse
        { update_loc lexbuf None 1 false 0 }
   | "" { () }
 
+and p4_quotation = parse
+  | "<" (":" identchar*)? ("@" identchar*)? "<"
+        { p4_quotation lexbuf }
+        (* FIXME: This is fake *)
+  | ">>" { () }
+  | eof { raise (Error (Unterminated_string, Location.none)) }
+  | _   { p4_quotation lexbuf }
+
 {
+  type comment = string * Location.t
+
   let token_with_comments = token
 
   let last_comments = ref []
@@ -561,8 +591,15 @@ and skip_sharp_bang = parse
           token lexbuf
       | tok -> tok
   let comments () = List.rev !last_comments
+
+  let extract_comments () = 
+    let r = !last_comments in
+    last_comments := [];
+    r
+
   let init () =
     is_in_string := false;
     last_comments := [];
     comment_start_loc := []
 }
+

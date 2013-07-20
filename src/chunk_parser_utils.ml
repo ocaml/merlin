@@ -104,6 +104,7 @@ let token_to_string =
     | MUTABLE -> "MUTABLE"
     | NATIVEINT s -> "NATIVEINT(" ^ Nativeint.to_string s ^ ")"
     | NEW -> "NEW"
+    | JSNEW -> "JSNEW"
     | OBJECT -> "OBJECT"
     | OF -> "OF"
     | OPEN -> "OPEN"
@@ -147,6 +148,10 @@ let token_to_string =
     | MATCH_LWT -> "MATCH_LWT"
     | FOR_LWT -> "FOR_LWT"
     | WHILE_LWT -> "WHILE_LWT"
+    | P4_QUOTATION -> "P4_QUOTATION"
+    | OUNIT_TEST -> "TEST"
+    | OUNIT_TEST_UNIT -> "TEST_UNIT"
+    | OUNIT_TEST_MODULE -> "TEST_MODULE"
 
 let dump_lexer ?who f a =
   let t = f a in
