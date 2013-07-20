@@ -239,7 +239,7 @@ endfunction
 
 function! merlin#GotoDotMerlin()
     if exists("b:dotmerlin")
-        execute ":e" . b:dotmerlin
+        execute ":e" . b:dotmerlin[0]
     " TODO : it's plausible to create an empty one here instead by guessing
     " where it should be located
     else
