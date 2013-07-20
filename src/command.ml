@@ -369,6 +369,9 @@ let command_refresh = {
     Env.reset_cache ();
     let types = Typer.sync state.chunks History.empty in
     {state with types}, `Bool true
+  | [`String "quick"] ->
+    let state, changed = State.quick_refresh_modules state in
+    state, `Bool changed
   | _ -> invalid_arguments ()
   end;
 }
@@ -547,3 +550,4 @@ let _ = List.iter register [
   command_which; command_find;
   command_help;
 ]
+

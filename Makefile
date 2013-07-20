@@ -32,6 +32,7 @@ install: $(TARGET)
 	install -d $(BIN_DIR)
 	install -d $(SHARE_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
+	install omake-merlin $(BIN_DIR)/omake-merlin
 	install -d $(SHARE_DIR)/ocamlmerlin/vim
 	install -d $(SHARE_DIR)/ocamlmerlin/vimbufsync
 	install -d $(SHARE_DIR)/emacs/site-lisp
@@ -56,4 +57,4 @@ install: $(TARGET)
 	@echo 
 
 uninstall:
-	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
+	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
