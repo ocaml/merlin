@@ -981,7 +981,25 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (if file
         (find-file-other-window file)
       (message "No project file for the current buffer."))))
-  
+;; Locate
+(defvar merlin-position-stack nil)
+(defun merlin-locate ()
+  "Locate the identifier under point"
+  (interactive)
+  (let* ((ident (thing-at-point 'ocamlatom))
+         (r (merlin-get-return-field (merlin-send-command "locate" (list ident)))))
+    (if r
+        (progn
+          (push r merlin-position-stack)
+          (merlin-goto-file-and-point r))
+      (message "%s not found." ident))))
+
+(defun merlin-pop-stack ()
+  "Go back to the last position"
+  (let ((r (pop merlin-position-stack)))
+    (if r
+        (merlin-goto-file-and-point r))))
+    
 ;; Idle 
 (defun merlin-idle-hook ()
   (if (<= merlin-idle-delay 0.)
@@ -1012,7 +1030,10 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (define-key merlin-map (kbd "C-c C-t") 'merlin-magic-show-type)
     (define-key merlin-map (kbd "C-c d") 'merlin-show-type-def)
     (define-key merlin-map (kbd "C-c l") 'merlin-use)
+
     (define-key merlin-map (kbd "C-c C-x") 'merlin-next-error)
+    (define-key merlin-map (kbd "C-c C-l") 'merlin-locate)
+    (define-key merlin-map (kbd "C-c &") 'merlin-pop-stack)
     (define-key merlin-map (kbd "C-c C-r") 'merlin-rewind)
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
     (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
