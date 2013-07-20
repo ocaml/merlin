@@ -179,14 +179,23 @@ In particular you can specify nil, meaning that the locked zone is not represent
          (s (mapconcat 'identity l ".")))
     (if (string-equal s "") s (concat s "."))))
 
+(defun merlin-goto-point (data)
+  "Goes to the point indicated by `DATA' which must be an assoc list with fields line and col"
+  (goto-char (point-min))
+  (forward-line (1- (cdr (assoc 'line data))))
+  (forward-char (cdr (assoc 'col data)))
+)
+(defun merlin-goto-file-and-point (data)
+  "Goes to the file and position indicated by `DATA' which is an assoc list containing fields file, line and col"
+  (find-file-other-window (cdr (assoc 'file data)))
+  (merlin-goto-point data))
+
 (defun merlin-make-point (data)
   "Create a point from a couple line / col."
   (save-excursion
     (beginning-of-line)
     ;; goto-line
-    (goto-char (point-min))
-    (forward-line (1- (cdr (assoc 'line data))))
-    (forward-char (cdr (assoc 'col data)))
+    (merlin-goto-point data)
     (point)))
 (defun merlin-make-bounds (data)
   "From a json object {\"start\": LOC1; \"end\": LOC2}
@@ -498,7 +507,7 @@ It proceeds by telling (with the end mode) each line until it returns true or un
   (interactive)
   (if merlin-pending-errors
       (let ((err (pop merlin-pending-errors)))
-        (goto-char (merlin-make-point (cdr (assoc 'start err))))
+        (merlin-goto-point (cdr (assoc 'start err)))
         (if merlin-pending-errors-overlays
             (delete-overlay (pop merlin-pending-errors-overlays)))
         (merlin-create-overlay 'merlin-error-overlay 
@@ -1071,7 +1080,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (add-to-list 'ac-sources 'merlin-ac-source))
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
-  (setq (make-local-variable 'completion-extra-properties) '(:exit-function (lambda (s status) (message "haha: %s" status))))
   (set (make-local-variable 'merlin-lock-point) (point-min))
   (set (make-local-variable 'merlin-buffer) nil)
   (set (make-local-variable 'merlin-result) nil)
