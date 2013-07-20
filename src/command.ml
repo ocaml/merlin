@@ -235,17 +235,20 @@ let command_complete = {
 let command_locate = {
   name = "locate";
 
-  handler =
-  begin fun _ state -> function
-  | [ `String path ] ->
-    let node = Browse.({dummy with env = Typer.env state.types}) in
-    begin match State.locate node path with
+  handler = begin fun _ state args ->
+    let path, node =
+      match args with
+      | [ `String path ] ->
+        path, Browse.({ dummy with env = Typer.env state.types })
+      | [ `String path ; `String "at" ; jpos ] ->
+        path, State.node_at state (Protocol.pos_of_json jpos)
+      | _ -> invalid_arguments ()
+    in
+    match State.locate node path with
     | None -> state, `String "Not found"
     | Some (file, loc) ->
       let pos = loc.Location.loc_start in
       state, `Assoc [ "file", `String file ; "pos", Protocol.pos_to_json pos ]
-    end
-  | _ -> invalid_arguments ()
   end
 }
 
