@@ -1154,4 +1154,6 @@ Short cuts:
             (merlin-kill-process)))
         merlin-processes))
 
+(merlin-insinuate)
+
 (provide 'merlin)
