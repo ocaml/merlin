@@ -547,11 +547,14 @@ It proceeds by telling (with the end mode) each line until it returns true or un
                                   (merlin-make-point (cdr (assoc 'start err)))
                                   (merlin-make-point (cdr (assoc 'end err))))))
                     (if (merlin-warning-p (cdr (assoc 'message err)))
-                        (merlin-put-margin-overlay overlay "?" compilation-warning-face)
-                      (merlin-put-margin-overlay overlay "!" compilation-error-face))
-                     
-                    overlay)) 
-                errors))
+                        (merlin-put-margin-overlay overlay 
+                                                   merlin-margin-warning-string 
+                                                   compilation-warning-face)
+                      (merlin-put-margin-overlay overlay 
+                                                 merlin-margin-error-string
+                                                 compilation-error-face))
+                      overlay))
+                  errors))
   (message "(pending errors, use %s to jump)"
            (substitute-command-keys "\\[merlin-next-error]")))
 
