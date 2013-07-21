@@ -990,7 +990,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (interactive)
   (let* ((ident (thing-at-point 'ocamlatom))
          (r (merlin-get-return-field (merlin-send-command "locate" (list ident)))))
-    (if (listp r)
+    (if (and r (listp r))
       (progn
         (push (cons (buffer-name) (point)) merlin-position-stack)
         (merlin-goto-file-and-point r)
