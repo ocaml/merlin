@@ -565,7 +565,8 @@ Moreover if `view-errors-p' is not nil, it will display them in the margin."
     (if (> (length (elt output 1)) 0)
 	(progn
           (when view-errors-p
-            (let ((errors (append (elt output 1) nil)))
+            (let ((errors (delete-if (lambda (e) (not (assoc 'start e)))
+                                     (append (elt output 1) nil))))
               (if (not merlin-report-warnings)
                   (delete-if (lambda (e) (merlin-warning-p (cdr (assoc 'message e)))) errors))
               (merlin-display-errors-in-margin errors)))
