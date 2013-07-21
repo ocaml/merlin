@@ -187,8 +187,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
 )
 (defun merlin-goto-file-and-point (data)
   "Goes to the file and position indicated by `DATA' which is an assoc list containing fields file, line and col"
-  (find-file-other-window (cdr (assoc 'file data)))
-  (merlin-goto-point data))
+  (if (> (length (cdr (assoc 'file data))) 0)
+      (find-file-other-window (cdr (assoc 'file data))))
+  (merlin-goto-point (cdr (assoc 'pos data))))
 
 (defun merlin-make-point (data)
   "Create a point from a couple line / col."
@@ -764,7 +765,8 @@ variable `merlin-cache')."
   (let ((file
          (merlin-get-return-field
           (merlin-send-command "which" (list "path" (concat (downcase name) "." ext))))))
-    (if file (find-file-other-window file)
+    (if file 
+        (find-file-other-window file)
       (message "No such file"))))
 (defun merlin-switch-to-ml (name)
   "Switch to a ML file."
@@ -988,17 +990,26 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (interactive)
   (let* ((ident (thing-at-point 'ocamlatom))
          (r (merlin-get-return-field (merlin-send-command "locate" (list ident)))))
-    (if r
-        (progn
-          (push r merlin-position-stack)
-          (merlin-goto-file-and-point r))
+    (if (listp r)
+      (progn
+        (push (cons (buffer-name) (point)) merlin-position-stack)
+        (merlin-goto-file-and-point r)
+        (message "Use %s to go back."
+                 (substitute-command-keys "\\[merlin-pop-stack]")))
       (message "%s not found." ident))))
 
 (defun merlin-pop-stack ()
   "Go back to the last position"
+  (interactive)
   (let ((r (pop merlin-position-stack)))
     (if r
-        (merlin-goto-file-and-point r))))
+        (progn
+          (select-window (display-buffer (car r)))
+          (goto-char (cdr r)))
+
+      (message "empty stack"))))
+    
+
     
 ;; Idle 
 (defun merlin-idle-hook ()
