@@ -331,7 +331,7 @@ denoting the parameters to be passed to merlin. USERS can be used to set the use
         (ignore-errors (merlin-kill-process)))
     (setq merlin-local-process (merlin-start-process merlin--current-flags users))
     (setq merlin-pending-errors nil)
-    (merlin-parse)
+    (merlin-load-project-file)
     (merlin-to-point)))
       
 (defun merlin-process-clear-flags ()
@@ -370,6 +370,7 @@ kill the process if required."
       (setq merlin-process-users (delete name merlin-process-users))
       (if (and (not merlin-process-users)
                merlin-automatically-garbage-processes)
+          (message "Killed merlin process.")
           (merlin-kill-process))
       )
     )
@@ -522,9 +523,9 @@ It proceeds by telling (with the end mode) each line until it returns true or un
                      (substitute-command-keys "\\[merlin-next-error]")
                      )
           (message "%s" (cdr (assoc 'message err)))))
-    (message "no more errors")))
+    (next-error)))
 
-(defun merlin-remove-error-overlay ()
+(defun merlin-remoove-error-overlay ()
   "Remove the error overlay."
   (delete-overlay merlin-error-overlay))
 
@@ -957,26 +958,14 @@ it will print types of bigger expressions around point (it will go up the ast). 
    (list (completing-read "Package to use:" (merlin-get-packages))))
   (merlin-send-command "find" (list "use" pkg)))
 
-(defun merlin--project-load-file(file)
-  "Load a the merlin project file FILE."
-  (merlin-send-command "project" (list "load" file)))
-  
-(defun merlin--project-file-path()
-  "Return the project file closer to the current directory"
-  (let ((dir (expand-file-name default-directory)))
-    (while (and
-            (stringp dir)
-            (not (string-equal dir "/")) ;; FIXME: Might loop for ever
-            (not (file-exists-p (concat dir ".merlin"))))
-      (setq dir (file-name-directory (directory-file-name dir))))
-    (concat dir ".merlin")))
-
-(defun merlin-reload-project-file ()
-  "(re)load the .merlin file corresponding to the current file."
+(defvar merlin--project-file nil "The .merlin file for current buffer")
+(defun merlin-load-project-file ()
+  "Load the .merlin file corresponding to the current file."
   (interactive)
-  (let ((file (merlin--project-file-path)))
-    (when file
-      (merlin--project-load-file file))))
+  (merlin-rewind)
+  (let ((r (merlin-get-return-field (merlin-send-command "project" (list "find" (buffer-file-name))))))
+    (if (and r (listp r))
+        (setq merlin--project-file (car r)))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
@@ -1095,6 +1084,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-type-overlay) nil)
   (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
   (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
+  (set (make-local-variable 'merlin--project-file) nil)
   (set (make-local-variable 'merlin-enclosing-types) nil)
   (set (make-local-variable 'merlin-enclosing-offset) nil)
   (set (make-local-variable 'merlin-last-point-type) nil)
