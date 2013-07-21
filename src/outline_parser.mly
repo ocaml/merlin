@@ -169,7 +169,7 @@ The precedences must be listed from low to high.
 %nonassoc IN
 %nonassoc below_SEMI
 %nonassoc SEMI                          (* below EQUAL ({ () }) *)
-%nonassoc LET                           (* above SEMI ( ...; let ... in ...) *)
+%nonassoc LET LET_LWT                   (* above SEMI ( ...; let ... in ...) *)
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 (* below BAR  (match ... with ...) *)
 %nonassoc FINALLY_LWT
@@ -301,6 +301,8 @@ comma_ext_list:
 
 structure_item:
     LET rec_flag let_bindings
+      { emit_top Definition $endpos }
+  | LET_LWT rec_flag let_bindings
       { emit_top Definition $endpos }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { emit_top Definition $endpos }

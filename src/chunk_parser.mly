@@ -470,7 +470,7 @@ The precedences must be listed from low to high.
 %nonassoc IN
 %nonassoc below_SEMI
 %nonassoc SEMI                          (* below EQUAL ({lbl=...; lbl=...}) *)
-%nonassoc LET                           (* above SEMI ( ...; let ... in ...) *)
+%nonassoc LET LET_LWT                   (* above SEMI ( ...; let ... in ...) *)
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 (* below BAR  (match ... with ...) *)
 %nonassoc FINALLY_LWT
@@ -607,6 +607,12 @@ structure_item:
         | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
             [mkstr $startpos $endpos (Pstr_eval exp)]
         | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev $3))]
+      }
+  | LET_LWT rec_flag let_bindings
+      { match $3 with
+        | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
+            [mkstr $startpos $endpos (Pstr_eval (Fake.app Fake.Lwt.un_lwt exp))]
+        | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3))]
       }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { [mkstr $startpos $endpos
