@@ -644,6 +644,9 @@ The parameter `view-errors-p' controls whether we should care for errors"
 
 (defun merlin-edit (start end length)
   "Called when an edit is make to retract the locked zone if it is needed."
+  (when merlin-type-overlay
+      (delete-overlay merlin-type-overlay)
+      (setq merlin-type-overlay nil))
   (if (< start merlin-lock-point)
       (progn
         (setq merlin-lock-point (merlin-retract-to start))
@@ -820,7 +823,7 @@ variable `merlin-cache')."
           (progn 
             (message "%s" type)
             (if (and (not quiet) bounds)
-                (merlin-create-overlay 'merlin-type-overlay bounds 'highlight "1 sec")))
+                (merlin-create-overlay 'merlin-type-overlay bounds 'highlight "5 sec")))
         (when (not quiet)
           (display-buffer merlin-type-buffer)
           (with-current-buffer merlin-type-buffer
