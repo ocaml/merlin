@@ -154,6 +154,19 @@ and from_path' (fname :: modules) =
 
 and from_path path = from_path' (path_to_list path)
 
+let path_and_loc_from_cstr desc =
+  let open Types in
+  match desc.cstr_tag with
+  | Cstr_exception (path, loc) -> path, loc
+  | _ ->
+    let (Tconstr (path, _, _)) = desc.cstr_res.desc in
+    path, Location.none
+
+let path_and_loc_from_label desc =
+  let open Types in
+  let (Tconstr (path, _, _)) = desc.lbl_res.desc in
+  path, Location.none
+
 let from_string ~sources ~env path =
   sources_path := sources ;
   let ident = Longident.parse path in
@@ -166,6 +179,14 @@ let from_string ~sources ~env path =
       try
         let path, typ_decl = Env.lookup_type ident env in
         path, typ_decl.Types.type_loc
+      with Not_found ->
+      try
+        let _, cstr_desc = Env.lookup_constructor ident env in
+        path_and_loc_from_cstr cstr_desc
+      with Not_found ->
+      try
+        let _, label_desc = Env.lookup_label ident env in
+        path_and_loc_from_label label_desc
       with Not_found ->
         raise Not_found
     in
