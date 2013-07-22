@@ -1140,6 +1140,13 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (with-current-buffer merlin-type-buffer
     (funcall merlin-favourite-caml-mode)))
 
+(defun merlin-is-ml-buffer ()
+  "Returns true if current buffer corresponds to a ML file"
+  (and
+   (buffer-file-name)
+   (equal (file-name-extension (buffer-file-name))
+          "ml")))
+  
 ;;;###autoload
 (define-minor-mode merlin-mode
   "Minor mode for interacting with a merlin process.
@@ -1151,17 +1158,14 @@ Short cuts:
   nil "merlin"
   :keymap merlin-mode-map
   (if merlin-mode 
-      (if (and
-           (buffer-file-name)
-           (equal (file-name-extension (buffer-file-name))
-                 "ml"))
+      (if (merlin-is-ml-buffer) 
           (merlin-setup)
         (progn
           (if (buffer-file-name)
               (message "merlin can only operate on ml files")
               nil)
           (merlin-mode -1)))
-    (progn
+    (when (merlin-is-ml-buffer)
       (cancel-timer merlin-idle-timer)
       (if merlin-lock-zone-highlight-overlay
           (delete-overlay merlin-lock-zone-highlight-overlay))
