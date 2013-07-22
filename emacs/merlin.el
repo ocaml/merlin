@@ -272,29 +272,39 @@ For now it is a constant function (every buffer shares the same instance)."
   (concat "merlin-" (merlin-get-buffer-instance-name))
   )
 
-
+(defvar merlin--counter 0)
 (defun merlin-filter (process output)
   "The filter on merlin's output."
   (setq merlin-buffer (concat merlin-buffer output))
-  (let ((a (ignore-errors (json-read-from-string merlin-buffer))))
-  (if a
-      (progn
-	(if merlin-debug (merlin-debug (format "Received:\n%s\n----\n" merlin-buffer)))
-	(setq merlin-result a)
-	(setq merlin-ready t)))))
+  (setq merlin--counter 0)
+  (if (> (length merlin-buffer) 1000)
+      (message "Loading answer %dk" (/ (length merlin-buffer) 1000)))
+  (when (or
+         (equal (elt merlin-buffer (1- (length merlin-buffer))) ?\n)
+         (< (length merlin-buffer) 1000))
+    (let ((a (ignore-errors (json-read-from-string merlin-buffer))))
+      (if a
+          (progn
+            (if merlin-debug 
+                (merlin-debug (format "Received:\n%s\n----\n" merlin-buffer)))
+            (if (> (length merlin-buffer) 1000)
+                (message "Loading answer %dk...done" 
+                         (/ (length merlin-buffer) 1000)))
+            (setq merlin-result a)
+            (setq merlin-ready t))))))
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
   (with-current-buffer (merlin-get-process-buffer-name)
-    (let ((times 0))
       (while
-          (and (< times 20)
+          (and (< merlin--counter 20)
                (or
                 (not (accept-process-output (merlin-get-process) 0.1 nil nil))
                 (not merlin-ready)))
-        (setq times (+ times 1)))
+        (setq merlin--counter (+ merlin--counter 1)))
       (setq merlin-buffer nil)
-      (setq merlin-ready nil))))
+      (setq merlin-ready nil)
+      (not (equal merlin--counter 20))))
 
 (defun merlin-start-process (flags &optional users)
   "Start the merlin process for the current buffer. FLAGS are a list of strings
@@ -303,9 +313,9 @@ denoting the parameters to be passed to merlin. USERS can be used to set the use
 			 (merlin-get-process-buffer-name)
 			 merlin-command flags) )
         (name (buffer-name)))
+    (set (make-local-variable 'merlin-local-process) p)
     (merlin-debug (format "Running %s with flags %s\n" merlin-command flags))
 ;; set the global process (for now)
-    (set (make-local-variable 'merlin-local-process) p)
     (set-process-query-on-exit-flag p nil)
     (set-process-filter p 'merlin-filter)
     (push p merlin-processes)
@@ -398,10 +408,8 @@ kill the process if required."
     (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
     (with-current-buffer (merlin-get-process-buffer-name)
       (setq merlin-process-last-user name)
-      (merlin-wait-for-answer)
-      merlin-result
-      )
-))
+      (when (merlin-wait-for-answer)
+          merlin-result))))
 
 
 (defun merlin-is-long (s)
@@ -526,7 +534,7 @@ It proceeds by telling (with the end mode) each line until it returns true or un
           (message "%s" (cdr (assoc 'message err)))))
     (next-error)))
 
-(defun merlin-remoove-error-overlay ()
+(defun merlin-remove-error-overlay ()
   "Remove the error overlay."
   (delete-overlay merlin-error-overlay))
 
@@ -1123,6 +1131,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-enclosing-types) nil)
   (set (make-local-variable 'merlin-enclosing-offset) nil)
   (set (make-local-variable 'merlin-last-point-type) nil)
+  (set (make-local-variable 'merlin-counter) 0)
   (add-to-list 'after-change-functions 'merlin-edit)
   (merlin-reload-project-file)
   (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
