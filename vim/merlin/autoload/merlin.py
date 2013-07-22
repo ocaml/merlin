@@ -326,8 +326,10 @@ def vim_locate_under_cursor():
         break
     else:
         start -= 1
-  while stop <= len(line):
-    if line[stop] in delimiters:
+  while stop < len(line):
+    # we stop on dots because on "Foo.Ba<cursor>r.Baz.lol" I want to jump at the
+    # definition of Bar, not the one of lol.
+    if line[stop] in delimiters or line[stop] == '.':
         break
     else:
         stop += 1

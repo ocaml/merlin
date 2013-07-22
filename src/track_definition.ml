@@ -31,6 +31,38 @@ module Utils = struct
     | Tmod_ident (path, _) -> assert false
     | Tmod_structure str -> str
     | _ -> raise Not_found (* TODO *)
+
+  let keep_suffix =
+    let open Longident in
+    let rec aux = function
+      | Lident str ->
+        if String.lowercase str <> str then
+          Some (Lident str)
+        else
+          None
+      | Ldot (t, str) ->
+        if String.lowercase str <> str then
+          match aux t with
+          | None -> Some (Lident str)
+          | Some t -> Some (Ldot (t, str))
+        else
+          None
+      | t -> Some t (* don't know what to do here, probably best if I do nothing. *)
+    in
+    function
+    | Lident s -> Lident s
+    | Ldot (t, s) ->
+      begin match aux t with
+      | None -> Lident s
+      | Some t -> Ldot (t, s)
+      end
+    | otherwise -> otherwise
+
+  let try_split_lident lid =
+    let open Longident in
+    match lid with
+    | Lident _ -> None
+    | Ldot (t, s) -> Some (t, Lident s)
 end
 
 include Utils
@@ -169,7 +201,7 @@ let path_and_loc_from_label desc =
 
 let from_string ~sources ~env path =
   sources_path := sources ;
-  let ident = Longident.parse path in
+  let ident = keep_suffix (Longident.parse path) in
   try
     let path, loc =
       try
