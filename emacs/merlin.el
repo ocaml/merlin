@@ -152,8 +152,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Last position where the user ran `merlin-magic-show-type'.")
 (defvar merlin-idle-point nil
   "Position of the last time we printed the type of point.")
-(defvar merlin-type-buffer
-  (get-buffer-create "*merlin types*")
+(defvar merlin-type-buffer nil
   "The buffer to use to display types."
   )
 (defvar merlin-type-overlay nil "Merlin overlay used for type-checking.")
@@ -1138,6 +1137,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
       (setq merlin-idle-timer
             (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
+  (setq merlin-type-buffer (get-buffer-create "*merlin types*"))
   (with-current-buffer merlin-type-buffer
     (funcall merlin-favourite-caml-mode)))
 
