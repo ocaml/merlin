@@ -1045,7 +1045,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (define-key merlin-map (kbd "C-c C-t") 'merlin-magic-show-type)
     (define-key merlin-map (kbd "C-c d") 'merlin-show-type-def)
     (define-key merlin-map (kbd "C-c l") 'merlin-use)
-
+    (define-key merlin-map (kbd "C-c r") 'merlin-restart-process)
     (define-key merlin-map (kbd "C-c C-x") 'merlin-next-error)
     (define-key merlin-map (kbd "C-c C-l") 'merlin-locate)
     (define-key merlin-map (kbd "C-c &") 'merlin-pop-stack)
