@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: ccomp.mli 11156 2011-07-27 14:17:02Z doligez $ *)
-
 (* Compiling C files and building C libraries *)
 
 val command: string -> int

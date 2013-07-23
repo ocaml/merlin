@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: typeclass.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 open Asttypes
 open Types
 open Format
@@ -105,7 +103,8 @@ type error =
   | Final_self_clash of (type_expr * type_expr) list
   | Mutability_mismatch of string * mutable_flag
   | No_overriding of string * string
+  | Duplicate of string * string
 
-exception Error of Location.t * error
+exception Error of Location.t * Env.t * error
 
-val report_error : formatter -> error -> unit
+val report_error : Env.t -> formatter -> error -> unit

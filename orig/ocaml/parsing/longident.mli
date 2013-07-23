@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: longident.mli 11156 2011-07-27 14:17:02Z doligez $ *)
-
 (* Long identifiers, used in parsetree. *)
 
 type t =

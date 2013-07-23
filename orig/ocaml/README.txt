@@ -6,6 +6,8 @@ Files derived from the original Ocaml compiler source includes:
 
 There you can find the original distribution:
   http://caml.inria.fr/pub/distrib/ocaml-4.00/ocaml-4.00.1.tar.gz
+Trunk version from:
+  https://github.com/ocaml/ocaml
 
 The Ocaml compiler is distributed under the QPL licence and is copyright INRIA.
 See LICENSE in the current directory.

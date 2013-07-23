@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: typedecl.mli 12521 2012-05-31 07:57:32Z garrigue $ *)
-
 (* Typing of type definitions and primitive definitions *)
 
 open Asttypes
@@ -43,6 +41,8 @@ val approx_type_decl:
                                   (Ident.t * type_declaration) list
 val check_recmod_typedecl:
     Env.t -> Location.t -> Ident.t list -> Path.t -> type_declaration -> unit
+val check_coherence:
+    Env.t -> Location.t -> Ident.t -> type_declaration -> unit
 
 (* for fixed types *)
 val is_fixed_type : Parsetree.type_declaration -> bool
@@ -64,15 +64,15 @@ type error =
   | Recursive_abbrev of string
   | Definition_mismatch of type_expr * Includecore.type_mismatch list
   | Constraint_failed of type_expr * type_expr
-  | Inconsistent_constraint of (type_expr * type_expr) list
-  | Type_clash of (type_expr * type_expr) list
+  | Inconsistent_constraint of Env.t * (type_expr * type_expr) list
+  | Type_clash of Env.t * (type_expr * type_expr) list
   | Parameters_differ of Path.t * type_expr * type_expr
   | Null_arity_external
   | Missing_native_external
   | Unbound_type_var of type_expr * type_declaration
   | Unbound_exception of Longident.t
   | Not_an_exception of Longident.t
-  | Bad_variance of int * (bool*bool) * (bool*bool)
+  | Bad_variance of int * (bool*bool*bool) * (bool*bool*bool)
   | Unavailable_type_constructor of Path.t
   | Bad_fixed_type of string
   | Unbound_type_var_exc of type_expr * type_expr

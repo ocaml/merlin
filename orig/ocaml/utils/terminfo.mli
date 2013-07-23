@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: terminfo.mli 11156 2011-07-27 14:17:02Z doligez $ *)
-
 (* Basic interface to the terminfo database *)
 
 type status =

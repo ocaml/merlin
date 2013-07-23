@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: predef.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 (* Predefined type constructors (with special typing rules in typecore) *)
 
 open Types

@@ -2,32 +2,32 @@
 (*                                                                     *)
 (*                                OCaml                                *)
 (*                                                                     *)
-(*          Damien Doligez, projet Moscova, INRIA Rocquencourt         *)
+(*          Jerome Vouillon, projet Cristal, INRIA Rocquencourt        *)
+(*          OCaml port by John Malecki and Xavier Leroy                *)
 (*                                                                     *)
-(*  Copyright 2003 Institut National de Recherche en Informatique et   *)
+(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
 (*  en Automatique.  All rights reserved.  This file is distributed    *)
 (*  under the terms of the Q Public License version 1.0.               *)
 (*                                                                     *)
 (***********************************************************************)
 
-(* Recording and dumping (partial) type information *)
+open Format
 
-(* Clflags.save_types must be true *)
+(* Convert environment summaries to environments *)
 
-open Typedtree;;
+val env_from_summary : Env.summary -> Subst.t -> Env.t
 
-type annotation =
-  | Ti_pat   of pattern
-  | Ti_expr  of expression
-  | Ti_class of class_expr
-  | Ti_mod   of module_expr
-  | An_call of Location.t * Annot.call
-  | An_ident of Location.t * string * Annot.ident
-;;
+(* Empty the environment caches. To be called when load_path changes. *)
 
-val record : annotation -> unit;;
-val record_phrase : Location.t -> unit;;
-val dump : string option -> unit;;
+val reset_cache: unit -> unit
 
-val get_location : annotation -> Location.t;;
-val get_info : unit -> annotation list;;
+val env_of_only_summary : Env.t -> Env.t
+
+(* Error report *)
+
+type error =
+    Module_not_found of Path.t
+
+exception Error of error
+
+val report_error: formatter -> error -> unit

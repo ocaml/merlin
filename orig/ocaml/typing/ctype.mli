@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: ctype.mli 12800 2012-07-30 18:59:07Z doligez $ *)
-
 (* Operations on core types *)
 
 open Asttypes
@@ -147,6 +145,11 @@ val expand_head_opt: Env.t -> type_expr -> type_expr
 (** The compiler's own version of [expand_head] necessary for type-based
     optimisations. *)
 val full_expand: Env.t -> type_expr -> type_expr
+val extract_concrete_typedecl:
+        Env.t -> type_expr -> Path.t * Path.t * type_declaration
+        (* Return the original path of the types, and the first concrete
+           type declaration found expanding it.
+           Raise [Not_found] if none appears or not a type constructor. *)
 
 val enforce_constraints: Env.t -> type_expr -> unit
 
@@ -183,11 +186,11 @@ val matches: Env.t -> type_expr -> type_expr -> bool
 type class_match_failure =
     CM_Virtual_class
   | CM_Parameter_arity_mismatch of int * int
-  | CM_Type_parameter_mismatch of (type_expr * type_expr) list
-  | CM_Class_type_mismatch of class_type * class_type
-  | CM_Parameter_mismatch of (type_expr * type_expr) list
-  | CM_Val_type_mismatch of string * (type_expr * type_expr) list
-  | CM_Meth_type_mismatch of string * (type_expr * type_expr) list
+  | CM_Type_parameter_mismatch of Env.t * (type_expr * type_expr) list
+  | CM_Class_type_mismatch of Env.t * class_type * class_type
+  | CM_Parameter_mismatch of Env.t * (type_expr * type_expr) list
+  | CM_Val_type_mismatch of string * Env.t * (type_expr * type_expr) list
+  | CM_Meth_type_mismatch of string * Env.t * (type_expr * type_expr) list
   | CM_Non_mutable_value of string
   | CM_Non_concrete_value of string
   | CM_Missing_value of string

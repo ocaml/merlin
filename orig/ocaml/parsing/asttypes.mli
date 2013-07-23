@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: asttypes.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 (* Auxiliary a.s.t. types used by parsetree and typedtree. *)
 
 type constant =
