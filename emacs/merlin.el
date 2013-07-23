@@ -481,9 +481,12 @@ kill the process if required."
 	 (forward-line 10))
        (merlin-tell-piece mode temp end))))
 
-(defun merlin-tell-till-end-of-phrase ()
+(defun merlin-tell-till-end-of-phrase (&optional no-retract)
   "Tell merlin the buffer until the end of the current phrase is met.
-It proceeds by telling (with the end mode) each line until it returns true or until we are at the end of the buffer."
+It proceeds by telling (with the end mode) each line until it returns true or until we are at the end of the buffer.
+
+If NO-RETRACT is non-nil, don't retract to a valid position after telling.
+"
   (let ((temp-point (point))
         (end-p nil))
     (forward-line 1)
@@ -502,8 +505,10 @@ It proceeds by telling (with the end mode) each line until it returns true or un
     (if (not end-p)
         (progn
           (merlin-send-command "tell" '("end" nil))
-          (merlin-seek (merlin-get-position)))
-      (merlin-retract-to (merlin-get-position)))))
+          (if no-retract (merlin-get-position)
+            (merlin-seek (merlin-get-position))))
+      (if no-retract (merlin-get-position)
+        (merlin-retract-to (merlin-get-position))))))
 
       
       
@@ -637,7 +642,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (setq merlin-lock-point (merlin-retract-to (point)))
     (end-of-line)
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
-    (setq merlin-lock-point (merlin-tell-till-end-of-phrase))
+    (setq merlin-lock-point (merlin-tell-till-end-of-phrase (not view-errors-p)))
     (merlin-check-for-errors view-errors-p)
     (merlin-update-lock-zone-display)))
   
@@ -645,10 +650,10 @@ The parameter `view-errors-p' controls whether we should care for errors"
   "If merlin point is before the end of line send everything up to the end of line."
   (interactive)
   (save-excursion
-    (forward-line -1)
+    (forward-line 1)
     (let ((p merlin-lock-point))
       (if (> (point-at-eol) merlin-lock-point)
-          (merlin-update-point quiet)))))
+          (merlin-update-point (not quiet))))))
 
 (defun merlin-edit (start end length)
   "Called when an edit is make to retract the locked zone if it is needed."
@@ -731,7 +736,7 @@ variable `merlin-cache')."
         (message "%s%s" (car ret) (cdr ret)))))
 (defun merlin-completion-at-point ()
   (save-excursion
-    (merlin-check-synchronize))
+    (merlin-check-synchronize t))
   (save-excursion
     (skip-syntax-backward "w_.")
     (let ((start (point)))
