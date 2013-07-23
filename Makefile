@@ -5,7 +5,7 @@ TARGET = ocamlmerlin.native
 DISTNAME = ocamlmerlin-0.1
 DISTFILES = configure Makefile README _tags vim emacs $(wildcard *.ml *.mli *.mly *.mll)
 
-OCAMLBUILD=ocamlbuild -Is src,src/typing,src/parsing,src/utils
+OCAMLBUILD=ocamlbuild -cflags -bin-annot -Is src,src/typing,src/parsing,src/utils
 OCAMLFIND=ocamlfind
 
 all: $(TARGET)

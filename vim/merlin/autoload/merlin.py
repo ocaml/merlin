@@ -168,6 +168,23 @@ def command_complete_cursor(base,line,col):
 def command_report_errors():
   return send_command("errors")
 
+def command_locate(path, line, col):
+  try:
+    if line is None or col is None:
+        return send_command("locate", path)
+    else:
+        pos_or_err = send_command("locate", path, "at", {'line': line, 'col': col})
+    if not isinstance(pos_or_err, dict):
+      print(pos_or_err)
+    else:
+      fpath = pos_or_err['file']
+      l = pos_or_err['pos']['line']
+      c = pos_or_err['pos']['col']
+      vim.command(":split %s" % fpath)
+      vim.current.window.cursor = (l, c)
+  except MerlinExc as e:
+    try_print_error(e)
+
 ######## BUFFER SYNCHRONIZATION
 
 def sync_buffer_to(to_line, to_col):
@@ -290,6 +307,34 @@ def vim_type(expr=None,is_approx=False):
       vim_type(expr=None,is_approx=True)
     else:
       try_print_error(e)
+
+def vim_locate(path):
+  command_locate(path, None, None)
+
+def vim_locate_at_cursor(path):
+  line, col = vim.current.window.cursor
+  sync_buffer_to(line, col)
+  command_locate(path, line, col)
+
+def vim_locate_under_cursor():
+  delimiters = [' ', '\n', '=', ';', ',', '(', ')', '[', ']', '{', '}', '|', '"']
+  line_nb, col_nb = vim.current.window.cursor
+  line = vim.current.buffer[line_nb - 1]
+  start = col_nb
+  stop = col_nb
+  while start > 0:
+    if line[start - 1] in delimiters:
+        break
+    else:
+        start -= 1
+  while stop < len(line):
+    # we stop on dots because on "Foo.Ba<cursor>r.Baz.lol" I want to jump at the
+    # definition of Bar, not the one of lol.
+    if line[stop] in delimiters or line[stop] == '.':
+        break
+    else:
+        stop += 1
+  vim_locate_at_cursor(line[start:stop])
 
 # expr used as fallback in case type_enclosing fail
 def vim_type_enclosing(vimvar,expr=None):

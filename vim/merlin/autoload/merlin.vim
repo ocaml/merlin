@@ -156,6 +156,16 @@ function! merlin#Complete(findstart,base)
   endif
 endfunction
 
+function! merlin#Locate(...)
+    if (a:0 > 1)
+        echoerr "Locate: to many arguments (expected 0 or 1)"
+    elseif (a:0 == 0) || (a:1 == "")
+        py merlin.vim_locate_under_cursor()
+    else
+        py merlin.vim_locate_at_cursor(vim.eval("a:1"))
+    endif
+endfunction
+
 function! merlin#SyntasticGetLocList()
   let l:errors = []
   if expand('%:e') == 'ml'
@@ -202,10 +212,15 @@ endfunction
 function! merlin#Register()
   " Deprecated, use TypeEnclosing
   command! -buffer -nargs=0 TypeOf call merlin#TypeOf(merlin#WordUnderCursor())
+
   command! -buffer -nargs=0 TypeEnclosing call merlin#TypeEnclosing(merlin#WordUnderCursor())
   command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
   command! -buffer -nargs=0 ShrinkEnclosing call merlin#ShrinkEnclosing()
+
   command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
+
+  command! -buffer -nargs=? Locate call merlin#Locate(<q-args>)
+
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
   command! -buffer -nargs=0 Reload       call merlin#Reload()

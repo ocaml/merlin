@@ -232,6 +232,26 @@ let command_complete = {
   end;
 }
 
+let command_locate = {
+  name = "locate";
+
+  handler = begin fun _ state args ->
+    let path, node =
+      match args with
+      | [ `String path ] ->
+        path, Browse.({ dummy with env = Typer.env state.types })
+      | [ `String path ; `String "at" ; jpos ] ->
+        path, State.node_at state (Protocol.pos_of_json jpos)
+      | _ -> invalid_arguments ()
+    in
+    match State.locate node path with
+    | None -> state, `String "Not found"
+    | Some (file, loc) ->
+      let pos = loc.Location.loc_start in
+      state, `Assoc [ "file", `String file ; "pos", Protocol.pos_to_json pos ]
+  end
+}
+
 let command_seek = {
   name = "seek";
 
@@ -543,6 +563,7 @@ let command_help = {
 let _ = List.iter register [
   command_tell; command_seek; command_reset; command_refresh;
   command_cd; command_type; command_complete; command_boundary;
+  command_locate;
   command_errors; command_dump;
   command_which; command_find;
   command_help;
