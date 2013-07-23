@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: datarepr.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 (* Compute constructor and label descriptions from type declarations,
    determining their representation. *)
 

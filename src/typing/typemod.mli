@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: typemod.mli 12542 2012-06-01 14:06:31Z frisch $ *)
-
 (* Type-checking of the module language *)
 
 open Types
@@ -40,8 +38,6 @@ val save_signature : string -> Typedtree.signature -> string -> string ->
 
 val package_units:
         string list -> string -> string -> Typedtree.module_coercion
-
-val bound_value_identifiers : Types.signature_item list -> Ident.t list
 
 type error =
     Cannot_apply of module_type

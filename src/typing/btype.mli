@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: btype.mli 12726 2012-07-18 03:34:36Z garrigue $ *)
-
 (* Basic operations on core types *)
 
 open Asttypes
@@ -78,6 +76,7 @@ val proxy: type_expr -> type_expr
 (**** Utilities for private abbreviations with fixed rows ****)
 val has_constr_row: type_expr -> bool
 val is_row_name: string -> bool
+val is_constr_row: type_expr -> bool
 
 (**** Utilities for type traversal ****)
 

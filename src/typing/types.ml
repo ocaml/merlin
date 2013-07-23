@@ -10,11 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: types.ml 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 (* Representation of types and declarations *)
 
-open Misc
 open Asttypes
 
 (* Type expressions for the core language *)
@@ -79,7 +76,8 @@ end
 
 (* Maps of methods and instance variables *)
 
-module OrderedString = struct type t = string let compare = compare end
+module OrderedString =
+  struct type t = string let compare (x:t) y = compare x y end
 module Meths = Map.Make(OrderedString)
 module Vars = Meths
 
@@ -107,7 +105,8 @@ and value_kind =
 (* Constructor descriptions *)
 
 type constructor_description =
-  { cstr_res: type_expr;                (* Type of the result *)
+  { cstr_name: string;                  (* Constructor name *)
+    cstr_res: type_expr;                (* Type of the result *)
     cstr_existentials: type_expr list;  (* list of existentials *)
     cstr_args: type_expr list;          (* Type of the arguments *)
     cstr_arity: int;                    (* Number of arguments *)
@@ -139,6 +138,36 @@ and record_representation =
     Record_regular                      (* All fields are boxed / tagged *)
   | Record_float                        (* All fields are floats *)
 
+(* Variance *)
+
+module Variance = struct
+  type t = int
+  type f = May_pos | May_neg | May_weak | Inj | Pos | Neg | Inv
+  let single = function
+    | May_pos -> 1
+    | May_neg -> 2
+    | May_weak -> 4
+    | Inj -> 8
+    | Pos -> 16
+    | Neg -> 32
+    | Inv -> 64
+  let union v1 v2 = v1 lor v2
+  let inter v1 v2 = v1 land v2
+  let subset v1 v2 = (v1 land v2 = v1)
+  let set x b v =
+    if b then v lor single x else  v land (lnot (single x))
+  let mem x = subset (single x)
+  let null = 0
+  let may_inv = 7
+  let full = 127
+  let covariant = single May_pos lor single Pos lor single Inj
+  let swap f1 f2 v =
+    let v' = set f1 (mem f2 v) v in set f2 (mem f1 v) v'
+  let conjugate v = swap May_pos May_neg (swap Pos Neg v)
+  let get_upper v = (mem May_pos v, mem May_neg v)
+  let get_lower v = (mem Pos v, mem Neg v, mem Inv v, mem Inj v)
+end 
+
 (* Type definitions *)
 
 type type_declaration =
@@ -147,8 +176,7 @@ type type_declaration =
     type_kind: type_kind;
     type_private: private_flag;
     type_manifest: type_expr option;
-    type_variance: (bool * bool * bool) list;
-    (* covariant, contravariant, weakly contravariant *)
+    type_variance: Variance.t list;
     type_newtype_level: (int * int) option;
     type_loc: Location.t }
 
@@ -157,6 +185,11 @@ and type_kind =
   | Type_record of
       (Ident.t * mutable_flag * type_expr) list * record_representation
   | Type_variant of (Ident.t * type_expr list * type_expr option) list
+
+and type_transparence =
+    Type_public      (* unrestricted expansion *)
+  | Type_new         (* "new" type *)
+  | Type_private     (* private type *)
 
 type exception_declaration =
     { exn_args: type_expr list;
@@ -183,13 +216,13 @@ type class_declaration =
     mutable cty_type: class_type;
     cty_path: Path.t;
     cty_new: type_expr option;
-    cty_variance: (bool * bool) list }
+    cty_variance: Variance.t list }
 
 type class_type_declaration =
   { clty_params: type_expr list;
     clty_type: class_type;
     clty_path: Path.t;
-    clty_variance: (bool * bool) list }
+    clty_variance: Variance.t list }
 
 (* Type expressions for the module language *)
 
@@ -217,32 +250,3 @@ and rec_status =
     Trec_not                            (* not recursive *)
   | Trec_first                          (* first in a recursive group *)
   | Trec_next                           (* not first in a recursive group *)
-
-
-let errors : (exn list ref * (int,unit) Hashtbl.t) option ref = ref None
-let raise_error exn =
-  match !errors with
-  | Some (l,h) -> l := exn :: !l
-  | None -> raise exn
-
-let catch_errors f =
-  let caught = ref [] in
-  let types  = Hashtbl.create 3 in
-  let previous = !errors in
-  errors := Some (caught,types);
-  let result =
-    try Misc.Inr (f())
-    with e -> Misc.Inl e
-  in
-  errors := previous;
-  !caught, result
-     
-let erroneous_type_register te =
-  match !errors with
-  | Some (l,h) -> Hashtbl.replace h te.id ()
-  | None -> ()
-
-let erroneous_type_check te = 
-  match !errors with
-  | Some (l,h) when Hashtbl.mem h te.id -> true
-  | _ -> false

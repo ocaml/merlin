@@ -10,10 +10,10 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: printast.mli 12404 2012-04-26 13:20:09Z lefessan $ *)
-
 open Typedtree;;
 open Format;;
 
 val interface : formatter -> signature -> unit;;
 val implementation : formatter -> structure -> unit;;
+
+val implementation_with_coercion : formatter -> (structure * module_coercion) -> unit;;

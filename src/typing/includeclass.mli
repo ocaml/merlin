@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: includeclass.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 (* Inclusion checks for the class language *)
 
 open Types
