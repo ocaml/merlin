@@ -186,18 +186,20 @@ and from_path' (fname :: modules) =
 
 and from_path path = from_path' (path_to_list path)
 
-let path_and_loc_from_cstr desc =
+let path_and_loc_from_cstr desc env =
   let open Types in
   match desc.cstr_tag with
   | Cstr_exception (path, loc) -> path, loc
   | _ ->
     let (Tconstr (path, _, _)) = desc.cstr_res.desc in
-    path, Location.none
+    let typ_decl = Env.find_type path env in
+    path, typ_decl.Types.type_loc
 
-let path_and_loc_from_label desc =
+let path_and_loc_from_label desc env =
   let open Types in
   let (Tconstr (path, _, _)) = desc.lbl_res.desc in
-  path, Location.none
+  let typ_decl = Env.find_type path env in
+  path, typ_decl.Types.type_loc
 
 let from_string ~sources ~env path =
   sources_path := sources ;
@@ -214,11 +216,11 @@ let from_string ~sources ~env path =
       with Not_found ->
       try
         let _, cstr_desc = Env.lookup_constructor ident env in
-        path_and_loc_from_cstr cstr_desc
+        path_and_loc_from_cstr cstr_desc env
       with Not_found ->
       try
         let _, label_desc = Env.lookup_label ident env in
-        path_and_loc_from_label label_desc
+        path_and_loc_from_label label_desc env
       with Not_found ->
         raise Not_found
     in
