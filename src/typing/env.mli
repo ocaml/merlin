@@ -128,6 +128,9 @@ val reset_cache: unit -> unit
 (* merlin: Invalidate modified interfaces from cache *)
 val quick_reset_cache: unit -> bool
 
+(* merlin: Delete 'missing cmi' entries from the cache. *)
+val reset_missing_cmis: unit -> unit
+
 (* To be called before each toplevel phrase. *)
 val reset_cache_toplevel: unit -> unit
 

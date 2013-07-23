@@ -1842,8 +1842,8 @@ and type_expect_ ?in_function env sexp ty_expected =
       unify_exp env exp (instance env ty_expected);
       exp
     with (Typetexp.Error _ | Error _) as exn ->
-      Types.erroneous_type_register ty_expected;
-      Types.raise_error exn;
+      Merlin_types.erroneous_type_register ty_expected;
+      Merlin_types.raise_error exn;
       {
         (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
         exp_desc = Texp_tuple [exp];
@@ -2491,7 +2491,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_env = env }
       with Unify _ ->
         Merlin_types.raise_error 
-          (Error(e.pexp_loc, Undefined_method (obj.exp_type, met)));
+          (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
         rue {
           exp_desc = Texp_send(obj, Tmeth_name met, None);
           exp_loc = loc; exp_extra = [];

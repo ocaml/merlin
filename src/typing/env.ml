@@ -375,14 +375,17 @@ let quick_reset_cache () =
   end
   else false
 
-let reset_cache_toplevel () =
+let reset_missing_cmis () =
   (* Delete 'missing cmi' entries from the cache. *)
   let l =
     Hashtbl.fold
       (fun name r acc -> if r = None then name :: acc else acc)
       persistent_structures []
   in
-  List.iter (Hashtbl.remove persistent_structures) l;
+  List.iter (Hashtbl.remove persistent_structures) l
+
+let reset_cache_toplevel () =
+  reset_missing_cmis ();
   Hashtbl.clear value_declarations;
   Hashtbl.clear type_declarations;
   Hashtbl.clear used_constructors;
