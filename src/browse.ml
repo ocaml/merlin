@@ -144,9 +144,9 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
   let subpatterns = match pat_desc with
     | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> []
     | Tpat_alias (p,_,_) | Tpat_lazy p | Tpat_variant (_,Some p,_) -> [p]
-    | Tpat_array ps | Tpat_tuple ps | Tpat_construct (_,_,_,ps,_) -> ps
+    | Tpat_array ps | Tpat_tuple ps | Tpat_construct (_,_,ps,_) -> ps
     | Tpat_or (p1,p2,_) -> [p1;p2]
-    | Tpat_record (r,_) -> List.map (fun (_,_,_,p) -> p) r
+    | Tpat_record (r,_) -> List.map (fun (_,_,p) -> p) r
   in
   singleton 
     ~context:(Pattern pat_type)
@@ -154,7 +154,7 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
     (match env with Some e' -> e' | _ -> pat_env)
 
 and expression_extra ~env t = function
-  | Texp_open (_,_,env),loc -> { loc ; env ; context = Other ; nodes = lazy [t] }
+  | Texp_open (_,_,_,env),loc -> { loc ; env ; context = Other ; nodes = lazy [t] }
   | Texp_constraint (c1,c2), loc ->
     let cs = match c1,c2 with
       | Some c1, Some c2 -> [c1;c2] | Some c, _ | _, Some c -> [c] | _ -> []
@@ -176,11 +176,11 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_match (e,pes,_) -> expression e :: patterns pes
     | Texp_try (e,pes) -> expression e :: patterns pes
     | Texp_tuple (es) -> List.map expression es
-    | Texp_construct (_,_,_,es,_) -> List.map expression es
+    | Texp_construct (_,_,es,_) -> List.map expression es
     | Texp_variant (_,Some e) -> [expression e]
     | Texp_variant (_,None) -> []
-    | Texp_record (pldes,Some e) -> expression e :: List.map (fun (_,_,_,e) -> expression e) pldes
-    | Texp_record (pldes,None) -> List.map (fun (_,_,_,e) -> expression e) pldes
+    | Texp_record (pldes,Some e) -> expression e :: List.map (fun (_,_,e) -> expression e) pldes
+    | Texp_record (pldes,None) -> List.map (fun (_,_,e) -> expression e) pldes
     | Texp_array es -> List.map expression es
     | Texp_send (ea, m, eb') ->
       let tail = match eb' with None -> [] | Some eb -> [expression eb] in
@@ -189,9 +189,9 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_assert ea
     | Texp_lazy ea
     | Texp_setinstvar (_,_,_,ea)
-    | Texp_field (ea,_,_,_) -> [expression ea]
+    | Texp_field (ea,_,_) -> [expression ea]
     | Texp_ifthenelse (ea,eb,None)
-    | Texp_setfield (ea,_,_,_,eb)
+    | Texp_setfield (ea,_,_,eb)
     | Texp_sequence (ea,eb)
     | Texp_when (ea,eb)
     | Texp_while (ea,eb) -> [expression ea ; expression eb]
@@ -232,7 +232,7 @@ and meth obj name loc_start loc_end =
     obj.exp_env
 
 let local_near pos nodes =
-  let cmp = Location.compare_pos pos in
+  let cmp = Merlin_parsing.compare_pos pos in
   let best_of ({ loc = l1 } as t1) ({ loc = l2 } as t2) =
     match cmp l1, cmp l2 with
     | 0, 0 ->
@@ -258,7 +258,7 @@ let local_near pos nodes =
   end None nodes
 
 let is_enclosing pos { loc } =
-  (Location.compare_pos pos loc = 0)
+  (Merlin_parsing.compare_pos pos loc = 0)
 
 let traverse_branch pos tree =
   let rec traverse { nodes = lazy nodes } acc =

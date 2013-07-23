@@ -170,7 +170,7 @@ let sync outlines chunks =
       | Some ({ Outline. kind ; tokens ; loc },outlines') ->
           let exns = exns chunks in
           let chunk =
-            match Location.catch_warnings (fun () -> sync_step kind tokens chunks) with
+            match Merlin_parsing.catch_warnings (fun () -> sync_step kind tokens chunks) with
             | warnings, Misc.Inr item ->
               warnings @ exns , item
             | warnings, Misc.Inl exn ->

@@ -33,7 +33,7 @@ let (>>=) a f = match a with
 let union_loc_opt a b = match a,b with
   | None, None -> None
   | (Some _ as l), None | None, (Some _ as l) -> l
-  | Some a, Some b -> Some (Location.union a b)
+  | Some a, Some b -> Some (Merlin_parsing.union a b)
 
 let rec signature_loc =
   let open Types in
@@ -104,7 +104,7 @@ let signature_of_summary =
   | Env_open _ | Env_empty -> None
 
 let summary_at pos sum =
-  let cmp = Location.compare_pos pos in
+  let cmp = Merlin_parsing.compare_pos pos in
   let rec aux sum =
     match signature_of_summary sum >>= signature_loc with
       | None -> summary_prev sum >>= aux

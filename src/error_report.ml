@@ -45,9 +45,9 @@ let strict_to_json = function
       let ppf, to_string = Misc.ppf_to_string () in
       Typecore.report_error env ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Typetexp.Error (loc, e) ->
+  | Typetexp.Error (loc, env, e) ->
       let ppf, to_string = Misc.ppf_to_string () in
-      Typetexp.report_error ppf e;
+      Typetexp.report_error env ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typedecl.Error (loc, e) ->
       let ppf, to_string = Misc.ppf_to_string () in
@@ -81,13 +81,14 @@ let strict_to_json = function
         | Syntaxerr.Applicative_path loc -> loc
         | Syntaxerr.Variable_in_scope (loc,_) -> loc
         | Syntaxerr.Other loc -> loc
+        | Syntaxerr.Expecting (loc,_) -> loc
       in
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
   | Lexer.Error (e, loc) ->
       let ppf, to_string = Misc.ppf_to_string () in
       Lexer.report_error ppf e;
       Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
-  | Location.Warning (loc, msg) ->
+  | Merlin_parsing.Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
   | Chunk.Malformed_module loc ->
       Some (format ~valid:true ~where:"warning" ~loc "Malformed module")

@@ -127,7 +127,7 @@ let parse_step ?bufpos ?(exns=[]) history buf =
       { Location. loc_start ; loc_end ; loc_ghost = false }
   in
   let exns', history', kind, tokens = 
-    match Location.catch_warnings 
+    match Merlin_parsing.catch_warnings 
         (fun () -> parse_with history
             ~parser:Outline_parser.implementation
             ~lexer:Lexer.token

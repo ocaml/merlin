@@ -131,8 +131,8 @@ let sync chunks t =
               | Misc.Inr c ->
                   let errs, result =
                     let process () = append_step chunks c t in
-                    let errors ()  = Types.catch_errors process in
-                    Misc.catch_join (Location.catch_warnings errors)
+                    let errors ()  = Merlin_types.catch_errors process in
+                    Misc.catch_join (Merlin_parsing.catch_warnings errors)
                   in
                   errs, Misc.sum raise (fun x -> x) result
               | Misc.Inl _ -> [], None

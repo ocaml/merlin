@@ -115,7 +115,6 @@ let token_to_string =
     | PREFIXOP s -> "PREFIXOP(" ^ String.escaped s ^ ")"
     | PRIVATE -> "PRIVATE"
     | QUESTION -> "QUESTION"
-    | QUESTIONQUESTION -> "QUESTIONQUESTION"
     | QUOTE -> "QUOTE"
     | RBRACE -> "RBRACE"
     | RBRACKET -> "RBRACKET"
