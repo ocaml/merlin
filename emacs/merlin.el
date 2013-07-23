@@ -992,7 +992,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
   (interactive)
-  (let ((file (merlin--project-file-path)))
+  (let ((file merlin--project-file))
     (if file
         (find-file-other-window file)
       (message "No project file for the current buffer."))))
@@ -1140,7 +1140,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-enclosing-types) nil)
   (set (make-local-variable 'merlin-enclosing-offset) nil)
   (set (make-local-variable 'merlin-last-point-type) nil)
-  (set (make-local-variable 'merlin-counter) 0)
+  (set (make-local-variable 'merlin--counter) 0)
   (add-to-list 'after-change-functions 'merlin-edit)
   (merlin-load-project-file)
   (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
