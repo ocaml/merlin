@@ -103,7 +103,6 @@
 %token <string> PREFIXOP
 %token PRIVATE
 %token QUESTION
-%token QUESTIONQUESTION
 %token QUOTE
 %token RBRACE
 %token RBRACKET
@@ -325,7 +324,7 @@ structure_item:
       { emit_top Definition $endpos }
   | MODULE TYPE ident EQUAL module_type
       { emit_top Definition $endpos }
-  | OPEN mod_longident
+  | OPEN override_flag mod_longident
       { emit_top Definition $endpos }
   | CLASS class_declarations
       { emit_top Definition $endpos }
@@ -410,7 +409,7 @@ signature_item:
       { () }
   | MODULE TYPE ident EQUAL module_type
       { () }
-  | OPEN mod_longident
+  | OPEN override_flag mod_longident
       { () }
   | INCLUDE module_type
       { () }
@@ -704,7 +703,7 @@ expr:
       { () }
   | LET MODULE UIDENT enter_sub module_binding leave_sub IN seq_expr
       { () }
-  | LET OPEN mod_longident IN seq_expr
+  | LET OPEN override_flag mod_longident IN seq_expr
       { () }
   | FUNCTION opt_bar match_cases
       { () }
@@ -1025,6 +1024,8 @@ pattern:
       { () }
   | pattern AS val_ident
       { () }
+  (* pattern AS error
+      { () } *)
   | pattern_comma_list  %prec below_COMMA
       { () }
   | constr_longident pattern %prec prec_constr_appl
@@ -1033,10 +1034,14 @@ pattern:
       { () }
   | pattern COLONCOLON pattern
       { () }
+  (* | pattern COLONCOLON error
+      { () } *)
   | LPAREN COLONCOLON RPAREN LPAREN pattern COMMA pattern RPAREN
       { () }
   | pattern BAR pattern
       { () }
+  (* | pattern BAR error
+      { () } *)
   | LAZY simple_pattern
       { () }
 ;
@@ -1077,6 +1082,8 @@ simple_pattern:
       { () }
   (* | LPAREN pattern COLON core_type error
       { () } *)
+  (* | LPAREN pattern COLON error
+      { () } *)
   | LPAREN MODULE UIDENT RPAREN
       { () }
   | LPAREN MODULE UIDENT COLON package_type RPAREN
@@ -1088,6 +1095,7 @@ simple_pattern:
 pattern_comma_list:
     pattern_comma_list COMMA pattern            { () }
   | pattern COMMA pattern                       { () }
+  (*| pattern COMMA error                         { () }*)
 ;
 pattern_semi_list:
     pattern                                     { () }
@@ -1225,11 +1233,11 @@ with_constraint:
       { () }
     (* used label_longident instead of type_longident to disallow
        functor applications in type path *)
-  | TYPE type_parameters label_longident COLONEQUAL core_type
+  | TYPE type_parameters label COLONEQUAL core_type
       { () }
   | MODULE mod_longident EQUAL mod_ext_longident
       { () }
-  | MODULE mod_longident COLONEQUAL mod_ext_longident
+  | MODULE UIDENT COLONEQUAL mod_ext_longident
       { () }
 ;
 with_type_binder:
@@ -1301,7 +1309,7 @@ simple_core_type2:
   | LBRACKET tag_field RBRACKET
       { () }
 (* PR#3835: this is not LR(1), would need lookahead=2
-  | LBRACKET simple_core_type2 RBRACKET
+  | LBRACKET simple_core_type RBRACKET
       { () }
 *)
   | LBRACKET BAR row_field_list RBRACKET
@@ -1336,7 +1344,7 @@ row_field_list:
 ;
 row_field:
     tag_field                                   { () }
-  | simple_core_type2                           { () }
+  | simple_core_type                            { () }
 ;
 tag_field:
     name_tag OF opt_ampersand amper_type_list
@@ -1419,6 +1427,9 @@ ident:
 val_ident:
     LIDENT                                      { () }
   | LPAREN operator RPAREN                      { () }
+  (*| LPAREN operator error                       { () }
+  | LPAREN error                                { () }
+  | LPAREN MODULE error                         { () }*)
 ;
 operator:
     PREFIXOP                                    { () }
