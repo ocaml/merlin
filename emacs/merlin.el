@@ -44,6 +44,12 @@
     )
   "Face for a region that merlin knows of."
   :group 'merlin-faces)
+(defface merlin-type-face
+  '(
+    (t :inherit 'caml-types-expr-face)
+    )
+  "Face for highlighting a typed expr."
+  :group 'merlin-faces)
 
 
 
@@ -841,7 +847,7 @@ variable `merlin-cache')."
           (progn 
             (message "%s" type)
             (if (and (not quiet) bounds)
-                (merlin-create-overlay 'merlin-type-overlay bounds 'highlight "5 sec")))
+                (merlin-create-overlay 'merlin-type-overlay bounds 'merlin-type-face "5 sec")))
         (when (not quiet)
           (display-buffer merlin-type-buffer)
           (with-current-buffer merlin-type-buffer
