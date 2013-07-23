@@ -25,6 +25,14 @@ from packages.
 
 Tab completion on packages name is provided.
 
+:Locate                                                               *Locate*
+
+When called with no arguments tries to jump at the definition of the identifier
+under the cursor.
+
+When called with one argument tries to jump at the definition of the given
+identifier, using the environment available at the cursor position.
+
 :ML[I]                                                                   *:ML*
 
 Quick switch to a source (resp. interface) file.
