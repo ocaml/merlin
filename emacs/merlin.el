@@ -313,17 +313,21 @@ denoting the parameters to be passed to merlin. USERS can be used to set the use
 			 merlin-command flags) )
         (name (buffer-name)))
     (set (make-local-variable 'merlin-local-process) p)
+    (dolist (buffer users)
+      (message "Setting process for buffer %s" buffer)
+      (with-current-buffer buffer
+        (set (make-local-variable 'merlin-local-process) p)))
     (merlin-debug (format "Running %s with flags %s\n" merlin-command flags))
-;; set the global process (for now)
+    ;; set the global process (for now)
     (set-process-query-on-exit-flag p nil)
     (set-process-filter p 'merlin-filter)
     (push p merlin-processes)
-  ; don't forget to initialize temporary variable
-  (with-current-buffer (merlin-get-process-buffer-name)
-    (set (make-local-variable 'merlin-process-users) (cons name users))
-    (set (make-local-variable 'merlin-local-process) p)
-    (set (make-local-variable 'merlin-process-last-user) name)
-    )
+; don't forget to initialize temporary variable
+    (with-current-buffer (merlin-get-process-buffer-name)
+      (set (make-local-variable 'merlin-process-users) (cons name users))
+      (set (make-local-variable 'merlin-local-process) p)
+      (set (make-local-variable 'merlin-process-last-user) name)
+      )
   p
   ))
 
@@ -1138,7 +1142,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-last-point-type) nil)
   (set (make-local-variable 'merlin-counter) 0)
   (add-to-list 'after-change-functions 'merlin-edit)
-  (merlin-reload-project-file)
+  (merlin-load-project-file)
   (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
       (setq merlin-idle-timer
             (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
