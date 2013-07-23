@@ -313,6 +313,7 @@ def vim_locate(path):
 
 def vim_locate_at_cursor(path):
   line, col = vim.current.window.cursor
+  sync_buffer_to(line, col)
   command_locate(path, line, col)
 
 def vim_locate_under_cursor():
