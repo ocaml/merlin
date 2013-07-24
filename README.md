@@ -233,7 +233,5 @@ Namely :
 Screenshots
 ===========
 
-![merlin typing in emacs](http://kiwi.iuwt.fr/~asmanur/compl.png)
-
 - [vim](http://88.191.77.33/~rks/merlin/)
-- [emacs](http://kiwi.iuwt.fr/~asmanur/blog/merlin/)
+- [emacs](http://kiwi.iuwt.fr/~asmanur/projects/merlin/merlin-emacs.html)
