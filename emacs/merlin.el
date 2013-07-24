@@ -983,7 +983,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   "Use a package in the current session of merlin."
   (interactive
    (list (completing-read "Package to use:" (merlin-get-packages))))
-  (merlin-send-command "find" (list "use" pkg))
+  (merlin-send-command "find" (list "use" (list pkg)))
   (merlin-rewind))
 
 (defvar merlin--project-file nil "The .merlin file for current buffer")
