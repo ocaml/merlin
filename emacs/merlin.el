@@ -1029,6 +1029,28 @@ it will print types of bigger expressions around point (it will go up the ast). 
       (message "empty stack"))))
     
 
+;; Semantic movement
+(defun merlin-goto-phrase (command indice)
+  "Go to the phrase indicated by COMMAND to the end INDICE."
+  (let ((r (merlin-get-return-field
+            (merlin-send-command "boundary" (list command "at" (merlin-unmake-point (point)))))))
+    (if r
+        (goto-char (merlin-make-point (elt r indice))))))
+
+(defun merlin-next-phrase ()
+  "Go to the beginning of the next phrase."
+  (interactive)
+  (merlin-check-synchronize t)
+  (merlin-goto-phrase "current" 1)
+  (forward-line 1)
+  (merlin-check-synchronize t)
+  (merlin-goto-phrase "next" 0))
+
+(defun merlin-prev-phrase ()
+  "Go to the beginning of the previous phrase."
+  (interactive)
+  (merlin-check-synchronize t)
+  (merlin-goto-phrase "prev" 0))
     
 ;; Idle 
 (defun merlin-idle-hook ()
@@ -1071,6 +1093,8 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (define-key merlin-map (kbd "C-c C-f <C-return>") 'merlin-type-enclosing)
     (define-key merlin-map (kbd "C-c C-f C-<up>") 'merlin-type-enclosing-go-up)
     (define-key merlin-map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
+    (define-key merlin-map (kbd "C-c C-n") 'merlin-next-phrase)
+    (define-key merlin-map (kbd "C-c C-p") 'merlin-prev-phrase)
     (define-key merlin-map (kbd "RET") 'merlin-enter)
 ;;    (define-key merlin-menu-map [customize]
 ;;      '("Customize merlin-mode" . merlin-customize))
