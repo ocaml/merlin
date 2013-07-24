@@ -130,7 +130,12 @@ Answers are of this shape :
 
 ## boundary
 
-### ["boundary"]
+### ["boundary", "prev|current|next"]
+Return the boundary of the phrase before, at, or after the cursor.
+
+### ["boundary", "prev|current|next", "at", pos]
+
+Return the boundary of the phrase before, at, or after the given position.
 
 ## errors
 

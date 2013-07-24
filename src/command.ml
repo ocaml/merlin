@@ -347,21 +347,37 @@ let command_seek = {
 
 let command_boundary = {
   name = "boundary";
-
-  handler =
-  begin fun _ state -> function
-  | [] ->
-      let boundaries =
-        match Outline.location state.outlines with
-          | l when l = Location.none -> `Null
-          | { Location.loc_start ; Location.loc_end } ->
-              `List [
-                Protocol.pos_to_json loc_start;
-                Protocol.pos_to_json loc_end;
-              ]
+  handler = begin
+    let prev2 x = match History.backward x with
+      | Some (_, y) -> History.prev y
+      | None -> None
+    in
+    let command_of_string = function
+      | "next" -> History.next
+      | "prev" -> prev2
+      | "current" -> History.prev
+      | _ -> invalid_arguments ()
+    in
+    let outlines_of_pos state pos =
+      let cmp o = Location.compare_pos pos (Outline.item_loc o) in
+      let outlines = state.outlines in
+      let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
+      let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
+      fst (History.Sync.rewind fst outlines state.chunks)
+    in
+    fun _ state args ->
+      let (f, pos) = match args with
+        | [ `String cmd; `String "at"; jpos] ->
+          (command_of_string cmd, Protocol.pos_of_json jpos)
+        | [ `String cmd ] -> (command_of_string cmd, state.pos)
+        | [ ] -> (History.prev, state.pos)
+        | [ `String "at"; jpos ] -> (History.prev, Protocol.pos_of_json jpos)
+        | _ -> invalid_arguments ()
       in
-      state, boundaries
-  | _ -> invalid_arguments ()
+      match f (outlines_of_pos state pos) with
+      | None -> state, `Null
+      | Some {Outline.loc={Location.loc_start; loc_end}} ->
+        state, `List (List.map Protocol.pos_to_json [loc_start; loc_end])
   end
 }
 
