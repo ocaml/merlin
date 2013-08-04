@@ -1,27 +1,56 @@
 git version
 ===========
 
-  emacs: add ML, MLI and merlin-goto-project-file commands
+  backend:
+    - added a "locate" command to find the definition location of given the
+      identifier.
+      works on local buffer out of the box and at project level if it can find
+      cmts in the build dirs.
 
-  extensions: merged support for ignoring P4_QUOTATION
+  emacs:
+    - various bugfixes
+    - aesthetic changes for highlighting
 
-  extensions: merged support for js_of_ocaml syntax
+  vim:
+    - ':TypeOf' command now accepts an (optional) argument and tries to type it
+      in the current context (i.e. at cursor position)
+
+merlin 1.2
+==========
+
+  emacs:
+    - add ML, MLI and merlin-goto-project-file commands
+    - prints the type of completed entry on completion
+    - various bugfixes
+
+  extensions:
+    - merged support for ignoring P4_QUOTATION
+    - merged support for js_of_ocaml syntax
+    - support top-level lwt binding
+    - merged support for oUnit
+
+  misc:
+    - introduced 'REC' flag in .merlin:
+        tells merlin to concatenate the current .merlin with the ones present in
+        parents directories
+    - added specific support for omake's polling mode.
+
+  vim:
+    - bugfix for omnicompletion on versions <= 703
 
 merlin 1.1
 ==========
 
-	emacs: Ported the completion to the usual `completion-at-point'
-	system, disabled auto-complete-mode-by-default
+  emacs:
+    - Ported the completion to the usual `completion-at-point' system, disabled
+      auto-complete-mode-by-default
+    - reset now tells merlin about the current buffer name
+    - merlin-mode comes with a menu
+    - improved documentation of the mode
 
-	emacs: reset now tells merlin about the current buffer name
-
-	emacs: merlin-mode comes with a menu
-
-	emacs: improved documentation of the mode
-
-  backend: code cleanup
-
-  backend: method completion
+  backend:
+    - code cleanup
+    - method completion
 
   vim plugin: refactored synchronization code out
 
