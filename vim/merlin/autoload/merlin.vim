@@ -88,8 +88,14 @@ function! merlin#RawCommand(...)
   py print send_command(*vim.eval("a:000"))
 endfunction
 
-function! merlin#TypeOf(expr)
-  py merlin.vim_type(expr=vim.eval("a:expr"))
+function! merlin#TypeOf(...)
+    if (a:0 > 1)
+        echoerr "TypeOf: too many arguments (expected 0 or 1)"
+    elseif (a:0 == 0) || (a:1 == "")
+        py merlin.vim_type(expr=vim.eval("merlin#WordUnderCursor()"))
+    else
+        py merlin.vim_type(vim.eval("a:1"))
+    endif
 endfunction
 
 function! merlin#TypeOfSel()
@@ -211,7 +217,7 @@ endfunction
 
 function! merlin#Register()
   " Deprecated, use TypeEnclosing
-  command! -buffer -nargs=0 TypeOf call merlin#TypeOf(merlin#WordUnderCursor())
+  command! -buffer -nargs=? TypeOf call merlin#TypeOf(<q-args>)
 
   command! -buffer -nargs=0 TypeEnclosing call merlin#TypeEnclosing(merlin#WordUnderCursor())
   command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
