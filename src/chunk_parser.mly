@@ -206,9 +206,9 @@ let check_constraint mkexp constr e =
     | (t,t') -> mkexp (Pexp_constraint(e, t, t'))
 
 
-(* FIXME *)
 let expecting startpos endpos nonterm =
-  raise Syntaxerr.(Error(Expecting(rhs_loc startpos endpos, nonterm)))
+  Merlin_parsing.raise_warning
+    Syntaxerr.(Error(Expecting(rhs_loc startpos endpos, nonterm)))
 
 let bigarray_function startpos endpos str name =
   ghloc startpos endpos (Ldot(Ldot(Lident "Bigarray", str), name))
@@ -1330,7 +1330,7 @@ simple_expr:
   | mod_longident DOT LPAREN seq_expr error
       { unclosed "(" $startpos($3) $endpos($3) ")" $startpos($5) $endpos($5);
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, $4)) }
-  | mod_longident DOT LPAREN error
+  | mod_longident DOT LPAREN EOF
       { syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, reloc_exp $startpos($3) $endpos($4) Fake.any_val')) }
   | mod_longident DOT LPAREN RPAREN
