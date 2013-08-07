@@ -79,3 +79,8 @@ module TypeWith : sig
   val generate_sigs : ty:tydecl list -> ?ghost_loc:Location.t ->
     generator list -> Parsetree.signature_item list
 end
+
+val type_add_nonrec : string Location.loc -> string Location.loc
+val type_drop_nonrec : string -> string
+val type_is_nonrec : string -> bool
+val type_ident_drop_nonrec : Ident.t -> Ident.t

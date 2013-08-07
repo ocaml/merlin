@@ -120,6 +120,7 @@ let token_to_string =
     | RBRACE -> "RBRACE"
     | RBRACKET -> "RBRACKET"
     | REC -> "REC"
+    | NONREC -> "NONREC"
     | RPAREN -> "RPAREN"
     | SEMI -> "SEMI"
     | SEMISEMI -> "SEMISEMI"

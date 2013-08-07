@@ -315,6 +315,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
   in
   (exp, ghtyp startpos endpos (Ptyp_poly(newtypes,varify_constructors newtypes core_type)))
 
+let tag_nonrec (id,a) = (Fake.type_add_nonrec id, a)
 %}
 
 (* Tokens *)
@@ -409,6 +410,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 %token RBRACE
 %token RBRACKET
 %token REC
+%token NONREC
 %token RPAREN
 %token SEMI
 %token SEMISEMI
@@ -621,11 +623,19 @@ structure_item:
       }
   | TYPE type_declarations
       { [mkstr $startpos $endpos (Pstr_type(List.rev $2))] }
+  | TYPE NONREC type_declarations
+      { [mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec $3))] }
   | TYPE type_declarations WITH with_extensions
       {
         let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
         let ast = Fake.TypeWith.generate_definitions ~ty:($2) ?ghost_loc $4 in
         mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
+      }
+  | TYPE NONREC type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($5) $endpos($5)) in
+        let ast = Fake.TypeWith.generate_definitions ~ty:($3) ?ghost_loc $5 in
+        mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec $3)) :: ast
       }
   | EXCEPTION UIDENT constructor_arguments
       { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
@@ -716,11 +726,19 @@ signature_item:
           pval_loc = symbol_rloc $startpos $endpos }))] }
   | TYPE type_declarations
       { [ mksig $startpos $endpos (Psig_type(List.rev $2)) ] }
+  | TYPE NONREC type_declarations
+      { [ mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec $3)) ] }
   | TYPE type_declarations WITH with_extensions
       {
         let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
         let decls = Fake.TypeWith.generate_sigs ~ty:($2) ?ghost_loc $4 in
         List.rev_append decls [mksig $startpos $endpos (Psig_type(List.rev $2))]
+      }
+  | TYPE NONREC type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($5) $endpos($5)) in
+        let decls = Fake.TypeWith.generate_sigs ~ty:($3) ?ghost_loc $5 in
+        List.rev_append decls [mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec $3))]
       }
   | EXCEPTION UIDENT constructor_arguments
       { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }

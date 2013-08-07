@@ -93,6 +93,9 @@ let keyword_table =
     "lsr", INFIXOP4("lsr");
     "asr", INFIXOP4("asr");
 
+    (* HACK: nonrec-ursive types extensions *)
+    "nonrec", NONREC;
+
     (* HACK: lwt extensions *)
     "lwt", LET_LWT;
     "try_lwt", TRY_LWT;

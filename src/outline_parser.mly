@@ -108,6 +108,7 @@
 %token RBRACE
 %token RBRACKET
 %token REC
+%token NONREC
 %token RPAREN
 %token SEMI
 %token SEMISEMI
@@ -308,6 +309,8 @@ structure_item:
       { emit_top Definition $endpos }
   | TYPE type_declarations with_extension
       { emit_top Definition $endpos }
+  | TYPE NONREC type_declarations with_extension
+      { emit_top Definition $endpos }
   | EXCEPTION UIDENT constructor_arguments with_extension
       { emit_top Definition $endpos }
   | EXCEPTION UIDENT EQUAL constr_longident
@@ -382,6 +385,8 @@ signature_item:
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
       { () }
   | TYPE type_declarations with_extension
+      { () }
+  | TYPE NONREC type_declarations with_extension
       { () }
   | EXCEPTION UIDENT constructor_arguments with_extension
       { () }
