@@ -54,9 +54,13 @@ In visual mode, returns the type of the selected expression.
 
 Bound to <LocalLeader>t by default in visual mode.
 
-:TypeOf                                                              *:TypeOf*
+:TypeOf [ident]                                                      *:TypeOf*
 
-Returns the type of the ident under the cursor.
+Returns the type of the ident, if it is given, otherwise the type of the ident
+under the cursor.
+
+In both cases |ident| is typed in the environment active at the cursor
+position.
 
 :GrowEnclosing                                                *:GrowEnclosing*
 
