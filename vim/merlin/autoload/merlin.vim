@@ -161,8 +161,13 @@ endfunction
 function! merlin#SyntasticGetLocList()
   let l:errors = []
   if expand('%:e') == 'ml'
-    py merlin.sync_full_buffer()
-    py merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
+    py <<EOF
+try: 
+    merlin.sync_full_buffer()
+    merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
+except merlin.MerlinException as e:
+    merlin.try_print_error(e)
+EOF
   endif
   return l:errors 
 endfunction

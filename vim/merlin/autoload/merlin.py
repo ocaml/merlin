@@ -100,6 +100,9 @@ def try_print_error(e, msg=None):
       elif re.search('Not_found',msg):
         sys.stderr.write ("error: Not found")
         return None
+      elif re.search('Cmi_format.Error', msg):
+        sys.stderr.write ("error: The version of merlin you're using doesn't support this version of ocaml")
+        return None
       m = re.search('Fl_package_base.No_such_package\("(([^"]|\\")*)", "(([^"]|\\")*)"\)',msg)
       if m:
         if m.group(3) != "":
@@ -235,16 +238,19 @@ def vim_complete(base, vimvar):
 def vim_complete_cursor(base, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
-  sync_buffer()
-  props = command_complete_cursor(base,line,col)
-  for prop in props:
-    vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-      (prop['name'].replace("'", "''")
-      ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
-      ,prop['info'].replace("'", "''")
-      ,prop['kind'][:1].replace("'", "''")
-      ))
-    vim.command("call add(%s, l:tmp)" % vimvar)
+  try:
+    sync_buffer()
+    props = command_complete_cursor(base,line,col)
+    for prop in props:
+        vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+        (prop['name'].replace("'", "''")
+        ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
+        ,prop['info'].replace("'", "''")
+        ,prop['kind'][:1].replace("'", "''")
+        ))
+        vim.command("call add(%s, l:tmp)" % vimvar)
+  except MerlinException as e:
+    try_print_error(e)
 
 def vim_loclist(vimvar, ignore_warnings):
   vim.command("let %s = []" % vimvar)
