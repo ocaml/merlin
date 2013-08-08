@@ -92,26 +92,15 @@ let keyword_table =
     "lsl", INFIXOP4("lsl");
     "lsr", INFIXOP4("lsr");
     "asr", INFIXOP4("asr");
-
-    (* HACK: nonrec-ursive types extensions *)
-    "nonrec", NONREC;
-
-    (* HACK: lwt extensions *)
-    "lwt", LET_LWT;
-    "try_lwt", TRY_LWT;
-    "match_lwt", MATCH_LWT;
-    "finally", FINALLY_LWT;
-    "for_lwt", FOR_LWT;
-    "while_lwt", WHILE_LWT;
-
-    (* HACK: js_of_ocaml extension *)
-    "jsnew", JSNEW;
-
-    (* HACK: pa_ounit extension *)
-    "TEST", OUNIT_TEST;
-    "TEST_UNIT", OUNIT_TEST_UNIT;
-    "TEST_MODULE", OUNIT_TEST_MODULE;
 ]
+
+let set_extension ~enabled kw =
+  let action =
+    if enabled
+    then (fun (key,value) -> Hashtbl.replace keyword_table key value)
+    else (fun (key,value) -> Hashtbl.remove keyword_table key)
+  in 
+  List.iter action kw
 
 (* To buffer string literals *)
 

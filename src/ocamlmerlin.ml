@@ -207,6 +207,9 @@ let command_project =
             path_add "source" ~cwd (drop 2 line)
           else if Misc.has_prefix "PKG " line then
             (Command.load_packages (Misc.rev_split_words (drop 4 line)))
+          else if Misc.has_prefix "EXT " line then
+            (List.iter (Extensions_utils.set_extension ~enabled:true)
+                       (Misc.rev_split_words (drop 4 line)))
           else if Misc.has_prefix "REC" line then recurse := true
           else if Misc.has_prefix "#" line then ()
           else ();

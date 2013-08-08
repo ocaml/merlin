@@ -541,6 +541,7 @@ let load_packages packages =
   let packages = Findlib.package_deep_ancestors [] packages in
   let path = List.map Findlib.package_directory packages in
   Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
+  Extensions_utils.register_packages packages;
   State.reset_global_modules ()
 
 let command_find = {
@@ -560,6 +561,30 @@ let command_find = {
       state, `Bool true
   | [`String "list"] ->
       state, `List (List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ()))
+  | _ -> invalid_arguments ()
+  end;
+}
+
+let command_extension = {
+  name = "extension";
+
+  handler =
+  begin fun _ state -> function
+  | [`String ("enable"|"disable" as action) ; `List extensions] ->
+      let enabled = action = "enable" in
+      let extensions = List.map
+        (function `String ext -> ext | _ -> invalid_arguments ())
+        extensions
+      in
+      List.iter (Extensions_utils.set_extension ~enabled)
+                extensions;
+      state, `Bool true
+  | [`String "list"; `String "enabled"] ->
+      state, `List (List.rev_map (fun s -> `String s) (Extensions_utils.enabled ()))
+  | [`String "list"; `String "disabled"] ->
+      state, `List (List.rev_map (fun s -> `String s) (Extensions_utils.disabled ()))
+  | [`String "list"] ->
+      state, `List (List.rev_map (fun s -> `String s) (Extensions_utils.all_extensions ()))
   | _ -> invalid_arguments ()
   end;
 }
@@ -584,7 +609,7 @@ let _ = List.iter register [
   command_cd; command_type; command_complete; command_boundary;
   command_locate;
   command_errors; command_dump;
-  command_which; command_find;
+  command_which; command_find; command_extension;
   command_help;
 ]
 

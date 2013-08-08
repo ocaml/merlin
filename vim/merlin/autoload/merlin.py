@@ -144,8 +144,23 @@ def command_which_file(name):
 def command_which_with_ext(ext):
   return send_command('which', 'with_ext', ext)
 
+def command_ext_enable(*packages):
+  return send_command('extension', 'enable', packages)
+
+def command_ext_disable(*packages):
+  return send_command('extension', 'disable', packages)
+
+def command_ext_list():
+  return send_command('extension', 'list')
+
+def command_ext_enabled():
+  return send_command('extension', 'list', 'enabled')
+
+def command_ext_disabled():
+  return send_command('extension', 'list', 'disabled')
+
 def command_find_use(*packages):
-  return send_command('find', 'use', *packages)
+  return send_command('find', 'use', packages)
 
 def command_find_list():
   return send_command('find', 'list')
@@ -440,6 +455,23 @@ def vim_which_ext(ext,vimvar):
 
 def vim_use(*args):
   catch_and_print(lambda: command_find_use(*args))
+
+def vim_ext(enable, exts):
+  if enable:
+    catch_and_print(lambda: command_ext_enable(*exts))
+  else:
+    catch_and_print(lambda: command_ext_disable(*exts))
+
+def vim_ext_list(vimvar,enabled=None):
+  if enabled == None:
+    exts = command_ext_list()
+  elif enabled:
+    exts = command_ext_enabled()
+  else:
+    exts = command_ext_disabled()
+  vim.command("let %s = []" % vimvar)
+  for ext in exts:
+    vim.command("call add(%s, '%s')" % (vimvar, ext))
 
 def vim_clear_flags():
   global flags

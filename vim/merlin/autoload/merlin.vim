@@ -56,6 +56,18 @@ function! merlin#PackageList(ArgLead, CmdLine, CursorPos)
   return join(l:pkgs, "\n")
 endfunction
 
+function! merlin#ExtEnabled(ArgLead, CmdLine, CursorPos)
+  let l:exts = []
+  py merlin.vim_ext_list("l:exts", enabled=True)
+  return join(l:exts, "\n")
+endfunction
+
+function! merlin#ExtDisabled(ArgLead, CmdLine, CursorPos)
+  let l:exts = []
+  py merlin.vim_ext_list("l:exts", enabled=False)
+  return join(l:exts, "\n")
+endfunction
+
 function! merlin#MLList(ArgLead, CmdLine, CursorPos)
   let l:files = []
   py merlin.vim_which_ext(".ml", "l:files")
@@ -66,6 +78,16 @@ function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
   let l:files = []
   py merlin.vim_which_ext(".mli", "l:files")
   return join(l:files, "\n")
+endfunction
+
+function! merlin#ExtEnable(...)
+  py merlin.vim_ext(True, vim.eval("a:000"))
+  py merlin.vim_reload()
+endfunction
+
+function! merlin#ExtDisable(...)
+  py merlin.vim_ext(False, vim.eval("a:000"))
+  py merlin.vim_reload()
 endfunction
 
 function! merlin#Use(...)
@@ -241,6 +263,8 @@ function! merlin#Register()
   "command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
   command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags call merlin#AddFlags(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtDisabled -nargs=* ExtEnable call merlin#ExtEnable(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtEnabled -nargs=* ExtDisable call merlin#ExtDisable(<f-args>)
   command! -buffer -nargs=0 ClearFlags call merlin#ClearFlags()
   command! -buffer -nargs=0 LoadProject call merlin#LoadProject()
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
