@@ -103,8 +103,7 @@ let sync_step outline tokens t =
     end
 
   | Outline_utils.Done
-  | Outline_utils.Unterminated
-  | Outline_utils.Rollback -> 
+  | Outline_utils.Unterminated ->
     Misc.Inl outline
 
   (* Can now occurs here when a malformed module contains a definition that should have been

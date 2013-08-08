@@ -163,7 +163,7 @@ let append_exns exns outlines = match History.prev outlines with
 
 let rec do_rollback next_tokens chunks =
   match History.backward chunks with
-  | Some ({ tokens ; kind = Outline_utils.Rollback }, chunks') ->
+  | Some ({ tokens ; kind = Outline_utils.Syntax_error _ }, chunks') ->
     do_rollback (tokens @ next_tokens) chunks'
   | None -> next_tokens, chunks
   | Some ({ tokens }, chunks') -> tokens @ next_tokens, chunks'
@@ -171,7 +171,7 @@ let rec do_rollback next_tokens chunks =
 let rec parse ?(can_rollback=true) ?bufpos tokens chunks buf =
   let exns = exns chunks in
   match parse_step ?bufpos ~exns (History.of_list tokens) buf with
-  | tokens', Some { kind = Outline_utils.Rollback } when can_rollback ->
+  | tokens', Some { kind = Outline_utils.Syntax_error _ } when can_rollback ->
     let tokens = History.nexts (History.seek_offset 0 tokens') in
     let tokens, chunks = do_rollback tokens chunks in
     let chunks = History.cutoff chunks in
