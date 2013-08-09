@@ -115,25 +115,6 @@ let seek_backward p =
   in
   wrap_seek aux
 
-(** [seek cmp hist] returns a history such that, if [p] and [n] are
-  * the previous and next element of history, then both [cmp p >= 0] and
-  * [cmp n <= 0] hold.
-  *
-  * For example, [seek (fun p -> Pervasives.compare p0 p) hist] will
-  * move the history to the position [p0], if it exists.
-*)
-(* val seek : ('a -> int) -> 'a t -> 'a t *)
-(*let seek cmp { prev ; next ; pos } =
-  let prev', next', pos' =
-    match prev, next with
-      | (t :: prev'), next when cmp t < 0 ->
-          seek_backward cmp prev' (t :: next) (pred pos)
-      | prev, (t :: next') when cmp t > 0 ->
-          seek_forward cmp (t :: prev) next (succ pos)
-      | _ -> prev, next, pos
-  in
-  { prev = prev' ; next = next' ; pos = pos' }*)
-
 type 'a loc = 'a * pos * pos
 
 let wrap_lexer ?(filter=fun _-> true) ?bufpos r f buf =

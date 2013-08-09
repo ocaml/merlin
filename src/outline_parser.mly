@@ -216,25 +216,32 @@ The precedences must be listed from low to high.
 (* Entry points *)
 
 implementation:
-  | top_structure EOF                    { () }
-
-  | EOF                                  { () }
-  | SEMISEMI                             { emit_top Done $endpos }
+  | top_structure EOF                        { () }
 ;
 interface:
     signature EOF                        { () }
 ;
 top_structure:
-    structure_item                        { () }
-  | structure_item top_structure          { () }
-  | END                                   { emit_top Leave_module $endpos }
+    top_structure_tail                   { () }
+  | top_expr top_structure_tail          { () }
+  | END                                  { emit_top Leave_module $endpos }
+top_structure_tail:
+    (* empty  *)                         { () }
+  | top_semisemi                                { () }
+  | top_semisemi top_expr top_structure_tail        { () }
+  | top_semisemi structure_item top_structure_tail  { () }
+  | structure_item top_structure_tail           { () }
 ;
+top_expr:
+  | seq_expr                             { emit_top Definition $endpos }
+;
+top_semisemi:
+  | SEMISEMI                             { emit_top Done $endpos }
 
 (* Module expressions *)
-
 emit_enter:
   { emit_top Enter_module $endpos }
-
+;
 module_expr:
     mod_longident
       { () }

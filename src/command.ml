@@ -81,14 +81,16 @@ let command_tell = {
             | None -> raise Not_found
             | Some (o, os) ->
               let tokens', outlines' =
-                Outline.parse ~bufpos (o.Outline.tokens @ tokens) os lexbuf
+                Outline.parse ~bufpos (o.Outline.tokens @ tokens)
+                  (History.cutoff os) lexbuf
               in
               match History.prev outlines' with
-                (* Parsing is stable *)
+              (* Parsing is stable *)
               | Some o' when o.Outline.tokens = o'.Outline.tokens ->
                 raise Not_found
-                (* Parsing is not stable *)
-              | _ -> tokens', outlines'
+              (* Parsing is not stable *)
+              | _ -> 
+                tokens', outlines'
           with Not_found ->
             Outline.parse ~bufpos tokens outlines lexbuf
         in

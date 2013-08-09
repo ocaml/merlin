@@ -593,10 +593,11 @@ structure_tail:
 ;
 
 top_structure_item:
-  | seq_expr EOF { [mkloc (ghstrexp $startpos $endpos $1) 
+  | option(SEMISEMI) seq_expr option(SEMISEMI) EOF { [mkloc (ghstrexp $startpos $endpos $2) 
                       (symbol_rloc $startpos $endpos)] }
-  | structure_item EOF
-      { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $1 }
+  | option(SEMISEMI) structure_item option(SEMISEMI) EOF
+      { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $2 }
+  | SEMISEMI EOF { [] }
 ;
 
 with_extensions:
