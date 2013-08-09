@@ -401,7 +401,7 @@ kill the process if required."
   "Kills the merlin process inside the buffer."
   (setq merlin-processes (delete merlin-local-process merlin-processes))
   (process-send-eof (merlin-get-process))
-  (delete-process (merlin-get-process))
+  (ignore-errors (delete-process (merlin-get-process)))
   (kill-buffer (merlin-get-process-buffer-name))
 )
 (defun merlin-send-command (name args)
