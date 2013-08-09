@@ -4,4 +4,4 @@
 ["return",false]
 ["return",true]
 ["return",[]]
-["return",[["File \"\", line 1, characters 28-56","module type Test_sexp = sig exception E of int end"]]]
+["return",[["Line 1, characters 28-56","module type Test_sexp = sig exception E of int end"]]]

@@ -2,4 +2,4 @@
 ["return",false]
 ["return",true]
 ["return",[]]
-["return",[["File \"\", line 1, characters 5-13","type t = int"],["File \"\", line 1, characters 18-25","val t_of_sexp : Sexplib.Sexp.t -> t"]]]
+["return",[["Line 1, characters 5-13","type t = int"],["Line 1, characters 18-25","val t_of_sexp : Sexplib.Sexp.t -> t"]]]
