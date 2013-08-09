@@ -75,10 +75,14 @@ let command_tell = {
           (History.cutoff state.types)
         in
         let tokens, outlines =
-          try
-            if not first then raise Not_found;
+          let default tokens =
+            Outline.parse ~bufpos tokens outlines lexbuf
+          in
+          if not first
+          then default tokens
+          else
             match History.backward outlines with
-            | None -> raise Not_found
+            | None -> default tokens
             | Some (o, os) ->
               let tokens', outlines' =
                 Outline.parse ~bufpos (o.Outline.tokens @ tokens)
@@ -87,12 +91,10 @@ let command_tell = {
               match History.prev outlines' with
               (* Parsing is stable *)
               | Some o' when o.Outline.tokens = o'.Outline.tokens ->
-                raise Not_found
+                default tokens'
               (* Parsing is not stable *)
               | _ -> 
                 tokens', outlines'
-          with Not_found ->
-            Outline.parse ~bufpos tokens outlines lexbuf
         in
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
