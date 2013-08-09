@@ -126,13 +126,15 @@ let wrap_lexer ?(filter=fun _-> true) ?bufpos r f buf =
         t
     | None ->
         (match bufpos with
-          | Some p -> buf.Lexing.lex_curr_p <- !p
+          | Some {contents = p} -> 
+            buf.Lexing.lex_abs_pos <- Lexing.(p.pos_cnum - buf.lex_curr_pos);
+            buf.Lexing.lex_curr_p <- p
           | None -> ());
         let t = f buf in
         if filter t then
-          r := insert (t,buf.Lexing.lex_start_p,buf.Lexing.lex_curr_p) !r;
+          r := insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !r;
         (match bufpos with
-          | Some p -> p := buf.Lexing.lex_curr_p;
+          | Some p -> p := buf.Lexing.lex_curr_p
           | None -> ());
         t
   in
@@ -144,7 +146,7 @@ let current_pos ?(default=Lexing.dummy_pos) hist =
     | _ -> default
 
 let seek_pos pos h =
-  let cmp (_,_,p) = compare pos.Lexing.pos_cnum p.Lexing.pos_cnum in
+  let cmp (_,_,p) = Misc.compare_pos pos p in
   let go_backward item = cmp item < 0 in
   let go_forward item = cmp item > 0 in
   match backward h with
