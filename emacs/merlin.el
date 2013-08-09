@@ -401,13 +401,13 @@ CALLBACK-IF-EXN is non-nil, call the function with the error message otherwise p
                           (message "Invalid answer received from merlin.")))))
       nil)))
 
-(defun merlin-send-command (command args)
+(defun merlin-send-command (command args &optional callback-if-exn)
   "Send a command to merlin and returns the result"
   (with-current-buffer (merlin-get-process-buffer-name)
     (setq merlin-result nil)
     (setq merlin-ready nil))
   (merlin-send-command-async command args #'(lambda (data) (setq merlin-ready t)
-                                              (setq merlin-result data)))
+                                              (setq merlin-result data)) callback-if-exn)
   (merlin-wait-for-answer))
 
 (defun merlin-is-long (s)
@@ -763,10 +763,9 @@ variable `merlin-cache')."
 (defun merlin--switch-to (name ext)
   "Switch to NAME.EXT."
   (let ((file
-         (merlin-send-command "which" (list "path" (concat (downcase name) "." ext)))))
-    (if file 
-        (find-file-other-window file)
-      (message "No such file"))))
+         (merlin-send-command "which" (list "path" (concat (downcase name) "." ext))
+                              #'(lambda (err) (message "No such file (message: %s)" err)))))
+    (when file (find-file-other-window file))))
 (defun merlin-switch-to-ml (name)
   "Switch to a ML file."
   (interactive (list (completing-read "Module:" (merlin--list-by-ext "ml"))))
