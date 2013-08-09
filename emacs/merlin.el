@@ -626,7 +626,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (forward-line -1)
     (let ((p merlin-lock-point))
       (if (> (point-at-eol) merlin-lock-point)
-          (merlin-update-point quiet)))))
+          (merlin-update-point (not quiet))))))
 
 (defun merlin-edit (start end length)
   "Called when an edit is make to retract the locked zone if it is needed."
@@ -718,7 +718,7 @@ variable `merlin-cache')."
       (list start (point)
             (apply-partially #'merlin--completion-table start)
             . (:exit-function #'merlin--completion-lookup
-              :annotation-function '(lambda (s) (merlin--completion-lookup s nil)))))))
+              :annotation-function '(lambda (s) (cdr (assoc s merlin--completion-annotation-table))))))))
             
 
 (defvar merlin--completion-cache-state nil)
