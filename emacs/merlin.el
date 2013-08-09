@@ -717,7 +717,8 @@ variable `merlin-cache')."
       (skip-syntax-forward "w_.")
       (list start (point)
             (apply-partially #'merlin--completion-table start)
-            . (:exit-function #'merlin--completion-lookup)))))
+            . (:exit-function #'merlin--completion-lookup
+              :annotation-function '(lambda (s) (merlin--completion-lookup s nil)))))))
             
 
 (defvar merlin--completion-cache-state nil)
