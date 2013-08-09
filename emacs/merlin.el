@@ -75,13 +75,6 @@
 (defvar merlin-favourite-caml-mode
   'tuareg-mode
   "The OCaml mode to use for the *merlin types* buffer.")
-(defvar merlin-idle-delay 3.0
-  "Seconds of idle time to wait before printing the type of the current ident.
-If user input arrives before this interval of time has elapsed
-after the last input, no documentation will be printed.
-
-If the timer is zero or negative, nothing is done."
-)
 
 (defvar merlin-margin-lock-string "-"
   "String put in the margin to signal the end of the locked zone.")
@@ -161,11 +154,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Current offset in `merlin-enclosing-types'.")
 (defvar merlin-last-point-type nil
   "Last position where the user ran `merlin-magic-show-type'.")
-(defvar merlin-idle-point nil
-  "Position of the last time we printed the type of point.")
 (defvar merlin-type-overlay nil "Merlin overlay used for type-checking.")
-(defvar merlin-idle-timer nil
-  "The timer used to print the type of the expression under point.")
 
 (defvar merlin-use-auto-complete-mode nil
   "If non nil, use `auto-complete-mode' in any buffer")
@@ -549,7 +538,6 @@ It then parses the error returned by merlin
                      (substitute-command-keys "\\[merlin-next-error]")
                      )
           (message "%s" (cdr (assoc 'message err))))
-        (setq merlin-idle-point (point))
         (merlin-highlight (merlin-make-bounds err) 'next-error))
     (next-error)))
 
@@ -723,7 +711,6 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defun merlin-source-init ()
   "Called at the beginning of a completion to fill the cache (the
 variable `merlin-cache')."
-  (setq merlin-idle-point (point))
   (setq merlin-completion-point ac-point)
   (merlin-complete-identifier ac-prefix))
 
@@ -886,7 +873,6 @@ overlay."
 (defun merlin-show-type-def ()
   "Print the definition of the type of the term under point."
   (interactive)
-  (setq merlin-idle-point (point))
   (let* ((bounds (bounds-of-thing-at-point 'ocamlatom)))
     (merlin-type-of-expression (merlin-string-at-bounds bounds)
                                #'(lambda (type)
@@ -895,7 +881,6 @@ overlay."
                                                                   (merlin-display-type bounds
                                                                                        (if typedef typedef
                                                                                          (concat type ": <not an atomic type>")))))))))
-
 
 (defun merlin-show-type-of-region ()
   "Show the type of the region."
@@ -938,7 +923,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (save-excursion
     (forward-line)
     (merlin-check-synchronize))
-  (setq merlin-idle-point (point))
   (if (and merlin-enclosing-types (equal merlin-last-point-type (point)))
       (if (> arg 1)
           (merlin-type-enclosing-go-down)
@@ -1067,22 +1051,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (merlin-check-synchronize t)
   (merlin-goto-phrase "prev" 0))
     
-;; Idle 
-(defun merlin-idle-hook ()
-  (if (<= merlin-idle-delay 0.)
-      (cancel-timer merlin-idle-timer)
-    (if (and merlin-mode
-	     (not (eq (point) merlin-idle-point)))
-	(progn
-	  (merlin-show-type-of-point-quiet)
-	  (setq merlin-idle-point (point))))))
-
-(defun merlin-enter ()
-  "Try to update the merlin point and fail silently."
-  (interactive)
-  (newline)
-  (if merlin-continuous-feed
-      (merlin-update-point nil)))
 (defun merlin-to-point ()
   "Update the merlin to the current point, reporting error."
   (interactive)
@@ -1173,7 +1141,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-lock-point) (point-min))
   (set (make-local-variable 'merlin-buffer) nil)
   (set (make-local-variable 'merlin-result) nil)
-  (set (make-local-variable 'merlin-idle-point) nil)
   (set (make-local-variable 'merlin-completion-point) nil)
   (set (make-local-variable 'merlin-ready) nil)
   (set (make-local-variable 'merlin-pending-errors) nil)
@@ -1188,9 +1155,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin--counter) 0)
   (add-to-list 'after-change-functions 'merlin-edit)
   (merlin-load-project-file)
-  (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
-      (setq merlin-idle-timer
-            (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
   (with-current-buffer (get-buffer-create merlin-type-buffer-name)
     (funcall merlin-favourite-caml-mode)))
 
@@ -1220,7 +1184,6 @@ Short cuts:
               nil)
           (merlin-mode -1)))
     (when (merlin-is-ml-buffer)
-      (cancel-timer merlin-idle-timer)
       (if merlin-lock-zone-highlight-overlay
           (delete-overlay merlin-lock-zone-highlight-overlay))
       (if merlin-lock-zone-margin-overlay
