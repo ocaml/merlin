@@ -330,3 +330,8 @@ let node_complete node prefix =
       | _ -> find prefix []
     with Not_found -> []
 
+and locate node path_str =
+  Track_definition.from_string
+    ~sources:(!source_path)
+    ~env:(node.Browse.env)
+    path_str

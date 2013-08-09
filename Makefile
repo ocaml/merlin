@@ -17,7 +17,10 @@ src/myocamlbuild_config.ml:
 $(TARGET): src/myocamlbuild_config.ml
 	$(OCAMLBUILD) -use-ocamlfind $@
 
-.PHONY: $(TARGET) all clean distclean install uninstall
+dev: src/myocamlbuild_config.ml
+	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET)
+
+.PHONY: $(TARGET) all dev clean distclean install uninstall
 
 clean:
 	$(OCAMLBUILD) -clean

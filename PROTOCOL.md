@@ -119,9 +119,23 @@ surrounding given position for given prefix/path (path of the form: Module.ident
 ### ["complete","prefix",string]
 ### ["complete","prefix",string,"at",position]
 
+## locate
+
+['locate', ident] returns the position where this identifier is introduced.
+
+Answers are of this shape :
+
+- "Not found" (string)
+- ["file": string , "pos": { "line" : int , "col": int }]
+
 ## boundary
 
-### ["boundary"]
+### ["boundary", "prev|current|next"]
+Return the boundary of the phrase before, at, or after the cursor.
+
+### ["boundary", "prev|current|next", "at", pos]
+
+Return the boundary of the phrase before, at, or after the given position.
 
 ## errors
 

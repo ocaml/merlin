@@ -44,4 +44,6 @@ val node_at : t -> Lexing.position -> Browse.t
 val node_complete : Browse.t -> string -> Json.json list
 val find_method : Env.t -> string -> Types.type_expr -> Types.type_expr option
 
+val locate : Browse.t -> string -> (string * Location.t) option
+
 val exns : t -> exn list

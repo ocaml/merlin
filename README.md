@@ -135,41 +135,56 @@ Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. If you
 Features
 --------
 
-merlin implements a locked zone like proofgeneral to know what merlin knows of
-the buffer. To advance or retract the locked zone to the point, use C-c C-RET.
-Note that retraction can go before the point in case the point is not at the end
-of the last definition. Lock zone is by default shown using a marker in the
-margin of the last line of it. The behaviour is controlled by the variable
-`merlin-display-lock-zone'.
+The emacs `merlin-mode` make all the features of merlin available
+inside emacs, by synchronizing ML buffers with a merlin instance. At
+any moment, the instance of merlin knows a part of the buffer that
+works like locked zones in proof assistant modes (eg. proofgeneral):
+editing inside this zone retracts it to the last valid phrase, and C-c
+C-t (`merlin-to-point`) expands it to the current position. Moreover
+executing a merlin command also tries to advance the locked zone as
+much as possible to contain the point.
 
 Main keybindings:
 
-- C-c l allows you to load a findlib package inside merlin. For a project you
-should use a .merlin file
+- C-c C-t (`merlin-magic-show-type`) shows the type of the expression
+  underpoint. To do so, it tries to compile the current phrase and
+  locate the leaf of the typedtree containing the current position: 
 
-- C-c C-t will show you the type of the expression under point. The behaviour of
-  this is quite complex. It will:
+  - if it is found, it prints the type of this leaf. Further calls to
+    `C-c C-t` will print the types of bigger expressions enclosing the
+    position ("go up" in the AST). (`C-u C-c C-t` will go down). For
+    instance if you have:
+    
+        List.map (fun n -> n + 1) [1; 2; 3]
+    
+    and your cursor is on the `n`, then successive calls to `C-c C-t`
+    will print (in this order): `int` (`n`), `int` (`n+1`), `int ->
+    int` (`fun n -> n + 1`), and `int list` (the whole statement)
 
-  - try to find the node of the typed AST the current point is in, and returns
-    this type. Further call to C-c C-t allow to go up (or down with a prefix
-    argument) in the AST
+  - if it is not possible (the current phrase cannot be made to
+    compile), then an approximation is tried to type the expression
+    out of context.
 
-  - try to type the ident under point within the local environment
+  Moreover, if you use a prefix argument, merlin-mode will try to type the region.
 
-  - try to type the ident under point within the local environment.
+- `C-c C-t` (`merlin-to-point`) will update the locked zone to the current position and report all the errors and warnings found.
 
-  Moreover, C-u C-c C-t is used to type the region (if there is no selected AST
-  node)
+- `C-c C-x` (`merlin-next-error`) will jump to the next error and display the error message
 
-- C-c C-x goes to the next error
+- `C-c C-u` (`merlin-refresh`) refreshes merlin's cmis cache (when you recompiled other files)
 
-- C-c C-u refreshes merlin's cache (when you recompiled other files, might be
-  handy)
+- `C-c C-r` (`merlin-rewind`) retracts the whole buffer (useful when merlin seems confused)
 
-- C-c C-r retracts the whole buffer (useful when merlin seems confused)
+- `C-c C-l` (`merlin-locate`) tries to find the definition of the ident under point and jumps to it. To go back, use `C-c &` (`merlin-pop-stack`)
 
-- C-c d will print the definition of the type of the expression underpoint if
-  any. If the type is compliated (eg. 'a -> 'a option) it will print the definition  of the codomain
+- `C-c d` (`merlin-show-type-def`) will print the definition of the
+  type of the expression underpoint if any. If the type is compliated
+  (eg. `'a -> 'a option`) it will print the definition of the
+  codomain.
+
+- `C-c l` (`merlin-use`) loads a findlib package inside merlin
+
+- `C-c r` (`merlin-restart-process`) restarts merlin process (useful when hung)
 
 Moreover, you have regular auto-completion (M-TAB by default) using
 completion-at-point. There is auto-complete integration you can enable
@@ -218,7 +233,5 @@ Namely :
 Screenshots
 ===========
 
-![merlin typing in emacs](http://kiwi.iuwt.fr/~asmanur/compl.png)
-
 - [vim](http://88.191.77.33/~rks/merlin/)
-- [emacs](http://kiwi.iuwt.fr/~asmanur/blog/merlin/)
+- [emacs](http://kiwi.iuwt.fr/~asmanur/projects/merlin/merlin-emacs.html)
