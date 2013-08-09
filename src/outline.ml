@@ -74,7 +74,7 @@ let parse_with history ~parser ~lexer ~bufpos buf =
             loc_ghost = false ;
           })
       in
-      history' := History.move (-1) !history';
+      history' := History.move (-2) !history';
       let lexer' who = Chunk_parser_utils.dump_lexer ~who lexer in
       let rec aux () =
         let count = Chunk_parser_utils.re_sync (lexer' "re_sync") buf in
