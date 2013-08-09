@@ -143,7 +143,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Position up to which merlin knows about.")
 (defvar merlin-pending-errors-overlays nil
   "Overlays for the pending errors.")
-(defvar merlin-error-overlay nil "Merlin overlay used for errors.")
+(defvar merlin-highlight-overlay nil "Merlin overlay used for highlights.")
 
 ; Completion related variables
 (defvar merlin-completion-point nil
@@ -240,15 +240,16 @@ return (LOC1 . LOC2)."
                            `((margin left-margin) ,s)
                            )))
 
-(defun merlin-create-overlay (var bounds face timer)
-  "Create an overlay on BOUNDS (of the form (START . END)).
-Give it FACE and store it in VAR. If TIMER is non-nil, the overlay is to disappear after TIMER seconds."
-  (let ((ol (or (symbol-value var)
-                (set var (make-overlay (point) (point))))))
-    (move-overlay ol (car bounds) (cdr bounds))
-    (overlay-put ol 'face face)
-    (if timer
-        (run-at-time timer nil #'delete-overlay ol))))
+(defun merlin-highlight (bounds face)
+  "Create an overlay on BOUNDS (of the form (START . END)) and give it face."
+  (if merlin-highlight-overlay
+      (delete-overlay merlin-highlight-overlay))
+  (setq merlin-highlight-overlay (make-overlay (car bounds) (cdr bounds)))
+  (overlay-put merlin-highlight-overlay 'face face)
+  (unwind-protect
+      (sit-for 60)
+    (delete-overlay merlin-highlight-overlay)
+    (setq merlin-highlight-overlay nil)))
       
 ;; PROCESS MANAGEMENT
 
@@ -543,7 +544,8 @@ If NO-RETRACT is non-nil, don't retract to a valid position after telling.
                      (length merlin-pending-errors)
                      (substitute-command-keys "\\[merlin-next-error]")
                      )
-          (message "%s" (cdr (assoc 'message err)))))
+          (message "%s" (cdr (assoc 'message err)))
+          (merlin-highlight (merlin-make-bounds err) 'next-error)))
     (next-error)))
 
 (defun merlin-remove-error-overlay ()
@@ -845,7 +847,7 @@ variable `merlin-cache')."
           (progn 
             (message "%s" type)
             (if (and (not quiet) bounds)
-                (merlin-create-overlay 'merlin-type-overlay bounds 'merlin-type-face "5 sec")))
+                (merlin-highlight bounds 'merlin-type-face)))
         (when (not quiet)
           (display-buffer (get-buffer-create merlin-type-buffer-name))
           (with-current-buffer (get-buffer-create merlin-type-buffer-name)
@@ -1208,6 +1210,8 @@ Short cuts:
           (delete-overlay merlin-lock-zone-highlight-overlay))
       (if merlin-lock-zone-margin-overlay
           (delete-overlay merlin-lock-zone-margin-overlay))
+      (if merlin-highlight-overlay
+          (delete-overlay merlin-highlight-overlay))
       (merlin-delete-error-overlays)
       (merlin-process-remove-user)
 )))
