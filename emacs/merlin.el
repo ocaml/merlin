@@ -28,6 +28,7 @@
 ;;;; Code:
 
 ;; json and cl are mandatory
+(require 'tq)
 (require 'cl)
 (require 'json)
 ;; auto-complete is not
@@ -120,6 +121,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-local-process nil
   "The local merlin process."
 )
+(defvar merlin--queue nil
+  "The transaction queue for current process. This variable lives only in process buffers.")
+
 (defvar merlin-process-users nil
   "Buffer that uses the process (local to a process buffer).")
 (defvar merlin-process-last-user nil
@@ -297,18 +301,6 @@ For now it is a constant function (every buffer shares the same instance)."
             (setq merlin-result a)
             (setq merlin-ready t))))))
 
-(defun merlin-wait-for-answer ()
-  "Waits for merlin to answer."
-  (with-current-buffer (merlin-get-process-buffer-name)
-      (while
-          (and (< merlin--counter 20)
-               (or
-                (not (accept-process-output (merlin-get-process) 0.1 nil nil))
-                (not merlin-ready)))
-        (setq merlin--counter (+ merlin--counter 1)))
-      (setq merlin-buffer nil)
-      (setq merlin-ready nil)
-      (not (equal merlin--counter 20))))
 
 (defun merlin-start-process (flags &optional users)
   "Start the merlin process for the current buffer. FLAGS are a list of strings
@@ -323,12 +315,11 @@ denoting the parameters to be passed to merlin. USERS can be used to set the use
       (with-current-buffer buffer
         (set (make-local-variable 'merlin-local-process) p)))
     (merlin-debug (format "Running %s with flags %s\n" merlin-command flags))
-    ;; set the global process (for now)
     (set-process-query-on-exit-flag p nil)
-    (set-process-filter p 'merlin-filter)
     (push p merlin-processes)
 ; don't forget to initialize temporary variable
     (with-current-buffer (merlin-get-process-buffer-name)
+      (set (make-local-variable 'merlin--queue) (tq-create p))
       (set (make-local-variable 'merlin-process-users) (cons name users))
       (set (make-local-variable 'merlin-local-process) p)
       (set (make-local-variable 'merlin-process-last-user) name)
@@ -403,33 +394,57 @@ kill the process if required."
   (process-send-eof (merlin-get-process))
   (ignore-errors (delete-process (merlin-get-process)))
   (kill-buffer (merlin-get-process-buffer-name))
+  (with-current-buffer (merlin-get-process-buffer-name)
+    (tq-close merlin--queue))
 )
-(defun merlin-send-command (name args)
-  "Send a command to merlin. Return the result."
+(defun merlin-wait-for-answer ()
+  "Waits for merlin to answer."
+  (with-current-buffer (merlin-get-process-buffer-name)
+      (while (not merlin-ready)
+        (accept-process-output (merlin-get-process) 0.1 nil nil))
+      merlin-result))
+(defun merlin-send-command-async (command args callback-if-success &optional callback-if-exn)
+  "Send a command to merlin. Give the result to callback-if-success. If merlin reported an error and if
+CALLBACK-IF-EXN is non-nil, call the function with the error message otherwise print a generic error message."
   (let ((string
 	 (concat 
-	  (json-encode (if args (append (list name) args) (list name)))
+	  (json-encode (if args (append (list command) args) (list command)))
 	  "\n"))
         (name (buffer-name)))
-    (process-send-string (merlin-get-process) string)
-    (setq merlin-result nil)
     (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
     (with-current-buffer (merlin-get-process-buffer-name)
       (setq merlin-process-last-user name)
-      (when (merlin-wait-for-answer)
-          merlin-result))))
+      (tq-enqueue merlin--queue string "\n"
+                  (cons callback-if-success (cons callback-if-exn command))
+                  #'(lambda (closure answer)
+                      (setq merlin-ready t)
+                      (let ((a (ignore-errors (json-read-from-string answer))))
+                        (if a
+                            (progn
+                              (if merlin-debug
+                                  (merlin-debug (format "Received:\n%s\n----\n" answer)))
+                              (if (string-equal (elt a 0) "return")
+                                  (funcall (car closure) (elt a 1))
+                                (progn
+                                  (if (functionp (cadr closure))
+                                      (funcall (cadr closure) (elt a 1))
+                                    (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
+                          (message "Invalid answer received from merlin.")))))
+      nil)))
 
+(defun merlin-send-command (command args)
+  "Send a command to merlin and returns the result"
+  (with-current-buffer (merlin-get-process-buffer-name)
+    (setq merlin-result nil)
+    (setq merlin-ready nil))
+  (merlin-send-command-async command args #'(lambda (data) (setq merlin-ready t)
+                                              (setq merlin-result data)))
+  (merlin-wait-for-answer))
 
 (defun merlin-is-long (s)
   "Return true if its parameter is long, ie. contains a new line."
   (string-match "sig" s))
 ;; SPECIAL CASE OF COMMANDS
-(defun merlin-get-return-field (data)
-  "Return the actual data of a response or nil if there was an error."
-  (if (string-equal (elt data 0) "return")
-      (elt data 1)
-    nil))
-		    
 (defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
@@ -464,13 +479,12 @@ kill the process if required."
 (defun merlin-get-position ()
   "Get the current position of merlin."
   (merlin-make-point
-   (merlin-get-return-field
-    (merlin-send-command "seek" '("position")))))
+   (merlin-send-command "seek" '("position"))))
 
 (defun merlin-seek (point)
   "Seek merlin's point to POINT."
   (let ((data 
-	 (merlin-get-return-field (merlin-send-command "seek" (list "before" (merlin-unmake-point point))))))
+	 (merlin-send-command "seek" (list "before" (merlin-unmake-point point)))))
     (merlin-make-point data)))
     
 (defun merlin-tell-piece (mode start end)
@@ -501,8 +515,7 @@ If NO-RETRACT is non-nil, don't retract to a valid position after telling.
     (forward-line 1)
     (while (and (not end-p) (< (point) (point-max)))
       (if (equal ;; this is not tautological since value is never nil
-           (merlin-get-return-field ;; tell end returned true => we are done
-            (merlin-tell-piece "end" temp-point (point)))
+           (merlin-tell-piece "end" temp-point (point))
            t)
           (progn
             (setq end-p t))
@@ -585,12 +598,12 @@ If NO-RETRACT is non-nil, don't retract to a valid position after telling.
 (defun merlin-check-for-errors (view-errors-p)
   "Check for errors. Return t if there were not any or nil if there were.
 Moreover if `view-errors-p' is not nil, it will display them in the margin."
-  (let ((output (merlin-send-command "errors" nil)))
-    (if (> (length (elt output 1)) 0)
+  (let ((raw-errors (merlin-send-command "errors" nil)))
+    (if (> (length raw-errors) 0)
 	(progn
           (when view-errors-p
             (let ((errors (delete-if (lambda (e) (not (assoc 'start e)))
-                                     (append (elt output 1) nil))))
+                                     (append raw-errors nil))))
               (if (not merlin-report-warnings)
                   (delete-if (lambda (e) (merlin-warning-p (cdr (assoc 'message e)))) errors))
               (merlin-display-errors-in-margin errors)))
@@ -696,19 +709,20 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defun merlin-get-completion-data (ident)
   "Return the completion data for IDENT, that is a list of pairs (COMPLETION . TYPE)"
   (let* ((prefix (merlin-compute-prefix ident))
-         (data (elt (merlin-get-completion ident) 1)))
-    (mapcar (lambda (c)
-            (cons
-             (concat prefix (cdr (assoc 'name c)))
-             (cond
-              (
-               (member (cdr (assoc 'kind c)) '("Module" "module"))
-               ": <module>"
-               )
-              ((string-equal (cdr (assoc 'kind c)) "Type")
-               (format " [%s]" (cdr (assoc 'desc c))))
-              (t
-               (replace-regexp-in-string "^[^:]+:[ \n]+" ": " (cdr (assoc 'desc c)))))))
+         (data (merlin-get-completion ident)))
+    (mapcar
+     #'(lambda (c)
+         (cons
+          (concat prefix (cdr (assoc 'name c)))
+          (cond
+           (
+            (member (cdr (assoc 'kind c)) '("Module" "module"))
+            ": <module>"
+            )
+           ((string-equal (cdr (assoc 'kind c)) "Type")
+            (format " [%s]" (cdr (assoc 'desc c))))
+           (t
+            (replace-regexp-in-string "^[^:]+:[ \n]+" ": " (cdr (assoc 'desc c)))))))
             data)))
                  
 ;; Vars from auto-complete
@@ -786,15 +800,13 @@ variable `merlin-cache')."
 ;; Switch to ML file
 (defun merlin--list-by-ext (ext)
   "Lists filenames ending by EXT in the path"
-  (append (merlin-get-return-field 
-           (merlin-send-command "which" (list "with_ext" ext)))
+  (append (merlin-send-command "which" (list "with_ext" ext))
           nil))
 
 (defun merlin--switch-to (name ext)
   "Switch to NAME.EXT."
   (let ((file
-         (merlin-get-return-field
-          (merlin-send-command "which" (list "path" (concat (downcase name) "." ext))))))
+         (merlin-send-command "which" (list "path" (concat (downcase name) "." ext)))))
     (if file 
         (find-file-other-window file)
       (message "No such file"))))
@@ -813,27 +825,31 @@ variable `merlin-cache')."
 (defun merlin-trim (s)
   (replace-regexp-in-string "\n\\'" "" s))
 
-(defun merlin-type-of-expression-local (exp)
+(defun merlin-type-of-expression-local (exp callback-if-success &optional callback-if-exn)
   "Get the type of an expression inside the local context."
   (if exp
-      (merlin-get-return-field 
-       (merlin-send-command "type"
-                            (list "expression" exp "at" 
-                                  (merlin-unmake-point (point)))))))
+      (merlin-send-command-async "type"
+                                 (list "expression" exp "at"
+                                       (merlin-unmake-point (point)))
+                                 callback-if-success callback-if-exn)))
 
-(defun merlin-type-of-expression-global (exp)
+(defun merlin-type-of-expression-global (exp callback-if-success &optional callback-if-exn)
   "Get the type of an expression globally."
   (if exp
-      (merlin-get-return-field (merlin-send-command "type" (list "expression" exp)))))
+      (merlin-send-command-async "type" (list "expression" exp)
+                                 callback-if-success callback-if-exn)))
 
 
-(defun merlin-type-of-expression (exp)
+(defun merlin-type-of-expression (exp callback-if-success &optional callback-if-exn)
   "Get the type of EXP. It uses three techniques to do so:
 - type-expression at (local)
 - type expression (global)."
-  (or
-   (merlin-type-of-expression-local exp)
-   (merlin-type-of-expression-global exp)))
+   (merlin-type-of-expression-local exp
+                                    callback-if-success
+                                    #'(lambda (exn)
+                                        (merlin-type-of-expression-global exp
+                                                                          callback-if-success
+                                                                          callback-if-exn))))
 
 
 (defun merlin-display-type (bounds type &optional quiet)
@@ -853,18 +869,25 @@ variable `merlin-cache')."
           (with-current-buffer (get-buffer-create merlin-type-buffer-name)
             (erase-buffer)
             (insert type)))))))
-          
+
+(defun merlin-string-at-bounds (bounds)
+  "Return the string inbetween BOUNDS."
+  (if bounds
+      (buffer-substring-no-properties (car bounds)
+                                      (cdr bounds))))
+
 (defun merlin-show-type (bounds &optional quiet)
   "This functions shows the type of the expression inside
 `bounds' in the current buffer. If `quiet' is non nil then an
 overlay is displayed and module types are displayed in another
 buffer. Otherwise only value type are displayed, and without
 overlay."
-  (let* ((substring (if bounds
-                       (buffer-substring-no-properties (car bounds)
-                                                       (cdr bounds))))
-         (type (merlin-type-of-expression substring)))
-    (merlin-display-type bounds type quiet)))
+  (lexical-let* ((substring (merlin-string-at-bounds bounds))
+                 (bounds bounds)
+                 (quiet quiet))
+    (merlin-type-of-expression substring
+                               #'(lambda (type)
+                                   (merlin-display-type bounds type quiet)))))
 
 (defun merlin-get-type-codomain (type)
   "Given a functional type, try to return its codomain."
@@ -874,12 +897,14 @@ overlay."
   "Print the definition of the type of the term under point."
   (interactive)
   (setq merlin-idle-point (point))
-  (let* ((bounds (bounds-of-thing-at-point 'ocamlatom))
-         (type (merlin-type-of-expression (buffer-substring-no-properties (car bounds) (cdr bounds))))
-         (typedef (merlin-type-of-expression (merlin-get-type-codomain type))))
-    (merlin-display-type bounds
-                         (if typedef typedef 
-                           (concat type ": <not an atomic type>")))))
+  (let* ((bounds (bounds-of-thing-at-point 'ocamlatom)))
+    (merlin-type-of-expression (merlin-string-at-bounds bounds)
+                               #'(lambda (type)
+                                   (merlin-type-of-expression (merlin-get-type-codomain type)
+                                                              #'(lambda (typedef)
+                                                                  (merlin-display-type bounds
+                                                                                       (if typedef typedef
+                                                                                         (concat type ": <not an atomic type>")))))))))
 
 
 (defun merlin-show-type-of-region ()
@@ -911,9 +936,8 @@ overlay."
              (cdr (assoc 'type obj))
              (merlin-make-bounds obj)))
           (elt
-               (merlin-get-return-field
-                (merlin-send-command "type" (list "enclosing" (merlin-unmake-point (point)))))
-               1))))
+           (merlin-send-command "type" (list "enclosing" (merlin-unmake-point (point))))
+           1))))
     (setq merlin-enclosing-types list)
     (setq merlin-enclosing-offset -1)))
 
@@ -941,7 +965,8 @@ it will print types of bigger expressions around point (it will go up the ast). 
 (defun merlin-show-type-of-user-supplied-expression (s)
   "Show the type of the expression S."
   (interactive "sExpression:")
-  (merlin-display-type nil (merlin-type-of-expression s) nil))
+  (merlin-type-of-expression s #'(lambda (type)
+                                   (merlin-display-type nil s nil))))
 
 (defun merlin-type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (TYPE . BOUNDS)."
@@ -978,7 +1003,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 
 (defun merlin-get-packages ()
   "Get the list of available findlib package."
-  (append (elt (merlin-send-command "find" '("list")) 1) nil))
+  (append (merlin-send-command "find" '("list")) nil))
 (defun merlin-use (pkg)
   "Use a package in the current session of merlin."
   (interactive
@@ -991,7 +1016,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   "Load the .merlin file corresponding to the current file."
   (interactive)
   (merlin-rewind)
-  (let ((r (merlin-get-return-field (merlin-send-command "project" (list "find" (buffer-file-name))))))
+  (let ((r (merlin-send-command "project" (list "find" (buffer-file-name)))))
     (if (and r (listp r))
         (setq merlin--project-file (car r)))))
 
@@ -1008,7 +1033,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   "Locate the identifier under point"
   (interactive)
   (let* ((ident (thing-at-point 'ocamlatom))
-         (r (merlin-get-return-field (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point)))))))
+         (r (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point))))))
     (if (and r (listp r))
       (progn
         (push (cons (buffer-name) (point)) merlin-position-stack)
