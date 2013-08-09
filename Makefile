@@ -33,6 +33,7 @@ install: $(TARGET)
 	install -d $(SHARE_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install omake-merlin $(BIN_DIR)/omake-merlin
+	install jenga-merlin $(BIN_DIR)/jenga-merlin
 	install -d $(SHARE_DIR)/ocamlmerlin/vim
 	install -d $(SHARE_DIR)/ocamlmerlin/vimbufsync
 	install -d $(SHARE_DIR)/emacs/site-lisp
