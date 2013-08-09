@@ -689,10 +689,14 @@ variable `merlin-cache')."
   (merlin-check-synchronize)
   (ac-complete-merlin))
 
+(defun merlin-prefix ()
+  (skip-syntax-backward "w_.")
+  (point))
 (defvar merlin-ac-source
   '((init . merlin-source-init)
     (candidates . (lambda () merlin-cache))
     (requires . 3)
+    (prefix . merlin-prefix)
     ))
 
 (when (featurep 'auto-complete)
