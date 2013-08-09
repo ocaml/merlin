@@ -129,6 +129,8 @@ def command_reset(name=None):
     r = send_command("reset","name",name)
   else:
     r = send_command("reset")
+  if name == "myocamlbuild.ml":
+    command_find_use("ocamlbuild")
   saved_sync = None
   return r
 
@@ -160,7 +162,7 @@ def command_ext_disabled():
   return send_command('extension', 'list', 'disabled')
 
 def command_find_use(*packages):
-  return send_command('find', 'use', packages)
+  return catch_and_print(lambda: send_command('find', 'use', packages))
 
 def command_find_list():
   return send_command('find', 'list')
@@ -328,6 +330,8 @@ def vim_type(expr=None,is_approx=False):
   except MerlinExc as e:
     if expr:
       vim_type(expr=None,is_approx=True)
+    elif re.search('Not_found',str(e)):
+      pass
     else:
       try_print_error(e)
 
