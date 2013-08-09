@@ -504,11 +504,10 @@ CALLBACK-IF-EXN is non-nil, call the function with the error message otherwise p
 	 (forward-line 10))
        (merlin-tell-piece mode temp end))))
 
-(defun merlin-tell-till-end-of-phrase (&optional no-retract)
+(defun merlin-tell-till-end-of-phrase (view-errors-p)
   "Tell merlin the buffer until the end of the current phrase is met.
 It proceeds by telling (with the end mode) each line until it returns true or until we are at the end of the buffer.
-
-If NO-RETRACT is non-nil, don't retract to a valid position after telling.
+It then parses the error returned by merlin
 "
   (let ((temp-point (point))
         (end-p nil))
@@ -525,12 +524,10 @@ If NO-RETRACT is non-nil, don't retract to a valid position after telling.
             (end-of-line))))
     ;; End of buffer
     (if (not end-p)
-        (progn
-          (merlin-send-command "tell" '("end" nil))
-          (if no-retract (merlin-get-position)
-            (merlin-seek (merlin-get-position))))
-      (if no-retract (merlin-get-position)
-        (merlin-retract-to (merlin-get-position))))))
+        (merlin-send-command "tell" '("end" nil)))
+    (merlin-check-for-errors view-errors-p)
+    (setq merlin--point (merlin-get-position))
+    (merlin-update-lock-zone-display)))
 
       
       
@@ -546,19 +543,14 @@ If NO-RETRACT is non-nil, don't retract to a valid position after telling.
         (merlin-goto-point (cdr (assoc 'start err)))
         (if merlin-pending-errors-overlays
             (delete-overlay (pop merlin-pending-errors-overlays)))
-        (merlin-create-overlay 'merlin-error-overlay 
-                               (merlin-make-bounds err)
-                               'next-error
-                               2)
-        (setq merlin-idle-point (point))
         (if merlin-pending-errors
             (message "%s (%d more errors, use %s to go to the next)" 
-                     (cdr (assoc 'message err))
                      (length merlin-pending-errors)
                      (substitute-command-keys "\\[merlin-next-error]")
                      )
-          (message "%s" (cdr (assoc 'message err)))
-          (merlin-highlight (merlin-make-bounds err) 'next-error)))
+          (message "%s" (cdr (assoc 'message err))))
+        (setq merlin-idle-point (point))
+        (merlin-highlight (merlin-make-bounds err) 'next-error))
     (next-error)))
 
 (defun merlin-remove-error-overlay ()
@@ -665,9 +657,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (setq merlin-lock-point (merlin-retract-to (point)))
     (end-of-line)
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
-    (setq merlin-lock-point (merlin-tell-till-end-of-phrase (not view-errors-p)))
-    (merlin-check-for-errors view-errors-p)
-    (merlin-update-lock-zone-display)))
+    (merlin-tell-till-end-of-phrase view-errors-p)))
   
 (defun merlin-check-synchronize (&optional quiet)
   "If merlin point is before the end of line send everything up to the end of line."
