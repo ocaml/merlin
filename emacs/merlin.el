@@ -70,6 +70,7 @@
 (defvar merlin-report-warnings t
   "If non-nil, report warnings.")
 
+(defvar merlin-type-buffer-name "* merlin types *")
 (defvar merlin-favourite-caml-mode
   'tuareg-mode
   "The OCaml mode to use for the *merlin types* buffer.")
@@ -158,9 +159,6 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Last position where the user ran `merlin-magic-show-type'.")
 (defvar merlin-idle-point nil
   "Position of the last time we printed the type of point.")
-(defvar merlin-type-buffer nil
-  "The buffer to use to display types."
-  )
 (defvar merlin-type-overlay nil "Merlin overlay used for type-checking.")
 (defvar merlin-idle-timer nil
   "The timer used to print the type of the expression under point.")
@@ -849,8 +847,8 @@ variable `merlin-cache')."
             (if (and (not quiet) bounds)
                 (merlin-create-overlay 'merlin-type-overlay bounds 'merlin-type-face "5 sec")))
         (when (not quiet)
-          (display-buffer merlin-type-buffer)
-          (with-current-buffer merlin-type-buffer
+          (display-buffer (get-buffer-create merlin-type-buffer-name))
+          (with-current-buffer (get-buffer-create merlin-type-buffer-name)
             (erase-buffer)
             (insert type)))))))
           
@@ -1176,8 +1174,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (if (and (> merlin-idle-delay 0.) (not merlin-idle-timer))
       (setq merlin-idle-timer
             (run-with-idle-timer merlin-idle-delay t 'merlin-idle-hook)))
-  (setq merlin-type-buffer (get-buffer-create "*merlin types*"))
-  (with-current-buffer merlin-type-buffer
+  (with-current-buffer (get-buffer-create merlin-type-buffer-name)
     (funcall merlin-favourite-caml-mode)))
 
 (defun merlin-is-ml-buffer ()
