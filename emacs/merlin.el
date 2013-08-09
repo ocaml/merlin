@@ -269,28 +269,6 @@ For now it is a constant function (every buffer shares the same instance)."
   (concat "merlin-" (merlin-get-buffer-instance-name))
   )
 
-(defvar merlin--counter 0)
-(defun merlin-filter (process output)
-  "The filter on merlin's output."
-  (setq merlin-buffer (concat merlin-buffer output))
-  (setq merlin--counter 0)
-  (if (> (length merlin-buffer) 1000)
-      (message "Loading answer %dk" (/ (length merlin-buffer) 1000)))
-  (when (or
-         (equal (elt merlin-buffer (1- (length merlin-buffer))) ?\n)
-         (< (length merlin-buffer) 1000))
-    (let ((a (ignore-errors (json-read-from-string merlin-buffer))))
-      (if a
-          (progn
-            (if merlin-debug 
-                (merlin-debug (format "Received:\n%s\n----\n" merlin-buffer)))
-            (if (> (length merlin-buffer) 1000)
-                (message "Loading answer %dk...done" 
-                         (/ (length merlin-buffer) 1000)))
-            (setq merlin-result a)
-            (setq merlin-ready t))))))
-
-
 (defun merlin-start-process (flags &optional users)
   "Start the merlin process for the current buffer. FLAGS are a list of strings
 denoting the parameters to be passed to merlin. USERS can be used to set the users of this buffer. Return the process created"
@@ -407,6 +385,8 @@ CALLBACK-IF-EXN is non-nil, call the function with the error message otherwise p
                   (cons callback-if-success (cons callback-if-exn command))
                   #'(lambda (closure answer)
                       (setq merlin-ready t)
+                      (if (>= (length answer) 4000)
+                          (message "merlin: Parsing long answer (%dk)" (/ (length answer) 10000)))
                       (let ((a (ignore-errors (json-read-from-string answer))))
                         (if a
                             (progn
@@ -1078,7 +1058,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (define-key merlin-map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-next-phrase)
     (define-key merlin-map (kbd "C-c C-p") 'merlin-prev-phrase)
-    (define-key merlin-map (kbd "RET") 'merlin-enter)
 ;;    (define-key merlin-menu-map [customize]
 ;;      '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
@@ -1152,7 +1131,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-enclosing-types) nil)
   (set (make-local-variable 'merlin-enclosing-offset) nil)
   (set (make-local-variable 'merlin-last-point-type) nil)
-  (set (make-local-variable 'merlin--counter) 0)
   (add-to-list 'after-change-functions 'merlin-edit)
   (merlin-load-project-file)
   (with-current-buffer (get-buffer-create merlin-type-buffer-name)
