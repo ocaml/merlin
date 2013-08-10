@@ -623,14 +623,14 @@ The parameter `view-errors-p' controls whether we should care for errors"
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (merlin-tell-till-end-of-phrase view-errors-p)))
   
-(defun merlin-check-synchronize (&optional quiet)
+(defun merlin-check-synchronize ()
   "If merlin point is before the end of line send everything up to the end of line."
   (interactive)
   (save-excursion
     (forward-line 1)
     (let ((p merlin-lock-point))
       (if (> (point-at-eol) merlin-lock-point)
-          (merlin-update-point (not quiet))))))
+          (merlin-update-point nil)))))
 
 (defun merlin-edit (start end length)
   "Called when an edit is make to retract the locked zone if it is needed."
@@ -685,6 +685,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defun merlin-source-init ()
   "Called at the beginning of a completion to fill the cache (the
 variable `merlin-cache')."
+  (merlin-check-synchronize)
   (setq merlin-completion-point ac-point)
   (merlin-complete-identifier ac-prefix))
 
@@ -715,7 +716,7 @@ variable `merlin-cache')."
         (message "%s%s" (car ret) (cdr ret)))))
 (defun merlin-completion-at-point ()
   (save-excursion
-    (merlin-check-synchronize t))
+    (merlin-check-synchronize))
   (save-excursion
     (skip-syntax-backward "w_.")
     (let ((start (point)))
@@ -863,7 +864,7 @@ overlay."
 (defun merlin-show-type-of-region ()
   "Show the type of the region."
   (interactive)
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-show-type (cons (region-beginning) (region-end))))
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)."
@@ -1017,16 +1018,16 @@ it will print types of bigger expressions around point (it will go up the ast). 
   "Go to the beginning of the next phrase."
   (interactive)
   (save-excursion
-    (merlin-check-synchronize t)
+    (merlin-check-synchronize)
     (merlin-goto-phrase "current" 1)
     (forward-line 1)
-    (merlin-check-synchronize t))
+    (merlin-check-synchronize))
   (merlin-goto-phrase "next" 0))
 
 (defun merlin-prev-phrase ()
   "Go to the beginning of the previous phrase."
   (interactive)
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-goto-phrase "prev" 0))
     
 (defun merlin-to-point ()
