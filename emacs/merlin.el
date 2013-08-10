@@ -644,7 +644,9 @@ The parameter `view-errors-p' controls whether we should care for errors"
   "Parse and format completion results."
   (mapcar (lambda (c) 
             (if merlin-completion-types
-                (let ((desc (replace-regexp-in-string "\n" "" (cdr (assoc 'desc c)))))
+                (let ((desc
+                       (replace-regexp-in-string "^[^:]+:[ \n]+" ""
+                        (replace-regexp-in-string "\n" "" (cdr (assoc 'desc c))))))
                   (popup-make-item (concat prefix (cdr (assoc 'name c)))
                                  :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
                                  :summary desc))
@@ -698,10 +700,20 @@ variable `merlin-cache')."
 (defun merlin-prefix ()
   (skip-syntax-backward "w_.")
   (point))
+(defun merlin-fetch-type ()
+  (let ((candidate (buffer-substring-no-properties merlin-completion-point  (point))))
+    (if merlin-completion-types
+        (mapc
+         (lambda (item)
+           (if (string-equal candidate item)
+               (message "%s: %s" candidate (popup-item-summary item))))
+         merlin-cache))))
+
 (defvar merlin-ac-source
   '((init . merlin-source-init)
     (candidates . (lambda () merlin-cache))
     (requires . 3)
+    (action . merlin-fetch-type)
     (prefix . merlin-prefix)
     ))
 
