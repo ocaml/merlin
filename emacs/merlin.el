@@ -644,9 +644,10 @@ The parameter `view-errors-p' controls whether we should care for errors"
   "Parse and format completion results."
   (mapcar (lambda (c) 
             (if merlin-completion-types
-                (popup-make-item (concat prefix (cdr (assoc 'name c)))
+                (let ((desc (replace-regexp-in-string "\n" "" (cdr (assoc 'desc c)))))
+                  (popup-make-item (concat prefix (cdr (assoc 'name c)))
                                  :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
-                                 :summary (cdr (assoc 'desc c)))
+                                 :summary desc))
               (cdr (assoc 'name c))))
 	  (append l nil)))
 
@@ -655,7 +656,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (setq merlin-cache nil)
   (setq merlin-cache
 	(merlin-extract-complete (merlin-compute-prefix ident) 
-			   (elt (merlin-get-completion ident) 1)))
+			   (merlin-get-completion ident)))
   )
 (defun merlin-get-completion-data (ident)
   "Return the completion data for IDENT, that is a list of pairs (COMPLETION . TYPE)"
