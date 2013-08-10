@@ -154,7 +154,6 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Current offset in `merlin-enclosing-types'.")
 (defvar merlin-last-point-type nil
   "Last position where the user ran `merlin-magic-show-type'.")
-(defvar merlin-type-overlay nil "Merlin overlay used for type-checking.")
 
 (defvar merlin-use-auto-complete-mode nil
   "If non nil, use `auto-complete-mode' in any buffer")
@@ -495,7 +494,7 @@ It then parses the error returned by merlin
     (if (not end-p)
         (merlin-send-command "tell" '("end" nil)))
     (merlin-check-for-errors view-errors-p)
-    (setq merlin--point (merlin-get-position))
+    (setq merlin-lock-point (merlin-get-position))
     (merlin-update-lock-zone-display)))
 
       
@@ -514,16 +513,13 @@ It then parses the error returned by merlin
             (delete-overlay (pop merlin-pending-errors-overlays)))
         (if merlin-pending-errors
             (message "%s (%d more errors, use %s to go to the next)" 
+                     (cdr (assoc 'message err))
                      (length merlin-pending-errors)
                      (substitute-command-keys "\\[merlin-next-error]")
                      )
           (message "%s" (cdr (assoc 'message err))))
         (merlin-highlight (merlin-make-bounds err) 'next-error))
     (next-error)))
-
-(defun merlin-remove-error-overlay ()
-  "Remove the error overlay."
-  (delete-overlay merlin-error-overlay))
 
 (defun merlin-delete-error-overlays ()
   "Removes margin error overlays."
@@ -638,10 +634,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
 
 (defun merlin-edit (start end length)
   "Called when an edit is make to retract the locked zone if it is needed."
-  (when merlin-type-overlay
-      (delete-overlay merlin-type-overlay)
-      (setq merlin-type-overlay nil))
-  (if (< start merlin-lock-point)
+  (if (and merlin-mode (< start merlin-lock-point))
       (progn
         (setq merlin-lock-point (merlin-retract-to start))
         (merlin-update-lock-zone-display))))
@@ -1108,6 +1101,19 @@ it will print types of bigger expressions around point (it will go up the ast). 
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
   (interactive)
+  (set (make-local-variable 'merlin-lock-point) (point-min))
+  (set (make-local-variable 'merlin-buffer) nil)
+  (set (make-local-variable 'merlin-result) nil)
+  (set (make-local-variable 'merlin-completion-point) nil)
+  (set (make-local-variable 'merlin-ready) nil)
+  (set (make-local-variable 'merlin-pending-errors) nil)
+  (set (make-local-variable 'merlin-pending-errors-overlays) nil)
+  (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
+  (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
+  (set (make-local-variable 'merlin--project-file) nil)
+  (set (make-local-variable 'merlin-enclosing-types) nil)
+  (set (make-local-variable 'merlin-enclosing-offset) nil)
+  (set (make-local-variable 'merlin-last-point-type) nil)
   ; if there is not yet a buffer for the current buffer, create one
   (when (not (merlin-process-started-p))
       (merlin-start-process nil))
@@ -1121,20 +1127,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (add-to-list 'ac-sources 'merlin-ac-source))
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
-  (set (make-local-variable 'merlin-lock-point) (point-min))
-  (set (make-local-variable 'merlin-buffer) nil)
-  (set (make-local-variable 'merlin-result) nil)
-  (set (make-local-variable 'merlin-completion-point) nil)
-  (set (make-local-variable 'merlin-ready) nil)
-  (set (make-local-variable 'merlin-pending-errors) nil)
-  (set (make-local-variable 'merlin-pending-errors-overlays) nil)
-  (set (make-local-variable 'merlin-type-overlay) nil)
-  (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
-  (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
-  (set (make-local-variable 'merlin--project-file) nil)
-  (set (make-local-variable 'merlin-enclosing-types) nil)
-  (set (make-local-variable 'merlin-enclosing-offset) nil)
-  (set (make-local-variable 'merlin-last-point-type) nil)
   (add-to-list 'after-change-functions 'merlin-edit)
   (merlin-load-project-file)
   (with-current-buffer (get-buffer-create merlin-type-buffer-name)
