@@ -1015,18 +1015,18 @@ it will print types of bigger expressions around point (it will go up the ast). 
 ;; Semantic movement
 (defun merlin-goto-phrase (command indice)
   "Go to the phrase indicated by COMMAND to the end INDICE."
-  (let ((r (merlin-get-return-field
-            (merlin-send-command "boundary" (list command "at" (merlin-unmake-point (point)))))))
+  (let ((r (merlin-send-command "boundary" (list command "at" (merlin-unmake-point (point))))))
     (if r
         (goto-char (merlin-make-point (elt r indice))))))
 
 (defun merlin-next-phrase ()
   "Go to the beginning of the next phrase."
   (interactive)
-  (merlin-check-synchronize t)
-  (merlin-goto-phrase "current" 1)
-  (forward-line 1)
-  (merlin-check-synchronize t)
+  (save-excursion
+    (merlin-check-synchronize t)
+    (merlin-goto-phrase "current" 1)
+    (forward-line 1)
+    (merlin-check-synchronize t))
   (merlin-goto-phrase "next" 0))
 
 (defun merlin-prev-phrase ()
