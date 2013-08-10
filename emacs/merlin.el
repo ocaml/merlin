@@ -997,6 +997,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
+  (merlin-check-synchronize)
   (let* ((ident (thing-at-point 'ocamlatom))
          (r (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point))))))
     (if (and r (listp r))
