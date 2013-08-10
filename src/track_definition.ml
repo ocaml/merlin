@@ -63,6 +63,7 @@ module Utils = struct
     match lid with
     | Lident _ -> None
     | Ldot (t, s) -> Some (t, Lident s)
+    | Lapply _ -> invalid_arg "Lapply"
 end
 
 include Utils
@@ -170,19 +171,25 @@ and browse_cmts ~root modules =
   match cmt_infos.cmt_annots with
   | Implementation impl -> browse_structure impl modules
   | Packed (_sign, files) ->
-    let mod_name :: modules = modules in
-    let file = List.find (fun f -> file_path_to_mod_name f = mod_name) files in
-    cwd := Filename.dirname root ;
-    let cmt_file = find_file file in
-    browse_cmts ~root:cmt_file modules
+    begin match modules with
+    | [] -> assert false
+    | mod_name :: modules ->
+      let file = List.find (fun f -> file_path_to_mod_name f = mod_name) files in
+      cwd := Filename.dirname root ;
+      let cmt_file = find_file file in
+      browse_cmts ~root:cmt_file modules
+    end
+  | _ -> None (* TODO? *)
 
-and from_path' (fname :: modules) =
-  let cmt_file =
-    let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
-    try Misc.find_in_path_uncap !sources_path fname
-    with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
-  in
-  browse_cmts ~root:cmt_file modules
+and from_path' = function
+  | [] -> invalid_arg "empty path"
+  | fname :: modules ->
+    let cmt_file =
+      let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
+      try Misc.find_in_path_uncap !sources_path fname
+      with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
+    in
+    browse_cmts ~root:cmt_file modules
 
 and from_path path = from_path' (path_to_list path)
 
@@ -191,15 +198,19 @@ let path_and_loc_from_cstr desc env =
   match desc.cstr_tag with
   | Cstr_exception (path, loc) -> path, loc
   | _ ->
-    let (Tconstr (path, _, _)) = desc.cstr_res.desc in
-    let typ_decl = Env.find_type path env in
-    path, typ_decl.Types.type_loc
+    match desc.cstr_res.desc with
+    | Tconstr (path, _, _) ->
+      let typ_decl = Env.find_type path env in
+      path, typ_decl.Types.type_loc
+    | _ -> assert false
 
 let path_and_loc_from_label desc env =
   let open Types in
-  let (Tconstr (path, _, _)) = desc.lbl_res.desc in
-  let typ_decl = Env.find_type path env in
-  path, typ_decl.Types.type_loc
+  match desc.lbl_res.desc with
+  | Tconstr (path, _, _) ->
+    let typ_decl = Env.find_type path env in
+    path, typ_decl.Types.type_loc
+  | _ -> assert false
 
 let from_string ~sources ~env path =
   sources_path := sources ;
