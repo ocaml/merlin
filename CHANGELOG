@@ -1,4 +1,4 @@
-merlin 1.1
+merlin 1.3
 ==========
 
   backend:
@@ -10,10 +10,19 @@ merlin 1.1
   emacs:
     - various bugfixes
     - aesthetic changes for highlighting
+    - introduced "semantic movements":
+      add commands (and keybindings) to go to the next/previous phrase
+    - support for completion in emacs 23
+    - reporting of syntax errors
+    - removed "idle-typing" feature
+
+  misc:
+    - added a wrapper for jenga
 
   vim:
     - ':TypeOf' command now accepts an (optional) argument and tries to type it
       in the current context (i.e. at cursor position)
+    - better catching of errors
 
 merlin 1.2
 ==========
