@@ -84,7 +84,7 @@
 )
 
 (defvar merlin-margin-warning-string "?"
-  "String to put in the margin of a line containing an error.")
+  "String to put in the margin of a line containing a warning.")
 
 (defvar merlin-display-lock-zone '(margin)
   "How to display the locked zone. 
