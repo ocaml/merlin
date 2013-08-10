@@ -136,7 +136,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 ; Errors related variables
 (defvar merlin-pending-errors nil
   "Pending errors.")
-(defvar merlin-lock-point nil
+(defvar merlin-lock-point 0
   "Position up to which merlin knows about.")
 (defvar merlin-pending-errors-overlays nil
   "Overlays for the pending errors.")
