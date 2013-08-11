@@ -15,7 +15,8 @@ merlin 1.3
     - support for completion in emacs 23
     - reporting of syntax errors
     - removed "idle-typing" feature
-
+    - asynchronous fetching of types so that long signatures
+      won't make emacs hang
   misc:
     - added a wrapper for jenga
 
