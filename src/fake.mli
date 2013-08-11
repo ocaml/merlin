@@ -80,7 +80,9 @@ module TypeWith : sig
     generator list -> Parsetree.signature_item list
 end
 
-val type_add_nonrec : string Location.loc -> string Location.loc
-val type_drop_nonrec : string -> string
-val type_is_nonrec : string -> bool
-val type_ident_drop_nonrec : Ident.t -> Ident.t
+module Nonrec : sig
+  val add  : string Location.loc -> string Location.loc
+  val is   : string -> bool
+  val drop : string -> string
+  val ident_drop : Ident.t -> Ident.t
+end

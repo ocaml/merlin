@@ -315,7 +315,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
   in
   (exp, ghtyp startpos endpos (Ptyp_poly(newtypes,varify_constructors newtypes core_type)))
 
-let tag_nonrec (id,a) = (Fake.type_add_nonrec id, a)
+let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %}
 
 (* Tokens *)

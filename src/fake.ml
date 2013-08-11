@@ -400,28 +400,30 @@ module TypeWith = struct
     List.map (sig_of_binding ?ghost_loc) bindings
 end
 
-let type_nonrec_prefix = "\x00nonrec" (*"__nonrec_"*)
-let type_nonrec_prefix_l = String.length type_nonrec_prefix
-let type_add_nonrec id = 
-  { id with Location.txt = type_nonrec_prefix ^ id.Location.txt }
-
-let type_is_nonrec t =
-  let l = String.length t in
-  (l > type_nonrec_prefix_l) &&
-  try
-    for i = 0 to type_nonrec_prefix_l - 1 do
-      if t.[i] <> type_nonrec_prefix.[i] then raise Not_found;
-    done;
-    true
-  with Not_found -> false
-
-let type_drop_nonrec t = 
-  let l = String.length t in
-  if type_is_nonrec t
-  then String.sub t type_nonrec_prefix_l (l - type_nonrec_prefix_l)
-  else t
-
-let type_ident_drop_nonrec id =
-  if type_is_nonrec id.Ident.name
-  then { id with Ident.name = type_drop_nonrec id.Ident.name }
-  else id
+module Nonrec = struct
+  let type_nonrec_prefix = "\x00nonrec" (*"__nonrec_"*)
+  let type_nonrec_prefix_l = String.length type_nonrec_prefix
+  let add id = 
+    { id with Location.txt = type_nonrec_prefix ^ id.Location.txt }
+  
+  let is t =
+    let l = String.length t in
+    (l > type_nonrec_prefix_l) &&
+    try
+      for i = 0 to type_nonrec_prefix_l - 1 do
+        if t.[i] <> type_nonrec_prefix.[i] then raise Not_found;
+      done;
+      true
+    with Not_found -> false
+  
+  let drop t = 
+    let l = String.length t in
+    if is t
+    then String.sub t type_nonrec_prefix_l (l - type_nonrec_prefix_l)
+    else t
+  
+  let ident_drop id =
+    if is id.Ident.name
+    then { id with Ident.name = drop id.Ident.name }
+    else id
+end 
