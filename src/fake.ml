@@ -380,7 +380,23 @@ module Fields = struct
     | Parsetree.Ptype_record fields ->
       Misc.list_concat_map (gen_field self) fields
     | _ -> []
-    
+end
+
+module Compare = struct
+  let bindings ({ Location.txt = name },ty) =
+    let params = List.map 
+        (function None -> `Var "_" | Some s -> `Var (s.Location.txt))
+        ty.ptype_params
+    in
+    let self = `Named (params, name) in
+    let comparator = {
+      ident = "compare_" ^ name;
+      typesig = `Arrow ("", self, `Arrow ("", self, `Named ([], "int")));
+      body = `AnyVal
+    } in
+    comparator :: (if name = "t" 
+                   then [{comparator with ident = "compare"}]
+                   else [])
 end
 
 module TypeWith = struct
@@ -418,6 +434,9 @@ module TypeWith = struct
 
     | "fields" ->
       Misc.list_concat_map Fields.bindings ty
+
+    | "compare" ->
+      Misc.list_concat_map Compare.bindings ty
 
     | ext when cow_supported_extension ext ->
       let module Cow = Make_cow(struct let name = ext end) in
