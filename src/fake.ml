@@ -58,6 +58,7 @@ module Ast = struct
     | `Var   of string
     | `Arrow of Asttypes.label * type_scheme * type_scheme
     | `Named of type_scheme list * string
+    | `Core_type of core_type
   ]
 
   and expr = [
@@ -89,6 +90,7 @@ let rec translate_ts ?ghost_loc = function
       ptyp_desc = Ptyp_constr (mkoptloc ghost_loc id, params) ;
       ptyp_loc = default_loc ghost_loc ;
     }
+  | `Core_type ct -> ct
 
 and translate_expr ?ghost_loc : Ast.expr -> _ = function
   | `Fun (simple_patterns, body) ->
@@ -352,6 +354,35 @@ module Binprot = struct
   end
 end
 
+module Fields = struct
+  let gen_field self ({ Location.txt = name }, mut, ty, _) =
+    (* Remove higher-rank quantifiers *)
+    let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
+    let ty = `Core_type ty in
+    let accessor = `Arrow ("", self, ty) in
+    let fields =
+      [{ ident = name; typesig = accessor; body = `AnyVal }] in
+    let fields = match mut with
+      | Asttypes.Immutable -> fields
+      | Asttypes.Mutable -> 
+        let mutator = `Arrow ("", self, `Arrow ("", ty, `Named ([],"unit"))) in
+        { ident = "set_" ^ name; typesig = mutator; body = `AnyVal } :: fields
+    in
+    fields
+
+  let bindings ({ Location.txt = name },ty) =
+    let params = List.map 
+        (function None -> `Var "_" | Some s -> `Var (s.Location.txt))
+        ty.ptype_params
+    in
+    let self = `Named (params, name) in
+    match ty.ptype_kind with
+    | Parsetree.Ptype_record fields ->
+      Misc.list_concat_map (gen_field self) fields
+    | _ -> []
+    
+end
+
 module TypeWith = struct
   type generator = string
 
@@ -385,9 +416,12 @@ module TypeWith = struct
         ]
       ) ty
 
+    | "fields" ->
+      Misc.list_concat_map Fields.bindings ty
+
     | ext when cow_supported_extension ext ->
       let module Cow = Make_cow(struct let name = ext end) in
-      Misc.list_concat_map (fun ty -> Cow.bindings ty) ty
+      Misc.list_concat_map Cow.bindings ty
 
     | _unsupported_ext -> []
 
