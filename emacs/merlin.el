@@ -479,7 +479,7 @@ It then parses the error returned by merlin
 "
   (let ((temp-point (point))
         (end-p nil))
-    (forward-line 1)
+    (forward-line 10)
     (while (and (not end-p) (< (point) (point-max)))
       (if (equal ;; this is not tautological since value is never nil
            (merlin-tell-piece "end" temp-point (point))
@@ -488,8 +488,7 @@ It then parses the error returned by merlin
             (setq end-p t))
         (progn
             (setq temp-point (point))
-            (forward-line 1)
-            (end-of-line))))
+            (forward-line 10))))
     ;; End of buffer
     (if (not end-p)
         (merlin-send-command "tell" '("end" nil)))
@@ -619,7 +618,6 @@ The parameter `view-errors-p' controls whether we should care for errors"
       (merlin-rewind))
   (save-excursion
     (setq merlin-lock-point (merlin-retract-to (point)))
-    (end-of-line)
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (merlin-tell-till-end-of-phrase view-errors-p)))
   
