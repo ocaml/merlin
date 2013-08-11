@@ -37,26 +37,27 @@ module Utils = struct
     let rec aux = function
       | Lident str ->
         if String.lowercase str <> str then
-          Some (Lident str)
+          Some (Lident str, false)
         else
           None
       | Ldot (t, str) ->
         if String.lowercase str <> str then
           match aux t with
-          | None -> Some (Lident str)
-          | Some t -> Some (Ldot (t, str))
+          | None -> Some (Lident str, true)
+          | Some (t, is_label) -> Some (Ldot (t, str), is_label)
         else
           None
-      | t -> Some t (* don't know what to do here, probably best if I do nothing. *)
+      | t ->
+        Some (t, false) (* don't know what to do here, probably best if I do nothing. *)
     in
     function
-    | Lident s -> Lident s
+    | Lident s -> Lident s, false
     | Ldot (t, s) ->
       begin match aux t with
-      | None -> Lident s
-      | Some t -> Ldot (t, s)
+      | None -> Lident s, true
+      | Some (t, is_label) -> Ldot (t, s), is_label
       end
-    | otherwise -> otherwise
+    | otherwise -> otherwise, false
 
   let try_split_lident lid =
     let open Longident in
@@ -214,26 +215,24 @@ let path_and_loc_from_label desc env =
 
 let from_string ~sources ~env path =
   sources_path := sources ;
-  let ident = keep_suffix (Longident.parse path) in
+  let ident, is_label = keep_suffix (Longident.parse path) in
   try
     let path, loc =
-      try
-        let path, val_desc = Env.lookup_value ident env in
-        path, val_desc.Types.val_loc
-      with Not_found ->
-      try
-        let path, typ_decl = Env.lookup_type ident env in
-        path, typ_decl.Types.type_loc
-      with Not_found ->
-      try
-        let _, cstr_desc = Env.lookup_constructor ident env in
-        path_and_loc_from_cstr cstr_desc env
-      with Not_found ->
-      try
+      if is_label then (
         let _, label_desc = Env.lookup_label ident env in
         path_and_loc_from_label label_desc env
-      with Not_found ->
-        raise Not_found
+      ) else (
+        try
+          let path, val_desc = Env.lookup_value ident env in
+          path, val_desc.Types.val_loc
+        with Not_found ->
+        try
+          let path, typ_decl = Env.lookup_type ident env in
+          path, typ_decl.Types.type_loc
+        with Not_found ->
+          let _, cstr_desc = Env.lookup_constructor ident env in
+          path_and_loc_from_cstr cstr_desc env
+      )
     in
     if not (is_ghost loc) then
       let fname = loc.Location.loc_start.Lexing.pos_fname in
