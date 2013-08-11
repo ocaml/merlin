@@ -86,7 +86,7 @@
 (defvar merlin-margin-warning-string "?"
   "String to put in the margin of a line containing a warning.")
 
-(defvar merlin-display-lock-zone '(margin)
+(defvar merlin-display-lock-zone nil
   "How to display the locked zone. 
 It is a list of methods among:
    - `highlight': highlight the current locked zone (like proofgeneral)
