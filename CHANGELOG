@@ -7,6 +7,11 @@ merlin 1.3
       works on local buffer out of the box and at project level if it can find
       cmts in the build dirs.
 
+  extensions:
+    - add support for "type nonrec" declaration
+    - add support for "with compare" from type-conv
+    - add partial support for "with fields" from type-conv
+
   emacs:
     - various bugfixes
     - aesthetic changes for highlighting
