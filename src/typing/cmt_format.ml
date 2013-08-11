@@ -964,7 +964,7 @@ let saved_types = ref []
 
 let add_saved_type b = () (* saved_types := b :: !saved_types *)
 let get_saved_types () = !saved_types
-let set_saved_types l = saved_types := l
+let set_saved_types l = () (*saved_types := l*)
 
 let save_cmt filename modname binary_annots sourcefile initial_env sg =
   if !Clflags.binary_annotations
