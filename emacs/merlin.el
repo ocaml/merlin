@@ -1162,7 +1162,7 @@ buffers) and perform queries on it.
 
 Short cuts:
 \\{merlin-mode-map}"
-  nil "merlin"
+  nil " merlin"
   :keymap merlin-mode-map
   (if merlin-mode 
       (if (merlin-is-ml-buffer) 
