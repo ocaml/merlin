@@ -32,53 +32,66 @@ class MerlinException(MerlinExc):
 
 ######## COMMUNICATION
 
-mainpipe = None
-saved_sync = None
-def restart():
-  global mainpipe
-  if mainpipe:
-    try:
+class MerlinProcess:
+  def __init__(self):
+    self.mainpipe = None
+    self.saved_sync = None
+
+  def restart(self):
+    if self.mainpipe:
       try:
-        mainpipe.terminate()
+        try:
+          self.mainpipe.terminate()
+        except OSError:
+          pass
+        self.mainpipe.communicate()
       except OSError:
         pass
-      mainpipe.communicate()
-    except OSError:
-      pass
-  try:
-    command = [vim.eval("merlin#FindOcamlMerlin()")]
-    command.extend(flags)
-    mainpipe = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=None,
-            preexec_fn = (lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
-        )
-  except OSError as e:
-    print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
-            is executable.")
-    raise e
+    try:
+      command = [vim.eval("merlin#FindOcamlMerlin()")]
+      command.extend(flags)
+      self.mainpipe = subprocess.Popen(
+              command,
+              stdin=subprocess.PIPE,
+              stdout=subprocess.PIPE,
+              stderr=None,
+              preexec_fn = (lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+          )
+    except OSError as e:
+      print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
+              is executable.")
+      raise e
+
+  def send_command(self, *cmd):
+    if self.mainpipe == None or self.mainpipe.returncode != None:
+      self.restart()
+    json.dump(cmd, self.mainpipe.stdin)
+    line = self.mainpipe.stdout.readline()
+    result = json.loads(line)
+    content = None
+    if len(result) == 2:
+      content = result[1]
+  
+    if result[0] == "return":
+      return content
+    elif result[0] == "failure":
+      raise Failure(content)
+    elif result[0] == "error":
+      raise Error(content)
+    elif result[0] == "exception":
+      raise MerlinException(content)
+
+
+merlin_processes = {}
+def merlin_process():
+  global merlin_processes
+  name = vim.eval("exists('b:merlin_project') ? b:merlin_project : ''")
+  if not name in merlin_processes:
+    merlin_processes[name] = MerlinProcess()
+  return merlin_processes[name]
 
 def send_command(*cmd):
-  global mainpipe
-  if mainpipe == None or mainpipe.returncode != None:
-    restart()
-  json.dump(cmd, mainpipe.stdin)
-  line = mainpipe.stdout.readline()
-  result = json.loads(line)
-  content = None
-  if len(result) == 2:
-    content = result[1]
-
-  if result[0] == "return":
-    return content
-  elif result[0] == "failure":
-    raise Failure(content)
-  elif result[0] == "error":
-    raise Error(content)
-  elif result[0] == "exception":
-    raise MerlinException(content)
+  return merlin_process().send_command(*cmd)
 
 def dump(*cmd):
   print(send_command('dump', *cmd))
@@ -120,8 +133,11 @@ def catch_and_print(f, msg=None):
 
 ######## BASIC COMMANDS
 
-def command_reload():
-  return send_command("refresh")
+def command_reload(full=False):
+  if full:
+    return send_command("refresh")
+  else:
+    return send_command("refresh", "quick")
 
 def command_reset(name=None):
   global saved_sync
@@ -210,7 +226,8 @@ def command_locate(path, line, col):
 ######## BUFFER SYNCHRONIZATION
 
 def sync_buffer_to(to_line, to_col):
-  global saved_sync
+  process = merlin_process()
+  saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
   cb = vim.current.buffer
   max_line = len(cb)
@@ -227,13 +244,13 @@ def sync_buffer_to(to_line, to_col):
         rest    = cb[line-1][col:]
         content = cb[line:end_line]
         content.insert(0, rest)
-      saved_sync = curr_sync
+      process.saved_sync = curr_sync
     else:
       content = None
   else:
     command_reset(name=os.path.basename(cb.name))
     content = cb[:end_line]
-    saved_sync = curr_sync
+    process.saved_sync = curr_sync
 
   # Send content
   if content:
@@ -436,11 +453,8 @@ def vim_reload_buffer():
   sync_buffer()
 
 # Reload changed cmi files then retype all definitions
-def vim_is_loaded():
-  return (mainpipe != None)
-
-def vim_reload():
-  command_reload()
+def vim_reload(full=False):
+  command_reload(full)
 
 # Spawn a fresh new process
 def vim_restart():
@@ -515,7 +529,13 @@ def vim_selectphrase(l1,c1,l2,c2):
   for (var,val) in [(l1,vl1),(l2,vl2),(c1,vc1),(c2,vc2)]:
     vim.command("let %s = %d" % (var,val))
 
-def load_project(directory):
+def load_project(directory,force=False):
+  command = [vim.eval("merlin#FindOcamlMerlin()"), "-project-find", directory]
+  process = subprocess.Popen(command, stdout=subprocess.PIPE)
+  name = process.communicate()[0].strip()
+  if not force:
+    if name == vim.eval("b:merlin_project"): return
+  vim.command("let b:merlin_project = '%s'" % name)
   fnames = catch_and_print(lambda: send_command("project","find",directory))
   if isinstance(fnames, list):
     vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))

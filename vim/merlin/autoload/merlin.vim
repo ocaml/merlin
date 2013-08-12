@@ -215,10 +215,14 @@ function! merlin#Restart()
 endfunction
 
 function! merlin#Reload()
-  py if merlin.vim_is_loaded(): merlin.vim_reload()
+  py merlin.vim_reload()
 endfunction
 
-function! merlin#ReloadBuffer()
+function! merlin#ReloadFull()
+  py merlin.vim_reload(full=True)
+endfunction
+
+function! merlin#ReparseBuffer()
   py merlin.vim_reload_buffer()
 endfunction
 
@@ -259,6 +263,7 @@ function! merlin#Register()
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
   command! -buffer -nargs=0 Reload       call merlin#Reload()
+  command! -buffer -nargs=0 ReloadFull   call merlin#ReloadFull()
   " Used only to debug synchronization, do not expose to end-user
   "command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
   command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
@@ -278,7 +283,7 @@ function! merlin#Register()
 endfunction
 
 function! merlin#LoadProject()
-  py merlin.load_project(vim.eval("expand('%:p:h')"))
+  py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
 endfunction
 
 function! merlin#EchoDotMerlin()
