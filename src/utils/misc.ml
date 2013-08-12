@@ -382,4 +382,5 @@ let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 let compare_pos p1 p2 =
   compare (split_pos p1) (split_pos p2)
 
-
+let string_drop n s =
+  String.sub s n (String.length s - n)

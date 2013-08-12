@@ -1,3 +1,4 @@
+PRJ merlin
 S src/.
 S src/parsing
 S src/typing

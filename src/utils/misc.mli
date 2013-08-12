@@ -174,3 +174,7 @@ val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b
 val make_pos : int * int -> Lexing.position
 val split_pos : Lexing.position -> int * int
 val compare_pos : Lexing.position -> Lexing.position -> int
+
+
+        (* Drop characters from beginning of string *)
+val string_drop : int -> string -> string

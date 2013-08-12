@@ -190,64 +190,104 @@ let path_add, command_path =
   ] in
   path_add pathes, command_path pathes
 
-let command_project = 
-  let rec load_dot_merlin path =  
-    let recurse = ref false in 
-    let cwd = Filename.dirname path in
-    let ic = open_in path in
-    begin try
-        let drop n s =
-          String.sub s n (String.length s- n) in
-        let rec aux () = 
-          let line = input_line ic in
-          if line = "" then ()
-          else if Misc.has_prefix "B " line then
-            path_add "build" ~cwd (drop 2 line)
-          else if Misc.has_prefix "S " line then
-            path_add "source" ~cwd (drop 2 line)
-          else if Misc.has_prefix "PKG " line then
-            (Command.load_packages (Misc.rev_split_words (drop 4 line)))
-          else if Misc.has_prefix "EXT " line then
-            (List.iter (Extensions_utils.set_extension ~enabled:true)
-                       (Misc.rev_split_words (drop 4 line)))
-          else if Misc.has_prefix "REC" line then recurse := true
-          else if Misc.has_prefix "#" line then ()
-          else ();
-          aux ()
-        in
-        aux ()
-      with 
-      | End_of_file ->
-        close_in_noerr ic; 
-        if !recurse
-        then path :: find_dot_merlin (Filename.dirname (Filename.dirname path))
-        else [path]
-      | exn -> 
-        close_in_noerr ic; raise exn
-    end 
-  and find_dot_merlin path =
-    let rec loop dir =
-      let fname = Filename.concat dir ".merlin" in
-      if Sys.file_exists fname
-      then Some fname
-      else
-        let parent = Filename.dirname dir in
-        if parent <> dir
-        then loop parent
-        else None
+type dot_merlin = {
+  project: string option;
+  path: string;
+  entries: [`B of string | `S of string | `PKG of string list | `EXT of string]
+           list;
+}
+
+type dot_merlins =
+  | Cons of dot_merlin * dot_merlins Lazy.t
+  | Nil
+
+let parse_dot_merlin path : bool * dot_merlin =
+  let ic = open_in path in
+  let acc = ref [] in
+  let recurse = ref false in
+  let proj = ref None in
+  let tell l = acc := l :: !acc in
+  try
+    let rec aux () = 
+      let line = input_line ic in
+      if line = "" then ()
+      else if Misc.has_prefix "B " line then
+        tell (`B (Misc.string_drop 2 line))
+      else if Misc.has_prefix "S " line then
+        tell (`S (Misc.string_drop 2 line))
+      else if Misc.has_prefix "PKG " line then
+        tell (`PKG (Misc.rev_split_words (Misc.string_drop 4 line)))
+      else if Misc.has_prefix "EXT " line then
+        (List.iter (fun ext -> tell (`EXT ext))
+                   (Misc.rev_split_words (Misc.string_drop 4 line)))
+      else if Misc.has_prefix "REC" line then recurse := true
+      else if Misc.has_prefix "PRJ " line then
+        proj := Some (String.trim (Misc.string_drop 4 line))
+      else if Misc.has_prefix "#" line then ()
+      else ();
+      aux ()
     in
-    match loop (Misc.canonicalize_filename path) with
-    | Some fname -> load_dot_merlin fname
-    | None -> []
+    aux ()
+  with
+  | End_of_file ->
+    close_in_noerr ic;
+    !recurse, {project = !proj; path; entries = !acc}
+  | exn ->
+    close_in_noerr ic;
+    raise exn
+
+let rec read_dot_merlin path =  
+  let recurse, dot_merlin = parse_dot_merlin path in
+  if recurse
+  then Cons (dot_merlin, lazy (find_dot_merlin (Filename.dirname (Filename.dirname path))))
+  else Cons (dot_merlin, lazy Nil)
+
+and find_dot_merlin path =
+  let rec loop dir =
+    let fname = Filename.concat dir ".merlin" in
+    if Sys.file_exists fname
+    then Some fname
+    else
+      let parent = Filename.dirname dir in
+      if parent <> dir
+      then loop parent
+      else None
   in
+  match loop (Misc.canonicalize_filename path) with
+  | Some fname -> read_dot_merlin fname
+  | None -> Nil 
+
+let exec_dot_merlin {path; project; entries} =
+  let cwd = Filename.dirname path in
+  List.iter (function
+    | `B path   -> path_add "build" ~cwd path
+    | `S path   -> path_add "source" ~cwd path
+    | `PKG pkgs -> Command.load_packages pkgs
+    | `EXT ext  -> Extensions_utils.set_extension ~enabled:true ext)
+    entries;
+  path
+
+let rec project_name = function
+  | Cons ({project = Some name}, _) -> Some name
+  | Cons (_, lazy tail) -> project_name tail
+  | Nil -> None
+
+let rec exec_dot_merlins = function
+  | Cons (dot_merlin, tail) ->
+    exec_dot_merlin dot_merlin :: exec_dot_merlins (Lazy.force tail)
+  | Nil -> []
+
+let command_project = 
   Command.({
     name = "project";
   
     handler =
     begin fun _ state -> function
       | [ `String ("load"|"find" as cmd) ; `String path ] ->
-        let f = if cmd = "load" then load_dot_merlin else find_dot_merlin in
-        state, `List (List.map (fun s -> `String s) (f path))
+        let f = if cmd = "load" then read_dot_merlin else find_dot_merlin in
+        let dot_merlins = f path in
+        state, `List (List.map (fun s -> `String s) 
+                        (exec_dot_merlins dot_merlins))
       | _ -> Command.invalid_arguments ()
     end;
   })
@@ -268,9 +308,17 @@ let print_version_num () =
 let unexpected_argument s =
   failwith ("Unexpected argument:" ^ s)
 
-module Options = Main_args.Make_bytetop_options (struct
+module Options = Main_args.Make_top_options (struct
   let set r () = r := true
   let clear r () = r := false
+
+  let _projectfind path =
+    let dot_merlins = find_dot_merlin path in
+    begin match project_name dot_merlins with
+    | Some name -> print_endline name
+    | None -> ()
+    end;
+    exit 0
 
   let _absname = set Location.absname
   let _I dir =

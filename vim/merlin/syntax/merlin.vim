@@ -3,7 +3,7 @@ if exists("b:current_syntax")
   finish
 endif
 
-syn keyword merlinKeyword S B PKG REC
+syn keyword merlinKeyword S B PKG REC EXT PRJ
 syn match merlinComment "\v#.*$"
 
 let b:current_syntax = "merlin"
