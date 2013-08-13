@@ -289,6 +289,8 @@ let node_complete node prefix =
           path env compl
       end
   in
+  Printtyp.wrap_printing_env env
+  begin fun () ->
   match node.Browse.context with
   | Browse.MethodCall (t,_) ->
     let has_prefix (name,_) = Misc.has_prefix prefix name in
@@ -329,6 +331,7 @@ let node_complete node prefix =
         end
       | _ -> find prefix []
     with Not_found -> []
+  end
 
 and locate node path_str =
   Track_definition.from_string

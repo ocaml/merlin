@@ -118,7 +118,8 @@ let command_type = {
         | _ -> failwith "unhandled expression"
       end
     in
-    begin match Chunk_parser.top_expr Lexer.token lexbuf with
+    Printtyp.wrap_printing_env env
+    begin fun () -> match Chunk_parser.top_expr Lexer.token lexbuf with
       | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
         begin
           try let _, c = Env.lookup_constructor longident.Asttypes.txt env in
@@ -168,7 +169,8 @@ let command_type = {
       | None -> raise Not_found
     in
     let ppf, to_string = Misc.ppf_to_string () in
-    begin match node.Browse.context with
+    Printtyp.wrap_printing_env node.Browse.env
+    begin fun () -> match node.Browse.context with
       | Browse.Other -> raise Not_found
       | Browse.Expr t | Browse.Pattern t | Browse.Type t ->
         Printtyp.type_scheme ppf t
@@ -192,14 +194,16 @@ let command_type = {
   | [`String "enclosing"; jpos] ->
     let pos = Protocol.pos_of_json jpos in
     let aux = function
-      | { Browse. loc ;
+      | { Browse. loc; env;
           context = (Browse.Expr t | Browse.Pattern t | Browse.Type t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
-        Printtyp.type_scheme ppf t;
+        Printtyp.wrap_printing_env env
+          (fun () -> Printtyp.type_scheme ppf t);
         Some (Protocol.with_location loc ["type", `String (to_string ())])
-      | { Browse. loc ; context = Browse.TypeDecl (id,t) } ->
+      | { Browse. loc; env; context = Browse.TypeDecl (id,t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
-        Printtyp.type_declaration id ppf t;
+        Printtyp.wrap_printing_env env
+          (fun () -> Printtyp.type_declaration id ppf t);
         Some (Protocol.with_location loc ["type", `String (to_string ())])
       | _ -> None
     in
