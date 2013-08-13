@@ -62,7 +62,7 @@ type error =
   | Recursive_local_constraint of (type_expr * type_expr) list
   | Unexpected_existential
 
-exception Error of Location.t * error
+exception Error of Location.t * Env.t * error
 
 (* Forward declaration, to be filled in by Typemod.type_module *)
 
@@ -267,7 +267,7 @@ let unify_pat_types loc env ty ty' =
     unify env ty ty'
   with
     Unify trace ->
-      raise(Error(loc, Pattern_type_clash(trace)))
+      raise(Error(loc, env, Pattern_type_clash(trace)))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, Typetexp.Variant_tags (l1, l2)))
 
@@ -279,7 +279,7 @@ let unify_exp_types loc env ty expected_ty =
     unify env ty expected_ty
   with
     Unify trace ->
-      raise(Error(loc, Expr_type_clash(trace)))
+      raise(Error(loc, env, Expr_type_clash(trace)))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, Typetexp.Variant_tags (l1, l2)))
 
@@ -300,11 +300,11 @@ let unify_pat_types_gadt loc env ty ty' =
     unify_gadt ~newtype_level env ty ty'
   with
     Unify trace ->
-      raise(Error(loc, Pattern_type_clash(trace)))
+      raise(Error(loc, !env, Pattern_type_clash(trace)))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, Typetexp.Variant_tags (l1, l2)))
   | Unification_recursive_abbrev trace ->
-      raise(Error(loc, Recursive_local_constraint trace))
+      raise(Error(loc, !env, Recursive_local_constraint trace))
 
 
 (* Creating new conjunctive types is not allowed when typing patterns *)
@@ -371,13 +371,14 @@ let reset_pattern scope allow =
 let enter_variable ?(is_module=false) ?(is_as_variable=false) loc name ty =
   if List.exists (fun (id, _, _, _, _) -> Ident.name id = name.txt)
       !pattern_variables
-  then raise(Error(loc, Multiply_bound_variable name.txt));
+  then raise(Error(loc, Env.empty, Multiply_bound_variable name.txt));
   let id = Ident.create name.txt in
   pattern_variables :=
     (id, ty, name, loc, is_as_variable) :: !pattern_variables;
   if is_module then begin
     (* Note: unpack patterns enter a variable of the same name *)
-    if not !allow_modules then raise (Error (loc, Modules_not_allowed));
+    if not !allow_modules then
+      raise (Error (loc, Env.empty, Modules_not_allowed));
     module_variables := (name, loc) :: !module_variables
   end else
     (* moved to genannot *)
@@ -406,18 +407,18 @@ let enter_orpat_variables loc env  p1_vs p2_vs =
               unify env t1 t2
             with
             | Unify trace ->
-                raise(Error(loc, Pattern_type_clash(trace)))
+                raise(Error(loc, env, Pattern_type_clash(trace)))
             end;
           (x2,x1)::unify_vars rem1 rem2
           end
       | [],[] -> []
-      | (x,_,_,_,_)::_, [] -> raise (Error (loc, Orpat_vars x))
-      | [],(x,_,_,_,_)::_  -> raise (Error (loc, Orpat_vars x))
+      | (x,_,_,_,_)::_, [] -> raise (Error (loc, env, Orpat_vars x))
+      | [],(x,_,_,_,_)::_  -> raise (Error (loc, env, Orpat_vars x))
       | (x,_,_,_,_)::_, (y,_,_,_,_)::_ ->
           let min_var =
             if Ident.name x < Ident.name y then x
             else y in
-          raise (Error (loc, Orpat_vars min_var)) in
+          raise (Error (loc, env, Orpat_vars min_var)) in
   unify_vars p1_vs p2_vs
 
 let rec build_as_type env p =
@@ -481,7 +482,7 @@ let build_or_pat env loc lid =
     let ty = expand_head env (newty(Tconstr(path, tyl, ref Mnil))) in
     match ty.desc with
       Tvariant row when static_row row -> row
-    | _ -> raise(Error(loc, Not_a_variant_type lid))
+    | _ -> raise(Error(loc, env, Not_a_variant_type lid))
   in
   let pats, fields =
     List.fold_left
@@ -510,7 +511,7 @@ let build_or_pat env loc lid =
       pats
   in
   match pats with
-    [] -> raise(Error(loc, Not_a_variant_type lid))
+    [] -> raise(Error(loc, env, Not_a_variant_type lid))
   | pat :: pats ->
       let r =
         List.fold_left
@@ -567,7 +568,7 @@ let check_recordpat_labels loc lbl_pat_list closed =
       let defined = Array.make (Array.length all) false in
       let check_defined (_, _, label, _) =
         if defined.(label.lbl_pos)
-        then raise(Error(loc, Label_multiply_defined
+        then raise(Error(loc, Env.empty, Label_multiply_defined
                                        (Longident.Lident label.lbl_name)))
         else defined.(label.lbl_pos) <- true in
       List.iter check_defined lbl_pat_list;
@@ -692,7 +693,7 @@ let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
       in
       Env.mark_constructor Env.Pattern !env (Longident.last lid.txt) constr;
       if no_existentials && constr.cstr_existentials <> [] then
-        raise (Error (loc, Unexpected_existential));
+        raise (Error (loc, !env, Unexpected_existential));
       (* if constructor is gadt, we must verify that the expected type has the
          correct head *)
       if constr.cstr_generalized then
@@ -709,7 +710,7 @@ let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
             replicate_list sp constr.cstr_arity
         | Some sp -> [sp] in
       if List.length sargs <> constr.cstr_arity then
-        raise(Error(loc, Constructor_arity_mismatch(lid.txt,
+        raise(Error(loc, !env, Constructor_arity_mismatch(lid.txt,
                                      constr.cstr_arity, List.length sargs)));
       let (ty_args, ty_res) =
         instance_constructor ~in_pattern:(env, get_newtype_level ()) constr
@@ -748,7 +749,7 @@ let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
         begin try
           unify_pat_types loc !env ty_res expected_ty
         with Unify trace ->
-          raise(Error(loc, Label_mismatch(lid_of_label label, trace)))
+          raise(Error(loc, !env, Label_mismatch(lid_of_label label, trace)))
         end;
         let arg = type_pat sarg ty_arg in
         if vars <> [] then begin
@@ -759,7 +760,7 @@ let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
             let tv = expand_head !env tv in
             not (is_Tvar tv) || tv.level <> generic_level in
           if List.exists instantiated vars then
-            raise (Error(loc, Polymorphic_label (lid_of_label label)))
+            raise (Error(loc, !env, Polymorphic_label (lid_of_label label)))
         end;
         (label_path, label_lid, label, arg)
       in
@@ -1085,9 +1086,9 @@ let type_format loc fmt =
   let ty_arrow gty ty = newty (Tarrow ("", instance_def gty, ty, Cok)) in
 
   let bad_conversion fmt i c =
-    raise (Error (loc, Bad_conversion (fmt, i, c))) in
+    raise (Error (loc, Env.empty, Bad_conversion (fmt, i, c))) in
   let incomplete_format fmt =
-    raise (Error (loc, Incomplete_format fmt)) in
+    raise (Error (loc, Env.empty, Incomplete_format fmt)) in
 
   let rec type_in_format fmt =
 
@@ -1315,7 +1316,7 @@ let rec type_approx env sexp =
       and ty1 = approx_ty_opt sty1
       and ty2 = approx_ty_opt sty2 in
       begin try unify env ty ty1 with Unify trace ->
-        raise(Error(sexp.pexp_loc, Expr_type_clash trace))
+        raise(Error(sexp.pexp_loc, env, Expr_type_clash trace))
       end;
       if sty2 = None then ty1 else ty2
   | _ -> newvar ()
@@ -1353,7 +1354,7 @@ let check_univars env expans kind exp ty_expected vars =
   if List.length vars = List.length vars' then () else
   let ty = newgenty (Tpoly(repr exp.exp_type, vars'))
   and ty_expected = repr ty_expected in
-  raise (Error (exp.exp_loc,
+  raise (Error (exp.exp_loc, env,
                 Less_general(kind, [ty, ty; ty_expected, ty_expected])))
 
 (* Check that a type is not a function *)
@@ -1548,7 +1549,7 @@ and type_expect' ?in_function env sexp ty_expected =
                 in
                 Texp_ident(path, lid, desc)
             | Val_unbound ->
-                raise(Error(loc, Masked_instance_variable lid.txt))
+                raise(Error(loc, env, Masked_instance_variable lid.txt))
             | _ ->
                 Texp_ident(path, lid, desc)
           end;
@@ -1648,9 +1649,9 @@ and type_expect' ?in_function env sexp ty_expected =
         with Unify _ ->
           match expand_head env ty_expected with
             {desc = Tarrow _} as ty ->
-              raise(Error(loc, Abstract_wrong_label(l, ty)))
+              raise(Error(loc, env, Abstract_wrong_label(l, ty)))
           | _ ->
-              raise(Error(loc_fun,
+              raise(Error(loc_fun, env,
                           Too_many_arguments (in_function <> None, ty_fun)))
       in
       let ty_arg =
@@ -1790,7 +1791,7 @@ and type_expect' ?in_function env sexp ty_expected =
         match (lid_sexp, lbl_exp) with
           ((lid, _) :: rem1, (_, _, lbl, _) :: rem2) ->
             if List.mem lbl.lbl_pos seen_pos
-            then raise(Error(loc, Label_multiply_defined lid.txt))
+            then raise(Error(loc, env, Label_multiply_defined lid.txt))
             else check_duplicates (lbl.lbl_pos :: seen_pos) rem1 rem2
         | (_, _) -> () in
       check_duplicates [] lid_sexp_list lbl_exp_list;
@@ -1833,7 +1834,7 @@ and type_expect' ?in_function env sexp ty_expected =
               else lbl :: missing_labels (n + 1) rem
         in
         let missing = missing_labels 0 label_names in
-        raise(Error(loc, Label_missing missing))
+        raise(Error(loc, env, Label_missing missing))
       end
       else if opt_sexp <> None && List.length lid_sexp_list = num_fields then
         Location.prerr_warning loc Warnings.Useless_record_with;
@@ -1859,7 +1860,7 @@ and type_expect' ?in_function env sexp ty_expected =
         type_label_exp false env loc record.exp_type
           (label_path, lid, label, snewval) in
       if label.lbl_mut = Immutable then
-        raise(Error(loc, Label_not_mutable lid.txt));
+        raise(Error(loc, env, Label_not_mutable lid.txt));
       rue {
         exp_desc = Texp_setfield(record, label_path, label_loc, label, newval);
         exp_loc = loc; exp_extra = [];
@@ -1986,13 +1987,13 @@ and type_expect' ?in_function env sexp ty_expected =
                       (Warnings.Not_principal "this ground coercion");
                 with Subtype (tr1, tr2) ->
                   (* prerr_endline "coercion failed"; *)
-                  raise(Error(loc, Not_subtype(tr1, tr2)))
+                  raise(Error(loc, env, Not_subtype(tr1, tr2)))
                 end;
             | _ ->
                 let ty, b = enlarge_type env ty' in
                 force ();
                 begin try Ctype.unify env arg.exp_type ty with Unify trace ->
-                  raise(Error(sarg.pexp_loc,
+                  raise(Error(sarg.pexp_loc, env,
                         Coercion_failure(ty', full_expand env ty', trace, b)))
                 end
             end;
@@ -2010,7 +2011,7 @@ and type_expect' ?in_function env sexp ty_expected =
               let force'' = subtype env ty ty' in
               force (); force' (); force'' ()
             with Subtype (tr1, tr2) ->
-              raise(Error(loc, Not_subtype(tr1, tr2)))
+              raise(Error(loc, env, Not_subtype(tr1, tr2)))
             end;
             if separate then begin
               end_def ();
@@ -2053,7 +2054,7 @@ and type_expect' ?in_function env sexp ty_expected =
           | Texp_ident(path, lid, {val_kind = Val_anc (methods, cl_num)}) ->
               let method_id =
                 begin try List.assoc met methods with Not_found ->
-                  raise(Error(e.pexp_loc, Undefined_inherited_method met))
+                  raise(Error(e.pexp_loc, env, Undefined_inherited_method met))
                 end
               in
               begin match
@@ -2124,7 +2125,7 @@ and type_expect' ?in_function env sexp ty_expected =
           exp_type = typ;
           exp_env = env }
       with Unify _ ->
-        Types.raise_error (Error(e.pexp_loc, Undefined_method (obj.exp_type, met)));
+        Types.raise_error (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
         rue {
           exp_desc = Texp_send(obj, Tmeth_name met, None);
           exp_loc = loc; exp_extra = [];
@@ -2135,7 +2136,7 @@ and type_expect' ?in_function env sexp ty_expected =
       let (cl_path, cl_decl) = Typetexp.find_class env loc cl.txt in
         begin match cl_decl.cty_new with
           None ->
-            raise(Error(loc, Virtual_class cl.txt))
+            raise(Error(loc, env, Virtual_class cl.txt))
         | Some ty ->
             rue {
               exp_desc = Texp_new (cl_path, cl, cl_decl);
@@ -2159,19 +2160,19 @@ and type_expect' ?in_function env sexp ty_expected =
               exp_type = instance_def Predef.type_unit;
               exp_env = env }
         | Val_ivar _ ->
-            raise(Error(loc,Instance_variable_not_mutable(true,lab.txt)))
+            raise(Error(loc, env, Instance_variable_not_mutable(true,lab.txt)))
         | _ ->
-            raise(Error(loc,Instance_variable_not_mutable(false,lab.txt)))
+            raise(Error(loc, env, Instance_variable_not_mutable(false,lab.txt)))
       with
         Not_found ->
-          raise(Error(loc, Unbound_instance_variable lab.txt))
+          raise(Error(loc, env, Unbound_instance_variable lab.txt))
       end
   | Pexp_override lst ->
       let _ =
        List.fold_right
         (fun (lab, _) l ->
            if List.exists (fun l -> l.txt = lab.txt) l then
-             raise(Error(loc,
+             raise(Error(loc, env,
                          Value_multiply_overridden lab.txt));
            lab::l)
         lst
@@ -2181,7 +2182,7 @@ and type_expect' ?in_function env sexp ty_expected =
           Env.lookup_value (Longident.Lident "selfpat-*") env,
           Env.lookup_value (Longident.Lident "self-*") env
         with Not_found ->
-          raise(Error(loc, Outside_class))
+          raise(Error(loc, env, Outside_class))
       with
         (_, {val_type = self_ty; val_kind = Val_self (_, vars, _, _)}),
         (path_self, _) ->
@@ -2191,7 +2192,7 @@ and type_expect' ?in_function env sexp ty_expected =
               (Path.Pident id, lab, type_expect env snewval (instance env ty))
             with
               Not_found ->
-                raise(Error(loc, Unbound_instance_variable lab.txt))
+                raise(Error(loc, env, Unbound_instance_variable lab.txt))
             end
           in
           let modifs = List.map type_override lst in
@@ -2224,7 +2225,7 @@ and type_expect' ?in_function env sexp ty_expected =
       begin try
         Ctype.unify_var new_env ty body.exp_type
       with Unify _ ->
-        raise(Error(loc, Scoping_let_module(name.txt, body.exp_type)))
+        raise(Error(loc, env, Scoping_let_module(name.txt, body.exp_type)))
       end;
       re {
         exp_desc = Texp_letmodule(id, name, modl, body);
@@ -2361,9 +2362,9 @@ and type_expect' ?in_function env sexp ty_expected =
                 (Warnings.Not_principal "this module packing");
             (p, nl, tl)
         | {desc = Tvar _} ->
-            raise (Error (loc, Cannot_infer_signature))
+            raise (Error (loc, env, Cannot_infer_signature))
         | _ ->
-            raise (Error (loc, Not_a_packed_module ty_expected))
+            raise (Error (loc, env, Not_a_packed_module ty_expected))
       in
       let (modl, tl') = !type_package env m p nl tl in
       rue {
@@ -2394,7 +2395,7 @@ and type_label_exp create env loc ty_expected
   begin try
     unify env (instance_def ty_res) (instance env ty_expected)
   with Unify trace ->
-    raise (Error(lid.loc, Label_mismatch(lid_of_label label, trace)))
+    raise(Error(lid.loc , env, Label_mismatch(lid_of_label label, trace)))
   end;
   (* Instantiate so that we can generalize internal nodes *)
   let ty_arg = instance_def ty_arg in
@@ -2405,9 +2406,10 @@ and type_label_exp create env loc ty_expected
   end;
   if label.lbl_private = Private then
     if create then
-      raise (Error(loc, Private_type ty_expected))
+      raise (Error(loc, env, Private_type ty_expected))
     else
-      raise (Error(lid.loc, Private_label(lid_of_label label, ty_expected)));
+      raise (Error(lid.loc, env,
+                   Private_label(lid_of_label label, ty_expected)));
   let arg =
     let snap = if vars = [] then None else Some (Btype.snapshot ()) in
     let arg = type_argument env sarg ty_arg (instance env ty_arg) in
@@ -2425,7 +2427,7 @@ and type_label_exp create env loc ty_expected
       unify_exp env arg ty_arg;
       check_univars env false "field value" arg label.lbl_arg vars;
       arg
-    with Error (_, Less_general _) as e -> raise e
+    with Error (_, _, Less_general _) as e -> raise e
     | _ -> raise exn    (* In case of failure return the first error *)
   in
   (label_path, lid, label, {arg with exp_type = instance env arg.exp_type})
@@ -2559,11 +2561,12 @@ and type_application env funct sargs =
               match ty_res.desc with
                 Tarrow _ ->
                   if (!Clflags.classic || not (has_label l1 ty_fun)) then
-                    raise(Error(sarg1.pexp_loc, Apply_wrong_label(l1, ty_res)))
+                    raise (Error(sarg1.pexp_loc, env,
+                                 Apply_wrong_label(l1, ty_res)))
                   else
-                    raise(Error(funct.exp_loc, Incoherent_label_order))
+                    raise (Error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
-                  raise(Error(funct.exp_loc, Apply_non_function
+                  raise(Error(funct.exp_loc, env, Apply_non_function
                                 (expand_head env funct.exp_type)))
         in
         let optional = if is_optional l1 then Optional else Required in
@@ -2608,10 +2611,12 @@ and type_application env funct sargs =
             (* In classic mode, omitted = [] *)
             match sargs, more_sargs with
               (l', sarg0) :: _, _ ->
-                raise(Error(sarg0.pexp_loc, Apply_wrong_label(l', ty_old)))
+                raise(Error(sarg0.pexp_loc, env,
+                            Apply_wrong_label(l', ty_old)))
             | _, (l', sarg0) :: more_sargs ->
                 if l <> l' && l' <> "" then
-                  raise(Error(sarg0.pexp_loc, Apply_wrong_label(l', ty_fun')))
+                  raise(Error(sarg0.pexp_loc, env,
+                              Apply_wrong_label(l', ty_fun')))
                 else
                   ([], more_sargs,
                    Some (fun () -> type_argument env sarg0 ty ty0))
@@ -2666,7 +2671,8 @@ and type_application env funct sargs =
     | _ ->
         match sargs with
           (l, sarg0) :: _ when ignore_labels ->
-            raise(Error(sarg0.pexp_loc, Apply_wrong_label(l, ty_old)))
+            raise(Error(sarg0.pexp_loc, env,
+                        Apply_wrong_label(l, ty_old)))
         | _ ->
             type_unknown_args args omitted ty_fun0
               (sargs @ more_sargs)
@@ -2702,7 +2708,7 @@ and type_construct env loc lid sarg explicit_arity ty_expected =
     | Some {pexp_desc = Pexp_tuple sel} when constr.cstr_arity > 1 -> sel
     | Some se -> [se] in
   if List.length sargs <> constr.cstr_arity then
-    raise(Error(loc, Constructor_arity_mismatch
+    raise(Error(loc, env, Constructor_arity_mismatch
                   (lid.txt, constr.cstr_arity, List.length sargs)));
   let separate = !Clflags.principal || Env.has_local_constraints env in
   if separate then (begin_def (); begin_def ());
@@ -2732,7 +2738,7 @@ and type_construct env loc lid sarg explicit_arity ty_expected =
   let args = List.map2 (fun e (t,t0) -> type_argument env e t t0) sargs
       (List.combine ty_args ty_args0) in
   if constr.cstr_private = Private then
-    raise(Error(loc, Private_type ty_res));
+    raise(Error(loc, env, Private_type ty_res));
   { texp with
     exp_desc = Texp_construct(path, lid, constr, args, explicit_arity) }
 
@@ -3253,6 +3259,9 @@ let report_error ppf = function
   | Unexpected_existential ->
       fprintf ppf
         "Unexpected existential"
+
+let report_error env ppf err =
+  wrap_printing_env env (fun () -> report_error ppf err)
 
 let () =
   Env.add_delayed_check_forward := add_delayed_check
