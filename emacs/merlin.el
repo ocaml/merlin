@@ -715,7 +715,6 @@ variable `merlin-cache')."
 (defvar merlin-ac-source
   '((init . merlin-source-init)
     (candidates . (lambda () merlin-cache))
-    (requires . 3)
     (action . merlin-fetch-type)
     (prefix . merlin-prefix)
     ))
