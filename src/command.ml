@@ -421,7 +421,10 @@ let command_cd = {
 
   handler =
   begin fun _ state -> function
-  | [`String s] -> Sys.chdir s; state, `Bool true
+  | [`String s] ->
+    Sys.chdir s;
+    State.reset_global_modules ();
+    state, `Bool true
   | _ -> invalid_arguments ()
   end;
 }
