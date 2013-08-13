@@ -175,16 +175,21 @@ In particular you can specify nil, meaning that the locked zone is not represent
     (if (string-equal s "") s (concat s "."))))
 
 (defun merlin-goto-point (data)
-  "Goes to the point indicated by `DATA' which must be an assoc list with fields line and col"
+  "Go to the point indicated by `DATA' which must be an assoc list with fields line and col"
   (goto-char (point-min))
   (forward-line (1- (cdr (assoc 'line data))))
   (forward-char (cdr (assoc 'col data)))
 )
-(defun merlin-goto-file-and-point (data)
-  "Goes to the file and position indicated by `DATA' which is an assoc list containing fields file, line and col"
+(defun merlin-goto-file-and-point (data &optional same-buffer-force)
+  "Go to the file and position indicated by `DATA' which is an assoc list containing fields file, line and col.
+If SAME-BUFFER-FORCE is non-nil, create a new window even if it is the same buffer.
+"
   (if (> (length (cdr (assoc 'file data))) 0)
-      (find-file-other-window (cdr (assoc 'file data))))
+      (find-file-other-window (cdr (assoc 'file data)))
+    (when same-buffer-force
+        (find-file-other-window buffer-file-name)))
   (merlin-goto-point (cdr (assoc 'pos data))))
+
 
 (defun merlin-make-point (data)
   "Create a point from a couple line / col."
@@ -992,19 +997,42 @@ it will print types of bigger expressions around point (it will go up the ast). 
       (message "No project file for the current buffer."))))
 ;; Locate
 (defvar merlin-position-stack nil)
+
+(defun merlin-locate-pure (ident &optional point just-open)
+  "Locate the identifier IDENT at POINT. If point is nil, the current point is used.
+If just-open is non-nil, don't move to the opened buffer"
+  (merlin-check-synchronize)
+  (let* ((point (if point point (point)))
+         (r (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point))))))
+    (if (and r (listp r))
+        (if just-open
+            (save-excursion
+              (save-selected-window
+                (merlin-goto-file-and-point r just-open)
+                (merlin-highlight (bounds-of-thing-at-point 'ocamlatom) 'merlin-type-face)))
+          (progn
+            (merlin-goto-file-and-point r)
+            (push (cons (buffer-name) (point)) merlin-position-stack)
+            (message "Use %s to go back."
+                     (substitute-command-keys "\\[merlin-pop-stack]"))))
+          (message "%s not found." ident))))
+
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
-  (merlin-check-synchronize)
-  (let* ((ident (thing-at-point 'ocamlatom))
-         (r (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point))))))
-    (if (and r (listp r))
-      (progn
-        (push (cons (buffer-name) (point)) merlin-position-stack)
-        (merlin-goto-file-and-point r)
-        (message "Use %s to go back."
-                 (substitute-command-keys "\\[merlin-pop-stack]")))
-      (message "%s not found." ident))))
+  (merlin-locate-pure (thing-at-point 'ocamlatom)))
+
+;; I don't like it beginning by "ac" but
+;; it is the only way I found to get it working (otherwise the completion
+;; menu just closes itself)
+(defun ac-merlin-locate ()
+  "Locate the identifier currently selected in the ac-completion."
+  (interactive)
+  (when (ac-menu-live-p)
+    (when (popup-hidden-p ac-menu)
+      (ac-show-menu))
+    (merlin-locate-pure (popup-selected-item ac-menu) (point) t)
+    (ac-show-menu)))
 
 (defun merlin-pop-stack ()
   "Go back to the last position"
@@ -1040,7 +1068,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (interactive)
   (merlin-check-synchronize)
   (merlin-goto-phrase "prev" 0))
-    
+
 (defun merlin-to-point ()
   "Update the merlin to the current point, reporting error."
   (interactive)
@@ -1058,6 +1086,8 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (define-key merlin-map (kbd "C-c r") 'merlin-restart-process)
     (define-key merlin-map (kbd "C-c C-x") 'merlin-next-error)
     (define-key merlin-map (kbd "C-c C-l") 'merlin-locate)
+    (when (featurep 'auto-complete)
+      (define-key ac-complete-mode-map (kbd "C-c C-l") 'ac-merlin-locate))
     (define-key merlin-map (kbd "C-c &") 'merlin-pop-stack)
     (define-key merlin-map (kbd "C-c C-r") 'merlin-rewind)
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
