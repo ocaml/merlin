@@ -643,56 +643,55 @@ The parameter `view-errors-p' controls whether we should care for errors"
         (merlin-update-lock-zone-display))))
 
 ;; COMPLETION
-(defun merlin-extract-complete (prefix l)
-  "Parse and format completion results."
-  (mapcar (lambda (c) 
-            (if merlin-completion-types
-                (let ((desc
-                       (replace-regexp-in-string "^[^:]+:[ \n]+" ""
-                        (replace-regexp-in-string "\n" "" (cdr (assoc 'desc c))))))
-                  (popup-make-item (concat prefix (cdr (assoc 'name c)))
-                                 :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
-                                 :summary desc))
-              (cdr (assoc 'name c))))
-	  (append l nil)))
+(defun merlin-format-completion-entry (entry)
+  "Format the completion entry ENTRY."
+  (let ((type
+         (cond
+          ((member (cdr (assoc 'kind entry)) '("Module" "module"))
+           ": <module>")
+          ((string-equal (cdr (assoc 'kind data)) "Type")
+           (format " [%s]" (cdr (assoc 'desc entry))))
+          (t
+           (replace-regexp-in-string "^[^:]+:[ \n]+" "" (cdr (assoc 'desc entry)))))))
+    (replace-regexp-in-string "\n" "" type)))
 
-(defun merlin-complete-identifier (ident)
-  "Return the formatted result of the completion of IDENT."
-  (setq merlin-cache nil)
-  (setq merlin-cache
-	(merlin-extract-complete (merlin-compute-prefix ident) 
-			   (merlin-get-completion ident)))
-  )
-(defun merlin-get-completion-data (ident)
-  "Return the completion data for IDENT, that is a list of pairs (COMPLETION . TYPE)"
-  (let* ((prefix (merlin-compute-prefix ident))
-         (data (merlin-get-completion ident)))
-    (mapcar
-     #'(lambda (c)
-         (cons
-          (concat prefix (cdr (assoc 'name c)))
-          (cond
-           (
-            (member (cdr (assoc 'kind c)) '("Module" "module"))
-            ": <module>"
-            )
-           ((string-equal (cdr (assoc 'kind c)) "Type")
-            (format " [%s]" (cdr (assoc 'desc c))))
-           (t
-            (replace-regexp-in-string "^[^:]+:[ \n]+" ": " (cdr (assoc 'desc c)))))))
+(defun merlin-completion-data (ident)
+  "Returns the data for completion of IDENT, ie. a list of pairs (NAME . TYPE)."
+  (let ((prefix (merlin-compute-prefix ident))
+        (data (append (merlin-get-completion ident) nil)))
+    (mapcar '(lambda (entry)
+               (list (concat prefix (cdr (assoc 'name entry)))
+                     (merlin-format-completion-entry entry)
+                     (elt (cdr (assoc 'kind entry)) 0)))
             data)))
-                 
+
 ;; Vars from auto-complete
 (defvar ac-point)
 (defvar ac-prefix)
 (defvar ac-sources)
+
+(defvar merlin-ac-use-summary t
+  "Use :summary for the types in AC")
+(defvar merlin-ac-use-document nil
+  "Use :document for the types in AC")
+
+(defun merlin-make-popup-item (data)
+  "Create a popup item from data DATA."
+  (popup-make-item
+   (car data)
+   :summary (if (and merlin-completion-types
+                     merlin-ac-use-summary) (cadr data))
+   :symbol (cddr data)
+   :document (if (and merlin-completion-types
+                      merlin-ac-use-document) (cadr data))))
 
 (defun merlin-source-init ()
   "Called at the beginning of a completion to fill the cache (the
 variable `merlin-cache')."
   (merlin-check-synchronize)
   (setq merlin-completion-point ac-point)
-  (merlin-complete-identifier ac-prefix))
+  (setq merlin-cache
+        (mapcar #'merlin-make-popup-item (merlin-completion-data ac-prefix))))
 
 (defun merlin-try-completion ()
   "Try the merlin completion after having synchronized the point."
@@ -704,6 +703,7 @@ variable `merlin-cache')."
   (skip-syntax-backward "w_.")
   (point))
 (defun merlin-fetch-type ()
+  "Prints the type of the selected candidate"
   (let ((candidate (buffer-substring-no-properties merlin-completion-point  (point))))
     (if merlin-completion-types
         (mapc
@@ -763,7 +763,7 @@ variable `merlin-cache')."
       (save-excursion
         (goto-char start)
         (setq merlin--completion-annotation-table 
-              (merlin-get-completion-data string)))
+              (mapcar '(lambda (a) (cons (car a) (concat ": " (cadr a)))) (merlin-completion-data string))))
       (setq merlin--completion-cache-state (cons start string)))
     (complete-with-action action merlin--completion-annotation-table string pred)))
 
