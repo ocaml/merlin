@@ -81,6 +81,8 @@
   * definition under the cursor changes.
   *)
 
+module My_config = My_config
+
 (* Search path (-I) handling *)
 let default_build_paths =
   let open Config in
@@ -106,11 +108,10 @@ let refresh_state_on_signal state f =
     raise exn
 
 let main_loop () =
-  let io = Protocol.make ~input:stdin ~output:stdout in
-  let input, output as io =
-    try Protocol.log ~dest:(open_out (Sys.getenv "MERLIN_LOG")) io
-    with Not_found -> io
+  let log = try Some (open_out (Sys.getenv "MERLIN_LOG"))
+            with _ -> None
   in
+  let input, output as io = Protocol.make ~input:stdin ~output:stdout ?log in
   try
     let rec loop state =
       let state, answer =
@@ -304,6 +305,7 @@ module Options = Main_args.Make_bytetop_options (struct
   let _drawlambda = set Clflags.dump_rawlambda
   let _dlambda = set Clflags.dump_lambda
   let _dinstr = set Clflags.dump_instr
+  let _protocol = Protocol.select_frontend
 
   let anonymous s = unexpected_argument s
 end);;

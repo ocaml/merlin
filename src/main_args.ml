@@ -308,6 +308,10 @@ let mk_warn_help f =
   "-warn-help", Arg.Unit f, "  Show description of warning numbers"
 ;;
 
+let mk_protocol f =
+  "-protocol", Arg.String f, "  Select frontend protocol (or 'help' to list)"
+;;
+
 let mk_where f =
   "-where", Arg.Unit f, " Print location of standard library and exit"
 ;;
@@ -476,6 +480,7 @@ module type Bytetop_options = sig
   val _w : string -> unit
   val _warn_error : string -> unit
   val _warn_help : unit -> unit
+  val _protocol : string -> unit
 
   val _dparsetree : unit -> unit
   val _drawlambda : unit -> unit
@@ -696,6 +701,7 @@ struct
     mk_w F._w;
     mk_warn_error F._warn_error;
     mk_warn_help F._warn_help;
+    mk_protocol F._protocol;
 
     mk_dparsetree F._dparsetree;
     mk_drawlambda F._drawlambda;
@@ -823,7 +829,7 @@ module Make_opttop_options (F : Opttop_options) = struct
     mk_dscheduling F._dscheduling;
     mk_dlinear F._dlinear;
     mk_dstartup F._dstartup;
-
+    
     mk__ F.anonymous;
   ]
 end;;

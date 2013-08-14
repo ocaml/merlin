@@ -27,12 +27,18 @@
 )* }}} *)
 
 type io = Json.json Stream.t * (Json.json -> unit)
+type io_maker = input:in_channel -> output:out_channel -> io
 
-val make : input:in_channel -> output:out_channel -> io
-val log  : dest:out_channel -> io -> io
+exception Protocol_failure of string
+
+val register_protocol : name:string -> desc:string -> io_maker -> unit
+val select_frontend : string -> unit
+
+val make : ?log:out_channel -> input:in_channel -> output:out_channel -> io
 
 val return : Json.json -> Json.json
 val fail   : exn -> Json.json
+val protocol_failure : string -> 'a
 
 (* HACK. Break circular reference:
  * Error_report uses Protocol to format error positions.
