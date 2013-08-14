@@ -49,12 +49,13 @@ let initial = {
  * Pathes are global, but once support for different pathes has been added to 
  * typer, this should be made a [state] wide property.
  * *)
-let source_path : string list ref = ref []
+let source_path : string list ref = ref ["."]
 let global_modules = ref (lazy [])
 
 let reset_global_modules () =
   let paths = !Config.load_path in
   global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
+let () = reset_global_modules ()
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =
