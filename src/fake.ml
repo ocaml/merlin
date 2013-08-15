@@ -383,26 +383,28 @@ module Fields = struct
 end
 
 module Compare = struct
-  let bindings ({ Location.txt = name },ty) =
+  let bindings ~kind ({ Location.txt = name },ty) =
     let params = List.map 
         (function None -> `Var "_" | Some s -> `Var (s.Location.txt))
         ty.ptype_params
     in
     let self = `Named (params, name) in
-    let comparator = {
+    let cmp = {
       ident = "compare_" ^ name;
       typesig = `Arrow ("", self, `Arrow ("", self, `Named ([], "int")));
       body = `AnyVal
     } in
-    comparator :: (if name = "t" 
-                   then [{comparator with ident = "compare"}]
-                   else [])
+    match kind with
+    | `Def when name = "t" -> [{cmp with ident = "compare"}; cmp]
+    | `Sig when name = "t" -> [{cmp with ident = "compare"}]
+    | _ -> [cmp]
+
 end
 
 module TypeWith = struct
   type generator = string
 
-  let generate_bindings ~ty = function
+  let generate_bindings ~kind ~ty = function
     | "sexp" -> Misc.list_concat_map Sexp.bindings ty
     | "sexp_of" -> List.map (fun ty -> Sexp.conv_of_ ty) ty
     | "of_sexp" -> List.map (fun ty -> Sexp._of_conv ty) ty
@@ -436,7 +438,7 @@ module TypeWith = struct
       Misc.list_concat_map Fields.bindings ty
 
     | "compare" ->
-      Misc.list_concat_map Compare.bindings ty
+      Misc.list_concat_map (Compare.bindings ~kind) ty
 
     | ext when cow_supported_extension ext ->
       let module Cow = Make_cow(struct let name = ext end) in
@@ -445,11 +447,11 @@ module TypeWith = struct
     | _unsupported_ext -> []
 
   let generate_definitions ~ty ?ghost_loc ext =
-    let bindings = Misc.list_concat_map (generate_bindings ~ty) ext in
+    let bindings = Misc.list_concat_map (generate_bindings ~kind:`Def ~ty) ext in
     List.map (str_of_binding ?ghost_loc) bindings
 
   let generate_sigs ~ty ?ghost_loc ext =
-    let bindings = Misc.list_concat_map (generate_bindings ~ty) ext in
+    let bindings = Misc.list_concat_map (generate_bindings ~kind:`Sig ~ty) ext in
     List.map (sig_of_binding ?ghost_loc) bindings
 end
 
