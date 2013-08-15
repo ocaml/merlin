@@ -194,14 +194,14 @@ end
 
 module Make_simple (Conv : Simple_conv_intf) = struct
   let mk_arrow x y = `Arrow ("", x, y)
-    
+
   let named params ty = `Named (params, ty)
-    
+
   let conv_of_sig params ty =
     let params = format_params ~f:(fun v -> `Var v) params in
     List.fold_right (fun var acc -> mk_arrow (mk_arrow var Conv.t) acc) params
       (mk_arrow (named params ty) Conv.t)
-      
+
   let of_conv_sig params ty =
     let params = format_params ~f:(fun v -> `Var v) params in
     List.fold_right (fun var acc -> mk_arrow (mk_arrow Conv.t var) acc) params
@@ -218,7 +218,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
       typesig = conv_of_sig type_infos.ptype_params ty;
       body = mk_fun ~args ;
     }
-      
+
   let _of_conv (located_name, type_infos) =
     let ty = located_name.Location.txt in
     let args =
@@ -240,7 +240,7 @@ module Sexp = Make_simple(struct
 end)
 
 (* the Cow generators are parametrized by the extension name *)
-let cow_supported_extension ext = List.mem ext ["json"; "xml"; "html";] 
+let cow_supported_extension ext = List.mem ext ["json"; "xml"; "html";]
 module Make_cow (Ext : sig val name : string end) =
   Make_simple(struct
     let t = `Named ([], "Cow." ^(String.capitalize Ext.name)^ ".t")
@@ -249,12 +249,12 @@ module Make_cow (Ext : sig val name : string end) =
 
 module Binprot = struct
 
-  let binding ~prefix ~typesig ty =
+  let binding ~prefix ?(sufix="") ~typesig ty =
     let (located_name, ty_infos) = ty in
     let tyname = located_name.Location.txt in
-    let args = format_params ~f:(fun x -> prefix ^ x) ty_infos.ptype_params in
+    let args = format_params ~f:(fun x -> prefix ^ x ^ sufix) ty_infos.ptype_params in
     {
-      ident = prefix ^ tyname ;
+      ident = prefix ^ tyname ^ sufix;
       typesig = typesig ty ;
       body = mk_fun ~args ;
     }
@@ -294,6 +294,30 @@ module Binprot = struct
     let binding ty = binding ~prefix ~typesig ty
   end
 
+  module Write_ = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let acc =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt),
+        `Named ([], "Bin_prot.Unsafe_common.sptr"))))
+      in
+      let make_var str =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Arrow ("", `Var str,
+        `Named ([], "Bin_prot.Unsafe_common.sptr"))))
+      in
+      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+
+    let prefix = "bin_write_"
+    let sufix = "_"
+
+    let binding ty = binding ~prefix ~sufix ~typesig ty
+  end
+
+
   module Writer = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> `Var x) ty_infos.ptype_params in
@@ -303,7 +327,7 @@ module Binprot = struct
         (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
 
     let prefix = "bin_writer_"
-  
+
     let binding ty = binding ~prefix ~typesig ty
   end
 
@@ -325,6 +349,49 @@ module Binprot = struct
     let prefix = "bin_read_"
 
     let binding ty = binding ~prefix ~typesig ty
+  end
+
+  module Read_ = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let acc =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Named (List.map (fun x -> `Var x) params, name.Location.txt)))
+      in
+      let make_var str =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Var str))
+      in
+      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+
+    let prefix = "bin_read_"
+    let sufix = "_"
+
+    let binding ty = binding ~prefix ~sufix ~typesig ty
+  end
+
+  module Read__ = struct
+    let typesig (name, ty_infos) =
+      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let acc =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Arrow ("", `Named ([], "int"),
+        `Named (List.map (fun x -> `Var x) params, name.Location.txt))))
+      in
+      let make_var str =
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
+        `Var str))
+      in
+      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+
+    let prefix = "bin_read_"
+    let sufix = "__"
+
+    let binding ty = binding ~prefix ~sufix ~typesig ty
   end
 
   module Reader = struct
@@ -364,14 +431,14 @@ module Fields = struct
       [{ ident = name; typesig = accessor; body = `AnyVal }] in
     let fields = match mut with
       | Asttypes.Immutable -> fields
-      | Asttypes.Mutable -> 
+      | Asttypes.Mutable ->
         let mutator = `Arrow ("", self, `Arrow ("", ty, `Named ([],"unit"))) in
         { ident = "set_" ^ name; typesig = mutator; body = `AnyVal } :: fields
     in
     fields
 
   let bindings ({ Location.txt = name },ty) =
-    let params = List.map 
+    let params = List.map
         (function None -> `Var "_" | Some s -> `Var (s.Location.txt))
         ty.ptype_params
     in
@@ -384,7 +451,7 @@ end
 
 module Compare = struct
   let bindings ~kind ({ Location.txt = name },ty) =
-    let params = List.map 
+    let params = List.map
         (function None -> `Var "_" | Some s -> `Var (s.Location.txt))
         ty.ptype_params
     in
@@ -412,13 +479,15 @@ module TypeWith = struct
     | "bin_write" ->
       let open Binprot in
       Misc.list_concat_map (fun ty ->
-        [ Sizer.binding ty ; Write.binding ty ; Writer.binding ty ]
+        [ Sizer.binding ty ; Write.binding ty ;
+          Write_.binding ty ; Writer.binding ty ]
       ) ty
 
     | "bin_read" ->
       let open Binprot in
       Misc.list_concat_map (fun ty ->
-        [ Read.binding ty ; Reader.binding ty ]
+        [ Read.binding ty ; Read_.binding ty ;
+          Read__.binding ty ; Reader.binding ty ]
       ) ty
 
     | "bin_io" ->
@@ -427,8 +496,11 @@ module TypeWith = struct
         [
           Sizer.binding ty ;
           Write.binding ty ;
+          Write_.binding ty ;
           Writer.binding ty ;
           Read.binding ty ;
+          Read_.binding ty ;
+          Read__.binding ty ;
           Reader.binding ty ;
           Type_class.binding ty ;
         ]
@@ -458,9 +530,9 @@ end
 module Nonrec = struct
   let type_nonrec_prefix = "\x00nonrec" (*"__nonrec_"*)
   let type_nonrec_prefix_l = String.length type_nonrec_prefix
-  let add id = 
+  let add id =
     { id with Location.txt = type_nonrec_prefix ^ id.Location.txt }
-  
+
   let is t =
     let l = String.length t in
     (l > type_nonrec_prefix_l) &&
@@ -470,15 +542,15 @@ module Nonrec = struct
       done;
       true
     with Not_found -> false
-  
-  let drop t = 
+
+  let drop t =
     let l = String.length t in
     if is t
     then String.sub t type_nonrec_prefix_l (l - type_nonrec_prefix_l)
     else t
-  
+
   let ident_drop id =
     if is id.Ident.name
     then { id with Ident.name = drop id.Ident.name }
     else id
-end 
+end
