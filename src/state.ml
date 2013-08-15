@@ -208,14 +208,18 @@ let node_complete node prefix =
           "Label"
       | `Mod m   ->
           (if exact then
-             match mod_smallerthan 200 m with
+             match mod_smallerthan 2000 m with
                | None -> ()
                | Some _ -> Printtyp.modtype ppf m
           ); "Module"
+      | `ModType m ->
+          (if exact then
+             Printtyp.modtype_declaration ident ppf m
+          ); "Signature"
       | `Typ t ->
           Printtyp.type_declaration ident ppf t; "Type"
     in
-    let desc, info = match kind with "Module" -> "", to_string () | _ -> to_string (), "" in
+    let desc, info = match kind with ("Module"|"Signature") -> "", to_string () | _ -> to_string (), "" in
     `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
   in
   let seen = Hashtbl.create 7 in
@@ -259,6 +263,13 @@ let node_complete node prefix =
         (fun name path v compl ->
           if valid ~uident:true `Mod name 
           then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl 
+          else compl)
+        path env compl
+      in
+      let compl = Env.fold_modtypes
+        (fun name path v compl ->
+          if valid ~uident:true `Mod name 
+          then (fmt ~exact:(name = prefix)  name path (`ModType v)) :: compl 
           else compl)
         path env compl
       in
