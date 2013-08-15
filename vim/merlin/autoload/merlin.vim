@@ -33,7 +33,7 @@ function! merlin#WordUnderCursor()
 endfunction
 
 function! merlin#FindFile(ext,file)
-  py vim.command("e "+ merlin.vim_which(vim.eval("a:file"), vim.eval("a:ext")))
+  py merlin.catch_and_print (lambda: vim.command("e "+ merlin.vim_which(vim.eval("a:file"), vim.eval("a:ext"))))
 endfunction
 
 function! merlin#Path(var,path)

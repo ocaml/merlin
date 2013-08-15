@@ -98,7 +98,7 @@ def try_print_error(e, msg=None):
         sys.stderr.write ("error: Cannot parse")
         return None
       elif re.search('Not_found',msg):
-        sys.stderr.write ("error: Not found")
+        print ("error: Not found")
         return None
       elif re.search('Cmi_format.Error', msg):
         sys.stderr.write ("error: The version of merlin you're using doesn't support this version of ocaml")
