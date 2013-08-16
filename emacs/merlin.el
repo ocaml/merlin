@@ -34,6 +34,10 @@
 ;; auto-complete is not
 (require 'auto-complete nil 'noerror)
 
+(defgroup merlin nil
+  "merlin binding mode allowing completion and typing in OCaml files."
+  :group 'languages)
+
 ;;
 ;; Faces
 ;;
@@ -44,49 +48,57 @@
     (t :background "#eaf8ff")
     )
   "Face for a region that merlin knows of."
-  :group 'merlin-faces)
+  :group 'merlin)
 (defface merlin-type-face
   '(
     (t :inherit 'caml-types-expr-face)
     )
   "Face for highlighting a typed expr."
-  :group 'merlin-faces)
-
-
-
+  :group 'merlin)
 
 ;;
-;; Variables
+;; Customizable vars
 ;;
 
-;; Variable the user can change
-(defvar merlin-command "ocamlmerlin"
-  "The command for ocamlmerlin in your installation.")
-(defvar merlin-continuous-feed nil
-  "If non-nil, each time you hit RET, the line is fed to merlin.")
-(defvar merlin-completion-types t
-  "If non-nil, print the types of the variables during completion.")
-(defvar merlin-debug nil
-  "If non-nil, log the data sent and received from merlin")
-(defvar merlin-report-warnings t
-  "If non-nil, report warnings.")
 
-(defvar merlin-type-buffer-name "* merlin types *")
-(defvar merlin-favourite-caml-mode
-  'tuareg-mode
-  "The OCaml mode to use for the *merlin types* buffer.")
+(defcustom merlin-command "ocamlmerlin"
+  "The path to merlin in your installation"
+  :group 'merlin :type '(file))
+(defcustom merlin-completion-types t
+  "If non-nil, print the types of the variables during completion with auto-complete-mode."
+  :group 'merlin :type 'boolean)
 
-(defvar merlin-margin-lock-string "-"
-  "String put in the margin to signal the end of the locked zone.")
+(defcustom merlin-debug nil
+  "If non-nil, log the data sent and received from merlin."
+  :group 'merlin :type 'boolean)
+  
+(defcustom merlin-report-warnings t
+  "If non-nil, report warnings, otherwise ignore them."
+  :group 'merlin :type 'boolean)
 
-(defvar merlin-margin-error-string "!"
+(defcustom merlin-type-buffer-name "* merlin types *"
+  "The name of the buffer storing module signatures."
+  :group 'merlin :type 'string)
+
+(defcustom merlin-favourite-caml-mode 'tuareg-mode
+  "The OCaml mode to use for the *merlin types* buffer."
+  :group 'merlin :type 'symbol)
+
+
+(defcustom merlin-margin-lock-string "-"
+  "String put in the margin to signal the end of the locked zone."
+  :group 'merlin :type 'string)
+
+(defcustom merlin-margin-error-string "!"
   "String to put in the margin of a line containing an error."
+  :group 'merlin :type 'string
 )
 
-(defvar merlin-margin-warning-string "?"
-  "String to put in the margin of a line containing a warning.")
+(defcustom merlin-margin-warning-string "?"
+  "String to put in the margin of a line containing a warning."
+  :group 'merlin :type 'string)
 
-(defvar merlin-display-lock-zone nil
+(defcustom merlin-display-lock-zone nil
   "How to display the locked zone. 
 It is a list of methods among:
    - `highlight': highlight the current locked zone (like proofgeneral)
@@ -94,46 +106,58 @@ It is a list of methods among:
      of the line where the zone ends.
 
 In particular you can specify nil, meaning that the locked zone is not represented on the screen."
-  )
+  :group 'merlin :type '(repeat
+                         (choice (const :tag "Highlight the locked zone" highlight)
+                                 (const :tag "Display a marker in the left margin at the end of the locked zone" margin))))
 
-(defvar merlin-automatically-garbage-processes t
-  "If non-nil, deletes a process when it has no more users. If nil, keep it.")
+(defcustom merlin-default-flags nil
+  "The flags to give to ocamlmerlin."
+  :group 'merlin :type '(repeat string))
+(defcustom merlin-automatically-garbage-processes t
+  "If non-nil, deletes a process when it has no more users. If nil, keep it."
+  :group 'merlin :type 'boolean)
+(defcustom merlin-rewind-after-refresh t
+  "If non-nil, rewind the buffer after refresh"
+  :group 'merlin :type 'boolean)
+(defcustom merlin-use-auto-complete-mode nil
+  "If non nil, use `auto-complete-mode' in any buffer"
+  :group 'merlin :type 'boolean)
 
+;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
+;;;;;;;;;;;;;;;;;;;;;
 
 
-(defvar merlin--flags '("-rectypes" "-nostdlib" "-absname" "-w" )
+;; merlin flags
+(defvar merlin-flags-list '("-rectypes" "-nostdlib" "-absname" "-w" )
   "List of flags that can be passed to ocamlmerlin")
-
-(defvar merlin--current-flags nil
+(defvar merlin-current-flags nil
   "The current list of flags to pass to ocamlmerlin")
 
-; Process / Reception related variables
+;; Process / Reception related variables
 (defvar merlin-processes nil
   "The global merlin process table. It lists the active instances of merlin.")
 (defvar merlin-local-process nil
-  "The local merlin process."
-)
-(defvar merlin--queue nil
+  "The local merlin process.")
+(defvar merlin-queue nil
   "The transaction queue for current process. This variable lives only in process buffers.")
-
 (defvar merlin-process-users nil
   "Buffer that uses the process (local to a process buffer).")
 (defvar merlin-process-last-user nil
   "Last buffer that used the process.")
 (defvar merlin-result nil
   "Temporary variables to store command results.")
+(defvar merlin-buffer nil "Buffer for merlin input.")
+(defvar merlin-ready nil "If non-nil, the reception is done.")
+
+;; Overlays
 (defvar merlin-lock-zone-highlight-overlay nil 
   "Overlay used for the lock zone highlighting.")
 (defvar merlin-lock-zone-margin-overlay nil 
   "Overlay used for the margin indicator of the lock zone.")
-(defvar merlin-buffer nil "Buffer for merlin input.")
-(defvar merlin-ready nil "If non-nil, the reception is done.")
 
-(defvar merlin-rewind-after-refresh t
-  "If non-nil, rewind the buffer after refresh")
 
-; Errors related variables
+;; Errors related variables
 (defvar merlin-pending-errors nil
   "Pending errors.")
 (defvar merlin-lock-point 0
@@ -142,12 +166,21 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Overlays for the pending errors.")
 (defvar merlin-highlight-overlay nil "Merlin overlay used for highlights.")
 
-; Completion related variables
+;; Completion related variables
 (defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix).")
 (defvar merlin-cache nil "Merlin cache for completion.")
+; Vars from auto-complete
+(defvar ac-point)
+(defvar ac-prefix)
+(defvar ac-sources)
+(defvar merlin-completion-cache-state nil)
+(defvar merlin-completion-annotation-table nil
+  "Hold a table mapping completion candidates to their types")
+(make-variable-buffer-local 'merlin-completion-cache-state)
+(make-variable-buffer-local 'merlin-completion-annotation-table)
 
-; Type related variables
+;; Type related variables
 (defvar merlin-enclosing-types nil
   "List containing the enclosing type.")
 (defvar merlin-enclosing-offset nil
@@ -155,8 +188,12 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-last-point-type nil
   "Last position where the user ran `merlin-magic-show-type'.")
 
-(defvar merlin-use-auto-complete-mode nil
-  "If non nil, use `auto-complete-mode' in any buffer")
+;; Locate
+(defvar merlin-position-stack nil)
+
+;; Misc
+(defvar merlin-project-file nil "The .merlin file for current buffer")
+
 
 
 
@@ -285,7 +322,7 @@ denoting the parameters to be passed to merlin. USERS can be used to set the use
     (push p merlin-processes)
 ; don't forget to initialize temporary variable
     (with-current-buffer (merlin-get-process-buffer-name)
-      (set (make-local-variable 'merlin--queue) (tq-create p))
+      (set (make-local-variable 'merlin-queue) (tq-create p))
       (set (make-local-variable 'merlin-process-users) (cons name users))
       (set (make-local-variable 'merlin-local-process) p)
       (set (make-local-variable 'merlin-process-last-user) name)
@@ -305,21 +342,21 @@ denoting the parameters to be passed to merlin. USERS can be used to set the use
   (let ((users (merlin-get-current-buffer-users)))
     (if (merlin-process-started-p)
         (ignore-errors (merlin-kill-process)))
-    (setq merlin-local-process (merlin-start-process merlin--current-flags users))
+    (setq merlin-local-process (merlin-start-process merlin-current-flags users))
     (setq merlin-pending-errors nil)
     (merlin-load-project-file)
     (merlin-to-point)))
       
 (defun merlin-process-clear-flags ()
-  "Clear all flags set up to be passed to merlin. This sets `merlin--current-flags' to nil."
+  "Clear all flags set up to be passed to merlin. This sets `merlin-current-flags' to nil."
   (interactive)
-  (setq merlin--current-flags nil))
+  (setq merlin-current-flags nil))
 
 (defun merlin-process-add-flag (flag)
-  "Add a flag to `merlin--current-flags' to be used when starting ocamlmerlin."
+  "Add a flag to `merlin-current-flags' to be used when starting ocamlmerlin."
   (interactive
-   (list (completing-read "Flag to add: " merlin--flags)))
-  (add-to-list 'merlin--current-flags flag)
+   (list (completing-read "Flag to add: " merlin-flags-list)))
+  (add-to-list 'merlin-current-flags flag)
   (message "Flag %s added. Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag)
 )
     
@@ -361,7 +398,7 @@ kill the process if required."
   (ignore-errors (delete-process (merlin-get-process)))
   (kill-buffer (merlin-get-process-buffer-name))
   (with-current-buffer (merlin-get-process-buffer-name)
-    (tq-close merlin--queue))
+    (tq-close merlin-queue))
 )
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
@@ -377,10 +414,10 @@ CALLBACK-IF-EXN is non-nil, call the function with the error message otherwise p
 	  (json-encode (if args (append (list command) args) (list command)))
 	  "\n"))
         (name (buffer-name)))
-    (if merlin-debug (merlin-debug (format "Sending:\n%s\n---\n" string)))
+    (if merlin-debug (merlin-debug (format "Sending:\n%s\n--\n" string)))
     (with-current-buffer (merlin-get-process-buffer-name)
       (setq merlin-process-last-user name)
-      (tq-enqueue merlin--queue string "\n"
+      (tq-enqueue merlin-queue string "\n"
                   (cons callback-if-success (cons callback-if-exn command))
                   #'(lambda (closure answer)
                       (setq merlin-ready t)
@@ -390,7 +427,7 @@ CALLBACK-IF-EXN is non-nil, call the function with the error message otherwise p
                         (if a
                             (progn
                               (if merlin-debug
-                                  (merlin-debug (format "Received:\n%s\n----\n" answer)))
+                                  (merlin-debug (format "Received:\n%s\n--\n" answer)))
                               (if (string-equal (elt a 0) "return")
                                   (funcall (car closure) (elt a 1))
                                 (progn
@@ -677,10 +714,6 @@ The parameter `view-errors-p' controls whether we should care for errors"
             (replace-regexp-in-string "^[^:]+:[ \n]+" ": " (cdr (assoc 'desc c)))))))
             data)))
                  
-;; Vars from auto-complete
-(defvar ac-point)
-(defvar ac-prefix)
-(defvar ac-sources)
 
 (defun merlin-source-init ()
   "Called at the beginning of a completion to fill the cache (the
@@ -719,9 +752,9 @@ variable `merlin-cache')."
   (ac-define-source "merlin" merlin-ac-source))
 
 ;; Usual completion
-(defun merlin--completion-lookup (string state)
+(defun merlin-completion-lookup (string state)
   "Lookup the entry `STRING' inside the completion table."
-  (let ((ret (assoc string merlin--completion-annotation-table)))
+  (let ((ret (assoc string merlin-completion-annotation-table)))
     (if ret
         (message "%s%s" (car ret) (cdr ret)))))
 (defun merlin-completion-at-point ()
@@ -732,45 +765,40 @@ variable `merlin-cache')."
     (let ((start (point)))
       (skip-syntax-forward "w_.")
       (list start (point)
-            (apply-partially #'merlin--completion-table start)
-            . (:exit-function #'merlin--completion-lookup
-              :annotation-function '(lambda (s) (cdr (assoc s merlin--completion-annotation-table))))))))
+            (apply-partially #'merlin-completion-table start)
+            . (:exit-function #'merlin-completion-lookup
+              :annotation-function '(lambda (s) (cdr (assoc s merlin-completion-annotation-table))))))))
             
 
-(defvar merlin--completion-cache-state nil)
-(defvar merlin--completion-annotation-table nil
-  "Hold a table mapping completion candidates to their types")
-(make-variable-buffer-local 'merlin--completion-cache-state)
-(make-variable-buffer-local 'merlin--completion-annotation-table)
 
 
 (defun merlin-completion-annotate (s)
-  (cdr (assoc s merlin--completion-annotation-table)))
-(defun merlin--completion-table (start string pred action)
+  (cdr (assoc s merlin-completion-annotation-table)))
+(defun merlin-completion-table (start string pred action)
   (if (eq 'metadata action)
       (when merlin-completion-types
         '(metadata (annotation-function . merlin-completion-annotate)))
-    (unless (and merlin--completion-annotation-table
-                 (eq (car merlin--completion-cache-state) start)
-                 (string-prefix-p (cdr merlin--completion-cache-state)
+    (unless (and merlin-completion-annotation-table
+                 (eq (car merlin-completion-cache-state) start)
+                 (string-prefix-p (cdr merlin-completion-cache-state)
                                   string completion-ignore-case)
                  (string-equal (merlin-compute-prefix string)
-                               (merlin-compute-prefix (cdr merlin--completion-cache-state))))
+                               (merlin-compute-prefix (cdr merlin-completion-cache-state))))
       (save-excursion
         (goto-char start)
-        (setq merlin--completion-annotation-table 
+        (setq merlin-completion-annotation-table 
               (merlin-get-completion-data string)))
-      (setq merlin--completion-cache-state (cons start string)))
-    (complete-with-action action merlin--completion-annotation-table string pred)))
+      (setq merlin-completion-cache-state (cons start string)))
+    (complete-with-action action merlin-completion-annotation-table string pred)))
 
 
 ;; Switch to ML file
-(defun merlin--list-by-ext (ext)
+(defun merlin-list-by-ext (ext)
   "Lists filenames ending by EXT in the path"
   (append (merlin-send-command "which" (list "with_ext" ext))
           nil))
 
-(defun merlin--switch-to (name ext)
+(defun merlin-switch-to (name ext)
   "Switch to NAME.EXT."
   (let ((file
          (merlin-send-command "which" (list "path" (concat (downcase name) "." ext))
@@ -778,13 +806,13 @@ variable `merlin-cache')."
     (when file (find-file-other-window file))))
 (defun merlin-switch-to-ml (name)
   "Switch to a ML file."
-  (interactive (list (completing-read "Module:" (merlin--list-by-ext "ml"))))
-  (merlin--switch-to name "ml"))
+  (interactive (list (completing-read "Module:" (merlin-list-by-ext "ml"))))
+  (merlin-switch-to name "ml"))
 
 (defun merlin-switch-to-mli (name)
   "Switch to a MLI file."
-  (interactive (list (completing-read "Module:" (merlin--list-by-ext "mli"))))
-  (merlin--switch-to name "mli"))
+  (interactive (list (completing-read "Module:" (merlin-list-by-ext "mli"))))
+  (merlin-switch-to name "mli"))
                
 ;; Get the type of an element
 
@@ -974,24 +1002,22 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (merlin-send-command "find" (list "use" (list pkg)))
   (merlin-rewind))
 
-(defvar merlin--project-file nil "The .merlin file for current buffer")
 (defun merlin-load-project-file ()
   "Load the .merlin file corresponding to the current file."
   (interactive)
   (merlin-rewind)
   (let ((r (merlin-send-command "project" (list "find" (buffer-file-name)))))
     (if (and r (listp r))
-        (setq merlin--project-file (car r)))))
+        (setq merlin-project-file (car r)))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
   (interactive)
-  (let ((file merlin--project-file))
+  (let ((file merlin-project-file))
     (if file
         (find-file-other-window file)
       (message "No project file for the current buffer."))))
 ;; Locate
-(defvar merlin-position-stack nil)
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
@@ -1071,7 +1097,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 ;;    (define-key merlin-menu-map [customize]
 ;;      '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
-      '("--"))
+      '("-"))
     (define-key merlin-show-type-map [local]
       '(menu-item "around the cursor" merlin-magic-show-type
                   :help "Show the type of the smallest subexpression near cursor"))
@@ -1123,7 +1149,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
   (set (make-local-variable 'merlin-pending-errors-overlays) nil)
   (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
   (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
-  (set (make-local-variable 'merlin--project-file) nil)
+  (set (make-local-variable 'merlin-project-file) nil)
   (set (make-local-variable 'merlin-enclosing-types) nil)
   (set (make-local-variable 'merlin-enclosing-offset) nil)
   (set (make-local-variable 'merlin-last-point-type) nil)
