@@ -123,6 +123,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "If non nil, use `auto-complete-mode' in any buffer."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-ac-prefix-size nil
+  "If non-nil, specify the minimum number of characters to wait before allowing auto-complete"
+  :group 'merlin :type 'boolean)
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables
 ;;;;;;;;;;;;;;;;;;;;;
@@ -752,11 +755,16 @@ variable `merlin-cache')."
          merlin-cache))))
 
 (defvar merlin-ac-source
-  '((init . merlin-source-init)
+  (if merlin-ac-prefix-size
+  `((init . merlin-source-init)
     (candidates . (lambda () merlin-cache))
     (action . merlin-fetch-type)
-    (prefix . merlin-prefix)
-    ))
+    (prefix . ,merlin-ac-prefix-size))
+  '((init . merlin-source-init)
+    (candidates . (lambda () merlin-cache))
+    (action . merlin-fetch-type))))
+
+
 
 (when (featurep 'auto-complete)
   (ac-define-source "merlin" merlin-ac-source))
