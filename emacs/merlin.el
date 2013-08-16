@@ -131,7 +131,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 ;; merlin flags
 (defvar merlin-flags-list '("-rectypes" "-nostdlib" "-absname" "-w" )
   "List of flags that can be passed to ocamlmerlin.")
-(defvar merlin-current-flags nil
+(defvar merlin-current-flags merlin-default-flags
   "The current list of flags to pass to ocamlmerlin.")
 
 ;; Process / Reception related variables
@@ -351,12 +351,12 @@ buffer.  Return the process created"
   "Clear all flags set up to be passed to merlin.
 This sets `merlin-current-flags' to nil."
   (interactive)
-  (setq merlin-current-flags nil))
+  (setq merlin-current-flags merlin-default-flags))
 
 (defun merlin-process-add-flag (flag)
   "Add FLAG to `merlin-current-flags' to be used when starting ocamlmerlin."
   (interactive
-   (list (completing-read "Flag to add: " merlin-flags-list)))
+   (list (completing-read "Flag to add: " merlin-flags-list nil nil)))
   (add-to-list 'merlin-current-flags flag)
   (message "Flag %s added. Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag)
 )
