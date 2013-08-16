@@ -212,15 +212,20 @@ In particular you can specify nil, meaning that the locked zone is not represent
 
 (defun merlin-goto-point (data)
   "Go to the point indicated by DATA which must be an assoc list with fields line and col."
+  "Go to the point indicated by `DATA' which must be an assoc list with fields line and col"
   (goto-char (point-min))
   (forward-line (1- (cdr (assoc 'line data))))
   (forward-char (cdr (assoc 'col data)))
 )
-(defun merlin-goto-file-and-point (data)
-  "Go to the file and position indicated by `DATA' which is an assoc list containing fields file, line and col."
+(defun merlin-goto-file-and-point (data &optional same-buffer-force)
+  "Go to the file and position indicated by DATA which is an assoc list containing fields file, line and col.
+If SAME-BUFFER-FORCE is non-nil, create a new window even if it is the same buffer."
   (if (> (length (cdr (assoc 'file data))) 0)
-      (find-file-other-window (cdr (assoc 'file data))))
+      (find-file-other-window (cdr (assoc 'file data)))
+    (when same-buffer-force
+        (find-file-other-window buffer-file-name)))
   (merlin-goto-point (cdr (assoc 'pos data))))
+
 
 (defun merlin-make-point (data)
   "Transform DATA (a couple line / col) into a point."
@@ -680,46 +685,42 @@ Called when an edit is made by the user."
         (merlin-update-lock-zone-display))))
 
 ;; COMPLETION
-(defun merlin-extract-complete (prefix candidates)
-  "Parse and format completion results.
-It transforms the list of candidates CANDIDATES into a list of popups."
-  (mapcar (lambda (c) 
-            (if merlin-completion-types
-                (let ((desc
-                       (replace-regexp-in-string "^[^:]+:[ \n]+" ""
-                        (replace-regexp-in-string "\n" "" (cdr (assoc 'desc c))))))
-                  (popup-make-item (concat prefix (cdr (assoc 'name c)))
-                                 :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
-                                 :summary desc))
-              (cdr (assoc 'name c))))
-	  (append candidates nil)))
+(defun merlin-format-completion-entry (entry)
+  "Format the completion entry ENTRY."
+  (let ((type
+         (cond
+          ((member (cdr (assoc 'kind entry)) '("Module" "module"))
+           ": <module>")
+          ((string-equal (cdr (assoc 'kind entry)) "Type")
+           (format " [%s]" (cdr (assoc 'desc entry))))
+          (t
+           (replace-regexp-in-string "^[^:]+:[ \n]+" "" (cdr (assoc 'desc entry)))))))
+    (replace-regexp-in-string "\n" "" type)))
 
-(defun merlin-complete-identifier (ident)
-  "Return the formatted result of the completion of IDENT."
-  (setq merlin-cache nil)
-  (setq merlin-cache
-	(merlin-extract-complete (merlin-compute-prefix ident) 
-			   (merlin-get-completion ident)))
-  )
-(defun merlin-get-completion-data (ident)
-  "Return the completion data for IDENT, that is a list of pairs (COMPLETION . TYPE)."
-  (let* ((prefix (merlin-compute-prefix ident))
-         (data (merlin-get-completion ident)))
-    (mapcar
-     #'(lambda (c)
-         (cons
-          (concat prefix (cdr (assoc 'name c)))
-          (cond
-           (
-            (member (cdr (assoc 'kind c)) '("Module" "module"))
-            ": <module>"
-            )
-           ((string-equal (cdr (assoc 'kind c)) "Type")
-            (format " [%s]" (cdr (assoc 'desc c))))
-           (t
-            (replace-regexp-in-string "^[^:]+:[ \n]+" ": " (cdr (assoc 'desc c)))))))
+(defun merlin-completion-data (ident)
+  "Return the data for completion of IDENT, ie. a list of pairs (NAME . TYPE)."
+  (let ((prefix (merlin-compute-prefix ident))
+        (data (append (merlin-get-completion ident) nil)))
+    (mapcar #'(lambda (entry)
+               (list (concat prefix (cdr (assoc 'name entry)))
+                     (merlin-format-completion-entry entry)
+                     (elt (cdr (assoc 'kind entry)) 0)))
             data)))
-                 
+
+(defvar merlin-ac-use-summary t
+  "Use :summary for the types in AC")
+(defvar merlin-ac-use-document nil
+  "Use :document for the types in AC")
+
+(defun merlin-make-popup-item (data)
+  "Create a popup item from data DATA."
+  (popup-make-item
+   (car data)
+   :summary (if (and merlin-completion-types
+                     merlin-ac-use-summary) (cadr data))
+   :symbol (cddr data)
+   :document (if (and merlin-completion-types
+                      merlin-ac-use-document) (cadr data))))
 
 (defun merlin-source-init ()
   "Initialize the cache for `auto-complete' completion.
@@ -727,7 +728,8 @@ Called at the beginning of a completion to fill the cache (the
 variable `merlin-cache')."
   (merlin-check-synchronize)
   (setq merlin-completion-point ac-point)
-  (merlin-complete-identifier ac-prefix))
+  (setq merlin-cache
+        (mapcar #'merlin-make-popup-item (merlin-completion-data ac-prefix))))
 
 (defun merlin-try-completion ()
   "Try the merlin completion after having synchronized the point."
@@ -740,6 +742,7 @@ variable `merlin-cache')."
   (skip-syntax-backward "w_.")
   (point))
 (defun merlin-fetch-type ()
+  "Prints the type of the selected candidate"
   (let ((candidate (buffer-substring-no-properties merlin-completion-point  (point))))
     (if merlin-completion-types
         (mapc
@@ -751,7 +754,6 @@ variable `merlin-cache')."
 (defvar merlin-ac-source
   '((init . merlin-source-init)
     (candidates . (lambda () merlin-cache))
-    (requires . 3)
     (action . merlin-fetch-type)
     (prefix . merlin-prefix)
     ))
@@ -797,10 +799,10 @@ variable `merlin-cache')."
                                (merlin-compute-prefix (cdr merlin-completion-cache-state))))
       (save-excursion
         (goto-char start)
-        (setq merlin-completion-annotation-table 
-              (merlin-get-completion-data string)))
-      (setq merlin-completion-cache-state (cons start string)))
-    (complete-with-action action merlin-completion-annotation-table string pred)))
+        (setq merlin--completion-annotation-table 
+              (mapcar #'(lambda (a) (cons (car a) (concat ": " (cadr a)))) (merlin-completion-data string))))
+      (setq merlin--completion-cache-state (cons start string)))
+    (complete-with-action action merlin--completion-annotation-table string pred)))
 
 
 ;; Switch to ML file
@@ -1031,19 +1033,42 @@ there is no enclosing, falls back to
         (find-file-other-window file)
       (message "No project file for the current buffer."))))
 ;; Locate
-(defun merlin-locate ()
-  "Locate the identifier under point."
-  (interactive)
+(defun merlin-locate-pure (ident &optional point just-open)
+  "Locate the identifier IDENT at POINT.
+If POINT is nil, the current point is used.  If JUST-OPEN is
+non-nil, don't move to the opened buffer."
   (merlin-check-synchronize)
-  (let* ((ident (thing-at-point 'ocamlatom))
+  (let* ((point (if point point (point)))
          (r (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point))))))
     (if (and r (listp r))
-      (progn
-        (push (cons (buffer-name) (point)) merlin-position-stack)
-        (merlin-goto-file-and-point r)
-        (message "Use %s to go back."
-                 (substitute-command-keys "\\[merlin-pop-stack]")))
-      (message "%s not found." ident))))
+        (if just-open
+            (save-excursion
+              (save-selected-window
+                (merlin-goto-file-and-point r just-open)
+                (merlin-highlight (bounds-of-thing-at-point 'ocamlatom) 'merlin-type-face)))
+          (progn
+            (merlin-goto-file-and-point r)
+            (push (cons (buffer-name) (point)) merlin-position-stack)
+            (message "Use %s to go back."
+                     (substitute-command-keys "\\[merlin-pop-stack]"))))
+          (message "%s not found." ident))))
+
+(defun merlin-locate ()
+  "Locate the identifier under point"
+  (interactive)
+  (merlin-locate-pure (thing-at-point 'ocamlatom)))
+
+;; I don't like it beginning by "ac" but
+;; it is the only way I found to get it working (otherwise the completion
+;; menu just closes itself)
+(defun ac-merlin-locate ()
+  "Locate the identifier currently selected in the ac-completion."
+  (interactive)
+  (when (ac-menu-live-p)
+    (when (popup-hidden-p ac-menu)
+      (ac-show-menu))
+    (merlin-locate-pure (popup-selected-item ac-menu) (point) t)
+    (ac-show-menu)))
 
 (defun merlin-pop-stack ()
   "Go back to the last position where the user did a locate."
@@ -1079,7 +1104,7 @@ there is no enclosing, falls back to
   (interactive)
   (merlin-check-synchronize)
   (merlin-goto-phrase "prev" 0))
-    
+
 (defun merlin-to-point ()
   "Update the merlin to the current point, reporting error."
   (interactive)
@@ -1101,6 +1126,8 @@ there is no enclosing, falls back to
     (define-key merlin-map (kbd "C-c r") 'merlin-restart-process)
     (define-key merlin-map (kbd "C-c C-x") 'merlin-next-error)
     (define-key merlin-map (kbd "C-c C-l") 'merlin-locate)
+    (when (featurep 'auto-complete)
+      (define-key ac-complete-mode-map (kbd "C-c C-l") 'ac-merlin-locate))
     (define-key merlin-map (kbd "C-c &") 'merlin-pop-stack)
     (define-key merlin-map (kbd "C-c C-r") 'merlin-rewind)
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
@@ -1245,3 +1272,5 @@ Short cuts:
 
 (provide 'merlin)
 ;;; merlin.el ends here
+
+(setq tab-always-indent 'complete)
