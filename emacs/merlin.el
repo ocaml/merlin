@@ -1085,6 +1085,10 @@ there is no enclosing, falls back to
   (interactive)
   (merlin-update-point t))
 
+(defun merlin-customize ()
+  "Open the customize buffer for the group merlin."
+  (interactive)
+  (customize-group 'merlin))
 ;; Mode definition
 (defvar merlin-mode-map
   (let ((merlin-map (make-sparse-keymap))
@@ -1107,8 +1111,8 @@ there is no enclosing, falls back to
     (define-key merlin-map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-next-phrase)
     (define-key merlin-map (kbd "C-c C-p") 'merlin-prev-phrase)
-;;    (define-key merlin-menu-map [customize]
-;;      '("Customize merlin-mode" . merlin-customize))
+    (define-key merlin-menu-map [customize]
+      '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
       '("-"))
     (define-key merlin-show-type-map [local]
