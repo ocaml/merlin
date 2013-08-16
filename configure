@@ -85,7 +85,7 @@ END
 
   if [ "$NOSEXP" -eq "0" ]; then
     echo >src/my_config.ml "open Protocol_sexp;;"
-    echo >>_tags "true: package(sexplib)"
+    echo >>_tags "<src/*>: package(sexplib)"
   else
     echo >src/my_config.ml
   fi
