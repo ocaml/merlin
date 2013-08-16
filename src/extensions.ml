@@ -59,6 +59,8 @@ let ext_ounit : extension = "ounit",
   ["module OUnit : sig
       val force_bool : bool -> unit
       val force_unit : unit -> unit
+      val force_unit_arrow_unit : (unit -> unit) -> unit
+      val force_indexed : (int -> unit -> unit) -> int list -> unit
     end"],
   []
 

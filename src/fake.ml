@@ -172,6 +172,8 @@ module OUnit = struct
 
   let force_bool = prim "OUnit.force_bool"
   let force_unit = prim "OUnit.force_unit"
+  let force_unit_arrow_unit = prim "OUnit.force_unit_arrow_unit"
+  let force_indexed = prim "OUnit.force_indexed"
 end
 
 (* tools used in the next few modules *)

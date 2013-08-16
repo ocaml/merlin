@@ -445,6 +445,10 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %token OUNIT_TEST
 %token OUNIT_TEST_UNIT
 %token OUNIT_TEST_MODULE
+%token OUNIT_BENCH
+%token OUNIT_BENCH_FUN
+%token OUNIT_BENCH_INDEXED
+%token OUNIT_BENCH_MODULE
 
 (* Precedences and associativities.
 
@@ -667,6 +671,29 @@ structure_item:
         [mkstr $startpos $endpos (Pstr_eval expr)]
       }
   | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
+      { let name = Fake.OUnit.fresh_test_module_ident () in
+        [mkstr $startpos $endpos
+           (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]
+      }
+  | OUNIT_BENCH STRING EQUAL seq_expr
+      { let expr = $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_BENCH_FUN STRING EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_unit_arrow_unit $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_BENCH_INDEXED STRING val_ident simple_expr EQUAL seq_expr
+      { let f_arg = mkpat $startpos $endpos 
+                        (Ppat_var (mkrhs $startpos($3) $endpos($3) $3))
+        in
+        let f_fun = mkexp $startpos $endpos 
+            (Pexp_function("", None, [f_arg, $6])) 
+        in
+        let expr = Fake.(app (app OUnit.force_indexed f_fun) $4) in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_BENCH_MODULE STRING EQUAL module_expr
       { let name = Fake.OUnit.fresh_test_module_ident () in
         [mkstr $startpos $endpos
            (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]

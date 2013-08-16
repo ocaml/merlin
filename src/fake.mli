@@ -63,6 +63,8 @@ module OUnit : sig
   val fresh_test_module_ident : unit -> string
   val force_bool : Parsetree.expression
   val force_unit : Parsetree.expression
+  val force_unit_arrow_unit : Parsetree.expression
+  val force_indexed : Parsetree.expression
 end
 
 type tydecl = string Location.loc * Parsetree.type_declaration

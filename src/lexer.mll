@@ -111,6 +111,11 @@ let keyword_table =
     "TEST", OUNIT_TEST;
     "TEST_UNIT", OUNIT_TEST_UNIT;
     "TEST_MODULE", OUNIT_TEST_MODULE;
+    (* HACK: pa_ounit benchmark extension *)
+    "BENCH", OUNIT_BENCH;
+    "BENCH_FUN", OUNIT_BENCH_FUN;
+    "BENCH_INDEXED", OUNIT_BENCH_INDEXED;
+    "BENCH_MODULE", OUNIT_BENCH_MODULE;
 ]
 
 (* To buffer string literals *)
