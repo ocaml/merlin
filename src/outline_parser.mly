@@ -143,6 +143,10 @@
 %token OUNIT_TEST
 %token OUNIT_TEST_UNIT
 %token OUNIT_TEST_MODULE
+%token OUNIT_BENCH
+%token OUNIT_BENCH_FUN
+%token OUNIT_BENCH_INDEXED
+%token OUNIT_BENCH_MODULE
 
 (* Precedences and associativities.
 
@@ -333,6 +337,14 @@ structure_item:
   | OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
       { emit_top Definition $endpos }
   | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
+      { emit_top Definition $endpos }
+  | OUNIT_BENCH STRING EQUAL seq_expr
+      { emit_top Definition $endpos }
+  | OUNIT_BENCH_FUN STRING EQUAL seq_expr
+      { emit_top Definition $endpos }
+  | OUNIT_BENCH_INDEXED STRING val_ident simple_expr EQUAL seq_expr
+      { emit_top Definition $endpos }
+  | OUNIT_BENCH_MODULE STRING EQUAL module_expr
       { emit_top Definition $endpos }
 ;
 module_binding:

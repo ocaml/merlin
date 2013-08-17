@@ -84,9 +84,9 @@
 )
 
 (defvar merlin-margin-warning-string "?"
-  "String to put in the margin of a line containing an error.")
+  "String to put in the margin of a line containing a warning.")
 
-(defvar merlin-display-lock-zone '(margin)
+(defvar merlin-display-lock-zone nil
   "How to display the locked zone. 
 It is a list of methods among:
    - `highlight': highlight the current locked zone (like proofgeneral)
@@ -136,7 +136,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 ; Errors related variables
 (defvar merlin-pending-errors nil
   "Pending errors.")
-(defvar merlin-lock-point nil
+(defvar merlin-lock-point 0
   "Position up to which merlin knows about.")
 (defvar merlin-pending-errors-overlays nil
   "Overlays for the pending errors.")
@@ -154,7 +154,6 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "Current offset in `merlin-enclosing-types'.")
 (defvar merlin-last-point-type nil
   "Last position where the user ran `merlin-magic-show-type'.")
-(defvar merlin-type-overlay nil "Merlin overlay used for type-checking.")
 
 (defvar merlin-use-auto-complete-mode nil
   "If non nil, use `auto-complete-mode' in any buffer")
@@ -480,7 +479,7 @@ It then parses the error returned by merlin
 "
   (let ((temp-point (point))
         (end-p nil))
-    (forward-line 1)
+    (forward-line 10)
     (while (and (not end-p) (< (point) (point-max)))
       (if (equal ;; this is not tautological since value is never nil
            (merlin-tell-piece "end" temp-point (point))
@@ -489,13 +488,12 @@ It then parses the error returned by merlin
             (setq end-p t))
         (progn
             (setq temp-point (point))
-            (forward-line 1)
-            (end-of-line))))
+            (forward-line 10))))
     ;; End of buffer
     (if (not end-p)
         (merlin-send-command "tell" '("end" nil)))
     (merlin-check-for-errors view-errors-p)
-    (setq merlin--point (merlin-get-position))
+    (setq merlin-lock-point (merlin-get-position))
     (merlin-update-lock-zone-display)))
 
       
@@ -514,16 +512,13 @@ It then parses the error returned by merlin
             (delete-overlay (pop merlin-pending-errors-overlays)))
         (if merlin-pending-errors
             (message "%s (%d more errors, use %s to go to the next)" 
+                     (cdr (assoc 'message err))
                      (length merlin-pending-errors)
                      (substitute-command-keys "\\[merlin-next-error]")
                      )
           (message "%s" (cdr (assoc 'message err))))
         (merlin-highlight (merlin-make-bounds err) 'next-error))
     (next-error)))
-
-(defun merlin-remove-error-overlay ()
-  "Remove the error overlay."
-  (delete-overlay merlin-error-overlay))
 
 (defun merlin-delete-error-overlays ()
   "Removes margin error overlays."
@@ -623,27 +618,23 @@ The parameter `view-errors-p' controls whether we should care for errors"
       (merlin-rewind))
   (save-excursion
     (setq merlin-lock-point (merlin-retract-to (point)))
-    (end-of-line)
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (merlin-tell-till-end-of-phrase view-errors-p)))
   
-(defun merlin-check-synchronize (&optional quiet)
+(defun merlin-check-synchronize ()
   "If merlin point is before the end of line send everything up to the end of line."
   (interactive)
   (save-excursion
     (forward-line 1)
     (let ((p merlin-lock-point))
       (if (> (point-at-eol) merlin-lock-point)
-          (merlin-update-point (not quiet))))))
+          (merlin-update-point nil)))))
 
 (defun merlin-edit (start end length)
   "Called when an edit is make to retract the locked zone if it is needed."
-  (when merlin-type-overlay
-      (delete-overlay merlin-type-overlay)
-      (setq merlin-type-overlay nil))
-  (if (< start merlin-lock-point)
+  (if (and merlin-mode (< start merlin-lock-point))
       (progn
-        (setq merlin-lock-point (merlin-retract-to start))
+        (setq merlin-lock-point (merlin-retract-to (1- start)))
         (merlin-update-lock-zone-display))))
 
 ;; COMPLETION
@@ -651,9 +642,12 @@ The parameter `view-errors-p' controls whether we should care for errors"
   "Parse and format completion results."
   (mapcar (lambda (c) 
             (if merlin-completion-types
-                (popup-make-item (concat prefix (cdr (assoc 'name c)))
+                (let ((desc
+                       (replace-regexp-in-string "^[^:]+:[ \n]+" ""
+                        (replace-regexp-in-string "\n" "" (cdr (assoc 'desc c))))))
+                  (popup-make-item (concat prefix (cdr (assoc 'name c)))
                                  :symbol (format "%c" (car (string-to-list (cdr (assoc 'kind c)))))
-                                 :summary (cdr (assoc 'desc c)))
+                                 :summary desc))
               (cdr (assoc 'name c))))
 	  (append l nil)))
 
@@ -662,7 +656,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (setq merlin-cache nil)
   (setq merlin-cache
 	(merlin-extract-complete (merlin-compute-prefix ident) 
-			   (elt (merlin-get-completion ident) 1)))
+			   (merlin-get-completion ident)))
   )
 (defun merlin-get-completion-data (ident)
   "Return the completion data for IDENT, that is a list of pairs (COMPLETION . TYPE)"
@@ -691,6 +685,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
 (defun merlin-source-init ()
   "Called at the beginning of a completion to fill the cache (the
 variable `merlin-cache')."
+  (merlin-check-synchronize)
   (setq merlin-completion-point ac-point)
   (merlin-complete-identifier ac-prefix))
 
@@ -703,10 +698,20 @@ variable `merlin-cache')."
 (defun merlin-prefix ()
   (skip-syntax-backward "w_.")
   (point))
+(defun merlin-fetch-type ()
+  (let ((candidate (buffer-substring-no-properties merlin-completion-point  (point))))
+    (if merlin-completion-types
+        (mapc
+         (lambda (item)
+           (if (string-equal candidate item)
+               (message "%s: %s" candidate (popup-item-summary item))))
+         merlin-cache))))
+
 (defvar merlin-ac-source
   '((init . merlin-source-init)
     (candidates . (lambda () merlin-cache))
     (requires . 3)
+    (action . merlin-fetch-type)
     (prefix . merlin-prefix)
     ))
 
@@ -721,7 +726,7 @@ variable `merlin-cache')."
         (message "%s%s" (car ret) (cdr ret)))))
 (defun merlin-completion-at-point ()
   (save-excursion
-    (merlin-check-synchronize t))
+    (merlin-check-synchronize))
   (save-excursion
     (skip-syntax-backward "w_.")
     (let ((start (point)))
@@ -869,7 +874,7 @@ overlay."
 (defun merlin-show-type-of-region ()
   "Show the type of the region."
   (interactive)
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-show-type (cons (region-beginning) (region-end))))
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)."
@@ -990,6 +995,7 @@ it will print types of bigger expressions around point (it will go up the ast). 
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
+  (merlin-check-synchronize)
   (let* ((ident (thing-at-point 'ocamlatom))
          (r (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point))))))
     (if (and r (listp r))
@@ -1015,24 +1021,24 @@ it will print types of bigger expressions around point (it will go up the ast). 
 ;; Semantic movement
 (defun merlin-goto-phrase (command indice)
   "Go to the phrase indicated by COMMAND to the end INDICE."
-  (let ((r (merlin-get-return-field
-            (merlin-send-command "boundary" (list command "at" (merlin-unmake-point (point)))))))
+  (let ((r (merlin-send-command "boundary" (list command "at" (merlin-unmake-point (point))))))
     (if r
         (goto-char (merlin-make-point (elt r indice))))))
 
 (defun merlin-next-phrase ()
   "Go to the beginning of the next phrase."
   (interactive)
-  (merlin-check-synchronize t)
-  (merlin-goto-phrase "current" 1)
-  (forward-line 1)
-  (merlin-check-synchronize t)
+  (save-excursion
+    (merlin-check-synchronize)
+    (merlin-goto-phrase "current" 1)
+    (forward-line 1)
+    (merlin-check-synchronize))
   (merlin-goto-phrase "next" 0))
 
 (defun merlin-prev-phrase ()
   "Go to the beginning of the previous phrase."
   (interactive)
-  (merlin-check-synchronize t)
+  (merlin-check-synchronize)
   (merlin-goto-phrase "prev" 0))
     
 (defun merlin-to-point ()
@@ -1108,6 +1114,19 @@ it will print types of bigger expressions around point (it will go up the ast). 
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
   (interactive)
+  (set (make-local-variable 'merlin-lock-point) (point-min))
+  (set (make-local-variable 'merlin-buffer) nil)
+  (set (make-local-variable 'merlin-result) nil)
+  (set (make-local-variable 'merlin-completion-point) nil)
+  (set (make-local-variable 'merlin-ready) nil)
+  (set (make-local-variable 'merlin-pending-errors) nil)
+  (set (make-local-variable 'merlin-pending-errors-overlays) nil)
+  (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
+  (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
+  (set (make-local-variable 'merlin--project-file) nil)
+  (set (make-local-variable 'merlin-enclosing-types) nil)
+  (set (make-local-variable 'merlin-enclosing-offset) nil)
+  (set (make-local-variable 'merlin-last-point-type) nil)
   ; if there is not yet a buffer for the current buffer, create one
   (when (not (merlin-process-started-p))
       (merlin-start-process nil))
@@ -1121,20 +1140,6 @@ it will print types of bigger expressions around point (it will go up the ast). 
     (add-to-list 'ac-sources 'merlin-ac-source))
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
-  (set (make-local-variable 'merlin-lock-point) (point-min))
-  (set (make-local-variable 'merlin-buffer) nil)
-  (set (make-local-variable 'merlin-result) nil)
-  (set (make-local-variable 'merlin-completion-point) nil)
-  (set (make-local-variable 'merlin-ready) nil)
-  (set (make-local-variable 'merlin-pending-errors) nil)
-  (set (make-local-variable 'merlin-pending-errors-overlays) nil)
-  (set (make-local-variable 'merlin-type-overlay) nil)
-  (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
-  (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
-  (set (make-local-variable 'merlin--project-file) nil)
-  (set (make-local-variable 'merlin-enclosing-types) nil)
-  (set (make-local-variable 'merlin-enclosing-offset) nil)
-  (set (make-local-variable 'merlin-last-point-type) nil)
   (add-to-list 'after-change-functions 'merlin-edit)
   (merlin-load-project-file)
   (with-current-buffer (get-buffer-create merlin-type-buffer-name)
@@ -1155,7 +1160,7 @@ buffers) and perform queries on it.
 
 Short cuts:
 \\{merlin-mode-map}"
-  nil "merlin"
+  nil " merlin"
   :keymap merlin-mode-map
   (if merlin-mode 
       (if (merlin-is-ml-buffer) 

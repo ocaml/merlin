@@ -20,7 +20,7 @@ open Typedtree
 open Types
 
 type symptom =
-    Missing_field of Ident.t
+    Missing_fields of Ident.t list
   | Value_descriptions of Ident.t * value_description * value_description
   | Type_declarations of Ident.t * type_declaration
         * type_declaration * Includecore.type_mismatch list
@@ -40,7 +40,7 @@ type symptom =
 
 type pos =
     Module of Ident.t | Modtype of Ident.t | Arg of Ident.t | Body of Ident.t
-type error = pos list * symptom
+type error = pos list * Env.t * symptom
 
 exception Error of error list
 
@@ -56,7 +56,7 @@ let value_descriptions env cxt subst id vd1 vd2 =
   try
     Includecore.value_descriptions env vd1 vd2
   with Includecore.Dont_match ->
-    raise(Error[cxt, Value_descriptions(id, vd1, vd2)])
+    raise(Error[cxt, env, Value_descriptions(id, vd1, vd2)])
 
 (* Inclusion between type declarations *)
 
@@ -64,7 +64,8 @@ let type_declarations env cxt subst id decl1 decl2 =
   Env.mark_type_used (Ident.name id) decl1;
   let decl2 = Subst.type_declaration subst decl2 in
   let err = Includecore.type_declarations env (Ident.name id) decl1 id decl2 in
-  if err <> [] then raise(Error[cxt, Type_declarations(id, decl1, decl2, err)])
+  if err <> [] then
+    raise(Error[cxt, env, Type_declarations(id, decl1, decl2, err)])
 
 (* Inclusion between exception declarations *)
 
@@ -73,7 +74,7 @@ let exception_declarations env cxt subst id decl1 decl2 =
   let decl2 = Subst.exception_declaration subst decl2 in
   if Includecore.exception_declarations env decl1 decl2
   then ()
-  else raise(Error[cxt, Exception_declarations(id, decl1, decl2)])
+  else raise(Error[cxt, env, Exception_declarations(id, decl1, decl2)])
 
 (* Inclusion between class declarations *)
 
@@ -82,13 +83,14 @@ let class_type_declarations env cxt subst id decl1 decl2 =
   match Includeclass.class_type_declarations env decl1 decl2 with
     []     -> ()
   | reason ->
-      raise(Error[cxt, Class_type_declarations(id, decl1, decl2, reason)])
+      raise(Error[cxt, env, Class_type_declarations(id, decl1, decl2, reason)])
 
 let class_declarations env cxt subst id decl1 decl2 =
   let decl2 = Subst.class_declaration subst decl2 in
   match Includeclass.class_declarations env decl1 decl2 with
     []     -> ()
-  | reason -> raise(Error[cxt, Class_declarations(id, decl1, decl2, reason)])
+  | reason ->
+      raise(Error[cxt, env, Class_declarations(id, decl1, decl2, reason)])
 
 (* Expand a module type identifier when possible *)
 
@@ -98,7 +100,7 @@ let expand_module_path env cxt path =
   try
     Env.find_modtype_expansion path env
   with Not_found ->
-    raise(Error[cxt, Unbound_modtype_path path])
+    raise(Error[cxt, env, Unbound_modtype_path path])
 
 (* Extract name, kind and ident from a signature item *)
 
@@ -141,9 +143,9 @@ let rec modtypes env cxt subst mty1 mty2 =
     try_modtypes env cxt subst mty1 mty2
   with
     Dont_match ->
-      raise(Error[cxt, Module_types(mty1, Subst.modtype subst mty2)])
+      raise(Error[cxt, env, Module_types(mty1, Subst.modtype subst mty2)])
   | Error reasons ->
-      raise(Error((cxt, Module_types(mty1, Subst.modtype subst mty2))
+      raise(Error((cxt, env, Module_types(mty1, Subst.modtype subst mty2))
                   :: reasons))
 
 and try_modtypes env cxt subst mty1 mty2 =
@@ -243,7 +245,13 @@ and signatures env cxt subst sig1 sig2 =
             ((item1, item2, pos1) :: paired) unpaired rem
         with Not_found ->
           let unpaired =
-            if report then (cxt, Missing_field id2) :: unpaired else unpaired in
+            if report then
+              match unpaired with
+              | (cxt', env, Missing_fields ids) :: unpaired when cxt == cxt' ->
+                (cxt, env, Missing_fields (id2 :: ids)) :: unpaired
+              | _ -> (cxt, env, Missing_fields [id2]) :: unpaired
+            else unpaired
+          in
           pair_components subst paired unpaired rem
         end in
   (* Do the pairing and checking, and return the final coercion *)
@@ -298,7 +306,7 @@ and modtype_infos env cxt subst id info1 info2 =
     | (Modtype_abstract, Modtype_manifest mty2) ->
         check_modtype_equiv env cxt' (Mty_ident(Pident id)) mty2
   with Error reasons ->
-    raise(Error((cxt, Modtype_infos(id, info1, info2)) :: reasons))
+    raise(Error((cxt, env, Modtype_infos(id, info1, info2)) :: reasons))
 
 and check_modtype_equiv env cxt mty1 mty2 =
   match
@@ -306,7 +314,7 @@ and check_modtype_equiv env cxt mty1 mty2 =
      modtypes env cxt Subst.identity mty2 mty1)
   with
     (Tcoerce_none, Tcoerce_none) -> ()
-  | (_, _) -> raise(Error [cxt, Modtype_permutation])
+  | (_, _) -> raise(Error [cxt, env, Modtype_permutation])
 
 (* Simplified inclusion check between module types (for Env) *)
 
@@ -326,7 +334,8 @@ let compunit impl_name impl_sig intf_name intf_sig =
   try
     signatures Env.initial [] Subst.identity impl_sig intf_sig
   with Error reasons ->
-    raise(Error(([], Interface_mismatch(impl_name, intf_name)) :: reasons))
+    raise(Error(([], Env.empty,Interface_mismatch(impl_name, intf_name))
+                :: reasons))
 
 (* Hide the context and substitution parameters to the outside world *)
 
@@ -350,8 +359,15 @@ let show_locs ppf (loc1, loc2) =
   show_loc "Actual declaration" ppf loc1
 
 let include_err ppf = function
-  | Missing_field id ->
+  | Missing_fields [id] ->
       fprintf ppf "The field `%a' is required but not provided" ident id
+  | Missing_fields ids ->
+      let rec idents ppf = function
+        | [] -> ()
+        | [id] -> fprintf ppf "`%a'" ident id
+        | id :: ids -> fprintf ppf "`%a', %a" ident id idents ids
+      in
+      fprintf ppf "The fields %a are required but not provided" idents ids
   | Value_descriptions(id, d1, d2) ->
       fprintf ppf
         "@[<hv 2>Values do not match:@ %a@;<1 -2>is not included in@ %a@]"
@@ -446,8 +462,9 @@ let context ppf cxt =
   else
     fprintf ppf "@[<hv 2>At position@ %a@]@ " context cxt
 
-let include_err ppf (cxt, err) =
-  fprintf ppf "@[<v>%a%a@]" context (List.rev cxt) include_err err
+let include_err ppf (cxt, env, err) =
+  Printtyp.wrap_printing_env env (fun () ->
+    fprintf ppf "@[<v>%a%a@]" context (List.rev cxt) include_err err)
 
 let buffer = ref ""
 let is_big obj =
@@ -463,8 +480,8 @@ let report_error ppf errs =
   if errs = [] then () else
   let (errs , err) = split_last errs in
   let pe = ref true in
-  let include_err' ppf err =
-    if not (is_big err) then fprintf ppf "%a@ " include_err err
+  let include_err' ppf (_,_,obj as err) =
+    if not (is_big obj) then fprintf ppf "%a@ " include_err err
     else if !pe then (fprintf ppf "...@ "; pe := false)
   in
   let print_errs ppf = List.iter (include_err' ppf) in

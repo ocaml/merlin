@@ -34,6 +34,7 @@ module type Top_options = sig
   val _w : string -> unit
   val _warn_error : string -> unit
   val _warn_help : unit -> unit
+  val _protocol : string -> unit
 
   val _dparsetree : unit -> unit
   val _drawlambda : unit -> unit

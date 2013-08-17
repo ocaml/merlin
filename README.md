@@ -118,7 +118,7 @@ To get it working you only to load the file `emacs/merlin.el' of the distributio
 If you installed through opam, a good thing to do is:
 
     
-    (add-to-list 'load-path "~/.opam/4.00.1/share/emacs/site-lisp/")
+    (add-to-list 'load-path "$SHARE_DIR/emacs/site-lisp/")
     (require 'merlin)
 
 
@@ -146,7 +146,7 @@ much as possible to contain the point.
 
 Main keybindings:
 
-- C-c C-t (`merlin-magic-show-type`) shows the type of the expression
+- `C-c C-t` (`merlin-magic-show-type`) shows the type of the expression
   underpoint. To do so, it tries to compile the current phrase and
   locate the leaf of the typedtree containing the current position: 
 
@@ -186,11 +186,21 @@ Main keybindings:
 
 - `C-c r` (`merlin-restart-process`) restarts merlin process (useful when hung)
 
-Moreover, you have regular auto-completion (M-TAB by default) using
-completion-at-point. There is auto-complete integration you can enable
-by setting merlin-use-auto-complete-mode to t:
+- `C-c C-n` (`merlin-next-phrase`) moves the point to the beginning of the next phrase
+
+- `C-c C-p` (`merlin-prev-phrase`) moves the point to the beginning of the previous phrase
+
+- `C-c C-l` (`merlin-locate`) jumps to the definition of the ident near the point.
+
+  Moreover, you have regular auto-completion (M-TAB by default with
+emacs24) using completion-at-point. There is also auto-complete
+integration you can enable by setting merlin-use-auto-complete-mode to
+t:
 
     (setq merlin-use-auto-complete-mode t)
+
+It will enable auto-complete mode with the merlin source in ML
+buffers. With this setting, you can use `C-c TAB` to force completion.
 
 Merlin project
 ==============

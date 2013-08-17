@@ -16,11 +16,11 @@ COL_GREEN=$(tput setf 2)
 
 check_package()
 {
-  if ocamlfind query "$1" >/dev/null; then
-    printf "Found $1\t${COL_GREEN}GOOD${COL_CLEAR}\n"
+  if ocamlfind query "$2" >/dev/null; then
+    printf "Found $2\t${COL_GREEN}GOOD${COL_CLEAR}\n"
   else
-    printf "${COL_RED}BAD${COL_CLEAR} $1 is missing\n\t$2\n"
-    EXIT=1
+    printf "${COL_RED}BAD${COL_CLEAR} $2 is missing\n\t$3\n"
+    eval $1=1
   fi
 }
 
@@ -29,9 +29,11 @@ Merlin configuration
 --------------------
 END
 
-check_package findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
-check_package yojson "Install yojson"
-check_package menhirLib "Please install menhir."
+NOSEXP=0
+check_package EXIT findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
+check_package EXIT yojson "Install yojson"
+check_package EXIT menhirLib "Please install menhir."
+check_package NOSEXP sexplib "Sexplib missing; sexp protocol disabled."
 STDLIB_DIR=$(ocamlfind printconf stdlib)
 
 while [ -n "$1" ]; do
@@ -74,10 +76,19 @@ if [ -d "$STDLIB_DIR" ]; then
   cat >Makefile.config <<END
 BIN_DIR=$BIN_DIR
 SHARE_DIR=$SHARE_DIR
+#NOSEXP=$NOSEXP
 END
   cat >src/myocamlbuild_config.ml <<END
 let libdir = "$STDLIB_DIR";;
 END
+  cat >_tags _tags.in
+
+  if [ "$NOSEXP" -eq "0" ]; then
+    echo >src/my_config.ml "open Protocol_sexp;;"
+    echo >>_tags "<src/*>: package(sexplib)"
+  else
+    echo >src/my_config.ml
+  fi
   if [ "$EXIT" -eq 0 ]; then
     echo "Now, type 'make' to compile then 'make install'."
   else

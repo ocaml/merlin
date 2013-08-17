@@ -33,19 +33,28 @@ function! merlin#WordUnderCursor()
 endfunction
 
 function! merlin#FindFile(ext,file)
-  py vim.command("e "+ merlin.vim_which(vim.eval("a:file"), vim.eval("a:ext")))
+  py merlin.catch_and_print (lambda: vim.command("e "+ merlin.vim_which(vim.eval("a:file"), vim.eval("a:ext"))))
 endfunction
 
 function! merlin#Path(var,path)
+  if a:path == ""
+    let l:path = ""
+  else
+    let l:raw = (a:path =~ '^\')
+    let l:path = l:raw ? substitute(a:path, '^\\\(.*\)$', '\1', '') : fnamemodify(a:path,':p')
+  endif
 python <<EOF
-if vim.eval("a:path") == "":
+path = vim.eval("l:path") 
+if path == "":
   for path in merlin.send_command("path","list", vim.eval("a:var")):
     if path != "":
       print path
 else:
-  path = vim.eval("fnamemodify(a:path,':p')")
   print path
-  merlin.send_command("path", "add", vim.eval("a:var"), vim.eval("a:path"))
+  if vim.eval("l:raw") == "1":
+    merlin.send_command("path", "raw", "add", vim.eval("a:var"), path)
+  else:
+    merlin.send_command("path", "add", vim.eval("a:var"), path)
 merlin.vim_reload()
 EOF
 endfunction
@@ -283,6 +292,7 @@ function! merlin#Register()
 endfunction
 
 function! merlin#LoadProject()
+  py merlin.send_command("cd",vim.eval("expand('%:p:h')"))
   py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
 endfunction
 

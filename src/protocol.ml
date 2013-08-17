@@ -27,17 +27,11 @@
 )* }}} *)
 
 type io = Json.json Stream.t * (Json.json -> unit)
+type io_maker = input:in_channel -> output:out_channel -> io
 
-let make ~input ~output =
-  let input  = Json.stream_from_channel input in
-  let output' = Json.to_channel output in
-  let output json =
-    output' json;
-    print_newline ()
-  in
-  input, output
+exception Protocol_failure of string
 
-let log ~dest (input,output) =
+let json_log ~dest (input,output) =
   let log_input json = Printf.fprintf dest "> %s\n%!" (Json.to_string json); json in
   let log_output json = Printf.fprintf dest "< %s\n%!" (Json.to_string json); json in
   let input' =
@@ -50,14 +44,52 @@ let log ~dest (input,output) =
   let output' json = output (log_output json) in
   input', output'
 
+let json_make ~input ~output =
+  let input  = Json.stream_from_channel input in
+  let output' = Json.to_channel output in
+  let output json =
+    output' json;
+    output_char output '\n';
+    flush output
+  in
+  input, output
+
+let makers = ref ["json", ("(default) simple JSON-based protocol", json_make)]
+
+let register_protocol ~name ~desc inst =
+  makers := (name, (desc,inst)) :: !makers
+
+let make' = ref json_make
+let make ?log ~input ~output = 
+  let io = !make' ~input ~output in
+  match log with
+  | Some dest -> json_log ~dest io
+  | None -> io
+
+let select_frontend name =
+  try make' := snd (List.assoc name !makers)
+  with Not_found ->
+    if name <> "help" then
+      prerr_endline 
+        ("Unknown protocol '" ^ name ^ "' (maybe check build configuration)\n"); 
+    prerr_endline "Choose protocol to use for communication. Known protocols:";
+    List.iter (fun (name, (desc, _)) -> 
+        prerr_endline (name ^ "\t" ^ desc))
+      !makers;
+    exit 1
+
 let return l = `List [`String "return" ; l]
 
 let error_catcher = ref (fun _ -> None)
 let fail = function
+  | Protocol_failure s ->
+    prerr_endline ("Fatal protocol failure. " ^ s);
+    exit (-1)
   | Failure s -> `List [`String "failure"; `String s]
   | exn -> match !error_catcher exn with
       | Some (_,error) -> `List [`String "error"; error]
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
+let protocol_failure s = raise (Protocol_failure s)
 
 let make_pos (pos_lnum, pos_cnum) =
   Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })

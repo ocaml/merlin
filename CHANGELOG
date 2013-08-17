@@ -1,19 +1,35 @@
-merlin 1.1
+merlin 1.3
 ==========
 
   backend:
-    - added a "locate" command to find the definition location of given the
-      identifier.
-      works on local buffer out of the box and at project level if it can find
-      cmts in the build dirs.
+    - added a "locate" command to find the definition location of the given
+      identifier
+      works on the local buffer out of the box and at project level if it the
+      build directories contain cmt files
 
   emacs:
     - various bugfixes
     - aesthetic changes for highlighting
+    - introduced "semantic movements":
+      add commands (and keybindings) to go to the next/previous phrase
+    - support for completion in emacs 23
+    - reporting of syntax errors
+    - removed "idle-typing" feature
+    - asynchronous fetching of types so that long signatures
+      won't make emacs hang
+
+  extensions:
+    - add support for "type nonrec" declaration
+    - add support for "with compare" from type-conv
+    - add partial support for "with fields" from type-conv
+
+  misc:
+    - added specific support for omake's polling mode
 
   vim:
     - ':TypeOf' command now accepts an (optional) argument and tries to type it
       in the current context (i.e. at cursor position)
+    - better catching of errors
 
 merlin 1.2
 ==========

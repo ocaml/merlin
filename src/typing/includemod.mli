@@ -25,7 +25,7 @@ val type_declarations:
       Env.t -> Ident.t -> type_declaration -> type_declaration -> unit
 
 type symptom =
-    Missing_field of Ident.t
+    Missing_fields of Ident.t list
   | Value_descriptions of Ident.t * value_description * value_description
   | Type_declarations of Ident.t * type_declaration
         * type_declaration * Includecore.type_mismatch list
@@ -45,7 +45,7 @@ type symptom =
 
 type pos =
     Module of Ident.t | Modtype of Ident.t | Arg of Ident.t | Body of Ident.t
-type error = pos list * symptom
+type error = pos list * Env.t * symptom
 
 exception Error of error list
 

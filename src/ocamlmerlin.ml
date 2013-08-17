@@ -81,10 +81,12 @@
   * definition under the cursor changes.
   *)
 
+module My_config = My_config
+
 (* Search path (-I) handling *)
 let default_build_paths =
   let open Config in
-  lazy (List.rev !Clflags.include_dirs @ !load_path)
+  lazy ("." :: List.rev !Clflags.include_dirs @ !load_path)
 
 let set_default_path () =
   Config.load_path := Lazy.force default_build_paths
@@ -106,11 +108,10 @@ let refresh_state_on_signal state f =
     raise exn
 
 let main_loop () =
-  let io = Protocol.make ~input:stdin ~output:stdout in
-  let input, output as io =
-    try Protocol.log ~dest:(open_out (Sys.getenv "MERLIN_LOG")) io
-    with Not_found -> io
+  let log = try Some (open_out (Sys.getenv "MERLIN_LOG"))
+            with _ -> None
   in
+  let input, output as io = Protocol.make ~input:stdin ~output:stdout ?log in
   try
     let rec loop state =
       let state, answer =
@@ -138,12 +139,18 @@ let main_loop () =
     loop State.initial
   with Stream.Failure -> ()
 
-let path_add pathes var ?cwd path =
+let path_modify pathes (action : [`Add|`Rem]) var ?(raw=false) ?cwd path =
   let r,_ = List.assoc var pathes in
-  let d = Misc.expand_directory Config.standard_library path in
-  let d = Misc.canonicalize_filename ?cwd d in
-  if not (List.mem d !r) then r := d :: !r
-
+  let d =
+    if raw 
+    then path
+    else Misc.canonicalize_filename ?cwd
+          (Misc.expand_directory Config.standard_library path)
+  in
+  r := List.filter ((<>) d) !r;
+  match action with
+  | `Add -> r := d :: !r
+  | `Rem -> ()
 
 let command_path pathes = Command.({
   name = "path";
@@ -153,24 +160,27 @@ let command_path pathes = Command.({
     match begin match arg with
       | [ `String "list" ] ->
         state, `List (List.map (fun (s,_) -> `String s) pathes)
-      | [ `String "list" ; `String var ] ->
+      | [ `String "list"; `String var ] ->
         let r,_ = List.assoc var pathes in
         state, `List (List.map (fun s -> `String s) !r)
-      | [ `String "add" ; `String var ; `String path ] ->
-        path_add pathes var path;
+      | [ `String "add"; `String var; `String path ] ->
+        path_modify pathes `Add var path;
         state, `Bool true
-      | [ `String "remove" ; `String path; `String s ] ->
-        let r,_ = List.assoc path pathes in
-        let d = Misc.expand_directory Config.standard_library s in
-        let d = Misc.canonicalize_filename d in
-        r := List.filter (fun d' -> d' <> d) !r;
+      | [ `String "remove"; `String var; `String path ] ->
+        path_modify pathes `Rem var path;
+        state, `Bool true
+      | [ `String "raw"; `String "add"; `String var; `String path ] ->
+        path_modify pathes ~raw:true `Add var path;
+        state, `Bool true
+      | [ `String "raw"; `String "remove"; `String var; `String path ] ->
+        path_modify pathes ~raw:true `Rem var path;
         state, `Bool true
       | [ `String "reset" ] ->
         List.iter
           (fun (_,(r,reset)) -> r := Lazy.force reset)
           pathes;
         state, `Bool true
-      | [ `String "reset" ; `String path ] ->
+      | [ `String "reset"; `String path ] ->
         let r,reset = List.assoc path pathes in
         r := Lazy.force reset;
         state, `Bool true
@@ -183,12 +193,12 @@ let command_path pathes = Command.({
   end;
 })
 
-let path_add, command_path = 
+let path_modify, command_path = 
   let pathes = [
     "build",  (Config.load_path,default_build_paths);
-    "source", (State.source_path, lazy [])
+    "source", (State.source_path, lazy ["."])
   ] in
-  path_add pathes, command_path pathes
+  path_modify pathes, command_path pathes
 
 type dot_merlin = {
   project: string option;
@@ -215,6 +225,8 @@ let parse_dot_merlin path : bool * dot_merlin =
         tell (`B (Misc.string_drop 2 line))
       else if Misc.has_prefix "S " line then
         tell (`S (Misc.string_drop 2 line))
+      else if Misc.has_prefix "SRC " line then
+        tell (`S (Misc.string_drop 4 line))
       else if Misc.has_prefix "PKG " line then
         tell (`PKG (Misc.rev_split_words (Misc.string_drop 4 line)))
       else if Misc.has_prefix "EXT " line then
@@ -260,8 +272,8 @@ and find_dot_merlin path =
 let exec_dot_merlin {path; project; entries} =
   let cwd = Filename.dirname path in
   List.iter (function
-    | `B path   -> path_add "build" ~cwd path
-    | `S path   -> path_add "source" ~cwd path
+    | `B path   -> path_modify `Add "build" ~cwd path
+    | `S path   -> path_modify `Add "source" ~cwd path
     | `PKG pkgs -> Command.load_packages pkgs
     | `EXT ext  -> Extensions_utils.set_extension ~enabled:true ext)
     entries;
@@ -346,6 +358,7 @@ module Options = Main_args.Make_top_options (struct
   let _drawlambda = set Clflags.dump_rawlambda
   let _dlambda = set Clflags.dump_lambda
   let _dinstr = set Clflags.dump_instr
+  let _protocol = Protocol.select_frontend
 
   let anonymous s = unexpected_argument s
 end);;

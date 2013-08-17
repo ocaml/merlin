@@ -35,7 +35,7 @@ type error =
   | Alias_type_mismatch of (type_expr * type_expr) list
   | Present_has_conjunction of string
   | Present_has_no_type of string
-  | Constructor_mismatch of type_expr * type_expr
+  | Constructor_mismatch of Env.t * type_expr * type_expr
   | Not_a_variant of type_expr
   | Variant_tags of string * string
   | Invalid_variable_name of string
@@ -416,7 +416,8 @@ let rec transl_type env policy styp =
           let ty = mkfield l f and ty' = mkfield l f' in
           if equal env false [ty] [ty'] then () else
           try unify env ty ty'
-          with Unify trace -> raise(Error(loc, Constructor_mismatch (ty,ty')))
+          with Unify trace ->
+            raise(Error(loc, Constructor_mismatch (env, ty,ty')))
         with Not_found ->
           Hashtbl.add hfields h (l,f)
       in
@@ -686,30 +687,29 @@ let report_error ppf = function
   | Unbound_row_variable lid ->
       fprintf ppf "Unbound row variable in #%a" longident lid
   | Type_mismatch trace ->
-      Printtyp.unification_error true trace
+      Printtyp.report_unification_error ppf trace
         (function ppf ->
            fprintf ppf "This type")
-        ppf
         (function ppf ->
            fprintf ppf "should be an instance of type")
   | Alias_type_mismatch trace ->
-      Printtyp.unification_error true trace
+      Printtyp.report_unification_error ppf trace
         (function ppf ->
            fprintf ppf "This alias is bound to type")
-        ppf
         (function ppf ->
            fprintf ppf "but is used as an instance of type")
   | Present_has_conjunction l ->
       fprintf ppf "The present constructor %s has a conjunctive type" l
   | Present_has_no_type l ->
       fprintf ppf "The present constructor %s has no type" l
-  | Constructor_mismatch (ty, ty') ->
-      Printtyp.reset_and_mark_loops_list [ty; ty'];
-      fprintf ppf "@[<hov>%s %a@ %s@ %a@]"
-        "This variant type contains a constructor"
-        Printtyp.type_expr ty
-        "which should be"
-        Printtyp.type_expr ty'
+  | Constructor_mismatch (env, ty, ty') ->
+      Printtyp.wrap_printing_env env (fun () ->
+        Printtyp.reset_and_mark_loops_list [ty; ty'];
+        fprintf ppf "@[<hov>%s %a@ %s@ %a@]"
+          "This variant type contains a constructor"
+          Printtyp.type_expr ty
+          "which should be"
+          Printtyp.type_expr ty')
   | Not_a_variant ty ->
       Printtyp.reset_and_mark_loops ty;
       fprintf ppf "@[The type %a@ is not a polymorphic variant type@]"

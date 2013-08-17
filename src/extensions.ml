@@ -95,6 +95,8 @@ let ext_ounit = {
     "module OUnit : sig
       val force_bool : bool -> unit
       val force_unit : unit -> unit
+      val force_unit_arrow_unit : (unit -> unit) -> unit
+      val force_indexed : (int -> unit -> unit) -> int list -> unit
     end"
   ];
   public_def = [];
@@ -102,8 +104,12 @@ let ext_ounit = {
     "TEST", OUNIT_TEST;
     "TEST_UNIT", OUNIT_TEST_UNIT;
     "TEST_MODULE", OUNIT_TEST_MODULE;
+    "BENCH", OUNIT_BENCH;
+    "BENCH_FUN", OUNIT_BENCH_FUN;
+    "BENCH_INDEXED", OUNIT_BENCH_INDEXED;
+    "BENCH_MODULE", OUNIT_BENCH_MODULE;
   ];
-  packages = ["pa_ounit.syntax"];
+  packages = ["oUnit";"pa_ounit.syntax"];
 }
 
 let ext_nonrec = {

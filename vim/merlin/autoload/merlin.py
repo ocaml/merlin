@@ -111,7 +111,7 @@ def try_print_error(e, msg=None):
         sys.stderr.write ("error: Cannot parse")
         return None
       elif re.search('Not_found',msg):
-        sys.stderr.write ("error: Not found")
+        print ("error: Not found")
         return None
       elif re.search('Cmi_format.Error', msg):
         sys.stderr.write ("error: The version of merlin you're using doesn't support this version of ocaml")
@@ -215,10 +215,12 @@ def command_locate(path, line, col):
     if not isinstance(pos_or_err, dict):
       print(pos_or_err)
     else:
+      curr_fpath = vim.current.buffer.name
       fpath = pos_or_err['file']
       l = pos_or_err['pos']['line']
       c = pos_or_err['pos']['col']
-      vim.command(":split %s" % fpath)
+      if curr_fpath != fpath:
+        vim.command(":split %s" % fpath)
       vim.current.window.cursor = (l, c)
   except MerlinExc as e:
     try_print_error(e)

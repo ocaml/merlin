@@ -37,32 +37,34 @@ module Utils = struct
     let rec aux = function
       | Lident str ->
         if String.lowercase str <> str then
-          Some (Lident str)
+          Some (Lident str, false)
         else
           None
       | Ldot (t, str) ->
         if String.lowercase str <> str then
           match aux t with
-          | None -> Some (Lident str)
-          | Some t -> Some (Ldot (t, str))
+          | None -> Some (Lident str, true)
+          | Some (t, is_label) -> Some (Ldot (t, str), is_label)
         else
           None
-      | t -> Some t (* don't know what to do here, probably best if I do nothing. *)
+      | t ->
+        Some (t, false) (* don't know what to do here, probably best if I do nothing. *)
     in
     function
-    | Lident s -> Lident s
+    | Lident s -> Lident s, false
     | Ldot (t, s) ->
       begin match aux t with
-      | None -> Lident s
-      | Some t -> Ldot (t, s)
+      | None -> Lident s, true
+      | Some (t, is_label) -> Ldot (t, s), is_label
       end
-    | otherwise -> otherwise
+    | otherwise -> otherwise, false
 
   let try_split_lident lid =
     let open Longident in
     match lid with
     | Lident _ -> None
     | Ldot (t, s) -> Some (t, Lident s)
+    | Lapply _ -> invalid_arg "Lapply"
 end
 
 include Utils
@@ -170,19 +172,25 @@ and browse_cmts ~root modules =
   match cmt_infos.cmt_annots with
   | Implementation impl -> browse_structure impl modules
   | Packed (_sign, files) ->
-    let mod_name :: modules = modules in
-    let file = List.find (fun f -> file_path_to_mod_name f = mod_name) files in
-    cwd := Filename.dirname root ;
-    let cmt_file = find_file file in
-    browse_cmts ~root:cmt_file modules
+    begin match modules with
+    | [] -> assert false
+    | mod_name :: modules ->
+      let file = List.find (fun f -> file_path_to_mod_name f = mod_name) files in
+      cwd := Filename.dirname root ;
+      let cmt_file = find_file file in
+      browse_cmts ~root:cmt_file modules
+    end
+  | _ -> None (* TODO? *)
 
-and from_path' (fname :: modules) =
-  let cmt_file =
-    let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
-    try Misc.find_in_path_uncap !sources_path fname
-    with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
-  in
-  browse_cmts ~root:cmt_file modules
+and from_path' = function
+  | [] -> invalid_arg "empty path"
+  | fname :: modules ->
+    let cmt_file =
+      let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
+      try Misc.find_in_path_uncap !sources_path fname
+      with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
+    in
+    browse_cmts ~root:cmt_file modules
 
 and from_path path = from_path' (path_to_list path)
 
@@ -191,38 +199,40 @@ let path_and_loc_from_cstr desc env =
   match desc.cstr_tag with
   | Cstr_exception (path, loc) -> path, loc
   | _ ->
-    let (Tconstr (path, _, _)) = desc.cstr_res.desc in
-    let typ_decl = Env.find_type path env in
-    path, typ_decl.Types.type_loc
+    match desc.cstr_res.desc with
+    | Tconstr (path, _, _) ->
+      let typ_decl = Env.find_type path env in
+      path, typ_decl.Types.type_loc
+    | _ -> assert false
 
 let path_and_loc_from_label desc env =
   let open Types in
-  let (Tconstr (path, _, _)) = desc.lbl_res.desc in
-  let typ_decl = Env.find_type path env in
-  path, typ_decl.Types.type_loc
+  match desc.lbl_res.desc with
+  | Tconstr (path, _, _) ->
+    let typ_decl = Env.find_type path env in
+    path, typ_decl.Types.type_loc
+  | _ -> assert false
 
 let from_string ~sources ~env path =
   sources_path := sources ;
-  let ident = keep_suffix (Longident.parse path) in
+  let ident, is_label = keep_suffix (Longident.parse path) in
   try
     let path, loc =
-      try
-        let path, val_desc = Env.lookup_value ident env in
-        path, val_desc.Types.val_loc
-      with Not_found ->
-      try
-        let path, typ_decl = Env.lookup_type ident env in
-        path, typ_decl.Types.type_loc
-      with Not_found ->
-      try
-        let _, cstr_desc = Env.lookup_constructor ident env in
-        path_and_loc_from_cstr cstr_desc env
-      with Not_found ->
-      try
+      if is_label then (
         let _, label_desc = Env.lookup_label ident env in
         path_and_loc_from_label label_desc env
-      with Not_found ->
-        raise Not_found
+      ) else (
+        try
+          let path, val_desc = Env.lookup_value ident env in
+          path, val_desc.Types.val_loc
+        with Not_found ->
+        try
+          let path, typ_decl = Env.lookup_type ident env in
+          path, typ_decl.Types.type_loc
+        with Not_found ->
+          let _, cstr_desc = Env.lookup_constructor ident env in
+          path_and_loc_from_cstr cstr_desc env
+      )
     in
     if not (is_ghost loc) then
       let fname = loc.Location.loc_start.Lexing.pos_fname in

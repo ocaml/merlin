@@ -41,9 +41,9 @@ let format ~valid ~where ?loc msg =
   loc, `Assoc content
 
 let strict_to_json = function
-  | Typecore.Error (loc, e) ->
+  | Typecore.Error (loc, env, e) ->
       let ppf, to_string = Misc.ppf_to_string () in
-      Typecore.report_error ppf e;
+      Typecore.report_error env ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typetexp.Error (loc, e) ->
       let ppf, to_string = Misc.ppf_to_string () in
@@ -53,13 +53,13 @@ let strict_to_json = function
       let ppf, to_string = Misc.ppf_to_string () in
       Typedecl.report_error ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Typemod.Error (loc, e) ->
+  | Typemod.Error (loc, env, e) ->
       let ppf, to_string = Misc.ppf_to_string () in
-      Typemod.report_error ppf e;
+      Typemod.report_error env ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Typeclass.Error (loc, e) ->
+  | Typeclass.Error (loc, env, e) ->
       let ppf, to_string = Misc.ppf_to_string () in
-      Typeclass.report_error ppf e;
+      Typeclass.report_error env ppf e;
       Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Env.Error e ->
       let ppf, to_string = Misc.ppf_to_string () in
@@ -83,7 +83,7 @@ let strict_to_json = function
         | Syntaxerr.Other loc -> loc
       in
       Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
-  | Lexer.Error (e,loc) ->
+  | Lexer.Error (e, loc) ->
       let ppf, to_string = Misc.ppf_to_string () in
       Lexer.report_error ppf e;
       Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
