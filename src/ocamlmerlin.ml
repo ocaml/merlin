@@ -265,7 +265,8 @@ let () =
 
 (** Mimic other Caml tools, entry point *)
 let print_version () =
-  Printf.printf "The Merlin toolkit for Ocaml version %s\n" Sys.ocaml_version;
+  Printf.printf "The Merlin toolkit version %s, for Ocaml %s\n"
+    My_config.version Sys.ocaml_version;
   exit 0
 
 let print_version_num () =
