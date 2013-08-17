@@ -275,6 +275,22 @@ let command_locate = {
   end
 }
 
+let command_drop = {
+  name = "drop";
+
+  handler =
+  begin fun _ state -> function
+  | [] ->
+    let outlines, chunks, types =
+      (History.cutoff state.outlines),
+      (History.cutoff state.chunks),
+      (History.cutoff state.types)
+    in
+    {state with tokens = []; outlines; chunks; types}, `Bool true
+  | _ -> invalid_arguments ()
+  end
+}
+
 let command_seek = {
   name = "seek";
 
@@ -635,7 +651,7 @@ let command_help = {
 }
 
 let _ = List.iter register [
-  command_tell; command_seek; command_reset; command_refresh;
+  command_tell; command_drop; command_seek; command_reset; command_refresh;
   command_cd; command_type; command_complete; command_boundary;
   command_locate;
   command_errors; command_dump;
