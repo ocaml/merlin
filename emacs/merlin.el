@@ -2,8 +2,9 @@
 
 ;; Licensed under the MIT license.
 
-;; Author: Simon Castellan <simon.castellan@iuwt.fr>
-
+;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
+;;         Frédéric Bour  <frederic.bour(_)lakaban.net>
+;;         Thomas Refis <thomas.refis(_)gmail.com>
 ;; Created: 18 April 2013
 ;; Version: 1.0
 ;; Package-Requires: ((json))
