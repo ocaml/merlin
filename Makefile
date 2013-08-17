@@ -33,7 +33,7 @@ check: $(TARGET)
 
 distclean: clean
 	@echo
-	rm -f Makefile.config $(CONFIG_FILES)
+	rm -f Makefile.config $(CONFIG_FILES) $(TARGET)
 
 install: $(TARGET)
 	install -d $(BIN_DIR)
