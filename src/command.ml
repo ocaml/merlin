@@ -93,13 +93,13 @@ let command_tell = {
               | Some o' when o.Outline.tokens = o'.Outline.tokens ->
                 default tokens'
               (* Parsing is not stable *)
-              | _ -> 
+              | _ ->
                 tokens', outlines'
         in
         let chunks = Chunk.sync outlines chunks in
         let types = Typer.sync chunks types in
         let pos = !bufpos in
-          (* If token list didn't change, move forward anyway 
+          (* If token list didn't change, move forward anyway
            * to prevent getting stuck *)
         let stuck = state.tokens = tokens in
         let tokens =
@@ -293,8 +293,10 @@ let command_seek = {
                 | i -> cmp i <= 0)
       outlines
     in
-    let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
-    let chunks, types = History.Sync.rewind fst chunks state.types in
+    let chunks           = History.Sync.right  fst outlines state.chunks in
+    let outlines, chunks = History.Sync.rewind fst outlines chunks       in
+    let types            = History.Sync.right  fst chunks   state.types  in
+    let chunks, types    = History.Sync.rewind fst chunks   types        in
     let pos =
       match Outline.location outlines with
         | l when l = Location.none -> State.initial.pos
@@ -309,8 +311,10 @@ let command_seek = {
     let outlines = state.outlines in
     let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
     let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
-    let outlines, chunks = History.Sync.rewind fst outlines state.chunks in
-    let chunks, types    = History.Sync.rewind fst chunks   state.types  in
+    let chunks           = History.Sync.right  fst outlines state.chunks in
+    let outlines, chunks = History.Sync.rewind fst outlines chunks       in
+    let types            = History.Sync.right  fst chunks   state.types  in
+    let chunks, types    = History.Sync.rewind fst chunks   types        in
     let pos =
       match Outline.location outlines with
       | l when l = Location.none -> State.initial.pos
@@ -413,7 +417,7 @@ let command_reset = {
   | [`String "name"; `String pos_fname] ->
     { State.initial with pos =
       { State.initial.pos with Lexing.pos_fname } },
-    Protocol.pos_to_json State.initial.pos 
+    Protocol.pos_to_json State.initial.pos
   | _ -> invalid_arguments ()
   end
 }
@@ -453,7 +457,7 @@ let command_errors = {
 
   handler =
   begin fun _ state -> function
-  | [] -> state, `List (List.map snd 
+  | [] -> state, `List (List.map snd
                           (Error_report.to_jsons (State.exns state)))
   | _ -> invalid_arguments ()
   end;
@@ -483,7 +487,7 @@ let command_dump = {
       in
       state, `List (List.map aux sg)
   | [`String "env" ; `String "at" ; jpos ] ->
-    let {Browse.env} = State.node_at state 
+    let {Browse.env} = State.node_at state
         (Protocol.pos_of_json jpos) in
     let sg = Browse_misc.signature_of_env env in
     let aux item =
@@ -533,7 +537,7 @@ let command_dump = {
       `List [`String (Outline_utils.kind_to_string item.Outline.kind);
              `List tokens]
     in
-    state, `List (List.rev_map aux outlines) 
+    state, `List (List.rev_map aux outlines)
 
 
   | [`String "exn"] ->
