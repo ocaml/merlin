@@ -137,9 +137,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-pending-errors nil
   "Pending errors.")
 (defvar merlin-lock-point 0
-  "Position of merlin cursor.")
-(defvar merlin-dirty-point nil
-  "Last position where contents of local buffer and merlin buffer agree.")
+  "Position up to which merlin knows about.")
 (defvar merlin-pending-errors-overlays nil
   "Overlays for the pending errors.")
 (defvar merlin-highlight-overlay nil "Merlin overlay used for highlights.")
@@ -420,7 +418,6 @@ CALLBACK-IF-EXN is non-nil, call the function with the error message otherwise p
   (interactive)
   (merlin-send-command "reset" (list "name" buffer-file-name))
   (setq merlin-lock-point (point-min))
-  (setq merlin-dirty-point nil)
   (merlin-delete-error-overlays)
   (setq merlin-pending-errors nil)
   (merlin-update-lock-zone-display)
@@ -497,7 +494,6 @@ It then parses the error returned by merlin
         (merlin-send-command "tell" '("end" nil)))
     (merlin-check-for-errors view-errors-p)
     (setq merlin-lock-point (merlin-get-position))
-    (setq merlin-dirty-point nil)
     (merlin-update-lock-zone-display)))
 
       
@@ -576,12 +572,6 @@ Moreover if `view-errors-p' is not nil, it will display them in the margin."
   "Retract merlin's view to POINT"
   (merlin-seek point))
 
-(defun merlin-dirty-retract-to (point)
-  "Retract merlin's view to last point shared between buffer and merlin before POINT"
-  (if merlin-dirty-point
-      (merlin-seek (min merlin-dirty-point point))
-      (merlin-seek point)))
-
 (defun merlin-update-lock-zone-display ()
   "Update the locked zone display, according to `merlin-display-lock-zone', ie.
  iterates through it and call each method."
@@ -627,7 +617,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (if (not (merlin-is-last-user-p))
       (merlin-rewind))
   (save-excursion
-    (setq merlin-lock-point (merlin-dirty-retract-to (point)))
+    (setq merlin-lock-point (merlin-retract-to (point)))
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (merlin-tell-till-end-of-phrase view-errors-p)))
   
@@ -645,10 +635,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   (if (and merlin-mode (< start merlin-lock-point))
       (progn
         (setq merlin-lock-point (merlin-retract-to start))
-        (merlin-update-lock-zone-display)))
-  (if merlin-dirty-point
-    (setq merlin-dirty-point (min merlin-dirty-point start))
-    (setq merlin-dirty-point start)))
+        (merlin-update-lock-zone-display))))
 
 ;; COMPLETION
 (defun merlin-extract-complete (prefix l)
