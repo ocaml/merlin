@@ -332,6 +332,7 @@ module Options = Main_args.Make_top_options (struct
     end;
     exit 0
 
+  let _real_paths = set Clflags.real_paths
   let _absname = set Location.absname
   let _I dir =
     let dir = Misc.expand_directory Config.standard_library dir in

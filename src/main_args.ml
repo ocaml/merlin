@@ -16,6 +16,10 @@ let mk_projectfind f =
   "-project-find", Arg.String f, "<path> Print name of merlin project near <path>, if any"
 ;;
 
+let mk_real_paths f =
+    "-real-paths", Arg.Unit f, " Display real paths in types rather than short ones"
+;;
+
 let mk_a f =
   "-a", Arg.Unit f, " Build a library"
 ;;
@@ -407,6 +411,7 @@ let mk__ f =
 
 module type Top_options = sig
   val _projectfind : string -> unit
+  val _real_paths : unit -> unit
   val _absname : unit -> unit
   val _I : string -> unit
   val _init : string -> unit
@@ -445,6 +450,7 @@ module Make_top_options (F : Top_options) =
 struct
   let list = [
     mk_projectfind F._projectfind;
+    mk_real_paths F._real_paths;
     mk_absname F._absname;
     mk_I F._I;
     mk_init F._init;
