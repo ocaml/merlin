@@ -434,8 +434,8 @@ the error message otherwise print a generic error message."
                   (cons callback-if-success (cons callback-if-exn command))
                   #'(lambda (closure answer)
                       (setq merlin-ready t)
-                      (if (>= (length answer) 4000)
-                          (message "merlin: Parsing long answer (%dk)" (/ (length answer) 10000)))
+                      (if (>= (length answer) 10000)
+                          (message "merlin: Parsing long answer (%dk)" (/ (length answer) 1000)))
                       (let ((a (ignore-errors (json-read-from-string answer))))
                         (if a
                             (progn
