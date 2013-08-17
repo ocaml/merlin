@@ -634,7 +634,7 @@ The parameter `view-errors-p' controls whether we should care for errors"
   "Called when an edit is make to retract the locked zone if it is needed."
   (if (and merlin-mode (< start merlin-lock-point))
       (progn
-        (setq merlin-lock-point (merlin-retract-to start))
+        (setq merlin-lock-point (merlin-retract-to (1- start)))
         (merlin-update-lock-zone-display))))
 
 ;; COMPLETION
