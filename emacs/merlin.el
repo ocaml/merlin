@@ -413,19 +413,19 @@ Kill the process if required."
 )
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
-  (with-current-buffer (merlin-get-process-buffer-name)
-      (while (not merlin-ready)
-        (accept-process-output (merlin-get-process) 0.1 nil nil))
-      merlin-result))
+  (while (not merlin-ready)
+    (accept-process-output (merlin-get-process) 0.1 nil nil))
+  merlin-result)
 (defun merlin-send-command-async (command args callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
 Give the result to callback-if-success.  If merlin reported an
 error and if CALLBACK-IF-EXN is non-nil, call the function with
 the error message otherwise print a generic error message."
-  (let ((string
+  (lexical-let* ((string
 	 (concat 
 	  (json-encode (if args (append (list command) args) (list command)))
 	  "\n"))
+        (buffer (current-buffer))
         (name (buffer-name)))
     (if merlin-debug (merlin-debug (format "Sending:\n%s\n--\n" string)))
     (with-current-buffer (merlin-get-process-buffer-name)
@@ -433,29 +433,30 @@ the error message otherwise print a generic error message."
       (tq-enqueue merlin-queue string "\n"
                   (cons callback-if-success (cons callback-if-exn command))
                   #'(lambda (closure answer)
-                      (setq merlin-ready t)
-                      (if (>= (length answer) 10000)
-                          (message "merlin: Parsing long answer (%dk)" (/ (length answer) 1000)))
-                      (let ((a (ignore-errors (json-read-from-string answer))))
-                        (if a
-                            (progn
-                              (if merlin-debug
-                                  (merlin-debug (format "Received:\n%s\n--\n" answer)))
-                              (if (string-equal (elt a 0) "return")
-                                  (funcall (car closure) (elt a 1))
-                                (progn
-                                  (if (functionp (cadr closure))
-                                      (funcall (cadr closure) (elt a 1))
-                                    (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
-                          (message "Invalid answer received from merlin.")))))
-      nil)))
+                      (with-current-buffer buffer
+                        (setq merlin-ready t)
+                        (if (>= (length answer) 10000)
+                            (message "merlin: Parsing long answer (%dk)" (/ (length answer) 1000)))
+                        (let ((a (ignore-errors (json-read-from-string answer))))
+                          (if a
+                              (progn
+                                (if merlin-debug
+                                    (merlin-debug (format "Received:\n%s\n--\n" answer)))
+                                (if (string-equal (elt a 0) "return")
+                                    (funcall (car closure) (elt a 1))
+                                  (progn
+                                    (if (functionp (cadr closure))
+                                        (funcall (cadr closure) (elt a 1))
+                                      (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
+                            (message "Invalid answer received from merlin.")))))
+      nil))))
 
 (defun merlin-send-command (command args &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
-  (with-current-buffer (merlin-get-process-buffer-name)
-    (setq merlin-result nil)
-    (setq merlin-ready nil))
-  (merlin-send-command-async command args #'(lambda (data) (setq merlin-ready t)
+  (setq merlin-result nil)
+  (setq merlin-ready nil)
+  (merlin-send-command-async command args #'(lambda (data)
+                                              (setq merlin-ready t)
                                               (setq merlin-result data)) callback-if-exn)
   (merlin-wait-for-answer))
 
