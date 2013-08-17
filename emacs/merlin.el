@@ -735,10 +735,10 @@ variable `merlin-cache')."
         (mapcar #'merlin-make-popup-item (merlin-completion-data ac-prefix))))
 
 (defun merlin-try-completion ()
-  "Try the merlin completion after having synchronized the point."
+  "Try completing after having synchronized the point."
   (interactive)
   (merlin-check-synchronize)
-  (ac-complete-merlin))
+  (auto-complete '(merlin-ac-source)))
 
 (defun merlin-prefix ()
   "Retrieve the prefix for completion with merlin."
