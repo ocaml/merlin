@@ -328,7 +328,8 @@ let init_path () =
   Env.reset_cache ()
 
 let main () =
-  Arg.parse Options.list unexpected_argument "TODO";
+  Arg.parse Options.list unexpected_argument
+    "Usage: ocamlmerlin [options]\noptions are:";
   init_path ();
   set_default_path ();
   State.reset_global_modules ();
