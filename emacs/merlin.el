@@ -206,6 +206,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defun merlin-debug (s)
   "Output S if the variable `merlin-debug' is non-nil on the process buffer associated to the current buffer."
   (with-current-buffer (merlin-get-process-buffer-name)
+    (end-of-buffer)
     (insert s)))
 
 (defun merlin-compute-prefix (ident)
@@ -427,7 +428,7 @@ the error message otherwise print a generic error message."
 	  "\n"))
         (buffer (current-buffer))
         (name (buffer-name)))
-    (if merlin-debug (merlin-debug (format "Sending:\n%s\n--\n" string)))
+    (if merlin-debug (merlin-debug (format ">%s" string)))
     (with-current-buffer (merlin-get-process-buffer-name)
       (setq merlin-process-last-user name)
       (tq-enqueue merlin-queue string "\n"
@@ -441,7 +442,7 @@ the error message otherwise print a generic error message."
                           (if a
                               (progn
                                 (if merlin-debug
-                                    (merlin-debug (format "Received:\n%s\n--\n" answer)))
+                                    (merlin-debug (format "<%s" answer)))
                                 (if (string-equal (elt a 0) "return")
                                     (funcall (car closure) (elt a 1))
                                   (progn
