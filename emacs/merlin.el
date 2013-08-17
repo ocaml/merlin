@@ -314,11 +314,12 @@ For now it is a constant function (every buffer shares the same instance)."
 (defun merlin-start-process (flags &optional users)
   "Start the merlin process for the current buffer.
 FLAGS are a list of strings denoting the parameters to be passed
-to merlin.  USERS can be used to set the users of this
-buffer.  Return the process created"
-  (let ((p (apply #'start-process (merlin-get-process-name)
-			 (merlin-get-process-buffer-name)
-			 merlin-command flags) )
+to merlin. USERS can be used to set the users of this
+buffer. Return the process created"
+  (get-buffer-create (merlin-get-process-buffer-name))
+  (let ((p (apply #'start-file-process (merlin-get-process-name)
+                         (merlin-get-process-buffer-name)
+                         merlin-command flags) )
         (name (buffer-name)))
     (set (make-local-variable 'merlin-local-process) p)
     (dolist (buffer users)
