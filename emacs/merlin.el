@@ -499,10 +499,15 @@ the error message otherwise print a generic error message."
   (merlin-make-point
    (merlin-send-command "seek" '("position"))))
 
-(defun merlin-seek (point)
-  "Seek merlin's point to POINT."
+(defun merlin-seek (point &optional mode)
+  "Seek merlin's point to POINT.
+MODE is a string that can be \"exact\", \"before\" or \"end\" (default is before)."
   (let ((data 
-	 (merlin-send-command "seek" (list "before" (merlin-unmake-point point)))))
+         (if (string-equal mode "end")
+             (merlin-send-command "seek" (list "end"))
+           (merlin-send-command "seek"
+                                (list (if mode mode "before")
+                                      (merlin-unmake-point point))))))
     (merlin-make-point data)))
     
 (defun merlin-tell-piece (mode start end)
