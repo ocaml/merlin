@@ -548,7 +548,12 @@ parses the error returned by merlin. If VIEW-ERRORS-P is non-nil, it reports the
     ;; End of buffer
     (if (not end-p)
         (merlin-send-command "tell" '("end" nil)))
-    (merlin-check-for-errors view-errors-p)
+    (if view-errors-p
+        (merlin-check-for-errors view-errors-p)
+      (progn
+        (merlin-seek (point))
+        (merlin-check-for-errors view-errors-p)
+        (merlin-seek (point) "end")))
     (setq merlin-lock-point (merlin-get-position))
     (merlin-update-lock-zone-display)))
 
@@ -602,24 +607,25 @@ parses the error returned by merlin. If VIEW-ERRORS-P is non-nil, it reports the
                                                  merlin-margin-error-string
                                                  compilation-error-face))
                       overlay))
-                  errors))
-  (message "(pending errors, use %s to jump)"
-           (substitute-command-keys "\\[merlin-next-error]")))
+                  errors)))
 
 (defun merlin-check-for-errors (view-errors-p)
   "Check for errors.
-Return t if there were not any or nil if there were.  Moreover if
-VIEW-ERRORS-P is non-nil, it will display them in the margin."
+Return t if there were not any or nil if there were.  Moreover, it displays
+the errors in the margin. If VIEW-ERRORS-P is non-nil, display a count of them."
   (let ((raw-errors (merlin-send-command "errors" nil)))
     (if (> (length raw-errors) 0)
 	(progn
-          (when view-errors-p
-            (let ((errors (delete-if (lambda (e) (not (assoc 'start e)))
-                                     (append raw-errors nil))))
-              (if (not merlin-report-warnings)
-                  (delete-if (lambda (e) (merlin-warning-p (cdr (assoc 'message e)))) errors))
-              (merlin-display-errors-in-margin errors)))
-	  nil)
+          (let ((errors (delete-if (lambda (e) (not (assoc 'start e)))
+                                   (append raw-errors nil))))
+            (if (not merlin-report-warnings)
+                (delete-if (lambda (e) (merlin-warning-p (cdr (assoc 'message e)))) errors))
+            (merlin-display-errors-in-margin errors)
+            (when view-errors-p
+              (message "(%d pending errors, use %s to jump)"
+                       (length errors)
+                       (substitute-command-keys "\\[merlin-next-error]")))
+            nil))
       (progn
 	(if view-errors-p (message "ok"))
 	t))))
