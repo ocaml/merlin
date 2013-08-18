@@ -29,11 +29,13 @@
 type io = Json.json Stream.t * (Json.json -> unit)
 type io_maker = input:in_channel -> output:out_channel -> io
 
+let section = Logger.(`protocol)
+
 exception Protocol_failure of string
 
-let json_log ~dest (input,output) =
-  let log_input json = Printf.fprintf dest "> %s\n%!" (Json.to_string json); json in
-  let log_output json = Printf.fprintf dest "< %s\n%!" (Json.to_string json); json in
+let json_log  (input,output) =
+  let log_input json = Logger.log section ~prefix:"<" (Json.to_string json); json in
+  let log_output json = Logger.log section ~prefix:">" (Json.to_string json); json in
   let input' =
     Stream.from
     begin fun _ ->
@@ -63,7 +65,7 @@ let make' = ref json_make
 let make ?log ~input ~output = 
   let io = !make' ~input ~output in
   match log with
-  | Some dest -> json_log ~dest io
+  | Some () -> json_log io
   | None -> io
 
 let select_frontend name =

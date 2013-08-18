@@ -12,6 +12,15 @@
 
 (* $Id: main_args.ml 12511 2012-05-30 13:29:48Z lefessan $ *)
 
+let mk_debug f =
+  "-debug", Arg.String f,
+         "<section>[,<log file path>] Activate logging for given sections.\n\
+\                                     Available sections are :\n\
+\                                       - protocol\n\
+\                                       - locate\n\
+\                                       - completion"
+;;
+
 let mk_projectfind f =
   "-project-find", Arg.String f, "<path> Print name of merlin project near <path>, if any"
 ;;
@@ -139,6 +148,7 @@ let mk__ f =
 ;;
 
 module type Top_options = sig
+  val _debug : string -> unit
   val _projectfind : string -> unit
   val _real_paths : unit -> unit
   val _absname : unit -> unit
@@ -147,10 +157,7 @@ module type Top_options = sig
   val _init : string -> unit
   val _labels : unit -> unit
   val _no_app_funct : unit -> unit
-  val _noassert : unit -> unit
   val _nolabels : unit -> unit
-  val _noprompt : unit -> unit
-  val _nopromptcont : unit -> unit
   val _nostdlib : unit -> unit
   val _principal : unit -> unit
   val _rectypes : unit -> unit
@@ -164,11 +171,6 @@ module type Top_options = sig
   val _warn_help : unit -> unit
   val _protocol : string -> unit
 
-  val _dparsetree : unit -> unit
-  val _drawlambda : unit -> unit
-  val _dlambda : unit -> unit
-  val _dinstr : unit -> unit
-
   val anonymous : string -> unit
 end;;
 
@@ -179,6 +181,7 @@ end;;
 module Make_top_options (F : Top_options) =
 struct
   let list = [
+    mk_debug F._debug;
     mk_projectfind F._projectfind;
     mk_real_paths F._real_paths;
     mk_absname F._absname;

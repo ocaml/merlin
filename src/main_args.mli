@@ -13,6 +13,7 @@
 (* $Id: main_args.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
 
 module type Top_options = sig
+  val _debug : string -> unit
   val _projectfind : string -> unit
   val _real_paths : unit -> unit
   val _absname : unit -> unit
@@ -21,10 +22,7 @@ module type Top_options = sig
   val _init : string -> unit
   val _labels : unit -> unit
   val _no_app_funct : unit -> unit
-  val _noassert : unit -> unit
   val _nolabels : unit -> unit
-  val _noprompt : unit -> unit
-  val _nopromptcont : unit -> unit
   val _nostdlib : unit -> unit
   val _principal : unit -> unit
   val _rectypes : unit -> unit
@@ -37,11 +35,6 @@ module type Top_options = sig
   val _warn_error : string -> unit
   val _warn_help : unit -> unit
   val _protocol : string -> unit
-
-  val _dparsetree : unit -> unit
-  val _drawlambda : unit -> unit
-  val _dlambda : unit -> unit
-  val _dinstr : unit -> unit
 
   val anonymous : string -> unit
 end;;

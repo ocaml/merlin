@@ -106,8 +106,14 @@ let refresh_state_on_signal state f =
   Misc.try_finally f (fun () -> ignore (signal previous))
 
 let main_loop () =
-  let log = try Some (open_out (Sys.getenv "MERLIN_LOG"))
-            with _ -> None
+  let log =
+    try
+      let dest = open_out (Sys.getenv "MERLIN_LOG") in
+      Logger.set_default_destination dest ;
+      Logger.monitor ~dest Logger.Section.(`protocol) ;
+      Some ()
+    with _ ->
+      None
   in
   let input, output as io = Protocol.make ~input:stdin ~output:stdout ?log in
   try
@@ -323,6 +329,21 @@ module Options = Main_args.Make_top_options (struct
   let set r () = r := true
   let clear r () = r := false
 
+  let _debug section =
+    match Misc.rev_string_split section ~on:',' with
+    | [ section ] ->
+      begin try Logger.(monitor (Section.of_string section))
+      with Invalid_argument _ -> () end
+    | [ log_path ; section ] ->
+      begin try
+        let section = Logger.Section.of_string section in
+        let oc = open_out log_path in
+        Logger.monitor ~dest:oc section
+      with Invalid_argument _ ->
+        ()
+      end
+    | _ -> assert false
+
   let _projectfind path =
     let dot_merlins = find_dot_merlin path in
     begin match project_name dot_merlins with
@@ -339,10 +360,7 @@ module Options = Main_args.Make_top_options (struct
   let _init s = Clflags.init_file := Some s
   let _labels = clear Clflags.classic
   let _no_app_funct = clear Clflags.applicative_functors
-  let _noassert = set Clflags.noassert
   let _nolabels = set Clflags.classic
-  let _noprompt = set Clflags.noprompt
-  let _nopromptcont = set Clflags.nopromptcont
   let _nostdlib = set Clflags.no_std_include
   let _principal = set Clflags.principal
   let _rectypes = set Clflags.recursive_types
@@ -354,10 +372,6 @@ module Options = Main_args.Make_top_options (struct
   let _w s = Warnings.parse_options false s
   let _warn_error s = Warnings.parse_options true s
   let _warn_help = Warnings.help_warnings
-  let _dparsetree = set Clflags.dump_parsetree
-  let _drawlambda = set Clflags.dump_rawlambda
-  let _dlambda = set Clflags.dump_lambda
-  let _dinstr = set Clflags.dump_instr
   let _protocol = Protocol.select_frontend
 
   let _ignore_sigint () =
