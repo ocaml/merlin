@@ -750,7 +750,6 @@ variable `merlin-cache')."
 (defun merlin-try-completion ()
   "Try completing after having synchronized the point."
   (interactive)
-  (merlin-check-synchronize)
   (auto-complete '(merlin-ac-source)))
 
 (defun merlin-prefix ()
@@ -811,7 +810,8 @@ variable `merlin-cache')."
   "Implement completion for merlin using `completion-at-point' API."
   (if (eq 'metadata action)
       (when merlin-completion-types
-        '(metadata (annotation-function . merlin-completion-annotate)))
+        '(metadata ((annotation-function . merlin-completion-annotate)
+                    (exit-function . merlin-completion-lookup))))
     (unless (and merlin-completion-annotation-table
                  (eq (car merlin-completion-cache-state) start)
                  (string-prefix-p (cdr merlin-completion-cache-state)
@@ -820,10 +820,11 @@ variable `merlin-cache')."
                                (merlin-compute-prefix (cdr merlin-completion-cache-state))))
       (save-excursion
         (goto-char start)
-        (setq merlin--completion-annotation-table 
+        (setq merlin-completion-annotation-table
               (mapcar #'(lambda (a) (cons (car a) (concat ": " (cadr a)))) (merlin-completion-data string))))
-      (setq merlin--completion-cache-state (cons start string)))
-    (complete-with-action action merlin--completion-annotation-table string pred)))
+      (setq merlin-completion-cache-state (cons start string))
+      (setq merlin-lock-point (merlin-retract-to (point))))
+    (complete-with-action action merlin-completion-annotation-table string pred)))
 
 
 ;; Switch to ML file
