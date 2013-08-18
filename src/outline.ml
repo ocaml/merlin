@@ -47,12 +47,12 @@ let parse_with history ~parser ~lexer ~bufpos buf =
   with
   | Outline_utils.Chunk (c,p) ->
     begin
-      let history = !history' in
-      let history = match History.backward history with
+      let rec aux history = match History.backward history with
         | Some ((t,_,p'), history) when Misc.compare_pos p p' < 0 ->
-          history
+          aux history
         | _ -> history
       in
+      let history = aux !history' in
       history, c, chunk_content history
     end
   | Sys.Break ->
