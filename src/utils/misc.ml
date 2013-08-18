@@ -224,20 +224,32 @@ let search_substring pat str start =
     else search (i+1) 0
   in search start 0
 
-let rev_split_words s =
+let rev_split_string cond s =
   let rec split1 res i =
     if i >= String.length s then res else begin
-      match s.[i] with
-        ' ' | '\t' | '\r' | '\n' -> split1 res (i+1)
-      | _ -> split2 res i (i+1)
+      if cond s.[i] then
+        split1 res (i+1)
+      else
+        split2 res i (i+1)
     end
   and split2 res i j =
     if j >= String.length s then String.sub s i (j-i) :: res else begin
-      match s.[j] with
-        ' ' | '\t' | '\r' | '\n' -> split1 (String.sub s i (j-i) :: res) (j+1)
-      | _ -> split2 res i (j+1)
+      if cond s.[i] then
+        split1 (String.sub s i (j-i) :: res) (j+1)
+      else
+        split2 res i (j+1)
     end
   in split1 [] 0
+
+let rev_split_words s =
+  let helper = function
+    | ' ' | '\t' | '\r' | '\n' -> true
+    | _ -> false
+  in
+  rev_split_string helper s
+
+let rev_string_split ~on s =
+  rev_split_string ((=) on) s
 
 let get_ref r =
   let v = !r in
