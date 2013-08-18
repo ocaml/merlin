@@ -62,11 +62,9 @@ let register_protocol ~name ~desc inst =
   makers := (name, (desc,inst)) :: !makers
 
 let make' = ref json_make
-let make ?log ~input ~output = 
+let make ~input ~output = 
   let io = !make' ~input ~output in
-  match log with
-  | Some () -> json_log io
-  | None -> io
+  if Logger.is_monitored section then json_log io else io
 
 let select_frontend name =
   try make' := snd (List.assoc name !makers)

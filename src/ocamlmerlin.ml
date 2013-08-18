@@ -106,16 +106,7 @@ let refresh_state_on_signal state f =
   Misc.try_finally f (fun () -> ignore (signal previous))
 
 let main_loop () =
-  let log =
-    try
-      let dest = open_out (Sys.getenv "MERLIN_LOG") in
-      Logger.set_default_destination dest ;
-      Logger.monitor ~dest Logger.Section.(`protocol) ;
-      Some ()
-    with _ ->
-      None
-  in
-  let input, output as io = Protocol.make ~input:stdin ~output:stdout ?log in
+  let input, output as io = Protocol.make ~input:stdin ~output:stdout in
   try
     let rec loop state =
       let state, answer =
@@ -398,6 +389,13 @@ let init_path () =
   Env.reset_cache ()
 
 let main () =
+  begin try
+    let dest = open_out (Sys.getenv "MERLIN_LOG") in
+    Logger.set_default_destination dest ;
+    Logger.monitor ~dest Logger.Section.(`protocol)
+  with _ ->
+    ()
+  end ;
   Arg.parse Options.list unexpected_argument
     "Usage: ocamlmerlin [options]\noptions are:";
   init_path ();

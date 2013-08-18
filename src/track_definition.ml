@@ -65,6 +65,9 @@ module Utils = struct
     | Lident _ -> None
     | Ldot (t, s) -> Some (t, Lident s)
     | Lapply _ -> invalid_arg "Lapply"
+
+  let debug_log = Logger.(log (Section.(`locate)))
+  let error_log = Logger.(error (Section.(`locate)))
 end
 
 include Utils
@@ -188,7 +191,12 @@ and from_path' = function
     let cmt_file =
       let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
       try Misc.find_in_path_uncap !sources_path fname
-      with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
+      with Not_found ->
+      try Misc.find_in_path_uncap !Config.load_path fname
+      with Not_found ->
+        debug_log (Printf.sprintf "no '%s' present in source or build path"
+          fname) ;
+        raise Not_found
     in
     browse_cmts ~root:cmt_file modules
 
@@ -214,6 +222,7 @@ let path_and_loc_from_label desc env =
   | _ -> assert false
 
 let from_string ~sources ~env path =
+  debug_log (Printf.sprintf "looking for the source of '%s'" path) ;
   sources_path := sources ;
   let ident, is_label = keep_suffix (Longident.parse path) in
   try
@@ -230,15 +239,21 @@ let from_string ~sources ~env path =
           let path, typ_decl = Env.lookup_type ident env in
           path, typ_decl.Types.type_loc
         with Not_found ->
+        try
           let _, cstr_desc = Env.lookup_constructor ident env in
           path_and_loc_from_cstr cstr_desc env
+        with Not_found ->
+          debug_log "   ... not in the environment" ;
+          raise Not_found
       )
     in
     if not (is_ghost loc) then
       let fname = loc.Location.loc_start.Lexing.pos_fname in
       let full_path =
         try find_file ~ext:".ml" fname
-        with Not_found -> fname
+        with Not_found ->
+          error_log "   found non ghost loc but no associated ml file??" ;
+          fname
       in
       Some (full_path, loc)
     else

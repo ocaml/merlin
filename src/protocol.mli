@@ -34,7 +34,7 @@ exception Protocol_failure of string
 val register_protocol : name:string -> desc:string -> io_maker -> unit
 val select_frontend : string -> unit
 
-val make : ?log:unit -> input:in_channel -> output:out_channel -> io
+val make : input:in_channel -> output:out_channel -> io
 
 val return : Json.json -> Json.json
 val fail   : exn -> Json.json
