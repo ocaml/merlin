@@ -368,6 +368,10 @@ let sum_join = function
   | Inl a | Inr (Inl a) -> Inl a
   | Inr c -> c
 
+let try_sum f =
+  try Inr (f ())
+  with exn -> Inl exn
+
 let catch_join (exns, r) = match r with
   | Inl e -> (exns, Inl e)
   | Inr (exns', r') -> (exns @ exns'), r'

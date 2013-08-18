@@ -219,32 +219,29 @@ and rec_status =
   | Trec_next                           (* not first in a recursive group *)
 
 
-let errors : (exn list ref * (int,unit) Hashtbl.t) option ref = ref None
+let errors : (exn list ref * (int,unit) Hashtbl.t) option fluid = fluid None
+let relax_typer = fluid false
+
 let raise_error exn =
-  match !errors with
+  match ~!errors with
   | Some (l,h) -> l := exn :: !l
   | None -> raise exn
 
 let catch_errors f =
   let caught = ref [] in
-  let types  = Hashtbl.create 3 in
-  let previous = !errors in
-  errors := Some (caught,types);
   let result =
-    try Misc.Inr (f())
-    with e -> Misc.Inl e
+    try_sum (fun () -> 
+        fluid'let errors (Some (caught,Hashtbl.create 3)) f)
   in
-  errors := previous;
   !caught, result
      
 let erroneous_type_register te =
-  match !errors with
+  match ~!errors with
   | Some (l,h) -> Hashtbl.replace h te.id ()
   | None -> ()
 
 let erroneous_type_check te = 
-  match !errors with
+  match ~!errors with
   | Some (l,h) when Hashtbl.mem h te.id -> true
   | _ -> false
 
-let relax_typer = fluid false

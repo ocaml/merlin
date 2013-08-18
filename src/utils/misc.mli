@@ -166,6 +166,7 @@ val list_drop_while : ('a -> bool) -> 'a list -> 'a list
 type ('a,'b) sum = Inl of 'a | Inr of 'b
 val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c
 val sum_join : ('a,('a,'c) sum) sum -> ('a,'c) sum
+val try_sum : (unit -> 'a) -> (exn,'a) sum
 
         (* Join for catch pattern (writer and error monad) *)
 val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b) sum

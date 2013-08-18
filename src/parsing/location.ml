@@ -12,6 +12,7 @@
 
 (* $Id: location.ml 12511 2012-05-30 13:29:48Z lefessan $ *)
 
+open Misc
 open Lexing
 
 let absname = ref false
@@ -272,15 +273,15 @@ let print_warning loc ppf w =
 
 exception Warning of t * string
 
-let warnings : exn list ref option ref = ref None
+let warnings : exn list ref option fluid = fluid None
 
 let raise_warning exn =
-  match !warnings with
+  match ~!warnings with
   | None -> raise exn
   | Some l -> l := exn :: !l
 
 let prerr_warning loc w =
-  match !warnings with
+  match ~!warnings with
   | None -> print_warning loc err_formatter w
   | Some l ->
     let ppf, to_string = Misc.ppf_to_string () in
@@ -291,13 +292,9 @@ let prerr_warning loc w =
 
 let catch_warnings f =
   let caught = ref [] in
-  let previous = !warnings in
-  warnings := Some caught;
-  let result =
-    try Misc.Inr (f())
-    with e -> Misc.Inl e
+  let result = 
+    try_sum (fun () -> fluid'let warnings (Some caught) f)
   in
-  warnings := previous;
   !caught, result
 ;;
 
