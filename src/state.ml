@@ -237,7 +237,12 @@ let node_complete node prefix =
     let ppf, to_string = Misc.ppf_to_string () in
     let kind =
       match ty with
-      | `Value v -> Printtyp.value_description ident ppf v; "Value"
+      | `Value v ->
+        let v = if exact
+          then Types.({v with val_type = verbose_type env v.val_type})
+          else v
+        in
+        Printtyp.value_description ident ppf v; "Value"
       | `Cons c  ->
           Format.pp_print_string ppf name;
           Format.pp_print_string ppf " : ";
@@ -253,16 +258,18 @@ let node_complete node prefix =
           "Label"
       | `Mod m   ->
           (if exact then
-             match mod_smallerthan 2000 m with
+             match mod_smallerthan (2000 * (verbosity `Query +1)) m with
                | None -> ()
                | Some _ -> Printtyp.modtype ppf m
           ); "Module"
       | `ModType m ->
-          (if exact then
-             Printtyp.modtype_declaration ident ppf m
-          ); "Signature"
+        if exact then Printtyp.modtype_declaration 
+             ident ppf (verbose_sig env m);
+        "Signature"
       | `Typ t ->
-          Printtyp.type_declaration ident ppf t; "Type"
+        Printtyp.type_declaration ident ppf 
+          (if exact then verbose_type_decl env t else t);
+        "Type"
     in
     let desc, info = match kind with ("Module"|"Signature") -> "", to_string () | _ -> to_string (), "" in
     `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
