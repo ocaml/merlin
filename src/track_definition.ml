@@ -18,6 +18,12 @@ module Utils = struct
 
   let find_file ?(ext=".cmt") file =
     let fname = Misc.chop_extension_if_any (Filename.basename file) ^ ext in
+    (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
+     * will most likely not be the one you want to edit.
+     * However, just using [find_in_path_uncap] won't work either when you have
+     * several ml files with the same name.
+     * Example: scheduler.ml and raw_scheduler.ml are present in both async_core
+     * and async_unix. *)
     let abs_cmt_file = Printf.sprintf "%s/%s" !cwd fname in
     if Sys.file_exists abs_cmt_file then
       abs_cmt_file
@@ -195,7 +201,7 @@ and from_path' = function
       try Misc.find_in_path_uncap !Config.load_path fname
       with Not_found ->
         debug_log (Printf.sprintf "no '%s' present in source or build path"
-          fname) ;
+          (String.uncapitalize fname)) ;
         raise Not_found
     in
     browse_cmts ~root:cmt_file modules
