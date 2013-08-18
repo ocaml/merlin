@@ -1107,10 +1107,12 @@ non-nil, don't move to the opened buffer."
 
 ;; Semantic movement
 (defun merlin-goto-phrase (command indice)
-  "Go to the phrase indicated by COMMAND to the end INDICE."
+  "Go to the phrase indicated by COMMAND to the end INDICE.
+Returns the position."
   (let ((r (merlin-send-command "boundary" (list command "at" (merlin-unmake-point (point))))))
-    (if r
-        (goto-char (merlin-make-point (elt r indice))))))
+    (when r
+      (goto-char (merlin-make-point (elt r indice)))
+      (merlin-make-point (elt r indice)))))
 
 (defun merlin-next-phrase ()
   "Go to the beginning of the next phrase."
@@ -1120,13 +1122,16 @@ non-nil, don't move to the opened buffer."
     (merlin-goto-phrase "current" 1)
     (forward-line 1)
     (merlin-check-synchronize))
-  (merlin-goto-phrase "next" 0))
+  (if (not (merlin-goto-phrase "next" 0)) ;; no next phrase => end-of-buffer
+      (goto-char (point-max))))
 
 (defun merlin-prev-phrase ()
   "Go to the beginning of the previous phrase."
   (interactive)
-  (merlin-check-synchronize)
-  (merlin-goto-phrase "prev" 0))
+  (let ((point (point)))
+    (merlin-check-synchronize)
+    (if (equal point (merlin-goto-phrase "current" 0))
+        (merlin-goto-phrase "prev" 0))))
 
 (defun merlin-to-point ()
   "Update the merlin to the current point, reporting error."
