@@ -529,11 +529,12 @@ MODE is a string that can be \"exact\", \"before\" or \"end\" (default is before
 	 (forward-line 10))
        (merlin-tell-piece mode temp end))))
 
-(defun merlin-tell-till-end-of-phrase (view-errors-p)
+(defun merlin-tell-till-end-of-phrase (orig-point view-errors-p)
   "Tell merlin the buffer until the end of the current phrase is met.
 It proceeds by telling (with the end mode) each line until it
 returns true or until we are at the end of the buffer.  It then
-parses the error returned by merlin. If VIEW-ERRORS-P is non-nil, it reports the errors to the user."
+parses the error returned by merlin. If VIEW-ERRORS-P is non-nil, it reports the errors to the user.
+ORIG-POINT is where the user was before starting telling merlin."
   (let ((temp-point (point))
         (end-p nil))
     (forward-line 10)
@@ -552,9 +553,9 @@ parses the error returned by merlin. If VIEW-ERRORS-P is non-nil, it reports the
     (if view-errors-p
         (merlin-check-for-errors view-errors-p)
       (progn
-        (merlin-seek (point))
+        (merlin-seek orig-point))
         (merlin-check-for-errors view-errors-p)
-        (merlin-seek (point) "end")))
+        (merlin-seek (point) "end"))
     (setq merlin-lock-point (merlin-get-position))
     (merlin-update-lock-zone-display)))
 
@@ -676,20 +677,19 @@ merlin and the argument
 - It continues until it finds the end of a phrase.
 
 The parameter VIEW-ERRORS-P controls whether we should care for errors"
-  (merlin-delete-error-overlays)
-  (setq merlin-pending-errors nil)
-  (if (not (merlin-is-last-user-p))
-      (merlin-rewind))
-  (save-excursion
-    (setq merlin-lock-point (merlin-retract-to (point)))
-    (merlin-tell-piece-split "struct" merlin-lock-point (point))
-    (merlin-tell-till-end-of-phrase view-errors-p)))
+  (let ((orig-point (point)))
+    (merlin-delete-error-overlays)
+    (setq merlin-pending-errors nil)
+    (if (not (merlin-is-last-user-p))
+        (merlin-rewind))
+    (save-excursion
+      (merlin-tell-piece-split "struct" merlin-lock-point (point))
+      (merlin-tell-till-end-of-phrase orig-point view-errors-p))))
   
 (defun merlin-check-synchronize ()
   "If merlin point is before the end of line send everything up to the end of line."
   (interactive)
   (save-excursion
-    (forward-line 1)
     (let ((p merlin-lock-point))
       (if (> (point-at-eol) merlin-lock-point)
           (merlin-update-point nil)))))
