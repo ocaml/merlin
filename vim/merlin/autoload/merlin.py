@@ -46,14 +46,13 @@ def restart():
     except OSError:
       pass
   try:
-    command = [vim.eval("merlin#FindOcamlMerlin()")]
+    command = [vim.eval("merlin#FindOcamlMerlin()"),"-ignore-sigint"]
     command.extend(flags)
     mainpipe = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
-            stderr=None,
-            preexec_fn = (lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
+            stderr=None
         )
   except OSError as e:
     print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\

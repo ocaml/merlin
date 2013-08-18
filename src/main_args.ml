@@ -16,6 +16,10 @@ let mk_a f =
   "-a", Arg.Unit f, " Build a library"
 ;;
 
+let mk_ignore_sigint f =
+  "-ignore-sigint", Arg.Unit f, "  Ignore SIGINT, useful when invoked from editor"
+;;
+
 let mk_absname f =
   "-absname", Arg.Unit f, "  Show absolute filenames in error message"
 ;;
@@ -461,6 +465,7 @@ end;;
 
 module type Bytetop_options = sig
   val _absname : unit -> unit
+  val _ignore_sigint : unit -> unit
   val _I : string -> unit
   val _init : string -> unit
   val _labels : unit -> unit
@@ -682,6 +687,7 @@ module Make_bytetop_options (F : Bytetop_options) =
 struct
   let list = [
     mk_absname F._absname;
+    mk_ignore_sigint F._ignore_sigint;
     mk_I F._I;
     mk_init F._init;
     mk_labels F._labels;

@@ -306,6 +306,10 @@ module Options = Main_args.Make_bytetop_options (struct
   let _dinstr = set Clflags.dump_instr
   let _protocol = Protocol.select_frontend
 
+  let _ignore_sigint () =
+    try ignore (Sys.(signal sigint Signal_ignore))
+    with Invalid_argument _ -> ()
+
   let anonymous s = unexpected_argument s
 end);;
 

@@ -74,6 +74,7 @@ module type Bytecomp_options =
 
 module type Bytetop_options = sig
   val _absname : unit -> unit
+  val _ignore_sigint : unit -> unit
   val _I : string -> unit
   val _init : string -> unit
   val _labels : unit -> unit
