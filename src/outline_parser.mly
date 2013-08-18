@@ -220,13 +220,14 @@ The precedences must be listed from low to high.
 (* Entry points *)
 
 implementation:
-  | top_structure EOF               { () }
+  | top_structure EOF                        { () }
   | top_expr top_structure EOF               { () }
   | top_semisemi top_structure EOF           { () }
   | top_end top_structure EOF                { () }
 ;
 top_structure:
-    (* empty  *)                         { () }
+    (* empty  *)                  { () }
+  | VAL val_ident COLON core_type { emit_top Definition $endpos }
   | structure_item top_structure  { () }
 ;
 top_expr:

@@ -603,6 +603,13 @@ top_structure_item:
                       (symbol_rloc $startpos $endpos)] }
   | option(SEMISEMI) structure_item option(SEMISEMI) EOF
       { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $2 }
+  | option(SEMISEMI) VAL val_ident COLON core_type EOF 
+    { syntax_error $startpos;
+      let fake_pat = mkpatvar $startpos($3) $endpos($3) $3 in
+      let fake_expr = mkexp $startpos($4) $endpos($5) 
+                          (Pexp_constraint (Fake.any_val', Some $5, None))
+      in
+      [mkloc (mkstr $startpos $endpos (Pstr_value (Nonrecursive, [fake_pat,fake_expr]))) (symbol_rloc $startpos $endpos)] }
   | SEMISEMI EOF { [] }
 ;
 
