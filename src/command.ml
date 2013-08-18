@@ -34,13 +34,29 @@ type state = State.t = {
   chunks   : Chunk.t;
   types    : Typer.t;
 }
+module VPrinttyp = State.Verbose_print
 
 type handler = Protocol.io -> state -> Json.json list -> state * Json.json
 type t = { name : string ; handler : handler }
 let invalid_arguments () = failwith "invalid arguments"
 
 let commands : (string,t) Hashtbl.t = Hashtbl.create 11
-let register cmd = Hashtbl.add commands cmd.name cmd
+let track_verbosity handler : handler =
+  let last = ref (History.Sync.origin, []) in
+  fun io st args ->
+    let action = 
+      let (sync,args') = !last in
+      let ol = st.outlines in
+      let ol = match History.backward ol with None -> ol | Some (_, h) -> h in
+      if args = args' && History.Sync.(same sync (at ol))
+      then `Incr
+      else (last := (History.Sync.at ol, args); `Clear)
+    in
+    ignore (State.verbosity action);
+    handler io st args
+
+let register cmd = Hashtbl.add commands cmd.name 
+    {cmd with handler = track_verbosity cmd.handler}
 
 let command_tell = {
   name = "tell";
@@ -114,7 +130,7 @@ let command_type = {
       let open Typedtree in
       begin match str.str_items with
         | [ { str_desc = Tstr_eval exp }] ->
-            Printtyp.type_scheme ppf exp.exp_type;
+            VPrinttyp.type_scheme ppf exp.exp_type;
         | _ -> failwith "unhandled expression"
       end
     in
@@ -129,7 +145,8 @@ let command_type = {
            Printtyp.modtype ppf m
           with Not_found ->
           try let p, m = Env.lookup_modtype longident.Asttypes.txt env in
-           Printtyp.modtype_declaration (Ident.create (Path.last p)) ppf m
+            VPrinttyp.modtype_declaration (Ident.create (Path.last p)) ppf 
+              (State.verbose_sig env m)
           with Not_found ->
             ()
         end
@@ -138,7 +155,7 @@ let command_type = {
           try print_expr e
           with exn ->
           try let p, t = Env.lookup_type longident.Asttypes.txt env in
-           Printtyp.type_declaration (Ident.create (Path.last p)) ppf t
+           VPrinttyp.type_declaration (Ident.create (Path.last p)) ppf t
           with _ ->
             raise exn
         end
@@ -173,19 +190,19 @@ let command_type = {
     begin fun () -> match node.Browse.context with
       | Browse.Other -> raise Not_found
       | Browse.Expr t | Browse.Pattern t | Browse.Type t ->
-        Printtyp.type_scheme ppf t
+        VPrinttyp.type_scheme ppf t
       | Browse.TypeDecl (ident, t) ->
-        Printtyp.type_declaration ident ppf t
+        VPrinttyp.type_declaration ident ppf t
       | Browse.Module m -> Printtyp.modtype ppf m
       | Browse.Modtype (ident, m) ->
-        Printtyp.modtype_declaration ident ppf m
+        VPrinttyp.modtype_declaration ident ppf m
       | Browse.Class (ident, cd) ->
         Printtyp.class_declaration ident ppf cd
       | Browse.ClassType (ident, ctd) ->
         Printtyp.cltype_declaration ident ppf ctd
       | Browse.MethodCall (obj, m) ->
         match State.find_method node.Browse.env m obj with
-        | Some t -> Printtyp.type_scheme ppf t
+        | Some t -> VPrinttyp.type_scheme ppf t
         | None -> Format.pp_print_string ppf "Unknown method"
     end;
     state, Protocol.with_location node.Browse.loc
@@ -198,12 +215,12 @@ let command_type = {
           context = (Browse.Expr t | Browse.Pattern t | Browse.Type t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
-          (fun () -> Printtyp.type_scheme ppf t);
+          (fun () -> VPrinttyp.type_scheme ppf t);
         Some (Protocol.with_location loc ["type", `String (to_string ())])
       | { Browse. loc; env; context = Browse.TypeDecl (id,t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
-          (fun () -> Printtyp.type_declaration id ppf t);
+          (fun () -> VPrinttyp.type_declaration id ppf t);
         Some (Protocol.with_location loc ["type", `String (to_string ())])
       | _ -> None
     in
