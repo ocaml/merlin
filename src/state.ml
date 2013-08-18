@@ -258,7 +258,7 @@ let node_complete node prefix =
           "Label"
       | `Mod m   ->
           (if exact then
-             match mod_smallerthan (2000 * (verbosity `Query +1)) m with
+             match mod_smallerthan (2000 * verbosity `Query) m with
                | None -> ()
                | Some _ -> Printtyp.modtype ppf m
           ); "Module"
