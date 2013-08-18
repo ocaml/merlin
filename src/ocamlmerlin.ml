@@ -91,21 +91,19 @@ let default_build_paths =
 let set_default_path () =
   Config.load_path := Lazy.force default_build_paths
 
+let signal behavior = 
+  try Sys.signal Sys.sigusr1 behavior
+  with Invalid_argument "Sys.signal: unavailable signal" ->
+    Sys.Signal_default
+
 let refresh_state_on_signal state f =
   let previous =
-    Sys.(signal sigusr1 (Signal_handle (fun _ ->
-        try
-          state := fst (State.quick_refresh_modules !state)
+    signal (Sys.Signal_handle (fun _ ->
+        try state := fst (State.quick_refresh_modules !state)
         with _ -> ()
-      )))
+      ))
   in
-  try
-    let r = f () in
-    ignore (Sys.(signal sigusr1 previous));
-    r
-  with exn ->
-    ignore (Sys.(signal sigusr1 previous));
-    raise exn
+  Misc.try_finally f (fun () -> ignore (signal previous))
 
 let main_loop () =
   let log = try Some (open_out (Sys.getenv "MERLIN_LOG"))
@@ -334,7 +332,7 @@ let main () =
   set_default_path ();
   State.reset_global_modules ();
   Findlib.init ();
-  ignore Sys.(signal sigusr1 Signal_ignore);
+  ignore (signal Sys.Signal_ignore);
   main_loop ()
 
 let _ = main ()
