@@ -206,7 +206,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defun merlin-debug (s)
   "Output S if the variable `merlin-debug' is non-nil on the process buffer associated to the current buffer."
   (with-current-buffer (merlin-get-process-buffer-name)
-    (end-of-buffer)
+    (goto-char (point-max))
     (insert s)))
 
 (defun merlin-compute-prefix (ident)
