@@ -689,10 +689,8 @@ The parameter VIEW-ERRORS-P controls whether we should care for errors"
 (defun merlin-check-synchronize ()
   "If merlin point is before the end of line send everything up to the end of line."
   (interactive)
-  (save-excursion
-    (let ((p merlin-lock-point))
-      (if (> (point-at-eol) merlin-lock-point)
-          (merlin-update-point nil)))))
+  (when (> (point-at-eol) merlin-lock-point)
+    (merlin-update-point nil)))
 
 (defun merlin-edit (start end length)
   "Retract the locked zone after an edit.
