@@ -227,8 +227,8 @@ implementation:
 ;
 top_structure:
     (* empty  *)                  { () }
-  | VAL val_ident COLON core_type { emit_top Definition $endpos }
   | structure_item top_structure  { () }
+  | structure_item error          { () }
 ;
 top_expr:
   | seq_expr                             { emit_top Definition $endpos }
@@ -304,8 +304,9 @@ comma_ext_list:
   | { () }
 
 structure_item:
-    LET rec_flag let_bindings
+  | LET rec_flag let_bindings
       { emit_top Definition $endpos }
+  | VAL val_ident COLON core_type { emit_top Definition $endpos }
   | LET_LWT rec_flag let_bindings
       { emit_top Definition $endpos }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
