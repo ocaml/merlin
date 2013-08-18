@@ -20,6 +20,10 @@ let mk_real_paths f =
     "-real-paths", Arg.Unit f, " Display real paths in types rather than short ones"
 ;;
 
+let mk_ignore_sigint f =
+  "-ignore-sigint", Arg.Unit f, "  Ignore SIGINT, useful when invoked from editor"
+;;
+
 let mk_absname f =
   "-absname", Arg.Unit f, "  Show absolute filenames in error message"
 ;;
@@ -138,6 +142,7 @@ module type Top_options = sig
   val _projectfind : string -> unit
   val _real_paths : unit -> unit
   val _absname : unit -> unit
+  val _ignore_sigint : unit -> unit
   val _I : string -> unit
   val _init : string -> unit
   val _labels : unit -> unit
@@ -177,6 +182,7 @@ struct
     mk_projectfind F._projectfind;
     mk_real_paths F._real_paths;
     mk_absname F._absname;
+    mk_ignore_sigint F._ignore_sigint;
     mk_I F._I;
     mk_init F._init;
     mk_labels F._labels;

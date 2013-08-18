@@ -167,6 +167,12 @@ struct
   let at h =
     prev h >>= fun a -> Some (offset h, a)
 
+  let same s1 s2 =
+    match s1, s2 with
+    | Some (p1,a1), Some (p2,a2) when p1 = p2 && a1 == a2 -> true
+    | None, None -> true
+    | _ -> false
+
   let item = function
     | None -> None
     | Some (_,a) -> Some a

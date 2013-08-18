@@ -153,6 +153,10 @@ let token_to_string =
     | OUNIT_TEST -> "TEST"
     | OUNIT_TEST_UNIT -> "TEST_UNIT"
     | OUNIT_TEST_MODULE -> "TEST_MODULE"
+    | OUNIT_BENCH -> "BENCH"
+    | OUNIT_BENCH_FUN -> "BENCH_FUN"
+    | OUNIT_BENCH_INDEXED -> "BENCH_INDEXED"
+    | OUNIT_BENCH_MODULE -> "BENCH_MODULE"
 
 let dump_lexer ?who f a =
   let t = f a in

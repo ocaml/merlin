@@ -16,6 +16,7 @@ module type Top_options = sig
   val _projectfind : string -> unit
   val _real_paths : unit -> unit
   val _absname : unit -> unit
+  val _ignore_sigint : unit -> unit
   val _I : string -> unit
   val _init : string -> unit
   val _labels : unit -> unit

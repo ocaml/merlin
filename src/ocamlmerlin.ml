@@ -91,21 +91,19 @@ let default_build_paths =
 let set_default_path () =
   Config.load_path := Lazy.force default_build_paths
 
+let signal behavior = 
+  try Sys.signal Sys.sigusr1 behavior
+  with Invalid_argument "Sys.signal: unavailable signal" ->
+    Sys.Signal_default
+
 let refresh_state_on_signal state f =
   let previous =
-    Sys.(signal sigusr1 (Signal_handle (fun _ ->
-        try
-          state := fst (State.quick_refresh_modules !state)
+    signal (Sys.Signal_handle (fun _ ->
+        try state := fst (State.quick_refresh_modules !state)
         with _ -> ()
-      )))
+      ))
   in
-  try
-    let r = f () in
-    ignore (Sys.(signal sigusr1 previous));
-    r
-  with exn ->
-    ignore (Sys.(signal sigusr1 previous));
-    raise exn
+  Misc.try_finally f (fun () -> ignore (signal previous))
 
 let main_loop () =
   let log = try Some (open_out (Sys.getenv "MERLIN_LOG"))
@@ -310,7 +308,8 @@ let () =
 
 (** Mimic other Caml tools, entry point *)
 let print_version () =
-  Printf.printf "The Merlin toolkit for Ocaml version %s\n" Sys.ocaml_version;
+  Printf.printf "The Merlin toolkit version %s, for Ocaml %s\n"
+    My_config.version Sys.ocaml_version;
   exit 0
 
 let print_version_num () =
@@ -361,6 +360,10 @@ module Options = Main_args.Make_top_options (struct
   let _dinstr = set Clflags.dump_instr
   let _protocol = Protocol.select_frontend
 
+  let _ignore_sigint () =
+    try ignore (Sys.(signal sigint Signal_ignore))
+    with Invalid_argument _ -> ()
+
   let anonymous s = unexpected_argument s
 end);;
 
@@ -381,12 +384,13 @@ let init_path () =
   Env.reset_cache ()
 
 let main () =
-  Arg.parse Options.list unexpected_argument "TODO";
+  Arg.parse Options.list unexpected_argument
+    "Usage: ocamlmerlin [options]\noptions are:";
   init_path ();
   set_default_path ();
   State.reset_global_modules ();
   Findlib.init ();
-  ignore Sys.(signal sigusr1 Signal_ignore);
+  ignore (signal Sys.Signal_ignore);
   main_loop ()
 
 let _ = main ()

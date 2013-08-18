@@ -113,6 +113,8 @@ sig
   val at : 'a t -> 'a sync
   val item : 'a sync -> 'a option
 
+  val same : 'a sync -> 'a sync -> bool
+
   (* [rewind prj a b] rewinds histories [a] and [b] until it finds
    *  a meeting point, possibly as far as the origin (offset 0).
    *)

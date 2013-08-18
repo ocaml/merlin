@@ -48,7 +48,7 @@ class MerlinProcess:
       except OSError:
         pass
     try:
-      command = [vim.eval("merlin#FindOcamlMerlin()")]
+      command = [vim.eval("merlin#FindOcamlMerlin()"),"-ignore-sigint"]
       command.extend(flags)
       self.mainpipe = subprocess.Popen(
               command,
@@ -239,13 +239,9 @@ def sync_buffer_to(to_line, to_col):
     line, col = saved_sync.pos()
     line, col = command_seek_before(line, 0)
     if line <= end_line:
-      if line <= 1:
-        command_reset(name=os.path.basename(cb.name))
-        content = cb[:end_line]
-      else:
-        rest    = cb[line-1][col:]
-        content = cb[line:end_line]
-        content.insert(0, rest)
+      rest    = cb[line-1][col:]
+      content = cb[line:end_line]
+      content.insert(0, rest)
       process.saved_sync = curr_sync
     else:
       content = None

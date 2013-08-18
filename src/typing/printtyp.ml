@@ -283,6 +283,7 @@ let wrap_printing_env env f =
     set_printing_env env;
     try_finally f (fun () -> set_printing_env Env.empty)
   end
+let curr_printing_env () = !printing_env
 
 let best_type_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
