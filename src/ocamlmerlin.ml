@@ -268,7 +268,7 @@ let print_version () =
   exit 0
 
 let print_version_num () =
-  Printf.printf "%s\n" Sys.ocaml_version;
+  Printf.printf "%s\n" My_config.version;
   exit 0
 
 let unexpected_argument s =
