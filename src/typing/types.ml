@@ -246,3 +246,5 @@ let erroneous_type_check te =
   match !errors with
   | Some (l,h) when Hashtbl.mem h te.id -> true
   | _ -> false
+
+let relax_typer = fluid false
