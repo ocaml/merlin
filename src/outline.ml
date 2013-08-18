@@ -168,14 +168,9 @@ let rec do_rollback next_tokens chunks =
   | None -> next_tokens, chunks
   | Some ({ tokens }, chunks') -> tokens @ next_tokens, chunks'
 
-let rec parse ?(can_rollback=true) ~bufpos tokens chunks buf =
+let rec parse ~bufpos tokens chunks buf =
   let exns = exns chunks in
   match parse_step ~bufpos ~exns (History.of_list tokens) buf with
-  | tokens', Some { kind = Outline_utils.Syntax_error _ } when can_rollback ->
-    let tokens = History.nexts (History.seek_offset 0 tokens') in
-    let tokens, chunks = do_rollback tokens chunks in
-    let chunks = History.cutoff chunks in
-    parse ~can_rollback:false ~bufpos tokens chunks buf
   | tokens', Some { kind = (Outline_utils.Unterminated | Outline_utils.Done) } ->
     tokens', chunks
   | tokens', Some item ->
