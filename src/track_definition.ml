@@ -23,7 +23,7 @@ module Utils = struct
      * However, just using [find_in_path_uncap] won't work either when you have
      * several ml files with the same name.
      * Example: scheduler.ml and raw_scheduler.ml are present in both async_core
-     * and async_unix. *)
+     * and async_unix. (ofc. "std.ml" is a more common example.) *)
     let abs_cmt_file = Printf.sprintf "%s/%s" !cwd fname in
     if Sys.file_exists abs_cmt_file then
       abs_cmt_file
@@ -140,7 +140,9 @@ and check_item modules item =
       end
     | Tstr_module (id, loc, _) when id.Ident.name = name ->
       Some (loc.Asttypes.loc)
-    | Tstr_recmodule _ -> None (* TODO *)
+    | Tstr_recmodule _ ->
+      debug_log "   recursive modules not handled, stopping ..." ;
+      None (* TODO *)
     | Tstr_include (mod_expr, idents) ->
       if List.exists (fun id -> id.Ident.name = name) idents then
         aux mod_expr [ name ]
@@ -152,7 +154,9 @@ and check_item modules item =
     match item.str_desc with
     | Tstr_module (id, _, mod_expr) when id.Ident.name = name ->
       `Direct mod_expr
-    | Tstr_recmodule _ -> `Not_found (* TODO *)
+    | Tstr_recmodule _ ->
+      debug_log "   recursive modules not handled, stopping..." ;
+      `Not_found (* TODO *)
     | Tstr_include (mod_expr, idents) ->
       if List.exists (fun id -> id.Ident.name = name) idents then
         `Included mod_expr
@@ -170,7 +174,9 @@ and check_item modules item =
       | `Direct mod_expr -> Some (path, mod_expr)
       | `Included mod_expr -> Some (modules, mod_expr)
     with
-    | None -> None
+    | None ->
+      error_log (Printf.sprintf "   module '%s' not found" mod_name) ;
+      None
     | Some (path, mod_expr) ->
       aux mod_expr path
     end
