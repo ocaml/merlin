@@ -45,6 +45,51 @@ let initial = {
   types    = History.empty;
 }
 
+let verbosity =
+  let counter = ref 0 in
+  fun cmd ->
+    begin match cmd with
+    | `Query -> ()
+    | `Incr  -> incr counter
+    | `Clear -> counter := 0
+    end;
+    !counter
+
+let verbose_type env ty =
+  if verbosity `Query > 0
+  then (Ctype.full_expand env ty)
+  else ty
+
+let verbose_type_decl env ty =
+  match ty.Types.type_manifest with
+  | Some m -> {ty with Types.type_manifest = Some (verbose_type env m)}
+  | None -> ty
+
+let verbose_sig env m =
+  let open Types in
+  let rec expand verbosity = function
+    | Modtype_manifest (Mty_ident p) when verbosity > 0 ->
+      expand (pred verbosity)
+             (Modtype_manifest (Env.find_modtype_expansion p env))
+    | m -> m
+  in
+  expand (verbosity `Query) m
+
+module Verbose_print = struct
+  open Format
+  open Types
+
+  let type_scheme ppf t = 
+    let env = Printtyp.curr_printing_env () in
+    Printtyp.type_scheme ppf (verbose_type env t)
+  let type_declaration id ppf t =
+    let env = Printtyp.curr_printing_env () in
+    Printtyp.type_declaration id ppf (verbose_type_decl env t)
+  let modtype_declaration id ppf t =
+    let env = Printtyp.curr_printing_env () in
+    Printtyp.modtype_declaration id ppf (verbose_sig env t)
+end
+
 (* FIXME: 
  * Pathes are global, but once support for different pathes has been added to 
  * typer, this should be made a [state] wide property.

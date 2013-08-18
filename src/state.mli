@@ -36,6 +36,20 @@ type t = {
 }
 val initial : t
 
+val verbosity : [`Query|`Incr|`Clear] -> int
+val verbose_type : Env.t -> Types.type_expr -> Types.type_expr
+val verbose_type_decl : Env.t -> Types.type_declaration -> Types.type_declaration
+val verbose_sig : Env.t -> Types.modtype_declaration -> Types.modtype_declaration
+
+module Verbose_print : sig
+  open Format
+  open Types
+
+  val type_scheme: formatter -> type_expr -> unit
+  val type_declaration: Ident.t -> formatter -> type_declaration -> unit
+  val modtype_declaration: Ident.t -> formatter -> modtype_declaration -> unit
+end
+
 val source_path : string list ref
 val reset_global_modules : unit -> unit
 val quick_refresh_modules : t -> t * bool
