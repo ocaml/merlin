@@ -178,3 +178,9 @@ val compare_pos : Lexing.position -> Lexing.position -> int
 
         (* Drop characters from beginning of string *)
 val string_drop : int -> string -> string
+
+        (* Dynamic binding pattern *)
+type 'a fluid
+val fluid : 'a -> 'a fluid
+val fluid'let : 'a fluid -> 'a -> (unit -> 'b) -> 'b 
+val (~!) : 'a fluid -> 'a

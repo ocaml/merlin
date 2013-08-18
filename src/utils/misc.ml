@@ -382,5 +382,19 @@ let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 let compare_pos p1 p2 =
   compare (split_pos p1) (split_pos p2)
 
+        (* Drop characters from beginning of string *)
 let string_drop n s =
   String.sub s n (String.length s - n)
+
+        (* Dynamic binding pattern *)
+type 'a fluid = 'a ref
+let fluid x = ref x
+let fluid'let d v f =
+  let p = !d in
+  d := v;
+  try let r = f () in
+      d := p; r
+  with exn ->
+      d := p; raise exn
+
+let (~!) a = !a
