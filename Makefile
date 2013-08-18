@@ -23,6 +23,9 @@ $(TARGET): assert_configured
 dev: assert_configured
 	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET)
 
+debug: assert_configured
+	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET) -tag debug
+
 .PHONY: $(TARGET) all dev clean distclean install uninstall assert_configured
 
 clean:
