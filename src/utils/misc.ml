@@ -234,7 +234,7 @@ let rev_split_string cond s =
     end
   and split2 res i j =
     if j >= String.length s then String.sub s i (j-i) :: res else begin
-      if cond s.[i] then
+      if cond s.[j] then
         split1 (String.sub s i (j-i) :: res) (j+1)
       else
         split2 res i (j+1)
