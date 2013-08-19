@@ -456,7 +456,7 @@ def vim_reload(full=False):
 
 # Spawn a fresh new process
 def vim_restart():
-  restart()
+  merlin_process().restart()
 
 def vim_which(name,ext):
   if ext:
@@ -492,11 +492,11 @@ def vim_ext_list(vimvar,enabled=None):
 def vim_clear_flags():
   global flags
   flags = []
-  restart()
+  merlin_procces().restart()
 
 def vim_add_flags(*args):
   flags.extend(args)
-  restart()
+  merlin_process().restart()
 
 def vim_selectphrase(l1,c1,l2,c2):
   vl1 = int(vim.eval(l1))
