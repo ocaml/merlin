@@ -511,7 +511,11 @@ MODE is a string that can be \"exact\", \"before\" or \"end\" (default is before
                                 (list (if mode mode "before")
                                       (merlin-unmake-point point))))))
     (merlin-make-point data)))
-    
+
+(defun merlin-drop ()
+  "Drop the knowledge of merlin of the buffer after the current position."
+  (merlin-send-command "drop" nil))
+
 (defun merlin-tell-piece (mode start end)
   "Tell the region using mode MODE between START and END in one chunk using."
   (merlin-tell-string mode (buffer-substring start end)))
@@ -630,8 +634,10 @@ the errors in the margin. If VIEW-ERRORS-P is non-nil, display a count of them."
  
 
 (defun merlin-retract-to (point)
-  "Retract merlin's view to POINT."
-  (merlin-seek point))
+  "Retract merlin's view to POINT and erase what comes next (drop)."
+  (let ((pos (merlin-seek point)))
+    (merlin-drop)
+    pos))
 
 (defun merlin-update-lock-zone-display ()
   "Update the locked zone display, according to `merlin-display-lock-zone', ie.
