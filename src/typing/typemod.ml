@@ -56,12 +56,12 @@ let rec path_concat head p =
 
 let extract_sig env loc mty =
   match Mtype.scrape env mty with
-    Mty_signature sg -> sg
+    Mty_signature (lazy sg) -> sg
   | _ -> raise(Error(loc, env, Signature_expected))
 
 let extract_sig_open env loc mty =
   match Mtype.scrape env mty with
-    Mty_signature sg -> sg
+    Mty_signature (lazy sg) -> sg
   | _ -> raise(Error(loc, env, Structure_expected mty))
 
 (* Compute the environment after opening a module *)
@@ -187,7 +187,7 @@ let merge_constraint initial_env loc  sg lid constr =
         let ((path, path_loc, tcstr), newsg) =
           merge env (extract_sig env loc mty) namelist None in
         (path_concat id path, lid, tcstr),
-        Sig_module(id, Mty_signature newsg, rs) :: rem
+        Sig_module(id, Mty_signature ~:newsg, rs) :: rem
     | (item :: rem, _, _) ->
         let (cstr, items) = merge (Env.add_item item env) rem namelist row_id
         in
@@ -272,7 +272,7 @@ let rec approx_modtype env smty =
       let (path, info) = Typetexp.find_modtype env smty.pmty_loc lid.txt in
       Mty_ident path
   | Pmty_signature ssg ->
-      Mty_signature(approx_sig env ssg)
+      Mty_signature ~:(approx_sig env ssg)
   | Pmty_functor(param, sarg, sres) ->
       let arg = approx_modtype env sarg in
       let (id, newenv) = Env.enter_module param.txt arg env in
@@ -416,7 +416,7 @@ let rec transl_modtype env smty =
       mkmty (Tmty_ident (path, lid)) (Mty_ident path) env loc
   | Pmty_signature ssg ->
       let sg = transl_signature env ssg in
-      mkmty (Tmty_signature sg) (Mty_signature sg.sig_type) env loc
+      mkmty (Tmty_signature sg) (Mty_signature ~:(sg.sig_type)) env loc
   | Pmty_functor(param, sarg, sres) ->
       let arg = transl_modtype env sarg in
       let (id, newenv) = Env.enter_module param.txt arg.mty_type env in
@@ -435,7 +435,7 @@ let rec transl_modtype env smty =
         )
         ([],init_sg) constraints in
       mkmty (Tmty_with ( body, tcstrs))
-      (Mtype.freshen (Mty_signature final_sg)) env loc
+      (Mtype.freshen (Mty_signature ~:final_sg)) env loc
   | Pmty_typeof smod ->
       let tmty, mty = !type_module_type_of_fwd env smod in
       mkmty (Tmty_typeof tmty) mty env loc
@@ -633,7 +633,7 @@ let rec path_of_module mexp =
 
 let rec closed_modtype = function
     Mty_ident p -> true
-  | Mty_signature sg -> List.for_all closed_signature_item sg
+  | Mty_signature (lazy sg) -> List.for_all closed_signature_item sg
   | Mty_functor(id, param, body) -> closed_modtype body
 
 and closed_signature_item = function
@@ -794,7 +794,7 @@ let rec package_constraints env loc mty constrs =
       )
       sg
   in
-  Mty_signature sg'
+  Mty_signature ~:sg'
 
 let modtype_of_package env loc p nl tl =
   try match Env.find_modtype p env with
@@ -837,7 +837,7 @@ let rec type_module sttn funct_body anchor env smod =
       let (str, sg, finalenv) =
         type_structure funct_body anchor env sstr smod.pmod_loc in
       rm { mod_desc = Tmod_structure str;
-           mod_type = Mty_signature sg;
+           mod_type = Mty_signature ~:sg;
            mod_env = env;
            mod_loc = smod.pmod_loc }
   | Pmod_functor(name, smty, sbody) ->
@@ -1123,7 +1123,7 @@ let type_structure = type_structure false None
 
 let rec normalize_modtype env = function
     Mty_ident p -> ()
-  | Mty_signature sg -> normalize_signature env sg
+  | Mty_signature (lazy sg) -> normalize_signature env sg
   | Mty_functor(id, param, body) -> normalize_modtype env body
 
 and normalize_signature env = List.iter (normalize_signature_item env)
@@ -1142,7 +1142,7 @@ let rec simplify_modtype mty =
   match mty with
     Mty_ident path -> mty
   | Mty_functor(id, arg, res) -> Mty_functor(id, arg, simplify_modtype res)
-  | Mty_signature sg -> Mty_signature(simplify_signature sg)
+  | Mty_signature (lazy sg) -> Mty_signature ~:(simplify_signature sg)
 
 and simplify_signature sg =
   let rec simplif val_names exn_names res = function
@@ -1312,7 +1312,7 @@ let rec package_signatures subst = function
       let sg' = Subst.signature subst sg in
       let oldid = Ident.create_persistent name
       and newid = Ident.create name in
-      Sig_module(newid, Mty_signature sg', Trec_not) ::
+      Sig_module(newid, Mty_signature ~:sg', Trec_not) ::
       package_signatures (Subst.add_module oldid (Pident newid) subst) rem
 
 let package_units objfiles cmifile modulename =

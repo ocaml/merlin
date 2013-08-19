@@ -414,3 +414,6 @@ let fluid'let d v f =
       d := p; raise exn
 
 let (~!) a = !a
+
+let (!:) = Lazy.force
+let (~:) = Lazy.from_val

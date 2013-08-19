@@ -57,5 +57,5 @@ let register env =
       (List.map (fun (fake,top,_,_) -> try_type fake, try_type top) enabled)
   in
   let env = Env.add_signature (List.concat tops) env in
-  let env = Env.add_module ident (Types.Mty_signature (List.concat fakes)) env in
+  let env = Env.add_module ident (Types.Mty_signature (lazy (List.concat fakes))) env in
   env
