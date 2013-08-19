@@ -529,7 +529,7 @@ MODE is a string that can be \"exact\", \"before\" or \"end\" (default is before
 	 (forward-line 10))
        (merlin-tell-piece mode temp end))))
 
-(defun merlin-tell-till-end-of-phrase (orig-point view-errors-p)
+(defun merlin-tell-till-end-of-phrase (view-errors-p)
   "Tell merlin the buffer until the end of the current phrase is met.
 It proceeds by telling (with the end mode) each line until it
 returns true or until we are at the end of the buffer.  It then
@@ -551,11 +551,7 @@ ORIG-POINT is where the user was before starting telling merlin."
     (if (not end-p)
         (merlin-send-command "tell" '("end" nil)))
     (if view-errors-p
-        (merlin-check-for-errors view-errors-p)
-      (progn
-        (merlin-seek orig-point))
-        (merlin-check-for-errors view-errors-p)
-        (merlin-seek (point) "end"))
+        (merlin-check-for-errors view-errors-p))
     (setq merlin-lock-point (merlin-get-position))
     (merlin-update-lock-zone-display)))
 
@@ -677,20 +673,29 @@ merlin and the argument
 - It continues until it finds the end of a phrase.
 
 The parameter VIEW-ERRORS-P controls whether we should care for errors"
-  (let ((orig-point (point)))
-    (merlin-delete-error-overlays)
-    (setq merlin-pending-errors nil)
-    (if (not (merlin-is-last-user-p))
-        (merlin-rewind))
-    (save-excursion
-      (merlin-tell-piece-split "struct" merlin-lock-point (point))
-      (merlin-tell-till-end-of-phrase orig-point view-errors-p))))
+  (merlin-delete-error-overlays)
+  (setq merlin-pending-errors nil)
+  (setq merlin-lock-point (merlin-seek (point))) ;; needed to be sure not be in the middle of a phrase
+  (if (not (merlin-is-last-user-p))
+      (merlin-rewind))
+  (save-excursion
+    (merlin-tell-piece-split "struct" merlin-lock-point (point))
+    (merlin-tell-till-end-of-phrase view-errors-p)))
   
 (defun merlin-check-synchronize ()
   "If merlin point is before the end of line send everything up to the end of line."
   (interactive)
   (when (> (point-at-eol) merlin-lock-point)
     (merlin-update-point nil)))
+
+(defmacro with-merlin-sync (&rest args)
+  "Synchronize the merlin lock zone till point, execute BODY, and check for errors."
+  `(progn
+     (save-excursion (forward-line)
+                     (merlin-check-synchronize))
+     ,(cons 'save-excursion args)
+     (setq merlin-lock-point (merlin-retract-to (point)))
+     (merlin-check-for-errors nil)))
 
 (defun merlin-edit (start end length)
   "Retract the locked zone after an edit.
@@ -742,10 +747,10 @@ Called when an edit is made by the user."
   "Initialize the cache for `auto-complete' completion.
 Called at the beginning of a completion to fill the cache (the
 variable `merlin-cache')."
-  (merlin-check-synchronize)
-  (setq merlin-completion-point ac-point)
-  (setq merlin-cache
-        (mapcar #'merlin-make-popup-item (merlin-completion-data ac-prefix))))
+  (with-merlin-sync
+   (setq merlin-completion-point ac-point)
+   (setq merlin-cache
+         (mapcar #'merlin-make-popup-item (merlin-completion-data ac-prefix)))))
 
 (defun merlin-try-completion ()
   "Try completing after having synchronized the point."
@@ -790,8 +795,6 @@ variable `merlin-cache')."
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
   (save-excursion
-    (merlin-check-synchronize))
-  (save-excursion
     (skip-syntax-backward "w_.")
     (let ((start (point)))
       (skip-syntax-forward "w_.")
@@ -814,16 +817,19 @@ variable `merlin-cache')."
                     (exit-function . merlin-completion-lookup))))
     (unless (and merlin-completion-annotation-table
                  (eq (car merlin-completion-cache-state) start)
-                 (string-prefix-p (cdr merlin-completion-cache-state)
-                                  string completion-ignore-case)
                  (string-equal (merlin-compute-prefix string)
                                (merlin-compute-prefix (cdr merlin-completion-cache-state))))
       (save-excursion
         (goto-char start)
-        (setq merlin-completion-annotation-table
-              (mapcar #'(lambda (a) (cons (car a) (concat ": " (cadr a)))) (merlin-completion-data string))))
-      (setq merlin-completion-cache-state (cons start string))
-      (setq merlin-lock-point (merlin-retract-to (point))))
+        (setq merlin-lock-point (merlin-retract-to (point))))
+      (save-excursion
+        (with-merlin-sync
+         (setq merlin-completion-annotation-table
+               (mapcar #'(lambda (a)
+                           (cons (car a) (concat ": " (cadr a))))
+                       (merlin-completion-data string)))
+         (goto-char start)))
+      (setq merlin-completion-cache-state (cons start string)))
     (complete-with-action action merlin-completion-annotation-table string pred)))
 
 
@@ -933,18 +939,17 @@ are displayed, and without overlay."
 (defun merlin-show-type-of-region ()
   "Show the type of the region."
   (interactive)
-  (merlin-check-synchronize)
-  (merlin-show-type (cons (region-beginning) (region-end))))
+  (with-merlin-sync
+   (merlin-show-type (cons (region-beginning) (region-end)))))
 (defun merlin-show-type-of-point-quiet ()
   "Show the type of the identifier under the point if it is short (a value)."
-  (merlin-check-synchronize)
-  (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) t))
+  (with-merlin-sync
+   (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) t)))
 
 (defun merlin-show-type-of-point (arg) 
   "Show the type of the identifier under the point. 
 If it is called with a prefix argument, then show the type of the region."
   (interactive "p")
-  (ignore-errors (merlin-check-synchronize))
   (if (> arg 1)
       (merlin-show-type-of-region)
     (merlin-show-type (bounds-of-thing-at-point 'ocamlatom))))
@@ -975,20 +980,14 @@ there is no enclosing, falls back to
 `merlin-show-type-of-point'."
   (interactive "p")
   (save-excursion
-    (forward-line)
-    (merlin-check-synchronize))
-  (if (and merlin-enclosing-types (equal merlin-last-point-type (point)))
-      (if (> arg 1)
-          (merlin-type-enclosing-go-down)
-        (merlin-type-enclosing-go-up))
-    (if (> arg 1)
-        (merlin-show-type-of-region)
-      (progn
-        (setq merlin-last-point-type (point))
-        (merlin-type-enclosing)
-        (if (not merlin-enclosing-types)
-            (merlin-show-type-of-point arg)
-          (merlin-type-enclosing-go-up))))))
+    (with-merlin-sync
+     (if (> arg 1)
+         (merlin-show-type-of-region)
+       (progn
+         (merlin-type-enclosing)
+         (if (not merlin-enclosing-types)
+             (merlin-show-type-of-point arg)
+           (merlin-type-enclosing-go-up)))))))
 
 (defun merlin-show-type-of-user-supplied-expression (s)
   "Show the type of the expression S."
@@ -1005,13 +1004,13 @@ there is no enclosing, falls back to
 (defun merlin-type-enclosing-go-up ()
   "Go up in the enclosing type zipper."
   (interactive)
-  (if merlin-enclosing-types
-      (if (> merlin-enclosing-offset (length merlin-enclosing-types))
-          (message "cannot go up")
-        (progn
-          (setq merlin-enclosing-offset (+ 1 merlin-enclosing-offset))
-          (merlin-type-enclosing-go)
-          ))))
+  (when merlin-enclosing-types
+    (setq merlin-enclosing-offset (+ 1 merlin-enclosing-offset))
+    (if (> merlin-enclosing-offset (1- (length merlin-enclosing-types)))
+        (message "cannot go up")
+      (progn
+        (merlin-type-enclosing-go)
+        ))))
 
 (defun merlin-type-enclosing-go-down ()
   "Go down in the enclosing type zipper."
@@ -1059,9 +1058,9 @@ there is no enclosing, falls back to
   "Locate the identifier IDENT at POINT.
 If POINT is nil, the current point is used.  If JUST-OPEN is
 non-nil, don't move to the opened buffer."
-  (merlin-check-synchronize)
   (let* ((point (if point point (point)))
-         (r (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point))))))
+         (r (with-merlin-sync
+             (merlin-send-command "locate" (list ident "at" (merlin-unmake-point (point)))))))
     (if (and r (listp r))
         (if just-open
             (save-excursion
@@ -1073,7 +1072,7 @@ non-nil, don't move to the opened buffer."
             (push (cons (buffer-name) (point)) merlin-position-stack)
             (message "Use %s to go back."
                      (substitute-command-keys "\\[merlin-pop-stack]"))))
-          (message "%s not found." ident))))
+      (message "%s not found." ident))))
 
 (defun merlin-locate ()
   "Locate the identifier under point"
