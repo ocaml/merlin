@@ -105,7 +105,7 @@ function! merlin#Use(...)
 endfunction
 
 function! merlin#RelevantFlags(ArgLead, CmdLine, CursorPos)
-  let l:flags = [ "-rectypes", "-nostdlib", "-absname", "-w" ]
+  let l:flags = [ "-rectypes", "-nostdlib", "-absname", "-debug", "-w" ]
   return join(l:flags, "\n")
 endfunction
 
