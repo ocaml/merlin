@@ -20,18 +20,33 @@ end
 
 let default_destination = ref stderr
 
-let set_default_destination oc =
-  default_destination := oc
-
 let monitored : (Section.t * out_channel) list ref = ref []
 
-let monitor ?(dest=(!default_destination)) x =
+let opened_files : (string, out_channel) Hashtbl.t = Hashtbl.create 3
+
+let get_or_open path =
+  try Hashtbl.find opened_files path
+  with Not_found ->
+    let oc = open_out path in
+    Hashtbl.add opened_files path oc ;
+    oc
+
+let set_default_destination path =
+  let oc = get_or_open path in
+  default_destination := oc
+
+let monitor ?dest x =
+  let dest = 
+    match dest with
+    | None -> !default_destination
+    | Some path -> get_or_open path
+  in
   monitored := (x, dest) :: !monitored
 
 let forget x =
   monitored := List.filter (fun (t, _) -> t = x) !monitored
 
-let is_monitored x = List.exists (fun (t, _) -> t = x) !monitored
+let is_monitored x = List.mem_assoc x !monitored
 
 let log section ?prefix msg =
   let prefix =
@@ -40,14 +55,20 @@ let log section ?prefix msg =
     | None -> Printf.sprintf "%s |" (Section.to_string section)
   in
   try
-    let _, oc = List.find (fun (t, _) -> t = section) !monitored in
+    let oc = List.assoc section !monitored in
     Printf.fprintf oc "%s %s\n%!" prefix msg
   with Not_found ->
     ()
 
 let error section msg =
   let oc =
-    try snd (List.find (fun (t, _) -> t = section) !monitored)
+    try List.assoc section !monitored
     with Not_found -> !default_destination
   in
   Printf.fprintf oc "ERROR(%s) | %s\n%!" (Section.to_string section) msg
+
+let shutdown () =
+  Hashtbl.iter (fun _ oc -> close_out oc) opened_files ;
+  Hashtbl.reset opened_files ;
+  default_destination := stderr ;
+  monitored := []

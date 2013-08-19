@@ -328,8 +328,7 @@ module Options = Main_args.Make_top_options (struct
     | [ log_path ; section ] ->
       begin try
         let section = Logger.Section.of_string section in
-        let oc = open_out log_path in
-        Logger.monitor ~dest:oc section
+        Logger.monitor ~dest:log_path section
       with Invalid_argument _ ->
         ()
       end
@@ -390,7 +389,7 @@ let init_path () =
 
 let main () =
   begin try
-    let dest = open_out (Sys.getenv "MERLIN_LOG") in
+    let dest = Sys.getenv "MERLIN_LOG" in
     Logger.set_default_destination dest ;
     Logger.monitor ~dest Logger.Section.(`protocol)
   with _ ->
@@ -403,6 +402,7 @@ let main () =
   State.reset_global_modules ();
   Findlib.init ();
   ignore (signal Sys.Signal_ignore);
-  main_loop ()
+  main_loop () ;
+  Logger.shutdown ()
 
 let _ = main ()
