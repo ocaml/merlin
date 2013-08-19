@@ -968,6 +968,7 @@ Otherwise start a new session at point."
           (elt
            (merlin-send-command "type" (list "enclosing" (merlin-unmake-point (point))))
            1))))
+    (setq merlin-last-point-type (point))
     (setq merlin-enclosing-types list)
     (setq merlin-enclosing-offset -1)))
 
@@ -1123,6 +1124,12 @@ Returns the position."
   (if (not (merlin-goto-phrase "next" 0)) ;; no next phrase => end-of-buffer
       (goto-char (point-max))))
 
+(defun merlin-next-phrase-or-go-down ()
+  (interactive)
+  (if (equal merlin-last-point-type (point))
+      (merlin-type-enclosing-go-down)
+    (merlin-next-phrase)))
+
 (defun merlin-prev-phrase ()
   "Go to the beginning of the previous phrase."
   (interactive)
@@ -1130,6 +1137,11 @@ Returns the position."
     (merlin-check-synchronize)
     (if (equal point (merlin-goto-phrase "current" 0))
         (merlin-goto-phrase "prev" 0))))
+(defun merlin-prev-phrase-or-go-up ()
+  (interactive)
+  (if (equal merlin-last-point-type (point))
+      (merlin-type-enclosing-go-up)
+    (merlin-prev-phrase)))
 
 (defun merlin-to-point ()
   "Update the merlin to the current point, reporting error."
@@ -1164,6 +1176,8 @@ Returns the position."
     (define-key merlin-map (kbd "C-c C-f C-<down>") 'merlin-type-enclosing-go-down)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-next-phrase)
     (define-key merlin-map (kbd "C-c C-p") 'merlin-prev-phrase)
+    (define-key merlin-map (kbd "C-<down>") 'merlin-next-phrase-or-go-down)
+    (define-key merlin-map (kbd "C-<up>") 'merlin-prev-phrase-or-go-up)
     (define-key merlin-menu-map [customize]
       '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
