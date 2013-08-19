@@ -717,7 +717,7 @@ Called when an edit is made by the user."
   (let ((type
          (cond
           ((member (cdr (assoc 'kind entry)) '("Module" "module"))
-           ": <module>")
+           " <module>")
           ((string-equal (cdr (assoc 'kind entry)) "Type")
            (format " [%s]" (cdr (assoc 'desc entry))))
           (t
