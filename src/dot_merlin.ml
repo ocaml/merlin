@@ -86,8 +86,7 @@ let err_log msg = Logger.error `dot_merlin msg
 
 module Flags = Top_options.Make (struct
   let _projectfind _ =
-    err_log "unsupported flag \"-project-find\"" ;
-    exit 0
+    err_log "unsupported flag \"-project-find\" (ignored)" ;
 end)
 
 let exec_dot_merlin ~path_modify { path; project; entries} =
@@ -103,7 +102,7 @@ let exec_dot_merlin ~path_modify { path; project; entries} =
       let lst = Misc.rev_split_words flags in
       let flags = Array.of_list (List.rev lst) in
       begin try
-        Arg.parse_argv flags Flags.list Top_options.unexpected_argument "error..."
+        Arg.parse_argv ~current:(ref (-1)) flags Flags.list Top_options.unexpected_argument "error..."
       with
       | Arg.Bad msg -> err_log msg ; exit 2
       | Arg.Help msg -> err_log msg ; exit 0 (* FIXME *)

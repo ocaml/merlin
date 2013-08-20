@@ -8,7 +8,7 @@ let print_version_num () =
   exit 0
 
 let unexpected_argument s =
-  failwith ("Unexpected argument:" ^ s)
+  failwith ("Unexpected argument: " ^ s)
 
 module Make (Bootstrap : sig val _projectfind : string -> unit end) = struct
   include Main_args.Make_top_options (struct
