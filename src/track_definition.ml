@@ -71,6 +71,19 @@ include Utils
 
 exception Found of Location.t
 
+let exists_in_sig ~ident s =
+  List.exists (
+    let open Types in
+    function
+    | Sig_value (id, _)
+    | Sig_type (id, _, _)
+    | Sig_exception (id, _)
+    | Sig_module (id, _, _)
+    | Sig_modtype (id, _)
+    | Sig_class (id, _, _)
+    | Sig_class_type (id, _, _) -> id.Ident.name = ident
+  ) s
+
 let rec browse_structure str modules =
   (* start from the bottom *)
   let items = List.rev str.Typedtree.str_items in
@@ -132,8 +145,8 @@ and check_item modules item =
     | Tstr_module (id, loc, _) when id.Ident.name = name ->
       Some (loc.Asttypes.loc)
     | Tstr_recmodule _ -> None (* TODO *)
-    | Tstr_include (mod_expr, idents) ->
-      if List.exists (fun id -> id.Ident.name = name) idents then
+    | Tstr_include (mod_expr, s) ->
+      if exists_in_sig ~ident:name s then
         aux mod_expr [ name ]
       else
         None
@@ -144,8 +157,8 @@ and check_item modules item =
     | Tstr_module (id, _, mod_expr) when id.Ident.name = name ->
       `Direct mod_expr
     | Tstr_recmodule _ -> `Not_found (* TODO *)
-    | Tstr_include (mod_expr, idents) ->
-      if List.exists (fun id -> id.Ident.name = name) idents then
+    | Tstr_include (mod_expr, s) ->
+      if exists_in_sig ~ident:name s then
         `Included mod_expr
       else
         `Not_found
@@ -219,7 +232,7 @@ let from_string ~sources ~env path =
   try
     let path, loc =
       if is_label then (
-        let _, label_desc = Env.lookup_label ident env in
+        let label_desc = Env.lookup_label ident env in
         path_and_loc_from_label label_desc env
       ) else (
         try
@@ -230,7 +243,7 @@ let from_string ~sources ~env path =
           let path, typ_decl = Env.lookup_type ident env in
           path, typ_decl.Types.type_loc
         with Not_found ->
-          let _, cstr_desc = Env.lookup_constructor ident env in
+          let cstr_desc = Env.lookup_constructor ident env in
           path_and_loc_from_cstr cstr_desc env
       )
     in
