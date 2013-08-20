@@ -380,7 +380,7 @@ let command_boundary = {
       | _ -> invalid_arguments ()
     in
     let outlines_of_pos state pos =
-      let cmp o = Location.compare_pos pos (Outline.item_loc o) in
+      let cmp o = Merlin_parsing.compare_pos pos (Outline.item_loc o) in
       let outlines = state.outlines in
       let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
       let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in

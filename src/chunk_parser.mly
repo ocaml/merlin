@@ -71,7 +71,7 @@ let mkoption d =
 let reloc_pat startpos endpos x = { x with ppat_loc = symbol_rloc startpos endpos  };;
 let reloc_exp startpos endpos x = { x with pexp_loc = symbol_rloc startpos endpos  };;
 let reloc_exp_fake startpos x = 
-  { x with pexp_loc = Location.pack_fake_start x.pexp_loc startpos };;
+  { x with pexp_loc = Merlin_parsing.pack_fake_start x.pexp_loc startpos };;
 
 let mkoperator startpos endpos name =
   let loc = symbol_rloc startpos endpos in

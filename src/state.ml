@@ -324,7 +324,7 @@ let node_complete node prefix =
       let compl = Env.fold_modtypes
         (fun name path v compl ->
           if valid ~uident:true `Mod name 
-          then (fmt ~exact:(name = prefix)  name path (`ModType v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl 
           else compl)
         path env compl
       in

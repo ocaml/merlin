@@ -3686,8 +3686,5 @@ let report_error env ppf = function
 let report_error env ppf err =
   wrap_printing_env env (fun () -> report_error env ppf err)
 
-let report_error env ppf err =
-  wrap_printing_env env (fun () -> report_error ppf err)
-
 let () =
   Env.add_delayed_check_forward := add_delayed_check

@@ -35,7 +35,7 @@ type error =
   | Alias_type_mismatch of (type_expr * type_expr) list
   | Present_has_conjunction of string
   | Present_has_no_type of string
-  | Constructor_mismatch of Env.t * type_expr * type_expr
+  | Constructor_mismatch of type_expr * type_expr
   | Not_a_variant of type_expr
   | Variant_tags of string * string
   | Invalid_variable_name of string
