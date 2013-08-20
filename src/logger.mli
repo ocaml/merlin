@@ -3,6 +3,7 @@ module Section : sig
     | `protocol
     | `locate
     | `completion
+    | `dot_merlin
   ]
 
   val of_string : string -> t

@@ -4,6 +4,7 @@ module Directives = struct
     | `S of string
     | `PKG of string list
     | `EXT of string list
+    | `FLG of string
   ]
 end
 
@@ -37,6 +38,8 @@ let parse_dot_merlin path : bool * t =
         tell (`PKG (Misc.rev_split_words (Misc.string_drop 4 line)))
       else if Misc.has_prefix "EXT " line then
         tell (`EXT (Misc.rev_split_words (Misc.string_drop 4 line)))
+      else if Misc.has_prefix "FLG " line then
+        tell (`FLG (Misc.string_drop 4 line))
       else if Misc.has_prefix "REC" line then recurse := true
       else if Misc.has_prefix "PRJ " line then
         proj := Some (String.trim (Misc.string_drop 4 line))
@@ -79,6 +82,12 @@ let rec project_name = function
   | Cons (_, lazy tail) -> project_name tail
   | Nil -> None
 
+module Flags = Top_options.Make (struct
+  let _projectfind _ =
+    Logger.error `dot_merlin "unsupported flag \"-project-find\"" ;
+    exit 0
+end)
+
 let exec_dot_merlin ~path_modify { path; project; entries} =
   let cwd = Filename.dirname path in
   List.iter (
@@ -88,6 +97,8 @@ let exec_dot_merlin ~path_modify { path; project; entries} =
     | `PKG pkgs -> Command.load_packages pkgs
     | `EXT exts ->
       List.iter (fun e -> Extensions_utils.set_extension ~enabled:true e) exts
+    | `FLG flags ->
+      Arg.parse Flags.list Top_options.unexpected_argument flags
   ) entries;
   path
 

@@ -4,17 +4,20 @@ module Section = struct
     | `protocol
     | `locate
     | `completion
+    | `dot_merlin
   ]
 
   let to_string = function
     | `protocol -> "protocol"
     | `locate -> "locate"
     | `completion -> "completion"
+    | `dot_merlin -> ".merlin"
 
   let of_string = function
     | "protocol" -> `protocol
     | "locate" -> `locate
     | "completion" -> `completion
+    | ".merlin" -> `dot_merlin
     | x -> invalid_arg ("unknown section: " ^ x)
 end
 
@@ -22,7 +25,7 @@ let default_destination = ref stderr
 
 let monitored : (Section.t * out_channel) list ref = ref []
 
-let opened_files : (string, out_channel) Hashtbl.t = Hashtbl.create 3
+let opened_files : (string, out_channel) Hashtbl.t = Hashtbl.create 4
 
 let get_or_open path =
   try Hashtbl.find opened_files path

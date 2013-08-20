@@ -78,10 +78,6 @@ let mk_rectypes f =
   "-rectypes", Arg.Unit f, " Allow arbitrary recursive types"
 ;;
 
-let mk_stdin f =
-  "-stdin", Arg.Unit f, " Read script from standard input"
-;;
-
 let mk_strict_sequence f =
   "-strict-sequence", Arg.Unit f,
   " Left-hand part of a sequence must have type unit"
@@ -161,7 +157,6 @@ module type Top_options = sig
   val _nostdlib : unit -> unit
   val _principal : unit -> unit
   val _rectypes : unit -> unit
-  val _stdin: unit -> unit
   val _strict_sequence : unit -> unit
   val _unsafe : unit -> unit
   val _version : unit -> unit
@@ -194,7 +189,6 @@ struct
     mk_nostdlib F._nostdlib;
     mk_principal F._principal;
     mk_rectypes F._rectypes;
-    mk_stdin F._stdin;
     mk_strict_sequence F._strict_sequence;
     mk_version F._version;
     mk_vnum F._vnum;
