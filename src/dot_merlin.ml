@@ -82,9 +82,11 @@ let rec project_name = function
   | Cons (_, lazy tail) -> project_name tail
   | Nil -> None
 
+let err_log msg = Logger.error `dot_merlin msg
+
 module Flags = Top_options.Make (struct
   let _projectfind _ =
-    Logger.error `dot_merlin "unsupported flag \"-project-find\"" ;
+    err_log "unsupported flag \"-project-find\"" ;
     exit 0
 end)
 
@@ -98,7 +100,14 @@ let exec_dot_merlin ~path_modify { path; project; entries} =
     | `EXT exts ->
       List.iter (fun e -> Extensions_utils.set_extension ~enabled:true e) exts
     | `FLG flags ->
-      Arg.parse Flags.list Top_options.unexpected_argument flags
+      let lst = Misc.rev_split_words flags in
+      let flags = Array.of_list (List.rev lst) in
+      begin try
+        Arg.parse_argv flags Flags.list Top_options.unexpected_argument "error..."
+      with
+      | Arg.Bad msg -> err_log msg ; exit 2
+      | Arg.Help msg -> err_log msg ; exit 0 (* FIXME *)
+      end
   ) entries;
   path
 
