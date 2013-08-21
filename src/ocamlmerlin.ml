@@ -30,7 +30,7 @@
   *
   * The toplevel read and write JSON objects on stdin/stdout
   * Each read object corresponds to a command in the following format:
-  *   ["nom_de_la_commande",arg1,arg2]
+  *   ["command_name",arg1,arg2]
   * Arguments are command-specific. The ["help"] command list existing
   * commands.
   * The type of answer is also command-specific following this convention:
@@ -54,7 +54,7 @@
   *   > ["tell","struct","let foo = 42"]  ; send buffer content
   *   < ["return","false"]
   *   > ["tell","struct",null]            ; signal end-of-buffer
-  *   > ["return","true"]
+  *   < ["return","true"]
   * The command ["seek","before",{"line":int,"col":int}] moves the cursor.
   * A session is a sequence of tell/seek commands to synchronize the
   * buffer and the editor, and of query commands.
