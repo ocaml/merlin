@@ -60,15 +60,6 @@ The default configuration can be seen in:
 Now you may be interested by *Features and interaction with other plugins*,
 *Merlin project* and *Extensions* sections.
 
-Using Vundle
-------------
-
-Alternatively you can install vim support using [Vundle](https://github.com/gmarik/vundle).
-Add the following to your .vimrc
-
-    Bundle 'def-lkb/merlin', {'rtp': 'vim/merlin/'}
-    Bundle 'def-lkb/vimbufsync'
-
 Features and interaction with other plugins
 --------------------------------------------
 
@@ -205,14 +196,22 @@ buffers. With this setting, you can use `C-c TAB` to force completion.
 Merlin project
 ==============
 
-When loading a ml file in your editor, merlin mode will search a file named
-.merlin in the same directory or in parent directories.
+When loading a ml file in your editor, merlin will search for a file named
+.merlin in the same directory as the file or in parent directories.
 
 The ".merlin" allows you to integrate merlin with your project.
-Each line of this file begin with a command name followed by one argument:
+Each line of this file begin with a directive name followed by zero, one or more
+arguments:
 - S \<src-dir\>: add a source directory, used to find \*.ml / \*.mli files
 - B \<build-dir\>: add a build directory, used to find \*.cmi files
 - PKG \<findlib-pkg\>: load a findlib package and its dependencies in merlin
+- FLG \<flag-list\>: activates the given flags, the same effect can be achieved
+  by lauching ocamlmerlin with those flags.
+  For a full list of flags run `ocamlmerlin -help`.
+- REC : inform merlin that it should look for .merlin files in parent
+  directories, and execute the directives it find in those files as well as the
+  ones in the current file.
+- EXT \<extension-list\>: (undocumented)
 
 Directory are either absolute or relative to the directory containing ".merlin"
 file.
@@ -239,6 +238,14 @@ A few syntax extensions based on type-conv are supported as well.
 Namely :
 - sexplib.syntax
 - binprot.syntax
+- fieldslib.syntax
+- comparelib.syntax
+
+Misc.
+-----
+
+Other common extensions which are supported :
+- pa\_ounit.syntax
 
 Screenshots
 ===========
