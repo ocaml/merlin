@@ -842,6 +842,8 @@ simple_expr:
       { () }
   | mod_longident DOT LPAREN seq_expr RPAREN
       { () }
+  | mod_longident DOT LPAREN RPAREN
+      { () }
   (* | mod_longident DOT LPAREN seq_expr error
       { () } *)
   | simple_expr DOT LPAREN seq_expr RPAREN
