@@ -1,5 +1,5 @@
-(* extend as necessary *)
 module Section = struct
+  (* extend as necessary *)
   type t = [
     | `protocol
     | `locate
@@ -21,7 +21,7 @@ module Section = struct
     | x -> invalid_arg ("unknown section: " ^ x)
 end
 
-let default_destination = ref stderr
+let default_destination = ref None
 
 let monitored : (Section.t * out_channel) list ref = ref []
 
@@ -36,13 +36,16 @@ let get_or_open path =
 
 let set_default_destination path =
   let oc = get_or_open path in
-  default_destination := oc
+  default_destination := Some oc
 
 let monitor ?dest x =
-  let dest = 
+  let dest =
     match dest with
-    | None -> !default_destination
     | Some path -> get_or_open path
+    | None ->
+      match !default_destination with
+      | None -> invalid_arg "no log file specified"
+      | Some dest -> dest
   in
   monitored := (x, dest) :: !monitored
 
@@ -64,14 +67,16 @@ let log section ?prefix msg =
     ()
 
 let error section msg =
-  let oc =
-    try List.assoc section !monitored
+  match
+    try Some (List.assoc section !monitored)
     with Not_found -> !default_destination
-  in
-  Printf.fprintf oc "ERROR(%s) | %s\n%!" (Section.to_string section) msg
+  with
+  | None -> ()
+  | Some oc ->
+    Printf.fprintf oc "ERROR(%s) | %s\n%!" (Section.to_string section) msg
 
 let shutdown () =
   Hashtbl.iter (fun _ oc -> close_out oc) opened_files ;
   Hashtbl.reset opened_files ;
-  default_destination := stderr ;
+  default_destination := None ;
   monitored := []
