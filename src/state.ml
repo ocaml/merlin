@@ -98,9 +98,7 @@ let source_path : string list ref = ref ["."]
 let global_modules = ref (lazy [])
 
 let reset_global_modules () =
-  let paths = !Config.load_path in
-  global_modules := lazy (Misc.modules_in_path ~ext:".cmi" paths)
-let () = reset_global_modules ()
+  global_modules := lazy (Misc.modules_in_path ~ext:".cmi" !Config.load_path)
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =
