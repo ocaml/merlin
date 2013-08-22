@@ -378,7 +378,9 @@ rule token = parse
         token lexbuf
       }
 
-  | "<" (":" identchar*)? ("@" identchar*)? "<" identchar
+  | "<:" identchar* ("@" identchar*)? "<"
+  | "<@" identchar* "<"
+  | "<<" identchar
       { let start = lexbuf.lex_start_p in
         p4_quotation lexbuf;
         lexbuf.lex_start_p <- start;
