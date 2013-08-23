@@ -26,6 +26,7 @@
 
 )* }}} *)
 
+open Misc
 type token = Chunk_parser.token History.loc
 
 let parse_with history ~parser ~lexer ~bufpos buf =

@@ -577,23 +577,20 @@ and p4_quotation = parse
 
   let token_with_comments = token
 
-  let last_comments = ref []
-  let rec token lexbuf =
-    match token_with_comments lexbuf with
-        COMMENT (s, comment_loc) ->
-          last_comments := (s, comment_loc) :: !last_comments;
-          token lexbuf
-      | tok -> tok
-  let comments () = List.rev !last_comments
+  let comments = fluid None
 
-  let extract_comments () = 
-    let r = !last_comments in
-    last_comments := [];
-    r
+  let rec token lexbuf = match token_with_comments lexbuf with
+    | COMMENT (s, comment_loc) ->
+        begin match ~!comments with
+        | None -> ()
+        | Some last_comments ->
+          last_comments := (s, comment_loc) :: !last_comments;
+        end;
+        token lexbuf
+    | tok -> tok
 
   let init () =
     is_in_string := false;
-    last_comments := [];
     comment_start_loc := []
 }
 
