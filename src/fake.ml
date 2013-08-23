@@ -54,66 +54,73 @@ let any_val' = prim "Any.val'"
 
 (* Helpers; extend as needed *)
 module Ast = struct
-  type type_scheme = [
-    | `Var   of string
-    | `Arrow of Asttypes.label * type_scheme * type_scheme
-    | `Named of type_scheme list * string
-    | `Core_type of core_type
-  ]
+  type type_scheme =
+    | Var   of string
+    | Arrow of Asttypes.label * type_scheme * type_scheme
+    | Named of type_scheme list * string
+    | Core_type of core_type
 
-  and expr = [
-    | `Fun   of string list * expr
-    | `App   of expr * expr
-    | `Ident of string
-    | `AnyVal (* wild card ident *)
-  ]
+  and expr =
+    | Fun   of (string * bool) list * expr
+    | App   of expr * expr
+    | Ident of string
+    | AnyVal (* wild card ident *)
 
   and binding = {
     ident   : string ;
     typesig : type_scheme ;
     body    : expr ;
   }
+
+  and top_item =
+    | Binding of binding
+    | Module of string * top_item list
+
+  let freshvars  = Stream.from (fun i -> Some (Printf.sprintf "\x00_%d" i))
+  let new_var () = Stream.next freshvars
 end
+
 open Ast
 
 let rec translate_ts ?ghost_loc = function
-  | `Var ident ->
+  | Var ident ->
     { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc }
-  | `Arrow (label, a, b) ->
+  | Arrow (label, a, b) ->
     let a = translate_ts ?ghost_loc a in
     let b = translate_ts ?ghost_loc b in
     { ptyp_desc = Ptyp_arrow(label, a, b) ; ptyp_loc = default_loc ghost_loc }
-  | `Named (params, id) ->
+  | Named (params, id) ->
     let id = Longident.parse id in
     let params = List.map (translate_ts ?ghost_loc) params in
     {
       ptyp_desc = Ptyp_constr (mkoptloc ghost_loc id, params) ;
       ptyp_loc = default_loc ghost_loc ;
     }
-  | `Core_type ct -> ct
+  | Core_type ct -> ct
 
 and translate_expr ?ghost_loc : Ast.expr -> _ = function
-  | `Fun (simple_patterns, body) ->
+  | Fun (simple_patterns, body) ->
     List.fold_right
-      (fun simple_pattern body ->
+      (fun (simple_pattern, is_label) body ->
         let patt = {
           ppat_desc = Ppat_var (mkoptloc ghost_loc simple_pattern) ;
           ppat_loc = default_loc ghost_loc ;
         }
         in
+        let label = if is_label then simple_pattern else "" in
         {
-          pexp_desc = Pexp_function ("", None, [patt, body]) ;
+          pexp_desc = Pexp_function (label, None, [patt, body]) ;
           pexp_loc = default_loc ghost_loc ;
         })
       simple_patterns
       (translate_expr ?ghost_loc body)
-  | `App (f, x) ->
+  | App (f, x) ->
     app (translate_expr ?ghost_loc f) (translate_expr ?ghost_loc x)
-  | `Ident i -> {
+  | Ident i -> {
       pexp_desc = Pexp_ident (mkoptloc ghost_loc (Longident.parse i)) ;
       pexp_loc = default_loc ghost_loc ;
     }
-  | `AnyVal -> any_val'
+  | AnyVal -> any_val'
 
 
 let sig_of_binding ?ghost_loc { ident; typesig; body = _ } =
@@ -142,6 +149,28 @@ let str_of_binding ?ghost_loc { ident; typesig; body } =
     pstr_desc = Pstr_value (Asttypes.Nonrecursive, [(pat, pexp)]) ;
     pstr_loc = default_loc ghost_loc ;
   }
+
+let rec str_of_top_lvl ?ghost_loc = function
+  | Binding b -> str_of_binding ?ghost_loc b
+  | Module (name, m) ->
+    let loc = { Location. txt = name ; loc = default_loc ghost_loc } in
+    let mod_expr = {
+      pmod_loc  = loc.Location.loc;
+      pmod_desc = Pmod_structure (List.map str_of_top_lvl m) ;
+    }
+    in
+    { pstr_desc = Pstr_module (loc, mod_expr) ; pstr_loc  = default_loc ghost_loc }
+
+let rec sig_of_top_lvl ?ghost_loc = function
+  | Binding b -> sig_of_binding ?ghost_loc b
+  | Module (name, m) ->
+    let loc = { Location. txt = name ; loc = default_loc ghost_loc } in
+    let mod_type = {
+      pmty_loc  = loc.Location.loc;
+      pmty_desc = Pmty_signature (List.map sig_of_top_lvl m) ;
+    }
+    in
+    { psig_desc = Psig_module (loc, mod_type) ; psig_loc  = default_loc ghost_loc }
 
 (* Lwt extension *)
 module Lwt = struct
@@ -180,7 +209,10 @@ end
 let format_params ~f =
   List.map (function None -> f "_" | Some id -> f id.Location.txt)
 
-let mk_fun ~args = `Fun (args, `App (`Ident "Obj.magic", `AnyVal))
+let mk_fun ~args =
+  Fun (List.map (fun s -> (s, false)) args, App (Ident "Obj.magic", AnyVal))
+
+let mk_labeled_fun ~args = Fun (args, App (Ident "Obj.magic", AnyVal))
 
 type tydecl = string Location.loc * Parsetree.type_declaration
 
@@ -190,24 +222,24 @@ end
 
 (** Some extensions (sexp, cow) follow a very simple generation pattern *)
 module type Simple_conv_intf = sig
-  val t : [> `Named of 'a list * string]
+  val t : Ast.type_scheme
   val name : string
 end
 
 module Make_simple (Conv : Simple_conv_intf) = struct
-  let mk_arrow x y = `Arrow ("", x, y)
+  let mk_arrow x y = Arrow ("", x, y)
 
-  let named params ty = `Named (params, ty)
+  let named params ty = Named (params, ty)
 
   let conv_of_sig params ty =
-    let params = format_params ~f:(fun v -> `Var v) params in
+    let params = format_params ~f:(fun v -> Var v) params in
     List.fold_right (fun var acc -> mk_arrow (mk_arrow var Conv.t) acc) params
       (mk_arrow (named params ty) Conv.t)
 
   let of_conv_sig params ty =
-    let params = format_params ~f:(fun v -> `Var v) params in
+    let params = format_params ~f:(fun v -> Var v) params in
     List.fold_right (fun var acc -> mk_arrow (mk_arrow Conv.t var) acc) params
-      (mk_arrow Conv.t (`Named (params, ty)))
+      (mk_arrow Conv.t (Named (params, ty)))
 
   let conv_of_ (located_name, type_infos) =
     let ty = located_name.Location.txt in
@@ -215,7 +247,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
       let f x = Conv.name ^ "_of_" ^ x in
       format_params ~f type_infos.ptype_params
     in
-    {
+    Binding {
       ident = Conv.name ^ "_of_" ^ ty ;
       typesig = conv_of_sig type_infos.ptype_params ty;
       body = mk_fun ~args ;
@@ -227,7 +259,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
       let f x = x ^ "_of_" ^ Conv.name in
       format_params ~f type_infos.ptype_params
     in
-    {
+    Binding {
       ident = ty ^ "_of_" ^ Conv.name ;
       typesig = of_conv_sig type_infos.ptype_params ty;
       body = mk_fun ~args ;
@@ -237,7 +269,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
 end
 
 module Sexp = Make_simple(struct
-  let t = `Named ([], "Sexplib.Sexp.t")
+  let t = Named ([], "Sexplib.Sexp.t")
   let name = "sexp"
 end)
 
@@ -245,7 +277,7 @@ end)
 let cow_supported_extension ext = List.mem ext ["json"; "xml"; "html";]
 module Make_cow (Ext : sig val name : string end) =
   Make_simple(struct
-    let t = `Named ([], "Cow." ^(String.capitalize Ext.name)^ ".t")
+    let t = Named ([], "Cow." ^(String.capitalize Ext.name)^ ".t")
     let name = Ext.name
   end)
 
@@ -255,19 +287,19 @@ module Binprot = struct
     let (located_name, ty_infos) = ty in
     let tyname = located_name.Location.txt in
     let args = format_params ~f:(fun x -> prefix ^ x ^ sufix) ty_infos.ptype_params in
-    {
+    Binding {
       ident = prefix ^ tyname ^ sufix;
       typesig = typesig ty ;
       body = mk_fun ~args ;
     }
 
   module Sizer = struct
-    let int = `Named ([], "int")
+    let int = Named ([], "int")
 
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
-      List.fold_right (fun v acc -> `Arrow ("", `Arrow ("", `Var v, int), acc)) params
-        (`Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt), int))
+      List.fold_right (fun v acc -> Arrow ("", Arrow ("", Var v, int), acc)) params
+        (Arrow ("", Named (List.map (fun x -> Var x) params, name.Location.txt), int))
 
     let prefix = "bin_size_"
 
@@ -278,18 +310,18 @@ module Binprot = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let acc =
-        `Arrow ("", `Named ([], "Bin_prot.Common.buf"),
-        `Arrow ("pos", `Named ([], "Bin_prot.Common.pos"),
-        `Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt),
-        `Named ([], "Bin_prot.Common.pos"))))
+        Arrow ("", Named ([], "Bin_prot.Common.buf"),
+        Arrow ("pos", Named ([], "Bin_prot.Common.pos"),
+        Arrow ("", Named (List.map (fun x -> Var x) params, name.Location.txt),
+        Named ([], "Bin_prot.Common.pos"))))
       in
       let make_var str =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Arrow ("", `Var str,
-        `Named ([], "Bin_prot.Unsafe_common.sptr"))))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Arrow ("", Var str,
+        Named ([], "Bin_prot.Unsafe_common.sptr"))))
       in
-      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+      List.fold_right (fun v acc -> Arrow ("", make_var v, acc)) params acc
 
     let prefix = "bin_write_"
 
@@ -300,18 +332,18 @@ module Binprot = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let acc =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Arrow ("", `Named (List.map (fun x -> `Var x) params, name.Location.txt),
-        `Named ([], "Bin_prot.Unsafe_common.sptr"))))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Arrow ("", Named (List.map (fun x -> Var x) params, name.Location.txt),
+        Named ([], "Bin_prot.Unsafe_common.sptr"))))
       in
       let make_var str =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Arrow ("", `Var str,
-        `Named ([], "Bin_prot.Unsafe_common.sptr"))))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Arrow ("", Var str,
+        Named ([], "Bin_prot.Unsafe_common.sptr"))))
       in
-      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+      List.fold_right (fun v acc -> Arrow ("", make_var v, acc)) params acc
 
     let prefix = "bin_write_"
     let sufix = "_"
@@ -322,11 +354,11 @@ module Binprot = struct
 
   module Writer = struct
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> `Var x) ty_infos.ptype_params in
+      let params = format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right
-        (fun param acc -> `Arrow ("", `Named ([param], "Bin_prot.Type_class.writer"), acc))
+        (fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.writer"), acc))
         params
-        (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
+        (Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
 
     let prefix = "bin_writer_"
 
@@ -337,16 +369,16 @@ module Binprot = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let acc =
-        `Arrow ("", `Named ([], "Bin_prot.Common.buf"),
-        `Arrow ("pos_ref", `Named ([`Named ([], "Bin_prot.Common.pos")], "ref"),
-        `Named (List.map (fun x -> `Var x) params, name.Location.txt)))
+        Arrow ("", Named ([], "Bin_prot.Common.buf"),
+        Arrow ("pos_ref", Named ([Named ([], "Bin_prot.Common.pos")], "ref"),
+        Named (List.map (fun x -> Var x) params, name.Location.txt)))
       in
       let make_var str =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Var str))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Var str))
       in
-      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+      List.fold_right (fun v acc -> Arrow ("", make_var v, acc)) params acc
 
     let prefix = "bin_read_"
 
@@ -357,16 +389,16 @@ module Binprot = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let acc =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Named (List.map (fun x -> `Var x) params, name.Location.txt)))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Named (List.map (fun x -> Var x) params, name.Location.txt)))
       in
       let make_var str =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Var str))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Var str))
       in
-      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+      List.fold_right (fun v acc -> Arrow ("", make_var v, acc)) params acc
 
     let prefix = "bin_read_"
     let sufix = "_"
@@ -378,17 +410,17 @@ module Binprot = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let acc =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Arrow ("", `Named ([], "int"),
-        `Named (List.map (fun x -> `Var x) params, name.Location.txt))))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Arrow ("", Named ([], "int"),
+        Named (List.map (fun x -> Var x) params, name.Location.txt))))
       in
       let make_var str =
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        `Arrow ("", `Named ([], "Bin_prot.Unsafe_common.eptr"),
-        `Var str))
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
+        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
+        Var str))
       in
-      List.fold_right (fun v acc -> `Arrow ("", make_var v, acc)) params acc
+      List.fold_right (fun v acc -> Arrow ("", make_var v, acc)) params acc
 
     let prefix = "bin_read_"
     let sufix = "__"
@@ -398,11 +430,11 @@ module Binprot = struct
 
   module Reader = struct
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> `Var x) ty_infos.ptype_params in
+      let params = format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right
-        (fun param acc -> `Arrow ("", `Named ([param], "Bin_prot.Type_class.reader"), acc))
+        (fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.reader"), acc))
         params
-        (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.reader"))
+        (Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.reader"))
 
     let prefix = "bin_reader_"
 
@@ -411,11 +443,11 @@ module Binprot = struct
 
   module Type_class = struct
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> `Var x) ty_infos.ptype_params in
+      let params = format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right
-        (fun param acc -> `Arrow ("", `Named ([param], "Bin_prot.Type_class.t"), acc))
+        (fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.t"), acc))
         params
-        (`Named ([`Named (params, name.Location.txt)], "Bin_prot.Type_class.t"))
+        (Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.t"))
 
     let prefix = "bin_"
 
@@ -424,49 +456,139 @@ module Binprot = struct
 end
 
 module Fields = struct
-  let gen_field self ({ Location.txt = name }, mut, ty, _) =
+  module List = ListLabels
+
+  let unit_ty = Named ([],"unit")
+  let bool_ty = Named ([],"bool")
+
+  let gen_field self ({ Location.txt = name }, mut, ty, _) : top_item list =
     (* Remove higher-rank quantifiers *)
     let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
-    let ty = `Core_type ty in
-    let accessor = `Arrow ("", self, ty) in
-    let fields =
-      [{ ident = name; typesig = accessor; body = `AnyVal }] in
+    let ty = Core_type ty in
+    let accessor = Arrow ("", self, ty) in
+    let fields = [Binding { ident = name; typesig = accessor; body = AnyVal }] in
     let fields = match mut with
       | Asttypes.Immutable -> fields
       | Asttypes.Mutable ->
-        let mutator = `Arrow ("", self, `Arrow ("", ty, `Named ([],"unit"))) in
-        { ident = "set_" ^ name; typesig = mutator; body = `AnyVal } :: fields
+        let typesig = Arrow ("", self, Arrow ("", ty, unit_ty)) in
+        (Binding { ident = "set_" ^ name; typesig ; body = AnyVal }) :: fields
     in
     fields
 
-  let bindings ({ Location.txt = name },ty) =
-    let params = List.map
-        (function None -> `Var "_" | Some s -> `Var (s.Location.txt))
-        ty.ptype_params
+  let make_fields_module ~self fields : top_item =
+    let fields_dot_t =
+      List.map fields ~f:(fun ({ Location.txt = name }, _, ty, _) ->
+        let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
+        let typesig = Named ([ self ; Core_type ty ], "Field.t") in
+        { ident = name ; typesig ; body = AnyVal }
+      )
     in
-    let self = `Named (params, name) in
+
+    (* Helper, used in the next few functions *)
+    let body =
+      mk_labeled_fun (List.map fields ~f:(fun (l,_,_,_) -> l.Location.txt,true))
+    in
+
+    (* TODO: iter, forall and exists can be easily factorised.
+             map could be too. *)
+    let fold =
+      let typesig =
+        let a = new_var () in
+        let init_ty, arrows =
+          List.fold_right fields_dot_t ~init:(a, Var a) ~f:(
+            fun field (fun_res, acc) ->
+              let param = new_var () in
+              let f =
+                Arrow ("", Var param, Arrow ("", field.typesig, Var fun_res))
+              in
+              (param, Arrow (field.ident, f, acc))
+          )
+        in
+        Arrow ("init", Var init_ty, arrows)
+      in
+      let body = Fun (["init", true], body) in
+      Binding { ident = "fold" ; typesig ; body }
+    in
+
+    let iter =
+      let typesig =
+        List.fold_right fields_dot_t ~init:unit_ty ~f:(fun field acc_ty ->
+          Arrow (field.ident, Arrow ("", field.typesig, unit_ty), acc_ty)
+        )
+      in
+      Binding { ident = "iter" ; typesig ; body }
+    in
+
+    let map =
+      let typesig =
+        List.fold_right2 fields_dot_t fields ~init:self ~f:(
+          fun field_t field acc_ty ->
+            let (_, _, ty, _) = field in
+            let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
+            Arrow (field_t.ident,
+              Arrow ("", field_t.typesig, Core_type ty), acc_ty
+            )
+        )
+      in
+      Binding { ident = "map" ; typesig ; body }
+    in
+
+    let forall =
+      let typesig =
+        List.fold_right fields_dot_t ~init:bool_ty ~f:(fun field acc_ty ->
+          Arrow (field.ident, Arrow ("", field.typesig, bool_ty), acc_ty)
+        )
+      in
+      Binding { ident = "for_all" ; typesig ; body }
+    in
+
+    let exists =
+      let typesig =
+        List.fold_right fields_dot_t ~init:bool_ty ~f:(fun field acc_ty ->
+          Arrow (field.ident, Arrow ("", field.typesig, bool_ty), acc_ty)
+        )
+      in
+      Binding { ident = "exists" ; typesig ; body }
+    in
+
+    Module (
+      "Fields",
+      List.map fields_dot_t ~f:(fun x -> Binding x) @ 
+        [ fold ; iter ; map ; forall ; exists ]
+    )
+
+  let top_lvl ({ Location.txt = name },ty) =
+    let params =
+      List.map ty.ptype_params ~f:(
+        function
+        | None -> Var "_"
+        | Some s -> Var (s.Location.txt)
+      )
+    in
+    let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_record fields ->
-      Misc.list_concat_map (gen_field self) fields
+      Misc.list_concat_map (gen_field self) fields @ [make_fields_module ~self fields]
     | _ -> []
+
 end
 
 module Compare = struct
   let bindings ~kind ({ Location.txt = name },ty) =
     let params = List.map
-        (function None -> `Var "_" | Some s -> `Var (s.Location.txt))
+        (function None -> Var "_" | Some s -> Var (s.Location.txt))
         ty.ptype_params
     in
-    let self = `Named (params, name) in
+    let self = Named (params, name) in
     let cmp = {
       ident = "compare_" ^ name;
-      typesig = `Arrow ("", self, `Arrow ("", self, `Named ([], "int")));
-      body = `AnyVal
+      typesig = Arrow ("", self, Arrow ("", self, Named ([], "int")));
+      body = AnyVal
     } in
     match kind with
-    | `Def when name = "t" -> [{cmp with ident = "compare"}; cmp]
-    | `Sig when name = "t" -> [{cmp with ident = "compare"}]
-    | _ -> [cmp]
+    | `Def when name = "t" -> [ Binding {cmp with ident = "compare"}; Binding cmp]
+    | `Sig when name = "t" -> [Binding {cmp with ident = "compare"}]
+    | _ -> [Binding cmp]
 
 end
 
@@ -509,7 +631,7 @@ module TypeWith = struct
       ) ty
 
     | "fields" ->
-      Misc.list_concat_map Fields.bindings ty
+      Misc.list_concat_map Fields.top_lvl ty
 
     | "compare" ->
       Misc.list_concat_map (Compare.bindings ~kind) ty
@@ -522,11 +644,11 @@ module TypeWith = struct
 
   let generate_definitions ~ty ?ghost_loc ext =
     let bindings = Misc.list_concat_map (generate_bindings ~kind:`Def ~ty) ext in
-    List.map (str_of_binding ?ghost_loc) bindings
+    List.map (str_of_top_lvl ?ghost_loc) bindings
 
   let generate_sigs ~ty ?ghost_loc ext =
     let bindings = Misc.list_concat_map (generate_bindings ~kind:`Sig ~ty) ext in
-    List.map (sig_of_binding ?ghost_loc) bindings
+    List.map (sig_of_top_lvl ?ghost_loc) bindings
 end
 
 module Nonrec = struct
