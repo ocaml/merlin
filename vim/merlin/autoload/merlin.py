@@ -322,7 +322,7 @@ def vim_locate_at_cursor(path):
   command_locate(path, line, col)
 
 def vim_locate_under_cursor():
-  delimiters = [' ', '\n', '=', ';', ',', '(', ')', '[', ']', '{', '}', '|', '"']
+  delimiters = [' ', '\n', '=', ';', ',', '(', ')', '[', ']', '{', '}', '|', '"',"+","-","*","/" ]
   line_nb, col_nb = vim.current.window.cursor
   line = vim.current.buffer[line_nb - 1]
   start = col_nb
