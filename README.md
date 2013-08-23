@@ -246,6 +246,7 @@ Misc.
 
 Other common extensions which are supported :
 - pa\_ounit.syntax
+- pa\_js.syntax
 
 Screenshots
 ===========
