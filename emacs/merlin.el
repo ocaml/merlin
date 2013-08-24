@@ -538,7 +538,7 @@ ORIG-POINT is where the user was before starting telling merlin."
   (let ((temp-point (point))
         (end-p nil))
     (forward-line 10)
-    (while (and (not end-p) (< (point) (point-max)))
+    (while (and (not end-p) (< temp-point (point-max)))
       (if (equal ;; this is not tautological since value is never nil
            (merlin-tell-piece "end" temp-point (point))
            t)
@@ -681,6 +681,7 @@ The parameter VIEW-ERRORS-P controls whether we should care for errors"
   (if (not (merlin-is-last-user-p))
       (merlin-rewind))
   (save-excursion
+    (end-of-line)
     (merlin-tell-piece-split "struct" merlin-lock-point (point))
     (merlin-tell-till-end-of-phrase view-errors-p)))
   
