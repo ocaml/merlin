@@ -1165,6 +1165,12 @@ Returns the position."
   "Open the customize buffer for the group merlin."
   (interactive)
   (customize-group 'merlin))
+
+(defun merlin-version ()
+  "Print the version of the ocamlmerlin binary."
+  (interactive)
+  (message "%s" (replace-regexp-in-string "\n$" ""
+                                          (shell-command-to-string "ocamlmerlin -version"))))
 ;; Mode definition
 (defvar merlin-mode-map
   (let ((merlin-map (make-sparse-keymap))
@@ -1230,6 +1236,9 @@ Returns the position."
     (define-key merlin-menu-map [restartmerlin]
       '(menu-item "Restart merlin" merlin-restart-process
                   :help "Restart merlin for the current buffer."))
+    (define-key merlin-menu-map [versionmerlin]
+      '(menu-item "Version" merlin-version
+                  :help "Print the version of the merlin binary."))
     (define-key merlin-map [menu-bar merlin] (cons "merlin" merlin-menu-map))
     merlin-map
     ))
