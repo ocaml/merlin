@@ -356,7 +356,8 @@ buffer. Return the process created"
     (setq merlin-local-process (merlin-start-process merlin-current-flags users))
     (setq merlin-pending-errors nil)
     (merlin-load-project-file)
-    (merlin-to-point)))
+    (merlin-to-point)
+    (message "Merlin restarted")))
       
 (defun merlin-process-clear-flags ()
   "Clear all flags set up to be passed to merlin.
@@ -455,7 +456,8 @@ the error message otherwise print a generic error message."
                                (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
                      (message "Invalid answer received from merlin.")))))
            nil)
-          nil)))))
+          nil)
+        t))))
 
 (defun merlin-send-command (command args &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
@@ -1261,7 +1263,7 @@ Returns the position."
   (set (make-local-variable 'merlin-last-point-type) nil)
   ; if there is not yet a buffer for the current buffer, create one
   (when (not (merlin-process-started-p))
-      (merlin-start-process nil))
+      (merlin-start-process merlin-current-flags))
   (set (make-local-variable 'merlin-local-process)
        (merlin-get-process-variable 'merlin-local-process))
   (merlin-process-add-user)
