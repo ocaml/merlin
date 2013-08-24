@@ -228,7 +228,6 @@ implementation:
 top_structure:
     (* empty  *)                  { () }
   | structure_item top_structure  { () }
-  | structure_item error          { () }
 ;
 top_expr:
   | seq_expr                             { emit_top Definition $endpos }
@@ -325,8 +324,8 @@ structure_item:
       { emit_top Definition $endpos }
   | MODULE TYPE ident EQUAL module_type
       { emit_top Definition $endpos }
-  | OPEN mod_longident
-      { emit_top Definition $endpos }
+  | OPEN mod_longident option(UIDENT)
+      { emit_top Definition $endpos($2) }
   | CLASS class_declarations
       { emit_top Definition $endpos }
   | CLASS TYPE class_type_declarations
