@@ -242,6 +242,11 @@ let command_type = {
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_declaration id ppf t);
         Some (Protocol.with_location loc ["type", `String (to_string ())])
+      | { Browse. loc; env; context = Browse.Module (_,m) } ->
+        let ppf, to_string = Misc.ppf_to_string () in
+        Printtyp.wrap_printing_env env
+          (fun () -> Printtyp.modtype ppf m);
+        Some (Protocol.with_location loc ["type", `String (to_string ())])
       | _ -> None
     in
     let structures = Misc.list_concat_map
