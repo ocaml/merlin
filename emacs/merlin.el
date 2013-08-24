@@ -930,24 +930,22 @@ are displayed, and without overlay."
 (defun merlin-show-type-def ()
   "Print the definition of the type of the term under point."
   (interactive)
-  (let* ((bounds (bounds-of-thing-at-point 'ocamlatom)))
-    (merlin-type-of-expression (merlin-string-at-bounds bounds)
-                               #'(lambda (type)
-                                   (merlin-type-of-expression (merlin-get-type-codomain type)
-                                                              #'(lambda (typedef)
-                                                                  (merlin-display-type bounds
-                                                                                       (if typedef typedef
-                                                                                         (concat type ": <not an atomic type>")))))))))
+  (lexical-let* ((bounds (bounds-of-thing-at-point 'ocamlatom)))
+    (with-merlin-sync
+     (merlin-type-of-expression
+      (merlin-string-at-bounds bounds)
+      #'(lambda (type)
+          (merlin-type-of-expression (merlin-get-type-codomain type)
+                                     #'(lambda (typedef)
+                                         (merlin-display-type bounds
+                                                              (if typedef typedef
+                                                                (concat type ": <not an atomic type>"))))))))))
 
 (defun merlin-show-type-of-region ()
   "Show the type of the region."
   (interactive)
   (with-merlin-sync
    (merlin-show-type (cons (region-beginning) (region-end)))))
-(defun merlin-show-type-of-point-quiet ()
-  "Show the type of the identifier under the point if it is short (a value)."
-  (with-merlin-sync
-   (merlin-show-type (bounds-of-thing-at-point 'ocamlatom) t)))
 
 (defun merlin-show-type-of-point (arg) 
   "Show the type of the identifier under the point. 
