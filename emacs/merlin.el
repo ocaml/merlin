@@ -334,7 +334,7 @@ buffer. Return the process created"
 ; don't forget to initialize temporary variable
     (with-current-buffer (merlin-get-process-buffer-name)
       (set (make-local-variable 'merlin-queue) (tq-create p))
-      (set (make-local-variable 'merlin-process-users) (cons name users))
+      (set (make-local-variable 'merlin-process-users) (cons name (delete name users)))
       (set (make-local-variable 'merlin-local-process) p)
       (set (make-local-variable 'merlin-process-last-user) name)
       )
@@ -391,26 +391,22 @@ This sets `merlin-current-flags' to nil."
   "Remove the current buffer as an user for the merlin process.
 Kill the process if required."
   (let ((name (buffer-name)))
-    (with-current-buffer (merlin-get-process-buffer-name)
-      (setq merlin-process-users (delete name merlin-process-users))
-      (if (and (not merlin-process-users)
-               merlin-automatically-garbage-processes)
-          (message "Killed merlin process.")
-          (merlin-kill-process))
-      )
-    )
-)
+    (if (get-buffer (merlin-get-process-buffer-name))
+        (with-current-buffer (merlin-get-process-buffer-name)
+          (setq merlin-process-users (delete name merlin-process-users))
+          (when (and (not merlin-process-users)
+                     merlin-automatically-garbage-processes)
+            (message "Killed merlin process.")
+            (merlin-kill-process))))))
 (defun merlin-process-started-p ()
   "Return non-nil if the merlin process for the current buffer is already started."
    (get-buffer (merlin-get-process-buffer-name)))
 (defun merlin-kill-process ()
   "Kill the merlin process inside the buffer."
   (setq merlin-processes (delete merlin-local-process merlin-processes))
-  (process-send-eof (merlin-get-process))
-  (ignore-errors (delete-process (merlin-get-process)))
-  (kill-buffer (merlin-get-process-buffer-name))
   (with-current-buffer (merlin-get-process-buffer-name)
     (tq-close merlin-queue))
+  (kill-buffer (merlin-get-process-buffer-name))
 )
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
@@ -1300,7 +1296,7 @@ Short cuts:
 (defun merlin-kill-buffer-hook ()
   "Cleans the buffer being killed."
   (if merlin-mode
-      (merlin-mode -1)))
+      (merlin-process-remove-user)))
   
 (defun merlin-insinuate ()
   "Initialize merlin."
