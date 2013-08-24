@@ -424,38 +424,50 @@ the error message otherwise print a generic error message."
 	  "\n"))
         (buffer (current-buffer))
         (name (buffer-name)))
-    (if merlin-debug (merlin-debug (format ">%s" string)))
-    (with-current-buffer (merlin-get-process-buffer-name)
-      (setq merlin-process-last-user name)
-      (tq-enqueue merlin-queue string "\n"
-                  (cons callback-if-success (cons callback-if-exn command))
-                  #'(lambda (closure answer)
-                      (with-current-buffer buffer
-                        (setq merlin-ready t)
-                        (if (>= (length answer) 10000)
-                            (message "merlin: Parsing long answer (%dk)" (/ (length answer) 1000)))
-                        (let ((a (ignore-errors (json-read-from-string answer))))
-                          (if a
-                              (progn
-                                (if merlin-debug
-                                    (merlin-debug (format "<%s" answer)))
-                                (if (string-equal (elt a 0) "return")
-                                    (funcall (car closure) (elt a 1))
-                                  (progn
-                                    (if (functionp (cadr closure))
-                                        (funcall (cadr closure) (elt a 1))
-                                      (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
-                            (message "Invalid answer received from merlin.")))))
-      nil))))
+    (if (not (equal (process-status (merlin-get-process)) 'run))
+        (progn
+          (error "Merlin process not running (try restarting with %s)"
+                 (substitute-command-keys "\\[merlin-restart-process]"))
+          nil)
+      (progn
+        (if merlin-debug (merlin-debug (format ">%s" string)))
+        (with-current-buffer (merlin-get-process-buffer-name)
+          (setq merlin-process-last-user name)
+          (tq-enqueue
+           merlin-queue string
+           "\n"
+           (cons callback-if-success (cons callback-if-exn command))
+           #'(lambda (closure answer)
+               (with-current-buffer buffer
+                 (setq merlin-ready t)
+                 (if (>= (length answer) 10000)
+                     (message "merlin: Parsing long answer (%dk)" (/ (length answer) 1000)))
+                 (let ((a (ignore-errors (json-read-from-string answer))))
+                   (if a
+                       (progn
+                         (if merlin-debug
+                             (merlin-debug (format "<%s" answer)))
+                         (if (string-equal (elt a 0) "return")
+                             (funcall (car closure) (elt a 1))
+                           (progn
+                             (if (functionp (cadr closure))
+                                 (funcall (cadr closure) (elt a 1))
+                               (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
+                     (message "Invalid answer received from merlin.")))))
+           nil)
+          nil)))))
 
 (defun merlin-send-command (command args &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
   (setq merlin-result nil)
   (setq merlin-ready nil)
-  (merlin-send-command-async command args #'(lambda (data)
-                                              (setq merlin-ready t)
-                                              (setq merlin-result data)) callback-if-exn)
-  (merlin-wait-for-answer))
+  (if (merlin-send-command-async
+       command
+       args
+       #'(lambda (data)
+           (setq merlin-ready t)
+           (setq merlin-result data)) callback-if-exn)
+      (merlin-wait-for-answer)))
 
 (defun merlin-is-long-p (type)
   "Return non-nil if TYPE is the signature of a module."
@@ -1263,6 +1275,15 @@ Returns the position."
    (equal (file-name-extension (buffer-file-name))
           "ml")))
   
+(defun merlin-process-dead-p ()
+  "Return non-nil if the merlin process is dead."
+  (if (merlin-get-process)
+      (not (equal (process-status (merlin-get-process)) 'run))))
+(defun merlin-lighter()
+  "Return the lighter for merlin which indicates the status of merlin process."
+  (if (merlin-process-dead-p)
+      " merlin(??)"
+    " merlin"))
 ;;;###autoload
 (define-minor-mode merlin-mode
   "Minor mode for interacting with a merlin process.
@@ -1271,7 +1292,7 @@ buffers) and perform queries on it.
 
 Short cuts:
 \\{merlin-mode-map}"
-  nil " merlin"
+  nil :lighter (:eval (merlin-lighter))
   :keymap merlin-mode-map
   (if merlin-mode 
       (if (merlin-is-ml-buffer) 
