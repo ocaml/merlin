@@ -98,27 +98,21 @@ let refresh_state_on_signal state f =
   Misc.try_finally f (fun () -> ignore (signal previous))
 
 let main_loop () =
-  let input, output as io = IO.make ~input:stdin ~output:stdout in
+  let input, output as io = IO.(lift (make ~input:stdin ~output:stdout)) in
   try
     let rec loop state =
       let state, answer =
         let state' = ref state in
-        try match
-          refresh_state_on_signal state' 
-            (fun () -> Stream.next input)
-        with
-          | `List (`String command :: args) ->
-            let state = !state' in
-            let { Command.handler } =
-              try Hashtbl.find Command.commands command
-              with Not_found -> failwith "unknown command"
-            in
-            let state, result = handler io state args in
-            state, IO.return result
-          | _ -> failwith "malformed command"
+        try 
+          let Protocol.Request request = 
+            refresh_state_on_signal state' (fun () -> Stream.next input)
+          in 
+          let state', response = Command.dispatch io state request in
+          state',
+          Protocol.Return (request, response)
         with
           | Stream.Failure as exn -> raise exn
-          | exn -> !state', IO.fail exn
+          | exn -> !state', Protocol.Exception exn
       in
       output answer;
       loop state

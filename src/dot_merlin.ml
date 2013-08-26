@@ -93,8 +93,8 @@ let exec_dot_merlin ~path_modify ~load_packages { path; project; entries} =
   let cwd = Filename.dirname path in
   List.iter (
     function
-    | `B path   -> path_modify `Add "build" ~cwd path
-    | `S path   -> path_modify `Add "source" ~cwd path
+    | `B path   -> path_modify `Add `Build ~cwd path
+    | `S path   -> path_modify `Add `Source ~cwd path
     | `PKG pkgs -> load_packages pkgs
     | `EXT exts ->
       List.iter (fun e -> Extensions_utils.set_extension ~enabled:true e) exts

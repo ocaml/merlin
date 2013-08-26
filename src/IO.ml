@@ -26,14 +26,22 @@
 
 )* }}} *)
 
-type io = Json.json Stream.t * (Json.json -> unit)
-type io_maker = input:in_channel -> output:out_channel -> io
+type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
+type low_io = Json.json Stream.t * (Json.json -> unit)
+type io_maker = input:in_channel -> output:out_channel -> low_io
 
 let section = Logger.(`protocol)
 
 exception Protocol_failure of string
+let error_catcher = ref (fun _ -> None) 
+let invalid_arguments () = failwith "invalid arguments"
 
-let json_log  (input,output) =
+let stream_map s f =
+  Stream.from (fun _ -> 
+      try Some (f (Stream.next s)) 
+      with Stream.Failure -> None)
+
+let json_log (input,output) =
   let log_input json = Logger.log section ~prefix:"<" (Json.to_string json); json in
   let log_output json = Logger.log section ~prefix:">" (Json.to_string json); json in
   let input' =
@@ -80,7 +88,6 @@ let select_frontend name =
 
 let return l = `List [`String "return" ; l]
 
-let error_catcher = ref (fun _ -> None)
 let fail = function
   | Protocol_failure s ->
     prerr_endline ("Fatal protocol failure. " ^ s);
@@ -112,3 +119,179 @@ let with_location loc assoc =
   `Assoc (("start", pos_to_json loc.Location.loc_start) ::
           ("end",   pos_to_json loc.Location.loc_end) ::
           assoc)
+
+let optional_position = function
+  | [`String "at"; jpos] -> Some (pos_of_json jpos)
+  | [] -> None
+  | _ -> invalid_arguments ()
+let string_list l =
+  List.map (function `String s -> s | _ -> invalid_arguments ()) l
+let json_of_string_list l =
+  `List (List.map (fun s -> `String s) l)
+
+let source_or_build = function
+  | "source" -> `Source
+  | "build"  -> `Build
+  | _ -> invalid_arguments ()
+
+let list_or_reset = function
+  | "list"  -> `List
+  | "reset" -> `Reset
+  | _ -> invalid_arguments ()
+
+let add_or_remove = function
+  | "add"    -> `Add
+  | "remove" -> `Rem
+  | _ -> invalid_arguments ()
+
+let load_or_find = function
+  | "load" -> `File
+  | "find" -> `Find
+  | _ -> invalid_arguments ()
+
+module Protocol_io = struct
+  open Protocol
+
+  let request_of_json = function
+    | [`String "tell"; `String "struct"; `String source] ->
+      Request (Tell (`Source source))
+    | [`String "tell"; `String "end"; `String source] ->
+      Request (Tell (`More source))
+    | [`String "tell"; `String ("struct"|"end"); `Null] ->
+      Request (Tell `End)
+    | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
+      Request (Type_expr (`Source (expr, optional_position opt_pos)))
+    | [`String "type"; `String "at"; jpos] ->
+      Request (Type_expr (`At (pos_of_json jpos)))
+    | [`String "type"; `String "enclosing"; jpos] ->
+      Request (Type_enclosing (pos_of_json jpos))
+    | (`String "complete" :: `String "prefix" :: `String prefix :: opt_pos) ->
+      Request (Complete_prefix (prefix, optional_position opt_pos))
+    | (`String "locate" :: `String path :: opt_pos) ->
+      Request (Locate (path, optional_position opt_pos))
+    | [`String "drop"] ->
+      Request Drop
+    | [`String "seek"; `String "position"] ->
+      Request (Seek `Position)
+    | [`String "seek"; `String "before"; jpos] ->
+      Request (Seek (`Before (pos_of_json jpos)))
+    | [`String "seek"; `String "exact"; jpos] ->
+      Request (Seek (`Exact (pos_of_json jpos)))
+    | [`String "seek"; `String "end"] ->
+      Request (Seek `End)
+    | [`String "seek"; `String "maximize_scope"] ->
+      Request (Seek `Maximize_scope)
+    | (`String "boundary" :: `String "next" :: opt_pos) ->
+      Request (Boundary (`Next, optional_position opt_pos))
+    | (`String "boundary" :: `String "prev" :: opt_pos) ->
+      Request (Boundary (`Prev, optional_position opt_pos))
+    | (`String "boundary" :: `String "current" :: opt_pos)
+    | (`String "boundary" :: opt_pos) ->
+      Request (Boundary (`Current, optional_position opt_pos))
+    | [`String "reset"] ->
+      Request (Reset None)
+    | [`String "reset"; `String "name"; `String fname] ->
+      Request (Reset (Some fname))
+    | [`String "refresh"] ->
+      Request (Refresh `Full)
+    | [`String "refresh"; `String "quick"] ->
+      Request (Refresh `Quick)
+    | [`String "cd"; `String cd] ->
+      Request (Cd cd)
+    | [`String "errors"] ->
+      Request Errors
+    | (`String "dump" :: `String "env" :: opt_pos) ->
+      Request (Dump (`Env (optional_position opt_pos)))
+    | [`String "dump"; `String "sig"] ->
+      Request (Dump `Sig)
+    | [`String "dump"; `String "chunks"] ->
+      Request (Dump `Chunks)
+    | [`String "dump"; `String "tree"] ->
+      Request (Dump `Tree)
+    | [`String "dump"; `String "outline"] ->
+      Request (Dump `Outline)
+    | [`String "dump"; `String "exn"] ->
+      Request (Dump `Exn)
+    | [`String "which"; `String "path"; `String name] ->
+      Request (Which_path name)
+    | [`String "which"; `String "with_ext"; `String ext] ->
+      Request (Which_with_ext ext)
+    | [`String "find"; `String "use"; `List packages]
+    | (`String "find" :: `String "use" :: packages) ->
+      Request (Findlib_use (string_list packages))
+    | [`String "find"; `String "list"] ->
+      Request Findlib_list
+    | [`String "extension"; `String "enable"; `List extensions] ->
+      Request (Extension_set (`Enabled,string_list extensions))
+    | [`String "extension"; `String "disable"; `List extensions] ->
+      Request (Extension_set (`Disabled,string_list extensions))
+    | [`String "extension"; `String "list"] ->
+      Request (Extension_list `All)
+    | [`String "extension"; `String "list"; `String "enabled"] ->
+      Request (Extension_list `Enabled)
+    | [`String "extension"; `String "list"; `String "disabled"] ->
+      Request (Extension_list `Disabled)
+    | [`String "path"; `String "list";
+                       `String ("source"|"build" as var)] ->
+      Request (Path_list (source_or_build var))
+    | [`String "path"; `String "reset";
+                       `String ("source"|"build" as var)] ->
+      Request (Path_reset (source_or_build var))
+    | [`String "path"; `String "reset"] ->
+      Request (Path_reset `Both)
+    | (`String "path" :: `String ("add"|"remove" as action) ::
+         `String ("source"|"build" as var) :: ((`List pathes :: []) | pathes)) ->
+      Request (Path (source_or_build var, `Relative, 
+                     add_or_remove action, string_list pathes))
+    | (`String "path" :: `String "raw" :: `String ("add"|"remove" as action) ::
+         `String ("source"|"build" as var) :: ((`List pathes :: []) | pathes)) ->
+      Request (Path (source_or_build var, `Absolute,
+                     add_or_remove action, string_list pathes))
+    | [`String "project"; `String ("load"|"find" as action); `String path] ->
+      Request (Project_load (load_or_find action, path))
+    | _ -> invalid_arguments ()
+  
+  let response_to_json = function
+    | Failure s -> `List [`String "failure"; `String s]
+    | Error error -> `List [`String "error"; error]
+    | Exception exn -> 
+      begin match !error_catcher exn with
+      | Some (_,error) -> `List [`String "error"; error]
+      | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
+      end
+    | Return (request, response) ->
+      `List [`String "return";
+      begin match request, response with
+        | Tell _, b -> `Bool b
+        | Type_expr _, json -> json
+        | Type_enclosing _, json -> json
+        | Complete_prefix _, json -> json
+        | Locate _, json -> json
+        | Drop, position -> pos_to_json position
+        | Seek _, position -> pos_to_json position
+        | Boundary _, json -> json
+        | Reset _, () -> `Bool true
+        | Refresh _, changed -> `Bool changed
+        | Cd _, () -> `Bool true
+        | Errors, json -> json
+        | Dump _, json -> json
+        | Which_path _, str -> `String str
+        | Which_with_ext _, strs -> json_of_string_list strs
+        | Findlib_use _, () -> `Bool true
+        | Findlib_list, strs -> json_of_string_list strs
+        | Extension_list _, strs -> json_of_string_list strs
+        | Extension_set _, () -> `Bool true
+        | Path _, changed -> `Bool changed
+        | Path_list _, strs -> json_of_string_list strs
+        | Path_reset _, () -> `Bool true
+        | Project_load _, strs -> json_of_string_list strs
+      end]
+end
+
+let request_of_json = function
+  | `List jsons -> Protocol_io.request_of_json jsons
+  | _ -> invalid_arguments ()
+let response_to_json = Protocol_io.response_to_json
+
+let lift (i,o : low_io) : io = 
+  (stream_map i request_of_json, (fun x -> o (response_to_json x)))
