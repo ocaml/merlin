@@ -80,12 +80,10 @@ include Utils
 
 exception Found of Location.t
 
-let rec browse_structure str modules =
-  (* start from the bottom *)
-  let items = List.rev str.Typedtree.str_items in
+let stop_at_first f items =
   try
     List.iter (fun item ->
-      match check_item modules item with
+      match f item with
       | None -> ()
       | Some loc -> raise (Found loc)
     ) items ;
@@ -93,100 +91,70 @@ let rec browse_structure str modules =
   with Found loc ->
     Some loc
 
+let rec browse_structure browsable modules =
+  (* start from the bottom *)
+  let items = List.rev browsable in
+  stop_at_first (check_item modules) items
+
 and check_item modules item =
-  let open Typedtree in
-  let check_binding ~name (pat, _) =
-    match pat.pat_desc with
-    | Tpat_var (id, _loc) -> id.Ident.name = name
-    | _ -> false
-  in
-  let rec aux mod_expr path =
-    match mod_expr.mod_desc with
-    | Tmod_ident (path', _) ->
+  let rec aux mod_item path =
+    let open Browse in
+    match mod_item with
+    | [ { context = Module (Alias path', _) } ] ->
       let full_path = (path_to_list path') @ path in
       from_path' full_path
-    | Tmod_structure str ->
-      browse_structure str path
-    | Tmod_constraint (mod_expr, _, _, _) ->
-      aux mod_expr path
-    | Tmod_apply _
-      (* Functor application, we probably want to stop here. *)
-    | Tmod_unpack _ ->
-      (* Unpack of a first class module, stop here as well. *)
-      Some mod_expr.mod_loc
-    | Tmod_functor (_,_,_,mod_expr) ->
-      (* We are looking for something inside a functor definition? Weird. *)
-      aux mod_expr path
+    | otherwise ->
+      browse_structure otherwise path
   in
-  let find_item ~name item =
-    match item.str_desc with
-    | Tstr_primitive (id, str_loc, _) when id.Ident.name = name ->
-      Some str_loc.Asttypes.loc
-    | Tstr_value (_, bindings) ->
-      begin
-        try
-          let (pat, _) = List.find (check_binding ~name) bindings in
-          Some pat.pat_loc
-        with Not_found ->
-          None
-      end
-    | Tstr_type lst ->
-      begin
-        try
-          let (_,loc,_) = List.find (fun (i,_,_) -> i.Ident.name = name) lst in
-          Some loc.Asttypes.loc
-        with Not_found ->
-          None
-      end
-    | Tstr_module (id, loc, _) when id.Ident.name = name ->
-      Some (loc.Asttypes.loc)
-    | Tstr_recmodule _ ->
-      debug_log "   recursive modules not handled, stopping ..." ;
-      None (* TODO *)
-    | Tstr_include (mod_expr, idents) ->
-      if List.exists (fun id -> id.Ident.name = name) idents then
-        aux mod_expr [ name ]
-      else
-        None
-    | _ -> None (* TODO *)
+  let rec get_loc ~name item =
+    match item.Browse.context with
+    | Browse.Pattern (Some id, _)
+    | Browse.TypeDecl (id, _)
+    | Browse.Module (Browse.TopNamed id, _)
+    | Browse.NamedOther id when id.Ident.name = name ->
+      Some item.Browse.loc
+    | Browse.Module (Browse.Include ids, _)
+      when List.exists (fun i -> i.Ident.name = name) ids ->
+      aux (Lazy.force item.Browse.nodes) [ name ]
+    | Browse.Other ->
+      (* The fuck is this? *)
+      stop_at_first (get_loc ~name) (Lazy.force item.Browse.nodes)
+    | _ -> None
   in
-  let get_mod_expr ~name item =
-    match item.str_desc with
-    | Tstr_module (id, _, mod_expr) when id.Ident.name = name ->
-      `Direct mod_expr
-    | Tstr_recmodule _ ->
-      debug_log "   recursive modules not handled, stopping..." ;
-      `Not_found (* TODO *)
-    | Tstr_include (mod_expr, idents) ->
-      if List.exists (fun id -> id.Ident.name = name) idents then
-        `Included mod_expr
-      else
-        `Not_found
+  let get_on_track ~name item =
+    match item.Browse.context with
+    | Browse.Module (Browse.TopNamed id, _) when id.Ident.name = name ->
+      `Direct
+    | Browse.Module (Browse.Include ids, _)
+      when List.exists (fun i -> i.Ident.name = name) ids ->
+      `Included
     | _ -> `Not_found
   in
   match modules with
   | [] -> assert false
-  | [ str_ident ] -> find_item ~name:str_ident item
+  | [ str_ident ] -> get_loc ~name:str_ident item
   | mod_name :: path ->
     begin match
-      match get_mod_expr ~name:mod_name item with
+      match get_on_track ~name:mod_name item with
       | `Not_found -> None
-      | `Direct mod_expr -> Some (path, mod_expr)
-      | `Included mod_expr -> Some (modules, mod_expr)
+      | `Direct -> Some path
+      | `Included -> Some modules
     with
     | None ->
       error_log (Printf.sprintf "   module '%s' not found" mod_name) ;
       None
-    | Some (path, mod_expr) ->
-      aux mod_expr path
+    | Some path ->
+      aux (Lazy.force item.Browse.nodes) path
     end
 
 and browse_cmts ~root modules =
   let open Cmt_format in
   let cmt_infos = read_cmt root in
   match cmt_infos.cmt_annots with
-  | Implementation impl -> browse_structure impl modules
-  | Packed (_sign, files) ->
+  | Implementation impl ->
+    let browses = Browse.structure impl in
+    browse_structure browses modules
+  | Packed (_, files) ->
     begin match modules with
     | [] -> assert false
     | mod_name :: modules ->
