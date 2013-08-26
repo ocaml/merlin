@@ -32,17 +32,24 @@
  * This is used both by the type-at-point and completion features.
  *)
 
+type mod_info =
+  | TopNamed of Ident.t
+  | Include of Ident.t list
+  | Alias of Path.t
+  | Local
+
 (* Typedtree constructions recognized *)
 type context =
   | Expr      of Types.type_expr
-  | Pattern   of Types.type_expr
+  | Pattern   of Ident.t option * Types.type_expr
   | Type      of Types.type_expr
   | TypeDecl  of Ident.t * Types.type_declaration
-  | Module    of Types.module_type
+  | Module    of mod_info * Types.module_type
   | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
   | ClassType of Ident.t * Types.class_type_declaration
   | MethodCall of Types.type_expr * string
+  | NamedOther of Ident.t
   | Other
 
 (* The browse tree; lazyness is added to prevent building the
@@ -61,7 +68,7 @@ val dummy : t
 (* Build tree out of Typedtree fragment *)
 val structure   : Typedtree.structure   -> t list
 val expression  : Typedtree.expression  -> t
-val module_expr : Typedtree.module_expr -> t
+(* val module_expr : Typedtree.module_expr -> t *)
 
 (* Navigate through tree *)
 

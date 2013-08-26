@@ -207,12 +207,13 @@ let command_type = {
     let ppf, to_string = Misc.ppf_to_string () in
     Printtyp.wrap_printing_env node.Browse.env
     begin fun () -> match node.Browse.context with
+      | Browse.NamedOther _ (* FIXME *)
       | Browse.Other -> raise Not_found
-      | Browse.Expr t | Browse.Pattern t | Browse.Type t ->
+      | Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t ->
         VPrinttyp.type_scheme ppf t
       | Browse.TypeDecl (ident, t) ->
         VPrinttyp.type_declaration ident ppf t
-      | Browse.Module m -> Printtyp.modtype ppf m
+      | Browse.Module (_, m) -> Printtyp.modtype ppf m
       | Browse.Modtype (ident, m) ->
         VPrinttyp.modtype_declaration ident ppf m
       | Browse.Class (ident, cd) ->
@@ -231,7 +232,7 @@ let command_type = {
     let pos = Protocol.pos_of_json jpos in
     let aux = function
       | { Browse. loc; env;
-          context = (Browse.Expr t | Browse.Pattern t | Browse.Type t) } ->
+          context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_scheme ppf t);

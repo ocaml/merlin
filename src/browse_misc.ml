@@ -165,6 +165,7 @@ let rec dump_ts ts =
       | Browse.Class (_, _) -> "class"
       | Browse.ClassType _ -> "class_type"
       | Browse.MethodCall _ -> "#"
+      | Browse.NamedOther _
       | Browse.Other -> "other"
     in
     Protocol.with_location loc

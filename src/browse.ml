@@ -28,16 +28,23 @@
 
 open Typedtree
 
+type mod_info =
+  | TopNamed of Ident.t
+  | Include of Ident.t list
+  | Alias of Path.t
+  | Local
+
 type context =
   | Expr      of Types.type_expr
-  | Pattern   of Types.type_expr
+  | Pattern   of Ident.t option * Types.type_expr
   | Type      of Types.type_expr
   | TypeDecl  of Ident.t * Types.type_declaration
-  | Module    of Types.module_type
+  | Module    of mod_info * Types.module_type
   | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
   | ClassType of Ident.t * Types.class_type_declaration
   | MethodCall of Types.type_expr * string
+  | NamedOther of Ident.t
   | Other
 
 (* Typedtree navigation made easy *)
@@ -64,15 +71,17 @@ and structure_item ~env { str_desc ; str_loc ; str_env } =
 and structure_item_desc ~env = function
   | Tstr_eval e            -> [expression e]
   | Tstr_value (_,pes)     -> patterns ~env pes
-  | Tstr_primitive (_,l,_)
-  | Tstr_exception (_,l,_) -> [singleton l.Location.loc env]
-  | Tstr_module (_,_,m)    -> [module_expr m]
-  | Tstr_recmodule ms      -> List.map (fun (_,_,_,m) -> module_expr m) ms
+  | Tstr_primitive (i,l,_)
+  | Tstr_modtype (i,l,_) (* TODO: change to Modtype *)
+  | Tstr_exception (i,l,_)
+  | Tstr_exn_rebind (i,l,_,_) ->
+    [singleton ~context:(NamedOther i) l.Location.loc env]
+  | Tstr_module (i,_,m)    -> [module_expr ~mod_info:(TopNamed i) m]
+  | Tstr_recmodule ms ->
+    List.map (fun (i,_,_,m) -> module_expr ~mod_info:(TopNamed i) m) ms
   | Tstr_type ilds ->
     let aux (id,_,ty) = type_declaration ~env id ty in
     List.map aux ilds
-  | Tstr_modtype (_,l,_)
-  | Tstr_exn_rebind (_,l,_,_) -> [singleton l.Location.loc env]
   | Tstr_open _               -> []
   | Tstr_class lst            -> List.map (class_declaration ~env) lst
   | Tstr_class_type lst ->
@@ -80,7 +89,7 @@ and structure_item_desc ~env = function
       (fun (id,l,{ ci_type_decl }) ->
         singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env)
       lst
-  | Tstr_include (m,_) -> [module_expr m]
+  | Tstr_include (m,ids) -> [module_expr ~mod_info:(Include ids) m]
 
 and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest } =
   let nodes = match typ_manifest with
@@ -148,8 +157,13 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
     | Tpat_or (p1,p2,_) -> [p1;p2]
     | Tpat_record (r,_) -> List.map (fun (_,_,_,p) -> p) r
   in
+  let name =
+    match pat_desc with
+    | Tpat_var (i, _) -> Some i
+    | _ -> None
+  in
   singleton 
-    ~context:(Pattern pat_type)
+    ~context:(Pattern (name, pat_type))
     ~nodes:(lazy (List.map (pattern ?env) subpatterns)) pat_loc 
     (match env with Some e' -> e' | _ -> pat_env)
 
@@ -210,14 +224,20 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
       nodes = lazy (expression_desc exp_desc) }
     exp_extra
 
-and module_expr { mod_env ; mod_desc ; mod_type ; mod_loc } =
-  { loc = mod_loc ; env = mod_env ; context = Module mod_type ;
-    nodes = lazy (module_expr_desc mod_desc) }
+and module_expr ?(mod_info=Local) { mod_env ; mod_desc ; mod_type ; mod_loc } =
+  match mod_desc with
+  | Tmod_ident (p, _loc) ->
+    { loc = mod_loc ; env = mod_env ; context = Module (Alias p, mod_type) ;
+      nodes = lazy [] }
+  | _ ->
+    { loc = mod_loc ; env = mod_env ; context = Module (mod_info, mod_type) ;
+      nodes = lazy (module_expr_desc mod_desc) }
 
 and module_expr_desc = function
-  | Tmod_ident _ -> []
+  | Tmod_ident _ -> assert false (* filtered beforehand *)
   | Tmod_structure s -> structure s
   | Tmod_constraint (e,_,_,_)
+  (* TODO: use name *)
   | Tmod_functor (_,_,_,e) -> [module_expr e]
   | Tmod_apply (e1,e2,_) -> [module_expr e1 ; module_expr e2]
   | Tmod_unpack (e,_) -> [expression e]
