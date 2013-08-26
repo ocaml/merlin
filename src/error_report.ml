@@ -32,8 +32,8 @@ let format ~valid ~where ?loc msg =
     match loc with
       | None -> content
       | Some loc ->
-        ("start", Protocol.pos_to_json loc.Location.loc_start) ::
-        ("end", Protocol.pos_to_json loc.Location.loc_end) ::
+        ("start", IO.pos_to_json loc.Location.loc_start) ::
+        ("end", IO.pos_to_json loc.Location.loc_end) ::
         content
   in
   let content = ("type", `String where) :: content in
@@ -116,4 +116,4 @@ let to_jsons list =
       Location.(Misc.compare_pos l1.loc_start l2.loc_start))
     (List.map to_json list)
 
-let _ = Protocol.error_catcher := strict_to_json
+let _ = IO.error_catcher := strict_to_json

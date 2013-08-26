@@ -36,7 +36,10 @@ type state = State.t = {
 }
 module VPrinttyp = State.Verbose_print
 
-type handler = Protocol.io -> state -> Json.json list -> state * Json.json
+  
+
+
+type handler = IO.io -> state -> Json.json list -> state * Json.json
 type t = { name : string ; handler : handler }
 let invalid_arguments () = failwith "invalid arguments"
 
@@ -69,7 +72,7 @@ let command_tell = {
         begin fun () ->
           if !eot then ""
           else try
-            o (Protocol.return (`Bool false));
+            o (IO.return (`Bool false));
             match Stream.next i with
             | `List [`String "tell" ; `String "struct" ; `String source] ->
               source
@@ -189,13 +192,13 @@ let command_type = {
       state, `String (to_string ())
 
   | [`String "expression"; `String expr; `String "at" ; jpos] ->
-    let {Browse.env} = State.node_at state (Protocol.pos_of_json jpos) in
+    let {Browse.env} = State.node_at state (IO.pos_of_json jpos) in
     let ppf, to_string = Misc.ppf_to_string () in
     type_in_env env ppf expr;
     state, `String (to_string ())
 
   | [`String "at" ; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+    let pos = IO.pos_of_json jpos in
     let structures = Misc.list_concat_map
       (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
@@ -225,28 +228,28 @@ let command_type = {
         | Some t -> VPrinttyp.type_scheme ppf t
         | None -> Format.pp_print_string ppf "Unknown method"
     end;
-    state, Protocol.with_location node.Browse.loc
+    state, IO.with_location node.Browse.loc
       ["type", `String (to_string ())]
 
   | [`String "enclosing"; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+    let pos = IO.pos_of_json jpos in
     let aux = function
       | { Browse. loc; env;
           context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_scheme ppf t);
-        Some (Protocol.with_location loc ["type", `String (to_string ())])
+        Some (IO.with_location loc ["type", `String (to_string ())])
       | { Browse. loc; env; context = Browse.TypeDecl (id,t) } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_declaration id ppf t);
-        Some (Protocol.with_location loc ["type", `String (to_string ())])
+        Some (IO.with_location loc ["type", `String (to_string ())])
       | { Browse. loc; env; context = Browse.Module (_,m) } ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> Printtyp.modtype ppf m);
-        Some (Protocol.with_location loc ["type", `String (to_string ())])
+        Some (IO.with_location loc ["type", `String (to_string ())])
       | _ -> None
     in
     let structures = Misc.list_concat_map
@@ -271,7 +274,7 @@ let command_complete = {
     let compl = State.node_complete node prefix in
     state, `List (List.rev compl)
   | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
-    let node = State.node_at state (Protocol.pos_of_json jpos) in
+    let node = State.node_at state (IO.pos_of_json jpos) in
     let compl = State.node_complete node prefix in
     state, `List (List.rev compl)
   | _ -> invalid_arguments ()
@@ -287,14 +290,14 @@ let command_locate = {
       | [ `String path ] ->
         path, Browse.({ dummy with env = Typer.env state.types })
       | [ `String path ; `String "at" ; jpos ] ->
-        path, State.node_at state (Protocol.pos_of_json jpos)
+        path, State.node_at state (IO.pos_of_json jpos)
       | _ -> invalid_arguments ()
     in
     match State.locate node path with
     | None -> state, `String "Not found"
     | Some (file, loc) ->
       let pos = loc.Location.loc_start in
-      state, `Assoc [ "file", `String file ; "pos", Protocol.pos_to_json pos ]
+      state, `Assoc [ "file", `String file ; "pos", IO.pos_to_json pos ]
   end
 }
 
@@ -320,10 +323,10 @@ let command_seek = {
   handler =
   begin fun _ state -> function
   | [`String "position"] ->
-    state, Protocol.pos_to_json state.pos
+    state, IO.pos_to_json state.pos
 
   | [`String "before" ; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+    let pos = IO.pos_of_json jpos in
     let cmp o = Location.compare_pos pos (Outline.item_loc o) in
     let outlines = state.outlines in
     let outlines = History.seek_forward (fun i -> cmp i > 0) outlines in
@@ -342,10 +345,10 @@ let command_seek = {
         | p -> p.Location.loc_end
     in
     { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
+    IO.pos_to_json pos
 
   | [`String "exact" ; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+    let pos = IO.pos_of_json jpos in
     let cmp o = Location.compare_pos pos (Outline.item_loc o) in
     let outlines = state.outlines in
     let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
@@ -360,7 +363,7 @@ let command_seek = {
       | p -> p.Location.loc_end
     in
     { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
+    IO.pos_to_json pos
 
   | [`String "end"] ->
     let outlines = History.seek_forward (fun _ -> true) state.outlines in
@@ -372,7 +375,7 @@ let command_seek = {
       | p -> p.Location.loc_end
     in
     { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
+    IO.pos_to_json pos
 
   | [`String "maximize_scope"] ->
     let rec find_end_of_module (depth,outlines) =
@@ -406,7 +409,7 @@ let command_seek = {
       | p -> p.Location.loc_end
     in
     { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
+    IO.pos_to_json pos
   | _ -> invalid_arguments ()
   end;
 }
@@ -434,16 +437,16 @@ let command_boundary = {
     fun _ state args ->
       let (f, pos) = match args with
         | [ `String cmd; `String "at"; jpos] ->
-          (command_of_string cmd, Protocol.pos_of_json jpos)
+          (command_of_string cmd, IO.pos_of_json jpos)
         | [ `String cmd ] -> (command_of_string cmd, state.pos)
         | [ ] -> (History.prev, state.pos)
-        | [ `String "at"; jpos ] -> (History.prev, Protocol.pos_of_json jpos)
+        | [ `String "at"; jpos ] -> (History.prev, IO.pos_of_json jpos)
         | _ -> invalid_arguments ()
       in
       match f (outlines_of_pos state pos) with
       | None -> state, `Null
       | Some {Outline.loc={Location.loc_start; loc_end}} ->
-        state, `List (List.map Protocol.pos_to_json [loc_start; loc_end])
+        state, `List (List.map IO.pos_to_json [loc_start; loc_end])
   end
 }
 
@@ -452,11 +455,11 @@ let command_reset = {
 
   handler =
   begin fun _ state -> function
-  | [] -> State.initial, Protocol.pos_to_json State.initial.pos
+  | [] -> State.initial, IO.pos_to_json State.initial.pos
   | [`String "name"; `String pos_fname] ->
     { State.initial with pos =
       { State.initial.pos with Lexing.pos_fname } },
-    Protocol.pos_to_json State.initial.pos
+    IO.pos_to_json State.initial.pos
   | _ -> invalid_arguments ()
   end
 }
@@ -527,7 +530,7 @@ let command_dump = {
       state, `List (List.map aux sg)
   | [`String "env" ; `String "at" ; jpos ] ->
     let {Browse.env} = State.node_at state
-        (Protocol.pos_of_json jpos) in
+        (IO.pos_of_json jpos) in
     let sg = Browse_misc.signature_of_env env in
     let aux item =
       let ppf, to_string = Misc.ppf_to_string () in
@@ -673,12 +676,97 @@ let command_help = {
   end;
 }
 
+let path_modify pathes (action : [`Add|`Rem]) var ?(raw=false) ?cwd path =
+  let r,_ = List.assoc var pathes in
+  let d =
+    if raw 
+    then path
+    else Misc.canonicalize_filename ?cwd
+          (Misc.expand_directory Config.standard_library path)
+  in
+  r := List.filter ((<>) d) !r;
+  match action with
+  | `Add -> r := d :: !r
+  | `Rem -> ()
+
+let command_path pathes = {
+  name = "path";
+
+  handler =
+  begin fun _ state arg->
+    match begin match arg with
+      | [ `String "list" ] ->
+        state, `List (List.map (fun (s,_) -> `String s) pathes)
+      | [ `String "list"; `String var ] ->
+        let r,_ = List.assoc var pathes in
+        state, `List (List.map (fun s -> `String s) !r)
+      | [ `String "add"; `String var; `String path ] ->
+        path_modify pathes `Add var path;
+        state, `Bool true
+      | [ `String "remove"; `String var; `String path ] ->
+        path_modify pathes `Rem var path;
+        state, `Bool true
+      | [ `String "raw"; `String "add"; `String var; `String path ] ->
+        path_modify pathes ~raw:true `Add var path;
+        state, `Bool true
+      | [ `String "raw"; `String "remove"; `String var; `String path ] ->
+        path_modify pathes ~raw:true `Rem var path;
+        state, `Bool true
+      | [ `String "reset" ] ->
+        List.iter
+          (fun (_,(r,reset)) -> r := Lazy.force reset)
+          pathes;
+        state, `Bool true
+      | [ `String "reset"; `String path ] ->
+        let r,reset = List.assoc path pathes in
+        r := Lazy.force reset;
+        state, `Bool true
+      | _ -> invalid_arguments ()
+    end with
+    | state, `Bool true as answer ->
+      State.reset_global_modules ();
+      answer
+    | answer -> answer
+  end;
+}
+
+(* Search path (-I) handling *)
+let default_build_paths =
+  let open Config in
+  lazy ("." :: List.rev !Clflags.include_dirs @ !load_path)
+
+let set_default_path () =
+  Config.load_path := Lazy.force default_build_paths
+
+let path_modify, command_path = 
+  let pathes = [
+    "build",  (Config.load_path,default_build_paths);
+    "source", (State.source_path, lazy ["."])
+  ] in
+  path_modify pathes, command_path pathes
+
+let command_project = 
+  {
+    name = "project";
+  
+    handler =
+    begin fun _ state -> function
+      | [ `String ("load"|"find" as cmd) ; `String path ] ->
+        let f = if cmd = "load" then Dot_merlin.read else Dot_merlin.find in
+        let dot_merlins = f path in
+        let path_modify act str ~cwd path = path_modify act str ~cwd path in
+        state, `List (List.map (fun s -> `String s) 
+                        (Dot_merlin.exec ~path_modify ~load_packages dot_merlins))
+      | _ -> invalid_arguments ()
+    end;
+  }
+
 let _ = List.iter register [
   command_tell; command_drop; command_seek; command_reset; command_refresh;
   command_cd; command_type; command_complete; command_boundary;
   command_locate;
   command_errors; command_dump;
   command_which; command_find; command_extension;
-  command_help;
+  command_help; command_path; command_project;
 ]
 

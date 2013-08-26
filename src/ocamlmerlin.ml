@@ -83,14 +83,6 @@
 
 module My_config = My_config
 
-(* Search path (-I) handling *)
-let default_build_paths =
-  let open Config in
-  lazy ("." :: List.rev !Clflags.include_dirs @ !load_path)
-
-let set_default_path () =
-  Config.load_path := Lazy.force default_build_paths
-
 let signal behavior = 
   try Sys.signal Sys.sigusr1 behavior
   with Invalid_argument "Sys.signal: unavailable signal" ->
@@ -106,7 +98,7 @@ let refresh_state_on_signal state f =
   Misc.try_finally f (fun () -> ignore (signal previous))
 
 let main_loop () =
-  let input, output as io = Protocol.make ~input:stdin ~output:stdout in
+  let input, output as io = IO.make ~input:stdin ~output:stdout in
   try
     let rec loop state =
       let state, answer =
@@ -122,98 +114,17 @@ let main_loop () =
               with Not_found -> failwith "unknown command"
             in
             let state, result = handler io state args in
-            state, Protocol.return result
+            state, IO.return result
           | _ -> failwith "malformed command"
         with
           | Stream.Failure as exn -> raise exn
-          | exn -> !state', Protocol.fail exn
+          | exn -> !state', IO.fail exn
       in
       output answer;
       loop state
     in
     loop State.initial
   with Stream.Failure -> ()
-
-let path_modify pathes (action : [`Add|`Rem]) var ?(raw=false) ?cwd path =
-  let r,_ = List.assoc var pathes in
-  let d =
-    if raw 
-    then path
-    else Misc.canonicalize_filename ?cwd
-          (Misc.expand_directory Config.standard_library path)
-  in
-  r := List.filter ((<>) d) !r;
-  match action with
-  | `Add -> r := d :: !r
-  | `Rem -> ()
-
-let command_path pathes = Command.({
-  name = "path";
-
-  handler =
-  begin fun _ state arg->
-    match begin match arg with
-      | [ `String "list" ] ->
-        state, `List (List.map (fun (s,_) -> `String s) pathes)
-      | [ `String "list"; `String var ] ->
-        let r,_ = List.assoc var pathes in
-        state, `List (List.map (fun s -> `String s) !r)
-      | [ `String "add"; `String var; `String path ] ->
-        path_modify pathes `Add var path;
-        state, `Bool true
-      | [ `String "remove"; `String var; `String path ] ->
-        path_modify pathes `Rem var path;
-        state, `Bool true
-      | [ `String "raw"; `String "add"; `String var; `String path ] ->
-        path_modify pathes ~raw:true `Add var path;
-        state, `Bool true
-      | [ `String "raw"; `String "remove"; `String var; `String path ] ->
-        path_modify pathes ~raw:true `Rem var path;
-        state, `Bool true
-      | [ `String "reset" ] ->
-        List.iter
-          (fun (_,(r,reset)) -> r := Lazy.force reset)
-          pathes;
-        state, `Bool true
-      | [ `String "reset"; `String path ] ->
-        let r,reset = List.assoc path pathes in
-        r := Lazy.force reset;
-        state, `Bool true
-      | _ -> invalid_arguments ()
-    end with
-    | state, `Bool true as answer ->
-      State.reset_global_modules ();
-      answer
-    | answer -> answer
-  end;
-})
-
-let path_modify, command_path = 
-  let pathes = [
-    "build",  (Config.load_path,default_build_paths);
-    "source", (State.source_path, lazy ["."])
-  ] in
-  path_modify pathes, command_path pathes
-
-let command_project = 
-  Command.({
-    name = "project";
-  
-    handler =
-    begin fun _ state -> function
-      | [ `String ("load"|"find" as cmd) ; `String path ] ->
-        let f = if cmd = "load" then Dot_merlin.read else Dot_merlin.find in
-        let dot_merlins = f path in
-        let path_modify act str ~cwd path = path_modify act str ~cwd path in
-        state, `List (List.map (fun s -> `String s) 
-                        (Dot_merlin.exec ~path_modify dot_merlins))
-      | _ -> Command.invalid_arguments ()
-    end;
-  })
-
-let () = 
-  Command.register command_path;
-  Command.register command_project
 
 (** Mimic other Caml tools, entry point *)
 
@@ -255,7 +166,7 @@ let main () =
   Arg.parse Options.list Top_options.unexpected_argument
     "Usage: ocamlmerlin [options]\noptions are:";
   init_path ();
-  set_default_path ();
+  Command.set_default_path ();
   State.reset_global_modules ();
   Findlib.init ();
   ignore (signal Sys.Signal_ignore);

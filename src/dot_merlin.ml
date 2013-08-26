@@ -89,13 +89,13 @@ module Flags = Top_options.Make (struct
     err_log "unsupported flag \"-project-find\" (ignored)" ;
 end)
 
-let exec_dot_merlin ~path_modify { path; project; entries} =
+let exec_dot_merlin ~path_modify ~load_packages { path; project; entries} =
   let cwd = Filename.dirname path in
   List.iter (
     function
     | `B path   -> path_modify `Add "build" ~cwd path
     | `S path   -> path_modify `Add "source" ~cwd path
-    | `PKG pkgs -> Command.load_packages pkgs
+    | `PKG pkgs -> load_packages pkgs
     | `EXT exts ->
       List.iter (fun e -> Extensions_utils.set_extension ~enabled:true e) exts
     | `FLG flags ->
@@ -110,8 +110,9 @@ let exec_dot_merlin ~path_modify { path; project; entries} =
   ) entries;
   path
 
-let rec exec ~path_modify = function
+let rec exec ~path_modify ~load_packages= function
   | Cons (dot_merlin, tail) ->
-    exec_dot_merlin ~path_modify dot_merlin :: exec ~path_modify (Lazy.force tail)
+    exec_dot_merlin ~path_modify ~load_packages dot_merlin :: 
+      exec ~path_modify ~load_packages (Lazy.force tail)
   | Nil -> []
 
