@@ -96,6 +96,7 @@ let fail = function
   | exn -> match !error_catcher exn with
       | Some (_,error) -> `List [`String "error"; error]
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
+
 let protocol_failure s = raise (Protocol_failure s)
 
 let make_pos (pos_lnum, pos_cnum) =
@@ -150,6 +151,7 @@ let load_or_find = function
   | _ -> invalid_arguments ()
 
 module Protocol_io = struct
+  exception Failure' = Failure
   open Protocol
 
   let request_of_json = function
@@ -252,7 +254,7 @@ module Protocol_io = struct
     | _ -> invalid_arguments ()
   
   let response_to_json = function
-    | Failure s -> `List [`String "failure"; `String s]
+    | Failure s | Exception (Failure' s) -> `List [`String "failure"; `String s]
     | Error error -> `List [`String "error"; error]
     | Exception exn -> 
       begin match !error_catcher exn with
@@ -270,7 +272,7 @@ module Protocol_io = struct
         | Drop, position -> pos_to_json position
         | Seek _, position -> pos_to_json position
         | Boundary _, json -> json
-        | Reset _, () -> `Bool true
+        | Reset _, () -> pos_to_json (make_pos (1,0)) 
         | Refresh _, changed -> `Bool changed
         | Cd _, () -> `Bool true
         | Errors, json -> json
