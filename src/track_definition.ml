@@ -31,13 +31,6 @@ module Utils = struct
       try Misc.find_in_path_uncap !sources_path fname
       with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
 
-  let struct_of_mod_expr me =
-    let open Typedtree in
-    match me.mod_desc with
-    | Tmod_ident (path, _) -> assert false
-    | Tmod_structure str -> str
-    | _ -> raise Not_found (* TODO *)
-
   let keep_suffix =
     let open Longident in
     let rec aux = function
