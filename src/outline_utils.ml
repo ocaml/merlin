@@ -73,3 +73,5 @@ let emit_top c pos =
   (*prerr_endline "emit";*)
   if !nesting = 0 then
     raise (Chunk (c,pos))
+
+let local_modules = Misc.fluid None

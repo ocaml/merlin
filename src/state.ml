@@ -143,9 +143,14 @@ let node_at state pos_cursor =
       raise Not_found
     | _ -> node
   with Not_found ->
-    let _, chunks = History.Sync.rewind fst outlines state.chunks in
+    let _, chunks = History.Sync.rewind Misc.fst3 outlines state.chunks in
     let _, types = History.Sync.rewind fst chunks state.types in
     Browse.({ dummy with env = Typer.env types })
+
+let local_modules state =
+  match History.prev state.chunks with
+  | None -> []
+  | Some (_, _, modules) -> modules
 
 (* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
 let exns state =
@@ -395,8 +400,9 @@ let node_complete node prefix =
     with Not_found -> []
   end
 
-and locate node path_str =
+and locate node path_str local_modules =
   Track_definition.from_string
     ~sources:(!source_path)
     ~env:(node.Browse.env)
+    ~local_modules
     path_str

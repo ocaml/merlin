@@ -160,6 +160,9 @@ and browse_cmts ~root modules =
 
 and from_path' = function
   | [] -> invalid_arg "empty path"
+  | [ fname ] ->
+    let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
+    Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
   | fname :: modules ->
     let cmt_file =
       let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
@@ -194,7 +197,7 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
-let from_string ~sources ~env path =
+let from_string ~sources ~env ~local_modules path =
   debug_log (Printf.sprintf "looking for the source of '%s'" path) ;
   sources_path := sources ;
   let ident, is_label = keep_suffix (Longident.parse path) in
@@ -215,6 +218,14 @@ let from_string ~sources ~env path =
         try
           let _, cstr_desc = Env.lookup_constructor ident env in
           path_and_loc_from_cstr cstr_desc env
+        with Not_found ->
+        try
+          let path, _ = Env.lookup_module ident env in
+          let loc =
+            try List.assoc (Longident.last ident) local_modules
+            with Not_found -> Location.symbol_gloc ()
+          in
+          path, loc
         with Not_found ->
           debug_log "   ... not in the environment" ;
           raise Not_found

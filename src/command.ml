@@ -282,15 +282,15 @@ let command_locate = {
   name = "locate";
 
   handler = begin fun _ state args ->
-    let path, node =
+    let path, node, local_modules =
       match args with
       | [ `String path ] ->
-        path, Browse.({ dummy with env = Typer.env state.types })
+        path, Browse.({ dummy with env = Typer.env state.types }), []
       | [ `String path ; `String "at" ; jpos ] ->
-        path, State.node_at state (Protocol.pos_of_json jpos)
+        path, State.node_at state (Protocol.pos_of_json jpos), State.local_modules state
       | _ -> invalid_arguments ()
     in
-    match State.locate node path with
+    match State.locate node path local_modules with
     | None -> state, `String "Not found"
     | Some (file, loc) ->
       let pos = loc.Location.loc_start in
@@ -332,8 +332,8 @@ let command_seek = {
                 | i -> cmp i <= 0)
       outlines
     in
-    let chunks           = History.Sync.right  fst outlines state.chunks in
-    let outlines, chunks = History.Sync.rewind fst outlines chunks       in
+    let chunks           = History.Sync.right  Misc.fst3 outlines state.chunks in
+    let outlines, chunks = History.Sync.rewind Misc.fst3 outlines chunks       in
     let types            = History.Sync.right  fst chunks   state.types  in
     let chunks, types    = History.Sync.rewind fst chunks   types        in
     let pos =
@@ -350,8 +350,8 @@ let command_seek = {
     let outlines = state.outlines in
     let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
     let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
-    let chunks           = History.Sync.right  fst outlines state.chunks in
-    let outlines, chunks = History.Sync.rewind fst outlines chunks       in
+    let chunks           = History.Sync.right  Misc.fst3 outlines state.chunks in
+    let outlines, chunks = History.Sync.rewind Misc.fst3 outlines chunks       in
     let types            = History.Sync.right  fst chunks   state.types  in
     let chunks, types    = History.Sync.rewind fst chunks   types        in
     let pos =
@@ -364,7 +364,7 @@ let command_seek = {
 
   | [`String "end"] ->
     let outlines = History.seek_forward (fun _ -> true) state.outlines in
-    let chunks = History.Sync.right fst outlines state.chunks in
+    let chunks = History.Sync.right Misc.fst3 outlines state.chunks in
     let types  = History.Sync.right fst chunks state.types in
     let pos =
       match Outline.location outlines with
@@ -398,7 +398,7 @@ let command_seek = {
       | Some (_,outlines') -> loop outlines'
     in
     let outlines = loop state.outlines in
-    let chunks = History.Sync.right fst outlines state.chunks in
+    let chunks = History.Sync.right Misc.fst3 outlines state.chunks in
     let types  = History.Sync.right fst chunks state.types in
     let pos =
       match Outline.location outlines with
@@ -429,7 +429,7 @@ let command_boundary = {
       let outlines = state.outlines in
       let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
       let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
-      fst (History.Sync.rewind fst outlines state.chunks)
+      fst (History.Sync.rewind Misc.fst3 outlines state.chunks)
     in
     fun _ state args ->
       let (f, pos) = match args with

@@ -32,7 +32,7 @@ type item_desc =
   | Module_closing of Parsetree.structure_item Location.loc * History.offset
 
 type step = (Outline_utils.kind, item_desc) Misc.sum
-type item = Outline.sync * (exn list * step)
+type item = Outline.sync * (exn list * step) * (string * Location.t) list
 type sync = item History.sync
 type t = item History.t
 
@@ -49,11 +49,11 @@ let dump_chunk t =
   let open Misc in
   List.map
   begin function
-  | _, (_, Inr (Definitions [])) -> assert false
-  | _, (_, Inr (Definitions (d :: _))) -> ("definition", line d)
-  | _, (_, Inr (Module_opening (l,s,_))) -> ("opening " ^ s.Location.txt, line s)
-  | _, (_, Inr (Module_closing (d,offset))) -> ("closing after " ^ string_of_int offset, line d)
-  | _, (_, Inl _) -> ("other", -1)
+  | _, (_, Inr (Definitions [])), _ -> assert false
+  | _, (_, Inr (Definitions (d :: _))), _ -> ("definition", line d)
+  | _, (_, Inr (Module_opening (l,s,_))), _ -> ("opening " ^ s.Location.txt, line s)
+  | _, (_, Inr (Module_closing (d,offset))), _ -> ("closing after " ^ string_of_int offset, line d)
+  | _, (_, Inl _), _ -> ("other", -1)
   end (List.rev (History.prevs t) @ History.nexts t)
 
 let fake_tokens tokens f =
@@ -116,13 +116,13 @@ let sync_step outline tokens t =
     (* reconstitute module from t *)
     let rec rewind_defs defs t =
       match History.backward t with
-      | Some ((_,(_,Misc.Inr (Definitions []))), _) -> assert false
-      | Some ((_,(_,Misc.Inr (Definitions lst))), t') -> 
+      | Some ((_,(_,Misc.Inr (Definitions [])), _), _) -> assert false
+      | Some ((_,(_,Misc.Inr (Definitions lst)), _), t') -> 
         rewind_defs (List.map (fun d -> d.Location.txt) lst @ defs) t'
-      | Some ((_,(_,Misc.Inr (Module_closing (d,offset)))), t') ->
+      | Some ((_,(_,Misc.Inr (Module_closing (d,offset))), _), t') ->
         rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
-      | Some ((_,(_,Misc.Inr (Module_opening (loc,s,m)))), t') -> loc,s,m,defs,t'
-      | Some ((_,(_,Misc.Inl _)), t') -> rewind_defs defs t'
+      | Some ((_,(_,Misc.Inr (Module_opening (loc,s,m))), _), t') -> loc,s,m,defs,t'
+      | Some ((_,(_,Misc.Inl _), _), t') -> rewind_defs defs t'
       | None ->
         let p = (match tokens with (_,loc_start,loc_end) :: _ -> Location.({loc_start;loc_end;loc_ghost = false}) | _ -> Location.none) in
         raise (Malformed_module p)
@@ -154,12 +154,16 @@ let sync_step outline tokens t =
       ))
 
 let exns h = match History.prev h with
-  | Some (_, (exns,_)) -> exns
+  | Some (_, (exns,_), _) -> exns
+  | None -> []
+
+let local_modules h = match History.prev h with
+  | Some (_, _, local_modules) -> local_modules
   | None -> []
 
 let sync outlines chunks =
   (* Find last synchronisation point *)
-  let outlines, chunks = History.Sync.rewind fst outlines chunks in
+  let outlines, chunks = History.Sync.rewind Misc.fst3 outlines chunks in
   (* Drop out of sync items *)
   let chunks = History.cutoff chunks in
   (* Process last items *)
@@ -168,14 +172,18 @@ let sync outlines chunks =
       | None -> chunks
       | Some ({ Outline. kind ; tokens ; loc },outlines') ->
           let exns = exns chunks in
+          let local_modules = ref (local_modules chunks) in
           let chunk =
-            match Location.catch_warnings (fun () -> sync_step kind tokens chunks) with
+            match
+              Misc.fluid'let Outline_utils.local_modules (Some local_modules) (fun () ->
+                Location.catch_warnings (fun () -> sync_step kind tokens chunks))
+            with
             | warnings, Misc.Inr item ->
               warnings @ exns , item
             | warnings, Misc.Inl exn ->
               exn :: warnings @ exns, Misc.Inl (Outline_utils.Syntax_error loc)
           in
-          let chunks' = History.(insert (Sync.at outlines', chunk) chunks) in
+          let chunks' = History.(insert (Sync.at outlines', chunk, !local_modules) chunks) in
           aux outlines' chunks'
   in
   aux outlines chunks
