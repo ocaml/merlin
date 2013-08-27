@@ -38,10 +38,14 @@
   *   {message: ''Printexc.to_string'', valid:false}
   *)
 
+type t = {valid: bool; loc: Location.t; text: string; where:string}
+
 (* Ignore unknown exceptions *)
-val strict_to_json : exn -> (Location.t * Json.json) option
-val strict_to_jsons : exn list -> (Location.t * Json.json) list
+val strict_of_exn  : exn -> (Location.t * t) option
+val strict_of_exns : exn list -> (Location.t * t) list
 
 (* Generic handling of unknown exceptions *)
-val to_json : exn -> Location.t * Json.json
-val to_jsons : exn list -> (Location.t * Json.json) list
+val of_exn : exn -> Location.t * t
+val of_exns : exn list -> (Location.t * t) list
+
+val error_catcher : exn -> (Location.t * t) option

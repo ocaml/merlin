@@ -5,17 +5,20 @@ type _ request =
     :  [`Source of string | `More of string | `End]
     -> bool request
   | Type_expr
-    :  [`Source of string * position option | `At of position]
-    -> fixme request
+    :  string * position option
+    -> string request
+  | Type_at
+    :  position
+    -> (Location.t * string) request
   | Type_enclosing
     :  position 
-    -> fixme request
+    -> (int * (Location.t * string) list) request
   | Complete_prefix 
     :  string * position option 
     -> fixme request
   | Locate          
     :  string * position option 
-    -> fixme request
+    -> (string * position) option request
   | Drop 
     :  position request
   | Seek 
@@ -23,7 +26,7 @@ type _ request =
     -> position request
   | Boundary 
     :  [`Prev|`Next|`Current] * position option 
-    -> fixme request
+    -> Location.t option request
   | Reset
     :  string option 
     -> unit request
@@ -34,10 +37,10 @@ type _ request =
     :  string 
     -> unit request
   | Errors 
-    :  fixme request 
+    :  exn list request 
   | Dump 
     :  [`Env of position option|`Sig|`Chunks|`Tree|`Outline|`Exn]
-    -> fixme request
+    -> Json.json request
   | Which_path
     :  string
     -> string request

@@ -105,7 +105,17 @@ let make_pos (pos_lnum, pos_cnum) =
 let pos_to_json pos =
   Lexing.(`Assoc ["line", `Int pos.pos_lnum;
                   "col", `Int (pos.pos_cnum - pos.pos_bol)])
-                  (*"offset", `Int pos.pos_cnum])*)
+
+let error_to_json {Error_report. valid; text; where; loc} =
+  let content = ["valid", `Bool valid; "message", `String text] in
+  let content =
+    if loc = Location.none then content else
+    ("start", pos_to_json loc.Location.loc_start) ::
+    ("end"  , pos_to_json loc.Location.loc_end) ::
+    content
+  in
+  let content = ("type", `String where) :: content in
+  `Assoc content
 
 let pos_of_json = function
   | `Assoc props ->
@@ -129,6 +139,8 @@ let string_list l =
   List.map (function `String s -> s | _ -> invalid_arguments ()) l
 let json_of_string_list l =
   `List (List.map (fun s -> `String s) l)
+let json_of_type_loc (loc,str) =
+  with_location loc ["type", `String str] 
 
 let source_or_build = function
   | "source" -> `Source
@@ -162,9 +174,9 @@ module Protocol_io = struct
     | [`String "tell"; `String ("struct"|"end"); `Null] ->
       Request (Tell `End)
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
-      Request (Type_expr (`Source (expr, optional_position opt_pos)))
+      Request (Type_expr (expr, optional_position opt_pos))
     | [`String "type"; `String "at"; jpos] ->
-      Request (Type_expr (`At (pos_of_json jpos)))
+      Request (Type_at (pos_of_json jpos))
     | [`String "type"; `String "enclosing"; jpos] ->
       Request (Type_enclosing (pos_of_json jpos))
     | (`String "complete" :: `String "prefix" :: `String prefix :: opt_pos) ->
@@ -265,17 +277,27 @@ module Protocol_io = struct
       `List [`String "return";
       begin match request, response with
         | Tell _, b -> `Bool b
-        | Type_expr _, json -> json
-        | Type_enclosing _, json -> json
+        | Type_expr _, str -> `String str
+        | Type_at _, loc_str -> json_of_type_loc loc_str
+        | Type_enclosing _, (len,results) ->
+          `List [`Int len; `List (List.map json_of_type_loc results)]
         | Complete_prefix _, json -> json
-        | Locate _, json -> json
+        | Locate _, None ->
+          `String "Not found"
+        | Locate _, Some (file,pos) ->
+          `Assoc ["file",`String file; "pos",pos_to_json pos]
         | Drop, position -> pos_to_json position
         | Seek _, position -> pos_to_json position
-        | Boundary _, json -> json
+        | Boundary _, Some {Location. loc_start; loc_end} ->
+          `List (List.map pos_to_json [loc_start; loc_end])
+        | Boundary _, None ->
+          `Null
         | Reset _, () -> pos_to_json (make_pos (1,0)) 
         | Refresh _, changed -> `Bool changed
         | Cd _, () -> `Bool true
-        | Errors, json -> json
+        | Errors, exns ->
+          `List (List.map (fun (_,err) -> error_to_json err)
+                          (Error_report.of_exns exns))
         | Dump _, json -> json
         | Which_path _, str -> `String str
         | Which_with_ext _, strs -> json_of_string_list strs

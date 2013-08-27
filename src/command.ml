@@ -206,19 +206,19 @@ let dispatch (i,o : IO.io) (state : state) =
   end
   | (Tell _ : a request) -> IO.invalid_arguments ()
 
-  | (Type_expr (`Source (source, None)) : a request) ->
+  | (Type_expr (source, None) : a request) ->
     let env = Typer.env state.types in
     let ppf, to_string = Misc.ppf_to_string () in
     Type_utils.type_in_env env ppf source;
-    state, `String (to_string ())
+    state, to_string ()
 
-  | (Type_expr (`Source (source, Some pos)) : a request) ->
+  | (Type_expr (source, Some pos) : a request) ->
     let {Browse.env} = State.node_at state pos in
     let ppf, to_string = Misc.ppf_to_string () in
     Type_utils.type_in_env env ppf source;
-    state, `String (to_string ())
+    state, to_string ()
 
-  | (Type_expr (`At pos) : a request) ->
+  | (Type_at pos : a request) ->
     let structures = Misc.list_concat_map
       (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
@@ -248,27 +248,26 @@ let dispatch (i,o : IO.io) (state : state) =
         | Some t -> VPrinttyp.type_scheme ppf t
         | None -> Format.pp_print_string ppf "Unknown method"
     end;
-    state, IO.with_location node.Browse.loc
-      ["type", `String (to_string ())]
+    state, (node.Browse.loc, to_string ())
 
   | (Type_enclosing pos : a request) ->
     let aux = function
-      | { Browse. loc; env;
-          context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t) } ->
+      | {Browse. loc; env;
+          context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t)} ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_scheme ppf t);
-        Some (IO.with_location loc ["type", `String (to_string ())])
-      | { Browse. loc; env; context = Browse.TypeDecl (id,t) } ->
+        Some (loc, to_string ())
+      | {Browse. loc; env; context = Browse.TypeDecl (id,t)} ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_declaration id ppf t);
-        Some (IO.with_location loc ["type", `String (to_string ())])
-      | { Browse. loc; env; context = Browse.Module (_,m) } ->
+        Some (loc, to_string ())
+      | {Browse. loc; env; context = Browse.Module (_,m)} ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> Printtyp.modtype ppf m);
-        Some (IO.with_location loc ["type", `String (to_string ())])
+        Some (loc, to_string ())
       | _ -> None
     in
     let structures = Misc.list_concat_map
@@ -277,7 +276,7 @@ let dispatch (i,o : IO.io) (state : state) =
     in
     let path = Browse.enclosing pos structures in
     let result = Misc.list_filter_map aux path in
-    state, `List [`Int (List.length path); `List result]
+    state, (List.length path, result)
 
   | (Complete_prefix (prefix, None) : a request) ->
     let node = Browse.({dummy with env = Typer.env state.types}) in
@@ -296,10 +295,10 @@ let dispatch (i,o : IO.io) (state : state) =
       | Some pos -> State.node_at state pos 
     in
     begin match State.locate node path with
-    | None -> state, `String "Not found"
+    | None -> state, None
     | Some (file, loc) ->
       let pos = loc.Location.loc_start in
-      state, `Assoc [ "file", `String file ; "pos", IO.pos_to_json pos ]
+      state, Some (file, pos)
     end
 
   | (Drop : a request) ->
@@ -415,9 +414,8 @@ let dispatch (i,o : IO.io) (state : state) =
       | None -> state.pos
     in
     begin match (command dir) (outlines_of_pos state pos) with
-    | None -> state, `Null
-    | Some {Outline.loc={Location.loc_start; loc_end}} ->
-      state, `List (List.map IO.pos_to_json [loc_start; loc_end])
+    | None -> state, None
+    | Some o -> state, Some o.Outline.loc
     end
 
   | (Reset None : a request) ->
@@ -443,8 +441,7 @@ let dispatch (i,o : IO.io) (state : state) =
     state, ()
 
   | (Errors : a request) ->
-    state,
-    `List (List.map snd (Error_report.to_jsons (State.exns state)))
+    state, State.exns state
 
   | (Dump (`Env None) : a request) ->
     let sg = Browse_misc.signature_of_env (Typer.env state.types) in
