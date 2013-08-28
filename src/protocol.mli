@@ -1,5 +1,13 @@
 type position = Lexing.position
-type fixme = Json.json
+
+type completion = { 
+  name: string;
+  kind: [`Value|`Constructor|`Label|
+         `Module|`Modtype|`Type|`MethodCall];
+  desc: string;
+  info: string;
+}
+
 type _ request =
   | Tell 
     :  [`Source of string | `More of string | `End]
@@ -15,7 +23,7 @@ type _ request =
     -> (int * (Location.t * string) list) request
   | Complete_prefix 
     :  string * position option 
-    -> fixme request
+    -> completion list request
   | Locate          
     :  string * position option 
     -> (string * position) option request
@@ -31,7 +39,7 @@ type _ request =
     :  string option 
     -> unit request
   | Refresh 
-    :  [`Full|`Quick] 
+    :  [`Full|`Quick]
     -> bool request
   | Cd 
     :  string 

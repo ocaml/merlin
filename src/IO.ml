@@ -41,6 +41,21 @@ let stream_map s f =
       try Some (f (Stream.next s)) 
       with Stream.Failure -> None)
 
+let json_of_completion {Protocol. name; kind; desc; info} =
+  let kind = match kind with
+    | `Value       -> "Value"
+    | `Constructor -> "Constructor"
+    | `Label       -> "Label"
+    | `Module      -> "Module"
+    | `Modtype     -> "Signature"
+    | `Type        -> "Type"
+    | `MethodCall  -> "#"
+  in
+  `Assoc ["name", `String name;
+          "kind", `String kind;
+          "desc", `String desc;
+          "info", `String info]
+
 let json_log (input,output) =
   let log_input json = Logger.log section ~prefix:"<" (Json.to_string json); json in
   let log_output json = Logger.log section ~prefix:">" (Json.to_string json); json in
@@ -281,7 +296,8 @@ module Protocol_io = struct
         | Type_at _, loc_str -> json_of_type_loc loc_str
         | Type_enclosing _, (len,results) ->
           `List [`Int len; `List (List.map json_of_type_loc results)]
-        | Complete_prefix _, json -> json
+        | Complete_prefix _, compl_list -> 
+          `List (List.map json_of_completion compl_list)
         | Locate _, None ->
           `String "Not found"
         | Locate _, Some (file,pos) ->

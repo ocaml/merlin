@@ -281,12 +281,12 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Complete_prefix (prefix, None) : a request) ->
     let node = Browse.({dummy with env = Typer.env state.types}) in
     let compl = State.node_complete node prefix in
-    state, `List (List.rev compl)
+    state, List.rev compl
 
   | (Complete_prefix (prefix, Some pos) : a request) ->
     let node = State.node_at state pos in
     let compl = State.node_complete node prefix in
-    state, `List (List.rev compl)
+    state, List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
     let node =

@@ -55,7 +55,7 @@ val reset_global_modules : unit -> unit
 val quick_refresh_modules : t -> t * bool
 
 val node_at : t -> Lexing.position -> Browse.t
-val node_complete : Browse.t -> string -> Json.json list
+val node_complete : Browse.t -> string -> Protocol.completion list
 val find_method : Env.t -> string -> Types.type_expr -> Types.type_expr option
 
 val locate : Browse.t -> string -> (string * Location.t) option
