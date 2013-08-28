@@ -77,30 +77,6 @@ let may_map f = function
 
 (* File functions *)
 
-let find_in_path path name =
-  if not (Filename.is_implicit name) then
-    if Sys.file_exists name then name else raise Not_found
-  else begin
-    let rec try_dir = function
-      [] -> raise Not_found
-    | dir::rem ->
-        let fullname = Filename.concat dir name in
-        if Sys.file_exists fullname then fullname else try_dir rem
-    in try_dir path
-  end
-
-let find_in_path_uncap path name =
-  let uname = String.uncapitalize name in
-  let rec try_dir = function
-    [] -> raise Not_found
-  | dir::rem ->
-      let fullname = Filename.concat dir name
-      and ufullname = Filename.concat dir uname in
-      if Sys.file_exists ufullname then ufullname
-      else if Sys.file_exists fullname then fullname
-      else try_dir rem
-  in try_dir path
-
 let remove_file filename =
   try
     Sys.remove filename
@@ -132,6 +108,36 @@ let canonicalize_filename ?cwd path =
     | root :: subs -> List.fold_left Filename.concat root subs
   in
   filename_concats parts
+
+let find_in_path path name =
+  canonicalize_filename
+  begin
+    if not (Filename.is_implicit name) then
+      if Sys.file_exists name then name else raise Not_found
+    else begin
+      let rec try_dir = function
+        [] -> raise Not_found
+      | dir::rem ->
+          let fullname = Filename.concat dir name in
+          if Sys.file_exists fullname then fullname else try_dir rem
+      in try_dir path
+    end
+  end
+
+let find_in_path_uncap path name =
+  canonicalize_filename
+  begin
+    let uname = String.uncapitalize name in
+    let rec try_dir = function
+      [] -> raise Not_found
+    | dir::rem ->
+        let fullname = Filename.concat dir name
+        and ufullname = Filename.concat dir uname in
+        if Sys.file_exists ufullname then ufullname
+        else if Sys.file_exists fullname then fullname
+        else try_dir rem
+    in try_dir path
+  end
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
