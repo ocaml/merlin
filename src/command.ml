@@ -26,6 +26,9 @@
 
 )* }}} *)
 
+open Misc
+open Protocol
+
 type state = State.t = {
   pos      : Lexing.position;
   tokens   : Outline.token list;
@@ -36,12 +39,7 @@ type state = State.t = {
 }
 module VPrinttyp = State.Verbose_print
 
-type handler = Protocol.io -> state -> Json.json list -> state * Json.json
-type t = { name : string ; handler : handler }
-let invalid_arguments () = failwith "invalid arguments"
-
-let commands : (string,t) Hashtbl.t = Hashtbl.create 11
-let track_verbosity handler : handler =
+(*let track_verbosity handler : handler =
   let last = ref (History.Sync.origin, []) in
   fun io st args ->
     let action = 
@@ -53,91 +51,44 @@ let track_verbosity handler : handler =
       else (last := (History.Sync.at ol, args); `Clear)
     in
     ignore (State.verbosity action);
-    handler io st args
+    handler io st args*)
 
-let register cmd = Hashtbl.add commands cmd.name 
-    {cmd with handler = track_verbosity cmd.handler}
+let load_packages packages =
+  let packages = Findlib.package_deep_ancestors [] packages in
+  let path = List.map Findlib.package_directory packages in
+  Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
+  Extensions_utils.register_packages packages;
+  State.reset_global_modules ()
 
-let command_tell = {
-  name = "tell";
+module Path_utils = struct
+  (* Search path (-I) handling *)
+  let default_build_paths =
+    let open Config in
+    lazy ("." :: List.rev !Clflags.include_dirs @ !load_path)
+  
+  let build  = Config.load_path,  default_build_paths 
+  let source = State.source_path, lazy ["."]
 
-  handler = begin fun (i,o) state -> function
-  | [`String "struct" ; `String source] ->
-      Env.reset_missing_cmis ();
-      let eod = ref false and eot = ref false in
-      let lexbuf = Misc.lex_strings source
-        begin fun () ->
-          if !eot then ""
-          else try
-            o (Protocol.return (`Bool false));
-            match Stream.next i with
-            | `List [`String "tell" ; `String "struct" ; `String source] ->
-              source
-            | `List [`String "tell" ; `String "end" ; `String source] ->
-              eod := true; source
-            | `List [`String "tell" ; `String ("end"|"struct") ; `Null] ->
-              eot := true; ""
-            | _ -> invalid_arguments ()
-          with
-            Stream.Failure -> invalid_arguments ()
-        end
-      in
-      let rec loop first state =
-        let bufpos = ref state.pos in
-        let tokens, outlines, chunks, types =
-          state.tokens,
-          (History.cutoff state.outlines),
-          (History.cutoff state.chunks),
-          (History.cutoff state.types)
-        in
-        let tokens, outlines =
-          let default tokens =
-            Outline.parse ~bufpos tokens outlines lexbuf
-          in
-          if not first
-          then default tokens
-          else
-            match History.backward outlines with
-            | None -> default tokens
-            | Some (o, os) ->
-              let tokens', outlines' =
-                Outline.parse ~bufpos (o.Outline.tokens @ tokens)
-                  (History.cutoff os) lexbuf
-              in
-              match History.prev outlines' with
-              (* Parsing is stable *)
-              | Some o' when o.Outline.tokens = o'.Outline.tokens ->
-                default tokens'
-              (* Parsing is not stable *)
-              | _ ->
-                tokens', outlines'
-        in
-        let chunks = Chunk.sync outlines chunks in
-        let types = Typer.sync chunks types in
-        let pos = !bufpos in
-          (* If token list didn't change, move forward anyway
-           * to prevent getting stuck *)
-        let stuck = state.tokens = tokens in
-        let tokens =
-          if stuck
-          then (try List.tl tokens with _ -> tokens)
-          else tokens
-        in
-        let state' = { tokens ; comments = [] ; outlines ; chunks ; types ; pos } in
-        if !eod || (!eot && (stuck || tokens = []))
-        then state'
-        else loop false state'
-      in
-      let state = loop true state in
-      state, `Bool true
-  | _ -> invalid_arguments ()
-  end;
-}
+  let set_default_path () =
+    Config.load_path := Lazy.force default_build_paths
+  
+  let modify ~action ~var ~kind ?cwd path =
+    let r,_= match var with `Source -> source | `Build -> build in
+    let d =
+      if kind = `Relative 
+      then path
+      else Misc.canonicalize_filename ?cwd
+            (Misc.expand_directory Config.standard_library path)
+    in
+    r := List.filter ((<>) d) !r;
+    match action with
+    | `Add -> r := d :: !r
+    | `Rem -> ()
+end
 
-let command_type = {
-  name = "type";
+let set_default_path = Path_utils.set_default_path
 
-  handler =
+module Type_utils = struct
   let type_in_env env ppf expr =
     let lexbuf = Lexing.from_string expr in
     let print_expr expression =
@@ -180,22 +131,94 @@ let command_type = {
         end
       | e -> print_expr e
     end
-  in
-  begin fun _ state -> function
-  | [`String "expression"; `String expr] ->
-      let env = Typer.env state.types in
-      let ppf, to_string = Misc.ppf_to_string () in
-      type_in_env env ppf expr;
-      state, `String (to_string ())
+end
 
-  | [`String "expression"; `String expr; `String "at" ; jpos] ->
-    let {Browse.env} = State.node_at state (Protocol.pos_of_json jpos) in
+let dispatch (i,o : IO.io) (state : state) = 
+  fun (type a) (request : a request) ->
+  (match request with
+  | (Tell (`Source source) : a request) ->
+  begin
+    Env.reset_missing_cmis ();
+    let eod = ref false and eot = ref false in
+    let lexbuf = Misc.lex_strings source
+      begin fun () ->
+        if !eot then ""
+        else try
+          o (Return (request, false));
+          let request = Stream.next i in
+          match request with
+          | Request (Tell (`Source source)) -> source
+          | Request (Tell (`More source)) -> eod := true; source
+          | Request (Tell `End) -> eot := true; ""
+          | _ -> IO.invalid_arguments ()
+        with
+          Stream.Failure -> IO.invalid_arguments ()
+      end
+    in
+    let rec loop first state =
+      let bufpos = ref state.pos in
+      let tokens, outlines, chunks, types =
+        state.tokens,
+        (History.cutoff state.outlines),
+        (History.cutoff state.chunks),
+        (History.cutoff state.types)
+      in
+      let tokens, outlines =
+        let default tokens =
+          Outline.parse ~bufpos tokens outlines lexbuf
+        in
+        if not first
+        then default tokens
+        else
+          match History.backward outlines with
+          | None -> default tokens
+          | Some (o, os) ->
+            let tokens', outlines' =
+              Outline.parse ~bufpos (o.Outline.tokens @ tokens)
+                (History.cutoff os) lexbuf
+            in
+            match History.prev outlines' with
+            (* Parsing is stable *)
+            | Some o' when o.Outline.tokens = o'.Outline.tokens ->
+              default tokens'
+            (* Parsing is not stable *)
+            | _ ->
+              tokens', outlines'
+      in
+      let chunks = Chunk.sync outlines chunks in
+      let types = Typer.sync chunks types in
+      let pos = !bufpos in
+        (* If token list didn't change, move forward anyway
+         * to prevent getting stuck *)
+      let stuck = state.tokens = tokens in
+      let tokens =
+        if stuck
+        then (try List.tl tokens with _ -> tokens)
+        else tokens
+      in
+      let state' = { tokens ; comments = [] ; outlines ; chunks ; types ; pos } in
+      if !eod || (!eot && (stuck || tokens = []))
+      then state'
+      else loop false state'
+    in
+    let state = loop true state in
+    state, true
+  end
+  | (Tell _ : a request) -> IO.invalid_arguments ()
+
+  | (Type_expr (source, None) : a request) ->
+    let env = Typer.env state.types in
     let ppf, to_string = Misc.ppf_to_string () in
-    type_in_env env ppf expr;
-    state, `String (to_string ())
+    Type_utils.type_in_env env ppf source;
+    state, to_string ()
 
-  | [`String "at" ; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+  | (Type_expr (source, Some pos) : a request) ->
+    let {Browse.env} = State.node_at state pos in
+    let ppf, to_string = Misc.ppf_to_string () in
+    Type_utils.type_in_env env ppf source;
+    state, to_string ()
+
+  | (Type_at pos : a request) ->
     let structures = Misc.list_concat_map
       (fun (str,sg) -> Browse.structure str)
       (Typer.trees state.types)
@@ -225,28 +248,26 @@ let command_type = {
         | Some t -> VPrinttyp.type_scheme ppf t
         | None -> Format.pp_print_string ppf "Unknown method"
     end;
-    state, Protocol.with_location node.Browse.loc
-      ["type", `String (to_string ())]
+    state, (node.Browse.loc, to_string ())
 
-  | [`String "enclosing"; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+  | (Type_enclosing pos : a request) ->
     let aux = function
-      | { Browse. loc; env;
-          context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t) } ->
+      | {Browse. loc; env;
+          context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t)} ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_scheme ppf t);
-        Some (Protocol.with_location loc ["type", `String (to_string ())])
-      | { Browse. loc; env; context = Browse.TypeDecl (id,t) } ->
+        Some (loc, to_string ())
+      | {Browse. loc; env; context = Browse.TypeDecl (id,t)} ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_declaration id ppf t);
-        Some (Protocol.with_location loc ["type", `String (to_string ())])
-      | { Browse. loc; env; context = Browse.Module (_,m) } ->
+        Some (loc, to_string ())
+      | {Browse. loc; env; context = Browse.Module (_,m)} ->
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> Printtyp.modtype ppf m);
-        Some (Protocol.with_location loc ["type", `String (to_string ())])
+        Some (loc, to_string ())
       | _ -> None
     in
     let structures = Misc.list_concat_map
@@ -255,75 +276,43 @@ let command_type = {
     in
     let path = Browse.enclosing pos structures in
     let result = Misc.list_filter_map aux path in
-    state, `List [`Int (List.length path); `List result]
+    state, (List.length path, result)
 
-  | _ -> invalid_arguments ()
-  end;
-}
-
-let command_complete = {
-  name = "complete";
-
-  handler =
-  begin fun _ state -> function
-  | [`String "prefix" ; `String prefix] ->
+  | (Complete_prefix (prefix, None) : a request) ->
     let node = Browse.({dummy with env = Typer.env state.types}) in
     let compl = State.node_complete node prefix in
-    state, `List (List.rev compl)
-  | [`String "prefix" ; `String prefix ; `String "at" ; jpos ] ->
-    let node = State.node_at state (Protocol.pos_of_json jpos) in
+    state, List.rev compl
+
+  | (Complete_prefix (prefix, Some pos) : a request) ->
+    let node = State.node_at state pos in
     let compl = State.node_complete node prefix in
-    state, `List (List.rev compl)
-  | _ -> invalid_arguments ()
-  end;
-}
+    state, List.rev compl
 
-let command_locate = {
-  name = "locate";
-
-  handler = begin fun _ state args ->
-    let path, node, local_modules =
-      match args with
-      | [ `String path ] ->
-        path, Browse.({ dummy with env = Typer.env state.types }), []
-      | [ `String path ; `String "at" ; jpos ] ->
-        path, State.node_at state (Protocol.pos_of_json jpos), State.local_modules state
-      | _ -> invalid_arguments ()
+  | (Locate (path, opt_pos) : a request) ->
+    let node, local_modules =
+      match opt_pos with
+      | None -> Browse.({ dummy with env = Typer.env state.types }), []
+      | Some pos -> State.node_at state pos, State.local_modules state
     in
-    match State.locate node path local_modules with
-    | None -> state, `String "Not found"
+    begin match State.locate node path local_modules with
+    | None -> state, None
     | Some (file, loc) ->
       let pos = loc.Location.loc_start in
-      state, `Assoc [ "file", `String file ; "pos", Protocol.pos_to_json pos ]
-  end
-}
+      state, Some (file, pos)
+    end
 
-let command_drop = {
-  name = "drop";
-
-  handler =
-  begin fun _ state -> function
-  | [] ->
+  | (Drop : a request) ->
     let outlines, chunks, types =
       (History.cutoff state.outlines),
       (History.cutoff state.chunks),
       (History.cutoff state.types)
     in
-    {state with tokens = []; outlines; chunks; types}, `Bool true
-  | _ -> invalid_arguments ()
-  end
-}
+    {state with tokens = []; outlines; chunks; types}, state.pos
 
-let command_seek = {
-  name = "seek";
+  | (Seek `Position : a request) ->
+    state, state.pos
 
-  handler =
-  begin fun _ state -> function
-  | [`String "position"] ->
-    state, Protocol.pos_to_json state.pos
-
-  | [`String "before" ; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+  | (Seek (`Before pos) : a request) ->
     let cmp o = Location.compare_pos pos (Outline.item_loc o) in
     let outlines = state.outlines in
     let outlines = History.seek_forward (fun i -> cmp i > 0) outlines in
@@ -341,11 +330,9 @@ let command_seek = {
         | l when l = Location.none -> State.initial.pos
         | p -> p.Location.loc_end
     in
-    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
+    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
 
-  | [`String "exact" ; jpos] ->
-    let pos = Protocol.pos_of_json jpos in
+  | (Seek (`Exact pos) : a request) ->
     let cmp o = Location.compare_pos pos (Outline.item_loc o) in
     let outlines = state.outlines in
     let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
@@ -359,10 +346,9 @@ let command_seek = {
       | l when l = Location.none -> State.initial.pos
       | p -> p.Location.loc_end
     in
-    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
+    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
 
-  | [`String "end"] ->
+  | (Seek `End : a request) ->
     let outlines = History.seek_forward (fun _ -> true) state.outlines in
     let chunks = History.Sync.right Misc.fst3 outlines state.chunks in
     let types  = History.Sync.right fst chunks state.types in
@@ -371,10 +357,9 @@ let command_seek = {
       | l when l = Location.none -> State.initial.pos
       | p -> p.Location.loc_end
     in
-    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
+    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
 
-  | [`String "maximize_scope"] ->
+  | (Seek `Maximize_scope : a request) ->
     let rec find_end_of_module (depth,outlines) =
       if depth = 0 then (0,outlines)
       else
@@ -405,24 +390,17 @@ let command_seek = {
       | l when l = Location.none -> State.initial.pos
       | p -> p.Location.loc_end
     in
-    { tokens = [] ; comments = [] ; outlines ; chunks ; types ; pos },
-    Protocol.pos_to_json pos
-  | _ -> invalid_arguments ()
-  end;
-}
+    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
 
-let command_boundary = {
-  name = "boundary";
-  handler = begin
+  | (Boundary (dir,pos) : a request) ->
     let prev2 x = match History.backward x with
       | Some (_, y) -> History.prev y
       | None -> None
     in
-    let command_of_string = function
-      | "next" -> History.next
-      | "prev" -> prev2
-      | "current" -> History.prev
-      | _ -> invalid_arguments ()
+    let command = function
+      | `Next -> History.next
+      | `Prev -> prev2
+      | `Current -> History.prev
     in
     let outlines_of_pos state pos =
       let cmp o = Location.compare_pos pos (Outline.item_loc o) in
@@ -431,103 +409,58 @@ let command_boundary = {
       let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
       fst (History.Sync.rewind Misc.fst3 outlines state.chunks)
     in
-    fun _ state args ->
-      let (f, pos) = match args with
-        | [ `String cmd; `String "at"; jpos] ->
-          (command_of_string cmd, Protocol.pos_of_json jpos)
-        | [ `String cmd ] -> (command_of_string cmd, state.pos)
-        | [ ] -> (History.prev, state.pos)
-        | [ `String "at"; jpos ] -> (History.prev, Protocol.pos_of_json jpos)
-        | _ -> invalid_arguments ()
-      in
-      match f (outlines_of_pos state pos) with
-      | None -> state, `Null
-      | Some {Outline.loc={Location.loc_start; loc_end}} ->
-        state, `List (List.map Protocol.pos_to_json [loc_start; loc_end])
-  end
-}
+    let pos = match pos with
+      | Some pos -> pos
+      | None -> state.pos
+    in
+    begin match (command dir) (outlines_of_pos state pos) with
+    | None -> state, None
+    | Some o -> state, Some o.Outline.loc
+    end
 
-let command_reset = {
-  name = "reset";
+  | (Reset None : a request) ->
+    State.initial, ()
 
-  handler =
-  begin fun _ state -> function
-  | [] -> State.initial, Protocol.pos_to_json State.initial.pos
-  | [`String "name"; `String pos_fname] ->
+  | (Reset (Some pos_fname) : a request) ->
     { State.initial with pos =
       { State.initial.pos with Lexing.pos_fname } },
-    Protocol.pos_to_json State.initial.pos
-  | _ -> invalid_arguments ()
-  end
-}
+    ()
 
-let command_refresh = {
-  name = "refresh";
-
-  handler =
-  begin fun _ state -> function
-  | [] ->
+  | (Refresh `Full : a request) ->
     State.reset_global_modules ();
     Env.reset_cache ();
     let types = Typer.sync state.chunks History.empty in
-    {state with types}, `Bool true
-  | [`String "quick"] ->
-    let state, changed = State.quick_refresh_modules state in
-    state, `Bool changed
-  | _ -> invalid_arguments ()
-  end;
-}
+    {state with types}, true
 
-let command_cd = {
-  name = "cd";
+  | (Refresh `Quick : a request) ->
+    State.quick_refresh_modules state
 
-  handler =
-  begin fun _ state -> function
-  | [`String s] ->
-    Sys.chdir s;
+  | (Cd dir : a request) ->
+    Sys.chdir dir;
     State.reset_global_modules ();
-    state, `Bool true
-  | _ -> invalid_arguments ()
-  end;
-}
+    state, ()
 
-let command_errors = {
-  name = "errors";
+  | (Errors : a request) ->
+    state, State.exns state
 
-  handler =
-  begin fun _ state -> function
-  | [] -> state, `List (List.map snd
-                          (Error_report.to_jsons (State.exns state)))
-  | _ -> invalid_arguments ()
-  end;
-}
+  | (Dump (`Env None) : a request) ->
+    let sg = Browse_misc.signature_of_env (Typer.env state.types) in
+    let aux item =
+      let ppf, to_string = Misc.ppf_to_string () in
+      Printtyp.signature ppf [item];
+      let content = to_string () in
+      let ppf, to_string = Misc.ppf_to_string () in
+      match Browse_misc.signature_loc item with
+        | Some loc ->
+            Location.print_loc ppf loc;
+            let loc = to_string () in
+            `List [`String loc ; `String content]
+        | None -> `String content
+    in
+    state, `List (List.map aux sg)
 
-let command_dump = {
-  name = "dump";
-
-  handler =
-  let pr_item_desc items =
-    (List.map (fun (s,i) -> `List [`String s;`Int i]) (Chunk.dump_chunk items))
-  in
-  begin fun _ state -> function
-  | [`String "env"] ->
-      let sg = Browse_misc.signature_of_env (Typer.env state.types) in
-      let aux item =
-        let ppf, to_string = Misc.ppf_to_string () in
-        Printtyp.signature ppf [item];
-        let content = to_string () in
-        let ppf, to_string = Misc.ppf_to_string () in
-        match Browse_misc.signature_loc item with
-          | Some loc ->
-              Location.print_loc ppf loc;
-              let loc = to_string () in
-              `List [`String loc ; `String content]
-          | None -> `String content
-      in
-      state, `List (List.map aux sg)
-  | [`String "env" ; `String "at" ; jpos ] ->
-    let {Browse.env} = State.node_at state
-        (Protocol.pos_of_json jpos) in
+  | (Dump (`Env (Some pos)) : a request) ->
+    let {Browse.env} = State.node_at state pos in
     let sg = Browse_misc.signature_of_env env in
     let aux item =
       let ppf, to_string = Misc.ppf_to_string () in
@@ -542,7 +475,8 @@ let command_dump = {
         | None -> `String content
     in
     state, `List (List.map aux sg)
-  | [`String "sig"] ->
+
+  | (Dump `Sig : a request) ->
       let trees = Typer.trees state.types in
       let sg = List.flatten (List.map snd trees) in
       let aux item =
@@ -558,15 +492,22 @@ let command_dump = {
           | None -> `String content
       in
       state, `List (List.map aux sg)
-  | [`String "chunks"] ->
-      state, `List (pr_item_desc state.chunks)
-  | [`String "tree"] ->
+
+  | (Dump `Chunks : a request) ->
+    let pr_item_desc items = List.map 
+        (fun (s,i) -> `List [`String s;`Int i])
+        (Chunk.dump_chunk items)
+    in
+    state, `List (pr_item_desc state.chunks)
+
+  | (Dump `Tree : a request) ->
       let structures = Misc.list_concat_map
         (fun (str,sg) -> Browse.structure str)
         (Typer.trees state.types)
       in
       state, Browse_misc.dump_ts structures
-  | [`String "outline"] ->
+
+  | (Dump `Outline : a request) ->
     let outlines = History.prevs state.outlines in
     let aux item =
       let tokens =
@@ -578,107 +519,70 @@ let command_dump = {
     in
     state, `List (List.rev_map aux outlines)
 
-
-  | [`String "exn"] ->
+  | (Dump `Exn : a request) ->
     let exns = State.exns state in
     state, `List (List.rev_map (fun e -> `String (Printexc.to_string e)) exns)
 
-  | _ -> invalid_arguments ()
-  end;
-}
+  | (Which_path s : a request) ->
+    let filename =
+      try Misc.find_in_path_uncap !State.source_path s
+      with Not_found ->
+        Misc.find_in_path_uncap !Config.load_path s
+    in
+    state, filename
 
-let command_which = {
-  name = "which";
+  | (Which_with_ext ext : a request) ->
+    state, Misc.modules_in_path ~ext !State.source_path
 
-  handler =
-  begin fun _ state -> function
-  | [`String "path" ; `String s] ->
-      let filename =
-        try Misc.find_in_path_uncap !State.source_path s
-        with Not_found ->
-          Misc.find_in_path_uncap !Config.load_path s
-      in
-      state, `String filename
-  | [`String "with_ext" ; `String ext] ->
-      let results = Misc.modules_in_path ~ext !State.source_path in
-      state, `List (List.map (fun s -> `String s) results)
-  | _ -> invalid_arguments ()
-  end;
-}
+  | (Findlib_use packages : a request) ->
+    load_packages packages;
+    state, ()
 
-let load_packages packages =
-  let packages = Findlib.package_deep_ancestors [] packages in
-  let path = List.map Findlib.package_directory packages in
-  Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
-  Extensions_utils.register_packages packages;
-  State.reset_global_modules ()
+  | (Findlib_list : a request) ->
+    state, (Fl_package_base.list_packages ())
 
-let command_find = {
-  name = "find";
+  | (Extension_list `All : a request) ->
+    state, (Extensions_utils.all_extensions ())
 
-  handler =
-  begin fun _ state -> function
-      (* Recommended form *)
-  | [`String "use" ; `List packages]
-      (* FIXME: Deprecated *)
-  | (`String "use" :: packages) ->
-      let packages = List.map
-        (function `String pkg -> pkg | _ -> invalid_arguments ())
-        packages
-      in
-      load_packages packages;
-      state, `Bool true
-  | [`String "list"] ->
-      state, `List (List.rev_map (fun s -> `String s) (Fl_package_base.list_packages ()))
-  | _ -> invalid_arguments ()
-  end;
-}
+  | (Extension_list `Enabled : a request) ->
+    state, (Extensions_utils.enabled ())
 
-let command_extension = {
-  name = "extension";
+  | (Extension_list `Disabled : a request) ->
+    state, (Extensions_utils.disabled ())
 
-  handler =
-  begin fun _ state -> function
-  | [`String ("enable"|"disable" as action) ; `List extensions] ->
-      let enabled = action = "enable" in
-      let extensions = List.map
-        (function `String ext -> ext | _ -> invalid_arguments ())
-        extensions
-      in
-      List.iter (Extensions_utils.set_extension ~enabled)
-                extensions;
-      state, `Bool true
-  | [`String "list"; `String "enabled"] ->
-      state, `List (List.rev_map (fun s -> `String s) (Extensions_utils.enabled ()))
-  | [`String "list"; `String "disabled"] ->
-      state, `List (List.rev_map (fun s -> `String s) (Extensions_utils.disabled ()))
-  | [`String "list"] ->
-      state, `List (List.rev_map (fun s -> `String s) (Extensions_utils.all_extensions ()))
-  | _ -> invalid_arguments ()
-  end;
-}
+  | (Extension_set (action,extensions) : a request) ->
+    let enabled = action = `Enabled in
+    List.iter (Extensions_utils.set_extension ~enabled)
+              extensions;
+    state, ()
 
-let command_help = {
-  name = "help";
+  | (Path (var,kind,action,pathes) : a request) -> 
+    List.iter (Path_utils.modify ~action ~kind ~var) pathes;
+    State.reset_global_modules ();
+    state, true 
 
-  handler =
-  begin fun _ state -> function
-  | [] ->
-      let helps = Hashtbl.fold
-        (fun name _ cmds -> `String name :: cmds)
-        commands []
-      in
-      state, `List helps
-  | _ -> invalid_arguments ()
-  end;
-}
+  | (Path_list `Build : a request) ->
+    state, !(fst Path_utils.build)
 
-let _ = List.iter register [
-  command_tell; command_drop; command_seek; command_reset; command_refresh;
-  command_cd; command_type; command_complete; command_boundary;
-  command_locate;
-  command_errors; command_dump;
-  command_which; command_find; command_extension;
-  command_help;
-]
+  | (Path_list `Source : a request) ->
+    state, !(fst Path_utils.source)
+
+  | (Path_reset var : a request) ->
+    let reset (v,lazy l) = v := l in
+    if var = `Both || var = `Build  then reset Path_utils.build;
+    if var = `Both || var = `Source then reset Path_utils.source;
+    State.reset_global_modules ();
+    state, ()
+
+  | (Project_load (cmd,path) : a request) ->
+    let f = match cmd with
+      | `File -> Dot_merlin.read
+      | `Find -> Dot_merlin.find 
+    in
+    let dot_merlins = f path in
+    let path_modify action var ~cwd path = 
+      Path_utils.modify ~action ~var ~kind:`Absolute ~cwd path in
+    state, (Dot_merlin.exec ~path_modify ~load_packages dot_merlins)
+
+  : state * a)
 

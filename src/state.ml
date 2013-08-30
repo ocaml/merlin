@@ -245,37 +245,39 @@ let node_complete node prefix =
           then Types.({v with val_type = verbose_type env v.val_type})
           else v
         in
-        Printtyp.value_description ident ppf v; "Value"
+        Printtyp.value_description ident ppf v;
+        `Value
       | `Cons c  ->
-          Format.pp_print_string ppf name;
-          Format.pp_print_string ppf " : ";
-          Browse_misc.print_constructor ppf c;
-          "Constructor"
+         Format.pp_print_string ppf name;
+         Format.pp_print_string ppf " : ";
+         Browse_misc.print_constructor ppf c;
+         `Constructor
       | `Label label_descr ->
-          let desc =
-            Types.(Tarrow ("", label_descr.lbl_res, label_descr.lbl_arg, Cok))
-          in
-          Format.pp_print_string ppf name;
-          Format.pp_print_string ppf " : ";
-          Printtyp.type_scheme ppf (Btype.newgenty desc);
-          "Label"
+         let desc =
+           Types.(Tarrow ("", label_descr.lbl_res, label_descr.lbl_arg, Cok))
+         in
+         Format.pp_print_string ppf name;
+         Format.pp_print_string ppf " : ";
+         Printtyp.type_scheme ppf (Btype.newgenty desc);
+         `Label
       | `Mod m   ->
-          (if exact then
-             match mod_smallerthan (2000 * verbosity `Query) m with
-               | None -> ()
-               | Some _ -> Printtyp.modtype ppf m
-          ); "Module"
+         if exact then
+         begin match mod_smallerthan (2000 * verbosity `Query) m with
+           | None -> ()
+           | Some _ -> Printtyp.modtype ppf m
+         end;
+         `Module
       | `ModType m ->
-        if exact then Printtyp.modtype_declaration 
-             ident ppf (verbose_sig env m);
-        "Signature"
+        if exact then
+          Printtyp.modtype_declaration ident ppf (verbose_sig env m);
+        `Modtype
       | `Typ t ->
         Printtyp.type_declaration ident ppf 
           (if exact then verbose_type_decl env t else t);
-        "Type"
+        `Type
     in
-    let desc, info = match kind with ("Module"|"Signature") -> "", to_string () | _ -> to_string (), "" in
-    `Assoc ["name", `String name ; "kind", `String kind ; "desc", `String desc ; "info", `String info]
+    let desc, info = match kind with `Module|`Modtype -> "", to_string () | _ -> to_string (), "" in
+    {Protocol. name; kind; desc; info}
   in
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
@@ -365,9 +367,12 @@ let node_complete node prefix =
     List.map (fun (name,ty) ->
       let ppf, to_string = Misc.ppf_to_string () in
       Printtyp.type_scheme ppf ty;
-      `Assoc ["name", `String name ; "kind", `String "#" ;
-              "desc", `String (to_string ()) ;
-              "info", `String ""])
+      {Protocol.
+        name; 
+        kind = `MethodCall; 
+        desc = to_string (); 
+        info = "";
+      })
       methods
   | _ ->
     try
@@ -379,12 +384,12 @@ let node_complete node prefix =
         begin match Misc.length_lessthan 30 compl with
         | Some _ -> List.fold_left
           begin fun compl modname ->
-          let default = `Assoc [
-              "name", `String modname;
-              "kind", `String "module";
-              "desc", `String "" ;
-              "info", `String ""
-            ] in 
+          let default = { Protocol. 
+            name = modname;
+            kind = `Module;
+            desc = "";
+            info = "";
+          } in 
           match modname with
           | modname when modname = prefix && uniq (`Mod,modname) ->
               (try let p, md = Env.lookup_module (Longident.Lident modname) env in

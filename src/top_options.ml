@@ -50,7 +50,7 @@ module Make (Bootstrap : sig val _projectfind : string -> unit end) = struct
     let _w s = Warnings.parse_options false s
     let _warn_error s = Warnings.parse_options true s
     let _warn_help = Warnings.help_warnings
-    let _protocol = Protocol.select_frontend
+    let _protocol = IO.select_frontend
 
     let _ignore_sigint () =
       try ignore (Sys.(signal sigint Signal_ignore))

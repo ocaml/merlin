@@ -26,40 +26,33 @@
 
 )* }}} *)
 
-type t = {
-  pos      : Lexing.position;
-  tokens   : Outline.token list;
-  comments : Lexer.comment list;
-  outlines : Outline.t;
-  chunks   : Chunk.t;
-  types    : Typer.t;
-}
-val initial : t
+type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
+type low_io = Json.json Stream.t * (Json.json -> unit)
+type io_maker = input:in_channel -> output:out_channel -> low_io
 
-val verbosity : [`Query|`Incr|`Clear] -> int
-val verbose_type : Env.t -> Types.type_expr -> Types.type_expr
-val verbose_type_decl : Env.t -> Types.type_declaration -> Types.type_declaration
-val verbose_sig : Env.t -> Types.modtype_declaration -> Types.modtype_declaration
+exception Protocol_failure of string
 
-module Verbose_print : sig
-  open Format
-  open Types
+val register_protocol : name:string -> desc:string -> io_maker -> unit
+val select_frontend : string -> unit
 
-  val type_scheme: formatter -> type_expr -> unit
-  val type_declaration: Ident.t -> formatter -> type_declaration -> unit
-  val modtype_declaration: Ident.t -> formatter -> modtype_declaration -> unit
-end
+val make : input:in_channel -> output:out_channel -> low_io
+val lift : low_io -> io
 
-val source_path : string list ref
-val reset_global_modules : unit -> unit
-val quick_refresh_modules : t -> t * bool
+val return : Json.json -> Json.json
+val fail   : exn -> Json.json
+val protocol_failure : string -> 'a
+val invalid_arguments : unit -> 'a
 
-val node_at : t -> Lexing.position -> Browse.t
-val node_complete : Browse.t -> string -> Protocol.completion list
-val find_method : Env.t -> string -> Types.type_expr -> Types.type_expr option
+(* HACK. Break circular reference:
+ * Error_report uses Protocol to format error positions.
+ * Protocol uses Error_report to format standard errors.
+ *)
+val error_catcher : (exn -> (Location.t * Json.json) option) ref
 
-val local_modules : t -> (string * Location.t) list
+val make_pos : int * int -> Lexing.position
+val pos_to_json : Lexing.position -> Json.json
+val pos_of_json : Json.json -> Lexing.position
+val with_location : Location.t -> (string * Json.json) list -> Json.json
 
-val locate : Browse.t -> string -> (string * Location.t) list -> (string * Location.t) option
-
-val exns : t -> exn list
+val request_of_json  : Json.json -> Protocol.a_request
+val response_to_json : Protocol.response -> Json.json

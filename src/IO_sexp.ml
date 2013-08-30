@@ -15,7 +15,7 @@ let rec sexp_of_json =
 
 let rec json_of_sexp = 
   let fail msg sexp = 
-    Protocol.protocol_failure 
+    IO.protocol_failure 
       (msg ^ ", got: \n" ^ Sexplib.Sexp.to_string_hum sexp)
   in
   let open Sexplib.Type in
@@ -52,7 +52,7 @@ let sexp_make ~input ~output =
   in
   input', output
   
-let () = Protocol.register_protocol
+let () = IO.register_protocol
       ~name:"sexp"
       ~desc:"Simple encoding of json over sexpr"
       sexp_make

@@ -168,7 +168,7 @@ let rec dump_ts ts =
       | Browse.NamedOther _
       | Browse.Other -> "other"
     in
-    Protocol.with_location loc
+    IO.with_location loc
     [
       "kind", `String kind;
       "children", dump_ts nodes
