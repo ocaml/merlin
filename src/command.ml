@@ -202,7 +202,7 @@ let dispatch (i,o : IO.io) (state : state) =
               Outline.parse ~bufpos (o.Outline.tokens @ tokens)
                 (History.cutoff os) lexbuf
             in
-            match History.prev outlines' with
+            match History.focused outlines' with
             (* Parsing is stable *)
             | Some o' when o.Outline.tokens = o'.Outline.tokens ->
               default tokens'
@@ -419,13 +419,14 @@ let dispatch (i,o : IO.io) (state : state) =
     {tokens = []; comments = []; outlines; chunks; types; pos}, pos
 
   | (Boundary (dir,pos) : a request) ->
-    let prev2 x =
-      Option.bind (History.backward x) ~f:(fun (_,y) -> History.prev y)
+    let prev2 x = match History.backward x with
+      | Some (_, y) -> History.focused y
+      | None -> None
     in
     let command = function
       | `Next -> History.next
       | `Prev -> prev2
-      | `Current -> History.prev
+      | `Current -> History.focused
     in
     let outlines_of_pos state pos =
       let cmp o = Location.compare_pos pos (Outline.item_loc o) in

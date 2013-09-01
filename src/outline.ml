@@ -27,60 +27,60 @@
 )* }}} *)
 
 open Misc
+module Spine = Spine
 type token = Chunk_parser.token History.loc
 
-let parse_with history ~parser ~lexer ~bufpos buf =
-  let origin = History.current_pos history in
-  let history' = ref history in
-  let chunk_content h =
+let parse_with tokens ~parser ~lexer ~bufpos buf =
+  let Misc.Zipper (_,origin,_) = tokens in
+  let tokens' = ref tokens in
+  let chunk_content tokens =
     (* Drop end of history *)
-    let end_of_chunk = History.cutoff h in
-    let at_origin = History.seek_pos origin end_of_chunk in
+    let end_of_chunk = Misc.zipper_change_tail [] tokens in
+    let Misc.Zipper (_,_,next) = Misc.zipper_seek origin end_of_chunk in
     (* Drop beginning of history *)
-    History.nexts at_origin
+    next
   in
-  let lexer = History.wrap_lexer ~bufpos history' lexer in
+  let lexer = Fake_lexer.wrap ~tokens:tokens' ~bufpos lexer in
   try
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in
-    let history = !history' in
-    history, Outline_utils.Done, chunk_content history
+    let tokens = !tokens' in
+    tokens, Outline_utils.Done, chunk_content tokens
   with
   | Outline_utils.Chunk (c,p) ->
     begin
-      let rec aux history = match History.backward history with
-        | Some ((t,_,p'), history) when Misc.compare_pos p p' < 0 ->
-          aux history
-        | _ -> history
+      let rec aux = function
+        | Misc.Zipper ((t,_,p') :: _,_,_) as tokens
+          when Misc.compare_pos p p' < 0 ->
+          aux (Misc.zipper_shift (-1) tokens)
+        | tokens -> tokens
       in
-      let history = aux !history' in
-      history, c, chunk_content history
+      let tokens = aux !tokens' in
+      tokens, c, chunk_content tokens
     end
   | Sys.Break ->
     begin
-      let history = !history' in
-      History.(seek_pos origin history),
-      Outline_utils.Unterminated,
-      []
+      let tokens = !tokens' in
+      Misc.zipper_seek origin tokens,
+      Outline_utils.Unterminated, []
     end
   | Outline_parser.Error ->
     begin
-      let loc = match History.prev history with
-        | Some (_prev_tok, _loc_start, loc_end) ->
-          Location.({ loc_start = loc_end ; loc_end ; loc_ghost=false })
-        | None ->
-          Location.({
-            loc_start = buf.Lexing.lex_start_p ;
-            loc_end   = buf.Lexing.lex_curr_p ;
-            loc_ghost = false ;
-          })
+      let loc = match tokens with
+        | Misc.Zipper ((_prev_tok, _loc_start, loc_end) :: _,_,_) ->
+          {Location. loc_start = loc_end ; loc_end ; loc_ghost=false}
+        | Misc.Zipper _ ->
+          {Location.
+            loc_start = buf.Lexing.lex_start_p;
+            loc_end   = buf.Lexing.lex_curr_p;
+            loc_ghost = false}
       in
-      history' := History.move (-2) !history';
+      tokens' := Misc.zipper_shift (-2) !tokens';
       let lexer' who = Chunk_parser_utils.dump_lexer ~who lexer in
       let rec aux () =
         let count = Chunk_parser_utils.re_sync (lexer' "re_sync") buf in
-        history' := History.move (-1) !history';
-        let offset = History.offset !history' in
+        tokens' := Misc.zipper_shift (-1) !tokens';
+        let Misc.Zipper (_,offset,_) = !tokens' in
         try
           for i = 1 to count do
             try ignore (parser (lexer' "checker") buf)
@@ -88,14 +88,12 @@ let parse_with history ~parser ~lexer ~bufpos buf =
           done;
           offset
         with Outline_parser.Error ->
-          history' := History.seek_offset (succ offset) !history';
+          tokens' := Misc.zipper_seek (succ offset) !tokens';
           aux ()
       in
       let offset = aux () in
-      let history =
-        History.seek_offset offset !history'
-      in
-      history, Outline_utils.Syntax_error loc, chunk_content history
+      let tokens = Misc.zipper_seek offset !tokens' in
+      tokens, Outline_utils.Syntax_error loc, chunk_content tokens
     end
   | exn -> raise exn
 
@@ -111,7 +109,7 @@ type t = item History.t
 let item_loc i = i.loc
 
 let location t =
-  match History.prev t with
+  match History.focused t with
   | Some i -> i.loc
   | None -> Location.none
 
@@ -148,11 +146,11 @@ let parse_step ~bufpos ?(exns=[]) history buf =
    | _ -> Some { kind ; loc = location tokens; tokens ; exns = exns' @ exns })
 
 let exns chunks =
-  match History.prev chunks with
+  match History.focused chunks with
   | Some { exns } -> exns
   | None -> []
 
-let append_exns exns outlines = match History.prev outlines with
+let append_exns exns outlines = match History.focused outlines with
   | None -> 
     History.insert {
       kind = Outline_utils.Syntax_error Location.none;
@@ -171,7 +169,7 @@ let rec do_rollback next_tokens chunks =
 
 let rec parse ~bufpos tokens chunks buf =
   let exns = exns chunks in
-  match parse_step ~bufpos ~exns (History.of_list tokens) buf with
+  match parse_step ~bufpos ~exns (Misc.zipper_of_list tokens) buf with
   | tokens', Some { kind = (Outline_utils.Unterminated | Outline_utils.Done) } ->
     tokens', chunks
   | tokens', Some item ->
@@ -180,6 +178,6 @@ let rec parse ~bufpos tokens chunks buf =
     tokens', chunks
 
 let parse ~bufpos tokens chunks buf =
-  let tokens, chunks = parse ~bufpos tokens chunks buf in
-  History.nexts tokens, chunks
+  let Misc.Zipper (_,_,tokens), chunks = parse ~bufpos tokens chunks buf in
+  tokens, chunks
 

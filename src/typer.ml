@@ -47,7 +47,7 @@ let initial_env =
     Extensions_utils.register env
 
 let value t =
-  match History.prev t with
+  match History.focused t with
     | None -> (initial_env (), [], [])
     | Some (_,item) -> item
 

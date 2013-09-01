@@ -71,7 +71,7 @@ let fake_tokens tokens f =
 let sync_step outline tokens t =
   match outline with
   | Outline_utils.Enter_module ->
-    let lexer = History.wrap_lexer (ref (History.of_list tokens))
+    let lexer = Fake_lexer.wrap ~tokens:(ref (Misc.zipper_of_list tokens))
         (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
     in
     let open Parsetree in
@@ -87,7 +87,7 @@ let sync_step outline tokens t =
     let buf = Lexing.from_string "" in
     begin try
         (* run structure_item parser on tokens, appending EOF *)
-        let lexer = History.wrap_lexer (ref (History.of_list tokens))
+        let lexer = Fake_lexer.wrap ~tokens:(ref (Misc.zipper_of_list tokens))
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
@@ -153,11 +153,11 @@ let sync_step outline tokens t =
         History.offset t
       ))
 
-let exns h = match History.prev h with
+let exns h = match History.focused h with
   | Some (_, (exns,_), _) -> exns
   | None -> []
 
-let local_modules h = match History.prev h with
+let local_modules h = match History.focused h with
   | Some (_, _, local_modules) -> local_modules
   | None -> []
 

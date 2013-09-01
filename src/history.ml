@@ -40,7 +40,7 @@ let cutoff = function
   | { next = [] } as h -> h
   | h -> { h with next = [] }
 
-let prev = function
+let focused = function
   | { prev = p :: _ } -> Some p
   | _ -> None
 
@@ -141,7 +141,7 @@ let wrap_lexer ?(filter=fun _-> true) ?bufpos r f buf =
   t
 
 let current_pos ?(default=Lexing.dummy_pos) hist =
-  match prev hist with
+  match focused hist with
     | Some (_,_,p) -> p
     | _ -> default
 
@@ -165,7 +165,7 @@ struct
     | Some a -> fun f -> f a
 
   let at h =
-    prev h >>= fun a -> Some (offset h, a)
+    focused h >>= fun a -> Some (offset h, a)
 
   let same s1 s2 =
     match s1, s2 with
@@ -177,28 +177,15 @@ struct
     | None -> None
     | Some (_,a) -> Some a
 
-  let rec nearest f ah bh =
-    let point = prev bh >>= f in
-    let found = point >>=
-      fun (off,a) ->
-      let ah' = seek_offset off ah in
-      prev ah' >>= function
-        | a' when a' == a -> Some (ah', bh)
-        | _ -> backward bh >>= fun (_,bh') -> Some (nearest f ah' bh')
-    in
-    match found with
-      | Some a -> a
-      | None   -> seek_offset 0 ah, seek_offset 0 bh
-
   let rec rewind f ah bh =
-    let point = prev bh >>= f in
+    let point = focused bh >>= f in
     let found = point >>=
       fun (off,a) ->
       let ah' = if off <= offset ah
         then seek_offset off ah
         else ah
       in
-      prev ah' >>= function
+      focused ah' >>= function
         | a' when a' == a -> Some (ah', bh)
         | _ -> backward bh >>= fun (_,bh') -> Some (rewind f ah' bh')
     in
@@ -226,7 +213,7 @@ struct
 
   let left f ah bh =
     let off =
-      match prev bh >>= f with
+      match focused bh >>= f with
         | None -> 0
         | Some (off,_) -> off
     in

@@ -49,9 +49,9 @@ val cutoff : 'a t -> 'a t
 (** Element to the left of the cursor
   * (if last operation was an insertion, the inserted value is returned)
   *)
-val prev : 'a t -> 'a option
+val focused : 'a t -> 'a option
 
-(** Élément to the right of the cursor
+(** Element to the right of the cursor
   * (often None)
   *)
 val next : 'a t -> 'a option
@@ -119,11 +119,6 @@ sig
    *  a meeting point, possibly as far as the origin (offset 0).
    *)
   val rewind : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t * 'b t
-
-  (* [nearest prj a b]
-   * Finds the point of [a] nearest to the current point of [b]
-   *)
-  val nearest : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t * 'b t
 
   val left : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t
   val right : ('b -> 'a sync) -> 'a t -> 'b t -> 'b t

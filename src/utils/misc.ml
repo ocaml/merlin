@@ -394,6 +394,26 @@ let catch_join (exns, r) = match r with
   | Inl e -> (exns, Inl e)
   | Inr (exns', r') -> (exns @ exns'), r'
 
+        (* Simple list zipper *)
+type 'a zipper = Zipper of 'a list * int * 'a list 
+
+let rec zipper_shift n = function
+  | Zipper (prev, pos, a :: next) when n > 0 -> 
+    zipper_shift (pred n) (Zipper (a :: prev, succ pos, next))
+  | Zipper (a :: prev, pos, next) when n < 0 -> 
+    zipper_shift (succ n) (Zipper (prev, pred pos, a :: next))
+  | zipper -> zipper
+
+let zipper_of_list l = Zipper ([], 0, l)
+let zipper_insert a (Zipper (prev, pos, next)) =
+  Zipper (a :: prev, succ pos, next)
+
+let zipper_seek n (Zipper (_,pos,_) as z) =
+  zipper_shift (n - pos) z
+
+let zipper_change_tail next (Zipper (prev,pos,_next)) =
+  Zipper (prev,pos,next)
+
         (* Manipulating Lexing.position *)
 
 let make_pos (pos_lnum, pos_cnum) =

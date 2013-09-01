@@ -148,7 +148,7 @@ let node_at state pos_cursor =
     Browse.({ dummy with env = Typer.env types })
 
 let local_modules state =
-  match History.prev state.chunks with
+  match History.focused state.chunks with
   | None -> []
   | Some (_, _, modules) -> modules
 
