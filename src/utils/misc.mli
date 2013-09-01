@@ -173,12 +173,15 @@ val sum_join : ('a,('a,'c) sum) sum -> ('a,'c) sum
 val try_sum : (unit -> 'a) -> (exn,'a) sum
 
         (* Simple list zipper with a position *)
-type 'a zipper = private Zipper of 'a list * int * 'a list
-val zipper_shift : int -> 'a zipper -> 'a zipper
-val zipper_of_list : 'a list -> 'a zipper
-val zipper_insert : 'a -> 'a zipper -> 'a zipper
-val zipper_seek : int -> 'a zipper -> 'a zipper
-val zipper_change_tail : 'a list -> 'a zipper -> 'a zipper
+module Zipper : sig
+  type 'a t = private Zipper of 'a list * int * 'a list
+  val shift : int -> 'a t -> 'a t
+  val of_list : 'a list -> 'a t
+  val insert : 'a -> 'a t -> 'a t
+  val seek : int -> 'a t -> 'a t
+  val change_tail : 'a list -> 'a t -> 'a t
+end
+type 'a zipper = 'a Zipper.t = private Zipper of 'a list * int * 'a list
 
         (* Join for catch pattern (writer and error monad) *)
 val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b) sum

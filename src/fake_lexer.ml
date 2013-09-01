@@ -8,7 +8,7 @@ let wrap ~tokens ?bufpos f buf =
   | Zipper (_, _, ((t,s,c) :: _)) ->
     buf.Lexing.lex_start_p <- s;
     buf.Lexing.lex_curr_p <- c;
-    tokens := zipper_shift 1 !tokens;
+    tokens := Zipper.shift 1 !tokens;
     t
   | Zipper (_, _, []) ->
     Misc.may begin fun {contents = p} ->
@@ -16,7 +16,7 @@ let wrap ~tokens ?bufpos f buf =
       buf.Lexing.lex_curr_p <- p
     end bufpos;
     let t = f buf in
-    tokens := zipper_insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !tokens;
+    tokens := Zipper.insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !tokens;
     Misc.may begin fun pos ->
       pos := buf.Lexing.lex_curr_p
     end bufpos;

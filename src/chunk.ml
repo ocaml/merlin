@@ -26,6 +26,7 @@
 
 )* }}} *)
 
+open Misc
 type item_desc =
   | Definitions of Parsetree.structure_item Location.loc list
   | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
@@ -71,7 +72,7 @@ let fake_tokens tokens f =
 let sync_step outline tokens t =
   match outline with
   | Outline_utils.Enter_module ->
-    let lexer = Fake_lexer.wrap ~tokens:(ref (Misc.zipper_of_list tokens))
+    let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
         (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
     in
     let open Parsetree in
@@ -87,7 +88,7 @@ let sync_step outline tokens t =
     let buf = Lexing.from_string "" in
     begin try
         (* run structure_item parser on tokens, appending EOF *)
-        let lexer = Fake_lexer.wrap ~tokens:(ref (Misc.zipper_of_list tokens))
+        let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in

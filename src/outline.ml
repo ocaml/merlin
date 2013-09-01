@@ -31,12 +31,12 @@ module Spine = Spine
 type token = Chunk_parser.token Fake_lexer.token
 
 let parse_with tokens ~parser ~lexer ~bufpos buf =
-  let Misc.Zipper (_,origin,_) = tokens in
+  let Zipper (_,origin,_) = tokens in
   let tokens' = ref tokens in
   let chunk_content tokens =
     (* Drop end of history *)
-    let end_of_chunk = Misc.zipper_change_tail [] tokens in
-    let Misc.Zipper (_,_,next) = Misc.zipper_seek origin end_of_chunk in
+    let end_of_chunk = Zipper.change_tail [] tokens in
+    let Zipper (_,_,next) = Zipper.seek origin end_of_chunk in
     (* Drop beginning of history *)
     next
   in
@@ -50,9 +50,9 @@ let parse_with tokens ~parser ~lexer ~bufpos buf =
   | Outline_utils.Chunk (c,p) ->
     begin
       let rec aux = function
-        | Misc.Zipper ((t,_,p') :: _,_,_) as tokens
+        | Zipper ((t,_,p') :: _,_,_) as tokens
           when Misc.compare_pos p p' < 0 ->
-          aux (Misc.zipper_shift (-1) tokens)
+          aux (Zipper.shift (-1) tokens)
         | tokens -> tokens
       in
       let tokens = aux !tokens' in
@@ -61,26 +61,26 @@ let parse_with tokens ~parser ~lexer ~bufpos buf =
   | Sys.Break ->
     begin
       let tokens = !tokens' in
-      Misc.zipper_seek origin tokens,
+      Zipper.seek origin tokens,
       Outline_utils.Unterminated, []
     end
   | Outline_parser.Error ->
     begin
       let loc = match tokens with
-        | Misc.Zipper ((_prev_tok, _loc_start, loc_end) :: _,_,_) ->
+        | Zipper ((_prev_tok, _loc_start, loc_end) :: _,_,_) ->
           {Location. loc_start = loc_end ; loc_end ; loc_ghost=false}
-        | Misc.Zipper _ ->
+        | Zipper _ ->
           {Location.
             loc_start = buf.Lexing.lex_start_p;
             loc_end   = buf.Lexing.lex_curr_p;
             loc_ghost = false}
       in
-      tokens' := Misc.zipper_shift (-2) !tokens';
+      tokens' := Zipper.shift (-2) !tokens';
       let lexer' who = Chunk_parser_utils.dump_lexer ~who lexer in
       let rec aux () =
         let count = Chunk_parser_utils.re_sync (lexer' "re_sync") buf in
-        tokens' := Misc.zipper_shift (-1) !tokens';
-        let Misc.Zipper (_,offset,_) = !tokens' in
+        tokens' := Zipper.shift (-1) !tokens';
+        let Zipper (_,offset,_) = !tokens' in
         try
           for i = 1 to count do
             try ignore (parser (lexer' "checker") buf)
@@ -88,11 +88,11 @@ let parse_with tokens ~parser ~lexer ~bufpos buf =
           done;
           offset
         with Outline_parser.Error ->
-          tokens' := Misc.zipper_seek (succ offset) !tokens';
+          tokens' := Zipper.seek (succ offset) !tokens';
           aux ()
       in
       let offset = aux () in
-      let tokens = Misc.zipper_seek offset !tokens' in
+      let tokens = Zipper.seek offset !tokens' in
       tokens, Outline_utils.Syntax_error loc, chunk_content tokens
     end
   | exn -> raise exn
@@ -169,7 +169,7 @@ let rec do_rollback next_tokens chunks =
 
 let rec parse ~bufpos tokens chunks buf =
   let exns = exns chunks in
-  match parse_step ~bufpos ~exns (Misc.zipper_of_list tokens) buf with
+  match parse_step ~bufpos ~exns (Zipper.of_list tokens) buf with
   | tokens', Some { kind = (Outline_utils.Unterminated | Outline_utils.Done) } ->
     tokens', chunks
   | tokens', Some item ->
@@ -178,6 +178,6 @@ let rec parse ~bufpos tokens chunks buf =
     tokens', chunks
 
 let parse ~bufpos tokens chunks buf =
-  let Misc.Zipper (_,_,tokens), chunks = parse ~bufpos tokens chunks buf in
+  let Zipper (_,_,tokens), chunks = parse ~bufpos tokens chunks buf in
   tokens, chunks
 
