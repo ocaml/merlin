@@ -28,7 +28,7 @@
 
 open Misc
 module Spine = Spine
-type token = Chunk_parser.token History.loc
+type token = Chunk_parser.token Fake_lexer.token
 
 let parse_with tokens ~parser ~lexer ~bufpos buf =
   let Misc.Zipper (_,origin,_) = tokens in

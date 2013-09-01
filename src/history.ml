@@ -115,45 +115,6 @@ let seek_backward p =
   in
   wrap_seek aux
 
-type 'a loc = 'a * pos * pos
-
-let wrap_lexer ?(filter=fun _-> true) ?bufpos r f buf =
-  let t = match forward !r with
-    | Some ((t,s,c), r') ->
-        buf.Lexing.lex_start_p <- s;
-        buf.Lexing.lex_curr_p <- c;
-        r := r';
-        t
-    | None ->
-        (match bufpos with
-          | Some {contents = p} -> 
-            buf.Lexing.lex_abs_pos <- Lexing.(p.pos_cnum - buf.lex_curr_pos);
-            buf.Lexing.lex_curr_p <- p
-          | None -> ());
-        let t = f buf in
-        if filter t then
-          r := insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !r;
-        (match bufpos with
-          | Some p -> p := buf.Lexing.lex_curr_p
-          | None -> ());
-        t
-  in
-  t
-
-let current_pos ?(default=Lexing.dummy_pos) hist =
-  match focused hist with
-    | Some (_,_,p) -> p
-    | _ -> default
-
-let seek_pos pos h =
-  let cmp (_,_,p) = Misc.compare_pos pos p in
-  let go_backward item = cmp item < 0 in
-  let go_forward item = cmp item > 0 in
-  match backward h with
-  | Some (item,h') when go_backward item ->
-      seek_backward go_backward h'
-  | _ -> seek_forward go_forward h
-
 type 'a sync = (int * 'a) option
 
 module Sync =

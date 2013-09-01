@@ -124,13 +124,3 @@ sig
   val right : ('b -> 'a sync) -> 'a t -> 'b t -> 'b t
 end
 
-(** {1 Misc: integration with the lexer} *)
-type pos = Lexing.position
-type 'a loc = 'a * pos * pos
-
-val wrap_lexer : ?filter:('a -> bool) -> ?bufpos:Lexing.position ref ->
-  'a loc t ref -> (Lexing.lexbuf -> 'a) -> (Lexing.lexbuf -> 'a)
-
-val current_pos : ?default:Lexing.position -> 'a loc t -> pos
-val seek_pos : pos -> 'a loc t -> 'a loc t
-
