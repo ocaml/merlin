@@ -26,70 +26,32 @@
 
 )* }}} *)
 
+type 'a non_empty =
+  | One of 'a
+  | More of 'a * 'a non_empty 
+
 (** {0 Historique}
   * A sort of zipper: maintains and synchronizes a list of different
   * versions of an object (see ocamlmerlin.ml top comment).
   *)
 type 'a t
 
-(* The empty history *)
-val empty : 'a t
-
-(** Builds an history from a list.
-  * The cursor is set at the beginning: list elements are all in the
-  * potential future.
-  *)
-val of_list : 'a list -> 'a t
-
-(** Splits [--o--] into [--o] [o--] *)
-val split : 'a t -> 'a t * 'a t
-(** Cut-off the future : [--o--] to [--o] *)
-val cutoff : 'a t -> 'a t
+(* New history *)
+val fresh : 'a -> 'a t
 
 (** Element to the left of the cursor
   * (if last operation was an insertion, the inserted value is returned)
   *)
-val focused : 'a t -> 'a option
-
-(** Element to the right of the cursor
-  * (often None)
-  *)
-val next : 'a t -> 'a option
-
-(** Past *)
-val prevs : 'a t -> 'a list
-
-(** Potential future *)
-val nexts : 'a t -> 'a list
-
-(** offsets are "dates", a number of elements in the past *)
-type offset = int
-val offset : 'a t -> offset
-val seek_offset : offset -> 'a t -> 'a t
+val focused : 'a t -> 'a
 
 (** Move forward while item under cursor satisfy predicate *)
 val seek_forward  : ('a -> bool) -> 'a t -> 'a t
 (** Move backward while item under cursor satisfy predicate *)
 val seek_backward : ('a -> bool) -> 'a t -> 'a t
 
-(** Moves one step in the future, returning the next element
-  * and shifted history (if they exist).
-  *
-  * If [forward t = Some (e, t')], then [next t = Some e = prev t'].
- *)
-
-val forward  : 'a t -> ('a * 'a t) option
-
-(** Moves one step in the past, returning the previous element
-  * and shifted history (if they exist).
-  *
-  * If [backward t = Some (e, t')] then [prev t = Some e = next t'].
- *)
-val backward : 'a t -> ('a * 'a t) option
-
 (** Moves an arbitrary number of steps.
   *
-  * May stop early if it reaches an end of history.
+  * May stop earlier if it reaches an end of history.
  *)
 val move : int -> 'a t -> 'a t
 
@@ -97,30 +59,9 @@ val move : int -> 'a t -> 'a t
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)
 val insert : 'a -> 'a t -> 'a t
 
-(** Removes and return the element to the left of the curser, if possible. *)
-val remove : 'a t -> ('a * 'a t) option
+(** Like insert, but drop tail
+  * insert w [..zyx|abc..] = [..zyxw|abc..] *)
+val push : 'a -> 'a t -> 'a t
 
-(** Modifies the element to the left of the cursor. *)
+(** Modifies focused element. *)
 val modify : ('a -> 'a) -> 'a t -> 'a t
-
-(** {1 Synchronization} *)
-type 'a sync
-
-module Sync :
-sig
-  val origin : 'a sync
-
-  val at : 'a t -> 'a sync
-  val item : 'a sync -> 'a option
-
-  val same : 'a sync -> 'a sync -> bool
-
-  (* [rewind prj a b] rewinds histories [a] and [b] until it finds
-   *  a meeting point, possibly as far as the origin (offset 0).
-   *)
-  val rewind : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t * 'b t
-
-  val left : ('b -> 'a sync) -> 'a t -> 'b t -> 'a t
-  val right : ('b -> 'a sync) -> 'a t -> 'b t -> 'b t
-end
-

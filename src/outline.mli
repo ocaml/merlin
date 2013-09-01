@@ -35,7 +35,6 @@ type item = {
   exns       : exn list;
 }
 
-type sync = item History.sync
 type t = item History.t
 
 val item_loc : item -> Location.t

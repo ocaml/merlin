@@ -34,7 +34,7 @@ type item_desc =
    * its submodules); the offset indicates the last definition before
    * the corresponding Module_opening.
    *)
-  | Module_closing of Parsetree.structure_item Location.loc * History.offset
+  | Module_closing of Parsetree.structure_item Location.loc
 
 and step = (Outline_utils.kind, item_desc) Misc.sum
 and item = Outline.sync * (exn list * step) * (string * Location.t) list

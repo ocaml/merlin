@@ -29,7 +29,6 @@
 (** {0 Outline parser}
  * Auxiliary definitions used by the outline parser *)
 
-type offset = History.offset
 type position = Lexing.position
 
 (** Source code constructs are split into "chunks" of different "kinds". *)

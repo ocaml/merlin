@@ -103,7 +103,6 @@ type item = {
   tokens     : token list;
   exns       : exn list;
 }
-type sync = item History.sync
 type t = item History.t
 
 let item_loc i = i.loc
@@ -145,27 +144,10 @@ let parse_step ~bufpos ?(exns=[]) history buf =
    | [], [] -> None
    | _ -> Some { kind ; loc = location tokens; tokens ; exns = exns' @ exns })
 
-let exns chunks =
-  match History.focused chunks with
-  | Some { exns } -> exns
-  | None -> []
+let exns chunks = (History.focused chunks).exns
 
-let append_exns exns outlines = match History.focused outlines with
-  | None -> 
-    History.insert {
-      kind = Outline_utils.Syntax_error Location.none;
-      tokens = [];
-      loc = Location.none;
-      exns;
-    } outlines
-  | Some _ -> History.modify (fun o -> { o with exns = exns @ o.exns }) outlines
-
-let rec do_rollback next_tokens chunks =
-  match History.backward chunks with
-  | Some ({ tokens ; kind = Outline_utils.Syntax_error _ }, chunks') ->
-    do_rollback (tokens @ next_tokens) chunks'
-  | None -> next_tokens, chunks
-  | Some ({ tokens }, chunks') -> tokens @ next_tokens, chunks'
+let append_exns exns =
+  History.modify (fun o -> { o with exns = exns @ o.exns })
 
 let rec parse ~bufpos tokens chunks buf =
   let exns = exns chunks in
