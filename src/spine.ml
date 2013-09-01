@@ -331,18 +331,17 @@ struct
       match dom with
       | Dom.Str_root step -> k (Str_root (initial dom (Fold.str_root step)))
       | Dom.Str_item step ->
-        let value, state = Dom.(value step, state step) in
         fold_str (Dom.parent step) (previous' cod)
           (fun cod ->
              let state, item = Fold.str_item step (str_state cod) in
              k (Str_item (str_step dom cod state item)))
 
       | Dom.Str_in_module step ->
-        let value, state = Dom.(value step, state step) in
+        let value = Dom.value step in
         fold_str (Dom.parent step) (previous' cod)
           (fun cod ->
              let state = Fold.str_in_module step (str_state cod) in
-             k (Str_in_module (str_step dom cod state (Dom.value step))))
+             k (Str_in_module (str_step dom cod state value)))
     and fold_sig dom cod k =
       match cod with
       | Some cod when Sync.same dom (sync cod) -> k (get_sig cod)
@@ -351,32 +350,31 @@ struct
       | Dom.Sig_root step -> k (Sig_root (initial dom (Fold.sig_root step)))
 
       | Dom.Sig_item step ->
-        let value, state = Dom.(value step, state step) in
         fold_sig (Dom.parent step) (previous' cod)
           (fun cod ->
              let state, item = Fold.sig_item step (sig_state cod) in
              k (Sig_item (sig_step dom cod state item)))
 
       | Dom.Sig_in_sig_modtype step ->
-        let value, state = Dom.(value step, state step) in
+        let value = Dom.value step in
         fold_sig (Dom.parent step) (previous' cod)
           (fun cod ->
              let state = Fold.sig_in_sig_modtype step (sig_state cod) in
-             k (Sig_in_sig_modtype (sig_step dom cod state (Dom.value step))))
+             k (Sig_in_sig_modtype (sig_step dom cod state value)))
 
       | Dom.Sig_in_sig_module step ->
-        let value, state = Dom.(value step, state step) in
+        let value = Dom.value step in
         fold_sig (Dom.parent step) (previous' cod)
           (fun cod ->
              let state = Fold.sig_in_sig_module step (sig_state cod) in
-             k (Sig_in_sig_module (sig_step dom cod state (Dom.value step))))
+             k (Sig_in_sig_module (sig_step dom cod state value)))
 
       | Dom.Sig_in_str_modtype step ->
-        let value, state = Dom.(value step, state step) in
+        let value = Dom.value step in
         fold_str (Dom.parent step) (previous' cod)
           (fun cod ->
              let state = Fold.sig_in_str_modtype step (str_state cod) in
-             k (Sig_in_str_modtype (str_step dom cod state (Dom.value step))))
+             k (Sig_in_str_modtype (str_step dom cod state value)))
     in
     match dom with
     | Dom.Sig dom -> fold_sig dom cod (fun r -> Sig r)
