@@ -52,7 +52,7 @@ let rec seek_forward pred = function
 
 (** Move backward while item under cursor satisfy predicate *)
 let rec seek_backward pred = function
-  | {head = More (x,head'); tail} as t when pred x ->
+  | {head = More (x,head'); tail} when pred x ->
     seek_backward pred {head = head'; tail = x :: tail}
   | t -> t
 
@@ -60,7 +60,7 @@ let rec seek_backward pred = function
   *
   * May stop earlier if it reaches an end of history.
  *)
-let move n t = function
+let rec move n = function
   | {head; tail = x :: tail} when n > 0 -> 
     move (pred n) {head = More (x,head); tail}
   | {head = More (x,head); tail = tail} when n < 0 -> 
@@ -73,9 +73,9 @@ let insert x h = {h with head = More (x, h.head)}
 
 (** Like insert, but drop tail
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)
-val push x h = {head = More (x,h); tail = []}
+let push x h = {head = More (x,h.head); tail = []}
 
 (** Modifies focused element. *)
 let modify f = function
   | {head = One x; tail} -> {head = One (f x); tail}
-  | {head = More (h,head); tail} -> {head = More (f x, head); tail}
+  | {head = More (x,head); tail} -> {head = More (f x, head); tail}

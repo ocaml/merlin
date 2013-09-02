@@ -37,8 +37,8 @@ type item_desc =
   | Module_closing of Parsetree.structure_item Location.loc
 
 and step = (Outline_utils.kind, item_desc) Misc.sum
-and item = Outline.sync * (exn list * step) * (string * Location.t) list
-and sync = item History.sync
+and item = (exn list * step) * (string * Location.t) list
+and sync
 and t = item History.t
 
 exception Malformed_module of Location.t

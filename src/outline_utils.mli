@@ -36,7 +36,6 @@ type kind =
   | Enter_module (* module _ = struct *)
   | Leave_module (* end *)
   | Definition   (* let / type / … *)
-  | Done         (* EOF found after a syntactically correct construction *)
   | Unterminated (* Unfinished syntactic construction *)
   | Syntax_error of Location.t
 

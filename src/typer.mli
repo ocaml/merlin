@@ -30,7 +30,7 @@
 
 type state = Env.t * (Typedtree.structure * Types.signature) list * exn list
 type item = Chunk.sync * state
-type sync = item History.sync
+type sync
 type t = item History.t
 
 val initial_env : unit -> Env.t

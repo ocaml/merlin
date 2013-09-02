@@ -1,4 +1,5 @@
 (* {{{ COPYING *(
+type token = Chunk_parser.token Fake_lexer.token
 
   This file is part of Merlin, an helper for ocaml editors
 
@@ -27,7 +28,16 @@
 )* }}} *)
 
 open Misc
-module Spine = Spine
+
+type token = Chunk_parser.token Fake_lexer.token
+
+module Context = struct
+  type state = exn list * Location.t
+  type signature_item = token list
+  type structure_item = token list
+end
+module Spine = Spine.Make (Context)
+
 type token = Chunk_parser.token Fake_lexer.token
 
 let parse_with tokens ~parser ~lexer ~bufpos buf =
@@ -107,10 +117,7 @@ type t = item History.t
 
 let item_loc i = i.loc
 
-let location t =
-  match History.focused t with
-  | Some i -> i.loc
-  | None -> Location.none
+let location t = (History.focused t).loc
 
 let parse_step ~bufpos ?(exns=[]) history buf =
   Outline_utils.reset ();

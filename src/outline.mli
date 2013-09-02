@@ -28,6 +28,7 @@
 
 type token = Chunk_parser.token Fake_lexer.token
 
+module Spine : Spine.S
 type item = {
   kind       : Outline_utils.kind;
   loc        : Location.t;
