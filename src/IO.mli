@@ -43,12 +43,6 @@ val fail   : exn -> Json.json
 val protocol_failure : string -> 'a
 val invalid_arguments : unit -> 'a
 
-(* HACK. Break circular reference:
- * Error_report uses Protocol to format error positions.
- * Protocol uses Error_report to format standard errors.
- *)
-val error_catcher : (exn -> (Location.t * Json.json) option) ref
-
 val make_pos : int * int -> Lexing.position
 val pos_to_json : Lexing.position -> Json.json
 val pos_of_json : Json.json -> Lexing.position

@@ -33,7 +33,7 @@ type io_maker = input:in_channel -> output:out_channel -> low_io
 let section = Logger.(`protocol)
 
 exception Protocol_failure of string
-let error_catcher = ref (fun _ -> None) 
+
 let invalid_arguments () = failwith "invalid arguments"
 
 let stream_map s f =
@@ -103,20 +103,6 @@ let select_frontend name =
 
 let return l = `List [`String "return" ; l]
 
-let fail = function
-  | Protocol_failure s ->
-    prerr_endline ("Fatal protocol failure. " ^ s);
-    exit (-1)
-  | Failure s -> `List [`String "failure"; `String s]
-  | exn -> match !error_catcher exn with
-      | Some (_,error) -> `List [`String "error"; error]
-      | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
-
-let protocol_failure s = raise (Protocol_failure s)
-
-let make_pos (pos_lnum, pos_cnum) =
-  Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
-
 let pos_to_json pos =
   Lexing.(`Assoc ["line", `Int pos.pos_lnum;
                   "col", `Int (pos.pos_cnum - pos.pos_bol)])
@@ -131,6 +117,25 @@ let error_to_json {Error_report. valid; text; where; loc} =
   in
   let content = ("type", `String where) :: content in
   `Assoc content
+
+let error_catcher exn = 
+  match Error_report.error_catcher exn with
+  | None -> None
+  | Some (loc,t) -> Some (loc, error_to_json t)
+
+let fail = function
+  | Protocol_failure s ->
+    prerr_endline ("Fatal protocol failure. " ^ s);
+    exit (-1)
+  | Failure s -> `List [`String "failure"; `String s]
+  | exn -> match error_catcher exn with
+      | Some (_,error) -> `List [`String "error"; error]
+      | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
+
+let protocol_failure s = raise (Protocol_failure s)
+
+let make_pos (pos_lnum, pos_cnum) =
+  Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
 
 let pos_of_json = function
   | `Assoc props ->
@@ -284,7 +289,7 @@ module Protocol_io = struct
     | Failure s | Exception (Failure' s) -> `List [`String "failure"; `String s]
     | Error error -> `List [`String "error"; error]
     | Exception exn -> 
-      begin match !error_catcher exn with
+      begin match error_catcher exn with
       | Some (_,error) -> `List [`String "error"; error]
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
       end

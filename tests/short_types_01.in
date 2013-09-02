@@ -1,6 +1,3 @@
-["cd","/home/def"]
-["project","find","/home/def"]
-["reset"]
 ["reset","name","test.ml"]
 ["tell","struct","type t = int -> unit\nlet x = 5      \n"]
 ["tell","end","when lol\n"]
