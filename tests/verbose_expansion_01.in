@@ -1,0 +1,5 @@
+["tell","struct","type t = int * string\nlet x : t = 5, \"lol\"\n"]
+["tell","end",null]
+["seek","exact",{"line":2,"col":4}]
+["type","enclosing",{"line":2,"col":4}]
+["type","enclosing",{"line":2,"col":4}]
