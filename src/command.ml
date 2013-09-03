@@ -37,11 +37,7 @@ type step = State.step = {
   types    : Typer.t;
 }
 
-type state = State.t = {
-  pos    : Lexing.position;
-  tokens : Outline.token list;
-  steps  : step History.t;
-}
+type state = State.t = {steps  : step History.t}
 
 module VPrinttyp = State.Verbose_print
 
@@ -161,6 +157,9 @@ let track_verbosity =
   in
   ignore (State.verbosity action)
 
+let location {steps} = Outline.location (History.focused steps).outlines
+let position state = (location state).Location.loc_end
+
 let dispatch (i,o : IO.io) (state : state) = 
   fun (type a) (request : a request) ->
   track_verbosity state (Request request);
@@ -185,11 +184,10 @@ let dispatch (i,o : IO.io) (state : state) =
           Stream.Failure -> IO.invalid_arguments ()
       end
     in
-    let rec loop first state =
-      let bufpos = ref state.pos in
-      let tokens = state.tokens in
+    let bufpos = ref (position state) in
+    let rec loop state tokens =
       let step = History.focused state.steps in
-      let tokens, outlines =
+      let tokens', outlines =
         let default tokens =
           Outline.parse ~bufpos tokens step.outlines lexbuf
         in
@@ -209,22 +207,21 @@ let dispatch (i,o : IO.io) (state : state) =
             | _ ->
               tokens', outlines'*)
       in
-      let pos = !bufpos in
         (* If token list didn't change, move forward anyway
          * to prevent getting stuck *)
-      let stuck = state.tokens = tokens in
-      let tokens =
+      let stuck = tokens = tokens' in
+      let tokens' =
         if stuck
-        then (try List.tl tokens with _ -> tokens)
-        else tokens
+        then (try List.tl tokens' with _ -> tokens')
+        else tokens'
       in
       let steps = History.insert (State.step step outlines) state.steps in
-      let state' = {tokens; pos; steps} in
-      if !eod || (!eot && (stuck || tokens = []))
+      let state' = {steps} in
+      if !eod || (!eot && (stuck || tokens' = []))
       then state'
-      else loop false state'
+      else loop state' tokens'
     in
-    let state = loop true state in
+    let state = loop state [] in
     state, true
   end
   | (Tell _ : a request) -> IO.invalid_arguments ()
@@ -320,11 +317,11 @@ let dispatch (i,o : IO.io) (state : state) =
     end
 
   | (Drop : a request) ->
-    let steps = History.modify (fun x -> x) state.steps in
-    {state with steps; tokens = []}, state.pos
+    let state = {steps = History.modify (fun x -> x) state.steps} in
+    state, position state
 
   | (Seek `Position : a request) ->
-    state, state.pos
+    state, position state
 
   | (Seek (`Before pos) : a request) ->
     let cmp step = Location.compare_pos pos (Outline.location step.outlines) in
@@ -336,25 +333,22 @@ let dispatch (i,o : IO.io) (state : state) =
        | _ -> cmp step <= 0)
       outlines
     in FIXME*)
-    let pos = (Outline.location (History.focused steps).outlines) in 
-    let pos = pos.Location.loc_end in
-    {tokens = []; steps; pos}, pos
+    let state = {steps} in
+    state, position state
 
   | (Seek (`Exact pos) : a request) ->
     let cmp step = Location.compare_pos pos (Outline.location step.outlines) in
     let steps = state.steps in
     let steps = History.seek_backward (fun i -> cmp i < 0) steps in
     let steps = History.seek_forward (fun i -> cmp i >= 0) steps in
-    let pos = Outline.location (History.focused steps).outlines in
-    let pos = pos.Location.loc_end in
-    {tokens = []; steps; pos}, pos
+    let state = {steps} in
+    state, position state
 
   | (Seek `End : a request) ->
     let steps = state.steps in
     let steps = History.seek_forward (fun _ -> true) steps in
-    let pos = Outline.location (History.focused steps).outlines in
-    let pos = pos.Location.loc_end in
-    {tokens = []; steps; pos}, pos
+    let state = {steps} in
+    state, position state
 
   | (Seek `Maximize_scope : a request) ->
     (*let rec find_end_of_module (depth,outlines) =
@@ -387,10 +381,8 @@ let dispatch (i,o : IO.io) (state : state) =
       | l when l = Location.none -> State.initial.pos
       | p -> p.Location.loc_end
     in*)
-    let steps = state.steps in
-    let pos = Outline.location (History.focused steps).outlines in
-    let pos = pos.Location.loc_end in
-    {tokens = []; steps; pos}, pos
+    (*let state = {steps} in FIXME*)
+    state, position state
 
   | (Boundary (dir,pos) : a request) ->
     let count = match dir with
@@ -411,7 +403,7 @@ let dispatch (i,o : IO.io) (state : state) =
     in
     let pos = match pos with
       | Some pos -> pos
-      | None -> state.pos
+      | None -> position state
     in
     state,
     begin match move (steps_at_pos state.steps pos) with
@@ -493,31 +485,29 @@ let dispatch (i,o : IO.io) (state : state) =
       state, `List (List.map ~f:aux sg)
 
   | (Dump `Chunks : a request) ->
-    failwith "TODO"
-  (*| (Dump `Chunks : a request) ->
     let pr_item_desc items = List.map 
-        (fun (s,i) -> `List [`String s;`Int i])
-        (Chunk.dump_chunk items)
+        (fun s -> `String s)
+        (Chunk.Spine.dump items)
     in
-    state, `List (pr_item_desc state.chunks*)
+    state, `List (pr_item_desc (History.focused state.steps).chunks)
 
   | (Dump `Tree : a request) ->
     let structures = State.browse step in
     state, Browse_misc.dump_ts structures
 
   | (Dump `Outline : a request) ->
-    failwith "TODO"
-    (*let outlines = History.prevs step.outlines in
-    let aux item = 
+    let print_item label _ tokens= 
       let tokens =
-        List.map item.Outline.tokens ~f:(fun (t,_,_) ->
-          `String (Chunk_parser_utils.token_to_string t)
-        )
+        String.concat " " 
+          (List.map tokens ~f:(fun (t,_,_) -> 
+            (Chunk_parser_utils.token_to_string t)))
       in
-      `List [`String (Outline_utils.kind_to_string item.Outline.kind);
-             `List tokens]
+      label ^ "(" ^ tokens ^ ")"
     in
-    state, `List (List.rev_map ~f:aux outlines)*)
+    let outlines = (History.focused state.steps).outlines in
+    state, `List (List.map ~f:(fun s -> `String s)
+                    (Outline.Spine.dump outlines
+                       ~sig_item:print_item ~str_item:print_item))
 
   | (Dump `Exn : a request) ->
     let exns = State.exns state in

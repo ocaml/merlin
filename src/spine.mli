@@ -49,6 +49,11 @@ module type S = sig
   val str_state : t_str -> Context.state
   val sig_state : t_sig -> Context.state
   val get_state : t -> Context.state
+
+  val dump :  ?sig_item:(string -> Context.state -> Context.signature_item -> string) 
+           -> ?str_item:(string -> Context.state -> Context.structure_item -> string) 
+           -> ?state:(string -> Context.state -> string) 
+           -> t -> string list
 end
 
 module Make (Context : CONTEXT) : sig

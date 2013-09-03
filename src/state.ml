@@ -33,11 +33,7 @@ type step = {
   types    : Typer.t;
 }
 
-type t = {
-  pos    : Lexing.position;
-  tokens : Outline.token list;
-  steps  : step History.t;
-}
+type t = {steps: step History.t}
 
 let initial_ outlines =
   let chunks = Chunk.update outlines None in
@@ -46,11 +42,7 @@ let initial_ outlines =
 let initial_str fname = initial_ (Outline.initial_str fname)
 let initial_sig fname = initial_ (Outline.initial_sig fname)
 
-let initial step = {
-  pos    = Lexing.({pos_fname = ""; pos_lnum = 1; pos_bol = 0; pos_cnum = 0});
-  tokens = [];
-  steps  = History.initial step;
-}
+let initial step = {steps  = History.initial step}
 
 let initial_str fname = initial (initial_str fname)
 let initial_sig fname = initial (initial_sig fname)
@@ -119,7 +111,7 @@ let retype state =
   let steps = state.steps in
   let types = Typer.update (History.focused steps).chunks None in
   let steps = History.modify (fun step -> {step with types}) steps in
-  {state with steps}
+  {steps}
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =

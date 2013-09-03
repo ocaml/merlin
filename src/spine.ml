@@ -74,6 +74,11 @@ module type S = sig
   val str_state : t_str -> Context.state
   val sig_state : t_sig -> Context.state
   val get_state : t -> Context.state
+
+  val dump :  ?sig_item:(string -> Context.state -> Context.signature_item -> string) 
+           -> ?str_item:(string -> Context.state -> Context.structure_item -> string) 
+           -> ?state:(string -> Context.state -> string) 
+           -> t -> string list
 end
 
 module Make_S (Step : STEP) :
@@ -145,6 +150,33 @@ struct
   let get_state = function
     | Sig sg  -> sig_state sg
     | Str str -> str_state str
+
+  let dump ?(sig_item=fun s _ _ -> s)
+           ?(str_item=fun s _ _ -> s) 
+           ?state:(pr_state=fun s _ -> s)
+           t
+           =
+    let rec dump_sig acc = function
+      | Sig_root step -> pr_state "sig_root" (state step) :: acc
+      | Sig_item step -> 
+        dump_sig (sig_item "sig_item" (state step) (value step) :: acc) (parent step)
+      | Sig_in_sig_module step -> 
+        dump_sig (pr_state "sig_in_sig_module" (state step) :: acc) (parent step)
+      | Sig_in_sig_modtype step ->
+        dump_sig (pr_state "sig_in_sig_modtype" (state step) :: acc) (parent step)
+      | Sig_in_str_modtype step ->
+        dump_str (pr_state "sig_in_str_modtype" (state step) :: acc) (parent step)
+    and dump_str acc = function
+      | Str_root step -> pr_state "str_root" (state step) :: acc
+      | Str_item step ->
+        dump_str (str_item "str_item" (state step) (value step) :: acc) (parent step)
+      | Str_in_module step ->
+        dump_str (pr_state "str_in_module" (state step) :: acc) (parent step)
+    in 
+    match t with
+    | Sig s -> dump_sig ["SIG"] s
+    | Str s -> dump_str ["STRUCT"] s
+
 end
 
 module Make (Context : CONTEXT) :
@@ -321,7 +353,7 @@ struct
         match try_ntimes (position cod - pd) previous cod with
         | None -> assert false
         | Some cod as result ->
-          assert (position cod < pd); 
+          assert (position cod <= pd); 
             (*if (position cod <> pd) then
               failwith (Printf.sprintf "cod:%d dom:%d" (position cod) pd);*)
           result

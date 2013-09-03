@@ -32,11 +32,7 @@ type step = {
   types    : Typer.t;
 }
 
-type t = {
-  pos    : Lexing.position;
-  tokens : Outline.token list;
-  steps  : step History.t;
-}
+type t = {steps: step History.t}
 
 val initial_sig : string -> t
 val initial_str : string -> t

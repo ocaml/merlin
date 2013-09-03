@@ -113,6 +113,8 @@ let parse_str ~bufpos ~exns ~location ~lexbuf zipper t =
           ~lexer:Lexer.token
           ~bufpos lexbuf)
   with
+  | exns', Inr (zipper, _, ([] | [Chunk_parser.EOF,_,_])) -> 
+    zipper, t
   | exns', Inr (zipper, Outline_utils.Unterminated, tokens) -> 
     zipper, t
   | exns', Inr (zipper, (Outline_utils.Definition | 
