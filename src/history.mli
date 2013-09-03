@@ -65,3 +65,5 @@ val push : 'a -> 'a t -> 'a t
 
 (** Modifies focused element. *)
 val modify : ('a -> 'a) -> 'a t -> 'a t
+
+val append : ('a -> 'a) -> 'a t -> 'a t

@@ -28,21 +28,16 @@
 
 type token = Chunk_parser.token Fake_lexer.token
 
-module Spine : Spine.S
-type item = {
-  kind       : Outline_utils.kind;
-  loc        : Location.t;
-  tokens     : token list;
-  exns       : exn list;
-}
-
-type t = item History.t
-
-val item_loc : item -> Location.t
-val location : t -> Location.t
+module Context : sig
+  type state = exn list * Location.t
+  type signature_item = token list
+  type structure_item = token list
+end
+module Spine : Spine.S with module Context = Context
+type t = Spine.t
 
 val parse : bufpos:Lexing.position ref ->
   token list -> t -> Lexing.lexbuf -> token list * t
 
 val exns : t -> exn list
-val append_exns : exn list -> t -> t
+val location : t -> Location.t

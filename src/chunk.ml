@@ -27,35 +27,10 @@
 )* }}} *)
 
 open Misc
-type item_desc =
-  | Definitions of Parsetree.structure_item Location.loc list
-  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
-  | Module_closing of Parsetree.structure_item Location.loc * History.offset
-
-type step = (Outline_utils.kind, item_desc) Misc.sum
-type item = Outline.sync * (exn list * step) * (string * Location.t) list
-type sync = item History.sync
-type t = item History.t
-
-exception Malformed_module of Location.t
-exception Invalid_chunk
 
 let eof_lexer _ = Chunk_parser.EOF
 let fail_lexer _ = failwith "lexer ended"
 let fallback_lexer = eof_lexer
-
-let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
-
-let dump_chunk t =
-  let open Misc in
-  List.map
-  begin function
-  | _, (_, Inr (Definitions [])), _ -> assert false
-  | _, (_, Inr (Definitions (d :: _))), _ -> ("definition", line d)
-  | _, (_, Inr (Module_opening (l,s,_))), _ -> ("opening " ^ s.Location.txt, line s)
-  | _, (_, Inr (Module_closing (d,offset))), _ -> ("closing after " ^ string_of_int offset, line d)
-  | _, (_, Inl _), _ -> ("other", -1)
-  end (List.rev (History.prevs t) @ History.nexts t)
 
 let fake_tokens tokens f =
   let tokens = ref tokens in
@@ -68,6 +43,71 @@ let fake_tokens tokens f =
           tokens := ts;
           t
       | _ -> f lexbuf
+
+module Context = struct
+  type state = exn list * string Location.loc list (* Local modules *)
+  type signature_item = Parsetree.signature_item Location.loc list 
+  type structure_item = Parsetree.structure_item Location.loc list
+end
+module Fold = struct
+  (* Initial state *)
+  let sig_root _ = [], []
+  let str_root _ = [], []
+
+  (* Fold items *)
+  let sig_item _ = failwith "TODO"
+
+  let str_item step (exns,modules as state) =
+    let tokens = Outline.Spine.value step in
+    let buf = Lexing.from_string "" in
+    begin try
+        (* run structure_item parser on tokens, appending EOF *)
+        let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
+            (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
+        in
+        let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
+        let defs = Chunk_parser.top_structure_item lexer buf in
+        state, defs
+      with Chunk_parser.Error ->
+        let loc = {Location.  
+                      loc_start = buf.Lexing.lex_start_p;
+                      loc_end = buf.Lexing.lex_curr_p;
+                      loc_ghost = false
+                   } in
+        (Syntaxerr.(Error (Other loc)) :: exns, modules), []
+    end
+
+  (* Fold signature shape *)
+  let sig_in_sig_modtype _ = failwith "TODO"
+  let sig_in_sig_module  _ = failwith "TODO"
+  let sig_in_str_modtype _ = failwith "TODO"
+
+  (* Fold structure shape *)
+  let str_in_module _ = failwith "TODO"
+end
+
+module Spine = Spine.Transform (Context) (Outline.Spine) (Fold)
+type t = Spine.t
+let update = Spine.update
+
+let exns t = fst (Spine.get_state t)
+let local_modules t = snd (Spine.get_state t)
+
+(*;;
+val update : Outline.t -> t option -> t
+
+type item_desc =
+  | Definitions of Parsetree.structure_item Location.loc list
+  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
+  | Module_closing of Parsetree.structure_item Location.loc
+
+type step = (Outline_utils.kind, item_desc) Misc.sum
+type item = Outline.sync * (exn list * step) * (string * Location.t) list
+type sync = item History.sync
+type t = item History.t
+
+
+let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 
 let sync_step outline tokens t =
   match outline with
@@ -85,23 +125,6 @@ let sync_step outline tokens t =
       | _ -> assert false
     end
   | Outline_utils.Definition | Outline_utils.Syntax_error _ ->
-    let buf = Lexing.from_string "" in
-    begin try
-        (* run structure_item parser on tokens, appending EOF *)
-        let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
-            (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-        in
-        let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
-        let defs = Chunk_parser.top_structure_item lexer buf in
-        Misc.Inr (Definitions defs)
-      with Chunk_parser.Error ->
-        raise Syntaxerr.(
-            Error (Other { Location.  
-                           loc_start = buf.Lexing.lex_start_p;
-                           loc_end = buf.Lexing.lex_curr_p;
-                           loc_ghost = false
-                         }))
-    end
 
   | Outline_utils.Done
   | Outline_utils.Unterminated ->
@@ -188,3 +211,4 @@ let sync outlines chunks =
           aux outlines' chunks'
   in
   aux outlines chunks
+*)

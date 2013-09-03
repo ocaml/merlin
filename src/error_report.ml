@@ -81,8 +81,6 @@ let strict_of_exn = function
     Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
   | Location.Warning (loc, msg) ->
     Some (format ~valid:true ~where:"warning" ~loc msg)
-  | Chunk.Malformed_module loc ->
-    Some (format ~valid:true ~where:"warning" ~loc "Malformed module")
   | exn -> None
 
 let null_loc = 

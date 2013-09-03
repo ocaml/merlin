@@ -233,7 +233,7 @@ top_expr:
   | seq_expr                             { emit_top Definition $endpos }
 ;
 top_semisemi:
-  | SEMISEMI                             { emit_top Done $endpos }
+  | SEMISEMI                             { emit_top Definition $endpos }
 top_end:
   | END                                  { emit_top Leave_module $endpos }
 

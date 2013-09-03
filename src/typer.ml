@@ -26,36 +26,68 @@
 
 )* }}} *)
 
-type state = Env.t * (Typedtree.structure * Types.signature) list * exn list
-type item = Chunk.sync * state
-type sync = item History.sync
-type t = item History.t
+open Misc
 
-let initial_env () =
-  Ident.reinit();
-  try
-    if !Clflags.nopervasives
-    then Env.initial
-    else Env.open_pers_signature "Pervasives" Env.initial
-  with Not_found ->
-    failwith "cannot open pervasives.cmi"
+module Context = struct
+  type state = exn list * Env.t
+  type signature_item = Types.signature Location.loc list 
+  type structure_item = Typedtree.structure Location.loc list
+end
 
 let initial_env =
-  let cenv = Lazy.lazy_from_fun initial_env in
-  fun () ->
-    let env = Lazy.force cenv in
-    Extensions_utils.register env
+  let env = lazy begin
+    Ident.reinit();
+    try
+      if !Clflags.nopervasives
+      then Env.initial
+      else Env.open_pers_signature "Pervasives" Env.initial
+    with Not_found ->
+      failwith "cannot open pervasives.cmi"
+  end in
+  fun () -> let lazy env = env in
+            Extensions_utils.register env
 
-let value t =
-  match History.focused t with
-    | None -> (initial_env (), [], [])
-    | Some (_,item) -> item
+module Fold = struct
+  (* Initial state *)
+  let sig_root _ = [], initial_env ()
+  let str_root _ = [], initial_env ()
 
-let env   t = let v,_,_ = value t in v
-let trees t = let _,v,_ = value t in v
-let exns  t = let _,_,v = value t in v
+  (* Fold items *)
+  let sig_item _ = failwith "TODO"
 
-let append_step chunks chunk_item t =
+  let str_item step (exns,env) =
+    let items = Chunk.Spine.value step in
+    let env, exns, trees =
+      List.fold_left
+      begin fun (env,exns,ts) d ->
+      try
+        let t,_,env = 
+          Typemod.type_structure env [d.Location.txt] d.Location.loc
+        in
+        (env, exns, {d with Location.txt = t} :: ts)
+      with exn -> (env, exn :: exns, ts)
+      end (env, exns, []) items
+    in
+    (exns, env), List.rev trees
+
+  (* Fold signature shape *)
+  let sig_in_sig_modtype _ = failwith "TODO"
+  let sig_in_sig_module  _ = failwith "TODO"
+  let sig_in_str_modtype _ = failwith "TODO"
+
+  (* Fold structure shape *)
+  let str_in_module _ = failwith "TODO"
+end
+
+module Spine = Spine.Transform (Context) (Chunk.Spine) (Fold)
+type t = Spine.t
+let update = Spine.update
+
+let exns t = fst (Spine.get_state t)
+let env t = snd (Spine.get_state t)
+
+
+(*let append_step chunks chunk_item t =
   let env, trees, exns = value t in
   match chunk_item with
     | Chunk.Module_opening (_,_,pmod) ->
@@ -146,3 +178,4 @@ let sync chunks t =
             (History.(insert (Sync.at chunks', (env, trees, type_errs @ exns'))) t)
   in
   aux chunks t
+*) 

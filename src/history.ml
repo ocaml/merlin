@@ -79,3 +79,6 @@ let push x h = {head = More (x,h.head); tail = []}
 let modify f = function
   | {head = One x; tail} -> {head = One (f x); tail}
   | {head = More (x,head); tail} -> {head = More (f x, head); tail}
+
+let append f {head = (One x | More (x,_) as head); tail} =
+  {head = More (f x, head); tail}

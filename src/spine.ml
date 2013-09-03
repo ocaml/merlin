@@ -77,7 +77,7 @@ module type S = sig
 end
 
 module Make_S (Step : STEP) :
-  S with module Context := Step.Context and type ('a,'b) step = ('a,'b) Step.step =
+  S with module Context = Step.Context and type ('a,'b) step = ('a,'b) Step.step =
 struct
   include Step
   open Context
@@ -154,7 +154,7 @@ sig
   val str_step : t_str -> Context.state -> 'a -> ('a,t_str) step
 
   val initial : Context.state -> (unit, unit) step
-end with module Context := Context =
+end with module Context = Context =
 struct
   module Step = struct
     module Context = Context
@@ -222,7 +222,7 @@ sig
   include S
   val rewind : Dom.t -> t -> Dom.t * t
   val update : Dom.t -> t option -> t
-end with module Dom := Dom and module Context := Context =
+end with module Dom = Dom and module Context = Context =
 struct
   module Dom = Dom
 

@@ -57,7 +57,7 @@ module Make (Context : CONTEXT) : sig
   val str_step : t_str -> Context.state -> 'a -> ('a,t_str) step
 
   val initial : Context.state -> (unit, unit) step
-end with module Context := Context
+end with module Context = Context
 
 module Transform (Context : CONTEXT) (Dom : S)
   (Fold : sig
@@ -94,4 +94,4 @@ sig
   include S
   val rewind : Dom.t -> t -> Dom.t * t
   val update : Dom.t -> t option -> t
-end with module Dom := Dom and module Context := Context
+end with module Dom = Dom and module Context = Context

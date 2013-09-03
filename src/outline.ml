@@ -37,10 +37,9 @@ module Context = struct
   type structure_item = token list
 end
 module Spine = Spine.Make (Context)
+type t = Spine.t
 
-type token = Chunk_parser.token Fake_lexer.token
-
-let parse_with tokens ~parser ~lexer ~bufpos buf =
+let parse_with (tokens : token zipper) ~parser ~lexer ~bufpos buf =
   let Zipper (_,origin,_) = tokens in
   let tokens' = ref tokens in
   let chunk_content tokens =
@@ -55,7 +54,7 @@ let parse_with tokens ~parser ~lexer ~bufpos buf =
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in
     let tokens = !tokens' in
-    tokens, Outline_utils.Done, chunk_content tokens
+    tokens, Outline_utils.Definition, chunk_content tokens
   with
   | Outline_utils.Chunk (c,p) ->
     begin
@@ -107,66 +106,46 @@ let parse_with tokens ~parser ~lexer ~bufpos buf =
     end
   | exn -> raise exn
 
-type item = {
-  kind       : Outline_utils.kind;
-  loc        : Location.t;
-  tokens     : token list;
-  exns       : exn list;
-}
-type t = item History.t
+let parse_str ~bufpos ~exns ~location ~lexbuf zipper t =
+  match Location.catch_warnings 
+      (fun () -> parse_with zipper
+          ~parser:Outline_parser.implementation
+          ~lexer:Lexer.token
+          ~bufpos lexbuf)
+  with
+  | exns', Inr (zipper, Outline_utils.Unterminated, tokens) -> 
+    zipper, t
+  | exns', Inr (zipper, (Outline_utils.Definition | 
+                               Outline_utils.Syntax_error _), tokens) -> 
+    zipper,
+    Spine.(Str_item (str_step t (exns' @ exns, location ()) tokens))
+  | exns', Inr (zipper, 
+                (Outline_utils.Enter_module | Outline_utils.Leave_module),
+                _) ->
+    failwith "TODO, MODULES NOT HANDLED"
+  | _, Inl (Failure _ as exn) ->
+    raise exn
+  | exns', Inl exn ->
+    zipper,
+    Spine.(Str_item (str_step t (exn :: exns, location ()) []))
 
-let item_loc i = i.loc
+let exns t = fst (Spine.get_state t)
+let location t = snd (Spine.get_state t)
 
-let location t = (History.focused t).loc
-
-let parse_step ~bufpos ?(exns=[]) history buf =
+let parse ~bufpos tokens t lexbuf =
+  let exns = exns t in
   Outline_utils.reset ();
   let location = 
-    let loc_start = buf.Lexing.lex_curr_p in
-    function
-    | []  ->
-      let loc_end = buf.Lexing.lex_start_p in
-      { Location. loc_start ; loc_end ; loc_ghost = false }
-    | (_, loc_start, curr) :: xs ->
-      let loc_end = List.fold_left (fun _ -> Misc.thd3) curr xs in
-      { Location. loc_start ; loc_end ; loc_ghost = false }
+    let loc_start = lexbuf.Lexing.lex_curr_p in
+    fun () -> let loc_end = lexbuf.Lexing.lex_start_p in
+              {Location. loc_start; loc_end; loc_ghost = false}
   in
-  let exns', history', kind, tokens = 
-    match Location.catch_warnings 
-        (fun () -> parse_with history
-            ~parser:Outline_parser.implementation
-            ~lexer:Lexer.token
-            ~bufpos buf)
-    with
-    | exns', Misc.Inr (history', kind, tokens) -> 
-      exns', history', kind, tokens
-    | _, Misc.Inl (Failure _ as exn) -> raise exn
-    | exns', Misc.Inl exn ->
-      exn :: exns', history,
-      Outline_utils.Syntax_error (location []),
-      []
-  in
-  history',
-  (match tokens, exns' with
-   | [], [] -> None
-   | _ -> Some { kind ; loc = location tokens; tokens ; exns = exns' @ exns })
-
-let exns chunks = (History.focused chunks).exns
-
-let append_exns exns =
-  History.modify (fun o -> { o with exns = exns @ o.exns })
-
-let rec parse ~bufpos tokens chunks buf =
-  let exns = exns chunks in
-  match parse_step ~bufpos ~exns (Zipper.of_list tokens) buf with
-  | tokens', Some { kind = (Outline_utils.Unterminated | Outline_utils.Done) } ->
-    tokens', chunks
-  | tokens', Some item ->
-    tokens', History.insert item chunks
-  | tokens', None ->
-    tokens', chunks
-
-let parse ~bufpos tokens chunks buf =
-  let Zipper (_,_,tokens), chunks = parse ~bufpos tokens chunks buf in
-  tokens, chunks
+  match t with
+  | Spine.Sig _ -> failwith "TODO"
+  | Spine.Str t_str -> 
+    let Zipper (_,_,tokens), t_str' = 
+      parse_str ~bufpos ~exns ~lexbuf ~location 
+        (Zipper.of_list tokens) t_str
+    in
+    tokens, Spine.Str t_str'
 
