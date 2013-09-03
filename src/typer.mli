@@ -29,7 +29,7 @@
 (* Maintains a typing environment synchronized with a chunk history *)
 
 module Context : sig
-  type state = exn list * Env.t
+  type state = exn list * Env.t * Typedtree.structure Location.loc list
   type signature_item = Types.signature Location.loc list 
   type structure_item = Typedtree.structure Location.loc list
 end
@@ -39,3 +39,4 @@ val update : Chunk.t -> t option -> t
 
 val exns : t -> exn list
 val env : t -> Env.t
+val trees : t -> Typedtree.structure Location.loc list

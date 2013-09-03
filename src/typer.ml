@@ -29,7 +29,7 @@
 open Misc
 
 module Context = struct
-  type state = exn list * Env.t
+  type state = exn list * Env.t * Typedtree.structure Location.loc list
   type signature_item = Types.signature Location.loc list 
   type structure_item = Typedtree.structure Location.loc list
 end
@@ -49,13 +49,13 @@ let initial_env =
 
 module Fold = struct
   (* Initial state *)
-  let sig_root _ = [], initial_env ()
-  let str_root _ = [], initial_env ()
+  let sig_root _ = [], initial_env (), []
+  let str_root _ = [], initial_env (), []
 
   (* Fold items *)
   let sig_item _ = failwith "TODO"
 
-  let str_item step (exns,env) =
+  let str_item step (exns,env,trees') =
     let items = Chunk.Spine.value step in
     let env, exns, trees =
       List.fold_left
@@ -68,7 +68,7 @@ module Fold = struct
       with exn -> (env, exn :: exns, ts)
       end (env, exns, []) items
     in
-    (exns, env), List.rev trees
+    (exns, env, trees @ trees'), List.rev trees
 
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
@@ -83,9 +83,9 @@ module Spine = Spine.Transform (Context) (Chunk.Spine) (Fold)
 type t = Spine.t
 let update = Spine.update
 
-let exns t = fst (Spine.get_state t)
-let env t = snd (Spine.get_state t)
-
+let exns  t = fst3 (Spine.get_state t)
+let env   t = snd3 (Spine.get_state t)
+let trees t = thd3 (Spine.get_state t)
 
 (*let append_step chunks chunk_item t =
   let env, trees, exns = value t in

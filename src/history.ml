@@ -37,7 +37,7 @@ type 'a non_empty =
 type 'a t = {head: 'a non_empty; tail: 'a list}
 
 (* New history *)
-let fresh x = {head = One x; tail = []}
+let initial x = {head = One x; tail = []}
 
 (** Element to the left of the cursor
   * (if last operation was an insertion, the inserted value is returned)
@@ -69,16 +69,12 @@ let rec move n = function
 
 (** Adds an element to the left of the cursor:
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)
-let insert x h = {h with head = More (x, h.head)}
-
-(** Like insert, but drop tail
-  * insert w [..zyx|abc..] = [..zyxw|abc..] *)
-let push x h = {head = More (x,h.head); tail = []}
+let insert x h = {head = More (x, h.head); tail = []}
 
 (** Modifies focused element. *)
 let modify f = function
-  | {head = One x; tail} -> {head = One (f x); tail}
-  | {head = More (x,head); tail} -> {head = More (f x, head); tail}
+  | {head = One x; _} -> {head = One (f x); tail = []}
+  | {head = More (x,head); _} -> {head = More (f x, head); tail = []}
 
-let append f {head = (One x | More (x,_) as head); tail} =
-  {head = More (f x, head); tail}
+let append f {head = (One x | More (x,_) as head); _} =
+  {head = More (f x, head); tail = []}

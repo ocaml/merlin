@@ -321,7 +321,9 @@ struct
         match try_ntimes (position cod - pd) previous cod with
         | None -> assert false
         | Some cod as result ->
-          assert (position cod = pd);
+          assert (position cod < pd); 
+            (*if (position cod <> pd) then
+              failwith (Printf.sprintf "cod:%d dom:%d" (position cod) pd);*)
           result
     in
     let rec fold_str dom cod k =

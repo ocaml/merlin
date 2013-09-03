@@ -1,7 +1,7 @@
 -include Makefile.config
 
 TARGET = ocamlmerlin.native
-#TARGET = src/chunk.cmo
+#TARGET = src/state.cmo
 
 OCAMLBUILD=ocamlbuild -Is src,src/typing,src/parsing,src/utils
 OCAMLFIND=ocamlfind

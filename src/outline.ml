@@ -149,3 +149,12 @@ let parse ~bufpos tokens t lexbuf =
     in
     tokens, Spine.Str t_str'
 
+let init_loc pos_fname =
+  let pos = {(Misc.make_pos (1,0)) with Lexing.pos_fname} in
+  {Location. loc_start = pos; loc_end = pos; loc_ghost = false}
+
+let initial_sig fname =
+  Spine.(Sig (Sig_root (initial ([], init_loc fname))))
+
+let initial_str fname =
+  Spine.(Str (Str_root (initial ([], init_loc fname))))

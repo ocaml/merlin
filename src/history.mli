@@ -37,7 +37,7 @@ type 'a non_empty =
 type 'a t
 
 (* New history *)
-val fresh : 'a -> 'a t
+val initial : 'a -> 'a t
 
 (** Element to the left of the cursor
   * (if last operation was an insertion, the inserted value is returned)
@@ -55,13 +55,9 @@ val seek_backward : ('a -> bool) -> 'a t -> 'a t
  *)
 val move : int -> 'a t -> 'a t
 
-(** Adds an element to the left of the cursor:
-  * insert w [..zyx|abc..] = [..zyxw|abc..] *)
+(** Adds an element to the left of the cursor and drop tail:
+  * insert w [..zyx|abc..] = [..zyxw|] *)
 val insert : 'a -> 'a t -> 'a t
-
-(** Like insert, but drop tail
-  * insert w [..zyx|abc..] = [..zyxw|abc..] *)
-val push : 'a -> 'a t -> 'a t
 
 (** Modifies focused element. *)
 val modify : ('a -> 'a) -> 'a t -> 'a t

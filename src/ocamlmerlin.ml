@@ -117,7 +117,7 @@ let main_loop () =
       output answer;
       loop state
     in
-    loop State.initial
+    loop (State.initial_str "")
   with Stream.Failure -> ()
 
 (** Mimic other Caml tools, entry point *)
