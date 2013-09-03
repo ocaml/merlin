@@ -3,21 +3,23 @@ type 'a binding = 'a * t * string loc
 type position = int
 
 module Sync : sig
-  type t
-  val none : t
-  val make : 'a -> t
-  val same : 'a -> t -> bool
+  type 'a t
+  val none : unit -> 'a t
+  val make : 'a -> 'a t
+  val same : 'a -> 'a t -> bool
 end = struct
-  type t = Obj.t Weak.t
+  type 'a t = 'a Weak.t
   let make x = 
     let t = Weak.create 1 in
-    Weak.set t 0 (Some (Obj.repr x));
+    Weak.set t 0 (Some x);
     t
   let same x t =
     match Weak.get t 0 with
     | None -> false
-    | Some x' -> (Obj.repr x) == x'
-  let none = make Not_found
+    | Some x' -> x == x'
+
+  let none : exn t = make Not_found
+  let none () : 'a t = Obj.magic none
 end
 
 let rec try_ntimes n f s =
@@ -266,7 +268,8 @@ struct
       state: state;
       position: position;
       parent: 'b;
-      sync: Sync.t;
+      sync: [`Sig of Dom.t_sig Sync.t
+            |`Str of Dom.t_str Sync.t]
     }
     let value t = t.value
     let state t = t.state
@@ -276,38 +279,45 @@ struct
 
   include Make_S (Step)
 
-  let sig_step dom parent state value =
+  let make_sync_str str = `Str (Sync.make str) 
+  let make_sync_sig sg  = `Sig (Sync.make sg)
+
+  let sig_step sync parent state value =
     let position = succ (sig_position parent) in
-    let sync = Sync.make dom in
     {Step. value; state; position; parent; sync}
 
-  let str_step dom parent state value =
+  let str_step sync parent state value =
     let position = succ (str_position parent) in
-    let sync = Sync.make dom in
     {Step. value; state; position; parent; sync}
 
-  let initial dom state =
-    let sync = Sync.make dom in
+  let initial sync state =
     {Step. value = (); state; position = 0; parent = (); sync}
 
   let str_sync = function
-    | Str_root _ -> Sync.none
-    | Str_item {Step.sync} | Str_in_module {Step.sync} -> 
+    | Str_root {Step.sync} | Str_item {Step.sync} | Str_in_module {Step.sync} -> 
       sync
   
   let sig_sync = function
-    | Sig_root _ -> Sync.none
-    | Sig_item {Step.sync} | Sig_in_str_modtype {Step.sync}
-    | Sig_in_sig_module  {Step.sync} | Sig_in_sig_modtype {Step.sync} ->
+    | Sig_root {Step.sync} | Sig_item {Step.sync}
+    | Sig_in_str_modtype {Step.sync} | Sig_in_sig_module {Step.sync}
+    | Sig_in_sig_modtype {Step.sync} ->
       sync
 
   let sync = function
     | Sig sg  -> sig_sync sg
     | Str str -> str_sync str
 
-  let same = function
-    | Dom.Sig sg  -> Sync.same sg
-    | Dom.Str str -> Sync.same str
+  let same_sig sg = function
+    | `Sig sync -> Sync.same sg sync
+    | _ -> false
+
+  let same_str str = function
+    | `Str sync -> Sync.same str sync
+    | _ -> false
+
+  let same = fun _ _ -> true (*function
+    | Dom.Sig sg  -> same_sig sg
+    | Dom.Str str -> same_str str*)
 
   let rewind dom cod = 
     let pd = Dom.position dom and pc = position cod in
@@ -326,9 +336,9 @@ struct
         | None, None ->
         match dom with
         | Dom.Sig (Dom.Sig_root step as sg) ->
-          dom, Sig (Sig_root (initial sg (Fold.sig_root step)))
+          dom, Sig (Sig_root (initial (make_sync_sig sg) (Fold.sig_root step)))
         | Dom.Str (Dom.Str_root step as str) ->
-          dom, Str (Str_root (initial str (Fold.str_root step)))
+          dom, Str (Str_root (initial (make_sync_str str) (Fold.str_root step)))
         | _ -> assert false
     in
     aux dom cod
@@ -341,74 +351,76 @@ struct
     | Str str -> str
     | Sig _  -> assert false
 
-  let previous' = function
-    | Some cod -> previous cod
-    | None -> None
-
+  let previous' pos dom = function
+    | Some cod when pos dom = position cod -> previous cod
+    | cod' -> cod'
+    
   let update dom cod =
     let pd = Dom.position dom in
     let cod = match cod with
       | None -> None
       | Some cod -> 
-        match try_ntimes (position cod - pd) previous cod with
+        let pc = position cod in
+        match try_ntimes (pc - pd) previous cod with
         | None -> assert false
         | Some cod as result ->
-          assert (position cod <= pd); 
-            (*if (position cod <> pd) then
-              failwith (Printf.sprintf "cod:%d dom:%d" (position cod) pd);*)
+          assert (pc <= pd); 
           result
     in
     let rec fold_str dom cod k =
       match cod with
-      | Some cod when Sync.same dom (sync cod) -> k (get_str cod)
+      | Some cod when same_str dom (sync cod) ->
+        k (get_str cod)
       | _ ->
+      let previous = previous' Dom.str_position dom cod in
       match dom with
-      | Dom.Str_root step -> k (Str_root (initial dom (Fold.str_root step)))
+      | Dom.Str_root step -> k (Str_root (initial (make_sync_str dom) (Fold.str_root step)))
       | Dom.Str_item step ->
-        fold_str (Dom.parent step) (previous' cod)
+        fold_str (Dom.parent step) previous
           (fun cod ->
              let state, item = Fold.str_item step (str_state cod) in
-             k (Str_item (str_step dom cod state item)))
+             k (Str_item (str_step (make_sync_str dom) cod state item)))
 
       | Dom.Str_in_module step ->
         let value = Dom.value step in
-        fold_str (Dom.parent step) (previous' cod)
+        fold_str (Dom.parent step) previous
           (fun cod ->
              let state = Fold.str_in_module step (str_state cod) in
-             k (Str_in_module (str_step dom cod state value)))
+             k (Str_in_module (str_step (make_sync_str dom) cod state value)))
     and fold_sig dom cod k =
       match cod with
-      | Some cod when Sync.same dom (sync cod) -> k (get_sig cod)
+      | Some cod when same_sig dom (sync cod) -> k (get_sig cod)
       | _ ->
+      let previous = previous' Dom.sig_position dom cod in
       match dom with
-      | Dom.Sig_root step -> k (Sig_root (initial dom (Fold.sig_root step)))
+      | Dom.Sig_root step -> k (Sig_root (initial (make_sync_sig dom) (Fold.sig_root step)))
 
       | Dom.Sig_item step ->
-        fold_sig (Dom.parent step) (previous' cod)
+        fold_sig (Dom.parent step) previous
           (fun cod ->
              let state, item = Fold.sig_item step (sig_state cod) in
-             k (Sig_item (sig_step dom cod state item)))
+             k (Sig_item (sig_step (make_sync_sig dom) cod state item)))
 
       | Dom.Sig_in_sig_modtype step ->
         let value = Dom.value step in
-        fold_sig (Dom.parent step) (previous' cod)
+        fold_sig (Dom.parent step) previous 
           (fun cod ->
              let state = Fold.sig_in_sig_modtype step (sig_state cod) in
-             k (Sig_in_sig_modtype (sig_step dom cod state value)))
+             k (Sig_in_sig_modtype (sig_step (make_sync_sig dom) cod state value)))
 
       | Dom.Sig_in_sig_module step ->
         let value = Dom.value step in
-        fold_sig (Dom.parent step) (previous' cod)
+        fold_sig (Dom.parent step) previous
           (fun cod ->
              let state = Fold.sig_in_sig_module step (sig_state cod) in
-             k (Sig_in_sig_module (sig_step dom cod state value)))
+             k (Sig_in_sig_module (sig_step (make_sync_sig dom) cod state value)))
 
       | Dom.Sig_in_str_modtype step ->
         let value = Dom.value step in
-        fold_str (Dom.parent step) (previous' cod)
+        fold_str (Dom.parent step) previous
           (fun cod ->
              let state = Fold.sig_in_str_modtype step (str_state cod) in
-             k (Sig_in_str_modtype (str_step dom cod state value)))
+             k (Sig_in_str_modtype (str_step (make_sync_sig dom) cod state value)))
     in
     match dom with
     | Dom.Sig dom -> fold_sig dom cod (fun r -> Sig r)
