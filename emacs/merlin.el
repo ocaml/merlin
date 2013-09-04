@@ -710,9 +710,10 @@ The parameter VIEW-ERRORS-P controls whether we should care for errors"
   `(progn
      (save-excursion (forward-line)
                      (merlin-check-synchronize))
-     ,(cons 'save-excursion args)
-     (setq merlin-lock-point (merlin-retract-to (point)))
-     (merlin-check-for-errors nil)))
+     (let ((value ,(cons 'save-excursion args)))
+       (setq merlin-lock-point (merlin-retract-to (point)))
+       (merlin-check-for-errors nil)
+       value)))
 
 (defun merlin-edit (start end length)
   "Retract the locked zone after an edit.
