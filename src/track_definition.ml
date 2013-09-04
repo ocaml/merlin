@@ -74,17 +74,6 @@ include Utils
 
 exception Found of Location.t
 
-let stop_at_first f items =
-  try
-    List.iter (fun item ->
-      match f item with
-      | None -> ()
-      | Some loc -> raise (Found loc)
-    ) items ;
-    None
-  with Found loc ->
-    Some loc
-
 let rec browse_structure browsable modules =
   (* start from the bottom *)
   let items =
@@ -95,9 +84,12 @@ let rec browse_structure browsable modules =
       | _ -> [bt]
     ) browsable
   in
-  stop_at_first (check_item modules) (List.concat items)
+  let rec find = function
+    | [] -> None
+    | item :: items -> check_item modules item (fun () -> find items)
+  in find (List.concat items)
 
-and check_item modules item =
+and check_item modules item try_next =
   let rec aux mod_item path =
     let open Browse in
     match mod_item with
@@ -121,7 +113,7 @@ and check_item modules item =
     | Browse.Module (Browse.Include ids, _)
       when List.exists (fun i -> i.Ident.name = name) ids ->
       aux (Lazy.force item.Browse.nodes) [ name ]
-    | _ -> None
+    | _ -> try_next ()
   in
   let get_on_track ~name item =
     match item.Browse.context with
@@ -142,7 +134,7 @@ and check_item modules item =
       | `Direct -> Some path
       | `Included -> Some modules
     with
-    | None -> None
+    | None -> try_next ()
     | Some path ->
       aux (Lazy.force item.Browse.nodes) path
     end
