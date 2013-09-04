@@ -125,19 +125,19 @@ let parse_str ~bufpos ~exns ~location ~lexbuf zipper t =
   | exns', Inr (zipper, Outline_utils.Unterminated, tokens) -> 
     zipper, t
   | exns', Inr (zipper, (Outline_utils.Definition | 
-                               Outline_utils.Syntax_error _), tokens) -> 
+                         Outline_utils.Syntax_error _), tokens) -> 
     zipper,
-    Spine.(Str_item (str_step t (exns' @ exns, location ()) tokens))
+    Spine.(Str_item (str_step t (exns' @ exns, location tokens) tokens))
   | exns', Inr (zipper, Outline_utils.Enter_module, tokens) ->
     zipper,
-    Spine.(Str_in_module (str_step t (exns' @ exns, location ()) tokens))
+    Spine.(Str_in_module (str_step t (exns' @ exns, location tokens) tokens))
   | exns', Inr (zipper, Outline_utils.Leave_module, tokens) ->
     let rec aux acc = function
       | Spine.Str_root step ->
-        Spine.(Str_item (str_step t (Malformed_module tokens :: exns, location ()) []))
+        Spine.(Str_item (str_step t (Malformed_module tokens :: exns, location tokens) []))
       | Spine.Str_in_module step ->
         let exns, loc = Spine.state step in
-        let loc = Location.union loc (location ()) in
+        let loc = Location.union loc (location tokens) in
         let tokens = Spine.value step @ acc in
         let parent = Spine.parent step in
         Spine.Str_item (Spine.str_step parent (exns, loc) tokens)
@@ -152,7 +152,7 @@ let parse_str ~bufpos ~exns ~location ~lexbuf zipper t =
     raise exn
   | exns', Inl exn ->
     zipper,
-    Spine.(Str_item (str_step t (exn :: exns, location ()) []))
+    Spine.(Str_item (str_step t (exn :: exns, location []) []))
 
 let exns t = fst (Spine.get_state t)
 let location t = snd (Spine.get_state t)
@@ -161,9 +161,14 @@ let parse ~bufpos tokens t lexbuf =
   let exns = exns t in
   Outline_utils.reset ();
   let location = 
-    let loc_start = lexbuf.Lexing.lex_curr_p in
-    fun () -> let loc_end = lexbuf.Lexing.lex_start_p in
-              {Location. loc_start; loc_end; loc_ghost = false}
+    let loc_start = lexbuf.Lexing.lex_curr_p in function
+    | [] -> let loc_end = lexbuf.Lexing.lex_start_p in
+      {Location. loc_start; loc_end; loc_ghost = false}
+    | (_,loc_start,loc_end) :: toks ->
+      let loc_end = List.fold_left 
+        (fun _ (_,_,loc_end) -> loc_end) loc_end toks
+      in
+      {Location. loc_start; loc_end; loc_ghost = false}
   in
   match t with
   | Spine.Sig _ -> failwith "TODO"
