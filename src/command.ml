@@ -129,17 +129,16 @@ let track_verbosity =
   let cell = 
     try Hashtbl.find h tag
     with Not_found ->
-      let cell = ref (History.Sync.origin,a_request) in
+      let cell = ref (Misc.Sync.none (),a_request) in
       Hashtbl.add h tag cell;
       cell
   in
   let sync, a_request' = !cell in
-  let ol = st.outlines in
-  let ol = match History.backward ol with None -> ol | Some (_, h) -> h in
+  let steps' = History.focused (History.move (-2) st.steps) in
   let action =
-    if a_request = a_request' && History.Sync.(same sync (at ol))
+    if a_request = a_request' && Sync.same steps' sync 
     then `Incr
-    else (cell := (History.Sync.at ol, a_request); `Clear)
+    else (cell := (Sync.make steps', a_request); `Clear)
   in
   ignore (State.verbosity action)
 
@@ -185,10 +184,12 @@ let dispatch (i,o : IO.io) (state : state) =
       tokens', outline, finished
     in
     let rec loop state first tokens =
-      let steps = 
+      let tokens, steps = 
         if first
-        then History.move (-1) state.steps
-        else state.steps
+        then let steps = History.move (-1) state.steps in
+             Outline.tokens ((History.focused steps).outlines) @ tokens,
+             steps
+        else tokens, state.steps
       in
       let tokens', outlines, finished = onestep tokens steps in
       if first && (History.focused state.steps).outlines = outlines

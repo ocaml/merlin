@@ -101,7 +101,7 @@ module Fold = struct
     (exns' @ exns, modules' @ modules), result
 
   (* Fold structure shape *)
-  let str_in_module step (exns,modules as state) =
+  let str_in_module step (exns,modules) =
     let exns', modules', result =
       protect_parser (fun () ->
         let tokens = Outline.Spine.value step in

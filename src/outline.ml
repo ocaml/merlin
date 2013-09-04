@@ -188,3 +188,14 @@ let initial_sig fname =
 
 let initial_str fname =
   Spine.(Str (Str_root (initial ([], init_loc fname))))
+
+let tokens = 
+  let open Spine in function
+  | Sig (Sig_root           step) -> []
+  | Sig (Sig_item           step) -> Spine.value step
+  | Sig (Sig_in_sig_modtype step) -> Spine.value step
+  | Sig (Sig_in_sig_module  step) -> Spine.value step
+  | Sig (Sig_in_str_modtype step) -> Spine.value step
+  | Str (Str_root      step) -> []
+  | Str (Str_item      step) -> Spine.value step
+  | Str (Str_in_module step) -> Spine.value step

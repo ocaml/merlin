@@ -51,3 +51,5 @@ val location : t -> Location.t
 
 val initial_sig : string -> t
 val initial_str : string -> t
+
+val tokens : t -> token list

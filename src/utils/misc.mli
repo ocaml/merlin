@@ -205,3 +205,10 @@ val (~!) : 'a fluid -> 'a
 
 val (!:) : 'a Lazy.t -> 'a
 val (~:) : 'a -> 'a Lazy.t
+
+module Sync : sig
+  type 'a t
+  val none : unit -> 'a t
+  val make : 'a -> 'a t
+  val same : 'a -> 'a t -> bool
+end

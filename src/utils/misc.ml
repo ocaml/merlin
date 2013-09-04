@@ -448,3 +448,23 @@ let (~!) a = !a
 
 let (!:) = Lazy.force
 let (~:) = Lazy.from_val
+
+module Sync : sig
+  type 'a t
+  val none : unit -> 'a t
+  val make : 'a -> 'a t
+  val same : 'a -> 'a t -> bool
+end = struct
+  type 'a t = 'a Weak.t
+  let make x = 
+    let t = Weak.create 1 in
+    Weak.set t 0 (Some x);
+    t
+  let same x t =
+    match Weak.get t 0 with
+    | None -> false
+    | Some x' -> x == x'
+
+  let none : exn t = make Not_found
+  let none () : 'a t = Obj.magic none
+end
