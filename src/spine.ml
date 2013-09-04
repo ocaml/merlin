@@ -363,11 +363,10 @@ struct
     let cod = match cod with
       | None -> None
       | Some cod -> 
-        let pc = position cod in
-        match try_ntimes (pc - pd) previous cod with
+        match try_ntimes (position cod - pd) previous cod with
         | None -> assert false
         | Some cod as result ->
-          assert (pc <= pd); 
+          assert (position cod <= pd); 
           result
     in
     let rec fold_str dom cod k =
