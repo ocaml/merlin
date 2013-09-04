@@ -28,10 +28,10 @@
 open Typedtree
 
 type mod_info =
-  | TopNamed of Ident.t
+  | Named of string
   | Include of Ident.t list
   | Alias of Path.t
-  | Local
+  | Structure
 
 type context =
   | Expr      of Types.type_expr
@@ -44,6 +44,7 @@ type context =
   | ClassType of Ident.t * Types.class_type_declaration
   | MethodCall of Types.type_expr * string
   | NamedOther of Ident.t
+  | TopStructure
   | Other
 
 (* Typedtree navigation made easy *)
@@ -64,7 +65,7 @@ let rec structure { str_final_env ; str_items } =
   List.map (structure_item ~env:str_final_env) str_items
 
 and structure_item ~env { str_desc ; str_loc ; str_env } =
-  { loc = str_loc ; env = str_env ; context = Other ;
+  { loc = str_loc ; env = str_env ; context = TopStructure ;
     nodes = lazy (structure_item_desc ~env str_desc) }
 
 and structure_item_desc ~env = function
@@ -75,9 +76,9 @@ and structure_item_desc ~env = function
   | Tstr_exception (i,l,_)
   | Tstr_exn_rebind (i,l,_,_) ->
     [singleton ~context:(NamedOther i) l.Location.loc env]
-  | Tstr_module (i,s,m) -> module_binding s ~mod_info:(TopNamed i) m
+  | Tstr_module (_,s,m) -> [module_binding s m]
   | Tstr_recmodule ms ->
-    Misc.list_concat_map (fun (i,s,_,m) -> module_binding s ~mod_info:(TopNamed i) m) ms
+    List.map (fun (i,s,_,m) -> module_binding s m) ms
   | Tstr_type ilds ->
     let aux (id,_,ty) = type_declaration ~env id ty in
     List.map aux ilds
@@ -88,7 +89,7 @@ and structure_item_desc ~env = function
       (fun (id,l,{ ci_type_decl }) ->
         singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env)
       lst
-  | Tstr_include (m,ids) -> [module_expr ~mod_info:(Include ids) m]
+  | Tstr_include (m,ids) -> [module_include ids m]
 
 and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest } =
   let nodes = match typ_manifest with
@@ -211,7 +212,7 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_for (_,_,ea,eb,_,ec)
     | Texp_ifthenelse (ea,eb,Some ec) -> List.map expression [ea;eb;ec]
     | Texp_override (_,ples) -> List.map (fun (_,_,e) -> expression e) ples
-    | Texp_letmodule (_,s,m,e) -> (expression e) :: module_binding s m
+    | Texp_letmodule (_,s,m,e) -> (expression e) :: [module_binding s m]
     | Texp_assertfalse -> []
     | Texp_pack m -> [module_expr m]
     | Texp_object (cls,_) -> class_structure ~env:exp_env cls
@@ -223,26 +224,42 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
       nodes = lazy (expression_desc exp_desc) }
     exp_extra
 
-and module_binding name ?mod_info def =
-  let m = module_expr ?mod_info def in
-  let m' = {m with loc = name.Location.loc} in
-  [m;m']
+and module_include ids ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
+  let mod_info =
+    match mod_desc with
+    | Tmod_ident (p, _loc) -> Some (Alias p)
+    | _ -> None
+  in
+  {
+    loc = mod_loc ;
+    env = mod_env ;
+    context = Module (Include ids, mod_type) ;
+    nodes = lazy [module_expr ?mod_info def] ;
+  }
 
-and module_expr ?(mod_info=Local) { mod_env ; mod_desc ; mod_type ; mod_loc } =
-  match mod_desc with
-  | Tmod_ident (p, _loc) ->
-    { loc = mod_loc ; env = mod_env ; context = Module (Alias p, mod_type) ;
-      nodes = lazy [] }
-  | _ ->
-    { loc = mod_loc ; env = mod_env ; context = Module (mod_info, mod_type) ;
-      nodes = lazy (module_expr_desc mod_desc) }
+and module_binding name ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
+  let mod_info =
+    match mod_desc with
+    | Tmod_ident (p, _loc) -> Some (Alias p)
+    | _ -> None
+  in
+  {
+    loc = name.Location.loc ;
+    env = mod_env ;
+    context = Module (Named name.Location.txt, mod_type) ;
+    nodes = lazy [module_expr ?mod_info def] ;
+  }
+
+and module_expr ?(mod_info=Structure) { mod_env ; mod_desc ; mod_type ; mod_loc } =
+  { loc = mod_loc ; env = mod_env ; context = Module (mod_info, mod_type) ;
+    nodes = lazy (module_expr_desc mod_desc) }
 
 and module_expr_desc = function
-  | Tmod_ident _ -> assert false (* filtered beforehand *)
+  | Tmod_ident _ -> []
   | Tmod_structure s -> structure s
   | Tmod_constraint (e,_,_,_) -> [module_expr e]
   (* TODO: use name *)
-  | Tmod_functor (_,s,_,e) -> module_binding s e
+  | Tmod_functor (_,s,_,e) -> [module_binding s e]
   | Tmod_apply (e1,e2,_) -> [module_expr e1 ; module_expr e2]
   | Tmod_unpack (e,_) -> [expression e]
 

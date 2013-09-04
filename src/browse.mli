@@ -33,10 +33,10 @@
  *)
 
 type mod_info =
-  | TopNamed of Ident.t
+  | Named of string
   | Include of Ident.t list
   | Alias of Path.t
-  | Local
+  | Structure
 
 (* Typedtree constructions recognized *)
 type context =
@@ -50,6 +50,7 @@ type context =
   | ClassType of Ident.t * Types.class_type_declaration
   | MethodCall of Types.type_expr * string
   | NamedOther of Ident.t
+  | TopStructure
   | Other
 
 (* The browse tree; lazyness is added to prevent building the

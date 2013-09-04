@@ -86,8 +86,15 @@ let stop_at_first f items =
 
 let rec browse_structure browsable modules =
   (* start from the bottom *)
-  let items = List.rev browsable in
-  stop_at_first (check_item modules) items
+  let items =
+    List.rev_map (fun bt ->
+      let open Browse in
+      match bt.context with
+      | TopStructure -> Lazy.force bt.nodes
+      | _ -> [bt]
+    ) browsable
+  in
+  stop_at_first (check_item modules) (List.concat items)
 
 and check_item modules item =
   let rec aux mod_item path =
@@ -96,27 +103,28 @@ and check_item modules item =
     | [ { context = Module (Alias path', _) } ] ->
       let full_path = (path_to_list path') @ path in
       from_path' full_path
+    | [ { context = Module (Structure, _) ; nodes } ] ->
+      browse_structure (Lazy.force nodes) path
     | otherwise ->
       browse_structure otherwise path
   in
   let rec get_loc ~name item =
     match item.Browse.context with
     | Browse.Pattern (Some id, _)
-    | Browse.TypeDecl (id, _)
-    | Browse.Module (Browse.TopNamed id, _)
+    | Browse.TypeDecl (id, _) when id.Ident.name = name ->
+      Some item.Browse.loc
+    | Browse.Module (Browse.Named id, _) when id = name ->
+      Some item.Browse.loc
     | Browse.NamedOther id when id.Ident.name = name ->
       Some item.Browse.loc
     | Browse.Module (Browse.Include ids, _)
       when List.exists (fun i -> i.Ident.name = name) ids ->
       aux (Lazy.force item.Browse.nodes) [ name ]
-    | Browse.Other ->
-      (* The fuck is this? *)
-      stop_at_first (get_loc ~name) (Lazy.force item.Browse.nodes)
     | _ -> None
   in
   let get_on_track ~name item =
     match item.Browse.context with
-    | Browse.Module (Browse.TopNamed id, _) when id.Ident.name = name ->
+    | Browse.Module (Browse.Named id, _) when id = name ->
       `Direct
     | Browse.Module (Browse.Include ids, _)
       when List.exists (fun i -> i.Ident.name = name) ids ->
@@ -133,9 +141,7 @@ and check_item modules item =
       | `Direct -> Some path
       | `Included -> Some modules
     with
-    | None ->
-      error_log (Printf.sprintf "   module '%s' not found" mod_name) ;
-      None
+    | None -> None
     | Some path ->
       aux (Lazy.force item.Browse.nodes) path
     end
