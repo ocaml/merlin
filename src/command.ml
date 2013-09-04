@@ -181,28 +181,42 @@ let dispatch (i,o : IO.io) (state : state) =
         else tokens'
       in
       let finished = !eod || (!eot && (stuck || tokens' = [])) in
-      tokens', outline, finished
+      if finished
+      then None, outline
+      else Some tokens', outline
     in
-    let rec loop state first tokens =
-      let tokens, steps = 
-        if first
-        then let steps = History.move (-1) state.steps in
-             Outline.tokens ((History.focused steps).outlines) @ tokens,
-             steps
-        else tokens, state.steps
+    let rec loop steps tokens =
+      let next_tokens, outlines = onestep tokens steps in
+      let step  = History.focused steps in
+      let steps = History.insert (State.step step outlines) steps in
+      match next_tokens with
+      | Some tokens -> loop steps tokens
+      | None -> steps
+    in
+    let first steps =
+      let steps' = History.move (-1) state.steps in
+      let steps, tokens =
+        if steps' == steps
+        then steps, []
+        else
+          let step' = History.focused steps' in
+          let tokens = Outline.tokens step'.outlines in
+          let next_tokens, outlines = onestep tokens steps' in
+          let tokens = match next_tokens with
+            | Some tokens -> tokens
+            | None -> []
+          in
+          let steps = 
+            if outlines = (History.focused steps).outlines
+            then steps
+            else History.insert (State.step step' outlines) steps'
+          in
+          steps, tokens
       in
-      let tokens', outlines, finished = onestep tokens steps in
-      if first && (History.focused state.steps).outlines = outlines
-      then loop state false tokens'
-      else 
-        let steps = History.insert (State.step step outlines) steps in
-        let state' = {steps} in
-        if finished
-        then state'
-        else loop state' false tokens'
+      loop steps tokens
     in
-    let state = loop state true [] in
-    state, true
+    let steps = first state.steps in
+    {steps}, true
   end
   | (Tell _ : a request) -> IO.invalid_arguments ()
 
