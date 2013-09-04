@@ -333,7 +333,7 @@ let dispatch (i,o : IO.io) (state : state) =
     let cmp step = Location.compare_pos pos (Outline.location step.outlines) in
     let steps = state.steps in
     let steps = History.seek_backward (fun i -> cmp i < 0) steps in
-    let steps = History.seek_forward (fun i -> cmp i >= 0) steps in
+    let steps = History.seek_forward (fun i -> cmp i > 0) steps in
     let state = {steps} in
     state, position state
 
@@ -369,7 +369,7 @@ let dispatch (i,o : IO.io) (state : state) =
     let steps_at_pos steps pos =
       let cmp step = Location.compare_pos pos (Outline.location step.outlines) in
       let steps = History.seek_backward (fun i -> cmp i < 0) steps in
-      let steps = History.seek_forward (fun i -> cmp i >= 0) steps in
+      let steps = History.seek_forward (fun i -> cmp i > 0) steps in
       steps
     in
     let pos = match pos with
