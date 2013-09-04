@@ -133,8 +133,31 @@ module Type_utils = struct
     end
 end
 
+let track_verbosity =
+  let tag (Request r) = Obj.tag (Obj.repr r) in
+  let h = Hashtbl.create 21 in
+  fun st a_request ->
+  let tag = tag a_request in
+  let cell = 
+    try Hashtbl.find h tag
+    with Not_found ->
+      let cell = ref (History.Sync.origin,a_request) in
+      Hashtbl.add h tag cell;
+      cell
+  in
+  let sync, a_request' = !cell in
+  let ol = st.outlines in
+  let ol = match History.backward ol with None -> ol | Some (_, h) -> h in
+  let action =
+    if a_request = a_request' && History.Sync.(same sync (at ol))
+    then `Incr
+    else (cell := (History.Sync.at ol, a_request); `Clear)
+  in
+  ignore (State.verbosity action)
+
 let dispatch (i,o : IO.io) (state : state) = 
   fun (type a) (request : a request) ->
+  track_verbosity state (Request request);
   (match request with
   | (Tell (`Source source) : a request) ->
   begin
