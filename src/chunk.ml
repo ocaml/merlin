@@ -49,13 +49,26 @@ type 'a binding = string Location.loc * 'a Location.loc
 module Context = struct
   type state = exn list * string Location.loc list (* Local modules *)
 
-  type sig_item = Parsetree.signature_item Location.loc list 
-  type str_item = Parsetree.structure_item Location.loc list
-  type sig_in_sig_modtype = Parsetree.modtype_declaration binding
-  type sig_in_sig_module  = Parsetree.module_type binding
-  type sig_in_str_modtype = Parsetree.module_type binding
-  type str_in_module      = Parsetree.module_expr binding
+  type sig_item = Parsetree.signature_item Location.loc list or_exn
+  type str_item = Parsetree.structure_item Location.loc list or_exn
+  type sig_in_sig_modtype = Parsetree.modtype_declaration binding or_exn
+  type sig_in_sig_module  = Parsetree.module_type binding or_exn
+  type sig_in_str_modtype = Parsetree.module_type binding or_exn
+  type str_in_module      = Parsetree.module_expr binding or_exn
 end
+
+let protect_parser f =
+  let local_modules = ref [] in
+  let exns, result =
+    Misc.fluid'let 
+      Outline_utils.local_modules (Some local_modules) 
+      (fun () -> Location.catch_warnings f)
+  in
+  let exns = match result with
+    | Inl exn -> exn :: exns
+    | Inr _ -> exns
+  in
+  exns, !local_modules, result 
 
 module Fold = struct
   (* Initial state *)
@@ -65,42 +78,48 @@ module Fold = struct
   (* Fold items *)
   let sig_item _ = failwith "TODO"
 
-  let str_item step (exns,modules as state) =
+  let str_item step (exns,modules) =
     let tokens = Outline.Spine.value step in
     let buf = Lexing.from_string "" in
-    begin try
+    let exns', modules', result =
+      protect_parser (fun () -> try
         (* run structure_item parser on tokens, appending EOF *)
         let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
         let defs = Chunk_parser.top_structure_item lexer buf in
-        state, defs
+        defs
       with Chunk_parser.Error ->
         let loc = {Location.  
                       loc_start = buf.Lexing.lex_start_p;
                       loc_end = buf.Lexing.lex_curr_p;
                       loc_ghost = false
                    } in
-        (Syntaxerr.(Error (Other loc)) :: exns, modules), []
-    end
+        raise Syntaxerr.(Error (Other loc)))
+    in
+    (exns' @ exns, modules' @ modules), result
 
   (* Fold structure shape *)
   let str_in_module step (exns,modules as state) =
-    let tokens = Outline.Spine.value step in
-    let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
-      (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
+    let exns', modules', result =
+      protect_parser (fun () ->
+        let tokens = Outline.Spine.value step in
+        let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
+          (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
+        in
+        let open Parsetree in
+        let mod_str =
+          List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
+        in
+        begin match mod_str.Location.txt with
+          | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
+            let m = {Location. txt = m; loc = pstr_loc} in
+            (s, m)
+          | _ -> assert false
+        end)
     in
-    let open Parsetree in
-    let mod_str =
-      List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
-    in
-    begin match mod_str.Location.txt with
-      | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-        let m = {Location. txt = m; loc = pstr_loc} in
-        state, (s, m)
-      | _ -> assert false
-    end
+    (exns' @ exns, modules' @ modules), result
 
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
@@ -131,82 +150,6 @@ type t = item History.t
 
 let line x = (x.Location.loc.Location.loc_start.Lexing.pos_lnum)
 
-let sync_step outline tokens t =
-  match outline with
-  | Outline_utils.Enter_module ->
-    let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
-        (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
-    in
-    let open Parsetree in
-    let mod_str =
-      List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
-    in
-    begin match mod_str.Location.txt with
-      | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
-        Misc.Inr (Module_opening (pstr_loc, s, m))
-      | _ -> assert false
-    end
-  | Outline_utils.Definition | Outline_utils.Syntax_error _ ->
-
-  | Outline_utils.Done
-  | Outline_utils.Unterminated ->
-    Misc.Inl outline
-
-  (* Can now occurs here when a malformed module contains a definition that should have been
-   * rolled back but cannot, as in:
-   *   exception E
-   *   and X
-  *)
-
-  | Outline_utils.Leave_module ->
-    (* reconstitute module from t *)
-    let rec rewind_defs defs t =
-      match History.backward t with
-      | Some ((_,(_,Misc.Inr (Definitions [])), _), _) -> assert false
-      | Some ((_,(_,Misc.Inr (Definitions lst)), _), t') -> 
-        rewind_defs (List.map (fun d -> d.Location.txt) lst @ defs) t'
-      | Some ((_,(_,Misc.Inr (Module_closing (d,offset))), _), t') ->
-        rewind_defs (d.Location.txt :: defs) (History.seek_offset offset t')
-      | Some ((_,(_,Misc.Inr (Module_opening (loc,s,m))), _), t') -> loc,s,m,defs,t'
-      | Some ((_,(_,Misc.Inl _), _), t') -> rewind_defs defs t'
-      | None ->
-        let p = (match tokens with (_,loc_start,loc_end) :: _ -> Location.({loc_start;loc_end;loc_ghost = false}) | _ -> Location.none) in
-        raise (Malformed_module p)
-    in
-    let loc,s,m,defs,t = rewind_defs [] t in
-    let open Parsetree in
-    let rec subst_structure e =
-      let pmod_desc = match e.pmod_desc with
-        | Pmod_structure _ ->
-          Pmod_structure defs
-        | Pmod_functor (s,t,e) ->
-          Pmod_functor (s,t,subst_structure e)
-        | Pmod_constraint (e,t) ->
-          Pmod_constraint (subst_structure e, t)
-        | Pmod_apply  _ | Pmod_unpack _ | Pmod_ident  _ -> assert false
-      in
-      { e with pmod_desc }
-    in
-    let loc = match tokens with
-      | (_,_,p) :: _ -> { loc with Location.loc_end = p }
-      | [] -> loc
-    in
-    Misc.Inr (Module_closing (
-        Location.mkloc {
-          pstr_desc = Pstr_module (s, subst_structure m);
-          pstr_loc  = loc
-        } loc,
-        History.offset t
-      ))
-
-let exns h = match History.focused h with
-  | Some (_, (exns,_), _) -> exns
-  | None -> []
-
-let local_modules h = match History.focused h with
-  | Some (_, _, local_modules) -> local_modules
-  | None -> []
-
 let sync outlines chunks =
   (* Find last synchronisation point *)
   let outlines, chunks = History.Sync.rewind Misc.fst3 outlines chunks in
@@ -217,8 +160,8 @@ let sync outlines chunks =
     match History.forward outlines with
       | None -> chunks
       | Some ({ Outline. kind ; tokens ; loc },outlines') ->
-          let exns = exns chunks in
-          let local_modules = ref (local_modules chunks) in
+          let exns = exns chunks in 
+let local_modules = ref (local_modules chunks) in
           let chunk =
             match
               Misc.fluid'let Outline_utils.local_modules (Some local_modules) (fun () ->

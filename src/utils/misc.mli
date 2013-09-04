@@ -168,6 +168,8 @@ val list_drop_while : ('a -> bool) -> 'a list -> 'a list
 
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
+type 'a or_exn = (exn, 'a) sum 
+
 val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c
 val sum_join : ('a,('a,'c) sum) sum -> ('a,'c) sum
 val try_sum : (unit -> 'a) -> (exn,'a) sum

@@ -31,8 +31,8 @@ open Misc
 module Context = struct
   type state = exn list * Env.t * Typedtree.structure Location.loc list
 
-  type sig_item = Types.signature Location.loc list 
-  type str_item = Typedtree.structure Location.loc list
+  type sig_item = Types.signature Location.loc list or_exn
+  type str_item = Typedtree.structure Location.loc list or_exn
   type sig_in_sig_modtype = unit
   type sig_in_sig_module  = unit
   type sig_in_str_modtype = unit
@@ -67,30 +67,34 @@ module Fold = struct
   (* Fold items *)
   let sig_item _ = failwith "TODO"
 
-  let str_item step (exns,env,trees') =
-    let items = Chunk.Spine.value step in
-    let exns', (env, exns, trees) =
-      protect_typer
-      begin fun () ->
-        List.fold_left
-        begin fun (env,exns,ts) d ->
-        try
-          let t,_,env = 
-            Typemod.type_structure env [d.Location.txt] d.Location.loc
-          in
-          (env, exns, {d with Location.txt = t} :: ts)
-        with exn -> (env, exn :: exns, ts)
-        end (env, exns, []) items
-      end
-    in
-    (exns' @ exns, env, trees @ trees'), List.rev trees
+  let str_item step (exns,env,trees' as state) =
+    match Chunk.Spine.value step with
+    | Inl exn -> state, Inl exn
+    | Inr items ->
+      let exns', (env, exns, trees) =
+        protect_typer
+        begin fun () ->
+          List.fold_left
+          begin fun (env,exns,ts) d ->
+          try
+            let t,_,env = 
+              Typemod.type_structure env [d.Location.txt] d.Location.loc
+            in
+            (env, exns, {d with Location.txt = t} :: ts)
+          with exn -> (env, exn :: exns, ts)
+          end (env, exns, []) items
+        end
+      in
+      (exns' @ exns, env, trees @ trees'), Inr (List.rev trees)
 
   (* Fold structure shape *)
-  let str_in_module step (exns,env,trees) =
+  let str_in_module step (exns,env,trees as state) =
+    match Chunk.Spine.value step with
+    | Inl exn -> state, ()
+    | Inr (_, {Location. txt = pmod; _}) ->
     match
       protect_typer
       begin fun () -> try
-        let _, {Location. txt = pmod; _} = Chunk.Spine.value step in
         let open Typedtree in
         let open Parsetree in
         let rec filter_constraint md =

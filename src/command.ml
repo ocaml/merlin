@@ -41,20 +41,6 @@ type state = State.t = {steps  : step History.t}
 
 module VPrinttyp = State.Verbose_print
 
-(*let track_verbosity handler : handler =
-  let last = ref (History.Sync.origin, []) in
-  fun io st args ->
-    let action = 
-      let (sync,args') = !last in
-      let ol = st.outlines in
-      let ol = match History.backward ol with None -> ol | Some (_, h) -> h in
-      if args = args' && History.Sync.(same sync (at ol))
-      then `Incr
-      else (last := (History.Sync.at ol, args); `Clear)
-    in
-    ignore (State.verbosity action);
-    handler io st args*)
-
 let load_packages packages =
   let packages = Findlib.package_deep_ancestors [] packages in
   let path = List.map ~f:Findlib.package_directory packages in
@@ -214,7 +200,7 @@ let dispatch (i,o : IO.io) (state : state) =
         then state'
         else loop state' false tokens'
     in
-    let state = loop state false [] in
+    let state = loop state true [] in
     state, true
   end
   | (Tell _ : a request) -> IO.invalid_arguments ()

@@ -377,6 +377,7 @@ let rec list_drop_while p = function
 
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
+type 'a or_exn = (exn, 'a) sum 
 
 let sum f g = function
   | Inl a -> f a

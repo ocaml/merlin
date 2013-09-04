@@ -72,4 +72,4 @@ val leave_sub : unit -> unit
 (** Sends [Chunk] only when outside of any enter_sub/leave_sub *)
 val emit_top : kind -> position -> unit
 
-val local_modules : (string * Location.t) list ref option Misc.fluid
+val local_modules : (string Location.loc) list ref option Misc.fluid

@@ -58,7 +58,7 @@ val print_warning: t -> formatter -> Warnings.t -> unit
 val raise_warning : exn -> unit
 val prerr_warning : t -> Warnings.t -> unit
 exception Warning of t * string
-val catch_warnings : (unit -> 'a) -> exn list * (exn, 'a) Misc.sum
+val catch_warnings : (unit -> 'a) -> exn list * 'a Misc.or_exn
 
 val echo_eof: unit -> unit
 val reset: unit -> unit

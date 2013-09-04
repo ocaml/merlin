@@ -80,11 +80,11 @@ let mkpatvar startpos endpos name =
   let loc = symbol_rloc startpos endpos in
   { ppat_desc = Ppat_var (mkrhs startpos endpos name); ppat_loc = loc }
 
-let remember_module_loc name pos =
+let remember_module_loc name loc =
   Logger.(log Section.(`locate)) ~prefix:"Chunk_parser |" name ;
   match Misc.(~!) Outline_utils.local_modules with
   | None -> ()
-  | Some lst -> lst := (name, pos) :: !lst
+  | Some lst -> lst := {Location. txt = name; loc} :: !lst
 
 (*
   Ghost expressions and patterns:

@@ -28,11 +28,13 @@
 
 (* Maintains a typing environment synchronized with a chunk history *)
 
+open Misc
+
 module Context : sig
   type state = exn list * Env.t * Typedtree.structure Location.loc list
 
-  type sig_item = Types.signature Location.loc list 
-  type str_item = Typedtree.structure Location.loc list
+  type sig_item = Types.signature Location.loc list or_exn
+  type str_item = Typedtree.structure Location.loc list or_exn
   type sig_in_sig_modtype = unit
   type sig_in_sig_module  = unit
   type sig_in_str_modtype = unit
