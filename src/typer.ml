@@ -30,8 +30,13 @@ open Misc
 
 module Context = struct
   type state = exn list * Env.t * Typedtree.structure Location.loc list
-  type signature_item = Types.signature Location.loc list 
-  type structure_item = Typedtree.structure Location.loc list
+
+  type sig_item = Types.signature Location.loc list 
+  type str_item = Typedtree.structure Location.loc list
+  type sig_in_sig_modtype = unit
+  type sig_in_sig_module  = unit
+  type sig_in_str_modtype = unit
+  type str_in_module      = unit
 end
 
 let initial_env =

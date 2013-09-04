@@ -46,14 +46,14 @@ let focused {head = (More (x,_) | One x); _} = x
 
 (** Move forward while item under cursor satisfy predicate *)
 let rec seek_forward pred = function
-  | {head; tail = x :: tail'} as t when pred (focused t) ->
-    seek_forward pred {head = More (x,head); tail = tail'}
+  | {head; tail = x :: tail} as t when pred (focused t) ->
+    seek_forward pred {head = More (x,head); tail}
   | t -> t
 
 (** Move backward while item under cursor satisfy predicate *)
 let rec seek_backward pred = function
-  | {head = More (x,head'); tail} when pred x ->
-    seek_backward pred {head = head'; tail = x :: tail}
+  | {head = More (x,head); tail} when pred x ->
+    seek_backward pred {head; tail = x :: tail}
   | t -> t
 
 (** Moves an arbitrary number of steps.
@@ -63,7 +63,7 @@ let rec seek_backward pred = function
 let rec move n = function
   | {head; tail = x :: tail} when n > 0 -> 
     move (pred n) {head = More (x,head); tail}
-  | {head = More (x,head); tail = tail} when n < 0 -> 
+  | {head = More (x,head); tail} when n < 0 -> 
     move (succ n) {head; tail = x :: tail}
   | t -> t
 

@@ -185,43 +185,36 @@ let dispatch (i,o : IO.io) (state : state) =
       end
     in
     let bufpos = ref (position state) in
-    let rec loop state tokens =
-      let step = History.focused state.steps in
-      let tokens', outlines =
-        let default tokens =
-          Outline.parse ~bufpos tokens step.outlines lexbuf
-        in
-        (*if not first then*) default tokens
-        (*else match History.backward outlines with
-          | None -> default tokens
-          | Some (o, os) ->
-            let tokens', outlines' =
-              Outline.parse ~bufpos (o.Outline.tokens @ tokens)
-                (History.cutoff os) lexbuf
-            in
-            match History.focused outlines' with
-            (* Parsing is stable *)
-            | Some o' when o.Outline.tokens = o'.Outline.tokens ->
-              default tokens'
-            (* Parsing is not stable *)
-            | _ ->
-              tokens', outlines'*)
-      in
-        (* If token list didn't change, move forward anyway
-         * to prevent getting stuck *)
+    let onestep tokens steps =
+      let step = History.focused steps in
+      let tokens', outline = 
+        Outline.parse ~bufpos tokens step.outlines lexbuf in
       let stuck = tokens = tokens' in
       let tokens' =
         if stuck
         then (try List.tl tokens' with _ -> tokens')
         else tokens'
       in
-      let steps = History.insert (State.step step outlines) state.steps in
-      let state' = {steps} in
-      if !eod || (!eot && (stuck || tokens' = []))
-      then state'
-      else loop state' tokens'
+      let finished = !eod || (!eot && (stuck || tokens' = [])) in
+      tokens', outline, finished
     in
-    let state = loop state [] in
+    let rec loop state first tokens =
+      let steps = 
+        if first
+        then History.move (-1) state.steps
+        else state.steps
+      in
+      let tokens', outlines, finished = onestep tokens steps in
+      if first && (History.focused state.steps).outlines = outlines
+      then loop state false tokens'
+      else 
+        let steps = History.insert (State.step step outlines) steps in
+        let state' = {steps} in
+        if finished
+        then state'
+        else loop state' false tokens'
+    in
+    let state = loop state false [] in
     state, true
   end
   | (Tell _ : a request) -> IO.invalid_arguments ()
@@ -327,12 +320,12 @@ let dispatch (i,o : IO.io) (state : state) =
     let cmp step = Location.compare_pos pos (Outline.location step.outlines) in
     let steps = state.steps in
     let steps = History.seek_forward (fun i -> cmp i > 0) steps in
-    (*let steps = History.seek_backward
+    let steps = History.seek_backward
       (fun step -> match step.outlines with 
-       | {Outline.tokens = []} -> true
+       (*| {Outline.tokens = []} -> true*)
        | _ -> cmp step <= 0)
-      outlines
-    in FIXME*)
+      steps
+    in
     let state = {steps} in
     state, position state
 
@@ -351,37 +344,15 @@ let dispatch (i,o : IO.io) (state : state) =
     state, position state
 
   | (Seek `Maximize_scope : a request) ->
-    (*let rec find_end_of_module (depth,outlines) =
-      if depth = 0 then (0,outlines)
-      else
-      match History.forward outlines with
-      | None -> (depth,outlines)
-      | Some ({Outline.kind = Outline_utils.Leave_module},outlines') ->
-          find_end_of_module (pred depth, outlines')
-      | Some ({Outline.kind = Outline_utils.Enter_module},outlines') ->
-          find_end_of_module (succ depth, outlines')
-      | Some (_,outlines') -> find_end_of_module (depth,outlines')
+    let rec loop steps =
+      let steps' = History.move 1 steps in
+      if Outline.Spine.position (History.focused steps').outlines <=
+         Outline.Spine.position (History.focused steps).outlines
+      then steps
+      else loop steps'
     in
-    let rec loop outlines =
-      match History.forward outlines with
-      | None -> outlines
-      | Some ({ Outline.kind = Outline_utils.Leave_module },_) ->
-          outlines
-      | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
-          (match find_end_of_module (1,outlines') with
-           | (0,outlines'') -> outlines''
-           | _ -> outlines)
-      | Some (_,outlines') -> loop outlines'
-    in
-    let outlines = loop state.outlines in
-    let chunks = History.Sync.right Misc.fst3 outlines state.chunks in
-    let types  = History.Sync.right fst chunks state.types in
-    let pos =
-      match Outline.location outlines with
-      | l when l = Location.none -> State.initial.pos
-      | p -> p.Location.loc_end
-    in*)
-    (*let state = {steps} in FIXME*)
+    let steps = loop state.steps in
+    let state = {steps} in
     state, position state
 
   | (Boundary (dir,pos) : a request) ->

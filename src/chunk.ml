@@ -44,11 +44,19 @@ let fake_tokens tokens f =
           t
       | _ -> f lexbuf
 
+type 'a binding = string Location.loc * 'a Location.loc
+
 module Context = struct
   type state = exn list * string Location.loc list (* Local modules *)
-  type signature_item = Parsetree.signature_item Location.loc list 
-  type structure_item = Parsetree.structure_item Location.loc list
+
+  type sig_item = Parsetree.signature_item Location.loc list 
+  type str_item = Parsetree.structure_item Location.loc list
+  type sig_in_sig_modtype = Parsetree.modtype_declaration binding
+  type sig_in_sig_module  = Parsetree.module_type binding
+  type sig_in_str_modtype = Parsetree.module_type binding
+  type str_in_module      = Parsetree.module_expr binding
 end
+
 module Fold = struct
   (* Initial state *)
   let sig_root _ = [], []
@@ -77,13 +85,13 @@ module Fold = struct
         (Syntaxerr.(Error (Other loc)) :: exns, modules), []
     end
 
+  (* Fold structure shape *)
+  let str_in_module _ = failwith "TODO"
+
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
   let sig_in_sig_module  _ = failwith "TODO"
   let sig_in_str_modtype _ = failwith "TODO"
-
-  (* Fold structure shape *)
-  let str_in_module _ = failwith "TODO"
 end
 
 module Spine = Spine.Transform (Context) (Outline.Spine) (Fold)

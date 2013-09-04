@@ -1,12 +1,15 @@
 open Location
-type 'a binding = 'a * t * string loc
 type position = int
 
 module type CONTEXT = sig
   type state
 
-  type signature_item
-  type structure_item
+  type sig_item
+  type str_item
+  type sig_in_sig_modtype
+  type sig_in_sig_module
+  type sig_in_str_modtype
+  type str_in_module
 end
 
 module type STEP = sig
@@ -24,15 +27,15 @@ module type S = sig
 
   type t_sig =
     | Sig_root of (unit, unit) step
-    | Sig_item of (Context.signature_item, t_sig) step
-    | Sig_in_sig_modtype of (Parsetree.modtype_declaration binding, t_sig) step
-    | Sig_in_sig_module  of (Parsetree.module_type binding, t_sig) step
-    | Sig_in_str_modtype of (Parsetree.module_type binding, t_str) step
+    | Sig_item of (Context.sig_item, t_sig) step
+    | Sig_in_sig_modtype of (Context.sig_in_sig_modtype, t_sig) step
+    | Sig_in_sig_module  of (Context.sig_in_sig_module,  t_sig) step
+    | Sig_in_str_modtype of (Context.sig_in_str_modtype, t_str) step
 
   and t_str =
     | Str_root of (unit, unit) step
-    | Str_item of (Context.structure_item, t_str) step
-    | Str_in_module of (Parsetree.module_expr binding, t_str) step
+    | Str_item of (Context.str_item, t_str) step
+    | Str_in_module of (Context.str_in_module, t_str) step
 
   type t = 
     | Str of t_str
@@ -50,8 +53,8 @@ module type S = sig
   val sig_state : t_sig -> Context.state
   val get_state : t -> Context.state
 
-  val dump :  ?sig_item:(string -> Context.state -> Context.signature_item -> string) 
-           -> ?str_item:(string -> Context.state -> Context.structure_item -> string) 
+  val dump :  ?sig_item:(string -> Context.state -> Context.sig_item -> string) 
+           -> ?str_item:(string -> Context.state -> Context.str_item -> string) 
            -> ?state:(string -> Context.state -> string) 
            -> t -> string list
 end
@@ -72,27 +75,27 @@ module Transform (Context : CONTEXT) (Dom : S)
 
     (* Fold items *)
     val sig_item 
-      :  (Dom.Context.signature_item, Dom.t_sig) Dom.step
-      -> Context.state -> Context.state * Context.signature_item
+      :  (Dom.Context.sig_item, Dom.t_sig) Dom.step
+      -> Context.state -> Context.state * Context.sig_item
     val str_item 
-      :  (Dom.Context.structure_item, Dom.t_str) Dom.step
-      -> Context.state -> Context.state * Context.structure_item
+      :  (Dom.Context.str_item, Dom.t_str) Dom.step
+      -> Context.state -> Context.state * Context.str_item
 
     (* Fold signature shape *)
     val sig_in_sig_modtype
-      :  (Parsetree.modtype_declaration binding, Dom.t_sig) Dom.step
-      -> Context.state -> Context.state
+      :  (Dom.Context.sig_in_sig_modtype, Dom.t_sig) Dom.step
+      -> Context.state -> Context.state * Context.sig_in_sig_modtype
     val sig_in_sig_module 
-      :  (Parsetree.module_type binding, Dom.t_sig) Dom.step
-      -> Context.state -> Context.state
+      :  (Dom.Context.sig_in_sig_module, Dom.t_sig) Dom.step
+      -> Context.state -> Context.state * Context.sig_in_sig_module
     val sig_in_str_modtype
-      :  (Parsetree.module_type binding, Dom.t_str) Dom.step
-      -> Context.state -> Context.state
+      :  (Dom.Context.sig_in_str_modtype, Dom.t_str) Dom.step
+      -> Context.state -> Context.state * Context.sig_in_str_modtype
 
     (* Fold structure shape *)
     val str_in_module 
-      :  (Parsetree.module_expr binding, Dom.t_str) Dom.step
-      -> Context.state -> Context.state
+      :  (Dom.Context.str_in_module, Dom.t_str) Dom.step
+      -> Context.state -> Context.state * Context.str_in_module
    end) :
 sig 
   module Dom : S

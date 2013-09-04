@@ -26,10 +26,17 @@
 
 )* }}} *)
 
+type 'a binding = string Location.loc * 'a Location.loc
+
 module Context : sig
   type state = exn list * string Location.loc list (* Local modules *)
-  type signature_item = Parsetree.signature_item Location.loc list 
-  type structure_item = Parsetree.structure_item Location.loc list
+
+  type sig_item = Parsetree.signature_item Location.loc list 
+  type str_item = Parsetree.structure_item Location.loc list
+  type sig_in_sig_modtype = Parsetree.modtype_declaration binding
+  type sig_in_sig_module  = Parsetree.module_type binding
+  type sig_in_str_modtype = Parsetree.module_type binding
+  type str_in_module      = Parsetree.module_expr binding
 end
 module Spine : Spine.S with module Context = Context
 type t = Spine.t

@@ -33,8 +33,13 @@ type token = Chunk_parser.token Fake_lexer.token
 
 module Context = struct
   type state = exn list * Location.t
-  type signature_item = token list
-  type structure_item = token list
+
+  type sig_item = token list
+  type str_item = token list
+  type sig_in_sig_modtype = token list
+  type sig_in_sig_module  = token list
+  type sig_in_str_modtype = token list
+  type str_in_module      = token list
 end
 module Spine = Spine.Make (Context)
 type t = Spine.t
