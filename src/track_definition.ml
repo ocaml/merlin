@@ -1,3 +1,5 @@
+open Std
+
 let sources_path = ref []
 let cwd = ref ""
 
@@ -66,8 +68,8 @@ module Utils = struct
     | Ldot (t, s) -> Some (t, Lident s)
     | Lapply _ -> invalid_arg "Lapply"
 
-  let debug_log = Logger.(log (Section.(`locate)))
-  let error_log = Logger.(error (Section.(`locate)))
+  let debug_log ?prefix = Printf.ksprintf (Logger.log `locate ?prefix)
+  let error_log = Printf.ksprintf (Logger.error `locate)
 end
 
 include Utils
@@ -111,7 +113,7 @@ and check_item modules item try_next =
     | Browse.NamedOther id when id.Ident.name = name ->
       Some item.Browse.loc
     | Browse.Module (Browse.Include ids, _)
-      when List.exists (fun i -> i.Ident.name = name) ids ->
+      when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
       aux (Lazy.force item.Browse.nodes) [ name ]
     | _ -> try_next ()
   in
@@ -150,7 +152,7 @@ and browse_cmts ~root modules =
     begin match modules with
     | [] -> assert false
     | mod_name :: modules ->
-      let file = List.find (fun f -> file_path_to_mod_name f = mod_name) files in
+      let file = List.find files ~f:(fun f -> file_path_to_mod_name f = mod_name) in
       cwd := Filename.dirname root ;
       let cmt_file = find_file file in
       browse_cmts ~root:cmt_file modules
@@ -188,7 +190,7 @@ let path_and_loc_from_label desc env =
   | _ -> assert false
 
 let from_string ~sources ~env ~local_modules path =
-  debug_log (Printf.sprintf "looking for the source of '%s'" path) ;
+  debug_log "looking for the source of '%s'" path ;
   sources_path := sources ;
   let ident, is_label = keep_suffix (Longident.parse path) in
   try
@@ -226,16 +228,15 @@ let from_string ~sources ~env ~local_modules path =
       let full_path =
         try find_file ~ext:".ml" fname
         with Not_found ->
-          error_log "   found non ghost loc but no associated ml file??" ;
+          error_log "%s" "   found non ghost loc but no associated ml file??" ;
           fname
       in
       Some (full_path, loc)
     else
-      match from_path path with
-      | None -> None
-      | Some loc ->
+      Option.map (from_path path) ~f:(fun loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
-        Some (full_path, loc)
+        full_path, loc
+      )
   with Not_found ->
     None

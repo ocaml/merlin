@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Std
+
 open Misc
 open Protocol
 
@@ -55,7 +57,7 @@ module VPrinttyp = State.Verbose_print
 
 let load_packages packages =
   let packages = Findlib.package_deep_ancestors [] packages in
-  let path = List.map Findlib.package_directory packages in
+  let path = List.map ~f:Findlib.package_directory packages in
   Config.load_path := Misc.list_filter_dup (path @ !Config.load_path);
   Extensions_utils.register_packages packages;
   State.reset_global_modules ()
@@ -80,7 +82,7 @@ module Path_utils = struct
       else Misc.canonicalize_filename ?cwd
             (Misc.expand_directory Config.standard_library path)
     in
-    r := List.filter ((<>) d) !r;
+    r := List.filter ~f:((<>) d) !r;
     match action with
     | `Add -> r := d :: !r
     | `Rem -> ()
@@ -298,7 +300,7 @@ let dispatch (i,o : IO.io) (state : state) =
       (Typer.trees state.types)
     in
     let path = Browse.enclosing pos structures in
-    let result = Misc.list_filter_map aux path in
+    let result = List.filter_map ~f:aux path in
     state, (List.length path, result)
 
   | (Complete_prefix (prefix, None) : a request) ->
@@ -416,9 +418,8 @@ let dispatch (i,o : IO.io) (state : state) =
     {tokens = []; comments = []; outlines; chunks; types; pos}, pos
 
   | (Boundary (dir,pos) : a request) ->
-    let prev2 x = match History.backward x with
-      | Some (_, y) -> History.prev y
-      | None -> None
+    let prev2 x =
+      Option.bind (History.backward x) ~f:(fun (_,y) -> History.prev y)
     in
     let command = function
       | `Next -> History.next
@@ -497,11 +498,11 @@ let dispatch (i,o : IO.io) (state : state) =
             `List [`String loc ; `String content]
         | None -> `String content
     in
-    state, `List (List.map aux sg)
+    state, `List (List.map ~f:aux sg)
 
   | (Dump `Sig : a request) ->
       let trees = Typer.trees state.types in
-      let sg = List.flatten (List.map snd trees) in
+      let sg = List.flatten (List.map ~f:snd trees) in
       let aux item =
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [item];
@@ -514,12 +515,13 @@ let dispatch (i,o : IO.io) (state : state) =
               `List [`String loc ; `String content]
           | None -> `String content
       in
-      state, `List (List.map aux sg)
+      state, `List (List.map ~f:aux sg)
 
   | (Dump `Chunks : a request) ->
-    let pr_item_desc items = List.map 
-        (fun (s,i) -> `List [`String s;`Int i])
-        (Chunk.dump_chunk items)
+    let pr_item_desc items =
+      List.map (Chunk.dump_chunk items) ~f:(fun (s,i) ->
+        `List [`String s;`Int i]
+      )
     in
     state, `List (pr_item_desc state.chunks)
 
@@ -534,17 +536,18 @@ let dispatch (i,o : IO.io) (state : state) =
     let outlines = History.prevs state.outlines in
     let aux item =
       let tokens =
-        List.map (fun (t,_,_) -> `String (Chunk_parser_utils.token_to_string t))
-          item.Outline.tokens
+        List.map item.Outline.tokens ~f:(fun (t,_,_) ->
+          `String (Chunk_parser_utils.token_to_string t)
+        )
       in
       `List [`String (Outline_utils.kind_to_string item.Outline.kind);
              `List tokens]
     in
-    state, `List (List.rev_map aux outlines)
+    state, `List (List.rev_map ~f:aux outlines)
 
   | (Dump `Exn : a request) ->
     let exns = State.exns state in
-    state, `List (List.rev_map (fun e -> `String (Printexc.to_string e)) exns)
+    state, `List (List.rev_map ~f:(fun e -> `String (Printexc.to_string e)) exns)
 
   | (Which_path s : a request) ->
     let filename =
@@ -575,12 +578,11 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Extension_set (action,extensions) : a request) ->
     let enabled = action = `Enabled in
-    List.iter (Extensions_utils.set_extension ~enabled)
-              extensions;
+    List.iter extensions ~f:(Extensions_utils.set_extension ~enabled) ;
     state, ()
 
   | (Path (var,kind,action,pathes) : a request) -> 
-    List.iter (Path_utils.modify ~action ~kind ~var) pathes;
+    List.iter ~f:(Path_utils.modify ~action ~kind ~var) pathes;
     State.reset_global_modules ();
     state, true 
 
