@@ -86,7 +86,21 @@ module Fold = struct
     end
 
   (* Fold structure shape *)
-  let str_in_module _ = failwith "TODO"
+  let str_in_module step (exns,modules as state) =
+    let tokens = Outline.Spine.value step in
+    let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
+      (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
+    in
+    let open Parsetree in
+    let mod_str =
+      List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
+    in
+    begin match mod_str.Location.txt with
+      | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
+        let m = {Location. txt = m; loc = pstr_loc} in
+        state, (s, m)
+      | _ -> assert false
+    end
 
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"

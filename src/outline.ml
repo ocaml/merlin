@@ -111,6 +111,8 @@ let parse_with (tokens : token zipper) ~parser ~lexer ~bufpos buf =
     end
   | exn -> raise exn
 
+exception Malformed_module of token list
+
 let parse_str ~bufpos ~exns ~location ~lexbuf zipper t =
   match Location.catch_warnings 
       (fun () -> parse_with zipper
@@ -126,10 +128,26 @@ let parse_str ~bufpos ~exns ~location ~lexbuf zipper t =
                                Outline_utils.Syntax_error _), tokens) -> 
     zipper,
     Spine.(Str_item (str_step t (exns' @ exns, location ()) tokens))
-  | exns', Inr (zipper, 
-                (Outline_utils.Enter_module | Outline_utils.Leave_module),
-                _) ->
-    failwith "TODO, MODULES NOT HANDLED"
+  | exns', Inr (zipper, Outline_utils.Enter_module, tokens) ->
+    zipper,
+    Spine.(Str_in_module (str_step t (exns' @ exns, location ()) tokens))
+  | exns', Inr (zipper, Outline_utils.Leave_module, tokens) ->
+    let rec aux acc = function
+      | Spine.Str_root step ->
+        Spine.(Str_item (str_step t (Malformed_module tokens :: exns, location ()) []))
+      | Spine.Str_in_module step ->
+        let exns, loc = Spine.state step in
+        let loc = Location.union loc (location ()) in
+        let tokens = Spine.value step @ acc in
+        let parent = Spine.parent step in
+        Spine.Str_item (Spine.str_step parent (exns, loc) tokens)
+      | Spine.Str_item step ->
+        let tokens = Spine.value step @ acc in
+        let parent = Spine.parent step in
+        aux tokens parent
+    in
+    zipper,
+    aux tokens t
   | _, Inl (Failure _ as exn) ->
     raise exn
   | exns', Inl exn ->

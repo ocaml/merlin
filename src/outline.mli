@@ -41,6 +41,8 @@ end
 module Spine : Spine.S with module Context = Context
 type t = Spine.t
 
+exception Malformed_module of token list
+
 val parse : bufpos:Lexing.position ref ->
   token list -> t -> Lexing.lexbuf -> token list * t
 

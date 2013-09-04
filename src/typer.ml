@@ -75,13 +75,53 @@ module Fold = struct
     in
     (exns, env, trees @ trees'), List.rev trees
 
+  (* Fold structure shape *)
+  let str_in_module step (exns,env,trees as state) =
+    match
+      try
+        let _, {Location. txt = pmod; _} = Chunk.Spine.value step in
+        let open Typedtree in
+        let open Parsetree in
+        let rec filter_constraint md =
+          let update f = function
+            | None -> None
+            | Some md' -> Some (f md')
+          in
+          match md.pmod_desc with
+            | Pmod_structure _ -> Some md
+            | Pmod_functor (a,b,md) ->
+                update
+                  (fun md' -> {md with pmod_desc = Pmod_functor (a,b,md')})
+                  (filter_constraint md)
+            | Pmod_constraint (md,_) ->
+                update (fun x -> x) (filter_constraint md)
+            | _ -> None
+        in
+        let pmod = match filter_constraint pmod with
+          | Some pmod' -> pmod'
+          | None -> pmod
+        in
+        let rec find_structure md =
+          match md.mod_desc with
+            | Tmod_structure _ -> Some md
+            | Tmod_functor (_,_,_,md) -> find_structure md
+            | Tmod_constraint (md,_,_,_) -> Some md
+            | _ -> None
+        in
+        let tymod = Typemod.type_module env pmod in
+        match find_structure tymod with
+          | None -> None
+          | Some md -> Some (exns, md.mod_env)
+      with exn -> Some (exn :: exns, env)
+    with
+    | None -> state, ()
+    | Some (exns, env) -> (exns, env, trees), ()
+
+
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
   let sig_in_sig_module  _ = failwith "TODO"
   let sig_in_str_modtype _ = failwith "TODO"
-
-  (* Fold structure shape *)
-  let str_in_module _ = failwith "TODO"
 end
 
 module Spine = Spine.Transform (Context) (Chunk.Spine) (Fold)
