@@ -52,6 +52,13 @@ let initial_env =
   fun () -> let lazy env = env in
             Extensions_utils.register env
 
+let protect_typer f =
+  let errors, result = 
+    Misc.catch_join (Location.catch_warnings (fun () -> Types.catch_errors f))
+  in
+  errors,
+  Misc.sum raise (fun x -> x) result
+
 module Fold = struct
   (* Initial state *)
   let sig_root _ = [], initial_env (), []
@@ -62,23 +69,27 @@ module Fold = struct
 
   let str_item step (exns,env,trees') =
     let items = Chunk.Spine.value step in
-    let env, exns, trees =
-      List.fold_left
-      begin fun (env,exns,ts) d ->
-      try
-        let t,_,env = 
-          Typemod.type_structure env [d.Location.txt] d.Location.loc
-        in
-        (env, exns, {d with Location.txt = t} :: ts)
-      with exn -> (env, exn :: exns, ts)
-      end (env, exns, []) items
+    let exns', (env, exns, trees) =
+      protect_typer
+      begin fun () ->
+        List.fold_left
+        begin fun (env,exns,ts) d ->
+        try
+          let t,_,env = 
+            Typemod.type_structure env [d.Location.txt] d.Location.loc
+          in
+          (env, exns, {d with Location.txt = t} :: ts)
+        with exn -> (env, exn :: exns, ts)
+        end (env, exns, []) items
+      end
     in
-    (exns, env, trees @ trees'), List.rev trees
+    (exns' @ exns, env, trees @ trees'), List.rev trees
 
   (* Fold structure shape *)
-  let str_in_module step (exns,env,trees as state) =
+  let str_in_module step (exns,env,trees) =
     match
-      try
+      protect_typer
+      begin fun () -> try
         let _, {Location. txt = pmod; _} = Chunk.Spine.value step in
         let open Typedtree in
         let open Parsetree in
@@ -113,10 +124,12 @@ module Fold = struct
           | None -> None
           | Some md -> Some (exns, md.mod_env)
       with exn -> Some (exn :: exns, env)
+      end
     with
-    | None -> state, ()
-    | Some (exns, env) -> (exns, env, trees), ()
-
+    | exns', None -> 
+      (exns' @ exns, env, trees), ()
+    | exns', Some (exns, env) -> 
+      (exns' @ exns, env, trees), ()
 
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
