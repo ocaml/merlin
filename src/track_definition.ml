@@ -17,6 +17,7 @@ module Utils = struct
     String.capitalize (Filename.basename pref)
 
   let find_file ?(ext=".cmt") file =
+    let file = String.uncapitalize file in
     let fname = Misc.chop_extension_if_any (Filename.basename file) ^ ext in
     (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
      * will most likely not be the one you want to edit.
@@ -170,16 +171,7 @@ and from_path' = function
     let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
     Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
   | fname :: modules ->
-    let cmt_file =
-      let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
-      try Misc.find_in_path_uncap !sources_path fname
-      with Not_found ->
-      try Misc.find_in_path_uncap !Config.load_path fname
-      with Not_found ->
-        debug_log (Printf.sprintf "no '%s' present in source or build path"
-          (String.uncapitalize fname)) ;
-        raise Not_found
-    in
+    let cmt_file = find_file fname in
     browse_cmts ~root:cmt_file modules
 
 and from_path path = from_path' (path_to_list path)
