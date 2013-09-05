@@ -26,9 +26,10 @@
 
 )* }}} *)
 
+open Misc
 type token = Chunk_parser.token History.loc
 
-let parse_with history ~parser ~lexer ?bufpos buf =
+let parse_with history ~parser ~lexer ~bufpos buf =
   let origin = History.current_pos history in
   let history' = ref history in
   let chunk_content h =
@@ -38,7 +39,7 @@ let parse_with history ~parser ~lexer ?bufpos buf =
     (* Drop beginning of history *)
     History.nexts at_origin
   in
-  let lexer = History.wrap_lexer ?bufpos history' lexer in
+  let lexer = History.wrap_lexer ~bufpos history' lexer in
   try
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in
@@ -47,12 +48,12 @@ let parse_with history ~parser ~lexer ?bufpos buf =
   with
   | Outline_utils.Chunk (c,p) ->
     begin
-      let history = !history' in
-      let history = match History.backward history with
-        | Some ((t,_,p'), history) when Lexing.(p.pos_cnum < p'.pos_cnum) ->
-          history
+      let rec aux history = match History.backward history with
+        | Some ((t,_,p'), history) when Misc.compare_pos p p' < 0 ->
+          aux history
         | _ -> history
       in
+      let history = aux !history' in
       history, c, chunk_content history
     end
   | Sys.Break ->
@@ -74,7 +75,7 @@ let parse_with history ~parser ~lexer ?bufpos buf =
             loc_ghost = false ;
           })
       in
-      history' := History.move (-1) !history';
+      history' := History.move (-2) !history';
       let lexer' who = Chunk_parser_utils.dump_lexer ~who lexer in
       let rec aux () =
         let count = Chunk_parser_utils.re_sync (lexer' "re_sync") buf in
@@ -114,7 +115,7 @@ let location t =
   | Some i -> i.loc
   | None -> Location.none
 
-let parse_step ?bufpos ?(exns=[]) history buf =
+let parse_step ~bufpos ?(exns=[]) history buf =
   Outline_utils.reset ();
   let location = 
     let loc_start = buf.Lexing.lex_curr_p in
@@ -131,7 +132,7 @@ let parse_step ?bufpos ?(exns=[]) history buf =
         (fun () -> parse_with history
             ~parser:Outline_parser.implementation
             ~lexer:Lexer.token
-            ?bufpos buf)
+            ~bufpos buf)
     with
     | exns', Misc.Inr (history', kind, tokens) -> 
       exns', history', kind, tokens
@@ -163,19 +164,14 @@ let append_exns exns outlines = match History.prev outlines with
 
 let rec do_rollback next_tokens chunks =
   match History.backward chunks with
-  | Some ({ tokens ; kind = Outline_utils.Rollback }, chunks') ->
+  | Some ({ tokens ; kind = Outline_utils.Syntax_error _ }, chunks') ->
     do_rollback (tokens @ next_tokens) chunks'
   | None -> next_tokens, chunks
   | Some ({ tokens }, chunks') -> tokens @ next_tokens, chunks'
 
-let rec parse ?(can_rollback=true) ?bufpos tokens chunks buf =
+let rec parse ~bufpos tokens chunks buf =
   let exns = exns chunks in
-  match parse_step ?bufpos ~exns (History.of_list tokens) buf with
-  | tokens', Some { kind = Outline_utils.Rollback } when can_rollback ->
-    let tokens = History.nexts (History.seek_offset 0 tokens') in
-    let tokens, chunks = do_rollback tokens chunks in
-    let chunks = History.cutoff chunks in
-    parse ~can_rollback:false ?bufpos tokens chunks buf
+  match parse_step ~bufpos ~exns (History.of_list tokens) buf with
   | tokens', Some { kind = (Outline_utils.Unterminated | Outline_utils.Done) } ->
     tokens', chunks
   | tokens', Some item ->
@@ -183,7 +179,7 @@ let rec parse ?(can_rollback=true) ?bufpos tokens chunks buf =
   | tokens', None ->
     tokens', chunks
 
-let parse ?bufpos tokens chunks buf =
-  let tokens, chunks = parse ?bufpos tokens chunks buf in
+let parse ~bufpos tokens chunks buf =
+  let tokens, chunks = parse ~bufpos tokens chunks buf in
   History.nexts tokens, chunks
 

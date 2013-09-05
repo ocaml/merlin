@@ -26,43 +26,102 @@
 
 )* }}} *)
 
-type extension = string * string list * string list
+open Chunk_parser
+type extension = {
+  name : string;
+  private_def : string list;
+  public_def : string list;
+  packages : string list;
+  keywords : (string * Chunk_parser.token) list;
+}
 
-let ext_lwt : extension = "lwt",
-  ["module Lwt : sig
+let ext_lwt = {
+  name = "lwt";
+  private_def = [
+    "module Lwt : sig
       val un_lwt : 'a Lwt.t -> 'a
       val in_lwt : 'a Lwt.t -> 'a Lwt.t
       val to_lwt : 'a -> 'a Lwt.t
       val finally' : 'a Lwt.t -> unit Lwt.t -> 'a Lwt.t
       val un_stream : 'a Lwt_stream.t -> 'a
       val unit_lwt : unit Lwt.t -> unit Lwt.t
-    end"],
-  ["val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t
-    val raise_lwt : exn -> 'a Lwt.t"]
+    end"
+  ];
+  public_def = [
+    "val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t
+     val raise_lwt : exn -> 'a Lwt.t"
+  ];
+  keywords = [
+    "lwt", LET_LWT;
+    "try_lwt", TRY_LWT;
+    "match_lwt", MATCH_LWT;
+    "finally", FINALLY_LWT;
+    "for_lwt", FOR_LWT;
+    "while_lwt", WHILE_LWT;
+  ];
+  packages = ["lwt.syntax"];
+}
 
-let ext_any : extension = "any",
-  ["module Any : sig
+let ext_any = {
+  name = "any";
+  private_def = [
+    "module Any : sig
       val val' : 'a
-    end"],
-  []
+    end"
+  ];
+  public_def = [];
+  keywords = [];
+  packages = [];
+}
 
-let ext_js : extension = "js",
-  ["module Js : sig
+let ext_js = {
+  name = "js";
+  private_def = [
+    "module Js : sig
       val un_js : 'a Js.t -> 'a
       val un_meth : 'a Js.meth -> 'a
       val un_constr : 'a Js.constr -> 'a
       val un_prop : 'a Js.gen_prop -> 'a
-    end"],
-  []
+    end"
+  ];
+  public_def = [];
+  keywords = ["jsnew", JSNEW];
+  packages = ["js_of_ocaml.syntax"];
+}
 
-let ext_ounit : extension = "ounit",
-  ["module OUnit : sig
+let ext_ounit = {
+  name = "ounit";
+  private_def = [
+    "module OUnit : sig
       val force_bool : bool -> unit
       val force_unit : unit -> unit
       val force_unit_arrow_unit : (unit -> unit) -> unit
       val force_indexed : (int -> unit -> unit) -> int list -> unit
-    end"],
-  []
+    end"
+  ];
+  public_def = [];
+  keywords = [
+    "TEST", OUNIT_TEST;
+    "TEST_UNIT", OUNIT_TEST_UNIT;
+    "TEST_MODULE", OUNIT_TEST_MODULE;
+    "BENCH", OUNIT_BENCH;
+    "BENCH_FUN", OUNIT_BENCH_FUN;
+    "BENCH_INDEXED", OUNIT_BENCH_INDEXED;
+    "BENCH_MODULE", OUNIT_BENCH_MODULE;
+  ];
+  packages = ["oUnit";"pa_ounit.syntax"];
+}
 
-let registry = [ext_lwt;ext_js;ext_any;ext_ounit]
+let ext_nonrec = {
+  name = "nonrec";
+  private_def = [];
+  public_def = [];
+  keywords = [
+    "nonrec", NONREC;
+  ];
+  packages = [];
+}
+
+let always = [ext_any]
+let registry = [ext_lwt;ext_js;ext_ounit;ext_nonrec]
 

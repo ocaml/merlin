@@ -10,17 +10,23 @@ OCAMLFIND=ocamlfind
 
 all: $(TARGET)
 
-src/myocamlbuild_config.ml:
+CONFIG_FILES = src/my_config.ml src/myocamlbuild_config.ml
+$(CONFIG_FILES):
 	@echo "Please run ./configure"
 	@false
 
-$(TARGET): src/myocamlbuild_config.ml
+assert_configured: $(CONFIG_FILES)
+
+$(TARGET): assert_configured
 	$(OCAMLBUILD) -use-ocamlfind $@
 
-dev: src/myocamlbuild_config.ml
+dev: assert_configured
 	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET)
 
-.PHONY: $(TARGET) all dev clean distclean install uninstall
+debug: assert_configured
+	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET) -tag debug
+
+.PHONY: $(TARGET) all dev clean distclean install uninstall assert_configured
 
 clean:
 	$(OCAMLBUILD) -clean
@@ -29,7 +35,8 @@ check: $(TARGET)
 	./test.sh
 
 distclean: clean
-	rm -f Makefile.config src/myocamlbuild_config.ml
+	@echo
+	rm -f Makefile.config $(CONFIG_FILES) $(TARGET)
 
 install: $(TARGET)
 	install -d $(BIN_DIR)

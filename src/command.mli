@@ -26,11 +26,7 @@
 
 )* }}} *)
 
-type handler = Protocol.io -> State.t -> Json.json list -> State.t * Json.json
-type t = { name : string ; handler : handler }
-val invalid_arguments : unit -> 'a
-
-val commands : (string,t) Hashtbl.t
-val register : t -> unit
+val dispatch : IO.io -> State.t -> 'a Protocol.request -> State.t * 'a
 
 val load_packages : string list -> unit
+val set_default_path : unit -> unit

@@ -40,6 +40,12 @@
  * ident. Use it to test or find private definition. *)
 val ident : Ident.t
 
+val all_extensions : unit -> string list
+val set_extension : enabled:bool -> string -> unit
+val enabled : unit -> string list
+val disabled : unit -> string list
+val register_packages : string list -> unit
+
 (* Register extensions in environment.
  * If an extension fails to typecheck (e.g. it needs definitions from an
  * external package not loaded), it is ignored and registration

@@ -33,7 +33,6 @@ type kind =
   | Enter_module
   | Leave_module
   | Definition
-  | Rollback
   | Done
   | Unterminated
   | Syntax_error of Location.t
@@ -44,7 +43,6 @@ let kind_to_string = function
   | Enter_module   -> "Enter_module"
   | Leave_module   -> "Leave_module"
   | Definition     -> "Definition"
-  | Rollback       -> "Rollback"
   | Done           -> "Done"
   | Unterminated   -> "Unterminated"
   | Syntax_error _ -> "Syntax_error"
@@ -75,3 +73,5 @@ let emit_top c pos =
   (*prerr_endline "emit";*)
   if !nesting = 0 then
     raise (Chunk (c,pos))
+
+let local_modules = Misc.fluid None

@@ -37,8 +37,6 @@ type kind =
   | Enter_module (* module _ = struct *)
   | Leave_module (* end *)
   | Definition   (* let / type / … *)
-  | Rollback     (* and … : we should go back to the previous definition
-                  * to find its "kind" *)
   | Done         (* EOF found after a syntactically correct construction *)
   | Unterminated (* Unfinished syntactic construction *)
   | Syntax_error of Location.t
@@ -75,3 +73,5 @@ val enter_sub : unit -> unit
 val leave_sub : unit -> unit
 (** Sends [Chunk] only when outside of any enter_sub/leave_sub *)
 val emit_top : kind -> position -> unit
+
+val local_modules : (string * Location.t) list ref option Misc.fluid

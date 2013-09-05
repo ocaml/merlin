@@ -1,0 +1,3 @@
+["return",false]
+["return",true]
+["return",[2,[{"start":{"line":5,"col":8},"end":{"line":5,"col":13},"type":"int"}]]]

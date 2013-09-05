@@ -36,7 +36,14 @@
  * See [Typer.initial_env] for initial environment generation.
  *)
 
-type extension = string * string list * string list
+type extension = {
+  name : string;
+  private_def : string list;
+  public_def : string list;
+  packages : string list;
+  keywords : (string * Chunk_parser.token) list;
+}
 
 (* Known extensions *)
+val always : extension list
 val registry : extension list

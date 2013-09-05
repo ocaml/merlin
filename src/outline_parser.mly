@@ -220,33 +220,31 @@ The precedences must be listed from low to high.
 (* Entry points *)
 
 implementation:
-  | top_structure EOF                    { () }
-  | AND                                  { emit_top Rollback $endpos }
-  | BAR                                  { emit_top Rollback $endpos }
-  | ELSE                                 { emit_top Rollback $endpos }
-  | SEMI                                 { emit_top Rollback $endpos }
-
-  (*FIXME: check if this is stable… we could get stuck in an infinite loop…*)
-  | LIDENT                               { emit_top Rollback $endpos }
-  | UIDENT                               { emit_top Rollback $endpos }
-
-  | EOF                                  { () }
-  | SEMISEMI                             { emit_top Done $endpos }
+  | top_structure EOF                        { () }
+  | top_expr top_structure EOF               { () }
+  | top_semisemi top_structure EOF           { () }
+  | top_end top_structure EOF                { () }
 ;
+top_structure:
+    (* empty  *)                  { () }
+  | structure_item top_structure  { () }
+;
+top_expr:
+  | seq_expr                             { emit_top Definition $endpos }
+;
+top_semisemi:
+  | SEMISEMI                             { emit_top Done $endpos }
+top_end:
+  | END                                  { emit_top Leave_module $endpos }
+
 interface:
     signature EOF                        { () }
 ;
-top_structure:
-    structure_item                        { () }
-  | structure_item top_structure          { () }
-  | END                                   { emit_top Leave_module $endpos }
-;
 
 (* Module expressions *)
-
 emit_enter:
   { emit_top Enter_module $endpos }
-
+;
 module_expr:
     mod_longident
       { () }
@@ -305,8 +303,9 @@ comma_ext_list:
   | { () }
 
 structure_item:
-    LET rec_flag let_bindings
+  | LET rec_flag let_bindings
       { emit_top Definition $endpos }
+  | VAL val_ident COLON core_type { emit_top Definition $endpos }
   | LET_LWT rec_flag let_bindings
       { emit_top Definition $endpos }
   | EXTERNAL val_ident COLON core_type EQUAL primitive_declaration
@@ -325,8 +324,8 @@ structure_item:
       { emit_top Definition $endpos }
   | MODULE TYPE ident EQUAL module_type
       { emit_top Definition $endpos }
-  | OPEN mod_longident
-      { emit_top Definition $endpos }
+  | OPEN mod_longident option(UIDENT)
+      { emit_top Definition $endpos($2) }
   | CLASS class_declarations
       { emit_top Definition $endpos }
   | CLASS TYPE class_type_declarations
@@ -841,6 +840,8 @@ simple_expr:
   | simple_expr DOT label_longident
       { () }
   | mod_longident DOT LPAREN seq_expr RPAREN
+      { () }
+  | mod_longident DOT LPAREN RPAREN
       { () }
   (* | mod_longident DOT LPAREN seq_expr error
       { () } *)

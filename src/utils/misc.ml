@@ -77,30 +77,6 @@ let may_map f = function
 
 (* File functions *)
 
-let find_in_path path name =
-  if not (Filename.is_implicit name) then
-    if Sys.file_exists name then name else raise Not_found
-  else begin
-    let rec try_dir = function
-      [] -> raise Not_found
-    | dir::rem ->
-        let fullname = Filename.concat dir name in
-        if Sys.file_exists fullname then fullname else try_dir rem
-    in try_dir path
-  end
-
-let find_in_path_uncap path name =
-  let uname = String.uncapitalize name in
-  let rec try_dir = function
-    [] -> raise Not_found
-  | dir::rem ->
-      let fullname = Filename.concat dir name
-      and ufullname = Filename.concat dir uname in
-      if Sys.file_exists ufullname then ufullname
-      else if Sys.file_exists fullname then fullname
-      else try_dir rem
-  in try_dir path
-
 let remove_file filename =
   try
     Sys.remove filename
@@ -132,6 +108,36 @@ let canonicalize_filename ?cwd path =
     | root :: subs -> List.fold_left Filename.concat root subs
   in
   filename_concats parts
+
+let find_in_path path name =
+  canonicalize_filename
+  begin
+    if not (Filename.is_implicit name) then
+      if Sys.file_exists name then name else raise Not_found
+    else begin
+      let rec try_dir = function
+        [] -> raise Not_found
+      | dir::rem ->
+          let fullname = Filename.concat dir name in
+          if Sys.file_exists fullname then fullname else try_dir rem
+      in try_dir path
+    end
+  end
+
+let find_in_path_uncap path name =
+  canonicalize_filename
+  begin
+    let uname = String.uncapitalize name in
+    let rec try_dir = function
+      [] -> raise Not_found
+    | dir::rem ->
+        let fullname = Filename.concat dir name
+        and ufullname = Filename.concat dir uname in
+        if Sys.file_exists ufullname then ufullname
+        else if Sys.file_exists fullname then fullname
+        else try_dir rem
+    in try_dir path
+  end
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
@@ -224,20 +230,32 @@ let search_substring pat str start =
     else search (i+1) 0
   in search start 0
 
-let rev_split_words s =
+let rev_split_string cond s =
   let rec split1 res i =
     if i >= String.length s then res else begin
-      match s.[i] with
-        ' ' | '\t' | '\r' | '\n' -> split1 res (i+1)
-      | _ -> split2 res i (i+1)
+      if cond s.[i] then
+        split1 res (i+1)
+      else
+        split2 res i (i+1)
     end
   and split2 res i j =
     if j >= String.length s then String.sub s i (j-i) :: res else begin
-      match s.[j] with
-        ' ' | '\t' | '\r' | '\n' -> split1 (String.sub s i (j-i) :: res) (j+1)
-      | _ -> split2 res i (j+1)
+      if cond s.[j] then
+        split1 (String.sub s i (j-i) :: res) (j+1)
+      else
+        split2 res i (j+1)
     end
   in split1 [] 0
+
+let rev_split_words s =
+  let helper = function
+    | ' ' | '\t' | '\r' | '\n' -> true
+    | _ -> false
+  in
+  rev_split_string helper s
+
+let rev_string_split ~on s =
+  rev_split_string ((=) on) s
 
 let get_ref r =
   let v = !r in
@@ -368,6 +386,10 @@ let sum_join = function
   | Inl a | Inr (Inl a) -> Inl a
   | Inr c -> c
 
+let try_sum f =
+  try Inr (f ())
+  with exn -> Inl exn
+
 let catch_join (exns, r) = match r with
   | Inl e -> (exns, Inl e)
   | Inr (exns', r') -> (exns @ exns'), r'
@@ -382,4 +404,22 @@ let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 let compare_pos p1 p2 =
   compare (split_pos p1) (split_pos p2)
 
+        (* Drop characters from beginning of string *)
+let string_drop n s =
+  String.sub s n (String.length s - n)
 
+        (* Dynamic binding pattern *)
+type 'a fluid = 'a ref
+let fluid x = ref x
+let fluid'let d v f =
+  let p = !d in
+  d := v;
+  try let r = f () in
+      d := p; r
+  with exn ->
+      d := p; raise exn
+
+let (~!) a = !a
+
+let (!:) = Lazy.force
+let (~:) = Lazy.from_val

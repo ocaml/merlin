@@ -1,0 +1,3 @@
+["tell","struct","module M = struct\n  let uniq = 42\nend\nopen M\nlet _ = (uniq\n"]
+["tell","end",null]
+["type","enclosing",{"line":5,"col":11}]

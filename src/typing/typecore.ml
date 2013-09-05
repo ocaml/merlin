@@ -1479,26 +1479,43 @@ let rec type_exp env sexp =
  *)
 
 and type_expect ?in_function env sexp ty_expected =
-  try
-    type_expect' ?in_function env sexp ty_expected
-  with (Typetexp.Error _ | Error _) as exn ->
-    Types.raise_error exn;
+  if ~!Types.relax_typer 
+  then type_relax ?in_function env sexp ty_expected
+  else try type_expect' ?in_function env sexp ty_expected
+       with (Typetexp.Error _ | Error _) ->
+         fluid'let Types.relax_typer true
+           (fun () -> type_relax ?in_function env sexp ty_expected)
+
+and type_relax ?in_function env sexp ty_expected =
+  let loc = sexp.pexp_loc in
+  let failwith_exn ~exn exp_desc =
     Types.erroneous_type_register ty_expected;
-    let loc = sexp.pexp_loc in
-    {
-      exp_desc = Texp_ident
+    Types.raise_error exn;
+    { exp_desc; exp_loc = loc;
+      exp_extra = [];
+      exp_type = ty_expected;
+      exp_env = env;
+    } 
+  in
+  try
+    let ty = newvar () in
+    let exp = type_expect' ?in_function env sexp ty in
+    try
+      unify_exp_types sexp.pexp_loc env ty ty_expected;
+      exp
+    with (Typetexp.Error _ | Error _) as exn ->
+      (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
+      failwith_exn ~exn (Texp_tuple [exp])
+  with (Typetexp.Error _ | Error _) as exn ->
+    failwith_exn ~exn 
+      (Texp_ident
         (Path.Pident (Ident.create "*type-error*"),
          Location.mkloc (Longident.Lident "*type-error*") loc,
          { Types.
            val_type = ty_expected;
            val_kind = Val_reg;
            val_loc = loc
-         });
-      exp_loc = loc;
-      exp_extra = [];
-      exp_type = ty_expected;
-      exp_env = env
-    }
+         }))
 
 and type_expect' ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in

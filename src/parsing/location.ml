@@ -12,6 +12,7 @@
 
 (* $Id: location.ml 12511 2012-05-30 13:29:48Z lefessan $ *)
 
+open Misc
 open Lexing
 
 let absname = ref false
@@ -224,8 +225,8 @@ let print_filename ppf file =
 let reset () =
   num_loc_lines := 0
 
-let (msg_file, msg_line, msg_chars, msg_to, msg_colon) =
-  ("File \"", "\", line ", ", characters ", "-", ":")
+let (msg_line, msg_chars, msg_to, msg_colon) =
+  ("Line ", ", characters ", "-", ":")
 
 (* return file, line, char from the given position *)
 let get_pos_info pos =
@@ -240,7 +241,7 @@ let print_loc ppf loc =
       fprintf ppf "Characters %i-%i"
               loc.loc_start.pos_cnum loc.loc_end.pos_cnum
   end else begin
-    fprintf ppf "%s%a%s%i" msg_file print_filename file msg_line line;
+    fprintf ppf "%s%i" msg_line line;
     if startchar >= 0 then
       fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar
   end
@@ -273,15 +274,15 @@ let print_warning loc ppf w =
 
 exception Warning of t * string
 
-let warnings : exn list ref option ref = ref None
+let warnings : exn list ref option fluid = fluid None
 
 let raise_warning exn =
-  match !warnings with
+  match ~!warnings with
   | None -> raise exn
   | Some l -> l := exn :: !l
 
 let prerr_warning loc w =
-  match !warnings with
+  match ~!warnings with
   | None -> print_warning loc err_formatter w
   | Some l ->
     let ppf, to_string = Misc.ppf_to_string () in
@@ -292,13 +293,9 @@ let prerr_warning loc w =
 
 let catch_warnings f =
   let caught = ref [] in
-  let previous = !warnings in
-  warnings := Some caught;
-  let result =
-    try Misc.Inr (f())
-    with e -> Misc.Inl e
+  let result = 
+    try_sum (fun () -> fluid'let warnings (Some caught) f)
   in
-  warnings := previous;
   !caught, result
 ;;
 

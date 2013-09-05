@@ -65,6 +65,18 @@ function! merlin#PackageList(ArgLead, CmdLine, CursorPos)
   return join(l:pkgs, "\n")
 endfunction
 
+function! merlin#ExtEnabled(ArgLead, CmdLine, CursorPos)
+  let l:exts = []
+  py merlin.vim_ext_list("l:exts", enabled=True)
+  return join(l:exts, "\n")
+endfunction
+
+function! merlin#ExtDisabled(ArgLead, CmdLine, CursorPos)
+  let l:exts = []
+  py merlin.vim_ext_list("l:exts", enabled=False)
+  return join(l:exts, "\n")
+endfunction
+
 function! merlin#MLList(ArgLead, CmdLine, CursorPos)
   let l:files = []
   py merlin.vim_which_ext(".ml", "l:files")
@@ -77,13 +89,23 @@ function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
   return join(l:files, "\n")
 endfunction
 
+function! merlin#ExtEnable(...)
+  py merlin.vim_ext(True, vim.eval("a:000"))
+  py merlin.vim_reload()
+endfunction
+
+function! merlin#ExtDisable(...)
+  py merlin.vim_ext(False, vim.eval("a:000"))
+  py merlin.vim_reload()
+endfunction
+
 function! merlin#Use(...)
   py merlin.vim_use(*vim.eval("a:000"))
   py merlin.vim_reload()
 endfunction
 
 function! merlin#RelevantFlags(ArgLead, CmdLine, CursorPos)
-  let l:flags = [ "-rectypes", "-nostdlib", "-absname", "-w" ]
+  let l:flags = [ "-rectypes", "-nostdlib", "-absname", "-debug", "-w" ]
   return join(l:flags, "\n")
 endfunction
 
@@ -202,10 +224,14 @@ function! merlin#Restart()
 endfunction
 
 function! merlin#Reload()
-  py if merlin.vim_is_loaded(): merlin.vim_reload()
+  py merlin.vim_reload()
 endfunction
 
-function! merlin#ReloadBuffer()
+function! merlin#ReloadFull()
+  py merlin.vim_reload(full=True)
+endfunction
+
+function! merlin#ReparseBuffer()
   py merlin.vim_reload_buffer()
 endfunction
 
@@ -246,10 +272,13 @@ function! merlin#Register()
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
   command! -buffer -nargs=0 Reload       call merlin#Reload()
+  command! -buffer -nargs=0 ReloadFull   call merlin#ReloadFull()
   " Used only to debug synchronization, do not expose to end-user
   "command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
   command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags call merlin#AddFlags(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtDisabled -nargs=* ExtEnable call merlin#ExtEnable(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtEnabled -nargs=* ExtDisable call merlin#ExtDisable(<f-args>)
   command! -buffer -nargs=0 ClearFlags call merlin#ClearFlags()
   command! -buffer -nargs=0 LoadProject call merlin#LoadProject()
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
@@ -264,7 +293,7 @@ endfunction
 
 function! merlin#LoadProject()
   py merlin.send_command("cd",vim.eval("expand('%:p:h')"))
-  py merlin.load_project(vim.eval("expand('%:p:h')"))
+  py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
 endfunction
 
 function! merlin#EchoDotMerlin()

@@ -41,10 +41,10 @@ type t = item History.t
 val item_loc : item -> Location.t
 val location : t -> Location.t
 
-val parse_step : ?bufpos:Lexing.position ref -> ?exns:exn list ->
+val parse_step : bufpos:Lexing.position ref -> ?exns:exn list ->
   token History.t -> Lexing.lexbuf -> token History.t * item option
 
-val parse : ?bufpos:Lexing.position ref ->
+val parse : bufpos:Lexing.position ref ->
   token list -> t -> Lexing.lexbuf -> token list * t
 
 val exns : t -> exn list

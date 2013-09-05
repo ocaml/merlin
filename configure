@@ -84,7 +84,7 @@ END
   cat >_tags _tags.in
 
   if [ "$NOSEXP" -eq "0" ]; then
-    echo >src/my_config.ml "open Protocol_sexp;;"
+    echo >src/my_config.ml "open IO_sexp;;"
     echo >>_tags "<src/*>: package(sexplib)"
   else
     echo >src/my_config.ml

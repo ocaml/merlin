@@ -41,7 +41,7 @@ let rec signature_loc =
     | Mty_ident _ -> None
     | Mty_functor (_,m1,m2) ->
         union_loc_opt (mod_loc m1) (mod_loc m2)
-    | Mty_signature s ->
+    | Mty_signature (lazy s) ->
         let rec find_first = function
           | x :: xs -> (match signature_loc x with
                         | (Some _ as v) -> v
@@ -165,9 +165,10 @@ let rec dump_ts ts =
       | Browse.Class (_, _) -> "class"
       | Browse.ClassType _ -> "class_type"
       | Browse.MethodCall _ -> "#"
+      | Browse.NamedOther _
       | Browse.Other -> "other"
     in
-    Protocol.with_location loc
+    IO.with_location loc
     [
       "kind", `String kind;
       "children", dump_ts nodes

@@ -113,6 +113,10 @@ val rev_split_words: string -> string list
         (* [rev_split_words s] splits [s] in blank-separated words, and return
            the list of words in reverse order. *)
 
+val rev_string_split: on:char -> string -> string list
+        (* [rev_string_split ~on s] splits [s] on [on], and return the list of
+           words in reverse order. *)
+
 val get_ref: 'a list ref -> 'a list
         (* [get_ref lr] returns the content of the list reference [lr] and reset
            its content to the empty list. *)
@@ -166,6 +170,7 @@ val list_drop_while : ('a -> bool) -> 'a list -> 'a list
 type ('a,'b) sum = Inl of 'a | Inr of 'b
 val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c
 val sum_join : ('a,('a,'c) sum) sum -> ('a,'c) sum
+val try_sum : (unit -> 'a) -> (exn,'a) sum
 
         (* Join for catch pattern (writer and error monad) *)
 val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b) sum
@@ -174,3 +179,16 @@ val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b
 val make_pos : int * int -> Lexing.position
 val split_pos : Lexing.position -> int * int
 val compare_pos : Lexing.position -> Lexing.position -> int
+
+
+        (* Drop characters from beginning of string *)
+val string_drop : int -> string -> string
+
+        (* Dynamic binding pattern *)
+type 'a fluid
+val fluid : 'a -> 'a fluid
+val fluid'let : 'a fluid -> 'a -> (unit -> 'b) -> 'b 
+val (~!) : 'a fluid -> 'a
+
+val (!:) : 'a Lazy.t -> 'a
+val (~:) : 'a -> 'a Lazy.t

@@ -92,31 +92,15 @@ let keyword_table =
     "lsl", INFIXOP4("lsl");
     "lsr", INFIXOP4("lsr");
     "asr", INFIXOP4("asr");
-
-    (* HACK: nonrec-ursive types extensions *)
-    "nonrec", NONREC;
-
-    (* HACK: lwt extensions *)
-    "lwt", LET_LWT;
-    "try_lwt", TRY_LWT;
-    "match_lwt", MATCH_LWT;
-    "finally", FINALLY_LWT;
-    "for_lwt", FOR_LWT;
-    "while_lwt", WHILE_LWT;
-
-    (* HACK: js_of_ocaml extension *)
-    "jsnew", JSNEW;
-
-    (* HACK: pa_ounit extension *)
-    "TEST", OUNIT_TEST;
-    "TEST_UNIT", OUNIT_TEST_UNIT;
-    "TEST_MODULE", OUNIT_TEST_MODULE;
-    (* HACK: pa_ounit benchmark extension *)
-    "BENCH", OUNIT_BENCH;
-    "BENCH_FUN", OUNIT_BENCH_FUN;
-    "BENCH_INDEXED", OUNIT_BENCH_INDEXED;
-    "BENCH_MODULE", OUNIT_BENCH_MODULE;
 ]
+
+let set_extension ~enabled kw =
+  let action =
+    if enabled
+    then (fun (key,value) -> Hashtbl.replace keyword_table key value)
+    else (fun (key,value) -> Hashtbl.remove keyword_table key)
+  in 
+  List.iter action kw
 
 (* To buffer string literals *)
 
@@ -394,7 +378,9 @@ rule token = parse
         token lexbuf
       }
 
-  | "<" (":" identchar*)? ("@" identchar*)? "<" identchar
+  | "<:" identchar* ("@" identchar*)? "<"
+  | "<@" identchar* "<"
+  | "<<" identchar
       { let start = lexbuf.lex_start_p in
         p4_quotation lexbuf;
         lexbuf.lex_start_p <- start;
@@ -591,23 +577,20 @@ and p4_quotation = parse
 
   let token_with_comments = token
 
-  let last_comments = ref []
-  let rec token lexbuf =
-    match token_with_comments lexbuf with
-        COMMENT (s, comment_loc) ->
-          last_comments := (s, comment_loc) :: !last_comments;
-          token lexbuf
-      | tok -> tok
-  let comments () = List.rev !last_comments
+  let comments = fluid None
 
-  let extract_comments () = 
-    let r = !last_comments in
-    last_comments := [];
-    r
+  let rec token lexbuf = match token_with_comments lexbuf with
+    | COMMENT (s, comment_loc) ->
+        begin match ~!comments with
+        | None -> ()
+        | Some last_comments ->
+          last_comments := (s, comment_loc) :: !last_comments;
+        end;
+        token lexbuf
+    | tok -> tok
 
   let init () =
     is_in_string := false;
-    last_comments := [];
     comment_start_loc := []
 }
 

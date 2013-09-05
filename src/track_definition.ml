@@ -1,3 +1,5 @@
+open Std
+
 let sources_path = ref []
 let cwd = ref ""
 
@@ -17,20 +19,20 @@ module Utils = struct
     String.capitalize (Filename.basename pref)
 
   let find_file ?(ext=".cmt") file =
+    let file = String.uncapitalize file in
     let fname = Misc.chop_extension_if_any (Filename.basename file) ^ ext in
+    (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
+     * will most likely not be the one you want to edit.
+     * However, just using [find_in_path_uncap] won't work either when you have
+     * several ml files with the same name.
+     * Example: scheduler.ml and raw_scheduler.ml are present in both async_core
+     * and async_unix. (ofc. "std.ml" is a more common example.) *)
     let abs_cmt_file = Printf.sprintf "%s/%s" !cwd fname in
     if Sys.file_exists abs_cmt_file then
       abs_cmt_file
     else
       try Misc.find_in_path_uncap !sources_path fname
       with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
-
-  let struct_of_mod_expr me =
-    let open Typedtree in
-    match me.mod_desc with
-    | Tmod_ident (path, _) -> assert false
-    | Tmod_structure str -> str
-    | _ -> raise Not_found (* TODO *)
 
   let keep_suffix =
     let open Longident in
@@ -65,117 +67,92 @@ module Utils = struct
     | Lident _ -> None
     | Ldot (t, s) -> Some (t, Lident s)
     | Lapply _ -> invalid_arg "Lapply"
+
+  let debug_log ?prefix = Printf.ksprintf (Logger.log `locate ?prefix)
+  let error_log = Printf.ksprintf (Logger.error `locate)
 end
 
 include Utils
 
 exception Found of Location.t
 
-let rec browse_structure str modules =
+let rec browse_structure browsable modules =
   (* start from the bottom *)
-  let items = List.rev str.Typedtree.str_items in
-  try
-    List.iter (fun item ->
-      match check_item modules item with
-      | None -> ()
-      | Some loc -> raise (Found loc)
-    ) items ;
-    None
-  with Found loc ->
-    Some loc
-
-and check_item modules item =
-  let open Typedtree in
-  let check_binding ~name (pat, _) =
-    match pat.pat_desc with
-    | Tpat_var (id, _loc) -> id.Ident.name = name
-    | _ -> false
+  let items =
+    List.rev_map (fun bt ->
+      let open Browse in
+      match bt.context with
+      | TopStructure -> Lazy.force bt.nodes
+      | _ -> [bt]
+    ) browsable
   in
-  let rec aux mod_expr path =
-    match mod_expr.mod_desc with
-    | Tmod_ident (path', _) ->
+  let rec find = function
+    | [] -> None
+    | item :: items -> check_item modules item (fun () -> find items)
+  in find (List.concat items)
+
+and check_item modules item try_next =
+  let rec aux mod_item path =
+    let open Browse in
+    match mod_item with
+    | [ { context = Module (Alias path', _) } ] ->
       let full_path = (path_to_list path') @ path in
       from_path' full_path
-    | Tmod_structure str ->
-      browse_structure str path
-    | Tmod_constraint (mod_expr, _, _, _) ->
-      aux mod_expr path
-    | Tmod_apply _
-      (* Functor application, we probably want to stop here. *)
-    | Tmod_unpack _ ->
-      (* Unpack of a first class module, stop here as well. *)
-      Some mod_expr.mod_loc
-    | Tmod_functor (_,_,_,mod_expr) ->
-      (* We are looking for something inside a functor definition? Weird. *)
-      aux mod_expr path
+    | [ { context = Module (Structure, _) ; nodes } ] ->
+      browse_structure (Lazy.force nodes) path
+    | otherwise ->
+      browse_structure otherwise path
   in
-  let find_item ~name item =
-    match item.str_desc with
-    | Tstr_primitive (id, str_loc, _) when id.Ident.name = name ->
-      Some str_loc.Asttypes.loc
-    | Tstr_value (_, bindings) ->
-      begin
-        try
-          let (pat, _) = List.find (check_binding ~name) bindings in
-          Some pat.pat_loc
-        with Not_found ->
-          None
-      end
-    | Tstr_type lst ->
-      begin
-        try
-          let (_,loc,_) = List.find (fun (i,_,_) -> i.Ident.name = name) lst in
-          Some loc.Asttypes.loc
-        with Not_found ->
-          None
-      end
-    | Tstr_module (id, loc, _) when id.Ident.name = name ->
-      Some (loc.Asttypes.loc)
-    | Tstr_recmodule _ -> None (* TODO *)
-    | Tstr_include (mod_expr, idents) ->
-      if List.exists (fun id -> id.Ident.name = name) idents then
-        aux mod_expr [ name ]
-      else
-        None
-    | _ -> None (* TODO *)
+  let rec get_loc ~name item =
+    match item.Browse.context with
+    | Browse.Pattern (Some id, _)
+    | Browse.TypeDecl (id, _) when id.Ident.name = name ->
+      Some item.Browse.loc
+    | Browse.Module (Browse.Named id, _) when id = name ->
+      Some item.Browse.loc
+    | Browse.NamedOther id when id.Ident.name = name ->
+      Some item.Browse.loc
+    | Browse.Module (Browse.Include ids, _)
+      when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
+      aux (Lazy.force item.Browse.nodes) [ name ]
+    | _ -> try_next ()
   in
-  let get_mod_expr ~name item =
-    match item.str_desc with
-    | Tstr_module (id, _, mod_expr) when id.Ident.name = name ->
-      `Direct mod_expr
-    | Tstr_recmodule _ -> `Not_found (* TODO *)
-    | Tstr_include (mod_expr, idents) ->
-      if List.exists (fun id -> id.Ident.name = name) idents then
-        `Included mod_expr
-      else
-        `Not_found
+  let get_on_track ~name item =
+    match item.Browse.context with
+    | Browse.Module (Browse.Named id, _) when id = name ->
+      `Direct
+    | Browse.Module (Browse.Include ids, _)
+      when List.exists (fun i -> i.Ident.name = name) ids ->
+      `Included
     | _ -> `Not_found
   in
   match modules with
   | [] -> assert false
-  | [ str_ident ] -> find_item ~name:str_ident item
+  | [ str_ident ] -> get_loc ~name:str_ident item
   | mod_name :: path ->
     begin match
-      match get_mod_expr ~name:mod_name item with
+      match get_on_track ~name:mod_name item with
       | `Not_found -> None
-      | `Direct mod_expr -> Some (path, mod_expr)
-      | `Included mod_expr -> Some (modules, mod_expr)
+      | `Direct -> Some path
+      | `Included -> Some modules
     with
-    | None -> None
-    | Some (path, mod_expr) ->
-      aux mod_expr path
+    | None -> try_next ()
+    | Some path ->
+      aux (Lazy.force item.Browse.nodes) path
     end
 
 and browse_cmts ~root modules =
   let open Cmt_format in
   let cmt_infos = read_cmt root in
   match cmt_infos.cmt_annots with
-  | Implementation impl -> browse_structure impl modules
-  | Packed (_sign, files) ->
+  | Implementation impl ->
+    let browses = Browse.structure impl in
+    browse_structure browses modules
+  | Packed (_, files) ->
     begin match modules with
     | [] -> assert false
     | mod_name :: modules ->
-      let file = List.find (fun f -> file_path_to_mod_name f = mod_name) files in
+      let file = List.find files ~f:(fun f -> file_path_to_mod_name f = mod_name) in
       cwd := Filename.dirname root ;
       let cmt_file = find_file file in
       browse_cmts ~root:cmt_file modules
@@ -184,12 +161,11 @@ and browse_cmts ~root modules =
 
 and from_path' = function
   | [] -> invalid_arg "empty path"
+  | [ fname ] ->
+    let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
+    Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
   | fname :: modules ->
-    let cmt_file =
-      let fname = (Misc.chop_extension_if_any fname) ^ ".cmt" in
-      try Misc.find_in_path_uncap !sources_path fname
-      with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
-    in
+    let cmt_file = find_file fname in
     browse_cmts ~root:cmt_file modules
 
 and from_path path = from_path' (path_to_list path)
@@ -213,7 +189,8 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
-let from_string ~sources ~env path =
+let from_string ~sources ~env ~local_modules path =
+  debug_log "looking for the source of '%s'" path ;
   sources_path := sources ;
   let ident, is_label = keep_suffix (Longident.parse path) in
   try
@@ -230,23 +207,36 @@ let from_string ~sources ~env path =
           let path, typ_decl = Env.lookup_type ident env in
           path, typ_decl.Types.type_loc
         with Not_found ->
+        try
           let _, cstr_desc = Env.lookup_constructor ident env in
           path_and_loc_from_cstr cstr_desc env
+        with Not_found ->
+        try
+          let path, _ = Env.lookup_module ident env in
+          let loc =
+            try List.assoc (Longident.last ident) local_modules
+            with Not_found -> Location.symbol_gloc ()
+          in
+          path, loc
+        with Not_found ->
+          debug_log "   ... not in the environment" ;
+          raise Not_found
       )
     in
     if not (is_ghost loc) then
       let fname = loc.Location.loc_start.Lexing.pos_fname in
       let full_path =
         try find_file ~ext:".ml" fname
-        with Not_found -> fname
+        with Not_found ->
+          error_log "%s" "   found non ghost loc but no associated ml file??" ;
+          fname
       in
       Some (full_path, loc)
     else
-      match from_path path with
-      | None -> None
-      | Some loc ->
+      Option.map (from_path path) ~f:(fun loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
-        Some (full_path, loc)
+        full_path, loc
+      )
   with Not_found ->
     None
