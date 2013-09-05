@@ -156,6 +156,7 @@ let signature_of_env env =
 let rec dump_ts ts =
   let dump_t { Browse. loc ; context ; nodes = lazy nodes } =
     let kind = match context with
+      | Browse.TopStructure -> "indir"
       | Browse.Type _ -> "type"
       | Browse.TypeDecl _ -> "type_decl"
       | Browse.Expr _ -> "expr"

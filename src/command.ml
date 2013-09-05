@@ -255,6 +255,7 @@ let dispatch (i,o : IO.io) (state : state) =
     let ppf, to_string = Misc.ppf_to_string () in
     Printtyp.wrap_printing_env node.Browse.env
     begin fun () -> match node.Browse.context with
+      | Browse.TopStructure
       | Browse.NamedOther _ (* FIXME *)
       | Browse.Other -> raise Not_found
       | Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t ->

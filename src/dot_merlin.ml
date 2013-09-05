@@ -1,3 +1,5 @@
+open Std
+
 module Directives = struct
   type t = [
     | `B of string
@@ -85,29 +87,29 @@ let rec project_name = function
 let err_log msg = Logger.error `dot_merlin msg
 
 module Flags = Top_options.Make (struct
-  let _projectfind _ =
-    err_log "unsupported flag \"-project-find\" (ignored)" ;
+  let _projectfind _ = err_log "unsupported flag \"-project-find\" (ignored)" ;
 end)
 
 let exec_dot_merlin ~path_modify ~load_packages { path; project; entries} =
   let cwd = Filename.dirname path in
-  List.iter (
+  List.iter entries ~f:(
     function
     | `B path   -> path_modify `Add `Build ~cwd path
     | `S path   -> path_modify `Add `Source ~cwd path
     | `PKG pkgs -> load_packages pkgs
     | `EXT exts ->
-      List.iter (fun e -> Extensions_utils.set_extension ~enabled:true e) exts
+      List.iter exts ~f:(fun e -> Extensions_utils.set_extension ~enabled:true e)
     | `FLG flags ->
       let lst = Misc.rev_split_words flags in
       let flags = Array.of_list (List.rev lst) in
       begin try
-        Arg.parse_argv ~current:(ref (-1)) flags Flags.list Top_options.unexpected_argument "error..."
+        Arg.parse_argv ~current:(ref (-1)) flags Flags.list
+          Top_options.unexpected_argument "error..."
       with
       | Arg.Bad msg -> err_log msg ; exit 2
       | Arg.Help msg -> err_log msg ; exit 0 (* FIXME *)
       end
-  ) entries;
+  ) ;
   path
 
 let rec exec ~path_modify ~load_packages= function

@@ -68,8 +68,8 @@ module Utils = struct
     | Ldot (t, s) -> Some (t, Lident s)
     | Lapply _ -> invalid_arg "Lapply"
 
-  let debug_log ?prefix = Printf.ksprintf (Logger.log `locate ?prefix)
-  let error_log = Printf.ksprintf (Logger.error `locate)
+  let debug_log ?prefix x = Printf.ksprintf (Logger.log `locate ?prefix) x
+  let error_log x = Printf.ksprintf (Logger.error `locate) x
 end
 
 include Utils
@@ -229,7 +229,7 @@ let from_string ~sources ~env ~local_modules path =
       let full_path =
         try find_file ~ext:".ml" fname
         with Not_found ->
-          error_log "%s" "   found non ghost loc but no associated ml file??" ;
+          error_log "   found non ghost loc but no associated ml file??" ;
           fname
       in
       Some (full_path, loc)
