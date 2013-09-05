@@ -89,7 +89,8 @@ let rec browse_structure browsable modules =
   let rec find = function
     | [] -> None
     | item :: items -> check_item modules item (fun () -> find items)
-  in find (List.concat items)
+  in
+  find (List.concat items)
 
 and check_item modules item try_next =
   let rec aux mod_item path =

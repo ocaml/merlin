@@ -150,6 +150,8 @@ let init_path () =
   Env.reset_cache ()
 
 let main () =
+  Arg.parse Options.list Top_options.unexpected_argument
+    "Usage: ocamlmerlin [options]\noptions are:";
   begin try
     let dest = Sys.getenv "MERLIN_LOG" in
     Logger.set_default_destination dest ;
@@ -157,8 +159,6 @@ let main () =
   with _ ->
     ()
   end ;
-  Arg.parse Options.list Top_options.unexpected_argument
-    "Usage: ocamlmerlin [options]\noptions are:";
   init_path ();
   Command.set_default_path ();
   State.reset_global_modules ();
