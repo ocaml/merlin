@@ -36,6 +36,8 @@ check_package EXIT menhirLib "Please install menhir."
 check_package NOSEXP sexplib "Sexplib missing; sexp protocol disabled."
 STDLIB_DIR=$(ocamlfind printconf stdlib)
 
+WITH_BIN_ANNOT=""
+
 while [ -n "$1" ]; do
   case "$1" in
     --prefix)
@@ -54,6 +56,9 @@ while [ -n "$1" ]; do
     --stdlib)
       shift 1
       STDLIB_DIR="$1"
+      ;;
+    --with-bin-annot)
+      WITH_BIN_ANNOT="-cflags -bin-annot"
   esac
   shift 1
 done
@@ -77,6 +82,7 @@ if [ -d "$STDLIB_DIR" ]; then
 BIN_DIR=$BIN_DIR
 SHARE_DIR=$SHARE_DIR
 #NOSEXP=$NOSEXP
+WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 END
   cat >src/myocamlbuild_config.ml <<END
 let libdir = "$STDLIB_DIR";;

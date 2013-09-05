@@ -15,10 +15,7 @@ $(CONFIG_FILES):
 assert_configured: $(CONFIG_FILES)
 
 $(TARGET): assert_configured
-	$(OCAMLBUILD) -use-ocamlfind $@
-
-dev: assert_configured
-	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET)
+	$(OCAMLBUILD) $(WITH_BIN_ANNOT) -use-ocamlfind $@
 
 debug: assert_configured
 	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET) -tag debug
