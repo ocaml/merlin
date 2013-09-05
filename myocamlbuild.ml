@@ -9,12 +9,11 @@ dispatch begin function
       flag ["ocaml"; "parser"; "menhir"; "ext_tokens"]
         (S [ A"--external-tokens";
              A"Chunk_parser"]);
-             (*A"chunk_parser.mly"]);*)
+
       flag ["ocaml"; "menhir_ocamldep"; "ext_tokens"]
         (S [ A"--external-tokens";
-             A"Chunk_parser"]);
-             (*A"chunk_parser.mly"]);*)
-      pflag ["forcepackage";"ocamlc"] "package" (fun pkg -> S [A "-package"; A pkg]);
+             A"Chunk_parser"])
+
   | _ -> ()
 end
 
