@@ -17,7 +17,7 @@ COL_GREEN=$(tput setf 2)
 
 check_package()
 {
-  if ocamlfind query "$2" >/dev/null; then
+  if ocamlfind query "$2" >/dev/null 2>/dev/null; then
     printf "Found $2\t${COL_GREEN}GOOD${COL_CLEAR}\n"
   else
     printf "${COL_RED}BAD${COL_CLEAR} $2 is missing\n\t$3\n"
