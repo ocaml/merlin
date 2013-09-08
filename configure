@@ -2,6 +2,7 @@
 
 BIN_DIR=/usr/local/bin
 SHARE_DIR=/usr/local/share
+WITH_BIN_ANNOT=""
 
 if ! [ -x $(which ocamlfind) ]; then
   echo "Ocamlfind is missing. Please install it."
@@ -24,19 +25,32 @@ check_package()
   fi
 }
 
-cat <<END
-Merlin configuration
---------------------
+usage()
+{
+    cat <<END
+\`configure' configures your Merlin installation.
+
+The options available for better control are as follow:
+
+    --bindir <path>     where to install merlin's executable
+                        default: /usr/local/bin
+
+    --sharedir <path>   where the different editor modes will be installed
+                        default: /usr/local/share
+
+    --prefix <path>     when given, bindir will be set to '<path>/bin' and
+                        sharedir to '<path>/share'
+
+    --stdlib <path>     tells merlin where to look for the standard library
+                        files.
+                        This can be overriden at runtime by setting the
+                        'CAMLLIB' environment variable.
+                        default: `ocamlfind printconf stdlib`
+
+    --with-bin-annot    compiles merlin with '--bin-annot', useful if you plan
+                        to work on merlin itself.
 END
-
-NOSEXP=0
-check_package EXIT findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
-check_package EXIT yojson "Install yojson"
-check_package EXIT menhirLib "Please install menhir."
-check_package NOSEXP sexplib "Sexplib missing; sexp protocol disabled."
-STDLIB_DIR=$(ocamlfind printconf stdlib)
-
-WITH_BIN_ANNOT=""
+}
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -59,9 +73,25 @@ while [ -n "$1" ]; do
       ;;
     --with-bin-annot)
       WITH_BIN_ANNOT="-cflags -bin-annot"
+      ;;
+    --help|-help|-h)
+      usage
+      exit 0
   esac
   shift 1
 done
+
+cat <<END
+Merlin configuration
+--------------------
+END
+
+NOSEXP=0
+check_package EXIT findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
+check_package EXIT yojson "Install yojson"
+check_package EXIT menhirLib "Please install menhir."
+check_package NOSEXP sexplib "Sexplib missing; sexp protocol disabled."
+STDLIB_DIR=$(ocamlfind printconf stdlib)
 
 cat <<END
 
@@ -75,6 +105,7 @@ Will install:
 To customize directories, use:
   ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--stdlib <stdlibdir>]
 
+For more informations rerun with --help.
 END
 
 if [ -d "$STDLIB_DIR" ]; then
