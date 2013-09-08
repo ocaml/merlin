@@ -64,7 +64,8 @@ The default configuration can be seen in:
     <SHARE_DIR>/ocamlmerlin/vim/plugin/merlin.vim  
 
 After adding merlin to vim runtime path, you will probably want to run
-:Helptags to register merlin documentation inside vim.
+`:helptags <SHARE_DIR>/ocamlmerlin/vim/doc` to register merlin documentation
+inside vim.
 
 Now you may be interested by *Features and interaction with other plugins*,
 *Merlin project* and *Extensions* sections.
