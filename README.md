@@ -146,25 +146,15 @@ much as possible to contain the point.
 
 Main keybindings:
 
-- `C-c C-t` (`merlin-magic-show-type`) shows the type of the expression
-  underpoint. To do so, it tries to compile the current phrase and
-  locate the leaf of the typedtree containing the current position: 
+- `C-c C-t` (`merlin-magic-show-type`) shows the type of the
+  expression underpoint. To do so, it tries to compile the current
+  phrase and locate the leaf of the typedtree containing the current
+  position. If it is not found, it tries other heuristic to display a type.
 
-  - if it is found, it prints the type of this leaf. Further calls to
-    `C-c C-t` will print the types of bigger expressions enclosing the
-    position ("go up" in the AST). (`C-u C-c C-t` will go down). For
-    instance if you have:
-    
-        List.map (fun n -> n + 1) [1; 2; 3]
-    
-    and your cursor is on the `n`, then successive calls to `C-c C-t`
-    will print (in this order): `int` (`n`), `int` (`n+1`), `int ->
-    int` (`fun n -> n + 1`), and `int list` (the whole statement)
-
-  - if it is not possible (the current phrase cannot be made to
-    compile), then an approximation is tried to type the expression
-    out of context.
-
+  If the typedtree is found, futher calls to `C-up` and `C-down` will
+  allow you to go up and down in the typedtree printing type of bigger
+  / smaller expressions.
+  
   Moreover, if you use a prefix argument, merlin-mode will try to type the region.
 
 - `C-c C-t` (`merlin-to-point`) will update the locked zone to the current position and report all the errors and warnings found.
@@ -186,9 +176,9 @@ Main keybindings:
 
 - `C-c r` (`merlin-restart-process`) restarts merlin process (useful when hung)
 
-- `C-c C-n` (`merlin-next-phrase`) moves the point to the beginning of the next phrase
+- `C-c C-n` or `C-up` (`merlin-next-phrase`) moves the point to the beginning of the next phrase
 
-- `C-c C-p` (`merlin-prev-phrase`) moves the point to the beginning of the previous phrase
+- `C-c C-p` or `C-down` (`merlin-prev-phrase`) moves the point to the beginning of the previous phrase
 
 - `C-c C-l` (`merlin-locate`) jumps to the definition of the ident near the point.
 
