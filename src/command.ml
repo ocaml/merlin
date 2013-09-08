@@ -144,6 +144,8 @@ let track_verbosity =
 
 let location {steps} = Outline.location (History.focused steps).outlines
 let position state = (location state).Location.loc_end
+let new_step outline steps =
+  History.insert (State.step (History.focused steps) outline) steps
 
 let dispatch (i,o : IO.io) (state : state) = 
   fun (type a) (request : a request) ->
@@ -194,24 +196,20 @@ let dispatch (i,o : IO.io) (state : state) =
       | None -> steps
     in
     let first steps =
-      let steps' = History.move (-1) state.steps in
+      let step = History.focused steps in
+      let tokens = Outline.tokens step.outlines in
+      if tokens = [] then loop steps tokens
+      else
       let steps, tokens =
-        if steps' == steps
-        then steps, []
-        else
-          let step' = History.focused steps' in
-          let tokens = Outline.tokens step'.outlines in
-          let next_tokens, outlines = onestep tokens steps' in
-          let tokens = match next_tokens with
-            | Some tokens -> tokens
-            | None -> []
-          in
-          let steps = 
-            if outlines = (History.focused steps).outlines
-            then steps
-            else History.insert (State.step step' outlines) steps'
-          in
-          steps, tokens
+        let steps' = History.move (-1) steps in
+        let tokens, outlines = onestep tokens steps' in
+        let tokens = Option.value ~default:[] tokens in
+        let steps = 
+          if outlines = (History.focused steps).outlines
+          then steps
+          else new_step outlines steps'
+        in
+        steps, tokens
       in
       loop steps tokens
     in
