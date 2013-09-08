@@ -1,0 +1,6 @@
+["tell","struct","module X = struct\n  List\nend\n"]
+["tell","end",null]
+["seek","before",{"line":2,"col":0}]
+["tell","struct","\n  include List\nend\n"]
+["tell","end",null]
+["errors"]
