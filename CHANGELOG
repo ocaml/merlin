@@ -1,3 +1,22 @@
+merlin 1.4.0rc0
+============
+
+  backend:
+    - lazy processing of open directives makes merlin much faster
+    - simplified buffer management
+    - tweak signal handling to improve windows compatibility
+    - track verbosity of query: repeated queries are considered more "verbose"
+    - type expansion: expand type aliases for verbose query
+    - add support for OUnit-like Benchmark extension
+    - more tolerant type checker, to provide completion on ill-typed
+      expressions
+    - proper version reporting with git revision
+    - refactored logging subsystem
+    - add support "val constructs" in implementation: report errors but add
+      definition to current environment
+    - add FLG, EXT and PRJ in .merlin
+    - "locate" command now works in much more situations
+  
 merlin 1.3.1
 ============
 

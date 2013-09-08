@@ -24,13 +24,6 @@ If you don't get any error in step above:
 
     $ make install 
 
-Installation from git
----------------------
-
-Don't forget to checkout submodules after pulling/cloning:
-
-    $ git submodule init
-    $ git submodule update
 
 Installing Merlin with opam
 ===========================
@@ -42,6 +35,19 @@ Then, just do :
 
     $ opam install merlin
 
+
+Share directory, \<SHARE\_DIR\>
+=============================
+
+In the rest of the document, \<SHARE\_DIR\> refers to the directory where merlin
+data files are installed.
+
+It will usually be:
+- "/usr/local/share" if you used manual configuration merlin
+- "<prefix>/share" if you explicitly specified a prefix when configuring merlin
+- printed by the command `opam config var share`, if you used opam
+
+
 Setting-up vim
 ==============
 
@@ -50,12 +56,15 @@ Makes sure that ocamlmerlin binary can be found in PATH.
 The only setup needed is to have the following directories in
 vim runtime path (append this to your .vimrc):
 
-    :set rtp+=$SHARE_DIR/ocamlmerlin/vim
-    :set rtp+=$SHARE_DIR/ocamlmerlin/vimbufsync
+    :set rtp+=<SHARE_DIR>/ocamlmerlin/vim
+    :set rtp+=<SHARE_DIR>/ocamlmerlin/vimbufsync
 
 The default configuration can be seen in:  
 
-    $SHARE_DIR/ocamlmerlin/vim/plugin/merlin.vim  
+    <SHARE_DIR>/ocamlmerlin/vim/plugin/merlin.vim  
+
+After adding merlin to vim runtime path, you will probably want to run
+:Helptags to register merlin documentation inside vim.
 
 Now you may be interested by *Features and interaction with other plugins*,
 *Merlin project* and *Extensions* sections.
@@ -75,7 +84,7 @@ It also lists, and explain, all the available commands.
 Misc: description of plugin's files
 -----------------------------------
 
-- $SHARE\_DIR/ocamlmerlin/vim -- main vim plugin directory
+- \<SHARE\_DIR\>/ocamlmerlin/vim -- main vim plugin directory
   - plugin/merlin.vim -- sample configuration
   - autoload/
     - merlin.vim   -- main vim script
@@ -86,7 +95,7 @@ Misc: description of plugin's files
                       -- set g:syntastic_ocaml_checkers = ['merlin']  
                       --  or g:syntastic_omlet_checkers = ['merlin']
 
-- $SHARE\_DIR/ocamlmerlin/vimbufsync  
+- \<SHARE\_DIR\>/ocamlmerlin/vimbufsync  
               -- library needed by merlin vim mode to keep buffer synchronized
 
 
@@ -96,7 +105,7 @@ Upgrading vim plugin from merlin 1.0
 Merlin plugin now relies on another vim helper called vimbufsync.
 If you installed from opam and/or archive, just make sure that vimbufsync is in vim runtime path:
 
-    :set rtp+=$SHARE_DIR/ocamlmerlin/vimbufsync
+    :set rtp+=<SHARE_DIR>/ocamlmerlin/vimbufsync
 
 Emacs interface
 ===============
@@ -109,7 +118,7 @@ To get it working you only to load the file `emacs/merlin.el' of the distributio
 If you installed through opam, a good thing to do is:
 
     
-    (add-to-list 'load-path "$SHARE_DIR/emacs/site-lisp/")
+    (add-to-list 'load-path "<SHARE_DIR>/emacs/site-lisp/")
     (require 'merlin)
 
 
