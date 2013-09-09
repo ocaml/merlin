@@ -59,7 +59,7 @@ module type S = sig
            -> t -> string list
 end
 
-module Make (Context : CONTEXT) : sig
+module Initial (Context : CONTEXT) : sig
   include S 
   val sig_step : t_sig -> Context.state -> 'a -> ('a,t_sig) step
   val str_step : t_str -> Context.state -> 'a -> ('a,t_str) step

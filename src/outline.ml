@@ -41,7 +41,7 @@ module Context = struct
   type sig_in_str_modtype = token list
   type str_in_module      = token list
 end
-module Spine = Spine.Make (Context)
+module Spine = Spine.Initial (Context)
 type t = Spine.t
 
 let parse_with (tokens : token zipper) ~parser ~lexer ~bufpos buf =

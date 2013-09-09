@@ -165,7 +165,7 @@ struct
 
 end
 
-module Make (Context : CONTEXT) :
+module Initial (Context : CONTEXT) :
 sig
   include S 
   val sig_step : t_sig -> Context.state -> 'a -> ('a,t_sig) step
