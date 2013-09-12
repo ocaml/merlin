@@ -29,7 +29,7 @@
 type token = Chunk_parser.token Fake_lexer.token
 
 module Context : sig
-  type state = exn list * Location.t
+  type state = exn list * Location.t * token list
 
   type sig_item = token list
   type str_item = token list

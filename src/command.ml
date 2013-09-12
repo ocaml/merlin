@@ -189,8 +189,7 @@ let dispatch (i,o : IO.io) (state : state) =
     in
     let rec loop steps tokens =
       let next_tokens, outlines = onestep tokens steps in
-      let step  = History.focused steps in
-      let steps = History.insert (State.step step outlines) steps in
+      let steps = new_step outlines steps in
       match next_tokens with
       | Some tokens -> loop steps tokens
       | None -> steps
@@ -204,11 +203,7 @@ let dispatch (i,o : IO.io) (state : state) =
         let steps' = History.move (-1) steps in
         let tokens, outlines = onestep tokens steps' in
         let tokens = Option.value ~default:[] tokens in
-        let steps = 
-          if outlines = (History.focused steps).outlines
-          then steps
-          else new_step outlines steps'
-        in
+        let steps = new_step outlines steps' in
         steps, tokens
       in
       loop steps tokens
