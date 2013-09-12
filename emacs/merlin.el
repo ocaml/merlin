@@ -258,7 +258,7 @@ If SAME-BUFFER-FORCE is non-nil, create a new window even if it is the same buff
 An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
     (skip-chars-backward "[a-z_0-9A-Z`.]")
-    (if (looking-at "[a-z_0-9A-Z`.]+")
+    (if (looking-at "[a-z_0-9A-Z`.]?[a-zA-Z0-9]")
         (cons (point) (match-end 0)) ; returns the bounds
       nil))) ; no atom at point
 
