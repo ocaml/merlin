@@ -292,8 +292,10 @@ function! merlin#Register()
 endfunction
 
 function! merlin#LoadProject()
-  py merlin.send_command("cd",vim.eval("expand('%:p:h')"))
-  py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
+  if isdirectory(expand('%:p:h'))
+    py merlin.send_command("cd",vim.eval("expand('%:p:h')"))
+    py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
+  endif
 endfunction
 
 function! merlin#EchoDotMerlin()
