@@ -485,6 +485,24 @@ let dispatch (i,o : IO.io) (state : state) =
     state, `List (List.map ~f:(fun s -> `String s)
                     (Outline.Spine.dump outlines
                        ~sig_item:print_item ~str_item:print_item))
+  | (Dump `History : a request) ->
+    state, 
+    let entry s =
+      let {Location. loc_start; loc_end} = Outline.location s.outlines in
+      let l1,c1 = Misc.split_pos loc_start in
+      let l2,c2 = Misc.split_pos loc_end   in
+      let tokens = Outline.tokens s.outlines in
+      let tokens = List.map (fun (tok,_,_) ->
+          `String (Chunk_parser_utils.token_to_string tok)) tokens
+      in
+      `List [`String (Printf.sprintf "%d:%d-%d:%d" l1 c1 l2 c2); `List tokens]
+    in
+    let rec aux acc = function
+      | History.One x -> entry x :: acc
+      | History.More (x,xs) ->  aux (entry x :: acc) xs
+    in
+    `List (aux [] (History.head state.steps))
+    
 
   | (Dump `Exn : a request) ->
     let exns = State.exns state in

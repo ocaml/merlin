@@ -47,7 +47,7 @@ type _ request =
   | Errors 
     :  exn list request 
   | Dump 
-    :  [`Env of position option|`Sig|`Chunks|`Tree|`Outline|`Exn]
+    :  [`Env of position option|`Sig|`Chunks|`Tree|`Outline|`Exn|`History]
     -> Json.json request
   | Which_path
     :  string
