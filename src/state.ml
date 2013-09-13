@@ -167,9 +167,34 @@ let node_at state pos_cursor =
     let types  = Typer.update chunks   (Some step.types)  in
     Browse.({ dummy with env = Typer.env types })
 
-let local_modules state =
+let local_modules_at state pos_cursor =
   let step = History.focused state.steps in
-  Chunk.local_modules step.chunks
+  let cmp o = Location.compare_pos pos_cursor (Outline.location o) in
+  let outlines =
+    let rec aux o =
+      match Outline.Spine.previous o with
+      | Some o' when cmp o < 0 -> aux o'
+      | Some _ | None -> o
+    in
+    aux step.outlines
+  in
+  let chunks = Chunk.update outlines (Some step.chunks) in
+  Chunk.local_modules chunks
+
+let str_items_before state pos_cursor =
+  let step = History.focused state.steps in
+  let cmp o = Location.compare_pos pos_cursor (Outline.location o) in
+  let outlines =
+    let rec aux o =
+      match Outline.Spine.previous o with
+      | Some o' when cmp o < 0 -> aux o'
+      | Some _ | None -> o
+    in
+    aux step.outlines
+  in
+  let chunks = Chunk.update outlines (Some step.chunks) in
+  let types  = Typer.update chunks (Some step.types) in
+  Typer.trees types
 
 (* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
 let exns state =
@@ -425,12 +450,13 @@ let node_complete node prefix =
     with Not_found -> []
   end
 
-and locate node path_str local_modules =
+and locate defs node path_str local_modules =
   let split_loc {Location. txt; loc} = txt, loc in
   let local_modules = List.map split_loc local_modules in
   match Track_definition.from_string
       ~sources:(!source_path)
       ~env:(node.Browse.env)
+      ~local_defs:defs
       ~local_modules
       path_str
   with

@@ -63,8 +63,11 @@ val node_at : t -> Lexing.position -> Browse.t
 val node_complete : Browse.t -> string -> Protocol.completion list
 val find_method : Env.t -> string -> Types.type_expr -> Types.type_expr option
 
-val local_modules : t -> string Location.loc list
+val local_modules_at : t -> Lexing.position -> string Location.loc list
 
-val locate : Browse.t -> string -> string Location.loc list -> string Location.loc option
+val str_items_before : t -> Lexing.position -> Typedtree.structure Asttypes.loc list
+
+val locate : Typedtree.structure Location.loc list -> Browse.t -> string ->
+  string Location.loc list -> string Location.loc option
 
 val exns : t -> exn list

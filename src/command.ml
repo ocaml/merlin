@@ -291,14 +291,26 @@ let dispatch (i,o : IO.io) (state : state) =
     state, List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
-    let node, local_modules =
+    let node, local_modules, local_defs =
       match opt_pos with
-      | None -> Browse.({ dummy with env = Typer.env step.types }), []
-      | Some pos -> State.node_at state pos, State.local_modules state
+      | None -> Browse.({ dummy with env = Typer.env step.types }), [], []
+      | Some pos -> (
+          State.node_at state pos,
+          List.map (State.local_modules_at state pos)
+            ~f:(fun { Location. txt ; loc } -> txt, loc),
+          State.str_items_before state pos
+        )
     in
-    begin match State.locate node path local_modules with
+    begin match
+      Track_definition.from_string
+        ~sources:(!State.source_path)
+        ~env:(node.Browse.env)
+        ~local_defs
+        ~local_modules
+        path
+    with
     | None -> state, None
-    | Some {Location. txt; loc} ->
+    | Some (txt, loc) ->
       let pos = loc.Location.loc_start in
       state, Some (txt, pos)
     end

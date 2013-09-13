@@ -187,6 +187,17 @@ and from_path' ?fallback =
 
 and from_path path = from_path' (path_to_list path)
 
+let rec find_includer ~name = function
+  | [] -> None
+  | str :: strs ->
+    let open Typedtree in
+    match str.Asttypes.txt.str_items with
+    | [ { str_desc = Tstr_include (_, idents) ; str_loc }]
+      when List.exists idents ~f:(fun i -> Ident.name i = name) ->
+      Some str_loc
+    | _ ->
+      find_includer ~name strs
+
 let path_and_loc_from_cstr desc env =
   let open Types in
   match desc.cstr_tag with
@@ -206,7 +217,7 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
-let from_string ~sources ~env ~local_modules path =
+let from_string ~sources ~env ~local_defs ~local_modules path =
   debug_log "looking for the source of '%s'" path ;
   sources_path := sources ;
   let ident, is_label = keep_suffix (Longident.parse path) in
@@ -250,10 +261,16 @@ let from_string ~sources ~env ~local_modules path =
       in
       Some (full_path, loc)
     else
-      Option.map (from_path path) ~f:(fun (loc, fallback_opt) ->
+      match find_includer ~name:(Ident.name (Path.head path)) local_defs with
+      | Some loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
-        full_path, loc
-      )
+        Some (full_path, loc)
+      | None ->
+        Option.map (from_path path) ~f:(fun (loc, fallback_opt) ->
+          let fname = loc.Location.loc_start.Lexing.pos_fname in
+          let full_path = find_file ~ext:".ml" fname in
+          full_path, loc
+        )
   with Not_found ->
     None
