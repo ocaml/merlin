@@ -53,17 +53,17 @@ module Path_utils = struct
   let default_build_paths =
     let open Config in
     lazy ("." :: List.rev !Clflags.include_dirs @ !load_path)
-  
-  let build  = Config.load_path,  default_build_paths 
+
+  let build  = Config.load_path,  default_build_paths
   let source = State.source_path, lazy ["."]
 
   let set_default_path () =
     Config.load_path := Lazy.force default_build_paths
-  
+
   let modify ~action ~var ~kind ?cwd path =
     let r,_= match var with `Source -> source | `Build -> build in
     let d =
-      if kind = `Relative 
+      if kind = `Relative
       then path
       else Misc.canonicalize_filename ?cwd
             (Misc.expand_directory Config.standard_library path)
@@ -103,7 +103,7 @@ module Type_utils = struct
            Printtyp.modtype ppf m
           with Not_found ->
           try let p, m = Env.lookup_modtype longident.Asttypes.txt env in
-            VPrinttyp.modtype_declaration (Ident.create (Path.last p)) ppf 
+            VPrinttyp.modtype_declaration (Ident.create (Path.last p)) ppf
               (State.verbose_sig env m)
           with Not_found ->
             ()
@@ -126,7 +126,7 @@ let track_verbosity =
   let h = Hashtbl.create 21 in
   fun st a_request ->
   let tag = tag a_request in
-  let cell = 
+  let cell =
     try Hashtbl.find h tag
     with Not_found ->
       let cell = ref (Misc.Sync.none (),a_request) in
@@ -136,7 +136,7 @@ let track_verbosity =
   let sync, a_request' = !cell in
   let steps' = History.focused (History.move (-2) st.steps) in
   let action =
-    if a_request = a_request' && Sync.same steps' sync 
+    if a_request = a_request' && Sync.same steps' sync
     then `Incr
     else (cell := (Sync.make steps', a_request); `Clear)
   in
@@ -147,7 +147,7 @@ let position state = (location state).Location.loc_end
 let new_step outline steps =
   History.insert (State.step (History.focused steps) outline) steps
 
-let dispatch (i,o : IO.io) (state : state) = 
+let dispatch (i,o : IO.io) (state : state) =
   fun (type a) (request : a request) ->
   track_verbosity state (Request request);
   let step = History.focused state.steps in
@@ -367,7 +367,7 @@ let dispatch (i,o : IO.io) (state : state) =
       | `Prev    -> -1
       | `Current -> 0
     in
-    let move steps = 
+    let move steps =
       if count <> 0 && steps = state.steps
       then None
       else Some steps
@@ -385,7 +385,7 @@ let dispatch (i,o : IO.io) (state : state) =
     state,
     begin match move (steps_at_pos state.steps pos) with
     | None -> None
-    | Some steps -> 
+    | Some steps ->
       Some (Outline.location (History.focused steps).outlines)
     end
 
@@ -462,7 +462,7 @@ let dispatch (i,o : IO.io) (state : state) =
       state, `List (List.map ~f:aux sg)
 
   | (Dump `Chunks : a request) ->
-    let pr_item_desc items = List.map 
+    let pr_item_desc items = List.map
         (fun s -> `String s)
         (Chunk.Spine.dump items)
     in
@@ -473,10 +473,10 @@ let dispatch (i,o : IO.io) (state : state) =
     state, Browse_misc.dump_ts structures
 
   | (Dump `Outline : a request) ->
-    let print_item label _ tokens= 
+    let print_item label _ tokens=
       let tokens =
-        String.concat " " 
-          (List.map tokens ~f:(fun (t,_,_) -> 
+        String.concat " "
+          (List.map tokens ~f:(fun (t,_,_) ->
             (Chunk_parser_utils.token_to_string t)))
       in
       label ^ "(" ^ tokens ^ ")"
@@ -486,7 +486,7 @@ let dispatch (i,o : IO.io) (state : state) =
                     (Outline.Spine.dump outlines
                        ~sig_item:print_item ~str_item:print_item))
   | (Dump `History : a request) ->
-    state, 
+    state,
     let entry s =
       let {Location. loc_start; loc_end} = Outline.location s.outlines in
       let l1,c1 = Misc.split_pos loc_start in
@@ -502,7 +502,7 @@ let dispatch (i,o : IO.io) (state : state) =
       | History.More (x,xs) ->  aux (entry x :: acc) xs
     in
     `List (aux [] (History.head state.steps))
-    
+
 
   | (Dump `Exn : a request) ->
     let exns = State.exns state in
@@ -540,10 +540,10 @@ let dispatch (i,o : IO.io) (state : state) =
     List.iter extensions ~f:(Extensions_utils.set_extension ~enabled) ;
     state, ()
 
-  | (Path (var,kind,action,pathes) : a request) -> 
+  | (Path (var,kind,action,pathes) : a request) ->
     List.iter ~f:(Path_utils.modify ~action ~kind ~var) pathes;
     State.reset_global_modules ();
-    state, true 
+    state, true
 
   | (Path_list `Build : a request) ->
     state, !(fst Path_utils.build)
@@ -561,10 +561,10 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Project_load (cmd,path) : a request) ->
     let f = match cmd with
       | `File -> Dot_merlin.read
-      | `Find -> Dot_merlin.find 
+      | `Find -> Dot_merlin.find
     in
     let dot_merlins = f path in
-    let path_modify action var ~cwd path = 
+    let path_modify action var ~cwd path =
       Path_utils.modify ~action ~var ~kind:`Absolute ~cwd path in
     state, (Dot_merlin.exec ~path_modify ~load_packages dot_merlins)
 
