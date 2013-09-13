@@ -39,6 +39,8 @@ type 'a t = {head: 'a non_empty; tail: 'a list}
 (* New history *)
 let initial x = {head = One x; tail = []}
 
+let head x = x.head
+
 (** Element to the left of the cursor
   * (if last operation was an insertion, the inserted value is returned)
   *)
