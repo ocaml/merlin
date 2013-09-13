@@ -122,38 +122,37 @@ let parse_str ~exns ~location ~lexbuf zipper t =
           lexbuf)
   with
   | exns', Inr (zipper, _, ([] | [Chunk_parser.EOF,_,_])) -> 
-    zipper, t
+    zipper, None
   | exns', Inr (zipper, Outline_utils.Unterminated, tokens) -> 
-    zipper, t
+    zipper, None
   | exns', Inr (zipper, (Outline_utils.Definition | 
                          Outline_utils.Syntax_error _), tokens) -> 
     zipper,
-    Spine.(Str_item (str_step t (new_state exns' tokens) tokens))
+    Some Spine.(Str_item (str_step t (new_state exns' tokens) tokens))
   | exns', Inr (zipper, Outline_utils.Enter_module, tokens) ->
     zipper,
-    Spine.(Str_in_module (str_step t (new_state exns' tokens) tokens))
+    Some Spine.(Str_in_module (str_step t (new_state exns' tokens) tokens))
   | exns', Inr (zipper, Outline_utils.Leave_module, tokens) ->
     let rec aux acc = function
       | Spine.Str_root step ->
         Spine.(Str_item (str_step t (Malformed_module tokens :: exns, location tokens, tokens) []))
       | Spine.Str_in_module step ->
         let exns, loc, _ = Spine.state step in
-        let loc = Location.union loc (location tokens) in
         let tokens' = Spine.value step @ acc in
         let parent = Spine.parent step in
-        Spine.Str_item (Spine.str_step parent (exns, loc, tokens) tokens')
+        Spine.Str_item (Spine.str_step parent (exns, location tokens, tokens) tokens')
       | Spine.Str_item step ->
         let tokens = Spine.value step @ acc in
         let parent = Spine.parent step in
         aux tokens parent
     in
     zipper,
-    aux tokens t
+    Some (aux tokens t)
   | _, Inl (Failure _ as exn) ->
     raise exn
   | exns', Inl exn ->
     zipper,
-    Spine.(Str_item (str_step t (exn :: exns, location [], []) []))
+    Some Spine.(Str_item (str_step t (exn :: exns, location [], []) []))
 
 let exns t = fst3 (Spine.get_state t)
 let location t = snd3 (Spine.get_state t)
@@ -179,7 +178,7 @@ let parse tokens t lexbuf =
       parse_str ~exns ~lexbuf ~location 
         (Zipper.of_list tokens) t_str
     in
-    tokens, Spine.Str t_str'
+    tokens, may_map (fun x -> Spine.Str x) t_str'
 
 let init_loc pos_fname =
   let pos = {(Misc.make_pos (1,0)) with Lexing.pos_fname} in

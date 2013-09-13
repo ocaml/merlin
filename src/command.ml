@@ -187,28 +187,21 @@ let dispatch (i,o : IO.io) (state : state) =
       else Some tokens', outline
     in
     let rec loop steps tokens =
-      let next_tokens, outlines = onestep tokens steps in
-      let steps = new_step outlines steps in
+      let next_tokens, outline = onestep tokens steps in
+      let steps = match outline with
+        | None -> steps
+        | Some outline -> new_step outline steps
+      in
       match next_tokens with
       | Some tokens -> loop steps tokens
       | None -> steps
     in
     let first steps =
-      let step = History.focused steps in
-      let tokens = Outline.tokens step.outlines in
-      if tokens = [] then loop steps tokens
-      else
-      let steps, tokens =
-        let steps' = History.move (-1) steps in
-        let tokens, outlines = onestep tokens steps' in
-        let tokens = Option.value ~default:[] tokens in
-        let steps = new_step outlines steps' in
-        steps, tokens
-      in
-      loop steps tokens
+      match Outline.tokens (History.focused steps).outlines with
+      | [] -> loop steps []
+      | tokens -> loop (History.move (-1) steps) tokens
     in
-    let steps = first state.steps in
-    {steps}, true
+    {steps = first state.steps}, true
   end
   | (Tell _ : a request) -> IO.invalid_arguments ()
 
