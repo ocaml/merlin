@@ -93,20 +93,6 @@ let rec browse_structure browsable modules =
   find (List.concat items)
 
 and check_item modules item try_next =
-  let rec aux ~fallback mod_item path =
-    let open Browse in
-    match mod_item with
-    | [ { context = Module (Alias path', _) } ] ->
-      let full_path = (path_to_list path') @ path in
-      begin match from_path' ~fallback full_path with
-      | None -> None
-      | Some (v, _) -> Some v
-      end
-    | [ { context = Module (Structure, _) ; nodes } ] ->
-      browse_structure (Lazy.force nodes) path
-    | otherwise ->
-      browse_structure otherwise path
-  in
   let rec get_loc ~name item =
     match item.Browse.context with
     | Browse.Pattern (Some id, _)
