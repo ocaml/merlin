@@ -190,3 +190,8 @@ let initial_sig fname =
 
 let initial_str fname =
   Spine.(Str (Str_root (initial ([], init_loc fname, []))))
+
+let invalid = function
+  | Spine.Sig (Spine.Sig_item step) -> Spine.value step = []
+  | Spine.Str (Spine.Str_item step) -> Spine.value step = []
+  | _ -> false

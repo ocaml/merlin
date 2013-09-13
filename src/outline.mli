@@ -52,3 +52,5 @@ val initial_sig : string -> t
 val initial_str : string -> t
 
 val tokens : t -> token list
+
+val invalid : t -> bool
