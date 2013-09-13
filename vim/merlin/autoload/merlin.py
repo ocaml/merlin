@@ -217,6 +217,8 @@ def command_locate(path, line, col):
     else:
       curr_fpath = vim.current.buffer.name
       fpath = pos_or_err['file']
+      cwd = os.path.dirname(curr_fpath)
+      fpath = os.path.join(cwd, fpath)
       l = pos_or_err['pos']['line']
       c = pos_or_err['pos']['col']
       if curr_fpath != fpath:
