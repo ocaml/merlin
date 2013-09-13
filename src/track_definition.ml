@@ -61,13 +61,6 @@ module Utils = struct
       end
     | otherwise -> otherwise, false
 
-  let try_split_lident lid =
-    let open Longident in
-    match lid with
-    | Lident _ -> None
-    | Ldot (t, s) -> Some (t, Lident s)
-    | Lapply _ -> invalid_arg "Lapply"
-
   let debug_log ?prefix x = Printf.ksprintf (Logger.log `locate ?prefix) x
   let error_log x = Printf.ksprintf (Logger.error `locate) x
 end
