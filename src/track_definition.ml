@@ -93,12 +93,15 @@ let rec browse_structure browsable modules =
   find (List.concat items)
 
 and check_item modules item try_next =
-  let rec aux mod_item path =
+  let rec aux ~fallback mod_item path =
     let open Browse in
     match mod_item with
     | [ { context = Module (Alias path', _) } ] ->
       let full_path = (path_to_list path') @ path in
-      from_path' full_path
+      begin match from_path' ~fallback full_path with
+      | None -> None
+      | Some (v, _) -> Some v
+      end
     | [ { context = Module (Structure, _) ; nodes } ] ->
       browse_structure (Lazy.force nodes) path
     | otherwise ->
@@ -115,7 +118,7 @@ and check_item modules item try_next =
       Some item.Browse.loc
     | Browse.Module (Browse.Include ids, _)
       when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
-      aux (Lazy.force item.Browse.nodes) [ name ]
+      aux ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) [ name ]
     | _ -> try_next ()
   in
   let get_on_track ~name item =
@@ -139,7 +142,7 @@ and check_item modules item try_next =
     with
     | None -> try_next ()
     | Some path ->
-      aux (Lazy.force item.Browse.nodes) path
+      aux ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) path
     end
 
 and browse_cmts ~root modules =
@@ -160,14 +163,27 @@ and browse_cmts ~root modules =
     end
   | _ -> None (* TODO? *)
 
-and from_path' = function
+and from_path' ?fallback =
+  let recover = function
+    | None ->
+      begin match fallback with
+      | None -> None
+      | Some default -> Some (default, None)
+      end
+    | Some v ->
+      Some (v, fallback)
+  in
+  function
   | [] -> invalid_arg "empty path"
   | [ fname ] ->
     let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
-    Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
+    Some ({ Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }, fallback)
   | fname :: modules ->
-    let cmt_file = find_file fname in
-    browse_cmts ~root:cmt_file modules
+    try
+      let cmt_file = find_file fname in
+      recover (browse_cmts ~root:cmt_file modules)
+    with Not_found ->
+      recover None
 
 and from_path path = from_path' (path_to_list path)
 
@@ -196,10 +212,10 @@ let from_string ~sources ~env ~local_modules path =
   let ident, is_label = keep_suffix (Longident.parse path) in
   try
     let path, loc =
-      if is_label then (
+      if is_label then
         let _, label_desc = Env.lookup_label ident env in
         path_and_loc_from_label label_desc env
-      ) else (
+      else (
         try
           let path, val_desc = Env.lookup_value ident env in
           path, val_desc.Types.val_loc
@@ -234,7 +250,7 @@ let from_string ~sources ~env ~local_modules path =
       in
       Some (full_path, loc)
     else
-      Option.map (from_path path) ~f:(fun loc ->
+      Option.map (from_path path) ~f:(fun (loc, fallback_opt) ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
         full_path, loc
