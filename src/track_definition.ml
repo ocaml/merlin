@@ -118,7 +118,7 @@ and check_item modules item try_next =
       Some item.Browse.loc
     | Browse.Module (Browse.Include ids, _)
       when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
-      aux ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) [ name ]
+      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) [ name ]
     | _ -> try_next ()
   in
   let get_on_track ~name item =
@@ -142,7 +142,7 @@ and check_item modules item try_next =
     with
     | None -> try_next ()
     | Some path ->
-      aux ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) path
+      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) path
     end
 
 and browse_cmts ~root modules =
@@ -185,18 +185,34 @@ and from_path' ?fallback =
     with Not_found ->
       recover None
 
-and from_path path = from_path' (path_to_list path)
+and resolve_mod_alias ~fallback mod_item path =
+  let open Browse in
+  match mod_item with
+  | [ { context = Module (Alias path', _) } ] ->
+    let full_path = (path_to_list path') @ path in
+    begin match from_path' ~fallback full_path with
+    | None -> None
+    | Some (v, _) -> Some v
+    end
+  | [ { context = Module (Structure, _) ; nodes } ] ->
+    browse_structure (Lazy.force nodes) path
+  | otherwise ->
+    browse_structure otherwise path
 
-let rec find_includer ~name = function
+let from_path path = from_path' (path_to_list path)
+
+let rec find_includer ~path = function
   | [] -> None
   | str :: strs ->
     let open Typedtree in
-    match str.Asttypes.txt.str_items with
+    let name = Ident.name (Path.head path) in
+    let str= str.Asttypes.txt in
+    match str.str_items with
     | [ { str_desc = Tstr_include (_, idents) ; str_loc }]
       when List.exists idents ~f:(fun i -> Ident.name i = name) ->
-      Some str_loc
+      resolve_mod_alias ~fallback:str_loc (Browse.structure str) (path_to_list path)
     | _ ->
-      find_includer ~name strs
+      find_includer ~path strs
 
 let path_and_loc_from_cstr desc env =
   let open Types in
@@ -261,16 +277,15 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
       in
       Some (full_path, loc)
     else
-      match find_includer ~name:(Ident.name (Path.head path)) local_defs with
-      | Some loc ->
+      let opt =
+        match find_includer ~path local_defs with
+        | None -> from_path path
+        | Some res -> Some (res, None)
+      in
+      Option.map opt ~f:(fun (loc, fallback_opt) ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
-        Some (full_path, loc)
-      | None ->
-        Option.map (from_path path) ~f:(fun (loc, fallback_opt) ->
-          let fname = loc.Location.loc_start.Lexing.pos_fname in
-          let full_path = find_file ~ext:".ml" fname in
-          full_path, loc
-        )
+        full_path, loc
+      )
   with Not_found ->
     None
