@@ -323,6 +323,7 @@ let dispatch (i,o : IO.io) (state : state) =
     begin match State.locate node path local_modules with
     | None -> state, None
     | Some (file, loc) ->
+      Logger.log `locate (Printf.sprintf "--> %s" file) ;
       let pos = loc.Location.loc_start in
       state, Some (file, pos)
     end

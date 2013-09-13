@@ -4,6 +4,9 @@ let sources_path = ref []
 let cwd = ref ""
 
 module Utils = struct
+  let debug_log ?prefix x = Printf.ksprintf (Logger.log `locate ?prefix) x
+  let error_log x = Printf.ksprintf (Logger.error `locate) x
+
   let is_ghost { Location. loc_ghost } = loc_ghost = true
 
   let path_to_list p =
@@ -22,15 +25,24 @@ module Utils = struct
     let file = String.uncapitalize file in
     let fname = Misc.chop_extension_if_any (Filename.basename file) ^ ext in
     (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
-     * will most likely not be the one you want to edit.
-     * However, just using [find_in_path_uncap] won't work either when you have
-     * several ml files with the same name.
-     * Example: scheduler.ml and raw_scheduler.ml are present in both async_core
-     * and async_unix. (ofc. "std.ml" is a more common example.) *)
+       will most likely not be the one you want to edit.
+       However, just using [find_in_path_uncap] won't work either when you have
+       several ml files with the same name (which can only happen in presence of packed
+       modules).
+       Example: scheduler.ml and raw_scheduler.ml are present in both async_core
+       and async_unix. (ofc. "std.ml" is a more common example.)
+      
+       Note that [cwd] is set only when we have encountered a packed module, so in other
+       cases [abs_cmt_file] will be something like "/file.ext" which (hopefully) won't
+       exist. *)
     let abs_cmt_file = Printf.sprintf "%s/%s" !cwd fname in
     if Sys.file_exists abs_cmt_file then
       abs_cmt_file
     else
+      let () =
+        if !cwd <> "" then
+          debug_log "%s not found. looking in source/build path..." abs_cmt_file
+      in
       try Misc.find_in_path_uncap !sources_path fname
       with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
 
@@ -60,9 +72,6 @@ module Utils = struct
       | Some (t, is_label) -> Ldot (t, s), is_label
       end
     | otherwise -> otherwise, false
-
-  let debug_log ?prefix x = Printf.ksprintf (Logger.log `locate ?prefix) x
-  let error_log x = Printf.ksprintf (Logger.error `locate) x
 end
 
 include Utils
@@ -148,6 +157,7 @@ and browse_cmts ~root modules =
     | mod_name :: modules ->
       let file = List.find files ~f:(fun f -> file_path_to_mod_name f = mod_name) in
       cwd := Filename.dirname root ;
+      debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
       let cmt_file = find_file file in
       browse_cmts ~root:cmt_file modules
     end
