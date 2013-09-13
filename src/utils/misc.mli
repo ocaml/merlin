@@ -136,7 +136,9 @@ val ppf_to_string : ?width:int -> unit -> Format.formatter * (unit -> string)
 
         (* [lex_strings s f] makes a lexing buffer from the string [s]
          * (like a Lexer.from_string) and call [f] to refill the buffer *)
-val lex_strings : string -> (unit -> string) -> Lexing.lexbuf
+val lex_strings : ?position:Lexing.position -> string -> (unit -> string) -> Lexing.lexbuf
+
+val lex_move : Lexing.lexbuf -> Lexing.position -> unit
 
         (* [length_lessthan n l] returns
          *   Some (List.length l) if List.length l <= n

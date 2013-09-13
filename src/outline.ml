@@ -44,7 +44,7 @@ end
 module Spine = Spine.Initial (Context)
 type t = Spine.t
 
-let parse_with (tokens : token zipper) ~parser ~lexer ~bufpos buf =
+let parse_with (tokens : token zipper) ~parser ~lexer buf =
   let Zipper (_,origin,_) = tokens in
   let tokens' = ref tokens in
   let chunk_content tokens =
@@ -54,7 +54,7 @@ let parse_with (tokens : token zipper) ~parser ~lexer ~bufpos buf =
     (* Drop beginning of history *)
     next
   in
-  let lexer = Fake_lexer.wrap ~tokens:tokens' ~bufpos lexer in
+  let lexer = Fake_lexer.wrap ~tokens:tokens' lexer in
   try
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in
@@ -113,13 +113,13 @@ let parse_with (tokens : token zipper) ~parser ~lexer ~bufpos buf =
 
 exception Malformed_module of token list
 
-let parse_str ~bufpos ~exns ~location ~lexbuf zipper t =
+let parse_str ~exns ~location ~lexbuf zipper t =
   let new_state exns' tokens = (exns' @ exns, location tokens, tokens) in
   match Location.catch_warnings 
       (fun () -> parse_with zipper
           ~parser:Outline_parser.implementation
           ~lexer:Lexer.token
-          ~bufpos lexbuf)
+          lexbuf)
   with
   | exns', Inr (zipper, _, ([] | [Chunk_parser.EOF,_,_])) -> 
     zipper, t
@@ -159,7 +159,7 @@ let exns t = fst3 (Spine.get_state t)
 let location t = snd3 (Spine.get_state t)
 let tokens t = thd3 (Spine.get_state t)
 
-let parse ~bufpos tokens t lexbuf =
+let parse tokens t lexbuf =
   let exns = exns t in
   Outline_utils.reset ();
   let location = 
@@ -176,7 +176,7 @@ let parse ~bufpos tokens t lexbuf =
   | Spine.Sig _ -> failwith "TODO"
   | Spine.Str t_str -> 
     let Zipper (_,_,tokens), t_str' = 
-      parse_str ~bufpos ~exns ~lexbuf ~location 
+      parse_str ~exns ~lexbuf ~location 
         (Zipper.of_list tokens) t_str
     in
     tokens, Spine.Str t_str'

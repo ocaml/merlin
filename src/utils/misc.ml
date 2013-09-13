@@ -307,6 +307,16 @@ let lex_strings source refill =
       end
     end
 
+let lex_move buf p =
+  let open Lexing in
+  buf.lex_abs_pos <- (p.pos_cnum - buf.lex_curr_pos);
+  buf.lex_curr_p <- p
+
+let lex_strings ?position source refill =
+  let buf = lex_strings source refill in
+  may (lex_move buf) position;
+  buf
+
         (* [length_lessthan n l] returns
          *   Some (List.length l) if List.length l <= n
          *   None otherwise *)

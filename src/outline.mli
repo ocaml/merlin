@@ -43,8 +43,7 @@ type t = Spine.t
 
 exception Malformed_module of token list
 
-val parse : bufpos:Lexing.position ref ->
-  token list -> t -> Lexing.lexbuf -> token list * t
+val parse : token list -> t -> Lexing.lexbuf -> token list * t option
 
 val exns : t -> exn list
 val location : t -> Location.t

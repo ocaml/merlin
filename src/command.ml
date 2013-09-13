@@ -156,7 +156,7 @@ let dispatch (i,o : IO.io) (state : state) =
   begin
     Env.reset_missing_cmis ();
     let eod = ref false and eot = ref false in
-    let lexbuf = Misc.lex_strings source
+    let lexbuf = Misc.lex_strings source ~position:(position state)
       begin fun () ->
         if !eot then ""
         else try
@@ -171,11 +171,10 @@ let dispatch (i,o : IO.io) (state : state) =
           Stream.Failure -> IO.invalid_arguments ()
       end
     in
-    let bufpos = ref (position state) in
     let onestep tokens steps =
       let step = History.focused steps in
-      let tokens', outline = 
-        Outline.parse ~bufpos tokens step.outlines lexbuf in
+      let tokens', outline =
+        Outline.parse tokens step.outlines lexbuf in
       let stuck = tokens = tokens' in
       let tokens' =
         if stuck
