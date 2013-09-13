@@ -158,7 +158,7 @@ Main keybindings:
   
   Moreover, if you use a prefix argument, merlin-mode will try to type the region.
 
-- `C-c C-t` (`merlin-to-point`) will update the locked zone to the current position and report all the errors and warnings found.
+- `C-c <C-return>` (`merlin-to-point`) will update the locked zone to the current position and report all the errors and warnings found.
 
 - `C-c C-x` (`merlin-next-error`) will jump to the next error and display the error message
 
