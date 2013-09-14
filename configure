@@ -77,6 +77,7 @@ To customize directories, use:
 
 END
 
+ln -sf $PWD/src/ocaml_400 $PWD/src/ocaml
 if [ -d "$STDLIB_DIR" ]; then
   cat >Makefile.config <<END
 BIN_DIR=$BIN_DIR
