@@ -89,7 +89,8 @@ and structure_item_desc ~env = function
     List.map lst ~f:(fun (id,l,{ ci_type_decl }) ->
       singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env
     )
-  | Tstr_include (m,ids) -> [module_include ids m]
+  | Tstr_include (m,arg) -> 
+    [module_include (Merlin_types.include_idents arg) m]
 
 and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest } =
   let nodes = Option.map typ_manifest ~f:(fun c -> lazy [core_type c]) in
@@ -233,7 +234,7 @@ and module_include ids ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
   {
     loc = mod_loc ;
     env = mod_env ;
-    context = Module (Include [], mod_type) ;
+    context = Module (Include ids, mod_type) ;
     nodes = lazy [module_expr ?mod_info def] ;
   }
 

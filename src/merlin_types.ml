@@ -25,3 +25,5 @@ let erroneous_type_check te =
   | _ -> false
 
 let relax_typer = fluid false
+
+include Merlin_types_custom

@@ -194,8 +194,9 @@ let rec find_includer ~path = function
     let name = Ident.name (Path.head path) in
     let str= str.Asttypes.txt in
     match str.str_items with
-    | [ { str_desc = Tstr_include (_, idents) ; str_loc }]
-      when List.exists idents ~f:(fun i -> Ident.name i = name) ->
+    | [ { str_desc = Tstr_include (_, arg) ; str_loc }]
+      when List.exists (Merlin_types.include_idents arg)
+             ~f:(fun i -> Ident.name i = name) ->
       resolve_mod_alias ~fallback:str_loc (Browse.structure str) (path_to_list path)
     | _ ->
       find_includer ~path strs
@@ -226,7 +227,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
   try
     let path, loc =
       if is_label then
-        let _, label_desc = Env.lookup_label ident env in
+        let label_desc = Merlin_types.lookup_label ident env in
         path_and_loc_from_label label_desc env
       else (
         try
@@ -238,7 +239,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
           path, typ_decl.Types.type_loc
         with Not_found ->
         try
-          let _, cstr_desc = Env.lookup_constructor ident env in
+          let cstr_desc = Merlin_types.lookup_constructor ident env in
           path_and_loc_from_cstr cstr_desc env
         with Not_found ->
         try

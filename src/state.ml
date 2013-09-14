@@ -280,8 +280,11 @@ let rec methods_of_type env ?(acc=[]) type_expr =
 (* Propose completion from a particular node *)
 let node_complete node prefix =
   let {Browse.env} = node in
-  let fmt ~exact name path ty =
-    let ident = Ident.create (Path.last path) in
+  let fmt ~exact name ?path ty =
+    let ident = match path with
+      | Some path -> Ident.create (Path.last path)
+      | None -> Extensions_utils.ident
+    in
     let ppf, to_string = Misc.ppf_to_string () in
     let kind =
       match ty with
@@ -343,35 +346,35 @@ let node_complete node prefix =
       let compl = Env.fold_values
         (fun name path v compl ->
           if valid `Value name
-          then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl 
           else compl)
         path env compl
       in
-      let compl = Env.fold_constructors
-        (fun name path v compl ->
-          if valid `Cons name 
-          then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl 
-          else compl)
+      let compl = Merlin_types.fold_constructors
+        (fun name v compl ->
+           if valid `Cons name
+           then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
+           else compl)
         path env compl
       in
-      let compl = Env.fold_types
-        (fun name path v compl ->
+      let compl = Merlin_types.fold_types
+        (fun name path decl compl ->
           if valid `Typ name 
-          then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl 
           else compl)
         path env compl
       in
       let compl = Env.fold_modules
         (fun name path v compl ->
           if valid ~uident:true `Mod name 
-          then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl 
           else compl)
         path env compl
       in
       let compl = Env.fold_modtypes
         (fun name path v compl ->
           if valid ~uident:true `Mod name 
-          then (fmt ~exact:(name = prefix)  name path (`ModType v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl 
           else compl)
         path env compl
       in
@@ -397,9 +400,9 @@ let node_complete node prefix =
       | None -> raise exn (* clearly the hypothesis is wrong here *)
       | Some long_ident ->
         let path = keep_until_lowercase long_ident in
-        Env.fold_labels
-          (fun name path l compl ->
-            if valid `Label name then (fmt ~exact:(name = prefix) name path (`Label l)) :: compl else compl)
+        Merlin_types.fold_labels
+          (fun ({Types.lbl_name = name} as l) compl ->
+            if valid `Label name then (fmt ~exact:(name = prefix) name (`Label l)) :: compl else compl)
           path env compl
       end
   in
@@ -437,8 +440,8 @@ let node_complete node prefix =
           } in 
           match modname with
           | modname when modname = prefix && uniq (`Mod,modname) ->
-              (try let p, md = Env.lookup_module (Longident.Lident modname) env in
-                fmt ~exact:true modname p (`Mod md) :: compl
+              (try let path, md = Env.lookup_module (Longident.Lident modname) env in
+                fmt ~exact:true modname ~path (`Mod md) :: compl
               with Not_found -> default :: compl)
           | modname when Misc.has_prefix prefix modname && uniq (`Mod,modname) ->
             default :: compl
