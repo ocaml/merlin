@@ -1,3 +1,11 @@
 [submodule "vim/vimbufsync.git"]
 	path = vim/vimbufsync.git
 	url = git://github.com/def-lkb/vimbufsync.git
+[submodule "src/ocaml_401.git"]
+	path = src/ocaml_401.git
+	url = git://github.com/def-lkb/merlin-typers
+	branch = 4.01
+[submodule "src/ocaml_400.git"]
+	path = src/ocaml_400.git
+	url = git://github.com/def-lkb/merlin-typers
+	branch = 4.00
