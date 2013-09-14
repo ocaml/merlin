@@ -812,14 +812,11 @@ variable `merlin-cache')."
         (message "%s%s" (car ret) (cdr ret)))))
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
-  (save-excursion
-    (skip-syntax-backward "w_.")
-    (let ((start (point)))
-      (skip-syntax-forward "w_.")
-      (list start (point)
-            (apply-partially #'merlin-completion-table start)
+  (let ((bounds (bounds-of-thing-at-point 'ocamlatom)))
+    (list (car bounds) (cdr bounds)
+            (apply-partially #'merlin-completion-table (car bounds))
             . (:exit-function #'merlin-completion-lookup
-              :annotation-function '(lambda (s) (cdr (assoc s merlin-completion-annotation-table))))))))
+              :annotation-function '(lambda (s) (cdr (assoc s merlin-completion-annotation-table)))))))
             
 
 
