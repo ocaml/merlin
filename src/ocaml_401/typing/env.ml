@@ -310,7 +310,7 @@ let read_pers_struct modname filename = (
   let comps =
       !components_of_module' empty Subst.identity
                              (Pident(Ident.create_persistent name))
-                             (Mty_signature sign) in
+                             (Mty_signature ~:sign) in
     let ps = { ps_name = name;
                ps_sig = sign;
                ps_comps = comps;
@@ -501,7 +501,7 @@ let find_module path env =
       with Not_found ->
         if Ident.persistent id then
           let ps = find_pers_struct (Ident.name id) in
-          Mty_signature(ps.ps_sig)
+          Mty_signature ~:(ps.ps_sig)
         else raise Not_found
       end
   | Pdot(p, s, pos) ->
@@ -566,7 +566,7 @@ and lookup_module lid env =
       with Not_found ->
         if s = !current_unit then raise Not_found;
         let ps = find_pers_struct s in
-        (Pident(Ident.create_persistent s), Mty_signature ps.ps_sig)
+        (Pident(Ident.create_persistent s), Mty_signature ~:(ps.ps_sig))
       end
   | Ldot(l, s) ->
       let (p, descr) = lookup_module_descr l env in
@@ -1062,7 +1062,7 @@ let rec components_of_module env sub path mty =
 
 and components_of_module_maker (env, sub, path, mty) =
   (match scrape_modtype mty env with
-    Mty_signature sg ->
+    Mty_signature (lazy sg) ->
       let c =
         { comp_values = Tbl.empty;
           comp_constrs = Tbl.empty;
@@ -1473,7 +1473,7 @@ let save_signature_with_imports sg modname filename imports =
        will also return its crc *)
     let comps =
       components_of_module empty Subst.identity
-        (Pident(Ident.create_persistent modname)) (Mty_signature sg) in
+        (Pident(Ident.create_persistent modname)) (Mty_signature ~:sg) in
     let ps =
       { ps_name = modname;
         ps_sig = sg;
@@ -1548,7 +1548,7 @@ let fold_modules f lid env acc =
               None -> acc
             | Some ps ->
               f name (Pident(Ident.create_persistent name))
-                     (Mty_signature ps.ps_sig) acc)
+                     (Mty_signature ~:(ps.ps_sig)) acc)
         persistent_structures
         acc
     | Some l ->
