@@ -35,6 +35,7 @@ check_package EXIT yojson "Install yojson"
 check_package EXIT menhirLib "Please install menhir."
 check_package NOSEXP sexplib "Sexplib missing; sexp protocol disabled."
 STDLIB_DIR=$(ocamlfind printconf stdlib)
+MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number|cut -d' ' -f2)
 
 WITH_BIN_ANNOT=""
 
@@ -63,10 +64,21 @@ while [ -n "$1" ]; do
   shift 1
 done
 
+OCAML_VERSION="ocaml_400"
+OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.00.1"
+
+case "$MAGIC_VERSION" in
+  "Caml1999I015")
+    OCAML_VERSION="ocaml_401"
+    OCAML_VERSION_MESSAGE="Ocaml 4.01.0"
+    ;;
+esac
+
 cat <<END
 
 System config:
   OCaml standard library: $STDLIB_DIR
+  Ocaml ABI version: $OCAML_VERSION_MESSAGE
 
 Will install:
   ocamlmerlin binary in: $BIN_DIR
@@ -77,7 +89,9 @@ To customize directories, use:
 
 END
 
-[ -d "$PWD/src/ocaml" ] || ln -sf $PWD/src/ocaml_400 $PWD/src/ocaml
+rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
+  ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+
 if [ -d "$STDLIB_DIR" ]; then
   cat >Makefile.config <<END
 BIN_DIR=$BIN_DIR
