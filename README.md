@@ -181,9 +181,7 @@ Main keybindings:
 
 - `C-c C-p` or `C-down` (`merlin-prev-phrase`) moves the point to the beginning of the previous phrase
 
-- `C-c C-l` (`merlin-locate`) jumps to the definition of the ident near the point.
-
-  Moreover, you have regular auto-completion (M-TAB by default with
+Moreover, you have regular auto-completion (M-TAB by default with
 emacs24) using completion-at-point. There is also auto-complete
 integration you can enable by setting merlin-use-auto-complete-mode to
 t:
