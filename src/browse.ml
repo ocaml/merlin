@@ -273,7 +273,7 @@ and meth obj name loc_start loc_end =
     obj.exp_env
 
 let local_near pos nodes =
-  let cmp = Location.compare_pos pos in
+  let cmp = Merlin_parsing.compare_pos pos in
   let best_of ({ loc = l1 } as t1) ({ loc = l2 } as t2) =
     match cmp l1, cmp l2 with
     | 0, 0 ->
@@ -298,7 +298,7 @@ let local_near pos nodes =
   )
 
 let is_enclosing pos { loc } =
-  (Location.compare_pos pos loc = 0)
+  (Merlin_parsing.compare_pos pos loc = 0)
 
 let traverse_branch pos tree =
   let rec traverse { nodes = lazy nodes } acc =

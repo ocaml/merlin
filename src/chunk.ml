@@ -62,7 +62,7 @@ let protect_parser f =
   let exns, result =
     Misc.fluid'let 
       Outline_utils.local_modules (Some local_modules) 
-      (fun () -> Location.catch_warnings f)
+      (fun () -> Merlin_parsing.catch_warnings f)
   in
   let exns = match result with
     | Inl exn -> exn :: exns

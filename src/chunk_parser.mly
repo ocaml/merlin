@@ -70,7 +70,7 @@ let mkoption d =
 let reloc_pat startpos endpos x = { x with ppat_loc = symbol_rloc startpos endpos  };;
 let reloc_exp startpos endpos x = { x with pexp_loc = symbol_rloc startpos endpos  };;
 let reloc_exp_fake startpos x = 
-  { x with pexp_loc = Location.pack_fake_start x.pexp_loc startpos };;
+  { x with pexp_loc = Merlin_parsing.pack_fake_start x.pexp_loc startpos };;
 
 let mkoperator startpos endpos name =
   let loc = symbol_rloc startpos endpos in
@@ -198,10 +198,10 @@ let rec mkrangepat startpos endpos c1 c2 =
   reloc_pat startpos endpos (deep_mkrangepat startpos endpos c1 c2)
 
 let syntax_error pos =
-  Location.raise_warning (Syntaxerr.Escape_error pos)
+  Merlin_parsing.raise_warning (Syntaxerr.Escape_error pos)
 
 let unclosed opening_name opstart opend closing_name clstart clend =
-  Location.raise_warning (Syntaxerr.Error(Syntaxerr.Unclosed(symbol_rloc opstart opend, opening_name,
+  Merlin_parsing.raise_warning (Syntaxerr.Error(Syntaxerr.Unclosed(symbol_rloc opstart opend, opening_name,
                                            symbol_rloc clstart clend, closing_name)))
 
 let check_constraint mkexp constr e =

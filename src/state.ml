@@ -141,7 +141,7 @@ let browse step =
 let node_at state pos_cursor =
   let step = History.focused state.steps in
   let structures = browse step in
-  let cmp o = Location.compare_pos pos_cursor (Outline.location o) in
+  let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
   let outlines = 
     let rec aux o = 
       match Outline.Spine.previous o with
@@ -169,7 +169,7 @@ let node_at state pos_cursor =
 
 let local_modules_at state pos_cursor =
   let step = History.focused state.steps in
-  let cmp o = Location.compare_pos pos_cursor (Outline.location o) in
+  let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
   let outlines =
     let rec aux o =
       match Outline.Spine.previous o with
@@ -183,7 +183,7 @@ let local_modules_at state pos_cursor =
 
 let str_items_before state pos_cursor =
   let step = History.focused state.steps in
-  let cmp o = Location.compare_pos pos_cursor (Outline.location o) in
+  let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
   let outlines =
     let rec aux o =
       match Outline.Spine.previous o with

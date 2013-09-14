@@ -79,7 +79,7 @@ let strict_of_exn = function
     let ppf, to_string = Misc.ppf_to_string () in
     Lexer.report_error ppf e;
     Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
-  | Location.Warning (loc, msg) ->
+  | Merlin_parsing.Warning (loc, msg) ->
     Some (format ~valid:true ~where:"warning" ~loc msg)
   | exn -> None
 

@@ -24,7 +24,7 @@ type error =
 
 
 exception Error of error
-exception Escape_error
+exception Escape_error of Lexing.position
 
 let report_error ppf = function
   | Unclosed(opening_loc, opening, closing_loc, closing) ->
