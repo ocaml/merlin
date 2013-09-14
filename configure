@@ -74,6 +74,11 @@ case "$MAGIC_VERSION" in
     ;;
 esac
 
+if [ -e "src/${OCAML_VERSION}.git/.git" ]; then
+  OCAML_VERSION="${OCAML_VERSION}.git"
+  OCAML_VERSION_MESSAGE="${OCAML_VERSION_MESSAGE} (git version)"
+fi
+
 cat <<END
 
 System config:
