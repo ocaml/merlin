@@ -225,8 +225,8 @@ let print_filename ppf file =
 let reset () =
   num_loc_lines := 0
 
-let (msg_file, msg_line, msg_chars, msg_to, msg_colon) =
-  ("File \"", "\", line ", ", characters ", "-", ":")
+let (msg_line, msg_chars, msg_to, msg_colon) =
+  ("Line ", ", characters ", "-", ":")
 
 (* return file, line, char from the given position *)
 let get_pos_info pos =
@@ -241,7 +241,7 @@ let print_loc ppf loc =
       fprintf ppf "Characters %i-%i"
               loc.loc_start.pos_cnum loc.loc_end.pos_cnum
   end else begin
-    fprintf ppf "%s%a%s%i" msg_file print_filename file msg_line line;
+    fprintf ppf "%s%i" msg_line line;
     if startchar >= 0 then
       fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar
   end
@@ -266,14 +266,14 @@ let print_warning loc ppf w =
       let n = Warnings.print ppf w in
       num_loc_lines := !num_loc_lines + n
     in
-    print ppf loc;
     fprintf ppf "Warning %a@." printw w;
     pp_print_flush ppf ();
     incr num_loc_lines;
   end
 ;;
 
-let prerr_warning loc w = print_warning loc err_formatter w;;
+let prerr_warning_ref = ref (fun loc w -> print_warning loc err_formatter w);; 
+let prerr_warning loc w = !prerr_warning_ref loc w;;
 
 let echo_eof () =
   print_newline ();
