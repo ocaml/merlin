@@ -192,7 +192,7 @@ type class_type_declaration =
 
 type module_type =
     Mty_ident of Path.t
-  | Mty_signature of signature
+  | Mty_signature of signature Lazy.t
   | Mty_functor of Ident.t * module_type * module_type
 
 and signature = signature_item list
