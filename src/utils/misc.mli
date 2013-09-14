@@ -129,6 +129,7 @@ val thd3: 'a * 'b * 'c -> 'c
 val fst4: 'a * 'b * 'c * 'd -> 'a
 val snd4: 'a * 'b * 'c * 'd -> 'b
 val thd4: 'a * 'b * 'c * 'd -> 'c
+val fth4: 'a * 'b * 'c * 'd -> 'd
 
         (* [ppf_to_string ()] gives a fresh formatter and a function to easily
          * gets its content as a string *)
