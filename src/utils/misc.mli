@@ -205,7 +205,6 @@ val fluid : 'a -> 'a fluid
 val fluid'let : 'a fluid -> 'a -> (unit -> 'b) -> 'b 
 val (~!) : 'a fluid -> 'a
 
-val (!:) : 'a Lazy.t -> 'a
 val (~:) : 'a -> 'a Lazy.t
 
 module Sync : sig

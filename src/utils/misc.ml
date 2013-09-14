@@ -456,7 +456,6 @@ let fluid'let d v f =
 
 let (~!) a = !a
 
-let (!:) = Lazy.force
 let (~:) = Lazy.from_val
 
 module Sync : sig
