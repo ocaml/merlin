@@ -258,7 +258,7 @@ If SAME-BUFFER-FORCE is non-nil, create a new window even if it is the same buff
 An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
     (skip-chars-backward "[a-z_0-9A-Z'`.]")
-    (if (looking-at "['a-z_0-9A-Z`.]*['a-zA-Z0-9]")
+    (if (looking-at "['a-z_0-9A-Z`.]*['a-z_A-Z0-9]")
         (cons (point) (match-end 0)) ; returns the bounds
       nil))) ; no atom at point
 
@@ -777,8 +777,7 @@ variable `merlin-cache')."
 
 (defun merlin-prefix ()
   "Retrieve the prefix for completion with merlin."
-  (skip-syntax-backward "w_.")
-  (point))
+  (car (bounds-of-thing-at-point 'ocamlatom)))
 (defun merlin-fetch-type ()
   "Prints the type of the selected candidate"
   (let ((candidate (buffer-substring-no-properties merlin-completion-point  (point))))
