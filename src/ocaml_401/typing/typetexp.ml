@@ -684,8 +684,8 @@ let transl_type_scheme env styp =
 open Format
 open Printtyp
 
-let spellcheck ppf fold env lid =
-  let cutoff =
+let spellcheck ppf fold env lid = ()
+  (*let cutoff =
     match String.length (Longident.last lid) with
       | 1 | 2 -> 0
       | 3 | 4 -> 1
@@ -723,7 +723,7 @@ let spellcheck ppf fold env lid =
     | Longident.Lident s ->
       handle (fold (compare s) None env init)
     | Longident.Ldot (r, s) ->
-      handle (fold (compare s) (Some r) env init)
+      handle (fold (compare s) (Some r) env init)*)
 
 let spellcheck_simple ppf fold extr =
   spellcheck ppf (fun f -> fold (fun decl x -> f (extr decl) x))

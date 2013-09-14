@@ -126,6 +126,13 @@ val enter_cltype: string -> class_type_declaration -> t -> Ident.t * t
 (* Initialize the cache of in-core module interfaces. *)
 val reset_cache: unit -> unit
 
+(* merlin: Remove entries from the cache if they changed on disk.
+           Return false only if no entry got invalidated. *)
+val quick_reset_cache: unit -> bool 
+
+(* merlin: Delete 'missing cmi' entries from the cache. *)
+val reset_missing_cmis: unit -> unit
+
 (* To be called before each toplevel phrase. *)
 val reset_cache_toplevel: unit -> unit
 

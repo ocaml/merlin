@@ -258,6 +258,7 @@ let rec normalize_type_path ?(cache=false) env p =
             let tyl = List.map repr tyl in
             if List.length params = List.length tyl
             && List.for_all2 (==) params tyl
+            && p != p1
             then normalize_type_path ~cache env p1
             else if cache || List.length params <= List.length tyl
                  || not (uniq tyl) then (p, Id)
@@ -316,6 +317,8 @@ let set_printing_env env =
 let wrap_printing_env env f =
   set_printing_env env;
   try_finally f (fun () -> set_printing_env Env.empty)
+
+let curr_printing_env () = !printing_env
 
 let is_unambiguous path env =
   let l = Env.find_shadowed_types path env in
