@@ -3,7 +3,7 @@
 TARGET = ocamlmerlin.native
 #TARGET = src/spine.cmo
 
-OCAMLBUILD=ocamlbuild -Is src,src/ocaml/typing,src/ocaml/parsing,src/utils
+OCAMLBUILD=ocamlbuild -Is src,src/ocaml,src/ocaml/utils,src/ocaml/typing,src/ocaml/parsing,src/utils
 OCAMLFIND=ocamlfind
 
 all: $(TARGET)

@@ -1,11 +1,15 @@
 PRJ merlin
 S src/.
+S src/ocaml
 S src/ocaml/parsing
 S src/ocaml/typing
+S src/ocaml/utils
 S src/utils
 B _build/src
+B _build/src/ocaml
 B _build/src/ocaml/parsing
 B _build/src/ocaml/typing
+B _build/src/ocaml/utils
 B _build/src/utils
 PKG findlib
 PKG yojson
