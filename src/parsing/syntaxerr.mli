@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: syntaxerr.mli 12256 2012-03-23 02:16:44Z garrigue $ *)
+(* $Id$ *)
 
 (* Auxiliary type for reporting syntax errors *)
 
@@ -23,6 +23,6 @@ type error =
   | Other of Location.t
 
 exception Error of error
-exception Escape_error of Lexing.position
+exception Escape_error
 
 val report_error: formatter -> error -> unit

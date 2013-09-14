@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: syntaxerr.ml 12256 2012-03-23 02:16:44Z garrigue $ *)
+(* $Id$ *)
 
 (* Auxiliary type for reporting syntax errors *)
 
@@ -24,7 +24,7 @@ type error =
 
 
 exception Error of error
-exception Escape_error of Lexing.position
+exception Escape_error
 
 let report_error ppf = function
   | Unclosed(opening_loc, opening, closing_loc, closing) ->

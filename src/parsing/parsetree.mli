@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: parsetree.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id$ *)
 
 (* Abstract syntax tree produced by parsing *)
 
