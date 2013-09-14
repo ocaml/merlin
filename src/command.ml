@@ -96,7 +96,7 @@ module Type_utils = struct
     begin fun () -> match Chunk_parser.top_expr Lexer.token lexbuf with
       | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
         begin
-          try let c = Env.lookup_constructor longident.Asttypes.txt env in
+          try let c = Merlin_types.lookup_constructor longident.Asttypes.txt env in
             Browse_misc.print_constructor ppf c
           with Not_found ->
           try let _, m = Env.lookup_module longident.Asttypes.txt env in
