@@ -27,6 +27,7 @@ val raw_type_expr: formatter -> type_expr -> unit
 val wrap_printing_env: Env.t -> (unit -> 'a) -> 'a
     (* Call the function using the environment for type path shortening *)
     (* This affects all the printing functions below *)
+val curr_printing_env: unit -> Env.t
 
 val reset: unit -> unit
 val mark_loops: type_expr -> unit

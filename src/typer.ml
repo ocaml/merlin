@@ -54,7 +54,7 @@ let initial_env =
 
 let protect_typer f =
   let errors, result = 
-    Misc.catch_join (Location.catch_warnings (fun () -> Types.catch_errors f))
+    Misc.catch_join (Location.catch_warnings (fun () -> Merlin_types.catch_errors f))
   in
   errors,
   Misc.sum raise (fun x -> x) result

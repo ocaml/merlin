@@ -1479,13 +1479,64 @@ let rec type_exp env sexp =
  *)
 
 and type_expect ?in_function env sexp ty_expected =
+  if ~!Merlin_types.relax_typer 
+  then type_relax ?in_function env sexp ty_expected
+  else try type_expect_ ?in_function env sexp ty_expected
+       with (Typetexp.Error _ | Error _) ->
+         fluid'let Merlin_types.relax_typer true
+           (fun () -> type_relax ?in_function env sexp ty_expected)
+
+and type_relax ?in_function env sexp ty_expected =
+  let loc = sexp.pexp_loc in
+  let failwith_exn ~exn exp_desc =
+    Merlin_types.erroneous_type_register ty_expected;
+    Merlin_types.raise_error exn;
+    { exp_desc; exp_loc = loc;
+      exp_extra = [];
+      exp_type = ty_expected;
+      exp_env = env;
+    } 
+  in
+  try
+    let ty = newvar () in
+    let exp = type_expect_ ?in_function env sexp ty in
+    try
+      unify_exp_types sexp.pexp_loc env ty ty_expected;
+      exp
+    with (Typetexp.Error _ | Error _) as exn ->
+      (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
+      failwith_exn ~exn (Texp_tuple [exp])
+  with (Typetexp.Error _ | Error _) as exn ->
+    failwith_exn ~exn 
+      (Texp_ident
+         (Path.Pident (Ident.create "*type-error*"),
+          Location.mkloc (Longident.Lident "*type-error*") loc,
+          { Types.
+            val_type = ty_expected;
+            val_kind = Val_reg;
+            val_loc = loc
+          }))
+
+and type_expect_ ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in
   (* Record the expression type before unifying it with the expected type *)
   let rue exp =
     Cmt_format.add_saved_type (Cmt_format.Partial_expression exp);
     Stypes.record (Stypes.Ti_expr exp);
-    unify_exp env exp (instance env ty_expected);
-    exp
+    try
+      unify_exp env exp (instance env ty_expected);
+      exp
+    with (Typetexp.Error _ | Error _) as exn ->
+      Merlin_types.erroneous_type_register ty_expected;
+      Merlin_types.raise_error exn;
+      {
+        (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
+        exp_desc = Texp_tuple [exp];
+        exp_loc = loc;
+        exp_extra = [];
+        exp_type = ty_expected;
+        exp_env = env
+      } 
   in
   match sexp.pexp_desc with
   | Pexp_ident lid ->
@@ -1580,10 +1631,10 @@ and type_expect ?in_function env sexp ty_expected =
          default;
       ] in
       let smatch = {
-        pexp_loc = loc;
+        pexp_loc = default_loc;
         pexp_desc =
           Pexp_match ({
-            pexp_loc = loc;
+            pexp_loc = default_loc;
             pexp_desc = Pexp_ident(mknoloc (Longident.Lident "*opt*"))
             },
             scases
@@ -1594,7 +1645,7 @@ and type_expect ?in_function env sexp ty_expected =
         pexp_desc =
          Pexp_function (
            l, None,
-           [ {ppat_loc = loc;
+           [ {ppat_loc = spat.ppat_loc;
               ppat_desc = Ppat_var (mknoloc "*opt*")},
              {pexp_loc = loc;
               pexp_desc = Pexp_let(Default, [spat, smatch], sbody);
@@ -2091,7 +2142,12 @@ and type_expect ?in_function env sexp ty_expected =
           exp_type = typ;
           exp_env = env }
       with Unify _ ->
-        raise(Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)))
+        Merlin_types.raise_error (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
+        rue {
+          exp_desc = Texp_send(obj, Tmeth_name met, None);
+          exp_loc = loc; exp_extra = [];
+          exp_type = ty_expected;
+          exp_env = env }
       end
   | Pexp_new cl ->
       let (cl_path, cl_decl) = Typetexp.find_class env loc cl.txt in
@@ -2507,7 +2563,8 @@ and type_application env funct sargs =
                     false
                 | _ -> true
               in
-              if ty_fun.level >= t1.level && not_identity funct.exp_desc then
+              if ty_fun.level >= t1.level && not_identity funct.exp_desc 
+                 && not (Merlin_types.erroneous_type_check funct.exp_type) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
@@ -3037,9 +3094,14 @@ let type_expression env sexp =
   else generalize_expansive env exp.exp_type;
   match sexp.pexp_desc with
     Pexp_ident lid ->
-      (* Special case for keeping type variables when looking-up a variable *)
+    (* Special case for keeping type variables when looking-up a variable *)
+    begin try 
       let (path, desc) = Env.lookup_value lid.txt env in
       {exp with exp_type = desc.val_type}
+      (* Due to Merlin relaxed rules, an expression that typed may contain
+         unbound variables, and so Env.lookup_value may raise Not_found *)
+      with Not_found -> exp
+    end
   | _ -> exp
 
 (* Error report *)

@@ -260,6 +260,7 @@ type pers_struct =
     ps_comps: module_components;
     ps_crcs: (string * Digest.t) list;
     ps_filename: string;
+    ps_mtime: float;
     ps_flags: pers_flags list }
 
 let persistent_structures =
@@ -276,6 +277,13 @@ let check_consistency filename crcs =
       crcs
   with Consistbl.Inconsistency(name, source, auth) ->
     raise(Error(Inconsistent_import(name, auth, source)))
+
+(* Rather than resetting the whole cache, it is more efficient for merlin to
+   keep track of the mtime of cmi files and only reloaded changed files.
+   See [quick_reset_cache].*)
+let file_mtime filename =
+  try Unix.((stat filename).st_mtime)
+  with _ -> min_float
 
 (* Reading persistent structures from .cmi files *)
 
@@ -294,6 +302,7 @@ let read_pers_struct modname filename =
                ps_comps = comps;
                ps_crcs = crcs;
                ps_filename = filename;
+               ps_mtime = file_mtime filename;
                ps_flags = flags } in
     if ps.ps_name <> modname then
       raise(Error(Illegal_renaming(ps.ps_name, filename)));
@@ -330,6 +339,22 @@ let reset_cache () =
   Consistbl.clear crc_units;
   Hashtbl.clear value_declarations;
   Hashtbl.clear type_declarations
+
+let quick_reset_cache () =
+  let invalidated = ref [] in
+  Hashtbl.iter (fun name -> function
+      | Some ps when file_mtime ps.ps_filename = ps.ps_mtime -> ()
+      | _ -> invalidated := name :: !invalidated)
+    persistent_structures;
+  if !invalidated <> [] then
+  begin 
+    List.iter (Hashtbl.remove persistent_structures) !invalidated;
+    Consistbl.filter 
+      (fun name -> Hashtbl.mem persistent_structures name)
+      crc_units;
+    true
+  end
+  else false
 
 let reset_missing_cmis () =
   let l = Hashtbl.fold
@@ -1247,6 +1272,7 @@ let save_signature_with_imports sg modname filename imports =
         ps_comps = comps;
         ps_crcs = (cmi.cmi_name, crc) :: imports;
         ps_filename = filename;
+        ps_mtime = file_mtime filename;
         ps_flags = cmi.cmi_flags } in
     Hashtbl.add persistent_structures modname (Some ps);
     Consistbl.set crc_units modname crc filename;
