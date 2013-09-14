@@ -1,5 +1,5 @@
 true: use_menhir, use_menhir_table
 
 <src/*>: package(yojson), package(unix), package(findlib), package(menhirLib)
-<src/ocaml/*>: package(menhirLib)
+<src/ocaml/*>: package(menhirLib), package(yojson), package(unix), package(findlib), package(menhirLib)
 <src/ocaml/outline_parser.*>: ext_tokens
