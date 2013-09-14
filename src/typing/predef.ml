@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: predef.ml 12520 2012-05-31 07:41:37Z garrigue $ *)
+(* $Id$ *)
 
 (* Predefined type constructors (with special typing rules in typecore) *)
 

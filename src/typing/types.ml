@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: types.ml 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id$ *)
 
 (* Representation of types and declarations *)
 
@@ -195,7 +195,7 @@ type class_type_declaration =
 
 type module_type =
     Mty_ident of Path.t
-  | Mty_signature of signature Lazy.t
+  | Mty_signature of signature
   | Mty_functor of Ident.t * module_type * module_type
 
 and signature = signature_item list
@@ -217,31 +217,3 @@ and rec_status =
     Trec_not                            (* not recursive *)
   | Trec_first                          (* first in a recursive group *)
   | Trec_next                           (* not first in a recursive group *)
-
-
-let errors : (exn list ref * (int,unit) Hashtbl.t) option fluid = fluid None
-let relax_typer = fluid false
-
-let raise_error exn =
-  match ~!errors with
-  | Some (l,h) -> l := exn :: !l
-  | None -> raise exn
-
-let catch_errors f =
-  let caught = ref [] in
-  let result =
-    try_sum (fun () -> 
-        fluid'let errors (Some (caught,Hashtbl.create 3)) f)
-  in
-  !caught, result
-     
-let erroneous_type_register te =
-  match ~!errors with
-  | Some (l,h) -> Hashtbl.replace h te.id ()
-  | None -> ()
-
-let erroneous_type_check te = 
-  match ~!errors with
-  | Some (l,h) when Hashtbl.mem h te.id -> true
-  | _ -> false
-

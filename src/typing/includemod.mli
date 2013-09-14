@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: includemod.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id$ *)
 
 (* Inclusion checks for the module language *)
 
@@ -25,7 +25,7 @@ val type_declarations:
       Env.t -> Ident.t -> type_declaration -> type_declaration -> unit
 
 type symptom =
-    Missing_fields of Ident.t list
+    Missing_field of Ident.t
   | Value_descriptions of Ident.t * value_description * value_description
   | Type_declarations of Ident.t * type_declaration
         * type_declaration * Includecore.type_mismatch list

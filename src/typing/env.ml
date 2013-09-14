@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: env.ml 12820 2012-08-03 20:23:26Z frisch $ *)
+(* $Id$ *)
 
 (* Environment handling *)
 
@@ -260,7 +260,6 @@ type pers_struct =
     ps_comps: module_components;
     ps_crcs: (string * Digest.t) list;
     ps_filename: string;
-    ps_mtime : float;
     ps_flags: pers_flags list }
 
 let persistent_structures =
@@ -278,13 +277,6 @@ let check_consistency filename crcs =
   with Consistbl.Inconsistency(name, source, auth) ->
     raise(Error(Inconsistent_import(name, auth, source)))
 
-(* Rather than resetting the whole cache, it is more efficient for merlin to
-   keep track of the mtime of cmi files and only reloaded changed files.
-   See [quick_reset_cache].*)
-let file_mtime filename =
-  try Unix.((stat filename).st_mtime)
-  with _ -> min_float
-
 (* Reading persistent structures from .cmi files *)
 
 let read_pers_struct modname filename =
@@ -296,13 +288,12 @@ let read_pers_struct modname filename =
   let comps =
       !components_of_module' empty Subst.identity
                              (Pident(Ident.create_persistent name))
-                             (Mty_signature ~:sign) in
+                             (Mty_signature sign) in
     let ps = { ps_name = name;
                ps_sig = sign;
                ps_comps = comps;
                ps_crcs = crcs;
                ps_filename = filename;
-               ps_mtime = file_mtime filename;
                ps_flags = flags } in
     if ps.ps_name <> modname then
       raise(Error(Illegal_renaming(ps.ps_name, filename)));
@@ -339,22 +330,6 @@ let reset_cache () =
   Consistbl.clear crc_units;
   Hashtbl.clear value_declarations;
   Hashtbl.clear type_declarations
-
-let quick_reset_cache () =
-  let invalidated = ref [] in
-  Hashtbl.iter (fun name -> function
-      | Some ps when file_mtime ps.ps_filename = ps.ps_mtime -> ()
-      | _ -> invalidated := name :: !invalidated)
-    persistent_structures;
-  if !invalidated <> [] then
-  begin 
-    List.iter (Hashtbl.remove persistent_structures) !invalidated;
-    Consistbl.filter 
-      (fun name -> Hashtbl.mem persistent_structures name)
-      crc_units;
-    true
-  end
-  else false
 
 let reset_missing_cmis () =
   let l = Hashtbl.fold
@@ -472,7 +447,7 @@ let find_module path env =
       with Not_found ->
         if Ident.persistent id then
           let ps = find_pers_struct (Ident.name id) in
-          Mty_signature ~:(ps.ps_sig)
+          Mty_signature(ps.ps_sig)
         else raise Not_found
       end
   | Pdot(p, s, pos) ->
@@ -528,7 +503,7 @@ and lookup_module lid env =
       with Not_found ->
         if s = !current_unit then raise Not_found;
         let ps = find_pers_struct s in
-        (Pident(Ident.create_persistent s), Mty_signature ~:(ps.ps_sig))
+        (Pident(Ident.create_persistent s), Mty_signature ps.ps_sig)
       end
   | Ldot(l, s) ->
       let (p, descr) = lookup_module_descr l env in
@@ -855,7 +830,7 @@ let rec components_of_module env sub path mty =
 
 and components_of_module_maker (env, sub, path, mty) =
   (match scrape_modtype mty env with
-    Mty_signature (lazy sg) ->
+    Mty_signature sg ->
       let c =
         { comp_values = Tbl.empty; comp_annotations = Tbl.empty;
           comp_constrs = Tbl.empty;
@@ -1265,14 +1240,13 @@ let save_signature_with_imports sg modname filename imports =
        will also return its crc *)
     let comps =
       components_of_module empty Subst.identity
-        (Pident(Ident.create_persistent modname)) (Mty_signature ~:sg) in
+        (Pident(Ident.create_persistent modname)) (Mty_signature sg) in
     let ps =
       { ps_name = modname;
         ps_sig = sg;
         ps_comps = comps;
         ps_crcs = (cmi.cmi_name, crc) :: imports;
         ps_filename = filename;
-        ps_mtime = file_mtime filename;
         ps_flags = cmi.cmi_flags } in
     Hashtbl.add persistent_structures modname (Some ps);
     Consistbl.set crc_units modname crc filename;
@@ -1324,7 +1298,7 @@ let fold_modules f lid env acc =
               None -> acc
             | Some ps ->
               f name (Pident(Ident.create_persistent name))
-                     (Mty_signature ~:(ps.ps_sig)) acc)
+                     (Mty_signature ps.ps_sig) acc)
         persistent_structures
         acc
     | Some l ->

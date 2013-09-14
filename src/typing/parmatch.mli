@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: parmatch.mli 12961 2012-09-27 13:30:07Z garrigue $ *)
+(* $Id$ *)
 
 (* Detection of partial matches and unused match cases. *)
 open Asttypes

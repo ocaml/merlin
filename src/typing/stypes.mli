@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: stypes.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id$ *)
 
 (* Recording and dumping (partial) type information *)
 

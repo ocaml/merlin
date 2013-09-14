@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: includecore.ml 12800 2012-07-30 18:59:07Z doligez $ *)
+(* $Id$ *)
 
 (* Inclusion checks for the core language *)
 

@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: printtyp.ml 12800 2012-07-30 18:59:07Z doligez $ *)
+(* $Id$ *)
 
 (* Printing functions *)
 
@@ -231,7 +231,6 @@ let rec normalize_type_path ?(cache=false) env p =
             let tyl = List.map repr tyl in
             if List.length params = List.length tyl
             && List.for_all2 (==) params tyl
-            && p != p1
             then normalize_type_path ~cache env p1
             else if cache || List.length params <= List.length tyl
                  || not (uniq tyl) then (p, Id)
@@ -284,7 +283,6 @@ let wrap_printing_env env f =
     set_printing_env env;
     try_finally f (fun () -> set_printing_env Env.empty)
   end
-let curr_printing_env () = !printing_env
 
 let best_type_path p =
   if !Clflags.real_paths || !printing_env == Env.empty
@@ -1008,7 +1006,7 @@ let rec filter_rem_sig item rem =
 let rec tree_of_modtype = function
   | Mty_ident p ->
       Omty_ident (tree_of_path p)
-  | Mty_signature (lazy sg) ->
+  | Mty_signature sg ->
       Omty_signature (tree_of_signature sg)
   | Mty_functor(param, ty_arg, ty_res) ->
       Omty_functor

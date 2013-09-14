@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: subst.ml 12800 2012-07-30 18:59:07Z doligez $ *)
+(* $Id$ *)
 
 (* Substitutions *)
 
@@ -288,7 +288,7 @@ let rec modtype s = function
           fatal_error "Subst.modtype"
       end
   | Mty_signature sg ->
-      Mty_signature(lazy (signature s !:sg))
+      Mty_signature(signature s sg)
   | Mty_functor(id, arg, res) ->
       let id' = Ident.rename id in
       Mty_functor(id', modtype s arg,

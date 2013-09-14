@@ -65,7 +65,8 @@ let rec narrow_unbound_lid_error env loc lid make_error =
   let check_module mlid =
     try ignore (Env.lookup_module mlid env)
     with Not_found ->
-      raise (narrow_unbound_lid_error env loc mlid (fun lid -> Unbound_module lid))
+      narrow_unbound_lid_error env loc mlid (fun lid -> Unbound_module lid);
+      assert false
   in
   begin match lid with
   | Longident.Lident _ -> ()
@@ -75,22 +76,18 @@ let rec narrow_unbound_lid_error env loc lid make_error =
       check_module mlid;
       raise (Error (loc, Ill_typed_functor_application lid))
   end;
-  Error (loc, make_error lid)
+  raise (Error (loc, make_error lid))
 
-let find_component ?fallback lookup make_error env loc lid =
+let find_component lookup make_error env loc lid =
   try
     match lid with
     | Longident.Ldot (Longident.Lident "*predef*", s) ->
         lookup (Longident.Lident s) Env.initial
     | _ -> lookup lid env
   with Not_found ->
-    let exn =
-      try narrow_unbound_lid_error env loc lid make_error
-      with exn -> exn
-    in
-    match fallback with
-      | None -> raise exn
-      | Some f -> Types.raise_error exn; f ()
+    (narrow_unbound_lid_error env loc lid make_error
+     : unit (* to avoid a warning *));
+    assert false
 
 let find_type =
   find_component Env.lookup_type (fun lid -> Unbound_type_constructor lid)

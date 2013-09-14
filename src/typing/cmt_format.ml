@@ -962,9 +962,9 @@ let read_cmi filename =
 
 let saved_types = ref []
 
-let add_saved_type b = () (* saved_types := b :: !saved_types *)
+let add_saved_type b = saved_types := b :: !saved_types
 let get_saved_types () = !saved_types
-let set_saved_types l = () (*saved_types := l*)
+let set_saved_types l = saved_types := l
 
 let save_cmt filename modname binary_annots sourcefile initial_env sg =
   if !Clflags.binary_annotations
@@ -990,8 +990,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env sg =
     let cmt = {
       cmt_modname = modname;
       cmt_annots = clear_env binary_annots;
-      cmt_comments = []; (* FIXME: If we introduce cmt generation in merlin,
-                                   this should be fixed *)
+      cmt_comments = Lexer.comments ();
       cmt_args = Sys.argv;
       cmt_sourcefile = sourcefile;
       cmt_builddir =  Sys.getcwd ();

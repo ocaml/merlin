@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: typedecl.ml 12800 2012-07-30 18:59:07Z doligez $ *)
+(* $Id$ *)
 
 (**** Typing of type definitions ****)
 
@@ -861,11 +861,6 @@ let transl_type_decl env name_sdecl_list =
     List.map (fun (_, sdecl) -> sdecl.ptype_variance, sdecl.ptype_loc)
       name_sdecl_list
   in
-  let decls = List.map (fun (id,n) -> Fake.Nonrec.ident_drop id,n) decls in
-  let tdecls = List.map (fun (id,loc,n) -> Fake.Nonrec.ident_drop id,
-                                           {loc with txt =
-                                              Fake.Nonrec.drop loc.txt},
-                                           n) tdecls in
   let final_decls, final_env =
     compute_variance_fixpoint env decls required (List.map init_variance decls)
   in

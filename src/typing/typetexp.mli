@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: typetexp.mli 12521 2012-05-31 07:57:32Z garrigue $ *)
+(* $Id$ *)
 
 (* Typechecking of type expressions for the core language *)
 

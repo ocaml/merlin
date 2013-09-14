@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: includemod.ml 12520 2012-05-31 07:41:37Z garrigue $ *)
+(* $Id$ *)
 
 (* Inclusion checks for the module language *)
 
@@ -20,7 +20,7 @@ open Typedtree
 open Types
 
 type symptom =
-    Missing_fields of Ident.t list
+    Missing_field of Ident.t
   | Value_descriptions of Ident.t * value_description * value_description
   | Type_declarations of Ident.t * type_declaration
         * type_declaration * Includecore.type_mismatch list
@@ -154,7 +154,7 @@ and try_modtypes env cxt subst mty1 mty2 =
       try_modtypes2 env cxt mty1 (Subst.modtype subst mty2)
   | (Mty_ident p1, _) ->
       try_modtypes env cxt subst (expand_module_path env cxt p1) mty2
-  | (Mty_signature (lazy sig1), Mty_signature (lazy sig2)) ->
+  | (Mty_signature sig1, Mty_signature sig2) ->
       signatures env cxt subst sig1 sig2
   | (Mty_functor(param1, arg1, res1), Mty_functor(param2, arg2, res2)) ->
       let arg2' = Subst.modtype subst arg2 in
@@ -245,13 +245,8 @@ and signatures env cxt subst sig1 sig2 =
             ((item1, item2, pos1) :: paired) unpaired rem
         with Not_found ->
           let unpaired =
-            if report then
-              match unpaired with
-              | (cxt', env, Missing_fields ids) :: unpaired when cxt == cxt' ->
-                (cxt, env, Missing_fields (id2 :: ids)) :: unpaired
-              | _ -> (cxt, env, Missing_fields [id2]) :: unpaired
-            else unpaired
-          in
+            if report then (cxt, env, Missing_field id2) :: unpaired
+            else unpaired in
           pair_components subst paired unpaired rem
         end in
   (* Do the pairing and checking, and return the final coercion *)
@@ -359,15 +354,8 @@ let show_locs ppf (loc1, loc2) =
   show_loc "Actual declaration" ppf loc1
 
 let include_err ppf = function
-  | Missing_fields [id] ->
+  | Missing_field id ->
       fprintf ppf "The field `%a' is required but not provided" ident id
-  | Missing_fields ids ->
-      let rec idents ppf = function
-        | [] -> ()
-        | [id] -> fprintf ppf "`%a'" ident id
-        | id :: ids -> fprintf ppf "`%a', %a" ident id idents ids
-      in
-      fprintf ppf "The fields %a are required but not provided" idents ids
   | Value_descriptions(id, d1, d2) ->
       fprintf ppf
         "@[<hv 2>Values do not match:@ %a@;<1 -2>is not included in@ %a@]"
