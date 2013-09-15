@@ -19,7 +19,6 @@ module Utils = struct
     String.capitalize (Filename.basename pref)
 
   let find_file ?(ext=".cmt") file =
-    let file = String.uncapitalize file in
     let fname = Misc.chop_extension_if_any (Filename.basename file) ^ ext in
     (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
      * will most likely not be the one you want to edit.
@@ -27,12 +26,10 @@ module Utils = struct
      * several ml files with the same name.
      * Example: scheduler.ml and raw_scheduler.ml are present in both async_core
      * and async_unix. (ofc. "std.ml" is a more common example.) *)
-    let abs_cmt_file = Printf.sprintf "%s/%s" !cwd fname in
-    if Sys.file_exists abs_cmt_file then
-      abs_cmt_file
-    else
-      try Misc.find_in_path_uncap !sources_path fname
-      with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
+    try Misc.find_in_path_uncap [ !cwd ] fname          with Not_found ->
+    try Misc.find_in_path_uncap !sources_path fname     with Not_found ->
+    try Misc.find_in_path_uncap !Config.load_path fname with Not_found ->
+    raise Not_found
 
   let keep_suffix =
     let open Longident in
