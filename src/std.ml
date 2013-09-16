@@ -19,6 +19,14 @@ module Option = struct
     | None -> None
     | Some x -> Some (f x)
 
+  let value ~default = function
+    | None -> default
+    | Some x -> x
+
+  let value_map ~f ~default = function
+    | None -> default
+    | Some x -> f x
+
   module Infix = struct
     let return x  = Some x
     let (>>=) x f = bind x ~f

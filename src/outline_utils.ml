@@ -26,14 +26,12 @@
 
 )* }}} *)
 
-type offset = History.offset
 type position = Lexing.position
 
 type kind =
   | Enter_module
   | Leave_module
   | Definition
-  | Done
   | Unterminated
   | Syntax_error of Location.t
 
@@ -43,7 +41,6 @@ let kind_to_string = function
   | Enter_module   -> "Enter_module"
   | Leave_module   -> "Leave_module"
   | Definition     -> "Definition"
-  | Done           -> "Done"
   | Unterminated   -> "Unterminated"
   | Syntax_error _ -> "Syntax_error"
 

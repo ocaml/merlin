@@ -29,7 +29,6 @@
 (** {0 Outline parser}
  * Auxiliary definitions used by the outline parser *)
 
-type offset = History.offset
 type position = Lexing.position
 
 (** Source code constructs are split into "chunks" of different "kinds". *)
@@ -37,7 +36,6 @@ type kind =
   | Enter_module (* module _ = struct *)
   | Leave_module (* end *)
   | Definition   (* let / type / … *)
-  | Done         (* EOF found after a syntactically correct construction *)
   | Unterminated (* Unfinished syntactic construction *)
   | Syntax_error of Location.t
 
@@ -74,4 +72,4 @@ val leave_sub : unit -> unit
 (** Sends [Chunk] only when outside of any enter_sub/leave_sub *)
 val emit_top : kind -> position -> unit
 
-val local_modules : (string * Location.t) list ref option Misc.fluid
+val local_modules : (string Location.loc) list ref option Misc.fluid

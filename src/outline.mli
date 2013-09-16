@@ -26,26 +26,31 @@
 
 )* }}} *)
 
-type token = Chunk_parser.token History.loc
+type token = Chunk_parser.token Fake_lexer.token
 
-type item = {
-  kind       : Outline_utils.kind;
-  loc        : Location.t;
-  tokens     : token list;
-  exns       : exn list;
-}
+module Context : sig
+  type state = exn list * Location.t * token list
 
-type sync = item History.sync
-type t = item History.t
+  type sig_item = token list
+  type str_item = token list
+  type sig_in_sig_modtype = token list
+  type sig_in_sig_module  = token list
+  type sig_in_str_modtype = token list
+  type str_in_module      = token list
+end
+module Spine : Spine.S with module Context = Context
+type t = Spine.t
 
-val item_loc : item -> Location.t
-val location : t -> Location.t
+exception Malformed_module of token list
 
-val parse_step : bufpos:Lexing.position ref -> ?exns:exn list ->
-  token History.t -> Lexing.lexbuf -> token History.t * item option
-
-val parse : bufpos:Lexing.position ref ->
-  token list -> t -> Lexing.lexbuf -> token list * t
+val parse : token list -> t -> Lexing.lexbuf -> token list * t option
 
 val exns : t -> exn list
-val append_exns : exn list -> t -> t
+val location : t -> Location.t
+
+val initial_sig : string -> t
+val initial_str : string -> t
+
+val tokens : t -> token list
+
+val invalid : t -> bool

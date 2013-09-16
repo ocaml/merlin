@@ -129,6 +129,7 @@ val thd3: 'a * 'b * 'c -> 'c
 val fst4: 'a * 'b * 'c * 'd -> 'a
 val snd4: 'a * 'b * 'c * 'd -> 'b
 val thd4: 'a * 'b * 'c * 'd -> 'c
+val fth4: 'a * 'b * 'c * 'd -> 'd
 
         (* [ppf_to_string ()] gives a fresh formatter and a function to easily
          * gets its content as a string *)
@@ -136,7 +137,9 @@ val ppf_to_string : ?width:int -> unit -> Format.formatter * (unit -> string)
 
         (* [lex_strings s f] makes a lexing buffer from the string [s]
          * (like a Lexer.from_string) and call [f] to refill the buffer *)
-val lex_strings : string -> (unit -> string) -> Lexing.lexbuf
+val lex_strings : ?position:Lexing.position -> string -> (unit -> string) -> Lexing.lexbuf
+
+val lex_move : Lexing.lexbuf -> Lexing.position -> unit
 
         (* [length_lessthan n l] returns
          *   Some (List.length l) if List.length l <= n
@@ -168,9 +171,22 @@ val list_drop_while : ('a -> bool) -> 'a list -> 'a list
 
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
+type 'a or_exn = (exn, 'a) sum 
+
 val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c
 val sum_join : ('a,('a,'c) sum) sum -> ('a,'c) sum
 val try_sum : (unit -> 'a) -> (exn,'a) sum
+
+        (* Simple list zipper with a position *)
+module Zipper : sig
+  type 'a t = private Zipper of 'a list * int * 'a list
+  val shift : int -> 'a t -> 'a t
+  val of_list : 'a list -> 'a t
+  val insert : 'a -> 'a t -> 'a t
+  val seek : int -> 'a t -> 'a t
+  val change_tail : 'a list -> 'a t -> 'a t
+end
+type 'a zipper = 'a Zipper.t = private Zipper of 'a list * int * 'a list
 
         (* Join for catch pattern (writer and error monad) *)
 val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b) sum
@@ -190,5 +206,11 @@ val fluid : 'a -> 'a fluid
 val fluid'let : 'a fluid -> 'a -> (unit -> 'b) -> 'b 
 val (~!) : 'a fluid -> 'a
 
-val (!:) : 'a Lazy.t -> 'a
 val (~:) : 'a -> 'a Lazy.t
+
+module Sync : sig
+  type 'a t
+  val none : unit -> 'a t
+  val make : 'a -> 'a t
+  val same : 'a -> 'a t -> bool
+end

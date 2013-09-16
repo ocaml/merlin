@@ -1,15 +1,18 @@
 -include Makefile.config
 
 TARGET = ocamlmerlin.native
+#TARGET = src/spine.cmo
 
-OCAMLBUILD=ocamlbuild -Is src,src/typing,src/parsing,src/utils
+OCAMLBUILD=ocamlbuild -Is src,src/ocaml,src/ocaml/utils,src/ocaml/typing,src/ocaml/parsing,src/utils
 OCAMLFIND=ocamlfind
 
 all: $(TARGET)
 
-CONFIG_FILES = src/my_config.ml src/myocamlbuild_config.ml
+CONFIG_FILES = src/my_config.ml src/myocamlbuild_config.ml src/ocaml
 $(CONFIG_FILES):
 	@echo "Please run ./configure"
+	@if [ -d _build ]; then printf \
+		"WARNING:\n\t_build directory already exists.\n\tConsider doing a 'make clean' before continuing.\n"; fi
 	@false
 
 assert_configured: $(CONFIG_FILES)

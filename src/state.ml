@@ -27,23 +27,30 @@
 
 )* }}} *)
 
-type t = {
-  pos      : Lexing.position;
-  tokens   : Outline.token list;
-  comments : Lexer.comment list;
+type step = {
   outlines : Outline.t;
   chunks   : Chunk.t;
   types    : Typer.t;
 }
 
-let initial = {
-  pos      = Lexing.({pos_fname = ""; pos_lnum = 1; pos_bol = 0; pos_cnum = 0});
-  tokens   = [];
-  comments = [];
-  outlines = History.empty;
-  chunks   = History.empty;
-  types    = History.empty;
-}
+type t = {steps: step History.t}
+
+let initial_ outlines =
+  let chunks = Chunk.update outlines None in
+  let types  = Typer.update chunks   None in
+  {outlines; chunks; types}
+let initial_str fname = initial_ (Outline.initial_str fname)
+let initial_sig fname = initial_ (Outline.initial_sig fname)
+
+let initial step = {steps  = History.initial step}
+
+let initial_str fname = initial (initial_str fname)
+let initial_sig fname = initial (initial_sig fname)
+
+let step {chunks;types} outlines =
+  let chunks = Chunk.update outlines (Some chunks) in
+  let types  = Typer.update chunks   (Some types)  in
+  {outlines; chunks; types}
 
 let verbosity =
   let counter = ref 0 in
@@ -100,14 +107,22 @@ let global_modules = ref (lazy [])
 let reset_global_modules () =
   global_modules := lazy (Misc.modules_in_path ~ext:".cmi" !Config.load_path)
 
+let retype state = 
+  let steps = state.steps in
+  let types = Typer.update (History.focused steps).chunks None in
+  let steps = History.modify (fun step -> {step with types}) steps in
+  {steps}
+
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =
-  if Env.quick_reset_cache () then
-  begin
-    let types = Typer.sync state.chunks History.empty in
-    {state with types}, true
-  end
+  if Env.quick_reset_cache ()
+  then retype state, true
   else state, false
+
+let browse step =
+  Misc.list_concat_map 
+    (fun {Location.txt} -> Browse.structure txt)
+    (Typer.trees step.types)
 
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.
@@ -124,12 +139,17 @@ let quick_refresh_modules state =
  *      inside x definition.
  *)
 let node_at state pos_cursor =
-  let structures = Misc.list_concat_map
-    (fun (str,sg) -> Browse.structure str)
-    (Typer.trees state.types)
+  let step = History.focused state.steps in
+  let structures = browse step in
+  let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
+  let outlines = 
+    let rec aux o = 
+      match Outline.Spine.previous o with
+      | Some o' when cmp o < 0 -> aux o'
+      | Some _ | None -> o
+    in 
+    aux step.outlines
   in
-  let cmp o = Location.compare_pos pos_cursor (Outline.item_loc o) in
-  let outlines = History.seek_backward (fun o -> cmp o < 0) state.outlines in
   try
     let node, pos_node =
       match Browse.nearest_before pos_cursor structures with
@@ -143,20 +163,45 @@ let node_at state pos_cursor =
       raise Not_found
     | _ -> node
   with Not_found ->
-    let _, chunks = History.Sync.rewind Misc.fst3 outlines state.chunks in
-    let _, types = History.Sync.rewind fst chunks state.types in
+    let chunks = Chunk.update outlines (Some step.chunks) in
+    let types  = Typer.update chunks   (Some step.types)  in
     Browse.({ dummy with env = Typer.env types })
 
-let local_modules state =
-  match History.prev state.chunks with
-  | None -> []
-  | Some (_, _, modules) -> modules
+let local_modules_at state pos_cursor =
+  let step = History.focused state.steps in
+  let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
+  let outlines =
+    let rec aux o =
+      match Outline.Spine.previous o with
+      | Some o' when cmp o < 0 -> aux o'
+      | Some _ | None -> o
+    in
+    aux step.outlines
+  in
+  let chunks = Chunk.update outlines (Some step.chunks) in
+  Chunk.local_modules chunks
+
+let str_items_before state pos_cursor =
+  let step = History.focused state.steps in
+  let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
+  let outlines =
+    let rec aux o =
+      match Outline.Spine.previous o with
+      | Some o' when cmp o < 0 -> aux o'
+      | Some _ | None -> o
+    in
+    aux step.outlines
+  in
+  let chunks = Chunk.update outlines (Some step.chunks) in
+  let types  = Typer.update chunks (Some step.types) in
+  Typer.trees types
 
 (* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
 let exns state =
-  Outline.exns state.outlines
-  @ Chunk.exns state.chunks
-  @ Typer.exns state.types
+  let step = History.focused state.steps in
+  Outline.exns step.outlines
+  @ Chunk.exns step.chunks
+  @ Typer.exns step.types
 
 (* Check if module is smaller (= has less definition, counting nested ones)
  * than a particular threshold. Return (Some n) if module has size n, or None
@@ -235,8 +280,11 @@ let rec methods_of_type env ?(acc=[]) type_expr =
 (* Propose completion from a particular node *)
 let node_complete node prefix =
   let {Browse.env} = node in
-  let fmt ~exact name path ty =
-    let ident = Ident.create (Path.last path) in
+  let fmt ~exact name ?path ty =
+    let ident = match path with
+      | Some path -> Ident.create (Path.last path)
+      | None -> Extensions_utils.ident
+    in
     let ppf, to_string = Misc.ppf_to_string () in
     let kind =
       match ty with
@@ -298,35 +346,35 @@ let node_complete node prefix =
       let compl = Env.fold_values
         (fun name path v compl ->
           if valid `Value name
-          then (fmt ~exact:(name = prefix) name path (`Value v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl 
           else compl)
         path env compl
       in
-      let compl = Env.fold_constructors
-        (fun name path v compl ->
-          if valid `Cons name 
-          then (fmt ~exact:(name = prefix) name path (`Cons v)) :: compl 
-          else compl)
+      let compl = Merlin_types.fold_constructors
+        (fun name v compl ->
+           if valid `Cons name
+           then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
+           else compl)
         path env compl
       in
-      let compl = Env.fold_types
-        (fun name path v compl ->
+      let compl = Merlin_types.fold_types
+        (fun name path decl compl ->
           if valid `Typ name 
-          then (fmt ~exact:(name = prefix)  name path (`Typ v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl 
           else compl)
         path env compl
       in
       let compl = Env.fold_modules
         (fun name path v compl ->
           if valid ~uident:true `Mod name 
-          then (fmt ~exact:(name = prefix)  name path (`Mod v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl 
           else compl)
         path env compl
       in
       let compl = Env.fold_modtypes
         (fun name path v compl ->
           if valid ~uident:true `Mod name 
-          then (fmt ~exact:(name = prefix)  name path (`ModType v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl 
           else compl)
         path env compl
       in
@@ -352,9 +400,9 @@ let node_complete node prefix =
       | None -> raise exn (* clearly the hypothesis is wrong here *)
       | Some long_ident ->
         let path = keep_until_lowercase long_ident in
-        Env.fold_labels
-          (fun name path l compl ->
-            if valid `Label name then (fmt ~exact:(name = prefix) name path (`Label l)) :: compl else compl)
+        Merlin_types.fold_labels
+          (fun ({Types.lbl_name = name} as l) compl ->
+            if valid `Label name then (fmt ~exact:(name = prefix) name (`Label l)) :: compl else compl)
           path env compl
       end
   in
@@ -392,8 +440,8 @@ let node_complete node prefix =
           } in 
           match modname with
           | modname when modname = prefix && uniq (`Mod,modname) ->
-              (try let p, md = Env.lookup_module (Longident.Lident modname) env in
-                fmt ~exact:true modname p (`Mod md) :: compl
+              (try let path, md = Env.lookup_module (Longident.Lident modname) env in
+                fmt ~exact:true modname ~path (`Mod md) :: compl
               with Not_found -> default :: compl)
           | modname when Misc.has_prefix prefix modname && uniq (`Mod,modname) ->
             default :: compl
@@ -405,9 +453,15 @@ let node_complete node prefix =
     with Not_found -> []
   end
 
-and locate node path_str local_modules =
-  Track_definition.from_string
-    ~sources:(!source_path)
-    ~env:(node.Browse.env)
-    ~local_modules
-    path_str
+and locate defs node path_str local_modules =
+  let split_loc {Location. txt; loc} = txt, loc in
+  let local_modules = List.map split_loc local_modules in
+  match Track_definition.from_string
+      ~sources:(!source_path)
+      ~env:(node.Browse.env)
+      ~local_defs:defs
+      ~local_modules
+      path_str
+  with
+  | None -> None
+  | Some (txt,loc) -> Some {Location. txt; loc}

@@ -261,13 +261,14 @@ let get_ref r =
   let v = !r in
   r := []; v
 
-let fst3 (x, _, _) = x
+let fst3 (x,_,_) = x
 let snd3 (_,x,_) = x
 let thd3 (_,_,x) = x
 
-let fst4 (x, _, _, _) = x
-let snd4 (_,x,_, _) = x
+let fst4 (x,_,_,_) = x
+let snd4 (_,x,_,_) = x
 let thd4 (_,_,x,_) = x
+let fth4 (_,_,_,x) = x
 
         (* [ppf_to_string ()] gives a fresh formatter and a function to easily
          * gets its content as a string *)
@@ -306,6 +307,16 @@ let lex_strings source refill =
         count
       end
     end
+
+let lex_move buf p =
+  let open Lexing in
+  buf.lex_abs_pos <- (p.pos_cnum - buf.lex_curr_pos);
+  buf.lex_curr_p <- p
+
+let lex_strings ?position source refill =
+  let buf = lex_strings source refill in
+  may (lex_move buf) position;
+  buf
 
         (* [length_lessthan n l] returns
          *   Some (List.length l) if List.length l <= n
@@ -377,6 +388,7 @@ let rec list_drop_while p = function
 
         (* Usual either/sum type *)
 type ('a,'b) sum = Inl of 'a | Inr of 'b
+type 'a or_exn = (exn, 'a) sum 
 
 let sum f g = function
   | Inl a -> f a
@@ -393,6 +405,30 @@ let try_sum f =
 let catch_join (exns, r) = match r with
   | Inl e -> (exns, Inl e)
   | Inr (exns', r') -> (exns @ exns'), r'
+
+        (* Simple list zipper *)
+module Zipper = struct
+  type 'a t = Zipper of 'a list * int * 'a list 
+
+  let rec shift n = function
+    | Zipper (prev, pos, a :: next) when n > 0 -> 
+      shift (pred n) (Zipper (a :: prev, succ pos, next))
+    | Zipper (a :: prev, pos, next) when n < 0 -> 
+      shift (succ n) (Zipper (prev, pred pos, a :: next))
+    | zipper -> zipper
+  
+  let of_list l = Zipper ([], 0, l)
+  let insert a (Zipper (prev, pos, next)) =
+    Zipper (a :: prev, succ pos, next)
+  
+  let seek n (Zipper (_,pos,_) as z) =
+    shift (n - pos) z
+  
+  let change_tail next (Zipper (prev,pos,_next)) =
+    Zipper (prev,pos,next)
+end
+
+type 'a zipper = 'a Zipper.t = Zipper of 'a list * int * 'a list 
 
         (* Manipulating Lexing.position *)
 
@@ -421,5 +457,24 @@ let fluid'let d v f =
 
 let (~!) a = !a
 
-let (!:) = Lazy.force
 let (~:) = Lazy.from_val
+
+module Sync : sig
+  type 'a t
+  val none : unit -> 'a t
+  val make : 'a -> 'a t
+  val same : 'a -> 'a t -> bool
+end = struct
+  type 'a t = 'a Weak.t
+  let make x = 
+    let t = Weak.create 1 in
+    Weak.set t 0 (Some x);
+    t
+  let same x t =
+    match Weak.get t 0 with
+    | None -> false
+    | Some x' -> x == x'
+
+  let none : exn t = make Not_found
+  let none () : 'a t = Obj.magic none
+end

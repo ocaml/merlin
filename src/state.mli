@@ -26,15 +26,18 @@
 
 )* }}} *)
 
-type t = {
-  pos      : Lexing.position;
-  tokens   : Outline.token list;
-  comments : Lexer.comment list;
+type step = {
   outlines : Outline.t;
   chunks   : Chunk.t;
   types    : Typer.t;
 }
-val initial : t
+
+type t = {steps: step History.t}
+
+val initial_sig : string -> t
+val initial_str : string -> t
+val step : step -> Outline.t -> step
+val browse : step -> Browse.t list
 
 val verbosity : [`Query|`Incr|`Clear] -> int
 val verbose_type : Env.t -> Types.type_expr -> Types.type_expr
@@ -52,14 +55,19 @@ end
 
 val source_path : string list ref
 val reset_global_modules : unit -> unit
+
+val retype : t -> t
 val quick_refresh_modules : t -> t * bool
 
 val node_at : t -> Lexing.position -> Browse.t
 val node_complete : Browse.t -> string -> Protocol.completion list
 val find_method : Env.t -> string -> Types.type_expr -> Types.type_expr option
 
-val local_modules : t -> (string * Location.t) list
+val local_modules_at : t -> Lexing.position -> string Location.loc list
 
-val locate : Browse.t -> string -> (string * Location.t) list -> (string * Location.t) option
+val str_items_before : t -> Lexing.position -> Typedtree.structure Asttypes.loc list
+
+val locate : Typedtree.structure Location.loc list -> Browse.t -> string ->
+  string Location.loc list -> string Location.loc option
 
 val exns : t -> exn list

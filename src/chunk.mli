@@ -26,26 +26,23 @@
 
 )* }}} *)
 
-type item_desc =
-  | Definitions of Parsetree.structure_item Location.loc list
-  | Module_opening of Location.t * string Location.loc * Parsetree.module_expr
-  (* When a module is closed, you have to rewind some number
-   * of definitions in the history (those of the module and
-   * its submodules); the offset indicates the last definition before
-   * the corresponding Module_opening.
-   *)
-  | Module_closing of Parsetree.structure_item Location.loc * History.offset
+open Misc
 
-and step = (Outline_utils.kind, item_desc) Misc.sum
-and item = Outline.sync * (exn list * step) * (string * Location.t) list
-and sync = item History.sync
-and t = item History.t
+type 'a binding = string Location.loc * 'a Location.loc
 
-exception Malformed_module of Location.t
-exception Invalid_chunk
+module Context : sig
+  type state = exn list * string Location.loc list (* Local modules *)
 
-val sync_step : Outline_utils.kind -> Outline.token list -> t -> step
-val sync : Outline.t -> t -> t
+  type sig_item = Parsetree.signature_item Location.loc list or_exn
+  type str_item = Parsetree.structure_item Location.loc list or_exn
+  type sig_in_sig_modtype = Parsetree.modtype_declaration binding or_exn
+  type sig_in_sig_module  = Parsetree.module_type binding or_exn
+  type sig_in_str_modtype = Parsetree.module_type binding or_exn
+  type str_in_module      = Parsetree.module_expr binding or_exn
+end                                                      
+module Spine : Spine.S with module Context = Context
+type t = Spine.t
+val update : Outline.t -> t option -> t
+
 val exns : t -> exn list
-
-val dump_chunk : t -> (string * int) list
+val local_modules : t -> string Location.loc list

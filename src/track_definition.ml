@@ -22,7 +22,6 @@ module Utils = struct
     String.capitalize (Filename.basename pref)
 
   let find_file ?(ext=".cmt") file =
-    let file = String.uncapitalize file in
     let fname = Misc.chop_extension_if_any (Filename.basename file) ^ ext in
     (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
        will most likely not be the one you want to edit.
@@ -35,16 +34,10 @@ module Utils = struct
        Note that [cwd] is set only when we have encountered a packed module, so in other
        cases [abs_cmt_file] will be something like "/file.ext" which (hopefully) won't
        exist. *)
-    let abs_cmt_file = Printf.sprintf "%s/%s" !cwd fname in
-    if Sys.file_exists abs_cmt_file then
-      abs_cmt_file
-    else
-      let () =
-        if !cwd <> "" then
-          debug_log "%s not found. looking in source/build path..." abs_cmt_file
-      in
-      try Misc.find_in_path_uncap !sources_path fname
-      with Not_found -> Misc.find_in_path_uncap !Config.load_path fname
+    try Misc.find_in_path_uncap [ !cwd ] fname          with Not_found ->
+    try Misc.find_in_path_uncap !sources_path fname     with Not_found ->
+    try Misc.find_in_path_uncap !Config.load_path fname with Not_found ->
+    raise Not_found
 
   let keep_suffix =
     let open Longident in
@@ -95,17 +88,6 @@ let rec browse_structure browsable modules =
   find (List.concat items)
 
 and check_item modules item try_next =
-  let rec aux mod_item path =
-    let open Browse in
-    match mod_item with
-    | [ { context = Module (Alias path', _) } ] ->
-      let full_path = (path_to_list path') @ path in
-      from_path' full_path
-    | [ { context = Module (Structure, _) ; nodes } ] ->
-      browse_structure (Lazy.force nodes) path
-    | otherwise ->
-      browse_structure otherwise path
-  in
   let rec get_loc ~name item =
     match item.Browse.context with
     | Browse.Pattern (Some id, _)
@@ -117,7 +99,7 @@ and check_item modules item try_next =
       Some item.Browse.loc
     | Browse.Module (Browse.Include ids, _)
       when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
-      aux (Lazy.force item.Browse.nodes) [ name ]
+      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) [ name ]
     | _ -> try_next ()
   in
   let get_on_track ~name item =
@@ -141,7 +123,7 @@ and check_item modules item try_next =
     with
     | None -> try_next ()
     | Some path ->
-      aux (Lazy.force item.Browse.nodes) path
+      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) path
     end
 
 and browse_cmts ~root modules =
@@ -163,16 +145,57 @@ and browse_cmts ~root modules =
     end
   | _ -> None (* TODO? *)
 
-and from_path' = function
+and from_path' ?fallback =
+  let recover = function
+    | None ->
+      begin match fallback with
+      | None -> None
+      | Some default -> Some (default, None)
+      end
+    | Some v ->
+      Some (v, fallback)
+  in
+  function
   | [] -> invalid_arg "empty path"
   | [ fname ] ->
     let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
-    Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
+    Some ({ Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }, fallback)
   | fname :: modules ->
-    let cmt_file = find_file fname in
-    browse_cmts ~root:cmt_file modules
+    try
+      let cmt_file = find_file fname in
+      recover (browse_cmts ~root:cmt_file modules)
+    with Not_found ->
+      recover None
 
-and from_path path = from_path' (path_to_list path)
+and resolve_mod_alias ~fallback mod_item path =
+  let open Browse in
+  match mod_item with
+  | [ { context = Module (Alias path', _) } ] ->
+    let full_path = (path_to_list path') @ path in
+    begin match from_path' ~fallback full_path with
+    | None -> None
+    | Some (v, _) -> Some v
+    end
+  | [ { context = Module (Structure, _) ; nodes } ] ->
+    browse_structure (Lazy.force nodes) path
+  | otherwise ->
+    browse_structure otherwise path
+
+let from_path path = from_path' (path_to_list path)
+
+let rec find_includer ~path = function
+  | [] -> None
+  | str :: strs ->
+    let open Typedtree in
+    let name = Ident.name (Path.head path) in
+    let str= str.Asttypes.txt in
+    match str.str_items with
+    | [ { str_desc = Tstr_include (_, arg) ; str_loc }]
+      when List.exists (Merlin_types.include_idents arg)
+             ~f:(fun i -> Ident.name i = name) ->
+      resolve_mod_alias ~fallback:str_loc (Browse.structure str) (path_to_list path)
+    | _ ->
+      find_includer ~path strs
 
 let path_and_loc_from_cstr desc env =
   let open Types in
@@ -193,16 +216,16 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
-let from_string ~sources ~env ~local_modules path =
+let from_string ~sources ~env ~local_defs ~local_modules path =
   debug_log "looking for the source of '%s'" path ;
   sources_path := sources ;
   let ident, is_label = keep_suffix (Longident.parse path) in
   try
     let path, loc =
-      if is_label then (
-        let _, label_desc = Env.lookup_label ident env in
+      if is_label then
+        let label_desc = Merlin_types.lookup_label ident env in
         path_and_loc_from_label label_desc env
-      ) else (
+      else (
         try
           let path, val_desc = Env.lookup_value ident env in
           path, val_desc.Types.val_loc
@@ -212,7 +235,7 @@ let from_string ~sources ~env ~local_modules path =
           path, typ_decl.Types.type_loc
         with Not_found ->
         try
-          let _, cstr_desc = Env.lookup_constructor ident env in
+          let cstr_desc = Merlin_types.lookup_constructor ident env in
           path_and_loc_from_cstr cstr_desc env
         with Not_found ->
         try
@@ -237,7 +260,12 @@ let from_string ~sources ~env ~local_modules path =
       in
       Some (full_path, loc)
     else
-      Option.map (from_path path) ~f:(fun loc ->
+      let opt =
+        match find_includer ~path local_defs with
+        | None -> from_path path
+        | Some res -> Some (res, None)
+      in
+      Option.map opt ~f:(fun (loc, fallback_opt) ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
         full_path, loc

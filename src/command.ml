@@ -31,29 +31,15 @@ open Std
 open Misc
 open Protocol
 
-type state = State.t = {
-  pos      : Lexing.position;
-  tokens   : Outline.token list;
-  comments : Lexer.comment list;
+type step = State.step = {
   outlines : Outline.t;
   chunks   : Chunk.t;
   types    : Typer.t;
 }
-module VPrinttyp = State.Verbose_print
 
-(*let track_verbosity handler : handler =
-  let last = ref (History.Sync.origin, []) in
-  fun io st args ->
-    let action = 
-      let (sync,args') = !last in
-      let ol = st.outlines in
-      let ol = match History.backward ol with None -> ol | Some (_, h) -> h in
-      if args = args' && History.Sync.(same sync (at ol))
-      then `Incr
-      else (last := (History.Sync.at ol, args); `Clear)
-    in
-    ignore (State.verbosity action);
-    handler io st args*)
+type state = State.t = {steps  : step History.t}
+
+module VPrinttyp = State.Verbose_print
 
 let load_packages packages =
   let packages = Findlib.package_deep_ancestors [] packages in
@@ -67,17 +53,17 @@ module Path_utils = struct
   let default_build_paths =
     let open Config in
     lazy ("." :: List.rev !Clflags.include_dirs @ !load_path)
-  
-  let build  = Config.load_path,  default_build_paths 
+
+  let build  = Config.load_path,  default_build_paths
   let source = State.source_path, lazy ["."]
 
   let set_default_path () =
     Config.load_path := Lazy.force default_build_paths
-  
+
   let modify ~action ~var ~kind ?cwd path =
     let r,_= match var with `Source -> source | `Build -> build in
     let d =
-      if kind = `Relative 
+      if kind = `Relative
       then path
       else Misc.canonicalize_filename ?cwd
             (Misc.expand_directory Config.standard_library path)
@@ -110,14 +96,14 @@ module Type_utils = struct
     begin fun () -> match Chunk_parser.top_expr Lexer.token lexbuf with
       | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
         begin
-          try let _, c = Env.lookup_constructor longident.Asttypes.txt env in
+          try let c = Merlin_types.lookup_constructor longident.Asttypes.txt env in
             Browse_misc.print_constructor ppf c
           with Not_found ->
           try let _, m = Env.lookup_module longident.Asttypes.txt env in
            Printtyp.modtype ppf m
           with Not_found ->
           try let p, m = Env.lookup_modtype longident.Asttypes.txt env in
-            VPrinttyp.modtype_declaration (Ident.create (Path.last p)) ppf 
+            VPrinttyp.modtype_declaration (Ident.create (Path.last p)) ppf
               (State.verbose_sig env m)
           with Not_found ->
             ()
@@ -140,32 +126,37 @@ let track_verbosity =
   let h = Hashtbl.create 21 in
   fun st a_request ->
   let tag = tag a_request in
-  let cell = 
+  let cell =
     try Hashtbl.find h tag
     with Not_found ->
-      let cell = ref (History.Sync.origin,a_request) in
+      let cell = ref (Misc.Sync.none (),a_request) in
       Hashtbl.add h tag cell;
       cell
   in
   let sync, a_request' = !cell in
-  let ol = st.outlines in
-  let ol = match History.backward ol with None -> ol | Some (_, h) -> h in
+  let steps' = History.focused (History.move (-2) st.steps) in
   let action =
-    if a_request = a_request' && History.Sync.(same sync (at ol))
+    if a_request = a_request' && Sync.same steps' sync
     then `Incr
-    else (cell := (History.Sync.at ol, a_request); `Clear)
+    else (cell := (Sync.make steps', a_request); `Clear)
   in
   ignore (State.verbosity action)
 
-let dispatch (i,o : IO.io) (state : state) = 
+let location {steps} = Outline.location (History.focused steps).outlines
+let position state = (location state).Location.loc_end
+let new_step outline steps =
+  History.insert (State.step (History.focused steps) outline) steps
+
+let dispatch (i,o : IO.io) (state : state) =
   fun (type a) (request : a request) ->
   track_verbosity state (Request request);
+  let step = History.focused state.steps in
   (match request with
   | (Tell (`Source source) : a request) ->
   begin
     Env.reset_missing_cmis ();
     let eod = ref false and eot = ref false in
-    let lexbuf = Misc.lex_strings source
+    let lexbuf = Misc.lex_strings source ~position:(position state)
       begin fun () ->
         if !eot then ""
         else try
@@ -180,59 +171,42 @@ let dispatch (i,o : IO.io) (state : state) =
           Stream.Failure -> IO.invalid_arguments ()
       end
     in
-    let rec loop first state =
-      let bufpos = ref state.pos in
-      let tokens, outlines, chunks, types =
-        state.tokens,
-        (History.cutoff state.outlines),
-        (History.cutoff state.chunks),
-        (History.cutoff state.types)
-      in
-      let tokens, outlines =
-        let default tokens =
-          Outline.parse ~bufpos tokens outlines lexbuf
-        in
-        if not first
-        then default tokens
-        else
-          match History.backward outlines with
-          | None -> default tokens
-          | Some (o, os) ->
-            let tokens', outlines' =
-              Outline.parse ~bufpos (o.Outline.tokens @ tokens)
-                (History.cutoff os) lexbuf
-            in
-            match History.prev outlines' with
-            (* Parsing is stable *)
-            | Some o' when o.Outline.tokens = o'.Outline.tokens ->
-              default tokens'
-            (* Parsing is not stable *)
-            | _ ->
-              tokens', outlines'
-      in
-      let chunks = Chunk.sync outlines chunks in
-      let types = Typer.sync chunks types in
-      let pos = !bufpos in
-        (* If token list didn't change, move forward anyway
-         * to prevent getting stuck *)
-      let stuck = state.tokens = tokens in
-      let tokens =
+    let onestep tokens steps =
+      let step = History.focused steps in
+      let tokens', outline =
+        Outline.parse tokens step.outlines lexbuf in
+      let stuck = tokens = tokens' in
+      let tokens' =
         if stuck
-        then (try List.tl tokens with _ -> tokens)
-        else tokens
+        then (try List.tl tokens' with _ -> tokens')
+        else tokens'
       in
-      let state' = { tokens ; comments = [] ; outlines ; chunks ; types ; pos } in
-      if !eod || (!eot && (stuck || tokens = []))
-      then state'
-      else loop false state'
+      let finished = !eod || (!eot && (stuck || tokens' = [])) in
+      if finished
+      then None, outline
+      else Some tokens', outline
     in
-    let state = loop true state in
-    state, true
+    let rec loop steps tokens =
+      let next_tokens, outline = onestep tokens steps in
+      let steps = match outline with
+        | None -> steps
+        | Some outline -> new_step outline steps
+      in
+      match next_tokens with
+      | Some tokens -> loop steps tokens
+      | None -> steps
+    in
+    let first steps =
+      match Outline.tokens (History.focused steps).outlines with
+      | [] -> loop steps []
+      | tokens -> loop (History.move (-1) steps) tokens
+    in
+    {steps = first state.steps}, true
   end
   | (Tell _ : a request) -> IO.invalid_arguments ()
 
   | (Type_expr (source, None) : a request) ->
-    let env = Typer.env state.types in
+    let env = Typer.env (History.focused state.steps).types in
     let ppf, to_string = Misc.ppf_to_string () in
     Type_utils.type_in_env env ppf source;
     state, to_string ()
@@ -244,10 +218,7 @@ let dispatch (i,o : IO.io) (state : state) =
     state, to_string ()
 
   | (Type_at pos : a request) ->
-    let structures = Misc.list_concat_map
-      (fun (str,sg) -> Browse.structure str)
-      (Typer.trees state.types)
-    in
+    let structures = State.browse step in
     let node = match Browse.nearest_before pos structures with
       | Some node -> node
       | None -> raise Not_found
@@ -296,16 +267,13 @@ let dispatch (i,o : IO.io) (state : state) =
         Some (loc, to_string ())
       | _ -> None
     in
-    let structures = Misc.list_concat_map
-      (fun (str,sg) -> Browse.structure str)
-      (Typer.trees state.types)
-    in
+    let structures = State.browse step in
     let path = Browse.enclosing pos structures in
     let result = List.filter_map ~f:aux path in
     state, (List.length path, result)
 
   | (Complete_prefix (prefix, None) : a request) ->
-    let node = Browse.({dummy with env = Typer.env state.types}) in
+    let node = Browse.({dummy with env = Typer.env step.types}) in
     let compl = State.node_complete node prefix in
     state, List.rev compl
 
@@ -315,12 +283,24 @@ let dispatch (i,o : IO.io) (state : state) =
     state, List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
-    let node, local_modules =
+    let node, local_modules, local_defs =
       match opt_pos with
-      | None -> Browse.({ dummy with env = Typer.env state.types }), []
-      | Some pos -> State.node_at state pos, State.local_modules state
+      | None -> Browse.({ dummy with env = Typer.env step.types }), [], []
+      | Some pos -> (
+          State.node_at state pos,
+          List.map (State.local_modules_at state pos)
+            ~f:(fun { Location. txt ; loc } -> txt, loc),
+          State.str_items_before state pos
+        )
     in
-    begin match State.locate node path local_modules with
+    begin match
+      Track_definition.from_string
+        ~sources:(!State.source_path)
+        ~env:(node.Browse.env)
+        ~local_defs
+        ~local_modules
+        path
+    with
     | None -> state, None
     | Some (file, loc) ->
       Logger.log `locate (Printf.sprintf "--> %s" file) ;
@@ -329,134 +309,91 @@ let dispatch (i,o : IO.io) (state : state) =
     end
 
   | (Drop : a request) ->
-    let outlines, chunks, types =
-      (History.cutoff state.outlines),
-      (History.cutoff state.chunks),
-      (History.cutoff state.types)
-    in
-    {state with tokens = []; outlines; chunks; types}, state.pos
+    let state = {steps = History.modify (fun x -> x) state.steps} in
+    state, position state
 
   | (Seek `Position : a request) ->
-    state, state.pos
+    state, position state
 
   | (Seek (`Before pos) : a request) ->
-    let cmp o = Location.compare_pos pos (Outline.item_loc o) in
-    let outlines = state.outlines in
-    let outlines = History.seek_forward (fun i -> cmp i > 0) outlines in
-    let outlines = History.seek_backward
-      (function { Outline.kind = (Outline_utils.Syntax_error _ | Outline_utils.Unterminated)} -> true
-                | i -> cmp i <= 0)
-      outlines
+    let inv step = Outline.invalid step.outlines in
+    let cmp step = Merlin_parsing.compare_pos pos (Outline.location step.outlines) in
+    let steps = state.steps in
+    let steps = History.seek_forward (fun i -> inv i || cmp i > 0) steps in
+    let steps = History.seek_backward
+      (fun step -> match step.outlines with
+       (*| {Outline.tokens = []} -> true*)
+       | _ -> inv step || cmp step <= 0)
+      steps
     in
-    let chunks           = History.Sync.right  Misc.fst3 outlines state.chunks in
-    let outlines, chunks = History.Sync.rewind Misc.fst3 outlines chunks       in
-    let types            = History.Sync.right  fst chunks   state.types  in
-    let chunks, types    = History.Sync.rewind fst chunks   types        in
-    let pos =
-      match Outline.location outlines with
-        | l when l = Location.none -> State.initial.pos
-        | p -> p.Location.loc_end
-    in
-    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
+    let state = {steps} in
+    state, position state
 
   | (Seek (`Exact pos) : a request) ->
-    let cmp o = Location.compare_pos pos (Outline.item_loc o) in
-    let outlines = state.outlines in
-    let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
-    let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
-    let chunks           = History.Sync.right  Misc.fst3 outlines state.chunks in
-    let outlines, chunks = History.Sync.rewind Misc.fst3 outlines chunks       in
-    let types            = History.Sync.right  fst chunks   state.types  in
-    let chunks, types    = History.Sync.rewind fst chunks   types        in
-    let pos =
-      match Outline.location outlines with
-      | l when l = Location.none -> State.initial.pos
-      | p -> p.Location.loc_end
-    in
-    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
+    let inv step = Outline.invalid step.outlines in
+    let cmp step = Merlin_parsing.compare_pos pos (Outline.location step.outlines) in
+    let steps = state.steps in
+    let steps = History.seek_backward (fun i -> inv i || cmp i < 0) steps in
+    let steps = History.seek_forward (fun i -> inv i || cmp i > 0) steps in
+    let state = {steps} in
+    state, position state
 
   | (Seek `End : a request) ->
-    let outlines = History.seek_forward (fun _ -> true) state.outlines in
-    let chunks = History.Sync.right Misc.fst3 outlines state.chunks in
-    let types  = History.Sync.right fst chunks state.types in
-    let pos =
-      match Outline.location outlines with
-      | l when l = Location.none -> State.initial.pos
-      | p -> p.Location.loc_end
-    in
-    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
+    let steps = state.steps in
+    let steps = History.seek_forward (fun _ -> true) steps in
+    let state = {steps} in
+    state, position state
 
   | (Seek `Maximize_scope : a request) ->
-    let rec find_end_of_module (depth,outlines) =
-      if depth = 0 then (0,outlines)
-      else
-      match History.forward outlines with
-      | None -> (depth,outlines)
-      | Some ({ Outline.kind = Outline_utils.Leave_module },outlines') ->
-          find_end_of_module (pred depth, outlines')
-      | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
-          find_end_of_module (succ depth, outlines')
-      | Some (_,outlines') -> find_end_of_module (depth,outlines')
+    let rec loop steps =
+      let steps' = History.move 1 steps in
+      if Outline.Spine.position (History.focused steps').outlines <=
+         Outline.Spine.position (History.focused steps).outlines
+      then steps
+      else loop steps'
     in
-    let rec loop outlines =
-      match History.forward outlines with
-      | None -> outlines
-      | Some ({ Outline.kind = Outline_utils.Leave_module },_) ->
-          outlines
-      | Some ({ Outline.kind = Outline_utils.Enter_module },outlines') ->
-          (match find_end_of_module (1,outlines') with
-           | (0,outlines'') -> outlines''
-           | _ -> outlines)
-      | Some (_,outlines') -> loop outlines'
-    in
-    let outlines = loop state.outlines in
-    let chunks = History.Sync.right Misc.fst3 outlines state.chunks in
-    let types  = History.Sync.right fst chunks state.types in
-    let pos =
-      match Outline.location outlines with
-      | l when l = Location.none -> State.initial.pos
-      | p -> p.Location.loc_end
-    in
-    {tokens = []; comments = []; outlines; chunks; types; pos}, pos
+    let steps = loop state.steps in
+    let state = {steps} in
+    state, position state
 
   | (Boundary (dir,pos) : a request) ->
-    let prev2 x =
-      Option.bind (History.backward x) ~f:(fun (_,y) -> History.prev y)
+    let count = match dir with
+      | `Next    -> 1
+      | `Prev    -> -1
+      | `Current -> 0
     in
-    let command = function
-      | `Next -> History.next
-      | `Prev -> prev2
-      | `Current -> History.prev
+    let move steps =
+      if count <> 0 && steps = state.steps
+      then None
+      else Some steps
     in
-    let outlines_of_pos state pos =
-      let cmp o = Location.compare_pos pos (Outline.item_loc o) in
-      let outlines = state.outlines in
-      let outlines = History.seek_backward (fun i -> cmp i < 0) outlines in
-      let outlines = History.seek_forward (fun i -> cmp i >= 0) outlines in
-      fst (History.Sync.rewind Misc.fst3 outlines state.chunks)
+    let steps_at_pos steps pos =
+      let cmp step = Merlin_parsing.compare_pos pos (Outline.location step.outlines) in
+      let steps = History.seek_backward (fun i -> cmp i < 0) steps in
+      let steps = History.seek_forward (fun i -> cmp i > 0) steps in
+      steps
     in
     let pos = match pos with
       | Some pos -> pos
-      | None -> state.pos
+      | None -> position state
     in
-    begin match (command dir) (outlines_of_pos state pos) with
-    | None -> state, None
-    | Some o -> state, Some o.Outline.loc
+    state,
+    begin match move (steps_at_pos state.steps pos) with
+    | None -> None
+    | Some steps ->
+      Some (Outline.location (History.focused steps).outlines)
     end
 
   | (Reset None : a request) ->
-    State.initial, ()
+    State.initial_str "", ()
 
-  | (Reset (Some pos_fname) : a request) ->
-    { State.initial with pos =
-      { State.initial.pos with Lexing.pos_fname } },
-    ()
+  | (Reset (Some name) : a request) ->
+    State.initial_str name, ()
 
   | (Refresh `Full : a request) ->
     State.reset_global_modules ();
     Env.reset_cache ();
-    let types = Typer.sync state.chunks History.empty in
-    {state with types}, true
+    State.retype state, true
 
   | (Refresh `Quick : a request) ->
     State.quick_refresh_modules state
@@ -470,7 +407,7 @@ let dispatch (i,o : IO.io) (state : state) =
     state, State.exns state
 
   | (Dump (`Env None) : a request) ->
-    let sg = Browse_misc.signature_of_env (Typer.env state.types) in
+    let sg = Browse_misc.signature_of_env (Typer.env step.types) in
     let aux item =
       let ppf, to_string = Misc.ppf_to_string () in
       Printtyp.signature ppf [item];
@@ -503,8 +440,8 @@ let dispatch (i,o : IO.io) (state : state) =
     state, `List (List.map ~f:aux sg)
 
   | (Dump `Sig : a request) ->
-      let trees = Typer.trees state.types in
-      let sg = List.flatten (List.map ~f:snd trees) in
+      let trees = Typer.trees step.types in
+      let sg = Misc.list_concat_map (fun {Location.txt} -> txt.Typedtree.str_type) trees in
       let aux item =
         let ppf, to_string = Misc.ppf_to_string () in
         Printtyp.signature ppf [item];
@@ -520,32 +457,47 @@ let dispatch (i,o : IO.io) (state : state) =
       state, `List (List.map ~f:aux sg)
 
   | (Dump `Chunks : a request) ->
-    let pr_item_desc items =
-      List.map (Chunk.dump_chunk items) ~f:(fun (s,i) ->
-        `List [`String s;`Int i]
-      )
+    let pr_item_desc items = List.map
+        (fun s -> `String s)
+        (Chunk.Spine.dump items)
     in
-    state, `List (pr_item_desc state.chunks)
+    state, `List (pr_item_desc (History.focused state.steps).chunks)
 
   | (Dump `Tree : a request) ->
-      let structures = Misc.list_concat_map
-        (fun (str,sg) -> Browse.structure str)
-        (Typer.trees state.types)
-      in
-      state, Browse_misc.dump_ts structures
+    let structures = State.browse step in
+    state, Browse_misc.dump_ts structures
 
   | (Dump `Outline : a request) ->
-    let outlines = History.prevs state.outlines in
-    let aux item =
+    let print_item label _ tokens=
       let tokens =
-        List.map item.Outline.tokens ~f:(fun (t,_,_) ->
-          `String (Chunk_parser_utils.token_to_string t)
-        )
+        String.concat " "
+          (List.map tokens ~f:(fun (t,_,_) ->
+            (Chunk_parser_utils.token_to_string t)))
       in
-      `List [`String (Outline_utils.kind_to_string item.Outline.kind);
-             `List tokens]
+      label ^ "(" ^ tokens ^ ")"
     in
-    state, `List (List.rev_map ~f:aux outlines)
+    let outlines = (History.focused state.steps).outlines in
+    state, `List (List.map ~f:(fun s -> `String s)
+                    (Outline.Spine.dump outlines
+                       ~sig_item:print_item ~str_item:print_item))
+  | (Dump `History : a request) ->
+    state,
+    let entry s =
+      let {Location. loc_start; loc_end} = Outline.location s.outlines in
+      let l1,c1 = Misc.split_pos loc_start in
+      let l2,c2 = Misc.split_pos loc_end   in
+      let tokens = Outline.tokens s.outlines in
+      let tokens = List.map (fun (tok,_,_) ->
+          `String (Chunk_parser_utils.token_to_string tok)) tokens
+      in
+      `List [`String (Printf.sprintf "%d:%d-%d:%d" l1 c1 l2 c2); `List tokens]
+    in
+    let rec aux acc = function
+      | History.One x -> entry x :: acc
+      | History.More (x,xs) ->  aux (entry x :: acc) xs
+    in
+    `List (aux [] (History.head state.steps))
+
 
   | (Dump `Exn : a request) ->
     let exns = State.exns state in
@@ -583,10 +535,10 @@ let dispatch (i,o : IO.io) (state : state) =
     List.iter extensions ~f:(Extensions_utils.set_extension ~enabled) ;
     state, ()
 
-  | (Path (var,kind,action,pathes) : a request) -> 
+  | (Path (var,kind,action,pathes) : a request) ->
     List.iter ~f:(Path_utils.modify ~action ~kind ~var) pathes;
     State.reset_global_modules ();
-    state, true 
+    state, true
 
   | (Path_list `Build : a request) ->
     state, !(fst Path_utils.build)
@@ -604,10 +556,10 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Project_load (cmd,path) : a request) ->
     let f = match cmd with
       | `File -> Dot_merlin.read
-      | `Find -> Dot_merlin.find 
+      | `Find -> Dot_merlin.find
     in
     let dot_merlins = f path in
-    let path_modify action var ~cwd path = 
+    let path_modify action var ~cwd path =
       Path_utils.modify ~action ~var ~kind:`Absolute ~cwd path in
     state, (Dot_merlin.exec ~path_modify ~load_packages dot_merlins)
 

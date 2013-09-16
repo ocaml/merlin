@@ -26,209 +26,57 @@
 
 )* }}} *)
 
-type pos = Lexing.position
-type 'a t = { prev : 'a list ; next : 'a list ; pos : int }
+type 'a non_empty =
+  | One of 'a
+  | More of 'a * 'a non_empty 
 
-let empty = { prev = [] ; next = [] ; pos = 0 }
+(** {0 Historique}
+  * A sort of zipper: maintains and synchronizes a list of different
+  * versions of an object (see ocamlmerlin.ml top comment).
+  *)
+type 'a t = {head: 'a non_empty; tail: 'a list}
 
-let of_list next = { empty with next }
+(* New history *)
+let initial x = {head = One x; tail = []}
 
-let split { prev ; next ; pos } =
-  { prev ; next = [] ; pos }, { prev = [] ; next; pos = 0 }
+let head x = x.head
 
-let cutoff = function
-  | { next = [] } as h -> h
-  | h -> { h with next = [] }
+(** Element to the left of the cursor
+  * (if last operation was an insertion, the inserted value is returned)
+  *)
+let focused {head = (More (x,_) | One x); _} = x
 
-let prev = function
-  | { prev = p :: _ } -> Some p
-  | _ -> None
+(** Move forward while item under cursor satisfy predicate *)
+let rec seek_forward pred = function
+  | {head; tail = x :: tail} as t when pred (focused t) ->
+    seek_forward pred {head = More (x,head); tail}
+  | t -> t
 
-let prevs { prev } = prev
+(** Move backward while item under cursor satisfy predicate *)
+let rec seek_backward pred = function
+  | {head = More (x,head); tail} when pred x ->
+    seek_backward pred {head; tail = x :: tail}
+  | t -> t
 
-let next = function
-  | { next = n :: _ } -> Some n
-  | _ -> None
+(** Moves an arbitrary number of steps.
+  *
+  * May stop earlier if it reaches an end of history.
+ *)
+let rec move n = function
+  | {head; tail = x :: tail} when n > 0 -> 
+    move (pred n) {head = More (x,head); tail}
+  | {head = More (x,head); tail} when n < 0 -> 
+    move (succ n) {head; tail = x :: tail}
+  | t -> t
 
-let nexts { next } = next
+(** Adds an element to the left of the cursor:
+  * insert w [..zyx|abc..] = [..zyxw|abc..] *)
+let insert x h = {head = More (x, h.head); tail = []}
 
-type offset = int
-let offset { pos } = pos
-
-let move amount h =
-  let rec shift count lx ly =
-    match count, lx, ly with
-      | n, (x :: xs), ys when n < 0 -> shift (succ n) xs (x :: ys)
-      | n, xs, (y :: ys) when n > 0 -> shift (pred n) (y :: xs) ys
-      | n, xs, ys -> n, xs, ys
-  in
-  let diff, prev, next = shift amount h.prev h.next in
-  let moved = amount - diff in
-  { prev ; next ; pos = h.pos + moved }
-
-let seek_offset offset h =
-  move (offset - h.pos) h
-
-
-let forward = function
-  | { prev ; next = n :: ns ; pos } ->
-      Some (n, { prev = n :: prev ; next = ns ; pos = succ pos })
-  | history -> None
-
-let backward = function
-  | { prev = p :: ps ; next ; pos } ->
-      Some (p, { prev = ps ; next = p :: next ; pos = pred pos })
-  | history -> None
-
-let insert p { pos ; prev ; next } =
-  { prev = p :: prev ; next ; pos = succ pos }
-
-let remove = function
-  | { prev = p :: ps ; next ; pos } ->
-      Some (p, { prev = ps ; next ; pos = pred pos })
-  | x -> None
-
+(** Modifies focused element. *)
 let modify f = function
-  | { prev = p :: ps ; next ; pos } ->
-      { prev = (f p) :: ps ; next ; pos }
-  | x -> x
+  | {head = One x; _} -> {head = One (f x); tail = []}
+  | {head = More (x,head); _} -> {head = More (f x, head); tail = []}
 
-let wrap_seek f { prev ; next ; pos } =
-  let prev, next, pos = f prev next pos in
-  { prev ; next ; pos }
-
-let seek_forward p =
-  let rec aux prev next pos =
-    match next with
-      | t :: next' when p t ->
-          aux (t :: prev) next' (succ pos)
-      | _ -> prev, next, pos
-  in
-  wrap_seek aux
-
-let seek_backward p =
-  let rec aux prev next pos =
-    match prev with
-      | t :: prev' when p t ->
-          aux prev' (t :: next) (pred pos)
-      | _ -> prev, next, pos
-  in
-  wrap_seek aux
-
-type 'a loc = 'a * pos * pos
-
-let wrap_lexer ?(filter=fun _-> true) ?bufpos r f buf =
-  let t = match forward !r with
-    | Some ((t,s,c), r') ->
-        buf.Lexing.lex_start_p <- s;
-        buf.Lexing.lex_curr_p <- c;
-        r := r';
-        t
-    | None ->
-        (match bufpos with
-          | Some {contents = p} -> 
-            buf.Lexing.lex_abs_pos <- Lexing.(p.pos_cnum - buf.lex_curr_pos);
-            buf.Lexing.lex_curr_p <- p
-          | None -> ());
-        let t = f buf in
-        if filter t then
-          r := insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !r;
-        (match bufpos with
-          | Some p -> p := buf.Lexing.lex_curr_p
-          | None -> ());
-        t
-  in
-  t
-
-let current_pos ?(default=Lexing.dummy_pos) hist =
-  match prev hist with
-    | Some (_,_,p) -> p
-    | _ -> default
-
-let seek_pos pos h =
-  let cmp (_,_,p) = Misc.compare_pos pos p in
-  let go_backward item = cmp item < 0 in
-  let go_forward item = cmp item > 0 in
-  match backward h with
-  | Some (item,h') when go_backward item ->
-      seek_backward go_backward h'
-  | _ -> seek_forward go_forward h
-
-type 'a sync = (int * 'a) option
-
-module Sync =
-struct
-  let origin = None
-
-  let (>>=) = function
-    | None   -> fun _ -> None
-    | Some a -> fun f -> f a
-
-  let at h =
-    prev h >>= fun a -> Some (offset h, a)
-
-  let same s1 s2 =
-    match s1, s2 with
-    | Some (p1,a1), Some (p2,a2) when p1 = p2 && a1 == a2 -> true
-    | None, None -> true
-    | _ -> false
-
-  let item = function
-    | None -> None
-    | Some (_,a) -> Some a
-
-  let rec nearest f ah bh =
-    let point = prev bh >>= f in
-    let found = point >>=
-      fun (off,a) ->
-      let ah' = seek_offset off ah in
-      prev ah' >>= function
-        | a' when a' == a -> Some (ah', bh)
-        | _ -> backward bh >>= fun (_,bh') -> Some (nearest f ah' bh')
-    in
-    match found with
-      | Some a -> a
-      | None   -> seek_offset 0 ah, seek_offset 0 bh
-
-  let rec rewind f ah bh =
-    let point = prev bh >>= f in
-    let found = point >>=
-      fun (off,a) ->
-      let ah' = if off <= offset ah
-        then seek_offset off ah
-        else ah
-      in
-      prev ah' >>= function
-        | a' when a' == a -> Some (ah', bh)
-        | _ -> backward bh >>= fun (_,bh') -> Some (rewind f ah' bh')
-    in
-    match found with
-      | Some a -> a
-      | None   -> seek_offset 0 ah, seek_offset 0 bh
-
-  let right f ah bh =
-    let off = offset ah in
-    let rec loop bh =
-      match forward bh with
-        | Some (item,bh') ->
-            let off' = match f item with
-              | None -> 0
-              | Some (off',_) -> off'
-            in
-            if off' < off
-            then loop bh'
-            else bh'
-        | _ -> bh
-    in
-    match backward bh with
-      | Some (_,bh') -> loop bh'
-      | None -> loop bh
-
-  let left f ah bh =
-    let off =
-      match prev bh >>= f with
-        | None -> 0
-        | Some (off,_) -> off
-    in
-    seek_offset off ah
-end
+let append f {head = (One x | More (x,_) as head); _} =
+  {head = More (f x, head); tail = []}

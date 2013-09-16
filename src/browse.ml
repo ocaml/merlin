@@ -89,7 +89,8 @@ and structure_item_desc ~env = function
     List.map lst ~f:(fun (id,l,{ ci_type_decl }) ->
       singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env
     )
-  | Tstr_include (m,ids) -> [module_include ids m]
+  | Tstr_include (m,arg) -> 
+    [module_include (Merlin_types.include_idents arg) m]
 
 and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest } =
   let nodes = Option.map typ_manifest ~f:(fun c -> lazy [core_type c]) in
@@ -147,25 +148,20 @@ and patterns ?env pes =
   )
 
 and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
-  let subpatterns = match pat_desc with
-    | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> []
-    | Tpat_alias (p,_,_) | Tpat_lazy p | Tpat_variant (_,Some p,_) -> [p]
-    | Tpat_array ps | Tpat_tuple ps | Tpat_construct (_,_,_,ps,_) -> ps
-    | Tpat_or (p1,p2,_) -> [p1;p2]
-    | Tpat_record (r,_) -> List.map ~f:(fun (_,_,_,p) -> p) r
-  in
   let name =
     match pat_desc with
     | Tpat_var (i, _) -> Some i
     | _ -> None
   in
+  let subpatterns = Merlin_types.extract_subpatterns pat_desc in
   singleton 
     ~context:(Pattern (name, pat_type))
     ~nodes:(lazy (List.map ~f:(pattern ?env) subpatterns)) pat_loc 
     (match env with Some e' -> e' | _ -> pat_env)
 
 and expression_extra ~env t = function
-  | Texp_open (_,_,env),loc -> { loc ; env ; context = Other ; nodes = lazy [t] }
+  | Texp_open _ as expr,loc -> 
+    { loc ; env = Merlin_types.exp_open_env expr; context = Other ; nodes = lazy [t] }
   | Texp_constraint (c1,c2), loc ->
     let cs = match c1,c2 with
       | Some c1, Some c2 -> [c1;c2] | Some c, _ | _, Some c -> [c] | _ -> []
@@ -187,12 +183,8 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_match (e,pes,_) -> expression e :: patterns pes
     | Texp_try (e,pes) -> expression e :: patterns pes
     | Texp_tuple (es) -> List.map ~f:expression es
-    | Texp_construct (_,_,_,es,_) -> List.map ~f:expression es
     | Texp_variant (_,Some e) -> [expression e]
     | Texp_variant (_,None) -> []
-    | Texp_record (pldes,Some e) ->
-      expression e :: List.map ~f:(fun (_,_,_,e) -> expression e) pldes
-    | Texp_record (pldes,None) -> List.map ~f:(fun (_,_,_,e) -> expression e) pldes
     | Texp_array es -> List.map ~f:expression es
     | Texp_send (ea, m, eb') ->
       let tail = match eb' with None -> [] | Some eb -> [expression eb] in
@@ -200,10 +192,8 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
       expression ea :: m :: tail
     | Texp_assert ea
     | Texp_lazy ea
-    | Texp_setinstvar (_,_,_,ea)
-    | Texp_field (ea,_,_,_) -> [expression ea]
+    | Texp_setinstvar (_,_,_,ea) -> [expression ea]
     | Texp_ifthenelse (ea,eb,None)
-    | Texp_setfield (ea,_,_,_,eb)
     | Texp_sequence (ea,eb)
     | Texp_when (ea,eb)
     | Texp_while (ea,eb) -> [expression ea ; expression eb]
@@ -216,6 +206,8 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_object (cls,_) -> class_structure ~env:exp_env cls
     | Texp_new _
     | Texp_instvar _ -> [] (*FIXME*)
+		| Texp_record _ | Texp_construct _ | Texp_setfield _ | Texp_field _ as expr ->
+			List.map ~f:expression (Merlin_types.extract_specific_subexpressions expr)
   in
   List.fold_left exp_extra ~f:(expression_extra ~env:exp_env) ~init:{
     loc = exp_loc ;
@@ -273,7 +265,7 @@ and meth obj name loc_start loc_end =
     obj.exp_env
 
 let local_near pos nodes =
-  let cmp = Location.compare_pos pos in
+  let cmp = Merlin_parsing.compare_pos pos in
   let best_of ({ loc = l1 } as t1) ({ loc = l2 } as t2) =
     match cmp l1, cmp l2 with
     | 0, 0 ->
@@ -298,7 +290,7 @@ let local_near pos nodes =
   )
 
 let is_enclosing pos { loc } =
-  (Location.compare_pos pos loc = 0)
+  (Merlin_parsing.compare_pos pos loc = 0)
 
 let traverse_branch pos tree =
   let rec traverse { nodes = lazy nodes } acc =

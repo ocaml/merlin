@@ -28,13 +28,22 @@
 
 (* Maintains a typing environment synchronized with a chunk history *)
 
-type state = Env.t * (Typedtree.structure * Types.signature) list * exn list
-type item = Chunk.sync * state
-type sync = item History.sync
-type t = item History.t
+open Misc
 
-val initial_env : unit -> Env.t
-val env : t -> Env.t
-val trees : t -> (Typedtree.structure * Types.signature) list
+module Context : sig
+  type state = exn list * Env.t * Typedtree.structure Location.loc list
+
+  type sig_item = Types.signature Location.loc list or_exn
+  type str_item = Typedtree.structure Location.loc list or_exn
+  type sig_in_sig_modtype = unit
+  type sig_in_sig_module  = unit
+  type sig_in_str_modtype = unit
+  type str_in_module      = unit
+end
+module Spine : Spine.S with module Context := Context
+type t = Spine.t
+val update : Chunk.t -> t option -> t
+
 val exns : t -> exn list
-val sync : Chunk.t -> t -> t
+val env : t -> Env.t
+val trees : t -> Typedtree.structure Location.loc list

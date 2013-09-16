@@ -1,4 +1,5 @@
 (* {{{ COPYING *(
+type token = Chunk_parser.token Fake_lexer.token
 
   This file is part of Merlin, an helper for ocaml editors
 
@@ -27,60 +28,73 @@
 )* }}} *)
 
 open Misc
-type token = Chunk_parser.token History.loc
 
-let parse_with history ~parser ~lexer ~bufpos buf =
-  let origin = History.current_pos history in
-  let history' = ref history in
-  let chunk_content h =
+type token = Chunk_parser.token Fake_lexer.token
+
+module Context = struct
+  type state = exn list * Location.t * token list
+
+  type sig_item = token list
+  type str_item = token list
+  type sig_in_sig_modtype = token list
+  type sig_in_sig_module  = token list
+  type sig_in_str_modtype = token list
+  type str_in_module      = token list
+end
+module Spine = Spine.Initial (Context)
+type t = Spine.t
+
+let parse_with (tokens : token zipper) ~parser ~lexer buf =
+  let Zipper (_,origin,_) = tokens in
+  let tokens' = ref tokens in
+  let chunk_content tokens =
     (* Drop end of history *)
-    let end_of_chunk = History.cutoff h in
-    let at_origin = History.seek_pos origin end_of_chunk in
+    let end_of_chunk = Zipper.change_tail [] tokens in
+    let Zipper (_,_,next) = Zipper.seek origin end_of_chunk in
     (* Drop beginning of history *)
-    History.nexts at_origin
+    next
   in
-  let lexer = History.wrap_lexer ~bufpos history' lexer in
+  let lexer = Fake_lexer.wrap ~tokens:tokens' lexer in
   try
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in
-    let history = !history' in
-    history, Outline_utils.Done, chunk_content history
+    let tokens = !tokens' in
+    tokens, Outline_utils.Definition, chunk_content tokens
   with
   | Outline_utils.Chunk (c,p) ->
     begin
-      let rec aux history = match History.backward history with
-        | Some ((t,_,p'), history) when Misc.compare_pos p p' < 0 ->
-          aux history
-        | _ -> history
+      let rec aux = function
+        | Zipper ((t,_,p') :: _,_,_) as tokens
+          when Misc.compare_pos p p' < 0 ->
+          aux (Zipper.shift (-1) tokens)
+        | tokens -> tokens
       in
-      let history = aux !history' in
-      history, c, chunk_content history
+      let tokens = aux !tokens' in
+      tokens, c, chunk_content tokens
     end
   | Sys.Break ->
     begin
-      let history = !history' in
-      History.(seek_pos origin history),
-      Outline_utils.Unterminated,
-      []
+      let tokens = !tokens' in
+      Zipper.seek origin tokens,
+      Outline_utils.Unterminated, []
     end
   | Outline_parser.Error ->
     begin
-      let loc = match History.prev history with
-        | Some (_prev_tok, _loc_start, loc_end) ->
-          Location.({ loc_start = loc_end ; loc_end ; loc_ghost=false })
-        | None ->
-          Location.({
-            loc_start = buf.Lexing.lex_start_p ;
-            loc_end   = buf.Lexing.lex_curr_p ;
-            loc_ghost = false ;
-          })
+      let loc = match tokens with
+        | Zipper ((_prev_tok, _loc_start, loc_end) :: _,_,_) ->
+          {Location. loc_start = loc_end ; loc_end ; loc_ghost=false}
+        | Zipper _ ->
+          {Location.
+            loc_start = buf.Lexing.lex_start_p;
+            loc_end   = buf.Lexing.lex_curr_p;
+            loc_ghost = false}
       in
-      history' := History.move (-2) !history';
+      tokens' := Zipper.shift (-2) !tokens';
       let lexer' who = Chunk_parser_utils.dump_lexer ~who lexer in
       let rec aux () =
         let count = Chunk_parser_utils.re_sync (lexer' "re_sync") buf in
-        history' := History.move (-1) !history';
-        let offset = History.offset !history' in
+        tokens' := Zipper.shift (-1) !tokens';
+        let Zipper (_,offset,_) = !tokens' in
         try
           for i = 1 to count do
             try ignore (parser (lexer' "checker") buf)
@@ -88,98 +102,95 @@ let parse_with history ~parser ~lexer ~bufpos buf =
           done;
           offset
         with Outline_parser.Error ->
-          history' := History.seek_offset (succ offset) !history';
+          tokens' := Zipper.seek (succ offset) !tokens';
           aux ()
       in
       let offset = aux () in
-      let history =
-        History.seek_offset offset !history'
-      in
-      history, Outline_utils.Syntax_error loc, chunk_content history
+      let tokens = Zipper.seek offset !tokens' in
+      tokens, Outline_utils.Syntax_error loc, chunk_content tokens
     end
   | exn -> raise exn
 
-type item = {
-  kind       : Outline_utils.kind;
-  loc        : Location.t;
-  tokens     : token list;
-  exns       : exn list;
-}
-type sync = item History.sync
-type t = item History.t
+exception Malformed_module of token list
 
-let item_loc i = i.loc
+let parse_str ~exns ~location ~lexbuf zipper t =
+  let new_state exns' tokens = (exns' @ exns, location tokens, tokens) in
+  match Merlin_parsing.catch_warnings 
+      (fun () -> parse_with zipper
+          ~parser:Outline_parser.implementation
+          ~lexer:Lexer.token
+          lexbuf)
+  with
+  | exns', Inr (zipper, _, ([] | [Chunk_parser.EOF,_,_])) -> 
+    zipper, None
+  | exns', Inr (zipper, Outline_utils.Unterminated, tokens) -> 
+    zipper, None
+  | exns', Inr (zipper, (Outline_utils.Definition | 
+                         Outline_utils.Syntax_error _), tokens) -> 
+    zipper,
+    Some Spine.(Str_item (str_step t (new_state exns' tokens) tokens))
+  | exns', Inr (zipper, Outline_utils.Enter_module, tokens) ->
+    zipper,
+    Some Spine.(Str_in_module (str_step t (new_state exns' tokens) tokens))
+  | exns', Inr (zipper, Outline_utils.Leave_module, tokens) ->
+    let rec aux acc = function
+      | Spine.Str_root step ->
+        Spine.(Str_item (str_step t (Malformed_module tokens :: exns, location tokens, tokens) []))
+      | Spine.Str_in_module step ->
+        let exns, loc, _ = Spine.state step in
+        let tokens' = Spine.value step @ acc in
+        let parent = Spine.parent step in
+        Spine.Str_item (Spine.str_step parent (exns, location tokens, tokens) tokens')
+      | Spine.Str_item step ->
+        let tokens = Spine.value step @ acc in
+        let parent = Spine.parent step in
+        aux tokens parent
+    in
+    zipper,
+    Some (aux tokens t)
+  | _, Inl (Failure _ as exn) ->
+    raise exn
+  | exns', Inl exn ->
+    zipper,
+    Some Spine.(Str_item (str_step t (exn :: exns, location [], []) []))
 
-let location t =
-  match History.prev t with
-  | Some i -> i.loc
-  | None -> Location.none
+let exns t = fst3 (Spine.get_state t)
+let location t = snd3 (Spine.get_state t)
+let tokens t = thd3 (Spine.get_state t)
 
-let parse_step ~bufpos ?(exns=[]) history buf =
+let parse tokens t lexbuf =
+  let exns = exns t in
   Outline_utils.reset ();
   let location = 
-    let loc_start = buf.Lexing.lex_curr_p in
-    function
-    | []  ->
-      let loc_end = buf.Lexing.lex_start_p in
-      { Location. loc_start ; loc_end ; loc_ghost = false }
-    | (_, loc_start, curr) :: xs ->
-      let loc_end = List.fold_left (fun _ -> Misc.thd3) curr xs in
-      { Location. loc_start ; loc_end ; loc_ghost = false }
+    let loc_start = lexbuf.Lexing.lex_curr_p in function
+    | [] -> let loc_end = lexbuf.Lexing.lex_start_p in
+      {Location. loc_start; loc_end; loc_ghost = false}
+    | (_,loc_start,loc_end) :: toks ->
+      let loc_end = List.fold_left 
+        (fun _ (_,_,loc_end) -> loc_end) loc_end toks
+      in
+      {Location. loc_start; loc_end; loc_ghost = false}
   in
-  let exns', history', kind, tokens = 
-    match Location.catch_warnings 
-        (fun () -> parse_with history
-            ~parser:Outline_parser.implementation
-            ~lexer:Lexer.token
-            ~bufpos buf)
-    with
-    | exns', Misc.Inr (history', kind, tokens) -> 
-      exns', history', kind, tokens
-    | _, Misc.Inl (Failure _ as exn) -> raise exn
-    | exns', Misc.Inl exn ->
-      exn :: exns', history,
-      Outline_utils.Syntax_error (location []),
-      []
-  in
-  history',
-  (match tokens, exns' with
-   | [], [] -> None
-   | _ -> Some { kind ; loc = location tokens; tokens ; exns = exns' @ exns })
+  match t with
+  | Spine.Sig _ -> failwith "TODO"
+  | Spine.Str t_str -> 
+    let Zipper (_,_,tokens), t_str' = 
+      parse_str ~exns ~lexbuf ~location 
+        (Zipper.of_list tokens) t_str
+    in
+    tokens, may_map (fun x -> Spine.Str x) t_str'
 
-let exns chunks =
-  match History.prev chunks with
-  | Some { exns } -> exns
-  | None -> []
+let init_loc pos_fname =
+  let pos = {(Misc.make_pos (1,0)) with Lexing.pos_fname} in
+  {Location. loc_start = pos; loc_end = pos; loc_ghost = false}
 
-let append_exns exns outlines = match History.prev outlines with
-  | None -> 
-    History.insert {
-      kind = Outline_utils.Syntax_error Location.none;
-      tokens = [];
-      loc = Location.none;
-      exns;
-    } outlines
-  | Some _ -> History.modify (fun o -> { o with exns = exns @ o.exns }) outlines
+let initial_sig fname =
+  Spine.(Sig (Sig_root (initial ([], init_loc fname, []))))
 
-let rec do_rollback next_tokens chunks =
-  match History.backward chunks with
-  | Some ({ tokens ; kind = Outline_utils.Syntax_error _ }, chunks') ->
-    do_rollback (tokens @ next_tokens) chunks'
-  | None -> next_tokens, chunks
-  | Some ({ tokens }, chunks') -> tokens @ next_tokens, chunks'
+let initial_str fname =
+  Spine.(Str (Str_root (initial ([], init_loc fname, []))))
 
-let rec parse ~bufpos tokens chunks buf =
-  let exns = exns chunks in
-  match parse_step ~bufpos ~exns (History.of_list tokens) buf with
-  | tokens', Some { kind = (Outline_utils.Unterminated | Outline_utils.Done) } ->
-    tokens', chunks
-  | tokens', Some item ->
-    tokens', History.insert item chunks
-  | tokens', None ->
-    tokens', chunks
-
-let parse ~bufpos tokens chunks buf =
-  let tokens, chunks = parse ~bufpos tokens chunks buf in
-  History.nexts tokens, chunks
-
+let invalid = function
+  | Spine.Sig (Spine.Sig_item step) -> Spine.value step = []
+  | Spine.Str (Spine.Str_item step) -> Spine.value step = []
+  | _ -> false
