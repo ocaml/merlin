@@ -45,6 +45,8 @@ let parse_dot_merlin path : bool * t =
       else if Misc.has_prefix "REC" line then recurse := true
       else if Misc.has_prefix "PRJ " line then
         proj := Some (String.trim (Misc.string_drop 4 line))
+      else if Misc.has_prefix "PRJ" line then
+        proj := Some ""
       else if Misc.has_prefix "#" line then ()
       else ();
       aux ()
@@ -80,7 +82,9 @@ and find path =
   | None -> Nil 
 
 let rec project_name = function
-  | Cons ({project = Some name}, _) -> Some name
+  | Cons (({project = Some ""; path = name} | {project = Some name}), _) ->
+    Some name
+  | Cons ({path}, lazy Nil) -> Some path
   | Cons (_, lazy tail) -> project_name tail
   | Nil -> None
 
@@ -90,7 +94,7 @@ module Flags = Top_options.Make (struct
   let _projectfind _ = err_log "unsupported flag \"-project-find\" (ignored)" ;
 end)
 
-let exec_dot_merlin ~path_modify ~load_packages { path; project; entries} =
+let exec_dot_merlin ~path_modify ~load_packages {path; project; entries} =
   let cwd = Filename.dirname path in
   List.iter entries ~f:(
     function
@@ -106,8 +110,8 @@ let exec_dot_merlin ~path_modify ~load_packages { path; project; entries} =
         Arg.parse_argv ~current:(ref (-1)) flags Flags.list
           Top_options.unexpected_argument "error..."
       with
-      | Arg.Bad msg -> err_log msg ; exit 2
-      | Arg.Help msg -> err_log msg ; exit 0 (* FIXME *)
+      | Arg.Bad msg -> err_log msg; exit 2
+      | Arg.Help msg -> err_log msg; exit 0 (* FIXME *)
       end
   ) ;
   path
