@@ -84,18 +84,6 @@ done
 OCAML_VERSION="ocaml_400"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.00.1"
 
-case "$MAGIC_VERSION" in
-  "Caml1999I015")
-    OCAML_VERSION="ocaml_401"
-    OCAML_VERSION_MESSAGE="Ocaml 4.01.0"
-    ;;
-esac
-
-if [ -e "src/${OCAML_VERSION}.git/.git" ]; then
-  OCAML_VERSION="${OCAML_VERSION}.git"
-  OCAML_VERSION_MESSAGE="${OCAML_VERSION_MESSAGE} (git version)"
-fi
-
 cat <<END
 Merlin configuration
 --------------------
@@ -108,6 +96,18 @@ check_package EXIT menhirLib "Please install menhir."
 check_package NOSEXP sexplib "Sexplib missing; sexp protocol disabled."
 STDLIB_DIR=$(ocamlfind printconf stdlib)
 MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number|cut -d' ' -f2)
+
+case "$MAGIC_VERSION" in
+  "Caml1999I015")
+    OCAML_VERSION="ocaml_401"
+    OCAML_VERSION_MESSAGE="Ocaml 4.01.0"
+    ;;
+esac
+
+if [ -e "src/${OCAML_VERSION}.git/.git" ]; then
+  OCAML_VERSION="${OCAML_VERSION}.git"
+  OCAML_VERSION_MESSAGE="${OCAML_VERSION_MESSAGE} (git version)"
+fi
 
 cat <<END
 
