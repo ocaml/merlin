@@ -125,7 +125,8 @@ function! merlin#TypeOf(...)
     if (a:0 > 1)
         echoerr "TypeOf: too many arguments (expected 0 or 1)"
     elseif (a:0 == 0) || (a:1 == "")
-        py merlin.vim_type(expr=vim.eval("merlin#WordUnderCursor()"))
+        call merlin#StopHighlight()
+        py merlin.vim_type_enclosing("w:enclosing_zone",expr=vim.eval("merlin#WordUnderCursor()"))
     else
         py merlin.vim_type(vim.eval("a:1"))
     endif
@@ -140,11 +141,6 @@ function! merlin#StopHighlight()
     call matchdelete(w:enclosing_zone)
     let w:enclosing_zone = -1
   endif
-endfunction
-
-function! merlin#TypeEnclosing(expr)
-  call merlin#StopHighlight()
-  py merlin.vim_type_enclosing("w:enclosing_zone",expr=vim.eval("a:expr"))
 endfunction
 
 function! merlin#GrowEnclosing()
@@ -258,10 +254,8 @@ function! merlin#Phrase()
 endfunction
 
 function! merlin#Register()
-  " Deprecated, use TypeEnclosing
   command! -buffer -nargs=? TypeOf call merlin#TypeOf(<q-args>)
 
-  command! -buffer -nargs=0 TypeEnclosing call merlin#TypeEnclosing(merlin#WordUnderCursor())
   command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
   command! -buffer -nargs=0 ShrinkEnclosing call merlin#ShrinkEnclosing()
 
@@ -284,7 +278,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
   setlocal omnifunc=merlin#Complete
-  map <buffer> <LocalLeader>t :TypeEnclosing<return>
+  map <buffer> <LocalLeader>t :TypeOf<return>
   map <buffer> <LocalLeader>n :GrowEnclosing<return>
   map <buffer> <LocalLeader>p :ShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>

@@ -412,6 +412,8 @@ def vim_type_enclosing(vimvar,expr=None):
     enclosing_types = send_command("type", "enclosing", arg, pos)
     if enclosing_types != []:
       vim_next_enclosing(vimvar)
+    else:
+      print("didn't manage to type '%s'" % atom)
   except MerlinExc as e:
     try_print_error(e)
 
