@@ -1028,19 +1028,20 @@ If JUST-OPEN is non-nil, don't move to the opened buffer."
 Returns the position."
   (let ((r (merlin-send-command 
             (list 'boundary command 'at (merlin-unmake-point (point))))))
-    (when r
-      (goto-char (merlin-make-point (elt r indice)))
-      (merlin-make-point (elt r indice)))))
+    (if (equal r 'null) nil
+      (progn
+        (goto-char (merlin-make-point (elt r indice)))
+        (merlin-make-point (elt r indice))))))
 
 (defun merlin-next-phrase ()
   "Go to the beginning of the next phrase."
   (interactive)
   (save-excursion
     (merlin-sync-to-point)
-    (merlin-goto-phrase "current" 1)
+    (merlin-goto-phrase 'current 1)
     (forward-line 1)
     (merlin-sync-to-point))
-  (if (not (merlin-goto-phrase "next" 0)) ;; no next phrase => end-of-buffer
+  (if (not (merlin-goto-phrase 'next 0)) ;; no next phrase => end-of-buffer
       (goto-char (point-max))))
 
 (defun merlin-prev-phrase ()
@@ -1048,8 +1049,8 @@ Returns the position."
   (interactive)
   (let ((point (point)))
     (merlin-sync-to-point)
-    (if (equal point (merlin-goto-phrase "current" 0))
-        (merlin-goto-phrase "prev" 0))))
+    (if (equal point (merlin-goto-phrase 'current 0))
+        (merlin-goto-phrase 'prev 0))))
 
 (defun merlin-to-point ()
   "Update merlin to the current point, reporting error."
