@@ -186,15 +186,15 @@ let dispatch (i,o : IO.io) (state : state) =
       then None, outline
       else Some tokens', outline
     in
-    let rec loop steps tokens =
-      let next_tokens, outline = onestep tokens steps in
-      let steps = match outline with
-        | None -> steps
-        | Some outline -> new_step outline steps
-      in
-      match next_tokens with
-      | Some tokens -> loop steps tokens
+    let rec loop steps = function
       | None -> steps
+      | Some tokens ->
+        let next_tokens, outline = onestep tokens steps in
+        let steps = match outline with
+          | None -> steps
+          | Some outline -> new_step outline steps
+        in
+        loop steps next_tokens
     in
     let first steps =
       match Outline.tokens (History.focused steps).outlines with
@@ -204,15 +204,14 @@ let dispatch (i,o : IO.io) (state : state) =
         when length_lessthan 10000 tokens <> None ->
         let steps' = History.move (-1) steps in
         begin match onestep tokens steps' with
-        | None, _ -> assert false 
-        | Some tokens', None -> loop steps tokens'
-        | Some tokens', Some outline
+        | tokens', None -> loop steps tokens'
+        | tokens', Some outline
           when Outline.tokens outline = tokens ->
           loop steps tokens'
-        | Some tokens', Some outline ->
+        | tokens', Some outline ->
           loop (new_step outline steps) tokens'
         end
-      | _ -> loop steps []
+      | _ -> loop steps (Some [])
     in
     {steps = first state.steps}, true
   end
