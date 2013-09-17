@@ -65,3 +65,5 @@ val insert : 'a -> 'a t -> 'a t
 val modify : ('a -> 'a) -> 'a t -> 'a t
 
 val append : ('a -> 'a) -> 'a t -> 'a t
+
+val reconstruct : 'a t -> ('a -> 'b) -> ('b -> 'a -> 'b) -> 'b t

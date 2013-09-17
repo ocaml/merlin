@@ -30,6 +30,9 @@ type 'a non_empty =
   | One of 'a
   | More of 'a * 'a non_empty 
 
+let nhd = function
+  | One x | More (x,_) -> x
+
 (** {0 Historique}
   * A sort of zipper: maintains and synchronizes a list of different
   * versions of an object (see ocamlmerlin.ml top comment).
@@ -80,3 +83,17 @@ let modify f = function
 
 let append f {head = (One x | More (x,_) as head); _} =
   {head = More (f x, head); tail = []}
+
+let reconstruct h init fold =
+  let f b x' = More (fold (nhd b) x', b) in
+  let rec past tail = function
+    | More (x,head) -> past (x :: tail) head 
+    | One x -> List.fold_left f (One (init x)) tail
+  in
+  let head = past [] h.head in
+  let f (b,l) a = 
+    let b' = fold b a in
+    (b', (b' :: l))
+  in
+  let tail = List.rev (snd (List.fold_left f (nhd head, []) h.tail)) in
+  {head; tail}

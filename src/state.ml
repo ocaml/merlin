@@ -108,10 +108,14 @@ let reset_global_modules () =
   global_modules := lazy (Misc.modules_in_path ~ext:".cmi" !Config.load_path)
 
 let retype state = 
-  let steps = state.steps in
-  let types = Typer.update (History.focused steps).chunks None in
-  let steps = History.modify (fun step -> {step with types}) steps in
-  {steps}
+  {steps = 
+    History.reconstruct state.steps (fun x -> x)
+      (fun prev old -> 
+        let outlines = old.outlines in
+        let chunks = Chunk.update outlines (Some prev.chunks) in
+        let types = Typer.update chunks (Some prev.types) in
+        {outlines; chunks; types}) 
+  }
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =
