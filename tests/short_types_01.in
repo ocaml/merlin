@@ -2,7 +2,7 @@
 ["tell","struct","type t = int -> unit\nlet x = 5      \n"]
 ["tell","end","when lol\n"]
 ["seek","exact",{"line":2,"col":4}]
-["type","enclosing",{"line":2,"col":4}]
+["type","enclosing",{"expr":"x","offset":0},{"line":2,"col":4}]
 ["seek","before",{"line":4,"col":0}]
 ["tell","struct","\nlet x = 5      \n"]
 ["tell","end","when lol\n"]
@@ -12,4 +12,3 @@
 ["tell","struct","\nlet x = 5      \n"]
 ["tell","end","when lol\n"]
 ["seek","exact",{"line":2,"col":4}]
-["type","at",{"line":2,"col":4}]
