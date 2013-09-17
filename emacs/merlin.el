@@ -1225,9 +1225,9 @@ Short cuts:
   
 (defun merlin-insinuate ()
   "Initialize merlin globally."
-  (add-hook 'after-save-hook '(lambda ()
-                                (if merlin-mode
-                                    (merlin-to-point))))
+  (add-hook 'after-save-hook (lambda ()
+                               (if merlin-mode
+                                   (merlin-to-point))))A
   (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook))
                                       
 (defun merlin-kill-all-processes ()
