@@ -2,7 +2,7 @@
 ["return",false]
 ["return",false]
 ["failure","invalid arguments"]
-["return",[0,[]]]
+["return",[]]
 ["return",{"line":1,"col":0}]
 ["return",false]
 ["return",false]
@@ -12,4 +12,3 @@
 ["return",false]
 ["return",false]
 ["failure","invalid arguments"]
-["exception","Not_found"]
