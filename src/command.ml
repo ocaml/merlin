@@ -198,8 +198,21 @@ let dispatch (i,o : IO.io) (state : state) =
     in
     let first steps =
       match Outline.tokens (History.focused steps).outlines with
-      | [] -> loop steps []
-      | tokens -> loop (History.move (-1) steps) tokens
+      | (_ :: _) as tokens
+        (* If length > 10000, we are probably just after a big structure.
+         * In this case we don't want to reparse the whole chunk. *)
+        when length_lessthan 10000 tokens <> None ->
+        let steps' = History.move (-1) steps in
+        begin match onestep tokens steps' with
+        | None, _ -> assert false 
+        | Some tokens', None -> loop steps tokens'
+        | Some tokens', Some outline
+          when Outline.tokens outline = tokens ->
+          loop steps tokens'
+        | Some tokens', Some outline ->
+          loop (new_step outline steps) tokens'
+        end
+      | _ -> loop steps []
     in
     {steps = first state.steps}, true
   end
