@@ -886,8 +886,15 @@ If it is called with a prefix argument, then show the type of the region."
   "If there is a selected type enclosing, kill it.
 Otherwise start a new session at point."
   (merlin-sync-to-point)
-  (let* ((types (elt (merlin-send-command (list 'type 'enclosing (merlin-unmake-point (point)))
-                      (lambda (exn) '(nil))) 1))
+  (let* ((bounds (bounds-of-thing-at-point 'ocaml-atom))
+         (start  (if bounds (car bounds) (point)))
+         (end    (if bounds (cdr bounds) (point)))
+         (string (if bounds (buffer-substring-no-properties start end) ""))
+         (fallback (list (cons 'assoc nil)
+                         (cons 'expr string)
+                         (cons 'offset (- (point) start))))
+         (types (merlin-send-command (list 'type 'enclosing fallback (merlin-unmake-point (point)))
+                      (lambda (exn) '(nil))))
          (list (mapcar (lambda (obj) (cons (cdr (assoc 'type obj))
                                            (merlin-make-bounds obj)))
                        types)))
