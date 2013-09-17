@@ -29,7 +29,8 @@ module Sexp = struct
       tell_cons tell b
     | sexp ->
       tell " . ";
-      tell_sexp tell sexp
+      tell_sexp tell sexp;
+      tell ")"
   
   let is_alpha c = 
          (c >= 'a' && c <= 'z')
@@ -182,7 +183,7 @@ let rec sexp_of_json =
   | `String s   -> String s
   | `Bool true  -> Sym "true"
   | `Bool false -> Sym "false"
-  | `Assoc lst  -> Cons (Sym "assoc", sexp_of_list (List.map assoc_item lst))
+  | `Assoc lst  -> Cons (Cons (Sym "assoc", Sym "nil"), sexp_of_list (List.map assoc_item lst))
   | `List lst   -> sexp_of_list (List.map sexp_of_json lst)
 
 let rec json_of_sexp = 
@@ -190,8 +191,7 @@ let rec json_of_sexp =
   let fail msg sexp = 
     IO.protocol_failure (msg ^ ", got: \n" ^ Sexp.to_string sexp) in
   let rec assoc_item = function
-    | Cons (Cons (Sym a, b), c) -> 
-      (String.sub a 1 (String.length a - 1), json_of_sexp b) :: assoc_item c
+    | Cons (Cons (Sym a, b), c) -> (a, json_of_sexp b) :: assoc_item c
     | Sym "nil" -> []
     | sexp -> fail "expecting association (key . value)" sexp
   in
@@ -207,7 +207,8 @@ let rec json_of_sexp =
   | Int i    -> `Int i
   | Float f  -> `Float f
   | String s -> `String s
-  | Cons (Sym "assoc", assocs) -> `Assoc (assoc_item assocs)
+  | Cons (Cons (Sym "assoc", Sym "nil"), assocs) ->
+    `Assoc (assoc_item assocs)
   | Sym "nil" -> `List []
   | Cons (hd, tl) -> `List (json_of_sexp hd :: list_items tl)
   | Sym s -> `String s
