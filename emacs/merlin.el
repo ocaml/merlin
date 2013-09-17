@@ -1327,7 +1327,10 @@ Short cuts:
       (merlin-process-remove-user)))
   
 (defun merlin-insinuate ()
-  "Initialize merlin."
+  "Initialize merlin globally."
+  (add-hook 'after-save-hook '(lambda ()
+                                (if merlin-mode
+                                    (merlin-to-point))))
   (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook))
                                       
 (defun merlin-kill-all-processes ()
