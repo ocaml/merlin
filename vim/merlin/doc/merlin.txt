@@ -9,8 +9,8 @@ COMMANDS                                                     *merlin-commands*
 
 :SourcePath [dir]                                                *:SourcePath*
 
-When dir is given add the directory to the list of directories where merlin
-looks for ml[i] files.
+When dir is given adds, for the current session, the directory to the list of
+directories where merlin looks for ml[i] files.
 
 If no argument is given, it will list those directories.
 
