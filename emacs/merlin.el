@@ -942,8 +942,7 @@ If there is no enclosing, falls back to `merlin-type-point'."
     (if (> arg 1)
         (merlin-type-region)
       (if (merlin-type-enclosing-query)
-          (merlin-type-enclosing-go-up)
-        (merlin-type-point arg)))))
+          (merlin-type-enclosing-go-up)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
