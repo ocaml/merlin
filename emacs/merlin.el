@@ -950,8 +950,7 @@ If there is no enclosing, falls back to `merlin-type-point'."
   "Use PKG in the current session of merlin."
   (interactive
    (list (completing-read "Package to use: " (merlin-get-packages))))
-  (merlin-send-command (list 'find 'use (list pkg)))
-  (merlin-rewind))
+  (merlin-send-command (list 'find 'use (list pkg))))
 
 (defun merlin-load-project-file ()
   "Load the .merlin file corresponding to the current file."
