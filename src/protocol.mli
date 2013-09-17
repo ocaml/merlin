@@ -15,12 +15,9 @@ type _ request =
   | Type_expr
     :  string * position option
     -> string request
-  | Type_at
-    :  position
-    -> (Location.t * string) request
   | Type_enclosing
-    :  position 
-    -> (int * (Location.t * string) list) request
+    :  (string * int) * position 
+    -> (Location.t * string) list request
   | Complete_prefix 
     :  string * position option 
     -> completion list request

@@ -15,6 +15,8 @@ flags = []
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
 
+atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
+
 class MerlinExc(Exception):
   def __init__(self, value):
       self.value = value
@@ -378,6 +380,22 @@ def vim_locate_under_cursor():
         stop += 1
   vim_locate_at_cursor(line[start:stop])
 
+def bounds_of_ocaml_atom_at_pos(to_line, col):
+    line = vim.current.buffer[to_line]
+    start = col
+    stop = col
+    while start > 0:
+        if atom_bound.match(line[start - 1]) is None:
+            break
+        else:
+            start -= 1
+    while stop < len(line):
+        if atom_bound.match(line[stop]) is None:
+            break
+        else:
+            stop += 1
+    return (line[start:stop], start, stop)
+
 # expr used as fallback in case type_enclosing fail
 def vim_type_enclosing(vimvar,expr=None):
   global enclosing_types
@@ -385,16 +403,17 @@ def vim_type_enclosing(vimvar,expr=None):
   enclosing_types = [] # reset
   current_enclosing = -1
   to_line, to_col = vim.current.window.cursor
+  atom, a_start, a_end = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
+  offset = to_col - a_start
+  pos = {'line':to_line, 'col':to_col}
+  arg = {'expr':atom, 'offset':offset}
   sync_buffer()
   try:
-    result = send_command("type", "enclosing", {'line':to_line,'col':to_col})
-    enclosing_types = result[1]
-    if enclosing_types == []:
-      vim_type(expr=expr, is_approx=True)
-    else:
+    enclosing_types = send_command("type", "enclosing", arg, pos)
+    if enclosing_types != []:
       vim_next_enclosing(vimvar)
-  except MerlinExc:
-    vim_type(expr=expr, is_approx=True)
+  except MerlinExc as e:
+    try_print_error(e)
 
 def easy_matcher(start, stop):
   startl = ""

@@ -217,37 +217,7 @@ let dispatch (i,o : IO.io) (state : state) =
     Type_utils.type_in_env env ppf source;
     state, to_string ()
 
-  | (Type_at pos : a request) ->
-    let structures = State.browse step in
-    let node = match Browse.nearest_before pos structures with
-      | Some node -> node
-      | None -> raise Not_found
-    in
-    let ppf, to_string = Misc.ppf_to_string () in
-    Printtyp.wrap_printing_env node.Browse.env
-    begin fun () -> match node.Browse.context with
-      | Browse.TopStructure
-      | Browse.NamedOther _ (* FIXME *)
-      | Browse.Other -> raise Not_found
-      | Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t ->
-        VPrinttyp.type_scheme ppf t
-      | Browse.TypeDecl (ident, t) ->
-        VPrinttyp.type_declaration ident ppf t
-      | Browse.Module (_, m) -> Printtyp.modtype ppf m
-      | Browse.Modtype (ident, m) ->
-        VPrinttyp.modtype_declaration ident ppf m
-      | Browse.Class (ident, cd) ->
-        Printtyp.class_declaration ident ppf cd
-      | Browse.ClassType (ident, ctd) ->
-        Printtyp.cltype_declaration ident ppf ctd
-      | Browse.MethodCall (obj, m) ->
-        match State.find_method node.Browse.env m obj with
-        | Some t -> VPrinttyp.type_scheme ppf t
-        | None -> Format.pp_print_string ppf "Unknown method"
-    end;
-    state, (node.Browse.loc, to_string ())
-
-  | (Type_enclosing pos : a request) ->
+  | (Type_enclosing ((expr, offset), pos) : a request) ->
     let aux = function
       | {Browse. loc; env;
           context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t)} ->
@@ -267,10 +237,50 @@ let dispatch (i,o : IO.io) (state : state) =
         Some (loc, to_string ())
       | _ -> None
     in
+    (* usual enclosings in typed tree. *)
     let structures = State.browse step in
     let path = Browse.enclosing pos structures in
     let result = List.filter_map ~f:aux path in
-    state, (List.length path, result)
+    (* enclosings of cursor in given expression *)
+    let exprs =
+      let len = String.length expr in
+      let rec aux acc i =
+        if i = len then
+          List.rev (expr :: acc)
+        else if expr.[i] = '.' then
+          aux (String.sub expr ~pos:0 ~len:i (* i-1 ? *) :: acc) (succ i)
+        else
+          aux acc (succ i)
+      in
+      aux [] offset
+    in
+    let small_enclosings =
+      let {Browse.env} = State.node_at state pos in
+      let loc_start =
+        let l, c = Misc.split_pos pos in
+        Misc.make_pos (l, c - offset)
+      in
+      let shift loc int =
+        let l, c = Misc.split_pos loc in
+        Misc.make_pos (l, c + int)
+      in
+      List.filter_map exprs ~f:(fun source ->
+        try
+          let loc = { Location.
+            loc_start ;
+            loc_end = shift loc_start (String.length source) ;
+            loc_ghost = false ;
+          }
+          in
+          let ppf, to_string = Misc.ppf_to_string () in
+          Logger.log `protocol ~prefix:"enclosing |" source ;
+          Type_utils.type_in_env env ppf source;
+          Some (loc, to_string ())
+        with _ ->
+          None
+      )
+    in
+    state, small_enclosings @ result
 
   | (Complete_prefix (prefix, None) : a request) ->
     let node = Browse.({dummy with env = Typer.env step.types}) in
