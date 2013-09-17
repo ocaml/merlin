@@ -35,4 +35,6 @@ module Option = struct
   include Infix
 end
 
+module String = StringLabels
+
 let sprintf = Printf.sprintf
