@@ -373,7 +373,7 @@ let dispatch (i,o : IO.io) (state : state) =
       | `Current -> 0
     in
     let move steps =
-      if count <> 0 && steps = state.steps
+      if count <> 0 && History.focused steps == History.focused state.steps
       then None
       else Some steps
     in
