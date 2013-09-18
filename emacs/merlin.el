@@ -542,6 +542,11 @@ the error message otherwise print a generic error message."
        (buffer-substring-no-properties start end)
      ""))
 
+(defun merlin-thing-at-point (thing)
+  "thing-at-point without text properties"
+  (let ((bounds (bounds-of-thing-at-point thing)))
+    (when bounds (merlin-buffer-substring (car bounds) (cdr bounds)))))
+
 (defun merlin-drop ()
   "Drop the knowledge of merlin of the buffer after the current position."
   (merlin-send-command 'drop))
@@ -1005,7 +1010,7 @@ If JUST-OPEN is non-nil, don't move to the opened buffer."
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
-  (merlin-locate-pure (thing-at-point 'ocaml-atom)))
+  (merlin-locate-pure (merlin-thing-at-point 'ocaml-atom)))
 
 ;; I don't like it beginning by "ac" but
 ;; it is the only way I found to get it working (otherwise the completion
