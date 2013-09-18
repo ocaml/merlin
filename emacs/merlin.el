@@ -590,7 +590,7 @@ ORIG-POINT is where the user was before starting telling merlin."
       (if (< chunk 1000)
           (setq chunk (* chunk 2))))))
 
-(defun merlin-tell-to-point (point)
+(defun merlin-tell-to-point (&optional point)
   "Move the merlin point to around the given the current point.
 It proceeds as follows:
 
@@ -606,6 +606,7 @@ The parameter VIEW-ERRORS-P controls whether we should care for errors"
   (save-excursion
     (if (not (merlin-is-last-user-p))
         (merlin-rewind))
+    (unless point (setq point (point)))
     (let ((start (merlin-seek-before merlin-lock-point)))
       (when (< start point)
         (merlin-tell-piece 'struct start point)
@@ -652,11 +653,10 @@ Called when an edit is made by the user."
 
 (defun merlin-sync-to-point (&optional point)
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
-  (lexical-let
-      ((point (if point point (point))))
-    (merlin-tell-to-point point)
-    (merlin-seek-exact point)
-    (merlin-sync-lock-zone-display)))
+  (unless point (setq point (point)))
+  (merlin-tell-to-point point)
+  (merlin-seek-exact point)
+  (merlin-sync-lock-zone-display))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
@@ -1017,7 +1017,8 @@ If there is no enclosing, falls back to `merlin-type-point'."
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
-  (merlin-locate-pure (thing-at-point 'ocaml-atom)))
+  (let ((ident (thing-at-point 'ocaml-atom)))
+    (when ident (merlin-locate-pure ident))))
 
 ;; I don't like it beginning by "ac" but
 ;; it is the only way I found to get it working (otherwise the completion
@@ -1051,8 +1052,7 @@ If there is no enclosing, falls back to `merlin-type-point'."
 (defun merlin-goto-phrase (command indice)
   "Go to the phrase indicated by COMMAND to the end INDICE.
 Returns the position."
-  (let ((r (merlin-send-command 
-            (list 'boundary command 'at (merlin-unmake-point (point))))))
+  (let ((r (merlin-send-command (list 'boundary command))))
     (if (equal r 'null) nil
       (progn
         (goto-char (merlin-make-point (elt r indice)))
