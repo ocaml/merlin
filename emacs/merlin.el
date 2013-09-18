@@ -1012,7 +1012,7 @@ If there is no enclosing, falls back to `merlin-type-point'."
                    'at (merlin-unmake-point (point))))))
     (if (and r (listp r))
         (merlin-goto-file-and-point r)
-      (message "%S not found." ident))))
+      (message "%s not found." ident))))
 
 (defun merlin-locate ()
   "Locate the identifier under point"
