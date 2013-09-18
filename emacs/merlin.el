@@ -120,6 +120,16 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "If non-nil, specify the minimum number of characters to wait before allowing auto-complete"
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-locate-in-new-window 'diff
+  "Determine whether to display results of `merlin-locate' in a new window or not."
+  :group 'merlin :type '(choice (const :tag "Always open a new window" always)
+                                (const :tag "Never open a new window" never)
+                                (const :tag "Open a new window only if the target file is different from current buffer." diff)))
+
+(defcustom merlin-locate-focus-new-window t
+  "If non-nil, when locate opens a new window it will give it the focus."
+  :group 'merlin :type 'boolean)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -221,14 +231,26 @@ In particular you can specify nil, meaning that the locked zone is not represent
       (forward-line (1- line))
       (move-to-column col))))
 
-(defun merlin-goto-file-and-point (data &optional same-buffer-force)
-  "Go to the file and position indicated by DATA which is an assoc list containing fields file, line and col.
-If SAME-BUFFER-FORCE is non-nil, create a new window even if it is the same buffer."
-  (if (> (length (cdr (assoc 'file data))) 0)
-      (find-file-other-window (cdr (assoc 'file data)))
-    (when same-buffer-force
-        (find-file-other-window buffer-file-name)))
-  (merlin-goto-point (cdr (assoc 'pos data))))
+(defun merlin-goto-file-and-point (data)
+  "Go to the file and position indicated by DATA which is an assoc list containing fields file, line and col."
+  (let* ((file (assoc 'file data))
+         (open-window (cond ((equal merlin-locate-in-new-window 'never) nil)
+                            ((equal merlin-locate-in-new-window 'always))
+                            (file)))
+         (filename (if file (cdr file) (buffer-file-name)))
+         (focus-window (or (not open-window) merlin-locate-focus-new-window))
+         (do-open (lambda () 
+                    (if open-window
+                      (find-file-other-window filename)
+                      (find-file filename))
+                    (merlin-goto-point (cdr (assoc 'pos data))))))
+    (if focus-window
+      (progn
+        (push (cons (buffer-name) (point)) merlin-position-stack)
+        (funcall do-open)
+        (message "Use %s to go back."
+          (substitute-command-keys "\\[merlin-pop-stack]")))
+      (save-excursion (save-selected-window (funcall do-open))))))
 
 (defun merlin-make-point (data)
   "Transform DATA (a couple line / col) into a point."
@@ -538,14 +560,7 @@ the error message otherwise print a generic error message."
 
 (defun merlin-buffer-substring (start end)
    "Return content of buffer between two-point or empty string if points are not valid"
-   (if (< start end)
-       (buffer-substring-no-properties start end)
-     ""))
-
-(defun merlin-thing-at-point (thing)
-  "thing-at-point without text properties"
-  (let ((bounds (bounds-of-thing-at-point thing)))
-    (when bounds (merlin-buffer-substring (car bounds) (cdr bounds)))))
+   (if (< start end) (buffer-substring-no-properties start end) ""))
 
 (defun merlin-drop ()
   "Drop the knowledge of merlin of the buffer after the current position."
@@ -848,7 +863,8 @@ variable `merlin-ac-cache')."
 (defun merlin-type-expression (exp callback-if-success &optional callback-if-exn)
   "Get the type of EXP inside the local context."
   (if exp (merlin-send-command-async
-           (list 'type 'expression exp 'at (merlin-unmake-point (point)))
+           (list 'type 'expression (substring-no-properties exp)
+                 'at (merlin-unmake-point (point)))
            callback-if-success callback-if-exn)))
 
 (defun merlin-type-display (bounds type &optional quiet)
@@ -988,29 +1004,20 @@ If there is no enclosing, falls back to `merlin-type-point'."
 ;; LOCATE ;;
 ;;;;;;;;;;;;
 
-(defun merlin-locate-pure (ident &optional just-open)
-  "Locate the identifier IDENT at point.
-If JUST-OPEN is non-nil, don't move to the opened buffer."
+(defun merlin-locate-pure (ident)
+  "Locate the identifier IDENT at point."
   (merlin-sync-to-point)
   (let* ((r (merlin-send-command 
-             (list 'locate ident 'at (merlin-unmake-point (point))))))
+             (list 'locate (substring-no-properties ident) 
+                   'at (merlin-unmake-point (point))))))
     (if (and r (listp r))
-        (if just-open
-            (save-excursion
-              (save-selected-window
-                (merlin-goto-file-and-point r just-open)
-                (merlin-highlight (bounds-of-thing-at-point 'ocaml-atom) 'merlin-type-face)))
-          (progn
-            (merlin-goto-file-and-point r)
-            (push (cons (buffer-name) (point)) merlin-position-stack)
-            (message "Use %s to go back."
-                     (substitute-command-keys "\\[merlin-pop-stack]"))))
-      (message "%s not found." ident))))
+        (merlin-goto-file-and-point r)
+      (message "%S not found." ident))))
 
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
-  (merlin-locate-pure (merlin-thing-at-point 'ocaml-atom)))
+  (merlin-locate-pure (thing-at-point 'ocaml-atom)))
 
 ;; I don't like it beginning by "ac" but
 ;; it is the only way I found to get it working (otherwise the completion
@@ -1021,18 +1028,21 @@ If JUST-OPEN is non-nil, don't move to the opened buffer."
   (when (ac-menu-live-p)
     (when (popup-hidden-p ac-menu)
       (ac-show-menu))
-    (merlin-locate-pure (popup-selected-item ac-menu) t)
+    (let ((merlin-locate-in-new-window 'always))
+      (merlin-locate-pure (ac-selected-candidate)))
     (ac-show-menu)))
 
 (defun merlin-pop-stack ()
   "Go back to the last position where the user did a locate."
   (interactive)
   (let ((r (pop merlin-position-stack)))
-    (if r
-        (progn
-          (select-window (display-buffer (car r)))
-          (goto-char (cdr r)))
-        (message "empty stack"))))
+    (cond ((not r) (message "empty stack"))
+          ((equal merlin-locate-in-new-window 'never) 
+           (switch-to-buffer (car r)))
+          ((or (equal merlin-locate-in-new-window 'always)
+               (not (equal (buffer-name) (car r))))
+           (select-window (display-buffer (car r)))))
+    (when r (goto-char (cdr r)))))
     
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEMANTIC MOVEMENT ;;
