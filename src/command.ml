@@ -171,7 +171,7 @@ let dispatch (i,o : IO.io) (state : state) =
           Stream.Failure -> IO.invalid_arguments ()
       end
     in
-    let onestep tokens steps =
+    let onestep first tokens steps =
       let step = History.focused steps in
       let tokens', outline =
         Outline.parse tokens step.outlines lexbuf in
@@ -181,7 +181,9 @@ let dispatch (i,o : IO.io) (state : state) =
         then (try List.tl tokens' with _ -> tokens')
         else tokens'
       in
-      let finished = !eod || (!eot && (stuck || tokens' = [])) in
+      let finished =
+        (!eot || not first) && (!eod || (!eot && (stuck || tokens' = [])))
+      in
       if finished
       then None, outline
       else Some tokens', outline
@@ -189,7 +191,7 @@ let dispatch (i,o : IO.io) (state : state) =
     let rec loop steps = function
       | None -> steps
       | Some tokens ->
-        let next_tokens, outline = onestep tokens steps in
+        let next_tokens, outline = onestep false tokens steps in
         let steps = match outline with
           | None -> steps
           | Some outline -> new_step outline steps
@@ -203,7 +205,7 @@ let dispatch (i,o : IO.io) (state : state) =
          * In this case we don't want to reparse the whole chunk. *)
         when length_lessthan 10000 tokens <> None ->
         let steps' = History.move (-1) steps in
-        begin match onestep tokens steps' with
+        begin match onestep true tokens steps' with
         | tokens', None -> loop steps tokens'
         | tokens', Some outline
           when Outline.tokens outline = tokens ->
@@ -385,19 +387,20 @@ let dispatch (i,o : IO.io) (state : state) =
       | `Current -> 0
     in
     let move steps =
+      let steps = History.move count steps in
       if count <> 0 && History.focused steps == History.focused state.steps
       then None
       else Some steps
     in
-    let steps_at_pos steps pos =
-      let cmp step = Merlin_parsing.compare_pos pos (Outline.location step.outlines) in
-      let steps = History.seek_backward (fun i -> cmp i < 0) steps in
-      let steps = History.seek_forward (fun i -> cmp i > 0) steps in
-      steps
-    in
-    let pos = match pos with
-      | Some pos -> pos
-      | None -> position state
+    let steps_at_pos steps = function
+      | None -> steps
+      | Some pos ->
+        let cmp step = Merlin_parsing.compare_pos pos
+                         (Outline.location step.outlines)
+        in
+        let steps = History.seek_backward (fun i -> cmp i < 0) steps in
+        let steps = History.seek_forward (fun i -> cmp i > 0) steps in
+        steps
     in
     state,
     begin match move (steps_at_pos state.steps pos) with
@@ -518,7 +521,8 @@ let dispatch (i,o : IO.io) (state : state) =
       | History.One x -> entry x :: acc
       | History.More (x,xs) ->  aux (entry x :: acc) xs
     in
-    `List (aux [] (History.head state.steps))
+    `Assoc ["head", `List (aux [] (History.head state.steps))
+           ;"tail", `List (List.map ~f:entry (History.tail state.steps))]
 
 
   | (Dump `Exn : a request) ->
