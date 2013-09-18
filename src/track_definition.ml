@@ -131,11 +131,18 @@ and browse_cmts ~root modules =
   let cmt_infos = read_cmt root in
   match cmt_infos.cmt_annots with
   | Implementation impl ->
-    let browses = Browse.structure impl in
-    browse_structure browses modules
+    begin match modules with
+    | [] -> (* we were looking for a module, we found the right file, we're happy *)
+      let pos_fname = root in
+      let pos = { Lexing. pos_fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
+      Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
+    | _ ->
+      let browses = Browse.structure impl in
+      browse_structure browses modules
+    end
   | Packed (_, files) ->
     begin match modules with
-    | [] -> assert false
+    | [] -> None
     | mod_name :: modules ->
       let file = List.find files ~f:(fun f -> file_path_to_mod_name f = mod_name) in
       cwd := Filename.dirname root ;
@@ -244,9 +251,36 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
         with Not_found ->
         try
           let path, _ = Env.lookup_module ident env in
+          let starting_point = Path.head path in
+          let is_local = 
+            let rec aux =
+              let open Env in
+              function
+              | Env_empty -> false
+              | Env_module (_, id, _) when Ident.same starting_point id -> true
+              | Env_value (summary, _, _)
+              | Env_type (summary, _, _)
+              | Env_exception (summary, _, _)
+              | Env_module (summary, _, _)
+              | Env_modtype (summary, _, _)
+              | Env_class (summary, _, _)
+              | Env_cltype (summary, _, _)
+              | Env_open (summary, _) -> aux summary
+            in
+            aux (Env.summary env)
+          in
           let loc =
-            try List.assoc (Longident.last ident) local_modules
-            with Not_found -> Location.symbol_gloc ()
+            if not is_local then
+              Location.symbol_gloc ()
+            else
+              let () = debug_log "which seems to be a local module... good luck." in
+              try
+                  (* FIXME: will only give the oldest ancestor of the searched module, not
+                   * the module itself... *)
+                  List.assoc (Ident.name starting_point) local_modules
+              with Not_found ->
+                (* we hope that [find_includer] will succeed where we failed. *)
+                Location.symbol_gloc ()
           in
           path, loc
         with Not_found ->
