@@ -178,6 +178,10 @@ and resolve_mod_alias ~fallback mod_item path =
     end
   | [ { context = Module (Structure, _) ; nodes } ] ->
     browse_structure (Lazy.force nodes) path
+  | [ { context = Module (Mod_apply, _) ; loc } ] ->
+    (* We don't want to follow functors instanciation *)
+    debug_log "stopping on functor instantiation" ;
+    Some loc
   | otherwise ->
     browse_structure otherwise path
 
@@ -251,7 +255,6 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
       )
     in
     if not (is_ghost loc) then
-      let fname = loc.Location.loc_start.Lexing.pos_fname in
       Some (None, loc)
     else
       let opt =

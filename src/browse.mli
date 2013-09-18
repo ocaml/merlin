@@ -36,6 +36,7 @@ type mod_info =
   | Named of string
   | Include of Ident.t list
   | Alias of Path.t
+  | Mod_apply
   | Structure
 
 (* Typedtree constructions recognized *)

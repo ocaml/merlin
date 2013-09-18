@@ -32,6 +32,7 @@ type mod_info =
   | Named of string
   | Include of Ident.t list
   | Alias of Path.t
+  | Mod_apply
   | Structure
 
 type context =
@@ -216,31 +217,40 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     nodes = lazy (expression_desc exp_desc)
   }
 
+(* TODO: factorise these two functions *)
 and module_include ids ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
-  let mod_info =
-    match mod_desc with
-    | Tmod_ident (p, _loc) -> Some (Alias p)
-    | _ -> None
-  in
-  {
-    loc = mod_loc ;
-    env = mod_env ;
-    context = Module (Include ids, mod_type) ;
-    nodes = lazy [module_expr ?mod_info def] ;
-  }
+  match mod_desc with
+  | Tmod_constraint (mod_expr, _, _, _) -> module_include ids mod_expr
+  | _ ->
+    let mod_info =
+      match mod_desc with
+      | Tmod_ident (p, _loc) -> Some (Alias p)
+      | Tmod_apply _ -> Some Mod_apply
+      | _ -> None
+    in
+    {
+      loc = mod_loc ;
+      env = mod_env ;
+      context = Module (Include ids, mod_type) ;
+      nodes = lazy [module_expr ?mod_info def] ;
+    }
 
 and module_binding name ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
-  let mod_info =
-    match mod_desc with
-    | Tmod_ident (p, _loc) -> Some (Alias p)
-    | _ -> None
-  in
-  {
-    loc = name.Location.loc ;
-    env = mod_env ;
-    context = Module (Named name.Location.txt, mod_type) ;
-    nodes = lazy [module_expr ?mod_info def] ;
-  }
+  match mod_desc with
+  | Tmod_constraint (mod_expr, _, _, _) -> module_binding name mod_expr
+  | _ ->
+    let mod_info =
+      match mod_desc with
+      | Tmod_ident (p, _loc) -> Some (Alias p)
+      | Tmod_apply _ -> Some Mod_apply
+      | _ -> None
+    in
+    {
+      loc = name.Location.loc ;
+      env = mod_env ;
+      context = Module (Named name.Location.txt, mod_type) ;
+      nodes = lazy [module_expr ?mod_info def] ;
+    }
 
 and module_expr ?(mod_info=Structure) { mod_env ; mod_desc ; mod_type ; mod_loc } =
   { loc = mod_loc ; env = mod_env ; context = Module (mod_info, mod_type) ;
