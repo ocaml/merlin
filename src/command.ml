@@ -285,7 +285,6 @@ let dispatch (i,o : IO.io) (state : state) =
           }
           in
           let ppf, to_string = Misc.ppf_to_string () in
-          Logger.log `protocol ~prefix:"enclosing |" source ;
           Type_utils.type_in_env env ppf source;
           Some (loc, to_string ())
         with _ ->
