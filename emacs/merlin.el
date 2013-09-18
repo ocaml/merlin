@@ -211,14 +211,15 @@ In particular you can specify nil, meaning that the locked zone is not represent
 
 (defun merlin-goto-point (data)
   "Go to the point indicated by `DATA' which must be an assoc list with fields line and col"
-  (let ((line  (cdr (assoc 'line data)))
-        (col   (cdr (assoc 'col data)))
-        (lines (line-number-at-pos (point-max))))
-    (if (> line lines) 
-        (end-of-buffer)
-      (progn (goto-char (point-min))
-             (forward-line (1- line))
-             (move-to-column col)))))
+  (goto-char (point-max))
+  (let* ((line-max (line-number-at-pos nil))
+         (col-max  (current-column))
+         (line     (cdr (assoc 'line data)))
+         (col      (cdr (assoc 'col data))))
+    (when (<= line line-max)
+      (goto-char (point-min))
+      (forward-line (1- line))
+      (move-to-column col))))
 
 (defun merlin-goto-file-and-point (data &optional same-buffer-force)
   "Go to the file and position indicated by DATA which is an assoc list containing fields file, line and col.
@@ -232,8 +233,6 @@ If SAME-BUFFER-FORCE is non-nil, create a new window even if it is the same buff
 (defun merlin-make-point (data)
   "Transform DATA (a couple line / col) into a point."
   (save-excursion
-    (beginning-of-line)
-    ;; goto-line
     (merlin-goto-point data)
     (point)))
 
@@ -537,6 +536,12 @@ the error message otherwise print a generic error message."
 ;; BUFFER SYNCHRONIZATION ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun merlin-buffer-substring (start end)
+   "Return content of buffer between two-point or empty string if points are not valid"
+   (if (< start end)
+       (buffer-substring-no-properties start end)
+     ""))
+
 (defun merlin-drop ()
   "Drop the knowledge of merlin of the buffer after the current position."
   (merlin-send-command 'drop))
@@ -544,7 +549,7 @@ the error message otherwise print a generic error message."
 (defun merlin-tell-piece (mode start end)
   "Tell the region using mode MODE between START and END in one chunk using."
   (merlin-send-command 
-   (list 'tell mode (buffer-substring-no-properties start end))))
+   (list 'tell mode (merlin-buffer-substring start end))))
 
 (defun merlin-tell-till-end-of-phrase ()
   "Tell merlin the buffer until the end of the current phrase is met.
@@ -581,10 +586,12 @@ The parameter VIEW-ERRORS-P controls whether we should care for errors"
   (save-excursion
     (if (not (merlin-is-last-user-p))
         (merlin-rewind))
-    (merlin-tell-piece 'struct (merlin-seek-before merlin-lock-point) point)
-    (goto-char point)
-    (merlin-tell-till-end-of-phrase)
-    (setq merlin-lock-point (merlin-get-position))))
+    (let ((start (merlin-seek-before merlin-lock-point)))
+      (when (< start point)
+        (merlin-tell-piece 'struct start point)
+        (goto-char point)
+        (merlin-tell-till-end-of-phrase)
+        (setq merlin-lock-point (merlin-get-position))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINT SYNCHRONIZATION ;;
@@ -623,11 +630,13 @@ Called when an edit is made by the user."
       (progn (setq merlin-lock-point (1- start))
              (merlin-sync-lock-zone-display))))
 
-(defun merlin-sync-to-point ()
+(defun merlin-sync-to-point (&optional point)
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
-  (merlin-tell-to-point (point))
-  (merlin-seek-exact (point))
-  (merlin-sync-lock-zone-display))
+  (lexical-let
+      ((point (if point point (point))))
+    (merlin-tell-to-point point)
+    (merlin-seek-exact point)
+    (merlin-sync-lock-zone-display)))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
@@ -746,7 +755,7 @@ the errors in the margin. If VIEW-ERRORS-P is non-nil, display a count of them."
       ((bounds (bounds-of-thing-at-point 'ocaml-atom))
        (start  (if bounds (car bounds) (point)))
        (end    (point))
-       (string (if bounds (buffer-substring-no-properties start end) "")))
+       (string (if bounds (merlin-buffer-substring start end) "")))
     (setq merlin-completion-annotation-table
           (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
                   (merlin-completion-data string)))
@@ -806,7 +815,7 @@ variable `merlin-ac-cache')."
 
 (defun merlin-ac-fetch-type ()
   "Prints the type of the selected candidate"
-  (let ((candidate (buffer-substring-no-properties merlin-completion-point  (point))))
+  (let ((candidate (merlin-buffer-substring merlin-completion-point  (point))))
     (if merlin-completion-types
         (mapc
          (lambda (item)
@@ -854,7 +863,7 @@ If QUIET is non nil then an overlay is displayed and module
 types are displayed in another buffer.  Otherwise only value type
 are displayed, and without overlay."
   (lexical-let* 
-      ((substring (if bounds (buffer-substring-no-properties 
+      ((substring (if bounds (merlin-buffer-substring 
                               (car bounds) (cdr bounds))))
        (bounds bounds)
        (quiet quiet)
@@ -889,7 +898,7 @@ Otherwise start a new session at point."
   (let* ((bounds (bounds-of-thing-at-point 'ocaml-atom))
          (start  (if bounds (car bounds) (point)))
          (end    (if bounds (cdr bounds) (point)))
-         (string (if bounds (buffer-substring-no-properties start end) ""))
+         (string (if bounds (merlin-buffer-substring start end) ""))
          (fallback (list (cons 'assoc nil)
                          (cons 'expr string)
                          (cons 'offset (- (point) start))))
@@ -909,26 +918,22 @@ Otherwise start a new session at point."
         (merlin-type-display (cdr data) (car data)))))
 
 (defun merlin-type-enclosing-go-up ()
-  "Go up in the enclosing type zipper."
+  "Go up in the enclosing type list."
   (interactive)
   (when merlin-enclosing-types
-    (setq merlin-enclosing-offset (+ 1 merlin-enclosing-offset))
-    (if (> merlin-enclosing-offset (1- (length merlin-enclosing-types)))
-        (message "cannot go up")
-      (progn
-        (merlin-type-enclosing-go)
-        ))))
+    (if (>= merlin-enclosing-offset (1- (length merlin-enclosing-types)))
+        (setq merlin-enclosing-offset -1))
+    (setq merlin-enclosing-offset (1+ merlin-enclosing-offset))
+    (merlin-type-enclosing-go)))
 
 (defun merlin-type-enclosing-go-down ()
-  "Go down in the enclosing type zipper."
+  "Go down in the enclosing type list."
   (interactive)
-  (if merlin-enclosing-types
-      (if (<= merlin-enclosing-offset 0)
-          (message "cannot go down")
-        (progn
-          (setq merlin-enclosing-offset (- merlin-enclosing-offset 1))
-          (merlin-type-enclosing-go)
-          ))))
+  (when merlin-enclosing-types
+    (if (<= merlin-enclosing-offset 0)
+        (setq merlin-enclosing-offset (length merlin-enclosing-types)))
+    (setq merlin-enclosing-offset (1- merlin-enclosing-offset))
+    (merlin-type-enclosing-go)))
 
 (defun merlin-type-enclosing (arg)
   "Print the type of the expression under point.
@@ -1058,10 +1063,17 @@ Returns the position."
         (merlin-goto-phrase 'prev 0))))
 
 (defun merlin-to-point ()
-  "Update merlin to the current point, reporting error."
+  "Update merlin to the current point, reporting errors."
   (interactive)
   (merlin-sync-to-point)
   (merlin-error-check t))
+
+(defun merlin-to-end ()
+  "Update merlin to the end-of-file, reporting errors."
+  (interactive)
+  (when merlin-mode
+    (merlin-sync-to-point (point-max))
+    (merlin-error-check t)))
 
 (defun merlin-customize ()
   "Open the customize buffer for the group merlin."
@@ -1228,14 +1240,12 @@ Short cuts:
   "Cleans the buffer being killed."
   (if merlin-mode
       (merlin-process-remove-user)))
-  
-(defun merlin-insinuate ()
-  "Initialize merlin globally."
-  (add-hook 'after-save-hook (lambda ()
-                               (if merlin-mode
-                                   (merlin-to-point))))
-  (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook))
-                                      
+ 
+(add-hook 'merlin-mode-hook
+          (lambda ()
+            (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook nil 'make-it-local)
+            (add-hook 'after-save-hook 'merlin-to-end nil 'make-it-local)))
+
 (defun merlin-kill-all-processes ()
   "Kill all the remaining buffers containing merlin processes."
   (interactive)
@@ -1243,8 +1253,6 @@ Short cuts:
           (with-current-buffer (process-buffer p)
             (merlin-kill-process)))
         merlin-processes))
-
-(merlin-insinuate)
 
 (provide 'merlin)
 ;;; merlin.el ends here
