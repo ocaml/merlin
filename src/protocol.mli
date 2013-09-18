@@ -23,7 +23,7 @@ type _ request =
     -> completion list request
   | Locate          
     :  string * position option 
-    -> (string * position) option request
+    -> (string option * position) option request
   | Drop 
     :  position request
   | Seek 

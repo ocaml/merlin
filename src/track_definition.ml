@@ -252,13 +252,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
     in
     if not (is_ghost loc) then
       let fname = loc.Location.loc_start.Lexing.pos_fname in
-      let full_path =
-        try find_file ~ext:".ml" fname
-        with Not_found ->
-          error_log "   found non ghost loc but no associated ml file??" ;
-          fname
-      in
-      Some (full_path, loc)
+      Some (None, loc)
     else
       let opt =
         match find_includer ~path local_defs with
@@ -268,7 +262,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
       Option.map opt ~f:(fun (loc, fallback_opt) ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
-        full_path, loc
+        Some full_path, loc
       )
   with Not_found ->
     None

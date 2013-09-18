@@ -324,7 +324,8 @@ let dispatch (i,o : IO.io) (state : state) =
     with
     | None -> state, None
     | Some (file, loc) ->
-      Logger.log `locate (Printf.sprintf "--> %s" file) ;
+      Logger.log `locate
+        (sprintf "--> %s" (match file with None -> "<local buffer>" | Some f -> f)) ;
       let pos = loc.Location.loc_start in
       state, Some (file, pos)
     end

@@ -4,4 +4,4 @@ val from_string
   -> local_defs:Typedtree.structure Asttypes.loc list
   -> local_modules:(string * Location.t) list
   -> string
-  -> (string * Location.t) option
+  -> (string option * Location.t) option

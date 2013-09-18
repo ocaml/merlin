@@ -217,12 +217,10 @@ def command_locate(path, line, col):
     if not isinstance(pos_or_err, dict):
       print(pos_or_err)
     else:
-      curr_fpath = vim.current.buffer.name
-      fpath = pos_or_err['file']
       l = pos_or_err['pos']['line']
       c = pos_or_err['pos']['col']
-      if curr_fpath != fpath:
-        vim.command(":split %s" % fpath)
+      if "file" in pos_or_err:
+        vim.command(":split %s" % pos_or_err['file'])
       vim.current.window.cursor = (l, c)
   except MerlinExc as e:
     try_print_error(e)

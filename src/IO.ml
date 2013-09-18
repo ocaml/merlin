@@ -305,7 +305,9 @@ module Protocol_io = struct
           `List (List.map json_of_completion compl_list)
         | Locate _, None ->
           `String "Not found"
-        | Locate _, Some (file,pos) ->
+        | Locate _, Some (None,pos) ->
+          `Assoc ["pos",pos_to_json pos]
+        | Locate _, Some (Some file,pos) ->
           `Assoc ["file",`String file; "pos",pos_to_json pos]
         | Drop, position -> pos_to_json position
         | Seek _, position -> pos_to_json position

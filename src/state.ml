@@ -456,16 +456,3 @@ let node_complete node prefix =
       | _ -> find prefix []
     with Not_found -> []
   end
-
-and locate defs node path_str local_modules =
-  let split_loc {Location. txt; loc} = txt, loc in
-  let local_modules = List.map split_loc local_modules in
-  match Track_definition.from_string
-      ~sources:(!source_path)
-      ~env:(node.Browse.env)
-      ~local_defs:defs
-      ~local_modules
-      path_str
-  with
-  | None -> None
-  | Some (txt,loc) -> Some {Location. txt; loc}

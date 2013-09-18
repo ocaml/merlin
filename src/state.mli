@@ -67,7 +67,4 @@ val local_modules_at : t -> Lexing.position -> string Location.loc list
 
 val str_items_before : t -> Lexing.position -> Typedtree.structure Asttypes.loc list
 
-val locate : Typedtree.structure Location.loc list -> Browse.t -> string ->
-  string Location.loc list -> string Location.loc option
-
 val exns : t -> exn list
