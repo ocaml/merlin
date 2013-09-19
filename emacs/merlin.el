@@ -708,9 +708,12 @@ Called when an edit is made by the user."
   "Tell if the message MSG is a warning."
   (string-match "^Warning" msg))
 
+(defun merlin-error-reset ()
+  (setq merlin-pending-errors nil)
+  (merlin-error-delete-overlays))
+
 (defun merlin-error-display-in-margin (errors)
   "Given a list of ERRORS, put annotations in the margin corresponding to them."
-  (merlin-error-delete-overlays)
   (setq merlin-pending-errors (append errors nil))
   (setq merlin-pending-errors-overlays 
         (mapcar (lambda (err)
@@ -731,24 +734,20 @@ Called when an edit is made by the user."
   "Check for errors.
 Return t if there were not any or nil if there were.  Moreover, it displays
 the errors in the margin. If VIEW-ERRORS-P is non-nil, display a count of them."
-  (merlin-sync-to-point)
+  (merlin-error-reset)
   (merlin-seek-end)
-  (let ((raw-errors (merlin-send-command 'errors nil)))
-    (if (> (length raw-errors) 0)
-	(progn
-          (let ((errors (delete-if (lambda (e) (not (assoc 'start e)))
-                                   (append raw-errors nil))))
-            (if (not merlin-report-warnings)
-                (delete-if (lambda (e) (merlin-error-warning-p (cdr (assoc 'message e)))) errors))
-            (merlin-error-display-in-margin errors)
-            (when view-errors-p
-              (message "(%d pending errors, use %s to jump)"
-                       (length errors)
-                       (substitute-command-keys "\\[merlin-error-next]")))
-            nil))
+  (let ((errors (merlin-send-command 'errors nil)))
+    (if (<= (length errors) 0)
+        (when view-errors-p (message "ok"))
       (progn
-	(if view-errors-p (message "ok"))
-	t))))
+        (delete-if (lambda (e) (not (assoc 'start e))) errors)
+        (when (not merlin-report-warnings)
+          (delete-if (lambda (e) (merlin-error-warning-p (cdr 'message e))) errors))
+        (merlin-error-display-in-margin errors)
+        (when view-errors-p
+          (message "(%d pending errors, use %s to jump)"
+                   (length errors)
+                   (substitute-command-keys "\\[merlin-error-next]")))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPLETION-AT-POINT SUPPORT ;;
