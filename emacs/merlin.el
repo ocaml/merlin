@@ -468,12 +468,15 @@ the error message otherwise print a generic error message."
                  (setq merlin-ready t)
                  (if merlin-debug (merlin-debug (format "<%s" answer)))
                  (let ((a (car (read-from-string answer))))
-                   (if a (if (string-equal (elt a 0) "return")
-                             (funcall (car closure) (elt a 1))
-                           (progn
-                             (if (functionp (cadr closure))
-                                 (funcall (cadr closure) (elt a 1))
-                               (message "Command %s failed with error %s" (cddr closure) (elt a 1)))))
+                   (if a
+                       (cond ((string-equal (elt a 0) "return")
+                              (funcall (car closure) (elt a 1)))
+                             ((string-equal (elt a 0) "exception")
+                              (message "Merlin failed with exception : %s" (elt a 1)))
+                             ((progn
+                               (if (functionp (cadr closure))
+                                   (funcall (cadr closure) (elt a 1))
+                                 (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
                      (message "Invalid answer received from merlin.")))))
            nil)
           nil)
@@ -894,44 +897,34 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (if (and (not quiet) bounds)
           (merlin-highlight bounds 'merlin-type-face)))))
 
-(defun merlin-type-bounds (bounds &optional quiet on-failure)
-  "Show the type of the expression inside BOUNDS in the current buffer.
-If QUIET is non nil then an overlay is displayed and module
-types are displayed in another buffer.  Otherwise only value type
-are displayed, and without overlay."
-  (lexical-let* 
-      ((substring (if bounds (merlin-buffer-substring 
-                              (car bounds) (cdr bounds))))
-       (bounds bounds)
-       (quiet quiet)
-       (on-success (lambda (type) (merlin-type-display bounds type quiet))))
-    (merlin-sync-to-point)
-    (merlin-type-expression substring on-success on-failure)))
-
 (defun merlin-type-region ()
   "Show the type of the region."
-  (interactive)
-  (merlin-type-bounds (cons (region-beginning) (region-end))))
+  (lexical-let* 
+      ((substring (merlin-buffer-substring (region-beginning) (region-end)))
+       (on-success (lambda (type) (merlin-type-display nil type nil)))
+       (on-error   (lambda (err)
+                     (let ((msg (assoc 'message err))
+                           (typ (assoc 'type err)))
+                       (cond ((and typ (equal (cdr typ) "parser"))
+                              (message "Error: the content of the region failed to parse."))
+                             (msg (message "Error: %s" (cdr msg)))
+                             (message "Unexpected error"))))))
+    (merlin-type-expression substring on-success on-error)))
 
-(defun merlin-type-point (arg) 
-  "Show the type of the identifier under the point. 
-If it is called with a prefix argument, then show the type of the region."
-  (interactive "p")
-  (if (> arg 1) (merlin-type-region)
-    (merlin-type-bounds (bounds-of-thing-at-point 'ocaml-path))))
-
-(defun merlin-type-expr (s)
-  "Show the type of the expression S."
+(defun merlin-type-expr (exp)
+  "Prompt the user for expression EXP, then show its type."
   (interactive "s# ")
   (merlin-sync-to-point)
-  (merlin-type-expression 
-   s #'(lambda (type) (merlin-type-display nil type nil))))
+  (let ((on-success (lambda (type) (merlin-type-display nil type nil)))
+        (on-error   (lambda (err)
+                      (let ((msg (assoc 'message err)))
+                        (if msg (message "Error: %s" (cdr msg))
+                          (message "unknown error"))))))
+    (merlin-type-expression exp on-success on-error)))
 
 ;; TYPE ENCLOSING 
 (defun merlin-type-enclosing-query ()
-  "If there is a selected type enclosing, kill it.
-Otherwise start a new session at point."
-  (merlin-sync-to-point)
+  "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
   (let* ((bounds (bounds-of-thing-at-point 'ocaml-atom))
          (start  (if bounds (car bounds) (point)))
          (end    (if bounds (cdr bounds) (point)))
@@ -940,7 +933,7 @@ Otherwise start a new session at point."
                          (cons 'expr string)
                          (cons 'offset (- (point) start))))
          (types (merlin-send-command (list 'type 'enclosing fallback (merlin-unmake-point (point)))
-                      (lambda (exn) '(nil))))
+                                     (lambda (exn) '(nil))))
          (list (mapcar (lambda (obj) (cons (cdr (assoc 'type obj))
                                            (merlin-make-bounds obj)))
                        types)))
@@ -972,16 +965,12 @@ Otherwise start a new session at point."
     (setq merlin-enclosing-offset (1- merlin-enclosing-offset))
     (merlin-type-enclosing-go)))
 
-(defun merlin-type-enclosing (arg)
-  "Print the type of the expression under point.
-If called several times at the same position, it will print types
-of bigger expressions around point (it will go up the ast).
-Called with a prefix argument, it will go down the AST.
-If there is no enclosing, falls back to `merlin-type-point'."
-  (interactive "p")
+(defun merlin-type-enclosing ()
+  "Print the type of the expression under point (or of the region, if it exists)."
+  (interactive)
   (save-excursion
     (merlin-sync-to-point)
-    (if (> arg 1)
+    (if (region-active-p)
         (merlin-type-region)
       (if (merlin-type-enclosing-query)
           (merlin-type-enclosing-go-up)))))
@@ -1128,7 +1117,6 @@ Returns the position."
         (merlin-menu-map (make-sparse-keymap))
         (merlin-show-type-map (make-sparse-keymap)))
     (define-key merlin-map (kbd "C-c <C-return>") 'merlin-to-point)
-    (define-key merlin-map (kbd "C-c C-t") 'merlin-type-point)
     (define-key merlin-map (kbd "C-c l") 'merlin-use)
     (define-key merlin-map (kbd "C-c r") 'merlin-restart-process)
     (define-key merlin-map (kbd "C-c C-x") 'merlin-error-next)
@@ -1140,7 +1128,8 @@ Returns the position."
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
     (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
-    (define-key merlin-map (kbd "C-c t") 'merlin-type-enclosing)
+    (define-key merlin-map (kbd "C-c t") 'merlin-type-expr)
+    (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
     (define-key merlin-map (kbd "C-<up>") 'merlin-type-enclosing-go-up)
     (define-key merlin-map (kbd "C-<down>") 'merlin-type-enclosing-go-down)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-next-phrase)
@@ -1149,18 +1138,15 @@ Returns the position."
       '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
       '("-"))
-    (define-key merlin-show-type-map [local]
-      '(menu-item "around the cursor" merlin-show-type
+    (define-key merlin-show-type-map [point]
+      '(menu-item "around the cursor" merlin-type-enclosing
                   :help "Show the type of the smallest subexpression near cursor"))
     (define-key merlin-show-type-map [region]
-      '(menu-item "of the region" merlin-show-type-of-region
+      '(menu-item "of the region" merlin-type-enclosing
                   :help "Show the type of the region"))
     (define-key merlin-show-type-map [exp]
-      '(menu-item "of an expression" merlin-show-type-of-user-supplied-expression
+      '(menu-item "of an expression" merlin-type-expr
                   :help "Input an expression and show its type"))
-    (define-key merlin-show-type-map [def]
-      '(menu-item "definition" merlin-show-type-def
-                  :help "Show the definition of the type of the expression near point"))
     (define-key merlin-menu-map [showtype]
       (cons "Show type..." merlin-show-type-map))
     (define-key merlin-menu-map [point]
