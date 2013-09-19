@@ -902,8 +902,13 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
       (if (not quiet)
           (message "<no information>"))
-    (progn 
-      (if (<= (cond ((string-match "\n" type)) (0)) 8)
+    (let ((count 0)
+          (pos   0))
+      (while (and (<= count 8)
+                  (string-match "\n" type pos))
+        (setq pos (match-end 0))
+        (setq count (1+ count)))
+      (if (<= count 8)
           (message "%s" type)
         (progn
           (merlin-type-display-in-buffer type)
