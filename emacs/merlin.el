@@ -904,15 +904,17 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
           (message "<no information>"))
     (let ((count 0)
           (pos   0))
+      (merlin-type-display-in-buffer type)
       (while (and (<= count 8)
                   (string-match "\n" type pos))
         (setq pos (match-end 0))
         (setq count (1+ count)))
-      (if (<= count 8)
-          (message "%s" type)
-        (progn
-          (merlin-type-display-in-buffer type)
-          (display-buffer merlin-type-buffer-name)))
+      (if (> count 8)
+          (display-buffer merlin-type-buffer-name)
+        (message "%s"
+          (with-current-buffer merlin-type-buffer-name
+            (font-lock-fontify-region (point-min) (point-max))
+            (buffer-string))))
       (if (and (not quiet) bounds)
           (merlin-highlight bounds 'merlin-type-face)))))
 
