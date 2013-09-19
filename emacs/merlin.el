@@ -885,6 +885,17 @@ variable `merlin-ac-cache')."
                  'at (merlin-unmake-point (point)))
            callback-if-success callback-if-exn)))
 
+(defun merlin-type-display-in-buffer (text)
+  "Change content of type-buffer"
+  (let ((initialized (get-buffer merlin-type-buffer-name)))
+    (with-current-buffer
+      (cond (initialized)
+            ((get-buffer-create merlin-type-buffer-name)))
+    (unless initialized (funcall merlin-favourite-caml-mode))
+    (erase-buffer)
+    (insert text)
+    (goto-char (point-min)))))
+
 (defun merlin-type-display (bounds type &optional quiet)
   "Display the type TYPE of the the expression occuring at BOUNDS.
 If QUIET is non nil, then an overlay and the merlin types can be used."
@@ -892,7 +903,11 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (if (not quiet)
           (message "<no information>"))
     (progn 
-      (message "%s" type)
+      (if (<= (cond ((string-match "\n" type)) (0)) 8)
+          (message "%s" type)
+        (progn
+          (merlin-type-display-in-buffer type)
+          (display-buffer merlin-type-buffer-name)))
       (if (and (not quiet) bounds)
           (merlin-highlight bounds 'merlin-type-face)))))
 
@@ -1205,9 +1220,7 @@ Returns the position."
   (add-hook 'completion-at-point-functions
             #'merlin-completion-at-point nil 'local)
   (add-to-list 'after-change-functions 'merlin-sync-edit)
-  (merlin-load-project-file)
-  (with-current-buffer (get-buffer-create merlin-type-buffer-name)
-    (funcall merlin-favourite-caml-mode)))
+  (merlin-load-project-file))
 
 (defun merlin-is-ml-buffer ()
   "Return true if current buffer corresponds to a ML file."
