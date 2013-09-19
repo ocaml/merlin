@@ -35,13 +35,12 @@ module Sexp = struct
   let is_alpha c = 
          (c >= 'a' && c <= 'z')
       || (c >= 'A' && c <= 'Z')
-      || (c >= '0' && c <= '9')
 
   let is_num c = 
       (c >= '0' && c <= '9')
 
   let is_alphanum c = is_alpha c || is_num c
-
+    
   let read_sexp getch =
     let buf = Buffer.create 10 in
     let rec read_sexp getch = function
@@ -51,7 +50,7 @@ module Sexp = struct
       | c when is_num c ->
         read_num getch c
 
-      | '\'' | ':' as c -> read_sym getch (Some c)
+      | '\'' | ':' | '_' as c -> read_sym getch (Some c)
       | c when is_alpha c -> read_sym getch (Some c)
 
       | '"' ->
@@ -122,7 +121,7 @@ module Sexp = struct
       Buffer.clear buf;
       let rec aux next =
         match (match next with Some c -> c | None -> getch ()) with
-        | ('\'' | '-' | ':') as c -> 
+        | ('\'' | '-' | ':' | '_') as c -> 
           Buffer.add_char buf c;
           aux None
         | c when is_alphanum c ->

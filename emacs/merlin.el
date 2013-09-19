@@ -543,19 +543,19 @@ the error message otherwise print a generic error message."
 (defun merlin-switch-to (name ext)
   "Switch to NAME.EXT."
   (let ((file (merlin-send-command 
-               (list 'which 'path (concat (downcase name) "." ext))
+               (list 'which 'path (concat (downcase name) ext))
                #'(lambda (err) (message "No such file (message: %s)" err)))))
     (when file (find-file-other-window file))))
 
 (defun merlin-switch-to-ml (name)
   "Switch to the ML file corresponding to the module NAME."
-  (interactive (list (completing-read "Module:" (merlin-switch-list-by-ext "ml"))))
-  (merlin-switch-to name "ml"))
+  (interactive (list (completing-read "Module: " (merlin-switch-list-by-ext ".ml"))))
+  (merlin-switch-to name ".ml"))
 
 (defun merlin-switch-to-mli (name)
   "Switch to the MLI file corresponding to the module NAME."
-  (interactive (list (completing-read "Module:" (merlin-switch-list-by-ext "mli"))))
-  (merlin-switch-to name "mli"))
+  (interactive (list (completing-read "Module: " (merlin-switch-list-by-ext ".mli"))))
+  (merlin-switch-to name ".mli"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BUFFER SYNCHRONIZATION ;;
