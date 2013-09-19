@@ -498,9 +498,9 @@ the error message otherwise print a generic error message."
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
   (merlin-send-command (list 'reset 'name buffer-file-name))
-  (setq merlin-lock-point (point-min))
-  ;;(merlin-error-delete-overlays)
-  (setq merlin-pending-errors nil))
+  (merlin-send-command (list 'cd (file-name-directory (buffer-file-name))))
+  (merlin-error-reset)
+  (setq merlin-lock-point (point-min)))
 
 (defun merlin-refresh ()
   "Refresh changed merlin cmis."
