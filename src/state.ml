@@ -283,6 +283,14 @@ let rec methods_of_type env ?(acc=[]) type_expr =
 
 (* Propose completion from a particular node *)
 let node_complete node prefix =
+  let prefix =
+    let li = Longident.parse prefix in
+    let suffix = Longident.last li in
+    if suffix <> "" && Char.uppercase suffix.[0] = suffix.[0] then
+      suffix
+    else
+      prefix
+  in
   let {Browse.env} = node in
   let fmt ~exact name ?path ty =
     let ident = match path with
