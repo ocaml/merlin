@@ -546,7 +546,7 @@ interface:
     signature EOF                        { List.rev $1 }
 ;
 top_expr:
-  | seq_expr EOF { $1 }
+  | seq_expr option(SEMISEMI) EOF { $1 }
 ;
 
 (* Module expressions *)
