@@ -566,10 +566,12 @@ the error message otherwise print a generic error message."
   "Drop the knowledge of merlin of the buffer after the current position."
   (merlin-send-command 'drop))
 
-(defun merlin-tell-piece (mode start end)
+(defun merlin-tell-piece (mode &optional start end)
   "Tell the region using mode MODE between START and END in one chunk using."
-  (merlin-send-command 
-   (list 'tell mode (merlin-buffer-substring start end))))
+  (cond ((and start end)
+         (merlin-send-command (list 'tell mode (merlin-buffer-substring start end))))
+        (start (merlin-send-command (list 'tell mode start)))
+        (t     (merlin-send-command '(tell end)))))
 
 (defun merlin-tell-till-end-of-phrase ()
   "Tell merlin the buffer until the end of the current phrase is met.
@@ -578,17 +580,20 @@ returns true or until we are at the end of the buffer.  It then
 parses the error returned by merlin. If VIEW-ERRORS-P is non-nil, it reports the errors to the user.
 ORIG-POINT is where the user was before starting telling merlin."
   (let ((curr (point))
-        (chunk 10))
+        (chunk 10)
+        (pos 'null))
     (forward-line chunk)
-    (while (equal
-            (if (< curr (point-max))
-                (merlin-tell-piece 'end curr (point))
-              (merlin-send-command '(tell end null)))
-            'false)
+    (while
+        (progn
+          (setq pos (if (< curr (point-max))
+                        (merlin-tell-piece 'more curr (point))
+                      (merlin-tell-piece 'end)))
+          (equal pos 'null))
       (setq curr (point))
       (forward-line chunk)
-      (if (< chunk 1000)
-          (setq chunk (* chunk 2))))))
+      (if (< chunk 20000)
+          (setq chunk (* chunk 2))))
+    (merlin-make-point pos)))
 
 (defun merlin-tell-to-point (&optional point)
   "Move the merlin point to around the given the current point.
@@ -609,11 +614,22 @@ The parameter VIEW-ERRORS-P controls whether we should care for errors"
     (unless point (setq point (point)))
     (let ((start (merlin-seek-before merlin-lock-point)))
       (when (< start point)
-        (merlin-tell-piece 'struct start point)
+        (merlin-tell-piece 'source start point)
         (goto-char point)
-        (merlin-tell-till-end-of-phrase)
-        (setq merlin-lock-point (merlin-get-position))))))
+        (setq merlin-lock-point
+              (merlin-tell-till-end-of-phrase))))))
 
+(defun merlin-tell-definitions (count &optional point)
+  (save-excursion
+    (if (not (merlin-is-last-user-p))
+        (merlin-rewind))
+    (unless point (setq point (point)))
+    (let ((start (merlin-seek-before point)))
+      (merlin-tell-piece 'definitions count)
+      (goto-char point)
+      (merlin-tell-piece 'source start point)
+      (setq merlin-lock-point
+          (merlin-tell-till-end-of-phrase)))))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINT SYNCHRONIZATION ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1055,19 +1071,20 @@ Returns the position."
   (let ((r (merlin-send-command (list 'boundary command))))
     (if (equal r 'null) nil
       (progn
-        (goto-char (merlin-make-point (elt r indice)))
-        (merlin-make-point (elt r indice))))))
+        (merlin-goto-point (elt r indice))
+        (point)))))
 
-(defun merlin-next-phrase ()
+(defun merlin-next-phrase (&optional point)
   "Go to the beginning of the next phrase."
   (interactive)
-  (save-excursion
-    (merlin-sync-to-point)
-    (merlin-goto-phrase 'current 1)
-    (forward-line 1)
-    (merlin-sync-to-point))
-  (if (not (merlin-goto-phrase 'next 0)) ;; no next phrase => end-of-buffer
-      (goto-char (point-max))))
+  (unless point (setq point (point)))
+  (merlin-sync-to-point point)
+  (cond
+    ((merlin-goto-phrase 'next 0))
+    ((progn (merlin-tell-definitions 2)
+            (goto-char (merlin-seek-exact point))
+            (merlin-goto-phrase 'next 0)))
+    (t (end-of-buffer))))
 
 (defun merlin-prev-phrase ()
   "Go to the beginning of the previous phrase."

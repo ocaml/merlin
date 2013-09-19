@@ -147,78 +147,84 @@ let position state = (location state).Location.loc_end
 let new_step outline steps =
   History.insert (State.step (History.focused steps) outline) steps
 
+let tell i o state request number_of_definitions source =
+  Env.reset_missing_cmis ();
+  let number_of_definitions = ref number_of_definitions in
+  let eod = ref false and eot = ref false in
+  let lexbuf = Misc.lex_strings source ~position:(position state)
+    begin fun () ->
+      if !eot then ""
+      else try
+        o (Return (request, None));
+        let request = Stream.next i in
+        match request with
+        | Request (Tell (`Source source)) -> source
+        | Request (Tell (`More source)) -> eod := true; source
+        | Request (Tell `End) -> eot := true; ""
+        | _ -> IO.invalid_arguments ()
+      with
+        Stream.Failure -> IO.invalid_arguments ()
+    end
+  in
+  let onestep first tokens steps =
+    let step = History.focused steps in
+    let tokens', outline =
+      Outline.parse tokens step.outlines lexbuf in
+    let stuck = tokens = tokens' in
+    let tokens' =
+      if stuck
+      then (try List.tl tokens' with _ -> tokens')
+      else tokens'
+    in
+    if !eod && not first then decr number_of_definitions;
+    let finished =
+      (!eod && !number_of_definitions <= 0) || (!eot && (stuck || tokens' = []))
+    in
+    if finished
+    then None, outline
+    else Some tokens', outline
+  in
+  let rec loop steps = function
+    | None -> steps
+    | Some tokens ->
+      let next_tokens, outline = onestep false tokens steps in
+      let steps = match outline with
+        | None -> steps
+        | Some outline -> new_step outline steps
+      in
+      loop steps next_tokens
+  in
+  let first steps =
+    match Outline.tokens (History.focused steps).outlines with
+    | (_ :: _) as tokens
+      (* If length > 10000, we are probably just after a big structure.
+       * In this case we don't want to reparse the whole chunk. *)
+      when length_lessthan 10000 tokens <> None ->
+      let steps' = History.move (-1) steps in
+      begin match onestep true tokens steps' with
+      | tokens', None -> loop steps tokens'
+      | tokens', Some outline
+        when Outline.tokens outline = tokens ->
+        loop steps tokens'
+      | tokens', Some outline ->
+        loop (new_step outline steps) tokens'
+      end
+    | _ -> loop steps (Some [])
+  in
+  let state = {steps = first state.steps} in
+  state, Some (position state)
+
+
 let dispatch (i,o : IO.io) (state : state) =
   fun (type a) (request : a request) ->
   track_verbosity state (Request request);
   let step = History.focused state.steps in
   (match request with
   | (Tell (`Source source) : a request) ->
-  begin
-    Env.reset_missing_cmis ();
-    let eod = ref false and eot = ref false in
-    let lexbuf = Misc.lex_strings source ~position:(position state)
-      begin fun () ->
-        if !eot then ""
-        else try
-          o (Return (request, false));
-          let request = Stream.next i in
-          match request with
-          | Request (Tell (`Source source)) -> source
-          | Request (Tell (`More source)) -> eod := true; source
-          | Request (Tell `End) -> eot := true; ""
-          | _ -> IO.invalid_arguments ()
-        with
-          Stream.Failure -> IO.invalid_arguments ()
-      end
-    in
-    let onestep first tokens steps =
-      let step = History.focused steps in
-      let tokens', outline =
-        Outline.parse tokens step.outlines lexbuf in
-      let stuck = tokens = tokens' in
-      let tokens' =
-        if stuck
-        then (try List.tl tokens' with _ -> tokens')
-        else tokens'
-      in
-      let finished =
-        (!eot || not first) && (!eod || (!eot && (stuck || tokens' = [])))
-      in
-      if finished
-      then None, outline
-      else Some tokens', outline
-    in
-    let rec loop steps = function
-      | None -> steps
-      | Some tokens ->
-        let next_tokens, outline = onestep false tokens steps in
-        let steps = match outline with
-          | None -> steps
-          | Some outline -> new_step outline steps
-        in
-        loop steps next_tokens
-    in
-    let first steps =
-      match Outline.tokens (History.focused steps).outlines with
-      | (_ :: _) as tokens
-        (* If length > 10000, we are probably just after a big structure.
-         * In this case we don't want to reparse the whole chunk. *)
-        when length_lessthan 10000 tokens <> None ->
-        let steps' = History.move (-1) steps in
-        begin match onestep true tokens steps' with
-        | tokens', None -> loop steps tokens'
-        | tokens', Some outline
-          when Outline.tokens outline = tokens ->
-          loop steps tokens'
-        | tokens', Some outline ->
-          loop (new_step outline steps) tokens'
-        end
-      | _ -> loop steps (Some [])
-    in
-    {steps = first state.steps}, true
-  end
+    tell i o state request 0 source
+  | (Tell (`Definitions defs) : a request) ->
+    tell i o state request defs "" 
   | (Tell _ : a request) -> IO.invalid_arguments ()
-
   | (Type_expr (source, None) : a request) ->
     let env = Typer.env (History.focused state.steps).types in
     let ppf, to_string = Misc.ppf_to_string () in

@@ -153,7 +153,9 @@ def command_reset(name=None):
   return r
 
 def command_tell(kind,content):
-  if type(content) is list:
+  if content == None:
+    return send_command("tell", "end")
+  elif type(content) is list:
     return send_command("tell", kind, "\n".join(content) + "\n")
   else:
     return send_command("tell", kind, content)
@@ -252,9 +254,9 @@ def sync_buffer_to(to_line, to_col):
 
   # Send content
   if content:
-    kind = "struct"
+    kind = "source"
     while not command_tell(kind,content):
-      kind = "end"
+      kind = "more"
       if end_line < max_line:
         next_end = min(max_line,end_line + 20)
         content = cb[end_line:next_end]

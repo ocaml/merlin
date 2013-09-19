@@ -10,8 +10,8 @@ type completion = {
 
 type _ request =
   | Tell 
-    :  [`Source of string | `More of string | `End]
-    -> bool request
+    :  [`Definitions of int | `Source of string | `More of string | `End]
+    -> position option request
   | Type_expr
     :  string * position option
     -> string request

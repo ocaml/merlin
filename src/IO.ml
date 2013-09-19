@@ -187,11 +187,13 @@ module Protocol_io = struct
   open Protocol
 
   let request_of_json = function
-    | [`String "tell"; `String "struct"; `String source] ->
+    | [`String "tell"; `String "definitions"; `Int d] ->
+      Request (Tell (`Definitions d))
+    | [`String "tell"; `String "source"; `String source] ->
       Request (Tell (`Source source))
-    | [`String "tell"; `String "end"; `String source] ->
+    | [`String "tell"; `String "more"; `String source] ->
       Request (Tell (`More source))
-    | [`String "tell"; `String ("struct"|"end"); `Null] ->
+    | [`String "tell"; `String "end"] ->
       Request (Tell `End)
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
       Request (Type_expr (expr, optional_position opt_pos))
@@ -297,7 +299,8 @@ module Protocol_io = struct
     | Return (request, response) ->
       `List [`String "return";
       begin match request, response with
-        | Tell _, b -> `Bool b
+        | Tell _, Some pos -> (pos_to_json pos)
+        | Tell _, None     -> `Null
         | Type_expr _, str -> `String str
         | Type_enclosing _, results ->
           `List (List.map json_of_type_loc results)
