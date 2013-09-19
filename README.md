@@ -141,24 +141,30 @@ inside emacs, by synchronizing ML buffers with a merlin instance. At
 any moment, the instance of merlin knows a part of the buffer that
 works like locked zones in proof assistant modes (eg. proofgeneral):
 editing inside this zone retracts it to the last valid phrase, and C-c
-C-t (`merlin-to-point`) expands it to the current position. Moreover
+C-RET (`merlin-to-point`) expands it to the current position. Moreover
 executing a merlin command also tries to advance the locked zone as
 much as possible to contain the point.
 
 Main keybindings:
 
-- `C-c C-t` (`merlin-magic-show-type`) shows the type of the
-  expression underpoint. To do so, it tries to compile the current
-  phrase and locate the leaf of the typedtree containing the current
-  position. If it is not found, it tries other heuristic to display a type.
+- `C-c C-t` (`merlin-type-enclosing`) shows the type of the
+  expression underpoint.
 
-  If the typedtree is found, futher calls to `C-up` and `C-down` will
-  allow you to go up and down in the typedtree printing type of bigger
-  / smaller expressions.
+  Futher calls to `C-up` and `C-down` will allow you to go up and down in the
+  typedtree printing type of bigger / smaller expressions.
   
-  Moreover, if you use a prefix argument, merlin-mode will try to type the region.
+  Not that if the region is active, merlin will try to type the content of the
+  region.
 
-- `C-c <C-return>` (`merlin-to-point`) will update the locked zone to the current position and report all the errors and warnings found.
+- `C-c t` (`merlin-type-expr`) prompt the user for an arbitrary expression and
+  returns its type.
+
+- `C-c <C-return>` (`merlin-to-point`) forces synchronization between emacs and
+  merlin. merlin will know the content of your buffer before the point, and
+  display the errors in that section.
+
+  Note that synchronization with the whole buffer is automatically done when you
+  save.
 
 - `C-c C-x` (`merlin-next-error`) will jump to the next error and display the error message
 
@@ -166,20 +172,18 @@ Main keybindings:
 
 - `C-c C-r` (`merlin-rewind`) retracts the whole buffer (useful when merlin seems confused)
 
-- `C-c C-l` (`merlin-locate`) tries to find the definition of the ident under point and jumps to it. To go back, use `C-c &` (`merlin-pop-stack`)
-
-- `C-c d` (`merlin-show-type-def`) will print the definition of the
-  type of the expression underpoint if any. If the type is compliated
-  (eg. `'a -> 'a option`) it will print the definition of the
-  codomain.
+- `C-c C-l` (`merlin-locate`) tries to find the definition of the ident under point and jumps to it.  
+  Note that you can customize the way that command behaves (you can make it
+  display the result in the current window, or open a new window, focused or
+  not). Use `M-x customize-group` to see the full list of options.
 
 - `C-c l` (`merlin-use`) loads a findlib package inside merlin
 
 - `C-c r` (`merlin-restart-process`) restarts merlin process (useful when hung)
 
-- `C-c C-n` or `C-up` (`merlin-next-phrase`) moves the point to the beginning of the next phrase
+- `C-c C-n` (`merlin-next-phrase`) moves the point to the beginning of the next phrase
 
-- `C-c C-p` or `C-down` (`merlin-prev-phrase`) moves the point to the beginning of the previous phrase
+- `C-c C-p` (`merlin-prev-phrase`) moves the point to the beginning of the previous phrase
 
 Moreover, you have regular auto-completion (M-TAB by default with
 emacs24) using completion-at-point. There is also auto-complete
