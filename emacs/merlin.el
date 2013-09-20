@@ -1115,7 +1115,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 ;; SEMANTIC MOVEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin-goto-phrase (command indice)
+(defun merlin-phrase-goto (command indice)
   "Go to the phrase indicated by COMMAND to the end INDICE.
 Returns the position."
   (let ((r (merlin-send-command (list 'boundary command))))
@@ -1124,25 +1124,25 @@ Returns the position."
         (merlin-goto-point (elt r indice))
         (point)))))
 
-(defun merlin-next-phrase (&optional point)
+(defun merlin-phrase-next (&optional point)
   "Go to the beginning of the next phrase."
   (interactive)
   (unless point (setq point (point)))
   (merlin-sync-to-point point)
   (cond
-    ((merlin-goto-phrase 'next 0))
+    ((merlin-phrase-goto 'next 0))
     ((progn (merlin-tell-definitions 2)
             (goto-char (merlin-seek-exact point))
-            (merlin-goto-phrase 'next 0)))
+            (merlin-phrase-goto 'next 0)))
     (t (end-of-buffer))))
 
-(defun merlin-prev-phrase ()
+(defun merlin-phrase-prev ()
   "Go to the beginning of the previous phrase."
   (interactive)
   (let ((point (point)))
     (merlin-sync-to-point)
-    (if (equal point (merlin-goto-phrase 'current 0))
-        (merlin-goto-phrase 'prev 0))))
+    (if (equal point (merlin-phrase-goto 'current 0))
+        (merlin-phrase-goto 'prev 0))))
 
 (defun merlin-to-point ()
   "Update merlin to the current point, reporting errors."
@@ -1193,8 +1193,8 @@ Returns the position."
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
     (define-key merlin-map (kbd "C-<up>") 'merlin-type-enclosing-go-up)
     (define-key merlin-map (kbd "C-<down>") 'merlin-type-enclosing-go-down)
-    (define-key merlin-map (kbd "C-c C-n") 'merlin-next-phrase)
-    (define-key merlin-map (kbd "C-c C-p") 'merlin-prev-phrase)
+    (define-key merlin-map (kbd "C-c C-n") 'merlin-phrase-next)
+    (define-key merlin-map (kbd "C-c C-p") 'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]
       '("Customize merlin-mode" . merlin-customize))
     (define-key merlin-menu-map [separator]
