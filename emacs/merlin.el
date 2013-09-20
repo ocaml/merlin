@@ -1277,11 +1277,54 @@ Short cuts:
   "Cleans the buffer being killed."
   (if merlin-mode
       (merlin-process-remove-user)))
- 
+
+(defun merlin-find-error-for-line (line errors)
+  "Return the error association list for the given line
+number. Return nil if there is no error on this line."
+  (let* ((found nil))
+    (while (and (not found) errors)
+      (let* ((err (car errors))
+             (start-line (cdr (assoc 'line (cdr (assoc 'start err)))))
+             (end-line (cdr (assoc 'line (cdr (assoc 'start err))))))
+        (if (and (>= line start-line) (<= line end-line))
+            (setq found err)
+          (setq errors (cdr errors)))))
+    found))
+
+(defvar merlin-show-error-timer nil
+  "Timer to show the error at point in the minibuffer.")
+(make-variable-buffer-local 'merlin-show-error-timer)
+
+(defun merlin-cancel-show-error-timer ()
+  "Cancel the error display timer for the current buffer."
+  (when merlin-show-error-timer
+    (cancel-timer merlin-show-error-timer)
+    (setq merlin-show-error-timer nil)))
+
+(defun merlin-show-error-on-current-line ()
+  "If there is an error on the current line, show it in the
+minibuffer. If there is no error, do nothing."
+  (merlin-cancel-show-error-timer)
+  (let* ((current-line (line-number-at-pos))
+         (err (merlin-find-error-for-line
+               (line-number-at-pos) merlin-pending-errors)))
+    (if err (message (cdr (assoc 'message err))))))
+
+(defun merlin-show-error-on-current-line-soon ()
+  "Register a timer for showing the error on the current line
+soon. We use a timer to avoid disturbing navigation in the
+buffer."
+  (merlin-cancel-show-error-timer)
+  (setq merlin-show-error-timer
+        (run-at-time 0.1 nil 'merlin-show-error-on-current-line)))
+
 (add-hook 'merlin-mode-hook
           (lambda ()
             (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook nil 'make-it-local)
-            (add-hook 'after-save-hook 'merlin-to-end nil 'make-it-local)))
+            (add-hook 'after-save-hook 'merlin-to-end nil 'make-it-local)
+            (add-hook 'post-command-hook
+            'merlin-show-error-on-current-line-soon
+            nil 'make-it-local)))
 
 (defun merlin-kill-all-processes ()
   "Kill all the remaining buffers containing merlin processes."
