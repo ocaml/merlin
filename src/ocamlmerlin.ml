@@ -114,7 +114,8 @@ let main_loop () =
           | Stream.Failure as exn -> raise exn
           | exn -> !state', Protocol.Exception exn
       in
-      output answer;
+      (try output answer
+       with exn -> output (Protocol.Exception exn));
       loop state
     in
     loop (State.initial_str "")
