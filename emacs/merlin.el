@@ -782,9 +782,9 @@ the errors in the margin. If VIEW-ERRORS-P is non-nil, display a count of them."
       (progn
         (setq errors (delete-if (lambda (e) (not (assoc 'start e))) errors))
         (when (not merlin-report-warnings)
-          (setq errors (delete-if (lambda (e) (merlin-error-warning-p (cdr 'message e))) errors)))
+          (setq errors (delete-if (lambda (e) (merlin-error-warning-p (cdr (assoc 'message e)))) errors)))
         (merlin-error-display-in-margin errors)
-        (when view-errors-p
+        (when (and view-errors-p errors)
           (message "(%d pending errors, use %s to jump)"
                    (length errors)
                    (substitute-command-keys "\\[merlin-error-next]")))))))
