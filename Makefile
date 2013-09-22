@@ -3,7 +3,7 @@
 TARGET = ocamlmerlin.native
 #TARGET = src/spine.cmo
 
-OCAMLBUILD=ocamlbuild -Is src,src/ocaml,src/ocaml/utils,src/ocaml/typing,src/ocaml/parsing,src/utils
+OCAMLBUILD=ocamlbuild -Is src,src/utils,src/ocaml$(TYPER_VERSION),src/ocaml$(TYPER_VERSION)/utils,src/ocaml$(TYPER_VERSION)/typing,src/ocaml$(TYPER_VERSION)/parsing
 OCAMLFIND=ocamlfind
 
 all: $(TARGET)
@@ -18,12 +18,18 @@ $(CONFIG_FILES):
 assert_configured: $(CONFIG_FILES)
 
 $(TARGET): assert_configured
-	$(OCAMLBUILD) $(WITH_BIN_ANNOT) -use-ocamlfind $@
+	$(OCAMLBUILD) $(INCLUDE_DEFAULT) $(WITH_BIN_ANNOT) -use-ocamlfind $@
+
+all_versions:
+	for i in _400 _401; do \
+		$(MAKE) TYPER_VERSION=$$i $(TARGET);\
+	 	cp $(TARGET) ocamlmerlin$$i;\
+	done
 
 debug: assert_configured
 	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET) -tag debug
 
-.PHONY: $(TARGET) all dev clean distclean install uninstall assert_configured
+.PHONY: $(TARGET) all dev clean distclean install uninstall assert_configured ocamlmerlin_400 ocamlmerlin_401
 
 clean:
 	$(OCAMLBUILD) -clean
