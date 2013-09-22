@@ -78,8 +78,10 @@ module Fold = struct
   (* Fold items *)
   let sig_item _ = failwith "TODO"
 
-  let str_item step (exns,modules) =
-    let tokens = Outline.Spine.value step in
+  let str_item step (exns,modules as state) =
+    match Outline.Spine.value step with
+    | [] -> state, Inr []
+    | tokens ->
     let buf = Lexing.from_string "" in
     let exns', modules', result =
       protect_parser (fun () -> try
@@ -91,11 +93,10 @@ module Fold = struct
         let defs = Chunk_parser.top_structure_item lexer buf in
         defs
       with Chunk_parser.Error ->
-        let loc = {Location.  
-                      loc_start = buf.Lexing.lex_start_p;
-                      loc_end = buf.Lexing.lex_curr_p;
-                      loc_ghost = false
-                   } in
+        let loc_start, loc_end = match tokens with
+          | (_,s,e) :: _ -> s, e
+          | _ -> buf.Lexing.lex_start_p, buf.Lexing.lex_curr_p in
+        let loc = {Location. loc_start; loc_end; loc_ghost = false } in
         raise Syntaxerr.(Error (Other loc)))
     in
     (exns' @ exns, modules' @ modules), result

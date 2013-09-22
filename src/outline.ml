@@ -111,7 +111,7 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
     end
   | exn -> raise exn
 
-exception Malformed_module of token list
+exception Malformed_module of token list * Location.t
 
 let parse_str ~exns ~location ~lexbuf zipper t =
   let new_state exns' tokens = (exns' @ exns, location tokens, tokens) in
@@ -135,7 +135,8 @@ let parse_str ~exns ~location ~lexbuf zipper t =
   | exns', Inr (zipper, Outline_utils.Leave_module, tokens) ->
     let rec aux acc = function
       | Spine.Str_root step ->
-        Spine.(Str_item (str_step t (Malformed_module tokens :: exns, location tokens, tokens) []))
+        let exn = Malformed_module (tokens, location tokens) in
+        Spine.(Str_item (str_step t (exn :: exns, location tokens, tokens) []))
       | Spine.Str_in_module step ->
         let exns, loc, _ = Spine.state step in
         let tokens' = Spine.value step @ acc in
