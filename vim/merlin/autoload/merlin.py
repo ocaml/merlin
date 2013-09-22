@@ -102,35 +102,25 @@ def try_print_error(e, msg=None):
   try:
     raise e
   except Error as e:
-    if msg: sys.stderr.write(msg)
+    if msg: print(msg)
     else:
-      sys.stderr.write(e.value['message'])
+      print(e.value['message'])
   except Exception as e:
     if msg: sys.stderr.write(msg)
     else:
       msg = str(e)
-      if re.search('Chunk_parser.Error',msg):
-        sys.stderr.write ("error: Cannot parse")
-        return None
-      elif re.search('Not_found',msg):
+      if re.search('Not_found',msg):
         print ("error: Not found")
         return None
       elif re.search('Cmi_format.Error', msg):
         sys.stderr.write ("error: The version of merlin you're using doesn't support this version of ocaml")
-        return None
-      m = re.search('Fl_package_base.No_such_package\("(([^"]|\\")*)", "(([^"]|\\")*)"\)',msg)
-      if m:
-        if m.group(3) != "":
-          sys.stderr.write ("error: Unknown package '%s' (%s)" % (m.group(1), m.group(3)))
-        else:
-          sys.stderr.write ("error: Unknown package '%s'" % m.group(1))
         return None
       sys.stderr.write(msg)
 
 def catch_and_print(f, msg=None):
   try:
     return f()
-  except MerlinException as e:
+  except MerlinExc as e:
     try_print_error(e, msg=msg)
 
 ######## BASIC COMMANDS
@@ -300,7 +290,7 @@ def vim_complete_cursor(base, vimvar):
         ,prop['kind'][:1].replace("'", "''")
         ))
         vim.command("call add(%s, l:tmp)" % vimvar)
-  except MerlinException as e:
+  except MerlinExc as e:
     try_print_error(e)
 
 def vim_loclist(vimvar, ignore_warnings):
@@ -330,7 +320,7 @@ def vim_find_list(vimvar):
   for pkg in pkgs:
     vim.command("call add(%s, '%s')" % (vimvar, pkg))
 
-def vim_type(expr=None,is_approx=False):
+def vim_type(expr,is_approx=False):
   to_line, to_col = vim.current.window.cursor
   cmd_at = ["at", {'line':to_line,'col':to_col}]
   sync_buffer_to(to_line,to_col)
@@ -345,9 +335,7 @@ def vim_type(expr=None,is_approx=False):
     if expr: print(expr + " : " + ty)
     else: print(ty)
   except MerlinExc as e:
-    if expr:
-      vim_type(expr=None,is_approx=True)
-    elif re.search('Not_found',str(e)):
+    if re.search('Not_found',str(e)):
       pass
     else:
       try_print_error(e)
@@ -494,7 +482,7 @@ def vim_which_ext(ext,vimvar):
     vim.command("call add(%s, '%s')" % (vimvar, f))
 
 def vim_use(*args):
-  catch_and_print(lambda: command_find_use(*args))
+  command_find_use(*args)
 
 def vim_ext(enable, exts):
   if enable:
