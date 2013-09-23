@@ -57,7 +57,6 @@ class MerlinProcess:
               stdin=subprocess.PIPE,
               stdout=subprocess.PIPE,
               stderr=None,
-              preexec_fn = (lambda: signal.signal(signal.SIGINT, signal.SIG_IGN))
           )
     except OSError as e:
       print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
@@ -191,9 +190,6 @@ def command_seek_scope():
 def command_seek_end():
   return send_command("seek", "end")
 
-def command_complete(base):
-  return send_command("complete", "prefix", base)
-
 def command_complete_cursor(base,line,col):
   return send_command("complete", "prefix", base, "at", {'line' : line, 'col': col})
 
@@ -263,19 +259,6 @@ def sync_buffer():
 def sync_full_buffer():
   sync_buffer_to(len(vim.current.buffer),0)
 
-def vim_complete(base, vimvar):
-  vim.command("let %s = []" % vimvar)
-  sync_buffer()
-  props = command_complete(base)
-  for prop in props:
-    vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-      (prop['name'].replace("'", "''")
-      ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
-      ,prop['info'].replace("'", "''")
-      ,prop['kind'][:1].replace("'", "''")
-      ))
-    vim.command("call add(%s, l:tmp)" % vimvar)
-
 def vim_complete_cursor(base, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
@@ -283,13 +266,13 @@ def vim_complete_cursor(base, vimvar):
     sync_buffer()
     props = command_complete_cursor(base,line,col)
     for prop in props:
-        vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+      vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
         (prop['name'].replace("'", "''")
         ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
         ,prop['info'].replace("'", "''")
         ,prop['kind'][:1].replace("'", "''")
         ))
-        vim.command("call add(%s, l:tmp)" % vimvar)
+      vim.command("call add(%s, l:tmp)" % vimvar)
   except MerlinExc as e:
     try_print_error(e)
 
@@ -339,9 +322,6 @@ def vim_type(expr,is_approx=False):
       pass
     else:
       try_print_error(e)
-
-def vim_locate(path):
-  command_locate(path, None, None)
 
 def vim_locate_at_cursor(path):
   line, col = vim.current.window.cursor
