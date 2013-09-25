@@ -1164,7 +1164,7 @@ expr:
       { syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_try($2, [])) }
   | TRY_LWT seq_expr %prec below_WITH
-      { mkexp $startpos $endpos (Fake.app Fake.Lwt.in_lwt $2) }
+      { reloc_exp $startpos $endpos (Fake.app Fake.Lwt.in_lwt $2) }
   | TRY_LWT seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) }
   | TRY_LWT seq_expr FINALLY_LWT seq_expr
