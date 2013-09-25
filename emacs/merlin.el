@@ -659,8 +659,8 @@ Called when an edit is made by the user."
 ;;;;;;;;;;;;;;;;;;
 
 (defun merlin-find-error-for-line (line errors)
-  "Return the error association list for the given line number.  Return nil if
-there is no error on this line."
+  "Return the first error mentioning line number LINE among ERRORS.
+Return nil if there is no error on this line."
   (let* ((found nil))
     (while (and (not found) errors)
       (let* ((err (car errors))
@@ -672,7 +672,7 @@ there is no error on this line."
     found))
 
 (defvar merlin-show-error-timer nil
-  "Timer to show the error at point in the minibuffer.")
+  "Timer to show the error at point in the echo area.")
 (make-variable-buffer-local 'merlin-show-error-timer)
 
 (defun merlin-cancel-show-error-timer ()
@@ -691,8 +691,8 @@ there is no error, do nothing."
     (if err (message (cdr (assoc 'message err))))))
 
 (defun merlin-show-error-on-current-line-soon ()
-  "Register a timer for showing the error on the current line soon.  We use a
-timer to avoid disturbing navigation in the buffer."
+  "Register a timer for showing the error on the current line soon.
+We use a timer to avoid disturbing navigation in the buffer."
   (merlin-cancel-show-error-timer)
   (setq merlin-show-error-timer
         (run-at-time 0.1 nil 'merlin-show-error-on-current-line)))
