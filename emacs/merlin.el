@@ -382,12 +382,13 @@ This sets `merlin-current-flags' to nil."
   (interactive)
   (setq merlin-current-flags merlin-default-flags))
 
-(defun merlin-process-add-flag (flag)
+(defun merlin-process-add-flag (flag-string)
   "Add FLAG to `merlin-current-flags' to be used when starting ocamlmerlin."
-  (interactive
-   (list (completing-read "Flag to add: " merlin-flags-list nil nil)))
-  (add-to-list 'merlin-current-flags flag)
-  (message "Flag %s added.  Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag))
+  (interactive "sFlag to add: ")
+  (let* ((flags     (split-string flag-string))
+         (flag-list (append flags merlin-current-flags)))
+    (setq merlin-current-flags flag-list))
+  (message "Flag %s added.  Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag-string))
 
 (defun merlin-process-add-user ()
   "Add the current buffer as an user for the merlin process."
