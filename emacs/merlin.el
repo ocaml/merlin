@@ -665,7 +665,7 @@ there is no error on this line."
     (while (and (not found) errors)
       (let* ((err (car errors))
              (start-line (cdr (assoc 'line (cdr (assoc 'start err)))))
-             (end-line (cdr (assoc 'line (cdr (assoc 'start err))))))
+             (end-line (cdr (assoc 'line (cdr (assoc 'end err))))))
         (if (and (>= line start-line) (<= line end-line))
             (setq found err)
           (setq errors (cdr errors)))))
