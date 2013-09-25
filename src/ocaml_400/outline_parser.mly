@@ -716,6 +716,8 @@ expr:
       { () }
   | TRY seq_expr WITH opt_bar match_cases
       { () }
+  | TRY_LWT seq_expr %prec below_WITH
+      { () }
   | TRY_LWT seq_expr WITH opt_bar match_cases
       { () }
   | TRY_LWT seq_expr FINALLY_LWT seq_expr
