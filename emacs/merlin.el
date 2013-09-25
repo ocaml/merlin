@@ -60,6 +60,18 @@
   "The path to merlin in your installation."
   :group 'merlin :type '(file))
 
+(defcustom merlin-command-use-opam nil
+  "Call merlin through opam if this is non-nil.
+This calls `merlin-command' through opam config exec.  This way,
+you can switch compilers from opam, and not have to restart Emacs
+for the switch to take effect (just restart merlin)."
+  :group 'merlin :type 'boolean)
+
+(defcustom merlin-command-opam-command "opam"
+  "The path to opam in your installation.
+Only needed if `merlin-command-use-opam' is set."
+  :group 'merlin :type 'file)
+
 (defcustom merlin-completion-types t
   "If non-nil, print the types of the variables during completion with `auto-complete'."
   :group 'merlin :type 'boolean)
@@ -331,32 +343,52 @@ For now it is a constant function (every buffer shares the same instance)."
   "Return the process name for the current buffer."
   (concat "merlin-" (merlin-get-buffer-instance-name)))
 
+(defun merlin-wrap-opam (command flags)
+  "Wrap a call to shell COMMAND with FLAGS into opam config exec.
+Return a list whose car is an executable and whose cdr contains
+its arguments."
+  (lexical-let*
+      ((escaped-command (combine-and-quote-strings (cons command flags))))
+    (list merlin-command-opam-command "config" "exec" escaped-command)))
+
+(defun merlin-build-command (command flags)
+  "Return a list representing call to shell COMMAND with FLAGS.
+This takes care of wrapping the command in opam config exec if
+`merlin-command-use-opam' is set.  Return a list whose car is an
+executable and whose cdr contains its arguments."
+  (if merlin-command-use-opam (merlin-wrap-opam command flags)
+    (cons command flags)))
+
 (defun merlin-start-process (flags &optional users)
   "Start the merlin process for the current buffer.
 FLAGS are a list of strings denoting the parameters to be passed
 to merlin.  USERS can be used to set the users of this
 buffer.  Return the process created"
   (get-buffer-create (merlin-get-process-buffer-name))
-  (let ((p (apply #'start-file-process (merlin-get-process-name)
-                         (merlin-get-process-buffer-name)
-                         merlin-command `("-protocol" "sexp" . ,flags)))
-        (name (buffer-name)))
-    (set (make-local-variable 'merlin-local-process) p)
-    (dolist (buffer users)
-      (message "Setting process for buffer %s" buffer)
-      (with-current-buffer buffer
-        (set (make-local-variable 'merlin-local-process) p)))
-    (merlin-debug (format "Running %s with flags %s\n" merlin-command flags))
-    (set-process-query-on-exit-flag p nil)
-    (push p merlin-processes)
-; don't forget to initialize temporary variable
-    (with-current-buffer (merlin-get-process-buffer-name)
-      (set (make-local-variable 'merlin-queue) (tq-create p))
-      (set (make-local-variable 'merlin-process-users) (cons name (delete name users)))
+  (lexical-let* ((command-and-args
+                  (merlin-build-command merlin-command
+                                        (append '("-protocol" "sexp") flags)))
+                 (command (car command-and-args))
+                 (args (cdr command-and-args)))
+    (let ((p (apply #'start-file-process (merlin-get-process-name)
+                    (merlin-get-process-buffer-name) command args))
+          (name (buffer-name)))
       (set (make-local-variable 'merlin-local-process) p)
-      (set (make-local-variable 'merlin-process-last-user) name)
-      )
-  p))
+      (dolist (buffer users)
+        (message "Setting process for buffer %s" buffer)
+        (with-current-buffer buffer
+          (set (make-local-variable 'merlin-local-process) p)))
+      (merlin-debug (format "Running %s with flags %s\n" command (pp-to-string args)))
+      (set-process-query-on-exit-flag p nil)
+      (push p merlin-processes)
+      ; don't forget to initialize temporary variable
+      (with-current-buffer (merlin-get-process-buffer-name)
+        (set (make-local-variable 'merlin-queue) (tq-create p))
+        (set (make-local-variable 'merlin-process-users) (cons name (delete name users)))
+        (set (make-local-variable 'merlin-local-process) p)
+        (set (make-local-variable 'merlin-process-last-user) name)
+        )
+      p)))
 
 (defun merlin-get-current-buffer-users ()
   "Return the list of users of the merlin instance for this buffer."
@@ -1175,7 +1207,9 @@ Returns the position."
   (interactive)
   (message "%s" (replace-regexp-in-string
                  "\n$" ""
-                 (shell-command-to-string (concat merlin-command " -version")))))
+                 (shell-command-to-string
+                  (combine-and-quote-strings
+                   (merlin-build-command merlin-command '("-version")) " ")))))
 
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
