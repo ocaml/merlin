@@ -675,20 +675,46 @@ Return nil if there is no error on this line."
   "Timer to show the error at point in the echo area.")
 (make-variable-buffer-local 'merlin-show-error-timer)
 
+(defvar merlin-current-error nil
+  "Current error displayed by Merlin.
+Used to prevent flicker of the echo area when moving left or
+right on an line with an error.  This is set by
+`merlin-show-error-on-current-line'.")
+(make-variable-buffer-local 'merlin-current-error)
+
 (defun merlin-cancel-show-error-timer ()
   "Cancel the error display timer for the current buffer."
   (when merlin-show-error-timer
     (cancel-timer merlin-show-error-timer)
     (setq merlin-show-error-timer nil)))
 
+(defun merlin-show-current-error ()
+  "Show the current error in the echo area.
+The error shown is the last computed by
+`merlin-show-error-on-current-line'.  This is used in a
+`pre-command-hook' to prevent flickering of the echo area when
+moving left or right on an line with an error (Emacs clears the
+echo area before calling `pre-command-hook', and updates the
+display between the `pre-command-hook' and the
+`post-command-hook'.)."
+  (when merlin-current-error
+    (message merlin-current-error)))
+
 (defun merlin-show-error-on-current-line ()
-  "If there is an error on the current line, show it in the minibuffer.  If
-there is no error, do nothing."
+  "Show the error of the current line in the echo area.
+If there is no error, do nothing.  Set `merlin-current-error' to
+the displayed error message."
   (merlin-cancel-show-error-timer)
-  (let* ((current-line (line-number-at-pos))
+  (lexical-let* ((current-line (line-number-at-pos))
          (err (merlin-find-error-for-line
                (line-number-at-pos) merlin-pending-errors)))
-    (if err (message (cdr (assoc 'message err))))))
+    (if err
+        (progn (setq merlin-current-error (cdr (assoc 'message err)))
+               (message merlin-current-error))
+      (progn
+        (if (equal merlin-current-error (current-message))
+            (message nil))
+        (setq merlin-current-error nil)))))
 
 (defun merlin-show-error-on-current-line-soon ()
   "Register a timer for showing the error on the current line soon.
@@ -1298,6 +1324,8 @@ Short cuts:
           (lambda ()
             (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook nil 'make-it-local)
             (add-hook 'after-save-hook 'merlin-to-end nil 'make-it-local)
+            (add-hook 'pre-command-hook
+                      'merlin-show-current-error nil 'make-it-local)
             (add-hook 'post-command-hook
                       'merlin-show-error-on-current-line-soon
                       nil 'make-it-local)))
