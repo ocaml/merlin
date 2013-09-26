@@ -491,10 +491,13 @@ def vim_add_flags(*args):
   vim_restart()
 
 def vim_selectphrase(l1,c1,l2,c2):
-  vl1 = int(vim.eval(l1))
-  vc1 = int(vim.eval(c1))
-  vl2 = int(vim.eval(l2))
-  vc2 = int(vim.eval(c2))
+  # In some context, vim set column of '> to 2147483647 (2^31 - 1)
+  # This cause the merlin json parser on 32 bit platforms to overflow
+  bound = 2147483647 - 1
+  vl1 = min(bound,int(vim.eval(l1)))
+  vc1 = min(bound,int(vim.eval(c1)))
+  vl2 = min(bound,int(vim.eval(l2)))
+  vc2 = min(bound,int(vim.eval(c2)))
   sync_buffer_to(vl2,vc2)
   command_seek_exact(vl2,vc2)
   loc2 = send_command("boundary")
