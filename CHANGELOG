@@ -1,3 +1,17 @@
+merlin 1.4.1
+============
+Thu Sep 26 21:29:56 BST 2013
+
+  documentation: 
+    - updates of the emacs section of the readme by Ronan Lehy.
+
+  emacs:
+    - bugfix for ac-mode: merlin-ac-prefix wasn't called.
+
+  vim:
+    - bugfix for the "selectPhrase" command, an overflow on 32b plateform was
+      causing complete desynchronisation between vim and merlin.
+
 merlin 1.4.0 
 ============
 Tue Sep 24 23:02:04 BST 2013
@@ -20,6 +34,7 @@ Tue Sep 24 23:02:04 BST 2013
     - one distribution for 4.00 and 4.01, introduced common interface between
       both, typers now live in https://github.com/def-lkb/merlin-typers
     - new implementation of the main merlin state tracking ast & types
+    - better error reporting thanks to a contribution from Ronan Lehy
 
   documentation:
     - started a wiki (https://github.com/def-lkb/merlin/wiki)
