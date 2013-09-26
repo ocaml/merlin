@@ -919,7 +919,8 @@ variable `merlin-ac-cache')."
     (prefix . ,merlin-ac-prefix-size))
   '((init . merlin-ac-source-init)
     (candidates . (lambda () merlin-ac-cache))
-    (action . merlin-ac-fetch-type))))
+    (action . merlin-ac-fetch-type)
+    (prefix . merlin-ac-prefix))))
 
 (when (featurep 'auto-complete)
   (ac-define-source "merlin" merlin-ac-source))
