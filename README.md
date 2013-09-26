@@ -114,24 +114,24 @@ Emacs interface
 merlin comes with an emacs interface (file: emacs/merlin.el) that implements a
 minor-mode that is supposed to be used on top of tuareg-mode.
 
-To get it working you only to load the file `emacs/merlin.el' of the distribution.
+If you installed through opam, all you need to do is add the following to your .emacs:
 
-If you installed through opam, a good thing to do is:
+    (push
+     (concat (substring (shell-command-to-string "opam config var share") 0 -1) "/emacs/site-lisp") load-path)
+    (setq merlin-command (concat (substring (shell-command-to-string "opam config var bin") 0 -1) "/ocamlmerlin"))
+    (autoload 'merlin-mode "merlin" "Merlin mode" t)
+    (add-hook 'tuareg-mode-hook 'merlin-mode)
+    (add-hook 'caml-mode-hook 'merlin-mode)
 
-    
-    (add-to-list 'load-path "<SHARE_DIR>/emacs/site-lisp/")
-    (require 'merlin)
+If you do not use opam, change the two first expressions above to point to the site-lisp directory containing merlin.el and ocamlmerlin:
 
+    (push "<SHARE_DIR>/emacs/site-lisp" load-path) ; directory containing merlin.el
+    (setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
 
 To use it, you will need
 
 - json.el (available by package.el)  
 - auto-complete-mode (optional, available by package.el and the MELPA repository)
-
-Once it is done, to enable merlin in a buffer, just type M-x merlin-mode. If you want merlin to be started on every ML buffer issue:
-
-    (add-hook 'tuareg-mode-hook 'merlin-mode)
-
 
 Features
 --------
