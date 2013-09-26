@@ -128,10 +128,7 @@ If you do not use opam, change the two first expressions above to point to the s
     (push "<SHARE_DIR>/emacs/site-lisp" load-path) ; directory containing merlin.el
     (setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
 
-To use it, you will need
-
-- json.el (available by package.el)  
-- auto-complete-mode (optional, available by package.el and the MELPA repository)
+`merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if is is installed.
 
 Features
 --------
