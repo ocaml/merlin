@@ -262,13 +262,14 @@ def sync_full_buffer():
 def vim_complete_cursor(base, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
+  wspaces = re.compile("[\n ]+")
   try:
     sync_buffer()
     props = command_complete_cursor(base,line,col)
     for prop in props:
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
         (prop['name'].replace("'", "''")
-        ,prop['desc'].replace("\n"," ").replace("  "," ").replace("'", "''")
+        ,re.sub(wspaces, " ", prop['desc']).replace("'", "''")
         ,prop['info'].replace("'", "''")
         ,prop['kind'][:1].replace("'", "''")
         ))
