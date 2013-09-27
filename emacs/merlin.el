@@ -814,7 +814,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
            (format " [%s]" (cdr (assoc 'desc entry))))
           (t
            (replace-regexp-in-string "^[^:]+:[ \n]+" "" (cdr (assoc 'desc entry)))))))
-    (replace-regexp-in-string "\n" "" type)))
+    (replace-regexp-in-string "[\n ]+" " " type)))
 
 (defun merlin-completion-prefix (ident)
   "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the prefix of `bar' is `'."
