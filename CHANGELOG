@@ -7,10 +7,12 @@ Thu Sep 26 21:29:56 BST 2013
 
   emacs:
     - bugfix for ac-mode: merlin-ac-prefix wasn't called.
+    - better formatting for completion suggestions.
 
   vim:
     - bugfix for the "selectPhrase" command, an overflow on 32b plateform was
       causing complete desynchronisation between vim and merlin.
+    - better formatting for completion suggestions.
 
 merlin 1.4.0 
 ============
