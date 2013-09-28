@@ -45,19 +45,25 @@ distclean: clean
 	@echo
 	rm -f Makefile.config $(CONFIG_FILES) $(TARGET)
 
-install: $(TARGET)
+install-binary: $(TARGET)
 	install -d $(BIN_DIR)
-	install -d $(SHARE_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install omake-merlin $(BIN_DIR)/omake-merlin
 	install jenga-merlin $(BIN_DIR)/jenga-merlin
-	install -d $(VIM_DIR)
+
+install-share: $(TARGET)
+	install -d $(SHARE_DIR)
 	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
+
+install-vim: $(TARGET)
+	install -d $(VIM_DIR)
 	if [ ! -z "$(WITH_VIMBUFSYNC)" ]; then \
 		cp -R vim/vimbufsync/* $(VIM_DIR)/; \
 	fi
 	cp -R vim/merlin/* $(VIM_DIR)
+
+install: install-binary install-share install-vim
 	@echo 
 	@echo "Quick setup for VIM"
 	@echo "-------------------"
