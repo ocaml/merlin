@@ -6,6 +6,10 @@ TARGET = ocamlmerlin.native
 OCAMLBUILD=ocamlbuild -Is src,src/utils,src/ocaml$(TYPER_VERSION),src/ocaml$(TYPER_VERSION)/utils,src/ocaml$(TYPER_VERSION)/typing,src/ocaml$(TYPER_VERSION)/parsing
 OCAMLFIND=ocamlfind
 
+DESTDIR ?=
+BIN_DIR := $(DESTDIR)$(BIN_DIR)
+SHARE_DIR := $(DESTDIR)$(SHARE_DIR)
+
 all: $(TARGET)
 
 CONFIG_FILES = src/my_config.ml src/myocamlbuild_config.ml src/ocaml
