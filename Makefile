@@ -27,7 +27,7 @@ $(TARGET): assert_configured
 all_versions:
 	for i in _400 _401; do \
 		$(MAKE) TYPER_VERSION=$$i $(TARGET);\
-	 	cp $(TARGET) ocamlmerlin$$i;\
+		cp $(TARGET) ocamlmerlin$$i;\
 	done
 
 debug: assert_configured
@@ -51,18 +51,18 @@ install: $(TARGET)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install omake-merlin $(BIN_DIR)/omake-merlin
 	install jenga-merlin $(BIN_DIR)/jenga-merlin
-	install -d $(SHARE_DIR)/ocamlmerlin/vim
-	install -d $(SHARE_DIR)/ocamlmerlin/vimbufsync
+	install -d $(VIM_DIR)
 	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
-	cp -R vim/merlin/* $(SHARE_DIR)/ocamlmerlin/vim/
-	cp -R vim/vimbufsync/* $(SHARE_DIR)/ocamlmerlin/vimbufsync/
+	if [ ! -z "$(WITH_VIMBUFSYNC)" ]; then \
+		cp -R vim/vimbufsync/* $(VIM_DIR)/; \
+	fi
+	cp -R vim/merlin/* $(VIM_DIR)
 	@echo 
 	@echo "Quick setup for VIM"
 	@echo "-------------------"
-	@echo "Add $(SHARE_DIR)/ocamlmerlin/vim and vimbufsync to your runtime path, e.g.:"
-	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vim"
-	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vimbufsync"
+	@echo "Add $(VIM_DIR) to your runtime path, e.g.:"
+	@echo "  :set rtp+=$(VIM_DIR)"
 	@echo 
 	@echo "Quick setup for EMACS"
 	@echo "-------------------"
