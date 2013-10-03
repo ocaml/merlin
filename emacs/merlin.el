@@ -92,6 +92,14 @@
   "String to put in the margin of a line containing a warning."
   :group 'merlin :type 'string)
 
+(defcustom merlin-error-after-save t
+  "If non-nil, check for errors after saving"
+  :group 'merlin :type 'boolean)
+
+(defcustom merlin-error-in-margin t
+  "If non-nil, display errors in margin"
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-display-lock-zone nil
   "How to display the locked zone.
 It is a list of methods among:
@@ -790,10 +798,10 @@ We use a timer to avoid disturbing navigation in the buffer."
                                            merlin-margin-error-string
                                            compilation-error-face))
               overlay)))
-         (errors   (mapcar err-point errors))
-         (overlays (mapcar err-overlay errors)))
+         (errors   (mapcar err-point errors)))
     (setq merlin-pending-errors errors)
-    (setq merlin-pending-errors-overlays overlays)))
+    (when merlin-error-in-margin (setq merlin-pending-errors-overlays
+                                       (mapcar err-overlay errors)))))
 
 (defun merlin-error-check (view-errors-p)
   "Check for errors.
@@ -806,11 +814,10 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
          (errors (if merlin-report-warnings errors
                    (delete-if (lambda (e) (merlin-error-warning-p (cdr (assoc 'message e))))
                               errors))))
-    (if (not errors)
-        (when view-errors-p (message "ok"))
+    (if (not errors) (when view-errors-p (message "ok"))
       (progn
         (merlin-error-display-in-margin errors)
-        (when (and view-errors-p errors)
+        (when view-errors-p
           (message "(%d pending errors, use %s to jump)"
                    (length errors)
                    (substitute-command-keys "\\[merlin-error-next]")))))))
@@ -1337,10 +1344,15 @@ Short cuts:
   (when merlin-mode
     (merlin-process-remove-user)))
 
+(defun merlin-after-save ()
+  (when merlin-error-after-save (merlin-to-end)))
+
 (add-hook 'merlin-mode-hook
           (lambda ()
-            (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook nil 'make-it-local)
-            (add-hook 'after-save-hook 'merlin-to-end nil 'make-it-local)
+            (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook
+                      nil 'make-it-local)
+            (add-hook 'after-save-hook 'merlin-after-save
+                      nil 'make-it-local)
             (add-hook 'pre-command-hook
                       'merlin-show-current-error nil 'make-it-local)
             (add-hook 'post-command-hook
