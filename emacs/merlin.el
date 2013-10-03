@@ -546,6 +546,21 @@ the error message otherwise print a generic error message."
   (interactive (list (completing-read "Module: " (merlin-switch-list-by-ext ".mli"))))
   (merlin-switch-to name ".mli"))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;
+;; EXTENSION SELECTION ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin-extension-enable (name)
+  "Enable merlin support for language extension NAME."
+  (interactive (list (completing-read "Extension: " (merlin-send-command '(extension list disabled)))))
+  (merlin-send-command (list 'extension 'enable (list name))))
+
+(defun merlin-extension-disable (name)
+  "Disable merlin support for language extension NAME."
+  (interactive (list (completing-read "Extension: " (merlin-send-command '(extension list enabled)))))
+  (merlin-send-command (list 'extension 'disable (list name))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; BUFFER SYNCHRONIZATION ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
