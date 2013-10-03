@@ -775,6 +775,7 @@ We use a timer to avoid disturbing navigation in the buffer."
 
 (defun merlin-error-reset ()
   "Clear error list."
+  (interactive)
   (setq merlin-pending-errors nil)
   (merlin-error-delete-overlays))
 
