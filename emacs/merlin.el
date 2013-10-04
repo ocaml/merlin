@@ -561,12 +561,14 @@ the error message otherwise print a generic error message."
 (defun merlin-extension-enable (name)
   "Enable merlin support for language extension NAME."
   (interactive (list (completing-read "Extension: " (merlin-send-command '(extension list disabled)))))
-  (merlin-send-command (list 'extension 'enable (list name))))
+  (merlin-send-command (list 'extension 'enable (list name)))
+  (merlin-error-reset))
 
 (defun merlin-extension-disable (name)
   "Disable merlin support for language extension NAME."
   (interactive (list (completing-read "Extension: " (merlin-send-command '(extension list enabled)))))
-  (merlin-send-command (list 'extension 'disable (list name))))
+  (merlin-send-command (list 'extension 'disable (list name)))
+  (merlin-error-reset))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1082,7 +1084,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Use PKG in the current session of merlin."
   (interactive
    (list (completing-read "Package to use: " (merlin-get-packages))))
-  (merlin-send-command (list 'find 'use (list pkg))))
+  (merlin-send-command (list 'find 'use (list pkg)))
+  (merlin-error-reset))
 
 (defun merlin-load-project-file ()
   "Load the .merlin file corresponding to the current file."
