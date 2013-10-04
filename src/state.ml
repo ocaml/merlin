@@ -97,15 +97,11 @@ module Verbose_print = struct
     Printtyp.modtype_declaration id ppf (verbose_sig env t)
 end
 
-(* FIXME: 
- * Pathes are global, but once support for different pathes has been added to 
- * typer, this should be made a [state] wide property.
- * *)
-let source_path : string list ref = ref ["."]
 let global_modules = ref (lazy [])
-
 let reset_global_modules () =
-  global_modules := lazy (Misc.modules_in_path ~ext:".cmi" !Config.load_path)
+  global_modules := 
+    lazy (Misc.modules_in_path ~ext:".cmi" 
+            (Misc.Path_list.to_strict_list !Config.load_path))
 
 let retype state = 
   {steps = 

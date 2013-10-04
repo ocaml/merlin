@@ -1,4 +1,5 @@
 open Std
+open Misc
 
 module Directives = struct
   type t = [
@@ -16,10 +17,6 @@ type t = {
   entries: Directives.t list;
 }
 
-type dot_merlins =
-  | Cons of t * dot_merlins Lazy.t
-  | Nil
-
 let parse_dot_merlin path : bool * t =
   let ic = open_in path in
   let acc = ref [] in
@@ -30,24 +27,24 @@ let parse_dot_merlin path : bool * t =
     let rec aux () = 
       let line = input_line ic in
       if line = "" then ()
-      else if Misc.has_prefix "B " line then
-        tell (`B (Misc.string_drop 2 line))
-      else if Misc.has_prefix "S " line then
-        tell (`S (Misc.string_drop 2 line))
-      else if Misc.has_prefix "SRC " line then
-        tell (`S (Misc.string_drop 4 line))
-      else if Misc.has_prefix "PKG " line then
-        tell (`PKG (Misc.rev_split_words (Misc.string_drop 4 line)))
-      else if Misc.has_prefix "EXT " line then
-        tell (`EXT (Misc.rev_split_words (Misc.string_drop 4 line)))
-      else if Misc.has_prefix "FLG " line then
-        tell (`FLG (Misc.string_drop 4 line))
-      else if Misc.has_prefix "REC" line then recurse := true
-      else if Misc.has_prefix "PRJ " line then
-        proj := Some (String.trim (Misc.string_drop 4 line))
-      else if Misc.has_prefix "PRJ" line then
+      else if has_prefix "B " line then
+        tell (`B (string_drop 2 line))
+      else if has_prefix "S " line then
+        tell (`S (string_drop 2 line))
+      else if has_prefix "SRC " line then
+        tell (`S (string_drop 4 line))
+      else if has_prefix "PKG " line then
+        tell (`PKG (rev_split_words (string_drop 4 line)))
+      else if has_prefix "EXT " line then
+        tell (`EXT (rev_split_words (string_drop 4 line)))
+      else if has_prefix "FLG " line then
+        tell (`FLG (string_drop 4 line))
+      else if has_prefix "REC" line then recurse := true
+      else if has_prefix "PRJ " line then
+        proj := Some (String.trim (string_drop 4 line))
+      else if has_prefix "PRJ" line then
         proj := Some ""
-      else if Misc.has_prefix "#" line then ()
+      else if has_prefix "#" line then ()
       else ();
       aux ()
     in
@@ -63,8 +60,8 @@ let parse_dot_merlin path : bool * t =
 let rec read path =  
   let recurse, dot_merlin = parse_dot_merlin path in
   if recurse
-  then Cons (dot_merlin, lazy (find (Filename.dirname (Filename.dirname path))))
-  else Cons (dot_merlin, lazy Nil)
+  then LCons (dot_merlin, lazy (find (Filename.dirname (Filename.dirname path))))
+  else LCons (dot_merlin, lazy LNil)
 
 and find path =
   let rec loop dir =
@@ -77,16 +74,16 @@ and find path =
       then loop parent
       else None
   in
-  match loop (Misc.canonicalize_filename path) with
+  match loop (canonicalize_filename path) with
   | Some fname -> read fname
-  | None -> Nil 
+  | None -> LNil 
 
 let rec project_name = function
-  | Cons (({project = Some ""; path = name} | {project = Some name}), _) ->
+  | LCons (({project = Some ""; path = name} | {project = Some name}), _) ->
     Some name
-  | Cons ({path}, lazy Nil) -> Some path
-  | Cons (_, lazy tail) -> project_name tail
-  | Nil -> None
+  | LCons ({path}, lazy LNil) -> Some path
+  | LCons (_, lazy tail) -> project_name tail
+  | LNil -> None
 
 let err_log msg = Logger.error `dot_merlin msg
 
@@ -94,17 +91,30 @@ module Flags = Top_options.Make (struct
   let _projectfind _ = err_log "unsupported flag \"-project-find\" (ignored)" ;
 end)
 
-let exec_dot_merlin ~path_modify ~load_packages {path; project; entries} =
+type path_config =
+  { 
+    dot_merlins : string list;
+    build_path  : string list;
+    source_path : string list;
+    packages    : string list;
+  }
+
+let exec_dot_merlin {path; project; entries} config =
   let cwd = Filename.dirname path in
-  List.iter entries ~f:(
+  let expand path = 
+    canonicalize_filename ~cwd (expand_directory Config.standard_library path)
+  in
+  List.fold_left ~init:{config with dot_merlins = path :: config.dot_merlins}
+  ~f:(fun config ->
     function
-    | `B path   -> path_modify `Add `Build ~cwd path
-    | `S path   -> path_modify `Add `Source ~cwd path
-    | `PKG pkgs -> load_packages pkgs
+    | `B path -> {config with build_path = expand path :: config.build_path}
+    | `S path -> {config with source_path = expand path :: config.source_path}
+    | `PKG pkgs -> {config with packages = pkgs @ config.packages}
     | `EXT exts ->
-      List.iter exts ~f:(fun e -> Extensions_utils.set_extension ~enabled:true e)
+      List.iter exts ~f:(fun e -> Extensions_utils.set_extension ~enabled:true e);
+      config
     | `FLG flags ->
-      let lst = Misc.rev_split_words flags in
+      let lst = rev_split_words flags in
       let flags = Array.of_list (List.rev lst) in
       begin try
         Arg.parse_argv ~current:(ref (-1)) flags Flags.list
@@ -112,13 +122,23 @@ let exec_dot_merlin ~path_modify ~load_packages {path; project; entries} =
       with
       | Arg.Bad msg -> err_log msg; exit 2
       | Arg.Help msg -> err_log msg; exit 0 (* FIXME *)
-      end
-  ) ;
-  path
+      end;
+      config
+  ) entries
 
-let rec exec ~path_modify ~load_packages= function
-  | Cons (dot_merlin, tail) ->
-    exec_dot_merlin ~path_modify ~load_packages dot_merlin :: 
-      exec ~path_modify ~load_packages (Lazy.force tail)
-  | Nil -> []
+let rec exec ?(config={build_path=[];source_path=[];packages=[];dot_merlins=[]}) =
+  function
+  | LCons (dot_merlin, lazy tail) ->
+    exec ~config:(exec_dot_merlin dot_merlin config) tail
+  | LNil ->
+    { config with
+      build_path = list_filter_dup config.build_path;
+      source_path = list_filter_dup config.source_path;
+      packages = list_filter_dup config.packages
+    }
+
+let packages_path packages =
+  let packages = Findlib.package_deep_ancestors [] packages in
+  let path = List.map ~f:Findlib.package_directory packages in
+  list_filter_dup path
 

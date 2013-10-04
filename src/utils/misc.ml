@@ -27,6 +27,21 @@ let try_finally work cleanup =
   result
 ;;
 
+        (* Lazy lists *)
+type 'a lazy_list =
+  | LNil
+  | LCons of 'a * 'a lazy_list lazy_t
+
+let rec lazy_list_map l f = match l with
+  | LNil -> LNil
+  | LCons (a,l) ->
+    LCons (f a, lazy (lazy_list_map (Lazy.force l) f))
+
+let rec lazy_list_strictify = function
+ | LNil -> []
+ | LCons (hd, lazy tl) ->
+   hd :: lazy_list_strictify tl
+  
 (* List functions *)
 
 let rec map_end f l1 l2 =
@@ -109,6 +124,38 @@ let canonicalize_filename ?cwd path =
   in
   filename_concats parts
 
+module Path_list = struct
+  type t = 
+    | String of string 
+    | StringList of string list ref
+    | List of t list
+    | Fun of (unit -> t)
+  
+  let of_fun f = Fun f
+  let of_list l = List l
+
+  let of_string s = String s
+  let of_string_list_ref l = StringList l
+
+  let rec to_list k = function
+    | String s -> LCons (s, k)
+    | List l -> from_list k l
+    | StringList l -> from_string_list k !l
+    | Fun f -> to_list k (f ())
+
+  and from_list k = function
+    | t :: l -> to_list (lazy (from_list k l)) t
+    | []     -> Lazy.force k
+
+  and from_string_list k = function
+    | s :: l -> LCons (s, lazy (from_string_list k l))
+    | [] -> Lazy.force k
+
+  let to_list t = to_list (lazy LNil) t
+
+  let to_strict_list t = lazy_list_strictify (to_list t)
+end
+
 let find_in_path path name =
   canonicalize_filename
   begin
@@ -116,11 +163,13 @@ let find_in_path path name =
       if Sys.file_exists name then name else raise Not_found
     else begin
       let rec try_dir = function
-        [] -> raise Not_found
-      | dir::rem ->
+        | LNil -> raise Not_found
+        | LCons (dir, rem) ->
           let fullname = Filename.concat dir name in
-          if Sys.file_exists fullname then fullname else try_dir rem
-      in try_dir path
+          if Sys.file_exists fullname
+          then fullname
+          else try_dir (Lazy.force rem)
+      in try_dir (Path_list.to_list path)
     end
   end
 
@@ -129,14 +178,14 @@ let find_in_path_uncap path name =
   begin
     let uname = String.uncapitalize name in
     let rec try_dir = function
-      [] -> raise Not_found
-    | dir::rem ->
-        let fullname = Filename.concat dir name
-        and ufullname = Filename.concat dir uname in
-        if Sys.file_exists ufullname then ufullname
-        else if Sys.file_exists fullname then fullname
-        else try_dir rem
-    in try_dir path
+      | LNil -> raise Not_found
+      | LCons (dir, rem) ->
+          let fullname = Filename.concat dir name
+          and ufullname = Filename.concat dir uname in
+          if Sys.file_exists ufullname then ufullname
+          else if Sys.file_exists fullname then fullname
+          else try_dir (Lazy.force rem)
+    in try_dir (Path_list.to_list path)
   end
 
 (* Expand a -I option: if it starts with +, make it relative to the standard

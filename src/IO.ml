@@ -271,19 +271,11 @@ module Protocol_io = struct
     | [`String "path"; `String "list";
                        `String ("source"|"build" as var)] ->
       Request (Path_list (source_or_build var))
-    | [`String "path"; `String "reset";
-                       `String ("source"|"build" as var)] ->
-      Request (Path_reset (source_or_build var))
     | [`String "path"; `String "reset"] ->
-      Request (Path_reset `Both)
+      Request Path_reset
     | (`String "path" :: `String ("add"|"remove" as action) ::
          `String ("source"|"build" as var) :: ((`List pathes :: []) | pathes)) ->
-      Request (Path (source_or_build var, `Relative, 
-                     add_or_remove action, string_list pathes))
-    | (`String "path" :: `String "raw" :: `String ("add"|"remove" as action) ::
-         `String ("source"|"build" as var) :: ((`List pathes :: []) | pathes)) ->
-      Request (Path (source_or_build var, `Absolute,
-                     add_or_remove action, string_list pathes))
+      Request (Path (source_or_build var, add_or_remove action, string_list pathes))
     | [`String "project"; `String ("load"|"find" as action); `String path] ->
       Request (Project_load (load_or_find action, path))
     | _ -> invalid_arguments ()
@@ -333,7 +325,7 @@ module Protocol_io = struct
         | Extension_set _, () -> `Bool true
         | Path _, changed -> `Bool changed
         | Path_list _, strs -> json_of_string_list strs
-        | Path_reset _, () -> `Bool true
+        | Path_reset, () -> `Bool true
         | Project_load _, strs -> json_of_string_list strs
       end]
 end

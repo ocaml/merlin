@@ -28,5 +28,4 @@
 
 val dispatch : IO.io -> State.t -> 'a Protocol.request -> State.t * 'a
 
-val load_packages : string list -> unit
-val set_default_path : unit -> unit
+val init_path : unit -> unit

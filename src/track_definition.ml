@@ -1,6 +1,6 @@
 open Std
 
-let sources_path = ref []
+let sources_path = ref (Misc.Path_list.of_list [])
 let cwd = ref ""
 
 module Utils = struct
@@ -34,7 +34,9 @@ module Utils = struct
        Note that [cwd] is set only when we have encountered a packed module, so in other
        cases [abs_cmt_file] will be something like "/file.ext" which (hopefully) won't
        exist. *)
-    try Misc.find_in_path_uncap [ !cwd ] fname          with Not_found ->
+    try Misc.find_in_path_uncap 
+          (Misc.Path_list.of_string_list_ref (ref [ !cwd ])) fname
+    with Not_found ->
     try Misc.find_in_path_uncap !sources_path fname     with Not_found ->
     try Misc.find_in_path_uncap !Config.load_path fname with Not_found ->
     raise Not_found
@@ -229,7 +231,7 @@ let path_and_loc_from_label desc env =
 
 let from_string ~sources ~env ~local_defs ~local_modules path =
   debug_log "looking for the source of '%s'" path ;
-  sources_path := sources ;
+  sources_path := sources;
   let ident, is_label = keep_suffix (Longident.parse path) in
   try
     let path, loc =

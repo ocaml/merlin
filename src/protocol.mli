@@ -65,7 +65,6 @@ type _ request =
     -> unit request
   | Path
     :  [`Build|`Source] 
-     * [`Relative|`Absolute]
      * [`Add|`Rem]
      * string list
     -> bool request
@@ -73,8 +72,7 @@ type _ request =
     :  [`Build|`Source] 
     -> string list request
   | Path_reset
-    :  [`Build|`Source|`Both] 
-    -> unit request
+    :  unit request
   | Project_load
     :  [`File|`Find] * string
     -> string list request

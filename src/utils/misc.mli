@@ -19,6 +19,13 @@ exception Fatal_error
 
 val try_finally : (unit -> 'a) -> (unit -> unit) -> 'a;;
 
+        (* Lazy lists *)
+type 'a lazy_list =
+  | LNil
+  | LCons of 'a * 'a lazy_list lazy_t
+val lazy_list_map : 'a lazy_list -> ('a -> 'b) -> 'b lazy_list
+val lazy_list_strictify : 'a lazy_list -> 'a list
+
 val map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
         (* [map_end f l t] is [map f l @ t], just more efficient. *)
 val map_left_right: ('a -> 'b) -> 'a list -> 'b list
@@ -42,9 +49,19 @@ val samelist: ('a -> 'a -> bool) -> 'a list -> 'a list -> bool
 val may: ('a -> unit) -> 'a option -> unit
 val may_map: ('a -> 'b) -> 'a option -> 'b option
 
-val find_in_path: string list -> string -> string
+module Path_list : sig
+  type t
+  
+  val of_list : t list -> t
+  val of_string_list_ref : string list ref -> t
+
+  val to_list : t -> string lazy_list
+  val to_strict_list : t -> string list
+end
+
+val find_in_path: Path_list.t -> string -> string
         (* Search a file in a list of directories. *)
-val find_in_path_uncap: string list -> string -> string
+val find_in_path_uncap: Path_list.t -> string -> string
         (* Same, but search also for uncapitalized name, i.e.
            if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
            to match. *)
@@ -195,7 +212,6 @@ val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b
 val make_pos : int * int -> Lexing.position
 val split_pos : Lexing.position -> int * int
 val compare_pos : Lexing.position -> Lexing.position -> int
-
 
         (* Drop characters from beginning of string *)
 val string_drop : int -> string -> string

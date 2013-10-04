@@ -10,7 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: config.mlbuild 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id$ *)
 
 (***********************************************************************)
 (**                                                                   **)
@@ -21,6 +21,7 @@
 (**                                                                   **)
 (***********************************************************************)
 
+open Misc
 
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
@@ -56,7 +57,7 @@ and ast_intf_magic_number = "Caml1999N014"
 and cmxs_magic_number = "Caml2007D001"
 and cmt_magic_number = "Caml2012T001"
 
-let load_path = ref ([] : string list)
+let load_path = ref (Path_list.of_list [])
 
 let interface_suffix = ref ".mli"
 

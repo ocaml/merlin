@@ -1,5 +1,5 @@
 val from_string
-  : sources:string list
+  : sources:Misc.Path_list.t
   -> env:Env.t
   -> local_defs:Typedtree.structure Asttypes.loc list
   -> local_modules:(string * Location.t) list

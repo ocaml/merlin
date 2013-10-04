@@ -53,7 +53,6 @@ module Verbose_print : sig
   val modtype_declaration: Ident.t -> formatter -> modtype_declaration -> unit
 end
 
-val source_path : string list ref
 val reset_global_modules : unit -> unit
 
 val retype : t -> t
