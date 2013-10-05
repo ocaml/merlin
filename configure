@@ -2,6 +2,8 @@
 
 BIN_DIR=/usr/local/bin
 SHARE_DIR=/usr/local/share
+VIM_DIR=/usr/local/share/ocamlmerlin/vim
+WITH_VIMBUFSYNC="1"
 WITH_BIN_ANNOT=""
 
 if ! [ -x $(which ocamlfind) ]; then
@@ -32,23 +34,29 @@ usage()
 
 The options available for better control are as follow:
 
-    --bindir <path>     where to install merlin's executable
-                        default: /usr/local/bin
+    --bindir <path>         where to install merlin's executable
+                            default: /usr/local/bin
 
-    --sharedir <path>   where the different editor modes will be installed
-                        default: /usr/local/share
+    --sharedir <path>       where the different editor modes will be installed
+                            default: /usr/local/share
 
-    --prefix <path>     when given, bindir will be set to '<path>/bin' and
-                        sharedir to '<path>/share'
+    --prefix <path>         when given, bindir will be set to '<path>/bin' and
+                            sharedir to '<path>/share'
 
-    --stdlib <path>     tells merlin where to look for the standard library
-                        files.
-                        This can be overriden at runtime by setting the
-                        'CAMLLIB' environment variable.
-                        default: `ocamlfind printconf stdlib`
+    --stdlib <path>         tells merlin where to look for the standard library
+                            files.
+                            This can be overriden at runtime by setting the
+                            'CAMLLIB' environment variable.
+                            default: `ocamlfind printconf stdlib`
 
-    --with-bin-annot    compiles merlin with '--bin-annot', useful if you plan
-                        to work on merlin itself.
+    --vimdir <path>         when given, vim bindings will be installed to '<path>'
+                            default: /usr/local/share/ocamlmerlin/vim
+
+    --with-vimbufsync       install vim vimbufsync plugin [default]
+    --without-vimbufsync    do not install vim vimbufsync plugin
+
+    --with-bin-annot        compiles merlin with '--bin-annot', useful if you plan
+                            to work on merlin itself.
 END
 }
 
@@ -58,6 +66,7 @@ while [ -n "$1" ]; do
       shift 1
       BIN_DIR="$1/bin"
       SHARE_DIR="$1/share"
+      VIM_DIR="$1/ocamlmerlin/vim"
       ;;
     --bindir)
       shift 1
@@ -70,6 +79,16 @@ while [ -n "$1" ]; do
     --stdlib)
       shift 1
       STDLIB_DIR="$1"
+      ;;
+    --vimdir)
+      shift 1
+      VIM_DIR="$1"
+      ;;
+    --with-vimbufsync)
+      WITH_VIMBUFSYNC="1"
+      ;;
+    --without-vimbufsync)
+      WITH_VIMBUFSYNC=""
       ;;
     --with-bin-annot)
       WITH_BIN_ANNOT="-cflags -bin-annot"
@@ -115,10 +134,10 @@ System config:
 
 Will install:
   ocamlmerlin binary in: $BIN_DIR
-  vim mode in: $SHARE_DIR/ocamlmerlin/vim/
+  vim mode in: $VIM_DIR
   
 To customize directories, use:
-  ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--stdlib <stdlibdir>]
+  ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--stdlib <stdlibdir>] [--vimdir <vimdir>] [--with-vimbufsync | --without-vimbufsync]
 
 For more informations rerun with --help.
 END
@@ -130,7 +149,9 @@ if [ -d "$STDLIB_DIR" ]; then
   cat >Makefile.config <<END
 BIN_DIR=$BIN_DIR
 SHARE_DIR=$SHARE_DIR
+VIM_DIR=$VIM_DIR
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
+WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 END
   cat >src/myocamlbuild_config.ml <<END
 let libdir = "$STDLIB_DIR";;
@@ -158,6 +179,7 @@ else
   [ -d "$BIN_DIR" ] || echo "'$BIN_DIR' not found or not a directory."
   [ -d "$SHARE_DIR" ] || echo "'$SHARE_DIR' not found or not a directory."
   [ -d "$STDLIB_DIR" ] || echo "'$STDLIB_DIR' not found or not a directory."
+  [ -d "$VIM_DIR" ] || echo "'$VIM_DIR' not found or not a directory."
   echo "Please check configuration."
   exit 1
 fi
