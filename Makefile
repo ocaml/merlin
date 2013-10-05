@@ -6,6 +6,10 @@ TARGET = ocamlmerlin.native
 OCAMLBUILD=ocamlbuild -Is src,src/utils,src/ocaml$(TYPER_VERSION),src/ocaml$(TYPER_VERSION)/utils,src/ocaml$(TYPER_VERSION)/typing,src/ocaml$(TYPER_VERSION)/parsing
 OCAMLFIND=ocamlfind
 
+DESTDIR ?=
+BIN_DIR := $(DESTDIR)$(BIN_DIR)
+SHARE_DIR := $(DESTDIR)$(SHARE_DIR)
+
 all: $(TARGET)
 
 CONFIG_FILES = src/my_config.ml src/myocamlbuild_config.ml src/ocaml
@@ -23,7 +27,7 @@ $(TARGET): assert_configured
 all_versions:
 	for i in _400 _401; do \
 		$(MAKE) TYPER_VERSION=$$i $(TARGET);\
-	 	cp $(TARGET) ocamlmerlin$$i;\
+		cp $(TARGET) ocamlmerlin$$i;\
 	done
 
 debug: assert_configured
@@ -41,24 +45,30 @@ distclean: clean
 	@echo
 	rm -f Makefile.config $(CONFIG_FILES) $(TARGET)
 
-install: $(TARGET)
+install-binary: $(TARGET)
 	install -d $(BIN_DIR)
-	install -d $(SHARE_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 	install omake-merlin $(BIN_DIR)/omake-merlin
 	install jenga-merlin $(BIN_DIR)/jenga-merlin
-	install -d $(SHARE_DIR)/ocamlmerlin/vim
-	install -d $(SHARE_DIR)/ocamlmerlin/vimbufsync
+
+install-share: $(TARGET)
+	install -d $(SHARE_DIR)
 	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
-	cp -R vim/merlin/* $(SHARE_DIR)/ocamlmerlin/vim/
-	cp -R vim/vimbufsync/* $(SHARE_DIR)/ocamlmerlin/vimbufsync/
+
+install-vim: $(TARGET)
+	install -d $(VIM_DIR)
+	if [ ! -z "$(WITH_VIMBUFSYNC)" ]; then \
+		cp -R vim/vimbufsync/* $(VIM_DIR)/; \
+	fi
+	cp -R vim/merlin/* $(VIM_DIR)
+
+install: install-binary install-share install-vim
 	@echo 
 	@echo "Quick setup for VIM"
 	@echo "-------------------"
-	@echo "Add $(SHARE_DIR)/ocamlmerlin/vim and vimbufsync to your runtime path, e.g.:"
-	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vim"
-	@echo "  :set rtp+=$(SHARE_DIR)/ocamlmerlin/vimbufsync"
+	@echo "Add $(VIM_DIR) to your runtime path, e.g.:"
+	@echo "  :set rtp+=$(VIM_DIR)"
 	@echo 
 	@echo "Quick setup for EMACS"
 	@echo "-------------------"

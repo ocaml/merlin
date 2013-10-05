@@ -108,6 +108,22 @@ If you installed from opam and/or archive, just make sure that vimbufsync is in 
 
     :set rtp+=<SHARE_DIR>/ocamlmerlin/vimbufsync
 
+Installing vim plugin with NeoBundle
+------------------------------------
+
+To install Merlin using NeoBundle, add to your vim configuration:
+
+    NeoBundleLazy 'def-lkb/merlin.git', {'depends': 'def-lkb/vimbufsync.git',
+        \ 'build': {
+        \   'unix': './configure --bindir ~/bin --without-vimbufsync && make install-binary'
+        \   },
+        \ 'autoload': {'filetypes': ['ocaml']},
+        \ 'rtp': 'vim/merlin'
+        \ }
+
+Where ~/bin should be the directory in your PATH (remove --bindir option to install to the
+system-wide bindir).
+
 Emacs interface
 ===============
 
