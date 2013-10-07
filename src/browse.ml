@@ -246,7 +246,7 @@ and module_binding name ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
       | _ -> None
     in
     {
-      loc = Merlin_parsing.location_union name.Location.loc mod_loc ;
+      loc = name.Location.loc ;
       env = mod_env ;
       context = Module (Named name.Location.txt, mod_type) ;
       nodes = lazy [module_expr ?mod_info def] ;
