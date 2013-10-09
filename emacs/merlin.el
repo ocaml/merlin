@@ -697,57 +697,65 @@ Return nil if there is no error on this line."
           (setq errors (cdr errors)))))
     found))
 
-(defvar merlin-show-error-timer nil
+(defvar merlin-error-timer nil
   "Timer to show the error at point in the echo area.")
-(make-variable-buffer-local 'merlin-show-error-timer)
 
-(defvar merlin-current-error nil
-  "Current error displayed by Merlin.
-Used to prevent flicker of the echo area when moving left or
-right on an line with an error.  This is set by
-`merlin-show-error-on-current-line'.")
-(make-variable-buffer-local 'merlin-current-error)
+(defun merlin-error-start-timer ()
+  "Start the error timer as an idle timer.
+When it expires, the current Merlin error is shown in the echo
+area."
+  (merlin-error-cancel-timer)
+  (setq merlin-error-timer
+        (run-with-idle-timer 0.1 'repeat 'merlin-show-error-on-current-line))
+  (merlin-error-start-gc-timer))
 
-(defun merlin-cancel-show-error-timer ()
-  "Cancel the error display timer for the current buffer."
-  (when merlin-show-error-timer
-    (cancel-timer merlin-show-error-timer)
-    (setq merlin-show-error-timer nil)))
+(defun merlin-error-cancel-timer ()
+  "Cancel the error display timer."
+  (when merlin-error-timer
+    (cancel-timer merlin-error-timer)
+    (setq merlin-error-timer nil)))
 
-(defun merlin-show-current-error ()
-  "Show the current error in the echo area.
-The error shown is the last computed by
-`merlin-show-error-on-current-line'.  This is used in a
-`pre-command-hook' to prevent flickering of the echo area when
-moving left or right on an line with an error (Emacs clears the
-echo area before calling `pre-command-hook', and updates the
-display between the `pre-command-hook' and the
-`post-command-hook'.)."
-  (when merlin-current-error
-    (message merlin-current-error)))
+(defvar merlin-error-gc-timer nil
+  "Timer to collect unused Merlin timers.
+This triggers `merlin-error-gc' to check whether there are any
+buffers left using Merlin.  If not, we can cancel this timer and
+`merlin-error-timer'.")
+
+(defun merlin-error-gc ()
+  "Check whether there are still buffers using Merlin.
+Clean up Merlin timers if there are none."
+  (when (not (member t
+                     (mapcar
+                      (lambda (buf) (buffer-local-value 'merlin-mode buf))
+                      (buffer-list))))
+    ;; No buffer uses Merlin anymore. Kill all hu^H^Htimers.
+    (merlin-error-cancel-timer)
+    (merlin-error-cancel-gc-timer)))
+
+(defun merlin-error-start-gc-timer ()
+  "Start the Merlin GC timer (see `merlin-error-gc-timer').
+The timer fires every 10 seconds of idle time."
+  (merlin-error-cancel-gc-timer)
+  (setq merlin-error-gc-timer (run-at-time 10 10 'merlin-error-gc)))
+
+(defun merlin-error-cancel-gc-timer ()
+  "Cancel the Merlin GC timer (see `merlin-error-gc-timer')."
+  (when merlin-error-gc-timer
+    (cancel-timer merlin-error-gc-timer)
+    (setq merlin-error-gc-timer nil)))
+
+(defun merlin-chomp (str)
+  "Remove whitespace at the beginning and end of STR."
+  (replace-regexp-in-string "\\(^[[:space:]\\n]*\\|[[:space:]\\n]*$\\)" "" str))
 
 (defun merlin-show-error-on-current-line ()
   "Show the error of the current line in the echo area.
-If there is no error, do nothing.  Set `merlin-current-error' to
-the displayed error message."
-  (merlin-cancel-show-error-timer)
-  (lexical-let* ((current-line (line-number-at-pos))
-         (err (merlin-find-error-for-line
-               (line-number-at-pos) merlin-pending-errors)))
-    (if err
-        (progn (setq merlin-current-error (cdr (assoc 'message err)))
-               (message merlin-current-error))
-      (progn
-        (if (equal merlin-current-error (current-message))
-            (message nil))
-        (setq merlin-current-error nil)))))
-
-(defun merlin-show-error-on-current-line-soon ()
-  "Register a timer for showing the error on the current line soon.
-We use a timer to avoid disturbing navigation in the buffer."
-  (merlin-cancel-show-error-timer)
-  (setq merlin-show-error-timer
-        (run-at-time 0.1 nil 'merlin-show-error-on-current-line)))
+If there is no error, do nothing."
+  (when (and merlin-mode (not (current-message)))
+    (lexical-let* ((current-line (line-number-at-pos))
+                   (err (merlin-find-error-for-line
+                         (line-number-at-pos) merlin-pending-errors)))
+      (if err (message (merlin-chomp (cdr (assoc 'message err))))))))
 
 (defun merlin-error-next ()
   "Jump to the next error."
@@ -1334,6 +1342,7 @@ Short cuts:
           (when (buffer-file-name) (message "merlin can only operate on ml files"))
           (merlin-mode -1)))
     (when (merlin-can-handle-buffer)
+      (merlin-error-gc)
       (when merlin-lock-zone-highlight-overlay
         (delete-overlay merlin-lock-zone-highlight-overlay))
       (when merlin-lock-zone-margin-overlay
@@ -1357,11 +1366,7 @@ Short cuts:
                       nil 'make-it-local)
             (add-hook 'after-save-hook 'merlin-after-save
                       nil 'make-it-local)
-            (add-hook 'pre-command-hook
-                      'merlin-show-current-error nil 'make-it-local)
-            (add-hook 'post-command-hook
-                      'merlin-show-error-on-current-line-soon
-                      nil 'make-it-local)))
+            (merlin-error-start-timer)))
 
 (defun merlin-kill-all-processes ()
   "Kill all the remaining buffers containing merlin processes."
