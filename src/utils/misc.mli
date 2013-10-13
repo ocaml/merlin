@@ -51,7 +51,7 @@ val may_map: ('a -> 'b) -> 'a option -> 'b option
 
 module Path_list : sig
   type t
-  
+
   val of_list : t list -> t
   val of_string_list_ref : string list ref -> t
 
@@ -137,7 +137,6 @@ val rev_string_split: on:char -> string -> string list
 val get_ref: 'a list ref -> 'a list
         (* [get_ref lr] returns the content of the list reference [lr] and reset
            its content to the empty list. *)
-
 
 val fst3: 'a * 'b * 'c -> 'a
 val snd3: 'a * 'b * 'c -> 'b

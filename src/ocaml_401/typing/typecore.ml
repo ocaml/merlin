@@ -3490,13 +3490,13 @@ let type_expression env sexp =
   match sexp.pexp_desc with
     Pexp_ident lid ->
     (* Special case for keeping type variables when looking-up a variable *)
-    begin try 
+    begin try
       let (path, desc) = Env.lookup_value lid.txt env in
       {exp with exp_type = desc.val_type}
       (* Due to Merlin relaxed rules, an expression that typed may contain
          unbound variables, and so Env.lookup_value may raise Not_found *)
       with Not_found -> exp
-    end 
+    end
   | _ -> exp
 
 (* Error report *)

@@ -24,7 +24,7 @@ let parse_dot_merlin path : bool * t =
   let proj = ref None in
   let tell l = acc := l :: !acc in
   try
-    let rec aux () = 
+    let rec aux () =
       let line = input_line ic in
       if line = "" then ()
       else if has_prefix "B " line then
@@ -57,7 +57,7 @@ let parse_dot_merlin path : bool * t =
     close_in_noerr ic;
     raise exn
 
-let rec read path =  
+let rec read path =
   let recurse, dot_merlin = parse_dot_merlin path in
   if recurse
   then LCons (dot_merlin, lazy (find (Filename.dirname (Filename.dirname path))))
@@ -92,7 +92,7 @@ module Flags = Top_options.Make (struct
 end)
 
 type path_config =
-  { 
+  {
     dot_merlins : string list;
     build_path  : string list;
     source_path : string list;
@@ -101,7 +101,7 @@ type path_config =
 
 let exec_dot_merlin {path; project; entries} config =
   let cwd = Filename.dirname path in
-  let expand path = 
+  let expand path =
     canonicalize_filename ~cwd (expand_directory Config.standard_library path)
   in
   List.fold_left ~init:{config with dot_merlins = path :: config.dot_merlins}

@@ -44,8 +44,8 @@ module VPrinttyp = State.Verbose_print
 module Path_utils : sig
   val set_local_path : string -> unit
   val set_dot_merlin : Dot_merlin.path_config -> unit
-  val user_path : action:[< `Add | `Rem ] ->
-                  var:[< `Build | `Source ] ->
+  val user_path : action:[`Add | `Rem] ->
+                  var:[`Build | `Source] ->
                   ?cwd:string -> string -> unit
 
   val load_packages : string list -> unit
@@ -54,7 +54,7 @@ module Path_utils : sig
   val build_path  : Path_list.t
 
   val reset : unit -> unit
-  val init : unit -> unit
+  val init  : unit -> unit
 end = struct
   (* 1. Local path *)
   let local_path = ref []
@@ -65,14 +65,14 @@ end = struct
   let dot_merlin_packages = ref []
   (* 2b. User packages *)
   let user_packages = ref []
-  let load_packages pkgs = 
+  let load_packages pkgs =
     Extensions_utils.register_packages pkgs;
     user_packages := 
       list_filter_dup (Dot_merlin.packages_path pkgs @ !user_packages)
 
   (* 2c. Dot merlin path *)
   let dot_merlin_build = ref []
-  let dot_merlin_source = ref [] 
+  let dot_merlin_source = ref []
 
   let set_dot_merlin config =
     dot_merlin_build    := config.Dot_merlin.build_path;
@@ -98,7 +98,7 @@ end = struct
   (* Default ocaml library path *)
   let default_path = ref []
 
-  let build_path = 
+  let build_path =
     Path_list.of_list (List.map ~f:Path_list.of_string_list_ref [
       user_build;
       dot_merlin_build;
@@ -613,7 +613,7 @@ let dispatch (i,o : IO.io) (state : state) =
     state, filename
 
   | (Which_with_ext ext : a request) ->
-    state, Misc.modules_in_path ~ext 
+    state, Misc.modules_in_path ~ext
             (Path_list.to_strict_list Path_utils.source_path)
 
   | (Findlib_use packages : a request) ->
@@ -664,4 +664,3 @@ let dispatch (i,o : IO.io) (state : state) =
     state, config.Dot_merlin.dot_merlins
 
   : state * a)
-

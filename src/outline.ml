@@ -115,7 +115,7 @@ exception Malformed_module of token list * Location.t
 
 let parse_str ~exns ~location ~lexbuf zipper t =
   let new_state exns' tokens = (exns' @ exns, location tokens, tokens) in
-  match Merlin_parsing.catch_warnings 
+  match Merlin_parsing.catch_warnings
       (fun () -> parse_with zipper
           ~parser:Outline_parser.implementation
           ~lexer:Lexer.token

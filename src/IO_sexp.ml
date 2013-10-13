@@ -1,18 +1,18 @@
 module Sexp = struct
-  type t = 
+  type t =
     | Cons   of t * t
     | Sym    of string
     | String of string
     | Int    of int
     | Float  of float
   let nil = Sym "nil"
-  
+
   let rec sexp_of_list = function
     | [] -> nil
     | a :: tl -> Cons (a, sexp_of_list tl)
-  
+
   let rec tell_sexp tell = function
-    | Cons (a,b) -> 
+    | Cons (a,b) ->
       tell "(";
       tell_sexp tell a;
       tell_cons tell b
@@ -20,7 +20,7 @@ module Sexp = struct
     | String s -> tell ("\"" ^ String.escaped s ^ "\"")
     | Int i    -> tell (string_of_int i)
     | Float f  -> tell (string_of_float f)
-  
+
   and tell_cons tell = function
     | Sym "nil" -> tell ")"
     | Cons (a,b) ->
@@ -31,16 +31,16 @@ module Sexp = struct
       tell " . ";
       tell_sexp tell sexp;
       tell ")"
-  
-  let is_alpha c = 
+
+  let is_alpha c =
          (c >= 'a' && c <= 'z')
       || (c >= 'A' && c <= 'Z')
 
-  let is_num c = 
+  let is_num c =
       (c >= '0' && c <= '9')
 
   let is_alphanum c = is_alpha c || is_num c
-    
+
   let read_sexp getch =
     let buf = Buffer.create 10 in
     let rec read_sexp getch = function
@@ -60,7 +60,7 @@ module Sexp = struct
         let lhs, next = read_sexp getch (getch ()) in
         read_cons getch (fun rhs -> Cons (lhs, rhs)) next
       | _ -> failwith "Invalid parse"
-    
+
     and read_cons getch k next =
       match (match next with Some c -> c | None -> getch ()) with
       | ' ' | '\t' | '\n' -> read_cons getch k None
@@ -79,8 +79,8 @@ module Sexp = struct
       | c ->
         let cell, next = read_sexp getch c in
         read_cons getch (fun rhs -> k (Cons (cell, rhs))) next
-    
-    and read_num getch c = 
+
+    and read_num getch c =
       Buffer.clear buf;
       Buffer.add_char buf c;
       let is_float = ref false in
@@ -99,7 +99,7 @@ module Sexp = struct
           Some c
       in
       aux ()
-    
+
     and read_string getch =
       Buffer.clear buf;
       let rec aux () =
@@ -121,7 +121,7 @@ module Sexp = struct
       Buffer.clear buf;
       let rec aux next =
         match (match next with Some c -> c | None -> getch ()) with
-        | ('\'' | '-' | ':' | '_') as c -> 
+        | ('\'' | '-' | ':' | '_') as c ->
           Buffer.add_char buf c;
           aux None
         | c when is_alphanum c ->
@@ -132,7 +132,7 @@ module Sexp = struct
       aux next
     in
     read_sexp getch (getch ())
- 
+
   let to_buf sexp buf =
     tell_sexp (Buffer.add_string buf) sexp
 
@@ -140,11 +140,11 @@ module Sexp = struct
     let buf = Buffer.create 100 in
     to_buf sexp buf;
     Buffer.contents buf
-  
+
   let getch_of_string str =
     let len = String.length str in
     let pos = ref 0 in
-    let getch () = 
+    let getch () =
       if !pos < len then
         let r = str.[!pos] in
         incr pos;
@@ -172,7 +172,7 @@ module Sexp = struct
     with End_of_file -> None
 end
 
-let rec sexp_of_json = 
+let rec sexp_of_json =
   let open Sexp in
   let assoc_item (a,b) = Cons (Sym a, sexp_of_json b) in
   function
@@ -185,9 +185,9 @@ let rec sexp_of_json =
   | `Assoc lst  -> Cons (Cons (Sym "assoc", Sym "nil"), sexp_of_list (List.map assoc_item lst))
   | `List lst   -> sexp_of_list (List.map sexp_of_json lst)
 
-let rec json_of_sexp = 
+let rec json_of_sexp =
   let open Sexp in
-  let fail msg sexp = 
+  let fail msg sexp =
     IO.protocol_failure (msg ^ ", got: \n" ^ Sexp.to_string sexp) in
   let rec assoc_item = function
     | Cons (Cons (Sym a, b), c) -> (a, json_of_sexp b) :: assoc_item c
@@ -228,7 +228,7 @@ let sexp_make ~input ~output =
     else Buffer.clear buf
   in
   (input', output : IO.low_io)
-  
+
 let () = IO.register_protocol
       ~name:"sexp"
       ~desc:"Simple encoding of json over sexpr"

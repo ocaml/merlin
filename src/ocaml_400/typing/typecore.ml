@@ -1479,7 +1479,7 @@ let rec type_exp env sexp =
  *)
 
 and type_expect ?in_function env sexp ty_expected =
-  if ~!Merlin_types.relax_typer 
+  if ~!Merlin_types.relax_typer
   then type_relax ?in_function env sexp ty_expected
   else try type_expect_ ?in_function env sexp ty_expected
        with (Typetexp.Error _ | Error _) ->
@@ -1495,7 +1495,7 @@ and type_relax ?in_function env sexp ty_expected =
       exp_extra = [];
       exp_type = ty_expected;
       exp_env = env;
-    } 
+    }
   in
   try
     let ty = newvar () in
@@ -1507,7 +1507,7 @@ and type_relax ?in_function env sexp ty_expected =
       (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
       failwith_exn ~exn (Texp_tuple [exp])
   with (Typetexp.Error _ | Error _) as exn ->
-    failwith_exn ~exn 
+    failwith_exn ~exn
       (Texp_ident
          (Path.Pident (Ident.create "*type-error*"),
           Location.mkloc (Longident.Lident "*type-error*") loc,
@@ -1536,7 +1536,7 @@ and type_expect_ ?in_function env sexp ty_expected =
         exp_extra = [];
         exp_type = ty_expected;
         exp_env = env
-      } 
+      }
   in
   match sexp.pexp_desc with
   | Pexp_ident lid ->
@@ -2563,7 +2563,7 @@ and type_application env funct sargs =
                     false
                 | _ -> true
               in
-              if ty_fun.level >= t1.level && not_identity funct.exp_desc 
+              if ty_fun.level >= t1.level && not_identity funct.exp_desc
                  && not (Merlin_types.erroneous_type_check funct.exp_type) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
@@ -3095,7 +3095,7 @@ let type_expression env sexp =
   match sexp.pexp_desc with
     Pexp_ident lid ->
     (* Special case for keeping type variables when looking-up a variable *)
-    begin try 
+    begin try
       let (path, desc) = Env.lookup_value lid.txt env in
       {exp with exp_type = desc.val_type}
       (* Due to Merlin relaxed rules, an expression that typed may contain

@@ -15,4 +15,4 @@ let wrap ~tokens f buf =
     tokens := Zipper.insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !tokens;
     t
 
-let const token _ = token 
+let const token _ = token

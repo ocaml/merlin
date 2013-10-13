@@ -86,7 +86,7 @@ module Verbose_print = struct
   open Format
   open Types
 
-  let type_scheme ppf t = 
+  let type_scheme ppf t =
     let env = Printtyp.curr_printing_env () in
     Printtyp.type_scheme ppf (verbose_type env t)
   let type_declaration id ppf t =
@@ -99,18 +99,18 @@ end
 
 let global_modules = ref (lazy [])
 let reset_global_modules () =
-  global_modules := 
-    lazy (Misc.modules_in_path ~ext:".cmi" 
+  global_modules :=
+    lazy (Misc.modules_in_path ~ext:".cmi"
             (Misc.Path_list.to_strict_list !Config.load_path))
 
-let retype state = 
-  {steps = 
+let retype state =
+  {steps =
     History.reconstruct state.steps (fun x -> x)
-      (fun prev old -> 
+      (fun prev old ->
         let outlines = old.outlines in
         let chunks = Chunk.update outlines (Some prev.chunks) in
         let types = Typer.update chunks (Some prev.types) in
-        {outlines; chunks; types}) 
+        {outlines; chunks; types})
   }
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
@@ -142,12 +142,12 @@ let node_at state pos_cursor =
   let step = History.focused state.steps in
   let structures = browse step in
   let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
-  let outlines = 
-    let rec aux o = 
+  let outlines =
+    let rec aux o =
       match Outline.Spine.previous o with
       | Some o' when cmp o < 0 -> aux o'
       | Some _ | None -> o
-    in 
+    in
     aux step.outlines
   in
   try
@@ -214,7 +214,7 @@ let rec mod_smallerthan n m =
   match m with
   | Mty_ident _ -> Some 1
   | Mty_signature (lazy s) ->
-    begin match Misc.length_lessthan n s with
+    begin match List.length_lessthan n s with
     | None -> None
     | Some n' ->
       List.fold_left
@@ -283,11 +283,11 @@ let node_complete node prefix =
     let li = Longident.parse prefix in
     let suffix = Longident.last li in
     if suffix <> ""
-      && Char.uppercase prefix.[0] <> prefix.[0] 
+      && Char.uppercase prefix.[0] <> prefix.[0]
       && Char.uppercase suffix.[0] = suffix.[0]
-    then 
+    then
       suffix
-    else 
+    else
       prefix
   in
   let {Browse.env} = node in
@@ -331,7 +331,7 @@ let node_complete node prefix =
           Printtyp.modtype_declaration ident ppf (verbose_sig env m);
         `Modtype
       | `Typ t ->
-        Printtyp.type_declaration ident ppf 
+        Printtyp.type_declaration ident ppf
           (if exact then verbose_type_decl env t else t);
         `Type
     in
@@ -346,18 +346,18 @@ let node_complete node prefix =
   let find ?path prefix compl =
     let valid tag n = Misc.has_prefix prefix n && uniq (tag,n) in
     (* Hack to prevent extensions namespace to leak *)
-    let valid ?(uident=false) tag name = 
+    let valid ?(uident=false) tag name =
       (if uident
        then name <> "" && name.[0] <> '_'
        else name <> "_")
-      && valid tag name 
+      && valid tag name
     in
     let compl = [] in
     try
       let compl = Env.fold_values
         (fun name path v compl ->
           if valid `Value name
-          then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl 
+          then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl
           else compl)
         path env compl
       in
@@ -370,22 +370,22 @@ let node_complete node prefix =
       in
       let compl = Merlin_types.fold_types
         (fun name path decl compl ->
-          if valid `Typ name 
-          then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl 
+          if valid `Typ name
+          then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
           else compl)
         path env compl
       in
       let compl = Env.fold_modules
         (fun name path v compl ->
-          if valid ~uident:true `Mod name 
-          then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl 
+          if valid ~uident:true `Mod name
+          then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
           else compl)
         path env compl
       in
       let compl = Env.fold_modtypes
         (fun name path v compl ->
-          if valid ~uident:true `Mod name 
-          then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl 
+          if valid ~uident:true `Mod name
+          then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
           else compl)
         path env compl
       in
@@ -427,9 +427,9 @@ let node_complete node prefix =
       let ppf, to_string = Misc.ppf_to_string () in
       Printtyp.type_scheme ppf ty;
       {Protocol.
-        name; 
-        kind = `MethodCall; 
-        desc = to_string (); 
+        name;
+        kind = `MethodCall;
+        desc = to_string ();
         info = "";
       })
       methods
@@ -448,7 +448,7 @@ let node_complete node prefix =
             kind = `Module;
             desc = "";
             info = "";
-          } in 
+          } in
           match modname with
           | modname when modname = prefix && uniq (`Mod,modname) ->
               (try let path, md = Env.lookup_module (Longident.Lident modname) env in

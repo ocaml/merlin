@@ -77,7 +77,7 @@ module Fold = struct
           List.fold_left
           begin fun (env,exns,ts) d ->
           try
-            let t,_,env = 
+            let t,_,env =
               Typemod.type_structure env [d.Location.txt] d.Location.loc
             in
             (env, exns, {d with Location.txt = t} :: ts)
@@ -130,9 +130,9 @@ module Fold = struct
       with exn -> Some (exn :: exns, env)
       end
     with
-    | exns', None -> 
+    | exns', None ->
       (exns' @ exns, env, trees), ()
-    | exns', Some (exns, env) -> 
+    | exns', Some (exns, env) ->
       (exns' @ exns, env, trees), ()
 
   (* Fold signature shape *)

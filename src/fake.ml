@@ -532,7 +532,7 @@ module Fields = struct
 
     Module (
       "Fields",
-      List.map fields_dot_t ~f:(fun x -> Binding x) @ 
+      List.map fields_dot_t ~f:(fun x -> Binding x) @
         [ fold ; iter ; map ; forall ; exists ]
     )
 

@@ -104,13 +104,13 @@ let canonicalize_filename ?cwd path =
     | dir, base when dir = path -> base :: acc
     | dir, base -> split dir (base :: acc)
   in
-  let parts = 
+  let parts =
     match split path [] with
     | dot :: rest when dot = Filename.current_dir_name ->
       split (match cwd with None -> Sys.getcwd () | Some c -> c) rest
     | parts -> parts
   in
-  let goup path = function 
+  let goup path = function
     | dir when dir = Filename.parent_dir_name ->
       (match path with _ :: t -> t | [] -> [])
     | dir when dir = Filename.current_dir_name ->
@@ -125,12 +125,12 @@ let canonicalize_filename ?cwd path =
   filename_concats parts
 
 module Path_list = struct
-  type t = 
-    | String of string 
+  type t =
+    | String of string
     | StringList of string list ref
     | List of t list
     | Fun of (unit -> t)
-  
+
   let of_fun f = Fun f
   let of_list l = List l
 

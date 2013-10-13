@@ -9,17 +9,17 @@ let raise_error exn =
 let catch_errors f =
   let caught = ref [] in
   let result =
-    try_sum (fun () ->
-        fluid'let errors (Some (caught,Hashtbl.create 3)) f)
+    Either.try' (fun () ->
+        Fluid.let' errors (Some (caught,Hashtbl.create 3)) f)
   in
   !caught, result
-     
+
 let erroneous_type_register te =
   match ~!errors with
   | Some (l,h) -> Hashtbl.replace h te.Types.id ()
   | None -> ()
 
-let erroneous_type_check te = 
+let erroneous_type_check te =
   match ~!errors with
   | Some (l,h) when Hashtbl.mem h te.Types.id -> true
   | _ -> false

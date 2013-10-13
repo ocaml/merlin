@@ -1,4 +1,4 @@
-(* {{{ COPYING *( 
+(* {{{ COPYING *(
   This file is part of Merlin, an helper for ocaml editors
 
   Copyright (C) 2013  Frédéric Bour  <frederic.bour(_)lakaban.net>
@@ -60,7 +60,7 @@ type t = {
 let dummy = { loc = Location.none ; env = Env.empty ;
               context = Other; nodes = lazy [] }
 
-let singleton ?(context=Other) ?(nodes=lazy []) loc env = 
+let singleton ?(context=Other) ?(nodes=lazy []) loc env =
   { loc ; env ; context ; nodes }
 
 let rec structure { str_final_env ; str_items } =
@@ -90,12 +90,12 @@ and structure_item_desc ~env = function
     List.map lst ~f:(fun (id,l,{ ci_type_decl }) ->
       singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env
     )
-  | Tstr_include (m,arg) -> 
+  | Tstr_include (m,arg) ->
     [module_include (Merlin_types.include_idents arg) m]
 
 and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest } =
   let nodes = Option.map typ_manifest ~f:(fun c -> lazy [core_type c]) in
-  singleton 
+  singleton
     ~context:(TypeDecl (id,typ_type))
     ?nodes
     typ_loc env
@@ -109,7 +109,7 @@ and core_type { ctyp_env ; ctyp_loc ; ctyp_desc ; ctyp_type } =
     | Ttyp_package _ | Ttyp_object _ | Ttyp_variant _ ->
       (*FIXME: case-by-case*) []
   in
-  singleton 
+  singleton
     ~context:(Type ctyp_type)
     ~nodes:(lazy (List.map ~f:core_type subtypes))
              ctyp_loc ctyp_env
@@ -155,21 +155,21 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
     | _ -> None
   in
   let subpatterns = Merlin_types.extract_subpatterns pat_desc in
-  singleton 
+  singleton
     ~context:(Pattern (name, pat_type))
-    ~nodes:(lazy (List.map ~f:(pattern ?env) subpatterns)) pat_loc 
+    ~nodes:(lazy (List.map ~f:(pattern ?env) subpatterns)) pat_loc
     (match env with Some e' -> e' | _ -> pat_env)
 
 and expression_extra ~env t = function
-  | Texp_open _ as expr,loc -> 
+  | Texp_open _ as expr,loc ->
     { loc ; env = Merlin_types.exp_open_env expr; context = Other ; nodes = lazy [t] }
   | Texp_constraint (c1,c2), loc ->
     let cs = match c1,c2 with
       | Some c1, Some c2 -> [c1;c2] | Some c, _ | _, Some c -> [c] | _ -> []
     in
-    { loc ; env ; context = Other ; nodes = lazy (t :: List.map ~f:core_type cs) } 
+    { loc ; env ; context = Other ; nodes = lazy (t :: List.map ~f:core_type cs) }
   | Texp_poly (Some c), loc ->
-    { loc ; env ; context = Other ; nodes = lazy [core_type c ; t] } 
+    { loc ; env ; context = Other ; nodes = lazy [core_type c ; t] }
   | _ -> t
 
 and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
@@ -305,7 +305,7 @@ let is_enclosing pos { loc } =
 let traverse_branch pos tree =
   let rec traverse { nodes = lazy nodes } acc =
     match local_near pos nodes with
-    | Some t' -> traverse t' (t' :: acc) 
+    | Some t' -> traverse t' (t' :: acc)
     | None -> acc
   in
   traverse tree [tree]

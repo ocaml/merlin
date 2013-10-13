@@ -61,14 +61,14 @@ let protect_parser f =
   let local_modules = ref [] in
   let exns, result =
     Misc.fluid'let 
-      Outline_utils.local_modules (Some local_modules) 
+      Outline_utils.local_modules (Some local_modules)
       (fun () -> Merlin_parsing.catch_warnings f)
   in
   let exns = match result with
     | Inl exn -> exn :: exns
     | Inr _ -> exns
   in
-  exns, !local_modules, result 
+  exns, !local_modules, result
 
 module Fold = struct
   (* Initial state *)

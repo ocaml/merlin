@@ -39,7 +39,7 @@ module Context : sig
   type sig_in_sig_module  = Parsetree.module_type binding or_exn
   type sig_in_str_modtype = Parsetree.module_type binding or_exn
   type str_in_module      = Parsetree.module_expr binding or_exn
-end                                                      
+end
 module Spine : Spine.S with module Context = Context
 type t = Spine.t
 val update : Outline.t -> t option -> t

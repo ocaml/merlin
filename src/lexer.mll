@@ -99,7 +99,7 @@ let set_extension ~enabled kw =
     if enabled
     then (fun (key,value) -> Hashtbl.replace keyword_table key value)
     else (fun (key,value) -> Hashtbl.remove keyword_table key)
-  in 
+  in
   List.iter action kw
 
 (* To buffer string literals *)
@@ -592,4 +592,3 @@ and p4_quotation = parse
     is_in_string := false;
     comment_start_loc := []
 }
-

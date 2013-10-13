@@ -3,7 +3,7 @@ open Location
 type position = int
 
 let rec try_ntimes n f s =
-  if n > 0 then 
+  if n > 0 then
     match f s with
       | None -> None
       | Some s' -> try_ntimes (pred n) f s'
@@ -45,7 +45,7 @@ module type S = sig
     | Str_item of (Context.str_item, t_str) step
     | Str_in_module of (Context.str_in_module, t_str) step
 
-  type t = 
+  type t =
     | Str of t_str
     | Sig of t_sig
 
@@ -61,9 +61,9 @@ module type S = sig
   val sig_state : t_sig -> Context.state
   val get_state : t -> Context.state
 
-  val dump :  ?sig_item:(string -> Context.state -> Context.sig_item -> string) 
-           -> ?str_item:(string -> Context.state -> Context.str_item -> string) 
-           -> ?state:(string -> Context.state -> string) 
+  val dump :  ?sig_item:(string -> Context.state -> Context.sig_item -> string)
+           -> ?str_item:(string -> Context.state -> Context.str_item -> string)
+           -> ?state:(string -> Context.state -> string)
            -> t -> string list
 end
 
@@ -84,8 +84,8 @@ struct
     | Str_root of (unit, unit) step
     | Str_item of (str_item, t_str) step
     | Str_in_module of (str_in_module, t_str) step
-  
-  type t = 
+
+  type t =
     | Str of t_str
     | Sig of t_sig
 
@@ -93,7 +93,7 @@ struct
     | Str_root _ -> 0
     | Str_item step -> position step
     | Str_in_module step -> position step
-  
+
   let sig_position = function
     | Sig_root _ -> 0
     | Sig_item step -> position step
@@ -109,7 +109,7 @@ struct
     | Str_root _ -> None
     | Str_item step -> Some (Str (parent step))
     | Str_in_module step -> Some (Str (parent step))
-  
+
   let sig_previous = function
     | Sig_root _ -> None
     | Sig_item step -> Some (Sig (parent step))
@@ -125,7 +125,7 @@ struct
     | Str_root step -> state step
     | Str_item step -> state step
     | Str_in_module step -> state step
-  
+
   let sig_state = function
     | Sig_root step -> state step
     | Sig_item step -> state step
@@ -138,15 +138,15 @@ struct
     | Str str -> str_state str
 
   let dump ?(sig_item=fun s _ _ -> s)
-           ?(str_item=fun s _ _ -> s) 
+           ?(str_item=fun s _ _ -> s)
            ?state:(pr_state=fun s _ -> s)
            t
            =
     let rec dump_sig acc = function
       | Sig_root step -> pr_state "sig_root" (state step) :: acc
-      | Sig_item step -> 
+      | Sig_item step ->
         dump_sig (sig_item "sig_item" (state step) (value step) :: acc) (parent step)
-      | Sig_in_sig_module step -> 
+      | Sig_in_sig_module step ->
         dump_sig (pr_state "sig_in_sig_module" (state step) :: acc) (parent step)
       | Sig_in_sig_modtype step ->
         dump_sig (pr_state "sig_in_sig_modtype" (state step) :: acc) (parent step)
@@ -158,7 +158,7 @@ struct
         dump_str (str_item "str_item" (state step) (value step) :: acc) (parent step)
       | Str_in_module step ->
         dump_str (pr_state "str_in_module" (state step) :: acc) (parent step)
-    in 
+    in
     match t with
     | Sig s -> dump_sig ["SIG"] s
     | Str s -> dump_str ["STRUCT"] s
@@ -167,7 +167,7 @@ end
 
 module Initial (Context : CONTEXT) :
 sig
-  include S 
+  include S
   val sig_step : t_sig -> Context.state -> 'a -> ('a,t_sig) step
   val str_step : t_str -> Context.state -> 'a -> ('a,t_str) step
 
@@ -177,7 +177,7 @@ struct
   module Step = struct
     module Context = Context
     open Context
-    type ('a,'b) step = { 
+    type ('a,'b) step = {
       value: 'a;
       state: state;
       position: position;
@@ -212,10 +212,10 @@ module Transform (Context : CONTEXT) (Dom : S)
     val str_root : (unit, unit) Dom.step -> Context.state
 
     (* Fold items *)
-    val sig_item 
+    val sig_item
       :  (Dom.Context.sig_item, Dom.t_sig) Dom.step
       -> Context.state -> Context.state * Context.sig_item
-    val str_item 
+    val str_item
       :  (Dom.Context.str_item, Dom.t_str) Dom.step
       -> Context.state -> Context.state * Context.str_item
 
@@ -223,7 +223,7 @@ module Transform (Context : CONTEXT) (Dom : S)
     val sig_in_sig_modtype
       :  (Dom.Context.sig_in_sig_modtype, Dom.t_sig) Dom.step
       -> Context.state -> Context.state * Context.sig_in_sig_modtype
-    val sig_in_sig_module 
+    val sig_in_sig_module
       :  (Dom.Context.sig_in_sig_module, Dom.t_sig) Dom.step
       -> Context.state -> Context.state * Context.sig_in_sig_module
     val sig_in_str_modtype
@@ -231,11 +231,11 @@ module Transform (Context : CONTEXT) (Dom : S)
       -> Context.state -> Context.state * Context.sig_in_str_modtype
 
     (* Fold structure shape *)
-    val str_in_module 
+    val str_in_module
       :  (Dom.Context.str_in_module, Dom.t_str) Dom.step
       -> Context.state -> Context.state * Context.str_in_module
    end) :
-sig 
+sig
   module Dom : S
   include S
   val rewind : Dom.t -> t -> Dom.t * t
@@ -247,7 +247,7 @@ struct
   module Step = struct
     module Context = Context
     open Context
-    type ('a,'b) step = { 
+    type ('a,'b) step = {
       value: 'a;
       state: state;
       position: position;
@@ -263,7 +263,7 @@ struct
 
   include Make_S (Step)
 
-  let make_sync_str str = `Str (Sync.make str) 
+  let make_sync_str str = `Str (Sync.make str)
   let make_sync_sig sg  = `Sig (Sync.make sg)
 
   let sig_step sync parent state value =
@@ -278,9 +278,9 @@ struct
     {Step. value = (); state; position = 0; parent = (); sync}
 
   let str_sync = function
-    | Str_root {Step.sync} | Str_item {Step.sync} | Str_in_module {Step.sync} -> 
+    | Str_root {Step.sync} | Str_item {Step.sync} | Str_in_module {Step.sync} ->
       sync
-  
+
   let sig_sync = function
     | Sig_root {Step.sync} | Sig_item {Step.sync}
     | Sig_in_str_modtype {Step.sync} | Sig_in_sig_module {Step.sync}
@@ -303,10 +303,10 @@ struct
     | Dom.Sig sg  -> same_sig sg
     | Dom.Str str -> same_str str*)
 
-  let rewind dom cod = 
+  let rewind dom cod =
     let pd = Dom.position dom and pc = position cod in
     match
-      try_ntimes (pd - pc) Dom.previous dom, 
+      try_ntimes (pd - pc) Dom.previous dom,
       try_ntimes (pc - pd) previous cod
     with
     | None, _ | _, None -> assert false
@@ -338,16 +338,16 @@ struct
   let previous' pos dom = function
     | Some cod when pos dom = position cod -> previous cod
     | cod' -> cod'
-    
+
   let update dom cod =
     let pd = Dom.position dom in
     let cod = match cod with
       | None -> None
-      | Some cod -> 
+      | Some cod ->
         match try_ntimes (position cod - pd) previous cod with
         | None -> assert false
         | Some cod as result ->
-          assert (position cod <= pd); 
+          assert (position cod <= pd);
           result
     in
     let rec fold_str dom cod k =
@@ -384,7 +384,7 @@ struct
              k (Sig_item (sig_step (make_sync_sig dom) cod state item)))
 
       | Dom.Sig_in_sig_modtype step ->
-        fold_sig (Dom.parent step) previous 
+        fold_sig (Dom.parent step) previous
           (fun cod ->
              let state, value = Fold.sig_in_sig_modtype step (sig_state cod) in
              k (Sig_in_sig_modtype (sig_step (make_sync_sig dom) cod state value)))

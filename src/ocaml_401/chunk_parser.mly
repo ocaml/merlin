@@ -70,7 +70,7 @@ let mkoption d =
 
 let reloc_pat startpos endpos x = { x with ppat_loc = symbol_rloc startpos endpos  };;
 let reloc_exp startpos endpos x = { x with pexp_loc = symbol_rloc startpos endpos  };;
-let reloc_exp_fake startpos x = 
+let reloc_exp_fake startpos x =
   { x with pexp_loc = Merlin_parsing.pack_fake_start x.pexp_loc startpos };;
 
 let mkoperator startpos endpos name =
@@ -107,7 +107,7 @@ let remember_module_loc name loc =
 let ghexp startpos endpos d = { pexp_desc = d; pexp_loc = symbol_gloc startpos endpos };;
 let ghpat startpos endpos d = { ppat_desc = d; ppat_loc = symbol_gloc startpos endpos };;
 let ghtyp startpos endpos d = { ptyp_desc = d; ptyp_loc = symbol_gloc startpos endpos };;
-let ghloc startpos endpos d = { txt = d; loc = symbol_gloc startpos endpos };; 
+let ghloc startpos endpos d = { txt = d; loc = symbol_gloc startpos endpos };;
 
 let mkassert startpos endpos  e =
   match e with
@@ -187,7 +187,7 @@ let mkstrexp startpos endpos e =
   { pstr_desc = Pstr_eval e; pstr_loc = e.pexp_loc }
 
 let array_function startpos endpos str name =
-  ghloc startpos endpos (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name))) 
+  ghloc startpos endpos (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name)))
 
 let rec deep_mkrangepat startpos endpos c1 c2 =
   if c1 = c2 then ghpat startpos endpos (Ppat_constant(Const_char c1)) else
@@ -611,14 +611,14 @@ structure_tail:
 ;
 
 top_structure_item:
-  | option(SEMISEMI) seq_expr option(SEMISEMI) EOF 
+  | option(SEMISEMI) seq_expr option(SEMISEMI) EOF
     { [mkloc (mkstrexp $startpos $endpos $2) (symbol_rloc $startpos $endpos)] }
   | option(SEMISEMI) structure_item option(SEMISEMI) EOF
       { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $2 }
-  | option(SEMISEMI) VAL val_ident COLON core_type EOF 
+  | option(SEMISEMI) VAL val_ident COLON core_type EOF
     { syntax_error $startpos;
       let fake_pat = mkpatvar $startpos($3) $endpos($3) $3 in
-      let fake_expr = mkexp $startpos($4) $endpos($5) 
+      let fake_expr = mkexp $startpos($4) $endpos($5)
                           (Pexp_constraint (Fake.any_val', Some $5, None))
       in
       [mkloc (mkstr $startpos $endpos (Pstr_value (Nonrecursive, [fake_pat,fake_expr]))) (symbol_rloc $startpos $endpos)] }
@@ -671,7 +671,7 @@ structure_item:
       { [mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
           mkloc $4 (rhs_loc $startpos($4) $endpos($4))))] }
   | MODULE UIDENT module_binding
-      { 
+      {
         remember_module_loc $2 (symbol_rloc $startpos($2) $endpos($2));
         [mkstr $startpos $endpos (Pstr_module(mkrhs $startpos($2) $endpos($2) $2, $3))]
       }
@@ -709,11 +709,11 @@ structure_item:
         [mkstr $startpos $endpos (Pstr_eval expr)]
       }
   | OUNIT_BENCH_INDEXED STRING val_ident simple_expr EQUAL seq_expr
-      { let f_arg = mkpat $startpos $endpos 
+      { let f_arg = mkpat $startpos $endpos
                         (Ppat_var (mkrhs $startpos($3) $endpos($3) $3))
         in
-        let f_fun = mkexp $startpos $endpos 
-            (Pexp_function("", None, [f_arg, $6])) 
+        let f_fun = mkexp $startpos $endpos
+            (Pexp_function("", None, [f_arg, $6]))
         in
         let expr = Fake.(app (app OUnit.force_indexed f_fun) $4) in
         [mkstr $startpos $endpos (Pstr_eval expr)]
@@ -738,7 +738,7 @@ module_rec_bindings:
 ;
 module_rec_binding:
     UIDENT COLON module_type EQUAL module_expr
-    { 
+    {
       remember_module_loc $1 (symbol_rloc $startpos($1) $endpos($1));
       (mkrhs $startpos($1) $endpos($5) $1, $3, $5)
     }
@@ -1211,11 +1211,11 @@ expr:
           (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
   | expr COLONCOLON expr
       { mkexp_cons (rhs_loc $startpos($2) $endpos($2))
-                   (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) 
+                   (ghexp $startpos $endpos (Pexp_tuple[$1;$3]))
                    (symbol_rloc $startpos $endpos) }
   | LPAREN COLONCOLON RPAREN LPAREN expr COMMA expr RPAREN
       { mkexp_cons (rhs_loc $startpos($2) $endpos($2))
-                   (ghexp $startpos $endpos (Pexp_tuple[$5;$7])) 
+                   (ghexp $startpos $endpos (Pexp_tuple[$5;$7]))
                    (symbol_rloc $startpos $endpos) }
   | expr INFIXOP0 expr
       { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
@@ -1300,7 +1300,7 @@ expr:
         let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
         let jsmeth =
           List.fold_left
-            (fun meth arg -> 
+            (fun meth arg ->
               reloc_exp meth.pexp_loc.Location.loc_start
                         arg.pexp_loc.Location.loc_end
               (Fake.app meth arg))
@@ -1433,7 +1433,7 @@ simple_expr:
         let constr = reloc_exp $startpos($1) $endpos($2) Fake.(app jsnew' $2) in
         reloc_exp $startpos $endpos
         (List.fold_left
-           (fun constr arg -> 
+           (fun constr arg ->
              reloc_exp constr.pexp_loc.Location.loc_start
                        arg.pexp_loc.Location.loc_end
              (Fake.app constr arg))
@@ -1507,7 +1507,7 @@ match_cases:
   | match_cases BAR error
     { syntax_error $startpos($3);
       (mkpat $startpos($3) $endpos($3) (Ppat_any), Fake.any_val') :: $1 }
-  | match_cases BAR pattern error               
+  | match_cases BAR pattern error
     { syntax_error $startpos($4);
       ($3, reloc_exp $startpos($4) $endpos($4) Fake.any_val') :: $1 }
 ;
@@ -1519,7 +1519,7 @@ fun_def:
       { mkexp $startpos $endpos (Pexp_newtype($3, $5)) }
 ;
 match_action:
-  | MINUSGREATER error                          
+  | MINUSGREATER error
       { syntax_error $startpos($2);
         reloc_exp $startpos($2) $endpos($2) Fake.any_val' }
   | MINUSGREATER seq_expr                       { $2 }
@@ -1584,16 +1584,16 @@ pattern:
       { mkpat $startpos $endpos (Ppat_variant($1, Some $2)) }
   | pattern COLONCOLON pattern
       { mkpat_cons (rhs_loc $startpos($2) $endpos($2))
-                   (ghpat $startpos $endpos (Ppat_tuple[$1;$3])) 
+                   (ghpat $startpos $endpos (Ppat_tuple[$1;$3]))
                    (symbol_rloc $startpos $endpos) }
   | LPAREN COLONCOLON RPAREN LPAREN pattern COMMA pattern RPAREN
       { mkpat_cons (rhs_loc $startpos($2) $endpos($2))
-                   (ghpat $startpos $endpos (Ppat_tuple[$5;$7])) 
+                   (ghpat $startpos $endpos (Ppat_tuple[$5;$7]))
                    (symbol_rloc $startpos $endpos) }
   | LPAREN COLONCOLON RPAREN LPAREN pattern COMMA pattern error
       { unclosed "(" $startpos($4) $endpos($4) ")" $startpos($8) $endpos($8);
         mkpat_cons (rhs_loc $startpos($2) $endpos($2))
-                   (ghpat $startpos $endpos (Ppat_tuple[$5;$7])) 
+                   (ghpat $startpos $endpos (Ppat_tuple[$5;$7]))
                    (symbol_rloc $startpos $endpos) }
   | pattern BAR pattern
       { mkpat $startpos $endpos (Ppat_or($1, $3)) }
@@ -1653,7 +1653,7 @@ simple_pattern:
   | LPAREN MODULE UIDENT RPAREN
       { mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)) }
   | LPAREN MODULE UIDENT COLON package_type RPAREN
-      { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos 
+      { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos
           (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),
           ghtyp $startpos($5) $endpos($5) (Ptyp_package $5))) }
   | LPAREN MODULE UIDENT COLON package_type error
@@ -1676,7 +1676,7 @@ lbl_pattern_list:
     lbl_pattern { [$1], Closed }
   | lbl_pattern SEMI { [$1], Closed }
   | lbl_pattern SEMI UNDERSCORE opt_semi { [$1], Open }
-  | lbl_pattern SEMI lbl_pattern_list 
+  | lbl_pattern SEMI lbl_pattern_list
       { let (fields, closed) = $3 in $1 :: fields, closed }
 ;
 lbl_pattern:
@@ -1800,7 +1800,7 @@ label_declarations:
   | label_declarations SEMI label_declaration   { $3 :: $1 }
 ;
 label_declaration:
-    mutable_flag label COLON poly_type          
+    mutable_flag label COLON poly_type
       { (mkrhs $startpos($2) $endpos($2) $2, $1, $4, symbol_rloc $startpos $endpos ) }
 ;
 

@@ -90,21 +90,21 @@ let strict_of_exn = function
     Some (format ~valid:true ~where:"parser" ~loc "Malformed module")
   | exn -> None
 
-let null_loc = 
+let null_loc =
   let z = {Lexing. pos_fname = ""; pos_bol = 0; pos_lnum = 1; pos_cnum = 0} in
   {Location. loc_start = z; loc_end = z; loc_ghost = true}
 
 let of_exn exn = match strict_of_exn exn with
   | Some j -> j
-  | None -> format ~valid:false ~where:"unknown" ~loc:null_loc 
+  | None -> format ~valid:false ~where:"unknown" ~loc:null_loc
               (Printexc.to_string exn)
 
-let strict_of_exns list = 
+let strict_of_exns list =
   List.sort (fun (l1,_) (l2,_) ->
       Location.(Misc.compare_pos l1.loc_start l2.loc_start))
     (Misc.list_filter_map strict_of_exn list)
 
-let of_exns list = 
+let of_exns list =
   List.sort (fun (l1,_) (l2,_) ->
       Location.(Misc.compare_pos l1.loc_start l2.loc_start))
     (List.map of_exn list)
