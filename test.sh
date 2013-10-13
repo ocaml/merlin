@@ -1,9 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if test -n "$1" ; then
     out=`mktemp`
     ./ocamlmerlin.native < ./tests/$1.in  > $out
-    diff ./tests/$1.out $out
+    # Use more appropriate jsondiff if available
+    if which jsondiff >& /dev/null; then
+      DIFF="jsondiff -color"
+    else
+      DIFF="diff -u"
+    fi
+    $DIFF ./tests/$1.out $out
     rm $out
 else
     for file in tests/*.in ; do

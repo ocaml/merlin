@@ -1,5 +1,5 @@
-["return",false]
-["return",true]
+["return",null]
+["return",{"line":3,"col":9}]
 ["return",{"line":3,"col":9}]
 ["return",{"line":2,"col":9}]
 ["return",{"line":1,"col":9}]

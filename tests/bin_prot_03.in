@@ -1,4 +1,4 @@
 ["find", "use", "bin_prot"]
-["tell", "struct", "module Test_binprot = struct type 'a t = { x : int ; y : 'a } with bin_io end"]
-["tell", "struct", null]
+["tell", "source", "module Test_binprot = struct type 'a t = { x : int ; y : 'a } with bin_io end"]
+["tell", "end"]
 ["dump", "env"]

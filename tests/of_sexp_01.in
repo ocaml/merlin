@@ -1,5 +1,5 @@
 ["find", "use", "sexplib"]
-["tell", "struct", "type t = int with of_sexp\n"]
-["tell", "end", null]
+["tell", "source", "type t = int with of_sexp\n"]
+["tell", "end"]
 ["errors"]
 ["dump", "env"]

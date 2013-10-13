@@ -1,3 +1,3 @@
-["tell","struct","module M = struct\n  let uniq = 42\nend\nopen M\nlet _ = (uniq\n"]
-["tell","end",null]
+["tell","source","module M = struct\n  let uniq = 42\nend\nopen M\nlet _ = (uniq\n"]
+["tell","end"]
 ["type","enclosing",{"expr":"uniq","offset":1},{"line":5,"col":11}]

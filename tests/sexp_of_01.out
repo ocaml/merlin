@@ -1,5 +1,5 @@
 ["return",true]
-["return",false]
-["return",true]
+["return",null]
+["return",{"line":2,"col":0}]
 ["return",[]]
 ["return",[["Line 1, characters 5-13","type t = int"],["Line 1, characters 18-25","val sexp_of_t : t -> Sexplib.Sexp.t"]]]

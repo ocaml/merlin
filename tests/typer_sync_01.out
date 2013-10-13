@@ -1,6 +1,6 @@
 ["return",{"line":1,"col":0}]
-["return",false]
-["return",true]
+["return",null]
+["return",{"line":19,"col":11}]
 ["return",{"line":19,"col":11}]
 ["return",true]
 ["return",{"line":19,"col":11}]

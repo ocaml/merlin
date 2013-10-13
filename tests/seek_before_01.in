@@ -1,5 +1,5 @@
-["tell","struct","let a = 4\nlet b = 6\nlet c = 7"] 
-["tell","end",null]
+["tell","source","let a = 4\nlet b = 6\nlet c = 7"] 
+["tell","end"]
 ["seek","position"]
 ["seek","before",{"line":3,"col":9}]
 ["seek","before",{"line":2,"col":9}]
