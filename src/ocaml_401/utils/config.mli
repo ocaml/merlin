@@ -10,7 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: config.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id$ *)
+open Misc
 
 (* System configuration *)
 
@@ -20,7 +21,7 @@ val version: string
 val standard_library: string
         (* The directory containing the standard libraries *)
 
-val load_path: string list ref
+val load_path: Path_list.t ref
         (* Directories in the search path for .cmi and .cmo files *)
 
 val interface_suffix: string ref

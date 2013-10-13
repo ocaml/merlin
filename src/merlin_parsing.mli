@@ -1,10 +1,10 @@
-open Misc
+open Std
 exception Warning of Location.t * string
 
 val warnings: exn list ref option fluid
 val raise_warning: exn -> unit
 val prerr_warning: Location.t -> Warnings.t -> unit
-val catch_warnings: (unit -> 'a) -> exn list * (exn, 'a) sum
+val catch_warnings: (unit -> 'a) -> exn list * (exn, 'a) Either.t
 
 val location_union : Location.t -> Location.t -> Location.t
 val compare_pos: Lexing.position -> Location.t -> int

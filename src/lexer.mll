@@ -16,6 +16,7 @@
 
 {
 open Lexing
+open Std
 open Misc
 open Chunk_parser
 

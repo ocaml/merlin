@@ -10,7 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: misc.mli 12511 2012-05-30 13:29:48Z lefessan $ *)
+(* $Id$ *)
+open Std
 
 (* Miscellaneous useful types and functions *)
 
@@ -18,13 +19,6 @@ val fatal_error: string -> 'a
 exception Fatal_error
 
 val try_finally : (unit -> 'a) -> (unit -> unit) -> 'a;;
-
-        (* Lazy lists *)
-type 'a lazy_list =
-  | LNil
-  | LCons of 'a * 'a lazy_list lazy_t
-val lazy_list_map : 'a lazy_list -> ('a -> 'b) -> 'b lazy_list
-val lazy_list_strictify : 'a lazy_list -> 'a list
 
 val map_end: ('a -> 'b) -> 'a list -> 'b list -> 'b list
         (* [map_end f l t] is [map f l @ t], just more efficient. *)
@@ -55,7 +49,7 @@ module Path_list : sig
   val of_list : t list -> t
   val of_string_list_ref : string list ref -> t
 
-  val to_list : t -> string lazy_list
+  val to_list : t -> string List.Lazy.t
   val to_strict_list : t -> string list
 end
 
@@ -147,24 +141,6 @@ val snd4: 'a * 'b * 'c * 'd -> 'b
 val thd4: 'a * 'b * 'c * 'd -> 'c
 val fth4: 'a * 'b * 'c * 'd -> 'd
 
-        (* [ppf_to_string ()] gives a fresh formatter and a function to easily
-         * gets its content as a string *)
-val ppf_to_string : ?width:int -> unit -> Format.formatter * (unit -> string)
-
-        (* [lex_strings s f] makes a lexing buffer from the string [s]
-         * (like a Lexer.from_string) and call [f] to refill the buffer *)
-val lex_strings : ?position:Lexing.position -> string -> (unit -> string) -> Lexing.lexbuf
-
-val lex_move : Lexing.lexbuf -> Lexing.position -> unit
-
-        (* [length_lessthan n l] returns
-         *   Some (List.length l) if List.length l <= n
-         *   None otherwise *)
-val length_lessthan : int -> 'a list -> int option
-
-        (* [has_prefix p s] returns true iff p is a prefix of s *)
-val has_prefix : string -> string -> bool
-
         (* [modules_in_path ~ext path] lists ocaml modules corresponding to
          * filenames with extension [ext] in given [path]es.
          * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
@@ -172,60 +148,4 @@ val has_prefix : string -> string -> bool
          * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
 val modules_in_path : ext:string -> string list -> string list
 
-        (* Remove duplicates from list *)
-val list_filter_dup : 'a list -> 'a list
-
-        (* Map and filter at the same time *)
-val list_filter_map : ('a -> 'b option) -> 'a list -> 'b list
-
-        (* Concat and map at the same time *)
-val list_concat_map : ('a -> 'b list) -> 'a list -> 'b list
-
-        (* Drop items from the beginning of the list until a predicate is no
-         * longer satisfied *)
-val list_drop_while : ('a -> bool) -> 'a list -> 'a list
-
-        (* Usual either/sum type *)
-type ('a,'b) sum = Inl of 'a | Inr of 'b
-type 'a or_exn = (exn, 'a) sum 
-
-val sum : ('a -> 'c) -> ('b -> 'c) -> ('a,'b) sum -> 'c
-val sum_join : ('a,('a,'c) sum) sum -> ('a,'c) sum
-val try_sum : (unit -> 'a) -> (exn,'a) sum
-
-        (* Simple list zipper with a position *)
-module Zipper : sig
-  type 'a t = private Zipper of 'a list * int * 'a list
-  val shift : int -> 'a t -> 'a t
-  val of_list : 'a list -> 'a t
-  val insert : 'a -> 'a t -> 'a t
-  val seek : int -> 'a t -> 'a t
-  val change_tail : 'a list -> 'a t -> 'a t
-end
-type 'a zipper = 'a Zipper.t = private Zipper of 'a list * int * 'a list
-
-        (* Join for catch pattern (writer and error monad) *)
-val catch_join : 'a list * ('a, 'a list * ('a, 'b) sum) sum -> 'a list * ('a, 'b) sum
-
-        (* Manipulating Lexing.position *)
-val make_pos : int * int -> Lexing.position
-val split_pos : Lexing.position -> int * int
-val compare_pos : Lexing.position -> Lexing.position -> int
-
-        (* Drop characters from beginning of string *)
-val string_drop : int -> string -> string
-
-        (* Dynamic binding pattern *)
-type 'a fluid
-val fluid : 'a -> 'a fluid
-val fluid'let : 'a fluid -> 'a -> (unit -> 'b) -> 'b 
-val (~!) : 'a fluid -> 'a
-
 val (~:) : 'a -> 'a Lazy.t
-
-module Sync : sig
-  type 'a t
-  val none : unit -> 'a t
-  val make : 'a -> 'a t
-  val same : 'a -> 'a t -> bool
-end

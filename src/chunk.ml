@@ -26,6 +26,7 @@
 
 )* }}} *)
 
+open Std
 open Misc
 
 let eof_lexer _ = Chunk_parser.EOF
@@ -60,13 +61,13 @@ end
 let protect_parser f =
   let local_modules = ref [] in
   let exns, result =
-    Misc.fluid'let 
+    Fluid.let'
       Outline_utils.local_modules (Some local_modules)
       (fun () -> Merlin_parsing.catch_warnings f)
   in
   let exns = match result with
-    | Inl exn -> exn :: exns
-    | Inr _ -> exns
+    | Either.L exn -> exn :: exns
+    | Either.R _ -> exns
   in
   exns, !local_modules, result
 
@@ -80,7 +81,7 @@ module Fold = struct
 
   let str_item step (exns,modules as state) =
     match Outline.Spine.value step with
-    | [] -> state, Inr []
+    | [] -> state, Either.R []
     | tokens ->
     let buf = Lexing.from_string "" in
     let exns', modules', result =

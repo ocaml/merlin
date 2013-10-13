@@ -1479,11 +1479,12 @@ let rec type_exp env sexp =
  *)
 
 and type_expect ?in_function env sexp ty_expected =
+  let open Std in
   if ~!Merlin_types.relax_typer
   then type_relax ?in_function env sexp ty_expected
   else try type_expect_ ?in_function env sexp ty_expected
        with (Typetexp.Error _ | Error _) ->
-         fluid'let Merlin_types.relax_typer true
+         Fluid.let' Merlin_types.relax_typer true
            (fun () -> type_relax ?in_function env sexp ty_expected)
 
 and type_relax ?in_function env sexp ty_expected =

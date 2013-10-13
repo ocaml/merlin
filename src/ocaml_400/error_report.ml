@@ -26,35 +26,37 @@
 
 )* }}} *)
 
+open Std
+
 type t = {valid: bool; loc: Location.t; text: string; where:string}
 
 let format ~valid ~where ?(loc=Location.none) text =
   loc, {valid; loc; text; where}
-  
+
 
 let strict_of_exn = function
   | Typecore.Error (loc, env, e) ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Typecore.report_error env ppf e;
     Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typetexp.Error (loc, e) ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Typetexp.report_error ppf e;
     Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typedecl.Error (loc, e) ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Typedecl.report_error ppf e;
     Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typemod.Error (loc, env, e) ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Typemod.report_error env ppf e;
     Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Typeclass.Error (loc, env, e) ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Typeclass.report_error env ppf e;
     Some (format ~valid:true ~where:"type" ~loc (to_string ()))
   | Env.Error e ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Env.report_error ppf e;
     Some (format ~valid:true ~where:"env" (to_string ()))
   | Syntaxerr.Escape_error pos ->
@@ -62,7 +64,7 @@ let strict_of_exn = function
             ~loc:{Location. loc_start = pos; loc_end = pos; loc_ghost = true}
             "Syntax error")
   | Syntaxerr.Error e ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Syntaxerr.report_error ppf e;
     let loc = match e with
       | Syntaxerr.Unclosed (loc,_,loc',_) ->
@@ -76,7 +78,7 @@ let strict_of_exn = function
     in
     Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
   | Lexer.Error (e, loc) ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Lexer.report_error ppf e;
     Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
   | Merlin_parsing.Warning (loc, msg) ->
@@ -100,12 +102,12 @@ let of_exn exn = match strict_of_exn exn with
 
 let strict_of_exns list =
   List.sort (fun (l1,_) (l2,_) ->
-      Location.(Misc.compare_pos l1.loc_start l2.loc_start))
-    (Misc.list_filter_map strict_of_exn list)
+      Location.(Lexing.compare_pos l1.loc_start l2.loc_start))
+    (List.filter_map ~f:strict_of_exn list)
 
 let of_exns list =
   List.sort (fun (l1,_) (l2,_) ->
-      Location.(Misc.compare_pos l1.loc_start l2.loc_start))
-    (List.map of_exn list)
+      Location.(Lexing.compare_pos l1.loc_start l2.loc_start))
+    (List.map ~f:of_exn list)
 
 let error_catcher = strict_of_exn

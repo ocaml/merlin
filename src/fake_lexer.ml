@@ -1,4 +1,4 @@
-open Misc
+open Std
 type position = Lexing.position
 
 type 'a token = 'a * position * position

@@ -26,6 +26,7 @@
 
 )* }}} *)
 
+open Std
 open Misc
 
 module Context = struct
@@ -53,11 +54,11 @@ let initial_env =
             Extensions_utils.register env
 
 let protect_typer f =
-  let errors, result = 
-    Misc.catch_join (Merlin_parsing.catch_warnings (fun () -> Merlin_types.catch_errors f))
+  let errors, result =
+    Either.join (Merlin_parsing.catch_warnings (fun () -> Merlin_types.catch_errors f))
   in
   errors,
-  Misc.sum raise (fun x -> x) result
+  Either.elim raise (fun x -> x) result
 
 module Fold = struct
   (* Initial state *)
@@ -69,29 +70,29 @@ module Fold = struct
 
   let str_item step (exns,env,trees' as state) =
     match Chunk.Spine.value step with
-    | Inl exn -> state, Inl exn
-    | Inr items ->
+    | Either.L exn -> state, Either.L exn
+    | Either.R items ->
       let exns', (env, exns, trees) =
         protect_typer
         begin fun () ->
-          List.fold_left
-          begin fun (env,exns,ts) d ->
+          List.fold_left items ~init:(env, exns, [])
+          ~f:begin fun (env,exns,ts) d ->
           try
             let t,_,env =
               Typemod.type_structure env [d.Location.txt] d.Location.loc
             in
             (env, exns, {d with Location.txt = t} :: ts)
           with exn -> (env, exn :: exns, ts)
-          end (env, exns, []) items
+          end
         end
       in
-      (exns' @ exns, env, trees @ trees'), Inr (List.rev trees)
+      (exns' @ exns, env, trees @ trees'), Either.R (List.rev trees)
 
   (* Fold structure shape *)
   let str_in_module step (exns,env,trees as state) =
     match Chunk.Spine.value step with
-    | Inl exn -> state, ()
-    | Inr (_, {Location. txt = pmod; _}) ->
+    | Either.L exn -> state, ()
+    | Either.R (_, {Location. txt = pmod; _}) ->
     match
       protect_typer
       begin fun () -> try

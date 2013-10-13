@@ -59,7 +59,8 @@ end = struct
   (* 1. Local path *)
   let local_path = ref []
   let set_local_path path =
-    local_path := [path]
+    local_path := [path];
+    State.reset_global_modules ()
 
   (* 2a. Dot merlin packages *)
   let dot_merlin_packages = ref []
@@ -67,8 +68,8 @@ end = struct
   let user_packages = ref []
   let load_packages pkgs =
     Extensions_utils.register_packages pkgs;
-    user_packages := 
-      list_filter_dup (Dot_merlin.packages_path pkgs @ !user_packages)
+    user_packages :=
+      List.filter_dup (Dot_merlin.packages_path pkgs @ !user_packages)
 
   (* 2c. Dot merlin path *)
   let dot_merlin_build = ref []
@@ -198,7 +199,7 @@ let track_verbosity =
   let cell =
     try Hashtbl.find h tag
     with Not_found ->
-      let cell = ref (Misc.Sync.none (),a_request) in
+      let cell = ref (Sync.none (),a_request) in
       Hashtbl.add h tag cell;
       cell
   in
@@ -220,7 +221,7 @@ let tell i o state request number_of_definitions source =
   Env.reset_missing_cmis ();
   let number_of_definitions = ref number_of_definitions in
   let eod = ref false and eot = ref false in
-  let lexbuf = Misc.lex_strings source ~position:(position state)
+  let lexbuf = Lexing.from_strings source ~position:(position state)
     begin fun () ->
       if !eot then ""
       else try
@@ -268,7 +269,7 @@ let tell i o state request number_of_definitions source =
     | (_ :: _) as tokens
       (* If length > 10000, we are probably just after a big structure.
        * In this case we don't want to reparse the whole chunk. *)
-      when length_lessthan 10000 tokens <> None ->
+      when List.length_lessthan 10000 tokens <> None ->
       let steps' = History.move (-1) steps in
       begin match onestep true tokens steps' with
       | tokens', None -> loop steps tokens'
@@ -292,17 +293,17 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Tell (`Source source) : a request) ->
     tell i o state request 0 source
   | (Tell (`Definitions defs) : a request) ->
-    tell i o state request defs "" 
+    tell i o state request defs ""
   | (Tell _ : a request) -> IO.invalid_arguments ()
   | (Type_expr (source, None) : a request) ->
     let env = Typer.env (History.focused state.steps).types in
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Type_utils.type_in_env env ppf source;
     state, to_string ()
 
   | (Type_expr (source, Some pos) : a request) ->
     let {Browse.env} = State.node_at state pos in
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Type_utils.type_in_env env ppf source;
     state, to_string ()
 
@@ -310,17 +311,17 @@ let dispatch (i,o : IO.io) (state : state) =
     let aux = function
       | {Browse. loc; env;
           context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t)} ->
-        let ppf, to_string = Misc.ppf_to_string () in
+        let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_scheme ppf t);
         Some (loc, to_string ())
       | {Browse. loc; env; context = Browse.TypeDecl (id,t)} ->
-        let ppf, to_string = Misc.ppf_to_string () in
+        let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_declaration id ppf t);
         Some (loc, to_string ())
       | {Browse. loc; env; context = Browse.Module (_,m)} ->
-        let ppf, to_string = Misc.ppf_to_string () in
+        let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> Printtyp.modtype ppf m);
         Some (loc, to_string ())
@@ -346,12 +347,12 @@ let dispatch (i,o : IO.io) (state : state) =
     let small_enclosings =
       let {Browse.env} = State.node_at state pos in
       let loc_start =
-        let l, c = Misc.split_pos pos in
-        Misc.make_pos (l, c - offset)
+        let l, c = Lexing.split_pos pos in
+        Lexing.make_pos (l, c - offset)
       in
       let shift loc int =
-        let l, c = Misc.split_pos loc in
-        Misc.make_pos (l, c + int)
+        let l, c = Lexing.split_pos loc in
+        Lexing.make_pos (l, c + int)
       in
       List.filter_map exprs ~f:(fun source ->
         try
@@ -361,7 +362,7 @@ let dispatch (i,o : IO.io) (state : state) =
             loc_ghost = false ;
           }
           in
-          let ppf, to_string = Misc.ppf_to_string () in
+          let ppf, to_string = Format.to_string () in
           Type_utils.type_in_env env ppf source;
           Some (loc, to_string ())
         with _ ->
@@ -500,7 +501,7 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Cd dir : a request) ->
     Sys.chdir dir;
-    State.reset_global_modules ();
+    Path_utils.set_local_path dir;
     state, ()
 
   | (Errors : a request) ->
@@ -509,10 +510,10 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Dump (`Env None) : a request) ->
     let sg = Browse_misc.signature_of_env (Typer.env step.types) in
     let aux item =
-      let ppf, to_string = Misc.ppf_to_string () in
+      let ppf, to_string = Format.to_string () in
       Printtyp.signature ppf [item];
       let content = to_string () in
-      let ppf, to_string = Misc.ppf_to_string () in
+      let ppf, to_string = Format.to_string () in
       match Browse_misc.signature_loc item with
         | Some loc ->
             Location.print_loc ppf loc;
@@ -526,10 +527,10 @@ let dispatch (i,o : IO.io) (state : state) =
     let {Browse.env} = State.node_at state pos in
     let sg = Browse_misc.signature_of_env env in
     let aux item =
-      let ppf, to_string = Misc.ppf_to_string () in
+      let ppf, to_string = Format.to_string () in
       Printtyp.signature ppf [item];
       let content = to_string () in
-      let ppf, to_string = Misc.ppf_to_string () in
+      let ppf, to_string = Format.to_string () in
       match Browse_misc.signature_loc item with
         | Some loc ->
             Location.print_loc ppf loc;
@@ -541,12 +542,12 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Dump `Sig : a request) ->
       let trees = Typer.trees step.types in
-      let sg = Misc.list_concat_map (fun {Location.txt} -> txt.Typedtree.str_type) trees in
+      let sg = List.concat_map ~f:(fun {Location.txt} -> txt.Typedtree.str_type) trees in
       let aux item =
-        let ppf, to_string = Misc.ppf_to_string () in
+        let ppf, to_string = Format.to_string () in
         Printtyp.signature ppf [item];
         let content = to_string () in
-        let ppf, to_string = Misc.ppf_to_string () in
+        let ppf, to_string = Format.to_string () in
         match Browse_misc.signature_loc item with
           | Some loc ->
               Location.print_loc ppf loc;
@@ -584,8 +585,8 @@ let dispatch (i,o : IO.io) (state : state) =
     state,
     let entry s =
       let {Location. loc_start; loc_end} = Outline.location s.outlines in
-      let l1,c1 = Misc.split_pos loc_start in
-      let l2,c2 = Misc.split_pos loc_end   in
+      let l1,c1 = Lexing.split_pos loc_start in
+      let l2,c2 = Lexing.split_pos loc_end   in
       let tokens = Outline.tokens s.outlines in
       let tokens = List.map (fun (tok,_,_) ->
           `String (Chunk_parser_utils.token_to_string tok)) tokens

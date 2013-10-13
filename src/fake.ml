@@ -547,7 +547,7 @@ module Fields = struct
     let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_record fields ->
-      Misc.list_concat_map (gen_field self) fields @ [make_fields_module ~self fields]
+      List.concat_map ~f:(gen_field self) fields @ [make_fields_module ~self fields]
     | _ -> []
 
 end
@@ -575,27 +575,27 @@ module TypeWith = struct
   type generator = string
 
   let generate_bindings ~kind ~ty = function
-    | "sexp" -> Misc.list_concat_map Sexp.bindings ty
-    | "sexp_of" -> List.map (fun ty -> Sexp.conv_of_ ty) ty
-    | "of_sexp" -> List.map (fun ty -> Sexp._of_conv ty) ty
+    | "sexp" -> List.concat_map ~f:Sexp.bindings ty
+    | "sexp_of" -> List.map ~f:Sexp.conv_of_ ty
+    | "of_sexp" -> List.map ~f:Sexp._of_conv ty
 
     | "bin_write" ->
       let open Binprot in
-      Misc.list_concat_map (fun ty ->
+      List.concat_map ~f:(fun ty ->
         [ Sizer.binding ty ; Write.binding ty ;
           Write_.binding ty ; Writer.binding ty ]
       ) ty
 
     | "bin_read" ->
       let open Binprot in
-      Misc.list_concat_map (fun ty ->
+      List.concat_map ~f:(fun ty ->
         [ Read.binding ty ; Read_.binding ty ;
           Read__.binding ty ; Reader.binding ty ]
       ) ty
 
     | "bin_io" ->
       let open Binprot in
-      Misc.list_concat_map (fun ty ->
+      List.concat_map ~f:(fun ty ->
         [
           Sizer.binding ty ;
           Write.binding ty ;
@@ -610,23 +610,23 @@ module TypeWith = struct
       ) ty
 
     | "fields" ->
-      Misc.list_concat_map Fields.top_lvl ty
+      List.concat_map ~f:Fields.top_lvl ty
 
     | "compare" ->
-      Misc.list_concat_map (Compare.bindings ~kind) ty
+      List.concat_map ~f:(Compare.bindings ~kind) ty
 
     | ext when cow_supported_extension ext ->
       let module Cow = Make_cow(struct let name = ext end) in
-      Misc.list_concat_map Cow.bindings ty
+      List.concat_map ~f:Cow.bindings ty
 
     | _unsupported_ext -> []
 
   let generate_definitions ~ty ?ghost_loc ext =
-    let bindings = Misc.list_concat_map (generate_bindings ~kind:`Def ~ty) ext in
+    let bindings = List.concat_map ~f:(generate_bindings ~kind:`Def ~ty) ext in
     List.map (str_of_top_lvl ?ghost_loc) bindings
 
   let generate_sigs ~ty ?ghost_loc ext =
-    let bindings = Misc.list_concat_map (generate_bindings ~kind:`Sig ~ty) ext in
+    let bindings = List.concat_map ~f:(generate_bindings ~kind:`Sig ~ty) ext in
     List.map (sig_of_top_lvl ?ghost_loc) bindings
 end
 

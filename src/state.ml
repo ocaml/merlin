@@ -27,6 +27,8 @@
 
 )* }}} *)
 
+open Std
+
 type step = {
   outlines : Outline.t;
   chunks   : Chunk.t;
@@ -120,8 +122,8 @@ let quick_refresh_modules state =
   else state, false
 
 let browse step =
-  Misc.list_concat_map 
-    (fun {Location.txt} -> Browse.structure txt)
+  List.concat_map
+    ~f:(fun {Location.txt} -> Browse.structure txt)
     (Typer.trees step.types)
 
 (** Heuristic to find suitable environment to complete / type at given position.
@@ -158,8 +160,8 @@ let node_at state pos_cursor =
     in
     match Outline.location outlines with
     | { Location.loc_start } when
-        Misc.(compare_pos loc_start pos_node > 0 &&
-              compare_pos pos_cursor loc_start > 0) ->
+        Lexing.(compare_pos loc_start pos_node > 0 &&
+                  compare_pos pos_cursor loc_start > 0) ->
       raise Not_found
     | _ -> node
   with Not_found ->
@@ -217,8 +219,8 @@ let rec mod_smallerthan n m =
     begin match List.length_lessthan n s with
     | None -> None
     | Some n' ->
-      List.fold_left
-      begin fun acc item ->
+      List.fold_left s ~init:(Some 0)
+      ~f:begin fun acc item ->
         match acc, item with
         | None, _ -> None
         | Some n', _ when n' > n -> None
@@ -228,7 +230,7 @@ let rec mod_smallerthan n m =
            | Some n2 -> Some (n1 + n2)
            | None -> None)
         | Some n', _ -> Some (succ n')
-      end (Some 0) s
+      end
     end
   | Mty_functor (_,m1,m2) ->
     begin
@@ -296,7 +298,7 @@ let node_complete node prefix =
       | Some path -> Ident.create (Path.last path)
       | None -> Extensions_utils.ident
     in
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     let kind =
       match ty with
       | `Value v ->
@@ -344,7 +346,7 @@ let node_complete node prefix =
     else (Hashtbl.add seen n (); true)
   in
   let find ?path prefix compl =
-    let valid tag n = Misc.has_prefix prefix n && uniq (tag,n) in
+    let valid tag n = String.is_prefixed ~by:prefix n && uniq (tag,n) in
     (* Hack to prevent extensions namespace to leak *)
     let valid ?(uident=false) tag name =
       (if uident
@@ -421,10 +423,10 @@ let node_complete node prefix =
   begin fun () ->
   match node.Browse.context with
   | Browse.MethodCall (t,_) ->
-    let has_prefix (name,_) = Misc.has_prefix prefix name in
+    let has_prefix (name,_) = String.is_prefixed ~by:prefix name in
     let methods = List.filter has_prefix (methods_of_type env t) in
     List.map (fun (name,ty) ->
-      let ppf, to_string = Misc.ppf_to_string () in
+      let ppf, to_string = Format.to_string () in
       Printtyp.type_scheme ppf ty;
       {Protocol.
         name;
@@ -440,10 +442,10 @@ let node_complete node prefix =
       | Longident.Lident prefix ->
         (* Add modules on path but not loaded *)
         let compl = find prefix [] in
-        begin match Misc.length_lessthan 30 compl with
-        | Some _ -> List.fold_left
-          begin fun compl modname ->
-          let default = { Protocol. 
+        begin match List.length_lessthan 30 compl with
+        | Some _ -> List.fold_left (Lazy.force !global_modules) ~init:compl
+          ~f:begin fun compl modname ->
+          let default = { Protocol.
             name = modname;
             kind = `Module;
             desc = "";
@@ -454,10 +456,10 @@ let node_complete node prefix =
               (try let path, md = Env.lookup_module (Longident.Lident modname) env in
                 fmt ~exact:true modname ~path (`Mod md) :: compl
               with Not_found -> default :: compl)
-          | modname when Misc.has_prefix prefix modname && uniq (`Mod,modname) ->
+          | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
             default :: compl
           | _ -> compl
-          end compl (Lazy.force !global_modules)
+          end
         | None -> compl
         end
       | _ -> find prefix []

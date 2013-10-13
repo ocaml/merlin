@@ -26,9 +26,8 @@
 
 )* }}} *)
 
-let (>>=) a f = match a with
-  | Some a' -> f a'
-  | None -> None
+open Std
+open Option.Infix
 
 let union_loc_opt a b = match a,b with
   | None, None -> None
@@ -176,7 +175,7 @@ let rec dump_ts ts =
     ]
   in
   let cmp_start { Browse.loc = l1 } { Browse.loc = l2 } =
-    Misc.compare_pos l1.Location.loc_start l2.Location.loc_end
+    Lexing.compare_pos l1.Location.loc_start l2.Location.loc_end
   in
   let ts = List.sort cmp_start ts in
   `List (List.map dump_t ts)

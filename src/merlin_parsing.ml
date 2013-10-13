@@ -1,4 +1,4 @@
-open Misc
+open Std
 exception Warning of Location.t * string
 
 let warnings : exn list ref option fluid = fluid None
@@ -12,7 +12,7 @@ let prerr_warning loc w =
   match ~!warnings with
   | None -> Location.print_warning loc Format.err_formatter w
   | Some l ->
-    let ppf, to_string = Misc.ppf_to_string () in
+    let ppf, to_string = Format.to_string () in
     Location.print_warning loc ppf w;
     match to_string () with
       | "" -> ()
@@ -23,22 +23,22 @@ let () = Location.prerr_warning_ref := prerr_warning
 let catch_warnings f =
   let caught = ref [] in
   let result =
-    try_sum (fun () -> fluid'let warnings (Some caught) f)
+    Either.try' (fun () -> Fluid.let' warnings (Some caught) f)
   in
   !caught, result
 
-let location_union a b = 
+let location_union a b =
   let open Location in
   match a,b with
   | a, { loc_ghost = true } -> a
   | { loc_ghost = true }, b -> b
   | a,b ->
     let loc_start =
-      if Misc.split_pos a.loc_start <= Misc.split_pos b.loc_start
+      if Lexing.split_pos a.loc_start <= Lexing.split_pos b.loc_start
       then a.loc_start
       else b.loc_start
     and loc_end =
-      if Misc.split_pos a.loc_end <= Misc.split_pos b.loc_end
+      if Lexing.split_pos a.loc_end <= Lexing.split_pos b.loc_end
       then b.loc_end
       else a.loc_end
     in
@@ -73,9 +73,9 @@ let unpack_fake_start t =
 
 let compare_pos pos loc =
   let open Location in
-  let pos = Misc.split_pos pos in
-  if pos < Misc.split_pos loc.loc_start
+  let pos = Lexing.split_pos pos in
+  if pos < Lexing.split_pos loc.loc_start
   then -1
-  else if pos > Misc.split_pos loc.loc_end
+  else if pos > Lexing.split_pos loc.loc_end
   then 1
   else 0

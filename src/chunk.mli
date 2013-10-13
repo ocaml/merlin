@@ -26,7 +26,7 @@
 
 )* }}} *)
 
-open Misc
+open Std
 
 type 'a binding = string Location.loc * 'a Location.loc
 

@@ -82,7 +82,7 @@ let mkpatvar startpos endpos name =
 
 let remember_module_loc name loc =
   Logger.(log Section.(`locate)) ~prefix:"Chunk_parser |" name ;
-  match Misc.(~!) Outline_utils.local_modules with
+  match Std.(~!) Outline_utils.local_modules with
   | None -> ()
   | Some lst -> lst := {Location. txt = name; loc} :: !lst
 

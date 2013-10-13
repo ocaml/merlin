@@ -1,3 +1,5 @@
+open Std
+
 module Sexp = struct
   type t =
     | Cons   of t * t
@@ -214,7 +216,7 @@ let rec json_of_sexp =
 
 let sexp_make ~input ~output =
   let input' = Stream.from (fun _ ->
-      Misc.may_map json_of_sexp (Sexp.of_channel input))
+      Option.map json_of_sexp (Sexp.of_channel input))
   in
   let buf = Buffer.create 8192 in
   let output json =

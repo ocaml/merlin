@@ -12,6 +12,8 @@
 
 (* $Id: misc.ml 12800 2012-07-30 18:59:07Z doligez $ *)
 
+open Std
+
 (* Errors *)
 
 exception Fatal_error
@@ -27,45 +29,19 @@ let try_finally work cleanup =
   result
 ;;
 
-        (* Lazy lists *)
-type 'a lazy_list =
-  | LNil
-  | LCons of 'a * 'a lazy_list lazy_t
-
-let rec lazy_list_map l f = match l with
-  | LNil -> LNil
-  | LCons (a,l) ->
-    LCons (f a, lazy (lazy_list_map (Lazy.force l) f))
-
-let rec lazy_list_strictify = function
- | LNil -> []
- | LCons (hd, lazy tl) ->
-   hd :: lazy_list_strictify tl
-  
 (* List functions *)
 
-let rec map_end f l1 l2 =
-  match l1 with
-    [] -> l2
-  | hd::tl -> f hd :: map_end f tl l2
+let map_end f l1 l2 = List.map_end ~f l1 l2
 
 let rec map_left_right f = function
     [] -> []
   | hd::tl -> let res = f hd in res :: map_left_right f tl
 
-let rec for_all2 pred l1 l2 =
-  match (l1, l2) with
-    ([], []) -> true
-  | (hd1::tl1, hd2::tl2) -> pred hd1 hd2 && for_all2 pred tl1 tl2
-  | (_, _) -> false
+let for_all2 pred l1 l2 = List.for_all2 ~f:pred l1 l2
 
-let rec replicate_list elem n =
-  if n <= 0 then [] else elem :: replicate_list elem (n-1)
+let replicate_list = List.replicate
 
-let rec list_remove x = function
-    [] -> []
-  | hd :: tl ->
-      if hd = x then tl else hd :: list_remove x tl
+let list_remove = List.remove
 
 let rec split_last = function
     [] -> assert false
@@ -74,21 +50,12 @@ let rec split_last = function
       let (lst, last) = split_last tl in
       (hd :: lst, last)
 
-let rec samelist pred l1 l2 =
-  match (l1, l2) with
-  | ([], []) -> true
-  | (hd1 :: tl1, hd2 :: tl2) -> pred hd1 hd2 && samelist pred tl1 tl2
-  | (_, _) -> false
+let samelist pred l1 l2 = List.same   ~f:pred l1 l2
 
 (* Options *)
 
-let may f = function
-    Some x -> f x
-  | None -> ()
-
-let may_map f = function
-    Some x -> Some (f x)
-  | None -> None
+let may f x = Option.iter ~f x
+let may_map f x = Option.map ~f x
 
 (* File functions *)
 
@@ -117,10 +84,10 @@ let canonicalize_filename ?cwd path =
       path
     | dir -> dir :: path
   in
-  let parts = List.rev (List.fold_left goup [] parts) in
+  let parts = List.rev (List.fold_left ~f:goup ~init:[] parts) in
   let filename_concats = function
     | [] -> ""
-    | root :: subs -> List.fold_left Filename.concat root subs
+    | root :: subs -> List.fold_left ~f:Filename.concat ~init:root subs
   in
   filename_concats parts
 
@@ -138,7 +105,7 @@ module Path_list = struct
   let of_string_list_ref l = StringList l
 
   let rec to_list k = function
-    | String s -> LCons (s, k)
+    | String s -> List.Lazy.Cons (s, k)
     | List l -> from_list k l
     | StringList l -> from_string_list k !l
     | Fun f -> to_list k (f ())
@@ -148,12 +115,12 @@ module Path_list = struct
     | []     -> Lazy.force k
 
   and from_string_list k = function
-    | s :: l -> LCons (s, lazy (from_string_list k l))
+    | s :: l -> List.Lazy.Cons (s, lazy (from_string_list k l))
     | [] -> Lazy.force k
 
-  let to_list t = to_list (lazy LNil) t
+  let to_list t = to_list (lazy List.Lazy.Nil) t
 
-  let to_strict_list t = lazy_list_strictify (to_list t)
+  let to_strict_list t = List.Lazy.to_strict (to_list t)
 end
 
 let find_in_path path name =
@@ -163,8 +130,8 @@ let find_in_path path name =
       if Sys.file_exists name then name else raise Not_found
     else begin
       let rec try_dir = function
-        | LNil -> raise Not_found
-        | LCons (dir, rem) ->
+        | List.Lazy.Nil -> raise Not_found
+        | List.Lazy.Cons (dir, rem) ->
           let fullname = Filename.concat dir name in
           if Sys.file_exists fullname
           then fullname
@@ -178,8 +145,8 @@ let find_in_path_uncap path name =
   begin
     let uname = String.uncapitalize name in
     let rec try_dir = function
-      | LNil -> raise Not_found
-      | LCons (dir, rem) ->
+      | List.Lazy.Nil -> raise Not_found
+      | List.Lazy.Cons (dir, rem) ->
           let fullname = Filename.concat dir name
           and ufullname = Filename.concat dir uname in
           if Sys.file_exists ufullname then ufullname
@@ -319,78 +286,6 @@ let snd4 (_,x,_,_) = x
 let thd4 (_,_,x,_) = x
 let fth4 (_,_,_,x) = x
 
-        (* [ppf_to_string ()] gives a fresh formatter and a function to easily
-         * gets its content as a string *)
-let ppf_to_string ?(width=0) () =
-  let b = Buffer.create 32 in
-  let ppf = Format.formatter_of_buffer b in
-  Format.pp_set_margin ppf width;
-  ppf,
-  (fun () ->
-    Format.pp_print_flush ppf ();
-    Buffer.contents b)
-
-        (* [lex_strings s f] makes a lexing buffer from the string [s]
-         * (like a Lexer.from_string) and call [f] to refill the buffer *)
-let lex_strings source refill =
-  let pos = ref 0 in
-  let len = ref (String.length source) in
-  let source = ref source in
-  Lexing.from_function
-    begin fun buf size ->
-      let count = min (!len - !pos) size in
-      let count =
-        if count <= 0 then
-        begin
-          source := refill ();
-          len := String.length !source;
-          pos := 0;
-          min !len size
-        end
-        else count
-      in
-      if count <= 0 then 0
-      else begin
-        String.blit !source !pos buf 0 count;
-        pos := !pos + count;
-        count
-      end
-    end
-
-let lex_move buf p =
-  let open Lexing in
-  buf.lex_abs_pos <- (p.pos_cnum - buf.lex_curr_pos);
-  buf.lex_curr_p <- p
-
-let lex_strings ?position source refill =
-  let buf = lex_strings source refill in
-  may (lex_move buf) position;
-  buf
-
-        (* [length_lessthan n l] returns
-         *   Some (List.length l) if List.length l <= n
-         *   None otherwise *)
-let length_lessthan n l =
-  let rec aux i = function
-    | _ :: xs when i < n -> aux (succ i) xs
-    | [] -> Some i
-    | _ -> None
-  in
-  aux 0 l
-
-       (* [has_prefix p s] returns true iff p is a prefix of s *)
-let has_prefix p =
-  let l = String.length p in fun s ->
-  let l' = String.length s in
-  (l' >= l) &&
-  (try
-     for i = 0 to pred l do
-       if s.[i] <> p.[i] then
-         raise Not_found
-     done;
-     true
-   with Not_found -> false)
-
         (* [modules_in_path ~ext path] lists ocaml modules corresponding to
          * filenames with extension [ext] in given [path]es.
          * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
@@ -398,8 +293,8 @@ let has_prefix p =
          * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
 let modules_in_path ~ext path =
   let seen = Hashtbl.create 7 in
-  List.fold_left
-  begin fun results dir ->
+  List.fold_left ~init:[] path
+  ~f:begin fun results dir ->
     try
       Array.fold_left
       begin fun results file ->
@@ -412,118 +307,6 @@ let modules_in_path ~ext path =
         else results
       end results (Sys.readdir dir)
     with Sys_error _ -> results
-  end [] path
-
-        (* Remove duplicates from list *)
-let list_filter_dup lst =
-  let tbl = Hashtbl.create 17 in
-  List.rev (List.fold_left (fun a b -> if Hashtbl.mem tbl b then a else (Hashtbl.add tbl b (); b :: a)) [] lst)
-
-        (* Map and filter at the same time *)
-let rec list_filter_map f = function
-  | [] -> []
-  | x :: xs -> match f x with
-      | Some x' -> x' :: list_filter_map f xs
-      | None -> list_filter_map f xs
-
-        (* Concat and map at the same time *)
-let list_concat_map f l = List.flatten (List.map f l)
-
-        (* Drop items from the beginning of the list until a predicate is no
-         * longer satisfied *)
-let rec list_drop_while p = function
-  | x :: xs when p x -> list_drop_while p xs
-  | xs -> xs
-
-        (* Usual either/sum type *)
-type ('a,'b) sum = Inl of 'a | Inr of 'b
-type 'a or_exn = (exn, 'a) sum 
-
-let sum f g = function
-  | Inl a -> f a
-  | Inr b -> g b
-
-let sum_join = function
-  | Inl a | Inr (Inl a) -> Inl a
-  | Inr c -> c
-
-let try_sum f =
-  try Inr (f ())
-  with exn -> Inl exn
-
-let catch_join (exns, r) = match r with
-  | Inl e -> (exns, Inl e)
-  | Inr (exns', r') -> (exns @ exns'), r'
-
-        (* Simple list zipper *)
-module Zipper = struct
-  type 'a t = Zipper of 'a list * int * 'a list 
-
-  let rec shift n = function
-    | Zipper (prev, pos, a :: next) when n > 0 -> 
-      shift (pred n) (Zipper (a :: prev, succ pos, next))
-    | Zipper (a :: prev, pos, next) when n < 0 -> 
-      shift (succ n) (Zipper (prev, pred pos, a :: next))
-    | zipper -> zipper
-  
-  let of_list l = Zipper ([], 0, l)
-  let insert a (Zipper (prev, pos, next)) =
-    Zipper (a :: prev, succ pos, next)
-  
-  let seek n (Zipper (_,pos,_) as z) =
-    shift (n - pos) z
-  
-  let change_tail next (Zipper (prev,pos,_next)) =
-    Zipper (prev,pos,next)
-end
-
-type 'a zipper = 'a Zipper.t = Zipper of 'a list * int * 'a list 
-
-        (* Manipulating Lexing.position *)
-
-let make_pos (pos_lnum, pos_cnum) =
-  Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
-
-let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
-
-let compare_pos p1 p2 =
-  compare (split_pos p1) (split_pos p2)
-
-        (* Drop characters from beginning of string *)
-let string_drop n s =
-  String.sub s n (String.length s - n)
-
-        (* Dynamic binding pattern *)
-type 'a fluid = 'a ref
-let fluid x = ref x
-let fluid'let d v f =
-  let p = !d in
-  d := v;
-  try let r = f () in
-      d := p; r
-  with exn ->
-      d := p; raise exn
-
-let (~!) a = !a
+  end
 
 let (~:) = Lazy.from_val
-
-module Sync : sig
-  type 'a t
-  val none : unit -> 'a t
-  val make : 'a -> 'a t
-  val same : 'a -> 'a t -> bool
-end = struct
-  type 'a t = 'a Weak.t
-  let make x = 
-    let t = Weak.create 1 in
-    Weak.set t 0 (Some x);
-    t
-  let same x t =
-    match Weak.get t 0 with
-    | None -> false
-    | Some x' -> x == x'
-
-  let none : exn t = make Not_found
-  let none () : 'a t = Obj.magic none
-end

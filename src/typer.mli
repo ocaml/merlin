@@ -28,7 +28,7 @@
 
 (* Maintains a typing environment synchronized with a chunk history *)
 
-open Misc
+open Std
 
 module Context : sig
   type state = exn list * Env.t * Typedtree.structure Location.loc list

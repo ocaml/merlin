@@ -27,6 +27,7 @@ type token = Chunk_parser.token Fake_lexer.token
 
 )* }}} *)
 
+open Std
 open Misc
 
 type token = Chunk_parser.token Fake_lexer.token
@@ -65,7 +66,7 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
     begin
       let rec aux = function
         | Zipper ((t,_,p') :: _,_,_) as tokens
-          when Misc.compare_pos p p' < 0 ->
+          when Lexing.compare_pos p p' < 0 ->
           aux (Zipper.shift (-1) tokens)
         | tokens -> tokens
       in
@@ -121,18 +122,18 @@ let parse_str ~exns ~location ~lexbuf zipper t =
           ~lexer:Lexer.token
           lexbuf)
   with
-  | exns', Inr (zipper, _, ([] | [Chunk_parser.EOF,_,_])) -> 
+  | exns', Either.R (zipper, _, ([] | [Chunk_parser.EOF,_,_])) ->
     zipper, None
-  | exns', Inr (zipper, Outline_utils.Unterminated, tokens) -> 
+  | exns', Either.R (zipper, Outline_utils.Unterminated, tokens) ->
     zipper, None
-  | exns', Inr (zipper, (Outline_utils.Definition | 
-                         Outline_utils.Syntax_error _), tokens) -> 
+  | exns', Either.R (zipper, (Outline_utils.Definition |
+                         Outline_utils.Syntax_error _), tokens) ->
     zipper,
     Some Spine.(Str_item (str_step t (new_state exns' tokens) tokens))
-  | exns', Inr (zipper, Outline_utils.Enter_module, tokens) ->
+  | exns', Either.R (zipper, Outline_utils.Enter_module, tokens) ->
     zipper,
     Some Spine.(Str_in_module (str_step t (new_state exns' tokens) tokens))
-  | exns', Inr (zipper, Outline_utils.Leave_module, tokens) ->
+  | exns', Either.R (zipper, Outline_utils.Leave_module, tokens) ->
     let rec aux acc = function
       | Spine.Str_root step ->
         let exn = Malformed_module (tokens, location tokens) in
@@ -149,9 +150,9 @@ let parse_str ~exns ~location ~lexbuf zipper t =
     in
     zipper,
     Some (aux tokens t)
-  | _, Inl (Failure _ as exn) ->
+  | _, Either.L (Failure _ as exn) ->
     raise exn
-  | exns', Inl exn ->
+  | exns', Either.L exn ->
     zipper,
     Some Spine.(Str_item (str_step t (exn :: exns, location [], []) []))
 
@@ -162,27 +163,27 @@ let tokens t = thd3 (Spine.get_state t)
 let parse tokens t lexbuf =
   let exns = exns t in
   Outline_utils.reset ();
-  let location = 
+  let location =
     let loc_start = lexbuf.Lexing.lex_curr_p in function
     | [] -> let loc_end = lexbuf.Lexing.lex_start_p in
       {Location. loc_start; loc_end; loc_ghost = false}
     | (_,loc_start,loc_end) :: toks ->
-      let loc_end = List.fold_left 
-        (fun _ (_,_,loc_end) -> loc_end) loc_end toks
+      let loc_end = List.fold_left toks ~init:loc_end
+        ~f:(fun _ (_,_,loc_end) -> loc_end)
       in
       {Location. loc_start; loc_end; loc_ghost = false}
   in
   match t with
   | Spine.Sig _ -> failwith "TODO"
-  | Spine.Str t_str -> 
-    let Zipper (_,_,tokens), t_str' = 
-      parse_str ~exns ~lexbuf ~location 
+  | Spine.Str t_str ->
+    let Zipper (_,_,tokens), t_str' =
+      parse_str ~exns ~lexbuf ~location
         (Zipper.of_list tokens) t_str
     in
-    tokens, may_map (fun x -> Spine.Str x) t_str'
+    tokens, Option.map (fun x -> Spine.Str x) t_str'
 
 let init_loc pos_fname =
-  let pos = {(Misc.make_pos (1,0)) with Lexing.pos_fname} in
+  let pos = {(Lexing.make_pos (1,0)) with Lexing.pos_fname} in
   {Location. loc_start = pos; loc_end = pos; loc_ghost = false}
 
 let initial_sig fname =

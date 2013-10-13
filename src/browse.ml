@@ -280,7 +280,7 @@ let local_near pos nodes =
     match cmp l1, cmp l2 with
     | 0, 0 ->
       (* Cursor is inside locations: select larger one... not sure why :-) *)
-      if Location.(Misc.compare_pos l1.loc_end l2.loc_end) < 0
+      if Location.(Lexing.compare_pos l1.loc_end l2.loc_end) < 0
       then t2
       else t1
       (* Cursor inside one location, prefer it *)
@@ -288,7 +288,7 @@ let local_near pos nodes =
     | _, 0 -> t2
     | _, _ ->
       (* Cursor outside locations, select the rightmost one *)
-      if Location.(Misc.compare_pos l1.loc_end l2.loc_end) < 0
+      if Location.(Lexing.compare_pos l1.loc_end l2.loc_end) < 0
       then t2
       else t1
   in
@@ -332,4 +332,4 @@ let enclosing pos envs =
   | None -> []
   | Some t ->
     let results = traverse_branch pos t in
-    Misc.list_drop_while not_enclosing results
+    List.drop_while ~f:not_enclosing results

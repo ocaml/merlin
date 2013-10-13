@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Std
+
 type position = Lexing.position
 
 type kind =
@@ -71,4 +73,4 @@ let emit_top c pos =
   if !nesting = 0 then
     raise (Chunk (c,pos))
 
-let local_modules = Misc.fluid None
+let local_modules = fluid None

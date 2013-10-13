@@ -27,24 +27,24 @@ let parse_dot_merlin path : bool * t =
     let rec aux () =
       let line = input_line ic in
       if line = "" then ()
-      else if has_prefix "B " line then
-        tell (`B (string_drop 2 line))
-      else if has_prefix "S " line then
-        tell (`S (string_drop 2 line))
-      else if has_prefix "SRC " line then
-        tell (`S (string_drop 4 line))
-      else if has_prefix "PKG " line then
-        tell (`PKG (rev_split_words (string_drop 4 line)))
-      else if has_prefix "EXT " line then
-        tell (`EXT (rev_split_words (string_drop 4 line)))
-      else if has_prefix "FLG " line then
-        tell (`FLG (string_drop 4 line))
-      else if has_prefix "REC" line then recurse := true
-      else if has_prefix "PRJ " line then
-        proj := Some (String.trim (string_drop 4 line))
-      else if has_prefix "PRJ" line then
+      else if String.is_prefixed ~by:"B " line then
+        tell (`B (String.drop 2 line))
+      else if String.is_prefixed ~by:"S " line then
+        tell (`S (String.drop 2 line))
+      else if String.is_prefixed ~by:"SRC " line then
+        tell (`S (String.drop 4 line))
+      else if String.is_prefixed ~by:"PKG " line then
+        tell (`PKG (rev_split_words (String.drop 4 line)))
+      else if String.is_prefixed ~by:"EXT " line then
+        tell (`EXT (rev_split_words (String.drop 4 line)))
+      else if String.is_prefixed ~by:"FLG " line then
+        tell (`FLG (String.drop 4 line))
+      else if String.is_prefixed ~by:"REC" line then recurse := true
+      else if String.is_prefixed ~by:"PRJ " line then
+        proj := Some (String.trim (String.drop 4 line))
+      else if String.is_prefixed ~by:"PRJ" line then
         proj := Some ""
-      else if has_prefix "#" line then ()
+      else if String.is_prefixed ~by:"#" line then ()
       else ();
       aux ()
     in
@@ -59,9 +59,10 @@ let parse_dot_merlin path : bool * t =
 
 let rec read path =
   let recurse, dot_merlin = parse_dot_merlin path in
-  if recurse
-  then LCons (dot_merlin, lazy (find (Filename.dirname (Filename.dirname path))))
-  else LCons (dot_merlin, lazy LNil)
+  List.Lazy.(Cons (dot_merlin,
+                   if recurse
+                   then lazy (find (Filename.dirname (Filename.dirname path)))
+                   else lazy Nil))
 
 and find path =
   let rec loop dir =
@@ -76,14 +77,14 @@ and find path =
   in
   match loop (canonicalize_filename path) with
   | Some fname -> read fname
-  | None -> LNil 
+  | None -> List.Lazy.Nil
 
 let rec project_name = function
-  | LCons (({project = Some ""; path = name} | {project = Some name}), _) ->
+  | List.Lazy.Cons (({project = Some ""; path = name} | {project = Some name}), _) ->
     Some name
-  | LCons ({path}, lazy LNil) -> Some path
-  | LCons (_, lazy tail) -> project_name tail
-  | LNil -> None
+  | List.Lazy.Cons ({path}, lazy List.Lazy.Nil) -> Some path
+  | List.Lazy.Cons (_, lazy tail) -> project_name tail
+  | List.Lazy.Nil -> None
 
 let err_log msg = Logger.error `dot_merlin msg
 
@@ -128,17 +129,16 @@ let exec_dot_merlin {path; project; entries} config =
 
 let rec exec ?(config={build_path=[];source_path=[];packages=[];dot_merlins=[]}) =
   function
-  | LCons (dot_merlin, lazy tail) ->
+  | List.Lazy.Cons (dot_merlin, lazy tail) ->
     exec ~config:(exec_dot_merlin dot_merlin config) tail
-  | LNil ->
+  | List.Lazy.Nil ->
     { config with
-      build_path = list_filter_dup config.build_path;
-      source_path = list_filter_dup config.source_path;
-      packages = list_filter_dup config.packages
+      build_path = List.filter_dup config.build_path;
+      source_path = List.filter_dup config.source_path;
+      packages = List.filter_dup config.packages
     }
 
 let packages_path packages =
   let packages = Findlib.package_deep_ancestors [] packages in
   let path = List.map ~f:Findlib.package_directory packages in
-  list_filter_dup path
-
+  List.filter_dup path
