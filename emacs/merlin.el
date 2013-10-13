@@ -469,7 +469,7 @@ the error message otherwise print a generic error message."
                        (cond ((string-equal (elt a 0) "return")
                               (funcall (car closure) (elt a 1)))
                              ((string-equal (elt a 0) "exception")
-                              (message "Merlin failed with exception : %s" (elt a 1)))
+                              (message "Merlin failed with exception: %s" (elt a 1)))
                              ((progn
                                (if (functionp (cadr closure))
                                    (funcall (cadr closure) (elt a 1))
@@ -540,7 +540,7 @@ the error message otherwise print a generic error message."
 (defun merlin-switch-to (name ext)
   "Switch to NAME.EXT."
   (let ((file (merlin-send-command
-               (list 'which 'path (concat (downcase name) ext))
+               (list 'which 'path (concat name ext))
                #'(lambda (err) (message "No such file (message: %s)" err)))))
     (when file (find-file-other-window file))))
 
