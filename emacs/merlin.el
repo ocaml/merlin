@@ -746,7 +746,7 @@ The timer fires every 10 seconds of idle time."
 
 (defun merlin-chomp (str)
   "Remove whitespace at the beginning and end of STR."
-  (replace-regexp-in-string "\\(^[[:space:]\\n]*\\|[[:space:]\\n]*$\\)" "" str))
+  (replace-regexp-in-string "^[[:space:]\n]\+\\|[[:space:]\\n]\+$" "" str))
 
 (defun merlin-show-error-on-current-line ()
   "Show the error of the current line in the echo area.
