@@ -69,7 +69,6 @@ module Fold = struct
   let sig_item _ = failwith "TODO"
 
   let str_item step (exns,env,trees',snap as state) =
-    Option.iter ~f:Btype.backtrack snap;
     match Chunk.Spine.value step with
     | Either.L exn -> state, Either.L exn
     | Either.R items ->
@@ -92,7 +91,6 @@ module Fold = struct
 
   (* Fold structure shape *)
   let str_in_module step (exns,env,trees,snap as state) =
-    Option.iter ~f:Btype.backtrack snap;
     match Chunk.Spine.value step with
     | Either.L exn -> state, ()
     | Either.R (_, {Location. txt = pmod; _}) ->

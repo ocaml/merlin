@@ -51,6 +51,7 @@ let initial_sig fname = initial (initial_sig fname)
 
 let step {chunks;types} outlines =
   let chunks = Chunk.update outlines (Some chunks) in
+  Option.iter ~f:Btype.backtrack (Typer.snapshot types);
   let types  = Typer.update chunks   (Some types)  in
   {outlines; chunks; types}
 
