@@ -1482,10 +1482,13 @@ and type_expect ?in_function env sexp ty_expected =
   let open Std in
   if ~!Merlin_types.relax_typer
   then type_relax ?in_function env sexp ty_expected
-  else try type_expect_ ?in_function env sexp ty_expected
-       with (Typetexp.Error _ | Error _) ->
-         Fluid.let' Merlin_types.relax_typer true
-           (fun () -> type_relax ?in_function env sexp ty_expected)
+  else 
+    let snap = Btype.snapshot () in
+    try type_expect_ ?in_function env sexp ty_expected
+    with (Typetexp.Error _ | Error _) ->
+      Btype.backtrack snap;
+      Fluid.let' Merlin_types.relax_typer true
+        (fun () -> type_relax ?in_function env sexp ty_expected)
 
 and type_relax ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in
@@ -1498,6 +1501,7 @@ and type_relax ?in_function env sexp ty_expected =
       exp_env = env;
     }
   in
+  let snap = Btype.snapshot () in
   try
     let ty = newvar () in
     let exp = type_expect_ ?in_function env sexp ty in
@@ -1505,9 +1509,11 @@ and type_relax ?in_function env sexp ty_expected =
       unify_exp_types sexp.pexp_loc env ty ty_expected;
       exp
     with (Typetexp.Error _ | Error _) as exn ->
+      Btype.backtrack snap;
       (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
       failwith_exn ~exn (Texp_tuple [exp])
   with (Typetexp.Error _ | Error _) as exn ->
+    Btype.backtrack snap;
     failwith_exn ~exn
       (Texp_ident
          (Path.Pident (Ident.create "*type-error*"),
