@@ -30,7 +30,7 @@ open Std
 open Misc
 
 module Context = struct
-  type state = exn list * Env.t * Typedtree.structure Location.loc list
+  type state = exn list * Env.t * Typedtree.structure Location.loc list * Btype.snapshot option
 
   type sig_item = Types.signature Location.loc list or_exn
   type str_item = Typedtree.structure Location.loc list or_exn
@@ -62,13 +62,14 @@ let protect_typer f =
 
 module Fold = struct
   (* Initial state *)
-  let sig_root _ = [], initial_env (), []
-  let str_root _ = [], initial_env (), []
+  let sig_root _ = [], initial_env (), [], None
+  let str_root _ = [], initial_env (), [], None
 
   (* Fold items *)
   let sig_item _ = failwith "TODO"
 
-  let str_item step (exns,env,trees' as state) =
+  let str_item step (exns,env,trees',snap as state) =
+    Option.iter ~f:Btype.backtrack snap;
     match Chunk.Spine.value step with
     | Either.L exn -> state, Either.L exn
     | Either.R items ->
@@ -86,10 +87,12 @@ module Fold = struct
           end
         end
       in
-      (exns' @ exns, env, trees @ trees'), Either.R (List.rev trees)
+      let snap' = Some (Btype.snapshot ()) in
+      (exns' @ exns, env, trees @ trees', snap'), Either.R (List.rev trees)
 
   (* Fold structure shape *)
-  let str_in_module step (exns,env,trees as state) =
+  let str_in_module step (exns,env,trees,snap as state) =
+    Option.iter ~f:Btype.backtrack snap;
     match Chunk.Spine.value step with
     | Either.L exn -> state, ()
     | Either.R (_, {Location. txt = pmod; _}) ->
@@ -132,9 +135,11 @@ module Fold = struct
       end
     with
     | exns', None ->
-      (exns' @ exns, env, trees), ()
+      let snap' = Some (Btype.snapshot ()) in
+      (exns' @ exns, env, trees, snap'), ()
     | exns', Some (exns, env) ->
-      (exns' @ exns, env, trees), ()
+      let snap' = Some (Btype.snapshot ()) in
+      (exns' @ exns, env, trees, snap'), ()
 
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
@@ -146,6 +151,7 @@ module Spine = Spine.Transform (Context) (Chunk.Spine) (Fold)
 type t = Spine.t
 let update = Spine.update
 
-let exns  t = fst3 (Spine.get_state t)
-let env   t = snd3 (Spine.get_state t)
-let trees t = thd3 (Spine.get_state t)
+let exns  t = fst4 (Spine.get_state t)
+let env   t = snd4 (Spine.get_state t)
+let trees t = thd4 (Spine.get_state t)
+let snapshot t = fth4 (Spine.get_state t)
