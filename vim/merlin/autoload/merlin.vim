@@ -256,6 +256,7 @@ endfunction
 function! merlin#Register()
   command! -buffer -nargs=? TypeOf call merlin#TypeOf(<q-args>)
 
+  command! -buffer -nargs=0 ClearEnclosing call merlin#StopHighlight()
   command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
   command! -buffer -nargs=0 ShrinkEnclosing call merlin#ShrinkEnclosing()
 
