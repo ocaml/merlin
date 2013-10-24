@@ -66,7 +66,7 @@ while [ -n "$1" ]; do
       shift 1
       BIN_DIR="$1/bin"
       SHARE_DIR="$1/share"
-      VIM_DIR="$1/ocamlmerlin/vim"
+      VIM_DIR="$SHARE_DIR/ocamlmerlin/vim"
       ;;
     --bindir)
       shift 1
