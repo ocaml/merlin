@@ -178,29 +178,40 @@ In particular you can specify nil, meaning that the locked zone is not represent
 
 (defvar merlin-result nil
   "Temporary variables to store command results.")
+(make-variable-buffer-local 'merlin-result)
 
-(defvar merlin-buffer nil "Buffer for merlin input.")
+(defvar merlin-buffer nil
+  "Buffer for merlin input.")
+(make-variable-buffer-local 'merlin-buffer)
 
-(defvar merlin-ready nil "If non-nil, the reception is done.")
+(defvar merlin-ready nil
+  "If non-nil, the reception is done.")
+(make-variable-buffer-local 'merlin-ready)
 
 ;; Overlays
 (defvar merlin-lock-zone-highlight-overlay nil
   "Overlay used for the lock zone highlighting.")
+(make-variable-buffer-local 'merlin-lock-zone-highlight-overlay)
 (defvar merlin-lock-zone-margin-overlay nil
   "Overlay used for the margin indicator of the lock zone.")
+(make-variable-buffer-local 'merlin-lock-zone-margin-overlay)
 
 ;; Errors related variables
 (defvar merlin-pending-errors nil
   "Pending errors.")
+(make-variable-buffer-local 'merlin-pending-errors)
 (defvar merlin-lock-point 0
   "Position up to which merlin knows about.")
 (defvar merlin-pending-errors-overlays nil
   "Overlays for the pending errors.")
-(defvar merlin-highlight-overlay nil "Merlin overlay used for highlights.")
+(make-variable-buffer-local 'merlin-pending-errors-overlays)
+(defvar merlin-highlight-overlay nil
+  "Merlin overlay used for highlights.")
 
 ;; Completion related variables
 (defvar merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix).")
+(make-variable-buffer-local 'merlin-completion-point)
 
 ; Vars from auto-complete
 (defvar ac-point)
@@ -216,14 +227,18 @@ In particular you can specify nil, meaning that the locked zone is not represent
 ;; Type related variables
 (defvar merlin-enclosing-types nil
   "List containing the enclosing type.")
+(make-variable-buffer-local 'merlin-enclosing-types)
 (defvar merlin-enclosing-offset nil
   "Current offset in `merlin-enclosing-types'.")
+(make-variable-buffer-local 'merlin-enclosing-offset)
 
 ;; Locate
 (defvar merlin-position-stack nil)
 
 ;; Misc
-(defvar merlin-project-file nil "The .merlin file for current buffer.")
+(defvar merlin-project-file nil
+  "The .merlin file for current buffer.")
+(make-variable-buffer-local 'merlin-project-file)
 
 
 ;;;;;;;;;;;
@@ -1294,17 +1309,6 @@ Returns the position."
   "Set up a buffer for use with merlin."
   (interactive)
   (set (make-local-variable 'merlin-lock-point) (point-min))
-  (set (make-local-variable 'merlin-buffer) nil)
-  (set (make-local-variable 'merlin-result) nil)
-  (set (make-local-variable 'merlin-completion-point) nil)
-  (set (make-local-variable 'merlin-ready) nil)
-  (set (make-local-variable 'merlin-pending-errors) nil)
-  (set (make-local-variable 'merlin-pending-errors-overlays) nil)
-  (set (make-local-variable 'merlin-lock-zone-highlight-overlay) nil)
-  (set (make-local-variable 'merlin-lock-zone-margin-overlay) nil)
-  (set (make-local-variable 'merlin-project-file) nil)
-  (set (make-local-variable 'merlin-enclosing-types) nil)
-  (set (make-local-variable 'merlin-enclosing-offset) nil)
   ; if there is not yet a buffer for the current buffer, create one
   (when (not (merlin-process-started-p))
     (merlin-start-process merlin-current-flags))
