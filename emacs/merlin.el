@@ -263,7 +263,7 @@ line and col"
     (when (<= line line-max)
       (goto-char (point-min))
       (forward-line (1- line))
-      (move-to-column col))))
+      (move-to-column (max 0 col)))))
 
 (defun merlin-goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
