@@ -138,6 +138,15 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "If non-nil, when locate opens a new window it will give it the focus."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-compilation-warning-face 'compilation-warning-face
+  "If non-nil, face to use to highlight merlin warnings."
+  :group 'merlin :type '(choice symbol (const :tag "Disable" nil)))
+
+(defcustom merlin-compilation-error-face 'compilation-error-face
+  "If non-nil, face to use to highlight merlin errors."
+  :group 'merlin :type '(choice symbol (const :tag "Disable" nil)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -299,7 +308,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 (defun merlin-put-margin-overlay (overlay string &optional face)
   "Put a margin overlay inside OVERLAY, with face FACE and string STRING."
   (set-window-margins nil 1)
-  (when face (overlay-put overlay 'face face))
+  (when face (overlay-put overlay 'face (eval face)))
   (overlay-put overlay 'before-string
                (propertize " " 'display `((margin left-margin) ,string))))
 
@@ -804,10 +813,10 @@ If there is no error, do nothing."
               (if (merlin-error-warning-p (cdr (assoc 'message err)))
                   (merlin-put-margin-overlay overlay
                                              merlin-margin-warning-string
-                                             compilation-warning-face)
+                                             merlin-compilation-warning-face)
                 (merlin-put-margin-overlay overlay
                                            merlin-margin-error-string
-                                           compilation-error-face))
+                                           merlin-compilation-error-face))
               overlay)))
          (errors   (mapcar err-point errors)))
     (setq merlin-pending-errors errors)
