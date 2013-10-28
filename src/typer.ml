@@ -86,7 +86,7 @@ module Fold = struct
 
   let str_item step ?back_from state =
     match Chunk.Spine.value step with
-    | Either.L exn -> state, Either.L exn
+    | Either.L exn -> {state with snap = Btype.snapshot ()}, Either.L exn
     | Either.R items ->
       let exns', (env, exns, trees) =
         protect_typer
@@ -115,7 +115,7 @@ module Fold = struct
   (* Fold structure shape *)
   let str_in_module step state =
     match Chunk.Spine.value step with
-    | Either.L exn -> state, ()
+    | Either.L exn -> {state with snap = Btype.snapshot ()}, ()
     | Either.R (_, {Location. txt = pmod; _}) ->
     match
       protect_typer
