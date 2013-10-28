@@ -121,7 +121,7 @@ let main_loop () =
     loop (State.initial_str "")
   with Stream.Failure -> ()
 
-(** Mimic other Caml tools, entry point *)
+(** Mimic other OCaml tools, entry point *)
 
 module Options = Top_options.Make (struct
   let _projectfind path =

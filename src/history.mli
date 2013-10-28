@@ -30,7 +30,7 @@ type 'a non_empty =
   | One of 'a
   | More of 'a * 'a non_empty
 
-(** {0 Historique}
+(** {0 History}
   * A sort of zipper: maintains and synchronizes a list of different
   * versions of an object (see ocamlmerlin.ml top comment).
   *)
@@ -58,7 +58,7 @@ val seek_backward : ('a -> bool) -> 'a t -> 'a t
  *)
 val move : int -> 'a t -> 'a t
 
-(** Adds an element to the left of the cursor and drop tail:
+(** Adds an element to the left of the cursor and drops the tail:
   * insert w [..zyx|abc..] = [..zyxw|] *)
 val insert : 'a -> 'a t -> 'a t
 

@@ -125,7 +125,7 @@ and class_declaration ~env (cd, _, _virtual_flag) =
   | _ -> singleton ~context cd.ci_loc env
 
 and class_structure ~env class_struct =
-  let pat = (* where is that pattern in the concret syntax? *)
+  let pat = (* where is that pattern in the concrete syntax? *)
     let context = Expr class_struct.cstr_pat.pat_type in
     singleton ~context class_struct.cstr_pat.pat_loc env
   in

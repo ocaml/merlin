@@ -188,7 +188,7 @@ and resolve_mod_alias ~fallback mod_item path =
   | [ { context = Module (Structure, _) ; nodes } ] ->
     browse_structure (Lazy.force nodes) path
   | [ { context = Module (Mod_apply, _) ; loc } ] ->
-    (* We don't want to follow functors instanciation *)
+    (* We don't want to follow functors instantiation *)
     debug_log "stopping on functor instantiation" ;
     Some loc
   | otherwise ->

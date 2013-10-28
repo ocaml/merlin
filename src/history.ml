@@ -33,7 +33,7 @@ type 'a non_empty =
 let nhd = function
   | One x | More (x,_) -> x
 
-(** {0 Historique}
+(** {0 History}
   * A sort of zipper: maintains and synchronizes a list of different
   * versions of an object (see ocamlmerlin.ml top comment).
   *)
