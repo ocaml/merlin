@@ -30,7 +30,7 @@ open Std
 open Misc
 
 module Context = struct
-  type state = exn list * Env.t * Typedtree.structure Location.loc list * Btype.snapshot option
+  type state = exn list * Env.t * Typedtree.structure Location.loc list * Btype.snapshot
 
   type sig_item = Types.signature Location.loc list or_exn
   type str_item = Typedtree.structure Location.loc list or_exn
@@ -62,8 +62,8 @@ let protect_typer f =
 
 module Fold = struct
   (* Initial state *)
-  let sig_root _ = [], initial_env (), [], None
-  let str_root _ = [], initial_env (), [], None
+  let sig_root _ = [], initial_env (), [], Btype.snapshot ()
+  let str_root _ = [], initial_env (), [], Btype.snapshot ()
 
   (* Fold items *)
   let sig_item _ = failwith "TODO"
@@ -86,7 +86,7 @@ module Fold = struct
           end
         end
       in
-      let snap' = Some (Btype.snapshot ()) in
+      let snap' = Btype.snapshot () in
       (exns' @ exns, env, trees @ trees', snap'), Either.R (List.rev trees)
 
   (* Fold structure shape *)
@@ -133,10 +133,10 @@ module Fold = struct
       end
     with
     | exns', None ->
-      let snap' = Some (Btype.snapshot ()) in
+      let snap' = Btype.snapshot () in
       (exns' @ exns, env, trees, snap'), ()
     | exns', Some (exns, env) ->
-      let snap' = Some (Btype.snapshot ()) in
+      let snap' = Btype.snapshot () in
       (exns' @ exns, env, trees, snap'), ()
 
   (* Fold signature shape *)

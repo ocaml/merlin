@@ -31,7 +31,7 @@
 open Std
 
 module Context : sig
-  type state = exn list * Env.t * Typedtree.structure Location.loc list * Btype.snapshot option
+  type state = exn list * Env.t * Typedtree.structure Location.loc list * Btype.snapshot
 
   type sig_item = Types.signature Location.loc list or_exn
   type str_item = Typedtree.structure Location.loc list or_exn
@@ -47,4 +47,4 @@ val update : Chunk.t -> t option -> t
 val exns : t -> exn list
 val env : t -> Env.t
 val trees : t -> Typedtree.structure Location.loc list
-val snapshot : t -> Btype.snapshot option
+val snapshot : t -> Btype.snapshot
