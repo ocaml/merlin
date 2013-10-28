@@ -1269,9 +1269,6 @@ Returns the position."
     (define-key merlin-show-type-map [point]
       '(menu-item "around the cursor" merlin-type-enclosing
                   :help "Show the type of the smallest subexpression near cursor"))
-    (define-key merlin-show-type-map [region]
-      '(menu-item "of the region" merlin-type-enclosing
-                  :help "Show the type of the region"))
     (define-key merlin-show-type-map [exp]
       '(menu-item "of an expression" merlin-type-expr
                   :help "Input an expression and show its type"))
