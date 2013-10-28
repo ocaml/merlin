@@ -30,11 +30,11 @@ module Utils = struct
        modules).
        Example: scheduler.ml and raw_scheduler.ml are present in both async_core
        and async_unix. (ofc. "std.ml" is a more common example.)
-      
+
        Note that [cwd] is set only when we have encountered a packed module, so in other
        cases [abs_cmt_file] will be something like "/file.ext" which (hopefully) won't
        exist. *)
-    try Misc.find_in_path_uncap 
+    try Misc.find_in_path_uncap
           (Misc.Path_list.of_string_list_ref (ref [ !cwd ])) fname
     with Not_found ->
     try Misc.find_in_path_uncap !sources_path fname     with Not_found ->
@@ -254,7 +254,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
         try
           let path, _ = Env.lookup_module ident env in
           let starting_point = Path.head path in
-          let is_local = 
+          let is_local =
             let rec aux =
               let open Env in
               function

@@ -28,7 +28,7 @@
 
 type 'a non_empty =
   | One of 'a
-  | More of 'a * 'a non_empty 
+  | More of 'a * 'a non_empty
 
 let nhd = function
   | One x | More (x,_) -> x
@@ -67,9 +67,9 @@ let rec seek_backward pred = function
   * May stop earlier if it reaches an end of history.
  *)
 let rec move n = function
-  | {head; tail = x :: tail} when n > 0 -> 
+  | {head; tail = x :: tail} when n > 0 ->
     move (pred n) {head = More (x,head); tail}
-  | {head = More (x,head); tail} when n < 0 -> 
+  | {head = More (x,head); tail} when n < 0 ->
     move (succ n) {head; tail = x :: tail}
   | t -> t
 
@@ -88,11 +88,11 @@ let append f {head = (One x | More (x,_) as head); _} =
 let reconstruct h init fold =
   let f b x' = More (fold (nhd b) x', b) in
   let rec past tail = function
-    | More (x,head) -> past (x :: tail) head 
+    | More (x,head) -> past (x :: tail) head
     | One x -> List.fold_left f (One (init x)) tail
   in
   let head = past [] h.head in
-  let f (b,l) a = 
+  let f (b,l) a =
     let b' = fold b a in
     (b', (b' :: l))
   in

@@ -132,7 +132,7 @@ module Fold = struct
           | _ -> assert false
         end)
     in
-    {exns = exns'; 
+    {exns = exns';
      modules = modules' @ state.modules;
      global_exns = state.exns @ state.global_exns},
     result

@@ -161,7 +161,7 @@ module Fold = struct
                   global_exns = state.exns @ state.global_exns}, ()
     | exns', Some (exns, env) ->
       let snap = Btype.snapshot () in
-      {state with exns = exns @ exns'; snap; env; 
+      {state with exns = exns @ exns'; snap; env;
                   global_exns = state.exns @ state.global_exns}, ()
 
   (* Fold signature shape *)

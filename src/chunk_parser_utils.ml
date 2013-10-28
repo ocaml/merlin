@@ -159,7 +159,7 @@ let token_to_string =
 
 let dump_lexer ?who f a =
   let t = f a in
-  (*Printf.eprintf "%s:%s, %!" 
+  (*Printf.eprintf "%s:%s, %!"
    (match who with Some w -> w | None -> "")
    (token_to_string t);*)
   t

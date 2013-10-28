@@ -37,7 +37,7 @@ module type S = sig
     | Str_item of (Context.str_item, t_str) step
     | Str_in_module of (Context.str_in_module, t_str) step
 
-  type t = 
+  type t =
     | Str of t_str
     | Sig of t_sig
 
@@ -53,14 +53,14 @@ module type S = sig
   val sig_state : t_sig -> Context.state
   val get_state : t -> Context.state
 
-  val dump :  ?sig_item:(string -> Context.state -> Context.sig_item -> string) 
-           -> ?str_item:(string -> Context.state -> Context.str_item -> string) 
-           -> ?state:(string -> Context.state -> string) 
+  val dump :  ?sig_item:(string -> Context.state -> Context.sig_item -> string)
+           -> ?str_item:(string -> Context.state -> Context.str_item -> string)
+           -> ?state:(string -> Context.state -> string)
            -> t -> string list
 end
 
 module Initial (Context : CONTEXT) : sig
-  include S 
+  include S
   val sig_step : t_sig -> Context.state -> 'a -> ('a,t_sig) step
   val str_step : t_str -> Context.state -> 'a -> ('a,t_str) step
 
@@ -74,22 +74,22 @@ module Transform (Context : CONTEXT) (Dom : S)
     val str_root : (unit, unit) Dom.step -> Context.state
 
     (* Fold items *)
-    val sig_item 
+    val sig_item
       :  (Dom.Context.sig_item, Dom.t_sig) Dom.step
       -> ?back_from:Context.state
-      -> Context.state 
+      -> Context.state
       -> Context.state * Context.sig_item
-    val str_item 
+    val str_item
       :  (Dom.Context.str_item, Dom.t_str) Dom.step
       -> ?back_from:Context.state
-      -> Context.state 
+      -> Context.state
       -> Context.state * Context.str_item
 
     (* Fold signature shape *)
     val sig_in_sig_modtype
       :  (Dom.Context.sig_in_sig_modtype, Dom.t_sig) Dom.step
       -> Context.state -> Context.state * Context.sig_in_sig_modtype
-    val sig_in_sig_module 
+    val sig_in_sig_module
       :  (Dom.Context.sig_in_sig_module, Dom.t_sig) Dom.step
       -> Context.state -> Context.state * Context.sig_in_sig_module
     val sig_in_str_modtype
@@ -97,11 +97,11 @@ module Transform (Context : CONTEXT) (Dom : S)
       -> Context.state -> Context.state * Context.sig_in_str_modtype
 
     (* Fold structure shape *)
-    val str_in_module 
+    val str_in_module
       :  (Dom.Context.str_in_module, Dom.t_str) Dom.step
       -> Context.state -> Context.state * Context.str_in_module
    end) :
-sig 
+sig
   module Dom : S
   include S
   val rewind : Dom.t -> t -> Dom.t * t

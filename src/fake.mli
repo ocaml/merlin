@@ -30,7 +30,7 @@
  * used to simulate some CamlP4 extensions. *)
 
 (* Generate AST faking value application *)
-val app : Parsetree.expression -> 
+val app : Parsetree.expression ->
   Parsetree.expression -> Parsetree.expression
 val pat_app : Parsetree.expression ->
   ('a * Parsetree.expression) -> ('a * Parsetree.expression )
@@ -42,11 +42,11 @@ val any_val' : Parsetree.expression
 (* Lwt extension *)
 module Lwt : sig
   val un_lwt     : Parsetree.expression
-  val to_lwt     : Parsetree.expression 
-  val in_lwt     : Parsetree.expression 
-  val unit_lwt   : Parsetree.expression 
-  val un_stream  : Parsetree.expression   
-  val finally'   : Parsetree.expression 
+  val to_lwt     : Parsetree.expression
+  val in_lwt     : Parsetree.expression
+  val unit_lwt   : Parsetree.expression
+  val un_stream  : Parsetree.expression
+  val finally'   : Parsetree.expression
   val raise_lwt' : Longident.t
 end
 

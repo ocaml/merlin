@@ -18,7 +18,7 @@ val monitor : ?dest:string -> Section.t -> unit
 (** [monitor ?dest section] starts the monitoring of [section].
     If [dest] is set then all subsequent logging related to [section] will go in
     that file, in the default destination otherwise.
-  
+
     If [dest] is omitted and the default destination is not set,
     [Invalid_argument] is raised. *)
 

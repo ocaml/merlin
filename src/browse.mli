@@ -26,7 +26,7 @@
 
 )* }}} *)
 
-(* The browse module transforms Typedtree into an uniform tree 
+(* The browse module transforms Typedtree into an uniform tree
  * suited for easy navigation, allowing to locate the typing environment
  * and the kind of construction at a given point.
  * This is used both by the type-at-point and completion features.
@@ -76,13 +76,13 @@ val expression  : Typedtree.expression  -> t
 
 (* The deepest context inside or before the node, for instance, navigating
  * through:
- *    foo bar (baz :: tail) <cursor> 
+ *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail". *)
 val deepest_before : Lexing.position -> t list -> t option
 (* The nearest context inside or before the node, though stopping after
  * leaving enclosing subtree. For instance, navigating
  * through:
- *    foo bar (baz :: tail) <cursor> 
+ *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of the complete,
  * application, since none of the arguments or the function expression will
  * get us closer to cursor. *)

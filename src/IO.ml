@@ -37,8 +37,8 @@ exception Protocol_failure of string
 let invalid_arguments () = failwith "invalid arguments"
 
 let stream_map s f =
-  Stream.from (fun _ -> 
-      try Some (f (Stream.next s)) 
+  Stream.from (fun _ ->
+      try Some (f (Stream.next s))
       with Stream.Failure -> None)
 
 let json_of_completion {Protocol. name; kind; desc; info} =
@@ -85,7 +85,7 @@ let register_protocol ~name ~desc inst =
   makers := (name, (desc,inst)) :: !makers
 
 let make' = ref json_make
-let make ~input ~output = 
+let make ~input ~output =
   let io = !make' ~input ~output in
   if Logger.is_monitored section then json_log io else io
 
@@ -93,10 +93,10 @@ let select_frontend name =
   try make' := snd (List.assoc name !makers)
   with Not_found ->
     if name <> "help" then
-      prerr_endline 
-        ("Unknown protocol '" ^ name ^ "' (maybe check build configuration)\n"); 
+      prerr_endline
+        ("Unknown protocol '" ^ name ^ "' (maybe check build configuration)\n");
     prerr_endline "Choose protocol to use for communication. Known protocols:";
-    List.iter (fun (name, (desc, _)) -> 
+    List.iter (fun (name, (desc, _)) ->
         prerr_endline (name ^ "\t" ^ desc))
       !makers;
     exit 1
@@ -118,7 +118,7 @@ let error_to_json {Error_report. valid; text; where; loc} =
   let content = ("type", `String where) :: content in
   `Assoc content
 
-let error_catcher exn = 
+let error_catcher exn =
   match Error_report.error_catcher exn with
   | None -> None
   | Some (loc,t) -> Some (loc, error_to_json t)
@@ -160,7 +160,7 @@ let string_list l =
 let json_of_string_list l =
   `List (List.map (fun s -> `String s) l)
 let json_of_type_loc (loc,str) =
-  with_location loc ["type", `String str] 
+  with_location loc ["type", `String str]
 
 let source_or_build = function
   | "source" -> `Source
@@ -279,11 +279,11 @@ module Protocol_io = struct
     | [`String "project"; `String ("load"|"find" as action); `String path] ->
       Request (Project_load (load_or_find action, path))
     | _ -> invalid_arguments ()
-  
+
   let response_to_json = function
     | Failure s | Exception (Failure' s) -> `List [`String "failure"; `String s]
     | Error error -> `List [`String "error"; error]
-    | Exception exn -> 
+    | Exception exn ->
       begin match error_catcher exn with
       | Some (_,error) -> `List [`String "error"; error]
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
@@ -296,7 +296,7 @@ module Protocol_io = struct
         | Type_expr _, str -> `String str
         | Type_enclosing _, results ->
           `List (List.map json_of_type_loc results)
-        | Complete_prefix _, compl_list -> 
+        | Complete_prefix _, compl_list ->
           `List (List.map json_of_completion compl_list)
         | Locate _, None ->
           `String "Not found"
@@ -310,7 +310,7 @@ module Protocol_io = struct
           `List (List.map pos_to_json [loc_start; loc_end])
         | Boundary _, None ->
           `Null
-        | Reset _, () -> pos_to_json (make_pos (1,0)) 
+        | Reset _, () -> pos_to_json (make_pos (1,0))
         | Refresh _, changed -> `Bool changed
         | Cd _, () -> `Bool true
         | Errors, exns ->
@@ -335,5 +335,5 @@ let request_of_json = function
   | _ -> invalid_arguments ()
 let response_to_json = Protocol_io.response_to_json
 
-let lift (i,o : low_io) : io = 
+let lift (i,o : low_io) : io =
   (stream_map i request_of_json, (fun x -> o (response_to_json x)))

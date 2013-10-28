@@ -41,5 +41,5 @@ val dump_lexer : ?who:string -> ('a -> token) -> 'a -> token
  * [re_sync] returns the number of phrases the [Outline_parser] must succeed
  * to parse for the resynchronization to be considered successful.
  * (0 for EOF or explicit synchronization, 1 or more when it's only
- * approximative) *) 
+ * approximative) *)
 val re_sync : (Lexing.lexbuf -> token) -> Lexing.lexbuf -> int

@@ -354,7 +354,7 @@ struct
           assert (position cod <= pd);
           result
     in
-    let back_from = 
+    let back_from =
       match cod' with
       | None -> None
       | Some cod' ->

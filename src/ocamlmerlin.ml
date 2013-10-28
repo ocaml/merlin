@@ -83,7 +83,7 @@
 
 module My_config = My_config
 
-let signal behavior = 
+let signal behavior =
   try Sys.signal Sys.sigusr1 behavior
   with Invalid_argument "Sys.signal: unavailable signal" ->
     Sys.Signal_default
@@ -103,10 +103,10 @@ let main_loop () =
     let rec loop state =
       let state, answer =
         let state' = ref state in
-        try 
-          let Protocol.Request request = 
+        try
+          let Protocol.Request request =
             refresh_state_on_signal state' (fun () -> Stream.next input)
-          in 
+          in
           let state', response = Command.dispatch io state request in
           state',
           Protocol.Return (request, response)

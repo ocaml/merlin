@@ -28,7 +28,7 @@
 
 type 'a non_empty =
   | One of 'a
-  | More of 'a * 'a non_empty 
+  | More of 'a * 'a non_empty
 
 (** {0 Historique}
   * A sort of zipper: maintains and synchronizes a list of different
