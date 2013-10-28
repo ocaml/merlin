@@ -1,9 +1,12 @@
 open Std
 
+exception Weak_error of exn
+let relax_typer = fluid false
+
 let errors : (exn list ref * (int,unit) Hashtbl.t) option fluid = fluid None
 let raise_error exn =
   match ~!errors with
-  | Some (l,h) -> l := exn :: !l
+  | Some (l,h) -> l := (*if ~!relax_typer then Weak_error exn else exn*) exn :: !l
   | None -> raise exn
 
 let catch_errors f =
@@ -23,7 +26,5 @@ let erroneous_type_check te =
   match ~!errors with
   | Some (l,h) when Hashtbl.mem h te.Types.id -> true
   | _ -> false
-
-let relax_typer = fluid false
 
 include Merlin_types_custom

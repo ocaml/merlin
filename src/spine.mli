@@ -76,10 +76,14 @@ module Transform (Context : CONTEXT) (Dom : S)
     (* Fold items *)
     val sig_item 
       :  (Dom.Context.sig_item, Dom.t_sig) Dom.step
-      -> Context.state -> Context.state * Context.sig_item
+      -> ?back_from:Context.state
+      -> Context.state 
+      -> Context.state * Context.sig_item
     val str_item 
       :  (Dom.Context.str_item, Dom.t_str) Dom.step
-      -> Context.state -> Context.state * Context.str_item
+      -> ?back_from:Context.state
+      -> Context.state 
+      -> Context.state * Context.str_item
 
     (* Fold signature shape *)
     val sig_in_sig_modtype

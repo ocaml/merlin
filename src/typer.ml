@@ -29,8 +29,16 @@
 open Std
 open Misc
 
+type step_state = {
+  exns: exn list;
+  global_exns: exn list;
+  env: Env.t;
+  trees: Typedtree.structure Location.loc list;
+  snap: Btype.snapshot;
+}
+
 module Context = struct
-  type state = exn list * Env.t * Typedtree.structure Location.loc list * Btype.snapshot
+  type state = step_state
 
   type sig_item = Types.signature Location.loc list or_exn
   type str_item = Typedtree.structure Location.loc list or_exn
@@ -62,35 +70,50 @@ let protect_typer f =
 
 module Fold = struct
   (* Initial state *)
-  let sig_root _ = [], initial_env (), [], Btype.snapshot ()
-  let str_root _ = [], initial_env (), [], Btype.snapshot ()
+  let initial () = {
+    exns = [];
+    global_exns = [];
+    env = initial_env ();
+    trees = [];
+    snap = Btype.snapshot ();
+  }
+
+  let sig_root _ = initial ()
+  let str_root _ = initial ()
 
   (* Fold items *)
   let sig_item _ = failwith "TODO"
 
-  let str_item step (exns,env,trees',snap as state) =
+  let str_item step ?back_from state =
     match Chunk.Spine.value step with
     | Either.L exn -> state, Either.L exn
     | Either.R items ->
       let exns', (env, exns, trees) =
         protect_typer
         begin fun () ->
-          List.fold_left items ~init:(env, exns, [])
-          ~f:begin fun (env,exns,ts) d ->
+          List.fold_left items ~init:(state.env, [], [])
+          ~f:begin fun (env, exns, trees) d ->
           try
             let t,_,env =
               Typemod.type_structure env [d.Location.txt] d.Location.loc
             in
-            (env, exns, {d with Location.txt = t} :: ts)
-          with exn -> (env, exn :: exns, ts)
+            (env, exns, {d with Location.txt = t} :: trees)
+          with exn -> (env, exn :: exns, trees)
           end
         end
       in
-      let snap' = Btype.snapshot () in
-      (exns' @ exns, env, trees @ trees', snap'), Either.R (List.rev trees)
+      let exns = match back_from with
+        | Some {exns = exns'} -> exns' @ exns
+        | _ -> exns' @ exns
+      in
+      let snap = Btype.snapshot () in
+      {state with exns = exns @ state.exns;
+                  trees = trees @ state.trees;
+                  snap; env},
+      Either.R (List.rev trees)
 
   (* Fold structure shape *)
-  let str_in_module step (exns,env,trees,snap as state) =
+  let str_in_module step state =
     match Chunk.Spine.value step with
     | Either.L exn -> state, ()
     | Either.R (_, {Location. txt = pmod; _}) ->
@@ -125,19 +148,21 @@ module Fold = struct
             | Tmod_constraint (md,_,_,_) -> Some md
             | _ -> None
         in
-        let tymod = Typemod.type_module env pmod in
+        let tymod = Typemod.type_module state.env pmod in
         match find_structure tymod with
           | None -> None
-          | Some md -> Some (exns, md.mod_env)
-      with exn -> Some (exn :: exns, env)
+          | Some md -> Some ([], md.mod_env)
+        with exn -> Some ([exn], state.env)
       end
     with
-    | exns', None ->
-      let snap' = Btype.snapshot () in
-      (exns' @ exns, env, trees, snap'), ()
+    | exns, None ->
+      let snap = Btype.snapshot () in
+      {state with exns; snap;
+                  global_exns = state.exns @ state.global_exns}, ()
     | exns', Some (exns, env) ->
-      let snap' = Btype.snapshot () in
-      (exns' @ exns, env, trees, snap'), ()
+      let snap = Btype.snapshot () in
+      {state with exns = exns @ exns'; snap; env; 
+                  global_exns = state.exns @ state.global_exns}, ()
 
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
@@ -149,7 +174,7 @@ module Spine = Spine.Transform (Context) (Chunk.Spine) (Fold)
 type t = Spine.t
 let update = Spine.update
 
-let exns  t = fst4 (Spine.get_state t)
-let env   t = snd4 (Spine.get_state t)
-let trees t = thd4 (Spine.get_state t)
-let snapshot t = fth4 (Spine.get_state t)
+let exns  t = let s = Spine.get_state t in s.exns @ s.global_exns
+let env   t = (Spine.get_state t).env
+let trees t = (Spine.get_state t).trees
+let snapshot t = (Spine.get_state t).snap

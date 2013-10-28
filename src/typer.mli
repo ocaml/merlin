@@ -30,8 +30,16 @@
 
 open Std
 
+type step_state = {
+  exns: exn list;
+  global_exns: exn list;
+  env: Env.t;
+  trees: Typedtree.structure Location.loc list;
+  snap: Btype.snapshot;
+}
+
 module Context : sig
-  type state = exn list * Env.t * Typedtree.structure Location.loc list * Btype.snapshot
+  type state = step_state
 
   type sig_item = Types.signature Location.loc list or_exn
   type str_item = Typedtree.structure Location.loc list or_exn

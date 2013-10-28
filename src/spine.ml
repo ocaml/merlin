@@ -214,10 +214,14 @@ module Transform (Context : CONTEXT) (Dom : S)
     (* Fold items *)
     val sig_item
       :  (Dom.Context.sig_item, Dom.t_sig) Dom.step
-      -> Context.state -> Context.state * Context.sig_item
+      -> ?back_from:Context.state
+      -> Context.state
+      -> Context.state * Context.sig_item
     val str_item
       :  (Dom.Context.str_item, Dom.t_str) Dom.step
-      -> Context.state -> Context.state * Context.str_item
+      -> ?back_from:Context.state
+      -> Context.state
+      -> Context.state * Context.str_item
 
     (* Fold signature shape *)
     val sig_in_sig_modtype
@@ -339,9 +343,9 @@ struct
     | Some cod when pos dom = position cod -> previous cod
     | cod' -> cod'
 
-  let update dom cod =
+  let update dom cod' =
     let pd = Dom.position dom in
-    let cod = match cod with
+    let cod = match cod' with
       | None -> None
       | Some cod ->
         match try_ntimes (position cod - pd) previous cod with
@@ -350,10 +354,27 @@ struct
           assert (position cod <= pd);
           result
     in
+    let back_from = 
+      match cod' with
+      | None -> None
+      | Some cod' ->
+        match dom, cod with
+        | Dom.Sig (Dom.Sig_item _),
+          Some (Sig (Sig_in_sig_modtype _ | Sig_in_sig_module _))
+        | Dom.Str (Dom.Str_item _),
+          Some (Sig (Sig_in_str_modtype _) | Str (Str_in_module _))
+          -> Some (position cod' - 1, get_state cod')
+        | _ -> None
+    in
+    let back_from get_pos dom =
+      match back_from with
+      | Some (position, state) when position = get_pos dom ->
+        Some state
+      | _ -> None
+    in
     let rec fold_str dom cod k =
       match cod with
-      | Some cod when same_str dom (sync cod) ->
-        k (get_str cod)
+      | Some cod when same_str dom (sync cod) -> k (get_str cod)
       | _ ->
       let previous = previous' Dom.str_position dom cod in
       match dom with
@@ -361,7 +382,7 @@ struct
       | Dom.Str_item step ->
         fold_str (Dom.parent step) previous
           (fun cod ->
-             let state, item = Fold.str_item step (str_state cod) in
+             let state, item = Fold.str_item step ?back_from:(back_from Dom.str_position dom) (str_state cod) in
              k (Str_item (str_step (make_sync_str dom) cod state item)))
 
       | Dom.Str_in_module step ->
@@ -380,7 +401,7 @@ struct
       | Dom.Sig_item step ->
         fold_sig (Dom.parent step) previous
           (fun cod ->
-             let state, item = Fold.sig_item step (sig_state cod) in
+             let state, item = Fold.sig_item step ?back_from:(back_from Dom.sig_position dom) (sig_state cod) in
              k (Sig_item (sig_step (make_sync_sig dom) cod state item)))
 
       | Dom.Sig_in_sig_modtype step ->

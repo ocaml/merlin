@@ -30,8 +30,14 @@ open Std
 
 type 'a binding = string Location.loc * 'a Location.loc
 
+type step_state = {
+  global_exns: exn list;
+  exns: exn list;
+  modules: string Location.loc list; (* Local modules *)
+}
+
 module Context : sig
-  type state = exn list * string Location.loc list (* Local modules *)
+  type state = step_state
 
   type sig_item = Parsetree.signature_item Location.loc list or_exn
   type str_item = Parsetree.structure_item Location.loc list or_exn

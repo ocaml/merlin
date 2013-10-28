@@ -47,9 +47,14 @@ let fake_tokens tokens f =
 
 type 'a binding = string Location.loc * 'a Location.loc
 
-module Context = struct
-  type state = exn list * string Location.loc list (* Local modules *)
+type step_state = {
+  global_exns: exn list;
+  exns: exn list;
+  modules: string Location.loc list; (* Local modules *)
+}
 
+module Context = struct
+  type state = step_state
   type sig_item = Parsetree.signature_item Location.loc list or_exn
   type str_item = Parsetree.structure_item Location.loc list or_exn
   type sig_in_sig_modtype = Parsetree.modtype_declaration binding or_exn
@@ -73,13 +78,14 @@ let protect_parser f =
 
 module Fold = struct
   (* Initial state *)
-  let sig_root _ = [], []
-  let str_root _ = [], []
+  let initial = {exns = []; global_exns = []; modules = []}
+  let sig_root _ = initial
+  let str_root _ = initial
 
   (* Fold items *)
   let sig_item _ = failwith "TODO"
 
-  let str_item step (exns,modules as state) =
+  let str_item step ?back_from state =
     match Outline.Spine.value step with
     | [] -> state, Either.R []
     | tokens ->
@@ -100,10 +106,15 @@ module Fold = struct
         let loc = {Location. loc_start; loc_end; loc_ghost = false } in
         raise Syntaxerr.(Error (Other loc)))
     in
-    (exns' @ exns, modules' @ modules), result
+    let exns' = match back_from with
+      | Some {exns = exns'} -> exns'
+      | _ -> exns'
+    in
+    {state with exns = exns' @ state.exns; modules = modules' @ state.modules},
+    result
 
   (* Fold structure shape *)
-  let str_in_module step (exns,modules) =
+  let str_in_module step state =
     let exns', modules', result =
       protect_parser (fun () ->
         let tokens = Outline.Spine.value step in
@@ -121,7 +132,10 @@ module Fold = struct
           | _ -> assert false
         end)
     in
-    (exns' @ exns, modules' @ modules), result
+    {exns = exns'; 
+     modules = modules' @ state.modules;
+     global_exns = state.exns @ state.global_exns},
+    result
 
   (* Fold signature shape *)
   let sig_in_sig_modtype _ = failwith "TODO"
@@ -133,5 +147,6 @@ module Spine = Spine.Transform (Context) (Outline.Spine) (Fold)
 type t = Spine.t
 let update = Spine.update
 
-let exns t = fst (Spine.get_state t)
-let local_modules t = snd (Spine.get_state t)
+let exns t = let {exns; global_exns} = (Spine.get_state t) in
+             exns @ global_exns
+let local_modules t = (Spine.get_state t).modules

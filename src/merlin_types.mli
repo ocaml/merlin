@@ -1,5 +1,7 @@
 open Std
 
+exception Weak_error of exn
+
 val raise_error: exn -> unit
 val catch_errors: (unit -> 'a) -> exn list * 'a or_exn
 
