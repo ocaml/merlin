@@ -283,12 +283,12 @@ module Make_cow (Ext : sig val name : string end) =
 
 module Binprot = struct
 
-  let binding ~prefix ?(sufix="") ~typesig ty =
+  let binding ~prefix ?(suffix="") ~typesig ty =
     let (located_name, ty_infos) = ty in
     let tyname = located_name.Location.txt in
-    let args = format_params ~f:(fun x -> prefix ^ x ^ sufix) ty_infos.ptype_params in
+    let args = format_params ~f:(fun x -> prefix ^ x ^ suffix) ty_infos.ptype_params in
     Binding {
-      ident = prefix ^ tyname ^ sufix;
+      ident = prefix ^ tyname ^ suffix;
       typesig = typesig ty ;
       body = mk_fun ~args ;
     }
@@ -307,28 +307,21 @@ module Binprot = struct
   end
 
   module Write = struct
+    let writer t = Named ([t], "Bin_prot.Write.writer")
+
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
-      let init =
-        Arrow ("", Named ([], "Bin_prot.Common.buf"),
-        Arrow ("pos", Named ([], "Bin_prot.Common.pos"),
-        Arrow ("", Named (List.map (fun x -> Var x) params, name.Location.txt),
-        Named ([], "Bin_prot.Common.pos"))))
-      in
-      let make_var str =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Arrow ("", Var str,
-        Named ([], "Bin_prot.Unsafe_common.sptr"))))
-      in
-      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) params ~init
+      let t = Named (List.map (fun x -> Var x) params, name.Location.txt) in
+      let init = writer t in
+      let make_var str = writer (Var str) in
+      List.fold_right ~init ~f:(fun v acc -> Arrow ("", make_var v, acc)) params
 
     let prefix = "bin_write_"
 
     let binding ty = binding ~prefix ~typesig ty
   end
 
-  module Write_ = struct
+  (*module Write_ = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let init =
@@ -346,11 +339,10 @@ module Binprot = struct
       List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) params ~init
 
     let prefix = "bin_write_"
-    let sufix = "_"
+    let suffix = "_"
 
-    let binding ty = binding ~prefix ~sufix ~typesig ty
-  end
-
+    let binding ty = binding ~prefix ~suffix ~typesig ty
+  end*)
 
   module Writer = struct
     let typesig (name, ty_infos) =
@@ -365,26 +357,21 @@ module Binprot = struct
   end
 
   module Read = struct
+    let reader t = Named ([t], "Bin_prot.Read.reader")
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
-      let init =
-        Arrow ("", Named ([], "Bin_prot.Common.buf"),
-        Arrow ("pos_ref", Named ([Named ([], "Bin_prot.Common.pos")], "ref"),
-        Named (List.map (fun x -> Var x) params, name.Location.txt)))
+      let init = reader 
+        (Named (List.map (fun x -> Var x) params, name.Location.txt))
       in
-      let make_var str =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Var str))
-      in
-      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) params ~init
+      let make_var str = reader (Var str) in
+      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) ~init params 
 
     let prefix = "bin_read_"
 
     let binding ty = binding ~prefix ~typesig ty
   end
 
-  module Read_ = struct
+  (*module Read_ = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let init =
@@ -400,31 +387,23 @@ module Binprot = struct
       List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) params ~init
 
     let prefix = "bin_read_"
-    let sufix = "_"
+    let suffix = "_"
 
-    let binding ty = binding ~prefix ~sufix ~typesig ty
-  end
+    let binding ty = binding ~prefix ~suffix ~typesig ty
+  end*)
 
   module Read__ = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
-      let init =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Arrow ("", Named ([], "int"),
-        Named (List.map (fun x -> Var x) params, name.Location.txt))))
-      in
-      let make_var str =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Var str))
-      in
-      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) params ~init
+      let res = Named (List.map (fun x -> Var x) params, name.Location.txt) in
+      let init = Read.reader (Arrow ("", Named ([], "int"), res)) in
+      let make_var str = Read.reader (Var str) in
+      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) ~init params 
 
-    let prefix = "bin_read_"
-    let sufix = "__"
+    let prefix = "__bin_read_"
+    let suffix = "__"
 
-    let binding ty = binding ~prefix ~sufix ~typesig ty
+    let binding ty = binding ~prefix ~suffix ~typesig ty
   end
 
   module Reader = struct
@@ -582,15 +561,17 @@ module TypeWith = struct
     | "bin_write" ->
       let open Binprot in
       List.concat_map ~f:(fun ty ->
-        [ Sizer.binding ty ; Write.binding ty ;
-          Write_.binding ty ; Writer.binding ty ]
+          [ Sizer.binding ty ;
+            Write.binding ty ;
+            Writer.binding ty ]
       ) ty
 
     | "bin_read" ->
       let open Binprot in
       List.concat_map ~f:(fun ty ->
-        [ Read.binding ty ; Read_.binding ty ;
-          Read__.binding ty ; Reader.binding ty ]
+        [ Read.binding ty ;
+          Read__.binding ty ;
+          Reader.binding ty ]
       ) ty
 
     | "bin_io" ->
@@ -599,10 +580,10 @@ module TypeWith = struct
         [
           Sizer.binding ty ;
           Write.binding ty ;
-          Write_.binding ty ;
+          (*Write_.binding ty ;*)
           Writer.binding ty ;
           Read.binding ty ;
-          Read_.binding ty ;
+          (*Read_.binding ty ;*)
           Read__.binding ty ;
           Reader.binding ty ;
           Type_class.binding ty ;
