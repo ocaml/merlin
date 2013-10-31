@@ -1,0 +1,4 @@
+["find", "use", "bin_prot"]
+["tell", "source", "module T : sig type t with bin_io end = struct type t = T with bin_io end\nmodule T1 : Bin_prot.Binable.S = T"]
+["tell", "end"]
+["errors"]

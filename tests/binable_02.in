@@ -1,0 +1,4 @@
+["find", "use", "bin_prot"]
+["tell", "source", "module Test_binprot : Bin_prot.Binable.S1 = struct type 'a t = T of 'a with bin_io end"]
+["tell", "end"]
+["errors"]
