@@ -70,13 +70,10 @@ let protect_typer f =
 
 module Fold = struct
   (* Initial state *)
-  let initial () = {
-    exns = [];
-    global_exns = [];
-    env = initial_env ();
-    trees = [];
-    snap = Btype.snapshot ();
-  }
+  let initial () = 
+    let env = initial_env () in
+    let snap = Btype.snapshot () in
+    { exns = []; global_exns = []; trees = []; env; snap }
 
   let sig_root _ = initial ()
   let str_root _ = initial ()
