@@ -508,7 +508,7 @@ let dispatch (i,o : IO.io) (state : state) =
     state, State.exns state
 
   | (Dump (`Env None) : a request) ->
-    let sg = Browse_misc.signature_of_env (Typer.env step.types) in
+    let sg = Browse_misc.signature_of_env ~ignore_extensions:false (Typer.env step.types) in
     let aux item =
       let ppf, to_string = Format.to_string () in
       Printtyp.signature ppf [item];
@@ -525,7 +525,7 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Dump (`Env (Some pos)) : a request) ->
     let {Browse.env} = State.node_at state pos in
-    let sg = Browse_misc.signature_of_env env in
+    let sg = Browse_misc.signature_of_env ~ignore_extensions:false env in
     let aux item =
       let ppf, to_string = Format.to_string () in
       Printtyp.signature ppf [item];
