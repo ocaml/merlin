@@ -532,6 +532,8 @@ module Fields = struct
 end
 
 module Compare = struct
+  let mk_simpl t = Arrow ("", t, Arrow ("", t, Named ([], "int")))
+
   let bindings ~kind ({ Location.txt = name },ty) =
     let params = List.map
         (function None -> Var "_" | Some s -> Var (s.Location.txt))
@@ -540,7 +542,10 @@ module Compare = struct
     let self = Named (params, name) in
     let cmp = {
       ident = "compare_" ^ name;
-      typesig = Arrow ("", self, Arrow ("", self, Named ([], "int")));
+      typesig = 
+        List.fold_left params ~init:(mk_simpl self) ~f:(fun t param ->
+          Arrow ("", mk_simpl param, t)
+        );
       body = AnyVal
     } in
     match kind with
