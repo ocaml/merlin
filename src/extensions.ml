@@ -122,6 +122,14 @@ let ext_nonrec = {
   packages = [];
 }
 
+let ext_here = {
+  name = "here";
+  private_def = [];
+  public_def = ["val _here_ : Lexing.position"];
+  keywords = [];
+  packages = [];
+}
+
 let always = [ext_any]
-let registry = [ext_lwt;ext_js;ext_ounit;ext_nonrec]
+let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec]
 
