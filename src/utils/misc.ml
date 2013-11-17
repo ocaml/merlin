@@ -302,3 +302,7 @@ let modules_in_path ~ext path =
   end
 
 let (~:) = Lazy.from_val
+
+let file_mtime filename =
+  try Unix.((stat filename).st_mtime)
+  with _ -> nan

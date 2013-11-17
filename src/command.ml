@@ -114,7 +114,7 @@ let new_step outline steps =
   History.insert (State.step (History.focused steps) outline) steps
 
 let tell i o state request number_of_definitions source =
-  Env.reset_missing_cmis ();
+  Env.reset_cache_toplevel ();
   let number_of_definitions = ref number_of_definitions in
   let eod = ref false and eot = ref false in
   let lexbuf = Lexing.from_strings source ~position:(position state)

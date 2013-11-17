@@ -110,9 +110,9 @@ let retype state =
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =
-  if Env.quick_reset_cache ()
-  then retype state, true
-  else state, false
+  if Env.check_cache_consistency ()
+  then state, false
+  else (Env.reset_cache (); retype state, true)
 
 let browse step =
   List.concat_map
