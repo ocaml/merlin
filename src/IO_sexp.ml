@@ -190,7 +190,8 @@ let rec sexp_of_json =
 let rec json_of_sexp =
   let open Sexp in
   let fail msg sexp =
-    IO.protocol_failure (msg ^ ", got: \n" ^ Sexp.to_string sexp) in
+    failwith (msg ^ ", got: \n" ^ Sexp.to_string sexp)
+  in
   let rec assoc_item = function
     | Cons (Cons (Sym a, b), c) -> (a, json_of_sexp b) :: assoc_item c
     | Sym "nil" -> []

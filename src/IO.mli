@@ -34,25 +34,16 @@ type low_io = Json.json Stream.t * (Json.json -> unit)
     (* Protocol-typed stream *)
 type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
 
-exception Protocol_failure of string
+(* Initialize protocol codec from a input and an output channel *)
+val make : input:in_channel -> output:out_channel -> low_io
+(* Add types *)
+val lift : low_io -> io
 
 (* Select between different serialization protocols *)
 type io_maker = input:in_channel -> output:out_channel -> low_io
 val register_protocol : name:string -> desc:string -> io_maker -> unit
 val select_frontend : string -> unit
 
-val make : input:in_channel -> output:out_channel -> low_io
-val lift : low_io -> io
-
-val return : Json.json -> Json.json
-val fail   : exn -> Json.json
-val protocol_failure : string -> 'a
+(* Misc *)
 val invalid_arguments : unit -> 'a
-
-val make_pos : int * int -> Lexing.position
-val pos_to_json : Lexing.position -> Json.json
-val pos_of_json : Json.json -> Lexing.position
 val with_location : Location.t -> (string * Json.json) list -> Json.json
-
-val request_of_json  : Json.json -> Protocol.a_request
-val response_to_json : Protocol.response -> Json.json
