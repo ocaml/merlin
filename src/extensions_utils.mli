@@ -40,11 +40,14 @@
  * ident. Use it to test or find private definitions. *)
 val ident : Ident.t
 
-val all_extensions : unit -> string list
-val set_extension : enabled:bool -> string -> unit
-val enabled : unit -> string list
-val disabled : unit -> string list
-val register_packages : string list -> unit
+val list : [`All|`Enabled|`Disabled] -> string list
+
+val set_extensions : string list -> unit
+val extensions_from_packages : string list -> string list
+
+(* Return a reference that will be set to false when the parser change
+   (as such, everything parsed before that point should be dropped) *)
+val parser_valid : unit -> bool ref
 
 (* Register extensions in environment.
  * If an extension fails to typecheck (e.g. it needs definitions from an

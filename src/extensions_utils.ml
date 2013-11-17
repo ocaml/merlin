@@ -1,3 +1,4 @@
+open Std
 
 let ident = Ident.create "_"
 
@@ -11,44 +12,62 @@ let type_sig env sg =
 
 let always, registry =
   let f = List.map
-    (fun {Extensions. name; private_def; public_def; keywords; packages} ->
+    ~f:(fun {Extensions. name; private_def; public_def; keywords; packages} ->
       name,
-      (List.concat (List.map parse_sig private_def),
-       List.concat (List.map parse_sig public_def),
+      (List.concat_map ~f:parse_sig private_def,
+       List.concat_map ~f:parse_sig public_def,
        keywords,
        packages))
   in
-  Extensions.(List.map snd (f always), f registry)
-
-let all_extensions () = List.map fst registry
+  Extensions.(List.map ~f:snd (f always), f registry)
+let all_extensions = List.map ~f:fst registry
 let ext_table = Hashtbl.create 5
-let enabled () = Hashtbl.fold (fun name _ names -> name :: names) ext_table []
-let disabled () =
-  List.filter (fun name -> not (Hashtbl.mem ext_table name)) (all_extensions ())
+
+let list = function
+  | `All ->
+    all_extensions
+  | `Enabled ->
+    Hashtbl.fold (fun name _ names -> name :: names) ext_table []
+  | `Disabled ->
+    List.filter (fun name -> not (Hashtbl.mem ext_table name)) all_extensions
+
+let parser_valid = ref (ref false)
 
 let set_raw_extension ~enabled (name,(_,_,kw,_ as ext)) =
   Lexer.set_extension ~enabled kw;
+  !parser_valid := false;
   if enabled
   then Hashtbl.replace ext_table name ext
   else Hashtbl.remove ext_table name
 
 let set_extension ~enabled name =
-  try
-    let (_,_,keywords,_) as ext = List.assoc name registry in
-    set_raw_extension ~enabled (name,ext)
+  try  let ext = List.assoc name registry in
+       set_raw_extension ~enabled (name,ext)
   with Not_found -> ()
 
-let register_packages packages =
-  let exts =
-    List.filter (fun (_,(_,_,_,ps)) ->
-                      List.exists (fun p -> List.mem p packages) ps)
-                registry
-  in
-  List.iter (set_raw_extension ~enabled:true) exts
+let set_extensions list =
+  List.iter 
+    (fun ext -> 
+       let enabled = (List.mem ext list) in
+       if enabled <> Hashtbl.mem ext_table ext then
+         set_extension ~enabled ext)
+    all_extensions
+
+let extensions_from_packages packages =
+  List.filter_map registry
+    ~f:(fun (ext,(_,_,_,ps)) ->
+        if List.exists (fun p -> List.mem p packages) ps
+        then Some ext
+        else None)
+
+let parser_valid () =
+  if not !(!parser_valid) then
+    parser_valid := ref true;
+  !parser_valid
 
 let register env =
   (* Log errors ? *)
-  let try_type sg' = try type_sig env sg' with exn -> [] in
+  let try_type sg' = try type_sig env sg' with _exn -> [] in
   let enabled = always @ Hashtbl.fold (fun _ ext exts -> ext :: exts)
                           ext_table []
   in
