@@ -27,5 +27,3 @@
 )* }}} *)
 
 val dispatch : IO.io -> State.t -> 'a Protocol.request -> State.t * 'a
-
-val init_path : unit -> unit

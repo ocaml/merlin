@@ -30,6 +30,7 @@ open Std
 
 open Misc
 open Protocol
+open Global_state
 
 type step = State.step = {
   outlines : Outline.t;
@@ -40,111 +41,6 @@ type step = State.step = {
 type state = State.t = {steps  : step History.t}
 
 module VPrinttyp = State.Verbose_print
-
-module Path_utils : sig
-  val set_local_path : string -> unit
-  val set_dot_merlin : Dot_merlin.path_config -> unit
-  val user_path : action:[`Add | `Rem] ->
-                  var:[`Build | `Source] ->
-                  ?cwd:string -> string -> unit
-
-  val load_packages : string list -> unit
-
-  val source_path : Path_list.t
-  val build_path  : Path_list.t
-
-  val reset : unit -> unit
-  val init  : unit -> unit
-end = struct
-  (* 1. Local path *)
-  let local_path = ref []
-  let set_local_path path =
-    local_path := [path];
-    State.reset_global_modules ()
-
-  (* 2a. Dot merlin packages *)
-  let dot_merlin_packages = ref []
-  (* 2b. User packages *)
-  let user_packages = ref []
-  let load_packages pkgs =
-    Extensions_utils.register_packages pkgs;
-    user_packages :=
-      List.filter_dup (Dot_merlin.packages_path pkgs @ !user_packages)
-
-  (* 2c. Dot merlin path *)
-  let dot_merlin_build = ref []
-  let dot_merlin_source = ref []
-
-  let set_dot_merlin config =
-    dot_merlin_build    := config.Dot_merlin.build_path;
-    dot_merlin_source   := config.Dot_merlin.source_path;
-    Extensions_utils.register_packages config.Dot_merlin.packages;
-    dot_merlin_packages := Dot_merlin.(packages_path config.packages);
-    State.reset_global_modules ()
-
-  (* 3. User path *)
-  let user_source = ref []
-  let user_build  = ref []
-
-  let user_path ~action ~var ?cwd path =
-    let r = match var with `Source -> user_source | `Build -> user_build in
-    let d = canonicalize_filename ?cwd
-              (expand_directory Config.standard_library path)
-    in
-    r := List.filter ~f:((<>) d) !r;
-    match action with
-    | `Add -> r := d :: !r
-    | `Rem -> ()
-
-  (* Default ocaml library path *)
-  let default_path = ref []
-
-  let build_path =
-    Path_list.of_list (List.map ~f:Path_list.of_string_list_ref [
-      user_build;
-      dot_merlin_build;
-      user_packages;
-      dot_merlin_packages;
-      local_path;
-      default_path;
-    ])
-
-  let source_path =
-    Path_list.of_list (List.map ~f:Path_list.of_string_list_ref [
-      user_source;
-      dot_merlin_source;
-      local_path;
-    ])
-
-  (* Initialize the search path.
-   The current directory is always searched first,
-   then the directories specified with the -I option (in command-line order),
-   then the standard library directory (unless the -nostdlib option is given).
-  *)
-  let init () =
-    let dirs =
-      if !Clflags.use_threads then "+threads" :: !Clflags.include_dirs
-      else if !Clflags.use_vmthreads then "+vmthreads" :: !Clflags.include_dirs
-      else !Clflags.include_dirs in
-    let exp_dirs = List.map (expand_directory Config.standard_library) dirs in
-    let exp_dirs = List.rev_append exp_dirs (Clflags.std_include_dir ()) in
-    default_path := exp_dirs;
-    Config.load_path := build_path;
-    Env.reset_cache ()
-
-  let reset () =
-    List.iter (fun p -> p := [])
-      [dot_merlin_packages;
-       dot_merlin_build;
-       dot_merlin_source;
-       user_packages;
-       user_build;
-       user_source;
-      ];
-    State.reset_global_modules ()
-end
-
-let init_path = Path_utils.init
 
 module Type_utils = struct
   let type_in_env env ppf expr =
@@ -394,7 +290,7 @@ let dispatch (i,o : IO.io) (state : state) =
     in
     begin match
       Track_definition.from_string
-        ~sources:Path_utils.source_path
+        ~sources:Project.source_path
         ~env:(node.Browse.env)
         ~local_defs
         ~local_modules
@@ -491,11 +387,11 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Reset (Some name) : a request) ->
     let dir = Filename.dirname name in
     let filename = Filename.basename name in
-    Path_utils.set_local_path dir;
+    Project.set_local_path dir;
     State.initial_str filename, ()
 
   | (Refresh `Full : a request) ->
-    State.reset_global_modules ();
+    Project.flush_global_modules ();
     Env.reset_cache ();
     State.retype state, true
 
@@ -605,7 +501,7 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Which_path s : a request) ->
     let filename =
-      try Misc.find_in_path_uncap Path_utils.source_path s
+      try Misc.find_in_path_uncap Project.source_path s
       with Not_found ->
         Misc.find_in_path_uncap !Config.load_path s
     in
@@ -613,44 +509,7 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Which_with_ext ext : a request) ->
     state, Misc.modules_in_path ~ext
-            (Path_list.to_strict_list Path_utils.source_path)
-
-  | (Findlib_use packages : a request) ->
-    Path_utils.load_packages packages;
-    state, ()
-
-  | (Findlib_list : a request) ->
-    state, (Fl_package_base.list_packages ())
-
-  | (Extension_list `All : a request) ->
-    state, (Extensions_utils.all_extensions ())
-
-  | (Extension_list `Enabled : a request) ->
-    state, (Extensions_utils.enabled ())
-
-  | (Extension_list `Disabled : a request) ->
-    state, (Extensions_utils.disabled ())
-
-  | (Extension_set (action,extensions) : a request) ->
-    let enabled = action = `Enabled in
-    List.iter extensions ~f:(Extensions_utils.set_extension ~enabled) ;
-    state, ()
-
-  | (Path (var,action,pathes) : a request) ->
-    List.iter ~f:(Path_utils.user_path ~action ~var ?cwd:None) pathes;
-    State.reset_global_modules ();
-    state, true
-
-  | (Path_list `Build : a request) ->
-    state, Path_list.to_strict_list Path_utils.build_path
-
-  | (Path_list `Source : a request) ->
-    state, Path_list.to_strict_list Path_utils.source_path
-
-  | (Path_reset : a request) ->
-    Path_utils.reset ();
-    State.reset_global_modules ();
-    state, ()
+            (Path_list.to_strict_list Project.source_path)
 
   | (Project_load (cmd,path) : a request) ->
     let f = match cmd with
@@ -658,8 +517,38 @@ let dispatch (i,o : IO.io) (state : state) =
       | `Find -> Dot_merlin.find
     in
     let dot_merlins = f path in
-    let config = Dot_merlin.exec dot_merlins in
-    Path_utils.set_dot_merlin config;
+    let config = Dot_merlin.parse dot_merlins in
+    Project.set_dot_merlin config;
     state, config.Dot_merlin.dot_merlins
+
+  | (Findlib_list : a request) ->
+    state, (Fl_package_base.list_packages ())
+
+  | (Findlib_use packages : a request) ->
+    Project.user_load_packages packages;
+    state, ()
+
+  | (Extension_list kind : a request) ->
+    state, (Extensions_utils.list kind)
+
+  | (Extension_set (action,extensions) : a request) ->
+    let enabled = action = `Enabled in
+    List.iter extensions ~f:(Project.user_set_extension ~enabled);
+    state, ()
+
+  | (Path (var,action,pathes) : a request) ->
+    List.iter ~f:(Project.user_path ~action ~var ?cwd:None) pathes;
+    Project.flush_global_modules ();
+    state, true
+
+  | (Path_list `Build : a request) ->
+    state, Path_list.to_strict_list Project.build_path
+
+  | (Path_list `Source : a request) ->
+    state, Path_list.to_strict_list Project.source_path
+
+  | (Path_reset : a request) ->
+    Project.reset_user ();
+    state, ()
 
   : state * a)
