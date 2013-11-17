@@ -107,8 +107,9 @@ let main_loop () =
           let Protocol.Request request =
             refresh_state_on_signal state' (fun () -> Stream.next input)
           in
-          let state', response = Command.dispatch io state request in
-          state',
+          let state = State.validate_parser !state' in
+          let state, response = Command.dispatch io state request in
+          state,
           Protocol.Return (request, response)
         with
           | Stream.Failure as exn -> raise exn

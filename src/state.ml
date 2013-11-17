@@ -36,7 +36,7 @@ type step = {
   types    : Typer.t;
 }
 
-type t = {steps: step History.t}
+type t = {steps: step History.t; parser_validity: bool ref}
 
 let initial_ outlines =
   let chunks = Chunk.update outlines None in
@@ -45,7 +45,8 @@ let initial_ outlines =
 let initial_str fname = initial_ (Outline.initial_str fname)
 let initial_sig fname = initial_ (Outline.initial_sig fname)
 
-let initial step = {steps  = History.initial step}
+let initial step = { steps = History.initial step; 
+                     parser_validity = Extensions_utils.parser_valid () }
 
 let initial_str fname = initial (initial_str fname)
 let initial_sig fname = initial (initial_sig fname)
@@ -99,7 +100,7 @@ module Verbose_print = struct
 end
 
 let retype state =
-  {steps =
+  {state with steps =
     History.reconstruct state.steps (fun x -> x)
       (fun prev old ->
         let outlines = old.outlines in
@@ -458,3 +459,12 @@ let node_complete node prefix =
       | _ -> find prefix
     with Not_found -> []
   end
+
+let validate_parser t =
+  if !(t.parser_validity)
+  then t
+  else 
+    let steps = History.seek_backward (fun _ -> true) t.steps in
+    let step = History.focused steps in
+    initial step
+

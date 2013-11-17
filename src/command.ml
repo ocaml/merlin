@@ -38,7 +38,7 @@ type step = State.step = {
   types    : Typer.t;
 }
 
-type state = State.t = {steps  : step History.t}
+type state = State.t = {steps: step History.t; parser_validity: bool ref}
 
 module VPrinttyp = State.Verbose_print
 
@@ -177,7 +177,7 @@ let tell i o state request number_of_definitions source =
       end
     | _ -> loop steps (Some [])
   in
-  let state = {steps = first state.steps} in
+  let state = {state with steps = first state.steps} in
   state, Some (position state)
 
 
@@ -305,7 +305,7 @@ let dispatch (i,o : IO.io) (state : state) =
     end
 
   | (Drop : a request) ->
-    let state = {steps = History.modify (fun x -> x) state.steps} in
+    let state = {state with steps = History.modify (fun x -> x) state.steps} in
     state, position state
 
   | (Seek `Position : a request) ->
@@ -322,7 +322,7 @@ let dispatch (i,o : IO.io) (state : state) =
        | _ -> inv step || cmp step <= 0)
       steps
     in
-    let state = {steps} in
+    let state = {state with steps} in
     state, position state
 
   | (Seek (`Exact pos) : a request) ->
@@ -331,13 +331,13 @@ let dispatch (i,o : IO.io) (state : state) =
     let steps = state.steps in
     let steps = History.seek_backward (fun i -> inv i || cmp i < 0) steps in
     let steps = History.seek_forward (fun i -> inv i || cmp i > 0) steps in
-    let state = {steps} in
+    let state = {state with steps} in
     state, position state
 
   | (Seek `End : a request) ->
     let steps = state.steps in
     let steps = History.seek_forward (fun _ -> true) steps in
-    let state = {steps} in
+    let state = {state with steps} in
     state, position state
 
   | (Seek `Maximize_scope : a request) ->
@@ -349,7 +349,7 @@ let dispatch (i,o : IO.io) (state : state) =
       else loop steps'
     in
     let steps = loop state.steps in
-    let state = {steps} in
+    let state = {state with steps} in
     state, position state
 
   | (Boundary (dir,pos) : a request) ->
@@ -382,9 +382,11 @@ let dispatch (i,o : IO.io) (state : state) =
     end
 
   | (Reset None : a request) ->
+    Env.reset_cache ();
     State.initial_str "", ()
 
   | (Reset (Some name) : a request) ->
+    Env.reset_cache ();
     let dir = Filename.dirname name in
     let filename = Filename.basename name in
     Project.set_local_path dir;
