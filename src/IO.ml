@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Std
+
 type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
 type low_io = Json.json Stream.t * (Json.json -> unit)
 type io_maker = input:in_channel -> output:out_channel -> low_io

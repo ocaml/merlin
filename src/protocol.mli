@@ -1,3 +1,5 @@
+open Std
+
 type position = Lexing.position
 
 type completion = {
@@ -76,6 +78,7 @@ type _ request =
   | Project_load
     :  [`File|`Find] * string
     -> string list request
+
 type a_request = Request : 'a request -> a_request
 
 type response =

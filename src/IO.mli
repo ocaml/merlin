@@ -26,12 +26,18 @@
 
 )* }}} *)
 
-type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
+open Std
+
+(* A protocol read & write a stream of Json-like objects *)
+    (* Untyped stream *)
 type low_io = Json.json Stream.t * (Json.json -> unit)
-type io_maker = input:in_channel -> output:out_channel -> low_io
+    (* Protocol-typed stream *)
+type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
 
 exception Protocol_failure of string
 
+(* Select between different serialization protocols *)
+type io_maker = input:in_channel -> output:out_channel -> low_io
 val register_protocol : name:string -> desc:string -> io_maker -> unit
 val select_frontend : string -> unit
 
