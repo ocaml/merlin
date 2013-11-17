@@ -86,21 +86,17 @@ let rec project_name = function
   | List.Lazy.Cons (_, lazy tail) -> project_name tail
   | List.Lazy.Nil -> None
 
-let err_log msg = Logger.error `dot_merlin msg
-
-module Flags = Top_options.Make (struct
-  let _projectfind _ = err_log "unsupported flag \"-project-find\" (ignored)" ;
-end)
-
 type path_config =
   {
     dot_merlins : string list;
     build_path  : string list;
     source_path : string list;
     packages    : string list;
+    flags       : string list list;
+    extensions  : string list;
   }
 
-let exec_dot_merlin {path; project; entries} config =
+let parse_dot_merlin {path; entries} config =
   let cwd = Filename.dirname path in
   let expand path =
     canonicalize_filename ~cwd (expand_directory Config.standard_library path)
@@ -112,30 +108,33 @@ let exec_dot_merlin {path; project; entries} config =
     | `S path -> {config with source_path = expand path :: config.source_path}
     | `PKG pkgs -> {config with packages = pkgs @ config.packages}
     | `EXT exts ->
-      List.iter exts ~f:(fun e -> Extensions_utils.set_extension ~enabled:true e);
-      config
+      {config with extensions = exts @ config.extensions}
     | `FLG flags ->
       let lst = rev_split_words flags in
-      let flags = Array.of_list (List.rev lst) in
-      begin try
-        Arg.parse_argv ~current:(ref (-1)) flags Flags.list
-          Top_options.unexpected_argument "error..."
-      with
-      | Arg.Bad msg -> err_log msg; exit 2
-      | Arg.Help msg -> err_log msg; exit 0 (* FIXME *)
-      end;
-      config
+      let flags = List.rev lst in
+      {config with flags = flags :: config.flags}
   ) entries
 
-let rec exec ?(config={build_path=[];source_path=[];packages=[];dot_merlins=[]}) =
+let empty_config = {
+  build_path  = [];
+  source_path = [];
+  packages    = [];
+  dot_merlins = [];
+  extensions  = [];
+  flags       = [];
+}
+
+let rec parse ?(config=empty_config) =
   function
   | List.Lazy.Cons (dot_merlin, lazy tail) ->
-    exec ~config:(exec_dot_merlin dot_merlin config) tail
+    parse ~config:(parse_dot_merlin dot_merlin config) tail
   | List.Lazy.Nil ->
     { config with
-      build_path = List.filter_dup config.build_path;
-      source_path = List.filter_dup config.source_path;
-      packages = List.filter_dup config.packages
+      build_path  = List.rev (List.filter_dup config.build_path);
+      source_path = List.rev (List.filter_dup config.source_path);
+      packages    = List.rev (List.filter_dup config.packages);
+      extensions  = List.rev (List.filter_dup config.extensions);
+      flags       = List.rev (List.filter_dup config.flags);
     }
 
 let packages_path packages =
