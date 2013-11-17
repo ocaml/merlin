@@ -45,7 +45,7 @@ let initial_ outlines =
 let initial_str fname = initial_ (Outline.initial_str fname)
 let initial_sig fname = initial_ (Outline.initial_sig fname)
 
-let initial step = { steps = History.initial step; 
+let initial step = { steps = History.initial step;
                      parser_validity = Extensions_utils.parser_valid () }
 
 let initial_str fname = initial (initial_str fname)
@@ -463,7 +463,7 @@ let node_complete node prefix =
 let validate_parser t =
   if !(t.parser_validity)
   then t
-  else 
+  else
     let steps = History.seek_backward (fun _ -> true) t.steps in
     let step = History.focused steps in
     initial step

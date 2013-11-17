@@ -46,8 +46,8 @@ let set_extension ~enabled name =
   with Not_found -> ()
 
 let set_extensions list =
-  List.iter 
-    (fun ext -> 
+  List.iter
+    (fun ext ->
        let enabled = (List.mem ext list) in
        if enabled <> Hashtbl.mem ext_table ext then
          set_extension ~enabled ext)

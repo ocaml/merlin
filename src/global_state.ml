@@ -3,7 +3,7 @@ open Misc
 
 (** Mimic other OCaml tools, entry point *)
 module Flags = struct
-  
+
   (* Parse arguments specified on commandline *)
   module Initial = Top_options.Make (struct
     let _projectfind path =
@@ -38,7 +38,7 @@ module Flags = struct
         Top_options.unexpected_argument "error..."
     with (* FIXME *)
     | Arg.Bad msg -> err_log msg
-    | Arg.Help msg -> err_log msg 
+    | Arg.Help msg -> err_log msg
     end
 end
 
@@ -64,6 +64,7 @@ module Project : sig
   (* Output values *)
   val source_path : Path_list.t
   val build_path  : Path_list.t
+  val cmt_path    : Path_list.t
 
   (* List all top modules of current project *)
   val global_modules : unit -> string list
@@ -81,7 +82,7 @@ end = struct
   let dot_merlin_extensions = ref []
   let user_extensions = ref []
 
-  let update_extensions () = 
+  let update_extensions () =
     Extensions_utils.set_extensions
       (List.filter_dup (!dot_merlin_extensions @ !user_extensions))
 
@@ -122,21 +123,25 @@ end = struct
   let user_packages = ref []
   let user_load_packages pkgs =
     let exts = Extensions_utils.extensions_from_packages pkgs in
-    user_extensions := 
+    user_extensions :=
       List.filter_dup (exts @ !user_extensions);
     update_extensions ();
     user_packages :=
       List.filter_dup (Dot_merlin.packages_path pkgs @ !user_packages)
 
   (* 2c. Dot merlin path *)
-  let dot_merlin_build = ref []
+  let dot_merlin_cmi    = ref []
+  let dot_merlin_cmt    = ref []
+  let dot_merlin_build  = ref []
   let dot_merlin_source = ref []
 
   let set_dot_merlin config =
     dot_merlin_set_flags config.Dot_merlin.flags;
-    dot_merlin_build    := config.Dot_merlin.build_path;
-    dot_merlin_source   := config.Dot_merlin.source_path;
-    let exts = Extensions_utils.extensions_from_packages 
+    dot_merlin_build  := config.Dot_merlin.build_path;
+    dot_merlin_source := config.Dot_merlin.source_path;
+    dot_merlin_cmi    := config.Dot_merlin.cmi_path;
+    dot_merlin_cmt    := config.Dot_merlin.cmt_path;
+    let exts = Extensions_utils.extensions_from_packages
         config.Dot_merlin.packages in
     dot_merlin_extensions := exts @ config.Dot_merlin.extensions;
     update_extensions ();
@@ -163,6 +168,7 @@ end = struct
   let build_path =
     Path_list.of_list (List.map ~f:Path_list.of_string_list_ref [
       user_build;
+      dot_merlin_cmi;
       dot_merlin_build;
       user_packages;
       dot_merlin_packages;
@@ -175,6 +181,17 @@ end = struct
       user_source;
       dot_merlin_source;
       local_path;
+    ])
+
+  let cmt_path =
+    Path_list.of_list (List.map ~f:Path_list.of_string_list_ref [
+      dot_merlin_cmt;
+      user_build;
+      dot_merlin_build;
+      user_packages;
+      dot_merlin_packages;
+      local_path;
+      default_path;
     ])
 
   (* Initialize the search path.

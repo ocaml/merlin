@@ -82,7 +82,7 @@ module Protocol_io = struct
   let pos_to_json pos =
     Lexing.(`Assoc ["line", `Int pos.pos_lnum;
                     "col", `Int (pos.pos_cnum - pos.pos_bol)])
-  
+
   let error_to_json {Error_report. valid; text; where; loc} =
     let content = ["valid", `Bool valid; "message", `String text] in
     let content =
@@ -93,15 +93,15 @@ module Protocol_io = struct
     in
     let content = ("type", `String where) :: content in
     `Assoc content
-  
+
   let error_catcher exn =
     match Error_report.error_catcher exn with
     | None -> None
     | Some (loc,t) -> Some (loc, error_to_json t)
-  
+
   let make_pos (pos_lnum, pos_cnum) =
     Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
-  
+
   let pos_of_json = function
     | `Assoc props ->
       begin try match List.assoc "line" props, List.assoc "col" props with
@@ -110,26 +110,26 @@ module Protocol_io = struct
       with Not_found -> failwith "Incorrect position"
       end
     | _ -> failwith "Incorrect position"
-  
+
   let with_location loc assoc =
     `Assoc (("start", pos_to_json loc.Location.loc_start) ::
             ("end",   pos_to_json loc.Location.loc_end) ::
             assoc)
-  
+
   let optional_position = function
     | [`String "at"; jpos] -> Some (pos_of_json jpos)
     | [] -> None
     | _ -> invalid_arguments ()
-  
+
   let string_list l =
     List.map (function `String s -> s | _ -> invalid_arguments ()) l
-  
+
   let json_of_string_list l =
     `List (List.map (fun s -> `String s) l)
-  
+
   let json_of_type_loc (loc,str) =
     with_location loc ["type", `String str]
-  
+
   let json_of_completion {Protocol. name; kind; desc; info} =
     let kind = match kind with
       | `Value       -> "Value"
@@ -144,17 +144,17 @@ module Protocol_io = struct
             "kind", `String kind;
             "desc", `String desc;
             "info", `String info]
-  
+
   let source_or_build = function
     | "source" -> `Source
     | "build"  -> `Build
     | _ -> invalid_arguments ()
-  
+
   let add_or_remove = function
     | "add"    -> `Add
     | "remove" -> `Rem
     | _ -> invalid_arguments ()
-  
+
   let load_or_find = function
     | "load" -> `File
     | "find" -> `Find

@@ -1,4 +1,5 @@
 open Std
+open Global_state
 
 let sources_path = ref (Misc.Path_list.of_list [])
 let cwd = ref ""
@@ -38,7 +39,7 @@ module Utils = struct
           (Misc.Path_list.of_string_list_ref (ref [ !cwd ])) fname
     with Not_found ->
     try Misc.find_in_path_uncap !sources_path fname     with Not_found ->
-    try Misc.find_in_path_uncap !Config.load_path fname with Not_found ->
+    try Misc.find_in_path_uncap Project.cmt_path fname  with Not_found ->
     raise Not_found
 
   let keep_suffix =

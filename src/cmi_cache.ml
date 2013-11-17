@@ -3,7 +3,7 @@ let cache : (string, float * Cmi_format.cmi_infos) Hashtbl.t
 
 let read_cmi filename =
   let mtime = Misc.file_mtime filename in
-  try 
+  try
     let mtime', cmi = Hashtbl.find cache filename in
     if mtime <> mtime' then raise Not_found;
     cmi
@@ -18,7 +18,7 @@ let read_cmi filename =
 
 let flush () =
   let invalid =
-    Hashtbl.fold 
+    Hashtbl.fold
       (fun filename (mtime, _) lst ->
         if Misc.file_mtime filename <> mtime
         then filename :: lst

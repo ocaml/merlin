@@ -22,9 +22,10 @@ module Project : sig
   (* Output values *)
   val source_path : Path_list.t
   val build_path  : Path_list.t
+  val cmt_path    : Path_list.t
 
   (* List all top modules of current project *)
   val global_modules : unit -> string list
   (* Force recomputing list of global modules *)
   val flush_global_modules : unit -> unit
-end 
+end

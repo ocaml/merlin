@@ -5,6 +5,8 @@ module Directives = struct
   type t = [
     | `B of string
     | `S of string
+    | `CMI of string
+    | `CMT of string
     | `PKG of string list
     | `EXT of string list
     | `FLG of string
@@ -33,6 +35,10 @@ let parse_dot_merlin path : bool * t =
         tell (`S (String.drop 2 line))
       else if String.is_prefixed ~by:"SRC " line then
         tell (`S (String.drop 4 line))
+      else if String.is_prefixed ~by:"CMI " line then
+        tell (`CMI (String.drop 4 line))
+      else if String.is_prefixed ~by:"CMT " line then
+        tell (`CMT (String.drop 4 line))
       else if String.is_prefixed ~by:"PKG " line then
         tell (`PKG (rev_split_words (String.drop 4 line)))
       else if String.is_prefixed ~by:"EXT " line then
@@ -91,6 +97,8 @@ type path_config =
     dot_merlins : string list;
     build_path  : string list;
     source_path : string list;
+    cmi_path    : string list;
+    cmt_path    : string list;
     packages    : string list;
     flags       : string list list;
     extensions  : string list;
@@ -106,6 +114,8 @@ let parse_dot_merlin {path; entries} config =
     function
     | `B path -> {config with build_path = expand path :: config.build_path}
     | `S path -> {config with source_path = expand path :: config.source_path}
+    | `CMI path -> {config with cmi_path = expand path :: config.cmi_path}
+    | `CMT path -> {config with cmt_path = expand path :: config.cmt_path}
     | `PKG pkgs -> {config with packages = pkgs @ config.packages}
     | `EXT exts ->
       {config with extensions = exts @ config.extensions}
@@ -118,6 +128,8 @@ let parse_dot_merlin {path; entries} config =
 let empty_config = {
   build_path  = [];
   source_path = [];
+  cmi_path    = [];
+  cmt_path    = [];
   packages    = [];
   dot_merlins = [];
   extensions  = [];
@@ -129,9 +141,12 @@ let rec parse ?(config=empty_config) =
   | List.Lazy.Cons (dot_merlin, lazy tail) ->
     parse ~config:(parse_dot_merlin dot_merlin config) tail
   | List.Lazy.Nil ->
-    { config with
+    {
+      dot_merlins = config.dot_merlins;
       build_path  = List.rev (List.filter_dup config.build_path);
       source_path = List.rev (List.filter_dup config.source_path);
+      cmi_path    = List.rev (List.filter_dup config.cmi_path);
+      cmt_path    = List.rev (List.filter_dup config.cmt_path);
       packages    = List.rev (List.filter_dup config.packages);
       extensions  = List.rev (List.filter_dup config.extensions);
       flags       = List.rev (List.filter_dup config.flags);
