@@ -234,6 +234,11 @@ module Transform (Context : CONTEXT) (Dom : S)
     val str_in_module
       :  (Dom.Context.str_in_module, Dom.t_str) Dom.step
       -> Context.state -> Context.state * Context.str_in_module
+
+    (* Validate state before incremental update
+     * (return false iff current step can't be used as a starting point for
+     *  incremental update)  *)
+    val is_valid : Dom.t -> Context.state -> bool
    end) :
 sig
   module Dom : S
@@ -370,7 +375,9 @@ struct
     in
     let rec fold_str dom cod k =
       match cod with
-      | Some cod when same_str dom (sync cod) -> k (get_str cod)
+      | Some cod when same_str dom (sync cod)
+                   && Fold.is_valid (Dom.Str dom) (get_state cod) ->
+          k (get_str cod)
       | _ ->
       let previous = previous' Dom.str_position dom cod in
       match dom with
@@ -388,7 +395,9 @@ struct
              k (Str_in_module (str_step (make_sync_str dom) cod state value)))
     and fold_sig dom cod k =
       match cod with
-      | Some cod when same_sig dom (sync cod) -> k (get_sig cod)
+      | Some cod when same_sig dom (sync cod)
+                   && Fold.is_valid (Dom.Sig dom) (get_state cod) ->
+          k (get_sig cod)
       | _ ->
       let previous = previous' Dom.sig_position dom cod in
       match dom with

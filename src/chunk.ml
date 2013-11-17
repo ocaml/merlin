@@ -139,6 +139,8 @@ module Fold = struct
   let sig_in_sig_modtype _ = failwith "TODO"
   let sig_in_sig_module  _ = failwith "TODO"
   let sig_in_str_modtype _ = failwith "TODO"
+
+  let is_valid _ _ = true
 end
 
 module Spine = Spine.Transform (Context) (Outline.Spine) (Fold)
