@@ -60,10 +60,8 @@ let may_map f x = Option.map ~f x
 (* File functions *)
 
 let remove_file filename =
-  try
-    Sys.remove filename
-  with Sys_error msg ->
-    ()
+  try  Sys.remove filename
+  with Sys_error _msg -> ()
 
 let canonicalize_filename ?cwd path =
   let rec split path acc =
@@ -93,22 +91,16 @@ let canonicalize_filename ?cwd path =
 
 module Path_list = struct
   type t =
-    | String of string
     | StringList of string list ref
     | List of t list
-    | Fun of (unit -> t)
 
-  let of_fun f = Fun f
   let of_list l = List l
 
-  let of_string s = String s
   let of_string_list_ref l = StringList l
 
   let rec to_list k = function
-    | String s -> List.Lazy.Cons (s, k)
     | List l -> from_list k l
     | StringList l -> from_string_list k !l
-    | Fun f -> to_list k (f ())
 
   and from_list k = function
     | t :: l -> to_list (lazy (from_list k l)) t

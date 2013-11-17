@@ -86,9 +86,6 @@ let verbose_sig env m =
   expand (verbosity `Query) m
 
 module Verbose_print = struct
-  open Format
-  open Types
-
   let type_scheme ppf t =
     let env = Printtyp.curr_printing_env () in
     Printtyp.type_scheme ppf (verbose_type env t)
@@ -219,7 +216,7 @@ let rec mod_smallerthan n m =
   | Mty_signature (lazy s) ->
     begin match List.length_lessthan n s with
     | None -> None
-    | Some n' ->
+    | Some _ ->
       List.fold_left s ~init:(Some 0)
       ~f:begin fun acc item ->
         match acc, item with
@@ -346,7 +343,7 @@ let node_complete node prefix =
     then false
     else (Hashtbl.add seen n (); true)
   in
-  let find ?path prefix compl =
+  let find ?path prefix =
     let valid tag n = String.is_prefixed ~by:prefix n && uniq (tag,n) in
     (* Hack to prevent extensions namespace to leak *)
     let valid ?(uident=false) tag name =
@@ -439,12 +436,12 @@ let node_complete node prefix =
   | _ ->
     try
       match Longident.parse prefix with
-      | Longident.Ldot (path,prefix) -> find ~path prefix []
+      | Longident.Ldot (path,prefix) -> find ~path prefix
       | Longident.Lident prefix ->
         (* Add modules on path but not loaded *)
-        let compl = find prefix [] in
+        let compl = find prefix in
         begin match List.length_lessthan 30 compl with
-        | Some _ -> List.fold_left (Lazy.force !global_modules) ~init:compl
+        | Some _ -> List.fold_left (Project.global_modules ()) ~init:compl
           ~f:begin fun compl modname ->
           let default = { Protocol.
             name = modname;
@@ -463,6 +460,6 @@ let node_complete node prefix =
           end
         | None -> compl
         end
-      | _ -> find prefix []
+      | _ -> find prefix
     with Not_found -> []
   end

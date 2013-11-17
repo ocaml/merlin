@@ -150,7 +150,7 @@ module Type_utils = struct
   let type_in_env env ppf expr =
     let lexbuf = Lexing.from_string expr in
     let print_expr expression =
-      let (str, sg, _) =
+      let (str, _sg, _) =
         Typemod.type_toplevel_phrase env
           Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.curr lexbuf }])
       in

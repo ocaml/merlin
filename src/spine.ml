@@ -1,5 +1,4 @@
 open Std
-open Location
 type position = int
 
 let rec try_ntimes n f s =
@@ -189,9 +188,6 @@ struct
     let parent t = t.parent
   end
   include Make_S (Step)
-
-  let str_root state = Str_root state
-  let sig_root state = Sig_root state
 
   let str_step str state value =
     let position = succ (str_position str) in

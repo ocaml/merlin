@@ -5,7 +5,7 @@ let cwd = ref ""
 
 module Utils = struct
   let debug_log ?prefix x = Printf.ksprintf (Logger.log `locate ?prefix) x
-  let error_log x = Printf.ksprintf (Logger.error `locate) x
+  (*let error_log x = Printf.ksprintf (Logger.error `locate) x*)
 
   let is_ghost { Location. loc_ghost } = loc_ghost = true
 
@@ -71,8 +71,6 @@ end
 
 include Utils
 
-exception Found of Location.t
-
 let rec browse_structure browsable modules =
   (* start from the bottom *)
   let items =
@@ -90,7 +88,7 @@ let rec browse_structure browsable modules =
   find (List.concat items)
 
 and check_item modules item try_next =
-  let rec get_loc ~name item =
+  let get_loc ~name item =
     match item.Browse.context with
     | Browse.Pattern (Some id, _)
     | Browse.TypeDecl (id, _) when id.Ident.name = name ->
@@ -298,7 +296,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
         | None -> from_path path
         | Some res -> Some (res, None)
       in
-      Option.map opt ~f:(fun (loc, fallback_opt) ->
+      Option.map opt ~f:(fun (loc, _fallback_opt) ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
         Some full_path, loc

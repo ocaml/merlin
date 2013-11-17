@@ -27,10 +27,8 @@
 )* }}} *)
 
 open Std
-open Misc
 
 let eof_lexer _ = Chunk_parser.EOF
-let fail_lexer _ = failwith "lexer ended"
 let fallback_lexer = eof_lexer
 
 let fake_tokens tokens f =

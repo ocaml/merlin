@@ -216,9 +216,9 @@ let mk_labeled_fun ~args = Fun (args, App (Ident "Obj.magic", AnyVal))
 
 type tydecl = string Location.loc * Parsetree.type_declaration
 
-module type Type_conv_intf = sig
+(*module type Type_conv_intf = sig
   val bindings : tydecl -> Ast.binding list
-end
+end*)
 
 (** Some extensions (sexp, cow) follow a very simple generation pattern *)
 module type Simple_conv_intf = sig

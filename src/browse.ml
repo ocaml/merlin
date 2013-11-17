@@ -80,7 +80,7 @@ and structure_item_desc ~env = function
     [singleton ~context:(NamedOther i) l.Location.loc env]
   | Tstr_module (_,s,m) -> [module_binding s m]
   | Tstr_recmodule ms ->
-    List.map (fun (i,s,_,m) -> module_binding s m) ms
+    List.map (fun (_,s,_,m) -> module_binding s m) ms
   | Tstr_type ilds ->
     let aux (id,_,ty) = type_declaration ~env id ty in
     List.map ~f:aux ilds
@@ -129,10 +129,10 @@ and class_structure ~env class_struct =
     let context = Expr class_struct.cstr_pat.pat_type in
     singleton ~context class_struct.cstr_pat.pat_loc env
   in
-  let fields = List.filter_map class_struct.cstr_fields ~f:(class_field ~env) in
+  let fields = List.filter_map class_struct.cstr_fields ~f:class_field in
   pat :: fields
 
-and class_field ~env { cf_desc ; cf_loc } =
+and class_field { cf_desc } =
   match cf_desc with
   | Tcf_val (_, _, _, _, context, _)
   | Tcf_meth (_, _, _, context, _) ->
@@ -235,7 +235,7 @@ and module_include ids ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
       nodes = lazy [module_expr ?mod_info def] ;
     }
 
-and module_binding name ({ mod_env ; mod_desc ; mod_type ; mod_loc } as def) =
+and module_binding name ({ mod_env ; mod_desc ; mod_type } as def) =
   match mod_desc with
   | Tmod_constraint (mod_expr, _, _, _) -> module_binding name mod_expr
   | _ ->
@@ -295,8 +295,8 @@ let local_near pos nodes =
   List.fold_left nodes ~init:None ~f:(fun best t ->
     match cmp t.loc, best with
     | n, _ when n < 0 -> best
-    | n, None -> Some t
-    | n, Some t' -> Some (best_of t t')
+    | _, None -> Some t
+    | _, Some t' -> Some (best_of t t')
   )
 
 let is_enclosing pos { loc } =
@@ -317,9 +317,9 @@ let nearest_before pos envs =
   Option.bind (local_near pos envs) ~f:(fun t ->
     let branch = traverse_branch pos t in
     let rec aux = function
-      | a :: b :: tail when is_enclosing pos b -> Some a
+      | a :: b :: _tail when is_enclosing pos b -> Some a
       (* No node matched: fallback to deepest before behavior *)
-      | [x] -> Some (List.hd branch)
+      | [_] -> Some (List.hd branch)
       | [] -> None
       | _ :: tail -> aux tail
     in

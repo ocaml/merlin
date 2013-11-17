@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Misc
 
 type step_state = {
   exns: exn list;
@@ -112,7 +111,7 @@ module Fold = struct
   (* Fold structure shape *)
   let str_in_module step state =
     match Chunk.Spine.value step with
-    | Either.L exn -> {state with snap = Btype.snapshot ()}, ()
+    | Either.L _exn -> {state with snap = Btype.snapshot ()}, ()
     | Either.R (_, {Location. txt = pmod; _}) ->
     match
       protect_typer
