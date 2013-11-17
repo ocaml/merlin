@@ -153,12 +153,12 @@ VIM_DIR=$VIM_DIR
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 END
-  cat >src/myocamlbuild_config.ml <<END
+  cat >src/config/myocamlbuild_config.ml <<END
 let libdir = "$STDLIB_DIR";;
 END
   cat >_tags _tags.in
 
-  echo >>src/my_config.ml "open IO_sexp"
+  echo >>src/config/my_config.ml "open IO_sexp"
 
   if [ -d ".git" ]; then
     version="git-`git rev-parse HEAD`"
@@ -168,7 +168,7 @@ END
     version="unknown"
   fi
 
-  echo >>src/my_config.ml "let version = \"$version\";;"
+  echo >>src/config/my_config.ml "let version = \"$version\";;"
 
   if [ "$EXIT" -eq 0 ]; then
     echo "Now, type 'make' to compile then 'make install'."
