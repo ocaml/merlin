@@ -489,7 +489,10 @@ let dispatch (i,o : IO.io) (state : state) =
     State.initial_str "", ()
 
   | (Reset (Some name) : a request) ->
-    State.initial_str name, ()
+    let dir = Filename.dirname name in
+    let filename = Filename.basename name in
+    Path_utils.set_local_path dir;
+    State.initial_str filename, ()
 
   | (Refresh `Full : a request) ->
     State.reset_global_modules ();
@@ -498,11 +501,6 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Refresh `Quick : a request) ->
     State.quick_refresh_modules state
-
-  | (Cd dir : a request) ->
-    Sys.chdir dir;
-    Path_utils.set_local_path dir;
-    state, ()
 
   | (Errors : a request) ->
     state, State.exns state

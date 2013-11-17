@@ -234,7 +234,7 @@ def sync_buffer_to(to_line, to_col):
     else:
       content = None
   else:
-    command_reset(name=os.path.basename(cb.name))
+    command_reset(name=vim.eval("expand('%:p')"))
     content = cb[:end_line]
     process.saved_sync = curr_sync
 
@@ -447,8 +447,7 @@ def vim_reload(full=False):
 # Spawn a fresh new process
 def vim_restart():
   merlin_process().restart()
-  path = vim.eval("expand('%:p:h')")
-  send_command("cd", path)
+  path = vim.eval("expand('%:p')")
   load_project(path, force=True)
 
 def vim_which(name,ext):

@@ -205,8 +205,6 @@ module Protocol_io = struct
       Request (Refresh `Full)
     | [`String "refresh"; `String "quick"] ->
       Request (Refresh `Quick)
-    | [`String "cd"; `String cd] ->
-      Request (Cd cd)
     | [`String "errors"] ->
       Request Errors
     | (`String "dump" :: `String "env" :: opt_pos) ->
@@ -286,7 +284,6 @@ module Protocol_io = struct
           `Null
         | Reset _, () -> pos_to_json (make_pos (1,0))
         | Refresh _, changed -> `Bool changed
-        | Cd _, () -> `Bool true
         | Errors, exns ->
           `List (List.map (fun (_,err) -> error_to_json err)
                           (Error_report.of_exns exns))

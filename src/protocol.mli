@@ -40,9 +40,6 @@ type _ request =
   | Refresh
     :  [`Full|`Quick]
     -> bool request
-  | Cd
-    :  string
-    -> unit request
   | Errors
     :  exn list request
   | Dump
