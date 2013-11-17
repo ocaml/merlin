@@ -145,6 +145,8 @@ END
 rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
   ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
 
+mkdir -p "$PWD/src/config"
+
 if [ -d "$STDLIB_DIR" ]; then
   cat >Makefile.config <<END
 BIN_DIR=$BIN_DIR
