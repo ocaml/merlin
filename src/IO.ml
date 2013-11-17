@@ -208,7 +208,9 @@ module Protocol_io = struct
     | [`String "errors"] ->
       Request Errors
     | (`String "dump" :: `String "env" :: opt_pos) ->
-      Request (Dump (`Env (optional_position opt_pos)))
+      Request (Dump (`Env (`Normal, optional_position opt_pos)))
+    | (`String "dump" :: `String "full_env" :: opt_pos) ->
+      Request (Dump (`Env (`Full, optional_position opt_pos)))
     | [`String "dump"; `String "sig"] ->
       Request (Dump `Sig)
     | [`String "dump"; `String "chunks"] ->
