@@ -109,8 +109,10 @@ val enter_cltype: string -> class_type_declaration -> t -> Ident.t * t
 
 (* Initialize the cache of in-core module interfaces. *)
 val reset_cache: unit -> unit
-val quick_reset_cache: unit -> bool
-val reset_missing_cmis: unit -> unit
+val reset_cache_toplevel: unit -> unit
+
+(* merlin: Check cache consistency *)
+val check_cache_consistency: unit -> bool
 
 (* Remember the name of the current compilation unit. *)
 val set_unit_name: string -> unit
