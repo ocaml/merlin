@@ -28,6 +28,7 @@
 )* }}} *)
 
 open Std
+open Global_state
 
 type step = {
   outlines : Outline.t;
@@ -96,12 +97,6 @@ module Verbose_print = struct
     let env = Printtyp.curr_printing_env () in
     Printtyp.modtype_declaration id ppf (verbose_sig env t)
 end
-
-let global_modules = ref (lazy [])
-let reset_global_modules () =
-  global_modules :=
-    lazy (Misc.modules_in_path ~ext:".cmi"
-            (Misc.Path_list.to_strict_list !Config.load_path))
 
 let retype state =
   {steps =

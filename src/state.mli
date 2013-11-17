@@ -53,8 +53,6 @@ module Verbose_print : sig
   val modtype_declaration: Ident.t -> formatter -> modtype_declaration -> unit
 end
 
-val reset_global_modules : unit -> unit
-
 val retype : t -> t
 val quick_refresh_modules : t -> t * bool
 
