@@ -1758,14 +1758,19 @@ generalized_constructor_arguments:
 ;
 
 
-
 label_declarations:
     label_declaration                           { [$1] }
   | label_declarations SEMI label_declaration   { $3 :: $1 }
 ;
 label_declaration:
-    mutable_flag label COLON poly_type          { (mkrhs $startpos($2) $endpos($2) $2, $1, $4, symbol_rloc $startpos $endpos ) }
+  mutable_flag label COLON poly_type label_declaration_with
+    { (mkrhs $startpos($2) $endpos($2) $2, $1, $4, symbol_rloc $startpos $endpos ) }
 ;
+label_declaration_with:
+  |           { () }
+  | WITH expr { () }
+;
+
 
 (* "with" constraints (additional type equations over signature components) *)
 

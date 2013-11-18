@@ -1207,14 +1207,18 @@ generalized_constructor_arguments:
 ;
 
 
-
 label_declarations:
     label_declaration                           { () }
   | label_declarations SEMI label_declaration   { () }
 ;
 label_declaration:
-    mutable_flag label COLON poly_type          { () }
+    mutable_flag label COLON poly_type label_declaration_with { () }
 ;
+label_declaration_with:
+  |           { () }
+  | WITH expr { () }
+;
+
 
 (* "with" constraints (additional type equations over signature components) *)
 
