@@ -1,4 +1,4 @@
-![merlin completion in gvim](http://88.191.77.33/~rks/merlin-complete.png)
+![merlin completion in gvim](http://195.154.188.33/~trefis/merlin-complete.png)
 
 Installing Merlin manually
 ==========================
@@ -266,5 +266,5 @@ Other common extensions which are supported :
 Screenshots
 ===========
 
-- [vim](http://88.191.77.33/~rks/merlin/)
+- [vim](http://195.154.188.33/~trefis/merlin/)
 - [emacs](http://kiwi.iuwt.fr/~asmanur/projects/merlin/merlin-emacs.html)
