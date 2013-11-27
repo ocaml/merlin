@@ -532,4 +532,4 @@ def load_project(directory,force=False):
   fnames = catch_and_print(lambda: send_command("project","find",directory))
   if isinstance(fnames, list):
     vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
-  command_reset()
+  sync_buffer_to(1, 0)
