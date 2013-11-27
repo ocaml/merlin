@@ -520,15 +520,15 @@ let dispatch (i,o : IO.io) (state : state) =
     in
     let dot_merlins = f path in
     let config = Dot_merlin.parse dot_merlins in
-    Project.set_dot_merlin config;
-    state, config.Dot_merlin.dot_merlins
+    let failures = Project.set_dot_merlin config in
+    state, (config.Dot_merlin.dot_merlins, failures)
 
   | (Findlib_list : a request) ->
     state, (Fl_package_base.list_packages ())
 
   | (Findlib_use packages : a request) ->
-    Project.user_load_packages packages;
-    state, ()
+    let failures = Project.user_load_packages packages in
+    state, failures
 
   | (Extension_list kind : a request) ->
     state, (Extensions_utils.list kind)

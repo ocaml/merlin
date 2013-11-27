@@ -48,7 +48,8 @@ module Project : sig
   val set_local_path : string -> unit
 
   (* Project-wide configuration *)
-  val set_dot_merlin : Dot_merlin.path_config -> unit
+  val set_dot_merlin
+    : Dot_merlin.path_config -> [`Ok | `Failures of (string * exn) list]
 
   val reset_project : unit -> unit
 
@@ -58,7 +59,9 @@ module Project : sig
                   var:[`Build | `Source] ->
                   ?cwd:string -> string -> unit
 
-  val user_load_packages : string list -> unit
+  val user_load_packages
+    : string list -> [`Ok | `Failures of (string * exn) list]
+
   val user_set_extension : enabled:bool -> string -> unit
 
   (* Output values *)
@@ -126,8 +129,9 @@ end = struct
     user_extensions :=
       List.filter_dup (exts @ !user_extensions);
     update_extensions ();
-    user_packages :=
-      List.filter_dup (Dot_merlin.packages_path pkgs @ !user_packages)
+    let failures, pathes = Dot_merlin.packages_path pkgs in
+    user_packages := List.filter_dup (pathes @ !user_packages);
+    failures
 
   (* 2c. Dot merlin path *)
   let dot_merlin_cmi    = ref []
@@ -145,8 +149,10 @@ end = struct
         config.Dot_merlin.packages in
     dot_merlin_extensions := exts @ config.Dot_merlin.extensions;
     update_extensions ();
-    dot_merlin_packages := Dot_merlin.(packages_path config.packages);
-    flush_global_modules ()
+    let failures, pathes = Dot_merlin.(packages_path config.packages) in
+    dot_merlin_packages := pathes;
+    flush_global_modules ();
+    failures
 
   (* 3. User path *)
   let user_source = ref []

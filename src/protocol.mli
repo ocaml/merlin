@@ -53,7 +53,7 @@ type _ request =
     -> string list request
   | Findlib_use
     :  string list
-    -> unit request
+    -> [`Ok | `Failures of (string * exn) list] request
   | Findlib_list
     :  string list request
   | Extension_list
@@ -74,7 +74,7 @@ type _ request =
     :  unit request
   | Project_load
     :  [`File|`Find] * string
-    -> string list request
+    -> (string list * [`Ok | `Failures of (string * exn) list]) request
 
 type a_request = Request : 'a request -> a_request
 

@@ -6,7 +6,8 @@ module Project : sig
   val set_local_path : string -> unit
 
   (* Project-wide configuration *)
-  val set_dot_merlin : Dot_merlin.path_config -> unit
+  val set_dot_merlin
+    : Dot_merlin.path_config -> [`Ok | `Failures of (string * exn) list]
 
   val reset_project : unit -> unit
 
@@ -16,7 +17,8 @@ module Project : sig
                   var:[`Build | `Source] ->
                   ?cwd:string -> string -> unit
 
-  val user_load_packages : string list -> unit
+  val user_load_packages
+    : string list -> [`Ok | `Failures of (string * exn) list]
   val user_set_extension : enabled:bool -> string -> unit
 
   (* Output values *)

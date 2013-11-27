@@ -209,6 +209,14 @@ module Either = struct
   let join (exns, r) = match r with
     | L e -> (exns, L e)
     | R (exns', r') -> (exns @ exns'), r'
+
+  let split =
+    let rec aux l1 l2 = function
+      | L a :: l -> aux (a :: l1) l2 l
+      | R b :: l -> aux l1 (b :: l2) l
+      | [] -> List.rev l1, List.rev l2
+    in
+    fun l -> aux [] [] l
 end
 type ('a, 'b) either = ('a, 'b) Either.t
 type 'a or_exn = (exn, 'a) Either.t

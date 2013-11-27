@@ -160,6 +160,21 @@ module Protocol_io = struct
     | "find" -> `Find
     | _ -> invalid_arguments ()
 
+  let with_package_failures assoc = function
+    | `Ok -> assoc
+    | `Failures failures ->
+      let failures = List.map failures
+          ~f:(fun (str,exn) ->
+              let str = "\"" ^ str ^ "\"" in
+              let str = match exn with
+                | Fl_package_base.No_such_package _ -> str
+                | exn -> str ^ " (" ^ Printexc.to_string exn ^ ")"
+              in
+              str)
+      in
+      let str = String.concat ~sep:", " failures in
+      ("failures", `String ("Failed to load some packages " ^ str)) :: assoc
+
   let request_of_json = function
     | [`String "tell"; `String "definitions"; `Int d] ->
       Request (Tell (`Definitions d))
@@ -292,14 +307,16 @@ module Protocol_io = struct
         | Dump _, json -> json
         | Which_path _, str -> `String str
         | Which_with_ext _, strs -> json_of_string_list strs
-        | Findlib_use _, () -> `Bool true
+        | Findlib_use _, failures ->
+          `Assoc (with_package_failures ["result", `Bool true] failures)
         | Findlib_list, strs -> json_of_string_list strs
         | Extension_list _, strs -> json_of_string_list strs
         | Extension_set _, () -> `Bool true
         | Path _, changed -> `Bool changed
         | Path_list _, strs -> json_of_string_list strs
         | Path_reset, () -> `Bool true
-        | Project_load _, strs -> json_of_string_list strs
+        | Project_load _, (strs, failures) ->
+          `Assoc (with_package_failures ["result", json_of_string_list strs] failures)
       end]
 
   let request_of_json = function

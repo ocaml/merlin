@@ -45,12 +45,14 @@ let parse_dot_merlin path : bool * t =
         tell (`EXT (rev_split_words (String.drop 4 line)))
       else if String.is_prefixed ~by:"FLG " line then
         tell (`FLG (String.drop 4 line))
-      else if String.is_prefixed ~by:"REC" line then recurse := true
+      else if String.is_prefixed ~by:"REC" line then
+        recurse := true
       else if String.is_prefixed ~by:"PRJ " line then
         proj := Some (String.trim (String.drop 4 line))
       else if String.is_prefixed ~by:"PRJ" line then
         proj := Some ""
-      else if String.is_prefixed ~by:"#" line then ()
+      else if String.is_prefixed ~by:"#" line then
+        ()
       else ();
       aux ()
     in
@@ -153,6 +155,18 @@ let rec parse ?(config=empty_config) =
     }
 
 let packages_path packages =
-  let packages = Findlib.package_deep_ancestors [] packages in
+  let packages =  packages in
+  let f pkg =
+    try Either.R (Findlib.package_deep_ancestors [] [pkg])
+    with exn -> Either.L (pkg, exn)
+  in
+  let packages = List.map ~f packages in
+  let failures, packages = Either.split packages in
+  let packages = List.filter_dup (List.concat packages) in
   let path = List.map ~f:Findlib.package_directory packages in
-  List.filter_dup path
+  let failures = match failures with
+    | [] -> `Ok
+    | ls -> `Failures ls
+  in
+  failures, path
+
