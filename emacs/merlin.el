@@ -1116,8 +1116,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (interactive
    (list (completing-read "Package to use: " (merlin-get-packages))))
   (let* ((r (merlin-send-command (list 'find 'use (list pkg))))
-         (failures (assoc 'failures r)))
-    (when failures (message (cdr failures))))
+         (failed (assoc 'failures r)))
+    (when failed (message (cdr failed))))
   (merlin-error-reset))
 
 (defun merlin-load-project-file ()
@@ -1125,11 +1125,11 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (interactive)
   (merlin-rewind)
   (let* ((r (merlin-send-command (list 'project 'find (buffer-file-name))))
-         (failures (assoc 'failures r))
-         (result   (assoc 'result r)))
-    ((when failures (message (cdr failures)))
-     (when (and result (listp (cdr result)))
-       (setq merlin-project-file (cadr result))))))
+         (failed (assoc 'failures r))
+         (result (assoc 'result r)))
+    (when failed (message (cdr failed)))
+    (when (and result (listp (cdr result)))
+      (setq merlin-project-file (cadr result)))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
