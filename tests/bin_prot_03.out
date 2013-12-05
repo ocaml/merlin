@@ -1,4 +1,4 @@
-["return",true]
+["return",{"result":true}]
 ["return",null]
 ["return",{"line":1,"col":77}]
 ["return",[["Line 1, characters 34-62","module Test_binprot :\n  sig\n    type 'a t = { x : Bin_prot.Common.pos; y : 'a; }\n    val bin_size_t :\n      ('a -> Bin_prot.Common.pos) -> 'a t -> Bin_prot.Common.pos\n    val bin_write_t : 'a Bin_prot.Write.writer -> 'a t Bin_prot.Write.writer\n    val bin_writer_t :\n      'a Bin_prot.Type_class.writer0 -> 'a t Bin_prot.Type_class.writer0\n    val bin_read_t : 'a Bin_prot.Read.reader -> 'a t Bin_prot.Read.reader\n    val __bin_read_t__ :\n      'a Bin_prot.Read.reader ->\n      (Bin_prot.Common.pos -> 'a t) Bin_prot.Read.reader\n    val bin_reader_t :\n      'a Bin_prot.Type_class.reader0 -> 'a t Bin_prot.Type_class.reader0\n    val bin_t : 'a Bin_prot.Type_class.t0 -> 'a t Bin_prot.Type_class.t0\n  end"]]]
