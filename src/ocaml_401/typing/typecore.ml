@@ -2948,7 +2948,7 @@ and type_application env funct sargs =
                 | _ -> true
               in
               if ty_fun.level >= t1.level && not_identity funct.exp_desc
-                && not (Merlin_types.erroneous_type_check funct.exp_type) then
+                && not (Merlin_types.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
@@ -3169,7 +3169,8 @@ and type_statement env sexp =
   | Tarrow _ ->
       Location.prerr_warning loc Warnings.Partial_application
   | Tconstr (p, _, _) when Path.same p Predef.path_unit -> ()
-  | Tvar _ when ty.level > tv.level ->
+  | Tvar _ when ty.level > tv.level
+             && not (Merlin_types.erroneous_expr_check exp) ->
       Location.prerr_warning loc Warnings.Nonreturning_statement
   | Tvar _ ->
       add_delayed_check (fun () -> check_application_result env true exp)
