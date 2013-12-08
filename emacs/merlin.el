@@ -458,7 +458,8 @@ the error message otherwise print a generic error message."
 (defun merlin-refresh ()
   "Refresh changed merlin cmis."
   (interactive)
-  (merlin-send-command '(refresh quick)))
+  (merlin-send-command '(refresh quick))
+  (merlin-after-save))
 
 (defun merlin-refresh-full ()
   "Refresh all merlin cmis."
