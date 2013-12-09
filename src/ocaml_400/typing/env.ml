@@ -264,6 +264,8 @@ type pers_struct =
 
 let persistent_structures =
   (Hashtbl.create 17 : (string, pers_struct option) Hashtbl.t)
+let missing_structures =
+  (Hashtbl.create 17 : (string, unit) Hashtbl.t)
 
 (* Consistency between persistent structures *)
 
@@ -327,6 +329,7 @@ let find_pers_struct name =
 let reset_cache () =
   current_unit := "";
   Hashtbl.clear persistent_structures;
+  Hashtbl.clear missing_structures;
   Consistbl.clear crc_units;
   Hashtbl.clear value_declarations;
   Hashtbl.clear type_declarations
@@ -335,23 +338,37 @@ let reset_cache_toplevel () =
   let l = Hashtbl.fold
       (fun name r acc -> if r = None then name :: acc else acc)
       persistent_structures [] in
-  List.iter (Hashtbl.remove persistent_structures) l
+  List.iter (Hashtbl.remove persistent_structures) l;
+  List.iter (fun x -> Hashtbl.replace missing_structures x ()) l
 
 let check_cache_consistency () =
   try
     Hashtbl.iter (fun name ps ->
-      let filename =
-        try Some (find_in_path_uncap !load_path (name ^ ".cmi"))
-        with Not_found -> None
-      in
-      match filename, ps with
-      | Some filename, Some ps
-        when ps.ps_sig == (Cmi_cache.read_cmi filename).cmi_sign ->
-          ()
-      | None, None ->
-          ()
-      | _ -> raise Not_found
-    ) persistent_structures;
+       let filename = 
+          try Some (find_in_path_uncap !load_path (name ^ ".cmi")) 
+          with Not_found -> None
+        in
+        let invalid =
+          match filename, ps with
+          | _, Some ps when Hashtbl.mem missing_structures name ->
+            true
+          | Some filename, Some ps
+            when ps.ps_sig == (Cmi_cache.read_cmi filename).cmi_sign ->
+            false
+          | None, None -> false
+          | _, _       -> true
+        in
+        Hashtbl.remove missing_structures name;
+        if invalid then raise Not_found
+      ) persistent_structures;
+    Hashtbl.iter (fun name () ->
+        let invalid = 
+          try ignore (find_in_path_uncap !load_path (name ^ ".cmi"));
+              true;  
+          with Not_found -> false
+        in
+        if invalid then raise Not_found
+      ) missing_structures;
     true
   with Not_found -> false
 

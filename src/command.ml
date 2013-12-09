@@ -521,6 +521,7 @@ let dispatch (i,o : IO.io) (state : state) =
     let dot_merlins = f path in
     let config = Dot_merlin.parse dot_merlins in
     let failures = Project.set_dot_merlin config in
+    let state, _ = State.quick_refresh_modules state in
     state, (config.Dot_merlin.dot_merlins, failures)
 
   | (Findlib_list : a request) ->
@@ -528,6 +529,7 @@ let dispatch (i,o : IO.io) (state : state) =
 
   | (Findlib_use packages : a request) ->
     let failures = Project.user_load_packages packages in
+    let state, _ = State.quick_refresh_modules state in
     state, failures
 
   | (Extension_list kind : a request) ->
@@ -536,11 +538,13 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Extension_set (action,extensions) : a request) ->
     let enabled = action = `Enabled in
     List.iter extensions ~f:(Project.user_set_extension ~enabled);
+    let state, _ = State.quick_refresh_modules state in
     state, ()
 
   | (Path (var,action,pathes) : a request) ->
     List.iter ~f:(Project.user_path ~action ~var ?cwd:None) pathes;
     Project.flush_global_modules ();
+    let state, _ = State.quick_refresh_modules state in
     state, true
 
   | (Path_list `Build : a request) ->
