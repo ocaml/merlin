@@ -1,39 +1,29 @@
 ![merlin completion in gvim](http://195.154.188.33/~trefis/merlin-complete.png)
 
-Installing Merlin manually
-==========================
+Building and installing Merlin
+==============================
+
+This README gives only indications on how to install merlin from source.
+If you want know how to install it from opam, and how to setup your environment
+to use merlin, have a look at [the wiki](https://github.com/def-lkb/merlin/wiki).
 
 Compilation
 -----------
 
-Needed: OCaml 4, ocamlfind, ocamlbuild, yojson, menhir
-
-Merlin requires OCaml >=4.00.1 (may work with newer versions, but it is tightly
-bound to compiler internals).  
-Then ensures that "yojson" and "menhir" are installed and are registered in
-ocamlfind.
+Dependencies: ocaml >= 4.00.1, ocamlfind, ocamlbuild, yojson, menhir
 
     $ ./configure
     $ make
 
+The configure script will check that all the dependencies are met, and will
+allow you to choose where to install merlin.
 
 Installation
 ------------
 
-If you don't get any error in step above:
+If you haven't encountered any error in the previous step, just run:
 
     $ make install 
-
-
-Installing Merlin with opam
-===========================
-
-Needed: [opam](http://opam.ocamlpro.com/doc/Advanced_Install.html),
-OCaml 4.00.1 (can be installed via opam typing `opam switch 4.00.1`).
-
-Then, just do :
-
-    $ opam install merlin
 
 
 Share directory, \<SHARE\_DIR\>
@@ -67,21 +57,6 @@ After adding merlin to vim runtime path, you will probably want to run
 `:helptags <SHARE_DIR>/ocamlmerlin/vim/doc` to register merlin documentation
 inside vim.
 
-Now you may be interested by *Features and interaction with other plugins*,
-*Merlin project* and *Extensions* sections.
-
-Features and interaction with other plugins
---------------------------------------------
-
-Omnicompletion should be available out-of-box.
-
-The documentation is accessible through `:h merlin.txt` and should provide all
-the necessary information on how to set-up merlin with other plugins (
-[Supertab](https://github.com/ervandew/supertab), 
-[neocomplcache](https://github.com/Shougo/neocomplcache),
-[syntastic](https://github.com/scrooloose/syntastic)).
-It also lists, and explain, all the available commands.
-
 Misc: description of plugin's files
 -----------------------------------
 
@@ -100,113 +75,22 @@ Misc: description of plugin's files
               -- library needed by merlin vim mode to keep buffer synchronized
 
 
-Upgrading vim plugin from merlin 1.0
-------------------------------------
-
-Merlin plugin now relies on another vim helper called vimbufsync.
-If you installed from opam and/or archive, just make sure that vimbufsync is in vim runtime path:
-
-    :set rtp+=<SHARE_DIR>/ocamlmerlin/vimbufsync
-
-Installing vim plugin with NeoBundle
-------------------------------------
-
-To install Merlin using NeoBundle, add to your vim configuration:
-
-    NeoBundleLazy 'def-lkb/merlin.git', {'depends': 'def-lkb/vimbufsync.git',
-        \ 'build': {
-        \   'unix': './configure --bindir ~/bin --without-vimbufsync && make install-binary'
-        \   },
-        \ 'autoload': {'filetypes': ['ocaml']},
-        \ 'rtp': 'vim/merlin'
-        \ }
-
-Where ~/bin should be the directory in your PATH (remove --bindir option to install to the
-system-wide bindir).
-
 Emacs interface
 ===============
 
 merlin comes with an emacs interface (file: emacs/merlin.el) that implements a
 minor-mode that is supposed to be used on top of tuareg-mode.
 
-If you installed through opam, all you need to do is add the following to your .emacs:
+All you need to do is add the following to your .emacs:
 
-    (push
-     (concat (substring (shell-command-to-string "opam config var share") 0 -1) "/emacs/site-lisp") load-path)
-    (setq merlin-command (concat (substring (shell-command-to-string "opam config var bin") 0 -1) "/ocamlmerlin"))
+    (push "<SHARE_DIR>/emacs/site-lisp" load-path) ; directory containing merlin.el
+    (setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
     (autoload 'merlin-mode "merlin" "Merlin mode" t)
     (add-hook 'tuareg-mode-hook 'merlin-mode)
     (add-hook 'caml-mode-hook 'merlin-mode)
 
-If you do not use opam, change the two first expressions above to point to the site-lisp directory containing merlin.el and ocamlmerlin:
-
-    (push "<SHARE_DIR>/emacs/site-lisp" load-path) ; directory containing merlin.el
-    (setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
-
 `merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if is is installed.
 
-Features
---------
-
-The emacs `merlin-mode` make all the features of merlin available
-inside emacs, by synchronizing ML buffers with a merlin instance. At
-any moment, the instance of merlin knows a part of the buffer that
-works like locked zones in proof assistant modes (eg. proofgeneral):
-editing inside this zone retracts it to the last valid phrase, and C-c
-C-RET (`merlin-to-point`) expands it to the current position. Moreover
-executing a merlin command also tries to advance the locked zone as
-much as possible to contain the point.
-
-Main keybindings:
-
-- `C-c C-t` (`merlin-type-enclosing`) shows the type of the
-  expression underpoint.
-
-  Futher calls to `C-up` and `C-down` will allow you to go up and down in the
-  typedtree printing type of bigger / smaller expressions.
-  
-  Not that if the region is active, merlin will try to type the content of the
-  region.
-
-- `C-c t` (`merlin-type-expr`) prompt the user for an arbitrary expression and
-  returns its type.
-
-- `C-c <C-return>` (`merlin-to-point`) forces synchronization between emacs and
-  merlin. merlin will know the content of your buffer before the point, and
-  display the errors in that section.
-
-  Note that synchronization with the whole buffer is automatically done when you
-  save.
-
-- `C-c C-x` (`merlin-next-error`) will jump to the next error and display the error message
-
-- `C-c C-u` (`merlin-refresh`) refreshes merlin's cmis cache (when you recompiled other files)
-
-- `C-c C-r` (`merlin-rewind`) retracts the whole buffer (useful when merlin seems confused)
-
-- `C-c C-l` (`merlin-locate`) tries to find the definition of the ident under point and jumps to it.  
-  Note that you can customize the way that command behaves (you can make it
-  display the result in the current window, or open a new window, focused or
-  not). Use `M-x customize-group` to see the full list of options.
-
-- `C-c l` (`merlin-use`) loads a findlib package inside merlin
-
-- `C-c r` (`merlin-restart-process`) restarts merlin process (useful when hung)
-
-- `C-c C-n` (`merlin-next-phrase`) moves the point to the beginning of the next phrase
-
-- `C-c C-p` (`merlin-prev-phrase`) moves the point to the beginning of the previous phrase
-
-Moreover, you have regular auto-completion (M-TAB by default with
-emacs24) using completion-at-point. There is also auto-complete
-integration you can enable by setting merlin-use-auto-complete-mode to
-t:
-
-    (setq merlin-use-auto-complete-mode t)
-
-It will enable auto-complete mode with the merlin source in ML
-buffers. With this setting, you can use `C-c TAB` to force completion.
 
 Merlin project
 ==============
