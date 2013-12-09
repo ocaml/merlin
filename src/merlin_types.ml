@@ -27,4 +27,12 @@ let erroneous_type_check te =
   | Some (l,h) when Hashtbl.mem h te.Types.id -> true
   | _ -> false
 
+let rec erroneous_expr_check e =
+  (erroneous_type_check e.Typedtree.exp_type) ||
+  match e.Typedtree.exp_desc with
+  | Typedtree.Texp_ident (p,_,_) 
+    when Ident.name (Path.head p) = "_" -> true
+  | Typedtree.Texp_apply (e',_) -> erroneous_expr_check e'
+  | _ -> false
+
 include Merlin_types_custom

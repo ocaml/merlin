@@ -111,7 +111,7 @@ let summary_at pos sum =
     match cmp loc with
       | x when x < 0 -> None
       | 0 -> Some sum
-      | x -> summary_prev sum >>= aux
+      | _ -> summary_prev sum >>= aux
   in
   aux sum
 
@@ -146,7 +146,7 @@ let signature_of_env ?(ignore_extensions=true) env =
     | Env.Env_cltype (s,i,ct) ->
         append (Sig_class_type (i,ct,Trec_not));
         aux s
-    | Env.Env_open (s,p) ->
+    | Env.Env_open (s,_p) ->
         aux s
   in
   let summary = Env.summary env in

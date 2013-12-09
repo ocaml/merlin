@@ -65,7 +65,7 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
   | Outline_utils.Chunk (c,p) ->
     begin
       let rec aux = function
-        | Zipper ((t,_,p') :: _,_,_) as tokens
+        | Zipper ((_,_,p') :: _,_,_) as tokens
           when Lexing.compare_pos p p' < 0 ->
           aux (Zipper.shift (-1) tokens)
         | tokens -> tokens
@@ -97,7 +97,7 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
         tokens' := Zipper.shift (-1) !tokens';
         let Zipper (_,offset,_) = !tokens' in
         try
-          for i = 1 to count do
+          for _i = 1 to count do
             try ignore (parser (lexer' "checker") buf)
             with Outline_utils.Chunk _ -> ()
           done;
@@ -122,9 +122,9 @@ let parse_str ~exns ~location ~lexbuf zipper t =
           ~lexer:Lexer.token
           lexbuf)
   with
-  | exns', Either.R (zipper, _, ([] | [Chunk_parser.EOF,_,_])) ->
+  | _exns, Either.R (zipper, _, ([] | [Chunk_parser.EOF,_,_])) ->
     zipper, None
-  | exns', Either.R (zipper, Outline_utils.Unterminated, tokens) ->
+  | _exns, Either.R (zipper, Outline_utils.Unterminated, _tokens) ->
     zipper, None
   | exns', Either.R (zipper, (Outline_utils.Definition |
                          Outline_utils.Syntax_error _), tokens) ->
@@ -133,13 +133,13 @@ let parse_str ~exns ~location ~lexbuf zipper t =
   | exns', Either.R (zipper, Outline_utils.Enter_module, tokens) ->
     zipper,
     Some Spine.(Str_in_module (str_step t (new_state exns' tokens) tokens))
-  | exns', Either.R (zipper, Outline_utils.Leave_module, tokens) ->
+  | _exns, Either.R (zipper, Outline_utils.Leave_module, tokens) ->
     let rec aux acc = function
-      | Spine.Str_root step ->
+      | Spine.Str_root _step ->
         let exn = Malformed_module (tokens, location tokens) in
         Spine.(Str_item (str_step t (exn :: exns, location tokens, tokens) []))
       | Spine.Str_in_module step ->
-        let exns, loc, _ = Spine.state step in
+        let exns, _, _ = Spine.state step in
         let tokens' = Spine.value step @ acc in
         let parent = Spine.parent step in
         Spine.Str_item (Spine.str_step parent (exns, location tokens, tokens) tokens')
@@ -152,7 +152,7 @@ let parse_str ~exns ~location ~lexbuf zipper t =
     Some (aux tokens t)
   | _, Either.L (Failure _ as exn) ->
     raise exn
-  | exns', Either.L exn ->
+  | _exns, Either.L exn ->
     zipper,
     Some Spine.(Str_item (str_step t (exn :: exns, location [], []) []))
 

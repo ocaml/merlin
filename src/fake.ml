@@ -216,9 +216,9 @@ let mk_labeled_fun ~args = Fun (args, App (Ident "Obj.magic", AnyVal))
 
 type tydecl = string Location.loc * Parsetree.type_declaration
 
-module type Type_conv_intf = sig
+(*module type Type_conv_intf = sig
   val bindings : tydecl -> Ast.binding list
-end
+end*)
 
 (** Some extensions (sexp, cow) follow a very simple generation pattern *)
 module type Simple_conv_intf = sig
@@ -360,11 +360,11 @@ module Binprot = struct
     let reader t = Named ([t], "Bin_prot.Read.reader")
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
-      let init = reader 
+      let init = reader
         (Named (List.map (fun x -> Var x) params, name.Location.txt))
       in
       let make_var str = reader (Var str) in
-      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) ~init params 
+      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) ~init params
 
     let prefix = "bin_read_"
 
@@ -398,7 +398,7 @@ module Binprot = struct
       let res = Named (List.map (fun x -> Var x) params, name.Location.txt) in
       let init = Read.reader (Arrow ("", Named ([], "int"), res)) in
       let make_var str = Read.reader (Var str) in
-      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) ~init params 
+      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) ~init params
 
     let prefix = "__bin_read_"
     let suffix = "__"
@@ -542,7 +542,7 @@ module Compare = struct
     let self = Named (params, name) in
     let cmp = {
       ident = "compare_" ^ name;
-      typesig = 
+      typesig =
         List.fold_left params ~init:(mk_simpl self) ~f:(fun t param ->
           Arrow ("", mk_simpl param, t)
         );

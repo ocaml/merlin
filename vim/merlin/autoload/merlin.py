@@ -170,8 +170,15 @@ def command_ext_enabled():
 def command_ext_disabled():
   return send_command('extension', 'list', 'disabled')
 
+def display_load_failures(result):
+  if 'failures' in result:
+    print (result['failures'])
+  return result['result']
+
 def command_find_use(*packages):
-  return catch_and_print(lambda: send_command('find', 'use', packages))
+  result = catch_and_print(lambda: send_command('find', 'use', packages))
+  return display_load_failures(result)
+
 
 def command_find_list():
   return send_command('find', 'list')
@@ -234,7 +241,7 @@ def sync_buffer_to(to_line, to_col):
     else:
       content = None
   else:
-    command_reset(name=os.path.basename(cb.name))
+    command_reset(name=vim.eval("expand('%:p')"))
     content = cb[:end_line]
     process.saved_sync = curr_sync
 
@@ -447,8 +454,7 @@ def vim_reload(full=False):
 # Spawn a fresh new process
 def vim_restart():
   merlin_process().restart()
-  path = vim.eval("expand('%:p:h')")
-  send_command("cd", path)
+  path = vim.eval("expand('%:p')")
   load_project(path, force=True)
 
 def vim_which(name,ext):
@@ -463,7 +469,7 @@ def vim_which_ext(ext,vimvar):
     vim.command("call add(%s, '%s')" % (vimvar, f))
 
 def vim_use(*args):
-  command_find_use(*args)
+  return command_find_use(*args)
 
 def vim_ext(enable, exts):
   if enable:
@@ -530,7 +536,7 @@ def load_project(directory,force=False):
   if not force:
     if name == vim.eval("b:merlin_project"): return
   vim.command("let b:merlin_project = '%s'" % name)
-  fnames = catch_and_print(lambda: send_command("project","find",directory))
+  fnames = display_load_failures(catch_and_print(lambda: send_command("project","find",directory)))
   if isinstance(fnames, list):
     vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
-  command_reset()
+  sync_buffer_to(1, 0)

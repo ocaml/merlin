@@ -149,3 +149,5 @@ val fth4: 'a * 'b * 'c * 'd -> 'd
 val modules_in_path : ext:string -> string list -> string list
 
 val (~:) : 'a -> 'a Lazy.t
+
+val file_mtime : string -> float

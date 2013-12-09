@@ -130,6 +130,14 @@ let ext_here = {
   packages = [];
 }
 
-let always = [ext_any]
+let ext_sexp_option = {
+  name = "sexp_option";
+  private_def = [];
+  public_def = ["type 'a sexp_option = 'a option"];
+  keywords = [];
+  packages = [];
+}
+
+let always = [ext_any;ext_sexp_option]
 let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec]
 

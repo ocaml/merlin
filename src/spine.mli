@@ -100,6 +100,11 @@ module Transform (Context : CONTEXT) (Dom : S)
     val str_in_module
       :  (Dom.Context.str_in_module, Dom.t_str) Dom.step
       -> Context.state -> Context.state * Context.str_in_module
+
+    (* Validate state before incremental update
+     * (return false iff current step can't be used as a starting point for
+     *  incremental update)  *)
+    val is_valid : Dom.t -> Context.state -> bool
    end) :
 sig
   module Dom : S

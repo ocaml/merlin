@@ -260,11 +260,12 @@ type pers_struct =
     ps_comps: module_components;
     ps_crcs: (string * Digest.t) list;
     ps_filename: string;
-    ps_mtime: float;
     ps_flags: pers_flags list }
 
 let persistent_structures =
   (Hashtbl.create 17 : (string, pers_struct option) Hashtbl.t)
+let missing_structures =
+  (Hashtbl.create 17 : (string, unit) Hashtbl.t)
 
 (* Consistency between persistent structures *)
 
@@ -278,17 +279,10 @@ let check_consistency filename crcs =
   with Consistbl.Inconsistency(name, source, auth) ->
     raise(Error(Inconsistent_import(name, auth, source)))
 
-(* Rather than resetting the whole cache, it is more efficient for merlin to
-   keep track of the mtime of cmi files and only reloaded changed files.
-   See [quick_reset_cache].*)
-let file_mtime filename =
-  try Unix.((stat filename).st_mtime)
-  with _ -> min_float
-
 (* Reading persistent structures from .cmi files *)
 
 let read_pers_struct modname filename =
-  let cmi = read_cmi filename in
+  let cmi = Cmi_cache.read_cmi filename in
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
@@ -302,7 +296,6 @@ let read_pers_struct modname filename =
                ps_comps = comps;
                ps_crcs = crcs;
                ps_filename = filename;
-               ps_mtime = file_mtime filename;
                ps_flags = flags } in
     if ps.ps_name <> modname then
       raise(Error(Illegal_renaming(ps.ps_name, filename)));
@@ -336,31 +329,48 @@ let find_pers_struct name =
 let reset_cache () =
   current_unit := "";
   Hashtbl.clear persistent_structures;
+  Hashtbl.clear missing_structures;
   Consistbl.clear crc_units;
   Hashtbl.clear value_declarations;
   Hashtbl.clear type_declarations
 
-let quick_reset_cache () =
-  let invalidated = ref [] in
-  Hashtbl.iter (fun name -> function
-      | Some ps when file_mtime ps.ps_filename = ps.ps_mtime -> ()
-      | _ -> invalidated := name :: !invalidated)
-    persistent_structures;
-  if !invalidated <> [] then
-  begin 
-    List.iter (Hashtbl.remove persistent_structures) !invalidated;
-    Consistbl.filter 
-      (fun name -> Hashtbl.mem persistent_structures name)
-      crc_units;
-    true
-  end
-  else false
-
-let reset_missing_cmis () =
+let reset_cache_toplevel () =
   let l = Hashtbl.fold
       (fun name r acc -> if r = None then name :: acc else acc)
       persistent_structures [] in
-  List.iter (Hashtbl.remove persistent_structures) l
+  List.iter (Hashtbl.remove persistent_structures) l;
+  List.iter (fun x -> Hashtbl.replace missing_structures x ()) l
+
+let check_cache_consistency () =
+  try
+    Hashtbl.iter (fun name ps ->
+       let filename = 
+          try Some (find_in_path_uncap !load_path (name ^ ".cmi")) 
+          with Not_found -> None
+        in
+        let invalid =
+          match filename, ps with
+          | _, Some ps when Hashtbl.mem missing_structures name ->
+            true
+          | Some filename, Some ps
+            when ps.ps_sig == (Cmi_cache.read_cmi filename).cmi_sign ->
+            false
+          | None, None -> false
+          | _, _       -> true
+        in
+        Hashtbl.remove missing_structures name;
+        if invalid then raise Not_found
+      ) persistent_structures;
+    Hashtbl.iter (fun name () ->
+        let invalid = 
+          try ignore (find_in_path_uncap !load_path (name ^ ".cmi"));
+              true;  
+          with Not_found -> false
+        in
+        if invalid then raise Not_found
+      ) missing_structures;
+    true
+  with Not_found -> false
 
 let set_unit_name name =
   current_unit := name
@@ -655,8 +665,10 @@ let rec path_subst_last path id =
   | Papply (p1, p2) -> assert false
 
 let mark_type_path env path =
-  let decl = try find_type path env with Not_found -> assert false in
-  mark_type_used (Path.last path) decl
+  try
+    let decl = find_type path env in
+    mark_type_used (Path.last path) decl
+  with Not_found -> ()
 
 let ty_path = function
   | {desc=Tconstr(path, _, _)} -> path
@@ -1272,7 +1284,6 @@ let save_signature_with_imports sg modname filename imports =
         ps_comps = comps;
         ps_crcs = (cmi.cmi_name, crc) :: imports;
         ps_filename = filename;
-        ps_mtime = file_mtime filename;
         ps_flags = cmi.cmi_flags } in
     Hashtbl.add persistent_structures modname (Some ps);
     Consistbl.set crc_units modname crc filename;

@@ -82,3 +82,7 @@ val std_include_dir : unit -> string list
 val shared : bool ref
 val dlcode : bool ref
 val runtime_variant : string ref
+
+type snapshot
+val snapshot : unit -> snapshot
+val restore : snapshot -> unit

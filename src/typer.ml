@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Misc
 
 type step_state = {
   exns: exn list;
@@ -70,7 +69,7 @@ let protect_typer f =
 
 module Fold = struct
   (* Initial state *)
-  let initial () = 
+  let initial () =
     let env = initial_env () in
     let snap = Btype.snapshot () in
     { exns = []; global_exns = []; trees = []; env; snap }
@@ -112,7 +111,7 @@ module Fold = struct
   (* Fold structure shape *)
   let str_in_module step state =
     match Chunk.Spine.value step with
-    | Either.L exn -> {state with snap = Btype.snapshot ()}, ()
+    | Either.L _exn -> {state with snap = Btype.snapshot ()}, ()
     | Either.R (_, {Location. txt = pmod; _}) ->
     match
       protect_typer
@@ -165,6 +164,12 @@ module Fold = struct
   let sig_in_sig_modtype _ = failwith "TODO"
   let sig_in_sig_module  _ = failwith "TODO"
   let sig_in_str_modtype _ = failwith "TODO"
+
+  let is_valid chunk _ =
+    let open Chunk.Spine in
+    match chunk with
+    | Str (Str_root _) | Sig (Sig_root _) -> false
+    | _ -> true
 end
 
 module Spine = Spine.Transform (Context) (Chunk.Spine) (Fold)

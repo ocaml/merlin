@@ -1,3 +1,5 @@
+open Std
+
 type position = Lexing.position
 
 type completion = {
@@ -38,13 +40,10 @@ type _ request =
   | Refresh
     :  [`Full|`Quick]
     -> bool request
-  | Cd
-    :  string
-    -> unit request
   | Errors
     :  exn list request
   | Dump
-    :  [`Env of position option|`Sig|`Chunks|`Tree|`Outline|`Exn|`History]
+    :  [`Env of [`Normal|`Full] * position option|`Sig|`Chunks|`Tree|`Outline|`Exn|`History]
     -> Json.json request
   | Which_path
     :  string
@@ -54,7 +53,7 @@ type _ request =
     -> string list request
   | Findlib_use
     :  string list
-    -> unit request
+    -> [`Ok | `Failures of (string * exn) list] request
   | Findlib_list
     :  string list request
   | Extension_list
@@ -75,7 +74,8 @@ type _ request =
     :  unit request
   | Project_load
     :  [`File|`Find] * string
-    -> string list request
+    -> (string list * [`Ok | `Failures of (string * exn) list]) request
+
 type a_request = Request : 'a request -> a_request
 
 type response =

@@ -28,8 +28,8 @@ module List = struct
 
   let rec remove_all x = function
     | [] -> []
-    | hd :: tl when x = hd -> remove x tl
-    | hd :: tl -> hd :: remove x tl
+    | hd :: tl when x = hd -> remove_all x tl
+    | hd :: tl -> hd :: remove_all x tl
 
   let rec same ~f l1 l2 = match l1, l2 with
     | [], [] -> true
@@ -186,6 +186,14 @@ module Lexing = struct
     compare (split_pos p1) (split_pos p2)
 end
 
+module Stream = struct
+  include Stream
+  let map ~f s =
+    from (fun _ ->
+      try Some (f (next s))
+      with Failure -> None)
+end
+
 module Either = struct
   type ('a,'b) t = L of 'a | R of 'b
 
@@ -201,6 +209,14 @@ module Either = struct
   let join (exns, r) = match r with
     | L e -> (exns, L e)
     | R (exns', r') -> (exns @ exns'), r'
+
+  let split =
+    let rec aux l1 l2 = function
+      | L a :: l -> aux (a :: l1) l2 l
+      | R b :: l -> aux l1 (b :: l2) l
+      | [] -> List.rev l1, List.rev l2
+    in
+    fun l -> aux [] [] l
 end
 type ('a, 'b) either = ('a, 'b) Either.t
 type 'a or_exn = (exn, 'a) Either.t
@@ -272,3 +288,5 @@ end = struct
   let none : exn t = make Not_found
   let none () : 'a t = Obj.magic none
 end
+
+module Json = Yojson.Basic

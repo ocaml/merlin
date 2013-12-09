@@ -98,8 +98,8 @@ let keyword_table =
 let set_extension ~enabled kw =
   let action =
     if enabled
-    then (fun (key,value) -> Hashtbl.replace keyword_table key value)
-    else (fun (key,value) -> Hashtbl.remove keyword_table key)
+    then (fun (key, value) -> Hashtbl.replace keyword_table key value)
+    else (fun (key,_value) -> Hashtbl.remove keyword_table key)
   in
   List.iter action kw
 

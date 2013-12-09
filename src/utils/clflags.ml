@@ -71,7 +71,6 @@ let dump_selection = ref false          (* -dsel *)
 let dump_live = ref false               (* -dlive *)
 let dump_spill = ref false              (* -dspill *)
 let dump_split = ref false              (* -dsplit *)
-let dump_scheduling = ref false         (* -dscheduling *)
 let dump_interf = ref false             (* -dinterf *)
 let dump_prefer = ref false             (* -dprefer *)
 let dump_regalloc = ref false           (* -dalloc *)
@@ -99,3 +98,45 @@ let shared = ref false (* -shared *)
 let dlcode = ref true (* not -nodynlink *)
 
 let runtime_variant = ref "";;     (* -runtime-variant *)
+
+type snapshot = (unit -> unit) list
+
+let snapshot =
+  let save_ref r =
+    let v = !r in
+    fun () -> r := v
+  in
+  let bools = [
+    compile_only; no_std_include; print_types; make_archive; debug; fast;
+    link_everything; custom_runtime; output_c_object; classic; nopervasives;
+    annotations; binary_annotations; use_threads; use_vmthreads; noassert;
+    verbose; noprompt; nopromptcont; principal; real_paths; recursive_types;
+    strict_sequence; applicative_functors; make_runtime; gprofile;
+    no_auto_link; make_package; dump_parsetree; dump_rawlambda; dump_lambda;
+    dump_clambda; dump_instr; keep_asm_file; optimize_for_speed; dump_cmm;
+    dump_selection; dump_live; dump_spill; dump_split; dump_interf;
+    dump_prefer; dump_regalloc; dump_reload; dump_scheduling; dump_linear;
+    keep_startup_file; dump_combine; native_code; dont_write_files; shared;
+    dlcode 
+  ] in
+  fun () ->
+    save_ref inline_threshold :: 
+    save_ref output_name :: 
+    save_ref dllpaths :: 
+    save_ref objfiles :: 
+    save_ref ccobjs :: 
+    save_ref dllibs :: 
+    save_ref include_dirs :: 
+    save_ref ccopts :: 
+    save_ref preprocessor :: 
+    save_ref init_file :: 
+    save_ref use_prims :: 
+    save_ref use_runtime :: 
+    save_ref runtime_variant :: 
+    save_ref c_compiler :: 
+    save_ref for_package :: 
+    save_ref error_size :: 
+    List.map save_ref bools
+
+let restore snapshot = List.iter (fun x -> x ()) snapshot
+

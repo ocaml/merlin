@@ -107,8 +107,9 @@ let main_loop () =
           let Protocol.Request request =
             refresh_state_on_signal state' (fun () -> Stream.next input)
           in
-          let state', response = Command.dispatch io state request in
-          state',
+          let state = State.validate_parser !state' in
+          let state, response = Command.dispatch io state request in
+          state,
           Protocol.Return (request, response)
         with
           | Stream.Failure as exn -> raise exn
@@ -121,34 +122,7 @@ let main_loop () =
     loop (State.initial_str "")
   with Stream.Failure -> ()
 
-(** Mimic other OCaml tools, entry point *)
-
-module Options = Top_options.Make (struct
-  let _projectfind path =
-    let dot_merlins = Dot_merlin.find path in
-    begin match Dot_merlin.project_name dot_merlins with
-    | Some name -> print_endline name
-    | None -> ()
-    end;
-    exit 0
-
-end)
-
-let main () =
-  Arg.parse Options.list Top_options.unexpected_argument
-    "Usage: ocamlmerlin [options]\noptions are:";
-  begin try
-    let dest = Sys.getenv "MERLIN_LOG" in
-    Logger.set_default_destination dest ;
-    Logger.monitor ~dest Logger.Section.(`protocol)
-  with _ ->
-    ()
-  end;
-  Command.init_path ();
-  State.reset_global_modules ();
-  Findlib.init ();
+let () =
   ignore (signal Sys.Signal_ignore);
-  main_loop () ;
-  Logger.shutdown ()
+  main_loop ()
 
-let _ = main ()

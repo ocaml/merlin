@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: main_args.ml 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 let mk_debug f =
   "-debug", Arg.String f,
          "<section>[,<log file path>] Activate logging for given sections.\n\
@@ -35,10 +33,6 @@ let mk_ignore_sigint f =
 
 let mk_absname f =
   "-absname", Arg.Unit f, "  Show absolute filenames in error message"
-;;
-
-let mk_config f =
-  "-config", Arg.Unit f, " Print configuration values and exit"
 ;;
 
 let mk_I f =
@@ -66,10 +60,6 @@ let mk_nostdlib f =
   " Do not add default directory to the list of include directories"
 ;;
 
-let mk_pp f =
-  "-pp", Arg.String f, "<command>  Pipe sources through preprocessor <command>"
-;;
-
 let mk_principal f =
   "-principal", Arg.Unit f, " Check principality of type inference"
 ;;
@@ -81,11 +71,6 @@ let mk_rectypes f =
 let mk_strict_sequence f =
   "-strict-sequence", Arg.Unit f,
   " Left-hand part of a sequence must have type unit"
-;;
-
-let mk_v f =
-  "-v", Arg.Unit f,
-  " Print compiler version and location of standard library and exit"
 ;;
 
 let mk_version f =
@@ -124,18 +109,6 @@ let mk_warn_help f =
 
 let mk_protocol f =
   "-protocol", Arg.String f, "  Select frontend protocol (or 'help' to list)"
-;;
-
-let mk_where f =
-  "-where", Arg.Unit f, " Print location of standard library and exit"
-;;
-
-let mk_nopervasives f =
-  "-nopervasives", Arg.Unit f, " (undocumented)"
-;;
-
-let mk_use_prims f =
-  "-use-prims", Arg.String f, "<file>  (undocumented)"
 ;;
 
 let mk__ f =

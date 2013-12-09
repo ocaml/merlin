@@ -27,10 +27,8 @@
 )* }}} *)
 
 open Std
-open Misc
 
 let eof_lexer _ = Chunk_parser.EOF
-let fail_lexer _ = failwith "lexer ended"
 let fallback_lexer = eof_lexer
 
 let fake_tokens tokens f =
@@ -141,6 +139,8 @@ module Fold = struct
   let sig_in_sig_modtype _ = failwith "TODO"
   let sig_in_sig_module  _ = failwith "TODO"
   let sig_in_str_modtype _ = failwith "TODO"
+
+  let is_valid _ _ = true
 end
 
 module Spine = Spine.Transform (Context) (Outline.Spine) (Fold)

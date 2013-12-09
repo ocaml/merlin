@@ -26,51 +26,25 @@
 
 )* }}} *)
 
+open Std
+
 type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
 type low_io = Json.json Stream.t * (Json.json -> unit)
 type io_maker = input:in_channel -> output:out_channel -> low_io
 
 let section = Logger.(`protocol)
 
-exception Protocol_failure of string
-
 let invalid_arguments () = failwith "invalid arguments"
-
-let stream_map s f =
-  Stream.from (fun _ ->
-      try Some (f (Stream.next s))
-      with Stream.Failure -> None)
-
-let json_of_completion {Protocol. name; kind; desc; info} =
-  let kind = match kind with
-    | `Value       -> "Value"
-    | `Constructor -> "Constructor"
-    | `Label       -> "Label"
-    | `Module      -> "Module"
-    | `Modtype     -> "Signature"
-    | `Type        -> "Type"
-    | `MethodCall  -> "#"
-  in
-  `Assoc ["name", `String name;
-          "kind", `String kind;
-          "desc", `String desc;
-          "info", `String info]
 
 let json_log (input,output) =
   let log_input json = Logger.log section ~prefix:"<" (Json.to_string json); json in
   let log_output json = Logger.log section ~prefix:">" (Json.to_string json); json in
-  let input' =
-    Stream.from
-    begin fun _ ->
-      try Some (log_input (Stream.next input))
-      with Stream.Failure -> None
-    end
-  in
+  let input' = Stream.map ~f:log_input input in
   let output' json = output (log_output json) in
   input', output'
 
 let json_make ~input ~output =
-  let input  = Json.stream_from_channel input in
+  let input   = Json.stream_from_channel input in
   let output' = Json.to_channel output in
   let output json =
     output' json;
@@ -101,90 +75,105 @@ let select_frontend name =
       !makers;
     exit 1
 
-let return l = `List [`String "return" ; l]
-
-let pos_to_json pos =
-  Lexing.(`Assoc ["line", `Int pos.pos_lnum;
-                  "col", `Int (pos.pos_cnum - pos.pos_bol)])
-
-let error_to_json {Error_report. valid; text; where; loc} =
-  let content = ["valid", `Bool valid; "message", `String text] in
-  let content =
-    if loc = Location.none then content else
-    ("start", pos_to_json loc.Location.loc_start) ::
-    ("end"  , pos_to_json loc.Location.loc_end) ::
-    content
-  in
-  let content = ("type", `String where) :: content in
-  `Assoc content
-
-let error_catcher exn =
-  match Error_report.error_catcher exn with
-  | None -> None
-  | Some (loc,t) -> Some (loc, error_to_json t)
-
-let fail = function
-  | Protocol_failure s ->
-    prerr_endline ("Fatal protocol failure. " ^ s);
-    exit (-1)
-  | Failure s -> `List [`String "failure"; `String s]
-  | exn -> match error_catcher exn with
-      | Some (_,error) -> `List [`String "error"; error]
-      | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
-
-let protocol_failure s = raise (Protocol_failure s)
-
-let make_pos (pos_lnum, pos_cnum) =
-  Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
-
-let pos_of_json = function
-  | `Assoc props ->
-    begin try match List.assoc "line" props, List.assoc "col" props with
-      | `Int line, `Int col -> make_pos (line,col)
-      | _ -> failwith "Incorrect position"
-    with Not_found -> failwith "Incorrect position"
-    end
-  | _ -> failwith "Incorrect position"
-
-let with_location loc assoc =
-  `Assoc (("start", pos_to_json loc.Location.loc_start) ::
-          ("end",   pos_to_json loc.Location.loc_end) ::
-          assoc)
-
-let optional_position = function
-  | [`String "at"; jpos] -> Some (pos_of_json jpos)
-  | [] -> None
-  | _ -> invalid_arguments ()
-let string_list l =
-  List.map (function `String s -> s | _ -> invalid_arguments ()) l
-let json_of_string_list l =
-  `List (List.map (fun s -> `String s) l)
-let json_of_type_loc (loc,str) =
-  with_location loc ["type", `String str]
-
-let source_or_build = function
-  | "source" -> `Source
-  | "build"  -> `Build
-  | _ -> invalid_arguments ()
-
-let list_or_reset = function
-  | "list"  -> `List
-  | "reset" -> `Reset
-  | _ -> invalid_arguments ()
-
-let add_or_remove = function
-  | "add"    -> `Add
-  | "remove" -> `Rem
-  | _ -> invalid_arguments ()
-
-let load_or_find = function
-  | "load" -> `File
-  | "find" -> `Find
-  | _ -> invalid_arguments ()
-
 module Protocol_io = struct
   exception Failure' = Failure
   open Protocol
+
+  let pos_to_json pos =
+    Lexing.(`Assoc ["line", `Int pos.pos_lnum;
+                    "col", `Int (pos.pos_cnum - pos.pos_bol)])
+
+  let error_to_json {Error_report. valid; text; where; loc} =
+    let content = ["valid", `Bool valid; "message", `String text] in
+    let content =
+      if loc = Location.none then content else
+      ("start", pos_to_json loc.Location.loc_start) ::
+      ("end"  , pos_to_json loc.Location.loc_end) ::
+      content
+    in
+    let content = ("type", `String where) :: content in
+    `Assoc content
+
+  let error_catcher exn =
+    match Error_report.error_catcher exn with
+    | None -> None
+    | Some (loc,t) -> Some (loc, error_to_json t)
+
+  let make_pos (pos_lnum, pos_cnum) =
+    Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
+
+  let pos_of_json = function
+    | `Assoc props ->
+      begin try match List.assoc "line" props, List.assoc "col" props with
+        | `Int line, `Int col -> make_pos (line,col)
+        | _ -> failwith "Incorrect position"
+      with Not_found -> failwith "Incorrect position"
+      end
+    | _ -> failwith "Incorrect position"
+
+  let with_location loc assoc =
+    `Assoc (("start", pos_to_json loc.Location.loc_start) ::
+            ("end",   pos_to_json loc.Location.loc_end) ::
+            assoc)
+
+  let optional_position = function
+    | [`String "at"; jpos] -> Some (pos_of_json jpos)
+    | [] -> None
+    | _ -> invalid_arguments ()
+
+  let string_list l =
+    List.map (function `String s -> s | _ -> invalid_arguments ()) l
+
+  let json_of_string_list l =
+    `List (List.map (fun s -> `String s) l)
+
+  let json_of_type_loc (loc,str) =
+    with_location loc ["type", `String str]
+
+  let json_of_completion {Protocol. name; kind; desc; info} =
+    let kind = match kind with
+      | `Value       -> "Value"
+      | `Constructor -> "Constructor"
+      | `Label       -> "Label"
+      | `Module      -> "Module"
+      | `Modtype     -> "Signature"
+      | `Type        -> "Type"
+      | `MethodCall  -> "#"
+    in
+    `Assoc ["name", `String name;
+            "kind", `String kind;
+            "desc", `String desc;
+            "info", `String info]
+
+  let source_or_build = function
+    | "source" -> `Source
+    | "build"  -> `Build
+    | _ -> invalid_arguments ()
+
+  let add_or_remove = function
+    | "add"    -> `Add
+    | "remove" -> `Rem
+    | _ -> invalid_arguments ()
+
+  let load_or_find = function
+    | "load" -> `File
+    | "find" -> `Find
+    | _ -> invalid_arguments ()
+
+  let with_package_failures assoc = function
+    | `Ok -> assoc
+    | `Failures failures ->
+      let failures = List.map failures
+          ~f:(fun (str,exn) ->
+              let str = "\"" ^ str ^ "\"" in
+              let str = match exn with
+                | Fl_package_base.No_such_package _ -> str
+                | exn -> str ^ " (" ^ Printexc.to_string exn ^ ")"
+              in
+              str)
+      in
+      let str = String.concat ~sep:", " failures in
+      ("failures", `String ("Failed to load some packages " ^ str)) :: assoc
 
   let request_of_json = function
     | [`String "tell"; `String "definitions"; `Int d] ->
@@ -231,12 +220,12 @@ module Protocol_io = struct
       Request (Refresh `Full)
     | [`String "refresh"; `String "quick"] ->
       Request (Refresh `Quick)
-    | [`String "cd"; `String cd] ->
-      Request (Cd cd)
     | [`String "errors"] ->
       Request Errors
     | (`String "dump" :: `String "env" :: opt_pos) ->
-      Request (Dump (`Env (optional_position opt_pos)))
+      Request (Dump (`Env (`Normal, optional_position opt_pos)))
+    | (`String "dump" :: `String "full_env" :: opt_pos) ->
+      Request (Dump (`Env (`Full, optional_position opt_pos)))
     | [`String "dump"; `String "sig"] ->
       Request (Dump `Sig)
     | [`String "dump"; `String "chunks"] ->
@@ -312,28 +301,32 @@ module Protocol_io = struct
           `Null
         | Reset _, () -> pos_to_json (make_pos (1,0))
         | Refresh _, changed -> `Bool changed
-        | Cd _, () -> `Bool true
         | Errors, exns ->
           `List (List.map (fun (_,err) -> error_to_json err)
                           (Error_report.of_exns exns))
         | Dump _, json -> json
         | Which_path _, str -> `String str
         | Which_with_ext _, strs -> json_of_string_list strs
-        | Findlib_use _, () -> `Bool true
+        | Findlib_use _, failures ->
+          `Assoc (with_package_failures ["result", `Bool true] failures)
         | Findlib_list, strs -> json_of_string_list strs
         | Extension_list _, strs -> json_of_string_list strs
         | Extension_set _, () -> `Bool true
         | Path _, changed -> `Bool changed
         | Path_list _, strs -> json_of_string_list strs
         | Path_reset, () -> `Bool true
-        | Project_load _, strs -> json_of_string_list strs
+        | Project_load _, (strs, failures) ->
+          `Assoc (with_package_failures ["result", json_of_string_list strs] failures)
       end]
+
+  let request_of_json = function
+    | `List jsons -> request_of_json jsons
+    | _ -> invalid_arguments ()
 end
 
-let request_of_json = function
-  | `List jsons -> Protocol_io.request_of_json jsons
-  | _ -> invalid_arguments ()
-let response_to_json = Protocol_io.response_to_json
+(* Used when dumping state as raw json *)
+let with_location = Protocol_io.with_location
 
 let lift (i,o : low_io) : io =
-  (stream_map i request_of_json, (fun x -> o (response_to_json x)))
+  (Stream.map ~f:Protocol_io.request_of_json i,
+   (fun x -> o (Protocol_io.response_to_json x)))

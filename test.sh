@@ -2,14 +2,17 @@
 
 if test -n "$1" ; then
     out=`mktemp`
-    ./ocamlmerlin.native < ./tests/$1.in  > $out
-    # Use more appropriate jsondiff if available
-    if which jsondiff >& /dev/null; then
-      DIFF="jsondiff -color"
-    else
-      DIFF="diff -u"
-    fi
-    $DIFF ./tests/$1.out $out
+    while test -n "$1"; do
+      ./ocamlmerlin.native < ./tests/$1.in  > $out
+      # Use more appropriate jsondiff if available
+      if which jsondiff >& /dev/null; then
+        DIFF="jsondiff -color"
+      else
+        DIFF="diff -u"
+      fi
+      $DIFF ./tests/$1.out $out
+      shift 1
+    done
     rm $out
 else
     for file in tests/*.in ; do

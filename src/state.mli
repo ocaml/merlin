@@ -32,7 +32,7 @@ type step = {
   types    : Typer.t;
 }
 
-type t = {steps: step History.t}
+type t = {steps: step History.t; parser_validity: bool ref}
 
 val initial_sig : string -> t
 val initial_str : string -> t
@@ -44,6 +44,8 @@ val verbose_type : Env.t -> Types.type_expr -> Types.type_expr
 val verbose_type_decl : Env.t -> Types.type_declaration -> Types.type_declaration
 val verbose_sig : Env.t -> Types.modtype_declaration -> Types.modtype_declaration
 
+val validate_parser : t -> t
+
 module Verbose_print : sig
   open Format
   open Types
@@ -52,8 +54,6 @@ module Verbose_print : sig
   val type_declaration: Ident.t -> formatter -> type_declaration -> unit
   val modtype_declaration: Ident.t -> formatter -> modtype_declaration -> unit
 end
-
-val reset_global_modules : unit -> unit
 
 val retype : t -> t
 val quick_refresh_modules : t -> t * bool

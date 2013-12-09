@@ -5,6 +5,8 @@ module Directives = struct
   type t = [
     | `B of string
     | `S of string
+    | `CMI of string
+    | `CMT of string
     | `PKG of string list
     | `EXT of string list
     | `FLG of string
@@ -33,18 +35,24 @@ let parse_dot_merlin path : bool * t =
         tell (`S (String.drop 2 line))
       else if String.is_prefixed ~by:"SRC " line then
         tell (`S (String.drop 4 line))
+      else if String.is_prefixed ~by:"CMI " line then
+        tell (`CMI (String.drop 4 line))
+      else if String.is_prefixed ~by:"CMT " line then
+        tell (`CMT (String.drop 4 line))
       else if String.is_prefixed ~by:"PKG " line then
         tell (`PKG (rev_split_words (String.drop 4 line)))
       else if String.is_prefixed ~by:"EXT " line then
         tell (`EXT (rev_split_words (String.drop 4 line)))
       else if String.is_prefixed ~by:"FLG " line then
         tell (`FLG (String.drop 4 line))
-      else if String.is_prefixed ~by:"REC" line then recurse := true
+      else if String.is_prefixed ~by:"REC" line then
+        recurse := true
       else if String.is_prefixed ~by:"PRJ " line then
         proj := Some (String.trim (String.drop 4 line))
       else if String.is_prefixed ~by:"PRJ" line then
         proj := Some ""
-      else if String.is_prefixed ~by:"#" line then ()
+      else if String.is_prefixed ~by:"#" line then
+        ()
       else ();
       aux ()
     in
@@ -86,21 +94,19 @@ let rec project_name = function
   | List.Lazy.Cons (_, lazy tail) -> project_name tail
   | List.Lazy.Nil -> None
 
-let err_log msg = Logger.error `dot_merlin msg
-
-module Flags = Top_options.Make (struct
-  let _projectfind _ = err_log "unsupported flag \"-project-find\" (ignored)" ;
-end)
-
 type path_config =
   {
     dot_merlins : string list;
     build_path  : string list;
     source_path : string list;
+    cmi_path    : string list;
+    cmt_path    : string list;
     packages    : string list;
+    flags       : string list list;
+    extensions  : string list;
   }
 
-let exec_dot_merlin {path; project; entries} config =
+let parse_dot_merlin {path; entries} config =
   let cwd = Filename.dirname path in
   let expand path =
     canonicalize_filename ~cwd (expand_directory Config.standard_library path)
@@ -110,35 +116,57 @@ let exec_dot_merlin {path; project; entries} config =
     function
     | `B path -> {config with build_path = expand path :: config.build_path}
     | `S path -> {config with source_path = expand path :: config.source_path}
+    | `CMI path -> {config with cmi_path = expand path :: config.cmi_path}
+    | `CMT path -> {config with cmt_path = expand path :: config.cmt_path}
     | `PKG pkgs -> {config with packages = pkgs @ config.packages}
     | `EXT exts ->
-      List.iter exts ~f:(fun e -> Extensions_utils.set_extension ~enabled:true e);
-      config
+      {config with extensions = exts @ config.extensions}
     | `FLG flags ->
       let lst = rev_split_words flags in
-      let flags = Array.of_list (List.rev lst) in
-      begin try
-        Arg.parse_argv ~current:(ref (-1)) flags Flags.list
-          Top_options.unexpected_argument "error..."
-      with
-      | Arg.Bad msg -> err_log msg; exit 2
-      | Arg.Help msg -> err_log msg; exit 0 (* FIXME *)
-      end;
-      config
+      let flags = List.rev lst in
+      {config with flags = flags :: config.flags}
   ) entries
 
-let rec exec ?(config={build_path=[];source_path=[];packages=[];dot_merlins=[]}) =
+let empty_config = {
+  build_path  = [];
+  source_path = [];
+  cmi_path    = [];
+  cmt_path    = [];
+  packages    = [];
+  dot_merlins = [];
+  extensions  = [];
+  flags       = [];
+}
+
+let rec parse ?(config=empty_config) =
   function
   | List.Lazy.Cons (dot_merlin, lazy tail) ->
-    exec ~config:(exec_dot_merlin dot_merlin config) tail
+    parse ~config:(parse_dot_merlin dot_merlin config) tail
   | List.Lazy.Nil ->
-    { config with
-      build_path = List.filter_dup config.build_path;
-      source_path = List.filter_dup config.source_path;
-      packages = List.filter_dup config.packages
+    {
+      dot_merlins = config.dot_merlins;
+      build_path  = List.rev (List.filter_dup config.build_path);
+      source_path = List.rev (List.filter_dup config.source_path);
+      cmi_path    = List.rev (List.filter_dup config.cmi_path);
+      cmt_path    = List.rev (List.filter_dup config.cmt_path);
+      packages    = List.rev (List.filter_dup config.packages);
+      extensions  = List.rev (List.filter_dup config.extensions);
+      flags       = List.rev (List.filter_dup config.flags);
     }
 
 let packages_path packages =
-  let packages = Findlib.package_deep_ancestors [] packages in
+  let packages =  packages in
+  let f pkg =
+    try Either.R (Findlib.package_deep_ancestors [] [pkg])
+    with exn -> Either.L (pkg, exn)
+  in
+  let packages = List.map ~f packages in
+  let failures, packages = Either.split packages in
+  let packages = List.filter_dup (List.concat packages) in
   let path = List.map ~f:Findlib.package_directory packages in
-  List.filter_dup path
+  let failures = match failures with
+    | [] -> `Ok
+    | ls -> `Failures ls
+  in
+  failures, path
+

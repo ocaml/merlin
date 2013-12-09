@@ -519,7 +519,6 @@ the error message otherwise print a generic error message."
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
   (merlin-send-command (list 'reset 'name buffer-file-name))
-  (merlin-send-command (list 'cd (file-name-directory (buffer-file-name))))
   (merlin-error-reset)
   (setq merlin-lock-point (point-min)))
 
@@ -1116,16 +1115,21 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Use PKG in the current session of merlin."
   (interactive
    (list (completing-read "Package to use: " (merlin-get-packages))))
-  (merlin-send-command (list 'find 'use (list pkg)))
+  (let* ((r (merlin-send-command (list 'find 'use (list pkg))))
+         (failed (assoc 'failures r)))
+    (when failed (message (cdr failed))))
   (merlin-error-reset))
 
 (defun merlin-load-project-file ()
   "Load the .merlin file corresponding to the current file."
   (interactive)
   (merlin-rewind)
-  (let ((r (merlin-send-command (list 'project 'find (buffer-file-name)))))
-    (if (and r (listp r))
-        (setq merlin-project-file (car r)))))
+  (let* ((r (merlin-send-command (list 'project 'find (buffer-file-name))))
+         (failed (assoc 'failures r))
+         (result (assoc 'result r)))
+    (when failed (message (cdr failed)))
+    (when (and result (listp (cdr result)))
+      (setq merlin-project-file (cadr result)))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
