@@ -34,7 +34,7 @@ data files are installed.
 
 It will usually be:
 - "/usr/local/share" if you used manual configuration merlin
-- "<prefix>/share" if you explicitly specified a prefix when configuring merlin
+- "\<prefix\>/share" if you explicitly specified a prefix when configuring merlin
 - printed by the command `opam config var share`, if you used opam
 
 
