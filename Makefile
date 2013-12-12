@@ -26,7 +26,7 @@ $(TARGET): assert_configured
 
 all_versions:
 	for i in _400 _401; do \
-		$(MAKE) TYPER_VERSION=$$i $(TARGET);\
+		$(MAKE) TYPER_VERSION=$$i $(TARGET) || exit 1;\
 		cp $(TARGET) ocamlmerlin$$i;\
 	done
 
