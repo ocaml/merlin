@@ -49,7 +49,8 @@ let ext_lwt = {
   ];
   public_def = [
     "val (>>) : unit Lwt.t -> 'a Lwt.t -> 'a Lwt.t
-     val raise_lwt : exn -> 'a Lwt.t"
+     val raise_lwt : exn -> 'a Lwt.t
+     val assert_lwt : bool -> unit Lwt.t"
   ];
   keywords = [
     "lwt", LET_LWT;
