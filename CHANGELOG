@@ -1,3 +1,34 @@
+merlin 1.5
+==========
+Sat Dec 14 19:45:06 CET 2013
+
+  backend:
+    - better handling of paths (both sources and build)
+    - splitted build path into cmi and cmt path.
+      New directives "CMI" and "CMT" are now available in .merlin files ("B"
+      still works as previously)
+    - doesn't get confused anymore when the user switch between buffers (the
+      state is cleaned)
+
+  emacs:
+    - adds ability to enable/disable extensions manually
+    - adds a command to clear all the errors from a buffer
+    - displaying of errors can now be disabled
+
+  extensions
+    - updated bin_prot for version >= 109.45.00
+    - bugfix for [with compare] in presence of parametrized types
+    - added support for "here" (when activated adds
+      [val _here_ : Lexing.position])
+    - added support for [assert_lwt]
+    - fixed typing of [while_lwt]
+
+  vim:
+    - vim plugin can be installed into a custom directory and has its own
+      makefile target (contribution from Vsevolod Velichko)
+    - added "ClearEnclosing" command to remove merlin's overlay after a call to
+      TypeOf.
+
 merlin 1.4.1
 ============
 Thu Sep 26 21:29:56 BST 2013
