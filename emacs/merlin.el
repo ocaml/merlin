@@ -396,6 +396,21 @@ buffer.  Return the process created"
     (with-current-buffer (merlin-get-process-buffer-name)
       merlin-process-users)))
 
+(defun merlin-toggle-view-errors ()
+  "Toggle the viewing of errors in the buffer."
+  (interactive)
+  (setq merlin-error-after-save (not merlin-error-after-save))
+  (if merlin-error-after-save
+      (progn
+        (merlin-rewind)
+        (merlin-after-save)
+        (message "Errors are now reported. Use %s to stop reporting them."
+                 (substitute-command-keys "\\[merlin-toggle-view-errors]")))
+    (progn
+      (merlin-error-reset)
+      (message "Errors are not reported anymore. Use %s to start again reporting them."
+               (substitute-command-keys "\\[merlin-toggle-view-errors]")))))
+
 (defun merlin-restart-process ()
   "Restart the merlin toplevel for this buffer, taking into account new flags."
   (interactive)
