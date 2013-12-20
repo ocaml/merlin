@@ -1,7 +1,7 @@
 Makefile.config
 _build
-myocamlbuild_config.ml
-my_config.ml
+src/config/myocamlbuild_config.ml
+src/config/my_config.ml
 _tags
 *.tar.gz
 *.native
