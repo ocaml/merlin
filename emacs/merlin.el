@@ -72,6 +72,10 @@
   "If non-nil, report warnings, otherwise ignore them."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-buffer-name "*merlin*"
+  "The name of the buffer storing module signatures."
+  :group 'merlin :type 'string)
+
 (defcustom merlin-type-buffer-name "*merlin-types*"
   "The name of the buffer storing module signatures."
   :group 'merlin :type 'string)
@@ -116,10 +120,6 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "The flags to give to ocamlmerlin."
   :group 'merlin :type '(repeat string))
 
-(defcustom merlin-automatically-garbage-processes t
-  "If non-nil, delete a process when it has no more users.  If nil, keep it."
-  :group 'merlin :type 'boolean)
-
 (defcustom merlin-use-auto-complete-mode nil
   "If non nil, use `auto-complete-mode' in any buffer."
   :group 'merlin :type 'boolean)
@@ -160,24 +160,18 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "The current list of flags to pass to ocamlmerlin.")
 
 ;; Process / Reception related variables
-(defvar merlin-processes nil
-  "The global merlin process table.  It lists the active instances of merlin.")
+(defvar merlin-process nil
+  "The global merlin process.")
 
-;; Per process variables
-(defvar merlin-local-process nil
-  "The local merlin process.")
-
-(defvar merlin-queue nil
-  "The transaction queue for current process.  This variable lives only in process buffers.")
-
-(defvar merlin-process-users nil
-  "Buffer that uses the process (local to a process buffer).")
+(defvar merlin-process-queue nil
+  "The transaction queue for the global process.")
 
 (defvar merlin-process-last-user nil
-  "Last buffer that used the process.")
+  "Last buffer that used the global process.")
 
 (defvar merlin-result nil
   "Temporary variables to store command results.")
+
 (make-variable-buffer-local 'merlin-result)
 
 (defvar merlin-buffer nil
@@ -192,6 +186,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-lock-zone-highlight-overlay nil
   "Overlay used for the lock zone highlighting.")
 (make-variable-buffer-local 'merlin-lock-zone-highlight-overlay)
+
 (defvar merlin-lock-zone-margin-overlay nil
   "Overlay used for the margin indicator of the lock zone.")
 (make-variable-buffer-local 'merlin-lock-zone-margin-overlay)
@@ -200,6 +195,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-pending-errors nil
   "Pending errors.")
 (make-variable-buffer-local 'merlin-pending-errors)
+
 (defvar merlin-lock-point 0
   "Position up to which merlin knows about.")
 (defvar merlin-pending-errors-overlays nil
@@ -248,7 +244,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defun merlin-debug (s)
   "Output S if the variable `merlin-debug' is non-nil on the process buffer
 associated to the current buffer."
-  (with-current-buffer (merlin-get-process-buffer-name)
+  (with-current-buffer merlin-buffer-name
     (goto-char (point-max))
     (insert s)))
 
@@ -341,60 +337,20 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 ;; PROCESS MANAGEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin-get-buffer-instance-name ()
-  "Return the instance name of the current-projet.
-For now it is a constant function (every buffer shares the same instance)."
-  "")
-
-(defun merlin-get-process ()
-  "Return the process of the current buffer."
-  merlin-local-process)
-
-(defun merlin-get-process-buffer-name ()
-  "Return the buffer name of the merlin process associated to the current buffer."
-  (format "*merlin*%s*" (merlin-get-buffer-instance-name)))
-
-(defun merlin-get-process-variable (var)
-  "Return the value of VAR (symbol) inside the process buffer."
-  (when (get-buffer (merlin-get-process-buffer-name))
-    (buffer-local-value var (get-buffer (merlin-get-process-buffer-name)))))
-
-(defun merlin-get-process-name ()
-  "Return the process name for the current buffer."
-  (concat "merlin-" (merlin-get-buffer-instance-name)))
-
-(defun merlin-start-process (flags &optional users)
-  "Start the merlin process for the current buffer.
+(defun merlin-start-process (flags)
+  "Start the merlin process.
 FLAGS are a list of strings denoting the parameters to be passed
-to merlin.  USERS can be used to set the users of this
-buffer.  Return the process created"
-  (get-buffer-create (merlin-get-process-buffer-name))
-  (let ((p (apply #'start-file-process (merlin-get-process-name)
-                         (merlin-get-process-buffer-name)
-                         merlin-command `("-protocol" "sexp" . ,flags)))
-        (name (buffer-name)))
-    (set (make-local-variable 'merlin-local-process) p)
-    (dolist (buffer users)
-      (message "Setting process for buffer %s" buffer)
-      (with-current-buffer buffer
-        (set (make-local-variable 'merlin-local-process) p)))
-    (merlin-debug (format "Running %s with flags %s\n" merlin-command flags))
-    (set-process-query-on-exit-flag p nil)
-    (push p merlin-processes)
-; don't forget to initialize temporary variable
-    (with-current-buffer (merlin-get-process-buffer-name)
-      (set (make-local-variable 'merlin-queue) (tq-create p))
-      (set (make-local-variable 'merlin-process-users) (cons name (delete name users)))
-      (set (make-local-variable 'merlin-local-process) p)
-      (set (make-local-variable 'merlin-process-last-user) name)
-      )
-  p))
-
-(defun merlin-get-current-buffer-users ()
-  "Return the list of users of the merlin instance for this buffer."
-  (when (get-buffer (merlin-get-process-buffer-name))
-    (with-current-buffer (merlin-get-process-buffer-name)
-      merlin-process-users)))
+to merlin.  It returns the created process."
+  (when (not (merlin-process-started-p))
+    (get-buffer-create merlin-buffer-name)
+    (let ((p (apply #'start-file-process "merlin" merlin-buffer-name
+                    merlin-command `("-protocol" "sexp" . ,flags)))
+          (name (buffer-name)))
+      (merlin-debug (format "Running %s with flags %s\n" merlin-command flags))
+      (set-process-query-on-exit-flag p nil)
+      (setq merlin-process p)
+      (setq merlin-process-queue (tq-create p))
+      p)))
 
 (defun merlin-toggle-view-errors ()
   "Toggle the viewing of errors in the buffer."
@@ -414,14 +370,13 @@ buffer.  Return the process created"
 (defun merlin-restart-process ()
   "Restart the merlin toplevel for this buffer, taking into account new flags."
   (interactive)
-  (let ((users (merlin-get-current-buffer-users)))
-    (when (merlin-process-started-p)
-      (ignore-errors (merlin-kill-process)))
-    (setq merlin-local-process (merlin-start-process merlin-current-flags users))
-    (setq merlin-pending-errors nil)
-    (merlin-load-project-file)
-    (merlin-to-point)
-    (message "Merlin restarted")))
+  (when (merlin-process-started-p)
+    (ignore-errors (merlin-kill-process)))
+  (merlin-start-process merlin-current-flags)
+  (setq merlin-pending-errors nil)
+  (merlin-load-project-file)
+  (merlin-to-point)
+  (message "Merlin restarted"))
 
 (defun merlin-process-clear-flags ()
   "Clear all flags set up to be passed to merlin.
@@ -437,45 +392,23 @@ This sets `merlin-current-flags' to nil."
     (setq merlin-current-flags flag-list))
   (message "Flag %s added.  Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag-string))
 
-(defun merlin-process-add-user ()
-  "Add the current buffer as an user for the merlin process."
-  (let ((name (buffer-name)))
-    (merlin-debug (format "Adding user: %s\n" name))
-    (with-current-buffer (merlin-get-process-buffer-name)
-      (push name merlin-process-users))))
-
 (defun merlin-is-last-user-p ()
-  "Return whether the current buffer was the current user of its merlin process."
-  (equal (merlin-get-process-variable 'merlin-process-last-user)
-         (buffer-name)))
-
-(defun merlin-process-remove-user ()
-  "Remove the current buffer as an user for the merlin process.
-Kill the process if required."
-  (let ((name (buffer-name)))
-    (when (get-buffer (merlin-get-process-buffer-name))
-      (with-current-buffer (merlin-get-process-buffer-name)
-        (setq merlin-process-users (delete name merlin-process-users))
-        (when (and (not merlin-process-users)
-                   merlin-automatically-garbage-processes)
-          (message "Killed merlin process.")
-          (merlin-kill-process))))))
+  "Return whether the current buffer was the current user of the merlin process."
+  (equal merlin-process-last-user (buffer-name)))
 
 (defun merlin-process-started-p ()
   "Return non-nil if the merlin process for the current buffer is already started."
-   (get-buffer (merlin-get-process-buffer-name)))
+  (get-buffer merlin-buffer-name))
 
 (defun merlin-kill-process ()
   "Kill the merlin process inside the buffer."
-  (setq merlin-processes (delete merlin-local-process merlin-processes))
-  (with-current-buffer (merlin-get-process-buffer-name)
-    (tq-close merlin-queue))
-  (kill-buffer (merlin-get-process-buffer-name)))
+  (tq-close merlin-process-queue)
+  (kill-process merlin-process))
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
   (while (not merlin-ready)
-    (accept-process-output (merlin-get-process) 0.1 nil t))
+    (accept-process-output merlin-process 0.1 nil t))
   merlin-result)
 
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
@@ -488,35 +421,34 @@ the error message otherwise print a generic error message."
                         "\n"))
        (buffer (current-buffer))
        (name (buffer-name)))
-    (if (not (equal (process-status (merlin-get-process)) 'run))
+    (if (not (equal (process-status merlin-process) 'run))
         (progn
           (error "Merlin process not running (try restarting with %s)"
                  (substitute-command-keys "\\[merlin-restart-process]"))
           nil)
       (progn
         (if merlin-debug (merlin-debug (format ">%s" string)))
-        (with-current-buffer (merlin-get-process-buffer-name)
-          (setq merlin-process-last-user name)
-          (tq-enqueue merlin-queue string "\n"
-           (cons callback-if-success (cons callback-if-exn command))
-           #'(lambda (closure answer)
-               (with-current-buffer buffer
-                 (setq merlin-ready t)
-                 (if merlin-debug (merlin-debug (format "<%s" answer)))
-                 (let ((a (car (read-from-string answer))))
-                   (if a
-                       (cond ((string-equal (elt a 0) "return")
-                              (funcall (car closure) (elt a 1)))
-                             ((string-equal (elt a 0) "exception")
-                              (message "Merlin failed with exception: %s" (elt a 1)))
-                             ((progn
-                               (if (functionp (cadr closure))
-                                   (funcall (cadr closure) (elt a 1))
-                                 (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
-                     (message "Invalid answer received from merlin.")))))
-           nil)
-          nil)
-        t))))
+        (setq merlin-process-last-user name)
+        (tq-enqueue merlin-process-queue string "\n"
+                    (cons callback-if-success (cons callback-if-exn command))
+                    #'(lambda (closure answer)
+                        (with-current-buffer buffer
+                          (setq merlin-ready t)
+                          (if merlin-debug (merlin-debug (format "<%s" answer)))
+                          (let ((a (car (read-from-string answer))))
+                            (if a
+                                (cond ((string-equal (elt a 0) "return")
+                                       (funcall (car closure) (elt a 1)))
+                                      ((string-equal (elt a 0) "exception")
+                                       (message "Merlin failed with exception: %s" (elt a 1)))
+                                      ((progn
+                                         (if (functionp (cadr closure))
+                                             (funcall (cadr closure) (elt a 1))
+                                           (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
+                              (message "Invalid answer received from merlin.")))))
+                    nil)
+        nil)
+      t)))
 
 (defun merlin-send-command (command &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
@@ -540,7 +472,8 @@ the error message otherwise print a generic error message."
 (defun merlin-refresh ()
   "Refresh changed merlin cmis."
   (interactive)
-  (merlin-send-command '(refresh quick)))
+  (merlin-send-command '(refresh quick))
+  (merlin-after-save))
 
 (defun merlin-refresh-full ()
   "Refresh all merlin cmis."
@@ -1220,7 +1153,7 @@ Returns the position."
     ((progn (merlin-tell-definitions 2)
             (goto-char (merlin-seek-exact point))
             (merlin-phrase-goto 'next 0)))
-    (t (end-of-buffer))))
+    (t (goto-char (point-max)))))
 
 (defun merlin-phrase-prev ()
   "Go to the beginning of the previous phrase."
@@ -1325,12 +1258,9 @@ Returns the position."
   "Set up a buffer for use with merlin."
   (interactive)
   (set (make-local-variable 'merlin-lock-point) (point-min))
-  ; if there is not yet a buffer for the current buffer, create one
+  ; if there is not yet a merlin process
   (when (not (merlin-process-started-p))
     (merlin-start-process merlin-current-flags))
-  (set (make-local-variable 'merlin-local-process)
-       (merlin-get-process-variable 'merlin-local-process))
-  (merlin-process-add-user)
   (when (and (fboundp 'auto-complete-mode)
              merlin-use-auto-complete-mode)
     (auto-complete-mode 1)
@@ -1347,8 +1277,8 @@ Returns the position."
 
 (defun merlin-process-dead-p ()
   "Return non-nil if merlin process is dead."
-  (and (merlin-get-process)
-       (not (equal (process-status (merlin-get-process)) 'run))))
+  (and merlin-process
+       (not (equal (process-status merlin-process) 'run))))
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
@@ -1378,32 +1308,17 @@ Short cuts:
         (delete-overlay merlin-lock-zone-margin-overlay))
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
-      ;;(merlin-error-delete-overlays)
-      (merlin-process-remove-user))))
-
-(defun merlin-kill-buffer-hook ()
-  "Release merlin resources associated with the buffer."
-  (when merlin-mode
-    (merlin-process-remove-user)))
+      ;;(merlin-error-delete-overlays) 
+     )))
 
 (defun merlin-after-save ()
   (when merlin-error-after-save (merlin-to-end)))
 
 (add-hook 'merlin-mode-hook
           (lambda ()
-            (add-hook 'kill-buffer-hook 'merlin-kill-buffer-hook
-                      nil 'make-it-local)
             (add-hook 'after-save-hook 'merlin-after-save
                       nil 'make-it-local)
             (merlin-error-start-timer)))
-
-(defun merlin-kill-all-processes ()
-  "Kill all the remaining buffers containing merlin processes."
-  (interactive)
-  (mapc (lambda (p)
-          (with-current-buffer (process-buffer p)
-            (merlin-kill-process)))
-        merlin-processes))
 
 (provide 'merlin)
 ;;; merlin.el ends here
