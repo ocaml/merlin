@@ -26,9 +26,7 @@ open Misc
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 
-module C = Myocamlbuild_config
-
-let standard_library_default = C.libdir
+let standard_library_default = Findlib.ocaml_stdlib ()
 
 let standard_library =
   try

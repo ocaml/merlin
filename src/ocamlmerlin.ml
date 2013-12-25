@@ -82,6 +82,7 @@
   *)
 
 module My_config = My_config
+module IO_sexp = IO_sexp
 
 let signal behavior =
   try Sys.signal Sys.sigusr1 behavior
