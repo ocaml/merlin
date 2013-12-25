@@ -131,6 +131,7 @@ end = struct
     update_extensions ();
     let failures, pathes = Dot_merlin.packages_path pkgs in
     user_packages := List.filter_dup (pathes @ !user_packages);
+    flush_global_modules ();
     failures
 
   (* 2c. Dot merlin path *)
@@ -164,9 +165,11 @@ end = struct
               (expand_directory Config.standard_library path)
     in
     r := List.filter ~f:((<>) d) !r;
-    match action with
+    begin match action with
     | `Add -> r := d :: !r
     | `Rem -> ()
+    end;
+    flush_global_modules ()
 
   (* Default ocaml library path *)
   let default_path = ref []

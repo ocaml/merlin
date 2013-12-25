@@ -35,7 +35,7 @@ debug: assert_configured
 .PHONY: $(TARGET) all dev clean distclean install uninstall assert_configured ocamlmerlin_400 ocamlmerlin_401
 
 clean:
-	@rm -f src/my_config.ml src/myocamlbuild_config.ml src/config
+	@rm -f src/my_config.ml src/myocamlbuild_config.ml
 	$(OCAMLBUILD) -clean
 
 check: $(TARGET)
