@@ -119,7 +119,7 @@ let parse_str ~exns ~location ~lexbuf zipper t =
   match Merlin_parsing.catch_warnings
       (fun () -> parse_with zipper
           ~parser:Outline_parser.implementation
-          ~lexer:Lexer.token
+          ~lexer:Raw_lexer.token
           lexbuf)
   with
   | _exns, Either.R (zipper, _, ([] | [Chunk_parser.EOF,_,_])) ->

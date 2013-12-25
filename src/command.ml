@@ -59,7 +59,7 @@ module Type_utils = struct
       end
     in
     Printtyp.wrap_printing_env env
-    begin fun () -> match Chunk_parser.top_expr Lexer.token lexbuf with
+    begin fun () -> match Chunk_parser.top_expr Raw_lexer.token lexbuf with
       | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
         begin
           try let c = Merlin_types.lookup_constructor longident.Asttypes.txt env in

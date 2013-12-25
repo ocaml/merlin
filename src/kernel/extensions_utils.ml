@@ -4,7 +4,7 @@ let ident = Ident.create "_"
 
 let parse_sig str =
   let buf = Lexing.from_string str in
-  Chunk_parser.interface Lexer.token buf
+  Chunk_parser.interface Raw_lexer.token buf
 
 let type_sig env sg =
   let sg = Typemod.transl_signature env sg in
@@ -34,7 +34,7 @@ let list = function
 let parser_valid = ref (ref false)
 
 let set_raw_extension ~enabled (name,(_,_,kw,_ as ext)) =
-  Lexer.set_extension ~enabled kw;
+  Raw_lexer.set_extension ~enabled kw;
   !parser_valid := false;
   if enabled
   then Hashtbl.replace ext_table name ext
