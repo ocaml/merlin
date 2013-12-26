@@ -46,6 +46,7 @@ val focused : 'a t -> 'a
 
 val head : 'a t -> 'a non_empty
 val tail : 'a t -> 'a list
+val position : 'a t -> int
 
 (** Move forward while item under cursor satisfy predicate *)
 val seek_forward  : ('a -> bool) -> 'a t -> 'a t

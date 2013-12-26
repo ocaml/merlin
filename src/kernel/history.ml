@@ -37,53 +37,73 @@ let nhd = function
   * A sort of zipper: maintains and synchronizes a list of different
   * versions of an object (see ocamlmerlin.ml top comment).
   *)
-type 'a t = {head: 'a non_empty; tail: 'a list}
+type 'a t = {head: 'a non_empty; position: int; tail: 'a list}
 
 (* New history *)
-let initial x = {head = One x; tail = []}
+let initial x = {head = One x; position = 0; tail = []}
 
 let head x = x.head
 let tail x = x.tail
+let position x = x.position
 
 (** Element to the left of the cursor
   * (if last operation was an insertion, the inserted value is returned)
   *)
-let focused {head = (More (x,_) | One x); _} = x
+let focused' (More (x,_) | One x) = x
+let focused t = focused' t.head
 
 (** Move forward while item under cursor satisfy predicate *)
-let rec seek_forward pred = function
-  | {head; tail = x :: tail} as t when pred (focused t) ->
-    seek_forward pred {head = More (x,head); tail}
+let rec seek_forward pred head position = function
+  | x :: tail when pred (focused' head) ->
+    seek_forward pred (More (x,head)) (position + 1) tail
+  | tail -> {head; position; tail}
+let seek_forward pred = function
+  | {head; position; tail = x :: tail} when pred (focused' head) ->
+    seek_forward pred (More (x,head)) (position + 1) tail
   | t -> t
 
 (** Move backward while item under cursor satisfy predicate *)
-let rec seek_backward pred = function
-  | {head = More (x,head); tail} when pred x ->
-    seek_backward pred {head; tail = x :: tail}
+let rec seek_backward pred position tail = function
+  | More (x,head) when pred x ->
+    seek_backward pred (position - 1) (x :: tail) head
+  | head -> {head; position; tail}
+let seek_backward pred = function
+  | {head = More (x,head); position; tail} when pred x ->
+    seek_backward pred (position - 1) (x :: tail) head
   | t -> t
 
 (** Moves an arbitrary number of steps.
   *
   * May stop earlier if it reaches an end of history.
  *)
-let rec move n = function
-  | {head; tail = x :: tail} when n > 0 ->
-    move (pred n) {head = More (x,head); tail}
-  | {head = More (x,head); tail} when n < 0 ->
-    move (succ n) {head; tail = x :: tail}
+let rec move n head position tail =
+  match head, tail with
+  | head, (x :: tail) when n > 0 ->
+    move (n - 1) (More (x,head)) (position + 1) tail
+  | (More (x,head)), tail when n < 0 ->
+    move (n + 1) head (position - 1) (x :: tail)
+  | head, tail -> {head; position; tail}
+let move n = function
+  | {head; position; tail = x :: tail} when n > 0 ->
+    move (n - 1) (More (x,head)) (position + 1) tail
+  | {head = More (x,head); position; tail} when n < 0 ->
+    move (n + 1) head (position - 1) (x :: tail)
   | t -> t
 
 (** Adds an element to the left of the cursor:
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)
-let insert x h = {head = More (x, h.head); tail = []}
+let insert x h =
+  {head = More (x, h.head); position = h.position + 1; tail = []}
 
 (** Modifies focused element. *)
 let modify f = function
-  | {head = One x; _} -> {head = One (f x); tail = []}
-  | {head = More (x,head); _} -> {head = More (f x, head); tail = []}
+  | {head = One x; position; _} ->
+    {head = One (f x); position; tail = []}
+  | {head = More (x,head); position; _} ->
+    {head = More (f x, head); position; tail = []}
 
-let append f {head = (One x | More (x,_) as head); _} =
-  {head = More (f x, head); tail = []}
+let append f {head = (One x | More (x,_) as head); position; _} =
+  {head = More (f x, head); position = position + 1; tail = []}
 
 let reconstruct h init fold =
   let f b x' = More (fold (nhd b) x', b) in
@@ -97,4 +117,5 @@ let reconstruct h init fold =
     (b', (b' :: l))
   in
   let tail = List.rev (snd (List.fold_left f (nhd head, []) h.tail)) in
-  {head; tail}
+  let position = h.position in
+  {head; position; tail}

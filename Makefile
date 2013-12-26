@@ -2,7 +2,7 @@
 
 TARGET = ocamlmerlin.native
 
-OCAMLBUILD=ocamlbuild -Is src,src/config,src/kernel,src/analysis,src/utils,src/ocaml$(TYPER_VERSION),src/ocaml$(TYPER_VERSION)/utils,src/ocaml$(TYPER_VERSION)/typing,src/ocaml$(TYPER_VERSION)/parsing
+OCAMLBUILD=ocamlbuild -Is src,src/config,src/frontend,src/ocaml_aux,src/kernel,src/analysis,src/utils,src/ocaml$(TYPER_VERSION),src/ocaml$(TYPER_VERSION)/utils,src/ocaml$(TYPER_VERSION)/typing,src/ocaml$(TYPER_VERSION)/parsing
 OCAMLFIND=ocamlfind
 
 DESTDIR ?=

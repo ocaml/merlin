@@ -30,9 +30,9 @@
  * See [Fake] for AST part *)
 
 (* Extension environment is composed of two part:
- * - private definitions, not exposed to user, but accessed from,
- * - public definitions, those are made available to user like Pervasive
- *   module.
+ * - private definitions, not exposed to user but accessed by AST rewriters,
+ * - public definitions, those are made available to user in default scope,
+ *   like the Pervasives module.
  * See [Typer.initial_env] for initial environment generation.
  *)
 
