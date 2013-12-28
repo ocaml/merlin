@@ -44,7 +44,19 @@ end
 module Spine = Spine.Initial (Context)
 type t = Spine.t
 
-let parse_with (tokens : token zipper) ~parser ~lexer buf =
+let rec parser_loop parser lexer lexbuf =
+  match Outline_parser.step parser with
+  | `Accept _ -> ()
+  | `Feed   f ->
+    let token = lexer lexbuf in
+    parser_loop
+      (Outline_parser.feed f
+         (lexbuf.Lexing.lex_start_p, token, lexbuf.Lexing.lex_curr_p ))
+      lexer lexbuf
+  | `Reject   -> raise Outline_parser.Error
+  | `Step   p -> parser_loop p lexer lexbuf
+
+let parse_with (tokens : token zipper) ~lexer buf =
   let Zipper (_,origin,_) = tokens in
   let tokens' = ref tokens in
   let chunk_content tokens =
@@ -56,15 +68,11 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
   in
   let lexer = Lexing.wrap_lexer ~tokens:tokens' lexer in
   try
-    let lexer =
-      let pan = ref false in
-      fun buf ->
-        if !pan
-        then lexer buf
-        else (pan := true; Chunk_parser.ENTRYPOINT)
-    in
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
-    let () = parser lexer buf in
+    let parser = Outline_parser.initial Outline_parser.implementation_state
+        (Lexing.dummy_pos, Chunk_parser.ENTRYPOINT, Lexing.dummy_pos)
+    in
+    let () = parser_loop parser lexer buf in
     let tokens = !tokens' in
     tokens, Outline_utils.Definition, chunk_content tokens
   with
@@ -104,7 +112,7 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
         let Zipper (_,offset,_) = !tokens' in
         try
           for _i = 1 to count do
-            try ignore (parser (lexer' "checker") buf)
+            try ignore (Outline_parser.implementation (lexer' "checker") buf)
             with Outline_utils.Chunk _ -> ()
           done;
           offset
@@ -124,7 +132,6 @@ let parse_str ~exns ~location ~lexbuf zipper t =
   let new_state exns' tokens = (exns' @ exns, location tokens, tokens) in
   match Merlin_parsing.catch_warnings
       (fun () -> parse_with zipper
-          ~parser:Outline_parser.implementation
           ~lexer:Raw_lexer.token
           lexbuf)
   with
