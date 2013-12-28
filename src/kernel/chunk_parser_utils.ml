@@ -26,10 +26,10 @@
 
 )* }}} *)
 
-type token = Chunk_parser.token
+type token = Raw_parser.token
 
 let token_to_string =
-  let open Chunk_parser in function
+  let open Raw_parser in function
     | AMPERAMPER -> "AMPERAMPER"
     | AMPERSAND -> "AMPERSAND"
     | AND -> "AND"
@@ -166,7 +166,7 @@ let dump_lexer ?who f a =
   t
 
 let rec re_sync lexer buf =
-  let open Chunk_parser in
+  let open Raw_parser in
   match lexer buf with
     | SEMISEMI | EOF -> 0
     | INCLUDE | OPEN | LET | TYPE | EXCEPTION -> 1

@@ -29,7 +29,7 @@
 open Std
 open Misc
 
-type token = Chunk_parser.token * Lexing.position * Lexing.position
+type token = Raw_parser.token * Lexing.position * Lexing.position
 
 module Context = struct
   type state = exn list * Location.t * token list
@@ -70,7 +70,7 @@ let parse_with (tokens : token zipper) ~lexer buf =
   try
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let parser = Outline_parser.initial Outline_parser.implementation_state
-        (Lexing.dummy_pos, Chunk_parser.ENTRYPOINT, Lexing.dummy_pos)
+        (Lexing.dummy_pos, Raw_parser.ENTRYPOINT, Lexing.dummy_pos)
     in
     let () = parser_loop parser lexer buf in
     let tokens = !tokens' in
@@ -135,7 +135,7 @@ let parse_str ~exns ~location ~lexbuf zipper t =
           ~lexer:Raw_lexer.token
           lexbuf)
   with
-  | _exns, Either.R (zipper, _, ([] | [Chunk_parser.EOF,_,_])) ->
+  | _exns, Either.R (zipper, _, ([] | [Raw_parser.EOF,_,_])) ->
     zipper, None
   | _exns, Either.R (zipper, Outline_utils.Unterminated, _tokens) ->
     zipper, None

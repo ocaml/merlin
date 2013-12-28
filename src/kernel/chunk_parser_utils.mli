@@ -26,14 +26,14 @@
 
 )* }}} *)
 
-type token = Chunk_parser.token
+type token = Raw_parser.token
 (* String representation of [token]s, for debug purpose *)
 val token_to_string : token -> string
 (* Wrap lexing function to optionally dump [token] stream, for debug purpose *)
 val dump_lexer : ?who:string -> ('a -> token) -> 'a -> token
 
 (* Heuristic applied before submitting [token] stream containing syntax errors
- * to [Chunk_parser].
+ * to [Raw_parser].
  * When the [Outline_parser] encounters an error, parsing is interrupted and
  * [re_sync] is called. [re_sync] consumes tokens until it find a potential
  * point for resuming parser (generally at the beginning of a definition).

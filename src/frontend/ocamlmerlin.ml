@@ -64,9 +64,9 @@
   * The source code analysis pipeline is as follows:
   *   outline_lexer | outline_parser | chunk_parser | typer
   * Modulo some implementation details, we have:
-  *   outline_lexer  : Lexing.buffer -> Chunk_parser.token
-  *   outline_parser : Chunk_parser.token -> Outline_utils.kind * Chunk_parser.token list
-  *   chunk_parser   : Outline_utils.kind * Chunk_parser.token list -> Parsetree.structure
+  *   outline_lexer  : Lexing.buffer -> Raw_parser.token
+  *   outline_parser : Raw_parser.token -> Outline_utils.kind * Raw_parser.token list
+  *   chunk_parser   : Outline_utils.kind * Raw_parser.token list -> Parsetree.structure
   *   typer          : Parsetree.structure -> Env.t * Typedtree.structure
   *
   * Incremental update of those analyses is implemented through the

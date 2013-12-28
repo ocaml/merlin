@@ -3,7 +3,7 @@ open Misc
 
 module Lexer: sig
   type item =
-    | Valid of Chunk_parser.token
+    | Valid of Raw_parser.token
     | Error of Raw_lexer.error
 
   (* Location of the last valid item *)
@@ -19,7 +19,7 @@ module Lexer: sig
   val start: Raw_lexer.keywords -> t History.t -> Lexing.position * (Lexing.lexbuf -> t History.t)
 end = struct
   type item =
-    | Valid of Chunk_parser.token
+    | Valid of Raw_parser.token
     | Error of Raw_lexer.error
 
   (* Location of the last valid item *)
@@ -42,7 +42,7 @@ end = struct
         loc_ghost = true;
       }
     in
-    History.initial (Location.mkloc (Valid Chunk_parser.ENTRYPOINT) loc)
+    History.initial (Location.mkloc (Valid Raw_parser.ENTRYPOINT) loc)
 
   (** Prepare for lexing.
       Returns the start position (end position of last valid token), and a
@@ -66,6 +66,78 @@ end = struct
            Location.mkloc (Error e) l
        in
        t := History.insert value !t; !t)
+end
+
+module Parser : sig
+  type t
+  type frame
+
+  type state
+
+  val from : state -> t
+  val feed : Lexing.position * Value.t * Lexing.position
+           -> t -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
+
+  val stack : t -> frame option
+  val stack_depth : t -> int
+
+  val value : frame -> Value.t
+  val eq    : frame -> frame -> bool
+  val next  : frame -> frame option
+
+  val of_step : ?hint:MenhirUtils.witness -> P.step P.parser
+              -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
+  val to_step : t -> P.feed P.parser option
+end = struct
+  module P = Raw_parser
+  type state = P.state
+
+  type t =
+    | First of state
+    | Other of P.feed P.parser * MenhirUtils.witness
+
+  type frame = (P.state, Value.t) E.stack
+
+  let get_stack s = s.P.env.E.stack
+
+  let rec of_step s depth =
+    match P.step s with
+    | `Accept _ as a -> a
+    | `Reject -> `Reject s
+    | `Feed p ->
+      `Step (Other (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
+    | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
+
+  let from state = First state
+
+  let feed input p =
+    let p', depth = match p with
+      | First state ->
+         P.initial state input, MenhirUtils.initial_depth
+      | Other (p, depth) -> P.feed p input, depth
+    in
+    of_step p' depth
+
+  let frame_of stack = if stack.E.next == stack then None else Some stack
+
+  let stack = function
+    | First _ -> None
+    | Other (s,_) -> frame_of (get_stack s)
+
+  let stack_depth = function
+    | First _ -> 0
+    | Other (_,w) -> MenhirUtils.depth w
+
+  let value frame = frame.E.semv
+  let eq f f' = f == f'
+  let next f = frame_of f.E.next
+
+  let of_step ?(hint=MenhirUtils.initial_depth) step =
+    of_step step MenhirUtils.(stack_depth ~hint (get_stack (step)))
+
+  let to_step = function
+    | First _ -> None
+    | Other (step,_) -> Some step
 end
 
 (* Project configuration *)
@@ -307,3 +379,28 @@ end = struct
   end
 
 end
+
+module Buffer = struct
+  type t = {
+    path: string option;
+    project : Project.t;
+    env: Env.cache;
+    btype: Btype.cache;
+    mutable lexer: Lexer.t History.t;
+  }
+
+  let create ?path project =
+    let path, filename = match path with
+      | None -> None, "*buffer*"
+      | Some path -> Some (Filename.dirname path), Filename.basename path
+    in
+    {
+      path;
+      project;
+      env = Env.new_cache ();
+      btype = Btype.new_cache ();
+      lexer = Lexer.empty ~filename;
+    }
+
+end
+

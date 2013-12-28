@@ -18,7 +18,7 @@
 open Lexing
 open Std
 open Misc
-open Chunk_parser
+open Raw_parser
 
 type error =
   | Illegal_character of char
@@ -34,7 +34,7 @@ exception Error of error * Location.t;;
 
 (* The table of keywords *)
 
-type keywords = (string, Chunk_parser.token) Hashtbl.t
+type keywords = (string, Raw_parser.token) Hashtbl.t
 
 let keyword_table : keywords =
   create_hashtable 149 [

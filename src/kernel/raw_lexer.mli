@@ -15,7 +15,7 @@ open Std
 (* The lexical analyzer *)
 
 val init : unit -> unit
-val token: Lexing.lexbuf -> Chunk_parser.token
+val token: Lexing.lexbuf -> Raw_parser.token
 val skip_sharp_bang: Lexing.lexbuf -> unit
 
 type error =
@@ -33,7 +33,7 @@ exception Error of error * Location.t
 open Format
 
 type keywords
-val keywords: (string * Chunk_parser.token) list -> keywords
+val keywords: (string * Raw_parser.token) list -> keywords
 
 val set_extensions : keywords -> unit
 val report_error : formatter -> error -> unit
@@ -53,4 +53,4 @@ val comments : comment list ref option fluid
 
 (* If you want to get the raw output, including comments, from the lexer, use
    the [token_with_comments] entry point. *)
-val token_with_comments : Lexing.lexbuf -> Chunk_parser.token
+val token_with_comments : Lexing.lexbuf -> Raw_parser.token

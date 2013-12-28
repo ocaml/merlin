@@ -83,7 +83,7 @@ let strict_of_exn = function
     Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
   | Merlin_parsing.Warning (loc, msg) ->
     Some (format ~valid:true ~where:"warning" ~loc msg)
-  | Chunk_parser.Error ->
+  | Raw_parser.Error ->
     Some (format ~valid:false ~where:"parser" "Parse error")
   | Findlib.No_such_package (pkg,msg) ->
     Some (format ~valid:true ~where:"env" (Printf.sprintf "Package not found %S (%s)" pkg msg))

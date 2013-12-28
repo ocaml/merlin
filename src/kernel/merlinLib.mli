@@ -10,7 +10,7 @@ open Misc
 
 module Lexer: sig
   type item =
-    | Valid of Chunk_parser.token
+    | Valid of Raw_parser.token
     | Error of Raw_lexer.error
 
   (* Location of the last valid item *)
@@ -24,6 +24,26 @@ module Lexer: sig
       lexing function that will append at most one token to the history at each
       call. *)
   val start: Raw_lexer.keywords -> t History.t -> Lexing.position * (Lexing.lexbuf -> t History.t)
+end
+
+module Parser : sig
+  type t
+  type frame
+
+  val from : P.state -> t
+  val feed : Lexing.position * Value.t * Lexing.position
+           -> t -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
+
+  val stack : t -> frame option
+  val stack_depth : t -> int
+
+  val value : frame -> Value.t
+  val eq    : frame -> frame -> bool
+  val next  : frame -> frame option
+
+  val of_step : ?hint:MenhirUtils.witness -> P.step P.parser
+              -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
+  val to_step : t -> P.feed P.parser option
 end
 
 (* Project configuration *)
@@ -62,5 +82,7 @@ end
 module Buffer : sig
   type t
   val create: ?path:string -> project -> t
+  val lexer: t -> Lexer.t History.t
+  val update_lexer: t -> Lexer.t History.t -> unit
 end
 

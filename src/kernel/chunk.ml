@@ -28,7 +28,7 @@
 
 open Std
 
-let eof_lexer _ = Chunk_parser.EOF
+let eof_lexer _ = Raw_parser.EOF
 
 let fake_tokens tokens f =
   let tokens = ref tokens in
@@ -61,16 +61,16 @@ module Context = struct
 end
 
 let rec parser_loop parser lexer lexbuf =
-  match Chunk_parser.step parser with
-  | `Accept (Chunk_parser.Nonterminal (Chunk_parser.NT'top_structure_item defs)) -> defs
+  match Raw_parser.step parser with
+  | `Accept (Raw_parser.Nonterminal (Raw_parser.NT'top_structure_item defs)) -> defs
   | `Accept _ -> assert false
   | `Feed   f ->
     let token = lexer lexbuf in
     parser_loop
-      (Chunk_parser.feed f
+      (Raw_parser.feed f
          (lexbuf.Lexing.lex_start_p, token, lexbuf.Lexing.lex_start_p ))
       lexer lexbuf
-  | `Reject   -> raise Chunk_parser.Error
+  | `Reject   -> raise Raw_parser.Error
   | `Step   p -> parser_loop p lexer lexbuf
 
 let protect_parser f =
@@ -106,12 +106,12 @@ module Fold = struct
         let lexer = Lexing.wrap_lexer
             ~tokens:(ref (Zipper.of_list tokens)) eof_lexer in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
-        let parser = Chunk_parser.initial Chunk_parser.top_structure_item_state
-            (Lexing.dummy_pos, Chunk_parser.ENTRYPOINT, Lexing.dummy_pos)
+        let parser = Raw_parser.initial Raw_parser.top_structure_item_state
+            (Lexing.dummy_pos, Raw_parser.ENTRYPOINT, Lexing.dummy_pos)
         in
         let defs = parser_loop parser lexer buf in
         defs
-      with Chunk_parser.Error ->
+      with Raw_parser.Error ->
         let loc_start, loc_end = match tokens with
           | (_,s,e) :: _ -> s, e
           | _ -> buf.Lexing.lex_start_p, buf.Lexing.lex_curr_p in
@@ -132,11 +132,11 @@ module Fold = struct
         let tokens = Outline.Spine.value step in
         let lexer = Lexing.wrap_lexer
             ~tokens:(ref (Zipper.of_list tokens))
-          (fake_tokens [Chunk_parser.END, 3] eof_lexer)
+          (fake_tokens [Raw_parser.END, 3] eof_lexer)
         in
         let open Parsetree in
-        let parser = Chunk_parser.initial Chunk_parser.top_structure_item_state
-            (Lexing.dummy_pos, Chunk_parser.ENTRYPOINT, Lexing.dummy_pos)
+        let parser = Raw_parser.initial Raw_parser.top_structure_item_state
+            (Lexing.dummy_pos, Raw_parser.ENTRYPOINT, Lexing.dummy_pos)
         in
         let mod_str =
           List.hd (parser_loop parser lexer (Lexing.from_string ""))

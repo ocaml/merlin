@@ -44,7 +44,7 @@ type t = {
   private_def : string list;
   public_def : string list;
   packages : string list;
-  keywords : (string * Chunk_parser.token) list;
+  keywords : (string * Raw_parser.token) list;
 }
 
 (* Private definitions are put in a fake module named "_" with the following

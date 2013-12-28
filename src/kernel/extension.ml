@@ -27,14 +27,14 @@
 )* }}} *)
 
 open Std
-open Chunk_parser
+open Raw_parser
 
 type t = {
   name : string;
   private_def : string list;
   public_def : string list;
   packages : string list;
-  keywords : (string * Chunk_parser.token) list;
+  keywords : (string * Raw_parser.token) list;
 }
 
 type set = String.Set.t
@@ -199,7 +199,7 @@ let keywords =
 (* Register extensions in typing environment *)
 let parse_sig str =
   let buf = Lexing.from_string str in
-  Chunk_parser.interface Raw_lexer.token buf
+  Raw_parser.interface Raw_lexer.token buf
 
 let type_sig env sg =
   let sg = Typemod.transl_signature env sg in
