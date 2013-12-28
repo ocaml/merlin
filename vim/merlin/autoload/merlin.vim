@@ -289,7 +289,7 @@ endfunction
 function! merlin#LoadProject()
   if isdirectory(expand('%:p:h'))
     py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
-    if exists("b:dotmerlin") && exists("g:merlin_move_to_project") && g:merlin_move_to_project
+    if exists("b:dotmerlin") && exists("g:merlin_move_to_project") && g:merlin_move_to_project && len(b:dotmerlin) > 0
       execute ":lchdir " . fnamemodify(b:dotmerlin[0], ":p:h")
     endif
   endif
