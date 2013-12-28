@@ -5,7 +5,9 @@ if test -n "$1" ; then
     while test -n "$1"; do
       ./ocamlmerlin.native < ./tests/$1.in  > $out
       # Use more appropriate jsondiff if available
-      if which jsondiff >& /dev/null; then
+      if [ -n "$DIFF" ]; then
+        :
+      elif which jsondiff >& /dev/null; then
         DIFF="jsondiff -color"
       else
         DIFF="diff -u"
