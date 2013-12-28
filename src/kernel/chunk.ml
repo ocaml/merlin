@@ -29,7 +29,6 @@
 open Std
 
 let eof_lexer _ = Chunk_parser.EOF
-let fallback_lexer = eof_lexer
 
 let fake_tokens tokens f =
   let tokens = ref tokens in
@@ -61,6 +60,19 @@ module Context = struct
   type str_in_module      = Parsetree.module_expr binding or_exn
 end
 
+let rec parser_loop parser lexer lexbuf =
+  match Chunk_parser.step parser with
+  | `Accept (Chunk_parser.Nonterminal (Chunk_parser.NT'top_structure_item defs)) -> defs
+  | `Accept _ -> assert false
+  | `Feed   f ->
+    let token = lexer lexbuf in
+    parser_loop
+      (Chunk_parser.feed f
+         (lexbuf.Lexing.lex_start_p, token, lexbuf.Lexing.lex_start_p ))
+      lexer lexbuf
+  | `Reject   -> raise Chunk_parser.Error
+  | `Step   p -> parser_loop p lexer lexbuf
+
 let protect_parser f =
   let local_modules = ref [] in
   let exns, result =
@@ -91,18 +103,13 @@ module Fold = struct
     let exns', modules', result =
       protect_parser (fun () -> try
         (* run structure_item parser on tokens, appending EOF *)
-        let lexer = Lexing.wrap_lexer ~tokens:(ref (Zipper.of_list tokens))
-            (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
-        in
-        let lexer =
-          let pan = ref false in
-          fun buf ->
-            if !pan
-            then lexer buf
-            else (pan := true; Chunk_parser.ENTRYPOINT)
-        in
+        let lexer = Lexing.wrap_lexer
+            ~tokens:(ref (Zipper.of_list tokens)) eof_lexer in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
-        let defs = Chunk_parser.top_structure_item lexer buf in
+        let parser = Chunk_parser.initial Chunk_parser.top_structure_item_state
+            (Lexing.dummy_pos, Chunk_parser.ENTRYPOINT, Lexing.dummy_pos)
+        in
+        let defs = parser_loop parser lexer buf in
         defs
       with Chunk_parser.Error ->
         let loc_start, loc_end = match tokens with
@@ -123,12 +130,16 @@ module Fold = struct
     let exns', modules', result =
       protect_parser (fun () ->
         let tokens = Outline.Spine.value step in
-        let lexer = Lexing.wrap_lexer ~tokens:(ref (Zipper.of_list tokens))
-          (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
+        let lexer = Lexing.wrap_lexer
+            ~tokens:(ref (Zipper.of_list tokens))
+          (fake_tokens [Chunk_parser.END, 3] eof_lexer)
         in
         let open Parsetree in
+        let parser = Chunk_parser.initial Chunk_parser.top_structure_item_state
+            (Lexing.dummy_pos, Chunk_parser.ENTRYPOINT, Lexing.dummy_pos)
+        in
         let mod_str =
-          List.hd (Chunk_parser.top_structure_item lexer (Lexing.from_string ""))
+          List.hd (parser_loop parser lexer (Lexing.from_string ""))
         in
         begin match mod_str.Location.txt with
           | { pstr_desc = (Pstr_module (s,m)) ; pstr_loc } ->
