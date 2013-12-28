@@ -533,7 +533,7 @@ let dispatch (i,o : IO.io) (state : state) =
     state, failures
 
   | (Extension_list kind : a request) ->
-    state, (Extensions_utils.list kind)
+    state, []
 
   | (Extension_set (action,extensions) : a request) ->
     let enabled = action = `Enabled in

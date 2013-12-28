@@ -124,7 +124,7 @@ let signature_of_env ?(ignore_extensions=true) env =
     | Env.Env_empty -> ()
     (* Stop when encoutering extensions *)
     | Env.Env_module (_,i,_)
-      when ignore_extensions && i = Extensions_utils.ident -> ()
+      when ignore_extensions && i = Extension.ident -> ()
     | Env.Env_value (s,i,v) ->
         append (Sig_value (i,v));
         aux s

@@ -32,12 +32,14 @@ exception Error of error * Location.t
 
 open Format
 
-val set_extension : enabled:bool -> (string * Chunk_parser.token) list -> unit
-val report_error: formatter -> error -> unit
+type keywords
+val keywords: (string * Chunk_parser.token) list -> keywords
+
+val set_extensions : keywords -> unit
+val report_error : formatter -> error -> unit
 
 val in_comment : unit -> bool;;
 val in_string : unit -> bool;;
-
 
 val print_warnings : bool ref
 

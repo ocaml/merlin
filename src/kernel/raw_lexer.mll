@@ -34,7 +34,9 @@ exception Error of error * Location.t;;
 
 (* The table of keywords *)
 
-let keyword_table =
+type keywords = (string, Chunk_parser.token) Hashtbl.t
+
+let keyword_table : keywords =
   create_hashtable 149 [
     "and", AND;
     "as", AS;
@@ -95,13 +97,10 @@ let keyword_table =
     "asr", INFIXOP4("asr");
 ]
 
-let set_extension ~enabled kw =
-  let action =
-    if enabled
-    then (fun (key, value) -> Hashtbl.replace keyword_table key value)
-    else (fun (key,_value) -> Hashtbl.remove keyword_table key)
-  in
-  List.iter action kw
+let ext_keyword_table = ref (create_hashtable 1 [])
+
+let keywords l = create_hashtable 11 l
+let set_extensions k = ext_keyword_table := k
 
 (* To buffer string literals *)
 
@@ -285,14 +284,16 @@ rule token = parse
         OPTLABEL name }
   | lowercase identchar *
       { let s = Lexing.lexeme lexbuf in
-          try
-            Hashtbl.find keyword_table s
+          try Hashtbl.find !ext_keyword_table s
+          with Not_found ->
+          try Hashtbl.find keyword_table s
           with Not_found ->
             LIDENT s }
   | uppercase identchar *
       { let s = Lexing.lexeme lexbuf in (* Capitalized keywords for OUnit *)
-          try
-            Hashtbl.find keyword_table s
+          try Hashtbl.find !ext_keyword_table s
+          with Not_found ->
+          try Hashtbl.find keyword_table s
           with Not_found ->
             UIDENT s }
   | int_literal

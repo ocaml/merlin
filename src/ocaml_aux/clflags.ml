@@ -99,7 +99,7 @@ let dlcode = ref true (* not -nodynlink *)
 
 let runtime_variant = ref "";;     (* -runtime-variant *)
 
-type snapshot = (unit -> unit) list
+type snapshot = int * (unit -> unit) list
 
 let snapshot =
   let save_ref r =
@@ -119,24 +119,27 @@ let snapshot =
     keep_startup_file; dump_combine; native_code; dont_write_files; shared;
     dlcode 
   ] in
+  let k = ref 0 in
   fun () ->
-    save_ref inline_threshold :: 
-    save_ref output_name :: 
-    save_ref dllpaths :: 
-    save_ref objfiles :: 
-    save_ref ccobjs :: 
-    save_ref dllibs :: 
-    save_ref include_dirs :: 
-    save_ref ccopts :: 
-    save_ref preprocessor :: 
-    save_ref init_file :: 
-    save_ref use_prims :: 
-    save_ref use_runtime :: 
-    save_ref runtime_variant :: 
-    save_ref c_compiler :: 
-    save_ref for_package :: 
-    save_ref error_size :: 
-    List.map save_ref bools
+    incr k;
+    !k,
+    (save_ref inline_threshold :: save_ref output_name      :: 
+     save_ref dllpaths         :: save_ref objfiles         :: 
+     save_ref ccobjs           :: save_ref dllibs           :: 
+     save_ref include_dirs     :: save_ref ccopts           :: 
+     save_ref preprocessor     :: save_ref init_file        :: 
+     save_ref use_prims        :: save_ref use_runtime      :: 
+     save_ref runtime_variant  :: save_ref c_compiler       :: 
+     save_ref for_package      :: save_ref error_size       :: 
+     List.map save_ref bools)
 
-let restore snapshot = List.iter (fun x -> x ()) snapshot
+let last_loaded = ref (-1)
+let force_restore (k,snapshot) = 
+  last_loaded := k;
+  List.iter (fun x -> x ()) snapshot
 
+let is_loaded (k,_) = !last_loaded = k
+
+let restore snapshot =
+  if not (is_loaded snapshot) then
+    force_restore snapshot

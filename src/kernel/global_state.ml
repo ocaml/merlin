@@ -1,6 +1,8 @@
 open Std
 open Misc
 
+let extensions = ref Extension.default
+
 (** Mimic other OCaml tools, entry point *)
 module Flags = struct
 
@@ -49,7 +51,7 @@ module Project : sig
 
   (* Project-wide configuration *)
   val set_dot_merlin
-    : Dot_merlin.path_config -> [`Ok | `Failures of (string * exn) list]
+    : Dot_merlin.config -> [`Ok | `Failures of (string * exn) list]
 
   val reset_project : unit -> unit
 
@@ -82,17 +84,18 @@ end = struct
     global_modules := None
 
   (** Extensions **)
-  let dot_merlin_extensions = ref []
-  let user_extensions = ref []
+  let dot_merlin_extensions = ref Extension.default
+  let user_extensions = ref String.Set.empty
 
   let update_extensions () =
-    Extensions_utils.set_extensions
-      (List.filter_dup (!dot_merlin_extensions @ !user_extensions))
+    extensions :=
+      String.Set.(union Extension.default
+                    (union !dot_merlin_extensions !user_extensions))
 
   let user_set_extension ~enabled name =
     (if enabled
-     then user_extensions := List.filter_dup (name :: !user_extensions)
-     else user_extensions := List.filter ~f:((<>) name) !user_extensions);
+     then user_extensions := String.Set.add name !user_extensions
+     else user_extensions := String.Set.remove name !user_extensions);
     update_extensions ()
 
   (** Flags **)
@@ -125,11 +128,10 @@ end = struct
   (* 2b. User packages *)
   let user_packages = ref []
   let user_load_packages pkgs =
-    let exts = Extensions_utils.extensions_from_packages pkgs in
-    user_extensions :=
-      List.filter_dup (exts @ !user_extensions);
+    let exts = Extension.from_packages pkgs in
+    user_extensions := String.Set.union exts !user_extensions;
     update_extensions ();
-    let failures, pathes = Dot_merlin.packages_path pkgs in
+    let failures, pathes = Dot_merlin.path_of_packages pkgs in
     user_packages := List.filter_dup (pathes @ !user_packages);
     flush_global_modules ();
     failures
@@ -146,11 +148,11 @@ end = struct
     dot_merlin_source := config.Dot_merlin.source_path;
     dot_merlin_cmi    := config.Dot_merlin.cmi_path;
     dot_merlin_cmt    := config.Dot_merlin.cmt_path;
-    let exts = Extensions_utils.extensions_from_packages
-        config.Dot_merlin.packages in
-    dot_merlin_extensions := exts @ config.Dot_merlin.extensions;
+    let exts = Extension.from_packages config.Dot_merlin.packages in
+    dot_merlin_extensions := 
+      String.Set.(union exts (of_list config.Dot_merlin.extensions));
     update_extensions ();
-    let failures, pathes = Dot_merlin.(packages_path config.packages) in
+    let failures, pathes = Dot_merlin.(path_of_packages config.packages) in
     dot_merlin_packages := pathes;
     flush_global_modules ();
     failures

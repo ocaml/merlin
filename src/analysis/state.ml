@@ -46,7 +46,7 @@ let initial_str fname = initial_ (Outline.initial_str fname)
 let initial_sig fname = initial_ (Outline.initial_sig fname)
 
 let initial step = { steps = History.initial step;
-                     parser_validity = Extensions_utils.parser_valid () }
+                     parser_validity = ref true }
 
 let initial_str fname = initial (initial_str fname)
 let initial_sig fname = initial (initial_sig fname)
@@ -290,7 +290,7 @@ let node_complete node prefix =
   let fmt ~exact name ?path ty =
     let ident = match path with
       | Some path -> Ident.create (Path.last path)
-      | None -> Extensions_utils.ident
+      | None -> Extension.ident
     in
     let ppf, to_string = Format.to_string () in
     let kind =

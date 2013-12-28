@@ -58,7 +58,7 @@ let initial_env =
       failwith "cannot open pervasives.cmi"
   end in
   fun () -> let lazy env = env in
-            Extensions_utils.register env
+            Extension.register !Global_state.extensions env
 
 let protect_typer f =
   let errors, result =

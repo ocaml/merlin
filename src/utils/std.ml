@@ -1,5 +1,18 @@
+module Hashtbl = struct
+  include Hashtbl
+
+  let find_some tbl key =
+    try Some (find tbl key)
+    with Not_found -> None
+end
+
 module List = struct
   include ListLabels
+
+  (* [fold_left] with arguments flipped, because *)
+  let rec fold_left' ~f l ~init = match l with
+    | [] -> init
+    | x :: xs -> fold_left' ~f ~init:(f x init) xs
 
   let rec filter_map ~f = function
     | [] -> []
@@ -124,6 +137,21 @@ module String = struct
 
   (* Drop characters from beginning of string *)
   let drop n s = sub s n (length s - n)
+
+  module Set = struct
+    include Set.Make (struct type t = string let compare = compare end)
+    let of_list l = List.fold_left' ~f:add l ~init:empty
+    let to_list s = fold (fun x xs -> x :: xs) s []
+  end
+
+  module Map = struct
+    include Map.Make (struct type t = string let compare = compare end)
+    let of_list l = List.fold_left' ~f:(fun (k,v) m -> add k v m) l ~init:empty
+    let to_list m = fold (fun k v xs -> (k,v) :: xs) m []
+
+    let keys m = fold (fun k _ xs -> k :: xs) m []
+    let values m = fold (fun _ v xs -> v :: xs) m []
+  end
 end
 
 let sprintf = Printf.sprintf

@@ -1,25 +1,23 @@
 open Std
 open Misc
 
-module Directives = struct
-  type t = [
-    | `B of string
-    | `S of string
-    | `CMI of string
-    | `CMT of string
-    | `PKG of string list
-    | `EXT of string list
-    | `FLG of string
-  ]
-end
+type directive = [
+  | `B of string
+  | `S of string
+  | `CMI of string
+  | `CMT of string
+  | `PKG of string list
+  | `EXT of string list
+  | `FLG of string
+]
 
-type t = {
-  project: string option;
-  path: string;
-  entries: Directives.t list;
+type file = {
+  project    : string option;
+  path       : string;
+  directives : directive list;
 }
 
-let parse_dot_merlin path : bool * t =
+let parse_dot_merlin_file path : bool * file =
   let ic = open_in path in
   let acc = ref [] in
   let recurse = ref false in
@@ -60,19 +58,20 @@ let parse_dot_merlin path : bool * t =
   with
   | End_of_file ->
     close_in_noerr ic;
-    !recurse, {project = !proj; path; entries = !acc}
+    !recurse, {project = !proj; path; directives = !acc}
   | exn ->
     close_in_noerr ic;
     raise exn
 
-let rec read path =
-  let recurse, dot_merlin = parse_dot_merlin path in
-  List.Lazy.(Cons (dot_merlin,
-                   if recurse
-                   then lazy (find (Filename.dirname (Filename.dirname path)))
-                   else lazy Nil))
+let rec read ~path =
+  let recurse, dot_merlin = parse_dot_merlin_file path in
+  let next = if recurse 
+    then lazy (find ~path:(Filename.dirname (Filename.dirname path)))
+    else lazy List.Lazy.Nil
+  in
+  List.Lazy.Cons (dot_merlin, next)
 
-and find path =
+and find ~path =
   let rec loop dir =
     let fname = Filename.concat dir ".merlin" in
     if Sys.file_exists fname
@@ -84,7 +83,7 @@ and find path =
       else None
   in
   match loop (canonicalize_filename path) with
-  | Some fname -> read fname
+  | Some path -> read path
   | None -> List.Lazy.Nil
 
 let rec project_name = function
@@ -94,7 +93,7 @@ let rec project_name = function
   | List.Lazy.Cons (_, lazy tail) -> project_name tail
   | List.Lazy.Nil -> None
 
-type path_config =
+type config =
   {
     dot_merlins : string list;
     build_path  : string list;
@@ -106,7 +105,7 @@ type path_config =
     extensions  : string list;
   }
 
-let parse_dot_merlin {path; entries} config =
+let parse_dot_merlin {path; directives} config =
   let cwd = Filename.dirname path in
   let expand path =
     canonicalize_filename ~cwd (expand_directory Config.standard_library path)
@@ -125,7 +124,7 @@ let parse_dot_merlin {path; entries} config =
       let lst = rev_split_words flags in
       let flags = List.rev lst in
       {config with flags = flags :: config.flags}
-  ) entries
+  ) directives
 
 let empty_config = {
   build_path  = [];
@@ -154,7 +153,7 @@ let rec parse ?(config=empty_config) =
       flags       = List.rev (List.filter_dup config.flags);
     }
 
-let packages_path packages =
+let path_of_packages packages =
   let packages =  packages in
   let f pkg =
     try Either.R (Findlib.package_deep_ancestors [] [pkg])
@@ -169,4 +168,3 @@ let packages_path packages =
     | ls -> `Failures ls
   in
   failures, path
-

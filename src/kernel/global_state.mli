@@ -1,5 +1,7 @@
 open Misc
 
+val extensions : Extension.set ref
+
 (* Project configuration *)
 module Project : sig
   (* Current buffer path *)
@@ -7,7 +9,7 @@ module Project : sig
 
   (* Project-wide configuration *)
   val set_dot_merlin
-    : Dot_merlin.path_config -> [`Ok | `Failures of (string * exn) list]
+    : Dot_merlin.config -> [`Ok | `Failures of (string * exn) list]
 
   val reset_project : unit -> unit
 

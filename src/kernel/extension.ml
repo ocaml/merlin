@@ -26,8 +26,10 @@
 
 )* }}} *)
 
+open Std
 open Chunk_parser
-type extension = {
+
+type t = {
   name : string;
   private_def : string list;
   public_def : string list;
@@ -35,6 +37,13 @@ type extension = {
   keywords : (string * Chunk_parser.token) list;
 }
 
+type set = String.Set.t
+
+(* Private definitions are put in a fake module named "_" with the following
+ * ident. Use it to test or find private definitions. *)
+let ident = Ident.create "_"
+
+(** Definition of each extension *)
 let ext_lwt = {
   name = "lwt";
   private_def = [
@@ -139,6 +148,94 @@ let ext_sexp_option = {
   packages = [];
 }
 
-let always = [ext_any;ext_sexp_option]
+(* Known extensions *)
 let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec]
+let registry = 
+  List.fold_left' registry
+    ~f:(fun ext -> String.Map.add ext.name ext)
+    ~init:String.Map.empty
+
+let lookup s = 
+  try Some (String.Map.find s registry)
+  with Not_found -> None
+
+(* Compute set of extensions from package names (used to enable support for
+  "lwt" if "lwt.syntax" is loaded by user. *)
+let from_packages pkgs =
+  String.Map.fold (fun name ext set ->
+      if List.exists ~f:(List.mem ~set:ext.packages) pkgs 
+      then String.Set.add name set
+      else set)
+    registry String.Set.empty
+
+(* Merlin expects a few extensions to be always enabled, otherwise error
+   recovery may fail arbitrarily *)
+let default = List.fold_left' [ext_any;ext_sexp_option] 
+    ~init:String.Set.empty
+    ~f:(fun ext -> String.Set.add ext.name)
+
+(* Lexer keywords needed by extensions *)
+let keywords set =
+  let add_kw ext kws =
+    match lookup ext with
+    | None -> kws
+    | Some def -> def.keywords @ kws
+  in
+  let all = String.Set.fold add_kw set [] in
+  Raw_lexer.keywords all
+
+(* Cache last keywords *)
+let keywords =
+  let last = ref None in
+  fun set ->
+    match !last with
+    | Some (set',kw) when set == set' -> kw
+    | Some (set',kw) when String.Set.equal set set' ->
+      last := Some (set,kw); kw
+    | _ ->
+      let kw = keywords set in
+      last := Some (set,kw); kw
+
+(* Register extensions in typing environment *)
+let parse_sig str =
+  let buf = Lexing.from_string str in
+  Chunk_parser.interface Raw_lexer.token buf
+
+let type_sig env sg =
+  let sg = Typemod.transl_signature env sg in
+  sg.Typedtree.sig_type
+
+let register exts env =
+  (* Log errors ? *)
+  let try_type sg' = try type_sig env sg' with _exn -> [] in
+  let exts = 
+    String.Map.fold (fun name ext list ->
+        if String.Set.mem name exts
+        then ext :: list
+        else list
+      ) registry []
+  in
+  let process_ext e =
+    let prv = List.concat_map ~f:parse_sig e.private_def in
+    let pub = List.concat_map ~f:parse_sig e.public_def in
+    try_type prv, try_type pub
+  in
+  let fakes, tops = List.split (List.map ~f:process_ext exts) in
+  let add_hidden_signature env sign =
+    let add_item env comp =
+      match comp with
+      | Types.Sig_value(id, decl)     -> Env.add_value (Ident.hide id) decl env
+      | Types.Sig_type(id, decl, _)   -> Env.add_type (Ident.hide id) decl env
+      | Types.Sig_exception(id, decl) -> Env.add_exception (Ident.hide id) decl env
+      | Types.Sig_module(id, mty, _)  -> Env.add_module (Ident.hide id) mty env
+      | Types.Sig_modtype(id, decl)   -> Env.add_modtype (Ident.hide id) decl env
+      | Types.Sig_class(id, decl, _)  -> Env.add_class (Ident.hide id) decl env
+      | Types.Sig_class_type(id, decl, _) -> Env.add_cltype (Ident.hide id) decl env
+    in
+    List.fold_left ~f:add_item ~init:env sign
+  in
+  let env = add_hidden_signature env (List.concat tops) in
+  let env = Env.add_module ident (Types.Mty_signature 
+                                    (Lazy.lazy_from_val (List.concat fakes))) env in
+  env
 

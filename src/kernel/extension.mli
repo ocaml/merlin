@@ -26,31 +26,47 @@
 
 )* }}} *)
 
+open Std
+
 (* Adjust typing environment for syntax extensions.
  * See [Fake] for AST part *)
 
-(* Extension environment is composed of two parts:
- * - private definitions, not exposed to user, but accessed from,
- * - public definitions, those are made available to user like Pervasive
- *   module.
+(* Extension environment is composed of two part:
+ * - private definitions, not exposed to user but accessed by AST rewriters,
+ * - public definitions, those are made available to user in default scope,
+ *   like the Pervasives module.
  * See [Typer.initial_env] for initial environment generation.
  *)
+
+(** Definition of an extension (as seen from Lexer and Typer) *)
+type t = {
+  name : string;
+  private_def : string list;
+  public_def : string list;
+  packages : string list;
+  keywords : (string * Chunk_parser.token) list;
+}
 
 (* Private definitions are put in a fake module named "_" with the following
  * ident. Use it to test or find private definitions. *)
 val ident : Ident.t
 
-val list : [`All|`Enabled|`Disabled] -> string list
+(** Set of extension name *)
+type set = String.Set.t
 
-val set_extensions : string list -> unit
-val extensions_from_packages : string list -> string list
+(* Lexer keywords needed by extensions *)
+val keywords : set -> Raw_lexer.keywords
+(* Register extensions in typing environment *)
+val register : set -> Env.t -> Env.t
 
-(* Return a reference that will be set to false when the parser change
-   (as such, everything parsed before that point should be dropped) *)
-val parser_valid : unit -> bool ref
+(* Known extensions *)
+val registry : t String.Map.t
+val lookup : string -> t option
 
-(* Register extensions in environment.
- * If an extension fails to typecheck (e.g. it needs definitions from an
- * external package not loaded), it is ignored and registration
- * continues for other extensions. *)
-val register : Env.t -> Env.t
+(* Compute set of extensions from package names (used to enable support for
+  "lwt" if "lwt.syntax" package is loaded by user. *)
+val from_packages : string list -> set
+
+(* Merlin expects a few extensions to be always enabled, otherwise error
+   recovery may fail arbitrarily *)
+val default : set
