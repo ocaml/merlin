@@ -170,58 +170,6 @@ module Format = struct
     ppf, contents
 end
 
-module Lexing = struct
-  include Lexing
-
-  let move buf p =
-    buf.lex_abs_pos <- (p.pos_cnum - buf.lex_curr_pos);
-    buf.lex_curr_p <- p
-
-  let from_strings ?position source refill =
-    let pos = ref 0 in
-    let len = ref (String.length source) in
-    let source = ref source in
-    let lex_fun buf size =
-      let count = min (!len - !pos) size in
-      let count =
-        if count <= 0 then
-          begin
-            source := refill ();
-            len := String.length !source;
-            pos := 0;
-            min !len size
-          end
-        else count
-      in
-      if count <= 0 then 0
-      else begin
-          String.blit !source !pos buf 0 count;
-          pos := !pos + count;
-          count
-        end
-    in
-    let buf = from_function lex_fun in
-    Option.iter ~f:(move buf) position;
-    buf
-
-  (* Manipulating position *)
-  let make_pos (pos_lnum, pos_cnum) =
-    Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
-
-  let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
-
-  let compare_pos p1 p2 =
-    compare (split_pos p1) (split_pos p2)
-end
-
-module Stream = struct
-  include Stream
-  let map ~f s =
-    from (fun _ ->
-      try Some (f (next s))
-      with Failure -> None)
-end
-
 module Either = struct
   type ('a,'b) t = L of 'a | R of 'b
 
@@ -270,8 +218,73 @@ module Zipper = struct
   let change_tail next (Zipper (prev,pos,_next)) =
     Zipper (prev,pos,next)
 end
-
 type 'a zipper = 'a Zipper.t = Zipper of 'a list * int * 'a list
+
+module Lexing = struct
+  include Lexing
+
+  let move buf p =
+    buf.lex_abs_pos <- (p.pos_cnum - buf.lex_curr_pos);
+    buf.lex_curr_p <- p
+
+  let from_strings ?position source refill =
+    let pos = ref 0 in
+    let len = ref (String.length source) in
+    let source = ref source in
+    let lex_fun buf size =
+      let count = min (!len - !pos) size in
+      let count =
+        if count <= 0 then
+          begin
+            source := refill ();
+            len := String.length !source;
+            pos := 0;
+            min !len size
+          end
+        else count
+      in
+      if count <= 0 then 0
+      else begin
+          String.blit !source !pos buf 0 count;
+          pos := !pos + count;
+          count
+        end
+    in
+    let buf = from_function lex_fun in
+    Option.iter ~f:(move buf) position;
+    buf
+
+  (* Manipulating position *)
+  let make_pos (pos_lnum, pos_cnum) =
+    Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
+
+  let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
+
+  let compare_pos p1 p2 =
+    compare (split_pos p1) (split_pos p2)
+
+  let wrap_lexer ~tokens f buf =
+    match !tokens with
+    | Zipper (_, _, ((t,s,c) :: _)) ->
+      buf.Lexing.lex_start_p <- s;
+      buf.Lexing.lex_curr_p <- c;
+      tokens := Zipper.shift 1 !tokens;
+      t
+    | Zipper (_, _, []) ->
+      let t = f buf in
+      tokens := Zipper.insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !tokens;
+      t
+
+  let const_lexer (token : 'a) (_ : lexbuf) : 'a = token
+end
+
+module Stream = struct
+  include Stream
+  let map ~f s =
+    from (fun _ ->
+      try Some (f (next s))
+      with Failure -> None)
+end
 
 (* Dynamic binding pattern *)
 module Fluid : sig

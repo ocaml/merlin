@@ -26,7 +26,8 @@
 
 )* }}} *)
 
-type token = Chunk_parser.token Fake_lexer.token
+open Std
+type token = Chunk_parser.token * Lexing.position * Lexing.position
 
 module Context : sig
   type state = exn list * Location.t * token list

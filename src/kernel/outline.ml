@@ -1,5 +1,4 @@
 (* {{{ COPYING *(
-type token = Chunk_parser.token Fake_lexer.token
 
   This file is part of Merlin, an helper for ocaml editors
 
@@ -30,7 +29,7 @@ type token = Chunk_parser.token Fake_lexer.token
 open Std
 open Misc
 
-type token = Chunk_parser.token Fake_lexer.token
+type token = Chunk_parser.token * Lexing.position * Lexing.position
 
 module Context = struct
   type state = exn list * Location.t * token list
@@ -55,7 +54,7 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
     (* Drop beginning of history *)
     next
   in
-  let lexer = Fake_lexer.wrap ~tokens:tokens' lexer in
+  let lexer = Lexing.wrap_lexer ~tokens:tokens' lexer in
   try
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in

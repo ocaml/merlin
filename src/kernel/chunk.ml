@@ -91,7 +91,7 @@ module Fold = struct
     let exns', modules', result =
       protect_parser (fun () -> try
         (* run structure_item parser on tokens, appending EOF *)
-        let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
+        let lexer = Lexing.wrap_lexer ~tokens:(ref (Zipper.of_list tokens))
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
@@ -116,7 +116,7 @@ module Fold = struct
     let exns', modules', result =
       protect_parser (fun () ->
         let tokens = Outline.Spine.value step in
-        let lexer = Fake_lexer.wrap ~tokens:(ref (Zipper.of_list tokens))
+        let lexer = Lexing.wrap_lexer ~tokens:(ref (Zipper.of_list tokens))
           (fake_tokens [Chunk_parser.END, 3; Chunk_parser.EOF, 0] fallback_lexer)
         in
         let open Parsetree in
