@@ -289,6 +289,9 @@ endfunction
 function! merlin#LoadProject()
   if isdirectory(expand('%:p:h'))
     py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
+    if exists("b:dotmerlin") && exists("g:merlin_move_to_project") && g:merlin_move_to_project
+      execute ":lchdir " . fnamemodify(b:dotmerlin[0], ":p:h")
+    endif
   endif
 endfunction
 
@@ -302,7 +305,7 @@ endfunction
 
 function! merlin#GotoDotMerlin()
     if exists("b:dotmerlin")
-        execute ":e" . b:dotmerlin[0]
+        execute ":e " . b:dotmerlin[0]
     " TODO : it's plausible to create an empty one here instead by guessing
     " where it should be located
     else

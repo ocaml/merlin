@@ -93,6 +93,14 @@ with the |:highlight| command, e.g. >
     hi EnclosingExpr ctermbg=17 guibg=LightGreen
 <
 
+                                                    *'merlin_move_to_project'*
+
+Default: false.
+If set to true, merlin will automatically change local directory of an ocaml
+buffer to the root of the ".merlin" file. >
+  let g:merlin_move_to_project = "true"
+<
+
 ==============================================================================
 EXTRAS                                                         *merlin-extras*
 
