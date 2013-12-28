@@ -56,6 +56,13 @@ let parse_with (tokens : token zipper) ~parser ~lexer buf =
   in
   let lexer = Lexing.wrap_lexer ~tokens:tokens' lexer in
   try
+    let lexer =
+      let pan = ref false in
+      fun buf ->
+        if !pan
+        then lexer buf
+        else (pan := true; Chunk_parser.ENTRYPOINT)
+    in
     let lexer = Chunk_parser_utils.dump_lexer ~who:"outline" lexer in
     let () = parser lexer buf in
     let tokens = !tokens' in

@@ -94,6 +94,13 @@ module Fold = struct
         let lexer = Lexing.wrap_lexer ~tokens:(ref (Zipper.of_list tokens))
             (fake_tokens [Chunk_parser.EOF, 0] fallback_lexer)
         in
+        let lexer =
+          let pan = ref false in
+          fun buf ->
+            if !pan
+            then lexer buf
+            else (pan := true; Chunk_parser.ENTRYPOINT)
+        in
         let lexer = Chunk_parser_utils.dump_lexer ~who:"chunk" lexer in
         let defs = Chunk_parser.top_structure_item lexer buf in
         defs

@@ -147,6 +147,8 @@
 %token OUNIT_BENCH_INDEXED
 %token OUNIT_BENCH_MODULE
 
+%token ENTRYPOINT
+
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved
@@ -219,10 +221,10 @@ The precedences must be listed from low to high.
 (* Entry points *)
 
 implementation:
-  | top_structure EOF                        { () }
-  | top_expr top_structure EOF               { () }
-  | top_semisemi top_structure EOF           { () }
-  | top_end top_structure EOF                { () }
+  | ENTRYPOINT top_structure EOF                        { () }
+  | ENTRYPOINT top_expr top_structure EOF               { () }
+  | ENTRYPOINT top_semisemi top_structure EOF           { () }
+  | ENTRYPOINT top_end top_structure EOF                { () }
 ;
 top_structure:
     (* empty  *)                  { () }
@@ -237,7 +239,7 @@ top_end:
   | END                                  { emit_top Leave_module $endpos }
 
 interface:
-    signature EOF                        { () }
+    ENTRYPOINT signature EOF                        { () }
 ;
 
 (* Module expressions *)

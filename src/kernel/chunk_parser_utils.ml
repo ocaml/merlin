@@ -56,6 +56,7 @@ let token_to_string =
     | DOWNTO -> "DOWNTO"
     | ELSE -> "ELSE"
     | END -> "END"
+    | ENTRYPOINT -> "ENTRYPOINT"
     | EOF -> "EOF"
     | EQUAL -> "EQUAL"
     | EXCEPTION -> "EXCEPTION"

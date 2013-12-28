@@ -464,6 +464,8 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %token OUNIT_BENCH_INDEXED
 %token OUNIT_BENCH_MODULE
 
+%token ENTRYPOINT
+
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved
@@ -531,22 +533,22 @@ The precedences must be listed from low to high.
 %type <Parsetree.structure> implementation
 %start interface                        (* for interface files *)
 %type <Parsetree.signature> interface
-%start top_structure_item               (* extension, ocaml-ty *)
+%start top_structure_item               (* extension, merlin *)
 %type <Parsetree.structure_item Location.loc list> top_structure_item
-%start top_expr                        (* extension, ocaml-ty *)
+%start top_expr                         (* extension, merlin *)
 %type <Parsetree.expression> top_expr
 %%
 
 (* Entry points *)
 
 implementation:
-    structure EOF                        { $1 }
+    ENTRYPOINT str = structure EOF                  { str }
 ;
 interface:
-    signature EOF                        { List.rev $1 }
+    ENTRYPOINT sg = signature EOF                   { List.rev sg }
 ;
 top_expr:
-  | seq_expr option(SEMISEMI) EOF { $1 }
+  | ENTRYPOINT expr = seq_expr option(SEMISEMI) EOF { expr }
 ;
 
 (* Module expressions *)
@@ -611,18 +613,18 @@ structure_tail:
 ;
 
 top_structure_item:
-  | option(SEMISEMI) seq_expr option(SEMISEMI) EOF
-    { [mkloc (mkstrexp $startpos $endpos $2) (symbol_rloc $startpos $endpos)] }
-  | option(SEMISEMI) structure_item option(SEMISEMI) EOF
-      { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $2 }
-  | option(SEMISEMI) VAL val_ident COLON core_type EOF
-    { syntax_error $startpos;
-      let fake_pat = mkpatvar $startpos($3) $endpos($3) $3 in
-      let fake_expr = mkexp $startpos($4) $endpos($5)
-                          (Pexp_constraint (Fake.any_val', Some $5, None))
+  | ENTRYPOINT option(SEMISEMI) expr = seq_expr option(SEMISEMI) EOF
+    { [mkloc (mkstrexp $startpos(expr) $endpos expr) (symbol_rloc $startpos(expr) $endpos)] }
+  | ENTRYPOINT option(SEMISEMI) str = structure_item option(SEMISEMI) EOF
+      { List.map (fun str -> mkloc str (symbol_rloc $startpos(str) $endpos)) str }
+  | ENTRYPOINT option(SEMISEMI) vl = VAL id = val_ident COLON ty = core_type EOF
+    { syntax_error $startpos(vl);
+      let fake_pat = mkpatvar $startpos(id) $endpos(id) id in
+      let fake_expr = mkexp $startpos(ty) $endpos(ty)
+                          (Pexp_constraint (Fake.any_val', Some ty, None))
       in
-      [mkloc (mkstr $startpos $endpos (Pstr_value (Nonrecursive, [fake_pat,fake_expr]))) (symbol_rloc $startpos $endpos)] }
-  | SEMISEMI EOF { [] }
+      [mkloc (mkstr $startpos(vl) $endpos (Pstr_value (Nonrecursive, [fake_pat,fake_expr]))) (symbol_rloc $startpos(vl) $endpos)] }
+  | ENTRYPOINT SEMISEMI EOF { [] }
 ;
 
 with_extensions:
