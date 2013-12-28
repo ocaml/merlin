@@ -65,7 +65,7 @@ let parse_dot_merlin_file path : bool * file =
 
 let rec read ~path =
   let recurse, dot_merlin = parse_dot_merlin_file path in
-  let next = if recurse 
+  let next = if recurse
     then lazy (find ~path:(Filename.dirname (Filename.dirname path)))
     else lazy List.Lazy.Nil
   in

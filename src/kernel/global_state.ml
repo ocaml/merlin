@@ -149,7 +149,7 @@ end = struct
     dot_merlin_cmi    := config.Dot_merlin.cmi_path;
     dot_merlin_cmt    := config.Dot_merlin.cmt_path;
     let exts = Extension.from_packages config.Dot_merlin.packages in
-    dot_merlin_extensions := 
+    dot_merlin_extensions :=
       String.Set.(union exts (of_list config.Dot_merlin.extensions));
     update_extensions ();
     let failures, pathes = Dot_merlin.(path_of_packages config.packages) in

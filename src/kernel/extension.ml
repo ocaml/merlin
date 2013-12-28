@@ -150,12 +150,12 @@ let ext_sexp_option = {
 
 (* Known extensions *)
 let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec]
-let registry = 
+let registry =
   List.fold_left' registry
     ~f:(fun ext -> String.Map.add ext.name ext)
     ~init:String.Map.empty
 
-let lookup s = 
+let lookup s =
   try Some (String.Map.find s registry)
   with Not_found -> None
 
@@ -163,14 +163,14 @@ let lookup s =
   "lwt" if "lwt.syntax" is loaded by user. *)
 let from_packages pkgs =
   String.Map.fold (fun name ext set ->
-      if List.exists ~f:(List.mem ~set:ext.packages) pkgs 
+      if List.exists ~f:(List.mem ~set:ext.packages) pkgs
       then String.Set.add name set
       else set)
     registry String.Set.empty
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-let default = List.fold_left' [ext_any;ext_sexp_option] 
+let default = List.fold_left' [ext_any;ext_sexp_option]
     ~init:String.Set.empty
     ~f:(fun ext -> String.Set.add ext.name)
 
@@ -208,7 +208,7 @@ let type_sig env sg =
 let register exts env =
   (* Log errors ? *)
   let try_type sg' = try type_sig env sg' with _exn -> [] in
-  let exts = 
+  let exts =
     String.Map.fold (fun name ext list ->
         if String.Set.mem name exts
         then ext :: list
@@ -235,7 +235,7 @@ let register exts env =
     List.fold_left ~f:add_item ~init:env sign
   in
   let env = add_hidden_signature env (List.concat tops) in
-  let env = Env.add_module ident (Types.Mty_signature 
+  let env = Env.add_module ident (Types.Mty_signature
                                     (Lazy.lazy_from_val (List.concat fakes))) env in
   env
 

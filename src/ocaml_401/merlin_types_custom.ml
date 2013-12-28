@@ -1,7 +1,7 @@
 open Std
 open Misc
 
-let signature_item_ident = 
+let signature_item_ident =
   let open Types in function
   | Sig_value (id, _)
   | Sig_type (id, _, _)
@@ -20,7 +20,7 @@ let fold_types f id env acc =
   Env.fold_types (fun s p (decl,descr) acc -> f s p decl acc) id env acc
 
 let fold_constructors f id env acc =
-  Env.fold_constructors 
+  Env.fold_constructors
     (fun constr acc -> f constr.Types.cstr_name constr acc)
     id env acc
 let fold_labels = Env.fold_labels

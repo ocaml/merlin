@@ -205,7 +205,7 @@ The precedences must be listed from low to high.
 (* Finally, the first tokens of simple_expr are above everything else. *)
 %nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION JSNEW 
+          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT P4_QUOTATION JSNEW
 
 
 (* Entry points *)

@@ -30,7 +30,7 @@ let erroneous_type_check te =
 let rec erroneous_expr_check e =
   (erroneous_type_check e.Typedtree.exp_type) ||
   match e.Typedtree.exp_desc with
-  | Typedtree.Texp_ident (p,_,_) 
+  | Typedtree.Texp_ident (p,_,_)
     when Ident.name (Path.head p) = "_" -> true
   | Typedtree.Texp_apply (e',_) -> erroneous_expr_check e'
   | _ -> false

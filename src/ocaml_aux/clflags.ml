@@ -117,24 +117,24 @@ let snapshot =
     dump_selection; dump_live; dump_spill; dump_split; dump_interf;
     dump_prefer; dump_regalloc; dump_reload; dump_scheduling; dump_linear;
     keep_startup_file; dump_combine; native_code; dont_write_files; shared;
-    dlcode 
+    dlcode
   ] in
   let k = ref 0 in
   fun () ->
     incr k;
     !k,
-    (save_ref inline_threshold :: save_ref output_name      :: 
-     save_ref dllpaths         :: save_ref objfiles         :: 
-     save_ref ccobjs           :: save_ref dllibs           :: 
-     save_ref include_dirs     :: save_ref ccopts           :: 
-     save_ref preprocessor     :: save_ref init_file        :: 
-     save_ref use_prims        :: save_ref use_runtime      :: 
-     save_ref runtime_variant  :: save_ref c_compiler       :: 
-     save_ref for_package      :: save_ref error_size       :: 
+    (save_ref inline_threshold :: save_ref output_name      ::
+     save_ref dllpaths         :: save_ref objfiles         ::
+     save_ref ccobjs           :: save_ref dllibs           ::
+     save_ref include_dirs     :: save_ref ccopts           ::
+     save_ref preprocessor     :: save_ref init_file        ::
+     save_ref use_prims        :: save_ref use_runtime      ::
+     save_ref runtime_variant  :: save_ref c_compiler       ::
+     save_ref for_package      :: save_ref error_size       ::
      List.map save_ref bools)
 
 let last_loaded = ref (-1)
-let force_restore (k,snapshot) = 
+let force_restore (k,snapshot) =
   last_loaded := k;
   List.iter (fun x -> x ()) snapshot
 
