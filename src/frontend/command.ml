@@ -32,13 +32,8 @@ open Misc
 open Protocol
 open Global_state
 
-type step = State.step = {
-  outlines : Outline.t;
-  chunks   : Chunk.t;
-  types    : Typer.t;
-}
-
-type state = State.t = {steps: step History.t; parser_validity: bool ref}
+type step = State.step
+type state = State.t
 
 module VPrinttyp = State.Verbose_print
 
@@ -100,18 +95,21 @@ let track_verbosity =
       cell
   in
   let sync, a_request' = !cell in
-  let steps' = History.focused (History.move (-2) st.steps) in
+  (failwith "TODO" : unit)
+  (*let steps' = History.focused (History.move (-2) st.steps) in
   let action =
     if a_request = a_request' && Sync.same steps' sync
     then `Incr
     else (cell := (Sync.make steps', a_request); `Clear)
   in
-  ignore (State.verbosity action)
+  ignore (State.verbosity action)*)
 
-let location {steps} = Outline.location (History.focused steps).outlines
+let location _ = failwith "TODO"
+    (*{steps} = Outline.location (History.focused steps).outlines*)
 let position state = (location state).Location.loc_end
 let new_step outline steps =
-  History.insert (State.step (History.focused steps) outline) steps
+  failwith "TODO"
+  (*History.insert (State.step (History.focused steps) outline) steps*)
 
 let tell i o state request number_of_definitions source =
   Env.reset_cache_toplevel ();
@@ -132,7 +130,8 @@ let tell i o state request number_of_definitions source =
         Stream.Failure -> IO.invalid_arguments ()
     end
   in
-  let onestep first tokens steps =
+  failwith "TODO"
+  (*let onestep first tokens steps =
     let step = History.focused steps in
     let tokens', outline =
       Outline.parse tokens step.outlines lexbuf in
@@ -178,13 +177,13 @@ let tell i o state request number_of_definitions source =
     | _ -> loop steps (Some [])
   in
   let state = {state with steps = first state.steps} in
-  state, Some (position state)
+  state, Some (position state)*)
 
 
 let dispatch (i,o : IO.io) (state : state) =
   fun (type a) (request : a request) ->
   track_verbosity state (Request request);
-  let step = History.focused state.steps in
+  let step = state (*History.focused state.steps*) in
   (match request with
   | (Tell (`Source source) : a request) ->
     tell i o state request 0 source
@@ -192,10 +191,11 @@ let dispatch (i,o : IO.io) (state : state) =
     tell i o state request defs ""
   | (Tell _ : a request) -> IO.invalid_arguments ()
   | (Type_expr (source, None) : a request) ->
-    let env = Typer.env (History.focused state.steps).types in
+    failwith "TODO"
+    (*let env = Typer.env (History.focused state.steps).types in
     let ppf, to_string = Format.to_string () in
     Type_utils.type_in_env env ppf source;
-    state, to_string ()
+    state, to_string ()*)
 
   | (Type_expr (source, Some pos) : a request) ->
     let {Browse.env} = State.node_at state pos in
@@ -268,9 +268,10 @@ let dispatch (i,o : IO.io) (state : state) =
     state, small_enclosings @ result
 
   | (Complete_prefix (prefix, None) : a request) ->
-    let node = Browse.({dummy with env = Typer.env step.types}) in
+    failwith "TODO"
+    (*let node = Browse.({dummy with env = Typer.env step.types}) in
     let compl = State.node_complete node prefix in
-    state, List.rev compl
+    state, List.rev compl*)
 
   | (Complete_prefix (prefix, Some pos) : a request) ->
     let node = State.node_at state pos in
@@ -278,7 +279,8 @@ let dispatch (i,o : IO.io) (state : state) =
     state, List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
-    let node, local_modules, local_defs =
+    failwith "TODO"
+    (*let node, local_modules, local_defs =
       match opt_pos with
       | None -> Browse.({ dummy with env = Typer.env step.types }), [], []
       | Some pos -> (
@@ -302,17 +304,19 @@ let dispatch (i,o : IO.io) (state : state) =
         (sprintf "--> %s" (match file with None -> "<local buffer>" | Some f -> f)) ;
       let pos = loc.Location.loc_start in
       state, Some (file, pos)
-    end
+    end*)
 
   | (Drop : a request) ->
-    let state = {state with steps = History.modify (fun x -> x) state.steps} in
-    state, position state
+    failwith "TODO"
+    (*let state = {state with steps = History.modify (fun x -> x) state.steps} in
+    state, position state*)
 
   | (Seek `Position : a request) ->
     state, position state
 
   | (Seek (`Before pos) : a request) ->
-    let inv step = Outline.invalid step.outlines in
+    failwith "TODO"
+    (*let inv step = Outline.invalid step.outlines in
     let cmp step = Merlin_parsing.compare_pos pos (Outline.location step.outlines) in
     let steps = state.steps in
     let steps = History.seek_forward (fun i -> inv i || cmp i > 0) steps in
@@ -323,25 +327,28 @@ let dispatch (i,o : IO.io) (state : state) =
       steps
     in
     let state = {state with steps} in
-    state, position state
+    state, position state*)
 
   | (Seek (`Exact pos) : a request) ->
-    let inv step = Outline.invalid step.outlines in
+    failwith "TODO"
+    (*let inv step = Outline.invalid step.outlines in
     let cmp step = Merlin_parsing.compare_pos pos (Outline.location step.outlines) in
     let steps = state.steps in
     let steps = History.seek_backward (fun i -> inv i || cmp i < 0) steps in
     let steps = History.seek_forward (fun i -> inv i || cmp i > 0) steps in
     let state = {state with steps} in
-    state, position state
+    state, position state*)
 
   | (Seek `End : a request) ->
-    let steps = state.steps in
+    failwith "TODO"
+    (*let steps = state.steps in
     let steps = History.seek_forward (fun _ -> true) steps in
     let state = {state with steps} in
-    state, position state
+    state, position state*)
 
   | (Seek `Maximize_scope : a request) ->
-    let rec loop steps =
+    failwith "TODO"
+    (*let rec loop steps =
       let steps' = History.move 1 steps in
       if Outline.Spine.position (History.focused steps').outlines <=
          Outline.Spine.position (History.focused steps).outlines
@@ -350,10 +357,11 @@ let dispatch (i,o : IO.io) (state : state) =
     in
     let steps = loop state.steps in
     let state = {state with steps} in
-    state, position state
+    state, position state*)
 
   | (Boundary (dir,pos) : a request) ->
-    let count = match dir with
+    failwith "TODO"
+    (*let count = match dir with
       | `Next    -> 1
       | `Prev    -> -1
       | `Current -> 0
@@ -379,18 +387,20 @@ let dispatch (i,o : IO.io) (state : state) =
     | None -> None
     | Some steps ->
       Some (Outline.location (History.focused steps).outlines)
-    end
+    end*)
 
   | (Reset None : a request) ->
-    Env.reset_cache ();
-    State.initial_str "", ()
+    failwith "TODO"
+    (*Env.reset_cache ();
+    State.initial_str "", ()*)
 
   | (Reset (Some name) : a request) ->
-    Env.reset_cache ();
+    failwith "TODO"
+    (*Env.reset_cache ();
     let dir = Filename.dirname name in
     let filename = Filename.basename name in
     Project.set_local_path dir;
-    State.initial_str filename, ()
+    State.initial_str filename, ()*)
 
   | (Refresh `Full : a request) ->
     Project.flush_global_modules ();
@@ -404,7 +414,8 @@ let dispatch (i,o : IO.io) (state : state) =
     state, State.exns state
 
   | (Dump (`Env (kind, None)) : a request) ->
-    let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) (Typer.env step.types) in
+    failwith "TODO"
+    (*let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) (Typer.env step.types) in
     let aux item =
       let ppf, to_string = Format.to_string () in
       Printtyp.signature ppf [item];
@@ -417,7 +428,7 @@ let dispatch (i,o : IO.io) (state : state) =
             `List [`String loc ; `String content]
         | None -> `String content
     in
-    state, `List (List.map aux sg)
+    state, `List (List.map aux sg)*)
 
   | (Dump (`Env (kind, Some pos)) : a request) ->
     let {Browse.env} = State.node_at state pos in
@@ -437,7 +448,8 @@ let dispatch (i,o : IO.io) (state : state) =
     state, `List (List.map ~f:aux sg)
 
   | (Dump `Sig : a request) ->
-      let trees = Typer.trees step.types in
+    failwith "TODO"
+    (*let trees = Typer.trees step.types in
       let sg = List.concat_map ~f:(fun {Location.txt} -> txt.Typedtree.str_type) trees in
       let aux item =
         let ppf, to_string = Format.to_string () in
@@ -451,34 +463,21 @@ let dispatch (i,o : IO.io) (state : state) =
               `List [`String loc ; `String content]
           | None -> `String content
       in
-      state, `List (List.map ~f:aux sg)
+      state, `List (List.map ~f:aux sg)*)
 
   | (Dump `Chunks : a request) ->
-    let pr_item_desc items = List.map
-        (fun s -> `String s)
-        (Chunk.Spine.dump items)
-    in
-    state, `List (pr_item_desc (History.focused state.steps).chunks)
+    failwith "Not implemented"
 
   | (Dump `Tree : a request) ->
     let structures = State.browse step in
     state, Browse_misc.dump_ts structures
 
   | (Dump `Outline : a request) ->
-    let print_item label _ tokens=
-      let tokens =
-        String.concat " "
-          (List.map tokens ~f:(fun (t,_,_) ->
-            (Chunk_parser_utils.token_to_string t)))
-      in
-      label ^ "(" ^ tokens ^ ")"
-    in
-    let outlines = (History.focused state.steps).outlines in
-    state, `List (List.map ~f:(fun s -> `String s)
-                    (Outline.Spine.dump outlines
-                       ~sig_item:print_item ~str_item:print_item))
+    failwith "Not implemented"
+
   | (Dump `History : a request) ->
-    state,
+    failwith "Not implemented"
+    (*state,
     let entry s =
       let {Location. loc_start; loc_end} = Outline.location s.outlines in
       let l1,c1 = Lexing.split_pos loc_start in
@@ -494,8 +493,7 @@ let dispatch (i,o : IO.io) (state : state) =
       | History.More (x,xs) ->  aux (entry x :: acc) xs
     in
     `Assoc ["head", `List (aux [] (History.head state.steps))
-           ;"tail", `List (List.map ~f:entry (History.tail state.steps))]
-
+           ;"tail", `List (List.map ~f:entry (History.tail state.steps))]*)
 
   | (Dump `Exn : a request) ->
     let exns = State.exns state in

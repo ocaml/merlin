@@ -26,17 +26,11 @@
 
 )* }}} *)
 
-type step = {
-  outlines : Outline.t;
-  chunks   : Chunk.t;
-  types    : Typer.t;
-}
+type fixme = { fixme: unit }
 
-type t = {steps: step History.t; parser_validity: bool ref}
+type step = fixme
+type t = fixme
 
-val initial_sig : string -> t
-val initial_str : string -> t
-val step : step -> Outline.t -> step
 val browse : step -> Browse.t list
 
 val verbosity : [`Query|`Incr|`Clear] -> int

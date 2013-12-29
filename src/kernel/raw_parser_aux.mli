@@ -28,27 +28,4 @@
 
 open Std
 
-type 'a binding = string Location.loc * 'a Location.loc
-
-type step_state = {
-  global_exns: exn list;
-  exns: exn list;
-  modules: string Location.loc list; (* Local modules *)
-}
-
-module Context : sig
-  type state = step_state
-
-  type sig_item = Parsetree.signature_item Location.loc list or_exn
-  type str_item = Parsetree.structure_item Location.loc list or_exn
-  type sig_in_sig_modtype = Parsetree.modtype_declaration binding or_exn
-  type sig_in_sig_module  = Parsetree.module_type binding or_exn
-  type sig_in_str_modtype = Parsetree.module_type binding or_exn
-  type str_in_module      = Parsetree.module_expr binding or_exn
-end
-module Spine : Spine.S with module Context = Context
-type t = Spine.t
-val update : Outline.t -> t option -> t
-
-val exns : t -> exn list
-val local_modules : t -> string Location.loc list
+val local_modules : (string Location.loc) list ref option fluid

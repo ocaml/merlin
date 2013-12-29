@@ -120,7 +120,7 @@ let main_loop () =
        with exn -> output (Protocol.Exception exn));
       loop state
     in
-    loop (State.initial_str "")
+    loop {State. fixme = () }
   with Stream.Failure -> ()
 
 let () =

@@ -30,32 +30,10 @@
 open Std
 open Global_state
 
-type step = {
-  outlines : Outline.t;
-  chunks   : Chunk.t;
-  types    : Typer.t;
-}
+type fixme = { fixme: unit }
 
-type t = {steps: step History.t; parser_validity: bool ref}
-
-let initial_ outlines =
-  let chunks = Chunk.update outlines None in
-  let types  = Typer.update chunks   None in
-  {outlines; chunks; types}
-let initial_str fname = initial_ (Outline.initial_str fname)
-let initial_sig fname = initial_ (Outline.initial_sig fname)
-
-let initial step = { steps = History.initial step;
-                     parser_validity = ref true }
-
-let initial_str fname = initial (initial_str fname)
-let initial_sig fname = initial (initial_sig fname)
-
-let step {chunks;types} outlines =
-  let chunks = Chunk.update outlines (Some chunks) in
-  Btype.backtrack (Typer.snapshot types);
-  let types  = Typer.update chunks   (Some types)  in
-  {outlines; chunks; types}
+type step = fixme
+type t = fixme
 
 let verbosity =
   let counter = ref 0 in
@@ -100,14 +78,15 @@ module Verbose_print = struct
 end
 
 let retype state =
-  let init x = x
+  failwith "TODO"
+  (*let init x = x
   and fold old prev =
     let outlines = old.outlines in
     let chunks = Chunk.update outlines (Some prev.chunks) in
     let types = Typer.update chunks (Some prev.types) in
     {outlines; chunks; types}
   in
-  { state with steps = History.reconstruct state.steps ~init ~fold }
+  { state with steps = History.reconstruct state.steps ~init ~fold }*)
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =
@@ -116,9 +95,10 @@ let quick_refresh_modules state =
   else (Env.reset_cache (); retype state, true)
 
 let browse step =
-  List.concat_map
+  failwith "TODO"
+  (*List.concat_map
     ~f:(fun {Location.txt} -> Browse.structure txt)
-    (Typer.trees step.types)
+    Typer.trees step.types*)
 
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.
@@ -135,7 +115,8 @@ let browse step =
  *      inside x definition.
  *)
 let node_at state pos_cursor =
-  let step = History.focused state.steps in
+  failwith "TODO"
+  (* let step = History.focused state.steps in
   let structures = browse step in
   let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
   let outlines =
@@ -161,10 +142,11 @@ let node_at state pos_cursor =
   with Not_found ->
     let chunks = Chunk.update outlines (Some step.chunks) in
     let types  = Typer.update chunks   (Some step.types)  in
-    Browse.({ dummy with env = Typer.env types })
+    Browse.({ dummy with env = Typer.env types })*)
 
 let local_modules_at state pos_cursor =
-  let step = History.focused state.steps in
+  failwith "TODO"
+  (*let step = History.focused state.steps in
   let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
   let outlines =
     let rec aux o =
@@ -175,10 +157,11 @@ let local_modules_at state pos_cursor =
     aux step.outlines
   in
   let chunks = Chunk.update outlines (Some step.chunks) in
-  Chunk.local_modules chunks
+  Chunk.local_modules chunks*)
 
 let str_items_before state pos_cursor =
-  let step = History.focused state.steps in
+  failwith "TODO"
+  (*let step = History.focused state.steps in
   let cmp o = Merlin_parsing.compare_pos pos_cursor (Outline.location o) in
   let outlines =
     let rec aux o =
@@ -190,14 +173,15 @@ let str_items_before state pos_cursor =
   in
   let chunks = Chunk.update outlines (Some step.chunks) in
   let types  = Typer.update chunks (Some step.types) in
-  Typer.trees types
+  Typer.trees types*)
 
 (* Gather all exceptions in state (warnings, syntax, env, typer, ...) *)
 let exns state =
-  let step = History.focused state.steps in
+  failwith "TODO"
+  (*let step = History.focused state.steps in
   Outline.exns step.outlines
   @ Chunk.exns step.chunks
-  @ Typer.exns step.types
+  @ Typer.exns step.types*)
 
 (* Check if module is smaller (= has less definition, counting nested ones)
  * than a particular threshold. Return (Some n) if module has size n, or None
@@ -461,10 +445,11 @@ let node_complete node prefix =
   end
 
 let validate_parser t =
-  if !(t.parser_validity)
+  failwith "TODO"
+  (*if !(t.parser_validity)
   then t
   else
     let steps = History.seek_backward (fun _ -> true) t.steps in
     let step = History.focused steps in
-    initial step
+    initial step*)
 

@@ -23,3 +23,4 @@ B _build/src/ocaml_aux
 B _build/src/utils
 PKG findlib
 PKG yojson
+PKG menhirLib

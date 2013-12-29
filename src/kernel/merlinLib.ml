@@ -72,36 +72,44 @@ module Parser : sig
   type t
   type frame
 
-  type state
+  type state = Raw_parser.state
+
+  val implementation : state
+  val interface : state
 
   val from : state -> t
-  val feed : Lexing.position * Value.t * Lexing.position
-           -> t -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
+  val feed : Lexing.position * Raw_parser.token * Lexing.position
+           -> t -> [`Accept of Raw_parser.semantic_value | `Reject of Raw_parser.step Raw_parser.parser | `Step of t]
 
   val stack : t -> frame option
-  val stack_depth : t -> int
+  val depth : frame -> int
 
-  val value : frame -> Value.t
+  val value : frame -> Raw_parser.semantic_value
   val eq    : frame -> frame -> bool
   val next  : frame -> frame option
 
-  val of_step : ?hint:MenhirUtils.witness -> P.step P.parser
-              -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
-  val to_step : t -> P.feed P.parser option
+  val of_step : ?hint:MenhirUtils.witness -> Raw_parser.step Raw_parser.parser
+              -> [`Accept of Raw_parser.semantic_value | `Reject of Raw_parser.step Raw_parser.parser | `Step of t]
+  val to_step : t -> Raw_parser.feed Raw_parser.parser option
 end = struct
   module P = Raw_parser
-  type state = P.state
+  module E = MenhirLib.EngineTypes
+
+  type state = Raw_parser.state
 
   type t =
     | First of state
-    | Other of P.feed P.parser * MenhirUtils.witness
+    | Other of Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
 
-  type frame = (P.state, Value.t) E.stack
+  type frame = int * (Raw_parser.state, Raw_parser.semantic_value) E.stack
 
-  let get_stack s = s.P.env.E.stack
+  let implementation = Raw_parser.implementation_state
+  let interface = Raw_parser.interface_state
+
+  let get_stack s = s.Raw_parser.env.E.stack
 
   let rec of_step s depth =
-    match P.step s with
+    match Raw_parser.step s with
     | `Accept _ as a -> a
     | `Reject -> `Reject s
     | `Feed p ->
@@ -113,24 +121,26 @@ end = struct
   let feed input p =
     let p', depth = match p with
       | First state ->
-         P.initial state input, MenhirUtils.initial_depth
-      | Other (p, depth) -> P.feed p input, depth
+         Raw_parser.initial state input, MenhirUtils.initial_depth
+      | Other (p, depth) -> Raw_parser.feed p input, depth
     in
     of_step p' depth
 
-  let frame_of stack = if stack.E.next == stack then None else Some stack
+  let frame_of d stack = if stack.E.next == stack then None else Some (d,stack)
 
   let stack = function
     | First _ -> None
-    | Other (s,_) -> frame_of (get_stack s)
+    | Other (s,w) -> frame_of (MenhirUtils.depth w) (get_stack s)
 
   let stack_depth = function
     | First _ -> 0
-    | Other (_,w) -> MenhirUtils.depth w
+    | Other (_,w) ->(MenhirUtils.depth w)
 
-  let value frame = frame.E.semv
-  let eq f f' = f == f'
-  let next f = frame_of f.E.next
+  let depth (d,f) = d
+
+  let value (_,frame) = frame.E.semv
+  let eq (_,f) (_,f') = f == f'
+  let next (d,f) = frame_of (d - 1) f.E.next
 
   let of_step ?(hint=MenhirUtils.initial_depth) step =
     of_step step MenhirUtils.(stack_depth ~hint (get_stack (step)))
@@ -171,6 +181,9 @@ module Project : sig
 
   (* Force recomputation of top modules *)
   val flush_global_modules : t -> unit
+
+  (* Make global state point to current project *)
+  val setup : t -> unit
 end = struct
 
   (** Mimic other OCaml tools entry point *)
@@ -320,8 +333,10 @@ end = struct
   let cmt_path    p = p.cmt_path
 
   let set_local_path project path =
-    project.local_path := path;
-    flush_global_modules project
+    if path != !(project.local_path) then begin
+      project.local_path := path;
+      flush_global_modules project
+    end
 
   let set_dot_merlin project dm =
     let module Dm = Dot_merlin in
@@ -378,6 +393,10 @@ end = struct
       cfg.cfg_extensions <- f path cfg.cfg_extensions
   end
 
+  (* Make global state point to current project *)
+  let setup project =
+    Config.load_path := project.build_path
+
 end
 
 module Buffer = struct
@@ -402,5 +421,13 @@ module Buffer = struct
       lexer = Lexer.empty ~filename;
     }
 
+  let setup buffer =
+    Project.setup buffer.project;
+    begin match buffer.path with
+      | Some path -> Project.set_local_path buffer.project [path]
+      | None -> ()
+    end;
+    Env.set_cache buffer.env;
+    Btype.set_cache buffer.btype
 end
 

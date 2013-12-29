@@ -1,11 +1,11 @@
 open Misc
 
 (* Stateful parts:
-   - typer snapshot root
-   - env cache
-   - lexer keywords
-   - compiler flags
-   - compiler path
+   - typer snapshot root, done Buffer.btype
+   - env cache, done Buffer.env
+   - lexer keywords, done Lexer
+   - compiler path, done Project
+   - compiler flags, todo
 *)
 
 module Lexer: sig
@@ -30,20 +30,25 @@ module Parser : sig
   type t
   type frame
 
-  val from : P.state -> t
-  val feed : Lexing.position * Value.t * Lexing.position
-           -> t -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
+  type state = Raw_parser.state
+
+  val implementation : state
+  val interface : state
+
+  val from : state -> t
+  val feed : Lexing.position * Raw_parser.token * Lexing.position
+           -> t -> [`Accept of Raw_parser.semantic_value | `Reject of Raw_parser.step Raw_parser.parser | `Step of t]
 
   val stack : t -> frame option
-  val stack_depth : t -> int
+  val depth : frame -> int
 
-  val value : frame -> Value.t
+  val value : frame -> Raw_parser.semantic_value
   val eq    : frame -> frame -> bool
   val next  : frame -> frame option
 
-  val of_step : ?hint:MenhirUtils.witness -> P.step P.parser
-              -> [`Accept of Value.t | `Reject of P.step P.parser | `Step of t]
-  val to_step : t -> P.feed P.parser option
+  val of_step : ?hint:MenhirUtils.witness -> Raw_parser.step Raw_parser.parser
+              -> [`Accept of Raw_parser.semantic_value | `Reject of Raw_parser.step Raw_parser.parser | `Step of t]
+  val to_step : t -> Raw_parser.feed Raw_parser.parser option
 end
 
 (* Project configuration *)
@@ -81,8 +86,9 @@ end
 
 module Buffer : sig
   type t
-  val create: ?path:string -> project -> t
+  val create: ?path:string -> Project.t -> t
   val lexer: t -> Lexer.t History.t
-  val update_lexer: t -> Lexer.t History.t -> unit
+  val start_lexing : t -> (Lexing.lexbuf -> Lexer.t History.t)
+  val update_lexer : t -> Lexer.t History.t -> unit
 end
 
