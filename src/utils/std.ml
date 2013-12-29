@@ -290,11 +290,13 @@ end
 module Fluid : sig
   type 'a t
   val from : 'a -> 'a t
+  val from_ref : 'a ref -> 'a t
   val let' : 'a t -> 'a -> (unit -> 'b) -> 'b
   val get : 'a t -> 'a
 end = struct
   type 'a t = 'a ref
   let from x = ref x
+  let from_ref x = x
   let let' d v f =
     let p = !d in
     d := v;
