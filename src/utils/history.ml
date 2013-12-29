@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Std
+
 type 'a non_empty =
   | One of 'a
   | More of 'a * 'a non_empty
@@ -105,17 +107,48 @@ let modify f = function
 let append f {head = (One x | More (x,_) as head); position; _} =
   {head = More (f x, head); position = position + 1; tail = []}
 
-let reconstruct h init fold =
-  let f b x' = More (fold (nhd b) x', b) in
+let reconstruct ~init ~fold h =
+  let f b x' = More (fold x' (nhd b), b) in
   let rec past tail = function
     | More (x,head) -> past (x :: tail) head
-    | One x -> List.fold_left f (One (init x)) tail
+    | One x -> List.fold_left ~f ~init:(One (init x)) tail
   in
   let head = past [] h.head in
   let f (b,l) a =
-    let b' = fold b a in
+    let b' = fold a b in
     (b', (b' :: l))
   in
-  let tail = List.rev (snd (List.fold_left f (nhd head, []) h.tail)) in
+  let tail = List.rev (snd (List.fold_left ~f ~init:(nhd head, []) h.tail)) in
   let position = h.position in
   {head; position; tail}
+
+let sync ~check ~init ~fold a = function
+  | Some b ->
+    let b = move (a.position - b.position) b in
+    assert (b.position <= a.position);
+    if b.position = a.position && check (focused a) (focused b) then b
+    else
+      let rec aux worklist ha hb =
+        match ha, hb with
+        | One a, One b | More (a,_), More (b,_) when check a b ->
+          worklist, hb
+        | One a, One b ->
+          worklist, One (init a)
+        | More (a,ha), More (_,hb) ->
+          aux (a :: worklist) ha hb
+        | _, _ -> assert false
+      in
+      let rec rewind worklist ha count =
+        if count > 0
+        then match ha with
+          | More (a,ha) -> rewind (a :: worklist) ha (count - 1)
+          | _ -> assert false
+        else aux worklist ha b.head
+      in
+      let worklist, hb = rewind [] a.head (a.position - b.position) in
+      let hb = List.fold_left' worklist ~init:hb
+          ~f:(fun a hb -> More (fold a (focused' hb), hb))
+      in
+      { head = hb; tail = []; position = a.position }
+  | None ->
+    reconstruct ~init ~fold {a with tail = []}

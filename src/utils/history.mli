@@ -68,4 +68,25 @@ val modify : ('a -> 'a) -> 'a t -> 'a t
 
 val append : ('a -> 'a) -> 'a t -> 'a t
 
-val reconstruct : 'a t -> ('a -> 'b) -> ('b -> 'a -> 'b) -> 'b t
+(* [hb' = reconstruct ~init ~fold ha]
+   where
+     [ha = (a_0, a_1, a_2, ...)]
+   computes
+     [hb' = (b_0 = init a_0, b_1 = fold a_1 b_0, b_2 = fold a_2 b_1, ...)]
+   for all items in [ha] (including those after cursor) *)
+val reconstruct : init:('a -> 'b) -> fold:('a -> 'b -> 'b) -> 'a t -> 'b t
+
+(* [hb' = sync ~check ~init ~fold ha (Some hb)] synchronize [ha] and [hb]
+   up to current position in [ha].
+   [hb] is supposed to be a previous result of [sync].
+   Let [ha] be:
+     (a_0, a_1, a_2, ...)
+   After synchronization, [hb'] is equal to:
+     (b_0 = init a_0, b_1 = fold a_1 b_0, b_2 = fold a_2 b_1, ...)
+   [check] function is called to check if two items are still valid, in order
+   to minimize work and update [hb] incrementally.
+
+   If second argument is None, then this function behave like
+   [reconstruct ~init ~fold ha] with an empty tail.
+*)
+val sync : check:('a -> 'b -> bool) -> init:('a -> 'b) -> fold:('a -> 'b -> 'b) -> 'a t -> 'b t option -> 'b t

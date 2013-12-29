@@ -100,14 +100,14 @@ module Verbose_print = struct
 end
 
 let retype state =
-  {state with steps =
-    History.reconstruct state.steps (fun x -> x)
-      (fun prev old ->
-        let outlines = old.outlines in
-        let chunks = Chunk.update outlines (Some prev.chunks) in
-        let types = Typer.update chunks (Some prev.types) in
-        {outlines; chunks; types})
-  }
+  let init x = x
+  and fold old prev =
+    let outlines = old.outlines in
+    let chunks = Chunk.update outlines (Some prev.chunks) in
+    let types = Typer.update chunks (Some prev.types) in
+    {outlines; chunks; types}
+  in
+  { state with steps = History.reconstruct state.steps ~init ~fold }
 
 (** Heuristic to speed-up reloading of CMI files that has changed *)
 let quick_refresh_modules state =
