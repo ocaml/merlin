@@ -3,14 +3,17 @@
 TARGET = ocamlmerlin.native
 #TARGET = src/spine.cmo
 
+TARGET_EMACS = emacs/merlin.elc
+
 OCAMLBUILD=ocamlbuild -Is src,src/config,src/utils,src/ocaml$(TYPER_VERSION),src/ocaml$(TYPER_VERSION)/utils,src/ocaml$(TYPER_VERSION)/typing,src/ocaml$(TYPER_VERSION)/parsing
 OCAMLFIND=ocamlfind
+EMACS=emacs
 
 DESTDIR ?=
 BIN_DIR := $(DESTDIR)$(BIN_DIR)
 SHARE_DIR := $(DESTDIR)$(SHARE_DIR)
 
-all: $(TARGET)
+all: $(TARGET) $(TARGET_EMACS)
 
 CONFIG_FILES = src/config/my_config.ml src/config/myocamlbuild_config.ml src/ocaml
 $(CONFIG_FILES):
@@ -33,6 +36,9 @@ all_versions:
 debug: assert_configured
 	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET) -tag debug
 
+%.elc : %.el
+	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
+
 .PHONY: $(TARGET) all dev clean distclean install uninstall assert_configured ocamlmerlin_400 ocamlmerlin_401
 
 clean:
@@ -53,10 +59,11 @@ install-binary: $(TARGET)
 	install omake-merlin $(BIN_DIR)/omake-merlin
 	install jenga-merlin $(BIN_DIR)/jenga-merlin
 
-install-share: $(TARGET)
+install-share: $(TARGET) $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
 	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
+	-install -m 644 emacs/merlin.elc $(SHARE_DIR)/emacs/site-lisp/merlin.elc
 
 install-vim: $(TARGET)
 	install -d $(VIM_DIR)
@@ -66,21 +73,21 @@ install-vim: $(TARGET)
 	cp -R vim/merlin/* $(VIM_DIR)
 
 install: install-binary install-share install-vim
-	@echo 
+	@echo
 	@echo "Quick setup for VIM"
 	@echo "-------------------"
 	@echo "Add $(VIM_DIR) to your runtime path, e.g.:"
 	@echo "  :set rtp+=$(VIM_DIR)"
-	@echo 
+	@echo
 	@echo "Quick setup for EMACS"
 	@echo "-------------------"
 	@echo "Add $(SHARE_DIR)/emacs/site-lisp to your runtime path, e.g.:"
 	@echo '  (add-to-list '"'"'load-path "$(SHARE_DIR)/emacs/site-lisp")'
 	@echo '  (require '"'"'merlin)'
 	@echo 'Then issue M-x merlin-mode in a ML buffer.'
-	@echo 
+	@echo
 	@echo 'Take a look at https://github.com/def-lkb/merlin for more information.'
-	@echo 
+	@echo
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
