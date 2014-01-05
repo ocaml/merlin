@@ -121,6 +121,11 @@ module Protocol_io = struct
     | [] -> None
     | _ -> invalid_arguments ()
 
+  let optional_string = function
+    | [`String name] -> Some name
+    | [] -> None
+    | _ -> invalid_arguments ()
+
   let string_list l =
     List.map (function `String s -> s | _ -> invalid_arguments ()) l
 
@@ -145,9 +150,25 @@ module Protocol_io = struct
             "desc", `String desc;
             "info", `String info]
 
+  let rec json_of_path acc =
+    let open Merlin_lib.Parser.Path in function
+    | Root -> acc
+    | Items (n,p) ->
+      json_of_path (`Int n :: acc) p
+    | Sub (Asttypes.Recursive,p) ->
+      json_of_path (`String "rec" :: acc) p
+    | Sub (_,p) ->
+      json_of_path acc p
+  let json_of_path p = `List (json_of_path [] p)
+
   let source_or_build = function
     | "source" -> `Source
     | "build"  -> `Build
+    | _ -> invalid_arguments ()
+
+  let ml_or_mli = function
+    | "ml" -> `ML
+    | "mli"  -> `MLI
     | _ -> invalid_arguments ()
 
   let add_or_remove = function
@@ -176,14 +197,8 @@ module Protocol_io = struct
       ("failures", `String ("Failed to load some packages " ^ str)) :: assoc
 
   let request_of_json = function
-    | [`String "tell"; `String "definitions"; `Int d] ->
-      Request (Tell (`Definitions d))
     | [`String "tell"; `String "source"; `String source] ->
-      Request (Tell (`Source source))
-    | [`String "tell"; `String "more"; `String source] ->
-      Request (Tell (`More source))
-    | [`String "tell"; `String "end"] ->
-      Request (Tell `End)
+      Request (Tell source)
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
       Request (Type_expr (expr, optional_position opt_pos))
     | [`String "type"; `String "enclosing";
@@ -203,8 +218,6 @@ module Protocol_io = struct
       Request (Seek (`Exact (pos_of_json jpos)))
     | [`String "seek"; `String "end"] ->
       Request (Seek `End)
-    | [`String "seek"; `String "maximize_scope"] ->
-      Request (Seek `Maximize_scope)
     | (`String "boundary" :: `String "next" :: opt_pos) ->
       Request (Boundary (`Next, optional_position opt_pos))
     | (`String "boundary" :: `String "prev" :: opt_pos) ->
@@ -212,14 +225,10 @@ module Protocol_io = struct
     | (`String "boundary" :: `String "current" :: opt_pos)
     | (`String "boundary" :: opt_pos) ->
       Request (Boundary (`Current, optional_position opt_pos))
-    | [`String "reset"] ->
-      Request (Reset None)
-    | [`String "reset"; `String "name"; `String fname] ->
-      Request (Reset (Some fname))
+    | (`String "reset" :: `String kind :: opt_name) ->
+      Request (Reset (ml_or_mli kind, optional_string opt_name))
     | [`String "refresh"] ->
-      Request (Refresh `Full)
-    | [`String "refresh"; `String "quick"] ->
-      Request (Refresh `Quick)
+      Request Refresh
     | [`String "errors"] ->
       Request Errors
     | (`String "dump" :: `String "env" :: opt_pos) ->
@@ -280,8 +289,10 @@ module Protocol_io = struct
     | Return (request, response) ->
       `List [`String "return";
       begin match request, response with
-        | Tell _, Some pos -> (pos_to_json pos)
-        | Tell _, None     -> `Null
+        | Tell _, (pos, path) ->
+          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
+        | Seek _, (pos, path) ->
+          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
         | Type_expr _, str -> `String str
         | Type_enclosing _, results ->
           `List (List.map json_of_type_loc results)
@@ -294,13 +305,12 @@ module Protocol_io = struct
         | Locate _, Some (Some file,pos) ->
           `Assoc ["file",`String file; "pos",pos_to_json pos]
         | Drop, position -> pos_to_json position
-        | Seek _, position -> pos_to_json position
         | Boundary _, Some {Location. loc_start; loc_end} ->
           `List (List.map pos_to_json [loc_start; loc_end])
         | Boundary _, None ->
           `Null
         | Reset _, () -> pos_to_json (make_pos (1,0))
-        | Refresh _, changed -> `Bool changed
+        | Refresh, changed -> `Bool changed
         | Errors, exns ->
           `List (List.map (fun (_,err) -> error_to_json err)
                           (Error_report.of_exns exns))

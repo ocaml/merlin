@@ -26,4 +26,13 @@
 
 )* }}} *)
 
-val dispatch : IO.io -> State.t -> 'a Protocol.request -> State.t * 'a
+open Merlin_lib
+
+type state = {
+  mutable project : Project.t;
+  mutable buffer : Buffer.t;
+}
+
+val new_state : unit -> state
+
+val dispatch : IO.io -> state -> 'a Protocol.request -> 'a

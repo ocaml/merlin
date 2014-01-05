@@ -28,7 +28,7 @@
 
 open MenhirLib.EngineTypes
 
-type witness = 
+type witness =
   | Zero : witness
   | Stack : int * ('s,'v) stack -> witness
 
@@ -39,28 +39,25 @@ let rec raw_depth stack =
   then 0
   else 1 + raw_depth stack.next
 
-let inc_depth depth 
-    ({next = ref_next} as ref) 
-    ({next = cur_next} as cur) =
+let rec find frame depth ({next = ref_next} as ref) =
   let (==) a b = Obj.repr a == Obj.repr b in
-  match () with
-  | () when cur == ref -> 
+  if ref == frame then
     depth
-  | () when cur == ref_next -> 
-    depth - 1
-  | () when cur_next == ref -> 
-    depth + 1
-  | () when cur_next == ref_next -> 
-    depth
-  | () when cur_next == ref_next.next -> 
-    depth - 1
-  | _ -> raw_depth cur
+  else if ref == ref_next then
+    raw_depth frame
+  else
+    find frame (depth - 1) ref_next
 
-let stack_depth ~hint stk = 
+let inc_depth depth ref ({next = cur_next} as cur) =
+  if cur == cur_next
+  then 0
+  else 1 + find cur_next depth ref
+
+let stack_depth ~hint stk =
   let d = match hint with
     | Zero ->
       raw_depth stk
-    | Stack (d,ref) -> 
+    | Stack (d,ref) ->
       inc_depth d ref stk
   in
   Stack (d,stk)

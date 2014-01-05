@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Std
+
 (** # Merlin's pipeline
   *
   * The toplevel read and write JSON objects on stdin/stdout
@@ -89,14 +91,14 @@ let signal behavior =
   with Invalid_argument "Sys.signal: unavailable signal" ->
     Sys.Signal_default
 
-let refresh_state_on_signal state f =
+(*let refresh_state_on_signal state f =
   let previous =
     signal (Sys.Signal_handle (fun _ ->
         try state := fst (State.quick_refresh_modules !state)
         with _ -> ()
       ))
   in
-  Misc.try_finally f (fun () -> ignore (signal previous))
+  Misc.try_finally f (fun () -> ignore (signal previous))*)
 
 let main_loop () =
   let input, output as io = IO.(lift (make ~input:stdin ~output:stdout)) in
@@ -106,10 +108,10 @@ let main_loop () =
         let state' = ref state in
         try
           let Protocol.Request request =
-            refresh_state_on_signal state' (fun () -> Stream.next input)
+            (*refresh_state_on_signal state' (fun () ->*) Stream.next input (* ) *)
           in
-          let state = State.validate_parser !state' in
-          let state, response = Command.dispatch io state request in
+          (*let state = State.validate_parser !state' in*)
+          let response = Command.dispatch io state request in
           state,
           Protocol.Return (request, response)
         with
@@ -120,10 +122,11 @@ let main_loop () =
        with exn -> output (Protocol.Exception exn));
       loop state
     in
-    loop {State. fixme = () }
+    loop (Command.new_state ())
   with Stream.Failure -> ()
 
 let () =
   ignore (signal Sys.Signal_ignore);
+  Option.iter Merlin_lib.chosen_protocol ~f:IO.select_frontend;
   main_loop ()
 

@@ -2,12 +2,11 @@ open Std
 open Misc
 
 module Lexer: sig
-  type item =
-    | Valid of Raw_parser.token
-    | Error of Raw_lexer.error
+  type keywords = Raw_lexer.keywords
 
-  (* Location of the last valid item *)
-  type t = item Location.loc
+  type t =
+    | Valid of Lexing.position * Raw_parser.token * Lexing.position
+    | Error of Raw_lexer.error * Location.t
 
   (** Create a new lexer *)
   val empty: filename:string -> t History.t
@@ -16,14 +15,14 @@ module Lexer: sig
       Returns the start position (end position of last valid token), and a
       lexing function that will append at most one token to the history at each
       call. *)
-  val start: Raw_lexer.keywords -> t History.t -> Lexing.position * (Lexing.lexbuf -> t History.t)
+  val start: keywords -> t History.t -> Lexing.position * (Lexing.lexbuf -> t History.t)
 end = struct
-  type item =
-    | Valid of Raw_parser.token
-    | Error of Raw_lexer.error
 
-  (* Location of the last valid item *)
-  type t = item Location.loc
+  type keywords = Raw_lexer.keywords
+
+  type t =
+    | Valid of Lexing.position * Raw_parser.token * Lexing.position
+    | Error of Raw_lexer.error * Location.t
 
   (** Create a new lexer *)
   let empty ~filename =
@@ -35,14 +34,7 @@ end = struct
         pos_cnum  = 0;
       }
     in
-    let loc =
-      { Location.
-        loc_start = pos;
-        loc_end = pos;
-        loc_ghost = true;
-      }
-    in
-    History.initial (Location.mkloc (Valid Raw_parser.ENTRYPOINT) loc)
+    History.initial (Valid (pos, Raw_parser.ENTRYPOINT, pos))
 
   (** Prepare for lexing.
       Returns the start position (end position of last valid token), and a
@@ -50,8 +42,8 @@ end = struct
       call. *)
   let start kw t =
     let rec aux = function
-      | History.One l | History.More ({Location.txt = Valid _} as l,_) ->
-        l.Location.loc.Location.loc_end
+      | History.One (Valid (_,_,p)) | History.More (Valid (_,_,p),_) -> p
+      | History.One (Error (_,l)) -> l.Location.loc_end
       | History.More (_,h) -> aux h
     in
     let pos = aux (History.head t) in
@@ -60,94 +52,11 @@ end = struct
     (fun buf ->
        Raw_lexer.set_extensions kw;
        let value =
-         try let token = Valid (Raw_lexer.token_with_comments buf) in
-           Location.mkloc token (Location.curr buf)
-         with Raw_lexer.Error (e,l) ->
-           Location.mkloc (Error e) l
+         try let token = Raw_lexer.token_with_comments buf in
+           Valid (buf.Lexing.lex_start_p, token, buf.Lexing.lex_curr_p)
+         with Raw_lexer.Error (e,l) -> Error (e,l)
        in
        t := History.insert value !t; !t)
-end
-
-module Parser : sig
-  type t
-  type frame
-
-  type state = Raw_parser.state
-
-  val implementation : state
-  val interface : state
-
-  val from : state -> t
-  val feed : Lexing.position * Raw_parser.token * Lexing.position
-           -> t -> [`Accept of Raw_parser.semantic_value | `Reject of Raw_parser.step Raw_parser.parser | `Step of t]
-
-  val stack : t -> frame option
-  val depth : frame -> int
-
-  val value : frame -> Raw_parser.semantic_value
-  val eq    : frame -> frame -> bool
-  val next  : frame -> frame option
-
-  val of_step : ?hint:MenhirUtils.witness -> Raw_parser.step Raw_parser.parser
-              -> [`Accept of Raw_parser.semantic_value | `Reject of Raw_parser.step Raw_parser.parser | `Step of t]
-  val to_step : t -> Raw_parser.feed Raw_parser.parser option
-end = struct
-  module P = Raw_parser
-  module E = MenhirLib.EngineTypes
-
-  type state = Raw_parser.state
-
-  type t =
-    | First of state
-    | Other of Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
-
-  type frame = int * (Raw_parser.state, Raw_parser.semantic_value) E.stack
-
-  let implementation = Raw_parser.implementation_state
-  let interface = Raw_parser.interface_state
-
-  let get_stack s = s.Raw_parser.env.E.stack
-
-  let rec of_step s depth =
-    match Raw_parser.step s with
-    | `Accept _ as a -> a
-    | `Reject -> `Reject s
-    | `Feed p ->
-      `Step (Other (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
-    | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
-
-  let from state = First state
-
-  let feed input p =
-    let p', depth = match p with
-      | First state ->
-         Raw_parser.initial state input, MenhirUtils.initial_depth
-      | Other (p, depth) -> Raw_parser.feed p input, depth
-    in
-    of_step p' depth
-
-  let frame_of d stack = if stack.E.next == stack then None else Some (d,stack)
-
-  let stack = function
-    | First _ -> None
-    | Other (s,w) -> frame_of (MenhirUtils.depth w) (get_stack s)
-
-  let stack_depth = function
-    | First _ -> 0
-    | Other (_,w) ->(MenhirUtils.depth w)
-
-  let depth (d,f) = d
-
-  let value (_,frame) = frame.E.semv
-  let eq (_,f) (_,f') = f == f'
-  let next (d,f) = frame_of (d - 1) f.E.next
-
-  let of_step ?(hint=MenhirUtils.initial_depth) step =
-    of_step step MenhirUtils.(stack_depth ~hint (get_stack (step)))
-
-  let to_step = function
-    | First _ -> None
-    | Other (step,_) -> Some step
 end
 
 (* Project configuration *)
@@ -182,12 +91,23 @@ module Project : sig
   (* Force recomputation of top modules *)
   val flush_global_modules : t -> unit
 
+  (* Enabled extensions *)
+  val extensions: t -> Extension.set
+
+  (* Lexer keywords for current config *)
+  val keywords: t -> Lexer.keywords
+
   (* Make global state point to current project *)
   val setup : t -> unit
+
+  (* TEMPORARY *)
+  val chosen_protocol : string option
 end = struct
 
   (** Mimic other OCaml tools entry point *)
   module Flags = struct
+
+    let chosen_protocol = ref None
 
     (* Parse arguments specified on commandline *)
     module Initial = Top_options.Make (struct
@@ -198,6 +118,8 @@ end = struct
         | None -> ()
         end;
         exit 0
+      let _protocol p =
+        chosen_protocol := Some p
     end)
 
     let () =
@@ -213,7 +135,10 @@ end = struct
     let err_log msg = Logger.error `dot_merlin msg
 
     module Incremental = Top_options.Make (struct
-      let _projectfind _ = err_log "unsupported flag \"-project-find\" (ignored)" ;
+        let _projectfind _ =
+          err_log "unsupported flag \"-project-find\" (ignored)"
+        let _protocol _ =
+          err_log "unsupported flag \"-protocol\" (ignored)"
     end)
 
     let enable_flags flags =
@@ -234,6 +159,7 @@ end = struct
       let exp_dirs = List.rev_append exp_dirs (Clflags.std_include_dir ()) in
       ref exp_dirs
   end
+  let chosen_protocol = !Flags.chosen_protocol
 
   type config = {
     mutable cfg_extensions : Extension.set;
@@ -397,7 +323,19 @@ end = struct
   let setup project =
     Config.load_path := project.build_path
 
+  (* Enabled extensions *)
+  let extensions project =
+    String.Set.union
+      project.dot_config.cfg_extensions
+      project.user_config.cfg_extensions
+
+  (* Lexer keywords for current config *)
+  let keywords project =
+    Extension.keywords (extensions project)
 end
+let chosen_protocol = Project.chosen_protocol
+
+module Parser = Merlin_parser
 
 module Buffer = struct
   type t = {
@@ -406,19 +344,23 @@ module Buffer = struct
     env: Env.cache;
     btype: Btype.cache;
     mutable lexer: Lexer.t History.t;
+    mutable parser: (Lexer.t * Parser.t) History.t;
   }
 
-  let create ?path project =
+  let create ?path project parser_state =
     let path, filename = match path with
       | None -> None, "*buffer*"
       | Some path -> Some (Filename.dirname path), Filename.basename path
     in
+    let lexer = Lexer.empty ~filename in
+    let parser = History.initial (History.focused lexer, Parser.from parser_state) in
     {
       path;
       project;
       env = Env.new_cache ();
       btype = Btype.new_cache ();
-      lexer = Lexer.empty ~filename;
+      lexer;
+      parser;
     }
 
   let setup buffer =
@@ -429,5 +371,28 @@ module Buffer = struct
     end;
     Env.set_cache buffer.env;
     Btype.set_cache buffer.btype
+
+  let lexer b = b.lexer
+  let parser b = snd (History.focused b.parser)
+
+  let start_lexing b =
+    Lexer.start (Project.keywords b.project) b.lexer
+
+  let update t l =
+    t.lexer <- l;
+    t.parser <- History.sync
+        ~check:(fun a (a',_) -> a == a')
+        ~init:(fun _ -> assert false)
+        ~fold:(fun l (_,p) ->
+            l,
+            match l with
+            | Lexer.Error _ -> p
+            | Lexer.Valid (s,t,e) ->
+              match Parser.feed (s,t,e) p with
+              | `Accept _ | `Reject _ -> p
+              | `Step p' -> p')
+        t.lexer
+        (Some t.parser);
+    parser t
 end
 

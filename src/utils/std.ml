@@ -73,6 +73,20 @@ module List = struct
     | x :: xs when f x -> drop_while ~f xs
     | xs -> xs
 
+  let rec take_n acc n = function
+    | x :: xs when n > 0 -> take_n (x :: acc) (n - 1) xs
+    | _ -> List.rev acc
+  let take_n n l = take_n [] n l
+
+  let rec drop_n n = function
+    | x :: xs when n > 0 -> drop_n (n - 1) xs
+    | xs -> xs
+
+  let rec split_n acc n = function
+    | x :: xs when n > 0 -> split_n (x :: acc) (n - 1) xs
+    | xs -> List.rev acc, xs
+  let split_n n l = split_n [] n l
+
   module Lazy = struct
     type 'a t =
       | Nil

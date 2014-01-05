@@ -1,5 +1,7 @@
 open Std
+open Merlin_lib
 
+type path = Parser.Path.path
 type position = Lexing.position
 
 type completion = {
@@ -12,8 +14,8 @@ type completion = {
 
 type _ request =
   | Tell
-    :  [`Definitions of int | `Source of string | `More of string | `End]
-    -> position option request
+    : string
+    -> (position * path)  request
   | Type_expr
     :  string * position option
     -> string request
@@ -29,17 +31,16 @@ type _ request =
   | Drop
     :  position request
   | Seek
-    :  [`Position|`End|`Maximize_scope|`Before of position|`Exact of position]
-    -> position request
+    :  [`Position|`End|`Before of position|`Exact of position]
+    -> (position * path) request
   | Boundary
     :  [`Prev|`Next|`Current] * position option
     -> Location.t option request
   | Reset
-    :  string option
+    :  [`ML | `MLI] * string option
     -> unit request
   | Refresh
-    :  [`Full|`Quick]
-    -> bool request
+    :  bool request
   | Errors
     :  exn list request
   | Dump
@@ -67,13 +68,14 @@ type _ request =
      * [`Add|`Rem]
      * string list
     -> bool request
+  | Path_reset
+    :  unit request
   | Path_list
     :  [`Build|`Source]
     -> string list request
-  | Path_reset
-    :  unit request
   | Project_load
-    :  [`File|`Find] * string
+    :  [`File|`Find]
+     * string
     -> (string list * [`Ok | `Failures of (string * exn) list]) request
 
 type a_request = Request : 'a request -> a_request

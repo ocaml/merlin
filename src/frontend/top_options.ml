@@ -10,7 +10,10 @@ let print_version_num () =
 let unexpected_argument s =
   failwith ("Unexpected argument: " ^ s)
 
-module Make (Bootstrap : sig val _projectfind : string -> unit end) = struct
+module Make (Bootstrap : sig
+               val _projectfind : string -> unit
+               val _protocol : string -> unit
+             end) = struct
   include Main_args.Make_top_options (struct
     let set r () = r := true
     let clear r () = r := false
@@ -50,7 +53,6 @@ module Make (Bootstrap : sig val _projectfind : string -> unit end) = struct
     let _w s = Warnings.parse_options false s
     let _warn_error s = Warnings.parse_options true s
     let _warn_help = Warnings.help_warnings
-    let _protocol = IO.select_frontend
 
     let _ignore_sigint () =
       try ignore (Sys.(signal sigint Signal_ignore))

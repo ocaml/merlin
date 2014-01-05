@@ -1,4 +1,5 @@
-true: use_menhir, use_menhir_table
+true: use_menhir, use_new_menhir
 
 <src/**/*>: package(yojson,unix,findlib,menhirLib)
 <src/ocaml*/outline_parser.*>: ext_tokens
+<src/kernel/raw_lexer.mll>: use_lexer_refill_handler
