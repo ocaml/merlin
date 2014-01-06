@@ -11,13 +11,9 @@
 (***********************************************************************)
 
 open Std
+open Format
 
-(* The lexical analyzer *)
-
-val init : unit -> unit
-val token: Lexing.lexbuf -> Raw_parser.token
-val skip_sharp_bang: Lexing.lexbuf -> unit
-
+(* Possible errors *)
 type error =
   | Illegal_character of char
   | Illegal_escape of string
@@ -26,31 +22,34 @@ type error =
   | Unterminated_string_in_comment of Location.t
   | Keyword_as_label of string
   | Literal_overflow of string
-;;
+val report_error : formatter -> error -> unit
 
-exception Error of error * Location.t
-
-open Format
-
+(* Keywords, manipulated by extensions *)
 type keywords
 val keywords: (string * Raw_parser.token) list -> keywords
 
-val set_extensions : keywords -> unit
-val report_error : formatter -> error -> unit
+(* Monad in which the lexer evaluates *)
+type 'a result =
+  | Return of 'a
+  | Refill of (unit -> 'a result)
+  | Error of error * Location.t
 
-val in_comment : unit -> bool;;
-val in_string : unit -> bool;;
+type state = {
+  keywords: keywords;
+  buffer: Buffer.t;
+  mutable string_start_loc: Location.t;
+  mutable comment_start_loc: Location.t list;
+}
 
-val print_warnings : bool ref
+(* The lexical analyzer *)
+
+val skip_sharp_bang: Lexing.lexbuf -> unit result
+val token: state -> Lexing.lexbuf -> Raw_parser.token result
 
 (* Comments are filtered out from the token rule and stored in a global
    variable. *)
 type comment = string * Location.t
 
-(* If the variable is not None, each new comment will be prepended to the
- * variable *)
-val comments : comment list ref option fluid
-
 (* If you want to get the raw output, including comments, from the lexer, use
    the [token_with_comments] entry point. *)
-val token_with_comments : Lexing.lexbuf -> Raw_parser.token
+val token_without_comments : state -> Lexing.lexbuf -> Raw_parser.token result
