@@ -61,7 +61,8 @@ end = struct
     (* Result *)
     mutable history: item History.t;
     (* Input buffer *)
-    refill: string option ref;
+    refill: string option ref; (* Input not yet sent to lexer *)
+    refill_empty: bool ref;    (* Lexer internal buffer status *)
     (* Lexer data *)
     state: Raw_lexer.state;
     lexbuf: Lexing.lexbuf;
@@ -74,8 +75,8 @@ end = struct
       Returns the start position (end position of last valid token), and a
       lexing function that will append at most one token to the history at each
       call. *)
-  let make_lexbuf refill position =
-    Lexing.from_strings ~position ""
+  let make_lexbuf empty refill position =
+    Lexing.from_strings ~position ~empty ""
       (fun () ->
          match !refill with
          | Some s -> refill := None; s
@@ -87,11 +88,12 @@ end = struct
       | Error (_,l) -> l.Location.loc_end
     in
     let refill = ref None in
-    let lexbuf = make_lexbuf refill position in
+    let refill_empty = ref true in
+    let lexbuf = make_lexbuf refill_empty refill position in
     {
+      history;
       state = Raw_lexer.make keywords;
-      resume = None;
-      history; refill; lexbuf;
+      resume = None; refill; refill_empty; lexbuf;
     }
 
   let position t = Lexing.immediate_pos t.lexbuf
@@ -104,7 +106,8 @@ end = struct
       in
       let rec aux = function
         (* Lexer interrupted, there is data to refill: continue. *)
-        | Raw_lexer.Refill f when !(t.refill) <> None ->
+        | Raw_lexer.Refill f
+          when !(t.refill) <> None || not !(t.refill_empty) ->
           aux (f ())
         (* Lexer interrupted, nothing to refill, return to caller. *)
         | Raw_lexer.Refill r ->
@@ -444,35 +447,40 @@ end = struct
   type step = {
     token: Lexer.item;
     parser: Parser.t;
-    parser_path: Parser.Path.t;
+    path: Parser.Path.t;
   }
 
   type t = {
+    kind: Parser.state;
     path: string option;
     project : Project.t;
-    env: Env.cache;
-    btype: Btype.cache;
     mutable keywords: Lexer.keywords;
     mutable lexer: Lexer.item History.t;
     mutable steps: step History.t;
+    env: Env.cache;
+    btype: Btype.cache;
   }
 
-  let create ?path project parser_state =
+  let initial_step kind token =
+    let input = match token with
+      | Lexer.Valid (s,t,e) -> s,t,e
+      | _ -> assert false
+    in
+    {
+      token;
+      parser = Parser.from kind input;
+      path = Parser.Path.empty;
+    }
+
+  let create ?path project kind =
     let path, filename = match path with
       | None -> None, "*buffer*"
       | Some path -> Some (Filename.dirname path), Filename.basename path
     in
     let lexer = Lexer.empty ~filename in
-    let step =
-      {
-        token = History.focused lexer;
-        parser = Parser.from parser_state;
-        parser_path = Parser.Path.empty;
-      }
-    in
-    let steps = History.initial step in
     {
-      path; project; lexer; steps;
+      path; project; lexer; kind;
+      steps = History.initial (initial_step kind (History.focused lexer));
       keywords = Project.keywords project;
       env = Env.new_cache ();
       btype = Btype.new_cache ();
@@ -490,29 +498,34 @@ end = struct
   let lexer b = b.lexer
   let step b = History.focused b.steps
   let parser b = (step b).parser
-  let path b = Parser.Path.get (step b).parser_path
+  let path b = Parser.Path.get (step b).path
 
   let update t l =
     t.lexer <- l;
     t.steps <- History.sync
         ~check:(fun a a' -> a == a'.token)
-        ~init:(fun _ -> assert false)
+        ~init:(initial_step t.kind)
         ~fold:(fun token step ->
             let result =
               match token with
               | Lexer.Error _ -> {step with token}
               | Lexer.Valid (s,t,e) ->
-                prerr_endline (Parser.Values.Token.to_string t);
+                Logger.debugf `internal
+                  (fun ppf t -> Format.fprintf ppf "received %s"
+                      (Parser.Values.Token.to_string t))
+                  t;
                 match Parser.feed (s,t,e) step.parser with
-                | `Accept _ -> prerr_endline "Accept"; {step with token}
-                | `Reject _ -> prerr_endline "Reject"; {step with token}
+                | `Accept _ ->
+                  Logger.debug `internal "parser accepted";
+                  {step with token}
+                | `Reject _ ->
+                  Logger.debug `internal "parser rejected";
+                  {step with token}
                 | `Step parser ->
-                  {
-                    token; parser;
-                    parser_path = Parser.Path.update' parser step.parser_path
-                  }
+                  let path = Parser.Path.update' parser step.path in
+                  { token; parser; path }
             in
-            Parser.dump Format.std_formatter result.parser;
+            Logger.debugf `internal Parser.dump result.parser;
             result
           )
         t.lexer

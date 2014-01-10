@@ -10,11 +10,11 @@ type state = Raw_parser.state
 val implementation : state
 val interface : state
 
-val from : state -> t
+val from : state -> Lexing.position * Raw_parser.token * Lexing.position -> t
 val feed : Lexing.position * Raw_parser.token * Lexing.position
-  -> t
-  -> [ `Accept of Raw_parser.semantic_value | `Step of t
-     | `Reject of Raw_parser.step Raw_parser.parser ]
+        -> t
+        -> [ `Accept of Raw_parser.semantic_value | `Step of t
+           | `Reject of Raw_parser.step Raw_parser.parser ]
 
 val dump : Format.formatter -> t -> unit
 

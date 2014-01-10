@@ -241,7 +241,7 @@ module Lexing = struct
     buf.lex_abs_pos <- (p.pos_cnum - buf.lex_curr_pos);
     buf.lex_curr_p <- p
 
-  let from_strings ?position source refill =
+  let from_strings ?empty ?position source refill =
     let pos = ref 0 in
     let len = ref (String.length source) in
     let source = ref source in
@@ -261,6 +261,7 @@ module Lexing = struct
       else begin
           String.blit !source !pos buf 0 count;
           pos := !pos + count;
+          (match empty with None -> () | Some r -> r := !pos >= !len);
           count
         end
     in

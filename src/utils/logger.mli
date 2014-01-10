@@ -1,3 +1,9 @@
+(* Verbosity *)
+type level =
+  | Error
+  | Info
+  | Debug
+
 (** A logging module. *)
 
 module Section : sig
@@ -11,6 +17,7 @@ module Section : sig
 
   val of_string : string -> t
   val to_string : t -> string
+  val enabled : level -> t -> bool
 end
 
 val set_default_destination : string -> unit
@@ -29,12 +36,19 @@ val forget : Section.t -> unit
 (** [forget section] stops the monitoring of [section] *)
 
 val log : Section.t -> ?prefix:string -> string -> unit
+val logf : Section.t -> ?prefix:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
 (** [log section msg] will output [msg] on the channel dedicated to [section],
     if it is being monitored. *)
 
 val error : Section.t -> string -> unit
+val errorf : Section.t -> (Format.formatter -> 'a -> unit) -> 'a -> unit
 (** [error section msg] behaves as [log] if [section] is being monitored, but
     prints to the default_destination (if it is set) otherwise. *)
+
+val debug : Section.t -> string -> unit
+val debugf : Section.t -> (Format.formatter -> 'a -> unit) -> 'a -> unit
+(** Use [debug section msg] for mostly unimportant messages, those will be
+    displayed only if verbose. *)
 
 val shutdown : unit -> unit
 (** Closes all the open channels, unsets the default destination and stops all

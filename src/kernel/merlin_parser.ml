@@ -7,9 +7,7 @@ module E = MenhirLib.EngineTypes
 
 type state = Raw_parser.state
 
-type t =
-  | First of state
-  | Other of Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
+type t = Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
 type parser = t
 
 type frame = int * (Raw_parser.state, Raw_parser.semantic_value) E.stack
@@ -23,29 +21,22 @@ let rec of_step s depth =
   match Raw_parser.step s with
   | `Accept _ as a -> a
   | `Reject -> `Reject s
-  | `Feed p ->
-    `Step (Other (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
+  | `Feed p -> `Step (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
   | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
-let from state = First state
+let from state input =
+  match of_step (Raw_parser.initial state input) MenhirUtils.initial_depth with
+  | `Step p -> p
+  | _ -> assert false
 
-let feed input p =
-  let p', depth = match p with
-    | First state ->
-      Raw_parser.initial state input, MenhirUtils.initial_depth
-    | Other (p, depth) -> Raw_parser.feed p input, depth
-  in
+let feed input (p, depth) =
+  let p' = Raw_parser.feed p input in
   of_step p' depth
 
 let frame_of d stack = if stack.E.next == stack then None else Some (d,stack)
 
-let stack = function
-  | First _ -> None
-  | Other (s,w) -> frame_of (MenhirUtils.depth w) (get_stack s)
-
-let stack_depth = function
-  | First _ -> 0
-  | Other (_,w) ->(MenhirUtils.depth w)
+let stack_depth (_,w) = MenhirUtils.depth w - 1
+let stack (s,_ as stk) = frame_of (stack_depth stk) (get_stack s)
 
 let depth (d,f) = d
 
@@ -56,13 +47,11 @@ let next (d,f) = frame_of (d - 1) f.E.next
 let of_step ?(hint=MenhirUtils.initial_depth) step =
   of_step step MenhirUtils.(stack_depth ~hint (get_stack (step)))
 
-let to_step = function
-  | First _ -> None
-  | Other (step,_) -> Some step
+let to_step (step,_) = Some step
 
 let dump ppf t =
   let rec aux ppf = function
-    | None -> Format.fprintf ppf "[]"
+    | None -> Format.fprintf ppf "[]\n%!"
     | Some frame ->
       Format.fprintf ppf "(%d, %s) :: %a"
         (depth frame) (Values.Value.to_string (value frame))
@@ -87,13 +76,18 @@ struct
     let t = List.drop_n (d' - depth frame) t in
     let rec seek acc f =
       if depth f > d' then
-        let f' = match next f with None -> assert false | Some f -> f in
-        seek (f :: acc) f'
+        begin
+          Logger.debugf `internal
+            (fun ppf (a,b) ->
+               Format.fprintf ppf "depth f = %d > d' = %d\n%!" a b)
+            (depth f, d');
+          let f' = match next f with None -> assert false | Some f -> f in
+          seek (f :: acc) f'
+        end
       else acc, f
     in
     let worklist, frame = seek [] frame in
     let rec rewind acc f = function
-      | [] -> assert false
       | (_, f') :: ts when not (eq f' f) ->
         begin match next f with
           | None ->
