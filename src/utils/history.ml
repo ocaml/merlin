@@ -107,6 +107,8 @@ let modify f = function
 let append f {head = (One x | More (x,_) as head); position; _} =
   {head = More (f x, head); position = position + 1; tail = []}
 
+let drop_tail t = {t with tail = []}
+
 let reconstruct ~init ~fold h =
   let f b x' = More (fold x' (nhd b), b) in
   let rec past tail = function

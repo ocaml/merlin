@@ -13,8 +13,8 @@ module type S = sig
   val to_terminal: t -> terminal
   val of_terminal: terminal -> t option
 
-  val index_of_terminal: terminal -> index option
-  val terminal_of_index: index -> terminal
+  (*val index_of_terminal: terminal -> index option*)
+(*  val terminal_of_index: index -> terminal*)
 
   val to_string: t -> string
 
@@ -492,7 +492,7 @@ struct
     | Nonterminal t -> Some t
     | _ -> None
 
-  let all' = Array.map to_terminal all
+  (*let all' = Array.map to_terminal all*)
 
   type index = int
   let to_index t = fst (!index_table).((to_terminal t :> int))
@@ -503,7 +503,7 @@ struct
     | idx, Nonterminal _ -> Some idx
     | _ -> None
 
-  let terminal_of_index t = all'.(t)
+  (*let terminal_of_index t = all'.(t)*)
 
   let iter f =
     for i = 0 to Array.length all - 1 do
@@ -547,7 +547,7 @@ end = struct
   let of_terminal (t : terminal) = snd (!index_table).((t :> int))
 end
 
-let max_terminal = Array.fold_left
+(*let max_terminal = Array.fold_left
     (fun acc v -> max acc (Value.to_terminal v))
     (Value.to_terminal Bottom)
     Value.all
@@ -561,4 +561,4 @@ let () =
     (fun i v -> table.((Nonterminal.to_terminal v :> int)) <- (i, Nonterminal v))
     Nonterminal.all;
   index_table := table
-
+*)

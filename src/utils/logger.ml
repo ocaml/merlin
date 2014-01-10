@@ -5,6 +5,7 @@ module Section = struct
     | `locate
     | `completion
     | `dot_merlin
+    | `internal
   ]
 
   let to_string = function
@@ -12,12 +13,14 @@ module Section = struct
     | `locate -> "locate"
     | `completion -> "completion"
     | `dot_merlin -> ".merlin"
+    | `internal -> "internal"
 
   let of_string = function
     | "protocol" -> `protocol
     | "locate" -> `locate
     | "completion" -> `completion
     | ".merlin" -> `dot_merlin
+    | "internal" -> `internal
     | x -> invalid_arg ("unknown section: " ^ x)
 end
 

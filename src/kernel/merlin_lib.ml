@@ -4,27 +4,48 @@ open Misc
 module Lexer: sig
   type keywords = Raw_lexer.keywords
 
-  type t =
+  (* Lexing is split in two steps.
+
+     First the list of tokens is represented by a [item History.t].
+     It's a pure value, independent of the context.
+
+     Second the process of lexing is represented by values of type [t].  You
+     resume the process from an arbitrary list of tokens, feeding it with one
+     or more string, and you can extract the current list of tokens and cursor
+     position at any time.
+     Beware, the cursor may be in the middle of a not yet determined token.
+
+     The process ultimately ends when fed with the empty string, representing
+     EOF.
+  *)
+
+  (* Lexing step *)
+  type item =
     | Valid of Lexing.position * Raw_parser.token * Lexing.position
     | Error of Raw_lexer.error * Location.t
 
-  (** Create a new lexer *)
-  val empty: filename:string -> t History.t
+  (** Create an empty list new lexer *)
+  val empty: filename:string -> item History.t
 
   (** Prepare for lexing.
       Returns the start position (end position of last valid token), and a
       lexing function that will append at most one token to the history at each
       call. *)
-  val start: keywords -> t History.t -> Lexing.position * (Lexing.lexbuf -> t History.t)
+  type t
+  val history: t -> item History.t
+  val start: keywords -> item History.t -> t
+  val position: t -> Lexing.position
+  val feed: t -> string -> bool
+  val eof: t -> bool
 end = struct
-
   type keywords = Raw_lexer.keywords
 
-  type t =
+  (* Lexing step *)
+  type item =
     | Valid of Lexing.position * Raw_parser.token * Lexing.position
     | Error of Raw_lexer.error * Location.t
 
-  (** Create a new lexer *)
+  (** Create an empty list new lexer *)
   let empty ~filename =
     let pos =
       { Lexing.
@@ -36,27 +57,90 @@ end = struct
     in
     History.initial (Valid (pos, Raw_parser.ENTRYPOINT, pos))
 
+  type t = {
+    (* Result *)
+    mutable history: item History.t;
+    (* Input buffer *)
+    refill: string option ref;
+    (* Lexer data *)
+    state: Raw_lexer.state;
+    lexbuf: Lexing.lexbuf;
+    mutable resume: (unit -> Raw_parser.token Raw_lexer.result) option;
+  }
+
+  let history t = t.history
+
   (** Prepare for lexing.
       Returns the start position (end position of last valid token), and a
       lexing function that will append at most one token to the history at each
       call. *)
-  let start kw t =
-    let rec aux = function
-      | History.One (Valid (_,_,p)) | History.More (Valid (_,_,p),_) -> p
-      | History.One (Error (_,l)) -> l.Location.loc_end
-      | History.More (_,h) -> aux h
+  let make_lexbuf refill position =
+    Lexing.from_strings ~position ""
+      (fun () ->
+         match !refill with
+         | Some s -> refill := None; s
+         | None -> "")
+
+  let start keywords history =
+    let position = match History.focused history with
+      | Valid (_,_,p) -> p
+      | Error (_,l) -> l.Location.loc_end
     in
-    let pos = aux (History.head t) in
-    let t = ref t in
-    pos,
-    (fun buf ->
-       Raw_lexer.set_extensions kw;
-       let value =
-         try let token = Raw_lexer.token_with_comments buf in
-           Valid (buf.Lexing.lex_start_p, token, buf.Lexing.lex_curr_p)
-         with Raw_lexer.Error (e,l) -> Error (e,l)
-       in
-       t := History.insert value !t; !t)
+    let refill = ref None in
+    let lexbuf = make_lexbuf refill position in
+    {
+      state = Raw_lexer.make keywords;
+      resume = None;
+      history; refill; lexbuf;
+    }
+
+  let position t = Lexing.immediate_pos t.lexbuf
+
+  let feed t str =
+    if not t.lexbuf.Lexing.lex_eof_reached then begin
+      t.refill := Some str;
+      let append item =
+        t.history <- History.insert item t.history
+      in
+      let rec aux = function
+        (* Lexer interrupted, there is data to refill: continue. *)
+        | Raw_lexer.Refill f when !(t.refill) <> None ->
+          aux (f ())
+        (* Lexer interrupted, nothing to refill, return to caller. *)
+        | Raw_lexer.Refill r ->
+          t.resume <- Some r
+        (* EOF Reached: notify EOF to parser, stop now *)
+        | Raw_lexer.Return Raw_parser.EOF ->
+          begin match History.focused t.history with
+            | Valid (_,Raw_parser.EOF,_) -> ()
+            | _ ->
+              append (Valid (t.lexbuf.Lexing.lex_start_p,
+                             Raw_parser.EOF,
+                             t.lexbuf.Lexing.lex_curr_p));
+          end
+        | Raw_lexer.Return token ->
+          append (Valid (t.lexbuf.Lexing.lex_start_p,
+                         token,
+                         t.lexbuf.Lexing.lex_curr_p));
+          continue ()
+        | Raw_lexer.Error (e,l) ->
+          append (Error (e,l));
+          continue ()
+      and continue () =
+        aux (Raw_lexer.token t.state t.lexbuf)
+      in
+      begin match t.resume with
+      | Some f ->
+        t.resume <- None;
+        aux (f ())
+      | None -> continue ()
+      end;
+      true
+    end
+    else
+      false
+
+  let eof t = t.lexbuf.Lexing.lex_eof_reached
 end
 
 (* Project configuration *)
@@ -201,6 +285,8 @@ end = struct
     cmt_path    : Path_list.t;
 
     mutable global_modules: string list option;
+
+    mutable keywords_cache : Lexer.keywords * Extension.set;
   }
 
   let flush_global_modules project =
@@ -252,6 +338,7 @@ end = struct
           Flags.default_path;
         ];
       global_modules = None;
+      keywords_cache = Raw_lexer.keywords [], String.Set.empty;
     }
 
   let source_path p = p.source_path
@@ -331,20 +418,43 @@ end = struct
 
   (* Lexer keywords for current config *)
   let keywords project =
-    Extension.keywords (extensions project)
+    let set = extensions project in
+    match project.keywords_cache with
+    | kw, set' when String.Set.equal set set' -> kw
+    | _ ->
+      let kw = Extension.keywords set in
+      project.keywords_cache <- kw, set;
+      kw
 end
 let chosen_protocol = Project.chosen_protocol
 
 module Parser = Merlin_parser
 
-module Buffer = struct
+module Buffer : sig
+  type t
+  val create: ?path:string -> Project.t -> Parser.state -> t
+
+  val lexer: t -> Lexer.item History.t
+  val update: t -> Lexer.item History.t -> Parser.t
+  val start_lexing: t -> Lexer.t
+
+  val parser: t -> Parser.t
+  val path: t -> Parser.path
+end = struct
+  type step = {
+    token: Lexer.item;
+    parser: Parser.t;
+    parser_path: Parser.Path.t;
+  }
+
   type t = {
     path: string option;
     project : Project.t;
     env: Env.cache;
     btype: Btype.cache;
-    mutable lexer: Lexer.t History.t;
-    mutable parser: (Lexer.t * Parser.t) History.t;
+    mutable keywords: Lexer.keywords;
+    mutable lexer: Lexer.item History.t;
+    mutable steps: step History.t;
   }
 
   let create ?path project parser_state =
@@ -353,14 +463,19 @@ module Buffer = struct
       | Some path -> Some (Filename.dirname path), Filename.basename path
     in
     let lexer = Lexer.empty ~filename in
-    let parser = History.initial (History.focused lexer, Parser.from parser_state) in
+    let step =
+      {
+        token = History.focused lexer;
+        parser = Parser.from parser_state;
+        parser_path = Parser.Path.empty;
+      }
+    in
+    let steps = History.initial step in
     {
-      path;
-      project;
+      path; project; lexer; steps;
+      keywords = Project.keywords project;
       env = Env.new_cache ();
       btype = Btype.new_cache ();
-      lexer;
-      parser;
     }
 
   let setup buffer =
@@ -373,26 +488,50 @@ module Buffer = struct
     Btype.set_cache buffer.btype
 
   let lexer b = b.lexer
-  let parser b = snd (History.focused b.parser)
-
-  let start_lexing b =
-    Lexer.start (Project.keywords b.project) b.lexer
+  let step b = History.focused b.steps
+  let parser b = (step b).parser
+  let path b = Parser.Path.get (step b).parser_path
 
   let update t l =
     t.lexer <- l;
-    t.parser <- History.sync
-        ~check:(fun a (a',_) -> a == a')
+    t.steps <- History.sync
+        ~check:(fun a a' -> a == a'.token)
         ~init:(fun _ -> assert false)
-        ~fold:(fun l (_,p) ->
-            l,
-            match l with
-            | Lexer.Error _ -> p
-            | Lexer.Valid (s,t,e) ->
-              match Parser.feed (s,t,e) p with
-              | `Accept _ | `Reject _ -> p
-              | `Step p' -> p')
+        ~fold:(fun token step ->
+            let result =
+              match token with
+              | Lexer.Error _ -> {step with token}
+              | Lexer.Valid (s,t,e) ->
+                prerr_endline (Parser.Values.Token.to_string t);
+                match Parser.feed (s,t,e) step.parser with
+                | `Accept _ -> prerr_endline "Accept"; {step with token}
+                | `Reject _ -> prerr_endline "Reject"; {step with token}
+                | `Step parser ->
+                  {
+                    token; parser;
+                    parser_path = Parser.Path.update' parser step.parser_path
+                  }
+            in
+            Parser.dump Format.std_formatter result.parser;
+            result
+          )
         t.lexer
-        (Some t.parser);
+        (Some t.steps);
     parser t
+
+  let start_lexing b =
+    let kw = Project.keywords b.project in
+    if kw != b.keywords then begin
+      b.keywords <- kw;
+      ignore (update b (History.drop_tail (History.seek_backward
+                                             (fun _ -> true) b.lexer)))
+    end else begin
+      ignore (update b (History.seek_backward
+                          (function ( Lexer.Valid (_,Raw_parser.EOF,_)
+                                    | Lexer.Error _) -> true
+                                  | _ -> false)
+                          b.lexer))
+    end;
+    Lexer.start kw b.lexer
 end
 

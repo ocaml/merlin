@@ -68,6 +68,9 @@ val modify : ('a -> 'a) -> 'a t -> 'a t
 
 val append : ('a -> 'a) -> 'a t -> 'a t
 
+(* Drop tail of history *)
+val drop_tail : 'a t -> 'a t
+
 (* [hb' = reconstruct ~init ~fold ha]
    where
      [ha = (a_0, a_1, a_2, ...)]

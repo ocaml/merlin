@@ -28,10 +28,7 @@
 
 open Merlin_lib
 
-type state = {
-  mutable project : Project.t;
-  mutable buffer : Buffer.t;
-}
+type state
 
 val new_state : unit -> state
 

@@ -6,6 +6,7 @@ module Section : sig
     | `locate
     | `completion
     | `dot_merlin
+    | `internal
   ]
 
   val of_string : string -> t

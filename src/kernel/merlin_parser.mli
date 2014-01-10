@@ -2,6 +2,7 @@
 module Values : module type of Merlin_parser_values
 
 type t
+type parser = t
 type frame
 
 type state = Raw_parser.state
@@ -14,6 +15,8 @@ val feed : Lexing.position * Raw_parser.token * Lexing.position
   -> t
   -> [ `Accept of Raw_parser.semantic_value | `Step of t
      | `Reject of Raw_parser.step Raw_parser.parser ]
+
+val dump : Format.formatter -> t -> unit
 
 val stack : t -> frame option
 val depth : frame -> int
@@ -37,6 +40,8 @@ sig
   val empty : t
   val update : frame -> t -> t
   val value : t -> P.t
+
+  val update' : parser -> t -> t
 end
 
 module Path : sig
@@ -51,4 +56,8 @@ module Path : sig
 
   val get : t -> path
   val length : t -> int
+
+  val update' : parser -> t -> t
 end
+type path = Path.path
+

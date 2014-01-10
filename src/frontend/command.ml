@@ -35,18 +35,27 @@ open Merlin_lib
 type state = {
   mutable project : Project.t;
   mutable buffer : Buffer.t;
+  mutable lexer : Lexer.t option;
 }
 
 let new_state () =
   let project = Project.create () in
   let buffer = Buffer.create project Parser.implementation in
-  { project; buffer }
+  { project; buffer; lexer = None }
 
 let dispatch (i,o : IO.io) (state : state) =
   fun (type a) (request : a request) ->
   (match request with
   | (Tell source : a request) ->
-    failwith "TODO"
+    let lexer = match state.lexer with
+      | Some lexer when not (Lexer.eof lexer) -> lexer
+      | None | Some _ ->
+      let lexer = Buffer.start_lexing state.buffer in
+      state.lexer <- Some lexer; lexer
+    in
+    assert (Lexer.feed lexer source);
+    ignore (Buffer.update state.buffer (Lexer.history lexer));
+    Lexer.position lexer, Buffer.path state.buffer
 
   | (Type_expr (source, None) : a request) ->
     failwith "TODO"

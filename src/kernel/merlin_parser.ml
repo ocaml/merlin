@@ -10,6 +10,7 @@ type state = Raw_parser.state
 type t =
   | First of state
   | Other of Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
+type parser = t
 
 type frame = int * (Raw_parser.state, Raw_parser.semantic_value) E.stack
 
@@ -59,6 +60,16 @@ let to_step = function
   | First _ -> None
   | Other (step,_) -> Some step
 
+let dump ppf t =
+  let rec aux ppf = function
+    | None -> Format.fprintf ppf "[]"
+    | Some frame ->
+      Format.fprintf ppf "(%d, %s) :: %a"
+        (depth frame) (Values.Value.to_string (value frame))
+        aux (next frame)
+  in
+  aux ppf (stack t)
+
 module Integrate
     (P : sig
        type t
@@ -93,6 +104,11 @@ struct
     in
     let worklist, t = rewind worklist frame t in
     List.fold_left' ~f:(fun f t -> ((P.frame f (value t), f) :: t)) ~init:t worklist
+
+  let update' p t =
+    match stack p with
+    | None -> empty
+    | Some frame -> update frame t
 end
 
 module Path : sig
@@ -104,6 +120,7 @@ module Path : sig
   type t
   val empty : t
   val update : frame -> t -> t
+  val update' : parser -> t -> t
 
   val get : t -> path
   val length : t -> int
@@ -131,9 +148,9 @@ end = struct
         items l p
       | _ -> t
   end
-  module I = Integrate (P)
-  include I
+  include Integrate (P)
 
   let get p = snd (value p)
   let length p = fst (value p)
 end
+type path = Path.path

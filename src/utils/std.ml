@@ -290,6 +290,11 @@ module Lexing = struct
       t
 
   let const_lexer (token : 'a) (_ : lexbuf) : 'a = token
+
+  (* Current position in lexer, even if the buffer is in the middle of a refill
+     operation *)
+  let immediate_pos buf =
+    {buf.lex_curr_p with pos_cnum = buf.lex_abs_pos + buf.lex_curr_pos}
 end
 
 module Stream = struct

@@ -41,6 +41,8 @@ type state = {
   mutable comment_start_loc: Location.t list;
 }
 
+val make: keywords -> state
+
 (* The lexical analyzer *)
 
 val skip_sharp_bang: Lexing.lexbuf -> unit result

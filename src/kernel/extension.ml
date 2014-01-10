@@ -184,22 +184,27 @@ let keywords set =
   let all = String.Set.fold add_kw set [] in
   Raw_lexer.keywords all
 
-(* Cache last keywords *)
-let keywords =
-  let last = ref None in
-  fun set ->
-    match !last with
-    | Some (set',kw) when set == set' -> kw
-    | Some (set',kw) when String.Set.equal set set' ->
-      last := Some (set,kw); kw
-    | _ ->
-      let kw = keywords set in
-      last := Some (set,kw); kw
-
 (* Register extensions in typing environment *)
-let parse_sig str =
+let parse_sig =
+  let keywords = Raw_lexer.keywords [] in fun str ->
   let buf = Lexing.from_string str in
-  Raw_parser.interface Raw_lexer.token buf
+  let state = Raw_lexer.make keywords in
+  let rec lex parser = function
+    | Raw_lexer.Error (e,l) ->
+      assert false
+    | Raw_lexer.Refill f ->
+      lex parser (f ())
+    | Raw_lexer.Return token ->
+      parse (`Step (Raw_parser.feed parser
+                      (Lexing.dummy_pos,token,Lexing.dummy_pos)))
+  and parse = function
+    | `Step s -> parse (Raw_parser.step s)
+    | `Feed p -> lex p (Raw_lexer.token_without_comments state buf)
+    | `Accept (Raw_parser.Nonterminal (Raw_parser.NT'interface sg)) -> sg
+    | `Reject | `Accept _ -> assert false
+  in
+  parse (`Step (Raw_parser.initial Raw_parser.interface_state
+                  (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))
 
 let type_sig env sg =
   let sg = Typemod.transl_signature env sg in

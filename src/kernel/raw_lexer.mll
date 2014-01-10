@@ -15,9 +15,9 @@
 (* The lexer definition *)
 
 {
-open Lexing
 open Std
 open Misc
+open Lexing
 open Raw_parser
 
 type keywords = (string, Raw_parser.token) Hashtbl.t
@@ -37,17 +37,17 @@ type 'a result =
   | Refill of (unit -> 'a result)
   | Error of error * Location.t
 
-let return a             = Return a
+let return a = Return a
 let refill_handler k state lexbuf arg = Refill (fun () -> k state lexbuf arg)
 let refill_handler' k lexbuf arg = Refill (fun () -> k lexbuf arg)
 
-let error e l            = Error (e,l)
+let error e l = Error (e,l)
 
-let rec bind (m : 'a result) (f : 'a -> 'b result) : 'b result =
+let rec (>>=) (m : 'a result) (f : 'a -> 'b result) : 'b result =
   match m with
   | Return a -> f a
   | Refill u ->
-    Refill (fun () -> bind (u ()) f)
+    Refill (fun () -> u () >>= f)
   | Error _ as e -> e
 
 type state = {
@@ -57,11 +57,17 @@ type state = {
   mutable comment_start_loc: Location.t list;
 }
 
+let make keywords = {
+  keywords;
+  buffer = Buffer.create 17;
+  string_start_loc = Location.none;
+  comment_start_loc = [];
+}
+
+
 let catch m f = match m with
   | Error (e,l) -> f e l
   | r -> r
-
-let (>>=) = bind
 
 (* The table of keywords *)
 let keyword_table : keywords =
