@@ -1,4 +1,4 @@
-;; merlin.el --- Mode for Merlin, an assistant for OCaml.   -*- coding: utf-8 -*-
+;;; merlin.el --- Mode for Merlin, an assistant for OCaml.   -*- coding: utf-8 -*-
 ;; Licensed under the MIT license.
 
 ;; Author: Simon Castellan <simon.castellan(_)iuwt.fr>
