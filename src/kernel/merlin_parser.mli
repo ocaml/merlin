@@ -34,6 +34,8 @@ module Integrate
        type t
        val empty : t (* Base-case, empty stack *)
        val frame : frame -> t -> t (* Add frame *)
+       (* Default: delta ~parent ~old:_ = frame parent *)
+       val delta : frame -> parent:t -> old:(t * frame) -> t
      end) :
 sig
   type t

@@ -64,6 +64,9 @@ module Integrate
        type t
        val empty : t (* Base-case, empty stack *)
        val frame : frame -> t -> t (* Add frame *)
+
+       (* Default: delta ~parent ~old:_ = frame parent *)
+       val delta : frame -> parent:t -> old:(t * frame) -> t
      end) =
 struct
   type t = (P.t * frame) list
@@ -86,18 +89,24 @@ struct
         end
       else acc, f
     in
-    let worklist, frame = seek [] frame in
-    let rec rewind acc f = function
-      | (_, f') :: ts when not (eq f' f) ->
+    let ws, frame = seek [] frame in
+    let rec rewind acc old f = function
+      | (_, f' as old) :: ts when not (eq f' f) ->
         begin match next f with
           | None ->
-            assert (ts = []); acc, []
-          | Some f' -> rewind (f :: acc) f' ts
+            assert (ts = []); acc, old, []
+          | Some f' ->
+            rewind (f :: acc) old f' ts
         end
-      | t -> acc, t
+      | t -> acc, old, t
     in
-    let worklist, t = rewind worklist frame t in
-    List.fold_left' ~f:(fun f t -> ((P.frame f (value t), f) :: t)) ~init:t worklist
+    let ws, t =
+      match rewind ws (P.empty,frame) frame t with
+      | f :: ws, (t',_ as old), t when t' != P.empty ->
+        ws, ((P.delta f ~parent:(value t) ~old, f) :: t)
+      | ws, _, t -> ws, t
+    in
+    List.fold_left' ~f:(fun f t -> ((P.frame f (value t), f) :: t)) ~init:t ws
 
   let update' p t =
     match stack p with
@@ -125,7 +134,9 @@ end = struct
     | Sub of Asttypes.rec_flag * path
   module P = struct
     type t = int * path
+
     let empty = (0,Root)
+
     let frame f (d,p as t) =
       let items l =
         let m = max 1 (List.length l) in
@@ -141,6 +152,20 @@ end = struct
       | Raw_parser.Nonterminal (Raw_parser.NT'structure_item l) ->
         items l p
       | _ -> t
+
+    let delta f ~parent ~old:(t',f') =
+      match value f', value f, t' with
+      | Raw_parser.Nonterminal (Raw_parser.NT'signature l'),
+        Raw_parser.Nonterminal (Raw_parser.NT'signature l),
+        (d, Items (n,p')) ->
+        let rec count n' = function
+          | l_ when l_ == l' -> n' + n
+          | _ :: l_ -> count n' l_
+          | [] -> n'
+        in
+        let n' = count 0 l in
+        (d, Items (n',p'))
+      | _ -> frame f parent
   end
   include Integrate (P)
 
