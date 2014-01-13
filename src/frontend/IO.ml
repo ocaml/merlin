@@ -304,7 +304,8 @@ module Protocol_io = struct
           `Assoc ["pos",pos_to_json pos]
         | Locate _, Some (Some file,pos) ->
           `Assoc ["file",`String file; "pos",pos_to_json pos]
-        | Drop, position -> pos_to_json position
+        | Drop, (pos, path) ->
+          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
         | Boundary _, Some {Location. loc_start; loc_end} ->
           `List (List.map pos_to_json [loc_start; loc_end])
         | Boundary _, None ->
@@ -322,7 +323,7 @@ module Protocol_io = struct
         | Findlib_list, strs -> json_of_string_list strs
         | Extension_list _, strs -> json_of_string_list strs
         | Extension_set _, () -> `Bool true
-        | Path _, changed -> `Bool changed
+        | Path _, () -> `Bool true
         | Path_list _, strs -> json_of_string_list strs
         | Path_reset, () -> `Bool true
         | Project_load _, (strs, failures) ->

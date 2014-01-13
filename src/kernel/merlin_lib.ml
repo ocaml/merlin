@@ -23,6 +23,8 @@ module Lexer: sig
   type item =
     | Valid of Lexing.position * Raw_parser.token * Lexing.position
     | Error of Raw_lexer.error * Location.t
+  val item_start: item -> Lexing.position
+  val item_end: item -> Lexing.position
 
   (** Create an empty list new lexer *)
   val empty: filename:string -> item History.t
@@ -44,6 +46,12 @@ end = struct
   type item =
     | Valid of Lexing.position * Raw_parser.token * Lexing.position
     | Error of Raw_lexer.error * Location.t
+
+  let item_start (Valid (p,_,_) | Error (_,{Location. loc_start = p})) =
+    p
+
+  let item_end (Valid (_,_,p) | Error (_,{Location. loc_end = p})) =
+    p
 
   (** Create an empty list new lexer *)
   let empty ~filename =
@@ -438,7 +446,7 @@ module Buffer : sig
   val create: ?path:string -> Project.t -> Parser.state -> t
 
   val lexer: t -> Lexer.item History.t
-  val update: t -> Lexer.item History.t -> Parser.t
+  val update: t -> Lexer.item History.t -> unit
   val start_lexing: t -> Lexer.t
 
   val parser: t -> Parser.t
@@ -529,8 +537,7 @@ end = struct
             result
           )
         t.lexer
-        (Some t.steps);
-    parser t
+        (Some t.steps)
 
   let start_lexing b =
     let kw = Project.keywords b.project in

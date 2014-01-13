@@ -43,6 +43,21 @@ let new_state () =
   let buffer = Buffer.create project Parser.implementation in
   { project; buffer; lexer = None }
 
+let position state =
+  let lexer =
+    match state.lexer with
+    | None -> Buffer.start_lexing state.buffer
+    | Some l -> l
+  in
+  Lexer.position lexer, Buffer.path state.buffer
+
+let buffer_changed state =
+  state.lexer <- None
+
+let buffer_update state items =
+  Buffer.update state.buffer items;
+  buffer_changed state
+
 let dispatch (i,o : IO.io) (state : state) =
   fun (type a) (request : a request) ->
   (match request with
@@ -76,25 +91,53 @@ let dispatch (i,o : IO.io) (state : state) =
     failwith "TODO"
 
   | (Drop : a request) ->
-    failwith "TODO"
+    let lexer = Buffer.lexer state.buffer in
+    Buffer.update state.buffer (History.drop_tail lexer);
+    buffer_changed state;
+    position state
 
   | (Seek `Position : a request) ->
-    failwith "TODO"
+    position state
 
   | (Seek (`Before pos) : a request) ->
-    failwith "TODO"
+    let items = Buffer.lexer state.buffer in
+    (* true while i is before pos *)
+    let until_after pos i = Lexing.compare_pos (Lexer.item_start i) pos < 0 in
+    (* true while i is after pos *)
+    let until_before pos i = Lexing.compare_pos (Lexer.item_start i) pos >= 0 in
+    let items = History.seek_forward (until_after pos) items in
+    let items = History.seek_backward (until_before pos) items in
+    buffer_update state items;
+    position state
 
   | (Seek (`Exact pos) : a request) ->
-    failwith "TODO"
+    let items = Buffer.lexer state.buffer in
+    (* true while i is before pos *)
+    let until_after pos i = Lexing.compare_pos (Lexer.item_start i) pos < 0 in
+    (* true while i is after pos *)
+    let until_before pos i = Lexing.compare_pos (Lexer.item_end i) pos > 0 in
+    let items = History.seek_forward (until_after pos) items in
+    let items = History.seek_backward (until_before pos) items in
+    buffer_update state items;
+    position state
 
   | (Seek `End : a request) ->
-    failwith "TODO"
+    let items = Buffer.lexer state.buffer in
+    let items = History.seek_forward (fun _ -> true) items in
+    buffer_update state items;
+    position state
 
   | (Boundary (dir,pos) : a request) ->
     failwith "TODO"
 
-  | (Reset (ml,source) : a request) ->
-    failwith "TODO"
+  | (Reset (ml,path) : a request) ->
+    let parser = match ml with
+      | `ML  -> Raw_parser.implementation_state
+      | `MLI -> Raw_parser.interface_state
+    in
+    let buffer = Buffer.create ?path state.project parser in
+    buffer_changed state;
+    state.buffer <- buffer
 
   | (Refresh : a request) ->
     failwith "TODO"
@@ -106,36 +149,61 @@ let dispatch (i,o : IO.io) (state : state) =
     failwith "TODO"
 
   | (Which_path s : a request) ->
-    failwith "TODO"
+    begin
+      try
+        find_in_path_uncap (Project.source_path state.project) s
+      with Not_found ->
+        find_in_path_uncap (Project.source_path state.project) s
+    end
 
   | (Which_with_ext ext : a request) ->
-    failwith "TODO"
+    modules_in_path ~ext
+      (Path_list.to_strict_list (Project.source_path state.project))
 
   | (Project_load (cmd,path) : a request) ->
-    failwith "TODO"
+    let fn = match cmd with
+      | `File -> Dot_merlin.read
+      | `Find -> Dot_merlin.find
+    in
+    let dot_merlins = fn path in
+    let config = Dot_merlin.parse dot_merlins in
+    let failures = Project.set_dot_merlin state.project (Some config) in
+    (config.Dot_merlin.dot_merlins, failures)
 
   | (Findlib_list : a request) ->
     Fl_package_base.list_packages ()
 
   | (Findlib_use packages : a request) ->
-    failwith "TODO"
+    Project.User.load_packages state.project packages
 
   | (Extension_list kind : a request) ->
-    []
+    let enabled = Project.extensions state.project in
+    let set = match kind with
+      | `All -> Extension.all
+      | `Enabled -> enabled
+      | `Disabled -> String.Set.diff Extension.all enabled
+    in
+    String.Set.to_list set
 
   | (Extension_set (action,extensions) : a request) ->
-    failwith "TODO"
+    let enabled = match action with
+      | `Enabled  -> true
+      | `Disabled -> false
+    in
+    List.iter ~f:(Project.User.set_extension state.project ~enabled)
+      extensions
 
   | (Path (var,action,pathes) : a request) ->
-    failwith "TODO"
+    List.iter pathes
+      ~f:(Project.User.path state.project ~action ~var ?cwd:None)
 
   | (Path_list `Build : a request) ->
-    failwith "TODO"
+    Path_list.to_strict_list (Project.build_path state.project)
 
   | (Path_list `Source : a request) ->
-    failwith "TODO"
+    Path_list.to_strict_list (Project.source_path state.project)
 
   | (Path_reset : a request) ->
-    failwith "TODO"
+    Project.User.reset state.project
 
   : a)

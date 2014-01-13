@@ -60,6 +60,7 @@ val keywords : set -> Raw_lexer.keywords
 val register : set -> Env.t -> Env.t
 
 (* Known extensions *)
+val all : set
 val registry : t String.Map.t
 val lookup : string -> t option
 

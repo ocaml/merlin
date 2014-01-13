@@ -154,6 +154,7 @@ let registry =
   List.fold_left' registry
     ~f:(fun ext -> String.Map.add ext.name ext)
     ~init:String.Map.empty
+let all = String.Set.of_list (String.Map.keys registry)
 
 let lookup s =
   try Some (String.Map.find s registry)

@@ -29,7 +29,7 @@ type _ request =
     :  string * position option
     -> (string option * position) option request
   | Drop
-    :  position request
+    :  (position * path) request
   | Seek
     :  [`Position|`End|`Before of position|`Exact of position]
     -> (position * path) request
@@ -67,7 +67,7 @@ type _ request =
     :  [`Build|`Source]
      * [`Add|`Rem]
      * string list
-    -> bool request
+    -> unit request
   | Path_reset
     :  unit request
   | Path_list

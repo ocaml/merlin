@@ -35,6 +35,9 @@ module Lexer: sig
     | Valid of Lexing.position * Raw_parser.token * Lexing.position
     | Error of Raw_lexer.error * Location.t
 
+  val item_start: item -> Lexing.position
+  val item_end: item -> Lexing.position
+
   (** Create an empty list new lexer *)
   val empty: filename:string -> item History.t
 
@@ -96,7 +99,7 @@ module Buffer : sig
   val create: ?path:string -> Project.t -> Parser.state -> t
 
   val lexer: t -> Lexer.item History.t
-  val update: t -> Lexer.item History.t -> Parser.t
+  val update: t -> Lexer.item History.t -> unit
   val start_lexing: t -> Lexer.t
 
   val parser: t -> Parser.t
