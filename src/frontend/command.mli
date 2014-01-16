@@ -32,4 +32,4 @@ type state
 
 val new_state : unit -> state
 
-val dispatch : IO.io -> state -> 'a Protocol.request -> 'a
+val dispatch : state -> 'a Protocol.request -> 'a

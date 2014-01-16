@@ -58,7 +58,7 @@ let buffer_update state items =
   Buffer.update state.buffer items;
   buffer_changed state
 
-let dispatch (i,o : IO.io) (state : state) =
+let dispatch (state : state) =
   fun (type a) (request : a request) ->
   (match request with
   | (Tell source : a request) ->
@@ -143,7 +143,7 @@ let dispatch (i,o : IO.io) (state : state) =
     failwith "TODO"
 
   | (Errors : a request) ->
-    failwith "TODO"
+    []
 
   | (Dump _ : a request) ->
     failwith "TODO"

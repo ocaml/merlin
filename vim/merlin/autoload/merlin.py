@@ -50,10 +50,10 @@ class MerlinProcess:
       except OSError:
         pass
     try:
-      command = [vim.eval("merlin#FindOcamlMerlin()"),"-ignore-sigint"]
-      command.extend(flags)
+      cmd = [vim.eval("merlin#FindOcamlMerlin()"),"-ignore-sigint"]
+      cmd.extend(flags)
       self.mainpipe = subprocess.Popen(
-              command,
+              cmd,
               stdin=subprocess.PIPE,
               stdout=subprocess.PIPE,
               stderr=None,
@@ -63,7 +63,7 @@ class MerlinProcess:
               is executable.")
       raise e
 
-  def send_command(self, *cmd):
+  def command(self, *cmd):
     if self.mainpipe == None or self.mainpipe.returncode != None:
       self.restart()
     json.dump(cmd, self.mainpipe.stdin)
@@ -72,7 +72,7 @@ class MerlinProcess:
     content = None
     if len(result) == 2:
       content = result[1]
-  
+
     if result[0] == "return":
       return content
     elif result[0] == "failure":
@@ -91,11 +91,11 @@ def merlin_process():
     merlin_processes[name] = MerlinProcess()
   return merlin_processes[name]
 
-def send_command(*cmd):
-  return merlin_process().send_command(*cmd)
+def command(*cmd):
+  return merlin_process().command(*cmd)
 
 def dump(*cmd):
-  print(send_command('dump', *cmd))
+  print(command('dump', *cmd))
 
 def try_print_error(e, msg=None):
   try:
@@ -122,53 +122,68 @@ def catch_and_print(f, msg=None):
   except MerlinExc as e:
     try_print_error(e, msg=msg)
 
+def path_is_recursive(path):
+  for component in path:
+    if isinstance(component,list):
+      for x in component:
+        if x == "rec":
+          return True
+    elif component == "rec":
+      return True
+  return False
+
+def path_common(p1,p2):
+  l = min(len(p1),len(p2))
+  p = []
+  for i in range(l):
+    if p1[i] == p2[i]:
+      p.append(p1[i])
+    else:
+      c1, c2 = c1[i], c2[i]
+      l = min(len(c1),len(c2))
+      c = []
+      for i in range(l):
+        if c1[i] == c2[i]:
+          c.append(c1[i])
+      p.append(c)
+      return p
+  return p
+
+def parse_position(pos):
+  position = pos['pos']
+  path = pos['path']
+  return (position['line'], position['col'], path)
+
 ######## BASIC COMMANDS
 
-def command_reload(full=False):
-  if full:
-    return send_command("refresh")
-  else:
-    return send_command("refresh", "quick")
-
-def command_reset(name=None):
+def command_reset(kind="ml",name=None):
   global saved_sync
-  if name:
-    r = send_command("reset","name",name)
-  else:
-    r = send_command("reset")
+  if name: r = command("reset",kind,name)
+  else:    r = command("reset",kind)
   if name == "myocamlbuild.ml":
     command_find_use("ocamlbuild")
   saved_sync = None
   return r
 
-def command_tell(kind,content):
-  if content == None:
-    return send_command("tell", "end")
-  elif type(content) is list:
-    return send_command("tell", kind, "\n".join(content) + "\n")
-  else:
-    return send_command("tell", kind, content)
+def command_tell(content):
+  if isinstance(content,list):
+    content = "\n".join(content) + "\n"
+  return parse_position(command("tell", "source", content))
 
 def command_which_file(name):
-  return send_command('which', 'path', name)
+  return command('which', 'path', name)
 
 def command_which_with_ext(ext):
-  return send_command('which', 'with_ext', ext)
-
-def command_ext_enable(*packages):
-  return send_command('extension', 'enable', packages)
-
-def command_ext_disable(*packages):
-  return send_command('extension', 'disable', packages)
+  return command('which', 'with_ext', ext)
 
 def command_ext_list():
-  return send_command('extension', 'list')
+  return command('extension', 'list')
 
 def command_ext_enabled():
-  return send_command('extension', 'list', 'enabled')
+  return command('extension', 'list', 'enabled')
 
 def command_ext_disabled():
-  return send_command('extension', 'list', 'disabled')
+  return command('extension', 'list', 'disabled')
 
 def display_load_failures(result):
   if 'failures' in result:
@@ -176,39 +191,27 @@ def display_load_failures(result):
   return result['result']
 
 def command_find_use(*packages):
-  result = catch_and_print(lambda: send_command('find', 'use', packages))
+  result = catch_and_print(lambda: command('find', 'use', packages))
   return display_load_failures(result)
 
-
-def command_find_list():
-  return send_command('find', 'list')
-
-def command_seek_before(line,col):
-  position = send_command("seek", "before", {'line' : line, 'col': col})
-  return (position['line'], position['col'])
-
-def command_seek_exact(line,col):
-  position = send_command("seek", "exact", {'line' : line, 'col': col})
-  return (position['line'], position['col'])
-
-def command_seek_scope():
-  return send_command("seek", "maximize_scope")
+def command_seek(mtd,line,col):
+  return parse_position(command("seek", mtd, {'line' : line, 'col': col}))
 
 def command_seek_end():
-  return send_command("seek", "end")
+  return command("seek", "end")
 
 def command_complete_cursor(base,line,col):
-  return send_command("complete", "prefix", base, "at", {'line' : line, 'col': col})
+  return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
 
 def command_report_errors():
-  return send_command("errors")
+  return command("errors")
 
 def command_locate(path, line, col):
   try:
     if line is None or col is None:
-        return send_command("locate", path)
+        return command("locate", path)
     else:
-        pos_or_err = send_command("locate", path, "at", {'line': line, 'col': col})
+        pos_or_err = command("locate", path, "at", {'line': line, 'col': col})
     if not isinstance(pos_or_err, dict):
       print(pos_or_err)
     else:
@@ -232,7 +235,7 @@ def sync_buffer_to(to_line, to_col):
 
   if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
     line, col = saved_sync.pos()
-    line, col = command_seek_before(line, 0)
+    line, col, path = command_seek("before", line, 0)
     if line <= end_line:
       rest    = cb[line-1][col:]
       content = cb[line:end_line]
@@ -242,22 +245,22 @@ def sync_buffer_to(to_line, to_col):
       content = None
   else:
     command_reset(name=vim.eval("expand('%:p')"))
+    path = []
     content = cb[:end_line]
     process.saved_sync = curr_sync
 
   # Send content
   if content:
     kind = "source"
-    while not command_tell(kind,content):
-      kind = "more"
+    _, _, path = command_tell(content)
+    while path_is_recursive(path):
       if end_line < max_line:
-        next_end = min(max_line,end_line + 20)
-        content = cb[end_line:next_end]
+        next_end = min(max_line,end_line + 50)
+        _, _, p2 = command_tell(cb[end_line:next_end])
+        path = path_common(path,p2)
         end_line = next_end
       else:
-        content = None
-  # Now we are synced, come back to environment around cursor
-  command_seek_exact(to_line, to_col)
+        break
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
@@ -306,7 +309,7 @@ def vim_loclist(vimvar, ignore_warnings):
     vim.command("call add(%s, l:tmp)" % vimvar)
 
 def vim_find_list(vimvar):
-  pkgs = command_find_list()
+  pkgs = command('find', 'list')
   vim.command("let %s = []" % vimvar)
   for pkg in pkgs:
     vim.command("call add(%s, '%s')" % (vimvar, pkg))
@@ -318,7 +321,7 @@ def vim_type(expr,is_approx=False):
   cmd_expr = ["expression", expr] if expr else []
   try:
     cmd = ["type"] + cmd_expr + cmd_at
-    ty = send_command(*cmd)
+    ty = command(*cmd)
     if isinstance(ty,dict):
       if "type" in ty: ty = ty['type']
       else: ty = str(ty)
@@ -385,7 +388,7 @@ def vim_type_enclosing(vimvar,expr=None):
   arg = {'expr':atom, 'offset':offset}
   sync_buffer()
   try:
-    enclosing_types = send_command("type", "enclosing", arg, pos)
+    enclosing_types = command("type", "enclosing", arg, pos)
     if enclosing_types != []:
       vim_next_enclosing(vimvar)
     else:
@@ -448,8 +451,8 @@ def vim_reload_buffer():
   sync_buffer()
 
 # Reload changed cmi files then retype all definitions
-def vim_reload(full=False):
-  command_reload(full)
+def vim_reload():
+  return command("refresh")
 
 # Spawn a fresh new process
 def vim_restart():
@@ -472,10 +475,8 @@ def vim_use(*args):
   return command_find_use(*args)
 
 def vim_ext(enable, exts):
-  if enable:
-    catch_and_print(lambda: command_ext_enable(*exts))
-  else:
-    catch_and_print(lambda: command_ext_disable(*exts))
+  state = enable and 'enable' or 'disable'
+  catch_and_print(lambda: command('extension', state, exts))
 
 def vim_ext_list(vimvar,enabled=None):
   if enabled == None:
@@ -507,10 +508,10 @@ def vim_selectphrase(l1,c1,l2,c2):
   vc2 = min(bound,int(vim.eval(c2)))
   sync_buffer_to(vl2,vc2)
   command_seek_exact(vl2,vc2)
-  loc2 = send_command("boundary")
+  loc2 = command("boundary")
   if vl2 != vl1 or vc2 != vc1:
     command_seek_exact(vl1,vc1)
-    loc1 = send_command("boundary")
+    loc1 = command("boundary")
   else:
     loc1 = None
 
@@ -530,13 +531,14 @@ def vim_selectphrase(l1,c1,l2,c2):
     vim.command("let %s = %d" % (var,val))
 
 def load_project(directory,force=False):
-  command = [vim.eval("merlin#FindOcamlMerlin()"), "-project-find", directory]
-  process = subprocess.Popen(command, stdout=subprocess.PIPE)
+  cmd = [vim.eval("merlin#FindOcamlMerlin()"), "-project-find", directory]
+  process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
   name = process.communicate()[0].strip()
   if not force:
     if name == vim.eval("b:merlin_project"): return
   vim.command("let b:merlin_project = '%s'" % name)
-  fnames = display_load_failures(catch_and_print(lambda: send_command("project","find",directory)))
+  failures = catch_and_print(lambda: command("project","find",directory))
+  fnames = display_load_failures(failures)
   if isinstance(fnames, list):
     vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
   sync_buffer_to(1, 0)

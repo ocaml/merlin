@@ -111,7 +111,7 @@ let main_loop () =
             (*refresh_state_on_signal state' (fun () ->*) Stream.next input (* ) *)
           in
           (*let state = State.validate_parser !state' in*)
-          let response = Command.dispatch io state request in
+          let response = Command.dispatch state request in
           state,
           Protocol.Return (request, response)
         with
