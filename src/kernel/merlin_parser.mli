@@ -29,6 +29,10 @@ val of_step : ?hint:MenhirUtils.witness -> Raw_parser.step Raw_parser.parser
   -> [`Accept of Raw_parser.semantic_value | `Reject of Raw_parser.step Raw_parser.parser | `Step of t]
 val to_step : t -> Raw_parser.feed Raw_parser.parser option
 
+(* Ease pattern matching on parser stack *)
+type destruct = D of Raw_parser.semantic_value * destruct lazy_t
+val destruct: frame -> destruct
+
 module Integrate
     (P : sig
        type t
@@ -47,10 +51,15 @@ sig
 end
 
 module Path : sig
-  type path =
-    | Root
-    | Items of int * path
-    | Sub of Asttypes.rec_flag * path
+  type item =
+    | Let of Asttypes.rec_flag * int
+    | Struct of int
+    | Sig of int
+    | Module_rec of int
+    | Object of int
+    | Class of int
+
+  type path = item list
 
   type t
   val empty : t

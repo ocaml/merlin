@@ -26,9 +26,7 @@
 
 )* }}} *)
 
-type 'a non_empty =
-  | One of 'a
-  | More of 'a * 'a non_empty
+open Std
 
 (** {0 History}
   * A sort of zipper: maintains and synchronizes a list of different
@@ -44,7 +42,7 @@ val initial : 'a -> 'a t
   *)
 val focused : 'a t -> 'a
 
-val head : 'a t -> 'a non_empty
+val head : 'a t -> 'a List.non_empty
 val tail : 'a t -> 'a list
 val position : 'a t -> int
 

@@ -150,16 +150,23 @@ module Protocol_io = struct
             "desc", `String desc;
             "info", `String info]
 
-  let rec json_of_path acc =
-    let open Merlin_lib.Parser.Path in function
-    | Root -> acc
-    | Items (n,p) ->
-      json_of_path (`Int n :: acc) p
-    | Sub (Asttypes.Recursive,p) ->
-      json_of_path (`String "rec" :: acc) p
-    | Sub (_,p) ->
-      json_of_path acc p
-  let json_of_path p = `List (json_of_path [] p)
+  let json_of_path =
+    let open Merlin_lib.Parser in function
+      | Path.Let (Asttypes.Recursive,n) ->
+        `List [`String "let"; `String "rec"; `Int n]
+      | Path.Let (_,n) ->
+        `List [`String "let"; `Int n]
+      | Path.Struct n ->
+        `List [`String "struct"; `Int n]
+      | Path.Sig n ->
+        `List [`String "sig"; `Int n]
+      | Path.Module_rec n ->
+        `List [`String "module"; `String "rec"; `Int n]
+      | Path.Object n ->
+        `List [`String "object"; `Int n]
+      | Path.Class n ->
+        `List [`String "class"; `Int n]
+  let json_of_path p = `List (List.rev_map ~f:json_of_path p)
 
   let source_or_build = function
     | "source" -> `Source
