@@ -288,7 +288,7 @@ end = struct
     dot_config : config;
     user_config : config;
 
-    mutable flags : Clflags.snapshot;
+    mutable flags : Clflags.t;
 
     local_path : string list ref;
 

@@ -15,8 +15,7 @@ module Make (Bootstrap : sig
                val _protocol : string -> unit
              end) = struct
   include Main_args.Make_top_options (struct
-    let set r () = r := true
-    let clear r () = r := false
+    let t = Clflags.t
 
     include Bootstrap
 
@@ -34,25 +33,41 @@ module Make (Bootstrap : sig
         end
       | _ -> assert false
 
-    let _real_paths = set Clflags.real_paths
-    let _absname = set Location.absname
+    let _real_paths () =
+      !t.Clflags.real_paths <- true
+    let _absname () =
+      Location.absname := true
     let _I dir =
       let dir = Misc.expand_directory Config.standard_library dir in
-      Clflags.include_dirs := dir :: !Clflags.include_dirs
-    let _init s = Clflags.init_file := Some s
-    let _labels = clear Clflags.classic
-    let _no_app_funct = clear Clflags.applicative_functors
-    let _nolabels = set Clflags.classic
-    let _nostdlib = set Clflags.no_std_include
-    let _principal = set Clflags.principal
-    let _rectypes = set Clflags.recursive_types
-    let _strict_sequence = set Clflags.strict_sequence
-    let _unsafe = set Clflags.fast
-    let _version () = print_version ()
-    let _vnum () = print_version_num ()
-    let _w s = Warnings.parse_options false s
-    let _warn_error s = Warnings.parse_options true s
-    let _warn_help = Warnings.help_warnings
+      !t.Clflags.include_dirs <- dir :: !t.Clflags.include_dirs
+    let _init s =
+      !t.Clflags.init_file <- Some s
+    let _labels () =
+      !t.Clflags.classic <- false
+    let _no_app_funct () =
+      !t.Clflags.applicative_functors <- false
+    let _nolabels () =
+      !t.Clflags.classic <- true
+    let _nostdlib () =
+      !t.Clflags.no_std_include <- true
+    let _principal () =
+      !t.Clflags.principal <- true
+    let _rectypes () =
+      !t.Clflags.recursive_types <- true
+    let _strict_sequence () =
+      !t.Clflags.strict_sequence <- true
+    let _unsafe () =
+      !t.Clflags.fast <- true
+    let _version () =
+      print_version ()
+    let _vnum () =
+      print_version_num ()
+    let _w s =
+      Warnings.parse_options false s
+    let _warn_error s =
+      Warnings.parse_options true s
+    let _warn_help () =
+      Warnings.help_warnings ()
 
     let _ignore_sigint () =
       try ignore (Sys.(signal sigint Signal_ignore))
