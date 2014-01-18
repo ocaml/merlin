@@ -73,22 +73,34 @@ let dump ppf t =
 
 module Integrate
     (P : sig
+       (* Arbitrary state, passed to update functions *)
+       type st
        type t
-       val empty : t (* Base-case, empty stack *)
-       val frame : frame -> t -> t (* Add frame *)
+       val empty : st -> t (* Base-case, empty stack *)
+       val frame : st -> frame -> t -> t (* Add frame *)
 
-       (* Default: delta ~parent ~old:_ = frame parent *)
-       val delta : frame -> parent:t -> old:(t * frame) -> t
+       (* Default: delta st f t ~old:_ = frame st f t *)
+       val delta : st -> frame -> t -> old:(t * frame) -> t
+       (* Check if an intermediate result is still valid *)
+       val validate : st -> t -> bool
      end) =
 struct
-  type t = (P.t * frame) list
-  let empty = []
+  type t =
+    | Zero of P.t
+    | More of (P.t * frame * t)
 
-  let value = function  ((p,_f) :: _) -> p | [] -> P.empty
+  let rec drop n = function
+    | Zero _ as t   -> t
+    | t when n <= 0 -> t
+    | More (_,_,t)  -> drop (n - 1) t
 
-  let update frame t =
-    let d' = match t with ((_p,f) :: _) -> depth f | [] -> 0 in
-    let t = List.drop_n (d' - depth frame) t in
+  let empty p = Zero (P.empty p)
+
+  let value (Zero p | More (p,_,_)) = p
+
+  let update st frame t =
+    let d' = match t with More (_,f,_) -> depth f | Zero _ -> 0 in
+    let t = drop (d' - depth frame) t in
     let rec seek acc f =
       if depth f > d' then
         begin
@@ -103,27 +115,30 @@ struct
     in
     let ws, frame = seek [] frame in
     let rec rewind acc old f = function
-      | (_, f' as old) :: ts when not (eq f' f) ->
-        begin match next f with
-          | None ->
-            assert (ts = []); acc, old, []
-          | Some f' ->
-            rewind (f :: acc) old f' ts
+      | More (t', f', ts) when not (eq f' f) || not (P.validate st t') ->
+        begin match next f, ts with
+          | None, Zero _ -> acc, Some (t',f'),
+                            (* Either reuse ts (more efficient ?)
+                               or regenerate fresh empty value
+                               or maybe validate previous one before ? *)
+                            (empty st)
+          | None, More _ -> assert false
+          | Some f', _   -> rewind (f :: acc) (Some (t',f')) f' ts
         end
       | t -> acc, old, t
     in
     let ws, t =
-      match rewind ws (P.empty,frame) frame t with
-      | f :: ws, (t',_ as old), t when t' != P.empty ->
-        ws, ((P.delta f ~parent:(value t) ~old, f) :: t)
+      match rewind ws None frame t with
+      | f :: ws, Some old, t ->
+        ws, More (P.delta st f (value t) ~old, f, t)
       | ws, _, t -> ws, t
     in
-    List.fold_left' ~f:(fun f t -> ((P.frame f (value t), f) :: t)) ~init:t ws
+    List.fold_left' ~f:(fun f t -> More (P.frame st f (value t), f, t)) ~init:t ws
 
-  let update' p t =
+  let update' st p t =
     match stack p with
-    | None -> empty
-    | Some frame -> update frame t
+    | None -> empty st
+    | Some frame -> update st frame t
 end
 
 module Path : sig
@@ -160,10 +175,11 @@ end = struct
   module P = struct
     open Raw_parser
 
+    type st = unit
     type t = int * item list
-    let empty = 0, []
+    let empty () = 0, []
 
-    let frame f (d,p as t) =
+    let frame () f (d,p as t) =
       match destruct f, p with
       (* struct _ ... end *)
       | D (Nonterminal (NT'structure_item l),
@@ -221,7 +237,7 @@ end = struct
       | _ :: l_ -> dlength (succ n) l' l_
       | [] -> n
 
-    let delta f ~parent ~old:(t',f') =
+    let delta () f t ~old:(t',f') =
       match value f', value f, t' with
       | Nonterminal (NT'signature l'),
         Nonterminal (NT'signature l),
@@ -241,12 +257,18 @@ end = struct
       | Nonterminal (NT'class_fields l'),
         Nonterminal (NT'class_fields l),
         (d, Object n' :: p') -> (d, Object (dlength n' l' l) :: p')
-      | _ -> frame f parent
+      | _ -> frame () f t
 
+    let validate () _ = true
   end
-  include Integrate (P)
+  module I = Integrate (P)
 
-  let get p = snd (value p)
-  let length p = fst (value p)
+  type t = I.t
+  let empty = I.empty ()
+  let update f t = I.update () f t
+  let update' p t = I.update' () p t
+
+  let get p = snd (I.value p)
+  let length p = fst (I.value p)
 end
 type path = Path.path

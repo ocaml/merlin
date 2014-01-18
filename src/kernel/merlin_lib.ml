@@ -252,6 +252,7 @@ end = struct
         else !Clflags.include_dirs in
       let exp_dirs = List.map (expand_directory Config.standard_library) dirs in
       let exp_dirs = List.rev_append exp_dirs (Clflags.std_include_dir ()) in
+      List.iter prerr_endline exp_dirs;
       ref exp_dirs
   end
   let chosen_protocol = !Flags.chosen_protocol
@@ -441,6 +442,8 @@ let chosen_protocol = Project.chosen_protocol
 
 module Parser = Merlin_parser
 
+module Typer = Merlin_typer
+
 module Buffer : sig
   type t
   val create: ?path:string -> Project.t -> Parser.state -> t
@@ -451,6 +454,7 @@ module Buffer : sig
 
   val parser: t -> Parser.t
   val path: t -> Parser.path
+  val typer: t -> Env.t * Typedtree.structure list
 end = struct
   type step = {
     token: Lexer.item;
@@ -465,6 +469,7 @@ end = struct
     mutable keywords: Lexer.keywords;
     mutable lexer: Lexer.item History.t;
     mutable steps: step History.t;
+    mutable typer: Merlin_typer.t;
     env: Env.cache;
     btype: Btype.cache;
   }
@@ -486,12 +491,14 @@ end = struct
       | Some path -> Some (Filename.dirname path), Filename.basename path
     in
     let lexer = Lexer.empty ~filename in
+    Project.setup project;
     {
       path; project; lexer; kind;
       steps = History.initial (initial_step kind (History.focused lexer));
       keywords = Project.keywords project;
       env = Env.new_cache ();
       btype = Btype.new_cache ();
+      typer = Merlin_typer.empty ();
     }
 
   let setup buffer =
@@ -507,6 +514,12 @@ end = struct
   let step b = History.focused b.steps
   let parser b = (step b).parser
   let path b = Parser.Path.get (step b).path
+
+  let typer b =
+    setup b;
+    let typer = Merlin_typer.update' () (parser b) b.typer in
+    b.typer <- typer;
+    Merlin_typer.value typer
 
   let update t l =
     t.lexer <- l;

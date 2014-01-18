@@ -35,19 +35,24 @@ val destruct: frame -> destruct
 
 module Integrate
     (P : sig
+       (* Arbitrary state, passed to update functions *)
+       type st
        type t
-       val empty : t (* Base-case, empty stack *)
-       val frame : frame -> t -> t (* Add frame *)
-       (* Default: delta ~parent ~old:_ = frame parent *)
-       val delta : frame -> parent:t -> old:(t * frame) -> t
+       val empty : st -> t (* Base-case, empty stack *)
+       val frame : st -> frame -> t -> t (* Add frame *)
+       (* Default: delta st f t ~old:_ = frame st f t *)
+       val delta : st -> frame -> t -> old:(t * frame) -> t
+       (* Check if an intermediate result is still valid *)
+       val validate : st -> t -> bool
      end) :
 sig
   type t
-  val empty : t
-  val update : frame -> t -> t
-  val value : t -> P.t
 
-  val update' : parser -> t -> t
+  val empty : P.st -> t
+  val update : P.st -> frame -> t -> t
+  val update' : P.st -> parser -> t -> t
+
+  val value : t -> P.t
 end
 
 module Path : sig
@@ -64,11 +69,10 @@ module Path : sig
   type t
   val empty : t
   val update : frame -> t -> t
+  val update' : parser -> t -> t
 
   val get : t -> path
   val length : t -> int
-
-  val update' : parser -> t -> t
 end
 type path = Path.path
 

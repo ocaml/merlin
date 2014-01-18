@@ -139,7 +139,7 @@ def path_common(p1,p2):
     if p1[i] == p2[i]:
       p.append(p1[i])
     else:
-      c1, c2 = c1[i], c2[i]
+      c1, c2 = p1[i], p2[i]
       l = min(len(c1),len(c2))
       c = []
       for i in range(l):

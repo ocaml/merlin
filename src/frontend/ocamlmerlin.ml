@@ -126,7 +126,19 @@ let main_loop () =
   with Stream.Failure -> ()
 
 let () =
+  (* Setup logging *)
+  begin try
+    let dest = Sys.getenv "MERLIN_LOG" in
+    Logger.set_default_destination dest ;
+    Logger.monitor ~dest `protocol
+  with _ ->
+    ()
+  end;
+  at_exit Logger.shutdown;
+  (* Setup signals *)
   ignore (signal Sys.Signal_ignore);
+  (* Select frontend *)
   Option.iter Merlin_lib.chosen_protocol ~f:IO.select_frontend;
+  (* Run! *)
   main_loop ()
 

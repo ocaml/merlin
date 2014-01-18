@@ -104,5 +104,6 @@ module Buffer : sig
 
   val parser: t -> Parser.t
   val path: t -> Parser.path
+  val typer: t -> Env.t * Typedtree.structure list
 end
 

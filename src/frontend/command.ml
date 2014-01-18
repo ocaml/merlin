@@ -81,11 +81,15 @@ let dispatch (state : state) =
   | (Type_enclosing ((expr, offset), pos) : a request) ->
     failwith "TODO"
 
-  | (Complete_prefix (prefix, None) : a request) ->
-    failwith "TODO"
+  | (Complete_prefix (prefix, _) : a request) ->
+    let env, _ = Buffer.typer state.buffer in
+    Env.fold_values
+      (fun name _ _ lst ->
+         { name; kind = `Value; desc = ""; info = "" } :: lst)
+      None env []
 
-  | (Complete_prefix (prefix, Some pos) : a request) ->
-    failwith "TODO"
+  (*| (Complete_prefix (prefix, Some pos) : a request) ->
+    failwith "TODO"*)
 
   | (Locate (path, opt_pos) : a request) ->
     failwith "TODO"

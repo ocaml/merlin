@@ -212,7 +212,6 @@ struct
       NT'expr_comma_opt_list [];
       NT'expr Fake.any_val';
       NT'expr_semi_list [];
-      NT'exit_EQUAL ();
       NT'field [];
       NT'field_expr_list [];
       NT'fun_binding Fake.any_val';
@@ -249,6 +248,7 @@ struct
       NT'module_binding any_mod;
       NT'module_declaration any_mty;
       NT'module_expr any_mod;
+      NT'module_functor_arg (Location.mkloc "" Location.none, any_mty);
       NT'module_rec_binding [];
       NT'module_rec_bindings [];
       NT'module_rec_declaration [];
@@ -327,7 +327,6 @@ struct
     |]
 
   let to_string = function
-    | NT'exit_EQUAL _ -> "exit_EQUAL"
     | NT'with_type_binder                  _ -> "with_type_binder"
     | NT'with_extensions                   _ -> "with_extensions"
     | NT'with_constraints                  _ -> "with_constraints"
@@ -403,6 +402,7 @@ struct
     | NT'module_rec_declaration            _ -> "module_rec_declaration"
     | NT'module_rec_bindings               _ -> "module_rec_bindings"
     | NT'module_rec_binding                _ -> "module_rec_binding"
+    | NT'module_functor_arg                _ -> "module_functor_arg"
     | NT'module_expr                       _ -> "module_expr"
     | NT'module_declaration                _ -> "module_declaration"
     | NT'module_binding                    _ -> "module_binding"
