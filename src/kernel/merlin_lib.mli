@@ -1,9 +1,5 @@
 open Misc
 
-(* FIXME: Right now, flags are parsed by Merlin_lib, this should be moved
-   elsewhere in frontend *)
-val chosen_protocol : string option
-
 (* Stateful parts:
    - typer snapshot root, done Buffer.btype
    - env cache, done Buffer.env

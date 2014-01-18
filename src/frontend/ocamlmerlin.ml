@@ -138,7 +138,7 @@ let () =
   (* Setup signals *)
   ignore (signal Sys.Signal_ignore);
   (* Select frontend *)
-  Option.iter Merlin_lib.chosen_protocol ~f:IO.select_frontend;
+  Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
   (* Run! *)
   main_loop ()
 

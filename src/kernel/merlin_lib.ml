@@ -195,67 +195,7 @@ module Project : sig
   (* Make global state point to current project *)
   val setup : t -> unit
 
-  (* TEMPORARY *)
-  val chosen_protocol : string option
 end = struct
-
-  (** Mimic other OCaml tools entry point *)
-  module Flags = struct
-
-    let chosen_protocol = ref None
-
-    (* Parse arguments specified on commandline *)
-    module Initial = Top_options.Make (struct
-      let _projectfind path =
-        let dot_merlins = Dot_merlin.find path in
-        begin match Dot_merlin.project_name dot_merlins with
-        | Some name -> print_endline name
-        | None -> ()
-        end;
-        exit 0
-      let _protocol p =
-        chosen_protocol := Some p
-    end)
-
-    let () =
-      (* Parse arguments on commandline *)
-      Arg.parse Initial.list Top_options.unexpected_argument
-        "Usage: ocamlmerlin [options]\noptions are:"
-
-    (* Save flags, so as to restore them when changing project *)
-    let initial_flags = Clflags.snapshot ()
-    let reset_flags () = Clflags.restore initial_flags
-
-    (* Parse flags specified at runtime (project-wide or entered by user) *)
-    let err_log msg = Logger.error `dot_merlin msg
-
-    module Incremental = Top_options.Make (struct
-        let _projectfind _ =
-          err_log "unsupported flag \"-project-find\" (ignored)"
-        let _protocol _ =
-          err_log "unsupported flag \"-protocol\" (ignored)"
-    end)
-
-    let enable_flags flags =
-      begin try
-        Arg.parse_argv ~current:(ref (-1)) (Array.of_list flags) Incremental.list
-          Top_options.unexpected_argument "error..."
-      with (* FIXME *)
-      | Arg.Bad msg -> err_log msg
-      | Arg.Help msg -> err_log msg
-      end
-
-    let default_path =
-      let dirs =
-        if !Clflags.use_threads then "+threads" :: !Clflags.include_dirs
-        else if !Clflags.use_vmthreads then "+vmthreads" :: !Clflags.include_dirs
-        else !Clflags.include_dirs in
-      let exp_dirs = List.map (expand_directory Config.standard_library) dirs in
-      let exp_dirs = List.rev_append exp_dirs (Clflags.std_include_dir ()) in
-      List.iter prerr_endline exp_dirs;
-      ref exp_dirs
-  end
-  let chosen_protocol = !Flags.chosen_protocol
 
   type config = {
     mutable cfg_extensions : Extension.set;
@@ -288,7 +228,8 @@ end = struct
     dot_config : config;
     user_config : config;
 
-    mutable flags : Clflags.t;
+    mutable flags : Clflags.set;
+    mutable warnings : Warnings.set;
 
     local_path : string list ref;
 
@@ -297,7 +238,6 @@ end = struct
     cmt_path    : Path_list.t;
 
     mutable global_modules: string list option;
-
     mutable keywords_cache : Lexer.keywords * Extension.set;
   }
 
@@ -322,7 +262,8 @@ end = struct
     dot_config.cfg_extensions <- Extension.default;
     let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
     { dot_config; user_config;
-      flags = Flags.initial_flags;
+      flags = Clflags.copy Clflags.initial;
+      warnings = Warnings.copy Warnings.initial;
       local_path;
       source_path = prepare [
           user_config.cfg_path_source;
@@ -337,7 +278,6 @@ end = struct
           user_config.cfg_path_pkg;
           dot_config.cfg_path_pkg;
           local_path;
-          Flags.default_path;
         ];
       cmt_path = prepare [
           user_config.cfg_path_cmt;
@@ -347,7 +287,6 @@ end = struct
           user_config.cfg_path_pkg;
           dot_config.cfg_path_pkg;
           local_path;
-          Flags.default_path;
         ];
       global_modules = None;
       keywords_cache = Raw_lexer.keywords [], String.Set.empty;
@@ -438,7 +377,6 @@ end = struct
       project.keywords_cache <- kw, set;
       kw
 end
-let chosen_protocol = Project.chosen_protocol
 
 module Parser = Merlin_parser
 
