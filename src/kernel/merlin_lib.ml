@@ -394,20 +394,15 @@ module Buffer : sig
   val path: t -> Parser.path
   val typer: t -> Env.t * Typedtree.structure list
 end = struct
-  type step = {
-    token: Lexer.item;
-    parser: Parser.t;
-    path: Parser.Path.t;
-  }
-
   type t = {
     kind: Parser.state;
     path: string option;
     project : Project.t;
     mutable keywords: Lexer.keywords;
     mutable lexer: Lexer.item History.t;
-    mutable steps: step History.t;
+    mutable parser: (Lexer.item * Parser.t) History.t;
     mutable typer: Merlin_typer.t;
+    mutable parser_path: Parser.Path.t;
     env: Env.cache;
     btype: Btype.cache;
   }
@@ -417,11 +412,7 @@ end = struct
       | Lexer.Valid (s,t,e) -> s,t,e
       | _ -> assert false
     in
-    {
-      token;
-      parser = Parser.from kind input;
-      path = Parser.Path.empty;
-    }
+    (token, Parser.from kind input)
 
   let create ?path project kind =
     let path, filename = match path with
@@ -432,9 +423,10 @@ end = struct
     Project.setup project;
     {
       path; project; lexer; kind;
-      steps = History.initial (initial_step kind (History.focused lexer));
       keywords = Project.keywords project;
       env = Env.new_cache ();
+      parser = History.initial (initial_step kind (History.focused lexer));
+      parser_path = Parser.Path.empty;
       btype = Btype.new_cache ();
       typer = Merlin_typer.empty ();
     }
@@ -449,9 +441,12 @@ end = struct
     Btype.set_cache buffer.btype
 
   let lexer b = b.lexer
-  let step b = History.focused b.steps
-  let parser b = (step b).parser
-  let path b = Parser.Path.get (step b).path
+  let parser b = snd (History.focused b.parser)
+
+  let path b =
+    let parser_path = Parser.Path.update' (parser b) b.parser_path in
+    b.parser_path <- parser_path;
+    Parser.Path.get parser_path
 
   let typer b =
     setup b;
@@ -461,34 +456,33 @@ end = struct
 
   let update t l =
     t.lexer <- l;
-    t.steps <- History.sync
-        ~check:(fun a a' -> a == a'.token)
+    t.parser <- History.sync
+        ~check:(fun token (token',_) -> token == token')
         ~init:(initial_step t.kind)
-        ~fold:(fun token step ->
+        ~fold:(fun token (_,parser) ->
             let result =
               match token with
-              | Lexer.Error _ -> {step with token}
+              | Lexer.Error _ -> (token, parser)
               | Lexer.Valid (s,t,e) ->
                 Logger.debugf `internal
                   (fun ppf t -> Format.fprintf ppf "received %s"
                       (Parser.Values.Token.to_string t))
                   t;
-                match Parser.feed (s,t,e) step.parser with
+                match Parser.feed (s,t,e) parser with
                 | `Accept _ ->
                   Logger.debug `internal "parser accepted";
-                  {step with token}
+                  (token, parser)
                 | `Reject _ ->
                   Logger.debug `internal "parser rejected";
-                  {step with token}
+                  (token, parser)
                 | `Step parser ->
-                  let path = Parser.Path.update' parser step.path in
-                  { token; parser; path }
+                  token, parser
             in
-            Logger.debugf `internal Parser.dump result.parser;
+            Logger.debugf `internal Parser.dump (snd result);
             result
           )
         t.lexer
-        (Some t.steps)
+        (Some t.parser)
 
   let start_lexing b =
     let kw = Project.keywords b.project in
