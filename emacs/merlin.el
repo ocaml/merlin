@@ -7,7 +7,7 @@
 ;; Created: 18 April 2013
 ;; Version: 1.4
 ;; Keywords: ocaml languages
-;; URL: http://github.com/def-lkb/merlin
+;; URL: http://github.com/the-lambda-church/merlin
 
 ;;; Commentary:
 ;; Description:
@@ -548,7 +548,7 @@ the error message otherwise print a generic error message."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun merlin-buffer-substring (start end)
-   "Return content of buffer between two-point or empty string if points are not valid"
+   "Return content of buffer between two points or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
 
 (defun merlin-tell-piece (mode &optional start end)
@@ -953,7 +953,7 @@ variable `merlin-ac-cache')."
     (goto-char (point-min)))))
 
 (defun merlin-type-display (bounds type &optional quiet)
-  "Display the type TYPE of the the expression occuring at BOUNDS.
+  "Display the type TYPE of the expression occuring at BOUNDS.
 If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
       (if (not quiet)
@@ -1208,7 +1208,6 @@ Returns the position."
     (define-key merlin-map (kbd "C-c C-r") 'merlin-rewind)
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
     (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
-    (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
     (define-key merlin-map (kbd "C-c t") 'merlin-type-expr)
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
     (define-key merlin-map (kbd "C-<up>") 'merlin-type-enclosing-go-up)
@@ -1309,7 +1308,7 @@ Short cuts:
         (delete-overlay merlin-lock-zone-margin-overlay))
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
-      ;;(merlin-error-delete-overlays) 
+      ;;(merlin-error-delete-overlays)
      )))
 
 (defun merlin-after-save ()
