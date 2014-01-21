@@ -15,8 +15,8 @@
 (* Command-line parameters *)
 
 type set = {
-  mutable include_dirs         : string list;
-  mutable no_std_include       : bool;
+  include_dirs                 : string list ref;
+  std_include                  : string list ref;
   mutable fast                 : bool;
   mutable classic              : bool;
   mutable principal            : bool;
@@ -28,8 +28,8 @@ type set = {
 
 let fresh () =
   {
-    include_dirs         = [];    (* -I *)
-    no_std_include       = false; (* -nostdlib *)
+    include_dirs         = ref [];    (* -I *)
+    std_include          = ref [Config.standard_library]; (* -nostdlib *)
     fast                 = false; (* -unsafe *)
     classic              = false; (* -nolabels *)
     principal            = false; (* -principal *)
@@ -39,21 +39,24 @@ let fresh () =
     applicative_functors = true;  (* -no-app-funct *)
   }
 
-let copy t = {t with fast = t.fast}
+let copy t = {t with
+              include_dirs = ref !(t.include_dirs);
+              std_include = ref !(t.std_include);
+             }
 
 let initial = fresh ()
 let set = ref initial
 
-let include_dirs () = !set.include_dirs
+let include_dirs () = !(!set.include_dirs)
 let include_dirs_spec t =
   "-I",
-  Arg.String (fun s -> t.include_dirs <- s :: t.include_dirs),
+  Arg.String (fun s -> t.include_dirs := s :: !(t.include_dirs)),
   "<dir> Add <dir> to the list of include directories"
 
-let no_std_include () = !set.no_std_include
+let no_std_include () = !(!set.std_include) = []
 let no_std_include_spec t =
   "-nostdlib",
-  Arg.Unit (fun () -> t.no_std_include <- true),
+  Arg.Unit (fun () -> t.std_include := []),
   " Do not add default directory to the list of include directories"
 
 let fast () = !set.fast
@@ -109,11 +112,6 @@ let print_types        () = false
 let native_code        () = false
 let error_size         () = 500
 let dont_write_files   () = true
-
-let std_include_dir () =
-  if !set.no_std_include
-  then []
-  else [Config.standard_library]
 
 let arg_spec t =
   [

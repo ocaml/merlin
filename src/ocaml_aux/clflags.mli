@@ -13,8 +13,8 @@
 (* $Id: clflags.mli 12800 2012-07-30 18:59:07Z doligez $ *)
 
 type set = {
-  mutable include_dirs         : string list;
-  mutable no_std_include       : bool;
+  include_dirs                 : string list ref;
+  std_include                  : string list ref;
   mutable fast                 : bool;
   mutable classic              : bool;
   mutable principal            : bool;
@@ -42,8 +42,6 @@ val real_paths           : unit -> bool
 val recursive_types      : unit -> bool
 val strict_sequence      : unit -> bool
 val applicative_functors : unit -> bool
-
-val std_include_dir      : unit -> string list
 
 (* Dummy values *)
 val annotations          : unit -> bool

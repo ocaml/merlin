@@ -1,24 +1,32 @@
 open Std
 
+let rec find_structure md =
+  match md.Typedtree.mod_desc with
+  | Typedtree.Tmod_structure _ -> Some md
+  | Typedtree.Tmod_functor (_,_,_,md) -> find_structure md
+  | Typedtree.Tmod_constraint (md,_,_,_) -> Some md
+  | _ -> None
+
 module P = struct
   open Raw_parser
 
-  type st = unit
-  type t = Env.t * Typedtree.structure list
+  type st = Extension.set
 
-  let empty () =
+  type t = {
+    snapshot: Btype.snapshot;
+    env: Env.t;
+    structures: Typedtree.structure list;
+  }
+
+  let empty st =
     let env = Env.initial in
     let env = Env.open_pers_signature "Pervasives" env in
-    env, []
+    let env = Extension.register st env in
+    { snapshot = Btype.snapshot (); env; structures = [] }
 
-  let rec find_structure md =
-    match md.Typedtree.mod_desc with
-    | Typedtree.Tmod_structure _ -> Some md
-    | Typedtree.Tmod_functor (_,_,_,md) -> find_structure md
-    | Typedtree.Tmod_constraint (md,_,_,_) -> Some md
-    | _ -> None
+  let validate _ t = Btype.is_valid t.snapshot
 
-  let frame () f (env,structures) =
+  let frame _ f t =
     let mkeval e = {
       Parsetree. pstr_desc = Parsetree.Pstr_eval e;
       pstr_loc = e.Parsetree.pexp_loc;
@@ -49,34 +57,65 @@ module P = struct
       | _ -> `none
     in
     match case with
-    | `str str ->
-      let structures',_,env = Typemod.type_structure env str Location.none in
-      (env, structures' :: structures)
-    | `sg sg ->
-      let sg = Typemod.transl_signature env sg in
-      let sg = sg.Typedtree.sig_type in
-      Env.add_signature sg env, structures
-    | `md pmod ->
-      let tymod = Typemod.type_module env pmod in
-      begin match find_structure tymod with
-        | None -> env
-        | Some md -> md.Typedtree.mod_env
-      end, structures
-    | `fmd (id,mty) ->
-      let mexpr = Parsetree.Pmod_structure [] in
-      let mexpr = { Parsetree. pmod_desc = mexpr; pmod_loc = Location.none } in
-      let mexpr = Parsetree.Pmod_functor (id, mty, mexpr) in
-      let mexpr = { Parsetree. pmod_desc = mexpr; pmod_loc = Location.none } in
-      let tymod = Typemod.type_module env mexpr in
-      begin match find_structure tymod with
-        | None -> env
-        | Some md -> md.Typedtree.mod_env
-      end, structures
-    | `none -> (env, structures)
+    | `none -> t
+    | _ as case ->
+      Btype.backtrack t.snapshot;
+      let env, structures =
+        match case with
+        | `str str ->
+          let structures,_,env = Typemod.type_structure t.env str Location.none in
+          env, structures :: t.structures
+        | `sg sg ->
+          let sg = Typemod.transl_signature t.env sg in
+          let sg = sg.Typedtree.sig_type in
+          Env.add_signature sg t.env, t.structures
+        | `md pmod ->
+          let tymod = Typemod.type_module t.env pmod in
+          begin match find_structure tymod with
+            | None -> t.env
+            | Some md -> md.Typedtree.mod_env
+          end, t.structures
+        | `fmd (id,mty) ->
+          let mexpr = Parsetree.Pmod_structure [] in
+          let mexpr = { Parsetree. pmod_desc = mexpr; pmod_loc = Location.none } in
+          let mexpr = Parsetree.Pmod_functor (id, mty, mexpr) in
+          let mexpr = { Parsetree. pmod_desc = mexpr; pmod_loc = Location.none } in
+          let tymod = Typemod.type_module t.env mexpr in
+          begin match find_structure tymod with
+            | None -> t.env
+            | Some md -> md.Typedtree.mod_env
+          end, t.structures
+        | `none -> t.env, t.structures
+      in
+      {env; structures; snapshot = Btype.snapshot ()}
 
-  let delta () f t ~old:_ = frame () f t
-
-  let validate () _ = true
+  let delta st f t ~old:_ = frame st f t
 end
 
-include Merlin_parser.Integrate (P)
+module I = Merlin_parser.Integrate (P)
+
+type t = {
+  btype_cache: Btype.cache;
+  env_cache: Env.cache;
+  st : Extension.set;
+  t : I.t;
+}
+
+let fresh extensions =
+  let btype_cache = Btype.new_cache () in
+  let env_cache = Env.new_cache () in
+  Btype.set_cache btype_cache;
+  Env.set_cache env_cache;
+  {
+    btype_cache; env_cache;
+    st = extensions; t = I.empty extensions;
+  }
+
+let update parser t =
+  Btype.set_cache t.btype_cache;
+  Env.set_cache t.env_cache;
+  let t' = I.update' t.st parser t.t in
+  {t with t = t'}
+
+let env t = (I.value t.t).P.env
+let structures t = (I.value t.t).P.structures

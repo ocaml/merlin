@@ -82,7 +82,7 @@ let dispatch (state : state) =
     failwith "TODO"
 
   | (Complete_prefix (prefix, _) : a request) ->
-    let env, _ = Buffer.typer state.buffer in
+    let env = Typer.env (Buffer.typer state.buffer) in
     Env.fold_values
       (fun name _ _ lst ->
          { name; kind = `Value; desc = ""; info = "" } :: lst)

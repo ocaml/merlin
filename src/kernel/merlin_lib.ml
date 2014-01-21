@@ -261,8 +261,8 @@ end = struct
     let local_path = ref [] in
     dot_config.cfg_extensions <- Extension.default;
     let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
-    { dot_config; user_config;
-      flags = Clflags.copy Clflags.initial;
+    let flags = Clflags.copy Clflags.initial in
+    { dot_config; user_config; flags;
       warnings = Warnings.copy Warnings.initial;
       local_path;
       source_path = prepare [
@@ -278,6 +278,8 @@ end = struct
           user_config.cfg_path_pkg;
           dot_config.cfg_path_pkg;
           local_path;
+          flags.Clflags.include_dirs;
+          flags.Clflags.std_include;
         ];
       cmt_path = prepare [
           user_config.cfg_path_cmt;
@@ -287,6 +289,8 @@ end = struct
           user_config.cfg_path_pkg;
           dot_config.cfg_path_pkg;
           local_path;
+          flags.Clflags.include_dirs;
+          flags.Clflags.std_include;
         ];
       global_modules = None;
       keywords_cache = Raw_lexer.keywords [], String.Set.empty;
@@ -392,7 +396,7 @@ module Buffer : sig
 
   val parser: t -> Parser.t
   val path: t -> Parser.path
-  val typer: t -> Env.t * Typedtree.structure list
+  val typer: t -> Typer.t
 end = struct
   type t = {
     kind: Parser.state;
@@ -403,8 +407,6 @@ end = struct
     mutable parser: (Lexer.item * Parser.t) History.t;
     mutable typer: Merlin_typer.t;
     mutable parser_path: Parser.Path.t;
-    env: Env.cache;
-    btype: Btype.cache;
   }
 
   let initial_step kind token =
@@ -424,21 +426,17 @@ end = struct
     {
       path; project; lexer; kind;
       keywords = Project.keywords project;
-      env = Env.new_cache ();
       parser = History.initial (initial_step kind (History.focused lexer));
       parser_path = Parser.Path.empty;
-      btype = Btype.new_cache ();
-      typer = Merlin_typer.empty ();
+      typer = Merlin_typer.fresh (Project.extensions project);
     }
 
   let setup buffer =
-    Project.setup buffer.project;
     begin match buffer.path with
       | Some path -> Project.set_local_path buffer.project [path]
       | None -> ()
     end;
-    Env.set_cache buffer.env;
-    Btype.set_cache buffer.btype
+    Project.setup buffer.project
 
   let lexer b = b.lexer
   let parser b = snd (History.focused b.parser)
@@ -450,9 +448,9 @@ end = struct
 
   let typer b =
     setup b;
-    let typer = Merlin_typer.update' () (parser b) b.typer in
+    let typer = Merlin_typer.update (parser b) b.typer  in
     b.typer <- typer;
-    Merlin_typer.value typer
+    typer
 
   let update t l =
     t.lexer <- l;

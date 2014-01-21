@@ -50,6 +50,7 @@ module Lexer: sig
 end
 
 module Parser : module type of Merlin_parser
+module Typer : module type of Merlin_typer
 
 (* Project configuration *)
 module Project : sig
@@ -100,6 +101,6 @@ module Buffer : sig
 
   val parser: t -> Parser.t
   val path: t -> Parser.path
-  val typer: t -> Env.t * Typedtree.structure list
+  val typer: t -> Typer.t
 end
 
