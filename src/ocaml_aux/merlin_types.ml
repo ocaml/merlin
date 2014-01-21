@@ -9,13 +9,9 @@ let raise_error exn =
   | Some (l,h) -> l := (*if ~!relax_typer then Weak_error exn else exn*) exn :: !l
   | None -> raise exn
 
-let catch_errors f =
-  let caught = ref [] in
-  let result =
-    Either.try' (fun () ->
-        Fluid.let' errors (Some (caught,Hashtbl.create 3)) f)
-  in
-  !caught, result
+let catch_errors caught f =
+  Either.try' (fun () ->
+      Fluid.let' errors (Some (caught,Hashtbl.create 3)) f)
 
 let erroneous_type_register te =
   match ~!errors with

@@ -99,8 +99,9 @@ module Buffer : sig
   val update: t -> Lexer.item History.t -> unit
   val start_lexing: t -> Lexer.t
 
-  val parser: t -> Parser.t
   val path: t -> Parser.path
+  val parser: t -> Parser.t
+  val parser_errors: t -> exn list
   val typer: t -> Typer.t
 end
 

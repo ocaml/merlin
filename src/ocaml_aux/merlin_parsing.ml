@@ -20,12 +20,8 @@ let prerr_warning loc w =
 
 let () = Location.prerr_warning_ref := prerr_warning
 
-let catch_warnings f =
-  let caught = ref [] in
-  let result =
-    Either.try' (fun () -> Fluid.let' warnings (Some caught) f)
-  in
-  !caught, result
+let catch_warnings caught f =
+  Either.try' (fun () -> Fluid.let' warnings (Some caught) f)
 
 let location_union a b =
   let open Location in

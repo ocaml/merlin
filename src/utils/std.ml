@@ -229,10 +229,15 @@ module Either = struct
     try R (f ())
     with exn -> L exn
 
+  let get = function
+    | L exn -> raise exn
+    | R v -> v
+
   (* Remove ? *)
-  let join (exns, r) = match r with
-    | L e -> (exns, L e)
-    | R (exns', r') -> (exns @ exns'), r'
+  let join = function
+    | R (R _ as r) -> r
+    | R (L _ as e) -> e
+    | L _ as e -> e
 
   let split =
     let rec aux l1 l2 = function

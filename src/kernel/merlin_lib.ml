@@ -395,6 +395,7 @@ module Buffer : sig
   val start_lexing: t -> Lexer.t
 
   val parser: t -> Parser.t
+  val parser_errors: t -> exn list
   val path: t -> Parser.path
   val typer: t -> Typer.t
 end = struct
@@ -404,7 +405,7 @@ end = struct
     project : Project.t;
     mutable keywords: Lexer.keywords;
     mutable lexer: Lexer.item History.t;
-    mutable parser: (Lexer.item * Parser.t) History.t;
+    mutable parser: (Lexer.item * Parser.t * exn list) History.t;
     mutable typer: Merlin_typer.t;
     mutable parser_path: Parser.Path.t;
   }
@@ -414,7 +415,7 @@ end = struct
       | Lexer.Valid (s,t,e) -> s,t,e
       | _ -> assert false
     in
-    (token, Parser.from kind input)
+    (token, Parser.from kind input, [])
 
   let create ?path project kind =
     let path, filename = match path with
@@ -439,7 +440,8 @@ end = struct
     Project.setup buffer.project
 
   let lexer b = b.lexer
-  let parser b = snd (History.focused b.parser)
+  let parser b = snd3 (History.focused b.parser)
+  let parser_errors b = thd3 (History.focused b.parser)
 
   let path b =
     let parser_path = Parser.Path.update' (parser b) b.parser_path in
@@ -454,33 +456,35 @@ end = struct
 
   let update t l =
     t.lexer <- l;
-    t.parser <- History.sync
-        ~check:(fun token (token',_) -> token == token')
-        ~init:(initial_step t.kind)
-        ~fold:(fun token (_,parser) ->
-            let result =
-              match token with
-              | Lexer.Error _ -> (token, parser)
-              | Lexer.Valid (s,t,e) ->
-                Logger.debugf `internal
-                  (fun ppf t -> Format.fprintf ppf "received %s"
-                      (Parser.Values.Token.to_string t))
-                  t;
-                match Parser.feed (s,t,e) parser with
-                | `Accept _ ->
-                  Logger.debug `internal "parser accepted";
-                  (token, parser)
-                | `Reject _ ->
-                  Logger.debug `internal "parser rejected";
-                  (token, parser)
-                | `Step parser ->
-                  token, parser
-            in
-            Logger.debugf `internal Parser.dump (snd result);
-            result
-          )
-        t.lexer
-        (Some t.parser)
+    let check token (token',_,_) = token == token' in
+    let init token = initial_step t.kind token in
+    let warnings = ref [] in
+    let fold token (_,parser,warnings') =
+      let warnings' = !warnings @ warnings' in
+      warnings := [];
+      let parser =
+        match token with
+        | Lexer.Error _ -> parser
+        | Lexer.Valid (s,t,e) ->
+          Logger.debugf `internal
+            (fun ppf t -> Format.fprintf ppf "received %s"
+                (Parser.Values.Token.to_string t))
+            t;
+          match Parser.feed (s,t,e) parser with
+          | `Accept _ ->
+            Logger.debug `internal "parser accepted";
+            parser
+          | `Reject _ ->
+            Logger.debug `internal "parser rejected";
+            parser
+          | `Step parser ->
+            parser
+      in
+      Logger.debugf `internal Parser.dump parser;
+      token, parser, warnings'
+    in
+    let sync () = History.sync ~check ~init ~fold t.lexer (Some t.parser) in
+    t.parser <- Either.get (Merlin_parsing.catch_warnings warnings sync)
 
   let start_lexing b =
     let kw = Project.keywords b.project in

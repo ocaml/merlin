@@ -7,26 +7,32 @@ let rec find_structure md =
   | Typedtree.Tmod_constraint (md,_,_,_) -> Some md
   | _ -> None
 
+let caught catch =
+  let caught = !catch in
+  catch := [];
+  caught
+
 module P = struct
   open Raw_parser
 
-  type st = Extension.set
+  type st = Extension.set * exn list ref
 
   type t = {
     snapshot: Btype.snapshot;
     env: Env.t;
     structures: Typedtree.structure list;
+    exns: exn list;
   }
 
-  let empty st =
+  let empty (extensions,catch) =
     let env = Env.initial in
     let env = Env.open_pers_signature "Pervasives" env in
-    let env = Extension.register st env in
-    { snapshot = Btype.snapshot (); env; structures = [] }
+    let env = Extension.register extensions env in
+    { snapshot = Btype.snapshot (); env; structures = []; exns = caught catch }
 
   let validate _ t = Btype.is_valid t.snapshot
 
-  let frame _ f t =
+  let frame (_,catch) f t =
     let mkeval e = {
       Parsetree. pstr_desc = Parsetree.Pstr_eval e;
       pstr_loc = e.Parsetree.pexp_loc;
@@ -59,6 +65,7 @@ module P = struct
     match case with
     | `none -> t
     | _ as case ->
+    try
       Btype.backtrack t.snapshot;
       let env, structures =
         match case with
@@ -87,7 +94,10 @@ module P = struct
           end, t.structures
         | `none -> t.env, t.structures
       in
-      {env; structures; snapshot = Btype.snapshot ()}
+      {env; structures; snapshot = Btype.snapshot ();
+       exns = caught catch @ t.exns}
+    with exn ->
+      {t with exns = exn :: caught catch @ t.exns}
 
   let delta st f t ~old:_ = frame st f t
 end
@@ -97,25 +107,40 @@ module I = Merlin_parser.Integrate (P)
 type t = {
   btype_cache: Btype.cache;
   env_cache: Env.cache;
-  st : Extension.set;
-  t : I.t;
+  extensions : Extension.set;
+  typer : I.t;
 }
+
+let fluid_btype = Fluid.from_ref Btype.cache
+let fluid_env = Fluid.from_ref Env.cache
+
+let protect_typer ~btype ~env f =
+  let caught = ref [] in
+  let (>>=) f x = f x in
+  Fluid.let' fluid_btype btype >>= fun () ->
+  Fluid.let' fluid_env env >>= fun () ->
+  Either.join (Merlin_parsing.catch_warnings caught >>= fun () ->
+               Merlin_types.catch_errors caught >>= fun () ->
+               f caught)
 
 let fresh extensions =
   let btype_cache = Btype.new_cache () in
   let env_cache = Env.new_cache () in
-  Btype.set_cache btype_cache;
-  Env.set_cache env_cache;
+  let result = protect_typer ~btype:btype_cache ~env:env_cache
+      (fun exns -> I.empty (extensions,exns))
+  in
   {
-    btype_cache; env_cache;
-    st = extensions; t = I.empty extensions;
+    typer = Either.get result;
+    extensions; env_cache; btype_cache;
   }
 
 let update parser t =
-  Btype.set_cache t.btype_cache;
-  Env.set_cache t.env_cache;
-  let t' = I.update' t.st parser t.t in
-  {t with t = t'}
+  let result =
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache
+      (fun exns -> I.update' (t.extensions,exns) parser t.typer)
+  in
+  {t with typer = Either.get result}
 
-let env t = (I.value t.t).P.env
-let structures t = (I.value t.t).P.structures
+let env t = (I.value t.typer).P.env
+let structures t = (I.value t.typer).P.structures
+let exns t = (I.value t.typer).P.exns
