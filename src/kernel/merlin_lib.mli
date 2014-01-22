@@ -50,7 +50,12 @@ module Lexer: sig
 end
 
 module Parser : module type of Merlin_parser
+  with type t = Merlin_parser.t
+   and type frame = Merlin_parser.frame
+   and module Integrate = Merlin_parser.Integrate
+   and module Path = Merlin_parser.Path
 module Typer : module type of Merlin_typer
+  with type t = Merlin_typer.t
 
 (* Project configuration *)
 module Project : sig

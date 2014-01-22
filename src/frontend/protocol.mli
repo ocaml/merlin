@@ -23,7 +23,7 @@ type _ request =
     :  (string * int) * position
     -> (Location.t * string) list request
   | Complete_prefix
-    :  string * position option
+    :  string * position
     -> completion list request
   | Locate
     :  string * position option
@@ -40,7 +40,7 @@ type _ request =
     :  [`ML | `MLI] * string option
     -> unit request
   | Refresh
-    :  bool request
+    :  unit request
   | Errors
     :  exn list request
   | Dump

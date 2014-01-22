@@ -211,8 +211,8 @@ module Protocol_io = struct
     | [`String "type"; `String "enclosing";
         `Assoc [ "expr", `String expr ; "offset", `Int offset] ; jpos] ->
       Request (Type_enclosing ((expr, offset), pos_of_json jpos))
-    | (`String "complete" :: `String "prefix" :: `String prefix :: opt_pos) ->
-      Request (Complete_prefix (prefix, optional_position opt_pos))
+    | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
+      Request (Complete_prefix (prefix, pos_of_json jpos))
     | (`String "locate" :: `String path :: opt_pos) ->
       Request (Locate (path, optional_position opt_pos))
     | [`String "drop"] ->
@@ -318,7 +318,7 @@ module Protocol_io = struct
         | Boundary _, None ->
           `Null
         | Reset _, () -> pos_to_json (make_pos (1,0))
-        | Refresh, changed -> `Bool changed
+        | Refresh, () -> `Bool true
         | Errors, exns ->
           `List (List.map (fun (_,err) -> error_to_json err)
                           (Error_report.of_exns exns))

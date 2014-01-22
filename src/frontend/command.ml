@@ -81,15 +81,10 @@ let dispatch (state : state) =
   | (Type_enclosing ((expr, offset), pos) : a request) ->
     failwith "TODO"
 
-  | (Complete_prefix (prefix, _) : a request) ->
-    let env = Typer.env (Buffer.typer state.buffer) in
-    Env.fold_values
-      (fun name _ _ lst ->
-         { name; kind = `Value; desc = ""; info = "" } :: lst)
-      None env []
-
-  (*| (Complete_prefix (prefix, Some pos) : a request) ->
-    failwith "TODO"*)
+  | (Complete_prefix (prefix, pos) : a request) ->
+    let node = Completion.node_at (Buffer.typer state.buffer) pos in
+    let compl = Completion.node_complete state.project node prefix in
+    List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
     failwith "TODO"
@@ -144,10 +139,13 @@ let dispatch (state : state) =
     state.buffer <- buffer
 
   | (Refresh : a request) ->
-    failwith "TODO"
+    (*FIXME: TODO*)
+    ()
 
   | (Errors : a request) ->
-    []
+    let pexns = Buffer.parser_errors state.buffer in
+    let texns = Typer.exns (Buffer.typer state.buffer) in
+    texns @ pexns
 
   | (Dump _ : a request) ->
     failwith "TODO"
