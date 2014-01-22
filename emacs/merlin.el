@@ -928,7 +928,7 @@ variable `merlin-ac-cache')."
     (prefix . merlin-ac-prefix))))
 
 (when (featurep 'auto-complete)
-  (ac-define-source "merlin" merlin-ac-source))
+  (eval '(ac-define-source "merlin" merlin-ac-source)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXPRESSION TYPING ;;
