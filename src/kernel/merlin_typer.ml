@@ -156,3 +156,11 @@ let update parser t =
 let env t = (I.value t.typer).P.env
 let structures t = (I.value t.typer).P.structures
 let exns t = (I.value t.typer).P.exns
+
+let is_valid t =
+  let env = env t in
+  match protect_typer ~btype:t.btype_cache ~env:t.env_cache
+          (fun _ -> Env.check_cache_consistency ())
+  with
+  | Either.L _exn -> false
+  | Either.R result -> result

@@ -195,6 +195,10 @@ module Project : sig
   (* Make global state point to current project *)
   val setup : t -> unit
 
+  (* Invalidate cache *)
+  val validity_stamp: t -> bool ref
+  val invalidate: ?flush:bool -> t -> unit
+
 end = struct
 
   type config = {
@@ -238,7 +242,8 @@ end = struct
     cmt_path    : Path_list.t;
 
     mutable global_modules: string list option;
-    mutable keywords_cache : Lexer.keywords * Extension.set;
+    mutable keywords_cache: Lexer.keywords * Extension.set;
+    mutable validity_stamp: bool ref
   }
 
   let flush_global_modules project =
@@ -294,6 +299,7 @@ end = struct
         ];
       global_modules = None;
       keywords_cache = Raw_lexer.keywords [], String.Set.empty;
+      validity_stamp = ref true;
     }
 
   let source_path p = p.source_path
@@ -380,6 +386,16 @@ end = struct
       let kw = Extension.keywords set in
       project.keywords_cache <- kw, set;
       kw
+
+  let validity_stamp p =
+    assert !(p.validity_stamp);
+    p.validity_stamp
+
+  let invalidate ?(flush=true) project =
+    if flush then Cmi_cache.flush ();
+    project.validity_stamp := false;
+    project.validity_stamp <- ref true
+
 end
 
 module Parser = Merlin_parser
@@ -408,6 +424,7 @@ end = struct
     mutable parser: (Lexer.item * Parser.t * exn list) History.t;
     mutable typer: Merlin_typer.t;
     mutable parser_path: Parser.Path.t;
+    mutable validity_stamp: bool ref;
   }
 
   let initial_step kind token =
@@ -430,6 +447,7 @@ end = struct
       parser = History.initial (initial_step kind (History.focused lexer));
       parser_path = Parser.Path.empty;
       typer = Merlin_typer.fresh (Project.extensions project);
+      validity_stamp = Project.validity_stamp project;
     }
 
   let setup buffer =
@@ -450,6 +468,12 @@ end = struct
 
   let typer b =
     setup b;
+    if not !(b.validity_stamp) then
+      begin
+        b.validity_stamp <- Project.validity_stamp b.project;
+        if not (Merlin_typer.is_valid b.typer) then
+          b.typer <- Merlin_typer.fresh (Project.extensions b.project);
+      end;
     let typer = Merlin_typer.update (parser b) b.typer  in
     b.typer <- typer;
     typer

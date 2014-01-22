@@ -94,6 +94,9 @@ module Project : sig
 
   (* Lexer keywords for current config *)
   val keywords: t -> Lexer.keywords
+
+  (* Invalidate cache *)
+  val invalidate: ?flush:bool -> t -> unit
 end
 
 module Buffer : sig

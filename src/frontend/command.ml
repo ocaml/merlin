@@ -139,8 +139,7 @@ let dispatch (state : state) =
     state.buffer <- buffer
 
   | (Refresh : a request) ->
-    (*FIXME: TODO*)
-    ()
+    Project.invalidate ~flush:true state.project
 
   | (Errors : a request) ->
     let pexns = Buffer.parser_errors state.buffer in

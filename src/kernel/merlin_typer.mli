@@ -1,5 +1,7 @@
 type t
 
+val is_valid: t -> bool
+
 val fresh: Extension.set -> t
 val update: Merlin_parser.t -> t -> t
 
