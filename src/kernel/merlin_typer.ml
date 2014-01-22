@@ -60,6 +60,8 @@ module P = struct
         `sg (List.rev sg)
       | NT'module_functor_arg (id,mty) ->
         `fmd (id,mty)
+      | NT'labeled_simple_pattern pat ->
+        `pat pat
       | _ -> `none
     in
     match case with
@@ -92,6 +94,16 @@ module P = struct
             | None -> t.env
             | Some md -> md.Typedtree.mod_env
           end, t.structures
+        | `pat (l,o,p) ->
+          let expr = Parsetree.Pexp_constant (Asttypes.Const_int 0) in
+          let expr = { Parsetree. pexp_desc = expr; pexp_loc = Location.none } in
+          let expr = Parsetree.Pexp_function (l, o, [p, expr]) in
+          let expr = { Parsetree. pexp_desc = expr; pexp_loc = Location.none } in
+          begin match Typecore.type_expression t.env expr with
+            | {Typedtree. exp_desc = Typedtree.Texp_function (_,[_,{Typedtree.exp_env}],_)} ->
+              exp_env, t.structures
+            | _ -> assert false
+          end
         | `none -> t.env, t.structures
       in
       {env; structures; snapshot = Btype.snapshot ();

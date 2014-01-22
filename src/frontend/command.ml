@@ -147,6 +147,11 @@ let dispatch (state : state) =
     let texns = Typer.exns (Buffer.typer state.buffer) in
     texns @ pexns
 
+  | (Dump `Parser : a request) ->
+    let ppf, to_string = Format.to_string () in
+    Parser.dump ppf (Buffer.parser state.buffer);
+    `String (to_string ())
+
   | (Dump _ : a request) ->
     failwith "TODO"
 

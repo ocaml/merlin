@@ -244,12 +244,8 @@ module Protocol_io = struct
       Request (Dump (`Env (`Full, optional_position opt_pos)))
     | [`String "dump"; `String "sig"] ->
       Request (Dump `Sig)
-    | [`String "dump"; `String "chunks"] ->
-      Request (Dump `Chunks)
-    | [`String "dump"; `String "tree"] ->
-      Request (Dump `Tree)
-    | [`String "dump"; `String "outline"] ->
-      Request (Dump `Outline)
+    | [`String "dump"; `String "parser"] ->
+      Request (Dump `Parser)
     | [`String "dump"; `String "exn"] ->
       Request (Dump `Exn)
     | [`String "dump"; `String "history"] ->
