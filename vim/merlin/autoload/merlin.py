@@ -244,7 +244,12 @@ def sync_buffer_to(to_line, to_col):
     else:
       content = None
   else:
-    command_reset(name=vim.eval("expand('%:p')"))
+    project = vim.eval("exists('b:dotmerlin') && len(b:dotmerlin) > 0 ? b:dotmerlin[0] : ''")
+    command("project","load",project)
+    command_reset(
+            kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
+            name=vim.eval("expand('%:p')")
+            )
     path = []
     content = cb[:end_line]
     process.saved_sync = curr_sync
