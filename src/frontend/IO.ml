@@ -313,7 +313,8 @@ module Protocol_io = struct
           `List (List.map pos_to_json [loc_start; loc_end])
         | Boundary _, None ->
           `Null
-        | Reset _, () -> pos_to_json (make_pos (1,0))
+        | Reset _, (pos, path) ->
+          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
         | Refresh, () -> `Bool true
         | Errors, exns ->
           `List (List.map (fun (_,err) -> error_to_json err)

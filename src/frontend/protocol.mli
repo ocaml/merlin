@@ -38,7 +38,7 @@ type _ request =
     -> Location.t option request
   | Reset
     :  [`ML | `MLI] * string option
-    -> unit request
+    -> (position * path) request
   | Refresh
     :  unit request
   | Errors

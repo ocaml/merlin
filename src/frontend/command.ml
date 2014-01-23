@@ -38,8 +38,16 @@ type state = {
   mutable lexer : Lexer.t option;
 }
 
+let store : (string, Project.t) Hashtbl.t = Hashtbl.create 3
+let project_by_key key =
+  try Hashtbl.find store key
+  with Not_found ->
+    let project = Project.create () in
+    Hashtbl.replace store key project;
+    project
+
 let new_state () =
-  let project = Project.create () in
+  let project = project_by_key "" in
   let buffer = Buffer.create project Parser.implementation in
   { project; buffer; lexer = None }
 
@@ -136,7 +144,8 @@ let dispatch (state : state) =
     in
     let buffer = Buffer.create ?path state.project parser in
     buffer_changed state;
-    state.buffer <- buffer
+    state.buffer <- buffer;
+    position state
 
   | (Refresh : a request) ->
     Project.invalidate ~flush:true state.project
@@ -173,7 +182,13 @@ let dispatch (state : state) =
     in
     let dot_merlins = fn path in
     let config = Dot_merlin.parse dot_merlins in
-    let failures = Project.set_dot_merlin state.project (Some config) in
+    let key = match config.Dot_merlin.dot_merlins with
+      | [] -> ""
+      | (a :: _) -> a
+    in
+    let project = project_by_key key in
+    let failures = Project.set_dot_merlin project (Some config) in
+    state.project <- project;
     (config.Dot_merlin.dot_merlins, failures)
 
   | (Findlib_list : a request) ->
