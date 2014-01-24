@@ -272,6 +272,8 @@ def sync_buffer():
 
 def sync_full_buffer():
   sync_buffer_to(len(vim.current.buffer),0)
+  command_tell("") # Signal EOF
+
 
 def vim_complete_cursor(base, vimvar):
   vim.command("let %s = []" % vimvar)

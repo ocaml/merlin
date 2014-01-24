@@ -29,7 +29,17 @@ let from state input =
   | `Step p -> p
   | _ -> assert false
 
-let feed input (p, depth) =
+let feed (s,t,e as input) (p, depth) =
+  (* FIXME Substitute EOF by SEMISEMI
+     This is not really clean. Rather than checking that the whole file is
+     well-formed we only check that the current structure_item is well formed.
+     The benefit of this hack is not having to handle a parser that reached
+     EOF as a special case... Could be fixed later.
+  *)
+  let input = match t with
+    | Raw_parser.EOF -> s,Raw_parser.SEMISEMI,e
+    | _ -> input
+  in
   let p' = Raw_parser.feed p input in
   of_step p' depth
 
