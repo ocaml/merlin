@@ -235,14 +235,7 @@ def sync_buffer_to(to_line, to_col):
 
   if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
     line, col = saved_sync.pos()
-    line, col, path = command_seek("before", line, 0)
-    if line <= end_line:
-      rest    = cb[line-1][col:]
-      content = cb[line:end_line]
-      content.insert(0, rest)
-      process.saved_sync = curr_sync
-    else:
-      content = None
+    command_seek("before", line, 0)
   else:
     project = vim.eval("exists('b:dotmerlin') && len(b:dotmerlin) > 0 ? b:dotmerlin[0] : ''")
     command("project","load",project)
@@ -250,9 +243,15 @@ def sync_buffer_to(to_line, to_col):
             kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
             name=vim.eval("expand('%:p')")
             )
-    path = []
-    content = cb[:end_line]
+  line, col, path = parse_position(command("tell", "start"))
+
+  if line <= end_line:
+    rest    = cb[line-1][col:]
+    content = cb[line:end_line]
+    content.insert(0, rest)
     process.saved_sync = curr_sync
+  else:
+    content = None
 
   # Send content
   if content:

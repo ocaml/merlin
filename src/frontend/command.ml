@@ -69,7 +69,13 @@ let buffer_update state items =
 let dispatch (state : state) =
   fun (type a) (request : a request) ->
   (match request with
-  | (Tell source : a request) ->
+  | (Tell `Start : a request) ->
+    let lexer = Buffer.start_lexing state.buffer in
+    state.lexer <- Some lexer;
+    ignore (Buffer.update state.buffer (Lexer.history lexer));
+    Lexer.position lexer, Buffer.path state.buffer
+
+  | (Tell (`Source source) : a request) ->
     let lexer = match state.lexer with
       | Some lexer when not (Lexer.eof lexer) -> lexer
       | None | Some _ ->
@@ -78,6 +84,11 @@ let dispatch (state : state) =
     in
     assert (Lexer.feed lexer source);
     ignore (Buffer.update state.buffer (Lexer.history lexer));
+    (* Stop lexer on EOF *)
+    begin match source with
+      | "" -> state.lexer <- None
+      | _ -> ()
+    end;
     Lexer.position lexer, Buffer.path state.buffer
 
   | (Type_expr (source, None) : a request) ->

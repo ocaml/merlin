@@ -14,7 +14,7 @@ type completion = {
 
 type _ request =
   | Tell
-    : string
+    : [`Start|`Source of string]
     -> (position * path)  request
   | Type_expr
     :  string * position option

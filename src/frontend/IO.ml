@@ -204,8 +204,12 @@ module Protocol_io = struct
       ("failures", `String ("Failed to load some packages " ^ str)) :: assoc
 
   let request_of_json = function
+    | [`String "tell"; `String "start"] ->
+      Request (Tell `Start)
     | [`String "tell"; `String "source"; `String source] ->
-      Request (Tell source)
+      Request (Tell (`Source source))
+    | [`String "tell"; `String "eof"] ->
+      Request (Tell (`Source ""))
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
       Request (Type_expr (expr, optional_position opt_pos))
     | [`String "type"; `String "enclosing";
