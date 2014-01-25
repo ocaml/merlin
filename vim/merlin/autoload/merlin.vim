@@ -61,7 +61,7 @@ endfunction
 
 function! merlin#PackageList(ArgLead, CmdLine, CursorPos)
   let l:pkgs = []
-  py merlin.vim_find_list("l:pkgs")
+  py merlin.vim_findlib_list("l:pkgs")
   return join(l:pkgs, "\n")
 endfunction
 
@@ -100,7 +100,7 @@ function! merlin#ExtDisable(...)
 endfunction
 
 function! merlin#Use(...)
-  py merlin.vim_use(*vim.eval("a:000"))
+  py merlin.vim_findlib_use(*vim.eval("a:000"))
   py merlin.vim_reload()
 endfunction
 
@@ -115,10 +115,6 @@ endfunction
 
 function! merlin#AddFlags(...)
   py merlin.vim_add_flags(*vim.eval("a:000"))
-endfunction
-
-function! merlin#RawCommand(...)
-  py print send_command(*vim.eval("a:000"))
 endfunction
 
 function! merlin#TypeOf(...)
@@ -192,13 +188,13 @@ function! merlin#Complete(findstart,base)
 endfunction
 
 function! merlin#Locate(...)
-    if (a:0 > 1)
-        echoerr "Locate: to many arguments (expected 0 or 1)"
-    elseif (a:0 == 0) || (a:1 == "")
-        py merlin.vim_locate_under_cursor()
-    else
-        py merlin.vim_locate_at_cursor(vim.eval("a:1"))
-    endif
+  if (a:0 > 1)
+    echoerr "Locate: to many arguments (expected 0 or 1)"
+  elseif (a:0 == 0) || (a:1 == "")
+    py merlin.vim_locate_under_cursor()
+  else
+    py merlin.vim_locate_at_cursor(vim.eval("a:1"))
+  endif
 endfunction
 
 function! merlin#SyntasticGetLocList()
@@ -206,10 +202,10 @@ function! merlin#SyntasticGetLocList()
   if expand('%:e') == 'ml'
     py <<EOF
 try: 
-    merlin.sync_full_buffer()
-    merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
+  merlin.sync_full_buffer()
+  merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
 except merlin.MerlinException as e:
-    merlin.try_print_error(e)
+  merlin.try_print_error(e)
 EOF
   endif
   return l:errors 
@@ -221,14 +217,6 @@ endfunction
 
 function! merlin#Reload()
   py merlin.vim_reload()
-endfunction
-
-function! merlin#ReloadFull()
-  py merlin.vim_reload(full=True)
-endfunction
-
-function! merlin#ReparseBuffer()
-  py merlin.vim_reload_buffer()
 endfunction
 
 " Copy-pasted from
@@ -254,41 +242,55 @@ function! merlin#Phrase()
 endfunction
 
 function! merlin#Register()
-  command! -buffer -nargs=? TypeOf call merlin#TypeOf(<q-args>)
+  command! -buffer        -nargs=? TypeOf          call merlin#TypeOf(<q-args>)
+  command! -buffer -range -nargs=0 TypeOfSel       call merlin#TypeOfSel()
+  command! -buffer        -nargs=? MerlinTypeOf    call merlin#TypeOf(<q-args>)
+  command! -buffer -range -nargs=0 MerlinTypeOfSel call merlin#TypeOfSel()
 
-  command! -buffer -nargs=0 ClearEnclosing call merlin#StopHighlight()
-  command! -buffer -nargs=0 GrowEnclosing call merlin#GrowEnclosing()
-  command! -buffer -nargs=0 ShrinkEnclosing call merlin#ShrinkEnclosing()
+  command! -buffer -nargs=0 ClearEnclosing        call merlin#StopHighlight()
+  command! -buffer -nargs=0 GrowEnclosing         call merlin#GrowEnclosing()
+  command! -buffer -nargs=0 ShrinkEnclosing       call merlin#ShrinkEnclosing()
+  command! -buffer -nargs=0 MerlinClearEnclosing  call merlin#StopHighlight()
+  command! -buffer -nargs=0 MerlinGrowEnclosing   call merlin#GrowEnclosing()
+  command! -buffer -nargs=0 MerlinShrinkEnclosing call merlin#ShrinkEnclosing()
 
-  command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
 
   command! -buffer -nargs=? Locate call merlin#Locate(<q-args>)
 
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
   command! -buffer -nargs=0 Reload       call merlin#Reload()
-  command! -buffer -nargs=0 ReloadFull   call merlin#ReloadFull()
-  " Used only to debug synchronization, do not expose to end-user
-  "command! -buffer -nargs=0 ReloadBuffer call merlin#ReloadBuffer()
-  command! -buffer -complete=custom,merlin#PackageList -nargs=* Use call merlin#Use(<f-args>)
-  command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags call merlin#AddFlags(<f-args>)
-  command! -buffer -complete=custom,merlin#ExtDisabled -nargs=* ExtEnable call merlin#ExtEnable(<f-args>)
-  command! -buffer -complete=custom,merlin#ExtEnabled -nargs=* ExtDisable call merlin#ExtDisable(<f-args>)
-  command! -buffer -nargs=0 ClearFlags call merlin#ClearFlags()
-  command! -buffer -nargs=0 LoadProject call merlin#LoadProject()
+  
+  command! -buffer -complete=custom,merlin#PackageList   -nargs=* Use              call merlin#Use(<f-args>)
+  command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags         call merlin#AddFlags(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* ExtEnable        call merlin#ExtEnable(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* ExtDisable       call merlin#ExtDisable(<f-args>)
+
+  command! -buffer -complete=custom,merlin#PackageList   -nargs=* MerlinUse        call merlin#Use(<f-args>)
+  command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* MerlinAddFlags   call merlin#AddFlags(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* MerlinExtEnable  call merlin#ExtEnable(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* MerlinExtDisable call merlin#ExtDisable(<f-args>)
+
+  command! -buffer -nargs=0 ClearFlags    call merlin#ClearFlags()
+  command! -buffer -nargs=0 LoadProject   call merlin#LoadProject()
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
+  command! -buffer -nargs=0 MerlinClearFlags    call merlin#ClearFlags()
+  command! -buffer -nargs=0 MerlinLoadProject   call merlin#LoadProject()
+  command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
+  command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
+
   setlocal omnifunc=merlin#Complete
-  map <buffer> <LocalLeader>t :TypeOf<return>
-  map <buffer> <LocalLeader>n :GrowEnclosing<return>
-  map <buffer> <LocalLeader>p :ShrinkEnclosing<return>
+  map  <buffer> <LocalLeader>t :TypeOf<return>
+  map  <buffer> <LocalLeader>n :GrowEnclosing<return>
+  map  <buffer> <LocalLeader>p :ShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
-  vmap <buffer> <TAB> :call merlin#Phrase()<return>
+  vmap <buffer> <TAB>          :call merlin#Phrase()<return>
 endfunction
 
 function! merlin#LoadProject()
   if isdirectory(expand('%:p:h'))
-    py merlin.load_project(vim.eval("expand('%:p:h')"), force=True)
+    py merlin.load_project(vim.eval("expand('%:p:h')"))
     if exists("b:dotmerlin") && exists("g:merlin_move_to_project") && g:merlin_move_to_project && len(b:dotmerlin) > 0
       execute ":lchdir " . fnamemodify(b:dotmerlin[0], ":p:h")
     endif
@@ -328,9 +330,8 @@ function! merlin#FindOcamlMerlin()
   return s:c.ocamlmerlin_path
 endfunction
 
-command! -nargs=1 -complete=custom,merlin#MLList ML call merlin#FindFile("ml",<f-args>)
+command! -nargs=1 -complete=custom,merlin#MLList  ML  call merlin#FindFile("ml",<f-args>)
 command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile("mli",<f-args>)
 
 " Flush buffer and dependencies after :make
-" Note: reloading Core can take some time
 au QuickFixCmdPost * call merlin#Reload()

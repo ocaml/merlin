@@ -11,11 +11,11 @@ import vimbufsync
 vimbufsync.check_version("0.1.0",who="merlin")
 
 flags = []
-
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
-
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
+
+######## ERROR MANAGEMENT
 
 class MerlinExc(Exception):
   def __init__(self, value):
@@ -32,7 +32,32 @@ class Error(MerlinExc):
 class MerlinException(MerlinExc):
   pass
 
-######## COMMUNICATION
+def try_print_error(e, msg=None):
+  try:
+    raise e
+  except Error as e:
+    if msg: print(msg)
+    else:
+      print(e.value['message'])
+  except Exception as e:
+    if msg: sys.stderr.write(msg)
+    else:
+      msg = str(e)
+      if re.search('Not_found',msg):
+        print ("error: Not found")
+        return None
+      elif re.search('Cmi_format.Error', msg):
+        sys.stderr.write ("error: The version of merlin you're using doesn't support this version of ocaml")
+        return None
+      sys.stderr.write(msg)
+
+def catch_and_print(f, msg=None):
+  try:
+    return f()
+  except MerlinExc as e:
+    try_print_error(e, msg=msg)
+
+######## PROCESS MANAGEMENT
 
 class MerlinProcess:
   def __init__(self):
@@ -82,14 +107,22 @@ class MerlinProcess:
     elif result[0] == "exception":
       raise MerlinException(content)
 
+## MULTI-PROCESS
+#merlin_processes = {}
+#def merlin_process():
+#  global merlin_processes
+#  name = vim.eval("exists('b:merlin_project') ? b:merlin_project : ''")
+#  if not name in merlin_processes:
+#    merlin_processes[name] = MerlinProcess()
+#  return merlin_processes[name]
 
-merlin_processes = {}
+# MONO-PROCESS
+merlin_processes = None
 def merlin_process():
   global merlin_processes
-  name = vim.eval("exists('b:merlin_project') ? b:merlin_project : ''")
-  if not name in merlin_processes:
-    merlin_processes[name] = MerlinProcess()
-  return merlin_processes[name]
+  if not merlin_processes:
+    merlin_processes = MerlinProcess()
+  return merlin_processes
 
 def command(*cmd):
   return merlin_process().command(*cmd)
@@ -97,30 +130,7 @@ def command(*cmd):
 def dump(*cmd):
   print(command('dump', *cmd))
 
-def try_print_error(e, msg=None):
-  try:
-    raise e
-  except Error as e:
-    if msg: print(msg)
-    else:
-      print(e.value['message'])
-  except Exception as e:
-    if msg: sys.stderr.write(msg)
-    else:
-      msg = str(e)
-      if re.search('Not_found',msg):
-        print ("error: Not found")
-        return None
-      elif re.search('Cmi_format.Error', msg):
-        sys.stderr.write ("error: The version of merlin you're using doesn't support this version of ocaml")
-        return None
-      sys.stderr.write(msg)
-
-def catch_and_print(f, msg=None):
-  try:
-    return f()
-  except MerlinExc as e:
-    try_print_error(e, msg=msg)
+######## PATH MANIPULATION
 
 def path_is_recursive(path):
   for component in path:
@@ -149,12 +159,26 @@ def path_common(p1,p2):
       return p
   return p
 
+######## BASIC COMMANDS
+
 def parse_position(pos):
   position = pos['pos']
   path = pos['path']
   return (position['line'], position['col'], path)
 
-######## BASIC COMMANDS
+def display_load_failures(result):
+  if 'failures' in result:
+    print (result['failures'])
+  return result['result']
+
+def command_tell(content):
+  if isinstance(content,list):
+    content = "\n".join(content) + "\n"
+  return parse_position(command("tell", "source", content))
+
+def command_find_use(*packages):
+  result = catch_and_print(lambda: command('find', 'use', packages))
+  return display_load_failures(result)
 
 def command_reset(kind="ml",name=None):
   global saved_sync
@@ -165,46 +189,11 @@ def command_reset(kind="ml",name=None):
   saved_sync = None
   return r
 
-def command_tell(content):
-  if isinstance(content,list):
-    content = "\n".join(content) + "\n"
-  return parse_position(command("tell", "source", content))
-
-def command_which_file(name):
-  return command('which', 'path', name)
-
-def command_which_with_ext(ext):
-  return command('which', 'with_ext', ext)
-
-def command_ext_list():
-  return command('extension', 'list')
-
-def command_ext_enabled():
-  return command('extension', 'list', 'enabled')
-
-def command_ext_disabled():
-  return command('extension', 'list', 'disabled')
-
-def display_load_failures(result):
-  if 'failures' in result:
-    print (result['failures'])
-  return result['result']
-
-def command_find_use(*packages):
-  result = catch_and_print(lambda: command('find', 'use', packages))
-  return display_load_failures(result)
-
 def command_seek(mtd,line,col):
   return parse_position(command("seek", mtd, {'line' : line, 'col': col}))
 
-def command_seek_end():
-  return command("seek", "end")
-
 def command_complete_cursor(base,line,col):
   return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
-
-def command_report_errors():
-  return command("errors")
 
 def command_locate(path, line, col):
   try:
@@ -225,7 +214,7 @@ def command_locate(path, line, col):
 
 ######## BUFFER SYNCHRONIZATION
 
-def sync_buffer_to(to_line, to_col):
+def sync_buffer_to(to_line, to_col, load_project=True):
   process = merlin_process()
   saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
@@ -237,8 +226,9 @@ def sync_buffer_to(to_line, to_col):
     line, col = saved_sync.pos()
     command_seek("before", line, 0)
   else:
-    project = vim.eval("exists('b:dotmerlin') && len(b:dotmerlin) > 0 ? b:dotmerlin[0] : ''")
-    command("project","load",project)
+    if load_project:
+      project = vim.eval("exists('b:dotmerlin') && len(b:dotmerlin) > 0 ? b:dotmerlin[0] : ''")
+      command("project","load",project)
     command_reset(
             kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
             name=vim.eval("expand('%:p')")
@@ -274,7 +264,19 @@ def sync_full_buffer():
   sync_buffer_to(len(vim.current.buffer),0)
   command_tell("") # Signal EOF
 
+######## VIM FRONTEND
 
+# Spawn a fresh new process
+def vim_restart():
+  merlin_process().restart()
+  path = vim.eval("expand('%:p')")
+  load_project(path)
+
+# Reload changed cmi files then retype all definitions
+def vim_reload():
+  return command("refresh")
+
+# Complete
 def vim_complete_cursor(base, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
@@ -293,9 +295,10 @@ def vim_complete_cursor(base, vimvar):
   except MerlinExc as e:
     try_print_error(e)
 
+# Error listing
 def vim_loclist(vimvar, ignore_warnings):
   vim.command("let %s = []" % vimvar)
-  errors = command_report_errors()
+  errors = command("errors")
   bufnr = vim.current.buffer.number
   nr = 0
   for error in errors:
@@ -314,32 +317,17 @@ def vim_loclist(vimvar, ignore_warnings):
     nr = nr + 1
     vim.command("call add(%s, l:tmp)" % vimvar)
 
-def vim_find_list(vimvar):
+# Findlib Package
+def vim_findlib_list(vimvar):
   pkgs = command('find', 'list')
   vim.command("let %s = []" % vimvar)
   for pkg in pkgs:
     vim.command("call add(%s, '%s')" % (vimvar, pkg))
 
-def vim_type(expr,is_approx=False):
-  to_line, to_col = vim.current.window.cursor
-  cmd_at = ["at", {'line':to_line,'col':to_col}]
-  sync_buffer_to(to_line,to_col)
-  cmd_expr = ["expression", expr] if expr else []
-  try:
-    cmd = ["type"] + cmd_expr + cmd_at
-    ty = command(*cmd)
-    if isinstance(ty,dict):
-      if "type" in ty: ty = ty['type']
-      else: ty = str(ty)
-    if is_approx: sys.stdout.write("(approx) ")
-    if expr: print(expr + " : " + ty)
-    else: print(ty)
-  except MerlinExc as e:
-    if re.search('Not_found',str(e)):
-      pass
-    else:
-      try_print_error(e)
+def vim_findlib_use(*args):
+  return command_find_use(*args)
 
+# Locate
 def vim_locate_at_cursor(path):
   line, col = vim.current.window.cursor
   sync_buffer_to(line, col)
@@ -364,6 +352,27 @@ def vim_locate_under_cursor():
     else:
         stop += 1
   vim_locate_at_cursor(line[start:stop])
+
+# Expression typing
+def vim_type(expr,is_approx=False):
+  to_line, to_col = vim.current.window.cursor
+  cmd_at = ["at", {'line':to_line,'col':to_col}]
+  sync_buffer_to(to_line,to_col)
+  cmd_expr = ["expression", expr] if expr else []
+  try:
+    cmd = ["type"] + cmd_expr + cmd_at
+    ty = command(*cmd)
+    if isinstance(ty,dict):
+      if "type" in ty: ty = ty['type']
+      else: ty = str(ty)
+    if is_approx: sys.stdout.write("(approx) ")
+    if expr: print(expr + " : " + ty)
+    else: print(ty)
+  except MerlinExc as e:
+    if re.search('Not_found',str(e)):
+      pass
+    else:
+      try_print_error(e)
 
 def bounds_of_ocaml_atom_at_pos(to_line, col):
     line = vim.current.buffer[to_line]
@@ -451,50 +460,35 @@ def vim_prev_enclosing(vimvar):
       vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
       print(tmp['type'])
 
-# Resubmit current buffer
-def vim_reload_buffer():
-  clear_cache()
-  sync_buffer()
-
-# Reload changed cmi files then retype all definitions
-def vim_reload():
-  return command("refresh")
-
-# Spawn a fresh new process
-def vim_restart():
-  merlin_process().restart()
-  path = vim.eval("expand('%:p')")
-  load_project(path, force=True)
-
+# Finding files
 def vim_which(name,ext):
   if ext:
     name = name + "." + ext
-  return command_which_file(name)
+  return command('which','path',name)
 
 def vim_which_ext(ext,vimvar):
-  files = command_which_with_ext(ext)
+  files = command('which', 'with_ext', ext)
   vim.command("let %s = []" % vimvar)
   for f in sorted(set(files)):
     vim.command("call add(%s, '%s')" % (vimvar, f))
 
-def vim_use(*args):
-  return command_find_use(*args)
-
+# Extension management
 def vim_ext(enable, exts):
   state = enable and 'enable' or 'disable'
   catch_and_print(lambda: command('extension', state, exts))
 
 def vim_ext_list(vimvar,enabled=None):
   if enabled == None:
-    exts = command_ext_list()
+    exts = command('extension','list')
   elif enabled:
-    exts = command_ext_enabled()
+    exts = command('extension','list','enabled')
   else:
-    exts = command_ext_disabled()
+    exts = command('extension','list','disabled')
   vim.command("let %s = []" % vimvar)
   for ext in exts:
     vim.command("call add(%s, '%s')" % (vimvar, ext))
 
+# Custom flag selection
 def vim_clear_flags():
   global flags
   flags = []
@@ -536,15 +530,9 @@ def vim_selectphrase(l1,c1,l2,c2):
   for (var,val) in [(l1,vl1),(l2,vl2),(c1,vc1),(c2,vc2)]:
     vim.command("let %s = %d" % (var,val))
 
-def load_project(directory,force=False):
-  cmd = [vim.eval("merlin#FindOcamlMerlin()"), "-project-find", directory]
-  process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-  name = process.communicate()[0].strip()
-  if not force:
-    if name == vim.eval("b:merlin_project"): return
-  vim.command("let b:merlin_project = '%s'" % name)
+def load_project(directory):
   failures = catch_and_print(lambda: command("project","find",directory))
   fnames = display_load_failures(failures)
   if isinstance(fnames, list):
     vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
-  sync_buffer_to(1, 0)
+  sync_buffer_to(1, 0, load_project=False)
