@@ -177,21 +177,26 @@ and from_path' ?fallback =
 
 and resolve_mod_alias ~fallback mod_item path =
   let open Browse in
+  let do_fallback = function
+    | None   -> Some fallback
+    | Some x -> Some x
+  in
   match mod_item with
   | [ { context = Module (Alias path', _) } ] ->
     let full_path = (path_to_list path') @ path in
     begin match from_path' ~fallback full_path with
-    | None -> None
+    (* [fallback] is used by [from_path'], so we *cannot* have [None] here *)
+    | None -> assert false
     | Some (v, _) -> Some v
     end
   | [ { context = Module (Structure, _) ; nodes } ] ->
-    browse_structure (Lazy.force nodes) path
+    do_fallback (browse_structure (Lazy.force nodes) path)
   | [ { context = Module (Mod_apply, _) ; loc } ] ->
     (* We don't want to follow functors instantiation *)
     debug_log "stopping on functor instantiation" ;
     Some loc
   | otherwise ->
-    browse_structure otherwise path
+    do_fallback (browse_structure otherwise path)
 
 let from_path path = from_path' (path_to_list path)
 
