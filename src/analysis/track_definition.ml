@@ -21,8 +21,18 @@ module Utils = struct
     let pref = Misc.chop_extensions f in
     String.capitalize (Filename.basename pref)
 
-  let find_file ?(ext=".cmt") file =
-    let fname = Misc.chop_extension_if_any (Filename.basename file) ^ ext in
+  type filetype =
+    | ML  of string
+    | CMT of string
+
+  let filename_of_filetype = function ML name | CMT name -> name
+  let ext_of_filetype = function ML _ -> ".ml" | CMT _ -> ".cmt"
+
+  let find_file file =
+    let fname =
+      Misc.chop_extension_if_any (filename_of_filetype file)
+      ^ (ext_of_filetype file)
+    in
     (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
        will most likely not be the one you want to edit.
        However, just using [find_in_path_uncap] won't work either when you have
@@ -34,12 +44,14 @@ module Utils = struct
        Note that [cwd] is set only when we have encountered a packed module, so in other
        cases [abs_cmt_file] will be something like "/file.ext" which (hopefully) won't
        exist. *)
-    try Misc.find_in_path_uncap
-          (Misc.Path_list.of_string_list_ref (ref [ !cwd ])) fname
+    try Misc.(find_in_path_uncap (Path_list.of_string_list_ref (ref [ !cwd ]))) fname
     with Not_found ->
-    try Misc.find_in_path_uncap !sources_path fname     with Not_found ->
-    try Misc.find_in_path_uncap Project.cmt_path fname  with Not_found ->
-    raise Not_found
+      let path =
+        match file with
+        | ML  _ -> !sources_path
+        | CMT _ -> Project.cmt_path
+      in
+      Misc.find_in_path_uncap path fname
 
   let keep_suffix =
     let open Longident in
@@ -154,7 +166,7 @@ and browse_cmts ~root modules =
       let file = List.find files ~f:(fun f -> file_path_to_mod_name f = mod_name) in
       cwd := Filename.dirname root ;
       debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
-      let cmt_file = find_file file in
+      let cmt_file = find_file (CMT file) in
       browse_cmts ~root:cmt_file modules
     end
   | _ -> None (* TODO? *)
@@ -171,7 +183,7 @@ and from_path' ?fallback =
     Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
   | fname :: modules ->
     try
-      let cmt_file = find_file fname in
+      let cmt_file = find_file (CMT fname) in
       recover (browse_cmts ~root:cmt_file modules)
     with Not_found ->
       recover None
@@ -294,7 +306,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
       in
       Option.map opt ~f:(fun loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
-        let full_path = find_file ~ext:".ml" fname in
+        let full_path = find_file (ML fname) in
         Some full_path, loc
       )
   with Not_found ->
