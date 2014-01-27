@@ -112,7 +112,9 @@ let rec check_item modules =
     | _ -> `Not_found
   in
   function
-  | [] -> from_path' modules
+  | [] ->
+    debug_log "%s not in current file..." (String.concat ~sep:"." modules) ;
+    from_path' modules
   | item :: rest ->
     match modules with
     | [] -> assert false
