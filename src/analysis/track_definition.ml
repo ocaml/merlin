@@ -6,7 +6,6 @@ let cwd = ref ""
 
 module Utils = struct
   let debug_log ?prefix x = Printf.ksprintf (Logger.log `locate ?prefix) x
-  (*let error_log x = Printf.ksprintf (Logger.error `locate) x*)
 
   let is_ghost { Location. loc_ghost } = loc_ghost = true
 
@@ -72,8 +71,9 @@ end
 
 include Utils
 
-let rec browse_structure browsable modules =
-  (* start from the bottom *)
+(** Reverse the list of structure items − we want to start from the bottom of
+    the file − and remove top level indirections. *)
+let get_browsable browsable =
   let items =
     List.rev_map (fun bt ->
       let open Browse in
@@ -82,14 +82,10 @@ let rec browse_structure browsable modules =
       | _ -> [bt]
     ) browsable
   in
-  let rec find = function
-    | [] -> None
-    | item :: items -> check_item modules item (fun () -> find items)
-  in
-  find (List.concat items)
+  List.concat items
 
-and check_item modules item try_next =
-  let get_loc ~name item =
+let rec check_item modules =
+  let get_loc ~name item rest =
     match item.Browse.context with
     | Browse.Pattern (Some id, _)
     | Browse.TypeDecl (id, _) when id.Ident.name = name ->
@@ -100,32 +96,39 @@ and check_item modules item try_next =
       Some item.Browse.loc
     | Browse.Module (Browse.Include ids, _)
       when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
-      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) [ name ]
-    | _ -> try_next ()
+      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes)
+        [ name ] rest
+    | _ -> check_item modules rest
   in
   let get_on_track ~name item =
     match item.Browse.context with
     | Browse.Module (Browse.Named id, _) when id = name ->
+      debug_log "(get_on_track) %s is an alias" name ;
       `Direct
     | Browse.Module (Browse.Include ids, _)
       when List.exists (fun i -> i.Ident.name = name) ids ->
+      debug_log "(get_on_track) %s is included..." name ;
       `Included
     | _ -> `Not_found
   in
-  match modules with
-  | [] -> assert false
-  | [ str_ident ] -> get_loc ~name:str_ident item
-  | mod_name :: path ->
-    begin match
-      match get_on_track ~name:mod_name item with
-      | `Not_found -> None
-      | `Direct -> Some path
-      | `Included -> Some modules
-    with
-    | None -> try_next ()
-    | Some path ->
-      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes) path
-    end
+  function
+  | [] -> from_path' modules
+  | item :: rest ->
+    match modules with
+    | [] -> assert false
+    | [ str_ident ] -> get_loc ~name:str_ident item rest
+    | mod_name :: path ->
+      begin match
+        match get_on_track ~name:mod_name item with
+        | `Not_found -> None
+        | `Direct -> Some path
+        | `Included -> Some modules
+      with
+      | None -> check_item modules rest
+      | Some path ->
+        resolve_mod_alias ~fallback:item.Browse.loc
+          (Lazy.force item.Browse.nodes) path rest
+      end
 
 and browse_cmts ~root modules =
   let open Cmt_format in
@@ -138,8 +141,9 @@ and browse_cmts ~root modules =
       let pos = { Lexing. pos_fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
       Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
     | _ ->
-      let browses = Browse.structure impl in
-      browse_structure browses modules
+      let browses   = Browse.structure impl in
+      let browsable = get_browsable browses in
+      check_item modules browsable
     end
   | Packed (_, files) ->
     begin match modules with
@@ -155,19 +159,14 @@ and browse_cmts ~root modules =
 
 and from_path' ?fallback =
   let recover = function
-    | None ->
-      begin match fallback with
-      | None -> None
-      | Some default -> Some (default, None)
-      end
-    | Some v ->
-      Some (v, fallback)
+    | None -> fallback
+    | Some v -> Some v
   in
   function
   | [] -> invalid_arg "empty path"
   | [ fname ] ->
     let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
-    Some ({ Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }, fallback)
+    Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
   | fname :: modules ->
     try
       let cmt_file = find_file fname in
@@ -175,44 +174,29 @@ and from_path' ?fallback =
     with Not_found ->
       recover None
 
-and resolve_mod_alias ~fallback mod_item path =
+and resolve_mod_alias ~fallback mod_item path rest =
   let open Browse in
   let do_fallback = function
     | None   -> Some fallback
     | Some x -> Some x
   in
   match mod_item with
+  | [ { context = TopStructure ; nodes } ] ->
+    (* Indirection, recurse. *)
+    resolve_mod_alias ~fallback (Lazy.force nodes) path rest
   | [ { context = Module (Alias path', _) } ] ->
     let full_path = (path_to_list path') @ path in
-    begin match from_path' ~fallback full_path with
-    (* [fallback] is used by [from_path'], so we *cannot* have [None] here *)
-    | None -> assert false
-    | Some (v, _) -> Some v
-    end
+    do_fallback (check_item full_path rest)
   | [ { context = Module (Structure, _) ; nodes } ] ->
-    do_fallback (browse_structure (Lazy.force nodes) path)
+    let browsable = get_browsable (Lazy.force nodes) @ rest in
+    do_fallback (check_item path browsable)
   | [ { context = Module (Mod_apply, _) ; loc } ] ->
     (* We don't want to follow functors instantiation *)
     debug_log "stopping on functor instantiation" ;
     Some loc
   | otherwise ->
-    do_fallback (browse_structure otherwise path)
-
-let from_path path = from_path' (path_to_list path)
-
-let rec find_includer ~path = function
-  | [] -> None
-  | str :: strs ->
-    let open Typedtree in
-    let name = Ident.name (Path.head path) in
-    let str= str.Asttypes.txt in
-    match str.str_items with
-    | [ { str_desc = Tstr_include (_, arg) ; str_loc }]
-      when List.exists (Merlin_types.include_idents arg)
-             ~f:(fun i -> Ident.name i = name) ->
-      resolve_mod_alias ~fallback:str_loc (Browse.structure str) (path_to_list path)
-    | _ ->
-      find_includer ~path strs
+    let browsable = get_browsable otherwise @ rest in
+    do_fallback (check_item path browsable)
 
 let path_and_loc_from_cstr desc env =
   let open Types in
@@ -279,13 +263,12 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
             if not is_local then
               Location.symbol_gloc ()
             else
-              let () = debug_log "which seems to be a local module... good luck." in
+              let () = debug_log "which is a local module..." in
               try
-                  (* FIXME: will only give the oldest ancestor of the searched module, not
-                   * the module itself... *)
-                  List.assoc (Ident.name starting_point) local_modules
+                (* FIXME: will only give the oldest ancestor of the searched
+                   module, not the module itself... *)
+                List.assoc (Ident.name starting_point) local_modules
               with Not_found ->
-                (* we hope that [find_includer] will succeed where we failed. *)
                 Location.symbol_gloc ()
           in
           path, loc
@@ -298,11 +281,16 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
       Some (None, loc)
     else
       let opt =
-        match find_includer ~path local_defs with
-        | None -> from_path path
-        | Some res -> Some (res, None)
+        let modules = path_to_list path in
+        let local_defs =
+          (* looks like local_defs is already in reversed order. So we need to
+             reverse it here (since [get_browsable] is going to reverse it one
+             last time). *)
+          List.rev_map local_defs ~f:(fun s -> Browse.structure s.Asttypes.txt)
+        in
+        check_item modules (get_browsable (List.concat local_defs))
       in
-      Option.map opt ~f:(fun (loc, _fallback_opt) ->
+      Option.map opt ~f:(fun loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file ~ext:".ml" fname in
         Some full_path, loc
