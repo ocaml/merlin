@@ -1,7 +1,6 @@
 val from_string
-  : sources:Misc.Path_list.t
+  : project:Merlin_lib.Project.t
   -> env:Env.t
-  -> local_defs:Typedtree.structure Asttypes.loc list
-  -> local_modules:(string * Location.t) list
+  -> local_defs:Typedtree.structure list
   -> string
   -> (string option * Location.t) option

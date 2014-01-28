@@ -1,7 +1,9 @@
 open Std
-open Global_state
+open Merlin_lib
 
 let sources_path = ref (Misc.Path_list.of_list [])
+let cmt_path = ref (Misc.Path_list.of_list [])
+
 let cwd = ref ""
 
 module Utils = struct
@@ -49,7 +51,7 @@ module Utils = struct
       let path =
         match file with
         | ML  _ -> !sources_path
-        | CMT _ -> Project.cmt_path
+        | CMT _ -> !cmt_path
       in
       Misc.find_in_path_uncap path fname
 
@@ -231,9 +233,10 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
-let from_string ~sources ~env ~local_defs ~local_modules path =
+let from_string ~project ~env ~local_defs path =
+  sources_path := Project.source_path project ;
+  cmt_path := Project.cmt_path project ;
   debug_log "looking for the source of '%s'" path ;
-  sources_path := sources;
   let ident, is_label = keep_suffix (Longident.parse path) in
   try
     let path, loc =
@@ -255,37 +258,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
         with Not_found ->
         try
           let path, _ = Env.lookup_module ident env in
-          let starting_point = Path.head path in
-          let is_local =
-            let rec aux =
-              let open Env in
-              function
-              | Env_empty -> false
-              | Env_module (_, id, _) when Ident.same starting_point id -> true
-              | Env_value (summary, _, _)
-              | Env_type (summary, _, _)
-              | Env_exception (summary, _, _)
-              | Env_module (summary, _, _)
-              | Env_modtype (summary, _, _)
-              | Env_class (summary, _, _)
-              | Env_cltype (summary, _, _)
-              | Env_open (summary, _) -> aux summary
-            in
-            aux (Env.summary env)
-          in
-          let loc =
-            if not is_local then
-              Location.symbol_gloc ()
-            else
-              let () = debug_log "which is a local module..." in
-              try
-                (* FIXME: will only give the oldest ancestor of the searched
-                   module, not the module itself... *)
-                List.assoc (Ident.name starting_point) local_modules
-              with Not_found ->
-                Location.symbol_gloc ()
-          in
-          path, loc
+          path, Location.symbol_gloc ()
         with Not_found ->
           debug_log "   ... not in the environment" ;
           raise Not_found
@@ -300,14 +273,16 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
           (* looks like local_defs is already in reversed order. So we need to
              reverse it here (since [get_browsable] is going to reverse it one
              last time). *)
-          List.rev_map local_defs ~f:(fun s -> Browse.structure s.Asttypes.txt)
+          List.rev_map local_defs ~f:(fun s -> Browse.structure s)
         in
         check_item modules (get_browsable (List.concat local_defs))
       in
       Option.map opt ~f:(fun loc ->
-        let fname = loc.Location.loc_start.Lexing.pos_fname in
-        let full_path = find_file (ML fname) in
-        Some full_path, loc
+        match loc.Location.loc_start.Lexing.pos_fname with
+        | "" -> None, loc
+        | fname ->
+          let full_path = find_file (ML fname) in
+          Some full_path, loc
       )
   with Not_found ->
     None

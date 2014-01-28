@@ -105,7 +105,22 @@ let dispatch (state : state) =
     List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
-    failwith "TODO"
+    let node, local_defs =
+      let typer = Buffer.typer state.buffer in
+      match opt_pos with
+      | None     -> Browse.({ dummy with env = Typer.env typer }), []
+      | Some pos -> Completion.node_at typer pos, Merlin_typer.structures typer
+    in
+    let opt =
+      Track_definition.from_string ~project:state.project ~env:(node.Browse.env)
+        ~local_defs path
+    in
+    Option.map opt ~f:(fun (file_opt, loc) ->
+      Logger.log `locate
+        (sprintf "--> %s"
+          (match file_opt with None -> "<local buffer>" | Some f -> f)) ;
+      file_opt, loc.Location.loc_start
+    )
 
   | (Drop : a request) ->
     let lexer = Buffer.lexer state.buffer in
