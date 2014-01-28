@@ -112,6 +112,8 @@ let rec check_item modules =
       when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
       resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes)
         [ name ] rest
+    | Browse.Module (Browse.Named str, _) when str = name ->
+      Some item.Browse.loc
     | _ -> check_item modules rest
   in
   let get_on_track ~name item =

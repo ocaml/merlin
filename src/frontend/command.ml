@@ -105,15 +105,16 @@ let dispatch (state : state) =
     List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
-    let node, local_defs =
+    let env, local_defs =
       let typer = Buffer.typer state.buffer in
       match opt_pos with
-      | None     -> Browse.({ dummy with env = Typer.env typer }), []
-      | Some pos -> Completion.node_at typer pos, Merlin_typer.structures typer
+      | None     -> Typer.env typer, []
+      | Some pos ->
+        let node = Completion.node_at typer pos in
+        node.Browse.env, Merlin_typer.structures typer
     in
     let opt =
-      Track_definition.from_string ~project:state.project ~env:(node.Browse.env)
-        ~local_defs path
+      Track_definition.from_string ~project:state.project ~env ~local_defs path
     in
     Option.map opt ~f:(fun (file_opt, loc) ->
       Logger.log `locate
