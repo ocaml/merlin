@@ -80,12 +80,6 @@ let mkpatvar startpos endpos name =
   let loc = symbol_rloc startpos endpos in
   { ppat_desc = Ppat_var (mkrhs startpos endpos name); ppat_loc = loc }
 
-let remember_module_loc name loc =
-  Logger.(log Section.(`locate)) ~prefix:"Raw_parser |" name ;
-  match Std.(~!) Outline_utils.local_modules with
-  | None -> ()
-  | Some lst -> lst := {Location. txt = name; loc} :: !lst
-
 (*
   Ghost expressions and patterns:
   expressions and patterns that do not appear explicitly in the
@@ -667,10 +661,7 @@ structure_item:
       { [mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
           mkloc $4 (rhs_loc $startpos($4) $endpos($4))))] }
   | MODULE UIDENT module_binding
-      {
-        remember_module_loc $2 (symbol_rloc $startpos($2) $endpos($2));
-        [mkstr $startpos $endpos (Pstr_module(mkrhs $startpos($2) $endpos($2) $2, $3))]
-      }
+      { [mkstr $startpos $endpos (Pstr_module(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | MODULE REC module_rec_bindings
       { [mkstr $startpos $endpos (Pstr_recmodule(List.rev $3))] }
   | MODULE TYPE ident EQUAL module_type
@@ -734,10 +725,7 @@ module_rec_bindings:
 ;
 module_rec_binding:
     UIDENT COLON module_type EQUAL module_expr
-    {
-      remember_module_loc $1 (symbol_rloc $startpos($1) $endpos($1));
-      (mkrhs $startpos($1) $endpos($5) $1, $3, $5)
-    }
+    { (mkrhs $startpos($1) $endpos($5) $1, $3, $5) }
 ;
 
 (* Module types *)

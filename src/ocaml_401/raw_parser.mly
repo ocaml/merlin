@@ -76,12 +76,6 @@ let mkpatvar startpos endpos name =
   let ppat_loc = rloc startpos endpos in
   { ppat_desc = Ppat_var (mkrhs startpos endpos name); ppat_loc; }
 
-let remember_module_loc name loc =
-  Logger.(log Section.(`locate)) ~prefix:"Raw_parser |" name;
-  match Std.(~!) Raw_parser_aux.local_modules with
-  | None -> ()
-  | Some lst -> lst := {Location. txt = name; loc} :: !lst
-
 let regularize_type_kind = function
   | ((Ptype_variant [] | Ptype_record []), _, None) ->
     (Ptype_abstract, Public, None)
@@ -671,8 +665,7 @@ structure_item:
                        mkloc $4 (rloc $startpos($4) $endpos($4))))]
   }
 | MODULE UIDENT module_binding
-  { remember_module_loc $2 (rloc $startpos($2) $endpos($2));
-    [mkstr $startpos $endpos
+  { [mkstr $startpos $endpos
       (Pstr_module (mkrhs $startpos($2) $endpos($2) $2, $3))]
   }
 | _m = MODULE _r = REC module_rec_bindings
@@ -742,8 +735,7 @@ module_rec_bindings:
 
 module_rec_binding:
 | UIDENT COLON module_type EQUAL module_expr
-  { remember_module_loc $1 (rloc $startpos($1) $endpos($1));
-    [(mkrhs $startpos($1) $endpos($5) $1, $3, $5)] }
+  { [(mkrhs $startpos($1) $endpos($5) $1, $3, $5)] }
 
 (* Module types *)
 
