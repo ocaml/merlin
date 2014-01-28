@@ -239,4 +239,4 @@ val fold_cltypes:
 type cache
 
 val new_cache : unit -> cache
-val set_cache : cache -> unit
+val cache : cache ref

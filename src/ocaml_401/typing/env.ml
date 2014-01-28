@@ -292,8 +292,6 @@ let new_cache () = {
 
 let cache = ref (new_cache ())
 
-let set_cache inst = if !cache != inst then cache := inst
-
 let check_consistency filename crcs =
   try
     List.iter
@@ -325,7 +323,7 @@ let read_pers_struct modname filename = (
     check_consistency filename ps.ps_crcs;
     List.iter
       (function Rectypes ->
-        if not !Clflags.recursive_types then
+        if not (Clflags.recursive_types ()) then
           raise(Error(Need_recursive_types(ps.ps_name, !current_unit))))
       ps.ps_flags;
     Hashtbl.add !cache.persistent_structures modname (Some ps);
@@ -1480,7 +1478,7 @@ let save_signature_with_imports sg modname filename imports =
       cmi_name = modname;
       cmi_sign = sg;
       cmi_crcs = imports;
-      cmi_flags = if !Clflags.recursive_types then [Rectypes] else [];
+      cmi_flags = if Clflags.recursive_types () then [Rectypes] else [];
     } in
     let crc = output_cmi filename oc cmi in
     close_out oc;

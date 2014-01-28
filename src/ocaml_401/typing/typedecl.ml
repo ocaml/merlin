@@ -1014,7 +1014,7 @@ let transl_value_decl env loc valdecl =
       if arity = 0 then
         raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));
       let prim = Primitive.parse_declaration arity decl in
-      if !Clflags.native_code
+      if Clflags.native_code ()
       && prim.prim_arity > 5
       && prim.prim_native_name = ""
       then raise(Error(valdecl.pval_type.ptyp_loc, Missing_native_external));

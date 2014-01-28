@@ -183,4 +183,4 @@ val print_raw: (Format.formatter -> type_expr -> unit) ref
 type cache
 
 val new_cache : unit -> cache
-val set_cache : cache -> unit
+val cache : cache ref

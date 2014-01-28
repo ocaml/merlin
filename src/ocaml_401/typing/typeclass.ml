@@ -550,10 +550,10 @@ let rec class_field self_loc cl_num self_type meths vars
        concr_meths, warn_vals, inher, local_meths, local_vals)
 
   | Pcf_valvirt (lab, mut, styp) ->
-      if !Clflags.principal then Ctype.begin_def ();
+      if Clflags.principal () then Ctype.begin_def ();
       let cty = Typetexp.transl_simple_type val_env false styp in
       let ty = cty.ctyp_type in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
         Ctype.end_def ();
         Ctype.generalize_structure ty
       end;
@@ -579,12 +579,12 @@ let rec class_field self_loc cl_num self_type meths vars
           raise(Error(loc, val_env,
                       No_overriding ("instance variable", lab.txt)))
       end;
-      if !Clflags.principal then Ctype.begin_def ();
+      if Clflags.principal () then Ctype.begin_def ();
       let exp =
         try type_exp val_env sexp with Ctype.Unify [(ty, _)] ->
           raise(Error(loc, val_env, Make_nongen_seltype ty))
       in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
         Ctype.end_def ();
         Ctype.generalize_structure exp.exp_type
        end;
@@ -782,10 +782,10 @@ and class_structure cl_num final val_env met_env loc
   end;
 
   (* Typing of method bodies *)
-  if !Clflags.principal then
+  if Clflags.principal () then
     List.iter (fun (_,_,ty) -> Ctype.generalize_spine ty) methods;
   let fields = List.map Lazy.force (List.rev fields) in
-  if !Clflags.principal then
+  if Clflags.principal () then
     List.iter (fun (_,_,ty) -> Ctype.unify val_env ty (Ctype.newvar ()))
       methods;
   let meths = Meths.map (function (id, ty) -> id) !meths in
@@ -876,11 +876,11 @@ and class_expr cl_num val_env met_env scl =
       in
       class_expr cl_num val_env met_env sfun
   | Pcl_fun (l, None, spat, scl') ->
-      if !Clflags.principal then Ctype.begin_def ();
+      if Clflags.principal () then Ctype.begin_def ();
       let (pat, pv, val_env', met_env) =
         Typecore.type_class_arg_pattern cl_num val_env met_env l spat
       in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
         Ctype.end_def ();
         iter_pattern (fun {pat_type=ty} -> Ctype.generalize_structure ty) pat
       end;
@@ -923,9 +923,9 @@ and class_expr cl_num val_env met_env scl =
             (l, Ctype.instance_def pat.pat_type, cl.cl_type);
           cl_env = val_env}
   | Pcl_apply (scl', sargs) ->
-      if !Clflags.principal then Ctype.begin_def ();
+      if Clflags.principal () then Ctype.begin_def ();
       let cl = class_expr cl_num val_env met_env scl' in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
         Ctype.end_def ();
         generalize_class_type false cl.cl_type;
       end;
@@ -937,7 +937,7 @@ and class_expr cl_num val_env met_env scl =
         | _    -> ls
       in
       let ignore_labels =
-        !Clflags.classic ||
+        Clflags.classic () ||
         let labels = nonopt_labels [] cl.cl_type in
         List.length labels = List.length sargs &&
         List.for_all (fun (l,_) -> l = "") sargs &&
@@ -1154,7 +1154,7 @@ let initial_env define_class approx
 
   (* Temporary type for the class constructor *)
   let constr_type = approx cl.pci_expr in
-  if !Clflags.principal then Ctype.generalize_spine constr_type;
+  if Clflags.principal () then Ctype.generalize_spine constr_type;
   let dummy_cty =
     Cty_signature
       { cty_self = Ctype.newvar ();

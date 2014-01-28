@@ -658,7 +658,7 @@ exception Not_a_path
 let rec path_of_module mexp =
   match mexp.mod_desc with
     Tmod_ident (p,_) -> p
-  | Tmod_apply(funct, arg, coercion) when !Clflags.applicative_functors ->
+  | Tmod_apply(funct, arg, coercion) when Clflags.applicative_functors () ->
       Papply(path_of_module funct, path_of_module arg)
   | _ -> raise Not_a_path
 
@@ -904,9 +904,9 @@ let rec type_module sttn funct_body anchor env smod =
   | Pmod_unpack sexp ->
       if funct_body then
         raise (Error (smod.pmod_loc, env, Not_allowed_in_functor_body));
-      if !Clflags.principal then Ctype.begin_def ();
+      if Clflags.principal () then Ctype.begin_def ();
       let exp = Typecore.type_exp env sexp in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
         Ctype.end_def ();
         Ctype.generalize_structure exp.exp_type
       end;
@@ -916,7 +916,7 @@ let rec type_module sttn funct_body anchor env smod =
             if List.exists (fun t -> Ctype.free_variables t <> []) tl then
               raise (Error (smod.pmod_loc, env,
                             Incomplete_packed_module exp.exp_type));
-            if !Clflags.principal &&
+            if Clflags.principal () &&
               not (Typecore.generalizable (Btype.generic_level-1) exp.exp_type)
             then
               Location.prerr_warning smod.pmod_loc
@@ -1141,7 +1141,7 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
          sg @ sig_rem,
          final_env)
   in
-  if !Clflags.annotations then
+  if Clflags.annotations () then
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
   let previous_saved_types = Cmt_format.get_saved_types () in
@@ -1285,7 +1285,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
   let (str, sg, finalenv) =
     type_structure initial_env ast (Location.in_file sourcefile) in
   let simple_sg = simplify_signature sg in
-  if !Clflags.print_types then begin
+  if Clflags.print_types () then begin
     Printtyp.wrap_printing_env initial_env
       (fun () -> fprintf std_formatter "%a@." Printtyp.signature simple_sg);
     (str, Tcoerce_none)   (* result is ignored by Compile.implementation *)
@@ -1319,7 +1319,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
          the value being exported. We can still capture unused
          declarations like "let x = true;; let x = 1;;", because in this
          case, the inferred signature contains only the last declaration. *)
-      if not !Clflags.dont_write_files then begin
+      if not (Clflags.dont_write_files ()) then begin
         let sg =
           Env.save_signature simple_sg modulename (outputprefix ^ ".cmi") in
         Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
@@ -1390,7 +1390,7 @@ let package_units objfiles cmifile modulename =
         (fun (name, crc) -> not (List.mem name unit_names))
         (Env.imported_units()) in
     (* Write packaged signature *)
-    if not !Clflags.dont_write_files then begin
+    if not (Clflags.dont_write_files ()) then begin
       let sg =
         Env.save_signature_with_imports sg modulename
           (prefix ^ ".cmi") imports in

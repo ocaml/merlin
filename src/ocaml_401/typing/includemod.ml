@@ -480,7 +480,7 @@ let include_err ppf (cxt, env, err) =
 
 let buffer = ref ""
 let is_big obj =
-  let size = !Clflags.error_size in
+  let size = Clflags.error_size () in
   size > 0 &&
   begin
     if String.length !buffer < size then buffer := String.create size;

@@ -503,9 +503,6 @@ let new_cache () = {
 
 let cache = ref (new_cache ())
 
-let set_cache inst =
-  if !cache != inst then cache := inst
-
 let log_change ch =
   match Weak.get !cache.trail 0 with None -> ()
   | Some r ->
