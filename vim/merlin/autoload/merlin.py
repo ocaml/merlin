@@ -132,6 +132,31 @@ def dump(*cmd):
 
 ######## PATH MANIPULATION
 
+def path_last_structure_or_sig(path):
+  si = -1
+  for i in range(len(path)):
+    c = path[i]
+    if len(c) > 0 and c[0] in ["struct","sig"]:
+      si = i
+  if si == -1:
+      return path
+  else:
+      return path[:si+1]
+
+def path_is_after(path, ref=[]):
+  l = min(len(path),len(ref))
+  for i in range(l):
+    if path[i] != ref[i]:
+      p, r = path[i], ref[i]
+      l = min(len(p),len(r))
+      for i in range(l):
+        if p[i] != r[i] and isinstance(p[i],int) and isinstance(r[i],int):
+          return p[i] > r[i]
+        else:
+          return True
+      return True
+  return False
+
 def path_is_recursive(path):
   for component in path:
     if isinstance(component,list):
@@ -247,7 +272,8 @@ def sync_buffer_to(to_line, to_col, load_project=True):
   if content:
     kind = "source"
     _, _, path = command_tell(content)
-    while path_is_recursive(path):
+    root = path_last_structure_or_sig(path)
+    while path_is_recursive(path) or not path_is_after(path,ref=root):
       if end_line < max_line:
         next_end = min(max_line,end_line + 50)
         _, _, p2 = command_tell(cb[end_line:next_end])
