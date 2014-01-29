@@ -123,6 +123,10 @@ let dispatch (state : state) =
       file_opt, loc.Location.loc_start
     )
 
+  | (Outline : a request) ->
+    let typed_tree = Merlin_typer.structures (Buffer.typer state.buffer) in
+    Outline.get typed_tree
+
   | (Drop : a request) ->
     let lexer = Buffer.lexer state.buffer in
     Buffer.update state.buffer (History.drop_tail lexer);

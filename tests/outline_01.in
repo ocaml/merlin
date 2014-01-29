@@ -1,0 +1,7 @@
+["tell","start"]
+["tell","source","type t1 = A | B of string\n"]
+["seek","before",{"line":10,"col":0}]
+["tell","start"]
+["tell","source","\n\ntype t2 = { e1 : bool; e2 : int; }\n\nlet a = 1\n\nmodule M = struct\n  let m1 = \"abc\"\nend\n"]
+["tell","source",""]
+["outline"]

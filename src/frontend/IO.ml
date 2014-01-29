@@ -135,20 +135,31 @@ module Protocol_io = struct
   let json_of_type_loc (loc,str) =
     with_location loc ["type", `String str]
 
+  let string_of_kind = function
+    | `Value       -> "Value"
+    | `Constructor -> "Constructor"
+    | `Label       -> "Label"
+    | `Module      -> "Module"
+    | `Modtype     -> "Signature"
+    | `Type        -> "Type"
+    | `MethodCall  -> "#"
+
   let json_of_completion {Protocol. name; kind; desc; info} =
-    let kind = match kind with
-      | `Value       -> "Value"
-      | `Constructor -> "Constructor"
-      | `Label       -> "Label"
-      | `Module      -> "Module"
-      | `Modtype     -> "Signature"
-      | `Type        -> "Type"
-      | `MethodCall  -> "#"
-    in
     `Assoc ["name", `String name;
-            "kind", `String kind;
+            "kind", `String (string_of_kind kind);
             "desc", `String desc;
             "info", `String info]
+
+  let rec json_of_outline outline =
+    let json_of_item {Protocol. name ; kind ; pos ; children } =
+      `Assoc [
+        "name", `String name;
+        "kind", `String (string_of_kind kind);
+        "pos", pos_to_json pos;
+        "children", `List (json_of_outline children);
+      ]
+    in
+    List.map json_of_item outline
 
   let json_of_path =
     let open Merlin_lib.Parser in function
@@ -219,6 +230,8 @@ module Protocol_io = struct
       Request (Complete_prefix (prefix, pos_of_json jpos))
     | (`String "locate" :: `String path :: opt_pos) ->
       Request (Locate (path, optional_position opt_pos))
+    | [`String "outline"] ->
+      Request Outline
     | [`String "drop"] ->
       Request Drop
     | [`String "seek"; `String "position"] ->
@@ -311,6 +324,8 @@ module Protocol_io = struct
           `Assoc ["pos",pos_to_json pos]
         | Locate _, Some (Some file,pos) ->
           `Assoc ["file",`String file; "pos",pos_to_json pos]
+        | Outline, outlines ->
+          `List (json_of_outline outlines)
         | Drop, (pos, path) ->
           `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
         | Boundary _, Some {Location. loc_start; loc_end} ->

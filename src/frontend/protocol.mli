@@ -12,6 +12,14 @@ type completion = {
   info: string;
 }
 
+type outline = item list
+and item = {
+  name : string ;
+  kind : [`Value|`Constructor|`Label|`Module|`Modtype|`Type|`MethodCall] ;
+  pos  : position ;
+  children : outline ;
+}
+
 type _ request =
   | Tell
     : [`Start|`Source of string]
@@ -28,6 +36,8 @@ type _ request =
   | Locate
     :  string * position option
     -> (string option * position) option request
+  | Outline
+    :  outline request
   | Drop
     :  (position * path) request
   | Seek

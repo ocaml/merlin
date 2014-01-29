@@ -1,0 +1,7 @@
+["return",{"pos":{"line":1,"col":0},"path":[]}]
+["return",{"pos":{"line":2,"col":0},"path":[]}]
+["return",{"pos":{"line":1,"col":25},"path":[]}]
+["return",{"pos":{"line":1,"col":25},"path":[]}]
+["return",{"pos":{"line":10,"col":0},"path":[["struct",3]]}]
+["return",{"pos":{"line":10,"col":0},"path":[["struct",4]]}]
+["return",[{"name":"t1","kind":"Type","pos":{"line":1,"col":5},"children":[{"name":"A","kind":"Constructor","pos":{"line":1,"col":10},"children":[]},{"name":"B","kind":"Constructor","pos":{"line":1,"col":14},"children":[]}]},{"name":"t2","kind":"Type","pos":{"line":3,"col":5},"children":[{"name":"e1","kind":"Label","pos":{"line":3,"col":12},"children":[]},{"name":"e2","kind":"Label","pos":{"line":3,"col":23},"children":[]}]},{"name":"a","kind":"Value","pos":{"line":5,"col":4},"children":[]},{"name":"M","kind":"Module","pos":{"line":7,"col":0},"children":[{"name":"m1","kind":"Value","pos":{"line":8,"col":6},"children":[]}]}]]
