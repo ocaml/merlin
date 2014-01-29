@@ -84,7 +84,7 @@ and structure_item_desc ~env = function
   | Tstr_type ilds ->
     let aux (id,_,ty) = type_declaration ~env id ty in
     List.map ~f:aux ilds
-  | Tstr_open _               -> []
+  | Tstr_open (_,_,l)         -> [{loc = l.Location.loc; env; nodes = lazy []; context = Other}]
   | Tstr_class lst            -> List.map ~f:(class_declaration ~env) lst
   | Tstr_class_type lst ->
     List.map lst ~f:(fun (id,l,{ ci_type_decl }) ->
