@@ -51,6 +51,13 @@ let stack (s,_ as stk) = frame_of (stack_depth stk) (get_stack s)
 let depth (d,f) = d
 
 let value (_,frame) = frame.E.semv
+let location (_,frame) =
+  { Location.
+    loc_start = frame.E.startp;
+    loc_end = frame.E.endp;
+    loc_ghost = false
+  }
+
 let eq (_,f) (_,f') = f == f'
 let next (d,f) = frame_of (d - 1) f.E.next
 

@@ -22,6 +22,7 @@ val stack : t -> frame option
 val depth : frame -> int
 
 val value : frame -> Raw_parser.semantic_value
+val location : frame -> Location.t
 val eq    : frame -> frame -> bool
 val next  : frame -> frame option
 
