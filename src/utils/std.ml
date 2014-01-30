@@ -135,6 +135,11 @@ module List = struct
       | One x -> One (f x)
       | More (x,tl) -> More (f x, map ~f tl)
   end
+
+  let rec last = function
+    | [] -> None
+    | [x] -> Some x
+    | _ :: l -> last l
 end
 
 module Option = struct
