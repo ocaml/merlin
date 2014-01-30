@@ -35,11 +35,16 @@ type mod_info =
   | Mod_apply
   | Structure
 
+type type_kind =
+  | Abstract
+  | Record of (Ident.t * Location.t) list
+  | Variant of (Ident.t * Location.t) list
+
 type context =
   | Expr      of Types.type_expr
   | Pattern   of Ident.t option * Types.type_expr
   | Type      of Types.type_expr
-  | TypeDecl  of Ident.t * Types.type_declaration
+  | TypeDecl  of Ident.t * Types.type_declaration * type_kind Lazy.t
   | Module    of mod_info * Types.module_type
   | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
@@ -93,12 +98,18 @@ and structure_item_desc ~env = function
   | Tstr_include (m,arg) ->
     [module_include (Merlin_types.include_idents arg) m]
 
-and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest } =
+and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest ; typ_kind } =
   let nodes = Option.map typ_manifest ~f:(fun c -> lazy [core_type c]) in
-  singleton
-    ~context:(TypeDecl (id,typ_type))
-    ?nodes
-    typ_loc env
+  let tkind =
+    match typ_kind with
+    | Ttype_abstract -> Lazy.from_val Abstract
+    | Ttype_variant cstrs -> lazy (Variant (type_variant cstrs))
+    | Ttype_record fields -> lazy (Record (type_record fields))
+  in
+  singleton ~context:(TypeDecl (id, typ_type, tkind)) ?nodes typ_loc env
+
+and type_variant lst = List.map lst ~f:(fun (ident, _, _, loc) -> ident, loc)
+and type_record lst = List.map lst ~f:(fun (ident, _, _, _, loc) -> ident, loc)
 
 and core_type { ctyp_env ; ctyp_loc ; ctyp_desc ; ctyp_type } =
   let subtypes = match ctyp_desc with

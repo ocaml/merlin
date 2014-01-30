@@ -102,7 +102,7 @@ let rec check_item modules =
   let get_loc ~name item rest =
     match item.Browse.context with
     | Browse.Pattern (Some id, _)
-    | Browse.TypeDecl (id, _) when id.Ident.name = name ->
+    | Browse.TypeDecl (id, _, _) when id.Ident.name = name ->
       Some item.Browse.loc
     | Browse.Module (Browse.Named id, _) when id = name ->
       Some item.Browse.loc

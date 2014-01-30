@@ -39,12 +39,17 @@ type mod_info =
   | Mod_apply
   | Structure
 
+type type_kind =
+  | Abstract
+  | Record of (Ident.t * Location.t) list
+  | Variant of (Ident.t * Location.t) list
+
 (* Typedtree constructions recognized *)
 type context =
   | Expr      of Types.type_expr
   | Pattern   of Ident.t option * Types.type_expr
   | Type      of Types.type_expr
-  | TypeDecl  of Ident.t * Types.type_declaration
+  | TypeDecl  of Ident.t * Types.type_declaration * type_kind Lazy.t
   | Module    of mod_info * Types.module_type
   | Modtype   of Ident.t * Types.modtype_declaration
   | Class     of Ident.t * Types.class_declaration
