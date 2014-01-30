@@ -106,9 +106,11 @@ module P = struct
           end
         | `none -> t.env, t.structures
       in
+      Typecore.reset_delayed_checks ();
       {env; structures; snapshot = Btype.snapshot ();
        exns = caught catch @ t.exns}
     with exn ->
+      Typecore.reset_delayed_checks ();
       {t with exns = exn :: caught catch @ t.exns}
 
   let delta st f t ~old:_ = frame st f t
@@ -158,7 +160,6 @@ let structures t = (I.value t.typer).P.structures
 let exns t = (I.value t.typer).P.exns
 
 let is_valid t =
-  let env = env t in
   match protect_typer ~btype:t.btype_cache ~env:t.env_cache
           (fun _ -> Env.check_cache_consistency ())
   with
