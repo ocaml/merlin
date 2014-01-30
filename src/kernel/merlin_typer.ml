@@ -170,6 +170,13 @@ module P = struct
       | NT'match_action e | NT'labeled_simple_expr (_,e) | NT'label_ident (_,e)
       | NT'label_expr (_,e) | NT'constrained_seq_expr e ->
         `str [mkeval e]
+      | NT'let_bindings e ->
+        let rec_ =
+          match Option.map ~f:Merlin_parser.value (Merlin_parser.next f) with
+          | Some (Nonterminal (NT'rec_flag r)) -> r
+          | None | Some _ -> Asttypes.Nonrecursive
+        in
+        `binds (rec_,e)
       | NT'expr_semi_list el | NT'expr_comma_opt_list el
       | NT'expr_comma_list el  ->
         `str (List.map ~f:mkeval el)
@@ -211,6 +218,9 @@ module P = struct
         let expr = { pexp_desc = expr; pexp_loc = loc } in
         let item = Pstr_eval expr in
         `fake { pstr_desc = item; pstr_loc = loc }
+      | `binds (rec_,e) ->
+        let item = Pstr_value (rec_,e) in
+        `str [{ pstr_desc = item; pstr_loc = loc }]
       | `Open (flag,name) ->
         let item = Pstr_open (flag,name) in
         `str [{ pstr_desc = item; pstr_loc = loc }]
