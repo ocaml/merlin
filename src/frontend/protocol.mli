@@ -15,7 +15,7 @@ type completion = {
 type outline = item list
 and item = {
   name : string ;
-  kind : [`Value|`Constructor|`Label|`Module|`Modtype|`Type|`MethodCall] ;
+  kind : [`Value|`Constructor|`Label|`Module|`Modtype|`Type|`Exn] ;
   pos  : position ;
   children : outline ;
 }
