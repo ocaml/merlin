@@ -164,14 +164,16 @@ module P = struct
       match nt with
       | NT'structure str | NT'structure_tail str | NT'structure_item str ->
         `str str
+      | NT'mod_open o -> `Open o
       | NT'top_expr e | NT'strict_binding e | NT'simple_expr e | NT'seq_expr e
       | NT'opt_default (Some e) | NT'fun_def e | NT'fun_binding e | NT'expr e
       | NT'match_action e | NT'labeled_simple_expr (_,e) | NT'label_ident (_,e)
-      | NT'label_expr (_,e) ->
+      | NT'label_expr (_,e) | NT'constrained_seq_expr e ->
         `str [mkeval e]
       | NT'expr_semi_list el | NT'expr_comma_opt_list el
       | NT'expr_comma_list el  ->
         `str (List.map ~f:mkeval el)
+      | NT'new_type s -> `nty s
       | NT'signature_item sg ->
         `sg sg
       | NT'signature sg ->
@@ -199,6 +201,19 @@ module P = struct
         let expr = { pexp_desc = expr; pexp_loc = loc } in
         let item = Pstr_eval expr in
         `fake { pstr_desc = item; pstr_loc = loc }
+      | `nty s ->
+        let expr = Pexp_constant (Asttypes.Const_int 0) in
+        let expr = { pexp_desc = expr; pexp_loc = Location.none } in
+        let pat = { ppat_desc = Ppat_any; ppat_loc = Location.none } in
+        let expr = Pexp_function ("", None, [pat, expr]) in
+        let expr = { pexp_desc = expr; pexp_loc = Location.none } in
+        let expr = Parsetree.Pexp_newtype (s,expr) in
+        let expr = { pexp_desc = expr; pexp_loc = loc } in
+        let item = Pstr_eval expr in
+        `fake { pstr_desc = item; pstr_loc = loc }
+      | `Open (flag,name) ->
+        let item = Pstr_open (flag,name) in
+        `str [{ pstr_desc = item; pstr_loc = loc }]
       | (`sg _ | `str _ | `none) as case -> case
     in
     match case with

@@ -673,9 +673,9 @@ structure_item:
 | MODULE TYPE ident EQUAL module_type
   { [mkstr $startpos $endpos
       (Pstr_modtype (mkrhs $startpos($3) $endpos($3) $3, $5))] }
-| OPEN override_flag mod_longident
-  { [mkstr $startpos $endpos
-      (Pstr_open ($2, mkrhs $startpos($3) $endpos($3) $3))] }
+| OPEN md = mod_open
+  { let flag, name = md in
+    [mkstr $startpos $endpos (Pstr_open (flag, name))] }
 | CLASS class_declarations
   { [mkstr $startpos $endpos
        (Pstr_class (List.rev $2))] }
@@ -802,8 +802,9 @@ signature_item:
   { [mksig $startpos $endpos (Psig_modtype (mkrhs $startpos($3) $endpos($3) $3, Pmodtype_abstract))] }
 | MODULE TYPE ident EQUAL module_type
   { [mksig $startpos $endpos (Psig_modtype (mkrhs $startpos($3) $endpos($3) $3, Pmodtype_manifest $5))] }
-| OPEN override_flag mod_longident
-  { [mksig $startpos $endpos (Psig_open ($2, mkrhs $startpos($3) $endpos($3) $3))] }
+| OPEN md = mod_open
+  { let flag, name = md in
+    [mksig $startpos $endpos (Psig_open (flag, name))] }
 | INCLUDE module_type
   { [mksig $startpos $endpos (Psig_include $2)] }
 | CLASS class_descriptions
@@ -1191,15 +1192,16 @@ expr:
 | LET MODULE UIDENT module_binding IN seq_expr
   { let expr = reloc_exp_fake $endpos($5) $6 in
     mkexp $startpos $endpos (Pexp_letmodule (mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
-| LET OPEN override_flag mod_longident IN seq_expr
-  { let expr = reloc_exp_fake $endpos($5) $6 in
-    mkexp $startpos $endpos (Pexp_open ($3, mkrhs $startpos($4) $endpos($4) $4, expr)) }
+| LET OPEN md = mod_open _in = IN expr = seq_expr
+  { let flag, name = md in
+    let expr = reloc_exp_fake $endpos(_in) expr in
+    mkexp $startpos $endpos (Pexp_open (flag, name, expr)) }
 | FUNCTION option(BAR) match_cases
   { mkexp $startpos $endpos (Pexp_function ("", None, List.rev $3)) }
 | FUN labeled_simple_pattern fun_def
   { let (l,o,p) = $2 in mkexp $startpos $endpos (Pexp_function (l, o, [p, $3])) }
-| FUN LPAREN TYPE LIDENT RPAREN fun_def
-  { mkexp $startpos $endpos (Pexp_newtype ($4, $6)) }
+| FUN new_type fun_def
+  { mkexp $startpos $endpos (Pexp_newtype ($2, $3)) }
 | MATCH seq_expr WITH option(BAR) match_cases
   { mkexp $startpos $endpos (Pexp_match ($2, List.rev $5)) }
 | MATCH_LWT seq_expr WITH option(BAR) match_cases
@@ -1369,8 +1371,8 @@ simple_expr:
 | BEGIN END
   { mkexp $startpos $endpos (Pexp_construct (mkloc (Lident "()") (rloc $startpos $endpos),
                            None, false)) }
-| LPAREN seq_expr type_constraint RPAREN
-  { check_constraint (mkexp $startpos $endpos) $3 $2 }
+| LPAREN e = constrained_seq_expr RPAREN
+  { reloc_exp $startpos $endpos e }
 | simple_expr DOT label_longident
   { mkexp $startpos $endpos (Pexp_field ($1, mkrhs $startpos($3) $endpos($3) $3)) }
 | mod_longident DOT LPAREN seq_expr RPAREN
@@ -1498,8 +1500,8 @@ strict_binding:
   { $2 }
 | labeled_simple_pattern fun_binding
   { let (l, o, p) = $1 in ghexp $startpos $endpos (Pexp_function (l, o, [p, $2])) }
-| LPAREN TYPE LIDENT RPAREN fun_binding
-  { mkexp $startpos $endpos (Pexp_newtype ($3, $5)) }
+| new_type fun_binding
+  { mkexp $startpos $endpos (Pexp_newtype ($1, $2)) }
 
 match_cases:
 | pattern match_action
@@ -1512,8 +1514,8 @@ fun_def:
   { $1 }
 | labeled_simple_pattern fun_def
   { let (l,o,p) = $1 in ghexp $startpos $endpos (Pexp_function (l, o, [p, $2])) }
-| LPAREN TYPE LIDENT RPAREN fun_def
-  { mkexp $startpos $endpos (Pexp_newtype ($3, $5)) }
+| new_type fun_def
+  { mkexp $startpos $endpos (Pexp_newtype ($1, $2)) }
 
 match_action:
 | MINUSGREATER seq_expr
@@ -2122,6 +2124,17 @@ class_longident:
 | LIDENT                   { Lident $1 }
 | mod_longident DOT LIDENT { Ldot ($1, $3) }
 
+(* Introduced for merlin, to make stack structure more explicit *)
+
+mod_open:
+| override_flag mod_longident { ($1, mkrhs $startpos($2) $endpos($2) $2) }
+
+new_type:
+| LPAREN TYPE LIDENT RPAREN { $3 }
+
+constrained_seq_expr:
+| e = seq_expr t = type_constraint
+  { check_constraint (mkexp $startpos $endpos) t e }
 
 (* Miscellaneous *)
 

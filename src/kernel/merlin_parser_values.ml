@@ -198,6 +198,7 @@ struct
       NT'constrain [];
       NT'constrain_field None;
       NT'constraints [];
+      NT'constrained_seq_expr Fake.any_val';
       NT'constr_ident "";
       NT'constr_longident any_lident;
       NT'constructor_arguments [];
@@ -245,6 +246,7 @@ struct
       NT'method_type None;
       NT'mod_ext_longident any_lident;
       NT'mod_longident any_lident;
+      NT'mod_open (Fresh,(Location.mkloc any_lident Location.none));
       NT'module_binding any_mod;
       NT'module_declaration any_mty;
       NT'module_expr any_mod;
@@ -258,6 +260,7 @@ struct
       NT'mutable_flag Immutable;
       NT'name_tag "";
       NT'name_tag_list [];
+      NT'new_type "";
       NT'operator "+";
       NT'opt_ampersand false;
       NT'opt_default None;
@@ -393,6 +396,7 @@ struct
     | NT'opt_default                       _ -> "opt_default"
     | NT'opt_ampersand                     _ -> "opt_ampersand"
     | NT'operator                          _ -> "operator"
+    | NT'new_type                          _ -> "new_type"
     | NT'name_tag_list                     _ -> "name_tag_list"
     | NT'name_tag                          _ -> "name_tag"
     | NT'mutable_flag                      _ -> "mutable_flag"
@@ -406,6 +410,7 @@ struct
     | NT'module_expr                       _ -> "module_expr"
     | NT'module_declaration                _ -> "module_declaration"
     | NT'module_binding                    _ -> "module_binding"
+    | NT'mod_open                          _ -> "mod_open"
     | NT'mod_longident                     _ -> "mod_longident"
     | NT'mod_ext_longident                 _ -> "mod_ext_longident"
     | NT'method_type                       _ -> "method_type"
@@ -452,6 +457,7 @@ struct
     | NT'constructor_declaration           _ -> "constructor_declaration"
     | NT'constructor_arguments             _ -> "constructor_arguments"
     | NT'constraints                       _ -> "constraints"
+    | NT'constrained_seq_expr              _ -> "constrained_seq_expr"
     | NT'constrain_field                   _ -> "constrain_field"
     | NT'constrain                         _ -> "constrain"
     | NT'constr_longident                  _ -> "constr_longident"
