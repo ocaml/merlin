@@ -284,6 +284,40 @@ containing fields file, line and col."
                    (substitute-command-keys "\\[merlin-pop-stack]")))
       (save-excursion (save-selected-window (funcall do-open))))))
 
+(defun merlin-parse-position (data)
+  "Position commands return a pair of a physical position (line, col) and a
+logical position (a path in the document)."
+  (cons
+    (merlin-make-point (cdr (assoc 'pos data)))
+    (cdr (assoc 'path data))))
+
+(defun merlin-path-common-prefix (p1 p2)
+  (cond ((equal p1 p2)
+         p1)
+        ((and (listp p1) (listp p2))
+         (let* ((head (list nil))
+                (tail head))
+           (while (and p1 p2 (equal (car p1) (car p2)))
+             (setcdr tail (list (car p1)))
+             (setq tail (cdr tail))
+             (setq p1 (cdr p1))
+             (setq p2 (cdr p2)))
+           (when (and p1 p2)
+             (let ((cell (merlin-path-common-prefix (car p1) (car p2))))
+               (when cell (setcdr tail (list cell)))))
+           (cdr head)))
+        (nil)))
+
+(defun merlin-path-is-recursive (path)
+  (let ((isrec nil))
+    (while (and (not isrec) path (listp path))
+      (setq isrec (merlin-path-is-recursive (car path)))
+      (setq path (cdr path)))
+    (or isrec (and (stringp path)
+                   (or (string-equal path "rec")
+                       (string-equal path "class")
+                       (string-equal path "object"))))))
+
 (defun merlin-make-point (data)
   "Transform DATA (a remote merlin position) into a point."
   (save-excursion
@@ -463,43 +497,46 @@ the error message otherwise print a generic error message."
     (merlin-wait-for-answer)))
 
 ;; SPECIAL CASE OF COMMANDS
-(defun merlin-rewind ()
+(defun merlin-rewind (&optional dont-load-project)
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
-  (merlin-send-command (list 'reset 'name buffer-file-name))
+  (unless dont-load-project
+    (when merlin-project-file
+      (merlin-send-command (list 'project 'load merlin-project-file))))
+  (let ((kind (if (string-equal ".mli" (file-name-extension buffer-file-name))
+                  'mli 'ml)))
+    (merlin-send-command (list 'reset kind buffer-file-name)))
   (merlin-error-reset)
   (setq merlin-lock-point (point-min)))
 
 (defun merlin-refresh ()
   "Refresh changed merlin cmis."
   (interactive)
-  (merlin-send-command '(refresh quick))
+  (merlin-send-command 'refresh)
   (merlin-after-save))
-
-(defun merlin-refresh-full ()
-  "Refresh all merlin cmis."
-  (interactive)
-  (merlin-send-command 'refresh))
 
 (defun merlin-get-completion (ident)
   "Return the completion for ident IDENT."
-  (merlin-send-command (list 'complete 'prefix ident 'at (merlin-unmake-point (point)))))
+  (merlin-send-command (list 'complete 'prefix ident 'at
+                             (merlin-unmake-point (point)))))
 
 (defun merlin-get-position ()
   "Get the current position of merlin."
-  (merlin-make-point (merlin-send-command '(seek position))))
+  (merlin-parse-position
+   (merlin-send-command
+    '(seek position))))
 
 (defun merlin-seek-before (point)
   "Move merlin's point to the valid definition before POINT."
-  (merlin-make-point (merlin-send-command (list 'seek 'before (merlin-unmake-point point)))))
+  (merlin-parse-position
+   (merlin-send-command
+    (list 'seek 'before (merlin-unmake-point point)))))
 
 (defun merlin-seek-exact (point)
   "Move merlin's point to the definition containing POINT."
-  (merlin-make-point (merlin-send-command (list 'seek 'exact (merlin-unmake-point point)))))
-
-(defun merlin-seek-end ()
-  "Move merlin's point to the end of its own view of the buffer."
-  (merlin-make-point (merlin-send-command '(seek end))))
+  (merlin-parse-position
+   (merlin-send-command
+    (list 'seek 'exact (merlin-unmake-point point)))))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
@@ -551,62 +588,45 @@ the error message otherwise print a generic error message."
    "Return content of buffer between two-point or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
 
-(defun merlin-tell-piece (mode &optional start end)
+(defun merlin-tell-piece (start end)
   "Send raw content to merlin.
-If START and END are specified, they are interpreted as positions in the buffer
-  and delimits the content to be sent.
-If only START is specified, it is directly used as argument.
-MODE can be 'source, 'more or 'end."
-  (cond ((and start end)
-         (merlin-send-command (list 'tell mode (merlin-buffer-substring start end))))
-        (start (merlin-send-command (list 'tell mode start)))
-        (t     (merlin-send-command '(tell end)))))
+START and END are positions in the buffer and delimits the content to be sent."
+  (let ((content (merlin-buffer-substring start end)))
+    (if (string-equal content "")
+        (merlin-send-command (list 'tell 'start)
+        (merlin-send-command (list 'tell 'source content))))))
 
-(defun merlin-tell-till-end-of-phrase ()
+(defun merlin-tell-till-end-of-recursion (path)
   "Feed merlin with as much content as it needs starting from (POINT).
 To be called only when merlin is waiting for input (e.g. after a `tell source'
 or `tell definitions')."
   (let ((curr (point))
-        (chunk 10)
-        (pos 'null))
+        (chunk 10))
     (forward-line chunk)
-    (while
-        (progn
-          (setq pos (if (< curr (point-max))
-                        (merlin-tell-piece 'more curr (point))
-                      (merlin-tell-piece 'end)))
-          (equal pos 'null))
+    (while (and (merlin-path-is-recursive path)
+                (< curr (point-max)))
+      (setq path (merlin-path-common-prefix
+                  path (cdr (merlin-tell-piece curr (point)))))
       (setq curr (point))
       (forward-line chunk)
-      (if (< chunk 20000)
-          (setq chunk (* chunk 2))))
-    (merlin-make-point pos)))
+      (when (< chunk 20000)
+        (setq chunk (* chunk 2))))))
 
 (defun merlin-tell-to-point (&optional point)
-  "Ensure that merlin view of the buffer is consistent up to POINT."
+  "Makes sure the buffer is synchronized on merlin-side at least up to POINT."
   (save-excursion
-    (if (not (merlin-is-last-user-p))
-        (merlin-rewind))
-    (unless point (setq point (point)))
-    (let ((start (merlin-seek-before merlin-lock-point)))
-      (when (< start point)
-        (merlin-tell-piece 'source start point)
-        (goto-char point)
-        (setq merlin-lock-point
-              (merlin-tell-till-end-of-phrase))))))
-
-(defun merlin-tell-definitions (count &optional point)
-  "Synchronize up to POINT then feed merlin with up to COUNT definitions."
-  (save-excursion
-    (if (not (merlin-is-last-user-p))
-        (merlin-rewind))
-    (unless point (setq point (point)))
-    (let ((start (merlin-seek-before point)))
-      (merlin-tell-piece 'definitions count)
+    (unless point
+      (setq point (point)))
+    (unless (merlin-is-last-user-p)
+      (merlin-rewind))
+    (merlin-seek-before point)
+    (let* ((result (merlin-parse-position (merlin-send-command '(tell start))))
+           (start  (car result))
+           (path   (cdr result)))
+      (setq path (merlin-path-common-prefix
+                  path (cdr (merlin-tell-piece start point))))
       (goto-char point)
-      (merlin-tell-piece 'source start point)
-      (setq merlin-lock-point
-          (merlin-tell-till-end-of-phrase)))))
+      (merlin-tell-till-end-of-recursion path))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINT SYNCHRONIZATION ;;
@@ -646,10 +666,9 @@ Called when an edit is made by the user."
              (merlin-sync-lock-zone-display))))
 
 (defun merlin-sync-to-point (&optional point)
-  "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
-  (unless point (setq point (point)))
+  "First do a merlin-tell-to-point then update lock zone display.
+FIXME: there is less structural meaning in lock-zone with new merlin, what should we do?"
   (merlin-tell-to-point point)
-  (merlin-seek-exact point)
   (merlin-sync-lock-zone-display))
 
 ;;;;;;;;;;;;;;;;;;
@@ -791,7 +810,6 @@ If there is no error, do nothing."
 Return t if there were not any or nil if there were.  Moreover, it displays the
 errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
-  (merlin-seek-end)
   (let* ((errors (merlin-send-command 'errors))
          (errors (delete-if (lambda (e) (not (assoc 'start e))) errors))
          (errors (if merlin-report-warnings errors
@@ -1064,21 +1082,23 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Use PKG in the current session of merlin."
   (interactive
    (list (completing-read "Package to use: " (merlin-get-packages))))
-  (let* ((r (merlin-send-command (list 'find 'use (list pkg))))
-         (failed (assoc 'failures r)))
+  (let* ((result (merlin-send-command (list 'find 'use (list pkg))))
+         (failed (assoc 'failures result)))
     (when failed (message (cdr failed))))
   (merlin-error-reset))
 
 (defun merlin-load-project-file ()
   "Load the .merlin file corresponding to the current file."
   (interactive)
-  (merlin-rewind)
-  (let* ((r (merlin-send-command (list 'project 'find (buffer-file-name))))
-         (failed (assoc 'failures r))
-         (result (assoc 'result r)))
-    (when failed (message (cdr failed)))
-    (when (and result (listp (cdr result)))
-      (setq merlin-project-file (cadr result)))))
+  (merlin-rewind t)
+  (let* ((result (merlin-send-command
+                  (list 'project 'find (buffer-file-name))))
+         (failed (cdr (assoc 'failures result))))
+    (when failed
+      (message failed))
+    (setq result (cdr (assoc 'result result)))
+    (when (and result (listp result))
+      (setq merlin-project-file (car result)))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
@@ -1095,11 +1115,11 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-locate-pure (ident)
   "Locate the identifier IDENT at point."
   (merlin-sync-to-point)
-  (let* ((r (merlin-send-command
+  (let* ((result (merlin-send-command
              (list 'locate (substring-no-properties ident)
                    'at (merlin-unmake-point (point))))))
-    (if (and r (listp r))
-        (merlin-goto-file-and-point r)
+    (if (and result (listp result))
+        (merlin-goto-file-and-point result)
       (message "%s not found." ident))))
 
 (defun merlin-locate ()
@@ -1123,14 +1143,14 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-pop-stack ()
   "Go back to the last position where the user did a locate."
   (interactive)
-  (let ((r (pop merlin-position-stack)))
-    (cond ((not r) (message "empty stack"))
+  (let ((result (pop merlin-position-stack)))
+    (cond ((not result) (message "empty stack"))
           ((equal merlin-locate-in-new-window 'never)
-           (switch-to-buffer (car r)))
+           (switch-to-buffer (car result)))
           ((or (equal merlin-locate-in-new-window 'always)
-               (not (equal (buffer-name) (car r))))
-           (select-window (display-buffer (car r)))))
-    (when r (goto-char (cdr r)))))
+               (not (equal (buffer-name) (car result))))
+           (select-window (display-buffer (car result)))))
+    (when result (goto-char (cdr result)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEMANTIC MOVEMENT ;;
@@ -1139,30 +1159,33 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-phrase-goto (command indice)
   "Go to the phrase indicated by COMMAND to the end INDICE.
 Returns the position."
-  (let ((r (merlin-send-command (list 'boundary command))))
-    (unless (equal r 'null)
-      (merlin-goto-point (elt r indice))
-      (point))))
+  (message "phrase: TODO"))
+  ; (let ((result (merlin-send-command (list 'boundary command))))
+  ;   (unless (equal result 'null)
+  ;     (merlin-goto-point (elt result indice))
+  ;     (point))))
 
 (defun merlin-phrase-next (&optional point)
   "Go to the beginning of the next phrase."
   (interactive)
-  (unless point (setq point (point)))
-  (merlin-sync-to-point point)
-  (cond
-    ((merlin-phrase-goto 'next 0))
-    ((progn (merlin-tell-definitions 2)
-            (goto-char (merlin-seek-exact point))
-            (merlin-phrase-goto 'next 0)))
-    (t (goto-char (point-max)))))
+  (message "phrase: TODO"))
+  ; (unless point (setq point (point)))
+  ; (merlin-sync-to-point point)
+  ; (cond
+  ;   ((merlin-phrase-goto 'next 0))
+  ;   ((progn (merlin-tell-definitions 2)
+  ;           (goto-char (merlin-seek-exact point))
+  ;           (merlin-phrase-goto 'next 0)))
+  ;   (t (goto-char (point-max)))))
 
 (defun merlin-phrase-prev ()
   "Go to the beginning of the previous phrase."
   (interactive)
-  (let ((point (point)))
-    (merlin-sync-to-point)
-    (if (equal point (merlin-phrase-goto 'current 0))
-        (merlin-phrase-goto 'prev 0))))
+  (message "phrase: TODO"))
+  ; (let ((point (point)))
+  ;   (merlin-sync-to-point)
+  ;   (if (equal point (merlin-phrase-goto 'current 0))
+  ;       (merlin-phrase-goto 'prev 0))))
 
 (defun merlin-to-point ()
   "Update merlin to the current point, reporting errors."
@@ -1175,6 +1198,7 @@ Returns the position."
   (interactive)
   (when merlin-mode
     (merlin-sync-to-point (point-max))
+    (merlin-send-command '(tell source "")) ; signal EOF
     (merlin-error-check t)))
 
 (defun merlin-customize ()
@@ -1309,7 +1333,7 @@ Short cuts:
         (delete-overlay merlin-lock-zone-margin-overlay))
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
-      ;;(merlin-error-delete-overlays) 
+      ;;(merlin-error-delete-overlays)
      )))
 
 (defun merlin-after-save ()
