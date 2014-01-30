@@ -91,13 +91,83 @@ let dispatch (state : state) =
     Lexer.position lexer, Buffer.path state.buffer
 
   | (Type_expr (source, None) : a request) ->
-    failwith "TODO"
+    let typer = Buffer.typer state.buffer in
+    let env = Typer.env typer in
+    let ppf, to_string = Format.to_string () in
+    Type_utils.type_in_env env ppf source;
+    to_string ()
 
   | (Type_expr (source, Some pos) : a request) ->
-    failwith "TODO"
+    let typer = Buffer.typer state.buffer in
+    let { Browse.env } = Completion.node_at typer pos in
+    let ppf, to_string = Format.to_string () in
+    Type_utils.type_in_env env ppf source;
+    to_string ()
 
   | (Type_enclosing ((expr, offset), pos) : a request) ->
-    failwith "TODO"
+    let typer = Buffer.typer state.buffer in
+    let structures = Typer.structures typer in
+    let structures = List.concat_map ~f:Browse.structure structures in
+    let path = Browse.enclosing pos structures in
+    let aux = function
+      | {Browse. loc; env;
+          context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t)} ->
+        let ppf, to_string = Format.to_string () in
+        Printtyp.wrap_printing_env env
+          (fun () -> Printtyp.type_scheme ppf t);
+        Some (loc, to_string ())
+      | {Browse. loc; env; context = Browse.TypeDecl (id,t,_)} ->
+        let ppf, to_string = Format.to_string () in
+        Printtyp.wrap_printing_env env
+          (fun () -> Printtyp.type_declaration id ppf t);
+        Some (loc, to_string ())
+      | {Browse. loc; env; context = Browse.Module (_,m)} ->
+        let ppf, to_string = Format.to_string () in
+        Printtyp.wrap_printing_env env
+          (fun () -> Printtyp.modtype ppf m);
+        Some (loc, to_string ())
+      | _ -> None
+    in
+    let result = List.filter_map ~f:aux path in
+    (* enclosings of cursor in given expression *)
+    let exprs =
+      let len = String.length expr in
+      let rec aux acc i =
+        if i >= len then
+          List.rev (expr :: acc)
+        else if expr.[i] = '.' then
+          aux (String.sub expr ~pos:0 ~len:i (* i-1 ? *) :: acc) (succ i)
+        else
+          aux acc (succ i)
+      in
+      aux [] offset
+    in
+    let small_enclosings =
+      let {Browse.env} = Completion.node_at typer pos in
+      let loc_start =
+        let l, c = Lexing.split_pos pos in
+        Lexing.make_pos (l, c - offset)
+      in
+      let shift loc int =
+        let l, c = Lexing.split_pos loc in
+        Lexing.make_pos (l, c + int)
+      in
+      List.filter_map exprs ~f:(fun source ->
+        try
+          let loc = { Location.
+            loc_start ;
+            loc_end = shift loc_start (String.length source) ;
+            loc_ghost = false ;
+          }
+          in
+          let ppf, to_string = Format.to_string () in
+          Type_utils.type_in_env env ppf source;
+          Some (loc, to_string ())
+        with _ ->
+          None
+      )
+    in
+    small_enclosings @ result
 
   | (Complete_prefix (prefix, pos) : a request) ->
     let node = Completion.node_at (Buffer.typer state.buffer) pos in
@@ -111,7 +181,7 @@ let dispatch (state : state) =
       | None     -> Typer.env typer, []
       | Some pos ->
         let node = Completion.node_at typer pos in
-        node.Browse.env, Merlin_typer.structures typer
+        node.Browse.env, Typer.structures typer
     in
     let opt =
       Track_definition.from_string ~project:state.project ~env ~local_defs path
@@ -124,7 +194,7 @@ let dispatch (state : state) =
     )
 
   | (Outline : a request) ->
-    let typed_tree = Merlin_typer.structures (Buffer.typer state.buffer) in
+    let typed_tree = Typer.structures (Buffer.typer state.buffer) in
     Outline.get typed_tree
 
   | (Drop : a request) ->
