@@ -152,10 +152,12 @@ module Fold = struct
       end
     with
     | exns, None ->
+      Typecore.reset_delayed_checks ();
       let snap = Btype.snapshot () in
       {state with exns; snap;
                   global_exns = state.exns @ state.global_exns}, ()
     | exns', Some (exns, env) ->
+      Typecore.reset_delayed_checks ();
       let snap = Btype.snapshot () in
       {state with exns = exns @ exns'; snap; env;
                   global_exns = state.exns @ state.global_exns}, ()
