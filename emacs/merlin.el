@@ -404,6 +404,7 @@ This sets `merlin-current-flags' to nil."
 (defun merlin-kill-process ()
   "Kill the merlin process inside the buffer."
   (tq-close merlin-process-queue)
+  (kill-buffer merlin-buffer-name)
   (kill-process merlin-process))
 
 (defun merlin-wait-for-answer ()
