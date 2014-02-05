@@ -65,9 +65,10 @@ let make keywords = {
 }
 
 
-let catch m f = match m with
+let rec catch m f = match m with
   | Error (e,l) -> f e l
-  | r -> r
+  | Refill next -> Refill (fun () -> catch (next ()) f)
+  | Return _ -> m
 
 (* The table of keywords *)
 let keyword_table : keywords =
