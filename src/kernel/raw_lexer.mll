@@ -38,8 +38,6 @@ type 'a result =
   | Error of error * Location.t
 
 let return a = Return a
-let refill_handler k state lexbuf arg = Refill (fun () -> k state lexbuf arg)
-let refill_handler' k lexbuf arg = Refill (fun () -> k lexbuf arg)
 
 let error e l = Error (e,l)
 
@@ -254,7 +252,9 @@ let float_literal =
   ('.' ['0'-'9' '_']* )?
   (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
 
-rule token state = refill {refill_handler} parse
+refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
+
+rule token state = parse
 | newline
   { update_loc lexbuf None 1 false 0;
     token state lexbuf
@@ -454,7 +454,7 @@ rule token state = refill {refill_handler} parse
   { error (Illegal_character (Lexing.lexeme_char lexbuf 0))
           (Location.curr lexbuf) }
 
-and comment state = refill {refill_handler} parse
+and comment state = parse
   "(*"
   { state.comment_start_loc <-
             (Location.curr lexbuf) :: state.comment_start_loc;
@@ -535,7 +535,7 @@ and comment state = refill {refill_handler} parse
     comment state lexbuf
   }
 
-and string state = refill {refill_handler} parse
+and string state = parse
   '"'
   { return () }
 | '\\' newline ([' ' '\t'] * as space)
@@ -585,7 +585,7 @@ and string state = refill {refill_handler} parse
     string state lexbuf
   }
 
-and skip_sharp_bang = refill {refill_handler'} parse
+and skip_sharp_bang = parse
 | "#!" [^ '\n']* '\n' [^ '\n']* "\n!#\n"
   { update_loc lexbuf None 3 false 0;
     return ()
@@ -596,7 +596,7 @@ and skip_sharp_bang = refill {refill_handler'} parse
   }
 | "" { return () }
 
-and p4_quotation = refill {refill_handler'} parse
+and p4_quotation = parse
 | "<" (":" identchar*)? ("@" identchar*)? "<"
   { p4_quotation lexbuf }
   (* FIXME: This is fake *)
