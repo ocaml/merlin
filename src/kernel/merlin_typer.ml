@@ -177,6 +177,7 @@ module P = struct
           | None | Some _ -> Asttypes.Nonrecursive
         in
         `binds (rec_,e)
+      (*| NT'let_rec_bindings e -> `binds e*)
       | NT'expr_semi_list el | NT'expr_comma_opt_list el
       | NT'expr_comma_list el  ->
         `str (List.map ~f:mkeval el)
@@ -189,6 +190,9 @@ module P = struct
         `fmd (id,mty)
       | NT'labeled_simple_pattern pat ->
         `pat pat
+      (* Approximation to match/with typing: we only introduce names in the environment, not taking the matched expression into account *)
+      | NT'pattern pat -> 
+        `pat ("",None,pat)
       | _ -> `none
     in
     let case =
@@ -241,7 +245,10 @@ module P = struct
           let sg = sg.Typedtree.sig_type in
           Env.add_signature sg t.env, t.structures
         | `fake str ->
-          let structure,_,_ = Typemod.type_structure t.env [str] loc in
+          let structure,_,_ =
+            Either.get (Merlin_parsing.catch_warnings (ref [])
+              (fun () -> Typemod.type_structure t.env [str] loc))
+          in
           Last_env.structure structure, structure :: t.structures
         | `none -> t.env, t.structures
       in
@@ -253,6 +260,8 @@ module P = struct
       {t with exns = exn :: caught catch @ t.exns}
 
   let delta st f t ~old:_ = frame st f t
+
+  let evict st _ = ()
 end
 
 module I = Merlin_parser.Integrate (P)

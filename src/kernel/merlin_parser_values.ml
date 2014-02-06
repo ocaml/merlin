@@ -284,6 +284,8 @@ struct
       NT'poly_type any_typ;
       NT'primitive_declaration [];
       NT'private_flag Public;
+      NT'recover_structure_item_ ();
+      NT'recover_structure_ ();
       NT'rec_flag Default;
       NT'record_expr (None, []);
       NT'row_field [];
@@ -373,6 +375,8 @@ struct
     | NT'row_field                         _ -> "row_field"
     | NT'record_expr                       _ -> "record_expr"
     | NT'rec_flag                          _ -> "rec_flag"
+    | NT'recover_structure_item_           _ -> "recover_structure_item_" 
+    | NT'recover_structure_                _ -> "recover_structure_"
     | NT'private_flag                      _ -> "private_flag"
     | NT'primitive_declaration             _ -> "primitive_declaration"
     | NT'poly_type                         _ -> "poly_type"

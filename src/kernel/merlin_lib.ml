@@ -1,6 +1,12 @@
 open Std
 open Misc
 
+(* Stateful parts:
+   - lexer keywords, done Lexer
+   - typer snapshot & env, done Typer
+   - compiler path, done Project
+   - compiler flags, done Project
+*)
 module Lexer  = Merlin_lexer
 module Parser = Merlin_parser
 module Typer  = Merlin_typer
@@ -267,7 +273,7 @@ end = struct
     project : Project.t;
     mutable keywords: Lexer.keywords;
     mutable lexer: Lexer.item History.t;
-    mutable parser: (Lexer.item * Parser.t * exn list) History.t;
+    mutable parser: (Lexer.item * Merlin_recover.t) History.t;
     mutable typer: Merlin_typer.t;
     mutable parser_path: Parser.Path.t;
     mutable validity_stamp: bool ref;
@@ -278,7 +284,7 @@ end = struct
       | Lexer.Valid (s,t,e) -> s,t,e
       | _ -> assert false
     in
-    (token, Parser.from kind input, [])
+    (token, Merlin_recover.fresh (Parser.from kind input))
 
   let create ?path project kind =
     let path, filename = match path with
@@ -304,8 +310,8 @@ end = struct
     Project.setup buffer.project
 
   let lexer b = b.lexer
-  let parser b = snd3 (History.focused b.parser)
-  let parser_errors b = thd3 (History.focused b.parser)
+  let parser b = Merlin_recover.parser (snd (History.focused b.parser))
+  let parser_errors b = Merlin_recover.exns (snd (History.focused b.parser))
 
   let path b =
     let parser_path = Parser.Path.update' (parser b) b.parser_path in
@@ -326,35 +332,11 @@ end = struct
 
   let update t l =
     t.lexer <- l;
-    let check token (token',_,_) = token == token' in
+    let check token (token',_) = token == token' in
     let init token = initial_step t.kind token in
-    let warnings = ref [] in
-    let fold token (_,parser,warnings') =
-      let warnings' = !warnings @ warnings' in
-      warnings := [];
-      let parser =
-        match token with
-        | Lexer.Error _ -> parser
-        | Lexer.Valid (s,t,e) ->
-          Logger.debugf `internal
-            (fun ppf t -> Format.fprintf ppf "received %s"
-                (Parser.Values.Token.to_string t))
-            t;
-          match Parser.feed (s,t,e) parser with
-          | `Accept _ ->
-            Logger.debug `internal "parser accepted";
-            parser
-          | `Reject _ ->
-            Logger.debug `internal "parser rejected";
-            parser
-          | `Step parser ->
-            parser
-      in
-      Logger.debugf `internal Parser.dump parser;
-      token, parser, warnings'
-    in
-    let sync () = History.sync ~check ~init ~fold t.lexer (Some t.parser) in
-    t.parser <- Either.get (Merlin_parsing.catch_warnings warnings sync)
+    let fold token (_,recover) =
+      (token,Merlin_recover.fold token recover) in
+    t.parser <- History.sync ~check ~init ~fold t.lexer (Some t.parser)
 
   let start_lexing b =
     let kw = Project.keywords b.project in

@@ -33,7 +33,7 @@ let feed (s,t,e as input) (p, depth as parser) =
   match t with
   (* Ignore comments *)
   | Raw_parser.COMMENT _ -> `Step parser
-  | _ ->
+  | _ -> 
     let p' = Raw_parser.feed p input in
     of_step p' depth
 
@@ -58,7 +58,7 @@ let next (d,f) = frame_of (d - 1) f.E.next
 let of_step ?(hint=MenhirUtils.initial_depth) step =
   of_step step MenhirUtils.(stack_depth ~hint (get_stack (step)))
 
-let to_step (step,_) = Some step
+let to_step (step,_) = step
 
 (* Ease pattern matching on parser stack *)
 type destruct = D of Raw_parser.semantic_value * destruct lazy_t
@@ -94,16 +94,21 @@ module Integrate
        val delta : st -> frame -> t -> old:(t * frame) -> t
        (* Check if an intermediate result is still valid *)
        val validate : st -> t -> bool
+
+       (* [evict st t] is called when [t] is no longer sync *) 
+       val evict : st -> t -> unit
      end) =
 struct
   type t =
     | Zero of P.t
     | More of (P.t * frame * t)
 
-  let rec drop n = function
+  let rec drop st n = function
     | Zero _ as t   -> t
     | t when n <= 0 -> t
-    | More (_,_,t)  -> drop (n - 1) t
+    | More (p,_,t)  -> 
+      P.evict st p;
+      drop st (n - 1) t
 
   let empty p = Zero (P.empty p)
 
@@ -111,7 +116,7 @@ struct
 
   let update st frame t =
     let d' = match t with More (_,f,_) -> depth f | Zero _ -> 0 in
-    let t = drop (d' - depth frame) t in
+    let t = drop st (d' - depth frame) t in
     let rec seek acc f =
       if depth f > d' then
         begin
@@ -126,15 +131,19 @@ struct
     in
     let ws, frame = seek [] frame in
     let rec rewind acc old f = function
-      | More (t', f', ts) when not (eq f' f) || not (P.validate st t') ->
+      | More (p', f', ts) when not (eq f' f) || not (P.validate st p') ->
+        P.evict st p';
         begin match next f, ts with
-          | None, Zero _ -> acc, Some (t',f'),
-                            (* Either reuse ts (more efficient ?)
-                               or regenerate fresh empty value
-                               or maybe validate previous one before ? *)
-                            (empty st)
+          | None, Zero p ->
+            P.evict st p;
+            acc, Some (p',f'),
+            (* Either reuse ts (more efficient ?)
+               or regenerate fresh empty value
+               or maybe validate previous one before ? *)
+            (empty st)
           | None, More _ -> assert false
-          | Some f', _   -> rewind (f :: acc) (Some (t',f')) f' ts
+          | Some f', _   -> 
+            rewind (f :: acc) (Some (p',f')) f' ts
         end
       | t -> acc, old, t
     in
@@ -271,6 +280,7 @@ end = struct
       | _ -> frame () f t
 
     let validate () _ = true
+    let evict () _ = ()
   end
   module I = Integrate (P)
 
