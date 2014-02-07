@@ -58,6 +58,7 @@ module Ast = struct
   type type_scheme =
     | Var   of string
     | Arrow of Asttypes.label * type_scheme * type_scheme
+    | Tuple of type_scheme list
     | Named of type_scheme list * string
     | Core_type of core_type
 
@@ -77,6 +78,11 @@ module Ast = struct
     | Binding of binding
     | Module of string * top_item list
 
+  let sub_of_simple_variants lst =
+    let variants = List.map lst ~f:(fun s -> Rtag (s, true, [])) in
+    let ptyp_desc = Ptyp_variant (variants, true, Some []) in
+    Core_type { ptyp_desc ; ptyp_loc = Location.symbol_gloc () }
+
   let freshvars  = Stream.from (fun i -> Some (Printf.sprintf "\x00_%d" i))
   let new_var () = Stream.next freshvars
 end
@@ -90,6 +96,9 @@ let rec translate_ts ?ghost_loc = function
     let a = translate_ts ?ghost_loc a in
     let b = translate_ts ?ghost_loc b in
     { ptyp_desc = Ptyp_arrow(label, a, b) ; ptyp_loc = default_loc ghost_loc }
+  | Tuple lst ->
+    let lst = List.map lst ~f:(translate_ts ?ghost_loc) in
+    { ptyp_desc = Ptyp_tuple lst ; ptyp_loc = default_loc ghost_loc }
   | Named (params, id) ->
     let id = Longident.parse id in
     let params = List.map (translate_ts ?ghost_loc) params in
@@ -435,26 +444,18 @@ module Fields = struct
   let unit_ty = Named ([],"unit")
   let bool_ty = Named ([],"bool")
 
-  let gen_field self ({ Location.txt = name }, mut, ty, _) : top_item list =
-    (* Remove higher-rank quantifiers *)
-    let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
-    let ty = Core_type ty in
-    let accessor = Arrow ("", self, ty) in
-    let fields = [Binding { ident = name; typesig = accessor; body = AnyVal }] in
-    let fields = match mut with
-      | Asttypes.Immutable -> fields
-      | Asttypes.Mutable ->
-        let typesig = Arrow ("", self, Arrow ("", ty, unit_ty)) in
-        (Binding { ident = "set_" ^ name; typesig ; body = AnyVal }) :: fields
-    in
-    fields
-
   let make_fields_module ~self fields : top_item =
+    let names =
+      let typesig = Named ([Named ([], "string")], "list") in
+      Binding { ident = "names" ; typesig ; body = AnyVal }
+    in
+
     let fields_dot_t =
+      let perms = sub_of_simple_variants [ "Read" ; "Set_and_create" ] in
       List.map fields ~f:(fun ({ Location.txt = name }, _, ty, _) ->
         let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
-        let typesig = Named ([ self ; Core_type ty ], "Field.t") in
-        { ident = name ; typesig ; body = AnyVal }
+        let t = Named ([ perms ; self ; Core_type ty ], "Field.t_with_perm") in
+        { ident = name ; typesig = t ; body = AnyVal }
       )
     in
 
@@ -463,18 +464,75 @@ module Fields = struct
       mk_labeled_fun (List.map fields ~f:(fun (l,_,_,_) -> l.Location.txt,true))
     in
 
-    let linear_pass ~name ~ret_ty =
+(*
+    That is so ugly.
+
+    val make_creator :
+      x:(([< `Read | `Set_and_create ], t, int) Field.t_with_perm -> 'a -> ('b -> int) * 'c) ->
+      y:(([< `Read | `Set_and_create ], t, float ref) Field.t_with_perm -> 'c -> ('b -> float ref) * 'd) ->
+      'a -> ('b -> t) * 'd
+*)
+    let make_creator =
+      let acc_ret_ty = Var (new_var ()) in
+      let ios, first_input =
+        List.fold_right fields ~init:([], acc_ret_ty) ~f:(fun f (lst, acc) ->
+          let x = Var (new_var ()) in
+          (x, acc) :: lst, x
+        )
+      in
+      let creator_input = Var (new_var ()) in
+      let init =
+        let creator = Arrow ("", creator_input, self) in
+        Arrow ("", first_input, Tuple [ creator ; acc_ret_ty ])
+      in
+      let lst = 
+        List.map2 fields fields_dot_t ~f:(fun (name, _, ty, _) fdt ->
+          (name.Location.txt, ty, fdt)
+        )
+      in
       let typesig =
-        List.fold_right fields_dot_t ~init:ret_ty ~f:(fun field acc_ty ->
+        List.fold_right2 lst ios ~init ~f:(fun (name, ty, f_dot_t) (i, o) acc ->
+          let field_creator = Arrow ("", creator_input, Core_type ty) in
+          Arrow (
+            name,
+            Arrow ("", f_dot_t.typesig, Arrow ("", i, Tuple [ field_creator ; o ])),
+            acc
+          )
+        )
+      in
+      Binding { ident = "make_creator" ; typesig ; body }
+    in
+
+    let create =
+      let typesig =
+        List.fold_right fields ~init:self ~f:(fun (name, _, t, _) acc ->
+          Arrow (name.Location.txt, Core_type t, acc)
+        )
+      in
+      Binding { ident = "create" ; typesig ; body }
+    in
+
+    let linear_pass ?result ~name ret_ty =
+      let init =
+        match result with
+        | None -> ret_ty
+        | Some ty -> ty
+      in
+      let typesig =
+        List.fold_right fields_dot_t ~init ~f:(fun field acc_ty ->
           Arrow (field.ident, Arrow ("", field.typesig, ret_ty), acc_ty)
         )
       in
       Binding { ident = name ; typesig ; body }
     in
 
-    let iter = linear_pass ~name:"iter" ~ret_ty:unit_ty in
-    let forall = linear_pass ~name:"for_all" ~ret_ty:bool_ty in
-    let exists = linear_pass ~name:"exists" ~ret_ty:bool_ty in
+    let iter = linear_pass ~name:"iter" unit_ty in
+    let forall = linear_pass ~name:"for_all" bool_ty in
+    let exists = linear_pass ~name:"exists" bool_ty in
+    let to_list =
+      let ty_var = Var (new_var ()) in
+      linear_pass ~result:(Named ([ty_var], "list")) ~name:"to_list" ty_var
+    in
 
     let fold =
       let typesig =
@@ -509,10 +567,20 @@ module Fields = struct
       Binding { ident = "map" ; typesig ; body }
     in
 
+    let map_poly =
+      let var = Var (new_var ()) in
+      let perms = sub_of_simple_variants [ "Read" ; "Set_and_create" ] in
+      let user = Named ([ perms ; self ; var ], "Field.user") in
+      let typesig = Arrow ("", user, Named ([var], "list")) in
+      Binding { ident = "map_poly" ; typesig ; body = AnyVal }
+    in
+
     Module (
       "Fields",
-      List.map fields_dot_t ~f:(fun x -> Binding x) @
-        [ fold ; iter ; map ; forall ; exists ]
+      names :: List.map fields_dot_t ~f:(fun x -> Binding x) @ [
+        make_creator ; create ; iter ; map ; fold ; map_poly ; forall ; exists ;
+        to_list ; Module ("Direct", [ iter ; fold ])
+      ]
     )
 
   let top_lvl ({ Location.txt = name },ty) =
@@ -525,8 +593,7 @@ module Fields = struct
     in
     let self = Named (params, name) in
     match ty.ptype_kind with
-    | Parsetree.Ptype_record fields ->
-      List.concat_map ~f:(gen_field self) fields @ [make_fields_module ~self fields]
+    | Parsetree.Ptype_record fields -> [make_fields_module ~self fields]
     | _ -> []
 
 end
