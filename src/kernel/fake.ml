@@ -89,6 +89,9 @@ end
 
 open Ast
 
+let unit_ty = Named ([],"unit")
+let bool_ty = Named ([],"bool")
+
 let rec translate_ts ?ghost_loc = function
   | Var ident ->
     { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc }
@@ -440,10 +443,112 @@ module Binprot = struct
   end
 end
 
-module Fields = struct
-  let unit_ty = Named ([],"unit")
-  let bool_ty = Named ([],"bool")
+(* TODO: factorize [Variants] and [Fields] *)
+module Variants = struct
+  let mk_cstr_typesig ~self args res_opt =
+    let r = Option.value_map res_opt ~default:self ~f:(fun x -> Core_type x) in
+    List.fold_right args ~init:r ~f:(fun arg ret_ty ->
+      Arrow ("", Core_type arg, ret_ty)
+    )
 
+  let constructors ~self cstrs =
+    List.map cstrs ~f:(fun ({ Location.txt = name }, args, res_opt, loc) ->
+      let typesig = mk_cstr_typesig ~self args res_opt in
+      Binding { ident = String.lowercase name ; typesig ; body = AnyVal }
+    )
+
+  let mk_module ~self cstrs =
+    let cstrs_dot_t =
+      List.map cstrs ~f:(fun ({ Location.txt = name }, args, res_opt, loc) ->
+        let t = Named ([mk_cstr_typesig ~self args res_opt], "Variant.t") in
+        { ident = String.lowercase name ; typesig = t ; body = AnyVal }
+      )
+    in
+
+    let fold =
+      let typesig =
+        let a = new_var () in
+        let init_ty, arrows =
+          List.fold_right cstrs_dot_t ~init:(a, Var a) ~f:(
+            fun cstr (fun_res, acc) ->
+              let param = new_var () in
+              let f =
+                Arrow ("", Var param, Arrow ("", cstr.typesig, Var fun_res))
+              in
+              (param, Arrow (cstr.ident, f, acc))
+          )
+        in
+        Arrow ("init", Var init_ty, arrows)
+      in
+      let body =
+        mk_labeled_fun (List.map cstrs ~f:(fun (l,_,_,_) -> l.Location.txt,true))
+      in
+      let body = Fun (["init", true], body) in
+      Binding { ident = "fold" ; typesig ; body }
+    in
+
+    let iter =
+      let typesig =
+        List.fold_right cstrs_dot_t ~init:unit_ty ~f:(fun cstr acc ->
+          Arrow (cstr.ident, Arrow ("", cstr.typesig, unit_ty), acc)
+        )
+      in
+      let body =
+        let args = List.map cstrs_dot_t ~f:(fun b -> b.ident, true) in
+        Fun (args, AnyVal)
+      in
+      Binding { ident = "iter" ; typesig ; body }
+    in
+
+    let map =
+      let typesig =
+        let ret_ty = Var (new_var ()) in
+        List.fold_right2 cstrs_dot_t cstrs ~init:ret_ty ~f:(
+          fun cstr (_, args, _res_opt, _) acc ->
+            let tmp =
+              List.fold_right args ~init:ret_ty
+                ~f:(fun arg acc -> Arrow ("", Core_type arg, acc))
+            in
+            Arrow (cstr.ident, Arrow ("", cstr.typesig, tmp), acc)
+        )
+      in
+      let typesig = Arrow ("", self, typesig) in
+      let body =
+        let args = List.map cstrs_dot_t ~f:(fun b -> b.ident, true) in
+        Fun ((new_var (), false) :: args, AnyVal)
+      in
+      Binding { ident = "map" ; typesig ; body }
+    in
+
+    let descriptions =
+      let (!) x = Named ([], x) in
+      Binding {
+        ident = "descriptions" ;
+        typesig = Named ([Tuple [ !"string" ; !"int" ]], "list") ;
+        body = AnyVal ;
+      }
+    in
+
+    Module ("Variants", List.map cstrs_dot_t ~f:(fun b -> Binding b) @ [ 
+      fold ; iter ; map ; descriptions
+    ])
+
+  let top_lvl ({ Location.txt = name },ty) =
+    let params =
+      List.map ty.ptype_params ~f:(
+        function
+        | None -> Var "_"
+        | Some s -> Var (s.Location.txt)
+      )
+    in
+    let self = Named (params, name) in
+    match ty.ptype_kind with
+    | Parsetree.Ptype_variant cstrs ->
+      constructors ~self cstrs @ [mk_module ~self cstrs]
+    | _ -> []
+end
+
+module Fields = struct
   let make_fields_module ~self fields : top_item =
     let names =
       let typesig = Named ([Named ([], "string")], "list") in
@@ -664,6 +769,9 @@ module TypeWith = struct
 
     | "fields" ->
       List.concat_map ~f:Fields.top_lvl ty
+
+    | "variants" ->
+      List.concat_map ~f:Variants.top_lvl ty
 
     | "compare" ->
       List.concat_map ~f:(Compare.bindings ~kind) ty
