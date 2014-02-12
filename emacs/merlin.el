@@ -1208,8 +1208,9 @@ Returns the position."
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
     (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
-    (define-key merlin-map (kbd "C-<up>") 'merlin-type-enclosing-go-up)
-    (define-key merlin-map (kbd "C-<down>") 'merlin-type-enclosing-go-down)
+;; See the discussion on #129 for the future of these bindings
+;   (define-key merlin-map (kbd "C-<up>") 'merlin-type-enclosing-go-up)
+;   (define-key merlin-map (kbd "C-<down>") 'merlin-type-enclosing-go-down)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-phrase-next)
     (define-key merlin-map (kbd "C-c C-p") 'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]
