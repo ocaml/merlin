@@ -16,6 +16,8 @@ git version
       meaning in emacs ( #129 )
       They were bound to `merlin-type-enclosing-go-up` and
       `merlin-type-enclosing-go-down` respectively.
+    - the emacs mode is now compiled (contribution from Jacques-Pascal Deplaix
+      #158 , with a follow up from Rudy Grinberg #165 )
 
   extensions:
     - added support for variantslib ( #132 )
