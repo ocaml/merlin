@@ -131,6 +131,14 @@ let ext_here = {
   packages = [];
 }
 
+let ext_pipebang = {
+  name = "pipebang";
+  private_def = [];
+  public_def = ["val (|!) : 'a -> ('a -> 'b) -> 'b"];
+  keywords = [];
+  packages = [];
+}
+
 let ext_sexp_option = {
   name = "sexp_option";
   private_def = [];
@@ -140,5 +148,5 @@ let ext_sexp_option = {
 }
 
 let always = [ext_any;ext_sexp_option]
-let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec]
+let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec;ext_pipebang]
 
