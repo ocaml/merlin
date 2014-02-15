@@ -378,7 +378,9 @@ return DEFAULT or the value associated to KEY otherwise."
    CONFIGURATION is an association list with the following keys:
 - `extra-flags': extra flags to give merlin
 
-- `environment': list of strings (of the shape VARIABLE=FOO) (see
+- `command': command to run
+
+- `env': list of strings (of the shape VARIABLE=FOO) (see
 `process-environment') that will be prepended to the environment of merlin
 
 - `name': the name of the instance."
@@ -387,7 +389,7 @@ return DEFAULT or the value associated to KEY otherwise."
         (name (lookup-default 'name configuration "default"))
         (environment (lookup-default 'env configuration nil))
         (buffer-name (merlin-instance-buffer-name name)))
-    (message "Starting merlin instance: %s." name)
+    (message "Starting merlin instance: %s (binary=%s)." name command)
     (setq merlin-instance name)
     (when (not (merlin-process-started-p name))
       (let* ((buffer (get-buffer-create buffer-name)) 
@@ -419,7 +421,7 @@ return DEFAULT or the value associated to KEY otherwise."
 (defun merlin-restart-process ()
   "Restart the merlin toplevel for this buffer, taking into account new flags."
   (interactive)
-  (when (merlin-process-started-p merlin-instance)
+  (when (get-buffer (merlin-process-buffer))
     (ignore-errors (merlin-kill-process)))
   (merlin-start-process merlin-current-flags (funcall merlin-grouping-function))
   (setq merlin-pending-errors nil)
@@ -1322,6 +1324,11 @@ Returns the position."
   "Groups every buffer in one emacs instance."
   '(
     (name . "default")))
+
+(defun merlin-dir-group ()
+  "Group buffers by directory" ()
+  (list
+    (cons 'name (file-name-directory (expand-file-name (buffer-file-name))))))
 
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
