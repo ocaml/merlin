@@ -421,7 +421,7 @@ return DEFAULT or the value associated to KEY otherwise."
   (interactive)
   (when (merlin-process-started-p merlin-instance)
     (ignore-errors (merlin-kill-process)))
-  (merlin-start-process merlin-current-flags)
+  (merlin-start-process merlin-current-flags (funcall merlin-grouping-function))
   (setq merlin-pending-errors nil)
   (merlin-load-project-file)
   (merlin-to-point)
@@ -441,6 +441,20 @@ This sets `merlin-current-flags' to nil."
     (setq merlin-current-flags flag-list))
   (message "Flag %s added.  Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag-string))
 
+(defun merlin-list-instances ()
+  "Return the list of instances currently started."
+  (let ((result nil))
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (if merlin-process
+            (push merlin-instance result))))
+    result))
+
+(defun merlin-kill-instance (instance)
+  (interactive (list (ido-completing-read "Instance:" (merlin-list-instances))))
+  (message "Instance: %s" instance)
+  (merlin-kill-process (get-buffer (merlin-instance-buffer-name instance))))
+
 (defun merlin-is-last-user-p ()
   "Return whether the current buffer was the current user of the merlin process."
   (equal merlin-process-last-user (buffer-name)))
@@ -449,12 +463,14 @@ This sets `merlin-current-flags' to nil."
   "Return non-nil if the merlin process for the instance NAME is already started."
   (get-buffer (merlin-instance-buffer-name name)))
 
-(defun merlin-kill-process ()
-  "Kill the merlin process inside the buffer."
-  (with-current-buffer (merlin-process-buffer)
-    (tq-close merlin-process-queue)
-    (kill-buffer merlin-buffer-name)
-    (kill-process merlin-process)))
+(defun merlin-kill-process (&optional buffer)
+  "Kill the merlin process inside BUFFER. If BUFFER is nil, use
+the merlin buffer of the current buffer."
+  (let ((buffer (if buffer buffer (merlin-process-buffer))))
+    (with-current-buffer buffer
+      (tq-close merlin-process-queue)
+      (ignore-errors (kill-process merlin-process)))
+    (kill-buffer buffer)))
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
@@ -1333,8 +1349,8 @@ Returns the position."
 
 (defun merlin-process-dead-p ()
   "Return non-nil if merlin process is dead."
-  (and merlin-process
-       (not (equal (process-status merlin-process) 'run))))
+  (and (merlin-process)
+       (not (equal (process-status (merlin-process)) 'run))))
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
