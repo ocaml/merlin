@@ -384,6 +384,7 @@ return DEFAULT or the value associated to KEY otherwise."
         (environment (lookup-default 'env configuration nil))
         (buffer-name (merlin-instance-buffer-name name)))
     (message "Starting merlin instance: %s." name)
+    (setq merlin-instance name)
     (when (not (merlin-process-started-p name))
       (let* ((buffer (get-buffer-create buffer-name)) 
              (process-environment (append environment process-environment))
@@ -1305,19 +1306,21 @@ Returns the position."
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
   (interactive)
-  (let ((conf (funcall merlin-grouping-function)))
+  (let* ((conf (funcall merlin-grouping-function))
+         (instance (lookup-default 'name conf "default")))
+    (setq merlin-instance instance)
     (set (make-local-variable 'merlin-lock-point) (point-min))
-    ; if there is not yet a merlin process
-    (when (not (merlin-process-started-p (lookup-default 'name conf "default")))
-      (merlin-start-process merlin-current-flags conf)))
-  (when (and (fboundp 'auto-complete-mode)
-             merlin-use-auto-complete-mode)
-    (auto-complete-mode 1)
-    (add-to-list 'ac-sources 'merlin-ac-source))
-  (add-hook 'completion-at-point-functions
-            #'merlin-completion-at-point nil 'local)
-  (add-to-list 'after-change-functions 'merlin-sync-edit)
-  (merlin-load-project-file))
+   ; if there is not yet a merlin process
+    (when (not (merlin-process-started-p instance))
+      (merlin-start-process merlin-current-flags conf))
+    (when (and (fboundp 'auto-complete-mode)
+               merlin-use-auto-complete-mode)
+      (auto-complete-mode 1)
+      (add-to-list 'ac-sources 'merlin-ac-source))
+    (add-hook 'completion-at-point-functions
+              #'merlin-completion-at-point nil 'local)
+    (add-to-list 'after-change-functions 'merlin-sync-edit)
+    (merlin-load-project-file)))
 
 (defun merlin-can-handle-buffer ()
   "Return true if current buffer corresponds to a ML file."
