@@ -66,6 +66,10 @@
 ;; Customizable vars
 ;;
 
+(defcustom merlin-show-instance-in-lighter t
+  "Show the current instance of the buffer in the lighter."
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-grouping-function 'merlin-one-group
   "The function to know how to group buffers. This function takes
 no argument and should return the configuration (see
@@ -1334,7 +1338,11 @@ Returns the position."
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
-  (if (merlin-process-dead-p) " merlin(??)" " merlin"))
+  (if (merlin-process-dead-p) 
+      " merlin(??)" 
+    (if merlin-show-instance-in-lighter
+        (format " merlin (%s)" merlin-instance)
+      " merlin")))
 
 ;;;###autoload
 
