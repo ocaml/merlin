@@ -916,7 +916,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (lexical-let*
       ((bounds (bounds-of-thing-at-point 'ocaml-atom))
        (start  (if bounds (car bounds) (point)))
-       (end    (point))
+       (end    (if bounds (cdr bounds) (point)))
        (string (if bounds (merlin-buffer-substring start end) "")))
     (setq merlin-completion-annotation-table
           (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
