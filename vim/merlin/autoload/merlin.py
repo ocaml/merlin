@@ -547,7 +547,12 @@ def load_project(directory,force=False):
   if not force:
     if name == vim.eval("b:merlin_project"): return
   vim.command("let b:merlin_project = '%s'" % name)
-  fnames = display_load_failures(catch_and_print(lambda: send_command("project","find",directory)))
+  try:
+    result = send_command("project","find",directory)
+    fnames = display_load_failures(result)
+  except MerlinException:
+    print("No project found")
+    fnames = None
   if isinstance(fnames, list):
     vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
   sync_buffer_to(1, 0)
