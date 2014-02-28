@@ -100,6 +100,16 @@ module List = struct
     let rec to_strict = function
       | Nil -> []
       | Cons (hd, lazy tl) -> hd :: to_strict tl
+
+    let rec unfold f a = match f a with
+      | None -> Nil
+      | Some a -> Cons (a, lazy (unfold f a))
+
+    let rec filter_map ~f = function
+      | Nil -> Nil
+      | Cons (a, tl) -> match f a with
+        | None -> filter_map f (Lazy.force tl)
+        | Some a' -> Cons (a', lazy (filter_map f (Lazy.force tl)))
   end
 
   type 'a non_empty =
