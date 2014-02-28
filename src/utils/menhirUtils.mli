@@ -35,3 +35,5 @@ val initial_depth: witness
 val stack_depth: hint:witness -> ('s,'v) stack -> witness
 val env_depth:   hint:witness -> ('s,'v,'t) env -> witness
 val depth: witness -> int
+
+val pop: ('s,'v,'t) env -> ('s,'v,'t) env option

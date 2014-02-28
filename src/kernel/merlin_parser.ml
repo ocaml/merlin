@@ -33,7 +33,7 @@ let feed (s,t,e as input) (p, depth as parser) =
   match t with
   (* Ignore comments *)
   | Raw_parser.COMMENT _ -> `Step parser
-  | _ -> 
+  | _ ->
     let p' = Raw_parser.feed p input in
     of_step p' depth
 
@@ -82,6 +82,29 @@ let dump ppf t =
   in
   aux ppf (stack t)
 
+let pop (p, depth) =
+  match MenhirUtils.pop p.Raw_parser.env with
+  | None -> None
+  | Some env ->
+    let p = {p with Raw_parser.env = env} in
+    Some (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
+
+let parser_location t =
+  match stack t with
+  | None -> Location.none
+  | Some frame -> location frame
+
+let recover t =
+  match stack t with
+  | None -> None
+  | Some frame ->
+    let l = location frame in
+    let p = l.Location.loc_end in
+    match feed (p,P.RECOVER,p) t with
+    | `Accept _ -> None
+    | `Reject _ -> None
+    | `Step t -> Some (Location.mkloc t l)
+
 module Integrate
     (P : sig
        (* Arbitrary state, passed to update functions *)
@@ -95,7 +118,7 @@ module Integrate
        (* Check if an intermediate result is still valid *)
        val validate : st -> t -> bool
 
-       (* [evict st t] is called when [t] is no longer sync *) 
+       (* [evict st t] is called when [t] is no longer sync *)
        val evict : st -> t -> unit
      end) =
 struct
@@ -106,7 +129,7 @@ struct
   let rec drop st n = function
     | Zero _ as t   -> t
     | t when n <= 0 -> t
-    | More (p,_,t)  -> 
+    | More (p,_,t)  ->
       P.evict st p;
       drop st (n - 1) t
 
@@ -142,7 +165,7 @@ struct
                or maybe validate previous one before ? *)
             (empty st)
           | None, More _ -> assert false
-          | Some f', _   -> 
+          | Some f', _   ->
             rewind (f :: acc) (Some (p',f')) f' ts
         end
       | t -> acc, old, t

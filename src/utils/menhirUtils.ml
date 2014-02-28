@@ -67,3 +67,11 @@ let env_depth ~hint env = stack_depth ~hint env.stack
 let depth = function
   | Zero -> 0
   | Stack (n,_) -> n
+
+let pop env =
+  let cell = env.stack in
+  let next = cell.next in
+  if next == cell then
+    None
+  else
+    Some {env with stack = next; current = cell.state}
