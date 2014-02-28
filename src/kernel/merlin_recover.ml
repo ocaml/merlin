@@ -1,114 +1,96 @@
 open Std
 open Raw_parser
 
-type kind =
-  | Struct
-  | Struct_item
-
-module Point = struct
-  (* The preceding parser, the one we can potentially recover from *)
-  type t = (kind * exn) list
-
-  type st = Merlin_parser.t * exn * t option ref
-
-  let drop_item = function
-    | (Struct_item, _) :: t | t ->  t
-
-  let empty _ = []
-
-  let frame (parser, payload, _) f t =
-    match Merlin_parser.value f with
-    | Nonterminal (NT'recover_structure_ ()) ->
-      (Struct, payload) :: t
-    | Nonterminal (NT'recover_structure_item_ ()) ->
-      (Struct_item, payload) :: (drop_item t)
-    | _ -> t
-
-  let delta st f t ~old:_ = t (*frame st f t*)
-
-  let validate _ _ = true
-
-  let evict (_, _, rt) t =
-    match !rt with
-    | Some t' when t == t' -> rt := None
-    | _ -> ()
-end
-
-
-module Points = Merlin_parser.Integrate(Point)
-
-module Rollback = struct
-  type t = {
-    parser: Merlin_parser.t;
-    points: Points.t;
-  }
-  exception T of t
-  
-  let fresh parser = {parser; points = Points.empty (parser,Not_found, ref None)}
-  
-  let feed in_error t parser =
-    let in_error = ref in_error in
-    let points = Points.update' (t.parser, T t, in_error) parser t.points in
-    !in_error, {parser; points}
-  
-  let rollback t =
-    match Points.value t.points with
-    | (kind, T t) :: _ -> Some (kind, t)
-    | (_, _) :: _ -> assert false
-    | _ -> None
-end
+let rollbacks parser =
+  let stacks = List.Lazy.unfold Merlin_parser.pop parser in
+  let recoverable = List.Lazy.filter_map Merlin_parser.recover stacks in
+  recoverable
 
 type t = {
-  rollback: Rollback.t;
   errors: exn list;
-  in_error: Point.t option;
+  parser: Merlin_parser.t;
+  recovering: (Merlin_parser.t Location.loc list *
+               Merlin_parser.t Location.loc List.Lazy.t) option;
 }
 
-let parser t = t.rollback.Rollback.parser
+let parser t = t.parser
 let exns t = t.errors
 
-let rollback warnings t input =
-  let parser = Merlin_parser.to_step (parser t) in
-  let error = Error_classifier.from parser input in
-  match Rollback.rollback t.rollback with
-  | None -> {t with errors = error :: (warnings @ t.errors)}
-  | Some (_, rollback) -> 
-    { 
-      rollback; 
-      errors = error :: (warnings @ t.errors);
-      in_error = Some (Points.value rollback.Rollback.points); 
-    }
+let fresh parser = { errors = []; parser; recovering = None }
 
-let fresh parser = { rollback = Rollback.fresh parser; errors = []; in_error = None; }
+let feed_normal (_,tok,_ as input) parser =
+  Logger.debugf `internal
+    (fun ppf tok -> Format.fprintf ppf "normal parser: received %s"
+        (Merlin_parser.Values.Token.to_string tok))
+    tok;
+  match Merlin_parser.feed input parser with
+  | `Accept _ ->
+    Logger.debug `internal "parser accepted";
+    Some parser
+  | `Reject _ ->
+    Logger.debug `internal "parser rejected";
+    None
+  | `Step parser ->
+    Some parser
+
+let feed_recover (s,tok,e as input) (hd,tl) =
+  let get_col x = snd (Lexing.split_pos x) in
+  let col = get_col s in
+  (* Find appropriate recovering position *)
+  let rec to_the_right hd tl =
+    match hd with
+    | cell :: hd' when col > get_col cell.Location.loc.Location.loc_start ->
+      to_the_right hd' (List.Lazy.Cons (cell, Lazy.from_val tl))
+    | _ -> hd, tl
+  in
+  let rec to_the_left hd tl =
+    match tl with
+    | List.Lazy.Cons (cell, lazy tl)
+      when get_col cell.Location.loc.Location.loc_start > col ->
+      to_the_left (cell :: hd) tl
+    | _ -> hd, tl
+  in
+  let hd, tl = to_the_right hd tl in
+  let hd, tl = to_the_left hd tl in
+  match hd, tl with
+  | [], List.Lazy.Nil -> assert false
+  | _, List.Lazy.Cons (cell, _) | (cell :: _), _ ->
+    match Merlin_parser.feed input cell.Location.txt with
+    | `Accept _ | `Reject _ ->
+      Either.L (hd,tl)
+    | `Step parser ->
+      Either.R parser
 
 let fold warnings token t =
-  let parser = t.rollback.Rollback.parser in
-  let pop w = let r = !warnings in w := []; r in
-  let t =
-    match token with
-    | Merlin_lexer.Error _ -> t
-    | Merlin_lexer.Valid (s,tok,e) ->
-      Logger.debugf `internal
-        (fun ppf tok -> Format.fprintf ppf "received %s"
-            (Merlin_parser.Values.Token.to_string tok))
-        tok;
-    match Merlin_parser.feed (s,tok,e) parser with
-    | `Accept _ ->
-      Logger.debug `internal "parser accepted";
-      {t with errors = (pop warnings) @ t.errors}
-    | `Reject _ ->
-      Logger.debug `internal "parser rejected";
-      rollback (pop warnings) t (s,tok,e)
-    | `Step parser ->
-      let in_error, rollback = 
-        Rollback.feed t.in_error t.rollback parser 
-      in
-      {t with rollback; in_error}
-  in
-  Logger.debugf `internal Merlin_parser.dump t.rollback.Rollback.parser;
-  t
+  match token with
+  | Merlin_lexer.Error _ -> t
+  | Merlin_lexer.Valid (s,tok,e) ->
+    Logger.debugf `internal
+      (fun ppf tok -> Format.fprintf ppf "received %s"
+          (Merlin_parser.Values.Token.to_string tok))
+      tok;
+    Logger.debugf `internal Merlin_parser.dump t.parser;
+    warnings := [];
+    let pop w = let r = !warnings in w := []; r in
+    match t.recovering with
+    | None ->
+      begin match feed_normal (s,tok,e) t.parser with
+        (* TODO: add error *)
+        | None ->
+          let recovering = Some ([], rollbacks t.parser) in
+          {t with errors = (pop warnings) @ t.errors; recovering }
+        | Some parser ->
+          {t with errors = (pop warnings) @ t.errors; parser }
+      end
+    | Some recovery ->
+      begin match feed_recover (s,tok,e) recovery with
+        | Either.L recovery ->
+          {t with recovering = Some recovery}
+        | Either.R parser ->
+          {t with parser; recovering = None}
+      end
 
-let fold token t = 
+let fold token t =
   let warnings = ref [] in
   Either.get (Merlin_parsing.catch_warnings warnings
                 (fun () -> fold warnings token t))

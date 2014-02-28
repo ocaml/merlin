@@ -191,7 +191,7 @@ module P = struct
       | NT'labeled_simple_pattern pat ->
         `pat pat
       (* Approximation to match/with typing: we only introduce names in the environment, not taking the matched expression into account *)
-      | NT'pattern pat -> 
+      | NT'pattern pat ->
         `pat ("",None,pat)
       | _ -> `none
     in
