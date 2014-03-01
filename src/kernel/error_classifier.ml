@@ -6,7 +6,10 @@ type t = {
 exception Error of t
 
 let loc t = t.loc
-let classify t = "Syntax error"
+let classify {state; token} = 
+  Printf.sprintf "Syntax error (%d,%s)" 
+    (state :> int)
+    (Merlin_parser.Values.Token.to_string token)
 
 let from parser (s,token,e) =
   let state = parser.Raw_parser.env.MenhirLib.EngineTypes.current in
