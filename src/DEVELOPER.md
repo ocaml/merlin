@@ -22,7 +22,7 @@ ocaml_aux
 kernel
   Wrap ocaml frontend into an incremental parser and typer, with error
   recovery, encapsulate various side-effects of the frontend, etc.
-  All access should be done through the MerlinLib module.
+  All access should be done through the Merlin_lib module.
 
 analysis
   Reuse kernel state to:
