@@ -2,7 +2,10 @@ open Std
 open Raw_parser
 
 let rollbacks parser =
-  let stacks = List.Lazy.unfold Merlin_parser.pop parser in
+  let stacks =
+    let l = List.Lazy.unfold Merlin_parser.pop parser in
+    List.Lazy.Cons (parser, lazy l)
+  in
   let recoverable = List.Lazy.filter_map Merlin_parser.recover stacks in
   recoverable
 
@@ -88,7 +91,7 @@ let fold warnings token t =
           let error =
             Error_classifier.from (Merlin_parser.to_step t.parser) (s,tok,e)
           in
-          recover_from 
+          recover_from
             {t with errors = error :: (pop warnings) @ t.errors; }
             recovery
         | Some parser ->
