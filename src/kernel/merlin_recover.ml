@@ -72,24 +72,27 @@ let fold warnings token t =
     Logger.debugf `internal Merlin_parser.dump t.parser;
     warnings := [];
     let pop w = let r = !warnings in w := []; r in
+    let recover_from t recovery =
+      match feed_recover (s,tok,e) recovery with
+      | Either.L recovery ->
+        {t with recovering = Some recovery}
+      | Either.R parser ->
+        {t with parser; recovering = None}
+    in
     match t.recovering with
+    | Some recovery -> recover_from t recovery
     | None ->
       begin match feed_normal (s,tok,e) t.parser with
         | None ->
-          let recovering = Some ([], rollbacks t.parser) in
+          let recovery = ([], rollbacks t.parser) in
           let error =
             Error_classifier.from (Merlin_parser.to_step t.parser) (s,tok,e)
           in
-          {t with errors = error :: (pop warnings) @ t.errors; recovering }
+          recover_from 
+            {t with errors = error :: (pop warnings) @ t.errors; }
+            recovery
         | Some parser ->
           {t with errors = (pop warnings) @ t.errors; parser }
-      end
-    | Some recovery ->
-      begin match feed_recover (s,tok,e) recovery with
-        | Either.L recovery ->
-          {t with recovering = Some recovery}
-        | Either.R parser ->
-          {t with parser; recovering = None}
       end
 
 let fold token t =
