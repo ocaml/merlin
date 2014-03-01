@@ -1236,16 +1236,16 @@ expr:
 | WHILE seq_expr DO seq_expr DONE
   { mkexp $startpos $endpos (Pexp_while ($2, $4)) }
 | WHILE_LWT seq_expr DO seq_expr DONE
-  { mkexp $startpos $endpos (Pexp_while (Fake.(app Lwt.un_lwt $2), Fake.(app Lwt.unit_lwt $4))) }
+  { let expr = Pexp_while ($2, Fake.(app Lwt.un_lwt $4)) in
+    Fake.(app Lwt.to_lwt (mkexp $startpos $endpos expr)) }
 | FOR val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
   { mkexp $startpos $endpos (Pexp_for (mkrhs $startpos($2) $endpos($2) $2, $4, $6, $5, $8)) }
 | FOR_LWT val_ident EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
-  { let expr = mkexp $startpos $endpos
-        (Pexp_for (mkrhs $startpos($2) $endpos($2) $2,
-          Fake.(app Lwt.un_lwt $4),
-          Fake.(app Lwt.un_lwt $6), $5,
-          Fake.(app Lwt.unit_lwt $8))) in
-      Fake.(app Lwt.to_lwt expr) }
+  { let expr =
+      Pexp_for (mkrhs $startpos($2) $endpos($2) $2,
+                $4, $6, $5, Fake.(app Lwt.un_lwt $8))
+    in
+    Fake.(app Lwt.to_lwt (mkexp $startpos $endpos expr)) }
 | FOR_LWT pattern IN seq_expr DO seq_expr DONE
   { mkexp $startpos $endpos
         (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
