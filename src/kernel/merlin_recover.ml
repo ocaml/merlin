@@ -92,5 +92,5 @@ let fold warnings token t =
 
 let fold token t =
   let warnings = ref [] in
-  Either.get (Merlin_parsing.catch_warnings warnings
+  Either.get (Parsing_aux.catch_warnings warnings
                 (fun () -> fold warnings token t))

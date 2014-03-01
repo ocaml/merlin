@@ -66,7 +66,7 @@ let reloc_pat startpos endpos x =
 let reloc_exp startpos endpos x =
   { x with pexp_loc = rloc startpos endpos }
 let reloc_exp_fake startpos x =
-  { x with pexp_loc = Merlin_parsing.pack_fake_start x.pexp_loc startpos }
+  { x with pexp_loc = Parsing_aux.pack_fake_start x.pexp_loc startpos }
 
 let mkoperator startpos endpos name =
   let loc = rloc startpos endpos in
@@ -204,15 +204,15 @@ let rec mkrangepat startpos endpos c1 c2 =
   reloc_pat startpos endpos (deep_mkrangepat startpos endpos c1 c2)
 
 let syntax_error pos =
-  Merlin_parsing.raise_warning (Syntaxerr.Escape_error pos)
+  Parsing_aux.raise_warning (Syntaxerr.Escape_error pos)
 
 let unclosed opening_name opstart opend closing_name clstart clend =
-  Merlin_parsing.raise_warning
+  Parsing_aux.raise_warning
     Syntaxerr.(Error (Unclosed (rloc opstart opend, opening_name,
                                 rloc clstart clend, closing_name)))
 
 let expecting startpos endpos nonterm =
-  Merlin_parsing.raise_warning
+  Parsing_aux.raise_warning
     Syntaxerr.(Error (Expecting (rloc startpos endpos, nonterm)))
 
 let check_constraint mkexp constr e =
@@ -424,6 +424,7 @@ let tag_nonrec (id, a) = (Fake.Nonrec.add id, a)
 %token REC
 %token NONREC
 %token RPAREN
+%token RECOVER
 %token SEMI
 %token SEMISEMI
 %token SHARP
@@ -615,6 +616,7 @@ with_extensions:
   { [$1] }
 
 structure_item:
+| RECOVER { [] }
 | LET rec_ = rec_flag binds = let_bindings
   { match binds with
     | [{ppat_desc = Ppat_any}, exp] ->
@@ -764,6 +766,7 @@ signature:
   { hd @ tl }
 
 signature_item:
+| RECOVER { [] }
 | VAL id = val_ident COLON pval_type = core_type
   { let t = {pval_type; pval_prim = []; pval_loc = rloc $startpos $endpos} in
     [mksig $startpos $endpos

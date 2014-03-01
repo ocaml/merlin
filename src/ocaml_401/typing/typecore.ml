@@ -1812,21 +1812,21 @@ let rec type_exp env sexp =
 
 and type_expect ?in_function env sexp ty_expected =
   let open Std in
-  if ~!Merlin_types.relax_typer
+  if ~!Typing_aux.relax_typer
   then type_relax ?in_function env sexp ty_expected
   else
     let snap= Btype.snapshot () in
     try type_expect_ ?in_function env sexp ty_expected
     with (Typetexp.Error _ | Error _) ->
       Btype.backtrack snap;
-      Fluid.let' Merlin_types.relax_typer true
+      Fluid.let' Typing_aux.relax_typer true
         (fun () -> type_relax ?in_function env sexp ty_expected)
 
 and type_relax ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in
   let failwith_exn ~exn exp_desc =
-    Merlin_types.erroneous_type_register ty_expected;
-    Merlin_types.raise_error exn;
+    Typing_aux.erroneous_type_register ty_expected;
+    Typing_aux.raise_error exn;
     { exp_desc; exp_loc = loc;
       exp_extra = [];
       exp_type = ty_expected;
@@ -1864,8 +1864,8 @@ and type_expect_ ?in_function env sexp ty_expected =
       unify_exp env exp (instance env ty_expected);
       exp
     with (Typetexp.Error _ | Error _) as exn ->
-      Merlin_types.erroneous_type_register ty_expected;
-      Merlin_types.raise_error exn;
+      Typing_aux.erroneous_type_register ty_expected;
+      Typing_aux.raise_error exn;
       {
         (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
         exp_desc = Texp_tuple [exp];
@@ -2512,7 +2512,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_type = typ;
           exp_env = env }
       with Unify _ ->
-        Merlin_types.raise_error (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
+        Typing_aux.raise_error (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
         rue {
           exp_desc = Texp_send(obj, Tmeth_name met, None);
           exp_loc = loc; exp_extra = [];
@@ -2948,7 +2948,7 @@ and type_application env funct sargs =
                 | _ -> true
               in
               if ty_fun.level >= t1.level && not_identity funct.exp_desc
-                && not (Merlin_types.erroneous_expr_check funct) then
+                && not (Typing_aux.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
@@ -3170,7 +3170,7 @@ and type_statement env sexp =
       Location.prerr_warning loc Warnings.Partial_application
   | Tconstr (p, _, _) when Path.same p Predef.path_unit -> ()
   | Tvar _ when ty.level > tv.level
-             && not (Merlin_types.erroneous_expr_check exp) ->
+             && not (Typing_aux.erroneous_expr_check exp) ->
       Location.prerr_warning loc Warnings.Nonreturning_statement
   | Tvar _ ->
       add_delayed_check (fun () -> check_application_result env true exp)

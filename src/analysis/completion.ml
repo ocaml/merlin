@@ -227,14 +227,14 @@ let node_complete project node prefix =
           else compl)
         path env compl
       in
-      let compl = Merlin_types.fold_constructors
+      let compl = Typing_aux.fold_constructors
         (fun name v compl ->
            if valid `Cons name
            then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
            else compl)
         path env compl
       in
-      let compl = Merlin_types.fold_types
+      let compl = Typing_aux.fold_types
         (fun name path decl compl ->
           if valid `Typ name
           then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
@@ -277,7 +277,7 @@ let node_complete project node prefix =
       | None -> raise exn (* clearly the hypothesis is wrong here *)
       | Some long_ident ->
         let path = keep_until_lowercase long_ident in
-        Merlin_types.fold_labels
+        Typing_aux.fold_labels
           (fun ({Types.lbl_name = name} as l) compl ->
             if valid `Label name then (fmt ~exact:(name = prefix) name (`Label l)) :: compl else compl)
           path env compl

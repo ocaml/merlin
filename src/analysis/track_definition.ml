@@ -243,7 +243,7 @@ let from_string ~project ~env ~local_defs path =
   try
     let path, loc =
       if is_label then
-        let label_desc = Merlin_types.lookup_label ident env in
+        let label_desc = Typing_aux.lookup_label ident env in
         path_and_loc_from_label label_desc env
       else (
         try
@@ -255,7 +255,7 @@ let from_string ~project ~env ~local_defs path =
           path, typ_decl.Types.type_loc
         with Not_found ->
         try
-          let cstr_desc = Merlin_types.lookup_constructor ident env in
+          let cstr_desc = Typing_aux.lookup_constructor ident env in
           path_and_loc_from_cstr cstr_desc env
         with Not_found ->
         try

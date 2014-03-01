@@ -96,7 +96,7 @@ and structure_item_desc ~env = function
       singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env
     )
   | Tstr_include (m,arg) ->
-    [module_include (Merlin_types.include_idents arg) m]
+    [module_include (Typing_aux.include_idents arg) m]
 
 and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest ; typ_kind } =
   let nodes = Option.map typ_manifest ~f:(fun c -> lazy [core_type c]) in
@@ -165,7 +165,7 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
     | Tpat_var (i, _) -> Some i
     | _ -> None
   in
-  let subpatterns = Merlin_types.extract_subpatterns pat_desc in
+  let subpatterns = Typing_aux.extract_subpatterns pat_desc in
   singleton
     ~context:(Pattern (name, pat_type))
     ~nodes:(lazy (List.map ~f:(pattern ?env) subpatterns)) pat_loc
@@ -173,7 +173,7 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
 
 and expression_extra ~env t = function
   | Texp_open _ as expr,loc ->
-    { loc ; env = Merlin_types.exp_open_env expr; context = Other ; nodes = lazy [t] }
+    { loc ; env = Typing_aux.exp_open_env expr; context = Other ; nodes = lazy [t] }
   | Texp_constraint (c1,c2), loc ->
     let cs = match c1,c2 with
       | Some c1, Some c2 -> [c1;c2] | Some c, _ | _, Some c -> [c] | _ -> []
@@ -219,7 +219,7 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_new _
     | Texp_instvar _ -> [] (*FIXME*)
 		| Texp_record _ | Texp_construct _ | Texp_setfield _ | Texp_field _ as expr ->
-			List.map ~f:expression (Merlin_types.extract_specific_subexpressions expr)
+			List.map ~f:expression (Typing_aux.extract_specific_subexpressions expr)
   in
   List.fold_left exp_extra ~f:(expression_extra ~env:exp_env) ~init:{
     loc = exp_loc ;
@@ -286,7 +286,7 @@ and meth obj name loc_start loc_end =
     obj.exp_env
 
 let local_near pos nodes =
-  let cmp = Merlin_parsing.compare_pos pos in
+  let cmp = Parsing_aux.compare_pos pos in
   let best_of ({ loc = l1 } as t1) ({ loc = l2 } as t2) =
     match cmp l1, cmp l2 with
     | 0, 0 ->
@@ -311,7 +311,7 @@ let local_near pos nodes =
   )
 
 let is_enclosing pos { loc } =
-  (Merlin_parsing.compare_pos pos loc = 0)
+  (Parsing_aux.compare_pos pos loc = 0)
 
 let traverse_branch pos tree =
   let rec traverse { nodes = lazy nodes } acc =

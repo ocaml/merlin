@@ -246,7 +246,7 @@ module P = struct
           Env.add_signature sg t.env, t.structures
         | `fake str ->
           let structure,_,_ =
-            Either.get (Merlin_parsing.catch_warnings (ref [])
+            Either.get (Parsing_aux.catch_warnings (ref [])
               (fun () -> Typemod.type_structure t.env [str] loc))
           in
           Last_env.structure structure, structure :: t.structures
@@ -281,8 +281,8 @@ let protect_typer ~btype ~env f =
   let (>>=) f x = f x in
   Fluid.let' fluid_btype btype >>= fun () ->
   Fluid.let' fluid_env env >>= fun () ->
-  Either.join (Merlin_parsing.catch_warnings caught >>= fun () ->
-               Merlin_types.catch_errors caught >>= fun () ->
+  Either.join (Parsing_aux.catch_warnings caught >>= fun () ->
+               Typing_aux.catch_errors caught >>= fun () ->
                f caught)
 
 let fresh extensions =
