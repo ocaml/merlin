@@ -37,50 +37,61 @@ let feed (s,t,e as input) (p, depth as parser) =
     let p' = Raw_parser.feed p input in
     of_step p' depth
 
-let frame_of d stack = if stack.E.next == stack then None else Some (d,stack)
+module Frame : sig
+  val stack : t -> frame option
+  val depth : frame -> int
 
-let stack_depth (_,w) = MenhirUtils.depth w - 1
-let stack (s,_ as stk) = frame_of (stack_depth stk) (get_stack s)
+  val value : frame -> Raw_parser.semantic_value
+  val location : frame -> Location.t
+  val eq    : frame -> frame -> bool
+  val next  : frame -> frame option
 
-let depth (d,f) = d
+  (* Ease pattern matching on parser stack *)
+  type destruct = D of Raw_parser.semantic_value * destruct lazy_t
+  val destruct: frame -> destruct
+end = struct
+  let frame_of d stack = if stack.E.next == stack then None else Some (d,stack)
 
-let value (_,frame) = frame.E.semv
-let location (_,frame) =
-  { Location.
-    loc_start = frame.E.startp;
-    loc_end = frame.E.endp;
-    loc_ghost = false
-  }
+  let stack_depth (_,w) = MenhirUtils.depth w - 1
+  let stack (s,_ as stk) = frame_of (stack_depth stk) (get_stack s)
 
-let eq (_,f) (_,f') = f == f'
-let next (d,f) = frame_of (d - 1) f.E.next
+  let depth (d,f) = d
 
-let of_step ?(hint=MenhirUtils.initial_depth) step =
-  of_step step MenhirUtils.(stack_depth ~hint (get_stack (step)))
+  let value (_,frame) = frame.E.semv
+  let location (_,frame) =
+    { Location.
+      loc_start = frame.E.startp;
+      loc_end = frame.E.endp;
+      loc_ghost = false
+    }
+
+  let eq (_,f) (_,f') = f == f'
+  let next (d,f) = frame_of (d - 1) f.E.next
+
+  (* Ease pattern matching on parser stack *)
+  type destruct = D of Raw_parser.semantic_value * destruct lazy_t
+  let rec destruct_bottom = D (Raw_parser.Bottom, lazy destruct_bottom)
+
+  let rec destruct f =
+    let v = value f in
+    let tl = match next f with
+      | Some f' -> lazy (destruct f')
+      | None -> lazy destruct_bottom
+    in
+    D (v,tl)
+end
 
 let to_step (step,_) = step
-
-(* Ease pattern matching on parser stack *)
-type destruct = D of Raw_parser.semantic_value * destruct lazy_t
-let rec destruct_bottom = D (Raw_parser.Bottom, lazy destruct_bottom)
-
-let rec destruct f =
-  let v = value f in
-  let tl = match next f with
-    | Some f' -> lazy (destruct f')
-    | None -> lazy destruct_bottom
-  in
-  D (v,tl)
 
 let dump ppf t =
   let rec aux ppf = function
     | None -> Format.fprintf ppf "[]\n%!"
     | Some frame ->
       Format.fprintf ppf "(%d, %s) :: %a"
-        (depth frame) (Values.Value.to_string (value frame))
-        aux (next frame)
+        (Frame.depth frame) (Values.Value.to_string (Frame.value frame))
+        aux (Frame.next frame)
   in
-  aux ppf (stack t)
+  aux ppf (Frame.stack t)
 
 let pop (p, depth) =
   match MenhirUtils.pop p.Raw_parser.env with
@@ -89,16 +100,16 @@ let pop (p, depth) =
     let p = {p with Raw_parser.env = env} in
     Some (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
-let parser_location t =
-  match stack t with
+let location t =
+  match Frame.stack t with
   | None -> Location.none
-  | Some frame -> location frame
+  | Some frame -> Frame.location frame
 
 let recover t =
-  match stack t with
+  match Frame.stack t with
   | None -> None
   | Some frame ->
-    let l = location frame in
+    let l = Frame.location frame in
     let p = l.Location.loc_end in
     match feed (p,P.RECOVER,p) t with
     | `Accept _ -> None
@@ -138,25 +149,26 @@ struct
   let value (Zero p | More (p,_,_)) = p
 
   let update st frame t =
-    let d' = match t with More (_,f,_) -> depth f | Zero _ -> 0 in
-    let t = drop st (d' - depth frame) t in
+    let d' = match t with More (_,f,_) -> Frame.depth f | Zero _ -> 0 in
+    let t = drop st (d' - Frame.depth frame) t in
     let rec seek acc f =
-      if depth f > d' then
+      if Frame.depth f > d' then
         begin
           Logger.debugf `internal
             (fun ppf (a,b) ->
                Format.fprintf ppf "depth f = %d > d' = %d\n%!" a b)
-            (depth f, d');
-          let f' = match next f with None -> assert false | Some f -> f in
-          seek (f :: acc) f'
+            (Frame.depth f, d');
+          match Frame.next f with
+          | None -> assert false
+          | Some f' -> seek (f :: acc) f'
         end
       else acc, f
     in
     let ws, frame = seek [] frame in
     let rec rewind acc old f = function
-      | More (p', f', ts) when not (eq f' f) || not (P.validate st p') ->
+      | More (p', f', ts) when not (Frame.eq f' f) || not (P.validate st p') ->
         P.evict st p';
-        begin match next f, ts with
+        begin match Frame.next f, ts with
           | None, Zero p ->
             P.evict st p;
             acc, Some (p',f'),
@@ -179,7 +191,7 @@ struct
     List.fold_left' ~f:(fun f t -> More (P.frame st f (value t), f, t)) ~init:t ws
 
   let update' st p t =
-    match stack p with
+    match Frame.stack p with
     | None -> empty st
     | Some frame -> update st frame t
 end
@@ -223,7 +235,8 @@ end = struct
     let empty () = 0, []
 
     let frame () f (d,p as t) =
-      match destruct f, p with
+      let open Frame in
+      match Frame.destruct f, p with
       (* struct _ ... end *)
       | D (Nonterminal (NT'structure_item l),
            lazy ( D (Nonterminal (NT'structure_item _), _)
@@ -281,7 +294,7 @@ end = struct
       | [] -> n
 
     let delta () f t ~old:(t',f') =
-      match value f', value f, t' with
+      match Frame.value f', Frame.value f, t' with
       | Nonterminal (NT'signature l'),
         Nonterminal (NT'signature l),
         (d, Sig n' :: p') -> (d, Sig (dlength n' l' l) :: p')

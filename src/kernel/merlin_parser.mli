@@ -10,35 +10,45 @@ val implementation : state
 val interface : state
 val from : state -> Lexing.position * Raw_parser.token * Lexing.position -> t
 
-(** High-level manipulations *)
+(** Manipulation *)
+
+(* Feed new token *)
 val feed : Lexing.position * Raw_parser.token * Lexing.position
         -> t
         -> [ `Accept of Raw_parser.semantic_value | `Step of t
            | `Reject of Raw_parser.step Raw_parser.parser ]
+
+(* Dump internal state for debugging purpose *)
 val dump : Format.formatter -> t -> unit
 
-val parser_location : t -> Location.t
+(* Location of top frame in stack *)
+(* for recovery: approximate position of last correct construction *)
+val location : t -> Location.t
 
-(* Recover clean state if token-stream is invalid *)
+(* Stack unwinding, hopefully to find a recovery point *)
 val pop : t -> t option
+
+(* Try to feed a RECOVER token *)
+(* succeeds if it's safe to recover from current state *)
 val recover : t -> t Location.loc option
 
-(** Stack inspection *)
-val stack : t -> frame option
-val depth : frame -> int
-
-val value : frame -> Raw_parser.semantic_value
-val location : frame -> Location.t
-val eq    : frame -> frame -> bool
-val next  : frame -> frame option
-
-(** Low-level conversion  *)
-
+(* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser
 
-(* Ease pattern matching on parser stack *)
-type destruct = D of Raw_parser.semantic_value * destruct lazy_t
-val destruct: frame -> destruct
+(** Stack inspection *)
+module Frame : sig
+  val stack : t -> frame option
+  val depth : frame -> int
+
+  val value : frame -> Raw_parser.semantic_value
+  val location : frame -> Location.t
+  val eq    : frame -> frame -> bool
+  val next  : frame -> frame option
+
+  (* Ease pattern matching on parser stack *)
+  type destruct = D of Raw_parser.semantic_value * destruct lazy_t
+  val destruct: frame -> destruct
+end
 
 (** Stack integration, incrementally compute metric over each frame *)
 module Integrate

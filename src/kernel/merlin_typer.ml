@@ -152,13 +152,14 @@ module P = struct
   let validate _ t = Btype.is_valid t.snapshot
 
   let frame (_,catch) f t =
+    let module Frame = Merlin_parser.Frame in
     let mkeval e = {
       Parsetree. pstr_desc = Parsetree.Pstr_eval e;
       pstr_loc = e.Parsetree.pexp_loc;
     } in
-    let loc = Merlin_parser.location f in
+    let loc = Frame.location f in
     let case =
-      match Merlin_parser.value f with
+      match Frame.value f with
       | Terminal _ | Bottom -> `none
       | Nonterminal nt ->
       match nt with
@@ -172,7 +173,7 @@ module P = struct
         `str [mkeval e]
       | NT'let_bindings e ->
         let rec_ =
-          match Option.map ~f:Merlin_parser.value (Merlin_parser.next f) with
+          match Option.map ~f:Frame.value (Frame.next f) with
           | Some (Nonterminal (NT'rec_flag r)) -> r
           | None | Some _ -> Asttypes.Nonrecursive
         in
