@@ -320,12 +320,17 @@ end = struct
 
   let typer b =
     setup b;
-    if not !(b.validity_stamp) then
-      begin
-        b.validity_stamp <- Project.validity_stamp b.project;
-        if not (Merlin_typer.is_valid b.typer) then
-          b.typer <- Merlin_typer.fresh (Project.extensions b.project);
-      end;
+    let need_refresh = not !(b.validity_stamp) in
+    if need_refresh then
+      b.validity_stamp <- Project.validity_stamp b.project;
+    let need_refresh = need_refresh ||
+                       not (Merlin_typer.is_valid b.typer) ||
+                       not (String.Set.equal
+                              (Merlin_typer.extensions b.typer)
+                              (Project.extensions b.project))
+    in
+    if need_refresh then
+      b.typer <- Merlin_typer.fresh (Project.extensions b.project);
     let typer = Merlin_typer.update (parser b) b.typer  in
     b.typer <- typer;
     typer

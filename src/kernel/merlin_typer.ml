@@ -307,6 +307,7 @@ let update parser t =
 let env t = (I.value t.typer).P.env
 let structures t = (I.value t.typer).P.structures
 let exns t = (I.value t.typer).P.exns
+let extensions t = t.extensions
 
 let is_valid t =
   match protect_typer ~btype:t.btype_cache ~env:t.env_cache
