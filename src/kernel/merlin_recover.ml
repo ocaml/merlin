@@ -75,10 +75,12 @@ let fold warnings token t =
     match t.recovering with
     | None ->
       begin match feed_normal (s,tok,e) t.parser with
-        (* TODO: add error *)
         | None ->
           let recovering = Some ([], rollbacks t.parser) in
-          {t with errors = (pop warnings) @ t.errors; recovering }
+          let error =
+            Error_classifier.from (Merlin_parser.to_step t.parser) (s,tok,e)
+          in
+          {t with errors = error :: (pop warnings) @ t.errors; recovering }
         | Some parser ->
           {t with errors = (pop warnings) @ t.errors; parser }
       end

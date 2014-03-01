@@ -86,6 +86,10 @@ let strict_of_exn = function
     Some (format ~valid:true ~where:"env" (Printf.sprintf "Package not found %S (%s)" pkg msg))
   (*| Outline.Malformed_module (_,loc) ->
     Some (format ~valid:true ~where:"parser" ~loc "Malformed module")*)
+  | Error_classifier.Error c ->
+    let loc = Error_classifier.loc c in
+    let msg = Error_classifier.classify c in
+    Some (format ~valid:true ~where:"parser" ~loc msg)
   | exn -> None
 
 let null_loc =
