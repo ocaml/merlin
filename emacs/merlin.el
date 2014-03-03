@@ -324,7 +324,7 @@ return (LOC1 . LOC2)."
 An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
     (skip-chars-backward "[a-z_0-9A-Z'`.]")
-    (if (looking-at "['a-z_0-9A-Z`.]*['a-z_A-Z0-9]")
+    (if (looking-at "['a-z_0-9A-Z`.]*['a-z._A-Z0-9]")
         (cons (point) (match-end 0)) ; returns the bounds
       nil))) ; no atom at point
 
