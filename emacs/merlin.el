@@ -910,17 +910,32 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (let ((ret (assoc string merlin-completion-annotation-table)))
     (if ret (message "%s%s" (car ret) (cdr ret)))))
 
+(defvar merlin-completion-at-point-cache-query ""
+  "The cache for calls to completion-at-point so that it does not
+trigger useless merlin calls.")
+(make-variable-buffer-local 'merlin-completion-at-point-cache-query)
+
+(defun merlin-needs-refresh (string)
+  "Returns non nil if we need to refresh the completion for
+STRING, based on the cache."
+  (if (string-prefix-p merlin-completion-at-point-cache-query string)
+      (not (= (count ?. string) (count ?. merlin-completion-at-point-cache-query)))
+    t))
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
-  (merlin-sync-to-point)
   (lexical-let*
       ((bounds (bounds-of-thing-at-point 'ocaml-atom))
        (start  (if bounds (car bounds) (point)))
        (end    (if bounds (cdr bounds) (point)))
-       (string (if bounds (merlin-buffer-substring start end) "")))
-    (setq merlin-completion-annotation-table
-          (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
-                  (merlin-completion-data string)))
+       (string (if bounds (merlin-buffer-substring start end) ""))
+       (request (if string (replace-regexp-in-string "[^\\.]+$" "" string))))
+    (when (or (not merlin-completion-at-point-cache-query)
+              (merlin-needs-refresh request))
+      (setq merlin-completion-at-point-cache-query request)
+      (merlin-sync-to-point)
+      (setq merlin-completion-annotation-table
+            (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
+                    (merlin-completion-data request))))
     (list start end #'merlin-completion-table
           . (:exit-function #'merlin-completion-lookup
              :annotation-function #'merlin-completion-annotate))))
