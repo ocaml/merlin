@@ -280,7 +280,14 @@ let dispatch (state : state) =
       | `File -> Dot_merlin.read
       | `Find -> Dot_merlin.find
     in
-    let dot_merlins = fn path in
+    let dot_merlins = 
+      try fn path
+      with Sys_error s ->
+        Logger.debugf `internal
+          (fun ppf -> Format.fprintf ppf "project_load: Sys_error %S")
+          s;
+        List.Lazy.Nil
+    in
     let config = Dot_merlin.parse dot_merlins in
     let key = match config.Dot_merlin.dot_merlins with
       | [] -> ""
