@@ -1,4 +1,5 @@
 ![merlin completion in gvim](http://195.154.188.33/~trefis/merlin-complete.png)
+Merlin will provide completion for ml files (not mli!) in your editor.
 
 Building and installing Merlin
 ==============================
