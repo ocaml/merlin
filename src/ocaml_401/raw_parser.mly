@@ -725,9 +725,10 @@ module_binding:
   { $2 }
 | COLON module_type EQUAL module_expr
   { mkmod $startpos $endpos (Pmod_constraint ($4, $2)) }
-| LPAREN UIDENT COLON module_type RPAREN module_binding
-  { mkmod $startpos $endpos
-      (Pmod_functor (mkrhs $startpos($2) $endpos($2) $2, $4, $6)) }
+| farg = module_functor_arg mb = module_binding
+  { let id, fty = farg in
+    mkmod $startpos $endpos
+      (Pmod_functor (id, fty, mb)) }
 
 module_rec_bindings:
 | module_rec_binding
@@ -819,8 +820,9 @@ signature_item:
 module_declaration:
 | COLON module_type
   { $2 }
-| LPAREN UIDENT COLON module_type RPAREN module_declaration
-  { mkmty $startpos $endpos (Pmty_functor (mkrhs $startpos($2) $endpos($2) $2, $4, $6)) }
+| farg = module_functor_arg md = module_declaration
+  { let id, fty = farg in
+    mkmty $startpos $endpos (Pmty_functor (id, fty, md)) }
 
 module_rec_declarations:
 | module_rec_declaration
