@@ -716,6 +716,26 @@ module Fields = struct
 
 end
 
+module Enumerate = struct
+  let top_lvl ({ Location.txt = name },ty) =
+    let ident = if name = "t" then "all" else "all_of_" ^ name in
+    let typesig =
+      let params =
+        List.map ty.ptype_params ~f:(function
+          | None -> Var "_"
+          | Some { Location.txt } -> Var txt
+        )
+      in
+      let param =
+        Named (params, name)
+      in
+      List.fold_right params ~init:(Named ([param], "list")) ~f:(fun var acc ->
+        Arrow ("", var, acc)
+      )
+    in
+    Binding { ident ; typesig ; body = AnyVal }
+end
+
 module Compare = struct
   let mk_simpl t = Arrow ("", t, Arrow ("", t, Named ([], "int")))
 
@@ -788,6 +808,9 @@ module TypeWith = struct
 
     | "compare" ->
       List.concat_map ~f:(Compare.bindings ~kind) ty
+
+    | "enumerate" ->
+      List.map ~f:Enumerate.top_lvl ty
 
     | ext when cow_supported_extension ext ->
       let module Cow = Make_cow(struct let name = ext end) in
