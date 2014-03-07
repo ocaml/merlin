@@ -549,6 +549,18 @@ module Variants = struct
 end
 
 module Fields = struct
+  let gen_field self ({ Location.txt = name }, mut, ty, _) : top_item list =
+    (* Remove higher-rank quantifiers *)
+    let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
+    let ty = Core_type ty in
+    let accessor = Arrow ("", self, ty) in
+    let fields = [Binding { ident = name; typesig = accessor; body = AnyVal }] in
+    match mut with
+    | Asttypes.Immutable -> fields
+    | Asttypes.Mutable ->
+      let typesig = Arrow ("", self, Arrow ("", ty, unit_ty)) in
+      (Binding { ident = "set_" ^ name; typesig ; body = AnyVal }) :: fields
+
   let make_fields_module ~self fields : top_item =
     let names =
       let typesig = Named ([Named ([], "string")], "list") in
@@ -698,7 +710,8 @@ module Fields = struct
     in
     let self = Named (params, name) in
     match ty.ptype_kind with
-    | Parsetree.Ptype_record fields -> [make_fields_module ~self fields]
+    | Parsetree.Ptype_record lst ->
+      List.concat_map ~f:(gen_field self) lst @ [make_fields_module ~self lst]
     | _ -> []
 
 end
