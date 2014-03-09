@@ -111,10 +111,18 @@ arguments:
 - REC : inform merlin that it should look for .merlin files in parent
   directories, and execute the directives it find in those files as well as the
   ones in the current file.
-- EXT \<extension-list\>: (undocumented)
+- EXT \<extension-list\>: enable one or more syntax extension, separated by spaces.
+  See below for available extension.
 
 Directory are either absolute or relative to the directory containing ".merlin"
 file.
+
+thread support
+--------------
+
+In Ocaml compiler thread support can be enabled with the ```-thread``` flag.
+
+In Merlin the flag is not supported and you have to add ```B +threads``` directive to achieve the same effect.
 
 Extensions
 ==========
@@ -145,8 +153,11 @@ Misc.
 -----
 
 Other common extensions which are supported :
-- pa\_ounit.syntax
-- pa\_js.syntax
+- pa\_ounit.syntax as ```ounit```
+- pa\_js.syntax as ```js```
+- ```nonrec``` for declaring non-recursive types
+
+The list of extensions available in your version can be directly obtained by running ```echo '["extension","list"]' | ocamlmerlin```.
 
 Screenshots
 ===========
