@@ -237,6 +237,8 @@ module Protocol_io = struct
       Request Drop
     | [`String "seek"; `String "position"] ->
       Request (Seek `Position)
+    | [`String "occurences"; `String "ident"; `String "at"; jpos] ->
+      Request (Occurences (`Ident_at (pos_of_json jpos)))
     | [`String "seek"; `String "before"; jpos] ->
       Request (Seek (`Before (pos_of_json jpos)))
     | [`String "seek"; `String "exact"; jpos] ->
@@ -356,6 +358,9 @@ module Protocol_io = struct
         | Path_reset, () -> `Bool true
         | Project_load _, (strs, failures) ->
           `Assoc (with_package_failures ["result", json_of_string_list strs] failures)
+        | Occurences _, locations ->
+          `List (List.map locations
+                   ~f:(fun loc -> with_location loc []))
       end]
 
   let request_of_json = function

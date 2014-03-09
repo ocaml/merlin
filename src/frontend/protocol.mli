@@ -87,6 +87,9 @@ type _ request =
     :  [`File|`Find]
      * string
     -> (string list * [`Ok | `Failures of (string * exn) list]) request
+  | Occurences
+    : [`Ident_at of position]
+    -> Location.t list request
 
 type a_request = Request : 'a request -> a_request
 
