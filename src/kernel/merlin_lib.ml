@@ -10,6 +10,7 @@ open Misc
 module Lexer  = Merlin_lexer
 module Parser = Merlin_parser
 module Typer  = Merlin_typer
+module Recover = Merlin_recover
 
 (* Project configuration *)
 module Project : sig
@@ -259,13 +260,14 @@ module Buffer : sig
   val create: ?path:string -> Project.t -> Parser.state -> t
 
   val lexer: t -> Lexer.item History.t
-  val update: t -> Lexer.item History.t -> unit
+  val update: ?ignore_eof:bool -> t -> Lexer.item History.t -> unit
   val start_lexing: t -> Lexer.t
 
   val parser: t -> Parser.t
   val parser_errors: t -> exn list
   val path: t -> Parser.path
   val typer: t -> Typer.t
+  val fresh_typer: t -> Typer.t
 end = struct
   type t = {
     kind: Parser.state;
@@ -335,12 +337,21 @@ end = struct
     b.typer <- typer;
     typer
 
-  let update t l =
+  let fresh_typer b =
+    setup b;
+    let typer = Merlin_typer.fresh (Project.extensions b.project) in
+    Merlin_typer.update (parser b) typer
+
+  let update ?(ignore_eof=true) t l =
     t.lexer <- l;
     let check token (token',_) = token == token' in
     let init token = initial_step t.kind token in
     let fold token (_,recover) =
-      (token,Merlin_recover.fold token recover) in
+      match token with
+      | Lexer.Valid (_,Raw_parser.EOF,_)
+        when ignore_eof -> (token,recover)
+      | _ -> (token,Merlin_recover.fold token recover)
+    in
     t.parser <- History.sync ~check ~init ~fold t.lexer (Some t.parser)
 
   let start_lexing b =

@@ -52,9 +52,9 @@ type _ request =
   | Refresh
     :  unit request
   | Errors
-    :  exn list request
+    :  [`Current | `EOF] -> exn list request
   | Dump
-    :  [`Env of [`Normal|`Full] * position option|`Sig|`Parser|`Exn|`History]
+    :  [`Env of [`Normal|`Full] * position option|`Sig|`Parser|`Exn|`History|`Recover]
     -> Json.json request
   | Which_path
     :  string

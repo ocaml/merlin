@@ -102,3 +102,28 @@ let fold token t =
   let warnings = ref [] in
   Either.get (Parsing_aux.catch_warnings warnings
                 (fun () -> fold warnings token t))
+
+let dump_snapshot ppf s =
+  Format.fprintf ppf "- position: %a\n  parser: %a\n"
+    Location.print s.Location.loc
+    Merlin_parser.dump s.Location.txt
+
+let dump_recovering ppf = function
+  | None -> Format.fprintf ppf "clean"
+  | Some (head, tail) ->
+    let tail = List.Lazy.to_strict tail in
+    let iter ppf l = List.iter ~f:(dump_snapshot ppf) l in
+    Format.fprintf ppf "recoverable states\nhead:\n%atail:\n%a"
+      iter head
+      iter tail
+
+let dump ppf t =
+  Format.fprintf ppf "parser: %a\n" Merlin_parser.dump t.parser;
+  Format.fprintf ppf "recovery: %a\n" dump_recovering t.recovering
+
+let dump_recoverable ppf t =
+  let t = match t.recovering with
+    | Some _ -> t
+    | None -> {t with recovering = Some ([], rollbacks t.parser)}
+  in
+  dump ppf t

@@ -324,7 +324,7 @@ def vim_complete_cursor(base, vimvar):
 # Error listing
 def vim_loclist(vimvar, ignore_warnings):
   vim.command("let %s = []" % vimvar)
-  errors = command("errors")
+  errors = command("errors","eof")
   bufnr = vim.current.buffer.number
   nr = 0
   for error in errors:

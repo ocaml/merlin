@@ -250,14 +250,29 @@ let dispatch (state : state) =
   | (Refresh : a request) ->
     Project.invalidate ~flush:true state.project
 
-  | (Errors : a request) ->
+  | (Errors `Current : a request) ->
     let pexns = Buffer.parser_errors state.buffer in
     let texns = Typer.exns (Buffer.typer state.buffer) in
     texns @ pexns
 
+  | (Errors `EOF : a request) ->
+    buffer_changed state;
+    let lexer = Buffer.start_lexing state.buffer in
+    assert (Lexer.feed lexer "");
+    ignore (Buffer.update ~ignore_eof:false state.buffer (Lexer.history lexer));
+    let typer = Buffer.fresh_typer state.buffer in
+    let pexns = Buffer.parser_errors state.buffer in
+    let texns = Typer.exns typer in
+    texns @ pexns
+
   | (Dump `Parser : a request) ->
     let ppf, to_string = Format.to_string () in
-    Parser.dump ppf (Buffer.parser state.buffer);
+    Merlin_recover.dump ppf (Buffer.recover state.buffer);
+    `String (to_string ())
+
+  | (Dump `Recover : a request) ->
+    let ppf, to_string = Format.to_string () in
+    Merlin_recover.dump_recoverable ppf (Buffer.recover state.buffer);
     `String (to_string ())
 
   | (Dump _ : a request) ->
@@ -280,7 +295,7 @@ let dispatch (state : state) =
       | `File -> Dot_merlin.read
       | `Find -> Dot_merlin.find
     in
-    let dot_merlins = 
+    let dot_merlins =
       try fn path
       with Sys_error s ->
         Logger.debugf `internal
