@@ -264,6 +264,7 @@ module Buffer : sig
 
   val parser: t -> Parser.t
   val parser_errors: t -> exn list
+  val recover: t -> Recover.t
   val path: t -> Parser.path
   val typer: t -> Typer.t
   val fresh_typer: t -> Typer.t
@@ -311,8 +312,9 @@ end = struct
     Project.setup buffer.project
 
   let lexer b = b.lexer
-  let parser b = Merlin_recover.parser (snd (History.focused b.parser))
-  let parser_errors b = Merlin_recover.exns (snd (History.focused b.parser))
+  let recover b = snd (History.focused b.parser)
+  let parser b = Merlin_recover.parser (recover b)
+  let parser_errors b = Merlin_recover.exns (recover b)
 
   let path b =
     let parser_path = Parser.Path.update' (parser b) b.parser_path in

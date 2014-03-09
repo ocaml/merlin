@@ -424,7 +424,6 @@ let tag_nonrec (id, a) = (Fake.Nonrec.add id, a)
 %token REC
 %token NONREC
 %token RPAREN
-%token RECOVER
 %token SEMI
 %token SEMISEMI
 %token SHARP
@@ -464,6 +463,8 @@ let tag_nonrec (id, a) = (Fake.Nonrec.add id, a)
 %token OUNIT_BENCH_MODULE
 
 %token ENTRYPOINT
+%token RECOVER
+%token <exn> RECONSTRUCT
 
 (* Precedences and associativities.
 
@@ -616,7 +617,8 @@ with_extensions:
   { [$1] }
 
 structure_item:
-| RECOVER { [] }
+| RECOVER { [mkstr $startpos $endpos (Pstr_eval Fake.any_val')] }
+| exn = RECONSTRUCT { !Parsing_aux.reconstruct_struct exn }
 | LET rec_ = rec_flag binds = let_bindings
   { match binds with
     | [{ppat_desc = Ppat_any}, exp] ->

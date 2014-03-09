@@ -75,3 +75,5 @@ let compare_pos pos loc =
   else if pos > Lexing.split_pos loc.loc_end
   then 1
   else 0
+
+let reconstruct_struct = ref (fun _ -> [])

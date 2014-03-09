@@ -24,13 +24,15 @@ val dump : Format.formatter -> t -> unit
 (* Location of top frame in stack *)
 (* for recovery: approximate position of last correct construction *)
 val location : t -> Location.t
+val last_token : t -> Raw_parser.token Location.loc
 
 (* Stack unwinding, hopefully to find a recovery point *)
 val pop : t -> t option
 
 (* Try to feed a RECOVER token *)
 (* succeeds if it's safe to recover from current state *)
-val recover : t -> t Location.loc option
+val recover : ?location:Location.t -> t -> t Location.loc option
+val reconstruct : exn -> t -> t option
 
 (* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser

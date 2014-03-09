@@ -105,16 +105,33 @@ let location t =
   | None -> Location.none
   | Some frame -> Frame.location frame
 
-let recover t =
+let last_token (parser,_) =
+  let loc_start,t,loc_end = parser.Raw_parser.env.E.token in
+  Location.mkloc t
+    { Location. loc_start; loc_end; loc_ghost = false }
+
+let recover ?location t =
   match Frame.stack t with
   | None -> None
   | Some frame ->
-    let l = Frame.location frame in
-    let p = l.Location.loc_end in
-    match feed (p,P.RECOVER,p) t with
+    let l = match location with
+      | None -> Frame.location frame
+      | Some l -> l
+    in
+    match feed (l.Location.loc_start,P.RECOVER,l.Location.loc_end) t with
     | `Accept _ -> None
     | `Reject _ -> None
     | `Step t -> Some (Location.mkloc t l)
+
+let reconstruct exn t =
+  match Frame.stack t with
+  | None -> None
+  | Some frame ->
+    let {Location. loc_start; loc_end} = Frame.location frame in
+    match feed (loc_start,P.RECONSTRUCT exn,loc_end) t with
+    | `Accept _ -> None
+    | `Reject _ -> None
+    | `Step t -> Some t
 
 module Integrate
     (P : sig

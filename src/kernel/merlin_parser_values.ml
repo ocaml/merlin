@@ -121,6 +121,7 @@ struct
     | OUNIT_BENCH         -> "OUNIT_BENCH"
     | ENTRYPOINT -> "ENTRYPOINT"
     | RECOVER -> "RECOVER"
+    | RECONSTRUCT _ -> "RECONSTRUCT"
 
   let to_terminal t = Query.index t
   let of_terminal (t : terminal) =

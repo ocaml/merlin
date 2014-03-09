@@ -6,7 +6,25 @@ let rollbacks parser =
     let l = List.Lazy.unfold Merlin_parser.pop parser in
     List.Lazy.Cons (parser, lazy l)
   in
-  let recoverable = List.Lazy.filter_map Merlin_parser.recover stacks in
+  let last_loc = ref None in
+  let recoverable =
+    List.Lazy.filter_map
+      (fun t ->
+         let location = !last_loc in
+         last_loc := Some (Merlin_parser.location t);
+         Merlin_parser.recover ?location t
+      ) stacks
+  in
+  let last_pos = ref (-1) in
+  let recoverable =
+    List.Lazy.filter_map
+      (fun t ->
+         let start = snd (Lexing.split_pos t.Location.loc.Location.loc_start) in
+         if start = !last_pos
+         then None
+         else (last_pos := start; Some t)
+      ) recoverable
+  in
   recoverable
 
 type t = {
@@ -36,7 +54,11 @@ let feed_normal (_,tok,_ as input) parser =
   | `Step parser ->
     Some parser
 
-let feed_recover (s,tok,e as input) (hd,tl) =
+let closing_token = function
+  | END -> true
+  | _ -> false
+
+let feed_recover original (s,tok,e as input) (hd,tl) =
   let get_col x = snd (Lexing.split_pos x) in
   let col = get_col s in
   (* Find appropriate recovering position *)
@@ -55,14 +77,30 @@ let feed_recover (s,tok,e as input) (hd,tl) =
   in
   let hd, tl = to_the_right hd tl in
   let hd, tl = to_the_left hd tl in
+  (* Closing tokens are applied one step behind *)
+  let hd, tl =
+    match closing_token tok, hd with
+    | true, (x :: hd) -> hd, List.Lazy.Cons (x, lazy tl)
+    | _ -> hd, tl
+  in
   match hd, tl with
   | [], List.Lazy.Nil -> assert false
   | _, List.Lazy.Cons (cell, _) | (cell :: _), _ ->
-    match Merlin_parser.feed input cell.Location.txt with
+    let candidate = cell.Location.txt in
+    match Merlin_parser.feed input candidate with
     | `Accept _ | `Reject _ ->
       Either.L (hd,tl)
     | `Step parser ->
-      Either.R parser
+      let diff = Merlin_reconstruct.diff ~stack:original ~wrt:parser in
+      match Merlin_parser.reconstruct
+              (Merlin_reconstruct.Partial_stack diff)
+              candidate
+      with
+      | None -> assert false
+      | Some parser ->
+        match Merlin_parser.feed input parser with
+        | `Accept _ | `Reject _ -> assert false
+        | `Step parser -> Either.R parser
 
 let fold warnings token t =
   match token with
@@ -76,7 +114,7 @@ let fold warnings token t =
     warnings := [];
     let pop w = let r = !warnings in w := []; r in
     let recover_from t recovery =
-      match feed_recover (s,tok,e) recovery with
+      match feed_recover t.parser (s,tok,e) recovery with
       | Either.L recovery ->
         {t with recovering = Some recovery}
       | Either.R parser ->
