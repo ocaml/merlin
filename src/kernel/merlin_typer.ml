@@ -258,7 +258,8 @@ module P = struct
        exns = caught catch @ t.exns}
     with exn ->
       Typecore.reset_delayed_checks ();
-      {t with exns = exn :: caught catch @ t.exns}
+      {t with exns = exn :: caught catch @ t.exns;
+              snapshot = Btype.snapshot (); }
 
   let delta st f t ~old:_ = frame st f t
 
