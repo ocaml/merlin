@@ -105,6 +105,16 @@ let applicative_functors_spec t =
   Arg.Unit (fun () -> t.applicative_functors <- false),
   " Deactivate applicative functors"
 
+let threads_spec t =
+  "-thread",
+  Arg.Unit (fun () -> t.include_dirs := "+threads" :: !(t.include_dirs)),
+  " Add support for system threads library"
+
+let vmthreads_spec t =
+  "-vmthread",
+  Arg.Unit (fun () -> t.include_dirs := "+vmthreads" :: !(t.include_dirs)),
+  " Add support for VM-scheduled threads library"
+
 (* Dummy values *)
 let annotations        () = false
 let binary_annotations () = false
@@ -125,5 +135,7 @@ let arg_spec t =
     real_paths_spec t;
     recursive_types_spec t;
     strict_sequence_spec t;
+    threads_spec t;
+    vmthreads_spec t;
   ]
 
