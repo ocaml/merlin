@@ -160,6 +160,8 @@ let lookup s =
   try Some (String.Map.find s registry)
   with Not_found -> None
 
+let empty = String.Set.empty
+
 (* Compute set of extensions from package names (used to enable support for
   "lwt" if "lwt.syntax" is loaded by user. *)
 let from_packages pkgs =
@@ -167,13 +169,11 @@ let from_packages pkgs =
       if List.exists ~f:(List.mem ~set:ext.packages) pkgs
       then String.Set.add name set
       else set)
-    registry String.Set.empty
+    registry empty
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-let default = List.fold_left' [ext_any;ext_sexp_option]
-    ~init:String.Set.empty
-    ~f:(fun ext -> String.Set.add ext.name)
+let default = [ext_any;ext_sexp_option]
 
 (* Lexer keywords needed by extensions *)
 let keywords set =
@@ -219,7 +219,7 @@ let register exts env =
         if String.Set.mem name exts
         then ext :: list
         else list
-      ) registry []
+      ) registry default
   in
   let process_ext e =
     let prv = List.concat_map ~f:parse_sig e.private_def in

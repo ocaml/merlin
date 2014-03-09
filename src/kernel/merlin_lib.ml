@@ -122,7 +122,7 @@ end = struct
     let dot_config = empty_config () in
     let user_config = empty_config () in
     let local_path = ref [] in
-    dot_config.cfg_extensions <- Extension.default;
+    dot_config.cfg_extensions <- String.Set.empty;
     let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
     let flags = Clflags.copy Clflags.initial in
     { dot_config; user_config; flags;
@@ -181,8 +181,7 @@ end = struct
     cfg.cfg_path_cmi := dm.Dm.cmi_path;
     cfg.cfg_path_cmt := dm.Dm.cmt_path;
     cfg.cfg_flags <- dm.Dm.flags;
-    cfg.cfg_extensions <-
-      String.Set.(union Extension.default (of_list dm.Dm.extensions));
+    cfg.cfg_extensions <- String.Set.(of_list dm.Dm.extensions);
     flush_global_modules project;
     result
 

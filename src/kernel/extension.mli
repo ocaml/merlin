@@ -70,4 +70,4 @@ val from_packages : string list -> set
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-val default : set
+val empty : set
