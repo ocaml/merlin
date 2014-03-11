@@ -1,5 +1,6 @@
-git version
-===========
+merlin 1.6
+==========
+Tue Mar 11 14:33:55 CET 2014
 
   backend:
     - small memory leak fix
@@ -18,10 +19,13 @@ git version
       `merlin-type-enclosing-go-down` respectively.
     - the emacs mode is now compiled (contribution from Jacques-Pascal Deplaix
       #158 , with a follow up from Rudy Grinberg #165 )
+    - improved efficiency of completion at point
 
   extensions:
     - added support for variantslib ( #132 )
-    - updated fieldslib support ( #169 )
+    - updated fieldslib support ( #169 , #185 )
+    - fix pa_lwt translation ( #182 )
+    - added support for pa_enumerate ( #187 )
 
   vim:
     - the split method for locate can now be configured
