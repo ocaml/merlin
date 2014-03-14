@@ -333,29 +333,6 @@ module Binprot = struct
     let binding ty = binding ~prefix ~typesig ty
   end
 
-  (*module Write_ = struct
-    let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
-      let init =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Arrow ("", Named (List.map (fun x -> Var x) params, name.Location.txt),
-        Named ([], "Bin_prot.Unsafe_common.sptr"))))
-      in
-      let make_var str =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Arrow ("", Var str,
-        Named ([], "Bin_prot.Unsafe_common.sptr"))))
-      in
-      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) params ~init
-
-    let prefix = "bin_write_"
-    let suffix = "_"
-
-    let binding ty = binding ~prefix ~suffix ~typesig ty
-  end*)
-
   module Writer = struct
     let typesig (name, ty_infos) =
       let params = format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
@@ -382,27 +359,6 @@ module Binprot = struct
 
     let binding ty = binding ~prefix ~typesig ty
   end
-
-  (*module Read_ = struct
-    let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
-      let init =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Named (List.map (fun x -> Var x) params, name.Location.txt)))
-      in
-      let make_var str =
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.sptr_ptr"),
-        Arrow ("", Named ([], "Bin_prot.Unsafe_common.eptr"),
-        Var str))
-      in
-      List.fold_right ~f:(fun v acc -> Arrow ("", make_var v, acc)) params ~init
-
-    let prefix = "bin_read_"
-    let suffix = "_"
-
-    let binding ty = binding ~prefix ~suffix ~typesig ty
-  end*)
 
   module Read__ = struct
     let typesig (name, ty_infos) =
