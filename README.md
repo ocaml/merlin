@@ -44,11 +44,10 @@ Setting-up vim
 
 Makes sure that ocamlmerlin binary can be found in PATH.
 
-The only setup needed is to have the following directories in
-vim runtime path (append this to your .vimrc):
+The only setup needed is to have the following directory in vim runtime path
+(append this to your .vimrc):
 
     :set rtp+=<SHARE_DIR>/ocamlmerlin/vim
-    :set rtp+=<SHARE_DIR>/ocamlmerlin/vimbufsync
 
 The default configuration can be seen in:  
 
@@ -67,6 +66,15 @@ Misc: description of plugin's files
     - merlin.vim   -- main vim script
     - merlin.py    -- helper script needed by merlin.vim
                       (has to be in the same directory)
+    - vimbufsync.vim -- library needed by merlin vim mode to keep buffer synchronized
+    - vimbufsync.py  -- see https://github.com/def-lkb/vimbufsync
+  - ftdetect/
+    - merlin.vim -- sets filetype for .merlin files
+  - ftplugin/ -- used to start merlin when encountering an ocaml file
+    - ocaml.vim
+    - omlet.vim
+  - syntax/
+    - merlin.vim -- define syntax highlighting for .merlin files
   - syntax\_checkers/  
                       -- integration with syntastic (ocaml or omlet)  
                       -- set g:syntastic_ocaml_checkers = ['merlin']  
