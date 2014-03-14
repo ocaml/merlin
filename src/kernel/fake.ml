@@ -399,18 +399,38 @@ module Binprot = struct
   end
 end
 
-let linear_pass ?result ~name ~body lst ret_ty =
-  let init =
-    match result with
-    | None -> ret_ty
-    | Some ty -> ty
-  in
-  let typesig =
-    List.fold_right lst ~init ~f:(fun cstr acc_ty ->
-      Arrow (cstr.ident, Arrow ("", cstr.typesig, ret_ty), acc_ty)
-    )
-  in
-  Binding { ident = name ; typesig ; body }
+module FV_helpers = struct
+  let linear_pass ?result ~name ~body lst ret_ty =
+    let init =
+      match result with
+      | None -> ret_ty
+      | Some ty -> ty
+    in
+    let typesig =
+      List.fold_right lst ~init ~f:(fun cstr acc_ty ->
+        Arrow (cstr.ident, Arrow ("", cstr.typesig, ret_ty), acc_ty)
+      )
+    in
+    Binding { ident = name ; typesig ; body }
+
+  let mk_fold ~body elts =
+    let typesig =
+      let a = new_var () in
+      let init_ty, arrows =
+        List.fold_right elts ~init:(a, Var a) ~f:(
+          fun cstr (fun_res, acc) ->
+            let param = new_var () in
+            let f =
+              Arrow ("", Var param, Arrow ("", cstr.typesig, Var fun_res))
+            in
+            (param, Arrow (cstr.ident, f, acc))
+        )
+      in
+      Arrow ("init", Var init_ty, arrows)
+    in
+    let body = Fun (["init", true], body) in
+    Binding { ident = "fold" ; typesig ; body }
+end
 
 (* TODO: factorize [Variants] and [Fields] *)
 module Variants = struct
@@ -438,27 +458,10 @@ module Variants = struct
       mk_labeled_fun (List.map cstrs ~f:(fun (l,_,_,_) -> l.Location.txt,true))
     in
 
-    let fold =
-      let typesig =
-        let a = new_var () in
-        let init_ty, arrows =
-          List.fold_right cstrs_dot_t ~init:(a, Var a) ~f:(
-            fun cstr (fun_res, acc) ->
-              let param = new_var () in
-              let f =
-                Arrow ("", Var param, Arrow ("", cstr.typesig, Var fun_res))
-              in
-              (param, Arrow (cstr.ident, f, acc))
-          )
-        in
-        Arrow ("init", Var init_ty, arrows)
-      in
-      let body = Fun (["init", true], body) in
-      Binding { ident = "fold" ; typesig ; body }
-    in
+    let fold = FV_helpers.mk_fold ~body cstrs_dot_t in
 
     let linear_pass ?result ~name ty =
-      linear_pass ?result ~name cstrs_dot_t ~body ty
+      FV_helpers.linear_pass ?result ~name cstrs_dot_t ~body ty
     in
 
     let iter = linear_pass ~name:"iter" unit_ty in
@@ -593,7 +596,7 @@ module Fields = struct
     in
 
     let linear_pass ?result ~name ret_ty =
-      linear_pass ?result ~name fields_dot_t ~body ret_ty
+      FV_helpers.linear_pass ?result ~name fields_dot_t ~body ret_ty
     in
 
     let iter = linear_pass ~name:"iter" unit_ty in
@@ -604,24 +607,7 @@ module Fields = struct
       linear_pass ~result:(Named ([ty_var], "list")) ~name:"to_list" ty_var
     in
 
-    let fold =
-      let typesig =
-        let a = new_var () in
-        let init_ty, arrows =
-          List.fold_right fields_dot_t ~init:(a, Var a) ~f:(
-            fun field (fun_res, acc) ->
-              let param = new_var () in
-              let f =
-                Arrow ("", Var param, Arrow ("", field.typesig, Var fun_res))
-              in
-              (param, Arrow (field.ident, f, acc))
-          )
-        in
-        Arrow ("init", Var init_ty, arrows)
-      in
-      let body = Fun (["init", true], body) in
-      Binding { ident = "fold" ; typesig ; body }
-    in
+    let fold = FV_helpers.mk_fold ~body fields_dot_t in
 
     let map =
       let typesig =
