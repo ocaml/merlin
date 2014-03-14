@@ -432,8 +432,7 @@ return DEFAULT or the value associated to KEY otherwise."
   (merlin-start-process merlin-current-flags (funcall merlin-grouping-function))
   (setq merlin-pending-errors nil)
   (merlin-load-project-file)
-  (merlin-to-point)
-  (message "Merlin restarted"))
+  (merlin-to-point))
 
 (defun merlin-process-clear-flags ()
   "Clear all flags set up to be passed to merlin.
