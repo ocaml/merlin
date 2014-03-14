@@ -117,6 +117,9 @@ arguments:
 Directory are either absolute or relative to the directory containing ".merlin"
 file.
 
+For a more comprehensive guide to the `.merlin` file have a look at [this
+guide](https://github.com/the-lambda-church/merlin/wiki/project-configuration).
+
 thread support
 --------------
 
