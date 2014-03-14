@@ -349,7 +349,7 @@ let all_occurences id =
   let rec aux acc t =
     let acc = match t.context with
       | Pattern (Some id',_)
-        when Ident.equal id id' ->
+        when Ident.same id id' ->
         t :: acc
       | Expr (Typedtree.Texp_ident (path,_,_), _)
         when Path.isfree id path ->
