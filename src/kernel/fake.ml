@@ -399,6 +399,19 @@ module Binprot = struct
   end
 end
 
+let linear_pass ?result ~name ~body lst ret_ty =
+  let init =
+    match result with
+    | None -> ret_ty
+    | Some ty -> ty
+  in
+  let typesig =
+    List.fold_right lst ~init ~f:(fun cstr acc_ty ->
+      Arrow (cstr.ident, Arrow ("", cstr.typesig, ret_ty), acc_ty)
+    )
+  in
+  Binding { ident = name ; typesig ; body }
+
 (* TODO: factorize [Variants] and [Fields] *)
 module Variants = struct
   let mk_cstr_typesig ~self args res_opt =
@@ -421,6 +434,10 @@ module Variants = struct
       )
     in
 
+    let body =
+      mk_labeled_fun (List.map cstrs ~f:(fun (l,_,_,_) -> l.Location.txt,true))
+    in
+
     let fold =
       let typesig =
         let a = new_var () in
@@ -436,25 +453,15 @@ module Variants = struct
         in
         Arrow ("init", Var init_ty, arrows)
       in
-      let body =
-        mk_labeled_fun (List.map cstrs ~f:(fun (l,_,_,_) -> l.Location.txt,true))
-      in
       let body = Fun (["init", true], body) in
       Binding { ident = "fold" ; typesig ; body }
     in
 
-    let iter =
-      let typesig =
-        List.fold_right cstrs_dot_t ~init:unit_ty ~f:(fun cstr acc ->
-          Arrow (cstr.ident, Arrow ("", cstr.typesig, unit_ty), acc)
-        )
-      in
-      let body =
-        let args = List.map cstrs_dot_t ~f:(fun b -> b.ident, true) in
-        Fun (args, AnyVal)
-      in
-      Binding { ident = "iter" ; typesig ; body }
+    let linear_pass ?result ~name ty =
+      linear_pass ?result ~name cstrs_dot_t ~body ty
     in
+
+    let iter = linear_pass ~name:"iter" unit_ty in
 
     let map =
       let typesig =
@@ -586,17 +593,7 @@ module Fields = struct
     in
 
     let linear_pass ?result ~name ret_ty =
-      let init =
-        match result with
-        | None -> ret_ty
-        | Some ty -> ty
-      in
-      let typesig =
-        List.fold_right fields_dot_t ~init ~f:(fun field acc_ty ->
-          Arrow (field.ident, Arrow ("", field.typesig, ret_ty), acc_ty)
-        )
-      in
-      Binding { ident = name ; typesig ; body }
+      linear_pass ?result ~name fields_dot_t ~body ret_ty
     in
 
     let iter = linear_pass ~name:"iter" unit_ty in
