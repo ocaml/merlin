@@ -37,8 +37,23 @@ let section = Logger.(`protocol)
 let invalid_arguments () = failwith "invalid arguments"
 
 let json_log (input,output) =
-  let log_input json = Logger.log section ~prefix:"<" (Json.to_string json); json in
-  let log_output json = Logger.log section ~prefix:">" (Json.to_string json); json in
+  let last_time = ref (Sys.time ()) in
+  let log_time () =
+    let old_time = !last_time in
+    let new_time = Sys.time () in
+    last_time := new_time;
+    Printf.sprintf "time %f, delta %f" new_time (new_time -. old_time)
+  in
+  let log_input json =
+    Logger.log section ~prefix:("// < " ^ log_time () ^ "\n")
+      (Json.to_string json);
+    json
+  in
+  let log_output json =
+    Logger.log section ~prefix:("// > " ^ log_time () ^ "\n")
+      (Json.to_string json);
+    json
+  in
   let input' = Stream.map ~f:log_input input in
   let output' json = output (log_output json) in
   input', output'
