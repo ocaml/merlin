@@ -3,8 +3,6 @@
 TARGET = ocamlmerlin.native
 #TARGET = src/spine.cmo
 
-TARGET_EMACS = emacs/merlin.elc
-
 OCAMLBUILD=ocamlbuild -Is src,src/config,src/utils,src/ocaml$(TYPER_VERSION),src/ocaml$(TYPER_VERSION)/utils,src/ocaml$(TYPER_VERSION)/typing,src/ocaml$(TYPER_VERSION)/parsing
 OCAMLFIND=ocamlfind
 EMACS=emacs
@@ -53,11 +51,15 @@ distclean: clean
 	@echo
 	rm -f Makefile.config $(CONFIG_FILES) $(TARGET)
 
-install-binary: $(TARGET)
+install-binary-common: $(TARGET)
 	install -d $(BIN_DIR)
-	install $(TARGET) $(BIN_DIR)/ocamlmerlin
+	install $(TARGET) $(BIN_DIR)/ocamlmerlin$(EXE)
+
+install-binary-scripts:
 	install omake-merlin $(BIN_DIR)/omake-merlin
 	install jenga-merlin $(BIN_DIR)/jenga-merlin
+
+install-binary: install-binary-common $(INSTALL_SCRIPTS)
 
 install-share: $(TARGET) $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
@@ -90,4 +92,4 @@ install: install-binary install-share install-vim
 	@echo
 
 uninstall:
-	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
+	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/jenga-merlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin$(EXE) $(SHARE_DIR)/emacs/site-lisp/merlin.el
