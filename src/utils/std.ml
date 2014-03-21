@@ -87,6 +87,10 @@ module List = struct
     | xs -> List.rev acc, xs
   let split_n n l = split_n [] n l
 
+  let rec unfold f a = match f a with
+    | None -> []
+    | Some a -> a :: unfold f a
+
   module Lazy = struct
     type 'a t =
       | Nil
@@ -276,6 +280,10 @@ module Zipper = struct
       shift (succ n) (Zipper (prev, pred pos, a :: next))
     | zipper -> zipper
 
+  let focused = function
+    | Zipper (_,_,x :: _) -> Some x
+    | Zipper (_,_,_) -> None
+
   let of_list l = Zipper ([], 0, l)
   let insert a (Zipper (prev, pos, next)) =
     Zipper (a :: prev, succ pos, next)
@@ -285,6 +293,20 @@ module Zipper = struct
 
   let change_tail next (Zipper (prev,pos,_next)) =
     Zipper (prev,pos,next)
+
+  let rec seek_forward pred head n tail =
+    match tail with
+    | x :: xs when pred x -> seek_forward pred (x :: head) (n + 1) xs
+    | _ -> Zipper (head, n, tail)
+  let seek_forward pred (Zipper (head,n,tail)) =
+    seek_forward pred head n tail
+
+  let rec seek_backward pred head n tail =
+    match head with
+    | x :: xs when pred x -> seek_backward pred xs (n - 1) (x :: tail)
+    | _ -> Zipper (head, n, tail)
+  let seek_backward pred (Zipper (head,n,tail)) =
+    seek_backward pred head n tail
 end
 type 'a zipper = 'a Zipper.t = Zipper of 'a list * int * 'a list
 
