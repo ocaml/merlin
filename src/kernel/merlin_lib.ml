@@ -259,7 +259,7 @@ module Buffer : sig
   val create: ?path:string -> Project.t -> Parser.state -> t
 
   val lexer: t -> Lexer.item History.t
-  val update: ?ignore_eof:bool -> t -> Lexer.item History.t -> unit
+  val update: t -> Lexer.item History.t -> unit
   val start_lexing: t -> Lexer.t
 
   val parser: t -> Parser.t
@@ -267,7 +267,6 @@ module Buffer : sig
   val recover: t -> Recover.t
   val path: t -> Parser.path
   val typer: t -> Typer.t
-  val fresh_typer: t -> Typer.t
 end = struct
   type t = {
     kind: Parser.state;
@@ -275,8 +274,9 @@ end = struct
     project : Project.t;
     mutable keywords: Lexer.keywords;
     mutable lexer: Lexer.item History.t;
-    mutable parser: (Lexer.item * Merlin_recover.t) History.t;
-    mutable typer: Merlin_typer.t;
+    mutable parser: (Lexer.item * Recover.t) History.t;
+    mutable typer: Typer.t;
+    mutable eof_typer: Typer.t option;
     mutable parser_path: Parser.Path.t;
     mutable validity_stamp: bool ref;
   }
@@ -286,7 +286,7 @@ end = struct
       | Lexer.Valid (s,t,e) -> s,t,e
       | _ -> assert false
     in
-    (token, Merlin_recover.fresh (Parser.from kind input))
+    (token, Recover.fresh (Parser.from kind input))
 
   let create ?path project kind =
     let path, filename = match path with
@@ -300,7 +300,8 @@ end = struct
       keywords = Project.keywords project;
       parser = History.initial (initial_step kind (History.focused lexer));
       parser_path = Parser.Path.empty;
-      typer = Merlin_typer.fresh (Project.extensions project);
+      typer = Typer.fresh (Project.extensions project);
+      eof_typer = None;
       validity_stamp = Project.validity_stamp project;
     }
 
@@ -313,47 +314,56 @@ end = struct
 
   let lexer b = b.lexer
   let recover b = snd (History.focused b.parser)
-  let parser b = Merlin_recover.parser (recover b)
-  let parser_errors b = Merlin_recover.exns (recover b)
+  let parser b = Recover.parser (recover b)
+  let parser_errors b = Recover.exns (recover b)
 
   let path b =
     let parser_path = Parser.Path.update' (parser b) b.parser_path in
     b.parser_path <- parser_path;
     Parser.Path.get parser_path
 
-  let typer b =
+  let incremental_typer b =
     setup b;
     let need_refresh = not !(b.validity_stamp) in
     if need_refresh then
       b.validity_stamp <- Project.validity_stamp b.project;
     let need_refresh = need_refresh ||
-                       not (Merlin_typer.is_valid b.typer) ||
+                       not (Typer.is_valid b.typer) ||
                        not (String.Set.equal
-                              (Merlin_typer.extensions b.typer)
+                              (Typer.extensions b.typer)
                               (Project.extensions b.project))
     in
     if need_refresh then
-      b.typer <- Merlin_typer.fresh (Project.extensions b.project);
-    let typer = Merlin_typer.update (parser b) b.typer  in
+      b.typer <- Typer.fresh (Project.extensions b.project);
+    let typer = Typer.update (parser b) b.typer  in
     b.typer <- typer;
     typer
 
   let fresh_typer b =
     setup b;
-    let typer = Merlin_typer.fresh (Project.extensions b.project) in
-    Merlin_typer.update (parser b) typer
+    let typer = Typer.fresh (Project.extensions b.project) in
+    Typer.update (parser b) typer
 
-  let update ?(ignore_eof=true) t l =
+  let typer b =
+    if Parser.reached_eof (parser b) then
+      match b.eof_typer with
+      | Some typer -> typer
+      | None ->
+        let typer = fresh_typer b in
+        b.eof_typer <- Some typer;
+        typer
+    else
+      incremental_typer b
+
+  let update t l =
     t.lexer <- l;
     let check token (token',_) = token == token' in
     let init token = initial_step t.kind token in
     let fold token (_,recover) =
-      match token with
-      | Lexer.Valid (_,Raw_parser.EOF,_)
-        when ignore_eof -> (token,recover)
-      | _ -> (token,Merlin_recover.fold token recover)
+      token, Recover.fold token recover
     in
-    t.parser <- History.sync ~check ~init ~fold t.lexer (Some t.parser)
+    t.parser <- History.sync ~check ~init ~fold t.lexer (Some t.parser);
+    t.eof_typer <- None
 
   let start_lexing b =
     let kw = Project.keywords b.project in

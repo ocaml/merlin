@@ -2,11 +2,14 @@ open Std
 open Raw_parser
 
 let in_struct parser =
-  match Merlin_parser.(Frame.value (stack parser)) with
-  | Nonterminal ( NT'with_recover_structure_item_ _
-                | NT'with_recover_seq_expr_ _
-                | NT'structure_sep _ ) -> true
-  | _ -> false
+  match Merlin_parser.stack parser with
+  | None -> false
+  | Some frame ->
+    match Merlin_parser.Frame.value frame with
+    | Nonterminal ( NT'with_recover_structure_item_ _
+                  | NT'with_recover_seq_expr_ _
+                  | NT'structure_sep _ ) -> true
+    | _ -> false
 
 let rec drop_items = function
   | parser :: parsers when in_struct parser -> drop_items parsers
@@ -60,10 +63,7 @@ let feed_normal (_,tok,_ as input) parser =
         (Merlin_parser.Values.Token.to_string tok))
     tok;
   match Merlin_parser.feed input parser with
-  | `Accept _ ->
-    Logger.debug `internal "parser accepted";
-    Some parser
-  | `Reject _ ->
+  | `Reject ->
     Logger.debug `internal "parser rejected";
     None
   | `Step parser ->
@@ -96,7 +96,7 @@ let feed_recover original (s,tok,e as input) zipper =
   | Zipper (_, _, cell :: _) | Zipper (cell :: _, _, _) ->
     let candidate = cell.Location.txt in
     match Merlin_parser.feed input candidate with
-    | `Accept _ | `Reject _ ->
+    | `Reject ->
       Either.L zipper
     | `Step parser ->
       let diff = Merlin_reconstruct.diff ~stack:original ~wrt:parser in
@@ -107,7 +107,7 @@ let feed_recover original (s,tok,e as input) zipper =
       | None -> assert false
       | Some parser ->
         match Merlin_parser.feed input parser with
-        | `Accept _ | `Reject _ -> assert false
+        | `Reject -> assert false
         | `Step parser -> Either.R parser
 
 let fold warnings token t =
@@ -134,12 +134,14 @@ let fold warnings token t =
       begin match feed_normal (s,tok,e) t.parser with
         | None ->
           let recovery = rollbacks t.parser in
-          let error =
-            Error_classifier.from (Merlin_parser.to_step t.parser) (s,tok,e)
-          in
-          recover_from
-            {t with errors = error :: (pop warnings) @ t.errors; }
-            recovery
+          begin match Merlin_parser.to_step t.parser with
+            | Some step ->
+              let error = Error_classifier.from step (s,tok,e) in
+              recover_from
+                {t with errors = error :: (pop warnings) @ t.errors}
+                recovery
+            | None -> t
+          end
         | Some parser ->
           {t with errors = (pop warnings) @ t.errors; parser }
       end

@@ -272,9 +272,7 @@ module Protocol_io = struct
     | [`String "refresh"] ->
       Request Refresh
     | [`String "errors"] ->
-      Request (Errors `Current)
-    | [`String "errors"; `String "eof"] ->
-      Request (Errors `EOF)
+      Request Errors
     | (`String "dump" :: `String "env" :: opt_pos) ->
       Request (Dump (`Env (`Normal, optional_position opt_pos)))
     | (`String "dump" :: `String "full_env" :: opt_pos) ->
@@ -357,7 +355,7 @@ module Protocol_io = struct
         | Reset _, (pos, path) ->
           `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
         | Refresh, () -> `Bool true
-        | Errors _, exns ->
+        | Errors, exns ->
           `List (List.map (fun (_,err) -> error_to_json err)
                           (Error_report.of_exns exns))
         | Dump _, json -> json

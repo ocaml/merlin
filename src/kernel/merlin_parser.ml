@@ -7,35 +7,17 @@ module E = MenhirLib.EngineTypes
 
 type state = Raw_parser.state
 
-type t = Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
+type t =
+  | Partial of Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
+  | Final of Raw_parser.semantic_value Location.loc
+
 type parser = t
 
-type frame = int * (Raw_parser.state, Raw_parser.semantic_value) E.stack
-
-let implementation = Raw_parser.implementation_state
-let interface = Raw_parser.interface_state
+type frame =
+  | Partial_frame of int * (Raw_parser.state, Raw_parser.semantic_value) E.stack
+  | Final_frame of Raw_parser.semantic_value Location.loc
 
 let get_stack s = s.Raw_parser.env.E.stack
-
-let rec of_step s depth =
-  match Raw_parser.step s with
-  | `Accept _ as a -> a
-  | `Reject -> `Reject s
-  | `Feed p -> `Step (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
-  | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
-
-let from state input =
-  match of_step (Raw_parser.initial state input) MenhirUtils.initial_depth with
-  | `Step p -> p
-  | _ -> assert false
-
-let feed (s,t,e as input) (p, depth as parser) =
-  match t with
-  (* Ignore comments *)
-  | Raw_parser.COMMENT _ -> `Step parser
-  | _ ->
-    let p' = Raw_parser.feed p input in
-    of_step p' depth
 
 module Frame : sig
   val stack : t -> frame option
@@ -50,23 +32,44 @@ module Frame : sig
   type destruct = D of Raw_parser.semantic_value * destruct lazy_t
   val destruct: frame -> destruct
 end = struct
-  let frame_of d stack = if stack.E.next == stack then None else Some (d,stack)
+  let frame_of d stack =
+    if stack.E.next == stack then
+      None
+    else
+      Some (Partial_frame (d,stack))
 
-  let stack_depth (_,w) = MenhirUtils.depth w - 1
-  let stack (s,_ as stk) = frame_of (stack_depth stk) (get_stack s)
+  let stack = function
+    | Partial (parser,w) ->
+      frame_of (MenhirUtils.depth w - 1) (get_stack parser)
+    | Final result ->
+      Some (Final_frame result)
 
-  let depth (d,f) = d
+  let depth = function
+    | Partial_frame (d,f) -> d
+    | Final_frame _ -> 0
 
-  let value (_,frame) = frame.E.semv
-  let location (_,frame) =
-    { Location.
-      loc_start = frame.E.startp;
-      loc_end = frame.E.endp;
-      loc_ghost = false
-    }
+  let value = function
+    | Partial_frame (_,frame) -> frame.E.semv
+    | Final_frame l -> l.Location.txt
 
-  let eq (_,f) (_,f') = f == f'
-  let next (d,f) = frame_of (d - 1) f.E.next
+  let location = function
+    | Partial_frame (_,frame) ->
+      { Location.
+        loc_start = frame.E.startp;
+        loc_end = frame.E.endp;
+        loc_ghost = false
+      }
+    | Final_frame l ->
+      l.Location.loc
+
+  let eq a b = match a, b with
+    | Partial_frame (_,f), Partial_frame (_,f') -> f == f'
+    | Final_frame f, Final_frame f' -> f == f'
+    | _ -> false
+
+  let next = function
+    | Partial_frame (d,f) -> frame_of (d - 1) f.E.next
+    | Final_frame _ -> None
 
   (* Ease pattern matching on parser stack *)
   type destruct = D of Raw_parser.semantic_value * destruct lazy_t
@@ -81,13 +84,56 @@ end = struct
     D (v,tl)
 end
 
-(* [stack] should be total for wellformed parsers *)
-let stack parser =
-  match Frame.stack parser with
-  | Some frame -> frame
-  | None -> assert false
+let implementation = Raw_parser.implementation_state
+let interface = Raw_parser.interface_state
 
-let to_step (step,_) = step
+let stack = Frame.stack
+let location t =
+  match stack t with
+  | None -> Location.none
+  | Some frame -> Frame.location frame
+
+let reached_eof = function
+  | Partial _ -> false
+  | Final _ -> true
+
+let rec of_step s depth =
+  match Raw_parser.step s with
+  | `Accept txt ->
+    let frame = (get_stack s) in
+    let loc =
+      { Location.
+        loc_start = frame.E.startp;
+        loc_end = frame.E.endp;
+        loc_ghost = false
+      }
+    in
+    `Step (Final {Location. txt; loc})
+  | `Reject -> `Reject
+  | `Feed p ->
+    `Step (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
+  | `Step p ->
+    of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
+
+let from state input =
+  match of_step (Raw_parser.initial state input) MenhirUtils.initial_depth with
+  | `Step p -> p
+  | _ -> assert false
+
+let feed (s,t,e as input) parser =
+  match parser with
+  | Final _ -> `Reject
+  | Partial (p, depth) ->
+    match t with
+    (* Ignore comments *)
+    | Raw_parser.COMMENT _ -> `Step parser
+    | _ ->
+      let p' = Raw_parser.feed p input in
+      of_step p' depth
+
+let to_step = function
+  | Partial (step,_) -> Some step
+  | Final _ -> None
 
 let dump ppf t =
   let rec aux ppf = function
@@ -99,22 +145,23 @@ let dump ppf t =
   in
   aux ppf (Frame.stack t)
 
-let pop (p, depth) =
-  match MenhirUtils.pop p.Raw_parser.env with
-  | None -> None
-  | Some env ->
-    let p = {p with Raw_parser.env = env} in
-    Some (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
+let pop = function
+  | Final _ -> None
+  | Partial (p, depth) ->
+    match MenhirUtils.pop p.Raw_parser.env with
+    | None -> None
+    | Some env ->
+      let p = {p with Raw_parser.env = env} in
+      Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
-let location t =
-  match Frame.stack t with
-  | None -> Location.none
-  | Some frame -> Frame.location frame
-
-let last_token (parser,_) =
-  let loc_start,t,loc_end = parser.Raw_parser.env.E.token in
-  Location.mkloc t
-    { Location. loc_start; loc_end; loc_ghost = false }
+let last_token = function
+  | Final {Location. loc = {Location. loc_end = l; _}; _} ->
+    Location.mkloc Raw_parser.EOF
+      { Location. loc_start = l; loc_end = l; loc_ghost = false }
+  | Partial (parser,_) ->
+    let loc_start,t,loc_end = parser.Raw_parser.env.E.token in
+    Location.mkloc t
+      { Location. loc_start; loc_end; loc_ghost = false }
 
 let recover ?location flag t =
   match Frame.stack t with
@@ -125,8 +172,7 @@ let recover ?location flag t =
       | Some l -> l
     in
     match feed (l.Location.loc_start,P.RECOVER flag,l.Location.loc_end) t with
-    | `Accept _ -> None
-    | `Reject _ -> None
+    | `Accept _ | `Reject -> None
     | `Step t -> Some (Location.mkloc t l)
 
 let reconstruct exn t =
@@ -135,8 +181,7 @@ let reconstruct exn t =
   | Some frame ->
     let {Location. loc_start; loc_end} = Frame.location frame in
     match feed (loc_start,P.RECONSTRUCT exn,loc_end) t with
-    | `Accept _ -> None
-    | `Reject _ -> None
+    | `Accept _ | `Reject -> None
     | `Step t -> Some t
 
 module Integrate

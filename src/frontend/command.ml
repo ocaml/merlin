@@ -250,19 +250,9 @@ let dispatch (state : state) =
   | (Refresh : a request) ->
     Project.invalidate ~flush:true state.project
 
-  | (Errors `Current : a request) ->
+  | (Errors : a request) ->
     let pexns = Buffer.parser_errors state.buffer in
     let texns = Typer.exns (Buffer.typer state.buffer) in
-    texns @ pexns
-
-  | (Errors `EOF : a request) ->
-    buffer_changed state;
-    let lexer = Buffer.start_lexing state.buffer in
-    assert (Lexer.feed lexer "");
-    ignore (Buffer.update ~ignore_eof:false state.buffer (Lexer.history lexer));
-    let typer = Buffer.fresh_typer state.buffer in
-    let pexns = Buffer.parser_errors state.buffer in
-    let texns = Typer.exns typer in
     texns @ pexns
 
   | (Dump `Parser : a request) ->

@@ -15,8 +15,7 @@ val from : state -> Lexing.position * Raw_parser.token * Lexing.position -> t
 (* Feed new token *)
 val feed : Lexing.position * Raw_parser.token * Lexing.position
         -> t
-        -> [ `Accept of Raw_parser.semantic_value | `Step of t
-           | `Reject of Raw_parser.step Raw_parser.parser ]
+        -> [ `Step of t | `Reject ]
 
 (* Dump internal state for debugging purpose *)
 val dump : Format.formatter -> t -> unit
@@ -25,6 +24,7 @@ val dump : Format.formatter -> t -> unit
 (* for recovery: approximate position of last correct construction *)
 val location : t -> Location.t
 val last_token : t -> Raw_parser.token Location.loc
+val reached_eof : t -> bool
 
 (* Stack unwinding, hopefully to find a recovery point *)
 val pop : t -> t option
@@ -35,10 +35,10 @@ val recover : ?location:Location.t -> bool ref -> t -> t Location.loc option
 val reconstruct : exn -> t -> t option
 
 (* Access to underlying raw parser *)
-val to_step : t -> Raw_parser.feed Raw_parser.parser
+val to_step : t -> Raw_parser.feed Raw_parser.parser option
 
 (** Stack inspection *)
-val stack : t -> frame
+val stack : t -> frame option
 
 module Frame : sig
   val depth : frame -> int
