@@ -120,7 +120,7 @@ struct
     | OUNIT_BENCH_FUN     -> "OUNIT_BENCH_FUN"
     | OUNIT_BENCH         -> "OUNIT_BENCH"
     | ENTRYPOINT -> "ENTRYPOINT"
-    | RECOVER -> "RECOVER"
+    | RECOVER _ -> "RECOVER"
     | RECONSTRUCT _ -> "RECONSTRUCT"
 
   let to_terminal t = Query.index t
@@ -332,7 +332,12 @@ struct
     |]
 
   let to_string = function
+    | NT'toplevel_directive                _ -> "toplevel_directive"
+    | NT'list_toplevel_directive_          _ -> "list(toplevel_directive)"
+    | NT'list_SEMISEMI_                    _ -> "list(SEMISEMI)"
     | NT'with_type_binder                  _ -> "with_type_binder"
+    | NT'with_recover_structure_item_      _ -> "with_recover(structure_item)"
+    | NT'with_recover_seq_expr_            _ -> "with_recover(seq_expr)"
     | NT'with_extensions                   _ -> "with_extensions"
     | NT'with_constraints                  _ -> "with_constraints"
     | NT'with_constraint                   _ -> "with_constraint"
@@ -358,6 +363,7 @@ struct
     | NT'top_expr                          _ -> "top_expr"
     | NT'subtractive                       _ -> "subtractive"
     | NT'structure_tail                    _ -> "structure_tail"
+    | NT'structure_sep                     _ -> "structure_sep"
     | NT'structure_item                    _ -> "structure_item"
     | NT'structure                         _ -> "structure"
     | NT'strict_binding                    _ -> "strict_binding"

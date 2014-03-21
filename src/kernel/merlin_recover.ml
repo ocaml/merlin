@@ -1,37 +1,55 @@
 open Std
 open Raw_parser
 
+let in_struct parser =
+  match Merlin_parser.Frame.stack parser with
+  | None -> false
+  | Some frame ->
+    match Merlin_parser.Frame.value frame with
+    | Nonterminal ( NT'with_recover_structure_item_ _
+                      | NT'with_recover_seq_expr_ _
+                      | NT'structure_sep _ ) -> true
+    | _ -> false
+
+let rec drop_items = function
+  | parser :: parsers when in_struct parser -> drop_items parsers
+  | parsers -> parsers
+
 let rollbacks parser =
-  let stacks =
-    let l = List.Lazy.unfold Merlin_parser.pop parser in
-    List.Lazy.Cons (parser, lazy l)
+  let flag = ref true in
+  let rec aux ?location = function
+    | [] -> []
+    | parser :: parsers ->
+      let loc' = Merlin_parser.location parser in
+      match Merlin_parser.recover ?location flag parser with
+      | None -> aux ~location:loc' parsers
+      | Some parser ->
+        let parsers =
+          if in_struct parser.Location.txt then
+            drop_items parsers
+          else
+            parsers
+        in
+        parser :: aux ~location:loc' parsers
   in
-  let last_loc = ref None in
-  let recoverable =
-    List.Lazy.filter_map
-      (fun t ->
-         let location = !last_loc in
-         last_loc := Some (Merlin_parser.location t);
-         Merlin_parser.recover ?location t
-      ) stacks
-  in
+  let stacks = List.unfold Merlin_parser.pop parser in
+  let recoverable = aux stacks in
   let last_pos = ref (-1) in
   let recoverable =
-    List.Lazy.filter_map
-      (fun t ->
-         let start = snd (Lexing.split_pos t.Location.loc.Location.loc_start) in
-         if start = !last_pos
-         then None
-         else (last_pos := start; Some t)
-      ) recoverable
+    List.filter_map recoverable
+    ~f:(fun t ->
+        let start = snd (Lexing.split_pos t.Location.loc.Location.loc_start) in
+        if start = !last_pos
+        then None
+        else (last_pos := start; Some t)
+       )
   in
-  recoverable
+  Zipper.of_list recoverable, flag
 
 type t = {
   errors: exn list;
   parser: Merlin_parser.t;
-  recovering: (Merlin_parser.t Location.loc list *
-               Merlin_parser.t Location.loc List.Lazy.t) option;
+  recovering: (Merlin_parser.t Location.loc zipper * bool ref) option;
 }
 
 let parser t = t.parser
@@ -58,38 +76,31 @@ let closing_token = function
   | END -> true
   | _ -> false
 
-let feed_recover original (s,tok,e as input) (hd,tl) =
+let feed_recover original (s,tok,e as input) zipper =
   let get_col x = snd (Lexing.split_pos x) in
   let col = get_col s in
   (* Find appropriate recovering position *)
-  let rec to_the_right hd tl =
-    match hd with
-    | cell :: hd' when col > get_col cell.Location.loc.Location.loc_start ->
-      to_the_right hd' (List.Lazy.Cons (cell, Lazy.from_val tl))
-    | _ -> hd, tl
+  let to_the_right =
+    Zipper.seek_backward
+      (fun cell -> col > get_col Location.(cell.loc.loc_start))
+  and to_the_left =
+    Zipper.seek_forward
+      (fun cell -> get_col Location.(cell.loc.loc_start) > col)
   in
-  let rec to_the_left hd tl =
-    match tl with
-    | List.Lazy.Cons (cell, lazy tl)
-      when get_col cell.Location.loc.Location.loc_start > col ->
-      to_the_left (cell :: hd) tl
-    | _ -> hd, tl
-  in
-  let hd, tl = to_the_right hd tl in
-  let hd, tl = to_the_left hd tl in
+  let zipper = to_the_right zipper in
+  let zipper = to_the_left zipper in
   (* Closing tokens are applied one step behind *)
-  let hd, tl =
-    match closing_token tok, hd with
-    | true, (x :: hd) -> hd, List.Lazy.Cons (x, lazy tl)
-    | _ -> hd, tl
+  let zipper =
+    Zipper.shift (if closing_token tok then -1 else 0)
+      zipper
   in
-  match hd, tl with
-  | [], List.Lazy.Nil -> assert false
-  | _, List.Lazy.Cons (cell, _) | (cell :: _), _ ->
+  match zipper with
+  | Zipper ([], _, []) -> Either.R original
+  | Zipper (_, _, cell :: _) | Zipper (cell :: _, _, _) ->
     let candidate = cell.Location.txt in
     match Merlin_parser.feed input candidate with
     | `Accept _ | `Reject _ ->
-      Either.L (hd,tl)
+      Either.L zipper
     | `Step parser ->
       let diff = Merlin_reconstruct.diff ~stack:original ~wrt:parser in
       match Merlin_parser.reconstruct
@@ -113,10 +124,10 @@ let fold warnings token t =
     Logger.debugf `internal Merlin_parser.dump t.parser;
     warnings := [];
     let pop w = let r = !warnings in w := []; r in
-    let recover_from t recovery =
+    let recover_from t (recovery, flag) =
       match feed_recover t.parser (s,tok,e) recovery with
       | Either.L recovery ->
-        {t with recovering = Some recovery}
+        {t with recovering = Some (recovery, flag)}
       | Either.R parser ->
         {t with parser; recovering = None}
     in
@@ -125,7 +136,7 @@ let fold warnings token t =
     | None ->
       begin match feed_normal (s,tok,e) t.parser with
         | None ->
-          let recovery = ([], rollbacks t.parser) in
+          let recovery = rollbacks t.parser in
           let error =
             Error_classifier.from (Merlin_parser.to_step t.parser) (s,tok,e)
           in
@@ -148,8 +159,7 @@ let dump_snapshot ppf s =
 
 let dump_recovering ppf = function
   | None -> Format.fprintf ppf "clean"
-  | Some (head, tail) ->
-    let tail = List.Lazy.to_strict tail in
+  | Some (Zipper (head, _, tail), _) ->
     let iter ppf l = List.iter ~f:(dump_snapshot ppf) l in
     Format.fprintf ppf "recoverable states\nhead:\n%atail:\n%a"
       iter head
@@ -162,6 +172,7 @@ let dump ppf t =
 let dump_recoverable ppf t =
   let t = match t.recovering with
     | Some _ -> t
-    | None -> {t with recovering = Some ([], rollbacks t.parser)}
+    | None -> {t with recovering = Some (rollbacks t.parser)}
   in
   dump ppf t
+

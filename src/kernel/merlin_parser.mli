@@ -31,7 +31,7 @@ val pop : t -> t option
 
 (* Try to feed a RECOVER token *)
 (* succeeds if it's safe to recover from current state *)
-val recover : ?location:Location.t -> t -> t Location.loc option
+val recover : ?location:Location.t -> bool ref -> t -> t Location.loc option
 val reconstruct : exn -> t -> t option
 
 (* Access to underlying raw parser *)

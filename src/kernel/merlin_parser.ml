@@ -110,7 +110,7 @@ let last_token (parser,_) =
   Location.mkloc t
     { Location. loc_start; loc_end; loc_ghost = false }
 
-let recover ?location t =
+let recover ?location flag t =
   match Frame.stack t with
   | None -> None
   | Some frame ->
@@ -118,7 +118,7 @@ let recover ?location t =
       | None -> Frame.location frame
       | Some l -> l
     in
-    match feed (l.Location.loc_start,P.RECOVER,l.Location.loc_end) t with
+    match feed (l.Location.loc_start,P.RECOVER flag,l.Location.loc_end) t with
     | `Accept _ -> None
     | `Reject _ -> None
     | `Step t -> Some (Location.mkloc t l)

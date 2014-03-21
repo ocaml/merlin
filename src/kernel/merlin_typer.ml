@@ -163,13 +163,15 @@ module P = struct
       | Terminal _ | Bottom -> `none
       | Nonterminal nt ->
       match nt with
-      | NT'structure str | NT'structure_tail str | NT'structure_item str ->
+      | NT'structure str | NT'structure_tail str | NT'structure_item str
+      | NT'with_recover_structure_item_ str ->
         `str str
       | NT'mod_open o -> `Open o
       | NT'top_expr e | NT'strict_binding e | NT'simple_expr e | NT'seq_expr e
       | NT'opt_default (Some e) | NT'fun_def e | NT'fun_binding e | NT'expr e
       | NT'match_action e | NT'labeled_simple_expr (_,e) | NT'label_ident (_,e)
-      | NT'label_expr (_,e) | NT'constrained_seq_expr e ->
+      | NT'label_expr (_,e) | NT'constrained_seq_expr e
+      | NT'with_recover_seq_expr_ e ->
         `str [mkeval e]
       | NT'let_bindings e ->
         let rec_ =

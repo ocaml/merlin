@@ -1,4 +1,5 @@
 
+
 (***********************************************************************)
 (*                                                                     *)
 (*                                OCaml                                *)
@@ -463,7 +464,7 @@ let tag_nonrec (id, a) = (Fake.Nonrec.add id, a)
 %token OUNIT_BENCH_MODULE
 
 %token ENTRYPOINT
-%token RECOVER
+%token <bool ref> RECOVER
 %token <exn> RECONSTRUCT
 
 (* Precedences and associativities.
@@ -554,7 +555,8 @@ interface:
   { List.rev sg }
 
 top_expr:
-| ENTRYPOINT expr = seq_expr option(SEMISEMI) EOF { expr }
+| ENTRYPOINT list(toplevel_directive) expr = seq_expr list(SEMISEMI) EOF
+  { expr }
 
 (* Module expressions *)
 
@@ -593,32 +595,40 @@ module_expr:
     mkmod $startpos $endpos (Pmod_unpack (ghexp $startpos $endpos exp)) }
 
 structure:
-| structure_tail
-  { $1 }
+| tl = structure_tail
+  { tl }
 | expr = seq_expr tl = structure_tail
   { mkstrexp expr :: tl}
 
-structure_tail:
+(* inline is required because it defers side-effects *)
+%inline recover:
 | (*empty*)
+  { None }
+| r = RECOVER e = RECONSTRUCT
+  { r := false; Some e }
+| r = RECOVER
+  { r := false; None }
+
+structure_sep:
+| recover SEMISEMI list(toplevel_directive)
+  { () }
+
+structure_tail:
+| recover
   { [] }
-| SEMISEMI
+| structure_sep recover
   { [] }
-| SEMISEMI expr = seq_expr tl = structure_tail
+| structure_sep expr = with_recover(seq_expr) tl = structure_tail
   { mkstrexp expr :: tl }
-| SEMISEMI hd = structure_item tl = structure_tail
+| structure_sep hd = with_recover(structure_item) tl = structure_tail
   { hd @ tl }
-| hd = structure_item tl = structure_tail
+| hd = with_recover(structure_item) tl = structure_tail
   { hd @ tl }
 
-with_extensions:
-| LIDENT COMMA with_extensions
-  { $1 :: $3 }
-| LIDENT
-  { [$1] }
+with_recover(p):
+| recover r = p { r }
 
 structure_item:
-| RECOVER { [mkstr $startpos $endpos (Pstr_eval Fake.any_val')] }
-| exn = RECONSTRUCT { !Parsing_aux.reconstruct_struct exn }
 | LET rec_ = rec_flag binds = let_bindings
   { match binds with
     | [{ppat_desc = Ppat_any}, exp] ->
@@ -722,6 +732,12 @@ structure_item:
        (Pstr_module (mkrhs $startpos($1) $endpos($2) name, $4))]
   }
 
+with_extensions:
+| LIDENT COMMA with_extensions
+  { $1 :: $3 }
+| LIDENT
+  { [$1] }
+
 module_binding:
 | EQUAL module_expr
   { $2 }
@@ -769,7 +785,6 @@ signature:
   { hd @ tl }
 
 signature_item:
-| RECOVER { [] }
 | VAL id = val_ident COLON pval_type = core_type
   { let t = {pval_type; pval_prim = []; pval_loc = rloc $startpos $endpos} in
     [mksig $startpos $endpos
@@ -2142,6 +2157,16 @@ new_type:
 constrained_seq_expr:
 | e = seq_expr t = type_constraint
   { check_constraint (mkexp $startpos $endpos) t e }
+
+(* Ignored, added for compatibility with toplevel scripts *)
+
+toplevel_directive:
+| SHARP id = ident                    { Ptop_dir(id, Pdir_none) }
+| SHARP id = ident v = STRING         { Ptop_dir(id, Pdir_string v) }
+| SHARP id = ident v = INT            { Ptop_dir(id, Pdir_int v) }
+| SHARP id = ident v = val_longident  { Ptop_dir(id, Pdir_ident v) }
+| SHARP id = ident FALSE              { Ptop_dir(id, Pdir_bool false) }
+| SHARP id = ident TRUE               { Ptop_dir(id, Pdir_bool true) }
 
 (* Miscellaneous *)
 
