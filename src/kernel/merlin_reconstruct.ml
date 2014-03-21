@@ -19,7 +19,7 @@ let diff ~stack:p1 ~wrt:p2 =
       else
         extract (Frame.next f1) (Frame.next f2) (f2 :: acc)
   in
-  extract (Frame.stack p1) (Frame.stack p2) []
+  extract (Some (stack p1)) (Some (stack p2)) []
 
 let extract_nt l =
   let f frame =

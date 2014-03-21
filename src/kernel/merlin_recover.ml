@@ -2,14 +2,11 @@ open Std
 open Raw_parser
 
 let in_struct parser =
-  match Merlin_parser.Frame.stack parser with
-  | None -> false
-  | Some frame ->
-    match Merlin_parser.Frame.value frame with
-    | Nonterminal ( NT'with_recover_structure_item_ _
-                      | NT'with_recover_seq_expr_ _
-                      | NT'structure_sep _ ) -> true
-    | _ -> false
+  match Merlin_parser.(Frame.value (stack parser)) with
+  | Nonterminal ( NT'with_recover_structure_item_ _
+                | NT'with_recover_seq_expr_ _
+                | NT'structure_sep _ ) -> true
+  | _ -> false
 
 let rec drop_items = function
   | parser :: parsers when in_struct parser -> drop_items parsers

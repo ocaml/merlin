@@ -38,8 +38,9 @@ val reconstruct : exn -> t -> t option
 val to_step : t -> Raw_parser.feed Raw_parser.parser
 
 (** Stack inspection *)
+val stack : t -> frame
+
 module Frame : sig
-  val stack : t -> frame option
   val depth : frame -> int
 
   val value : frame -> Raw_parser.semantic_value

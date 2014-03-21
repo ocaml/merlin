@@ -81,6 +81,12 @@ end = struct
     D (v,tl)
 end
 
+(* [stack] should be total for wellformed parsers *)
+let stack parser =
+  match Frame.stack parser with
+  | Some frame -> frame
+  | None -> assert false
+
 let to_step (step,_) = step
 
 let dump ppf t =
