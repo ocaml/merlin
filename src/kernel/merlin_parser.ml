@@ -205,58 +205,85 @@ struct
     | Zero of P.t
     | More of (P.t * frame * t)
 
-  let rec drop st n = function
-    | Zero _ as t   -> t
-    | t when n <= 0 -> t
-    | More (p,_,t)  ->
-      P.evict st p;
-      drop st (n - 1) t
-
-  let empty p = Zero (P.empty p)
+  let empty state = Zero (P.empty state)
 
   let value (Zero p | More (p,_,_)) = p
 
-  let update st frame t =
-    let d' = match t with More (_,f,_) -> Frame.depth f | Zero _ -> 0 in
-    let t = drop st (d' - Frame.depth frame) t in
-    let rec seek acc f =
-      if Frame.depth f > d' then
+  let rec drop state n = function
+    | Zero _ as t   -> t
+    | t when n <= 0 -> t
+    | More (p,_,t)  ->
+      P.evict state p;
+      drop state (n - 1) t
+
+  let size = function
+    | Zero _ -> 0
+    | More (_,f,_) ->
+      (* Frames are indexed starting from 0, so total size is depth + 1 *)
+      Frame.depth f + 1
+
+  (* state: data passed to user functor
+   * top: top of the current stack
+   * pre: computed metric for a previous version of the stack
+   *)
+  let update state top int =
+    (* How many steps were computed in previous integratio ? *)
+    let size' = size int in
+    (* Chop the top part of previous larger than current stack *)
+    let int = drop state (size' - (Frame.depth top + 1)) int in
+    (* Conversely, if stack is larger than previous, extract all exceeding
+       frames *)
+    let rec fat_free acc f =
+      if Frame.depth f >= size' then
         begin
           Logger.debugf `internal
             (fun ppf (a,b) ->
-               Format.fprintf ppf "depth f = %d > d' = %d\n%!" a b)
-            (Frame.depth f, d');
+               Format.fprintf ppf "depth f = %d >= size = %d\n%!" a b)
+            (Frame.depth f, size');
           match Frame.next f with
-          | None -> assert false
-          | Some f' -> seek (f :: acc) f'
+          | None -> None, (f :: acc)
+          | Some f' -> fat_free (f :: acc) f'
         end
-      else acc, f
+      else Some f, acc
     in
-    let ws, frame = seek [] frame in
-    let rec rewind acc old f = function
-      | More (p', f', ts) when not (Frame.eq f' f) || not (P.validate st p') ->
-        P.evict st p';
-        begin match Frame.next f, ts with
-          | None, Zero p ->
-            P.evict st p;
-            acc, Some (p',f'),
-            (* Either reuse ts (more efficient ?)
+    (* The new top, if any, and all removed frames to be processed *)
+    let top, worklist = fat_free [] top in
+    (* A valid top should now match previous size *)
+    assert (size int - 1 = Option.value_map ~f:Frame.depth ~default:(-1) top);
+    (* Decrease previous result and stack until we find matching frames *)
+    let rec rewind worklist old top int =
+      match int with
+      | More (v, last, int')
+        when not (Frame.eq top last) || not (P.validate state v) ->
+        P.evict state v;
+        begin match Frame.next top, int' with
+          | None, Zero v' ->
+            P.evict state v';
+            worklist, None,
+            (* Either reuse int' (more efficient ?)
                or regenerate fresh empty value
                or maybe validate previous one before ? *)
-            (empty st)
+            (empty state)
           | None, More _ -> assert false
-          | Some f', _   ->
-            rewind (f :: acc) (Some (p',f')) f' ts
+          | Some top', _   ->
+            rewind (top :: worklist) (Some (v,last)) top' int'
         end
-      | t -> acc, old, t
+      | int -> worklist, old, int
     in
-    let ws, t =
-      match rewind ws None frame t with
-      | f :: ws, Some old, t ->
-        ws, More (P.delta st f (value t) ~old, f, t)
-      | ws, _, t -> ws, t
+    let worklist, int =
+      match top with
+      | None -> worklist, (empty state)
+      | Some frame ->
+        match rewind worklist None frame int with
+        | work :: worklist', Some old, int ->
+          worklist', More (P.delta state work (value int) ~old, work, int)
+        | worklist, _, int ->
+          worklist, int
     in
-    List.fold_left' ~f:(fun f t -> More (P.frame st f (value t), f, t)) ~init:t ws
+    List.fold_left' worklist
+      ~init:int
+      ~f:(fun frame int ->
+          More (P.frame state frame (value int), frame, int))
 
   let update' st p t =
     match Frame.stack p with

@@ -163,8 +163,8 @@ module P = struct
       | Terminal _ | Bottom -> `none
       | Nonterminal nt ->
       match nt with
-      | NT'structure str | NT'structure_tail str | NT'structure_item str
-      | NT'with_recover_structure_item_ str ->
+      | NT'implementation str | NT'structure str | NT'structure_tail str
+      | NT'structure_item str | NT'with_recover_structure_item_ str ->
         `str str
       | NT'mod_open o -> `Open o
       | NT'top_expr e | NT'strict_binding e | NT'simple_expr e | NT'seq_expr e
@@ -185,7 +185,7 @@ module P = struct
       | NT'expr_comma_list el  ->
         `str (List.map ~f:mkeval el)
       | NT'new_type s -> `nty s
-      | NT'signature_item sg ->
+      | NT'interface sg | NT'signature_item sg ->
         `sg sg
       | NT'signature sg ->
         `sg (List.rev sg)
