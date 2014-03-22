@@ -1525,11 +1525,15 @@ strict_binding:
 | new_type fun_binding
   { mkexp $startpos $endpos (Pexp_newtype ($1, $2)) }
 
+match_case:
+| r = recover p = pattern a = match_action
+  { (p, a) }
+
 match_cases:
-| pattern match_action
-  { [$1, $2] }
-| match_cases BAR pattern match_action
-  { ($3, $4) :: $1 }
+| match_case
+  { [$1] }
+| match_cases BAR match_case
+  { $3 :: $1 }
 
 fun_def:
 | match_action
