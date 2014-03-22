@@ -267,6 +267,10 @@ module Protocol_io = struct
     | (`String "boundary" :: `String "current" :: opt_pos)
     | (`String "boundary" :: opt_pos) ->
       Request (Boundary (`Current, optional_position opt_pos))
+    | [`String "check"; `String "unclosed"; `String "recursion"] ->
+      Request (Check_position `Unclosed_recursion)
+    | [`String "check"; `String "completed"; jpos] ->
+      Request (Check_position (`Completed (pos_of_json jpos)))
     | (`String "reset" :: `String kind :: opt_name) ->
       Request (Reset (ml_or_mli kind, optional_string opt_name))
     | [`String "refresh"] ->
@@ -352,6 +356,8 @@ module Protocol_io = struct
           `List (List.map pos_to_json [loc_start; loc_end])
         | Boundary _, None ->
           `Null
+        | Check_position _, result ->
+          `Bool result
         | Reset _, (pos, path) ->
           `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
         | Refresh, () -> `Bool true

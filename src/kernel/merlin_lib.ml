@@ -335,7 +335,16 @@ end = struct
     in
     if need_refresh then
       b.typer <- Typer.fresh (Project.extensions b.project);
-    let typer = Typer.update (parser b) b.typer  in
+    let parser = parser b in
+    let parser =
+      match Parser.feed
+              (Lexing.dummy_pos,Raw_parser.SEMISEMI,Lexing.dummy_pos)
+              parser
+      with
+      | `Reject -> parser
+      | `Step parser -> parser
+    in
+    let typer = Typer.update parser b.typer  in
     b.typer <- typer;
     typer
 
@@ -369,14 +378,18 @@ end = struct
     let kw = Project.keywords b.project in
     if kw != b.keywords then begin
       b.keywords <- kw;
-      ignore (update b (History.drop_tail (History.seek_backward
-                                             (fun _ -> true) b.lexer)))
-    end else begin
-      ignore (update b (History.seek_backward
-                          (function ( Lexer.Valid (_,Raw_parser.EOF,_)
-                                    | Lexer.Error _) -> true
-                                  | _ -> false)
-                          b.lexer))
+      update b (History.drop_tail (History.seek_backward
+                                     (fun _ -> true) b.lexer))
+    end
+    else begin
+      update b (History.seek_backward
+                  (function
+                    | ( Lexer.Valid (_,Raw_parser.EOF,_)
+                      | Lexer.Error _) -> true
+                    | Lexer.Valid (p,_,_)
+                      when p = Lexing.dummy_pos -> true
+                    | _ -> false)
+                  b.lexer)
     end;
     Lexer.start kw b.lexer
 end

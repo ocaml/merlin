@@ -234,6 +234,39 @@ let dispatch (state : state) =
     buffer_update state items;
     position state
 
+  | (Check_position `Unclosed_recursion : a request) ->
+    let open Parser.Path in
+    let path = Buffer.path state.buffer in
+    List.exists path
+      ~f:(function
+          | Let (Asttypes.Recursive, _) | Module_rec _ | Object _ | Class _ ->
+            true
+          | _ -> false)
+
+
+  | (Check_position (`Completed pos) : a request) ->
+    let position_match loc =
+      Lexing.compare_pos pos loc.Location.loc_start >= 0 &&
+      Lexing.compare_pos pos loc.Location.loc_end <= 0
+    in
+    let open Parser in
+    let rec aux = function
+      | None -> false
+      | Some frame ->
+        position_match (Frame.location frame)
+        && begin let open Raw_parser in
+          match Frame.value frame with
+          | Nonterminal
+              ( NT'structure_tail _ | NT'structure_sep  _ | NT'structure_item _
+              | NT'structure _ | NT'signature_item _ | NT'signature _
+              | NT'interface _ | NT'implementation _)
+            -> true
+          | _ -> false
+        end
+        || aux (Frame.next frame)
+    in
+    aux (stack (Buffer.parser state.buffer))
+
   | (Boundary (dir,pos) : a request) ->
     failwith "TODO"
 

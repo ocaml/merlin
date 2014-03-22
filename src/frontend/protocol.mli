@@ -46,6 +46,9 @@ type _ request =
   | Boundary
     :  [`Prev|`Next|`Current] * position option
     -> Location.t option request
+  | Check_position
+    :  [`Unclosed_recursion | `Completed of position]
+    -> bool request
   | Reset
     :  [`ML | `MLI] * string option
     -> (position * path) request
