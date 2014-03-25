@@ -98,7 +98,7 @@ All you need to do is add the following to your .emacs:
     (add-hook 'tuareg-mode-hook 'merlin-mode)
     (add-hook 'caml-mode-hook 'merlin-mode)
 
-`merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if is is installed.
+`merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if it is installed.
 
 
 Merlin project
