@@ -231,6 +231,16 @@ def command_locate(path, line, col):
   except MerlinExc as e:
     try_print_error(e)
 
+def command_occurences(line, col):
+  try:
+    lst_or_err = send_command("occurences", "ident", "at", {'line':line, 'col':col})
+    if not isinstance(lst_or_err, list):
+      print(lst_or_err)
+    else:
+      return lst_or_err
+  except MerlinExc as e:
+    try_print_error(e)
+
 ######## BUFFER SYNCHRONIZATION
 
 def sync_buffer_to(to_line, to_col):
@@ -321,6 +331,22 @@ def vim_find_list(vimvar):
   vim.command("let %s = []" % vimvar)
   for pkg in pkgs:
     vim.command("call add(%s, '%s')" % (vimvar, pkg))
+
+def vim_occurences(vimvar):
+  vim.command("let %s = []" % vimvar)
+  line, col = vim.current.window.cursor
+  sync_buffer_to(line, col)
+  lst = command_occurences(line, col)
+  lst = map(lambda x: x['start'], lst)
+  bufnr = vim.current.buffer.number
+  nr = 0
+  for pos in lst:
+    lnum = pos['line']
+    lcol = pos['col']
+    vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'occurence','type':'E','valid':1}" %
+        (bufnr, lnum, lcol + 1, nr))
+    nr = nr + 1
+    vim.command("call add(%s, l:tmp)" % vimvar)
 
 def vim_type(expr,is_approx=False):
   to_line, to_col = vim.current.window.cursor

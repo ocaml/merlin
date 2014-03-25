@@ -205,6 +205,12 @@ function! merlin#Locate(...)
     endif
 endfunction
 
+function! merlin#Occurences()
+  let l:occurences = []
+  py merlin.vim_occurences("l:occurences")
+  call setloclist(0, l:occurences)
+endfunction
+
 function! merlin#SyntasticGetLocList()
   let l:errors = []
   if expand('%:e') == 'ml'
@@ -267,6 +273,7 @@ function! merlin#Register()
   command! -buffer -range -nargs=0 TypeOfSel call merlin#TypeOfSel()
 
   command! -buffer -nargs=? Locate call merlin#Locate(<q-args>)
+  command! -buffer -nargs=0 Occurences call merlin#Occurences()
 
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
