@@ -26,10 +26,17 @@
 
 )* }}} *)
 
+type result = [
+  | `Found of string option * Lexing.position
+  | `Not_in_env of string
+  | `File_not_found of string
+  | `Not_found
+]
+
 val from_string
   : sources:Misc.Path_list.t
   -> env:Env.t
   -> local_defs:Typedtree.structure Asttypes.loc list
   -> local_modules:(string * Location.t) list
   -> string
-  -> (string option * Location.t) option
+  -> result

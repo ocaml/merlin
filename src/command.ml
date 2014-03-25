@@ -296,12 +296,11 @@ let dispatch (i,o : IO.io) (state : state) =
         ~local_modules
         path
     with
-    | None -> state, None
-    | Some (file, loc) ->
+    | `Found (file, pos) ->
       Logger.log `locate
         (sprintf "--> %s" (match file with None -> "<local buffer>" | Some f -> f)) ;
-      let pos = loc.Location.loc_start in
-      state, Some (file, pos)
+      state, `Found (file, pos)
+    | otherwise -> state, otherwise
     end
 
   | (Drop : a request) ->

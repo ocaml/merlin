@@ -53,7 +53,11 @@ type _ request =
     -> completion list request
   | Locate
     :  string * position option
-    -> (string option * position) option request
+    -> [ `Found of string option * Lexing.position
+       | `Not_in_env of string
+       | `File_not_found of string
+       | `Not_found
+       ] request
   | Drop
     :  position request
   | Seek

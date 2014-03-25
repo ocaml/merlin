@@ -53,6 +53,8 @@ module Utils = struct
     | ML  of string
     | CMT of string
 
+  exception File_not_found of filetype
+
   let filename_of_filetype = function ML name | CMT name -> name
   let ext_of_filetype = function ML _ -> ".ml" | CMT _ -> ".cmt"
 
@@ -74,12 +76,15 @@ module Utils = struct
        exist. *)
     try Misc.(find_in_path_uncap (Path_list.of_string_list_ref (ref [ !cwd ]))) fname
     with Not_found ->
+    try
       let path =
         match file with
         | ML  _ -> !sources_path
         | CMT _ -> Project.cmt_path
       in
       Misc.find_in_path_uncap path fname
+    with Not_found ->
+      raise (File_not_found file)
 
   let keep_suffix =
     let open Longident in
@@ -110,6 +115,13 @@ module Utils = struct
 end
 
 include Utils
+
+type result = [
+  | `Found of string option * Lexing.position
+  | `Not_in_env of string
+  | `File_not_found of string
+  | `Not_found
+]
 
 (** Reverse the list of structure items − we want to start from the bottom of
     the file − and remove top level indirections. *)
@@ -213,8 +225,13 @@ and from_path' ?fallback =
     try
       let cmt_file = find_file (CMT fname) in
       recover (browse_cmts ~root:cmt_file modules)
-    with Not_found ->
-      recover None
+    with
+    | Not_found -> recover None
+    | File_not_found (ML _) -> assert false
+    | File_not_found (CMT fname) as exn ->
+      match fallback with
+      | None  -> raise exn
+      | value -> value
 
 and resolve_mod_alias ~fallback mod_item path rest =
   let open Browse in
@@ -259,10 +276,13 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
+exception Not_in_env
+
 let from_string ~sources ~env ~local_defs ~local_modules path =
   debug_log "looking for the source of '%s'" path ;
   sources_path := sources;
   let ident, is_label = keep_suffix (Longident.parse path) in
+  let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let path, loc =
       if is_label then
@@ -316,11 +336,11 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
           path, loc
         with Not_found ->
           debug_log "   ... not in the environment" ;
-          raise Not_found
+          raise Not_in_env
       )
     in
     if not (is_ghost loc) then
-      Some (None, loc)
+      `Found (None, loc.Location.loc_start)
     else
       let opt =
         let modules = path_to_list path in
@@ -332,10 +352,23 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
         in
         check_item modules (get_browsable (List.concat local_defs))
       in
-      Option.map opt ~f:(fun loc ->
+      match opt with
+      | None -> `Not_found
+      | Some loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
         let full_path = find_file (ML fname) in
-        Some full_path, loc
-      )
-  with Not_found ->
-    None
+        `Found (Some full_path, loc.Location.loc_start)
+  with
+  | Not_found -> `Not_found
+  | File_not_found path -> 
+    let msg =
+      match path with
+      | ML file ->
+        Printf.sprintf "'%s' seems to originate from '%s' which could not be found"
+          str_ident file
+      | CMT file ->
+        Printf.sprintf "Needed cmt file of module '%s' to locate '%s' but it is not present"
+          file str_ident
+    in
+    `File_not_found msg
+  | Not_in_env -> `Not_in_env str_ident

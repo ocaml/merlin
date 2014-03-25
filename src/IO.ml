@@ -302,11 +302,15 @@ module Protocol_io = struct
           `List (List.map json_of_type_loc results)
         | Complete_prefix _, compl_list ->
           `List (List.map json_of_completion compl_list)
-        | Locate _, None ->
+        | Locate _, `Not_found ->
           `String "Not found"
-        | Locate _, Some (None,pos) ->
+        | Locate _, `Not_in_env str ->
+          `String (Printf.sprintf "Not in environment '%s'" str)
+        | Locate _, `File_not_found msg ->
+          `String msg
+        | Locate _, `Found (None,pos) ->
           `Assoc ["pos",pos_to_json pos]
-        | Locate _, Some (Some file,pos) ->
+        | Locate _, `Found (Some file,pos) ->
           `Assoc ["file",`String file; "pos",pos_to_json pos]
         | Drop, position -> pos_to_json position
         | Seek _, position -> pos_to_json position
