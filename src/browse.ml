@@ -36,7 +36,7 @@ type mod_info =
   | Structure
 
 type context =
-  | Expr      of Types.type_expr
+  | Expr      of Typedtree.expression_desc * Types.type_expr
   | Pattern   of Ident.t option * Types.type_expr
   | Type      of Types.type_expr
   | TypeDecl  of Ident.t * Types.type_declaration
@@ -126,7 +126,7 @@ and class_declaration ~env (cd, _, _virtual_flag) =
 
 and class_structure ~env class_struct =
   let pat = (* where is that pattern in the concrete syntax? *)
-    let context = Expr class_struct.cstr_pat.pat_type in
+    let context = Pattern (None, class_struct.cstr_pat.pat_type) in
     singleton ~context class_struct.cstr_pat.pat_loc env
   in
   let fields = List.filter_map class_struct.cstr_fields ~f:class_field in
@@ -207,13 +207,13 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_object (cls,_) -> class_structure ~env:exp_env cls
     | Texp_new _
     | Texp_instvar _ -> [] (*FIXME*)
-		| Texp_record _ | Texp_construct _ | Texp_setfield _ | Texp_field _ as expr ->
-			List.map ~f:expression (Merlin_types.extract_specific_subexpressions expr)
+    | Texp_record _ | Texp_construct _ | Texp_setfield _ | Texp_field _ as expr ->
+      List.map ~f:expression (Merlin_types.extract_specific_subexpressions expr)
   in
   List.fold_left exp_extra ~f:(expression_extra ~env:exp_env) ~init:{
     loc = exp_loc ;
     env = exp_env ;
-    context = Expr exp_type ;
+    context = Expr (exp_desc, exp_type) ;
     nodes = lazy (expression_desc exp_desc)
   }
 
@@ -333,3 +333,16 @@ let enclosing pos envs =
   | Some t ->
     let results = traverse_branch pos t in
     List.drop_while ~f:not_enclosing results
+
+let all_occurences id =
+  let rec aux acc t =
+    let acc =
+      match t.context with
+      | Pattern (Some id', _) when Ident.same id id' -> t :: acc
+      | Expr (Typedtree.Texp_ident (path,_,_), _) when Path.isfree id path ->
+        t :: acc
+      | _ -> acc
+    in
+    List.fold_left (Lazy.force t.nodes) ~init:acc ~f:aux
+  in
+  aux []

@@ -206,7 +206,7 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Type_enclosing ((expr, offset), pos) : a request) ->
     let aux = function
       | {Browse. loc; env;
-          context = (Browse.Expr t | Browse.Pattern (_, t) | Browse.Type t)} ->
+          context = (Browse.Expr (_, t) | Browse.Pattern (_, t) | Browse.Type t)} ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env env
           (fun () -> VPrinttyp.type_scheme ppf t);
@@ -555,5 +555,22 @@ let dispatch (i,o : IO.io) (state : state) =
   | (Path_reset : a request) ->
     Project.reset_user ();
     state, ()
+
+  | (Occurences (`Ident_at pos) : a request) ->
+    let str = State.browse step in
+    let node =
+      Option.value ~default:Browse.dummy (Browse.nearest_before pos str)
+    in
+    state, begin match
+      match node.Browse.context with
+      | Browse.Expr (Typedtree.Texp_ident (p,_,_), _) -> Some (Path.head p)
+      | Browse.Pattern (ident, _) -> ident
+      | _ -> None
+    with
+    | None -> []
+    | Some ident ->
+      let ids = List.concat_map str ~f:(Browse.all_occurences ident) in
+      List.map ids ~f:(fun id -> id.Browse.loc)
+    end
 
   : state * a)

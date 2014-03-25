@@ -208,6 +208,8 @@ module Protocol_io = struct
       Request (Complete_prefix (prefix, optional_position opt_pos))
     | (`String "locate" :: `String path :: opt_pos) ->
       Request (Locate (path, optional_position opt_pos))
+    | [`String "occurences"; `String "ident"; `String "at"; jpos] ->
+      Request (Occurences (`Ident_at (pos_of_json jpos)))
     | [`String "drop"] ->
       Request Drop
     | [`String "seek"; `String "position"] ->
@@ -336,6 +338,8 @@ module Protocol_io = struct
         | Path_reset, () -> `Bool true
         | Project_load _, (strs, failures) ->
           `Assoc (with_package_failures ["result", json_of_string_list strs] failures)
+        | Occurences _, locations ->
+          `List (List.map locations ~f:(fun loc -> with_location loc []))
       end]
 
   let request_of_json = function

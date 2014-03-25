@@ -41,7 +41,7 @@ type mod_info =
 
 (* Typedtree constructions recognized *)
 type context =
-  | Expr      of Types.type_expr
+  | Expr      of Typedtree.expression_desc * Types.type_expr
   | Pattern   of Ident.t option * Types.type_expr
   | Type      of Types.type_expr
   | TypeDecl  of Ident.t * Types.type_declaration
@@ -92,3 +92,5 @@ val nearest_before : Lexing.position -> t list -> t option
  *    f (g x<cursor>))
  * will return the contexts of "x", "g x" then "f (g x)". *)
 val enclosing : Lexing.position -> t list -> t list
+
+val all_occurences : Ident.t -> t -> t list
