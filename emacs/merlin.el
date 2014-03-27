@@ -183,7 +183,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (make-variable-buffer-local 'merlin-process-queue)
 
 (defvar merlin-process-last-user nil
-  "Last buffer that used the local process (only valid in a process buffer.")
+  "Last buffer that used the local process (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin-process-last-user)
 
 (defvar merlin-result nil
@@ -379,6 +379,10 @@ return DEFAULT or the value associated to KEY otherwise."
   "Return the process of the current buffer."
   (buffer-local-value 'merlin-process (merlin-process-buffer)))
 
+(defun merlin-last-user ()
+  "Return the last user of the process of the current buffer."
+  (buffer-local-value 'merlin-process-last-user (merlin-process-buffer)))
+
 (defun merlin-start-process (flags &optional configuration)
   "Start the merlin process by fetching the information inside CONFIGURATION. FLAGS contains the list of flags to give merlin.
    CONFIGURATION is an association list with the following keys:
@@ -464,7 +468,7 @@ This sets `merlin-current-flags' to nil."
 
 (defun merlin-is-last-user-p ()
   "Return whether the current buffer was the current user of the merlin process."
-  (equal merlin-process-last-user (buffer-name)))
+  (equal (merlin-last-user) (buffer-name)))
 
 (defun merlin-process-started-p (name)
   "Return non-nil if the merlin process for the instance NAME is already started."
