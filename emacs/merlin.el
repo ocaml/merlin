@@ -950,6 +950,10 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;; AUTO-COMPLETE SUPPORT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar merlin-ac-prefix "" 
+  "The cache of the prefix for completion")
+(make-variable-buffer-local 'merlin-ac-prefix)
+
 (defvar merlin-ac-use-summary t
   "Use :summary for the types in AC")
 
@@ -966,14 +970,20 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
    :document (if (and merlin-completion-types
                       merlin-ac-use-document) (cadr data))))
 
+(defun merlin-ac-source-refresh-cache()
+  "Refresh the cache of completion."
+  (setq merlin-ac-prefix (merlin-completion-prefix ac-prefix))
+  (setq merlin-ac-cache 
+        (mapcar #'merlin-ac-make-popup-item (merlin-completion-data merlin-ac-prefix))))
+
+  
 (defun merlin-ac-source-init ()
   "Initialize the cache for `auto-complete' completion.
 Called at the beginning of a completion to fill the cache (the
 variable `merlin-ac-cache')."
   (merlin-sync-to-point)
   (setq merlin-completion-point ac-point)
-  (setq merlin-ac-cache
-        (mapcar #'merlin-ac-make-popup-item (merlin-completion-data ac-prefix))))
+  (merlin-ac-source-refresh-cache))
 
 (defun merlin-try-completion ()
   "Try completing after having synchronized the point."
@@ -993,14 +1003,22 @@ variable `merlin-ac-cache')."
                 (message "%s: %s" candidate (popup-item-summary item))))
             merlin-ac-cache))))
 
+(defun merlin-auto-complete-candidates ()
+  "Return the candidates for auto-completion with
+  auto-complete. If the cache is wrong then recompute it."
+  (if (not (equal (merlin-completion-prefix ac-prefix)
+                  merlin-ac-prefix))
+      (merlin-ac-source-refresh-cache))
+  merlin-ac-cache)
+      
 (defvar merlin-ac-source
   (if merlin-ac-prefix-size
   `((init . merlin-ac-source-init)
-    (candidates . (lambda () merlin-ac-cache))
+    (candidates . merlin-auto-complete-candidates)
     (action . merlin-ac-fetch-type)
     (prefix . ,merlin-ac-prefix-size))
   '((init . merlin-ac-source-init)
-    (candidates . (lambda () merlin-ac-cache))
+    (candidates . merlin-auto-complete-candidates)
     (action . merlin-ac-fetch-type)
     (prefix . merlin-ac-prefix))))
 
