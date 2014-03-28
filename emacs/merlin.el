@@ -151,6 +151,12 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "If non-nil, specify the minimum number of characters to wait before allowing auto-complete"
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-occurences-show-buffer 'other
+  "Determine how to display the occurences list after a call to `merlin-occurences'."
+  :group 'merlin :type '(choice (const :tag "Don't show list" never)
+                                (const :tag "Show in the current window" same)
+                                (const :tag "Show in another window" other)))
+
 (defcustom merlin-locate-in-new-window 'diff
   "Determine whether to display results of `merlin-locate' in a new window or not."
   :group 'merlin :type '(choice (const :tag "Always open a new window" always)
@@ -1244,7 +1250,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 ;; OCCURENCES ;;
 ;;;;;;;;;;;;;;;;
 
-(defun merlin-occurences-list (lst)
+(defun merlin-occurences-populate-buffer (lst)
   (lexical-let ((src-buff (buffer-name))
                 (occ-buff (merlin-get-occ-buff)))
     (with-current-buffer occ-buff
@@ -1270,6 +1276,14 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
               'action action)
              (insert "\n")))
              lst)))))
+
+(defun merlin-occurences-list (lst)
+  (merlin-occurences-populate-buffer lst)
+  (cond ((equal merlin-occurences-show-buffer 'same)
+         (switch-to-buffer (merlin-get-occ-buff)))
+        ((equal merlin-occurences-show-buffer 'other)
+         (switch-to-buffer-other-window (merlin-get-occ-buff)))
+        nil))
 
 (defun merlin-occurences ()
   (interactive)
