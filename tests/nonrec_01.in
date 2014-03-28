@@ -1,0 +1,6 @@
+["reset","name","test.ml"]
+["extension","enable",["nonrec"]]
+["tell","source","type nonrec 'a t = 'a list\n"]
+["tell","end"]
+["errors"]
+["dump","env"]
