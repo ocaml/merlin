@@ -95,6 +95,10 @@ no argument and should return the configuration (see
   "The name of the buffer storing module signatures."
   :group 'merlin :type 'string)
 
+(defcustom merlin-occurences-buffer-name "*merlin-occurences*"
+  "The name of the buffer listing occurences of an identifier after a call to `merlin-occurences'."
+  :group 'merlin :type 'string)
+
 (defcustom merlin-type-buffer-name "*merlin-types*"
   "The name of the buffer storing module signatures."
   :group 'merlin :type 'string)
@@ -269,6 +273,9 @@ associated to the current buffer."
   (with-current-buffer (merlin-process-buffer)
     (goto-char (point-max))
     (insert s)))
+
+(defun merlin-get-occ-buff ()
+  (get-buffer-create merlin-occurences-buffer-name))
 
 (defun merlin-goto-point (data)
   "Go to the point indicated by `DATA' which must be an assoc list with fields
@@ -1201,7 +1208,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
         (if (listp r)
             (merlin-goto-file-and-point r)
           (message r))
-      (message "%s not found. (No answer from merlin)" ident))))
+      (error "%s not found. (No answer from merlin)" ident))))
 
 (defun merlin-locate ()
   "Locate the identifier under point"
@@ -1232,6 +1239,48 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                (not (equal (buffer-name) (car r))))
            (select-window (display-buffer (car r)))))
     (when r (goto-char (cdr r)))))
+
+;;;;;;;;;;;;;;;;
+;; OCCURENCES ;;
+;;;;;;;;;;;;;;;;
+
+(defun merlin-occurences-list (lst)
+  (lexical-let ((src-buff (buffer-name))
+                (occ-buff (merlin-get-occ-buff)))
+    (with-current-buffer occ-buff
+      (let ((inhibit-read-only t)
+            (buffer-undo-list t))
+        (erase-buffer)
+        (mapcar 
+         (lambda (pos)
+           (lexical-let*
+               ((start (assoc 'start pos))
+                (line  (cdr (assoc 'line start)))
+                (col   (cdr (assoc 'col  start)))
+                (action (lambda (ev)
+                          (let ((buff (get-buffer src-buff)))
+                            (if buff
+                                (progn
+                                  (pop-to-buffer buff)
+                                  (merlin-goto-point start))
+                              (message "Closed buffer : %s" src-buff))))))
+             (insert "  + ")
+             (insert-button
+              (format "occurence at line %d column %d" line col)
+              'action action)
+             (insert "\n")))
+             lst)))))
+
+(defun merlin-occurences ()
+  (interactive)
+  (merlin-sync-to-point)
+  (let* ((r (merlin-send-command
+             (list 'occurences 'ident 'at
+                   (merlin-unmake-point (point))))))
+    (when r
+      (if (listp r)
+          (merlin-occurences-list r)
+        (message r)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEMANTIC MOVEMENT ;;
