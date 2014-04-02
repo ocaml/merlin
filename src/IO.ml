@@ -286,6 +286,76 @@ module Protocol_io = struct
       Request (Project_load (load_or_find action, path))
     | _ -> invalid_arguments ()
 
+    let return_response_to_json (type a) (request : a request) (response : a) =
+      (match request, response with
+      | (Tell _ : a request),
+        (Some pos : a) -> (pos_to_json pos)
+      | (Tell _ : a request),
+        (None : a) -> `Null
+      | (Type_expr _ : a request),
+        (str : a) -> `String str
+      | (Type_enclosing _ : a request),
+        (results : a) -> `List (List.map json_of_type_loc results)
+      | (Complete_prefix _ : a request),
+        (compl_list : a) -> `List (List.map json_of_completion compl_list)
+      | (Locate _ : a request),
+        (`Not_found : a) -> `String "Not found"
+      | (Locate _ : a request),
+        (`Not_in_env str : a) ->
+        `String (Printf.sprintf "Not in environment '%s'" str)
+      | (Locate _ : a request),
+        (`File_not_found msg : a) -> `String msg
+      | (Locate _ : a request),
+        (`Found (None,pos) : a) ->
+        `Assoc ["pos",pos_to_json pos]
+      | (Locate _ : a request),
+        (`Found (Some file,pos) : a) ->
+        `Assoc ["file",`String file; "pos",pos_to_json pos]
+      | (Drop : a request),
+        (position : a) -> pos_to_json position
+      | (Seek _ : a request),
+        (position : a) -> pos_to_json position
+      | (Boundary _ : a request),
+        (Some {Location. loc_start; loc_end} : a) ->
+        `List (List.map pos_to_json [loc_start; loc_end])
+      | (Boundary _ : a request),
+        (None : a) -> `Null
+      | (Reset _ : a request),
+        (() : a) -> pos_to_json (make_pos (1,0))
+      | (Refresh _ : a request),
+        (changed : a) -> `Bool changed
+      | (Errors : a request),
+        (exns : a) ->
+        `List (List.map (fun (_, err) -> error_to_json err)
+                        (Error_report.of_exns exns))
+      | (Dump _ : a request),
+        (json : a) -> json
+      | (Which_path _ : a request),
+        (str : a) -> `String str
+      | (Which_with_ext _ : a request),
+        (strs : a) -> json_of_string_list strs
+      | (Findlib_use _ : a request),
+        (failures : a) ->
+        `Assoc (with_package_failures ["result", `Bool true] failures)
+      | (Findlib_list : a request), strs -> json_of_string_list strs
+      | (Extension_list _ : a request),
+        (strs : a) -> json_of_string_list strs
+      | (Extension_set _ : a request),
+        (() : a) -> `Bool true
+      | (Path _ : a request),
+        (changed : a) -> `Bool changed
+      | (Path_list _ : a request),
+        (strs : a) -> json_of_string_list strs
+      | (Path_reset : a request),
+        (() : a) -> `Bool true
+      | (Project_load _ : a request),
+        (strs, failures : a) ->
+        `Assoc (with_package_failures ["result", json_of_string_list strs] failures)
+      | (Occurences _ : a request),
+        (locations : a) ->
+        `List (List.map locations ~f:(fun loc -> with_location loc []))
+      : Json.json)
+
   let response_to_json = function
     | Failure s | Exception (Failure' s) -> `List [`String "failure"; `String s]
     | Error error -> `List [`String "error"; error]
@@ -295,52 +365,7 @@ module Protocol_io = struct
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
       end
     | Return (request, response) ->
-      `List [`String "return";
-      begin match request, response with
-        | Tell _, Some pos -> (pos_to_json pos)
-        | Tell _, None     -> `Null
-        | Type_expr _, str -> `String str
-        | Type_enclosing _, results ->
-          `List (List.map json_of_type_loc results)
-        | Complete_prefix _, compl_list ->
-          `List (List.map json_of_completion compl_list)
-        | Locate _, `Not_found ->
-          `String "Not found"
-        | Locate _, `Not_in_env str ->
-          `String (Printf.sprintf "Not in environment '%s'" str)
-        | Locate _, `File_not_found msg ->
-          `String msg
-        | Locate _, `Found (None,pos) ->
-          `Assoc ["pos",pos_to_json pos]
-        | Locate _, `Found (Some file,pos) ->
-          `Assoc ["file",`String file; "pos",pos_to_json pos]
-        | Drop, position -> pos_to_json position
-        | Seek _, position -> pos_to_json position
-        | Boundary _, Some {Location. loc_start; loc_end} ->
-          `List (List.map pos_to_json [loc_start; loc_end])
-        | Boundary _, None ->
-          `Null
-        | Reset _, () -> pos_to_json (make_pos (1,0))
-        | Refresh _, changed -> `Bool changed
-        | Errors, exns ->
-          `List (List.map (fun (_,err) -> error_to_json err)
-                          (Error_report.of_exns exns))
-        | Dump _, json -> json
-        | Which_path _, str -> `String str
-        | Which_with_ext _, strs -> json_of_string_list strs
-        | Findlib_use _, failures ->
-          `Assoc (with_package_failures ["result", `Bool true] failures)
-        | Findlib_list, strs -> json_of_string_list strs
-        | Extension_list _, strs -> json_of_string_list strs
-        | Extension_set _, () -> `Bool true
-        | Path _, changed -> `Bool changed
-        | Path_list _, strs -> json_of_string_list strs
-        | Path_reset, () -> `Bool true
-        | Project_load _, (strs, failures) ->
-          `Assoc (with_package_failures ["result", json_of_string_list strs] failures)
-        | Occurences _, locations ->
-          `List (List.map locations ~f:(fun loc -> with_location loc []))
-      end]
+      `List [`String "return"; return_response_to_json request response]
 
   let request_of_json = function
     | `List jsons -> request_of_json jsons
