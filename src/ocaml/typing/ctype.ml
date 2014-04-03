@@ -171,7 +171,7 @@ let wrap_trace_gadt_instances env f x =
 let simple_abbrevs = ref Mnil
 
 let proper_abbrevs path tl abbrev =
-  if tl <> [] || !trace_gadt_instances || !Clflags.principal ||
+  if tl <> [] || !trace_gadt_instances || Clflags.principal () ||
      is_object_type path
   then abbrev
   else simple_abbrevs
@@ -806,7 +806,7 @@ let rec update_level env level ty =
 (* Generalize and lower levels of contravariant branches simultaneously *)
 
 let generalize_contravariant env =
-  if !Clflags.principal then generalize_structure else update_level env
+  if Clflags.principal () then generalize_structure else update_level env
 
 let rec generalize_expansive env var_level ty =
   let ty = repr ty in
@@ -1621,7 +1621,7 @@ let rec non_recursive_abbrev env ty0 ty =
         begin try
           non_recursive_abbrev env ty0 (try_expand_once_opt env ty)
         with Cannot_expand ->
-          if !Clflags.recursive_types &&
+          if Clflags.recursive_types () &&
             (in_pervasives p ||
              try is_datatype (Env.find_type p env) with Not_found -> false)
           then ()
@@ -1630,7 +1630,7 @@ let rec non_recursive_abbrev env ty0 ty =
     | Tobject _ | Tvariant _ ->
         ()
     | _ ->
-        if !Clflags.recursive_types then () else
+        if Clflags.recursive_types () then () else
         iter_type_expr (non_recursive_abbrev env ty0) ty
   end
 
@@ -1655,7 +1655,7 @@ let rec occur_rec env visited ty0 ty =
   match ty.desc with
     Tconstr(p, tl, abbrev) ->
       begin try
-        if List.memq ty visited || !Clflags.recursive_types then raise Occur;
+        if List.memq ty visited || Clflags.recursive_types () then raise Occur;
         iter_type_expr (occur_rec env (ty::visited) ty0) ty
       with Occur -> try
         let ty' = try_expand_head try_expand_once env ty in
@@ -1666,15 +1666,15 @@ let rec occur_rec env visited ty0 ty =
         match ty'.desc with
           Tobject _ | Tvariant _ -> ()
         | _ ->
-            if not !Clflags.recursive_types then
+            if not (Clflags.recursive_types ()) then
               iter_type_expr (occur_rec env (ty'::visited) ty0) ty'
       with Cannot_expand ->
-        if not !Clflags.recursive_types then raise Occur
+        if not (Clflags.recursive_types ()) then raise Occur
       end
   | Tobject _ | Tvariant _ ->
       ()
   | _ ->
-      if not !Clflags.recursive_types then
+      if not (Clflags.recursive_types ()) then
         iter_type_expr (occur_rec env visited ty0) ty
 
 let type_changed = ref false (* trace possible changes to the studied type *)
@@ -1706,9 +1706,15 @@ let rec local_non_recursive_abbrev visited env p ty =
         if Path.same p p' then raise Recursive_abbrev;
         begin try
           local_non_recursive_abbrev visited env p (try_expand_once_opt env ty)
-        with Cannot_expand -> ()
+        with Cannot_expand ->
+          if Clflags.recursive_types () then () else
+          iter_type_expr (local_non_recursive_abbrev visited env p) ty
         end
-    | _ -> ()
+    | Tobject _ | Tvariant _ ->
+        ()
+    | _ ->
+        if Clflags.recursive_types () then () else
+        iter_type_expr (local_non_recursive_abbrev visited env p) ty
   end
 
 let local_non_recursive_abbrev env p =
@@ -2377,7 +2383,7 @@ and unify2 env t1 t2 =
     if lv2 > lv1 then Env.add_gadt_instance_chain !env lv2 t1
   end;
   let t1, t2 =
-    if !Clflags.principal
+    if Clflags.principal ()
     && (find_lowest_level t1' < lv || find_lowest_level t2' < lv) then
       (* Expand abbreviations hiding a lower level *)
       (* Should also do it for parameterized types, after unification... *)
@@ -2422,7 +2428,7 @@ and unify3 env t1 t1' t2 t2' =
     try
       begin match (d1, d2) with
         (Tarrow (l1, t1, u1, c1), Tarrow (l2, t2, u2, c2)) when l1 = l2 ||
-        !Clflags.classic && not (is_optional l1 || is_optional l2) ->
+        Clflags.classic () && not (is_optional l1 || is_optional l2) ->
           unify  env t1 t2; unify env  u1 u2;
           begin match commu_repr c1, commu_repr c2 with
             Clink r, c2 -> set_commu r c2
@@ -2821,7 +2827,7 @@ let filter_arrow env t l =
       link_type t t';
       (t1, t2)
   | Tarrow(l', t1, t2, _)
-    when l = l' || !Clflags.classic && l = "" && not (is_optional l') ->
+    when l = l' || Clflags.classic () && l = "" && not (is_optional l') ->
       (t1, t2)
   | _ ->
       raise (Unify [])
@@ -2944,7 +2950,7 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
               moregen_occur env t1'.level t2;
               link_type t1' t2
           | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _)) when l1 = l2
-            || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
+            || Clflags.classic () && not (is_optional l1 || is_optional l2) ->
               moregen inst_nongen type_pairs env t1 t2;
               moregen inst_nongen type_pairs env u1 u2
           | (Ttuple tl1, Ttuple tl2) ->
@@ -3215,7 +3221,7 @@ let rec eqtype rename type_pairs subst env t1 t2 =
                 subst := (t1', t2') :: !subst
               end
           | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _)) when l1 = l2
-            || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
+            || Clflags.classic () && not (is_optional l1 || is_optional l2) ->
               eqtype rename type_pairs subst env t1 t2;
               eqtype rename type_pairs subst env u1 u2;
           | (Ttuple tl1, Ttuple tl2) ->
@@ -3909,7 +3915,7 @@ let rec subtype_rec env trace t1 t2 cstrs =
       (Tvar _, _) | (_, Tvar _) ->
         (trace, t1, t2, !univar_pairs)::cstrs
     | (Tarrow(l1, t1, u1, _), Tarrow(l2, t2, u2, _)) when l1 = l2
-      || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
+      || Clflags.classic () && not (is_optional l1 || is_optional l2) ->
         let cstrs = subtype_rec env ((t2, t1)::trace) t2 t1 cstrs in
         subtype_rec env ((u1, u2)::trace) u1 u2 cstrs
     | (Ttuple tl1, Ttuple tl2) ->

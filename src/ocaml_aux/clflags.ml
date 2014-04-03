@@ -116,12 +116,13 @@ let vmthreads_spec t =
   " Add support for VM-scheduled threads library"
 
 (* Dummy values *)
-let annotations        () = false
-let binary_annotations () = false
-let print_types        () = false
-let native_code        () = false
-let error_size         () = 500
-let dont_write_files   () = true
+let annotations         () = false
+let binary_annotations  () = false
+let print_types         () = false
+let native_code         () = false
+let error_size          () = 500
+let dont_write_files    () = true
+let transparent_modules () = true
 
 let arg_spec t =
   [

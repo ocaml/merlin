@@ -23,16 +23,6 @@ open Btype
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
-let value_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t =
-  Hashtbl.create 16
-    (* This table is used to usage of value declarations.  A declaration is
-       identified with its name and location.  The callback attached to a
-       declaration is called whenever the value is used explicitly
-       (lookup_value) or implicitly (inclusion test between signatures,
-       cf Includemod.value_descriptions). *)
-
-let type_declarations = Hashtbl.create 16
-
 type constructor_usage = Positive | Pattern | Privatize
 type constructor_usages =
     {
@@ -46,12 +36,6 @@ let add_constructor_usage cu = function
   | Privatize -> cu.cu_privatize <- true
 let constructor_usages () =
   {cu_positive = false; cu_pattern = false; cu_privatize = false}
-
-let used_constructors :
-    (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t
-  = Hashtbl.create 16
-
-let prefixed_sg = Hashtbl.create 113
 
 type error =
   | Illegal_renaming of string * string * string
@@ -215,6 +199,50 @@ and functor_components = {
   fcomp_subst_cache: (Path.t, module_type) Hashtbl.t
 }
 
+(* Persistent structure descriptions *)
+
+type pers_struct =
+  { ps_name: string;
+    ps_sig: signature;
+    ps_comps: module_components;
+    ps_crcs: (string * Digest.t option) list;
+    ps_filename: string;
+    ps_flags: pers_flags list }
+
+
+(* Regroup all internal state *)
+type cache = {
+
+  (* This table is used to usage of value declarations.  A declaration is
+     identified with its name and location.  The callback attached to a
+     declaration is called whenever the value is used explicitly
+     (lookup_value) or implicitly (inclusion test between signatures,
+     cf Includemod.value_descriptions). *)
+  value_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t;
+  type_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t;
+  used_constructors :
+    (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t;
+  persistent_structures : (string, pers_struct option) Hashtbl.t;
+  missing_structures : (string, unit) Hashtbl.t;
+  prefixed_sg : (Path.t, (signature * (Path.t list * Subst.t * signature_item list lazy_t)) list ref) Hashtbl.t;
+  (* Consistency between persistent structures *)
+  crc_units : Consistbl.t;
+  imported_units : string list ref;
+}
+
+let new_cache () = {
+  persistent_structures = Hashtbl.create 17;
+  missing_structures = Hashtbl.create 17;
+  crc_units = Consistbl.create ();
+  value_declarations = Hashtbl.create 16;
+  used_constructors = Hashtbl.create 16;
+  type_declarations = Hashtbl.create 16;
+  prefixed_sg = Hashtbl.create 113;
+  imported_units = ref [];
+}
+
+let cache = ref (new_cache ())
+
 let subst_modtype_maker (subst, mty) = Subst.modtype subst mty
 
 let empty = {
@@ -289,31 +317,17 @@ let md md_type =
 
 let current_unit = ref ""
 
-(* Persistent structure descriptions *)
-
-type pers_struct =
-  { ps_name: string;
-    ps_sig: signature;
-    ps_comps: module_components;
-    ps_crcs: (string * Digest.t option) list;
-    ps_filename: string;
-    ps_flags: pers_flags list }
-
-let persistent_structures =
-  (Hashtbl.create 17 : (string, pers_struct option) Hashtbl.t)
-
 (* Consistency between persistent structures *)
 
 let crc_units = Consistbl.create()
-let imported_units = ref ([] : string list)
 
 let clear_imports () =
-  Consistbl.clear crc_units;
-  imported_units := []
+  Consistbl.clear !cache.crc_units;
+  !cache.imported_units := []
 
 let add_imports ps =
   List.iter
-    (fun (name, _) -> imported_units := name :: !imported_units)
+    (fun (name, _) -> !cache.imported_units := name :: !(!cache.imported_units))
     ps.ps_crcs
 
 let check_consistency ps =
@@ -330,7 +344,7 @@ let check_consistency ps =
 (* Reading persistent structures from .cmi files *)
 
 let read_pers_struct modname filename =
-  let cmi = read_cmi filename in
+  let cmi = Cmi_cache.read_cmi filename in
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
@@ -338,7 +352,7 @@ let read_pers_struct modname filename =
   let comps =
       !components_of_module' empty Subst.identity
                              (Pident(Ident.create_persistent name))
-                             (Mty_signature sign)
+                             (Mty_signature ~:sign)
   in
   let ps = { ps_name = name;
              ps_sig = sign;
@@ -352,16 +366,16 @@ let read_pers_struct modname filename =
   check_consistency ps;
   List.iter
     (function Rectypes ->
-      if not !Clflags.recursive_types then
+      if not (Clflags.recursive_types ()) then
         error (Need_recursive_types(ps.ps_name, !current_unit)))
     ps.ps_flags;
-  Hashtbl.add persistent_structures modname (Some ps);
+  Hashtbl.add !cache.persistent_structures modname (Some ps);
   ps
 
 let find_pers_struct name =
   if name = "*predef*" then raise Not_found;
   let r =
-    try Some (Hashtbl.find persistent_structures name)
+    try Some (Hashtbl.find !cache.persistent_structures name)
     with Not_found -> None
   in
   match r with
@@ -371,33 +385,63 @@ let find_pers_struct name =
       let filename =
         try find_in_path_uncap !load_path (name ^ ".cmi")
         with Not_found ->
-          Hashtbl.add persistent_structures name None;
+          Hashtbl.add !cache.persistent_structures name None;
           raise Not_found
       in
       read_pers_struct name filename
 
 let reset_cache () =
   current_unit := "";
-  Hashtbl.clear persistent_structures;
-  clear_imports ();
-  Hashtbl.clear value_declarations;
-  Hashtbl.clear type_declarations;
-  Hashtbl.clear used_constructors;
-  Hashtbl.clear prefixed_sg
+  Hashtbl.clear !cache.persistent_structures;
+  Consistbl.clear !cache.crc_units;
+  Hashtbl.clear !cache.value_declarations;
+  Hashtbl.clear !cache.type_declarations;
+  Hashtbl.clear !cache.used_constructors;
+  Hashtbl.clear !cache.prefixed_sg
 
 let reset_cache_toplevel () =
   (* Delete 'missing cmi' entries from the cache. *)
   let l =
     Hashtbl.fold
       (fun name r acc -> if r = None then name :: acc else acc)
-      persistent_structures []
+      !cache.persistent_structures []
   in
-  List.iter (Hashtbl.remove persistent_structures) l;
-  Hashtbl.clear value_declarations;
-  Hashtbl.clear type_declarations;
-  Hashtbl.clear used_constructors;
-  Hashtbl.clear prefixed_sg
+  List.iter (Hashtbl.remove !cache.persistent_structures) l;
+  Hashtbl.clear !cache.value_declarations;
+  Hashtbl.clear !cache.type_declarations;
+  Hashtbl.clear !cache.used_constructors;
+  Hashtbl.clear !cache.prefixed_sg
 
+let check_cache_consistency () =
+  try
+    Hashtbl.iter (fun name ps ->
+        let filename =
+          try Some (find_in_path_uncap !load_path (name ^ ".cmi"))
+          with Not_found -> None
+        in
+        let invalid =
+          match filename, ps with
+          | _, Some ps when Hashtbl.mem !cache.missing_structures name ->
+            true
+          | Some filename, Some ps
+            when ps.ps_sig == (Cmi_cache.read_cmi filename).cmi_sign ->
+            false
+          | None, None -> false
+          | _, _       -> true
+        in
+        Hashtbl.remove !cache.missing_structures name;
+        if invalid then raise Not_found
+      ) !cache.persistent_structures;
+    Hashtbl.iter (fun name () ->
+        let invalid =
+          try ignore (find_in_path_uncap !load_path (name ^ ".cmi"));
+            true;
+          with Not_found -> false
+        in
+        if invalid then raise Not_found
+      ) !cache.missing_structures;
+    true
+  with Not_found -> false
 
 let set_unit_name name =
   current_unit := name
@@ -477,7 +521,7 @@ let find_module ~alias path env =
       with Not_found ->
         if Ident.persistent id then
           let ps = find_pers_struct (Ident.name id) in
-          md (Mty_signature(ps.ps_sig))
+          md (Mty_signature ~:(ps.ps_sig))
         else raise Not_found
       end
   | Pdot(p, s, pos) ->
@@ -517,7 +561,7 @@ let required_globals = ref []
 let reset_required_globals () = required_globals := []
 let get_required_globals () = !required_globals
 let add_required_global id =
-  if Ident.global id && not !Clflags.transparent_modules
+  if Ident.global id && not (Clflags.transparent_modules ())
   && not (List.exists (Ident.same id) !required_globals)
   then required_globals := id :: !required_globals
 
@@ -533,7 +577,7 @@ let rec normalize_path lax env path =
   try match find_module ~alias:true path env with
     {md_type=Mty_alias path1} ->
       let path' = normalize_path lax env path1 in
-      if lax || !Clflags.transparent_modules then path' else
+      if lax || Clflags.transparent_modules () then path' else
       let id = Path.head path in
       if Ident.global id && not (Ident.same id (Path.head path'))
       then add_required_global id;
@@ -654,7 +698,7 @@ and lookup_module ~load lid env : Path.t =
         p
       with Not_found ->
         if s = !current_unit then raise Not_found;
-	if !Clflags.transparent_modules && not load then
+	if Clflags.transparent_modules () && not load then
 	  try ignore (find_in_path_uncap !load_path (s ^ ".cmi"))
           with Not_found ->
 	    Location.prerr_warning Location.none (Warnings.No_cmi_file s)
@@ -771,46 +815,46 @@ and lookup_cltype =
 
 let mark_value_used env name vd =
   if not (is_implicit_coercion env) then
-    try Hashtbl.find value_declarations (name, vd.val_loc) ()
+    try Hashtbl.find !cache.value_declarations (name, vd.val_loc) ()
     with Not_found -> ()
 
 let mark_type_used env name vd =
   if not (is_implicit_coercion env) then
-    try Hashtbl.find type_declarations (name, vd.type_loc) ()
+    try Hashtbl.find !cache.type_declarations (name, vd.type_loc) ()
     with Not_found -> ()
 
 let mark_constructor_used usage env name vd constr =
   if not (is_implicit_coercion env) then
-    try Hashtbl.find used_constructors (name, vd.type_loc, constr) usage
+    try Hashtbl.find !cache.used_constructors (name, vd.type_loc, constr) usage
     with Not_found -> ()
 
 let mark_extension_used usage env ext name =
   if not (is_implicit_coercion env) then
     let ty_name = Path.last ext.ext_type_path in
-    try Hashtbl.find used_constructors (ty_name, ext.ext_loc, name) usage
+    try Hashtbl.find !cache.used_constructors (ty_name, ext.ext_loc, name) usage
     with Not_found -> ()
 
 let set_value_used_callback name vd callback =
   let key = (name, vd.val_loc) in
   try
-    let old = Hashtbl.find value_declarations key in
-    Hashtbl.replace value_declarations key (fun () -> old (); callback ())
+    let old = Hashtbl.find !cache.value_declarations key in
+    Hashtbl.replace !cache.value_declarations key (fun () -> old (); callback ())
       (* this is to support cases like:
                let x = let x = 1 in x in x
          where the two declarations have the same location
          (e.g. resulting from Camlp4 expansion of grammar entries) *)
   with Not_found ->
-    Hashtbl.add value_declarations key callback
+    Hashtbl.add !cache.value_declarations key callback
 
 let set_type_used_callback name td callback =
   let loc = td.type_loc in
   if loc.Location.loc_ghost then ()
   else let key = (name, loc) in
   let old =
-    try Hashtbl.find type_declarations key
+    try Hashtbl.find !cache.type_declarations key
     with Not_found -> assert false
   in
-  Hashtbl.replace type_declarations key (fun () -> callback old)
+  Hashtbl.replace !cache.type_declarations key (fun () -> callback old)
 
 let lookup_value lid env =
   let (_, desc) as r = lookup_value lid env in
@@ -870,7 +914,7 @@ let mark_constructor usage env name desc =
       begin
         let ty_path = ty_path desc.cstr_res in
         let ty_name = Path.last ty_path in
-        try Hashtbl.find used_constructors (ty_name, desc.cstr_loc, name) usage
+        try Hashtbl.find !cache.used_constructors (ty_name, desc.cstr_loc, name) usage
         with Not_found -> ()
       end
   | _ ->
@@ -936,7 +980,7 @@ let iter_env proj1 proj2 f env =
       | Some ps ->
           let id = Pident (Ident.create_persistent s) in
           iter_components id id ps.ps_comps)
-    persistent_structures;
+    !cache.persistent_structures;
   Ident.iter
     (fun id ((path, comps), _) -> iter_components (Pident id) path comps)
     env.components
@@ -949,7 +993,7 @@ let same_types env1 env2 =
 let used_persistent () =
   let r = ref Concr.empty in
   Hashtbl.iter (fun s pso -> if pso != None then r := Concr.add s !r)
-    persistent_structures;
+    !cache.persistent_structures;
   !r
 
 let find_all_comps proj s (p,mcomps) =
@@ -1148,10 +1192,10 @@ let prefix_idents_and_subst root sub sg =
   if sub = Subst.identity then
     let sgs =
       try
-        Hashtbl.find prefixed_sg root
+        Hashtbl.find !cache.prefixed_sg root
       with Not_found ->
         let sgs = ref [] in
-        Hashtbl.add prefixed_sg root sgs;
+        Hashtbl.add !cache.prefixed_sg root sgs;
         sgs
     in
     try
@@ -1175,7 +1219,7 @@ let rec components_of_module env sub path mty =
 
 and components_of_module_maker (env, sub, path, mty) =
   (match scrape_alias env mty with
-    Mty_signature sg ->
+    Mty_signature (lazy sg) ->
       let c =
         { comp_values = Tbl.empty;
           comp_constrs = Tbl.empty;
@@ -1285,7 +1329,7 @@ and check_usage loc id warn tbl =
   end;
 
 and store_value ?check slot id path decl env renv =
-  may (fun f -> check_usage decl.val_loc id f value_declarations) check;
+  may (fun f -> check_usage decl.val_loc id f !cache.value_declarations) check;
   { env with
     values = EnvTbl.add "value" slot id (path, decl) env.values renv.values;
     summary = Env_value(env.summary, id, decl) }
@@ -1294,7 +1338,7 @@ and store_type ~check slot id path info env renv =
   let loc = info.type_loc in
   if check then
     check_usage loc id (fun s -> Warnings.Unused_type_declaration s)
-      type_declarations;
+      !cache.type_declarations;
   let constructors = constructors_of_type path info in
   let labels = labels_of_type path info in
   let descrs = (List.map snd constructors, List.map snd labels) in
@@ -1306,9 +1350,9 @@ and store_type ~check slot id path info env renv =
     List.iter
       begin fun (_, {cstr_name = c; _}) ->
         let k = (ty, loc, c) in
-        if not (Hashtbl.mem used_constructors k) then
+        if not (Hashtbl.mem !cache.used_constructors k) then
           let used = constructor_usages () in
-          Hashtbl.add used_constructors k (add_constructor_usage used);
+          Hashtbl.add !cache.used_constructors k (add_constructor_usage used);
           if not (ty = "" || ty.[0] = '_')
           then !add_delayed_check_forward
               (fun () ->
@@ -1355,9 +1399,9 @@ and store_extension ~check slot id path ext env renv =
     let ty = Path.last ext.ext_type_path in
     let n = Ident.name id in
     let k = (ty, loc, n) in
-    if not (Hashtbl.mem used_constructors k) then begin
+    if not (Hashtbl.mem !cache.used_constructors k) then begin
       let used = constructor_usages () in
-      Hashtbl.add used_constructors k (add_constructor_usage used);
+      Hashtbl.add !cache.used_constructors k (add_constructor_usage used);
       !add_delayed_check_forward
         (fun () ->
           if not (is_in_signature env) && not used.cu_positive then
@@ -1596,7 +1640,7 @@ let crc_of_unit name =
 (* Return the list of imported interfaces with their CRCs *)
 
 let imports() =
-  Consistbl.extract !imported_units crc_units
+  Consistbl.extract !(!cache.imported_units) !cache.crc_units
 
 (* Save a signature to a file *)
 
@@ -1612,7 +1656,7 @@ let save_signature_with_imports sg modname filename imports =
       cmi_name = modname;
       cmi_sign = sg;
       cmi_crcs = imports;
-      cmi_flags = if !Clflags.recursive_types then [Rectypes] else [];
+      cmi_flags = if Clflags.recursive_types () then [Rectypes] else [];
     } in
     let crc = output_cmi filename oc cmi in
     close_out oc;
@@ -1620,7 +1664,7 @@ let save_signature_with_imports sg modname filename imports =
        will also return its crc *)
     let comps =
       components_of_module empty Subst.identity
-        (Pident(Ident.create_persistent modname)) (Mty_signature sg) in
+        (Pident(Ident.create_persistent modname)) (Mty_signature  ~:sg) in
     let ps =
       { ps_name = modname;
         ps_sig = sg;
@@ -1628,9 +1672,9 @@ let save_signature_with_imports sg modname filename imports =
         ps_crcs = (cmi.cmi_name, Some crc) :: imports;
         ps_filename = filename;
         ps_flags = cmi.cmi_flags } in
-    Hashtbl.add persistent_structures modname (Some ps);
-    Consistbl.set crc_units modname crc filename;
-    imported_units := modname :: !imported_units;
+    Hashtbl.add !cache.persistent_structures modname (Some ps);
+    Consistbl.set !cache.crc_units modname crc filename;
+    !cache.imported_units := modname :: !(!cache.imported_units);
     sg
   with exn ->
     close_out oc;
@@ -1695,8 +1739,8 @@ let fold_modules f lid env acc =
               None -> acc
             | Some ps ->
               f name (Pident(Ident.create_persistent name))
-                     (md (Mty_signature ps.ps_sig)) acc)
-        persistent_structures
+                     (md (Mty_signature  ~:(ps.ps_sig))) acc)
+        !cache.persistent_structures
         acc
     | Some l ->
       let p, desc = lookup_module_descr l env in

@@ -162,24 +162,31 @@ let letter = function
   | _ -> assert false
 ;;
 
-let active = Array.create (last_warning_number + 1) true;;
-let error = Array.create (last_warning_number + 1) false;;
+type set = bool array * bool array
 
-type state = bool array * bool array
-let backup () = (Array.copy active, Array.copy error)
-let restore (a, e) =
-  assert(Array.length a = Array.length active);
-  assert(Array.length e = Array.length error);
-  Array.blit a 0 active 0 (Array.length active);
-  Array.blit e 0 error 0 (Array.length error)
+let fresh () =
+  let active = Array.create (last_warning_number + 1) true in
+  let error = Array.create (last_warning_number + 1) false in
+  active, error
 
-let is_active x = active.(number x);;
-let is_error x = error.(number x);;
+(* Manage set of flag *)
+let initial = fresh ()
+
+let copy (a,b) = (Array.copy a, Array.copy b)
+
+(* Current state *)
+let set = ref initial
+
+let active () = fst !set
+let error () = snd !set
+
+let is_active x = (active ()).(number x);;
+let is_error x = (error ()).(number x);;
 
 let parse_opt flags s =
   let set i = flags.(i) <- true in
   let clear i = flags.(i) <- false in
-  let set_all i = active.(i) <- true; error.(i) <- true in
+  let set_all i = (active ()).(i) <- true; (error ()).(i) <- true in
   let error () = raise (Arg.Bad "Ill-formed list of warnings") in
   let rec get_num n i =
     if i >= String.length s then i, n
@@ -227,14 +234,15 @@ let parse_opt flags s =
   loop 0
 ;;
 
-let parse_options errflag s = parse_opt (if errflag then error else active) s;;
+let parse_options set errflag s =
+  parse_opt (if errflag then snd set else fst set) s;;
 
 (* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-6-7-9-27-29-32..39-41..42-44-45-48";;
 let defaults_warn_error = "-a";;
 
-let () = parse_options false defaults_w;;
-let () = parse_options true defaults_warn_error;;
+let () = parse_options initial false defaults_w;;
+let () = parse_options initial true defaults_warn_error;;
 
 let message = function
   | Comment_start -> "this is the start of a comment."
@@ -392,7 +400,7 @@ let print ppf w =
   Format.fprintf ppf "%d: %s" num msg;
   Format.pp_print_flush ppf ();
   Format.pp_set_all_formatter_output_functions ppf out flush newline space;
-  if error.(num) then incr nerrors;
+  if (error ()).(num) then incr nerrors;
   !newlines
 ;;
 
@@ -487,3 +495,33 @@ let help_warnings () =
   done;
   exit 0
 ;;
+
+let w_spec t =
+  "-w",
+  Arg.String (parse_options t false),
+  Printf.sprintf
+    "<list>  Enable or disable warnings according to <list>:\n\
+    \        +<spec>   enable warnings in <spec>\n\
+    \        -<spec>   disable warnings in <spec>\n\
+    \        @<spec>   enable warnings in <spec> and treat them as errors\n\
+    \     <spec> can be:\n\
+    \        <num>             a single warning number\n\
+    \        <num1>..<num2>    a range of consecutive warning numbers\n\
+    \        <letter>          a predefined set\n\
+    \     default setting is %S"
+    defaults_w
+
+let warn_error_spec t =
+  "-warn-error",
+  Arg.String (parse_options t true),
+  Printf.sprintf
+    "<list> Enable or disable error status for warnings according\n\
+    \     to <list>.  See option -w for the syntax of <list>.\n\
+    \     Default setting is %S"
+    defaults_warn_error
+
+let arg_spec t =
+  [
+    w_spec t;
+    warn_error_spec t;
+  ]

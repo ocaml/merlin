@@ -50,6 +50,7 @@ val print_types          : unit -> bool
 val native_code          : unit -> bool
 val dont_write_files     : unit -> bool
 val error_size           : unit -> int (* max size of module related errors *)
+val transparent_modules  : unit -> bool
 
 (* Compute arguments specification *)
 val arg_spec : set -> (string * Arg.spec * string) list

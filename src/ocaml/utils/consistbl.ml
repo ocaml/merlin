@@ -1,5 +1,4 @@
-(***********************************************************************)
-(*                                                                     *)
+(***********************************************************************) (*                                                                     *)
 (*                                OCaml                                *)
 (*                                                                     *)
 (*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
@@ -9,8 +8,6 @@
 (*  under the terms of the Q Public License version 1.0.               *)
 (*                                                                     *)
 (***********************************************************************)
-
-(* $Id: consistbl.ml 11156 2011-07-27 14:17:02Z doligez $ *)
 
 (* Consistency tables: for checking consistency of module CRCs *)
 
@@ -42,8 +39,19 @@ let set tbl name crc source = Hashtbl.add tbl name (crc, source)
 
 let source tbl name = snd (Hashtbl.find tbl name)
 
-let extract tbl =
-  Hashtbl.fold (fun name (crc, auth) accu -> (name, crc) :: accu) tbl []
+let extract l tbl =
+  List.fold_left
+    (fun assc name ->
+     try
+       ignore (List.assoc name assc);
+       assc
+     with Not_found ->
+       try
+         let (crc, _) = Hashtbl.find tbl name in
+           (name, Some crc) :: assc
+       with Not_found ->
+         (name, None) :: assc)
+    [] l
 
 let filter p tbl =
   let to_remove = ref [] in

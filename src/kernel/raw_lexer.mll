@@ -27,7 +27,7 @@ type error =
   | Illegal_escape of string
   | Unterminated_comment of Location.t
   | Unterminated_string
-  | Unterminated_string_in_comment of Location.t
+  | Unterminated_string_in_comment of Location.t * Location.t
   | Keyword_as_label of string
   | Literal_overflow of string
 
@@ -48,18 +48,22 @@ let rec (>>=) (m : 'a result) (f : 'a -> 'b result) : 'b result =
     Refill (fun () -> u () >>= f)
   | Error _ as e -> e
 
+type preprocessor = (Lexing.lexbuf -> Parser.token) -> Lexing.lexbuf -> Parser.token
+
 type state = {
   keywords: keywords;
   buffer: Buffer.t;
   mutable string_start_loc: Location.t;
   mutable comment_start_loc: Location.t list;
+  mutable preprocessor: preprocessor option;
 }
 
-let make keywords = {
+let make ?preprocessor keywords = {
   keywords;
   buffer = Buffer.create 17;
   string_start_loc = Location.none;
   comment_start_loc = [];
+  preprocessor;
 }
 
 
@@ -220,8 +224,10 @@ let report_error ppf = function
     fprintf ppf "Comment not terminated"
   | Unterminated_string ->
     fprintf ppf "String literal not terminated"
-  | Unterminated_string_in_comment _ ->
-    fprintf ppf "This comment contains an unterminated string literal"
+  | Unterminated_string_in_comment (_, loc) ->
+    fprintf ppf "This comment contains an unterminated string literal@.\
+                 %aString litera begins here"
+      Location.print_error loc
   | Keyword_as_label kwd ->
     fprintf ppf "`%s' is a keyword, it cannot be used as label name" kwd
   | Literal_overflow ty ->
@@ -229,7 +235,7 @@ let report_error ppf = function
                 \ integers of type %s" ty
 }
 
-let newline = ('\010' | '\013' | "\013\010")
+let newline = ('\013'* '\010')
 let blank = [' ' '\009' '\012']
 let lowercase = ['a'-'z' '\223'-'\246' '\248'-'\255' '_']
 let uppercase = ['A'-'Z' '\192'-'\214' '\216'-'\222']
@@ -255,9 +261,20 @@ let float_literal =
 refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
 
 rule token state = parse
+| "\\" newline {
+    match state.preprocessor with
+    | None ->
+      error (Illegal_character (Lexing.lexeme_char lexbuf 0),
+             Location.curr lexbuf)
+    | Some _ ->
+      update_loc lexbuf None 1 false 0
+      token state lexbuf
+  }
 | newline
   { update_loc lexbuf None 1 false 0;
-    token state lexbuf
+    match !preprocessor with
+    | None -> token state lexbuf
+    | Some _ -> return EOL
   }
 | blank +
   { token state lexbuf }
@@ -391,48 +408,52 @@ rule token state = parse
     return P4_QUOTATION
   }
 
-| "#"  { return SHARP }
-| "&"  { return AMPERSAND }
-| "&&" { return AMPERAMPER }
-| "`"  { return BACKQUOTE }
-| "'"  { return QUOTE }
-| "("  { return LPAREN }
-| ")"  { return RPAREN }
-| "*"  { return STAR }
-| ","  { return COMMA }
-| "->" { return MINUSGREATER }
-| "."  { return DOT }
-| ".." { return DOTDOT }
-| ":"  { return COLON }
-| "::" { return COLONCOLON }
-| ":=" { return COLONEQUAL }
-| ":>" { return COLONGREATER }
-| ";"  { return SEMI }
-| ";;" { return SEMISEMI }
-| "<"  { return LESS }
-| "<-" { return LESSMINUS }
-| "="  { return EQUAL }
-| "["  { return LBRACKET }
-| "[|" { return LBRACKETBAR }
-| "[<" { return LBRACKETLESS }
-| "[>" { return LBRACKETGREATER }
-| "]"  { return RBRACKET }
-| "{"  { return LBRACE }
-| "{<" { return LBRACELESS }
-| "|"  { return BAR }
-| "||" { return BARBAR }
-| "|]" { return BARRBRACKET }
-| ">"  { return GREATER }
-| ">]" { return GREATERRBRACKET }
-| "}"  { return RBRACE }
-| ">}" { return GREATERRBRACE }
-| "!"  { return BANG }
-
-| "!=" { return (INFIXOP0 "!=") }
-| "+"  { return PLUS }
-| "+." { return PLUSDOT }
-| "-"  { return MINUS }
-| "-." { return MINUSDOT }
+| "#"    { return SHARP }
+| "&"    { return AMPERSAND }
+| "&&"   { return AMPERAMPER }
+| "`"    { return BACKQUOTE }
+| "'"    { return QUOTE }
+| "("    { return LPAREN }
+| ")"    { return RPAREN }
+| "*"    { return STAR }
+| ","    { return COMMA }
+| "->"   { return MINUSGREATER }
+| "."    { return DOT }
+| ".."   { return DOTDOT }
+| ":"    { return COLON }
+| "::"   { return COLONCOLON }
+| ":="   { return COLONEQUAL }
+| ":>"   { return COLONGREATER }
+| ";"    { return SEMI }
+| ";;"   { return SEMISEMI }
+| "<"    { return LESS }
+| "<-"   { return LESSMINUS }
+| "="    { return EQUAL }
+| "["    { return LBRACKET }
+| "[|"   { return LBRACKETBAR }
+| "[<"   { return LBRACKETLESS }
+| "[>"   { return LBRACKETGREATER }
+| "]"    { return RBRACKET }
+| "{"    { return LBRACE }
+| "{<"   { return LBRACELESS }
+| "|"    { return BAR }
+| "||"   { return BARBAR }
+| "|]"   { return BARRBRACKET }
+| ">"    { return GREATER }
+| ">]"   { return GREATERRBRACKET }
+| "}"    { return RBRACE }
+| ">}"   { return GREATERRBRACE }
+| "[%"   { return LBRACKETPERCENT }
+| "[%%"  { return LBRACKETPERCENTPERCENT }
+| "[@@"  { return LBRACKETATAT }
+| "[@@@" { return LBRACKETATATAT }
+| "!"    { return BANG }
+| "!="   { return (INFIXOP0 "!=") }
+| "+"    { return PLUS }
+| "+."   { return PLUSDOT }
+| "+="   { return PLUSEQ }
+| "-"    { return MINUS }
+| "-."   { return MINUSDOT }
 
 | "!" symbolchar +
   { return (PREFIXOP(Lexing.lexeme lexbuf)) }
@@ -478,13 +499,13 @@ and comment state = parse
     Buffer.add_char state.buffer '"';
     (catch (string state lexbuf) (fun e l ->
       match e with
-      | Unterminated_string ->
+      | Unterminated_string str_start ->
         begin match state.comment_start_loc with
         | [] -> assert false
         | loc :: _ ->
           let start = List.hd (List.rev state.comment_start_loc) in
           state.comment_start_loc <- [];
-          error (Unterminated_string_in_comment start) loc
+          error (Unterminated_string_in_comment (start, str_start)) loc
         end
       | e -> error e l
     )) >>= fun () ->

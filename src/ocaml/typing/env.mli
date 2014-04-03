@@ -143,6 +143,9 @@ val reset_cache: unit -> unit
 (* To be called before each toplevel phrase. *)
 val reset_cache_toplevel: unit -> unit
 
+(* merlin: Check cache consistency *)
+val check_cache_consistency: unit -> bool
+
 (* Remember the name of the current compilation unit. *)
 val set_unit_name: string -> unit
 
@@ -164,11 +167,6 @@ val crc_of_unit: string -> Digest.t
 (* Return the set of compilation units imported, with their CRC *)
 
 val imports: unit -> (string * Digest.t option) list
-
-(* Direct access to the table of imported compilation units with their CRC *)
-
-val crc_units: Consistbl.t
-val imported_units: string list ref
 
 (* Summaries -- compact representation of an environment, to be
    exported in debugging information. *)
@@ -256,3 +254,11 @@ val fold_cltypes:
 
 (** Utilities *)
 val scrape_alias: t -> module_type -> module_type
+
+
+(** merlin: manage all internal state *)
+
+type cache
+
+val new_cache : unit -> cache
+val cache : cache ref

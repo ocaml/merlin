@@ -281,7 +281,7 @@ let same_printing_env env =
   Env.same_types !printing_old env && Concr.equal !printing_pers used_pers
 
 let set_printing_env env =
-  printing_env := if !Clflags.real_paths then Env.empty else env;
+  printing_env := if Clflags.real_paths () then Env.empty else env;
   if !printing_env == Env.empty || same_printing_env env then () else
   begin
     (* printf "Reset printing_map@."; *)
@@ -310,6 +310,8 @@ let set_printing_env env =
 let wrap_printing_env env f =
   set_printing_env env;
   try_finally f (fun () -> set_printing_env Env.empty)
+
+let curr_printing_env () = !printing_env
 
 let is_unambiguous path env =
   let l = Env.find_shadowed_types path env in
@@ -343,7 +345,7 @@ let rec get_best_path r =
       get_best_path r
 
 let best_type_path p =
-  if !Clflags.real_paths || !printing_env == Env.empty
+  if Clflags.real_paths () || !printing_env == Env.empty
   then (p, Id)
   else
     let (p', s) = normalize_type_path !printing_env p in
@@ -1135,7 +1137,7 @@ let dummy =
 
 let hide_rec_items = function
   | Sig_type(id, decl, rs) ::rem
-    when rs <> Trec_next && not !Clflags.real_paths ->
+    when rs <> Trec_next && not (Clflags.real_paths ()) ->
       let rec get_ids = function
           Sig_type (id, _, Trec_next) :: rem ->
             id :: get_ids rem
@@ -1151,7 +1153,7 @@ let hide_rec_items = function
 let rec tree_of_modtype = function
   | Mty_ident p ->
       Omty_ident (tree_of_path p)
-  | Mty_signature sg ->
+  | Mty_signature (lazy sg) ->
       Omty_signature (tree_of_signature sg)
   | Mty_functor(param, ty_arg, ty_res) ->
       let res =
@@ -1425,7 +1427,7 @@ let unification_error unif tr txt1 ppf txt2 =
       let tr = filter_trace (mis = None) tr in
       let t1, t1' = may_prepare_expansion (tr = []) t1
       and t2, t2' = may_prepare_expansion (tr = []) t2 in
-      print_labels := not !Clflags.classic;
+      print_labels := not (Clflags.classic ());
       let tr = List.map prepare_expansion tr in
       fprintf ppf
         "@[<v>\
@@ -1448,7 +1450,7 @@ let report_unification_error ppf env ?(unif=true)
 ;;
 
 let trace fst keep_last txt ppf tr =
-  print_labels := not !Clflags.classic;
+  print_labels := not (Clflags.classic ());
   trace_same_names tr;
   try match tr with
     t1 :: t2 :: tr' ->

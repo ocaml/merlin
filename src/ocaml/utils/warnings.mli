@@ -64,7 +64,16 @@ type t =
   | No_cmi_file of string                   (* 49 *)
 ;;
 
-val parse_options : bool -> string -> unit;;
+type set
+
+(* Manage set of flag *)
+val initial : set
+
+val fresh : unit -> set
+val copy : set -> set
+
+(* Current state *)
+val set : set ref
 
 val is_active : t -> bool;;
 val is_error : t -> bool;;
@@ -82,6 +91,5 @@ val check_fatal : unit -> unit;;
 
 val help_warnings: unit -> unit
 
-type state
-val backup: unit -> state
-val restore: state -> unit
+(* Compute arguments specification *)
+val arg_spec : set -> (string * Arg.spec * string) list

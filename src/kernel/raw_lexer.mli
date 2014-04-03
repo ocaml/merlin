@@ -34,11 +34,14 @@ type 'a result =
   | Refill of (unit -> 'a result)
   | Error of error * Location.t
 
+type preprocessor = (Lexing.lexbuf -> Raw_parser.token) -> Lexing.lexbuf -> Raw_parser.token
+
 type state = {
   keywords: keywords;
   buffer: Buffer.t;
   mutable string_start_loc: Location.t;
   mutable comment_start_loc: Location.t list;
+  mutable preprocessor: preprocessor option;
 }
 
 val make: keywords -> state

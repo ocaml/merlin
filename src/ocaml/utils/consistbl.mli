@@ -42,7 +42,7 @@ val source: t -> string -> string
          if the latter has an associated CRC in [tbl].
          Raise [Not_found] otherwise. *)
 
-val extract: t -> (string * Digest.t) list
+val extract: string list -> t -> (string * Digest.t option) list
       (* Return all bindings ([name], [crc]) contained in the given
          table. *)
 
