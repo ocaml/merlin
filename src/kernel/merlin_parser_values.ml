@@ -43,7 +43,7 @@ struct
     BARRBRACKET; BARBAR; BAR; BANG; BACKQUOTE; ASSERT; AS; AND; AMPERSAND;
     AMPERAMPER; P4_QUOTATION; OUNIT_TEST_UNIT; OUNIT_TEST_MODULE; OUNIT_TEST;
     OUNIT_BENCH_MODULE; OUNIT_BENCH_INDEXED; OUNIT_BENCH_FUN; OUNIT_BENCH;
-    STRING ""; CHAR ' '; INT32 0l; INT 0; INT64 0L; UIDENT ""; OPTLABEL "";
+    STRING ("", None); CHAR ' '; INT32 0l; INT 0; INT64 0L; UIDENT ""; OPTLABEL "";
     NATIVEINT 0n; LIDENT ""; LABEL ""; PREFIXOP ""; FLOAT "";
     INFIXOP4 ""; INFIXOP3 ""; INFIXOP2 ""; INFIXOP1 ""; INFIXOP0 "";
   |]
@@ -120,8 +120,11 @@ struct
     | OUNIT_BENCH_FUN     -> "OUNIT_BENCH_FUN"
     | OUNIT_BENCH         -> "OUNIT_BENCH"
     | ENTRYPOINT -> "ENTRYPOINT"
-    | RECOVER _ -> "RECOVER"
-    | RECONSTRUCT _ -> "RECONSTRUCT"
+    | PERCENT                -> "PERCENT"
+    | LBRACKETPERCENTPERCENT -> "LBRACKETPERCENTPERCENT"
+    | LBRACKETPERCENT        -> "LBRACKETPERCENT"
+    | LBRACKETATAT           -> "LBRACKETATAT"
+    | LBRACKETAT             -> "LBRACKETAT"
 
   let to_terminal t = Query.index t
   let of_terminal (t : terminal) =
@@ -148,18 +151,18 @@ struct
     done
 end
 
-module Nonterminal : S with type t = nonterminal =
+module Nonterminal = (*: S with type t = nonterminal =*)
 struct
   open Asttypes
   open Parsetree
 
   type t = nonterminal
 
-  let all =
-    let mktyp d = { ptyp_desc = d; ptyp_loc = Location.none } in
-    let mkpat d = { ppat_desc = d; ppat_loc = Location.none } in
-    let mkmty d = { pmty_desc = d; pmty_loc = Location.none } in
-    let mkmod d = { pmod_desc = d; pmod_loc = Location.none } in
+  (*let all =
+    let mktyp d = { ptyp_desc = d; ptyp_loc = Location.none; ptyp_attributes = [] } in
+    let mkpat d = { ppat_desc = d; ppat_loc = Location.none; ppat_attributes = [] } in
+    let mkmty d = { pmty_desc = d; pmty_loc = Location.none; pmty_attributes = [] } in
+    let mkmod d = { pmod_desc = d; pmod_loc = Location.none; pmod_attributes = [] } in
     let any_pat = mkpat Ppat_any in
     let any_typ = mktyp Ptyp_any in
     let any_lident = Longident.Lident "" in
@@ -330,8 +333,8 @@ struct
       NT'with_extensions [];
       NT'with_type_binder Public;
     |]
-
-  let to_string = function
+*)
+  (*let to_string = function
     | NT'toplevel_directive                _ -> "toplevel_directive"
     | NT'list_toplevel_directive_          _ -> "list(toplevel_directive)"
     | NT'list_SEMISEMI_                    _ -> "list(SEMISEMI)"
@@ -522,7 +525,9 @@ struct
   let iter f =
     for i = 0 to Array.length all - 1 do
       f i
-    done
+    done*)
+
+  let to_string _ = "TODO"
 end
 
 module Value : sig
@@ -531,10 +536,10 @@ module Value : sig
     | Terminal of Token.t
     | Nonterminal of Nonterminal.t
 
-  val to_terminal: t -> terminal
-  val of_terminal: terminal -> t
+  (*val to_terminal: t -> terminal
+  val of_terminal: terminal -> t*)
   val to_string: t -> string
-  val all: t array
+  (*val all: t array*)
 end = struct
 
   type t = Raw_parser.semantic_value =
@@ -542,37 +547,22 @@ end = struct
     | Terminal of Token.t
     | Nonterminal of Nonterminal.t
 
-  let all =
+  (*let all =
     Array.concat [
       Array.map (fun x -> Terminal x) Token.all;
       Array.map (fun x -> Nonterminal x) Nonterminal.all;
-    ]
+    ]*)
 
   let to_string = function
     | Bottom -> "Bottom"
     | Terminal t -> Token.to_string t
     | Nonterminal nt -> Nonterminal.to_string nt
 
-  let to_terminal = function
+  (*let to_terminal = function
     | Terminal t -> Query.index t
     | _ -> failwith "Not supported with current settings (enable --feed-nonterminal)"
     (* Query.index *)
 
-  let of_terminal (t : terminal) = snd (!index_table).((t :> int))
+  let of_terminal (t : terminal) = snd (!index_table).((t :> int))*)
 end
 
-(*let max_terminal = Array.fold_left
-    (fun acc v -> max acc (Value.to_terminal v))
-    (Value.to_terminal Bottom)
-    Value.all
-
-let () =
-  let table = Array.create ((max_terminal :> int) + 1) (-1, Bottom) in
-  Array.iteri
-    (fun i v -> table.((Token.to_terminal v :> int)) <- (i, Terminal v))
-    Token.all;
-  Array.iteri
-    (fun i v -> table.((Nonterminal.to_terminal v :> int)) <- (i, Nonterminal v))
-    Nonterminal.all;
-  index_table := table
-*)

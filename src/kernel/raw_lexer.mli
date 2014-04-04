@@ -19,7 +19,7 @@ type error =
   | Illegal_escape of string
   | Unterminated_comment of Location.t
   | Unterminated_string
-  | Unterminated_string_in_comment of Location.t
+  | Unterminated_string_in_comment of Location.t * Location.t
   | Keyword_as_label of string
   | Literal_overflow of string
 val report_error : formatter -> error -> unit
@@ -44,7 +44,7 @@ type state = {
   mutable preprocessor: preprocessor option;
 }
 
-val make: keywords -> state
+val make: ?preprocessor:preprocessor -> keywords -> state
 
 (* The lexical analyzer *)
 

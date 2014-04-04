@@ -234,15 +234,15 @@ let parse_opt flags s =
   loop 0
 ;;
 
-let parse_options set errflag s =
+let parse_options ?(set=(!set)) errflag s =
   parse_opt (if errflag then snd set else fst set) s;;
 
 (* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-6-7-9-27-29-32..39-41..42-44-45-48";;
 let defaults_warn_error = "-a";;
 
-let () = parse_options initial false defaults_w;;
-let () = parse_options initial true defaults_warn_error;;
+let () = parse_options ~set:initial false defaults_w;;
+let () = parse_options ~set:initial true defaults_warn_error;;
 
 let message = function
   | Comment_start -> "this is the start of a comment."
@@ -498,7 +498,7 @@ let help_warnings () =
 
 let w_spec t =
   "-w",
-  Arg.String (parse_options t false),
+  Arg.String (parse_options ~set:t false),
   Printf.sprintf
     "<list>  Enable or disable warnings according to <list>:\n\
     \        +<spec>   enable warnings in <spec>\n\
@@ -513,7 +513,7 @@ let w_spec t =
 
 let warn_error_spec t =
   "-warn-error",
-  Arg.String (parse_options t true),
+  Arg.String (parse_options ~set:t true),
   Printf.sprintf
     "<list> Enable or disable error status for warnings according\n\
     \     to <list>.  See option -w for the syntax of <list>.\n\
@@ -525,3 +525,7 @@ let arg_spec t =
     w_spec t;
     warn_error_spec t;
   ]
+
+type state = set
+let backup () = copy !set
+let restore aset = set := copy aset

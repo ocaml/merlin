@@ -14,30 +14,30 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
   and parse = function
     | `Step s -> parse (Raw_parser.step s)
     | `Feed p -> lex p (Raw_lexer.token_without_comments state lexbuf)
-    | `Accept (Raw_parser.Nonterminal (Raw_parser.NT'top_expr e)) -> e
+    | `Accept (Raw_parser.Nonterminal (Raw_parser.NT'parse_expression e)) -> e
     | `Reject | `Accept _ -> assert false
   in
-  parse (`Step (Raw_parser.initial Raw_parser.top_expr_state
+  parse (`Step (Raw_parser.initial Raw_parser.parse_expression_state
                   (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))
 
 let type_in_env ?keywords env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
       Typemod.type_toplevel_phrase env
-        Parsetree.([{ pstr_desc = Pstr_eval expression ; pstr_loc = Location.none }])
+        Parsetree.([{ pstr_desc = Pstr_eval (expression, []) ; pstr_loc = Location.none }])
     in
     (*let sg' = Typemod.simplify_signature sg in*)
     let open Typedtree in
     begin match str.str_items with
-      | [ { str_desc = Tstr_eval exp }] ->
+      | [ { str_desc = Tstr_eval (exp,[]) }] ->
         Printtyp.type_scheme ppf exp.exp_type;
       | _ -> failwith "unhandled expression"
     end
   in
   Printtyp.wrap_printing_env env
-   
+
     begin fun () -> match parse_expr ?keywords expr with
-      | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
+      (*| { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
         begin
           try let c = Typing_aux.lookup_constructor longident.Asttypes.txt env in
             Browse_misc.print_constructor ppf c
@@ -49,7 +49,7 @@ let type_in_env ?keywords env ppf expr =
                 Printtyp.modtype_declaration (Ident.create (Path.last p)) ppf m
               with Not_found ->
                 ()
-        end
+        end*)
       | { Parsetree.pexp_desc = Parsetree.Pexp_ident longident } as e ->
         begin
           try print_expr e

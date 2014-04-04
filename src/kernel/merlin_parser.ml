@@ -164,7 +164,8 @@ let last_token = function
       { Location. loc_start; loc_end; loc_ghost = false }
 
 let recover ?location flag t =
-  match Frame.stack t with
+  None
+  (*match Frame.stack t with
   | None -> None
   | Some frame ->
     let l = match location with
@@ -173,16 +174,17 @@ let recover ?location flag t =
     in
     match feed (l.Location.loc_start,P.RECOVER flag,l.Location.loc_end) t with
     | `Accept _ | `Reject -> None
-    | `Step t -> Some (Location.mkloc t l)
+    | `Step t -> Some (Location.mkloc t l)*)
 
 let reconstruct exn t =
-  match Frame.stack t with
+  None
+  (*match Frame.stack t with
   | None -> None
   | Some frame ->
     let {Location. loc_start; loc_end} = Frame.location frame in
     match feed (loc_start,P.RECONSTRUCT exn,loc_end) t with
     | `Accept _ | `Reject -> None
-    | `Step t -> Some t
+    | `Step t -> Some t*)
 
 module Integrate
     (P : sig
@@ -367,17 +369,17 @@ end = struct
         (d + 1, Let (flag, List.length l) :: p)
 
       | D (Nonterminal (NT'let_bindings l), _), _ ->
-        (d + 1, Let (Asttypes.Default, List.length l) :: p)
+        (d + 1, Let (Asttypes.Nonrecursive, List.length l) :: p)
 
       (* Module rec *)
       | D (Terminal REC, lazy (D (Terminal MODULE, _))), _ ->
         (d, Module_rec 0 :: p)
-      | D (Nonterminal (NT'module_rec_bindings l), _), (Module_rec 0 :: p') ->
-        (d, Module_rec (List.length l) :: p')
+      (*| D (Nonterminal (NT'module_rec_bindings l), _), (Module_rec 0 :: p') ->
+        (d, Module_rec (List.length l) :: p')*)
       | D (Nonterminal (NT'module_rec_declarations l), _), (Module_rec 0 :: p') ->
         (d, Module_rec (List.length l) :: p')
-      | D (Nonterminal (NT'module_rec_bindings l), _), _ ->
-        (d + 1, Module_rec (List.length l) :: p)
+      (*| D (Nonterminal (NT'module_rec_bindings l), _), _ ->
+        (d + 1, Module_rec (List.length l) :: p)*)
       | D (Nonterminal (NT'module_rec_declarations l), _), _ ->
         (d + 1, Module_rec (List.length l) :: p)
 
@@ -393,9 +395,9 @@ end = struct
       | Nonterminal (NT'signature l'),
         Nonterminal (NT'signature l),
         (d, Sig n' :: p') -> (d, Sig (dlength n' l' l) :: p')
-      | Nonterminal (NT'module_rec_bindings l'),
+      (*| Nonterminal (NT'module_rec_bindings l'),
         Nonterminal (NT'module_rec_bindings l),
-        (d, Module_rec n' :: p') -> (d, Module_rec (dlength n' l' l) :: p')
+        (d, Module_rec n' :: p') -> (d, Module_rec (dlength n' l' l) :: p')*)
       | Nonterminal (NT'module_rec_declarations l'),
         Nonterminal (NT'module_rec_declarations l),
         (d, Module_rec n' :: p') -> (d, Module_rec (dlength n' l' l) :: p')

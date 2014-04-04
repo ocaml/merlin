@@ -40,14 +40,15 @@ let mkoptloc opt x =
 
 let app a b =
   let pexp_loc = { b.pexp_loc with Location.loc_ghost = true } in
-  { pexp_desc = Pexp_apply (a, ["", b]) ; pexp_loc }
+  { pexp_desc = Pexp_apply (a, ["", b]) ; pexp_loc ; pexp_attributes = [] }
 
 let pat_app f (pat,expr) = pat, app f expr
 
 let prim_ident prim = Longident.parse ("_." ^ prim)
 let prim prim = {
   pexp_desc = Pexp_ident (Location.mknoloc (prim_ident prim));
-  pexp_loc = Location.none
+  pexp_loc = Location.none;
+  pexp_attributes = [];
 }
 
 let any_val' = prim "Any.val'"
@@ -79,9 +80,9 @@ module Ast = struct
     | Module of string * top_item list
 
   let sub_of_simple_variants lst =
-    let variants = List.map lst ~f:(fun s -> Rtag (s, true, [])) in
-    let ptyp_desc = Ptyp_variant (variants, true, Some []) in
-    Core_type { ptyp_desc ; ptyp_loc = Location.symbol_gloc () }
+    let variants = List.map lst ~f:(fun s -> Rtag (s, [], true, [])) in
+    let ptyp_desc = Ptyp_variant (variants, Asttypes.Closed, Some []) in
+    Core_type { ptyp_desc ; ptyp_loc = Location.symbol_gloc (); ptyp_attributes = [] }
 
   let freshvars  = Stream.from (fun i -> Some (Printf.sprintf "\x00_%d" i))
   let new_var () = Stream.next freshvars
@@ -94,20 +95,21 @@ let bool_ty = Named ([],"bool")
 
 let rec translate_ts ?ghost_loc = function
   | Var ident ->
-    { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc }
+    { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc; ptyp_attributes = [] }
   | Arrow (label, a, b) ->
     let a = translate_ts ?ghost_loc a in
     let b = translate_ts ?ghost_loc b in
-    { ptyp_desc = Ptyp_arrow(label, a, b) ; ptyp_loc = default_loc ghost_loc }
+    { ptyp_desc = Ptyp_arrow(label, a, b) ; ptyp_loc = default_loc ghost_loc; ptyp_attributes = [] }
   | Tuple lst ->
     let lst = List.map lst ~f:(translate_ts ?ghost_loc) in
-    { ptyp_desc = Ptyp_tuple lst ; ptyp_loc = default_loc ghost_loc }
+    { ptyp_desc = Ptyp_tuple lst ; ptyp_loc = default_loc ghost_loc; ptyp_attributes = [] }
   | Named (params, id) ->
     let id = Longident.parse id in
     let params = List.map (translate_ts ?ghost_loc) params in
     {
       ptyp_desc = Ptyp_constr (mkoptloc ghost_loc id, params) ;
       ptyp_loc = default_loc ghost_loc ;
+      ptyp_attributes = [];
     }
   | Core_type ct -> ct
 
@@ -118,12 +120,14 @@ and translate_expr ?ghost_loc : Ast.expr -> _ = function
         let patt = {
           ppat_desc = Ppat_var (mkoptloc ghost_loc simple_pattern) ;
           ppat_loc = default_loc ghost_loc ;
+          ppat_attributes = [] ;
         }
         in
         let label = if is_label then simple_pattern else "" in
         {
-          pexp_desc = Pexp_function (label, None, [patt, body]) ;
+          pexp_desc = Pexp_fun (label, None, patt, body) ;
           pexp_loc = default_loc ghost_loc ;
+          pexp_attributes = [] ;
         }
     )
   | App (f, x) ->
@@ -131,58 +135,80 @@ and translate_expr ?ghost_loc : Ast.expr -> _ = function
   | Ident i -> {
       pexp_desc = Pexp_ident (mkoptloc ghost_loc (Longident.parse i)) ;
       pexp_loc = default_loc ghost_loc ;
+      pexp_attributes = [] ;
     }
   | AnyVal -> any_val'
 
 
 let sig_of_binding ?ghost_loc { ident; typesig; body = _ } =
-  let pval_ty = {
+  let pval = {
     pval_type = translate_ts ?ghost_loc typesig ;
     pval_prim = [] ;
     pval_loc  = default_loc ghost_loc ;
+    pval_name = mkoptloc ghost_loc ident;
+    pval_attributes = [] ;
   } in
-  let psig_desc = Psig_value (mkoptloc ghost_loc ident, pval_ty) in
+  let psig_desc = Psig_value pval in
   { psig_desc ; psig_loc = default_loc ghost_loc }
 
 let str_of_binding ?ghost_loc { ident; typesig; body } =
-  let pat = {
+  let loc = default_loc ghost_loc in
+  let pvb_pat = {
     ppat_desc = Ppat_var (mkoptloc ghost_loc ident) ;
-    ppat_loc = default_loc ghost_loc ;
+    ppat_loc = loc ;
+    ppat_attributes = [] ;
   }
   in
-  let typesig_opt = Some (translate_ts ?ghost_loc typesig) in
+  let typesig_opt = translate_ts ?ghost_loc typesig in
   let body = translate_expr ?ghost_loc body in
-  let pexp = {
-    pexp_desc = Pexp_constraint (body, typesig_opt, None) ;
-    pexp_loc = default_loc ghost_loc ;
+  let pvb_expr = {
+    pexp_desc = Pexp_constraint (body, typesig_opt) ;
+    pexp_loc = loc ;
+    pexp_attributes = [] ;
   }
   in
+  let pvb = { pvb_loc = loc; pvb_pat; pvb_expr; pvb_attributes = [] } in
   {
-    pstr_desc = Pstr_value (Asttypes.Nonrecursive, [(pat, pexp)]) ;
-    pstr_loc = default_loc ghost_loc ;
+    pstr_desc = Pstr_value (Asttypes.Nonrecursive, [pvb]) ;
+    pstr_loc = loc;
   }
 
 let rec str_of_top_lvl ?ghost_loc = function
   | Binding b -> str_of_binding ?ghost_loc b
   | Module (name, m) ->
-    let loc = { Location. txt = name ; loc = default_loc ghost_loc } in
-    let mod_expr = {
-      pmod_loc  = loc.Location.loc;
+    let pmb_name = { Location. txt = name ; loc = default_loc ghost_loc } in
+    let pmb_expr = {
+      pmod_loc  = pmb_name.Location.loc;
       pmod_desc = Pmod_structure (List.map str_of_top_lvl m) ;
+      pmod_attributes = [];
     }
     in
-    { pstr_desc = Pstr_module (loc, mod_expr) ; pstr_loc  = default_loc ghost_loc }
+    let pmb = {
+      pmb_name;
+      pmb_expr;
+      pmb_attributes = [];
+      pmb_loc = default_loc ghost_loc;
+    }
+    in
+    { pstr_desc = Pstr_module pmb ; pstr_loc  = default_loc ghost_loc }
 
 let rec sig_of_top_lvl ?ghost_loc = function
   | Binding b -> sig_of_binding ?ghost_loc b
   | Module (name, m) ->
-    let loc = { Location. txt = name ; loc = default_loc ghost_loc } in
-    let mod_type = {
-      pmty_loc  = loc.Location.loc;
+    let pmd_name = { Location. txt = name ; loc = default_loc ghost_loc } in
+    let pmd_type = {
+      pmty_loc  = pmd_name.Location.loc;
       pmty_desc = Pmty_signature (List.map sig_of_top_lvl m) ;
+      pmty_attributes = [];
     }
     in
-    { psig_desc = Psig_module (loc, mod_type) ; psig_loc  = default_loc ghost_loc }
+    let pmd = {
+      pmd_name; pmd_type;
+      pmd_attributes = [];
+      pmd_loc = default_loc ghost_loc;
+    }
+    in
+    { psig_desc = Psig_module pmd; psig_loc = default_loc ghost_loc }
 
 (* Lwt extension *)
 module Lwt = struct
@@ -218,8 +244,14 @@ module OUnit = struct
 end
 
 (* tools used in the next few modules *)
-let format_params ~f =
-  List.map ~f:(function None -> f "_" | Some id -> f id.Location.txt)
+let format_params ~f params =
+  let format_param (param,_variance) =
+    match param.ptyp_desc with
+    | Ptyp_any -> f "_"
+    | Ptyp_var v -> f v
+    | _ -> assert false (*TODO*)
+  in
+  List.map ~f:format_param params
 
 let mk_fun ~args =
   Fun (List.map (fun s -> (s, false)) args, App (Ident "Obj.magic", AnyVal))
@@ -441,21 +473,21 @@ module Variants = struct
     )
 
   let constructors ~self cstrs =
-    List.map cstrs ~f:(fun ({ Location.txt = name }, args, res_opt, loc) ->
+    List.map cstrs ~f:(fun { pcd_name = {Location. txt = name}; pcd_args = args; pcd_res = res_opt; pcd_loc = loc} ->
       let typesig = mk_cstr_typesig ~self args res_opt in
       Binding { ident = String.lowercase name ; typesig ; body = AnyVal }
     )
 
   let mk_module ~self cstrs =
     let cstrs_dot_t =
-      List.map cstrs ~f:(fun ({ Location.txt = name }, args, res_opt, loc) ->
+      List.map cstrs ~f:(fun { pcd_name = {Location. txt = name}; pcd_args = args; pcd_res = res_opt; pcd_loc = loc} ->
         let t = Named ([mk_cstr_typesig ~self args res_opt], "Variant.t") in
         { ident = String.lowercase name ; typesig = t ; body = AnyVal }
       )
     in
 
     let body =
-      mk_labeled_fun (List.map cstrs ~f:(fun (l,_,_,_) -> l.Location.txt,true))
+      mk_labeled_fun (List.map cstrs ~f:(fun {pcd_name} -> pcd_name.Location.txt,true))
     in
 
     let fold = FV_helpers.mk_fold ~body cstrs_dot_t in
@@ -470,7 +502,7 @@ module Variants = struct
       let typesig =
         let ret_ty = Var (new_var ()) in
         List.fold_right2 cstrs_dot_t cstrs ~init:ret_ty ~f:(
-          fun cstr (_, args, _res_opt, _) acc ->
+          fun cstr {pcd_args = args} acc ->
             let tmp =
               List.fold_right args ~init:ret_ty
                 ~f:(fun arg acc -> Arrow ("", Core_type arg, acc))
@@ -495,18 +527,12 @@ module Variants = struct
       }
     in
 
-    Module ("Variants", List.map cstrs_dot_t ~f:(fun b -> Binding b) @ [ 
+    Module ("Variants", List.map cstrs_dot_t ~f:(fun b -> Binding b) @ [
       fold ; iter ; map ; descriptions
     ])
 
   let top_lvl ({ Location.txt = name },ty) =
-    let params =
-      List.map ty.ptype_params ~f:(
-        function
-        | None -> Var "_"
-        | Some s -> Var (s.Location.txt)
-      )
-    in
+    let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
     let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_variant cstrs ->
@@ -515,7 +541,7 @@ module Variants = struct
 end
 
 module Fields = struct
-  let gen_field self ({ Location.txt = name }, mut, ty, _) : top_item list =
+  let gen_field self { pld_name = { Location.txt = name }; pld_mutable = mut; pld_type = ty } : top_item list =
     (* Remove higher-rank quantifiers *)
     let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
     let ty = Core_type ty in
@@ -535,7 +561,7 @@ module Fields = struct
 
     let fields_dot_t =
       let perms = sub_of_simple_variants [ "Read" ; "Set_and_create" ] in
-      List.map fields ~f:(fun ({ Location.txt = name }, _, ty, _) ->
+      List.map fields ~f:(fun { pld_name = { Location.txt = name }; pld_type = ty } ->
         let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
         let t = Named ([ perms ; self ; Core_type ty ], "Field.t_with_perm") in
         { ident = name ; typesig = t ; body = AnyVal }
@@ -544,7 +570,7 @@ module Fields = struct
 
     (* Helper, used in the next few functions *)
     let body =
-      mk_labeled_fun (List.map fields ~f:(fun (l,_,_,_) -> l.Location.txt,true))
+      mk_labeled_fun (List.map fields ~f:(fun l -> l.pld_name.Location.txt,true))
     in
 
 (*
@@ -568,9 +594,9 @@ module Fields = struct
         let creator = Arrow ("", creator_input, self) in
         Arrow ("", first_input, Tuple [ creator ; acc_ret_ty ])
       in
-      let lst = 
-        List.map2 fields fields_dot_t ~f:(fun (name, _, ty, _) fdt ->
-          (name.Location.txt, ty, fdt)
+      let lst =
+        List.map2 fields fields_dot_t ~f:(fun {pld_name; pld_type} fdt ->
+          (pld_name.Location.txt, pld_type, fdt)
         )
       in
       let typesig =
@@ -588,8 +614,8 @@ module Fields = struct
 
     let create =
       let typesig =
-        List.fold_right fields ~init:self ~f:(fun (name, _, t, _) acc ->
-          Arrow (name.Location.txt, Core_type t, acc)
+        List.fold_right fields ~init:self ~f:(fun {pld_name; pld_type} acc ->
+          Arrow (pld_name.Location.txt, Core_type pld_type, acc)
         )
       in
       Binding { ident = "create" ; typesig ; body }
@@ -612,8 +638,7 @@ module Fields = struct
     let map =
       let typesig =
         List.fold_right2 fields_dot_t fields ~init:self ~f:(
-          fun field_t field acc_ty ->
-            let (_, _, ty, _) = field in
+          fun field_t {pld_type = ty} acc_ty ->
             let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
             Arrow (field_t.ident,
               Arrow ("", field_t.typesig, Core_type ty), acc_ty
@@ -640,13 +665,7 @@ module Fields = struct
     )
 
   let top_lvl ({ Location.txt = name },ty) =
-    let params =
-      List.map ty.ptype_params ~f:(
-        function
-        | None -> Var "_"
-        | Some s -> Var (s.Location.txt)
-      )
-    in
+    let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
     let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_record lst ->
@@ -659,12 +678,7 @@ module Enumerate = struct
   let top_lvl ({ Location.txt = name },ty) =
     let ident = if name = "t" then "all" else "all_of_" ^ name in
     let typesig =
-      let params =
-        List.map ty.ptype_params ~f:(function
-          | None -> Var "_"
-          | Some { Location.txt } -> Var txt
-        )
-      in
+      let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
       let param =
         Named (params, name)
       in
@@ -679,10 +693,7 @@ module Compare = struct
   let mk_simpl t = Arrow ("", t, Arrow ("", t, Named ([], "int")))
 
   let bindings ~kind ({ Location.txt = name },ty) =
-    let params = List.map
-        (function None -> Var "_" | Some s -> Var (s.Location.txt))
-        ty.ptype_params
-    in
+    let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
     let self = Named (params, name) in
     let cmp = {
       ident = "compare_" ^ name;

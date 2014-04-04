@@ -1794,7 +1794,7 @@ and type_expect_ ?in_function env sexp ty_expected =
                   "format6", 0)) in
     let is_format = match ty_exp.desc with
       | Tconstr(path, _, _) when Path.same path fmt6_path ->
-        if !Clflags.principal && ty_exp.level <> generic_level then
+        if Clflags.principal () && ty_exp.level <> generic_level then
           Location.prerr_warning loc
             (Warnings.Not_principal "this coercion to format6");
         true

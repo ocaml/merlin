@@ -1,5 +1,4 @@
 %{
-open Location
 open Asttypes
 open Longident
 open Parsetree
@@ -7,18 +6,20 @@ open Ast_helper
 
 
 let rloc loc_start loc_end =
-  { loc_start; loc_end; loc_ghost = false; }
+  { Location. loc_start; loc_end; loc_ghost = false; }
 let gloc loc_start loc_end =
-  { loc_start; loc_end; loc_ghost = true; }
+  { Location. loc_start; loc_end; loc_ghost = true; }
+let mkloc =
+  Location.mkloc
 
 let mktyp startpos endpos d   = Typ.mk ~loc:(rloc startpos endpos) d
 let mkpat startpos endpos d   = Pat.mk ~loc:(rloc startpos endpos) d
 let mkexp startpos endpos d   = Exp.mk ~loc:(rloc startpos endpos) d
 let mkmty startpos endpos d   = Mty.mk ~loc:(rloc startpos endpos) d
-let mksig startpos endpos d   = Sig.mk ~loc:(rloc startpos endpos) d
+let mksig startpos endpos d   = [Sig.mk ~loc:(rloc startpos endpos) d]
 let mkmod startpos endpos d   = Mod.mk ~loc:(rloc startpos endpos) d
-let mkstr startpos endpos d   = Str.mk ~loc:(rloc startpos endpos) d
-let ghstr startpos endpos d   = Str.mk ~loc:(gloc startpos endpos) d
+let mkstr startpos endpos d   = [Str.mk ~loc:(rloc startpos endpos) d]
+let ghstr startpos endpos d   = [Str.mk ~loc:(gloc startpos endpos) d]
 let mkclass startpos endpos d = Cl.mk  ~loc:(rloc startpos endpos) d
 let mkcty startpos endpos d   = Cty.mk ~loc:(rloc startpos endpos) d
 let mkctf startpos endpos ?attrs d = Ctf.mk ~loc:(rloc startpos endpos) ?attrs d
@@ -404,6 +405,25 @@ let tag_nonrec (id, a) = (Fake.Nonrec.add id, a)
 
 %token EOL
 
+%token LET_LWT
+%token TRY_LWT
+%token MATCH_LWT
+%token FINALLY_LWT
+%token FOR_LWT
+%token WHILE_LWT
+%token JSNEW
+%token P4_QUOTATION
+%token OUNIT_TEST
+%token OUNIT_TEST_UNIT
+%token OUNIT_TEST_MODULE
+%token OUNIT_BENCH
+%token OUNIT_BENCH_FUN
+%token OUNIT_BENCH_INDEXED
+%token OUNIT_BENCH_MODULE
+%token NONREC
+
+%token ENTRYPOINT
+
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved
@@ -492,19 +512,37 @@ The precedences must be listed from low to high.
 (* Entry points *)
 
 implementation:
-| v1 = structure EOF
+| ENTRYPOINT v1 = structure EOF
     { v1 }
 
 interface:
-| v1 = signature EOF
+| ENTRYPOINT v1 = signature EOF
     { v1 }
 
 parse_expression:
-| v1 = seq_expr EOF
+| ENTRYPOINT v1 = seq_expr EOF
     { v1 }
 
 dummy:
-| COMMENT GREATERRBRACKET EOF
+| NONREC
+| COMMENT
+| GREATERRBRACKET
+| ENTRYPOINT
+| LET_LWT
+| TRY_LWT
+| MATCH_LWT
+| FINALLY_LWT
+| FOR_LWT
+| WHILE_LWT
+| JSNEW
+| P4_QUOTATION
+| OUNIT_TEST
+| OUNIT_TEST_UNIT
+| OUNIT_TEST_MODULE
+| OUNIT_BENCH
+| OUNIT_BENCH_FUN
+| OUNIT_BENCH_INDEXED
+| OUNIT_BENCH_MODULE
     { () }
 
 (* Module expressions *)
@@ -532,24 +570,24 @@ module_expr:
     { mkmod $startpos $endpos (Pmod_ident (mkrhs $startpos(v1) $endpos(v1) v1)) }
 | STRUCT v2 = structure END
     { mkmod $startpos $endpos (Pmod_structure(v2)) }
-| v1 = STRUCT structure v3 = error
-    { unclosed "struct" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }
+(*| v1 = STRUCT structure v3 = error
+    { unclosed "struct" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }*)
 | FUNCTOR v2 = functor_args MINUSGREATER v4 = module_expr
     { List.fold_left (fun acc (n, t) -> mkmod $startpos $endpos (Pmod_functor(n, t, acc))) v4 v2 }
 | v1 = module_expr LPAREN v3 = module_expr RPAREN
     { mkmod $startpos $endpos (Pmod_apply(v1, v3)) }
 | v1 = module_expr LPAREN RPAREN
     { mkmod $startpos $endpos (Pmod_apply(v1, mkmod $startpos $endpos (Pmod_structure []))) }
-| module_expr v2 = LPAREN module_expr v4 = error
-    { unclosed "(" $startpos(v2) $endpos(v2) ")" $startpos(v4) $endpos(v4) }
+(*| module_expr v2 = LPAREN module_expr v4 = error
+    { unclosed "(" $startpos(v2) $endpos(v2) ")" $startpos(v4) $endpos(v4) }*)
 | LPAREN v2 = module_expr COLON v4 = module_type RPAREN
     { mkmod $startpos $endpos (Pmod_constraint(v2, v4)) }
-| v1 = LPAREN module_expr COLON module_type v5 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }
+(*| v1 = LPAREN module_expr COLON module_type v5 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }*)
 | LPAREN v2 = module_expr RPAREN
     { v2 }
-| v1 = LPAREN module_expr v3 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }
+(*| v1 = LPAREN module_expr v3 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }*)
 | LPAREN VAL v3 = expr RPAREN
     { mkmod $startpos $endpos (Pmod_unpack v3) }
 | LPAREN VAL v3 = expr COLON v5 = package_type RPAREN
@@ -562,12 +600,12 @@ module_expr:
 | LPAREN VAL v3 = expr COLONGREATER v5 = package_type RPAREN
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_coerce(v3, None, ghtyp $startpos $endpos (Ptyp_package v5))))) }
-| v1 = LPAREN VAL expr COLON v5 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }
-| v1 = LPAREN VAL expr COLONGREATER v5 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }
-| v1 = LPAREN VAL expr v4 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v4) $endpos(v4) }
+(*| v1 = LPAREN VAL expr COLON v5 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }*)
+(*| v1 = LPAREN VAL expr COLONGREATER v5 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }*)
+(*| v1 = LPAREN VAL expr v4 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v4) $endpos(v4) }*)
 | v1 = module_expr v2 = attribute
     { Mod.attr v1 v2 }
 | v1 = extension
@@ -585,7 +623,7 @@ structure_tail:
 | SEMISEMI v2 = structure
     { v2 }
 | v1 = structure_item v2 = structure_tail
-    { v1 :: v2 }
+    { v1 @ v2 }
 
 structure_item:
 | LET v2 = ext_attributes v3 = rec_flag v4 = let_bindings
@@ -601,7 +639,7 @@ structure_item:
         if attrs <> [] then not_expecting $startpos(v2) $endpos(v2) "attribute";
         match ext with
         | None -> str
-        | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr [str]), []))
+        | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr str), []))
     }
 | EXTERNAL v2 = val_ident COLON v4 = core_type EQUAL v6 = primitive_declaration
   v7 = post_item_attributes
@@ -663,8 +701,8 @@ module_type:
     { mkmty $startpos $endpos (Pmty_ident (mkrhs $startpos(v1) $endpos(v1) v1)) }
 | SIG v2 = signature END
     { mkmty $startpos $endpos (Pmty_signature v2) }
-| v1 = SIG signature v3 = error
-    { unclosed "sig" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }
+(*| v1 = SIG signature v3 = error
+    { unclosed "sig" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }*)
 | FUNCTOR v2 = functor_args MINUSGREATER v4 = module_type %prec below_WITH
     { List.fold_left (fun acc (n, t) -> mkmty $startpos $endpos (Pmty_functor(n, t, acc))) v4 v2 }
 | v1 = module_type WITH v3 = with_constraints
@@ -675,8 +713,8 @@ module_type:
     { mkmty $startpos $endpos  (Pmty_alias (mkrhs $startpos(v3) $endpos(v3) v3)) }
 | LPAREN v2 = module_type RPAREN
     { v2 }
-| v1 = LPAREN module_type v3 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }
+(*| v1 = LPAREN module_type v3 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }*)
 | v1 = extension
     { mkmty $startpos $endpos (Pmty_extension v1) }
 | v1 = module_type v2 = attribute
@@ -688,7 +726,7 @@ signature:
 | SEMISEMI v2 = signature
     { v2 }
 | v1 = signature_item v2 = signature
-    { v1 :: v2 }
+    { v1 @ v2 }
 
 signature_item:
 | VAL v2 = val_ident COLON v4 = core_type v5 = post_item_attributes
@@ -817,16 +855,16 @@ class_simple_expr:
     { mkclass $startpos $endpos (Pcl_constr(mkrhs $startpos(v1) $endpos(v1) v1, [])) }
 | OBJECT v2 = class_structure END
     { mkclass $startpos $endpos (Pcl_structure(v2)) }
-| v1 = OBJECT class_structure v3 = error
-    { unclosed "object" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }
+(*| v1 = OBJECT class_structure v3 = error
+    { unclosed "object" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }*)
 | LPAREN v2 = class_expr COLON v4 = class_type RPAREN
     { mkclass $startpos $endpos (Pcl_constraint(v2, v4)) }
-| v1 = LPAREN class_expr COLON class_type v5 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }
+(*| v1 = LPAREN class_expr COLON class_type v5 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }*)
 | LPAREN v2 = class_expr RPAREN
     { v2 }
-| v1 = LPAREN class_expr v3 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }
+(*| v1 = LPAREN class_expr v3 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }*)
 
 class_structure:
 | v1 = class_self_pattern v2 = class_fields
@@ -923,8 +961,8 @@ class_signature:
     { mkcty $startpos $endpos (Pcty_constr (mkrhs $startpos(v1) $endpos(v1) v1, [])) }
 | OBJECT v2 = class_sig_body END
     { mkcty $startpos $endpos (Pcty_signature v2) }
-| v1 = OBJECT class_sig_body v3 = error
-    { unclosed "object" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }
+(*| v1 = OBJECT class_sig_body v3 = error
+    { unclosed "object" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }*)
 
 class_sig_body:
 | v1 = class_self_type v2 = class_sig_fields
@@ -1081,9 +1119,9 @@ expr:
     { mkexp_attrs $startpos $endpos (Pexp_match(v3, List.rev v6)) v2 }
 | TRY v2 = ext_attributes v3 = seq_expr WITH opt_bar v6 = match_cases
     { mkexp_attrs $startpos $endpos (Pexp_try(v3, List.rev v6)) v2 }
-| TRY ext_attributes seq_expr WITH error
+(*| TRY ext_attributes seq_expr WITH error
     { syntax_error $startpos $endpos;
-      reloc_exp $startpos $endpos Fake.any_val' }
+      reloc_exp $startpos $endpos Fake.any_val' }*)
 | v1 = expr_comma_list %prec below_COMMA
     { mkexp $startpos $endpos (Pexp_tuple(List.rev v1)) }
 | v1 = constr_longident v2 = simple_expr %prec below_SHARP
@@ -1164,8 +1202,8 @@ expr:
     { mkexp_attrs $startpos $endpos (Pexp_lazy v3) v2 }
 | OBJECT v2 = ext_attributes v3 = class_structure END
     { mkexp_attrs $startpos $endpos (Pexp_object v3) v2 }
-| v1 = OBJECT ext_attributes class_structure v4 = error
-    { unclosed "object" $startpos(v1) $endpos(v1) "end" $startpos(v4) $endpos(v4) }
+(*| v1 = OBJECT ext_attributes class_structure v4 = error
+    { unclosed "object" $startpos(v1) $endpos(v1) "end" $startpos(v4) $endpos(v4) }*)
 | v1 = expr v2 = attribute
     { Exp.attr v1 v2 }
 
@@ -1180,66 +1218,66 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_variant(v1, None)) }
 | LPAREN v2 = seq_expr RPAREN
     { reloc_exp $startpos $endpos v2 }
-| v1 = LPAREN seq_expr v3 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }
+(*| v1 = LPAREN seq_expr v3 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }*)
 | BEGIN v2 = ext_attributes v3 = seq_expr END
     { wrap_exp_attrs $startpos $endpos (reloc_exp $startpos $endpos v3) v2 (* check location *) }
 | BEGIN v2 = ext_attributes END
     { mkexp_attrs $startpos $endpos (Pexp_construct (mkloc (Lident "()") (rloc $startpos $endpos),
                                None)) v2 }
-| BEGIN v1 = ext_attributes seq_expr v3 = error
-    { unclosed "begin" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }
+(*| BEGIN v1 = ext_attributes seq_expr v3 = error
+    { unclosed "begin" $startpos(v1) $endpos(v1) "end" $startpos(v3) $endpos(v3) }*)
 | LPAREN v2 = seq_expr v3 = type_constraint RPAREN
     { mkexp_constraint $startpos $endpos v2 v3 }
 | v1 = simple_expr DOT v3 = label_longident
     { mkexp $startpos $endpos (Pexp_field(v1, mkrhs $startpos(v3) $endpos(v3) v3)) }
 | v1 = mod_longident DOT LPAREN v4 = seq_expr RPAREN
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, v4)) }
-| mod_longident DOT v3 = LPAREN seq_expr v5 = error
-    { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v5) $endpos(v5) }
+(*| mod_longident DOT v3 = LPAREN seq_expr v5 = error
+    { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v5) $endpos(v5) }*)
 | v1 = simple_expr DOT LPAREN v4 = seq_expr RPAREN
     { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function $startpos $endpos "Array" "get")),
                          ["",v1; "",v4])) }
-| simple_expr DOT v3 = LPAREN seq_expr v5 = error
-    { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v5) $endpos(v5) }
+(*| simple_expr DOT v3 = LPAREN seq_expr v5 = error
+    { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v5) $endpos(v5) }*)
 | v1 = simple_expr DOT LBRACKET v4 = seq_expr RBRACKET
     { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function $startpos $endpos "String" "get")),
                          ["",v1; "",v4])) }
-| simple_expr DOT v3 = LBRACKET seq_expr v5 = error
-    { unclosed "[" $startpos(v3) $endpos(v3) "]" $startpos(v5) $endpos(v5) }
+(*| simple_expr DOT v3 = LBRACKET seq_expr v5 = error
+    { unclosed "[" $startpos(v3) $endpos(v3) "]" $startpos(v5) $endpos(v5) }*)
 | v1 = simple_expr DOT LBRACE v4 = expr RBRACE
     { bigarray_get $startpos $endpos v1 v4 }
-| simple_expr DOT v3 = LBRACE expr_comma_list v5 = error
-    { unclosed "{" $startpos(v3) $endpos(v3) "}" $startpos(v5) $endpos(v5) }
+(*| simple_expr DOT v3 = LBRACE expr_comma_list v5 = error
+    { unclosed "{" $startpos(v3) $endpos(v3) "}" $startpos(v5) $endpos(v5) }*)
 | LBRACE v2 = record_expr RBRACE
     { let (exten, fields) = v2 in mkexp $startpos $endpos  (Pexp_record(fields, exten)) }
-| v1 = LBRACE record_expr v3 = error
-    { unclosed "{" $startpos(v1) $endpos(v1) "}" $startpos(v3) $endpos(v3) }
+(*| v1 = LBRACE record_expr v3 = error
+    { unclosed "{" $startpos(v1) $endpos(v1) "}" $startpos(v3) $endpos(v3) }*)
 | v1 = mod_longident DOT LBRACE v4 = record_expr RBRACE
     { let (exten, fields) = v4 in
         let rec_exp = mkexp $startpos $endpos (Pexp_record(fields, exten)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, rec_exp)) }
-| mod_longident DOT v3 = LBRACE record_expr v5 = error
-    { unclosed "{" $startpos(v3) $endpos(v3) "}" $startpos(v5) $endpos(v5) }
+(*| mod_longident DOT v3 = LBRACE record_expr v5 = error
+    { unclosed "{" $startpos(v3) $endpos(v3) "}" $startpos(v5) $endpos(v5) }*)
 | LBRACKETBAR v2 = expr_semi_list opt_semi BARRBRACKET
     { mkexp $startpos $endpos  (Pexp_array(List.rev v2)) }
-| v1 = LBRACKETBAR expr_semi_list opt_semi v4 = error
-    { unclosed "[|" $startpos(v1) $endpos(v1) "|]" $startpos(v4) $endpos(v4) }
+(*| v1 = LBRACKETBAR expr_semi_list opt_semi v4 = error
+    { unclosed "[|" $startpos(v1) $endpos(v1) "|]" $startpos(v4) $endpos(v4) }*)
 | LBRACKETBAR BARRBRACKET
     { mkexp $startpos $endpos  (Pexp_array []) }
 | v1 = mod_longident DOT LBRACKETBAR v4 = expr_semi_list opt_semi BARRBRACKET
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, mkexp $startpos(v4) $endpos(v4) (Pexp_array(List.rev v4)))) }
-| mod_longident DOT v3 = LBRACKETBAR expr_semi_list opt_semi v6 = error
-    { unclosed "[|" $startpos(v3) $endpos(v3) "|]" $startpos(v6) $endpos(v6) }
+(*| mod_longident DOT v3 = LBRACKETBAR expr_semi_list opt_semi v6 = error
+    { unclosed "[|" $startpos(v3) $endpos(v3) "|]" $startpos(v6) $endpos(v6) }*)
 | LBRACKET v2 = expr_semi_list opt_semi v4 = RBRACKET
     { reloc_exp $startpos $endpos (mktailexp $startpos(v4) $endpos(v4) (List.rev v2)) }
-| v1 = LBRACKET expr_semi_list opt_semi v4 = error
-    { unclosed "[" $startpos(v1) $endpos(v1) "]" $startpos(v4) $endpos(v4) }
+(*| v1 = LBRACKET expr_semi_list opt_semi v4 = error
+    { unclosed "[" $startpos(v1) $endpos(v1) "]" $startpos(v4) $endpos(v4) }*)
 | v1 = mod_longident DOT LBRACKET v4 = expr_semi_list opt_semi v6 = RBRACKET
     { let list_exp = reloc_exp $startpos $endpos (mktailexp $startpos(v6) $endpos(v6) (List.rev v4)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, list_exp)) }
-| mod_longident DOT v3 = LBRACKET expr_semi_list opt_semi v6 = error
-    { unclosed "[" $startpos(v3) $endpos(v3) "]" $startpos(v6) $endpos(v6) }
+(*| mod_longident DOT v3 = LBRACKET expr_semi_list opt_semi v6 = error
+    { unclosed "[" $startpos(v3) $endpos(v3) "]" $startpos(v6) $endpos(v6) }*)
 | v1 = PREFIXOP v2 = simple_expr
     { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos(v1) $endpos(v1) v1, ["",v2])) }
 | v1 = BANG v2 = simple_expr
@@ -1248,14 +1286,14 @@ simple_expr:
     { mkexp_attrs $startpos $endpos (Pexp_new(mkrhs $startpos(v3) $endpos(v3) v3)) v2 }
 | LBRACELESS v2 = field_expr_list opt_semi GREATERRBRACE
     { mkexp $startpos $endpos  (Pexp_override(List.rev v2)) }
-| v1 = LBRACELESS field_expr_list opt_semi v4 = error
-    { unclosed "{<" $startpos(v1) $endpos(v1) ">}" $startpos(v4) $endpos(v4) }
+(*| v1 = LBRACELESS field_expr_list opt_semi v4 = error
+    { unclosed "{<" $startpos(v1) $endpos(v1) ">}" $startpos(v4) $endpos(v4) }*)
 | LBRACELESS GREATERRBRACE
     { mkexp $startpos $endpos  (Pexp_override [])}
 | v1 = mod_longident DOT LBRACELESS v4 = field_expr_list opt_semi GREATERRBRACE
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, mkexp $startpos(v4) $endpos(v4) (Pexp_override(List.rev v4)))) }
-| mod_longident DOT v3 = LBRACELESS field_expr_list opt_semi v6 = error
-    { unclosed "{<" $startpos(v3) $endpos(v3) ">}" $startpos(v6) $endpos(v6) }
+(*| mod_longident DOT v3 = LBRACELESS field_expr_list opt_semi v6 = error
+    { unclosed "{<" $startpos(v3) $endpos(v3) ">}" $startpos(v6) $endpos(v6) }*)
 | v1 = simple_expr SHARP v3 = label
     { mkexp $startpos $endpos (Pexp_send(v1, v3)) }
 | LPAREN MODULE v3 = module_expr RPAREN
@@ -1263,14 +1301,14 @@ simple_expr:
 | LPAREN MODULE v3 = module_expr COLON v5 = package_type RPAREN
     { mkexp $startpos $endpos  (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack v3),
                                 ghtyp $startpos $endpos (Ptyp_package v5))) }
-| v1 = LPAREN MODULE module_expr COLON v5 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }
+(*| v1 = LPAREN MODULE module_expr COLON v5 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }*)
 | v1 = mod_longident DOT LPAREN MODULE v5 = module_expr COLON v7 = package_type RPAREN
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1,
         mkexp $startpos $endpos (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack v5),
                                 ghtyp $startpos $endpos (Ptyp_package v7))))) }
-| mod_longident DOT v3 = LPAREN MODULE module_expr COLON v7 = error
-    { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v7) $endpos(v7) }
+(*| mod_longident DOT v3 = LPAREN MODULE module_expr COLON v7 = error
+    { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v7) $endpos(v7) }*)
 | v1 = extension
     { mkexp $startpos $endpos  (Pexp_extension v1) }
 
@@ -1422,10 +1460,10 @@ type_constraint:
     { (Some v2, Some v4) }
 | COLONGREATER v2 = core_type
     { (None, Some v2) }
-| COLON error
-    { syntax_error $startpos $endpos; (None, None) }
-| COLONGREATER error
-    { syntax_error $startpos $endpos; (None, None) }
+(*| COLON error
+    { syntax_error $startpos $endpos; (None, None) }*)
+(*| COLONGREATER error
+    { syntax_error $startpos $endpos; (None, None) }*)
 
 (* Patterns *)
 
@@ -1434,8 +1472,8 @@ pattern:
     { v1 }
 | v1 = pattern AS v3 = val_ident
     { mkpat $startpos $endpos (Ppat_alias(v1, mkrhs $startpos(v3) $endpos(v3) v3)) }
-| pattern AS v3 = error
-    { expecting $startpos(v3) $endpos(v3) "identifier" }
+(*| pattern AS v3 = error
+    { expecting $startpos(v3) $endpos(v3) "identifier" }*)
 | v1 = pattern_comma_list %prec below_COMMA
     { mkpat $startpos $endpos (Ppat_tuple(List.rev v1)) }
 | v1 = constr_longident v2 = pattern %prec prec_constr_appl
@@ -1444,16 +1482,16 @@ pattern:
     { mkpat $startpos $endpos (Ppat_variant(v1, Some v2)) }
 | v1 = pattern v2 = COLONCOLON v3 = pattern
     { mkpat_cons (rloc $startpos(v2) $endpos(v2)) (ghpat $startpos $endpos (Ppat_tuple[v1;v3])) (rloc $startpos $endpos) }
-| pattern COLONCOLON v3 = error
-    { expecting $startpos(v3) $endpos(v3) "pattern" }
+(*| pattern COLONCOLON v3 = error
+    { expecting $startpos(v3) $endpos(v3) "pattern" }*)
 | LPAREN v2 = COLONCOLON RPAREN LPAREN v5 = pattern COMMA v7 = pattern RPAREN
     { mkpat_cons (rloc $startpos(v2) $endpos(v2)) (ghpat $startpos $endpos (Ppat_tuple[v5;v7])) (rloc $startpos $endpos) }
-| LPAREN COLONCOLON RPAREN v4 = LPAREN pattern COMMA pattern v8 = error
-    { unclosed "(" $startpos(v4) $endpos(v4) ")" $startpos(v8) $endpos(v8) }
+(*| LPAREN COLONCOLON RPAREN v4 = LPAREN pattern COMMA pattern v8 = error
+    { unclosed "(" $startpos(v4) $endpos(v4) ")" $startpos(v8) $endpos(v8) }*)
 | v1 = pattern BAR v3 = pattern
     { mkpat $startpos $endpos (Ppat_or(v1, v3)) }
-| pattern BAR v3 = error
-    { expecting $startpos(v3) $endpos(v3) "pattern" }
+(*| pattern BAR v3 = error
+    { expecting $startpos(v3) $endpos(v3) "pattern" }*)
 | LAZY v2 = simple_pattern
     { mkpat $startpos $endpos (Ppat_lazy v2) }
 | EXCEPTION v2 = pattern %prec prec_constr_appl
@@ -1482,35 +1520,35 @@ simple_pattern_not_ident:
     { mkpat $startpos $endpos (Ppat_type (mkrhs $startpos(v2) $endpos(v2) v2)) }
 | LBRACE v2 = lbl_pattern_list RBRACE
     { let (fields, closed) = v2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
-| v1 = LBRACE lbl_pattern_list v3 = error
-    { unclosed "{" $startpos(v1) $endpos(v1) "}" $startpos(v3) $endpos(v3) }
+(*| v1 = LBRACE lbl_pattern_list v3 = error
+    { unclosed "{" $startpos(v1) $endpos(v1) "}" $startpos(v3) $endpos(v3) }*)
 | LBRACKET v2 = pattern_semi_list opt_semi v4 = RBRACKET
     { reloc_pat $startpos $endpos (mktailpat $startpos(v4) $endpos(v4) (List.rev v2)) }
-| v1 = LBRACKET pattern_semi_list opt_semi v4 = error
-    { unclosed "[" $startpos(v1) $endpos(v1) "]" $startpos(v4) $endpos(v4) }
+(*| v1 = LBRACKET pattern_semi_list opt_semi v4 = error
+    { unclosed "[" $startpos(v1) $endpos(v1) "]" $startpos(v4) $endpos(v4) }*)
 | LBRACKETBAR v2 = pattern_semi_list opt_semi BARRBRACKET
     { mkpat $startpos $endpos (Ppat_array(List.rev v2)) }
 | LBRACKETBAR BARRBRACKET
     { mkpat $startpos $endpos (Ppat_array []) }
-| v1 = LBRACKETBAR pattern_semi_list opt_semi v4 = error
-    { unclosed "[|" $startpos(v1) $endpos(v1) "|]" $startpos(v4) $endpos(v4) }
+(*| v1 = LBRACKETBAR pattern_semi_list opt_semi v4 = error
+    { unclosed "[|" $startpos(v1) $endpos(v1) "|]" $startpos(v4) $endpos(v4) }*)
 | LPAREN v2 = pattern RPAREN
     { reloc_pat $startpos $endpos v2 }
-| v1 = LPAREN pattern v3 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }
+(*| v1 = LPAREN pattern v3 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }*)
 | LPAREN v2 = pattern COLON v4 = core_type RPAREN
     { mkpat $startpos $endpos (Ppat_constraint(v2, v4)) }
-| v1 = LPAREN pattern COLON core_type v5 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }
-| LPAREN pattern COLON v4 = error
-    { expecting $startpos(v4) $endpos(v4) "type" }
+(*| v1 = LPAREN pattern COLON core_type v5 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v5) $endpos(v5) }*)
+(*| LPAREN pattern COLON v4 = error
+    { expecting $startpos(v4) $endpos(v4) "type" }*)
 | LPAREN MODULE v3 = UIDENT RPAREN
     { mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos(v3) $endpos(v3) v3)) }
 | LPAREN MODULE v3 = UIDENT COLON v5 = package_type RPAREN
     { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos(Ppat_unpack (mkrhs $startpos(v3) $endpos(v3) v3)),
                               ghtyp $startpos $endpos (Ptyp_package v5))) }
-| v1 = LPAREN MODULE UIDENT COLON package_type v6 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v6) $endpos(v6) }
+(*| v1 = LPAREN MODULE UIDENT COLON package_type v6 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v6) $endpos(v6) }*)
 | v1 = extension
     { mkpat $startpos $endpos (Ppat_extension v1) }
 
@@ -1519,8 +1557,8 @@ pattern_comma_list:
     { v3 :: v1 }
 | v1 = pattern COMMA v3 = pattern
     { [v3; v1] }
-| pattern COMMA v3 = error
-    { expecting $startpos(v3) $endpos(v3) "pattern" }
+(*| pattern COMMA v3 = error
+    { expecting $startpos(v3) $endpos(v3) "pattern" }*)
 
 pattern_semi_list:
 | v1 = pattern
@@ -2032,12 +2070,12 @@ val_ident:
     { v1 }
 | LPAREN v2 = operator RPAREN
     { v2 }
-| v1 = LPAREN operator v3 = error
-    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }
-| LPAREN v2 =error
-    { expecting $startpos(v2) $endpos(v2) "operator" }
-| LPAREN MODULE v3 = error
-    { expecting $startpos(v3) $endpos(v3) "module-expr" }
+(*| v1 = LPAREN operator v3 = error
+    { unclosed "(" $startpos(v1) $endpos(v1) ")" $startpos(v3) $endpos(v3) }*)
+(*| LPAREN v2 =error
+    { expecting $startpos(v2) $endpos(v2) "operator" }*)
+(*| LPAREN MODULE v3 = error
+    { expecting $startpos(v3) $endpos(v3) "module-expr" }*)
 
 operator:
 | v1 = PREFIXOP

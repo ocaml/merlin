@@ -85,19 +85,29 @@ let rec mod_smallerthan n m =
     | Some _ ->
       List.fold_left s ~init:(Some 0)
       ~f:begin fun acc item ->
+        let sub n1 m = match mod_smallerthan (n - n1) m with
+           | Some n2 -> Some (n1 + n2)
+           | None -> None
+        in
         match acc, item with
         | None, _ -> None
         | Some n', _ when n' > n -> None
-        | Some n1, Sig_modtype (_,Modtype_manifest m)
+        | Some n1, Sig_modtype (_,m) ->
+            begin match Merlin_types_custom.extract_modtype_declaration m with
+              | Some m -> sub n1 m
+              | None -> None
+            end
         | Some n1, Sig_module (_,m,_) ->
-          (match mod_smallerthan (n - n1) m with
-           | Some n2 -> Some (n1 + n2)
-           | None -> None)
+          sub n1 (Merlin_types_custom.extract_module_declaration m)
+
         | Some n', _ -> Some (succ n')
       end
     end
   | Mty_functor (_,m1,m2) ->
     begin
+      match Merlin_types_custom.extract_functor_arg m1 with
+      | None -> None
+      | Some m1 ->
       match mod_smallerthan n m1 with
       | None -> None
       | Some n1 ->
@@ -105,6 +115,7 @@ let rec mod_smallerthan n m =
       | None -> None
       | Some n2 -> Some (n1 + n2)
     end
+  | _ -> Some 1
 
 (* List methods of an object.
  * Code taken from [uTop](https://github.com/diml/utop
@@ -243,6 +254,7 @@ let node_complete project node prefix =
       in
       let compl = Env.fold_modules
         (fun name path v compl ->
+          let v = Merlin_types_custom.extract_module_declaration v in
           if valid ~uident:true `Mod name
           then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
           else compl)
@@ -317,9 +329,10 @@ let node_complete project node prefix =
           } in
           match modname with
           | modname when modname = prefix && uniq (`Mod,modname) ->
-              (try let path, md = Env.lookup_module (Longident.Lident modname) env in
-                fmt ~exact:true modname ~path (`Mod md) :: compl
-              with Not_found -> default :: compl)
+            (try let path, md =
+              Merlin_types_custom.lookup_module (Longident.Lident modname) env in
+               fmt ~exact:true modname ~path (`Mod md) :: compl
+             with Not_found -> default :: compl)
           | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
             default :: compl
           | _ -> compl

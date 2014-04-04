@@ -339,8 +339,8 @@ let rec modtype s = function
       | Papply(p1, p2) ->
           fatal_error "Subst.modtype"
       end
-  | Mty_signature (lazy sg) ->
-      Mty_signature (lazy (signature s sg))
+  | Mty_signature sg ->
+      Mty_signature (lazy (signature s (Lazy.force sg)))
 
   | Mty_functor(id, arg, res) ->
       let id' = Ident.rename id in

@@ -6,9 +6,6 @@ let in_struct parser =
   | None -> false
   | Some frame ->
     match Merlin_parser.Frame.value frame with
-    | Nonterminal ( NT'with_recover_structure_item_ _
-                  | NT'with_recover_seq_expr_ _
-                  | NT'structure_sep _ ) -> true
     | _ -> false
 
 let rec drop_items = function
@@ -37,8 +34,8 @@ let rollbacks parser =
   let last_pos = ref (-1) in
   let recoverable =
     List.filter_map recoverable
-    ~f:(fun t ->
-        let start = snd (Lexing.split_pos t.Location.loc.Location.loc_start) in
+    ~f:(fun ({Location. txt; loc} as t) ->
+        let start = snd (Lexing.split_pos loc.Location.loc_start) in
         if start = !last_pos
         then None
         else (last_pos := start; Some t)
@@ -79,10 +76,10 @@ let feed_recover original (s,tok,e as input) zipper =
   (* Find appropriate recovering position *)
   let to_the_right =
     Zipper.seek_backward
-      (fun cell -> col > get_col Location.(cell.loc.loc_start))
+      (fun {Location. txt; loc} -> col > get_col loc.Location.loc_start)
   and to_the_left =
     Zipper.seek_forward
-      (fun cell -> get_col Location.(cell.loc.loc_start) > col)
+      (fun {Location. txt; loc} -> get_col loc.Location.loc_start > col)
   in
   let zipper = to_the_right zipper in
   let zipper = to_the_left zipper in
@@ -151,10 +148,10 @@ let fold token t =
   Either.get (Parsing_aux.catch_warnings warnings
                 (fun () -> fold warnings token t))
 
-let dump_snapshot ppf s =
+let dump_snapshot ppf {Location. txt; loc} =
   Format.fprintf ppf "- position: %a\n  parser: %a\n"
-    Location.print s.Location.loc
-    Merlin_parser.dump s.Location.txt
+    Location.print loc
+    Merlin_parser.dump txt
 
 let dump_recovering ppf = function
   | None -> Format.fprintf ppf "clean"

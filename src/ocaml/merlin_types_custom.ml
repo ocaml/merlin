@@ -45,3 +45,49 @@ let extract_specific_subexpressions =
 let exp_open_env = function
   | Typedtree.Texp_open (_,_,_,env) -> env
   | _ -> assert false
+
+let extract_functor_arg m = m
+
+let extract_modtype_declaration m = m.Types.mtd_type
+let extract_module_declaration m = m.Types.md_type
+
+let lookup_module name env =
+  let path = Env.lookup_module ~load:true name env in
+  let md = Env.find_module path env in
+  path, extract_module_declaration md
+
+let tstr_eval_expression = function
+  | Typedtree.Tstr_eval (e,_) -> e
+  | _ -> assert false
+
+let summary_prev =
+  let open Env in
+  function
+  | Env_empty -> None
+  | Env_open (s,_) | Env_value (s,_,_)
+  | Env_type (s,_,_) | Env_extension (s,_,_)
+  | Env_module (s,_,_) | Env_modtype (s,_,_)
+  | Env_class (s,_,_) | Env_cltype (s,_,_)
+  | Env_functor_arg (s,_) ->
+    Some s
+
+let signature_of_summary =
+  let open Env in
+  let open Types in
+  function
+  | Env_value (_,i,v)      -> Some (Sig_value (i,v))
+  (* Trec_not == bluff, FIXME *)
+  | Env_type (_,i,t)       -> Some (Sig_type (i,t,Trec_not))
+  (* Texp_first == bluff, FIXME *)
+  | Env_extension (_,i,e)  ->
+    begin match e.ext_type_path with
+    | Path.Pident id when Ident.name id = "exn" ->
+      Some (Sig_typext (i,e, Text_exception))
+    | _ ->
+      Some (Sig_typext (i,e, Text_first))
+    end
+  | Env_module (_,i,m)     -> Some (Sig_module (i,m,Trec_not))
+  | Env_modtype (_,i,m)    -> Some (Sig_modtype (i,m))
+  | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
+  | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
+  | Env_open _ | Env_empty | Env_functor_arg _ -> None

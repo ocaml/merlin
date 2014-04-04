@@ -15,6 +15,7 @@
 open Asttypes
 open Path
 open Types
+open Misc
 
 
 let rec scrape env mty =
@@ -246,7 +247,7 @@ let rec contains_type env = function
       | Some mty -> contains_type env mty
       with Not_found -> raise Exit
       end
-  | Mty_signature sg ->
+  | Mty_signature (lazy sg) ->
       contains_type_sig env sg
   | Mty_functor (_, _, body) ->
       contains_type env body
@@ -330,7 +331,7 @@ let collect_arg_paths mty =
     match si with
       Sig_module (id, {md_type=Mty_alias p}, _) ->
         bindings := Ident.add id p !bindings
-    | Sig_module (id, {md_type=Mty_signature sg}, _) ->
+    | Sig_module (id, {md_type=Mty_signature (lazy sg)}, _) ->
         List.iter
           (function Sig_module (id', _, _) ->
               subst :=
@@ -347,8 +348,8 @@ let collect_arg_paths mty =
 
 let rec remove_aliases env excl mty =
   match mty with
-    Mty_signature sg ->
-      Mty_signature (remove_aliases_sig env excl sg)
+    Mty_signature (lazy sg) ->
+      Mty_signature (Lazy.from_val (remove_aliases_sig env excl sg))
   | Mty_alias _ ->
       remove_aliases env excl (Env.scrape_alias env mty)
   | mty ->

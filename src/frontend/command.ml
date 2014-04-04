@@ -257,7 +257,7 @@ let dispatch (state : state) =
         && begin let open Raw_parser in
           match Frame.value frame with
           | Nonterminal
-              ( NT'structure_tail _ | NT'structure_sep  _ | NT'structure_item _
+              ( NT'structure_tail _ | NT'structure_item _
               | NT'structure _ | NT'signature_item _ | NT'signature _
               | NT'interface _ | NT'implementation _)
             -> true

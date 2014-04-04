@@ -75,28 +75,29 @@ and structure_item ~env { str_desc ; str_loc ; str_env } =
   { loc = str_loc ; env = str_env ; context = TopStructure ;
     nodes = lazy (structure_item_desc ~env str_desc) }
 
-and structure_item_desc ~env = function
-  | Tstr_eval e            -> [expression e]
+and structure_item_desc ~env _ = [] (* TODO *)
+  (*| Tstr_eval _ as t ->
+    [expression (Merlin_types_custom.tstr_eval_expression t)]
   | Tstr_value (_,pes)     -> patterns ~env pes
-  | Tstr_primitive (i,l,_)
-  | Tstr_modtype (i,l,_) (* TODO: change to Modtype *)
-  | Tstr_exception (i,l,_)
+  (*| Tstr_primitive (i,l,_) TODO*)
+  (*| Tstr_modtype (i,l,_) (* TODO: change to Modtype *)*)
+  (*| Tstr_exception (i,l,_)
   | Tstr_exn_rebind (i,l,_,_) ->
-    [singleton ~context:(NamedOther i) l.Location.loc env]
-  | Tstr_module (_,s,m) -> [module_binding s m]
-  | Tstr_recmodule ms ->
-    List.map (fun (_,s,_,m) -> module_binding s m) ms
-  | Tstr_type ilds ->
+    [singleton ~context:(NamedOther i) l.Location.loc env]*)
+  (*| Tstr_module (_,s,m) -> [module_binding s m]*)
+  (*| Tstr_recmodule ms ->
+    List.map (fun (_,s,_,m) -> module_binding s m) ms*)
+  (*| Tstr_type ilds ->
     let aux (id,_,ty) = type_declaration ~env id ty in
-    List.map ~f:aux ilds
-  | Tstr_open (_,_,l)         -> [{loc = l.Location.loc; env; nodes = lazy []; context = Other}]
+    List.map ~f:aux ilds*)
+  (*| Tstr_open (_,_,l)         -> [{loc = l.Location.loc; env; nodes = lazy []; context = Other}]*)
   | Tstr_class lst            -> List.map ~f:(class_declaration ~env) lst
   | Tstr_class_type lst ->
     List.map lst ~f:(fun (id,l,{ ci_type_decl }) ->
       singleton ~context:(ClassType (id, ci_type_decl)) l.Location.loc env
     )
-  | Tstr_include (m,arg) ->
-    [module_include (Typing_aux.include_idents arg) m]
+  (*| Tstr_include (m,arg) ->
+    [module_include (Typing_aux.include_idents arg) m]*)*)
 
 and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest ; typ_kind } =
   let nodes = Option.map typ_manifest ~f:(fun c -> lazy [core_type c]) in
@@ -108,17 +109,17 @@ and type_declaration ~env id { typ_loc ; typ_type ; typ_manifest ; typ_kind } =
   in
   singleton ~context:(TypeDecl (id, typ_type, tkind)) ?nodes typ_loc env
 
-and type_variant lst = List.map lst ~f:(fun (ident, _, _, loc) -> ident, loc)
-and type_record lst = List.map lst ~f:(fun (ident, _, _, _, loc) -> ident, loc)
+and type_variant lst = [] (*List.map lst ~f:(fun (ident, _, _, loc) -> ident, loc) TODO*)
+and type_record lst = [] (*List.map lst ~f:(fun (ident, _, _, _, loc) -> ident, loc)*)
 
 and core_type { ctyp_env ; ctyp_loc ; ctyp_desc ; ctyp_type } =
-  let subtypes = match ctyp_desc with
+  let subtypes = (*match ctyp_desc with
     | Ttyp_any | Ttyp_var _ -> []
     | Ttyp_arrow (_,t1,t2) -> [t1;t2]
     | Ttyp_tuple ts | Ttyp_constr (_,_,ts) | Ttyp_class (_,_,ts,_) -> ts
     | Ttyp_alias (t,_) | Ttyp_poly (_,t) -> [t]
     | Ttyp_package _ | Ttyp_object _ | Ttyp_variant _ ->
-      (*FIXME: case-by-case*) []
+                   (*FIXME: case-by-case*) []*) []
   in
   singleton
     ~context:(Type ctyp_type)
@@ -135,22 +136,22 @@ and class_declaration ~env (cd, _, _virtual_flag) =
   (* TODO: extend *)
   | _ -> singleton ~context cd.ci_loc env
 
-and class_structure ~env class_struct =
-  let pat = (* where is that pattern in the concrete syntax? *)
+and class_structure ~env class_struct = []
+  (*let pat = (* where is that pattern in the concrete syntax? *)
     let context = Pattern (None, class_struct.cstr_pat.pat_type) in
     singleton ~context class_struct.cstr_pat.pat_loc env
   in
   let fields = List.filter_map class_struct.cstr_fields ~f:class_field in
-  pat :: fields
+  pat :: fields*)
 
 and class_field { cf_desc } =
   match cf_desc with
-  | Tcf_val (_, _, _, _, context, _)
+  (*| Tcf_val (_, _, _, _, context, _)
   | Tcf_meth (_, _, _, context, _) ->
     begin match context with
     | Tcfk_concrete e -> Some (expression e)
     | _ -> None
-    end
+    end*)
   | _ -> None
 
 and patterns ?env pes =
@@ -172,28 +173,29 @@ and pattern ?env { pat_loc ; pat_type ; pat_desc ; pat_env } =
     (match env with Some e' -> e' | _ -> pat_env)
 
 and expression_extra ~env t = function
-  | Texp_open _ as expr,loc ->
+  | Texp_open _ as expr,loc,_ ->
     { loc ; env = Typing_aux.exp_open_env expr; context = Other ; nodes = lazy [t] }
-  | Texp_constraint (c1,c2), loc ->
+  (*| Texp_constraint (c1,c2), loc ->
     let cs = match c1,c2 with
       | Some c1, Some c2 -> [c1;c2] | Some c, _ | _, Some c -> [c] | _ -> []
     in
     { loc ; env ; context = Other ; nodes = lazy (t :: List.map ~f:core_type cs) }
   | Texp_poly (Some c), loc ->
-    { loc ; env ; context = Other ; nodes = lazy [core_type c ; t] }
+    { loc ; env ; context = Other ; nodes = lazy [core_type c ; t] }*)
   | _ -> t
 
 and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
   let expression_desc = function
     | Texp_ident (_,_,_) -> []
     | Texp_constant _ -> []
-    | Texp_let (_,pes,e) -> expression e :: patterns ~env:e.exp_env pes
-    | Texp_function (_,pes,_) -> patterns pes
+    | Texp_try _ | Texp_match _ | Texp_function _ | Texp_let _ -> [] (*FIXME*)
+    (*| Texp_let (_,pes,e) -> expression e :: patterns ~env:e.exp_env pes*)
+    (*| Texp_function (_,pes,_) -> patterns pes*)
     | Texp_apply (e,leso) ->
       let f = function (_,Some e,_) -> Some (expression e) | _ -> None in
       expression e :: List.filter_map leso ~f
-    | Texp_match (e,pes,_) -> expression e :: patterns pes
-    | Texp_try (e,pes) -> expression e :: patterns pes
+    (*| Texp_match (e,pes,_) -> expression e :: patterns pes*)
+    (*| Texp_try (e,pes) -> expression e :: patterns pes*)
     | Texp_tuple (es) -> List.map ~f:expression es
     | Texp_variant (_,Some e) -> [expression e]
     | Texp_variant (_,None) -> []
@@ -207,13 +209,13 @@ and expression { exp_desc ; exp_loc ; exp_extra ; exp_type ; exp_env } =
     | Texp_setinstvar (_,_,_,ea) -> [expression ea]
     | Texp_ifthenelse (ea,eb,None)
     | Texp_sequence (ea,eb)
-    | Texp_when (ea,eb)
+    (*| Texp_when (ea,eb)*)
     | Texp_while (ea,eb) -> [expression ea ; expression eb]
     | Texp_for (_,_,ea,eb,_,ec)
     | Texp_ifthenelse (ea,eb,Some ec) -> List.map ~f:expression [ea;eb;ec]
     | Texp_override (_,ples) -> List.map ~f:(fun (_,_,e) -> expression e) ples
     | Texp_letmodule (_,s,m,e) -> (expression e) :: [module_binding s m]
-    | Texp_assertfalse -> []
+    (*| Texp_assertfalse -> []*)
     | Texp_pack m -> [module_expr m]
     | Texp_object (cls,_) -> class_structure ~env:exp_env cls
     | Texp_new _

@@ -274,7 +274,8 @@ let print_warning loc ppf w =
   end
 ;;
 
-let prerr_warning loc w = print_warning loc err_formatter w;;
+let prerr_warning_ref = ref (fun loc w -> print_warning loc err_formatter w);;
+let prerr_warning loc w = !prerr_warning_ref loc w;;
 
 let echo_eof () =
   print_newline ();

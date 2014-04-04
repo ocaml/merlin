@@ -34,6 +34,7 @@ let add_constructor_usage cu = function
   | Positive -> cu.cu_positive <- true
   | Pattern -> cu.cu_pattern <- true
   | Privatize -> cu.cu_privatize <- true
+
 let constructor_usages () =
   {cu_positive = false; cu_pattern = false; cu_privatize = false}
 
@@ -211,6 +212,7 @@ type pers_struct =
 
 
 (* Regroup all internal state *)
+
 type cache = {
 
   (* This table is used to usage of value declarations.  A declaration is
@@ -254,7 +256,7 @@ let empty = {
   summary = Env_empty; local_constraints = false; gadt_instances = [];
   flags = 0;
   functor_args = Ident.empty;
- }
+}
 
 let in_signature env =
   {env with flags = env.flags lor in_signature_flag}
@@ -1739,7 +1741,7 @@ let fold_modules f lid env acc =
               None -> acc
             | Some ps ->
               f name (Pident(Ident.create_persistent name))
-                     (md (Mty_signature  ~:(ps.ps_sig))) acc)
+                     (md (Mty_signature ~:(ps.ps_sig))) acc)
         !cache.persistent_structures
         acc
     | Some l ->

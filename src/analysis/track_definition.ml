@@ -219,7 +219,7 @@ and resolve_mod_alias ~fallback mod_item path rest =
 let path_and_loc_from_cstr desc env =
   let open Types in
   match desc.cstr_tag with
-  | Cstr_exception (path, loc) -> path, loc
+  | Cstr_extension (path, _) -> path, Location.none (*FIXME*)
   | _ ->
     match desc.cstr_res.desc with
     | Tconstr (path, _, _) ->
@@ -259,7 +259,7 @@ let from_string ~project ~env ~local_defs path =
           path_and_loc_from_cstr cstr_desc env
         with Not_found ->
         try
-          let path, _ = Env.lookup_module ident env in
+          let path, _ = Merlin_types_custom.lookup_module ident env in
           path, Location.symbol_gloc ()
         with Not_found ->
           debug_log "   ... not in the environment" ;

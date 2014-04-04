@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: lexer.mll 12511 2012-05-30 13:29:48Z lefessan $ *)
-
 (* The lexer definition *)
 
 {
@@ -48,7 +46,7 @@ let rec (>>=) (m : 'a result) (f : 'a -> 'b result) : 'b result =
     Refill (fun () -> u () >>= f)
   | Error _ as e -> e
 
-type preprocessor = (Lexing.lexbuf -> Parser.token) -> Lexing.lexbuf -> Parser.token
+type preprocessor = (Lexing.lexbuf -> Raw_parser.token) -> Lexing.lexbuf -> Raw_parser.token
 
 type state = {
   keywords: keywords;
@@ -151,8 +149,8 @@ let char_for_backslash = function
 
 let char_for_decimal_code state lexbuf i =
   let c = 100 * (Char.code(Lexing.lexeme_char lexbuf i) - 48) +
-           10 * (Char.code(Lexing.lexeme_char lexbuf (i+1)) - 48) +
-                (Char.code(Lexing.lexeme_char lexbuf (i+2)) - 48) in
+          10 * (Char.code(Lexing.lexeme_char lexbuf (i+1)) - 48) +
+          (Char.code(Lexing.lexeme_char lexbuf (i+2)) - 48) in
   if (c < 0 || c > 255) then
     if in_comment state
     then return 'x'
@@ -162,13 +160,13 @@ let char_for_decimal_code state lexbuf i =
 let char_for_hexadecimal_code lexbuf i =
   let d1 = Char.code (Lexing.lexeme_char lexbuf i) in
   let val1 = if d1 >= 97 then d1 - 87
-             else if d1 >= 65 then d1 - 55
-             else d1 - 48
+    else if d1 >= 65 then d1 - 55
+    else d1 - 48
   in
   let d2 = Char.code (Lexing.lexeme_char lexbuf (i+1)) in
   let val2 = if d2 >= 97 then d2 - 87
-             else if d2 >= 65 then d2 - 55
-             else d2 - 48
+    else if d2 >= 65 then d2 - 55
+    else d2 - 48
   in
   Char.chr (val1 * 16 + val2)
 
@@ -256,23 +254,23 @@ let int_literal =
 let float_literal =
   ['0'-'9'] ['0'-'9' '_']*
   ('.' ['0'-'9' '_']* )?
-  (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
+    (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
 
-refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
+    refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
 
 rule token state = parse
 | "\\" newline {
     match state.preprocessor with
     | None ->
-      error (Illegal_character (Lexing.lexeme_char lexbuf 0),
-             Location.curr lexbuf)
+      error (Illegal_character (Lexing.lexeme_char lexbuf 0))
+            (Location.curr lexbuf)
     | Some _ ->
-      update_loc lexbuf None 1 false 0
+      update_loc lexbuf None 1 false 0;
       token state lexbuf
   }
 | newline
   { update_loc lexbuf None 1 false 0;
-    match !preprocessor with
+    match state.preprocessor with
     | None -> token state lexbuf
     | Some _ -> return EOL
   }
@@ -347,7 +345,7 @@ rule token state = parse
     string state lexbuf >>= fun () ->
     lexbuf.lex_start_p <- state.string_start_loc.Location.loc_start;
     state.string_start_loc <- Location.none;
-    return (STRING (Buffer.contents state.buffer))
+    return (STRING (Buffer.contents state.buffer, None))
   }
 | "'" newline "'"
   { update_loc lexbuf None 1 false 1;
@@ -499,13 +497,13 @@ and comment state = parse
     Buffer.add_char state.buffer '"';
     (catch (string state lexbuf) (fun e l ->
       match e with
-      | Unterminated_string str_start ->
+      | Unterminated_string ->
         begin match state.comment_start_loc with
         | [] -> assert false
         | loc :: _ ->
           let start = List.hd (List.rev state.comment_start_loc) in
           state.comment_start_loc <- [];
-          error (Unterminated_string_in_comment (start, str_start)) loc
+          error (Unterminated_string_in_comment (start, l)) loc
         end
       | e -> error e l
     )) >>= fun () ->
@@ -557,83 +555,109 @@ and comment state = parse
   }
 
 and string state = parse
-  '"'
-  { return () }
-| '\\' newline ([' ' '\t'] * as space)
-  { update_loc lexbuf None 1 false (String.length space);
-    string state lexbuf
-  }
-| '\\' ['\\' '\'' '"' 'n' 't' 'b' 'r' ' ']
-  { Buffer.add_char state.buffer
-      (char_for_backslash (Lexing.lexeme_char lexbuf 1));
-    string state lexbuf
-  }
-| '\\' ['0'-'9'] ['0'-'9'] ['0'-'9']
-  { char_for_decimal_code state lexbuf 1 >>= fun c ->
-    Buffer.add_char state.buffer c;
-    string state lexbuf
-  }
-| '\\' 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F']
-  { Buffer.add_char state.buffer (char_for_hexadecimal_code lexbuf 2);
-    string state lexbuf
-  }
-| '\\' _
-  { if in_comment state
-    then string state lexbuf
-    else begin
-      (*  Should be an error, but we are very lax.
-          error (Illegal_escape (Lexing.lexeme lexbuf),
-                        Location.curr lexbuf))
-      *)
-      let loc = Location.curr lexbuf in
-      Location.prerr_warning loc Warnings.Illegal_backslash;
-      Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
-      Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 1);
-      string state lexbuf
-    end
-  }
-| newline
-  { if not (in_comment state) then
-      Location.prerr_warning (Location.curr lexbuf) Warnings.Eol_in_string;
-    update_loc lexbuf None 1 false 0;
-    Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
-    string state lexbuf
-  }
-| eof
-  { error Unterminated_string state.string_start_loc }
-| _
-  { Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
-    string state lexbuf
-  }
+    '"'
+      { return () }
+  | '\\' newline ([' ' '\t'] * as space)
+      { update_loc lexbuf None 1 false (String.length space);
+        string state lexbuf
+      }
+  | '\\' ['\\' '\'' '"' 'n' 't' 'b' 'r' ' ']
+      { Buffer.add_char state.buffer
+          (char_for_backslash (Lexing.lexeme_char lexbuf 1));
+        string state lexbuf
+      }
+  | '\\' ['0'-'9'] ['0'-'9'] ['0'-'9']
+      { char_for_decimal_code state lexbuf 1 >>= fun c ->
+        Buffer.add_char state.buffer c;
+        string state lexbuf
+      }
+  | '\\' 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F']
+      { Buffer.add_char state.buffer (char_for_hexadecimal_code lexbuf 2);
+        string state lexbuf
+      }
+  | '\\' _
+      { if in_comment state
+        then string state lexbuf
+        else begin
+          (*  Should be an error, but we are very lax.
+              error (Illegal_escape (Lexing.lexeme lexbuf),
+                            Location.curr lexbuf))
+          *)
+          let loc = Location.curr lexbuf in
+          Location.prerr_warning loc Warnings.Illegal_backslash;
+          Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
+          Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 1);
+          string state lexbuf
+        end
+      }
+  | newline
+      { if not (in_comment state) then
+          Location.prerr_warning (Location.curr lexbuf) Warnings.Eol_in_string;
+        update_loc lexbuf None 1 false 0;
+        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        string state lexbuf
+      }
+  | eof
+      { state.string_start_loc <- Location.none;
+        error Unterminated_string state.string_start_loc }
+  | _
+      { Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
+        string state lexbuf
+      }
+
+and quoted_string state delim = parse
+  | newline
+      { update_loc lexbuf None 1 false 0;
+        Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+        quoted_string state delim lexbuf
+      }
+  | eof
+      { state.string_start_loc <- Location.none;
+        error Unterminated_string state.string_start_loc }
+  | "|" lowercase* "}"
+      {
+        let edelim = Lexing.lexeme lexbuf in
+        let edelim = String.sub edelim 1 (String.length edelim - 2) in
+        if delim = edelim then
+          return ()
+        else
+          begin
+            Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
+            quoted_string state delim lexbuf
+          end
+      }
+  | _
+      { Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
+        quoted_string state delim lexbuf }
 
 and skip_sharp_bang = parse
-| "#!" [^ '\n']* '\n' [^ '\n']* "\n!#\n"
-  { update_loc lexbuf None 3 false 0;
-    return ()
-  }
-| "#!" [^ '\n']* '\n'
-  { update_loc lexbuf None 1 false 0;
-    return ()
-  }
-| "" { return () }
+  | "#!" [^ '\n']* '\n' [^ '\n']* "\n!#\n"
+      { update_loc lexbuf None 3 false 0;
+        return ()
+      }
+  | "#!" [^ '\n']* '\n'
+      { update_loc lexbuf None 1 false 0;
+        return ()
+      }
+  | "" { return () }
 
 and p4_quotation = parse
-| "<" (":" identchar*)? ("@" identchar*)? "<"
-  { p4_quotation lexbuf }
+  | "<" (":" identchar*)? ("@" identchar*)? "<"
+      { p4_quotation lexbuf }
   (* FIXME: This is fake *)
-| ">>"
-  { return () }
-| eof
-  { error Unterminated_string Location.none }
-| _
-  { p4_quotation lexbuf }
+  | ">>"
+      { return () }
+  | eof
+      { error Unterminated_string Location.none }
+  | _
+      { p4_quotation lexbuf }
 
-{
+      {
 type comment = string * Location.t
 
 let rec token_without_comments state lexbuf =
   token state lexbuf >>= function
   | COMMENT (s, comment_loc) ->
-      token_without_comments state lexbuf
+    token_without_comments state lexbuf
   | tok -> return tok
 }

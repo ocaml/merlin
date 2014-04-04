@@ -503,7 +503,7 @@ let rec transl_modtype env smty =
         smty.pmty_attributes
   | Pmty_signature ssg ->
       let sg = transl_signature env ssg in
-      mkmty (Tmty_signature sg) (Mty_signature ~:sg.sig_type) env loc
+      mkmty (Tmty_signature sg) (Mty_signature ~:(sg.sig_type)) env loc
         smty.pmty_attributes
   | Pmty_functor(param, sarg, sres) ->
       let arg = Misc.may_map (transl_modtype env) sarg in

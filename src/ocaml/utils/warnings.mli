@@ -66,6 +66,8 @@ type t =
 
 type set
 
+val parse_options : ?set:set -> bool -> string -> unit;;
+
 (* Manage set of flag *)
 val initial : set
 
@@ -90,6 +92,10 @@ exception Errors of int;;
 val check_fatal : unit -> unit;;
 
 val help_warnings: unit -> unit
+
+type state
+val backup: unit -> state
+val restore: state -> unit
 
 (* Compute arguments specification *)
 val arg_spec : set -> (string * Arg.spec * string) list
