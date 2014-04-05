@@ -1,3 +1,4 @@
+open Std
 open Typedtree
 
 type node =
@@ -35,9 +36,11 @@ type node =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
-and t = {
-  node: node;
-  children: t list lazy_t;
+type t = {
+  t_node: node;
+  t_loc : Location.t option;
+  t_env : Env.t option;
+  t_children: t list lazy_t;
 }
 
 let rec of_list f l1 l2 = match l1 with
@@ -50,13 +53,50 @@ let rec of_option_list f l1 l2 = match l1 with
     | Some x' -> x' :: of_option_list f xs l2
     | None -> of_option_list f xs l2
 
-let rec of_node node =
+let of_option f o acc =
+  match o with
+  | None -> acc
+  | Some x -> f x :: acc
+
+let rec of_node t_node =
+  let t_loc, t_env =
+    match t_node with
+    | Pattern        {pat_loc = loc; pat_env = env}
+    | Expression     {exp_loc = loc; exp_env = env}
+    | Class_expr     {cl_loc = loc; cl_env = env}
+    | Module_expr    {mod_loc = loc; mod_env = env}
+    | Structure_item {str_loc = loc; str_env = env}
+    | Signature_item {sig_env = env; sig_loc = loc}
+    | Module_type    {mty_env = env; mty_loc = loc}
+    | Core_type      {ctyp_env = env; ctyp_loc = loc}
+    | Class_type     {cltyp_env = env; cltyp_loc = loc}
+      -> Some loc, Some env
+    | Class_field             {cf_loc = loc}
+    | Module_binding          {mb_loc = loc}
+    | Module_declaration      {md_loc = loc}
+    | Module_type_declaration {mtd_loc = loc}
+    | Value_description       {val_loc = loc}
+    | Type_declaration        {typ_loc = loc}
+    | Label_declaration       {ld_loc = loc}
+    | Constructor_declaration {cd_loc = loc}
+    | Class_type_field        {ctf_loc = loc}
+    | Class_declaration       {ci_loc = loc}
+    | Class_description       {ci_loc = loc}
+    | Class_type_declaration  {ci_loc = loc}
+      -> Some loc, None
+    | Structure {str_final_env = env} | Signature {sig_final_env = env}
+      -> None, Some env
+    | Case _ | Class_structure _ | Value_binding _
+    | Class_field_kind _ | Module_type_constraint _ | With_constraint _
+    | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
+      -> None, None
+  in
   let children () =
-    match node with
+    match t_node with
     | Pattern { pat_desc; pat_loc; pat_extra } ->
-      of_pattern_desc pat_desc (List.fold_right of_pat_extra pat_extra [])
+      of_pattern_desc pat_desc (List.fold_right ~f:of_pat_extra pat_extra ~init:[])
     | Expression { exp_desc; exp_loc; exp_extra } ->
-      of_expression_desc exp_desc (List.fold_right of_exp_extra exp_extra [])
+      of_expression_desc exp_desc (List.fold_right ~f:of_exp_extra exp_extra ~init:[])
     | Case { c_lhs; c_guard; c_rhs } ->
       of_pattern c_lhs :: of_expression c_rhs ::
       of_option of_expression c_guard []
@@ -115,7 +155,7 @@ let rec of_node node =
       in
       of_option of_core_type typ_manifest @@
       of_node (Type_kind typ_kind) ::
-      List.fold_right of_typ_cstrs typ_cstrs []
+      List.fold_right ~f:of_typ_cstrs typ_cstrs ~init:[]
     | Type_kind Ttype_abstract ->
       []
     | Type_kind (Ttype_variant cds) ->
@@ -144,12 +184,8 @@ let rec of_node node =
     | Class_type_declaration { ci_expr } ->
       [of_node (Class_type ci_expr)]
   in
-  { node; children = Lazy.from_fun children }
-
-and of_option : 'a. ('a -> 'b) -> 'a option -> 'b list -> 'b list = fun f o acc ->
-  match o with
-  | None -> acc
-  | Some x -> f x :: acc
+  { t_node; t_loc; t_env;
+    t_children = Lazy.from_fun children }
 
 and of_pattern_desc pat acc = match pat with
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) ->
@@ -380,3 +416,16 @@ and of_class_type_field_desc desc acc = match desc with
   | Tctf_constraint (ct1,ct2) ->
     of_core_type ct1 :: of_core_type ct2 :: acc
 
+type t_annot = {
+  ta_node: node;
+  ta_loc : Location.t;
+  ta_env : Env.t;
+  ta_children: t_annot list lazy_t;
+}
+let rec annot loc env { t_node; t_loc; t_env; t_children } =
+  let ta_loc = Option.value ~default:loc t_loc in
+  let ta_env = Option.value ~default:env t_env in
+  { ta_node = t_node; ta_loc; ta_env;
+    ta_children =
+      lazy (List.map (annot ta_loc ta_env) (Lazy.force t_children));
+  }

@@ -108,6 +108,10 @@ case "$MAGIC_VERSION" in
     OCAML_VERSION="ocaml_401"
     OCAML_VERSION_MESSAGE="Ocaml 4.01.0"
     ;;
+  "Caml1999I016")
+    OCAML_VERSION="ocaml_402"
+    OCAML_VERSION_MESSAGE="Ocaml 4.02.0"
+    ;;
 esac
 
 if [ -e "src/${OCAML_VERSION}.git/.git" ]; then

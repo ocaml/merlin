@@ -27,6 +27,7 @@
 
 open Std
 open Typedtree
+module T = BrowseT
 
 type mod_info =
   | Named of string

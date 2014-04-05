@@ -69,11 +69,19 @@ type node =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
-and t = {
-  node: node;
-  (*loc : Location.t;
-  env : Env.t;*)
-  children: t list lazy_t;
+type t = {
+  t_node: node;
+  t_loc : Location.t option;
+  t_env : Env.t option;
+  t_children: t list lazy_t;
 }
 
 val of_node : node -> t
+
+type t_annot = {
+  ta_node: node;
+  ta_loc : Location.t;
+  ta_env : Env.t;
+  ta_children: t_annot list lazy_t;
+}
+val annot : Location.t -> Env.t -> t -> t_annot
