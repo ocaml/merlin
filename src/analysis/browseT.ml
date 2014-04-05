@@ -27,6 +27,8 @@ type node =
   | Value_description        of value_description
   | Type_declaration         of type_declaration
   | Type_kind                of type_kind
+  | Type_extension           of type_extension
+  | Extension_constructor    of extension_constructor
   | Label_declaration        of label_declaration
   | Constructor_declaration  of constructor_declaration
   | Class_type               of class_type
@@ -83,10 +85,11 @@ let rec of_node t_node =
     | Class_declaration       {ci_loc = loc}
     | Class_description       {ci_loc = loc}
     | Class_type_declaration  {ci_loc = loc}
+    | Extension_constructor   {ext_loc = loc}
       -> Some loc, None
     | Structure {str_final_env = env} | Signature {sig_final_env = env}
       -> None, Some env
-    | Case _ | Class_structure _ | Value_binding _
+    | Case _ | Class_structure _ | Value_binding _ | Type_extension _
     | Class_field_kind _ | Module_type_constraint _ | With_constraint _
     | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
       -> None, None
@@ -143,25 +146,37 @@ let rec of_node t_node =
       of_core_type_desc ctyp_desc []
     | Package_type { pack_fields } ->
       List.map (fun (_,ct) -> of_core_type ct) pack_fields
-    | Row_field (Ttag (_,_,cts)) ->
+    | Row_field (Ttag (_,_,_,cts)) ->
       List.map of_core_type cts
     | Row_field (Tinherit ct) ->
       [of_core_type ct]
     | Value_description { val_desc } ->
       [of_core_type val_desc]
-    | Type_declaration { typ_cstrs; typ_kind; typ_manifest } ->
+    | Type_declaration { typ_params; typ_cstrs; typ_kind; typ_manifest } ->
       let of_typ_cstrs (ct1,ct2,_) acc =
         of_core_type ct1 :: of_core_type ct2 :: acc
       in
       of_option of_core_type typ_manifest @@
+      of_list of_typ_param typ_params @@
       of_node (Type_kind typ_kind) ::
       List.fold_right ~f:of_typ_cstrs typ_cstrs ~init:[]
-    | Type_kind Ttype_abstract ->
+    | Type_kind (Ttype_abstract | Ttype_open) ->
       []
     | Type_kind (Ttype_variant cds) ->
       List.map (fun cd -> of_node (Constructor_declaration cd)) cds
     | Type_kind (Ttype_record lds) ->
       List.map (fun ld -> of_node (Label_declaration ld)) lds
+    | Type_extension { tyext_params; tyext_constructors } ->
+      let of_constructors ec acc =
+        of_node (Extension_constructor ec) :: acc
+      in
+      of_list of_typ_param tyext_params @@
+      List.fold_right ~f:of_constructors tyext_constructors ~init:[]
+    | Extension_constructor { ext_kind = Text_decl (cts,cto) } ->
+      of_option of_core_type cto @@
+      of_list of_core_type cts []
+    | Extension_constructor { ext_kind = Text_rebind _ } ->
+      []
     | Label_declaration { ld_type } ->
       [of_core_type ld_type]
     | Constructor_declaration { cd_args; cd_res } ->
@@ -177,12 +192,15 @@ let rec of_node t_node =
       List.map (fun x -> of_node (Class_type_field x)) csig_fields
     | Class_type_field { ctf_desc } ->
       of_class_type_field_desc ctf_desc []
-    | Class_declaration { ci_expr } ->
-      [of_node (Class_expr ci_expr)]
-    | Class_description { ci_expr } ->
-      [of_node (Class_type ci_expr)]
-    | Class_type_declaration { ci_expr } ->
-      [of_node (Class_type ci_expr)]
+    | Class_declaration { ci_params; ci_expr } ->
+      of_node (Class_expr ci_expr) ::
+      List.map of_typ_param ci_params
+    | Class_description { ci_params; ci_expr } ->
+      of_node (Class_type ci_expr) ::
+      List.map of_typ_param ci_params
+    | Class_type_declaration { ci_params; ci_expr } ->
+      of_node (Class_type ci_expr) ::
+      List.map of_typ_param ci_params
   in
   { t_node; t_loc; t_env;
     t_children = Lazy.from_fun children }
@@ -212,6 +230,7 @@ and of_core_type ct : t = of_node (Core_type ct)
 and of_value_binding vb = of_node (Value_binding vb)
 and of_module_type mt = of_node (Module_type mt)
 and of_module_expr me = of_node (Module_expr me)
+and of_typ_param (ct,_) = of_core_type ct
 
 and of_expression_desc desc acc = match desc with
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
@@ -229,7 +248,10 @@ and of_expression_desc desc acc = match desc with
         | (_,Some e,_) -> Some (of_expression e))
       ls
       acc
-  | Texp_match (e,cs,_) | Texp_try (e,cs) ->
+  | Texp_match (e,cs1,cs2,_) ->
+    of_expression e ::
+    of_list of_case (cs1 @ cs2) acc
+  | Texp_try (e,cs) ->
     of_expression e ::
     of_list of_case cs acc
   | Texp_tuple es | Texp_construct (_,_,es) | Texp_array es ->
@@ -243,9 +265,7 @@ and of_expression_desc desc acc = match desc with
   | Texp_setfield (e1,_,_,e2) | Texp_ifthenelse (e1,e2,None)
   | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
     of_expression e1 :: of_expression e2 :: acc
-  | Texp_ifthenelse (e1,e2,Some e3) ->
-    of_expression e1 :: of_expression e2 :: of_expression e3 :: acc
-  | Texp_for (_,_,e1,e2,_,e3) ->
+  | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
     of_expression e1 :: of_expression e2 :: of_expression e3 :: acc
   | Texp_send (e,_,eo) ->
     of_expression e :: of_option of_expression eo acc
@@ -302,6 +322,8 @@ and of_class_field_desc desc acc = match desc with
     of_core_type ct1 :: of_core_type ct2 :: acc
   | Tcf_initializer e ->
     of_expression e :: acc
+  | Tcf_attribute _ ->
+    assert false (*TODO*)
 and of_module_expr_desc desc acc = match desc with
   | Tmod_ident _ -> acc
   | Tmod_structure str ->
@@ -331,8 +353,10 @@ and of_structure_item_desc desc acc = match desc with
     of_node (Value_description vd) :: acc
   | Tstr_type tds ->
     of_list (fun td -> of_node (Type_declaration td)) tds acc
-  | Tstr_exception cd ->
-    of_node (Constructor_declaration cd) :: acc
+  | Tstr_typext text ->
+    of_node (Type_extension text) :: acc
+  | Tstr_exception ec ->
+    of_node (Extension_constructor ec) :: acc
   | Tstr_module mb ->
     of_node (Module_binding mb) :: acc
   | Tstr_recmodule mbs ->
@@ -343,9 +367,9 @@ and of_structure_item_desc desc acc = match desc with
     of_list (fun (cd,_,_) -> of_node (Class_declaration cd)) cds acc
   | Tstr_class_type ctds ->
     of_list (fun (_,_,ctd) -> of_node (Class_type_declaration ctd)) ctds acc
-  | Tstr_include (me,_,_) ->
+  | Tstr_include { incl_mod = me } ->
     of_module_expr me :: acc
-  | Tstr_exn_rebind _ | Tstr_open _ | Tstr_attribute _ ->
+  | Tstr_open _ | Tstr_attribute _ ->
     acc
 
 and of_module_type_desc desc acc = match desc with
@@ -370,15 +394,15 @@ and of_signature_item_desc desc acc = match desc with
     of_node (Value_description vd) :: acc
   | Tsig_type tds ->
     of_list (fun td -> of_node (Type_declaration td)) tds acc
-  | Tsig_exception cd ->
-    of_node (Constructor_declaration cd) :: acc
+  | Tsig_exception ec ->
+    of_node (Extension_constructor ec) :: acc
   | Tsig_module md ->
     of_node (Module_declaration md) :: acc
   | Tsig_recmodule mds ->
     of_list (fun md -> of_node (Module_declaration md)) mds acc
   | Tsig_modtype mtd ->
     of_node (Module_type_declaration mtd) :: acc
-  | Tsig_include (mt,_,_) ->
+  | Tsig_include { incl_mod = mt } ->
     of_module_type mt :: acc
   | Tsig_class cds ->
     of_list (fun cd -> of_node (Class_description cd)) cds acc
@@ -392,7 +416,7 @@ and of_core_type_desc desc acc = match desc with
   | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
     of_list of_core_type cts acc
   | Ttyp_object (cts,_) ->
-    of_list (fun (_,ct) -> of_core_type ct) cts acc
+    of_list (fun (_,_,ct) -> of_core_type ct) cts acc
   | Ttyp_poly (_,ct) | Ttyp_alias (ct,_) ->
     of_core_type ct :: acc
   | Ttyp_variant (rfs,_,_) ->

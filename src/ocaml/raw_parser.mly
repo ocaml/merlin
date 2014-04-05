@@ -23,7 +23,7 @@ let ghstr startpos endpos d   = [Str.mk ~loc:(gloc startpos endpos) d]
 let mkclass startpos endpos d = Cl.mk  ~loc:(rloc startpos endpos) d
 let mkcty startpos endpos d   = Cty.mk ~loc:(rloc startpos endpos) d
 let mkctf startpos endpos ?attrs d = Ctf.mk ~loc:(rloc startpos endpos) ?attrs d
-let mkcf  startpos endpos ?attrs d = Cf.mk  ~loc:(rloc startpos endpos) ?attrs d
+let mkcf  startpos endpos ?attrs d = [Cf.mk  ~loc:(rloc startpos endpos) ?attrs d]
 
 let mkrhs startpos endpos rhs = mkloc rhs (rloc startpos endpos)
 let mkoption d =
@@ -280,6 +280,16 @@ let mkexp_attrs startpos endpos d attrs =
   wrap_exp_attrs startpos endpos (mkexp startpos endpos d) attrs
 
 let tag_nonrec (id, a) = (Fake.Nonrec.add id, a)
+let fake_any_typ = Typ.mk Ptyp_any
+let fake_any_pat = Pat.mk Ppat_any
+let fake_mty = Mty.mk (Pmty_signature [])
+let fake_mod = Mod.mk (Pmod_structure [])
+let fake_class_structure = Cstr.mk fake_any_pat []
+let fake_class_expr = Cl.mk (Pcl_structure fake_class_structure)
+let fake_class_signature = Csig.mk fake_any_typ []
+let fake_class_type = Cty.mk (Pcty_signature fake_class_signature)
+let fake_class_type_field =
+  Ctf.mk (Pctf_constraint (fake_any_typ,fake_any_typ))
 
 %}
 
@@ -489,6 +499,179 @@ The precedences must be listed from low to high.
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
 
+(* Default values *)
+
+%token DEFAULT
+%left DEFAULT
+
+%default AMPERAMPER AMPERSAND AND AS ASSERT BACKQUOTE BANG BAR BARBAR
+         BARRBRACKET BEGIN CLASS COLON COLONCOLON COLONEQUAL COLONGREATER COMMA
+         CONSTRAINT DO DONE DOT DOTDOT DOWNTO ELSE END EOF EQUAL EXCEPTION
+         EXTERNAL FALSE FOR FUN FUNCTION FUNCTOR GREATER GREATERRBRACE
+         GREATERRBRACKET IF IN INCLUDE INHERIT INITIALIZER LAZY LBRACE
+         LBRACELESS LBRACKET LBRACKETAT LBRACKETATAT LBRACKETBAR
+         LBRACKETGREATER LBRACKETLESS LBRACKETPERCENT LBRACKETPERCENTPERCENT
+         LESS LESSMINUS LET LPAREN MATCH METHOD MINUS MINUSDOT MINUSGREATER
+         MODULE MUTABLE NEW OBJECT OF OPEN OR PERCENT PLUS PLUSDOT PRIVATE
+         QUESTION QUOTE RBRACE RBRACKET REC RPAREN SEMI SEMISEMI SHARP SIG STAR
+         STRUCT THEN TILDE TO TRUE TRY TYPE UNDERSCORE VAL VIRTUAL WHEN WHILE
+         WITH
+  {()}
+
+%default LET_LWT TRY_LWT MATCH_LWT FINALLY_LWT FOR_LWT WHILE_LWT JSNEW
+         P4_QUOTATION OUNIT_TEST OUNIT_TEST_UNIT OUNIT_TEST_MODULE OUNIT_BENCH
+         OUNIT_BENCH_FUN OUNIT_BENCH_INDEXED OUNIT_BENCH_MODULE NONREC
+  {()}
+
+%default CHAR {' '}
+%default FLOAT {"0."}
+%default INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4 {"+"}
+%default COMMENT {"", Location.none}
+%default STRING {"", None}
+%default UIDENT {"Invalid"}
+%default OPTLABEL LABEL {"invalid_label"}
+%default PREFIXOP LIDENT {"invalid"}
+%default INT {0}
+%default INT32 {0l}
+%default INT64 {0L}
+%default NATIVEINT {0n}
+
+%default attributes post_item_attributes class_type_parameters
+         type_parameter_list type_parameters optional_type_parameter_list
+         name_tag_list typevar_list simple_labeled_expr_list package_type_cstrs
+         lbl_expr_list match_cases class_declarations class_descriptions
+         class_fields class_type_declarations class_sig_fields
+         constructor_declarations amper_type_list core_type_comma_list
+         core_type_list core_type_list_no_attr constraints expr_comma_list
+         expr_semi_list label_declarations module_bindings
+         module_rec_declarations pattern_comma_list pattern_semi_list
+         optional_type_parameters row_field_list sig_attribute signature_item
+         str_attribute structure_item type_declarations let_bindings
+         with_constraints field_expr_list functor_args lident_list
+         primitive_declaration
+         interface signature signature_tail
+         implementation structure structure_tail
+         class_declaration class_description class_field class_type_declaration
+  {[]}
+
+
+%default generalized_constructor_arguments {[], None}
+%default type_constraint                   {None, None}
+%default opt_default                       {None}
+%default parent_binder                     {None}
+%default meth_list lbl_pattern_list        {[], Closed}
+%default record_expr                       {None, []}
+%default expr fun_binding fun_def parse_expression seq_expr simple_expr
+         strict_binding
+  {Fake.any_val'}
+
+%default opt_bar opt_semi {()}
+%default opt_ampersand {false}
+
+%default mutable_flag {Immutable}
+%default override_flag {Fresh}
+%default private_virtual_flags {Public, Concrete}
+%default private_flag with_type_binder {Public}
+%default rec_flag {Nonrecursive}
+%default type_variance {Invariant}
+%default virtual_flag {Concrete}
+
+%default class_self_type core_type core_type2 poly_type simple_core_type
+         simple_core_type2 simple_core_type_no_attr simple_core_type_or_tuple
+         simple_core_type_or_tuple_no_attr
+  {fake_any_typ}
+
+%default class_self_pattern let_pattern pattern pattern_var simple_pattern
+         simple_pattern_not_ident
+  {fake_any_pat}
+
+%default let_binding_ {fake_any_pat, Fake.any_val'}
+
+%default labeled_simple_expr label_expr label_ident
+  { "", Fake.any_val' }
+
+%default labeled_simple_pattern
+  {"", None, fake_any_pat }
+
+%default label_let_pattern label_var
+  {"", fake_any_pat }
+
+%default module_binding_body module_expr
+  {fake_mod}
+
+%default module_declaration module_type
+  {fake_mty}
+
+%default class_expr class_fun_binding class_fun_def class_simple_expr
+  {fake_class_expr}
+
+%default class_sig_body
+  {fake_class_signature}
+
+%default class_structure
+  {fake_class_structure}
+
+%default class_signature class_type
+  {fake_class_type}
+
+%default class_sig_field
+  {fake_class_type_field}
+
+(*
+type_parameter                                     Ast_helper.str * Asttypes.variance
+optional_type_parameter                            Ast_helper.str option * Asttypes.variance
+constant                                           Asttypes.constant
+signed_constant                                    Asttypes.constant
+direction_flag                                     Asttypes.direction_flag
+ident                                              Asttypes.label
+name_tag                                           Asttypes.label
+package_type_cstr                                  Longident.t Asttypes.loc * Parsetree.core_type
+lbl_expr                                           Longident.t Asttypes.loc * Parsetree.expression
+lbl_pattern                                        Longident.t Asttypes.loc * Parsetree.pattern
+class_longident                                    Longident.t
+clty_longident                                     Longident.t
+constr_longident                                   Longident.t
+label_longident                                    Longident.t
+mod_ext_longident                                  Longident.t
+mod_longident                                      Longident.t
+mty_longident                                      Longident.t
+type_longident                                     Longident.t
+val_longident                                      Longident.t
+match_case                                         Parsetree.case
+constructor_declaration                            Parsetree.constructor_declaration
+exception_declaration                              Parsetree.constructor_declaration
+constrain                                          Parsetree.core_type * Parsetree.core_type * Ast_helper.loc
+constrain_field                                    Parsetree.core_type * Parsetree.core_type
+label_declaration                                  Parsetree.label_declaration
+module_binding                                     Parsetree.module_binding
+module_rec_declaration                             Parsetree.module_declaration
+package_type                                       Parsetree.package_type
+payload                                            Parsetree.payload
+row_field                                          Parsetree.row_field
+tag_field                                          Parsetree.row_field
+type_declaration                                   Parsetree.type_declaration
+type_kind                                          Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option
+let_binding                                        Parsetree.value_binding
+with_constraint                                    Parsetree.with_constraint
+additive                                           string
+value                                              string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind
+method_                                            string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind
+attr_id                                            string Asttypes.loc
+ext_attributes                                     string Asttypes.loc option * Ast_helper.attrs
+functor_arg                                        string Asttypes.loc * Parsetree.module_type option
+value_type                                         string * Asttypes.mutable_flag * Asttypes.virtual_flag * tree.core_type
+constr_ident                                       string
+functor_arg_name                                   string
+label                                              string
+operator                                           string
+field                                              string * Parsetree.core_type
+single_attr_id                                     string
+subtractive                                        string
+val_ident                                          string
+
+
+*)
+
 (* Entry points *)
 
 (* for implementation files *)
@@ -548,8 +731,8 @@ dummy:
 (* Module expressions *)
 
 functor_arg:
-| LPAREN v2 = RPAREN
-    { mkrhs $startpos(v2) $endpos(v2) "()", None }
+| LPAREN _2 = RPAREN
+    { mkrhs $startpos(_2) $endpos(_2) "()", None }
 | LPAREN v2 = functor_arg_name COLON v4 = module_type RPAREN
     { mkrhs $startpos(v2) $endpos(v2) v2, Some v4 }
 
@@ -784,8 +967,8 @@ module_declaration:
     { v2 }
 | LPAREN v2 = UIDENT COLON v4 = module_type RPAREN v6 = module_declaration
     { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos(v2) $endpos(v2) v2, Some v4, v6)) }
-| v1 = LPAREN RPAREN v3 = module_declaration
-    { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos(v1) $endpos(v1) "()", None, v3)) }
+| _1 = LPAREN RPAREN v3 = module_declaration
+    { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos(_1) $endpos(_1) "()", None, v3)) }
 
 module_rec_declarations:
 | v1 = module_rec_declaration
@@ -801,17 +984,17 @@ module_rec_declaration:
 
 class_declarations:
 | v1 = class_declarations AND v3 = class_declaration
-    { v3 :: v1 }
+    { v3 @ v1 }
 | v1 = class_declaration
-    { [v1] }
+    { v1 }
 
 class_declaration:
 | v1 = virtual_flag v2 = class_type_parameters v3 = LIDENT v4 = class_fun_binding
   v5 = post_item_attributes
     {
-      Ci.mk (mkrhs $startpos(v3) $endpos(v3) v3) v4
-        ~virt:v1 ~params:v2
-        ~attrs:v5 ~loc:(rloc $startpos $endpos)
+      [Ci.mk (mkrhs $startpos(v3) $endpos(v3) v3) v4
+         ~virt:v1 ~params:v2
+         ~attrs:v5 ~loc:(rloc $startpos $endpos)]
     }
 
 class_fun_binding:
@@ -882,7 +1065,7 @@ class_fields:
 | (* empty *)
     { [] }
 | v1 = class_fields v2 = class_field
-    { v2 :: v1 }
+    { v2 @ v1 }
 
 class_field:
 | INHERIT v2 = override_flag v3 = class_expr v4 = parent_binder attrs = post_item_attributes
@@ -1015,31 +1198,31 @@ constrain_field:
 
 class_descriptions:
 | v1 = class_descriptions AND v3 = class_description
-    { v3 :: v1 }
+    { v3 @ v1 }
 | v1 = class_description
-    { [v1] }
+    { v1 }
 
 class_description:
 | v1 = virtual_flag v2 = class_type_parameters v3 = LIDENT COLON v5 = class_type v6 = post_item_attributes
     {
-       Ci.mk (mkrhs $startpos(v3) $endpos(v3) v3) v5
+      [Ci.mk (mkrhs $startpos(v3) $endpos(v3) v3) v5
          ~virt:v1 ~params:v2
-         ~attrs:v6 ~loc:(rloc $startpos $endpos)
-      }
+         ~attrs:v6 ~loc:(rloc $startpos $endpos)]
+    }
 
 class_type_declarations:
 | v1 = class_type_declarations AND v3 = class_type_declaration
-    { v3 :: v1 }
+    { v3 @ v1 }
 | v1 = class_type_declaration
-    { [v1] }
+    { v1 }
 
 class_type_declaration:
 | v1 = virtual_flag v2 = class_type_parameters v3 = LIDENT EQUAL v5 = class_signature v6 = post_item_attributes
     {
-       Ci.mk (mkrhs $startpos(v3) $endpos(v3) v3) v5
+      [Ci.mk (mkrhs $startpos(v3) $endpos(v3) v3) v5
          ~virt:v1 ~params:v2
-         ~attrs:v6 ~loc:(rloc $startpos $endpos)
-      }
+         ~attrs:v6 ~loc:(rloc $startpos $endpos)]
+    }
 
 (* Core expressions *)
 
@@ -1136,10 +1319,10 @@ expr:
     { mkexp_attrs $startpos $endpos (Pexp_while(v3, v5)) v2 }
 | FOR v2 = ext_attributes v3 = pattern EQUAL v5 = seq_expr v6 = direction_flag v7 = seq_expr DO v9 = seq_expr DONE
     { mkexp_attrs $startpos $endpos (Pexp_for(v3, v5, v7, v6, v9)) v2 }
-| v1 = expr v2 = COLONCOLON v3 = expr
-    { mkexp_cons (rloc $startpos(v2) $endpos(v2)) (ghexp $startpos $endpos (Pexp_tuple[v1;v3])) (rloc $startpos $endpos) }
-| LPAREN v2 = COLONCOLON RPAREN LPAREN v5 = expr COMMA v7 = expr RPAREN
-    { mkexp_cons (rloc $startpos(v2) $endpos(v2)) (ghexp $startpos $endpos (Pexp_tuple[v5;v7])) (rloc $startpos $endpos) }
+| v1 = expr _2 = COLONCOLON v3 = expr
+    { mkexp_cons (rloc $startpos(_2) $endpos(_2)) (ghexp $startpos $endpos (Pexp_tuple[v1;v3])) (rloc $startpos $endpos) }
+| LPAREN _2 = COLONCOLON RPAREN LPAREN v5 = expr COMMA v7 = expr RPAREN
+    { mkexp_cons (rloc $startpos(_2) $endpos(_2)) (ghexp $startpos $endpos (Pexp_tuple[v5;v7])) (rloc $startpos $endpos) }
 | v1 = expr v2 = INFIXOP0 v3 = expr
     { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) v2 v3 }
 | v1 = expr v2 = INFIXOP1 v3 = expr
@@ -1269,19 +1452,19 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, mkexp $startpos(v4) $endpos(v4) (Pexp_array(List.rev v4)))) }
 (*| mod_longident DOT v3 = LBRACKETBAR expr_semi_list opt_semi v6 = error
     { unclosed "[|" $startpos(v3) $endpos(v3) "|]" $startpos(v6) $endpos(v6) }*)
-| LBRACKET v2 = expr_semi_list opt_semi v4 = RBRACKET
-    { reloc_exp $startpos $endpos (mktailexp $startpos(v4) $endpos(v4) (List.rev v2)) }
+| LBRACKET v2 = expr_semi_list opt_semi _4 = RBRACKET
+    { reloc_exp $startpos $endpos (mktailexp $startpos(_4) $endpos(_4) (List.rev v2)) }
 (*| v1 = LBRACKET expr_semi_list opt_semi v4 = error
     { unclosed "[" $startpos(v1) $endpos(v1) "]" $startpos(v4) $endpos(v4) }*)
-| v1 = mod_longident DOT LBRACKET v4 = expr_semi_list opt_semi v6 = RBRACKET
-    { let list_exp = reloc_exp $startpos $endpos (mktailexp $startpos(v6) $endpos(v6) (List.rev v4)) in
+| v1 = mod_longident DOT LBRACKET v4 = expr_semi_list opt_semi _6 = RBRACKET
+    { let list_exp = reloc_exp $startpos $endpos (mktailexp $startpos(_6) $endpos(_6) (List.rev v4)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, list_exp)) }
 (*| mod_longident DOT v3 = LBRACKET expr_semi_list opt_semi v6 = error
     { unclosed "[" $startpos(v3) $endpos(v3) "]" $startpos(v6) $endpos(v6) }*)
 | v1 = PREFIXOP v2 = simple_expr
     { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos(v1) $endpos(v1) v1, ["",v2])) }
-| v1 = BANG v2 = simple_expr
-    { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos(v1) $endpos(v1) "!", ["",v2])) }
+| _1 = BANG v2 = simple_expr
+    { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos(_1) $endpos(_1) "!", ["",v2])) }
 | NEW v2 = ext_attributes v3 = class_longident
     { mkexp_attrs $startpos $endpos (Pexp_new(mkrhs $startpos(v3) $endpos(v3) v3)) v2 }
 | LBRACELESS v2 = field_expr_list opt_semi GREATERRBRACE
@@ -1480,12 +1663,12 @@ pattern:
     { mkpat $startpos $endpos (Ppat_construct(mkrhs $startpos(v1) $endpos(v1) v1, Some v2)) }
 | v1 = name_tag v2 = pattern %prec prec_constr_appl
     { mkpat $startpos $endpos (Ppat_variant(v1, Some v2)) }
-| v1 = pattern v2 = COLONCOLON v3 = pattern
-    { mkpat_cons (rloc $startpos(v2) $endpos(v2)) (ghpat $startpos $endpos (Ppat_tuple[v1;v3])) (rloc $startpos $endpos) }
+| v1 = pattern _2 = COLONCOLON v3 = pattern
+    { mkpat_cons (rloc $startpos(_2) $endpos(_2)) (ghpat $startpos $endpos (Ppat_tuple[v1;v3])) (rloc $startpos $endpos) }
 (*| pattern COLONCOLON v3 = error
     { expecting $startpos(v3) $endpos(v3) "pattern" }*)
-| LPAREN v2 = COLONCOLON RPAREN LPAREN v5 = pattern COMMA v7 = pattern RPAREN
-    { mkpat_cons (rloc $startpos(v2) $endpos(v2)) (ghpat $startpos $endpos (Ppat_tuple[v5;v7])) (rloc $startpos $endpos) }
+| LPAREN _2 = COLONCOLON RPAREN LPAREN v5 = pattern COMMA v7 = pattern RPAREN
+    { mkpat_cons (rloc $startpos(_2) $endpos(_2)) (ghpat $startpos $endpos (Ppat_tuple[v5;v7])) (rloc $startpos $endpos) }
 (*| LPAREN COLONCOLON RPAREN v4 = LPAREN pattern COMMA pattern v8 = error
     { unclosed "(" $startpos(v4) $endpos(v4) ")" $startpos(v8) $endpos(v8) }*)
 | v1 = pattern BAR v3 = pattern
@@ -1522,8 +1705,8 @@ simple_pattern_not_ident:
     { let (fields, closed) = v2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
 (*| v1 = LBRACE lbl_pattern_list v3 = error
     { unclosed "{" $startpos(v1) $endpos(v1) "}" $startpos(v3) $endpos(v3) }*)
-| LBRACKET v2 = pattern_semi_list opt_semi v4 = RBRACKET
-    { reloc_pat $startpos $endpos (mktailpat $startpos(v4) $endpos(v4) (List.rev v2)) }
+| LBRACKET v2 = pattern_semi_list opt_semi _4 = RBRACKET
+    { reloc_pat $startpos $endpos (mktailpat $startpos(_4) $endpos(_4) (List.rev v2)) }
 (*| v1 = LBRACKET pattern_semi_list opt_semi v4 = error
     { unclosed "[" $startpos(v1) $endpos(v1) "]" $startpos(v4) $endpos(v4) }*)
 | LBRACKETBAR v2 = pattern_semi_list opt_semi BARRBRACKET

@@ -60,6 +60,8 @@ type node =
   | Value_description        of value_description
   | Type_declaration         of type_declaration
   | Type_kind                of type_kind
+  | Type_extension           of type_extension
+  | Extension_constructor    of extension_constructor
   | Label_declaration        of label_declaration
   | Constructor_declaration  of constructor_declaration
   | Class_type               of class_type
