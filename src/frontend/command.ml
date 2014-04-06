@@ -90,9 +90,12 @@ let dispatch (state : state) =
     if Lexer.eof lexer then state.lexer <- None;
     Lexer.position lexer, Buffer.path state.buffer
 
-  | (Type_expr (source, None) : a request) ->
+  | (Type_expr (source, pos) : a request) ->
     let typer = Buffer.typer state.buffer in
-    let env = Typer.env typer in
+    let env = match pos with
+      | None -> Typer.env typer
+      | Some pos -> (Completion.node_at typer pos).Browse.env
+    in
     let ppf, to_string = Format.to_string () in
     Type_utils.type_in_env env ppf source;
     to_string ()
@@ -297,6 +300,27 @@ let dispatch (state : state) =
     let ppf, to_string = Format.to_string () in
     Merlin_recover.dump_recoverable ppf (Buffer.recover state.buffer);
     `String (to_string ())
+
+  | (Dump (`Env (kind, pos)) : a request) ->
+    let typer = Buffer.typer state.buffer in
+    let env = match pos with
+      | None -> Typer.env typer
+      | Some pos -> (Completion.node_at typer pos).Browse.env
+    in
+    let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
+    let aux item =
+      let ppf, to_string = Format.to_string () in
+      Printtyp.signature ppf [item];
+      let content = to_string () in
+      let ppf, to_string = Format.to_string () in
+      match Browse_misc.signature_loc item with
+      | Some loc ->
+        Location.print_loc ppf loc;
+        let loc = to_string () in
+        `List [`String loc ; `String content]
+      | None -> `String content
+    in
+    `List (List.map ~f:aux sg)
 
   | (Dump _ : a request) ->
     failwith "TODO"
