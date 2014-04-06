@@ -1,4 +1,4 @@
-module Values : module type of Merlin_parser_values
+module Values : module type of Raw_parser_values
 
 type t
 type parser = t

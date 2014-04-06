@@ -139,6 +139,7 @@ module P = struct
   type st = Extension.set * exn list ref
 
   type t = {
+    raw: Raw_typer.t;
     snapshot: Btype.snapshot;
     env: Env.t;
     structures: Typedtree.structure list;
@@ -149,97 +150,60 @@ module P = struct
     let env = Env.initial_unsafe_string (*FIXME: should be in Raw_typer ?*) in
     let env = Env.open_pers_signature "Pervasives" env in
     let env = Extension.register extensions env in
-    { snapshot = Btype.snapshot (); env; structures = []; exns = caught catch }
+    let raw = Raw_typer.empty in
+    let exns = caught catch in
+    let snapshot = Btype.snapshot () in
+    { raw; snapshot; env; structures = []; exns }
 
   let validate _ t = Btype.is_valid t.snapshot
 
-  let frame (_,catch) f t =
-    let module Frame = Merlin_parser.Frame in
-    let mkeval e = {
-      Parsetree. pstr_desc = Parsetree.Pstr_eval (e,[]);
-      pstr_loc = e.Parsetree.pexp_loc;
-    } in
-    let loc = Frame.location f in
-    let case =
-      match Frame.value f with
-      | Terminal _ | Bottom -> `none
-      | Nonterminal nt ->
-      match nt with
-      | NT'implementation str | NT'structure str
-      | NT'structure_tail str | NT'structure_item str ->
-        `str str
-      (*| NT'mod_open o -> `Open o*)
-      | NT'strict_binding e | NT'simple_expr e | NT'seq_expr e
-      | NT'opt_default (Some e) | NT'fun_def e | NT'fun_binding e | NT'expr e
-      | NT'labeled_simple_expr (_,e) | NT'label_ident (_,e)
-      | NT'label_expr (_,e) ->
-        `str [mkeval e]
-      | NT'let_bindings e ->
-        let rec_ =
-          match Option.map ~f:Frame.value (Frame.next f) with
-          | Some (Nonterminal (NT'rec_flag r)) -> r
-          | None | Some _ -> Asttypes.Nonrecursive
-        in
-        `binds (rec_,e)
-      (*| NT'let_rec_bindings e -> `binds e*)
-      | NT'expr_semi_list el | NT'expr_comma_list el  ->
-        `str (List.map ~f:mkeval el)
-      | NT'interface sg | NT'signature_item sg ->
-        `sg sg
-      | NT'signature sg ->
-        `sg (List.rev sg)
-      (*| NT'module_functor_arg (id,mty) ->
-        `fmd (id,mty)*)
-      | NT'labeled_simple_pattern pat ->
-        `pat pat
-      (* Approximation to match/with typing: we only introduce names in the environment, not taking the matched expression into account *)
-      | NT'pattern pat ->
-        `pat ("",None,pat)
-      | _ -> `none
-    in
-    let case =
-      let open Parsetree in
-      match case with
-      | `fmd (id,mty) ->
-          let mexpr = Pmod_structure [] in
-          let mexpr = { pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = [] } in
-          let mexpr = Pmod_functor (id, mty, mexpr) in
-          let mexpr = { pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = [] } in
-          failwith "TODO"
-          (*let item = Pstr_module (Location.mknoloc "" , mexpr) in
-          `fake { pstr_desc = item; pstr_loc = loc }*)
-      | `pat (l,o,p) ->
-        let expr = Pexp_constant (Asttypes.Const_int 0) in
-        let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
-        let expr = Pexp_fun (l, o, p, expr) in
-        let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
-        let item = Pstr_eval (expr,[]) in
-        `fake { pstr_desc = item; pstr_loc = loc }
-      | `nty s ->
-        let expr = Pexp_constant (Asttypes.Const_int 0) in
-        let expr = { pexp_desc = expr; pexp_loc = Location.none; pexp_attributes = [] } in
-        let pat = { ppat_desc = Ppat_any; ppat_loc = Location.none; ppat_attributes = [] } in
-        let expr = Pexp_fun ("", None, pat, expr) in
-        let expr = { pexp_desc = expr; pexp_loc = Location.none; pexp_attributes = [] } in
-        let expr = Parsetree.Pexp_newtype (s,expr) in
-        let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
-        let item = Pstr_eval (expr,[]) in
-        `fake { pstr_desc = item; pstr_loc = loc }
-      | `binds (rec_,e) ->
-        let item = Pstr_value (rec_,e) in
-        `str [{ pstr_desc = item; pstr_loc = loc }]
-      | `Open (override,name) ->
-        let item = Pstr_open (Ast_helper.Opn.mk ~override name) in
-        `str [{ pstr_desc = item; pstr_loc = loc }]
-      | (`sg _ | `str _ | `none) as case -> case
-    in
-    match case with
-    | `none -> t
-    | _ as case ->
+  let rewrite loc =
+    let open Parsetree in
+    function
+    | Raw_typer.Functor_argument (id,mty) ->
+      let mexpr = Pmod_structure [] in
+      let mexpr = { pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = [] } in
+      let mexpr = Pmod_functor (id, mty, mexpr) in
+      let mexpr = { pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = [] } in
+      failwith "TODO"
+    (*let item = Pstr_module (Location.mknoloc "" , mexpr) in
+      `fake { pstr_desc = item; pstr_loc = loc }*)
+    | Raw_typer.Pattern (l,o,p) ->
+      let expr = Pexp_constant (Asttypes.Const_int 0) in
+      let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
+      let expr = Pexp_fun (l, o, p, expr) in
+      let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
+      let item = Pstr_eval (expr,[]) in
+      `fake { pstr_desc = item; pstr_loc = loc }
+    | Raw_typer.Newtype s ->
+      let expr = Pexp_constant (Asttypes.Const_int 0) in
+      let expr = { pexp_desc = expr; pexp_loc = Location.none; pexp_attributes = [] } in
+      let pat = { ppat_desc = Ppat_any; ppat_loc = Location.none; ppat_attributes = [] } in
+      let expr = Pexp_fun ("", None, pat, expr) in
+      let expr = { pexp_desc = expr; pexp_loc = Location.none; pexp_attributes = [] } in
+      let expr = Parsetree.Pexp_newtype (s,expr) in
+      let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
+      let item = Pstr_eval (expr,[]) in
+      `fake { pstr_desc = item; pstr_loc = loc }
+    | Raw_typer.Bindings (rec_,e) ->
+      let item = Pstr_value (rec_,e) in
+      `str [{ pstr_desc = item; pstr_loc = loc }]
+    | Raw_typer.Open (override,name) ->
+      let item = Pstr_open (Ast_helper.Opn.mk ~override name) in
+      `str [{ pstr_desc = item; pstr_loc = loc }]
+    | Raw_typer.Eval e ->
+      `str [{
+        Parsetree. pstr_desc = Parsetree.Pstr_eval (e,[]);
+        pstr_loc = e.Parsetree.pexp_loc;
+      }]
+    | Raw_typer.Structure str -> `str str
+    | Raw_typer.Signature sg -> `sg sg
+
+  let append catch loc item t =
     try
       Btype.backtrack t.snapshot;
       let env, structures =
-        match case with
+        match item with
         | `str str ->
           let structure,_,env = Typemod.type_structure t.env str loc in
           env, structure :: t.structures
@@ -250,18 +214,28 @@ module P = struct
         | `fake str ->
           let structure,_,_ =
             Either.get (Parsing_aux.catch_warnings (ref [])
-              (fun () -> Typemod.type_structure t.env [str] loc))
+                          (fun () -> Typemod.type_structure t.env [str] loc))
           in
           Last_env.structure structure, structure :: t.structures
         | `none -> t.env, t.structures
       in
       Typecore.reset_delayed_checks ();
-      {env; structures; snapshot = Btype.snapshot ();
+      {env; structures; snapshot = Btype.snapshot (); raw = t.raw;
        exns = caught catch @ t.exns}
     with exn ->
       Typecore.reset_delayed_checks ();
       {t with exns = exn :: caught catch @ t.exns;
-              snapshot = Btype.snapshot (); }
+              snapshot = Btype.snapshot () }
+
+  let frame (_,catch) f t =
+    let module Frame = Merlin_parser.Frame in
+    let loc = Frame.location f in
+    let raw = Raw_typer.step (Frame.value f) t.raw in
+    let t = {t with raw} in
+    let items = Raw_typer.observe t.raw in
+    let items = List.map ~f:(rewrite loc) items in
+    let t = List.fold_left' ~f:(append catch loc) items ~init:t in
+    t
 
   let delta st f t ~old:_ = frame st f t
 

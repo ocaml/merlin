@@ -1289,15 +1289,16 @@ expr:
     { mkexp_attrs $startpos $endpos (Pexp_let(v3, List.rev v4, v6)) v2 }
 | LET MODULE v3 = ext_attributes v4 = UIDENT v5 = module_binding_body IN v7 = seq_expr
     { mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos(v4) $endpos(v4) v4, v5, v7)) v3 }
-| LET OPEN v3 = override_flag v4 = ext_attributes v5 = mod_longident IN v7 = seq_expr
-    { mkexp_attrs $startpos $endpos (Pexp_open(v3, mkrhs $startpos(v5) $endpos(v5) v5, v7)) v4 }
+| LET OPEN v3 = expr_open IN v5 = seq_expr
+    { let (flag,id,ext) = v3 in
+      mkexp_attrs $startpos $endpos (Pexp_open(flag, id, v5)) ext }
 | FUNCTION v2 = ext_attributes opt_bar v4 = match_cases
     { mkexp_attrs $startpos $endpos (Pexp_function(List.rev v4)) v2 }
 | FUN v2 = ext_attributes v3 = labeled_simple_pattern v4 = fun_def
     { let (l,o,p) = v3 in
         mkexp_attrs $startpos $endpos (Pexp_fun(l, o, p, v4)) v2 }
-| FUN v2 = ext_attributes LPAREN TYPE v5 = LIDENT RPAREN v7 = fun_def
-    { mkexp_attrs $startpos $endpos (Pexp_newtype(v5, v7)) v2 }
+| FUN v2 = ext_attributes v3 = newtype v4 = fun_def
+    { mkexp_attrs $startpos $endpos (Pexp_newtype(v3, v4)) v2 }
 | MATCH v2 = ext_attributes v3 = seq_expr WITH opt_bar v6 = match_cases
     { mkexp_attrs $startpos $endpos (Pexp_match(v3, List.rev v6)) v2 }
 | TRY v2 = ext_attributes v3 = seq_expr WITH opt_bar v6 = match_cases
@@ -2622,9 +2623,14 @@ payload:
 | QUESTION v2 = pattern WHEN v4 = seq_expr
     { PPat (v2, Some v4) }
 
+(* Merlin refactoring *)
+
+newtype:
+| LPAREN TYPE v3 = LIDENT RPAREN
+    { v3 }
+
+expr_open:
+| v1 = override_flag v2 = ext_attributes v3 = mod_longident
+    { v1, mkrhs $startpos(v3) $endpos(v3) v3, v2 }
+
 %%
-
-
-
-
-

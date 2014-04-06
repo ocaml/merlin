@@ -1,6 +1,6 @@
 open Std
 
-module Values = Merlin_parser_values
+module Values = Raw_parser_values
 
 module P = Raw_parser
 module E = MenhirLib.EngineTypes
@@ -140,7 +140,7 @@ let dump ppf t =
     | None -> Format.fprintf ppf "[]\n%!"
     | Some frame ->
       Format.fprintf ppf "(%d, %s) :: %a"
-        (Frame.depth frame) (Values.Value.to_string (Frame.value frame))
+        (Frame.depth frame) (Values.to_string (Frame.value frame))
         aux (Frame.next frame)
   in
   aux ppf (Frame.stack t)
