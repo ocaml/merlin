@@ -196,8 +196,10 @@ module P = struct
         Parsetree. pstr_desc = Parsetree.Pstr_eval (e,[]);
         pstr_loc = e.Parsetree.pexp_loc;
       }]
-    | Raw_typer.Structure str -> `str str
-    | Raw_typer.Signature sg -> `sg sg
+    | Raw_typer.Structure str ->
+      `str str
+    | Raw_typer.Signature sg ->
+      `sg sg
 
   let append catch loc item t =
     try

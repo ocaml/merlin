@@ -233,7 +233,7 @@ let register exts env =
       | Types.Sig_value(id, decl)     -> Env.add_value (Ident.hide id) decl env
       | Types.Sig_type(id, decl, _)   -> Env.add_type ~check:false (Ident.hide id) decl env
       | Types.Sig_typext(id, decl, _) -> Env.add_extension ~check:false (Ident.hide id) decl env
-      | Types.Sig_module(id, mty, _)  -> Env.add_module (Ident.hide id) mty.md_type env
+      | Types.Sig_module(id, mty, _)  -> Env.add_module (Ident.hide id) mty.Types.md_type env
       | Types.Sig_modtype(id, decl)   -> Env.add_modtype (Ident.hide id) decl env
       | Types.Sig_class(id, decl, _)  -> Env.add_class (Ident.hide id) decl env
       | Types.Sig_class_type(id, decl, _) -> Env.add_cltype (Ident.hide id) decl env

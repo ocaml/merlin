@@ -163,28 +163,23 @@ let last_token = function
     Location.mkloc t
       { Location. loc_start; loc_end; loc_ghost = false }
 
-let recover ?location flag t =
-  None
-  (*match Frame.stack t with
+let recover ?location t =
+  match Frame.stack t with
   | None -> None
   | Some frame ->
     let l = match location with
       | None -> Frame.location frame
       | Some l -> l
     in
-    match feed (l.Location.loc_start,P.RECOVER flag,l.Location.loc_end) t with
-    | `Accept _ | `Reject -> None
-    | `Step t -> Some (Location.mkloc t l)*)
-
-let reconstruct exn t =
-  None
-  (*match Frame.stack t with
-  | None -> None
-  | Some frame ->
-    let {Location. loc_start; loc_end} = Frame.location frame in
-    match feed (loc_start,P.RECONSTRUCT exn,loc_end) t with
-    | `Accept _ | `Reject -> None
-    | `Step t -> Some t*)
+    let t =
+      match feed (l.Location.loc_start,P.DEFAULT,l.Location.loc_end) t with
+      | `Accept _ -> None
+      | `Reject -> pop t
+      | `Step t -> Some t
+    in
+    match t with
+    | None -> None
+    | Some t -> Some (Location.mkloc t l)
 
 module Integrate
     (P : sig

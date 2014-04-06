@@ -1,37 +1,17 @@
 open Std
 open Raw_parser
 
-let in_struct parser =
-  match Merlin_parser.stack parser with
-  | None -> false
-  | Some frame ->
-    match Merlin_parser.Frame.value frame with
-    | _ -> false
-
-let rec drop_items = function
-  | parser :: parsers when in_struct parser -> drop_items parsers
-  | parsers -> parsers
-
 let rollbacks parser =
-  let flag = ref true in
-  let rec aux ?location = function
-    | [] -> []
-    | parser :: parsers ->
-      let loc' = Merlin_parser.location parser in
-      match Merlin_parser.recover ?location flag parser with
-      | None -> aux ~location:loc' parsers
-      | Some parser ->
-        let parsers =
-          if in_struct parser.Location.txt then
-            drop_items parsers
-          else
-            parsers
-        in
-        parser :: aux ~location:loc' parsers
+  let rec aux (location,{Location. txt = parser}) =
+    let loc' = Merlin_parser.location parser in
+    match Merlin_parser.recover ?location parser with
+    | None -> None
+    | Some parser -> None
+      (*Some (Some loc', parser)*)
   in
-  let stacks = List.unfold Merlin_parser.pop parser in
-  let recoverable = aux stacks in
-  let last_pos = ref (-1) in
+  let stacks = List.unfold aux (None,Location.mkloc parser Location.none) in
+  let recoverable = List.map ~f:snd stacks in
+  (*let last_pos = ref (-1) in
   let recoverable =
     List.filter_map recoverable
     ~f:(fun ({Location. txt; loc} as t) ->
@@ -40,13 +20,13 @@ let rollbacks parser =
         then None
         else (last_pos := start; Some t)
        )
-  in
-  Zipper.of_list recoverable, flag
+  in*)
+  Zipper.of_list recoverable
 
 type t = {
   errors: exn list;
   parser: Merlin_parser.t;
-  recovering: (Merlin_parser.t Location.loc zipper * bool ref) option;
+  recovering: (Merlin_parser.t Location.loc zipper) option;
 }
 
 let parser t = t.parser
@@ -96,16 +76,7 @@ let feed_recover original (s,tok,e as input) zipper =
     | `Reject ->
       Either.L zipper
     | `Step parser ->
-      let diff = Merlin_reconstruct.diff ~stack:original ~wrt:parser in
-      match Merlin_parser.reconstruct
-              (Merlin_reconstruct.Partial_stack diff)
-              candidate
-      with
-      | None -> assert false
-      | Some parser ->
-        match Merlin_parser.feed input parser with
-        | `Reject -> assert false
-        | `Step parser -> Either.R parser
+      Either.R parser
 
 let fold warnings token t =
   match token with
@@ -118,10 +89,10 @@ let fold warnings token t =
     Logger.debugf `internal Merlin_parser.dump t.parser;
     warnings := [];
     let pop w = let r = !warnings in w := []; r in
-    let recover_from t (recovery, flag) =
+    let recover_from t recovery =
       match feed_recover t.parser (s,tok,e) recovery with
       | Either.L recovery ->
-        {t with recovering = Some (recovery, flag)}
+        {t with recovering = Some recovery}
       | Either.R parser ->
         {t with parser; recovering = None}
     in
@@ -155,7 +126,7 @@ let dump_snapshot ppf {Location. txt; loc} =
 
 let dump_recovering ppf = function
   | None -> Format.fprintf ppf "clean"
-  | Some (Zipper (head, _, tail), _) ->
+  | Some (Zipper (head, _, tail)) ->
     let iter ppf l = List.iter ~f:(dump_snapshot ppf) l in
     Format.fprintf ppf "recoverable states\nhead:\n%atail:\n%a"
       iter head

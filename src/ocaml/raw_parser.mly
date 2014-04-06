@@ -434,6 +434,7 @@ let fake_class_type_field =
 
 %token ENTRYPOINT
 
+
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved

@@ -6,4 +6,3 @@ _tags
 *.native
 *.byte
 *.pyc
-src/ocaml
