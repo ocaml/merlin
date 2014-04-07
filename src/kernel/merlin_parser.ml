@@ -174,7 +174,7 @@ let recover ?location t =
     let t =
       match feed (l.Location.loc_start,P.DEFAULT,l.Location.loc_end) t with
       | `Accept _ -> None
-      | `Reject -> pop t
+      | `Reject -> None (*Option.bind (pop t) ~f:pop*)
       | `Step t -> Some t
     in
     match t with

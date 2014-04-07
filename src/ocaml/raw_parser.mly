@@ -458,6 +458,8 @@ conflicts.
 The precedences must be listed from low to high.
 *)
 
+%left DEFAULT
+
 %nonassoc IN
 %nonassoc below_SEMI
 %nonassoc SEMI                          (* below EQUAL ({lbl=...; lbl=...}) *)
@@ -503,7 +505,6 @@ The precedences must be listed from low to high.
 (* Default values *)
 
 %token DEFAULT
-%left DEFAULT
 
 %default AMPERAMPER AMPERSAND AND AS ASSERT BACKQUOTE BANG BAR BARBAR
          BARRBRACKET BEGIN CLASS COLON COLONCOLON COLONEQUAL COLONGREATER COMMA
@@ -547,11 +548,12 @@ The precedences must be listed from low to high.
          expr_semi_list label_declarations module_bindings
          module_rec_declarations pattern_comma_list pattern_semi_list
          optional_type_parameters row_field_list sig_attribute signature_item
+         structure structure_tail
          str_attribute structure_item type_declarations let_bindings
          with_constraints field_expr_list functor_args lident_list
          primitive_declaration
          interface signature signature_tail
-         implementation structure structure_tail
+         implementation
          class_declaration class_description class_field class_type_declaration
   {[]}
 

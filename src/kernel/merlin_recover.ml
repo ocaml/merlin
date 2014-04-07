@@ -2,12 +2,15 @@ open Std
 open Raw_parser
 
 let rollbacks parser =
+  let counter = ref 10 in
   let rec aux (location,{Location. txt = parser}) =
     let loc' = Merlin_parser.location parser in
     match Merlin_parser.recover ?location parser with
     | None -> None
-    | Some parser -> None
-      (*Some (Some loc', parser)*)
+    | Some _ when !counter <= 0 -> None
+    | Some parser ->
+      decr counter;
+      Some (Some loc', parser)
   in
   let stacks = List.unfold aux (None,Location.mkloc parser Location.none) in
   let recoverable = List.map ~f:snd stacks in
