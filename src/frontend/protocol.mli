@@ -57,7 +57,8 @@ type _ request =
   | Errors
     :  exn list request
   | Dump
-    :  [`Env of [`Normal|`Full] * position option|`Sig|`Parser|`Exn|`History|`Recover]
+    :  [`Env of [`Normal|`Full] * position option
+       |`Sig|`Parser|`Exn|`History|`Recover|`Typer_input]
     -> Json.json request
   | Which_path
     :  string

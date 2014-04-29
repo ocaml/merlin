@@ -1,12 +1,5 @@
 open Std
 
-let rec find_structure md =
-  match md.Typedtree.mod_desc with
-  | Typedtree.Tmod_structure _ -> Some md
-  | Typedtree.Tmod_functor (_,_,_,md) -> find_structure md
-  | Typedtree.Tmod_constraint (md,_,_,_) -> Some md
-  | _ -> None
-
 let caught catch =
   let caught = !catch in
   catch := [];

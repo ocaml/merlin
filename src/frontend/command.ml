@@ -100,13 +100,6 @@ let dispatch (state : state) =
     Type_utils.type_in_env env ppf source;
     to_string ()
 
-  | (Type_expr (source, Some pos) : a request) ->
-    let typer = Buffer.typer state.buffer in
-    let { Browse.env } = Completion.node_at typer pos in
-    let ppf, to_string = Format.to_string () in
-    Type_utils.type_in_env env ppf source;
-    to_string ()
-
   | (Type_enclosing ((expr, offset), pos) : a request) ->
     let typer = Buffer.typer state.buffer in
     let structures = Typer.structures typer in
@@ -294,6 +287,11 @@ let dispatch (state : state) =
   | (Dump `Parser : a request) ->
     let ppf, to_string = Format.to_string () in
     Merlin_recover.dump ppf (Buffer.recover state.buffer);
+    `String (to_string ())
+
+  | (Dump `Typer_input : a request) ->
+    let ppf, to_string = Format.to_string () in
+    Typer.dump ppf (Buffer.typer state.buffer);
     `String (to_string ())
 
   | (Dump `Recover : a request) ->

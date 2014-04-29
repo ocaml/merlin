@@ -291,6 +291,8 @@ module Protocol_io = struct
       Request (Dump `Exn)
     | [`String "dump"; `String "history"] ->
       Request (Dump `History)
+    | [`String "dump"; `String "typer"; `String "input"] ->
+      Request (Dump `Typer_input)
     | [`String "which"; `String "path"; `String name] ->
       Request (Which_path name)
     | [`String "which"; `String "with_ext"; `String ext] ->
