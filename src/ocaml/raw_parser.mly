@@ -290,6 +290,8 @@ let fake_class_signature = Csig.mk fake_any_typ []
 let fake_class_type = Cty.mk (Pcty_signature fake_class_signature)
 let fake_class_type_field =
   Ctf.mk (Pctf_constraint (fake_any_typ,fake_any_typ))
+let fake_lident = Longident.Lident ""
+let fake_lident_loc = mknoloc fake_lident
 
 %}
 
@@ -620,26 +622,29 @@ The precedences must be listed from low to high.
 %default class_sig_field
   {fake_class_type_field}
 
+%default additive constr_ident functor_arg_name label operator single_attr_id
+         subtractive val_ident ident name_tag
+  {""}
+
+%default constant signed_constant
+  {Const_int 0}
+
+%default class_longident clty_longident constr_longident label_longident
+         mod_ext_longident mod_longident mty_longident type_longident
+         val_longident
+  {fake_lident}
+
+%default package_type_cstr {fake_lident_loc, fake_any_typ}
+%default lbl_expr {fake_lident_loc, Fake.any_val'}
+%default lbl_pattern {fake_lident_loc, fake_any_pat}
+
+%default direction_flag {Upto}
+
+%default ext_attributes {None, []}
+
 (*
 type_parameter                                     Ast_helper.str * Asttypes.variance
 optional_type_parameter                            Ast_helper.str option * Asttypes.variance
-constant                                           Asttypes.constant
-signed_constant                                    Asttypes.constant
-direction_flag                                     Asttypes.direction_flag
-ident                                              Asttypes.label
-name_tag                                           Asttypes.label
-package_type_cstr                                  Longident.t Asttypes.loc * Parsetree.core_type
-lbl_expr                                           Longident.t Asttypes.loc * Parsetree.expression
-lbl_pattern                                        Longident.t Asttypes.loc * Parsetree.pattern
-class_longident                                    Longident.t
-clty_longident                                     Longident.t
-constr_longident                                   Longident.t
-label_longident                                    Longident.t
-mod_ext_longident                                  Longident.t
-mod_longident                                      Longident.t
-mty_longident                                      Longident.t
-type_longident                                     Longident.t
-val_longident                                      Longident.t
 match_case                                         Parsetree.case
 constructor_declaration                            Parsetree.constructor_declaration
 exception_declaration                              Parsetree.constructor_declaration
@@ -656,21 +661,13 @@ type_declaration                                   Parsetree.type_declaration
 type_kind                                          Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option
 let_binding                                        Parsetree.value_binding
 with_constraint                                    Parsetree.with_constraint
-additive                                           string
 value                                              string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind
 method_                                            string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind
 attr_id                                            string Asttypes.loc
 ext_attributes                                     string Asttypes.loc option * Ast_helper.attrs
 functor_arg                                        string Asttypes.loc * Parsetree.module_type option
 value_type                                         string * Asttypes.mutable_flag * Asttypes.virtual_flag * tree.core_type
-constr_ident                                       string
-functor_arg_name                                   string
-label                                              string
-operator                                           string
 field                                              string * Parsetree.core_type
-single_attr_id                                     string
-subtractive                                        string
-val_ident                                          string
 
 
 *)

@@ -87,10 +87,31 @@ let implementation = Raw_parser.implementation_state
 let interface = Raw_parser.interface_state
 
 let stack = Frame.stack
+
+let pop = function
+  | Final _ -> None
+  | Partial (p, depth) ->
+    match MenhirUtils.pop p.Raw_parser.env with
+    | None -> None
+    | Some env ->
+      let p = {p with Raw_parser.env = env} in
+      Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
+
+let rec pop_default t =
+  match Option.map (stack t) ~f:Frame.value with
+  | Some P.Terminal P.DEFAULT ->
+    begin match pop t with
+      | Some p -> pop_default p
+      | None -> assert false
+    end
+  | None | Some _ -> t
+
 let location t =
-  match stack t with
-  | None -> Location.none
-  | Some frame -> Frame.location frame
+  let t = pop_default t in
+  Option.value_map
+    ~default:Location.none
+    ~f:Frame.location
+    (stack t)
 
 let reached_eof = function
   | Partial _ -> false
@@ -108,6 +129,10 @@ let rec of_step s depth =
   | `Step p ->
     of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
+let to_step = function
+  | Partial (step,_) -> Some step
+  | Final _ -> None
+
 let from state input =
   match of_step (Raw_parser.initial state input) MenhirUtils.initial_depth with
   | `Step p -> p
@@ -124,28 +149,17 @@ let feed (s,t,e as input) parser =
       let p' = Raw_parser.feed p input in
       of_step p' depth
 
-let to_step = function
-  | Partial (step,_) -> Some step
-  | Final _ -> None
-
 let dump ppf t =
   let rec aux ppf = function
     | None -> Format.fprintf ppf "[]\n%!"
     | Some frame ->
-      Format.fprintf ppf "(%d, %s) :: %a"
-        (Frame.depth frame) (Values.to_string (Frame.value frame))
+      let v = Frame.value frame in
+      let l,c = Lexing.split_pos (Frame.location frame).Location.loc_start in
+      Format.fprintf ppf "(%d, %s %d:%d) :: %a"
+        (Frame.depth frame) (Values.to_string v) l c
         aux (Frame.next frame)
   in
   aux ppf (Frame.stack t)
-
-let pop = function
-  | Final _ -> None
-  | Partial (p, depth) ->
-    match MenhirUtils.pop p.Raw_parser.env with
-    | None -> None
-    | Some env ->
-      let p = {p with Raw_parser.env = env} in
-      Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
 let last_token = function
   | Final {Location. loc = {Location. loc_end = l; _}; _} ->
@@ -164,15 +178,10 @@ let recover ?location t =
       | None -> Frame.location frame
       | Some l -> l
     in
-    let t =
-      match feed (l.Location.loc_start,P.DEFAULT,l.Location.loc_end) t with
-      | `Accept _ -> None
-      | `Reject -> None (*Option.bind (pop t) ~f:pop*)
-      | `Step t -> Some t
-    in
-    match t with
-    | None -> None
-    | Some t -> Some (Location.mkloc t l)
+    match feed (l.Location.loc_start,P.DEFAULT,l.Location.loc_end) t with
+    | `Accept _ | `Reject -> None
+    | `Step t' ->
+      Some (Location.mkloc t' l)
 
 module Integrate
     (P : sig
@@ -280,6 +289,10 @@ struct
     match Frame.stack p with
     | None -> empty st
     | Some frame -> update st frame t
+
+  let previous = function
+    | Zero _ -> None
+    | More (_,_,t) -> Some t
 
 end
 

@@ -5,25 +5,15 @@ let rollbacks parser =
   let counter = ref 10 in
   let rec aux (location,{Location. txt = parser}) =
     let loc' = Merlin_parser.location parser in
+    decr counter;
     match Merlin_parser.recover ?location parser with
     | None -> None
-    | Some _ when !counter <= 0 -> None
-    | Some parser ->
-      decr counter;
-      Some (Some loc', parser)
+    | Some _ when !counter = 0 -> None
+    | Some p -> Some (Some loc', p)
   in
-  let stacks = List.unfold aux (None,Location.mkloc parser Location.none) in
+  let parser = (None, Location.mkloc parser (Merlin_parser.location parser)) in
+  let stacks = parser :: List.unfold aux parser in
   let recoverable = List.map ~f:snd stacks in
-  (*let last_pos = ref (-1) in
-  let recoverable =
-    List.filter_map recoverable
-    ~f:(fun ({Location. txt; loc} as t) ->
-        let start = snd (Lexing.split_pos loc.Location.loc_start) in
-        if start = !last_pos
-        then None
-        else (last_pos := start; Some t)
-       )
-  in*)
   Zipper.of_list recoverable
 
 type t = {
@@ -51,35 +41,30 @@ let feed_normal (_,tok,_ as input) parser =
 
 let closing_token = function
   | END -> true
+  | RPAREN -> true
   | _ -> false
 
 let feed_recover original (s,tok,e as input) zipper =
   let get_col x = snd (Lexing.split_pos x) in
   let col = get_col s in
   (* Find appropriate recovering position *)
-  let to_the_right =
-    Zipper.seek_backward
-      (fun {Location. txt; loc} -> col > get_col loc.Location.loc_start)
-  and to_the_left =
-    Zipper.seek_forward
-      (fun {Location. txt; loc} -> get_col loc.Location.loc_start > col)
+  let until_after  {Location. txt; loc} = col >= get_col loc.Location.loc_start
+  and until_before {Location. txt; loc} = get_col loc.Location.loc_start >= col
   in
-  let zipper = to_the_right zipper in
-  let zipper = to_the_left zipper in
-  (* Closing tokens are applied one step behind *)
-  let zipper =
-    Zipper.shift (if closing_token tok then -1 else 0)
-      zipper
+  let zipper = Zipper.seek_backward until_before zipper in
+  let zipper = Zipper.seek_forward until_after zipper in
+  let candidates = Zipper.select_backward until_before zipper in
+  let rec aux = function
+    | {Location. txt = candidate} :: candidates ->
+      begin match Merlin_parser.feed input candidate with
+      | `Step parser ->
+        Either.R parser
+      | `Reject ->
+        aux candidates
+      end
+    | [] -> Either.L zipper
   in
-  match zipper with
-  | Zipper ([], _, []) -> Either.R original
-  | Zipper (_, _, cell :: _) | Zipper (cell :: _, _, _) ->
-    let candidate = cell.Location.txt in
-    match Merlin_parser.feed input candidate with
-    | `Reject ->
-      Either.L zipper
-    | `Step parser ->
-      Either.R parser
+  aux candidates
 
 let fold warnings token t =
   match token with
@@ -124,7 +109,7 @@ let fold token t =
 
 let dump_snapshot ppf {Location. txt; loc} =
   Format.fprintf ppf "- position: %a\n  parser: %a\n"
-    Location.print loc
+    Location.print (Merlin_parser.location txt)
     Merlin_parser.dump txt
 
 let dump_recovering ppf = function

@@ -71,6 +71,7 @@ sig
   val update' : P.st -> parser -> t -> t
 
   val value : t -> P.t
+  val previous : t -> t option
 end
 
 (** A basic metric: path leading to an item *)
