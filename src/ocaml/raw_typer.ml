@@ -47,3 +47,15 @@ let step v (is_rec,_) = match v with
       default, [Pattern ("",None,pat)]
     | _ -> empty
 
+let dump_item ppf = function
+  | Structure str -> Printast.implementation ppf str
+  | Signature sg -> Printast.interface ppf sg
+  | Pattern _ -> ()
+  | Eval _ -> ()
+  | Bindings _ -> ()
+  | Newtype _ -> ()
+  | Functor_argument _ -> ()
+  | Open _ -> ()
+
+let dump ppf t =
+  List.iter (dump_item ppf) (observe t)

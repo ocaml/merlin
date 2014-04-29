@@ -194,3 +194,8 @@ let is_valid t =
   with
   | Either.L _exn -> false
   | Either.R result -> result
+
+let dump ppf t =
+  let ts = t.typer :: List.unfold I.previous t.typer in
+  let ts = List.map ts ~f:(fun x -> (I.value x).P.raw) in
+  List.iter (Raw_typer.dump ppf) ts

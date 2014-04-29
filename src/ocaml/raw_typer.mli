@@ -16,3 +16,5 @@ val empty : t
 val step : Raw_parser.semantic_value -> t -> t
 
 val observe : t -> item list
+
+val dump : Format.formatter -> t -> unit
