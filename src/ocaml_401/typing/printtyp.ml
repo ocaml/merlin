@@ -828,7 +828,11 @@ let rec tree_of_type_decl id decl =
   let tree_of_manifest ty1 =
     match ty_manifest with
     | None -> ty1
-    | Some ty -> Otyp_manifest (tree_of_typexp false ty, ty1)
+    | Some ty ->
+      Std.Fluid.(
+        let' (from_ref Clflags.real_paths) true
+          (fun () -> Otyp_manifest (tree_of_typexp false ty, ty1))
+      )
   in
   let (name, args) = type_defined decl in
   let constraints = tree_of_constraints params in
@@ -838,7 +842,10 @@ let rec tree_of_type_decl id decl =
         begin match ty_manifest with
         | None -> (Otyp_abstract, Public)
         | Some ty ->
-            tree_of_typexp false ty, decl.type_private
+          Std.Fluid.(
+            let' (from_ref Clflags.real_paths) true
+              (fun () -> tree_of_typexp false ty, decl.type_private)
+          )
         end
     | Type_variant cstrs ->
         tree_of_manifest (Otyp_sum (List.map tree_of_constructor cstrs)),
