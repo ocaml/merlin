@@ -38,10 +38,13 @@ type node =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
+let default_loc = Location.none
+let default_env = Env.empty
+
 type t = {
   t_node: node;
-  t_loc : Location.t option;
-  t_env : Env.t option;
+  t_loc : Location.t;
+  t_env : Env.t;
   t_children: t list lazy_t;
 }
 
@@ -94,6 +97,8 @@ let rec of_node t_node =
     | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
       -> None, None
   in
+  let t_loc = Option.value ~default:default_loc t_loc in
+  let t_env = Option.value ~default:default_env t_env in
   let children () =
     match t_node with
     | Pattern { pat_desc; pat_loc; pat_extra } ->
@@ -440,16 +445,18 @@ and of_class_type_field_desc desc acc = match desc with
   | Tctf_constraint (ct1,ct2) ->
     of_core_type ct1 :: of_core_type ct2 :: acc
 
-type t_annot = {
-  ta_node: node;
-  ta_loc : Location.t;
-  ta_env : Env.t;
-  ta_children: t_annot list lazy_t;
-}
-let rec annot loc env { t_node; t_loc; t_env; t_children } =
-  let ta_loc = Option.value ~default:loc t_loc in
-  let ta_env = Option.value ~default:env t_env in
-  { ta_node = t_node; ta_loc; ta_env;
-    ta_children =
-      lazy (List.map (annot ta_loc ta_env) (Lazy.force t_children));
-  }
+let rec annot loc env t =
+  let t_loc = if t.t_loc == default_loc then loc else t.t_loc in
+  let t_env = if t.t_env == default_env then env else t.t_env in
+  if (t_loc != t.t_loc ) || (t_env != t.t_env) then
+    { t_node = t.t_node; t_loc; t_env;
+      t_children = lazy (List.map (annot loc env) (Lazy.force t.t_children)) }
+  else
+    t
+
+let of_node ?(loc=default_loc) ?(env=default_env) node =
+  let t = of_node node in
+  if loc != default_loc || env != default_env then
+    annot loc env t
+  else
+    t

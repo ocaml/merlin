@@ -26,11 +26,20 @@
 
 )* }}} *)
 
-(* The browse module transforms Typedtree into an uniform tree
- * suited for easy navigation, allowing to locate the typing environment
- * and the kind of construction at a given point.
- * This is used both by the type-at-point and completion features.
- *)
+(** [BrowseT] offers a uniform interface to traverse constructions from
+  * [TypedTree].
+  *
+  * Mutually recursive types from [TypedTree] are wrapped into different
+  * constructors of the type [node].
+  * Then type [t] allows to build a tree of [node]s.
+  *
+  * Finally the function [of_node] turns a [node] into a [t] tree, which
+  * structure mimics the recursive structure of the [TypedTree] node.
+  *
+  * [t] also tries to capture the location and environment of node and defaults
+  * to [default_loc] and [default_env] otherwise.
+  *
+  *)
 
 open Typedtree
 
@@ -72,18 +81,21 @@ type node =
   | Class_type_declaration   of class_type_declaration
 
 type t = {
-  t_node: node;
-  t_loc : Location.t option;
-  t_env : Env.t option;
-  t_children: t list lazy_t;
+  t_node     : node;
+  t_loc      : Location.t;
+  t_env      : Env.t;
+  t_children : t list lazy_t;
 }
 
-val of_node : node -> t
+val default_loc : Location.t
+val default_env : Env.t
 
-type t_annot = {
-  ta_node: node;
-  ta_loc : Location.t;
-  ta_env : Env.t;
-  ta_children: t_annot list lazy_t;
-}
-val annot : Location.t -> Env.t -> t -> t_annot
+(** [of_node ?loc ?env node] produces a tree from [node], using [loc] and [env]
+  * as default annotation when nothing can be inferred from the [node].
+  * [loc] and [env] default to [default_loc] and [default_env].
+  *)
+val of_node : ?loc:Location.t -> ?env:Env.t -> node -> t
+
+(** [annot loc env t] replace [default_loc] and [default_env] in [t] by [loc]
+  * and [env]. *)
+val annot : Location.t -> Env.t -> t -> t

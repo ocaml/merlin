@@ -17,15 +17,18 @@ let rec last_env t =
     | [] -> candidate
     | x :: xs ->
       last (if Lexing.compare_pos
-               x.BrowseT.ta_loc.Location.loc_start
-               candidate.BrowseT.ta_loc.Location.loc_start
+               x.BrowseT.t_loc.Location.loc_start
+               candidate.BrowseT.t_loc.Location.loc_start
                > 0
             then x
             else candidate)
         xs
   in
-  let t' = last t (Lazy.force t.BrowseT.ta_children) in
-  if t == t' then t' else last_env t'
+  let t' = last t (Lazy.force t.BrowseT.t_children) in
+  if t == t' then
+    t'
+  else
+    last_env t'
 
 module P = struct
   open Raw_parser
@@ -112,9 +115,10 @@ module P = struct
             Either.get (Parsing_aux.catch_warnings (ref [])
                           (fun () -> Typemod.type_structure t.env [str] loc))
           in
-          let browse = BrowseT.of_node (BrowseT.Structure structure) in
-          let browse = BrowseT.annot loc t.env browse in
-          (last_env browse).BrowseT.ta_env, structure :: t.structures
+          let browse =
+            BrowseT.of_node ~loc ~env:t.env (BrowseT.Structure structure)
+          in
+          (last_env browse).BrowseT.t_env, structure :: t.structures
         | `none -> t.env, t.structures
       in
       Typecore.reset_delayed_checks ();
