@@ -53,13 +53,19 @@ let feed_recover original (s,tok,e as input) zipper =
   in
   let zipper = Zipper.seek_backward until_before zipper in
   let zipper = Zipper.seek_forward until_after zipper in
-  let candidates = Zipper.select_backward until_before zipper in
+  let candidates = List.rev (Zipper.select_backward until_before zipper) in
   let rec aux = function
     | {Location. txt = candidate} :: candidates ->
       begin match Merlin_parser.feed input candidate with
       | `Step parser ->
+        Logger.debugf `internal (fun ppf ->
+            Format.fprintf ppf "selected recovery %a\n%!" Merlin_parser.dump)
+          candidate;
         Either.R parser
       | `Reject ->
+        Logger.debugf `internal (fun ppf ->
+            Format.fprintf ppf "failed recovery from %a\n%!" Merlin_parser.dump)
+          candidate;
         aux candidates
       end
     | [] -> Either.L zipper
