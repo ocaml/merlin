@@ -100,7 +100,6 @@ END
 
 check_package EXIT findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
 check_package EXIT yojson "Install yojson"
-check_package EXIT menhirLib "Please install menhir."
 MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number|cut -d' ' -f2)
 
 case "$MAGIC_VERSION" in

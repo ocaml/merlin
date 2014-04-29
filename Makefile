@@ -9,6 +9,8 @@ DESTDIR ?=
 BIN_DIR := $(DESTDIR)$(BIN_DIR)
 SHARE_DIR := $(DESTDIR)$(SHARE_DIR)
 
+TYPER_VERSIONS=400 401
+
 all: $(TARGET)
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
@@ -24,10 +26,23 @@ $(TARGET): assert_configured
 	$(OCAMLBUILD) $(INCLUDE_DEFAULT) $(WITH_BIN_ANNOT) -use-ocamlfind $@
 
 all_versions:
-	for i in _400 _401; do \
-		$(MAKE) TYPER_VERSION=$$i $(TARGET) || exit 1;\
-		cp $(TARGET) ocamlmerlin$$i;\
+	for i in $(TYPER_VERSIONS); do \
+		$(MAKE) TYPER_VERSION=_$$i $(TARGET) || exit 1;\
+		cp $(TARGET) ocamlmerlin_$$i;\
 	done
+
+preprocess:
+	$(OCAMLBUILD) -use-ocamlfind -use-menhir -tag use_new_menhir \
+		-I src/ocaml$(TYPER_VERSION)/preprocess \
+		src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.ml \
+		src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.mli \
+		src/kernel/preprocess/raw_lexer.ml
+	cp _build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.ml \
+		src/ocaml$(TYPER_VERSION)/raw_parser.ml
+	cp _build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.mli \
+		src/ocaml$(TYPER_VERSION)/raw_parser.mli
+	cp _build/src/kernel/preprocess/raw_lexer.ml \
+		src/kernel/raw_lexer.ml
 
 debug: assert_configured
 	$(OCAMLBUILD) -cflags -bin-annot -use-ocamlfind $(TARGET) -tag debug
