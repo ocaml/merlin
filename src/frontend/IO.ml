@@ -50,7 +50,7 @@ let json_log (input,output) =
     json
   in
   let log_output json =
-    Logger.log section ~prefix:("// > " ^ log_time () ^ "\n")
+    Logger.log section ~prefix:("// > " ^ log_time () ^ "\n// ")
       (Json.to_string json);
     json
   in
