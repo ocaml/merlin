@@ -307,6 +307,20 @@ module Zipper = struct
     | _ -> Zipper (head, n, tail)
   let seek_backward pred (Zipper (head,n,tail)) =
     seek_backward pred head n tail
+
+  let rec select_forward pred acc tail =
+    match tail with
+    | x :: xs when pred x -> select_forward pred (x :: acc) xs
+    | _ -> acc
+  let select_forward pred (Zipper (head,n,tail)) =
+    select_forward pred [] tail
+
+  let rec select_backward pred head acc =
+    match head with
+    | x :: xs when pred x -> select_backward pred xs (x :: acc)
+    | _ -> acc
+  let select_backward pred (Zipper (head,n,tail)) =
+    select_backward pred head tail
 end
 type 'a zipper = 'a Zipper.t = Zipper of 'a list * int * 'a list
 
