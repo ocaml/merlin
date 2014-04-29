@@ -3,6 +3,8 @@ open Ocamlbuild_plugin ;;
 dispatch begin function
   | After_rules ->
     (* Menhir --table *)
+    mark_tag_used "use_menhir";
+    mark_tag_used "use_menhir_table";
     flag ["ocaml" ; "menhir"; "use_new_menhir"]
       (S [A "--table"; A"--typed-values"; A"--stepwise"]);
     (* Menhir --external-tokens and --base flag *)
