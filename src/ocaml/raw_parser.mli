@@ -31,6 +31,7 @@ type token =
   | QUESTION
   | PRIVATE
   | PREFIXOP of (string)
+  | PLUSEQ
   | PLUSDOT
   | PLUS
   | PERCENT
@@ -69,6 +70,7 @@ type token =
   | LBRACKETLESS
   | LBRACKETGREATER
   | LBRACKETBAR
+  | LBRACKETATATAT
   | LBRACKETATAT
   | LBRACKETAT
   | LBRACKET
@@ -104,6 +106,7 @@ type token =
   | EXTERNAL
   | EXCEPTION
   | EQUAL
+  | EOL
   | EOF
   | ENTRYPOINT
   | END
@@ -147,9 +150,10 @@ and nonterminal =
   | NT'val_ident of (string)
   | NT'typevar_list of (Asttypes.label list)
   | NT'type_variance of (Asttypes.variance)
-  | NT'type_parameters of ((Ast_helper.str * Asttypes.variance) list)
-  | NT'type_parameter_list of ((Ast_helper.str * Asttypes.variance) list)
-  | NT'type_parameter of (Ast_helper.str * Asttypes.variance)
+  | NT'type_variable of (Parsetree.core_type)
+  | NT'type_parameters of ((Parsetree.core_type * Asttypes.variance) list)
+  | NT'type_parameter_list of ((Parsetree.core_type * Asttypes.variance) list)
+  | NT'type_parameter of (Parsetree.core_type * Asttypes.variance)
   | NT'type_longident of (Longident.t)
   | NT'type_kind of (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option)
   | NT'type_declarations of (Parsetree.type_declaration list)
@@ -161,7 +165,9 @@ and nonterminal =
   | NT'structure_item of (Parsetree.structure_item list)
   | NT'structure of (Parsetree.structure)
   | NT'strict_binding of (Parsetree.expression)
-  | NT'str_attribute of (Parsetree.structure_item list)
+  | NT'str_type_extension of (Parsetree.type_extension)
+  | NT'str_extension_constructors of (Parsetree.extension_constructor list)
+  | NT'str_exception_declaration of (Parsetree.extension_constructor)
   | NT'single_attr_id of (string)
   | NT'simple_pattern_not_ident of (Parsetree.pattern)
   | NT'simple_pattern of (Parsetree.pattern)
@@ -173,10 +179,11 @@ and nonterminal =
   | NT'simple_core_type2 of (Parsetree.core_type)
   | NT'simple_core_type of (Parsetree.core_type)
   | NT'signed_constant of (Asttypes.constant)
-  | NT'signature_tail of (Parsetree.signature)
   | NT'signature_item of (Parsetree.signature_item list)
   | NT'signature of (Parsetree.signature)
-  | NT'sig_attribute of (Parsetree.signature_item list)
+  | NT'sig_type_extension of (Parsetree.type_extension)
+  | NT'sig_extension_constructors of (Parsetree.extension_constructor list)
+  | NT'sig_exception_declaration of (Parsetree.extension_constructor)
   | NT'seq_expr of (Parsetree.expression)
   | NT'row_field_list of (Parsetree.row_field list)
   | NT'row_field of (Parsetree.row_field)
@@ -200,14 +207,16 @@ and nonterminal =
   | NT'package_type_cstr of (Longident.t Asttypes.loc * Parsetree.core_type)
   | NT'package_type of (Parsetree.package_type)
   | NT'override_flag of (Asttypes.override_flag)
-  | NT'optional_type_parameters of ((Ast_helper.str option * Asttypes.variance) list)
-  | NT'optional_type_parameter_list of ((Ast_helper.str option * Asttypes.variance) list)
-  | NT'optional_type_parameter of (Ast_helper.str option * Asttypes.variance)
+  | NT'optional_type_variable of (Parsetree.core_type)
+  | NT'optional_type_parameters of ((Parsetree.core_type * Asttypes.variance) list)
+  | NT'optional_type_parameter_list of ((Parsetree.core_type * Asttypes.variance) list)
+  | NT'optional_type_parameter of (Parsetree.core_type * Asttypes.variance)
   | NT'opt_semi of (unit)
   | NT'opt_default of (Parsetree.expression option)
   | NT'opt_bar of (unit)
   | NT'opt_ampersand of (bool)
   | NT'operator of (string)
+  | NT'open_statement of (Parsetree.open_description)
   | NT'newtype of (string)
   | NT'name_tag_list of (Asttypes.label list)
   | NT'name_tag of (Asttypes.label)
@@ -221,11 +230,11 @@ and nonterminal =
   | NT'module_bindings of (Parsetree.module_binding list)
   | NT'module_binding_body of (Parsetree.module_expr)
   | NT'module_binding of (Parsetree.module_binding)
-  | NT'mod_open of (Asttypes.override_flag * Longident.t Asttypes.loc)
   | NT'mod_longident of (Longident.t)
   | NT'mod_ext_longident of (Longident.t)
   | NT'method_ of (string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind)
-  | NT'meth_list of ((string * Parsetree.core_type) list * Asttypes.closed_flag)
+  | NT'meth_list of ((string * Parsetree.attributes * Parsetree.core_type) list *
+  Asttypes.closed_flag)
   | NT'match_cases of (Parsetree.case list)
   | NT'match_case of (Parsetree.case)
   | NT'lident_list of (string list)
@@ -257,16 +266,18 @@ and nonterminal =
   | NT'functor_arg of (string Asttypes.loc * Parsetree.module_type option)
   | NT'fun_def of (Parsetree.expression)
   | NT'fun_binding of (Parsetree.expression)
+  | NT'floating_attribute of (Parsetree.attribute)
   | NT'field_expr_list of ((string Asttypes.loc * Parsetree.expression) list)
-  | NT'field of (string * Parsetree.core_type)
+  | NT'field of (string * Parsetree.attributes * Parsetree.core_type)
+  | NT'extension_constructor_rebind of (Parsetree.extension_constructor)
+  | NT'extension_constructor_declaration of (Parsetree.extension_constructor)
   | NT'extension of (Parsetree.extension)
-  | NT'ext_attributes of (string Asttypes.loc option * Ast_helper.attrs)
+  | NT'ext_attributes of (string Asttypes.loc option * Parsetree.attributes)
   | NT'expr_semi_list of (Parsetree.expression list)
   | NT'expr_open of (Asttypes.override_flag * Longident.t Asttypes.loc *
-  (string Asttypes.loc option * Ast_helper.attrs))
+  (string Asttypes.loc option * Parsetree.attributes))
   | NT'expr_comma_list of (Parsetree.expression list)
   | NT'expr of (Parsetree.expression)
-  | NT'exception_declaration of (Parsetree.constructor_declaration)
   | NT'dummy of (unit)
   | NT'direction_flag of (Asttypes.direction_flag)
   | NT'core_type_list_no_attr of (Parsetree.core_type list)
@@ -283,7 +294,7 @@ and nonterminal =
   | NT'constr_ident of (string)
   | NT'constant of (Asttypes.constant)
   | NT'clty_longident of (Longident.t)
-  | NT'class_type_parameters of ((Ast_helper.str * Asttypes.variance) list)
+  | NT'class_type_parameters of ((Parsetree.core_type * Asttypes.variance) list)
   | NT'class_type_declarations of (Parsetree.class_type_declaration list)
   | NT'class_type_declaration of (Parsetree.class_type_declaration list)
   | NT'class_type of (Parsetree.class_type)
@@ -305,7 +316,7 @@ and nonterminal =
   | NT'class_description of (Parsetree.class_description list)
   | NT'class_declarations of (Parsetree.class_declaration list)
   | NT'class_declaration of (Parsetree.class_declaration list)
-  | NT'attributes of (Ast_helper.attrs)
+  | NT'attributes of (Parsetree.attributes)
   | NT'attribute of (Parsetree.attribute)
   | NT'attr_id of (string Asttypes.loc)
   | NT'amper_type_list of (Parsetree.core_type list)

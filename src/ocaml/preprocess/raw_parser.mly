@@ -291,7 +291,7 @@ let fake_class_type = Cty.mk (Pcty_signature fake_class_signature)
 let fake_class_type_field =
   Ctf.mk (Pctf_constraint (fake_any_typ,fake_any_typ))
 let fake_lident = Longident.Lident ""
-let fake_lident_loc = mknoloc fake_lident
+let fake_lident_loc = Location.mknoloc fake_lident
 
 %}
 

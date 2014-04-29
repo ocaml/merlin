@@ -1727,14 +1727,60 @@ let rec type_exp env sexp =
  *)
 
 and type_expect ?in_function env sexp ty_expected =
-  let previous_saved_types = Cmt_format.get_saved_types () in
-  Typetexp.warning_enter_scope ();
-  Typetexp.warning_attribute sexp.pexp_attributes;
-  let exp = type_expect_ ?in_function env sexp ty_expected in
-  Typetexp.warning_leave_scope ();
-  Cmt_format.set_saved_types
-    (Cmt_format.Partial_expression exp :: previous_saved_types);
-  exp
+  let open Std in
+  let aux () =
+    if ~!Typing_aux.relax_typer then
+      type_relax ?in_function env sexp ty_expected
+    else
+      let snap = Btype.snapshot () in
+      try type_expect_ ?in_function env sexp ty_expected
+      with (Typetexp.Error _ | Error _) ->
+        Btype.backtrack snap;
+        Fluid.let' Typing_aux.relax_typer true
+          (fun () -> type_relax ?in_function env sexp ty_expected)
+  in
+  match sexp.pexp_attributes with
+  | [] -> aux ()
+  | attributes ->
+    Typetexp.warning_enter_scope ();
+    Typetexp.warning_attribute sexp.pexp_attributes;
+    try_finally aux Typetexp.warning_leave_scope
+
+and type_relax ?in_function env sexp ty_expected =
+  let loc = sexp.pexp_loc in
+  let failwith_exn ~exn exp_desc =
+    Typing_aux.erroneous_type_register ty_expected;
+    Typing_aux.raise_error exn;
+    { exp_desc; exp_loc = loc;
+      exp_extra = [];
+      exp_type = ty_expected;
+      exp_env = env;
+      exp_attributes = [];
+    }
+  in
+  let snap = Btype.snapshot () in
+  try
+    let ty = newvar () in
+    let exp = type_expect_ ?in_function env sexp ty in
+    try
+      unify_exp_types sexp.pexp_loc env ty ty_expected;
+      exp
+    with (Typetexp.Error _ | Error _) as exn ->
+      Btype.backtrack snap;
+      (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
+      failwith_exn ~exn (Texp_tuple [exp])
+    with (Typetexp.Error _ | Error _) as exn ->
+      Btype.backtrack snap;
+      failwith_exn ~exn
+        (Texp_ident
+           (Path.Pident (Ident.create "*type-error*"),
+            Location.mkloc (Longident.Lident "*type-error*") loc,
+            { Types.
+              val_type = ty_expected;
+              val_kind = Val_reg;
+              val_loc = loc;
+              val_attributes = [];
+            }))
 
 and type_expect_ ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in
