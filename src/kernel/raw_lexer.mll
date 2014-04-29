@@ -229,7 +229,7 @@ let report_error ppf = function
   | Keyword_as_label kwd ->
     fprintf ppf "`%s' is a keyword, it cannot be used as label name" kwd
   | Literal_overflow ty ->
-    fprintf ppf "Integer literal exceeds the range of representable
+    fprintf ppf "Integer literal exceeds the range of representable\
                 \ integers of type %s" ty
 }
 

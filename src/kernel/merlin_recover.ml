@@ -35,7 +35,7 @@ type t = {
 let parser t = t.parser
 let exns t = t.errors
 
-let fresh parser = { errors = []; parser; recovering = None }
+let fresh parser = {errors = []; parser; recovering = None}
 
 let feed_normal (_,tok,_ as input) parser =
   Logger.debugf `internal

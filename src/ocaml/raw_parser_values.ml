@@ -1,8 +1,6 @@
 open Std
 open Raw_parser
 
-let index_table = ref [||]
-
 module Token =
 struct
   type t = token

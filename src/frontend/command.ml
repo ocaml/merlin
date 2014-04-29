@@ -49,7 +49,7 @@ let project_by_key key =
 let new_state () =
   let project = project_by_key "" in
   let buffer = Buffer.create project Parser.implementation in
-  { project; buffer; lexer = None }
+  {project; buffer; lexer = None}
 
 let position state =
   let lexer =

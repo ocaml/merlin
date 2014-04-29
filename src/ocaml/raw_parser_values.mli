@@ -1,3 +1,5 @@
+(** Helpers around Menhir generated definitions *)
+
 module Token : sig
   type t = Raw_parser.token
   val to_string: t -> string

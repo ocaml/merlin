@@ -18,6 +18,7 @@ type frame =
   | Final_frame of Raw_parser.semantic_value Location.loc
 
 let get_stack s = s.Raw_parser.env.E.stack
+let mk_loc loc_start loc_end = {Location. loc_start; loc_end; loc_ghost = false}
 
 module Frame : sig
   val stack : t -> frame option
@@ -32,6 +33,7 @@ module Frame : sig
   type destruct = D of Raw_parser.semantic_value * destruct lazy_t
   val destruct: frame -> destruct
 end = struct
+
   let frame_of d stack =
     if stack.E.next == stack then
       None
@@ -54,17 +56,13 @@ end = struct
 
   let location = function
     | Partial_frame (_,frame) ->
-      { Location.
-        loc_start = frame.E.startp;
-        loc_end = frame.E.endp;
-        loc_ghost = false
-      }
+      mk_loc frame.E.startp frame.E.endp
     | Final_frame l ->
       l.Location.loc
 
   let eq a b = match a, b with
     | Partial_frame (_,f), Partial_frame (_,f') -> f == f'
-    | Final_frame f, Final_frame f' -> f == f'
+    | Final_frame f,       Final_frame f'       -> f == f'
     | _ -> false
 
   let next = function
@@ -82,6 +80,7 @@ end = struct
       | None -> lazy destruct_bottom
     in
     D (v,tl)
+
 end
 
 let implementation = Raw_parser.implementation_state
@@ -95,19 +94,13 @@ let location t =
 
 let reached_eof = function
   | Partial _ -> false
-  | Final _ -> true
+  | Final _   -> true
 
 let rec of_step s depth =
   match Raw_parser.step s with
   | `Accept txt ->
     let frame = (get_stack s) in
-    let loc =
-      { Location.
-        loc_start = frame.E.startp;
-        loc_end = frame.E.endp;
-        loc_ghost = false
-      }
-    in
+    let loc = mk_loc frame.E.startp frame.E.endp in
     `Step (Final {Location. txt; loc})
   | `Reject -> `Reject
   | `Feed p ->
@@ -157,11 +150,11 @@ let pop = function
 let last_token = function
   | Final {Location. loc = {Location. loc_end = l; _}; _} ->
     Location.mkloc Raw_parser.EOF
-      { Location. loc_start = l; loc_end = l; loc_ghost = false }
+      {Location. loc_start = l; loc_end = l; loc_ghost = false}
   | Partial (parser,_) ->
     let loc_start,t,loc_end = parser.Raw_parser.env.E.token in
     Location.mkloc t
-      { Location. loc_start; loc_end; loc_ghost = false }
+      {Location. loc_start; loc_end; loc_ghost = false}
 
 let recover ?location t =
   match Frame.stack t with
@@ -198,6 +191,7 @@ module Integrate
        val evict : st -> t -> unit
      end) =
 struct
+
   type t =
     | Zero of P.t
     | More of (P.t * frame * t)
@@ -286,10 +280,10 @@ struct
     match Frame.stack p with
     | None -> empty st
     | Some frame -> update st frame t
+
 end
 
 module Path : sig
-
   type item =
     | Let of Asttypes.rec_flag * int
     | Struct of int
@@ -419,5 +413,7 @@ end = struct
 
   let get p = snd (I.value p)
   let length p = fst (I.value p)
+
 end
+
 type path = Path.path

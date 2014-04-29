@@ -31,16 +31,17 @@ let rec last_env t =
     last_env t'
 
 module P = struct
+
   open Raw_parser
 
   type st = Extension.set * exn list ref
 
   type t = {
-    raw: Raw_typer.t;
-    snapshot: Btype.snapshot;
-    env: Env.t;
-    structures: Typedtree.structure list;
-    exns: exn list;
+    raw        : Raw_typer.t;
+    snapshot   : Btype.snapshot;
+    env        : Env.t;
+    structures : Typedtree.structure list;
+    exns       : exn list;
   }
 
   let empty (extensions,catch) =
@@ -59,9 +60,9 @@ module P = struct
     function
     | Raw_typer.Functor_argument (id,mty) ->
       let mexpr = Pmod_structure [] in
-      let mexpr = { pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = [] } in
+      let mexpr = {pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = []} in
       let mexpr = Pmod_functor (id, mty, mexpr) in
-      let mexpr = { pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = [] } in
+      let mexpr = {pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = []} in
       failwith "TODO"
     (*let item = Pstr_module (Location.mknoloc "" , mexpr) in
       `fake { pstr_desc = item; pstr_loc = loc }*)
@@ -126,8 +127,8 @@ module P = struct
        exns = caught catch @ t.exns}
     with exn ->
       Typecore.reset_delayed_checks ();
-      {t with exns = exn :: caught catch @ t.exns;
-              snapshot = Btype.snapshot () }
+      let snapshot = Btype.snapshot () in
+      {t with snapshot; exns = exn :: caught catch @ t.exns}
 
   let frame (_,catch) f t =
     let module Frame = Merlin_parser.Frame in
@@ -142,15 +143,16 @@ module P = struct
   let delta st f t ~old:_ = frame st f t
 
   let evict st _ = ()
+
 end
 
 module I = Merlin_parser.Integrate (P)
 
 type t = {
-  btype_cache: Btype.cache;
-  env_cache: Env.cache;
-  extensions : Extension.set;
-  typer : I.t;
+  btype_cache : Btype.cache;
+  env_cache   : Env.cache;
+  extensions  : Extension.set;
+  typer       : I.t;
 }
 
 let fluid_btype = Fluid.from_ref Btype.cache
