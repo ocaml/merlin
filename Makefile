@@ -32,7 +32,11 @@ all_versions:
 	done
 
 preprocess:
-	$(OCAMLBUILD) -use-ocamlfind -use-menhir -tag use_new_menhir \
+	rm -f \
+		_build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.ml \
+		_build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.mli \
+		_build/src/kernel/preprocess/raw_lexer.ml
+	$(OCAMLBUILD) -use-ocamlfind -use-menhir -tag use_new_menhir -yaccflags -lg,3\
 		-I src/ocaml$(TYPER_VERSION)/preprocess \
 		src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.ml \
 		src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.mli \
