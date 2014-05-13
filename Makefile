@@ -42,25 +42,16 @@ $(TARGET): assert_configured
 
 all_versions:
 	for i in $(OCAML_VERSIONS); do \
-		$(OCAMLMAKEFILE) OCAML_VERSION=_$$i \
+		$(OCAMLMAKEFILE) OCAML_VERSION=_$$i; \
 	done
 
 preprocess:
-	rm -f \
-		_build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.ml \
-		_build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.mli \
-		_build/src/kernel/preprocess/raw_lexer.ml
-	$(OCAMLBUILD) -use-ocamlfind -use-menhir -tag use_new_menhir -yaccflags -lg,3\
-		-I src/ocaml$(TYPER_VERSION)/preprocess \
-		src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.ml \
-		src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.mli \
-		src/kernel/preprocess/raw_lexer.ml
-	cp _build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.ml \
-		src/ocaml$(TYPER_VERSION)/raw_parser.ml
-	cp _build/src/ocaml$(TYPER_VERSION)/preprocess/raw_parser.mli \
-		src/ocaml$(TYPER_VERSION)/raw_parser.mli
-	cp _build/src/kernel/preprocess/raw_lexer.ml \
-		src/kernel/raw_lexer.ml
+	$(MAKE) -f Makefile.preprocess
+
+preprocess_all_versions:
+	for i in $(OCAML_VERSIONS); do \
+		$(MAKE) -f Makefile.preprocess OCAML_VERSION=_$$i; \
+	done
 
 debug: assert_configured
 	$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITH_DEBUG=1 $(TARGET)
