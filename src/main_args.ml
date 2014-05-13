@@ -19,6 +19,10 @@ let mk_debug f =
 \                                       - completion"
 ;;
 
+let mk_timed_logs f =
+  "-timed-logs", Arg.Unit f, " Adds time information in the log file when enabled"
+;;
+
 let mk_projectfind f =
   "-project-find", Arg.String f, "<path> Print name of merlin project near <path>, if any"
 ;;
@@ -118,6 +122,7 @@ let mk__ f =
 
 module type Top_options = sig
   val _debug : string -> unit
+  val _timed_logs : unit -> unit
   val _projectfind : string -> unit
   val _real_paths : unit -> unit
   val _absname : unit -> unit
@@ -150,6 +155,7 @@ module Make_top_options (F : Top_options) =
 struct
   let list = [
     mk_debug F._debug;
+    mk_timed_logs F._timed_logs;
     mk_projectfind F._projectfind;
     mk_real_paths F._real_paths;
     mk_absname F._absname;

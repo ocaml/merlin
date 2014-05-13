@@ -22,6 +22,7 @@ val no_std_include : bool ref
 val print_types : bool ref
 val make_archive : bool ref
 val debug : bool ref
+val timed_logs : bool ref
 val fast : bool ref
 val link_everything : bool ref
 val custom_runtime : bool ref

@@ -44,15 +44,14 @@ let json_log (input,output) =
     last_time := new_time;
     Printf.sprintf "time %f, delta %f" new_time (new_time -. old_time)
   in
+  let mk_prefix s =
+    if not !Clflags.timed_logs then s else sprintf "// %s %s\n" s (log_time ())
+  in
   let log_input json =
-    Logger.log section ~prefix:("// < " ^ log_time () ^ "\n")
-      (Json.to_string json);
-    json
+    Logger.log section ~prefix:(mk_prefix "<") (Json.to_string json); json
   in
   let log_output json =
-    Logger.log section ~prefix:("// > " ^ log_time () ^ "\n")
-      (Json.to_string json);
-    json
+    Logger.log section ~prefix:(mk_prefix ">") (Json.to_string json); json
   in
   let input' = Stream.map ~f:log_input input in
   let output' json = output (log_output json) in

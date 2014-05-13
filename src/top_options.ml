@@ -59,6 +59,8 @@ module Make (Bootstrap : sig val _projectfind : string -> unit end) = struct
         end
       | _ -> assert false
 
+    let _timed_logs = set Clflags.timed_logs
+
     let _real_paths = set Clflags.real_paths
     let _absname = set Location.absname
     let _I dir =

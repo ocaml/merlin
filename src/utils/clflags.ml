@@ -25,6 +25,7 @@ and no_std_include = ref false          (* -nostdlib *)
 and print_types = ref false             (* -i *)
 and make_archive = ref false            (* -a *)
 and debug = ref false                   (* -g *)
+and timed_logs = ref false              (* -timed-logs *)
 and fast = ref false                    (* -unsafe *)
 and link_everything = ref false         (* -linkall *)
 and custom_runtime = ref false          (* -custom *)
@@ -107,7 +108,7 @@ let snapshot =
     fun () -> r := v
   in
   let bools = [
-    compile_only; no_std_include; print_types; make_archive; debug; fast;
+    compile_only; no_std_include; print_types; make_archive; debug; timed_logs ; fast;
     link_everything; custom_runtime; output_c_object; classic; nopervasives;
     annotations; binary_annotations; use_threads; use_vmthreads; noassert;
     verbose; noprompt; nopromptcont; principal; real_paths; recursive_types;
