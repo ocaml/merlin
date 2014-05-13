@@ -10,29 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-let debug_spec =
-  let f section =
-    match Misc.rev_string_split section ~on:',' with
-    | [ section ] ->
-      begin try Logger.(monitor (Section.of_string section))
-        with Invalid_argument _ -> () end
-    | [ log_path ; section ] ->
-      begin try
-          let section = Logger.Section.of_string section in
-          Logger.monitor ~dest:log_path section
-        with Invalid_argument _ ->
-          ()
-      end
-    | _ -> assert false
-  in
-  "-debug",
-  Arg.String f,
-  "<section>[,<log file path>] Activate logging for given sections.\n\
-  \                            Available sections are :\n\
-  \                              - protocol\n\
-  \                              - locate\n\
-  \                              - completion"
-
 let projectfind_spec =
   let f path =
     let dot_merlins = Dot_merlin.find path in
@@ -90,7 +67,6 @@ let unexpected_argument s =
 
 let flags =
   [
-    debug_spec;
     projectfind_spec;
     ignore_sigint_spec;
     print_version_spec;

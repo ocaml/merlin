@@ -49,6 +49,29 @@ let copy t = {t with
 let initial = fresh ()
 let set = ref initial
 
+let debug_spec =
+  let f section =
+    match Misc.rev_string_split section ~on:',' with
+    | [ section ] ->
+      begin try Logger.(monitor (Section.of_string section))
+        with Invalid_argument _ -> () end
+    | [ log_path ; section ] ->
+      begin try
+          let section = Logger.Section.of_string section in
+          Logger.monitor ~dest:log_path section
+        with Invalid_argument _ ->
+          ()
+      end
+    | _ -> assert false
+  in
+  "-debug",
+  Arg.String f,
+  "<section>[,<log file path>] Activate logging for given sections.\n\
+  \                            Available sections are :\n\
+  \                              - protocol\n\
+  \                              - locate\n\
+  \                              - completion"
+
 let timed_logs () = !(!set.timed_logs)
 let timed_logs_spec t =
   "-timed-logs",
@@ -135,6 +158,7 @@ let transparent_modules () = true
 
 let arg_spec t =
   [
+    debug_spec;
     applicative_functors_spec t;
     fast_spec t;
     include_dirs_spec t;
