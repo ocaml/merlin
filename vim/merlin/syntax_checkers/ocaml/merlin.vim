@@ -3,7 +3,7 @@
 " :let g:syntastic_ocaml_checkers=['merlin']
 
 function! SyntaxCheckers_ocaml_merlin_IsAvailable()
-    return executable('ocamlmerlin')
+  try | return merlin#FindOcamlMerlin() | catch | return 0 | endtry
 endfunction
 
 function! SyntaxCheckers_ocaml_merlin_GetLocList()
