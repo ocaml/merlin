@@ -12,6 +12,8 @@
 
 (* $Id: clflags.mli 12800 2012-07-30 18:59:07Z doligez $ *)
 
+(* Command-line parameters *)
+
 type set = {
   include_dirs                 : string list ref;
   std_include                  : string list ref;
@@ -19,6 +21,7 @@ type set = {
   mutable classic              : bool;
   mutable principal            : bool;
   mutable real_paths           : bool;
+  mutable timed_logs           : bool;
   mutable recursive_types      : bool;
   mutable strict_sequence      : bool;
   mutable applicative_functors : bool;
@@ -39,6 +42,7 @@ val fast                 : unit -> bool
 val classic              : unit -> bool
 val principal            : unit -> bool
 val real_paths           : unit -> bool
+val timed_logs           : unit -> bool
 val recursive_types      : unit -> bool
 val strict_sequence      : unit -> bool
 val applicative_functors : unit -> bool
