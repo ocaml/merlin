@@ -1,0 +1,169 @@
+#OCAML_VERSION =
+
+ifdef WITH_BIN_ANNOT
+	OCAMLFLAGS += -bin-annot
+endif
+
+ifdef WITH_DEBUG
+	OCAMLFLAGS += -g
+	OCAMLLDFLAGS += -g
+endif
+
+RESULT ?= ocamlmerlin$(OCAML_VERSION)
+TYPER  ?= src/ocaml$(OCAML_VERSION)
+
+CONFIG_FILES = src/config/my_config.ml src/ocaml
+
+SOURCES = \
+	src/utils/terminfo.mli            \
+	src/utils/terminfo.ml             \
+	src/utils/std.ml                  \
+	src/utils/misc.mli                \
+	src/utils/misc.ml                 \
+	src/utils/logger.mli              \
+	src/utils/logger.ml               \
+	src/utils/menhirLib.ml            \
+	src/utils/menhirUtils.mli         \
+	src/utils/menhirUtils.ml          \
+	$(TYPER)/utils/warnings.mli       \
+	$(TYPER)/utils/warnings.ml        \
+	$(TYPER)/utils/config.mli         \
+	$(TYPER)/utils/config.ml          \
+	$(TYPER)/parsing/asttypes.mli     \
+	$(TYPER)/parsing/parsetree.mli    \
+	$(TYPER)/parsing/location.mli     \
+	$(TYPER)/parsing/location.ml      \
+	$(TYPER)/parsing/longident.mli    \
+	$(TYPER)/parsing/longident.ml     \
+	$(TYPER)/parsing/ast_helper.mli   \
+	$(TYPER)/parsing/ast_helper.ml    \
+	$(TYPER)/parsing/ast_mapper.mli   \
+	$(TYPER)/parsing/ast_mapper.ml    \
+	$(TYPER)/typing/annot.mli         \
+	$(TYPER)/typing/outcometree.mli   \
+	$(TYPER)/typing/ident.mli         \
+	$(TYPER)/typing/ident.ml          \
+	$(TYPER)/typing/path.mli          \
+	$(TYPER)/typing/path.ml           \
+	$(TYPER)/typing/primitive.mli     \
+	$(TYPER)/typing/primitive.ml      \
+	$(TYPER)/typing/types.mli         \
+	$(TYPER)/typing/types.ml          \
+	$(TYPER)/typing/btype.mli         \
+	$(TYPER)/typing/btype.ml          \
+	$(TYPER)/typing/cmi_format.mli    \
+	$(TYPER)/typing/cmi_format.ml     \
+	$(TYPER)/typing/predef.mli        \
+	$(TYPER)/typing/predef.ml         \
+	$(TYPER)/typing/datarepr.mli      \
+	$(TYPER)/typing/datarepr.ml       \
+	src/ocaml_aux/clflags.mli         \
+	src/ocaml_aux/tbl.mli             \
+	src/ocaml_aux/clflags.ml          \
+	src/ocaml_aux/tbl.ml              \
+	$(TYPER)/typing/subst.mli         \
+	$(TYPER)/typing/subst.ml          \
+	src/ocaml_aux/cmi_cache.mli       \
+	src/ocaml_aux/cmi_cache.ml        \
+	src/ocaml_aux/consistbl.ml        \
+	src/ocaml_aux/consistbl.mli       \
+	$(TYPER)/typing/env.mli           \
+	$(TYPER)/typing/env.ml            \
+	$(TYPER)/typing/typedtree.mli     \
+	$(TYPER)/typing/typedtree.ml      \
+	$(TYPER)/browseT.mli              \
+	$(TYPER)/browseT.ml               \
+	$(TYPER)/merlin_types_custom.ml   \
+	src/ocaml_aux/parsing_aux.mli     \
+	src/ocaml_aux/parsing_aux.ml      \
+	src/ocaml_aux/typing_aux.mli      \
+	src/ocaml_aux/typing_aux.ml       \
+	src/analysis/browse.mli           \
+	src/analysis/browse.ml            \
+	src/kernel/dot_merlin.mli         \
+	src/kernel/dot_merlin.ml          \
+	src/kernel/fake.mli               \
+	src/kernel/fake.ml                \
+	$(TYPER)/parsing/syntaxerr.mli    \
+	$(TYPER)/parsing/syntaxerr.ml     \
+	$(TYPER)/raw_parser.mli           \
+	$(TYPER)/raw_parser.ml            \
+	$(TYPER)/raw_parser_values.mli    \
+	$(TYPER)/raw_parser_values.ml     \
+	src/kernel/merlin_parser.mli      \
+	src/kernel/merlin_parser.ml       \
+	src/kernel/error_classifier.ml    \
+	src/kernel/raw_lexer.mli          \
+	src/kernel/raw_lexer.ml           \
+	$(TYPER)/typing/typedtreeMap.mli  \
+	$(TYPER)/typing/typedtreeMap.ml   \
+	$(TYPER)/typing/cmt_format.mli    \
+	$(TYPER)/typing/cmt_format.ml     \
+	$(TYPER)/typing/ctype.mli         \
+	$(TYPER)/typing/ctype.ml          \
+	$(TYPER)/typing/oprint.mli        \
+	$(TYPER)/typing/oprint.ml         \
+	$(TYPER)/typing/printtyp.mli      \
+	$(TYPER)/typing/printtyp.ml       \
+	$(TYPER)/typing/includeclass.mli  \
+	$(TYPER)/typing/includeclass.ml   \
+	$(TYPER)/typing/includecore.mli   \
+	$(TYPER)/typing/includecore.ml    \
+	$(TYPER)/typing/mtype.mli         \
+	$(TYPER)/typing/mtype.ml          \
+	$(TYPER)/typing/includemod.mli    \
+	$(TYPER)/typing/includemod.ml     \
+	$(TYPER)/typing/parmatch.mli      \
+	$(TYPER)/typing/parmatch.ml       \
+	$(TYPER)/typing/stypes.mli        \
+	$(TYPER)/typing/stypes.ml         \
+	$(TYPER)/typing/typetexp.mli      \
+	$(TYPER)/typing/typetexp.ml       \
+	$(TYPER)/typing/typecore.mli      \
+	$(TYPER)/typing/typecore.ml       \
+	$(TYPER)/typing/typedecl.mli      \
+	$(TYPER)/typing/typedecl.ml       \
+	$(TYPER)/typing/typeclass.mli     \
+	$(TYPER)/typing/typeclass.ml      \
+	$(TYPER)/typing/typemod.mli       \
+	$(TYPER)/typing/typemod.ml        \
+	src/kernel/extension.mli          \
+	src/kernel/extension.ml           \
+	src/utils/history.mli             \
+	src/utils/history.ml              \
+	src/kernel/merlin_lexer.mli       \
+	src/kernel/merlin_lexer.ml        \
+	src/kernel/merlin_recover.mli     \
+	src/kernel/merlin_recover.ml      \
+	$(TYPER)/parsing/printast.mli     \
+	$(TYPER)/parsing/printast.ml      \
+	$(TYPER)/raw_typer.mli            \
+	$(TYPER)/raw_typer.ml             \
+	src/kernel/merlin_typer.mli       \
+	src/kernel/merlin_typer.ml        \
+	src/kernel/merlin_lib.ml          \
+	$(TYPER)/error_report.mli         \
+	$(TYPER)/error_report.ml          \
+	src/frontend/protocol.mli         \
+	src/frontend/IO.mli               \
+	src/frontend/IO.ml                \
+	src/analysis/browse_misc.ml       \
+	src/analysis/completion.ml        \
+	src/analysis/outline.mli          \
+	src/analysis/outline.ml           \
+	src/analysis/track_definition.mli \
+	src/analysis/track_definition.ml  \
+	src/analysis/type_utils.ml        \
+	src/config/my_config.ml           \
+	src/frontend/IO_sexp.ml           \
+	src/frontend/command.mli          \
+	src/frontend/command.ml           \
+	src/frontend/main_args.mli        \
+	src/frontend/main_args.ml         \
+	src/frontend/ocamlmerlin.ml
+
+PACKS = findlib yojson unix
+
+ocamlmerlin $(RESULT): native-code
+
+-include OCamlMakefile
