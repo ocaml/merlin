@@ -72,10 +72,10 @@ let debug_spec =
   \                              - locate\n\
   \                              - completion"
 
-let timed_logs () = !(!set.timed_logs)
+let timed_logs () = !set.timed_logs
 let timed_logs_spec t =
   "-timed-logs",
-  Arg.Unit (fun () -> t.timed_logs := true),
+  Arg.Unit (fun () -> t.timed_logs <- true),
   " Add time information in the log file when enabled"
 
 let include_dirs () = !(!set.include_dirs)
