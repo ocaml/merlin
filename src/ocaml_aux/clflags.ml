@@ -21,6 +21,7 @@ type set = {
   mutable classic              : bool;
   mutable principal            : bool;
   mutable real_paths           : bool;
+  mutable timed_logs           : bool;
   mutable recursive_types      : bool;
   mutable strict_sequence      : bool;
   mutable applicative_functors : bool;
@@ -34,6 +35,7 @@ let fresh () =
     classic              = false; (* -nolabels *)
     principal            = false; (* -principal *)
     real_paths           = false; (* -real-paths *)
+    timed_logs           = false; (* -timed-logs *)
     recursive_types      = false; (* -rectypes *)
     strict_sequence      = false; (* -strict-sequence *)
     applicative_functors = true;  (* -no-app-funct *)
@@ -46,6 +48,12 @@ let copy t = {t with
 
 let initial = fresh ()
 let set = ref initial
+
+let timed_logs () = !(!set.timed_logs)
+let timed_logs_spec t =
+  "-timed-logs",
+  Arg.Unit (fun () -> t.timed_logs := true),
+  " Add time information in the log file when enabled"
 
 let include_dirs () = !(!set.include_dirs)
 let include_dirs_spec t =
@@ -135,6 +143,7 @@ let arg_spec t =
     no_std_include_spec t;
     principal_spec t;
     real_paths_spec t;
+    timed_logs_spec t;
     recursive_types_spec t;
     strict_sequence_spec t;
     threads_spec t;
