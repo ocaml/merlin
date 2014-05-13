@@ -65,8 +65,8 @@ SOURCES = \
 	$(TYPER)/typing/subst.ml          \
 	src/ocaml_aux/cmi_cache.mli       \
 	src/ocaml_aux/cmi_cache.ml        \
-	src/ocaml_aux/consistbl.ml        \
-	src/ocaml_aux/consistbl.mli       \
+	$(TYPER)/utils/consistbl.ml       \
+	$(TYPER)/utils/consistbl.mli      \
 	$(TYPER)/typing/env.mli           \
 	$(TYPER)/typing/env.ml            \
 	$(TYPER)/typing/typedtree.mli     \

@@ -10,7 +10,7 @@ to use merlin, have a look at [the wiki](https://github.com/def-lkb/merlin/wiki)
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.00.1, ocamlfind, ocamlbuild, yojson, menhir
+Dependencies: ocaml >= 4.00.1, ocamlfind, yojson
 
     $ ./configure
     $ make

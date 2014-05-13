@@ -1,8 +1,11 @@
 Makefile.config
-_build
 src/config/my_config.ml
-_tags
+emacs/merlin.elc
 *.tar.gz
-*.native
-*.byte
 *.pyc
+*.o
+*.cm?
+*.cm??
+ocamlmerlin
+._d
+._ncdi

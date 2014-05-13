@@ -7,10 +7,10 @@ preprocess: parser lexer
 
 parser:
 	$(MENHIR) --ocamlc 'ocamlfind ocamlc -package yojson,unix,findlib -I $(TYPER)/preprocess -I $(TYPER)_aux -I src/utils -I src/frontend -I $(TYPER) -I src/analysis -I src/kernel -I src/config -I $(TYPER)/typing -I $(TYPER)/utils -I $(TYPER)/parsing' --table --typed-values --stepwise --infer $(TYPER)/preprocess/raw_parser.mly
-	cp $(TYPER)/raw_parser.ml $(TYPER)/raw_parser.mli $(TYPER)
+	mv $(TYPER)/preprocess/raw_parser.ml $(TYPER)/preprocess/raw_parser.mli $(TYPER)
 
 lexer:
 	$(OCAMLLEX) -q src/kernel/preprocess/raw_lexer.mll
-	cp src/kernel/preprocess/raw_lexer.ml src/kernel/raw_lexer.ml
+	mv src/kernel/preprocess/raw_lexer.ml src/kernel/raw_lexer.ml
 
 .PHONY: preprocess parser lexer
