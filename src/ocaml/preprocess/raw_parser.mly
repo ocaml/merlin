@@ -434,7 +434,7 @@ let fake_lident_loc = Location.mknoloc fake_lident
 %token OUNIT_BENCH_MODULE
 %token NONREC
 
-%token ENTRYPOINT
+%token ENTRYPOINT DEFAULT
 
 
 (* Precedences and associativities.
@@ -506,7 +506,6 @@ The precedences must be listed from low to high.
 
 (* Default values *)
 
-%token DEFAULT
 
 %default IN AMPERAMPER AMPERSAND AND AS ASSERT BACKQUOTE BANG BAR BARBAR
          BARRBRACKET BEGIN CLASS COLON COLONCOLON COLONEQUAL COLONGREATER COMMA

@@ -349,7 +349,6 @@ val step: step parser ->   [ `Step of step parser
   | `Accept of semantic_value
   | `Reject ]
 val feed: feed parser -> Lexing.position * token * Lexing.position -> step parser
-val reduce_default: feed parser -> feed parser
 val parse_expression_state: state
 val interface_state: state
 val implementation_state: state
