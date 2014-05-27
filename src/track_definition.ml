@@ -284,6 +284,7 @@ let path_and_loc_from_label desc env =
 exception Not_in_env
 
 let from_string ~sources ~env ~local_defs ~local_modules path =
+  cwd := "" (* Reset the cwd before doing anything *) ;
   debug_log "looking for the source of '%s'" path ;
   sources_path := sources;
   let ident, is_label = keep_suffix (Longident.parse path) in
