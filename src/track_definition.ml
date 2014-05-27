@@ -60,6 +60,8 @@ module Utils = struct
 
   let find_file file =
     let fname =
+      (* FIXME: the [Misc.chop_extension_if_any] should have no effect here,
+         make sure of that and then remove it. *)
       Misc.chop_extension_if_any (filename_of_filetype file)
       ^ (ext_of_filetype file)
     in
@@ -71,10 +73,13 @@ module Utils = struct
        Example: scheduler.ml and raw_scheduler.ml are present in both async_core
        and async_unix. (ofc. "std.ml" is a more common example.)
 
-       Note that [cwd] is set only when we have encountered a packed module, so in other
-       cases [abs_cmt_file] will be something like "/file.ext" which (hopefully) won't
-       exist. *)
-    try Misc.(find_in_path_uncap (Path_list.of_string_list_ref (ref [ !cwd ]))) fname
+       N.B. [cwd] is set only when we have encountered a packed module and we
+       use it only when set, we don't want to look in the actual cwd of merlin
+       when looking for files. *)
+    try
+      if !cwd = "" then raise Not_found ;
+      Misc.(find_in_path_uncap (Path_list.of_string_list_ref (ref [ !cwd ])))
+        fname
     with Not_found ->
     try
       let path =
@@ -203,7 +208,7 @@ and browse_cmts ~root modules =
     begin match modules with
     | [] -> None
     | mod_name :: modules ->
-      let file = List.find files ~f:(fun f -> file_path_to_mod_name f = mod_name) in
+      let file = List.(find (map files ~f:file_path_to_mod_name)) ~f:((=) mod_name) in
       cwd := Filename.dirname root ;
       debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
       let cmt_file = find_file (CMT file) in
@@ -356,7 +361,7 @@ let from_string ~sources ~env ~local_defs ~local_modules path =
       | None -> `Not_found
       | Some loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
-        let full_path = find_file (ML fname) in
+        let full_path = find_file (ML (file_path_to_mod_name fname)) in
         `Found (Some full_path, loc.Location.loc_start)
   with
   | Not_found -> `Not_found
