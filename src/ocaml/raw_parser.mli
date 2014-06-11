@@ -116,7 +116,6 @@ type token =
   | DOT
   | DONE
   | DO
-  | DEFAULT
   | CONSTRAINT
   | COMMENT of (string * Location.t)
   | COMMA
@@ -138,203 +137,344 @@ type token =
   | AMPERSAND
   | AMPERAMPER
 
-and nonterminal = 
-  | NT'with_type_binder of (Asttypes.private_flag)
-  | NT'with_constraints of (Parsetree.with_constraint list)
-  | NT'with_constraint of (Parsetree.with_constraint)
-  | NT'virtual_flag of (Asttypes.virtual_flag)
-  | NT'value_type of (string * Asttypes.mutable_flag * Asttypes.virtual_flag *
-  Parsetree.core_type)
-  | NT'value of (string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind)
-  | NT'val_longident of (Longident.t)
-  | NT'val_ident of (string)
-  | NT'typevar_list of (Asttypes.label list)
-  | NT'type_variance of (Asttypes.variance)
-  | NT'type_variable of (Parsetree.core_type)
-  | NT'type_parameters of ((Parsetree.core_type * Asttypes.variance) list)
-  | NT'type_parameter_list of ((Parsetree.core_type * Asttypes.variance) list)
-  | NT'type_parameter of (Parsetree.core_type * Asttypes.variance)
-  | NT'type_longident of (Longident.t)
-  | NT'type_kind of (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option)
-  | NT'type_declarations of (Parsetree.type_declaration list)
-  | NT'type_declaration of (Parsetree.type_declaration)
-  | NT'type_constraint of (Parsetree.core_type option * Parsetree.core_type option)
-  | NT'tag_field of (Parsetree.row_field)
-  | NT'subtractive of (string)
-  | NT'structure_tail of (Parsetree.structure)
-  | NT'structure_item of (Parsetree.structure_item list)
-  | NT'structure of (Parsetree.structure)
-  | NT'strict_binding of (Parsetree.expression)
-  | NT'str_type_extension of (Parsetree.type_extension)
-  | NT'str_extension_constructors of (Parsetree.extension_constructor list)
-  | NT'str_exception_declaration of (Parsetree.extension_constructor)
-  | NT'single_attr_id of (string)
-  | NT'simple_pattern_not_ident of (Parsetree.pattern)
-  | NT'simple_pattern of (Parsetree.pattern)
-  | NT'simple_labeled_expr_list of ((Asttypes.label * Parsetree.expression) list)
-  | NT'simple_expr of (Parsetree.expression)
-  | NT'simple_core_type_or_tuple_no_attr of (Parsetree.core_type)
-  | NT'simple_core_type_or_tuple of (Parsetree.core_type)
-  | NT'simple_core_type_no_attr of (Parsetree.core_type)
-  | NT'simple_core_type2 of (Parsetree.core_type)
-  | NT'simple_core_type of (Parsetree.core_type)
-  | NT'signed_constant of (Asttypes.constant)
-  | NT'signature_item of (Parsetree.signature_item list)
-  | NT'signature of (Parsetree.signature)
-  | NT'sig_type_extension of (Parsetree.type_extension)
-  | NT'sig_extension_constructors of (Parsetree.extension_constructor list)
-  | NT'sig_exception_declaration of (Parsetree.extension_constructor)
-  | NT'seq_expr of (Parsetree.expression)
-  | NT'row_field_list of (Parsetree.row_field list)
-  | NT'row_field of (Parsetree.row_field)
-  | NT'record_expr of (Parsetree.expression option *
-  (Longident.t Asttypes.loc * Parsetree.expression) list)
-  | NT'rec_flag of (Asttypes.rec_flag)
-  | NT'private_virtual_flags of (Asttypes.private_flag * Asttypes.virtual_flag)
-  | NT'private_flag of (Asttypes.private_flag)
-  | NT'primitive_declaration of (string list)
-  | NT'post_item_attributes of (Ast_helper.attrs)
-  | NT'post_item_attribute of (Parsetree.attribute)
-  | NT'poly_type of (Parsetree.core_type)
-  | NT'payload of (Parsetree.payload)
-  | NT'pattern_var of (Parsetree.pattern)
-  | NT'pattern_semi_list of (Parsetree.pattern list)
-  | NT'pattern_comma_list of (Parsetree.pattern list)
-  | NT'pattern of (Parsetree.pattern)
-  | NT'parse_expression of (Parsetree.expression)
-  | NT'parent_binder of (string option)
-  | NT'package_type_cstrs of ((Longident.t Asttypes.loc * Parsetree.core_type) list)
-  | NT'package_type_cstr of (Longident.t Asttypes.loc * Parsetree.core_type)
-  | NT'package_type of (Parsetree.package_type)
-  | NT'override_flag of (Asttypes.override_flag)
-  | NT'optional_type_variable of (Parsetree.core_type)
-  | NT'optional_type_parameters of ((Parsetree.core_type * Asttypes.variance) list)
-  | NT'optional_type_parameter_list of ((Parsetree.core_type * Asttypes.variance) list)
-  | NT'optional_type_parameter of (Parsetree.core_type * Asttypes.variance)
-  | NT'opt_semi of (unit)
-  | NT'opt_default of (Parsetree.expression option)
-  | NT'opt_bar of (unit)
-  | NT'opt_ampersand of (bool)
-  | NT'operator of (string)
-  | NT'open_statement of (Parsetree.open_description)
-  | NT'newtype of (string)
-  | NT'name_tag_list of (Asttypes.label list)
-  | NT'name_tag of (Asttypes.label)
-  | NT'mutable_flag of (Asttypes.mutable_flag)
-  | NT'mty_longident of (Longident.t)
-  | NT'module_type of (Parsetree.module_type)
-  | NT'module_rec_declarations of (Parsetree.module_declaration list)
-  | NT'module_rec_declaration of (Parsetree.module_declaration)
-  | NT'module_expr of (Parsetree.module_expr)
-  | NT'module_declaration of (Parsetree.module_type)
-  | NT'module_bindings of (Parsetree.module_binding list)
-  | NT'module_binding_body of (Parsetree.module_expr)
-  | NT'module_binding of (Parsetree.module_binding)
-  | NT'mod_longident of (Longident.t)
-  | NT'mod_ext_longident of (Longident.t)
-  | NT'method_ of (string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind)
-  | NT'meth_list of ((string * Parsetree.attributes * Parsetree.core_type) list *
-  Asttypes.closed_flag)
-  | NT'match_cases of (Parsetree.case list)
-  | NT'match_case of (Parsetree.case)
-  | NT'lident_list of (string list)
-  | NT'let_pattern of (Parsetree.pattern)
-  | NT'let_bindings of (Parsetree.value_binding list)
-  | NT'let_binding_ of (Parsetree.pattern * Parsetree.expression)
-  | NT'let_binding of (Parsetree.value_binding)
-  | NT'lbl_pattern_list of ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag)
-  | NT'lbl_pattern of (Longident.t Asttypes.loc * Parsetree.pattern)
-  | NT'lbl_expr_list of ((Longident.t Asttypes.loc * Parsetree.expression) list)
-  | NT'lbl_expr of (Longident.t Asttypes.loc * Parsetree.expression)
-  | NT'labeled_simple_pattern of (Asttypes.label * Parsetree.expression option * Parsetree.pattern)
-  | NT'labeled_simple_expr of (Asttypes.label * Parsetree.expression)
-  | NT'label_var of (Asttypes.label * Parsetree.pattern)
-  | NT'label_longident of (Longident.t)
-  | NT'label_let_pattern of (Asttypes.label * Parsetree.pattern)
-  | NT'label_ident of (Asttypes.label * Parsetree.expression)
-  | NT'label_expr of (Asttypes.label * Parsetree.expression)
-  | NT'label_declarations of (Parsetree.label_declaration list)
-  | NT'label_declaration of (Parsetree.label_declaration)
-  | NT'label of (string)
-  | NT'item_extension of (Parsetree.extension)
-  | NT'interface of (Parsetree.signature)
-  | NT'implementation of (Parsetree.structure)
-  | NT'ident of (Asttypes.label)
-  | NT'generalized_constructor_arguments of (Parsetree.core_type list * Parsetree.core_type option)
-  | NT'functor_args of ((string Asttypes.loc * Parsetree.module_type option) list)
-  | NT'functor_arg_name of (string)
-  | NT'functor_arg of (string Asttypes.loc * Parsetree.module_type option)
-  | NT'fun_def of (Parsetree.expression)
-  | NT'fun_binding of (Parsetree.expression)
-  | NT'floating_attribute of (Parsetree.attribute)
-  | NT'field_expr_list of ((string Asttypes.loc * Parsetree.expression) list)
-  | NT'field of (string * Parsetree.attributes * Parsetree.core_type)
-  | NT'extension_constructor_rebind of (Parsetree.extension_constructor)
-  | NT'extension_constructor_declaration of (Parsetree.extension_constructor)
-  | NT'extension of (Parsetree.extension)
-  | NT'ext_attributes of (string Asttypes.loc option * Parsetree.attributes)
-  | NT'expr_semi_list of (Parsetree.expression list)
-  | NT'expr_open of (Asttypes.override_flag * Longident.t Asttypes.loc *
-  (string Asttypes.loc option * Parsetree.attributes))
-  | NT'expr_comma_list of (Parsetree.expression list)
-  | NT'expr of (Parsetree.expression)
-  | NT'dummy of (unit)
-  | NT'direction_flag of (Asttypes.direction_flag)
-  | NT'core_type_list_no_attr of (Parsetree.core_type list)
-  | NT'core_type_list of (Parsetree.core_type list)
-  | NT'core_type_comma_list of (Parsetree.core_type list)
-  | NT'core_type2 of (Parsetree.core_type)
-  | NT'core_type of (Parsetree.core_type)
-  | NT'constructor_declarations of (Parsetree.constructor_declaration list)
-  | NT'constructor_declaration of (Parsetree.constructor_declaration)
-  | NT'constraints of ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list)
-  | NT'constrain_field of (Parsetree.core_type * Parsetree.core_type)
-  | NT'constrain of (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc)
-  | NT'constr_longident of (Longident.t)
-  | NT'constr_ident of (string)
-  | NT'constant of (Asttypes.constant)
-  | NT'clty_longident of (Longident.t)
-  | NT'class_type_parameters of ((Parsetree.core_type * Asttypes.variance) list)
-  | NT'class_type_declarations of (Parsetree.class_type_declaration list)
-  | NT'class_type_declaration of (Parsetree.class_type_declaration list)
-  | NT'class_type of (Parsetree.class_type)
-  | NT'class_structure of (Parsetree.class_structure)
-  | NT'class_simple_expr of (Parsetree.class_expr)
-  | NT'class_signature of (Parsetree.class_type)
-  | NT'class_sig_fields of (Parsetree.class_type_field list)
-  | NT'class_sig_field of (Parsetree.class_type_field)
-  | NT'class_sig_body of (Parsetree.class_signature)
-  | NT'class_self_type of (Parsetree.core_type)
-  | NT'class_self_pattern of (Parsetree.pattern)
-  | NT'class_longident of (Longident.t)
-  | NT'class_fun_def of (Parsetree.class_expr)
-  | NT'class_fun_binding of (Parsetree.class_expr)
-  | NT'class_fields of (Parsetree.class_field list)
-  | NT'class_field of (Parsetree.class_field list)
-  | NT'class_expr of (Parsetree.class_expr)
-  | NT'class_descriptions of (Parsetree.class_description list)
-  | NT'class_description of (Parsetree.class_description list)
-  | NT'class_declarations of (Parsetree.class_declaration list)
-  | NT'class_declaration of (Parsetree.class_declaration list)
-  | NT'attributes of (Parsetree.attributes)
-  | NT'attribute of (Parsetree.attribute)
-  | NT'attr_id of (string Asttypes.loc)
-  | NT'amper_type_list of (Parsetree.core_type list)
-  | NT'additive of (string)
+and _ token_class = 
+  | T_WITH : unit token_class
+  | T_WHILE_LWT : unit token_class
+  | T_WHILE : unit token_class
+  | T_WHEN : unit token_class
+  | T_VIRTUAL : unit token_class
+  | T_VAL : unit token_class
+  | T_UNDERSCORE : unit token_class
+  | T_UIDENT : (string) token_class
+  | T_TYPE : unit token_class
+  | T_TRY_LWT : unit token_class
+  | T_TRY : unit token_class
+  | T_TRUE : unit token_class
+  | T_TO : unit token_class
+  | T_TILDE : unit token_class
+  | T_THEN : unit token_class
+  | T_STRUCT : unit token_class
+  | T_STRING : (string * string option) token_class
+  | T_STAR : unit token_class
+  | T_SIG : unit token_class
+  | T_SHARP : unit token_class
+  | T_SEMISEMI : unit token_class
+  | T_SEMI : unit token_class
+  | T_RPAREN : unit token_class
+  | T_REC : unit token_class
+  | T_RBRACKET : unit token_class
+  | T_RBRACE : unit token_class
+  | T_QUOTE : unit token_class
+  | T_QUESTION : unit token_class
+  | T_PRIVATE : unit token_class
+  | T_PREFIXOP : (string) token_class
+  | T_PLUSEQ : unit token_class
+  | T_PLUSDOT : unit token_class
+  | T_PLUS : unit token_class
+  | T_PERCENT : unit token_class
+  | T_P4_QUOTATION : unit token_class
+  | T_OUNIT_TEST_UNIT : unit token_class
+  | T_OUNIT_TEST_MODULE : unit token_class
+  | T_OUNIT_TEST : unit token_class
+  | T_OUNIT_BENCH_MODULE : unit token_class
+  | T_OUNIT_BENCH_INDEXED : unit token_class
+  | T_OUNIT_BENCH_FUN : unit token_class
+  | T_OUNIT_BENCH : unit token_class
+  | T_OR : unit token_class
+  | T_OPTLABEL : (string) token_class
+  | T_OPEN : unit token_class
+  | T_OF : unit token_class
+  | T_OBJECT : unit token_class
+  | T_NONREC : unit token_class
+  | T_NEW : unit token_class
+  | T_NATIVEINT : (nativeint) token_class
+  | T_MUTABLE : unit token_class
+  | T_MODULE : unit token_class
+  | T_MINUSGREATER : unit token_class
+  | T_MINUSDOT : unit token_class
+  | T_MINUS : unit token_class
+  | T_METHOD : unit token_class
+  | T_MATCH_LWT : unit token_class
+  | T_MATCH : unit token_class
+  | T_LPAREN : unit token_class
+  | T_LIDENT : (string) token_class
+  | T_LET_LWT : unit token_class
+  | T_LET : unit token_class
+  | T_LESSMINUS : unit token_class
+  | T_LESS : unit token_class
+  | T_LBRACKETPERCENTPERCENT : unit token_class
+  | T_LBRACKETPERCENT : unit token_class
+  | T_LBRACKETLESS : unit token_class
+  | T_LBRACKETGREATER : unit token_class
+  | T_LBRACKETBAR : unit token_class
+  | T_LBRACKETATATAT : unit token_class
+  | T_LBRACKETATAT : unit token_class
+  | T_LBRACKETAT : unit token_class
+  | T_LBRACKET : unit token_class
+  | T_LBRACELESS : unit token_class
+  | T_LBRACE : unit token_class
+  | T_LAZY : unit token_class
+  | T_LABEL : (string) token_class
+  | T_JSNEW : unit token_class
+  | T_INT64 : (int64) token_class
+  | T_INT32 : (int32) token_class
+  | T_INT : (int) token_class
+  | T_INITIALIZER : unit token_class
+  | T_INHERIT : unit token_class
+  | T_INFIXOP4 : (string) token_class
+  | T_INFIXOP3 : (string) token_class
+  | T_INFIXOP2 : (string) token_class
+  | T_INFIXOP1 : (string) token_class
+  | T_INFIXOP0 : (string) token_class
+  | T_INCLUDE : unit token_class
+  | T_IN : unit token_class
+  | T_IF : unit token_class
+  | T_GREATERRBRACKET : unit token_class
+  | T_GREATERRBRACE : unit token_class
+  | T_GREATER : unit token_class
+  | T_FUNCTOR : unit token_class
+  | T_FUNCTION : unit token_class
+  | T_FUN : unit token_class
+  | T_FOR_LWT : unit token_class
+  | T_FOR : unit token_class
+  | T_FLOAT : (string) token_class
+  | T_FINALLY_LWT : unit token_class
+  | T_FALSE : unit token_class
+  | T_EXTERNAL : unit token_class
+  | T_EXCEPTION : unit token_class
+  | T_EQUAL : unit token_class
+  | T_EOL : unit token_class
+  | T_EOF : unit token_class
+  | T_ENTRYPOINT : unit token_class
+  | T_END : unit token_class
+  | T_ELSE : unit token_class
+  | T_DOWNTO : unit token_class
+  | T_DOTDOT : unit token_class
+  | T_DOT : unit token_class
+  | T_DONE : unit token_class
+  | T_DO : unit token_class
+  | T_CONSTRAINT : unit token_class
+  | T_COMMENT : (string * Location.t) token_class
+  | T_COMMA : unit token_class
+  | T_COLONGREATER : unit token_class
+  | T_COLONEQUAL : unit token_class
+  | T_COLONCOLON : unit token_class
+  | T_COLON : unit token_class
+  | T_CLASS : unit token_class
+  | T_CHAR : (char) token_class
+  | T_BEGIN : unit token_class
+  | T_BARRBRACKET : unit token_class
+  | T_BARBAR : unit token_class
+  | T_BAR : unit token_class
+  | T_BANG : unit token_class
+  | T_BACKQUOTE : unit token_class
+  | T_ASSERT : unit token_class
+  | T_AS : unit token_class
+  | T_AND : unit token_class
+  | T_AMPERSAND : unit token_class
+  | T_AMPERAMPER : unit token_class
 
-and semantic_value = 
+and _ nonterminal_class = 
+  | N_with_type_binder : (Asttypes.private_flag) nonterminal_class
+  | N_with_constraints : (Parsetree.with_constraint list) nonterminal_class
+  | N_with_constraint : (Parsetree.with_constraint) nonterminal_class
+  | N_virtual_flag : (Asttypes.virtual_flag) nonterminal_class
+  | N_value_type : (string * Asttypes.mutable_flag * Asttypes.virtual_flag *
+  Parsetree.core_type) nonterminal_class
+  | N_value : (string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal_class
+  | N_val_longident : (Longident.t) nonterminal_class
+  | N_val_ident : (string) nonterminal_class
+  | N_typevar_list : (Asttypes.label list) nonterminal_class
+  | N_type_variance : (Asttypes.variance) nonterminal_class
+  | N_type_variable : (Parsetree.core_type) nonterminal_class
+  | N_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
+  | N_type_parameter_list : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
+  | N_type_parameter : (Parsetree.core_type * Asttypes.variance) nonterminal_class
+  | N_type_longident : (Longident.t) nonterminal_class
+  | N_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal_class
+  | N_type_declarations : (Parsetree.type_declaration list) nonterminal_class
+  | N_type_declaration : (Parsetree.type_declaration) nonterminal_class
+  | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal_class
+  | N_tag_field : (Parsetree.row_field) nonterminal_class
+  | N_subtractive : (string) nonterminal_class
+  | N_structure_tail : (Parsetree.structure) nonterminal_class
+  | N_structure_item : (Parsetree.structure_item list) nonterminal_class
+  | N_structure : (Parsetree.structure) nonterminal_class
+  | N_strict_binding : (Parsetree.expression) nonterminal_class
+  | N_str_type_extension : (Parsetree.type_extension) nonterminal_class
+  | N_str_extension_constructors : (Parsetree.extension_constructor list) nonterminal_class
+  | N_str_exception_declaration : (Parsetree.extension_constructor) nonterminal_class
+  | N_single_attr_id : (string) nonterminal_class
+  | N_simple_pattern_not_ident : (Parsetree.pattern) nonterminal_class
+  | N_simple_pattern : (Parsetree.pattern) nonterminal_class
+  | N_simple_labeled_expr_list : ((Asttypes.label * Parsetree.expression) list) nonterminal_class
+  | N_simple_expr : (Parsetree.expression) nonterminal_class
+  | N_simple_core_type_or_tuple_no_attr : (Parsetree.core_type) nonterminal_class
+  | N_simple_core_type_or_tuple : (Parsetree.core_type) nonterminal_class
+  | N_simple_core_type_no_attr : (Parsetree.core_type) nonterminal_class
+  | N_simple_core_type2 : (Parsetree.core_type) nonterminal_class
+  | N_simple_core_type : (Parsetree.core_type) nonterminal_class
+  | N_signed_constant : (Asttypes.constant) nonterminal_class
+  | N_signature_item : (Parsetree.signature_item list) nonterminal_class
+  | N_signature : (Parsetree.signature) nonterminal_class
+  | N_sig_type_extension : (Parsetree.type_extension) nonterminal_class
+  | N_sig_extension_constructors : (Parsetree.extension_constructor list) nonterminal_class
+  | N_sig_exception_declaration : (Parsetree.extension_constructor) nonterminal_class
+  | N_seq_expr : (Parsetree.expression) nonterminal_class
+  | N_row_field_list : (Parsetree.row_field list) nonterminal_class
+  | N_row_field : (Parsetree.row_field) nonterminal_class
+  | N_record_expr : (Parsetree.expression option *
+  (Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal_class
+  | N_rec_flag : (Asttypes.rec_flag) nonterminal_class
+  | N_private_virtual_flags : (Asttypes.private_flag * Asttypes.virtual_flag) nonterminal_class
+  | N_private_flag : (Asttypes.private_flag) nonterminal_class
+  | N_primitive_declaration : (string list) nonterminal_class
+  | N_post_item_attributes : (Ast_helper.attrs) nonterminal_class
+  | N_post_item_attribute : (Parsetree.attribute) nonterminal_class
+  | N_poly_type : (Parsetree.core_type) nonterminal_class
+  | N_payload : (Parsetree.payload) nonterminal_class
+  | N_pattern_var : (Parsetree.pattern) nonterminal_class
+  | N_pattern_semi_list : (Parsetree.pattern list) nonterminal_class
+  | N_pattern_comma_list : (Parsetree.pattern list) nonterminal_class
+  | N_pattern : (Parsetree.pattern) nonterminal_class
+  | N_parse_expression : (Parsetree.expression) nonterminal_class
+  | N_parent_binder : (string option) nonterminal_class
+  | N_package_type_cstrs : ((Longident.t Asttypes.loc * Parsetree.core_type) list) nonterminal_class
+  | N_package_type_cstr : (Longident.t Asttypes.loc * Parsetree.core_type) nonterminal_class
+  | N_package_type : (Parsetree.package_type) nonterminal_class
+  | N_override_flag : (Asttypes.override_flag) nonterminal_class
+  | N_optional_type_variable : (Parsetree.core_type) nonterminal_class
+  | N_optional_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
+  | N_optional_type_parameter_list : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
+  | N_optional_type_parameter : (Parsetree.core_type * Asttypes.variance) nonterminal_class
+  | N_opt_semi : (unit) nonterminal_class
+  | N_opt_default : (Parsetree.expression option) nonterminal_class
+  | N_opt_bar : (unit) nonterminal_class
+  | N_opt_ampersand : (bool) nonterminal_class
+  | N_operator : (string) nonterminal_class
+  | N_open_statement : (Parsetree.open_description) nonterminal_class
+  | N_newtype : (string) nonterminal_class
+  | N_name_tag_list : (Asttypes.label list) nonterminal_class
+  | N_name_tag : (Asttypes.label) nonterminal_class
+  | N_mutable_flag : (Asttypes.mutable_flag) nonterminal_class
+  | N_mty_longident : (Longident.t) nonterminal_class
+  | N_module_type : (Parsetree.module_type) nonterminal_class
+  | N_module_rec_declarations : (Parsetree.module_declaration list) nonterminal_class
+  | N_module_rec_declaration : (Parsetree.module_declaration) nonterminal_class
+  | N_module_expr : (Parsetree.module_expr) nonterminal_class
+  | N_module_declaration : (Parsetree.module_type) nonterminal_class
+  | N_module_bindings : (Parsetree.module_binding list) nonterminal_class
+  | N_module_binding_body : (Parsetree.module_expr) nonterminal_class
+  | N_module_binding : (Parsetree.module_binding) nonterminal_class
+  | N_mod_longident : (Longident.t) nonterminal_class
+  | N_mod_ext_longident : (Longident.t) nonterminal_class
+  | N_method_ : (string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind) nonterminal_class
+  | N_meth_list : ((string * Parsetree.attributes * Parsetree.core_type) list *
+  Asttypes.closed_flag) nonterminal_class
+  | N_match_cases : (Parsetree.case list) nonterminal_class
+  | N_match_case : (Parsetree.case) nonterminal_class
+  | N_lident_list : (string list) nonterminal_class
+  | N_let_pattern : (Parsetree.pattern) nonterminal_class
+  | N_let_bindings : (Parsetree.value_binding list) nonterminal_class
+  | N_let_binding_ : (Parsetree.pattern * Parsetree.expression) nonterminal_class
+  | N_let_binding : (Parsetree.value_binding) nonterminal_class
+  | N_lbl_pattern_list : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) nonterminal_class
+  | N_lbl_pattern : (Longident.t Asttypes.loc * Parsetree.pattern) nonterminal_class
+  | N_lbl_expr_list : ((Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal_class
+  | N_lbl_expr : (Longident.t Asttypes.loc * Parsetree.expression) nonterminal_class
+  | N_labeled_simple_pattern : (Asttypes.label * Parsetree.expression option * Parsetree.pattern) nonterminal_class
+  | N_labeled_simple_expr : (Asttypes.label * Parsetree.expression) nonterminal_class
+  | N_label_var : (Asttypes.label * Parsetree.pattern) nonterminal_class
+  | N_label_longident : (Longident.t) nonterminal_class
+  | N_label_let_pattern : (Asttypes.label * Parsetree.pattern) nonterminal_class
+  | N_label_ident : (Asttypes.label * Parsetree.expression) nonterminal_class
+  | N_label_expr : (Asttypes.label * Parsetree.expression) nonterminal_class
+  | N_label_declarations : (Parsetree.label_declaration list) nonterminal_class
+  | N_label_declaration : (Parsetree.label_declaration) nonterminal_class
+  | N_label : (string) nonterminal_class
+  | N_item_extension : (Parsetree.extension) nonterminal_class
+  | N_interface : (Parsetree.signature) nonterminal_class
+  | N_implementation : (Parsetree.structure) nonterminal_class
+  | N_ident : (Asttypes.label) nonterminal_class
+  | N_generalized_constructor_arguments : (Parsetree.core_type list * Parsetree.core_type option) nonterminal_class
+  | N_functor_args : ((string Asttypes.loc * Parsetree.module_type option) list) nonterminal_class
+  | N_functor_arg_name : (string) nonterminal_class
+  | N_functor_arg : (string Asttypes.loc * Parsetree.module_type option) nonterminal_class
+  | N_fun_def : (Parsetree.expression) nonterminal_class
+  | N_fun_binding : (Parsetree.expression) nonterminal_class
+  | N_floating_attribute : (Parsetree.attribute) nonterminal_class
+  | N_field_expr_list : ((string Asttypes.loc * Parsetree.expression) list) nonterminal_class
+  | N_field : (string * Parsetree.attributes * Parsetree.core_type) nonterminal_class
+  | N_extension_constructor_rebind : (Parsetree.extension_constructor) nonterminal_class
+  | N_extension_constructor_declaration : (Parsetree.extension_constructor) nonterminal_class
+  | N_extension : (Parsetree.extension) nonterminal_class
+  | N_ext_attributes : (string Asttypes.loc option * Parsetree.attributes) nonterminal_class
+  | N_expr_semi_list : (Parsetree.expression list) nonterminal_class
+  | N_expr_open : (Asttypes.override_flag * Longident.t Asttypes.loc *
+  (string Asttypes.loc option * Parsetree.attributes)) nonterminal_class
+  | N_expr_comma_list : (Parsetree.expression list) nonterminal_class
+  | N_expr : (Parsetree.expression) nonterminal_class
+  | N_dummy : (unit) nonterminal_class
+  | N_direction_flag : (Asttypes.direction_flag) nonterminal_class
+  | N_core_type_list_no_attr : (Parsetree.core_type list) nonterminal_class
+  | N_core_type_list : (Parsetree.core_type list) nonterminal_class
+  | N_core_type_comma_list : (Parsetree.core_type list) nonterminal_class
+  | N_core_type2 : (Parsetree.core_type) nonterminal_class
+  | N_core_type : (Parsetree.core_type) nonterminal_class
+  | N_constructor_declarations : (Parsetree.constructor_declaration list) nonterminal_class
+  | N_constructor_declaration : (Parsetree.constructor_declaration) nonterminal_class
+  | N_constraints : ((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) nonterminal_class
+  | N_constrain_field : (Parsetree.core_type * Parsetree.core_type) nonterminal_class
+  | N_constrain : (Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) nonterminal_class
+  | N_constr_longident : (Longident.t) nonterminal_class
+  | N_constr_ident : (string) nonterminal_class
+  | N_constant : (Asttypes.constant) nonterminal_class
+  | N_clty_longident : (Longident.t) nonterminal_class
+  | N_class_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
+  | N_class_type_declarations : (Parsetree.class_type_declaration list) nonterminal_class
+  | N_class_type_declaration : (Parsetree.class_type_declaration list) nonterminal_class
+  | N_class_type : (Parsetree.class_type) nonterminal_class
+  | N_class_structure : (Parsetree.class_structure) nonterminal_class
+  | N_class_simple_expr : (Parsetree.class_expr) nonterminal_class
+  | N_class_signature : (Parsetree.class_type) nonterminal_class
+  | N_class_sig_fields : (Parsetree.class_type_field list) nonterminal_class
+  | N_class_sig_field : (Parsetree.class_type_field) nonterminal_class
+  | N_class_sig_body : (Parsetree.class_signature) nonterminal_class
+  | N_class_self_type : (Parsetree.core_type) nonterminal_class
+  | N_class_self_pattern : (Parsetree.pattern) nonterminal_class
+  | N_class_longident : (Longident.t) nonterminal_class
+  | N_class_fun_def : (Parsetree.class_expr) nonterminal_class
+  | N_class_fun_binding : (Parsetree.class_expr) nonterminal_class
+  | N_class_fields : (Parsetree.class_field list) nonterminal_class
+  | N_class_field : (Parsetree.class_field list) nonterminal_class
+  | N_class_expr : (Parsetree.class_expr) nonterminal_class
+  | N_class_descriptions : (Parsetree.class_description list) nonterminal_class
+  | N_class_description : (Parsetree.class_description list) nonterminal_class
+  | N_class_declarations : (Parsetree.class_declaration list) nonterminal_class
+  | N_class_declaration : (Parsetree.class_declaration list) nonterminal_class
+  | N_attributes : (Parsetree.attributes) nonterminal_class
+  | N_attribute : (Parsetree.attribute) nonterminal_class
+  | N_attr_id : (string Asttypes.loc) nonterminal_class
+  | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
+  | N_additive : (string) nonterminal_class
+
+and symbol_class = 
+  | CT_ : 'a token_class -> symbol_class
+  | CN_ : 'a nonterminal_class -> symbol_class
+
+and symbol = 
+  | T_ : 'a token_class * 'a -> symbol
+  | N_ : 'a nonterminal_class * 'a -> symbol
   | Bottom
-  | Terminal of token
-  | Nonterminal of nonterminal
 
-and state = private int
+and state = int
 
 and feed = [ `Feed | `Feed_error ]
 
 and step = [ `Step_run | `Step_error | `Step_action ]
 
 and 'a parser = {
-  env: (state, semantic_value, token) MenhirLib.EngineTypes.env;
+  env: (state, symbol, token) MenhirLib.EngineTypes.env;
   tag: 'a
 }
 
@@ -346,7 +486,7 @@ val dummy: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (unit)
 val initial: state -> Lexing.position * token * Lexing.position -> step parser
 val step: step parser ->   [ `Step of step parser
   | `Feed of feed parser
-  | `Accept of semantic_value
+  | `Accept of symbol
   | `Reject ]
 val feed: feed parser -> Lexing.position * token * Lexing.position -> step parser
 val parse_expression_state: state
@@ -354,15 +494,10 @@ val interface_state: state
 val implementation_state: state
 val dummy_state: state
 
-module Query : sig
-
-  type terminal = private int
-  
-  
-  val index: token -> terminal
-  val action: state -> terminal -> [`Shift of [`Discard | `Keep] * state | `Reduce | `Fail]
-  val default_reduction: state -> bool
-  val iter_states: (state -> unit) -> unit
-  val forward_references: terminal -> terminal list
-
-end
+module Query : MenhirLib.EngineTypes.QUERY_ENGINE
+   with type state := state
+    and type production := int
+    and type producer := symbol_class
+    and type semantic_action =
+               (state, symbol, token) MenhirLib.EngineTypes.env ->
+               (state, symbol) MenhirLib.EngineTypes.stack

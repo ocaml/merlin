@@ -201,7 +201,7 @@ let parse_sig =
   and parse = function
     | `Step s -> parse (Raw_parser.step s)
     | `Feed p -> lex p (Raw_lexer.token_without_comments state buf)
-    | `Accept (Raw_parser.Nonterminal (Raw_parser.NT'interface sg)) -> sg
+    | `Accept (Raw_parser.N_ (Raw_parser.N_interface, sg)) -> (sg : Parsetree.signature)
     | `Reject | `Accept _ -> assert false
   in
   parse (`Step (Raw_parser.initial Raw_parser.interface_state

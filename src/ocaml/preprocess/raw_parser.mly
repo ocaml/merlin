@@ -132,7 +132,7 @@ let mkexp_constraint startpos endpos e (t1, t2) =
   match t1, t2 with
   | Some t, None -> ghexp startpos endpos (Pexp_constraint(e, t))
   | _, Some t -> ghexp startpos endpos (Pexp_coerce(e, t1, t))
-  | None, None -> assert false
+  | None, None -> e
 
 let array_function startpos endpos str name =
   ghloc startpos endpos
@@ -434,8 +434,7 @@ let fake_lident_loc = Location.mknoloc fake_lident
 %token OUNIT_BENCH_MODULE
 %token NONREC
 
-%token ENTRYPOINT DEFAULT
-
+%token ENTRYPOINT
 
 (* Precedences and associativities.
 
@@ -459,8 +458,6 @@ conflicts.
 
 The precedences must be listed from low to high.
 *)
-
-%left DEFAULT
 
 %nonassoc IN
 %nonassoc below_SEMI
@@ -503,172 +500,6 @@ The precedences must be listed from low to high.
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
-
-(* Default values *)
-
-
-%default IN AMPERAMPER AMPERSAND AND AS ASSERT BACKQUOTE BANG BAR BARBAR
-         BARRBRACKET BEGIN CLASS COLON COLONCOLON COLONEQUAL COLONGREATER COMMA
-         CONSTRAINT DO DONE DOT DOTDOT DOWNTO ELSE END EOF EQUAL EXCEPTION
-         EXTERNAL FALSE FOR FUN FUNCTION FUNCTOR GREATER GREATERRBRACE
-         GREATERRBRACKET IF INCLUDE INHERIT INITIALIZER LAZY LBRACE
-         LBRACELESS LBRACKET LBRACKETAT LBRACKETATAT LBRACKETBAR
-         LBRACKETGREATER LBRACKETLESS LBRACKETPERCENT LBRACKETPERCENTPERCENT
-         LESS LESSMINUS LET LPAREN MATCH METHOD MINUS MINUSDOT MINUSGREATER
-         MODULE MUTABLE NEW OBJECT OF OPEN OR PERCENT PLUS PLUSDOT PRIVATE
-         QUESTION QUOTE RBRACE RBRACKET REC RPAREN SEMI SEMISEMI SHARP SIG STAR
-         STRUCT THEN TILDE TO TRUE TRY TYPE UNDERSCORE VAL VIRTUAL WHEN WHILE
-         WITH
-  {()}
-
-%default LET_LWT TRY_LWT MATCH_LWT FINALLY_LWT FOR_LWT WHILE_LWT JSNEW
-         P4_QUOTATION OUNIT_TEST OUNIT_TEST_UNIT OUNIT_TEST_MODULE OUNIT_BENCH
-         OUNIT_BENCH_FUN OUNIT_BENCH_INDEXED OUNIT_BENCH_MODULE NONREC
-  {()}
-
-%default CHAR {' '}
-%default FLOAT {"0."}
-%default INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4 {"+"}
-%default COMMENT {"", Location.none}
-%default STRING {"", None}
-%default UIDENT {"Invalid"}
-%default OPTLABEL LABEL {"invalid_label"}
-%default PREFIXOP LIDENT {"invalid"}
-%default INT {0}
-%default INT32 {0l}
-%default INT64 {0L}
-%default NATIVEINT {0n}
-
-%default attributes post_item_attributes class_type_parameters
-         type_parameter_list type_parameters optional_type_parameter_list
-         name_tag_list typevar_list simple_labeled_expr_list package_type_cstrs
-         lbl_expr_list match_cases class_declarations class_descriptions
-         class_fields class_type_declarations class_sig_fields
-         constructor_declarations amper_type_list core_type_comma_list
-         core_type_list core_type_list_no_attr constraints expr_comma_list
-         expr_semi_list label_declarations module_bindings
-         module_rec_declarations pattern_comma_list pattern_semi_list
-         optional_type_parameters row_field_list sig_attribute signature_item
-         structure structure_tail
-         str_attribute structure_item type_declarations let_bindings
-         with_constraints field_expr_list functor_args lident_list
-         primitive_declaration
-         interface signature signature_tail
-         implementation
-         class_declaration class_description class_field class_type_declaration
-  {[]}
-
-
-%default generalized_constructor_arguments {[], None}
-%default type_constraint                   {None, None}
-%default opt_default                       {None}
-%default parent_binder                     {None}
-%default meth_list lbl_pattern_list        {[], Closed}
-%default record_expr                       {None, []}
-%default expr fun_binding fun_def parse_expression seq_expr simple_expr
-         strict_binding
-  {Fake.any_val'}
-
-%default opt_bar opt_semi {()}
-%default opt_ampersand {false}
-
-%default mutable_flag {Immutable}
-%default override_flag {Fresh}
-%default private_virtual_flags {Public, Concrete}
-%default private_flag with_type_binder {Public}
-%default rec_flag {Nonrecursive}
-%default type_variance {Invariant}
-%default virtual_flag {Concrete}
-
-%default class_self_type core_type core_type2 poly_type simple_core_type
-         simple_core_type2 simple_core_type_no_attr simple_core_type_or_tuple
-         simple_core_type_or_tuple_no_attr
-  {fake_any_typ}
-
-%default class_self_pattern let_pattern pattern pattern_var simple_pattern
-         simple_pattern_not_ident
-  {fake_any_pat}
-
-%default let_binding_ {fake_any_pat, Fake.any_val'}
-
-%default labeled_simple_expr label_expr label_ident
-  { "", Fake.any_val' }
-
-%default labeled_simple_pattern
-  {"", None, fake_any_pat }
-
-%default label_let_pattern label_var
-  {"", fake_any_pat }
-
-%default module_binding_body module_expr
-  {fake_mod}
-
-%default module_declaration module_type
-  {fake_mty}
-
-%default class_expr class_fun_binding class_fun_def class_simple_expr
-  {fake_class_expr}
-
-%default class_sig_body
-  {fake_class_signature}
-
-%default class_structure
-  {fake_class_structure}
-
-%default class_signature class_type
-  {fake_class_type}
-
-%default class_sig_field
-  {fake_class_type_field}
-
-%default additive constr_ident functor_arg_name label operator single_attr_id
-         subtractive val_ident ident name_tag
-  {""}
-
-%default constant signed_constant
-  {Const_int 0}
-
-%default class_longident clty_longident constr_longident label_longident
-         mod_ext_longident mod_longident mty_longident type_longident
-         val_longident
-  {fake_lident}
-
-%default package_type_cstr {fake_lident_loc, fake_any_typ}
-%default lbl_expr {fake_lident_loc, Fake.any_val'}
-%default lbl_pattern {fake_lident_loc, fake_any_pat}
-
-%default direction_flag {Upto}
-
-%default ext_attributes {None, []}
-(*
-type_parameter                                     Ast_helper.str * Asttypes.variance
-optional_type_parameter                            Ast_helper.str option * Asttypes.variance
-match_case                                         Parsetree.case
-constructor_declaration                            Parsetree.constructor_declaration
-exception_declaration                              Parsetree.constructor_declaration
-constrain                                          Parsetree.core_type * Parsetree.core_type * Ast_helper.loc
-constrain_field                                    Parsetree.core_type * Parsetree.core_type
-label_declaration                                  Parsetree.label_declaration
-module_binding                                     Parsetree.module_binding
-module_rec_declaration                             Parsetree.module_declaration
-package_type                                       Parsetree.package_type
-payload                                            Parsetree.payload
-row_field                                          Parsetree.row_field
-tag_field                                          Parsetree.row_field
-type_declaration                                   Parsetree.type_declaration
-type_kind                                          Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option
-let_binding                                        Parsetree.value_binding
-with_constraint                                    Parsetree.with_constraint
-value                                              string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind
-method_                                            string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind
-attr_id                                            string Asttypes.loc
-ext_attributes                                     string Asttypes.loc option * Ast_helper.attrs
-functor_arg                                        string Asttypes.loc * Parsetree.module_type option
-value_type                                         string * Asttypes.mutable_flag * Asttypes.virtual_flag * tree.core_type
-field                                              string * Parsetree.core_type
-
-
-*)
 
 (* Entry points *)
 

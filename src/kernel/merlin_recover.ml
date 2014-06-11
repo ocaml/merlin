@@ -32,7 +32,7 @@ let fresh parser = {errors = []; parser; recovering = None}
 let feed_normal (_,tok,_ as input) parser =
   Logger.debugf `internal
     (fun ppf tok -> Format.fprintf ppf "normal parser: received %s"
-        (Merlin_parser.Values.Token.to_string tok))
+        Merlin_parser.Values.(string_of_class (class_of_symbol (symbol_of_token tok))))
     tok;
   match Merlin_parser.feed input parser with
   | `Reject ->
@@ -80,7 +80,7 @@ let fold warnings token t =
   | Merlin_lexer.Valid (s,tok,e) ->
     Logger.debugf `internal
       (fun ppf tok -> Format.fprintf ppf "received %s"
-          (Merlin_parser.Values.Token.to_string tok))
+          Merlin_parser.Values.(string_of_class (class_of_symbol (symbol_of_token tok))))
       tok;
     Logger.debugf `internal Merlin_parser.dump t.parser;
     warnings := [];

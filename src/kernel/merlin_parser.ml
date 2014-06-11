@@ -9,28 +9,29 @@ type state = Raw_parser.state
 
 type t =
   | Partial of Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
-  | Final of Raw_parser.semantic_value Location.loc
+  | Final of Raw_parser.symbol Location.loc
 
 type parser = t
 
 type frame =
-  | Partial_frame of int * (Raw_parser.state, Raw_parser.semantic_value) E.stack
-  | Final_frame of Raw_parser.semantic_value Location.loc
+  | Partial_frame of int * (Raw_parser.state, Raw_parser.symbol) E.stack
+  | Final_frame of Raw_parser.symbol Location.loc
 
 let get_stack s = s.Raw_parser.env.E.stack
+let get_state s = s.Raw_parser.env.E.current
 let mk_loc loc_start loc_end = {Location. loc_start; loc_end; loc_ghost = false}
 
 module Frame : sig
   val stack : t -> frame option
   val depth : frame -> int
 
-  val value : frame -> Raw_parser.semantic_value
+  val value : frame -> Raw_parser.symbol
   val location : frame -> Location.t
   val eq    : frame -> frame -> bool
   val next  : frame -> frame option
 
   (* Ease pattern matching on parser stack *)
-  type destruct = D of Raw_parser.semantic_value * destruct lazy_t
+  type destruct = D of Raw_parser.symbol * destruct lazy_t
   val destruct: frame -> destruct
 end = struct
 
@@ -70,7 +71,7 @@ end = struct
     | Final_frame _ -> None
 
   (* Ease pattern matching on parser stack *)
-  type destruct = D of Raw_parser.semantic_value * destruct lazy_t
+  type destruct = D of Raw_parser.symbol * destruct lazy_t
   let rec destruct_bottom = D (Raw_parser.Bottom, lazy destruct_bottom)
 
   let rec destruct f =
@@ -97,17 +98,7 @@ let pop = function
       let p = {p with Raw_parser.env = env} in
       Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
-let rec pop_default t =
-  match Option.map (stack t) ~f:Frame.value with
-  | Some P.Terminal P.DEFAULT ->
-    begin match pop t with
-      | Some p -> pop_default p
-      | None -> assert false
-    end
-  | None | Some _ -> t
-
 let location t =
-  let t = pop_default t in
   Option.value_map
     ~default:Location.none
     ~f:Frame.location
@@ -150,13 +141,28 @@ let feed (s,t,e as input) parser =
       of_step p' depth
 
 let dump ppf t =
+  begin match t with
+    | Partial (s,_) ->
+      let state = get_state s in
+      let print_item (production,pos) =
+        Format.fprintf ppf "ITEMSET:\n";
+        Array.iteri (fun i symbol ->
+            Format.fprintf ppf "%s %s"
+              (if i = pos then " ." else "")
+              (Values.string_of_class symbol)
+          ) (Raw_parser.Query.production_definition production);
+        Format.fprintf ppf "\n"
+      in
+      List.iter print_item (Raw_parser.Query.itemset state)
+    | Final _ -> ()
+  end;
   let rec aux ppf = function
     | None -> Format.fprintf ppf "[]\n%!"
     | Some frame ->
       let v = Frame.value frame in
       let l,c = Lexing.split_pos (Frame.location frame).Location.loc_start in
       Format.fprintf ppf "(%d, %s %d:%d) :: %a"
-        (Frame.depth frame) (Values.to_string v) l c
+        (Frame.depth frame) Values.(string_of_class (class_of_symbol v)) l c
         aux (Frame.next frame)
   in
   aux ppf (Frame.stack t)
@@ -170,8 +176,9 @@ let last_token = function
     Location.mkloc t
       {Location. loc_start; loc_end; loc_ghost = false}
 
-let recover ?location t =
-  match Frame.stack t with
+let recover ?location _t =
+  None
+  (*match Frame.stack t with
   | None -> None
   | Some frame ->
     let l = match location with
@@ -181,7 +188,7 @@ let recover ?location t =
     match feed (l.Location.loc_start,P.DEFAULT,l.Location.loc_end) t with
     | `Accept _ | `Reject -> None
     | `Step t' ->
-      Some (Location.mkloc t' l)
+      Some (Location.mkloc t' l)*)
 
 module Integrate
     (P : sig
@@ -337,52 +344,52 @@ end = struct
       let open Frame in
       match Frame.destruct f, p with
       (* struct _ ... end *)
-      | D (Nonterminal (NT'structure_item l),
-           lazy ( D (Nonterminal (NT'structure_item _), _)
-                | D (Terminal SEMISEMI,
-                     lazy (D (Nonterminal (NT'structure_item _), _))))),
+      | D (N_ (N_structure_item, l),
+           lazy ( D (N_ (N_structure_item, _), _))),
+                (*| D (T_ (T_SEMISEMI, ()),
+                     lazy (D (N_ (N_structure_item, _), _))))),*)
         (Struct n :: p') ->
         (d, Struct (List.length l + n) :: p')
 
-      | D (Nonterminal (NT'structure_item l), _), _ ->
+      | D (N_ (N_structure_item, l), _), _ ->
         (d + 1, Struct (List.length l) :: p)
 
       (* sig _ ... end *)
-      | D (Nonterminal (NT'signature l), _), _ ->
+      | D (N_ (N_signature, l), _), _ ->
         (d + 1, Sig (List.length l) :: p)
 
       (* object ... end *)
-      | D (Nonterminal (NT'class_fields l), _), _ ->
+      | D (N_ (N_class_fields, l), _), _ ->
         (d + 1, Object (List.length l) :: p)
 
       (* classes (class _ and ... *)
-      | D (Nonterminal (NT'class_declarations l), _), _ ->
+      | D (N_ (N_class_declarations, l), _), _ ->
         (d + 1, Class (List.length l) :: p)
-      | D (Nonterminal (NT'class_descriptions l), _), _ ->
+      | D (N_ (N_class_descriptions, l), _), _ ->
         (d + 1, Class (List.length l) :: p)
 
       (* let [rec] _ and ... *)
-      | D (Nonterminal (NT'let_binding _ | NT'val_ident _ | NT'pattern _),
-           lazy (D (Nonterminal (NT'rec_flag flag), _))), _ ->
+      | D ((N_ (N_let_binding , _)), (* | N_val_ident | N_pattern)*)
+           lazy (D (N_ (N_rec_flag, flag), _))), _ ->
         (d + 1, Let (flag, 0) :: p)
 
-      | D (Nonterminal (NT'let_bindings l),
-           lazy (D (Nonterminal (NT'rec_flag flag), _))), _ ->
+      | D (N_ (N_let_bindings, l),
+           lazy (D (N_ (N_rec_flag, flag), _))), _ ->
         (d + 1, Let (flag, List.length l) :: p)
 
-      | D (Nonterminal (NT'let_bindings l), _), _ ->
+      | D (N_ (N_let_bindings, l), _), _ ->
         (d + 1, Let (Asttypes.Nonrecursive, List.length l) :: p)
 
       (* Module rec *)
-      | D (Terminal REC, lazy (D (Terminal MODULE, _))), _ ->
+      | D (T_ (T_REC, ()), lazy (D (T_ (T_MODULE, ()), _))), _ ->
         (d, Module_rec 0 :: p)
-      (*| D (Nonterminal (NT'module_rec_bindings l), _), (Module_rec 0 :: p') ->
+      (*| D (N_ (N_module_rec_bindings, l), _), (Module_rec 0 :: p') ->
         (d, Module_rec (List.length l) :: p')*)
-      | D (Nonterminal (NT'module_rec_declarations l), _), (Module_rec 0 :: p') ->
+      | D (N_ (N_module_rec_declarations, l), _), (Module_rec 0 :: p') ->
         (d, Module_rec (List.length l) :: p')
-      (*| D (Nonterminal (NT'module_rec_bindings l), _), _ ->
+      (*| D (N_ (N_module_rec_bindings, l), _), _ ->
         (d + 1, Module_rec (List.length l) :: p)*)
-      | D (Nonterminal (NT'module_rec_declarations l), _), _ ->
+      | D (N_ (N_module_rec_declarations, l), _), _ ->
         (d + 1, Module_rec (List.length l) :: p)
 
       | _ -> t
@@ -394,23 +401,23 @@ end = struct
 
     let delta () f t ~old:(t',f') =
       match Frame.value f', Frame.value f, t' with
-      | Nonterminal (NT'signature l'),
-        Nonterminal (NT'signature l),
+      | N_ (N_signature, l'),
+        N_ (N_signature, l),
         (d, Sig n' :: p') -> (d, Sig (dlength n' l' l) :: p')
-      (*| Nonterminal (NT'module_rec_bindings l'),
-        Nonterminal (NT'module_rec_bindings l),
+      (*| N_ (N_module_rec_bindings, l'),
+        N_ (N_module_rec_bindings, l),
         (d, Module_rec n' :: p') -> (d, Module_rec (dlength n' l' l) :: p')*)
-      | Nonterminal (NT'module_rec_declarations l'),
-        Nonterminal (NT'module_rec_declarations l),
+      | N_ (N_module_rec_declarations, l'),
+        N_ (N_module_rec_declarations, l),
         (d, Module_rec n' :: p') -> (d, Module_rec (dlength n' l' l) :: p')
-      | Nonterminal (NT'class_declarations l'),
-        Nonterminal (NT'class_declarations l),
+      | N_ (N_class_declarations, l'),
+        N_ (N_class_declarations, l),
         (d, Class n' :: p') -> (d, Class (dlength n' l' l) :: p')
-      | Nonterminal (NT'class_descriptions l'),
-        Nonterminal (NT'class_descriptions l),
+      | N_ (N_class_descriptions, l'),
+        N_ (N_class_descriptions, l),
         (d, Class n' :: p') -> (d, Class (dlength n' l' l) :: p')
-      | Nonterminal (NT'class_fields l'),
-        Nonterminal (NT'class_fields l),
+      | N_ (N_class_fields, l'),
+        N_ (N_class_fields, l),
         (d, Object n' :: p') -> (d, Object (dlength n' l' l) :: p')
       | _ -> frame () f t
 

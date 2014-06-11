@@ -13,7 +13,7 @@ type item =
 
 type t
 val empty : t
-val step : Raw_parser.semantic_value -> t -> t
+val step : Raw_parser.symbol -> t -> t
 
 val observe : t -> item list
 

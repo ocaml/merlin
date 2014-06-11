@@ -787,8 +787,8 @@ module EngineTypes = struct
     val action:
       state ->
       terminal ->
-      'semantic_value ->
-      ('env -> bool -> terminal -> 'semantic_value -> state -> 'answer) ->
+      semantic_value ->
+      ('env -> bool -> terminal -> semantic_value -> state -> 'answer) ->
       ('env -> production -> 'answer) ->
       ('env -> 'answer) ->
       'env -> 'answer
@@ -825,10 +825,6 @@ module EngineTypes = struct
        normally. This convention allows us to not distinguish between regular
        productions and accepting productions. All we have to do is catch that
        exception at top level. *)
-
-    (* For introspection purposes, the user can iterate on all states of the
-       grammar. *)
-    val iter_states: (state -> unit) -> unit
 
     (* Entry points of grammar are allowed to raise [Accept result]. *)
 
@@ -901,6 +897,21 @@ module EngineTypes = struct
 
   (* Step-by-step execution interface *)
 
+  module type QUERY_ENGINE = sig
+
+    type state
+    type production
+    type producer
+    type semantic_action
+
+    (* Valid states are numbered between [0] and [state_count-1] *)
+    val state_count: int
+
+    val itemset: state -> (production * int) list
+    val production_definition: production -> producer array
+    val semantic_action: production -> semantic_action option
+  end
+
   module type STEP_ENGINE = sig
 
     type state
@@ -924,18 +935,6 @@ module EngineTypes = struct
 
     val feed: feed parser -> Lexing.position * token * Lexing.position -> step parser
 
-    val reduce_default: feed parser -> feed parser
-  end
-
-  module type QUERY = sig
-    type token
-    type state
-
-    type terminal
-    val index: token -> terminal
-    val action: state -> terminal -> [`Shift of [`Discard | `Keep] * state | `Reduce | `Fail]
-    val default_reduction: state -> bool
-    val iter_states: (state -> unit) -> unit
   end
 
   (* This signature describes the LR engine. *)
@@ -945,7 +944,6 @@ module EngineTypes = struct
     type state
     type token
     type semantic_value
-    type terminal
 
     (* An entry point to the engine requires a start state, a lexer, and a lexing
        buffer. It either succeeds and produces a semantic value, or fails and
@@ -968,11 +966,6 @@ module EngineTypes = struct
        and type token := token
        and type semantic_value := semantic_value
 
-    module Query : QUERY
-      with type state := state
-       and type token := token
-       and type terminal = terminal
-
   end
 
 end
@@ -984,16 +977,11 @@ module Engine : sig
   module Make (T : TABLE) : ENGINE with type state = T.state
                                     and type token = T.token
                                     and type semantic_value = T.semantic_value
-                                    and type terminal := T.terminal
 
 end = struct
   open EngineTypes
 
   (* The LR parsing engine. *)
-
-  let fst3 (a,_,_) = a
-  let snd3 (_,a,_) = a
-  let thd3 (_,_,a) = a
 
   (* This module is used:
 
@@ -1030,10 +1018,8 @@ end = struct
        it is incremented. *)
 
     let discard env token : (state, semantic_value, token) env =
-      Log.lookahead_token
-        (fst3 token)
-        (T.token2terminal (snd3 token))
-        (thd3 token);
+      let startp, token', endp = token in
+      Log.lookahead_token startp (T.token2terminal token') endp;
       let shifted = env.shifted + 1 in
       let shifted =
         if shifted >= 0
@@ -1116,7 +1102,7 @@ end = struct
          current state and the current lookahead token, in order to
          determine which action should be taken. *)
 
-      let token = snd3 env.token in
+      let _, token, _ = env.token in
       T.action
         env.current                    (* determines a row *)
         (T.token2terminal token)       (* determines a column *)
@@ -1216,7 +1202,8 @@ end = struct
     and initiate env : result =
       assert (env.shifted >= 0);
       if T.recovery && env.shifted = 0 then begin
-        Log.discarding_last_token (T.token2terminal (snd3 env.token));
+        let _, token, _ = env.token in
+        Log.discarding_last_token (T.token2terminal token);
         `Feed { env; tag = `Feed_error }
       end
       else
@@ -1304,29 +1291,6 @@ end = struct
         { env = discard s.env token; tag = `Step_run }
       | `Feed_error ->
         { env = { (discard s.env token) with shifted = 0 }; tag = `Step_action }
-
-    let reduce_default s =
-      let rec aux env =
-        T.default_reduction env.current
-          begin fun env prod ->
-             let env', success =
-               try { env with stack = T.semantic_action prod env }, true
-               with Error -> env, false
-             in
-             if success then begin
-
-               let current = T.goto env'.stack.state prod in
-               aux { env' with current }
-
-             end
-             else
-               env
-          end
-          (fun env -> env)
-          env
-      in
-      {s with env = aux s.env}
-
 
     let initial s (start_p,t,curr_p as token) =
       let rec empty = {
@@ -1417,31 +1381,6 @@ end = struct
 
     (* --------------------------------------------------------------------------- *)
 
-    (* Query interface *)
-
-    module Query = struct
-      type terminal = T.terminal
-      let index = T.token2terminal
-
-      let action state term =
-        T.action state term ()
-          (fun () discard _term () state ->
-             `Shift ((if discard then `Discard else `Keep), state))
-          (fun () _prod -> `Reduce)
-          (fun () -> `Fail)
-          ()
-
-      let default_reduction state =
-        T.default_reduction state
-          (fun () _prod -> true)
-          (fun () -> false)
-          ()
-
-      let iter_states = T.iter_states
-    end
-
-    (* --------------------------------------------------------------------------- *)
-
   end
 
 
@@ -1475,10 +1414,6 @@ module TableFormat = struct
     (* This maps a token to its semantic value. *)
 
     val token2value: token -> semantic_value
-
-    (* Number of states (labelled from 0 to n-1) provided only for information *)
-
-    val number_of_states: int
 
     (* Traditionally, an LR automaton is described by two tables, namely, an
        action table and a goto table. See, for instance, the Dragon book.
@@ -1586,6 +1521,27 @@ module TableFormat = struct
 
   end
 
+  (* Low-level interface needed to query the engine *)
+
+  module type QUERY_TABLE = sig
+
+    val lr1_states: int
+
+    (* Mapping from lr1 state number to lr0 state number *)
+    val lr0_mapping: PackedIntArray.t
+
+    (* Mapping from lr0 state to the underlying item set.
+       An item is a pair of a production and a position in this production. *)
+    val lr0_itemset: (int * int) list array
+
+    (* A production is a pair of a producer array and an optional reduction,
+       represented by an index to an action in the [semantic_action] array.
+       A reduction can be [None] if it had been removed dead code elimination.
+    *)
+    type producer_definition
+    val productions_definition: (producer_definition array * int option) array
+
+  end
 
 end
 module TableInterpreter : sig
@@ -1599,12 +1555,17 @@ module TableInterpreter : sig
   (* This functor is invoked by the generated parser. *)
 
   module Make (T : TableFormat.TABLES)
+    : EngineTypes.ENGINE with type state = int
+                          and type token = T.token
+                          and type semantic_value = T.semantic_value
 
-  : EngineTypes.ENGINE with type state = int
-                        and type token = T.token
-                        and type semantic_value = T.semantic_value
-                        and type terminal := int
-
+  module MakeQuery (T : TableFormat.TABLES) (Q : TableFormat.QUERY_TABLE)
+    : EngineTypes.QUERY_ENGINE with type state = int
+                                and type producer = Q.producer_definition
+                                and type production = int
+                                and type semantic_action =
+                                  (int, T.semantic_value, T.token) EngineTypes.env ->
+                                  (int, T.semantic_value) EngineTypes.stack
 
 end = struct
   (* This module instantiates the generic [Engine] with a thin decoding layer
@@ -1694,11 +1655,6 @@ end = struct
       (* code = 1 + state *)
       code - 1
 
-    let iter_states f =
-      for i = 0 to T.number_of_states - 1 do
-        f i
-      done
-
     exception Accept = T.Accept
 
     exception Error = T.Error
@@ -1779,6 +1735,31 @@ end = struct
     end
 
   end)
+
+  module MakeQuery (T : TableFormat.TABLES) (Q : TableFormat.QUERY_TABLE) =
+  struct
+    type state = int
+    type production = int
+    type producer = Q.producer_definition
+    type semantic_action =
+      (int, T.semantic_value, T.token) EngineTypes.env ->
+      (int, T.semantic_value) EngineTypes.stack
+
+    let state_count = Q.lr1_states
+
+    let itemset lr1 =
+      let lr0 = PackedIntArray.get Q.lr0_mapping lr1 in
+      Q.lr0_itemset.(lr0)
+
+    let production_definition prod =
+      fst Q.productions_definition.(prod)
+
+    let semantic_action prod =
+      match snd Q.productions_definition.(prod) with
+      | None -> None
+      | Some action -> Some T.semantic_action.(action)
+
+  end
 
 end
 module Convert : sig

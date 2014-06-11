@@ -14,7 +14,8 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
   and parse = function
     | `Step s -> parse (Raw_parser.step s)
     | `Feed p -> lex p (Raw_lexer.token_without_comments state lexbuf)
-    | `Accept (Raw_parser.Nonterminal (Raw_parser.NT'parse_expression e)) -> e
+    | `Accept (Raw_parser.N_ (Raw_parser.N_parse_expression, e)) ->
+      (e : Parsetree.expression)
     | `Reject | `Accept _ -> assert false
   in
   parse (`Step (Raw_parser.initial Raw_parser.parse_expression_state

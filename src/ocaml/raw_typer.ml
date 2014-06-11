@@ -17,35 +17,37 @@ let default = Asttypes.Nonrecursive
 let empty = default, []
 let observe = snd
 
+let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
+  match nt, v with
+  | N_rec_flag, r                 -> (r : Asttypes.rec_flag), []
+  | N_implementation, str         -> default, [Structure str]
+  | N_structure, str              -> default, [Structure str]
+  | N_structure_tail, str         -> default, [Structure str]
+  | N_structure_item, str         -> default, [Structure str]
+  | N_strict_binding, e           -> default, [Eval e]
+  | N_simple_expr, e              -> default, [Eval e]
+  | N_seq_expr, e                 -> default, [Eval e]
+  | N_opt_default, (Some e)       -> default, [Eval e]
+  | N_fun_def, e                  -> default, [Eval e]
+  | N_expr, e                     -> default, [Eval e]
+  | N_labeled_simple_expr, (_,e)  -> default, [Eval e]
+  | N_label_ident, (_,e)          -> default, [Eval e]
+  | N_label_expr, (_,e)           -> default, [Eval e]
+  | N_let_bindings, e             -> default, [Bindings (is_rec,e)]
+  (*| N_let_rec_bindings, e -> `binds e*)
+  | N_expr_semi_list, el          -> default, List.map (fun e -> Eval e) el
+  | N_expr_comma_list, el         -> default, List.map (fun e -> Eval e) el
+  | N_interface, sg               -> default, [Signature sg]
+  | N_signature_item, sg          -> default, [Signature sg]
+  | N_signature, sg               -> default, [Signature (List.rev sg)]
+  (*| N_module_functor_arg, (id,mty) -> `fmd (id,mty)*)
+  | N_labeled_simple_pattern, pat -> default, [Pattern pat]
+  | N_pattern, pat                -> default, [Pattern ("",None,pat)]
+  | _                             -> empty
+
 let step v (is_rec,_) = match v with
-  | Terminal _ | Bottom -> empty
-  | Nonterminal nt ->
-    match nt with
-    | NT'rec_flag r -> r, []
-    | NT'implementation str | NT'structure str
-    | NT'structure_tail str | NT'structure_item str ->
-      default, [Structure str]
-    | NT'strict_binding e | NT'simple_expr e | NT'seq_expr e
-    | NT'opt_default (Some e) | NT'fun_def e | NT'fun_binding e | NT'expr e
-    | NT'labeled_simple_expr (_,e) | NT'label_ident (_,e)
-    | NT'label_expr (_,e) ->
-      default, [Eval e]
-    | NT'let_bindings e ->
-      default, [Bindings (is_rec,e)]
-    (*| NT'let_rec_bindings e -> `binds e*)
-    | NT'expr_semi_list el | NT'expr_comma_list el  ->
-      default, List.map (fun e -> Eval e) el
-    | NT'interface sg | NT'signature_item sg ->
-      default, [Signature sg]
-    | NT'signature sg ->
-      default, [Signature (List.rev sg)]
-    (*| NT'module_functor_arg (id,mty) ->
-      `fmd (id,mty)*)
-    | NT'labeled_simple_pattern pat ->
-      default, [Pattern pat]
-    | NT'pattern pat ->
-      default, [Pattern ("",None,pat)]
-    | _ -> empty
+  | T_ _ | Bottom -> empty
+  | N_ (nt,v) -> step_nt is_rec nt v
 
 let dump_item ppf = function
   | Structure str -> Printast.implementation ppf str

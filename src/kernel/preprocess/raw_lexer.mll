@@ -131,7 +131,6 @@ let keyword_table : keywords =
     "lsr", INFIXOP4("lsr");
     "asr", INFIXOP4("asr");
 
-    "DEFAULT", DEFAULT;
   ]
 
 let keywords l = create_hashtable 11 l

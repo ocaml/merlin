@@ -1,287 +1,991 @@
 open Std
-open Raw_parser
 
-module Token =
-struct
-  type t = token
+(** Helpers around Menhir generated definitions *)
 
-  let to_string =
-    let p a s = "(" ^ s ^ ")" in
-    function
-    | WITH            -> "WITH"            | WHILE_LWT       -> "WHILE_LWT"
-    | WHILE           -> "WHILE"           | WHEN            -> "WHEN"
-    | VIRTUAL         -> "VIRTUAL"         | VAL             -> "VAL"
-    | UNDERSCORE      -> "UNDERSCORE"      | UIDENT _        -> "UIDENT"
-    | TYPE            -> "TYPE"            | TRY_LWT         -> "TRY_LWT"
-    | TRY             -> "TRY"             | TRUE            -> "TRUE"
-    | TO              -> "TO"              | TILDE           -> "TILDE"
-    | THEN            -> "THEN"            | STRUCT          -> "STRUCT"
-    | STRING _        -> "STRING"          | STAR            -> "STAR"
-    | SIG             -> "SIG"             | SHARP           -> "SHARP"
-    | SEMISEMI        -> "SEMISEMI"        | SEMI            -> "SEMI"
-    | RPAREN          -> "RPAREN"          | REC             -> "REC"
-    | RBRACKET        -> "RBRACKET"        | RBRACE          -> "RBRACE"
-    | QUOTE           -> "QUOTE"           | QUESTION        -> "QUESTION"
-    | PRIVATE         -> "PRIVATE"         | PREFIXOP s      -> p"PREFIXOP" s
-    | PLUSDOT         -> "PLUSDOT"         | PLUS            -> "PLUS"
-    | OR              -> "OR"              | OPTLABEL _      -> "OPTLABEL"
-    | OPEN            -> "OPEN"            | OF              -> "OF"
-    | OBJECT          -> "OBJECT"          | NONREC          -> "NONREC"
-    | NEW             -> "NEW"             | NATIVEINT _     -> "NATIVEINT"
-    | MUTABLE         -> "MUTABLE"         | MODULE          -> "MODULE"
-    | MINUSGREATER    -> "MINUSGREATER"    | MINUSDOT        -> "MINUSDOT"
-    | MINUS           -> "MINUS"           | METHOD          -> "METHOD"
-    | MATCH_LWT       -> "MATCH_LWT"       | MATCH           -> "MATCH"
-    | LPAREN          -> "LPAREN"          | LIDENT _        -> "LIDENT"
-    | LET_LWT         -> "LET_LWT"         | LET             -> "LET"
-    | LESSMINUS       -> "LESSMINUS"       | LESS            -> "LESS"
-    | LBRACKETLESS    -> "LBRACKETLESS"    | LBRACKETGREATER -> "LBRACKETGREATER"
-    | LBRACKETBAR     -> "LBRACKETBAR"     | LBRACKET        -> "LBRACKET"
-    | LBRACELESS      -> "LBRACELESS"      | LBRACE          -> "LBRACE"
-    | LAZY            -> "LAZY"            | LABEL _         -> "LABEL"
-    | JSNEW           -> "JSNEW"           | INT64 _         -> "INT64"
-    | INT32 _         -> "INT32"           | INT _           -> "INT"
-    | INITIALIZER     -> "INITIALIZER"     | INHERIT         -> "INHERIT"
-    | INFIXOP4 s      -> p"INFIXOP4" s     | INFIXOP3 s      -> p"INFIXOP3" s
-    | INFIXOP2 s      -> p"INFIXOP2" s     | INFIXOP1 s      -> p"INFIXOP1" s
-    | INFIXOP0 s      -> p"INFIXOP0" s     | INCLUDE         -> "INCLUDE"
-    | IN              -> "IN"              | IF              -> "IF"
-    | GREATERRBRACKET -> "GREATERRBRACKET" | GREATERRBRACE   -> "GREATERRBRACE"
-    | GREATER         -> "GREATER"         | FUNCTOR         -> "FUNCTOR"
-    | FUNCTION        -> "FUNCTION"        | FUN             -> "FUN"
-    | FOR_LWT         -> "FOR_LWT"         | FOR             -> "FOR"
-    | FLOAT _         -> "FLOAT"           | FINALLY_LWT     -> "FINALLY_LWT"
-    | FALSE           -> "FALSE"           | EXTERNAL        -> "EXTERNAL"
-    | EXCEPTION       -> "EXCEPTION"       | EQUAL           -> "EQUAL"
-    | EOF             -> "EOF"             | END             -> "END"
-    | ELSE            -> "ELSE"            | DOWNTO          -> "DOWNTO"
-    | DOTDOT          -> "DOTDOT"          | DOT             -> "DOT"
-    | DONE            -> "DONE"            | DO              -> "DO"
-    | CONSTRAINT      -> "CONSTRAINT"      | COMMENT _       -> "COMMENT"
-    | COMMA           -> "COMMA"           | COLONGREATER    -> "COLONGREATER"
-    | COLONEQUAL      -> "COLONEQUAL"      | COLONCOLON      -> "COLONCOLON"
-    | COLON           -> "COLON"           | CLASS           -> "CLASS"
-    | CHAR _          -> "CHAR"            | BEGIN           -> "BEGIN"
-    | BARRBRACKET     -> "BARRBRACKET"     | BARBAR          -> "BARBAR"
-    | BAR             -> "BAR"             | BANG            -> "BANG"
-    | BACKQUOTE       -> "BACKQUOTE"       | ASSERT          -> "ASSERT"
-    | AS              -> "AS"              | AND             -> "AND"
-    | AMPERSAND       -> "AMPERSAND"       | AMPERAMPER      -> "AMPERAMPER"
-    | P4_QUOTATION           -> "P4_QUOTATION"
-    | OUNIT_TEST_UNIT        -> "OUNIT_TEST_UNIT"
-    | OUNIT_TEST_MODULE      -> "OUNIT_TEST_MODULE"
-    | OUNIT_TEST             -> "OUNIT_TEST"
-    | OUNIT_BENCH_MODULE     -> "OUNIT_BENCH_MODULE"
-    | OUNIT_BENCH_INDEXED    -> "OUNIT_BENCH_INDEXED"
-    | OUNIT_BENCH_FUN        -> "OUNIT_BENCH_FUN"
-    | OUNIT_BENCH            -> "OUNIT_BENCH"
-    | ENTRYPOINT             -> "ENTRYPOINT"
-    | PERCENT                -> "PERCENT"
-    | LBRACKETPERCENTPERCENT -> "LBRACKETPERCENTPERCENT"
-    | LBRACKETPERCENT        -> "LBRACKETPERCENT"
-    | LBRACKETATAT           -> "LBRACKETATAT"
-    | LBRACKETAT             -> "LBRACKETAT"
-    | PLUSEQ                 -> "PLUSEQ"
-    | LBRACKETATATAT         -> "LBRACKETATATAT"
-    | EOL                    -> "EOL"
-    | DEFAULT                -> "DEFAULT"
-end
+type token = Raw_parser.token
 
-module Nonterminal =
-struct
-  open Asttypes
-  open Parsetree
+type 'a token_class = 'a Raw_parser.token_class
+type 'a nonterminal_class = 'a Raw_parser.nonterminal_class
 
-  type t = nonterminal
+type symbol_class = Raw_parser.symbol_class =
+  | CT_ : 'a token_class -> symbol_class
+  | CN_ : 'a nonterminal_class -> symbol_class
 
-  let to_string = function
-    | NT'with_type_binder                  _ -> "with_type_binder"
-    | NT'with_constraints                  _ -> "with_constraints"
-    | NT'with_constraint                   _ -> "with_constraint"
-    | NT'virtual_flag                      _ -> "virtual_flag"
-    | NT'value_type                        _ -> "value_type"
-    | NT'value                             _ -> "value"
-    | NT'val_longident                     _ -> "val_longident"
-    | NT'val_ident                         _ -> "val_ident"
-    | NT'typevar_list                      _ -> "typevar_list"
-    | NT'type_variance                     _ -> "type_variance"
-    | NT'type_parameters                   _ -> "type_parameters"
-    | NT'type_parameter_list               _ -> "type_parameter_list"
-    | NT'type_parameter                    _ -> "type_parameter"
-    | NT'type_longident                    _ -> "type_longident"
-    | NT'type_kind                         _ -> "type_kind"
-    | NT'type_declarations                 _ -> "type_declarations"
-    | NT'type_declaration                  _ -> "type_declaration"
-    | NT'type_constraint                   _ -> "type_constraint"
-    | NT'tag_field                         _ -> "tag_field"
-    | NT'subtractive                       _ -> "subtractive"
-    | NT'single_attr_id                    _ -> "single_attr_id"
-    | NT'simple_pattern_not_ident          _ -> "simple_pattern_not_ident"
-    | NT'simple_core_type_or_tuple_no_attr _ -> "simple_core_type_or_tuple_no_attr"
-    | NT'simple_core_type_no_attr          _ -> "simple_core_type_no_attr"
-    | NT'private_virtual_flags             _ -> "private_virtual_flags"
-    | NT'post_item_attributes              _ -> "post_item_attributes"
-    | NT'post_item_attribute               _ -> "post_item_attribute"
-    | NT'payload                           _ -> "payload"
-    | NT'parse_expression                  _ -> "parse_expression"
-    | NT'opt_semi                          _ -> "opt_semi"
-    | NT'opt_bar                           _ -> "opt_bar"
-    | NT'module_bindings                   _ -> "module_bindings"
-    | NT'module_binding_body               _ -> "module_binding_body"
-    | NT'method_                           _ -> "method_"
-    | NT'match_case                        _ -> "match_case"
-    | NT'let_binding_                      _ -> "let_binding_"
-    | NT'item_extension                    _ -> "item_extension"
-    | NT'functor_args                      _ -> "functor_args"
-    | NT'functor_arg_name                  _ -> "functor_arg_name"
-    | NT'functor_arg                       _ -> "functor_arg"
-    | NT'extension                         _ -> "extension"
-    | NT'ext_attributes                    _ -> "ext_attributes"
-    | NT'dummy                             _ -> "dummy"
-    | NT'core_type_list_no_attr            _ -> "core_type_list_no_attr"
-    | NT'attributes                        _ -> "attributes"
-    | NT'attribute                         _ -> "attribute"
-    | NT'attr_id                           _ -> "attr_id"
-    | NT'structure_tail                    _ -> "structure_tail"
-    | NT'structure_item                    _ -> "structure_item"
-    | NT'structure                         _ -> "structure"
-    | NT'strict_binding                    _ -> "strict_binding"
-    | NT'simple_pattern                    _ -> "simple_pattern"
-    | NT'simple_labeled_expr_list          _ -> "simple_labeled_expr_list"
-    | NT'simple_expr                       _ -> "simple_expr"
-    | NT'simple_core_type_or_tuple         _ -> "simple_core_type_or_tuple"
-    | NT'simple_core_type2                 _ -> "simple_core_type2"
-    | NT'simple_core_type                  _ -> "simple_core_type"
-    | NT'signed_constant                   _ -> "signed_constant"
-    | NT'signature_item                    _ -> "signature_item"
-    | NT'signature                         _ -> "signature"
-    | NT'seq_expr                          _ -> "seq_expr"
-    | NT'row_field_list                    _ -> "row_field_list"
-    | NT'row_field                         _ -> "row_field"
-    | NT'record_expr                       _ -> "record_expr"
-    | NT'rec_flag                          _ -> "rec_flag"
-    | NT'private_flag                      _ -> "private_flag"
-    | NT'primitive_declaration             _ -> "primitive_declaration"
-    | NT'poly_type                         _ -> "poly_type"
-    | NT'pattern_var                       _ -> "pattern_var"
-    | NT'pattern_semi_list                 _ -> "pattern_semi_list"
-    | NT'pattern_comma_list                _ -> "pattern_comma_list"
-    | NT'pattern                           _ -> "pattern"
-    | NT'parent_binder                     _ -> "parent_binder"
-    | NT'package_type_cstrs                _ -> "package_type_cstrs"
-    | NT'package_type_cstr                 _ -> "package_type_cstr"
-    | NT'package_type                      _ -> "package_type"
-    | NT'override_flag                     _ -> "override_flag"
-    | NT'optional_type_parameters          _ -> "optional_type_parameters"
-    | NT'optional_type_parameter_list      _ -> "optional_type_parameter_list"
-    | NT'optional_type_parameter           _ -> "optional_type_parameter"
-    | NT'opt_default                       _ -> "opt_default"
-    | NT'opt_ampersand                     _ -> "opt_ampersand"
-    | NT'operator                          _ -> "operator"
-    | NT'name_tag_list                     _ -> "name_tag_list"
-    | NT'name_tag                          _ -> "name_tag"
-    | NT'mutable_flag                      _ -> "mutable_flag"
-    | NT'mty_longident                     _ -> "mty_longident"
-    | NT'module_type                       _ -> "module_type"
-    | NT'module_rec_declarations           _ -> "module_rec_declarations"
-    | NT'module_rec_declaration            _ -> "module_rec_declaration"
-    | NT'module_expr                       _ -> "module_expr"
-    | NT'module_declaration                _ -> "module_declaration"
-    | NT'module_binding                    _ -> "module_binding"
-    | NT'mod_longident                     _ -> "mod_longident"
-    | NT'mod_ext_longident                 _ -> "mod_ext_longident"
-    | NT'meth_list                         _ -> "meth_list"
-    | NT'match_cases                       _ -> "match_cases"
-    | NT'lident_list                       _ -> "lident_list"
-    | NT'let_pattern                       _ -> "let_pattern"
-    | NT'let_bindings                      _ -> "let_bindings"
-    | NT'let_binding                       _ -> "let_binding"
-    | NT'lbl_pattern_list                  _ -> "lbl_pattern_list"
-    | NT'lbl_pattern                       _ -> "lbl_pattern"
-    | NT'lbl_expr_list                     _ -> "lbl_expr_list"
-    | NT'lbl_expr                          _ -> "lbl_expr"
-    | NT'labeled_simple_pattern            _ -> "labeled_simple_pattern"
-    | NT'labeled_simple_expr               _ -> "labeled_simple_expr"
-    | NT'label_var                         _ -> "label_var"
-    | NT'label_longident                   _ -> "label_longident"
-    | NT'label_let_pattern                 _ -> "label_let_pattern"
-    | NT'label_ident                       _ -> "label_ident"
-    | NT'label_expr                        _ -> "label_expr"
-    | NT'label_declarations                _ -> "label_declarations"
-    | NT'label_declaration                 _ -> "label_declaration"
-    | NT'label                             _ -> "label"
-    | NT'interface                         _ -> "interface"
-    | NT'implementation                    _ -> "implementation"
-    | NT'ident                             _ -> "ident"
-    | NT'generalized_constructor_arguments _ -> "generalized_constructor_arguments"
-    | NT'fun_def                           _ -> "fun_def"
-    | NT'fun_binding                       _ -> "fun_binding"
-    | NT'field_expr_list                   _ -> "field_expr_list"
-    | NT'field                             _ -> "field"
-    | NT'expr_semi_list                    _ -> "expr_semi_list"
-    | NT'expr_comma_list                   _ -> "expr_comma_list"
-    | NT'expr                              _ -> "expr"
-    | NT'direction_flag                    _ -> "direction_flag"
-    | NT'core_type_list                    _ -> "core_type_list"
-    | NT'core_type_comma_list              _ -> "core_type_comma_list"
-    | NT'core_type2                        _ -> "core_type2"
-    | NT'core_type                         _ -> "core_type"
-    | NT'constructor_declarations          _ -> "constructor_declarations"
-    | NT'constructor_declaration           _ -> "constructor_declaration"
-    | NT'constraints                       _ -> "constraints"
-    | NT'constrain_field                   _ -> "constrain_field"
-    | NT'constrain                         _ -> "constrain"
-    | NT'constr_longident                  _ -> "constr_longident"
-    | NT'constr_ident                      _ -> "constr_ident"
-    | NT'constant                          _ -> "constant"
-    | NT'clty_longident                    _ -> "clty_longident"
-    | NT'class_type_parameters             _ -> "class_type_parameters"
-    | NT'class_type_declarations           _ -> "class_type_declarations"
-    | NT'class_type_declaration            _ -> "class_type_declaration"
-    | NT'class_type                        _ -> "class_type"
-    | NT'class_structure                   _ -> "class_structure"
-    | NT'class_simple_expr                 _ -> "class_simple_expr"
-    | NT'class_signature                   _ -> "class_signature"
-    | NT'class_sig_fields                  _ -> "class_sig_fields"
-    | NT'class_sig_field                   _ -> "class_sig_field"
-    | NT'class_sig_body                    _ -> "class_sig_body"
-    | NT'class_self_type                   _ -> "class_self_type"
-    | NT'class_self_pattern                _ -> "class_self_pattern"
-    | NT'class_longident                   _ -> "class_longident"
-    | NT'class_fun_def                     _ -> "class_fun_def"
-    | NT'class_fun_binding                 _ -> "class_fun_binding"
-    | NT'class_fields                      _ -> "class_fields"
-    | NT'class_field                       _ -> "class_field"
-    | NT'class_expr                        _ -> "class_expr"
-    | NT'class_descriptions                _ -> "class_descriptions"
-    | NT'class_description                 _ -> "class_description"
-    | NT'class_declarations                _ -> "class_declarations"
-    | NT'class_declaration                 _ -> "class_declaration"
-    | NT'amper_type_list                   _ -> "amper_type_list"
-    | NT'additive                          _ -> "additive"
-    | NT'type_variable                     _ -> "NT'type_variable"
-    | NT'str_type_extension                _ -> "NT'str_type_extension"
-    | NT'str_extension_constructors        _ -> "NT'str_extension_constructors"
-    | NT'str_exception_declaration         _ -> "NT'str_exception_declaration"
-    | NT'sig_type_extension                _ -> "NT'sig_type_extension"
-    | NT'sig_extension_constructors        _ -> "NT'sig_extension_constructors"
-    | NT'sig_exception_declaration         _ -> "NT'sig_exception_declaration"
-    | NT'optional_type_variable            _ -> "NT'optional_type_variable"
-    | NT'open_statement                    _ -> "NT'open_statement"
-    | NT'newtype                           _ -> "NT'newtype"
-    | NT'floating_attribute                _ -> "NT'floating_attribute"
-    | NT'extension_constructor_rebind      _ -> "NT'extension_constructor_rebind"
-    | NT'extension_constructor_declaration _ -> "NT'extension_constructor_declaration"
-    | NT'expr_open                         _ -> "NT'expr_open"
-
-end
-
-type t = Raw_parser.semantic_value =
+type symbol = Raw_parser.symbol =
+  | T_ : 'a token_class * 'a -> symbol
+  | N_ : 'a nonterminal_class * 'a -> symbol
   | Bottom
-  | Terminal of Token.t
-  | Nonterminal of Nonterminal.t
 
-let to_string = function
-  | Bottom -> "Bottom"
-  | Terminal t -> Token.to_string t
-  | Nonterminal nt -> Nonterminal.to_string nt
+let class_of_symbol = function
+  | T_ (k,_) -> CT_ k
+  | N_ (k,_) -> CN_ k
+  | Bottom -> assert false
+
+open Raw_parser
+let string_of_token : type a. a token_class -> string = function
+  | T_WITH                 -> "WITH"
+  | T_WHILE_LWT            -> "WHILE_LWT"
+  | T_WHILE                -> "WHILE"
+  | T_WHEN                 -> "WHEN"
+  | T_VIRTUAL              -> "VIRTUAL"
+  | T_VAL                  -> "VAL"
+  | T_UNDERSCORE           -> "UNDERSCORE"
+  | T_UIDENT               -> "UIDENT"
+  | T_TYPE                 -> "TYPE"
+  | T_TRY_LWT              -> "TRY_LWT"
+  | T_TRY                  -> "TRY"
+  | T_TRUE                 -> "TRUE"
+  | T_TO                   -> "TO"
+  | T_TILDE                -> "TILDE"
+  | T_THEN                 -> "THEN"
+  | T_STRUCT               -> "STRUCT"
+  | T_STRING               -> "STRING"
+  | T_STAR                 -> "STAR"
+  | T_SIG                  -> "SIG"
+  | T_SHARP                -> "SHARP"
+  | T_SEMISEMI             -> "SEMISEMI"
+  | T_SEMI                 -> "SEMI"
+  | T_RPAREN               -> "RPAREN"
+  | T_REC                  -> "REC"
+  | T_RBRACKET             -> "RBRACKET"
+  | T_RBRACE               -> "RBRACE"
+  | T_QUOTE                -> "QUOTE"
+  | T_QUESTION             -> "QUESTION"
+  | T_PRIVATE              -> "PRIVATE"
+  | T_PREFIXOP             -> "PREFIXOP"
+  | T_PLUSEQ               -> "PLUSEQ"
+  | T_PLUSDOT              -> "PLUSDOT"
+  | T_PLUS                 -> "PLUS"
+  | T_PERCENT              -> "PERCENT"
+  | T_P4_QUOTATION         -> "P4_QUOTATION"
+  | T_OUNIT_TEST_UNIT      -> "OUNIT_TEST_UNIT"
+  | T_OUNIT_TEST_MODULE    -> "OUNIT_TEST_MODULE"
+  | T_OUNIT_TEST           -> "OUNIT_TEST"
+  | T_OUNIT_BENCH_MODULE   -> "OUNIT_BENCH_MODULE"
+  | T_OUNIT_BENCH_INDEXED  -> "OUNIT_BENCH_INDEXED"
+  | T_OUNIT_BENCH_FUN      -> "OUNIT_BENCH_FUN"
+  | T_OUNIT_BENCH          -> "OUNIT_BENCH"
+  | T_OR                   -> "OR"
+  | T_OPTLABEL             -> "OPTLABEL"
+  | T_OPEN                 -> "OPEN"
+  | T_OF                   -> "OF"
+  | T_OBJECT               -> "OBJECT"
+  | T_NONREC               -> "NONREC"
+  | T_NEW                  -> "NEW"
+  | T_NATIVEINT            -> "NATIVEINT"
+  | T_MUTABLE              -> "MUTABLE"
+  | T_MODULE               -> "MODULE"
+  | T_MINUSGREATER         -> "MINUSGREATER"
+  | T_MINUSDOT             -> "MINUSDOT"
+  | T_MINUS                -> "MINUS"
+  | T_METHOD               -> "METHOD"
+  | T_MATCH_LWT            -> "MATCH_LWT"
+  | T_MATCH                -> "MATCH"
+  | T_LPAREN               -> "LPAREN"
+  | T_LIDENT               -> "LIDENT"
+  | T_LET_LWT              -> "LET_LWT"
+  | T_LET                  -> "LET"
+  | T_LESSMINUS            -> "LESSMINUS"
+  | T_LESS                 -> "LESS"
+  | T_LBRACKETPERCENTPERCENT -> "LBRACKETPERCENTPERCENT"
+  | T_LBRACKETPERCENT      -> "LBRACKETPERCENT"
+  | T_LBRACKETLESS         -> "LBRACKETLESS"
+  | T_LBRACKETGREATER      -> "LBRACKETGREATER"
+  | T_LBRACKETBAR          -> "LBRACKETBAR"
+  | T_LBRACKETATATAT       -> "LBRACKETATATAT"
+  | T_LBRACKETATAT         -> "LBRACKETATAT"
+  | T_LBRACKETAT           -> "LBRACKETAT"
+  | T_LBRACKET             -> "LBRACKET"
+  | T_LBRACELESS           -> "LBRACELESS"
+  | T_LBRACE               -> "LBRACE"
+  | T_LAZY                 -> "LAZY"
+  | T_LABEL                -> "LABEL"
+  | T_JSNEW                -> "JSNEW"
+  | T_INT64                -> "INT64"
+  | T_INT32                -> "INT32"
+  | T_INT                  -> "INT"
+  | T_INITIALIZER          -> "INITIALIZER"
+  | T_INHERIT              -> "INHERIT"
+  | T_INFIXOP4             -> "INFIXOP4"
+  | T_INFIXOP3             -> "INFIXOP3"
+  | T_INFIXOP2             -> "INFIXOP2"
+  | T_INFIXOP1             -> "INFIXOP1"
+  | T_INFIXOP0             -> "INFIXOP0"
+  | T_INCLUDE              -> "INCLUDE"
+  | T_IN                   -> "IN"
+  | T_IF                   -> "IF"
+  | T_GREATERRBRACKET      -> "GREATERRBRACKET"
+  | T_GREATERRBRACE        -> "GREATERRBRACE"
+  | T_GREATER              -> "GREATER"
+  | T_FUNCTOR              -> "FUNCTOR"
+  | T_FUNCTION             -> "FUNCTION"
+  | T_FUN                  -> "FUN"
+  | T_FOR_LWT              -> "FOR_LWT"
+  | T_FOR                  -> "FOR"
+  | T_FLOAT                -> "FLOAT"
+  | T_FINALLY_LWT          -> "FINALLY_LWT"
+  | T_FALSE                -> "FALSE"
+  | T_EXTERNAL             -> "EXTERNAL"
+  | T_EXCEPTION            -> "EXCEPTION"
+  | T_EQUAL                -> "EQUAL"
+  | T_EOL                  -> "EOL"
+  | T_EOF                  -> "EOF"
+  | T_ENTRYPOINT           -> "ENTRYPOINT"
+  | T_END                  -> "END"
+  | T_ELSE                 -> "ELSE"
+  | T_DOWNTO               -> "DOWNTO"
+  | T_DOTDOT               -> "DOTDOT"
+  | T_DOT                  -> "DOT"
+  | T_DONE                 -> "DONE"
+  | T_DO                   -> "DO"
+  | T_CONSTRAINT           -> "CONSTRAINT"
+  | T_COMMENT              -> "COMMENT"
+  | T_COMMA                -> "COMMA"
+  | T_COLONGREATER         -> "COLONGREATER"
+  | T_COLONEQUAL           -> "COLONEQUAL"
+  | T_COLONCOLON           -> "COLONCOLON"
+  | T_COLON                -> "COLON"
+  | T_CLASS                -> "CLASS"
+  | T_CHAR                 -> "CHAR"
+  | T_BEGIN                -> "BEGIN"
+  | T_BARRBRACKET          -> "BARRBRACKET"
+  | T_BARBAR               -> "BARBAR"
+  | T_BAR                  -> "BAR"
+  | T_BANG                 -> "BANG"
+  | T_BACKQUOTE            -> "BACKQUOTE"
+  | T_ASSERT               -> "ASSERT"
+  | T_AS                   -> "AS"
+  | T_AND                  -> "AND"
+  | T_AMPERSAND            -> "AMPERSAND"
+  | T_AMPERAMPER           -> "AMPERAMPER"
+
+let string_of_nonterminal : type a. a nonterminal_class -> string = function
+  | N_with_type_binder                  -> "with_type_binder"
+  | N_with_constraints                  -> "with_constraints"
+  | N_with_constraint                   -> "with_constraint"
+  | N_virtual_flag                      -> "virtual_flag"
+  | N_value_type                        -> "value_type"
+  | N_value                             -> "value"
+  | N_val_longident                     -> "val_longident"
+  | N_val_ident                         -> "val_ident"
+  | N_typevar_list                      -> "typevar_list"
+  | N_type_variance                     -> "type_variance"
+  | N_type_variable                     -> "type_variable"
+  | N_type_parameters                   -> "type_parameters"
+  | N_type_parameter_list               -> "type_parameter_list"
+  | N_type_parameter                    -> "type_parameter"
+  | N_type_longident                    -> "type_longident"
+  | N_type_kind                         -> "type_kind"
+  | N_type_declarations                 -> "type_declarations"
+  | N_type_declaration                  -> "type_declaration"
+  | N_type_constraint                   -> "type_constraint"
+  | N_tag_field                         -> "tag_field"
+  | N_subtractive                       -> "subtractive"
+  | N_structure_tail                    -> "structure_tail"
+  | N_structure_item                    -> "structure_item"
+  | N_structure                         -> "structure"
+  | N_strict_binding                    -> "strict_binding"
+  | N_str_type_extension                -> "str_type_extension"
+  | N_str_extension_constructors        -> "str_extension_constructors"
+  | N_str_exception_declaration         -> "str_exception_declaration"
+  | N_single_attr_id                    -> "single_attr_id"
+  | N_simple_pattern_not_ident          -> "simple_pattern_not_ident"
+  | N_simple_pattern                    -> "simple_pattern"
+  | N_simple_labeled_expr_list          -> "simple_labeled_expr_list"
+  | N_simple_expr                       -> "simple_expr"
+  | N_simple_core_type_or_tuple_no_attr -> "simple_core_type_or_tuple_no_attr"
+  | N_simple_core_type_or_tuple         -> "simple_core_type_or_tuple"
+  | N_simple_core_type_no_attr          -> "simple_core_type_no_attr"
+  | N_simple_core_type2                 -> "simple_core_type2"
+  | N_simple_core_type                  -> "simple_core_type"
+  | N_signed_constant                   -> "signed_constant"
+  | N_signature_item                    -> "signature_item"
+  | N_signature                         -> "signature"
+  | N_sig_type_extension                -> "sig_type_extension"
+  | N_sig_extension_constructors        -> "sig_extension_constructors"
+  | N_sig_exception_declaration         -> "sig_exception_declaration"
+  | N_seq_expr                          -> "seq_expr"
+  | N_row_field_list                    -> "row_field_list"
+  | N_row_field                         -> "row_field"
+  | N_record_expr                       -> "record_expr"
+  | N_rec_flag                          -> "rec_flag"
+  | N_private_virtual_flags             -> "private_virtual_flags"
+  | N_private_flag                      -> "private_flag"
+  | N_primitive_declaration             -> "primitive_declaration"
+  | N_post_item_attributes              -> "post_item_attributes"
+  | N_post_item_attribute               -> "post_item_attribute"
+  | N_poly_type                         -> "poly_type"
+  | N_payload                           -> "payload"
+  | N_pattern_var                       -> "pattern_var"
+  | N_pattern_semi_list                 -> "pattern_semi_list"
+  | N_pattern_comma_list                -> "pattern_comma_list"
+  | N_pattern                           -> "pattern"
+  | N_parse_expression                  -> "parse_expression"
+  | N_parent_binder                     -> "parent_binder"
+  | N_package_type_cstrs                -> "package_type_cstrs"
+  | N_package_type_cstr                 -> "package_type_cstr"
+  | N_package_type                      -> "package_type"
+  | N_override_flag                     -> "override_flag"
+  | N_optional_type_variable            -> "optional_type_variable"
+  | N_optional_type_parameters          -> "optional_type_parameters"
+  | N_optional_type_parameter_list      -> "optional_type_parameter_list"
+  | N_optional_type_parameter           -> "optional_type_parameter"
+  | N_opt_semi                          -> "opt_semi"
+  | N_opt_default                       -> "opt_default"
+  | N_opt_bar                           -> "opt_bar"
+  | N_opt_ampersand                     -> "opt_ampersand"
+  | N_operator                          -> "operator"
+  | N_open_statement                    -> "open_statement"
+  | N_newtype                           -> "newtype"
+  | N_name_tag_list                     -> "name_tag_list"
+  | N_name_tag                          -> "name_tag"
+  | N_mutable_flag                      -> "mutable_flag"
+  | N_mty_longident                     -> "mty_longident"
+  | N_module_type                       -> "module_type"
+  | N_module_rec_declarations           -> "module_rec_declarations"
+  | N_module_rec_declaration            -> "module_rec_declaration"
+  | N_module_expr                       -> "module_expr"
+  | N_module_declaration                -> "module_declaration"
+  | N_module_bindings                   -> "module_bindings"
+  | N_module_binding_body               -> "module_binding_body"
+  | N_module_binding                    -> "module_binding"
+  | N_mod_longident                     -> "mod_longident"
+  | N_mod_ext_longident                 -> "mod_ext_longident"
+  | N_method_                           -> "method_"
+  | N_meth_list                         -> "meth_list"
+  | N_match_cases                       -> "match_cases"
+  | N_match_case                        -> "match_case"
+  | N_lident_list                       -> "lident_list"
+  | N_let_pattern                       -> "let_pattern"
+  | N_let_bindings                      -> "let_bindings"
+  | N_let_binding_                      -> "let_binding_"
+  | N_let_binding                       -> "let_binding"
+  | N_lbl_pattern_list                  -> "lbl_pattern_list"
+  | N_lbl_pattern                       -> "lbl_pattern"
+  | N_lbl_expr_list                     -> "lbl_expr_list"
+  | N_lbl_expr                          -> "lbl_expr"
+  | N_labeled_simple_pattern            -> "labeled_simple_pattern"
+  | N_labeled_simple_expr               -> "labeled_simple_expr"
+  | N_label_var                         -> "label_var"
+  | N_label_longident                   -> "label_longident"
+  | N_label_let_pattern                 -> "label_let_pattern"
+  | N_label_ident                       -> "label_ident"
+  | N_label_expr                        -> "label_expr"
+  | N_label_declarations                -> "label_declarations"
+  | N_label_declaration                 -> "label_declaration"
+  | N_label                             -> "label"
+  | N_item_extension                    -> "item_extension"
+  | N_interface                         -> "interface"
+  | N_implementation                    -> "implementation"
+  | N_ident                             -> "ident"
+  | N_generalized_constructor_arguments -> "generalized_constructor_arguments"
+  | N_functor_args                      -> "functor_args"
+  | N_functor_arg_name                  -> "functor_arg_name"
+  | N_functor_arg                       -> "functor_arg"
+  | N_fun_def                           -> "fun_def"
+  | N_fun_binding                       -> "fun_binding"
+  | N_floating_attribute                -> "floating_attribute"
+  | N_field_expr_list                   -> "field_expr_list"
+  | N_field                             -> "field"
+  | N_extension_constructor_rebind      -> "extension_constructor_rebind"
+  | N_extension_constructor_declaration -> "extension_constructor_declaration"
+  | N_extension                         -> "extension"
+  | N_ext_attributes                    -> "ext_attributes"
+  | N_expr_semi_list                    -> "expr_semi_list"
+  | N_expr_open                         -> "expr_open"
+  | N_expr_comma_list                   -> "expr_comma_list"
+  | N_expr                              -> "expr"
+  | N_dummy                             -> "dummy"
+  | N_direction_flag                    -> "direction_flag"
+  | N_core_type_list_no_attr            -> "core_type_list_no_attr"
+  | N_core_type_list                    -> "core_type_list"
+  | N_core_type_comma_list              -> "core_type_comma_list"
+  | N_core_type2                        -> "core_type2"
+  | N_core_type                         -> "core_type"
+  | N_constructor_declarations          -> "constructor_declarations"
+  | N_constructor_declaration           -> "constructor_declaration"
+  | N_constraints                       -> "constraints"
+  | N_constrain_field                   -> "constrain_field"
+  | N_constrain                         -> "constrain"
+  | N_constr_longident                  -> "constr_longident"
+  | N_constr_ident                      -> "constr_ident"
+  | N_constant                          -> "constant"
+  | N_clty_longident                    -> "clty_longident"
+  | N_class_type_parameters             -> "class_type_parameters"
+  | N_class_type_declarations           -> "class_type_declarations"
+  | N_class_type_declaration            -> "class_type_declaration"
+  | N_class_type                        -> "class_type"
+  | N_class_structure                   -> "class_structure"
+  | N_class_simple_expr                 -> "class_simple_expr"
+  | N_class_signature                   -> "class_signature"
+  | N_class_sig_fields                  -> "class_sig_fields"
+  | N_class_sig_field                   -> "class_sig_field"
+  | N_class_sig_body                    -> "class_sig_body"
+  | N_class_self_type                   -> "class_self_type"
+  | N_class_self_pattern                -> "class_self_pattern"
+  | N_class_longident                   -> "class_longident"
+  | N_class_fun_def                     -> "class_fun_def"
+  | N_class_fun_binding                 -> "class_fun_binding"
+  | N_class_fields                      -> "class_fields"
+  | N_class_field                       -> "class_field"
+  | N_class_expr                        -> "class_expr"
+  | N_class_descriptions                -> "class_descriptions"
+  | N_class_description                 -> "class_description"
+  | N_class_declarations                -> "class_declarations"
+  | N_class_declaration                 -> "class_declaration"
+  | N_attributes                        -> "attributes"
+  | N_attribute                         -> "attribute"
+  | N_attr_id                           -> "attr_id"
+  | N_amper_type_list                   -> "amper_type_list"
+  | N_additive                          -> "additive"
+
+let string_of_class = function
+  | CT_ t -> string_of_token t
+  | CN_ n -> string_of_nonterminal n
+
+let symbol_of_token = function
+  | WITH                         -> T_ (T_WITH, ())
+  | WHILE_LWT                    -> T_ (T_WHILE_LWT, ())
+  | WHILE                        -> T_ (T_WHILE, ())
+  | WHEN                         -> T_ (T_WHEN, ())
+  | VIRTUAL                      -> T_ (T_VIRTUAL, ())
+  | VAL                          -> T_ (T_VAL, ())
+  | UNDERSCORE                   -> T_ (T_UNDERSCORE, ())
+  | UIDENT v                     -> T_ (T_UIDENT, v)
+  | TYPE                         -> T_ (T_TYPE, ())
+  | TRY_LWT                      -> T_ (T_TRY_LWT, ())
+  | TRY                          -> T_ (T_TRY, ())
+  | TRUE                         -> T_ (T_TRUE, ())
+  | TO                           -> T_ (T_TO, ())
+  | TILDE                        -> T_ (T_TILDE, ())
+  | THEN                         -> T_ (T_THEN, ())
+  | STRUCT                       -> T_ (T_STRUCT, ())
+  | STRING v                     -> T_ (T_STRING, v)
+  | STAR                         -> T_ (T_STAR, ())
+  | SIG                          -> T_ (T_SIG, ())
+  | SHARP                        -> T_ (T_SHARP, ())
+  | SEMISEMI                     -> T_ (T_SEMISEMI, ())
+  | SEMI                         -> T_ (T_SEMI, ())
+  | RPAREN                       -> T_ (T_RPAREN, ())
+  | REC                          -> T_ (T_REC, ())
+  | RBRACKET                     -> T_ (T_RBRACKET, ())
+  | RBRACE                       -> T_ (T_RBRACE, ())
+  | QUOTE                        -> T_ (T_QUOTE, ())
+  | QUESTION                     -> T_ (T_QUESTION, ())
+  | PRIVATE                      -> T_ (T_PRIVATE, ())
+  | PREFIXOP v                   -> T_ (T_PREFIXOP, v)
+  | PLUSEQ                       -> T_ (T_PLUSEQ, ())
+  | PLUSDOT                      -> T_ (T_PLUSDOT, ())
+  | PLUS                         -> T_ (T_PLUS, ())
+  | PERCENT                      -> T_ (T_PERCENT, ())
+  | P4_QUOTATION                 -> T_ (T_P4_QUOTATION, ())
+  | OUNIT_TEST_UNIT              -> T_ (T_OUNIT_TEST_UNIT, ())
+  | OUNIT_TEST_MODULE            -> T_ (T_OUNIT_TEST_MODULE, ())
+  | OUNIT_TEST                   -> T_ (T_OUNIT_TEST, ())
+  | OUNIT_BENCH_MODULE           -> T_ (T_OUNIT_BENCH_MODULE, ())
+  | OUNIT_BENCH_INDEXED          -> T_ (T_OUNIT_BENCH_INDEXED, ())
+  | OUNIT_BENCH_FUN              -> T_ (T_OUNIT_BENCH_FUN, ())
+  | OUNIT_BENCH                  -> T_ (T_OUNIT_BENCH, ())
+  | OR                           -> T_ (T_OR, ())
+  | OPTLABEL v                   -> T_ (T_OPTLABEL, v)
+  | OPEN                         -> T_ (T_OPEN, ())
+  | OF                           -> T_ (T_OF, ())
+  | OBJECT                       -> T_ (T_OBJECT, ())
+  | NONREC                       -> T_ (T_NONREC, ())
+  | NEW                          -> T_ (T_NEW, ())
+  | NATIVEINT v                  -> T_ (T_NATIVEINT, v)
+  | MUTABLE                      -> T_ (T_MUTABLE, ())
+  | MODULE                       -> T_ (T_MODULE, ())
+  | MINUSGREATER                 -> T_ (T_MINUSGREATER, ())
+  | MINUSDOT                     -> T_ (T_MINUSDOT, ())
+  | MINUS                        -> T_ (T_MINUS, ())
+  | METHOD                       -> T_ (T_METHOD, ())
+  | MATCH_LWT                    -> T_ (T_MATCH_LWT, ())
+  | MATCH                        -> T_ (T_MATCH, ())
+  | LPAREN                       -> T_ (T_LPAREN, ())
+  | LIDENT v                     -> T_ (T_LIDENT, v)
+  | LET_LWT                      -> T_ (T_LET_LWT, ())
+  | LET                          -> T_ (T_LET, ())
+  | LESSMINUS                    -> T_ (T_LESSMINUS, ())
+  | LESS                         -> T_ (T_LESS, ())
+  | LBRACKETPERCENTPERCENT       -> T_ (T_LBRACKETPERCENTPERCENT, ())
+  | LBRACKETPERCENT              -> T_ (T_LBRACKETPERCENT, ())
+  | LBRACKETLESS                 -> T_ (T_LBRACKETLESS, ())
+  | LBRACKETGREATER              -> T_ (T_LBRACKETGREATER, ())
+  | LBRACKETBAR                  -> T_ (T_LBRACKETBAR, ())
+  | LBRACKETATATAT               -> T_ (T_LBRACKETATATAT, ())
+  | LBRACKETATAT                 -> T_ (T_LBRACKETATAT, ())
+  | LBRACKETAT                   -> T_ (T_LBRACKETAT, ())
+  | LBRACKET                     -> T_ (T_LBRACKET, ())
+  | LBRACELESS                   -> T_ (T_LBRACELESS, ())
+  | LBRACE                       -> T_ (T_LBRACE, ())
+  | LAZY                         -> T_ (T_LAZY, ())
+  | LABEL v                      -> T_ (T_LABEL, v)
+  | JSNEW                        -> T_ (T_JSNEW, ())
+  | INT64 v                      -> T_ (T_INT64, v)
+  | INT32 v                      -> T_ (T_INT32, v)
+  | INT v                        -> T_ (T_INT, v)
+  | INITIALIZER                  -> T_ (T_INITIALIZER, ())
+  | INHERIT                      -> T_ (T_INHERIT, ())
+  | INFIXOP4 v                   -> T_ (T_INFIXOP4, v)
+  | INFIXOP3 v                   -> T_ (T_INFIXOP3, v)
+  | INFIXOP2 v                   -> T_ (T_INFIXOP2, v)
+  | INFIXOP1 v                   -> T_ (T_INFIXOP1, v)
+  | INFIXOP0 v                   -> T_ (T_INFIXOP0, v)
+  | INCLUDE                      -> T_ (T_INCLUDE, ())
+  | IN                           -> T_ (T_IN, ())
+  | IF                           -> T_ (T_IF, ())
+  | GREATERRBRACKET              -> T_ (T_GREATERRBRACKET, ())
+  | GREATERRBRACE                -> T_ (T_GREATERRBRACE, ())
+  | GREATER                      -> T_ (T_GREATER, ())
+  | FUNCTOR                      -> T_ (T_FUNCTOR, ())
+  | FUNCTION                     -> T_ (T_FUNCTION, ())
+  | FUN                          -> T_ (T_FUN, ())
+  | FOR_LWT                      -> T_ (T_FOR_LWT, ())
+  | FOR                          -> T_ (T_FOR, ())
+  | FLOAT v                      -> T_ (T_FLOAT, v)
+  | FINALLY_LWT                  -> T_ (T_FINALLY_LWT, ())
+  | FALSE                        -> T_ (T_FALSE, ())
+  | EXTERNAL                     -> T_ (T_EXTERNAL, ())
+  | EXCEPTION                    -> T_ (T_EXCEPTION, ())
+  | EQUAL                        -> T_ (T_EQUAL, ())
+  | EOL                          -> T_ (T_EOL, ())
+  | EOF                          -> T_ (T_EOF, ())
+  | ENTRYPOINT                   -> T_ (T_ENTRYPOINT, ())
+  | END                          -> T_ (T_END, ())
+  | ELSE                         -> T_ (T_ELSE, ())
+  | DOWNTO                       -> T_ (T_DOWNTO, ())
+  | DOTDOT                       -> T_ (T_DOTDOT, ())
+  | DOT                          -> T_ (T_DOT, ())
+  | DONE                         -> T_ (T_DONE, ())
+  | DO                           -> T_ (T_DO, ())
+  | CONSTRAINT                   -> T_ (T_CONSTRAINT, ())
+  | COMMENT v                    -> T_ (T_COMMENT, v)
+  | COMMA                        -> T_ (T_COMMA, ())
+  | COLONGREATER                 -> T_ (T_COLONGREATER, ())
+  | COLONEQUAL                   -> T_ (T_COLONEQUAL, ())
+  | COLONCOLON                   -> T_ (T_COLONCOLON, ())
+  | COLON                        -> T_ (T_COLON, ())
+  | CLASS                        -> T_ (T_CLASS, ())
+  | CHAR v                       -> T_ (T_CHAR, v)
+  | BEGIN                        -> T_ (T_BEGIN, ())
+  | BARRBRACKET                  -> T_ (T_BARRBRACKET, ())
+  | BARBAR                       -> T_ (T_BARBAR, ())
+  | BAR                          -> T_ (T_BAR, ())
+  | BANG                         -> T_ (T_BANG, ())
+  | BACKQUOTE                    -> T_ (T_BACKQUOTE, ())
+  | ASSERT                       -> T_ (T_ASSERT, ())
+  | AS                           -> T_ (T_AS, ())
+  | AND                          -> T_ (T_AND, ())
+  | AMPERSAND                    -> T_ (T_AMPERSAND, ())
+  | AMPERAMPER                   -> T_ (T_AMPERAMPER, ())
+
+let default_token (type a) (t : a token_class) : int * a =
+  match t with
+  | T_WITH                    -> 0, ()
+  | T_WHILE_LWT               -> 0, ()
+  | T_WHILE                   -> 0, ()
+  | T_WHEN                    -> 0, ()
+  | T_VIRTUAL                 -> 0, ()
+  | T_VAL                     -> 0, ()
+  | T_UNDERSCORE              -> 0, ()
+  | T_TYPE                    -> 0, ()
+  | T_TRY_LWT                 -> 0, ()
+  | T_TRY                     -> 0, ()
+  | T_TRUE                    -> 0, ()
+  | T_TO                      -> 0, ()
+  | T_TILDE                   -> 0, ()
+  | T_THEN                    -> 0, ()
+  | T_STRUCT                  -> 0, ()
+  | T_STAR                    -> 0, ()
+  | T_SIG                     -> 0, ()
+  | T_SHARP                   -> 0, ()
+  | T_SEMISEMI                -> 0, ()
+  | T_SEMI                    -> 0, ()
+  | T_RPAREN                  -> 0, ()
+  | T_REC                     -> 0, ()
+  | T_RBRACKET                -> 0, ()
+  | T_RBRACE                  -> 0, ()
+  | T_QUOTE                   -> 0, ()
+  | T_QUESTION                -> 0, ()
+  | T_PRIVATE                 -> 0, ()
+  | T_PLUSEQ                  -> 0, ()
+  | T_PLUSDOT                 -> 0, ()
+  | T_PLUS                    -> 0, ()
+  | T_PERCENT                 -> 0, ()
+  | T_P4_QUOTATION            -> 0, ()
+  | T_OR                      -> 0, ()
+  | T_OPEN                    -> 0, ()
+  | T_OF                      -> 0, ()
+  | T_OBJECT                  -> 0, ()
+  | T_NONREC                  -> 0, ()
+  | T_NEW                     -> 0, ()
+  | T_MUTABLE                 -> 0, ()
+  | T_MODULE                  -> 0, ()
+  | T_MINUSGREATER            -> 0, ()
+  | T_MINUSDOT                -> 0, ()
+  | T_MINUS                   -> 0, ()
+  | T_METHOD                  -> 0, ()
+  | T_MATCH_LWT               -> 0, ()
+  | T_MATCH                   -> 0, ()
+  | T_LPAREN                  -> 0, ()
+  | T_LET_LWT                 -> 0, ()
+  | T_LET                     -> 0, ()
+  | T_LESSMINUS               -> 0, ()
+  | T_LESS                    -> 0, ()
+  | T_LBRACKETPERCENT         -> 0, ()
+  | T_LBRACKETLESS            -> 0, ()
+  | T_LBRACKETGREATER         -> 0, ()
+  | T_LBRACKETBAR             -> 0, ()
+  | T_LBRACKETATATAT          -> 0, ()
+  | T_LBRACKETATAT            -> 0, ()
+  | T_LBRACKETAT              -> 0, ()
+  | T_LBRACKET                -> 0, ()
+  | T_LBRACELESS              -> 0, ()
+  | T_LBRACE                  -> 0, ()
+  | T_LAZY                    -> 0, ()
+  | T_JSNEW                   -> 0, ()
+  | T_INITIALIZER             -> 0, ()
+  | T_INHERIT                 -> 0, ()
+  | T_INCLUDE                 -> 0, ()
+  | T_IN                      -> 0, ()
+  | T_IF                      -> 0, ()
+  | T_GREATERRBRACKET         -> 0, ()
+  | T_GREATERRBRACE           -> 0, ()
+  | T_GREATER                 -> 0, ()
+  | T_FUNCTOR                 -> 0, ()
+  | T_FUNCTION                -> 0, ()
+  | T_FUN                     -> 0, ()
+  | T_FOR_LWT                 -> 0, ()
+  | T_FOR                     -> 0, ()
+  | T_FINALLY_LWT             -> 0, ()
+  | T_FALSE                   -> 0, ()
+  | T_EXTERNAL                -> 0, ()
+  | T_EXCEPTION               -> 0, ()
+  | T_EQUAL                   -> 0, ()
+  | T_EOL                     -> 0, ()
+  | T_EOF                     -> 0, ()
+  | T_ENTRYPOINT              -> 0, ()
+  | T_END                     -> 0, ()
+  | T_ELSE                    -> 0, ()
+  | T_DOWNTO                  -> 0, ()
+  | T_DOTDOT                  -> 0, ()
+  | T_DOT                     -> 0, ()
+  | T_DONE                    -> 0, ()
+  | T_DO                      -> 0, ()
+  | T_CONSTRAINT              -> 0, ()
+  | T_COMMA                   -> 0, ()
+  | T_COLONGREATER            -> 0, ()
+  | T_COLONEQUAL              -> 0, ()
+  | T_COLONCOLON              -> 0, ()
+  | T_COLON                   -> 0, ()
+  | T_CLASS                   -> 0, ()
+  | T_BEGIN                   -> 0, ()
+  | T_BARRBRACKET             -> 0, ()
+  | T_BARBAR                  -> 0, ()
+  | T_BAR                     -> 0, ()
+  | T_BANG                    -> 0, ()
+  | T_BACKQUOTE               -> 0, ()
+  | T_ASSERT                  -> 0, ()
+  | T_AS                      -> 0, ()
+  | T_AND                     -> 0, ()
+  | T_AMPERSAND               -> 0, ()
+  | T_AMPERAMPER              -> 0, ()
+  | T_OUNIT_TEST_UNIT         -> 0, ()
+  | T_OUNIT_TEST_MODULE       -> 0, ()
+  | T_OUNIT_TEST              -> 0, ()
+  | T_OUNIT_BENCH_MODULE      -> 0, ()
+  | T_OUNIT_BENCH_INDEXED     -> 0, ()
+  | T_OUNIT_BENCH_FUN         -> 0, ()
+  | T_OUNIT_BENCH             -> 0, ()
+  | T_LBRACKETPERCENTPERCENT  -> 0, ()
+
+  | T_UIDENT    -> -2, "_"
+  | T_STRING    -> -2, ("", None)
+  | T_PREFIXOP  -> -2, "!"
+  | T_OPTLABEL  -> -2, "_"
+  | T_NATIVEINT -> -1, 0n
+  | T_LIDENT    -> -2, "_"
+  | T_LABEL     -> -2, "_"
+  | T_INT64     -> -1, 0L
+  | T_INT32     -> -1, 0l
+  | T_INT       -> -1, 0
+  | T_INFIXOP4  -> -2, "_"
+  | T_INFIXOP3  -> -2, "_"
+  | T_INFIXOP2  -> -2, "_"
+  | T_INFIXOP1  -> -2, "_"
+  | T_INFIXOP0  -> -2, "_"
+  | T_FLOAT     -> -2, "0."
+  | T_COMMENT   -> -2, ("", Location.none)
+  | T_CHAR      -> -2, '_'
+
+let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
+  match n with
+  | N_with_type_binder                  ->
+    raise Not_found (*(Asttypes.private_flag) nonterminal_class*)
+  | N_with_constraints                  ->
+    raise Not_found (*(Parsetree.with_constraint list) nonterminal_class*)
+  | N_with_constraint                   ->
+    raise Not_found (*(Parsetree.with_constraint) nonterminal_class*)
+  | N_virtual_flag                      ->
+    raise Not_found (*(Asttypes.virtual_flag) nonterminal_class*)
+  | N_value_type                        ->
+    raise Not_found (*(string * Asttypes.mutable_flag * Asttypes.virtual_flag * Parsetree.core_type) nonterminal_class*)
+  | N_value                             ->
+    raise Not_found (*(string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal_class*)
+  | N_val_longident                     ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_val_ident                         ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_typevar_list                      ->
+    raise Not_found (*(Asttypes.label list) nonterminal_class*)
+  | N_type_variance                     ->
+    raise Not_found (*(Asttypes.variance) nonterminal_class*)
+  | N_type_variable                     ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_type_parameters                   ->
+    raise Not_found (*((Parsetree.core_type * Asttypes.variance) list) nonterminal_class*)
+  | N_type_parameter_list               ->
+    raise Not_found (*((Parsetree.core_type * Asttypes.variance) list) nonterminal_class*)
+  | N_type_parameter                    ->
+    raise Not_found (*(Parsetree.core_type * Asttypes.variance) nonterminal_class*)
+  | N_type_longident                    ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_type_kind                         ->
+    raise Not_found (*(Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal_class*)
+  | N_type_declarations                 ->
+    raise Not_found (*(Parsetree.type_declaration list) nonterminal_class*)
+  | N_type_declaration                  ->
+    raise Not_found (*(Parsetree.type_declaration) nonterminal_class*)
+  | N_type_constraint                   ->
+    raise Not_found (*(Parsetree.core_type option * Parsetree.core_type option) nonterminal_class*)
+  | N_tag_field                         ->
+    raise Not_found (*(Parsetree.row_field) nonterminal_class*)
+  | N_subtractive                       ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_structure_tail                    ->
+    raise Not_found (*(Parsetree.structure) nonterminal_class*)
+  | N_structure_item                    ->
+    raise Not_found (*(Parsetree.structure_item list) nonterminal_class*)
+  | N_structure                         ->
+    raise Not_found (*(Parsetree.structure) nonterminal_class*)
+  | N_strict_binding                    ->
+    raise Not_found (*(Parsetree.expression) nonterminal_class*)
+  | N_str_type_extension                ->
+    raise Not_found (*(Parsetree.type_extension) nonterminal_class*)
+  | N_str_extension_constructors        ->
+    raise Not_found (*(Parsetree.extension_constructor list) nonterminal_class*)
+  | N_str_exception_declaration         ->
+    raise Not_found (*(Parsetree.extension_constructor) nonterminal_class*)
+  | N_single_attr_id                    ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_simple_pattern_not_ident          ->
+    raise Not_found (*(Parsetree.pattern) nonterminal_class*)
+  | N_simple_pattern                    ->
+    raise Not_found (*(Parsetree.pattern) nonterminal_class*)
+  | N_simple_labeled_expr_list          ->
+    raise Not_found (*((Asttypes.label * Parsetree.expression) list) nonterminal_class*)
+  | N_simple_expr                       ->
+    raise Not_found (*(Parsetree.expression) nonterminal_class*)
+  | N_simple_core_type_or_tuple_no_attr ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_simple_core_type_or_tuple         ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_simple_core_type_no_attr          ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_simple_core_type2                 ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_simple_core_type                  ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_signed_constant                   ->
+    raise Not_found (*(Asttypes.constant) nonterminal_class*)
+  | N_signature_item                    ->
+    raise Not_found (*(Parsetree.signature_item list) nonterminal_class*)
+  | N_signature                         ->
+    raise Not_found (*(Parsetree.signature) nonterminal_class*)
+  | N_sig_type_extension                ->
+    raise Not_found (*(Parsetree.type_extension) nonterminal_class*)
+  | N_sig_extension_constructors        ->
+    raise Not_found (*(Parsetree.extension_constructor list) nonterminal_class*)
+  | N_sig_exception_declaration         ->
+    raise Not_found (*(Parsetree.extension_constructor) nonterminal_class*)
+  | N_seq_expr                          ->
+    raise Not_found (*(Parsetree.expression) nonterminal_class*)
+  | N_row_field_list                    ->
+    raise Not_found (*(Parsetree.row_field list) nonterminal_class*)
+  | N_row_field                         ->
+    raise Not_found (*(Parsetree.row_field) nonterminal_class*)
+  | N_record_expr                       ->
+    raise Not_found (*(Parsetree.expression option * (Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal_class*)
+  | N_rec_flag                          ->
+    raise Not_found (*(Asttypes.rec_flag) nonterminal_class*)
+  | N_private_virtual_flags             ->
+    raise Not_found (*(Asttypes.private_flag * Asttypes.virtual_flag) nonterminal_class*)
+  | N_private_flag                      ->
+    raise Not_found (*(Asttypes.private_flag) nonterminal_class*)
+  | N_primitive_declaration             ->
+    raise Not_found (*(string list) nonterminal_class*)
+  | N_post_item_attributes              ->
+    raise Not_found (*(Ast_helper.attrs) nonterminal_class*)
+  | N_post_item_attribute               ->
+    raise Not_found (*(Parsetree.attribute) nonterminal_class*)
+  | N_poly_type                         ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_payload                           ->
+    raise Not_found (*(Parsetree.payload) nonterminal_class*)
+  | N_pattern_var                       ->
+    raise Not_found (*(Parsetree.pattern) nonterminal_class*)
+  | N_pattern_semi_list                 ->
+    raise Not_found (*(Parsetree.pattern list) nonterminal_class*)
+  | N_pattern_comma_list                ->
+    raise Not_found (*(Parsetree.pattern list) nonterminal_class*)
+  | N_pattern                           ->
+    raise Not_found (*(Parsetree.pattern) nonterminal_class*)
+  | N_parse_expression                  ->
+    raise Not_found (*(Parsetree.expression) nonterminal_class*)
+  | N_parent_binder                     ->
+    raise Not_found (*(string option) nonterminal_class*)
+  | N_package_type_cstrs                ->
+    raise Not_found (*((Longident.t Asttypes.loc * Parsetree.core_type) list) nonterminal_class*)
+  | N_package_type_cstr                 ->
+    raise Not_found (*(Longident.t Asttypes.loc * Parsetree.core_type) nonterminal_class*)
+  | N_package_type                      ->
+    raise Not_found (*(Parsetree.package_type) nonterminal_class*)
+  | N_override_flag                     ->
+    raise Not_found (*(Asttypes.override_flag) nonterminal_class*)
+  | N_optional_type_variable            ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_optional_type_parameters          ->
+    raise Not_found (*((Parsetree.core_type * Asttypes.variance) list) nonterminal_class*)
+  | N_optional_type_parameter_list      ->
+    raise Not_found (*((Parsetree.core_type * Asttypes.variance) list) nonterminal_class*)
+  | N_optional_type_parameter           ->
+    raise Not_found (*(Parsetree.core_type * Asttypes.variance) nonterminal_class*)
+  | N_opt_semi                          ->
+    raise Not_found (*(unit) nonterminal_class*)
+  | N_opt_default                       ->
+    raise Not_found (*(Parsetree.expression option) nonterminal_class*)
+  | N_opt_bar                           ->
+    raise Not_found (*(unit) nonterminal_class*)
+  | N_opt_ampersand                     ->
+    raise Not_found (*(bool) nonterminal_class*)
+  | N_operator                          ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_open_statement                    ->
+    raise Not_found (*(Parsetree.open_description) nonterminal_class*)
+  | N_newtype                           ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_name_tag_list                     ->
+    raise Not_found (*(Asttypes.label list) nonterminal_class*)
+  | N_name_tag                          ->
+    raise Not_found (*(Asttypes.label) nonterminal_class*)
+  | N_mutable_flag                      ->
+    raise Not_found (*(Asttypes.mutable_flag) nonterminal_class*)
+  | N_mty_longident                     ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_module_type                       ->
+    raise Not_found (*(Parsetree.module_type) nonterminal_class*)
+  | N_module_rec_declarations           ->
+    raise Not_found (*(Parsetree.module_declaration list) nonterminal_class*)
+  | N_module_rec_declaration            ->
+    raise Not_found (*(Parsetree.module_declaration) nonterminal_class*)
+  | N_module_expr                       ->
+    raise Not_found (*(Parsetree.module_expr) nonterminal_class*)
+  | N_module_declaration                ->
+    raise Not_found (*(Parsetree.module_type) nonterminal_class*)
+  | N_module_bindings                   ->
+    raise Not_found (*(Parsetree.module_binding list) nonterminal_class*)
+  | N_module_binding_body               ->
+    raise Not_found (*(Parsetree.module_expr) nonterminal_class*)
+  | N_module_binding                    ->
+    raise Not_found (*(Parsetree.module_binding) nonterminal_class*)
+  | N_mod_longident                     ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_mod_ext_longident                 ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_method_                           ->
+    raise Not_found (*(string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind) nonterminal_class*)
+  | N_meth_list                         ->
+    raise Not_found (*((string * Parsetree.attributes * Parsetree.core_type) list * Asttypes.closed_flag) nonterminal_class*)
+  | N_match_cases                       ->
+    raise Not_found (*(Parsetree.case list) nonterminal_class*)
+  | N_match_case                        ->
+    raise Not_found (*(Parsetree.case) nonterminal_class*)
+  | N_lident_list                       ->
+    raise Not_found (*(string list) nonterminal_class*)
+  | N_let_pattern                       ->
+    raise Not_found (*(Parsetree.pattern) nonterminal_class*)
+  | N_let_bindings                      ->
+    raise Not_found (*(Parsetree.value_binding list) nonterminal_class*)
+  | N_let_binding_                      ->
+    raise Not_found (*(Parsetree.pattern * Parsetree.expression) nonterminal_class*)
+  | N_let_binding                       ->
+    raise Not_found (*(Parsetree.value_binding) nonterminal_class*)
+  | N_lbl_pattern_list                  ->
+    raise Not_found (*((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) nonterminal_class*)
+  | N_lbl_pattern                       ->
+    raise Not_found (*(Longident.t Asttypes.loc * Parsetree.pattern) nonterminal_class*)
+  | N_lbl_expr_list                     ->
+    raise Not_found (*((Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal_class*)
+  | N_lbl_expr                          ->
+    raise Not_found (*(Longident.t Asttypes.loc * Parsetree.expression) nonterminal_class*)
+  | N_labeled_simple_pattern            ->
+    raise Not_found (*(Asttypes.label * Parsetree.expression option * Parsetree.pattern) nonterminal_class*)
+  | N_labeled_simple_expr               ->
+    raise Not_found (*(Asttypes.label * Parsetree.expression) nonterminal_class*)
+  | N_label_var                         ->
+    raise Not_found (*(Asttypes.label * Parsetree.pattern) nonterminal_class*)
+  | N_label_longident                   ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_label_let_pattern                 ->
+    raise Not_found (*(Asttypes.label * Parsetree.pattern) nonterminal_class*)
+  | N_label_ident                       ->
+    raise Not_found (*(Asttypes.label * Parsetree.expression) nonterminal_class*)
+  | N_label_expr                        ->
+    raise Not_found (*(Asttypes.label * Parsetree.expression) nonterminal_class*)
+  | N_label_declarations                ->
+    raise Not_found (*(Parsetree.label_declaration list) nonterminal_class*)
+  | N_label_declaration                 ->
+    raise Not_found (*(Parsetree.label_declaration) nonterminal_class*)
+  | N_label                             ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_item_extension                    ->
+    raise Not_found (*(Parsetree.extension) nonterminal_class*)
+  | N_interface                         ->
+    raise Not_found (*(Parsetree.signature) nonterminal_class*)
+  | N_implementation                    ->
+    raise Not_found (*(Parsetree.structure) nonterminal_class*)
+  | N_ident                             ->
+    raise Not_found (*(Asttypes.label) nonterminal_class*)
+  | N_generalized_constructor_arguments ->
+    raise Not_found (*(Parsetree.core_type list * Parsetree.core_type option) nonterminal_class*)
+  | N_functor_args                      ->
+    raise Not_found (*((string Asttypes.loc * Parsetree.module_type option) list) nonterminal_class*)
+  | N_functor_arg_name                  ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_functor_arg                       ->
+    raise Not_found (*(string Asttypes.loc * Parsetree.module_type option) nonterminal_class*)
+  | N_fun_def                           ->
+    raise Not_found (*(Parsetree.expression) nonterminal_class*)
+  | N_fun_binding                       ->
+    raise Not_found (*(Parsetree.expression) nonterminal_class*)
+  | N_floating_attribute                ->
+    raise Not_found (*(Parsetree.attribute) nonterminal_class*)
+  | N_field_expr_list                   ->
+    raise Not_found (*((string Asttypes.loc * Parsetree.expression) list) nonterminal_class*)
+  | N_field                             ->
+    raise Not_found (*(string * Parsetree.attributes * Parsetree.core_type) nonterminal_class*)
+  | N_extension_constructor_rebind      ->
+    raise Not_found (*(Parsetree.extension_constructor) nonterminal_class*)
+  | N_extension_constructor_declaration ->
+    raise Not_found (*(Parsetree.extension_constructor) nonterminal_class*)
+  | N_extension                         ->
+    raise Not_found (*(Parsetree.extension) nonterminal_class*)
+  | N_ext_attributes                    ->
+    raise Not_found (*(string Asttypes.loc option * Parsetree.attributes) nonterminal_class*)
+  | N_expr_semi_list                    ->
+    raise Not_found (*(Parsetree.expression list) nonterminal_class*)
+  | N_expr_open                         ->
+    raise Not_found (*(Asttypes.override_flag * Longident.t Asttypes.loc * (string Asttypes.loc option * Parsetree.attributes)) nonterminal_class*)
+  | N_expr_comma_list                   ->
+    raise Not_found (*(Parsetree.expression list) nonterminal_class*)
+  | N_expr                              ->
+    raise Not_found (*(Parsetree.expression) nonterminal_class*)
+  | N_dummy                             ->
+    raise Not_found (*(unit) nonterminal_class*)
+  | N_direction_flag                    ->
+    raise Not_found (*(Asttypes.direction_flag) nonterminal_class*)
+  | N_core_type_list_no_attr            ->
+    raise Not_found (*(Parsetree.core_type list) nonterminal_class*)
+  | N_core_type_list                    ->
+    raise Not_found (*(Parsetree.core_type list) nonterminal_class*)
+  | N_core_type_comma_list              ->
+    raise Not_found (*(Parsetree.core_type list) nonterminal_class*)
+  | N_core_type2                        ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_core_type                         ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_constructor_declarations          ->
+    raise Not_found (*(Parsetree.constructor_declaration list) nonterminal_class*)
+  | N_constructor_declaration           ->
+    raise Not_found (*(Parsetree.constructor_declaration) nonterminal_class*)
+  | N_constraints                       ->
+    raise Not_found (*((Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) list) nonterminal_class*)
+  | N_constrain_field                   ->
+    raise Not_found (*(Parsetree.core_type * Parsetree.core_type) nonterminal_class*)
+  | N_constrain                         ->
+    raise Not_found (*(Parsetree.core_type * Parsetree.core_type * Ast_helper.loc) nonterminal_class*)
+  | N_constr_longident                  ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_constr_ident                      ->
+    raise Not_found (*(string) nonterminal_class*)
+  | N_constant                          ->
+    raise Not_found (*(Asttypes.constant) nonterminal_class*)
+  | N_clty_longident                    ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_class_type_parameters             ->
+    raise Not_found (*((Parsetree.core_type * Asttypes.variance) list) nonterminal_class*)
+  | N_class_type_declarations           ->
+    raise Not_found (*(Parsetree.class_type_declaration list) nonterminal_class*)
+  | N_class_type_declaration            ->
+    raise Not_found (*(Parsetree.class_type_declaration list) nonterminal_class*)
+  | N_class_type                        ->
+    raise Not_found (*(Parsetree.class_type) nonterminal_class*)
+  | N_class_structure                   ->
+    raise Not_found (*(Parsetree.class_structure) nonterminal_class*)
+  | N_class_simple_expr                 ->
+    raise Not_found (*(Parsetree.class_expr) nonterminal_class*)
+  | N_class_signature                   ->
+    raise Not_found (*(Parsetree.class_type) nonterminal_class*)
+  | N_class_sig_fields                  ->
+    raise Not_found (*(Parsetree.class_type_field list) nonterminal_class*)
+  | N_class_sig_field                   ->
+    raise Not_found (*(Parsetree.class_type_field) nonterminal_class*)
+  | N_class_sig_body                    ->
+    raise Not_found (*(Parsetree.class_signature) nonterminal_class*)
+  | N_class_self_type                   ->
+    raise Not_found (*(Parsetree.core_type) nonterminal_class*)
+  | N_class_self_pattern                ->
+    raise Not_found (*(Parsetree.pattern) nonterminal_class*)
+  | N_class_longident                   ->
+    raise Not_found (*(Longident.t) nonterminal_class*)
+  | N_class_fun_def                     ->
+    raise Not_found (*(Parsetree.class_expr) nonterminal_class*)
+  | N_class_fun_binding                 ->
+    raise Not_found (*(Parsetree.class_expr) nonterminal_class*)
+  | N_class_fields                      ->
+    raise Not_found (*(Parsetree.class_field list) nonterminal_class*)
+  | N_class_field                       ->
+    raise Not_found (*(Parsetree.class_field list) nonterminal_class*)
+  | N_class_expr                        ->
+    raise Not_found (*(Parsetree.class_expr) nonterminal_class*)
+  | N_class_descriptions                ->
+    raise Not_found (*(Parsetree.class_description list) nonterminal_class*)
+  | N_class_description                 ->
+    raise Not_found (*(Parsetree.class_description list) nonterminal_class*)
+  | N_class_declarations                ->
+    raise Not_found (*(Parsetree.class_declaration list) nonterminal_class*)
+  | N_class_declaration                 ->
+    raise Not_found (*(Parsetree.class_declaration list) nonterminal_class*)
+  | N_attributes                        ->
+    raise Not_found (*(Parsetree.attributes) nonterminal_class*)
+  | N_attribute                         ->
+    raise Not_found (*(Parsetree.attribute) nonterminal_class*)
+  | N_attr_id                           ->
+    raise Not_found (*(string Asttypes.loc) nonterminal_class*)
+  | N_amper_type_list                   ->
+    raise Not_found (*(Parsetree.core_type list) nonterminal_class*)
+  | N_additive                          ->
+    raise Not_found (*(string) nonterminal_class*)
+
+let default_symbol = function
+  | CT_ t ->
+    let q, v = default_token t in
+    q, T_ (t, v)
+  | CN_ n ->
+    try
+      let q, v = default_nonterminal n in
+      q, N_ (n, v)
+    with Not_found ->
+      min_int, Bottom
+

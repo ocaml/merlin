@@ -38,13 +38,13 @@ val stack : t -> frame option
 module Frame : sig
   val depth : frame -> int
 
-  val value : frame -> Raw_parser.semantic_value
+  val value : frame -> Raw_parser.symbol
   val location : frame -> Location.t
   val eq    : frame -> frame -> bool
   val next  : frame -> frame option
 
   (* Ease pattern matching on parser stack *)
-  type destruct = D of Raw_parser.semantic_value * destruct lazy_t
+  type destruct = D of Raw_parser.symbol * destruct lazy_t
   val destruct: frame -> destruct
 end
 

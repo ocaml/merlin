@@ -252,11 +252,13 @@ let dispatch (state : state) =
         position_match (Frame.location frame)
         && begin let open Raw_parser in
           match Frame.value frame with
-          | Nonterminal
-              ( NT'structure_tail _ | NT'structure_item _
-              | NT'structure _ | NT'signature_item _ | NT'signature _
-              | NT'interface _ | NT'implementation _)
-            -> true
+          | N_ (N_structure_tail, _) -> true
+          | N_ (N_structure_item, _) -> true
+          | N_ (N_structure, _)      -> true
+          | N_ (N_signature_item, _) -> true
+          | N_ (N_signature, _)      -> true
+          | N_ (N_interface, _)      -> true
+          | N_ (N_implementation, _) -> true
           | _ -> false
         end
         || aux (Frame.next frame)
