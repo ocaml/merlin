@@ -141,31 +141,37 @@ let feed (s,t,e as input) parser =
       of_step p' depth
 
 let dump ppf t =
+  (* Print current frame, with its itemset *)
   begin match t with
     | Partial (s,_) ->
       let state = get_state s in
-      let print_item (production,pos) =
-        Format.fprintf ppf "ITEMSET:\n";
-        Array.iteri (fun i symbol ->
-            Format.fprintf ppf "%s %s"
-              (if i = pos then " ." else "")
-              (Values.string_of_class symbol)
-          ) (Raw_parser.Query.production_definition production);
+      let print_item (production, dot_pos) =
+        let print_symbol i symbol =
+          Format.fprintf ppf "%s %s"
+            (if i = dot_pos then " ." else "")
+            (Values.string_of_class symbol)
+        in
+        Format.fprintf ppf "itemset:\n";
+        List.iteri print_symbol (P.Query.production_definition production);
         Format.fprintf ppf "\n"
       in
       List.iter print_item (Raw_parser.Query.itemset state)
     | Final _ -> ()
   end;
-  let rec aux ppf = function
-    | None -> Format.fprintf ppf "[]\n%!"
+  (* Print overview of the stack *)
+  let rec aux first ppf = function
+    | None -> ()
     | Some frame ->
       let v = Frame.value frame in
       let l,c = Lexing.split_pos (Frame.location frame).Location.loc_start in
-      Format.fprintf ppf "(%d, %s %d:%d) :: %a"
-        (Frame.depth frame) Values.(string_of_class (class_of_symbol v)) l c
-        aux (Frame.next frame)
+      Format.fprintf ppf "%s%s %d:%d"
+        (if first then "" else "; ")
+        Values.(string_of_class (class_of_symbol v)) l c;
+      aux false ppf (Frame.next frame)
   in
-  aux ppf (Frame.stack t)
+  Format.fprintf ppf "[";
+  aux true ppf (Frame.stack t);
+  Format.fprintf ppf "]\n%!"
 
 let last_token = function
   | Final {Location. loc = {Location. loc_end = l; _}; _} ->
@@ -242,15 +248,9 @@ struct
        frames *)
     let rec fat_free acc f =
       if Frame.depth f >= size' then
-        begin
-          Logger.debugf `internal
-            (fun ppf (a,b) ->
-               Format.fprintf ppf "depth f = %d >= size = %d\n%!" a b)
-            (Frame.depth f, size');
-          match Frame.next f with
-          | None -> None, (f :: acc)
-          | Some f' -> fat_free (f :: acc) f'
-        end
+        match Frame.next f with
+        | None -> None, (f :: acc)
+        | Some f' -> fat_free (f :: acc) f'
       else Some f, acc
     in
     (* The new top, if any, and all removed frames to be processed *)
@@ -346,8 +346,12 @@ end = struct
       (* struct _ ... end *)
       | D (N_ (N_structure_item, l),
            lazy ( D (N_ (N_structure_item, _), _))),
-                (*| D (T_ (T_SEMISEMI, ()),
-                     lazy (D (N_ (N_structure_item, _), _))))),*)
+        (Struct n :: p') ->
+        (d, Struct (List.length l + n) :: p')
+
+      | D (N_ (N_structure_item, l),
+           lazy ( D (T_ (T_SEMISEMI, ()),
+                   lazy (D (N_ (N_structure_item, _), _))))),
         (Struct n :: p') ->
         (d, Struct (List.length l + n) :: p')
 

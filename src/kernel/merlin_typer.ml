@@ -56,9 +56,8 @@ module P = struct
       let mexpr = {pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = []} in
       let mexpr = Pmod_functor (id, mty, mexpr) in
       let mexpr = {pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = []} in
-      failwith "TODO"
-    (*let item = Pstr_module (Location.mknoloc "" , mexpr) in
-      `fake { pstr_desc = item; pstr_loc = loc }*)
+      let item = Pstr_module (Ast_helper.Mb.mk (Location.mknoloc "") mexpr) in
+      `fake { pstr_desc = item; pstr_loc = loc }
     | Raw_typer.Pattern (l,o,p) ->
       let expr = Pexp_constant (Asttypes.Const_int 0) in
       let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in

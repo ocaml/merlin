@@ -1,13 +1,14 @@
 module Values : module type of Raw_parser_values
 
 type t
-type parser = t
-type frame
 
 (** Initialization *)
+
 type state = Raw_parser.state
+
 val implementation : state
 val interface : state
+
 val from : state -> Lexing.position * Raw_parser.token * Lexing.position -> t
 
 (** Manipulation *)
@@ -32,7 +33,10 @@ val recover : ?location:Location.t -> t -> t Location.loc option
 (* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser option
 
+
 (** Stack inspection *)
+type frame
+
 val stack : t -> frame option
 
 module Frame : sig
@@ -48,33 +52,64 @@ module Frame : sig
   val destruct: frame -> destruct
 end
 
+
+
 (** Stack integration, incrementally compute metric over each frame *)
+
+type parser = t
+
 module Integrate
     (P : sig
-       (* Arbitrary state, passed to update functions *)
-       type st
+
+       (* Type of the value computed at each frame *)
        type t
-       val empty : st -> t (* Base-case, empty stack *)
-       val frame : st -> frame -> t -> t (* Add frame *)
-       (* Default: delta st f t ~old:_ = frame st f t *)
+
+       (* User-defined state *)
+       type st
+
+       (* Generate an initial value, from an empty stack *)
+       val empty : st -> t
+
+       (* Fold function updating a value from a frame *)
+       val frame : st -> frame -> t -> t
+
+       (* (REMOVE?) Special case, specific fold function called
+          at the point where two stacks start diverging
+       *)
        val delta : st -> frame -> t -> old:(t * frame) -> t
-       (* Check if an intermediate result is still valid *)
+
+       (* Check if an intermediate result is still valid.
+          If this function returns [false], this value will not be reused
+          in the incremental computation.
+       *)
        val validate : st -> t -> bool
-       (* [evict st t] is called when [t] is no longer sync *)
+
+       (* [evict st t] is called when [t] is dropped out of the value stack *)
        val evict : st -> t -> unit
+
      end) :
 sig
   type t
 
+  (* Return a fresh incremental computation from user-defined state *)
   val empty : P.st -> t
+
+  (* Starting from a top frame, update incremental value while minimizing
+     amount of computations. *)
   val update : P.st -> frame -> t -> t
+
+  (* Same but starting from a parser *)
   val update' : P.st -> parser -> t -> t
 
+  (* Observe the current value computed *)
   val value : t -> P.t
+
+  (* Drop the stack frame at the top of the computation, if any *)
   val previous : t -> t option
 end
 
 (** A basic metric: path leading to an item *)
+
 module Path : sig
   type item =
     | Let of Asttypes.rec_flag * int
