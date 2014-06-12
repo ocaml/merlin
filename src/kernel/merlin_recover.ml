@@ -2,21 +2,23 @@ open Std
 open Raw_parser
 
 let rollbacks parser =
-  let counter = ref 100 in
-  let rec aux (location,{Location. txt = parser}) =
-    let loc' = Merlin_parser.location parser in
-    decr counter;
-    match Merlin_parser.recover ?location parser with
-    | None -> None
-    | Some _ when !counter = 0 ->
-      prerr_endline "OVERFLOW";
-      None
-    | Some p -> Some (Some loc', p)
+  let rec aux parser =
+    (* FIXME: find proper way to handle limit conditions *)
+    (* When reaching bottom of the stack, last frame will raise an Accept
+       exception, we can't recover from it, and we shouldn't recover TO it. *)
+    try
+      match Merlin_parser.recover parser with
+      | Some _ as r -> r
+      | None -> Merlin_parser.pop parser
+    with _ -> None
   in
-  let parser = (None, Location.mkloc parser (Merlin_parser.location parser)) in
   let stacks = parser :: List.unfold aux parser in
-  let recoverable = List.map ~f:snd stacks in
-  Zipper.of_list recoverable
+  let stacks = List.rev_map stacks
+      ~f:(fun p -> Location.mkloc p (Merlin_parser.location p))
+  in
+  (* Hack to drop last parser *)
+  let stacks = List.rev (List.tl stacks) in
+  Zipper.of_list stacks
 
 type t = {
   errors: exn list;

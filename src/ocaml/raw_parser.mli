@@ -1,6 +1,6 @@
 exception Error
 
-type token = 
+type token =
   | WITH
   | WHILE_LWT
   | WHILE
@@ -137,7 +137,7 @@ type token =
   | AMPERSAND
   | AMPERAMPER
 
-and _ token_class = 
+and _ token_class =
   | T_WITH : unit token_class
   | T_WHILE_LWT : unit token_class
   | T_WHILE : unit token_class
@@ -274,7 +274,7 @@ and _ token_class =
   | T_AMPERSAND : unit token_class
   | T_AMPERAMPER : unit token_class
 
-and _ nonterminal_class = 
+and _ nonterminal_class =
   | N_with_type_binder : (Asttypes.private_flag) nonterminal_class
   | N_with_constraints : (Parsetree.with_constraint list) nonterminal_class
   | N_with_constraint : (Parsetree.with_constraint list) nonterminal_class
@@ -458,11 +458,11 @@ and _ nonterminal_class =
   | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
   | N_additive : (string) nonterminal_class
 
-and symbol_class = 
+and symbol_class =
   | CT_ : 'a token_class -> symbol_class
   | CN_ : 'a nonterminal_class -> symbol_class
 
-and symbol = 
+and symbol =
   | T_ : 'a token_class * 'a -> symbol
   | N_ : 'a nonterminal_class * 'a -> symbol
   | Bottom
@@ -500,3 +500,7 @@ module Query : MenhirLib.EngineTypes.QUERY_ENGINE
     and type semantic_action =
                (state, symbol, token) MenhirLib.EngineTypes.env ->
                (state, symbol) MenhirLib.EngineTypes.stack
+
+module MenhirInterpreterTable : MenhirLib.TableFormat.TABLES
+  with type token = token
+   and type semantic_value = symbol

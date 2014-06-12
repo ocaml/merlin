@@ -90,6 +90,7 @@ SOURCES = \
 	$(TYPER)/raw_parser.ml            \
 	$(TYPER)/raw_parser_values.mli    \
 	$(TYPER)/raw_parser_values.ml     \
+	src/kernel/merlin_recovery_strategy.ml \
 	src/kernel/merlin_parser.mli      \
 	src/kernel/merlin_parser.ml       \
 	src/kernel/error_classifier.ml    \

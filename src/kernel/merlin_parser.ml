@@ -8,30 +8,30 @@ module E = MenhirLib.EngineTypes
 type state = Raw_parser.state
 
 type t =
-  | Partial of Raw_parser.feed Raw_parser.parser * MenhirUtils.witness
-  | Final of Raw_parser.symbol Location.loc
+  | Partial of P.feed P.parser * MenhirUtils.witness
+  | Final of P.symbol Location.loc
 
 type parser = t
 
 type frame =
-  | Partial_frame of int * (Raw_parser.state, Raw_parser.symbol) E.stack
-  | Final_frame of Raw_parser.symbol Location.loc
+  | Partial_frame of int * (P.state, P.symbol) E.stack
+  | Final_frame of P.symbol Location.loc
 
-let get_stack s = s.Raw_parser.env.E.stack
-let get_state s = s.Raw_parser.env.E.current
+let get_stack s = s.P.env.E.stack
+let get_state s = s.P.env.E.current
 let mk_loc loc_start loc_end = {Location. loc_start; loc_end; loc_ghost = false}
 
 module Frame : sig
   val stack : t -> frame option
   val depth : frame -> int
 
-  val value : frame -> Raw_parser.symbol
+  val value : frame -> P.symbol
   val location : frame -> Location.t
   val eq    : frame -> frame -> bool
   val next  : frame -> frame option
 
   (* Ease pattern matching on parser stack *)
-  type destruct = D of Raw_parser.symbol * destruct lazy_t
+  type destruct = D of P.symbol * destruct lazy_t
   val destruct: frame -> destruct
 end = struct
 
@@ -71,8 +71,8 @@ end = struct
     | Final_frame _ -> None
 
   (* Ease pattern matching on parser stack *)
-  type destruct = D of Raw_parser.symbol * destruct lazy_t
-  let rec destruct_bottom = D (Raw_parser.Bottom, lazy destruct_bottom)
+  type destruct = D of P.symbol * destruct lazy_t
+  let rec destruct_bottom = D (P.Bottom, lazy destruct_bottom)
 
   let rec destruct f =
     let v = value f in
@@ -84,18 +84,18 @@ end = struct
 
 end
 
-let implementation = Raw_parser.implementation_state
-let interface = Raw_parser.interface_state
+let implementation = P.implementation_state
+let interface = P.interface_state
 
 let stack = Frame.stack
 
 let pop = function
   | Final _ -> None
   | Partial (p, depth) ->
-    match MenhirUtils.pop p.Raw_parser.env with
+    match MenhirUtils.pop p.P.env with
     | None -> None
     | Some env ->
-      let p = {p with Raw_parser.env = env} in
+      let p = {p with P.env = env} in
       Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
 let location t =
@@ -108,24 +108,25 @@ let reached_eof = function
   | Partial _ -> false
   | Final _   -> true
 
+let of_feed p depth =
+  Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
+
 let rec of_step s depth =
-  match Raw_parser.step s with
+  match P.step s with
   | `Accept txt ->
     let frame = (get_stack s) in
     let loc = mk_loc frame.E.startp frame.E.endp in
     `Step (Final {Location. txt; loc})
   | `Reject -> `Reject
-  | `Feed p ->
-    `Step (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
-  | `Step p ->
-    of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
+  | `Feed p -> `Step (of_feed p depth)
+  | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
 let to_step = function
   | Partial (step,_) -> Some step
   | Final _ -> None
 
 let from state input =
-  match of_step (Raw_parser.initial state input) MenhirUtils.initial_depth with
+  match of_step (P.initial state input) MenhirUtils.initial_depth with
   | `Step p -> p
   | _ -> assert false
 
@@ -135,27 +136,30 @@ let feed (s,t,e as input) parser =
   | Partial (p, depth) ->
     match t with
     (* Ignore comments *)
-    | Raw_parser.COMMENT _ -> `Step parser
+    | P.COMMENT _ -> `Step parser
     | _ ->
-      let p' = Raw_parser.feed p input in
+      let p' = P.feed p input in
       of_step p' depth
+
+let dump_item ppf (prod, dot_pos) =
+  let print_symbol i symbol =
+    Format.fprintf ppf "%s %s"
+      (if i = dot_pos then " ." else "")
+      (Values.string_of_class symbol)
+  in
+  List.iteri print_symbol (P.Query.production_definition prod)
+
+let dump_itemset ppf l =
+  Format.fprintf ppf "itemset:\n";
+  List.iter ~f:(Format.fprintf ppf "- %a\n" dump_item) l
 
 let dump ppf t =
   (* Print current frame, with its itemset *)
   begin match t with
     | Partial (s,_) ->
       let state = get_state s in
-      let print_item (production, dot_pos) =
-        let print_symbol i symbol =
-          Format.fprintf ppf "%s %s"
-            (if i = dot_pos then " ." else "")
-            (Values.string_of_class symbol)
-        in
-        Format.fprintf ppf "itemset:\n";
-        List.iteri print_symbol (P.Query.production_definition production);
-        Format.fprintf ppf "\n"
-      in
-      List.iter print_item (Raw_parser.Query.itemset state)
+      let itemset = P.Query.itemset state in
+      dump_itemset ppf itemset
     | Final _ -> ()
   end;
   (* Print overview of the stack *)
@@ -164,8 +168,9 @@ let dump ppf t =
     | Some frame ->
       let v = Frame.value frame in
       let l,c = Lexing.split_pos (Frame.location frame).Location.loc_start in
-      Format.fprintf ppf "%s%s %d:%d"
+      Format.fprintf ppf "%s(%d.) %s %d:%d"
         (if first then "" else "; ")
+        (Frame.depth frame)
         Values.(string_of_class (class_of_symbol v)) l c;
       aux false ppf (Frame.next frame)
   in
@@ -175,26 +180,73 @@ let dump ppf t =
 
 let last_token = function
   | Final {Location. loc = {Location. loc_end = l; _}; _} ->
-    Location.mkloc Raw_parser.EOF
+    Location.mkloc P.EOF
       {Location. loc_start = l; loc_end = l; loc_ghost = false}
   | Partial (parser,_) ->
-    let loc_start,t,loc_end = parser.Raw_parser.env.E.token in
+    let loc_start,t,loc_end = parser.P.env.E.token in
     Location.mkloc t
       {Location. loc_start; loc_end; loc_ghost = false}
 
-let recover ?location _t =
-  None
-  (*match Frame.stack t with
-  | None -> None
-  | Some frame ->
-    let l = match location with
-      | None -> Frame.location frame
-      | Some l -> l
-    in
-    match feed (l.Location.loc_start,P.DEFAULT,l.Location.loc_end) t with
-    | `Accept _ | `Reject -> None
-    | `Step t' ->
-      Some (Location.mkloc t' l)*)
+let recover t = match t with
+  | Final _ -> None
+  | Partial (p,w) ->
+    let env = p.P.env in
+    let lr1_state = env.E.current in
+    let lr0_state = P.Query.lr0_state lr1_state in
+    let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
+    Logger.errorf `parser (fun ppf strategies ->
+        Format.fprintf ppf "search for strategies at %d.\n" lr0_state;
+        dump_itemset ppf (P.Query.itemset lr0_state);
+        if strategies = [] then
+          Format.fprintf ppf "no candidate selected, dropping.\n"
+        else
+          begin
+            Format.fprintf ppf "candidates: (selected in first position)\n";
+            List.iter strategies
+              ~f:(fun (cost,l,prod,_) ->
+                  let l = List.map ~f:Values.class_of_symbol l in
+                  let l = List.map ~f:Values.string_of_class l in
+                  Format.fprintf ppf
+                    "- at cost %d, production %d, %s\n" cost prod
+                    (String.concat " " l)
+                )
+          end
+      ) strategies;
+    match strategies with
+    | [] -> None
+    | (_, symbols, prod, action) :: _ ->
+      let add_symbol stack symbol =
+        {stack with E. semv = symbol; startp = stack.E.endp; next = stack}
+      in
+      (* Feed stack *)
+      let stack = List.fold_left ~f:add_symbol ~init:env.E.stack symbols in
+      let env = {env with E. stack} in
+      (* Reduce stack *)
+      (* FIXME: action can raise an error. We should catch it and fallback to
+         another strategy *)
+      let stack = action env in
+      let env = {env with E. stack} in
+
+      (* Follow goto transition *)
+      (* FIXME: Rework menhir interface to expose appopriate primitives *)
+      let module M = MenhirLib in
+      let module T = P.MenhirInterpreterTable in
+      let unmarshal2 table i j =
+        M.RowDisplacement.getget
+          M.PackedIntArray.get
+          M.PackedIntArray.get
+          table
+          i j
+      in
+      let goto state prod =
+        let code = unmarshal2 T.goto state (M.PackedIntArray.get T.lhs prod) in
+        (* code = 1 + state *)
+        code - 1
+      in
+      let env = {env with E. current = goto stack.E.state prod} in
+
+      (* Construct parser *)
+      Some (of_feed {p with P. env} w)
 
 module Integrate
     (P : sig

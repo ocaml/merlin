@@ -51,6 +51,7 @@ let set = ref initial
 
 let debug_spec =
   let f section =
+    prerr_endline "ca debug";
     match Misc.rev_string_split section ~on:',' with
     | [ section ] ->
       begin try Logger.(monitor (Section.of_string section))

@@ -27,8 +27,11 @@ val location : t -> Location.t
 val last_token : t -> Raw_parser.token Location.loc
 val reached_eof : t -> bool
 
-(* Try to feed a RECOVER token *)
-val recover : ?location:Location.t -> t -> t Location.loc option
+(* Just remove the state on top of the stack *)
+val pop : t -> t option
+
+(* Try to reduce the state on top of the stack *)
+val recover : t -> t option
 
 (* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser option
