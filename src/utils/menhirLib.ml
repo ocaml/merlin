@@ -899,17 +899,25 @@ module EngineTypes = struct
 
   module type QUERY_ENGINE = sig
 
-    type state
+    type lr1_state = int
+    type lr0_state = int
+
     type production
     type producer
     type semantic_action
 
-    (* Valid states are numbered between [0] and [state_count-1] *)
-    val state_count: int
+    (* States are numbered from [0] to [lrx_states - 1] *)
+    val lr0_states: int
+    val lr1_states: int
 
-    val itemset: state -> (production * int) list
-    val production_definition: production -> producer array
+    (* Productions are numbered from [0] to [productions - 1] *)
+    val productions: int
+
+    val lr0_state: lr1_state -> lr0_state
+    val itemset: lr0_state -> (production * int) list
+    val production_definition: production -> producer list
     val semantic_action: production -> semantic_action option
+
   end
 
   module type STEP_ENGINE = sig
@@ -1525,6 +1533,8 @@ module TableFormat = struct
 
   module type QUERY_TABLE = sig
 
+    (* Number of states in lr0 and lr1 automata *)
+    val lr0_states: int
     val lr1_states: int
 
     (* Mapping from lr1 state number to lr0 state number *)
@@ -1539,7 +1549,7 @@ module TableFormat = struct
        A reduction can be [None] if it had been removed dead code elimination.
     *)
     type producer_definition
-    val productions_definition: (producer_definition array * int option) array
+    val productions_definition: (producer_definition list * int option) array
 
   end
 
@@ -1560,8 +1570,7 @@ module TableInterpreter : sig
                           and type semantic_value = T.semantic_value
 
   module MakeQuery (T : TableFormat.TABLES) (Q : TableFormat.QUERY_TABLE)
-    : EngineTypes.QUERY_ENGINE with type state = int
-                                and type producer = Q.producer_definition
+    : EngineTypes.QUERY_ENGINE with type producer = Q.producer_definition
                                 and type production = int
                                 and type semantic_action =
                                   (int, T.semantic_value, T.token) EngineTypes.env ->
@@ -1738,18 +1747,23 @@ end = struct
 
   module MakeQuery (T : TableFormat.TABLES) (Q : TableFormat.QUERY_TABLE) =
   struct
-    type state = int
+
+    type lr1_state = int
+    type lr0_state = int
+
     type production = int
     type producer = Q.producer_definition
     type semantic_action =
       (int, T.semantic_value, T.token) EngineTypes.env ->
       (int, T.semantic_value) EngineTypes.stack
 
-    let state_count = Q.lr1_states
+    let lr0_states = Q.lr0_states
+    let lr1_states = Q.lr1_states
 
-    let itemset lr1 =
-      let lr0 = PackedIntArray.get Q.lr0_mapping lr1 in
-      Q.lr0_itemset.(lr0)
+    let productions = Array.length Q.productions_definition
+
+    let lr0_state lr1 = PackedIntArray.get Q.lr0_mapping lr1
+    let itemset lr0 = Q.lr0_itemset.(lr0)
 
     let production_definition prod =
       fst Q.productions_definition.(prod)
