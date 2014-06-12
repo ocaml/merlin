@@ -1,4 +1,16 @@
-(* Verbosity *)
+(** Log module
+  *
+  * 1. Provide functions to log arbitrary messages, filtered according to a
+  * section and a verbosity level.
+  *
+  * 2. Allow to setup destinations for these log messages.
+  *
+  * MERLIN_LOG environment variable and -debug commandline flag are used to
+  * determine destinations.
+  *
+  **)
+
+(** Verbosity **)
 type level =
   | Error
   | Info
@@ -13,6 +25,7 @@ module Section : sig
     | `completion
     | `dot_merlin
     | `internal
+    | `parser
   ]
 
   val of_string : string -> t

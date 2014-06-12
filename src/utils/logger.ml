@@ -18,6 +18,7 @@ module Section = struct
     | `completion
     | `dot_merlin
     | `internal
+    | `parser
   ]
 
   let switches, switch =
@@ -26,6 +27,7 @@ module Section = struct
     and completion = ref Info, ref None, "completion"
     and dot_merlin = ref Info, ref None, ".merlin"
     and internal   = ref Info, ref None, "internal"
+    and parser     = ref Info, ref None, "parser"
     in
     [protocol; locate; completion; dot_merlin; internal],
     function
@@ -34,6 +36,7 @@ module Section = struct
     | `completion -> completion
     | `dot_merlin -> dot_merlin
     | `internal   -> internal
+    | `parser     -> parser
 
   let dest lvl x =
     let rlvl, rdest, _ = switch x in
@@ -52,6 +55,7 @@ module Section = struct
     | "completion" -> `completion
     | ".merlin"    -> `dot_merlin
     | "internal"   -> `internal
+    | "parser"     -> `parser
     | x            -> invalid_arg ("unknown section: " ^ x)
 
 end
