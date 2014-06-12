@@ -1807,30 +1807,30 @@ extension_constructor_rebind:
 
 with_constraints:
 | v1 = with_constraint
-    { [v1] }
+    { v1 }
 | v1 = with_constraints AND v3 = with_constraint
-    { v3 :: v1 }
+    { v3 @ v1 }
 
 with_constraint:
 | TYPE v2 = type_parameters v3 = label_longident v4 = with_type_binder v5 = core_type v6 = constraints
-    { Pwith_type
+    { [Pwith_type
           (mkrhs $startpos(v3) $endpos(v3) v3,
            (Type.mk (mkrhs $startpos(v3) $endpos(v3) (Longident.last v3))
               ~params:v2
               ~cstrs:(List.rev v6)
               ~manifest:v5
               ~priv:v4
-              ~loc:(rloc $startpos $endpos))) }
+              ~loc:(rloc $startpos $endpos)))] }
 | TYPE v2 = type_parameters v3 = label COLONEQUAL v5 = core_type
-    { Pwith_typesubst
+    { [Pwith_typesubst
           (Type.mk (mkrhs $startpos(v3) $endpos(v3) v3)
              ~params:v2
              ~manifest:v5
-             ~loc:(rloc $startpos $endpos)) }
+             ~loc:(rloc $startpos $endpos))] }
 | MODULE v2 = mod_longident EQUAL v4 = mod_ext_longident
-    { Pwith_module (mkrhs $startpos(v2) $endpos(v2) v2, mkrhs $startpos(v4) $endpos(v4) v4) }
+    { [Pwith_module (mkrhs $startpos(v2) $endpos(v2) v2, mkrhs $startpos(v4) $endpos(v4) v4)] }
 | MODULE v2 = UIDENT COLONEQUAL v4 = mod_ext_longident
-    { Pwith_modsubst (mkrhs $startpos(v2) $endpos(v2) v2, mkrhs $startpos(v4) $endpos(v4) v4) }
+    { [Pwith_modsubst (mkrhs $startpos(v2) $endpos(v2) v2, mkrhs $startpos(v4) $endpos(v4) v4)] }
 
 with_type_binder:
 | EQUAL

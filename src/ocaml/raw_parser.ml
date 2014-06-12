@@ -277,7 +277,7 @@ and _ token_class =
 and _ nonterminal_class = 
   | N_with_type_binder : (Asttypes.private_flag) nonterminal_class
   | N_with_constraints : (Parsetree.with_constraint list) nonterminal_class
-  | N_with_constraint : (Parsetree.with_constraint) nonterminal_class
+  | N_with_constraint : (Parsetree.with_constraint list) nonterminal_class
   | N_virtual_flag : (Asttypes.virtual_flag) nonterminal_class
   | N_value_type : (string * Asttypes.mutable_flag * Asttypes.virtual_flag *
   Parsetree.core_type) nonterminal_class
@@ -22755,14 +22755,14 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_v6_ in
-        let _v : (Parsetree.with_constraint) =     ( Pwith_type
+        let _v : (Parsetree.with_constraint list) =     ( [Pwith_type
           (mkrhs _startpos_v3_ _endpos_v3_ v3,
            (Type.mk (mkrhs _startpos_v3_ _endpos_v3_ (Longident.last v3))
               ~params:v2
               ~cstrs:(List.rev v6)
               ~manifest:v5
               ~priv:v4
-              ~loc:(rloc _startpos _endpos))) ) in
+              ~loc:(rloc _startpos _endpos)))] ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_with_constraint, _v);
@@ -22814,11 +22814,11 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_v5_ in
-        let _v : (Parsetree.with_constraint) =     ( Pwith_typesubst
+        let _v : (Parsetree.with_constraint list) =     ( [Pwith_typesubst
           (Type.mk (mkrhs _startpos_v3_ _endpos_v3_ v3)
              ~params:v2
              ~manifest:v5
-             ~loc:(rloc _startpos _endpos)) ) in
+             ~loc:(rloc _startpos _endpos))] ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_with_constraint, _v);
@@ -22860,7 +22860,7 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_v4_ in
-        let _v : (Parsetree.with_constraint) =     ( Pwith_module (mkrhs _startpos_v2_ _endpos_v2_ v2, mkrhs _startpos_v4_ _endpos_v4_ v4) ) in
+        let _v : (Parsetree.with_constraint list) =     ( [Pwith_module (mkrhs _startpos_v2_ _endpos_v2_ v2, mkrhs _startpos_v4_ _endpos_v4_ v4)] ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_with_constraint, _v);
@@ -22902,7 +22902,7 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_v4_ in
-        let _v : (Parsetree.with_constraint) =     ( Pwith_modsubst (mkrhs _startpos_v2_ _endpos_v2_ v2, mkrhs _startpos_v4_ _endpos_v4_ v4) ) in
+        let _v : (Parsetree.with_constraint list) =     ( [Pwith_modsubst (mkrhs _startpos_v2_ _endpos_v2_ v2, mkrhs _startpos_v4_ _endpos_v4_ v4)] ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_with_constraint, _v);
@@ -22920,13 +22920,13 @@ module MenhirInterpreterTable = struct
           MenhirLib.EngineTypes.next = _menhir_stack;
           } = _menhir_stack in
         let v1 = match v1 with
-        | N_ (N_with_constraint, (v1 : (Parsetree.with_constraint))) ->
+        | N_ (N_with_constraint, (v1 : (Parsetree.with_constraint list))) ->
             v1
         | _ ->
             assert false in
         let _startpos = _startpos_v1_ in
         let _endpos = _endpos_v1_ in
-        let _v : (Parsetree.with_constraint list) =     ( [v1] ) in
+        let _v : (Parsetree.with_constraint list) =     ( v1 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_with_constraints, _v);
@@ -22953,7 +22953,7 @@ module MenhirInterpreterTable = struct
             };
           } = _menhir_stack in
         let v3 = match v3 with
-        | N_ (N_with_constraint, (v3 : (Parsetree.with_constraint))) ->
+        | N_ (N_with_constraint, (v3 : (Parsetree.with_constraint list))) ->
             v3
         | _ ->
             assert false in
@@ -22964,7 +22964,7 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos_v1_ in
         let _endpos = _endpos_v3_ in
-        let _v : (Parsetree.with_constraint list) =     ( v3 :: v1 ) in
+        let _v : (Parsetree.with_constraint list) =     ( v3 @ v1 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_with_constraints, _v);

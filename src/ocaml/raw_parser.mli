@@ -277,7 +277,7 @@ and _ token_class =
 and _ nonterminal_class = 
   | N_with_type_binder : (Asttypes.private_flag) nonterminal_class
   | N_with_constraints : (Parsetree.with_constraint list) nonterminal_class
-  | N_with_constraint : (Parsetree.with_constraint) nonterminal_class
+  | N_with_constraint : (Parsetree.with_constraint list) nonterminal_class
   | N_virtual_flag : (Asttypes.virtual_flag) nonterminal_class
   | N_value_type : (string * Asttypes.mutable_flag * Asttypes.virtual_flag *
   Parsetree.core_type) nonterminal_class
