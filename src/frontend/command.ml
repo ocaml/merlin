@@ -333,6 +333,12 @@ let dispatch (state : state) =
     in
     `List (List.map ~f:aux sg)
 
+  | (Dump `Browse : a request) ->
+    let typer = Buffer.typer state.buffer in
+    let structures = Typer.structures typer in
+    let structures = Browse.of_structures structures in
+    Browse_misc.dump_ts structures
+
   | (Dump _ : a request) ->
     failwith "TODO"
 

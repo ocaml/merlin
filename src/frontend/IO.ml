@@ -288,8 +288,8 @@ module Protocol_io = struct
       Request (Dump `Recover)
     | [`String "dump"; `String "exn"] ->
       Request (Dump `Exn)
-    | [`String "dump"; `String "history"] ->
-      Request (Dump `History)
+    | [`String "dump"; `String "browse"] ->
+      Request (Dump `Browse)
     | [`String "dump"; `String "typer"; `String "input"] ->
       Request (Dump `Typer_input)
     | [`String "which"; `String "path"; `String name] ->
