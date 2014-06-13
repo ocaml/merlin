@@ -915,7 +915,7 @@ module EngineTypes = struct
 
     val lr0_state: lr1_state -> lr0_state
     val itemset: lr0_state -> (production * int) list
-    val production_definition: production -> producer list
+    val production_definition: production -> producer option * producer list
     val semantic_action: production -> semantic_action option
 
   end
@@ -1549,7 +1549,9 @@ module TableFormat = struct
        A reduction can be [None] if it had been removed dead code elimination.
     *)
     type producer_definition
-    val productions_definition: (producer_definition list * int option) array
+
+    val productions_definition:
+      (producer_definition option * producer_definition list * int option) array
 
   end
 
@@ -1766,12 +1768,13 @@ end = struct
     let itemset lr0 = Q.lr0_itemset.(lr0)
 
     let production_definition prod =
-      fst Q.productions_definition.(prod)
+      let lhs, rhs, _ = Q.productions_definition.(prod) in
+      lhs, rhs
 
     let semantic_action prod =
-      match snd Q.productions_definition.(prod) with
-      | None -> None
-      | Some action -> Some T.semantic_action.(action)
+      match Q.productions_definition.(prod) with
+      | _, _, None -> None
+      | _, _, Some action -> Some T.semantic_action.(action)
 
   end
 

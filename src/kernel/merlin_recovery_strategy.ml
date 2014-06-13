@@ -6,8 +6,21 @@ let memoize n ~f =
   let cache = Array.init n f in
   fun i -> Lazy.force (cache.(i))
 
+type measurement =
+  {
+    (* If a production is a of the form "<nt1>: <nt1> …",
+       then we forbid reducing it if only <nt1> has been given, since
+       this can cause infinite loops. *)
+    left_recursive: bool;
+
+    rhs: (int * symbol) list;
+
+    production: int;
+    action: Query.semantic_action;
+  }
+
 let measure_production prod =
-  let def = Query.production_definition prod in
+  let lhs, rhs = Query.production_definition prod in
   try match Query.semantic_action prod with
     | None -> None
     | Some action ->
@@ -17,11 +30,21 @@ let measure_production prod =
         let values = (cost, value) :: values in
         (cost, values)
       in
-      let cost, values = List.fold_right ~f:prepend_cost def ~init:(0, []) in
-      Some (values, prod, action)
+      let left_recursive = match lhs, rhs with
+        | Some sym, (sym' :: _) -> sym = sym'
+        | _ -> false
+      in
+      let _cost, values = List.fold_right ~f:prepend_cost rhs ~init:(0, []) in
+      Some { left_recursive ; rhs = values; production = prod; action }
   with Not_found -> None
 
 let measure_production = memoize Query.productions ~f:measure_production
+
+let can_use measurement pos =
+  match pos with
+  | 0 -> false
+  | 1 -> not measurement.left_recursive
+  | n -> assert (n > 0); true
 
 let reduction_strategy lr0 =
   let itemset = Raw_parser.Query.itemset lr0 in
@@ -29,8 +52,8 @@ let reduction_strategy lr0 =
     match measure_production prod with
     (* items at pos 0 are forbidden: they won't consume anything on stack
        and as such can prevent termination *)
-    | Some (values, prod, action) when pos > 0 ->
-      let values = List.drop_n pos values in
+    | Some measurement when can_use measurement pos ->
+      let values = List.drop_n pos measurement.rhs in
       let cost = match values with
         | (cost, _) :: _ -> cost
         | [] -> 0
@@ -42,16 +65,15 @@ let reduction_strategy lr0 =
            FIXME: We might need to provide a finer metric to prevent a loop
            between 1-items.
 
-           FIXME: a first step to do so would be to forbid 1-item reducing to
-           the same non-terminal as their lhs.
-           Generalizing on this idea,
-           we should forbid 1-item reducing to a cycle in their lhs.
-        *)
+           A first step to do so would be to forbid 1-item reducing to
+           the same non-terminal as their lhs. (DONE)
+           Generalizing on this idea, we should forbid 1-item reducing to a
+           cycle in their lhs.  *)
         | 1 -> cost + 10
         (* In general we want to favor rightmost items *)
-        | n -> cost - n * 2
+        | n -> cost - n * 2 + (if measurement.left_recursive then 10 else 0)
       in
-      Some (cost, values, prod, action)
+      Some (cost, values, prod, measurement.action)
 
     | _ -> None
   in

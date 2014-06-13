@@ -28891,68 +28891,68 @@ module MenhirInterpreterTable = struct
   
   let productions_definition =
     [|
-      ([
+      (None, [
         CN_ N_dummy;
         ], Some 0);
-      ([
+      (None, [
         CN_ N_implementation;
         ], Some 1);
-      ([
+      (None, [
         CN_ N_interface;
         ], Some 2);
-      ([
+      (None, [
         CN_ N_parse_expression;
         ], Some 3);
-      ([
+      (Some (CN_ N_additive), [
         CT_ T_PLUS;
         ], Some 4);
-      ([
+      (Some (CN_ N_additive), [
         CT_ T_PLUSDOT;
         ], Some 5);
-      ([
+      (Some (CN_ N_amper_type_list), [
         CN_ N_core_type;
         ], Some 6);
-      ([
+      (Some (CN_ N_amper_type_list), [
         CN_ N_amper_type_list;
         CT_ T_AMPERSAND;
         CN_ N_core_type;
         ], Some 7);
-      ([
+      (Some (CN_ N_attr_id), [
         CN_ N_single_attr_id;
         ], Some 8);
-      ([
+      (Some (CN_ N_attr_id), [
         CN_ N_single_attr_id;
         CT_ T_DOT;
         CN_ N_attr_id;
         ], Some 9);
-      ([
+      (Some (CN_ N_attribute), [
         CT_ T_LBRACKETAT;
         CN_ N_attr_id;
         CN_ N_payload;
         CT_ T_RBRACKET;
         ], Some 10);
-      ([
+      (Some (CN_ N_attributes), [
         ], Some 11);
-      ([
+      (Some (CN_ N_attributes), [
         CN_ N_attribute;
         CN_ N_attributes;
         ], Some 12);
-      ([
+      (Some (CN_ N_class_declaration), [
         CN_ N_virtual_flag;
         CN_ N_class_type_parameters;
         CT_ T_LIDENT;
         CN_ N_class_fun_binding;
         CN_ N_post_item_attributes;
         ], Some 13);
-      ([
+      (Some (CN_ N_class_declarations), [
         CN_ N_class_declarations;
         CT_ T_AND;
         CN_ N_class_declaration;
         ], Some 14);
-      ([
+      (Some (CN_ N_class_declarations), [
         CN_ N_class_declaration;
         ], Some 15);
-      ([
+      (Some (CN_ N_class_description), [
         CN_ N_virtual_flag;
         CN_ N_class_type_parameters;
         CT_ T_LIDENT;
@@ -28960,145 +28960,145 @@ module MenhirInterpreterTable = struct
         CN_ N_class_type;
         CN_ N_post_item_attributes;
         ], Some 16);
-      ([
+      (Some (CN_ N_class_descriptions), [
         CN_ N_class_descriptions;
         CT_ T_AND;
         CN_ N_class_description;
         ], Some 17);
-      ([
+      (Some (CN_ N_class_descriptions), [
         CN_ N_class_description;
         ], Some 18);
-      ([
+      (Some (CN_ N_class_expr), [
         CN_ N_class_simple_expr;
         ], Some 19);
-      ([
+      (Some (CN_ N_class_expr), [
         CT_ T_FUN;
         CN_ N_class_fun_def;
         ], Some 20);
-      ([
+      (Some (CN_ N_class_expr), [
         CN_ N_class_simple_expr;
         CN_ N_simple_labeled_expr_list;
         ], Some 21);
-      ([
+      (Some (CN_ N_class_expr), [
         CT_ T_LET;
         CN_ N_rec_flag;
         CN_ N_let_bindings;
         CT_ T_IN;
         CN_ N_class_expr;
         ], Some 22);
-      ([
+      (Some (CN_ N_class_expr), [
         CN_ N_class_expr;
         CN_ N_attribute;
         ], Some 23);
-      ([
+      (Some (CN_ N_class_expr), [
         CN_ N_extension;
         ], Some 24);
-      ([
+      (Some (CN_ N_class_field), [
         CT_ T_INHERIT;
         CN_ N_override_flag;
         CN_ N_class_expr;
         CN_ N_parent_binder;
         CN_ N_post_item_attributes;
         ], Some 25);
-      ([
+      (Some (CN_ N_class_field), [
         CT_ T_VAL;
         CN_ N_value;
         CN_ N_post_item_attributes;
         ], Some 26);
-      ([
+      (Some (CN_ N_class_field), [
         CT_ T_METHOD;
         CN_ N_method_;
         CN_ N_post_item_attributes;
         ], Some 27);
-      ([
+      (Some (CN_ N_class_field), [
         CT_ T_CONSTRAINT;
         CN_ N_constrain_field;
         CN_ N_post_item_attributes;
         ], Some 28);
-      ([
+      (Some (CN_ N_class_field), [
         CT_ T_INITIALIZER;
         CN_ N_seq_expr;
         CN_ N_post_item_attributes;
         ], Some 29);
-      ([
+      (Some (CN_ N_class_field), [
         CN_ N_item_extension;
         ], Some 30);
-      ([
+      (Some (CN_ N_class_field), [
         CN_ N_floating_attribute;
         ], Some 31);
-      ([
+      (Some (CN_ N_class_fields), [
         ], Some 32);
-      ([
+      (Some (CN_ N_class_fields), [
         CN_ N_class_fields;
         CN_ N_class_field;
         ], Some 33);
-      ([
+      (Some (CN_ N_class_fun_binding), [
         CT_ T_EQUAL;
         CN_ N_class_expr;
         ], Some 34);
-      ([
+      (Some (CN_ N_class_fun_binding), [
         CT_ T_COLON;
         CN_ N_class_type;
         CT_ T_EQUAL;
         CN_ N_class_expr;
         ], Some 35);
-      ([
+      (Some (CN_ N_class_fun_binding), [
         CN_ N_labeled_simple_pattern;
         CN_ N_class_fun_binding;
         ], Some 36);
-      ([
+      (Some (CN_ N_class_fun_def), [
         CN_ N_labeled_simple_pattern;
         CT_ T_MINUSGREATER;
         CN_ N_class_expr;
         ], Some 37);
-      ([
+      (Some (CN_ N_class_fun_def), [
         CN_ N_labeled_simple_pattern;
         CN_ N_class_fun_def;
         ], Some 38);
-      ([
+      (Some (CN_ N_class_longident), [
         CT_ T_LIDENT;
         ], Some 39);
-      ([
+      (Some (CN_ N_class_longident), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LIDENT;
         ], Some 40);
-      ([
+      (Some (CN_ N_class_self_pattern), [
         CT_ T_LPAREN;
         CN_ N_pattern;
         CT_ T_RPAREN;
         ], Some 41);
-      ([
+      (Some (CN_ N_class_self_pattern), [
         CT_ T_LPAREN;
         CN_ N_pattern;
         CT_ T_COLON;
         CN_ N_core_type;
         CT_ T_RPAREN;
         ], Some 42);
-      ([
+      (Some (CN_ N_class_self_pattern), [
         ], Some 43);
-      ([
+      (Some (CN_ N_class_self_type), [
         CT_ T_LPAREN;
         CN_ N_core_type;
         CT_ T_RPAREN;
         ], Some 44);
-      ([
+      (Some (CN_ N_class_self_type), [
         ], Some 45);
-      ([
+      (Some (CN_ N_class_sig_body), [
         CN_ N_class_self_type;
         CN_ N_class_sig_fields;
         ], Some 46);
-      ([
+      (Some (CN_ N_class_sig_field), [
         CT_ T_INHERIT;
         CN_ N_class_signature;
         CN_ N_post_item_attributes;
         ], Some 47);
-      ([
+      (Some (CN_ N_class_sig_field), [
         CT_ T_VAL;
         CN_ N_value_type;
         CN_ N_post_item_attributes;
         ], Some 48);
-      ([
+      (Some (CN_ N_class_sig_field), [
         CT_ T_METHOD;
         CN_ N_private_virtual_flags;
         CN_ N_label;
@@ -29106,72 +29106,72 @@ module MenhirInterpreterTable = struct
         CN_ N_poly_type;
         CN_ N_post_item_attributes;
         ], Some 49);
-      ([
+      (Some (CN_ N_class_sig_field), [
         CT_ T_CONSTRAINT;
         CN_ N_constrain_field;
         CN_ N_post_item_attributes;
         ], Some 50);
-      ([
+      (Some (CN_ N_class_sig_field), [
         CN_ N_item_extension;
         CN_ N_post_item_attributes;
         ], Some 51);
-      ([
+      (Some (CN_ N_class_sig_field), [
         CN_ N_floating_attribute;
         ], Some 52);
-      ([
+      (Some (CN_ N_class_sig_fields), [
         ], Some 53);
-      ([
+      (Some (CN_ N_class_sig_fields), [
         CN_ N_class_sig_fields;
         CN_ N_class_sig_field;
         ], Some 54);
-      ([
+      (Some (CN_ N_class_signature), [
         CT_ T_LBRACKET;
         CN_ N_core_type_comma_list;
         CT_ T_RBRACKET;
         CN_ N_clty_longident;
         ], Some 55);
-      ([
+      (Some (CN_ N_class_signature), [
         CN_ N_clty_longident;
         ], Some 56);
-      ([
+      (Some (CN_ N_class_signature), [
         CT_ T_OBJECT;
         CN_ N_class_sig_body;
         CT_ T_END;
         ], Some 57);
-      ([
+      (Some (CN_ N_class_simple_expr), [
         CT_ T_LBRACKET;
         CN_ N_core_type_comma_list;
         CT_ T_RBRACKET;
         CN_ N_class_longident;
         ], Some 58);
-      ([
+      (Some (CN_ N_class_simple_expr), [
         CN_ N_class_longident;
         ], Some 59);
-      ([
+      (Some (CN_ N_class_simple_expr), [
         CT_ T_OBJECT;
         CN_ N_class_structure;
         CT_ T_END;
         ], Some 60);
-      ([
+      (Some (CN_ N_class_simple_expr), [
         CT_ T_LPAREN;
         CN_ N_class_expr;
         CT_ T_COLON;
         CN_ N_class_type;
         CT_ T_RPAREN;
         ], Some 61);
-      ([
+      (Some (CN_ N_class_simple_expr), [
         CT_ T_LPAREN;
         CN_ N_class_expr;
         CT_ T_RPAREN;
         ], Some 62);
-      ([
+      (Some (CN_ N_class_structure), [
         CN_ N_class_self_pattern;
         CN_ N_class_fields;
         ], Some 63);
-      ([
+      (Some (CN_ N_class_type), [
         CN_ N_class_signature;
         ], Some 64);
-      ([
+      (Some (CN_ N_class_type), [
         CT_ T_QUESTION;
         CT_ T_LIDENT;
         CT_ T_COLON;
@@ -29179,32 +29179,32 @@ module MenhirInterpreterTable = struct
         CT_ T_MINUSGREATER;
         CN_ N_class_type;
         ], Some 65);
-      ([
+      (Some (CN_ N_class_type), [
         CT_ T_OPTLABEL;
         CN_ N_simple_core_type_or_tuple_no_attr;
         CT_ T_MINUSGREATER;
         CN_ N_class_type;
         ], Some 66);
-      ([
+      (Some (CN_ N_class_type), [
         CT_ T_LIDENT;
         CT_ T_COLON;
         CN_ N_simple_core_type_or_tuple_no_attr;
         CT_ T_MINUSGREATER;
         CN_ N_class_type;
         ], Some 67);
-      ([
+      (Some (CN_ N_class_type), [
         CN_ N_simple_core_type_or_tuple_no_attr;
         CT_ T_MINUSGREATER;
         CN_ N_class_type;
         ], Some 68);
-      ([
+      (Some (CN_ N_class_type), [
         CN_ N_class_type;
         CN_ N_attribute;
         ], Some 69);
-      ([
+      (Some (CN_ N_class_type), [
         CN_ N_extension;
         ], Some 70);
-      ([
+      (Some (CN_ N_class_type_declaration), [
         CN_ N_virtual_flag;
         CN_ N_class_type_parameters;
         CT_ T_LIDENT;
@@ -29212,126 +29212,126 @@ module MenhirInterpreterTable = struct
         CN_ N_class_signature;
         CN_ N_post_item_attributes;
         ], Some 71);
-      ([
+      (Some (CN_ N_class_type_declarations), [
         CN_ N_class_type_declarations;
         CT_ T_AND;
         CN_ N_class_type_declaration;
         ], Some 72);
-      ([
+      (Some (CN_ N_class_type_declarations), [
         CN_ N_class_type_declaration;
         ], Some 73);
-      ([
+      (Some (CN_ N_class_type_parameters), [
         ], Some 74);
-      ([
+      (Some (CN_ N_class_type_parameters), [
         CT_ T_LBRACKET;
         CN_ N_type_parameter_list;
         CT_ T_RBRACKET;
         ], Some 75);
-      ([
+      (Some (CN_ N_clty_longident), [
         CT_ T_LIDENT;
         ], Some 76);
-      ([
+      (Some (CN_ N_clty_longident), [
         CN_ N_mod_ext_longident;
         CT_ T_DOT;
         CT_ T_LIDENT;
         ], Some 77);
-      ([
+      (Some (CN_ N_constant), [
         CT_ T_INT;
         ], Some 78);
-      ([
+      (Some (CN_ N_constant), [
         CT_ T_CHAR;
         ], Some 79);
-      ([
+      (Some (CN_ N_constant), [
         CT_ T_STRING;
         ], Some 80);
-      ([
+      (Some (CN_ N_constant), [
         CT_ T_FLOAT;
         ], Some 81);
-      ([
+      (Some (CN_ N_constant), [
         CT_ T_INT32;
         ], Some 82);
-      ([
+      (Some (CN_ N_constant), [
         CT_ T_INT64;
         ], Some 83);
-      ([
+      (Some (CN_ N_constant), [
         CT_ T_NATIVEINT;
         ], Some 84);
-      ([
+      (Some (CN_ N_constr_ident), [
         CT_ T_UIDENT;
         ], Some 85);
-      ([
+      (Some (CN_ N_constr_ident), [
         CT_ T_LPAREN;
         CT_ T_RPAREN;
         ], Some 86);
-      ([
+      (Some (CN_ N_constr_ident), [
         CT_ T_COLONCOLON;
         ], Some 87);
-      ([
+      (Some (CN_ N_constr_ident), [
         CT_ T_FALSE;
         ], Some 88);
-      ([
+      (Some (CN_ N_constr_ident), [
         CT_ T_TRUE;
         ], Some 89);
-      ([
+      (Some (CN_ N_constr_longident), [
         CN_ N_mod_longident;
         ], Some 90);
-      ([
+      (Some (CN_ N_constr_longident), [
         CT_ T_LBRACKET;
         CT_ T_RBRACKET;
         ], Some 91);
-      ([
+      (Some (CN_ N_constr_longident), [
         CT_ T_LPAREN;
         CT_ T_RPAREN;
         ], Some 92);
-      ([
+      (Some (CN_ N_constr_longident), [
         CT_ T_FALSE;
         ], Some 93);
-      ([
+      (Some (CN_ N_constr_longident), [
         CT_ T_TRUE;
         ], Some 94);
-      ([
+      (Some (CN_ N_constrain), [
         CN_ N_core_type;
         CT_ T_EQUAL;
         CN_ N_core_type;
         ], Some 95);
-      ([
+      (Some (CN_ N_constrain_field), [
         CN_ N_core_type;
         CT_ T_EQUAL;
         CN_ N_core_type;
         ], Some 96);
-      ([
+      (Some (CN_ N_constraints), [
         CN_ N_constraints;
         CT_ T_CONSTRAINT;
         CN_ N_constrain;
         ], Some 97);
-      ([
+      (Some (CN_ N_constraints), [
         ], Some 98);
-      ([
+      (Some (CN_ N_constructor_declaration), [
         CN_ N_constr_ident;
         CN_ N_attributes;
         CN_ N_generalized_constructor_arguments;
         ], Some 99);
-      ([
+      (Some (CN_ N_constructor_declarations), [
         CN_ N_constructor_declaration;
         ], Some 100);
-      ([
+      (Some (CN_ N_constructor_declarations), [
         CN_ N_constructor_declarations;
         CT_ T_BAR;
         CN_ N_constructor_declaration;
         ], Some 101);
-      ([
+      (Some (CN_ N_core_type), [
         CN_ N_core_type2;
         ], Some 102);
-      ([
+      (Some (CN_ N_core_type), [
         CN_ N_core_type2;
         CT_ T_AS;
         CT_ T_QUOTE;
         CN_ N_ident;
         ], Some 103);
-      ([
+      (Some (CN_ N_core_type2), [
         CN_ N_simple_core_type_or_tuple;
         ], Some 104);
-      ([
+      (Some (CN_ N_core_type2), [
         CT_ T_QUESTION;
         CT_ T_LIDENT;
         CT_ T_COLON;
@@ -29339,119 +29339,119 @@ module MenhirInterpreterTable = struct
         CT_ T_MINUSGREATER;
         CN_ N_core_type2;
         ], Some 105);
-      ([
+      (Some (CN_ N_core_type2), [
         CT_ T_OPTLABEL;
         CN_ N_core_type2;
         CT_ T_MINUSGREATER;
         CN_ N_core_type2;
         ], Some 106);
-      ([
+      (Some (CN_ N_core_type2), [
         CT_ T_LIDENT;
         CT_ T_COLON;
         CN_ N_core_type2;
         CT_ T_MINUSGREATER;
         CN_ N_core_type2;
         ], Some 107);
-      ([
+      (Some (CN_ N_core_type2), [
         CN_ N_core_type2;
         CT_ T_MINUSGREATER;
         CN_ N_core_type2;
         ], Some 108);
-      ([
+      (Some (CN_ N_core_type_comma_list), [
         CN_ N_core_type;
         ], Some 109);
-      ([
+      (Some (CN_ N_core_type_comma_list), [
         CN_ N_core_type_comma_list;
         CT_ T_COMMA;
         CN_ N_core_type;
         ], Some 110);
-      ([
+      (Some (CN_ N_core_type_list), [
         CN_ N_simple_core_type;
         ], Some 111);
-      ([
+      (Some (CN_ N_core_type_list), [
         CN_ N_core_type_list;
         CT_ T_STAR;
         CN_ N_simple_core_type;
         ], Some 112);
-      ([
+      (Some (CN_ N_core_type_list_no_attr), [
         CN_ N_simple_core_type_no_attr;
         ], Some 113);
-      ([
+      (Some (CN_ N_core_type_list_no_attr), [
         CN_ N_core_type_list;
         CT_ T_STAR;
         CN_ N_simple_core_type_no_attr;
         ], Some 114);
-      ([
+      (Some (CN_ N_direction_flag), [
         CT_ T_TO;
         ], Some 115);
-      ([
+      (Some (CN_ N_direction_flag), [
         CT_ T_DOWNTO;
         ], Some 116);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_NONREC;
         ], Some 117);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_COMMENT;
         ], Some 118);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_GREATERRBRACKET;
         ], Some 119);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_ENTRYPOINT;
         ], Some 120);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_LET_LWT;
         ], Some 121);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_TRY_LWT;
         ], Some 122);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_MATCH_LWT;
         ], Some 123);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_FINALLY_LWT;
         ], Some 124);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_FOR_LWT;
         ], Some 125);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_WHILE_LWT;
         ], Some 126);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_JSNEW;
         ], Some 127);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_P4_QUOTATION;
         ], Some 128);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_OUNIT_TEST;
         ], Some 129);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_OUNIT_TEST_UNIT;
         ], Some 130);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_OUNIT_TEST_MODULE;
         ], Some 131);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_OUNIT_BENCH;
         ], Some 132);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_OUNIT_BENCH_FUN;
         ], Some 133);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_OUNIT_BENCH_INDEXED;
         ], Some 134);
-      ([
+      (Some (CN_ N_dummy), [
         CT_ T_OUNIT_BENCH_MODULE;
         ], Some 135);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_simple_expr;
         ], Some 136);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_simple_expr;
         CN_ N_simple_labeled_expr_list;
         ], Some 137);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_LET;
         CN_ N_ext_attributes;
         CN_ N_rec_flag;
@@ -29459,7 +29459,7 @@ module MenhirInterpreterTable = struct
         CT_ T_IN;
         CN_ N_seq_expr;
         ], Some 138);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_LET;
         CT_ T_MODULE;
         CN_ N_ext_attributes;
@@ -29468,32 +29468,32 @@ module MenhirInterpreterTable = struct
         CT_ T_IN;
         CN_ N_seq_expr;
         ], Some 139);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_LET;
         CT_ T_OPEN;
         CN_ N_expr_open;
         CT_ T_IN;
         CN_ N_seq_expr;
         ], Some 140);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_FUNCTION;
         CN_ N_ext_attributes;
         CN_ N_opt_bar;
         CN_ N_match_cases;
         ], Some 141);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_FUN;
         CN_ N_ext_attributes;
         CN_ N_labeled_simple_pattern;
         CN_ N_fun_def;
         ], Some 142);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_FUN;
         CN_ N_ext_attributes;
         CN_ N_newtype;
         CN_ N_fun_def;
         ], Some 143);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_MATCH;
         CN_ N_ext_attributes;
         CN_ N_seq_expr;
@@ -29501,7 +29501,7 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_bar;
         CN_ N_match_cases;
         ], Some 144);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_TRY;
         CN_ N_ext_attributes;
         CN_ N_seq_expr;
@@ -29509,18 +29509,18 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_bar;
         CN_ N_match_cases;
         ], Some 145);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr_comma_list;
         ], Some 146);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_constr_longident;
         CN_ N_simple_expr;
         ], Some 147);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_name_tag;
         CN_ N_simple_expr;
         ], Some 148);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_IF;
         CN_ N_ext_attributes;
         CN_ N_seq_expr;
@@ -29529,14 +29529,14 @@ module MenhirInterpreterTable = struct
         CT_ T_ELSE;
         CN_ N_expr;
         ], Some 149);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_IF;
         CN_ N_ext_attributes;
         CN_ N_seq_expr;
         CT_ T_THEN;
         CN_ N_expr;
         ], Some 150);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_WHILE;
         CN_ N_ext_attributes;
         CN_ N_seq_expr;
@@ -29544,7 +29544,7 @@ module MenhirInterpreterTable = struct
         CN_ N_seq_expr;
         CT_ T_DONE;
         ], Some 151);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_FOR;
         CN_ N_ext_attributes;
         CN_ N_pattern;
@@ -29556,12 +29556,12 @@ module MenhirInterpreterTable = struct
         CN_ N_seq_expr;
         CT_ T_DONE;
         ], Some 152);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_COLONCOLON;
         CN_ N_expr;
         ], Some 153);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_LPAREN;
         CT_ T_COLONCOLON;
         CT_ T_RPAREN;
@@ -29571,122 +29571,122 @@ module MenhirInterpreterTable = struct
         CN_ N_expr;
         CT_ T_RPAREN;
         ], Some 154);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_INFIXOP0;
         CN_ N_expr;
         ], Some 155);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_INFIXOP1;
         CN_ N_expr;
         ], Some 156);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_INFIXOP2;
         CN_ N_expr;
         ], Some 157);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_INFIXOP3;
         CN_ N_expr;
         ], Some 158);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_INFIXOP4;
         CN_ N_expr;
         ], Some 159);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_PLUS;
         CN_ N_expr;
         ], Some 160);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_PLUSDOT;
         CN_ N_expr;
         ], Some 161);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_PLUSEQ;
         CN_ N_expr;
         ], Some 162);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_MINUS;
         CN_ N_expr;
         ], Some 163);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_MINUSDOT;
         CN_ N_expr;
         ], Some 164);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_STAR;
         CN_ N_expr;
         ], Some 165);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_PERCENT;
         CN_ N_expr;
         ], Some 166);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_EQUAL;
         CN_ N_expr;
         ], Some 167);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_LESS;
         CN_ N_expr;
         ], Some 168);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_GREATER;
         CN_ N_expr;
         ], Some 169);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_OR;
         CN_ N_expr;
         ], Some 170);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_BARBAR;
         CN_ N_expr;
         ], Some 171);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_AMPERSAND;
         CN_ N_expr;
         ], Some 172);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_AMPERAMPER;
         CN_ N_expr;
         ], Some 173);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CT_ T_COLONEQUAL;
         CN_ N_expr;
         ], Some 174);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_subtractive;
         CN_ N_expr;
         ], Some 175);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_additive;
         CN_ N_expr;
         ], Some 176);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CN_ N_label_longident;
         CT_ T_LESSMINUS;
         CN_ N_expr;
         ], Some 177);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CT_ T_LPAREN;
@@ -29695,7 +29695,7 @@ module MenhirInterpreterTable = struct
         CT_ T_LESSMINUS;
         CN_ N_expr;
         ], Some 178);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CT_ T_LBRACKET;
@@ -29704,7 +29704,7 @@ module MenhirInterpreterTable = struct
         CT_ T_LESSMINUS;
         CN_ N_expr;
         ], Some 179);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CT_ T_LBRACE;
@@ -29713,347 +29713,347 @@ module MenhirInterpreterTable = struct
         CT_ T_LESSMINUS;
         CN_ N_expr;
         ], Some 180);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_label;
         CT_ T_LESSMINUS;
         CN_ N_expr;
         ], Some 181);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_ASSERT;
         CN_ N_ext_attributes;
         CN_ N_simple_expr;
         ], Some 182);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_LAZY;
         CN_ N_ext_attributes;
         CN_ N_simple_expr;
         ], Some 183);
-      ([
+      (Some (CN_ N_expr), [
         CT_ T_OBJECT;
         CN_ N_ext_attributes;
         CN_ N_class_structure;
         CT_ T_END;
         ], Some 184);
-      ([
+      (Some (CN_ N_expr), [
         CN_ N_expr;
         CN_ N_attribute;
         ], Some 185);
-      ([
+      (Some (CN_ N_expr_comma_list), [
         CN_ N_expr_comma_list;
         CT_ T_COMMA;
         CN_ N_expr;
         ], Some 186);
-      ([
+      (Some (CN_ N_expr_comma_list), [
         CN_ N_expr;
         CT_ T_COMMA;
         CN_ N_expr;
         ], Some 187);
-      ([
+      (Some (CN_ N_expr_open), [
         CN_ N_override_flag;
         CN_ N_ext_attributes;
         CN_ N_mod_longident;
         ], Some 188);
-      ([
+      (Some (CN_ N_expr_semi_list), [
         CN_ N_expr;
         ], Some 189);
-      ([
+      (Some (CN_ N_expr_semi_list), [
         CN_ N_expr_semi_list;
         CT_ T_SEMI;
         CN_ N_expr;
         ], Some 190);
-      ([
+      (Some (CN_ N_ext_attributes), [
         ], Some 191);
-      ([
+      (Some (CN_ N_ext_attributes), [
         CN_ N_attribute;
         CN_ N_attributes;
         ], Some 192);
-      ([
+      (Some (CN_ N_ext_attributes), [
         CT_ T_PERCENT;
         CN_ N_attr_id;
         CN_ N_attributes;
         ], Some 193);
-      ([
+      (Some (CN_ N_extension), [
         CT_ T_LBRACKETPERCENT;
         CN_ N_attr_id;
         CN_ N_payload;
         CT_ T_RBRACKET;
         ], Some 194);
-      ([
+      (Some (CN_ N_extension_constructor_declaration), [
         CN_ N_constr_ident;
         CN_ N_attributes;
         CN_ N_generalized_constructor_arguments;
         ], Some 195);
-      ([
+      (Some (CN_ N_extension_constructor_rebind), [
         CN_ N_constr_ident;
         CN_ N_attributes;
         CT_ T_EQUAL;
         CN_ N_constr_longident;
         ], Some 196);
-      ([
+      (Some (CN_ N_field), [
         CN_ N_label;
         CN_ N_attributes;
         CT_ T_COLON;
         CN_ N_poly_type;
         ], Some 197);
-      ([
+      (Some (CN_ N_field_expr_list), [
         CN_ N_label;
         CT_ T_EQUAL;
         CN_ N_expr;
         ], Some 198);
-      ([
+      (Some (CN_ N_field_expr_list), [
         CN_ N_field_expr_list;
         CT_ T_SEMI;
         CN_ N_label;
         CT_ T_EQUAL;
         CN_ N_expr;
         ], Some 199);
-      ([
+      (Some (CN_ N_floating_attribute), [
         CT_ T_LBRACKETATATAT;
         CN_ N_attr_id;
         CN_ N_payload;
         CT_ T_RBRACKET;
         ], Some 200);
-      ([
+      (Some (CN_ N_fun_binding), [
         CN_ N_strict_binding;
         ], Some 201);
-      ([
+      (Some (CN_ N_fun_binding), [
         CN_ N_type_constraint;
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 202);
-      ([
+      (Some (CN_ N_fun_def), [
         CT_ T_MINUSGREATER;
         CN_ N_seq_expr;
         ], Some 203);
-      ([
+      (Some (CN_ N_fun_def), [
         CN_ N_labeled_simple_pattern;
         CN_ N_fun_def;
         ], Some 204);
-      ([
+      (Some (CN_ N_fun_def), [
         CT_ T_LPAREN;
         CT_ T_TYPE;
         CT_ T_LIDENT;
         CT_ T_RPAREN;
         CN_ N_fun_def;
         ], Some 205);
-      ([
+      (Some (CN_ N_functor_arg), [
         CT_ T_LPAREN;
         CT_ T_RPAREN;
         ], Some 206);
-      ([
+      (Some (CN_ N_functor_arg), [
         CT_ T_LPAREN;
         CN_ N_functor_arg_name;
         CT_ T_COLON;
         CN_ N_module_type;
         CT_ T_RPAREN;
         ], Some 207);
-      ([
+      (Some (CN_ N_functor_arg_name), [
         CT_ T_UIDENT;
         ], Some 208);
-      ([
+      (Some (CN_ N_functor_arg_name), [
         CT_ T_UNDERSCORE;
         ], Some 209);
-      ([
+      (Some (CN_ N_functor_args), [
         CN_ N_functor_args;
         CN_ N_functor_arg;
         ], Some 210);
-      ([
+      (Some (CN_ N_functor_args), [
         CN_ N_functor_arg;
         ], Some 211);
-      ([
+      (Some (CN_ N_generalized_constructor_arguments), [
         ], Some 212);
-      ([
+      (Some (CN_ N_generalized_constructor_arguments), [
         CT_ T_OF;
         CN_ N_core_type_list;
         ], Some 213);
-      ([
+      (Some (CN_ N_generalized_constructor_arguments), [
         CT_ T_COLON;
         CN_ N_core_type_list;
         CT_ T_MINUSGREATER;
         CN_ N_simple_core_type;
         ], Some 214);
-      ([
+      (Some (CN_ N_generalized_constructor_arguments), [
         CT_ T_COLON;
         CN_ N_simple_core_type;
         ], Some 215);
-      ([
+      (Some (CN_ N_ident), [
         CT_ T_UIDENT;
         ], Some 216);
-      ([
+      (Some (CN_ N_ident), [
         CT_ T_LIDENT;
         ], Some 217);
-      ([
+      (Some (CN_ N_implementation), [
         CT_ T_ENTRYPOINT;
         CN_ N_structure;
         CT_ T_EOF;
         ], Some 218);
-      ([
+      (Some (CN_ N_interface), [
         CT_ T_ENTRYPOINT;
         CN_ N_signature;
         CT_ T_EOF;
         ], Some 219);
-      ([
+      (Some (CN_ N_item_extension), [
         CT_ T_LBRACKETPERCENTPERCENT;
         CN_ N_attr_id;
         CN_ N_payload;
         CT_ T_RBRACKET;
         ], Some 220);
-      ([
+      (Some (CN_ N_label), [
         CT_ T_LIDENT;
         ], Some 221);
-      ([
+      (Some (CN_ N_label_declaration), [
         CN_ N_mutable_flag;
         CN_ N_label;
         CN_ N_attributes;
         CT_ T_COLON;
         CN_ N_poly_type;
         ], Some 222);
-      ([
+      (Some (CN_ N_label_declarations), [
         CN_ N_label_declaration;
         ], Some 223);
-      ([
+      (Some (CN_ N_label_declarations), [
         CN_ N_label_declarations;
         CT_ T_SEMI;
         CN_ N_label_declaration;
         ], Some 224);
-      ([
+      (Some (CN_ N_label_expr), [
         CT_ T_LABEL;
         CN_ N_simple_expr;
         ], Some 225);
-      ([
+      (Some (CN_ N_label_expr), [
         CT_ T_TILDE;
         CN_ N_label_ident;
         ], Some 226);
-      ([
+      (Some (CN_ N_label_expr), [
         CT_ T_QUESTION;
         CN_ N_label_ident;
         ], Some 227);
-      ([
+      (Some (CN_ N_label_expr), [
         CT_ T_OPTLABEL;
         CN_ N_simple_expr;
         ], Some 228);
-      ([
+      (Some (CN_ N_label_ident), [
         CT_ T_LIDENT;
         ], Some 229);
-      ([
+      (Some (CN_ N_label_let_pattern), [
         CN_ N_label_var;
         ], Some 230);
-      ([
+      (Some (CN_ N_label_let_pattern), [
         CN_ N_label_var;
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 231);
-      ([
+      (Some (CN_ N_label_longident), [
         CT_ T_LIDENT;
         ], Some 232);
-      ([
+      (Some (CN_ N_label_longident), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LIDENT;
         ], Some 233);
-      ([
+      (Some (CN_ N_label_var), [
         CT_ T_LIDENT;
         ], Some 234);
-      ([
+      (Some (CN_ N_labeled_simple_expr), [
         CN_ N_simple_expr;
         ], Some 235);
-      ([
+      (Some (CN_ N_labeled_simple_expr), [
         CN_ N_label_expr;
         ], Some 236);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CT_ T_QUESTION;
         CT_ T_LPAREN;
         CN_ N_label_let_pattern;
         CN_ N_opt_default;
         CT_ T_RPAREN;
         ], Some 237);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CT_ T_QUESTION;
         CN_ N_label_var;
         ], Some 238);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CT_ T_OPTLABEL;
         CT_ T_LPAREN;
         CN_ N_let_pattern;
         CN_ N_opt_default;
         CT_ T_RPAREN;
         ], Some 239);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CT_ T_OPTLABEL;
         CN_ N_pattern_var;
         ], Some 240);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CT_ T_TILDE;
         CT_ T_LPAREN;
         CN_ N_label_let_pattern;
         CT_ T_RPAREN;
         ], Some 241);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CT_ T_TILDE;
         CN_ N_label_var;
         ], Some 242);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CT_ T_LABEL;
         CN_ N_simple_pattern;
         ], Some 243);
-      ([
+      (Some (CN_ N_labeled_simple_pattern), [
         CN_ N_simple_pattern;
         ], Some 244);
-      ([
+      (Some (CN_ N_lbl_expr), [
         CN_ N_label_longident;
         CT_ T_EQUAL;
         CN_ N_expr;
         ], Some 245);
-      ([
+      (Some (CN_ N_lbl_expr), [
         CN_ N_label_longident;
         ], Some 246);
-      ([
+      (Some (CN_ N_lbl_expr_list), [
         CN_ N_lbl_expr;
         ], Some 247);
-      ([
+      (Some (CN_ N_lbl_expr_list), [
         CN_ N_lbl_expr;
         CT_ T_SEMI;
         CN_ N_lbl_expr_list;
         ], Some 248);
-      ([
+      (Some (CN_ N_lbl_expr_list), [
         CN_ N_lbl_expr;
         CT_ T_SEMI;
         ], Some 249);
-      ([
+      (Some (CN_ N_lbl_pattern), [
         CN_ N_label_longident;
         CT_ T_EQUAL;
         CN_ N_pattern;
         ], Some 250);
-      ([
+      (Some (CN_ N_lbl_pattern), [
         CN_ N_label_longident;
         ], Some 251);
-      ([
+      (Some (CN_ N_lbl_pattern_list), [
         CN_ N_lbl_pattern;
         ], Some 252);
-      ([
+      (Some (CN_ N_lbl_pattern_list), [
         CN_ N_lbl_pattern;
         CT_ T_SEMI;
         ], Some 253);
-      ([
+      (Some (CN_ N_lbl_pattern_list), [
         CN_ N_lbl_pattern;
         CT_ T_SEMI;
         CT_ T_UNDERSCORE;
         CN_ N_opt_semi;
         ], Some 254);
-      ([
+      (Some (CN_ N_lbl_pattern_list), [
         CN_ N_lbl_pattern;
         CT_ T_SEMI;
         CN_ N_lbl_pattern_list;
         ], Some 255);
-      ([
+      (Some (CN_ N_let_binding), [
         CN_ N_let_binding_;
         CN_ N_post_item_attributes;
         ], Some 256);
-      ([
+      (Some (CN_ N_let_binding_), [
         CN_ N_val_ident;
         CN_ N_fun_binding;
         ], Some 257);
-      ([
+      (Some (CN_ N_let_binding_), [
         CN_ N_val_ident;
         CT_ T_COLON;
         CN_ N_typevar_list;
@@ -30062,7 +30062,7 @@ module MenhirInterpreterTable = struct
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 258);
-      ([
+      (Some (CN_ N_let_binding_), [
         CN_ N_val_ident;
         CT_ T_COLON;
         CT_ T_TYPE;
@@ -30072,74 +30072,74 @@ module MenhirInterpreterTable = struct
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 259);
-      ([
+      (Some (CN_ N_let_binding_), [
         CN_ N_pattern;
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 260);
-      ([
+      (Some (CN_ N_let_binding_), [
         CN_ N_simple_pattern_not_ident;
         CT_ T_COLON;
         CN_ N_core_type;
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 261);
-      ([
+      (Some (CN_ N_let_bindings), [
         CN_ N_let_binding;
         ], Some 262);
-      ([
+      (Some (CN_ N_let_bindings), [
         CN_ N_let_bindings;
         CT_ T_AND;
         CN_ N_let_binding;
         ], Some 263);
-      ([
+      (Some (CN_ N_let_pattern), [
         CN_ N_pattern;
         ], Some 264);
-      ([
+      (Some (CN_ N_let_pattern), [
         CN_ N_pattern;
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 265);
-      ([
+      (Some (CN_ N_lident_list), [
         CT_ T_LIDENT;
         ], Some 266);
-      ([
+      (Some (CN_ N_lident_list), [
         CT_ T_LIDENT;
         CN_ N_lident_list;
         ], Some 267);
-      ([
+      (Some (CN_ N_match_case), [
         CN_ N_pattern;
         CT_ T_MINUSGREATER;
         CN_ N_seq_expr;
         ], Some 268);
-      ([
+      (Some (CN_ N_match_case), [
         CN_ N_pattern;
         CT_ T_WHEN;
         CN_ N_seq_expr;
         CT_ T_MINUSGREATER;
         CN_ N_seq_expr;
         ], Some 269);
-      ([
+      (Some (CN_ N_match_cases), [
         CN_ N_match_case;
         ], Some 270);
-      ([
+      (Some (CN_ N_match_cases), [
         CN_ N_match_cases;
         CT_ T_BAR;
         CN_ N_match_case;
         ], Some 271);
-      ([
+      (Some (CN_ N_meth_list), [
         CN_ N_field;
         CT_ T_SEMI;
         CN_ N_meth_list;
         ], Some 272);
-      ([
+      (Some (CN_ N_meth_list), [
         CN_ N_field;
         CN_ N_opt_semi;
         ], Some 273);
-      ([
+      (Some (CN_ N_meth_list), [
         CT_ T_DOTDOT;
         ], Some 274);
-      ([
+      (Some (CN_ N_method_), [
         CN_ N_override_flag;
         CT_ T_PRIVATE;
         CT_ T_VIRTUAL;
@@ -30147,7 +30147,7 @@ module MenhirInterpreterTable = struct
         CT_ T_COLON;
         CN_ N_poly_type;
         ], Some 275);
-      ([
+      (Some (CN_ N_method_), [
         CN_ N_override_flag;
         CT_ T_VIRTUAL;
         CN_ N_private_flag;
@@ -30155,13 +30155,13 @@ module MenhirInterpreterTable = struct
         CT_ T_COLON;
         CN_ N_poly_type;
         ], Some 276);
-      ([
+      (Some (CN_ N_method_), [
         CN_ N_override_flag;
         CN_ N_private_flag;
         CN_ N_label;
         CN_ N_strict_binding;
         ], Some 277);
-      ([
+      (Some (CN_ N_method_), [
         CN_ N_override_flag;
         CN_ N_private_flag;
         CN_ N_label;
@@ -30170,7 +30170,7 @@ module MenhirInterpreterTable = struct
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 278);
-      ([
+      (Some (CN_ N_method_), [
         CN_ N_override_flag;
         CN_ N_private_flag;
         CN_ N_label;
@@ -30182,60 +30182,60 @@ module MenhirInterpreterTable = struct
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 279);
-      ([
+      (Some (CN_ N_mod_ext_longident), [
         CT_ T_UIDENT;
         ], Some 280);
-      ([
+      (Some (CN_ N_mod_ext_longident), [
         CN_ N_mod_ext_longident;
         CT_ T_DOT;
         CT_ T_UIDENT;
         ], Some 281);
-      ([
+      (Some (CN_ N_mod_ext_longident), [
         CN_ N_mod_ext_longident;
         CT_ T_LPAREN;
         CN_ N_mod_ext_longident;
         CT_ T_RPAREN;
         ], Some 282);
-      ([
+      (Some (CN_ N_mod_longident), [
         CT_ T_UIDENT;
         ], Some 283);
-      ([
+      (Some (CN_ N_mod_longident), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_UIDENT;
         ], Some 284);
-      ([
+      (Some (CN_ N_module_binding), [
         CT_ T_UIDENT;
         CN_ N_module_binding_body;
         CN_ N_post_item_attributes;
         ], Some 285);
-      ([
+      (Some (CN_ N_module_binding_body), [
         CT_ T_EQUAL;
         CN_ N_module_expr;
         ], Some 286);
-      ([
+      (Some (CN_ N_module_binding_body), [
         CT_ T_COLON;
         CN_ N_module_type;
         CT_ T_EQUAL;
         CN_ N_module_expr;
         ], Some 287);
-      ([
+      (Some (CN_ N_module_binding_body), [
         CN_ N_functor_arg;
         CN_ N_module_binding_body;
         ], Some 288);
-      ([
+      (Some (CN_ N_module_bindings), [
         CN_ N_module_binding;
         ], Some 289);
-      ([
+      (Some (CN_ N_module_bindings), [
         CN_ N_module_bindings;
         CT_ T_AND;
         CN_ N_module_binding;
         ], Some 290);
-      ([
+      (Some (CN_ N_module_declaration), [
         CT_ T_COLON;
         CN_ N_module_type;
         ], Some 291);
-      ([
+      (Some (CN_ N_module_declaration), [
         CT_ T_LPAREN;
         CT_ T_UIDENT;
         CT_ T_COLON;
@@ -30243,55 +30243,55 @@ module MenhirInterpreterTable = struct
         CT_ T_RPAREN;
         CN_ N_module_declaration;
         ], Some 292);
-      ([
+      (Some (CN_ N_module_declaration), [
         CT_ T_LPAREN;
         CT_ T_RPAREN;
         CN_ N_module_declaration;
         ], Some 293);
-      ([
+      (Some (CN_ N_module_expr), [
         CN_ N_mod_longident;
         ], Some 294);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_STRUCT;
         CN_ N_structure;
         CT_ T_END;
         ], Some 295);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_FUNCTOR;
         CN_ N_functor_args;
         CT_ T_MINUSGREATER;
         CN_ N_module_expr;
         ], Some 296);
-      ([
+      (Some (CN_ N_module_expr), [
         CN_ N_module_expr;
         CT_ T_LPAREN;
         CN_ N_module_expr;
         CT_ T_RPAREN;
         ], Some 297);
-      ([
+      (Some (CN_ N_module_expr), [
         CN_ N_module_expr;
         CT_ T_LPAREN;
         CT_ T_RPAREN;
         ], Some 298);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_LPAREN;
         CN_ N_module_expr;
         CT_ T_COLON;
         CN_ N_module_type;
         CT_ T_RPAREN;
         ], Some 299);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_LPAREN;
         CN_ N_module_expr;
         CT_ T_RPAREN;
         ], Some 300);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_LPAREN;
         CT_ T_VAL;
         CN_ N_expr;
         CT_ T_RPAREN;
         ], Some 301);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_LPAREN;
         CT_ T_VAL;
         CN_ N_expr;
@@ -30299,7 +30299,7 @@ module MenhirInterpreterTable = struct
         CN_ N_package_type;
         CT_ T_RPAREN;
         ], Some 302);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_LPAREN;
         CT_ T_VAL;
         CN_ N_expr;
@@ -30309,7 +30309,7 @@ module MenhirInterpreterTable = struct
         CN_ N_package_type;
         CT_ T_RPAREN;
         ], Some 303);
-      ([
+      (Some (CN_ N_module_expr), [
         CT_ T_LPAREN;
         CT_ T_VAL;
         CN_ N_expr;
@@ -30317,285 +30317,285 @@ module MenhirInterpreterTable = struct
         CN_ N_package_type;
         CT_ T_RPAREN;
         ], Some 304);
-      ([
+      (Some (CN_ N_module_expr), [
         CN_ N_module_expr;
         CN_ N_attribute;
         ], Some 305);
-      ([
+      (Some (CN_ N_module_expr), [
         CN_ N_extension;
         ], Some 306);
-      ([
+      (Some (CN_ N_module_rec_declaration), [
         CT_ T_UIDENT;
         CT_ T_COLON;
         CN_ N_module_type;
         CN_ N_post_item_attributes;
         ], Some 307);
-      ([
+      (Some (CN_ N_module_rec_declarations), [
         CN_ N_module_rec_declaration;
         ], Some 308);
-      ([
+      (Some (CN_ N_module_rec_declarations), [
         CN_ N_module_rec_declarations;
         CT_ T_AND;
         CN_ N_module_rec_declaration;
         ], Some 309);
-      ([
+      (Some (CN_ N_module_type), [
         CN_ N_mty_longident;
         ], Some 310);
-      ([
+      (Some (CN_ N_module_type), [
         CT_ T_SIG;
         CN_ N_signature;
         CT_ T_END;
         ], Some 311);
-      ([
+      (Some (CN_ N_module_type), [
         CT_ T_FUNCTOR;
         CN_ N_functor_args;
         CT_ T_MINUSGREATER;
         CN_ N_module_type;
         ], Some 312);
-      ([
+      (Some (CN_ N_module_type), [
         CN_ N_module_type;
         CT_ T_WITH;
         CN_ N_with_constraints;
         ], Some 313);
-      ([
+      (Some (CN_ N_module_type), [
         CT_ T_MODULE;
         CT_ T_TYPE;
         CT_ T_OF;
         CN_ N_module_expr;
         ], Some 314);
-      ([
+      (Some (CN_ N_module_type), [
         CT_ T_LPAREN;
         CT_ T_MODULE;
         CN_ N_mod_longident;
         CT_ T_RPAREN;
         ], Some 315);
-      ([
+      (Some (CN_ N_module_type), [
         CT_ T_LPAREN;
         CN_ N_module_type;
         CT_ T_RPAREN;
         ], Some 316);
-      ([
+      (Some (CN_ N_module_type), [
         CN_ N_extension;
         ], Some 317);
-      ([
+      (Some (CN_ N_module_type), [
         CN_ N_module_type;
         CN_ N_attribute;
         ], Some 318);
-      ([
+      (Some (CN_ N_mty_longident), [
         CN_ N_ident;
         ], Some 319);
-      ([
+      (Some (CN_ N_mty_longident), [
         CN_ N_mod_ext_longident;
         CT_ T_DOT;
         CN_ N_ident;
         ], Some 320);
-      ([
+      (Some (CN_ N_mutable_flag), [
         ], Some 321);
-      ([
+      (Some (CN_ N_mutable_flag), [
         CT_ T_MUTABLE;
         ], Some 322);
-      ([
+      (Some (CN_ N_name_tag), [
         CT_ T_BACKQUOTE;
         CN_ N_ident;
         ], Some 323);
-      ([
+      (Some (CN_ N_name_tag_list), [
         CN_ N_name_tag;
         ], Some 324);
-      ([
+      (Some (CN_ N_name_tag_list), [
         CN_ N_name_tag_list;
         CN_ N_name_tag;
         ], Some 325);
-      ([
+      (Some (CN_ N_newtype), [
         CT_ T_LPAREN;
         CT_ T_TYPE;
         CT_ T_LIDENT;
         CT_ T_RPAREN;
         ], Some 326);
-      ([
+      (Some (CN_ N_open_statement), [
         CT_ T_OPEN;
         CN_ N_override_flag;
         CN_ N_mod_longident;
         CN_ N_post_item_attributes;
         ], Some 327);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_PREFIXOP;
         ], Some 328);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_INFIXOP0;
         ], Some 329);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_INFIXOP1;
         ], Some 330);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_INFIXOP2;
         ], Some 331);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_INFIXOP3;
         ], Some 332);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_INFIXOP4;
         ], Some 333);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_BANG;
         ], Some 334);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_PLUS;
         ], Some 335);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_PLUSDOT;
         ], Some 336);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_MINUS;
         ], Some 337);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_MINUSDOT;
         ], Some 338);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_STAR;
         ], Some 339);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_EQUAL;
         ], Some 340);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_LESS;
         ], Some 341);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_GREATER;
         ], Some 342);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_OR;
         ], Some 343);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_BARBAR;
         ], Some 344);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_AMPERSAND;
         ], Some 345);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_AMPERAMPER;
         ], Some 346);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_COLONEQUAL;
         ], Some 347);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_PLUSEQ;
         ], Some 348);
-      ([
+      (Some (CN_ N_operator), [
         CT_ T_PERCENT;
         ], Some 349);
-      ([
+      (Some (CN_ N_opt_ampersand), [
         CT_ T_AMPERSAND;
         ], Some 350);
-      ([
+      (Some (CN_ N_opt_ampersand), [
         ], Some 351);
-      ([
+      (Some (CN_ N_opt_bar), [
         ], Some 352);
-      ([
+      (Some (CN_ N_opt_bar), [
         CT_ T_BAR;
         ], Some 353);
-      ([
+      (Some (CN_ N_opt_default), [
         ], Some 354);
-      ([
+      (Some (CN_ N_opt_default), [
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 355);
-      ([
+      (Some (CN_ N_opt_semi), [
         ], Some 356);
-      ([
+      (Some (CN_ N_opt_semi), [
         CT_ T_SEMI;
         ], Some 357);
-      ([
+      (Some (CN_ N_optional_type_parameter), [
         CN_ N_type_variance;
         CN_ N_optional_type_variable;
         ], Some 358);
-      ([
+      (Some (CN_ N_optional_type_parameter_list), [
         CN_ N_optional_type_parameter;
         ], Some 359);
-      ([
+      (Some (CN_ N_optional_type_parameter_list), [
         CN_ N_optional_type_parameter_list;
         CT_ T_COMMA;
         CN_ N_optional_type_parameter;
         ], Some 360);
-      ([
+      (Some (CN_ N_optional_type_parameters), [
         ], Some 361);
-      ([
+      (Some (CN_ N_optional_type_parameters), [
         CN_ N_optional_type_parameter;
         ], Some 362);
-      ([
+      (Some (CN_ N_optional_type_parameters), [
         CT_ T_LPAREN;
         CN_ N_optional_type_parameter_list;
         CT_ T_RPAREN;
         ], Some 363);
-      ([
+      (Some (CN_ N_optional_type_variable), [
         CT_ T_QUOTE;
         CN_ N_ident;
         ], Some 364);
-      ([
+      (Some (CN_ N_optional_type_variable), [
         CT_ T_UNDERSCORE;
         ], Some 365);
-      ([
+      (Some (CN_ N_override_flag), [
         ], Some 366);
-      ([
+      (Some (CN_ N_override_flag), [
         CT_ T_BANG;
         ], Some 367);
-      ([
+      (Some (CN_ N_package_type), [
         CN_ N_mty_longident;
         ], Some 368);
-      ([
+      (Some (CN_ N_package_type), [
         CN_ N_mty_longident;
         CT_ T_WITH;
         CN_ N_package_type_cstrs;
         ], Some 369);
-      ([
+      (Some (CN_ N_package_type_cstr), [
         CT_ T_TYPE;
         CN_ N_label_longident;
         CT_ T_EQUAL;
         CN_ N_core_type;
         ], Some 370);
-      ([
+      (Some (CN_ N_package_type_cstrs), [
         CN_ N_package_type_cstr;
         ], Some 371);
-      ([
+      (Some (CN_ N_package_type_cstrs), [
         CN_ N_package_type_cstr;
         CT_ T_AND;
         CN_ N_package_type_cstrs;
         ], Some 372);
-      ([
+      (Some (CN_ N_parent_binder), [
         CT_ T_AS;
         CT_ T_LIDENT;
         ], Some 373);
-      ([
+      (Some (CN_ N_parent_binder), [
         ], Some 374);
-      ([
+      (Some (CN_ N_parse_expression), [
         CT_ T_ENTRYPOINT;
         CN_ N_seq_expr;
         CT_ T_EOF;
         ], Some 375);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_simple_pattern;
         ], Some 376);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_pattern;
         CT_ T_AS;
         CN_ N_val_ident;
         ], Some 377);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_pattern_comma_list;
         ], Some 378);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_constr_longident;
         CN_ N_pattern;
         ], Some 379);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_name_tag;
         CN_ N_pattern;
         ], Some 380);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_pattern;
         CT_ T_COLONCOLON;
         CN_ N_pattern;
         ], Some 381);
-      ([
+      (Some (CN_ N_pattern), [
         CT_ T_LPAREN;
         CT_ T_COLONCOLON;
         CT_ T_RPAREN;
@@ -30605,164 +30605,164 @@ module MenhirInterpreterTable = struct
         CN_ N_pattern;
         CT_ T_RPAREN;
         ], Some 382);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_pattern;
         CT_ T_BAR;
         CN_ N_pattern;
         ], Some 383);
-      ([
+      (Some (CN_ N_pattern), [
         CT_ T_LAZY;
         CN_ N_simple_pattern;
         ], Some 384);
-      ([
+      (Some (CN_ N_pattern), [
         CT_ T_EXCEPTION;
         CN_ N_pattern;
         ], Some 385);
-      ([
+      (Some (CN_ N_pattern), [
         CN_ N_pattern;
         CN_ N_attribute;
         ], Some 386);
-      ([
+      (Some (CN_ N_pattern_comma_list), [
         CN_ N_pattern_comma_list;
         CT_ T_COMMA;
         CN_ N_pattern;
         ], Some 387);
-      ([
+      (Some (CN_ N_pattern_comma_list), [
         CN_ N_pattern;
         CT_ T_COMMA;
         CN_ N_pattern;
         ], Some 388);
-      ([
+      (Some (CN_ N_pattern_semi_list), [
         CN_ N_pattern;
         ], Some 389);
-      ([
+      (Some (CN_ N_pattern_semi_list), [
         CN_ N_pattern_semi_list;
         CT_ T_SEMI;
         CN_ N_pattern;
         ], Some 390);
-      ([
+      (Some (CN_ N_pattern_var), [
         CT_ T_LIDENT;
         ], Some 391);
-      ([
+      (Some (CN_ N_pattern_var), [
         CT_ T_UNDERSCORE;
         ], Some 392);
-      ([
+      (Some (CN_ N_payload), [
         CN_ N_structure;
         ], Some 393);
-      ([
+      (Some (CN_ N_payload), [
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 394);
-      ([
+      (Some (CN_ N_payload), [
         CT_ T_QUESTION;
         CN_ N_pattern;
         ], Some 395);
-      ([
+      (Some (CN_ N_payload), [
         CT_ T_QUESTION;
         CN_ N_pattern;
         CT_ T_WHEN;
         CN_ N_seq_expr;
         ], Some 396);
-      ([
+      (Some (CN_ N_poly_type), [
         CN_ N_core_type;
         ], Some 397);
-      ([
+      (Some (CN_ N_poly_type), [
         CN_ N_typevar_list;
         CT_ T_DOT;
         CN_ N_core_type;
         ], Some 398);
-      ([
+      (Some (CN_ N_post_item_attribute), [
         CT_ T_LBRACKETATAT;
         CN_ N_attr_id;
         CN_ N_payload;
         CT_ T_RBRACKET;
         ], Some 399);
-      ([
+      (Some (CN_ N_post_item_attributes), [
         ], Some 400);
-      ([
+      (Some (CN_ N_post_item_attributes), [
         CN_ N_post_item_attribute;
         CN_ N_post_item_attributes;
         ], Some 401);
-      ([
+      (Some (CN_ N_primitive_declaration), [
         CT_ T_STRING;
         ], Some 402);
-      ([
+      (Some (CN_ N_primitive_declaration), [
         CT_ T_STRING;
         CN_ N_primitive_declaration;
         ], Some 403);
-      ([
+      (Some (CN_ N_private_flag), [
         ], Some 404);
-      ([
+      (Some (CN_ N_private_flag), [
         CT_ T_PRIVATE;
         ], Some 405);
-      ([
+      (Some (CN_ N_private_virtual_flags), [
         ], Some 406);
-      ([
+      (Some (CN_ N_private_virtual_flags), [
         CT_ T_PRIVATE;
         ], Some 407);
-      ([
+      (Some (CN_ N_private_virtual_flags), [
         CT_ T_VIRTUAL;
         ], Some 408);
-      ([
+      (Some (CN_ N_private_virtual_flags), [
         CT_ T_PRIVATE;
         CT_ T_VIRTUAL;
         ], Some 409);
-      ([
+      (Some (CN_ N_private_virtual_flags), [
         CT_ T_VIRTUAL;
         CT_ T_PRIVATE;
         ], Some 410);
-      ([
+      (Some (CN_ N_rec_flag), [
         ], Some 411);
-      ([
+      (Some (CN_ N_rec_flag), [
         CT_ T_REC;
         ], Some 412);
-      ([
+      (Some (CN_ N_record_expr), [
         CN_ N_simple_expr;
         CT_ T_WITH;
         CN_ N_lbl_expr_list;
         ], Some 413);
-      ([
+      (Some (CN_ N_record_expr), [
         CN_ N_lbl_expr_list;
         ], Some 414);
-      ([
+      (Some (CN_ N_row_field), [
         CN_ N_tag_field;
         ], Some 415);
-      ([
+      (Some (CN_ N_row_field), [
         CN_ N_simple_core_type;
         ], Some 416);
-      ([
+      (Some (CN_ N_row_field_list), [
         CN_ N_row_field;
         ], Some 417);
-      ([
+      (Some (CN_ N_row_field_list), [
         CN_ N_row_field_list;
         CT_ T_BAR;
         CN_ N_row_field;
         ], Some 418);
-      ([
+      (Some (CN_ N_seq_expr), [
         CN_ N_expr;
         ], Some 419);
-      ([
+      (Some (CN_ N_seq_expr), [
         CN_ N_expr;
         CT_ T_SEMI;
         ], Some 420);
-      ([
+      (Some (CN_ N_seq_expr), [
         CN_ N_expr;
         CT_ T_SEMI;
         CN_ N_seq_expr;
         ], Some 421);
-      ([
+      (Some (CN_ N_sig_exception_declaration), [
         CN_ N_extension_constructor_declaration;
         CN_ N_post_item_attributes;
         ], Some 422);
-      ([
+      (Some (CN_ N_sig_extension_constructors), [
         CN_ N_extension_constructor_declaration;
         ], Some 423);
-      ([
+      (Some (CN_ N_sig_extension_constructors), [
         CN_ N_sig_extension_constructors;
         CT_ T_BAR;
         CN_ N_extension_constructor_declaration;
         ], Some 424);
-      ([
+      (Some (CN_ N_sig_type_extension), [
         CN_ N_optional_type_parameters;
         CN_ N_type_longident;
         CT_ T_PLUSEQ;
@@ -30771,24 +30771,24 @@ module MenhirInterpreterTable = struct
         CN_ N_sig_extension_constructors;
         CN_ N_post_item_attributes;
         ], Some 425);
-      ([
+      (Some (CN_ N_signature), [
         ], Some 426);
-      ([
+      (Some (CN_ N_signature), [
         CT_ T_SEMISEMI;
         CN_ N_signature;
         ], Some 427);
-      ([
+      (Some (CN_ N_signature), [
         CN_ N_signature_item;
         CN_ N_signature;
         ], Some 428);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_VAL;
         CN_ N_val_ident;
         CT_ T_COLON;
         CN_ N_core_type;
         CN_ N_post_item_attributes;
         ], Some 429);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_EXTERNAL;
         CN_ N_val_ident;
         CT_ T_COLON;
@@ -30797,43 +30797,43 @@ module MenhirInterpreterTable = struct
         CN_ N_primitive_declaration;
         CN_ N_post_item_attributes;
         ], Some 430);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_TYPE;
         CN_ N_type_declarations;
         ], Some 431);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_TYPE;
         CN_ N_sig_type_extension;
         ], Some 432);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_EXCEPTION;
         CN_ N_sig_exception_declaration;
         ], Some 433);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_MODULE;
         CT_ T_UIDENT;
         CN_ N_module_declaration;
         CN_ N_post_item_attributes;
         ], Some 434);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_MODULE;
         CT_ T_UIDENT;
         CT_ T_EQUAL;
         CN_ N_mod_longident;
         CN_ N_post_item_attributes;
         ], Some 435);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_MODULE;
         CT_ T_REC;
         CN_ N_module_rec_declarations;
         ], Some 436);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_MODULE;
         CT_ T_TYPE;
         CN_ N_ident;
         CN_ N_post_item_attributes;
         ], Some 437);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_MODULE;
         CT_ T_TYPE;
         CN_ N_ident;
@@ -30841,165 +30841,165 @@ module MenhirInterpreterTable = struct
         CN_ N_module_type;
         CN_ N_post_item_attributes;
         ], Some 438);
-      ([
+      (Some (CN_ N_signature_item), [
         CN_ N_open_statement;
         ], Some 439);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_INCLUDE;
         CN_ N_module_type;
         CN_ N_post_item_attributes;
         ], Some 440);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_CLASS;
         CN_ N_class_descriptions;
         ], Some 441);
-      ([
+      (Some (CN_ N_signature_item), [
         CT_ T_CLASS;
         CT_ T_TYPE;
         CN_ N_class_type_declarations;
         ], Some 442);
-      ([
+      (Some (CN_ N_signature_item), [
         CN_ N_item_extension;
         CN_ N_post_item_attributes;
         ], Some 443);
-      ([
+      (Some (CN_ N_signature_item), [
         CN_ N_floating_attribute;
         ], Some 444);
-      ([
+      (Some (CN_ N_signed_constant), [
         CN_ N_constant;
         ], Some 445);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_MINUS;
         CT_ T_INT;
         ], Some 446);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_MINUS;
         CT_ T_FLOAT;
         ], Some 447);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_MINUS;
         CT_ T_INT32;
         ], Some 448);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_MINUS;
         CT_ T_INT64;
         ], Some 449);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_MINUS;
         CT_ T_NATIVEINT;
         ], Some 450);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_PLUS;
         CT_ T_INT;
         ], Some 451);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_PLUS;
         CT_ T_FLOAT;
         ], Some 452);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_PLUS;
         CT_ T_INT32;
         ], Some 453);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_PLUS;
         CT_ T_INT64;
         ], Some 454);
-      ([
+      (Some (CN_ N_signed_constant), [
         CT_ T_PLUS;
         CT_ T_NATIVEINT;
         ], Some 455);
-      ([
+      (Some (CN_ N_simple_core_type), [
         CN_ N_simple_core_type2;
         ], Some 456);
-      ([
+      (Some (CN_ N_simple_core_type), [
         CT_ T_LPAREN;
         CN_ N_core_type_comma_list;
         CT_ T_RPAREN;
         ], Some 457);
-      ([
+      (Some (CN_ N_simple_core_type), [
         CN_ N_simple_core_type;
         CN_ N_attribute;
         ], Some 458);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_QUOTE;
         CN_ N_ident;
         ], Some 459);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_UNDERSCORE;
         ], Some 460);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CN_ N_type_longident;
         ], Some 461);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CN_ N_simple_core_type2;
         CN_ N_type_longident;
         ], Some 462);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LPAREN;
         CN_ N_core_type_comma_list;
         CT_ T_RPAREN;
         CN_ N_type_longident;
         ], Some 463);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LESS;
         CN_ N_meth_list;
         CT_ T_GREATER;
         ], Some 464);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LESS;
         CT_ T_GREATER;
         ], Some 465);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_SHARP;
         CN_ N_class_longident;
         ], Some 466);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CN_ N_simple_core_type2;
         CT_ T_SHARP;
         CN_ N_class_longident;
         ], Some 467);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LPAREN;
         CN_ N_core_type_comma_list;
         CT_ T_RPAREN;
         CT_ T_SHARP;
         CN_ N_class_longident;
         ], Some 468);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LBRACKET;
         CN_ N_tag_field;
         CT_ T_RBRACKET;
         ], Some 469);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LBRACKET;
         CT_ T_BAR;
         CN_ N_row_field_list;
         CT_ T_RBRACKET;
         ], Some 470);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LBRACKET;
         CN_ N_row_field;
         CT_ T_BAR;
         CN_ N_row_field_list;
         CT_ T_RBRACKET;
         ], Some 471);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LBRACKETGREATER;
         CN_ N_opt_bar;
         CN_ N_row_field_list;
         CT_ T_RBRACKET;
         ], Some 472);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LBRACKETGREATER;
         CT_ T_RBRACKET;
         ], Some 473);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LBRACKETLESS;
         CN_ N_opt_bar;
         CN_ N_row_field_list;
         CT_ T_RBRACKET;
         ], Some 474);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LBRACKETLESS;
         CN_ N_opt_bar;
         CN_ N_row_field_list;
@@ -31007,129 +31007,129 @@ module MenhirInterpreterTable = struct
         CN_ N_name_tag_list;
         CT_ T_RBRACKET;
         ], Some 475);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CT_ T_LPAREN;
         CT_ T_MODULE;
         CN_ N_package_type;
         CT_ T_RPAREN;
         ], Some 476);
-      ([
+      (Some (CN_ N_simple_core_type2), [
         CN_ N_extension;
         ], Some 477);
-      ([
+      (Some (CN_ N_simple_core_type_no_attr), [
         CN_ N_simple_core_type2;
         ], Some 478);
-      ([
+      (Some (CN_ N_simple_core_type_no_attr), [
         CT_ T_LPAREN;
         CN_ N_core_type_comma_list;
         CT_ T_RPAREN;
         ], Some 479);
-      ([
+      (Some (CN_ N_simple_core_type_or_tuple), [
         CN_ N_simple_core_type;
         ], Some 480);
-      ([
+      (Some (CN_ N_simple_core_type_or_tuple), [
         CN_ N_simple_core_type;
         CT_ T_STAR;
         CN_ N_core_type_list;
         ], Some 481);
-      ([
+      (Some (CN_ N_simple_core_type_or_tuple_no_attr), [
         CN_ N_simple_core_type_no_attr;
         ], Some 482);
-      ([
+      (Some (CN_ N_simple_core_type_or_tuple_no_attr), [
         CN_ N_simple_core_type_no_attr;
         CT_ T_STAR;
         CN_ N_core_type_list_no_attr;
         ], Some 483);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_val_longident;
         ], Some 484);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_constant;
         ], Some 485);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_constr_longident;
         ], Some 486);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_name_tag;
         ], Some 487);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LPAREN;
         CN_ N_seq_expr;
         CT_ T_RPAREN;
         ], Some 488);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_BEGIN;
         CN_ N_ext_attributes;
         CN_ N_seq_expr;
         CT_ T_END;
         ], Some 489);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_BEGIN;
         CN_ N_ext_attributes;
         CT_ T_END;
         ], Some 490);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LPAREN;
         CN_ N_seq_expr;
         CN_ N_type_constraint;
         CT_ T_RPAREN;
         ], Some 491);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CN_ N_label_longident;
         ], Some 492);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LPAREN;
         CN_ N_seq_expr;
         CT_ T_RPAREN;
         ], Some 493);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CT_ T_LPAREN;
         CN_ N_seq_expr;
         CT_ T_RPAREN;
         ], Some 494);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CT_ T_LBRACKET;
         CN_ N_seq_expr;
         CT_ T_RBRACKET;
         ], Some 495);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_simple_expr;
         CT_ T_DOT;
         CT_ T_LBRACE;
         CN_ N_expr;
         CT_ T_RBRACE;
         ], Some 496);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LBRACE;
         CN_ N_record_expr;
         CT_ T_RBRACE;
         ], Some 497);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LBRACE;
         CN_ N_record_expr;
         CT_ T_RBRACE;
         ], Some 498);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LBRACKETBAR;
         CN_ N_expr_semi_list;
         CN_ N_opt_semi;
         CT_ T_BARRBRACKET;
         ], Some 499);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LBRACKETBAR;
         CT_ T_BARRBRACKET;
         ], Some 500);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LBRACKETBAR;
@@ -31137,13 +31137,13 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_semi;
         CT_ T_BARRBRACKET;
         ], Some 501);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LBRACKET;
         CN_ N_expr_semi_list;
         CN_ N_opt_semi;
         CT_ T_RBRACKET;
         ], Some 502);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LBRACKET;
@@ -31151,30 +31151,30 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_semi;
         CT_ T_RBRACKET;
         ], Some 503);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_PREFIXOP;
         CN_ N_simple_expr;
         ], Some 504);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_BANG;
         CN_ N_simple_expr;
         ], Some 505);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_NEW;
         CN_ N_ext_attributes;
         CN_ N_class_longident;
         ], Some 506);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LBRACELESS;
         CN_ N_field_expr_list;
         CN_ N_opt_semi;
         CT_ T_GREATERRBRACE;
         ], Some 507);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LBRACELESS;
         CT_ T_GREATERRBRACE;
         ], Some 508);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LBRACELESS;
@@ -31182,18 +31182,18 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_semi;
         CT_ T_GREATERRBRACE;
         ], Some 509);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_simple_expr;
         CT_ T_SHARP;
         CN_ N_label;
         ], Some 510);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LPAREN;
         CT_ T_MODULE;
         CN_ N_module_expr;
         CT_ T_RPAREN;
         ], Some 511);
-      ([
+      (Some (CN_ N_simple_expr), [
         CT_ T_LPAREN;
         CT_ T_MODULE;
         CN_ N_module_expr;
@@ -31201,7 +31201,7 @@ module MenhirInterpreterTable = struct
         CN_ N_package_type;
         CT_ T_RPAREN;
         ], Some 512);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CT_ T_LPAREN;
@@ -31211,83 +31211,83 @@ module MenhirInterpreterTable = struct
         CN_ N_package_type;
         CT_ T_RPAREN;
         ], Some 513);
-      ([
+      (Some (CN_ N_simple_expr), [
         CN_ N_extension;
         ], Some 514);
-      ([
+      (Some (CN_ N_simple_labeled_expr_list), [
         CN_ N_labeled_simple_expr;
         ], Some 515);
-      ([
+      (Some (CN_ N_simple_labeled_expr_list), [
         CN_ N_simple_labeled_expr_list;
         CN_ N_labeled_simple_expr;
         ], Some 516);
-      ([
+      (Some (CN_ N_simple_pattern), [
         CN_ N_val_ident;
         ], Some 517);
-      ([
+      (Some (CN_ N_simple_pattern), [
         CN_ N_simple_pattern_not_ident;
         ], Some 518);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_UNDERSCORE;
         ], Some 519);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CN_ N_signed_constant;
         ], Some 520);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CN_ N_signed_constant;
         CT_ T_DOTDOT;
         CN_ N_signed_constant;
         ], Some 521);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CN_ N_constr_longident;
         ], Some 522);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CN_ N_name_tag;
         ], Some 523);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_SHARP;
         CN_ N_type_longident;
         ], Some 524);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LBRACE;
         CN_ N_lbl_pattern_list;
         CT_ T_RBRACE;
         ], Some 525);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LBRACKET;
         CN_ N_pattern_semi_list;
         CN_ N_opt_semi;
         CT_ T_RBRACKET;
         ], Some 526);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LBRACKETBAR;
         CN_ N_pattern_semi_list;
         CN_ N_opt_semi;
         CT_ T_BARRBRACKET;
         ], Some 527);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LBRACKETBAR;
         CT_ T_BARRBRACKET;
         ], Some 528);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LPAREN;
         CN_ N_pattern;
         CT_ T_RPAREN;
         ], Some 529);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LPAREN;
         CN_ N_pattern;
         CT_ T_COLON;
         CN_ N_core_type;
         CT_ T_RPAREN;
         ], Some 530);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LPAREN;
         CT_ T_MODULE;
         CT_ T_UIDENT;
         CT_ T_RPAREN;
         ], Some 531);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CT_ T_LPAREN;
         CT_ T_MODULE;
         CT_ T_UIDENT;
@@ -31295,184 +31295,184 @@ module MenhirInterpreterTable = struct
         CN_ N_package_type;
         CT_ T_RPAREN;
         ], Some 532);
-      ([
+      (Some (CN_ N_simple_pattern_not_ident), [
         CN_ N_extension;
         ], Some 533);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_LIDENT;
         ], Some 534);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_UIDENT;
         ], Some 535);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_AND;
         ], Some 536);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_AS;
         ], Some 537);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_ASSERT;
         ], Some 538);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_BEGIN;
         ], Some 539);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_CLASS;
         ], Some 540);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_CONSTRAINT;
         ], Some 541);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_DO;
         ], Some 542);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_DONE;
         ], Some 543);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_DOWNTO;
         ], Some 544);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_ELSE;
         ], Some 545);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_END;
         ], Some 546);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_EXCEPTION;
         ], Some 547);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_EXTERNAL;
         ], Some 548);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_FALSE;
         ], Some 549);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_FOR;
         ], Some 550);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_FUN;
         ], Some 551);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_FUNCTION;
         ], Some 552);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_FUNCTOR;
         ], Some 553);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_IF;
         ], Some 554);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_IN;
         ], Some 555);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_INCLUDE;
         ], Some 556);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_INHERIT;
         ], Some 557);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_INITIALIZER;
         ], Some 558);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_LAZY;
         ], Some 559);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_LET;
         ], Some 560);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_MATCH;
         ], Some 561);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_METHOD;
         ], Some 562);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_MODULE;
         ], Some 563);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_MUTABLE;
         ], Some 564);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_NEW;
         ], Some 565);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_OBJECT;
         ], Some 566);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_OF;
         ], Some 567);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_OPEN;
         ], Some 568);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_OR;
         ], Some 569);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_PRIVATE;
         ], Some 570);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_REC;
         ], Some 571);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_SIG;
         ], Some 572);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_STRUCT;
         ], Some 573);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_THEN;
         ], Some 574);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_TO;
         ], Some 575);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_TRUE;
         ], Some 576);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_TRY;
         ], Some 577);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_TYPE;
         ], Some 578);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_VAL;
         ], Some 579);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_VIRTUAL;
         ], Some 580);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_WHEN;
         ], Some 581);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_WHILE;
         ], Some 582);
-      ([
+      (Some (CN_ N_single_attr_id), [
         CT_ T_WITH;
         ], Some 583);
-      ([
+      (Some (CN_ N_str_exception_declaration), [
         CN_ N_extension_constructor_declaration;
         CN_ N_post_item_attributes;
         ], Some 584);
-      ([
+      (Some (CN_ N_str_exception_declaration), [
         CN_ N_extension_constructor_rebind;
         CN_ N_post_item_attributes;
         ], Some 585);
-      ([
+      (Some (CN_ N_str_extension_constructors), [
         CN_ N_extension_constructor_declaration;
         ], Some 586);
-      ([
+      (Some (CN_ N_str_extension_constructors), [
         CN_ N_extension_constructor_rebind;
         ], Some 587);
-      ([
+      (Some (CN_ N_str_extension_constructors), [
         CN_ N_str_extension_constructors;
         CT_ T_BAR;
         CN_ N_extension_constructor_declaration;
         ], Some 588);
-      ([
+      (Some (CN_ N_str_extension_constructors), [
         CN_ N_str_extension_constructors;
         CT_ T_BAR;
         CN_ N_extension_constructor_rebind;
         ], Some 589);
-      ([
+      (Some (CN_ N_str_type_extension), [
         CN_ N_optional_type_parameters;
         CN_ N_type_longident;
         CT_ T_PLUSEQ;
@@ -31481,36 +31481,36 @@ module MenhirInterpreterTable = struct
         CN_ N_str_extension_constructors;
         CN_ N_post_item_attributes;
         ], Some 590);
-      ([
+      (Some (CN_ N_strict_binding), [
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 591);
-      ([
+      (Some (CN_ N_strict_binding), [
         CN_ N_labeled_simple_pattern;
         CN_ N_fun_binding;
         ], Some 592);
-      ([
+      (Some (CN_ N_strict_binding), [
         CT_ T_LPAREN;
         CT_ T_TYPE;
         CT_ T_LIDENT;
         CT_ T_RPAREN;
         CN_ N_fun_binding;
         ], Some 593);
-      ([
+      (Some (CN_ N_structure), [
         CN_ N_seq_expr;
         CN_ N_post_item_attributes;
         CN_ N_structure_tail;
         ], Some 594);
-      ([
+      (Some (CN_ N_structure), [
         CN_ N_structure_tail;
         ], Some 595);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_LET;
         CN_ N_ext_attributes;
         CN_ N_rec_flag;
         CN_ N_let_bindings;
         ], Some 596);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_EXTERNAL;
         CN_ N_val_ident;
         CT_ T_COLON;
@@ -31519,34 +31519,34 @@ module MenhirInterpreterTable = struct
         CN_ N_primitive_declaration;
         CN_ N_post_item_attributes;
         ], Some 597);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_TYPE;
         CN_ N_type_declarations;
         ], Some 598);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_TYPE;
         CN_ N_str_type_extension;
         ], Some 599);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_EXCEPTION;
         CN_ N_str_exception_declaration;
         ], Some 600);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_MODULE;
         CN_ N_module_binding;
         ], Some 601);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_MODULE;
         CT_ T_REC;
         CN_ N_module_bindings;
         ], Some 602);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_MODULE;
         CT_ T_TYPE;
         CN_ N_ident;
         CN_ N_post_item_attributes;
         ], Some 603);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_MODULE;
         CT_ T_TYPE;
         CN_ N_ident;
@@ -31554,113 +31554,113 @@ module MenhirInterpreterTable = struct
         CN_ N_module_type;
         CN_ N_post_item_attributes;
         ], Some 604);
-      ([
+      (Some (CN_ N_structure_item), [
         CN_ N_open_statement;
         ], Some 605);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_CLASS;
         CN_ N_class_declarations;
         ], Some 606);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_CLASS;
         CT_ T_TYPE;
         CN_ N_class_type_declarations;
         ], Some 607);
-      ([
+      (Some (CN_ N_structure_item), [
         CT_ T_INCLUDE;
         CN_ N_module_expr;
         CN_ N_post_item_attributes;
         ], Some 608);
-      ([
+      (Some (CN_ N_structure_item), [
         CN_ N_item_extension;
         CN_ N_post_item_attributes;
         ], Some 609);
-      ([
+      (Some (CN_ N_structure_item), [
         CN_ N_floating_attribute;
         ], Some 610);
-      ([
+      (Some (CN_ N_structure_tail), [
         ], Some 611);
-      ([
+      (Some (CN_ N_structure_tail), [
         CT_ T_SEMISEMI;
         CN_ N_structure;
         ], Some 612);
-      ([
+      (Some (CN_ N_structure_tail), [
         CN_ N_structure_item;
         CN_ N_structure_tail;
         ], Some 613);
-      ([
+      (Some (CN_ N_subtractive), [
         CT_ T_MINUS;
         ], Some 614);
-      ([
+      (Some (CN_ N_subtractive), [
         CT_ T_MINUSDOT;
         ], Some 615);
-      ([
+      (Some (CN_ N_tag_field), [
         CN_ N_name_tag;
         CN_ N_attributes;
         CT_ T_OF;
         CN_ N_opt_ampersand;
         CN_ N_amper_type_list;
         ], Some 616);
-      ([
+      (Some (CN_ N_tag_field), [
         CN_ N_name_tag;
         CN_ N_attributes;
         ], Some 617);
-      ([
+      (Some (CN_ N_type_constraint), [
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 618);
-      ([
+      (Some (CN_ N_type_constraint), [
         CT_ T_COLON;
         CN_ N_core_type;
         CT_ T_COLONGREATER;
         CN_ N_core_type;
         ], Some 619);
-      ([
+      (Some (CN_ N_type_constraint), [
         CT_ T_COLONGREATER;
         CN_ N_core_type;
         ], Some 620);
-      ([
+      (Some (CN_ N_type_declaration), [
         CN_ N_optional_type_parameters;
         CT_ T_LIDENT;
         CN_ N_type_kind;
         CN_ N_constraints;
         CN_ N_post_item_attributes;
         ], Some 621);
-      ([
+      (Some (CN_ N_type_declarations), [
         CN_ N_type_declaration;
         ], Some 622);
-      ([
+      (Some (CN_ N_type_declarations), [
         CN_ N_type_declarations;
         CT_ T_AND;
         CN_ N_type_declaration;
         ], Some 623);
-      ([
+      (Some (CN_ N_type_kind), [
         ], Some 624);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CN_ N_core_type;
         ], Some 625);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CT_ T_PRIVATE;
         CN_ N_core_type;
         ], Some 626);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CN_ N_constructor_declarations;
         ], Some 627);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CT_ T_PRIVATE;
         CN_ N_constructor_declarations;
         ], Some 628);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CN_ N_private_flag;
         CT_ T_BAR;
         CN_ N_constructor_declarations;
         ], Some 629);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CN_ N_private_flag;
         CT_ T_LBRACE;
@@ -31668,7 +31668,7 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_semi;
         CT_ T_RBRACE;
         ], Some 630);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CN_ N_core_type;
         CT_ T_EQUAL;
@@ -31676,7 +31676,7 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_bar;
         CN_ N_constructor_declarations;
         ], Some 631);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CN_ N_core_type;
         CT_ T_EQUAL;
@@ -31686,84 +31686,84 @@ module MenhirInterpreterTable = struct
         CN_ N_opt_semi;
         CT_ T_RBRACE;
         ], Some 632);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CT_ T_DOTDOT;
         ], Some 633);
-      ([
+      (Some (CN_ N_type_kind), [
         CT_ T_EQUAL;
         CN_ N_core_type;
         CT_ T_EQUAL;
         CT_ T_DOTDOT;
         ], Some 634);
-      ([
+      (Some (CN_ N_type_longident), [
         CT_ T_LIDENT;
         ], Some 635);
-      ([
+      (Some (CN_ N_type_longident), [
         CN_ N_mod_ext_longident;
         CT_ T_DOT;
         CT_ T_LIDENT;
         ], Some 636);
-      ([
+      (Some (CN_ N_type_parameter), [
         CN_ N_type_variance;
         CN_ N_type_variable;
         ], Some 637);
-      ([
+      (Some (CN_ N_type_parameter_list), [
         CN_ N_type_parameter;
         ], Some 638);
-      ([
+      (Some (CN_ N_type_parameter_list), [
         CN_ N_type_parameter_list;
         CT_ T_COMMA;
         CN_ N_type_parameter;
         ], Some 639);
-      ([
+      (Some (CN_ N_type_parameters), [
         ], Some 640);
-      ([
+      (Some (CN_ N_type_parameters), [
         CN_ N_type_parameter;
         ], Some 641);
-      ([
+      (Some (CN_ N_type_parameters), [
         CT_ T_LPAREN;
         CN_ N_type_parameter_list;
         CT_ T_RPAREN;
         ], Some 642);
-      ([
+      (Some (CN_ N_type_variable), [
         CT_ T_QUOTE;
         CN_ N_ident;
         ], Some 643);
-      ([
+      (Some (CN_ N_type_variance), [
         ], Some 644);
-      ([
+      (Some (CN_ N_type_variance), [
         CT_ T_PLUS;
         ], Some 645);
-      ([
+      (Some (CN_ N_type_variance), [
         CT_ T_MINUS;
         ], Some 646);
-      ([
+      (Some (CN_ N_typevar_list), [
         CT_ T_QUOTE;
         CN_ N_ident;
         ], Some 647);
-      ([
+      (Some (CN_ N_typevar_list), [
         CN_ N_typevar_list;
         CT_ T_QUOTE;
         CN_ N_ident;
         ], Some 648);
-      ([
+      (Some (CN_ N_val_ident), [
         CT_ T_LIDENT;
         ], Some 649);
-      ([
+      (Some (CN_ N_val_ident), [
         CT_ T_LPAREN;
         CN_ N_operator;
         CT_ T_RPAREN;
         ], Some 650);
-      ([
+      (Some (CN_ N_val_longident), [
         CN_ N_val_ident;
         ], Some 651);
-      ([
+      (Some (CN_ N_val_longident), [
         CN_ N_mod_longident;
         CT_ T_DOT;
         CN_ N_val_ident;
         ], Some 652);
-      ([
+      (Some (CN_ N_value), [
         CN_ N_override_flag;
         CT_ T_MUTABLE;
         CT_ T_VIRTUAL;
@@ -31771,21 +31771,21 @@ module MenhirInterpreterTable = struct
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 653);
-      ([
+      (Some (CN_ N_value), [
         CT_ T_VIRTUAL;
         CN_ N_mutable_flag;
         CN_ N_label;
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 654);
-      ([
+      (Some (CN_ N_value), [
         CN_ N_override_flag;
         CN_ N_mutable_flag;
         CN_ N_label;
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 655);
-      ([
+      (Some (CN_ N_value), [
         CN_ N_override_flag;
         CN_ N_mutable_flag;
         CN_ N_label;
@@ -31793,31 +31793,31 @@ module MenhirInterpreterTable = struct
         CT_ T_EQUAL;
         CN_ N_seq_expr;
         ], Some 656);
-      ([
+      (Some (CN_ N_value_type), [
         CT_ T_VIRTUAL;
         CN_ N_mutable_flag;
         CN_ N_label;
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 657);
-      ([
+      (Some (CN_ N_value_type), [
         CT_ T_MUTABLE;
         CN_ N_virtual_flag;
         CN_ N_label;
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 658);
-      ([
+      (Some (CN_ N_value_type), [
         CN_ N_label;
         CT_ T_COLON;
         CN_ N_core_type;
         ], Some 659);
-      ([
+      (Some (CN_ N_virtual_flag), [
         ], Some 660);
-      ([
+      (Some (CN_ N_virtual_flag), [
         CT_ T_VIRTUAL;
         ], Some 661);
-      ([
+      (Some (CN_ N_with_constraint), [
         CT_ T_TYPE;
         CN_ N_type_parameters;
         CN_ N_label_longident;
@@ -31825,37 +31825,37 @@ module MenhirInterpreterTable = struct
         CN_ N_core_type;
         CN_ N_constraints;
         ], Some 662);
-      ([
+      (Some (CN_ N_with_constraint), [
         CT_ T_TYPE;
         CN_ N_type_parameters;
         CN_ N_label;
         CT_ T_COLONEQUAL;
         CN_ N_core_type;
         ], Some 663);
-      ([
+      (Some (CN_ N_with_constraint), [
         CT_ T_MODULE;
         CN_ N_mod_longident;
         CT_ T_EQUAL;
         CN_ N_mod_ext_longident;
         ], Some 664);
-      ([
+      (Some (CN_ N_with_constraint), [
         CT_ T_MODULE;
         CT_ T_UIDENT;
         CT_ T_COLONEQUAL;
         CN_ N_mod_ext_longident;
         ], Some 665);
-      ([
+      (Some (CN_ N_with_constraints), [
         CN_ N_with_constraint;
         ], Some 666);
-      ([
+      (Some (CN_ N_with_constraints), [
         CN_ N_with_constraints;
         CT_ T_AND;
         CN_ N_with_constraint;
         ], Some 667);
-      ([
+      (Some (CN_ N_with_type_binder), [
         CT_ T_EQUAL;
         ], Some 668);
-      ([
+      (Some (CN_ N_with_type_binder), [
         CT_ T_EQUAL;
         CT_ T_PRIVATE;
         ], Some 669);

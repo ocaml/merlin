@@ -147,7 +147,10 @@ let dump_item ppf (prod, dot_pos) =
       (if i = dot_pos then " ." else "")
       (Values.string_of_class symbol)
   in
-  List.iteri print_symbol (P.Query.production_definition prod)
+  let lhs, rhs = P.Query.production_definition prod in
+  Format.fprintf ppf "%s = "
+    (Option.value_map ~f:Values.string_of_class ~default:"?" lhs);
+  List.iteri print_symbol rhs
 
 let dump_itemset ppf l =
   Format.fprintf ppf "itemset:\n";
