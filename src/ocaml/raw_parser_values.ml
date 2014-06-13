@@ -728,7 +728,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_name_tag_list                     -> 0, []
   | N_name_tag                          -> 1, ""
   | N_mutable_flag                      -> 1, Asttypes.Immutable
-  | N_mty_longident                     -> 1, default_longident
+  | N_mty_longident                     -> 2, default_longident
   | N_module_type                       -> 1, default_module_type
   | N_module_rec_declarations           -> 0, []
   | N_module_rec_declaration            -> 1, default_module_decl
@@ -737,8 +737,8 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_module_bindings                   -> 0, []
   | N_module_binding_body               -> 1, default_module_expr
   | N_module_binding                    -> 1, default_module_bind
-  | N_mod_longident                     -> 1, default_longident
-  | N_mod_ext_longident                 -> 1, default_longident
+  | N_mod_longident                     -> 2, default_longident
+  | N_mod_ext_longident                 -> 2, default_longident
   | N_method_                           ->
     raise Not_found (*(string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind) nonterminal_class*)
   | N_meth_list                         ->
@@ -753,15 +753,15 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_let_binding                       ->
     1, Ast_helper.Vb.mk default_pattern default_expr
   | N_lbl_pattern_list                  -> 1, ([], Asttypes.Closed)
-  | N_lbl_pattern                       -> 1, (default_longident_loc, default_pattern)
+  | N_lbl_pattern                       -> 2, (default_longident_loc, default_pattern)
   | N_lbl_expr_list                     -> 0, []
-  | N_lbl_expr                          -> 1, (default_longident_loc, default_expr)
+  | N_lbl_expr                          -> 2, (default_longident_loc, default_expr)
   | N_labeled_simple_pattern            -> 1, ("", None, default_pattern)
   | N_labeled_simple_expr               -> 1, ("", default_expr)
   | N_label_var                         -> 1, ("", default_pattern)
-  | N_label_longident                   -> 1, default_longident
+  | N_label_longident                   -> 2, default_longident
   | N_label_let_pattern                 -> 1, ("", default_pattern)
-  | N_label_ident                       -> 1, ("", default_expr)
+  | N_label_ident                       -> 2, ("", default_expr)
   | N_label_expr                        -> 1, ("", default_expr)
   | N_label_declarations                -> 0, []
   | N_label_declaration                 ->
@@ -771,7 +771,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     raise Not_found (*(Parsetree.extension) nonterminal_class*)
   | N_interface                         -> 0, []
   | N_implementation                    -> 0, []
-  | N_ident                             -> 1, ""
+  | N_ident                             -> 2, ""
   | N_generalized_constructor_arguments -> 1, ([], None)
   | N_functor_args                      -> 0, []
   | N_functor_arg_name                  -> 1, ""
@@ -807,10 +807,10 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_constraints                       -> 0, []
   | N_constrain_field                   -> 1, (default_type, default_type)
   | N_constrain                         -> 1, (default_type, default_type, Location.none)
-  | N_constr_longident                  -> 1, default_longident
+  | N_constr_longident                  -> 2, default_longident
   | N_constr_ident                      -> 1, ""
   | N_constant                          -> 1, Asttypes.Const_int 0
-  | N_clty_longident                    -> 1, default_longident
+  | N_clty_longident                    -> 2, default_longident
   | N_class_type_parameters             -> 0, []
   | N_class_type_declarations           -> 0, []
   | N_class_type_declaration            -> 0, []

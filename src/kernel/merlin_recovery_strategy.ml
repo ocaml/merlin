@@ -13,7 +13,7 @@ let measure_production prod =
     | Some action ->
       let prepend_cost symclass (cost, values) =
         let cost', value = Raw_parser_values.default_symbol symclass in
-        let cost = cost + cost' in
+        let cost = cost + cost' + 1 in
         let values = (cost, value) :: values in
         (cost, values)
       in
