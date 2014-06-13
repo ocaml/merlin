@@ -321,8 +321,6 @@ let current_unit = ref ""
 
 (* Consistency between persistent structures *)
 
-let crc_units = Consistbl.create()
-
 let clear_imports () =
   Consistbl.clear !cache.crc_units;
   !cache.imported_units := []
@@ -338,7 +336,7 @@ let check_consistency ps =
       (fun (name, crco) ->
          match crco with
             None -> ()
-          | Some crc -> Consistbl.check crc_units name crc ps.ps_filename)
+          | Some crc -> Consistbl.check !cache.crc_units name crc ps.ps_filename)
       ps.ps_crcs
   with Consistbl.Inconsistency(name, source, auth) ->
     error (Inconsistent_import(name, auth, source))
