@@ -107,8 +107,28 @@ let all_occurences id =
   in
   aux []
 
+let rec fix_loc t =
+  let t_children = t.t_children in
+  if t.t_loc == BrowseT.default_loc then
+    let t_children = List.map fix_loc (Lazy.force t_children) in
+    {t with
+     t_loc = List.fold_left' ~init:BrowseT.default_loc t_children
+         ~f:(fun t l ->
+             if t.t_loc == BrowseT.default_loc then
+               l
+             else if l == BrowseT.default_loc then
+               t.t_loc
+             else
+               Parsing_aux.location_union t.t_loc l);
+     t_children = lazy t_children}
+  else
+    {t with t_children = lazy (List.map fix_loc (Lazy.force t_children))}
+
 let of_structures strs =
   let of_structure str =
-    Lazy.force (BrowseT.of_node (BrowseT.Structure str)).t_children
+    let node = BrowseT.Structure str in
+    let browse = BrowseT.of_node node in
+    let browse = fix_loc browse in
+    Lazy.force browse.t_children
   in
   List.concat_map ~f:of_structure strs

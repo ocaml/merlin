@@ -41,6 +41,11 @@ let reduction_strategy lr0 =
            as such, they can cause loop too but might sometimes be needed.
            FIXME: We might need to provide a finer metric to prevent a loop
            between 1-items.
+
+           FIXME: a first step to do so would be to forbid 1-item reducing to
+           the same non-terminal as their lhs.
+           Generalizing on this idea,
+           we should forbid 1-item reducing to a cycle in their lhs.
         *)
         | 1 -> cost + 10
         (* In general we want to favor rightmost items *)
