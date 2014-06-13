@@ -49,3 +49,5 @@ val nearest_before : Lexing.position -> t list -> t option
 val enclosing : Lexing.position -> t list -> t list
 
 val all_occurences : Ident.t -> t -> t list
+
+val of_structures : Typedtree.structure list -> t list

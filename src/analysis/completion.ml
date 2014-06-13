@@ -58,8 +58,7 @@ end*)
  *)
 let node_at typer pos_cursor =
   let structures = Typer.structures typer in
-  let of_structure str = BrowseT.of_node (BrowseT.Structure str) in
-  let structures = List.map ~f:of_structure structures in
+  let structures = Browse.of_structures structures in
   try
     let node, _pos_node =
       match Browse.nearest_before pos_cursor structures with

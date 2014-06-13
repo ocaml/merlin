@@ -106,3 +106,9 @@ let all_occurences id =
     List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
   in
   aux []
+
+let of_structures strs =
+  let of_structure str =
+    Lazy.force (BrowseT.of_node (BrowseT.Structure str)).t_children
+  in
+  List.concat_map ~f:of_structure strs

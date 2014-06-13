@@ -93,8 +93,8 @@ let dispatch (state : state) =
   | (Type_expr (source, pos) : a request) ->
     let typer = Buffer.typer state.buffer in
     let env = match pos with
-      | (*None*) _ -> Typer.env typer
-      (*| Some pos -> (Completion.node_at typer pos).Browse.env*)
+      | None -> Typer.env typer
+      | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
     in
     let ppf, to_string = Format.to_string () in
     Type_utils.type_in_env env ppf source;
@@ -105,8 +105,7 @@ let dispatch (state : state) =
     let open Typedtree in
     let typer = Buffer.typer state.buffer in
     let structures = Typer.structures typer in
-    let of_structure str = BrowseT.of_node (BrowseT.Structure str) in
-    let structures = List.map ~f:of_structure structures in
+    let structures = Browse.of_structures structures in
     let path = Browse.enclosing pos structures in
     let aux = function
       | { t_loc; t_env;
