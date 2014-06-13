@@ -58,16 +58,17 @@ end*)
  *)
 let node_at typer pos_cursor =
   let structures = Typer.structures typer in
-  let structures = List.concat_map ~f:Browse.structure structures in
+  let of_structure str = BrowseT.of_node (BrowseT.Structure str) in
+  let structures = List.map ~f:of_structure structures in
   try
     let node, _pos_node =
       match Browse.nearest_before pos_cursor structures with
-      | Some ({ Browse.loc } as node) -> node, loc.Location.loc_end
+      | Some ({BrowseT. t_loc} as node) -> node, t_loc.Location.loc_end
       | None -> raise Not_found
     in
     node
   with Not_found ->
-    Browse.({ dummy with env = Typer.env typer })
+    {BrowseT.dummy with BrowseT.t_env = Typer.env typer}
 
 (* Check if module is smaller (= has less definition, counting nested ones)
  * than a particular threshold. Return (Some n) if module has size n, or None
@@ -167,7 +168,7 @@ let node_complete project node prefix =
     else
       prefix
   in
-  let {Browse.env} = node in
+  let env = node.BrowseT.t_env in
   let fmt ~exact name ?path ty =
     let ident = match path with
       | Some path -> Ident.create (Path.last path)
@@ -297,8 +298,9 @@ let node_complete project node prefix =
   in
   Printtyp.wrap_printing_env env
   begin fun () ->
-  match node.Browse.context with
-  | Browse.MethodCall (t,_) ->
+  match node.BrowseT.t_node with
+  | BrowseT.Expression {Typedtree. exp_desc = Typedtree.Texp_send (exp',_,_) } ->
+    let t = exp'.Typedtree.exp_type in
     let has_prefix (name,_) = String.is_prefixed ~by:prefix name in
     let methods = List.filter has_prefix (methods_of_type env t) in
     List.map (fun (name,ty) ->

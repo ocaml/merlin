@@ -1,7 +1,7 @@
 open Std
 open Merlin_lib
 
-let sources_path = ref (Misc.Path_list.of_list [])
+(*let sources_path = ref (Misc.Path_list.of_list [])
 let cmt_path = ref (Misc.Path_list.of_list [])
 
 let cwd = ref ""
@@ -90,7 +90,7 @@ include Utils
 let get_browsable browsable =
   let items =
     List.rev_map (fun bt ->
-      let open Browse in
+      let open BrowseT in
       match bt.context with
       | TopStructure -> Lazy.force bt.nodes
       | _ -> [bt]
@@ -287,4 +287,6 @@ let from_string ~project ~env ~local_defs path =
           Some full_path, loc
       )
   with Not_found ->
-    None
+    None*)
+
+let from_string ~project ~env ~local_defs = failwith "TODO"

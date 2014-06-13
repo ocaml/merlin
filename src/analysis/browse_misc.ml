@@ -28,6 +28,7 @@
 
 open Std
 open Option.Infix
+open BrowseT
 
 let union_loc_opt a b = match a,b with
   | None, None -> None
@@ -120,28 +121,14 @@ let signature_of_env ?(ignore_extensions=true) env =
   Typemod.simplify_signature (!sg)
 
 let rec dump_ts ts =
-  let dump_t { Browse. loc ; context ; nodes = lazy nodes } =
-    let kind = match context with
-      | Browse.TopStructure -> "indir"
-      | Browse.Type _ -> "type"
-      | Browse.TypeDecl _ -> "type_decl"
-      | Browse.Expr _ -> "expr"
-      | Browse.Pattern _ -> "pattern"
-      | Browse.Module _ -> "module"
-      | Browse.Modtype _ -> "modtype"
-      | Browse.Class (_, _) -> "class"
-      | Browse.ClassType _ -> "class_type"
-      | Browse.MethodCall _ -> "#"
-      | Browse.NamedOther _
-      | Browse.Other -> "other"
-    in
-    IO.with_location loc
+  let dump_t { t_loc ; t_node ; t_children = lazy children } =
+    IO.with_location t_loc
     [
-      "kind", `String kind;
-      "children", dump_ts nodes
+      "kind", `String (string_of_node t_node);
+      "children", dump_ts children
     ]
   in
-  let cmp_start { Browse.loc = l1 } { Browse.loc = l2 } =
+  let cmp_start { t_loc = l1 } { t_loc = l2 } =
     Lexing.compare_pos l1.Location.loc_start l2.Location.loc_end
   in
   let ts = List.sort cmp_start ts in

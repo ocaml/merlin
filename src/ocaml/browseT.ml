@@ -48,6 +48,16 @@ type t = {
   t_children: t list lazy_t;
 }
 
+let dummy =
+  let dummy_struct =
+    {Typedtree. str_items = []; str_type = []; str_final_env = default_env }
+  in
+  { t_node = Structure dummy_struct;
+    t_loc = default_loc;
+    t_env = default_env;
+    t_children = lazy [];
+  }
+
 let rec of_list f l1 l2 = match l1 with
   | [] -> l2
   | x :: xs -> f x :: of_list f xs l2
@@ -399,6 +409,8 @@ and of_signature_item_desc desc acc = match desc with
     of_node (Value_description vd) :: acc
   | Tsig_type tds ->
     of_list (fun td -> of_node (Type_declaration td)) tds acc
+  | Tsig_typext text ->
+    of_node (Type_extension text) :: acc
   | Tsig_exception ec ->
     of_node (Extension_constructor ec) :: acc
   | Tsig_module md ->
@@ -444,6 +456,8 @@ and of_class_type_field_desc desc acc = match desc with
     of_core_type ct :: acc
   | Tctf_constraint (ct1,ct2) ->
     of_core_type ct1 :: of_core_type ct2 :: acc
+  | Tctf_attribute _ ->
+    acc
 
 let rec annot loc env t =
   let t_loc = if t.t_loc == default_loc then loc else t.t_loc in
@@ -460,3 +474,64 @@ let of_node ?(loc=default_loc) ?(env=default_env) node =
     annot loc env t
   else
     t
+
+
+(** Accessors for information specific to a node *)
+
+let string_of_node = function
+  | Pattern                 _ -> "pattern"
+  | Expression              _ -> "expression"
+  | Case                    _ -> "case"
+  | Class_expr              _ -> "class_expr"
+  | Class_structure         _ -> "class_structure"
+  | Class_field             _ -> "class_field"
+  | Class_field_kind        _ -> "class_field_kind"
+  | Module_expr             _ -> "module_expr"
+  | Module_type_constraint  _ -> "module_type_constraint"
+  | Structure               _ -> "structure"
+  | Structure_item          _ -> "structure_item"
+  | Module_binding          _ -> "module_binding"
+  | Value_binding           _ -> "value_binding"
+  | Module_type             _ -> "module_type"
+  | Signature               _ -> "signature"
+  | Signature_item          _ -> "signature_item"
+  | Module_declaration      _ -> "module_declaration"
+  | Module_type_declaration _ -> "module_type_declaration"
+  | With_constraint         _ -> "with_constraint"
+  | Core_type               _ -> "core_type"
+  | Package_type            _ -> "package_type"
+  | Row_field               _ -> "row_field"
+  | Value_description       _ -> "value_description"
+  | Type_declaration        _ -> "type_declaration"
+  | Type_kind               _ -> "type_kind"
+  | Type_extension          _ -> "type_extension"
+  | Extension_constructor   _ -> "extension_constructor"
+  | Label_declaration       _ -> "label_declaration"
+  | Constructor_declaration _ -> "constructor_declaration"
+  | Class_type              _ -> "class_type"
+  | Class_signature         _ -> "class_signature"
+  | Class_type_field        _ -> "class_type_field"
+  | Class_declaration       _ -> "class_declaration"
+  | Class_description       _ -> "class_description"
+  | Class_type_declaration  _ -> "class_type_declaration"
+
+let pattern_paths { Typedtree. pat_desc; pat_extra } =
+  let init =
+    match pat_desc with
+    | Tpat_var (id,_) | Tpat_alias (_,id,_) -> [Path.Pident id]
+    | _ -> []
+  in
+  List.fold_left ~init pat_extra
+    ~f:(fun acc (extra,_,_) ->
+      match extra with
+      | Tpat_type (path,_) -> path :: acc
+      | _ -> acc)
+
+let expression_paths { Typedtree. exp_desc; exp_extra } =
+  match exp_desc with
+  | Texp_ident (path,_,_) -> [path]
+  | Texp_new (path,_,_) -> [path]
+  | Texp_instvar (p1,p2,_) | Texp_setinstvar (p1,p2,_,_) -> [p1; p2]
+  | Texp_override (p1,ps) -> p1 :: List.map Misc.fst3 ps
+  | Texp_letmodule (id,_,_,_) -> [Path.Pident id]
+  | _ -> []

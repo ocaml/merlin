@@ -90,6 +90,10 @@ type t = {
 val default_loc : Location.t
 val default_env : Env.t
 
+(** Dummy value, used as fallback when there is nothing to analyze (e.g
+   incorrect input) *)
+val dummy : t
+
 (** [of_node ?loc ?env node] produces a tree from [node], using [loc] and [env]
   * as default annotation when nothing can be inferred from the [node].
   * [loc] and [env] default to [default_loc] and [default_env].
@@ -99,3 +103,10 @@ val of_node : ?loc:Location.t -> ?env:Env.t -> node -> t
 (** [annot loc env t] replace [default_loc] and [default_env] in [t] by [loc]
   * and [env]. *)
 val annot : Location.t -> Env.t -> t -> t
+
+(** Accessors for information specific to a node *)
+
+val string_of_node : node -> string
+
+val pattern_paths : pattern -> Path.t list
+val expression_paths : expression -> Path.t list

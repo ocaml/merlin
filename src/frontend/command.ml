@@ -93,35 +93,46 @@ let dispatch (state : state) =
   | (Type_expr (source, pos) : a request) ->
     let typer = Buffer.typer state.buffer in
     let env = match pos with
-      | None -> Typer.env typer
-      | Some pos -> (Completion.node_at typer pos).Browse.env
+      | (*None*) _ -> Typer.env typer
+      (*| Some pos -> (Completion.node_at typer pos).Browse.env*)
     in
     let ppf, to_string = Format.to_string () in
     Type_utils.type_in_env env ppf source;
     to_string ()
 
   | (Type_enclosing ((expr, offset), pos) : a request) ->
+    let open BrowseT in
+    let open Typedtree in
     let typer = Buffer.typer state.buffer in
     let structures = Typer.structures typer in
-    let structures = List.concat_map ~f:Browse.structure structures in
+    let of_structure str = BrowseT.of_node (BrowseT.Structure str) in
+    let structures = List.map ~f:of_structure structures in
     let path = Browse.enclosing pos structures in
     let aux = function
-      | {Browse. loc; env;
-          context = (Browse.Expr (_, t) | Browse.Pattern (_, t) | Browse.Type t)} ->
+      | { t_loc; t_env;
+          t_node = ( Expression {exp_type = t}
+                   | Pattern {pat_type = t}
+                   | Core_type {ctyp_type = t } )
+        } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env env
+        Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.type_scheme ppf t);
-        Some (loc, to_string ())
-      | {Browse. loc; env; context = Browse.TypeDecl (id,t,_)} ->
+        Some (t_loc, to_string ())
+      | { t_loc; t_env; t_node = Type_declaration {typ_id = id; typ_type = t} } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env env
+        Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.type_declaration id ppf t);
-        Some (loc, to_string ())
-      | {Browse. loc; env; context = Browse.Module (_,m)} ->
+        Some (t_loc, to_string ())
+      | { t_loc; t_env;
+          t_node = ( Module_expr {mod_type = m}
+                   | Module_type {mty_type = m}
+                   | Module_declaration {md_type = {mty_type = m}}
+                   | Module_type_declaration {mtd_type = Some {mty_type = m}} )
+        } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env env
+        Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.modtype ppf m);
-        Some (loc, to_string ())
+        Some (t_loc, to_string ())
       | _ -> None
     in
     let result = List.filter_map ~f:aux path in
@@ -139,7 +150,8 @@ let dispatch (state : state) =
       aux [] offset
     in
     let small_enclosings =
-      let {Browse.env} = Completion.node_at typer pos in
+      let node = Completion.node_at typer pos in
+      let env = node.BrowseT.t_env in
       let loc_start =
         let l, c = Lexing.split_pos pos in
         Lexing.make_pos (l, c - offset)
@@ -177,7 +189,7 @@ let dispatch (state : state) =
       | None     -> Typer.env typer, []
       | Some pos ->
         let node = Completion.node_at typer pos in
-        node.Browse.env, Typer.structures typer
+        node.BrowseT.t_env, Typer.structures typer
     in
     let opt =
       Track_definition.from_string ~project:state.project ~env ~local_defs path
@@ -305,7 +317,7 @@ let dispatch (state : state) =
     let typer = Buffer.typer state.buffer in
     let env = match pos with
       | None -> Typer.env typer
-      | Some pos -> (Completion.node_at typer pos).Browse.env
+      | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
     in
     let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
     let aux item =
@@ -398,20 +410,22 @@ let dispatch (state : state) =
 
   | (Occurences (`Ident_at pos) : a request) ->
     let str = Typer.structures (Buffer.typer state.buffer) in
-    let str = List.concat_map ~f:Browse.structure str in
-    let node = Option.value ~default:Browse.dummy
+    let of_structure str = BrowseT.of_node (BrowseT.Structure str) in
+    let str = List.map ~f:of_structure str in
+    let node = Option.value ~default:BrowseT.dummy
         (Browse.nearest_before pos str)
     in
     begin match
-        match node.Browse.context with
-        | Browse.Expr (Typedtree.Texp_ident (p,_,_), _) -> Some (Path.head p)
-        | Browse.Pattern (ident, _) -> ident
-        | _ -> None
-      with
-      | None -> []
-      | Some ident ->
-        let ids = List.concat_map ~f:(Browse.all_occurences ident) str in
-        List.map ~f:(fun id -> id.Browse.loc) ids
+      match node.BrowseT.t_node with
+      | BrowseT.Expression e -> BrowseT.expression_paths e
+      | BrowseT.Pattern p -> BrowseT.pattern_paths p
+      | _ -> []
+    with
+    | [] -> []
+    | (path :: _) ->
+      let ident = Path.head path in
+      let ids = List.concat_map ~f:(Browse.all_occurences ident) str in
+      List.map ~f:(fun id -> id.BrowseT.t_loc) ids
     end
 
   : a)
