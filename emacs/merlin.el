@@ -33,6 +33,9 @@
 ;; auto-complete is not
 (require 'auto-complete nil 'noerror)
 
+;; silence free variable warning
+(defvar merlin-mode)
+
 (defgroup merlin nil
   "merlin binding mode allowing completion and typing in OCaml files."
   :group 'languages)
@@ -1097,7 +1100,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                        (cond ((and typ (equal (cdr typ) "parser"))
                               (message "Error: the content of the region failed to parse."))
                              (msg (message "Error: %s" (cdr msg)))
-                             (message "Unexpected error"))))))
+			     (t
+			      (message "Unexpected error")))))))
     (merlin-type-expression substring on-success on-error)))
 
 (defun merlin-type-expr (exp)
@@ -1283,7 +1287,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
          (switch-to-buffer (merlin-get-occ-buff)))
         ((equal merlin-occurences-show-buffer 'other)
          (switch-to-buffer-other-window (merlin-get-occ-buff)))
-        nil))
+	(t nil)))
 
 (defun merlin-occurences ()
   (interactive)
