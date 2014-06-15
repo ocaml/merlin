@@ -236,6 +236,7 @@ def sync_buffer_to(to_line, to_col, load_project=True):
         end_line = next_end
       else:
         break
+    if marker: command("tell","eof")
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
