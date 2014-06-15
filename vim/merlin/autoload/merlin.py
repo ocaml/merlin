@@ -133,7 +133,7 @@ def dump(*cmd):
 ######## BASIC COMMANDS
 
 def parse_position(pos):
-  position = pos['pos']
+  position = pos['cursor']
   marker = pos['marker']
   return (position['line'], position['col'], marker)
 
@@ -228,7 +228,7 @@ def sync_buffer_to(to_line, to_col, load_project=True):
   if content:
     kind = "source"
     _, _, _ = command_tell(content)
-    _, _, marker = command("tell","marker")
+    _, _, marker = parse_position(command("tell","marker"))
     while marker:
       if end_line < max_line:
         next_end = min(max_line,end_line + 50)
