@@ -265,8 +265,10 @@ module Buffer : sig
   val parser: t -> Parser.t
   val parser_errors: t -> exn list
   val recover: t -> Recover.t
-  val anchor: t -> Parser.anchor
   val typer: t -> Typer.t
+
+  val set_mark: t -> unit
+  val get_mark: t -> bool
 end = struct
   type t = {
     kind: Parser.state;
@@ -277,7 +279,7 @@ end = struct
     mutable parser: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
     mutable eof_typer: Typer.t option;
-    mutable parser_anchor: Parser.Anchor.t;
+    mutable parser_marker: bool ref;
     mutable validity_stamp: bool ref;
   }
 
@@ -299,10 +301,10 @@ end = struct
       path; project; lexer; kind;
       keywords = Project.keywords project;
       parser = History.initial (initial_step kind (History.focused lexer));
-      parser_anchor = Parser.Anchor.empty;
       typer = Typer.fresh (Project.extensions project);
       eof_typer = None;
       validity_stamp = Project.validity_stamp project;
+      parser_marker = ref false;
     }
 
   let setup buffer =
@@ -316,11 +318,6 @@ end = struct
   let recover b = snd (History.focused b.parser)
   let parser b = Recover.parser (recover b)
   let parser_errors b = Recover.exns (recover b)
-
-  let anchor b =
-    let parser_anchor = Parser.Anchor.update' (parser b) b.parser_anchor in
-    b.parser_anchor <- parser_anchor;
-    Parser.Anchor.get parser_anchor
 
   let incremental_typer b =
     setup b;
@@ -399,4 +396,12 @@ end = struct
       update b lexer
     end;
     Lexer.start kw b.lexer
+
+  let get_mark t = !(t.parser_marker)
+  let set_mark t = 
+    let r = ref true in
+    t.parser_marker <- r;
+    t.parser <- History.modify 
+      (fun (item, recover) -> item, Recover.mark r recover)
+      t.parser
 end

@@ -176,15 +176,10 @@ module Protocol_io = struct
     in
     List.map json_of_item outline
 
-  let json_of_cursor_state {cursor; anchor} =
-    let depth, pos = match anchor with
-      | Merlin_parser.In_rec (d,p) -> d,p
-      | Merlin_parser.Out_rec (d,p) -> d,p
-    in
+  let json_of_cursor_state {cursor; marker} =
     `Assoc [
       "cursor", json_of_pos cursor;
-      "anchor", json_of_pos pos;
-      "depth", `Int depth;
+      "marker", `Bool marker;
     ]
 
   let source_or_build = function
@@ -229,6 +224,8 @@ module Protocol_io = struct
       Request (Tell (`Source source))
     | [`String "tell"; `String "eof"] ->
       Request (Tell (`Source ""))
+    | [`String "tell"; `String "marker"] ->
+      Request (Tell `Marker)
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
       Request (Type_expr (expr, optional_position opt_pos))
     | [`String "type"; `String "enclosing";

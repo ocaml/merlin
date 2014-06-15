@@ -55,7 +55,8 @@ module Frame : sig
   val destruct: frame -> destruct
 end
 
-
+(* The bool ref will be set to false whenever the frame exit the parser *)
+val mark : frame -> bool ref -> t -> t
 
 (** Stack integration, incrementally compute metric over each frame *)
 
@@ -109,19 +110,7 @@ sig
 
   (* Drop the stack frame at the top of the computation, if any *)
   val previous : t -> t option
-end
 
-(** A basic metric tracking last safe position for the typer *)
-
-type anchor =
-  | In_rec of int * Lexing.position
-  | Out_rec of int * Lexing.position
-
-module Anchor : sig
-  type t
-  val empty : t
-  val update : frame -> t -> t
-  val update' : parser -> t -> t
-
-  val get : t -> anchor
+  (* Change value at the top of stack *)
+  val modify : (P.t -> P.t) -> t -> t
 end

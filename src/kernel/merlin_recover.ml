@@ -141,3 +141,4 @@ let dump_recoverable ppf t =
   in
   dump ppf t
 
+let mark _ = assert false

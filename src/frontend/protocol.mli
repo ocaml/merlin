@@ -4,7 +4,7 @@ open Merlin_lib
 type position = Lexing.position
 type cursor_state = {
   cursor: position;
-  anchor: Parser.anchor;
+  marker: bool;
 }
 
 type completion = {
@@ -25,7 +25,7 @@ and item = {
 
 type _ request =
   | Tell
-    : [ `Start of position option | `Source of string]
+    : [ `Start of position option | `Source of string | `Marker]
     -> cursor_state request
   | Type_expr
     :  string * position option

@@ -8,7 +8,7 @@ module E = MenhirLib.EngineTypes
 type state = Raw_parser.state
 
 type t =
-  | Partial of P.feed P.parser * MenhirUtils.witness
+  | Partial of P.feed P.parser * MenhirUtils.depth
   | Final of P.symbol Location.loc
 
 type parser = t
@@ -43,7 +43,7 @@ end = struct
 
   let stack = function
     | Partial (parser,w) ->
-      frame_of (MenhirUtils.depth w - 1) (get_stack parser)
+      frame_of (MenhirUtils.Depth.get w - 1) (get_stack parser)
     | Final result ->
       Some (Final_frame result)
 
@@ -96,7 +96,7 @@ let pop = function
     | None -> None
     | Some env ->
       let p = {p with P.env = env} in
-      Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
+      Some (Partial (p, MenhirUtils.Depth.stack ~hint:depth (get_stack p)))
 
 let location t =
   Option.value_map
@@ -109,7 +109,7 @@ let reached_eof = function
   | Final _   -> true
 
 let of_feed p depth =
-  Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
+  Partial (p, MenhirUtils.Depth.stack ~hint:depth (get_stack p))
 
 let rec of_step s depth =
   match P.step s with
@@ -119,14 +119,14 @@ let rec of_step s depth =
     `Step (Final {Location. txt; loc})
   | `Reject -> `Reject
   | `Feed p -> `Step (of_feed p depth)
-  | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
+  | `Step p -> of_step p (MenhirUtils.Depth.stack ~hint:depth (get_stack p))
 
 let to_step = function
   | Partial (step,_) -> Some step
   | Final _ -> None
 
 let from state input =
-  match of_step (P.initial state input) MenhirUtils.initial_depth with
+  match of_step (P.initial state input) MenhirUtils.Depth.initial with
   | `Step p -> p
   | _ -> assert false
 
@@ -251,6 +251,13 @@ let recover t = match t with
       (* Construct parser *)
       Some (of_feed {p with P. env} w)
 
+let mark f r = function
+  | Final _ as t -> r := false; t
+  | Partial (p,d) ->
+    let d' = Frame.depth f in
+    Partial (p, MenhirUtils.Depth.mark (d' + 1) (fun () -> r := false) d)
+    
+
 module Integrate
     (P : sig
        (* Arbitrary state, passed to update functions *)
@@ -356,79 +363,7 @@ struct
     | Zero _ -> None
     | More (_,_,t) -> Some t
 
-end
-
-type anchor =
-    | In_rec of int * Lexing.position
-    | Out_rec of int * Lexing.position
-
-module Anchor = struct
-  module P = struct
-    open Raw_parser
-
-    type st = unit
-    type t = anchor
-
-    let empty () = Out_rec (0,Lexing.dummy_pos)
-
-    let update f = function
-      | Out_rec (d,_) -> 
-        let l = Frame.location f in
-        Out_rec (d + 1, l.Location.loc_end)
-      | v -> v
-
-    let set_rec = function
-      | Out_rec (d,p) -> In_rec (d + 1, p)
-      | v -> v
-
-    let frame () f v =
-      let open Frame in
-      match Frame.destruct f with
-      (* struct _ ... end *)
-      | D (N_ (N_structure_item, _), _) ->
-        update f v
-
-      | D (N_ (N_structure, _), _) ->
-        update f v
-
-      (* sig _ ... end *)
-      | D (N_ (N_signature_item, _), _) ->
-        update f v
-
-      | D (N_ (N_signature, _), _) ->
-        update f v
-
-      (* object ... end *)
-      | D (N_ (N_class_fields, _), _) ->
-        set_rec v
-
-      (* classes (class _ and ... *)
-      | D (N_ (N_class_declarations, _), _) ->
-        set_rec v
-
-      | D (N_ (N_class_descriptions, _), _) ->
-        set_rec v
-
-      (* let rec, module rec *)
-      | D (T_ (T_REC, ()), _) ->
-        set_rec v
-
-      | D (N_ (N_rec_flag, _), _) ->
-        set_rec v
-
-      | _ -> v 
-
-    let delta () f t ~old:_ = frame () f t
-
-    let validate () _ = true
-    let evict () _ = ()
-  end
-  module I = Integrate (P)
-
-  type t = I.t
-  let empty = I.empty ()
-  let update f t = I.update () f t
-  let update' p t = I.update' () p t
-
-  let get p = I.value p
+  let modify f = function
+    | Zero v -> Zero (f v)
+    | More (v,s,t) -> More (f v, s, t)
 end

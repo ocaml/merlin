@@ -59,7 +59,7 @@ let cursor_state state =
   in
   { 
     cursor = Lexer.position lexer;
-    anchor = Buffer.anchor state.buffer;
+    marker = Buffer.get_mark state.buffer;
   }
 
 let buffer_changed state =
@@ -91,6 +91,10 @@ let dispatch (state : state) =
     ignore (Buffer.update state.buffer (Lexer.history lexer));
     (* Stop lexer on EOF *)
     if Lexer.eof lexer then state.lexer <- None;
+    cursor_state state
+
+  | (Tell `Marker : a request) ->
+    Buffer.set_mark state.buffer;
     cursor_state state
 
   | (Type_expr (source, pos) : a request) ->
