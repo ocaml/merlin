@@ -93,16 +93,16 @@ module Protocol_io = struct
   exception Failure' = Failure
   open Protocol
 
-  let pos_to_json pos =
+  let json_of_pos pos =
     Lexing.(`Assoc ["line", `Int pos.pos_lnum;
                     "col", `Int (pos.pos_cnum - pos.pos_bol)])
 
-  let error_to_json {Error_report. valid; text; where; loc} =
+  let json_of_error {Error_report. valid; text; where; loc} =
     let content = ["valid", `Bool valid; "message", `String text] in
     let content =
       if loc = Location.none then content else
-      ("start", pos_to_json loc.Location.loc_start) ::
-      ("end"  , pos_to_json loc.Location.loc_end) ::
+      ("start", json_of_pos loc.Location.loc_start) ::
+      ("end"  , json_of_pos loc.Location.loc_end) ::
       content
     in
     let content = ("type", `String where) :: content in
@@ -111,7 +111,7 @@ module Protocol_io = struct
   let error_catcher exn =
     match Error_report.error_catcher exn with
     | None -> None
-    | Some (loc,t) -> Some (loc, error_to_json t)
+    | Some (loc,t) -> Some (loc, json_of_error t)
 
   let make_pos (pos_lnum, pos_cnum) =
     Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
@@ -126,8 +126,8 @@ module Protocol_io = struct
     | _ -> failwith "Incorrect position"
 
   let with_location loc assoc =
-    `Assoc (("start", pos_to_json loc.Location.loc_start) ::
-            ("end",   pos_to_json loc.Location.loc_end) ::
+    `Assoc (("start", json_of_pos loc.Location.loc_start) ::
+            ("end",   json_of_pos loc.Location.loc_end) ::
             assoc)
 
   let optional_position = function
@@ -170,29 +170,22 @@ module Protocol_io = struct
       `Assoc [
         "name", `String name;
         "kind", `String (string_of_kind kind);
-        "pos", pos_to_json pos;
+        "pos", json_of_pos pos;
         "children", `List (json_of_outline children);
       ]
     in
     List.map json_of_item outline
 
-  let json_of_path =
-    let open Merlin_lib.Parser in function
-      | Path.Let (Asttypes.Recursive,n) ->
-        `List [`String "let"; `String "rec"; `Int n]
-      | Path.Let (_,n) ->
-        `List [`String "let"; `Int n]
-      | Path.Struct n ->
-        `List [`String "struct"; `Int n]
-      | Path.Sig n ->
-        `List [`String "sig"; `Int n]
-      | Path.Module_rec n ->
-        `List [`String "module"; `String "rec"; `Int n]
-      | Path.Object n ->
-        `List [`String "object"; `Int n]
-      | Path.Class n ->
-        `List [`String "class"; `Int n]
-  let json_of_path p = `List (List.rev_map ~f:json_of_path p)
+  let json_of_cursor_state {cursor; anchor} =
+    let depth, pos = match anchor with
+      | Merlin_parser.In_rec (d,p) -> d,p
+      | Merlin_parser.Out_rec (d,p) -> d,p
+    in
+    `Assoc [
+      "cursor", json_of_pos cursor;
+      "anchor", json_of_pos pos;
+      "depth", `Int depth;
+    ]
 
   let source_or_build = function
     | "source" -> `Source
@@ -230,8 +223,8 @@ module Protocol_io = struct
       ("failures", `String ("Failed to load some packages " ^ str)) :: assoc
 
   let request_of_json = function
-    | [`String "tell"; `String "start"] ->
-      Request (Tell `Start)
+    | (`String "tell" :: `String "start" :: opt_pos) ->
+      Request (Tell (`Start (optional_position opt_pos)))
     | [`String "tell"; `String "source"; `String source] ->
       Request (Tell (`Source source))
     | [`String "tell"; `String "eof"] ->
@@ -266,10 +259,6 @@ module Protocol_io = struct
     | (`String "boundary" :: `String "current" :: opt_pos)
     | (`String "boundary" :: opt_pos) ->
       Request (Boundary (`Current, optional_position opt_pos))
-    | [`String "check"; `String "unclosed"; `String "recursion"] ->
-      Request (Check_position `Unclosed_recursion)
-    | [`String "check"; `String "completed"; jpos] ->
-      Request (Check_position (`Completed (pos_of_json jpos)))
     | (`String "reset" :: `String kind :: opt_name) ->
       Request (Reset (ml_or_mli kind, optional_string opt_name))
     | [`String "refresh"] ->
@@ -323,7 +312,7 @@ module Protocol_io = struct
       Request (Project_load (load_or_find action, path))
     | _ -> invalid_arguments ()
 
-  let response_to_json = function
+  let json_of_response = function
     | Failure s | Exception (Failure' s) -> `List [`String "failure"; `String s]
     | Error error -> `List [`String "error"; error]
     | Exception exn ->
@@ -334,10 +323,10 @@ module Protocol_io = struct
     | Return (request, response) ->
       `List [`String "return";
       begin match request, response with
-        | Tell _, (pos, path) ->
-          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
-        | Seek _, (pos, path) ->
-          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
+        | Tell _, cursor ->
+          json_of_cursor_state cursor
+        | Seek _, cursor ->
+          json_of_cursor_state cursor
         | Type_expr _, str -> `String str
         | Type_enclosing _, results ->
           `List (List.map json_of_type_loc results)
@@ -346,24 +335,22 @@ module Protocol_io = struct
         | Locate _, None ->
           `String "Not found"
         | Locate _, Some (None,pos) ->
-          `Assoc ["pos",pos_to_json pos]
+          `Assoc ["pos",json_of_pos pos]
         | Locate _, Some (Some file,pos) ->
-          `Assoc ["file",`String file; "pos",pos_to_json pos]
+          `Assoc ["file",`String file; "pos",json_of_pos pos]
         | Outline, outlines ->
           `List (json_of_outline outlines)
-        | Drop, (pos, path) ->
-          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
+        | Drop, cursor ->
+          json_of_cursor_state cursor
         | Boundary _, Some {Location. loc_start; loc_end} ->
-          `List (List.map pos_to_json [loc_start; loc_end])
+          `List (List.map json_of_pos [loc_start; loc_end])
         | Boundary _, None ->
           `Null
-        | Check_position _, result ->
-          `Bool result
-        | Reset _, (pos, path) ->
-          `Assoc ["pos", pos_to_json pos; "path", json_of_path path]
+        | Reset _, cursor ->
+          json_of_cursor_state cursor
         | Refresh, () -> `Bool true
         | Errors, exns ->
-          `List (List.map (fun (_,err) -> error_to_json err)
+          `List (List.map (fun (_,err) -> json_of_error err)
                           (Error_report.of_exns exns))
         | Dump _, json -> json
         | Which_path _, str -> `String str
@@ -393,4 +380,4 @@ let with_location = Protocol_io.with_location
 
 let lift (i,o : low_io) : io =
   (Stream.map ~f:Protocol_io.request_of_json i,
-   (fun x -> o (Protocol_io.response_to_json x)))
+   (fun x -> o (Protocol_io.json_of_response x)))

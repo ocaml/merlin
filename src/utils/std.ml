@@ -361,12 +361,16 @@ module Lexing = struct
 
   (* Manipulating position *)
   let make_pos (pos_lnum, pos_cnum) =
-    Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
+    { pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 }
 
-  let split_pos pos = Lexing.(pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
+  let column pos = pos.pos_cnum - pos.pos_bol
+
+  let split_pos pos = (pos.pos_lnum, column pos)
 
   let compare_pos p1 p2 =
-    compare (split_pos p1) (split_pos p2)
+    match compare p1.pos_lnum p2.pos_lnum with
+    | 0 -> compare (column p1) (column p2)
+    | n -> n
 
   let wrap_lexer ~tokens f buf =
     match !tokens with

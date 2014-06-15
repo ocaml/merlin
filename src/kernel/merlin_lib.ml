@@ -260,12 +260,12 @@ module Buffer : sig
 
   val lexer: t -> Lexer.item History.t
   val update: t -> Lexer.item History.t -> unit
-  val start_lexing: t -> Lexer.t
+  val start_lexing: ?pos:Lexing.position -> t -> Lexer.t
 
   val parser: t -> Parser.t
   val parser_errors: t -> exn list
   val recover: t -> Recover.t
-  val path: t -> Parser.path
+  val anchor: t -> Parser.anchor
   val typer: t -> Typer.t
 end = struct
   type t = {
@@ -277,7 +277,7 @@ end = struct
     mutable parser: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
     mutable eof_typer: Typer.t option;
-    mutable parser_path: Parser.Path.t;
+    mutable parser_anchor: Parser.Anchor.t;
     mutable validity_stamp: bool ref;
   }
 
@@ -299,7 +299,7 @@ end = struct
       path; project; lexer; kind;
       keywords = Project.keywords project;
       parser = History.initial (initial_step kind (History.focused lexer));
-      parser_path = Parser.Path.empty;
+      parser_anchor = Parser.Anchor.empty;
       typer = Typer.fresh (Project.extensions project);
       eof_typer = None;
       validity_stamp = Project.validity_stamp project;
@@ -317,10 +317,10 @@ end = struct
   let parser b = Recover.parser (recover b)
   let parser_errors b = Recover.exns (recover b)
 
-  let path b =
-    let parser_path = Parser.Path.update' (parser b) b.parser_path in
-    b.parser_path <- parser_path;
-    Parser.Path.get parser_path
+  let anchor b =
+    let parser_anchor = Parser.Anchor.update' (parser b) b.parser_anchor in
+    b.parser_anchor <- parser_anchor;
+    Parser.Anchor.get parser_anchor
 
   let incremental_typer b =
     setup b;
@@ -374,7 +374,7 @@ end = struct
     t.parser <- History.sync ~check ~init ~fold t.lexer (Some t.parser);
     t.eof_typer <- None
 
-  let start_lexing b =
+  let start_lexing ?pos b =
     let kw = Project.keywords b.project in
     if kw != b.keywords then begin
       b.keywords <- kw;
@@ -382,14 +382,21 @@ end = struct
                                      (fun _ -> true) b.lexer))
     end
     else begin
-      update b (History.seek_backward
-                  (function
-                    | ( Lexer.Valid (_,Raw_parser.EOF,_)
-                      | Lexer.Error _) -> true
-                    | Lexer.Valid (p,_,_)
-                      when p = Lexing.dummy_pos -> true
-                    | _ -> false)
-                  b.lexer)
+      let pos_pred = match pos with
+        | None -> (fun _ -> false)
+        | Some pos -> (fun cur -> Lexing.compare_pos pos cur <= 0)
+      in
+      let item_pred = function
+        | Lexer.Valid (cur,_,_) when pos_pred cur -> true
+        | ( Lexer.Valid (_,Raw_parser.EOF,_)
+        | Lexer.Error _) -> true
+        | Lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
+        | _ -> false
+      in
+      let lexer = b.lexer in
+      let lexer = History.seek_backward item_pred lexer in
+      let lexer = History.move (-1) lexer in
+      update b lexer
     end;
     Lexer.start kw b.lexer
 end

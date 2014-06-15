@@ -1,8 +1,11 @@
 open Std
 open Merlin_lib
 
-type path = Parser.Path.path
 type position = Lexing.position
+type cursor_state = {
+  cursor: position;
+  anchor: Parser.anchor;
+}
 
 type completion = {
   name: string;
@@ -22,8 +25,8 @@ and item = {
 
 type _ request =
   | Tell
-    : [`Start|`Source of string]
-    -> (position * path)  request
+    : [ `Start of position option | `Source of string]
+    -> cursor_state request
   | Type_expr
     :  string * position option
     -> string request
@@ -39,19 +42,16 @@ type _ request =
   | Outline
     :  outline request
   | Drop
-    :  (position * path) request
+    :  cursor_state request
   | Seek
     :  [`Position|`End|`Before of position|`Exact of position]
-    -> (position * path) request
+    -> cursor_state request
   | Boundary
     :  [`Prev|`Next|`Current] * position option
     -> Location.t option request
-  | Check_position
-    :  [`Unclosed_recursion | `Completed of position]
-    -> bool request
   | Reset
     :  [`ML | `MLI] * string option
-    -> (position * path) request
+    -> cursor_state request
   | Refresh
     :  unit request
   | Errors

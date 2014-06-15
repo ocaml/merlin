@@ -111,26 +111,17 @@ sig
   val previous : t -> t option
 end
 
-(** A basic metric: path leading to an item *)
+(** A basic metric tracking last safe position for the typer *)
 
-module Path : sig
-  type item =
-    | Let of Asttypes.rec_flag * int
-    | Struct of int
-    | Sig of int
-    | Module_rec of int
-    | Object of int
-    | Class of int
+type anchor =
+  | In_rec of int * Lexing.position
+  | Out_rec of int * Lexing.position
 
-  type path = item list
-
+module Anchor : sig
   type t
   val empty : t
   val update : frame -> t -> t
   val update' : parser -> t -> t
 
-  val get : t -> path
-  val length : t -> int
+  val get : t -> anchor
 end
-type path = Path.path
-

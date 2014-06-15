@@ -358,127 +358,67 @@ struct
 
 end
 
-module Path : sig
-  type item =
-    | Let of Asttypes.rec_flag * int
-    | Struct of int
-    | Sig of int
-    | Module_rec of int
-    | Object of int
-    | Class of int
+type anchor =
+    | In_rec of int * Lexing.position
+    | Out_rec of int * Lexing.position
 
-  type path = item list
-
-  type t
-  val empty : t
-  val update : frame -> t -> t
-  val update' : parser -> t -> t
-
-  val get : t -> path
-  val length : t -> int
-end = struct
-
-  type item =
-    | Let of Asttypes.rec_flag * int
-    | Struct of int
-    | Sig of int
-    | Module_rec of int
-    | Object of int
-    | Class of int
-
-  type path = item list
-
+module Anchor = struct
   module P = struct
     open Raw_parser
 
     type st = unit
-    type t = int * item list
-    let empty () = 0, []
+    type t = anchor
 
-    let frame () f (d,p as t) =
+    let empty () = Out_rec (0,Lexing.dummy_pos)
+
+    let update f = function
+      | Out_rec (d,_) -> 
+        let l = Frame.location f in
+        Out_rec (d + 1, l.Location.loc_end)
+      | v -> v
+
+    let set_rec = function
+      | Out_rec (d,p) -> In_rec (d + 1, p)
+      | v -> v
+
+    let frame () f v =
       let open Frame in
-      match Frame.destruct f, p with
+      match Frame.destruct f with
       (* struct _ ... end *)
-      | D (N_ (N_structure_item, l),
-           lazy ( D (N_ (N_structure_item, _), _))),
-        (Struct n :: p') ->
-        (d, Struct (List.length l + n) :: p')
+      | D (N_ (N_structure_item, _), _) ->
+        update f v
 
-      | D (N_ (N_structure_item, l),
-           lazy ( D (T_ (T_SEMISEMI, ()),
-                   lazy (D (N_ (N_structure_item, _), _))))),
-        (Struct n :: p') ->
-        (d, Struct (List.length l + n) :: p')
-
-      | D (N_ (N_structure_item, l), _), _ ->
-        (d + 1, Struct (List.length l) :: p)
+      | D (N_ (N_structure, _), _) ->
+        update f v
 
       (* sig _ ... end *)
-      | D (N_ (N_signature, l), _), _ ->
-        (d + 1, Sig (List.length l) :: p)
+      | D (N_ (N_signature_item, _), _) ->
+        update f v
+
+      | D (N_ (N_signature, _), _) ->
+        update f v
 
       (* object ... end *)
-      | D (N_ (N_class_fields, l), _), _ ->
-        (d + 1, Object (List.length l) :: p)
+      | D (N_ (N_class_fields, _), _) ->
+        set_rec v
 
       (* classes (class _ and ... *)
-      | D (N_ (N_class_declarations, l), _), _ ->
-        (d + 1, Class (List.length l) :: p)
-      | D (N_ (N_class_descriptions, l), _), _ ->
-        (d + 1, Class (List.length l) :: p)
+      | D (N_ (N_class_declarations, _), _) ->
+        set_rec v
 
-      (* let [rec] _ and ... *)
-      | D ((N_ (N_let_binding , _)), (* | N_val_ident | N_pattern)*)
-           lazy (D (N_ (N_rec_flag, flag), _))), _ ->
-        (d + 1, Let (flag, 0) :: p)
+      | D (N_ (N_class_descriptions, _), _) ->
+        set_rec v
 
-      | D (N_ (N_let_bindings, l),
-           lazy (D (N_ (N_rec_flag, flag), _))), _ ->
-        (d + 1, Let (flag, List.length l) :: p)
+      (* let rec, module rec *)
+      | D (T_ (T_REC, ()), _) ->
+        set_rec v
 
-      | D (N_ (N_let_bindings, l), _), _ ->
-        (d + 1, Let (Asttypes.Nonrecursive, List.length l) :: p)
+      | D (N_ (N_rec_flag, _), _) ->
+        set_rec v
 
-      (* Module rec *)
-      | D (T_ (T_REC, ()), lazy (D (T_ (T_MODULE, ()), _))), _ ->
-        (d, Module_rec 0 :: p)
-      (*| D (N_ (N_module_rec_bindings, l), _), (Module_rec 0 :: p') ->
-        (d, Module_rec (List.length l) :: p')*)
-      | D (N_ (N_module_rec_declarations, l), _), (Module_rec 0 :: p') ->
-        (d, Module_rec (List.length l) :: p')
-      (*| D (N_ (N_module_rec_bindings, l), _), _ ->
-        (d + 1, Module_rec (List.length l) :: p)*)
-      | D (N_ (N_module_rec_declarations, l), _), _ ->
-        (d + 1, Module_rec (List.length l) :: p)
+      | _ -> v 
 
-      | _ -> t
-
-    let rec dlength n l' = function
-      | l_ when l_ == l' -> n
-      | _ :: l_ -> dlength (succ n) l' l_
-      | [] -> n
-
-    let delta () f t ~old:(t',f') =
-      match Frame.value f', Frame.value f, t' with
-      | N_ (N_signature, l'),
-        N_ (N_signature, l),
-        (d, Sig n' :: p') -> (d, Sig (dlength n' l' l) :: p')
-      (*| N_ (N_module_rec_bindings, l'),
-        N_ (N_module_rec_bindings, l),
-        (d, Module_rec n' :: p') -> (d, Module_rec (dlength n' l' l) :: p')*)
-      | N_ (N_module_rec_declarations, l'),
-        N_ (N_module_rec_declarations, l),
-        (d, Module_rec n' :: p') -> (d, Module_rec (dlength n' l' l) :: p')
-      | N_ (N_class_declarations, l'),
-        N_ (N_class_declarations, l),
-        (d, Class n' :: p') -> (d, Class (dlength n' l' l) :: p')
-      | N_ (N_class_descriptions, l'),
-        N_ (N_class_descriptions, l),
-        (d, Class n' :: p') -> (d, Class (dlength n' l' l) :: p')
-      | N_ (N_class_fields, l'),
-        N_ (N_class_fields, l),
-        (d, Object n' :: p') -> (d, Object (dlength n' l' l) :: p')
-      | _ -> frame () f t
+    let delta () f t ~old:_ = frame () f t
 
     let validate () _ = true
     let evict () _ = ()
@@ -490,9 +430,5 @@ end = struct
   let update f t = I.update () f t
   let update' p t = I.update' () p t
 
-  let get p = snd (I.value p)
-  let length p = fst (I.value p)
-
+  let get p = I.value p
 end
-
-type path = Path.path

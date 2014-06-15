@@ -51,13 +51,16 @@ let new_state () =
   let buffer = Buffer.create project Parser.implementation in
   {project; buffer; lexer = None}
 
-let position state =
+let cursor_state state =
   let lexer =
     match state.lexer with
     | None -> Buffer.start_lexing state.buffer
     | Some l -> l
   in
-  Lexer.position lexer, Buffer.path state.buffer
+  { 
+    cursor = Lexer.position lexer;
+    anchor = Buffer.anchor state.buffer;
+  }
 
 let buffer_changed state =
   state.lexer <- None
@@ -69,11 +72,11 @@ let buffer_update state items =
 let dispatch (state : state) =
   fun (type a) (request : a request) ->
   (match request with
-  | (Tell `Start : a request) ->
-    let lexer = Buffer.start_lexing state.buffer in
+  | (Tell (`Start pos) : a request) ->
+    let lexer = Buffer.start_lexing ?pos state.buffer in
     state.lexer <- Some lexer;
     ignore (Buffer.update state.buffer (Lexer.history lexer));
-    Lexer.position lexer, Buffer.path state.buffer
+    cursor_state state
 
   | (Tell (`Source source) : a request) ->
     let lexer = match state.lexer with
@@ -88,7 +91,7 @@ let dispatch (state : state) =
     ignore (Buffer.update state.buffer (Lexer.history lexer));
     (* Stop lexer on EOF *)
     if Lexer.eof lexer then state.lexer <- None;
-    Lexer.position lexer, Buffer.path state.buffer
+    cursor_state state
 
   | (Type_expr (source, pos) : a request) ->
     let typer = Buffer.typer state.buffer in
@@ -208,10 +211,10 @@ let dispatch (state : state) =
     let lexer = Buffer.lexer state.buffer in
     Buffer.update state.buffer (History.drop_tail lexer);
     buffer_changed state;
-    position state
+    cursor_state state
 
   | (Seek `Position : a request) ->
-    position state
+    cursor_state state
 
   | (Seek (`Before pos) : a request) ->
     let items = Buffer.lexer state.buffer in
@@ -222,7 +225,7 @@ let dispatch (state : state) =
     let items = History.seek_forward (until_after pos) items in
     let items = History.seek_backward (until_before pos) items in
     buffer_update state items;
-    position state
+    cursor_state state
 
   | (Seek (`Exact pos) : a request) ->
     let items = Buffer.lexer state.buffer in
@@ -233,48 +236,13 @@ let dispatch (state : state) =
     let items = History.seek_forward (until_after pos) items in
     let items = History.seek_backward (until_before pos) items in
     buffer_update state items;
-    position state
+    cursor_state state
 
   | (Seek `End : a request) ->
     let items = Buffer.lexer state.buffer in
     let items = History.seek_forward (fun _ -> true) items in
     buffer_update state items;
-    position state
-
-  | (Check_position `Unclosed_recursion : a request) ->
-    let open Parser.Path in
-    let path = Buffer.path state.buffer in
-    List.exists path
-      ~f:(function
-          | Let (Asttypes.Recursive, _) | Module_rec _ | Object _ | Class _ ->
-            true
-          | _ -> false)
-
-
-  | (Check_position (`Completed pos) : a request) ->
-    let position_match loc =
-      Lexing.compare_pos pos loc.Location.loc_start >= 0 &&
-      Lexing.compare_pos pos loc.Location.loc_end <= 0
-    in
-    let open Parser in
-    let rec aux = function
-      | None -> false
-      | Some frame ->
-        position_match (Frame.location frame)
-        && begin let open Raw_parser in
-          match Frame.value frame with
-          | N_ (N_structure_tail, _) -> true
-          | N_ (N_structure_item, _) -> true
-          | N_ (N_structure, _)      -> true
-          | N_ (N_signature_item, _) -> true
-          | N_ (N_signature, _)      -> true
-          | N_ (N_interface, _)      -> true
-          | N_ (N_implementation, _) -> true
-          | _ -> false
-        end
-        || aux (Frame.next frame)
-    in
-    aux (stack (Buffer.parser state.buffer))
+    cursor_state state
 
   | (Boundary (dir,pos) : a request) ->
     failwith "TODO"
@@ -287,7 +255,7 @@ let dispatch (state : state) =
     let buffer = Buffer.create ?path state.project parser in
     buffer_changed state;
     state.buffer <- buffer;
-    position state
+    cursor_state state
 
   | (Refresh : a request) ->
     Project.invalidate ~flush:true state.project
