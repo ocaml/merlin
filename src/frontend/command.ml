@@ -59,7 +59,7 @@ let cursor_state state =
   in
   {
     cursor = Lexer.position lexer;
-    marker = Buffer.get_mark state.buffer;
+    marker = Buffer.has_mark state.buffer (Lexer.get_mark lexer);
   }
 
 let buffer_changed state =
@@ -94,7 +94,15 @@ let dispatch (state : state) =
     cursor_state state
 
   | (Tell `Marker : a request) ->
-    Buffer.set_mark state.buffer;
+    let lexer = match state.lexer with
+      | Some lexer ->
+        assert (not (Lexer.eof lexer));
+        lexer
+      | None ->
+        let lexer = Buffer.start_lexing state.buffer in
+        state.lexer <- Some lexer; lexer
+    in
+    Lexer.put_mark lexer (Buffer.get_mark state.buffer);
     cursor_state state
 
   | (Type_expr (source, pos) : a request) ->

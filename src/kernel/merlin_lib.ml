@@ -267,8 +267,9 @@ module Buffer : sig
   val recover: t -> Recover.t
   val typer: t -> Typer.t
 
-  val set_mark: t -> unit
-  val get_mark: t -> bool
+  val get_mark: t -> Parser.frame option
+  val has_mark: t -> Parser.frame option -> bool
+
 end = struct
   type t = {
     kind: Parser.state;
@@ -279,7 +280,6 @@ end = struct
     mutable parser: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
     mutable eof_typer: Typer.t option;
-    mutable parser_mark: Parser.frame option;
     mutable validity_stamp: bool ref;
   }
 
@@ -301,7 +301,6 @@ end = struct
       path; project; lexer; kind;
       keywords = Project.keywords project;
       parser = History.initial (initial_step kind (History.focused lexer));
-      parser_mark = None;
       typer = Typer.fresh (Project.extensions project);
       eof_typer = None;
       validity_stamp = Project.validity_stamp project;
@@ -389,12 +388,9 @@ end = struct
     end;
     Lexer.start kw b.lexer
 
-  let get_mark t =
-    match t.parser_mark with
+  let get_mark t = Parser.find_marker (parser t)
+
+  let has_mark t = function
     | None -> false
     | Some frame -> Parser.has_marker (parser t) frame
-
-  let set_mark t =
-    t.parser_mark <- Parser.find_marker (parser t)
-
 end

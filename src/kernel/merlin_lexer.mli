@@ -37,3 +37,6 @@ val feed: t -> string -> bool
 val eof: t -> bool
 
 val equal: item -> item -> bool
+
+val put_mark: t -> Merlin_parser.frame option -> unit
+val get_mark: t -> Merlin_parser.frame option

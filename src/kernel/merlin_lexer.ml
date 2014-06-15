@@ -35,6 +35,7 @@ type t = {
   state: Raw_lexer.state;
   lexbuf: Lexing.lexbuf;
   mutable resume: (unit -> Raw_parser.token Raw_lexer.result) option;
+  mutable marker: Merlin_parser.frame option;
 }
 
 let history t = t.history
@@ -62,6 +63,7 @@ let start keywords history =
     history;
     state = Raw_lexer.make keywords;
     resume = None; refill; refill_empty; lexbuf;
+    marker = None;
   }
 
 let position t = Lexing.immediate_pos t.lexbuf
@@ -124,3 +126,8 @@ let equal it1 it2 =
     Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end = 0 &&
     v1 = v2
   | _ -> false
+
+let put_mark t mark =
+  t.marker <- mark
+
+let get_mark t = t.marker
