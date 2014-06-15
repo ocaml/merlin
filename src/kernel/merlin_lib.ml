@@ -279,7 +279,7 @@ end = struct
     mutable parser: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
     mutable eof_typer: Typer.t option;
-    mutable parser_marker: bool ref;
+    mutable parser_mark: Parser.frame option;
     mutable validity_stamp: bool ref;
   }
 
@@ -301,10 +301,10 @@ end = struct
       path; project; lexer; kind;
       keywords = Project.keywords project;
       parser = History.initial (initial_step kind (History.focused lexer));
+      parser_mark = None;
       typer = Typer.fresh (Project.extensions project);
       eof_typer = None;
       validity_stamp = Project.validity_stamp project;
-      parser_marker = ref false;
     }
 
   let setup buffer =
@@ -397,11 +397,12 @@ end = struct
     end;
     Lexer.start kw b.lexer
 
-  let get_mark t = !(t.parser_marker)
-  let set_mark t = 
-    let r = ref true in
-    t.parser_marker <- r;
-    t.parser <- History.modify 
-      (fun (item, recover) -> item, Recover.mark r recover)
-      t.parser
+  let get_mark t =
+    match t.parser_mark with
+    | None -> false
+    | Some frame -> Parser.has_marker (parser t) frame
+
+  let set_mark t =
+    t.parser_mark <- Parser.find_marker (parser t)
+
 end

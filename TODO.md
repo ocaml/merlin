@@ -1,4 +1,3 @@
-- Cleanup MARKER implementation
 - how should last token be handled? -> editor tell "" ?
 - Replace Browse by a propper wrapping of Typedtree
 - Find proper API for incremental parser

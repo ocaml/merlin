@@ -28,15 +28,12 @@
 
 open MenhirLib.EngineTypes
 
-type depth 
+type witness
 
-module Depth : sig
-  val initial: depth
-  
-  val stack: hint:depth -> ('s,'v) stack -> depth
-  val env:   hint:depth -> ('s,'v,'t) env -> depth
-  val get:   depth -> int
-  val mark:  int -> (unit -> unit) -> depth -> depth
-end
+val initial_depth: witness
+
+val stack_depth: hint:witness -> ('s,'v) stack -> witness
+val env_depth:   hint:witness -> ('s,'v,'t) env -> witness
+val depth: witness -> int
 
 val pop: ('s,'v,'t) env -> ('s,'v,'t) env option

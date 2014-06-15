@@ -140,38 +140,3 @@ let dump_recoverable ppf t =
     | None -> {t with recovering = Some (rollbacks t.parser)}
   in
   dump ppf t
-
-let is_rec frame = match Merlin_parser.Frame.value frame with
-  | T_ (T_REC, ()) -> true
-  | N_ (N_rec_flag, Asttypes.Recursive) -> true
-  | N_ (N_class_fields, _) -> true
-  | N_ (N_class_declarations, _) -> true
-  | N_ (N_class_descriptions, _) -> true
-  | _ -> false
-
-let end_top frame = match Merlin_parser.Frame.value frame with
-  | N_ (N_structure_item, _) -> true
-  | N_ (N_structure, _) -> true
-  | N_ (N_signature_item, _) -> true
-  | N_ (N_signature, _) -> true
-  | T_ (T_ENTRYPOINT, ()) -> true
-  | _ -> false
-
-let mark mk t =
-  let rec find_rec acc = function
-    | None -> acc
-    | Some frame ->
-      find_rec (if is_rec frame then frame else acc) (Merlin_parser.Frame.next frame)
-  in
-  let rec find_first acc = function
-    | None -> acc
-    | Some frame when end_top frame -> find_rec acc (Merlin_parser.Frame.next frame)
-    | Some frame -> find_first frame (Merlin_parser.Frame.next frame)
-  in
-  let stack = Merlin_parser.stack t.parser in
-  match stack with
-  | Some frame when Merlin_parser.Frame.value frame <> T_ (T_ENTRYPOINT, ()) ->
-    let frame = find_first frame stack in
-    {t with parser = Merlin_parser.mark frame mk t.parser}
-  | _ -> mk := false; t
-    

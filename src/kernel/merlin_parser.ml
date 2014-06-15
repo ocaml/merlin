@@ -8,7 +8,7 @@ module E = MenhirLib.EngineTypes
 type state = Raw_parser.state
 
 type t =
-  | Partial of P.feed P.parser * MenhirUtils.depth
+  | Partial of P.feed P.parser * MenhirUtils.witness
   | Final of P.symbol Location.loc
 
 type parser = t
@@ -43,7 +43,7 @@ end = struct
 
   let stack = function
     | Partial (parser,w) ->
-      frame_of (MenhirUtils.Depth.get w - 1) (get_stack parser)
+      frame_of (MenhirUtils.depth w - 1) (get_stack parser)
     | Final result ->
       Some (Final_frame result)
 
@@ -96,7 +96,7 @@ let pop = function
     | None -> None
     | Some env ->
       let p = {p with P.env = env} in
-      Some (Partial (p, MenhirUtils.Depth.stack ~hint:depth (get_stack p)))
+      Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
 let location t =
   Option.value_map
@@ -109,7 +109,7 @@ let reached_eof = function
   | Final _   -> true
 
 let of_feed p depth =
-  Partial (p, MenhirUtils.Depth.stack ~hint:depth (get_stack p))
+  Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
 let rec of_step s depth =
   match P.step s with
@@ -119,14 +119,14 @@ let rec of_step s depth =
     `Step (Final {Location. txt; loc})
   | `Reject -> `Reject
   | `Feed p -> `Step (of_feed p depth)
-  | `Step p -> of_step p (MenhirUtils.Depth.stack ~hint:depth (get_stack p))
+  | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
 let to_step = function
   | Partial (step,_) -> Some step
   | Final _ -> None
 
 let from state input =
-  match of_step (P.initial state input) MenhirUtils.Depth.initial with
+  match of_step (P.initial state input) MenhirUtils.initial_depth with
   | `Step p -> p
   | _ -> assert false
 
@@ -251,13 +251,6 @@ let recover t = match t with
       (* Construct parser *)
       Some (of_feed {p with P. env} w)
 
-let mark f r = function
-  | Final _ as t -> r := false; t
-  | Partial (p,d) ->
-    let d' = Frame.depth f in
-    Partial (p, MenhirUtils.Depth.mark (d' + 1) (fun () -> r := false) d)
-    
-
 module Integrate
     (P : sig
        (* Arbitrary state, passed to update functions *)
@@ -367,3 +360,49 @@ struct
     | Zero v -> Zero (f v)
     | More (v,s,t) -> More (f v, s, t)
 end
+
+let find_marker t =
+  let is_rec frame = match Frame.value frame with
+    | P.T_ (P.T_REC, ()) -> true
+    | P.N_ (P.N_rec_flag, Asttypes.Recursive) -> true
+    | P.N_ (P.N_class_fields, _) -> true
+    | P.N_ (P.N_class_declarations, _) -> true
+    | P.N_ (P.N_class_descriptions, _) -> true
+    | _ -> false
+  in
+  let end_top frame = match Frame.value frame with
+    | P.N_ (P.N_structure_item, _) -> true
+    | P.N_ (P.N_structure, _) -> true
+    | P.N_ (P.N_signature_item, _) -> true
+    | P.N_ (P.N_signature, _) -> true
+    | P.T_ (P.T_ENTRYPOINT, ()) -> true
+    | _ -> false
+  in
+  let rec find_rec acc = function
+    | None -> acc
+    | Some frame ->
+      find_rec (if is_rec frame then frame else acc) (Frame.next frame)
+  in
+  let rec find_first acc = function
+    | None -> acc
+    | Some frame when end_top frame -> find_rec acc (Frame.next frame)
+    | Some frame -> find_first frame (Frame.next frame)
+  in
+  let stack = stack t in
+  match stack with
+  | Some frame when Frame.value frame <> P.T_ (P.T_ENTRYPOINT, ()) ->
+    Some (find_first frame stack)
+  | _ -> None
+
+let has_marker t f' =
+  let d = Frame.depth f' in
+  if d = 0 then
+    false
+  else
+    let rec aux = function
+      | None -> false
+      | Some f when Frame.eq f f' -> true
+      | Some f when Frame.depth f <= d -> false
+      | Some f -> aux (Frame.next f)
+    in
+    aux (stack t)

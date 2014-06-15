@@ -55,9 +55,6 @@ module Frame : sig
   val destruct: frame -> destruct
 end
 
-(* The bool ref will be set to false whenever the frame exit the parser *)
-val mark : frame -> bool ref -> t -> t
-
 (** Stack integration, incrementally compute metric over each frame *)
 
 type parser = t
@@ -114,3 +111,9 @@ sig
   (* Change value at the top of stack *)
   val modify : (P.t -> P.t) -> t -> t
 end
+
+(** [find_marker] return the first frame that might be unsafe for the parser *)
+val find_marker : t -> frame option
+
+(** [has_marker t f] returns true iff f is still in t stack *)
+val has_marker : t -> frame -> bool

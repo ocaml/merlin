@@ -28,71 +28,45 @@
 
 open MenhirLib.EngineTypes
 
-type depth =
-  | Zero : depth 
-  | Stack : int * ('s,'v) stack -> depth
-  | Marker : int * ('s,'v) stack * (int * (unit -> unit)) -> depth
+type witness =
+  | Zero : witness
+  | Stack : int * ('s,'v) stack -> witness
 
-module Depth = struct
-  let initial = Zero
-  
-  let rec raw_depth stack =
-    if stack.next == stack
-    then 0
-    else 1 + raw_depth stack.next
-  
-  let rec find frame depth ({next = ref_next} as ref) =
-    let (==) a b = Obj.repr a == Obj.repr b in
-    if ref == frame then
-      depth
-    else if ref == ref_next then
-      raise Not_found
-    else
-      find frame (depth - 1) ref_next
-  
-  let inc_depth depth ref ({next = cur_next} as cur) =
-    if cur == cur_next
-    then 0
-    else 1 + find cur_next depth ref 
- 
-  let trigger f =
-    try f () with _ -> assert false
+let initial_depth = Zero
 
-  let stack ~hint stk =
-    match hint with
+let rec raw_depth stack =
+  if stack.next == stack
+  then 0
+  else 1 + raw_depth stack.next
+
+let rec find frame depth ({next = ref_next} as ref) =
+  let (==) a b = Obj.repr a == Obj.repr b in
+  if ref == frame then
+    depth
+  else if ref == ref_next then
+    raw_depth frame
+  else
+    find frame (depth - 1) ref_next
+
+let inc_depth depth ref ({next = cur_next} as cur) =
+  if cur == cur_next
+  then 0
+  else 1 + find cur_next depth ref
+
+let stack_depth ~hint stk =
+  let d = match hint with
     | Zero ->
-      Stack (raw_depth stk, stk)
+      raw_depth stk
     | Stack (d,ref) ->
-      begin try
-        Stack (inc_depth d ref stk, stk)
-      with Not_found ->
-        Stack (raw_depth stk, stk)
-      end
-    | Marker (d,ref,(dm,f as m)) ->
-      begin try
-        let d' = inc_depth d ref stk in
-        if dm >= d' then
-          (trigger f; Stack (d', stk))
-        else
-          Marker (d', stk, m)
-      with Not_found ->
-        trigger f;
-        Stack (raw_depth stk, stk)
-      end
-  
-  let env ~hint env = stack ~hint env.stack
-  
-  let get = function
-    | Zero -> 0
-    | Stack (n,_) -> n
-    | Marker (n,_,_) -> n
+      inc_depth d ref stk
+  in
+  Stack (d,stk)
 
-  (* FIXME: a better implementation is possible *)
-  let mark n' f = function
-    | Zero -> trigger f; Zero
-    | Stack (n,stk) -> Marker (n,stk,(n',f))
-    | Marker (n,stk,(_,f')) -> trigger f'; Marker (n,stk,(n',f))
-end
+let env_depth ~hint env = stack_depth ~hint env.stack
+
+let depth = function
+  | Zero -> 0
+  | Stack (n,_) -> n
 
 let pop env =
   let cell = env.stack in
