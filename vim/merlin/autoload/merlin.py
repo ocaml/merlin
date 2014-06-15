@@ -130,24 +130,12 @@ def command(*cmd):
 def dump(*cmd):
   print(command('dump', *cmd))
 
-######## ANCHOR MANIPULATION
-
-def anchor_is_after(anchor0, anchor1):
-  if anchor0 == anchor1:
-    return False   
-  # more indented
-  if anchor1[2] > anchor0[2]:
-    return False
-  # less indented or different position
-  return True
-
 ######## BASIC COMMANDS
 
 def parse_position(pos):
   position = pos['pos']
-  anchor = pos['anchor']
-  anchor = (anchor['line'], anchor['col'], pos['depth'])
-  return (position['line'], position['col'], anchor)
+  marker = pos['marker']
+  return (position['line'], position['col'], marker)
 
 def display_load_failures(result):
   if 'failures' in result:
@@ -226,7 +214,7 @@ def sync_buffer_to(to_line, to_col, load_project=True):
             kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
             name=vim.eval("expand('%:p')")
             )
-  line, col, anchor = parse_position(command("tell", "start"))
+  line, col, _ = parse_position(command("tell", "start"))
 
   if line <= end_line:
     rest    = cb[line-1][col:]
@@ -239,12 +227,12 @@ def sync_buffer_to(to_line, to_col, load_project=True):
   # Send content
   if content:
     kind = "source"
-    _, _, anchor = command_tell(content)
-    anchor2 = anchor
-    while not anchor_is_after(anchor, anchor2):
+    _, _, _ = command_tell(content)
+    _, _, marker = command("tell","marker")
+    while marker:
       if end_line < max_line:
         next_end = min(max_line,end_line + 50)
-        _, _, anchor2 = command_tell(cb[end_line:next_end])
+        _, _, marker = command_tell(cb[end_line:next_end])
         end_line = next_end
       else:
         break
