@@ -27,7 +27,7 @@ let mkcf  startpos endpos ?attrs d = [Cf.mk  ~loc:(rloc startpos endpos) ?attrs 
 
 let mkrhs startpos endpos rhs = mkloc rhs (rloc startpos endpos)
 let mkoption d =
-  let loc = {d.ptyp_loc with loc_ghost = true} in
+  let loc = {d.ptyp_loc with Location. loc_ghost = true} in
   Typ.mk ~loc (Ptyp_constr(mkloc (Ldot (Lident "*predef*", "option")) loc,[d]))
 
 let reloc_pat startpos endpos x= { x with ppat_loc = rloc startpos endpos };;
@@ -109,6 +109,7 @@ let rec mktailexp startpos endpos = function
       let nil = { txt = Lident "[]"; loc = loc } in
       Exp.mk ~loc (Pexp_construct (nil, None))
   | e1 :: el ->
+      let open Location in
       let exp_el = mktailexp e1.pexp_loc.loc_end endpos el in
       let loc = gloc e1.pexp_loc.loc_start exp_el.pexp_loc.loc_end in
       let arg = Exp.mk ~loc (Pexp_tuple [e1; exp_el]) in
@@ -120,6 +121,7 @@ let rec mktailpat startpos endpos = function
       let nil = { txt = Lident "[]"; loc = loc } in
       Pat.mk ~loc (Ppat_construct (nil, None))
   | p1 :: pl ->
+      let open Location in
       let pat_pl = mktailpat p1.ppat_loc.loc_end endpos pl in
       let loc = gloc p1.ppat_loc.loc_start pat_pl.ppat_loc.loc_end in
       let arg = Pat.mk ~loc (Ppat_tuple [p1; pat_pl]) in
@@ -1163,36 +1165,36 @@ expr:
     { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) v2 v3 }
 | v1 = expr v2 = INFIXOP4 v3 = expr
     { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) v2 v3 }
-| v1 = expr v2 = PLUS v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "+" v3 }
-| v1 = expr v2 = PLUSDOT v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "+." v3 }
-| v1 = expr v2 = PLUSEQ v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "+=" v3 }
-| v1 = expr v2 = MINUS v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "-" v3 }
-| v1 = expr v2 = MINUSDOT v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "-." v3 }
-| v1 = expr v2 = STAR v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "*" v3 }
-| v1 = expr v2 = PERCENT v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "%" v3 }
-| v1 = expr v2 = EQUAL v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "=" v3 }
-| v1 = expr v2 = LESS v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "<" v3 }
-| v1 = expr v2 = GREATER v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) ">" v3 }
-| v1 = expr v2 = OR v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "or" v3 }
-| v1 = expr v2 = BARBAR v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "||" v3 }
-| v1 = expr v2 = AMPERSAND v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "&" v3 }
-| v1 = expr v2 = AMPERAMPER v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) "&&" v3 }
-| v1 = expr v2 = COLONEQUAL v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(v2) $endpos(v2) ":=" v3 }
+| v1 = expr _2 = PLUS v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "+" v3 }
+| v1 = expr _2 = PLUSDOT v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "+." v3 }
+| v1 = expr _2 = PLUSEQ v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "+=" v3 }
+| v1 = expr _2 = MINUS v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "-" v3 }
+| v1 = expr _2 = MINUSDOT v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "-." v3 }
+| v1 = expr _2 = STAR v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "*" v3 }
+| v1 = expr _2 = PERCENT v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "%" v3 }
+| v1 = expr _2 = EQUAL v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "=" v3 }
+| v1 = expr _2 = LESS v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "<" v3 }
+| v1 = expr _2 = GREATER v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) ">" v3 }
+| v1 = expr _2 = OR v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(v2) "or" v3 }
+| v1 = expr _2 = BARBAR v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "||" v3 }
+| v1 = expr _2 = AMPERSAND v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "&" v3 }
+| v1 = expr _2 = AMPERAMPER v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "&&" v3 }
+| v1 = expr _2 = COLONEQUAL v3 = expr
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) ":=" v3 }
 | v1 = subtractive v2 = expr %prec prec_unary_minus
     { mkuminus $startpos $endpos v1 v2 }
 | v1 = additive v2 = expr %prec prec_unary_plus

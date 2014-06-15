@@ -77,6 +77,7 @@ let strict_of_exn = function
       | Syntaxerr.Other loc -> loc
       | Syntaxerr.Expecting (loc,_) -> loc
       | Syntaxerr.Not_expecting (loc,_) -> loc
+      | Syntaxerr.Ill_formed_ast (loc,_) -> loc
     in
     Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
   | Parsing_aux.Warning (loc, msg) ->
