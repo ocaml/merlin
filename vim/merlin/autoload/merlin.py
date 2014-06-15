@@ -130,66 +130,24 @@ def command(*cmd):
 def dump(*cmd):
   print(command('dump', *cmd))
 
-######## PATH MANIPULATION
+######## ANCHOR MANIPULATION
 
-def path_last_structure_or_sig(path):
-  si = -1
-  for i in range(len(path)):
-    c = path[i]
-    if len(c) > 0 and c[0] in ["struct","sig"]:
-      si = i
-  if si == -1:
-      return path
-  else:
-      return path[:si+1]
-
-def path_is_after(path, ref=[]):
-  l = min(len(path),len(ref))
-  for i in range(l):
-    if path[i] != ref[i]:
-      p, r = path[i], ref[i]
-      l = min(len(p),len(r))
-      for i in range(l):
-        if p[i] != r[i] and isinstance(p[i],int) and isinstance(r[i],int):
-          return p[i] > r[i]
-        else:
-          return True
-      return True
-  return False
-
-def path_is_recursive(path):
-  for component in path:
-    if isinstance(component,list):
-      for x in component:
-        if x == "rec":
-          return True
-    elif component == "rec":
-      return True
-  return False
-
-def path_common(p1,p2):
-  l = min(len(p1),len(p2))
-  p = []
-  for i in range(l):
-    if p1[i] == p2[i]:
-      p.append(p1[i])
-    else:
-      c1, c2 = p1[i], p2[i]
-      l = min(len(c1),len(c2))
-      c = []
-      for i in range(l):
-        if c1[i] == c2[i]:
-          c.append(c1[i])
-      p.append(c)
-      return p
-  return p
+def anchor_is_after(anchor0, anchor1):
+  if anchor0 == anchor1:
+    return False   
+  # more indented
+  if anchor1[2] > anchor0[2]:
+    return False
+  # less indented or different position
+  return True
 
 ######## BASIC COMMANDS
 
 def parse_position(pos):
   position = pos['pos']
-  path = pos['path']
-  return (position['line'], position['col'], path)
+  anchor = pos['anchor']
+  anchor = (anchor['line'], anchor['col'], pos['depth'])
+  return (position['line'], position['col'], anchor)
 
 def display_load_failures(result):
   if 'failures' in result:
@@ -268,7 +226,7 @@ def sync_buffer_to(to_line, to_col, load_project=True):
             kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
             name=vim.eval("expand('%:p')")
             )
-  line, col, path = parse_position(command("tell", "start"))
+  line, col, anchor = parse_position(command("tell", "start"))
 
   if line <= end_line:
     rest    = cb[line-1][col:]
@@ -281,13 +239,12 @@ def sync_buffer_to(to_line, to_col, load_project=True):
   # Send content
   if content:
     kind = "source"
-    _, _, path = command_tell(content)
-    root = path_last_structure_or_sig(path)
-    while path_is_recursive(path) or not path_is_after(path,ref=root):
+    _, _, anchor = command_tell(content)
+    anchor2 = anchor
+    while not anchor_is_after(anchor, anchor2):
       if end_line < max_line:
         next_end = min(max_line,end_line + 50)
-        _, _, p2 = command_tell(cb[end_line:next_end])
-        path = path_common(path,p2)
+        _, _, anchor2 = command_tell(cb[end_line:next_end])
         end_line = next_end
       else:
         break
