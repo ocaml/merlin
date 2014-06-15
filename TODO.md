@@ -13,3 +13,8 @@
   -> type enclosing / type expr
   -> occurences
 - catch "different assumptions" exception
+- recovery heuristic is really not sufficient, a few test cases easily trigger
+  bad recursion:
+  let f =
+    let bad
+    let x = () in
