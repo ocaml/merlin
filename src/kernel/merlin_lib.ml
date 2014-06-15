@@ -332,16 +332,7 @@ end = struct
     in
     if need_refresh then
       b.typer <- Typer.fresh (Project.extensions b.project);
-    let parser = parser b in
-    let parser =
-      match Parser.feed
-              (Lexing.dummy_pos,Raw_parser.SEMISEMI,Lexing.dummy_pos)
-              parser
-      with
-      | `Reject -> parser
-      | `Step parser -> parser
-    in
-    let typer = Typer.update parser b.typer  in
+    let typer = Typer.update (parser b) b.typer in
     b.typer <- typer;
     typer
 
