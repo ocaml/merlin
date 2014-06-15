@@ -260,6 +260,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_let_bindings                      -> "let_bindings"
   | N_let_binding_                      -> "let_binding_"
   | N_let_binding                       -> "let_binding"
+  | N_let_bindings_no_attrs             -> "let_bindings_no_attrs"
   | N_lbl_pattern_list                  -> "lbl_pattern_list"
   | N_lbl_pattern                       -> "lbl_pattern"
   | N_lbl_expr_list                     -> "lbl_expr_list"
@@ -749,6 +750,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_lident_list                       -> 0, []
   | N_let_pattern                       -> 0, default_pattern
   | N_let_bindings                      -> 0, []
+  | N_let_bindings_no_attrs             -> 0, []
   | N_let_binding_                      -> 1, (default_pattern, default_expr)
   | N_let_binding                       ->
     1, Ast_helper.Vb.mk default_pattern default_expr

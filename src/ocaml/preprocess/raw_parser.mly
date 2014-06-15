@@ -1186,7 +1186,7 @@ expr:
 | v1 = expr _2 = GREATER v3 = expr
     { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) ">" v3 }
 | v1 = expr _2 = OR v3 = expr
-    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(v2) "or" v3 }
+    { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "or" v3 }
 | v1 = expr _2 = BARBAR v3 = expr
     { mkinfix $startpos $endpos v1 $startpos(_2) $endpos(_2) "||" v3 }
 | v1 = expr _2 = AMPERSAND v3 = expr
@@ -1360,9 +1360,9 @@ let_bindings:
     { v3 :: v1 }
 
 let_bindings_no_attrs:
-| l = let_bindings 
+| l = let_bindings
     { List.iter (fun vb -> if vb.pvb_attributes <> [] then
-        Parsing_aux.raise_warning 
+        Parsing_aux.raise_warning
           (Syntaxerr.(Error(Not_expecting(vb.pvb_loc,"item attribute")))))
         l;
       l }

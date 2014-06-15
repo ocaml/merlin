@@ -375,6 +375,7 @@ and _ nonterminal_class =
   | N_match_case : (Parsetree.case) nonterminal_class
   | N_lident_list : (string list) nonterminal_class
   | N_let_pattern : (Parsetree.pattern) nonterminal_class
+  | N_let_bindings_no_attrs : (Parsetree.value_binding list) nonterminal_class
   | N_let_bindings : (Parsetree.value_binding list) nonterminal_class
   | N_let_binding_ : (Parsetree.pattern * Parsetree.expression) nonterminal_class
   | N_let_binding : (Parsetree.value_binding) nonterminal_class
