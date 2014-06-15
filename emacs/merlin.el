@@ -289,15 +289,9 @@ associated to the current buffer."
 (defun merlin-goto-point (data)
   "Go to the point indicated by `DATA' which must be an assoc list with fields
 line and col"
-  (goto-char (point-max))
-  (let* ((line-max (line-number-at-pos nil))
-         (col-max  (current-column))
-         (line     (cdr (assoc 'line data)))
-         (col      (cdr (assoc 'col data))))
-    (when (<= line line-max)
-      (goto-char (point-min))
-      (forward-line (1- line))
-      (move-to-column (max 0 col)))))
+  (goto-char (point-min))
+  (forward-line (1- (lookup-default 'line data 0)))
+  (move-to-column (max 0 (lookup-default 'col data 0))))
 
 (defun merlin-goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
@@ -502,7 +496,7 @@ the merlin buffer of the current buffer."
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
   (while (not merlin-ready)
-    (accept-process-output merlin-process 0.1 nil t))
+    (accept-process-output (merlin-process) 0.1 nil t))
   merlin-result)
 
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
@@ -559,9 +553,10 @@ the error message otherwise print a generic error message."
 (defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
-  (merlin-send-command (list 'reset 'name buffer-file-name))
-  (merlin-error-reset)
-  (setq merlin-lock-point (point-min)))
+  (let ((ext (file-name-extension buffer-file-name)))
+    (merlin-send-command (list 'reset (if (string-equal ext "mli") 'mli 'ml) buffer-file-name))
+    (merlin-error-reset)
+    (setq merlin-lock-point (point-min))))
 
 (defun merlin-refresh ()
   "Refresh changed merlin cmis."
@@ -578,21 +573,26 @@ the error message otherwise print a generic error message."
   "Return the completion for ident IDENT."
   (merlin-send-command (list 'complete 'prefix ident 'at (merlin-unmake-point (point)))))
 
+(defun merlin-parse-position (result)
+  (list
+   (merlin-make-point (lookup-default 'cursor result nil))
+   (lookup-default 'marker result nil)))
+
 (defun merlin-get-position ()
   "Get the current position of merlin."
-  (merlin-make-point (merlin-send-command '(seek position))))
+  (car (merlin-parse-position (merlin-send-command '(seek position)))))
 
 (defun merlin-seek-before (point)
   "Move merlin's point to the valid definition before POINT."
-  (merlin-make-point (merlin-send-command (list 'seek 'before (merlin-unmake-point point)))))
+  (merlin-parse-position (merlin-send-command (list 'seek 'before (merlin-unmake-point point)))))
 
 (defun merlin-seek-exact (point)
   "Move merlin's point to the definition containing POINT."
-  (merlin-make-point (merlin-send-command (list 'seek 'exact (merlin-unmake-point point)))))
+  (merlin-parse-position (merlin-send-command (list 'seek 'exact (merlin-unmake-point point)))))
 
 (defun merlin-seek-end ()
   "Move merlin's point to the end of its own view of the buffer."
-  (merlin-make-point (merlin-send-command '(seek end))))
+  (merlin-parse-position (merlin-send-command '(seek end))))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
@@ -644,49 +644,47 @@ the error message otherwise print a generic error message."
    "Return content of buffer between two points or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
 
-(defun merlin-tell-piece (mode &optional start end)
-  "Send raw content to merlin.
-If START and END are specified, they are interpreted as positions in the buffer
-  and delimits the content to be sent.
-If only START is specified, it is directly used as argument.
-MODE can be 'source, 'more or 'end."
-  (cond ((and start end)
-         (merlin-send-command (list 'tell mode (merlin-buffer-substring start end))))
-        (start (merlin-send-command (list 'tell mode start)))
-        (t     (merlin-send-command '(tell end)))))
+(defun merlin-tell-source (code)
+  "Tell CODE to merlin and returns whether the position of the
+anchor matches the current position."
+  (let ((result (merlin-parse-position (merlin-send-command (list 'tell 'source code)))))
+    (setq merlin-lock-point (car result))
+    (if (equal (cdr result) 'true)
+        (car result))))
+  
+(defun merlin-tell-till-end-of-definition ()
+  "Tell merlin till anchor and cursor agree."
+  (let ((before (point))
+        (after (point)))
+    (merlin-send-command (list 'tell 'marker))
+    (forward-line 10)
+    (setq after (point))
+    (while (and (not (= before (point-max)))
+               (setq before (merlin-tell-source (merlin-buffer-substring before after))))
+      (forward-line 10)
+      (setq after (point)))))
 
-(defun merlin-tell-till-end-of-phrase ()
-  "Feed merlin with as much content as it needs starting from (POINT).
-To be called only when merlin is waiting for input (e.g. after a `tell source'
-or `tell definitions')."
-  (let ((curr (point))
-        (chunk 10)
-        (pos 'null))
-    (forward-line chunk)
-    (while
-        (progn
-          (setq pos (if (< curr (point-max))
-                        (merlin-tell-piece 'more curr (point))
-                      (merlin-tell-piece 'end)))
-          (equal pos 'null))
-      (setq curr (point))
-      (forward-line chunk)
-      (if (< chunk 20000)
-          (setq chunk (* chunk 2))))
-    (merlin-make-point pos)))
+(defun merlin-tell (start end)
+  "Tell to merlin part of the buffer between START and END. START
+may be nil, in that case the current cursor of merlin is used."
+  (let* ((data 
+          (if start
+              (merlin-send-command (list 'tell 'start (merlin-unmake-point start)))
+            (merlin-send-command (list 'tell 'start))))
+         (pos (car (merlin-parse-position data)))
+         (before nil)
+         (after nil))
+    (save-excursion
+      (merlin-tell-source (merlin-buffer-substring pos end))
+      (merlin-tell-till-end-of-definition))))
 
 (defun merlin-tell-to-point (&optional point)
   "Ensure that merlin view of the buffer is consistent up to POINT."
-  (save-excursion
+  (setq point (if point point (point)))
+  (when (or (< merlin-lock-point (point)) (< (merlin-get-position) point))
     (if (not (merlin-is-last-user-p))
         (merlin-rewind))
-    (unless point (setq point (point)))
-    (let ((start (merlin-seek-before merlin-lock-point)))
-      (when (< start point)
-        (merlin-tell-piece 'source start point)
-        (goto-char point)
-        (setq merlin-lock-point
-              (merlin-tell-till-end-of-phrase))))))
+    (merlin-tell nil point)))
 
 (defun merlin-tell-definitions (count &optional point)
   "Synchronize up to POINT then feed merlin with up to COUNT definitions."
@@ -742,7 +740,7 @@ Called when an edit is made by the user."
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
   (unless point (setq point (point)))
   (merlin-tell-to-point point)
-  (merlin-seek-exact point)
+;  (merlin-seek-exact point)
   (merlin-sync-lock-zone-display))
 
 ;;;;;;;;;;;;;;;;;;
@@ -884,7 +882,7 @@ If there is no error, do nothing."
 Return t if there were not any or nil if there were.  Moreover, it displays the
 errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
-  (merlin-seek-end)
+;  (merlin-seek-end)
   (let* ((errors (merlin-send-command 'errors))
          (errors (delete-if (lambda (e) (not (assoc 'start e))) errors))
          (errors (if merlin-report-warnings errors
