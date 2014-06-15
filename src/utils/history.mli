@@ -90,4 +90,10 @@ val reconstruct : init:('a -> 'b) -> fold:('a -> 'b -> 'b) -> 'a t -> 'b t
    If second argument is None, then this function behave like
    [reconstruct ~init ~fold ha] with an empty tail.
 *)
-val sync : check:('a -> 'b -> bool) -> init:('a -> 'b) -> fold:('a -> 'b -> 'b) -> 'a t -> 'b t option -> 'b t
+val sync
+  :  strong_check:('a -> 'b -> bool)
+  -> weak_check:('a -> 'b -> bool)
+  -> init:('a -> 'b)
+  -> strong_fold:('a -> 'b -> 'b)
+  -> weak_update:('a -> 'b -> 'b)
+  -> 'a t -> 'b t option -> 'b t

@@ -57,7 +57,7 @@ let cursor_state state =
     | None -> Buffer.start_lexing state.buffer
     | Some l -> l
   in
-  { 
+  {
     cursor = Lexer.position lexer;
     marker = Buffer.get_mark state.buffer;
   }

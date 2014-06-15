@@ -112,3 +112,15 @@ let feed t str =
     false
 
 let eof t = t.lexbuf.Lexing.lex_eof_reached
+
+let equal it1 it2 =
+  match it1, it2 with
+  | Valid (s1,t1,e1), Valid (s2,t2,e2) ->
+    Lexing.compare_pos s1 s2 = 0 &&
+    Lexing.compare_pos e1 e2 = 0 &&
+    t1 = t2
+  | Error (v1,l1), Error (v2,l2) ->
+    Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start = 0 &&
+    Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end = 0 &&
+    v1 = v2
+  | _ -> false

@@ -117,20 +117,24 @@ let reconstruct ~init ~fold h =
   let position = h.position in
   {head; position; tail}
 
-let sync ~check ~init ~fold a = function
+let sync ~strong_check ~weak_check ~init ~strong_fold ~weak_update a = function
   | Some b ->
     let b = move (a.position - b.position) b in
     assert (b.position <= a.position);
-    if b.position = a.position && check (focused a) (focused b) then b
+    if b.position = a.position && strong_check (focused a) (focused b) then b
     else
-      let rec aux worklist ha hb =
+      let rec aux worklist weaklist ha hb =
         match ha, hb with
-        | List.One a, List.One b | List.More (a,_), List.More (b,_) when check a b ->
-          worklist, hb
+        | List.One a, List.One b | List.More (a,_), List.More (b,_) when strong_check a b ->
+          worklist, weaklist, hb
+        | List.One a, List.One b when weak_check a b ->
+          worklist, weaklist, List.One b
         | List.One a, List.One b ->
-          worklist, List.One (init a)
+          worklist, [], List.One (init a)
+        | List.More (a,ha), List.More (b,hb) when weak_check a b ->
+          aux (a :: worklist) (b :: weaklist) ha hb
         | List.More (a,ha), List.More (_,hb) ->
-          aux (a :: worklist) ha hb
+          aux (a :: worklist) [] ha hb
         | _, _ -> assert false
       in
       let rec rewind worklist ha count =
@@ -138,12 +142,26 @@ let sync ~check ~init ~fold a = function
         then match ha with
           | List.More (a,ha) -> rewind (a :: worklist) ha (count - 1)
           | _ -> assert false
-        else aux worklist ha b.head
+        else aux worklist [] ha b.head
       in
-      let worklist, hb = rewind [] a.head (a.position - b.position) in
-      let hb = List.fold_left' worklist ~init:hb
-          ~f:(fun a hb -> List.More (fold a (focused' hb), hb))
+      let rec fast_forward worklist weaklist hb =
+        match worklist, weaklist with
+        | a :: worklist, b :: weaklist ->
+          fast_forward worklist weaklist (List.More (weak_update a b, hb))
+        | worklist, [] -> worklist, hb
+        | [], _ -> assert false
       in
-      { head = hb; tail = []; position = a.position }
+      let worklist, weaklist, hb = rewind [] a.head (a.position - b.position) in
+      let worklist, hb = fast_forward worklist weaklist hb in
+      begin match worklist with
+      | [] ->
+        assert (a.position = b.position);
+        { b with head = hb }
+      | worklist ->
+        let hb = List.fold_left' worklist ~init:hb
+            ~f:(fun a hb -> List.More (strong_fold a (focused' hb), hb))
+        in
+        { head = hb; tail = []; position = a.position }
+      end
   | None ->
-    reconstruct ~init ~fold {a with tail = []}
+    reconstruct ~init ~fold:strong_fold {a with tail = []}

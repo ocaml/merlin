@@ -354,12 +354,13 @@ end = struct
 
   let update t l =
     t.lexer <- l;
-    let check token (token',_) = token == token' in
+    let strong_check token (token',_) = token == token' in
+    let weak_check token (token',_) = Lexer.equal token token' in
     let init token = initial_step t.kind token in
-    let fold token (_,recover) =
-      token, Recover.fold token recover
-    in
-    t.parser <- History.sync ~check ~init ~fold t.lexer (Some t.parser);
+    let strong_fold token (_,recover) = token, Recover.fold token recover in
+    let weak_update token (_,recover) = (token,recover) in
+    t.parser <- History.sync t.lexer (Some t.parser)
+        ~init ~strong_check ~strong_fold ~weak_check ~weak_update;
     t.eof_typer <- None
 
   let start_lexing ?pos b =

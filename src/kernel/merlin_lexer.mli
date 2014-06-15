@@ -35,3 +35,5 @@ val start: keywords -> item History.t -> t
 val position: t -> Lexing.position
 val feed: t -> string -> bool
 val eof: t -> bool
+
+val equal: item -> item -> bool

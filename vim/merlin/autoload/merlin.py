@@ -205,7 +205,9 @@ def sync_buffer_to(to_line, to_col, load_project=True):
 
   if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
     line, col = saved_sync.pos()
-    command_seek("before", line, 0)
+    line = min(to_line, line)
+    if line == to_line: col = min(to_col, col)
+    command_seek("exact", line, col)
   else:
     if load_project:
       project = vim.eval("exists('b:dotmerlin') && len(b:dotmerlin) > 0 ? b:dotmerlin[0] : ''")
@@ -216,27 +218,25 @@ def sync_buffer_to(to_line, to_col, load_project=True):
             )
   line, col, _ = parse_position(command("tell", "start"))
 
+  # Send prefix content
   if line <= end_line:
     rest    = cb[line-1][col:]
     content = cb[line:end_line]
     content.insert(0, rest)
     process.saved_sync = curr_sync
-  else:
-    content = None
+    command_tell(content)
 
-  # Send content
-  if content:
-    kind = "source"
-    _, _, _ = command_tell(content)
-    _, _, marker = parse_position(command("tell","marker"))
-    while marker:
-      if end_line < max_line:
-        next_end = min(max_line,end_line + 50)
-        _, _, marker = command_tell(cb[end_line:next_end])
-        end_line = next_end
-      else:
-        break
-    if marker: command("tell","eof")
+  # put marker
+  _, _, marker = parse_position(command("tell","marker"))
+
+  # satisfy marker
+  while marker and (end_line < max_line):
+    next_end = min(max_line,end_line + 50)
+    _, _, marker = command_tell(cb[end_line:next_end])
+    end_line = next_end
+
+  # put eof if marker still on stack at max_line
+  if marker: command("tell","eof")
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
