@@ -1,7 +1,5 @@
-- Test and find a better way to return current position, tell to specific point 
-  proto: "tell","complete",{position}
-         "tell","after","recursion"
-- how should last token be handled?
+- Cleanup MARKER implementation
+- how should last token be handled? -> editor tell "" ?
 - Replace Browse by a propper wrapping of Typedtree
 - Find proper API for incremental parser
   -> goto table should not be manipulated explicitly
@@ -15,3 +13,4 @@
   -> completion
   -> type enclosing / type expr
   -> occurences
+-
