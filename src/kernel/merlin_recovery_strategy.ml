@@ -20,8 +20,10 @@ type measurement =
   }
 
 let measure_production prod =
-  let lhs, rhs = Query.production_definition prod in
-  try match Query.semantic_action prod with
+  match Query.production_definition prod with
+  | _, (CT_ T_ENTRYPOINT :: _) -> None
+  | lhs, rhs ->
+    try match Query.semantic_action prod with
     | None -> None
     | Some action ->
       let prepend_cost symclass (cost, values) =
@@ -36,7 +38,7 @@ let measure_production prod =
       in
       let _cost, values = List.fold_right ~f:prepend_cost rhs ~init:(0, []) in
       Some { left_recursive ; rhs = values; production = prod; action }
-  with Not_found -> None
+    with Not_found -> None
 
 let measure_production = memoize Query.productions ~f:measure_production
 

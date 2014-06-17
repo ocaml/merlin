@@ -71,7 +71,7 @@ let depth = function
 let pop env =
   let cell = env.stack in
   let next = cell.next in
-  if next == cell then
+  if next == next.next then
     None
   else
     Some {env with stack = next; current = cell.state}
