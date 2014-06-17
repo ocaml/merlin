@@ -38,7 +38,7 @@ module P = struct
   }
 
   let empty (extensions,catch) =
-    let env = Env.initial_unsafe_string (*FIXME: should be in Raw_typer ?*) in
+    let env = Raw_typer.fresh_env () in
     let env = Env.open_pers_signature "Pervasives" env in
     let env = Extension.register extensions env in
     let raw = Raw_typer.empty in

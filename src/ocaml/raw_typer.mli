@@ -18,3 +18,5 @@ val step : Raw_parser.symbol -> t -> t
 val observe : t -> item list
 
 val dump : Format.formatter -> t -> unit
+
+val fresh_env : unit -> Env.t

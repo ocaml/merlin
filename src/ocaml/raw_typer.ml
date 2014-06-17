@@ -61,3 +61,6 @@ let dump_item ppf = function
 
 let dump ppf t =
   List.iter (dump_item ppf) (observe t)
+
+let fresh_env () =
+  Env.initial_safe_string
