@@ -69,6 +69,10 @@ module List = struct
     in
     rev (fold_left ~f ~init:[] lst)
 
+  let rec take_while ~f = function
+    | x :: xs when f x -> x :: take_while ~f xs
+    | _ -> []
+
   let rec drop_while ~f = function
     | x :: xs when f x -> drop_while ~f xs
     | xs -> xs
@@ -99,7 +103,7 @@ module List = struct
     let rec map ~f = function
       | Nil -> Nil
       | Cons (hd,tl) ->
-         Cons (hd, lazy (map ~f (Lazy.force tl)))
+         Cons (f hd, lazy (map ~f (Lazy.force tl)))
 
     let rec to_strict = function
       | Nil -> []
