@@ -115,5 +115,8 @@ end
 (** [find_marker] return the first frame that might be unsafe for the parser *)
 val find_marker : t -> frame option
 
-(** [has_marker t f] returns true iff f is still in t stack *)
-val has_marker : t -> frame -> bool
+(** [has_marker ?diff t f] returns true iff f is still in t stack.
+    If provided, [diff] is used to speed-up the search (amortized constant time),
+    assuming that [diff] is the same parser as [t] with one more or one less
+    token fed. *)
+val has_marker : ?diff:(t * bool) -> t -> frame -> bool

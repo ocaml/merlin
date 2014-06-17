@@ -241,6 +241,8 @@ module Protocol_io = struct
       Request Drop
     | [`String "seek"; `String "position"] ->
       Request (Seek `Position)
+    | [`String "seek"; `String "marker"] ->
+      Request (Seek `Marker)
     | [`String "occurences"; `String "ident"; `String "at"; jpos] ->
       Request (Occurences (`Ident_at (pos_of_json jpos)))
     | [`String "seek"; `String "before"; jpos] ->

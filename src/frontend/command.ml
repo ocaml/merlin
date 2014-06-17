@@ -256,6 +256,29 @@ let dispatch (state : state) =
     buffer_update state items;
     cursor_state state
 
+  | (Seek `Marker : a request) ->
+    begin match Option.bind state.lexer ~f:Lexer.get_mark with
+    | None -> ()
+    | Some mark ->
+      let recoveries = Buffer.recover_history state.buffer in
+      let diff = ref None in
+      let check_item (lex_item,recovery) =
+        let parser = Recover.parser recovery in
+        let result = Parser.has_marker ?diff:!diff parser mark in
+        diff := Some (parser,result);
+        not result
+      in
+      if check_item (History.focused recoveries) then
+        let recoveries = History.move (-1) recoveries in
+        let recoveries = History.seek_backward check_item recoveries in
+        let recoveries = History.move 1 recoveries in
+        let item, _ = History.focused recoveries in
+        let items = Buffer.lexer state.buffer in
+        let items = History.seek_backward ((==) item) items in
+        buffer_update state items;
+    end;
+    cursor_state state
+
   | (Boundary (dir,pos) : a request) ->
     failwith "TODO"
 

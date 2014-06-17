@@ -44,7 +44,7 @@ type _ request =
   | Drop
     :  cursor_state request
   | Seek
-    :  [`Position|`End|`Before of position|`Exact of position]
+    :  [`Marker|`Position|`End|`Before of position|`Exact of position]
     -> cursor_state request
   | Boundary
     :  [`Prev|`Next|`Current] * position option

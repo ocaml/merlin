@@ -406,3 +406,16 @@ let has_marker t f' =
       | Some f -> aux (Frame.next f)
     in
     aux (stack t)
+
+let has_marker ?diff t f' =
+  match diff with
+  | None -> has_marker t f'
+  | Some (t',result) ->
+    match stack t, stack t' with
+    | None, _ | _, None -> has_marker t f'
+    | Some s, Some s' ->
+      let d_inf = min (Frame.depth s) (Frame.depth s') - 1 in
+      let d' = Frame.depth f' in
+      if d_inf > d'
+      then result
+      else has_marker t f'

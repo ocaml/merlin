@@ -265,6 +265,7 @@ module Buffer : sig
   val parser: t -> Parser.t
   val parser_errors: t -> exn list
   val recover: t -> Recover.t
+  val recover_history : t -> (Lexer.item * Recover.t) History.t
   val typer: t -> Typer.t
 
   val get_mark: t -> Parser.frame option
@@ -314,6 +315,7 @@ end = struct
     Project.setup buffer.project
 
   let lexer b = b.lexer
+  let recover_history b = b.recover
   let recover b = snd (History.focused b.recover)
   let parser b = Recover.parser (recover b)
   let parser_errors b = Recover.exns (recover b)
