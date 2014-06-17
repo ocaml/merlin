@@ -151,10 +151,6 @@ let last_token (Parser (raw_parser,_)) =
 
 let recover ?endp (Parser (p,w)) =
   let env = p.P.env in
-  let endp = match endp with
-    | Some endp -> endp
-    | None -> Misc.thd3 env.E.token
-  in
   let lr1_state = env.E.current in
   let lr0_state = P.Query.lr0_state lr1_state in
   let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
@@ -180,6 +176,10 @@ let recover ?endp (Parser (p,w)) =
   | [] -> None
   | (_, symbols, prod, action) :: _ ->
     let add_symbol stack symbol =
+      let endp = match endp with
+        | Some endp -> endp
+        | None -> stack.E.endp
+      in
       {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
     in
     (* Feed stack *)
