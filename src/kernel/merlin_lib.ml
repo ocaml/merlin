@@ -282,7 +282,6 @@ end = struct
     mutable lexer: Lexer.item History.t;
     mutable recover: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
-    mutable eof_typer: Typer.t option;
     mutable validity_stamp: bool ref;
   }
 
@@ -305,7 +304,6 @@ end = struct
       keywords = Project.keywords project;
       recover = History.initial (initial_step kind (History.focused lexer));
       typer = Typer.fresh (Project.extensions project);
-      eof_typer = None;
       validity_stamp = Project.validity_stamp project;
     }
 
@@ -357,9 +355,10 @@ end = struct
     let init token = initial_step t.kind token in
     let strong_fold token (_,recover) = token, Recover.fold token recover in
     let weak_update token (_,recover) = (token,recover) in
-    t.recover <- History.sync t.lexer (Some t.recover)
+    let recover' = History.sync t.lexer (Some t.recover)
         ~init ~strong_check ~strong_fold ~weak_check ~weak_update;
-    t.eof_typer <- None
+    in
+    t.recover <- recover'
 
   let start_lexing ?pos b =
     let kw = Project.keywords b.project in
