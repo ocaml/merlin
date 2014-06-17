@@ -1,29 +1,27 @@
 open Std
 open Raw_parser
 
-let rollbacks parser =
+let rollbacks endp parser =
   let rec aux parser =
     (* FIXME: find proper way to handle limit conditions *)
     (* When reaching bottom of the stack, last frame will raise an Accept
        exception, we can't recover from it, and we shouldn't recover TO it. *)
     try
-      match Merlin_parser.recover parser with
+      match Merlin_parser.recover ~endp:!endp parser with
       | Some _ as r -> r
       | None -> Merlin_parser.pop parser
     with _ -> None
   in
-  let stacks = parser :: List.unfold aux parser in
-  let stacks = List.rev_map stacks
+  let stacks = List.Lazy.Cons (parser, lazy (List.Lazy.unfold aux parser)) in
+  List.Lazy.map stacks
       ~f:(fun p -> Location.mkloc p (Merlin_parser.location p))
-  in
-  (* Hack to drop last parser *)
-  let stacks = List.rev (List.tl stacks) in
-  Zipper.of_list stacks
 
 type t = {
   errors: exn list;
   parser: Merlin_parser.t;
-  recovering: (Merlin_parser.t Location.loc zipper) option;
+  recovering: (Lexing.position ref *
+               (Merlin_parser.t Location.loc list *
+                Merlin_parser.t Location.loc List.Lazy.t)) option;
 }
 
 let parser t = t.parser
@@ -48,16 +46,30 @@ let closing_token = function
   | RPAREN -> true
   | _ -> false
 
-let feed_recover original (s,tok,e as input) zipper =
+let feed_recover original (s,tok,e as input) (r,zipper) =
+  r := s;
   let get_col x = snd (Lexing.split_pos x) in
   let col = get_col s in
   (* Find appropriate recovering position *)
   let until_after  {Location. txt; loc} = col >= get_col loc.Location.loc_start
   and until_before {Location. txt; loc} = get_col loc.Location.loc_start >= col
   in
-  let zipper = Zipper.seek_backward until_before zipper in
-  let zipper = Zipper.seek_forward until_after zipper in
-  let candidates = List.rev (Zipper.select_backward until_before zipper) in
+  let rec seek_backward pred = function
+    | ([_], _) as zipper -> zipper
+    | ((h :: head'), tail) when pred h ->
+      seek_backward pred (head', List.Lazy.Cons (h, lazy tail))
+    | zipper -> zipper
+  in
+  let rec seek_forward pred = function
+    | ([], List.Lazy.Cons (t, lazy tail')) ->
+      seek_forward pred ([t], tail')
+    | (((h :: _) as head), List.Lazy.Cons (t, lazy tail')) when pred h ->
+      seek_forward pred (t :: head, tail')
+    | zipper -> zipper
+  in
+  let zipper = seek_backward until_before zipper in
+  let (head, _) as zipper = seek_forward until_after zipper in
+  let candidates = List.take_while until_before head in
   let rec aux = function
     | {Location. txt = candidate} :: candidates ->
       begin match Merlin_parser.feed input candidate with
@@ -72,7 +84,7 @@ let feed_recover original (s,tok,e as input) zipper =
           candidate;
         aux candidates
       end
-    | [] -> Either.L zipper
+    | [] -> Either.L (r,zipper)
   in
   aux candidates
 
@@ -99,7 +111,8 @@ let fold warnings token t =
     | None ->
       begin match feed_normal (s,tok,e) t.parser with
         | None ->
-          let recovery = rollbacks t.parser in
+          let endp = ref s in
+          let recovery = endp, ([], rollbacks endp t.parser) in
           begin match Merlin_parser.to_step t.parser with
             | Some step ->
               let error = Error_classifier.from step (s,tok,e) in
@@ -124,11 +137,11 @@ let dump_snapshot ppf {Location. txt; loc} =
 
 let dump_recovering ppf = function
   | None -> Format.fprintf ppf "clean"
-  | Some (Zipper (head, _, tail)) ->
+  | Some (_, (head, tail)) ->
     let iter ppf l = List.iter ~f:(dump_snapshot ppf) l in
     Format.fprintf ppf "recoverable states\nhead:\n%atail:\n%a"
       iter head
-      iter tail
+      iter (List.Lazy.to_strict tail)
 
 let dump ppf t =
   Format.fprintf ppf "parser: %a\n" Merlin_parser.dump t.parser;
@@ -137,6 +150,8 @@ let dump ppf t =
 let dump_recoverable ppf t =
   let t = match t.recovering with
     | Some _ -> t
-    | None -> {t with recovering = Some (rollbacks t.parser)}
+    | None ->
+      let endp = ref Lexing.dummy_pos (*FIXME*) in
+      {t with recovering = Some (endp, ([], rollbacks endp t.parser))}
   in
   dump ppf t

@@ -31,7 +31,7 @@ val reached_eof : t -> bool
 val pop : t -> t option
 
 (* Try to reduce the state on top of the stack *)
-val recover : t -> t option
+val recover : ?endp:Lexing.position -> t -> t option
 
 (* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser option

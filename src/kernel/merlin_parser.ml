@@ -190,10 +190,14 @@ let last_token = function
     Location.mkloc t
       {Location. loc_start; loc_end; loc_ghost = false}
 
-let recover t = match t with
+let recover ?endp t = match t with
   | Final _ -> None
   | Partial (p,w) ->
     let env = p.P.env in
+    let endp = match endp with
+      | Some endp -> endp
+      | None -> Misc.thd3 env.E.token
+    in
     let lr1_state = env.E.current in
     let lr0_state = P.Query.lr0_state lr1_state in
     let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
@@ -219,7 +223,7 @@ let recover t = match t with
     | [] -> None
     | (_, symbols, prod, action) :: _ ->
       let add_symbol stack symbol =
-        {stack with E. semv = symbol; startp = stack.E.endp; next = stack}
+        {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
       in
       (* Feed stack *)
       let stack = List.fold_left ~f:add_symbol ~init:env.E.stack symbols in
