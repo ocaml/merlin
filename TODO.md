@@ -18,3 +18,5 @@
   let f =
     let bad
     let x = () in
+- tell marker: after tell, seeking to the first state without marker
+  might be an easy way to get slightly faster on thousand lines files
