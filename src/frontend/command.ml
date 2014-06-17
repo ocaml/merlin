@@ -274,7 +274,7 @@ let dispatch (state : state) =
         let recoveries = History.move 1 recoveries in
         let item, _ = History.focused recoveries in
         let items = Buffer.lexer state.buffer in
-        let items = History.seek_backward ((==) item) items in
+        let items = History.seek_backward ((!=) item) items in
         buffer_update state items;
     end;
     cursor_state state
@@ -297,7 +297,7 @@ let dispatch (state : state) =
 
   | (Errors : a request) ->
     let pexns = Buffer.parser_errors state.buffer in
-    let texns = Typer.exns (Buffer.typer state.buffer) in
+    let texns = Typer.exns (Buffer.final_typer state.buffer) in
     texns @ pexns
 
   | (Dump `Parser : a request) ->

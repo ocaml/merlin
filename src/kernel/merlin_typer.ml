@@ -140,11 +140,15 @@ end
 
 module I = Merlin_parser.Integrate (P)
 
+type kind =
+  | Incremental of I.t
+  | Manual of P.t
+
 type t = {
   btype_cache : Btype.cache;
   env_cache   : Env.cache;
   extensions  : Extension.set;
-  typer       : I.t;
+  typer       : kind;
 }
 
 let fluid_btype = Fluid.from_ref Btype.cache
@@ -166,20 +170,29 @@ let fresh extensions =
       (fun exns -> I.empty (extensions,exns))
   in
   {
-    typer = Either.get result;
+    typer = Incremental (Either.get result);
     extensions; env_cache; btype_cache;
   }
 
+let get_incremental state = function
+  | Manual _ -> I.empty state
+  | Incremental i -> i
+
+let get_value = function
+  | Incremental i -> I.value i
+  | Manual v -> v
+
 let update parser t =
   let result =
-    protect_typer ~btype:t.btype_cache ~env:t.env_cache
-      (fun exns -> I.update' (t.extensions,exns) parser t.typer)
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache (fun exns ->
+      let state = (t.extensions,exns) in
+      I.update' state parser (get_incremental state t.typer))
   in
-  {t with typer = Either.get result}
+  {t with typer = Incremental (Either.get result)}
 
-let env t = (I.value t.typer).P.env
-let structures t = (I.value t.typer).P.structures
-let exns t = (I.value t.typer).P.exns
+let env t = (get_value t.typer).P.env
+let structures t = (get_value t.typer).P.structures
+let exns t = (get_value t.typer).P.exns
 let extensions t = t.extensions
 
 let is_valid t =
@@ -190,6 +203,19 @@ let is_valid t =
   | Either.R result -> result
 
 let dump ppf t =
-  let ts = t.typer :: List.unfold I.previous t.typer in
-  let ts = List.map ts ~f:(fun x -> (I.value x).P.raw) in
+  let ts = match t.typer with
+    | Manual v -> [v]
+    | Incremental i ->
+      let ls = i :: List.unfold I.previous i in
+      List.map ~f:I.value ls
+  in
+  let ts = List.map ts ~f:(fun x -> x.P.raw) in
   List.iter (Raw_typer.dump ppf) ts
+
+let manual t item =
+  let typer =
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache (fun exns ->
+      let p = P.empty (t.extensions,exns) in
+      P.append exns Location.none item p)
+  in
+  {t with typer = Manual (Either.get typer)}

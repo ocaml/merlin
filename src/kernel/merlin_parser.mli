@@ -16,7 +16,7 @@ val from : state -> Lexing.position * Raw_parser.token * Lexing.position -> t
 (* Feed new token *)
 val feed : Lexing.position * Raw_parser.token * Lexing.position
         -> t
-        -> [ `Step of t | `Reject ]
+        -> [ `Accept of Raw_parser.symbol | `Step of t | `Reject ]
 
 (* Dump internal state for debugging purpose *)
 val dump : Format.formatter -> t -> unit
@@ -25,7 +25,6 @@ val dump : Format.formatter -> t -> unit
 (* for recovery: approximate position of last correct construction *)
 val location : t -> Location.t
 val last_token : t -> Raw_parser.token Location.loc
-val reached_eof : t -> bool
 
 (* Just remove the state on top of the stack *)
 val pop : t -> t option
@@ -34,7 +33,7 @@ val pop : t -> t option
 val recover : ?endp:Lexing.position -> t -> t option
 
 (* Access to underlying raw parser *)
-val to_step : t -> Raw_parser.feed Raw_parser.parser option
+val to_step : t -> Raw_parser.feed Raw_parser.parser
 
 
 (** Stack inspection *)
@@ -120,3 +119,9 @@ val find_marker : t -> frame option
     assuming that [diff] is the same parser as [t] with one more or one less
     token fed. *)
 val has_marker : ?diff:(t * bool) -> t -> frame -> bool
+
+val accepting : t ->
+  [ `No
+  | `str of Parsetree.structure
+  | `sg of Parsetree.signature
+  ]

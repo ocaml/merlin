@@ -7,15 +7,10 @@ module E = MenhirLib.EngineTypes
 
 type state = Raw_parser.state
 
-type t =
-  | Partial of P.feed P.parser * MenhirUtils.witness
-  | Final of P.symbol Location.loc
+type t = Parser of P.feed P.parser * MenhirUtils.witness
+type frame = Frame of int * (P.state, P.symbol) E.stack
 
 type parser = t
-
-type frame =
-  | Partial_frame of int * (P.state, P.symbol) E.stack
-  | Final_frame of P.symbol Location.loc
 
 let get_stack s = s.P.env.E.stack
 let get_state s = s.P.env.E.current
@@ -39,36 +34,21 @@ end = struct
     if stack.E.next == stack then
       None
     else
-      Some (Partial_frame (d,stack))
+      Some (Frame (d,stack))
 
-  let stack = function
-    | Partial (parser,w) ->
-      frame_of (MenhirUtils.depth w - 1) (get_stack parser)
-    | Final result ->
-      Some (Final_frame result)
+  let stack (Parser (parser,w)) =
+    frame_of (MenhirUtils.depth w - 1) (get_stack parser)
 
-  let depth = function
-    | Partial_frame (d,f) -> d
-    | Final_frame _ -> 0
+  let depth (Frame (d,f)) = d
 
-  let value = function
-    | Partial_frame (_,frame) -> frame.E.semv
-    | Final_frame l -> l.Location.txt
+  let value (Frame (_,frame)) = frame.E.semv
 
-  let location = function
-    | Partial_frame (_,frame) ->
-      mk_loc frame.E.startp frame.E.endp
-    | Final_frame l ->
-      l.Location.loc
+  let location (Frame (_,frame)) =
+    mk_loc frame.E.startp frame.E.endp
 
-  let eq a b = match a, b with
-    | Partial_frame (_,f), Partial_frame (_,f') -> f == f'
-    | Final_frame f,       Final_frame f'       -> f == f'
-    | _ -> false
+  let eq (Frame (_,f)) (Frame (_,f')) = f == f'
 
-  let next = function
-    | Partial_frame (d,f) -> frame_of (d - 1) f.E.next
-    | Final_frame _ -> None
+  let next (Frame (d,f)) = frame_of (d - 1) f.E.next
 
   (* Ease pattern matching on parser stack *)
   type destruct = D of P.symbol * destruct lazy_t
@@ -89,14 +69,12 @@ let interface = P.interface_state
 
 let stack = Frame.stack
 
-let pop = function
-  | Final _ -> None
-  | Partial (p, depth) ->
-    match MenhirUtils.pop p.P.env with
-    | None -> None
-    | Some env ->
-      let p = {p with P.env = env} in
-      Some (Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
+let pop (Parser (p, depth)) =
+  match MenhirUtils.pop p.P.env with
+  | None -> None
+  | Some env ->
+    let p = {p with P.env = env} in
+    Some (Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
 let location t =
   Option.value_map
@@ -104,26 +82,16 @@ let location t =
     ~f:Frame.location
     (stack t)
 
-let reached_eof = function
-  | Partial _ -> false
-  | Final _   -> true
-
 let of_feed p depth =
-  Partial (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
+  Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
 let rec of_step s depth =
   match P.step s with
-  | `Accept txt ->
-    let frame = (get_stack s) in
-    let loc = mk_loc frame.E.startp frame.E.endp in
-    `Step (Final {Location. txt; loc})
-  | `Reject -> `Reject
+  | `Accept _ | `Reject as result -> result
   | `Feed p -> `Step (of_feed p depth)
   | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
-let to_step = function
-  | Partial (step,_) -> Some step
-  | Final _ -> None
+let to_step (Parser (step,_)) = step
 
 let from state input =
   match of_step (P.initial state input) MenhirUtils.initial_depth with
@@ -131,15 +99,13 @@ let from state input =
   | _ -> assert false
 
 let feed (s,t,e as input) parser =
-  match parser with
-  | Final _ -> `Reject
-  | Partial (p, depth) ->
-    match t with
-    (* Ignore comments *)
-    | P.COMMENT _ -> `Step parser
-    | _ ->
-      let p' = P.feed p input in
-      of_step p' depth
+  match t with
+  (* Ignore comments *)
+  | P.COMMENT _ -> `Step parser
+  | _ ->
+    let Parser (p, depth) = parser in
+    let p' = P.feed p input in
+    of_step p' depth
 
 let dump_item ppf (prod, dot_pos) =
   let print_symbol i symbol =
@@ -158,13 +124,10 @@ let dump_itemset ppf l =
 
 let dump ppf t =
   (* Print current frame, with its itemset *)
-  begin match t with
-    | Partial (s,_) ->
-      let state = get_state s in
-      let itemset = P.Query.itemset state in
-      dump_itemset ppf itemset
-    | Final _ -> ()
-  end;
+  let Parser (s,_) = t in
+  let state = get_state s in
+  let itemset = P.Query.itemset state in
+  dump_itemset ppf itemset;
   (* Print overview of the stack *)
   let rec aux first ppf = function
     | None -> ()
@@ -181,79 +144,73 @@ let dump ppf t =
   aux true ppf (Frame.stack t);
   Format.fprintf ppf "]\n%!"
 
-let last_token = function
-  | Final {Location. loc = {Location. loc_end = l; _}; _} ->
-    Location.mkloc P.EOF
-      {Location. loc_start = l; loc_end = l; loc_ghost = false}
-  | Partial (parser,_) ->
-    let loc_start,t,loc_end = parser.P.env.E.token in
-    Location.mkloc t
-      {Location. loc_start; loc_end; loc_ghost = false}
+let last_token (Parser (raw_parser,_)) =
+  let loc_start,t,loc_end = raw_parser.P.env.E.token in
+  Location.mkloc t
+    {Location. loc_start; loc_end; loc_ghost = false}
 
-let recover ?endp t = match t with
-  | Final _ -> None
-  | Partial (p,w) ->
-    let env = p.P.env in
-    let endp = match endp with
-      | Some endp -> endp
-      | None -> Misc.thd3 env.E.token
+let recover ?endp (Parser (p,w)) =
+  let env = p.P.env in
+  let endp = match endp with
+    | Some endp -> endp
+    | None -> Misc.thd3 env.E.token
+  in
+  let lr1_state = env.E.current in
+  let lr0_state = P.Query.lr0_state lr1_state in
+  let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
+  Logger.errorf `parser (fun ppf strategies ->
+    Format.fprintf ppf "search for strategies at %d.\n" lr0_state;
+    dump_itemset ppf (P.Query.itemset lr0_state);
+    if strategies = [] then
+      Format.fprintf ppf "no candidate selected, dropping.\n"
+    else
+      begin
+        Format.fprintf ppf "candidates: (selected in first position)\n";
+        List.iter strategies
+          ~f:(fun (cost,l,prod,_) ->
+            let l = List.map ~f:Values.class_of_symbol l in
+            let l = List.map ~f:Values.string_of_class l in
+            Format.fprintf ppf
+              "- at cost %d, production %d, %s\n" cost prod
+              (String.concat " " l)
+          )
+      end
+  ) strategies;
+  match strategies with
+  | [] -> None
+  | (_, symbols, prod, action) :: _ ->
+    let add_symbol stack symbol =
+      {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
     in
-    let lr1_state = env.E.current in
-    let lr0_state = P.Query.lr0_state lr1_state in
-    let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
-    Logger.errorf `parser (fun ppf strategies ->
-        Format.fprintf ppf "search for strategies at %d.\n" lr0_state;
-        dump_itemset ppf (P.Query.itemset lr0_state);
-        if strategies = [] then
-          Format.fprintf ppf "no candidate selected, dropping.\n"
-        else
-          begin
-            Format.fprintf ppf "candidates: (selected in first position)\n";
-            List.iter strategies
-              ~f:(fun (cost,l,prod,_) ->
-                  let l = List.map ~f:Values.class_of_symbol l in
-                  let l = List.map ~f:Values.string_of_class l in
-                  Format.fprintf ppf
-                    "- at cost %d, production %d, %s\n" cost prod
-                    (String.concat " " l)
-                )
-          end
-      ) strategies;
-    match strategies with
-    | [] -> None
-    | (_, symbols, prod, action) :: _ ->
-      let add_symbol stack symbol =
-        {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
-      in
-      (* Feed stack *)
-      let stack = List.fold_left ~f:add_symbol ~init:env.E.stack symbols in
-      let env = {env with E. stack} in
-      (* Reduce stack *)
-      (* FIXME: action can raise an error. We should catch it and fallback to
-         another strategy *)
-      let stack = action env in
-      let env = {env with E. stack} in
+    (* Feed stack *)
+    let stack = List.fold_left ~f:add_symbol ~init:env.E.stack symbols in
+    let env = {env with E. stack} in
+    (* Reduce stack *)
+    (* FIXME: action can raise an error. We should catch it and fallback to
+       another strategy *)
+    let stack = action env in
+    let env = {env with E. stack} in
 
-      (* Follow goto transition *)
-      (* FIXME: Rework menhir interface to expose appopriate primitives *)
-      let module M = MenhirLib in
-      let module T = P.MenhirInterpreterTable in
-      let unmarshal2 table i j =
-        M.RowDisplacement.getget
-          M.PackedIntArray.get
-          M.PackedIntArray.get
-          table
-          i j
-      in
-      let goto state prod =
-        let code = unmarshal2 T.goto state (M.PackedIntArray.get T.lhs prod) in
-        (* code = 1 + state *)
-        code - 1
-      in
-      let env = {env with E. current = goto stack.E.state prod} in
+    (* Follow goto transition *)
+    (* FIXME: Rework menhir interface to expose appopriate primitives *)
+    let module M = MenhirLib in
+    let module T = P.MenhirInterpreterTable in
+    let unmarshal2 table i j =
+      M.RowDisplacement.getget
+        M.PackedIntArray.get
+        M.PackedIntArray.get
+        table
+        i j
+    in
+    let goto state prod =
+      let code = unmarshal2 T.goto state (M.PackedIntArray.get T.lhs prod) in
+      (* code = 1 + state *)
+      code - 1
+    in
+    let env = {env with E. current = goto stack.E.state prod} in
 
-      (* Construct parser *)
-      Some (of_feed {p with P. env} w)
+    (* Construct parser *)
+    Some (of_feed {p with P. env} w)
 
 module Integrate
     (P : sig
@@ -423,3 +380,13 @@ let has_marker ?diff t f' =
       if d_inf > d'
       then result
       else has_marker t f'
+
+let accepting (Parser (raw_parser,_) as parser) =
+  let loc_start,t,loc_end = raw_parser.P.env.E.token in
+  match feed (loc_end,Raw_parser.EOF,loc_end) parser with
+  | `Accept (Raw_parser.N_ (Raw_parser.N_implementation, str)) ->
+    `str (str : Parsetree.structure)
+  | `Accept (Raw_parser.N_ (Raw_parser.N_interface, sg)) ->
+    `sg (sg : Parsetree.signature)
+  | _ -> `No
+

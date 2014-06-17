@@ -29,12 +29,16 @@ let exns t = t.errors
 
 let fresh parser = {errors = []; parser; recovering = None}
 
-let feed_normal (_,tok,_ as input) parser =
+let rec feed_normal (s,tok,e as input) parser =
   Logger.debugf `internal
     (fun ppf tok -> Format.fprintf ppf "normal parser: received %s"
         Merlin_parser.Values.(string_of_class (class_of_symbol (symbol_of_token tok))))
     tok;
   match Merlin_parser.feed input parser with
+  | `Accept _ ->
+    Logger.debug `internal "parser accepted";
+    assert (tok = EOF);
+    feed_normal (s,SEMISEMI,e) parser
   | `Reject ->
     Logger.debug `internal "parser rejected";
     None
@@ -70,23 +74,33 @@ let feed_recover original (s,tok,e as input) (r,zipper) =
   let zipper = seek_backward until_before zipper in
   let (head, _) as zipper = seek_forward until_after zipper in
   let candidates = List.take_while until_before head in
-  let rec aux = function
-    | {Location. txt = candidate} :: candidates ->
-      begin match Merlin_parser.feed input candidate with
-      | `Step parser ->
-        Logger.debugf `internal (fun ppf ->
-            Format.fprintf ppf "selected recovery %a\n%!" Merlin_parser.dump)
-          candidate;
-        Either.R parser
-      | `Reject ->
-        Logger.debugf `internal (fun ppf ->
-            Format.fprintf ppf "failed recovery from %a\n%!" Merlin_parser.dump)
-          candidate;
-        aux candidates
-      end
+  let rec aux_feed = function
     | [] -> Either.L (r,zipper)
+    | {Location. txt = candidate} :: candidates ->
+      aux_dispatch candidates candidate
+        (Merlin_parser.feed input candidate)
+
+  and aux_dispatch candidates candidate = function
+    | `Step parser ->
+      Logger.debugf `internal (fun ppf ->
+          Format.fprintf ppf "selected recovery %a\n%!" Merlin_parser.dump)
+        candidate;
+      Either.R parser
+    | `Accept _ ->
+      Logger.debugf `internal (fun ppf ->
+          Format.fprintf ppf "accepted recovery %a\n%!" Merlin_parser.dump)
+        candidate;
+      assert (tok = EOF);
+      aux_dispatch candidates candidate
+        (Merlin_parser.feed (s,SEMISEMI,e) candidate)
+    | `Reject ->
+      Logger.debugf `internal (fun ppf ->
+          Format.fprintf ppf "failed recovery from %a\n%!" Merlin_parser.dump)
+        candidate;
+      aux_feed candidates
+
   in
-  aux candidates
+  aux_feed (List.rev candidates)
 
 let fold warnings token t =
   match token with
@@ -113,14 +127,11 @@ let fold warnings token t =
         | None ->
           let endp = ref s in
           let recovery = endp, ([], rollbacks endp t.parser) in
-          begin match Merlin_parser.to_step t.parser with
-            | Some step ->
-              let error = Error_classifier.from step (s,tok,e) in
-              recover_from
-                {t with errors = error :: (pop warnings) @ t.errors}
-                recovery
-            | None -> t
-          end
+          let step = Merlin_parser.to_step t.parser in
+          let error = Error_classifier.from step (s,tok,e) in
+          recover_from
+            {t with errors = error :: (pop warnings) @ t.errors}
+            recovery
         | Some parser ->
           {t with errors = (pop warnings) @ t.errors; parser }
       end

@@ -982,7 +982,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   "Initialize the cache for `auto-complete' completion.
 Called at the beginning of a completion to fill the cache (the
 variable `merlin-ac-cache')."
-  (merlin-sync-to-point)
+  (merlin-sync-to-point ac-point)
   (setq merlin-completion-point ac-point)
   (merlin-ac-source-refresh-cache))
 

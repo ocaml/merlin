@@ -266,7 +266,9 @@ module Buffer : sig
   val parser_errors: t -> exn list
   val recover: t -> Recover.t
   val recover_history : t -> (Lexer.item * Recover.t) History.t
+
   val typer: t -> Typer.t
+  val final_typer: t -> Typer.t
 
   val get_mark: t -> Parser.frame option
   val has_mark: t -> Parser.frame option -> bool
@@ -320,7 +322,7 @@ end = struct
   let parser b = Recover.parser (recover b)
   let parser_errors b = Recover.exns (recover b)
 
-  let incremental_typer b =
+  let typer b =
     setup b;
     let need_refresh = not !(b.validity_stamp) in
     if need_refresh then
@@ -342,16 +344,11 @@ end = struct
     let typer = Typer.fresh (Project.extensions b.project) in
     Typer.update (parser b) typer
 
-  let typer b =
-    if Parser.reached_eof (parser b) then
-      match b.eof_typer with
-      | Some typer -> typer
-      | None ->
-        let typer = fresh_typer b in
-        b.eof_typer <- Some typer;
-        typer
-    else
-      incremental_typer b
+  let final_typer b =
+    match Parser.accepting (parser b) with
+    | `No -> typer b
+    | (`str _ | `sg _) as result ->
+      Typer.manual (fresh_typer b) result
 
   let update t l =
     t.lexer <- l;
