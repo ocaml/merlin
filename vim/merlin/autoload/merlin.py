@@ -195,7 +195,7 @@ def command_occurences(line, col):
 
 ######## BUFFER SYNCHRONIZATION
 
-def sync_buffer_to(to_line, to_col, load_project=True):
+def sync_buffer_to(to_line, to_col, load_project=True,skip_marker=False):
   process = merlin_process()
   saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
@@ -235,14 +235,14 @@ def sync_buffer_to(to_line, to_col, load_project=True):
 
   # put eof if marker still on stack at max_line
   if marker: command("tell","eof")
+  if not skip_marker: command("seek","marker")
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
   sync_buffer_to(to_line, to_col)
 
 def sync_full_buffer():
-  sync_buffer_to(len(vim.current.buffer),0)
-  command_tell("") # Signal EOF
+  sync_buffer_to(len(vim.current.buffer),0,skip_marker=True)
 
 ######## VIM FRONTEND
 

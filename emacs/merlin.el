@@ -718,10 +718,12 @@ Called when an edit is made by the user."
       (progn (setq merlin-dirty-point (1- start))
              (merlin-sync-lock-zone-display))))
 
-(defun merlin-sync-to-point (&optional point)
+(defun merlin-sync-to-point (&optional point skip-marker)
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
   (unless point (setq point (point)))
   (merlin-tell-to-point point)
+  (unless skip-marker
+    (merlin-send-cursor-command '(seek marker)))
   (merlin-sync-lock-zone-display))
 
 ;;;;;;;;;;;;;;;;;;
@@ -863,7 +865,7 @@ If there is no error, do nothing."
 Return t if there were not any or nil if there were.  Moreover, it displays the
 errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
-  (merlin-sync-to-point (point-max))
+  (merlin-sync-to-point (point-max) t)
   (let* ((errors (merlin-send-command 'errors))
          (errors (delete-if (lambda (e) (not (assoc 'start e))) errors))
          (errors (if merlin-report-warnings errors
