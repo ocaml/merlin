@@ -52,15 +52,16 @@ let new_state () =
   {project; buffer; lexer = None}
 
 let cursor_state state =
-  let lexer =
+  let cursor, marker =
     match state.lexer with
-    | None -> Buffer.start_lexing state.buffer
-    | Some l -> l
+    | None ->
+      Lexer.item_end (History.focused (Buffer.lexer state.buffer)),
+      false
+    | Some lexer ->
+      Lexer.position lexer,
+      Buffer.has_mark state.buffer (Lexer.get_mark lexer)
   in
-  {
-    cursor = Lexer.position lexer;
-    marker = Buffer.has_mark state.buffer (Lexer.get_mark lexer);
-  }
+  { cursor; marker }
 
 let buffer_changed state =
   state.lexer <- None
