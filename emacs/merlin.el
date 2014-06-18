@@ -557,9 +557,11 @@ the error message otherwise print a generic error message."
 (defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
-  (let ((ext (file-name-extension buffer-file-name)))
+  (let ((ext (if (buffer-file-name)
+                 (file-name-extension (buffer-file-name))
+               "ml")))
     (merlin-send-command
-      `(reset ,(if (string-equal ext "mli") 'mli 'ml) ,buffer-file-name))
+     `(reset ,(if (string-equal ext "mli") 'mli 'ml) ,(buffer-file-name)))
     (merlin-error-reset)
     (setq merlin-dirty-point (point-min))))
 
@@ -1430,6 +1432,10 @@ Returns the position."
               #'merlin-completion-at-point nil 'local)
     (add-to-list 'after-change-functions 'merlin-sync-edit)
     (merlin-load-project-file)))
+
+(defun merlin-can-handle-buffer ()
+  "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
+  (buffer-file-name))
 
 (defun merlin-process-dead-p ()
   "Return non-nil if merlin process is dead."
