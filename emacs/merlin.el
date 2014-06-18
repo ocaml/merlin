@@ -574,7 +574,7 @@ the error message otherwise print a generic error message."
 (defun merlin-get-completion (ident)
   "Return the completion for ident IDENT."
   (merlin-send-command
-    `(complete prefix ,ident at ,(merlin-unmake-point (point)))))
+    `(complete prefix ,ident at ,(merlin-unmake-point (- (point) (length ident))))))
 
 (defun merlin-parse-position (result)
   "Returns a pair whose first member is a point set at merlin cursor position
@@ -975,7 +975,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-ac-source-refresh-cache()
   "Refresh the cache of completion."
-  (setq merlin-ac-prefix (merlin-completion-prefix ac-prefix))
+  (setq merlin-ac-prefix ac-prefix)
   (setq merlin-ac-cache
         (mapcar #'merlin-ac-make-popup-item (merlin-completion-data merlin-ac-prefix))))
 
@@ -1009,7 +1009,7 @@ variable `merlin-ac-cache')."
 (defun merlin-auto-complete-candidates ()
   "Return the candidates for auto-completion with
   auto-complete. If the cache is wrong then recompute it."
-  (if (not (equal (merlin-completion-prefix ac-prefix)
+  (if (not (equal ac-prefix
                   merlin-ac-prefix))
       (merlin-ac-source-refresh-cache))
   merlin-ac-cache)
