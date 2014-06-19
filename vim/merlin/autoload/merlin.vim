@@ -46,15 +46,15 @@ function! merlin#Path(var,path)
 python <<EOF
 path = vim.eval("l:path") 
 if path == "":
-  for path in merlin.send_command("path","list", vim.eval("a:var")):
+  for path in merlin.command("path","list", vim.eval("a:var")):
     if path != "":
       print path
 else:
   print path
   if vim.eval("l:raw") == "1":
-    merlin.send_command("path", "raw", "add", vim.eval("a:var"), path)
+    merlin.command("path", "raw", "add", vim.eval("a:var"), path)
   else:
-    merlin.send_command("path", "add", vim.eval("a:var"), path)
+    merlin.command("path", "add", vim.eval("a:var"), path)
 merlin.vim_reload()
 EOF
 endfunction
