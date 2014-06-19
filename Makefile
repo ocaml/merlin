@@ -18,6 +18,10 @@ ifndef VERBOSE
 	OCAMLMAKEFILE += REALLY_QUIET=1
 endif
 
+#### Leftovers from previous buildsystem
+
+OCAMLBUILD_LEFTOVERS = _build _tags src/config/myocamlbuild_config.ml ocamlmerlin.native
+
 #### Default rule
 
 all: $(TARGET)
@@ -65,6 +69,7 @@ check: $(TARGET)
 
 distclean: clean
 	@echo
+	rm -rf $(OCAMLBUILD_LEFTOVERS)
 	rm -f Makefile.config $(CONFIG_FILES) $(TARGET)
 
 install-binary: $(TARGET)
