@@ -3785,12 +3785,13 @@ let type_expression env sexp =
   end_def();
   if is_nonexpansive exp then generalize exp.exp_type
   else generalize_expansive env exp.exp_type;
-  match sexp.pexp_desc with
+  try match sexp.pexp_desc with
     Pexp_ident lid ->
       (* Special case for keeping type variables when looking-up a variable *)
       let (path, desc) = Env.lookup_value lid.txt env in
       {exp with exp_type = desc.val_type}
   | _ -> exp
+  with _ -> exp
 
 (* Error report *)
 
