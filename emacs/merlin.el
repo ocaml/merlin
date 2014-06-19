@@ -938,6 +938,20 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (let ((ret (assoc string merlin-completion-annotation-table)))
     (if ret (message "%s%s" (car ret) (cdr ret)))))
 
+(defun merlin--kill-overlapping-errors (start end)
+  "Kill any pending errors that overlap the region START..END."
+  ;; fixme: factor out common bits with kill-if-edited
+  (loop for err in merlin-pending-errors
+	for overlay in merlin-pending-errors-overlays
+	if (and (>= (overlay-start overlay) start)
+		(<= (overlay-end overlay) end))
+	  do (delete-overlay overlay)
+	else
+	  collect err into surviving-errors
+	  and collect overlay into surviving-overlays
+	finally (setq merlin-pending-errors surviving-errors
+		      merlin-pending-errors-overlays surviving-overlays)))
+
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
   (lexical-let*
@@ -946,6 +960,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
        (end    (if bounds (cdr bounds) (point)))
        (string (if bounds (merlin-buffer-substring start end) ""))
        (request (if string (replace-regexp-in-string "[^\\.]+$" "" string))))
+    (merlin--kill-overlapping-errors start end)
     (when (or (not merlin-completion-at-point-cache-query)
               (not (equal (cons request start)  merlin-completion-at-point-cache-query)))
       (setq merlin-completion-at-point-cache-query (cons request start))
