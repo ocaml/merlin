@@ -1201,13 +1201,13 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-load-project-file ()
   "Load the .merlin file corresponding to the current file."
   (interactive)
-  (merlin-rewind)
   (let* ((r (merlin-send-command (list 'project 'find (buffer-file-name))))
          (failed (assoc 'failures r))
          (result (assoc 'result r)))
     (when failed (message (cdr failed)))
     (when (and result (listp (cdr result)))
-      (setq merlin-project-file (cadr result)))))
+      (setq merlin-project-file (cadr result)))
+    (merlin-rewind)))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
