@@ -378,7 +378,7 @@ return DEFAULT or the value associated to KEY otherwise."
 
 (defun merlin-instance-buffer-name (name)
   "Return the buffer name corresponding to the merlin instance NAME."
-  (format "*merlin (%s)*" name))
+  (format " *merlin (%s)*" name))
 
 (defun merlin-process-buffer ()
   "Return the process buffer of the current buffer."
