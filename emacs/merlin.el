@@ -837,6 +837,21 @@ If there is no error, do nothing."
   (setq merlin-pending-errors nil)
   (merlin-error-delete-overlays))
 
+(defun merlin--kill-error-if-edited (overlay
+				     is-after
+				     beg
+				     end
+				     &optional length)
+  "Remove an error from the pending error lists if it is edited by the user."
+  (when is-after
+    (let ((err (nth (position overlay merlin-pending-errors-overlays)
+		    merlin-pending-errors)))
+      (setq merlin-pending-errors
+	    (delete err merlin-pending-errors))
+      (setq merlin-pending-errors-overlays
+	    (delete overlay merlin-pending-errors-overlays))
+      (delete-overlay overlay))))
+
 (defun merlin-error-display-in-margin (errors)
   "Given a list of ERRORS, put annotations in the margin corresponding to them."
   (let* ((err-point
@@ -849,6 +864,8 @@ If there is no error, do nothing."
           (lambda (err)
             (let* ((bounds (cdr (assoc 'bounds err)))
                    (overlay (make-overlay (car bounds) (cdr bounds))))
+	      (push #'merlin--kill-error-if-edited
+		    (overlay-get overlay 'modification-hooks))
               (if (merlin-error-warning-p (cdr (assoc 'message err)))
                   (merlin-put-margin-overlay overlay
                                              merlin-margin-warning-string
