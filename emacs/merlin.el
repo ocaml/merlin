@@ -665,10 +665,13 @@ the error message otherwise print a generic error message."
   "Put a marker and tell merlin until marker is satisfied."
   (let* ((marker (cdr (merlin-send-cursor-command '(tell marker))))
          (point (when marker (point))))
-    (while (and point (not (= point (point-max))))
+    (while (and point
+		(not (= point (point-max))))
       (forward-line 10)
-      (setq point (merlin-tell-source (merlin-buffer-substring point (point))))))
-    (when point (merlin-send-cursor-command '(tell eof))))
+      (setq point (merlin-tell-source
+		   (merlin-buffer-substring point (point)))))
+    (when point
+      (merlin-send-cursor-command '(tell eof)))))
 
 (defun merlin-tell-to-point (&optional point)
   "Tell to merlin part of the buffer between START and END. START
