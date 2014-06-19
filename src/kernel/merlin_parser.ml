@@ -149,7 +149,7 @@ let last_token (Parser (raw_parser,_)) =
   Location.mkloc t
     {Location. loc_start; loc_end; loc_ghost = false}
 
-let recover ?endp (Parser (p,w)) =
+let find_strategies (Parser (p,w)) =
   let env = p.P.env in
   let lr1_state = env.E.current in
   let lr0_state = P.Query.lr0_state lr1_state in
@@ -163,7 +163,7 @@ let recover ?endp (Parser (p,w)) =
       begin
         Format.fprintf ppf "candidates: (selected in first position)\n";
         List.iter strategies
-          ~f:(fun (cost,l,prod,_) ->
+          ~f:(fun {Merlin_recovery_strategy. cost; prod; symbols = l; _} ->
             let l = List.map ~f:Values.class_of_symbol l in
             let l = List.map ~f:Values.string_of_class l in
             Format.fprintf ppf
@@ -172,9 +172,20 @@ let recover ?endp (Parser (p,w)) =
           )
       end
   ) strategies;
-  match strategies with
+  strategies
+
+type termination = t Merlin_recovery_strategy.Termination.t
+let termination = Merlin_recovery_strategy.Termination.initial
+
+let rec recover ?endp termination parser =
+  let open Merlin_recovery_strategy in
+  match find_strategies parser with
   | [] -> None
-  | (_, symbols, prod, action) :: _ ->
+  | strat :: _ ->
+  match Termination.check strat parser termination with
+  | parser, termination, false -> recover ?endp termination parser
+  | Parser (p,w), termination, true ->
+    let env = p.P.env in
     let add_symbol stack symbol =
       let endp = match endp with
         | Some endp -> endp
@@ -183,12 +194,12 @@ let recover ?endp (Parser (p,w)) =
       {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
     in
     (* Feed stack *)
-    let stack = List.fold_left ~f:add_symbol ~init:env.E.stack symbols in
+    let stack = List.fold_left ~f:add_symbol ~init:env.E.stack strat.symbols in
     let env = {env with E. stack} in
     (* Reduce stack *)
     (* FIXME: action can raise an error. We should catch it and fallback to
        another strategy *)
-    let stack = action env in
+    let stack = strat.action env in
     let env = {env with E. stack} in
 
     (* Follow goto transition *)
@@ -207,10 +218,10 @@ let recover ?endp (Parser (p,w)) =
       (* code = 1 + state *)
       code - 1
     in
-    let env = {env with E. current = goto stack.E.state prod} in
+    let env = {env with E. current = goto stack.E.state strat.prod} in
 
     (* Construct parser *)
-    Some (of_feed {p with P. env} w)
+    Some (termination, of_feed {p with P. env} w)
 
 module Integrate
     (P : sig

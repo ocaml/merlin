@@ -2,19 +2,22 @@ open Std
 open Raw_parser
 
 let rollbacks endp parser =
-  let rec aux parser =
+  let rec aux (termination,parser) =
     (* FIXME: find proper way to handle limit conditions *)
     (* When reaching bottom of the stack, last frame will raise an Accept
        exception, we can't recover from it, and we shouldn't recover TO it. *)
     try
-      match Merlin_parser.recover ~endp parser with
+      match Merlin_parser.recover ~endp termination parser with
       | Some _ as r -> r
-      | None -> Merlin_parser.pop parser
+      | None ->
+        Option.map ~f:(fun a -> Merlin_parser.termination, a)
+          (Merlin_parser.pop parser)
     with _ -> None
   in
+  let parser = Merlin_parser.termination, parser in
   let stacks = parser :: List.unfold aux parser in
   let stacks = List.rev_map stacks
-      ~f:(fun p -> Location.mkloc p (Merlin_parser.location p))
+      ~f:(fun (_,p) -> Location.mkloc p (Merlin_parser.location p))
   in
   (* Hack to drop last parser *)
   let stacks = List.rev (List.tl stacks) in
