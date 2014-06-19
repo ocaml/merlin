@@ -15,7 +15,13 @@
   -> occurences
 - catch "different assumptions" exception
 
-FIXME 
+DONE
+- recovery heuristic is really not sufficient, a few test cases easily trigger
+  bad recursion:
+  let f =
+    let bad
+    let x = () in
+  fixed in b5cf1991705ea7f2138602875fe774e20b4a0a49
 
 - with this input:
     let xxy =
@@ -25,11 +31,5 @@ FIXME
     let _ = xx |;;
   completion at "|" is correct without the preceding "xx", wrong otherwise
   Also, xx generate one expected error and a Not_found exception.
-
-DONE
--  
-  recovery heuristic is really not sufficient, a few test cases easily trigger
-  bad recursion:
-  let f =
-    let bad
-    let x = () in
+  Both were due to a special case with Pexp_ident in typecore
+  fixed in 8f0fd7cf0e5b7c19270c792c4bbda8f067936c5f
