@@ -1078,8 +1078,7 @@ variable `merlin-ac-cache')."
   "Change content of type-buffer."
   (let ((initialized (get-buffer merlin-type-buffer-name)))
     (with-current-buffer
-      (cond (initialized)
-            ((get-buffer-create merlin-type-buffer-name)))
+      (or initialized (get-buffer-create merlin-type-buffer-name))
     (unless initialized (funcall merlin-favourite-caml-mode))
     (erase-buffer)
     (insert text)
