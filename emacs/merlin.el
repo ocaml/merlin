@@ -94,10 +94,6 @@ no argument and should return the configuration (see
   "If non-nil, report warnings, otherwise ignore them."
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-buffer-name "*merlin*"
-  "The name of the buffer storing module signatures."
-  :group 'merlin :type 'string)
-
 (defcustom merlin-occurences-buffer-name "*merlin-occurences*"
   "The name of the buffer listing occurences of an identifier after a call to `merlin-occurences'."
   :group 'merlin :type 'string)
