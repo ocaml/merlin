@@ -665,10 +665,13 @@ the error message otherwise print a generic error message."
   "Put a marker and tell merlin until marker is satisfied."
   (let* ((marker (cdr (merlin-send-cursor-command '(tell marker))))
          (point (when marker (point))))
-    (while (and point (not (= point (point-max))))
+    (while (and point
+		(not (= point (point-max))))
       (forward-line 10)
-      (setq point (merlin-tell-source (merlin-buffer-substring point (point))))))
-    (when point (merlin-send-cursor-command '(tell eof))))
+      (setq point (merlin-tell-source
+		   (merlin-buffer-substring point (point)))))
+    (when point
+      (merlin-send-cursor-command '(tell eof)))))
 
 (defun merlin-tell-to-point (&optional point)
   "Tell to merlin part of the buffer between START and END. START
@@ -837,6 +840,21 @@ If there is no error, do nothing."
   (setq merlin-pending-errors nil)
   (merlin-error-delete-overlays))
 
+(defun merlin--kill-error-if-edited (overlay
+				     is-after
+				     beg
+				     end
+				     &optional length)
+  "Remove an error from the pending error lists if it is edited by the user."
+  (when is-after
+    (let ((err (nth (position overlay merlin-pending-errors-overlays)
+		    merlin-pending-errors)))
+      (setq merlin-pending-errors
+	    (delete err merlin-pending-errors))
+      (setq merlin-pending-errors-overlays
+	    (delete overlay merlin-pending-errors-overlays))
+      (delete-overlay overlay))))
+
 (defun merlin-error-display-in-margin (errors)
   "Given a list of ERRORS, put annotations in the margin corresponding to them."
   (let* ((err-point
@@ -849,6 +867,8 @@ If there is no error, do nothing."
           (lambda (err)
             (let* ((bounds (cdr (assoc 'bounds err)))
                    (overlay (make-overlay (car bounds) (cdr bounds))))
+	      (push #'merlin--kill-error-if-edited
+		    (overlay-get overlay 'modification-hooks))
               (if (merlin-error-warning-p (cdr (assoc 'message err)))
                   (merlin-put-margin-overlay overlay
                                              merlin-margin-warning-string
@@ -918,6 +938,20 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (let ((ret (assoc string merlin-completion-annotation-table)))
     (if ret (message "%s%s" (car ret) (cdr ret)))))
 
+(defun merlin--kill-overlapping-errors (start end)
+  "Kill any pending errors that overlap the region START..END."
+  ;; fixme: factor out common bits with kill-if-edited
+  (loop for err in merlin-pending-errors
+	for overlay in merlin-pending-errors-overlays
+	if (and (>= (overlay-start overlay) start)
+		(<= (overlay-end overlay) end))
+	  do (delete-overlay overlay)
+	else
+	  collect err into surviving-errors
+	  and collect overlay into surviving-overlays
+	finally (setq merlin-pending-errors surviving-errors
+		      merlin-pending-errors-overlays surviving-overlays)))
+
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
   (lexical-let*
@@ -926,6 +960,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
        (end    (if bounds (cdr bounds) (point)))
        (string (if bounds (merlin-buffer-substring start end) ""))
        (request (if string (replace-regexp-in-string "[^\\.]+$" "" string))))
+    (merlin--kill-overlapping-errors start end)
     (when (or (not merlin-completion-at-point-cache-query)
               (not (equal (cons request start)  merlin-completion-at-point-cache-query)))
       (setq merlin-completion-at-point-cache-query (cons request start))

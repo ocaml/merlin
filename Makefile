@@ -106,4 +106,5 @@ uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin \
 				 $(BIN_DIR)/omake-merlin  \
 				 $(BIN_DIR)/ocamlmerlin   \
-				 $(SHARE_DIR)/emacs/site-lisp/merlin.el
+				 $(SHARE_DIR)/emacs/site-lisp/merlin.el \
+				 $(SHARE_DIR)/emacs/site-lisp/merlin.elc
