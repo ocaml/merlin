@@ -9,3 +9,9 @@ emacs/merlin.elc
 ocamlmerlin
 ._d
 ._ncdi
+
+# Ignore any stale ocamlbuild stuff
+_tags
+_build/
+src/config/myocamlbuild_config.ml
+ocamlmerlin.native
