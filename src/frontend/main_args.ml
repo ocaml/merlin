@@ -32,10 +32,13 @@ let ignore_sigint_spec =
   Arg.Unit f,
   " Ignore SIGINT, useful when invoked from editor"
 
+let version_spec =
+  Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s"
+    My_config.version Sys.ocaml_version
+
 let print_version_spec =
   let f () =
-    Printf.printf "The Merlin toolkit version %s, for Ocaml %s\n"
-      My_config.version Sys.ocaml_version;
+    print_endline version_spec;
     exit 0
   in
   "-version",

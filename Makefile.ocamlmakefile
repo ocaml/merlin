@@ -157,10 +157,10 @@ SOURCES = \
 	src/analysis/type_utils.ml        \
 	src/config/my_config.ml           \
 	src/frontend/IO_sexp.ml           \
-	src/frontend/command.mli          \
-	src/frontend/command.ml           \
 	src/frontend/main_args.mli        \
 	src/frontend/main_args.ml         \
+	src/frontend/command.mli          \
+	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
 PACKS = findlib yojson unix

@@ -11,3 +11,5 @@
 (***********************************************************************)
 
 val chosen_protocol : string option
+
+val version_spec : string

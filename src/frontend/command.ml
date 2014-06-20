@@ -437,4 +437,7 @@ let dispatch (state : state) =
       List.map ~f:(fun id -> id.BrowseT.t_loc) ids
     end
 
+  | (Version : a request) ->
+    Main_args.version_spec
+
   : a)

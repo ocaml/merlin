@@ -94,6 +94,8 @@ type _ request =
   | Occurences
     : [`Ident_at of position]
     -> Location.t list request
+  | Version
+    : string request
 
 type a_request = Request : 'a request -> a_request
 

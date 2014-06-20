@@ -309,6 +309,8 @@ module Protocol_io = struct
       Request (Path (source_or_build var, add_or_remove action, string_list pathes))
     | [`String "project"; `String ("load"|"find" as action); `String path] ->
       Request (Project_load (load_or_find action, path))
+    | [`String "version"] ->
+      Request (Version)
     | _ -> invalid_arguments ()
 
   let json_of_response = function
@@ -367,6 +369,8 @@ module Protocol_io = struct
         | Occurences _, locations ->
           `List (List.map locations
                    ~f:(fun loc -> with_location loc []))
+        | Version, version ->
+          `String version
       end]
 
   let request_of_json = function
