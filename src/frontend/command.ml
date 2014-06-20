@@ -351,7 +351,7 @@ let dispatch (state : state) =
       try
         find_in_path_uncap (Project.source_path state.project) s
       with Not_found ->
-        find_in_path_uncap (Project.source_path state.project) s
+        find_in_path_uncap (Project.build_path state.project) s
     end
 
   | (Which_with_ext ext : a request) ->
