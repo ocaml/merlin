@@ -18,6 +18,7 @@
      treatment.
   -> occurences
 - catch "different assumptions" exception
+- write syntax error message generating heuristic
 
 DONE
 - recovery heuristic is really not sufficient, a few test cases easily trigger
