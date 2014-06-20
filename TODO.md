@@ -12,6 +12,10 @@
 - features to test:
   -> completion
   -> type enclosing / type expr
+     An assertion in Type_utils:19 might fail if provided wrong input.
+     Some heuristic in type enclosing might generate wrong input and the user
+     can deliberately submit something wrong. So this case should receive proper
+     treatment.
   -> occurences
 - catch "different assumptions" exception
 
@@ -27,7 +31,7 @@ DONE
     let xxy =
       let xx = with
     let xxz : int = "hello"
-    
+
     let _ = xx |;;
   completion at "|" is correct without the preceding "xx", wrong otherwise
   Also, xx generate one expected error and a Not_found exception.
