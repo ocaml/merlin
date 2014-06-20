@@ -1111,13 +1111,17 @@ let_pattern:
 | v1 = pattern COLON v3 = core_type
     { mkpat $startpos $endpos (Ppat_constraint(v1, v3)) }
 
+expr_let_in_:
+| LET v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs IN
+  { v2, v3, v4 }
+
 expr:
 | v1 = simple_expr %prec below_SHARP
     { v1 }
 | v1 = simple_expr v2 = simple_labeled_expr_list
     { mkexp $startpos $endpos (Pexp_apply(v1, List.rev v2)) }
-| LET v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs IN v6 = seq_expr
-    { mkexp_attrs $startpos $endpos (Pexp_let(v3, List.rev v4, v6)) v2 }
+| v1 = expr_let_in_ v6 = seq_expr
+    { let v2, v3, v4 = v1 in mkexp_attrs $startpos $endpos (Pexp_let(v3, List.rev v4, v6)) v2 }
 | LET MODULE v3 = ext_attributes v4 = UIDENT v5 = module_binding_body IN v7 = seq_expr
     { mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos(v4) $endpos(v4) v4, v5, v7)) v3 }
 | LET OPEN v3 = expr_open IN v5 = seq_expr

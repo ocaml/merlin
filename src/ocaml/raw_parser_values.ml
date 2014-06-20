@@ -296,6 +296,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_expr_open                         -> "expr_open"
   | N_expr_comma_list                   -> "expr_comma_list"
   | N_expr                              -> "expr"
+  | N_expr_let_in_                      -> "expr_let_in"
   | N_dummy                             -> "dummy"
   | N_direction_flag                    -> "direction_flag"
   | N_core_type_list_no_attr            -> "core_type_list_no_attr"
@@ -796,6 +797,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     raise Not_found (*(Asttypes.override_flag * Longident.t Asttypes.loc * (string Asttypes.loc option * Parsetree.attributes)) nonterminal_class*)
   | N_expr_comma_list                   -> 0, []
   | N_expr                              -> 1, default_expr
+  | N_expr_let_in_                      -> raise Not_found
   | N_dummy                             -> 0, ()
   | N_direction_flag                    -> 0, Asttypes.Upto
   | N_core_type_list_no_attr            -> 0, []

@@ -64,7 +64,7 @@ let feed_recover original (s,tok,e as input) zipper =
   in
   let zipper = Zipper.seek_backward until_before zipper in
   let zipper = Zipper.seek_forward until_after zipper in
-  let candidates = List.rev (Zipper.select_backward until_before zipper) in
+  let candidates = Zipper.select_backward until_before zipper in
   let rec aux_feed = function
     | [] -> Either.L zipper
     | {Location. txt = candidate} :: candidates ->

@@ -413,6 +413,8 @@ and _ nonterminal_class =
   | N_expr_semi_list : (Parsetree.expression list) nonterminal_class
   | N_expr_open : (Asttypes.override_flag * Longident.t Asttypes.loc *
   (string Asttypes.loc option * Parsetree.attributes)) nonterminal_class
+  | N_expr_let_in_ : ((string Asttypes.loc option * Parsetree.attributes) * Asttypes.rec_flag *
+  Parsetree.value_binding list) nonterminal_class
   | N_expr_comma_list : (Parsetree.expression list) nonterminal_class
   | N_expr : (Parsetree.expression) nonterminal_class
   | N_dummy : (unit) nonterminal_class
