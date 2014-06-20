@@ -573,4 +573,8 @@ let dispatch (i,o : IO.io) (state : state) =
       List.map ids ~f:(fun id -> id.Browse.loc)
     end
 
+  | (Version : a request) ->
+    state, Top_options.version_spec
+
+
   : state * a)

@@ -26,9 +26,12 @@
 
 )* }}} *)
 
+let version_spec =
+  Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s"
+    My_config.version Sys.ocaml_version
+
 let print_version () =
-  Printf.printf "The Merlin toolkit version %s, for Ocaml %s\n"
-    My_config.version Sys.ocaml_version;
+  print_endline version_spec;
   exit 0
 
 let print_version_num () =
