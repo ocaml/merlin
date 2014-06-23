@@ -118,7 +118,6 @@ let dump_item ppf (prod, dot_pos) =
   List.iteri print_symbol rhs
 
 let dump_itemset ppf l =
-  Format.fprintf ppf "itemset:\n";
   List.iter ~f:(Format.fprintf ppf "- %a\n" dump_item) l
 
 let dump ppf t =
@@ -126,7 +125,9 @@ let dump ppf t =
   let Parser (s,_) = t in
   let state = get_state s in
   let itemset = P.Query.itemset state in
-  dump_itemset ppf itemset;
+  Format.fprintf ppf "position: %a; itemset:\n%a"
+    Lexing.print_position (location t).Location.loc_start
+    dump_itemset itemset;
   (* Print overview of the stack *)
   let rec aux first ppf = function
     | None -> ()
@@ -155,7 +156,8 @@ let find_strategies (Parser (p,w)) =
   let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
   Logger.errorf `parser (fun ppf strategies ->
     Format.fprintf ppf "search for strategies at %d.\n" lr0_state;
-    dump_itemset ppf (P.Query.itemset lr0_state);
+    Format.fprintf ppf "itemset:\n%a"
+      dump_itemset (P.Query.itemset lr0_state);
     if strategies = [] then
       Format.fprintf ppf "no candidate selected, dropping.\n"
     else
