@@ -2,7 +2,7 @@ open Std
 open Raw_parser
 
 let rollbacks endp parser =
-  let rec aux (termination,parser) =
+  let rec aux (termination,_,parser) =
     (* FIXME: find proper way to handle limit conditions *)
     (* When reaching bottom of the stack, last frame will raise an Accept
        exception, we can't recover from it, and we shouldn't recover TO it. *)
@@ -10,13 +10,13 @@ let rollbacks endp parser =
       match Merlin_parser.recover ~endp termination parser with
       | Some _ as r -> r
       | None ->
-        Option.map ~f:(fun a -> Merlin_parser.termination, a)
+        Option.map ~f:(fun a -> Merlin_parser.termination, 0, a)
           (Merlin_parser.pop parser)
     with _ -> None
   in
-  let parser = Merlin_parser.termination, parser in
+  let parser = Merlin_parser.termination, 0, parser in
   let stacks = parser :: List.unfold aux parser in
-  let stacks = List.rev_map stacks ~f:snd in
+  let stacks = List.rev_map stacks ~f:(fun (_,a,b) -> a,b) in
   (* Hack to drop last parser *)
   let stacks = List.rev (List.tl stacks) in
   Zipper.of_list stacks
@@ -24,7 +24,7 @@ let rollbacks endp parser =
 type t = {
   errors: exn list;
   parser: Merlin_parser.t;
-  recovering: (Merlin_parser.t zipper) option;
+  recovering: ((int * Merlin_parser.t) zipper) option;
 }
 
 let parser t = t.parser
@@ -61,13 +61,8 @@ let prepare_candidates candidates =
         Lexing.compare_pos a.loc.loc_start b.loc.loc_start = 0)
       candidates
   in*)
-  let parser_priority p =
-    let symbol = Merlin_parser.Frame.value (Merlin_parser.stack p) in
-    let symcls = Merlin_parser.Values.class_of_symbol symbol in
-    Raw_parser_values.selection_priority symcls
-  in
-  let cmp pa pb =
-    - compare (parser_priority pa) (parser_priority pb)
+  let cmp (pa,_) (pb,_) =
+    - compare pa pb
   in
   (*List.concat_map (List.stable_sort ~cmp) candidates*)
   List.stable_sort ~cmp candidates
@@ -77,10 +72,10 @@ let feed_recover original (s,tok,e as input) zipper =
   let get_col x = snd (Lexing.split_pos x) in
   let ref_col = get_col s in
   (* Find appropriate recovering position *)
-  let less_indented p =
+  let less_indented (_,p) =
     let loc = Merlin_parser.location p in
     get_col loc.Location.loc_start <= ref_col
-  and more_indented p =
+  and more_indented (_,p) =
     let loc = Merlin_parser.location p in
     get_col loc.Location.loc_start >= ref_col
   in
@@ -92,15 +87,15 @@ let feed_recover original (s,tok,e as input) zipper =
   Logger.errorf `protocol (fun ppf candidates->
     Format.fprintf ppf "recovery candidates starting at %a:\n%!"
       Lexing.print_position s;
-    let dump_snapshot p =
-      Format.fprintf ppf "- %a\n"
-        Merlin_parser.dump p
+    let dump_snapshot (priority,parser) =
+      Format.fprintf ppf "- priority %d, %a\n"
+        priority Merlin_parser.dump parser
     in
     List.iter dump_snapshot candidates)
     candidates;
   let rec aux_feed = function
     | [] -> Either.L zipper
-    | candidate :: candidates ->
+    | (_,candidate) :: candidates ->
       aux_dispatch candidates candidate
         (Merlin_parser.feed input candidate)
 
@@ -168,9 +163,9 @@ let fold token t =
 let dump_recovering ppf = function
   | None -> Format.fprintf ppf "clean"
   | Some (Zipper (head, _, tail)) ->
-    let dump_snapshot p =
-      Format.fprintf ppf "- %a\n"
-        Merlin_parser.dump p
+    let dump_snapshot (priority,parser) =
+      Format.fprintf ppf "- priority %d, %a\n"
+        priority Merlin_parser.dump parser
     in
     let iter ppf l = List.iter ~f:dump_snapshot l in
     Format.fprintf ppf "recoverable states\nhead:\n%atail:\n%a"

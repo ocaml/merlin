@@ -4,7 +4,7 @@ open Std
 
 type token = Raw_parser.token
 
-type annotation = [`Shift]
+type annotation = [`Shift of int]
 
 type 'a token_class = 'a Raw_parser.token_class
 type 'a nonterminal_class = 'a Raw_parser.nonterminal_class
@@ -482,6 +482,144 @@ let symbol_of_token = function
   | AND                          -> T_ (T_AND, ())
   | AMPERSAND                    -> T_ (T_AMPERSAND, ())
   | AMPERAMPER                   -> T_ (T_AMPERAMPER, ())
+
+let token_of_symbol (type a) (t : a token_class) (v : a) =
+  match t with
+  | T_WITH                   -> WITH
+  | T_WHILE_LWT              -> WHILE_LWT
+  | T_WHILE                  -> WHILE
+  | T_WHEN                   -> WHEN
+  | T_VIRTUAL                -> VIRTUAL
+  | T_VAL                    -> VAL
+  | T_UNDERSCORE             -> UNDERSCORE
+  | T_UIDENT                 -> UIDENT v
+  | T_TYPE                   -> TYPE
+  | T_TRY_LWT                -> TRY_LWT
+  | T_TRY                    -> TRY
+  | T_TRUE                   -> TRUE
+  | T_TO                     -> TO
+  | T_TILDE                  -> TILDE
+  | T_THEN                   -> THEN
+  | T_STRUCT                 -> STRUCT
+  | T_STRING                 -> STRING v
+  | T_STAR                   -> STAR
+  | T_SIG                    -> SIG
+  | T_SHARP                  -> SHARP
+  | T_SEMISEMI               -> SEMISEMI
+  | T_SEMI                   -> SEMI
+  | T_RPAREN                 -> RPAREN
+  | T_REC                    -> REC
+  | T_RBRACKET               -> RBRACKET
+  | T_RBRACE                 -> RBRACE
+  | T_QUOTE                  -> QUOTE
+  | T_QUESTION               -> QUESTION
+  | T_PRIVATE                -> PRIVATE
+  | T_PREFIXOP               -> PREFIXOP v
+  | T_PLUSEQ                 -> PLUSEQ
+  | T_PLUSDOT                -> PLUSDOT
+  | T_PLUS                   -> PLUS
+  | T_PERCENT                -> PERCENT
+  | T_P4_QUOTATION           -> P4_QUOTATION
+  | T_OUNIT_TEST_UNIT        -> OUNIT_TEST_UNIT
+  | T_OUNIT_TEST_MODULE      -> OUNIT_TEST_MODULE
+  | T_OUNIT_TEST             -> OUNIT_TEST
+  | T_OUNIT_BENCH_MODULE     -> OUNIT_BENCH_MODULE
+  | T_OUNIT_BENCH_INDEXED    -> OUNIT_BENCH_INDEXED
+  | T_OUNIT_BENCH_FUN        -> OUNIT_BENCH_FUN
+  | T_OUNIT_BENCH            -> OUNIT_BENCH
+  | T_OR                     -> OR
+  | T_OPTLABEL               -> OPTLABEL v
+  | T_OPEN                   -> OPEN
+  | T_OF                     -> OF
+  | T_OBJECT                 -> OBJECT
+  | T_NONREC                 -> NONREC
+  | T_NEW                    -> NEW
+  | T_NATIVEINT              -> NATIVEINT v
+  | T_MUTABLE                -> MUTABLE
+  | T_MODULE                 -> MODULE
+  | T_MINUSGREATER           -> MINUSGREATER
+  | T_MINUSDOT               -> MINUSDOT
+  | T_MINUS                  -> MINUS
+  | T_METHOD                 -> METHOD
+  | T_MATCH_LWT              -> MATCH_LWT
+  | T_MATCH                  -> MATCH
+  | T_LPAREN                 -> LPAREN
+  | T_LIDENT                 -> LIDENT v
+  | T_LET_LWT                -> LET_LWT
+  | T_LET                    -> LET
+  | T_LESSMINUS              -> LESSMINUS
+  | T_LESS                   -> LESS
+  | T_LBRACKETPERCENTPERCENT -> LBRACKETPERCENTPERCENT
+  | T_LBRACKETPERCENT        -> LBRACKETPERCENT
+  | T_LBRACKETLESS           -> LBRACKETLESS
+  | T_LBRACKETGREATER        -> LBRACKETGREATER
+  | T_LBRACKETBAR            -> LBRACKETBAR
+  | T_LBRACKETATATAT         -> LBRACKETATATAT
+  | T_LBRACKETATAT           -> LBRACKETATAT
+  | T_LBRACKETAT             -> LBRACKETAT
+  | T_LBRACKET               -> LBRACKET
+  | T_LBRACELESS             -> LBRACELESS
+  | T_LBRACE                 -> LBRACE
+  | T_LAZY                   -> LAZY
+  | T_LABEL                  -> LABEL v
+  | T_JSNEW                  -> JSNEW
+  | T_INT64                  -> INT64 v
+  | T_INT32                  -> INT32 v
+  | T_INT                    -> INT v
+  | T_INITIALIZER            -> INITIALIZER
+  | T_INHERIT                -> INHERIT
+  | T_INFIXOP4               -> INFIXOP4 v
+  | T_INFIXOP3               -> INFIXOP3 v
+  | T_INFIXOP2               -> INFIXOP2 v
+  | T_INFIXOP1               -> INFIXOP1 v
+  | T_INFIXOP0               -> INFIXOP0 v
+  | T_INCLUDE                -> INCLUDE
+  | T_IN                     -> IN
+  | T_IF                     -> IF
+  | T_GREATERRBRACKET        -> GREATERRBRACKET
+  | T_GREATERRBRACE          -> GREATERRBRACE
+  | T_GREATER                -> GREATER
+  | T_FUNCTOR                -> FUNCTOR
+  | T_FUNCTION               -> FUNCTION
+  | T_FUN                    -> FUN
+  | T_FOR_LWT                -> FOR_LWT
+  | T_FOR                    -> FOR
+  | T_FLOAT                  -> FLOAT v
+  | T_FINALLY_LWT            -> FINALLY_LWT
+  | T_FALSE                  -> FALSE
+  | T_EXTERNAL               -> EXTERNAL
+  | T_EXCEPTION              -> EXCEPTION
+  | T_EQUAL                  -> EQUAL
+  | T_EOL                    -> EOL
+  | T_EOF                    -> EOF
+  | T_ENTRYPOINT             -> ENTRYPOINT
+  | T_END                    -> END
+  | T_ELSE                   -> ELSE
+  | T_DOWNTO                 -> DOWNTO
+  | T_DOTDOT                 -> DOTDOT
+  | T_DOT                    -> DOT
+  | T_DONE                   -> DONE
+  | T_DO                     -> DO
+  | T_CONSTRAINT             -> CONSTRAINT
+  | T_COMMENT                -> COMMENT v
+  | T_COMMA                  -> COMMA
+  | T_COLONGREATER           -> COLONGREATER
+  | T_COLONEQUAL             -> COLONEQUAL
+  | T_COLONCOLON             -> COLONCOLON
+  | T_COLON                  -> COLON
+  | T_CLASS                  -> CLASS
+  | T_CHAR                   -> CHAR v
+  | T_BEGIN                  -> BEGIN
+  | T_BARRBRACKET            -> BARRBRACKET
+  | T_BARBAR                 -> BARBAR
+  | T_BAR                    -> BAR
+  | T_BANG                   -> BANG
+  | T_BACKQUOTE              -> BACKQUOTE
+  | T_ASSERT                 -> ASSERT
+  | T_AS                     -> AS
+  | T_AND                    -> AND
+  | T_AMPERSAND              -> AMPERSAND
+  | T_AMPERAMPER             -> AMPERAMPER
 
 let default_token (type a) (t : a token_class) : int * a =
   match t with

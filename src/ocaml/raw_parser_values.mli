@@ -2,7 +2,7 @@
 
 type token = Raw_parser.token
 
-type annotation = [`Shift]
+type annotation = [`Shift of int]
 
 type 'a token_class = 'a Raw_parser.token_class
 type 'a nonterminal_class = 'a Raw_parser.nonterminal_class
@@ -25,3 +25,5 @@ val symbol_of_token: token -> symbol
 val default_symbol: symbol_class -> int * symbol
 
 val selection_priority: symbol_class -> int
+
+val token_of_symbol: 'a token_class -> 'a -> token

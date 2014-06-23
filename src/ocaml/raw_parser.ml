@@ -459,7 +459,7 @@ and _ nonterminal_class =
   | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
   | N_additive : (string) nonterminal_class
 
-and annotation = ([`Shift])
+and annotation = ([`Shift of int])
 
 and symbol_class =
   | CT_ : 'a token_class * annotation list -> symbol_class
@@ -29085,7 +29085,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_let_bindings_no_attrs, [
           ]);
         CT_ (T_IN, [
-                                                             (`Shift);
+                                                             (`Shift 2);
           ]);
         CN_ (N_class_expr, [
           ]);
@@ -29916,7 +29916,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_let_bindings_no_attrs, [
           ]);
         CT_ (T_IN, [
-                                                                                 (`Shift);
+                                                                                 (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -29934,7 +29934,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_module_binding_body, [
           ]);
         CT_ (T_IN, [
-                                                                                    (`Shift);
+                                                                                    (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -29948,7 +29948,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_expr_open, [
           ]);
         CT_ (T_IN, [
-                                        (`Shift);
+                                        (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32223,7 +32223,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_expr, [
           ]);
         CT_ (T_SEMI, [
-                            (`Shift);
+                            (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);

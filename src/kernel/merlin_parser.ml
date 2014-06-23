@@ -164,12 +164,20 @@ let find_strategies (Parser (p,w)) =
       begin
         Format.fprintf ppf "candidates: (selected in first position)\n";
         List.iter strategies
-          ~f:(fun {Merlin_recovery_strategy. cost; prod; symbols = l; _} ->
-            let l = List.map ~f:Values.class_of_symbol l in
-            let l = List.map ~f:Values.string_of_class l in
-            Format.fprintf ppf
-              "- at cost %d, production %d, %s\n" cost prod
-              (String.concat " " l)
+          ~f:(fun {Merlin_recovery_strategy. cost; action} ->
+              match action with
+              | `Reduce {Merlin_recovery_strategy. r_prod; r_symbols = l} ->
+                let l = List.map ~f:Values.class_of_symbol l in
+                let l = List.map ~f:Values.string_of_class l in
+                Format.fprintf ppf
+                  "- at cost %d, reduce %d, %s\n" cost r_prod
+                  (String.concat " " l)
+              | `Shift (token, priority) ->
+                let token = Values.symbol_of_token token in
+                let token = Values.class_of_symbol token in
+                let token = Values.string_of_class token in
+                Format.fprintf ppf
+                  "- at cost %d, priority %d, shift %s\n" cost priority token
           )
       end
   ) strategies;
@@ -177,6 +185,11 @@ let find_strategies (Parser (p,w)) =
 
 type termination = t Merlin_recovery_strategy.Termination.t
 let termination = Merlin_recovery_strategy.Termination.initial
+
+let parser_priority p =
+  let symbol = Frame.value (stack p) in
+  let symcls = Values.class_of_symbol symbol in
+  Values.selection_priority symcls
 
 let rec recover ?endp termination parser =
   let open Merlin_recovery_strategy in
@@ -195,34 +208,44 @@ let rec recover ?endp termination parser =
       {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
     in
     (* Feed stack *)
-    let stack = List.fold_left ~f:add_symbol ~init:env.E.stack strat.symbols in
-    let env = {env with E. stack} in
-    (* Reduce stack *)
-    (* FIXME: action can raise an error. We should catch it and fallback to
-       another strategy *)
-    let stack = strat.action env in
-    let env = {env with E. stack} in
+    match strat.action with
+    | `Reduce {r_prod; r_symbols; r_action} ->
+      let stack = List.fold_left ~f:add_symbol ~init:env.E.stack r_symbols in
+      let env = {env with E. stack} in
+      (* Reduce stack *)
+      (* FIXME: action can raise an error. We should catch it and fallback to
+         another strategy *)
+      let stack = r_action env in
+      let env = {env with E. stack} in
 
-    (* Follow goto transition *)
-    (* FIXME: Rework menhir interface to expose appopriate primitives *)
-    let module M = MenhirLib in
-    let module T = P.MenhirInterpreterTable in
-    let unmarshal2 table i j =
-      M.RowDisplacement.getget
-        M.PackedIntArray.get
-        M.PackedIntArray.get
-        table
-        i j
-    in
-    let goto state prod =
-      let code = unmarshal2 T.goto state (M.PackedIntArray.get T.lhs prod) in
-      (* code = 1 + state *)
-      code - 1
-    in
-    let env = {env with E. current = goto stack.E.state strat.prod} in
+      (* Follow goto transition *)
+      (* FIXME: Rework menhir interface to expose appopriate primitives *)
+      let module M = MenhirLib in
+      let module T = P.MenhirInterpreterTable in
+      let unmarshal2 table i j =
+        M.RowDisplacement.getget
+          M.PackedIntArray.get
+          M.PackedIntArray.get
+          table
+          i j
+      in
+      let goto state prod =
+        let code = unmarshal2 T.goto state (M.PackedIntArray.get T.lhs prod) in
+        (* code = 1 + state *)
+        code - 1
+      in
+      let env = {env with E. current = goto stack.E.state r_prod} in
 
-    (* Construct parser *)
-    Some (termination, of_feed {p with P. env} w)
+      (* Construct parser *)
+      let parser = of_feed {p with P. env} w in
+      Some (termination, parser_priority parser, parser)
+
+    | `Shift (token,priority) ->
+      let startp = (location parser).Location.loc_end in
+      let endp = Option.value ~default:startp endp in
+      match feed (startp,token,endp) parser with
+      | `Accept _ | `Reject -> None
+      | `Step parser' -> Some (termination, priority, parser')
 
 module Integrate
     (P : sig

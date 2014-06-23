@@ -297,7 +297,7 @@ let fake_lident_loc = Location.mknoloc fake_lident
 
 %}
 
-%annot <[`Shift]>
+%annot <[`Shift of int]>
 
 (* Tokens *)
 
@@ -857,7 +857,7 @@ class_expr:
     { v2 }
 | v1 = class_simple_expr v2 = simple_labeled_expr_list
     { mkclass $startpos $endpos (Pcl_apply(v1, List.rev v2)) }
-| LET v2 = rec_flag v3 = let_bindings_no_attrs IN @{`Shift} v5 = class_expr
+| LET v2 = rec_flag v3 = let_bindings_no_attrs IN @{`Shift 2} v5 = class_expr
     { mkclass $startpos $endpos (Pcl_let (v2, List.rev v3, v5)) }
 | v1 = class_expr v2 = attribute
     { Cl.attr v1 v2 }
@@ -1064,7 +1064,7 @@ seq_expr:
     { v1 }
 | v1 = expr SEMI
     { reloc_exp $startpos $endpos v1 }
-| v1 = expr SEMI @{`Shift} v3 = seq_expr
+| v1 = expr SEMI @{`Shift 2} v3 = seq_expr
     { mkexp $startpos $endpos (Pexp_sequence(v1, v3)) }
 
 labeled_simple_pattern:
@@ -1118,11 +1118,11 @@ expr:
     { v1 }
 | v1 = simple_expr v2 = simple_labeled_expr_list
     { mkexp $startpos $endpos (Pexp_apply(v1, List.rev v2)) }
-| LET v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs IN @{`Shift} v6 = seq_expr
+| LET v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs IN @{`Shift 2} v6 = seq_expr
     { mkexp_attrs $startpos $endpos (Pexp_let(v3, List.rev v4, v6)) v2 }
-| LET MODULE v3 = ext_attributes v4 = UIDENT v5 = module_binding_body IN @{`Shift} v7 = seq_expr
+| LET MODULE v3 = ext_attributes v4 = UIDENT v5 = module_binding_body IN @{`Shift 2} v7 = seq_expr
     { mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos(v4) $endpos(v4) v4, v5, v7)) v3 }
-| LET OPEN v3 = expr_open IN @{`Shift} v5 = seq_expr
+| LET OPEN v3 = expr_open IN @{`Shift 2} v5 = seq_expr
     { let (flag,id,ext) = v3 in
       mkexp_attrs $startpos $endpos (Pexp_open(flag, id, v5)) ext }
 | FUNCTION v2 = ext_attributes opt_bar v4 = match_cases
