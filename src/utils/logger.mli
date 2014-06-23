@@ -10,32 +10,29 @@
   *
   **)
 
-(** Verbosity **)
-type level =
-  | Error
-  | Info
-  | Debug
+open Std
 
-(** A logging module. *)
+(** Verbosity **)
+
+type level = [ `error | `info | `debug ]
+
+(** Module sections, to group messages along functional lines. *)
 
 module Section : sig
-  type t = [
-    | `protocol
-    | `locate
-    | `completion
-    | `dot_merlin
-    | `internal
-    | `parser
-  ]
+  type t
 
   val of_string : string -> t
   val to_string : t -> string
   val enabled : level -> t -> bool
 end
 
+type section = Section.t
+val section : string -> section
+val general : section
+
 val set_default_destination : string -> unit
 
-val monitor : ?dest:string -> Section.t -> unit
+val monitor : ?dest:string -> section -> level -> unit
 (** [monitor ?dest section] starts the monitoring of [section].
     If [dest] is set then all subsequent logging related to [section] will go in
     that file, in the default destination otherwise.
@@ -43,23 +40,34 @@ val monitor : ?dest:string -> Section.t -> unit
     If [dest] is omitted and the default destination is not set,
     [Invalid_argument] is raised. *)
 
-val is_monitored : Section.t -> bool
+val is_monitored : section -> bool
 
-val forget : Section.t -> unit
+val forget : section -> unit
 (** [forget section] stops the monitoring of [section] *)
 
-val log : Section.t -> ?prefix:string -> string -> unit
-val logf : Section.t -> ?prefix:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
-(** [log section msg] will output [msg] on the channel dedicated to [section],
+val log : level -> section -> ?title:string -> string -> unit
+val logf : level -> section -> ?title:string ->(Format.formatter -> 'a -> unit) -> 'a -> unit
+val logj : level -> section -> ?title:string ->Std.json -> unit
+val logjf : level -> section -> ?title:string ->('a -> Std.json) -> 'a -> unit
+
+val info : section -> ?title:string -> string -> unit
+val infof : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
+val infoj : section -> ?title:string -> Std.json -> unit
+val infojf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
+(** [info section msg] will output [msg] on the channel dedicated to [section],
     if it is being monitored. *)
 
-val error : Section.t -> string -> unit
-val errorf : Section.t -> (Format.formatter -> 'a -> unit) -> 'a -> unit
+val error : section -> ?title:string -> string -> unit
+val errorf : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
+val errorj : section -> ?title:string -> Std.json -> unit
+val errorjf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
 (** [error section msg] behaves as [log] if [section] is being monitored, but
     prints to the default_destination (if it is set) otherwise. *)
 
-val debug : Section.t -> string -> unit
-val debugf : Section.t -> (Format.formatter -> 'a -> unit) -> 'a -> unit
+val debug : section -> ?title:string -> string -> unit
+val debugf : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
+val debugj : section -> ?title:string -> Std.json -> unit
+val debugjf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
 (** Use [debug section msg] for mostly unimportant messages, those will be
     displayed only if verbose. *)
 

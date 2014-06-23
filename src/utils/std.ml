@@ -1,3 +1,10 @@
+module Json = struct
+  include Yojson.Basic
+  let string x = `String x
+  let int x = `Int x
+end
+type json = Json.json
+
 module Hashtbl = struct
   include Hashtbl
 
@@ -410,6 +417,10 @@ module Lexing = struct
      operation *)
   let immediate_pos buf =
     {buf.lex_curr_p with pos_cnum = buf.lex_abs_pos + buf.lex_curr_pos}
+
+  let json_of_position pos =
+    let line, col = split_pos pos in
+    `Assoc ["line", `Int line; "col", `Int col]
 end
 
 module Stream = struct
@@ -465,5 +476,3 @@ end = struct
   let none : exn t = make Not_found
   let none () : 'a t = Obj.magic none
 end
-
-module Json = Yojson.Basic

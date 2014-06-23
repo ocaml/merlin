@@ -1,6 +1,8 @@
 open Std
 open Raw_parser
 
+let section = Logger.section "recover"
+
 let rollbacks endp parser =
   let rec aux (termination,_,parser) =
     (* FIXME: find proper way to handle limit conditions *)
@@ -32,20 +34,25 @@ let exns t = t.errors
 
 let fresh parser = {errors = []; parser; recovering = None}
 
+let token_to_string tok =
+  let open Merlin_parser.Values in
+  string_of_class (class_of_symbol (symbol_of_token tok))
+
 let rec feed_normal (s,tok,e as input) parser =
-  Logger.debugf `internal
-    (fun ppf tok -> Format.fprintf ppf "normal parser: received %s"
-        Merlin_parser.Values.(string_of_class (class_of_symbol (symbol_of_token tok))))
-    tok;
+  let dump_token token = `Assoc [
+      "token", `String (token_to_string token)
+    ]
+  in
   match Merlin_parser.feed input parser with
   | `Accept _ ->
-    Logger.debug `internal "parser accepted";
+    Logger.debugjf section ~title:"feed_normal accepted" dump_token tok;
     assert (tok = EOF);
     feed_normal (s,SEMISEMI,e) parser
   | `Reject ->
-    Logger.debug `internal "parser rejected";
+    Logger.debugjf section ~title:"feed_normal rejected" dump_token tok;
     None
   | `Step parser ->
+    Logger.debugjf section ~title:"feed_normal step" dump_token tok;
     Some parser
 
 let closing_token = function
@@ -84,52 +91,52 @@ let feed_recover original (s,tok,e as input) zipper =
   let zipper = Zipper.seek_forward more_indented zipper in
   let zipper = Zipper.seek_backward less_indented zipper in
   let candidates = prepare_candidates (Zipper.select_forward more_indented zipper) in
-  Logger.errorf `protocol (fun ppf candidates->
-    Format.fprintf ppf "recovery candidates starting at %a:\n%!"
-      Lexing.print_position s;
-    let dump_snapshot (priority,parser) =
-      Format.fprintf ppf "- priority %d, %a\n"
-        priority Merlin_parser.dump parser
-    in
-    List.iter dump_snapshot candidates)
-    candidates;
-  let rec aux_feed = function
+  Logger.infojf section ~title:"feed_recover candidates"
+    (fun (pos,candidates) ->
+      `Assoc [
+        "position", Lexing.json_of_position pos;
+        "candidates",
+        let dump_snapshot n (priority,parser) = `Assoc [
+            "number", `Int n;
+            "priority", `Int priority;
+            "parser", Merlin_parser.dump parser;
+          ]
+        in
+        `List (List.mapi ~f:dump_snapshot candidates)
+      ])
+    (s,candidates);
+  let rec aux_feed n = function
     | [] -> Either.L zipper
     | (_,candidate) :: candidates ->
-      aux_dispatch candidates candidate
+      aux_dispatch candidates n candidate
         (Merlin_parser.feed input candidate)
 
-  and aux_dispatch candidates candidate = function
+  and aux_dispatch candidates n candidate = function
     | `Step parser ->
-      Logger.debugf `internal (fun ppf ->
-          Format.fprintf ppf "selected recovery %a\n%!" Merlin_parser.dump)
-        candidate;
+      Logger.infojf section ~title:"feed_recover selected"
+        (fun (n,parser) ->
+          `Assoc ["number", `Int n;
+                  "parser", Merlin_parser.dump parser])
+        (n,parser);
       Either.R parser
     | `Accept _ ->
-      Logger.debugf `internal (fun ppf ->
-          Format.fprintf ppf "accepted recovery %a\n%!" Merlin_parser.dump)
-        candidate;
+      Logger.debugjf section ~title:"feed_recover accepted"
+        (fun n -> `Assoc ["number", `Int n]) n;
       assert (tok = EOF);
-      aux_dispatch candidates candidate
+      aux_dispatch candidates n candidate
         (Merlin_parser.feed (s,SEMISEMI,e) candidate)
     | `Reject ->
-      Logger.debugf `internal (fun ppf ->
-          Format.fprintf ppf "failed recovery from %a\n%!" Merlin_parser.dump)
-        candidate;
-      aux_feed candidates
+      Logger.debugjf section ~title:"feed_recover rejected"
+        (fun n -> `Assoc ["number", `Int n]) n;
+      aux_feed (n + 1) candidates
 
   in
-  aux_feed candidates
+  aux_feed 0 candidates
 
 let fold warnings token t =
   match token with
   | Merlin_lexer.Error _ -> t
   | Merlin_lexer.Valid (s,tok,e) ->
-    Logger.debugf `internal
-      (fun ppf tok -> Format.fprintf ppf "received %s"
-          Merlin_parser.Values.(string_of_class (class_of_symbol (symbol_of_token tok))))
-      tok;
-    Logger.debugf `internal Merlin_parser.dump t.parser;
     warnings := [];
     let pop w = let r = !warnings in w := []; r in
     let recover_from t recovery =
@@ -159,26 +166,28 @@ let fold token t =
   Either.get (Parsing_aux.catch_warnings warnings
                 (fun () -> fold warnings token t))
 
-
-let dump_recovering ppf = function
-  | None -> Format.fprintf ppf "clean"
+let dump_recovering = function
+  | None -> `Null
   | Some (Zipper (head, _, tail)) ->
     let dump_snapshot (priority,parser) =
-      Format.fprintf ppf "- priority %d, %a\n"
-        priority Merlin_parser.dump parser
+      `Assoc [
+        "priority", `Int priority;
+        "parser", Merlin_parser.dump parser
+      ]
     in
-    let iter ppf l = List.iter ~f:dump_snapshot l in
-    Format.fprintf ppf "recoverable states\nhead:\n%atail:\n%a"
-      iter head
-      iter tail
+    `Assoc [
+      "head", `List (List.map ~f:dump_snapshot head);
+      "tail", `List (List.map ~f:dump_snapshot tail);
+    ]
 
-let dump ppf t =
-  Format.fprintf ppf "parser: %a\n" Merlin_parser.dump t.parser;
-  Format.fprintf ppf "recovery: %a\n" dump_recovering t.recovering
+let dump t = `Assoc [
+    "parser", Merlin_parser.dump t.parser;
+    "recovery", dump_recovering t.recovering;
+  ]
 
-let dump_recoverable ppf t =
+let dump_recoverable t =
   let t = match t.recovering with
     | Some _ -> t
     | None -> {t with recovering = Some (rollbacks Lexing.dummy_pos t.parser)}
   in
-  dump ppf t
+  dump t

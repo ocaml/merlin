@@ -51,6 +51,8 @@ let new_state () =
   let buffer = Buffer.create project Parser.implementation in
   {project; buffer; lexer = None}
 
+let section = Logger.section "command"
+
 let cursor_state state =
   let cursor, marker =
     match state.lexer with
@@ -210,9 +212,8 @@ let dispatch (state : state) =
       Track_definition.from_string ~project:state.project ~env ~local_defs path
     in
     Option.map opt ~f:(fun (file_opt, loc) ->
-      Logger.log `locate
-        (sprintf "--> %s"
-          (match file_opt with None -> "<local buffer>" | Some f -> f)) ;
+      Logger.info section ~title:"locate"
+        (Option.value ~default:"<local buffer>" file_opt);
       file_opt, loc.Location.loc_start
     )
 
@@ -302,9 +303,7 @@ let dispatch (state : state) =
     texns @ pexns
 
   | (Dump `Parser : a request) ->
-    let ppf, to_string = Format.to_string () in
-    Merlin_recover.dump ppf (Buffer.recover state.buffer);
-    `String (to_string ())
+    Merlin_recover.dump (Buffer.recover state.buffer);
 
   | (Dump `Typer_input : a request) ->
     let ppf, to_string = Format.to_string () in
@@ -312,9 +311,7 @@ let dispatch (state : state) =
     `String (to_string ())
 
   | (Dump `Recover : a request) ->
-    let ppf, to_string = Format.to_string () in
-    Merlin_recover.dump_recoverable ppf (Buffer.recover state.buffer);
-    `String (to_string ())
+    Merlin_recover.dump_recoverable (Buffer.recover state.buffer);
 
   | (Dump (`Env (kind, pos)) : a request) ->
     let typer = Buffer.typer state.buffer in
@@ -366,9 +363,8 @@ let dispatch (state : state) =
     let dot_merlins =
       try fn path
       with Sys_error s ->
-        Logger.debugf `internal
-          (fun ppf -> Format.fprintf ppf "project_load: Sys_error %S")
-          s;
+        Logger.debugj section ~title:"project_load"
+          (`String s);
         List.Lazy.Nil
     in
     let config = Dot_merlin.parse dot_merlins in

@@ -32,26 +32,26 @@ type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
 type low_io = Json.json Stream.t * (Json.json -> unit)
 type io_maker = input:in_channel -> output:out_channel -> low_io
 
-let section = Logger.(`protocol)
+let section = Logger.section "protocol"
 
 let invalid_arguments () = failwith "invalid arguments"
 
+let last_time = ref (Sys.time ())
+let log_time fields =
+  let old_time = !last_time in
+  let new_time = Sys.time () in
+  last_time := new_time;
+  ("time", `Float new_time) ::
+    ("delta", `Float (new_time -. old_time)) ::
+    fields
+
 let json_log (input,output) =
-  let last_time = ref (Sys.time ()) in
-  let log_time () =
-    let old_time = !last_time in
-    let new_time = Sys.time () in
-    last_time := new_time;
-    Printf.sprintf "time %f, delta %f" new_time (new_time -. old_time)
-  in
-  let mk_prefix s =
-    if Clflags.timed_logs () then sprintf "// %s %s\n " s (log_time ()) else s
-  in
+  let wrap json = `Assoc (log_time ["body", json]) in
   let log_input json =
-    Logger.log section ~prefix:(mk_prefix "<") (Json.to_string json); json
+    Logger.infojf section ~title:"input" wrap json; json
   in
   let log_output json =
-    Logger.log section ~prefix:(mk_prefix ">") (Json.to_string json); json
+    Logger.infojf section ~title:"output" wrap json; json
   in
   let input' = Stream.map ~f:log_input input in
   let output' json = output (log_output json) in
@@ -93,16 +93,12 @@ module Protocol_io = struct
   exception Failure' = Failure
   open Protocol
 
-  let json_of_pos pos =
-    Lexing.(`Assoc ["line", `Int pos.pos_lnum;
-                    "col", `Int (pos.pos_cnum - pos.pos_bol)])
-
   let json_of_error {Error_report. valid; text; where; loc} =
     let content = ["valid", `Bool valid; "message", `String text] in
     let content =
       if loc = Location.none then content else
-      ("start", json_of_pos loc.Location.loc_start) ::
-      ("end"  , json_of_pos loc.Location.loc_end) ::
+      ("start", Lexing.json_of_position loc.Location.loc_start) ::
+      ("end"  , Lexing.json_of_position loc.Location.loc_end) ::
       content
     in
     let content = ("type", `String where) :: content in
@@ -126,8 +122,8 @@ module Protocol_io = struct
     | _ -> failwith "Incorrect position"
 
   let with_location loc assoc =
-    `Assoc (("start", json_of_pos loc.Location.loc_start) ::
-            ("end",   json_of_pos loc.Location.loc_end) ::
+    `Assoc (("start", Lexing.json_of_position loc.Location.loc_start) ::
+            ("end",   Lexing.json_of_position loc.Location.loc_end) ::
             assoc)
 
   let optional_position = function
@@ -170,7 +166,7 @@ module Protocol_io = struct
       `Assoc [
         "name", `String name;
         "kind", `String (string_of_kind kind);
-        "pos", json_of_pos pos;
+        "pos", Lexing.json_of_position pos;
         "children", `List (json_of_outline children);
       ]
     in
@@ -178,7 +174,7 @@ module Protocol_io = struct
 
   let json_of_cursor_state {cursor; marker} =
     `Assoc [
-      "cursor", json_of_pos cursor;
+      "cursor", Lexing.json_of_position cursor;
       "marker", `Bool marker;
     ]
 
@@ -336,15 +332,15 @@ module Protocol_io = struct
         | Locate _, None ->
           `String "Not found"
         | Locate _, Some (None,pos) ->
-          `Assoc ["pos",json_of_pos pos]
+          `Assoc ["pos",Lexing.json_of_position pos]
         | Locate _, Some (Some file,pos) ->
-          `Assoc ["file",`String file; "pos",json_of_pos pos]
+          `Assoc ["file",`String file; "pos",Lexing.json_of_position pos]
         | Outline, outlines ->
           `List (json_of_outline outlines)
         | Drop, cursor ->
           json_of_cursor_state cursor
         | Boundary _, Some {Location. loc_start; loc_end} ->
-          `List (List.map json_of_pos [loc_start; loc_end])
+          `List (List.map Lexing.json_of_position [loc_start; loc_end])
         | Boundary _, None ->
           `Null
         | Reset _, cursor ->

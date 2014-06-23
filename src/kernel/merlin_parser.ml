@@ -5,6 +5,8 @@ module Values = Raw_parser_values
 module P = Raw_parser
 module E = MenhirLib.EngineTypes
 
+let section = Logger.section "parser"
+
 type state = Raw_parser.state
 
 type t = Parser of P.feed P.parser * MenhirUtils.witness
@@ -106,82 +108,94 @@ let feed (s,t,e as input) parser =
     let p' = P.feed p input in
     of_step p' depth
 
-let dump_item ppf (prod, dot_pos) =
-  let print_symbol i symbol =
-    Format.fprintf ppf "%s %s"
-      (if i = dot_pos then " ." else "")
-      (Values.string_of_class symbol)
-  in
+let dump_item (prod, dot_pos) =
   let lhs, rhs = P.Query.production_definition prod in
-  Format.fprintf ppf "%s = "
-    (Option.value_map ~f:Values.string_of_class ~default:"?" lhs);
-  List.iteri print_symbol rhs
+  let lhs = Option.value_map ~f:Values.string_of_class ~default:"?" lhs in
+  let rhs = List.map ~f:Values.string_of_class rhs in
+  let prefix, suffix = List.split_n dot_pos rhs in
+  `Assoc [
+    "item", `List [`Int prod; `Int dot_pos];
+    "non_terminal", `String lhs;
+    "prefix", `List (List.map ~f:Json.string prefix);
+    "suffix", `List (List.map ~f:Json.string suffix);
+  ]
 
-let dump_itemset ppf l =
-  List.iter ~f:(Format.fprintf ppf "- %a\n" dump_item) l
+let dump_itemset l =
+  `List (List.map dump_item l)
 
-let dump ppf t =
+let rec dump_stack acc = function
+  | None -> `List (List.rev acc)
+  | Some frame ->
+    let v = Frame.value frame in
+    let position = (Frame.location frame).Location.loc_start in
+    let json =
+      `Assoc [
+        "position", Lexing.json_of_position position;
+        "content", `String (Values.(string_of_class (class_of_symbol v)));
+      ]
+    in
+    dump_stack (json :: acc) (Frame.next frame)
+let dump_stack xs = dump_stack [] xs
+
+let dump t =
   (* Print current frame, with its itemset *)
   let Parser (s,_) = t in
-  let state = get_state s in
-  let itemset = P.Query.itemset state in
-  Format.fprintf ppf "position: %a; itemset:\n%a"
-    Lexing.print_position (location t).Location.loc_start
-    dump_itemset itemset;
+  let lr1 = get_state s in
+  let lr0 = P.Query.lr0_state lr1 in
   (* Print overview of the stack *)
-  let rec aux first ppf = function
-    | None -> ()
-    | Some frame ->
-      let v = Frame.value frame in
-      let l,c = Lexing.split_pos (Frame.location frame).Location.loc_start in
-      Format.fprintf ppf "%s(%d.) %s %d:%d"
-        (if first then "" else "; ")
-        (Frame.depth frame)
-        Values.(string_of_class (class_of_symbol v)) l c;
-      aux false ppf (Frame.next frame)
-  in
-  Format.fprintf ppf "[";
-  aux true ppf (Some (Frame.stack t));
-  Format.fprintf ppf "]\n%!"
+  `Assoc [
+    "guide", Lexing.json_of_position (location t).Location.loc_start;
+    "lr0", `Int lr0;
+    "itemset", dump_itemset (P.Query.itemset lr0);
+    "stack", dump_stack (Some (Frame.stack t));
+  ]
 
-let last_token (Parser (raw_parser,_)) =
-  let loc_start,t,loc_end = raw_parser.P.env.E.token in
-  Location.mkloc t
-    {Location. loc_start; loc_end; loc_ghost = false}
+let dump_strategy {Merlin_recovery_strategy. cost; action} =
+  `Assoc [
+    "cost", `Int cost;
+    "action",
+    begin match action with
+    | `Reduce {Merlin_recovery_strategy. r_prod; r_symbols = l} ->
+      let l = List.map ~f:Values.class_of_symbol l in
+      let l = List.map ~f:Values.string_of_class l in
+      let l = List.map ~f:Json.string l in
+      (* FUCK FUCK FUCK JSON, NO WAY TO REPRESENT SUMS ?!
+         HOW IS IT POSSIBLE TO DESIGN SUCH SHIT *)
+      `List [`String "reduce"; `Assoc [
+               "production", `Int r_prod;
+               "symbols", `List l;
+             ] ]
+    | `Shift (token, priority) ->
+      let token = Values.symbol_of_token token in
+      let token = Values.class_of_symbol token in
+      let token = Values.string_of_class token in
+      `List [`String "shift"; `Assoc [
+               "token", `String token;
+               "priority", `Int priority;
+             ] ]
+    end
+  ]
+
+let dump_strategies (lr0,strategies) =
+  `Assoc [
+    "lr0", `Int lr0;
+    "itemset", dump_itemset (P.Query.itemset lr0);
+    "strategies", `List (List.map ~f:dump_strategy strategies)
+  ]
 
 let find_strategies (Parser (p,w)) =
   let env = p.P.env in
   let lr1_state = env.E.current in
   let lr0_state = P.Query.lr0_state lr1_state in
   let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
-  Logger.errorf `parser (fun ppf strategies ->
-    Format.fprintf ppf "search for strategies at %d.\n" lr0_state;
-    Format.fprintf ppf "itemset:\n%a"
-      dump_itemset (P.Query.itemset lr0_state);
-    if strategies = [] then
-      Format.fprintf ppf "no candidate selected, dropping.\n"
-    else
-      begin
-        Format.fprintf ppf "candidates: (selected in first position)\n";
-        List.iter strategies
-          ~f:(fun {Merlin_recovery_strategy. cost; action} ->
-              match action with
-              | `Reduce {Merlin_recovery_strategy. r_prod; r_symbols = l} ->
-                let l = List.map ~f:Values.class_of_symbol l in
-                let l = List.map ~f:Values.string_of_class l in
-                Format.fprintf ppf
-                  "- at cost %d, reduce %d, %s\n" cost r_prod
-                  (String.concat " " l)
-              | `Shift (token, priority) ->
-                let token = Values.symbol_of_token token in
-                let token = Values.class_of_symbol token in
-                let token = Values.string_of_class token in
-                Format.fprintf ppf
-                  "- at cost %d, priority %d, shift %s\n" cost priority token
-          )
-      end
-  ) strategies;
+  Logger.infojf section ~title:"find_strategies" dump_strategies
+    (lr0_state,strategies);
   strategies
+
+let last_token (Parser (raw_parser,_)) =
+  let loc_start,t,loc_end = raw_parser.P.env.E.token in
+  Location.mkloc t
+    {Location. loc_start; loc_end; loc_ghost = false}
 
 type termination = t Merlin_recovery_strategy.Termination.t
 let termination = Merlin_recovery_strategy.Termination.initial

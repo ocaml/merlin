@@ -51,19 +51,26 @@ let set = ref initial
 
 let debug_spec =
   let f section =
-    prerr_endline "ca debug";
-    match Misc.rev_string_split section ~on:',' with
-    | [ section ] ->
-      begin try Logger.(monitor (Section.of_string section))
-        with Invalid_argument _ -> () end
-    | [ log_path ; section ] ->
-      begin try
-          let section = Logger.Section.of_string section in
-          Logger.monitor ~dest:log_path section
-        with Invalid_argument _ ->
-          ()
-      end
-    | _ -> assert false
+    let split = Misc.rev_string_split in
+    let section, dest =
+      match split section ~on:',' with
+      | [ section ] -> section, None
+      | [ log_path ; section ] -> section, Some log_path
+      | _ -> invalid_arg "-debug"
+    in
+    let section, level =
+      match Misc.rev_string_split section ~on:':' with
+      | [ section ] -> section, `info
+      | [ "error" ; section  ] -> section, `error
+      | [ "info"  ; section  ] -> section, `info
+      | [ "debug" ; section  ] -> section, `debug
+      | _ -> invalid_arg "-debug"
+    in
+    begin try
+      let section = Logger.section section in
+      Logger.monitor ?dest section level
+    with Invalid_argument _ -> ()
+    end
   in
   "-debug",
   Arg.String f,

@@ -130,7 +130,7 @@ let () =
   begin try
     let dest = Sys.getenv "MERLIN_LOG" in
     Logger.set_default_destination dest ;
-    Logger.monitor ~dest `protocol
+    Logger.monitor ~dest (Logger.section "protocol") `info;
   with _ ->
     ()
   end;

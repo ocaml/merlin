@@ -2,63 +2,65 @@ open Std
 open Misc
 
 (* Verbosity *)
-type level =
-  | Error
-  | Info
-  | Debug
+type level = [ `error | `info | `debug ]
 
-let default_destination =
-  ref None
+let log_level = function
+  | `error -> 0
+  | `info  -> 1
+  | `debug -> 2
+
+type section = {
+  name: string;
+  mutable destination: out_channel option;
+  mutable log_level: int;
+}
 
 module Section = struct
-  (* extend as necessary *)
-  type t = [
-    | `protocol
-    | `locate
-    | `completion
-    | `dot_merlin
-    | `internal
-    | `parser
-  ]
+  type t = section
 
-  let switches, switch =
-    let protocol   = ref Info, ref None, "protocol"
-    and locate     = ref Info, ref None, "locate"
-    and completion = ref Info, ref None, "completion"
-    and dot_merlin = ref Info, ref None, ".merlin"
-    and internal   = ref Info, ref None, "internal"
-    and parser     = ref Info, ref None, "parser"
+  let sections = Hashtbl.create 7
+
+  let on_create = ref (fun _ -> ())
+
+  let of_string name =
+    try
+      Hashtbl.find sections name
+    with Not_found ->
+      assert (String.length name >= 2);
+      let assert_well_formed = function
+        | 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '-' | '.' -> ()
+        | _ ->
+          prerr_endline ("Malformed section name: " ^ name);
+          invalid_arg "Logger.Section.make"
+      in
+      String.iter ~f:assert_well_formed name;
+      let section = { name; destination = None; log_level = 0 } in
+      Hashtbl.add sections name section;
+      !on_create name;
+      section
+
+  let general = of_string "general"
+
+  let to_string t = t.name
+
+  let dest level x =
+    let dest =
+      if log_level level > x.log_level
+      then None
+      else x.destination
     in
-    [protocol; locate; completion; dot_merlin; internal],
-    function
-    | `protocol   -> protocol
-    | `locate     -> locate
-    | `completion -> completion
-    | `dot_merlin -> dot_merlin
-    | `internal   -> internal
-    | `parser     -> parser
-
-  let dest lvl x =
-    let rlvl, rdest, _ = switch x in
-    let dest = if lvl <= !rlvl then !rdest else None in
-    match lvl, dest with
-    | Error, None -> !default_destination
+    match level, dest with
+    | `error, None -> general.destination
     | _, _ -> dest
 
-  let enabled lvl x = match dest lvl x with Some _ -> true | None -> false
-
-  let to_string s = thd3 (switch s)
-
-  let of_string = function
-    | "protocol"   -> `protocol
-    | "locate"     -> `locate
-    | "completion" -> `completion
-    | ".merlin"    -> `dot_merlin
-    | "internal"   -> `internal
-    | "parser"     -> `parser
-    | x            -> invalid_arg ("unknown section: " ^ x)
-
+  let enabled lvl x =
+    match dest lvl x with
+    | Some _ -> true
+    | None -> false
 end
+
+let section = Section.of_string
+let general = Section.general
 
 let opened_files : (string, out_channel) Hashtbl.t =
   Hashtbl.create 4
@@ -70,67 +72,102 @@ let get_or_open path =
     Hashtbl.add opened_files path oc;
     oc
 
-let set_default_destination path =
-  let oc = get_or_open path in
-  default_destination := Some oc
+let is_monitored x =
+  match x.destination with
+  | Some _ -> true
+  | None -> false
 
-let monitor ?dest x =
-  let _lvl, rdest, _ = Section.switch x in
+let start_time = Unix.time ()
+
+let format level section ?title content =
+  let at = Unix.time () -. start_time in
+  let level = match level with
+    | `error -> "error"
+    | `info  -> "info"
+    | `debug -> "debug"
+  in
+  `Assoc [
+    "time", `Float at;
+    "level", `String level;
+    "section", `String (Section.to_string section);
+    "title", (match title with None -> `Null | Some s -> `String s);
+    "content", content
+  ]
+
+let output level section ?title j oc =
+  Json.to_channel oc (format level section ?title j);
+  output_char oc '\n';
+  flush oc
+
+let logjf level section ?title f j =
+  match Section.dest level section with
+  | None -> ()
+  | Some oc ->
+    output level section ?title (f j) oc
+
+let logj level section ?title j =
+  logjf level section ?title (fun x -> x) j
+
+let log level section ?title msg =
+  logj level section ?title (`String msg)
+
+let logf level section ?title f x =
+  match Section.dest level section with
+  | None -> ()
+  | Some oc ->
+    let ppf, to_string = Format.to_string () in
+    f ppf x;
+    output level section ?title (`String (to_string ())) oc
+
+let info    x = log   `info  x
+let infof   x = logf  `info  x
+let infoj   x = logj  `info  x
+let infojf  x = logjf `info  x
+let error   x = log   `error x
+let errorf  x = logf  `error x
+let errorj  x = logj  `error x
+let errorjf x = logjf `error x
+let debug   x = log   `debug x
+let debugf  x = logf  `debug x
+let debugj  x = logj  `debug x
+let debugjf x = logjf `debug x
+
+let monitor ?dest x level =
   let dest =
     match dest with
     | Some path -> get_or_open path
     | None ->
-      match !default_destination with
+      match general.destination with
       | None -> invalid_arg "no log file specified"
       | Some dest -> dest
   in
-  rdest := Some dest
+  x.destination <- Some dest;
+  x.log_level <- log_level level;
+  infoj general ~title:"monitor start"
+    (`List [`String x.name;
+            `String (match level with | `error -> "error"
+                                      | `info -> "info"
+                                      | `debug -> "debug")]);
+  if x == general then
+    let sections = Hashtbl.fold
+        (fun name _ names -> `String name :: names)
+        Section.sections []
+    in
+    infoj general ~title:"available logging sections" (`List sections)
 
-let forget x = snd3 (Section.switch x) := None
+let () =
+  Section.on_create := (fun name ->
+    info general ~title:"logging section created" name)
 
-let is_monitored x =
-  match !(snd3 (Section.switch x)) with
-  | Some _ -> true
-  | None -> false
+let forget x =
+  x.destination <- None;
+  info general ~title:"monitor stop" x.name
 
-let log section ?prefix msg =
-  let prefix =
-    match prefix with
-    | Some s -> s
-    | None -> Printf.sprintf "%s |" (Section.to_string section)
-  in
-  match Section.dest Info section with
-  | Some oc -> Printf.fprintf oc "%s %s\n%!" prefix msg
-  | None -> ()
-
-let error section msg =
-  match Section.dest Error section with
-  | Some oc ->
-    Printf.fprintf oc "ERROR(%s) | %s\n%!" (Section.to_string section) msg
-  | None -> ()
-
-let debug section msg =
-  match Section.dest Debug section with
-  | Some oc ->
-    Printf.fprintf oc "DEBUG(%s) | %s\n%!" (Section.to_string section) msg
-  | None -> ()
-
-let format out level section f x =
-  if Section.enabled level section then
-    let ppf, to_string = Format.to_string () in
-    f ppf x; out section (to_string ())
-
-let logf section ?prefix f x =
-  format (log ?prefix) Info section f x
-
-let errorf section f x =
-  format error Error section f x
-
-let debugf section f x =
-  format debug Debug section f x
+let set_default_destination dest =
+  monitor ~dest general `info
 
 let shutdown () =
   Hashtbl.iter (fun _ oc -> close_out oc) opened_files;
   Hashtbl.reset opened_files;
-  default_destination := None;
-  List.iter ~f:(fun (_,rdest,_) -> rdest := None) Section.switches
+  Hashtbl.iter (fun _ section -> section.destination <- None)
+    Section.sections

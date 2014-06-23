@@ -19,7 +19,7 @@ val feed : Lexing.position * Raw_parser.token * Lexing.position
         -> [ `Accept of Raw_parser.symbol | `Step of t | `Reject ]
 
 (* Dump internal state for debugging purpose *)
-val dump : Format.formatter -> t -> unit
+val dump : t -> Std.json
 
 (* Location of top frame in stack *)
 (* for recovery: approximate position of last correct construction *)
