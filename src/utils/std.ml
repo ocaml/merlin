@@ -158,6 +158,18 @@ module List = struct
     | [] -> None
     | [x] -> Some x
     | _ :: l -> last l
+
+  let rec group_by pred group acc = function
+    | [] -> List.rev acc
+    | x :: xs ->
+      match group with
+      | (x' :: _) when pred x x' ->
+        group_by pred (x :: group) acc xs
+      | _ -> group_by pred [x] (group :: acc) xs
+
+  let group_by pred xs =
+    match group_by pred [] [] xs with
+    | [] :: xs | xs -> xs
 end
 
 module Option = struct
@@ -375,6 +387,10 @@ module Lexing = struct
     match compare p1.pos_lnum p2.pos_lnum with
     | 0 -> compare (column p1) (column p2)
     | n -> n
+
+  let print_position ppf p =
+    let line, col = split_pos p in
+    Format.fprintf ppf "%d:%d" line col
 
   let wrap_lexer ~tokens f buf =
     match !tokens with
