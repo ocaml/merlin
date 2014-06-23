@@ -26,5 +26,5 @@ opam install ${OPAM_DEPENDS}
 
 eval `opam config env`
 ./configure
-make all_versions
-
+make
+make install
