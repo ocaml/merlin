@@ -17,7 +17,7 @@ let get_state s = s.P.env.E.current
 let mk_loc loc_start loc_end = {Location. loc_start; loc_end; loc_ghost = false}
 
 module Frame : sig
-  val stack : t -> frame option
+  val stack : t -> frame
   val depth : frame -> int
 
   val value : frame -> P.symbol
@@ -37,7 +37,9 @@ end = struct
       Some (Frame (d,stack))
 
   let stack (Parser (parser,w)) =
-    frame_of (MenhirUtils.depth w - 1) (get_stack parser)
+    match frame_of (MenhirUtils.depth w - 1) (get_stack parser) with
+    | Some frame -> frame
+    | None -> assert false
 
   let depth (Frame (d,f)) = d
 
@@ -77,10 +79,7 @@ let pop (Parser (p, depth)) =
     Some (Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
 let location t =
-  Option.value_map
-    ~default:Location.none
-    ~f:Frame.location
-    (stack t)
+  Frame.location (stack t)
 
 let of_feed p depth =
   Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
@@ -141,7 +140,7 @@ let dump ppf t =
       aux false ppf (Frame.next frame)
   in
   Format.fprintf ppf "[";
-  aux true ppf (Frame.stack t);
+  aux true ppf (Some (Frame.stack t));
   Format.fprintf ppf "]\n%!"
 
 let last_token (Parser (raw_parser,_)) =
@@ -320,9 +319,7 @@ struct
           More (P.frame state frame (value int), frame, int))
 
   let update' st p t =
-    match Frame.stack p with
-    | None -> empty st
-    | Some frame -> update st frame t
+    update st (Frame.stack p) t
 
   let previous = function
     | Zero _ -> None
@@ -360,11 +357,12 @@ let find_marker t =
     | Some frame when end_top frame -> find_rec acc (Frame.next frame)
     | Some frame -> find_first frame (Frame.next frame)
   in
-  let stack = stack t in
-  match stack with
-  | Some frame when Frame.value frame <> P.T_ (P.T_ENTRYPOINT, ()) ->
-    Some (find_first frame stack)
-  | _ -> None
+  let frame = stack t in
+  if Frame.value frame <> P.T_ (P.T_ENTRYPOINT, ()) then
+    Some (find_first frame (Some frame))
+  else
+    None
+
 
 let has_marker t f' =
   let d = Frame.depth f' in
@@ -377,20 +375,19 @@ let has_marker t f' =
       | Some f when Frame.depth f <= d -> false
       | Some f -> aux (Frame.next f)
     in
-    aux (stack t)
+    aux (Some (stack t))
 
 let has_marker ?diff t f' =
   match diff with
   | None -> has_marker t f'
   | Some (t',result) ->
-    match stack t, stack t' with
-    | None, _ | _, None -> has_marker t f'
-    | Some s, Some s' ->
-      let d_inf = min (Frame.depth s) (Frame.depth s') - 1 in
-      let d' = Frame.depth f' in
-      if d_inf > d'
-      then result
-      else has_marker t f'
+    let s, s' = stack t, stack t' in
+    let d_inf = min (Frame.depth s) (Frame.depth s') - 1 in
+    let d' = Frame.depth f' in
+    if d_inf > d' then
+      result
+    else
+      has_marker t f'
 
 let accepting (Parser (raw_parser,_) as parser) =
   let loc_start,t,loc_end = raw_parser.P.env.E.token in
@@ -400,4 +397,3 @@ let accepting (Parser (raw_parser,_) as parser) =
   | `Accept (Raw_parser.N_ (Raw_parser.N_interface, sg)) ->
     `sg (sg : Parsetree.signature)
   | _ -> `No
-

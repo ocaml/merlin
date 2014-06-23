@@ -41,7 +41,7 @@ val to_step : t -> Raw_parser.feed Raw_parser.parser
 (** Stack inspection *)
 type frame
 
-val stack : t -> frame option
+val stack : t -> frame
 
 module Frame : sig
   val depth : frame -> int
