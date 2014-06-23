@@ -21,3 +21,5 @@ val string_of_class: symbol_class -> string
 val symbol_of_token: token -> symbol
 
 val default_symbol: symbol_class -> int * symbol
+
+val selection_priority: symbol_class -> int

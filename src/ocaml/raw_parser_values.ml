@@ -867,3 +867,7 @@ let default_symbol = function
     with Not_found ->
       min_int, Bottom
 
+let selection_priority = function
+  | CN_ N_expr_let_in_ -> 1
+  | CN_ N_structure_item -> 2
+  | _ -> 0
