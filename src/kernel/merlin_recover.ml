@@ -16,9 +16,7 @@ let rollbacks endp parser =
   in
   let parser = Merlin_parser.termination, parser in
   let stacks = parser :: List.unfold aux parser in
-  let stacks = List.rev_map stacks
-      ~f:(fun (_,p) -> Location.mkloc p (Merlin_parser.location p))
-  in
+  let stacks = List.rev_map stacks ~f:snd in
   (* Hack to drop last parser *)
   let stacks = List.rev (List.tl stacks) in
   Zipper.of_list stacks
@@ -26,7 +24,7 @@ let rollbacks endp parser =
 type t = {
   errors: exn list;
   parser: Merlin_parser.t;
-  recovering: (Merlin_parser.t Location.loc zipper) option;
+  recovering: (Merlin_parser.t zipper) option;
 }
 
 let parser t = t.parser
@@ -55,19 +53,54 @@ let closing_token = function
   | RPAREN -> true
   | _ -> false
 
+let prepare_candidates candidates =
+  let open Location in
+  let candidates = List.rev candidates in
+  (*let candidates = List.group_by
+      (fun (a : _ loc) (b : _ loc) ->
+        Lexing.compare_pos a.loc.loc_start b.loc.loc_start = 0)
+      candidates
+  in*)
+  let parser_priority p =
+    let symbol = Merlin_parser.Frame.value (Merlin_parser.stack p) in
+    let symcls = Merlin_parser.Values.class_of_symbol symbol in
+    Raw_parser_values.selection_priority symcls
+  in
+  let cmp pa pb =
+    - compare (parser_priority pa) (parser_priority pb)
+  in
+  (*List.concat_map (List.stable_sort ~cmp) candidates*)
+  List.stable_sort ~cmp candidates
+
+
 let feed_recover original (s,tok,e as input) zipper =
   let get_col x = snd (Lexing.split_pos x) in
-  let col = get_col s in
+  let ref_col = get_col s in
   (* Find appropriate recovering position *)
-  let until_after  {Location. txt; loc} = col >= get_col loc.Location.loc_start
-  and until_before {Location. txt; loc} = get_col loc.Location.loc_start >= col
+  let less_indented p =
+    let loc = Merlin_parser.location p in
+    get_col loc.Location.loc_start <= ref_col
+  and more_indented p =
+    let loc = Merlin_parser.location p in
+    get_col loc.Location.loc_start >= ref_col
   in
-  let zipper = Zipper.seek_backward until_before zipper in
-  let zipper = Zipper.seek_forward until_after zipper in
-  let candidates = Zipper.select_backward until_before zipper in
+  (* Backward: increase column *)
+  (* Forward: decrease column *)
+  let zipper = Zipper.seek_forward more_indented zipper in
+  let zipper = Zipper.seek_backward less_indented zipper in
+  let candidates = prepare_candidates (Zipper.select_forward more_indented zipper) in
+  Logger.errorf `protocol (fun ppf candidates->
+    Format.fprintf ppf "recovery candidates starting at %a:\n%!"
+      Lexing.print_position s;
+    let dump_snapshot p =
+      Format.fprintf ppf "- %a\n"
+        Merlin_parser.dump p
+    in
+    List.iter dump_snapshot candidates)
+    candidates;
   let rec aux_feed = function
     | [] -> Either.L zipper
-    | {Location. txt = candidate} :: candidates ->
+    | candidate :: candidates ->
       aux_dispatch candidates candidate
         (Merlin_parser.feed input candidate)
 
@@ -131,15 +164,15 @@ let fold token t =
   Either.get (Parsing_aux.catch_warnings warnings
                 (fun () -> fold warnings token t))
 
-let dump_snapshot ppf {Location. txt; loc} =
-  Format.fprintf ppf "- position: %a\n  parser: %a\n"
-    Location.print (Merlin_parser.location txt)
-    Merlin_parser.dump txt
 
 let dump_recovering ppf = function
   | None -> Format.fprintf ppf "clean"
   | Some (Zipper (head, _, tail)) ->
-    let iter ppf l = List.iter ~f:(dump_snapshot ppf) l in
+    let dump_snapshot p =
+      Format.fprintf ppf "- %a\n"
+        Merlin_parser.dump p
+    in
+    let iter ppf l = List.iter ~f:dump_snapshot l in
     Format.fprintf ppf "recoverable states\nhead:\n%atail:\n%a"
       iter head
       iter tail
