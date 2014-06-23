@@ -2,12 +2,14 @@
 
 type token = Raw_parser.token
 
+type annotation = [`Shift]
+
 type 'a token_class = 'a Raw_parser.token_class
 type 'a nonterminal_class = 'a Raw_parser.nonterminal_class
 
 type symbol_class = Raw_parser.symbol_class =
-  | CT_ : 'a token_class -> symbol_class
-  | CN_ : 'a nonterminal_class -> symbol_class
+  | CT_ : 'a token_class * annotation list -> symbol_class
+  | CN_ : 'a nonterminal_class  * annotation list -> symbol_class
 
 type symbol = Raw_parser.symbol =
   | T_ : 'a token_class * 'a -> symbol

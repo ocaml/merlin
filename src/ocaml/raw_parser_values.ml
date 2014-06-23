@@ -4,12 +4,14 @@ open Std
 
 type token = Raw_parser.token
 
+type annotation = [`Shift]
+
 type 'a token_class = 'a Raw_parser.token_class
 type 'a nonterminal_class = 'a Raw_parser.nonterminal_class
 
 type symbol_class = Raw_parser.symbol_class =
-  | CT_ : 'a token_class -> symbol_class
-  | CN_ : 'a nonterminal_class -> symbol_class
+  | CT_ : 'a token_class * annotation list -> symbol_class
+  | CN_ : 'a nonterminal_class  * annotation list -> symbol_class
 
 type symbol = Raw_parser.symbol =
   | T_ : 'a token_class * 'a -> symbol
@@ -17,8 +19,8 @@ type symbol = Raw_parser.symbol =
   | Bottom
 
 let class_of_symbol = function
-  | T_ (k,_) -> CT_ k
-  | N_ (k,_) -> CN_ k
+  | T_ (k,_) -> CT_ (k, [])
+  | N_ (k,_) -> CN_ (k, [])
   | Bottom -> assert false
 
 open Raw_parser
@@ -296,7 +298,6 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_expr_open                         -> "expr_open"
   | N_expr_comma_list                   -> "expr_comma_list"
   | N_expr                              -> "expr"
-  | N_expr_let_in_                      -> "expr_let_in"
   | N_dummy                             -> "dummy"
   | N_direction_flag                    -> "direction_flag"
   | N_core_type_list_no_attr            -> "core_type_list_no_attr"
@@ -342,8 +343,8 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_additive                          -> "additive"
 
 let string_of_class = function
-  | CT_ t -> string_of_token t
-  | CN_ n -> string_of_nonterminal n
+  | CT_ (t,_) -> string_of_token t
+  | CN_ (n,_) -> string_of_nonterminal n
 
 let symbol_of_token = function
   | WITH                         -> T_ (T_WITH, ())
@@ -797,7 +798,6 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     raise Not_found (*(Asttypes.override_flag * Longident.t Asttypes.loc * (string Asttypes.loc option * Parsetree.attributes)) nonterminal_class*)
   | N_expr_comma_list                   -> 0, []
   | N_expr                              -> 1, default_expr
-  | N_expr_let_in_                      -> raise Not_found
   | N_dummy                             -> 0, ()
   | N_direction_flag                    -> 0, Asttypes.Upto
   | N_core_type_list_no_attr            -> 0, []
@@ -857,10 +857,10 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_additive                          -> 1, "+"
 
 let default_symbol = function
-  | CT_ t ->
+  | CT_ (t,_) ->
     let q, v = default_token t in
     q, T_ (t, v)
-  | CN_ n ->
+  | CN_ (n,_) ->
     try
       let q, v = default_nonterminal n in
       q, N_ (n, v)
@@ -868,6 +868,5 @@ let default_symbol = function
       min_int, Bottom
 
 let selection_priority = function
-  | CN_ N_expr_let_in_ -> 1
-  | CN_ N_structure_item -> 2
+  | CN_ (N_structure_item, _) -> 2
   | _ -> 0
