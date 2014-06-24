@@ -121,8 +121,7 @@ let parse_dot_merlin {path; directives} config =
     | `EXT exts ->
       {config with extensions = exts @ config.extensions}
     | `FLG flags ->
-      let lst = rev_split_words flags in
-      let flags = List.rev lst in
+      let flags = List.rev (rev_split_words flags) in
       {config with flags = flags :: config.flags}
   ) directives
 

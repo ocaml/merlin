@@ -170,21 +170,6 @@ end = struct
       flush_global_modules project
     end
 
-  let set_dot_merlin project dm =
-    let module Dm = Dot_merlin in
-    let dm = match dm with | Some dm -> dm | None -> Dm.empty_config in
-    let cfg = project.dot_config in
-    let result, path_pkg = Dot_merlin.path_of_packages dm.Dm.packages in
-    cfg.cfg_path_pkg := List.filter_dup (path_pkg @ !(cfg.cfg_path_pkg));
-    cfg.cfg_path_build := dm.Dm.build_path;
-    cfg.cfg_path_source := dm.Dm.source_path;
-    cfg.cfg_path_cmi := dm.Dm.cmi_path;
-    cfg.cfg_path_cmt := dm.Dm.cmt_path;
-    cfg.cfg_flags <- dm.Dm.flags;
-    cfg.cfg_extensions <- String.Set.(of_list dm.Dm.extensions);
-    flush_global_modules project;
-    result
-
   (* Config override by user *)
   module User = struct
     let reset project =
@@ -223,6 +208,37 @@ end = struct
       let f = String.Set.(if enabled then add else remove) in
       cfg.cfg_extensions <- f path cfg.cfg_extensions
   end
+
+  let update_flags prj =
+    let spec = Clflags.arg_spec prj.flags in
+    let process_flags flags =
+      try Arg.parse_argv ~current:(ref (-1)) (Array.of_list flags) spec
+          (fun name ->
+            Logger.info Logger.general ~title:"unknown flag"
+              name)
+          ""
+      with exn ->
+        Logger.info Logger.general ~title:"exception while processing flags"
+          (Printexc.to_string exn)
+    in
+    List.iter process_flags prj.dot_config.cfg_flags;
+    List.iter process_flags prj.user_config.cfg_flags
+
+  let set_dot_merlin project dm =
+    let module Dm = Dot_merlin in
+    let dm = match dm with | Some dm -> dm | None -> Dm.empty_config in
+    let cfg = project.dot_config in
+    let result, path_pkg = Dot_merlin.path_of_packages dm.Dm.packages in
+    cfg.cfg_path_pkg := List.filter_dup (path_pkg @ !(cfg.cfg_path_pkg));
+    cfg.cfg_path_build := dm.Dm.build_path;
+    cfg.cfg_path_source := dm.Dm.source_path;
+    cfg.cfg_path_cmi := dm.Dm.cmi_path;
+    cfg.cfg_path_cmt := dm.Dm.cmt_path;
+    cfg.cfg_flags <- dm.Dm.flags;
+    cfg.cfg_extensions <- String.Set.(of_list dm.Dm.extensions);
+    flush_global_modules project;
+    update_flags project;
+    result
 
   (* Make global state point to current project *)
   let setup project =
