@@ -20,7 +20,17 @@ let rollbacks endp parser =
   let stacks = parser :: List.unfold aux parser in
   let stacks = List.rev_map stacks ~f:(fun (_,a,b) -> a,b) in
   (* Hack to drop last parser *)
-  let stacks = List.rev (List.tl stacks) in
+  let stacks =
+    List.sort (fun (_,p1) (_,p2) ->
+        let p1 = Merlin_parser.location p1 in
+        let p1 = p1.Location.loc_start in
+        let _, p1 = Lexing.split_pos p1 in
+        let p2 = Merlin_parser.location p2 in
+        let p2 = p2.Location.loc_start in
+        let _, p2 = Lexing.split_pos p2 in
+        - compare p1 p2)
+      stacks
+  in
   Zipper.of_list stacks
 
 type t = {
@@ -88,9 +98,11 @@ let feed_recover original (s,tok,e as input) zipper =
   in
   (* Backward: increase column *)
   (* Forward: decrease column *)
-  let zipper = Zipper.seek_forward more_indented zipper in
+  (*let zipper = Zipper.seek_forward more_indented zipper in
   let zipper = Zipper.seek_backward less_indented zipper in
-  let candidates = prepare_candidates (Zipper.select_forward more_indented zipper) in
+    let candidates = prepare_candidates (Zipper.select_forward more_indented zipper) in*)
+  let Zipper (_,_,candidates) = zipper in
+  let candidates = prepare_candidates candidates in
   Logger.infojf section ~title:"feed_recover candidates"
     (fun (pos,candidates) ->
       `Assoc [

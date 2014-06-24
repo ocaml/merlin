@@ -1064,7 +1064,7 @@ seq_expr:
     { v1 }
 | v1 = expr SEMI
     { reloc_exp $startpos $endpos v1 }
-| v1 = expr SEMI @{`Shift 2} v3 = seq_expr
+| v1 = expr SEMI @{`Shift 1} v3 = seq_expr
     { mkexp $startpos $endpos (Pexp_sequence(v1, v3)) }
 
 labeled_simple_pattern:

@@ -1006,5 +1006,5 @@ let default_symbol = function
       min_int, Bottom
 
 let selection_priority = function
-  | CN_ (N_structure_item, _) -> 2
+  | CN_ (N_structure_item, _) -> 1
   | _ -> 0

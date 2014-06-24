@@ -32223,7 +32223,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_expr, [
           ]);
         CT_ (T_SEMI, [
-                            (`Shift 2);
+                            (`Shift 1);
           ]);
         CN_ (N_seq_expr, [
           ]);
