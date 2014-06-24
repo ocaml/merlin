@@ -208,14 +208,14 @@ let dispatch (state : state) =
         let node = Completion.node_at typer pos in
         node.BrowseT.t_env, Typer.structures typer
     in
-    let opt =
+    begin match
       Track_definition.from_string ~project:state.project ~env ~local_defs path
-    in
-    Option.map opt ~f:(fun (file_opt, loc) ->
-      Logger.info section ~title:"locate"
-        (Option.value ~default:"<local buffer>" file_opt);
-      file_opt, loc.Location.loc_start
-    )
+    with
+    | `Found (file, pos) ->
+      Logger.log `locate (Option.value ~default:"<local buffer>" file_opt);
+      `Found (file, pos)
+    | otherwise -> otherwise
+    end
 
   | (Outline : a request) ->
     let typed_tree = Typer.structures (Buffer.typer state.buffer) in

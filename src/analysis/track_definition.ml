@@ -1,7 +1,7 @@
 open Std
 open Merlin_lib
 
-(*let sources_path = ref (Misc.Path_list.of_list [])
+let sources_path = ref (Misc.Path_list.of_list [])
 let cmt_path = ref (Misc.Path_list.of_list [])
 
 let cwd = ref ""
@@ -27,11 +27,15 @@ module Utils = struct
     | ML  of string
     | CMT of string
 
+  exception File_not_found of filetype
+
   let filename_of_filetype = function ML name | CMT name -> name
   let ext_of_filetype = function ML _ -> ".ml" | CMT _ -> ".cmt"
 
   let find_file file =
     let fname =
+      (* FIXME: the [Misc.chop_extension_if_any] should have no effect here,
+         make sure of that and then remove it. *)
       Misc.chop_extension_if_any (filename_of_filetype file)
       ^ (ext_of_filetype file)
     in
@@ -43,17 +47,23 @@ module Utils = struct
        Example: scheduler.ml and raw_scheduler.ml are present in both async_core
        and async_unix. (ofc. "std.ml" is a more common example.)
 
-       Note that [cwd] is set only when we have encountered a packed module, so in other
-       cases [abs_cmt_file] will be something like "/file.ext" which (hopefully) won't
-       exist. *)
-    try Misc.(find_in_path_uncap (Path_list.of_string_list_ref (ref [ !cwd ]))) fname
+       N.B. [cwd] is set only when we have encountered a packed module and we
+       use it only when set, we don't want to look in the actual cwd of merlin
+       when looking for files. *)
+    try
+      if !cwd = "" then raise Not_found ;
+      Misc.(find_in_path_uncap (Path_list.of_string_list_ref (ref [ !cwd ])))
+        fname
     with Not_found ->
+    try
       let path =
         match file with
         | ML  _ -> !sources_path
         | CMT _ -> !cmt_path
       in
       Misc.find_in_path_uncap path fname
+    with Not_found ->
+      raise (File_not_found file)
 
   let keep_suffix =
     let open Longident in
@@ -85,46 +95,82 @@ end
 
 include Utils
 
+type result = [
+  | `Found of string option * Lexing.position
+  | `Not_in_env of string
+  | `File_not_found of string
+  | `Not_found
+]
+
 (** Reverse the list of structure items − we want to start from the bottom of
     the file − and remove top level indirections. *)
-let get_browsable browsable =
+let get_top_items browsable =
   let items =
     List.rev_map (fun bt ->
       let open BrowseT in
-      match bt.context with
-      | TopStructure -> Lazy.force bt.nodes
-      | _ -> [bt]
+      match bt.t_node with
+      | Structure { Typedtree. str_items } -> str_items (* FIXME: rev? *)
+      | Structure_item str_item -> [ str_item ]
+      | _ -> [] (* TODO: handle signature *)
     ) browsable
   in
   List.concat items
 
+let get_idents item =
+  let open Typedtree in
+  match item.str_desc with
+  | Tstr_value (_, binding_lst) ->
+    List.concat_map binding_lst ~f:(fun binding ->
+      match binding.vb_pat.pat_desc with
+      | Tpat_var (id, _) -> [ Ident.name id , binding.vb_loc ]
+      | _ -> []
+    )
+  | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
+  | Tstr_type td_list ->
+    List.map td_list ~f:(fun { typ_id ; typ_loc } ->
+      Ident.name typ_id, typ_loc
+    )
+  | Tstr_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
+  | _ -> []
+
 let rec check_item modules =
   let get_loc ~name item rest =
-    match item.Browse.context with
-    | Browse.Pattern (Some id, _)
-    | Browse.TypeDecl (id, _, _) when id.Ident.name = name ->
-      Some item.Browse.loc
-    | Browse.Module (Browse.Named id, _) when id = name ->
-      Some item.Browse.loc
-    | Browse.NamedOther id when id.Ident.name = name ->
-      Some item.Browse.loc
-    | Browse.Module (Browse.Include ids, _)
-      when List.exists ids ~f:(fun i -> i.Ident.name = name) ->
-      resolve_mod_alias ~fallback:item.Browse.loc (Lazy.force item.Browse.nodes)
-        [ name ] rest
-    | Browse.Module (Browse.Named str, _) when str = name ->
-      Some item.Browse.loc
-    | _ -> check_item modules rest
+    try Some (List.assoc name (get_idents item))
+    with Not_found ->
+      match item.Typedtree.str_desc with
+      | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } when
+        List.exists incl_type ~f:(let open Types in function
+          | Sig_value (id, _)
+          | Sig_type (id, _, _)
+          | Sig_typext (id, _, _)
+          | Sig_module (id, _, _)
+          | Sig_modtype (id, _)
+          | Sig_class (id, _, _)
+          | Sig_class_type (id, _, _) -> Ident.name id = name
+        ) ->
+        debug_log "one more include to follow..." ;
+        resolve_mod_alias ~fallback:item.Typedtree.str_loc incl_mod
+          [ name ] rest
+      | _ -> check_item modules rest
   in
   let get_on_track ~name item =
-    match item.Browse.context with
-    | Browse.Module (Browse.Named id, _) when id = name ->
-      debug_log "(get_on_track) %s is an alias" name ;
-      `Direct
-    | Browse.Module (Browse.Include ids, _)
-      when List.exists (fun i -> i.Ident.name = name) ids ->
+    let open Typedtree in
+    match item.Typedtree.str_desc with
+    | Tstr_module mb when Ident.name mb.mb_id = name ->
+      debug_log "(get_on_track) %s is bound" name ;
+      `Direct mb.mb_expr
+    | Tstr_include { incl_type ; incl_mod } when
+      List.exists incl_type ~f:(let open Types in function
+        | Sig_value (id, _)
+        | Sig_type (id, _, _)
+        | Sig_typext (id, _, _)
+        | Sig_module (id, _, _)
+        | Sig_modtype (id, _)
+        | Sig_class (id, _, _)
+        | Sig_class_type (id, _, _) -> Ident.name id = name
+      ) ->
       debug_log "(get_on_track) %s is included..." name ;
-      `Included
+      `Included incl_mod
     | _ -> `Not_found
   in
   function
@@ -139,13 +185,13 @@ let rec check_item modules =
       begin match
         match get_on_track ~name:mod_name item with
         | `Not_found -> None
-        | `Direct -> Some path
-        | `Included -> Some modules
+        | `Direct me -> Some (path, me)
+        | `Included me -> Some (modules, me)
       with
       | None -> check_item modules rest
-      | Some path ->
-        resolve_mod_alias ~fallback:item.Browse.loc
-          (Lazy.force item.Browse.nodes) path rest
+      | Some (path, me) ->
+        resolve_mod_alias ~fallback:item.Typedtree.str_loc
+          me path rest
       end
 
 and browse_cmts ~root modules =
@@ -159,15 +205,15 @@ and browse_cmts ~root modules =
       let pos = { Lexing. pos_fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
       Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
     | _ ->
-      let browses   = Browse.structure impl in
-      let browsable = get_browsable browses in
+      let browses   = Browse.of_structures [ impl ] in
+      let browsable = get_top_items browses in
       check_item modules browsable
     end
   | Packed (_, files) ->
     begin match modules with
     | [] -> None
     | mod_name :: modules ->
-      let file = List.find files ~f:(fun f -> file_path_to_mod_name f = mod_name) in
+      let file = List.(find (map files ~f:file_path_to_mod_name)) ~f:((=) mod_name) in
       cwd := Filename.dirname root ;
       debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
       let cmt_file = find_file (CMT file) in
@@ -189,37 +235,41 @@ and from_path' ?fallback =
     try
       let cmt_file = find_file (CMT fname) in
       recover (browse_cmts ~root:cmt_file modules)
-    with Not_found ->
-      recover None
+    with
+    | Not_found -> recover None
+    | File_not_found (ML _) -> assert false
+    | File_not_found (CMT fname) as exn ->
+      match fallback with
+      | None  -> raise exn
+      | value -> value
 
-and resolve_mod_alias ~fallback mod_item path rest =
+and resolve_mod_alias ~fallback mod_expr path rest =
   let open Browse in
   let do_fallback = function
     | None   -> Some fallback
     | Some x -> Some x
   in
-  match mod_item with
-  | [ { context = TopStructure ; nodes } ] ->
-    (* Indirection, recurse. *)
-    resolve_mod_alias ~fallback (Lazy.force nodes) path rest
-  | [ { context = Module (Alias path', _) } ] ->
+  match mod_expr.Typedtree.mod_desc with
+  | Typedtree.Tmod_ident (path', _) ->
     let full_path = (path_to_list path') @ path in
     do_fallback (check_item full_path rest)
-  | [ { context = Module (Structure, _) ; nodes } ] ->
-    let browsable = get_browsable (Lazy.force nodes) @ rest in
+  | Typedtree.Tmod_structure str ->
+    let browsable = get_top_items (Browse.of_structures [ str ]) @ rest in
     do_fallback (check_item path browsable)
-  | [ { context = Module (Mod_apply, _) ; loc } ] ->
+  | Typedtree.Tmod_functor _
+  | Typedtree.Tmod_apply (_, _, _) ->
     (* We don't want to follow functors instantiation *)
     debug_log "stopping on functor instantiation" ;
-    Some loc
-  | otherwise ->
-    let browsable = get_browsable otherwise @ rest in
-    do_fallback (check_item path browsable)
+    Some (mod_expr.Typedtree.mod_loc)
+  | Typedtree.Tmod_constraint (mod_expr, _, _, _) ->
+    resolve_mod_alias ~fallback mod_expr path rest
+  | Typedtree.Tmod_unpack _ ->
+    do_fallback (check_item path rest)
 
 let path_and_loc_from_cstr desc env =
   let open Types in
   match desc.cstr_tag with
-  | Cstr_extension (path, _) -> path, Location.none (*FIXME*)
+  | Cstr_extension (path, loc) -> path, desc.cstr_loc
   | _ ->
     match desc.cstr_res.desc with
     | Tconstr (path, _, _) ->
@@ -235,11 +285,15 @@ let path_and_loc_from_label desc env =
     path, typ_decl.Types.type_loc
   | _ -> assert false
 
+exception Not_in_env
+
 let from_string ~project ~env ~local_defs path =
+  cwd := "" (* Reset the cwd before doing anything *) ;
   sources_path := Project.source_path project ;
   cmt_path := Project.cmt_path project ;
   debug_log "looking for the source of '%s'" path ;
   let ident, is_label = keep_suffix (Longident.parse path) in
+  let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let path, loc =
       if is_label then
@@ -263,30 +317,37 @@ let from_string ~project ~env ~local_defs path =
           path, Location.symbol_gloc ()
         with Not_found ->
           debug_log "   ... not in the environment" ;
-          raise Not_found
+          raise Not_in_env
       )
     in
     if not (is_ghost loc) then
-      Some (None, loc)
+      `Found (None, loc.Location.loc_start)
     else
       let opt =
         let modules = path_to_list path in
-        let local_defs =
-          (* looks like local_defs is already in reversed order. So we need to
-             reverse it here (since [get_browsable] is going to reverse it one
-             last time). *)
-          List.rev_map local_defs ~f:(fun s -> Browse.structure s)
-        in
-        check_item modules (get_browsable (List.concat local_defs))
+        (* looks like local_defs is already in reversed order. So we need to
+            reverse it here (since [get_browsable] is going to reverse it one
+            last time). *)
+        let local_defs = Browse.of_structures local_defs in
+        check_item modules (get_top_items local_defs)
       in
-      Option.map opt ~f:(fun loc ->
-        match loc.Location.loc_start.Lexing.pos_fname with
-        | "" -> None, loc
-        | fname ->
-          let full_path = find_file (ML fname) in
-          Some full_path, loc
-      )
-  with Not_found ->
-    None*)
-
-let from_string ~project ~env ~local_defs = failwith "TODO"
+      match opt with
+      | None -> `Not_found
+      | Some loc ->
+        let fname = loc.Location.loc_start.Lexing.pos_fname in
+        let full_path = find_file (ML (file_path_to_mod_name fname)) in
+        `Found (Some full_path, loc.Location.loc_start)
+  with
+  | Not_found -> `Not_found
+  | File_not_found path -> 
+    let msg =
+      match path with
+      | ML file ->
+        Printf.sprintf "'%s' seems to originate from '%s' which could not be found"
+          str_ident file
+      | CMT file ->
+        Printf.sprintf "Needed cmt file of module '%s' to locate '%s' but it is not present"
+          file str_ident
+    in
+    `File_not_found msg
+  | Not_in_env -> `Not_in_env str_ident
