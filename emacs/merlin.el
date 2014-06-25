@@ -310,7 +310,7 @@ associated to the current buffer."
 line and col"
   (goto-char (point-min))
   (forward-line (1- (lookup-default 'line data 0)))
-  (move-to-column (max 0 (lookup-default 'col data 0))))
+  (forward-char (max 0 (lookup-default 'col data 0))))
 
 (defun merlin-goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
