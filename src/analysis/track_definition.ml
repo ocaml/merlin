@@ -6,8 +6,12 @@ let cmt_path = ref (Misc.Path_list.of_list [])
 
 let cwd = ref ""
 
+let section = Logger.section "locate"
+
 module Utils = struct
-  let debug_log ?prefix x = Printf.ksprintf (Logger.log `locate ?prefix) x
+  (* FIXME: turn this into proper debug logging *)
+  let debug_log x =
+    Printf.ksprintf (Logger.info section)  x
 
   let is_ghost { Location. loc_ghost } = loc_ghost = true
 
@@ -339,7 +343,7 @@ let from_string ~project ~env ~local_defs path =
         `Found (Some full_path, loc.Location.loc_start)
   with
   | Not_found -> `Not_found
-  | File_not_found path -> 
+  | File_not_found path ->
     let msg =
       match path with
       | ML file ->

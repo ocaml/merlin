@@ -212,7 +212,8 @@ let dispatch (state : state) =
       Track_definition.from_string ~project:state.project ~env ~local_defs path
     with
     | `Found (file, pos) ->
-      Logger.log `locate (Option.value ~default:"<local buffer>" file_opt);
+      Logger.info (Logger.section "locate")
+        (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)
     | otherwise -> otherwise
     end
