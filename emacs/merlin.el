@@ -954,8 +954,12 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (mapcar (lambda (entry)
                 (list (concat prefix (cdr (assoc 'name entry)))
                       (merlin-completion-format-entry entry)
-                      (elt (cdr (assoc 'kind entry)) 0)))
+                      (cdr (assoc 'kind entry))
+                      (cdr (assoc 'info entry))))
             data)))
+(defun merlin-completion-info (ident)
+  "Return the info of IDENT."
+  (cadddr (assoc ident (merlin-completion-data ident))))
 
 (defun merlin-completion-lookup (string state)
   "Lookup the entry STRING inside the completion table."
@@ -1008,6 +1012,40 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
                     (exit-function . merlin-completion-lookup))))
     (complete-with-action action merlin-completion-annotation-table string pred)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; COMPANY MODE SUPPORT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun merlin-company-backend (command &optional arg &rest ignored)
+    (interactive (list 'interactive))
+    (case command
+      (interactive (company-begin-backend 'company-my-backend))
+      (prefix (substring-no-properties (thing-at-point 'ocaml-atom)))
+      (no-cache t)
+      (init merlin-mode)
+      (doc-buffer
+       (progn
+         (let ((doc (merlin-completion-info arg)))
+           (with-current-buffer merlin-type-buffer-name
+             (insert doc)
+             (get-buffer merlin-type-buffer-name)))))
+      (location
+       (let* ((pos (merlin-locate-pos arg))
+              (filename (lookup-default 'file pos (current-buffer)))
+              (pos (merlin-make-point (lookup-default 'pos pos nil))))
+         (cons filename pos)))
+      (post-completion
+       (progn
+         (minibuffer-message "%s: %s" arg (cadr (assoc arg merlin-company-cache)))
+         nil))
+      (candidates
+       (progn
+         (setq merlin-company-cache (merlin-completion-data arg))
+         (mapcar #'(lambda (x) (car x)) merlin-company-cache)))
+      (meta (cadr (assoc arg merlin-company-cache)))
+      (annotation (concat ": " (cadr (assoc arg merlin-company-cache))))
+))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUTO-COMPLETE SUPPORT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1028,7 +1066,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
    (car data)
    :summary (if (and merlin-completion-types
                      merlin-ac-use-summary) (cadr data))
-   :symbol (cddr data)
+   :symbol (format "%c" (elt (caddr data) 0))
    :document (if (and merlin-completion-types
                       merlin-ac-use-document) (cadr data))))
 
@@ -1259,12 +1297,16 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 ;; LOCATE ;;
 ;;;;;;;;;;;;
 
-(defun merlin-locate-pure (ident)
-  "Locate the identifier IDENT at point."
+(defun merlin-locate-pos (ident)
+  "Locate the identifier IDENT at point and return the result."
   (merlin-sync-to-point)
   (let* ((r (merlin-send-command
              (list 'locate (substring-no-properties ident)
                    'at (merlin-unmake-point (point))))))
+    r))
+(defun merlin-locate-pure (ident)
+  "Locate the identifier IDENT at point."
+  (let* ((r (merlin-locate-pos ident)))
     (if r
         (if (listp r)
             (merlin-goto-file-and-point r)
