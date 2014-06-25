@@ -10570,6 +10570,7 @@ module MenhirInterpreterTable = struct
           MenhirLib.EngineTypes.startp = _startpos_v3_;
           MenhirLib.EngineTypes.endp = _endpos_v3_;
           MenhirLib.EngineTypes.next = {
+            MenhirLib.EngineTypes.semv = _2;
             MenhirLib.EngineTypes.startp = _startpos__2_;
             MenhirLib.EngineTypes.endp = _endpos__2_;
             MenhirLib.EngineTypes.next = {
@@ -10586,6 +10587,11 @@ module MenhirInterpreterTable = struct
             v3
         | _ ->
             assert false in
+        let _2 = match _2 with
+        | T_ (T_MINUSGREATER, (_2 : unit)) ->
+            _2
+        | _ ->
+            assert false in
         let v1 = match v1 with
         | N_ (N_pattern, (v1 : (Parsetree.pattern))) ->
             v1
@@ -10593,7 +10599,7 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos_v1_ in
         let _endpos = _endpos_v3_ in
-        let _v : (Parsetree.case) =     ( Exp.case v1 v3 ) in
+        let _v : (Parsetree.case) =     ( Exp.case v1 (reloc_exp _endpos__2_ _endpos v3) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_match_case, _v);
@@ -10608,6 +10614,7 @@ module MenhirInterpreterTable = struct
           MenhirLib.EngineTypes.startp = _startpos_v5_;
           MenhirLib.EngineTypes.endp = _endpos_v5_;
           MenhirLib.EngineTypes.next = {
+            MenhirLib.EngineTypes.semv = _4;
             MenhirLib.EngineTypes.startp = _startpos__4_;
             MenhirLib.EngineTypes.endp = _endpos__4_;
             MenhirLib.EngineTypes.next = {
@@ -10633,6 +10640,11 @@ module MenhirInterpreterTable = struct
             v5
         | _ ->
             assert false in
+        let _4 = match _4 with
+        | T_ (T_MINUSGREATER, (_4 : unit)) ->
+            _4
+        | _ ->
+            assert false in
         let v3 = match v3 with
         | N_ (N_seq_expr, (v3 : (Parsetree.expression))) ->
             v3
@@ -10645,7 +10657,7 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos_v1_ in
         let _endpos = _endpos_v5_ in
-        let _v : (Parsetree.case) =     ( Exp.case v1 ~guard:v3 v5 ) in
+        let _v : (Parsetree.case) =     ( Exp.case v1 ~guard:v3 (reloc_exp _endpos__4_ _endpos v5) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_match_case, _v);

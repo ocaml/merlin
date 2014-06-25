@@ -1424,10 +1424,10 @@ match_cases:
     { v3 :: v1 }
 
 match_case:
-| v1 = pattern MINUSGREATER v3 = seq_expr
-    { Exp.case v1 v3 }
-| v1 = pattern WHEN v3 = seq_expr MINUSGREATER v5 = seq_expr
-    { Exp.case v1 ~guard:v3 v5 }
+| v1 = pattern _2 = MINUSGREATER v3 = seq_expr
+    { Exp.case v1 (reloc_exp $endpos(_2) $endpos v3) }
+| v1 = pattern WHEN v3 = seq_expr _4 = MINUSGREATER v5 = seq_expr
+    { Exp.case v1 ~guard:v3 (reloc_exp $endpos(_4) $endpos v5) }
 
 fun_def:
 | MINUSGREATER v2 = seq_expr

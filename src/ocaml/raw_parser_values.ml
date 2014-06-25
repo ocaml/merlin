@@ -4,7 +4,7 @@ open Std
 
 type token = Raw_parser.token
 
-type annotation = [`Shift of int]
+type annotation = [`Shift of int|`Shift_token of int * token]
 
 type 'a token_class = 'a Raw_parser.token_class
 type 'a nonterminal_class = 'a Raw_parser.nonterminal_class
@@ -132,6 +132,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_EQUAL                -> "EQUAL"
   | T_EOL                  -> "EOL"
   | T_EOF                  -> "EOF"
+  | T_EXITPOINT            -> "EXITPOINT"
   | T_ENTRYPOINT           -> "ENTRYPOINT"
   | T_END                  -> "END"
   | T_ELSE                 -> "ELSE"
@@ -183,6 +184,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_type_constraint                   -> "type_constraint"
   | N_tag_field                         -> "tag_field"
   | N_subtractive                       -> "subtractive"
+  | N_structure_head                    -> "structure_head"
   | N_structure_tail                    -> "structure_tail"
   | N_structure_item                    -> "structure_item"
   | N_structure                         -> "structure"
@@ -454,6 +456,7 @@ let symbol_of_token = function
   | EQUAL                        -> T_ (T_EQUAL, ())
   | EOL                          -> T_ (T_EOL, ())
   | EOF                          -> T_ (T_EOF, ())
+  | EXITPOINT                    -> T_ (T_EXITPOINT, ())
   | ENTRYPOINT                   -> T_ (T_ENTRYPOINT, ())
   | END                          -> T_ (T_END, ())
   | ELSE                         -> T_ (T_ELSE, ())
@@ -592,6 +595,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_EQUAL                  -> EQUAL
   | T_EOL                    -> EOL
   | T_EOF                    -> EOF
+  | T_EXITPOINT              -> EXITPOINT
   | T_ENTRYPOINT             -> ENTRYPOINT
   | T_END                    -> END
   | T_ELSE                   -> ELSE
@@ -706,6 +710,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_EQUAL                   -> 0, ()
   | T_EOL                     -> 0, ()
   | T_EOF                     -> 0, ()
+  | T_EXITPOINT               -> 10, ()
   | T_ENTRYPOINT              -> 0, ()
   | T_END                     -> 0, ()
   | T_ELSE                    -> 0, ()
@@ -803,6 +808,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_tag_field                         ->
     raise Not_found (*(Parsetree.row_field) nonterminal_class*)
   | N_subtractive                       -> 1, "-"
+  | N_structure_head                    -> 0, []
   | N_structure_tail                    -> 0, []
   | N_structure_item                    -> 0, []
   | N_structure                         -> 0, []
