@@ -69,10 +69,9 @@ let unpack_fake_start t =
 
 let compare_pos pos loc =
   let open Location in
-  let pos = Lexing.split_pos pos in
-  if pos < Lexing.split_pos loc.loc_start
+  if Lexing.compare_pos pos loc.loc_start < 0
   then -1
-  else if pos > Lexing.split_pos loc.loc_end
+  else if Lexing.compare_pos pos loc.loc_end > 0
   then 1
   else 0
 
