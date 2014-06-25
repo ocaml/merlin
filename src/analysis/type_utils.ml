@@ -15,8 +15,9 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
     | `Step s -> parse (Raw_parser.step s)
     | `Feed p -> lex p (Raw_lexer.token_without_comments state lexbuf)
     | `Accept (Raw_parser.N_ (Raw_parser.N_parse_expression, e)) ->
-      (e : Parsetree.expression)
-    | `Reject | `Accept _ -> assert false
+      Some (e : Parsetree.expression)
+    | `Reject -> None
+    | `Accept _ -> assert false
   in
   parse (`Step (Raw_parser.initial Raw_parser.parse_expression_state
                   (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))
@@ -37,8 +38,9 @@ let type_in_env ?keywords env ppf expr =
   in
   Printtyp.wrap_printing_env env
 
-    begin fun () -> match parse_expr ?keywords expr with
-      (*| { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
+    begin fun () ->
+      match parse_expr ?keywords expr with (*
+      | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
         begin
           try let c = Typing_aux.lookup_constructor longident.Asttypes.txt env in
             Browse_misc.print_constructor ppf c
@@ -50,8 +52,9 @@ let type_in_env ?keywords env ppf expr =
                 Printtyp.modtype_declaration (Ident.create (Path.last p)) ppf m
               with Not_found ->
                 ()
-        end*)
-      | { Parsetree.pexp_desc = Parsetree.Pexp_ident longident } as e ->
+        end *)
+      | None -> Format.pp_print_string ppf "Syntax error"
+      | Some ({ Parsetree.pexp_desc = Parsetree.Pexp_ident longident } as e) ->
         begin
           try print_expr e
           with exn ->
@@ -60,5 +63,5 @@ let type_in_env ?keywords env ppf expr =
             with _ ->
               raise exn
         end
-      | e -> print_expr e
+      | Some e -> print_expr e
     end

@@ -7,15 +7,10 @@
 - perf idea: send batches of token rather than entering/exiting the whole
   parser barrier for each token
 - backport support for ocaml 4.00 & 4.01
-- features to port:
-  -> locate
 - features to test:
   -> completion
+  -> locate
   -> type enclosing / type expr
-     An assertion in Type_utils:19 might fail if provided wrong input.
-     Some heuristic in type enclosing might generate wrong input and the user
-     can deliberately submit something wrong. So this case should receive proper
-     treatment.
   -> occurences
 - catch "different assumptions" exception
 - write syntax error message generating heuristic
