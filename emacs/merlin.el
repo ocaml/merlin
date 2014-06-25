@@ -176,7 +176,12 @@ field logfile (see `merlin-start-process')"
 
 (defcustom merlin-arrow-keys-type-enclosing t
   "If non-nil, after a type enclosing, up and down arrow are used to go up and down the AST."
-  :group 'merlin :type 'filename)
+  :group 'merlin :type 'boolean)
+
+(defcustom merlin-type-after-locate t
+  "If non-nil, use type-enclosing after locate."
+  :group 'merlin :type 'boolean)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1275,7 +1280,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Locate the identifier under point"
   (interactive)
   (let ((ident (thing-at-point 'ocaml-atom)))
-    (when ident (merlin-locate-pure ident))))
+    (when ident 
+      (merlin-locate-pure ident)
+      (if merlin-type-after-locate
+          (merlin-type-enclosing)))))
 
 ;; I don't like it beginning by "ac" but it is the only way I found to get it
 ;; working (otherwise the completion menu just closes itself)
