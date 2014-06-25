@@ -166,6 +166,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "If non-nil, when locate opens a new window it will give it the focus."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-logfile nil
+  "If non-nil, use this file for the log file (should be an absolute path)"
+  :group 'merlin :type 'filename)
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -190,6 +193,10 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defvar merlin-process-queue nil
   "The transaction queue for the local process (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin-process-queue)
+
+(defvar merlin-process-data nil
+  "The process data (as returned by the grouping function) (only valid in a process buffer).")
+(make-variable-buffer-local 'merlin-process-data)
 
 (defvar merlin-process-last-user nil
   "Last buffer that used the local process (only valid in a process buffer).")
@@ -407,20 +414,26 @@ return DEFAULT or the value associated to KEY otherwise."
         (extra-flags (lookup-default 'flags configuration nil))
         (name (lookup-default 'name configuration "default"))
         (environment (lookup-default 'env configuration nil))
+        (logfile (lookup-default 'logfile configuration nil))
         (buffer-name (merlin-instance-buffer-name name)))
     (message "Starting merlin instance: %s (binary=%s)." name command)
     (setq merlin-instance name)
     (when (not (merlin-process-started-p name))
       (let* ((buffer (get-buffer-create buffer-name))
-             (process-environment (append environment process-environment))
+             (process-environment (append (if logfile (list (format "MERLIN_LOG=%s" (expand-file-name logfile)))) environment process-environment))
              (p (apply #'start-file-process "merlin" buffer-name
                        command `("-protocol" "sexp" . ,(append extra-flags flags)))))
         (with-current-buffer buffer
           (set-process-query-on-exit-flag p nil)
           (setq merlin-process p)
+          (setq merlin-process-data configuration)
           (setq merlin-instance name)
           (setq merlin-process-queue (tq-create p)))
         p))))
+
+(defun merlin-process-data ()
+  "Return the process configuration of the current buffer."
+  (buffer-local-value 'merlin-process-data (merlin-process-buffer)))
 
 (defun merlin-toggle-view-errors ()
   "Toggle the viewing of errors in the buffer."
@@ -1457,8 +1470,9 @@ Returns the position."
 
 (defun merlin-one-group ()
   "Groups every buffer in one emacs instance."
-  '(
-    (name . "default")))
+  (append
+   '((name . "default"))
+   (if merlin-logfile (list (cons 'logfile merlin-logfile)))))
 
 (defun merlin-dir-group ()
   "Group buffers by directory" ()
@@ -1486,6 +1500,13 @@ Returns the position."
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
   (buffer-file-name))
+
+(defun merlin-view-log ()
+  "Jump to the log file of merlin."
+  (interactive)
+  (let ((file (lookup-default 'logfile (merlin-process-data) nil)))
+    (if file (find-file-other-window file)
+      (message "No log file for this instance."))))
 
 (defun merlin-process-dead-p ()
   "Return non-nil if merlin process is dead."
