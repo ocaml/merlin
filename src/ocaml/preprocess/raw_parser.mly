@@ -297,7 +297,7 @@ let fake_lident_loc = Location.mknoloc fake_lident
 
 %}
 
-%annot <[`Shift of int]>
+%annot <[`Shift of int | `Shift_token of int * token]>
 
 (* Tokens *)
 
@@ -438,7 +438,7 @@ let fake_lident_loc = Location.mknoloc fake_lident
 %token OUNIT_BENCH_MODULE
 %token NONREC
 
-%token ENTRYPOINT
+%token ENTRYPOINT EXITPOINT
 
 (* Precedences and associativities.
 
@@ -628,17 +628,26 @@ module_expr:
     { mkmod $startpos $endpos (Pmod_extension v1) }
 
 structure:
+| v = structure_head
+| v = structure_head EXITPOINT
+  { v }
+
+structure_head:
 | v1 = seq_expr v2 = post_item_attributes v3 = structure_tail
+  @{`Shift_token (1,EXITPOINT)}
     { mkstrexp v1 v2 :: v3 }
 | v1 = structure_tail
+  @{`Shift_token (1,EXITPOINT)}
     { v1 }
 
 structure_tail:
 | (* empty *)
     { [] }
-| SEMISEMI v2 = structure
+| SEMISEMI v2 = structure_head
+  @{`Shift_token (1,EXITPOINT)}
     { v2 }
 | v1 = structure_item v2 = structure_tail
+  @{`Shift_token (1,EXITPOINT)}
     { v1 @ v2 }
 
 structure_item:

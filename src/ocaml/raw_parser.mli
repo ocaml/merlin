@@ -104,6 +104,7 @@ type token =
   | FINALLY_LWT
   | FALSE
   | EXTERNAL
+  | EXITPOINT
   | EXCEPTION
   | EQUAL
   | EOL
@@ -241,6 +242,7 @@ and _ token_class =
   | T_FINALLY_LWT : unit token_class
   | T_FALSE : unit token_class
   | T_EXTERNAL : unit token_class
+  | T_EXITPOINT : unit token_class
   | T_EXCEPTION : unit token_class
   | T_EQUAL : unit token_class
   | T_EOL : unit token_class
@@ -299,6 +301,7 @@ and _ nonterminal_class =
   | N_subtractive : (string) nonterminal_class
   | N_structure_tail : (Parsetree.structure) nonterminal_class
   | N_structure_item : (Parsetree.structure_item list) nonterminal_class
+  | N_structure_head : (Parsetree.structure) nonterminal_class
   | N_structure : (Parsetree.structure) nonterminal_class
   | N_strict_binding : (Parsetree.expression) nonterminal_class
   | N_str_type_extension : (Parsetree.type_extension) nonterminal_class
@@ -459,7 +462,7 @@ and _ nonterminal_class =
   | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
   | N_additive : (string) nonterminal_class
 
-and annotation = ([`Shift of int])
+and annotation = ([`Shift of int | `Shift_token of int * token])
 
 and symbol_class =
   | CT_ : 'a token_class * annotation list -> symbol_class
