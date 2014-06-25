@@ -1271,6 +1271,13 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-occurences-populate-buffer (lst)
   (lexical-let ((src-buff (buffer-name))
                 (occ-buff (merlin-get-occ-buff)))
+    (setq lst (mapcar (lambda (pos)
+                         (let* ((start (assoc 'start pos))
+                                (line  (cdr (assoc 'line start)))
+                                (col   (cdr (assoc 'col  start))))
+                           (merlin-goto-point start)
+                           (cons (cons 'marker (point-marker)) pos)))
+                      lst))
     (with-current-buffer occ-buff
       (let ((inhibit-read-only t)
             (buffer-undo-list t))
@@ -1279,6 +1286,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
          (lambda (pos)
            (lexical-let*
                ((start (assoc 'start pos))
+                (marker (cdr (assoc 'marker pos)))
                 (line  (cdr (assoc 'line start)))
                 (col   (cdr (assoc 'col  start)))
                 (action (lambda (ev)
@@ -1286,7 +1294,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                             (if buff
                                 (progn
                                   (pop-to-buffer buff)
-                                  (merlin-goto-point start))
+                                  (goto-char marker))
                               (message "Closed buffer : %s" src-buff))))))
              (insert "  + ")
              (insert-button
@@ -1296,16 +1304,21 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
              lst)))))
 
 (defun merlin-occurences-list (lst)
-  (merlin-occurences-populate-buffer lst)
-  (cond ((equal merlin-occurences-show-buffer 'same)
-         (switch-to-buffer (merlin-get-occ-buff)))
-        ((equal merlin-occurences-show-buffer 'other)
-         (switch-to-buffer-other-window (merlin-get-occ-buff)))
-	(t nil)))
+  (save-excursion
+    (merlin-occurences-populate-buffer lst)
+    (cond ((equal merlin-occurences-show-buffer 'same)
+           (switch-to-buffer (merlin-get-occ-buff)))
+          ((equal merlin-occurences-show-buffer 'other)
+           (switch-to-buffer-other-window (merlin-get-occ-buff)))
+          (t nil))))
 
-(defun merlin-occurences ()
+(defun merlin-occurences (&optional local-occurences)
+  "List all occurences of buffer under cursor.
+   LOCAL-OCCURENCES restricts the search to the local scope."
   (interactive)
-  (merlin-sync-to-point)
+  (if local-occurences
+      (merlin-sync-to-point)
+    (merlin-sync-to-point (point-max) t))
   (let* ((r (merlin-send-command
              (list 'occurences 'ident 'at
                    (merlin-unmake-point (point))))))
@@ -1313,6 +1326,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (if (listp r)
           (merlin-occurences-list r)
         (message r)))))
+
+(defun merlin-local-occurences ()
+  (interactive)
+  (merlin-occurences t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEMANTIC MOVEMENT ;;
