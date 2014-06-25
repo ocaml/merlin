@@ -167,7 +167,11 @@ In particular you can specify nil, meaning that the locked zone is not represent
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-logfile nil
-  "If non-nil, use this file for the log file (should be an absolute path)"
+  "If non-nil, use this file for the log file (should be an absolute path).
+
+Note that works only if you use the default grouping function. If
+you are using your own grouping function, you should include a
+field logfile (see `merlin-start-process')"
   :group 'merlin :type 'filename)
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
@@ -408,6 +412,8 @@ return DEFAULT or the value associated to KEY otherwise."
 
 - `env': list of strings (of the shape VARIABLE=FOO) (see
 `process-environment') that will be prepended to the environment of merlin
+
+- `logfile': path to the logfile
 
 - `name': the name of the instance."
   (let* ((command (lookup-default 'command configuration merlin-command))
