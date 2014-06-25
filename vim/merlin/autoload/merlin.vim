@@ -203,10 +203,17 @@ endfunction
 
 function! merlin#Occurences()
   let l:occurences = []
-  py merlin.vim_occurences("l:occurences")
+  let l:pos = 0
+  py vim.command ("let l:pos = %d" % merlin.vim_occurences("l:occurences"))
+
+  if l:occurences == []
+    return
+  endif
+
   call setloclist(0, l:occurences)
   if g:merlin_display_occurence_list
     lopen
+    execute ":ll! " . l:pos
   endif
 endfunction
 

@@ -342,13 +342,16 @@ def vim_occurences(vimvar):
   lst = map(lambda x: x['start'], lst)
   bufnr = vim.current.buffer.number
   nr = 0
+  cursorpos = 0
   for pos in lst:
     lnum = pos['line']
     lcol = pos['col']
+    if (lnum, lcol) <= (line, col): cursorpos = nr
     vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'occurence','type':'I','valid':1}" %
         (bufnr, lnum, lcol + 1, nr))
     nr = nr + 1
     vim.command("call add(%s, l:tmp)" % vimvar)
+  return cursorpos + 1
 
 # Expression typing
 def vim_type(expr,is_approx=False):
