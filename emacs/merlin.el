@@ -173,6 +173,10 @@ Note that works only if you use the default grouping function. If
 you are using your own grouping function, you should include a
 field logfile (see `merlin-start-process')"
   :group 'merlin :type 'filename)
+
+(defcustom merlin-arrow-keys-type-enclosing t
+  "If non-nil, after a type enclosing, up and down arrow are used to go up and down the AST."
+  :group 'merlin :type 'filename)
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1190,6 +1194,16 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (setq merlin-enclosing-offset (1- merlin-enclosing-offset))
     (merlin-type-enclosing-go)))
 
+
+(defvar merlin-type-enclosing-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap (kbd "<up>") 'up)
+    (define-key keymap (kbd "[up]") 'up)
+    (define-key keymap (kbd "<down>") 'down)
+    (define-key keymap (kbd "[down]") 'down)
+    keymap)
+  "The local map to navigate type enclosing.")
+
 (defun merlin-type-enclosing ()
   "Print the type of the expression under point (or of the region, if it exists)."
   (interactive)
@@ -1197,8 +1211,12 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (merlin-sync-to-point)
     (if (region-active-p)
         (merlin-type-region)
-      (if (merlin-type-enclosing-query)
-          (merlin-type-enclosing-go-up)))))
+      (when (merlin-type-enclosing-query)
+        (merlin-type-enclosing-go-up))))
+  (if merlin-arrow-keys-type-enclosing
+      (merlin-event-loop merlin-type-enclosing-map
+                         '((up . merlin-type-enclosing-go-up)
+                           (down . merlin-type-enclosing-go-down)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
@@ -1410,6 +1428,52 @@ Returns the position."
              (version (replace-regexp-in-string "\n$" "" version)))
         (message "%s (from shell)" version))
     (message "%s" (merlin-send-command '(version)))))
+
+;;;;;;;;;;;;;;;;
+;; KEYBOARD MAGIC
+;;;;;;;;;;;;;;;;
+;; Code taken from popup.el
+;; (Thanks to bobot)
+(defun merlin-read-key-sequence (keymap &optional timeout)
+  (catch 'timeout
+    (let ((timer (and timeout
+                      (run-with-timer timeout nil
+                                      (lambda ()
+                                        (if (zerop (length (this-command-keys)))
+                                            (throw 'timeout nil))))))
+          (old-global-map (current-global-map))
+          (temp-global-map (make-sparse-keymap))
+          (overriding-terminal-local-map (make-sparse-keymap)))
+      (substitute-key-definition 'keyboard-quit 'keyboard-quit
+                                 temp-global-map old-global-map)
+      (define-key temp-global-map [menu-bar] (lookup-key old-global-map [menu-bar]))
+      (define-key temp-global-map [tool-bar] (lookup-key old-global-map [tool-bar]))
+      (set-keymap-parent overriding-terminal-local-map keymap)
+      (if (current-local-map)
+          (define-key overriding-terminal-local-map [menu-bar]
+            (lookup-key (current-local-map) [menu-bar])))
+      (unwind-protect
+          (progn
+            (use-global-map temp-global-map)
+            (clear-this-command-keys)
+            (read-key-sequence nil))
+        (use-global-map old-global-map)
+        (if timer (cancel-timer timer))))))
+
+
+(defun* merlin-event-loop (keymap keyactions)
+  (setq key (merlin-read-key-sequence keymap nil))
+  (if (or (null key) (eq (lookup-key (current-global-map) key) 'keyboard-quit))
+      (keyboard-quit)
+    (setq binding (lookup-key keymap key))
+    (let ((action (lookup-default binding keyactions)))
+      (cond
+       (action
+        (progn
+          (funcall action)
+          (merlin-event-loop keymap keyactions)))
+       ((commandp key)
+        (call-interactively (key-binding (kbd key))))))))
 
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
