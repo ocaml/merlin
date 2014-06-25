@@ -14,6 +14,7 @@
   -> occurences
 - catch "different assumptions" exception
 - write syntax error message generating heuristic
+- have a way to get the types of modules
 
 VIM
 document g:merlin_move_to_project
