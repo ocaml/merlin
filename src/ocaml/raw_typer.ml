@@ -22,6 +22,7 @@ let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
   | N_rec_flag, r                 -> (r : Asttypes.rec_flag), []
   | N_implementation, str         -> default, [Structure str]
   | N_structure, str              -> default, [Structure str]
+  | N_structure_head, str         -> default, [Structure str]
   | N_structure_tail, str         -> default, [Structure str]
   | N_structure_item, str         -> default, [Structure str]
   | N_strict_binding, e           -> default, [Eval e]

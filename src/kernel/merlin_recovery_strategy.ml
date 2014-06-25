@@ -104,12 +104,25 @@ let reduction_strategy lr0 =
     (* items at pos 0 are forbidden: they won't consume anything on stack
        and as such can prevent termination *)
     | Some measurement when can_use measurement pos ->
-      let values = List.drop_n pos measurement.m_rhs in
+      let values = measurement.m_rhs in
+      let annot, values =
+        if pos > 0 then
+          match List.drop_n (pos - 1) values  with
+          | (_, annot, _) :: values -> annot, values
+          | _ -> assert false
+        else
+          [], values
+      in
       let cost = match values with
         | (cost, _, _) :: _ -> cost
         | [] -> 0
       in
-      let cost, action = match values with
+      let cost, action =
+        match annot with
+        | [`Shift_token (n,token)] ->
+          cost - 10, `Shift (pos, token, n)
+        | _ ->
+        match values with
         | (_, [`Shift n], T_ (toksym,value)) :: _ ->
           cost - 10, `Shift (pos, Raw_parser_values.token_of_symbol toksym value, n)
         | _ -> make_reduction measurement prod pos cost values
