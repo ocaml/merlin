@@ -23,7 +23,8 @@ val dump : t -> Std.json
 
 (* Location of top frame in stack *)
 (* for recovery: approximate position of last correct construction *)
-val location : t -> Location.t
+val get_location : ?pop:int -> t -> Location.t
+val get_guide : ?pop:int -> t -> int
 val last_token : t -> Raw_parser.token Location.loc
 
 (* Just remove the state on top of the stack *)
@@ -32,7 +33,7 @@ val pop : t -> t option
 (* Try to reduce the state on top of the stack *)
 type termination
 val termination : termination
-val recover : ?endp:Lexing.position -> termination -> t -> (termination * int * t) option
+val recover : ?endp:Lexing.position -> termination -> (int * t) -> (termination * int * (int * t)) option
 
 (* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser
@@ -47,7 +48,7 @@ module Frame : sig
   val depth : frame -> int
 
   val value : frame -> Raw_parser.symbol
-  val location : frame -> Location.t
+  val location : ?pop:int -> frame -> Location.t
   val eq    : frame -> frame -> bool
   val next  : frame -> frame option
 

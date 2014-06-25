@@ -23,7 +23,7 @@ module Frame : sig
   val depth : frame -> int
 
   val value : frame -> P.symbol
-  val location : frame -> Location.t
+  val location : ?pop:int -> frame -> Location.t
   val eq    : frame -> frame -> bool
   val next  : frame -> frame option
 
@@ -47,7 +47,12 @@ end = struct
 
   let value (Frame (_,frame)) = frame.E.semv
 
-  let location (Frame (_,frame)) =
+  let location ?(pop=0) (Frame (_,frame)) =
+    let rec aux frame = function
+      | n when n > 0 -> aux frame.E.next (n - 1)
+      | _ -> frame
+    in
+    let frame = aux frame pop in
     mk_loc frame.E.startp frame.E.endp
 
   let eq (Frame (_,f)) (Frame (_,f')) = f == f'
@@ -80,8 +85,13 @@ let pop (Parser (p, depth)) =
     let p = {p with P.env = env} in
     Some (Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
-let location t =
-  Frame.location (stack t)
+let get_location ?pop t =
+  Frame.location ?pop (stack t)
+
+let get_guide ?pop t =
+  let loc = get_location ?pop t in
+  let _, col = Lexing.split_pos loc.Location.loc_start in
+  col
 
 let of_feed p depth =
   Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
@@ -144,7 +154,7 @@ let dump t =
   let lr0 = P.Query.lr0_state lr1 in
   (* Print overview of the stack *)
   `Assoc [
-    "guide", Lexing.json_of_position (location t).Location.loc_start;
+    "guide", Lexing.json_of_position (get_location t).Location.loc_start;
     "lr0", `Int lr0;
     "itemset", dump_itemset (P.Query.itemset lr0);
     "stack", dump_stack (Some (Frame.stack t));
@@ -165,11 +175,12 @@ let dump_strategy {Merlin_recovery_strategy. cost; action} =
                "production", `Int r_prod;
                "symbols", `List l;
              ] ]
-    | `Shift (token, priority) ->
+    | `Shift (pop, token, priority) ->
       let token = Values.symbol_of_token token in
       let token = Values.class_of_symbol token in
       let token = Values.string_of_class token in
       `List [`String "shift"; `Assoc [
+               "dot_pos", `Int pop;
                "token", `String token;
                "priority", `Int priority;
              ] ]
@@ -205,13 +216,14 @@ let parser_priority p =
   let symcls = Values.class_of_symbol symbol in
   Values.selection_priority symcls
 
-let rec recover ?endp termination parser =
+let rec recover ?endp termination (guide,parser) =
   let open Merlin_recovery_strategy in
   match find_strategies parser with
   | [] -> None
   | strat :: _ ->
   match Termination.check strat parser termination with
-  | parser, termination, false -> recover ?endp termination parser
+  | parser, termination, false ->
+    recover ?endp termination (guide,parser)
   | Parser (p,w), termination, true ->
     let env = p.P.env in
     let add_symbol stack symbol =
@@ -252,14 +264,16 @@ let rec recover ?endp termination parser =
 
       (* Construct parser *)
       let parser = of_feed {p with P. env} w in
-      Some (termination, parser_priority parser, parser)
+      let guide = min guide (get_guide parser) in
+      Some (termination, parser_priority parser, (guide,parser))
 
-    | `Shift (token,priority) ->
-      let startp = (location parser).Location.loc_end in
+    | `Shift (pop,token,priority) ->
+      let startp = (get_location parser).Location.loc_end in
       let endp = Option.value ~default:startp endp in
+      let guide = min guide (get_guide ~pop parser) in
       match feed (startp,token,endp) parser with
       | `Accept _ | `Reject -> None
-      | `Step parser' -> Some (termination, priority, parser')
+      | `Step parser -> Some (termination, priority, (guide,parser))
 
 module Integrate
     (P : sig
@@ -401,7 +415,6 @@ let find_marker t =
     Some (find_first frame (Some frame))
   else
     None
-
 
 let has_marker t f' =
   let d = Frame.depth f' in

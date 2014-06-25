@@ -72,7 +72,7 @@ type strategy = {
   uid: int;
   mutable cost: cost;
   first: bool;
-  action: [`Reduce of reduction | `Shift of (token * int)]
+  action: [`Reduce of reduction | `Shift of (int * token * int)]
 }
 
 let genuid =
@@ -111,7 +111,7 @@ let reduction_strategy lr0 =
       in
       let cost, action = match values with
         | (_, [`Shift n], T_ (toksym,value)) :: _ ->
-          cost - 10, `Shift (Raw_parser_values.token_of_symbol toksym value, n)
+          cost - 10, `Shift (pos, Raw_parser_values.token_of_symbol toksym value, n)
         | _ -> make_reduction measurement prod pos cost values
       in
       Some {uid = genuid (); cost; first = pos = 1; action }
