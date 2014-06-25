@@ -2,6 +2,7 @@ open Std
 open Typedtree
 
 type node =
+  | Dummy
   | Pattern                  of pattern
   | Expression               of expression
   | Case                     of case
@@ -49,10 +50,7 @@ type t = {
 }
 
 let dummy =
-  let dummy_struct =
-    {Typedtree. str_items = []; str_type = []; str_final_env = default_env }
-  in
-  { t_node = Structure dummy_struct;
+  { t_node = Dummy;
     t_loc = default_loc;
     t_env = default_env;
     t_children = lazy [];
@@ -105,6 +103,7 @@ let rec of_node t_node =
     | Case _ | Class_structure _ | Value_binding _ | Type_extension _
     | Class_field_kind _ | Module_type_constraint _ | With_constraint _
     | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
+    | Dummy
       -> None, None
   in
   let t_loc = Option.value ~default:default_loc t_loc in
@@ -216,6 +215,7 @@ let rec of_node t_node =
     | Class_type_declaration { ci_params; ci_expr } ->
       of_node (Class_type ci_expr) ::
       List.map of_typ_param ci_params
+    | Dummy -> []
   in
   { t_node; t_loc; t_env;
     t_children = Lazy.from_fun children }
@@ -479,6 +479,7 @@ let of_node ?(loc=default_loc) ?(env=default_env) node =
 (** Accessors for information specific to a node *)
 
 let string_of_node = function
+  | Dummy                     -> "dummy"
   | Pattern                 _ -> "pattern"
   | Expression              _ -> "expression"
   | Case                    _ -> "case"

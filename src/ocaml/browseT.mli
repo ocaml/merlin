@@ -44,6 +44,7 @@
 open Typedtree
 
 type node =
+  | Dummy
   | Pattern                  of pattern
   | Expression               of expression
   | Case                     of case
