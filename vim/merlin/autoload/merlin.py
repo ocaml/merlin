@@ -337,7 +337,7 @@ def vim_locate_under_cursor():
 def vim_occurences(vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
-  sync_buffer_to(line, col)
+  sync_full_buffer()
   lst = command_occurences(line, col)
   lst = map(lambda x: x['start'], lst)
   bufnr = vim.current.buffer.number
@@ -345,7 +345,7 @@ def vim_occurences(vimvar):
   for pos in lst:
     lnum = pos['line']
     lcol = pos['col']
-    vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'occurence','type':'E','valid':1}" %
+    vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'occurence','type':'I','valid':1}" %
         (bufnr, lnum, lcol + 1, nr))
     nr = nr + 1
     vim.command("call add(%s, l:tmp)" % vimvar)

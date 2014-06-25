@@ -11,6 +11,10 @@ if !exists("g:merlin_ignore_warnings")
   let g:merlin_ignore_warnings = "false"
 endif
 
+if !exists("g:merlin_display_occurence_list")
+  let g:merlin_display_occurence_list = 1
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -44,7 +48,7 @@ function! merlin#Path(var,path)
     let l:path = l:raw ? substitute(a:path, '^\\\(.*\)$', '\1', '') : fnamemodify(a:path,':p')
   endif
 python <<EOF
-path = vim.eval("l:path") 
+path = vim.eval("l:path")
 if path == "":
   for path in merlin.command("path","list", vim.eval("a:var")):
     if path != "":
@@ -176,7 +180,7 @@ function! merlin#Complete(findstart,base)
     let s:prepended = strpart(line, start, lastword - start)
     return lastword
   endif
-  
+
   let base = s:prepended . a:base
   let l:props = []
   py merlin.vim_complete_cursor(vim.eval("base"),"l:props")
@@ -201,20 +205,23 @@ function! merlin#Occurences()
   let l:occurences = []
   py merlin.vim_occurences("l:occurences")
   call setloclist(0, l:occurences)
+  if g:merlin_display_occurence_list
+    lopen
+  endif
 endfunction
 
 function! merlin#SyntasticGetLocList()
   let l:errors = []
   if expand('%:e') == 'ml'
     py <<EOF
-try: 
+try:
   merlin.sync_full_buffer()
   merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
 except merlin.MerlinException as e:
   merlin.try_print_error(e)
 EOF
   endif
-  return l:errors 
+  return l:errors
 endfunction
 
 function! merlin#Restart()
@@ -268,7 +275,7 @@ function! merlin#Register()
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
   command! -buffer -nargs=0 Reload       call merlin#Reload()
-  
+
   command! -buffer -complete=custom,merlin#PackageList   -nargs=* Use              call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags         call merlin#AddFlags(<f-args>)
   command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* ExtEnable        call merlin#ExtEnable(<f-args>)

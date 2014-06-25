@@ -20,6 +20,10 @@
 - catch "different assumptions" exception
 - write syntax error message generating heuristic
 
+VIM
+document g:merlin_move_to_project
+document g:merlin_display_occurence_list
+
 DONE
 - recovery heuristic is really not sufficient, a few test cases easily trigger
   bad recursion:
