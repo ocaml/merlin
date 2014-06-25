@@ -126,8 +126,7 @@ let dump_item (prod, dot_pos) =
   `Assoc [
     "item", `List [`Int prod; `Int dot_pos];
     "non_terminal", `String lhs;
-    "prefix", `List (List.map ~f:Json.string prefix);
-    "suffix", `List (List.map ~f:Json.string suffix);
+    "definition", `String (String.concat " " (prefix @ ["."] @ suffix));
   ]
 
 let dump_itemset l =
