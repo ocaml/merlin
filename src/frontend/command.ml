@@ -416,8 +416,7 @@ let dispatch (state : state) =
 
   | (Occurences (`Ident_at pos) : a request) ->
     let str = Typer.structures (Buffer.typer state.buffer) in
-    let of_structure str = BrowseT.of_node (BrowseT.Structure str) in
-    let str = List.map ~f:of_structure str in
+    let str = Browse.of_structures str in
     let node = Option.value ~default:BrowseT.dummy
         (Browse.nearest_before pos str)
     in
@@ -431,7 +430,12 @@ let dispatch (state : state) =
     | (path :: _) ->
       let ident = Path.head path in
       let ids = List.concat_map ~f:(Browse.all_occurences ident) str in
-      List.map ~f:(fun id -> id.BrowseT.t_loc) ids
+      let t_loc x = x.BrowseT.t_loc in
+      let loc_start x = x.Location.loc_start in
+      let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
+      let ids = List.map ~f:t_loc ids in
+      let ids = List.sort ~cmp ids in
+      ids
     end
 
   | (Version : a request) ->
