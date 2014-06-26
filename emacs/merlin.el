@@ -1021,7 +1021,11 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (interactive (list 'interactive))
     (case command
       (interactive (company-begin-backend 'company-my-backend))
-      (prefix (substring-no-properties (thing-at-point 'ocaml-atom)))
+      (prefix
+       (if (bounds-of-thing-at-point 'ocaml-atom)
+           (buffer-substring-no-properties
+            (car (bounds-of-thing-at-point 'ocaml-atom))
+            (point))))
       (no-cache t)
       (init merlin-mode)
       (doc-buffer
@@ -1036,9 +1040,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
               (pos (merlin-make-point (lookup-default 'pos pos nil))))
          (cons filename pos)))
       (post-completion
-       (progn
-         (minibuffer-message "%s: %s" arg (cadr (assoc arg merlin-company-cache)))
-         nil))
+       (minibuffer-message "%s: %s" arg (cadr (assoc arg merlin-company-cache))))
       (candidates
        (progn
          (setq merlin-company-cache (merlin-completion-data arg))
