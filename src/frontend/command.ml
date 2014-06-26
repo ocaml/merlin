@@ -115,7 +115,7 @@ let dispatch (state : state) =
       | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
     in
     let ppf, to_string = Format.to_string () in
-    Type_utils.type_in_env env ppf source;
+    ignore (Type_utils.type_in_env env ppf source : bool);
     to_string ()
 
   | (Type_enclosing ((expr, offset), pos) : a request) ->
@@ -186,13 +186,18 @@ let dispatch (state : state) =
           }
           in
           let ppf, to_string = Format.to_string () in
-          Type_utils.type_in_env env ppf source;
-          Some (loc, to_string ())
+          if Type_utils.type_in_env env ppf source then
+            Some (loc, to_string ())
+          else
+            None
         with _ ->
           None
       )
     in
-    small_enclosings @ result
+    List.filter_dup'
+      ~equiv:(fun ({Location. loc_start; loc_end}, text) ->
+        Lexing.split_pos loc_start, Lexing.split_pos loc_end, text)
+      (small_enclosings @ result)
 
   | (Complete_prefix (prefix, pos) : a request) ->
     let node = Completion.node_at (Buffer.typer state.buffer) pos in

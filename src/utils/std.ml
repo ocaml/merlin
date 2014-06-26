@@ -67,14 +67,17 @@ module List = struct
     in
     aux 0 l
 
-  let filter_dup lst =
+  let filter_dup' ~equiv lst =
     let tbl = Hashtbl.create 17 in
     let f a b =
-      if Hashtbl.mem tbl b
+      let b' = equiv b in
+      if Hashtbl.mem tbl b'
       then a
-      else (Hashtbl.add tbl b (); b :: a)
+      else (Hashtbl.add tbl b' (); b :: a)
     in
     rev (fold_left ~f ~init:[] lst)
+
+  let filter_dup lst = filter_dup' ~equiv:(fun x -> x) lst
 
   let rec take_while ~f = function
     | x :: xs when f x -> x :: take_while ~f xs

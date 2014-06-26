@@ -53,15 +53,21 @@ let type_in_env ?keywords env ppf expr =
               with Not_found ->
                 ()
         end *)
-      | None -> Format.pp_print_string ppf "Syntax error"
+      | None ->
+        Format.pp_print_string ppf "Syntax error";
+        false
+
       | Some ({ Parsetree.pexp_desc = Parsetree.Pexp_ident longident } as e) ->
         begin
-          try print_expr e
+          try
+            print_expr e;
+            true
           with exn ->
             try let p, t = Env.lookup_type longident.Asttypes.txt env in
-              Printtyp.type_declaration (Ident.create (Path.last p)) ppf t
+            Printtyp.type_declaration (Ident.create (Path.last p)) ppf t;
+            true
             with _ ->
               raise exn
         end
-      | Some e -> print_expr e
+      | Some e -> print_expr e; true
     end
