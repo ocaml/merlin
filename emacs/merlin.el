@@ -1199,13 +1199,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (setq merlin-enclosing-offset (1- merlin-enclosing-offset))
     (merlin-type-enclosing-go)))
 
-
 (defvar merlin-type-enclosing-map
   (let ((keymap (make-sparse-keymap)))
-    (define-key keymap (kbd "<up>") 'up)
-    (define-key keymap (kbd "[up]") 'up)
-    (define-key keymap (kbd "<down>") 'down)
-    (define-key keymap (kbd "[down]") 'down)
+    (define-key keymap (kbd "<up>") 'merlin-type-enclosing-go-up)
+    (define-key keymap (kbd "<down>") 'merlin-type-enclosing-go-down)
     keymap)
   "The local map to navigate type enclosing.")
 
@@ -1218,10 +1215,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
         (merlin-type-region)
       (when (merlin-type-enclosing-query)
         (merlin-type-enclosing-go-up))))
-  (if merlin-arrow-keys-type-enclosing
-      (merlin-event-loop merlin-type-enclosing-map
-                         '((up . merlin-type-enclosing-go-up)
-                           (down . merlin-type-enclosing-go-down)))))
+  (when merlin-arrow-keys-type-enclosing
+    (set-temporary-overlay-map merlin-type-enclosing-map t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
@@ -1280,7 +1275,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Locate the identifier under point"
   (interactive)
   (let ((ident (thing-at-point 'ocaml-atom)))
-    (when ident 
+    (when ident
       (merlin-locate-pure ident)
       (if merlin-type-after-locate
           (merlin-type-enclosing)))))
@@ -1436,52 +1431,6 @@ Returns the position."
              (version (replace-regexp-in-string "\n$" "" version)))
         (message "%s (from shell)" version))
     (message "%s" (merlin-send-command '(version)))))
-
-;;;;;;;;;;;;;;;;
-;; KEYBOARD MAGIC
-;;;;;;;;;;;;;;;;
-;; Code taken from popup.el
-;; (Thanks to bobot)
-(defun merlin-read-key-sequence (keymap &optional timeout)
-  (catch 'timeout
-    (let ((timer (and timeout
-                      (run-with-timer timeout nil
-                                      (lambda ()
-                                        (if (zerop (length (this-command-keys)))
-                                            (throw 'timeout nil))))))
-          (old-global-map (current-global-map))
-          (temp-global-map (make-sparse-keymap))
-          (overriding-terminal-local-map (make-sparse-keymap)))
-      (substitute-key-definition 'keyboard-quit 'keyboard-quit
-                                 temp-global-map old-global-map)
-      (define-key temp-global-map [menu-bar] (lookup-key old-global-map [menu-bar]))
-      (define-key temp-global-map [tool-bar] (lookup-key old-global-map [tool-bar]))
-      (set-keymap-parent overriding-terminal-local-map keymap)
-      (if (current-local-map)
-          (define-key overriding-terminal-local-map [menu-bar]
-            (lookup-key (current-local-map) [menu-bar])))
-      (unwind-protect
-          (progn
-            (use-global-map temp-global-map)
-            (clear-this-command-keys)
-            (read-key-sequence nil))
-        (use-global-map old-global-map)
-        (if timer (cancel-timer timer))))))
-
-
-(defun* merlin-event-loop (keymap keyactions)
-  (setq key (merlin-read-key-sequence keymap nil))
-  (if (or (null key) (eq (lookup-key (current-global-map) key) 'keyboard-quit))
-      (keyboard-quit)
-    (setq binding (lookup-key keymap key))
-    (let ((action (lookup-default binding keyactions)))
-      (cond
-       (action
-        (progn
-          (funcall action)
-          (merlin-event-loop keymap keyactions)))
-       ((commandp key)
-        (call-interactively (key-binding (kbd key))))))))
 
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
