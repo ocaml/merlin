@@ -319,7 +319,7 @@ containing fields file, line and col."
          (open-window (cond ((equal merlin-locate-in-new-window 'never) nil)
                             ((equal merlin-locate-in-new-window 'always))
                             (file)))
-         (filename (if file (cdr file) (buffer-file-name)))
+         (filename (if file (cdr file) buffer-file-name))
          (focus-window (or (not open-window) merlin-locate-focus-new-window))
          (do-open (lambda ()
                     (if open-window
@@ -581,11 +581,12 @@ the error message otherwise print a generic error message."
 (defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
-  (let ((ext (if (buffer-file-name)
-                 (file-name-extension (buffer-file-name))
-               "ml")))
-    (merlin-send-command
-     `(reset ,(if (string-equal ext "mli") 'mli 'ml) ,(buffer-file-name)))
+  (let* ((ext (if buffer-file-name
+                  (file-name-extension buffer-file-name)
+                "ml"))
+         (ext (if (string-equal ext "mli") 'mli 'ml))
+         (name (or buffer-file-name "toplevel")))
+    (merlin-send-command (list 'reset ext name))
     (merlin-error-reset)
     (setq merlin-dirty-point (point-min))))
 
@@ -1276,13 +1277,14 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-load-project-file ()
   "Load the .merlin file corresponding to the current file."
   (interactive)
-  (let* ((r (merlin-send-command (list 'project 'find (buffer-file-name))))
-         (failed (assoc 'failures r))
-         (result (assoc 'result r)))
-    (when failed (message (cdr failed)))
-    (when (and result (listp (cdr result)))
-      (setq merlin-project-file (cadr result)))
-    (merlin-rewind)))
+  (when buffer-file-name
+    (let* ((r (merlin-send-command (list 'project 'find buffer-file-name)))
+           (failed (assoc 'failures r))
+           (result (assoc 'result r)))
+      (when failed (message (cdr failed)))
+      (when (and result (listp (cdr result)))
+        (setq merlin-project-file (cadr result)))
+      (merlin-rewind))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
@@ -1546,7 +1548,7 @@ Returns the position."
 (defun merlin-dir-group ()
   "Group buffers by directory" ()
   (list
-    (cons 'name (file-name-directory (expand-file-name (buffer-file-name))))))
+    (cons 'name (file-name-directory (expand-file-name buffer-file-name)))))
 
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
@@ -1568,7 +1570,7 @@ Returns the position."
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
-  (buffer-file-name))
+  buffer-file-name)
 
 (defun merlin-view-log ()
   "Jump to the log file of merlin."
