@@ -69,5 +69,21 @@ let type_in_env ?keywords env ppf expr =
             with _ ->
               raise exn
         end
+
+      | Some ({ Parsetree.pexp_desc = Parsetree.Pexp_construct (longident, _) } as e) ->
+        begin
+          try
+            print_expr e;
+            true
+          with exn ->
+            try
+              let p = Env.lookup_module ~load:true longident.Asttypes.txt env in
+              let md = Env.find_module p env in
+              Printtyp.modtype ppf md.Types.md_type;
+              true
+            with _ ->
+              raise exn
+        end
+
       | Some e -> print_expr e; true
     end

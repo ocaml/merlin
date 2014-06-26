@@ -160,7 +160,7 @@ let dispatch (state : state) =
         if i >= len then
           List.rev (expr :: acc)
         else if expr.[i] = '.' then
-          aux (String.sub expr ~pos:0 ~len:i (* i-1 ? *) :: acc) (succ i)
+          aux (String.sub expr ~pos:0 ~len:i :: acc) (succ i)
         else
           aux acc (succ i)
       in
