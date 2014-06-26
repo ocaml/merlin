@@ -32,6 +32,9 @@ let mkoption d =
 
 let reloc_pat startpos endpos x= { x with ppat_loc = rloc startpos endpos };;
 let reloc_exp startpos endpos x= { x with pexp_loc = rloc startpos endpos };;
+let reloc_exp_fake startpos endpos x =
+  { x with pexp_loc =
+      Parsing_aux.pack_fake_location x.pexp_loc ~fake:(rloc startpos endpos) }
 
 let mkoperator startpos endpos name =
   let loc = rloc startpos endpos in
@@ -1127,13 +1130,16 @@ expr:
     { v1 }
 | v1 = simple_expr v2 = simple_labeled_expr_list
     { mkexp $startpos $endpos (Pexp_apply(v1, List.rev v2)) }
-| LET v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs IN @{`Shift 2} v6 = seq_expr
-    { mkexp_attrs $startpos $endpos (Pexp_let(v3, List.rev v4, v6)) v2 }
-| LET MODULE v3 = ext_attributes v4 = UIDENT v5 = module_binding_body IN @{`Shift 2} v7 = seq_expr
-    { mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos(v4) $endpos(v4) v4, v5, v7)) v3 }
-| LET OPEN v3 = expr_open IN @{`Shift 2} v5 = seq_expr
-    { let (flag,id,ext) = v3 in
-      mkexp_attrs $startpos $endpos (Pexp_open(flag, id, v5)) ext }
+| LET v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs _in = IN @{`Shift 2} expr = seq_expr
+    { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
+      mkexp_attrs $startpos $endpos (Pexp_let(v3, List.rev v4, expr)) v2 }
+| LET MODULE v3 = ext_attributes v4 = UIDENT v5 = module_binding_body _in = IN @{`Shift 2} expr = seq_expr
+    { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
+      mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos(v4) $endpos(v4) v4, v5, expr)) v3 }
+| LET OPEN v3 = expr_open _in = IN @{`Shift 2} expr = seq_expr
+    { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
+      let (flag,id,ext) = v3 in
+      mkexp_attrs $startpos $endpos (Pexp_open(flag, id, expr)) ext }
 | FUNCTION v2 = ext_attributes opt_bar v4 = match_cases
     { mkexp_attrs $startpos $endpos (Pexp_function(List.rev v4)) v2 }
 | FUN v2 = ext_attributes v3 = labeled_simple_pattern v4 = fun_def
@@ -1424,10 +1430,10 @@ match_cases:
     { v3 :: v1 }
 
 match_case:
-| v1 = pattern _2 = MINUSGREATER v3 = seq_expr
-    { Exp.case v1 (reloc_exp $endpos(_2) $endpos v3) }
-| v1 = pattern WHEN v3 = seq_expr _4 = MINUSGREATER v5 = seq_expr
-    { Exp.case v1 ~guard:v3 (reloc_exp $endpos(_4) $endpos v5) }
+| v1 = pattern _2 = MINUSGREATER expr = seq_expr
+    { Exp.case v1 (reloc_exp_fake $endpos(_2) $endpos expr) }
+| v1 = pattern WHEN v3 = seq_expr _4 = MINUSGREATER expr = seq_expr
+    { Exp.case v1 ~guard:v3 (reloc_exp_fake $endpos(_4) $endpos expr) }
 
 fun_def:
 | MINUSGREATER v2 = seq_expr

@@ -12,7 +12,5 @@ val compare_pos: Lexing.position -> Location.t -> int
 val with_bag_of_holding: Location.t -> exn -> Location.t
 val bag_of_holding: Location.t -> exn
 
-val pack_fake_start: Location.t -> Lexing.position -> Location.t
-val unpack_fake_start: Location.t -> Lexing.position
-
-val reconstruct_struct: (exn -> Parsetree.structure) ref
+val pack_fake_location: fake:Location.t -> Location.t -> Location.t
+val unpack_fake_location: Location.t -> Location.t
