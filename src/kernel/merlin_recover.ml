@@ -14,9 +14,11 @@ let rollbacks endp parser =
       | None ->
         let guide, parser = gparser in
         let guide parser =
-          let loc = Merlin_parser.get_location parser in
-          let _, col = Lexing.split_pos loc.Location.loc_start in
-          min guide col
+          let guide' = Merlin_parser.get_guide parser in
+          if Lexing.compare_pos guide guide' < 0 then
+            guide'
+          else
+            guide
         in
         Option.map (Merlin_parser.pop parser)
           ~f:(fun parser -> Merlin_parser.termination, 0, (guide parser, parser))
@@ -29,7 +31,7 @@ let rollbacks endp parser =
   (* Hack to drop last parser *)
   let stacks =
     List.sort (fun (_,(g1,_)) (_,(g2,_)) ->
-        - compare g1 g2)
+        - compare (snd (Lexing.split_pos g1)) (snd (Lexing.split_pos g2)))
       stacks
   in
   Zipper.of_list stacks
@@ -37,7 +39,7 @@ let rollbacks endp parser =
 type t = {
   errors: exn list;
   parser: Merlin_parser.t;
-  recovering: ((int * (int * Merlin_parser.t)) zipper) option;
+  recovering: ((int * (Lexing.position * Merlin_parser.t)) zipper) option;
 }
 
 let parser t = t.parser
@@ -73,14 +75,19 @@ let closing_token = function
 
 let prepare_candidates candidates =
   let open Location in
-  let candidates = List.rev candidates in
   (*let candidates = List.group_by
       (fun (a : _ loc) (b : _ loc) ->
         Lexing.compare_pos a.loc.loc_start b.loc.loc_start = 0)
       candidates
   in*)
-  let cmp (pa,_) (pb,_) =
-    - compare pa pb
+  let candidates = List.rev candidates in
+  let cmp (pa,(ga,_)) (pb,(gb,_)) =
+    match - compare pa pb with
+      | 0 ->
+        let la,_ = Lexing.split_pos ga in
+        let lb,_ = Lexing.split_pos gb in
+        - compare la lb
+      | n -> n
   in
   (*List.concat_map (List.stable_sort ~cmp) candidates*)
   List.stable_sort ~cmp candidates
@@ -90,15 +97,14 @@ let feed_recover original (s,tok,e as input) zipper =
   let get_col x = snd (Lexing.split_pos x) in
   let ref_col = get_col s in
   (* Find appropriate recovering position *)
-  let less_indented (_,(g,_)) = g <= ref_col in
-  let more_indented (_,(g,_)) = g >= ref_col in
+  let less_indented (_,(g,_)) = get_col g <= ref_col in
+  let more_indented (_,(g,_)) = get_col g >= ref_col in
   (* Backward: increase column *)
   (* Forward: decrease column *)
   let zipper = Zipper.seek_backward less_indented zipper in
   let zipper = Zipper.seek_forward more_indented zipper in
   (*let candidates = Zipper.select_forward more_indented zipper in*)
   let candidates = Zipper.select_backward less_indented zipper in
-  (*let candidates = prepare_candidates candidates in*)
   (*let Zipper (_,_,candidates) = zipper in*)
   let candidates = prepare_candidates candidates in
   Logger.infojf section ~title:"feed_recover candidates"
@@ -106,10 +112,12 @@ let feed_recover original (s,tok,e as input) zipper =
       `Assoc [
         "position", Lexing.json_of_position pos;
         "candidates",
-        let dump_snapshot n (priority,(guide,parser)) = `Assoc [
+          let dump_snapshot n (priority,(guide,parser)) =
+          let line, col = Lexing.split_pos guide in
+          `Assoc [
             "number", `Int n;
             "priority", `Int priority;
-            "guide", `Int guide;
+            "guide", `List [`Int line; `Int col];
             "parser", Merlin_parser.dump parser;
           ]
         in
@@ -181,9 +189,10 @@ let dump_recovering = function
   | None -> `Null
   | Some (Zipper (head, _, tail)) ->
     let dump_snapshot (priority,(guide,parser)) =
+      let line, col = Lexing.split_pos guide in
       `Assoc [
         "priority", `Int priority;
-        "guide", `Int guide;
+        "guide", `List [`Int line; `Int col];
         "parser", Merlin_parser.dump parser
       ]
     in

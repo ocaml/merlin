@@ -90,8 +90,7 @@ let get_location ?pop t =
 
 let get_guide ?pop t =
   let loc = get_location ?pop t in
-  let _, col = Lexing.split_pos loc.Location.loc_start in
-  col
+  loc.Location.loc_start
 
 let of_feed p depth =
   Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
@@ -263,13 +262,13 @@ let rec recover ?endp termination (guide,parser) =
 
       (* Construct parser *)
       let parser = of_feed {p with P. env} w in
-      let guide = min guide (get_guide parser) in
+      let guide = get_guide parser in
       Some (termination, parser_priority parser, (guide,parser))
 
     | `Shift (pop,token,priority) ->
       let startp = (get_location parser).Location.loc_end in
       let endp = Option.value ~default:startp endp in
-      let guide = min guide (get_guide ~pop parser) in
+      let guide = get_guide ~pop parser in
       match feed (startp,token,endp) parser with
       | `Accept _ | `Reject -> None
       | `Step parser -> Some (termination, priority, (guide,parser))
