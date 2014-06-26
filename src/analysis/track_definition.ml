@@ -300,6 +300,7 @@ let from_string ~project ~env ~local_defs path =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let path, loc =
+      (* [1] If we know it is a record field, we only look for that. *)
       if is_label then
         let label_desc = Typing_aux.lookup_label ident env in
         path_and_loc_from_label label_desc env
@@ -320,6 +321,15 @@ let from_string ~project ~env ~local_defs path =
           let path, _ = Merlin_types_custom.lookup_module ident env in
           path, Location.symbol_gloc ()
         with Not_found ->
+        try
+          (* However, [1] is not the only time where we can have a record field,
+              we could also have found the ident in a pattern like
+                  | { x ; y } -> e
+              in which case the check before [1] won't know that we have a
+              label, but it's worth checking at this point. *)
+          let label_desc = Typing_aux.lookup_label ident env in
+          path_and_loc_from_label label_desc env
+        with Not_found ->
           debug_log "   ... not in the environment" ;
           raise Not_in_env
       )
@@ -329,9 +339,6 @@ let from_string ~project ~env ~local_defs path =
     else
       let opt =
         let modules = path_to_list path in
-        (* looks like local_defs is already in reversed order. So we need to
-            reverse it here (since [get_browsable] is going to reverse it one
-            last time). *)
         let local_defs = Browse.of_structures local_defs in
         check_item modules (get_top_items local_defs)
       in
