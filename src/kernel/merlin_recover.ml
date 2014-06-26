@@ -3,35 +3,34 @@ open Raw_parser
 
 let section = Logger.section "recover"
 
+let candidate_pos (_,{Location.txt = _; loc}) =
+  Lexing.split_pos loc.Location.loc_start
+
 let rollbacks endp parser =
-  let rec aux (termination,_,gparser) =
+  let rec aux (termination,_,parser) =
     (* FIXME: find proper way to handle limit conditions *)
     (* When reaching bottom of the stack, last frame will raise an Accept
        exception, we can't recover from it, and we shouldn't recover TO it. *)
     try
-      match Merlin_parser.recover ~endp termination gparser with
+      match Merlin_parser.recover ~endp termination parser with
       | Some _ as r -> r
       | None ->
-        let guide, parser = gparser in
-        let guide parser =
-          let guide' = Merlin_parser.get_guide parser in
-          if Lexing.compare_pos guide guide' < 0 then
-            guide'
-          else
-            guide
+        let locate parser' parser =
+          let loc = Merlin_parser.get_location parser' in
+          Location.mkloc parser loc
         in
-        Option.map (Merlin_parser.pop parser)
-          ~f:(fun parser -> Merlin_parser.termination, 0, (guide parser, parser))
+        Option.map (Merlin_parser.pop parser) ~f:(fun parser' ->
+          Merlin_parser.termination, (0, locate parser' parser), parser')
     with _ -> None
   in
-  let guide = Merlin_parser.get_guide parser in
-  let parser = Merlin_parser.termination, 0, (guide, parser) in
-  let stacks = parser :: List.unfold aux parser in
-  let stacks = List.rev_map stacks ~f:(fun (_,a,b) -> a,b) in
+  let parser = Merlin_parser.termination, (0, Location.mknoloc parser), parser in
+  let stacks = List.unfold aux parser in
+  let stacks = List.rev_map stacks ~f:Misc.snd3 in
   (* Hack to drop last parser *)
-  let stacks =
-    List.sort (fun (_,(g1,_)) (_,(g2,_)) ->
-        - compare (snd (Lexing.split_pos g1)) (snd (Lexing.split_pos g2)))
+  let stacks = List.sort (fun c1 c2 ->
+      let _, col1 = candidate_pos c1 in
+      let _, col2 = candidate_pos c2 in
+      - compare col1 col2)
       stacks
   in
   Zipper.of_list stacks
@@ -39,7 +38,7 @@ let rollbacks endp parser =
 type t = {
   errors: exn list;
   parser: Merlin_parser.t;
-  recovering: ((int * (Lexing.position * Merlin_parser.t)) zipper) option;
+  recovering: ((int * Merlin_parser.t Location.loc) zipper) option;
 }
 
 let parser t = t.parser
@@ -50,6 +49,15 @@ let fresh parser = {errors = []; parser; recovering = None}
 let token_to_string tok =
   let open Merlin_parser.Values in
   string_of_class (class_of_symbol (symbol_of_token tok))
+
+let dump_candidate (priority,{Location. txt = parser; loc}) =
+  let guide = loc.Location.loc_start in
+  let line, col = Lexing.split_pos guide in
+  `Assoc [
+    "priority", `Int priority;
+    "guide", `List [`Int line; `Int col];
+    "parser", Merlin_parser.dump parser
+  ]
 
 let rec feed_normal (s,tok,e as input) parser =
   let dump_token token = `Assoc [
@@ -73,62 +81,48 @@ let closing_token = function
   | RPAREN -> true
   | _ -> false
 
-let prepare_candidates candidates =
+let prepare_candidates ref_col candidates =
   let open Location in
-  (*let candidates = List.group_by
-      (fun (a : _ loc) (b : _ loc) ->
-        Lexing.compare_pos a.loc.loc_start b.loc.loc_start = 0)
-      candidates
-  in*)
   let candidates = List.rev candidates in
-  let cmp (pa,(ga,_)) (pb,(gb,_)) =
+  let cmp (pa,_ as ca) (pb,_ as cb) =
     match - compare pa pb with
       | 0 ->
-        let la,_ = Lexing.split_pos ga in
-        let lb,_ = Lexing.split_pos gb in
-        - compare la lb
+        let la,ca = candidate_pos ca in
+        let lb,cb = candidate_pos cb in
+        begin match compare (abs (ca - ref_col) / 2) (abs (cb - ref_col) / 2) with
+        | 0 -> - compare la lb
+        | n -> n
+        end
       | n -> n
   in
-  (*List.concat_map (List.stable_sort ~cmp) candidates*)
   List.stable_sort ~cmp candidates
 
 
 let feed_recover original (s,tok,e as input) zipper =
-  let get_col x = snd (Lexing.split_pos x) in
-  let ref_col = get_col s in
+  let _, ref_col = Lexing.split_pos s in
+  let get_col candidate = snd (candidate_pos candidate) in
   (* Find appropriate recovering position *)
-  let less_indented (_,(g,_)) = get_col g <= ref_col in
-  let more_indented (_,(g,_)) = get_col g >= ref_col in
+  let less_indented c = get_col c <= ref_col + 2 in
+  let more_indented c = get_col c >= ref_col - 2 in
   (* Backward: increase column *)
   (* Forward: decrease column *)
-  let zipper = Zipper.seek_backward less_indented zipper in
   let zipper = Zipper.seek_forward more_indented zipper in
-  (*let candidates = Zipper.select_forward more_indented zipper in*)
-  let candidates = Zipper.select_backward less_indented zipper in
-  (*let Zipper (_,_,candidates) = zipper in*)
-  let candidates = prepare_candidates candidates in
+  let zipper = Zipper.seek_backward less_indented zipper in
+  let candidates = Zipper.select_forward more_indented zipper in
+  (*let candidates = Zipper.select_backward less_indented zipper in*)
+  let candidates = prepare_candidates ref_col candidates in
   Logger.infojf section ~title:"feed_recover candidates"
     (fun (pos,candidates) ->
       `Assoc [
         "position", Lexing.json_of_position pos;
-        "candidates",
-          let dump_snapshot n (priority,(guide,parser)) =
-          let line, col = Lexing.split_pos guide in
-          `Assoc [
-            "number", `Int n;
-            "priority", `Int priority;
-            "guide", `List [`Int line; `Int col];
-            "parser", Merlin_parser.dump parser;
-          ]
-        in
-        `List (List.mapi ~f:dump_snapshot candidates)
+        "candidates", `List (List.map ~f:dump_candidate candidates)
       ])
     (s,candidates);
   let rec aux_feed n = function
     | [] -> Either.L zipper
-    | (_,candidate) :: candidates ->
+    | candidate :: candidates ->
       aux_dispatch candidates n candidate
-        (Merlin_parser.feed input (snd candidate))
+        (Merlin_parser.feed input (snd candidate).Location.txt)
 
   and aux_dispatch candidates n candidate = function
     | `Step parser ->
@@ -143,7 +137,7 @@ let feed_recover original (s,tok,e as input) zipper =
         (fun n -> `Assoc ["number", `Int n]) n;
       assert (tok = EOF);
       aux_dispatch candidates n candidate
-        (Merlin_parser.feed (s,SEMISEMI,e) (snd candidate))
+        (Merlin_parser.feed (s,SEMISEMI,e) (snd candidate).Location.txt)
     | `Reject ->
       Logger.debugjf section ~title:"feed_recover rejected"
         (fun n -> `Assoc ["number", `Int n]) n;
@@ -188,7 +182,8 @@ let fold token t =
 let dump_recovering = function
   | None -> `Null
   | Some (Zipper (head, _, tail)) ->
-    let dump_snapshot (priority,(guide,parser)) =
+    let dump_snapshot (priority,{Location. txt = parser; loc}) =
+      let guide = loc.Location.loc_start in
       let line, col = Lexing.split_pos guide in
       `Assoc [
         "priority", `Int priority;

@@ -33,7 +33,9 @@ val pop : t -> t option
 (* Try to reduce the state on top of the stack *)
 type termination
 val termination : termination
-val recover : ?endp:Lexing.position -> termination -> (Lexing.position * t) -> (termination * int * (Lexing.position * t)) option
+val recover : ?endp:Lexing.position
+  -> termination -> t
+  -> (termination * (int * t Location.loc) * t) option
 
 (* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser

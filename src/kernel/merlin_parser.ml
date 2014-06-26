@@ -214,26 +214,26 @@ let parser_priority p =
   let symcls = Values.class_of_symbol symbol in
   Values.selection_priority symcls
 
-let rec recover ?endp termination (guide,parser) =
+let rec recover ?endp termination parser =
   let open Merlin_recovery_strategy in
   match find_strategies parser with
   | [] -> None
   | strat :: _ ->
   match Termination.check strat parser termination with
   | parser, termination, false ->
-    recover ?endp termination (guide,parser)
+    recover ?endp termination parser
   | Parser (p,w), termination, true ->
-    let env = p.P.env in
-    let add_symbol stack symbol =
-      let endp = match endp with
-        | Some endp -> endp
-        | None -> stack.E.endp
-      in
-      {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
-    in
     (* Feed stack *)
     match strat.action with
     | `Reduce {r_prod; r_symbols; r_action} ->
+      let env = p.P.env in
+      let add_symbol endp stack symbol =
+        {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
+      in
+      let add_symbol = match endp with
+        | Some endp -> add_symbol endp
+        | None -> (fun stack -> add_symbol stack.E.endp stack)
+      in
       let stack = List.fold_left ~f:add_symbol ~init:env.E.stack r_symbols in
       let env = {env with E. stack} in
       (* Reduce stack *)
@@ -261,17 +261,24 @@ let rec recover ?endp termination (guide,parser) =
       let env = {env with E. current = goto stack.E.state r_prod} in
 
       (* Construct parser *)
-      let parser = of_feed {p with P. env} w in
-      let guide = get_guide parser in
-      Some (termination, parser_priority parser, (guide,parser))
+      let parser' = of_feed {p with P. env} w in
+      let priority = parser_priority parser in
+      let parser = Location.mkloc parser (get_location parser') in
+      Some (termination, (priority, parser), parser')
 
     | `Shift (pop,token,priority) ->
-      let startp = (get_location parser).Location.loc_end in
-      let endp = Option.value ~default:startp endp in
-      let guide = get_guide ~pop parser in
-      match feed (startp,token,endp) parser with
+      let loc = get_location parser in
+      let token =
+        let startp = loc.Location.loc_end in
+        let endp = Option.value ~default:startp endp in
+        (startp,token,endp)
+      in
+      let loc = Parsing_aux.location_union (get_location ~pop parser) loc in
+      match feed token parser with
       | `Accept _ | `Reject -> None
-      | `Step parser -> Some (termination, priority, (guide,parser))
+      | `Step parser' ->
+        let parser = Location.mkloc parser' loc in
+        Some (termination, (priority, parser), parser')
 
 module Integrate
     (P : sig
