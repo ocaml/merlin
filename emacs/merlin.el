@@ -526,6 +526,14 @@ the merlin buffer of the current buffer."
     (accept-process-output (merlin-process) 0.1 nil t))
   merlin-result)
 
+(defun merlin-reset-user ()
+  "Checks whether we need to change the current buffer viewed by merlin."
+  (let ((name buffer-file-name))
+    (with-current-buffer (merlin-process-buffer)
+      (when (not (string-equal merlin-process-last-user name))
+        (setq merlin-process-last-user name)
+        (merlin-load-project-file name)))))
+
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
 Give the result to callback-if-success.  If merlin reported an
@@ -543,7 +551,6 @@ the error message otherwise print a generic error message."
           nil)
       (with-current-buffer (merlin-process-buffer)
         (if merlin-debug (merlin-debug (format ">%s" string)))
-        (setq merlin-process-last-user name)
         (tq-enqueue merlin-process-queue string "\n"
                     (cons callback-if-success (cons callback-if-exn command))
                     #'(lambda (closure answer)
@@ -578,10 +585,11 @@ the error message otherwise print a generic error message."
 
 ;; SPECIAL CASE OF COMMANDS
 
-(defun merlin-rewind ()
+(defun merlin-rewind (&optional buffer)
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
-  (let* ((ext (if buffer-file-name
+  (let* ((buffer (if buffer buffer buffer-file-name))
+         (ext (if buffer-file-name
                   (file-name-extension buffer-file-name)
                 "ml"))
          (ext (if (string-equal ext "mli") 'mli 'ml))
@@ -701,6 +709,7 @@ the error message otherwise print a generic error message."
 (defun merlin-tell-to-point (&optional point)
   "Tell to merlin part of the buffer between START and END. START
 may be nil, in that case the current cursor of merlin is used."
+  (merlin-reset-user)
   (let* ((point (if point point (point)))
          (start (min point merlin-dirty-point))
          (start (car (merlin-send-cursor-command
@@ -1027,7 +1036,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
             (car (bounds-of-thing-at-point 'ocaml-atom))
             (point))))
       (no-cache t)
-      (init merlin-mode)
+      (init (if merlin-mode (merlin-sync-to-point)))
       (doc-buffer
        (progn
          (let ((doc (merlin-completion-info arg)))
@@ -1043,6 +1052,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
        (minibuffer-message "%s: %s" arg (cadr (assoc arg merlin-company-cache))))
       (candidates
        (progn
+         (merlin-sync-to-point)
          (setq merlin-company-cache (merlin-completion-data arg))
          (mapcar #'(lambda (x) (car x)) merlin-company-cache)))
       (meta (cadr (assoc arg merlin-company-cache)))
@@ -1276,17 +1286,19 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (when failed (message (cdr failed))))
   (merlin-error-reset))
 
-(defun merlin-load-project-file ()
-  "Load the .merlin file corresponding to the current file."
+(defun merlin-load-project-file (&optional buffer)
+  "Load the .merlin file corresponding to BUFFER (or the current
+buffer if BUFFER is nil)."
   (interactive)
-  (when buffer-file-name
-    (let* ((r (merlin-send-command (list 'project 'find buffer-file-name)))
-           (failed (assoc 'failures r))
-           (result (assoc 'result r)))
-      (when failed (message (cdr failed)))
-      (when (and result (listp (cdr result)))
-        (setq merlin-project-file (cadr result)))
-      (merlin-rewind))))
+  (let ((buffer (if buffer buffer buffer-file-name)))
+    (when buffer
+      (let* ((r (merlin-send-command (list 'project 'find buffer)))
+             (failed (assoc 'failures r))
+             (result (assoc 'result r)))
+        (when failed (message (cdr failed)))
+        (when (and result (listp (cdr result)))
+          (setq merlin-project-file (cadr result)))
+        (merlin-rewind buffer)))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
