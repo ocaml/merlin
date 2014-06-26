@@ -15,6 +15,8 @@
 - catch "different assumptions" exception
 - write syntax error message generating heuristic
 - have a way to get the types of modules
+  partially done by 6f7e89e6f6d0915f5b2f76d892c99434399e9a76
+  now we need a clean/generic way
 
 VIM
 document g:merlin_move_to_project
