@@ -1304,13 +1304,14 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
              (list 'locate (substring-no-properties ident)
                    'at (merlin-unmake-point (point))))))
     r))
+
 (defun merlin-locate-pure (ident)
   "Locate the identifier IDENT at point."
   (let* ((r (merlin-locate-pos ident)))
     (if r
         (if (listp r)
             (merlin-goto-file-and-point r)
-          (message r))
+          (error "%s" r))
       (error "%s not found. (No answer from merlin)" ident))))
 
 (defun merlin-locate ()
