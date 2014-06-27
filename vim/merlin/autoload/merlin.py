@@ -353,6 +353,20 @@ def vim_occurences(vimvar):
     vim.command("call add(%s, l:tmp)" % vimvar)
   return cursorpos + 1
 
+def vim_occurences_replace(content):
+  sync_full_buffer()
+  line, col = vim.current.window.cursor
+  lst = command_occurences(line, col)
+  lst.reverse()
+  bufnr = vim.current.buffer.number
+  nr, cursorpos = 0, 0
+  for pos in lst:
+    if pos['start']['line'] == pos['end']['line']:
+      mlen = pos['end']['col'] - pos['start']['col']
+      matcher = make_matcher(pos['start'], pos['end'])
+      query = ":%s/{0}.\\{{{1}\\}}/{2}/".format(matcher,mlen,content)
+      vim.command(query)
+
 # Expression typing
 def vim_type(expr,is_approx=False):
   to_line, to_col = vim.current.window.cursor

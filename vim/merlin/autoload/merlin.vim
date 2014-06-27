@@ -217,6 +217,10 @@ function! merlin#Occurences()
   endif
 endfunction
 
+function! merlin#OccurencesRename(text)
+  py merlin.vim_occurences_replace(vim.eval("a:text"))
+endfunction
+
 function! merlin#SyntasticGetLocList()
   let l:errors = []
   if expand('%:e') == 'ml'
@@ -278,6 +282,7 @@ function! merlin#Register()
   command! -buffer -nargs=? Locate call merlin#Locate(<q-args>)
 
   command! -buffer -nargs=0 Occurences call merlin#Occurences()
+  command! -buffer -nargs=* Rename call merlin#OccurencesRename(<f-args>)
 
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
