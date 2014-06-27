@@ -1473,7 +1473,7 @@ Returns the position."
   (interactive)
   (if (merlin-process-dead-p)
       (let* ((command (concat merlin-command " -version"))
-             (version (shell-command-to-string version))
+             (version (shell-command-to-string command))
              (version (replace-regexp-in-string "\n$" "" version)))
         (message "%s (from shell)" version))
     (message "%s" (merlin-send-command '(version)))))
