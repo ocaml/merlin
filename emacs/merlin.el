@@ -1026,6 +1026,9 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; COMPANY MODE SUPPORT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar merlin-company-cache)
+
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
     (case command
@@ -1320,13 +1323,14 @@ buffer if BUFFER is nil)."
              (list 'locate (substring-no-properties ident)
                    'at (merlin-unmake-point (point))))))
     r))
+
 (defun merlin-locate-pure (ident)
   "Locate the identifier IDENT at point."
   (let* ((r (merlin-locate-pos ident)))
     (if r
         (if (listp r)
             (merlin-goto-file-and-point r)
-          (message r))
+          (error "%s" r))
       (error "%s not found. (No answer from merlin)" ident))))
 
 (defun merlin-locate ()
@@ -1485,7 +1489,7 @@ Returns the position."
   (interactive)
   (if (merlin-process-dead-p)
       (let* ((command (concat merlin-command " -version"))
-             (version (shell-command-to-string version))
+             (version (shell-command-to-string command))
              (version (replace-regexp-in-string "\n$" "" version)))
         (message "%s (from shell)" version))
     (message "%s" (merlin-send-command '(version)))))
