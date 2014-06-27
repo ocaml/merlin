@@ -1016,6 +1016,9 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; COMPANY MODE SUPPORT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar merlin-company-cache)
+
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
     (case command
