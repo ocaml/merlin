@@ -55,4 +55,4 @@ val of_structures : Typedtree.structure list -> t list
 val all_constructor_occurences :
   t * [ `Description of Types.constructor_description
       | `Declaration of Typedtree.constructor_declaration ]
-  -> t -> t list
+  -> t -> t Location.loc list

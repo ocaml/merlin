@@ -543,9 +543,9 @@ let expression_paths { Typedtree. exp_desc; exp_extra } =
 let is_constructor t =
   match t.t_node with
   | Constructor_declaration decl ->
-    Some (`Declaration decl)
-  | Expression {exp_desc = Texp_construct (_, desc, _)} ->
-    Some (`Description desc)
-  | Pattern {pat_desc = Tpat_construct (_, desc, _)} ->
-    Some (`Description desc)
+    Some {decl.cd_name with Location.txt = `Declaration decl}
+  | Expression {exp_desc = Texp_construct (loc, desc, _)} ->
+    Some {loc with Location.txt = `Description desc}
+  | Pattern {pat_desc = Tpat_construct (loc, desc, _)} ->
+    Some {loc with Location.txt = `Description desc}
   | _ -> None

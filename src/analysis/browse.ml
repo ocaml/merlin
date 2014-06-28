@@ -175,7 +175,8 @@ let all_constructor_occurences ({t_env = env},d) t =
   let rec aux acc t =
     let acc =
       match is_constructor t with
-      | Some d' when same_constructor env d d' -> t :: acc
+      | Some d' when same_constructor env d d'.Location.txt ->
+        {d' with Location.txt = t} :: acc
       | _ -> acc
     in
     List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)

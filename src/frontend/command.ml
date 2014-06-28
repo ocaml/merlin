@@ -460,11 +460,11 @@ let dispatch (state : state) =
     and constructor_occurence d =
       let ts = List.concat_map str
           ~f:(Browse.all_constructor_occurences (node,d)) in
-      List.map ~f:(fun t -> t.BrowseT.t_loc) ts
+      List.map ~f:get_loc ts
 
     in
     let locs = match BrowseT.is_constructor node with
-      | Some d -> constructor_occurence d
+      | Some d -> constructor_occurence d.Location.txt
       | None -> ident_occurence ()
     in
     let loc_start l = l.Location.loc_start in
