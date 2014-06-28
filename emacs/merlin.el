@@ -312,6 +312,13 @@ line and col"
   (forward-line (1- (lookup-default 'line data 0)))
   (forward-char (max 0 (lookup-default 'col data 0))))
 
+(defun merlin-point-of-pos (pos)
+  "Return the buffer position corresponding to the merlin
+position POS."
+  (save-excursion
+    (merlin-goto-point pos)
+    (point)))
+
 (defun merlin-goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
 containing fields file, line and col."
@@ -1272,6 +1279,37 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
         (merlin-type-enclosing-go-up))))
   (when merlin-arrow-keys-type-enclosing
     (set-temporary-overlay-map merlin-type-enclosing-map t)))
+
+(defun merlin--find-extents (list low high)
+  "Return the smallest extent in LIST that LOW and HIGH fit
+strictly within, or nil if there is no such element."
+  (find-if (lambda (extent)
+	     (let ((start (merlin-point-of-pos (assoc 'start extent)))
+		   (end (merlin-point-of-pos (assoc 'end extent))))
+	       (or (and (> low start)
+			(<= high end))
+		   (and (< high end)
+			(>= low start)))))
+	   list))
+
+(defun merlin-enclosing-expand ()
+  "Select the construct enclosing point (or the region, if it
+is active)."
+  (interactive)
+  (merlin-sync-to-point)
+  (let* ((enclosing-extents
+	  (merlin-send-command
+	   `(enclosing ,(merlin-unmake-point (point)))))
+	 (extents (if (use-region-p)
+		      (merlin--find-extents enclosing-extents
+					    (region-beginning)
+					    (region-end))
+		    (first enclosing-extents))))
+    (if (not extents)
+	(error "No enclosing construct")
+      (merlin-goto-point (cdr (assoc 'start extents)))
+      (push-mark (merlin-point-of-pos (cdr (assoc 'end extents)))
+		 t t))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
