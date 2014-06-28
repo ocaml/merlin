@@ -357,17 +357,25 @@ let dispatch (state : state) =
   | (Dump _ : a request) ->
     failwith "TODO"
 
-  | (Which_path s : a request) ->
+  | (Which_path xs : a request) ->
     begin
-      try
-        find_in_path_uncap (Project.source_path state.project) s
-      with Not_found ->
-        find_in_path_uncap (Project.build_path state.project) s
+      let rec aux = function
+        | [] -> raise Not_found
+        | x :: xs ->
+          try
+            find_in_path_uncap (Project.source_path state.project) x
+          with Not_found -> try
+            find_in_path_uncap (Project.build_path state.project) x
+          with Not_found ->
+            aux xs
+      in
+      aux xs
     end
 
-  | (Which_with_ext ext : a request) ->
-    modules_in_path ~ext
-      (Path_list.to_strict_list (Project.source_path state.project))
+  | (Which_with_ext exts : a request) ->
+    let path = Path_list.to_strict_list (Project.source_path state.project) in
+    let with_ext ext = modules_in_path ~ext path in
+    List.concat_map ~f:with_ext exts
 
   | (Project_load (cmd,path) : a request) ->
     let fn = match cmd with

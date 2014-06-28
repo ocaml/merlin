@@ -68,10 +68,10 @@ type _ request =
        |`Sig|`Parser|`Exn|`Browse|`Recover|`Typer_input]
     -> Json.json request
   | Which_path
-    :  string
+    :  string list
     -> string request
   | Which_with_ext
-    :  string
+    :  string list
     -> string list request
   | Findlib_use
     :  string list

@@ -83,13 +83,13 @@ endfunction
 
 function! merlin#MLList(ArgLead, CmdLine, CursorPos)
   let l:files = []
-  py merlin.vim_which_ext(".ml", "l:files")
+  py merlin.vim_which_ext([".ml",".mli"], "l:files")
   return join(l:files, "\n")
 endfunction
 
 function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
   let l:files = []
-  py merlin.vim_which_ext(".mli", "l:files")
+  py merlin.vim_which_ext([".mli",".ml"], "l:files")
   return join(l:files, "\n")
 endfunction
 
@@ -357,8 +357,8 @@ function! merlin#FindOcamlMerlin()
   return s:c.ocamlmerlin_path
 endfunction
 
-command! -nargs=1 -complete=custom,merlin#MLList  ML  call merlin#FindFile("ml",<f-args>)
-command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile("mli",<f-args>)
+command! -nargs=1 -complete=custom,merlin#MLList  ML  call merlin#FindFile(["ml","mli"],<f-args>)
+command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile(["mli","ml"],<f-args>)
 
 " Flush buffer and dependencies after :make
 au QuickFixCmdPost * call merlin#Reload()

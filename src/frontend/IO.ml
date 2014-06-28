@@ -279,9 +279,13 @@ module Protocol_io = struct
     | [`String "dump"; `String "typer"; `String "input"] ->
       Request (Dump `Typer_input)
     | [`String "which"; `String "path"; `String name] ->
-      Request (Which_path name)
+      Request (Which_path [name])
+    | [`String "which"; `String "path"; `List names] ->
+      Request (Which_path (string_list names))
     | [`String "which"; `String "with_ext"; `String ext] ->
-      Request (Which_with_ext ext)
+      Request (Which_with_ext [ext])
+    | [`String "which"; `String "with_ext"; `List exts] ->
+      Request (Which_with_ext (string_list exts))
     | [`String "find"; `String "use"; `List packages]
     | (`String "find" :: `String "use" :: packages) ->
       Request (Findlib_use (string_list packages))

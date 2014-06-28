@@ -476,7 +476,9 @@ def vim_prev_enclosing(vimvar):
 
 # Finding files
 def vim_which(name,ext):
-  if ext:
+  if isinstance(ext, list):
+    name = map(lambda ext: name + "." + ext, ext)
+  elif ext:
     name = name + "." + ext
   return command('which','path',name)
 
