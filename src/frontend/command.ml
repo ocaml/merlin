@@ -423,7 +423,7 @@ let dispatch (state : state) =
     let str = Typer.structures (Buffer.typer state.buffer) in
     let str = Browse.of_structures str in
     let node = Option.value ~default:BrowseT.dummy
-        (Browse.nearest_before pos str)
+        (Browse.deepest_before pos str)
     in
     begin match
       match node.BrowseT.t_node with
