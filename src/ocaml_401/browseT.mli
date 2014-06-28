@@ -41,10 +41,98 @@
   *
   *)
 
-(* Compatibility with previous versions of OCaml *)
-type constructor_declaration = Typedtree.constructor_declaration
+(* Compatibility with 4.02 *)
+
+type case = {
+  c_lhs: Typedtree.pattern;
+  c_guard: Typedtree.expression option;
+  c_rhs: Typedtree.expression;
+}
+
+type extension_constructor_kind =
+    Text_decl of Typedtree.core_type list * Typedtree.core_type option
+  | Text_rebind of Path.t * Longident.t Asttypes.loc
+
+type extension_constructor = {
+  ext_id: Ident.t;
+  ext_name: string Asttypes.loc;
+(*   ext_type : Types.extension_constructor; *)
+  ext_kind : extension_constructor_kind;
+  ext_loc : Location.t;
+}
+
+type variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+
+type type_extension = {
+  tyext_path: Path.t;
+  tyext_txt: Longident.t Asttypes.loc;
+  tyext_params: (Typedtree.core_type * variance) list;
+  tyext_constructors: extension_constructor list;
+  tyext_private: Asttypes.private_flag;
+}
+
+type module_binding = {
+  mb_id: Ident.t;
+  mb_name: string Asttypes.loc;
+  mb_expr: Typedtree.module_expr;
+  mb_loc: Location.t;
+}
+
+type value_binding = {
+  vb_pat: Typedtree.pattern;
+  vb_expr: Typedtree.expression;
+  vb_loc: Location.t;
+}
+
+type module_declaration = {
+  md_id: Ident.t;
+  md_name: string Asttypes.loc;
+  md_type: Typedtree.module_type;
+  md_loc: Location.t;
+}
+
+type module_type_declaration = {
+  mtd_id: Ident.t;
+  mtd_name: string Asttypes.loc;
+  mtd_type: Typedtree.module_type option;
+  mtd_loc: Location.t;
+}
+
+type label_declaration = {
+  ld_id: Ident.t;
+  ld_name: string Asttypes.loc;
+  ld_mutable: Asttypes.mutable_flag;
+  ld_type: Typedtree.core_type;
+  ld_loc: Location.t;
+}
+
+type constructor_declaration = {
+  cd_id: Ident.t;
+  cd_name: string Asttypes.loc;
+  cd_args: Typedtree.core_type list;
+  cd_res: Typedtree.core_type option;
+  cd_loc: Location.t;
+}
+
+(* Usual BrowseT *)
 
 open Typedtree
+
+type type_declaration = {
+  typ_id: Ident.t ;
+  typ_name: string Asttypes.loc ;
+  typ_params: string Asttypes.loc option list;
+  typ_type : Types.type_declaration;
+  typ_cstrs: (core_type * core_type * Location.t) list;
+  typ_kind: type_kind;
+  typ_private: Asttypes.private_flag;
+  typ_manifest: core_type option;
+  typ_variance: (bool * bool) list;
+  typ_loc: Location.t
+}
 
 type node =
   | Dummy
@@ -117,4 +205,4 @@ val expression_paths : expression -> Path.t Location.loc list
 
 val is_constructor : t ->
   [ `Description of Types.constructor_description
-  | `Declaration of Typedtree.constructor_declaration ] Location.loc option
+  | `Declaration of constructor_declaration ] Location.loc option

@@ -227,20 +227,7 @@ let register exts env =
     try_type prv, try_type pub
   in
   let fakes, tops = List.split (List.map ~f:process_ext exts) in
-  let add_hidden_signature env sign =
-    let add_item env comp =
-      match comp with
-      | Types.Sig_value(id, decl)     -> Env.add_value (Ident.hide id) decl env
-      | Types.Sig_type(id, decl, _)   -> Env.add_type ~check:false (Ident.hide id) decl env
-      | Types.Sig_typext(id, decl, _) -> Env.add_extension ~check:false (Ident.hide id) decl env
-      | Types.Sig_module(id, mty, _)  -> Env.add_module (Ident.hide id) mty.Types.md_type env
-      | Types.Sig_modtype(id, decl)   -> Env.add_modtype (Ident.hide id) decl env
-      | Types.Sig_class(id, decl, _)  -> Env.add_class (Ident.hide id) decl env
-      | Types.Sig_class_type(id, decl, _) -> Env.add_cltype (Ident.hide id) decl env
-    in
-    List.fold_left ~f:add_item ~init:env sign
-  in
-  let env = add_hidden_signature env (List.concat tops) in
+  let env = Merlin_types_custom.add_hidden_signature env (List.concat tops) in
   let env = Env.add_module ident (Types.Mty_signature
                                     (Lazy.lazy_from_val (List.concat fakes))) env in
   env

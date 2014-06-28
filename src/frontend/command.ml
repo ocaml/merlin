@@ -339,7 +339,7 @@ let dispatch (state : state) =
       Printtyp.signature ppf [item];
       let content = to_string () in
       let ppf, to_string = Format.to_string () in
-      match Browse_misc.signature_loc item with
+      match Merlin_types_custom.signature_loc item with
       | Some loc ->
         Location.print_loc ppf loc;
         let loc = to_string () in

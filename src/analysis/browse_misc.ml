@@ -30,54 +30,6 @@ open Std
 open Option.Infix
 open BrowseT
 
-let union_loc_opt a b = match a,b with
-  | None, None -> None
-  | (Some _ as l), None | None, (Some _ as l) -> l
-  | Some a, Some b -> Some (Parsing_aux.location_union a b)
-
-let rec signature_loc =
-  let open Types in
-  let rec mod_loc = function
-    | Mty_ident _ -> None
-    | Mty_functor (_,m1,m2) ->
-      begin match Merlin_types_custom.extract_functor_arg m1 with
-        | Some m1 -> union_loc_opt (mod_loc m1) (mod_loc m2)
-        | None -> mod_loc m2
-      end
-    | Mty_signature (lazy s) ->
-        let rec find_first = function
-          | x :: xs -> (match signature_loc x with
-                        | (Some _ as v) -> v
-                        | None -> find_first xs)
-          | [] -> None
-        in
-        let a = find_first s and b = find_first (List.rev s) in
-        union_loc_opt a b
-    | _ -> None
-  in
-  function
-  | Sig_value (_,v)     -> Some v.val_loc
-  | Sig_type (_,t,_)      -> Some t.type_loc
-  | Sig_typext (_,e,_) -> Some e.ext_loc
-  | Sig_module (_,m,_)    -> mod_loc (Merlin_types_custom.extract_module_declaration m)
-  | Sig_modtype (_,m) ->
-    begin match Merlin_types_custom.extract_modtype_declaration m with
-      | Some m -> mod_loc m
-      | None -> None
-    end
-  | Sig_class (_,_,_)
-  | Sig_class_type (_,_,_) -> None
-
-let signature_ident =
-  let open Types in function
-  | Sig_value (i,_)
-  | Sig_type (i,_,_)
-  | Sig_typext (i,_,_)
-  | Sig_modtype (i,_)
-  | Sig_module (i,_,_)
-  | Sig_class (i,_,_)
-  | Sig_class_type (i,_,_) -> i
-
 let print_constructor ppf c =
   let open Types in
   match c.cstr_args with
@@ -87,19 +39,14 @@ let print_constructor ppf c =
     let desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok) in
     Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc  })
 
-let summary_prev =
-  Merlin_types_custom.summary_prev
-
-let signature_of_summary =
-  Merlin_types_custom.signature_of_summary
-
 let summary_at pos sum =
   let cmp = Parsing_aux.compare_pos pos in
   let rec aux sum =
+    let open Merlin_types_custom in
     match signature_of_summary sum >>= signature_loc with
-      | None -> summary_prev sum >>= aux
-      | Some loc ->
-    match cmp loc with
+    | None -> summary_prev sum >>= aux
+    | Some loc ->
+      match cmp loc with
       | x when x < 0 -> None
       | 0 -> Some sum
       | _ -> summary_prev sum >>= aux
@@ -114,6 +61,7 @@ let signature_of_env ?(ignore_extensions=true) env =
     | Env.Env_module (_,i,_)
       when ignore_extensions && i = Extension.ident -> ()
     | summary ->
+      let open Merlin_types_custom in
       Option.iter ~f:append (signature_of_summary summary);
       Option.iter aux (summary_prev summary)
   in

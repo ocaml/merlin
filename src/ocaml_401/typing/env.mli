@@ -234,6 +234,7 @@ val fold_cltypes:
   (string -> Path.t -> class_type_declaration -> 'a -> 'a) ->
   Longident.t option -> t -> 'a -> 'a
 
+
 (** merlin: manage all internal state *)
 
 type cache

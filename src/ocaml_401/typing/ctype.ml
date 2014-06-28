@@ -1629,13 +1629,13 @@ let rec local_non_recursive_abbrev visited env p ty =
         begin try
           local_non_recursive_abbrev visited env p (try_expand_once_opt env ty)
         with Cannot_expand ->
-          if Clflags.recursive_types () then () else
+          if (Clflags.recursive_types ()) then () else
           iter_type_expr (local_non_recursive_abbrev visited env p) ty
         end
     | Tobject _ | Tvariant _ ->
         ()
     | _ ->
-        if Clflags.recursive_types () then () else
+        if (Clflags.recursive_types ()) then () else
         iter_type_expr (local_non_recursive_abbrev visited env p) ty
   end
 

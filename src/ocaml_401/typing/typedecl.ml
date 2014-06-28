@@ -955,6 +955,11 @@ let transl_type_decl env name_sdecl_list =
       (fun (_, sdecl) -> add_injectivity sdecl.ptype_variance, sdecl.ptype_loc)
       name_sdecl_list
   in
+  let decls  = List.map (fun (id,n) -> Fake.Nonrec.ident_drop id,n) decls in
+  let tdecls = List.map (fun (id,loc,n) ->
+      Fake.Nonrec.ident_drop id,
+      {loc with txt = Fake.Nonrec.drop loc.txt}, n) tdecls
+  in
   let final_decls, final_env =
     compute_variance_fixpoint env decls required (List.map init_variance decls)
   in

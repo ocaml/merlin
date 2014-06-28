@@ -1,8 +1,99 @@
 open Std
 
-type constructor_declaration = Typedtree.constructor_declaration
+(* Compatibility with 4.02 *)
+
+type case = {
+  c_lhs: Typedtree.pattern;
+  c_guard: Typedtree.expression option;
+  c_rhs: Typedtree.expression;
+}
+
+type extension_constructor_kind =
+    Text_decl of Typedtree.core_type list * Typedtree.core_type option
+  | Text_rebind of Path.t * Longident.t Asttypes.loc
+
+type extension_constructor = {
+  ext_id: Ident.t;
+  ext_name: string Asttypes.loc;
+(*   ext_type : Types.extension_constructor; *)
+  ext_kind : extension_constructor_kind;
+  ext_loc : Location.t;
+}
+
+type variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+
+type type_extension = {
+  tyext_path: Path.t;
+  tyext_txt: Longident.t Asttypes.loc;
+  tyext_params: (Typedtree.core_type * variance) list;
+  tyext_constructors: extension_constructor list;
+  tyext_private: Asttypes.private_flag;
+}
+
+type module_binding = {
+  mb_id: Ident.t;
+  mb_name: string Asttypes.loc;
+  mb_expr: Typedtree.module_expr;
+  mb_loc: Location.t;
+}
+
+type value_binding = {
+  vb_pat: Typedtree.pattern;
+  vb_expr: Typedtree.expression;
+  vb_loc: Location.t;
+}
+
+type module_declaration = {
+  md_id: Ident.t;
+  md_name: string Asttypes.loc;
+  md_type: Typedtree.module_type;
+  md_loc: Location.t;
+}
+
+type module_type_declaration = {
+  mtd_id: Ident.t;
+  mtd_name: string Asttypes.loc;
+  mtd_type: Typedtree.module_type option;
+  mtd_loc: Location.t;
+}
+
+type label_declaration = {
+  ld_id: Ident.t;
+  ld_name: string Asttypes.loc;
+  ld_mutable: Asttypes.mutable_flag;
+  ld_type: Typedtree.core_type;
+  ld_loc: Location.t;
+}
+
+type constructor_declaration = {
+  cd_id: Ident.t;
+  cd_name: string Asttypes.loc;
+  cd_args: Typedtree.core_type list;
+  cd_res: Typedtree.core_type option;
+  cd_loc: Location.t;
+}
 
 open Typedtree
+
+(* Unlike the previous type definitions, this one is an extension of the one in
+    Typedtree, and not a completly new one. *)
+type type_declaration = {
+  typ_id: Ident.t ;
+  typ_name: string Asttypes.loc ;
+  typ_params: string Asttypes.loc option list;
+  typ_type : Types.type_declaration;
+  typ_cstrs: (core_type * core_type * Location.t) list;
+  typ_kind: type_kind;
+  typ_private: Asttypes.private_flag;
+  typ_manifest: core_type option;
+  typ_variance: (bool * bool) list;
+  typ_loc: Location.t
+}
+
+(* Let's get started *)
 
 type node =
   | Dummy
@@ -122,14 +213,14 @@ let rec of_node t_node =
       of_option of_expression c_guard []
     | Class_expr { cl_desc; cl_loc } ->
       of_class_expr_desc cl_desc []
-    | Class_structure { cstr_self; cstr_fields } ->
-      of_pattern cstr_self ::
+    | Class_structure { cstr_pat; cstr_fields } ->
+      of_pattern cstr_pat ::
       List.map (fun f -> of_node (Class_field f)) cstr_fields
     | Class_field { cf_desc; cf_loc } ->
       of_class_field_desc cf_desc []
     | Class_field_kind (Tcfk_virtual ct) ->
       [of_core_type ct]
-    | Class_field_kind (Tcfk_concrete (_,e)) ->
+    | Class_field_kind (Tcfk_concrete e) ->
       [of_expression e]
     | Module_expr { mod_desc; mod_loc } ->
       of_module_expr_desc mod_desc []
@@ -156,6 +247,16 @@ let rec of_node t_node =
     | Module_type_declaration { mtd_type } ->
       of_option of_module_type mtd_type []
     | With_constraint (Twith_type td | Twith_typesubst td) ->
+      let { Typedtree. typ_params; typ_type ; typ_cstrs; typ_kind; typ_private;
+            typ_manifest; typ_variance; typ_loc } = td
+      in
+      let td = {
+        typ_id = Ident.create "merlin_dummy" ;
+        typ_name = Location.mknoloc "merlin_dummy" ;
+        typ_params; typ_type ; typ_cstrs; typ_kind; typ_private; typ_manifest;
+        typ_variance; typ_loc
+      }
+      in
       [of_node (Type_declaration td)]
     | With_constraint (Twith_module _ | Twith_modsubst _) ->
       []
@@ -163,7 +264,7 @@ let rec of_node t_node =
       of_core_type_desc ctyp_desc []
     | Package_type { pack_fields } ->
       List.map (fun (_,ct) -> of_core_type ct) pack_fields
-    | Row_field (Ttag (_,_,_,cts)) ->
+    | Row_field (Ttag (_,_,cts)) ->
       List.map of_core_type cts
     | Row_field (Tinherit ct) ->
       [of_core_type ct]
@@ -174,15 +275,20 @@ let rec of_node t_node =
         of_core_type ct1 :: of_core_type ct2 :: acc
       in
       of_option of_core_type typ_manifest @@
-      of_list of_typ_param typ_params @@
       of_node (Type_kind typ_kind) ::
       List.fold_right ~f:of_typ_cstrs typ_cstrs ~init:[]
-    | Type_kind (Ttype_abstract | Ttype_open) ->
+    | Type_kind Ttype_abstract ->
       []
     | Type_kind (Ttype_variant cds) ->
-      List.map (fun cd -> of_node (Constructor_declaration cd)) cds
+      List.map (fun (cd_id, cd_name, cd_args, cd_loc) ->
+        let cd = { cd_id ; cd_name ; cd_args ; cd_loc ; cd_res = None } in
+        of_node (Constructor_declaration cd)
+      ) cds
     | Type_kind (Ttype_record lds) ->
-      List.map (fun ld -> of_node (Label_declaration ld)) lds
+      List.map (fun (ld_id , ld_name, ld_mutable, ld_type, ld_loc) ->
+        let ld = { ld_id ; ld_name ; ld_mutable ; ld_type ; ld_loc } in
+        of_node (Label_declaration ld)
+      ) lds
     | Type_extension { tyext_params; tyext_constructors } ->
       let of_constructors ec acc =
         of_node (Extension_constructor ec) :: acc
@@ -210,14 +316,11 @@ let rec of_node t_node =
     | Class_type_field { ctf_desc } ->
       of_class_type_field_desc ctf_desc []
     | Class_declaration { ci_params; ci_expr } ->
-      of_node (Class_expr ci_expr) ::
-      List.map of_typ_param ci_params
+      [ of_node (Class_expr ci_expr) ]
     | Class_description { ci_params; ci_expr } ->
-      of_node (Class_type ci_expr) ::
-      List.map of_typ_param ci_params
+      [ of_node (Class_type ci_expr) ]
     | Class_type_declaration { ci_params; ci_expr } ->
-      of_node (Class_type ci_expr) ::
-      List.map of_typ_param ci_params
+      [ of_node (Class_type ci_expr) ]
     | Dummy -> []
   in
   { t_node; t_loc; t_env;
@@ -228,33 +331,44 @@ and of_pattern_desc pat acc = match pat with
     acc
   | Tpat_alias (p,_,_) | Tpat_variant (_,Some p,_) | Tpat_lazy p ->
     of_pattern p :: acc
-  | Tpat_tuple ps | Tpat_construct (_,_,ps) | Tpat_array ps ->
+  | Tpat_tuple ps | Tpat_construct (_,_,ps,_) | Tpat_array ps ->
     of_list of_pattern ps acc
   | Tpat_record (ls,_) ->
     of_list (fun (_,_,p) -> of_pattern p) ls acc
   | Tpat_or (p1,p2,_) ->
     of_pattern p1 :: of_pattern p2 :: acc
 
-and of_pat_extra (pat,_,_) acc = match pat with
+and of_pat_extra (pat,_) acc = match pat with
   | Tpat_constraint ct ->
     of_core_type ct :: acc
   | Tpat_type _ | Tpat_unpack ->
     acc
 
 and of_expression e = of_node (Expression e)
-and of_case c = of_node (Case c)
 and of_pattern p = of_node (Pattern p)
 and of_core_type ct : t = of_node (Core_type ct)
 and of_value_binding vb = of_node (Value_binding vb)
 and of_module_type mt = of_node (Module_type mt)
 and of_module_expr me = of_node (Module_expr me)
 and of_typ_param (ct,_) = of_core_type ct
+and of_case (pat, expr) =
+  let c_rhs, c_guard =
+    match expr.exp_desc with
+    | Texp_when (g, rhs) -> rhs, Some g
+    | _ -> expr, None
+  in
+  of_node (Case { c_lhs = pat ; c_rhs ; c_guard })
 
 and of_expression_desc desc acc = match desc with
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ ->
     acc
   | Texp_let (_,vbs,e) ->
+    let vbs =
+      List.map (fun (pat, expr) ->
+        { vb_pat = pat ; vb_expr = expr ; vb_loc = pat.Typedtree.pat_loc }
+      ) vbs
+    in
     of_expression e ::
     of_list of_value_binding vbs acc
   | Texp_function (_,cs,_) ->
@@ -266,13 +380,13 @@ and of_expression_desc desc acc = match desc with
         | (_,Some e,_) -> Some (of_expression e))
       ls
       acc
-  | Texp_match (e,cs1,cs2,_) ->
+  | Texp_match (e,cs,_) ->
     of_expression e ::
-    of_list of_case (cs1 @ cs2) acc
+    of_list of_case cs acc
   | Texp_try (e,cs) ->
     of_expression e ::
     of_list of_case cs acc
-  | Texp_tuple es | Texp_construct (_,_,es) | Texp_array es ->
+  | Texp_tuple es | Texp_construct (_,_,es,_) | Texp_array es ->
     of_list of_expression es acc
   | Texp_variant (_,Some e) | Texp_field (e,_,_)
   | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
@@ -295,12 +409,15 @@ and of_expression_desc desc acc = match desc with
     of_node (Class_structure cs) :: acc
   | Texp_pack me ->
     of_module_expr me :: acc
+  | Texp_assertfalse ->
+    acc
+  | Texp_when (_grd, _rhs) ->
+    assert false (* Handled in [of_case] *)
 
-and of_exp_extra (exp,_,_) acc = match exp with
-  | Texp_constraint ct ->
-    of_core_type ct :: acc
-  | Texp_coerce (cto,ct) ->
-    of_core_type ct :: of_option of_core_type cto acc
+and of_exp_extra (exp,_) acc = match exp with
+  | Texp_constraint (cto,ct) ->
+    (* FIXME: what about the order? *)
+    of_option of_core_type ct @@ of_option of_core_type cto acc
   | Texp_poly cto ->
     of_option of_core_type cto acc
   | Texp_open _ | Texp_newtype _ -> acc
@@ -322,6 +439,11 @@ and of_class_expr_desc desc acc = match desc with
     of_node (Class_expr ce) ::
     acc
   | Tcl_let (_,vbs,es,ce) ->
+    let vbs =
+      List.map (fun (pat, expr) ->
+        { vb_pat = pat ; vb_expr = expr ; vb_loc = pat.Typedtree.pat_loc }
+      ) vbs
+    in
     of_list of_value_binding vbs @@
     of_list (fun (_,_,e) -> of_expression e) es @@
     of_node (Class_expr ce) ::
@@ -332,22 +454,21 @@ and of_class_expr_desc desc acc = match desc with
     acc
 
 and of_class_field_desc desc acc = match desc with
-  | Tcf_inherit (_,ce,_,_,_) ->
+  | Tcf_inher (_,ce,_,_,_) ->
     of_node (Class_expr ce) :: acc
-  | Tcf_val (_,_,_,cfk,_) | Tcf_method (_,_,cfk) ->
+  | Tcf_val (_,_,_,_,cfk,_) | Tcf_meth (_,_,_,cfk,_) ->
     of_node (Class_field_kind cfk) :: acc
-  | Tcf_constraint (ct1,ct2) ->
+  | Tcf_constr (ct1,ct2) ->
     of_core_type ct1 :: of_core_type ct2 :: acc
-  | Tcf_initializer e ->
+  | Tcf_init e ->
     of_expression e :: acc
-  | Tcf_attribute _ ->
-    assert false (*TODO*)
+
 and of_module_expr_desc desc acc = match desc with
   | Tmod_ident _ -> acc
   | Tmod_structure str ->
     of_node (Structure str) :: acc
   | Tmod_functor (_,_,mto,me) ->
-    of_option of_module_type mto @@
+    of_module_type mto ::
     of_module_expr me ::
     acc
   | Tmod_apply (me1,me2,_) ->
@@ -363,40 +484,65 @@ and of_module_expr_desc desc acc = match desc with
     acc
 
 and of_structure_item_desc desc acc = match desc with
-  | Tstr_eval (e,_) ->
+  | Tstr_eval e ->
     of_expression e :: acc
   | Tstr_value (_,vbs) ->
+    let vbs =
+      List.map (fun (pat, expr) ->
+        { vb_pat = pat ; vb_expr = expr ; vb_loc = pat.Typedtree.pat_loc }
+      ) vbs
+    in
     of_list of_value_binding vbs acc
-  | Tstr_primitive vd ->
+  | Tstr_primitive (_,_,vd) ->
     of_node (Value_description vd) :: acc
   | Tstr_type tds ->
-    of_list (fun td -> of_node (Type_declaration td)) tds acc
-  | Tstr_typext text ->
-    of_node (Type_extension text) :: acc
+    of_list (fun (typ_id,typ_name,td) ->
+      let { Typedtree. typ_params; typ_type ; typ_cstrs; typ_kind; typ_private;
+            typ_manifest; typ_variance; typ_loc } = td
+      in
+      let td = {
+        typ_id ; typ_name ; typ_params; typ_type ; typ_cstrs; typ_kind;
+        typ_private; typ_manifest; typ_variance; typ_loc
+      }
+      in
+      of_node (Type_declaration td)
+    ) tds acc
+  | Tstr_exn_rebind _
+  | Tstr_exception _ ->
+    acc
+      (* TODO
   | Tstr_exception ec ->
     of_node (Extension_constructor ec) :: acc
-  | Tstr_module mb ->
+*)
+  | Tstr_module (mb_id, mb_name, mb_expr) ->
+    let mb = { mb_id ; mb_name ; mb_expr ; mb_loc = mb_name.Asttypes.loc } in
     of_node (Module_binding mb) :: acc
   | Tstr_recmodule mbs ->
-    of_list (fun x -> of_node (Module_binding x)) mbs acc
-  | Tstr_modtype mtd ->
+    of_list (fun (mb_id, mb_name, _mb_ty, mb_expr) ->
+      let mb = { mb_id ; mb_name ; mb_expr ; mb_loc = mb_name.Asttypes.loc } in
+      of_node (Module_binding mb)
+    ) mbs acc
+  | Tstr_modtype (mtd_id, mtd_name, mt) ->
+    let mtd =
+      { mtd_id; mtd_name; mtd_type = Some mt; mtd_loc = mtd_name.Asttypes.loc }
+    in
     of_node (Module_type_declaration mtd) :: acc
   | Tstr_class cds ->
     of_list (fun (cd,_,_) -> of_node (Class_declaration cd)) cds acc
   | Tstr_class_type ctds ->
     of_list (fun (_,_,ctd) -> of_node (Class_type_declaration ctd)) ctds acc
-  | Tstr_include { incl_mod = me } ->
+  | Tstr_include (me, _) ->
     of_module_expr me :: acc
-  | Tstr_open _ | Tstr_attribute _ ->
+  | Tstr_open _ ->
     acc
 
 and of_module_type_desc desc acc = match desc with
-  | Tmty_ident _ | Tmty_alias _ -> acc
+  | Tmty_ident _ -> acc
   | Tmty_signature sg ->
     of_node (Signature sg) :: acc
-  | Tmty_functor (_,_,mto,mt) ->
-    of_option of_module_type mto @@
-    of_module_type mt ::
+  | Tmty_functor (_,_,mt1,mt2) ->
+    of_module_type mt1 ::
+    of_module_type mt2 ::
     acc
   | Tmty_with (mt,wcs) ->
     of_list (fun (_,_,wc) -> of_node (With_constraint wc)) wcs @@
@@ -406,23 +552,46 @@ and of_module_type_desc desc acc = match desc with
     of_module_expr me :: acc
 
 and of_signature_item_desc desc acc = match desc with
-  | Tsig_open _ | Tsig_attribute _ ->
+  | Tsig_open _ ->
     acc
-  | Tsig_value vd ->
+  | Tsig_value (_,_,vd) ->
     of_node (Value_description vd) :: acc
   | Tsig_type tds ->
-    of_list (fun td -> of_node (Type_declaration td)) tds acc
-  | Tsig_typext text ->
-    of_node (Type_extension text) :: acc
+    of_list (fun (typ_id,typ_name,td) ->
+      let { Typedtree. typ_params; typ_type ; typ_cstrs; typ_kind; typ_private;
+            typ_manifest; typ_variance; typ_loc } = td
+      in
+      let td = {
+        typ_id ; typ_name ; typ_params; typ_type ; typ_cstrs; typ_kind;
+        typ_private; typ_manifest; typ_variance; typ_loc
+      }
+      in
+      of_node (Type_declaration td)
+    ) tds acc
+  | Tsig_exception _ -> acc (* TODO *)
+    (*
   | Tsig_exception ec ->
     of_node (Extension_constructor ec) :: acc
-  | Tsig_module md ->
+*)
+  | Tsig_module (md_id, md_name, md_type) ->
+    let md = { md_id ; md_name ; md_type ; md_loc = md_name.Asttypes.loc } in
     of_node (Module_declaration md) :: acc
   | Tsig_recmodule mds ->
-    of_list (fun md -> of_node (Module_declaration md)) mds acc
-  | Tsig_modtype mtd ->
+    of_list (fun (md_id, md_name, md_type) ->
+      let md = { md_id ; md_name ; md_type ; md_loc = md_name.Asttypes.loc } in
+      of_node (Module_declaration md)
+    ) mds acc
+  | Tsig_modtype (mtd_id, mtd_name, mtd_mtd) ->
+    let mtd =
+      let mtd_type =
+        match mtd_mtd with
+        | Tmodtype_abstract -> None
+        | Tmodtype_manifest mt -> Some mt
+      in
+      { mtd_id ; mtd_name ; mtd_loc = mtd_name.Asttypes.loc ; mtd_type }
+    in
     of_node (Module_type_declaration mtd) :: acc
-  | Tsig_include { incl_mod = mt } ->
+  | Tsig_include (mt, _) ->
     of_module_type mt :: acc
   | Tsig_class cds ->
     of_list (fun cd -> of_node (Class_description cd)) cds acc
@@ -433,10 +602,14 @@ and of_core_type_desc desc acc = match desc with
   | Ttyp_any | Ttyp_var _ -> acc
   | Ttyp_arrow (_,ct1,ct2) ->
     of_core_type ct1 :: of_core_type ct2 :: acc
-  | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts) ->
+  | Ttyp_tuple cts | Ttyp_constr (_,_,cts) | Ttyp_class (_,_,cts,_) ->
     of_list of_core_type cts acc
-  | Ttyp_object (cts,_) ->
-    of_list (fun (_,_,ct) -> of_core_type ct) cts acc
+  | Ttyp_object cfts ->
+    of_list (fun { field_desc ; _ } ->
+      match field_desc with
+      | Tcfield (_, ct) -> of_core_type ct
+      | _ -> of_node Dummy
+    ) cfts acc
   | Ttyp_poly (_,ct) | Ttyp_alias (ct,_) ->
     of_core_type ct :: acc
   | Ttyp_variant (rfs,_,_) ->
@@ -449,18 +622,16 @@ and of_class_type_desc desc acc = match desc with
     of_list of_core_type cts acc
   | Tcty_signature cs ->
     of_node (Class_signature cs) :: acc
-  | Tcty_arrow (_,ct,clt) ->
+  | Tcty_fun (_,ct,clt) ->
     of_core_type ct :: of_node (Class_type clt) :: acc
 
 and of_class_type_field_desc desc acc = match desc with
-  | Tctf_inherit ct ->
+  | Tctf_inher ct ->
     of_node (Class_type ct) :: acc
-  | Tctf_val (_,_,_,ct) | Tctf_method (_,_,_,ct) ->
+  | Tctf_val (_,_,_,ct) | Tctf_meth (_,_,ct) | Tctf_virt (_,_,ct) ->
     of_core_type ct :: acc
-  | Tctf_constraint (ct1,ct2) ->
+  | Tctf_cstr (ct1,ct2) ->
     of_core_type ct1 :: of_core_type ct2 :: acc
-  | Tctf_attribute _ ->
-    acc
 
 let rec annot loc env t =
   let t_loc = if t.t_loc == default_loc then loc else t.t_loc in
@@ -527,7 +698,7 @@ let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
     | _ -> []
   in
   List.fold_left ~init pat_extra
-    ~f:(fun acc (extra,_,_) ->
+    ~f:(fun acc (extra,_) ->
       match extra with
       | Tpat_type (path,loc) -> {loc with Location.txt = path} :: acc
       | _ -> acc)
@@ -547,8 +718,8 @@ let is_constructor t =
   match t.t_node with
   | Constructor_declaration decl ->
     Some {decl.cd_name with Location.txt = `Declaration decl}
-  | Expression {exp_desc = Texp_construct (loc, desc, _)} ->
+  | Expression {exp_desc = Texp_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
-  | Pattern {pat_desc = Tpat_construct (loc, desc, _)} ->
+  | Pattern {pat_desc = Tpat_construct (loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
   | _ -> None

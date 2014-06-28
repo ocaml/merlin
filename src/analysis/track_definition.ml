@@ -120,37 +120,14 @@ let get_top_items browsable =
   in
   List.concat items
 
-let get_idents item =
-  let open Typedtree in
-  match item.str_desc with
-  | Tstr_value (_, binding_lst) ->
-    List.concat_map binding_lst ~f:(fun binding ->
-      match binding.vb_pat.pat_desc with
-      | Tpat_var (id, _) -> [ Ident.name id , binding.vb_loc ]
-      | _ -> []
-    )
-  | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
-  | Tstr_type td_list ->
-    List.map td_list ~f:(fun { typ_id ; typ_loc } ->
-      Ident.name typ_id, typ_loc
-    )
-  | Tstr_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
-  | _ -> []
-
 let rec check_item modules =
   let get_loc ~name item rest =
-    try Some (List.assoc name (get_idents item))
+    try Some (List.assoc name (Merlin_types_custom.str_ident_locs item))
     with Not_found ->
-      match item.Typedtree.str_desc with
-      | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } when
-        List.exists incl_type ~f:(let open Types in function
-          | Sig_value (id, _)
-          | Sig_type (id, _, _)
-          | Sig_typext (id, _, _)
-          | Sig_module (id, _, _)
-          | Sig_modtype (id, _)
-          | Sig_class (id, _, _)
-          | Sig_class_type (id, _, _) -> Ident.name id = name
+      match Merlin_types_custom.me_and_sig_of_include item with
+      | Some (incl_mod, incl_type) when
+        List.exists incl_type ~f:(fun x ->
+          Ident.name (Merlin_types_custom.signature_ident x) = name
         ) ->
         debug_log "one more include to follow..." ;
         resolve_mod_alias ~fallback:item.Typedtree.str_loc incl_mod
@@ -159,23 +136,19 @@ let rec check_item modules =
   in
   let get_on_track ~name item =
     let open Typedtree in
-    match item.Typedtree.str_desc with
-    | Tstr_module mb when Ident.name mb.mb_id = name ->
-      debug_log "(get_on_track) %s is bound" name ;
-      `Direct mb.mb_expr
-    | Tstr_include { incl_type ; incl_mod } when
-      List.exists incl_type ~f:(let open Types in function
-        | Sig_value (id, _)
-        | Sig_type (id, _, _)
-        | Sig_typext (id, _, _)
-        | Sig_module (id, _, _)
-        | Sig_modtype (id, _)
-        | Sig_class (id, _, _)
-        | Sig_class_type (id, _, _) -> Ident.name id = name
+    match Merlin_types_custom.me_and_sig_of_include item with
+    | Some (incl_mod, incl_type) when
+      List.exists incl_type ~f:(fun x ->
+        Ident.name (Merlin_types_custom.signature_ident x) = name
       ) ->
       debug_log "(get_on_track) %s is included..." name ;
       `Included incl_mod
-    | _ -> `Not_found
+    | _ ->
+      match Merlin_types_custom.expose_module_binding item with
+      | Some mb when Ident.name mb.mb_id = name ->
+        debug_log "(get_on_track) %s is bound" name ;
+        `Direct mb.mb_expr
+      | _ -> `Not_found
   in
   function
   | [] ->
@@ -270,17 +243,6 @@ and resolve_mod_alias ~fallback mod_expr path rest =
   | Typedtree.Tmod_unpack _ ->
     do_fallback (check_item path rest)
 
-let path_and_loc_from_cstr desc env =
-  let open Types in
-  match desc.cstr_tag with
-  | Cstr_extension (path, loc) -> path, desc.cstr_loc
-  | _ ->
-    match desc.cstr_res.desc with
-    | Tconstr (path, _, _) ->
-      let typ_decl = Env.find_type path env in
-      path, typ_decl.Types.type_loc
-    | _ -> assert false
-
 let path_and_loc_from_label desc env =
   let open Types in
   match desc.lbl_res.desc with
@@ -315,7 +277,7 @@ let from_string ~project ~env ~local_defs path =
         with Not_found ->
         try
           let cstr_desc = Typing_aux.lookup_constructor ident env in
-          path_and_loc_from_cstr cstr_desc env
+          Merlin_types_custom.path_and_loc_of_cstr cstr_desc env
         with Not_found ->
         try
           let path, _ = Merlin_types_custom.lookup_module ident env in

@@ -48,49 +48,6 @@ module P = struct
 
   let validate _ t = Btype.is_valid t.snapshot
 
-  let rewrite loc =
-    let open Parsetree in
-    function
-    | Raw_typer.Functor_argument (id,mty) ->
-      let mexpr = Pmod_structure [] in
-      let mexpr = {pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = []} in
-      let mexpr = Pmod_functor (id, mty, mexpr) in
-      let mexpr = {pmod_desc = mexpr; pmod_loc = loc; pmod_attributes = []} in
-      let item = Pstr_module (Ast_helper.Mb.mk (Location.mknoloc "") mexpr) in
-      `fake { pstr_desc = item; pstr_loc = loc }
-    | Raw_typer.Pattern (l,o,p) ->
-      let expr = Pexp_constant (Asttypes.Const_int 0) in
-      let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
-      let expr = Pexp_fun (l, o, p, expr) in
-      let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
-      let item = Pstr_eval (expr,[]) in
-      `fake { pstr_desc = item; pstr_loc = loc }
-    | Raw_typer.Newtype s ->
-      let expr = Pexp_constant (Asttypes.Const_int 0) in
-      let expr = { pexp_desc = expr; pexp_loc = Location.none; pexp_attributes = [] } in
-      let pat = { ppat_desc = Ppat_any; ppat_loc = Location.none; ppat_attributes = [] } in
-      let expr = Pexp_fun ("", None, pat, expr) in
-      let expr = { pexp_desc = expr; pexp_loc = Location.none; pexp_attributes = [] } in
-      let expr = Parsetree.Pexp_newtype (s,expr) in
-      let expr = { pexp_desc = expr; pexp_loc = loc; pexp_attributes = [] } in
-      let item = Pstr_eval (expr,[]) in
-      `fake { pstr_desc = item; pstr_loc = loc }
-    | Raw_typer.Bindings (rec_,e) ->
-      let item = Pstr_value (rec_,e) in
-      `str [{ pstr_desc = item; pstr_loc = loc }]
-    | Raw_typer.Open (override,name) ->
-      let item = Pstr_open (Ast_helper.Opn.mk ~override name) in
-      `str [{ pstr_desc = item; pstr_loc = loc }]
-    | Raw_typer.Eval e ->
-      `str [{
-        Parsetree. pstr_desc = Parsetree.Pstr_eval (e,[]);
-        pstr_loc = e.Parsetree.pexp_loc;
-      }]
-    | Raw_typer.Structure str ->
-      `str str
-    | Raw_typer.Signature sg ->
-      `sg sg
-
   let append catch loc item t =
     try
       Btype.backtrack t.snapshot;
@@ -128,7 +85,7 @@ module P = struct
     let raw = Raw_typer.step (Frame.value f) t.raw in
     let t = {t with raw} in
     let items = Raw_typer.observe t.raw in
-    let items = List.map ~f:(rewrite loc) items in
+    let items = List.map ~f:(Raw_typer.rewrite loc) items in
     let t = List.fold_left' ~f:(append catch loc) items ~init:t in
     t
 

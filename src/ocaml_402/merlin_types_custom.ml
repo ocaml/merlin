@@ -91,3 +91,122 @@ let signature_of_summary =
   | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
   | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
   | Env_open _ | Env_empty | Env_functor_arg _ -> None
+
+let id_of_constr_decl c = c.Types.cd_id
+
+let add_hidden_signature env sign =
+  let add_item env comp =
+    match comp with
+    | Types.Sig_value(id, decl)     -> Env.add_value (Ident.hide id) decl env
+    | Types.Sig_type(id, decl, _)   -> Env.add_type ~check:false (Ident.hide id) decl env
+    | Types.Sig_typext(id, decl, _) -> Env.add_extension ~check:false (Ident.hide id) decl env
+    | Types.Sig_module(id, mty, _)  -> Env.add_module (Ident.hide id) mty.Types.md_type env
+    | Types.Sig_modtype(id, decl)   -> Env.add_modtype (Ident.hide id) decl env
+    | Types.Sig_class(id, decl, _)  -> Env.add_class (Ident.hide id) decl env
+    | Types.Sig_class_type(id, decl, _) -> Env.add_cltype (Ident.hide id) decl env
+  in
+  List.fold_left ~f:add_item ~init:env sign
+
+let signature_ident =
+  let open Types in function
+  | Sig_value (i,_)
+  | Sig_type (i,_,_)
+  | Sig_typext (i,_,_)
+  | Sig_modtype (i,_)
+  | Sig_module (i,_,_)
+  | Sig_class (i,_,_)
+  | Sig_class_type (i,_,_) -> i
+
+let union_loc_opt a b = match a,b with
+  | None, None -> None
+  | (Some _ as l), None | None, (Some _ as l) -> l
+  | Some a, Some b -> Some (Parsing_aux.location_union a b)
+
+let rec signature_loc =
+  let open Types in
+  let rec mod_loc = function
+    | Mty_ident _ -> None
+    | Mty_functor (_,m1,m2) ->
+      begin match extract_functor_arg m1 with
+      | Some m1 -> union_loc_opt (mod_loc m1) (mod_loc m2)
+      | None -> mod_loc m2
+      end
+    | Mty_signature (lazy s) ->
+        let rec find_first = function
+          | x :: xs -> (match signature_loc x with
+                        | (Some _ as v) -> v
+                        | None -> find_first xs)
+          | [] -> None
+        in
+        let a = find_first s and b = find_first (List.rev s) in
+        union_loc_opt a b
+    | _ -> None
+  in
+  function
+  | Sig_value (_,v)    -> Some v.val_loc
+  | Sig_type (_,t,_)   -> Some t.type_loc
+  | Sig_typext (_,e,_) -> Some e.ext_loc
+  | Sig_module (_,m,_) -> mod_loc (extract_module_declaration m)
+  | Sig_modtype (_,m) ->
+    begin match extract_modtype_declaration m with
+    | Some m -> mod_loc m
+    | None -> None
+    end
+  | Sig_class (_,_,_)
+  | Sig_class_type (_,_,_) -> None
+
+let str_ident_locs item =
+  let open Typedtree in
+  match item.str_desc with
+  | Tstr_value (_, binding_lst) ->
+    List.concat_map binding_lst ~f:(fun binding ->
+      match binding.vb_pat.pat_desc with
+      | Tpat_var (id, _) -> [ Ident.name id , binding.vb_loc ]
+      | _ -> []
+    )
+  | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
+  | Tstr_type td_list ->
+    List.map td_list ~f:(fun { typ_id ; typ_loc } ->
+      Ident.name typ_id, typ_loc
+    )
+  | Tstr_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
+  | _ -> []
+
+let me_and_sig_of_include item =
+  match item.Typedtree.str_desc with
+  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
+    Some (incl_mod, incl_type)
+  | _ -> None
+
+let expose_module_binding item =
+  match item.Typedtree.str_desc with
+  | Typedtree.Tstr_module mb -> Some mb
+  | _ -> None
+
+let path_and_loc_of_cstr desc env =
+  let open Types in
+  match desc.cstr_tag with
+  | Cstr_extension (path, loc) -> path, desc.cstr_loc
+  | _ ->
+    match desc.cstr_res.desc with
+    | Tconstr (path, _, _) ->
+      let typ_decl = Env.find_type path env in
+      path, typ_decl.Types.type_loc
+    | _ -> assert false
+
+(* TODO: remove *)
+let mk_pstr_eval expression =
+  Parsetree.([{ pstr_desc = Pstr_eval (expression, []) ; pstr_loc = Location.none }])
+
+let dest_tstr_eval str =
+  let open Typedtree in
+  match str.str_items with
+  | [ { str_desc = Tstr_eval (exp,[]) }] -> exp
+  | _ -> failwith "unhandled expression"
+
+let extract_specific_parsing_info e =
+  let open Parsetree in
+  match e with
+  | { pexp_desc = Pexp_ident longident } -> `Ident longident
+  | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
+  | _ -> `Other

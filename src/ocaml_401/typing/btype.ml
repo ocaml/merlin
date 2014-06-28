@@ -489,8 +489,6 @@ type changes =
 
 type snapshot = changes ref * int
 
-(** merlin: manage all internal state *)
-
 type cache = {
   trail: changes ref Weak.t;
   mutable last_snapshot: int;
@@ -500,8 +498,8 @@ let new_cache () = {
   trail = Weak.create 1;
   last_snapshot = 0;
 }
-
 let cache = ref (new_cache ())
+
 
 let log_change ch =
   match Weak.get !cache.trail 0 with None -> ()
@@ -555,6 +553,11 @@ let snapshot () =
       Weak.set !cache.trail 0 (Some r);
       (r, old)
 
+let is_valid (changes, _old) =
+  match !changes with
+  | Invalid -> false
+  | _ -> true
+
 let rec rev_log accu = function
     Unchanged -> accu
   | Invalid -> assert false
@@ -574,8 +577,3 @@ let backtrack (changes, old) =
       changes := Unchanged;
       !cache.last_snapshot <- old;
       Weak.set !cache.trail 0 (Some changes)
-
-let is_valid (changes, _old) =
-  match !changes with
-  | Invalid -> false
-  | _ -> true

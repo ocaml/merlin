@@ -1814,7 +1814,7 @@ and type_expect ?in_function env sexp ty_expected =
   let open Std in
   if ~!Typing_aux.relax_typer
   then type_relax ?in_function env sexp ty_expected
-  else
+  else 
     let snap= Btype.snapshot () in
     try type_expect_ ?in_function env sexp ty_expected
     with (Typetexp.Error _ | Error _) ->
@@ -2317,7 +2317,7 @@ and type_expect_ ?in_function env sexp ty_expected =
         exp_env = env }
   | Pexp_constraint(sarg, sty, sty') ->
       let separate = true (* always separate, 1% slowdown for lablgtk *)
-        (* Clflags.principal () || Env.has_local_constraints env *) in
+        (* !Clflags.principal || Env.has_local_constraints env *) in
       let (arg, ty',cty,cty') =
         match (sty, sty') with
           (None, None) ->               (* Case actually unused *)
@@ -2500,7 +2500,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           | {desc = Tvar _} as ty ->
               let ty' = newvar () in
               unify env (instance_def ty) (newty(Tpoly(ty',[])));
-              (* if not (Clflags.nolabels ()) then
+              (* if not !Clflags.nolabels then
                  Location.prerr_warning loc (Warnings.Unknown_method met); *)
               ty'
           | _ ->

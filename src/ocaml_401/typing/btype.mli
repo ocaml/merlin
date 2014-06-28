@@ -177,7 +177,6 @@ val log_type: type_expr -> unit
 (**** Forward declarations ****)
 val print_raw: (Format.formatter -> type_expr -> unit) ref
 
-
 (** merlin: manage all internal state *)
 
 type cache
