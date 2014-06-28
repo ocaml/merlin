@@ -227,6 +227,8 @@ module Protocol_io = struct
     | [`String "type"; `String "enclosing";
         `Assoc [ "expr", `String expr ; "offset", `Int offset] ; jpos] ->
       Request (Type_enclosing ((expr, offset), pos_of_json jpos))
+    | [`String "enclosing"; jpos] ->
+      Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       Request (Complete_prefix (prefix, pos_of_json jpos))
     | (`String "locate" :: `String path :: opt_pos) ->
@@ -327,6 +329,8 @@ module Protocol_io = struct
         | Type_expr _, str -> `String str
         | Type_enclosing _, results ->
           `List (List.map json_of_type_loc results)
+        | Enclosing _, results ->
+          `List (List.map (fun loc -> with_location loc []) results)
         | Complete_prefix _, compl_list ->
           `List (List.map json_of_completion compl_list)
         | Locate _, resp ->

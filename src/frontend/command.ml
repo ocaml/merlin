@@ -199,6 +199,14 @@ let dispatch (state : state) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text)
       (small_enclosings @ result)
 
+  | (Enclosing pos : a request) ->
+    let open BrowseT in
+    let typer = Buffer.typer state.buffer in
+    let structures = Typer.structures typer in
+    let structures = Browse.of_structures structures in
+    let path = Browse.enclosing pos structures in
+    List.map (fun t -> t.BrowseT.t_loc) path
+
   | (Complete_prefix (prefix, pos) : a request) ->
     let node = Completion.node_at (Buffer.typer state.buffer) pos in
     let compl = Completion.node_complete state.project node prefix in

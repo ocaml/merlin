@@ -33,6 +33,9 @@ type _ request =
   | Type_enclosing
     :  (string * int) * position
     -> (Location.t * string) list request
+  | Enclosing
+    :  position
+    -> Location.t list request
   | Complete_prefix
     :  string * position
     -> completion list request
