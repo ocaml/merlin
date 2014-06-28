@@ -109,5 +109,9 @@ val annot : Location.t -> Env.t -> t -> t
 
 val string_of_node : node -> string
 
-val pattern_paths : pattern -> Path.t list
-val expression_paths : expression -> Path.t list
+val pattern_paths : pattern -> Path.t Location.loc list
+val expression_paths : expression -> Path.t Location.loc list
+
+val is_constructor : t ->
+  [ `Description of Types.constructor_description
+  | `Declaration of Typedtree.constructor_declaration ] Location.loc option

@@ -199,6 +199,14 @@ let dispatch (state : state) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text)
       (small_enclosings @ result)
 
+  | (Enclosing pos : a request) ->
+    let open BrowseT in
+    let typer = Buffer.typer state.buffer in
+    let structures = Typer.structures typer in
+    let structures = Browse.of_structures structures in
+    let path = Browse.enclosing pos structures in
+    List.map (fun t -> t.BrowseT.t_loc) path
+
   | (Complete_prefix (prefix, pos) : a request) ->
     let node = Completion.node_at (Buffer.typer state.buffer) pos in
     let compl = Completion.node_complete state.project node prefix in
@@ -349,17 +357,25 @@ let dispatch (state : state) =
   | (Dump _ : a request) ->
     failwith "TODO"
 
-  | (Which_path s : a request) ->
+  | (Which_path xs : a request) ->
     begin
-      try
-        find_in_path_uncap (Project.source_path state.project) s
-      with Not_found ->
-        find_in_path_uncap (Project.build_path state.project) s
+      let rec aux = function
+        | [] -> raise Not_found
+        | x :: xs ->
+          try
+            find_in_path_uncap (Project.source_path state.project) x
+          with Not_found -> try
+            find_in_path_uncap (Project.build_path state.project) x
+          with Not_found ->
+            aux xs
+      in
+      aux xs
     end
 
-  | (Which_with_ext ext : a request) ->
-    modules_in_path ~ext
-      (Path_list.to_strict_list (Project.source_path state.project))
+  | (Which_with_ext exts : a request) ->
+    let path = Path_list.to_strict_list (Project.source_path state.project) in
+    let with_ext ext = modules_in_path ~ext path in
+    List.concat_map ~f:with_ext exts
 
   | (Project_load (cmd,path) : a request) ->
     let fn = match cmd with
@@ -422,26 +438,54 @@ let dispatch (state : state) =
   | (Occurences (`Ident_at pos) : a request) ->
     let str = Typer.structures (Buffer.typer state.buffer) in
     let str = Browse.of_structures str in
-    let node = Option.value ~default:BrowseT.dummy
-        (Browse.nearest_before pos str)
+    let node = match Browse.enclosing pos str with
+      | node :: _ -> node
+      | [] -> BrowseT.dummy
     in
-    begin match
-      match node.BrowseT.t_node with
-      | BrowseT.Expression e -> BrowseT.expression_paths e
-      | BrowseT.Pattern p -> BrowseT.pattern_paths p
-      | _ -> []
-    with
-    | [] -> []
-    | (path :: _) ->
-      let ident = Path.head path in
-      let ids = List.concat_map ~f:(Browse.all_occurences ident) str in
-      let t_loc x = x.BrowseT.t_loc in
-      let loc_start x = x.Location.loc_start in
-      let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
-      let ids = List.map ~f:t_loc ids in
-      let ids = List.sort ~cmp ids in
-      ids
-    end
+    let get_loc {Location.txt = _; loc} = loc in
+    let ident_occurence () =
+      let paths =
+        match node.BrowseT.t_node with
+        | BrowseT.Expression e -> BrowseT.expression_paths e
+        | BrowseT.Pattern p -> BrowseT.pattern_paths p
+        | _ -> []
+      in
+      let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
+      Logger.infojf section ~title:"Occurences paths"
+        (fun paths ->
+          let dump_path ({Location.txt; loc} as p) =
+            let ppf, to_string = Format.to_string () in
+            Printtyp.path ppf txt;
+            `Assoc [
+              "start", Lexing.json_of_position loc.Location.loc_start;
+              "end", Lexing.json_of_position loc.Location.loc_end;
+              "under_cursor", `Bool (under_cursor p);
+              "path", `String (to_string ())
+            ]
+          in
+          `List (List.map ~f:dump_path paths)
+        ) paths;
+      match List.filter paths ~f:under_cursor with
+      | [] -> []
+      | (path :: _) ->
+        let path = path.Location.txt in
+        let ts = List.concat_map ~f:(Browse.all_occurences path) str in
+        let loc (_t,paths) = List.map ~f:get_loc paths in
+        List.concat_map ~f:loc ts
+
+    and constructor_occurence d =
+      let ts = List.concat_map str
+          ~f:(Browse.all_constructor_occurences (node,d)) in
+      List.map ~f:get_loc ts
+
+    in
+    let locs = match BrowseT.is_constructor node with
+      | Some d -> constructor_occurence d.Location.txt
+      | None -> ident_occurence ()
+    in
+    let loc_start l = l.Location.loc_start in
+    let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
+    List.sort ~cmp locs
 
   | (Version : a request) ->
     Main_args.version_spec

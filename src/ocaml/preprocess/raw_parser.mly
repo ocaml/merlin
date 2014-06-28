@@ -166,11 +166,11 @@ let bigarray_untuplify = function
     { pexp_desc = Pexp_tuple explist; pexp_loc = _ } -> explist
   | exp -> [exp]
 
-let bigarray_get startpos endpos arr arg =
+let bigarray_get (startpos,endpos) (startop,endop) arr arg =
   let get = if Clflags.fast () then "unsafe_get" else "get" in
-  let ghexp = ghexp startpos endpos in
+  let ghexp = ghexp startop endop in
   let mkexp = mkexp startpos endpos in
-  let bigarray_function = bigarray_function startpos endpos in
+  let bigarray_function = bigarray_function startop endop in
   match bigarray_untuplify arg with
     [c1] ->
       mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array1" get)),
@@ -185,11 +185,11 @@ let bigarray_get startpos endpos arr arg =
       mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Genarray" "get")),
                        ["", arr; "", ghexp(Pexp_array coords)]))
 
-let bigarray_set startpos endpos arr arg newval =
+let bigarray_set (startpos,endpos) (startop,endop) arr arg newval =
   let set = if Clflags.fast () then "unsafe_set" else "set" in
-  let ghexp = ghexp startpos endpos in
-  let bigarray_function = bigarray_function startpos endpos in
+  let ghexp = ghexp startop endop in
   let mkexp = mkexp startpos endpos in
+  let bigarray_function = bigarray_function startop endop in
   match bigarray_untuplify arg with
     [c1] ->
       mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array1" set)),
@@ -1218,14 +1218,18 @@ expr:
     { mkuplus $startpos $endpos v1 v2 }
 | v1 = simple_expr DOT v3 = label_longident LESSMINUS v5 = expr
     { mkexp $startpos $endpos (Pexp_setfield(v1, mkrhs $startpos(v3) $endpos(v3) v3, v5)) }
-| v1 = simple_expr DOT LPAREN v4 = seq_expr RPAREN LESSMINUS v7 = expr
-    { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function $startpos $endpos "Array" "set")),
+| v1 = simple_expr _ops = DOT _ope = LPAREN v4 = seq_expr RPAREN LESSMINUS v7 = expr
+    { mkexp $startpos $endpos
+          (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "Array" "set")),
                          ["",v1; "",v4; "",v7])) }
-| v1 = simple_expr DOT LBRACKET v4 = seq_expr RBRACKET LESSMINUS v7 = expr
-    { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function $startpos $endpos "String" "set")),
+| v1 = simple_expr _ops = DOT _ope = LBRACKET v4 = seq_expr RBRACKET LESSMINUS v7 = expr
+    { mkexp $startpos $endpos
+          (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "String" "set")),
                          ["",v1; "",v4; "",v7])) }
-| v1 = simple_expr DOT LBRACE v4 = expr RBRACE LESSMINUS v7 = expr
-    { bigarray_set $startpos $endpos v1 v4 v7 }
+| v1 = simple_expr _ops = DOT _ope = LBRACE v4 = expr RBRACE LESSMINUS v7 = expr
+    { bigarray_set ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) v1 v4 v7 }
 | v1 = label LESSMINUS v3 = expr
     { mkexp $startpos $endpos (Pexp_setinstvar(mkrhs $startpos(v1) $endpos(v1) v1, v3)) }
 | ASSERT v2 = ext_attributes v3 = simple_expr %prec below_SHARP
@@ -1267,22 +1271,26 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, v4)) }
 (*| mod_longident DOT v3 = LPAREN seq_expr v5 = error
     { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v5) $endpos(v5) }*)
-| v1 = simple_expr DOT LPAREN v4 = seq_expr RPAREN
-    { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function $startpos $endpos "Array" "get")),
+| v1 = simple_expr _ops = DOT _ope = LPAREN v4 = seq_expr RPAREN
+    { mkexp $startpos $endpos
+          (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "Array" "get")),
                          ["",v1; "",v4])) }
 (*| simple_expr DOT v3 = LPAREN seq_expr v5 = error
     { unclosed "(" $startpos(v3) $endpos(v3) ")" $startpos(v5) $endpos(v5) }*)
-| v1 = simple_expr DOT LBRACKET v4 = seq_expr RBRACKET
-    { mkexp $startpos $endpos (Pexp_apply(ghexp $startpos $endpos (Pexp_ident(array_function $startpos $endpos "String" "get")),
+| v1 = simple_expr _ops = DOT _ope = LBRACKET v4 = seq_expr RBRACKET
+    { mkexp $startpos $endpos
+          (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "String" "get")),
                          ["",v1; "",v4])) }
 (*| simple_expr DOT v3 = LBRACKET seq_expr v5 = error
     { unclosed "[" $startpos(v3) $endpos(v3) "]" $startpos(v5) $endpos(v5) }*)
-| v1 = simple_expr DOT LBRACE v4 = expr RBRACE
-    { bigarray_get $startpos $endpos v1 v4 }
+| v1 = simple_expr _ops = DOT _ope = LBRACE v4 = expr RBRACE
+    { bigarray_get ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) v1 v4 }
 (*| simple_expr DOT v3 = LBRACE expr_comma_list v5 = error
     { unclosed "{" $startpos(v3) $endpos(v3) "}" $startpos(v5) $endpos(v5) }*)
 | LBRACE v2 = record_expr RBRACE
-    { let (exten, fields) = v2 in mkexp $startpos $endpos  (Pexp_record(fields, exten)) }
+    { let (exten, fields) = v2 in mkexp $startpos $endpos (Pexp_record(fields, exten)) }
 (*| v1 = LBRACE record_expr v3 = error
     { unclosed "{" $startpos(v1) $endpos(v1) "}" $startpos(v3) $endpos(v3) }*)
 | v1 = mod_longident DOT LBRACE v4 = record_expr RBRACE

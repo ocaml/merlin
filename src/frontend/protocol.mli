@@ -33,6 +33,9 @@ type _ request =
   | Type_enclosing
     :  (string * int) * position
     -> (Location.t * string) list request
+  | Enclosing
+    :  position
+    -> Location.t list request
   | Complete_prefix
     :  string * position
     -> completion list request
@@ -65,10 +68,10 @@ type _ request =
        |`Sig|`Parser|`Exn|`Browse|`Recover|`Typer_input]
     -> Json.json request
   | Which_path
-    :  string
+    :  string list
     -> string request
   | Which_with_ext
-    :  string
+    :  string list
     -> string list request
   | Findlib_use
     :  string list

@@ -9,6 +9,8 @@
 ;; Keywords: ocaml languages
 ;; URL: http://github.com/the-lambda-church/merlin
 
+(require 'iedit)
+
 (defun merlin-iedit-printable ()
   "Stub substituting `iedit-printable' during merlin-iedit-occurrences"
   "merlin-iedit-occurrences")
