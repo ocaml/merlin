@@ -516,23 +516,36 @@ let string_of_node = function
   | Class_description       _ -> "class_description"
   | Class_type_declaration  _ -> "class_type_declaration"
 
-let pattern_paths { Typedtree. pat_desc; pat_extra } =
+let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =
     match pat_desc with
-    | Tpat_var (id,_) | Tpat_alias (_,id,_) -> [Path.Pident id]
+    | Tpat_var (id,_) -> [Location.mkloc (Path.Pident id) pat_loc]
+    | Tpat_alias (_,id,loc) -> [{loc with Location.txt = Path.Pident id}]
     | _ -> []
   in
   List.fold_left ~init pat_extra
     ~f:(fun acc (extra,_,_) ->
       match extra with
-      | Tpat_type (path,_) -> path :: acc
+      | Tpat_type (path,loc) -> {loc with Location.txt = path} :: acc
       | _ -> acc)
 
 let expression_paths { Typedtree. exp_desc; exp_extra } =
   match exp_desc with
-  | Texp_ident (path,_,_) -> [path]
-  | Texp_new (path,_,_) -> [path]
-  | Texp_instvar (p1,p2,_) | Texp_setinstvar (p1,p2,_,_) -> [p1; p2]
-  | Texp_override (p1,ps) -> p1 :: List.map Misc.fst3 ps
-  | Texp_letmodule (id,_,_,_) -> [Path.Pident id]
+  | Texp_ident (path,loc,_) -> [{loc with Location.txt = path}]
+  | Texp_new (path,loc,_) -> [{loc with Location.txt = path}]
+  | Texp_instvar (_,path,loc)  -> [{loc with Location.txt = path}]
+  | Texp_setinstvar (_,path,loc,_) -> [{loc with Location.txt = path}]
+  | Texp_override (_,ps) ->
+    List.map (fun (path,loc,_) -> {loc with Location.txt = path}) ps
+  | Texp_letmodule (id,loc,_,_) -> [{loc with Location.txt = Path.Pident id}]
   | _ -> []
+
+let is_constructor t =
+  match t.t_node with
+  | Constructor_declaration decl ->
+    Some (`Declaration decl)
+  | Expression {exp_desc = Texp_construct (_, desc, _)} ->
+    Some (`Description desc)
+  | Pattern {pat_desc = Tpat_construct (_, desc, _)} ->
+    Some (`Description desc)
+  | _ -> None

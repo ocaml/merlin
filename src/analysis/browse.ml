@@ -89,7 +89,7 @@ let enclosing pos envs =
     let results = traverse_branch pos t in
     List.drop_while ~f:not_enclosing results
 
-let all_occurences id =
+let all_occurences path =
   let rec aux acc t =
     let acc =
       let paths =
@@ -98,10 +98,10 @@ let all_occurences id =
         | Expression e -> expression_paths e
         | _ -> []
       in
-      if List.exists paths ~f:(fun path -> Ident.same id (Path.head path)) then
-        t :: acc
-      else
-        acc
+      let same l = Path.same path l.Location.txt in
+      match List.filter ~f:same paths with
+      | [] -> acc
+      | paths -> (t, paths) :: acc
     in
     List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
   in
@@ -138,3 +138,46 @@ let of_structures strs =
     browse
   in
   List.map ~f:of_structure strs
+
+let rec normalize_type_expr env = function
+  | {Types.desc = Types.Tconstr (path,_,_)} ->
+    normalize_type_decl env (Env.find_type path env)
+  | _ -> raise Not_found
+
+and normalize_type_decl env decl = match decl.Types.type_manifest with
+  | Some expr -> normalize_type_expr env expr
+  | None -> decl
+
+let same_constructor env a b =
+  let name = function
+    | `Description d -> d.Types.cstr_name
+    | `Declaration d -> Ident.name d.Typedtree.cd_id
+  in
+  if name a <> name b then false
+  else begin
+    let get_decls = function
+      | `Description d ->
+        let ty = normalize_type_expr env d.Types.cstr_res in
+        begin match ty.Types.type_kind with
+        | Types.Type_variant decls ->
+          List.map decls ~f:(fun c -> c.Types.cd_id)
+        | _ -> assert false
+        end
+      | `Declaration d ->
+        [d.Typedtree.cd_id]
+    in
+    let a = get_decls a in
+    let b = get_decls b in
+    List.exists a ~f:(fun id -> List.exists b ~f:(Ident.same id))
+  end
+
+let all_constructor_occurences ({t_env = env},d) t =
+  let rec aux acc t =
+    let acc =
+      match is_constructor t with
+      | Some d' when same_constructor env d d' -> t :: acc
+      | _ -> acc
+    in
+    List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
+  in
+  aux [] t
