@@ -135,7 +135,8 @@ let dispatch (state : state) =
         Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.type_scheme ppf t);
         Some (t_loc, to_string ())
-      | { t_loc; t_env; t_node = Type_declaration {typ_id = id; typ_type = t} } ->
+      | { t_loc; t_env;
+          t_node = Type_declaration { Override. typ_id = id; typ_type = t} } ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.type_declaration id ppf t);

@@ -166,9 +166,9 @@ let me_and_sig_of_include item =
   | _ -> None
 
 let expose_module_binding item =
-  let open BrowseT in
-  match item.Typedtree.str_desc with
-  | Typedtree.Tstr_module (mb_id, mb_name, mb_expr) ->
+  let open Typedtree in
+  match item.str_desc with
+  | Tstr_module (mb_id, mb_name, mb_expr) ->
     Some { mb_id ; mb_name ; mb_expr ; mb_loc = mb_name.Asttypes.loc }
   | _ -> None
 

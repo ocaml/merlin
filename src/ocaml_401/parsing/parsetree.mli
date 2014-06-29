@@ -304,3 +304,18 @@ and directive_argument =
   | Pdir_int of int
   | Pdir_ident of Longident.t
   | Pdir_bool of bool
+
+(** merlin: Compatibility with versions of OCaml >= 4.02 points
+      (required for ast_helper backport) *)
+
+type attribute = string loc * payload
+
+and extension = string loc * payload
+
+and attributes = attribute list
+
+and payload =
+  | PStr of structure
+  | PTyp of core_type  (* : T *)
+  | PPat of pattern * expression option  (* : P  or  : P when E *)
+

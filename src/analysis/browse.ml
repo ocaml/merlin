@@ -151,7 +151,7 @@ and normalize_type_decl env decl = match decl.Types.type_manifest with
 let same_constructor env a b =
   let name = function
     | `Description d -> d.Types.cstr_name
-    | `Declaration d -> Ident.name d.BrowseT.cd_id
+    | `Declaration d -> Ident.name d.Typedtree.cd_id
   in
   if name a <> name b then false
   else begin
@@ -164,7 +164,7 @@ let same_constructor env a b =
         | _ -> assert false
         end
       | `Declaration d ->
-        [d.BrowseT.cd_id]
+        [d.Typedtree.cd_id]
     in
     let a = get_decls a in
     let b = get_decls b in

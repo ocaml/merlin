@@ -461,3 +461,96 @@ let rec alpha_pat env p = match p.pat_desc with
 
 let mkloc = Location.mkloc
 let mknoloc = Location.mknoloc
+
+(* Compatibility with 4.02 *)
+
+type case = {
+  c_lhs: pattern;
+  c_guard: expression option;
+  c_rhs: expression;
+}
+
+type extension_constructor_kind =
+    Text_decl of core_type list * core_type option
+  | Text_rebind of Path.t * Longident.t loc
+
+type extension_constructor = {
+  ext_id: Ident.t;
+  ext_name: string loc;
+(*   ext_type : Types.extension_constructor; *)
+  ext_kind : extension_constructor_kind;
+  ext_loc : Location.t;
+}
+
+type variance =
+  | Covariant
+  | Contravariant
+  | Invariant
+
+type type_extension = {
+  tyext_path: Path.t;
+  tyext_txt: Longident.t loc;
+  tyext_params: (core_type * variance) list;
+  tyext_constructors: extension_constructor list;
+  tyext_private: private_flag;
+}
+
+type module_binding = {
+  mb_id: Ident.t;
+  mb_name: string loc;
+  mb_expr: module_expr;
+  mb_loc: Location.t;
+}
+
+type value_binding = {
+  vb_pat: pattern;
+  vb_expr: expression;
+  vb_loc: Location.t;
+}
+
+type module_declaration = {
+  md_id: Ident.t;
+  md_name: string loc;
+  md_type: module_type;
+  md_loc: Location.t;
+}
+
+type module_type_declaration = {
+  mtd_id: Ident.t;
+  mtd_name: string loc;
+  mtd_type: module_type option;
+  mtd_loc: Location.t;
+}
+
+type label_declaration = {
+  ld_id: Ident.t;
+  ld_name: string loc;
+  ld_mutable: mutable_flag;
+  ld_type: core_type;
+  ld_loc: Location.t;
+}
+
+type constructor_declaration = {
+  cd_id: Ident.t;
+  cd_name: string loc;
+  cd_args: core_type list;
+  cd_res: core_type option;
+  cd_loc: Location.t;
+}
+
+module Override = struct
+(* Unlike the previous type definitions, this one is an extension of the one in
+    Typedtree, and not a completly new one. *)
+  type type_declaration = {
+    typ_id: Ident.t ;
+    typ_name: string loc ;
+    typ_params: string loc option list;
+    typ_type : Types.type_declaration;
+    typ_cstrs: (core_type * core_type * Location.t) list;
+    typ_kind: type_kind;
+    typ_private: private_flag;
+    typ_manifest: core_type option;
+    typ_variance: (bool * bool) list;
+    typ_loc: Location.t
+  }
+end
