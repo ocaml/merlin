@@ -30247,6 +30247,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_simple_expr, [
           ]);
         CT_ (T_SHARP, [
+                                 (`Shift_token (1,LIDENT ""));
           ]);
         CN_ (N_label, [
           ]);

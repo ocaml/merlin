@@ -1462,7 +1462,7 @@ simple_expr:
         mkexp $startpos $endpos (Pexp_override(List.rev $2)) } *)
   | LBRACELESS GREATERRBRACE
       { mkexp $startpos $endpos (Pexp_override []) }
-  | simple_expr SHARP label
+  | simple_expr SHARP @{`Shift_token (1,LIDENT "")} label
       { mkexp $startpos $endpos (Pexp_send($1, $3)) }
 (*  | simple_expr SHARP error
       { syntax_error $startpos($3);
