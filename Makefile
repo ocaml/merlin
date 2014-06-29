@@ -7,11 +7,11 @@ DESTDIR ?=
 BIN_DIR := $(DESTDIR)$(BIN_DIR)
 SHARE_DIR := $(DESTDIR)$(SHARE_DIR)
 
-OCAML_VERSIONS = 400 401
+OCAML_VERSIONS = 401 402
 
 #### Invocation of OCamlMakefile
 
-OCAMLMAKEFILE= +$(MAKE) -f Makefile.ocamlmakefile \
+OCAMLMAKEFILE= $(MAKE) -f Makefile.ocamlmakefile \
 							 WITH_BIN_ANNOT="$(WITH_BIN_ANNOT)" WITH_DEBUG="$(WITH_DEBUG)"
 
 ifndef VERBOSE
@@ -42,7 +42,7 @@ $(CONFIG_FILES):
 assert_configured: $(CONFIG_FILES)
 
 $(TARGET): assert_configured
-	 $(OCAMLMAKEFILE) $@
+	 +$(OCAMLMAKEFILE) $@
 
 all_versions:
 	for i in $(OCAML_VERSIONS); do \
@@ -58,11 +58,11 @@ preprocess_all_versions:
 	done
 
 debug: assert_configured
-	$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITH_DEBUG=1 $(TARGET)
+	+$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITH_DEBUG=1 $(TARGET)
 
 clean:
 	@rm -f src/my_config.ml src/myocamlbuild_config.ml
-	$(OCAMLMAKEFILE) clean
+	+$(OCAMLMAKEFILE) clean
 
 check: $(TARGET)
 	./test.sh
