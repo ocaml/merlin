@@ -319,3 +319,64 @@ and payload =
   | PTyp of core_type  (* : T *)
   | PPat of pattern * expression option  (* : P  or  : P when E *)
 
+type value_binding =
+  {
+    pvb_pat: pattern;
+    pvb_expr: expression;
+    pvb_loc: Location.t;
+  }
+
+type module_binding =
+    {
+     pmb_name: string loc;
+     pmb_expr: module_expr;
+     pmb_loc: Location.t;
+    }
+
+type case =
+    {
+     pc_lhs: pattern;
+     pc_guard: expression option;
+     pc_rhs: expression;
+    }
+
+type constructor_declaration =
+    {
+     pcd_name: string loc;
+     pcd_args: core_type list;
+     pcd_res: core_type option;
+     pcd_loc: Location.t;
+    }
+
+type label_declaration =
+    {
+     pld_name: string loc;
+     pld_mutable: mutable_flag;
+     pld_type: core_type;
+     pld_loc: Location.t;
+    }
+
+type module_declaration =
+    {
+     pmd_name: string loc;
+     pmd_type: module_type;
+     pmd_loc: Location.t;
+    }
+(* S : MT *)
+
+type module_type_declaration =
+    {
+     pmtd_name: string loc;
+     pmtd_type: module_type option;
+     pmtd_loc: Location.t;
+    }
+
+module Override : sig
+  type value_description =
+    {
+     pval_name: string loc;
+     pval_type: core_type;
+     pval_prim: string list;
+     pval_loc: Location.t;
+    }
+end

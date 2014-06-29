@@ -482,11 +482,6 @@ type extension_constructor = {
   ext_loc : Location.t;
 }
 
-type variance =
-  | Covariant
-  | Contravariant
-  | Invariant
-
 type type_extension = {
   tyext_path: Path.t;
   tyext_txt: Longident.t loc;

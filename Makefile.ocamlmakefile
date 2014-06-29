@@ -35,6 +35,8 @@ SOURCES = \
 	$(TYPER)/parsing/location.ml      \
 	$(TYPER)/parsing/longident.mli    \
 	$(TYPER)/parsing/longident.ml     \
+	$(TYPER)/parsing/ast_helper.mli   \
+	$(TYPER)/parsing/ast_helper.ml    \
 	$(TYPER)/parsing/ast_mapper.mli   \
 	$(TYPER)/parsing/ast_mapper.ml    \
 	$(TYPER)/typing/annot.mli         \
