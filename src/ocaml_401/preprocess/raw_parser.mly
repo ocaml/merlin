@@ -645,14 +645,25 @@ module_expr:
 ;
 structure:
     structure_tail                              { $1 }
+  | structure_tail EXITPOINT                    { $1 }
   | seq_expr structure_tail                     { mkstrexp $startpos $endpos $1 :: $2 }
+  | seq_expr structure_tail EXITPOINT           { mkstrexp $startpos $endpos $1 :: $2 }
 ;
 structure_tail:
     (* empty *)                                 { [] }
   | SEMISEMI                                    { [] }
-  | SEMISEMI seq_expr structure_tail            { mkstrexp $startpos $endpos $2 :: $3 }
-  | SEMISEMI structure_item structure_tail      { $2 @ $3 }
-  | structure_item structure_tail               { $1 @ $2 }
+  | SEMISEMI seq_expr
+      @{`Shift_token (1,EXITPOINT)}
+      structure_tail
+    { mkstrexp $startpos $endpos $2 :: $3 }
+  | SEMISEMI structure_item
+      @{`Shift_token (1,EXITPOINT)}
+      structure_tail
+    { $2 @ $3 }
+  | structure_item
+      @{`Shift_token (1,EXITPOINT)}
+      structure_tail
+    { $1 @ $2 }
 ;
 
 top_structure_item:
@@ -912,7 +923,7 @@ class_expr:
       { $2 }
   | class_simple_expr simple_labeled_expr_list
       { mkclass $startpos $endpos (Pcl_apply($1, List.rev $2)) }
-  | LET rec_flag let_bindings IN class_expr
+  | LET rec_flag let_bindings IN @{`Shift 2} class_expr
       { mkclass $startpos $endpos (Pcl_let ($2, List.rev $3, $5)) }
 ;
 class_simple_expr:
@@ -1108,7 +1119,8 @@ class_type_declaration:
 seq_expr:
   | expr        %prec below_SEMI  { $1 }
   | expr SEMI                     { reloc_exp $startpos $endpos  $1 }
-  | expr SEMI seq_expr            { mkexp $startpos $endpos (Pexp_sequence($1, $3)) }
+  | expr SEMI @{`Shift 1} seq_expr
+      { mkexp $startpos $endpos (Pexp_sequence($1, $3)) }
 ;
 labeled_simple_pattern:
     QUESTION LPAREN label_let_pattern opt_default RPAREN
@@ -1166,14 +1178,14 @@ expr:
       { $1 }
   | simple_expr simple_labeled_expr_list
       { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
-  | LET rec_flag let_bindings IN seq_expr
+  | LET rec_flag let_bindings IN  @{`Shift 2} seq_expr
       { let expr = reloc_exp_fake $endpos($4) $endpos $5 in
         mkexp $startpos $endpos (Pexp_let($2, List.rev $3, expr)) }
 (*  | LET rec_flag let_bindings IN error
       { let expr = reloc_exp_fake $endpos($4) $endpos Fake.any_val' in
         syntax_error $startpos($4);
         mkexp $startpos $endpos (Pexp_let($2, List.rev $3, expr)) } *)
-  | LET_LWT rec_flag let_bindings IN seq_expr
+  | LET_LWT rec_flag let_bindings IN @{`Shift 2} seq_expr
       { let expr = reloc_exp_fake $endpos($4) $endpos $5 in
         let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
         Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) }
@@ -1182,14 +1194,14 @@ expr:
         let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
         syntax_error $startpos($5);
         Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) } *)
-  | LET MODULE UIDENT module_binding IN seq_expr
+  | LET MODULE UIDENT module_binding IN @{`Shift 2} seq_expr
       { let expr = reloc_exp_fake $endpos($5) $endpos $6 in
         mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
 (*  | LET MODULE UIDENT module_binding IN error
       { let expr = reloc_exp_fake $endpos($5) $endpos Fake.any_val' in
         syntax_error $startpos($6);
         mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) } *)
-  | LET OPEN override_flag mod_longident IN seq_expr
+  | LET OPEN override_flag mod_longident IN @{`Shift 2} seq_expr
       { let expr = reloc_exp_fake $endpos($5) $endpos $6 in
         mkexp $startpos $endpos (Pexp_open($3, mkrhs $startpos($4) $endpos($4) $4, expr)) }
 (*  | LET OPEN override_flag mod_longident IN error
@@ -1565,8 +1577,10 @@ match_action:
 (*  | MINUSGREATER error
       { syntax_error $startpos($2);
         reloc_exp $startpos($2) $endpos($2) Fake.any_val' } *)
-  | MINUSGREATER seq_expr                       { $2 }
-  | WHEN seq_expr MINUSGREATER seq_expr         { ghexp $startpos $endpos (Pexp_when($2, $4)) }
+  | MINUSGREATER seq_expr                       { reloc_exp_fake $endpos($1) $endpos $2 }
+  | WHEN seq_expr MINUSGREATER expr = seq_expr
+    { let expr = reloc_exp_fake $endpos($3) $endpos expr in
+      ghexp $startpos $endpos (Pexp_when($2, expr)) }
 ;
 expr_comma_list:
     expr_comma_list COMMA expr                  { $3 :: $1 }
