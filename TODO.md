@@ -17,9 +17,8 @@
 - have a way to get the types of modules
   partially done by 6f7e89e6f6d0915f5b2f76d892c99434399e9a76
   now we need a clean/generic way
-- port ast_helper to 401 and mv [rewrite] from [Raw_typer] to [Merlin_typer]
-  and reinclude it in the Makefile (right now it has been removed, meaning
-  merlin doesn't compile with 4.02 on this branch.)
+- mv [rewrite] from [Raw_typer] to [Merlin_typer]
+- Add support for ppx
 
 VIM
 document g:merlin_move_to_project
