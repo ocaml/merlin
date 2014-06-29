@@ -312,6 +312,13 @@ line and col"
   (forward-line (1- (lookup-default 'line data 0)))
   (forward-char (max 0 (lookup-default 'col data 0))))
 
+(defun merlin-point-of-pos (pos)
+  "Return the buffer position corresponding to the merlin
+position POS."
+  (save-excursion
+    (merlin-goto-point pos)
+    (point)))
+
 (defun merlin-goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
 containing fields file, line and col."
@@ -1273,6 +1280,37 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (when merlin-arrow-keys-type-enclosing
     (set-temporary-overlay-map merlin-type-enclosing-map t)))
 
+(defun merlin--find-extents (list low high)
+  "Return the smallest extent in LIST that LOW and HIGH fit
+strictly within, or nil if there is no such element."
+  (find-if (lambda (extent)
+	     (let ((start (merlin-point-of-pos (assoc 'start extent)))
+		   (end (merlin-point-of-pos (assoc 'end extent))))
+	       (or (and (> low start)
+			(<= high end))
+		   (and (< high end)
+			(>= low start)))))
+	   list))
+
+(defun merlin-enclosing-expand ()
+  "Select the construct enclosing point (or the region, if it
+is active)."
+  (interactive)
+  (merlin-sync-to-point)
+  (let* ((enclosing-extents
+	  (merlin-send-command
+	   `(enclosing ,(merlin-unmake-point (point)))))
+	 (extents (if (use-region-p)
+		      (merlin--find-extents enclosing-extents
+					    (region-beginning)
+					    (region-end))
+		    (first enclosing-extents))))
+    (if (not extents)
+	(error "No enclosing construct")
+      (merlin-goto-point (cdr (assoc 'start extents)))
+      (push-mark (merlin-point-of-pos (cdr (assoc 'end extents)))
+		 t t))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1371,40 +1409,97 @@ buffer if BUFFER is nil)."
 ;; OCCURENCES ;;
 ;;;;;;;;;;;;;;;;
 
+(defun merlin--occurence-text (line-num marker start end source-buf)
+  (concat (propertize (format "%7d:" line-num)
+		      'occur-prefix t
+		      'occur-target marker
+		      'follow-link t
+		      'front-sticky t
+		      'rear-nonsticky t
+		      'mouse-face '(highlight))
+	  (propertize (replace-regexp-in-string
+		       "\n"
+		       "\n       :"
+		       (with-current-buffer source-buf
+			 (buffer-substring
+			  (progn
+			    (goto-char start)
+			    (line-beginning-position))
+			  (progn
+			    (goto-char end)
+			    (line-end-position)))))
+		      'follow-link t
+		      'mouse-face '(highlight)
+		      'occur-target marker)
+	  (propertize "\n" 'occur-target marker)))
+
 (defun merlin-occurences-populate-buffer (lst)
-  (lexical-let ((src-buff (buffer-name))
-                (occ-buff (merlin-get-occ-buff)))
-    (setq lst (mapcar (lambda (pos)
-                         (let* ((start (assoc 'start pos))
-                                (line  (cdr (assoc 'line start)))
-                                (col   (cdr (assoc 'col  start))))
-                           (merlin-goto-point start)
-                           (cons (cons 'marker (point-marker)) pos)))
-                      lst))
+  (let ((src-buff (buffer-name))
+	(occ-buff (merlin-get-occ-buff))
+	(positions
+	 (mapcar (lambda (pos)
+		   (merlin-goto-point (assoc 'start pos))
+		   (cons (cons 'marker (point-marker)) pos))
+		 lst)))
     (with-current-buffer occ-buff
       (let ((inhibit-read-only t)
-            (buffer-undo-list t))
-        (erase-buffer)
-        (mapcar
-         (lambda (pos)
-           (lexical-let*
-               ((start (assoc 'start pos))
-                (marker (cdr (assoc 'marker pos)))
-                (line  (cdr (assoc 'line start)))
-                (col   (cdr (assoc 'col  start)))
-                (action (lambda (ev)
-                          (let ((buff (get-buffer src-buff)))
-                            (if buff
-                                (progn
-                                  (pop-to-buffer buff)
-                                  (goto-char marker))
-                              (message "Closed buffer : %s" src-buff))))))
-             (insert "  + ")
-             (insert-button
-              (format "occurence at line %d column %d" line col)
-              'action action)
-             (insert "\n")))
-             lst)))))
+	    (buffer-undo-list t)
+	    (pending-line)
+	    (pending-lines-text))
+	(erase-buffer)
+	(occur-mode)
+	(insert (propertize (format "%d occurences in buffer: %s"
+				    (length lst)
+				    src-buff)
+			    'font-lock-face list-matching-lines-buffer-name-face
+			    'read-only t
+			    'occur-title (get-buffer src-buff)))
+	(insert "\n")
+	(dolist (pos positions)
+	  (let* ((marker (cdr (assoc 'marker pos)))
+		 (start (assoc 'start pos))
+		 (end (assoc 'end pos))
+		 (line (cdr (assoc 'line start)))
+		 (start-buf-pos (with-current-buffer src-buff
+				  (merlin-goto-point start)
+				  (point)))
+		 (end-buf-pos (with-current-buffer src-buff
+				(merlin-goto-point end)
+				(point)))
+		 (prefix-length 8)
+		 (start-offset (+ prefix-length
+				  (cdr (assoc 'col start))))
+		 (lines-text
+		  (if (equal line pending-line)
+		      pending-lines-text
+		    (merlin--occurence-text line
+					    marker
+					    start-buf-pos
+					    end-buf-pos
+					    src-buff))))
+
+	    ;; Insert the critical text properties that occur-mode
+	    ;; makes use of
+	    (add-text-properties start-offset
+				 (+ start-offset
+				    (- end-buf-pos start-buf-pos))
+				 (list 'occur-match t
+				       'face list-matching-lines-face)
+				 lines-text)
+
+	    ;; Inserting text is delayed until non-equal lines are
+	    ;; found in order to accumulate multiple matches within
+	    ;; one line.
+	    (when (and pending-lines-text
+		       (not (equal line pending-line)))
+	      (insert pending-lines-text))
+	    (setq pending-line line)
+	    (setq pending-lines-text lines-text)))
+
+	;; Catch final pending text
+	(when pending-lines-text
+	  (insert pending-lines-text))
+	(goto-char (point-min))))))
 
 (defun merlin-occurences-list (lst)
   (save-excursion
@@ -1428,7 +1523,7 @@ buffer if BUFFER is nil)."
     (when r
       (if (listp r)
           (merlin-occurences-list r)
-        (message r)))))
+        (error "%s" r)))))
 
 (defun merlin-local-occurences ()
   (interactive)
