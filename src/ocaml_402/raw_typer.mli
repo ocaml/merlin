@@ -21,7 +21,7 @@ val dump : Format.formatter -> t -> unit
 
 val fresh_env : unit -> Env.t
 
-val rewrite : item -> [
+val rewrite : Location.t -> item -> [
     | `fake of structure_item
     | `str of structure_item list
     | `sg of signature
