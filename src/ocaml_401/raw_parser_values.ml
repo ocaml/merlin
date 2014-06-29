@@ -55,6 +55,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_QUESTION             -> "QUESTION"
   | T_PRIVATE              -> "PRIVATE"
   | T_PREFIXOP             -> "PREFIXOP"
+  | T_PLUSEQ               -> "PLUSEQ"
   | T_PLUSDOT              -> "PLUSDOT"
   | T_PLUS                 -> "PLUS"
   | T_P4_QUOTATION         -> "P4_QUOTATION"
@@ -87,9 +88,14 @@ let string_of_token : type a. a token_class -> string = function
   | T_LET                  -> "LET"
   | T_LESSMINUS            -> "LESSMINUS"
   | T_LESS                 -> "LESS"
+  | T_LBRACKETPERCENTPERCENT -> "LBRACKETPERCENTPERCENT"
+  | T_LBRACKETPERCENT      -> "LBRACKETPERCENT"
   | T_LBRACKETLESS         -> "LBRACKETLESS"
   | T_LBRACKETGREATER      -> "LBRACKETGREATER"
   | T_LBRACKETBAR          -> "LBRACKETBAR"
+  | T_LBRACKETATATAT       -> "LBRACKETATATAT"
+  | T_LBRACKETATAT         -> "LBRACKETATAT"
+  | T_LBRACKETAT           -> "LBRACKETAT"
   | T_LBRACKET             -> "LBRACKET"
   | T_LBRACELESS           -> "LBRACELESS"
   | T_LBRACE               -> "LBRACE"
@@ -123,6 +129,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_EXTERNAL             -> "EXTERNAL"
   | T_EXCEPTION            -> "EXCEPTION"
   | T_EQUAL                -> "EQUAL"
+  | T_EOL                  -> "EOL"
   | T_EOF                  -> "EOF"
   | T_EXITPOINT            -> "EXITPOINT"
   | T_ENTRYPOINT           -> "ENTRYPOINT"
@@ -156,8 +163,12 @@ let string_of_token : type a. a token_class -> string = function
 
 let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_with_type_binder                  -> "with_type_binder"
+  | N_with_extensions                   -> "with_extensions"
   | N_with_constraints                  -> "with_constraints"
   | N_with_constraint                   -> "with_constraint"
+  | N_virtual_value                     -> "virtual_value"
+  | N_virtual_method_type               -> "virtual_method_type"
+  | N_virtual_method                    -> "virtual_method"
   | N_virtual_flag                      -> "virtual_flag"
   | N_value_type                        -> "value_type"
   | N_value                             -> "value"
@@ -173,6 +184,8 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_type_declarations                 -> "type_declarations"
   | N_type_declaration                  -> "type_declaration"
   | N_type_constraint                   -> "type_constraint"
+  | N_top_structure_item                -> "top_structure_item"
+  | N_top_expr                          -> "top_expr"
   | N_tag_field                         -> "tag_field"
   | N_subtractive                       -> "subtractive"
   | N_structure_tail                    -> "structure_tail"
@@ -206,10 +219,13 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_package_type_cstr                 -> "package_type_cstr"
   | N_package_type                      -> "package_type"
   | N_override_flag                     -> "override_flag"
+  | N_option_SEMISEMI_                  -> "option_SEMISEMI_"
+  | N_option_STRING_                    -> "option_STRING_"
   | N_optional_type_parameters          -> "optional_type_parameters"
   | N_optional_type_parameter_list      -> "optional_type_parameter_list"
   | N_optional_type_parameter           -> "optional_type_parameter"
   | N_opt_semi                          -> "opt_semi"
+  | N_opt_present                       -> "opt_present"
   | N_opt_default                       -> "opt_default"
   | N_opt_bar                           -> "opt_bar"
   | N_opt_ampersand                     -> "opt_ampersand"
@@ -221,13 +237,17 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_module_type                       -> "module_type"
   | N_module_rec_declarations           -> "module_rec_declarations"
   | N_module_rec_declaration            -> "module_rec_declaration"
+  | N_module_rec_bindings               -> "module_rec_bindings"
+  | N_module_rec_binding                -> "module_rec_binding"
   | N_module_expr                       -> "module_expr"
   | N_module_declaration                -> "module_declaration"
   | N_module_binding                    -> "module_binding"
   | N_mod_longident                     -> "mod_longident"
   | N_mod_ext_longident                 -> "mod_ext_longident"
+  | N_method_type                       -> "method_type"
   | N_meth_list                         -> "meth_list"
   | N_match_cases                       -> "match_cases"
+  | N_match_action                      -> "match_action"
   | N_lident_list                       -> "lident_list"
   | N_let_pattern                       -> "let_pattern"
   | N_let_bindings                      -> "let_bindings"
@@ -244,6 +264,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_label_ident                       -> "label_ident"
   | N_label_expr                        -> "label_expr"
   | N_label_declarations                -> "label_declarations"
+  | N_label_declaration_with            -> "label_declaration_with"
   | N_label_declaration                 -> "label_declaration"
   | N_label                             -> "label"
   | N_interface                         -> "interface"
@@ -255,6 +276,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_field_expr_list                   -> "field_expr_list"
   | N_field                             -> "field"
   | N_expr_semi_list                    -> "expr_semi_list"
+  | N_expr_comma_opt_list               -> "expr_comma_opt_list"
   | N_expr_comma_list                   -> "expr_comma_list"
   | N_expr                              -> "expr"
   | N_dummy                             -> "dummy"
@@ -265,12 +287,14 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_core_type                         -> "core_type"
   | N_constructor_declarations          -> "constructor_declarations"
   | N_constructor_declaration           -> "constructor_declaration"
+  | N_constructor_arguments             -> "constructor_arguments"
   | N_constraints                       -> "constraints"
   | N_constrain_field                   -> "constrain_field"
   | N_constrain                         -> "constrain"
   | N_constr_longident                  -> "constr_longident"
   | N_constr_ident                      -> "constr_ident"
   | N_constant                          -> "constant"
+  | N_concrete_method                   -> "concrete_method"
   | N_clty_longident                    -> "clty_longident"
   | N_class_type_parameters             -> "class_type_parameters"
   | N_class_type_declarations           -> "class_type_declarations"
@@ -302,6 +326,13 @@ let string_of_class = function
   | CN_ (n,_) -> string_of_nonterminal n
 
 let symbol_of_token = function
+  | PLUSEQ                       -> T_ (T_PLUSEQ, ())
+  | LBRACKETPERCENTPERCENT       -> T_ (T_LBRACKETPERCENTPERCENT, ())
+  | LBRACKETPERCENT              -> T_ (T_LBRACKETPERCENT, ())
+  | LBRACKETATATAT               -> T_ (T_LBRACKETATATAT, ())
+  | LBRACKETATAT                 -> T_ (T_LBRACKETATAT, ())
+  | LBRACKETAT                   -> T_ (T_LBRACKETAT, ())
+  | EOL                          -> T_ (T_EOL, ())
   | WITH                         -> T_ (T_WITH, ())
   | WHILE_LWT                    -> T_ (T_WHILE_LWT, ())
   | WHILE                        -> T_ (T_WHILE, ())
@@ -464,6 +495,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_PRIVATE                -> PRIVATE
   | T_PREFIXOP               -> PREFIXOP v
   | T_PLUSDOT                -> PLUSDOT
+  | T_PLUSEQ                 -> PLUSEQ
   | T_PLUS                   -> PLUS
   | T_P4_QUOTATION           -> P4_QUOTATION
   | T_OUNIT_TEST_UNIT        -> OUNIT_TEST_UNIT
@@ -495,6 +527,11 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_LET                    -> LET
   | T_LESSMINUS              -> LESSMINUS
   | T_LESS                   -> LESS
+  | T_LBRACKETPERCENTPERCENT -> LBRACKETPERCENTPERCENT
+  | T_LBRACKETPERCENT        -> LBRACKETPERCENT
+  | T_LBRACKETATATAT         -> LBRACKETATATAT
+  | T_LBRACKETATAT           -> LBRACKETATAT
+  | T_LBRACKETAT             -> LBRACKETAT
   | T_LBRACKETLESS           -> LBRACKETLESS
   | T_LBRACKETGREATER        -> LBRACKETGREATER
   | T_LBRACKETBAR            -> LBRACKETBAR
@@ -531,6 +568,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_EXTERNAL               -> EXTERNAL
   | T_EXCEPTION              -> EXCEPTION
   | T_EQUAL                  -> EQUAL
+  | T_EOL                    -> EOL
   | T_EOF                    -> EOF
   | T_EXITPOINT              -> EXITPOINT
   | T_ENTRYPOINT             -> ENTRYPOINT
@@ -591,6 +629,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_QUOTE                   -> 0, ()
   | T_QUESTION                -> 0, ()
   | T_PRIVATE                 -> 0, ()
+  | T_PLUSEQ                  -> 0, ()
   | T_PLUSDOT                 -> 0, ()
   | T_PLUS                    -> 0, ()
   | T_P4_QUOTATION            -> 0, ()
@@ -613,6 +652,14 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_LET                     -> 0, ()
   | T_LESSMINUS               -> 0, ()
   | T_LESS                    -> 0, ()
+  | T_LBRACKETPERCENTPERCENT  -> 0, ()
+  | T_LBRACKETPERCENT         -> 0, ()
+  | T_LBRACKETLESS            -> 0, ()
+  | T_LBRACKETGREATER         -> 0, ()
+  | T_LBRACKETBAR             -> 0, ()
+  | T_LBRACKETATATAT          -> 0, ()
+  | T_LBRACKETATAT            -> 0, ()
+  | T_LBRACKETAT              -> 0, ()
   | T_LBRACKETLESS            -> 0, ()
   | T_LBRACKETGREATER         -> 0, ()
   | T_LBRACKETBAR             -> 0, ()
@@ -639,6 +686,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_EXTERNAL                -> 0, ()
   | T_EXCEPTION               -> 0, ()
   | T_EQUAL                   -> 0, ()
+  | T_EOL                     -> 0, ()
   | T_EOF                     -> 0, ()
   | T_EXITPOINT               -> 10, ()
   | T_ENTRYPOINT              -> 0, ()
@@ -712,7 +760,7 @@ let default_module_type =
   let open Parsetree in
   { pmty_desc = Pmty_signature [] ; pmty_loc = Location.none }
 
-let dummy_gloc = 
+let dummy_gloc =
   Location.({
     loc_start = Lexing.dummy_pos;
     loc_end   = Lexing.dummy_pos;
@@ -722,8 +770,12 @@ let dummy_gloc =
 let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   match n with
   | N_with_type_binder                  -> 1, Asttypes.Public
+  | N_with_extensions                   -> 0, []
   | N_with_constraints                  -> 0, []
   | N_with_constraint                   -> 0, []
+  | N_virtual_value                     -> raise Not_found (*TODO*)
+  | N_virtual_method_type               -> raise Not_found (*TODO*)
+  | N_virtual_method                    -> raise Not_found (*TODO*)
   | N_virtual_flag                      -> 1, Asttypes.Concrete
   | N_value_type                        ->
     raise Not_found (*(string * Asttypes.mutable_flag * Asttypes.virtual_flag * Parsetree.core_type) nonterminal_class*)
@@ -744,6 +796,8 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_type_declaration                  ->
     raise Not_found (*(Parsetree.type_declaration) nonterminal_class*)
   | N_type_constraint                   -> 1, (None, None)
+  | N_top_structure_item                -> raise Not_found (*TODO*)
+  | N_top_expr                          -> raise Not_found (*TODO*)
   | N_tag_field                         ->
     raise Not_found (*(Parsetree.row_field) nonterminal_class*)
   | N_subtractive                       -> 1, "-"
@@ -779,9 +833,12 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_package_type_cstr                 -> 1, (default_longident_loc, default_type)
   | N_package_type                      -> 1, (default_longident_loc, [])
   | N_override_flag                     -> 1, Asttypes.Fresh
+  | N_option_SEMISEMI_                  -> raise Not_found (*TODO*)
+  | N_option_STRING_                    -> raise Not_found (*TODO*)
   | N_optional_type_parameters          -> 0, []
   | N_optional_type_parameter_list      -> 0, []
   | N_optional_type_parameter           -> 1, (None, (false, false))
+  | N_opt_present                       -> raise Not_found (*TODO*)
   | N_opt_semi                          -> 0, ()
   | N_opt_default                       -> 1, None
   | N_opt_bar                           -> 0, ()
@@ -794,14 +851,18 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_module_type                       -> 1, default_module_type
   | N_module_rec_declarations           -> 0, []
   | N_module_rec_declaration            -> 1, (default_string_loc, default_module_type)
+  | N_module_rec_bindings               -> raise Not_found (*TODO*)
+  | N_module_rec_binding                -> raise Not_found (*TODO*)
   | N_module_expr                       -> 1, default_module_expr
   | N_module_declaration                -> 1, default_module_type
   | N_module_binding                    -> 1, default_module_expr
   | N_mod_longident                     -> 2, default_longident
   | N_mod_ext_longident                 -> 2, default_longident
+  | N_method_type                       -> raise Not_found (*TODO*)
   | N_meth_list                         ->
     raise Not_found (*((string * Parsetree.attributes * Parsetree.core_type) list * Asttypes.closed_flag) nonterminal_class*)
   | N_match_cases                       -> 0, []
+  | N_match_action                      -> raise Not_found (*TODO*)
   | N_lident_list                       -> 0, []
   | N_let_pattern                       -> 0, default_pattern
   | N_let_bindings                      -> 0, []
@@ -818,9 +879,10 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_label_ident                       -> 2, ("", default_expr)
   | N_label_expr                        -> 1, ("", default_expr)
   | N_label_declarations                -> 0, []
+  | N_label_declaration_with            -> raise Not_found (*TODO*)
   | N_label_declaration                 ->
     raise Not_found (*(Parsetree.label_declaration) nonterminal_class*)
-  | N_label                             -> 1, ""
+  | N_label                             -> 1, "ol"
   | N_interface                         -> 0, []
   | N_implementation                    -> 0, []
   | N_ident                             -> 2, ""
@@ -831,6 +893,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_field                             ->
     raise Not_found (*(string * Parsetree.attributes * Parsetree.core_type) nonterminal_class*)
   | N_expr_semi_list                    -> 0, []
+  | N_expr_comma_opt_list               -> 0, []
   | N_expr_comma_list                   -> 0, []
   | N_expr                              -> 1, default_expr
   | N_dummy                             -> 0, ()
@@ -842,12 +905,14 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_constructor_declarations          -> 0, []
   | N_constructor_declaration           ->
     raise Not_found (*(Parsetree.constructor_declaration) nonterminal_class*)
+  | N_constructor_arguments             -> raise Not_found (*TODO*)
   | N_constraints                       -> 0, []
   | N_constrain_field                   -> 1, (default_type, default_type)
   | N_constrain                         -> 1, (default_type, default_type, Location.none)
   | N_constr_longident                  -> 2, default_longident
   | N_constr_ident                      -> 1, ""
   | N_constant                          -> 1, Asttypes.Const_int 0
+  | N_concrete_method                   -> raise Not_found (*TODO*)
   | N_clty_longident                    -> 2, default_longident
   | N_class_type_parameters             -> 0, ([], dummy_gloc)
   | N_class_type_declarations           -> 0, []
