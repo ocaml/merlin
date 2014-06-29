@@ -42,6 +42,8 @@ type node =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
+  | Method_call              of expression * meth
+
 let default_loc = Location.none
 let default_env = Env.empty
 
@@ -79,6 +81,7 @@ let rec of_node t_node =
     match t_node with
     | Pattern        {pat_loc = loc; pat_env = env}
     | Expression     {exp_loc = loc; exp_env = env}
+    | Method_call    ({exp_loc = loc; exp_env = env}, _)
     | Class_expr     {cl_loc = loc; cl_env = env}
     | Module_expr    {mod_loc = loc; mod_env = env}
     | Structure_item {str_loc = loc; str_env = env}
@@ -115,8 +118,8 @@ let rec of_node t_node =
     match t_node with
     | Pattern { pat_desc; pat_loc; pat_extra } ->
       of_pattern_desc pat_desc (List.fold_right ~f:of_pat_extra pat_extra ~init:[])
-    | Expression { exp_desc; exp_loc; exp_extra } ->
-      of_expression_desc exp_desc (List.fold_right ~f:of_exp_extra exp_extra ~init:[])
+    | Expression ({ exp_desc; exp_loc; exp_extra } as exp) ->
+      of_expression_desc exp exp_desc (List.fold_right ~f:of_exp_extra exp_extra ~init:[])
     | Case { c_lhs; c_guard; c_rhs } ->
       of_pattern c_lhs :: of_expression c_rhs ::
       of_option of_expression c_guard []
@@ -219,6 +222,7 @@ let rec of_node t_node =
       of_node (Class_type ci_expr) ::
       List.map of_typ_param ci_params
     | Dummy -> []
+    | Method_call _ -> []
   in
   { t_node; t_loc; t_env;
     t_children = Lazy.from_fun children }
@@ -250,7 +254,7 @@ and of_module_type mt = of_node (Module_type mt)
 and of_module_expr me = of_node (Module_expr me)
 and of_typ_param (ct,_) = of_core_type ct
 
-and of_expression_desc desc acc = match desc with
+and of_expression_desc exp desc acc = match desc with
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ ->
     acc
@@ -285,8 +289,20 @@ and of_expression_desc desc acc = match desc with
     of_expression e1 :: of_expression e2 :: acc
   | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
     of_expression e1 :: of_expression e2 :: of_expression e3 :: acc
-  | Texp_send (e,_,eo) ->
-    of_expression e :: of_option of_expression eo acc
+  | Texp_send (e,meth,eo) ->
+    let lhs = of_expression e in
+    let meth =
+      let loc_start = lhs.t_loc.Location.loc_end in
+      let loc_end = match eo with
+        | None -> exp.exp_loc.Location.loc_end
+        | Some e -> e.exp_loc.Location.loc_start
+      in
+      { t_node = Method_call (e,meth);
+        t_loc = {Location. loc_ghost = true; loc_start; loc_end};
+        t_env = default_env; t_children = lazy [];
+      }
+    in
+    lhs :: meth :: of_option of_expression eo acc
   | Texp_override (_,ls) ->
     of_list (fun (_,_,e) -> of_expression e) ls acc
   | Texp_letmodule (_,_,me,e) ->
@@ -518,6 +534,7 @@ let string_of_node = function
   | Class_declaration       _ -> "class_declaration"
   | Class_description       _ -> "class_description"
   | Class_type_declaration  _ -> "class_type_declaration"
+  | Method_call             _ -> "method_call"
 
 let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =

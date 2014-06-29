@@ -307,7 +307,7 @@ let node_complete project node prefix =
   Printtyp.wrap_printing_env env
   begin fun () ->
   match node.BrowseT.t_node with
-  | BrowseT.Expression {Typedtree. exp_desc = Typedtree.Texp_send (exp',_,_) } ->
+  | BrowseT.Method_call (exp',_) ->
     let t = exp'.Typedtree.exp_type in
     let has_prefix (name,_) = String.is_prefixed ~by:prefix name in
     let methods = List.filter has_prefix (methods_of_type env t) in

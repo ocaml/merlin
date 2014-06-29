@@ -82,6 +82,8 @@ type node =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
+  | Method_call              of expression * meth
+
 type t = {
   t_node     : node;
   t_loc      : Location.t;
