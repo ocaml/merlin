@@ -224,7 +224,7 @@ let node_complete project node prefix =
     let valid tag name =
       String.is_prefixed ~by:prefix name && uniq (tag,name)
     in
-    (* Prevent other identifiers introduced by type checker to leak *)
+    (* Prevent identifiers introduced by type checker to leak *)
     let valid tag name =
       try
         ignore (String.index name '-' : int);
@@ -309,7 +309,12 @@ let node_complete project node prefix =
   match node.BrowseT.t_node with
   | BrowseT.Method_call (exp',_) ->
     let t = exp'.Typedtree.exp_type in
-    let has_prefix (name,_) = String.is_prefixed ~by:prefix name in
+    let has_prefix (name,_) =
+      String.is_prefixed ~by:prefix name &&
+      (* Prevent identifiers introduced by type checker to leak *)
+      try ignore (String.index name ' ' : int); false
+      with Not_found -> true
+    in
     let methods = List.filter has_prefix (methods_of_type env t) in
     List.map (fun (name,ty) ->
       let ppf, to_string = Format.to_string () in
