@@ -221,7 +221,16 @@ let node_complete project node prefix =
     else (Hashtbl.add seen n (); true)
   in
   let find ?path prefix =
-    let valid tag n = String.is_prefixed ~by:prefix n && uniq (tag,n) in
+    let valid tag name =
+      String.is_prefixed ~by:prefix name && uniq (tag,name)
+    in
+    (* Prevent other identifiers introduced by type checker to leak *)
+    let valid tag name =
+      try
+        ignore (String.index name '-' : int);
+        false
+      with Not_found -> valid tag name
+    in
     (* Hack to prevent extensions namespace to leak *)
     let valid ?(uident=false) tag name =
       (if uident
