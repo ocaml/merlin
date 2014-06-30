@@ -86,7 +86,16 @@ let pop (Parser (p, depth)) =
     Some (Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
 
 let get_location ?pop t =
-  Frame.location ?pop (stack t)
+  let pop =
+    match pop with
+    | None ->
+      let Parser (s,_) = t in
+      let lr1 = get_state s in
+      let lr0 = P.Query.lr0_state lr1 in
+      Merlin_recovery_strategy.parser_pos lr0
+    | Some pop -> pop
+  in
+  Frame.location ~pop (stack t)
 
 let get_guide ?pop t =
   let loc = get_location ?pop t in
@@ -261,10 +270,10 @@ let rec recover ?endp termination parser =
       let env = {env with E. current = goto stack.E.state r_prod} in
 
       (* Construct parser *)
-      let parser' = of_feed {p with P. env} w in
+      let parser = of_feed {p with P. env} w in
       let priority = parser_priority parser in
-      let parser = Location.mkloc parser (get_location parser') in
-      Some (termination, (priority, parser), parser')
+      let parser = Location.mkloc parser (get_location parser) in
+      Some (termination, (priority, parser))
 
     | `Shift (pop,token,priority) ->
       let loc = get_location parser in
@@ -276,9 +285,9 @@ let rec recover ?endp termination parser =
       let loc = Parsing_aux.location_union (get_location ~pop parser) loc in
       match feed token parser with
       | `Accept _ | `Reject -> None
-      | `Step parser' ->
-        let parser = Location.mkloc parser' loc in
-        Some (termination, (priority, parser), parser')
+      | `Step parser ->
+        let parser = Location.mkloc parser loc in
+        Some (termination, (priority, parser))
 
 module Integrate
     (P : sig

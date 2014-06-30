@@ -35,7 +35,7 @@ type termination
 val termination : termination
 val recover : ?endp:Lexing.position
   -> termination -> t
-  -> (termination * (int * t Location.loc) * t) option
+  -> (termination * (int * t Location.loc)) option
 
 (* Access to underlying raw parser *)
 val to_step : t -> Raw_parser.feed Raw_parser.parser

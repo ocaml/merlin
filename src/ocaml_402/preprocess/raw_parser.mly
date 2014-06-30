@@ -300,7 +300,7 @@ let fake_lident_loc = Location.mknoloc fake_lident
 
 %}
 
-%annot <[`Shift of int | `Shift_token of int * token]>
+%annot <[`Shift of int | `Shift_token of int * token | `Cost of int | `Indent of int]>
 
 (* Tokens *)
 
@@ -1434,7 +1434,7 @@ strict_binding:
 match_cases:
 | v1 = match_case
     { [v1] }
-| v1 = match_cases BAR v3 = match_case
+| v1 = match_cases @{`Indent (-2)} BAR v3 = match_case
     { v3 :: v1 }
 
 match_case:

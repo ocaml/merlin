@@ -2,7 +2,12 @@
 
 type token = Raw_parser.token
 
-type annotation = [`Shift of int|`Shift_token of int * token]
+type annotation =
+  [ `Shift of int
+  | `Shift_token of int * token
+  | `Cost of int
+  | `Indent of int
+  ]
 
 type 'a token_class = 'a Raw_parser.token_class
 type 'a nonterminal_class = 'a Raw_parser.nonterminal_class

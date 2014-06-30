@@ -17,6 +17,16 @@ let memoize ?check n ~f =
 
 type cost = int
 
+let rec annotcost = function
+  | `Cost n :: xs -> n + annotcost xs
+  | _ :: xs -> annotcost xs
+  | [] -> 0
+
+let rec annotindent = function
+  | `Indent n :: xs -> n + annotcost xs
+  | _ :: xs -> annotcost xs
+  | [] -> 0
+
 type measurement =
   {
     (* If a production is a of the form "<nt1>: <nt1> …",
@@ -42,7 +52,7 @@ let measure_production prod =
           | CN_ (_,annot) -> annot
         in
         let cost', value = Raw_parser_values.default_symbol symclass in
-        let cost = cost + cost' + 1 in
+        let cost = cost + cost' + annotcost annot + 1 in
         let values = (cost, annot, value) :: values in
         (cost, values)
       in
@@ -72,7 +82,8 @@ type strategy = {
   uid: int;
   mutable cost: cost;
   first: bool;
-  action: [`Reduce of reduction | `Shift of (int * token * int)]
+  action: [`Reduce of reduction | `Shift of (int * token * int)];
+  reindent: int;
 }
 
 let genuid =
@@ -113,6 +124,7 @@ let reduction_strategy lr0 =
         else
           [], values
       in
+      let reindent = annotindent annot in
       let cost = match values with
         | (cost, _, _) :: _ -> cost
         | [] -> 0
@@ -127,10 +139,12 @@ let reduction_strategy lr0 =
           cost - 10, `Shift (pos, Raw_parser_values.token_of_symbol toksym value, n)
         | _ -> make_reduction measurement prod pos cost values
       in
-      Some {uid = genuid (); cost; first = pos = 1; action }
+      Some {uid = genuid (); cost; first = pos = 1; action; reindent }
     | _ -> None
   in
   let candidates = List.filter_map ~f:measure_item itemset in
+  let reindent = List.fold_left ~init:0 ~f:(fun r c -> min r c.reindent) candidates in
+  let candidates = List.map ~f:(fun c -> {c with reindent}) candidates in
   List.sort ~cmp:(fun s1 s2 -> compare s1.cost s2.cost) candidates
 
 let reduction_strategy =
@@ -138,6 +152,13 @@ let reduction_strategy =
     ~f:reduction_strategy
     ~check:(function {cost = -1} :: tl -> Some tl
                    | _ -> None)
+
+let parser_pos lr0 =
+  match List.map ~f:snd (Raw_parser.Query.itemset lr0) with
+  | [] -> 0
+  | x :: xs -> List.fold_left ~f:min ~init:x xs
+let parser_pos = memoize Query.lr0_states ~f:parser_pos
+
 
 module Termination : sig
   type 'a t
