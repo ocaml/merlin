@@ -7,9 +7,9 @@ type item =
   | Signature of signature
   | Pattern of (Asttypes.label * expression option * pattern)
   | Eval of expression
-  | Bindings of Asttypes.rec_flag * (pattern * expression) list
+  | Bindings of Asttypes.rec_flag * value_binding list
   | Newtype of string
-  (* | Functor_argument of string loc * module_type option *)
+  | Functor_argument of string loc * module_type option
   | Open of Asttypes.override_flag * Longident.t loc
 
 type t = Asttypes.rec_flag * item list
@@ -36,7 +36,9 @@ let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
   | N_labeled_simple_expr, (_,e)  -> default, [Eval e]
   | N_label_ident, (_,e)          -> default, [Eval e]
   | N_label_expr, (_,e)           -> default, [Eval e]
-  | N_let_bindings, e             -> default, [Bindings (is_rec,e)]
+  | N_let_bindings, e             ->
+    let e = List.map (fun (p,e) -> Ast_helper.Vb.mk p e) e in
+    default, [Bindings (is_rec,e)]
   (*| N_let_rec_bindings, e -> `binds e*)
   | N_expr_semi_list, el          -> default, List.map (fun e -> Eval e) el
   | N_expr_comma_list, el         -> default, List.map (fun e -> Eval e) el
@@ -60,53 +62,10 @@ let dump_item ppf = function
   | Eval _ -> ()
   | Bindings _ -> ()
   | Newtype _ -> ()
-  (* | Functor_argument _ -> () *)
+  | Functor_argument _ -> ()
   | Open _ -> ()
 
 let dump ppf t =
   List.iter (dump_item ppf) (observe t)
 
 let fresh_env () = Env.initial
-
-let rewrite loc = function
-  (*
-  | Functor_argument (id,mty) ->
-    let mexpr = Pmod_structure [] in
-    let mexpr = {pmod_desc = mexpr; pmod_loc = loc} in
-    let mexpr = Pmod_functor (id, mty, mexpr) in
-    let mexpr = {pmod_desc = mexpr; pmod_loc = loc} in
-    let item = Pstr_module (Ast_helper.Mb.mk (Location.mknoloc "") mexpr) in
-    `fake { pstr_desc = item; pstr_loc = loc }
-  *)
-  | Pattern (l,o,p) ->
-    let expr = Pexp_constant (Asttypes.Const_int 0) in
-    let expr = { pexp_desc = expr; pexp_loc = loc } in
-    let expr = Pexp_function (l, o, [(p, expr)]) in
-    let expr = { pexp_desc = expr; pexp_loc = loc } in
-    let item = Pstr_eval expr in
-    `fake { pstr_desc = item; pstr_loc = loc }
-  | Newtype s ->
-    let expr = Pexp_constant (Asttypes.Const_int 0) in
-    let expr = { pexp_desc = expr; pexp_loc = Location.none } in
-    let pat = { ppat_desc = Ppat_any; ppat_loc = Location.none } in
-    let expr = Pexp_function ("", None, [(pat, expr)]) in
-    let expr = { pexp_desc = expr; pexp_loc = Location.none } in
-    let expr = Parsetree.Pexp_newtype (s,expr) in
-    let expr = { pexp_desc = expr; pexp_loc = loc } in
-    let item = Pstr_eval expr in
-    `fake { pstr_desc = item; pstr_loc = loc }
-  | Bindings (rec_,e) ->
-    let item = Pstr_value (rec_,e) in
-    `str [{ pstr_desc = item; pstr_loc = loc }]
-  | Open (override,name) ->
-    let item = Pstr_open (override, name) in
-    `str [{ pstr_desc = item; pstr_loc = loc }]
-  | Eval e ->
-    `str [{
-      Parsetree. pstr_desc = Parsetree.Pstr_eval e;
-      pstr_loc = e.Parsetree.pexp_loc;
-    }]
-  | Structure str ->
-    `str str
-  | Signature sg ->
-    `sg sg

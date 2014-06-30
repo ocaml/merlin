@@ -219,8 +219,8 @@ module Sig:
     val module_: ?loc:loc -> module_declaration -> signature_item
     val rec_module: ?loc:loc -> module_declaration list -> signature_item
     val modtype: ?loc:loc -> module_type_declaration -> signature_item
-      (* TODO
     val open_: ?loc:loc -> open_description -> signature_item
+      (* TODO
     val include_: ?loc:loc -> include_description -> signature_item
     *)
     val class_: ?loc:loc -> class_description list -> signature_item
@@ -245,7 +245,7 @@ module Str:
     val module_: ?loc:loc -> module_binding -> structure_item
     val rec_module: ?loc:loc -> module_binding list -> structure_item
     val modtype: ?loc:loc -> module_type_declaration -> structure_item
-(*    val open_: ?loc:loc -> open_description -> structure_item *)
+    val open_: ?loc:loc -> open_description -> structure_item
     val class_: ?loc:loc -> class_declaration list -> structure_item
     val class_type: ?loc:loc -> class_type_declaration list -> structure_item
       (*
@@ -274,12 +274,10 @@ module Mb:
   end
 
 (* Opens *)
-  (*
 module Opn:
   sig
     val mk: ?loc: loc -> ?attrs:attrs -> ?override:override_flag -> lid -> open_description
   end
-*)
 
 (* Includes *)
   (*

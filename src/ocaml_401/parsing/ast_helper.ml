@@ -232,7 +232,13 @@ module Sig = struct
       | Some m -> Pmodtype_manifest m
     in
     mk ?loc (Psig_modtype (pmtd_name, modtype_decl))
-  let open_ ?loc a = assert false (* TODO *)
+  let open_ ?loc { popen_lid; popen_override; popen_loc } =
+    let loc =
+      match loc with
+      | None -> popen_loc
+      | Some l -> l
+    in
+    mk ~loc (Psig_open (popen_override, popen_lid))
   let include_ ?loc a = assert false (* TODO *)
   let class_ ?loc a = mk ?loc (Psig_class a)
   let class_type ?loc a = mk ?loc (Psig_class_type a)
@@ -260,7 +266,13 @@ module Str = struct
       | Some m -> m
     in
     mk ?loc (Pstr_modtype (pmtd_name, modtype))
-  let open_ ?loc a = assert false
+  let open_ ?loc { popen_lid; popen_override; popen_loc } =
+    let loc =
+      match loc with
+      | None -> popen_loc
+      | Some l -> l
+    in
+    mk ~loc (Pstr_open (popen_override, popen_lid))
   let class_ ?loc a = mk ?loc (Pstr_class a)
   let class_type ?loc a = mk ?loc (Pstr_class_type a)
   let include_ ?loc a = mk ?loc (Pstr_include a)
@@ -372,17 +384,16 @@ module Mb = struct
     }
 end
 
-(*
 module Opn = struct
   let mk ?(loc = !default_loc) ?(attrs = []) ?(override = Fresh) lid =
     {
      popen_lid = lid;
      popen_override = override;
      popen_loc = loc;
-     popen_attributes = attrs;
     }
 end
 
+(*
 module Incl = struct
   let mk ?(loc = !default_loc) ?(attrs = []) mexpr =
     {

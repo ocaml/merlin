@@ -371,6 +371,13 @@ type module_type_declaration =
      pmtd_loc: Location.t;
     }
 
+type open_description =
+    {
+     popen_lid: Longident.t loc;
+     popen_override: override_flag;
+     popen_loc: Location.t;
+    }
+
 module Override : sig
   type value_description =
     {

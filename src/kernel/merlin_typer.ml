@@ -79,13 +79,41 @@ module P = struct
       let snapshot = Btype.snapshot () in
       {t with snapshot; exns = exn :: caught catch @ t.exns}
 
+  let rewrite loc = function
+    | Raw_typer.Functor_argument (id,mty) ->
+      let mexpr = Ast_helper.Mod.structure ~loc [] in
+      let mexpr = Ast_helper.Mod.functor_ ~loc id mty mexpr in
+      let mb = Ast_helper.Mb.mk (Location.mknoloc "") mexpr in
+      `fake (Ast_helper.Str.module_ ~loc mb)
+    | Raw_typer.Pattern (l,o,p) ->
+      let expr = Ast_helper.Exp.constant ~loc (Asttypes.Const_int 0) in
+      let expr = Ast_helper.Exp.fun_ ~loc l o p expr in
+      `fake (Ast_helper.Str.eval ~loc expr)
+    | Raw_typer.Newtype s ->
+      let expr = Ast_helper.Exp.constant (Asttypes.Const_int 0) in
+      let patt = Ast_helper.Pat.any () in
+      let expr = Ast_helper.Exp.fun_ "" None patt expr in
+      let expr = Ast_helper.Exp.newtype ~loc s expr in
+      `fake (Ast_helper.Str.eval ~loc expr)
+    | Raw_typer.Bindings (rec_,e) ->
+      `str [Ast_helper.Str.value ~loc rec_ e]
+    | Raw_typer.Open (override,name) ->
+      let od = Ast_helper.Opn.mk ~override name in
+      `str [Ast_helper.Str.open_ ~loc od]
+    | Raw_typer.Eval e ->
+      `str [Ast_helper.Str.eval ~loc e]
+    | Raw_typer.Structure str ->
+      `str str
+    | Raw_typer.Signature sg ->
+      `sg sg
+
   let frame (_,catch) f t =
     let module Frame = Merlin_parser.Frame in
     let loc = Frame.location f in
     let raw = Raw_typer.step (Frame.value f) t.raw in
     let t = {t with raw} in
     let items = Raw_typer.observe t.raw in
-    let items = List.map ~f:(Raw_typer.rewrite loc) items in
+    let items = List.map ~f:(rewrite loc) items in
     let t = List.fold_left' ~f:(append catch loc) items ~init:t in
     t
 
