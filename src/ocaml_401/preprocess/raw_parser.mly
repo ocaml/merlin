@@ -1830,7 +1830,7 @@ type_parameter_list:
 ;
 constructor_declarations:
     constructor_declaration                     { [$1] }
-  | constructor_declarations BAR constructor_declaration { $3 :: $1 }
+  | constructor_declarations @{`Indent (-2)} BAR constructor_declaration { $3 :: $1 }
 ;
 constructor_declaration:
 

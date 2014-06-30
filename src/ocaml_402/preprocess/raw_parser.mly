@@ -1733,7 +1733,7 @@ type_parameter_list:
 constructor_declarations:
 | v1 = constructor_declaration
     { [v1] }
-| v1 = constructor_declarations BAR v3 = constructor_declaration
+| v1 = constructor_declarations @{`Indent (-2)} BAR v3 = constructor_declaration
     { v3 :: v1 }
 
 constructor_declaration:

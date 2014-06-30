@@ -29956,6 +29956,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_constructor_declarations, [
         ])), [
         CN_ (N_constructor_declarations, [
+                                           (`Indent (-2));
           ]);
         CT_ (T_BAR, [
           ]);

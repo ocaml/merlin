@@ -4393,7 +4393,7 @@ module MenhirInterpreterTable = struct
         let _endpos = _endpos__3_ in
         let _v : ((string Asttypes.loc * Parsetree.core_type list *
    Parsetree.core_type option * Location.t)
-  list) =                                                          ( _3 :: _1 ) in
+  list) =                                                                          ( _3 :: _1 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_constructor_declarations, _v);
@@ -27310,6 +27310,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_constructor_declarations, [
         ])), [
         CN_ (N_constructor_declarations, [
+                                        (`Indent (-2));
           ]);
         CT_ (T_BAR, [
           ]);
