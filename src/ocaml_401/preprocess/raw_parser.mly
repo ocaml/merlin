@@ -327,7 +327,7 @@ let wrap_type_annotation startpos endpos newtypes core_type body =
 let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %}
 
-%annot <[`Shift of int | `Shift_token of int * token]>
+%annot <[`Shift of int | `Shift_token of int * token | `Cost of int | `Indent of int]>
 
 (* Tokens *)
 
@@ -1557,8 +1557,10 @@ strict_binding:
       { mkexp $startpos $endpos (Pexp_newtype($3, $5)) }
 ;
 match_cases:
-  | pattern match_action                        { [$1, $2] }
-  | match_cases BAR pattern match_action        { ($3, $4) :: $1 }
+  | pattern match_action
+    { [$1, $2] }
+  | match_cases @{`Indent (-2)} BAR pattern match_action
+    { ($3, $4) :: $1 }
 (*  | match_cases BAR error
     { syntax_error $startpos($3);
       (mkpat $startpos($3) $endpos($3) (Ppat_any), Fake.any_val') :: $1 }

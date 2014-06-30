@@ -4,7 +4,12 @@ open Std
 
 type token = Raw_parser.token
 
-type annotation = [`Shift of int|`Shift_token of int * token]
+type annotation =
+  [ `Shift of int
+  | `Shift_token of int * token
+  | `Cost of int
+  | `Indent of int
+  ]
 
 type 'a token_class = 'a Raw_parser.token_class
 type 'a nonterminal_class = 'a Raw_parser.nonterminal_class
@@ -654,9 +659,6 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_LESS                    -> 0, ()
   | T_LBRACKETPERCENTPERCENT  -> 0, ()
   | T_LBRACKETPERCENT         -> 0, ()
-  | T_LBRACKETLESS            -> 0, ()
-  | T_LBRACKETGREATER         -> 0, ()
-  | T_LBRACKETBAR             -> 0, ()
   | T_LBRACKETATATAT          -> 0, ()
   | T_LBRACKETATAT            -> 0, ()
   | T_LBRACKETAT              -> 0, ()
@@ -833,12 +835,12 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_package_type_cstr                 -> 1, (default_longident_loc, default_type)
   | N_package_type                      -> 1, (default_longident_loc, [])
   | N_override_flag                     -> 1, Asttypes.Fresh
-  | N_option_SEMISEMI_                  -> raise Not_found (*TODO*)
-  | N_option_STRING_                    -> raise Not_found (*TODO*)
+  | N_option_SEMISEMI_                  -> 0, None
+  | N_option_STRING_                    -> 1, None
   | N_optional_type_parameters          -> 0, []
   | N_optional_type_parameter_list      -> 0, []
   | N_optional_type_parameter           -> 1, (None, (false, false))
-  | N_opt_present                       -> raise Not_found (*TODO*)
+  | N_opt_present                       -> 1, []
   | N_opt_semi                          -> 0, ()
   | N_opt_default                       -> 1, None
   | N_opt_bar                           -> 0, ()
@@ -862,7 +864,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_meth_list                         ->
     raise Not_found (*((string * Parsetree.attributes * Parsetree.core_type) list * Asttypes.closed_flag) nonterminal_class*)
   | N_match_cases                       -> 0, []
-  | N_match_action                      -> raise Not_found (*TODO*)
+  | N_match_action                      -> 1, default_expr
   | N_lident_list                       -> 0, []
   | N_let_pattern                       -> 0, default_pattern
   | N_let_bindings                      -> 0, []
@@ -879,7 +881,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_label_ident                       -> 2, ("", default_expr)
   | N_label_expr                        -> 1, ("", default_expr)
   | N_label_declarations                -> 0, []
-  | N_label_declaration_with            -> raise Not_found (*TODO*)
+  | N_label_declaration_with            -> 1, ()
   | N_label_declaration                 ->
     raise Not_found (*(Parsetree.label_declaration) nonterminal_class*)
   | N_label                             -> 1, "ol"

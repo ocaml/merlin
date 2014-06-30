@@ -43,7 +43,7 @@ let measure_production prod =
   match Query.production_definition prod with
   | _, (CT_ (T_ENTRYPOINT, _) :: _) -> None
   | lhs, rhs ->
-    try match Query.semantic_action prod with
+    try match fst (Query.semantic_action prod) with
     | None -> None
     | Some m_action ->
       let prepend_cost symclass (cost, values) =

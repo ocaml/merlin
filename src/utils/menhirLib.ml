@@ -905,6 +905,7 @@ module EngineTypes = struct
     type production
     type producer
     type semantic_action
+    type annotation
 
     (* States are numbered from [0] to [lrx_states - 1] *)
     val lr0_states: int
@@ -916,7 +917,8 @@ module EngineTypes = struct
     val lr0_state: lr1_state -> lr0_state
     val itemset: lr0_state -> (production * int) list
     val production_definition: production -> producer option * producer list
-    val semantic_action: production -> semantic_action option
+    val semantic_action: production ->
+      semantic_action option * annotation list
 
   end
 
@@ -1549,9 +1551,12 @@ module TableFormat = struct
        A reduction can be [None] if it had been removed dead code elimination.
     *)
     type producer_definition
+    type annotation_definition
 
     val productions_definition:
-      (producer_definition option * producer_definition list * int option) array
+      (producer_definition option *
+       producer_definition list *
+       (int option * annotation_definition list)) array
 
   end
 
@@ -1574,6 +1579,7 @@ module TableInterpreter : sig
   module MakeQuery (T : TableFormat.TABLES) (Q : TableFormat.QUERY_TABLE)
     : EngineTypes.QUERY_ENGINE with type producer = Q.producer_definition
                                 and type production = int
+                                and type annotation = Q.annotation_definition
                                 and type semantic_action =
                                   (int, T.semantic_value, T.token) EngineTypes.env ->
                                   (int, T.semantic_value) EngineTypes.stack
@@ -1758,6 +1764,7 @@ end = struct
     type semantic_action =
       (int, T.semantic_value, T.token) EngineTypes.env ->
       (int, T.semantic_value) EngineTypes.stack
+    type annotation = Q.annotation_definition
 
     let lr0_states = Q.lr0_states
     let lr1_states = Q.lr1_states
@@ -1772,9 +1779,10 @@ end = struct
       lhs, rhs
 
     let semantic_action prod =
-      match Q.productions_definition.(prod) with
-      | _, _, None -> None
-      | _, _, Some action -> Some T.semantic_action.(action)
+      let _, _, (action, annots) = Q.productions_definition.(prod) in
+      match action with
+      | None -> None, annots
+      | Some action -> Some T.semantic_action.(action), annots
 
   end
 

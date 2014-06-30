@@ -444,7 +444,7 @@ and _ nonterminal_class =
   | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
   | N_additive : (string) nonterminal_class
 
-and annotation = ([`Shift of int | `Shift_token of int * token])
+and annotation = ([`Shift of int | `Shift_token of int * token | `Cost of int | `Indent of int])
 
 and symbol_class =
   | CT_ : 'a token_class * annotation list -> symbol_class
@@ -489,6 +489,7 @@ val dummy_state: state
 module Query : MenhirLib.EngineTypes.QUERY_ENGINE
    with type production := int
     and type producer := symbol_class
+    and type annotation := annotation
     and type semantic_action =
                (state, symbol, token) MenhirLib.EngineTypes.env ->
                (state, symbol) MenhirLib.EngineTypes.stack
