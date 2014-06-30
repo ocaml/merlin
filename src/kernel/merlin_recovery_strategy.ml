@@ -23,8 +23,8 @@ let rec annotcost = function
   | [] -> 0
 
 let rec annotindent = function
-  | `Indent n :: xs -> n + annotcost xs
-  | _ :: xs -> annotcost xs
+  | `Indent n :: xs -> n + annotindent xs
+  | _ :: xs -> annotindent xs
   | [] -> 0
 
 type measurement =
@@ -36,6 +36,8 @@ type measurement =
 
     m_rhs: (cost * annotation list * symbol) list;
 
+    m_cost: cost;
+
     m_action: Query.semantic_action;
   }
 
@@ -43,9 +45,13 @@ let measure_production prod =
   match Query.production_definition prod with
   | _, (CT_ (T_ENTRYPOINT, _) :: _) -> None
   | lhs, rhs ->
-    try match fst (Query.semantic_action prod) with
-    | None -> None
-    | Some m_action ->
+    try match Query.semantic_action prod with
+    | None, _ -> None
+    | Some m_action, action_annot ->
+      let m_left_rec = match lhs, rhs with
+        | Some sym, (sym' :: _) -> sym = sym'
+        | _ -> false
+      in
       let prepend_cost symclass (cost, values) =
         let annot = match symclass with
           | CT_ (_,annot) -> annot
@@ -56,12 +62,9 @@ let measure_production prod =
         let values = (cost, annot, value) :: values in
         (cost, values)
       in
-      let m_left_rec = match lhs, rhs with
-        | Some sym, (sym' :: _) -> sym = sym'
-        | _ -> false
-      in
-      let _cost, m_rhs = List.fold_right ~f:prepend_cost rhs ~init:(0, []) in
-      Some { m_left_rec ; m_rhs; m_action }
+      let m_cost = annotcost action_annot in
+      let _, m_rhs = List.fold_right ~f:prepend_cost rhs ~init:(m_cost, []) in
+      Some { m_left_rec ; m_rhs; m_action; m_cost }
     with Not_found -> None
 
 let measure_production = memoize Query.productions ~f:measure_production
@@ -127,7 +130,7 @@ let reduction_strategy lr0 =
       let reindent = annotindent annot in
       let cost = match values with
         | (cost, _, _) :: _ -> cost
-        | [] -> 0
+        | [] -> measurement.m_cost
       in
       let cost, action =
         match annot with

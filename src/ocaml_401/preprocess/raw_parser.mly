@@ -691,7 +691,7 @@ structure_item:
         | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
             [mkstr $startpos $endpos (Pstr_eval exp)]
         | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev $3))]
-      }
+      } @{`Cost (-10)}
   | LET_LWT rec_flag let_bindings
       { match $3 with
         | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->

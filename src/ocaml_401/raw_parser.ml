@@ -31009,6 +31009,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_let_bindings, [
           ]);
         ], (Some 496, [
+                 (`Cost (-10));
         ]));
       (Some (CN_ (N_structure_item, [
         ])), [
