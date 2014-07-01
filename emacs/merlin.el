@@ -1039,36 +1039,37 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
-    (case command
-      (interactive (company-begin-backend 'company-my-backend))
-      (prefix
-       (if (bounds-of-thing-at-point 'ocaml-atom)
-           (buffer-substring-no-properties
-            (car (bounds-of-thing-at-point 'ocaml-atom))
-            (point))))
-      (no-cache t)
-      (init (if merlin-mode (merlin-sync-to-point)))
-      (doc-buffer
-       (progn
-         (let ((doc (merlin-completion-info arg)))
-           (with-current-buffer merlin-type-buffer-name
-             (insert doc)
-             (get-buffer merlin-type-buffer-name)))))
-      (location
-       (let* ((pos (merlin-locate-pos arg))
-              (filename (lookup-default 'file pos (current-buffer)))
-              (pos (merlin-make-point (lookup-default 'pos pos nil))))
-         (cons filename pos)))
-      (post-completion
-       (minibuffer-message "%s: %s" arg (cadr (assoc arg merlin-company-cache))))
-      (candidates
-       (progn
-         (merlin-sync-to-point)
-         (setq merlin-company-cache (merlin-completion-data arg))
-         (mapcar #'(lambda (x) (car x)) merlin-company-cache)))
-      (meta (cadr (assoc arg merlin-company-cache)))
-      (annotation (concat ": " (cadr (assoc arg merlin-company-cache))))
-))
+    (if merlin-mode
+        (case command
+          (interactive (company-begin-backend 'company-my-backend))
+          (prefix
+           (if (bounds-of-thing-at-point 'ocaml-atom)
+               (buffer-substring-no-properties
+                (car (bounds-of-thing-at-point 'ocaml-atom))
+                (point))))
+          (no-cache t)
+          (init (merlin-sync-to-point))
+          (doc-buffer
+           (progn
+             (let ((doc (merlin-completion-info arg)))
+               (with-current-buffer merlin-type-buffer-name
+                 (insert doc)
+                 (get-buffer merlin-type-buffer-name)))))
+          (location
+           (let* ((pos (merlin-locate-pos arg))
+                  (filename (lookup-default 'file pos (current-buffer)))
+                  (pos (merlin-make-point (lookup-default 'pos pos nil))))
+             (cons filename pos)))
+          (post-completion
+           (minibuffer-message "%s: %s" arg (cadr (assoc arg merlin-company-cache))))
+          (candidates
+           (progn
+             (merlin-sync-to-point)
+             (setq merlin-company-cache (merlin-completion-data arg))
+             (mapcar #'(lambda (x) (car x)) merlin-company-cache)))
+          (meta (cadr (assoc arg merlin-company-cache)))
+          (annotation (concat ": " (cadr (assoc arg merlin-company-cache))))
+          )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUTO-COMPLETE SUPPORT ;;
