@@ -1,23 +1,28 @@
+- Backport support for ocaml 4.00
+- catch "different assumptions" exception
+- there is a bug in cmi refreshing
+- write syntax error message generating heuristic
+- have a way to get the types of modules
+  partially done by 6f7e89e6f6d0915f5b2f76d892c99434399e9a76
+  now we need a clean/generic way
+- Add support for ppx
+- Add support for existing p4 extensions on 4.02
 - Replace Browse by a propper wrapping of Typedtree (~60%)
 - Find proper API for incremental parser
   -> goto table should not be manipulated explicitly
   -> exceptions from semantic action should be caught and treated differently
   -> relying on special handling of stack bottom is not good either
      Bottom handling code improved, but we should make sure it s stable.
-- perf idea: send batches of token rather than entering/exiting the whole
-  parser barrier for each token
-- backport support for ocaml 4.00 & 4.01
-- features to test:
+- Test:
   -> completion
   -> locate
   -> type enclosing / type expr
   -> occurences
-- catch "different assumptions" exception
-- write syntax error message generating heuristic
-- have a way to get the types of modules
-  partially done by 6f7e89e6f6d0915f5b2f76d892c99434399e9a76
-  now we need a clean/generic way
-- Add support for ppx
+- Reimplement verbosity, expand module aliases
+
+IDEA (later)
+- perf: send batches of token rather than entering/exiting the whole
+  parser barrier for each token
 
 VIM
 document g:merlin_move_to_project
