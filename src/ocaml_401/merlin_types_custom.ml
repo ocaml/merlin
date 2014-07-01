@@ -153,6 +153,8 @@ let str_ident_locs item =
       | _ -> []
     )
   | Tstr_module (id, name, _) -> [ Ident.name id , name.Asttypes.loc ]
+  | Tstr_recmodule mods ->
+    List.map mods ~f:(fun (id,name,_,_) -> Ident.name id, name.Asttypes.loc)
   | Tstr_type td_list ->
     List.map td_list ~f:(fun (id, name, _) ->
       Ident.name id, name.Asttypes.loc
@@ -169,8 +171,12 @@ let expose_module_binding item =
   let open Typedtree in
   match item.str_desc with
   | Tstr_module (mb_id, mb_name, mb_expr) ->
-    Some { mb_id ; mb_name ; mb_expr ; mb_loc = mb_name.Asttypes.loc }
-  | _ -> None
+    [{ mb_id ; mb_name ; mb_expr ; mb_loc = mb_name.Asttypes.loc }]
+  | Tstr_recmodule mods ->
+    List.map mods
+      ~f:(fun (mb_id, mb_name, _, mb_expr) ->
+          { mb_id ; mb_name ; mb_expr ; mb_loc = mb_name.Asttypes.loc })
+  | _ -> []
 
 let path_and_loc_of_cstr desc env =
   let open Types in

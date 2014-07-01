@@ -165,6 +165,8 @@ let str_ident_locs item =
       | _ -> []
     )
   | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
+  | Tstr_recmodule mbs ->
+    List.map mbs ~f:(fun mb -> Ident.name mb.mb_id , mb.mb_loc)
   | Tstr_type td_list ->
     List.map td_list ~f:(fun { typ_id ; typ_loc } ->
       Ident.name typ_id, typ_loc
@@ -180,8 +182,9 @@ let me_and_sig_of_include item =
 
 let expose_module_binding item =
   match item.Typedtree.str_desc with
-  | Typedtree.Tstr_module mb -> Some mb
-  | _ -> None
+  | Typedtree.Tstr_module mb -> [mb]
+  | Typedtree.Tstr_recmodule mbs -> mbs
+  | _ -> []
 
 let path_and_loc_of_cstr desc env =
   let open Types in

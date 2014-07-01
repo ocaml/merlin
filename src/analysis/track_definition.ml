@@ -144,11 +144,12 @@ let rec check_item modules =
       debug_log "(get_on_track) %s is included..." name ;
       `Included incl_mod
     | _ ->
-      match Merlin_types_custom.expose_module_binding item with
-      | Some mb when Ident.name mb.mb_id = name ->
+      try
+        let mbs = Merlin_types_custom.expose_module_binding item in
+        let mb = List.find ~f:(fun mb -> Ident.name mb.mb_id = name) mbs in
         debug_log "(get_on_track) %s is bound" name ;
         `Direct mb.mb_expr
-      | _ -> `Not_found
+      with Not_found -> `Not_found
   in
   function
   | [] ->
