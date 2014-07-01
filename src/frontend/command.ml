@@ -174,6 +174,20 @@ let dispatch (state : state) =
     let small_enclosings =
       let node = Completion.node_at typer pos in
       let env = node.BrowseT.t_env in
+      let include_lident = match node.BrowseT.t_node with
+        | BrowseT.Pattern _ -> false
+        | _ -> true
+      in
+      let include_uident = match node.BrowseT.t_node with
+        | BrowseT.Module_binding _
+        | BrowseT.Module_binding_name _
+        | BrowseT.Module_declaration _
+        | BrowseT.Module_declaration_name _
+        | BrowseT.Module_type_declaration _
+        | BrowseT.Module_type_declaration_name _
+          -> false
+        | _ -> true
+      in
       let loc_start =
         let l, c = Lexing.split_pos pos in
         Lexing.make_pos (l, c - offset)
@@ -182,21 +196,27 @@ let dispatch (state : state) =
         let l, c = Lexing.split_pos loc in
         Lexing.make_pos (l, c + int)
       in
-      List.filter_map exprs ~f:(fun source ->
-        try
-          let loc = { Location.
-            loc_start ;
-            loc_end = shift loc_start (String.length source) ;
-            loc_ghost = false ;
-          }
-          in
-          let ppf, to_string = Format.to_string () in
-          if Type_utils.type_in_env env ppf source then
-            Some (loc, to_string ())
-          else
-            None
-        with _ ->
+      List.filter_map exprs ~f:(function
+        | "" -> None
+        | source when not include_lident && Char.is_lowercase source.[0] ->
           None
+        | source when not include_uident && Char.is_uppercase source.[0] ->
+          None
+        | source ->
+          try
+            let loc = { Location.
+              loc_start ;
+              loc_end = shift loc_start (String.length source) ;
+              loc_ghost = false ;
+            }
+            in
+            let ppf, to_string = Format.to_string () in
+            if Type_utils.type_in_env env ppf source then
+              Some (loc, to_string ())
+            else
+              None
+          with _ ->
+            None
       )
     in
     List.filter_dup'

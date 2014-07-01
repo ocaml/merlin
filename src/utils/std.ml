@@ -479,3 +479,9 @@ end = struct
   let none : exn t = make Not_found
   let none () : 'a t = Obj.magic none
 end
+
+module Char = struct
+  include Char
+  let is_lowercase c = lowercase c = c
+  let is_uppercase c = uppercase c = c
+end
