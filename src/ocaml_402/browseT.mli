@@ -85,6 +85,9 @@ type node =
   | Class_type_declaration   of class_type_declaration
 
   | Method_call              of expression * meth
+  | Module_binding_name      of module_binding
+  | Module_declaration_name  of module_declaration
+  | Module_type_declaration_name of module_type_declaration
 
 type t = {
   t_node     : node;

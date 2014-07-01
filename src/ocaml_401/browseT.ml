@@ -40,6 +40,9 @@ type node =
   | Class_type_declaration   of class_type_declaration
 
   | Method_call              of expression * meth
+  | Module_binding_name      of module_binding
+  | Module_declaration_name  of module_declaration
+  | Module_type_declaration_name of module_type_declaration
 
 let default_loc = Location.none
 let default_env = Env.empty
@@ -101,6 +104,10 @@ let rec of_node t_node =
     | Class_type_declaration  {ci_loc = loc}
     | Extension_constructor   {ext_loc = loc}
       -> Some loc, None
+    | Module_binding_name          {mb_name = loc}
+    | Module_declaration_name      {md_name = loc}
+    | Module_type_declaration_name {mtd_name = loc}
+      -> Some loc.Location.loc, None
     | Structure {str_final_env = env} | Signature {sig_final_env = env}
       -> None, Some env
     | Case _ | Class_structure _ | Value_binding _ | Type_extension _
@@ -141,8 +148,8 @@ let rec of_node t_node =
       List.map (fun item -> of_node (Structure_item item)) str_items
     | Structure_item { str_desc; str_loc; str_env } ->
       of_structure_item_desc str_desc []
-    | Module_binding { mb_expr; mb_loc } ->
-      [of_node (Module_expr mb_expr)]
+    | Module_binding mb ->
+      [of_node (Module_expr mb.mb_expr); of_node (Module_binding_name mb)]
     | Value_binding { vb_pat; vb_expr } ->
       [of_pattern vb_pat; of_expression vb_expr]
     | Module_type { mty_desc; mty_env; mty_loc } ->
@@ -151,10 +158,10 @@ let rec of_node t_node =
       List.map (fun item -> of_node (Signature_item item)) sig_items
     | Signature_item { sig_desc; sig_env; sig_loc } ->
       of_signature_item_desc sig_desc []
-    | Module_declaration { md_type; md_loc } ->
-      [of_module_type md_type]
-    | Module_type_declaration { mtd_type } ->
-      of_option of_module_type mtd_type []
+    | Module_declaration md ->
+      [of_module_type md.md_type; of_node (Module_declaration_name md)]
+    | Module_type_declaration mtd ->
+      of_option of_module_type mtd.mtd_type [of_node (Module_type_declaration_name mtd)]
     | With_constraint (Twith_type td | Twith_typesubst td) ->
       let { typ_params; typ_type ; typ_cstrs; typ_kind; typ_private;
             typ_manifest; typ_variance; typ_loc } = td
@@ -233,6 +240,9 @@ let rec of_node t_node =
       [ of_node (Class_type ci_expr) ]
     | Dummy -> []
     | Method_call _ -> []
+    | Module_binding_name _ -> []
+    | Module_declaration_name _ -> []
+    | Module_type_declaration_name _ -> []
   in
   { t_node; t_loc; t_env;
     t_children = Lazy.from_fun children }
@@ -614,6 +624,9 @@ let string_of_node = function
   | Class_description       _ -> "class_description"
   | Class_type_declaration  _ -> "class_type_declaration"
   | Method_call             _ -> "method_call"
+  | Module_binding_name     _ -> "module_binding_name"
+  | Module_declaration_name _ -> "module_declaration_name"
+  | Module_type_declaration_name _ -> "module_type_declaration_name"
 
 let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =

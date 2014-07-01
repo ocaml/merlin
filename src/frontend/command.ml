@@ -144,8 +144,12 @@ let dispatch (state : state) =
       | { t_loc; t_env;
           t_node = ( Module_expr {mod_type = m}
                    | Module_type {mty_type = m}
+                   | Module_binding {mb_expr = {mod_type = m}}
                    | Module_declaration {md_type = {mty_type = m}}
-                   | Module_type_declaration {mtd_type = Some {mty_type = m}} )
+                   | Module_type_declaration {mtd_type = Some {mty_type = m}}
+                   | Module_binding_name {mb_expr = {mod_type = m}}
+                   | Module_declaration_name {md_type = {mty_type = m}}
+                   | Module_type_declaration_name {mtd_type = Some {mty_type = m}} )
         } ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env
