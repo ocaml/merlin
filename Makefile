@@ -3,6 +3,9 @@
 -include Makefile.config
 TARGET = ocamlmerlin
 
+TARGET_EMACS = emacs/merlin.elc
+EMACS = emacs
+
 DESTDIR ?=
 BIN_DIR := $(DESTDIR)$(BIN_DIR)
 SHARE_DIR := $(DESTDIR)$(SHARE_DIR)
@@ -24,7 +27,7 @@ OCAMLBUILD_LEFTOVERS = _build _tags src/config/myocamlbuild_config.ml ocamlmerli
 
 #### Default rule
 
-all: $(TARGET)
+all: $(TARGET) $(TARGET_EMACS)
 
 #### Configuration
 
@@ -63,6 +66,9 @@ preprocess_all_versions:
 debug: assert_configured
 	+$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITH_DEBUG=1 $(TARGET)
 
+%.elc : %.el
+	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
+
 clean:
 	@rm -f src/my_config.ml src/myocamlbuild_config.ml
 	+$(OCAMLMAKEFILE) clean
@@ -81,10 +87,11 @@ install-binary: $(TARGET)
 	install omake-merlin $(BIN_DIR)/omake-merlin
 	install jenga-merlin $(BIN_DIR)/jenga-merlin
 
-install-share: $(TARGET)
+install-share: $(TARGET) $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
 	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
+	-install -m 644 emacs/merlin.elc $(SHARE_DIR)/emacs/site-lisp/merlin.elc
 
 install-vim: $(TARGET)
 	install -d $(VIM_DIR)
