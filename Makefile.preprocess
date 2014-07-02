@@ -1,7 +1,7 @@
 MENHIR ?= menhir
 OCAMLLEX ?= ocamllex
 
-TYPER  ?= src/ocaml$(OCAML_VERSION)
+TYPER  ?= src/ocaml$(MERLIN_OCAML_VERSION)
 
 preprocess: parser lexer
 

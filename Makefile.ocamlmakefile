@@ -1,5 +1,3 @@
-#OCAML_VERSION =
-
 ifdef WITH_BIN_ANNOT
 	OCAMLFLAGS += -bin-annot
 endif
@@ -9,8 +7,8 @@ ifdef WITH_DEBUG
 	OCAMLLDFLAGS += -g
 endif
 
-RESULT ?= ocamlmerlin$(OCAML_VERSION)$(RESULT_SUFFIX)
-TYPER  ?= src/ocaml$(OCAML_VERSION)
+RESULT ?= ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
+TYPER  ?= src/ocaml$(MERLIN_OCAML_VERSION)
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 

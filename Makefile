@@ -46,7 +46,9 @@ $(TARGET): assert_configured
 
 all_versions:
 	for i in $(OCAML_VERSIONS); do \
-		$(OCAMLMAKEFILE) OCAML_VERSION=_$$i; \
+	  $(OCAMLMAKEFILE) clean; \
+		echo "# building for ocaml $$i"; \
+		$(OCAMLMAKEFILE) MERLIN_OCAML_VERSION=_$$i; \
 	done
 
 wine:
@@ -57,7 +59,7 @@ preprocess:
 
 preprocess_all_versions:
 	for i in $(OCAML_VERSIONS); do \
-		$(MAKE) -f Makefile.preprocess OCAML_VERSION=_$$i; \
+		$(MAKE) -f Makefile.preprocess MERLIN_OCAML_VERSION=_$$i; \
 	done
 
 debug: assert_configured
