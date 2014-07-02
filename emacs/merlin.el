@@ -535,11 +535,11 @@ the merlin buffer of the current buffer."
 
 (defun merlin-reset-user ()
   "Checks whether we need to change the current buffer viewed by merlin."
-  (let ((name buffer-file-name))
-    (with-current-buffer (merlin-process-buffer)
-      (when (not (string-equal merlin-process-last-user name))
-        (setq merlin-process-last-user name)
-        (merlin-load-project-file name)))))
+  (unless (merlin-is-last-user-p)
+    (let ((name (buffer-name)))
+      (with-current-buffer (merlin-process-buffer)
+        (setq merlin-process-last-user name)))
+    (merlin-load-project-file)))
 
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
@@ -592,11 +592,10 @@ the error message otherwise print a generic error message."
 
 ;; SPECIAL CASE OF COMMANDS
 
-(defun merlin-rewind (&optional buffer)
+(defun merlin-rewind ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (interactive)
-  (let* ((buffer (if buffer buffer buffer-file-name))
-         (ext (if buffer-file-name
+  (let* ((ext (if buffer-file-name
                   (file-name-extension buffer-file-name)
                 "ml"))
          (ext (if (string-equal ext "mli") 'mli 'ml))
@@ -693,40 +692,39 @@ the error message otherwise print a generic error message."
 ;; BUFFER SYNCHRONIZATION ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin-buffer-substring (start end)
+(defun merlin--buffer-substring (start end)
    "Return content of buffer between two points or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
 
-(defun merlin-tell-source (code)
+(defun merlin--tell-source (code)
   "Tell CODE to merlin and returns whether the position if marker is still active."
   (let ((result (merlin-send-cursor-command `(tell source ,code))))
      (when (cdr result) (car result))))
 
-(defun merlin-tell-rest ()
+(defun merlin--tell-rest ()
   "Put a marker and tell merlin until marker is satisfied."
   (let* ((marker (cdr (merlin-send-cursor-command '(tell marker))))
          (point (when marker (point))))
     (while (and point
 		(not (= point (point-max))))
       (forward-line 10)
-      (setq point (merlin-tell-source
-		   (merlin-buffer-substring point (point)))))
+      (setq point (merlin--tell-source
+		   (merlin--buffer-substring point (point)))))
     (when point
       (merlin-send-cursor-command '(tell eof)))))
 
-(defun merlin-tell-to-point (&optional point)
+(defun merlin--tell-to-point (&optional point)
   "Tell to merlin part of the buffer between START and END. START
 may be nil, in that case the current cursor of merlin is used."
-  (merlin-reset-user)
   (let* ((point (if point point (point)))
          (start (min point merlin-dirty-point))
          (start (car (merlin-send-cursor-command
                        `(tell start at ,(merlin-unmake-point start))))))
     (setq merlin-dirty-point point)
     (save-excursion
-      (merlin-tell-source (merlin-buffer-substring start point))
+      (merlin--tell-source (merlin--buffer-substring start point))
       (goto-char point)
-      (merlin-tell-rest))))
+      (merlin--tell-rest))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINT SYNCHRONIZATION ;;
@@ -767,8 +765,9 @@ Called when an edit is made by the user."
 
 (defun merlin-sync-to-point (&optional point skip-marker)
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
+  (merlin-reset-user)
   (unless point (setq point (point)))
-  (merlin-tell-to-point point)
+  (merlin--tell-to-point point)
   (unless skip-marker
     (merlin-send-cursor-command '(seek marker)))
   (merlin-sync-lock-zone-display))
@@ -1004,7 +1003,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
       ((bounds (bounds-of-thing-at-point 'ocaml-atom))
        (start  (if bounds (car bounds) (point)))
        (end    (if bounds (cdr bounds) (point)))
-       (string (if bounds (merlin-buffer-substring start end) ""))
+       (string (if bounds (merlin--buffer-substring start end) ""))
        (request (if string (replace-regexp-in-string "[^\\.]+$" "" string))))
     (merlin--kill-overlapping-errors start end)
     (when (or (not merlin-completion-at-point-cache-query)
@@ -1121,7 +1120,7 @@ variable `merlin-ac-cache')."
 
 (defun merlin-ac-fetch-type ()
   "Prints the type of the selected candidate"
-  (let ((candidate (merlin-buffer-substring merlin-completion-point  (point))))
+  (let ((candidate (merlin--buffer-substring merlin-completion-point  (point))))
     (when merlin-completion-types
       (mapc (lambda (item)
               (when (string-equal candidate item)
@@ -1196,7 +1195,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-type-region ()
   "Show the type of the region."
   (lexical-let*
-      ((substring (merlin-buffer-substring (region-beginning) (region-end)))
+      ((substring (merlin--buffer-substring (region-beginning) (region-end)))
        (on-success (lambda (type) (merlin-type-display nil type nil)))
        (on-error   (lambda (err)
                      (let ((msg (assoc 'message err))
@@ -1225,7 +1224,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (let* ((bounds (bounds-of-thing-at-point 'ocaml-atom))
          (start  (if bounds (car bounds) (point)))
          (end    (if bounds (cdr bounds) (point)))
-         (string (if bounds (merlin-buffer-substring start end) ""))
+         (string (if bounds (merlin--buffer-substring start end) ""))
          (fallback (list (cons 'assoc nil)
                          (cons 'expr string)
                          (cons 'offset (- (point) start))))
@@ -1329,19 +1328,17 @@ is active)."
     (when failed (message (cdr failed))))
   (merlin-error-reset))
 
-(defun merlin-load-project-file (&optional buffer)
-  "Load the .merlin file corresponding to BUFFER (or the current
-buffer if BUFFER is nil)."
+(defun merlin-load-project-file ()
+  "Load the .merlin file corresponding to the current buffer."
   (interactive)
-  (let ((buffer (if buffer buffer buffer-file-name)))
-    (when buffer
-      (let* ((r (merlin-send-command (list 'project 'find buffer)))
-             (failed (assoc 'failures r))
-             (result (assoc 'result r)))
-        (when failed (message (cdr failed)))
-        (when (and result (listp (cdr result)))
-          (setq merlin-project-file (cadr result)))
-        (merlin-rewind buffer)))))
+  (when buffer-file-name
+    (let* ((r (merlin-send-command `(project find ,buffer-file-name)))
+           (failed (assoc 'failures r))
+           (result (assoc 'result r)))
+      (when failed (message (cdr failed)))
+      (when (and result (listp (cdr result)))
+        (setq merlin-project-file (cadr result)))
+      (merlin-rewind))))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
