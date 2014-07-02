@@ -66,7 +66,7 @@ let remove_file filename =
 let canonicalize_filename ?cwd path =
   let rec split path acc =
     match Filename.dirname path, Filename.basename path with
-    | dir, base when dir = path -> base :: acc
+    | dir, _ when dir = path -> dir :: acc
     | dir, base -> split dir (base :: acc)
   in
   let parts =
