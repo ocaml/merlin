@@ -3,7 +3,10 @@
 -include Makefile.config
 TARGET = ocamlmerlin
 
-TARGET_EMACS = emacs/merlin.elc
+ifdef ENABLE_COMPILED_EMACS_MODE
+    TARGET_EMACS = emacs/merlin.elc
+endif
+
 EMACS = emacs
 
 DESTDIR ?=
@@ -71,6 +74,7 @@ debug: assert_configured
 
 clean:
 	@rm -f src/my_config.ml src/myocamlbuild_config.ml
+	@rm -f emacs/merlin.elc
 	+$(OCAMLMAKEFILE) clean
 
 check: $(TARGET)
