@@ -1,0 +1,4 @@
+OCAMLFIND=wine ocamlfind
+RESULT_SUFFIX=.exe
+
+include Makefile.ocamlmakefile

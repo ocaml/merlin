@@ -49,6 +49,9 @@ all_versions:
 		$(OCAMLMAKEFILE) OCAML_VERSION=_$$i; \
 	done
 
+wine:
+	$(MAKE) -f Makefile.wine
+
 preprocess:
 	$(MAKE) -f Makefile.preprocess
 
