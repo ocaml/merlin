@@ -245,10 +245,6 @@ field logfile (see `merlin-start-process')"
   "Pending errors.")
 (make-variable-buffer-local 'merlin-pending-errors)
 
-(defvar merlin-pending-errors-overlays nil
-  "Overlays for the pending errors.")
-(make-variable-buffer-local 'merlin-pending-errors-overlays)
-
 (defvar merlin-highlight-overlay nil
   "Merlin overlay used for highlights.")
 
@@ -874,8 +870,6 @@ If there is no error, do nothing."
   (if merlin-pending-errors
       (let ((err (pop merlin-pending-errors)))
         (goto-char (cadr (assoc 'bounds err)))
-        (if merlin-pending-errors-overlays
-            (delete-overlay (pop merlin-pending-errors-overlays)))
         (if merlin-pending-errors
             (message "%s (%d more errors, use %s to go to the next)"
                      (cdr (assoc 'message err))
@@ -887,8 +881,7 @@ If there is no error, do nothing."
 
 (defun merlin-error-delete-overlays ()
   "Remove margin error overlays."
-  (mapc #'delete-overlay merlin-pending-errors-overlays)
-  (setq merlin-pending-errors-overlays nil))
+  (remove-overlays nil nil 'merlin-kind 'error))
 
 (defun merlin-error-warning-p (msg)
   "Tell if the message MSG is a warning."
@@ -900,20 +893,24 @@ If there is no error, do nothing."
   (setq merlin-pending-errors nil)
   (merlin-error-delete-overlays))
 
+(defun merlin--overlay-p (overlay)
+  "Returns non-nil if OVERLAY is managed by merlin."
+  (overlay-get overlay 'merlin-kind))
+
+(defun merlin--clear-error-overlay (overlay)
+  "Delete an overlay, remove corresponding error from list."
+  (let ((err (overlay-get overlay 'merlin-pending-error)))
+    (when err (setq merlin-pending-errors
+                    (delete err merlin-pending-errors))))
+  (delete-overlay overlay))
+
 (defun merlin--kill-error-if-edited (overlay
 				     is-after
 				     beg
 				     end
 				     &optional length)
   "Remove an error from the pending error lists if it is edited by the user."
-  (when is-after
-    (let ((err (nth (position overlay merlin-pending-errors-overlays)
-		    merlin-pending-errors)))
-      (setq merlin-pending-errors
-	    (delete err merlin-pending-errors))
-      (setq merlin-pending-errors-overlays
-	    (delete overlay merlin-pending-errors-overlays))
-      (delete-overlay overlay))))
+  (when is-after (merlin--clear-error-overlay overlay)))
 
 (defun merlin-error-display-in-margin (errors)
   "Given a list of ERRORS, put annotations in the margin corresponding to them."
@@ -923,24 +920,24 @@ If there is no error, do nothing."
                    (bounds (cons (copy-marker (car bounds))
                                  (copy-marker (cdr bounds)))))
               (acons 'bounds bounds err))))
-         (err-overlay
-          (lambda (err)
-            (let* ((bounds (cdr (assoc 'bounds err)))
-                   (overlay (make-overlay (car bounds) (cdr bounds))))
-	      (push #'merlin--kill-error-if-edited
-		    (overlay-get overlay 'modification-hooks))
-              (if (merlin-error-warning-p (cdr (assoc 'message err)))
-                  (merlin-put-margin-overlay overlay
-                                             merlin-margin-warning-string
-                                             'merlin-compilation-warning-face)
-                (merlin-put-margin-overlay overlay
-                                           merlin-margin-error-string
-                                           'merlin-compilation-error-face))
-              overlay)))
          (errors   (mapcar err-point errors)))
     (setq merlin-pending-errors errors)
-    (when merlin-error-in-margin (setq merlin-pending-errors-overlays
-                                       (mapcar err-overlay errors)))))
+    (when merlin-error-in-margin
+      (dolist (err errors)
+        (let* ((bounds (cdr (assoc 'bounds err)))
+               (overlay (make-overlay (car bounds) (cdr bounds))))
+          (overlay-put overlay 'merlin-kind 'error)
+          (overlay-put overlay 'merlin-pending-error err)
+          (push #'merlin--kill-error-if-edited
+                (overlay-get overlay 'modification-hooks))
+          (if (merlin-error-warning-p (cdr (assoc 'message err)))
+            (merlin-put-margin-overlay overlay
+                                       merlin-margin-warning-string
+                                       'merlin-compilation-warning-face)
+            (merlin-put-margin-overlay overlay
+                                       merlin-margin-error-string
+                                       'merlin-compilation-error-face))
+          overlay)))))
 
 (defun merlin--error-check (view-errors-p)
   "Check for errors.
@@ -1005,16 +1002,10 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin--kill-overlapping-errors (start end)
   "Kill any pending errors that overlap the region START..END."
   ;; fixme: factor out common bits with kill-if-edited
-  (loop for err in merlin-pending-errors
-	for overlay in merlin-pending-errors-overlays
-	if (and (>= (overlay-start overlay) start)
-		(<= (overlay-end overlay) end))
-	  do (delete-overlay overlay)
-	else
-	  collect err into surviving-errors
-	  and collect overlay into surviving-overlays
-	finally (setq merlin-pending-errors surviving-errors
-		      merlin-pending-errors-overlays surviving-overlays)))
+  (let ((overlays (overlays-in start end)))
+    (delete-if-not 'merlin--overlay-p overlays)
+    (dolist (overlay overlays)
+      (merlin--clear-error-overlay overlay))))
 
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
