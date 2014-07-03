@@ -41,9 +41,10 @@ For instance, given moduleA.ml and moduleB.mli in source path, use: >
     :MLI ModuleB
 <
 
-:TypeEnclosing                                                *:TypeEnclosing*
+:TypeOf [expr]                                                       *:TypeOf*
 
-Highlights the expression under the cursor and prints its type.
+If given an expression, returns its type.
+Otherwise, highlights the expression under the cursor and prints its type.
 Use in conjunction with |:GrowEnclosing| and |:ShrinkEnclosing|.
 
 Bound to <LocalLeader>t by default in normal mode.
@@ -53,14 +54,6 @@ Bound to <LocalLeader>t by default in normal mode.
 In visual mode, returns the type of the selected expression.
 
 Bound to <LocalLeader>t by default in visual mode.
-
-:TypeOf [ident]                                                      *:TypeOf*
-
-Returns the type of the ident, if it is given, otherwise the type of the ident
-under the cursor.
-
-In both cases |ident| is typed in the environment active at the cursor
-position.
 
 :GrowEnclosing                                                *:GrowEnclosing*
 
