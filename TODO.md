@@ -24,10 +24,6 @@ IDEA (later)
 - perf: send batches of token rather than entering/exiting the whole
   parser barrier for each token
 
-VIM
-document g:merlin_move_to_project
-document g:merlin_display_occurence_list
-
 DONE
 - recovery heuristic is really not sufficient, a few test cases easily trigger
   bad recursion:
