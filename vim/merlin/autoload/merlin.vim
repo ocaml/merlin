@@ -11,8 +11,8 @@ if !exists("g:merlin_ignore_warnings")
   let g:merlin_ignore_warnings = "false"
 endif
 
-if !exists("g:merlin_display_occurence_list")
-  let g:merlin_display_occurence_list = 1
+if !exists("g:merlin_display_occurrence_list")
+  let g:merlin_display_occurrence_list = 1
 endif
 
 let s:current_dir=expand("<sfile>:p:h")
@@ -201,24 +201,24 @@ function! merlin#Locate(...)
   endif
 endfunction
 
-function! merlin#Occurences()
-  let l:occurences = []
+function! merlin#Occurrences()
+  let l:occurrences = []
   let l:pos = 0
-  py vim.command ("let l:pos = %d" % merlin.vim_occurences("l:occurences"))
+  py vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences"))
 
-  if l:occurences == []
+  if l:occurrences == []
     return
   endif
 
-  call setloclist(0, l:occurences)
-  if g:merlin_display_occurence_list
+  call setloclist(0, l:occurrences)
+  if g:merlin_display_occurrence_list
     lopen
     execute ":ll! " . l:pos
   endif
 endfunction
 
-function! merlin#OccurencesRename(text)
-  py merlin.vim_occurences_replace(vim.eval("a:text"))
+function! merlin#OccurrencesRename(text)
+  py merlin.vim_occurrences_replace(vim.eval("a:text"))
 endfunction
 
 function! merlin#SyntasticGetLocList()
@@ -281,8 +281,8 @@ function! merlin#Register()
 
   command! -buffer -nargs=? Locate call merlin#Locate(<q-args>)
 
-  command! -buffer -nargs=0 Occurences call merlin#Occurences()
-  command! -buffer -nargs=* Rename call merlin#OccurencesRename(<f-args>)
+  command! -buffer -nargs=0 Occurrences call merlin#Occurrences()
+  command! -buffer -nargs=* Rename call merlin#OccurrencesRename(<f-args>)
 
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)

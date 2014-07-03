@@ -460,7 +460,7 @@ let dispatch (state : state) =
   | (Path_reset : a request) ->
     Project.User.reset state.project
 
-  | (Occurences (`Ident_at pos) : a request) ->
+  | (Occurrences (`Ident_at pos) : a request) ->
     let str = Typer.structures (Buffer.typer state.buffer) in
     let str = Browse.of_structures str in
     let node = match Browse.enclosing pos str with
@@ -468,7 +468,7 @@ let dispatch (state : state) =
       | [] -> BrowseT.dummy
     in
     let get_loc {Location.txt = _; loc} = loc in
-    let ident_occurence () =
+    let ident_occurrence () =
       let paths =
         match node.BrowseT.t_node with
         | BrowseT.Expression e -> BrowseT.expression_paths e
@@ -476,7 +476,7 @@ let dispatch (state : state) =
         | _ -> []
       in
       let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
-      Logger.infojf section ~title:"Occurences paths"
+      Logger.infojf section ~title:"Occurrences paths"
         (fun paths ->
           let dump_path ({Location.txt; loc} as p) =
             let ppf, to_string = Format.to_string () in
@@ -494,19 +494,19 @@ let dispatch (state : state) =
       | [] -> []
       | (path :: _) ->
         let path = path.Location.txt in
-        let ts = List.concat_map ~f:(Browse.all_occurences path) str in
+        let ts = List.concat_map ~f:(Browse.all_occurrences path) str in
         let loc (_t,paths) = List.map ~f:get_loc paths in
         List.concat_map ~f:loc ts
 
-    and constructor_occurence d =
+    and constructor_occurrence d =
       let ts = List.concat_map str
-          ~f:(Browse.all_constructor_occurences (node,d)) in
+          ~f:(Browse.all_constructor_occurrences (node,d)) in
       List.map ~f:get_loc ts
 
     in
     let locs = match BrowseT.is_constructor node with
-      | Some d -> constructor_occurence d.Location.txt
-      | None -> ident_occurence ()
+      | Some d -> constructor_occurrence d.Location.txt
+      | None -> ident_occurrence ()
     in
     let loc_start l = l.Location.loc_start in
     let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in

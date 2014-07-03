@@ -37,11 +37,11 @@
   (length occurrences))
 
 (defun merlin-iedit-occurrences ()
-  "Edit occurences of identifier under cursor using `iedit'"
+  "Edit occurrences of identifier under cursor using `iedit'"
   (interactive)
   (merlin-sync-to-point (point-max) t)
   (let* ((pos (merlin-unmake-point (point)))
-         (r (merlin-send-command `(occurences ident at ,pos))))
+         (r (merlin-send-command `(occurrences ident at ,pos))))
     (when r
       (if (listp r)
           (flet ((iedit-printable (a)

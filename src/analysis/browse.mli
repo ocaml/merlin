@@ -48,11 +48,11 @@ val nearest_before : Lexing.position -> t list -> t option
  * will return the contexts of "x", "g x" then "f (g x)". *)
 val enclosing : Lexing.position -> t list -> t list
 
-val all_occurences : Path.t -> t -> (t * Path.t Location.loc list) list
+val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
 
 val of_structures : Typedtree.structure list -> t list
 
-val all_constructor_occurences :
+val all_constructor_occurrences :
   t * [ `Description of Types.constructor_description
       | `Declaration of Typedtree.constructor_declaration ]
   -> t -> t Location.loc list

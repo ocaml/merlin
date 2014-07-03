@@ -17,7 +17,7 @@
   -> completion
   -> locate
   -> type enclosing / type expr
-  -> occurences
+  -> occurrences
 - Reimplement verbosity, expand module aliases
 
 IDEA (later)

@@ -98,7 +98,7 @@ type _ request =
     :  [`File|`Find]
      * string
     -> (string list * [`Ok | `Failures of (string * exn) list]) request
-  | Occurences
+  | Occurrences
     : [`Ident_at of position]
     -> Location.t list request
   | Version

@@ -183,9 +183,9 @@ def command_locate(path, line, col):
   except MerlinExc as e:
     try_print_error(e)
 
-def command_occurences(line, col):
+def command_occurrences(line, col):
   try:
-    lst_or_err = command("occurences", "ident", "at", {'line':line, 'col':col})
+    lst_or_err = command("occurrences", "ident", "at", {'line':line, 'col':col})
     if not isinstance(lst_or_err, list):
       print(lst_or_err)
     else:
@@ -333,12 +333,12 @@ def vim_locate_under_cursor():
         stop += 1
   vim_locate_at_cursor(line[start:stop])
 
-# Occurences
-def vim_occurences(vimvar):
+# Occurrences
+def vim_occurrences(vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
   sync_full_buffer()
-  lst = command_occurences(line, col)
+  lst = command_occurrences(line, col)
   lst = map(lambda x: x['start'], lst)
   bufnr = vim.current.buffer.number
   nr = 0
@@ -347,16 +347,16 @@ def vim_occurences(vimvar):
     lnum = pos['line']
     lcol = pos['col']
     if (lnum, lcol) <= (line, col): cursorpos = nr
-    vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'occurence','type':'I','valid':1}" %
+    vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'occurrence','type':'I','valid':1}" %
         (bufnr, lnum, lcol + 1, nr))
     nr = nr + 1
     vim.command("call add(%s, l:tmp)" % vimvar)
   return cursorpos + 1
 
-def vim_occurences_replace(content):
+def vim_occurrences_replace(content):
   sync_full_buffer()
   line, col = vim.current.window.cursor
-  lst = command_occurences(line, col)
+  lst = command_occurrences(line, col)
   lst.reverse()
   bufnr = vim.current.buffer.number
   nr, cursorpos = 0, 0

@@ -89,7 +89,7 @@ let enclosing pos envs =
     let results = traverse_branch pos t in
     List.drop_while ~f:not_enclosing results
 
-let all_occurences path =
+let all_occurrences path =
   let rec aux acc t =
     let acc =
       let paths =
@@ -171,7 +171,7 @@ let same_constructor env a b =
     List.exists a ~f:(fun id -> List.exists b ~f:(Ident.same id))
   end
 
-let all_constructor_occurences ({t_env = env},d) t =
+let all_constructor_occurrences ({t_env = env},d) t =
   let rec aux acc t =
     let acc =
       match is_constructor t with

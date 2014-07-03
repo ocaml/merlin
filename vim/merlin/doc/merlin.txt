@@ -67,14 +67,14 @@ expression. (i.e. the largest expression, centered around the position where
 |:TypeEnclosing| was called, which is contained in the currently highlighted
 expression).
 
-:Occurences                                                      *:Occurences*
+:Occurrences                                                    *:Occurrences*
 
-List all occurences of identifier under cursor in current buffer.
-See |merlin_display_occurence_list|.
+List all occurrences of identifier under cursor in current buffer.
+See |merlin_display_occurrence_list|.
 
 :Rename <ident>                                                      *:Rename*
 
-Rename all occurences of identifier under cursor to <ident>.
+Rename all occurrences of identifier under cursor to <ident>.
 
 ==============================================================================
 OPTIONS                                                       *merlin-options*
@@ -102,12 +102,12 @@ If set to true, merlin will automatically change local directory of an ocaml
 buffer to the root of the ".merlin" file. >
   let g:merlin_move_to_project = "true"
 <
-                                             *'merlin_display_occurence_list'*
+                                             *'merlin_display_occurrence_list'*
 
 Default: true.
-If set to true, merlin automatically display the list of occurences in a
-separate window after a :Occurences command. >
-  let g:merlin_display_occurence_list = 0
+If set to true, merlin automatically display the list of occurrences in a
+separate window after a :Occurrences command. >
+  let g:merlin_display_occurrence_list = 0
 <
 
 ==============================================================================

@@ -94,8 +94,8 @@ no argument and should return the configuration (see
   "If non-nil, report warnings, otherwise ignore them."
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-occurences-buffer-name "*merlin-occurences*"
-  "The name of the buffer listing occurences of an identifier after a call to `merlin-occurences'."
+(defcustom merlin-occurrences-buffer-name "*merlin-occurrences*"
+  "The name of the buffer listing occurrences of an identifier after a call to `merlin-occurrences'."
   :group 'merlin :type 'string)
 
 (defcustom merlin-type-buffer-name "*merlin-types*"
@@ -150,8 +150,8 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "If non-nil, specify the minimum number of characters to wait before allowing auto-complete"
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-occurences-show-buffer 'other
-  "Determine how to display the occurences list after a call to `merlin-occurences'."
+(defcustom merlin-occurrences-show-buffer 'other
+  "Determine how to display the occurrences list after a call to `merlin-occurrences'."
   :group 'merlin :type '(choice (const :tag "Don't show list" never)
                                 (const :tag "Show in the current window" same)
                                 (const :tag "Show in another window" other)))
@@ -299,7 +299,7 @@ associated to the current buffer."
     (insert s)))
 
 (defun merlin-get-occ-buff ()
-  (get-buffer-create merlin-occurences-buffer-name))
+  (get-buffer-create merlin-occurrences-buffer-name))
 
 (defun merlin-goto-point (data)
   "Go to the point indicated by `DATA' which must be an assoc list with fields
@@ -1413,7 +1413,7 @@ is active)."
 ;; OCCURENCES ;;
 ;;;;;;;;;;;;;;;;
 
-(defun merlin--occurence-text (line-num marker start end source-buf)
+(defun merlin--occurrence-text (line-num marker start end source-buf)
   (concat (propertize (format "%7d:" line-num)
 		      'occur-prefix t
 		      'occur-target marker
@@ -1437,7 +1437,7 @@ is active)."
 		      'occur-target marker)
 	  (propertize "\n" 'occur-target marker)))
 
-(defun merlin-occurences-populate-buffer (lst)
+(defun merlin-occurrences-populate-buffer (lst)
   (let ((src-buff (buffer-name))
 	(occ-buff (merlin-get-occ-buff))
 	(positions
@@ -1452,7 +1452,7 @@ is active)."
 	    (pending-lines-text))
 	(erase-buffer)
 	(occur-mode)
-	(insert (propertize (format "%d occurences in buffer: %s"
+	(insert (propertize (format "%d occurrences in buffer: %s"
 				    (length lst)
 				    src-buff)
 			    'font-lock-face list-matching-lines-buffer-name-face
@@ -1476,7 +1476,7 @@ is active)."
 		 (lines-text
 		  (if (equal line pending-line)
 		      pending-lines-text
-		    (merlin--occurence-text line
+		    (merlin--occurrence-text line
 					    marker
 					    start-buf-pos
 					    end-buf-pos
@@ -1505,26 +1505,28 @@ is active)."
 	  (insert pending-lines-text))
 	(goto-char (point-min))))))
 
-(defun merlin-occurences-list (lst)
+(defun merlin-occurrences-list (lst)
   (save-excursion
-    (merlin-occurences-populate-buffer lst)
-    (cond ((equal merlin-occurences-show-buffer 'same)
+    (merlin-occurrences-populate-buffer lst)
+    (cond ((equal merlin-occurrences-show-buffer 'same)
            (switch-to-buffer (merlin-get-occ-buff)))
-          ((equal merlin-occurences-show-buffer 'other)
+          ((equal merlin-occurrences-show-buffer 'other)
            (switch-to-buffer-other-window (merlin-get-occ-buff)))
           (t nil))))
 
-(defun merlin-occurences ()
-  "List all occurences of identifier under cursor in buffer."
+(defun merlin-occurrences ()
+  "List all occurrences of identifier under cursor in buffer."
   (interactive)
   (merlin-sync-to-point (point-max) t)
   (let* ((r (merlin-send-command
-             (list 'occurences 'ident 'at
+             (list 'occurrences 'ident 'at
                    (merlin-unmake-point (point))))))
     (when r
       (if (listp r)
-          (merlin-occurences-list r)
+          (merlin-occurrences-list r)
         (error "%s" r)))))
+
+(define-obsolete-function-alias 'merlin-occurences 'merlin-occurrences)
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEMANTIC MOVEMENT ;;
