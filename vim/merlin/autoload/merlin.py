@@ -205,6 +205,7 @@ def sync_buffer_to(to_line, to_col, load_project=True,skip_marker=False):
 
   if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
     line, col = min(saved_sync.pos(),(to_line,to_col))
+    col = 0
     command_seek("exact", line, col)
   else:
     if load_project:
