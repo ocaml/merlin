@@ -184,11 +184,14 @@ function! merlin#Complete(findstart,base)
   let base = s:prepended . a:base
   let l:props = []
   py merlin.vim_complete_cursor(vim.eval("base"),"l:props")
-  if v:version <= 703
-    return l:props
-  else
-    return {'words': l:props, 'refresh': 'always'}
-  endif
+
+  " Workaround https://github.com/the-lambda-church/merlin/issues/223 vim 704
+  return l:props
+  "if v:version <= 703
+  "  return l:props
+  "else
+  "  return {'words': l:props, 'refresh': 'always'}
+  "endif
 endfunction
 
 function! merlin#Locate(...)
