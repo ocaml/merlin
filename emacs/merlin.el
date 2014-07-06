@@ -56,12 +56,12 @@
   :group 'merlin)
 
 (defface merlin-compilation-warning-face
-  '((t :inherit compilation-error))
+  '((t :inherit compilation-warning))
   "If non-nil, face to use to highlight merlin warnings."
   :group 'merlin)
 
 (defface merlin-compilation-error-face
-  '((t :inherit compilation-warning))
+  '((t :inherit compilation-error))
   "If non-nil, face to use to highlight merlin errors."
   :group 'merlin)
 
