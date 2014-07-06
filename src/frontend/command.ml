@@ -121,6 +121,7 @@ let dispatch (state : state) =
   | (Type_enclosing ((expr, offset), pos) : a request) ->
     let open BrowseT in
     let open Typedtree in
+    let open Override in
     let typer = Buffer.typer state.buffer in
     let structures = Typer.structures typer in
     let structures = Browse.of_structures structures in
