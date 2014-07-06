@@ -1565,6 +1565,7 @@ Returns the position."
   "Update merlin to the end-of-file, reporting errors."
   (interactive)
   (when merlin-mode (merlin--error-check t)))
+(define-obsolete-function-alias 'merlin-to-end 'merlin-error-check)
 
 (defun merlin-customize ()
   "Open the customize buffer for the group merlin."
