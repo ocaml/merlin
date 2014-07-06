@@ -1,5 +1,5 @@
 #!/bin/sh
-SUBMODULES="vim/vimbufsync src/ocaml_400 src/ocaml_401"
+SUBMODULES="vim/vimbufsync"
 
 git submodule update
 for i in $SUBMODULES; do
