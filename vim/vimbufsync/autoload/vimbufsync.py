@@ -1,19 +1,19 @@
 # VIMBUFSYNC, original version by Frederic Bour <frederic.bour _ lakaban.net>
 # Released under the terms of the WTFPL license. See below.
- 
+
 #
 #            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
 #                    Version 2, December 2004
-# 
+#
 # Copyright (C) 2004 Sam Hocevar <sam@hocevar.net>
-# 
+#
 # Everyone is permitted to copy and distribute verbatim or modified
 # copies of this license document, and changing it is allowed as long
 # as the name is changed.
-# 
+#
 #            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
 #   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
-# 
+#
 #  0. You just DO WHAT THE FUCK YOU WANT TO.
 #
 
@@ -96,9 +96,9 @@ class BufferRevision:
     return self._buf.number
 
   def pos(self):
-    """Position of the first character that differs between revision and 
+    """Position of the first character that differs between revision and
        current contents. This can only decrease over time, when (1,1) is
-       reached, the buffer is completely different""" 
+       reached, the buffer is completely different"""
     buf = self.buf()
     if buf and self._last_rev != buf._revision() and self._last_pos > (1,1):
       (self._last_pos,self._last_rev) = buf._validate_revision(self._rev)
@@ -107,7 +107,7 @@ class BufferRevision:
   def line(self):
     """Index of the first line that differs between revision and current
        contents. This can only decrease over time, when 1 is reached, the
-       buffer is completely different""" 
+       buffer is completely different"""
     return self.pos()[0]
 
   def col(self):
@@ -143,8 +143,6 @@ class ShadowBuffer:
     first_pass = previous == None
     if first_pass:
       return None
-    if not len:
-      return []
     return [k for (k,v) in changes.items()
               if not k in previous or previous[k] < v]
 
@@ -152,7 +150,7 @@ class ShadowBuffer:
     changes = self._find_changes()
     if changes == None:
       return 1
-    lines = set(lin for lin,col,txt in changes) 
+    lines = set(lin for lin,col,txt in changes)
     if lines:
       return min(lines)
     return None
@@ -176,7 +174,7 @@ class ShadowBuffer:
       self._revisions_num = self._revisions_num[:last]
     else:
       self._revisions_pos = []
-      self._revisions_num = []    
+      self._revisions_num = []
     self._revisions_pos.append((line,col))
     self._revisions_num.append(self._rev)
 
@@ -261,7 +259,7 @@ def garbage_collect():
       del shadow_buffers[nr]
       for l in deletion_listeners:
         try:
-          l.deleted(shadow,nr) 
+          l.deleted(shadow,nr)
         except:
           pass
 
