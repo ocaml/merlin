@@ -390,8 +390,9 @@ end = struct
       in
       let item_pred = function
         | Lexer.Valid (cur,_,_) when pos_pred cur -> true
-        | ( Lexer.Valid (_,Raw_parser.EOF,_)
-        | Lexer.Error _) -> true
+        | Lexer.Valid (_, ( Raw_parser.EOF | Raw_parser.LPAREN
+                          | Raw_parser.RPAREN | Raw_parser.STAR ),_)
+        | Lexer.Error _ -> true
         | Lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
         | _ -> false
       in
