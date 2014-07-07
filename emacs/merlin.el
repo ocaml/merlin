@@ -118,9 +118,12 @@ no argument and should return the configuration (see
   "String to put in the margin of a line containing a warning."
   :group 'merlin :type 'string)
 
-(defcustom merlin-error-after-save t
-  "If non-nil, check for errors after saving"
-  :group 'merlin :type 'boolean)
+(defcustom merlin-error-after-save '("ml" "mli")
+  "Determines whether merlin should check for errors after saving.
+If t, always check for errors after saving.
+If nil, never check.
+If a string list, check only if the extension of the buffer-file-name is in the list."
+  :group 'merlin :type '(choice (repeat string) boolean))
 
 (defcustom merlin-error-in-margin t
   "If non-nil, display errors in margin"
@@ -453,11 +456,21 @@ return DEFAULT or the value associated to KEY otherwise."
   "Return the process configuration of the current buffer."
   (buffer-local-value 'merlin-process-data (merlin-process-buffer)))
 
+(defun merlin-error-after-save ()
+  "Determine whether the buffer should be checked for errors depending on the value of merlin-error-after-save setting."
+  (cond
+    ((equal merlin-error-after-save t) t)
+    ((equal merlin-error-after-save nil) nil)
+    ((and (listp merlin-error-after-save)
+          buffer-file-name)
+     (member (file-name-extension buffer-file-name)
+             merlin-error-after-save))))
+
 (defun merlin-toggle-view-errors ()
   "Toggle the viewing of errors in the buffer."
   (interactive)
-  (setq merlin-error-after-save (not merlin-error-after-save))
-  (if merlin-error-after-save
+  (setq merlin-error-after-save (not (merlin-error-after-save)))
+  (if (merlin-error-after-save)
       (progn
         (merlin-after-save)
         (message "Errors are now reported. Use %s to stop reporting them."
@@ -1718,7 +1731,7 @@ Short cuts:
      )))
 
 (defun merlin-after-save ()
-  (when merlin-error-after-save (merlin-error-check)))
+  (when (merlin-error-after-save) (merlin-error-check)))
 
 (add-hook 'merlin-mode-hook
           (lambda ()
