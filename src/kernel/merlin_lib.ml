@@ -274,9 +274,10 @@ module Buffer : sig
   type t
   val create: ?path:string -> Project.t -> Parser.state -> t
 
-  val lexer: t -> Lexer.item History.t
-  val update: t -> Lexer.item History.t -> unit
+  val lexer: t -> (exn list * Lexer.item) History.t
+  val update: t -> (exn list * Lexer.item) History.t -> unit
   val start_lexing: ?pos:Lexing.position -> t -> Lexer.t
+  val lexer_errors: t -> exn list
 
   val parser: t -> Parser.t
   val parser_errors: t -> exn list
@@ -295,13 +296,13 @@ end = struct
     path: string option;
     project : Project.t;
     mutable keywords: Lexer.keywords;
-    mutable lexer: Lexer.item History.t;
+    mutable lexer: (exn list * Lexer.item) History.t;
     mutable recover: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
     mutable validity_stamp: bool ref;
   }
 
-  let initial_step kind token =
+  let initial_step kind (_,token) =
     let input = match token with
       | Lexer.Valid (s,t,e) -> s,t,e
       | _ -> assert false
@@ -331,6 +332,7 @@ end = struct
     Project.setup buffer.project
 
   let lexer b = b.lexer
+  let lexer_errors b = fst (History.focused b.lexer)
   let recover_history b = b.recover
   let recover b = snd (History.focused b.recover)
   let parser b = Recover.parser (recover b)
@@ -366,11 +368,11 @@ end = struct
 
   let update t l =
     t.lexer <- l;
-    let strong_check token (token',_) = token == token' in
-    let weak_check token (token',_) = Lexer.equal token token' in
+    let strong_check (_,token) (token',_) = token == token' in
+    let weak_check (_,token) (token',_) = Lexer.equal token token' in
     let init token = initial_step t.kind token in
-    let strong_fold token (_,recover) = token, Recover.fold token recover in
-    let weak_update token (_,recover) = (token,recover) in
+    let strong_fold (_,token) (_,recover) = token, Recover.fold token recover in
+    let weak_update (_,token) (_,recover) = (token,recover) in
     let recover' = History.sync t.lexer (Some t.recover)
         ~init ~strong_check ~strong_fold ~weak_check ~weak_update;
     in
@@ -389,11 +391,11 @@ end = struct
         | Some pos -> (fun cur -> Lexing.compare_pos pos cur <= 0)
       in
       let item_pred = function
-        | Lexer.Valid (cur,_,_) when pos_pred cur -> true
-        | Lexer.Valid (_, ( Raw_parser.EOF | Raw_parser.LPAREN
+        | _, Lexer.Valid (cur,_,_) when pos_pred cur -> true
+        | _, Lexer.Valid (_, ( Raw_parser.EOF | Raw_parser.LPAREN
                           | Raw_parser.RPAREN | Raw_parser.STAR ),_)
-        | Lexer.Error _ -> true
-        | Lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
+        | _, Lexer.Error _ -> true
+        | _, Lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
         | _ -> false
       in
       let lexer = b.lexer in

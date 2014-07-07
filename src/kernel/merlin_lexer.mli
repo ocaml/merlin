@@ -23,15 +23,15 @@ val item_start: item -> Lexing.position
 val item_end: item -> Lexing.position
 
 (** Create an empty list new lexer *)
-val empty: filename:string -> item History.t
+val empty: filename:string -> (exn list * item) History.t
 
 (** Prepare for lexing.
     Returns the start position (end position of last valid token), and a
     lexing function that will append at most one token to the history at each
     call. *)
 type t
-val history: t -> item History.t
-val start: keywords -> item History.t -> t
+val history: t -> (exn list * item) History.t
+val start: keywords -> (exn list * item) History.t -> t
 val position: t -> Lexing.position
 val feed: t -> string -> bool
 val eof: t -> bool

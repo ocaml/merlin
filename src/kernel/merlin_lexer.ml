@@ -23,11 +23,11 @@ let empty ~filename =
       pos_cnum  = 0;
     }
   in
-  History.initial (Valid (pos, Raw_parser.ENTRYPOINT, pos))
+  History.initial ([], Valid (pos, Raw_parser.ENTRYPOINT, pos))
 
 type t = {
   (* Result *)
-  mutable history: item History.t;
+  mutable history: (exn list * item) History.t;
   (* Input buffer *)
   refill: string option ref; (* Input not yet sent to lexer *)
   refill_empty: bool ref;    (* Lexer internal buffer status *)
@@ -53,8 +53,8 @@ let make_lexbuf empty refill position =
 
 let start keywords history =
   let position = match History.focused history with
-    | Valid (_,_,p) -> p
-    | Error (_,l) -> l.Location.loc_end
+    | _, Valid (_,_,p) -> p
+    | _, Error (_,l) -> l.Location.loc_end
   in
   let refill = ref None in
   let refill_empty = ref true in
@@ -69,10 +69,12 @@ let start keywords history =
 let position t = Lexing.immediate_pos t.lexbuf
 
 let feed t str =
+  let warnings = ref (fst (History.focused t.history)) in
+  Parsing_aux.catch_warnings warnings @@ fun () ->
   if not t.lexbuf.Lexing.lex_eof_reached then begin
     t.refill := Some str;
     let append item =
-      t.history <- History.insert item t.history
+      t.history <- History.insert (!warnings, item) t.history
     in
     let rec aux = function
       (* Lexer interrupted, there is data to refill: continue. *)
@@ -85,7 +87,7 @@ let feed t str =
       (* EOF Reached: notify EOF to parser, stop now *)
       | Raw_lexer.Return Raw_parser.EOF ->
         begin match History.focused t.history with
-          | Valid (_,Raw_parser.EOF,_) -> ()
+          | _, Valid (_,Raw_parser.EOF,_) -> ()
           | _ ->
             append (Valid (t.lexbuf.Lexing.lex_start_p,
                            Raw_parser.EOF,
@@ -103,15 +105,16 @@ let feed t str =
       aux (Raw_lexer.token t.state t.lexbuf)
     in
     begin match t.resume with
-    | Some f ->
-      t.resume <- None;
-      aux (f ())
-    | None -> continue ()
+      | Some f ->
+        t.resume <- None;
+        aux (f ())
+      | None -> continue ()
     end;
     true
   end
   else
     false
+
 
 let eof t = t.lexbuf.Lexing.lex_eof_reached
 

@@ -57,7 +57,7 @@ let cursor_state state =
   let cursor, marker =
     match state.lexer with
     | None ->
-      Lexer.item_end (History.focused (Buffer.lexer state.buffer)),
+      Lexer.item_end (snd (History.focused (Buffer.lexer state.buffer))),
       false
     | Some lexer ->
       Lexer.position lexer,
@@ -273,9 +273,11 @@ let dispatch (state : state) =
   | (Seek (`Before pos) : a request) ->
     let items = Buffer.lexer state.buffer in
     (* true while i is before pos *)
-    let until_after pos i = Lexing.compare_pos (Lexer.item_start i) pos < 0 in
+    let until_after pos (_,i) =
+      Lexing.compare_pos (Lexer.item_start i) pos < 0 in
     (* true while i is after pos *)
-    let until_before pos i = Lexing.compare_pos (Lexer.item_start i) pos >= 0 in
+    let until_before pos (_,i) =
+      Lexing.compare_pos (Lexer.item_start i) pos >= 0 in
     let items = History.seek_forward (until_after pos) items in
     let items = History.seek_backward (until_before pos) items in
     buffer_update state items;
@@ -284,9 +286,11 @@ let dispatch (state : state) =
   | (Seek (`Exact pos) : a request) ->
     let items = Buffer.lexer state.buffer in
     (* true while i is before pos *)
-    let until_after pos i = Lexing.compare_pos (Lexer.item_start i) pos < 0 in
+    let until_after pos (_,i) =
+      Lexing.compare_pos (Lexer.item_start i) pos < 0 in
     (* true while i is after pos *)
-    let until_before pos i = Lexing.compare_pos (Lexer.item_end i) pos > 0 in
+    let until_before pos (_,i) =
+      Lexing.compare_pos (Lexer.item_end i) pos > 0 in
     let items = History.seek_forward (until_after pos) items in
     let items = History.seek_backward (until_before pos) items in
     buffer_update state items;
@@ -316,7 +320,7 @@ let dispatch (state : state) =
         let recoveries = History.move 1 recoveries in
         let item, _ = History.focused recoveries in
         let items = Buffer.lexer state.buffer in
-        let items = History.seek_backward ((!=) item) items in
+        let items = History.seek_backward (fun (_,item') -> item' != item) items in
         buffer_update state items;
     end;
     cursor_state state
@@ -338,9 +342,10 @@ let dispatch (state : state) =
     Project.invalidate ~flush:true state.project
 
   | (Errors : a request) ->
-    let pexns = Buffer.parser_errors state.buffer in
-    let texns = Typer.exns (Buffer.final_typer state.buffer) in
-    texns @ pexns
+    let exn_lexer  = Buffer.lexer_errors state.buffer in
+    let exn_parser = Buffer.parser_errors state.buffer in
+    let exn_typer  = Typer.exns (Buffer.final_typer state.buffer) in
+    exn_lexer @ exn_parser @ exn_typer
 
   | (Dump `Parser : a request) ->
     Merlin_recover.dump (Buffer.recover state.buffer);

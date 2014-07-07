@@ -62,8 +62,8 @@ module P = struct
           Env.add_signature sg t.env, t.structures
         | `fake str ->
           let structure,_,_ =
-            Either.get (Parsing_aux.catch_warnings (ref [])
-                          (fun () -> Typemod.type_structure t.env [str] loc))
+            Parsing_aux.catch_warnings (ref []) @@ fun () ->
+            Typemod.type_structure t.env [str] loc
           in
           let browse =
             BrowseT.of_node ~loc ~env:t.env (BrowseT.Structure structure)
@@ -151,8 +151,9 @@ let protect_typer ~btype ~env f =
 let fresh extensions =
   let btype_cache = Btype.new_cache () in
   let env_cache = Env.new_cache () in
-  let result = protect_typer ~btype:btype_cache ~env:env_cache
-      (fun exns -> I.empty (extensions,exns))
+  let result = protect_typer ~btype:btype_cache ~env:env_cache @@ fun exns ->
+    Either.try' @@ fun () ->
+    I.empty (extensions,exns)
   in
   {
     typer = Incremental (Either.get result);
@@ -169,9 +170,10 @@ let get_value = function
 
 let update parser t =
   let result =
-    protect_typer ~btype:t.btype_cache ~env:t.env_cache (fun exns ->
-      let state = (t.extensions,exns) in
-      I.update' state parser (get_incremental state t.typer))
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache @@ fun exns ->
+    Either.try' @@ fun () ->
+    let state = (t.extensions,exns) in
+    I.update' state parser (get_incremental state t.typer)
   in
   {t with typer = Incremental (Either.get result)}
 
@@ -181,8 +183,9 @@ let exns t = (get_value t.typer).P.exns
 let extensions t = t.extensions
 
 let is_valid t =
-  match protect_typer ~btype:t.btype_cache ~env:t.env_cache
-          (fun _ -> Env.check_cache_consistency ())
+  match
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache @@ fun _ ->
+    Either.try' Env.check_cache_consistency
   with
   | Either.L _exn -> false
   | Either.R result -> result
@@ -199,8 +202,9 @@ let dump ppf t =
 
 let manual t item =
   let typer =
-    protect_typer ~btype:t.btype_cache ~env:t.env_cache (fun exns ->
-      let p = P.empty (t.extensions,exns) in
-      P.append exns Location.none item p)
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache @@ fun exns ->
+    Either.try' @@ fun () ->
+    let p = P.empty (t.extensions,exns) in
+    P.append exns Location.none item p
   in
   {t with typer = Manual (Either.get typer)}
