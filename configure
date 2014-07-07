@@ -16,6 +16,7 @@ EXIT=0
 COL_CLEAR=$(tput sgr0)
 COL_RED=$(tput setf 4)
 COL_GREEN=$(tput setf 2)
+COL_YELLOW=$(tput setf 6)
 
 check_package()
 {
@@ -59,6 +60,8 @@ The options available for better control are as follow:
                             to work on merlin itself.
 END
 }
+
+STDLIB_DIR=$(ocamlfind printconf stdlib)
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -111,7 +114,16 @@ END
 check_package EXIT findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
 check_package EXIT yojson "Install yojson"
 check_package EXIT menhirLib "Please install menhir."
-STDLIB_DIR=$(ocamlfind printconf stdlib)
+
+which emacs >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+  TARGET_EMACS=emacs/merlin.elc
+  printf "Found Emacs\t${COL_GREEN}GOOD${COL_CLEAR}\n"
+else
+  TARGET_EMACS=
+  printf "Missing Emacs\t${COL_YELLOW}WARN${COL_CLEAR}\n"
+fi
+
 MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number|cut -d' ' -f2)
 
 case "$MAGIC_VERSION" in
@@ -142,10 +154,32 @@ To customize directories, use:
 For more informations rerun with --help.
 END
 
-rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
-  ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+SYSTEM=$(ocamlfind c -config | grep system|cut -d' ' -f2)
+case "$SYSTEM" in
+  mingw*)
+    rm -rf "$PWD/src/ocaml" 2>&1 >/dev/null &&
+      cp -R "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+    ;;
+  *)
+    rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
+      ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+    ;;
+esac
 
 mkdir -p "$PWD/src/config"
+
+OS_TYPE=$(ocamlfind c -config | grep os_type|cut -d' ' -f2)
+
+case "$OS_TYPE" in
+  Win32)
+    EXE=.exe
+    INSTALL_SCRIPTS=
+    ;;
+  *)
+    EXE=
+    INSTALL_SCRIPTS=install-binary-scripts
+    ;;
+esac
 
 if [ -d "$STDLIB_DIR" ]; then
   cat >Makefile.config <<END
@@ -154,6 +188,9 @@ SHARE_DIR=$SHARE_DIR
 VIM_DIR=$VIM_DIR
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
+EXE=$EXE
+INSTALL_SCRIPTS=$INSTALL_SCRIPTS
+TARGET_EMACS=$TARGET_EMACS
 END
   cat >src/config/myocamlbuild_config.ml <<END
 let libdir = "$STDLIB_DIR";;

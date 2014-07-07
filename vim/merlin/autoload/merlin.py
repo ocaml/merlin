@@ -6,6 +6,7 @@ import re
 import os
 import sys
 from itertools import groupby
+from sys import platform
 
 import vimbufsync
 vimbufsync.check_version("0.1.0",who="merlin")
@@ -52,12 +53,24 @@ class MerlinProcess:
     try:
       command = [vim.eval("merlin#FindOcamlMerlin()"),"-ignore-sigint"]
       command.extend(flags)
-      self.mainpipe = subprocess.Popen(
-              command,
-              stdin=subprocess.PIPE,
-              stdout=subprocess.PIPE,
-              stderr=None,
-          )
+      if platform == "win32":
+        info = subprocess.STARTUPINFO()
+        info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        info.wShowWindow = subprocess.SW_HIDE
+        self.mainpipe = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                startupinfo=info,
+            )
+      else:
+        self.mainpipe = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.None,
+            )
     except OSError as e:
       print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
               is executable.")
@@ -568,7 +581,10 @@ def vim_selectphrase(l1,c1,l2,c2):
 
 def load_project(directory,force=False):
   command = [vim.eval("merlin#FindOcamlMerlin()"), "-project-find", directory]
-  process = subprocess.Popen(command, stdout=subprocess.PIPE)
+  if platform == "win32":
+    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  else:
+    process = subprocess.Popen(command, stdout=subprocess.PIPE)
   name = process.communicate()[0].strip()
   if not force:
     if name == vim.eval("b:merlin_project"): return
