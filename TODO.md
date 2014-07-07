@@ -1,3 +1,4 @@
+- Add support for existing p4 extensions on 4.02
 - Backport support for ocaml 4.00
 - catch "different assumptions" exception
 - there is a bug in cmi refreshing
@@ -6,7 +7,6 @@
   partially done by 6f7e89e6f6d0915f5b2f76d892c99434399e9a76
   now we need a clean/generic way
 - Add support for ppx
-- Add support for existing p4 extensions on 4.02
 - Replace Browse by a propper wrapping of Typedtree (~60%)
 - Find proper API for incremental parser
   -> goto table should not be manipulated explicitly
@@ -19,6 +19,8 @@
   -> type enclosing / type expr
   -> occurrences
 - Reimplement verbosity, expand module aliases
+- When resuming after a (, lexer can get confused if it receives *:
+  it will be lexed as STAR token and not beginning of comment
 
 IDEA (later)
 - perf: send batches of token rather than entering/exiting the whole
