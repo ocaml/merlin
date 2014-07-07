@@ -21,6 +21,8 @@
 - Reimplement verbosity, expand module aliases
 - When resuming after a (, lexer can get confused if it receives *:
   it will be lexed as STAR token and not beginning of comment
+- Module constraint relaxation is wrong on functors argument. 
+  Check how typer behaves with incorrect functors.
 
 IDEA (later)
 - perf: send batches of token rather than entering/exiting the whole
