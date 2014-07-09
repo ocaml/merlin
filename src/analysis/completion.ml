@@ -155,7 +155,7 @@ let rec methods_of_type env ?(acc=[]) type_expr =
   | _ -> acc
 
 (* Propose completion from a particular node *)
-let node_complete project node prefix =
+let node_complete buffer node prefix =
   let prefix =
     let li = Longident.parse prefix in
     let suffix = Longident.last li in
@@ -334,7 +334,7 @@ let node_complete project node prefix =
         (* Add modules on path but not loaded *)
         let compl = find prefix in
         begin match List.length_lessthan 30 compl with
-        | Some _ -> List.fold_left (Project.global_modules project) ~init:compl
+        | Some _ -> List.fold_left (Buffer.global_modules buffer) ~init:compl
           ~f:begin fun compl modname ->
           let default = { Protocol.
             name = modname;

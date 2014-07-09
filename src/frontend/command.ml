@@ -235,7 +235,7 @@ let dispatch (state : state) =
 
   | (Complete_prefix (prefix, pos) : a request) ->
     let node = Completion.node_at (Buffer.typer state.buffer) pos in
-    let compl = Completion.node_complete state.project node prefix in
+    let compl = Completion.node_complete state.buffer node prefix in
     List.rev compl
 
   | (Locate (path, opt_pos) : a request) ->
