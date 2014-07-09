@@ -246,11 +246,6 @@ let check_modtype_inclusion =
   ref ((fun env mty1 path1 mty2 -> assert false) :
           t -> module_type -> Path.t -> module_type -> unit)
 
-(* The name of the compilation unit currently compiled.
-   "" if outside a compilation unit. *)
-
-let current_unit = ref ""
-
 (* Persistent structure descriptions *)
 
 type pers_struct =
@@ -278,9 +273,13 @@ type cache = {
     (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t;
   type_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t;
   prefixed_sg : (Path.t, (signature * (Path.t list * Subst.t * signature_item list lazy_t)) list ref) Hashtbl.t;
+
+  (* The name of the compilation unit currently compiled.
+     "" if outside a compilation unit. *)
+  mutable current_unit: string;
 }
 
-let new_cache () = {
+let new_cache ~unit_name = {
   persistent_structures = Hashtbl.create 17;
   missing_structures = Hashtbl.create 17;
   crc_units = Consistbl.create ();
@@ -288,9 +287,10 @@ let new_cache () = {
   used_constructors = Hashtbl.create 16;
   type_declarations = Hashtbl.create 16;
   prefixed_sg = Hashtbl.create 113;
+  current_unit = unit_name;
 }
 
-let cache = ref (new_cache ())
+let cache = ref (new_cache ~unit_name:"")
 
 let check_consistency filename crcs =
   try
@@ -298,6 +298,8 @@ let check_consistency filename crcs =
       (fun (name, crc) -> Consistbl.check !cache.crc_units name crc filename)
       crcs
   with Consistbl.Inconsistency(name, source, auth) ->
+    (* Flush cache, incompatible file might be reloaded on next try *)
+    Cmi_cache.flush ();
     raise(Error(Inconsistent_import(name, auth, source)))
 
 (* Reading persistent structures from .cmi files *)
@@ -324,7 +326,7 @@ let read_pers_struct modname filename = (
     List.iter
       (function Rectypes ->
         if not (Clflags.recursive_types ()) then
-          raise(Error(Need_recursive_types(ps.ps_name, !current_unit))))
+          raise(Error(Need_recursive_types(ps.ps_name, !cache.current_unit))))
       ps.ps_flags;
     Hashtbl.add !cache.persistent_structures modname (Some ps);
     ps
@@ -349,7 +351,7 @@ let find_pers_struct name =
       read_pers_struct name filename
 
 let reset_cache () =
-  current_unit := "";
+  !cache.current_unit <- "";
   Hashtbl.clear !cache.persistent_structures;
   Hashtbl.clear !cache.missing_structures;
   Consistbl.clear !cache.crc_units;
@@ -404,7 +406,7 @@ let check_cache_consistency () =
   with Not_found -> false
 
 let set_unit_name name =
-  current_unit := name
+  !cache.current_unit <- name
 
 (* Lookup by identifier *)
 
@@ -540,7 +542,7 @@ let rec lookup_module_descr lid env =
       begin try
         EnvTbl.find_name s env.components
       with Not_found ->
-        if s = !current_unit then raise Not_found;
+        if s = !cache.current_unit then raise Not_found;
         let ps = find_pers_struct s in
         (Pident(Ident.create_persistent s), ps.ps_comps)
       end
@@ -577,7 +579,7 @@ and lookup_module lid env =
         end;
         r
       with Not_found ->
-        if s = !current_unit then raise Not_found;
+        if s = !cache.current_unit then raise Not_found;
         let ps = find_pers_struct s in
         (Pident(Ident.create_persistent s), Mty_signature ~:(ps.ps_sig))
       end

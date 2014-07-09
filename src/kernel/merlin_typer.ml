@@ -148,9 +148,9 @@ let protect_typer ~btype ~env f =
                Typing_aux.catch_errors caught >>= fun () ->
                f caught)
 
-let fresh extensions =
+let fresh ~unit_name extensions =
   let btype_cache = Btype.new_cache () in
-  let env_cache = Env.new_cache () in
+  let env_cache = Env.new_cache ~unit_name in
   let result = protect_typer ~btype:btype_cache ~env:env_cache @@ fun exns ->
     Either.try' @@ fun () ->
     I.empty (extensions,exns)

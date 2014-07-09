@@ -230,9 +230,10 @@ type cache = {
   (* Consistency between persistent structures *)
   crc_units : Consistbl.t;
   imported_units : string list ref;
+  mutable current_unit : string;
 }
 
-let new_cache () = {
+let new_cache ~unit_name = {
   persistent_structures = Hashtbl.create 17;
   missing_structures = Hashtbl.create 17;
   crc_units = Consistbl.create ();
@@ -241,9 +242,10 @@ let new_cache () = {
   type_declarations = Hashtbl.create 16;
   prefixed_sg = Hashtbl.create 113;
   imported_units = ref [];
+  current_unit = unit_name;
 }
 
-let cache = ref (new_cache ())
+let cache = ref (new_cache ~unit_name:"")
 
 let subst_modtype_maker (subst, mty) = Subst.modtype subst mty
 
@@ -314,11 +316,6 @@ let strengthen =
 let md md_type =
   {md_type; md_attributes=[]; md_loc=Location.none}
 
-(* The name of the compilation unit currently compiled.
-   "" if outside a compilation unit. *)
-
-let current_unit = ref ""
-
 (* Consistency between persistent structures *)
 
 let clear_imports () =
@@ -367,7 +364,7 @@ let read_pers_struct modname filename =
   List.iter
     (function Rectypes ->
       if not (Clflags.recursive_types ()) then
-        error (Need_recursive_types(ps.ps_name, !current_unit)))
+        error (Need_recursive_types(ps.ps_name, !cache.current_unit)))
     ps.ps_flags;
   Hashtbl.add !cache.persistent_structures modname (Some ps);
   ps
@@ -391,7 +388,6 @@ let find_pers_struct name =
       read_pers_struct name filename
 
 let reset_cache () =
-  current_unit := "";
   Hashtbl.clear !cache.persistent_structures;
   Consistbl.clear !cache.crc_units;
   Hashtbl.clear !cache.value_declarations;
@@ -444,7 +440,7 @@ let check_cache_consistency () =
   with Not_found -> false
 
 let set_unit_name name =
-  current_unit := name
+  !cache.current_unit <- name
 
 (* Lookup by identifier *)
 
@@ -659,7 +655,7 @@ let rec lookup_module_descr lid env =
       begin try
         EnvTbl.find_name s env.components
       with Not_found ->
-        if s = !current_unit then raise Not_found;
+        if s = !cache.current_unit then raise Not_found;
         let ps = find_pers_struct s in
         (Pident(Ident.create_persistent s), ps.ps_comps)
       end
@@ -697,7 +693,7 @@ and lookup_module ~load lid env : Path.t =
         end;
         p
       with Not_found ->
-        if s = !current_unit then raise Not_found;
+        if s = !cache.current_unit then raise Not_found;
 	if Clflags.transparent_modules () && not load then
 	  try ignore (find_in_path_uncap !load_path (s ^ ".cmi"))
           with Not_found ->

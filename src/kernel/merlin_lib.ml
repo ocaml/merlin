@@ -56,6 +56,7 @@ module Project : sig
   (* Invalidate cache *)
   val validity_stamp: t -> bool ref
   val invalidate: ?flush:bool -> t -> unit
+  val flush_cache: t -> unit
 
 end = struct
 
@@ -268,6 +269,9 @@ end = struct
     if flush then Cmi_cache.flush ();
     project.validity_stamp := false;
     project.validity_stamp <- ref true
+
+  let flush_cache project =
+    Cmi_cache.flush ();
 end
 
 module Buffer : sig
@@ -290,11 +294,14 @@ module Buffer : sig
   val get_mark: t -> Parser.frame option
   val has_mark: t -> Parser.frame option -> bool
 
+  (* All top modules of current project, with current module removed *)
+  val global_modules: t -> string list
 end = struct
   type t = {
     kind: Parser.state;
     path: string option;
     project : Project.t;
+    unit_name : string;
     mutable keywords: Lexer.keywords;
     mutable lexer: (exn list * Lexer.item) History.t;
     mutable recover: (Lexer.item * Recover.t) History.t;
@@ -314,13 +321,18 @@ end = struct
       | None -> None, "*buffer*"
       | Some path -> Some (Filename.dirname path), Filename.basename path
     in
+    let unit_name =
+      try String.sub filename ~pos:0 ~len:(String.index filename '.')
+      with Not_found -> filename
+    in
+    let unit_name = String.capitalize unit_name in
     let lexer = Lexer.empty ~filename in
     Project.setup project;
     {
-      path; project; lexer; kind;
+      path; project; lexer; kind; unit_name;
       keywords = Project.keywords project;
       recover = History.initial (initial_step kind (History.focused lexer));
-      typer = Typer.fresh (Project.extensions project);
+      typer = Typer.fresh ~unit_name (Project.extensions project);
       validity_stamp = Project.validity_stamp project;
     }
 
@@ -350,14 +362,18 @@ end = struct
                               (Project.extensions b.project))
     in
     if need_refresh then
-      b.typer <- Typer.fresh (Project.extensions b.project);
+      b.typer <- Typer.fresh
+          ~unit_name:b.unit_name
+          (Project.extensions b.project);
     let typer = Typer.update (parser b) b.typer in
     b.typer <- typer;
     typer
 
   let fresh_typer b =
     setup b;
-    let typer = Typer.fresh (Project.extensions b.project) in
+    let typer = Typer.fresh
+        ~unit_name:b.unit_name
+        (Project.extensions b.project) in
     Typer.update (parser b) typer
 
   let final_typer b =
@@ -410,4 +426,8 @@ end = struct
   let has_mark t = function
     | None -> false
     | Some frame -> Parser.has_marker (parser t) frame
+
+  let global_modules t =
+    setup t;
+    List.remove t.unit_name (Project.global_modules t.project)
 end

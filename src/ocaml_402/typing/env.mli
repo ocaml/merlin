@@ -260,5 +260,5 @@ val scrape_alias: t -> module_type -> module_type
 
 type cache
 
-val new_cache : unit -> cache
+val new_cache : unit_name:string -> cache
 val cache : cache ref
