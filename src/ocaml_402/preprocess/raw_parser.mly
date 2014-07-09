@@ -284,19 +284,10 @@ let wrap_exp_attrs startpos endpos body (ext, attrs) =
 let mkexp_attrs startpos endpos d attrs =
   wrap_exp_attrs startpos endpos (mkexp startpos endpos d) attrs
 
-let tag_nonrec (id, a) = (Fake.Nonrec.add id, a)
-let fake_any_typ = Typ.mk Ptyp_any
-let fake_any_pat = Pat.mk Ppat_any
-let fake_mty = Mty.mk (Pmty_signature [])
-let fake_mod = Mod.mk (Pmod_structure [])
-let fake_class_structure = Cstr.mk fake_any_pat []
-let fake_class_expr = Cl.mk (Pcl_structure fake_class_structure)
-let fake_class_signature = Csig.mk fake_any_typ []
-let fake_class_type = Cty.mk (Pcty_signature fake_class_signature)
-let fake_class_type_field =
-  Ctf.mk (Pctf_constraint (fake_any_typ,fake_any_typ))
-let fake_lident = Longident.Lident ""
-let fake_lident_loc = Location.mknoloc fake_lident
+let fake_tydecl tydecl = tydecl.ptype_name, tydecl
+let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
+let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
+let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
 %}
 
@@ -469,9 +460,10 @@ The precedences must be listed from low to high.
 %nonassoc IN
 %nonassoc below_SEMI
 %nonassoc SEMI                          (* below EQUAL ({lbl=...; lbl=...}) *)
-%nonassoc LET                           (* above SEMI ( ...; let ... in ...) *)
+%nonassoc LET LET_LWT                   (* above SEMI ( ...; let ... in ...) *)
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 (* below BAR  (match ... with ...) *)
+%nonassoc FINALLY_LWT
 %nonassoc AND             (* above WITH (module rec A: SIG with ... and ...) *)
 %nonassoc THEN                          (* below ELSE (if ... then ...) *)
 %nonassoc ELSE                          (* (if ... then ... else ...) *)
@@ -507,6 +499,7 @@ The precedences must be listed from low to high.
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
+          P4_QUOTATION JSNEW
 
 (* Entry points *)
 
@@ -543,6 +536,7 @@ parse_expression:
     { v1 }
 
 dummy:
+| EOL
 | NONREC
 | COMMENT
 | GREATERRBRACKET
@@ -674,8 +668,8 @@ structure_item:
     { mkstr $startpos $endpos
         (Pstr_primitive (Val.mk (mkrhs $startpos(v2) $endpos(v2) v2) v4
                            ~prim:v6 ~attrs:v7 ~loc:(rloc $startpos $endpos))) }
-| TYPE v2 = type_declarations
-    { mkstr $startpos $endpos (Pstr_type (List.rev v2) ) }
+| TYPE decls = type_declarations
+    { mkstr $startpos $endpos (Pstr_type (List.rev decls) ) }
 | TYPE v2 = str_type_extension
     { mkstr $startpos $endpos (Pstr_typext v2) }
 | EXCEPTION v2 = str_exception_declaration
@@ -2488,5 +2482,193 @@ newtype:
 expr_open:
 | v1 = override_flag v2 = ext_attributes v3 = mod_longident
     { v1, mkrhs $startpos(v3) $endpos(v3) v3, v2 }
+
+(* Caml p4 extensions *)
+structure_item:
+| LET_LWT ext_attributes rec_flag let_bindings
+    { match $4 with
+    | [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
+         pvb_expr = exp; pvb_attributes = attrs} ] ->
+        let exp = wrap_exp_attrs $startpos $endpos exp $2 in
+        mkstr $startpos $endpos (Pstr_eval (Fake.app Fake.Lwt.un_lwt exp, attrs))
+    | _ ->
+      let str = mkstr $startpos $endpos
+            (Pstr_value ($3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) $4))
+      in
+      let (ext, attrs) = $2 in
+      if attrs <> [] then not_expecting $startpos($2) $endpos($2) "attribute";
+      match ext with
+      | None -> str
+      | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr str), []))
+    }
+| TYPE NONREC decls = type_declarations
+    { let ty = List.map fake_tydecl decls in
+      mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec ty)) }
+| TYPE type_declarations WITH with_extensions
+    {
+      let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
+      let ty = List.map fake_tydecl $2 in
+      let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $4 in
+      mkstr $startpos $endpos (Pstr_type(List.rev $2)) @ ast
+    }
+| TYPE NONREC type_declarations WITH with_extensions
+    {
+      let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
+      let ty = List.map fake_tydecl $3 in
+      let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $5 in
+      mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec ty)) @ ast
+    }
+| OUNIT_TEST option(STRING) EQUAL seq_expr
+    { let expr = Fake.app Fake.OUnit.force_bool $4 in
+      mkstr $startpos $endpos (Pstr_eval (expr,[]))
+    }
+| OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
+    { let expr = Fake.app Fake.OUnit.force_unit $4 in
+      mkstr $startpos $endpos (Pstr_eval (expr,[]))
+    }
+| OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
+    { let name = Fake.OUnit.fresh_test_module_ident () in
+      mkstr $startpos $endpos
+         (Pstr_module(Mb.mk (mkrhs $startpos($1) $endpos($2) name) $4))
+    }
+| OUNIT_BENCH STRING EQUAL seq_expr
+    { let expr = $4 in
+      mkstr $startpos $endpos (Pstr_eval (expr,[]))
+    }
+| OUNIT_BENCH_FUN STRING EQUAL seq_expr
+    { let expr = Fake.app Fake.OUnit.force_unit_arrow_unit $4 in
+      mkstr $startpos $endpos (Pstr_eval (expr,[]))
+    }
+| OUNIT_BENCH_INDEXED STRING val_ident simple_expr EQUAL seq_expr
+    { let f_arg = mkpat $startpos $endpos
+                      (Ppat_var (mkrhs $startpos($3) $endpos($3) $3))
+      in
+      let f_fun = mkexp $startpos $endpos
+          (Pexp_fun("", None, f_arg, $6))
+      in
+      let expr = Fake.(app (app OUnit.force_indexed f_fun) $4) in
+      mkstr $startpos $endpos (Pstr_eval (expr,[]))
+    }
+| OUNIT_BENCH_MODULE STRING EQUAL module_expr
+    { let name = Fake.OUnit.fresh_test_module_ident () in
+      mkstr $startpos $endpos
+         (Pstr_module(Mb.mk (mkrhs $startpos($1) $endpos($2) name) $4))
+    }
+;
+
+signature_item:
+| TYPE NONREC decls = type_declarations
+    { let ty = List.map fake_tydecl decls in
+      mksig $startpos $endpos (Psig_type (List.rev_map tag_nonrec ty)) }
+| TYPE type_declarations WITH with_extensions
+    {
+      let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
+      let ty = List.map fake_tydecl $2 in
+      let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $4 in
+      List.rev_append decls (mksig $startpos $endpos (Psig_type(List.rev $2)))
+    }
+| TYPE NONREC type_declarations WITH with_extensions
+    {
+      let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
+      let ty = List.map fake_tydecl $3 in
+      let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $5 in
+      List.rev_append decls (mksig $startpos $endpos
+            (Psig_type(List.rev_map tag_nonrec ty)))
+    }
+
+with_extensions:
+| LIDENT COMMA with_extensions { $1 :: $3 }
+| LIDENT { [$1] }
+
+
+expr:
+| LET_LWT ext_attributes rec_flag let_bindings IN @{`Shift 2} seq_expr
+    { let expr = reloc_exp_fake $endpos($5) $endpos $6 in
+      let expr = Pexp_let($3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) $4, expr) in
+      Fake.app Fake.Lwt.in_lwt (mkexp_attrs $startpos $endpos expr $2) }
+| MATCH_LWT ext_attributes seq_expr WITH opt_bar match_cases
+    { let expr = mkexp_attrs $startpos $endpos
+          (Pexp_match(Fake.app Fake.Lwt.un_lwt $3, List.rev $6)) $2 in
+      Fake.app Fake.Lwt.in_lwt expr }
+| TRY_LWT ext_attributes seq_expr %prec below_WITH
+    { reloc_exp $startpos $endpos (Fake.app Fake.Lwt.in_lwt $3) }
+| TRY_LWT ext_attributes seq_expr WITH opt_bar match_cases
+    { mkexp_attrs $startpos $endpos
+        (Pexp_try(Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 }
+| TRY_LWT ext_attributes seq_expr FINALLY_LWT seq_expr
+    { Fake.app (Fake.app Fake.Lwt.finally' $3) $5 }
+| TRY_LWT ext_attributes seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
+    { let expr = mkexp_attrs $startpos $endpos
+        (Pexp_try (Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 in
+      Fake.app (Fake.app Fake.Lwt.finally' expr) $8 }
+| WHILE_LWT ext_attributes seq_expr DO seq_expr DONE
+  { let expr = Pexp_while ($3, Fake.(app Lwt.un_lwt $5)) in
+    Fake.(app Lwt.to_lwt (mkexp_attrs $startpos $endpos expr $2)) }
+| FOR_LWT ext_attributes pattern EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
+    { let expr = Pexp_for ($3, $5, $7, $6, Fake.(app Lwt.un_lwt $9)) in
+      Fake.(app Lwt.to_lwt (mkexp_attrs $startpos $endpos expr $2)) }
+| FOR_LWT ext_attributes pattern IN seq_expr DO seq_expr DONE
+    { mkexp_attrs $startpos $endpos
+          (Pexp_let (Nonrecursive, [Vb.mk $3 (Fake.(app Lwt.un_stream $5))],
+             Fake.(app Lwt.unit_lwt $7)))
+          $2
+    }
+| simple_expr SHARP SHARP label
+    { let inst = Fake.(app Js.un_js $1) in
+      let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+      let prop = Fake.(app Js.un_prop field) in
+      mkexp $startpos $endpos (Pexp_send(prop,"get"))
+    }
+| simple_expr SHARP SHARP label LESSMINUS expr
+    { let inst = Fake.(app Js.un_js $1) in
+      let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+      let prop = Fake.(app Js.un_prop field) in
+      let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
+      reloc_exp $startpos $endpos
+      Fake.(app setter $6)
+    }
+| simple_expr SHARP SHARP label LPAREN RPAREN
+    { let inst = Fake.(app Js.un_js $1) in
+      let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+      Fake.(app Js.un_meth jsmeth)
+    }
+| simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+    { let inst = Fake.(app Js.un_js $1) in
+      let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+      let jsmeth =
+        List.fold_left
+          (fun meth arg ->
+            reloc_exp meth.pexp_loc.Location.loc_start
+                      arg.pexp_loc.Location.loc_end
+            (Fake.app meth arg))
+          meth (List.rev $6)
+      in
+      Fake.(app Js.un_meth jsmeth)
+    }
+
+simple_expr:
+| P4_QUOTATION
+    { reloc_exp $startpos $endpos Fake.any_val' }
+(* Js_of_ocaml extension *)
+| JSNEW simple_expr LPAREN RPAREN
+    { reloc_exp $startpos $endpos
+      Fake.(app Js.un_constr $2)
+    }
+| JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
+    { let jsnew' = reloc_exp $startpos($1) $endpos($1) Fake.Js.un_constr in
+      let constr = reloc_exp $startpos($1) $endpos($2) Fake.(app jsnew' $2) in
+      reloc_exp $startpos $endpos
+      (List.fold_left
+         (fun constr arg ->
+           reloc_exp constr.pexp_loc.Location.loc_start
+                     arg.pexp_loc.Location.loc_end
+           (Fake.app constr arg))
+         constr (List.rev $4))
+    }
+
+expr_comma_opt_list:
+    expr_comma_opt_list COMMA expr              { $3 :: $1 }
+  | expr %prec COMMA                            { [$1] }
+;
 
 %%

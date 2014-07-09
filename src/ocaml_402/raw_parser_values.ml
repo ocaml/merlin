@@ -169,6 +169,7 @@ let string_of_token : type a. a token_class -> string = function
 
 let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_with_type_binder                  -> "with_type_binder"
+  | N_with_extensions                   -> "with_extensions"
   | N_with_constraints                  -> "with_constraints"
   | N_with_constraint                   -> "with_constraint"
   | N_virtual_flag                      -> "virtual_flag"
@@ -239,6 +240,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_optional_type_parameters          -> "optional_type_parameters"
   | N_optional_type_parameter_list      -> "optional_type_parameter_list"
   | N_optional_type_parameter           -> "optional_type_parameter"
+  | N_option_STRING_                    -> "option_STRING_"
   | N_opt_semi                          -> "opt_semi"
   | N_opt_default                       -> "opt_default"
   | N_opt_bar                           -> "opt_bar"
@@ -304,6 +306,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_expr_semi_list                    -> "expr_semi_list"
   | N_expr_open                         -> "expr_open"
   | N_expr_comma_list                   -> "expr_comma_list"
+  | N_expr_comma_opt_list               -> "expr_comma_opt_list"
   | N_expr                              -> "expr"
   | N_dummy                             -> "dummy"
   | N_direction_flag                    -> "direction_flag"
@@ -787,6 +790,7 @@ let default_module_bind = Ast_helper.Mb.mk (Location.mknoloc "_") default_module
 let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   match n with
   | N_with_type_binder                  -> 1, Asttypes.Public
+  | N_with_extensions                   -> 1, []
   | N_with_constraints                  -> 0, []
   | N_with_constraint                   -> 0, []
   | N_virtual_flag                      -> 1, Asttypes.Concrete
@@ -869,6 +873,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_optional_type_parameters          -> 0, []
   | N_optional_type_parameter_list      -> 0, []
   | N_optional_type_parameter           -> 1, (default_type, Asttypes.Invariant)
+  | N_option_STRING_                    -> 0, None
   | N_opt_semi                          -> 0, ()
   | N_opt_default                       -> 1, None
   | N_opt_bar                           -> 0, ()
@@ -946,6 +951,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_expr_open                         ->
     raise Not_found (*(Asttypes.override_flag * Longident.t Asttypes.loc * (string Asttypes.loc option * Parsetree.attributes)) nonterminal_class*)
   | N_expr_comma_list                   -> 0, []
+  | N_expr_comma_opt_list               -> 0, []
   | N_expr                              -> 1, default_expr
   | N_dummy                             -> 0, ()
   | N_direction_flag                    -> 0, Asttypes.Upto

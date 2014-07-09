@@ -278,6 +278,7 @@ and _ token_class =
 
 and _ nonterminal_class =
   | N_with_type_binder : (Asttypes.private_flag) nonterminal_class
+  | N_with_extensions : (Fake.TypeWith.generator list) nonterminal_class
   | N_with_constraints : (Parsetree.with_constraint list) nonterminal_class
   | N_with_constraint : (Parsetree.with_constraint list) nonterminal_class
   | N_virtual_flag : (Asttypes.virtual_flag) nonterminal_class
@@ -350,6 +351,7 @@ and _ nonterminal_class =
   | N_optional_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
   | N_optional_type_parameter_list : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
   | N_optional_type_parameter : (Parsetree.core_type * Asttypes.variance) nonterminal_class
+  | N_option_STRING_ : ((string * string option) option) nonterminal_class
   | N_opt_semi : (unit) nonterminal_class
   | N_opt_default : (Parsetree.expression option) nonterminal_class
   | N_opt_bar : (unit) nonterminal_class
@@ -416,6 +418,7 @@ and _ nonterminal_class =
   | N_expr_semi_list : (Parsetree.expression list) nonterminal_class
   | N_expr_open : (Asttypes.override_flag * Longident.t Asttypes.loc *
   (string Asttypes.loc option * Parsetree.attributes)) nonterminal_class
+  | N_expr_comma_opt_list : (Parsetree.expression list) nonterminal_class
   | N_expr_comma_list : (Parsetree.expression list) nonterminal_class
   | N_expr : (Parsetree.expression) nonterminal_class
   | N_dummy : (unit) nonterminal_class
