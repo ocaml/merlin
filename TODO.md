@@ -1,3 +1,4 @@
+- Improve js_of_ocaml support
 - Add support for existing p4 extensions on 4.02
 - Backport support for ocaml 4.00
 - catch "different assumptions" exception

@@ -1328,7 +1328,7 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, mkexp $startpos(v4) $endpos(v4) (Pexp_override(List.rev v4)))) }
 (*| mod_longident DOT v3 = LBRACELESS field_expr_list opt_semi v6 = error
     { unclosed "{<" $startpos(v3) $endpos(v3) ">}" $startpos(v6) $endpos(v6) }*)
-| v1 = simple_expr SHARP v3 = label
+| v1 = simple_expr SHARP @{`Shift_token (1,LIDENT "")} v3 = label
     { mkexp $startpos $endpos (Pexp_send(v1, v3)) }
 | LPAREN MODULE v3 = module_expr RPAREN
     { mkexp $startpos $endpos  (Pexp_pack v3) }
@@ -2613,7 +2613,7 @@ expr:
              Fake.(app Lwt.unit_lwt $7)))
           $2
     }
-| simple_expr SHARP SHARP label
+| simple_expr SHARP SHARP @{`Shift_token (1,LIDENT "")} label
     { let inst = Fake.(app Js.un_js $1) in
       let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
       let prop = Fake.(app Js.un_prop field) in

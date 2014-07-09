@@ -1325,7 +1325,7 @@ expr:
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
       { bigarray_set $startpos($1) $endpos($7) $1 $4 $7 }
 
-  | simple_expr SHARP SHARP label
+  | simple_expr SHARP SHARP @{`Shift_token (1,LIDENT "")} label
       { let inst = Fake.(app Js.un_js $1) in
         let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
         let prop = Fake.(app Js.un_prop field) in
