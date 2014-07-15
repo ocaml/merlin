@@ -3,6 +3,19 @@ open Raw_parser
 
 let section = Logger.section "recover"
 
+type candidates = (int * Merlin_parser.t Location.loc) zipper
+
+type recovering = {
+  candidate: (Merlin_parser.t * int) option;
+  candidates: candidates;
+}
+
+type t = {
+  errors: exn list;
+  parser: Merlin_parser.t;
+  recovering: recovering option;
+}
+
 let candidate_pos (_,{Location.txt = _; loc}) =
   Lexing.split_pos loc.Location.loc_start
 
@@ -33,13 +46,7 @@ let rollbacks endp parser =
       - compare col1 col2)
       stacks
   in
-  Zipper.of_list stacks
-
-type t = {
-  errors: exn list;
-  parser: Merlin_parser.t;
-  recovering: ((int * Merlin_parser.t Location.loc) zipper) option;
-}
+  {candidate = None; candidates = Zipper.of_list stacks}
 
 let parser t = t.parser
 let exns t = t.errors
@@ -48,7 +55,7 @@ let fresh parser = {errors = []; parser; recovering = None}
 
 let dump_recovering = function
   | None -> `Null
-  | Some (Zipper (head, _, tail)) ->
+  | Some {candidate; candidates = Zipper (head, _, tail)} ->
     let dump_snapshot (priority,{Location. txt = parser; loc}) =
       let guide = loc.Location.loc_start in
       let line, col = Lexing.split_pos guide in
@@ -61,6 +68,11 @@ let dump_recovering = function
     `Assoc [
       "head", `List (List.map ~f:dump_snapshot head);
       "tail", `List (List.map ~f:dump_snapshot tail);
+      "candidate",
+      begin match candidate with
+      | None -> `Null
+      | Some (candidate,_step) -> Merlin_parser.dump candidate
+      end
     ]
 
 let dump t = `Assoc [
@@ -175,6 +187,10 @@ let feed_recover original (s,tok,e as input) zipper =
   in
   aux_feed 0 candidates
 
+(* Number of tokens that should parse successfully before considering that the
+   candidate was valid *)
+let recover_steps = 5
+
 let fold warnings token t =
   match token with
   | Merlin_lexer.Error _ -> t
@@ -182,11 +198,25 @@ let fold warnings token t =
     warnings := [];
     let pop w = let r = !warnings in w := []; r in
     let recover_from t recovery =
-      match feed_recover t.parser (s,tok,e) recovery with
-      | Either.L recovery ->
-        {t with recovering = Some recovery}
-      | Either.R parser ->
-        {t with parser; recovering = None}
+      match
+        begin match recovery.candidate with
+        | None -> None
+        | Some (candidate,steps) ->
+          match feed_normal (s,tok,e) candidate with
+          | None -> None
+          | Some parser when steps <= 0 ->
+            Some {t with parser; recovering = None}
+          | Some parser ->
+            Some {t with recovering = Some {recovery with candidate = Some (parser,steps-1)}}
+        end
+      with
+      | Some t -> t
+      | None -> match feed_recover t.parser (s,tok,e) recovery.candidates with
+        | Either.L candidates ->
+          {t with recovering = Some {candidate = None; candidates}}
+        | Either.R candidate ->
+          {t with recovering = Some {recovery with candidate =
+                                        Some (candidate, recover_steps)}}
     in
     match t.recovering with
     | Some recovery -> recover_from t recovery
