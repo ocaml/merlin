@@ -52,7 +52,10 @@ module Frame : sig
   val value : frame -> Raw_parser.symbol
   val location : ?pop:int -> frame -> Location.t
   val eq    : frame -> frame -> bool
-  val next  : frame -> frame option
+  val next  : ?n:int -> frame -> frame option
+
+  val lr1_state : frame -> int
+  val lr0_state : frame -> int
 
   (* Ease pattern matching on parser stack *)
   type destruct = D of Raw_parser.symbol * destruct lazy_t

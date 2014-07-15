@@ -1,5 +1,4 @@
-- Improve js_of_ocaml support
-- Add support for existing p4 extensions on 4.02
+- Add support for ppx
 - Backport support for ocaml 4.00
 - catch "different assumptions" exception
 - there is a bug in cmi refreshing
@@ -7,7 +6,6 @@
 - have a way to get the types of modules
   partially done by 6f7e89e6f6d0915f5b2f76d892c99434399e9a76
   now we need a clean/generic way
-- Add support for ppx
 - Replace Browse by a propper wrapping of Typedtree (~60%)
 - Find proper API for incremental parser
   -> goto table should not be manipulated explicitly
@@ -24,6 +22,7 @@
   it will be lexed as STAR token and not beginning of comment
 - Module constraint relaxation is wrong on functors argument. 
   Check how typer behaves with incorrect functors.
+- Improve js_of_ocaml support
 
 IDEA (later)
 - perf: send batches of token rather than entering/exiting the whole

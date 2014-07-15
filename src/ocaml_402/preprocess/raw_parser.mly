@@ -1152,32 +1152,32 @@ expr:
     { v1 }
 | v1 = simple_expr v2 = simple_labeled_expr_list
     { mkexp $startpos $endpos (Pexp_apply(v1, List.rev v2)) }
-| LET @{Item "let"} v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs _in = IN @{`Shift 2} expr = seq_expr
+| LET @{`Item "let"} v2 = ext_attributes v3 = rec_flag v4 = let_bindings_no_attrs _in = IN @{`Shift 2} expr = seq_expr
     { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
       mkexp_attrs $startpos $endpos (Pexp_let(v3, List.rev v4, expr)) v2 }
-| LET MODULE @{Item "let module"}
+| LET MODULE @{`Item "let module"}
   v3 = ext_attributes v4 = UIDENT v5 = module_binding_body _in = IN @{`Shift 2} expr = seq_expr
     { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
       mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos(v4) $endpos(v4) v4, v5, expr)) v3 }
-| LET OPEN @{Item "let open"}
+| LET OPEN @{`Item "let open"}
   v3 = expr_open _in = IN @{`Shift 2} expr = seq_expr
     { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
       let (flag,id,ext) = v3 in
       mkexp_attrs $startpos $endpos (Pexp_open(flag, id, expr)) ext }
-| FUNCTION @{Item "function"}
+| FUNCTION @{`Item "function"}
   v2 = ext_attributes opt_bar v4 = match_cases
     { mkexp_attrs $startpos $endpos (Pexp_function(List.rev v4)) v2 }
-| FUN @{Item "fun"}
+| FUN @{`Item "fun"}
   v2 = ext_attributes v3 = labeled_simple_pattern v4 = fun_def
     { let (l,o,p) = v3 in
         mkexp_attrs $startpos $endpos (Pexp_fun(l, o, p, v4)) v2 }
-| FUN @{Item "fun"}
+| FUN @{`Item "fun"}
   v2 = ext_attributes v3 = newtype v4 = fun_def
     { mkexp_attrs $startpos $endpos (Pexp_newtype(v3, v4)) v2 }
-| MATCH @{Item "match"}
+| MATCH @{`Item "match"}
   v2 = ext_attributes v3 = seq_expr WITH opt_bar v6 = match_cases
     { mkexp_attrs $startpos $endpos (Pexp_match(v3, List.rev v6)) v2 }
-| TRY @{Item "try"}
+| TRY @{`Item "try"}
   v2 = ext_attributes v3 = seq_expr WITH opt_bar v6 = match_cases
     { mkexp_attrs $startpos $endpos (Pexp_try(v3, List.rev v6)) v2 }
 | v1 = expr_comma_list %prec below_COMMA
@@ -1186,14 +1186,14 @@ expr:
     { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos(v1) $endpos(v1) v1, Some v2)) }
 | v1 = name_tag v2 = simple_expr %prec below_SHARP
     { mkexp $startpos $endpos (Pexp_variant(v1, Some v2)) }
-| IF @{Item "if"}
+| IF @{`Item "if"}
   v2 = ext_attributes v3 = seq_expr
-  THEN @{Item "then clause"} v5 = expr
-  ELSE @{Item "else clause"} v7 = expr
+  THEN @{`Item "then clause"} v5 = expr
+  ELSE @{`Item "else clause"} v7 = expr
     { mkexp_attrs $startpos $endpos (Pexp_ifthenelse(v3, v5, Some v7)) v2 }
-| IF @{Item "if"}
+| IF @{`Item "if"}
   v2 = ext_attributes v3 = seq_expr
-  THEN @{Item "then clause"} v5 = expr
+  THEN @{`Item "then clause"} v5 = expr
     { mkexp_attrs $startpos $endpos (Pexp_ifthenelse(v3, v5, None)) v2 }
 | WHILE @{`Item "while"}
   v2 = ext_attributes v3 = seq_expr DO @{`Item "while body"} v5 = seq_expr DONE

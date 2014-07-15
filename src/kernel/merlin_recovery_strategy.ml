@@ -1,20 +1,6 @@
 open Std
 open Raw_parser
 
-let memoize ?check n ~f =
-  let f i = lazy (f i) in
-  let cache = Array.init n f in
-  match check with
-  | None -> (fun i -> Lazy.force cache.(i))
-  | Some check ->
-    (fun i ->
-      let cell = Lazy.force cache.(i) in
-      match check cell with
-      | None -> cell
-      | Some cell' ->
-        cache.(i) <- lazy cell';
-        cell')
-
 type cost = int
 
 let rec annotcost = function
@@ -67,7 +53,7 @@ let measure_production prod =
       Some { m_left_rec ; m_rhs; m_action; m_cost }
     with Not_found -> None
 
-let measure_production = memoize Query.productions ~f:measure_production
+let measure_production = Array.memoize Query.productions ~f:measure_production
 
 let can_use {m_left_rec} pos =
   match pos with
@@ -151,7 +137,7 @@ let reduction_strategy lr0 =
   List.sort ~cmp:(fun s1 s2 -> compare s1.cost s2.cost) candidates
 
 let reduction_strategy =
-  memoize Query.lr0_states
+  Array.memoize Query.lr0_states
     ~f:reduction_strategy
     ~check:(function {cost = -1} :: tl -> Some tl
                    | _ -> None)
@@ -160,7 +146,7 @@ let parser_pos lr0 =
   match List.map ~f:snd (Raw_parser.Query.itemset lr0) with
   | [] -> 0
   | x :: xs -> List.fold_left ~f:min ~init:x xs
-let parser_pos = memoize Query.lr0_states ~f:parser_pos
+let parser_pos = Array.memoize Query.lr0_states ~f:parser_pos
 
 
 module Termination : sig
