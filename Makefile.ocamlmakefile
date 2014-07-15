@@ -93,6 +93,7 @@ SOURCES = \
 	src/kernel/merlin_recovery_strategy.ml \
 	src/kernel/merlin_parser.mli      \
 	src/kernel/merlin_parser.ml       \
+	src/kernel/merlin_recovery_explain.ml \
 	src/kernel/error_classifier.ml    \
 	src/kernel/raw_lexer.mli          \
 	src/kernel/raw_lexer.ml           \

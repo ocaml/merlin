@@ -25,7 +25,10 @@ module Frame : sig
   val value : frame -> P.symbol
   val location : ?pop:int -> frame -> Location.t
   val eq    : frame -> frame -> bool
-  val next  : frame -> frame option
+  val next  : ?n:int -> frame -> frame option
+
+  val lr1_state : frame -> int
+  val lr0_state : frame -> int
 
   (* Ease pattern matching on parser stack *)
   type destruct = D of P.symbol * destruct lazy_t
@@ -57,7 +60,13 @@ end = struct
 
   let eq (Frame (_,f)) (Frame (_,f')) = f == f'
 
-  let next (Frame (d,f)) = frame_of (d - 1) f.E.next
+  let next ?(n=1) (Frame (d,f)) =
+    assert (n >= 0);
+    let rec loop f = function
+      | 0 -> f
+      | n -> loop f.E.next (n - 1)
+    in
+    frame_of (d - n) (loop f n)
 
   (* Ease pattern matching on parser stack *)
   type destruct = D of P.symbol * destruct lazy_t
@@ -71,6 +80,8 @@ end = struct
     in
     D (v,tl)
 
+  let lr1_state (Frame (_,stack)) = stack.E.state
+  let lr0_state frame = Raw_parser.Query.lr0_state (lr1_state frame)
 end
 
 let implementation = P.implementation_state

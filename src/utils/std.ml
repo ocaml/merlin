@@ -499,6 +499,24 @@ end = struct
   let none () : 'a t = Obj.magic none
 end
 
+module Array = struct
+  include Array
+
+  let memoize ?check n ~f =
+    let f i = lazy (f i) in
+    let cache = Array.init n f in
+    match check with
+    | None -> (fun i -> Lazy.force cache.(i))
+    | Some check ->
+      (fun i ->
+        let cell = Lazy.force cache.(i) in
+        match check cell with
+        | None -> cell
+        | Some cell' ->
+          cache.(i) <- lazy cell';
+          cell')
+end
+
 module Char = struct
   include Char
   let is_lowercase c = lowercase c = c

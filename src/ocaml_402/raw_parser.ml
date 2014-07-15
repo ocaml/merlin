@@ -465,7 +465,10 @@ and _ nonterminal_class =
   | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
   | N_additive : (string) nonterminal_class
 
-and annotation = ([`Shift of int | `Shift_token of int * token | `Cost of int | `Indent of int])
+and annotation = ([ `Shift of int | `Shift_token of int * token | `Cost of int
+        | `Indent of int
+        | `Unclosed of string | `Close
+        | `Item of string ])
 
 and symbol_class =
   | CT_ : 'a token_class * annotation list -> symbol_class
@@ -768,6 +771,8 @@ let fake_tydecl tydecl = tydecl.ptype_name, tydecl
 let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
 let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
 let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
+
+let unclosed_paren = `Unclosed "("
 
 let _eRR =
   Error
@@ -31832,6 +31837,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_class_signature, [
         ])), [
         CT_ (T_OBJECT, [
+                    (`Unclosed "object");
           ]);
         CN_ (N_class_sig_body, [
           ]);
@@ -31860,6 +31866,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_class_simple_expr, [
         ])), [
         CT_ (T_OBJECT, [
+                    (`Unclosed "object");
           ]);
         CN_ (N_class_structure, [
           ]);
@@ -31870,6 +31877,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_class_simple_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_class_expr, [
           ]);
@@ -31884,6 +31892,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_class_simple_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_class_expr, [
           ]);
@@ -32477,6 +32486,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_LET_LWT, [
+                     (`Item "lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32485,7 +32495,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_let_bindings, [
           ]);
         CT_ (T_IN, [
-                                                             (`Shift 2);
+                                                     (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32494,6 +32504,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_MATCH_LWT, [
+                       (`Item "match_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32510,6 +32521,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_TRY_LWT, [
+                     (`Item "try_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32520,6 +32532,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_TRY_LWT, [
+                     (`Item "try_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32536,6 +32549,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_TRY_LWT, [
+                     (`Item "try_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32550,6 +32564,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_TRY_LWT, [
+                     (`Item "try_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32570,12 +32585,14 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_WHILE_LWT, [
+                       (`Item "while_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_DO, [
+                (`Item "while_lwt body");
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32586,6 +32603,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_FOR_LWT, [
+                     (`Item "for_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32600,6 +32618,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_DO, [
+                (`Item "for body");
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32610,6 +32629,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_FOR_LWT, [
+                     (`Item "for_lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32620,6 +32640,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_DO, [
+                (`Item "for body");
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32644,6 +32665,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_LET, [
+                 (`Item "let");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32652,7 +32674,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_let_bindings_no_attrs, [
           ]);
         CT_ (T_IN, [
-                                                                                       (`Shift 2);
+                                                                                                      (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32663,6 +32685,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_LET, [
           ]);
         CT_ (T_MODULE, [
+                        (`Item "let module");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32671,7 +32694,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_module_binding_body, [
           ]);
         CT_ (T_IN, [
-                                                                                          (`Shift 2);
+                                                                               (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32682,11 +32705,12 @@ module MenhirInterpreterTable = struct
         CT_ (T_LET, [
           ]);
         CT_ (T_OPEN, [
+                      (`Item "let open");
           ]);
         CN_ (N_expr_open, [
           ]);
         CT_ (T_IN, [
-                                              (`Shift 2);
+                                     (`Shift 2);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32695,6 +32719,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_FUNCTION, [
+                      (`Item "function");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32707,6 +32732,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_FUN, [
+                 (`Item "fun");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32719,6 +32745,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_FUN, [
+                 (`Item "fun");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32731,6 +32758,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_MATCH, [
+                   (`Item "match");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32747,6 +32775,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_TRY, [
+                 (`Item "try");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32785,16 +32814,19 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_IF, [
+                (`Item "if");
           ]);
         CN_ (N_ext_attributes, [
           ]);
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_THEN, [
+                  (`Item "then clause");
           ]);
         CN_ (N_expr, [
           ]);
         CT_ (T_ELSE, [
+                  (`Item "else clause");
           ]);
         CN_ (N_expr, [
           ]);
@@ -32803,12 +32835,14 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_IF, [
+                (`Item "if");
           ]);
         CN_ (N_ext_attributes, [
           ]);
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_THEN, [
+                  (`Item "then clause");
           ]);
         CN_ (N_expr, [
           ]);
@@ -32817,12 +32851,14 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_WHILE, [
+                   (`Item "while");
           ]);
         CN_ (N_ext_attributes, [
           ]);
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_DO, [
+                                                  (`Item "while body");
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -32833,6 +32869,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_FOR, [
+                 (`Item "for");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -32847,6 +32884,7 @@ module MenhirInterpreterTable = struct
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_DO, [
+                (`Item "for body");
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -33201,6 +33239,8 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_expr, [
         ])), [
         CT_ (T_OBJECT, [
+                    (`Unclosed "object");
+                                          (`Item "object");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -33375,6 +33415,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_floating_attribute, [
         ])), [
         CT_ (T_LBRACKETATATAT, [
+                            (`Item "attribute");
           ]);
         CN_ (N_attr_id, [
           ]);
@@ -33545,6 +33586,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_item_extension, [
         ])), [
         CT_ (T_LBRACKETPERCENTPERCENT, [
+                                    (`Item "extension");
           ]);
         CN_ (N_attr_id, [
           ]);
@@ -33979,24 +34021,29 @@ module MenhirInterpreterTable = struct
         ], (Some 281, [
         ]));
       (Some (CN_ (N_match_case, [
+           (`Item "pattern");
         ])), [
         CN_ (N_pattern, [
           ]);
         CT_ (T_MINUSGREATER, [
+                               (`Item "match action");
           ]);
         CN_ (N_seq_expr, [
           ]);
         ], (Some 282, [
         ]));
       (Some (CN_ (N_match_case, [
+           (`Item "pattern");
         ])), [
         CN_ (N_pattern, [
           ]);
         CT_ (T_WHEN, [
+                  (`Item "match guard");
           ]);
         CN_ (N_seq_expr, [
           ]);
         CT_ (T_MINUSGREATER, [
+                               (`Item "match action");
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -34270,6 +34317,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_expr, [
         ])), [
         CT_ (T_STRUCT, [
+                    (`Unclosed "struct");
           ]);
         CN_ (N_structure, [
           ]);
@@ -34314,6 +34362,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_module_expr, [
           ]);
@@ -34328,6 +34377,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_module_expr, [
           ]);
@@ -34338,6 +34388,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CT_ (T_VAL, [
           ]);
@@ -34350,6 +34401,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CT_ (T_VAL, [
           ]);
@@ -34366,6 +34418,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CT_ (T_VAL, [
           ]);
@@ -34386,6 +34439,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CT_ (T_VAL, [
           ]);
@@ -34450,6 +34504,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_type, [
         ])), [
         CT_ (T_SIG, [
+                 (`Unclosed "sig");
           ]);
         CN_ (N_signature, [
           ]);
@@ -34494,6 +34549,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_type, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CT_ (T_MODULE, [
           ]);
@@ -34506,6 +34562,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_module_type, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_module_type, [
           ]);
@@ -34590,6 +34647,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_open_statement, [
         ])), [
         CT_ (T_OPEN, [
+                  (`Item "open");
           ]);
         CN_ (N_override_flag, [
           ]);
@@ -35343,6 +35401,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_TYPE, [
           ]);
         CT_ (T_NONREC, [
+                         (`Item "type nonrec");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -35351,6 +35410,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_TYPE, [
+                  (`Item "type");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -35365,6 +35425,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_TYPE, [
           ]);
         CT_ (T_NONREC, [
+                         (`Item "type nonrec");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -35377,6 +35438,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_VAL, [
+                 (`Item "val");
           ]);
         CN_ (N_val_ident, [
           ]);
@@ -35391,6 +35453,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_EXTERNAL, [
+                      (`Item "external");
           ]);
         CN_ (N_val_ident, [
           ]);
@@ -35409,6 +35472,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_TYPE, [
+                  (`Item "type");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -35417,6 +35481,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_TYPE, [
+                  (`Item "type");
           ]);
         CN_ (N_sig_type_extension, [
           ]);
@@ -35425,6 +35490,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_EXCEPTION, [
+                       (`Item "exception");
           ]);
         CN_ (N_sig_exception_declaration, [
           ]);
@@ -35433,6 +35499,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_MODULE, [
+                    (`Item "module");
           ]);
         CT_ (T_UIDENT, [
           ]);
@@ -35445,6 +35512,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_MODULE, [
+                    (`Item "module");
           ]);
         CT_ (T_UIDENT, [
           ]);
@@ -35461,6 +35529,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_MODULE, [
           ]);
         CT_ (T_REC, [
+                        (`Item "recursive module");
           ]);
         CN_ (N_module_rec_declarations, [
           ]);
@@ -35471,6 +35540,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_MODULE, [
           ]);
         CT_ (T_TYPE, [
+                         (`Item "module type");
           ]);
         CN_ (N_ident, [
           ]);
@@ -35483,6 +35553,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_MODULE, [
           ]);
         CT_ (T_TYPE, [
+                         (`Item "module type");
           ]);
         CN_ (N_ident, [
           ]);
@@ -35503,6 +35574,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_INCLUDE, [
+                     (`Item "include");
           ]);
         CN_ (N_module_type, [
           ]);
@@ -35513,6 +35585,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_signature_item, [
         ])), [
         CT_ (T_CLASS, [
+                   (`Item "class");
           ]);
         CN_ (N_class_descriptions, [
           ]);
@@ -35523,6 +35596,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_CLASS, [
           ]);
         CT_ (T_TYPE, [
+                        (`Item "class type");
           ]);
         CN_ (N_class_type_declarations, [
           ]);
@@ -35998,6 +36072,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -36020,6 +36095,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_BEGIN, [
+                   (`Unclosed "begin");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -36056,6 +36132,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LPAREN, [
+                                           (unclosed_paren);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -36070,6 +36147,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LPAREN, [
+                                                       (unclosed_paren);
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -36084,6 +36162,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LBRACKET, [
+                                                         (`Unclosed "[");
           ]);
         CN_ (N_seq_expr, [
           ]);
@@ -36098,6 +36177,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LBRACE, [
+                                                       (`Unclosed "{");
           ]);
         CN_ (N_expr, [
           ]);
@@ -36108,6 +36188,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_LBRACE, [
+                    (`Unclosed "{");
           ]);
         CN_ (N_record_expr, [
           ]);
@@ -36122,6 +36203,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LBRACE, [
+                                           (`Unclosed "{");
           ]);
         CN_ (N_record_expr, [
           ]);
@@ -36132,6 +36214,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_LBRACKETBAR, [
+                         (`Unclosed "[|");
           ]);
         CN_ (N_expr_semi_list, [
           ]);
@@ -36156,6 +36239,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LBRACKETBAR, [
+                                                (`Unclosed "[|");
           ]);
         CN_ (N_expr_semi_list, [
           ]);
@@ -36168,6 +36252,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_LBRACKET, [
+                      (`Unclosed "[");
           ]);
         CN_ (N_expr_semi_list, [
           ]);
@@ -36184,6 +36269,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LBRACKET, [
+                                             (`Unclosed "[");
           ]);
         CN_ (N_expr_semi_list, [
           ]);
@@ -36222,6 +36308,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_LBRACELESS, [
+                        (`Unclosed "{<");
           ]);
         CN_ (N_field_expr_list, [
           ]);
@@ -36246,6 +36333,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LBRACELESS, [
+                                               (`Unclosed "{<");
           ]);
         CN_ (N_field_expr_list, [
           ]);
@@ -36269,6 +36357,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CT_ (T_MODULE, [
           ]);
@@ -36281,6 +36370,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_expr, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CT_ (T_MODULE, [
           ]);
@@ -36301,6 +36391,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_DOT, [
           ]);
         CT_ (T_LPAREN, [
+                                           (unclosed_paren);
           ]);
         CT_ (T_MODULE, [
           ]);
@@ -36391,6 +36482,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_pattern_not_ident, [
         ])), [
         CT_ (T_LBRACE, [
+                    (`Unclosed "{");
           ]);
         CN_ (N_lbl_pattern_list, [
           ]);
@@ -36401,6 +36493,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_pattern_not_ident, [
         ])), [
         CT_ (T_LBRACKET, [
+                      (`Unclosed "[");
           ]);
         CN_ (N_pattern_semi_list, [
           ]);
@@ -36413,6 +36506,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_pattern_not_ident, [
         ])), [
         CT_ (T_LBRACKETBAR, [
+                         (`Unclosed "[|");
           ]);
         CN_ (N_pattern_semi_list, [
           ]);
@@ -36433,6 +36527,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_pattern_not_ident, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_pattern, [
           ]);
@@ -36443,6 +36538,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_simple_pattern_not_ident, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_pattern, [
           ]);
@@ -36459,6 +36555,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_LPAREN, [
           ]);
         CT_ (T_MODULE, [
+                           (unclosed_paren);
           ]);
         CT_ (T_UIDENT, [
           ]);
@@ -36471,6 +36568,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_LPAREN, [
           ]);
         CT_ (T_MODULE, [
+                           (unclosed_paren);
           ]);
         CT_ (T_UIDENT, [
           ]);
@@ -36919,6 +37017,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_LET_LWT, [
+                     (`Item "lwt");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -36933,6 +37032,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_TYPE, [
           ]);
         CT_ (T_NONREC, [
+                         (`Item "type nonrec");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -36941,6 +37041,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_TYPE, [
+                  (`Item "type");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -36955,6 +37056,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_TYPE, [
           ]);
         CT_ (T_NONREC, [
+                         (`Item "type nonrec");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -37055,6 +37157,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_LET, [
+                 (`Item "let");
           ]);
         CN_ (N_ext_attributes, [
           ]);
@@ -37067,6 +37170,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_EXTERNAL, [
+                      (`Item "external");
           ]);
         CN_ (N_val_ident, [
           ]);
@@ -37085,6 +37189,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_TYPE, [
+                  (`Item "type");
           ]);
         CN_ (N_type_declarations, [
           ]);
@@ -37093,6 +37198,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_TYPE, [
+                   (`Item "type");
           ]);
         CN_ (N_str_type_extension, [
           ]);
@@ -37101,6 +37207,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_EXCEPTION, [
+                       (`Item "exception");
           ]);
         CN_ (N_str_exception_declaration, [
           ]);
@@ -37109,6 +37216,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_MODULE, [
+                    (`Item "module");
           ]);
         CN_ (N_module_binding, [
           ]);
@@ -37119,6 +37227,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_MODULE, [
           ]);
         CT_ (T_REC, [
+                        (`Item "recursive module");
           ]);
         CN_ (N_module_bindings, [
           ]);
@@ -37129,6 +37238,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_MODULE, [
           ]);
         CT_ (T_TYPE, [
+                         (`Item "module type");
           ]);
         CN_ (N_ident, [
           ]);
@@ -37141,6 +37251,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_MODULE, [
           ]);
         CT_ (T_TYPE, [
+                         (`Item "module type");
           ]);
         CN_ (N_ident, [
           ]);
@@ -37161,6 +37272,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_CLASS, [
+                   (`Item "class");
           ]);
         CN_ (N_class_declarations, [
           ]);
@@ -37171,6 +37283,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_CLASS, [
           ]);
         CT_ (T_TYPE, [
+                        (`Item "class type");
           ]);
         CN_ (N_class_type_declarations, [
           ]);
@@ -37179,6 +37292,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_structure_item, [
         ])), [
         CT_ (T_INCLUDE, [
+                     (`Item "include");
           ]);
         CN_ (N_module_expr, [
           ]);
@@ -37259,6 +37373,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_type_constraint, [
         ])), [
         CT_ (T_COLON, [
+                   (`Item "type constraint");
           ]);
         CN_ (N_core_type, [
           ]);
@@ -37267,6 +37382,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_type_constraint, [
         ])), [
         CT_ (T_COLON, [
+                   (`Item "type constraint");
           ]);
         CN_ (N_core_type, [
           ]);
@@ -37279,6 +37395,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_type_constraint, [
         ])), [
         CT_ (T_COLONGREATER, [
+                          (`Item "type constraint");
           ]);
         CN_ (N_core_type, [
           ]);
@@ -37549,6 +37666,7 @@ module MenhirInterpreterTable = struct
       (Some (CN_ (N_val_ident, [
         ])), [
         CT_ (T_LPAREN, [
+                    (unclosed_paren);
           ]);
         CN_ (N_operator, [
           ]);
