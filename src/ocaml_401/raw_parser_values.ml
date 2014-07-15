@@ -276,6 +276,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_implementation                    -> "implementation"
   | N_ident                             -> "ident"
   | N_generalized_constructor_arguments -> "generalized_constructor_arguments"
+  | N_functor_arg                       -> "functor_arg"
   | N_fun_def                           -> "fun_def"
   | N_fun_binding                       -> "fun_binding"
   | N_field_expr_list                   -> "field_expr_list"
@@ -889,6 +890,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_implementation                    -> 0, []
   | N_ident                             -> 2, ""
   | N_generalized_constructor_arguments -> 1, ([], None)
+  | N_functor_arg                       -> 1, (default_string_loc, default_module_type)
   | N_fun_def                           -> 1, default_expr
   | N_fun_binding                       -> 1, default_expr
   | N_field_expr_list                   -> 0, []

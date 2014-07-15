@@ -390,6 +390,7 @@ and _ nonterminal_class =
   | N_implementation : (Parsetree.structure) nonterminal_class
   | N_ident : (Asttypes.label) nonterminal_class
   | N_generalized_constructor_arguments : (Parsetree.core_type list * Parsetree.core_type option) nonterminal_class
+  | N_functor_arg : (string Asttypes.loc * Parsetree.module_type) nonterminal_class
   | N_fun_def : (Parsetree.expression) nonterminal_class
   | N_fun_binding : (Parsetree.expression) nonterminal_class
   | N_field_expr_list : ((string Asttypes.loc * Parsetree.expression) list) nonterminal_class

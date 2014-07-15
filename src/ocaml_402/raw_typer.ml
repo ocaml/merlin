@@ -1,3 +1,4 @@
+open Std
 open Location
 open Parsetree
 open Raw_parser
@@ -16,6 +17,16 @@ type t = Asttypes.rec_flag * item list
 let default = Asttypes.Nonrecursive
 let empty = default, []
 let observe = snd
+
+let functor_arg = function
+  | (id, Some mty) ->
+    let md = Ast_helper.Md.mk id mty in
+    [Signature [Ast_helper.Sig.module_ md]]
+  | (id, None) -> []
+
+let rec functor_args acc = function
+  | arg :: args -> functor_args (functor_arg arg @ acc) args
+  | [] -> acc
 
 let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
   match nt, v with
@@ -41,7 +52,8 @@ let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
   | N_interface, sg               -> default, [Signature sg]
   | N_signature_item, sg          -> default, [Signature sg]
   | N_signature, sg               -> default, [Signature (List.rev sg)]
-  (*| N_module_functor_arg, (id,mty) -> `fmd (id,mty)*)
+  | N_functor_arg, arg            -> default, functor_arg arg
+  | N_functor_args, args          -> default, functor_args [] args
   | N_labeled_simple_pattern, pat -> default, [Pattern pat]
   | N_pattern, pat                -> default, [Pattern ("",None,pat)]
   | N_match_cases, cases          -> default, [Eval (Ast_helper.Exp.function_ cases)]

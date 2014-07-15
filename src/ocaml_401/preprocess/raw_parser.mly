@@ -596,6 +596,10 @@ dummy:
 
 (* Module expressions *)
 
+functor_arg:
+| LPAREN UIDENT COLON module_type RPAREN
+  { mkrhs $startpos($2) $endpos($2) $2, $4 }
+
 module_expr:
     mod_longident
       { mkmod $startpos $endpos (Pmod_ident (mkrhs $startpos($1) $endpos($1) $1)) }
@@ -604,8 +608,8 @@ module_expr:
 (*  | STRUCT structure error
       { unclosed "struct" $startpos($1) $endpos($1) "end" $startpos($3) $endpos($3);
         mkmod $startpos $endpos (Pmod_structure($2)) } *)
-  | FUNCTOR LPAREN UIDENT COLON module_type RPAREN MINUSGREATER module_expr
-      { mkmod $startpos $endpos (Pmod_functor(mkrhs $startpos($3) $endpos($3) $3, $5, $8)) }
+  | FUNCTOR functor_arg MINUSGREATER module_expr
+      { let id, mty = $2 in mkmod $startpos $endpos (Pmod_functor(id, mty, $4)) }
   | module_expr LPAREN module_expr RPAREN
       { mkmod $startpos $endpos (Pmod_apply($1, $3)) }
 (*  | module_expr LPAREN module_expr error
