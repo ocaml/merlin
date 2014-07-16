@@ -8,6 +8,14 @@ type t = {
 exception Error of t
 
 let loc t = t.loc
+
+let friendly_concat = function
+  | [] -> ""
+  | [a] -> a
+  | [a; b] -> a ^ " or " ^ b
+  | hd :: tl ->
+    String.concat ", " tl ^ " or " ^ hd
+
 let classify {explanation = {Ex. item; unclosed; expected}} =
   let inside = match item with
     | None -> ""
@@ -20,7 +28,7 @@ let classify {explanation = {Ex. item; unclosed; expected}} =
     | classes ->
       let classes = List.map ~f:Raw_parser_values.string_of_class classes in
       let classes = List.filter_dup classes in
-      ", expecting " ^ (String.concat " or " classes)
+      ", expecting " ^ friendly_concat classes
   in
   Printf.sprintf "Syntax error%s%s%s"
     inside after expecting
