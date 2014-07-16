@@ -289,8 +289,6 @@ let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
 let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
 let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
-let unclosed_paren = `Unclosed "("
-
 %}
 
 (**
@@ -612,24 +610,24 @@ module_expr:
     { mkmod $startpos $endpos (Pmod_apply(v1, v3)) }
 | v1 = module_expr LPAREN RPAREN
     { mkmod $startpos $endpos (Pmod_apply(v1, mkmod $startpos $endpos (Pmod_structure []))) }
-| LPAREN @{unclosed_paren}
+| LPAREN @{`Unclosed "("}
   v2 = module_expr COLON v4 = module_type RPAREN
     { mkmod $startpos $endpos (Pmod_constraint(v2, v4)) }
-| LPAREN @{unclosed_paren} v2 = module_expr RPAREN
+| LPAREN @{`Unclosed "("} v2 = module_expr RPAREN
     { v2 }
-| LPAREN @{unclosed_paren}
+| LPAREN @{`Unclosed "("}
   VAL v3 = expr RPAREN
     { mkmod $startpos $endpos (Pmod_unpack v3) }
-| LPAREN @{unclosed_paren}
+| LPAREN @{`Unclosed "("}
   VAL v3 = expr COLON v5 = package_type RPAREN
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_constraint(v3, ghtyp $startpos $endpos (Ptyp_package v5))))) }
-| LPAREN @{unclosed_paren}
+| LPAREN @{`Unclosed "("}
   VAL v3 = expr COLON v5 = package_type COLONGREATER v7 = package_type RPAREN
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_coerce(v3, Some(ghtyp $startpos $endpos (Ptyp_package v5)),
                                     ghtyp $startpos $endpos (Ptyp_package v7))))) }
-| LPAREN @{unclosed_paren}
+| LPAREN @{`Unclosed "("}
   VAL v3 = expr COLONGREATER v5 = package_type RPAREN
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_coerce(v3, None, ghtyp $startpos $endpos (Ptyp_package v5))))) }
@@ -755,9 +753,9 @@ module_type:
     { mkmty $startpos $endpos (Pmty_with(v1, List.rev v3)) }
 | MODULE TYPE OF v4 = module_expr %prec below_LBRACKETAT
     { mkmty $startpos $endpos (Pmty_typeof v4) }
-| LPAREN @{unclosed_paren} MODULE v3 = mod_longident RPAREN
+| LPAREN @{`Unclosed "("} MODULE v3 = mod_longident RPAREN
     { mkmty $startpos $endpos  (Pmty_alias (mkrhs $startpos(v3) $endpos(v3) v3)) }
-| LPAREN @{unclosed_paren} v2 = module_type RPAREN
+| LPAREN @{`Unclosed "("} v2 = module_type RPAREN
     { v2 }
 | v1 = extension
     { mkmty $startpos $endpos (Pmty_extension v1) }
@@ -911,11 +909,11 @@ class_simple_expr:
     { mkclass $startpos $endpos (Pcl_constr(mkloc v4 (rloc $startpos(v4) $endpos(v4)), List.rev v2)) }
 | v1 = class_longident
     { mkclass $startpos $endpos (Pcl_constr(mkrhs $startpos(v1) $endpos(v1) v1, [])) }
-| OBJECT @{`Unclosed "object"} v2 = class_structure END
+| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = class_structure END
     { mkclass $startpos $endpos (Pcl_structure(v2)) }
-| LPAREN @{unclosed_paren} v2 = class_expr COLON v4 = class_type RPAREN
+| LPAREN @{`Unclosed "("} v2 = class_expr COLON v4 = class_type RPAREN
     { mkclass $startpos $endpos (Pcl_constraint(v2, v4)) }
-| LPAREN @{unclosed_paren} v2 = class_expr RPAREN
+| LPAREN @{`Unclosed "("} v2 = class_expr RPAREN
     { v2 }
 
 class_structure:
@@ -1011,7 +1009,7 @@ class_signature:
     { mkcty $startpos $endpos (Pcty_constr (mkloc v4 (rloc $startpos(v4) $endpos(v4)), List.rev v2)) }
 | v1 = clty_longident
     { mkcty $startpos $endpos (Pcty_constr (mkrhs $startpos(v1) $endpos(v1) v1, [])) }
-| OBJECT @{`Unclosed "object"} v2 = class_sig_body END
+| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = class_sig_body END
     { mkcty $startpos $endpos (Pcty_signature v2) }
 
 class_sig_body:
@@ -1284,7 +1282,7 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos(v1) $endpos(v1) v1, None)) }
 | v1 = name_tag %prec prec_constant_constructor
     { mkexp $startpos $endpos (Pexp_variant(v1, None)) }
-| LPAREN @{unclosed_paren} v2 = seq_expr RPAREN
+| LPAREN @{`Unclosed "("} v2 = seq_expr RPAREN
     { reloc_exp $startpos $endpos v2 }
 | BEGIN v2 = ext_attributes v3 = seq_expr END
     { wrap_exp_attrs $startpos $endpos (reloc_exp $startpos $endpos v3) v2 (* check location *) }
@@ -1295,9 +1293,9 @@ simple_expr:
     { mkexp_constraint $startpos $endpos v2 v3 }
 | v1 = simple_expr DOT v3 = label_longident
     { mkexp $startpos $endpos (Pexp_field(v1, mkrhs $startpos(v3) $endpos(v3) v3)) }
-| v1 = mod_longident DOT LPAREN @{unclosed_paren} v4 = seq_expr RPAREN
+| v1 = mod_longident DOT LPAREN @{`Unclosed "("} v4 = seq_expr RPAREN
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, v4)) }
-| v1 = simple_expr _ops = DOT _ope = LPAREN @{unclosed_paren} v4 = seq_expr RPAREN
+| v1 = simple_expr _ops = DOT _ope = LPAREN @{`Unclosed "("} v4 = seq_expr RPAREN
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
                  (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "Array" "get")),
@@ -1340,12 +1338,12 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, mkexp $startpos(v4) $endpos(v4) (Pexp_override(List.rev v4)))) }
 | v1 = simple_expr SHARP @{`Shift_token (1,LIDENT "")} v3 = label
     { mkexp $startpos $endpos (Pexp_send(v1, v3)) }
-| LPAREN @{unclosed_paren} MODULE v3 = module_expr RPAREN
+| LPAREN @{`Unclosed "("} MODULE v3 = module_expr RPAREN
     { mkexp $startpos $endpos  (Pexp_pack v3) }
-| LPAREN @{unclosed_paren} MODULE v3 = module_expr COLON v5 = package_type RPAREN
+| LPAREN @{`Unclosed "("} MODULE v3 = module_expr COLON v5 = package_type RPAREN
     { mkexp $startpos $endpos  (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack v3),
                                 ghtyp $startpos $endpos (Ptyp_package v5))) }
-| v1 = mod_longident DOT LPAREN @{unclosed_paren} MODULE v5 = module_expr COLON v7 = package_type RPAREN
+| v1 = mod_longident DOT LPAREN @{`Unclosed "("} MODULE v5 = module_expr COLON v7 = package_type RPAREN
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1,
         mkexp $startpos $endpos (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack v5),
                                 ghtyp $startpos $endpos (Ptyp_package v7))))) }
@@ -1442,7 +1440,7 @@ match_case:
   _2 = MINUSGREATER @{`Item "match action"} expr = seq_expr
     { Exp.case v1 (reloc_exp_fake $endpos(_2) $endpos expr) }
 | @{`Item "pattern"} v1 = pattern
-  WHEN @{`Item "match guard"} v3 = seq_expr
+  WHEN @{`Item "when guard"} v3 = seq_expr
   _4 = MINUSGREATER @{`Item "match action"} expr = seq_expr
     { Exp.case v1 ~guard:v3 (reloc_exp_fake $endpos(_4) $endpos expr) }
 
@@ -1569,15 +1567,15 @@ simple_pattern_not_ident:
     { mkpat $startpos $endpos (Ppat_array(List.rev v2)) }
 | LBRACKETBAR BARRBRACKET
     { mkpat $startpos $endpos (Ppat_array []) }
-| LPAREN @{unclosed_paren} v2 = pattern RPAREN
+| LPAREN @{`Unclosed "("} v2 = pattern RPAREN
     { reloc_pat $startpos $endpos v2 }
-| LPAREN @{unclosed_paren} v2 = pattern COLON v4 = core_type RPAREN
+| LPAREN @{`Unclosed "("} v2 = pattern COLON v4 = core_type RPAREN
     { mkpat $startpos $endpos (Ppat_constraint(v2, v4)) }
 (*| LPAREN pattern COLON v4 = error
     { expecting $startpos(v4) $endpos(v4) "type" }*)
-| LPAREN MODULE @{unclosed_paren} v3 = UIDENT RPAREN
+| LPAREN MODULE @{`Unclosed "("} v3 = UIDENT RPAREN
     { mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos(v3) $endpos(v3) v3)) }
-| LPAREN MODULE @{unclosed_paren} v3 = UIDENT COLON v5 = package_type RPAREN
+| LPAREN MODULE @{`Unclosed "("} v3 = UIDENT COLON v5 = package_type RPAREN
     { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos(Ppat_unpack (mkrhs $startpos(v3) $endpos(v3) v3)),
                               ghtyp $startpos $endpos (Ptyp_package v5))) }
 | v1 = extension
@@ -2099,7 +2097,7 @@ ident:
 val_ident:
 | v1 = LIDENT
     { v1 }
-| LPAREN @{unclosed_paren} v2 = operator RPAREN
+| LPAREN @{`Unclosed "("} v2 = operator RPAREN
     { v2 }
 (*| LPAREN v2 =error
     { expecting $startpos(v2) $endpos(v2) "operator" }*)
