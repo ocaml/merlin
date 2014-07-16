@@ -19,6 +19,7 @@ let classify {explanation = {Ex. item; unclosed; expected}} =
     | [] -> ""
     | classes ->
       let classes = List.map ~f:Raw_parser_values.string_of_class classes in
+      let classes = List.filter_dup classes in
       ", expecting " ^ (String.concat " or " classes)
   in
   Printf.sprintf "Syntax error%s%s%s"
