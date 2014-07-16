@@ -51,6 +51,9 @@ The options available for better control are as follow:
 
     --with-bin-annot        compiles merlin with '--bin-annot', useful if you plan
                             to work on merlin itself.
+
+    --enable-compiled-emacs-mode    compiles the emacs mode.
+                                    Makes the plugin load slightly faster.
 END
 }
 
@@ -82,6 +85,9 @@ while [ -n "$1" ]; do
       ;;
     --with-bin-annot)
       WITH_BIN_ANNOT="-cflags -bin-annot"
+      ;;
+    --enable-compiled-emacs-mode)
+      ENABLE_COMPILED_EMACS_MODE=true
       ;;
     --help|-help|-h)
       usage
@@ -150,6 +156,7 @@ SHARE_DIR=$SHARE_DIR
 VIM_DIR=$VIM_DIR
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
+ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 END
 
   if [ -d ".git" ]; then
