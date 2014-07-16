@@ -7,6 +7,9 @@ type annotation =
   | `Shift_token of int * token
   | `Cost of int
   | `Indent of int
+  | `Unclosed of string
+  | `Close
+  | `Item of string
   ]
 
 type 'a token_class = 'a Raw_parser.token_class

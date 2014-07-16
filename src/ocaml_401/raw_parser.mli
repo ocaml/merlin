@@ -445,7 +445,10 @@ and _ nonterminal_class =
   | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
   | N_additive : (string) nonterminal_class
 
-and annotation = ([`Shift of int | `Shift_token of int * token | `Cost of int | `Indent of int])
+and annotation = ([ `Shift of int | `Shift_token of int * token | `Cost of int
+        | `Indent of int
+        | `Unclosed of string | `Close
+        | `Item of string ])
 
 and symbol_class =
   | CT_ : 'a token_class * annotation list -> symbol_class
