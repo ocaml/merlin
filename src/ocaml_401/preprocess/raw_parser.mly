@@ -668,10 +668,6 @@ top_structure_item:
   | SEMISEMI EOF { [] }
 ;
 
-with_extensions:
-  | LIDENT COMMA with_extensions { $1 :: $3 }
-  | LIDENT { [$1] }
-
 structure_item:
   | LET @{`Item "let"} rec_flag let_bindings
       { match $3 with
@@ -679,12 +675,6 @@ structure_item:
             [mkstr $startpos $endpos (Pstr_eval exp)]
         | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev $3))]
       } @{`Cost (-10)}
-  | LET_LWT @{`Item "lwt"}  rec_flag let_bindings
-      { match $3 with
-        | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
-            [mkstr $startpos $endpos (Pstr_eval (Fake.app Fake.Lwt.un_lwt exp))]
-        | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3))]
-      }
   | EXTERNAL @{`Item "external"} val_ident COLON core_type EQUAL primitive_declaration
       { [mkstr $startpos $endpos
           (Pstr_primitive (mkrhs $startpos($2) $endpos($2) $2,
@@ -692,23 +682,7 @@ structure_item:
       }
   | TYPE @{`Item "type"} type_declarations
       { [mkstr $startpos $endpos (Pstr_type(List.rev $2))] }
-  | TYPE NONREC @{`Item "type nonrec"} type_declarations
-      { [mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec $3))] }
-  | TYPE @{`Item "type"} type_declarations WITH with_extensions
-      {
-        let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
-        let ast = Fake.TypeWith.generate_definitions ~ty:($2) ?ghost_loc $4 in
-        mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
-      }
-  | TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
-      {
-        let ghost_loc = Some (symbol_gloc $startpos($5) $endpos($5)) in
-        let ast = Fake.TypeWith.generate_definitions ~ty:($3) ?ghost_loc $5 in
-        mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec $3)) :: ast
-      }
   | EXCEPTION @{`Item "exception"} UIDENT constructor_arguments
-      { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
-  | EXCEPTION @{`Item "exception"} UIDENT constructor_arguments WITH with_extensions
       { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | EXCEPTION @{`Item "exception"} UIDENT EQUAL constr_longident
       { [mkstr $startpos $endpos (Pstr_exn_rebind(mkrhs $startpos($2) $endpos($2) $2,
@@ -729,42 +703,6 @@ structure_item:
       { [mkstr $startpos $endpos (Pstr_class_type (List.rev $3))] }
   | INCLUDE @{`Item "include"} module_expr
       { [mkstr $startpos $endpos (Pstr_include $2)] }
-  | OUNIT_TEST option(STRING) EQUAL seq_expr
-      { let expr = Fake.app Fake.OUnit.force_bool $4 in
-        [mkstr $startpos $endpos (Pstr_eval expr)]
-      }
-  | OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
-      { let expr = Fake.app Fake.OUnit.force_unit $4 in
-        [mkstr $startpos $endpos (Pstr_eval expr)]
-      }
-  | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
-      { let name = Fake.OUnit.fresh_test_module_ident () in
-        [mkstr $startpos $endpos
-           (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]
-      }
-  | OUNIT_BENCH STRING EQUAL seq_expr
-      { let expr = $4 in
-        [mkstr $startpos $endpos (Pstr_eval expr)]
-      }
-  | OUNIT_BENCH_FUN STRING EQUAL seq_expr
-      { let expr = Fake.app Fake.OUnit.force_unit_arrow_unit $4 in
-        [mkstr $startpos $endpos (Pstr_eval expr)]
-      }
-  | OUNIT_BENCH_INDEXED STRING val_ident simple_expr EQUAL seq_expr
-      { let f_arg = mkpat $startpos $endpos
-                        (Ppat_var (mkrhs $startpos($3) $endpos($3) $3))
-        in
-        let f_fun = mkexp $startpos $endpos
-            (Pexp_function("", None, [f_arg, $6]))
-        in
-        let expr = Fake.(app (app OUnit.force_indexed f_fun) $4) in
-        [mkstr $startpos $endpos (Pstr_eval expr)]
-      }
-  | OUNIT_BENCH_MODULE STRING EQUAL module_expr
-      { let name = Fake.OUnit.fresh_test_module_ident () in
-        [mkstr $startpos $endpos
-           (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]
-      }
 ;
 module_binding:
     EQUAL module_expr
@@ -816,23 +754,7 @@ signature_item:
           pval_loc = symbol_rloc $startpos $endpos }))] }
   | TYPE @{`Item "type"} type_declarations
       { [ mksig $startpos $endpos (Psig_type(List.rev $2)) ] }
-  | TYPE NONREC @{`Item "type nonrec"} type_declarations
-      { [ mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec $3)) ] }
-  | TYPE @{`Item "type"} type_declarations WITH with_extensions
-      {
-        let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
-        let decls = Fake.TypeWith.generate_sigs ~ty:($2) ?ghost_loc $4 in
-        List.rev_append decls [mksig $startpos $endpos (Psig_type(List.rev $2))]
-      }
-  | TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
-      {
-        let ghost_loc = Some (symbol_gloc $startpos($5) $endpos($5)) in
-        let decls = Fake.TypeWith.generate_sigs ~ty:($3) ?ghost_loc $5 in
-        List.rev_append decls [mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec $3))]
-      }
   | EXCEPTION @{`Item "exception"} UIDENT constructor_arguments
-      { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
-  | EXCEPTION @{`Item "exception"} UIDENT constructor_arguments WITH with_extensions
       { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
   | MODULE @{`Item "module"} UIDENT module_declaration
       { [mksig $startpos $endpos (Psig_module(mkrhs $startpos($2) $endpos($2) $2, $3))] }
@@ -1150,10 +1072,6 @@ expr:
   | LET @{`Item "let"} rec_flag let_bindings IN  @{`Shift 2} seq_expr
       { let expr = reloc_exp_fake $endpos($4) $endpos $5 in
         mkexp $startpos $endpos (Pexp_let($2, List.rev $3, expr)) }
-  | LET_LWT @{`Item "lwt"} rec_flag let_bindings IN @{`Shift 2} seq_expr
-      { let expr = reloc_exp_fake $endpos($4) $endpos $5 in
-        let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
-        Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) }
   | LET MODULE @{`Item "let module"} UIDENT module_binding IN @{`Shift 2} seq_expr
       { let expr = reloc_exp_fake $endpos($5) $endpos $6 in
         mkexp $startpos $endpos (Pexp_letmodule(mkrhs $startpos($3) $endpos($3) $3, $4, expr)) }
@@ -1168,22 +1086,8 @@ expr:
       { mkexp $startpos $endpos (Pexp_newtype($4, $6)) }
   | MATCH @{`Item "match"} seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_match($2, List.rev $5)) }
-  | MATCH_LWT @{`Item "match_lwt"} seq_expr WITH opt_bar match_cases
-      { let expr = mkexp $startpos $endpos
-          (Pexp_match(Fake.app Fake.Lwt.un_lwt $2, List.rev $5)) in
-        Fake.app Fake.Lwt.in_lwt expr }
   | TRY @{`Item "try"} seq_expr WITH opt_bar match_cases
       { mkexp $startpos $endpos (Pexp_try($2, List.rev $5)) }
-  | TRY_LWT @{`Item "try_lwt"} seq_expr %prec below_WITH
-      { reloc_exp $startpos $endpos (Fake.app Fake.Lwt.in_lwt $2) }
-  | TRY_LWT @{`Item "try_lwt"} seq_expr WITH opt_bar match_cases
-      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) }
-  | TRY_LWT @{`Item "try_lwt"} seq_expr FINALLY_LWT seq_expr
-      { Fake.app (Fake.app Fake.Lwt.finally' $2) $4 }
-  | TRY_LWT @{`Item "try_lwt"} seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
-      { let expr = mkexp $startpos $endpos
-          (Pexp_try (Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) in
-        Fake.app (Fake.app Fake.Lwt.finally' expr) $7 }
   | expr_comma_list %prec below_COMMA
       { mkexp $startpos $endpos (Pexp_tuple(List.rev $1)) }
   | constr_longident simple_expr
@@ -1200,24 +1104,9 @@ expr:
   | WHILE @{`Item "while"} seq_expr
     DO @{`Item "while body"} seq_expr DONE
       { mkexp $startpos $endpos (Pexp_while($2, $4)) }
-  | WHILE_LWT @{`Item "while_lwt"} seq_expr
-    DO @{`Item "while_lwt body"} seq_expr DONE
-    { let expr = Pexp_while ($2, Fake.(app Lwt.un_lwt $4)) in
-      Fake.(app Lwt.to_lwt (mkexp $startpos $endpos expr)) }
   | FOR @{`Item "for"} val_ident EQUAL seq_expr direction_flag seq_expr
     DO @{`Item "for body"} seq_expr DONE
       { mkexp $startpos $endpos (Pexp_for(mkrhs $startpos($2) $endpos($2) $2, $4, $6, $5, $8)) }
-  | FOR_LWT @{`Item "for_lwt"} val_ident EQUAL seq_expr direction_flag seq_expr
-    DO @{`Item "for_lwt body"} seq_expr DONE
-      { let expr =
-          Pexp_for (mkrhs $startpos($2) $endpos($2) $2,
-                    $4, $6, $5, Fake.(app Lwt.un_lwt $8))
-        in
-        Fake.(app Lwt.to_lwt (mkexp $startpos $endpos expr)) }
-  | FOR_LWT @{`Item "for_lwt"} pattern IN seq_expr
-    DO @{`Item "for_lwt body"} seq_expr DONE
-      { mkexp $startpos $endpos
-          (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
   | expr COLONCOLON expr
       { mkexp_cons (rhs_loc $startpos($2) $endpos($2))
                    (ghexp $startpos $endpos (Pexp_tuple[$1;$3]))
@@ -1348,25 +1237,6 @@ simple_expr:
   | LPAREN MODULE @{`Unclosed "("} module_expr COLON package_type RPAREN
       { mkexp $startpos $endpos  (Pexp_constraint (ghexp $startpos $endpos  (Pexp_pack $3),
                                 Some (ghtyp $startpos $endpos  (Ptyp_package $5)), None)) }
-  (* CamlP4 compatibility *)
-  | P4_QUOTATION
-      { reloc_exp $startpos $endpos Fake.any_val' }
-  (* Js_of_ocaml extension *)
-  | JSNEW simple_expr LPAREN RPAREN
-      { reloc_exp $startpos $endpos
-        Fake.(app Js.un_constr $2)
-      }
-  | JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
-      { let jsnew' = reloc_exp $startpos($1) $endpos($1) Fake.Js.un_constr in
-        let constr = reloc_exp $startpos($1) $endpos($2) Fake.(app jsnew' $2) in
-        reloc_exp $startpos $endpos
-        (List.fold_left
-           (fun constr arg ->
-             reloc_exp constr.pexp_loc.Location.loc_start
-                       arg.pexp_loc.Location.loc_end
-             (Fake.app constr arg))
-           constr (List.rev $4))
-      }
 ;
 simple_labeled_expr_list:
     labeled_simple_expr
@@ -2051,9 +1921,42 @@ additive:
   | PLUSDOT                                     { "+." }
 ;
 
-(* Some extensions *)
+(* Caml p4 extensions *)
 
 expr:
+  | LET_LWT @{`Item "lwt"} rec_flag let_bindings IN @{`Shift 2} seq_expr
+      { let expr = reloc_exp_fake $endpos($4) $endpos $5 in
+        let expr = Pexp_let($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3, expr) in
+        Fake.app Fake.Lwt.in_lwt (mkexp $startpos $endpos expr) }
+  | MATCH_LWT @{`Item "match_lwt"} seq_expr WITH opt_bar match_cases
+      { let expr = mkexp $startpos $endpos
+          (Pexp_match(Fake.app Fake.Lwt.un_lwt $2, List.rev $5)) in
+        Fake.app Fake.Lwt.in_lwt expr }
+  | TRY_LWT @{`Item "try_lwt"} seq_expr %prec below_WITH
+      { reloc_exp $startpos $endpos (Fake.app Fake.Lwt.in_lwt $2) }
+  | TRY_LWT @{`Item "try_lwt"} seq_expr WITH opt_bar match_cases
+      { mkexp $startpos $endpos (Pexp_try(Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) }
+  | TRY_LWT @{`Item "try_lwt"} seq_expr FINALLY_LWT seq_expr
+      { Fake.app (Fake.app Fake.Lwt.finally' $2) $4 }
+  | TRY_LWT @{`Item "try_lwt"} seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
+      { let expr = mkexp $startpos $endpos
+          (Pexp_try (Fake.app Fake.Lwt.in_lwt $2, List.rev $5)) in
+        Fake.app (Fake.app Fake.Lwt.finally' expr) $7 }
+  | WHILE_LWT @{`Item "while_lwt"} seq_expr
+    DO @{`Item "while_lwt body"} seq_expr DONE
+    { let expr = Pexp_while ($2, Fake.(app Lwt.un_lwt $4)) in
+      Fake.(app Lwt.to_lwt (mkexp $startpos $endpos expr)) }
+  | FOR_LWT @{`Item "for_lwt"} val_ident EQUAL seq_expr direction_flag seq_expr
+    DO @{`Item "for_lwt body"} seq_expr DONE
+      { let expr =
+          Pexp_for (mkrhs $startpos($2) $endpos($2) $2,
+                    $4, $6, $5, Fake.(app Lwt.un_lwt $8))
+        in
+        Fake.(app Lwt.to_lwt (mkexp $startpos $endpos expr)) }
+  | FOR_LWT @{`Item "for_lwt"} pattern IN seq_expr
+    DO @{`Item "for_lwt body"} seq_expr DONE
+      { mkexp $startpos $endpos
+          (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
   | simple_expr SHARP SHARP label LESSMINUS expr
     { let inst = Fake.(app Js.un_js $1) in
       let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
@@ -2062,8 +1965,6 @@ expr:
       reloc_exp $startpos $endpos
         Fake.(app setter $6)
       }
-
-simple_expr:
   | simple_expr SHARP SHARP @{`Shift_token (1,LIDENT "")} label
       { let inst = Fake.(app Js.un_js $1) in
         let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
@@ -2075,12 +1976,6 @@ simple_expr:
         let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
         Fake.(app Js.un_meth jsmeth)
       }
-  (*  | simple_expr SHARP SHARP error
-        { syntax_error $startpos($4);
-          let inst = Fake.(app Js.un_js $1) in
-          let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, "")) in
-          Fake.(app Js.un_meth jsmeth)
-        } *)
   | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
       { let inst = Fake.(app Js.un_js $1) in
         let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
@@ -2094,6 +1989,109 @@ simple_expr:
         in
         Fake.(app Js.un_meth jsmeth)
       }
+;
 
+simple_expr:
+  | P4_QUOTATION
+      { reloc_exp $startpos $endpos Fake.any_val' }
+  | JSNEW simple_expr LPAREN RPAREN
+      { reloc_exp $startpos $endpos
+        Fake.(app Js.un_constr $2)
+      }
+  | JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
+      { let jsnew' = reloc_exp $startpos($1) $endpos($1) Fake.Js.un_constr in
+        let constr = reloc_exp $startpos($1) $endpos($2) Fake.(app jsnew' $2) in
+        reloc_exp $startpos $endpos
+        (List.fold_left
+           (fun constr arg ->
+             reloc_exp constr.pexp_loc.Location.loc_start
+                       arg.pexp_loc.Location.loc_end
+             (Fake.app constr arg))
+           constr (List.rev $4))
+      }
+;
 
-%%
+with_extensions:
+  | LIDENT COMMA with_extensions { $1 :: $3 }
+  | LIDENT { [$1] }
+;
+
+structure_item:
+  | LET_LWT @{`Item "lwt"}  rec_flag let_bindings
+      { match $3 with
+        | [{ ppat_desc = Ppat_any; ppat_loc = _ }, exp] ->
+            [mkstr $startpos $endpos (Pstr_eval (Fake.app Fake.Lwt.un_lwt exp))]
+        | _ -> [mkstr $startpos $endpos (Pstr_value($2, List.rev_map (Fake.pat_app Fake.Lwt.un_lwt) $3))]
+      }
+  | TYPE @{`Item "type"} type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
+        let ast = Fake.TypeWith.generate_definitions ~ty:($2) ?ghost_loc $4 in
+        mkstr $startpos $endpos (Pstr_type(List.rev $2)) :: ast
+      }
+  | TYPE NONREC @{`Item "type nonrec"} type_declarations
+      { [mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec $3))] }
+  | TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($5) $endpos($5)) in
+        let ast = Fake.TypeWith.generate_definitions ~ty:($3) ?ghost_loc $5 in
+        mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec $3)) :: ast
+      }
+  | EXCEPTION @{`Item "exception"} UIDENT constructor_arguments WITH with_extensions
+      { [mkstr $startpos $endpos (Pstr_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
+  | OUNIT_TEST option(STRING) EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_bool $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_unit $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
+      { let name = Fake.OUnit.fresh_test_module_ident () in
+        [mkstr $startpos $endpos
+           (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]
+      }
+  | OUNIT_BENCH STRING EQUAL seq_expr
+      { let expr = $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_BENCH_FUN STRING EQUAL seq_expr
+      { let expr = Fake.app Fake.OUnit.force_unit_arrow_unit $4 in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_BENCH_INDEXED STRING val_ident simple_expr EQUAL seq_expr
+      { let f_arg = mkpat $startpos $endpos
+                        (Ppat_var (mkrhs $startpos($3) $endpos($3) $3))
+        in
+        let f_fun = mkexp $startpos $endpos
+            (Pexp_function("", None, [f_arg, $6]))
+        in
+        let expr = Fake.(app (app OUnit.force_indexed f_fun) $4) in
+        [mkstr $startpos $endpos (Pstr_eval expr)]
+      }
+  | OUNIT_BENCH_MODULE STRING EQUAL module_expr
+      { let name = Fake.OUnit.fresh_test_module_ident () in
+        [mkstr $startpos $endpos
+           (Pstr_module(mkrhs $startpos($1) $endpos($2) name, $4))]
+      }
+;
+
+signature_item:
+  | EXCEPTION @{`Item "exception"} UIDENT constructor_arguments WITH with_extensions
+      { [mksig $startpos $endpos (Psig_exception(mkrhs $startpos($2) $endpos($2) $2, $3))] }
+  | TYPE @{`Item "type"} type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($4) $endpos($4)) in
+        let decls = Fake.TypeWith.generate_sigs ~ty:($2) ?ghost_loc $4 in
+        List.rev_append decls [mksig $startpos $endpos (Psig_type(List.rev $2))]
+      }
+  | TYPE NONREC @{`Item "type nonrec"} type_declarations
+      { [ mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec $3)) ] }
+  | TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
+      {
+        let ghost_loc = Some (symbol_gloc $startpos($5) $endpos($5)) in
+        let decls = Fake.TypeWith.generate_sigs ~ty:($3) ?ghost_loc $5 in
+        List.rev_append decls [mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec $3))]
+      }
+;
