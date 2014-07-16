@@ -25,6 +25,8 @@ val dump : t -> Std.json
 (* for recovery: approximate position of last correct construction *)
 val get_location : ?pop:int -> t -> Location.t
 val get_guide : ?pop:int -> t -> Lexing.position
+val get_lr0_state : t -> int
+val get_lr1_state : t -> int
 val last_token : t -> Raw_parser.token Location.loc
 
 (* Just remove the state on top of the stack *)

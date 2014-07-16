@@ -25,6 +25,5 @@ let classify {explanation = {Ex. item; unclosed; expected}} =
     inside after expecting
 
 let from parser (s,token,e) =
-  let explanation = Ex.explain (Merlin_parser.stack parser) in
   let loc = {Location. loc_start = s; loc_end = e; loc_ghost = false } in
-  Error { loc; explanation }
+  Error { loc; explanation = Ex.explain parser }

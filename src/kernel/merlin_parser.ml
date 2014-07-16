@@ -15,7 +15,8 @@ type frame = Frame of int * (P.state, P.symbol) E.stack
 type parser = t
 
 let get_stack s = s.P.env.E.stack
-let get_state s = s.P.env.E.current
+let get_lr1_state s = s.P.env.E.current
+let get_lr0_state s = P.Query.lr0_state (get_lr1_state s)
 let mk_loc loc_start loc_end = {Location. loc_start; loc_end; loc_ghost = false}
 
 module Frame : sig
@@ -101,9 +102,7 @@ let get_location ?pop t =
     match pop with
     | None ->
       let Parser (s,_) = t in
-      let lr1 = get_state s in
-      let lr0 = P.Query.lr0_state lr1 in
-      Merlin_recovery_strategy.parser_pos lr0
+      Merlin_recovery_strategy.parser_pos (get_lr0_state s)
     | Some pop -> pop
   in
   Frame.location ~pop (stack t)
@@ -168,8 +167,7 @@ let dump_stack xs = dump_stack [] xs
 let dump t =
   (* Print current frame, with its itemset *)
   let Parser (s,_) = t in
-  let lr1 = get_state s in
-  let lr0 = P.Query.lr0_state lr1 in
+  let lr0 = get_lr0_state s in
   (* Print overview of the stack *)
   `Assoc [
     "guide", Lexing.json_of_position (get_location t).Location.loc_start;
@@ -214,11 +212,10 @@ let dump_strategies (lr0,strategies) =
 
 let find_strategies (Parser (p,w)) =
   let env = p.P.env in
-  let lr1_state = env.E.current in
-  let lr0_state = P.Query.lr0_state lr1_state in
-  let strategies = Merlin_recovery_strategy.reduction_strategy lr0_state in
+  let lr0 = get_lr0_state p in
+  let strategies = Merlin_recovery_strategy.reduction_strategy lr0 in
   Logger.infojf section ~title:"find_strategies" dump_strategies
-    (lr0_state,strategies);
+    (lr0,strategies);
   strategies
 
 let last_token (Parser (raw_parser,_)) =
@@ -474,3 +471,6 @@ let accepting (Parser (raw_parser,_) as parser) =
   | `Accept (Raw_parser.N_ (Raw_parser.N_interface, sg)) ->
     `sg (sg : Parsetree.signature)
   | _ -> `No
+
+let get_lr1_state (Parser (s,_)) = get_lr1_state s
+let get_lr0_state (Parser (s,_)) = get_lr0_state s
