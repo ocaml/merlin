@@ -89,37 +89,44 @@ let canonicalize_filename ?cwd path =
   in
   filename_concats parts
 
-(* let has_star s =
-   try ignore (String.index s '*' : int); true
-   with Not_found -> false
-   FIXME implement real globbing *)
-
-let rec expand_glob ?(filter=fun _ -> true) acc root = function
+let rec expand_glob ~filter acc root = function
   | [] -> root :: acc
-  | ["**"] ->
+  | [Glob.Joker; Glob.Joker] :: tl ->
     let rec append acc root =
-      match try Some (Sys.readdir root) with Sys_error _ -> None with
-      | None -> acc
-      | Some items ->
-      Array.fold_left (fun acc dir ->
+      let items = try Sys.readdir root with Sys_error _ -> [||] in
+      let process acc dir =
         let filename = Filename.concat root dir in
         if filter filename
         then append (filename :: acc) filename
-        else acc) acc items
+        else acc
+      in
+      Array.fold_left process acc items
     in
     append acc root
-  | component :: tl ->
+  | [Glob.Exact component] :: tl ->
     let filename = Filename.concat root component in
     if Sys.file_exists filename && filter filename then
-      expand_glob acc filename tl
+      expand_glob ~filter acc filename tl
     else
       acc
+  | pattern :: tl ->
+    let items = try Sys.readdir root with Sys_error _ -> [||] in
+    let process acc dir =
+      if Glob.match_pattern dir pattern then
+        let root' = Filename.concat root dir in
+        if filter root' then
+          expand_glob ~filter acc root' tl
+        else acc
+      else acc
+    in
+    Array.fold_left process acc items
 
-let expand_glob ?filter path acc =
+let expand_glob ?(filter=fun _ -> true) path acc =
   match split_path path [] with
   | [] -> acc
   | root :: subs ->
-    expand_glob ?filter acc root subs
+    let patterns = List.map ~f:Glob.compile_pattern subs in
+    expand_glob ~filter acc root patterns
 
 module Path_list = struct
   type t =
