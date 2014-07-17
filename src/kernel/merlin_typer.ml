@@ -134,6 +134,7 @@ type t = {
   env_cache   : Env.cache;
   extensions  : Extension.set;
   typer       : kind;
+  stamp       : bool ref;
 }
 
 let fluid_btype = Fluid.from_ref Btype.cache
@@ -148,7 +149,7 @@ let protect_typer ~btype ~env f =
                Typing_aux.catch_errors caught >>= fun () ->
                f caught)
 
-let fresh ~unit_name extensions =
+let fresh ~unit_name ~stamp extensions =
   let btype_cache = Btype.new_cache () in
   let env_cache = Env.new_cache ~unit_name in
   let result = protect_typer ~btype:btype_cache ~env:env_cache @@ fun exns ->
@@ -156,6 +157,7 @@ let fresh ~unit_name extensions =
     I.empty (extensions,exns)
   in
   {
+    stamp;
     typer = Incremental (Either.get result);
     extensions; env_cache; btype_cache;
   }
@@ -183,6 +185,7 @@ let exns t = (get_value t.typer).P.exns
 let extensions t = t.extensions
 
 let is_valid t =
+  !(t.stamp) &&
   match
     protect_typer ~btype:t.btype_cache ~env:t.env_cache @@ fun _ ->
     Either.try' Env.check_cache_consistency
@@ -208,3 +211,8 @@ let manual t item =
     P.append exns Location.none item p
   in
   {t with typer = Manual (Either.get typer)}
+
+let with_typer t f =
+  Fluid.let' fluid_btype t.btype_cache @@ fun () ->
+  Fluid.let' fluid_env t.env_cache @@ fun () ->
+  f t

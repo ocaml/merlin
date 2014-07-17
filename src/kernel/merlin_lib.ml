@@ -306,7 +306,6 @@ end = struct
     mutable lexer: (exn list * Lexer.item) History.t;
     mutable recover: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
-    mutable validity_stamp: bool ref;
   }
 
   let initial_step kind (_,token) =
@@ -332,8 +331,9 @@ end = struct
       path; project; lexer; kind; unit_name;
       keywords = Project.keywords project;
       recover = History.initial (initial_step kind (History.focused lexer));
-      typer = Typer.fresh ~unit_name (Project.extensions project);
-      validity_stamp = Project.validity_stamp project;
+      typer = Typer.fresh
+          ~unit_name ~stamp:(Project.validity_stamp project)
+          (Project.extensions project);
     }
 
   let setup buffer =
@@ -352,27 +352,23 @@ end = struct
 
   let typer b =
     setup b;
-    let need_refresh = not !(b.validity_stamp) in
-    if need_refresh then
-      b.validity_stamp <- Project.validity_stamp b.project;
-    let need_refresh = need_refresh ||
-                       not (Typer.is_valid b.typer) ||
-                       not (String.Set.equal
-                              (Typer.extensions b.typer)
-                              (Project.extensions b.project))
-    in
-    if need_refresh then
-      b.typer <- Typer.fresh
+    let valid = Typer.is_valid b.typer in
+    let valid = valid &&
+                String.Set.equal
+                  (Typer.extensions b.typer)
+                  (Project.extensions b.project) in
+    if not valid then b.typer <- Typer.fresh
           ~unit_name:b.unit_name
+          ~stamp:(Project.validity_stamp b.project)
           (Project.extensions b.project);
-    let typer = Typer.update (parser b) b.typer in
-    b.typer <- typer;
-    typer
+    b.typer <- Typer.update (parser b) b.typer;
+    b.typer
 
   let fresh_typer b =
     setup b;
     let typer = Typer.fresh
         ~unit_name:b.unit_name
+        ~stamp:(Project.validity_stamp b.project)
         (Project.extensions b.project) in
     Typer.update (parser b) typer
 

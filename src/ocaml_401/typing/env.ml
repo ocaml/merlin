@@ -396,7 +396,7 @@ let check_cache_consistency () =
       ) !cache.persistent_structures;
     Hashtbl.iter (fun name () ->
         let invalid =
-          try ignore (find_in_path_uncap !load_path (name ^ ".cmi"));
+          try ignore (find_in_path_uncap !load_path (name ^ ".cmi") : string);
               true;
           with Not_found -> false
         in

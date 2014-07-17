@@ -2,7 +2,7 @@ type t
 
 val is_valid : t -> bool
 
-val fresh : unit_name:string -> Extension.set -> t
+val fresh : unit_name:string -> stamp:bool ref -> Extension.set -> t
 val update : Merlin_parser.t -> t -> t
 
 val env : t -> Env.t
@@ -17,3 +17,5 @@ val manual
   -> [ `sg  of Parsetree.signature
      | `str of Parsetree.structure ]
   -> t
+
+val with_typer : t -> (t -> 'a) -> 'a
