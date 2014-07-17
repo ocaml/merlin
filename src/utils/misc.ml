@@ -63,16 +63,16 @@ let remove_file filename =
   try  Sys.remove filename
   with Sys_error _msg -> ()
 
+let rec split_path path acc =
+  match Filename.dirname path, Filename.basename path with
+  | dir, _ when dir = path -> dir :: acc
+  | dir, base -> split_path dir (base :: acc)
+
 let canonicalize_filename ?cwd path =
-  let rec split path acc =
-    match Filename.dirname path, Filename.basename path with
-    | dir, _ when dir = path -> dir :: acc
-    | dir, base -> split dir (base :: acc)
-  in
   let parts =
-    match split path [] with
+    match split_path path [] with
     | dot :: rest when dot = Filename.current_dir_name ->
-      split (match cwd with None -> Sys.getcwd () | Some c -> c) rest
+      split_path (match cwd with None -> Sys.getcwd () | Some c -> c) rest
     | parts -> parts
   in
   let goup path = function
@@ -88,6 +88,38 @@ let canonicalize_filename ?cwd path =
     | root :: subs -> List.fold_left ~f:Filename.concat ~init:root subs
   in
   filename_concats parts
+
+(* let has_star s =
+   try ignore (String.index s '*' : int); true
+   with Not_found -> false
+   FIXME implement real globbing *)
+
+let rec expand_glob ?(filter=fun _ -> true) acc root = function
+  | [] -> root :: acc
+  | ["**"] ->
+    let rec append acc root =
+      match try Some (Sys.readdir root) with Sys_error _ -> None with
+      | None -> acc
+      | Some items ->
+      Array.fold_left (fun acc dir ->
+        let filename = Filename.concat root dir in
+        if filter filename
+        then append (filename :: acc) filename
+        else acc) acc items
+    in
+    append acc root
+  | component :: tl ->
+    let filename = Filename.concat root component in
+    if Sys.file_exists filename && filter filename then
+      expand_glob acc filename tl
+    else
+      acc
+
+let expand_glob ?filter path acc =
+  match split_path path [] with
+  | [] -> acc
+  | root :: subs ->
+    expand_glob ?filter acc root subs
 
 module Path_list = struct
   type t =

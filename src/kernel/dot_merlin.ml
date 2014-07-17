@@ -107,16 +107,18 @@ type config =
 
 let parse_dot_merlin {path; directives} config =
   let cwd = Filename.dirname path in
-  let expand path =
-    canonicalize_filename ~cwd (expand_directory Config.standard_library path)
+  let expand path acc =
+    let path = expand_directory Config.standard_library path in
+    let path = canonicalize_filename ~cwd path in
+    expand_glob ~filter:Sys.is_directory path acc
   in
   List.fold_left ~init:{config with dot_merlins = path :: config.dot_merlins}
   ~f:(fun config ->
     function
-    | `B path -> {config with build_path = expand path :: config.build_path}
-    | `S path -> {config with source_path = expand path :: config.source_path}
-    | `CMI path -> {config with cmi_path = expand path :: config.cmi_path}
-    | `CMT path -> {config with cmt_path = expand path :: config.cmt_path}
+    | `B path -> {config with build_path = expand path config.build_path}
+    | `S path -> {config with source_path = expand path config.source_path}
+    | `CMI path -> {config with cmi_path = expand path config.cmi_path}
+    | `CMT path -> {config with cmt_path = expand path config.cmt_path}
     | `PKG pkgs -> {config with packages = pkgs @ config.packages}
     | `EXT exts ->
       {config with extensions = exts @ config.extensions}
