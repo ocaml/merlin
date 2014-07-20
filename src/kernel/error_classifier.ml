@@ -26,9 +26,11 @@ let classify {explanation = {Ex. item; unclosed; expected}} =
   let expecting = match expected with
     | [] -> ""
     | classes ->
-      let classes = List.map ~f:Raw_parser_values.string_of_class classes in
-      let classes = List.filter_dup classes in
-      ", expecting " ^ friendly_concat classes
+      let names = List.filter_map ~f:Raw_parser_values.friendly_name classes in
+      let names = List.filter_dup names in
+      let symbols = List.map ~f:Raw_parser_values.string_of_class classes in
+      let symbols = List.filter_dup symbols in
+      ", expecting " ^ friendly_concat names ^ " (" ^ friendly_concat symbols ^ ")"
   in
   Printf.sprintf "Syntax error%s%s%s"
     inside after expecting

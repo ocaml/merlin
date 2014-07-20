@@ -9,7 +9,8 @@ type annotation =
   | `Shift_token of int * token
   | `Cost of int
   | `Indent of int
-  | `Unclosed of string | `Close
+  | `Unclosed of string
+  | `Close
   | `Item of string
   ]
 
@@ -1027,3 +1028,332 @@ let default_symbol = function
 let selection_priority = function
   | CN_ (N_structure_item, _) -> 1
   | _ -> 0
+
+let friendly_name_of_token : type a. a token_class -> string option = function
+  | T_WITH                 -> Some "with"
+  | T_WHILE_LWT            -> Some "while_lwt"
+  | T_WHILE                -> Some "while"
+  | T_WHEN                 -> Some "when"
+  | T_VIRTUAL              -> Some "virtual"
+  | T_VAL                  -> Some "val"
+  | T_UNDERSCORE           -> Some "_"
+  | T_UIDENT               -> Some "identifier"
+  | T_TYPE                 -> Some "type"
+  | T_TRY_LWT              -> Some "try_lwt"
+  | T_TRY                  -> Some "try"
+  | T_TRUE                 -> None
+  | T_TO                   -> Some "to"
+  | T_TILDE                -> Some "~"
+  | T_THEN                 -> Some "then"
+  | T_STRUCT               -> Some "struct"
+  | T_STRING               -> Some "string"
+  | T_STAR                 -> Some "*"
+  | T_SIG                  -> Some "sig"
+  | T_SHARP                -> Some "#"
+  | T_SEMISEMI             -> Some ";;"
+  | T_SEMI                 -> Some ";"
+  | T_RPAREN               -> Some ")"
+  | T_REC                  -> Some "rec"
+  | T_RBRACKET             -> Some "]"
+  | T_RBRACE               -> Some "}"
+  | T_QUOTE                -> None
+  | T_QUESTION             -> Some "?"
+  | T_PRIVATE              -> Some "private"
+  | T_PREFIXOP             -> None
+  | T_PLUSEQ               -> Some "+="
+  | T_PLUSDOT              -> Some "+."
+  | T_PLUS                 -> Some "+"
+  | T_PERCENT              -> Some "%"
+  | T_P4_QUOTATION         -> None
+  | T_OUNIT_TEST_UNIT      -> None
+  | T_OUNIT_TEST_MODULE    -> None
+  | T_OUNIT_TEST           -> None
+  | T_OUNIT_BENCH_MODULE   -> None
+  | T_OUNIT_BENCH_INDEXED  -> None
+  | T_OUNIT_BENCH_FUN      -> None
+  | T_OUNIT_BENCH          -> None
+  | T_OR                   -> None
+  | T_OPTLABEL             -> None
+  | T_OPEN                 -> Some "open"
+  | T_OF                   -> Some "of"
+  | T_OBJECT               -> Some "object"
+  | T_NONREC               -> None
+  | T_NEW                  -> Some "new"
+  | T_NATIVEINT            -> None
+  | T_MUTABLE              -> Some "mutable"
+  | T_MODULE               -> Some "module"
+  | T_MINUSGREATER         -> Some "->"
+  | T_MINUSDOT             -> Some "-."
+  | T_MINUS                -> Some "-"
+  | T_METHOD               -> Some "method"
+  | T_MATCH_LWT            -> None
+  | T_MATCH                -> None
+  | T_LPAREN               -> Some "("
+  | T_LIDENT               -> Some "identifier"
+  | T_LET_LWT              -> Some "let_lwt"
+  | T_LET                  -> Some "let"
+  | T_LESSMINUS            -> Some "<-"
+  | T_LESS                 -> Some "<"
+  | T_LBRACKETPERCENTPERCENT -> None
+  | T_LBRACKETPERCENT      -> None
+  | T_LBRACKETLESS         -> None
+  | T_LBRACKETGREATER      -> None
+  | T_LBRACKETBAR          -> None
+  | T_LBRACKETATATAT       -> None
+  | T_LBRACKETATAT         -> None
+  | T_LBRACKETAT           -> None
+  | T_LBRACKET             -> Some "["
+  | T_LBRACELESS           -> None
+  | T_LBRACE               -> Some "{"
+  | T_LAZY                 -> Some "lazy"
+  | T_LABEL                -> Some "label"
+  | T_JSNEW                -> Some "jsnew"
+  | T_INT64                -> Some "int64"
+  | T_INT32                -> Some "int32"
+  | T_INT                  -> None
+  | T_INITIALIZER          -> Some "initializer"
+  | T_INHERIT              -> Some "inherit"
+  | T_INFIXOP4             -> None
+  | T_INFIXOP3             -> None
+  | T_INFIXOP2             -> None
+  | T_INFIXOP1             -> None
+  | T_INFIXOP0             -> None
+  | T_INCLUDE              -> Some "include"
+  | T_IN                   -> Some "in"
+  | T_IF                   -> Some "if"
+  | T_GREATERRBRACKET      -> Some ">]"
+  | T_GREATERRBRACE        -> Some ">}"
+  | T_GREATER              -> Some ">"
+  | T_FUNCTOR              -> None
+  | T_FUNCTION             -> None
+  | T_FUN                  -> None
+  | T_FOR_LWT              -> Some "for_lwt"
+  | T_FOR                  -> Some "for"
+  | T_FLOAT                -> None
+  | T_FINALLY_LWT          -> Some "finally_lwt"
+  | T_FALSE                -> None
+  | T_EXTERNAL             -> Some "external"
+  | T_EXCEPTION            -> Some "exception"
+  | T_EQUAL                -> Some "="
+  | T_EOL                  -> None
+  | T_EOF                  -> None
+  | T_EXITPOINT            -> None
+  | T_ENTRYPOINT           -> None
+  | T_END                  -> Some "end"
+  | T_ELSE                 -> Some "else"
+  | T_DOWNTO               -> Some "downto"
+  | T_DOTDOT               -> Some ".."
+  | T_DOT                  -> Some "."
+  | T_DONE                 -> Some "done"
+  | T_DO                   -> Some "do"
+  | T_CONSTRAINT           -> Some "constraint"
+  | T_COMMENT              -> None
+  | T_COMMA                -> Some ","
+  | T_COLONGREATER         -> Some ":>"
+  | T_COLONEQUAL           -> Some ":="
+  | T_COLONCOLON           -> Some "::"
+  | T_COLON                -> Some ":"
+  | T_CLASS                -> Some "class"
+  | T_CHAR                 -> None
+  | T_BEGIN                -> Some "begin"
+  | T_BARRBRACKET          -> Some "|]"
+  | T_BARBAR               -> Some "||"
+  | T_BAR                  -> Some "|"
+  | T_BANG                 -> Some "!"
+  | T_BACKQUOTE            -> Some "`"
+  | T_ASSERT               -> None
+  | T_AS                   -> Some "as"
+  | T_AND                  -> Some "and"
+  | T_AMPERSAND            -> Some "&"
+  | T_AMPERAMPER           -> Some "&&"
+
+let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option = function
+  | N_with_type_binder                  -> None
+  | N_with_extensions                   -> None
+  | N_with_constraints                  -> None
+  | N_with_constraint                   -> Some "constraint"
+  | N_virtual_flag                      -> None
+  | N_value_type                        -> Some "value definition"
+  | N_value                             -> Some "object value"
+  | N_val_longident                     -> None
+  | N_val_ident                         -> None
+  | N_typevar_list                      -> None
+  | N_type_variance                     -> Some "type variance"
+  | N_type_variable                     -> Some "type variable"
+  | N_type_parameters                   -> None
+  | N_type_parameter_list               -> None
+  | N_type_parameter                    -> Some "type parameter"
+  | N_type_longident                    -> None
+  | N_type_kind                         -> None
+  | N_type_declarations                 -> None
+  | N_type_declaration                  -> Some "type declaration"
+  | N_type_constraint                   -> Some "type constraint"
+  | N_tag_field                         -> None
+  | N_subtractive                       -> None
+  | N_structure_head                    -> None
+  | N_structure_tail                    -> None
+  | N_structure_item                    -> Some "any definition"
+  | N_structure                         -> Some "structure"
+  | N_strict_binding                    -> Some "'= expression'"
+  | N_str_type_extension                -> None
+  | N_str_extension_constructors        -> None
+  | N_str_exception_declaration         -> None
+  | N_single_attr_id                    -> None
+  | N_simple_pattern_not_ident          -> Some "pattern"
+  | N_simple_pattern                    -> Some "pattern"
+  | N_simple_labeled_expr_list          -> Some "expression"
+  | N_simple_expr                       -> Some "expression"
+  | N_simple_core_type_or_tuple_no_attr -> None
+  | N_simple_core_type_or_tuple         -> None
+  | N_simple_core_type_no_attr          -> None
+  | N_simple_core_type2                 -> Some "type expression"
+  | N_simple_core_type                  -> Some "type expression"
+  | N_signed_constant                   -> None
+  | N_signature_item                    -> Some "any declaration"
+  | N_signature                         -> Some "signature"
+  | N_sig_type_extension                -> None
+  | N_sig_extension_constructors        -> None
+  | N_sig_exception_declaration         -> None
+  | N_seq_expr                          -> Some "expression"
+  | N_row_field_list                    -> None
+  | N_row_field                         -> Some "row field"
+  | N_record_expr                       -> None
+  | N_rec_flag                          -> None
+  | N_private_virtual_flags             -> None
+  | N_private_flag                      -> None
+  | N_primitive_declaration             -> Some "primitive declaration"
+  | N_post_item_attributes              -> None
+  | N_post_item_attribute               -> None
+  | N_poly_type                         -> None
+  | N_payload                           -> None
+  | N_pattern_var                       -> None
+  | N_pattern_semi_list                 -> None
+  | N_pattern_comma_list                -> None
+  | N_pattern                           -> Some "pattern"
+  | N_parse_expression                  -> None
+  | N_parent_binder                     -> None
+  | N_package_type_cstrs                -> None
+  | N_package_type_cstr                 -> None
+  | N_package_type                      -> Some "package type"
+  | N_override_flag                     -> None
+  | N_optional_type_variable            -> None
+  | N_optional_type_parameters          -> None
+  | N_optional_type_parameter_list      -> None
+  | N_optional_type_parameter           -> None
+  | N_option_STRING_                    -> None
+  | N_opt_semi                          -> None
+  | N_opt_default                       -> None
+  | N_opt_bar                           -> None
+  | N_opt_ampersand                     -> None
+  | N_operator                          -> Some "operator"
+  | N_open_statement                    -> Some "open statement"
+  | N_newtype                           -> Some "newtype"
+  | N_name_tag_list                     -> None
+  | N_name_tag                          -> None
+  | N_mutable_flag                      -> None
+  | N_mty_longident                     -> None
+  | N_module_type                       -> Some "module type"
+  | N_module_rec_declarations           -> None
+  | N_module_rec_declaration            -> Some "module declaration"
+  | N_module_expr                       -> Some "module expression"
+  | N_module_declaration                -> Some "module declaration"
+  | N_module_bindings                   -> None
+  | N_module_binding_body               -> None
+  | N_module_binding                    -> Some "module binding"
+  | N_mod_longident                     -> None
+  | N_mod_ext_longident                 -> None
+  | N_method_                           -> None
+  | N_meth_list                         -> None
+  | N_match_cases                       -> None
+  | N_match_case                        -> Some "match case"
+  | N_lident_list                       -> None
+  | N_let_pattern                       -> None
+  | N_let_bindings                      -> None
+  | N_let_binding_                      -> None
+  | N_let_binding                       -> Some "binding"
+  | N_let_bindings_no_attrs             -> None
+  | N_lbl_pattern_list                  -> None
+  | N_lbl_pattern                       -> Some "labeled pattern"
+  | N_lbl_expr_list                     -> Some "field list"
+  | N_lbl_expr                          -> Some "field expression"
+  | N_labeled_simple_pattern            -> None
+  | N_labeled_simple_expr               -> None
+  | N_label_var                         -> None
+  | N_label_longident                   -> None
+  | N_label_let_pattern                 -> Some "labelled pattern"
+  | N_label_ident                       -> None
+  | N_label_expr                        -> Some "labelled expression"
+  | N_label_declarations                -> None
+  | N_label_declaration                 -> Some "label declaration"
+  | N_label                             -> Some "label"
+  | N_item_extension                    -> None
+  | N_interface                         -> None
+  | N_implementation                    -> None
+  | N_ident                             -> Some "ident"
+  | N_generalized_constructor_arguments -> Some "constructor arguments"
+  | N_functor_args                      -> None
+  | N_functor_arg_name                  -> None
+  | N_functor_arg                       -> Some "functor argument"
+  | N_fun_def                           -> None
+  | N_fun_binding                       -> None
+  | N_floating_attribute                -> None
+  | N_field_expr_list                   -> Some "field expression"
+  | N_field                             -> Some "field"
+  | N_extension_constructor_rebind      -> None
+  | N_extension_constructor_declaration -> None
+  | N_extension                         -> Some "extension"
+  | N_ext_attributes                    -> None
+  | N_expr_semi_list                    -> None
+  | N_expr_open                         -> None
+  | N_expr_comma_list                   -> None
+  | N_expr_comma_opt_list               -> None
+  | N_expr                              -> Some "expression"
+  | N_dummy                             -> None
+  | N_direction_flag                    -> None
+  | N_core_type_list_no_attr            -> None
+  | N_core_type_list                    -> None
+  | N_core_type_comma_list              -> None
+  | N_core_type2                        -> Some "type expression"
+  | N_core_type                         -> Some "type expression"
+  | N_constructor_declarations          -> None
+  | N_constructor_declaration           -> Some "constructor declaration"
+  | N_constraints                       -> None
+  | N_constrain_field                   -> None
+  | N_constrain                         -> Some "constraint"
+  | N_constr_longident                  -> None
+  | N_constr_ident                      -> None
+  | N_constant                          -> None
+  | N_clty_longident                    -> None
+  | N_class_type_parameters             -> None
+  | N_class_type_declarations           -> None
+  | N_class_type_declaration            -> Some "class type declaration"
+  | N_class_type                        -> Some "class type"
+  | N_class_structure                   -> Some "class field"
+  | N_class_simple_expr                 -> Some "class expression"
+  | N_class_signature                   -> None
+  | N_class_sig_fields                  -> None
+  | N_class_sig_field                   -> Some "class field"
+  | N_class_sig_body                    -> Some "class field"
+  | N_class_self_type                   -> None
+  | N_class_self_pattern                -> None
+  | N_class_longident                   -> None
+  | N_class_fun_def                     -> None
+  | N_class_fun_binding                 -> None
+  | N_class_fields                      -> None
+  | N_class_field                       -> Some "class field"
+  | N_class_expr                        -> Some "class expression"
+  | N_class_descriptions                -> None
+  | N_class_description                 -> Some "class description"
+  | N_class_declarations                -> None
+  | N_class_declaration                 -> Some "class declaration"
+  | N_attributes                        -> None
+  | N_attribute                         -> None
+  | N_attr_id                           -> None
+  | N_amper_type_list                   -> None
+  | N_additive                          -> None
+
+
+let friendly_name = function
+  | CT_ (t,_) -> friendly_name_of_token t
+  | CN_ (n,_) -> friendly_name_of_nonterminal n
+
