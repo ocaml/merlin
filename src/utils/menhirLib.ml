@@ -919,7 +919,7 @@ module EngineTypes = struct
     val production_definition: production -> producer option * producer list
     val semantic_action: production ->
       semantic_action option * annotation list
-
+    val nullable: producer -> bool
   end
 
   module type STEP_ENGINE = sig
@@ -1558,6 +1558,7 @@ module TableFormat = struct
        producer_definition list *
        (int option * annotation_definition list)) array
 
+    val nullable: producer_definition -> bool
   end
 
 end
@@ -1777,6 +1778,8 @@ end = struct
     let production_definition prod =
       let lhs, rhs, _ = Q.productions_definition.(prod) in
       lhs, rhs
+
+    let nullable producer = Q.nullable producer
 
     let semantic_action prod =
       let _, _, (action, annots) = Q.productions_definition.(prod) in

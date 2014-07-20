@@ -18,10 +18,13 @@ let item_annotations (prod,pos) =
   let annots = production_annotations prod in
   let annots, tail = List.split_n (succ pos) annots in
   let expected = List.drop_n pos (snd (Query.production_definition prod)) in
-  let expected = match expected with
+  let rec follow_nullable = function
     | [] -> []
+    | hd :: tl when Query.nullable hd ->
+      hd :: follow_nullable tl
     | hd :: _ -> [hd]
   in
+  let expected = follow_nullable expected in
   expected, List.rev annots
 
 let rec merge_annotations acc = function

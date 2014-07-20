@@ -7,7 +7,8 @@ type annotation =
   | `Shift_token of int * token
   | `Cost of int
   | `Indent of int
-  | `Unclosed of string | `Close
+  | `Unclosed of string
+  | `Close
   | `Item of string
   ]
 
