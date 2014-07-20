@@ -211,7 +211,6 @@ let dump_strategies (lr0,strategies) =
   ]
 
 let find_strategies (Parser (p,w)) =
-  let env = p.P.env in
   let lr0 = get_lr0_state p in
   let strategies = Merlin_recovery_strategy.reduction_strategy lr0 in
   Logger.infojf section ~title:"find_strategies" dump_strategies
