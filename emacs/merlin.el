@@ -106,18 +106,6 @@ no argument and should return the configuration (see
   "The OCaml mode to use for the *merlin-types* buffer."
   :group 'merlin :type 'symbol)
 
-(defcustom merlin-margin-lock-string "-"
-  "String put in the margin to signal the end of the locked zone."
-  :group 'merlin :type 'string)
-
-(defcustom merlin-margin-error-string "!"
-  "String to put in the margin of a line containing an error."
-  :group 'merlin :type 'string)
-
-(defcustom merlin-margin-warning-string "?"
-  "String to put in the margin of a line containing a warning."
-  :group 'merlin :type 'string)
-
 (defcustom merlin-error-after-save '("ml" "mli")
   "Determines whether merlin should check for errors after saving.
 If t, always check for errors after saving.
@@ -125,21 +113,21 @@ If nil, never check.
 If a string list, check only if the extension of the buffer-file-name is in the list."
   :group 'merlin :type '(choice (repeat string) boolean))
 
-(defcustom merlin-error-in-margin t
-  "If non-nil, display errors in margin"
+(defcustom merlin-error-in-fringe t
+  "If non-nil, display errors in fringe"
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-display-lock-zone nil
   "How to display the locked zone.
 It is a list of methods among:
    - `highlight': highlight the current locked zone (like proofgeneral)
-   - `margin': put a symbol (given by `merlin-margin-lock-string') in the margin
-     of the line where the zone ends.
+   - `fringe': put a symbol in the fringe of the line where the
+     zone ends.
 
 In particular you can specify nil, meaning that the locked zone is not represented on the screen."
   :group 'merlin :type '(repeat
                          (choice (const :tag "Highlight the locked zone" highlight)
-                                 (const :tag "Display a marker in the left margin at the end of the locked zone" margin))))
+                                 (const :tag "Display a marker in the left fringe at the end of the locked zone" fringe))))
 
 (defcustom merlin-default-flags nil
   "The flags to give to ocamlmerlin."
@@ -239,9 +227,9 @@ field logfile (see `merlin-start-process')"
   "Overlay used for the lock zone highlighting.")
 (make-variable-buffer-local 'merlin-lock-zone-highlight-overlay)
 
-(defvar merlin-lock-zone-margin-overlay nil
-  "Overlay used for the margin indicator of the lock zone.")
-(make-variable-buffer-local 'merlin-lock-zone-margin-overlay)
+(defvar merlin-lock-zone-fringe-overlay nil
+  "Overlay used for the fringe indicator of the lock zone.")
+(make-variable-buffer-local 'merlin-lock-zone-fringe-overlay)
 
 ;; Errors related variables
 (defvar merlin-pending-errors nil
@@ -372,13 +360,14 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 (put 'ocaml-atom 'bounds-of-thing-at-point
      'bounds-of-ocaml-atom-at-point)
 
-; overlay management
-(defun merlin-put-margin-overlay (overlay string &optional face)
-  "Put a margin overlay inside OVERLAY, with face FACE and string STRING."
-  (set-window-margins nil 1)
-  (when face (overlay-put overlay 'face face))
-  (overlay-put overlay 'before-string
-               (propertize " " 'display `((margin left-margin) ,string))))
+(defun merlin-add-display-properties (overlay bitmap string &optional face)
+  "Add the necessary properties to OVERLAY to display it nicely."
+  (let ((prop (if window-system
+		  `(left-fringe ,bitmap . ,(if face (list face) nil))
+		`((margin left-margin) ,string))))
+    (when face (overlay-put overlay 'face face))
+    (overlay-put overlay 'before-string
+		 (propertize " " 'display prop))))
 
 (defun merlin-highlight (bounds face)
   "Create an overlay on BOUNDS (of the form (START . END)) and give it FACE."
@@ -758,16 +747,17 @@ may be nil, in that case the current cursor of merlin is used."
 ;; POINT SYNCHRONIZATION ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin-sync-margin-lock-zone ()
-  "Mark the position of the lock zone by a marker in the margin."
-  (if merlin-lock-zone-margin-overlay
-      (delete-overlay merlin-lock-zone-margin-overlay))
+(defun merlin-sync-fringe-lock-zone ()
+  "Display the position of the lock zone by a marker in the fringe."
+  (if merlin-lock-zone-fringe-overlay
+      (delete-overlay merlin-lock-zone-fringe-overlay))
   (save-excursion
     (goto-char merlin-dirty-point)
-    (setq merlin-lock-zone-margin-overlay (make-overlay (point) (point)))
-    (set-window-margins nil 1)
-    (merlin-put-margin-overlay merlin-lock-zone-margin-overlay
-                               merlin-margin-lock-string)))
+    (setq merlin-lock-zone-fringe-overlay (make-overlay (point) (point)))
+    (merlin-add-display-properties
+     merlin-lock-zone-fringe-overlay
+     'horizontal-bar
+     "-")))
 
 (defun merlin-sync-highlight-lock-zone ()
   "Mark the position of the lock zone by highlighting the zone."
@@ -781,7 +771,7 @@ may be nil, in that case the current cursor of merlin is used."
 iterates through it and call each method."
   (dolist (x merlin-display-lock-zone)
     (case x
-      (margin (merlin-sync-margin-lock-zone))
+      (fringe (merlin-sync-fringe-lock-zone))
       (highlight (merlin-sync-highlight-lock-zone)))))
 
 (defun merlin-sync-edit (start end length)
@@ -893,7 +883,7 @@ If there is no error, do nothing."
     (next-error)))
 
 (defun merlin-error-delete-overlays ()
-  "Remove margin error overlays."
+  "Remove error overlays."
   (remove-overlays nil nil 'merlin-kind 'error))
 
 (defun merlin-error-warning-p (msg)
@@ -925,8 +915,9 @@ If there is no error, do nothing."
   "Remove an error from the pending error lists if it is edited by the user."
   (when is-after (merlin--clear-error-overlay overlay)))
 
-(defun merlin-error-display-in-margin (errors)
-  "Given a list of ERRORS, put annotations in the margin corresponding to them."
+(defun merlin-transform-display-errors (errors)
+  "Populate the error list with ERRORS, transformed into an
+  emacs-friendly form. Do display of error list."
   (let* ((err-point
           (lambda (err)
             (let* ((bounds (merlin-make-bounds err))
@@ -935,7 +926,7 @@ If there is no error, do nothing."
               (acons 'bounds bounds err))))
          (errors   (mapcar err-point errors)))
     (setq merlin-pending-errors errors)
-    (when merlin-error-in-margin
+    (when merlin-error-in-fringe
       (dolist (err errors)
         (let* ((bounds (cdr (assoc 'bounds err)))
                (overlay (make-overlay (car bounds) (cdr bounds))))
@@ -944,18 +935,20 @@ If there is no error, do nothing."
           (push #'merlin--kill-error-if-edited
                 (overlay-get overlay 'modification-hooks))
           (if (merlin-error-warning-p (cdr (assoc 'message err)))
-            (merlin-put-margin-overlay overlay
-                                       merlin-margin-warning-string
-                                       'merlin-compilation-warning-face)
-            (merlin-put-margin-overlay overlay
-                                       merlin-margin-error-string
-                                       'merlin-compilation-error-face))
+	      (merlin-add-display-properties overlay
+					     'question-mark
+					     "?"
+					     'merlin-compilation-warning-face)
+            (merlin-add-display-properties overlay
+					   'exclamation-mark
+					   "!"
+					   'merlin-compilation-error-face))
           overlay)))))
 
 (defun merlin--error-check (view-errors-p)
   "Check for errors.
 Return t if there were not any or nil if there were.  Moreover, it displays the
-errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
+errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
   (merlin-sync-to-point (point-max) t)
   (let* ((errors (merlin-send-command 'errors))
@@ -965,7 +958,7 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
                               errors))))
     (if (not errors) (when view-errors-p (message "ok"))
       (progn
-        (merlin-error-display-in-margin errors)
+        (merlin-transform-display-errors errors)
         (when view-errors-p
           (message "(%d pending errors, use %s to jump)"
                    (length errors)
@@ -1723,8 +1716,8 @@ Short cuts:
       (merlin-error-gc)
       (when merlin-lock-zone-highlight-overlay
         (delete-overlay merlin-lock-zone-highlight-overlay))
-      (when merlin-lock-zone-margin-overlay
-        (delete-overlay merlin-lock-zone-margin-overlay))
+      (when merlin-lock-zone-fringe-overlay
+        (delete-overlay merlin-lock-zone-fringe-overlay))
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
       ;;(merlin-error-delete-overlays)
