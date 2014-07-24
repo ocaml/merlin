@@ -37,19 +37,23 @@ def try_print_error(e, msg=None):
     raise e
   except Error as e:
     if msg: print(msg)
-    else:
-      print(e.value['message'])
+    else: print(e.value['message'])
   except Exception as e:
-    if msg: sys.stderr.write(msg)
+    # Always print to stdout
+    # vim try to be 'smart' and prepend a backtrace when writing to stderr
+    # WTF?!
+    if msg: print (msg)
     else:
       msg = str(e)
       if re.search('Not_found',msg):
         print ("error: Not found")
         return None
       elif re.search('Cmi_format.Error', msg):
-        sys.stderr.write ("error: The version of merlin you're using doesn't support this version of ocaml")
+        if vim.eval('exists("b:merlin_incompatible_version")') == '0':
+          vim.command('let b:merlin_incompatible_version = 1')
+          print ("The version of merlin you're using doesn't support this version of ocaml")
         return None
-      sys.stderr.write(msg)
+      print (msg)
 
 def catch_and_print(f, msg=None):
   try:
@@ -195,7 +199,7 @@ def command_occurrences(line, col):
 
 ######## BUFFER SYNCHRONIZATION
 
-def sync_buffer_to(to_line, to_col, load_project=True,skip_marker=False):
+def sync_buffer_to_(to_line, to_col, load_project=True,skip_marker=False):
   process = merlin_process()
   saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
@@ -237,6 +241,9 @@ def sync_buffer_to(to_line, to_col, load_project=True,skip_marker=False):
   # put eof if marker still on stack at max_line
   if marker: command("tell","eof")
   if not skip_marker: command("seek","marker")
+
+def sync_buffer_to(to_line, to_col, load_project=True,skip_marker=False):
+  return catch_and_print(lambda: sync_buffer_to_(to_line, to_col, load_project=load_project,skip_marker=skip_marker))
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
@@ -549,7 +556,8 @@ def vim_selectphrase(l1,c1,l2,c2):
 
 def load_project(directory):
   failures = catch_and_print(lambda: command("project","find",directory))
-  fnames = display_load_failures(failures)
-  if isinstance(fnames, list):
-    vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
-  sync_buffer_to(1, 0, load_project=False)
+  if failures != None:
+    fnames = display_load_failures(failures)
+    if isinstance(fnames, list):
+      vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
+    sync_buffer_to(1, 0, load_project=False)
