@@ -400,14 +400,14 @@ end = struct
     else begin
       let pos_pred = match pos with
         | None -> (fun _ -> false)
-        | Some pos -> (fun cur -> Lexing.compare_pos pos cur <= 0)
+        | Some pos ->
+          let line, _ = Lexing.split_pos pos in
+          (fun cur -> let line', _ = Lexing.split_pos cur in line <= line')
       in
       let item_pred = function
         | _, Lexer.Valid (cur,_,_) when pos_pred cur -> true
-        | _, Lexer.Valid (_, ( Raw_parser.EOF | Raw_parser.LPAREN
-                          | Raw_parser.RPAREN | Raw_parser.STAR ),_)
-        | _, Lexer.Error _ -> true
         | _, Lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
+        | _, Lexer.Error _ -> true
         | _ -> false
       in
       let lexer = b.lexer in
