@@ -159,11 +159,21 @@ let str_ident_locs item =
   let open Typedtree in
   match item.str_desc with
   | Tstr_value (_, binding_lst) ->
-    List.concat_map binding_lst ~f:(fun binding ->
-      match binding.vb_pat.pat_desc with
-      | Tpat_var (id, _) -> [ Ident.name id , binding.vb_loc ]
+    let rec inspect_pattern pat =
+      match pat.pat_desc with
+      | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
+      | Tpat_tuple patts
+      | Tpat_array patts
+      | Tpat_construct (_, _, patts, _) ->
+        List.concat_map patts ~f:inspect_pattern
+      | Tpat_record (lst, _) ->
+        List.map lst ~f:(fun (lid_loc, _, _pattern) ->
+          Longident.last lid_loc.Asttypes.txt, lid_loc.Asttypes.loc
+        ) (* TODO: handle rhs, i.e. [_pattern] *)
+      | Tpat_variant (_, Some pat, _) -> inspect_pattern pat
       | _ -> []
-    )
+    in
+    List.concat_map binding_lst ~f:(fun b -> inspect_pattern b.vb_pat)
   | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
   | Tstr_recmodule mbs ->
     List.map mbs ~f:(fun mb -> Ident.name mb.mb_id , mb.mb_loc)
