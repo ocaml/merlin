@@ -217,6 +217,7 @@ and from_path' ?fallback =
     | Not_found -> recover None
     | File_not_found (ML _) -> assert false
     | File_not_found (CMT fname) as exn ->
+      debug_log "failed to locate the cmt of '%s'" fname ;
       match fallback with
       | None  -> raise exn
       | value -> value
