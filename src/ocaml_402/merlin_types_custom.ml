@@ -164,7 +164,7 @@ let str_ident_locs item =
       | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
       | Tpat_tuple patts
       | Tpat_array patts
-      | Tpat_construct (_, _, patts, _) ->
+      | Tpat_construct (_, _, patts) ->
         List.concat_map patts ~f:inspect_pattern
       | Tpat_record (lst, _) ->
         List.map lst ~f:(fun (lid_loc, _, _pattern) ->
