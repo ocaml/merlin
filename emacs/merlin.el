@@ -78,6 +78,11 @@
 no argument and should return the configuration (see
 `merlin-start-process') for the current buffer."
   :group 'merlin :type 'symbol)
+
+(defcustom merlin-quiet-startup nil
+  "If non-nil, suppress process startup message."
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-command "ocamlmerlin"
   "The path to merlin in your installation."
   :group 'merlin :type '(file))
@@ -437,7 +442,9 @@ return DEFAULT or the value associated to KEY otherwise."
         (environment (lookup-default 'env configuration nil))
         (logfile (lookup-default 'logfile configuration nil))
         (buffer-name (merlin-instance-buffer-name name)))
-    (message "Starting merlin instance: %s (binary=%s)." name command)
+    (when (not merlin-quiet-startup)
+      (message "Starting merlin instance: %s (binary=%s)."
+	       name command))
     (setq merlin-instance name)
     (when (not (merlin-process-started-p name))
       (let* ((buffer (get-buffer-create buffer-name))
