@@ -2613,12 +2613,9 @@ expr:
              Fake.(app Lwt.unit_lwt $7)))
           $2
     }
-| simple_expr SHARP SHARP @{`Shift_token (1,LIDENT "")} label
-    { let inst = Fake.(app Js.un_js $1) in
-      let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
-      let prop = Fake.(app Js.un_prop field) in
-      mkexp $startpos $endpos (Pexp_send(prop,"get"))
-    }
+;
+
+expr:
 | simple_expr SHARP SHARP label LESSMINUS expr
     { let inst = Fake.(app Js.un_js $1) in
       let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
@@ -2626,6 +2623,15 @@ expr:
       let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
       reloc_exp $startpos $endpos
       Fake.(app setter $6)
+    }
+;
+
+simple_expr:
+| simple_expr SHARP SHARP @{`Shift_token (1,LIDENT "")} label
+    { let inst = Fake.(app Js.un_js $1) in
+      let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+      let prop = Fake.(app Js.un_prop field) in
+      mkexp $startpos $endpos (Pexp_send(prop,"get"))
     }
 | simple_expr SHARP SHARP label LPAREN RPAREN
     { let inst = Fake.(app Js.un_js $1) in
