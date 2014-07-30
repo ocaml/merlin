@@ -602,7 +602,7 @@ module_expr:
 | v1 = mod_longident
     { mkmod $startpos $endpos (Pmod_ident (mkrhs $startpos(v1) $endpos(v1) v1)) }
 | STRUCT @{`Unclosed "struct"}
-  v2 = structure END
+  v2 = structure END @{`Close}
     { mkmod $startpos $endpos (Pmod_structure(v2)) }
 | FUNCTOR v2 = functor_args MINUSGREATER v4 = module_expr
     { List.fold_left (fun acc (n, t) -> mkmod $startpos $endpos (Pmod_functor(n, t, acc))) v4 v2 }
@@ -611,24 +611,24 @@ module_expr:
 | v1 = module_expr LPAREN RPAREN
     { mkmod $startpos $endpos (Pmod_apply(v1, mkmod $startpos $endpos (Pmod_structure []))) }
 | LPAREN @{`Unclosed "("}
-  v2 = module_expr COLON v4 = module_type RPAREN
+  v2 = module_expr COLON v4 = module_type RPAREN @{`Close}
     { mkmod $startpos $endpos (Pmod_constraint(v2, v4)) }
-| LPAREN @{`Unclosed "("} v2 = module_expr RPAREN
+| LPAREN @{`Unclosed "("} v2 = module_expr RPAREN @{`Close}
     { v2 }
 | LPAREN @{`Unclosed "("}
-  VAL v3 = expr RPAREN
+  VAL v3 = expr RPAREN @{`Close}
     { mkmod $startpos $endpos (Pmod_unpack v3) }
 | LPAREN @{`Unclosed "("}
-  VAL v3 = expr COLON v5 = package_type RPAREN
+  VAL v3 = expr COLON v5 = package_type RPAREN @{`Close}
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_constraint(v3, ghtyp $startpos $endpos (Ptyp_package v5))))) }
 | LPAREN @{`Unclosed "("}
-  VAL v3 = expr COLON v5 = package_type COLONGREATER v7 = package_type RPAREN
+  VAL v3 = expr COLON v5 = package_type COLONGREATER v7 = package_type RPAREN @{`Close}
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_coerce(v3, Some(ghtyp $startpos $endpos (Ptyp_package v5)),
                                     ghtyp $startpos $endpos (Ptyp_package v7))))) }
 | LPAREN @{`Unclosed "("}
-  VAL v3 = expr COLONGREATER v5 = package_type RPAREN
+  VAL v3 = expr COLONGREATER v5 = package_type RPAREN @{`Close}
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_coerce(v3, None, ghtyp $startpos $endpos (Ptyp_package v5))))) }
 | v1 = module_expr v2 = attribute
@@ -745,7 +745,7 @@ module_binding:
 module_type:
 | v1 = mty_longident
     { mkmty $startpos $endpos (Pmty_ident (mkrhs $startpos(v1) $endpos(v1) v1)) }
-| SIG @{`Unclosed "sig"} v2 = signature END
+| SIG @{`Unclosed "sig"} v2 = signature END @{`Close}
     { mkmty $startpos $endpos (Pmty_signature v2) }
 | FUNCTOR v2 = functor_args MINUSGREATER v4 = module_type %prec below_WITH
     { List.fold_left (fun acc (n, t) -> mkmty $startpos $endpos (Pmty_functor(n, t, acc))) v4 v2 }
@@ -753,9 +753,9 @@ module_type:
     { mkmty $startpos $endpos (Pmty_with(v1, List.rev v3)) }
 | MODULE TYPE OF v4 = module_expr %prec below_LBRACKETAT
     { mkmty $startpos $endpos (Pmty_typeof v4) }
-| LPAREN @{`Unclosed "("} MODULE v3 = mod_longident RPAREN
+| LPAREN @{`Unclosed "("} MODULE v3 = mod_longident RPAREN @{`Close}
     { mkmty $startpos $endpos  (Pmty_alias (mkrhs $startpos(v3) $endpos(v3) v3)) }
-| LPAREN @{`Unclosed "("} v2 = module_type RPAREN
+| LPAREN @{`Unclosed "("} v2 = module_type RPAREN @{`Close}
     { v2 }
 | v1 = extension
     { mkmty $startpos $endpos (Pmty_extension v1) }
@@ -909,11 +909,11 @@ class_simple_expr:
     { mkclass $startpos $endpos (Pcl_constr(mkloc v4 (rloc $startpos(v4) $endpos(v4)), List.rev v2)) }
 | v1 = class_longident
     { mkclass $startpos $endpos (Pcl_constr(mkrhs $startpos(v1) $endpos(v1) v1, [])) }
-| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = class_structure END
+| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = class_structure END @{`Close}
     { mkclass $startpos $endpos (Pcl_structure(v2)) }
-| LPAREN @{`Unclosed "("} v2 = class_expr COLON v4 = class_type RPAREN
+| LPAREN @{`Unclosed "("} v2 = class_expr COLON v4 = class_type RPAREN @{`Close}
     { mkclass $startpos $endpos (Pcl_constraint(v2, v4)) }
-| LPAREN @{`Unclosed "("} v2 = class_expr RPAREN
+| LPAREN @{`Unclosed "("} v2 = class_expr RPAREN @{`Close}
     { v2 }
 
 class_structure:
@@ -1009,7 +1009,7 @@ class_signature:
     { mkcty $startpos $endpos (Pcty_constr (mkloc v4 (rloc $startpos(v4) $endpos(v4)), List.rev v2)) }
 | v1 = clty_longident
     { mkcty $startpos $endpos (Pcty_constr (mkrhs $startpos(v1) $endpos(v1) v1, [])) }
-| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = class_sig_body END
+| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = class_sig_body END @{`Close}
     { mkcty $startpos $endpos (Pcty_signature v2) }
 
 class_sig_body:
@@ -1268,7 +1268,7 @@ expr:
     { mkexp_attrs $startpos $endpos (Pexp_assert v3) v2 }
 | LAZY v2 = ext_attributes v3 = simple_expr %prec below_SHARP
     { mkexp_attrs $startpos $endpos (Pexp_lazy v3) v2 }
-| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = ext_attributes v3 = class_structure END
+| OBJECT @{`Unclosed "object"} @{`Item "object"} v2 = ext_attributes v3 = class_structure END @{`Close}
     { mkexp_attrs $startpos $endpos (Pexp_object v3) v2 }
 | v1 = expr v2 = attribute
     { Exp.attr v1 v2 }
@@ -1282,46 +1282,46 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos(v1) $endpos(v1) v1, None)) }
 | v1 = name_tag %prec prec_constant_constructor
     { mkexp $startpos $endpos (Pexp_variant(v1, None)) }
-| LPAREN @{`Unclosed "("} v2 = seq_expr RPAREN
+| LPAREN @{`Unclosed "("} v2 = seq_expr RPAREN @{`Close}
     { reloc_exp $startpos $endpos v2 }
 | BEGIN v2 = ext_attributes v3 = seq_expr END
     { wrap_exp_attrs $startpos $endpos (reloc_exp $startpos $endpos v3) v2 (* check location *) }
-| BEGIN @{`Unclosed "begin"} v2 = ext_attributes END
+| BEGIN @{`Unclosed "begin"} v2 = ext_attributes END @{`Close}
     { mkexp_attrs $startpos $endpos (Pexp_construct (mkloc (Lident "()") (rloc $startpos $endpos),
                                None)) v2 }
 | LPAREN v2 = seq_expr v3 = type_constraint RPAREN
     { mkexp_constraint $startpos $endpos v2 v3 }
 | v1 = simple_expr DOT v3 = label_longident
     { mkexp $startpos $endpos (Pexp_field(v1, mkrhs $startpos(v3) $endpos(v3) v3)) }
-| v1 = mod_longident DOT LPAREN @{`Unclosed "("} v4 = seq_expr RPAREN
+| v1 = mod_longident DOT LPAREN @{`Unclosed "("} v4 = seq_expr RPAREN @{`Close}
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, v4)) }
-| v1 = simple_expr _ops = DOT _ope = LPAREN @{`Unclosed "("} v4 = seq_expr RPAREN
+| v1 = simple_expr _ops = DOT _ope = LPAREN @{`Unclosed "("} v4 = seq_expr RPAREN @{`Close}
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
                  (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "Array" "get")),
                          ["",v1; "",v4])) }
-| v1 = simple_expr _ops = DOT _ope = LBRACKET @{`Unclosed "["} v4 = seq_expr RBRACKET
+| v1 = simple_expr _ops = DOT _ope = LBRACKET @{`Unclosed "["} v4 = seq_expr RBRACKET @{`Close}
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
                  (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "String" "get")),
                          ["",v1; "",v4])) }
-| v1 = simple_expr _ops = DOT _ope = LBRACE @{`Unclosed "{"} v4 = expr RBRACE
+| v1 = simple_expr _ops = DOT _ope = LBRACE @{`Unclosed "{"} v4 = expr RBRACE @{`Close}
     { bigarray_get ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) v1 v4 }
-| LBRACE @{`Unclosed "{"} v2 = record_expr RBRACE
+| LBRACE @{`Unclosed "{"} v2 = record_expr RBRACE @{`Close}
     { let (exten, fields) = v2 in mkexp $startpos $endpos (Pexp_record(fields, exten)) }
-| v1 = mod_longident DOT LBRACE @{`Unclosed "{"}  v4 = record_expr RBRACE
+| v1 = mod_longident DOT LBRACE @{`Unclosed "{"}  v4 = record_expr RBRACE @{`Close}
     { let (exten, fields) = v4 in
         let rec_exp = mkexp $startpos $endpos (Pexp_record(fields, exten)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, rec_exp)) }
-| LBRACKETBAR @{`Unclosed "[|"} v2 = expr_semi_list opt_semi BARRBRACKET
+| LBRACKETBAR @{`Unclosed "[|"} v2 = expr_semi_list opt_semi BARRBRACKET @{`Close}
     { mkexp $startpos $endpos  (Pexp_array(List.rev v2)) }
 | LBRACKETBAR BARRBRACKET
     { mkexp $startpos $endpos  (Pexp_array []) }
-| v1 = mod_longident DOT LBRACKETBAR @{`Unclosed "[|"} v4 = expr_semi_list opt_semi BARRBRACKET
+| v1 = mod_longident DOT LBRACKETBAR @{`Unclosed "[|"} v4 = expr_semi_list opt_semi BARRBRACKET @{`Close}
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, mkexp $startpos(v4) $endpos(v4) (Pexp_array(List.rev v4)))) }
-| LBRACKET @{`Unclosed "["} v2 = expr_semi_list opt_semi _4 = RBRACKET
+| LBRACKET @{`Unclosed "["} v2 = expr_semi_list opt_semi _4 = RBRACKET @{`Close}
     { reloc_exp $startpos $endpos (mktailexp $startpos(_4) $endpos(_4) (List.rev v2)) }
-| v1 = mod_longident DOT LBRACKET @{`Unclosed "["} v4 = expr_semi_list opt_semi _6 = RBRACKET
+| v1 = mod_longident DOT LBRACKET @{`Unclosed "["} v4 = expr_semi_list opt_semi _6 = RBRACKET @{`Close}
     { let list_exp = reloc_exp $startpos $endpos (mktailexp $startpos(_6) $endpos(_6) (List.rev v4)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, list_exp)) }
 | v1 = PREFIXOP v2 = simple_expr
@@ -1334,16 +1334,16 @@ simple_expr:
     { mkexp $startpos $endpos  (Pexp_override(List.rev v2)) }
 | LBRACELESS GREATERRBRACE
     { mkexp $startpos $endpos  (Pexp_override [])}
-| v1 = mod_longident DOT LBRACELESS @{`Unclosed "{<"} v4 = field_expr_list opt_semi GREATERRBRACE
+| v1 = mod_longident DOT LBRACELESS @{`Unclosed "{<"} v4 = field_expr_list opt_semi GREATERRBRACE @{`Close}
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1, mkexp $startpos(v4) $endpos(v4) (Pexp_override(List.rev v4)))) }
 | v1 = simple_expr SHARP @{`Shift_token (1,LIDENT "")} v3 = label
     { mkexp $startpos $endpos (Pexp_send(v1, v3)) }
-| LPAREN @{`Unclosed "("} MODULE v3 = module_expr RPAREN
+| LPAREN @{`Unclosed "("} MODULE v3 = module_expr RPAREN @{`Close}
     { mkexp $startpos $endpos  (Pexp_pack v3) }
-| LPAREN @{`Unclosed "("} MODULE v3 = module_expr COLON v5 = package_type RPAREN
+| LPAREN @{`Unclosed "("} MODULE v3 = module_expr COLON v5 = package_type RPAREN @{`Close}
     { mkexp $startpos $endpos  (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack v3),
                                 ghtyp $startpos $endpos (Ptyp_package v5))) }
-| v1 = mod_longident DOT LPAREN @{`Unclosed "("} MODULE v5 = module_expr COLON v7 = package_type RPAREN
+| v1 = mod_longident DOT LPAREN @{`Unclosed "("} MODULE v5 = module_expr COLON v7 = package_type RPAREN @{`Close}
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos(v1) $endpos(v1) v1,
         mkexp $startpos $endpos (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack v5),
                                 ghtyp $startpos $endpos (Ptyp_package v7))))) }
@@ -1557,25 +1557,25 @@ simple_pattern_not_ident:
 | SHARP v2 = type_longident
     { mkpat $startpos $endpos (Ppat_type (mkrhs $startpos(v2) $endpos(v2) v2)) }
 | LBRACE @{`Unclosed "{"}
-  v2 = lbl_pattern_list RBRACE
+  v2 = lbl_pattern_list RBRACE @{`Close}
     { let (fields, closed) = v2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
 | LBRACKET @{`Unclosed "["}
-  v2 = pattern_semi_list opt_semi _4 = RBRACKET
+  v2 = pattern_semi_list opt_semi _4 = RBRACKET @{`Close}
     { reloc_pat $startpos $endpos (mktailpat $startpos(_4) $endpos(_4) (List.rev v2)) }
 | LBRACKETBAR @{`Unclosed "[|"}
-  v2 = pattern_semi_list opt_semi BARRBRACKET
+  v2 = pattern_semi_list opt_semi BARRBRACKET @{`Close}
     { mkpat $startpos $endpos (Ppat_array(List.rev v2)) }
 | LBRACKETBAR BARRBRACKET
     { mkpat $startpos $endpos (Ppat_array []) }
-| LPAREN @{`Unclosed "("} v2 = pattern RPAREN
+| LPAREN @{`Unclosed "("} v2 = pattern RPAREN @{`Close}
     { reloc_pat $startpos $endpos v2 }
-| LPAREN @{`Unclosed "("} v2 = pattern COLON v4 = core_type RPAREN
+| LPAREN @{`Unclosed "("} v2 = pattern COLON v4 = core_type RPAREN @{`Close}
     { mkpat $startpos $endpos (Ppat_constraint(v2, v4)) }
 (*| LPAREN pattern COLON v4 = error
     { expecting $startpos(v4) $endpos(v4) "type" }*)
-| LPAREN MODULE @{`Unclosed "("} v3 = UIDENT RPAREN
+| LPAREN MODULE @{`Unclosed "("} v3 = UIDENT RPAREN @{`Close}
     { mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos(v3) $endpos(v3) v3)) }
-| LPAREN MODULE @{`Unclosed "("} v3 = UIDENT COLON v5 = package_type RPAREN
+| LPAREN MODULE @{`Unclosed "("} v3 = UIDENT COLON v5 = package_type RPAREN @{`Close}
     { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos(Ppat_unpack (mkrhs $startpos(v3) $endpos(v3) v3)),
                               ghtyp $startpos $endpos (Ptyp_package v5))) }
 | v1 = extension
@@ -2097,7 +2097,7 @@ ident:
 val_ident:
 | v1 = LIDENT
     { v1 }
-| LPAREN @{`Unclosed "("} v2 = operator RPAREN
+| LPAREN @{`Unclosed "("} v2 = operator RPAREN @{`Close}
     { v2 }
 (*| LPAREN v2 =error
     { expecting $startpos(v2) $endpos(v2) "operator" }*)
