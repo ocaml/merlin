@@ -599,8 +599,9 @@ and string state = parse
         string state lexbuf
       }
   | eof
-      { state.string_start_loc <- Location.none;
-        error Unterminated_string state.string_start_loc }
+      { let loc = state.string_start_loc in
+        state.string_start_loc <- Location.none;
+        error Unterminated_string loc }
   | _
       { Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         string state lexbuf
@@ -613,8 +614,9 @@ and quoted_string state delim = parse
         quoted_string state delim lexbuf
       }
   | eof
-      { state.string_start_loc <- Location.none;
-        error Unterminated_string state.string_start_loc }
+      { let loc = state.string_start_loc in
+        state.string_start_loc <- Location.none;
+        error Unterminated_string loc }
   | "|" lowercase* "}"
       {
         let edelim = Lexing.lexeme lexbuf in
@@ -649,11 +651,11 @@ and p4_quotation = parse
   | ">>"
       { return () }
   | eof
-      { error Unterminated_string Location.none }
+      { error Unterminated_string (Location.curr lexbuf) }
   | _
       { p4_quotation lexbuf }
 
-      {
+{
 type comment = string * Location.t
 
 let rec token_without_comments state lexbuf =
