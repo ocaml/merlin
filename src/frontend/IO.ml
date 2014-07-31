@@ -284,6 +284,8 @@ module Protocol_io = struct
       Request (Dump `Browse)
     | [`String "dump"; `String "typer"; `String "input"] ->
       Request (Dump `Typer_input)
+    | [`String "dump"; `String "tokens"] ->
+      Request (Dump `Tokens)
     | [`String "which"; `String "path"; `String name] ->
       Request (Which_path [name])
     | [`String "which"; `String "path"; `List names] ->

@@ -397,6 +397,25 @@ let dispatch (state : state) =
     let structures = Browse.of_structures structures in
     Browse_misc.dump_ts structures
 
+  | (Dump `Tokens : a request) ->
+    let tokens = Buffer.lexer state.buffer in
+    let tokens = History.seek_backward (fun _ -> true) tokens in
+    let tokens = History.tail tokens in
+    `List (List.filter_map tokens
+             ~f:(fun (_exns,item) -> match item with
+             | Lexer.Error _ -> None
+             | Lexer.Valid (s,t,e) ->
+               let t = Raw_parser_values.symbol_of_token t in
+               let t = Raw_parser_values.class_of_symbol t in
+               let t = Raw_parser_values.string_of_class t in
+               Some (`Assoc [
+                   "start", Lexing.json_of_position s;
+                   "end", Lexing.json_of_position e;
+                   "token", `String t;
+                 ])
+             )
+          )
+
   | (Dump _ : a request) ->
     failwith "TODO"
 

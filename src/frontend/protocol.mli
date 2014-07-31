@@ -67,7 +67,7 @@ type _ request =
     :  exn list request
   | Dump
     :  [`Env of [`Normal|`Full] * position option
-       |`Sig|`Parser|`Exn|`Browse|`Recover|`Typer_input]
+       |`Sig|`Parser|`Exn|`Browse|`Recover|`Typer_input|`Tokens]
     -> Json.json request
   | Which_path
     :  string list
