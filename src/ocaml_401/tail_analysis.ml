@@ -15,7 +15,7 @@ let expr_tail_positions = function
   (* Match with no exception handler *)
   | Texp_match (_,cs,_)
   | Texp_try (_,cs)
-    -> List.map cs ~f:(fun (p,e) -> Expression e)
+    -> List.map cs ~f:(fun c -> Case (make_case c))
   | Texp_letmodule (_,_,_,e) | Texp_let (_,_,e)
   | Texp_when (_,e)
   | Texp_sequence (_,e) | Texp_ifthenelse (_,e,None)
@@ -25,12 +25,13 @@ let expr_tail_positions = function
 
 let tail_positions = function
   | Expression expr -> expr_tail_positions expr.exp_desc
+  | Case case -> [Expression case.c_rhs]
   | _ -> []
 
 (* If the expression is a function, return all of its entry-points (which are
    in tail-positions). Returns an empty list otherwise *)
 let expr_entry_points = function
-  | Texp_function (_,cs,_) -> List.map cs ~f:(fun (p,e) -> Expression e)
+  | Texp_function (_,cs,_) -> List.map cs ~f:(fun c -> Case (make_case c))
   | _ -> []
 
 let entry_points = function

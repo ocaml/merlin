@@ -549,3 +549,11 @@ module Override = struct
     typ_loc: Location.t
   }
 end
+
+let make_case (pat, expr) =
+  let c_rhs, c_guard =
+    match expr.exp_desc with
+    | Texp_when (g, rhs) -> rhs, Some g
+    | _ -> expr, None
+  in
+  { c_lhs = pat ; c_rhs ; c_guard }

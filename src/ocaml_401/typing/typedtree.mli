@@ -481,3 +481,5 @@ module Override : sig
     typ_loc: Location.t
   }
 end
+
+val make_case : (pattern * expression) -> case

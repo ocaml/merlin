@@ -272,13 +272,7 @@ and of_value_binding vb = of_node (Value_binding vb)
 and of_module_type mt = of_node (Module_type mt)
 and of_module_expr me = of_node (Module_expr me)
 and of_typ_param (ct,_) = of_core_type ct
-and of_case (pat, expr) =
-  let c_rhs, c_guard =
-    match expr.exp_desc with
-    | Texp_when (g, rhs) -> rhs, Some g
-    | _ -> expr, None
-  in
-  of_node (Case { c_lhs = pat ; c_rhs ; c_guard })
+and of_case pat_expr = of_node (Case (make_case pat_expr))
 
 and of_expression_desc exp desc acc = match desc with
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
