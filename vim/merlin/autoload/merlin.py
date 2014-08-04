@@ -460,6 +460,11 @@ def make_matcher(start, stop):
   else:
     return hard_matcher(start, stop)
 
+def enclosing_tail_info(record):
+  if record['tail'] == 'call': return ' (* tail call *)'
+  if record['tail'] == 'position': return ' (* tail position *)'
+  return ''
+
 def vim_next_enclosing(vimvar):
   if enclosing_types != []:
     global current_enclosing
@@ -469,7 +474,7 @@ def vim_next_enclosing(vimvar):
       tmp = enclosing_types[current_enclosing]
       matcher = make_matcher(tmp['start'], tmp['end'])
       vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-      print(tmp['type'])
+      print(tmp['type'] + enclosing_tail_info(tmp))
 
 def vim_prev_enclosing(vimvar):
   if enclosing_types != []:
@@ -480,7 +485,7 @@ def vim_prev_enclosing(vimvar):
       tmp = enclosing_types[current_enclosing]
       matcher = make_matcher(tmp['start'], tmp['end'])
       vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-      print(tmp['type'])
+      print(tmp['type'] + enclosing_tail_info(tmp))
 
 # Finding files
 def vim_which(name,ext):
