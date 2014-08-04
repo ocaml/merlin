@@ -187,7 +187,7 @@ let annotate_tail_calls ts : (t * Protocol.is_tail_position) list =
   let open BrowseT in
   let is_one_of candidates t =
     List.exists
-      ~f:(fun candidate -> same_payload candidate t.t_node)
+      ~f:(fun candidate -> Obj.unfolded_physical_equality candidate t.t_node)
       candidates in
   let find_entry_points candidates t =
     Tail_analysis.entry_points t.t_node,

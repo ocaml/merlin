@@ -604,3 +604,21 @@ end = struct
         end
       |  xs -> joker 0 xs
 end
+
+module Obj = struct
+  include Obj
+  let unfolded_physical_equality a b =
+    let a, b = Obj.repr a, Obj.repr b in
+    if Obj.is_int a || Obj.is_int b then
+      a == b
+    else
+      let sa, sb = Obj.size a, Obj.size b in
+      sa = sb &&
+      try
+        for i = 0 to sa - 1 do
+          if not (Obj.field a i == Obj.field b i) then
+            raise Not_found
+        done;
+        true
+      with Not_found -> false
+end
