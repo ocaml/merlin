@@ -79,6 +79,14 @@ module List = struct
 
   let filter_dup lst = filter_dup' ~equiv:(fun x -> x) lst
 
+  let rec merge_cons ~f = function
+    | a :: ((b :: tl) as tl') ->
+      begin match f a b with
+        | Some a' -> merge_cons ~f (a' :: tl)
+        | None -> a :: merge_cons ~f tl'
+      end
+    | tl -> tl
+
   let rec take_while ~f = function
     | x :: xs when f x -> x :: take_while ~f xs
     | _ -> []
@@ -104,6 +112,13 @@ module List = struct
   let rec unfold f a = match f a with
     | None -> []
     | Some a -> a :: unfold f a
+
+  let rec fold_n_map ~f ~init = function
+    | [] -> init, []
+    | x :: xs ->
+      let acc, x' = f init x in
+      let acc, xs' = fold_n_map ~f ~init:acc xs in
+      acc, (x' :: xs')
 
   module Lazy = struct
     type 'a t =
