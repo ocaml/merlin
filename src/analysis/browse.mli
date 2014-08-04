@@ -56,3 +56,11 @@ val all_constructor_occurrences :
   t * [ `Description of Types.constructor_description
       | `Declaration of Typedtree.constructor_declaration ]
   -> t -> t Location.loc list
+
+(* From a chain of nodes, going from the root to the leaf, returns a list in
+   the same ordering about what is known about tail positions *)
+val annotate_tail_calls : t list -> (t * Protocol.is_tail_position) list
+
+(* Same function, but operating from leaves to root *)
+val annotate_tail_calls_from_leaf
+  : t list -> (t * Protocol.is_tail_position) list

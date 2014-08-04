@@ -71,6 +71,8 @@ SOURCES = \
 	$(TYPER)/typing/typedtree.ml      \
 	$(TYPER)/browseT.mli              \
 	$(TYPER)/browseT.ml               \
+	$(TYPER)/tail_analysis.mli        \
+	$(TYPER)/tail_analysis.ml         \
 	src/ocaml_aux/parsing_aux.mli     \
 	src/ocaml_aux/parsing_aux.ml      \
 	$(TYPER)/merlin_types_custom.ml   \

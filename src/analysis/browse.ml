@@ -182,3 +182,33 @@ let all_constructor_occurrences ({t_env = env},d) t =
     List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
   in
   aux [] t
+
+let annotate_tail_calls ts : (t * Protocol.is_tail_position) list =
+  let open BrowseT in
+  let is_one_of candidates t =
+    List.exists
+      ~f:(fun candidate -> same_payload candidate t.t_node)
+      candidates in
+  let find_entry_points candidates t =
+    Tail_analysis.entry_points t.t_node,
+    (t, is_one_of candidates t) in
+  let _, entry_points = List.fold_n_map ts ~f:find_entry_points ~init:[] in
+  let propagate candidates (t,entry) =
+    let is_in_tail = entry || is_one_of candidates t in
+    (if is_in_tail
+     then Tail_analysis.tail_positions t.t_node
+     else []),
+    (t, is_in_tail) in
+  let _, tail_positions = List.fold_n_map entry_points ~f:propagate ~init:[] in
+  List.map ~f:(fun (t,tail) ->
+      t,
+      if not tail then
+        `No
+      else if Tail_analysis.is_call t.t_node then
+        `Tail_call
+      else
+        `Tail_position)
+    tail_positions
+
+let annotate_tail_calls_from_leaf ts =
+  List.rev (annotate_tail_calls (List.rev ts))

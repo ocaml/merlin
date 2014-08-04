@@ -123,3 +123,5 @@ val expression_paths : expression -> Path.t Location.loc list
 val is_constructor : t ->
   [ `Description of Types.constructor_description
   | `Declaration of Typedtree.constructor_declaration ] Location.loc option
+
+val same_payload : node -> node -> bool
