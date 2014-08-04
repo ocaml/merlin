@@ -142,8 +142,14 @@ module Protocol_io = struct
   let json_of_string_list l =
     `List (List.map (fun s -> `String s) l)
 
-  let json_of_type_loc (loc,str) =
-    with_location loc ["type", `String str]
+  let json_of_type_loc (loc,str,tail) =
+    with_location loc [
+      "type", `String str;
+      "tail", `String (match tail with
+          | `No -> "no"
+          | `Tail_position -> "position"
+          | `Tail_call -> "call")
+    ]
 
   let string_of_kind = function
     | `Value       -> "Value"

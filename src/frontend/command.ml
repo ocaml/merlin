@@ -129,7 +129,8 @@ let dispatch (state : state) =
     let structures = Typer.structures typer in
     let structures = Browse.of_structures structures in
     let path = Browse.enclosing pos structures in
-    let aux = function
+    let path = Browse.annotate_tail_calls_from_leaf path in
+    let aux (t,tail) = match t with
       | { t_loc; t_env;
           t_node = ( Expression {exp_type = t}
                    | Pattern {pat_type = t}
@@ -138,13 +139,13 @@ let dispatch (state : state) =
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.type_scheme ppf t);
-        Some (t_loc, to_string ())
+        Some (t_loc, to_string (), tail)
       | { t_loc; t_env;
           t_node = Type_declaration { typ_id = id; typ_type = t} } ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.type_declaration id ppf t);
-        Some (t_loc, to_string ())
+        Some (t_loc, to_string (), tail)
       | { t_loc; t_env;
           t_node = ( Module_expr {mod_type = m}
                    | Module_type {mty_type = m}
@@ -158,7 +159,7 @@ let dispatch (state : state) =
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env
           (fun () -> Printtyp.modtype ppf m);
-        Some (t_loc, to_string ())
+        Some (t_loc, to_string (), tail)
       | _ -> None
     in
     let result = List.filter_map ~f:aux path in
@@ -216,16 +217,21 @@ let dispatch (state : state) =
             in
             let ppf, to_string = Format.to_string () in
             if Type_utils.type_in_env env ppf source then
-              Some (loc, to_string ())
+              Some (loc, to_string (), `No)
             else
               None
           with _ ->
             None
       )
     in
-    List.filter_dup'
-      ~equiv:(fun ({Location. loc_start; loc_end}, text) ->
-        Lexing.split_pos loc_start, Lexing.split_pos loc_end, text)
+    let normalize ({Location. loc_start; loc_end}, text, _tail) =
+        Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in
+    List.merge_cons
+      ~f:(fun a b ->
+          (* Tail position is computed only on result, and result comes last
+             As an approximation, when two items are similar, we returns the
+             rightmost one *)
+          if normalize a = normalize b then Some b else None)
       (small_enclosings @ result)
 
   | (Enclosing pos : a request) ->

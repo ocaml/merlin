@@ -23,6 +23,8 @@ and item = {
   children : outline ;
 }
 
+type is_tail_position = [`No | `Tail_position | `Tail_call]
+
 type _ request =
   | Tell
     : [ `Start of position option | `Source of string | `Marker]
@@ -32,7 +34,7 @@ type _ request =
     -> string request
   | Type_enclosing
     :  (string * int) * position
-    -> (Location.t * string) list request
+    -> (Location.t * string * is_tail_position) list request
   | Enclosing
     :  position
     -> Location.t list request
