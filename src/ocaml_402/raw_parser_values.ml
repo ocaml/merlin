@@ -1025,3 +1025,22 @@ let default_symbol = function
 let selection_priority = function
   | CN_ (N_structure_item, _) -> 1
   | _ -> 0
+
+let is_operator =
+  let open Raw_parser in function
+    | PREFIXOP s
+    | INFIXOP0 s | INFIXOP1 s | INFIXOP2 s | INFIXOP3 s | INFIXOP4 s -> Some s
+    | BANG -> Some "!"        | PERCENT -> Some "%"
+    | PLUS -> Some "+"        | PLUSDOT -> Some "+."
+    | MINUS -> Some "-"       | MINUSDOT -> Some "-."
+    | STAR -> Some "*"        | EQUAL -> Some "="
+    | LESS -> Some "<"        | GREATER -> Some ">"
+    | OR -> Some "or"         | BARBAR -> Some "||"
+    | AMPERSAND -> Some "&"   | AMPERAMPER -> Some "&&"
+    | COLONEQUAL -> Some ":=" | PLUSEQ -> Some "+="
+    | _ -> None
+
+let is_ident =
+  let open Raw_parser in function
+    | UIDENT s | LIDENT s -> Some s
+    | _ -> None

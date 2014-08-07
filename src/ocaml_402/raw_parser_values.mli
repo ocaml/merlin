@@ -32,3 +32,6 @@ val default_symbol: symbol_class -> int * symbol
 val selection_priority: symbol_class -> int
 
 val token_of_symbol: 'a token_class -> 'a -> token
+
+val is_ident : token -> string option
+val is_operator : token -> string option

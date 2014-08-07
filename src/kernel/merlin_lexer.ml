@@ -135,22 +135,8 @@ let put_mark t mark =
 
 let get_mark t = t.marker
 
-let is_operator =
-  let open Raw_parser in function
-    | PREFIXOP _
-    | INFIXOP0 _ | INFIXOP1 _ | INFIXOP2 _ | INFIXOP3 _ | INFIXOP4 _
-    | BANG | PLUS | PLUSDOT | MINUS | MINUSDOT | STAR | EQUAL | LESS | GREATER
-    | OR | BARBAR | AMPERSAND | AMPERAMPER | COLONEQUAL | PLUSEQ | PERCENT
-      -> true
-    | _ -> false
-
-let is_ident =
-  let open Raw_parser in function
-    | UIDENT _ | LIDENT _ -> true
-    | _ -> false
-
 let token is = function
-  | Valid (_,op,_) -> is op
+  | Valid (_,op,_) -> (is op <> None)
   | _ -> false
 
 let reconstruct_identifier h =
@@ -167,54 +153,42 @@ let reconstruct_identifier h =
   in
   let acc, h = match History.head h, History.tail h with
     | (List.More((_, ident), _) | List.One (_, ident)), _
-      when token is_ident ident -> [ident], h
+      when token Raw_parser_values.is_ident ident -> [ident], h
     | ( List.More ((_, Valid (_,Raw_parser.LPAREN,_)), _)
       | List.One (_, Valid (_,Raw_parser.LPAREN,_))),
       (_, op) :: (_, Valid (_,Raw_parser.RPAREN,_)) :: _
-      when token is_operator op -> [op], h
+      when token Raw_parser_values.is_operator op -> [op], h
     | List.More ((_, op),
                  ( List.More ((_, Valid (_,Raw_parser.LPAREN,_)), _)
                  | List.One (_, Valid (_,Raw_parser.LPAREN,_)))),
       (_, Valid (_,Raw_parser.RPAREN,_)) :: _
-      when token is_operator op -> [op], History.move (-1) h
+      when token Raw_parser_values.is_operator op -> [op], History.move (-1) h
     | List.More ((_, Valid (_,Raw_parser.RPAREN,_)),
                  List.More ((_, op),
                             ( List.More ((_, Valid (_,Raw_parser.LPAREN,_)), _)
                             | List.One (_, Valid (_,Raw_parser.LPAREN,_))))),
       _
-      when token is_operator op -> [op], History.move (-2) h
+      when token Raw_parser_values.is_operator op -> [op], History.move (-2) h
     | _ -> [], h
   in
   let rec head acc = function
     | List.More ((_, Valid (_,Raw_parser.DOT,_)),
                  List.More ((_, ident), tl))
-      when token is_ident ident -> head (ident :: acc) tl
+      when token Raw_parser_values.is_ident ident -> head (ident :: acc) tl
     | List.More ((_, Valid (_,Raw_parser.DOT,_)),
                  List.One (_, ident))
-      when token is_ident ident -> (ident :: acc)
+      when token Raw_parser_values.is_ident ident -> (ident :: acc)
     | _ -> acc
   in
   let extract_ident = function
     | Error _ -> assert false
     | Valid (s,t,e) ->
-      let open Raw_parser in
-      let t' = match t with
-        | UIDENT s | LIDENT s | PREFIXOP s
-        | INFIXOP0 s | INFIXOP1 s | INFIXOP2 s | INFIXOP3 s | INFIXOP4 s
-          -> s
-        | BANG -> "!"        | PERCENT -> "%"
-        | PLUS -> "+"        | PLUSDOT -> "+."
-        | MINUS -> "-"       | MINUSDOT -> "-."
-        | STAR -> "*"        | EQUAL -> "="
-        | LESS -> "<"        | GREATER -> ">"
-        | OR -> "or"         | BARBAR -> "        |  | "
-        | AMPERSAND -> "&"   | AMPERAMPER -> "&&"
-        | COLONEQUAL -> ":=" | PLUSEQ -> "+="
-        | _ -> assert false in
-      let t' = match t with
-        | UIDENT _ | LIDENT _ -> t'
-        | _ -> "( " ^ t' ^ " )" in
-      Location.mkloc t'
+      let t = match Raw_parser_values.is_ident t with
+        | Some t -> t
+        | None -> match Raw_parser_values.is_operator t with
+          | Some t -> "( " ^ t ^ " )"
+          | None -> assert false in
+      Location.mkloc t
         {Location. loc_start = s; loc_end = e; loc_ghost = false}
   in
   List.map ~f:extract_ident (head acc (History.head h))
