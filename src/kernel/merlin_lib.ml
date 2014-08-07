@@ -217,13 +217,15 @@ end = struct
           (fun name ->
             Logger.info Logger.general ~title:"unknown flag"
               name)
-          ""
+          "" ;
+          List.iter flags ~f:(Logger.info Logger.general ~title:"added flag")
       with exn ->
         Logger.info Logger.general ~title:"exception while processing flags"
           (Printexc.to_string exn)
     in
     List.iter process_flags prj.dot_config.cfg_flags;
-    List.iter process_flags prj.user_config.cfg_flags
+    List.iter process_flags prj.user_config.cfg_flags;
+    Clflags.set := prj.flags
 
   let set_dot_merlin project dm =
     let module Dm = Dot_merlin in
