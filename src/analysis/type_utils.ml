@@ -25,7 +25,7 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
 let type_in_env ?keywords env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
-      Typemod.type_toplevel_phrase env 
+      Typemod.type_toplevel_phrase env
         (Merlin_types_custom.mk_pstr_eval expression)
     in
     (*let sg' = Typemod.simplify_signature sg in*)

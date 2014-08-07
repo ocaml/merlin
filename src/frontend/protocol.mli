@@ -33,7 +33,7 @@ type _ request =
     :  string * position option
     -> string request
   | Type_enclosing
-    :  (string * int) * position
+    :  (string * int) option * position
     -> (Location.t * string * is_tail_position) list request
   | Enclosing
     :  position

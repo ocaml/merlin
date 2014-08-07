@@ -58,10 +58,7 @@ if path == "":
       print path
 else:
   print path
-  if vim.eval("l:raw") == "1":
-    merlin.command("path", "raw", "add", vim.eval("a:var"), path)
-  else:
-    merlin.command("path", "add", vim.eval("a:var"), path)
+  merlin.command("path", "add", vim.eval("a:var"), path)
 merlin.vim_reload()
 EOF
 endfunction

@@ -21,6 +21,12 @@ module List = struct
     | [] -> init
     | x :: xs -> fold_left' ~f ~init:(f x init) xs
 
+  let rec scan_left ~f l ~init = match l with
+    | [] -> []
+    | x :: xs ->
+      let init = f x init in
+      init :: (scan_left ~f xs ~init)
+
   let rec filter_map ~f = function
     | [] -> []
     | x :: xs ->

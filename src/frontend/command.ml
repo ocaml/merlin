@@ -121,7 +121,7 @@ let dispatch (state : state) =
     ignore (Type_utils.type_in_env env ppf source : bool);
     to_string ()
 
-  | (Type_enclosing ((expr, offset), pos) : a request) ->
+  | (Type_enclosing (expro, pos) : a request) ->
     let open BrowseT in
     let open Typedtree in
     let open Override in
@@ -165,16 +165,50 @@ let dispatch (state : state) =
     let result = List.filter_map ~f:aux path in
     (* enclosings of cursor in given expression *)
     let exprs =
-      let len = String.length expr in
-      let rec aux acc i =
-        if i >= len then
-          List.rev (expr :: acc)
-        else if expr.[i] = '.' then
-          aux (String.sub expr ~pos:0 ~len:i :: acc) (succ i)
-        else
-          aux acc (succ i)
-      in
-      aux [] offset
+      match expro with
+      | None ->
+        let lexer = Buffer.lexer state.buffer in
+        let lexer = History.seek_backward (fun (_,item) ->
+            Lexing.compare_pos pos (Lexer.item_start item) < 0)
+            lexer in
+        begin match Lexer.reconstruct_identifier lexer with
+          | [] -> []
+          | base :: tail ->
+            base ::
+            List.scan_left ~f:(fun {Location. txt = dot; loc = dl}
+                                {Location. txt = base; loc = bl} ->
+                                let loc = Parsing_aux.location_union bl dl in
+                                let txt = base ^ "." ^ dot in
+                                Location.mkloc txt loc)
+              ~init:base tail
+        end
+      | Some (expr, offset) ->
+        let loc_start =
+          let l, c = Lexing.split_pos pos in
+          Lexing.make_pos (l, c - offset)
+        in
+        let shift loc int =
+          let l, c = Lexing.split_pos loc in
+          Lexing.make_pos (l, c + int)
+        in
+        let add_loc source =
+          let loc =
+            { Location.
+              loc_start ;
+              loc_end = shift loc_start (String.length source) ;
+              loc_ghost = false ;
+            } in
+          Location.mkloc source loc
+        in
+        let len = String.length expr in
+        let rec aux acc i =
+          if i >= len then
+            List.rev_map ~f:add_loc (expr :: acc)
+          else if expr.[i] = '.' then
+            aux (String.sub expr ~pos:0 ~len:i :: acc) (succ i)
+          else
+            aux acc (succ i) in
+        aux [] offset
     in
     let small_enclosings =
       let node = Completion.node_at typer pos in
@@ -193,36 +227,23 @@ let dispatch (state : state) =
           -> false
         | _ -> true
       in
-      let loc_start =
-        let l, c = Lexing.split_pos pos in
-        Lexing.make_pos (l, c - offset)
-      in
-      let shift loc int =
-        let l, c = Lexing.split_pos loc in
-        Lexing.make_pos (l, c + int)
-      in
-      List.filter_map exprs ~f:(function
-        | "" -> None
-        | source when not include_lident && Char.is_lowercase source.[0] ->
-          None
-        | source when not include_uident && Char.is_uppercase source.[0] ->
-          None
-        | source ->
-          try
-            let loc = { Location.
-              loc_start ;
-              loc_end = shift loc_start (String.length source) ;
-              loc_ghost = false ;
-            }
-            in
-            let ppf, to_string = Format.to_string () in
-            if Type_utils.type_in_env env ppf source then
-              Some (loc, to_string (), `No)
-            else
-              None
-          with _ ->
+      List.filter_map exprs ~f:(fun {Location. txt = source; loc} ->
+          match source with
+          | "" -> None
+          | source when not include_lident && Char.is_lowercase source.[0] ->
             None
-      )
+          | source when not include_uident && Char.is_uppercase source.[0] ->
+            None
+          | source ->
+            try
+              let ppf, to_string = Format.to_string () in
+              if Type_utils.type_in_env env ppf source then
+                Some (loc, to_string (), `No)
+              else
+                None
+            with _ ->
+              None
+        )
     in
     let normalize ({Location. loc_start; loc_end}, text, _tail) =
         Lexing.split_pos loc_start, Lexing.split_pos loc_end, text in

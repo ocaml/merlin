@@ -232,7 +232,9 @@ module Protocol_io = struct
       Request (Type_expr (expr, optional_position opt_pos))
     | [`String "type"; `String "enclosing";
         `Assoc [ "expr", `String expr ; "offset", `Int offset] ; jpos] ->
-      Request (Type_enclosing ((expr, offset), pos_of_json jpos))
+      Request (Type_enclosing (Some (expr, offset), pos_of_json jpos))
+    | [`String "type"; `String "enclosing"; `String "at"; jpos] ->
+      Request (Type_enclosing (None, pos_of_json jpos))
     | [`String "enclosing"; jpos] ->
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
