@@ -129,7 +129,7 @@ function! merlin#TypeOf(...)
         echoerr "TypeOf: too many arguments (expected 0 or 1)"
     elseif (a:0 == 0) || (a:1 == "")
         call merlin#StopHighlight()
-        py merlin.vim_type_enclosing("w:enclosing_zone",expr=vim.eval("merlin#WordUnderCursor()"))
+        py merlin.vim_type_enclosing("w:enclosing_zone")
     else
         py merlin.vim_type(vim.eval("a:1"))
     endif

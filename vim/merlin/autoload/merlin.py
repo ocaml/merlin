@@ -412,23 +412,25 @@ def bounds_of_ocaml_atom_at_pos(to_line, col):
             stop += 1
     return (line[start:stop], start, stop)
 
-# expr used as fallback in case type_enclosing fail
-def vim_type_enclosing(vimvar,expr=None):
+def vim_type_enclosing(vimvar):
   global enclosing_types
   global current_enclosing
+  sync_buffer()
   enclosing_types = [] # reset
   current_enclosing = -1
   to_line, to_col = vim.current.window.cursor
-  atom, a_start, a_end = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
-  offset = to_col - a_start
   pos = {'line':to_line, 'col':to_col}
-  arg = {'expr':atom, 'offset':offset}
-  sync_buffer()
+  # deprecated, leave merlin compute the correct identifier
+  # atom, a_start, a_end = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
+  # offset = to_col - a_start
+  # arg = {'expr':atom, 'offset':offset}
+  # enclosing_types = command("type", "enclosing", arg, pos)
   try:
-    enclosing_types = command("type", "enclosing", arg, pos)
+    enclosing_types = command("type", "enclosing", "at", pos)
     if enclosing_types != []:
       vim_next_enclosing(vimvar)
     else:
+      atom, _, _ = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
       print("didn't manage to type '%s'" % atom)
   except MerlinExc as e:
     try_print_error(e)

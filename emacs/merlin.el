@@ -1244,14 +1244,15 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 ;; TYPE ENCLOSING
 (defun merlin--type-enclosing-query ()
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
-  (let* ((bounds (bounds-of-thing-at-point 'ocaml-atom))
-         (start  (if bounds (car bounds) (point)))
-         (end    (if bounds (cdr bounds) (point)))
-         (string (if bounds (merlin--buffer-substring start end) ""))
-         (fallback (list (cons 'assoc nil)
-                         (cons 'expr string)
-                         (cons 'offset (- (point) start))))
-         (types (merlin-send-command (list 'type 'enclosing fallback (merlin-unmake-point (point)))
+  (let* (; deprecated, leave merlin compute the identifier
+         ; (bounds (bounds-of-thing-at-point 'ocaml-atom))
+         ; (start  (if bounds (car bounds) (point)))
+         ; (end    (if bounds (cdr bounds) (point)))
+         ; (string (if bounds (merlin--buffer-substring start end) ""))
+         ; (fallback (list (cons 'assoc nil)
+         ;                 (cons 'expr string)
+         ;                 (cons 'offset (- (point) start))))
+         (types (merlin-send-command (list 'type 'enclosing 'at (merlin-unmake-point (point)))
                                      (lambda (exn) '(nil))))
          (list (mapcar (lambda (obj)
                          (let* ((tail (cdr (assoc 'tail obj)))
