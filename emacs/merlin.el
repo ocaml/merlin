@@ -389,8 +389,8 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun lookup-default (key list &optional default)
-  "Lookup KEY in LIST which a list of pairs. If it not found,
-return DEFAULT or the value associated to KEY otherwise."
+  "Lookup KEY in LIST which is a list of pairs. If not found,
+return DEFAULT or the value associated to KEY."
   (let ((v (assoc key list)))
     (if v (cdr v)
       default)))
@@ -1259,7 +1259,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                                 (tail (cond ((equal tail "position")
                                              " (* tail position *)")
                                             ((equal tail "call")
-                                             " (* tail cail *)")
+                                             " (* tail call *)")
                                             (t "")))
                                 (type (cdr (assoc 'type obj))))
                            (cons (concat type tail)
@@ -1438,9 +1438,9 @@ is active)."
            (select-window (display-buffer (car r)))))
     (when r (goto-char (cdr r)))))
 
-;;;;;;;;;;;;;;;;
-;; OCCURENCES ;;
-;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;
+;; OCCURRENCES ;;
+;;;;;;;;;;;;;;;;;
 
 (defun merlin--occurrence-text (line-num marker start end source-buf)
   (concat (propertize (format "%7d:" line-num)
