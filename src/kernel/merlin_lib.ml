@@ -24,6 +24,11 @@ module Project : sig
 
   (* Project-wide configuration *)
   val set_dot_merlin : t -> Dot_merlin.config option -> [`Ok | `Failures of (string * exn) list]
+  val reload_dot_merlin : t -> [`Ok | `Failures of (string * exn) list]
+  val autoreload_dot_merlin : t -> [`No | `Ok | `Failures of (string * exn) list]
+
+  (* paths of dot_merlins with mtime at time of load *)
+  val get_dot_merlins : t -> (string * float) list
 
   (* Config override by user *)
   module User : sig
@@ -88,6 +93,7 @@ end = struct
     cfg.cfg_path_pkg := []
 
   type t = {
+    mutable dot_merlins : (string * float) list;
     dot_config : config;
     user_config : config;
 
@@ -126,7 +132,8 @@ end = struct
     dot_config.cfg_extensions <- String.Set.empty;
     let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
     let flags = Clflags.copy Clflags.initial in
-    { dot_config; user_config; flags;
+    { dot_merlins = [];
+      dot_config; user_config; flags;
       warnings = Warnings.copy Warnings.initial;
       local_path;
       source_path = prepare [
@@ -232,6 +239,8 @@ end = struct
     let dm = match dm with | Some dm -> dm | None -> Dm.empty_config in
     let cfg = project.dot_config in
     let result, path_pkg = Dot_merlin.path_of_packages dm.Dm.packages in
+    project.dot_merlins <- List.map dm.Dm.dot_merlins
+        ~f:(fun file -> file, file_mtime file);
     cfg.cfg_path_pkg := List.filter_dup (path_pkg @ !(cfg.cfg_path_pkg));
     cfg.cfg_path_build := dm.Dm.build_path;
     cfg.cfg_path_source := dm.Dm.source_path;
@@ -242,6 +251,29 @@ end = struct
     flush_global_modules project;
     update_flags project;
     result
+
+  let reload_dot_merlin project =
+    try match project.dot_merlins with
+      | [] -> `Ok
+      | (path, _) :: _ ->
+        let files = Dot_merlin.read ~path in
+        let dot_merlins = Dot_merlin.parse files in
+        set_dot_merlin project (Some dot_merlins)
+    with exn -> `Failures ["reloading", exn]
+
+  let get_dot_merlins project =
+    project.dot_merlins
+
+  let autoreload_dot_merlin project =
+    match project.dot_merlins with
+    | [] -> `No
+    | (path, mtime) :: _ ->
+      let mtime' = file_mtime path in
+      if mtime <> mtime' &&
+         (classify_float mtime, classify_float mtime') <> (FP_nan,FP_nan) then
+        (reload_dot_merlin project :> [> `Ok | `Failures of _])
+      else
+        `No
 
   (* Make global state point to current project *)
   let setup project =
@@ -358,7 +390,8 @@ end = struct
     let valid = valid &&
                 String.Set.equal
                   (Typer.extensions b.typer)
-                  (Project.extensions b.project) in
+                  (Project.extensions b.project) &&
+                (Project.autoreload_dot_merlin b.project = `No) in
     if not valid then b.typer <- Typer.fresh
           ~unit_name:b.unit_name
           ~stamp:(Project.validity_stamp b.project)
