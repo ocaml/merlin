@@ -64,7 +64,7 @@ type _ request =
   | Refresh
     :  unit request
   | Errors
-    :  exn list request
+    :  Error_report.t list request
   | Dump
     :  [`Env of [`Normal|`Full] * position option
        |`Sig|`Parser|`Exn|`Browse|`Recover|`Typer_input|`Tokens]

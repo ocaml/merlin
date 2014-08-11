@@ -495,7 +495,7 @@ module Variants = struct
       }
     in
 
-    Module ("Variants", List.map cstrs_dot_t ~f:(fun b -> Binding b) @ [ 
+    Module ("Variants", List.map cstrs_dot_t ~f:(fun b -> Binding b) @ [
       fold ; iter ; map ; descriptions
     ])
 
@@ -568,7 +568,7 @@ module Fields = struct
         let creator = Arrow ("", creator_input, self) in
         Arrow ("", first_input, Tuple [ creator ; acc_ret_ty ])
       in
-      let lst = 
+      let lst =
         List.map2 fields fields_dot_t ~f:(fun (name, _, ty, _) fdt ->
           (name.Location.txt, ty, fdt)
         )

@@ -370,9 +370,8 @@ module Protocol_io = struct
         | Reset _, cursor ->
           json_of_cursor_state cursor
         | Refresh, () -> `Bool true
-        | Errors, exns ->
-          `List (List.map (fun (_,err) -> json_of_error err)
-                          (Error_report.of_exns exns))
+        | Errors, errors ->
+          `List (List.map ~f:json_of_error errors)
         | Dump _, json -> json
         | Which_path _, str -> `String str
         | Which_with_ext _, strs -> json_of_string_list strs

@@ -201,6 +201,15 @@ module List = struct
   let group_by pred xs =
     match group_by pred [] [] xs with
     | [] :: xs | xs -> xs
+
+  (* Merge sorted lists *)
+  let rec merge ~cmp l1 l2 = match l1, l2 with
+    | l, [] | [], l -> l
+    | (x1 :: _), (x2 :: x2s) when cmp x1 x2 > 0 ->
+      x2 :: merge ~cmp l1 x2s
+    | x1 :: x1s, _ ->
+      x1 :: merge ~cmp x1s l2
+
 end
 
 module Option = struct
