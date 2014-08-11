@@ -376,8 +376,16 @@ let dispatch (state : state) =
   | (Errors : a request) ->
     let exn_lexer  = Buffer.lexer_errors state.buffer in
     let exn_parser = Buffer.parser_errors state.buffer in
-    let exn_typer  = Typer.exns (Buffer.typer state.buffer) in
-    exn_lexer @ exn_parser @ exn_typer
+    (* Return parsing warnings & first parsing error,
+       or type errors if no parsing errors *)
+    let rec extract_warnings_and_exn acc = function
+      | Parsing_aux.Warning _ as exn :: exns ->
+        extract_warnings_and_exn (exn :: acc) exns
+      | exn :: _ ->
+        List.rev_append acc [exn]
+      | [] ->
+        List.rev_append acc (Typer.exns (Buffer.typer state.buffer)) in
+    exn_lexer @ extract_warnings_and_exn [] exn_parser
 
   | (Dump `Parser : a request) ->
     Merlin_recover.dump (Buffer.recover state.buffer);
