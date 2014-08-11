@@ -499,7 +499,7 @@ val initial: state -> Lexing.position * token * Lexing.position -> step parser
 val step: step parser ->   [ `Step of step parser
   | `Feed of feed parser
   | `Accept of symbol
-  | `Reject ]
+  | `Reject of step parser ]
 val feed: feed parser -> Lexing.position * token * Lexing.position -> step parser
 val parse_expression_state: state
 val interface_state: state

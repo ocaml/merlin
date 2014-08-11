@@ -481,7 +481,7 @@ val initial: state -> Lexing.position * token * Lexing.position -> step parser
 val step: step parser ->   [ `Step of step parser
   | `Feed of feed parser
   | `Accept of symbol
-  | `Reject ]
+  | `Reject of step parser ]
 val feed: feed parser -> Lexing.position * token * Lexing.position -> step parser
 val top_structure_item_state: state
 val top_expr_state: state

@@ -937,7 +937,7 @@ module EngineTypes = struct
       [ `Step   of step parser
       | `Feed   of feed parser
       | `Accept of semantic_value
-      | `Reject ]
+      | `Reject of step parser ]
 
     val initial: state -> Lexing.position * token * Lexing.position -> step parser
 
@@ -1018,7 +1018,7 @@ end = struct
       [ `Step   of step parser
       | `Feed   of feed parser
       | `Accept of semantic_value
-      | `Reject ]
+      | `Reject of step parser ]
 
     (* --------------------------------------------------------------------------- *)
 
@@ -1269,7 +1269,7 @@ end = struct
 
         (* The stack is empty. Die. *)
 
-        `Reject
+        raise _eRR
 
       else begin
 
@@ -1293,7 +1293,7 @@ end = struct
         | `Step_error  -> error s.env
       with
       | T.Accept v -> `Accept v
-      | Error      -> `Reject
+      | Error      -> `Reject s
 
     let feed s token =
       match s.tag with
@@ -1379,7 +1379,7 @@ end = struct
         let rec aux : result -> semantic_value = function
           | `Step p -> aux (step p)
           | `Accept v -> v
-          | `Reject -> raise _eRR
+          | `Reject _ -> raise _eRR
           | `Feed p ->
             let token = lexer lexbuf in
             let { Lexing.lex_start_p; lex_curr_p } = lexbuf in

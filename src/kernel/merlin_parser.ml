@@ -116,7 +116,9 @@ let of_feed p depth =
 
 let rec of_step s depth =
   match P.step s with
-  | `Accept _ | `Reject as result -> result
+  | `Accept _ as result -> result
+  | `Reject p ->
+    `Reject (of_feed (Obj.magic p) depth)
   | `Feed p -> `Step (of_feed p depth)
   | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
 
@@ -291,7 +293,7 @@ let rec recover ?endp termination parser =
       in
       let loc = Parsing_aux.location_union (get_location ~pop parser) loc in
       match feed token parser with
-      | `Accept _ | `Reject -> None
+      | `Accept _ | `Reject _ -> None
       | `Step parser ->
         let parser = Location.mkloc parser loc in
         Some (termination, (priority, parser))

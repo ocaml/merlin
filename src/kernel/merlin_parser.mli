@@ -16,7 +16,8 @@ val from : state -> Lexing.position * Raw_parser.token * Lexing.position -> t
 (* Feed new token *)
 val feed : Lexing.position * Raw_parser.token * Lexing.position
         -> t
-        -> [ `Accept of Raw_parser.symbol | `Step of t | `Reject ]
+        -> [ `Accept of Raw_parser.symbol | `Step of t
+           | `Reject of t ]
 
 (* Dump internal state for debugging purpose *)
 val dump : t -> Std.json

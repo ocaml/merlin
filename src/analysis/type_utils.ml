@@ -16,7 +16,7 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
     | `Feed p -> lex p (Raw_lexer.token_without_comments state lexbuf)
     | `Accept (Raw_parser.N_ (Raw_parser.N_parse_expression, e)) ->
       Some (e : Parsetree.expression)
-    | `Reject -> None
+    | `Reject _ -> None
     | `Accept _ -> assert false
   in
   parse (`Step (Raw_parser.initial Raw_parser.parse_expression_state

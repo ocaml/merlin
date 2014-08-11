@@ -202,7 +202,7 @@ let parse_sig =
     | `Step s -> parse (Raw_parser.step s)
     | `Feed p -> lex p (Raw_lexer.token_without_comments state buf)
     | `Accept (Raw_parser.N_ (Raw_parser.N_interface, sg)) -> (sg : Parsetree.signature)
-    | `Reject | `Accept _ -> assert false
+    | `Reject _ | `Accept _ -> assert false
   in
   parse (`Step (Raw_parser.initial Raw_parser.interface_state
                   (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))

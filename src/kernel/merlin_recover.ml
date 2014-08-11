@@ -98,12 +98,12 @@ let rec feed_normal (s,tok,e as input) parser =
     Logger.debugjf section ~title:"feed_normal accepted" dump_token tok;
     assert (tok = EOF);
     feed_normal (s,SEMISEMI,e) parser
-  | `Reject ->
+  | (`Reject _ as result) ->
     Logger.debugjf section ~title:"feed_normal rejected" dump_token tok;
-    None
-  | `Step parser ->
+    result
+  | (`Step parser as result) ->
     Logger.debugjf section ~title:"feed_normal step" dump_token tok;
-    Some parser
+    result
 
 let closing_token = function
   | END -> true
@@ -167,7 +167,7 @@ let feed_recover original (s,tok,e as input) zipper =
       assert (tok = EOF);
       aux_dispatch candidates n candidate
         (Merlin_parser.feed (s,SEMISEMI,e) (snd candidate).Location.txt)
-    | `Reject ->
+    | `Reject _ ->
       Logger.debugjf section ~title:"feed_recover rejected"
         (fun n -> `Assoc ["number", `Int n]) n;
       aux_feed (n + 1) candidates
@@ -192,15 +192,15 @@ let fold warnings token t =
     | Some recovery -> recover_from t recovery
     | None ->
       begin match feed_normal (s,tok,e) t.parser with
-        | None ->
+        | `Reject invalid_parser ->
           let recovery = rollbacks e t.parser in
           Logger.infojf section ~title:"entering recovery"
             dump_recovering (Some recovery);
-          let error = Error_classifier.from t.parser (s,tok,e) in
+          let error = Error_classifier.from invalid_parser (s,tok,e) in
           recover_from
             {t with errors = error :: (pop warnings) @ t.errors}
             recovery
-        | Some parser ->
+        | `Step parser ->
           {t with errors = (pop warnings) @ t.errors; parser }
       end
 
