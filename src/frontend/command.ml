@@ -376,7 +376,7 @@ let dispatch (state : state) =
   | (Errors : a request) ->
     let exn_lexer  = Buffer.lexer_errors state.buffer in
     let exn_parser = Buffer.parser_errors state.buffer in
-    let exn_typer  = Typer.exns (Buffer.final_typer state.buffer) in
+    let exn_typer  = Typer.exns (Buffer.typer state.buffer) in
     exn_lexer @ exn_parser @ exn_typer
 
   | (Dump `Parser : a request) ->

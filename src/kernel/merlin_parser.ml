@@ -462,14 +462,5 @@ let has_marker ?diff t f' =
     else
       has_marker t f'
 
-let accepting (Parser (raw_parser,_) as parser) =
-  let loc_start,t,loc_end = raw_parser.P.env.E.token in
-  match feed (loc_end,Raw_parser.EOF,loc_end) parser with
-  | `Accept (Raw_parser.N_ (Raw_parser.N_implementation, str)) ->
-    `str (str : Parsetree.structure)
-  | `Accept (Raw_parser.N_ (Raw_parser.N_interface, sg)) ->
-    `sg (sg : Parsetree.signature)
-  | _ -> `No
-
 let get_lr1_state (Parser (s,_)) = get_lr1_state s
 let get_lr0_state (Parser (s,_)) = get_lr0_state s

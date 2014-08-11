@@ -12,10 +12,4 @@ val extensions : t -> Extension.set
 
 val dump : Format.formatter -> t -> unit
 
-val manual
-  :  t
-  -> [ `sg  of Parsetree.signature
-     | `str of Parsetree.structure ]
-  -> t
-
 val with_typer : t -> (t -> 'a) -> 'a

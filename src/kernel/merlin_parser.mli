@@ -129,9 +129,3 @@ val find_marker : t -> frame option
     assuming that [diff] is the same parser as [t] with one more or one less
     token fed. *)
 val has_marker : ?diff:(t * bool) -> t -> frame -> bool
-
-val accepting : t ->
-  [ `No
-  | `str of Parsetree.structure
-  | `sg of Parsetree.signature
-  ]

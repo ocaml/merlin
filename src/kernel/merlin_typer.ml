@@ -125,15 +125,11 @@ end
 
 module I = Merlin_parser.Integrate (P)
 
-type kind =
-  | Incremental of I.t
-  | Manual of P.t
-
 type t = {
   btype_cache : Btype.cache;
   env_cache   : Env.cache;
   extensions  : Extension.set;
-  typer       : kind;
+  typer       : I.t;
   stamp       : bool ref;
 }
 
@@ -158,17 +154,12 @@ let fresh ~unit_name ~stamp extensions =
   in
   {
     stamp;
-    typer = Incremental (Either.get result);
+    typer = Either.get result;
     extensions; env_cache; btype_cache;
   }
 
-let get_incremental state = function
-  | Manual _ -> I.empty state
-  | Incremental i -> i
-
-let get_value = function
-  | Incremental i -> I.value i
-  | Manual v -> v
+let get_incremental _state x = x
+let get_value = I.value
 
 let update parser t =
   let result =
@@ -177,7 +168,7 @@ let update parser t =
     let state = (t.extensions,exns) in
     I.update' state parser (get_incremental state t.typer)
   in
-  {t with typer = Incremental (Either.get result)}
+  {t with typer = Either.get result}
 
 let env t = (get_value t.typer).P.env
 let structures t = (get_value t.typer).P.structures
@@ -194,23 +185,10 @@ let is_valid t =
   | Either.R result -> result
 
 let dump ppf t =
-  let ts = match t.typer with
-    | Manual v -> [v]
-    | Incremental i ->
-      let ls = i :: List.unfold I.previous i in
-      List.map ~f:I.value ls
-  in
+  let ls = t.typer :: List.unfold I.previous t.typer in
+  let ts = List.map ~f:I.value ls in
   let ts = List.map ts ~f:(fun x -> x.P.raw) in
   List.iter (Raw_typer.dump ppf) ts
-
-let manual t item =
-  let typer =
-    protect_typer ~btype:t.btype_cache ~env:t.env_cache @@ fun exns ->
-    Either.try' @@ fun () ->
-    let p = P.empty (t.extensions,exns) in
-    P.append exns Location.none item p
-  in
-  {t with typer = Manual (Either.get typer)}
 
 let with_typer t f =
   Fluid.let' fluid_btype t.btype_cache @@ fun () ->

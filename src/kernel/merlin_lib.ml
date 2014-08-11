@@ -323,7 +323,6 @@ module Buffer : sig
   val recover_history : t -> (Lexer.item * Recover.t) History.t
 
   val typer: t -> Typer.t
-  val final_typer: t -> Typer.t
 
   val get_mark: t -> Parser.frame option
   val has_mark: t -> Parser.frame option -> bool
@@ -406,12 +405,6 @@ end = struct
         ~stamp:(Project.validity_stamp b.project)
         (Project.extensions b.project) in
     Typer.update (parser b) typer
-
-  let final_typer b =
-    match Parser.accepting (parser b) with
-    | `No -> typer b
-    | (`str _ | `sg _) as result ->
-      Typer.manual (fresh_typer b) result
 
   let update t l =
     t.lexer <- l;
