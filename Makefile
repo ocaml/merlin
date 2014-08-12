@@ -90,4 +90,4 @@ install: install-binary install-share install-vim
 	@echo
 
 uninstall:
-	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
+	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin $(BIND_DIR)/jenga-merlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
