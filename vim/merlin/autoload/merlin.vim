@@ -15,6 +15,14 @@ if !exists("g:merlin_ignore_warnings")
   let g:merlin_ignore_warnings = "false"
 endif
 
+if !exists("g:merlin_display_error_list")
+  let g:merlin_display_error_list = 1
+endif
+
+if !exists("g:merlin_close_error_list")
+  let g:merlin_close_error_list = 1
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -48,7 +56,7 @@ function! merlin#Path(var,path)
     let l:path = l:raw ? substitute(a:path, '^\\\(.*\)$', '\1', '') : fnamemodify(a:path,':p')
   endif
 python <<EOF
-path = vim.eval("l:path") 
+path = vim.eval("l:path")
 if path == "":
   for path in merlin.send_command("path","list", vim.eval("a:var")):
     if path != "":
@@ -184,7 +192,7 @@ function! merlin#Complete(findstart,base)
     let s:prepended = strpart(line, start, lastword - start)
     return lastword
   endif
-  
+
   let base = s:prepended . a:base
   let l:props = []
   py merlin.vim_complete_cursor(vim.eval("base"),"l:props")
@@ -214,18 +222,32 @@ function! merlin#Occurences()
   call setloclist(0, l:occurences)
 endfunction
 
-function! merlin#SyntasticGetLocList()
+function! merlin#ErrorLocList()
   let l:errors = []
   if expand('%:e') == 'ml'
     py <<EOF
-try: 
+try:
     merlin.sync_full_buffer()
     merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
 except merlin.MerlinException as e:
     merlin.try_print_error(e)
 EOF
   endif
-  return l:errors 
+  return l:errors
+endfunction
+
+function! merlin#Errors()
+  let l:errors = merlin#ErrorLocList()
+  call setloclist(0, l:errors)
+  if len(l:errors) > 0
+    if g:merlin_display_error_list
+      lopen
+    endif
+  else
+    if g:merlin_close_error_list
+      lclose
+    endif
+  endif
 endfunction
 
 function! merlin#Restart()
@@ -292,6 +314,13 @@ function! merlin#Register()
   command! -buffer -nargs=0 LoadProject call merlin#LoadProject()
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
+
+  command! -buffer -nargs=0 ErrorCheck call merlin#Errors()
+  command! -buffer -nargs=0 MerlinErrorCheck call merlin#Errors()
+
+  command! -buffer -nargs=0 ErrorCheck call merlin#Errors()
+  command! -buffer -nargs=0 MerlinErrorCheck call merlin#Errors()
+
   setlocal omnifunc=merlin#Complete
   map <buffer> <LocalLeader>t :TypeOf<return>
   map <buffer> <LocalLeader>n :GrowEnclosing<return>
