@@ -174,4 +174,4 @@ Screenshots
 ===========
 
 - [vim](http://195.154.188.33/~trefis/merlin/)
-- [emacs](http://kiwi.iuwt.fr/~asmanur/projects/merlin/merlin-emacs.html)
+- [emacs](http://iso.mor.phis.me/projects/merlin/merlin-emacs.html)
