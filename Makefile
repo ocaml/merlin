@@ -39,7 +39,8 @@ debug: assert_configured
 %.elc : %.el
 	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
-.PHONY: $(TARGET) all dev clean distclean install uninstall assert_configured ocamlmerlin_400 ocamlmerlin_401
+.PHONY: $(TARGET) all dev clean distclean install uninstall message \
+	assert_configured ocamlmerlin_400 ocamlmerlin_401 merlin.install
 
 clean:
 	@rm -f src/my_config.ml
@@ -72,7 +73,7 @@ install-vim: $(TARGET)
 	fi
 	cp -R vim/merlin/* $(VIM_DIR)
 
-install: install-binary install-share install-vim
+message:
 	@echo
 	@echo "Quick setup for VIM"
 	@echo "-------------------"
@@ -86,8 +87,14 @@ install: install-binary install-share install-vim
 	@echo '  (require '"'"'merlin)'
 	@echo 'Then issue M-x merlin-mode in a ML buffer.'
 	@echo
-	@echo 'Take a look at https://github.com/def-lkb/merlin for more information.'
+	@echo 'Take a look at https://github.com/the-lambda-church/merlin for more information.'
 	@echo
 
+install: install-binary install-share install-vim
+	+$(MAKE) message
+
+merlin.install:
+	@sh merlin.install.sh
+
 uninstall:
-	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin $(BIND_DIR)/jenga-merlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
+	rm -rf $(SHARE_DIR)/ocamlmerlin $(BIN_DIR)/omake-merlin $(BIN_DIR)/ocamlmerlin $(BIN_DIR)/jenga-merlin $(SHARE_DIR)/emacs/site-lisp/merlin.el
