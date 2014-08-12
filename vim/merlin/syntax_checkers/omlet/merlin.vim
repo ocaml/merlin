@@ -7,7 +7,7 @@ function! SyntaxCheckers_omlet_merlin_IsAvailable()
 endfunction
 
 function! SyntaxCheckers_omlet_merlin_GetLocList()
-  return merlin#SyntasticGetLocList()
+  return merlin#ErrorLocList()
 endfunction
 
 call g:SyntasticRegistry.CreateAndRegisterChecker({

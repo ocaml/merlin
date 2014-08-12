@@ -15,6 +15,14 @@ if !exists("g:merlin_display_occurrence_list")
   let g:merlin_display_occurrence_list = 1
 endif
 
+if !exists("g:merlin_display_error_list")
+  let g:merlin_display_error_list = 1
+endif
+
+if !exists("g:merlin_close_error_list")
+  let g:merlin_close_error_list = 1
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -224,7 +232,7 @@ function! merlin#OccurrencesRename(text)
   py merlin.vim_occurrences_replace(vim.eval("a:text"))
 endfunction
 
-function! merlin#SyntasticGetLocList()
+function! merlin#ErrorLocList()
   let l:errors = []
   if expand('%:e') == 'ml'
     py <<EOF
@@ -236,6 +244,20 @@ except merlin.MerlinException as e:
 EOF
   endif
   return l:errors
+endfunction
+
+function! merlin#Errors()
+  let l:errors = merlin#ErrorLocList()
+  call setloclist(0, l:errors)
+  if len(l:errors) > 0
+    if g:merlin_display_error_list
+      lopen
+    endif
+  else
+    if g:merlin_close_error_list
+      lclose
+    endif
+  endif
 endfunction
 
 function! merlin#Restart()
@@ -309,6 +331,9 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinLoadProject   call merlin#LoadProject()
   command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
+
+  command! -buffer -nargs=0 ErrorCheck call merlin#Errors()
+  command! -buffer -nargs=0 MerlinErrorCheck call merlin#Errors()
 
   setlocal omnifunc=merlin#Complete
   map  <buffer> <LocalLeader>t :TypeOf<return>

@@ -105,9 +105,25 @@ buffer to the root of the ".merlin" file. >
                                              *'merlin_display_occurrence_list'*
 
 Default: true.
-If set to true, merlin automatically display the list of occurrences in a
+If set to true, merlin automatically displays the list of occurrences in a
 separate window after a :Occurrences command. >
   let g:merlin_display_occurrence_list = 0
+<
+
+                                                  *'merlin_display_error_list'*
+
+Default: true.
+If set to true, merlin automatically displays the list of errors in a
+separate window after a :ErrorCheck command. >
+  let g:merlin_display_error_list = 0
+<
+
+                                                    *'merlin_close_error_list'*
+
+Default: true.
+If set to true, merlin automatically closes the list of errors if no error
+was found after a :ErrorCheck command. >
+  let g:merlin_close_error_list = 0
 <
 
 ==============================================================================
