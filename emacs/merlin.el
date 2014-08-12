@@ -85,7 +85,9 @@ no argument and should return the configuration (see
 
 (defcustom merlin-command "ocamlmerlin"
   "The path to merlin in your installation."
-  :group 'merlin :type '(file))
+  :group 'merlin :type '(choice (file :tag "Filename")
+                                (const :tag "Use current opam switch" opam)))
+
 
 (defcustom merlin-completion-types t
   "If non-nil, print the types of the variables during completion with `auto-complete'."
@@ -107,7 +109,7 @@ no argument and should return the configuration (see
   "The name of the buffer storing module signatures."
   :group 'merlin :type 'string)
 
-(defcustom merlin-favourite-caml-mode 'tuareg-mode
+(defcustom merlin-favourite-caml-mode nil
   "The OCaml mode to use for the *merlin-types* buffer."
   :group 'merlin :type 'symbol)
 
@@ -140,7 +142,9 @@ In particular you can specify nil, meaning that the locked zone is not represent
 
 (defcustom merlin-use-auto-complete-mode nil
   "If non nil, use `auto-complete-mode' in any buffer."
-  :group 'merlin :type 'boolean)
+  :group 'merlin :type '(choice (const :tag "Integrate with auto-complete" t)
+                                (const :tag "Don't integrate with auto-complete" nil)
+                                (const :tag "Integrate with auto-complet, use sane default options" easy)))
 
 (defcustom merlin-ac-prefix-size nil
   "If non-nil, specify the minimum number of characters to wait before allowing auto-complete"
@@ -425,7 +429,7 @@ return DEFAULT or the value associated to KEY."
 - `logfile': path to the logfile
 
 - `name': the name of the instance."
-  (let* ((command (lookup-default 'command configuration merlin-command))
+  (let* ((command (lookup-default 'command configuration (merlin-command)))
         (extra-flags (lookup-default 'flags configuration nil))
         (name (lookup-default 'name configuration "default"))
         (environment (lookup-default 'env configuration nil))
@@ -437,7 +441,11 @@ return DEFAULT or the value associated to KEY."
     (setq merlin-instance name)
     (when (not (merlin-process-started-p name))
       (let* ((buffer (get-buffer-create buffer-name))
-             (process-environment (append (if logfile (list (format "MERLIN_LOG=%s" (expand-file-name logfile)))) environment process-environment))
+             (process-environment (append
+                                    (if logfile
+                                      (list (format "MERLIN_LOG=%s" (expand-file-name logfile))))
+                                    environment
+                                    process-environment))
              (p (apply #'start-file-process "merlin" buffer-name
                        command `("-protocol" "sexp" . ,(append extra-flags flags)))))
         (with-current-buffer buffer
@@ -1119,9 +1127,10 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-ac-source-refresh-cache()
   "Refresh the cache of completion."
-  (setq merlin-ac-prefix ac-prefix)
+  (setq merlin-ac-prefix (merlin-completion-prefix ac-prefix))
   (setq merlin-ac-cache
-        (mapcar #'merlin-ac-make-popup-item (merlin-completion-data merlin-ac-prefix))))
+        (mapcar #'merlin-ac-make-popup-item
+                (merlin-completion-data merlin-ac-prefix))))
 
 
 (defun merlin-ac-source-init ()
@@ -1185,13 +1194,18 @@ variable `merlin-ac-cache')."
 
 (defun merlin-type-display-in-buffer (text)
   "Change content of type-buffer."
-  (let ((initialized (get-buffer merlin-type-buffer-name)))
-    (with-current-buffer
-      (or initialized (get-buffer-create merlin-type-buffer-name))
-    (unless initialized (funcall merlin-favourite-caml-mode))
-    (erase-buffer)
-    (insert text)
-    (goto-char (point-min)))))
+  (let (main-mode major-mode)
+    (with-current-buffer (get-buffer-create merlin-type-buffer-name)
+       (when (equal major-mode 'fundamental-mode)
+         ; Guess value for merlin-favourite-caml-mode
+         (let* (caml-mode
+                 (or merlin-favourite-caml-mode
+                     (member main-mode '(tuareg-mode caml-mode))))
+           (when (listp caml-mode) (setq caml-mode (car caml-mode)))
+           (when caml-mode (funcall caml-mode))))
+       (erase-buffer)
+       (insert text)
+       (goto-char (point-min)))))
 
 (defun merlin-type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
@@ -1303,7 +1317,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                                        (when (cddr data)
                                            (message "Killed %s" (cdr data))
                                            (kill-new (cddr data))))))
-                                     
+
     keymap)
   "The local map to navigate type enclosing.")
 
@@ -1605,11 +1619,19 @@ Returns the position."
   "Print the version of the ocamlmerlin binary."
   (interactive)
   (if (merlin-process-dead-p)
-      (let* ((command (concat merlin-command " -version"))
-             (version (shell-command-to-string command))
+      (let* ((command (concat (merlin-command) " -version"))
+             (version (shell-command-to-string version))
              (version (replace-regexp-in-string "\n$" "" version)))
         (message "%s (from shell)" version))
     (message "%s" (merlin-send-command '(version)))))
+
+(defun merlin-command ()
+  "Return path of ocamlmerlin binary selected by configuration"
+  (if (equal merlin-command 'opam)
+    (concat (replace-regexp-in-string "\n$" ""
+              (shell-command-to-string "opam config var bin"))
+       "/ocamlmerlin")
+    merlin-command))
 
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
@@ -1692,7 +1714,9 @@ Returns the position."
       (merlin-start-process merlin-current-flags conf))
     (when (and (fboundp 'auto-complete-mode)
                merlin-use-auto-complete-mode)
-      (auto-complete-mode 1)
+      (if (equal merlin-use-auto-complete-mode 'easy)
+          (merlin-setup-auto-complete)
+        (auto-complete-mode t))
       (add-to-list 'ac-sources 'merlin-ac-source))
     (add-hook 'completion-at-point-functions
               #'merlin-completion-at-point nil 'local)
@@ -1754,6 +1778,18 @@ Short cuts:
             (add-hook 'after-save-hook 'merlin-after-save
                       nil 'make-it-local)
             (merlin-error-start-timer)))
+
+(defun merlin-setup-auto-complete ()
+  "Integrate merlin to auto-complete with sane defaults"
+  (require 'auto-complete)
+  (auto-complete-mode t)
+  (set (make-local-variable 'ac-auto-show-menu) t)
+  (set (make-local-variable 'ac-auto-start) nil)
+  (set (make-local-variable 'ac-delay) 0.0)
+  (set (make-local-variable 'ac-expand-on-auto-complete) nil)
+  (set (make-local-variable 'ac-ignore-case) nil)
+  (set (make-local-variable 'ac-quick-help-delay) 0.2)
+  (set (make-local-variable 'ac-trigger-commands) nil))
 
 (provide 'merlin)
 ;;; merlin.el ends here

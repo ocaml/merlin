@@ -43,7 +43,7 @@ $(CONFIG_FILES):
 
 #### Rules
 
-.PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured
+.PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured message
 
 assert_configured: $(CONFIG_FILES)
 
@@ -107,8 +107,8 @@ install-vim: $(TARGET)
 	fi
 	cp -R vim/merlin/* $(VIM_DIR)
 
-install: install-binary install-share install-vim
-	@echo 
+message:
+	@echo
 	@echo "Quick setup for VIM"
 	@echo "-------------------"
 	@echo "Add $(VIM_DIR) to your runtime path, e.g.:"
@@ -120,13 +120,20 @@ install: install-binary install-share install-vim
 	@echo '  (add-to-list '"'"'load-path "$(SHARE_DIR)/emacs/site-lisp")'
 	@echo '  (require '"'"'merlin)'
 	@echo 'Then issue M-x merlin-mode in a ML buffer.'
-	@echo 
-	@echo 'Take a look at https://github.com/def-lkb/merlin for more information.'
-	@echo 
+	@echo
+	@echo 'Take a look at https://github.com/the-lambda-church/merlin for more information.'
+	@echo
+
+install: install-binary install-share install-vim
+	+$(MAKE) message
+
+merlin.install:
+	@sh merlin.install.sh
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin \
 				 $(BIN_DIR)/omake-merlin  \
+				 $(BIN_DIR)/jenga-merlin  \
 				 $(BIN_DIR)/ocamlmerlin   \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.el \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.elc
