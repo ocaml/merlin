@@ -1,4 +1,4 @@
-![merlin completion in gvim](http://195.154.188.33/~trefis/merlin-complete.png)
+![merlin completion in vim](https://github.com/the-lambda-church/merlin/wiki/vim_complete.png)  
 Merlin will provide completion for ml files (not mli!) in your editor.
 
 Building and installing Merlin
@@ -173,5 +173,4 @@ The list of extensions available in your version can be directly obtained by run
 Screenshots
 ===========
 
-- [vim](http://195.154.188.33/~trefis/merlin/)
 - [emacs](http://iso.mor.phis.me/projects/merlin/merlin-emacs.html)
