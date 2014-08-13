@@ -2,8 +2,6 @@
 (
   printf 'bin: [\n'
   printf '  "ocamlmerlin"\n'
-  printf '  "omake-merlin"\n'
-  printf '  "jenga-merlin"\n'
   printf ']\n'
   printf '\n'
   printf 'share: [\n'

@@ -8,7 +8,6 @@ build: [
 depends: [
   "ocamlfind"
   "yojson"
-  "menhir"
 ]
 ocaml-version: [>= "4.00.1"]
 
@@ -18,10 +17,10 @@ post-messages: [
 Quick setup for VIM
 -------------------
 Append this to your .vimrc to add merlin to vim's runtime-path:
-  execute "set rtp+=" . substitute(system('opam config var share'),'\n$','','''') . "/ocamlmerlin/vim"
+  execute \"set rtp+=\" . substitute(system('opam config var share'),'\\n$','','''') . \"/ocamlmerlin/vim\"
 
 Also run the following line in vim to index the documentation:
-  :execute "helptags " . substitute(system('opam config var share'),'\n$','','''') . "/ocamlmerlin/vim/doc"
+  :execute \"helptags \" . substitute(system('opam config var share'),'\\n$','','''') . \"/ocamlmerlin/vim/doc\"
 
 Quick setup for EMACS
 -------------------
@@ -40,7 +39,7 @@ Add opam emacs directory to your load-path by appending this to your .emacs:
   ;; Use opam switch to lookup ocamlmerlin binary
   (setq merlin-command 'opam)
 
-Take a look at https://github.com/the-lambda-church/merlin for more information.
+Take a look at https://github.com/the-lambda-church/merlin for more information
 "
   {success}
 ]
