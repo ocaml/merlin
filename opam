@@ -2,6 +2,7 @@ opam-version: "1"
 maintainer: "defree@gmail.com"
 build: [
   ["./configure" "--prefix" prefix]
+  ["rm" "-rf" "%{prefix}%/share/ocamlmerlin"]
   [make]
   [make "merlin.install"]
 ]
