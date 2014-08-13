@@ -1,7 +1,7 @@
 #!/bin/sh
 (
   printf 'bin: [\n'
-  printf '  "ocamlmerlin"\n'
+  printf '  "ocamlmerlin.native" {"ocamlmerlin"}\n'
   printf '  "omake-merlin"\n'
   printf '  "jenga-merlin"\n'
   printf ']\n'
