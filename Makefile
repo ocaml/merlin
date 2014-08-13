@@ -43,7 +43,7 @@ $(CONFIG_FILES):
 
 #### Rules
 
-.PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured message
+.PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured message merlin.install
 
 assert_configured: $(CONFIG_FILES)
 
