@@ -1208,7 +1208,7 @@ variable `merlin-ac-cache')."
                  'at (merlin-unmake-point (point)))
            callback-if-success callback-if-exn)))
 
-(defun merlin-type-display-in-buffer (text)
+(defun merlin--type-display-in-buffer (text)
   "Change content of type-buffer."
   (with-current-buffer (get-buffer-create merlin-type-buffer-name)
      (when (member major-mode '(nil fundamental-mode))
@@ -1220,15 +1220,14 @@ variable `merlin-ac-cache')."
      (insert text)
      (goto-char (point-min))))
 
-(defun merlin-type-display (bounds type &optional quiet)
+(defun merlin--type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
 If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
-      (if (not quiet)
-          (message "<no information>"))
+      (unless quiet (message "<no information>"))
     (let ((count 0)
           (pos   0))
-      (merlin-type-display-in-buffer type)
+      (merlin--type-display-in-buffer type)
       (while (and (<= count 8)
                   (string-match "\n" type pos))
         (setq pos (match-end 0))
@@ -1246,7 +1245,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Show the type of the region."
   (lexical-let*
       ((substring (merlin--buffer-substring (region-beginning) (region-end)))
-       (on-success (lambda (type) (merlin-type-display nil type nil)))
+       (on-success (lambda (type) (merlin--type-display nil type nil)))
        (on-error   (lambda (err)
                      (let ((msg (assoc 'message err))
                            (typ (assoc 'type err)))
@@ -1261,7 +1260,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Prompt the user for expression EXP, then show its type."
   (interactive "s# ")
   (merlin-sync-to-point)
-  (let ((on-success (lambda (type) (merlin-type-display nil type nil)))
+  (let ((on-success (lambda (type) (merlin--type-display nil type nil)))
         (on-error   (lambda (err)
                       (let ((msg (assoc 'message err)))
                         (if msg (message "Error: %s" (cdr msg))
@@ -1271,15 +1270,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 ;; TYPE ENCLOSING
 (defun merlin--type-enclosing-query ()
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
-  (let* (; deprecated, leave merlin compute the identifier
-         ; (bounds (bounds-of-thing-at-point 'ocaml-atom))
-         ; (start  (if bounds (car bounds) (point)))
-         ; (end    (if bounds (cdr bounds) (point)))
-         ; (string (if bounds (merlin--buffer-substring start end) ""))
-         ; (fallback (list (cons 'assoc nil)
-         ;                 (cons 'expr string)
-         ;                 (cons 'offset (- (point) start))))
-         (types (merlin-send-command (list 'type 'enclosing 'at (merlin-unmake-point (point)))
+  (let* ((types (merlin-send-command (list 'type 'enclosing 'at (merlin-unmake-point (point)))
                                      (lambda (exn) '(nil))))
          (list (mapcar (lambda (obj)
                          (let* ((tail (cdr (assoc 'tail obj)))
@@ -1296,11 +1287,11 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (setq merlin-enclosing-offset -1)
     merlin-enclosing-types))
 
-(defun merlin-type-enclosing-go ()
+(defun merlin--type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (TYPE . BOUNDS)."
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
     (if (cddr data)
-        (merlin-type-display (cdr data) (car data)))))
+        (merlin--type-display (cdr data) (car data)))))
 
 (defun merlin-type-enclosing-go-up ()
   "Go up in the enclosing type list."
@@ -1309,7 +1300,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (if (>= merlin-enclosing-offset (1- (length merlin-enclosing-types)))
         (setq merlin-enclosing-offset -1))
     (setq merlin-enclosing-offset (1+ merlin-enclosing-offset))
-    (merlin-type-enclosing-go)))
+    (merlin--type-enclosing-go)))
 
 (defun merlin-type-enclosing-go-down ()
   "Go down in the enclosing type list."
@@ -1318,7 +1309,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (if (<= merlin-enclosing-offset 0)
         (setq merlin-enclosing-offset (length merlin-enclosing-types)))
     (setq merlin-enclosing-offset (1- merlin-enclosing-offset))
-    (merlin-type-enclosing-go)))
+    (merlin--type-enclosing-go)))
 
 (defvar merlin-type-enclosing-map
   (let ((keymap (make-sparse-keymap)))
