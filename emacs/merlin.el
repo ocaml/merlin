@@ -1067,9 +1067,9 @@ variable `merlin-ac-cache')."
     (with-current-buffer (get-buffer-create merlin-type-buffer-name)
        (when (equal major-mode 'fundamental-mode)
          ; Guess value for merlin-favourite-caml-mode
-         (let* (caml-mode
+         (let* ((caml-mode
                  (or merlin-favourite-caml-mode
-                     (member main-mode '(tuareg-mode caml-mode))))
+                     (member main-mode '(tuareg-mode caml-mode)))))
            (when (listp caml-mode) (setq caml-mode (car caml-mode)))
            (when caml-mode (funcall caml-mode))))
        (erase-buffer)
