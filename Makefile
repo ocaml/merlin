@@ -90,8 +90,6 @@ distclean: clean
 install-binary: $(TARGET)
 	install -d $(BIN_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
-	install omake-merlin $(BIN_DIR)/omake-merlin
-	install jenga-merlin $(BIN_DIR)/jenga-merlin
 
 install-share: $(TARGET) $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
@@ -132,8 +130,6 @@ merlin.install:
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin \
-				 $(BIN_DIR)/omake-merlin  \
-				 $(BIN_DIR)/jenga-merlin  \
 				 $(BIN_DIR)/ocamlmerlin   \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.el \
 				 $(SHARE_DIR)/emacs/site-lisp/merlin.elc
