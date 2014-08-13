@@ -1319,8 +1319,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                                      (interactive)
                                      (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
                                        (when (cddr data)
-                                           (message "Killed %s" (cdr data))
-                                           (kill-new (cddr data))))))
+                                           (message "Killed %s" (car data))
+                                           (kill-new (car data))))))
 
     keymap)
   "The local map to navigate type enclosing.")
