@@ -507,7 +507,7 @@ the merlin buffer of the current buffer."
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
   (while (not merlin-ready)
-    (accept-process-output merlin-process 0.1 nil t))
+    (accept-process-output (merlin-process) 0.1 nil t))
   merlin-result)
 
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
