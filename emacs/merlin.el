@@ -979,6 +979,10 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
   "The cache of the prefix for completion")
 (make-variable-buffer-local 'merlin-ac-prefix)
 
+(defvar merlin-ac-ac-prefix ""
+  "The original value of ac-prefix used when computing merlin-ac-prefix")
+(make-variable-buffer-local 'merlin-ac-ac-prefix)
+
 (defvar merlin-ac-use-summary t
   "Use :summary for the types in AC")
 
@@ -998,8 +1002,9 @@ errors in the margin.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin-ac-source-refresh-cache()
   "Refresh the cache of completion."
   (setq merlin-ac-prefix (merlin-completion-prefix ac-prefix))
+  (setq merlin-ac-ac-prefix ac-prefix)
   (setq merlin-ac-cache
-        (mapcar #'merlin-ac-make-popup-item (merlin-completion-data merlin-ac-prefix))))
+        (mapcar #'merlin-ac-make-popup-item (merlin-completion-data ac-prefix))))
 
 
 (defun merlin-ac-source-init ()
@@ -1031,8 +1036,9 @@ variable `merlin-ac-cache')."
 (defun merlin-auto-complete-candidates ()
   "Return the candidates for auto-completion with
   auto-complete. If the cache is wrong then recompute it."
-  (if (not (equal (merlin-completion-prefix ac-prefix)
-                  merlin-ac-prefix))
+  (if (or (not (equal (merlin-completion-prefix ac-prefix)
+                       merlin-ac-prefix))
+          (not (string-prefix-p merlin-ac-ac-prefix ac-prefix)))
       (merlin-ac-source-refresh-cache))
   merlin-ac-cache)
 
