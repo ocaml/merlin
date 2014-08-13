@@ -113,6 +113,10 @@ no argument and should return the configuration (see
   "The OCaml mode to use for the *merlin-types* buffer."
   :group 'merlin :type 'symbol)
 
+; If user did not specify its merlin-favourite-caml-mode, try to guess it from
+; the buffer being edited
+(defvar merlin-guessed-favorite-caml-mode nil)
+
 (defcustom merlin-error-after-save '("ml" "mli")
   "Determines whether merlin should check for errors after saving.
 If t, always check for errors after saving.
@@ -429,6 +433,14 @@ return DEFAULT or the value associated to KEY."
 - `logfile': path to the logfile
 
 - `name': the name of the instance."
+  ; Assuming process is started from the main caml buffer,
+  ; try to guess the favourite ocaml mode
+  (unless (or merlin-favourite-caml-mode merlin-guessed-favorite-caml-mode)
+    (let ((main-caml-mode (member major-mode '(tuareg-mode caml-mode))))
+      (when main-caml-mode
+        (setq merlin-guessed-favorite-caml-mode (car main-caml-mode)))))
+
+  ; Really start process
   (let* ((command (lookup-default 'command configuration (merlin-command)))
         (extra-flags (lookup-default 'flags configuration nil))
         (name (lookup-default 'name configuration "default"))
@@ -1198,18 +1210,15 @@ variable `merlin-ac-cache')."
 
 (defun merlin-type-display-in-buffer (text)
   "Change content of type-buffer."
-  (let (main-mode major-mode)
-    (with-current-buffer (get-buffer-create merlin-type-buffer-name)
-       (when (equal major-mode 'fundamental-mode)
-         ; Guess value for merlin-favourite-caml-mode
-         (let* ((caml-mode
-                 (or merlin-favourite-caml-mode
-                     (member main-mode '(tuareg-mode caml-mode)))))
-           (when (listp caml-mode) (setq caml-mode (car caml-mode)))
-           (when caml-mode (funcall caml-mode))))
-       (erase-buffer)
-       (insert text)
-       (goto-char (point-min)))))
+  (with-current-buffer (get-buffer-create merlin-type-buffer-name)
+     (when (member major-mode '(nil fundamental-mode))
+       ; Guess value for merlin-favourite-caml-mode
+       (let ((caml-mode (or merlin-favourite-caml-mode
+                            merlin-guessed-favorite-caml-mode)))
+         (when caml-mode (funcall caml-mode))))
+     (erase-buffer)
+     (insert text)
+     (goto-char (point-min))))
 
 (defun merlin-type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
