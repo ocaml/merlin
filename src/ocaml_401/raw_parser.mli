@@ -299,6 +299,7 @@ and _ nonterminal_class =
   | N_type_declarations : (Fake.tydecl list) nonterminal_class
   | N_type_declaration : (Fake.tydecl) nonterminal_class
   | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal_class
+  | N_toplevel_directive : (unit) nonterminal_class
   | N_top_structure_item : (Parsetree.structure_item Location.loc list) nonterminal_class
   | N_top_expr : (Parsetree.expression) nonterminal_class
   | N_tag_field : (Parsetree.row_field) nonterminal_class

@@ -2684,4 +2684,27 @@ expr_comma_opt_list:
   | expr %prec COMMA                            { [$1] }
 ;
 
+
+structure:
+  | toplevel_directive structure_tail           { $2 }
+  | toplevel_directive structure_tail EXITPOINT { $2 }
+;
+
+structure_tail:
+  | SEMISEMI toplevel_directive
+      @{`Shift_token (1,EXITPOINT)}
+      structure_tail
+      { $3 }
+;
+
+(* Toplevel directives *)
+toplevel_directive:
+    SHARP ident { () }
+  | SHARP ident STRING { () }
+  | SHARP ident INT { () }
+  | SHARP ident val_longident { () }
+  | SHARP ident FALSE { () }
+  | SHARP ident TRUE { () }
+;
+
 %%

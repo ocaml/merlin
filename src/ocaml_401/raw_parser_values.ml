@@ -192,6 +192,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_type_declarations                 -> "type_declarations"
   | N_type_declaration                  -> "type_declaration"
   | N_type_constraint                   -> "type_constraint"
+  | N_toplevel_directive                -> "toplevel_directive"
   | N_top_structure_item                -> "top_structure_item"
   | N_top_expr                          -> "top_expr"
   | N_tag_field                         -> "tag_field"
@@ -802,6 +803,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_type_declaration                  ->
     raise Not_found (*(Parsetree.type_declaration) nonterminal_class*)
   | N_type_constraint                   -> 1, (None, None)
+  | N_toplevel_directive                -> raise Not_found
   | N_top_structure_item                -> raise Not_found (*TODO*)
   | N_top_expr                          -> raise Not_found (*TODO*)
   | N_tag_field                         ->
@@ -1152,6 +1154,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_type_declarations                 -> None
   | N_type_declaration                  -> Some "type declaration"
   | N_type_constraint                   -> Some "type constraint"
+  | N_toplevel_directive                -> None
   | N_top_structure_item                -> None
   | N_top_expr                          -> None
   | N_tag_field                         -> None
