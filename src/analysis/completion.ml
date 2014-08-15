@@ -154,6 +154,149 @@ let rec methods_of_type env ?(acc=[]) type_expr =
     end
   | _ -> acc
 
+let classify_node =
+  let open BrowseT in function
+  | Dummy                      -> `Expression
+  | Pattern                  _ -> `Pattern
+  | Expression               _ -> `Expression
+  | Case                     _ -> `Pattern
+  | Class_expr               _ -> `Expression
+  | Class_structure          _ -> `Expression
+  | Class_field              _ -> `Expression
+  | Class_field_kind         _ -> `Expression
+  | Module_expr              _ -> `Module
+  | Module_type_constraint   _ -> `Module_type
+  | Structure                _ -> `Structure
+  | Structure_item           _ -> `Structure
+  | Module_binding           _ -> `Module
+  | Value_binding            _ -> `Expression
+  | Module_type              _ -> `Module_type
+  | Signature                _ -> `Signature
+  | Signature_item           _ -> `Signature
+  | Module_declaration       _ -> `Module
+  | Module_type_declaration  _ -> `Module_type
+  | With_constraint          _ -> `Type
+  | Core_type                _ -> `Type
+  | Package_type             _ -> `Module_type
+  | Row_field                _ -> `Expression
+  | Value_description        _ -> `Type
+  | Type_declaration         _ -> `Type
+  | Type_kind                _ -> `Type
+  | Type_extension           _ -> `Type
+  | Extension_constructor    _ -> `Type
+  | Label_declaration        _ -> `Type
+  | Constructor_declaration  _ -> `Type
+  | Class_type               _ -> `Type
+  | Class_signature          _ -> `Type
+  | Class_type_field         _ -> `Type
+  | Class_declaration        _ -> `Expression
+  | Class_description        _ -> `Type
+  | Class_type_declaration   _ -> `Type
+  | Method_call              _ -> `Expression
+  | Module_binding_name      _ -> `Module
+  | Module_declaration_name  _ -> `Module
+  | Module_type_declaration_name _ -> `Module_type
+
+
+let completion_format ~exact name ?path ty =
+  let ident = match path with
+    | Some path -> Ident.create (Path.last path)
+    | None -> Extension.ident
+  in
+  let ppf, to_string = Format.to_string () in
+  let kind =
+    match ty with
+    | `Value v ->
+      let v = (*if exact
+                 then Types.({v with val_type = verbose_type env v.val_type})
+                 else*) v
+      in
+      Printtyp.value_description ident ppf v;
+      `Value
+    | `Cons c  ->
+      Format.pp_print_string ppf name;
+      Format.pp_print_string ppf " : ";
+      Browse_misc.print_constructor ppf c;
+      `Constructor
+    | `Label label_descr ->
+      let desc =
+        Types.(Tarrow ("", label_descr.lbl_res, label_descr.lbl_arg, Cok))
+      in
+      Format.pp_print_string ppf name;
+      Format.pp_print_string ppf " : ";
+      Printtyp.type_scheme ppf (Btype.newgenty desc);
+      `Label
+    | `Mod m   ->
+      if exact then
+        begin match mod_smallerthan (2000 (** verbosity `Query*)) m with
+        | None -> ()
+        | Some _ -> Printtyp.modtype ppf m
+        end;
+      `Module
+    | `ModType m ->
+      if exact then
+        Printtyp.modtype_declaration ident ppf ((*verbose_sig env*) m);
+      `Modtype
+    | `Typ t ->
+      Printtyp.type_declaration ident ppf
+        (*if exact then verbose_type_decl env t else*)( t);
+      `Type
+  in
+  let desc, info =
+    match kind with
+    | `Module|`Modtype -> "", to_string ()
+    | _ -> to_string (), "" in
+  {Protocol. name; kind; desc; info}
+
+let completion_fold prefix path kind ~validate env compl =
+  let fmt = completion_format in
+  match kind with
+  | `Values ->
+    Env.fold_values
+      (fun name path v compl ->
+        if validate `Lident `Value name
+        then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl
+        else compl)
+      path env compl
+  | `Constructor ->
+    Typing_aux.fold_constructors
+      (fun name v compl ->
+        if validate `Lident `Cons name
+        then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
+        else compl)
+      path env compl
+  | `Types ->
+    Typing_aux.fold_types
+      (fun name path decl compl ->
+        if validate `Lident `Typ name
+        then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
+        else compl)
+      path env compl
+  | `Modules ->
+    Env.fold_modules
+      (fun name path v compl ->
+        let v = Merlin_types_custom.extract_module_declaration v in
+        if validate `Uident `Mod name
+        then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
+        else compl)
+      path env compl
+  | `Modules_type ->
+    Env.fold_modtypes
+      (fun name path v compl ->
+        if validate `Uident `Mod name
+        then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
+        else compl)
+      path env compl
+
+let completion_order = function
+  | `Expression  -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
+  | `Structure   -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
+  | `Signature   -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
+  | `Pattern     -> [`Constructor; `Modules; `Values; `Types; `Modules_type]
+  | `Module      -> [`Modules; `Modules_type; `Types; `Constructor; `Values]
+  | `Module_type -> [`Modules_type; `Modules; `Types; `Constructor; `Values]
+  | `Type        -> [`Types; `Modules; `Modules_type; `Constructor; `Values]
+
 (* Propose completion from a particular node *)
 let node_complete buffer node prefix =
   let prefix =
@@ -168,53 +311,6 @@ let node_complete buffer node prefix =
       prefix
   in
   let env = node.BrowseT.t_env in
-  let fmt ~exact name ?path ty =
-    let ident = match path with
-      | Some path -> Ident.create (Path.last path)
-      | None -> Extension.ident
-    in
-    let ppf, to_string = Format.to_string () in
-    let kind =
-      match ty with
-      | `Value v ->
-        let v = (*if exact
-          then Types.({v with val_type = verbose_type env v.val_type})
-          else*) v
-        in
-        Printtyp.value_description ident ppf v;
-        `Value
-      | `Cons c  ->
-         Format.pp_print_string ppf name;
-         Format.pp_print_string ppf " : ";
-         Browse_misc.print_constructor ppf c;
-         `Constructor
-      | `Label label_descr ->
-         let desc =
-           Types.(Tarrow ("", label_descr.lbl_res, label_descr.lbl_arg, Cok))
-         in
-         Format.pp_print_string ppf name;
-         Format.pp_print_string ppf " : ";
-         Printtyp.type_scheme ppf (Btype.newgenty desc);
-         `Label
-      | `Mod m   ->
-         if exact then
-         begin match mod_smallerthan (2000 (** verbosity `Query*)) m with
-           | None -> ()
-           | Some _ -> Printtyp.modtype ppf m
-         end;
-         `Module
-      | `ModType m ->
-        if exact then
-          Printtyp.modtype_declaration ident ppf ((*verbose_sig env*) m);
-        `Modtype
-      | `Typ t ->
-        Printtyp.type_declaration ident ppf
-          (*if exact then verbose_type_decl env t else*)( t);
-        `Type
-    in
-    let desc, info = match kind with `Module|`Modtype -> "", to_string () | _ -> to_string (), "" in
-    {Protocol. name; kind; desc; info}
-  in
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
     then false
@@ -232,51 +328,18 @@ let node_complete buffer node prefix =
       with Not_found -> valid tag name
     in
     (* Hack to prevent extensions namespace to leak *)
-    let valid ?(uident=false) tag name =
-      (if uident
+    let validate ident tag name =
+      (if ident = `UIdent
        then name <> "" && name.[0] <> '_'
        else name <> "_")
       && valid tag name
     in
-    let compl = [] in
     try
-      let compl = Env.fold_values
-        (fun name path v compl ->
-          if valid `Value name
-          then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl
-          else compl)
-        path env compl
-      in
-      let compl = Typing_aux.fold_constructors
-        (fun name v compl ->
-           if valid `Cons name
-           then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
-           else compl)
-        path env compl
-      in
-      let compl = Typing_aux.fold_types
-        (fun name path decl compl ->
-          if valid `Typ name
-          then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
-          else compl)
-        path env compl
-      in
-      let compl = Env.fold_modules
-        (fun name path v compl ->
-          let v = Merlin_types_custom.extract_module_declaration v in
-          if valid ~uident:true `Mod name
-          then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
-          else compl)
-        path env compl
-      in
-      let compl = Env.fold_modtypes
-        (fun name path v compl ->
-          if valid ~uident:true `Mod name
-          then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
-          else compl)
-        path env compl
-      in
-      compl
+      let kind = classify_node node.BrowseT.t_node in
+      let order = completion_order kind in
+      let add_completions kind compl =
+        completion_fold prefix path kind ~validate env compl in
+      List.fold_left' ~f:add_completions order ~init:[]
     with
     | exn ->
       (* Our path might be of the form [Some_path.record.Real_path.prefix] which
@@ -300,8 +363,10 @@ let node_complete buffer node prefix =
         let path = keep_until_lowercase long_ident in
         Typing_aux.fold_labels
           (fun ({Types.lbl_name = name} as l) compl ->
-            if valid `Label name then (fmt ~exact:(name = prefix) name (`Label l)) :: compl else compl)
-          path env compl
+            if valid `Label name then
+              (completion_format ~exact:(name = prefix) name (`Label l)) :: compl
+            else compl)
+          path env []
       end
   in
   Printtyp.wrap_printing_env env
@@ -346,7 +411,7 @@ let node_complete buffer node prefix =
           | modname when modname = prefix && uniq (`Mod,modname) ->
             (try let path, md =
               Merlin_types_custom.lookup_module (Longident.Lident modname) env in
-               fmt ~exact:true modname ~path (`Mod md) :: compl
+               completion_format ~exact:true modname ~path (`Mod md) :: compl
              with Not_found -> default :: compl)
           | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
             default :: compl
