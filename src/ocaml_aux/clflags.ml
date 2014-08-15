@@ -34,7 +34,7 @@ let fresh () =
     fast                 = false; (* -unsafe *)
     classic              = false; (* -nolabels *)
     principal            = false; (* -principal *)
-    real_paths           = false; (* -real-paths *)
+    real_paths           = true;  (* -real-paths / ! -short-paths *)
     timed_logs           = false; (* -timed-logs *)
     recursive_types      = false; (* -rectypes *)
     strict_sequence      = false; (* -strict-sequence *)
@@ -125,6 +125,10 @@ let real_paths_spec t =
   "-real-paths",
   Arg.Unit (fun () -> t.real_paths <- true),
   " Display real paths in types rather than short ones"
+let short_paths_spec t =
+  "-short-paths",
+  Arg.Unit (fun () -> t.real_paths <- false),
+  " Shorten paths in types (opposite of -real-paths)"
 
 let recursive_types () = !set.recursive_types
 let recursive_types_spec t =
@@ -175,6 +179,7 @@ let arg_spec t =
     no_std_include_spec t;
     principal_spec t;
     real_paths_spec t;
+    short_paths_spec t;
     timed_logs_spec t;
     recursive_types_spec t;
     strict_sequence_spec t;
