@@ -269,7 +269,7 @@ let dispatch (state : state) =
     let compl = Completion.node_complete state.buffer node prefix in
     List.rev compl
 
-  | (Locate (path, opt_pos) : a request) ->
+  | (Locate (patho, opt_pos) : a request) ->
     let env, local_defs =
       with_typer state @@ fun typer ->
       match opt_pos with
@@ -277,6 +277,19 @@ let dispatch (state : state) =
       | Some pos ->
         let node = Completion.node_at typer pos in
         node.BrowseT.t_env, Typer.structures typer
+    in
+    let path = match patho, opt_pos with
+      (* Wrong use *)
+      | None, None -> ""
+      | None, Some pos ->
+        let lexer = Buffer.lexer state.buffer in
+        let lexer = History.seek_backward (fun (_,item) ->
+            Lexing.compare_pos pos (Lexer.item_start item) < 0)
+            lexer in
+        let path = Lexer.reconstruct_identifier lexer in
+        let path = List.map ~f:(fun {Location. txt} -> txt) path in
+        String.concat ~sep:"." path
+      | Some path, _ -> path
     in
     begin match
       Track_definition.from_string ~project:state.project ~env ~local_defs path

@@ -239,8 +239,10 @@ module Protocol_io = struct
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       Request (Complete_prefix (prefix, pos_of_json jpos))
+    | (`String "locate" :: `String "" :: opt_pos) ->
+      Request (Locate (None, optional_position opt_pos))
     | (`String "locate" :: `String path :: opt_pos) ->
-      Request (Locate (path, optional_position opt_pos))
+      Request (Locate (Some path, optional_position opt_pos))
     | [`String "outline"] ->
       Request Outline
     | [`String "drop"] ->
