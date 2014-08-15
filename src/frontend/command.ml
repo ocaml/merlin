@@ -174,13 +174,12 @@ let dispatch (state : state) =
         begin match Lexer.reconstruct_identifier lexer with
           | [] -> []
           | base :: tail ->
-            base ::
-            List.scan_left ~f:(fun {Location. txt = dot; loc = dl}
-                                {Location. txt = base; loc = bl} ->
-                                let loc = Parsing_aux.location_union bl dl in
-                                let txt = base ^ "." ^ dot in
-                                Location.mkloc txt loc)
-              ~init:base tail
+            [List.fold_left' ~f:(fun {Location. txt = dot; loc = dl}
+                                  {Location. txt = base; loc = bl} ->
+                                  let loc = Parsing_aux.location_union bl dl in
+                                  let txt = base ^ "." ^ dot in
+                                  Location.mkloc txt loc)
+               ~init:base tail]
         end
       | Some (expr, offset) ->
         let loc_start =
@@ -288,7 +287,8 @@ let dispatch (state : state) =
             lexer in
         let path = Lexer.reconstruct_identifier lexer in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
-        String.concat ~sep:"." path
+        let path = String.concat ~sep:"." path in
+        path
       | Some path, _ -> path
     in
     begin match

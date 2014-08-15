@@ -171,6 +171,7 @@ let reconstruct_identifier h =
       when token Raw_parser_values.is_operator op -> [op], History.move (-2) h
     | _ -> [], h
   in
+  let h = History.move (-1) h in
   let rec head acc = function
     | List.More ((_, Valid (_,Raw_parser.DOT,_)),
                  List.More ((_, ident), tl))
