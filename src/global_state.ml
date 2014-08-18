@@ -114,6 +114,7 @@ end = struct
   let user_extensions = ref []
 
   let update_extensions () =
+    flush_global_modules ();
     Extensions_utils.set_extensions
       (List.filter_dup (!dot_merlin_extensions @ !user_extensions))
 
