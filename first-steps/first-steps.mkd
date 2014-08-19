@@ -1,0 +1,52 @@
+# First steps with merlin
+
+Let's try typing a simple function to compute the mean value of a list:
+
+<p align="center">
+  <img src="vim1.png" /><img src="emacs1.png" />
+</p>
+
+We get completion on the List module using either vim's omnicomplete (`C-X C-O`) or `M-x auto-complete`. 
+
+Try the `:TypeOf`/`<LocalLeader>t` or `C-c C-t` to see the type of `mean_value`.
+
+<p align="center">
+  <img src="vim2.png" /><img src="emacs2.png" />
+</p>
+
+For the sake of this example, let's lift this computation to Lwt, receiving float values from Lwt threads.
+
+Lwt is not yet known to merlin, we have to issue a `:Use lwt` or `M-x merlin-use` command to load the package (completion is available on packages, try typing `<TAB>`):
+
+<p align="center">
+  <img src="vim3.png" /><img src="emacs3.png" />
+</p>
+
+Ok, completion is back! But if you try to save (you need to enable [Syntastic](linkTODO) in vim), merlin complains about a type error.
+
+<p align="center">
+  <img src="vim4.png" /><img src="emacs4.png" />
+</p>
+
+We need to lift the rest of the code to Lwt!
+
+
+And to finish, some sugar with lwt syntax extension: enabling the extension with `:ExtEnable lwt` / `M-x merlin-extension-enable`.
+
+<p align="center">
+  <img src="vim6.png" /><img src="emacs6.png" />
+</p>
+
+No type errors are reported and the correct type is still computed.
+
+And can save the configuration for this small example in a .merlin file:
+
+```
+# Build files are put in the _build subdirectory with ocamlbuild
+B _build
+# Our source file is in the root directory
+S .
+# We use lwt package & syntax extension
+PKG lwt
+EXT lwt 
+```
