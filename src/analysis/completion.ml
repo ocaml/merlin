@@ -249,44 +249,54 @@ let completion_format ~exact name ?path ty =
   {Protocol. name; kind; desc; info}
 
 let completion_fold prefix path kind ~validate env compl =
-  let fmt = completion_format in
-  match kind with
-  | `Values ->
-    Env.fold_values
-      (fun name path v compl ->
-        if validate `Lident `Value name
-        then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl
-        else compl)
-      path env compl
-  | `Constructor ->
-    Typing_aux.fold_constructors
-      (fun name v compl ->
-        if validate `Lident `Cons name
-        then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
-        else compl)
-      path env compl
-  | `Types ->
-    Typing_aux.fold_types
-      (fun name path decl compl ->
-        if validate `Lident `Typ name
-        then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
-        else compl)
-      path env compl
-  | `Modules ->
-    Env.fold_modules
-      (fun name path v compl ->
-        let v = Merlin_types_custom.extract_module_declaration v in
-        if validate `Uident `Mod name
-        then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
-        else compl)
-      path env compl
-  | `Modules_type ->
-    Env.fold_modtypes
-      (fun name path v compl ->
-        if validate `Uident `Mod name
-        then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
-        else compl)
-      path env compl
+  let fmt ~exact name ?path ty =
+    let time =
+      try Ident.binding_time (Path.head (Option.get path))
+      with _ -> 0 in
+    let item = completion_format ~exact name ?path ty in
+    (- time, name), item in
+  let items =
+    match kind with
+    | `Values ->
+      Env.fold_values
+        (fun name path v compl ->
+           if validate `Lident `Value name
+           then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl
+           else compl)
+        path env []
+    | `Constructor ->
+      Typing_aux.fold_constructors
+        (fun name v compl ->
+           if validate `Lident `Cons name
+           then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
+           else compl)
+        path env []
+    | `Types ->
+      Typing_aux.fold_types
+        (fun name path decl compl ->
+           if validate `Lident `Typ name
+           then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
+           else compl)
+        path env []
+    | `Modules ->
+      Env.fold_modules
+        (fun name path v compl ->
+           let v = Merlin_types_custom.extract_module_declaration v in
+           if validate `Uident `Mod name
+           then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
+           else compl)
+        path env []
+    | `Modules_type ->
+      Env.fold_modtypes
+        (fun name path v compl ->
+           if validate `Uident `Mod name
+           then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
+           else compl)
+        path env []
+  in
+  let items = List.sort items ~cmp:(fun (a,_) (b,_) -> compare a b) in
+  let items = List.rev_map ~f:snd items in
+  items @ compl
 
 let completion_order = function
   | `Expression  -> [`Values; `Constructor; `Types; `Modules; `Modules_type]

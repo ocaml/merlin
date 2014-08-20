@@ -222,6 +222,10 @@ module Option = struct
     | None -> None
     | Some x -> Some (f x)
 
+  let get = function
+    | None -> raise Not_found
+    | Some x -> x
+
   let value ~default = function
     | None -> default
     | Some x -> x
