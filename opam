@@ -4,7 +4,6 @@ build: [
   ["./configure" "--prefix" prefix]
   ["rm" "-rf" "%{prefix}%/share/ocamlmerlin"]
   [make]
-  [make "merlin.install"]
 ]
 depends: [
   "ocamlfind"
