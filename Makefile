@@ -126,7 +126,7 @@ install: install-binary install-share install-vim
 	+$(MAKE) message
 
 merlin.install:
-	@sh merlin.install.sh
+	@echo "Manually run 'sh merlin.install.sh' to update merlin.install"
 
 uninstall:
 	rm -rf $(SHARE_DIR)/ocamlmerlin \

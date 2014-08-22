@@ -1,22 +1,20 @@
 bin: [
-  "ocamlmerlin.native" {"ocamlmerlin"}
-  "omake-merlin"
-  "jenga-merlin"
+  "ocamlmerlin"
 ]
 
 share: [
-  "vim/merlin/plugin/merlin.vim" { "vim/plugin/merlin.vim" }
+  "vim/merlin/autoload/merlin.py" { "vim/autoload/merlin.py" }
+  "vim/merlin/autoload/merlin.vim" { "vim/autoload/merlin.vim" }
+  "vim/merlin/doc/merlin.txt" { "vim/doc/merlin.txt" }
+  "vim/merlin/ftdetect/merlin.vim" { "vim/ftdetect/merlin.vim" }
   "vim/merlin/ftplugin/ocaml.vim" { "vim/ftplugin/ocaml.vim" }
   "vim/merlin/ftplugin/omlet.vim" { "vim/ftplugin/omlet.vim" }
-  "vim/merlin/doc/merlin.txt" { "vim/doc/merlin.txt" }
+  "vim/merlin/plugin/merlin.vim" { "vim/plugin/merlin.vim" }
   "vim/merlin/syntax_checkers/ocaml/merlin.vim" { "vim/syntax_checkers/ocaml/merlin.vim" }
   "vim/merlin/syntax_checkers/omlet/merlin.vim" { "vim/syntax_checkers/omlet/merlin.vim" }
   "vim/merlin/syntax/merlin.vim" { "vim/syntax/merlin.vim" }
-  "vim/merlin/autoload/merlin.vim" { "vim/autoload/merlin.vim" }
-  "vim/merlin/autoload/merlin.py" { "vim/autoload/merlin.py" }
-  "vim/merlin/ftdetect/merlin.vim" { "vim/ftdetect/merlin.vim" }
-  "vim/vimbufsync/autoload/vimbufsync.vim" { "vim/autoload/vimbufsync.vim" }
   "vim/vimbufsync/autoload/vimbufsync.py" { "vim/autoload/vimbufsync.py" }
+  "vim/vimbufsync/autoload/vimbufsync.vim" { "vim/autoload/vimbufsync.vim" }
   "emacs/merlin.el" {"../emacs/site-lisp/merlin.el"}
   "?emacs/merlin.elc" {"../emacs/site-lisp/merlin.elc"}
 ]
