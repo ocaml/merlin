@@ -27,7 +27,7 @@ type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ request =
   | Tell
-    : [ `Start of position option | `Source of string | `Marker]
+    : [ `Start of position option | `Source of string | `Eof | `Marker]
     -> cursor_state request
   | Type_expr
     :  string * position option

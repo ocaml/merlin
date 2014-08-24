@@ -225,7 +225,7 @@ module Protocol_io = struct
     | [`String "tell"; `String "source"; `String source] ->
       Request (Tell (`Source source))
     | [`String "tell"; `String "eof"] ->
-      Request (Tell (`Source ""))
+      Request (Tell `Eof)
     | [`String "tell"; `String "marker"] ->
       Request (Tell `Marker)
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->

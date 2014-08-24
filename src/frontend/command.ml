@@ -84,15 +84,20 @@ let dispatch (state : state) =
     ignore (Buffer.update state.buffer (Lexer.history lexer));
     cursor_state state
 
-  | (Tell (`Source source) : a request) ->
+  | (Tell (`Source "") : a request) ->
+    cursor_state state
+
+  | (Tell (`Source _ | `Eof as source) : a request) ->
+    let source = match source with
+      | `Eof -> ""
+      | `Source source -> source in
     let lexer = match state.lexer with
       | Some lexer ->
         assert (not (Lexer.eof lexer));
         lexer
       | None ->
         let lexer = Buffer.start_lexing state.buffer in
-        state.lexer <- Some lexer; lexer
-    in
+        state.lexer <- Some lexer; lexer in
     assert (Lexer.feed lexer source);
     ignore (Buffer.update state.buffer (Lexer.history lexer));
     (* Stop lexer on EOF *)
