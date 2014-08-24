@@ -246,7 +246,7 @@ let sexp_make ~input ~output =
     let contents = Buffer.contents buf in
     let rec write_contents n l =
       if l > 0 then
-        let l' = Unix.write_substring output' contents n l in
+        let l' = Unix.write output' contents n l in
         if l' > 0 then
           write_contents (n + l') (l - l')
     in
