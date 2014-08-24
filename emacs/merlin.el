@@ -748,10 +748,11 @@ the error message otherwise print a generic error message."
 (defun merlin--tell-rest ()
   "Put a marker and tell merlin until marker is satisfied."
   (let* ((marker (cdr (merlin-send-cursor-command '(tell marker))))
-         (point (when marker (point))))
-    (while (and point
-		(not (= point (point-max))))
-      (forward-line 10)
+         (point (when marker (point)))
+         (lines 20))
+    (while (and point (not (= point (point-max))))
+      (forward-line lines)
+      (unless (> lines 1000) (setq lines (* lines 2)))
       (setq point (merlin--tell-source
 		   (merlin--buffer-substring point (point)))))
     (when point
