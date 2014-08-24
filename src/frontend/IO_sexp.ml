@@ -143,9 +143,11 @@ module Sexp = struct
     to_buf sexp buf;
     Buffer.contents buf
 
-  let getch_of_string str =
-    let len = String.length str in
-    let pos = ref 0 in
+  let getch_of_substring str pos len =
+    let len = pos + len in
+    if pos < 0 || len > String.length str then
+      invalid_arg "Sexp.getch_of_substring";
+    let pos = ref pos in
     let getch () =
       if !pos < len then
         let r = str.[!pos] in
@@ -155,23 +157,40 @@ module Sexp = struct
     in
     getch
 
+  let getch_of_string str =
+    getch_of_substring str 0 (String.length str)
+
   let of_string str =
     fst (read_sexp (getch_of_string str))
 
   let of_channel ic =
+    let fd = Unix.descr_of_in_channel ic in
     let getch = ref (fun () -> '\000') in
+    let rest = ref None in
+    let buffer = Bytes.create 1024 in
     let getch () =
-      match !getch () with
-      | '\000' ->
-        begin try
-          getch := getch_of_string (input_line ic);
-          '\n'
-        with End_of_file -> '\000'
-        end
-      | c -> c
+      match !rest with
+      | Some r ->
+        rest := None;
+        r
+      | None ->
+        match !getch () with
+        | '\000' ->
+          let read = Unix.read fd buffer 0 1024 in
+          if read = 0 then '\000'
+          else
+            begin
+              getch := getch_of_substring (Bytes.to_string buffer) 0 read;
+              !getch ()
+            end
+        | c -> c
     in
-    try Some (fst (read_sexp getch))
-    with End_of_file -> None
+    fun () ->
+      try
+        let sexp, rest' = read_sexp getch in
+        rest := rest';
+        Some sexp
+      with End_of_file -> None
 end
 
 let rec sexp_of_json =
@@ -216,16 +235,22 @@ let rec json_of_sexp =
   | Sym s -> `String s
 
 let sexp_make ~input ~output =
-  let input' = Stream.from (fun _ ->
-      Option.map json_of_sexp (Sexp.of_channel input))
-  in
+  let input' = Sexp.of_channel input in
+  let input' = Stream.from (fun _ -> Option.map json_of_sexp (input' ())) in
+  let output' = Unix.descr_of_out_channel output in
   let buf = Buffer.create 8192 in
   let output json =
     let sexp = sexp_of_json json in
     Sexp.to_buf sexp buf;
     Buffer.add_char buf '\n';
-    Buffer.output_buffer output buf;
-    flush output;
+    let contents = Buffer.contents buf in
+    let rec write_contents n l =
+      if l > 0 then
+        let l' = Unix.write_substring output' contents n l in
+        if l' > 0 then
+          write_contents (n + l') (l - l')
+    in
+    write_contents 0 (String.length contents);
     if Buffer.length buf > 100_000
     then Buffer.reset buf
     else Buffer.clear buf
