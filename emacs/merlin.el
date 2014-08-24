@@ -1088,7 +1088,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
            (if (bounds-of-thing-at-point 'ocaml-atom)
                (buffer-substring-no-properties
                 (car (bounds-of-thing-at-point 'ocaml-atom))
-                (point))))
+                (point))
+             ""))
           (no-cache t)
           (init (merlin-sync-to-point))
           (doc-buffer
