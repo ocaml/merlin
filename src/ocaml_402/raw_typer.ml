@@ -77,4 +77,8 @@ let dump_item ppf = function
 let dump ppf t =
   List.iter (dump_item ppf) (observe t)
 
-let fresh_env () = Env.initial_safe_string
+let fresh_env () =
+  if Clflags.unsafe_string () then
+    Env.initial_unsafe_string
+  else
+    Env.initial_safe_string

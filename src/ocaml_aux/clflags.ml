@@ -25,6 +25,7 @@ type set = {
   mutable recursive_types      : bool;
   mutable strict_sequence      : bool;
   mutable applicative_functors : bool;
+  mutable unsafe_string        : bool;
 }
 
 let fresh () =
@@ -39,6 +40,7 @@ let fresh () =
     recursive_types      = false; (* -rectypes *)
     strict_sequence      = false; (* -strict-sequence *)
     applicative_functors = true;  (* -no-app-funct *)
+    unsafe_string        = true;  (* -safe-string / -unsafe-string *)
   }
 
 let copy t = {t with
@@ -158,6 +160,16 @@ let vmthreads_spec t =
   Arg.Unit (fun () -> t.include_dirs := "+vmthreads" :: !(t.include_dirs)),
   " Add support for VM-scheduled threads library"
 
+let unsafe_string () = !set.unsafe_string
+let unsafe_string_spec t =
+  "-unsafe-string",
+  Arg.Unit (fun () -> t.unsafe_string <- true),
+  " Make strings mutable (default)"
+let safe_string_spec t =
+  "-safe-string",
+  Arg.Unit (fun () -> t.unsafe_string <- false),
+  " Make strings immutable"
+
 (* Dummy values *)
 let annotations         () = false
 let binary_annotations  () = false
@@ -185,5 +197,7 @@ let arg_spec t =
     strict_sequence_spec t;
     threads_spec t;
     vmthreads_spec t;
+    safe_string_spec t;
+    unsafe_string_spec t;
   ]
 

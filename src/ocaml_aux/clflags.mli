@@ -25,6 +25,7 @@ type set = {
   mutable recursive_types      : bool;
   mutable strict_sequence      : bool;
   mutable applicative_functors : bool;
+  mutable unsafe_string        : bool;
 }
 
 (* Manage set of flag *)
@@ -46,6 +47,7 @@ val timed_logs           : unit -> bool
 val recursive_types      : unit -> bool
 val strict_sequence      : unit -> bool
 val applicative_functors : unit -> bool
+val unsafe_string        : unit -> bool
 
 (* Dummy values *)
 val annotations          : unit -> bool
