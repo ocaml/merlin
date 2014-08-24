@@ -167,7 +167,7 @@ module Sexp = struct
     let fd = Unix.descr_of_in_channel ic in
     let getch = ref (fun () -> '\000') in
     let rest = ref None in
-    let buffer = Bytes.create 1024 in
+    let buffer = String.create 1024 in
     let getch () =
       match !rest with
       | Some r ->
@@ -180,7 +180,7 @@ module Sexp = struct
           if read = 0 then '\000'
           else
             begin
-              getch := getch_of_substring (Bytes.to_string buffer) 0 read;
+              getch := getch_of_substring buffer 0 read;
               !getch ()
             end
         | c -> c
