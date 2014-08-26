@@ -552,8 +552,9 @@ the merlin buffer of the current buffer."
 
 (defun merlin-wait-for-answer ()
   "Waits for merlin to answer."
-  (while (not merlin-ready)
-    (accept-process-output (merlin-process) 0.1 nil t))
+  (let ((w32-pipe-read-delay 0)) ;; fix 50ms latency of emacs on win32
+    (while (not merlin-ready)
+      (accept-process-output (merlin-process) 0.1 nil t)))
   merlin-result)
 
 (defun merlin--reset ()
