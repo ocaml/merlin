@@ -1336,7 +1336,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
         (merlin--type-region)
       (when (merlin--type-enclosing-query)
         (merlin-type-enclosing-go-up))))
-  (when merlin-arrow-keys-type-enclosing
+  (when (and (fboundp 'set-temporary-overlay-map)
+             merlin-arrow-keys-type-enclosing)
     (set-temporary-overlay-map merlin-type-enclosing-map t)))
 
 (defun merlin--find-extents (list low high)
