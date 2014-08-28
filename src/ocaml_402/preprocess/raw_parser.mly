@@ -753,8 +753,8 @@ module_type:
     { mkmty $startpos $endpos (Pmty_with($1, List.rev $3)) }
 | MODULE TYPE OF module_expr %prec below_LBRACKETAT
     { mkmty $startpos $endpos (Pmty_typeof $4) }
-| LPAREN @{`Unclosed "("} MODULE mod_longident RPAREN @{`Close}
-    { mkmty $startpos $endpos  (Pmty_alias (mkrhs $startpos($3) $endpos($3) $3)) }
+(*| LPAREN @{`Unclosed "("} MODULE mod_longident RPAREN @{`Close}
+    { mkmty $startpos $endpos  (Pmty_alias (mkrhs $startpos($3) $endpos($3) $3)) }*)
 | LPAREN @{`Unclosed "("} module_type RPAREN @{`Close}
     { $2 }
 | extension
@@ -945,8 +945,8 @@ class_field:
     { mkcf $startpos $endpos (Pcf_constraint $2) ~attrs }
 | INITIALIZER seq_expr attrs = post_item_attributes
     { mkcf $startpos $endpos (Pcf_initializer $2) ~attrs }
-| item_extension
-    { mkcf $startpos $endpos (Pcf_extension $1) }
+| item_extension attrs = post_item_attributes
+    { mkcf $startpos $endpos (Pcf_extension $1) ~attrs }
 | floating_attribute
     { mkcf $startpos $endpos (Pcf_attribute $1) }
 
@@ -999,10 +999,6 @@ class_type:
     { mkcty $startpos $endpos (Pcty_arrow($1, $3, $5)) }
 | simple_core_type_or_tuple_no_attr MINUSGREATER class_type
     { mkcty $startpos $endpos (Pcty_arrow("", $1, $3)) }
-| class_type attribute
-    { Cty.attr $1 $2 }
-| extension
-    { mkcty $startpos $endpos (Pcty_extension $1) }
 
 class_signature:
 | LBRACKET core_type_comma_list RBRACKET clty_longident
@@ -1011,6 +1007,10 @@ class_signature:
     { mkcty $startpos $endpos (Pcty_constr (mkrhs $startpos($1) $endpos($1) $1, [])) }
 | OBJECT @{`Unclosed "object"} @{`Item "object"} class_sig_body END @{`Close}
     { mkcty $startpos $endpos (Pcty_signature $2) }
+| class_signature attribute
+    { Cty.attr $1 $2 }
+| extension
+    { mkcty $startpos $endpos (Pcty_extension $1) }
 
 class_sig_body:
 | class_self_type class_sig_fields
