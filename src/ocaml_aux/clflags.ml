@@ -26,6 +26,9 @@ type set = {
   mutable strict_sequence      : bool;
   mutable applicative_functors : bool;
   mutable unsafe_string        : bool;
+  mutable nopervasives         : bool;
+  mutable strict_formats       : bool;
+  mutable open_modules         : string list;
 }
 
 let fresh () =
@@ -41,6 +44,9 @@ let fresh () =
     strict_sequence      = false; (* -strict-sequence *)
     applicative_functors = true;  (* -no-app-funct *)
     unsafe_string        = true;  (* -safe-string / -unsafe-string *)
+    nopervasives         = false; (* -nopervasives *)
+    strict_formats       = false; (* -strict-formats *)
+    open_modules         = [];
   }
 
 let copy t = {t with
@@ -170,6 +176,24 @@ let safe_string_spec t =
   Arg.Unit (fun () -> t.unsafe_string <- false),
   " Make strings immutable"
 
+let nopervasives () = !set.nopervasives
+let nopervasives_spec t =
+  "-nopervasives",
+  Arg.Unit (fun () -> t.nopervasives <- true),
+  " Don't open Pervasives module (advanced)"
+
+let strict_formats () = !set.strict_formats
+let strict_formats_spec t =
+  "-strict-formats",
+  Arg.Unit (fun () -> t.strict_formats <- true),
+  " Reject invalid formats accepted by legacy implementations"
+
+let open_modules () = !set.open_modules
+let open_modules_spec t =
+  "-open",
+  Arg.String (fun md -> t.open_modules <- md :: t.open_modules),
+  " Make strings mutable (default)"
+
 (* Dummy values *)
 let annotations         () = false
 let binary_annotations  () = false
@@ -199,5 +223,8 @@ let arg_spec t =
     vmthreads_spec t;
     safe_string_spec t;
     unsafe_string_spec t;
+    nopervasives_spec t;
+    strict_formats_spec t;
+    open_modules_spec t;
   ]
 

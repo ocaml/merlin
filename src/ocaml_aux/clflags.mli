@@ -26,6 +26,9 @@ type set = {
   mutable strict_sequence      : bool;
   mutable applicative_functors : bool;
   mutable unsafe_string        : bool;
+  mutable nopervasives         : bool;
+  mutable strict_formats       : bool;
+  mutable open_modules         : string list;
 }
 
 (* Manage set of flag *)
@@ -48,6 +51,9 @@ val recursive_types      : unit -> bool
 val strict_sequence      : unit -> bool
 val applicative_functors : unit -> bool
 val unsafe_string        : unit -> bool
+val nopervasives         : unit -> bool
+val strict_formats       : unit -> bool
+val open_modules         : unit -> string list
 
 (* Dummy values *)
 val annotations          : unit -> bool

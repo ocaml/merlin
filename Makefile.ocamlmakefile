@@ -27,6 +27,8 @@ SOURCES = \
 	$(TYPER)/utils/warnings.ml        \
 	$(TYPER)/utils/config.mli         \
 	$(TYPER)/utils/config.ml          \
+	src/ocaml_aux/clflags.mli         \
+	src/ocaml_aux/clflags.ml          \
 	$(TYPER)/parsing/asttypes.mli     \
 	$(TYPER)/parsing/parsetree.mli    \
 	$(TYPER)/parsing/location.mli     \
@@ -55,9 +57,7 @@ SOURCES = \
 	$(TYPER)/typing/predef.ml         \
 	$(TYPER)/typing/datarepr.mli      \
 	$(TYPER)/typing/datarepr.ml       \
-	src/ocaml_aux/clflags.mli         \
 	src/ocaml_aux/tbl.mli             \
-	src/ocaml_aux/clflags.ml          \
 	src/ocaml_aux/tbl.ml              \
 	$(TYPER)/typing/subst.mli         \
 	$(TYPER)/typing/subst.ml          \

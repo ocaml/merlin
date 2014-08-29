@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: consistbl.mli 11156 2011-07-27 14:17:02Z doligez $ *)
-
 (* Consistency tables: for checking consistency of module CRCs *)
 
 type t
@@ -43,8 +41,9 @@ val source: t -> string -> string
          Raise [Not_found] otherwise. *)
 
 val extract: string list -> t -> (string * Digest.t option) list
-      (* Return all bindings ([name], [crc]) contained in the given
-         table. *)
+      (* [extract tbl names] returns an associative list mapping each string
+         in [names] to the CRC associated with it in [tbl]. If no CRC is
+         associated with a name then it is mapped to [None]. *)
 
 val filter: (string -> bool) -> t -> unit
       (* [filter pred tbl] removes from [tbl] table all (name, CRC) pairs

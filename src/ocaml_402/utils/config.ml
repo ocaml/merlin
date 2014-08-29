@@ -10,15 +10,12 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id$ *)
-open Misc
-
 (***********************************************************************)
 (**                                                                   **)
 (**               WARNING WARNING WARNING                             **)
 (**                                                                   **)
 (** When you change this file, you must make the parallel change      **)
-(** in config.mlp                                                     **)
+(** in config.mlbuild                                                 **)
 (**                                                                   **)
 (***********************************************************************)
 
@@ -55,7 +52,7 @@ and ast_intf_magic_number = "Caml1999N015"
 and cmxs_magic_number = "Caml2007D002"
 and cmt_magic_number = "Caml2012T004"
 
-let load_path = ref (Path_list.of_list [])
+let load_path = ref (Misc.Path_list.of_list [])
 
 let interface_suffix = ref ".mli"
 

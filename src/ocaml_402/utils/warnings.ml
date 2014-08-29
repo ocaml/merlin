@@ -165,8 +165,8 @@ let letter = function
 type set = bool array * bool array
 
 let fresh () =
-  let active = Array.create (last_warning_number + 1) true in
-  let error = Array.create (last_warning_number + 1) false in
+  let active = Array.make (last_warning_number + 1) true in
+  let error = Array.make (last_warning_number + 1) false in
   active, error
 
 (* Manage set of flag *)
@@ -247,7 +247,7 @@ let () = parse_options ~set:initial true defaults_warn_error;;
 let message = function
   | Comment_start -> "this is the start of a comment."
   | Comment_not_end -> "this is not the end of a comment."
-  | Deprecated s -> "deprecated feature: " ^ s
+  | Deprecated s -> "deprecated: " ^ s
   | Fragile_match "" ->
       "this pattern-matching is fragile."
   | Fragile_match s ->
@@ -330,7 +330,8 @@ let message = function
       "constructor " ^ s ^
       " is never used to build values.\n\
         Its type is exported as a private type."
-  | Unused_extension (s, false, false) -> "unused extension constructor " ^ s ^ "."
+  | Unused_extension (s, false, false) ->
+      "unused extension constructor " ^ s ^ "."
   | Unused_extension (s, true, _) ->
       "extension constructor " ^ s ^
       " is never used to build values.\n\
@@ -392,14 +393,13 @@ let print ppf w =
   for i = 0 to String.length msg - 1 do
     if msg.[i] = '\n' then incr newlines;
   done;
-  let (out, flush, newline, space) =
-    Format.pp_get_all_formatter_output_functions ppf ()
-  in
-  let countnewline x = incr newlines; newline x in
-  Format.pp_set_all_formatter_output_functions ppf out flush countnewline space;
+  let out_functions = Format.pp_get_formatter_out_functions ppf () in
+  let countnewline x = incr newlines; out_functions.Format.out_newline x in
+  Format.pp_set_formatter_out_functions ppf
+         {out_functions with Format.out_newline = countnewline};
   Format.fprintf ppf "%d: %s" num msg;
   Format.pp_print_flush ppf ();
-  Format.pp_set_all_formatter_output_functions ppf out flush newline space;
+  Format.pp_set_formatter_out_functions ppf out_functions;
   if (error ()).(num) then incr nerrors;
   !newlines
 ;;
