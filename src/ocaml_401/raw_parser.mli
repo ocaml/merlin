@@ -17,7 +17,7 @@ type token =
   | TILDE
   | THEN
   | STRUCT
-  | STRING of (string * unit option)
+  | STRING of (string * string option)
   | STAR
   | SIG
   | SHARP
@@ -34,6 +34,7 @@ type token =
   | PLUSEQ
   | PLUSDOT
   | PLUS
+  | PERCENT
   | P4_QUOTATION
   | OUNIT_TEST_UNIT
   | OUNIT_TEST_MODULE
@@ -154,7 +155,7 @@ and _ token_class =
   | T_TILDE : unit token_class
   | T_THEN : unit token_class
   | T_STRUCT : unit token_class
-  | T_STRING : (string * unit option) token_class
+  | T_STRING : (string * string option) token_class
   | T_STAR : unit token_class
   | T_SIG : unit token_class
   | T_SHARP : unit token_class
@@ -171,6 +172,7 @@ and _ token_class =
   | T_PLUSEQ : unit token_class
   | T_PLUSDOT : unit token_class
   | T_PLUS : unit token_class
+  | T_PERCENT : unit token_class
   | T_P4_QUOTATION : unit token_class
   | T_OUNIT_TEST_UNIT : unit token_class
   | T_OUNIT_TEST_MODULE : unit token_class
@@ -339,7 +341,7 @@ and _ nonterminal_class =
   | N_optional_type_parameters : ((Asttypes.label Asttypes.loc option * (bool * bool)) list) nonterminal_class
   | N_optional_type_parameter_list : ((Asttypes.label Asttypes.loc option * (bool * bool)) list) nonterminal_class
   | N_optional_type_parameter : (Asttypes.label Asttypes.loc option * (bool * bool)) nonterminal_class
-  | N_option_STRING_ : ((string * unit option) option) nonterminal_class
+  | N_option_STRING_ : ((string * string option) option) nonterminal_class
   | N_option_SEMISEMI_ : (unit option) nonterminal_class
   | N_opt_semi : (unit) nonterminal_class
   | N_opt_present : (Asttypes.label list) nonterminal_class

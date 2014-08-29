@@ -437,7 +437,7 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %token SHARP
 %token SIG
 %token STAR
-%token <string * unit option> STRING
+%token <string * string option> STRING
 %token STRUCT
 %token THEN
 %token TILDE
@@ -473,6 +473,7 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %token OUNIT_BENCH_MODULE
 
 %token ENTRYPOINT EXITPOINT
+%token PERCENT
 
 (* Precedences and associativities.
 
@@ -596,6 +597,7 @@ dummy:
 | OUNIT_BENCH_FUN
 | OUNIT_BENCH_INDEXED
 | OUNIT_BENCH_MODULE
+| PERCENT
     { () }
 
 (* Module expressions *)

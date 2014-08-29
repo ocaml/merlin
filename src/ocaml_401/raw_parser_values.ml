@@ -66,6 +66,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_PLUSEQ               -> "PLUSEQ"
   | T_PLUSDOT              -> "PLUSDOT"
   | T_PLUS                 -> "PLUS"
+  | T_PERCENT              -> "PERCENT"
   | T_P4_QUOTATION         -> "P4_QUOTATION"
   | T_OUNIT_TEST_UNIT      -> "OUNIT_TEST_UNIT"
   | T_OUNIT_TEST_MODULE    -> "OUNIT_TEST_MODULE"
@@ -375,6 +376,7 @@ let symbol_of_token = function
   | PREFIXOP v                   -> T_ (T_PREFIXOP, v)
   | PLUSDOT                      -> T_ (T_PLUSDOT, ())
   | PLUS                         -> T_ (T_PLUS, ())
+  | PERCENT                      -> T_ (T_PERCENT, ())
   | P4_QUOTATION                 -> T_ (T_P4_QUOTATION, ())
   | OUNIT_TEST_UNIT              -> T_ (T_OUNIT_TEST_UNIT, ())
   | OUNIT_TEST_MODULE            -> T_ (T_OUNIT_TEST_MODULE, ())
@@ -507,6 +509,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_PLUSDOT                -> PLUSDOT
   | T_PLUSEQ                 -> PLUSEQ
   | T_PLUS                   -> PLUS
+  | T_PERCENT                -> PERCENT
   | T_P4_QUOTATION           -> P4_QUOTATION
   | T_OUNIT_TEST_UNIT        -> OUNIT_TEST_UNIT
   | T_OUNIT_TEST_MODULE      -> OUNIT_TEST_MODULE
@@ -642,6 +645,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_PLUSEQ                  -> 0, ()
   | T_PLUSDOT                 -> 0, ()
   | T_PLUS                    -> 0, ()
+  | T_PERCENT                 -> 0, ()
   | T_P4_QUOTATION            -> 0, ()
   | T_OR                      -> 0, ()
   | T_OPEN                    -> 0, ()
@@ -1028,6 +1032,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_PLUSEQ               -> Some "+="
   | T_PLUSDOT              -> Some "+."
   | T_PLUS                 -> Some "+"
+  | T_PERCENT              -> Some "%"
   | T_P4_QUOTATION         -> None
   | T_OUNIT_TEST_UNIT      -> None
   | T_OUNIT_TEST_MODULE    -> None
