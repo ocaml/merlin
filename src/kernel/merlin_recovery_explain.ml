@@ -1,6 +1,8 @@
 open Std
 open Raw_parser
 
+let section = Logger.section "explain"
+
 let extract_annots = function
   | CT_ (_,annots) -> annots
   | CN_ (_,annots) -> annots
@@ -150,5 +152,11 @@ let explain parser =
       let reducing_to, expected, _ = lr0_annotations lr0 in
       close_expected expected reducing_to next
   in
+  Logger.infojf section ~title:"syntax error explanation expected symbols"
+    (fun expected ->
+       let symbols = List.map ~f:Raw_parser_values.string_of_class expected in
+       let symbols = List.filter_dup symbols in
+       `List (List.map (fun x -> `String x) symbols))
+    expected;
   { item = !item; unclosed = !unclosed; expected }
 
