@@ -115,6 +115,11 @@ module List = struct
     | xs -> List.rev acc, xs
   let split_n n l = split_n [] n l
 
+  let rec split3 xs ys zs = function
+    | (x,y,z) :: tl -> split3 (x :: xs) (y :: ys) (z :: zs) tl
+    | [] -> List.rev xs, List.rev ys, List.rev zs
+  let split3 l = split3 [] [] [] l
+
   let rec unfold f a = match f a with
     | None -> []
     | Some a -> a :: unfold f a

@@ -1,3 +1,5 @@
+open Std
+
 module Values : module type of Raw_parser_values
 
 type t
@@ -28,6 +30,8 @@ val get_location : ?pop:int -> t -> Location.t
 val get_guide : ?pop:int -> t -> Lexing.position
 val get_lr0_state : t -> int
 val get_lr1_state : t -> int
+val get_lr0_states : t -> int List.Lazy.t
+val get_lr1_states : t -> int List.Lazy.t
 val last_token : t -> Raw_parser.token Location.loc
 
 (* Just remove the state on top of the stack *)

@@ -464,5 +464,17 @@ let has_marker ?diff t f' =
     else
       has_marker t f'
 
-let get_lr1_state (Parser (s,_)) = get_lr1_state s
 let get_lr0_state (Parser (s,_)) = get_lr0_state s
+let get_lr1_state (Parser (s,_)) = get_lr1_state s
+
+let get_lr0_states parser =
+  List.Lazy.Cons (get_lr0_state parser, lazy begin
+      let frames = List.Lazy.unfold Frame.next (stack parser) in
+      List.Lazy.map Frame.lr0_state frames
+    end)
+
+let get_lr1_states parser =
+  List.Lazy.Cons (get_lr1_state parser, lazy begin
+      let frames = List.Lazy.unfold Frame.next (stack parser) in
+      List.Lazy.map Frame.lr1_state frames
+    end)

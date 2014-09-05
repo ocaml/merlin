@@ -14,7 +14,8 @@ let rollbacks endp parser =
   let rec aux (termination,(_,{Location.txt = parser})) =
     (* FIXME: find proper way to handle limit conditions *)
     (* When reaching bottom of the stack, last frame will raise an Accept
-       exception, we can't recover from it, and we shouldn't recover TO it. *)
+       exception, we can't recover from it, and we shouldn't have to recover up
+       TO it. *)
     try
       match Merlin_parser.recover ~endp termination parser with
       | Some _ as r -> r
