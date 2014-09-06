@@ -47,20 +47,20 @@ Makes sure that ocamlmerlin binary can be found in PATH.
 The only setup needed is to have the following directory in vim runtime path
 (append this to your .vimrc):
 
-    :set rtp+=<SHARE_DIR>/ocamlmerlin/vim
+    :set rtp+=<SHARE_DIR>/merlin/vim
 
 The default configuration can be seen in:  
 
-    <SHARE_DIR>/ocamlmerlin/vim/plugin/merlin.vim  
+    <SHARE_DIR>/merlin/vim/plugin/merlin.vim  
 
 After adding merlin to vim runtime path, you will probably want to run
-`:helptags <SHARE_DIR>/ocamlmerlin/vim/doc` to register merlin documentation
+`:helptags <SHARE_DIR>/merlin/vim/doc` to register merlin documentation
 inside vim.
 
 Misc: description of plugin's files
 -----------------------------------
 
-- \<SHARE\_DIR\>/ocamlmerlin/vim -- main vim plugin directory
+- \<SHARE\_DIR\>/merlin/vim -- main vim plugin directory
   - plugin/merlin.vim -- sample configuration
   - autoload/
     - merlin.vim   -- main vim script
