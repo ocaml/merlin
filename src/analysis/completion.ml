@@ -408,8 +408,7 @@ let node_complete buffer node prefix =
       | Longident.Lident prefix ->
         (* Add modules on path but not loaded *)
         let compl = find prefix in
-        begin match List.length_lessthan 30 compl with
-        | Some _ -> List.fold_left (Buffer.global_modules buffer) ~init:compl
+        List.fold_left (Buffer.global_modules buffer) ~init:compl
           ~f:begin fun compl modname ->
           let default = { Protocol.
             name = modname;
@@ -426,8 +425,6 @@ let node_complete buffer node prefix =
           | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
             default :: compl
           | _ -> compl
-          end
-        | None -> compl
         end
       | _ -> find prefix
     with Not_found -> []
