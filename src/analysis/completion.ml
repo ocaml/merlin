@@ -169,7 +169,7 @@ let classify_node =
   | Structure                _ -> `Structure
   | Structure_item           _ -> `Structure
   | Module_binding           _ -> `Module
-  | Value_binding            _ -> `Expression
+  | Value_binding            _ -> `Type
   | Module_type              _ -> `Module_type
   | Signature                _ -> `Signature
   | Signature_item           _ -> `Signature
@@ -301,10 +301,10 @@ let completion_fold prefix path kind ~validate env compl =
 let completion_order = function
   | `Expression  -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
   | `Structure   -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
-  | `Signature   -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
   | `Pattern     -> [`Constructor; `Modules; `Values; `Types; `Modules_type]
   | `Module      -> [`Modules; `Modules_type; `Types; `Constructor; `Values]
   | `Module_type -> [`Modules_type; `Modules; `Types; `Constructor; `Values]
+  | `Signature   -> [`Types; `Modules; `Modules_type; `Constructor; `Values]
   | `Type        -> [`Types; `Modules; `Modules_type; `Constructor; `Values]
 
 (* Propose completion from a particular node *)
