@@ -131,8 +131,8 @@ let dispatch (state : state) =
     let open Typedtree in
     let open Override in
     with_typer state @@ fun typer ->
-    let structures = Typer.structures typer in
-    let structures = Browse.of_structures structures in
+    let structures = Typer.contents typer in
+    let structures = Browse.of_typer_contents structures in
     let path = Browse.enclosing pos structures in
     let path = Browse.annotate_tail_calls_from_leaf path in
     let aux (t,tail) = match t with
@@ -262,8 +262,8 @@ let dispatch (state : state) =
   | (Enclosing pos : a request) ->
     with_typer state @@ fun typer ->
     let open BrowseT in
-    let structures = Typer.structures typer in
-    let structures = Browse.of_structures structures in
+    let structures = Typer.contents typer in
+    let structures = Browse.of_typer_contents structures in
     let path = Browse.enclosing pos structures in
     List.map (fun t -> t.BrowseT.t_loc) path
 
@@ -280,7 +280,7 @@ let dispatch (state : state) =
       | None     -> Typer.env typer, []
       | Some pos ->
         let node = Completion.node_at typer pos in
-        node.BrowseT.t_env, Typer.structures typer
+        node.BrowseT.t_env, Typer.contents typer
     in
     let path = match patho, opt_pos with
       (* Wrong use *)
@@ -308,7 +308,7 @@ let dispatch (state : state) =
 
   | (Outline : a request) ->
     with_typer state @@ fun typer ->
-    let typed_tree = Typer.structures typer in
+    let typed_tree = Typer.contents typer in
     Outline.get typed_tree
 
   | (Drop : a request) ->
@@ -446,8 +446,8 @@ let dispatch (state : state) =
 
   | (Dump `Browse : a request) ->
     with_typer state @@ fun typer ->
-    let structures = Typer.structures typer in
-    let structures = Browse.of_structures structures in
+    let structures = Typer.contents typer in
+    let structures = Browse.of_typer_contents structures in
     Browse_misc.dump_ts structures
 
   | (Dump `Tokens : a request) ->
@@ -552,8 +552,8 @@ let dispatch (state : state) =
 
   | (Occurrences (`Ident_at pos) : a request) ->
     with_typer state @@ fun typer ->
-    let str = Typer.structures typer in
-    let str = Browse.of_structures str in
+    let str = Typer.contents typer in
+    let str = Browse.of_typer_contents str in
     let node = match Browse.enclosing pos str with
       | node :: _ -> node
       | [] -> BrowseT.dummy

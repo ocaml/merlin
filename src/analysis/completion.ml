@@ -57,8 +57,8 @@ end*)
  *      inside x definition.
  *)
 let node_at typer pos_cursor =
-  let structures = Typer.structures typer in
-  let structures = Browse.of_structures structures in
+  let structures = Typer.contents typer in
+  let structures = Browse.of_typer_contents structures in
   try
     let node, _pos_node =
       match Browse.nearest_before pos_cursor structures with

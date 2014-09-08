@@ -33,7 +33,7 @@ module P = struct
     raw        : Raw_typer.t;
     snapshot   : Btype.snapshot;
     env        : Env.t;
-    structures : Typedtree.structure list;
+    contents   : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list;
     exns       : exn list;
   }
 
@@ -44,22 +44,21 @@ module P = struct
     let raw = Raw_typer.empty in
     let exns = caught catch in
     let snapshot = Btype.snapshot () in
-    { raw; snapshot; env; structures = []; exns }
+    { raw; snapshot; env; contents = []; exns }
 
   let validate _ t = Btype.is_valid t.snapshot
 
   let append catch loc item t =
     try
       Btype.backtrack t.snapshot;
-      let env, structures =
+      let env, contents =
         match item with
         | `str str ->
           let structure,_,env = Typemod.type_structure t.env str loc in
-          env, structure :: t.structures
+          env, `Str structure :: t.contents
         | `sg sg ->
           let sg = Typemod.transl_signature t.env sg in
-          let sg = sg.Typedtree.sig_type in
-          Env.add_signature sg t.env, t.structures
+          sg.Typedtree.sig_final_env, `Sg sg :: t.contents
         | `fake str ->
           let structure,_,_ =
             Parsing_aux.catch_warnings (ref []) @@ fun () ->
@@ -68,11 +67,11 @@ module P = struct
           let browse =
             BrowseT.of_node ~loc ~env:t.env (BrowseT.Structure structure)
           in
-          (last_env browse).BrowseT.t_env, structure :: t.structures
-        | `none -> t.env, t.structures
+          (last_env browse).BrowseT.t_env, `Str structure :: t.contents
+        | `none -> t.env, t.contents
       in
       Typecore.reset_delayed_checks ();
-      {env; structures; snapshot = Btype.snapshot (); raw = t.raw;
+      {env; contents; snapshot = Btype.snapshot (); raw = t.raw;
        exns = caught catch @ t.exns}
     with exn ->
       Typecore.reset_delayed_checks ();
@@ -171,7 +170,7 @@ let update parser t =
   {t with typer = Either.get result}
 
 let env t = (get_value t.typer).P.env
-let structures t = (get_value t.typer).P.structures
+let contents t = (get_value t.typer).P.contents
 let exns t = (get_value t.typer).P.exns
 let extensions t = t.extensions
 

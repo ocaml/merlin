@@ -1,7 +1,7 @@
 val from_string
   : project:Merlin_lib.Project.t
   -> env:Env.t
-  -> local_defs:Typedtree.structure list
+  -> local_defs:[`Str of Typedtree.structure | `Sg of Typedtree.signature] list
   -> string
   -> [> `File_not_found of string
       | `Found of string option * Lexing.position

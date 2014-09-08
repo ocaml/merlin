@@ -50,7 +50,7 @@ val enclosing : Lexing.position -> t list -> t list
 
 val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
 
-val of_structures : Typedtree.structure list -> t list
+val of_typer_contents : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list -> t list
 
 val all_constructor_occurrences :
   t * [ `Description of Types.constructor_description

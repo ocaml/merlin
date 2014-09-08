@@ -183,7 +183,7 @@ and browse_cmts ~root modules =
       let pos = { Lexing. pos_fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
       Some { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
     | _ ->
-      let browses   = Browse.of_structures [ impl ] in
+      let browses   = Browse.of_typer_contents [ `Str impl ] in
       let browsable = get_top_items browses in
       check_item modules browsable
     end
@@ -233,7 +233,7 @@ and resolve_mod_alias ~fallback mod_expr path rest =
     let full_path = (path_to_list path') @ path in
     do_fallback (check_item full_path rest)
   | Typedtree.Tmod_structure str ->
-    let browsable = get_top_items (Browse.of_structures [ str ]) @ rest in
+    let browsable = get_top_items (Browse.of_typer_contents [ `Str str ]) @ rest in
     do_fallback (check_item path browsable)
   | Typedtree.Tmod_functor _
   | Typedtree.Tmod_apply (_, _, _) ->
@@ -303,7 +303,7 @@ let from_string ~project ~env ~local_defs path =
     else
       let opt =
         let modules = path_to_list path in
-        let local_defs = Browse.of_structures local_defs in
+        let local_defs = Browse.of_typer_contents local_defs in
         check_item modules (get_top_items local_defs)
       in
       match opt with
