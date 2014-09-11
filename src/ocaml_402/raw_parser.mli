@@ -117,6 +117,7 @@ type token =
   | DOT
   | DONE
   | DO
+  | CUSTOM_BANG
   | CONSTRAINT
   | COMMENT of (string * Location.t)
   | COMMA
@@ -255,6 +256,7 @@ and _ token_class =
   | T_DOT : unit token_class
   | T_DONE : unit token_class
   | T_DO : unit token_class
+  | T_CUSTOM_BANG : unit token_class
   | T_CONSTRAINT : unit token_class
   | T_COMMENT : (string * Location.t) token_class
   | T_COMMA : unit token_class

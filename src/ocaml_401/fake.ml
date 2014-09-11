@@ -793,3 +793,13 @@ module Nonrec = struct
     then { id with Ident.name = drop id.Ident.name }
     else id
 end
+
+(* Custom printf extension *)
+module Custom_printf = struct
+
+  let bang loc_start loc_end expr = match expr with
+    | { pexp_desc = Pexp_constant (Asttypes.Const_string str) } ->
+      let pexp_loc = {any_val'.pexp_loc with Location. loc_start; loc_end} in
+      Some {any_val' with pexp_loc}
+    | _ -> None
+end

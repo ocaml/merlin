@@ -163,6 +163,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_BARBAR               -> "BARBAR"
   | T_BAR                  -> "BAR"
   | T_BANG                 -> "BANG"
+  | T_CUSTOM_BANG          -> "CUSTOM_BANG"
   | T_BACKQUOTE            -> "BACKQUOTE"
   | T_ASSERT               -> "ASSERT"
   | T_AS                   -> "AS"
@@ -491,6 +492,7 @@ let symbol_of_token = function
   | BARBAR                       -> T_ (T_BARBAR, ())
   | BAR                          -> T_ (T_BAR, ())
   | BANG                         -> T_ (T_BANG, ())
+  | CUSTOM_BANG                  -> T_ (T_CUSTOM_BANG, ())
   | BACKQUOTE                    -> T_ (T_BACKQUOTE, ())
   | ASSERT                       -> T_ (T_ASSERT, ())
   | AS                           -> T_ (T_AS, ())
@@ -630,6 +632,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_BARBAR                 -> BARBAR
   | T_BAR                    -> BAR
   | T_BANG                   -> BANG
+  | T_CUSTOM_BANG            -> CUSTOM_BANG
   | T_BACKQUOTE              -> BACKQUOTE
   | T_ASSERT                 -> ASSERT
   | T_AS                     -> AS
@@ -743,6 +746,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_BARBAR                  -> 0, ()
   | T_BAR                     -> 0, ()
   | T_BANG                    -> 0, ()
+  | T_CUSTOM_BANG             -> 0, ()
   | T_BACKQUOTE               -> 0, ()
   | T_ASSERT                  -> 0, ()
   | T_AS                      -> 0, ()
@@ -1035,7 +1039,8 @@ let is_operator =
   let open Raw_parser in function
     | PREFIXOP s
     | INFIXOP0 s | INFIXOP1 s | INFIXOP2 s | INFIXOP3 s | INFIXOP4 s -> Some s
-    | BANG -> Some "!"        | PERCENT -> Some "%"
+    | BANG -> Some "!"        | CUSTOM_BANG -> Some "!"
+    | PERCENT -> Some "%"
     | PLUS -> Some "+"        | PLUSDOT -> Some "+."
     | MINUS -> Some "-"       | MINUSDOT -> Some "-."
     | STAR -> Some "*"        | EQUAL -> Some "="
@@ -1181,6 +1186,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_BARBAR               -> Some "||"
   | T_BAR                  -> Some "|"
   | T_BANG                 -> Some "!"
+  | T_CUSTOM_BANG          -> Some "!"
   | T_BACKQUOTE            -> Some "`"
   | T_ASSERT               -> None
   | T_AS                   -> Some "as"

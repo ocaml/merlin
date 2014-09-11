@@ -148,8 +148,19 @@ let ext_sexp_option = {
   packages = [];
 }
 
+let custom_printf = "custom_printf"
+let ext_custom_printf = {
+  name = custom_printf;
+  private_def = [];
+  public_def = [];
+  keywords = [
+    "!", CUSTOM_BANG;
+  ];
+  packages = ["custom_printf"];
+}
+
 (* Known extensions *)
-let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec]
+let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec;ext_custom_printf]
 let registry =
   List.fold_left' registry
     ~f:(fun ext -> String.Map.add ext.name ext)
@@ -231,4 +242,3 @@ let register exts env =
   let env = Env.add_module ident (Types.Mty_signature
                                     (Lazy.from_val (List.concat fakes))) env in
   env
-

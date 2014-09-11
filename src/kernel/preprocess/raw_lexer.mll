@@ -463,7 +463,9 @@ rule token state = parse
   | "[%%" { return LBRACKETPERCENTPERCENT }
   | "[@@" { return LBRACKETATAT }
   | "[@@@" { return LBRACKETATATAT }
-  | "!"  { return BANG }
+  (* Custom-printf is implemented by generating a custom BANG token *)
+  | "!"  { return (try Hashtbl.find state.keywords "!"
+                   with Not_found -> BANG) }
   | "!=" { return (INFIXOP0 "!=") }
   | "+"  { return PLUS }
   | "+." { return PLUSDOT }

@@ -88,3 +88,9 @@ module Nonrec : sig
   val drop : string -> string
   val ident_drop : Ident.t -> Ident.t
 end
+
+(* Custom printf extension *)
+module Custom_printf : sig
+  val bang : Lexing.position -> Lexing.position ->
+    Parsetree.expression -> Parsetree.expression option
+end

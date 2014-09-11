@@ -443,6 +443,7 @@ let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 %token WHILE_LWT
 %token JSNEW
 %token P4_QUOTATION
+%token CUSTOM_BANG
 %token OUNIT_TEST
 %token OUNIT_TEST_UNIT
 %token OUNIT_TEST_MODULE
@@ -519,7 +520,7 @@ The precedences must be listed from low to high.
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
-          P4_QUOTATION JSNEW
+          P4_QUOTATION JSNEW CUSTOM_BANG
 
 (* Entry points *)
 
@@ -2696,6 +2697,21 @@ structure_tail:
       structure_tail
       { $3 }
 ;
+
+(* Custom-printf extension *)
+simple_expr:
+| CUSTOM_BANG simple_expr
+    { match Fake.Custom_printf.bang $startpos $endpos $2 with
+      | None -> mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) "!", ["",$2]))
+      | Some expr -> expr }
+
+operator:
+| CUSTOM_BANG
+    { "!" }
+
+override_flag:
+| CUSTOM_BANG
+    { Override }
 
 (* Toplevel directives *)
 toplevel_directive:
