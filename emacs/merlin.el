@@ -1080,8 +1080,6 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;;; COMPANY MODE SUPPORT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defvar merlin-company-cache)
-
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
     (if merlin-mode
@@ -1106,15 +1104,22 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                   (filename (lookup-default 'file pos (current-buffer)))
                   (pos (merlin-make-point (lookup-default 'pos pos nil))))
              (cons filename pos)))
-          (post-completion
-           (minibuffer-message "%s: %s" arg (cadr (assoc arg merlin-company-cache))))
           (candidates
-           (progn
-             (merlin-sync-to-point)
-             (setq merlin-company-cache (merlin-completion-data arg))
-             (mapcar #'(lambda (x) (car x)) merlin-company-cache)))
-          (meta (cadr (assoc arg merlin-company-cache)))
-          (annotation (concat ": " (cadr (assoc arg merlin-company-cache))))
+           (merlin-sync-to-point)
+           (mapcar #'(lambda (x) (propertize (car x) 'merlin-meta (cadr x)))
+                   (merlin-completion-data arg)))
+          (post-completion
+           (prin1 command)
+           (prin1 arg)
+           (minibuffer-message "%s: %s" arg (get-text-property 0 'merlin-meta arg)))
+          (meta
+           (prin1 command)
+           (prin1 arg)
+           (get-text-property 0 'merlin-meta arg))
+          (annotation
+           (prin1 command)
+           (prin1 arg)
+           (concat ": " (get-text-property 0 'merlin-meta arg)))
           )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
