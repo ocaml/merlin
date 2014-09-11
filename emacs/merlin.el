@@ -414,7 +414,8 @@ return DEFAULT or the value associated to KEY."
 
 (defun merlin-process ()
   "Return the process of the current buffer."
-  (buffer-local-value 'merlin-process (merlin-process-buffer)))
+  (and (merlin-process-buffer)
+       (buffer-local-value 'merlin-process (merlin-process-buffer))))
 
 (defun merlin-process-owner ()
   "Return the last user of the process of the current buffer."
@@ -1628,7 +1629,7 @@ Returns the position."
   (interactive)
   (if (merlin-process-dead-p)
       (let* ((command (concat (merlin-command) " -version"))
-             (version (shell-command-to-string version))
+             (version (shell-command-to-string command))
              (version (replace-regexp-in-string "\n$" "" version)))
         (message "%s (from shell)" version))
     (message "%s" (merlin-send-command '(version)))))
@@ -1744,8 +1745,8 @@ Returns the position."
 
 (defun merlin-process-dead-p ()
   "Return non-nil if merlin process is dead."
-  (and (merlin-process)
-       (not (equal (process-status (merlin-process)) 'run))))
+  (not (and (merlin-process)
+            (equal (process-status (merlin-process)) 'run))))
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
