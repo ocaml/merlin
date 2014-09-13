@@ -28,6 +28,8 @@ val with_default_loc: loc -> (unit -> 'a) -> 'a
     (** Set the [default_loc] within the scope of the execution
         of the provided function. *)
 
+val rtag : ?attrs:attrs -> label -> bool -> core_type list -> row_field
+
 (** {2 Core language} *)
 
 (** Type expressions *)

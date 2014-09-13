@@ -39,17 +39,13 @@ let mkoptloc opt x =
   | Some l -> Location.mkloc x l
 
 let app a b =
-  let pexp_loc = { b.pexp_loc with Location.loc_ghost = true } in
-  { pexp_desc = Pexp_apply (a, ["", b]) ; pexp_loc ; pexp_attributes = [] }
+  let loc = { b.pexp_loc with Location.loc_ghost = true } in
+  Ast_helper.Exp.apply ~loc a ["", b]
 
 let pat_app f (pat,expr) = pat, app f expr
 
 let prim_ident prim = Longident.parse ("_." ^ prim)
-let prim prim = {
-  pexp_desc = Pexp_ident (Location.mknoloc (prim_ident prim));
-  pexp_loc = Location.none;
-  pexp_attributes = [];
-}
+let prim prim = Ast_helper.Exp.ident (Location.mknoloc (prim_ident prim))
 
 let any_val' = prim "Any.val'"
 
@@ -80,9 +76,9 @@ module Ast = struct
     | Module of string * top_item list
 
   let sub_of_simple_variants lst =
-    let variants = List.map lst ~f:(fun s -> Rtag (s, [], true, [])) in
-    let ptyp_desc = Ptyp_variant (variants, Asttypes.Closed, Some []) in
-    Core_type { ptyp_desc ; ptyp_loc = Location.symbol_gloc (); ptyp_attributes = [] }
+    let variants = List.map lst ~f:(fun s -> Ast_helper.rtag s true []) in
+    let ptyp = Ast_helper.Typ.variant variants Asttypes.Open (Some []) in
+    Core_type ptyp
 
   let freshvars  = Stream.from (fun i -> Some (Printf.sprintf "\x00_%d" i))
   let new_var () = Stream.next freshvars
@@ -93,122 +89,72 @@ open Ast
 let unit_ty = Named ([],"unit")
 let bool_ty = Named ([],"bool")
 
-let rec translate_ts ?ghost_loc = function
-  | Var ident ->
-    { ptyp_desc = Ptyp_var ident ; ptyp_loc = default_loc ghost_loc; ptyp_attributes = [] }
+let rec translate_ts ?ghost_loc =
+  let loc = default_loc ghost_loc in
+  function
+  | Var ident -> Ast_helper.Typ.var ~loc ident
   | Arrow (label, a, b) ->
     let a = translate_ts ?ghost_loc a in
     let b = translate_ts ?ghost_loc b in
-    { ptyp_desc = Ptyp_arrow(label, a, b) ; ptyp_loc = default_loc ghost_loc; ptyp_attributes = [] }
+    Ast_helper.Typ.arrow ~loc label a b
   | Tuple lst ->
     let lst = List.map lst ~f:(translate_ts ?ghost_loc) in
-    { ptyp_desc = Ptyp_tuple lst ; ptyp_loc = default_loc ghost_loc; ptyp_attributes = [] }
+    Ast_helper.Typ.tuple ~loc lst
   | Named (params, id) ->
     let id = Longident.parse id in
     let params = List.map (translate_ts ?ghost_loc) params in
-    {
-      ptyp_desc = Ptyp_constr (mkoptloc ghost_loc id, params) ;
-      ptyp_loc = default_loc ghost_loc ;
-      ptyp_attributes = [];
-    }
+    Ast_helper.Typ.constr ~loc (mkoptloc ghost_loc id) params
   | Core_type ct -> ct
 
-and translate_expr ?ghost_loc : Ast.expr -> _ = function
+and translate_expr ?ghost_loc : Ast.expr -> _ =
+  let loc = default_loc ghost_loc in
+  function
   | Fun (simple_patterns, body) ->
     List.fold_right simple_patterns ~init:(translate_expr ?ghost_loc body) ~f:(
       fun (simple_pattern, is_label) body ->
-        let patt = {
-          ppat_desc = Ppat_var (mkoptloc ghost_loc simple_pattern) ;
-          ppat_loc = default_loc ghost_loc ;
-          ppat_attributes = [] ;
-        }
-        in
-        let label = if is_label then simple_pattern else "" in
-        {
-          pexp_desc = Pexp_fun (label, None, patt, body) ;
-          pexp_loc = default_loc ghost_loc ;
-          pexp_attributes = [] ;
-        }
+        let pat = Ast_helper.Pat.var ~loc (mkoptloc ghost_loc simple_pattern) in
+        let lbl = if is_label then simple_pattern else "" in
+        Ast_helper.Exp.fun_ ~loc lbl None pat body
     )
   | App (f, x) ->
     app (translate_expr ?ghost_loc f) (translate_expr ?ghost_loc x)
-  | Ident i -> {
-      pexp_desc = Pexp_ident (mkoptloc ghost_loc (Longident.parse i)) ;
-      pexp_loc = default_loc ghost_loc ;
-      pexp_attributes = [] ;
-    }
+  | Ident i -> 
+    Ast_helper.Exp.ident ~loc (mkoptloc ghost_loc (Longident.parse i))
   | AnyVal -> any_val'
 
 
 let sig_of_binding ?ghost_loc { ident; typesig; body = _ } =
-  let pval = {
-    pval_type = translate_ts ?ghost_loc typesig ;
-    pval_prim = [] ;
-    pval_loc  = default_loc ghost_loc ;
-    pval_name = mkoptloc ghost_loc ident;
-    pval_attributes = [] ;
-  } in
-  let psig_desc = Psig_value pval in
-  { psig_desc ; psig_loc = default_loc ghost_loc }
+  let loc = default_loc ghost_loc in
+  let pval_ty =
+    Ast_helper.Val.mk ~loc (mkoptloc ghost_loc ident)
+      (translate_ts ?ghost_loc typesig)
+  in
+  Ast_helper.Sig.value ~loc pval_ty
 
 let str_of_binding ?ghost_loc { ident; typesig; body } =
   let loc = default_loc ghost_loc in
-  let pvb_pat = {
-    ppat_desc = Ppat_var (mkoptloc ghost_loc ident) ;
-    ppat_loc = loc ;
-    ppat_attributes = [] ;
-  }
-  in
-  let typesig_opt = translate_ts ?ghost_loc typesig in
+  let pat = Ast_helper.Pat.var ~loc (mkoptloc ghost_loc ident) in
+  let tsig = translate_ts ?ghost_loc typesig in
   let body = translate_expr ?ghost_loc body in
-  let pvb_expr = {
-    pexp_desc = Pexp_constraint (body, typesig_opt) ;
-    pexp_loc = loc ;
-    pexp_attributes = [] ;
-  }
-  in
-  let pvb = { pvb_loc = loc; pvb_pat; pvb_expr; pvb_attributes = [] } in
-  {
-    pstr_desc = Pstr_value (Asttypes.Nonrecursive, [pvb]) ;
-    pstr_loc = loc;
-  }
+  let pexp = Ast_helper.Exp.constraint_ ~loc body tsig in
+  let bind = Ast_helper.Vb.mk ~loc pat pexp in
+  Ast_helper.Str.value ~loc Asttypes.Nonrecursive [bind]
 
 let rec str_of_top_lvl ?ghost_loc = function
   | Binding b -> str_of_binding ?ghost_loc b
   | Module (name, m) ->
-    let pmb_name = { Location. txt = name ; loc = default_loc ghost_loc } in
-    let pmb_expr = {
-      pmod_loc  = pmb_name.Location.loc;
-      pmod_desc = Pmod_structure (List.map str_of_top_lvl m) ;
-      pmod_attributes = [];
-    }
-    in
-    let pmb = {
-      pmb_name;
-      pmb_expr;
-      pmb_attributes = [];
-      pmb_loc = default_loc ghost_loc;
-    }
-    in
-    { pstr_desc = Pstr_module pmb ; pstr_loc  = default_loc ghost_loc }
+    let loc = default_loc ghost_loc in
+    let me = Ast_helper.Mod.structure ~loc (List.map str_of_top_lvl m) in
+    let mb = Ast_helper.Mb.mk (mkoptloc ghost_loc name) me in
+    Ast_helper.Str.module_ ~loc mb
 
 let rec sig_of_top_lvl ?ghost_loc = function
   | Binding b -> sig_of_binding ?ghost_loc b
   | Module (name, m) ->
-    let pmd_name = { Location. txt = name ; loc = default_loc ghost_loc } in
-    let pmd_type = {
-      pmty_loc  = pmd_name.Location.loc;
-      pmty_desc = Pmty_signature (List.map sig_of_top_lvl m) ;
-      pmty_attributes = [];
-    }
-    in
-    let pmd = {
-      pmd_name; pmd_type;
-      pmd_attributes = [];
-      pmd_loc = default_loc ghost_loc;
-    }
-    in
-    { psig_desc = Psig_module pmd; psig_loc = default_loc ghost_loc }
+    let loc = default_loc ghost_loc in
+    let mty = Ast_helper.Mty.signature ~loc (List.map sig_of_top_lvl m) in
+    let md = Ast_helper.Md.mk (mkoptloc ghost_loc name) mty in
+    Ast_helper.Sig.module_ ~loc md
 
 (* Lwt extension *)
 module Lwt = struct
@@ -244,15 +190,6 @@ module OUnit = struct
 end
 
 (* tools used in the next few modules *)
-let format_params ~f params =
-  let format_param (param,_variance) =
-    match param.ptyp_desc with
-    | Ptyp_any -> f "_"
-    | Ptyp_var v -> f v
-    | _ -> assert false (*TODO*)
-  in
-  List.map ~f:format_param params
-
 let mk_fun ~args =
   Fun (List.map (fun s -> (s, false)) args, App (Ident "Obj.magic", AnyVal))
 
@@ -276,12 +213,12 @@ module Make_simple (Conv : Simple_conv_intf) = struct
   let named params ty = Named (params, ty)
 
   let conv_of_sig params ty =
-    let params = format_params ~f:(fun v -> Var v) params in
+    let params = Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v) params in
     List.fold_right ~f:(fun var acc -> mk_arrow (mk_arrow var Conv.t) acc) params
       ~init:(mk_arrow (named params ty) Conv.t)
 
   let of_conv_sig params ty =
-    let params = format_params ~f:(fun v -> Var v) params in
+    let params = Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v) params in
     List.fold_right ~f:(fun var acc -> mk_arrow (mk_arrow Conv.t var) acc) params
       ~init:(mk_arrow Conv.t (Named (params, ty)))
 
@@ -289,7 +226,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
     let ty = located_name.Location.txt in
     let args =
       let f x = Conv.name ^ "_of_" ^ x in
-      format_params ~f type_infos.ptype_params
+      Merlin_types_custom.Parsetree.format_params ~f type_infos.ptype_params
     in
     Binding {
       ident = Conv.name ^ "_of_" ^ ty ;
@@ -301,7 +238,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
     let ty = located_name.Location.txt in
     let args =
       let f x = x ^ "_of_" ^ Conv.name in
-      format_params ~f type_infos.ptype_params
+      Merlin_types_custom.Parsetree.format_params ~f type_infos.ptype_params
     in
     Binding {
       ident = ty ^ "_of_" ^ Conv.name ;
@@ -330,7 +267,7 @@ module Binprot = struct
   let binding ~prefix ?(suffix="") ~typesig ty =
     let (located_name, ty_infos) = ty in
     let tyname = located_name.Location.txt in
-    let args = format_params ~f:(fun x -> prefix ^ x ^ suffix) ty_infos.ptype_params in
+    let args = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> prefix ^ x ^ suffix) ty_infos.ptype_params in
     Binding {
       ident = prefix ^ tyname ^ suffix;
       typesig = typesig ty ;
@@ -341,7 +278,7 @@ module Binprot = struct
     let int = Named ([], "int")
 
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       List.fold_right ~f:(fun v acc -> Arrow ("", Arrow ("", Var v, int), acc)) params
         ~init:(Arrow ("", Named (List.map (fun x -> Var x) params, name.Location.txt), int))
 
@@ -354,7 +291,7 @@ module Binprot = struct
     let writer t = Named ([t], "Bin_prot.Write.writer")
 
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let t = Named (List.map (fun x -> Var x) params, name.Location.txt) in
       let init = writer t in
       let make_var str = writer (Var str) in
@@ -367,7 +304,7 @@ module Binprot = struct
 
   module Writer = struct
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
+      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right params
         ~init:(Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
         ~f:(fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.writer"), acc))
@@ -380,7 +317,7 @@ module Binprot = struct
   module Read = struct
     let reader t = Named ([t], "Bin_prot.Read.reader")
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let init = reader
         (Named (List.map (fun x -> Var x) params, name.Location.txt))
       in
@@ -394,7 +331,7 @@ module Binprot = struct
 
   module Read__ = struct
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let res = Named (List.map (fun x -> Var x) params, name.Location.txt) in
       let init = Read.reader (Arrow ("", Named ([], "int"), res)) in
       let make_var str = Read.reader (Var str) in
@@ -408,7 +345,7 @@ module Binprot = struct
 
   module Reader = struct
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
+      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right params
         ~init:(Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.reader"))
         ~f:(fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.reader"), acc))
@@ -420,7 +357,7 @@ module Binprot = struct
 
   module Type_class = struct
     let typesig (name, ty_infos) =
-      let params = format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
+      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right params
         ~init:(Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.t"))
         ~f:(fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.t"), acc))
@@ -473,21 +410,25 @@ module Variants = struct
     )
 
   let constructors ~self cstrs =
-    List.map cstrs ~f:(fun { pcd_name = {Location. txt = name}; pcd_args = args; pcd_res = res_opt; pcd_loc = loc} ->
-      let typesig = mk_cstr_typesig ~self args res_opt in
-      Binding { ident = String.lowercase name ; typesig ; body = AnyVal }
+    Merlin_types_custom.Parsetree.map_constructors cstrs ~f:(
+      fun name args res_opt loc ->
+        let typesig = mk_cstr_typesig ~self args res_opt in
+        Binding { ident = String.lowercase name ; typesig ; body = AnyVal }
     )
 
   let mk_module ~self cstrs =
     let cstrs_dot_t =
-      List.map cstrs ~f:(fun { pcd_name = {Location. txt = name}; pcd_args = args; pcd_res = res_opt; pcd_loc = loc} ->
-        let t = Named ([mk_cstr_typesig ~self args res_opt], "Variant.t") in
-        { ident = String.lowercase name ; typesig = t ; body = AnyVal }
+      Merlin_types_custom.Parsetree.map_constructors cstrs ~f:(
+        fun name args res_opt loc ->
+          let t = Named ([mk_cstr_typesig ~self args res_opt], "Variant.t") in
+          { ident = String.lowercase name ; typesig = t ; body = AnyVal }
       )
     in
 
     let body =
-      mk_labeled_fun (List.map cstrs ~f:(fun {pcd_name} -> pcd_name.Location.txt,true))
+      mk_labeled_fun 
+        (Merlin_types_custom.Parsetree.map_constructors cstrs
+          ~f:(fun name _ _ _ -> name, true))
     in
 
     let fold = FV_helpers.mk_fold ~body cstrs_dot_t in
@@ -502,7 +443,8 @@ module Variants = struct
       let typesig =
         let ret_ty = Var (new_var ()) in
         List.fold_right2 cstrs_dot_t cstrs ~init:ret_ty ~f:(
-          fun cstr {pcd_args = args} acc ->
+          fun cstr c acc ->
+            let args = Merlin_types_custom.Parsetree.args_of_constructor c in
             let tmp =
               List.fold_right args ~init:ret_ty
                 ~f:(fun arg acc -> Arrow ("", Core_type arg, acc))
@@ -532,7 +474,7 @@ module Variants = struct
     ])
 
   let top_lvl ({ Location.txt = name },ty) =
-    let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
+    let params = Merlin_types_custom.Parsetree.format_params ~f:(fun s -> Var s) ty.ptype_params in
     let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_variant cstrs ->
@@ -541,7 +483,10 @@ module Variants = struct
 end
 
 module Fields = struct
-  let gen_field self { pld_name = { Location.txt = name }; pld_mutable = mut; pld_type = ty } : top_item list =
+  let gen_field self lbl : top_item list =
+    let ({ Location.txt = name }, mut, ty, _) =
+      Merlin_types_custom.Parsetree.inspect_label lbl 
+    in
     (* Remove higher-rank quantifiers *)
     let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
     let ty = Core_type ty in
@@ -561,7 +506,10 @@ module Fields = struct
 
     let fields_dot_t =
       let perms = sub_of_simple_variants [ "Read" ; "Set_and_create" ] in
-      List.map fields ~f:(fun { pld_name = { Location.txt = name }; pld_type = ty } ->
+      List.map fields ~f:(fun lbl ->
+        let ({ Location.txt = name }, _, ty, _) =
+          Merlin_types_custom.Parsetree.inspect_label lbl
+        in
         let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
         let t = Named ([ perms ; self ; Core_type ty ], "Field.t_with_perm") in
         { ident = name ; typesig = t ; body = AnyVal }
@@ -570,7 +518,10 @@ module Fields = struct
 
     (* Helper, used in the next few functions *)
     let body =
-      mk_labeled_fun (List.map fields ~f:(fun l -> l.pld_name.Location.txt,true))
+      mk_labeled_fun (List.map fields ~f:(fun lbl ->
+        let (l,_,_,_) = Merlin_types_custom.Parsetree.inspect_label lbl in
+        l.Location.txt,true)
+      )
     in
 
 (*
@@ -584,7 +535,7 @@ module Fields = struct
     let make_creator =
       let acc_ret_ty = Var (new_var ()) in
       let ios, first_input =
-        List.fold_right fields ~init:([], acc_ret_ty) ~f:(fun f (lst, acc) ->
+        List.fold_right fields ~init:([], acc_ret_ty) ~f:(fun _f (lst, acc) ->
           let x = Var (new_var ()) in
           (x, acc) :: lst, x
         )
@@ -595,8 +546,9 @@ module Fields = struct
         Arrow ("", first_input, Tuple [ creator ; acc_ret_ty ])
       in
       let lst =
-        List.map2 fields fields_dot_t ~f:(fun {pld_name; pld_type} fdt ->
-          (pld_name.Location.txt, pld_type, fdt)
+        List.map2 fields fields_dot_t ~f:(fun f fdt ->
+          let (name,_,ty,_) = Merlin_types_custom.Parsetree.inspect_label f in
+          (name.Location.txt, ty, fdt)
         )
       in
       let typesig =
@@ -614,8 +566,9 @@ module Fields = struct
 
     let create =
       let typesig =
-        List.fold_right fields ~init:self ~f:(fun {pld_name; pld_type} acc ->
-          Arrow (pld_name.Location.txt, Core_type pld_type, acc)
+        List.fold_right fields ~init:self ~f:(fun f acc ->
+          let (name, _, t, _) = Merlin_types_custom.Parsetree.inspect_label f in
+          Arrow (name.Location.txt, Core_type t, acc)
         )
       in
       Binding { ident = "create" ; typesig ; body }
@@ -638,7 +591,8 @@ module Fields = struct
     let map =
       let typesig =
         List.fold_right2 fields_dot_t fields ~init:self ~f:(
-          fun field_t {pld_type = ty} acc_ty ->
+          fun field_t f acc_ty ->
+            let (_, _, ty, _) = Merlin_types_custom.Parsetree.inspect_label f in
             let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
             Arrow (field_t.ident,
               Arrow ("", field_t.typesig, Core_type ty), acc_ty
@@ -665,7 +619,10 @@ module Fields = struct
     )
 
   let top_lvl ({ Location.txt = name },ty) =
-    let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
+    let params =
+      Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v)
+        ty.ptype_params
+    in
     let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_record lst ->
@@ -678,7 +635,10 @@ module Enumerate = struct
   let top_lvl ({ Location.txt = name },ty) =
     let ident = if name = "t" then "all" else "all_of_" ^ name in
     let typesig =
-      let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
+      let params =
+        Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v)
+          ty.ptype_params
+      in
       let param =
         Named (params, name)
       in
@@ -693,7 +653,10 @@ module Compare = struct
   let mk_simpl t = Arrow ("", t, Arrow ("", t, Named ([], "int")))
 
   let bindings ~kind ({ Location.txt = name },ty) =
-    let params = format_params ~f:(fun x -> Var x) ty.ptype_params in
+    let params =
+      Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v)
+        ty.ptype_params
+    in
     let self = Named (params, name) in
     let cmp = {
       ident = "compare_" ^ name;
@@ -809,7 +772,8 @@ end
 module Custom_printf = struct
 
   let bang loc_start loc_end expr = match expr with
-    | { pexp_desc = Pexp_constant (Asttypes.Const_string (str, None)) } ->
+    | { pexp_desc = Pexp_constant (Asttypes.Const_string _ as cs) } ->
+      let str = Merlin_types_custom.extract_const_string cs in
       let pexp_loc = {any_val'.pexp_loc with Location. loc_start; loc_end} in
       Some {any_val' with pexp_loc}
     | _ -> None

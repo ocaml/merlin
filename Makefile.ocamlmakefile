@@ -82,8 +82,8 @@ SOURCES = \
 	src/analysis/browse.ml            \
 	src/kernel/dot_merlin.mli         \
 	src/kernel/dot_merlin.ml          \
-	$(TYPER)/fake.mli                 \
-	$(TYPER)/fake.ml                  \
+	src/kernel/fake.mli               \
+	src/kernel/fake.ml                \
 	$(TYPER)/parsing/syntaxerr.mli    \
 	$(TYPER)/parsing/syntaxerr.ml     \
 	$(TYPER)/raw_parser.mli           \

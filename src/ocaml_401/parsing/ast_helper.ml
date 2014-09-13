@@ -20,6 +20,8 @@ type str = string loc
 type loc = Location.t
 type attrs = attribute list
 
+let rtag ?(attrs=[]) label bool lst = Rtag (label, bool, lst)
+
 let default_loc = ref Location.none
 
 let with_default_loc l f =
@@ -350,7 +352,8 @@ end
 
 module Val = struct
   let mk ?(loc = !default_loc) ?(attrs = []) ?(prim = []) name typ =
-    {
+    { Override.
+     pval_name = name;
      pval_type = typ;
      pval_loc = loc;
      pval_prim = prim;

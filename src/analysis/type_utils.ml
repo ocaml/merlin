@@ -25,8 +25,7 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
 let type_in_env ?keywords env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
-      Typemod.type_toplevel_phrase env
-        (Merlin_types_custom.mk_pstr_eval expression)
+      Typemod.type_toplevel_phrase env [Ast_helper.Str.eval expression]
     in
     (*let sg' = Typemod.simplify_signature sg in*)
     let open Typedtree in
@@ -55,7 +54,7 @@ let type_in_env ?keywords env ppf expr =
         false
 
       | Some e ->
-        begin match Merlin_types_custom.extract_specific_parsing_info e with
+        begin match Merlin_types_custom.Parsetree.extract_specific_parsing_info e with
         | `Ident longident ->
           begin
             try

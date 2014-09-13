@@ -1,6 +1,38 @@
 open Std
 open Misc
 
+let extract_const_string = function
+  | Asttypes.Const_string (str, _) -> str
+  | _ -> assert false
+
+module Parsetree = struct
+  open Parsetree
+
+  let format_params ~f params =
+    let format_param (param,_variance) =
+      match param.ptyp_desc with
+      | Ptyp_any -> f "_"
+      | Ptyp_var v -> f v
+      | _ -> assert false (*TODO*)
+    in
+    List.map format_param params
+
+  let extract_specific_parsing_info = function
+    | { pexp_desc = Pexp_ident longident } -> `Ident longident
+    | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
+    | _ -> `Other
+
+  let map_constructors ~f lst =
+    List.map lst ~f:(fun { pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } ->
+      f pcd_name.Location.txt pcd_args pcd_res pcd_loc
+    )
+
+  let args_of_constructor c = c.pcd_args
+
+  let inspect_label { pld_name ; pld_mutable ; pld_type ; pld_loc ; _ } =
+    pld_name, pld_mutable, pld_type, pld_loc
+end
+
 let signature_item_ident =
   let open Types in function
   | Sig_value (id, _)
@@ -208,18 +240,9 @@ let path_and_loc_of_cstr desc env =
     | _ -> assert false
 
 (* TODO: remove *)
-let mk_pstr_eval expression =
-  Parsetree.([{ pstr_desc = Pstr_eval (expression, []) ; pstr_loc = Location.none }])
-
 let dest_tstr_eval str =
   let open Typedtree in
   match str.str_items with
   | [ { str_desc = Tstr_eval (exp,[]) }] -> exp
   | _ -> failwith "unhandled expression"
 
-let extract_specific_parsing_info e =
-  let open Parsetree in
-  match e with
-  | { pexp_desc = Pexp_ident longident } -> `Ident longident
-  | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
-  | _ -> `Other
