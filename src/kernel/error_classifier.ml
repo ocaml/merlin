@@ -11,22 +11,27 @@ let loc t = t.loc
 
 let friendly_concat = function
   | [] -> ""
-  | [a] -> "`" ^ a ^ "'"
-  | [a; b] -> "`" ^ a ^ "' or `" ^ b ^ "'"
+  | [a] -> a
+  | [a; b] -> a ^ " or " ^ b
   | hd :: tl ->
-    "`" ^ String.concat "', `" tl ^ "' or `" ^ hd ^ "'"
+    String.concat ", " tl ^ " or " ^ hd
 
 let classify {explanation = {Ex. item; unclosed; expected}} =
   let inside = match item with
     | None -> ""
-    | Some (name, _) -> " inside `" ^ name ^ "'" in
+    | Some (name, _) -> " inside " ^ name in
   let after = match unclosed with
     | None -> ""
-    | Some (name, _) -> " after unclosed `" ^ name ^ "'" in
+    | Some (name, _) -> " after unclosed " ^ name in
+  let friendly_name cls =
+    match Raw_parser_values.friendly_name cls, cls with
+    | Some name, Raw_parser.CT_ _ -> Some ("`" ^ name ^ "'")
+    | Some name, Raw_parser.CN_ _ -> Some ("<" ^ name ^ ">")
+    | None, _ -> None in
   let expecting = match expected with
     | [] -> ""
     | classes ->
-      let names = List.filter_map ~f:Raw_parser_values.friendly_name classes in
+      let names = List.filter_map ~f:friendly_name classes in
       let names = match names with
         | [] -> List.map ~f:Raw_parser_values.string_of_class expected
         | names -> names in
