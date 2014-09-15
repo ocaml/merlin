@@ -82,11 +82,15 @@ let debug_spec =
   in
   "-debug",
   Arg.String f,
-  "<section>[,<log file path>] Activate logging for given sections.\n\
+  "<section>[:level][,<log file path>] Activate logging for given section.\n\
   \                            Available sections are :\n\
   \                              - protocol\n\
   \                              - locate\n\
-  \                              - completion"
+  \                              - completion\n\
+  \                            Available levels are :\n\
+  \                              - error\n\
+  \                              - info (default)\n\
+  \                              - debug"
 
 let timed_logs () = !set.timed_logs
 let timed_logs_spec t =
