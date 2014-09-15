@@ -7,7 +7,8 @@ let rec summarize node =
   match node.t_node with
   (*FIXME TODO*)
   | Pattern { pat_desc = Tpat_var (id,_) } ->
-    Some { Protocol. name = Ident.name id; kind = `Value; pos; children = [] }
+      Some { Protocol. outline_name = Ident.name id;
+                       outline_kind = `Value; pos; children = [] }
   (*| TypeDecl (i, ty_decl, kind) ->
     let children =
       let helper kind (id, loc) =

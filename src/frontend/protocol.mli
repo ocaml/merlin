@@ -10,15 +10,15 @@ type cursor_state = {
 type completion = {
   name: string;
   kind: [`Value|`Constructor|`Label|
-         `Module|`Modtype|`Type|`MethodCall];
+               `Module|`Modtype|`Type|`MethodCall];
   desc: string;
   info: string;
 }
 
 type outline = item list
 and item = {
-  name : string ;
-  kind : [`Value|`Constructor|`Label|`Module|`Modtype|`Type|`Exn] ;
+  outline_name : string ;
+  outline_kind : [`Value|`Constructor|`Label|`Module|`Modtype|`Type|`Exn] ;
   pos  : position ;
   children : outline ;
 }

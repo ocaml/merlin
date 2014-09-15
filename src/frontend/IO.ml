@@ -161,17 +161,17 @@ module Protocol_io = struct
     | `MethodCall  -> "#"
     | `Exn         -> "Exn"
 
-  let json_of_completion {Protocol. name; kind; desc; info} =
+  let json_of_completion { name; kind; desc; info} =
     `Assoc ["name", `String name;
             "kind", `String (string_of_kind kind);
             "desc", `String desc;
             "info", `String info]
 
   let rec json_of_outline outline =
-    let json_of_item {Protocol. name ; kind ; pos ; children } =
+    let json_of_item { outline_name ; outline_kind ; pos ; children } =
       `Assoc [
-        "name", `String name;
-        "kind", `String (string_of_kind kind);
+        "name", `String outline_name;
+        "kind", `String (string_of_kind outline_kind);
         "pos", Lexing.json_of_position pos;
         "children", `List (json_of_outline children);
       ]
