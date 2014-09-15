@@ -392,24 +392,29 @@ let dispatch (state : state) =
     Project.invalidate ~flush:true state.project
 
   | (Errors : a request) ->
-    let cmp (l1,_) (l2,_) =
-      Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
-    let err = Error_report.of_exns in
-    let err_lexer  = err (Buffer.lexer_errors state.buffer) in
-    let err_parser = err (Buffer.parser_errors state.buffer) in
-    let err_typer  = err (Typer.exns (Buffer.typer state.buffer)) in
-    (* Return parsing warnings & first parsing error,
-       or type errors if no parsing errors *)
-    let rec extract_warnings acc = function
-      | (_,{Error_report. where = "warning"; _ }) as err :: errs ->
-        extract_warnings (err :: acc) errs
-      | err :: _ ->
-        List.rev (err :: acc),
-        List.take_while ~f:(fun err' -> cmp err' err < 0) err_typer
-      | [] ->
-        List.rev acc, err_typer in
-    let err_parser, err_typer = extract_warnings [] err_parser in
-    List.(map ~f:snd (merge ~cmp err_lexer (merge ~cmp err_parser err_typer)))
+    begin try
+        let cmp (l1,_) (l2,_) =
+          Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
+        let err = Error_report.of_exns in
+        let err_lexer  = err (Buffer.lexer_errors state.buffer) in
+        let err_parser = err (Buffer.parser_errors state.buffer) in
+        let err_typer  = err (Typer.exns (Buffer.typer state.buffer)) in
+        (* Return parsing warnings & first parsing error,
+           or type errors if no parsing errors *)
+        let rec extract_warnings acc = function
+          | (_,{Error_report. where = "warning"; _ }) as err :: errs ->
+            extract_warnings (err :: acc) errs
+          | err :: _ ->
+            List.rev (err :: acc),
+            List.take_while ~f:(fun err' -> cmp err' err < 0) err_typer
+          | [] ->
+            List.rev acc, err_typer in
+        let err_parser, err_typer = extract_warnings [] err_parser in
+        List.(map ~f:snd (merge ~cmp err_lexer (merge ~cmp err_parser err_typer)))
+      with exn -> match Error_report.strict_of_exn exn with
+        | None -> raise exn
+        | Some (_loc, err) -> [err]
+    end
 
   | (Dump `Parser : a request) ->
     Merlin_recover.dump (Buffer.recover state.buffer);
