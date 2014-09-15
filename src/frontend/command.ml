@@ -117,16 +117,19 @@ let dispatch (state : state) =
     cursor_state state
 
   | (Type_expr (source, pos) : a request) ->
-    with_typer state @@ fun typer ->
-    let env = match pos with
-      | None -> Typer.env typer
-      | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
-    in
-    let ppf, to_string = Format.to_string () in
-    ignore (Type_utils.type_in_env env ppf source : bool);
-    to_string ()
+    with_typer state (
+      fun typer ->
+        let env = match pos with
+          | None -> Typer.env typer
+          | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
+        in
+        let ppf, to_string = Format.to_string () in
+        ignore (Type_utils.type_in_env env ppf source : bool);
+        to_string ()
+    )
 
   | (Type_enclosing (expro, pos) : a request) ->
+    let (@@) f x = f x in
     let open BrowseT in
     let open Typedtree in
     let open Override in
@@ -260,27 +263,33 @@ let dispatch (state : state) =
       (small_enclosings @ result)
 
   | (Enclosing pos : a request) ->
-    with_typer state @@ fun typer ->
-    let open BrowseT in
-    let structures = Typer.contents typer in
-    let structures = Browse.of_typer_contents structures in
-    let path = Browse.enclosing pos structures in
-    List.map (fun t -> t.BrowseT.t_loc) path
+    with_typer state (
+      fun typer ->
+        let open BrowseT in
+        let structures = Typer.contents typer in
+        let structures = Browse.of_typer_contents structures in
+        let path = Browse.enclosing pos structures in
+        List.map (fun t -> t.BrowseT.t_loc) path
+    )
 
   | (Complete_prefix (prefix, pos) : a request) ->
-    with_typer state @@ fun typer ->
-    let node = Completion.node_at typer pos in
-    let compl = Completion.node_complete state.buffer node prefix in
-    List.rev compl
+    with_typer state (
+      fun typer ->
+        let node = Completion.node_at typer pos in
+        let compl = Completion.node_complete state.buffer node prefix in
+        List.rev compl
+    )
 
   | (Locate (patho, opt_pos) : a request) ->
     let env, local_defs =
-      with_typer state @@ fun typer ->
-      match opt_pos with
-      | None     -> Typer.env typer, []
-      | Some pos ->
-        let node = Completion.node_at typer pos in
-        node.BrowseT.t_env, Typer.contents typer
+      with_typer state (
+        fun typer ->
+          match opt_pos with
+          | None     -> Typer.env typer, []
+          | Some pos ->
+            let node = Completion.node_at typer pos in
+            node.BrowseT.t_env, Typer.contents typer
+      )
     in
     let path = match patho, opt_pos with
       (* Wrong use *)
@@ -307,9 +316,10 @@ let dispatch (state : state) =
     end
 
   | (Outline : a request) ->
-    with_typer state @@ fun typer ->
-    let typed_tree = Typer.contents typer in
-    Outline.get typed_tree
+    with_typer state (fun typer ->
+      let typed_tree = Typer.contents typer in
+      Outline.get typed_tree
+    )
 
   | (Drop : a request) ->
     let lexer = Buffer.lexer state.buffer in
@@ -420,15 +430,17 @@ let dispatch (state : state) =
     Merlin_recover.dump (Buffer.recover state.buffer);
 
   | (Dump `Typer_input : a request) ->
-    with_typer state @@ fun typer ->
-    let ppf, to_string = Format.to_string () in
-    Typer.dump ppf typer;
-    `String (to_string ())
+    with_typer state (fun typer ->
+      let ppf, to_string = Format.to_string () in
+      Typer.dump ppf typer;
+      `String (to_string ())
+    )
 
   | (Dump `Recover : a request) ->
     Merlin_recover.dump_recoverable (Buffer.recover state.buffer);
 
   | (Dump (`Env (kind, pos)) : a request) ->
+    let (@@) f x = f x in
     with_typer state @@ fun typer ->
     let env = match pos with
       | None -> Typer.env typer
@@ -450,10 +462,11 @@ let dispatch (state : state) =
     `List (List.map ~f:aux sg)
 
   | (Dump `Browse : a request) ->
-    with_typer state @@ fun typer ->
-    let structures = Typer.contents typer in
-    let structures = Browse.of_typer_contents structures in
-    Browse_misc.dump_ts structures
+    with_typer state (fun typer ->
+      let structures = Typer.contents typer in
+      let structures = Browse.of_typer_contents structures in
+      Browse_misc.dump_ts structures
+    )
 
   | (Dump `Tokens : a request) ->
     let tokens = Buffer.lexer state.buffer in
@@ -556,6 +569,7 @@ let dispatch (state : state) =
     Project.User.reset state.project
 
   | (Occurrences (`Ident_at pos) : a request) ->
+    let (@@) f x = f x in
     with_typer state @@ fun typer ->
     let str = Typer.contents typer in
     let str = Browse.of_typer_contents str in

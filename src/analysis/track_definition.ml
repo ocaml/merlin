@@ -124,7 +124,7 @@ let rec check_item modules =
   let get_loc ~name item rest =
     try Some (List.assoc name (Merlin_types_custom.str_ident_locs item))
     with Not_found ->
-      match Merlin_types_custom.me_and_ids item with
+      match Merlin_types_custom.me_and_ids_of_include item with
       | Some (incl_mod, incl_type) when
         List.exists incl_type ~f:(fun x -> Ident.name x = name) ->
         debug_log "one more include to follow..." ;

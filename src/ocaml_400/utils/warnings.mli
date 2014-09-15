@@ -56,8 +56,6 @@ type t =
   | Unused_rec_flag                         (* 39 *)
 ;;
 
-val parse_options : bool -> string -> unit;;
-
 type set
 
 (* Manage set of flag *)
@@ -87,3 +85,6 @@ exception Errors of int;;
 val check_fatal : unit -> unit;;
 
 val help_warnings: unit -> unit
+
+(* Compute arguments specification *)
+val arg_spec : set -> (string * Arg.spec * string) list
