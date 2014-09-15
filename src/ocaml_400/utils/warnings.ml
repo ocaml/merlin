@@ -22,7 +22,7 @@
 type t =
   | Comment_start                           (*  1 *)
   | Comment_not_end                         (*  2 *)
-  | Deprecated                              (*  3 *)
+  | Deprecated of string                    (*  3 *)
   | Fragile_match of string                 (*  4 *)
   | Partial_application                     (*  5 *)
   | Labels_omitted                          (*  6 *)
@@ -70,7 +70,7 @@ type t =
 let number = function
   | Comment_start -> 1
   | Comment_not_end -> 2
-  | Deprecated -> 3
+  | Deprecated _ -> 3
   | Fragile_match _ -> 4
   | Partial_application -> 5
   | Labels_omitted -> 6
@@ -144,18 +144,33 @@ let letter = function
   | _ -> assert false
 ;;
 
-let active = Array.create (last_warning_number + 1) true;;
-let error = Array.create (last_warning_number + 1) false;;
+type set = bool array * bool array
 
-let is_active x = active.(number x);;
-let is_error x = error.(number x);;
-let set_active x v = active.(number x) <- v;;
-let set_error x v = error.(number x) <- v;;
+let fresh () =
+  let active = Array.create (last_warning_number + 1) true in
+  let error = Array.create (last_warning_number + 1) false in
+  active, error
+
+(* Manage set of flag *)
+let initial = fresh ()
+
+let copy (a,b) = (Array.copy a, Array.copy b)
+
+(* Current state *)
+let set = ref initial
+
+let active () = fst !set
+let error () = snd !set
+
+let is_active x = (active ()).(number x);;
+let is_error x = (error ()).(number x);;
+let set_active x v = (active ()).(number x) <- v;;
+let set_error x v = (error ()).(number x) <- v;;
 
 let parse_opt flags s =
   let set i = flags.(i) <- true in
   let clear i = flags.(i) <- false in
-  let set_all i = active.(i) <- true; error.(i) <- true in
+  let set_all i = (active ()).(i) <- true; (error ()).(i) <- true in
   let error () = raise (Arg.Bad "Ill-formed list of warnings") in
   let rec get_num n i =
     if i >= String.length s then i, n
@@ -203,7 +218,8 @@ let parse_opt flags s =
   loop 0
 ;;
 
-let parse_options errflag s = parse_opt (if errflag then error else active) s;;
+let parse_options errflag s =
+  parse_opt (if errflag then snd !set else fst !set) s;;
 
 (* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-6-7-9-27-29-32..39";;
@@ -215,7 +231,7 @@ let () = parse_options true defaults_warn_error;;
 let message = function
   | Comment_start -> "this is the start of a comment."
   | Comment_not_end -> "this is not the end of a comment."
-  | Deprecated -> "this syntax is deprecated."
+  | Deprecated s -> "deprecated feature: " ^ s
   | Fragile_match "" ->
       "this pattern-matching is fragile."
   | Fragile_match s ->
@@ -325,7 +341,7 @@ let print ppf w =
   Format.fprintf ppf "%d: %s" num msg;
   Format.pp_print_flush ppf ();
   Format.pp_set_all_formatter_output_functions ppf out flush newline space;
-  if error.(num) then incr nerrors;
+  if (error ()).(num) then incr nerrors;
   !newlines
 ;;
 
@@ -343,7 +359,7 @@ let descriptions =
   [
     1, "Suspicious-looking start-of-comment mark.";
     2, "Suspicious-looking end-of-comment mark.";
-    3, "Deprecated syntax.";
+    3, "Deprecated feature.";
     4, "Fragile pattern matching: matching that will remain complete even\n\
    \    if additional constructors are added to one of the variant types\n\
    \    matched.";

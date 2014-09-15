@@ -18,6 +18,7 @@ open Format
 
 type error =
     Unclosed of Location.t * string * Location.t * string
+  | Expecting of Location.t * string
   | Applicative_path of Location.t
   | Variable_in_scope of Location.t * string
   | Other of Location.t
@@ -26,3 +27,5 @@ exception Error of error
 exception Escape_error of Lexing.position
 
 val report_error: formatter -> error -> unit
+
+val location_of_error: error -> Location.t

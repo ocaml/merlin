@@ -72,7 +72,8 @@ let constructor_descrs ty_res cstrs priv =
               TypeSet.elements (TypeSet.diff arg_vars res_vars)
         in
         let cstr =
-          { cstr_res = ty_res;
+          { cstr_name = Ident.name name;
+            cstr_res = ty_res;
             cstr_existentials = existentials;
             cstr_args = ty_args;
             cstr_arity = List.length ty_args;
@@ -87,7 +88,8 @@ let constructor_descrs ty_res cstrs priv =
   describe_constructors 0 0 cstrs
 
 let exception_descr path_exc decl =
-  { cstr_res = Predef.type_exn;
+  { cstr_name = Path.last path_exc;
+    cstr_res = Predef.type_exn;
     cstr_existentials = [];
     cstr_args = decl.exn_args;
     cstr_arity = List.length decl.exn_args;

@@ -207,6 +207,6 @@ let fold warnings token t =
 
 let fold token t =
   let warnings = ref [] in
-  Parsing_aux.catch_warnings warnings @@ fun () ->
-  fold warnings token t
+  Parsing_aux.catch_warnings warnings
+    (fun () -> fold warnings token t)
 

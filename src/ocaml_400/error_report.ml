@@ -75,20 +75,21 @@ let strict_of_exn = function
       | Syntaxerr.Applicative_path loc -> loc
       | Syntaxerr.Variable_in_scope (loc,_) -> loc
       | Syntaxerr.Other loc -> loc
+      | Syntaxerr.Expecting (loc,_) -> loc
     in
     Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
-  | Lexer.Error (e, loc) ->
-    let ppf, to_string = Format.to_string () in
-    Lexer.report_error ppf e;
-    Some (format ~valid:true ~where:"warning" ~loc (to_string ()))
-  | Merlin_parsing.Warning (loc, msg) ->
+  | Parsing_aux.Warning (loc, msg) ->
     Some (format ~valid:true ~where:"warning" ~loc msg)
-  | Chunk_parser.Error ->
+  | Raw_parser.Error ->
     Some (format ~valid:false ~where:"parser" "Parse error")
   | Findlib.No_such_package (pkg,msg) ->
     Some (format ~valid:true ~where:"env" (Printf.sprintf "Package not found %S (%s)" pkg msg))
-  | Outline.Malformed_module (_,loc) ->
-    Some (format ~valid:true ~where:"parser" ~loc "Malformed module")
+  (*| Outline.Malformed_module (_,loc) ->
+    Some (format ~valid:true ~where:"parser" ~loc "Malformed module")*)
+  | Error_classifier.Error c ->
+    let loc = Error_classifier.loc c in
+    let msg = Error_classifier.classify c in
+    Some (format ~valid:true ~where:"parser" ~loc msg)
   | exn -> None
 
 let null_loc =

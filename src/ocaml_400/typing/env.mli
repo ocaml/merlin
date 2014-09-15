@@ -136,10 +136,6 @@ val crc_of_unit: string -> Digest.t
 
 val imported_units: unit -> (string * Digest.t) list
 
-(* Direct access to the table of imported compilation units with their CRC *)
-
-val crc_units: Consistbl.t
-
 (* Summaries -- compact representation of an environment, to be
    exported in debugging information. *)
 
@@ -220,3 +216,11 @@ val fold_classs:
 val fold_cltypes:
   (string -> Path.t -> Types.class_type_declaration -> 'a -> 'a) ->
   Longident.t option -> t -> 'a -> 'a
+
+
+(** merlin: manage all internal state *)
+
+type cache
+
+val new_cache : unit_name:string -> cache
+val cache : cache ref

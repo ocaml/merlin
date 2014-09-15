@@ -1480,21 +1480,21 @@ let rec type_exp env sexp =
 
 and type_expect ?in_function env sexp ty_expected =
   let open Std in
-  if ~!Merlin_types.relax_typer
+  if ~!Typing_aux.relax_typer
   then type_relax ?in_function env sexp ty_expected
   else 
     let snap = Btype.snapshot () in
     try type_expect_ ?in_function env sexp ty_expected
     with (Typetexp.Error _ | Error _) ->
       Btype.backtrack snap;
-      Fluid.let' Merlin_types.relax_typer true
+      Fluid.let' Typing_aux.relax_typer true
         (fun () -> type_relax ?in_function env sexp ty_expected)
 
 and type_relax ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in
   let failwith_exn ~exn exp_desc =
-    Merlin_types.erroneous_type_register ty_expected;
-    Merlin_types.raise_error exn;
+    Typing_aux.erroneous_type_register ty_expected;
+    Typing_aux.raise_error exn;
     { exp_desc; exp_loc = loc;
       exp_extra = [];
       exp_type = ty_expected;
@@ -1534,8 +1534,8 @@ and type_expect_ ?in_function env sexp ty_expected =
       unify_exp env exp (instance env ty_expected);
       exp
     with (Typetexp.Error _ | Error _) as exn ->
-      Merlin_types.erroneous_type_register ty_expected;
-      Merlin_types.raise_error exn;
+      Typing_aux.erroneous_type_register ty_expected;
+      Typing_aux.raise_error exn;
       {
         (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
         exp_desc = Texp_tuple [exp];
@@ -1548,7 +1548,7 @@ and type_expect_ ?in_function env sexp ty_expected =
   match sexp.pexp_desc with
   | Pexp_ident lid ->
       begin
-        if !Clflags.annotations then begin
+        if Clflags.annotations () then begin
           try let (path, annot) = Env.lookup_annot lid.txt env in
               Stypes.record
                 (Stypes.An_ident (
@@ -1666,7 +1666,7 @@ and type_expect_ ?in_function env sexp ty_expected =
         match in_function with Some p -> p
         | None -> (loc, instance env ty_expected)
       in
-      let separate = !Clflags.principal || Env.has_local_constraints env in
+      let separate = Clflags.principal () || Env.has_local_constraints env in
       if separate then begin_def ();
       let (ty_arg, ty_res) =
         try filter_arrow env (instance env ty_expected) l
@@ -1710,9 +1710,9 @@ and type_expect_ ?in_function env sexp ty_expected =
         exp_env = env }
   | Pexp_apply(sfunct, sargs) ->
       begin_def (); (* one more level for non-returning functions *)
-      if !Clflags.principal then begin_def ();
+      if Clflags.principal () then begin_def ();
       let funct = type_exp env sfunct in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
           end_def ();
           generalize_structure funct.exp_type
         end;
@@ -1823,7 +1823,7 @@ and type_expect_ ?in_function env sexp ty_expected =
         match opt_sexp, lbl_exp_list with
           None, _ -> None
         | Some sexp, (_, _, lbl, _) :: _ ->
-            if !Clflags.principal then begin_def ();
+            if Clflags.principal () then begin_def ();
             let ty_exp = newvar () in
             let unify_kept lbl =
               if List.for_all
@@ -1837,7 +1837,7 @@ and type_expect_ ?in_function env sexp ty_expected =
                 unify env ty_arg1 ty_arg2
               end in
             Array.iter unify_kept lbl.lbl_all;
-            if !Clflags.principal then begin
+            if Clflags.principal () then begin
               end_def ();
               generalize_structure ty_exp
             end;
@@ -2062,7 +2062,7 @@ and type_expect_ ?in_function env sexp ty_expected =
         exp_type = body.exp_type;
         exp_env = env }
   | Pexp_send (e, met) ->
-      if !Clflags.principal then begin_def ();
+      if Clflags.principal () then begin_def ();
       let obj = type_exp env e in
       begin try
         let (meth, exp, typ) =
@@ -2121,7 +2121,7 @@ and type_expect_ ?in_function env sexp ty_expected =
               (Tmeth_name met, None,
                filter_method env met Public obj.exp_type)
         in
-        if !Clflags.principal then begin
+        if Clflags.principal () then begin
           end_def ();
           generalize_structure typ;
         end;
@@ -2130,7 +2130,7 @@ and type_expect_ ?in_function env sexp ty_expected =
             {desc = Tpoly (ty, [])} ->
               instance env ty
           | {desc = Tpoly (ty, tl); level = l} ->
-              if !Clflags.principal && l <> generic_level then
+              if Clflags.principal () && l <> generic_level then
                 Location.prerr_warning loc
                   (Warnings.Not_principal "this use of a polymorphic method");
               snd (instance_poly false tl ty)
@@ -2149,7 +2149,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_type = typ;
           exp_env = env }
       with Unify _ ->
-        Merlin_types.raise_error (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
+        Typing_aux.raise_error (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
         rue {
           exp_desc = Texp_send(obj, Tmeth_name met, None);
           exp_loc = loc; exp_extra = [];
@@ -2291,14 +2291,14 @@ and type_expect_ ?in_function env sexp ty_expected =
         exp_env = env;
       }
   | Pexp_poly(sbody, sty) ->
-      if !Clflags.principal then begin_def ();
+      if Clflags.principal () then begin_def ();
       let ty, cty =
         match sty with None -> repr ty_expected, None
         | Some sty ->
             let cty = Typetexp.transl_simple_type env false sty in
             repr cty.ctyp_type, Some cty
       in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
         end_def ();
         generalize_structure ty
       end;
@@ -2312,9 +2312,9 @@ and type_expect_ ?in_function env sexp ty_expected =
         | Tpoly (ty', tl) ->
             (* One more level to generalize locally *)
             begin_def ();
-            if !Clflags.principal then begin_def ();
+            if Clflags.principal () then begin_def ();
             let vars, ty'' = instance_poly true tl ty' in
-            if !Clflags.principal then begin
+            if Clflags.principal () then begin
               end_def ();
               generalize_structure ty''
             end;
@@ -2379,7 +2379,7 @@ and type_expect_ ?in_function env sexp ty_expected =
       let (p, nl, tl) =
         match Ctype.expand_head env (instance env ty_expected) with
           {desc = Tpackage (p, nl, tl)} ->
-            if !Clflags.principal &&
+            if Clflags.principal () &&
               (Ctype.expand_head env ty_expected).level < Btype.generic_level
             then
               Location.prerr_warning loc
@@ -2407,7 +2407,7 @@ and type_label_exp create env loc ty_expected
           (label_path, lid, label, sarg) =
   (* Here also ty_expected may be at generic_level *)
   begin_def ();
-  let separate = !Clflags.principal || Env.has_local_constraints env in
+  let separate = Clflags.principal () || Env.has_local_constraints env in
   if separate then (begin_def (); begin_def ());
   let (vars, ty_arg, ty_res) = instance_label true label in
   if separate then begin
@@ -2472,9 +2472,9 @@ and type_argument env sarg ty_expected' ty_expected =
     {desc = Tarrow("",ty_arg,ty_res,_); level = lv} when is_inferred sarg ->
       (* apply optional arguments when expected type is "" *)
       (* we must be very careful about not breaking the semantics *)
-      if !Clflags.principal then begin_def ();
+      if Clflags.principal () then begin_def ();
       let texp = type_exp env sarg in
-      if !Clflags.principal then begin
+      if Clflags.principal () then begin
         end_def ();
         generalize_structure texp.exp_type
       end;
@@ -2485,13 +2485,13 @@ and type_argument env sarg ty_expected' ty_expected =
               ((Some(option_none (instance env ty_arg) sarg.pexp_loc), Optional)
                :: args)
               ty_fun
-        | Tarrow (l,_,ty_res',_) when l = "" || !Clflags.classic ->
+        | Tarrow (l,_,ty_res',_) when l = "" || Clflags.classic () ->
             args, ty_fun, no_labels ty_res'
         | Tvar _ ->  args, ty_fun, false
         |  _ -> [], texp.exp_type, false
       in
       let args, ty_fun', simple_res = make_args [] texp.exp_type in
-      let warn = !Clflags.principal &&
+      let warn = Clflags.principal () &&
         (lv <> generic_level || (repr ty_fun').level <> generic_level)
       and texp = {texp with exp_type = instance env texp.exp_type}
       and ty_fun = instance env ty_fun' in
@@ -2571,12 +2571,12 @@ and type_application env funct sargs =
                 | _ -> true
               in
               if ty_fun.level >= t1.level && not_identity funct.exp_desc
-                 && not (Merlin_types.erroneous_expr_check funct) then
+                 && not (Typing_aux.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
           | Tarrow (l,t1,t2,_) when l = l1
-            || !Clflags.classic && l1 = "" && not (is_optional l) ->
+            || Clflags.classic () && l1 = "" && not (is_optional l) ->
               (t1, t2)
           | td ->
               let ty_fun =
@@ -2584,7 +2584,7 @@ and type_application env funct sargs =
               let ty_res = result_type (omitted @ !ignored) ty_fun in
               match ty_res.desc with
                 Tarrow _ ->
-                  if (!Clflags.classic || not (has_label l1 ty_fun)) then
+                  if (Clflags.classic () || not (has_label l1 ty_fun)) then
                     raise (Error(sarg1.pexp_loc, env,
                                  Apply_wrong_label(l1, ty_res)))
                   else
@@ -2603,7 +2603,7 @@ and type_application env funct sargs =
         type_unknown_args ((l1, Some arg1, optional) :: args) omitted ty2 sargl
   in
   let ignore_labels =
-    !Clflags.classic ||
+    Clflags.classic () ||
     begin
       let ls, tvar = list_labels env funct.exp_type in
       not tvar &&
@@ -2622,7 +2622,7 @@ and type_application env funct sargs =
       {desc=Tarrow (_, ty0, ty_fun0, _)}
       when (sargs <> [] || more_sargs <> []) && commu_repr com = Cok ->
         let may_warn loc w =
-          if not !warned && !Clflags.principal && lv <> generic_level
+          if not !warned && Clflags.principal () && lv <> generic_level
           then begin
             warned := true;
             Location.prerr_warning loc w
@@ -2734,7 +2734,7 @@ and type_construct env loc lid sarg explicit_arity ty_expected =
   if List.length sargs <> constr.cstr_arity then
     raise(Error(loc, env, Constructor_arity_mismatch
                   (lid.txt, constr.cstr_arity, List.length sargs)));
-  let separate = !Clflags.principal || Env.has_local_constraints env in
+  let separate = Clflags.principal () || Env.has_local_constraints env in
   if separate then (begin_def (); begin_def ());
   let (ty_args, ty_res) = instance_constructor constr in
   let texp =
@@ -2773,7 +2773,7 @@ and type_statement env sexp =
   begin_def();
   let exp = type_exp env sexp in
   end_def();
-  if !Clflags.strict_sequence then
+  if Clflags.strict_sequence () then
     let expected_ty = instance_def Predef.type_unit in
     unify_exp env exp expected_ty;
     exp else
@@ -2783,7 +2783,7 @@ and type_statement env sexp =
       Location.prerr_warning loc Warnings.Partial_application
   | Tconstr (p, _, _) when Path.same p Predef.path_unit -> ()
   | Tvar _ when ty.level > tv.level
-             && not (Merlin_types.erroneous_expr_check exp) ->
+             && not (Typing_aux.erroneous_expr_check exp) ->
       Location.prerr_warning loc Warnings.Nonreturning_statement
   | Tvar _ ->
       add_delayed_check (fun () -> check_application_result env true exp)
@@ -2803,7 +2803,7 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
     List.exists (contains_gadt env) patterns in
 (*  prerr_endline ( if has_gadts then "contains gadt" else "no gadt"); *)
   let ty_arg, ty_res, env =
-    if has_gadts && not !Clflags.principal then
+    if has_gadts && not (Clflags.principal ()) then
       correct_levels ty_arg, correct_levels ty_res,
       duplicate_ident_types loc caselist env
     else ty_arg, ty_res, env in
@@ -2828,18 +2828,18 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
     List.map
       (fun (spat, sexp) ->
         let loc = sexp.pexp_loc in
-        if !Clflags.principal then begin_def (); (* propagation of pattern *)
+        if Clflags.principal () then begin_def (); (* propagation of pattern *)
         let scope = Some (Annot.Idef loc) in
         let (pat, ext_env, force, unpacks) =
           let partial =
-            if !Clflags.principal then Some false else None in
+            if Clflags.principal () then Some false else None in
           let ty_arg =
             if dont_propagate then newvar () else instance ?partial env ty_arg
           in type_pattern ~lev env spat scope ty_arg
         in
         pattern_force := force @ !pattern_force;
         let pat =
-          if !Clflags.principal then begin
+          if Clflags.principal () then begin
             end_def ();
             iter_pattern (fun {pat_type=t} -> generalize_structure t) pat;
             { pat with pat_type = instance env pat.pat_type }
@@ -2870,7 +2870,7 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
       (fun (pat, (ext_env, unpacks)) (spat, sexp) ->
         let sexp = wrap_unpacks sexp unpacks in
         let ty_res' =
-          if !Clflags.principal then begin
+          if Clflags.principal () then begin
             begin_def ();
             let ty = instance ~partial:true env ty_res in
             end_def ();
@@ -2884,7 +2884,7 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
         (pat, {exp with exp_type = instance env ty_res'}))
       pat_env_list caselist
   in
-  if !Clflags.principal || has_gadts then begin
+  if Clflags.principal () || has_gadts then begin
     let ty_res' = instance env ty_res in
     List.iter (fun (_,exp) -> unify_exp env exp ty_res') cases
   end;
@@ -2908,7 +2908,7 @@ and type_let ?(check = fun s -> Warnings.Unused_var s)
              ?(check_strict = fun s -> Warnings.Unused_var_strict s)
     env rec_flag spat_sexp_list scope allow =
   begin_def();
-  if !Clflags.principal then begin_def ();
+  if Clflags.principal () then begin_def ();
 
   let is_fake_let =
     match spat_sexp_list with
@@ -2926,7 +2926,7 @@ and type_let ?(check = fun s -> Warnings.Unused_var s)
         match spat.ppat_desc, sexp.pexp_desc with
           (Ppat_any | Ppat_constraint _), _ -> spat
         | _, Pexp_constraint (_, _, Some sty)
-        | _, Pexp_constraint (_, Some sty, None) when !Clflags.principal ->
+        | _, Pexp_constraint (_, Some sty, None) when Clflags.principal () ->
             (* propagate type annotation to pattern,
                to allow it to be generalized in -principal mode *)
             {ppat_desc = Ppat_constraint (spat, sty);
@@ -2959,7 +2959,7 @@ and type_let ?(check = fun s -> Warnings.Unused_var s)
     pat_list;
   (* Generalize the structure *)
   let pat_list =
-    if !Clflags.principal then begin
+    if Clflags.principal () then begin
       end_def ();
       List.map
         (fun pat ->
@@ -3043,9 +3043,9 @@ and type_let ?(check = fun s -> Warnings.Unused_var s)
         match pat.pat_type.desc with
         | Tpoly (ty, tl) ->
             begin_def ();
-            if !Clflags.principal then begin_def ();
+            if Clflags.principal () then begin_def ();
             let vars, ty' = instance_poly ~keep_names:true true tl ty in
-            if !Clflags.principal then begin
+            if Clflags.principal () then begin
               end_def ();
               generalize_structure ty'
             end;

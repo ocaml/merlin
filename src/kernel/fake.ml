@@ -773,7 +773,7 @@ module Custom_printf = struct
 
   let bang loc_start loc_end expr = match expr with
     | { pexp_desc = Pexp_constant (Asttypes.Const_string _ as cs) } ->
-      let str = Merlin_types_custom.extract_const_string cs in
+      let _str = Merlin_types_custom.extract_const_string cs in
       let pexp_loc = {any_val'.pexp_loc with Location. loc_start; loc_end} in
       Some {any_val' with pexp_loc}
     | _ -> None

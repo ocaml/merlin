@@ -61,8 +61,8 @@ module P = struct
           sg.Typedtree.sig_final_env, `Sg sg :: t.contents
         | `fake str ->
           let structure,_,_ =
-            Parsing_aux.catch_warnings (ref []) @@ fun () ->
-            Typemod.type_structure t.env [str] loc
+            Parsing_aux.catch_warnings (ref [])
+              (fun () -> Typemod.type_structure t.env [str] loc)
           in
           let browse =
             BrowseT.of_node ~loc ~env:t.env (BrowseT.Structure structure)
@@ -147,9 +147,9 @@ let protect_typer ~btype ~env f =
 let fresh ~unit_name ~stamp extensions =
   let btype_cache = Btype.new_cache () in
   let env_cache = Env.new_cache ~unit_name in
-  let result = protect_typer ~btype:btype_cache ~env:env_cache @@ fun exns ->
-    Either.try' @@ fun () ->
-    I.empty (extensions,exns)
+  let result = protect_typer ~btype:btype_cache ~env:env_cache (fun exns ->
+    Either.try' (fun () -> I.empty (extensions,exns))
+  )
   in
   {
     stamp;
@@ -162,10 +162,12 @@ let get_value = I.value
 
 let update parser t =
   let result =
-    protect_typer ~btype:t.btype_cache ~env:t.env_cache @@ fun exns ->
-    Either.try' @@ fun () ->
-    let state = (t.extensions,exns) in
-    I.update' state parser (get_incremental state t.typer)
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache (fun exns ->
+    Either.try' (fun () ->
+      let state = (t.extensions,exns) in
+      I.update' state parser (get_incremental state t.typer)
+    )
+  )
   in
   {t with typer = Either.get result}
 
@@ -177,8 +179,8 @@ let extensions t = t.extensions
 let is_valid t =
   !(t.stamp) &&
   match
-    protect_typer ~btype:t.btype_cache ~env:t.env_cache @@ fun _ ->
-    Either.try' Env.check_cache_consistency
+    protect_typer ~btype:t.btype_cache ~env:t.env_cache
+      (fun _ -> Either.try' Env.check_cache_consistency)
   with
   | Either.L _exn -> false
   | Either.R result -> result
@@ -190,6 +192,6 @@ let dump ppf t =
   List.iter (Raw_typer.dump ppf) ts
 
 let with_typer t f =
-  Fluid.let' fluid_btype t.btype_cache @@ fun () ->
-  Fluid.let' fluid_env t.env_cache @@ fun () ->
-  f t
+  Fluid.let' fluid_btype t.btype_cache (fun () ->
+  Fluid.let' fluid_env t.env_cache (fun () ->
+  f t))

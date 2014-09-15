@@ -257,7 +257,7 @@ let rec path_size = function
       (l + fst (path_size p2), b)
 
 let set_printing_env env =
-  if not !Clflags.real_paths && env != !printing_env then begin
+  if not (Clflags.real_paths ()) && env != !printing_env then begin
     (* printf "Reset printing_map@."; *)
     printing_env := env;
     printing_map := lazy begin
@@ -288,7 +288,7 @@ let wrap_printing_env env f =
 let curr_printing_env () = !printing_env
 
 let best_type_path p =
-  if !Clflags.real_paths || !printing_env == Env.empty
+  if Clflags.real_paths () || !printing_env == Env.empty
   then (p, Id)
   else
     let (p', s) = normalize_type_path !printing_env p in
@@ -750,7 +750,8 @@ let rec tree_of_type_decl id decl =
     | None -> ty1
     | Some ty ->
       Std.Fluid.(
-        let' (from_ref Clflags.real_paths) true
+        let fluid = from_ref Clflags.set in
+        let' fluid { (get fluid) with Clflags.real_paths = true }
           (fun () -> Otyp_manifest (tree_of_typexp false ty, ty1))
       )
   in
@@ -763,7 +764,8 @@ let rec tree_of_type_decl id decl =
         | None -> (Otyp_abstract, Public)
         | Some ty ->
           Std.Fluid.(
-            let' (from_ref Clflags.real_paths) true
+            let fluid = from_ref Clflags.set in
+            let' fluid { (get fluid) with Clflags.real_paths = true }
               (fun () -> tree_of_typexp false ty, decl.type_private)
           )
         end
@@ -1261,7 +1263,7 @@ let unification_error unif tr txt1 ppf txt2 =
       let tr = filter_trace tr in
       let t1, t1' = may_prepare_expansion (tr = []) t1
       and t2, t2' = may_prepare_expansion (tr = []) t2 in
-      print_labels := not !Clflags.classic;
+      print_labels := not (Clflags.classic ());
       let tr = List.map prepare_expansion tr in
       fprintf ppf
         "@[<v>\
@@ -1284,7 +1286,7 @@ let report_unification_error ppf ?(env = !printing_env) ?(unif=true)
 ;;
 
 let trace fst txt ppf tr =
-  print_labels := not !Clflags.classic;
+  print_labels := not (Clflags.classic ());
   trace_same_names tr;
   try match tr with
     t1 :: t2 :: tr' ->

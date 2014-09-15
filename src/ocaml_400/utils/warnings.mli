@@ -17,7 +17,7 @@ open Format
 type t =
   | Comment_start                           (*  1 *)
   | Comment_not_end                         (*  2 *)
-  | Deprecated                              (*  3 *)
+  | Deprecated of string                    (*  3 *)
   | Fragile_match of string                 (*  4 *)
   | Partial_application                     (*  5 *)
   | Labels_omitted                          (*  6 *)
@@ -57,6 +57,18 @@ type t =
 ;;
 
 val parse_options : bool -> string -> unit;;
+
+type set
+
+(* Manage set of flag *)
+val initial : set
+
+val fresh : unit -> set
+val copy : set -> set
+
+(* Current state *)
+val set : set ref
+
 
 val is_active : t -> bool;;
 val is_error : t -> bool;;

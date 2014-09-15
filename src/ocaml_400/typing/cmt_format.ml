@@ -967,9 +967,9 @@ let get_saved_types () = !saved_types
 let set_saved_types l = () (*saved_types := l*)
 
 let save_cmt filename modname binary_annots sourcefile initial_env sg =
-  if !Clflags.binary_annotations
-    && not !Clflags.print_types
-    && not !Clflags.dont_write_files
+  if Clflags.binary_annotations ()
+    && not (Clflags.print_types ())
+    && not (Clflags.dont_write_files ())
   then begin
     let imports = Env.imported_units () in
     let oc = open_out_bin filename in
@@ -981,7 +981,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env sg =
             cmi_name = modname;
             cmi_sign = sg;
             cmi_flags =
-            if !Clflags.recursive_types then [Cmi_format.Rectypes] else [];
+            if Clflags.recursive_types () then [Cmi_format.Rectypes] else [];
             cmi_crcs = imports;
           } in
           Some (output_cmi filename oc cmi)

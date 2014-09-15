@@ -70,50 +70,51 @@ let position t = Lexing.immediate_pos t.lexbuf
 
 let feed t str =
   let warnings = ref (fst (History.focused t.history)) in
-  Parsing_aux.catch_warnings warnings @@ fun () ->
-  if not t.lexbuf.Lexing.lex_eof_reached then begin
-    t.refill := Some str;
-    let append item =
-      t.history <- History.insert (!warnings, item) t.history
-    in
-    let rec aux = function
-      (* Lexer interrupted, there is data to refill: continue. *)
-      | Raw_lexer.Refill f
-        when !(t.refill) <> None || not !(t.refill_empty) ->
-        aux (f ())
-      (* Lexer interrupted, nothing to refill, return to caller. *)
-      | Raw_lexer.Refill r ->
-        t.resume <- Some r
-      (* EOF Reached: notify EOF to parser, stop now *)
-      | Raw_lexer.Return Raw_parser.EOF ->
-        begin match History.focused t.history with
-          | _, Valid (_,Raw_parser.EOF,_) -> ()
-          | _ ->
-            append (Valid (t.lexbuf.Lexing.lex_start_p,
-                           Raw_parser.EOF,
-                           t.lexbuf.Lexing.lex_curr_p));
-        end
-      | Raw_lexer.Return token ->
-        append (Valid (t.lexbuf.Lexing.lex_start_p,
-                       token,
-                       t.lexbuf.Lexing.lex_curr_p));
-        continue ()
-      | Raw_lexer.Error (e,l) ->
-        append (Error (e,l));
-        continue ()
-    and continue () =
-      aux (Raw_lexer.token t.state t.lexbuf)
-    in
-    begin match t.resume with
-      | Some f ->
-        t.resume <- None;
-        aux (f ())
-      | None -> continue ()
-    end;
-    true
-  end
-  else
-    false
+  Parsing_aux.catch_warnings warnings (fun () ->
+    if not t.lexbuf.Lexing.lex_eof_reached then begin
+      t.refill := Some str;
+      let append item =
+        t.history <- History.insert (!warnings, item) t.history
+      in
+      let rec aux = function
+        (* Lexer interrupted, there is data to refill: continue. *)
+        | Raw_lexer.Refill f
+          when !(t.refill) <> None || not !(t.refill_empty) ->
+          aux (f ())
+        (* Lexer interrupted, nothing to refill, return to caller. *)
+        | Raw_lexer.Refill r ->
+          t.resume <- Some r
+        (* EOF Reached: notify EOF to parser, stop now *)
+        | Raw_lexer.Return Raw_parser.EOF ->
+          begin match History.focused t.history with
+            | _, Valid (_,Raw_parser.EOF,_) -> ()
+            | _ ->
+              append (Valid (t.lexbuf.Lexing.lex_start_p,
+                            Raw_parser.EOF,
+                            t.lexbuf.Lexing.lex_curr_p));
+          end
+        | Raw_lexer.Return token ->
+          append (Valid (t.lexbuf.Lexing.lex_start_p,
+                        token,
+                        t.lexbuf.Lexing.lex_curr_p));
+          continue ()
+        | Raw_lexer.Error (e,l) ->
+          append (Error (e,l));
+          continue ()
+      and continue () =
+        aux (Raw_lexer.token t.state t.lexbuf)
+      in
+      begin match t.resume with
+        | Some f ->
+          t.resume <- None;
+          aux (f ())
+        | None -> continue ()
+      end;
+      true
+    end
+    else
+      false
+  )
 
 
 let eof t = t.lexbuf.Lexing.lex_eof_reached
