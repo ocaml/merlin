@@ -16,3 +16,6 @@ _tags
 _build/
 src/config/myocamlbuild_config.ml
 ocamlmerlin.native
+
+# Ignore garbage files from editors
+*.un~
