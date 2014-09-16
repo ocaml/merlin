@@ -218,7 +218,9 @@ end = struct
   end
 
   let update_flags prj =
-    let spec = Clflags.arg_spec prj.flags in
+    let cl = Clflags.arg_spec prj.flags in
+    let w  = Warnings.arg_spec prj.warnings in
+    let spec = cl @ w in
     let process_flags flags =
       try Arg.parse_argv ~current:(ref (-1)) (Array.of_list flags) spec
           (fun name ->
@@ -232,7 +234,8 @@ end = struct
     in
     List.iter process_flags prj.dot_config.cfg_flags;
     List.iter process_flags prj.user_config.cfg_flags;
-    Clflags.set := prj.flags
+    Clflags.set := prj.flags ;
+    Warnings.set := prj.warnings
 
   let set_dot_merlin project dm =
     let module Dm = Dot_merlin in
