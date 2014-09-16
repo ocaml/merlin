@@ -215,6 +215,13 @@ module List = struct
     | x1 :: x1s, _ ->
       x1 :: merge ~cmp x1s l2
 
+  let rec uniq ~cmp = function
+    | x1 :: (x2 :: _ as xs) when cmp x1 x2 = 0 -> uniq ~cmp xs
+    | x :: xs  -> x :: uniq ~cmp xs
+    | [] -> []
+
+  let sort_uniq ~cmp l =
+    uniq ~cmp (sort ~cmp l)
 end
 
 module Option = struct
