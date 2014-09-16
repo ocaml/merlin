@@ -2514,6 +2514,9 @@ structure_item:
       let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $5 in
       mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec ty)) @ ast
     }
+| EXCEPTION @{`Item "exception"}
+  str_exception_declaration WITH with_extensions
+    { mkstr $startpos $endpos (Pstr_exception $2) }
 | OUNIT_TEST option(STRING) EQUAL seq_expr
     { let expr = Fake.app Fake.OUnit.force_bool $4 in
       mkstr $startpos $endpos (Pstr_eval (expr,[]))
@@ -2571,6 +2574,9 @@ signature_item:
       List.rev_append decls (mksig $startpos $endpos
             (Psig_type(List.rev_map tag_nonrec ty)))
     }
+| EXCEPTION @{`Item "exception"}
+  sig_exception_declaration WITH with_extensions
+    { mksig $startpos $endpos (Psig_exception $2) }
 
 with_extensions:
 | LIDENT COMMA with_extensions { $1 :: $3 }
