@@ -137,8 +137,6 @@ let () =
   at_exit Logger.shutdown;
   (* Setup signals *)
   ignore (signal Sys.Signal_ignore);
-  (* Disable warnings by default *)
-  Location.prerr_warning_ref := (fun _ _ -> ());
   (* Select frontend *)
   Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
   (* Run! *)
