@@ -101,14 +101,4 @@ let of_exn exn = match strict_of_exn exn with
   | None -> format ~valid:false ~where:"unknown" ~loc:null_loc
               (Printexc.to_string exn)
 
-let strict_of_exns list =
-  List.sort (fun (l1,_) (l2,_) ->
-      Location.(Lexing.compare_pos l1.loc_start l2.loc_start))
-    (List.filter_map strict_of_exn list)
-
-let of_exns list =
-  List.sort (fun (l1,_) (l2,_) ->
-      Location.(Lexing.compare_pos l1.loc_start l2.loc_start))
-    (List.map of_exn list)
-
 let error_catcher = strict_of_exn

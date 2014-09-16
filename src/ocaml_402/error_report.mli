@@ -42,10 +42,8 @@ type t = {valid: bool; loc: Location.t; text: string; where:string}
 
 (* Ignore unknown exceptions *)
 val strict_of_exn  : exn -> (Location.t * t) option
-val strict_of_exns : exn list -> (Location.t * t) list
 
 (* Generic handling of unknown exceptions *)
 val of_exn : exn -> Location.t * t
-val of_exns : exn list -> (Location.t * t) list
 
 val error_catcher : exn -> (Location.t * t) option

@@ -405,7 +405,10 @@ let dispatch (state : state) =
     begin try
         let cmp (l1,_) (l2,_) =
           Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
-        let err = Error_report.of_exns in
+        let err exns =
+          let cmp (l1,_) (l2,_) =
+            Location.(Lexing.compare_pos l1.loc_start l2.loc_start) in
+          List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns) in
         let err_lexer  = err (Buffer.lexer_errors state.buffer) in
         let err_parser = err (Buffer.parser_errors state.buffer) in
         let err_typer  = err (Typer.exns (Buffer.typer state.buffer)) in
