@@ -10,7 +10,7 @@ let raise_warning exn =
 
 let prerr_warning loc w =
   match ~!warnings with
-  | None -> Location.print_warning loc Format.err_formatter w
+  | None -> () (*Location.print_warning loc Format.err_formatter w*)
   | Some l ->
     let ppf, to_string = Format.to_string () in
     Location.print_warning loc ppf w;
