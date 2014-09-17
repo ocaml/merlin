@@ -1002,6 +1002,11 @@ let is_ident =
     | UIDENT s | LIDENT s -> Some s
     | _ -> None
 
+let is_uident =
+  let open Raw_parser in function
+    | UIDENT s -> Some s
+    | _ -> None
+
 let friendly_name_of_token : type a. a token_class -> string option = function
   | T_WITH                 -> Some "with"
   | T_WHILE_LWT            -> Some "while_lwt"

@@ -256,6 +256,10 @@ module Option = struct
   end
 
   include Infix
+
+  let to_list = function
+    | None -> []
+    | Some x -> [x]
 end
 
 module String = struct

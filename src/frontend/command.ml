@@ -176,19 +176,12 @@ let dispatch (state : state) =
       match expro with
       | None ->
         let lexer = Buffer.lexer state.buffer in
-        let lexer = History.seek_backward (fun (_,item) ->
-            Lexing.compare_pos pos (Lexer.item_start item) < 0)
-            lexer in
-        begin match Lexer.reconstruct_identifier lexer with
-          | [] -> []
-          | base :: tail ->
-            [List.fold_left' ~f:(fun {Location. txt = dot; loc = dl}
-                                  {Location. txt = base; loc = bl} ->
-                                  let loc = Parsing_aux.location_union bl dl in
-                                  let txt = base ^ "." ^ dot in
-                                  Location.mkloc txt loc)
-               ~init:base tail]
-        end
+        let lexer =
+          History.seek_backward
+            (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) < 0)
+            lexer
+        in
+        Option.to_list (Lexer.get_smallest_enclosing lexer)
       | Some (expr, offset) ->
         let loc_start =
           let l, c = Lexing.split_pos pos in
