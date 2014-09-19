@@ -132,7 +132,12 @@ def command(*cmd):
   return merlin_process().command(*cmd)
 
 def dump(*cmd):
-  print(command('dump', *cmd))
+  print(json.dumps(command('dump', *cmd)))
+
+def dump_at_cursor(*cmd):
+  line, col = vim.current.window.cursor
+  command_seek("exact", line, col)
+  dump(*cmd)
 
 ######## BASIC COMMANDS
 
