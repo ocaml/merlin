@@ -25,7 +25,7 @@ let parse_dot_merlin_file path : bool * file =
   let tell l = acc := l :: !acc in
   try
     let rec aux () =
-      let line = input_line ic in
+      let line = String.trim (input_line ic) in
       if line = "" then ()
       else if String.is_prefixed ~by:"B " line then
         tell (`B (String.drop 2 line))
