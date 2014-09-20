@@ -1,4 +1,4 @@
-![merlin completion in gvim](http://195.154.188.33/~trefis/merlin-complete.png)
+![merlin completion in vim](https://github.com/the-lambda-church/merlin/wiki/vim_complete.png)
 
 Building and installing Merlin
 ==============================
@@ -43,15 +43,14 @@ Setting-up vim
 
 Makes sure that ocamlmerlin binary can be found in PATH.
 
-The only setup needed is to have the following directories in
-vim runtime path (append this to your .vimrc):
+The only setup needed is to have the following directory in vim runtime path
+(append this to your .vimrc):
 
     :set rtp+=<SHARE_DIR>/ocamlmerlin/vim
-    :set rtp+=<SHARE_DIR>/ocamlmerlin/vimbufsync
 
-The default configuration can be seen in:  
+The default configuration can be seen in:
 
-    <SHARE_DIR>/ocamlmerlin/vim/plugin/merlin.vim  
+    <SHARE_DIR>/ocamlmerlin/vim/plugin/merlin.vim
 
 After adding merlin to vim runtime path, you will probably want to run
 `:helptags <SHARE_DIR>/ocamlmerlin/vim/doc` to register merlin documentation
@@ -66,12 +65,21 @@ Misc: description of plugin's files
     - merlin.vim   -- main vim script
     - merlin.py    -- helper script needed by merlin.vim
                       (has to be in the same directory)
-  - syntax\_checkers/  
-                      -- integration with syntastic (ocaml or omlet)  
-                      -- set g:syntastic_ocaml_checkers = ['merlin']  
+    - vimbufsync.vim -- library needed by merlin vim mode to keep buffer synchronized
+    - vimbufsync.py  -- see https://github.com/def-lkb/vimbufsync
+  - ftdetect/
+    - merlin.vim -- sets filetype for .merlin files
+  - ftplugin/ -- used to start merlin when encountering an ocaml file
+    - ocaml.vim
+    - omlet.vim
+  - syntax/
+    - merlin.vim -- define syntax highlighting for .merlin files
+  - syntax\_checkers/
+                      -- integration with syntastic (ocaml or omlet)
+                      -- set g:syntastic_ocaml_checkers = ['merlin']
                       --  or g:syntastic_omlet_checkers = ['merlin']
 
-- \<SHARE\_DIR\>/ocamlmerlin/vimbufsync  
+- \<SHARE\_DIR\>/ocamlmerlin/vimbufsync
               -- library needed by merlin vim mode to keep buffer synchronized
 
 
@@ -89,7 +97,7 @@ All you need to do is add the following to your .emacs:
     (add-hook 'tuareg-mode-hook 'merlin-mode)
     (add-hook 'caml-mode-hook 'merlin-mode)
 
-`merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if is is installed.
+`merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if it is installed.
 
 
 Merlin project
@@ -110,10 +118,21 @@ arguments:
 - REC : inform merlin that it should look for .merlin files in parent
   directories, and execute the directives it find in those files as well as the
   ones in the current file.
-- EXT \<extension-list\>: (undocumented)
+- EXT \<extension-list\>: enable one or more syntax extension, separated by spaces.
+  See below for available extension.
 
 Directory are either absolute or relative to the directory containing ".merlin"
 file.
+
+For a more comprehensive guide to the `.merlin` file have a look at [this
+guide](https://github.com/the-lambda-church/merlin/wiki/project-configuration).
+
+thread support
+--------------
+
+In Ocaml compiler thread support can be enabled with the ```-thread``` flag.
+
+In Merlin the flag is not supported and you have to add ```B +threads``` directive to achieve the same effect.
 
 Extensions
 ==========
@@ -125,7 +144,8 @@ Lwt
 ---
 
 Support for lwt, match\_lwt, try\_lwt / finally, for\_lwt, while\_lwt,
-if\_lwt and raise\_lwt.  
+if\_lwt and raise\_lwt.
+
 You need to add lwt package (with ":Use lwt" or "PKG lwt" in .merlin) for
 this to work, and it may be necessary to reload buffer for this change to
 take effect.
@@ -144,11 +164,13 @@ Misc.
 -----
 
 Other common extensions which are supported :
-- pa\_ounit.syntax
-- pa\_js.syntax
+- pa\_ounit.syntax as ```ounit```
+- pa\_js.syntax as ```js```
+- ```nonrec``` for declaring non-recursive types
+
+The list of extensions available in your version can be directly obtained by running ```echo '["extension","list"]' | ocamlmerlin```.
 
 Screenshots
 ===========
 
-- [vim](http://195.154.188.33/~trefis/merlin/)
-- [emacs](http://kiwi.iuwt.fr/~asmanur/projects/merlin/merlin-emacs.html)
+- [emacs](http://iso.mor.phis.me/projects/merlin/merlin-emacs.html)
