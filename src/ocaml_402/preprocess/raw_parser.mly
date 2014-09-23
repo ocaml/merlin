@@ -2564,15 +2564,14 @@ signature_item:
       let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
       let ty = List.map fake_tydecl $2 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $4 in
-      List.rev_append decls (mksig $startpos $endpos (Psig_type(List.rev $2)))
+      mksig $startpos $endpos (Psig_type(List.rev $2)) @ decls
     }
 | TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
       let ty = List.map fake_tydecl $3 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $5 in
-      List.rev_append decls (mksig $startpos $endpos
-            (Psig_type(List.rev_map tag_nonrec ty)))
+      mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec ty)) @ decls
     }
 | EXCEPTION @{`Item "exception"}
   sig_exception_declaration WITH with_extensions

@@ -16233,7 +16233,7 @@ module MenhirInterpreterTable = struct
       let ghost_loc = Some (gloc _startpos__4_ _endpos__4_) in
       let ty = List.map fake_tydecl _2 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc _4 in
-      List.rev_append decls (mksig _startpos _endpos (Psig_type(List.rev _2)))
+      mksig _startpos _endpos (Psig_type(List.rev _2)) @ decls
     ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -16284,8 +16284,7 @@ module MenhirInterpreterTable = struct
       let ghost_loc = Some (gloc _startpos__5_ _endpos__5_) in
       let ty = List.map fake_tydecl _3 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc _5 in
-      List.rev_append decls (mksig _startpos _endpos
-            (Psig_type(List.rev_map tag_nonrec ty)))
+      mksig _startpos _endpos (Psig_type(List.rev_map tag_nonrec ty)) @ decls
     ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
