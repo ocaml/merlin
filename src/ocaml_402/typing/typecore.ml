@@ -3210,7 +3210,8 @@ and type_application env funct sargs =
                     false
                 | _ -> true
               in
-              if ty_fun.level >= t1.level && not_identity funct.exp_desc then
+              if ty_fun.level >= t1.level && not_identity funct.exp_desc
+                && not (Typing_aux.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
