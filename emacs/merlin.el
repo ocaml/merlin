@@ -1043,22 +1043,27 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (dolist (overlay overlays)
       (merlin--clear-error-overlay overlay))))
 
+(defun merlin--completion-bounds ()
+  "Returns a pair (start . end) of the content to complete"
+  (let ((bounds (bounds-of-thing-at-point 'ocaml-atom)))
+    (cons (if bounds (car bounds) (point))
+          (point))))
+
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
   (lexical-let*
-      ((bounds (bounds-of-thing-at-point 'ocaml-atom))
-       (start  (if bounds (car bounds) (point)))
-       (end    (if bounds (cdr bounds) (point)))
-       (string (if bounds (merlin--buffer-substring start end) ""))
-       (request (if string (replace-regexp-in-string "[^\\.]+$" "" string))))
+      ((bounds (merlin--completion-bounds))
+       (start  (car bounds))
+       (end    (cdr bounds))
+       (prefix (merlin--buffer-substring start end)))
     (merlin--kill-overlapping-errors start end)
     (when (or (not merlin-completion-at-point-cache-query)
-              (not (equal (cons request start)  merlin-completion-at-point-cache-query)))
-      (setq merlin-completion-at-point-cache-query (cons request start))
+              (not (equal (cons prefix start)  merlin-completion-at-point-cache-query)))
+      (setq merlin-completion-at-point-cache-query (cons prefix start))
       (merlin-sync-to-point)
       (setq merlin-completion-annotation-table
             (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
-                    (merlin-completion-data request))))
+                    (merlin-completion-data prefix))))
     (list start end #'merlin-completion-table
           . (:exit-function #'merlin-completion-lookup
              :annotation-function #'merlin-completion-annotate))))
@@ -1086,11 +1091,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
         (case command
           (interactive (company-begin-backend 'company-my-backend))
           (prefix
-           (if (bounds-of-thing-at-point 'ocaml-atom)
-               (buffer-substring-no-properties
-                (car (bounds-of-thing-at-point 'ocaml-atom))
-                (point))
-             ""))
+           (let ((bounds (merlin--completion-bounds)))
+             (merlin--buffer-substring (car bounds) (cdr bounds))))
           (no-cache t)
           (init (merlin-sync-to-point))
           (doc-buffer
@@ -1173,7 +1175,7 @@ variable `merlin-ac-cache')."
 
 (defun merlin-ac-prefix ()
   "Retrieve the prefix for completion with merlin."
-  (car (bounds-of-thing-at-point 'ocaml-atom)))
+  (car (merlin--completion-bounds)))
 
 (defun merlin-ac-fetch-type ()
   "Prints the type of the selected candidate"
