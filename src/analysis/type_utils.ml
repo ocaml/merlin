@@ -22,6 +22,14 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
   parse (`Step (Raw_parser.initial Raw_parser.parse_expression_state
                   (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))
 
+let lookup_module_or_modtype name env =
+  try
+    let path, mty = Merlin_types_custom.lookup_module name env in
+    path, Some mty
+  with Not_found ->
+    let path, mdtype = Env.lookup_modtype name env in
+    path, mdtype.Types.mtd_type
+
 let type_in_env ?keywords env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
@@ -35,20 +43,8 @@ let type_in_env ?keywords env ppf expr =
   Printtyp.wrap_printing_env env
 
     begin fun () ->
-      match parse_expr ?keywords expr with (*
-      | { Parsetree.pexp_desc = Parsetree.Pexp_construct (longident,None,_) } ->
-        begin
-          try let c = Typing_aux.lookup_constructor longident.Asttypes.txt env in
-            Browse_misc.print_constructor ppf c
-          with Not_found ->
-            try let _, m = Env.lookup_module longident.Asttypes.txt env in
-              Printtyp.modtype ppf m
-            with Not_found ->
-              try let p, m = Env.lookup_modtype longident.Asttypes.txt env in
-                Printtyp.modtype_declaration (Ident.create (Path.last p)) ppf m
-              with Not_found ->
-                ()
-        end *)
+      match parse_expr ?keywords expr with
+
       | None ->
         Format.pp_print_string ppf "Syntax error";
         false
@@ -75,11 +71,13 @@ let type_in_env ?keywords env ppf expr =
               true
             with exn ->
               try
-                let p, md =
-                  Merlin_types_custom.lookup_module longident.Asttypes.txt env
-                in
-                Printtyp.modtype ppf md;
-                true
+                (* TODO: special processing for module aliases? *)
+                match lookup_module_or_modtype longident.Asttypes.txt env with
+                | _path, None ->
+                  Format.pp_print_string ppf "(* abstract module *)";
+                  true
+                | _path, Some md -> Printtyp.modtype ppf md;
+                  true
               with _ ->
                 raise exn
           end
