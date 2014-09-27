@@ -42,4 +42,3 @@ val put_mark: t -> Merlin_parser.frame option -> unit
 val get_mark: t -> Merlin_parser.frame option
 
 val reconstruct_identifier: (exn list * item) History.t -> string Location.loc list
-val get_smallest_enclosing: (exn list * item) History.t -> string Location.loc option

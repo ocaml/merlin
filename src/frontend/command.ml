@@ -176,12 +176,24 @@ let dispatch (state : state) =
       match expro with
       | None ->
         let lexer = Buffer.lexer state.buffer in
-        let lexer =
-          History.seek_backward
-            (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) < 0)
-            lexer
-        in
-        Option.to_list (Lexer.get_smallest_enclosing lexer)
+        let lexer = History.seek_backward (fun (_,item) ->
+            Lexing.compare_pos pos (Lexer.item_start item) < 0)
+            lexer in
+        let rec drop_lowercase acc = function
+          | {Location. txt = x} :: xs
+            when x <> "" && Char.is_lowercase x.[0] -> drop_lowercase [] xs
+          | x :: xs -> drop_lowercase (x :: acc) xs
+          | [] -> List.rev acc in
+        begin match drop_lowercase [] (Lexer.reconstruct_identifier lexer) with
+          | [] -> []
+          | base :: tail ->
+            [List.fold_left' ~f:(fun {Location. txt = dot; loc = dl}
+                                  {Location. txt = base; loc = bl} ->
+                                  let loc = Parsing_aux.location_union bl dl in
+                                  let txt = base ^ "." ^ dot in
+                                  Location.mkloc txt loc)
+               ~init:base tail]
+        end
       | Some (expr, offset) ->
         let loc_start =
           let l, c = Lexing.split_pos pos in
