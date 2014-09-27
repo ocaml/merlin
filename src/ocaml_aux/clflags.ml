@@ -196,7 +196,7 @@ let open_modules () = !set.open_modules
 let open_modules_spec t =
   "-open",
   Arg.String (fun md -> t.open_modules <- md :: t.open_modules),
-  " Make strings mutable (default)"
+  "<module>  Opens the module <module> before typing"
 
 (* Dummy values *)
 let annotations         () = false
