@@ -180,6 +180,12 @@ let fold warnings token t =
   match token with
   | Merlin_lexer.Error _ -> t
   | Merlin_lexer.Valid (s,tok,e) ->
+    let s,e = match tok with
+      | EOF -> let pos = {e with Lexing.
+                              pos_lnum = e.Lexing.pos_lnum + 1;
+                              pos_cnum = e.Lexing.pos_bol} in
+        pos, pos
+      | _ -> s, e in
     warnings := [];
     let pop w = let r = !warnings in w := []; r in
     let recover_from t recovery =
