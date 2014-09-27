@@ -104,6 +104,11 @@ let extract_module_declaration m = m
 
 let lookup_module = Env.lookup_module
 
+let lookup_modtype name env =
+  match Env.lookup_modtype name env with
+  | path, Types.Modtype_abstract -> path, None
+  | path, Types.Modtype_manifest mty -> path, Some mty
+
 let tstr_eval_expression = function
   | Typedtree.Tstr_eval e -> e
   | _ -> assert false

@@ -88,6 +88,10 @@ let lookup_module name env =
   let md = Env.find_module path env in
   path, extract_module_declaration md
 
+let lookup_modtype name env =
+  let path, mdtype = Env.lookup_modtype name env in
+  path, mdtype.Types.mtd_type
+
 let tstr_eval_expression = function
   | Typedtree.Tstr_eval (e,_) -> e
   | _ -> assert false

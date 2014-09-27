@@ -27,8 +27,7 @@ let lookup_module_or_modtype name env =
     let path, mty = Merlin_types_custom.lookup_module name env in
     path, Some mty
   with Not_found ->
-    let path, mdtype = Env.lookup_modtype name env in
-    path, mdtype.Types.mtd_type
+    Merlin_types_custom.lookup_modtype name env
 
 let type_in_env ?keywords env ppf expr =
   let print_expr expression =
