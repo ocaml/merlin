@@ -11,5 +11,3 @@ val erroneous_type_check: Types.type_expr -> bool
 val erroneous_expr_check: Typedtree.expression -> bool
 
 val relax_typer: bool fluid
-
-include module type of Merlin_types_custom

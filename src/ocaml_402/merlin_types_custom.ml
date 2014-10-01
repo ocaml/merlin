@@ -250,3 +250,4 @@ let dest_tstr_eval str =
   | [ { str_desc = Tstr_eval (exp,[]) }] -> exp
   | _ -> failwith "unhandled expression"
 
+let full_scrape = Env.scrape_alias

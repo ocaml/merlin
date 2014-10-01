@@ -235,3 +235,5 @@ let dest_tstr_eval str =
   match str.str_items with
   | [ { str_desc = Tstr_eval exp }] -> exp
   | _ -> failwith "unhandled expression"
+
+let full_scrape = Mtype.scrape

@@ -228,9 +228,11 @@ let completion_format ~exact name ?path ty =
       `Label
     | `Mod m   ->
       if exact then
-        begin match mod_smallerthan (2000 (** verbosity `Query*)) m with
-        | None -> ()
-        | Some _ -> Printtyp.modtype ppf m
+        begin
+          let verbosity = Fluid.get Type_utils.verbosity + 1 in
+          match mod_smallerthan (2000 * verbosity) m with
+          | None -> ()
+          | Some _ -> Printtyp.modtype ppf m
         end;
       `Module
     | `ModType m ->
@@ -265,14 +267,14 @@ let completion_fold prefix path kind ~validate env compl =
            else compl)
         path env []
     | `Constructor ->
-      Typing_aux.fold_constructors
+      Merlin_types_custom.fold_constructors
         (fun name v compl ->
            if validate `Lident `Cons name
            then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
            else compl)
         path env []
     | `Types ->
-      Typing_aux.fold_types
+      Merlin_types_custom.fold_types
         (fun name path decl compl ->
            if validate `Lident `Typ name
            then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
@@ -371,7 +373,7 @@ let node_complete buffer node prefix =
       | None -> raise exn (* clearly the hypothesis is wrong here *)
       | Some long_ident ->
         let path = keep_until_lowercase long_ident in
-        Typing_aux.fold_labels
+       Merlin_types_custom.fold_labels
           (fun ({Types.lbl_name = name} as l) compl ->
             if valid `Label name then
               (completion_format ~exact:(name = prefix) name (`Label l)) :: compl

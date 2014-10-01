@@ -75,28 +75,12 @@ SOURCES = \
 	$(TYPER)/tail_analysis.ml         \
 	src/ocaml_aux/parsing_aux.mli     \
 	src/ocaml_aux/parsing_aux.ml      \
-	$(TYPER)/merlin_types_custom.ml   \
 	src/ocaml_aux/typing_aux.mli      \
 	src/ocaml_aux/typing_aux.ml       \
-	src/analysis/browse.mli           \
-	src/analysis/browse.ml            \
 	src/kernel/dot_merlin.mli         \
 	src/kernel/dot_merlin.ml          \
-	src/kernel/fake.mli               \
-	src/kernel/fake.ml                \
 	$(TYPER)/parsing/syntaxerr.mli    \
 	$(TYPER)/parsing/syntaxerr.ml     \
-	$(TYPER)/raw_parser.mli           \
-	$(TYPER)/raw_parser.ml            \
-	$(TYPER)/raw_parser_values.mli    \
-	$(TYPER)/raw_parser_values.ml     \
-	src/kernel/merlin_recovery_strategy.ml \
-	src/kernel/merlin_parser.mli      \
-	src/kernel/merlin_parser.ml       \
-	src/kernel/merlin_recovery_explain.ml \
-	src/kernel/error_classifier.ml    \
-	src/kernel/raw_lexer.mli          \
-	src/kernel/raw_lexer.ml           \
 	$(TYPER)/typing/typedtreeMap.mli  \
 	$(TYPER)/typing/typedtreeMap.ml   \
 	$(TYPER)/typing/cmt_format.mli    \
@@ -113,6 +97,9 @@ SOURCES = \
 	$(TYPER)/typing/includecore.ml    \
 	$(TYPER)/typing/mtype.mli         \
 	$(TYPER)/typing/mtype.ml          \
+	$(TYPER)/merlin_types_custom.ml   \
+	src/kernel/fake.mli               \
+	src/kernel/fake.ml                \
 	$(TYPER)/typing/includemod.mli    \
 	$(TYPER)/typing/includemod.ml     \
 	$(TYPER)/typing/parmatch.mli      \
@@ -129,6 +116,19 @@ SOURCES = \
 	$(TYPER)/typing/typeclass.ml      \
 	$(TYPER)/typing/typemod.mli       \
 	$(TYPER)/typing/typemod.ml        \
+	$(TYPER)/raw_parser.mli           \
+	$(TYPER)/raw_parser.ml            \
+	$(TYPER)/raw_parser_values.mli    \
+	$(TYPER)/raw_parser_values.ml     \
+	src/kernel/merlin_recovery_strategy.ml \
+	src/kernel/merlin_parser.mli      \
+	src/kernel/merlin_parser.ml       \
+	src/kernel/merlin_recovery_explain.ml \
+	src/kernel/error_classifier.ml    \
+	src/kernel/raw_lexer.mli          \
+	src/kernel/raw_lexer.ml           \
+	src/analysis/browse.mli           \
+	src/analysis/browse.ml            \
 	src/kernel/extension.mli          \
 	src/kernel/extension.ml           \
 	src/utils/history.mli             \
@@ -149,13 +149,13 @@ SOURCES = \
 	src/frontend/protocol.mli         \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
+	src/analysis/type_utils.ml        \
 	src/analysis/browse_misc.ml       \
 	src/analysis/completion.ml        \
 	src/analysis/outline.mli          \
 	src/analysis/outline.ml           \
 	src/analysis/track_definition.mli \
 	src/analysis/track_definition.ml  \
-	src/analysis/type_utils.ml        \
 	src/config/my_config.ml           \
 	src/frontend/IO_sexp.ml           \
 	src/frontend/main_args.mli        \

@@ -75,8 +75,30 @@ let buffer_update state items =
   Buffer.update state.buffer items;
   buffer_changed state
 
+let verbosity_last = ref None and verbosity_counter = ref 0
+
+let track_verbosity =
+  let classify (type a) (request : a request) =
+    let obj = Some (Obj.repr request) in
+    match request with
+    | Type_expr _ -> obj
+    | Type_enclosing _ -> obj
+    | Enclosing _ -> obj
+    | Complete_prefix _ -> obj
+    | _ -> None in
+  fun (type a) (request : a request) ->
+    match classify request with
+    | None -> 0
+    | value when !verbosity_last = value ->
+      incr verbosity_counter; !verbosity_counter
+    | value ->
+      verbosity_last := value; verbosity_counter := 0; 0
+
+module Printtyp = Type_utils.Printtyp
+
 let dispatch (state : state) =
   fun (type a) (request : a request) ->
+  let verbosity = track_verbosity request in
   (match request with
   | (Tell (`Start pos) : a request) ->
     let lexer = Buffer.start_lexing ?pos state.buffer in
@@ -124,7 +146,7 @@ let dispatch (state : state) =
           | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
         in
         let ppf, to_string = Format.to_string () in
-        ignore (Type_utils.type_in_env env ppf source : bool);
+        ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
         to_string ()
     )
 
@@ -145,14 +167,14 @@ let dispatch (state : state) =
                    | Core_type {ctyp_type = t } )
         } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env
-          (fun () -> Printtyp.type_scheme ppf t);
+        Printtyp.wrap_printing_env t_env verbosity
+          (fun () -> Printtyp.type_scheme t_env ppf t);
         Some (t_loc, to_string (), tail)
       | { t_loc; t_env;
           t_node = Type_declaration { typ_id = id; typ_type = t} } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env
-          (fun () -> Printtyp.type_declaration id ppf t);
+        Printtyp.wrap_printing_env t_env verbosity
+          (fun () -> Printtyp.type_declaration t_env id ppf t);
         Some (t_loc, to_string (), tail)
       | { t_loc; t_env;
           t_node = ( Module_expr {mod_type = m}
@@ -165,8 +187,8 @@ let dispatch (state : state) =
                    | Module_type_declaration_name {mtd_type = Some {mty_type = m}} )
         } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env
-          (fun () -> Printtyp.modtype ppf m);
+        Printtyp.wrap_printing_env t_env verbosity
+          (fun () -> Printtyp.modtype t_env ppf m);
         Some (t_loc, to_string (), tail)
       | _ -> None
     in
@@ -249,7 +271,7 @@ let dispatch (state : state) =
           | source ->
             try
               let ppf, to_string = Format.to_string () in
-              if Type_utils.type_in_env env ppf source then
+              if Type_utils.type_in_env ~verbosity env ppf source then
                 Some (loc, to_string (), `No)
               else
                 None

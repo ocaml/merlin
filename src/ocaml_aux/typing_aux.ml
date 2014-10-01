@@ -30,5 +30,3 @@ let rec erroneous_expr_check e =
     when Ident.name (Path.head p) = "_" -> true
   | Typedtree.Texp_apply (e',_) -> erroneous_expr_check e'
   | _ -> false
-
-include Merlin_types_custom

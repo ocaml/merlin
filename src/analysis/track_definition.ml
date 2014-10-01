@@ -262,7 +262,7 @@ let from_string ~project ~env ~local_defs path =
     let path, loc =
       (* [1] If we know it is a record field, we only look for that. *)
       if is_label then
-        let label_desc = Typing_aux.lookup_label ident env in
+        let label_desc = Merlin_types_custom.lookup_label ident env in
         path_and_loc_from_label label_desc env
       else (
         try
@@ -274,7 +274,7 @@ let from_string ~project ~env ~local_defs path =
           path, typ_decl.Types.type_loc
         with Not_found ->
         try
-          let cstr_desc = Typing_aux.lookup_constructor ident env in
+          let cstr_desc = Merlin_types_custom.lookup_constructor ident env in
           Merlin_types_custom.path_and_loc_of_cstr cstr_desc env
         with Not_found ->
         try
@@ -287,7 +287,7 @@ let from_string ~project ~env ~local_defs path =
                   | { x ; y } -> e
               in which case the check before [1] won't know that we have a
               label, but it's worth checking at this point. *)
-          let label_desc = Typing_aux.lookup_label ident env in
+          let label_desc = Merlin_types_custom.lookup_label ident env in
           path_and_loc_from_label label_desc env
         with Not_found ->
           debug_log "   ... not in the environment" ;

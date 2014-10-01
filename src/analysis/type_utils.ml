@@ -1,3 +1,4 @@
+open Std
 open Merlin_lib
 
 let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
@@ -29,7 +30,53 @@ let lookup_module_or_modtype name env =
   with Not_found ->
     Merlin_types_custom.lookup_modtype name env
 
-let type_in_env ?keywords env ppf expr =
+let verbosity = Fluid.from 0
+
+module Printtyp = struct
+  include Printtyp
+
+  let expand_type env ty =
+    let ty' = Ctype.full_expand env ty in
+    raw_type_expr Format.err_formatter ty';
+    ty'
+
+  let expand_type_decl env ty =
+    match ty.Types.type_manifest with
+    | Some m -> {ty with Types.type_manifest = Some (expand_type env m)}
+    | None -> ty
+
+  let expand_sig = Merlin_types_custom.full_scrape
+
+  let verbose_type_scheme env ppf t =
+    Printtyp.type_scheme ppf (expand_type env t)
+
+  let verbose_type_declaration env id ppf t =
+    Printtyp.type_declaration id ppf (expand_type_decl env t)
+
+  let verbose_modtype env ppf t =
+    Printtyp.modtype ppf (expand_sig env t)
+
+  let select_verbose a b env =
+    (if Fluid.get verbosity = 0 then a else b env)
+
+  let type_scheme env ppf ty =
+    select_verbose type_scheme verbose_type_scheme env ppf ty
+
+  let type_declaration env ppf tdecl =
+    select_verbose type_declaration verbose_type_declaration env ppf tdecl
+
+  let modtype env ppf mty =
+    select_verbose modtype verbose_modtype env ppf mty
+
+  let wrap_printing_env env verbosity' f =
+    Fluid.let' verbosity verbosity'
+      (fun () -> wrap_printing_env env f)
+end
+
+let type_in_env ?(verbosity=0) ?keywords env ppf expr =
+  let module Print = struct
+  end
+  in
   let print_expr expression =
     let (str, _sg, _) =
       Typemod.type_toplevel_phrase env [Ast_helper.Str.eval expression]
@@ -37,9 +84,9 @@ let type_in_env ?keywords env ppf expr =
     (*let sg' = Typemod.simplify_signature sg in*)
     let open Typedtree in
     let exp = Merlin_types_custom.dest_tstr_eval str in
-    Printtyp.type_scheme ppf exp.exp_type;
+    Printtyp.type_scheme env ppf exp.exp_type;
   in
-  Printtyp.wrap_printing_env env
+  Printtyp.wrap_printing_env env verbosity
 
     begin fun () ->
       match parse_expr ?keywords expr with
@@ -57,7 +104,7 @@ let type_in_env ?keywords env ppf expr =
               true
             with exn ->
               try let p, t = Env.lookup_type longident.Asttypes.txt env in
-              Printtyp.type_declaration (Ident.create (Path.last p)) ppf t;
+              Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;
               true
               with _ ->
                 raise exn
@@ -75,7 +122,7 @@ let type_in_env ?keywords env ppf expr =
                 | _path, None ->
                   Format.pp_print_string ppf "(* abstract module *)";
                   true
-                | _path, Some md -> Printtyp.modtype ppf md;
+                | _path, Some md -> Printtyp.modtype env ppf md;
                   true
               with _ ->
                 raise exn
