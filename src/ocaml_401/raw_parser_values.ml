@@ -195,12 +195,11 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_type_declaration                  -> "type_declaration"
   | N_type_constraint                   -> "type_constraint"
   | N_toplevel_directive                -> "toplevel_directive"
-  | N_top_structure_item                -> "top_structure_item"
-  | N_top_expr                          -> "top_expr"
   | N_tag_field                         -> "tag_field"
   | N_subtractive                       -> "subtractive"
   | N_structure_tail                    -> "structure_tail"
   | N_structure_item                    -> "structure_item"
+  | N_structure_head                    -> "structure_head"
   | N_structure                         -> "structure"
   | N_strict_binding                    -> "strict_binding"
   | N_simple_pattern                    -> "simple_pattern"
@@ -230,7 +229,6 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_package_type_cstr                 -> "package_type_cstr"
   | N_package_type                      -> "package_type"
   | N_override_flag                     -> "override_flag"
-  | N_option_SEMISEMI_                  -> "option_SEMISEMI_"
   | N_option_STRING_                    -> "option_STRING_"
   | N_optional_type_parameters          -> "optional_type_parameters"
   | N_optional_type_parameter_list      -> "optional_type_parameter_list"
@@ -812,13 +810,12 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     raise Not_found (*(Parsetree.type_declaration) nonterminal_class*)
   | N_type_constraint                   -> 1, (None, None)
   | N_toplevel_directive                -> raise Not_found
-  | N_top_structure_item                -> raise Not_found (*TODO*)
-  | N_top_expr                          -> raise Not_found (*TODO*)
   | N_tag_field                         ->
     raise Not_found (*(Parsetree.row_field) nonterminal_class*)
   | N_subtractive                       -> 1, "-"
   | N_structure_tail                    -> 0, []
   | N_structure_item                    -> 0, []
+  | N_structure_head                    -> 0, []
   | N_structure                         -> 0, []
   | N_strict_binding                    -> 1, default_expr
   | N_simple_pattern                    -> 0, default_pattern
@@ -849,7 +846,6 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_package_type_cstr                 -> 1, (default_longident_loc, default_type)
   | N_package_type                      -> 1, (default_longident_loc, [])
   | N_override_flag                     -> 1, Asttypes.Fresh
-  | N_option_SEMISEMI_                  -> 0, None
   | N_option_STRING_                    -> 1, None
   | N_optional_type_parameters          -> 0, []
   | N_optional_type_parameter_list      -> 0, []
@@ -1170,12 +1166,11 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_type_declaration                  -> Some "type declaration"
   | N_type_constraint                   -> Some "type constraint"
   | N_toplevel_directive                -> None
-  | N_top_structure_item                -> None
-  | N_top_expr                          -> None
   | N_tag_field                         -> None
   | N_subtractive                       -> None
   | N_structure_tail                    -> None
   | N_structure_item                    -> Some "any definition"
+  | N_structure_head                    -> None
   | N_structure                         -> Some "structure"
   | N_strict_binding                    -> Some "'= expression'"
   | N_simple_pattern                    -> Some "pattern"
@@ -1208,7 +1203,6 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_optional_type_parameters          -> None
   | N_optional_type_parameter_list      -> None
   | N_optional_type_parameter           -> None
-  | N_option_SEMISEMI_                  -> None
   | N_option_STRING_                    -> None
   | N_opt_present                       -> None
   | N_opt_semi                          -> None

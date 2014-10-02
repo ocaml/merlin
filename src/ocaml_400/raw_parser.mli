@@ -304,12 +304,11 @@ and _ nonterminal_class =
   | N_type_declaration : (Fake.tydecl) nonterminal_class
   | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal_class
   | N_toplevel_directive : (unit) nonterminal_class
-  | N_top_structure_item : (Parsetree.structure_item Location.loc list) nonterminal_class
-  | N_top_expr : (Parsetree.expression) nonterminal_class
   | N_tag_field : (Parsetree.row_field) nonterminal_class
   | N_subtractive : (string) nonterminal_class
   | N_structure_tail : (Parsetree.structure) nonterminal_class
   | N_structure_item : (Parsetree.structure_item list) nonterminal_class
+  | N_structure_head : (Parsetree.structure) nonterminal_class
   | N_structure : (Parsetree.structure) nonterminal_class
   | N_strict_binding : (Parsetree.expression) nonterminal_class
   | N_simple_pattern : (Parsetree.pattern) nonterminal_class
@@ -344,7 +343,6 @@ and _ nonterminal_class =
   | N_optional_type_parameter_list : ((Asttypes.label Asttypes.loc option * (bool * bool)) list) nonterminal_class
   | N_optional_type_parameter : (Asttypes.label Asttypes.loc option * (bool * bool)) nonterminal_class
   | N_option_STRING_ : ((string * string option) option) nonterminal_class
-  | N_option_SEMISEMI_ : (unit option) nonterminal_class
   | N_opt_semi : (unit) nonterminal_class
   | N_opt_present : (Asttypes.label list) nonterminal_class
   | N_opt_default : (Parsetree.expression option) nonterminal_class
@@ -476,8 +474,6 @@ and 'a parser = {
 }
 
 
-val top_structure_item: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.structure_item Location.loc list)
-val top_expr: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.expression)
 val parse_expression: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.expression)
 val interface: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.signature)
 val implementation: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.structure)
@@ -488,8 +484,6 @@ val step: step parser ->   [ `Step of step parser
   | `Accept of symbol
   | `Reject of step parser ]
 val feed: feed parser -> Lexing.position * token * Lexing.position -> step parser
-val top_structure_item_state: state
-val top_expr_state: state
 val parse_expression_state: state
 val interface_state: state
 val implementation_state: state

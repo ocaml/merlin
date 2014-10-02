@@ -177,7 +177,7 @@ let rec mktailpat _nilloc startpos endpos = function
       let arg = {ppat_desc = Ppat_tuple [p1; pat_pl]; ppat_loc = l} in
       mkpat_cons {l with Location.loc_ghost = true} arg l
 
-let mkstrexp startpos endpos e =
+let mkstrexp e =
   { pstr_desc = Pstr_eval e; pstr_loc = e.pexp_loc }
 
 let array_function startpos endpos str name =
@@ -544,10 +544,6 @@ The precedences must be listed from low to high.
 %type <Parsetree.structure> implementation
 %start interface                        (* for interface files *)
 %type <Parsetree.signature> interface
-%start top_structure_item               (* extension, ocaml-ty *)
-%type <Parsetree.structure_item Location.loc list> top_structure_item
-%start top_expr                        (* extension, ocaml-ty *)
-%type <Parsetree.expression> top_expr
 
 (* merlin: for inline expression *)
 %start parse_expression
@@ -573,10 +569,6 @@ interface:
 parse_expression:
 | ENTRYPOINT v1 = seq_expr EOF
     { v1 }
-;
-
-top_expr:
-  | seq_expr option(SEMISEMI) EOF { $1 }
 ;
 
 dummy:
@@ -634,42 +626,24 @@ module_expr:
       { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_constraint($3, None, Some(ghtyp $startpos $endpos (Ptyp_package $5)))))) }
 ;
+
 structure:
-    structure_tail                              { $1 }
-  | structure_tail EXITPOINT                    { $1 }
-  | seq_expr structure_tail                     { mkstrexp $startpos $endpos $1 :: $2 }
-  | seq_expr structure_tail EXITPOINT           { mkstrexp $startpos $endpos $1 :: $2 }
-;
-structure_tail:
-    (* empty *)                                 { [] }
-  | SEMISEMI                                    { [] }
-  | SEMISEMI seq_expr
-      @{`Shift_token (1,EXITPOINT)}
-      structure_tail
-    { mkstrexp $startpos $endpos $2 :: $3 }
-  | SEMISEMI structure_item
-      @{`Shift_token (1,EXITPOINT)}
-      structure_tail
-    { $2 @ $3 }
-  | structure_item
-      @{`Shift_token (1,EXITPOINT)}
-      structure_tail
-    { $1 @ $2 }
+  | structure_head { $1 }
+  | structure_head EXITPOINT { $1 }
 ;
 
-top_structure_item:
-  | option(SEMISEMI) seq_expr option(SEMISEMI) EOF
-    { [mkloc (mkstrexp $startpos $endpos $2) (symbol_rloc $startpos $endpos)] }
-  | option(SEMISEMI) structure_item option(SEMISEMI) EOF
-      { List.map (fun str -> mkloc str (symbol_rloc $startpos $endpos)) $2 }
-  | option(SEMISEMI) VAL val_ident COLON core_type EOF
-    { syntax_error $startpos;
-      let fake_pat = mkpatvar $startpos($3) $endpos($3) $3 in
-      let fake_expr = mkexp $startpos($4) $endpos($5)
-                          (Pexp_constraint (Fake.any_val', Some $5, None))
-      in
-      [mkloc (mkstr $startpos $endpos (Pstr_value (Nonrecursive, [fake_pat,fake_expr]))) (symbol_rloc $startpos $endpos)] }
-  | SEMISEMI EOF { [] }
+structure_head:
+  | seq_expr structure_tail @{`Shift_token (1,EXITPOINT)}
+    { mkstrexp $1 :: $2 }
+  | structure_tail @{`Shift_token (1,EXITPOINT)}
+    { $1 }
+;
+
+structure_tail:
+  | (* empty *) { [] }
+  | SEMISEMI structure_head @{`Shift_token (1,EXITPOINT)}
+    { $2 }
+  | structure_item structure_tail @{`Shift_token (1,EXITPOINT)} { $1 @ $2 }
 ;
 
 structure_item:
@@ -2100,16 +2074,8 @@ signature_item:
       }
 ;
 
-structure:
-  | toplevel_directive structure_tail           { $2 }
-  | toplevel_directive structure_tail EXITPOINT { $2 }
-;
-
-structure_tail:
-  | SEMISEMI toplevel_directive
-      @{`Shift_token (1,EXITPOINT)}
-      structure_tail
-      { $3 }
+structure_head:
+  | toplevel_directive structure_tail @{`Shift_token (1,EXITPOINT)} { $2 }
 ;
 
 (* Custom-printf extension *)
