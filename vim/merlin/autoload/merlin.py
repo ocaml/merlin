@@ -327,24 +327,7 @@ def vim_locate_at_cursor(path):
   command_locate(path, line, col)
 
 def vim_locate_under_cursor():
-  delimiters = [' ', '\n', '=', ';', ',', '(', ')', '[', ']', '{', '}', '|', '"',"+","-","*","/" ]
-  line_nb, col_nb = vim.current.window.cursor
-  line = vim.current.buffer[line_nb - 1]
-  start = col_nb
-  stop = col_nb
-  while start > 0:
-    if line[start - 1] in delimiters:
-        break
-    else:
-        start -= 1
-  while stop < len(line):
-    # we stop on dots because on "Foo.Ba<cursor>r.Baz.lol" I want to jump at the
-    # definition of Bar, not the one of lol.
-    if line[stop] in delimiters or line[stop] == '.':
-        break
-    else:
-        stop += 1
-  vim_locate_at_cursor(line[start:stop])
+  vim_locate_at_cursor(None)
 
 # Occurrences
 def vim_occurrences(vimvar):

@@ -1424,7 +1424,7 @@ is active)."
    (list 'locate (substring-no-properties ident)
          'at (merlin-unmake-point (point)))))
 
-(defun merlin--locate-pure (ident)
+(defun merlin--locate-pure (&optional ident)
   "Locate the identifier IDENT at point."
   (let* ((r (merlin--locate-pos ident)))
     (if r
@@ -1436,12 +1436,10 @@ is active)."
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
-  (let ((ident (thing-at-point 'ocaml-atom)))
-    (when ident
-      (merlin-sync-to-point)
-      (merlin--locate-pure ident)
-      (if merlin-type-after-locate
-          (merlin-type-enclosing)))))
+  (merlin-sync-to-point)
+  (merlin--locate-pure)
+  (if merlin-type-after-locate
+      (merlin-type-enclosing)))
 
 ;; I don't like it beginning by "ac" but it is the only way I found to get it
 ;; working (otherwise the completion menu just closes itself)
