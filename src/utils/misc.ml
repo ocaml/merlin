@@ -14,6 +14,8 @@
 
 open Std
 
+let () = Findlib.init ()
+
 (* Errors *)
 
 exception Fatal_error
