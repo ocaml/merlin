@@ -96,4 +96,4 @@ val sync
   -> init:('a -> 'b)
   -> strong_fold:('a -> 'b -> 'b)
   -> weak_update:('a -> 'b -> 'b)
-  -> 'a t -> 'b t option -> 'b t
+  -> 'a t -> 'b t option -> 'b t * [`Nothing_done | `Updated]

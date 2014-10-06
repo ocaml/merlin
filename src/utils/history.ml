@@ -121,7 +121,8 @@ let sync ~strong_check ~weak_check ~init ~strong_fold ~weak_update a = function
   | Some b ->
     let b = move (a.position - b.position) b in
     assert (b.position <= a.position);
-    if b.position = a.position && strong_check (focused a) (focused b) then b
+    if b.position = a.position && strong_check (focused a) (focused b)
+    then b, `Nothing_done
     else
       let rec aux worklist weaklist ha hb =
         match ha, hb with
@@ -156,12 +157,14 @@ let sync ~strong_check ~weak_check ~init ~strong_fold ~weak_update a = function
       begin match worklist with
       | [] ->
         assert (a.position = b.position);
-        { b with head = hb }
+        { b with head = hb },
+        `Nothing_done
       | worklist ->
         let hb = List.fold_left' worklist ~init:hb
-            ~f:(fun a hb -> List.More (strong_fold a (focused' hb), hb))
-        in
-        { head = hb; tail = []; position = a.position }
+            ~f:(fun a hb -> List.More (strong_fold a (focused' hb), hb)) in
+        { head = hb; tail = []; position = a.position },
+        `Updated
       end
   | None ->
-    reconstruct ~init ~fold:strong_fold {a with tail = []}
+    reconstruct ~init ~fold:strong_fold {a with tail = []},
+    `Updated

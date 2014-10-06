@@ -331,7 +331,7 @@ module Buffer : sig
   val create: ?path:string -> Project.t -> Parser.state -> t
 
   val lexer: t -> (exn list * Lexer.item) History.t
-  val update: t -> (exn list * Lexer.item) History.t -> unit
+  val update: t -> (exn list * Lexer.item) History.t -> [`Nothing_done | `Updated]
   val start_lexing: ?pos:Lexing.position -> t -> Lexer.t
   val lexer_errors: t -> exn list
 
@@ -431,17 +431,18 @@ end = struct
     let init token = initial_step t.kind token in
     let strong_fold (_,token) (_,recover) = token, Recover.fold token recover in
     let weak_update (_,token) (_,recover) = (token,recover) in
-    let recover' = History.sync t.lexer (Some t.recover)
-        ~init ~strong_check ~strong_fold ~weak_check ~weak_update;
-    in
-    t.recover <- recover'
+    let recover', updated = History.sync t.lexer (Some t.recover)
+        ~init ~strong_check ~strong_fold ~weak_check ~weak_update; in
+    t.recover <- recover';
+    updated
+
 
   let start_lexing ?pos b =
     let kw = Project.keywords b.project in
     if kw != b.keywords then begin
       b.keywords <- kw;
-      update b (History.drop_tail (History.seek_backward
-                                     (fun _ -> true) b.lexer))
+      ignore (update b (History.drop_tail (History.seek_backward
+                                             (fun _ -> true) b.lexer)))
     end
     else begin
       let pos_pred = match pos with
@@ -459,7 +460,7 @@ end = struct
       let lexer = b.lexer in
       let lexer = History.seek_backward item_pred lexer in
       let lexer = History.move (-1) lexer in
-      update b lexer
+      ignore (update b lexer)
     end;
     Lexer.start kw b.lexer
 

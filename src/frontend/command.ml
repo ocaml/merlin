@@ -66,13 +66,6 @@ let cursor_state state =
   in
   { cursor; marker }
 
-let buffer_changed state =
-  state.lexer <- None
-
-let buffer_update state items =
-  Buffer.update state.buffer items;
-  buffer_changed state
-
 let verbosity_last = ref None and verbosity_counter = ref 0
 
 let track_verbosity =
@@ -92,6 +85,17 @@ let track_verbosity =
     | value ->
       verbosity_last := value; verbosity_counter := 0; 0
 
+let buffer_changed state =
+  state.lexer <- None
+
+let buffer_update state items =
+  if Buffer.update state.buffer items = `Updated then
+    verbosity_last := None
+
+let buffer_freeze state items =
+  buffer_update state items;
+  buffer_changed state
+
 module Printtyp = Type_utils.Printtyp
 
 let dispatch (state : state) =
@@ -101,7 +105,7 @@ let dispatch (state : state) =
   | (Tell (`Start pos) : a request) ->
     let lexer = Buffer.start_lexing ?pos state.buffer in
     state.lexer <- Some lexer;
-    ignore (Buffer.update state.buffer (Lexer.history lexer));
+    buffer_update state (Lexer.history lexer);
     cursor_state state
 
   | (Tell (`Source "") : a request) ->
@@ -119,7 +123,7 @@ let dispatch (state : state) =
         let lexer = Buffer.start_lexing state.buffer in
         state.lexer <- Some lexer; lexer in
     assert (Lexer.feed lexer source);
-    ignore (Buffer.update state.buffer (Lexer.history lexer));
+    buffer_update state (Lexer.history lexer);
     (* Stop lexer on EOF *)
     if Lexer.eof lexer then state.lexer <- None;
     cursor_state state
@@ -344,7 +348,7 @@ let dispatch (state : state) =
 
   | (Drop : a request) ->
     let lexer = Buffer.lexer state.buffer in
-    Buffer.update state.buffer (History.drop_tail lexer);
+    buffer_update state (History.drop_tail lexer);
     buffer_changed state;
     cursor_state state
 
@@ -361,7 +365,7 @@ let dispatch (state : state) =
       Lexing.compare_pos (Lexer.item_start i) pos >= 0 in
     let items = History.seek_forward (until_after pos) items in
     let items = History.seek_backward (until_before pos) items in
-    buffer_update state items;
+    buffer_freeze state items;
     cursor_state state
 
   | (Seek (`Exact pos) : a request) ->
@@ -374,13 +378,13 @@ let dispatch (state : state) =
       Lexing.compare_pos (Lexer.item_end i) pos > 0 in
     let items = History.seek_forward (until_after pos) items in
     let items = History.seek_backward (until_before pos) items in
-    buffer_update state items;
+    buffer_freeze state items;
     cursor_state state
 
   | (Seek `End : a request) ->
     let items = Buffer.lexer state.buffer in
     let items = History.seek_forward (fun _ -> true) items in
-    buffer_update state items;
+    buffer_freeze state items;
     cursor_state state
 
   | (Seek `Marker : a request) ->
@@ -402,7 +406,7 @@ let dispatch (state : state) =
         let item, _ = History.focused recoveries in
         let items = Buffer.lexer state.buffer in
         let items = History.seek_backward (fun (_,item') -> item' != item) items in
-        buffer_update state items;
+        buffer_freeze state items;
     end;
     cursor_state state
 
