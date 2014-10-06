@@ -324,7 +324,7 @@ let dispatch (state : state) =
       | None, Some pos ->
         let lexer = Buffer.lexer state.buffer in
         let lexer = History.seek_backward (fun (_,item) ->
-            Lexing.compare_pos pos (Lexer.item_start item) <= 0)
+            Lexing.compare_pos pos (Lexer.item_start item) < 0)
             lexer in
         let path = Lexer.reconstruct_identifier lexer in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
