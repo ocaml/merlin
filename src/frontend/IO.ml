@@ -204,20 +204,33 @@ module Protocol_io = struct
     | "find" -> `Find
     | _ -> invalid_arguments ()
 
-  let with_package_failures assoc = function
+  let with_failures assoc = function
     | `Ok -> assoc
     | `Failures failures ->
-      let failures = List.map failures
-          ~f:(fun (str,exn) ->
-              let str = "\"" ^ str ^ "\"" in
-              let str = match exn with
-                | Fl_package_base.No_such_package _ -> str
-                | exn -> str ^ " (" ^ Printexc.to_string exn ^ ")"
-              in
-              str)
+      let packages, flags =
+        List.fold_left failures ~init:([],[]) ~f:(fun (packages, flags) (str,exn) ->
+          let str = "\"" ^ str ^ "\"" in
+          match exn with
+          | Fl_package_base.No_such_package _ -> str :: packages, flags
+          | Arg.Bad _ -> packages, str :: flags
+          | exn -> (str ^ " (" ^ Printexc.to_string exn ^ ")") :: packages, flags
+        )
       in
-      let str = String.concat ~sep:", " failures in
-      ("failures", `String ("Failed to load some packages " ^ str)) :: assoc
+      let packages =
+        match packages with
+        | [] -> []
+        | failures ->
+          let str = String.concat ~sep:", " failures in
+          [ `String ("Failed to load some packages " ^ str) ]
+      in
+      let flags =
+        match flags with
+        | [] -> []
+        | failures ->
+          let str = String.concat ~sep:", " failures in
+          [ `String ("Unknown flags " ^ str) ]
+      in
+      ("failures", `List (packages @ flags)) :: assoc
 
   let request_of_json = function
     | (`String "tell" :: `String "start" :: opt_pos) ->
@@ -378,7 +391,7 @@ module Protocol_io = struct
         | Which_path _, str -> `String str
         | Which_with_ext _, strs -> json_of_string_list strs
         | Findlib_use _, failures ->
-          `Assoc (with_package_failures ["result", `Bool true] failures)
+          `Assoc (with_failures ["result", `Bool true] failures)
         | Findlib_list, strs -> json_of_string_list strs
         | Extension_list _, strs -> json_of_string_list strs
         | Extension_set _, () -> `Bool true
@@ -386,7 +399,7 @@ module Protocol_io = struct
         | Path_list _, strs -> json_of_string_list strs
         | Path_reset, () -> `Bool true
         | Project_load _, (strs, failures) ->
-          `Assoc (with_package_failures ["result", json_of_string_list strs] failures)
+          `Assoc (with_failures ["result", json_of_string_list strs] failures)
         | Occurrences _, locations ->
           `List (List.map locations
                    ~f:(fun loc -> with_location loc []))

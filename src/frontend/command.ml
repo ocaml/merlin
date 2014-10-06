@@ -54,8 +54,6 @@ let new_state () =
 let with_typer state f =
   Typer.with_typer (Buffer.typer state.buffer) f
 
-let section = Logger.section "command"
-
 let cursor_state state =
   let cursor, marker =
     match state.lexer with
@@ -544,8 +542,7 @@ let dispatch (state : state) =
     let dot_merlins =
       try fn path
       with Sys_error s ->
-        Logger.debugj section ~title:"project_load"
-          (`String s);
+        Logger.debug Logger.Section.project_load ~title:"command" s;
         List.Lazy.Nil
     in
     let config = Dot_merlin.parse dot_merlins in
@@ -612,7 +609,7 @@ let dispatch (state : state) =
         | _ -> []
       in
       let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
-      Logger.infojf section ~title:"Occurrences paths"
+      Logger.infojf (Logger.section "occurences") ~title:"Occurrences paths"
         (fun paths ->
           let dump_path ({Location.txt; loc} as p) =
             let ppf, to_string = Format.to_string () in

@@ -158,7 +158,11 @@ let path_of_packages packages =
   let packages =  packages in
   let f pkg =
     try Either.R (Findlib.package_deep_ancestors [] [pkg])
-    with exn -> Either.L (pkg, exn)
+    with exn ->
+      Logger.infof Logger.Section.project_load ~title:"findlib"
+        (fun fmt (exn, pkg) -> Format.fprintf fmt "%s: %s" pkg (Printexc.to_string exn))
+        (exn, pkg) ;
+      Either.L (pkg, exn)
   in
   let packages = List.map ~f packages in
   let failures, packages = Either.split packages in

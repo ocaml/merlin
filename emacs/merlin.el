@@ -574,7 +574,7 @@ the merlin buffer of the current buffer."
   (let* ((r (merlin-send-command `(project find ,buffer-file-name)))
          (failed (assoc 'failures r))
          (result (assoc 'result r)))
-    (when failed (message (cdr failed)))
+    (when failed (mapcar #'message (cdr failed)))
     (when (and result (listp (cdr result)))
       (setq merlin-project-file (cadr result)))
     (merlin--reset)))

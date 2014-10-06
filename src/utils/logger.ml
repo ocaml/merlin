@@ -40,6 +40,7 @@ module Section = struct
       section
 
   let general = of_string "general"
+  let project_load = of_string "project_load"
 
   let to_string t = t.name
 

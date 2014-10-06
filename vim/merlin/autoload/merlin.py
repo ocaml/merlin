@@ -148,7 +148,8 @@ def parse_position(pos):
 
 def display_load_failures(result):
   if 'failures' in result:
-    print (result['failures'])
+      for failure in result['failures']:
+          print failure
   return result['result']
 
 def command_tell(content):

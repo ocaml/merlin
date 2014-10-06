@@ -222,20 +222,33 @@ end = struct
     let w  = Warnings.arg_spec prj.warnings in
     let spec = cl @ w in
     let process_flags flags =
-      try Arg.parse_argv ~current:(ref (-1)) (Array.of_list flags) spec
-          (fun name ->
-            Logger.info Logger.general ~title:"unknown flag"
-              name)
-          "" ;
-          List.iter flags ~f:(Logger.info Logger.general ~title:"added flag")
-      with exn ->
-        Logger.info Logger.general ~title:"exception while processing flags"
-          (Printexc.to_string exn)
+      let failures = ref [] in
+      let rec loop ?(current=(ref 0)) flags =
+        try Arg.parse_argv ~current flags spec (fun flg -> raise (Arg.Bad flg)) "" with
+        | Arg.Bad _ ->
+          Logger.info Logger.Section.project_load ~title:"flags"
+            (sprintf "unknown flag: %s" flags.(!current));
+          failures := (flags.(!current), Arg.Bad flags.(!current)) :: !failures ;
+          loop ~current flags
+        | Arg.Help _ -> (* ignore *)
+          loop ~current flags
+      in
+      loop (Array.of_list ("merlin" :: flags)) ;
+      !failures
     in
-    List.iter process_flags prj.dot_config.cfg_flags;
-    List.iter process_flags prj.user_config.cfg_flags;
+    let failures =
+      List.fold_left prj.dot_config.cfg_flags ~init:[] ~f:(fun acc lst ->
+        List.rev_append (process_flags lst) acc
+      )
+    in
+    let failures = 
+      List.fold_left prj.user_config.cfg_flags ~init:failures ~f:(fun acc lst ->
+        List.rev_append (process_flags lst) acc
+      )
+    in
     Clflags.set := prj.flags ;
-    Warnings.set := prj.warnings
+    Warnings.set := prj.warnings ;
+    failures
 
   let set_dot_merlin project dm =
     let module Dm = Dot_merlin in
@@ -252,8 +265,10 @@ end = struct
     cfg.cfg_flags <- dm.Dm.flags;
     cfg.cfg_extensions <- String.Set.(of_list dm.Dm.extensions);
     flush_global_modules project;
-    update_flags project;
-    result
+    match result, update_flags project with
+    | _, [] -> result
+    | `Ok, lst -> `Failures lst
+    | `Failures l1, l2 -> `Failures (List.rev_append l1 l2)
 
   let reload_dot_merlin project =
     try match project.dot_merlins with

@@ -24,6 +24,9 @@ module Section : sig
   val of_string : string -> t
   val to_string : t -> string
   val enabled : level -> t -> bool
+
+  val general : t
+  val project_load : t
 end
 
 type section = Section.t
@@ -50,19 +53,19 @@ val logf : level -> section -> ?title:string ->(Format.formatter -> 'a -> unit) 
 val logj : level -> section -> ?title:string ->Std.json -> unit
 val logjf : level -> section -> ?title:string ->('a -> Std.json) -> 'a -> unit
 
-val info : section -> ?title:string -> string -> unit
-val infof : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
-val infoj : section -> ?title:string -> Std.json -> unit
-val infojf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
-(** [info section msg] will output [msg] on the channel dedicated to [section],
-    if it is being monitored. *)
-
 val error : section -> ?title:string -> string -> unit
 val errorf : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
 val errorj : section -> ?title:string -> Std.json -> unit
 val errorjf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
 (** [error section msg] behaves as [log] if [section] is being monitored, but
     prints to the default_destination (if it is set) otherwise. *)
+
+val info : section -> ?title:string -> string -> unit
+val infof : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
+val infoj : section -> ?title:string -> Std.json -> unit
+val infojf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
+(** [info section msg] will output [msg] on the channel dedicated to [section],
+    if it is being monitored. *)
 
 val debug : section -> ?title:string -> string -> unit
 val debugf : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
