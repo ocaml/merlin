@@ -1770,9 +1770,9 @@ label_declarations:
 
 label_declaration:
 | mutable_flag label attributes COLON poly_type
-    {
-       Type.field (mkrhs $startpos($2) $endpos($2) $2) $5 ~mut:$1 ~attrs:$3 ~loc:(rloc $startpos $endpos)
-      }
+  {
+    Type.field (mkrhs $startpos($2) $endpos($2) $2) $5 ~mut:$1 ~attrs:$3 ~loc:(rloc $startpos $endpos)
+  }
 
 (* Type extensions *)
 
@@ -2684,6 +2684,13 @@ simple_expr:
            (Fake.app constr arg))
          constr (List.rev $4))
     }
+
+label_declaration:
+  mutable_flag label attributes COLON poly_type WITH expr
+    {
+      Type.field (mkrhs $startpos($2) $endpos($2) $2) $5 ~mut:$1 ~attrs:$3 ~loc:(rloc $startpos $endpos)
+    }
+;
 
 expr_comma_opt_list:
     expr_comma_opt_list COMMA expr              { $3 :: $1 }
