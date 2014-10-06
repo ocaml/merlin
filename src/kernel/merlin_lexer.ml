@@ -194,3 +194,17 @@ let reconstruct_identifier h =
         {Location. loc_start = s; loc_end = e; loc_ghost = false}
   in
   List.map ~f:extract_ident (head acc (History.head h))
+
+let is_uppercase {Location. txt = x} =
+  x <> "" && Char.is_uppercase x.[0]
+
+let rec drop_lowercase acc = function
+  | [x] -> List.rev (x :: acc)
+  | x :: xs when not (is_uppercase x) -> drop_lowercase [] xs
+  | x :: xs -> drop_lowercase (x :: acc) xs
+  | [] -> List.rev acc
+
+let identifier_suffix ident =
+  match List.last ident with
+  | Some x when is_uppercase x -> drop_lowercase [] ident
+  | _ -> ident
