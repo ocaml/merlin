@@ -202,6 +202,7 @@ let dispatch (state : state) =
             Lexing.compare_pos pos (Lexer.item_start item) < 0)
             lexer in
         let rec drop_lowercase acc = function
+          | [x] -> List.rev (x :: acc)
           | {Location. txt = x} :: xs
             when x <> "" && Char.is_lowercase x.[0] -> drop_lowercase [] xs
           | x :: xs -> drop_lowercase (x :: acc) xs
