@@ -35,10 +35,7 @@ let verbosity = Fluid.from 0
 module Printtyp = struct
   include Printtyp
 
-  let expand_type env ty =
-    let ty' = Ctype.full_expand env ty in
-    raw_type_expr Format.err_formatter ty';
-    ty'
+  let expand_type env ty = Ctype.full_expand env ty
 
   let expand_type_decl env ty =
     match ty.Types.type_manifest with
