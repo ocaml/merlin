@@ -202,10 +202,11 @@ let str_ident_locs item =
   | Tstr_exception (id, name, _) -> [ Ident.name id , name.Asttypes.loc ]
   | _ -> []
 
-let me_and_ids_of_include item =
+let get_mod_expr_if_included ~name item =
   match item.Typedtree.str_desc with
-  | Typedtree.Tstr_include (mod_expr, sign) ->
-    Some (mod_expr, include_idents sign)
+  | Typedtree.Tstr_include (mod_expr, sign) when
+    List.exists (include_idents sign) ~f:(fun x -> Ident.name x = name) ->
+    Some mod_expr
   | _ -> None
 
 let expose_module_binding item =

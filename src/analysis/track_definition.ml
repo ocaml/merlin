@@ -124,22 +124,20 @@ let rec check_item modules =
   let get_loc ~name item rest =
     try Some (List.assoc name (Merlin_types_custom.str_ident_locs item))
     with Not_found ->
-      match Merlin_types_custom.me_and_ids_of_include item with
-      | Some (incl_mod, incl_type) when
-        List.exists incl_type ~f:(fun x -> Ident.name x = name) ->
+      match Merlin_types_custom.get_mod_expr_if_included ~name item with
+      | None -> check_item modules rest
+      | Some incl_mod ->
         debug_log "one more include to follow..." ;
         resolve_mod_alias ~fallback:item.Typedtree.str_loc incl_mod
           [ name ] rest
-      | _ -> check_item modules rest
   in
   let get_on_track ~name item =
     let open Typedtree in
-    match Merlin_types_custom.me_and_ids_of_include item with
-    | Some (incl_mod, incl_type) when
-      List.exists incl_type ~f:(fun x -> Ident.name x = name) ->
+    match Merlin_types_custom.get_mod_expr_if_included ~name item with
+    | Some incl_mod ->
       debug_log "(get_on_track) %s is included..." name ;
       `Included incl_mod
-    | _ ->
+    | None ->
       try
         let mbs = Merlin_types_custom.expose_module_binding item in
         let mb = List.find ~f:(fun mb -> Ident.name mb.mb_id = name) mbs in
