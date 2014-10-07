@@ -1324,9 +1324,9 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 
 (defvar merlin-type-enclosing-map
   (let ((keymap (make-sparse-keymap)))
-    (define-key keymap (kbd "<up>") 'merlin-type-enclosing-go-up)
-    (define-key keymap (kbd "<down>") 'merlin-type-enclosing-go-down)
-    (define-key keymap (kbd "w") #'(lambda ()
+    (define-key keymap (kbd "C-<up>") 'merlin-type-enclosing-go-up)
+    (define-key keymap (kbd "C-<down>") 'merlin-type-enclosing-go-down)
+    (define-key keymap (kbd "C-w") #'(lambda ()
                                      (interactive)
                                      (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
                                        (when (cddr data)
