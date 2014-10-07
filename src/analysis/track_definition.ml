@@ -73,11 +73,21 @@ module Utils = struct
     with Not_found ->
       raise (File_not_found file)
 
-  let find_cmt fname =
-    try find_file (CMT fname)
-    with File_not_found _ ->
-      debug_log "no cmt, looking for .cmti of %s" fname ;
-      find_file (CMTI fname)
+  let find_file ?(with_fallback=false) file =
+    try find_file file
+    with File_not_found _ as exn ->
+      if not with_fallback then raise exn else
+      let fallback =
+        match file with
+        | ML f -> MLI f
+        | MLI f -> ML f
+        | CMT f -> CMTI f
+        | CMTI f -> CMT f
+      in
+      debug_log "no %s, looking for %s of %s" (ext_of_filetype file)
+        (ext_of_filetype fallback) (filename_of_filetype file);
+      try find_file fallback
+      with File_not_found _ -> raise exn
 
   let keep_suffix =
     let open Longident in
@@ -240,7 +250,7 @@ and browse_cmts ~root modules =
       let file = List.(find (map files ~f:file_path_to_mod_name)) ~f:((=) mod_name) in
       cwd := Filename.dirname root ;
       debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
-      let cmt_file = find_cmt file in
+      let cmt_file = find_file ~with_fallback:true (CMT file) in
       browse_cmts ~root:cmt_file modules
     end
   | _ -> `Not_found (* TODO? *)
@@ -254,11 +264,11 @@ and from_path' ~source ?(fallback=`Not_found) =
   | [] -> invalid_arg "empty path"
   | [ fname ] ->
     let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
-    let loc = { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false } in
+    let loc = { Location. loc_start = pos ; loc_end = pos ; loc_ghost = true } in
     if source then `ML loc else `MLI loc
   | fname :: modules ->
     try
-      let cmt_file = find_cmt fname in
+      let cmt_file = find_file ~with_fallback:true (CMT fname) in
       recover (browse_cmts ~root:cmt_file modules)
     with
     | Not_found -> recover `Not_found
@@ -379,11 +389,13 @@ let from_string ~project ~env ~local_defs is_implementation path =
       | `Not_found -> `Not_found
       | `ML loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
-        let full_path = find_file (ML (file_path_to_mod_name fname)) in
+        let with_fallback = loc.Location.loc_ghost in
+        let full_path = find_file ~with_fallback (ML (file_path_to_mod_name fname)) in
         `Found (Some full_path, loc.Location.loc_start)
       | `MLI loc ->
         let fname = loc.Location.loc_start.Lexing.pos_fname in
-        let full_path = find_file (MLI (file_path_to_mod_name fname)) in
+        let with_fallback = loc.Location.loc_ghost in
+        let full_path = find_file ~with_fallback (MLI (file_path_to_mod_name fname)) in
         `Found (Some full_path, loc.Location.loc_start)
   with
   | Not_found -> `Not_found
@@ -391,7 +403,7 @@ let from_string ~project ~env ~local_defs is_implementation path =
     let msg =
       match path with
       | ML file ->
-        Printf.sprintf "'%s' seems to originate from '%s' whose ML file could not be found (perhaps a packed module?)"
+        Printf.sprintf "'%s' seems to originate from '%s' whose ML file could not be found"
           str_ident file
       | MLI file ->
         Printf.sprintf "'%s' seems to originate from '%s' whose MLI file could not be found"
