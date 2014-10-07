@@ -70,6 +70,55 @@ module Printtyp = struct
       (fun () -> wrap_printing_env env f)
 end
 
+(* Check if module is smaller (= has less definition, counting nested ones)
+ * than a particular threshold. Return (Some n) if module has size n, or None
+ * otherwise (module is bigger than threshold).
+ * Used to skip printing big modules in completion. *)
+let rec mod_smallerthan n m =
+  if n < 0 then None
+  else
+  let open Types in
+  match m with
+  | Mty_ident _ -> Some 1
+  | Mty_signature (lazy s) ->
+    begin match List.length_lessthan n s with
+    | None -> None
+    | Some _ ->
+      List.fold_left s ~init:(Some 0)
+      ~f:begin fun acc item ->
+        let sub n1 m = match mod_smallerthan (n - n1) m with
+           | Some n2 -> Some (n1 + n2)
+           | None -> None
+        in
+        match acc, item with
+        | None, _ -> None
+        | Some n', _ when n' > n -> None
+        | Some n1, Sig_modtype (_,m) ->
+            begin match Merlin_types_custom.extract_modtype_declaration m with
+              | Some m -> sub n1 m
+              | None -> None
+            end
+        | Some n1, Sig_module (_,m,_) ->
+          sub n1 (Merlin_types_custom.extract_module_declaration m)
+
+        | Some n', _ -> Some (succ n')
+      end
+    end
+  | Mty_functor (_,m1,m2) ->
+    begin
+      match Merlin_types_custom.extract_functor_arg m1 with
+      | None -> None
+      | Some m1 ->
+      match mod_smallerthan n m1 with
+      | None -> None
+      | Some n1 ->
+      match mod_smallerthan (n - n1) m2 with
+      | None -> None
+      | Some n2 -> Some (n1 + n2)
+    end
+  | _ -> Some 1
+
+
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   let module Print = struct
   end
@@ -119,7 +168,13 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
                 | _path, None ->
                   Format.pp_print_string ppf "(* abstract module *)";
                   true
-                | _path, Some md -> Printtyp.modtype env ppf md;
+                | _path, Some md ->
+                  begin match mod_smallerthan 2000 md with
+                  | None when verbosity = 0 ->
+                    Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
+                  | _ ->
+                    Printtyp.modtype env ppf md
+                  end;
                   true
               with _ ->
                 raise exn
