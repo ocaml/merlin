@@ -51,7 +51,9 @@ let parse_dot_merlin_file path : bool * file =
         proj := Some ""
       else if String.is_prefixed ~by:"#" line then
         ()
-      else ();
+      else
+        Logger.info Logger.Section.project_load ~title:".merlin"
+          (sprintf "unexpected directive \"%s\"" line) ;
       aux ()
     in
     aux ()
