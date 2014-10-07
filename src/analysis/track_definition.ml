@@ -110,10 +110,10 @@ type result = [
     the file − and remove top level indirections. *)
 let get_top_items browsable =
   let items =
-    List.rev_map (fun bt ->
+    List.map (fun bt ->
       let open BrowseT in
       match bt.t_node with
-      | Structure { Typedtree. str_items } -> str_items (* FIXME: rev? *)
+      | Structure { Typedtree. str_items } -> List.rev str_items
       | Structure_item str_item -> [ str_item ]
       | _ -> [] (* TODO: handle signature *)
     ) browsable
