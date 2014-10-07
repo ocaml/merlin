@@ -345,6 +345,8 @@ module Buffer : sig
   val get_mark: t -> Parser.frame option
   val has_mark: t -> Parser.frame option -> bool
 
+  val is_implementation : t -> bool
+
   (* All top modules of current project, with current module removed *)
   val global_modules: t -> string list
 end = struct
@@ -358,6 +360,8 @@ end = struct
     mutable recover: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
   }
+
+  let is_implementation { kind ; _ } = kind = Parser.implementation
 
   let initial_step kind (_,token) =
     let input = match token with

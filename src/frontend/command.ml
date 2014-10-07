@@ -330,8 +330,9 @@ let dispatch (state : state) =
         path
       | Some path, _ -> path
     in
+    let is_implem = Buffer.is_implementation state.buffer in
     begin match
-      Track_definition.from_string ~project:state.project ~env ~local_defs path
+      Track_definition.from_string ~project:state.project ~env ~local_defs is_implem path
     with
     | `Found (file, pos) ->
       Logger.info (Logger.section "locate")
