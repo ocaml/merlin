@@ -1214,10 +1214,10 @@ variable `merlin-ac-cache')."
 
 (defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
   "Get the type of EXP inside the local context."
-  (if exp (merlin-send-command-async
-           (list 'type 'expression (substring-no-properties exp)
-                 'at (merlin-unmake-point (point)))
-           callback-if-success callback-if-exn)))
+  (when exp (merlin-send-command-async
+             (list 'type 'expression (substring-no-properties exp)
+                   'at (merlin-unmake-point (point)))
+             callback-if-success callback-if-exn)))
 
 (defun merlin--type-display-in-buffer (text)
   "Change content of type-buffer."
@@ -1252,11 +1252,12 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (if (and (not quiet) bounds)
           (merlin-highlight bounds 'merlin-type-face)))))
 
-(defun merlin--type-region ()
+(defun merlin--type-region (k)
   "Show the type of the region."
   (lexical-let*
-      ((substring (merlin--buffer-substring (region-beginning) (region-end)))
-       (on-success (lambda (type) (merlin--type-display nil type nil)))
+      ((k k)
+       (substring (merlin--buffer-substring (region-beginning) (region-end)))
+       (on-success (lambda (type) (merlin--type-display nil type nil) (funcall k)))
        (on-error   (lambda (err)
                      (let ((msg (assoc 'message err))
                            (typ (assoc 'type err)))
@@ -1264,7 +1265,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                               (message "Error: the content of the region failed to parse."))
                              (msg (message "Error: %s" (cdr msg)))
 			     (t
-			      (message "Unexpected error")))))))
+			      (message "Unexpected error"))))
+                     (funcall k))))
     (merlin--type-expression substring on-success on-error)))
 
 (defun merlin-type-expr (exp)
@@ -1279,24 +1281,26 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (merlin--type-expression exp on-success on-error)))
 
 ;; TYPE ENCLOSING
-(defun merlin--type-enclosing-query ()
+(defun merlin--type-enclosing-query (k)
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
-  (let* ((types (merlin-send-command (list 'type 'enclosing 'at (merlin-unmake-point (point)))
-                                     (lambda (exn) '(nil))))
-         (list (mapcar (lambda (obj)
-                         (let* ((tail (cdr (assoc 'tail obj)))
-                                (tail (cond ((equal tail "position")
-                                             " (* tail position *)")
-                                            ((equal tail "call")
-                                             " (* tail call *)")
-                                            (t "")))
-                                (type (cdr (assoc 'type obj))))
-                           (cons (concat type tail)
-                                 (merlin-make-bounds obj))))
-                       types)))
-    (setq merlin-enclosing-types list)
-    (setq merlin-enclosing-offset -1)
-    merlin-enclosing-types))
+  (lexical-let* ((k k))
+    (merlin-send-command-async (list 'type 'enclosing 'at (merlin-unmake-point (point)))
+      (lambda (types) ; success continuation
+        (setq merlin-enclosing-types
+              (mapcar (lambda (obj)
+                        (let* ((tail (cdr (assoc 'tail obj)))
+                               (tail (cond ((equal tail "position")
+                                            " (* tail position *)")
+                                           ((equal tail "call")
+                                            " (* tail call *)")
+                                           (t "")))
+                               (type (cdr (assoc 'type obj))))
+                          (cons (concat type tail)
+                                (merlin-make-bounds obj))))
+                      types))
+        (setq merlin-enclosing-offset -1)
+        (funcall k merlin-enclosing-types))
+      (lambda (exn) (funcall k nil))))) ; failure continuation
 
 (defun merlin--type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (TYPE . BOUNDS)."
@@ -1336,18 +1340,21 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     keymap)
   "The local map to navigate type enclosing.")
 
+(defun merlin--type-enclosing-after ()
+  (when (and (fboundp 'set-temporary-overlay-map)
+             merlin-arrow-keys-type-enclosing)
+    (set-temporary-overlay-map merlin-type-enclosing-map t)))
+
 (defun merlin-type-enclosing ()
   "Print the type of the expression under point (or of the region, if it exists)."
   (interactive)
   (merlin-sync-to-point)
-  (save-excursion
-    (if (region-active-p)
-        (merlin--type-region)
-      (when (merlin--type-enclosing-query)
-        (merlin-type-enclosing-go-up))))
-  (when (and (fboundp 'set-temporary-overlay-map)
-             merlin-arrow-keys-type-enclosing)
-    (set-temporary-overlay-map merlin-type-enclosing-map t)))
+  (if (region-active-p)
+      (merlin--type-region #'merlin--type-enclosing-after)
+    (merlin--type-enclosing-query
+     (lambda (success)
+       (when success (merlin-type-enclosing-go-up))
+       (merlin--type-enclosing-after)))))
 
 (defun merlin--find-extents (list low high)
   "Return the smallest extent in LIST that LOW and HIGH fit
@@ -1664,9 +1671,6 @@ Returns the position."
     (define-key merlin-map (kbd "C-c C-r") 'merlin-error-check)
     (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
-;; See the discussion on #129 for the future of these bindings
-;   (define-key merlin-map (kbd "C-<up>") 'merlin-type-enclosing-go-up)
-;   (define-key merlin-map (kbd "C-<down>") 'merlin-type-enclosing-go-down)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-phrase-next)
     (define-key merlin-map (kbd "C-c C-p") 'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]
