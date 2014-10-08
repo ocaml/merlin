@@ -199,7 +199,7 @@ let rec check_item ~source modules =
   function
   | [] ->
     debug_log "%s not in current file..." (String.concat ~sep:"." modules) ;
-    from_path' ~source modules
+    from_path ~source modules
   | item :: rest ->
     match modules with
     | [] -> assert false
@@ -224,8 +224,7 @@ and browse_cmts ~root modules =
   | Interface intf ->
     begin match modules with
     | [] ->
-      let pos_fname = root in
-      let pos = { Lexing. pos_fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
+      let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
       `MLI { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
     | _ ->
       let browses   = Browse.of_typer_contents [ `Sg intf ] in
@@ -235,8 +234,7 @@ and browse_cmts ~root modules =
   | Implementation impl ->
     begin match modules with
     | [] -> (* we were looking for a module, we found the right file, we're happy *)
-      let pos_fname = root in
-      let pos = { Lexing. pos_fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
+      let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
       `ML { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
     | _ ->
       let browses   = Browse.of_typer_contents [ `Str impl ] in
@@ -247,7 +245,9 @@ and browse_cmts ~root modules =
     begin match modules with
     | [] -> `Not_found
     | mod_name :: modules ->
-      let file = List.(find (map files ~f:file_path_to_mod_name)) ~f:((=) mod_name) in
+      let file = 
+        List.(find (map files ~f:file_path_to_mod_name)) ~f:((=) mod_name)
+      in
       cwd := Filename.dirname root ;
       debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
       let cmt_file = find_file ~with_fallback:true (CMT file) in
@@ -255,7 +255,7 @@ and browse_cmts ~root modules =
     end
   | _ -> `Not_found (* TODO? *)
 
-and from_path' ~source ?(fallback=`Not_found) =
+and from_path ~source ?(fallback=`Not_found) =
   let recover = function
     | `Not_found -> fallback
     | otherwise -> otherwise
@@ -263,8 +263,8 @@ and from_path' ~source ?(fallback=`Not_found) =
   function
   | [] -> invalid_arg "empty path"
   | [ fname ] ->
-    let pos = { Lexing. pos_fname = fname ; pos_lnum = 1 ; pos_cnum = 0 ; pos_bol = 0 } in
-    let loc = { Location. loc_start = pos ; loc_end = pos ; loc_ghost = true } in
+    let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
+    let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
     if source then `ML loc else `MLI loc
   | fname :: modules ->
     try
@@ -273,7 +273,7 @@ and from_path' ~source ?(fallback=`Not_found) =
     with
     | Not_found -> recover `Not_found
     | File_not_found (CMT fname) as exn ->
-      debug_log "failed to locate the cmt of '%s'" fname ;
+      debug_log "failed to locate the cmt[i] of '%s'" fname ;
       begin match fallback with
       | `Not_found  -> raise exn
       | value -> value
@@ -285,43 +285,31 @@ and resolve_mod_alias ~source ~fallback node path rest =
     | `Not_found -> if source then `ML fallback else `MLI fallback
     | otherwise  -> otherwise
   in
-  let open Typedtree in
-  match node with
-  | BrowseT.Module_expr mod_expr ->
-    begin match mod_expr.mod_desc with
-    | Tmod_ident (path', _) ->
-      let full_path = (path_to_list path') @ path in
-      do_fallback (check_item ~source full_path rest)
-    | Tmod_structure str ->
-      let browsable = get_top_items (Browse.of_typer_contents [ `Str str ]) @ rest in
-      do_fallback (check_item ~source path browsable)
-    | Tmod_functor _
-    | Tmod_apply (_, _, _) ->
-      (* We don't want to follow functors instantiation *)
-      debug_log "stopping on functor instantiation" ;
-      if source then `ML mod_expr.mod_loc else `MLI mod_expr.mod_loc
-    | Tmod_constraint (mod_expr, _, _, _) ->
-      resolve_mod_alias ~source ~fallback (BrowseT.Module_expr mod_expr) path rest
-    | Tmod_unpack _ ->
-      do_fallback (check_item ~source path rest)
-    end
-  | BrowseT.Module_type mod_type ->
-    begin match Merlin_types_custom.remove_indir_mty mod_type with
-    | `Alias path' ->
-      let full_path = (path_to_list path') @ path in
-      do_fallback (check_item ~source full_path rest)
-    | `Sg sg ->
-      let browsable = get_top_items (Browse.of_typer_contents [ `Sg sg ]) @ rest in
-      do_fallback (check_item ~source path browsable)
-    | `Functor ->
-      debug_log "stopping on functor signature" ;
-      if source then `ML mod_type.mty_loc else `MLI mod_type.mty_loc
-    | `Mod_type mod_type ->
-      resolve_mod_alias ~source ~fallback (BrowseT.Module_type mod_type) path rest
-    | `Mod_expr mod_expr ->
-      resolve_mod_alias ~source ~fallback (BrowseT.Module_expr mod_expr) path rest
-    end
-  | _ -> assert false (* absurd *)
+  let direct, loc =
+    match node with
+    | BrowseT.Module_expr me  ->
+      Merlin_types_custom.remove_indir_me me, me.Typedtree.mod_loc
+    | BrowseT.Module_type mty ->
+      Merlin_types_custom.remove_indir_mty mty, mty.Typedtree.mty_loc
+    | _ -> assert false (* absurd *)
+  in
+  match direct with
+  | `Alias path' ->
+    let full_path = (path_to_list path') @ path in
+    do_fallback (check_item ~source full_path rest)
+  | `Sg _ | `Str _ as x ->
+    let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
+    do_fallback (check_item ~source path lst)
+  | `Functor msg ->
+    debug_log "stopping on functor%s" msg ;
+    if source then `ML loc else `MLI loc
+  | `Mod_type mod_type ->
+    resolve_mod_alias ~source ~fallback (BrowseT.Module_type mod_type) path rest
+  | `Mod_expr mod_expr ->
+    resolve_mod_alias ~source ~fallback (BrowseT.Module_expr mod_expr) path rest
+  | `Unpack -> (* FIXME: should we do something or stop here? *)
+    debug_log "found Tmod_unpack, expect random results." ;
+    do_fallback (check_item ~source path rest)
 
 let path_and_loc_from_label desc env =
   let open Types in

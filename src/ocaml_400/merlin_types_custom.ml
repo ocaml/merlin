@@ -109,10 +109,6 @@ let lookup_modtype name env =
   | path, Types.Modtype_abstract -> path, None
   | path, Types.Modtype_manifest mty -> path, Some mty
 
-let tstr_eval_expression = function
-  | Typedtree.Tstr_eval e -> e
-  | _ -> assert false
-
 let summary_prev =
   let open Env in
   function
@@ -273,6 +269,15 @@ let expose_module_declaration item =
       { md_id ; md_name ; md_type ; md_loc = md_name.Asttypes.loc }
     )
   | _ -> []
+
+let remove_indir_me me =
+  match me.Typedtree.mod_desc with
+  | Typedtree.Tmod_ident (path, _) -> `Alias path
+  | Typedtree.Tmod_structure str -> `Str str
+  | Typedtree.Tmod_functor _ -> `Functor ""
+  | Typedtree.Tmod_apply (_,_,_) -> `Functor " instantiation"
+  | Typedtree.Tmod_constraint (me, _, _, _) -> `Mod_expr me
+  | Typedtree.Tmod_unpack _ -> `Unpack
 
 let remove_indir_mty mty =
   match mty.Typedtree.mty_desc with

@@ -442,8 +442,8 @@ module Lexing = struct
     buf
 
   (* Manipulating position *)
-  let make_pos (pos_lnum, pos_cnum) =
-    { pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 }
+  let make_pos ?(pos_fname="") (pos_lnum, pos_cnum) =
+    { pos_fname ; pos_lnum ; pos_cnum ; pos_bol = 0 }
 
   let column pos = pos.pos_cnum - pos.pos_bol
 
