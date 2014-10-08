@@ -8,5 +8,5 @@ val from_string
   -> string
   -> [> `File_not_found of string
       | `Found of string option * Lexing.position
-      | `Not_found
+      | `Not_found of string * string option
       | `Not_in_env of string ]

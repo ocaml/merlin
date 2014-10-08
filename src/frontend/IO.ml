@@ -364,7 +364,10 @@ module Protocol_io = struct
           `List (List.map json_of_completion compl_list)
         | Locate _, resp ->
           begin match resp with
-          | `Not_found -> `String "Not found"
+          | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
+          | `Not_found (i, Some f) ->
+            `String
+              (sprintf "%s was supposed to be in %s but could not be found" i f)
           | `Not_in_env str ->
             `String (Printf.sprintf "Not in environment '%s'" str)
           | `File_not_found msg ->

@@ -262,6 +262,10 @@ module Option = struct
   let to_list = function
     | None -> []
     | Some x -> [x]
+
+  let is_some = function
+    | None -> false
+    | _ -> true
 end
 
 module String = struct

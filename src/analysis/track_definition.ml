@@ -6,6 +6,43 @@ let cmt_path = ref (Misc.Path_list.of_list [])
 
 let cwd = ref ""
 
+module File_switching : sig
+  exception Can't_move
+
+  val reset : unit -> unit
+
+  val can_move : unit -> bool
+
+  val move_to : string -> unit (* raises Can't_move *)
+
+  val allow_movement : unit -> unit
+
+  val where_am_i : unit -> string option
+end = struct
+  type t = {
+    already_moved : bool ;
+    last_file_visited : string option ;
+  }
+
+  exception Can't_move
+
+  let default = { already_moved = false ; last_file_visited = None }
+
+  let state = ref default
+
+  let reset () = state := default
+
+  let can_move () = not !state.already_moved
+
+  let move_to file =
+    if !state.already_moved then raise Can't_move else
+    state := { already_moved = true ; last_file_visited = Some file }
+
+  let allow_movement () = state := { !state with already_moved = false }
+
+  let where_am_i () = !state.last_file_visited
+end
+
 let section = Logger.section "locate"
 
 module Utils = struct
@@ -213,6 +250,7 @@ and browse_cmts ~root modules =
   let open Cmt_format in
   let cmt_infos = read_cmt root in
   debug_log "inspecting %s" root ;
+  File_switching.move_to root ;
   match
     match cmt_infos.cmt_annots with
     | Interface intf -> `Sg intf, false
@@ -234,6 +272,7 @@ and browse_cmts ~root modules =
       check_item ~source modules browsable
     end
   | `Pack files, _ ->
+    File_switching.allow_movement () ;
     begin match modules with
     | [] -> `Not_found
     | mod_name :: modules ->
@@ -246,12 +285,13 @@ and browse_cmts ~root modules =
       browse_cmts ~root:cmt_file modules
     end
 
-and from_path ~source ?(fallback=`Not_found) =
+and from_path ~source ?(fallback=`Not_found) lst =
   let recover = function
     | `Not_found -> fallback
-    | otherwise -> otherwise
+    | otherwise  -> otherwise
   in
-  function
+  if not (File_switching.can_move ()) then fallback else
+  match lst with
   | [] -> invalid_arg "empty path"
   | [ fname ] ->
     let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
@@ -262,11 +302,11 @@ and from_path ~source ?(fallback=`Not_found) =
       let cmt_file = find_file ~with_fallback:true (CMT fname) in
       recover (browse_cmts ~root:cmt_file modules)
     with
-    | Not_found -> recover `Not_found
+    | Not_found -> fallback
     | File_not_found (CMT fname) as exn ->
       debug_log "failed to locate the cmt[i] of '%s'" fname ;
       begin match fallback with
-      | `Not_found  -> raise exn
+      | `Not_found -> raise exn
       | value -> value
       end
     | File_not_found _ -> assert false
@@ -286,6 +326,7 @@ and resolve_mod_alias ~source ~fallback node path rest =
   in
   match direct with
   | `Alias path' ->
+    File_switching.allow_movement () ;
     let full_path = (path_to_list path') @ path in
     do_fallback (check_item ~source full_path rest)
   | `Sg _ | `Str _ as x ->
@@ -321,6 +362,7 @@ let finalize source loc =
   `Found (Some full_path, loc.Location.loc_start)
 
 let from_string ~project ~env ~local_defs is_implementation path =
+  File_switching.reset () ;
   cwd := "" (* Reset the cwd before doing anything *) ;
   sources_path := Project.source_path project ;
   cmt_path := Project.cmt_path project ;
@@ -328,7 +370,7 @@ let from_string ~project ~env ~local_defs is_implementation path =
   let ident, is_label = keep_suffix (Longident.parse path) in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
-    let path, loc =
+    let path', loc =
       (* [1] If we know it is a record field, we only look for that. *)
       if is_label then
         let label_desc = Merlin_types_custom.lookup_label ident env in
@@ -366,14 +408,14 @@ let from_string ~project ~env ~local_defs is_implementation path =
     if not (is_ghost loc) then
       `Found (None, loc.Location.loc_start)
     else
-      let modules = path_to_list path in
+      let modules = path_to_list path' in
       let items   = get_top_items (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
-      | `Not_found -> `Not_found
-      | `ML  loc -> finalize true loc
-      | `MLI loc -> finalize false loc
+      | `Not_found -> `Not_found (path, File_switching.where_am_i ())
+      | `ML  loc   -> finalize true loc
+      | `MLI loc   -> finalize false loc
   with
-  | Not_found -> `Not_found
+  | Not_found -> `Not_found (path, File_switching.where_am_i ())
   | File_not_found path ->
     let msg =
       match path with
