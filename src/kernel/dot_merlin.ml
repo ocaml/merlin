@@ -60,7 +60,7 @@ let parse_dot_merlin_file path : bool * file =
   with
   | End_of_file ->
     close_in_noerr ic;
-    !recurse, {project = !proj; path; directives = !acc}
+    !recurse, {project = !proj; path; directives = List.rev !acc}
   | exn ->
     close_in_noerr ic;
     raise exn
