@@ -432,12 +432,21 @@ let dispatch (state : state) =
         let cmp (l1,_) (l2,_) =
           Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
         let err exns =
-          let cmp (l1,_) (l2,_) =
-            Location.(Lexing.compare_pos l1.loc_start l2.loc_start) in
-          List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns) in
+          List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns)
+        in
         let err_lexer  = err (Buffer.lexer_errors state.buffer) in
         let err_parser = err (Buffer.parser_errors state.buffer) in
-        let err_typer  = err (Typer.exns (Buffer.typer state.buffer)) in
+        let err_typer  =
+          (* When there is a cmi error, we will have a lot of meaningless errors,
+           * there is no need to report them. *)
+          let exns = Typer.exns (Buffer.typer state.buffer) in
+          let exns =
+            let cmi_error = function Cmi_format.Error _ -> true | _ -> false in
+            try [ List.find exns ~f:cmi_error ]
+            with Not_found -> exns
+          in
+          err exns
+        in
         (* Return parsing warnings & first parsing error,
            or type errors if no parsing errors *)
         let rec extract_warnings acc = function

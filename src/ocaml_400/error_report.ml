@@ -35,6 +35,10 @@ let format ~valid ~where ?(loc=Location.none) text =
 
 
 let strict_of_exn = function
+  | Cmi_format.Error error ->
+    let ppf, to_string = Format.to_string () in
+    Cmi_format.report_error ppf error ;
+    Some (format ~valid:true ~where:"type" (to_string ()))
   | Typecore.Error (loc, env, e) ->
     let ppf, to_string = Format.to_string () in
     Typecore.report_error env ppf e;
