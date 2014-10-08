@@ -1428,7 +1428,7 @@ is active)."
 (defun merlin--locate-pos (ident)
   "Locate the identifier IDENT at point and return the result."
   (merlin-send-command
-   (list 'locate (substring-no-properties ident)
+   (list 'locate (if ident (substring-no-properties ident) 'null)
          'at (merlin-unmake-point (point)))))
 
 (defun merlin--locate-pure (&optional ident)
