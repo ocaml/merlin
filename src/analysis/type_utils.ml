@@ -169,7 +169,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
                   Format.pp_print_string ppf "(* abstract module *)";
                   true
                 | _path, Some md ->
-                  begin match mod_smallerthan 2000 md with
+                  begin match mod_smallerthan 1000 md with
                   | None when verbosity = 0 ->
                     Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
                   | _ ->

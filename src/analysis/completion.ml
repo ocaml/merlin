@@ -181,8 +181,8 @@ let completion_format ~exact name ?path ty =
     | `Mod m   ->
       if exact then
         begin
-          let verbosity = Fluid.get Type_utils.verbosity + 1 in
-          match Type_utils.mod_smallerthan (2000 * verbosity) m with
+          let verbosity = Fluid.get Type_utils.verbosity in
+          match Type_utils.mod_smallerthan (1000 * verbosity) m with
           | None -> ()
           | Some _ -> Printtyp.modtype ppf m
         end;
