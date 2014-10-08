@@ -306,20 +306,19 @@ and resolve_mod_alias ~source ~fallback node path rest =
       do_fallback (check_item ~source path rest)
     end
   | BrowseT.Module_type mod_type ->
-    begin match mod_type.mty_desc with
-    | Tmty_alias (path', _)
-    | Tmty_ident (path', _) ->
+    begin match Merlin_types_custom.remove_indir_mty mod_type with
+    | `Alias path' ->
       let full_path = (path_to_list path') @ path in
       do_fallback (check_item ~source full_path rest)
-    | Tmty_signature sg ->
+    | `Sg sg ->
       let browsable = get_top_items (Browse.of_typer_contents [ `Sg sg ]) @ rest in
       do_fallback (check_item ~source path browsable)
-    | Tmty_functor _ ->
+    | `Functor ->
       debug_log "stopping on functor signature" ;
       if source then `ML mod_type.mty_loc else `MLI mod_type.mty_loc
-    | Tmty_with (mod_type, _) ->
+    | `Mod_type mod_type ->
       resolve_mod_alias ~source ~fallback (BrowseT.Module_type mod_type) path rest
-    | Tmty_typeof mod_expr -> (* ??? *)
+    | `Mod_expr mod_expr ->
       resolve_mod_alias ~source ~fallback (BrowseT.Module_expr mod_expr) path rest
     end
   | _ -> assert false (* absurd *)

@@ -269,6 +269,15 @@ let expose_module_declaration item =
   | Typedtree.Tsig_recmodule mds -> mds
   | _ -> []
 
+let remove_indir_mty mty =
+  match mty.Typedtree.mty_desc with
+  | Typedtree.Tmty_alias (path, _)
+  | Typedtree.Tmty_ident (path, _) -> `Alias path
+  | Typedtree.Tmty_signature sg -> `Sg sg
+  | Typedtree.Tmty_functor _ -> `Functor
+  | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
+  | Typedtree.Tmty_typeof me -> `Mod_expr me
+
 let path_and_loc_of_cstr desc env =
   let open Types in
   match desc.cstr_tag with

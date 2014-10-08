@@ -64,7 +64,7 @@ let signature_item_ident =
   | Sig_class (id, _, _)
   | Sig_class_type (id, _, _) -> id
 
-let include_idents l = l
+let include_idents l = List.map signature_item_ident l
 
 let lookup_constructor id env = snd (Env.lookup_constructor id env)
 let lookup_label id env = snd (Env.lookup_label id env)
@@ -229,8 +229,28 @@ let get_mod_expr_if_included ~name item =
   match item.Typedtree.str_desc with
   | Typedtree.Tstr_include (mod_expr, ids) when
     List.exists ids ~f:(fun x -> Ident.name x = name) ->
-    Some mod_expr
-  | _ -> None
+    `Mod_expr mod_expr
+  | _ -> `Not_included
+
+let sig_ident_locs item =
+  let open Typedtree in
+  match item.sig_desc with
+  | Tsig_value (id, _, vd) -> [ Ident.name id , vd.val_loc ]
+  | Tsig_type td_list ->
+    List.map td_list ~f:(fun (id, _, td) -> Ident.name id, td.typ_loc)
+  | Tsig_exception (id, _, ed) -> [ Ident.name id , ed.exn_loc ]
+  | Tsig_module (id, _, mt) -> [ Ident.name id , mt.mty_loc ]
+  | Tsig_recmodule mds ->
+    List.map mds ~f:(fun (id, _, mt) -> Ident.name id , mt.mty_loc)
+  | Tsig_modtype (_, str_loc, _) -> [ str_loc.Asttypes.txt , str_loc.Asttypes.loc ]
+  | _ -> []
+
+let get_mod_type_if_included ~name item =
+  match item.Typedtree.sig_desc with
+  | Typedtree.Tsig_include (mty, sign) when
+    List.exists (include_idents sign) ~f:(fun x -> Ident.name x = name) ->
+    `Mod_type mty
+  | _ -> `Not_included
 
 let expose_module_binding item =
   let open Typedtree in
@@ -242,6 +262,25 @@ let expose_module_binding item =
       ~f:(fun (mb_id, mb_name, _, mb_expr) ->
           { mb_id ; mb_name ; mb_expr ; mb_loc = mb_name.Asttypes.loc })
   | _ -> []
+
+let expose_module_declaration item =
+  let open Typedtree in
+  match item.sig_desc with
+  | Tsig_module (md_id, md_name, md_type) ->
+    [{ md_id ; md_name ; md_type ; md_loc = md_name.Asttypes.loc }]
+  | Tsig_recmodule mds ->
+    List.map mds ~f:(fun (md_id, md_name, md_type) ->
+      { md_id ; md_name ; md_type ; md_loc = md_name.Asttypes.loc }
+    )
+  | _ -> []
+
+let remove_indir_mty mty =
+  match mty.Typedtree.mty_desc with
+  | Typedtree.Tmty_ident (path, _) -> `Alias path
+  | Typedtree.Tmty_signature sg -> `Sg sg
+  | Typedtree.Tmty_functor _ -> `Functor
+  | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
+  | Typedtree.Tmty_typeof me -> `Mod_expr me
 
 let path_and_loc_of_cstr desc env =
   let open Types in
