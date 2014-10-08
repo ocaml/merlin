@@ -260,7 +260,7 @@ let remove_indir_mty mty =
   match mty.Typedtree.mty_desc with
   | Typedtree.Tmty_ident (path, _) -> `Alias path
   | Typedtree.Tmty_signature sg -> `Sg sg
-  | Typedtree.Tmty_functor _ -> `Functor
+  | Typedtree.Tmty_functor _ -> `Functor " signature"
   | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
   | Typedtree.Tmty_typeof me -> `Mod_expr me
 
