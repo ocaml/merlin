@@ -129,7 +129,7 @@ type t = {
   env_cache   : Env.cache;
   extensions  : Extension.set;
   typer       : I.t;
-  stamp       : bool ref;
+  stamp       : bool ref list;
 }
 
 let fluid_btype = Fluid.from_ref Btype.cache
@@ -177,7 +177,7 @@ let exns t = (get_value t.typer).P.exns
 let extensions t = t.extensions
 
 let is_valid t =
-  !(t.stamp) &&
+  List.for_all ~f:(!) t.stamp &&
   match
     protect_typer ~btype:t.btype_cache ~env:t.env_cache
       (fun _ -> Either.try' Env.check_cache_consistency)

@@ -65,28 +65,31 @@ let parse_dot_merlin_file path : bool * file =
     close_in_noerr ic;
     raise exn
 
-let rec read ~path =
+let rec find dir =
+  let fname = Filename.concat dir ".merlin" in
+  if Sys.file_exists fname && not (Sys.is_directory fname)
+  then Some fname
+  else
+    let parent = Filename.dirname dir in
+    if parent <> dir
+    then find parent
+    else None
+
+let rec read path =
   let recurse, dot_merlin = parse_dot_merlin_file path in
   let next = if recurse
-    then lazy (find ~path:(Filename.dirname (Filename.dirname path)))
+    then lazy (find_next (Filename.dirname (Filename.dirname path)))
     else lazy List.Lazy.Nil
   in
   List.Lazy.Cons (dot_merlin, next)
 
-and find ~path =
-  let rec loop dir =
-    let fname = Filename.concat dir ".merlin" in
-    if Sys.file_exists fname
-    then Some fname
-    else
-      let parent = Filename.dirname dir in
-      if parent <> dir
-      then loop parent
-      else None
-  in
-  match loop (canonicalize_filename path) with
+and find_next path =
+  match find path with
   | Some path -> read path
   | None -> List.Lazy.Nil
+
+let find path = find (canonicalize_filename path)
+let read path = read (canonicalize_filename path)
 
 let rec project_name = function
   | List.Lazy.Cons (({project = Some ""; path = name} | {project = Some name}), _) ->

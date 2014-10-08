@@ -96,10 +96,8 @@ type _ request =
   | Path_list
     :  [`Build|`Source]
     -> string list request
-  | Project_load
-    :  [`File|`Find]
-     * string
-    -> (string list * [`Ok | `Failures of (string * exn) list]) request
+  | Project_get
+    :  (string list * [`Ok | `Failures of (string * exn) list]) request
   | Occurrences
     : [`Ident_at of position]
     -> Location.t list request

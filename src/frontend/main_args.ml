@@ -10,19 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-let projectfind_spec =
-  let f path =
-    let dot_merlins = Dot_merlin.find path in
-    begin match Dot_merlin.project_name dot_merlins with
-      | Some name -> print_endline name
-      | None -> ()
-    end;
-    exit 0
-  in
-  "-project-find",
-  Arg.String f,
-  "<path> Print name of merlin project near <path>, if any"
-
 let ignore_sigint_spec =
   let f () =
     try ignore (Sys.(signal sigint Signal_ignore))
@@ -70,7 +57,6 @@ let unexpected_argument s =
 
 let flags =
   [
-    projectfind_spec;
     ignore_sigint_spec;
     print_version_spec;
     print_version_num_spec;

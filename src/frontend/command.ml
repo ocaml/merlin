@@ -33,23 +33,13 @@ open Protocol
 open Merlin_lib
 
 type state = {
-  mutable project : Project.t;
   mutable buffer : Buffer.t;
   mutable lexer : Lexer.t option;
 }
 
-let store : (string, Project.t) Hashtbl.t = Hashtbl.create 3
-let project_by_key key =
-  try Hashtbl.find store key
-  with Not_found ->
-    let project = Project.create () in
-    Hashtbl.replace store key project;
-    project
-
 let new_state () =
-  let project = project_by_key "" in
-  let buffer = Buffer.create project Parser.implementation in
-  {project; buffer; lexer = None}
+  let buffer = Buffer.create Parser.implementation in
+  {buffer; lexer = None}
 
 let with_typer state f =
   Typer.with_typer (Buffer.typer state.buffer) f
@@ -331,8 +321,9 @@ let dispatch (state : state) =
       | Some path, _ -> path
     in
     let is_implem = Buffer.is_implementation state.buffer in
+    let project = Buffer.project state.buffer in
     begin match
-      Track_definition.from_string ~project:state.project ~env ~local_defs is_implem path
+      Track_definition.from_string ~project ~env ~local_defs is_implem path
     with
     | `Found (file, pos) ->
       Logger.info (Track_definition.section)
@@ -419,13 +410,13 @@ let dispatch (state : state) =
       | `ML  -> Raw_parser.implementation_state
       | `MLI -> Raw_parser.interface_state
     in
-    let buffer = Buffer.create ?path state.project parser in
+    let buffer = Buffer.create ?path parser in
     buffer_changed state;
     state.buffer <- buffer;
     cursor_state state
 
   | (Refresh : a request) ->
-    Project.invalidate ~flush:true state.project
+    Project.invalidate ~flush:true (Buffer.project state.buffer)
 
   | (Errors : a request) ->
     begin try
@@ -530,13 +521,14 @@ let dispatch (state : state) =
 
   | (Which_path xs : a request) ->
     begin
+      let project = Buffer.project state.buffer in
       let rec aux = function
         | [] -> raise Not_found
         | x :: xs ->
           try
-            find_in_path_uncap (Project.source_path state.project) x
+            find_in_path_uncap (Project.source_path project) x
           with Not_found -> try
-            find_in_path_uncap (Project.build_path state.project) x
+            find_in_path_uncap (Project.build_path project) x
           with Not_found ->
             aux xs
       in
@@ -544,39 +536,28 @@ let dispatch (state : state) =
     end
 
   | (Which_with_ext exts : a request) ->
-    let path = Path_list.to_strict_list (Project.source_path state.project) in
+    let project = Buffer.project state.buffer in
+    let path = Path_list.to_strict_list (Project.source_path project) in
     let with_ext ext = modules_in_path ~ext path in
     List.concat_map ~f:with_ext exts
 
-  | (Project_load (cmd,path) : a request) ->
-    let fn = match cmd with
-      | `File -> Dot_merlin.read
-      | `Find -> Dot_merlin.find
-    in
-    let dot_merlins =
-      try fn path
-      with Sys_error s ->
-        Logger.debug Logger.Section.project_load ~title:"command" s;
-        List.Lazy.Nil
-    in
-    let config = Dot_merlin.parse dot_merlins in
-    let key = match config.Dot_merlin.dot_merlins with
-      | [] -> ""
-      | (a :: _) -> a
-    in
-    let project = project_by_key key in
-    let failures = Project.set_dot_merlin project (Some config) in
-    state.project <- project;
-    (config.Dot_merlin.dot_merlins, failures)
+  | (Project_get : a request) ->
+    let project = Buffer.project state.buffer in
+    (List.map ~f:fst (Project.get_dot_merlins project),
+     match Project.get_dot_merlins_failure project with
+     | [] -> `Ok
+     | failures -> `Failures failures)
 
   | (Findlib_list : a request) ->
     Fl_package_base.list_packages ()
 
   | (Findlib_use packages : a request) ->
-    Project.User.load_packages state.project packages
+    let project = Buffer.project state.buffer in
+    Project.User.load_packages project packages
 
   | (Extension_list kind : a request) ->
-    let enabled = Project.extensions state.project in
+    let project = Buffer.project state.buffer in
+    let enabled = Project.extensions project in
     let set = match kind with
       | `All -> Extension.all
       | `Enabled -> enabled
@@ -589,21 +570,26 @@ let dispatch (state : state) =
       | `Enabled  -> true
       | `Disabled -> false
     in
-    List.iter ~f:(Project.User.set_extension state.project ~enabled)
+    let project = Buffer.project state.buffer in
+    List.iter ~f:(Project.User.set_extension project ~enabled)
       extensions
 
   | (Path (var,action,pathes) : a request) ->
+    let project = Buffer.project state.buffer in
     List.iter pathes
-      ~f:(Project.User.path state.project ~action ~var ?cwd:None)
+      ~f:(Project.User.path project ~action ~var ?cwd:None)
 
   | (Path_list `Build : a request) ->
-    Path_list.to_strict_list (Project.build_path state.project)
+    let project = Buffer.project state.buffer in
+    Path_list.to_strict_list (Project.build_path project)
 
   | (Path_list `Source : a request) ->
-    Path_list.to_strict_list (Project.source_path state.project)
+    let project = Buffer.project state.buffer in
+    Path_list.to_strict_list (Project.source_path project)
 
   | (Path_reset : a request) ->
-    Project.User.reset state.project
+    let project = Buffer.project state.buffer in
+    Project.User.reset project
 
   | (Occurrences (`Ident_at pos) : a request) ->
     let (@@) f x = f x in

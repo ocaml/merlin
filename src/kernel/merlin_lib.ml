@@ -16,16 +16,16 @@ module Recover = Merlin_recover
 module Project : sig
   type t
 
-  (** Create a new project *)
-  val create: unit -> t
+  (* A global store mapping (.merlin-)path to projects *)
+  val get : string option -> t * [`Fresh | `Cached]
 
   (* Current buffer path *)
   val set_local_path : t -> string list -> unit
 
   (* Project-wide configuration *)
-  val set_dot_merlin : t -> Dot_merlin.config option -> [`Ok | `Failures of (string * exn) list]
   val reload_dot_merlin : t -> [`Ok | `Failures of (string * exn) list]
   val autoreload_dot_merlin : t -> [`No | `Ok | `Failures of (string * exn) list]
+  val get_dot_merlins_failure : t -> (string * exn) list
 
   (* paths of dot_merlins with mtime at time of load *)
   val get_dot_merlins : t -> (string * float) list
@@ -94,6 +94,8 @@ end = struct
 
   type t = {
     mutable dot_merlins : (string * float) list;
+    mutable dot_merlins_failures : (string * exn) list;
+
     dot_config : config;
     user_config : config;
 
@@ -133,6 +135,7 @@ end = struct
     let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
     let flags = Clflags.copy Clflags.initial in
     { dot_merlins = [];
+      dot_merlins_failures = [];
       dot_config; user_config; flags;
       warnings = Warnings.copy Warnings.initial;
       local_path;
@@ -241,7 +244,7 @@ end = struct
         List.rev_append (process_flags lst) acc
       )
     in
-    let failures = 
+    let failures =
       List.fold_left prj.user_config.cfg_flags ~init:failures ~f:(fun acc lst ->
         List.rev_append (process_flags lst) acc
       )
@@ -250,9 +253,11 @@ end = struct
     Warnings.set := prj.warnings ;
     failures
 
-  let set_dot_merlin project dm =
+  let set_dot_merlin project path =
     let module Dm = Dot_merlin in
-    let dm = match dm with | Some dm -> dm | None -> Dm.empty_config in
+    let dm = match path with
+      | Some path -> Dm.parse (Dm.read path)
+      | None -> Dm.empty_config in
     let cfg = project.dot_config in
     let result, path_pkg = Dot_merlin.path_of_packages dm.Dm.packages in
     project.dot_merlins <- List.map dm.Dm.dot_merlins
@@ -265,18 +270,27 @@ end = struct
     cfg.cfg_flags <- dm.Dm.flags;
     cfg.cfg_extensions <- String.Set.(of_list dm.Dm.extensions);
     flush_global_modules project;
-    match result, update_flags project with
-    | _, [] -> result
-    | `Ok, lst -> `Failures lst
-    | `Failures l1, l2 -> `Failures (List.rev_append l1 l2)
+    project.dot_merlins_failures <-
+      (match result  with `Ok -> [] | `Failures l -> l) @
+      update_flags project
+
+  let store : (string option, t) Hashtbl.t = Hashtbl.create 3
+  let get path =
+    try Hashtbl.find store path, `Cached
+    with Not_found ->
+      let project = create () in
+      set_dot_merlin project path;
+      Hashtbl.replace store path project;
+      project, `Fresh
 
   let reload_dot_merlin project =
     try match project.dot_merlins with
       | [] -> `Ok
       | (path, _) :: _ ->
-        let files = Dot_merlin.read ~path in
-        let dot_merlins = Dot_merlin.parse files in
-        set_dot_merlin project (Some dot_merlins)
+        set_dot_merlin project (Some path);
+        match project.dot_merlins_failures with
+        | [] -> `Ok
+        | lst -> `Failures lst
     with exn -> `Failures ["reloading", exn]
 
   let get_dot_merlins project =
@@ -292,6 +306,9 @@ end = struct
         (reload_dot_merlin project :> [> `Ok | `Failures of _])
       else
         `No
+
+  let get_dot_merlins_failure project =
+    project.dot_merlins_failures
 
   (* Make global state point to current project *)
   let setup project =
@@ -328,7 +345,9 @@ end
 
 module Buffer : sig
   type t
-  val create: ?path:string -> Project.t -> Parser.state -> t
+  val create: ?path:string -> Parser.state -> t
+
+  val project: t -> Project.t
 
   val lexer: t -> (exn list * Lexer.item) History.t
   val update: t -> (exn list * Lexer.item) History.t -> [`Nothing_done | `Updated]
@@ -353,13 +372,18 @@ end = struct
   type t = {
     kind: Parser.state;
     path: string option;
-    project : Project.t;
     unit_name : string;
+    mutable project : Project.t;
+    mutable stamp : bool ref;
     mutable keywords: Lexer.keywords;
     mutable lexer: (exn list * Lexer.item) History.t;
     mutable recover: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
   }
+
+  let invalidate t =
+    t.stamp := false;
+    t.stamp <- ref true
 
   let is_implementation { kind ; _ } = kind = Parser.implementation
 
@@ -370,7 +394,20 @@ end = struct
     in
     (token, Recover.fresh (Parser.from kind input))
 
-  let create ?path project kind =
+  let autoreload_dot_merlin buffer =
+    let path = Option.bind buffer.path Dot_merlin.find in
+    let project' = buffer.project in
+    let project, status = Project.get path in
+    buffer.project <- project';
+    match status with
+    | _ when project != project' -> invalidate buffer
+    | `Fresh -> invalidate buffer
+    | `Cached ->
+      match Project.autoreload_dot_merlin project with
+      | `Ok -> invalidate buffer
+      | _ -> ()
+
+  let create ?path kind =
     let path, filename = match path with
       | None -> None, "*buffer*"
       | Some path -> Some (Filename.dirname path), Filename.basename path
@@ -381,22 +418,31 @@ end = struct
     in
     let unit_name = String.capitalize unit_name in
     let lexer = Lexer.empty ~filename in
+    let project = match Project.get (Option.bind path Dot_merlin.find) with
+      | project, `Fresh -> project
+      | project, `Cached ->
+        ignore (Project.autoreload_dot_merlin project);
+        project in
+    let stamp = ref true in
     Project.setup project;
     {
-      path; project; lexer; kind; unit_name;
+      path; project; lexer; kind; unit_name; stamp;
       keywords = Project.keywords project;
       recover = History.initial (initial_step kind (History.focused lexer));
       typer = Typer.fresh
-          ~unit_name ~stamp:(Project.validity_stamp project)
+          ~unit_name ~stamp:[Project.validity_stamp project; stamp]
           (Project.extensions project);
     }
 
   let setup buffer =
+    autoreload_dot_merlin buffer;
     begin match buffer.path with
       | Some path -> Project.set_local_path buffer.project [path]
       | None -> ()
     end;
     Project.setup buffer.project
+
+  let project t = t.project
 
   let lexer b = b.lexer
   let lexer_errors b = fst (History.focused b.lexer)
@@ -411,22 +457,13 @@ end = struct
     let valid = valid &&
                 String.Set.equal
                   (Typer.extensions b.typer)
-                  (Project.extensions b.project) &&
-                (Project.autoreload_dot_merlin b.project = `No) in
+                  (Project.extensions b.project) in
     if not valid then b.typer <- Typer.fresh
           ~unit_name:b.unit_name
-          ~stamp:(Project.validity_stamp b.project)
+          ~stamp:[Project.validity_stamp b.project; b.stamp]
           (Project.extensions b.project);
     b.typer <- Typer.update (parser b) b.typer;
     b.typer
-
-  let fresh_typer b =
-    setup b;
-    let typer = Typer.fresh
-        ~unit_name:b.unit_name
-        ~stamp:(Project.validity_stamp b.project)
-        (Project.extensions b.project) in
-    Typer.update (parser b) typer
 
   let update t l =
     t.lexer <- l;
@@ -439,7 +476,6 @@ end = struct
         ~init ~strong_check ~strong_fold ~weak_check ~weak_update; in
     t.recover <- recover';
     updated
-
 
   let start_lexing ?pos b =
     let kw = Project.keywords b.project in

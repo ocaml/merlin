@@ -334,8 +334,8 @@ module Protocol_io = struct
     | (`String "path" :: `String ("add"|"remove" as action) ::
          `String ("source"|"build" as var) :: ((`List pathes :: []) | pathes)) ->
       Request (Path (source_or_build var, add_or_remove action, string_list pathes))
-    | [`String "project"; `String ("load"|"find" as action); `String path] ->
-      Request (Project_load (load_or_find action, path))
+    | [`String "project"; `String "get"] ->
+      Request (Project_get)
     | [`String "version"] ->
       Request (Version)
     | _ -> invalid_arguments ()
@@ -398,7 +398,7 @@ module Protocol_io = struct
         | Path _, () -> `Bool true
         | Path_list _, strs -> json_of_string_list strs
         | Path_reset, () -> `Bool true
-        | Project_load _, (strs, failures) ->
+        | Project_get, (strs, failures) ->
           `Assoc (with_failures ["result", json_of_string_list strs] failures)
         | Occurrences _, locations ->
           `List (List.map locations

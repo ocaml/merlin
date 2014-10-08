@@ -324,11 +324,9 @@ function! merlin#Register()
   command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* MerlinExtDisable call merlin#ExtDisable(<f-args>)
 
   command! -buffer -nargs=0 ClearFlags    call merlin#ClearFlags()
-  command! -buffer -nargs=0 LoadProject   call merlin#LoadProject()
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
   command! -buffer -nargs=0 MerlinClearFlags    call merlin#ClearFlags()
-  command! -buffer -nargs=0 MerlinLoadProject   call merlin#LoadProject()
   command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
   command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
 
@@ -345,7 +343,7 @@ endfunction
 
 function! merlin#LoadProject()
   if isdirectory(expand('%:p:h'))
-    py merlin.load_project(vim.eval("expand('%:p:h')"))
+    py merlin.setup_merlin()
     if exists("b:dotmerlin") && exists("g:merlin_move_to_project") && g:merlin_move_to_project && len(b:dotmerlin) > 0
       execute ":lchdir " . fnamemodify(b:dotmerlin[0], ":p:h")
     endif

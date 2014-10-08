@@ -205,7 +205,7 @@ def command_occurrences(line, col):
 
 ######## BUFFER SYNCHRONIZATION
 
-def sync_buffer_to_(to_line, to_col, load_project=True,skip_marker=False):
+def sync_buffer_to_(to_line, to_col, skip_marker=False):
   process = merlin_process()
   saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
@@ -218,9 +218,6 @@ def sync_buffer_to_(to_line, to_col, load_project=True,skip_marker=False):
     col = 0
     command_seek("exact", line, col)
   else:
-    if load_project:
-      project = vim.eval("exists('b:dotmerlin') && len(b:dotmerlin) > 0 ? b:dotmerlin[0] : ''")
-      command("project","load",project)
     command_reset(
             kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
             name=vim.eval("expand('%:p')")
@@ -248,8 +245,8 @@ def sync_buffer_to_(to_line, to_col, load_project=True,skip_marker=False):
   if marker: command("tell","eof")
   if not skip_marker: command("seek","marker")
 
-def sync_buffer_to(to_line, to_col, load_project=True,skip_marker=False):
-  return catch_and_print(lambda: sync_buffer_to_(to_line, to_col, load_project=load_project,skip_marker=skip_marker))
+def sync_buffer_to(to_line, to_col, skip_marker=False):
+  return catch_and_print(lambda: sync_buffer_to_(to_line, to_col, skip_marker=skip_marker))
 
 def sync_buffer():
   to_line, to_col = vim.current.window.cursor
@@ -264,7 +261,7 @@ def sync_full_buffer():
 def vim_restart():
   merlin_process().restart()
   path = vim.eval("expand('%:p')")
-  load_project(path)
+  setup_merlin(path)
 
 # Reload changed cmi files then retype all definitions
 def vim_reload():
@@ -551,10 +548,10 @@ def vim_selectphrase(l1,c1,l2,c2):
   for (var,val) in [(l1,vl1),(l2,vl2),(c1,vc1),(c2,vc2)]:
     vim.command("let %s = %d" % (var,val))
 
-def load_project(directory):
-  failures = catch_and_print(lambda: command("project","find",directory))
+def setup_merlin():
+  sync_buffer_to(1, 0)
+  failures = command("project","get")
   if failures != None:
     fnames = display_load_failures(failures)
     if isinstance(fnames, list):
       vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
-    sync_buffer_to(1, 0, load_project=False)

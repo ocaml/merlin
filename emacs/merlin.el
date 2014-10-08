@@ -573,13 +573,13 @@ the merlin buffer of the current buffer."
 
 (defun merlin--acquire-load-project-file ()
   "Load the .merlin file corresponding to the current buffer."
-  (let* ((r (merlin-send-command `(project find ,buffer-file-name)))
+  (merlin--reset)
+  (let* ((r (merlin-send-command '(project get)))
          (failed (assoc 'failures r))
          (result (assoc 'result r)))
     (when failed (mapcar #'message (cdr failed)))
     (when (and result (listp (cdr result)))
-      (setq merlin-project-file (cadr result)))
-    (merlin--reset)))
+      (setq merlin-project-file (cadr result)))))
 
 (defun merlin--acquire-buffer (&optional force)
   "Prepare merlin to receive data from current buffer."

@@ -2,7 +2,7 @@ type t
 
 val is_valid : t -> bool
 
-val fresh : unit_name:string -> stamp:bool ref -> Extension.set -> t
+val fresh : unit_name:string -> stamp:bool ref list -> Extension.set -> t
 val update : Merlin_parser.t -> t -> t
 
 val env : t -> Env.t

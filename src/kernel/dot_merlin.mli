@@ -19,16 +19,6 @@ type file = {
   directives : directive list;
 }
 
-(* Parse a file from the filesystem. Path is a filename *)
-val read : path:string -> file List.Lazy.t
-
-(* Find a dot-merlin in given directory (if path is a directory), or directory
-   of specified filename *)
-val find : path:string -> file List.Lazy.t
-
-(* If any of the dot-merlin specify a project name, return it *)
-val project_name : file List.Lazy.t -> string option
-
 (* After parsing, dot-merlins are turned into a project configuration *)
 type config = {
   dot_merlins : string list;
@@ -41,7 +31,14 @@ type config = {
   extensions  : string list;
 }
 
+(* Find path of the dot-merlin file *)
+val find : string -> string option
+
+(* Parse a file from the filesystem. Path is a filename *)
+val read : string -> file List.Lazy.t
 val empty_config : config
 val parse : ?config:config -> file List.Lazy.t -> config
 
+(* If any of the dot-merlin specify a project name, return it *)
+val project_name : file List.Lazy.t -> string option
 val path_of_packages : string list -> [> `Failures of (string * exn) list | `Ok ] * string list
