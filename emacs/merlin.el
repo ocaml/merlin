@@ -219,17 +219,19 @@ field logfile (see `merlin-start-process')"
   "Name of the buffer owning the local process (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin-process-owner)
 
-(defvar merlin-result nil
-  "Temporary variables to store command results.")
-(make-variable-buffer-local 'merlin-result)
-
 (defvar merlin-buffer nil
   "Buffer for merlin input.")
 (make-variable-buffer-local 'merlin-buffer)
 
-(defvar merlin-ready nil
-  "If non-nil, the reception is done.")
-(make-variable-buffer-local 'merlin-ready)
+;; Those variables will be bound dynamically in the scope of asynchronous
+;; closures (merlin-send-command-async & merlin-wait-for-answer)
+; (defvar merlin-result nil
+;   "Temporary variables to store command results.")
+; (make-variable-buffer-local 'merlin-result)
+
+; (defvar merlin-ready nil
+;   "If non-nil, the reception is done.")
+; (make-variable-buffer-local 'merlin-ready)
 
 (defvar merlin-dirty-point 0
   "Position after which buffer content may differ.")
@@ -628,14 +630,12 @@ the error message otherwise print a generic error message."
 
 (defun merlin-send-command (command &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
-  (setq merlin-result nil)
-  (setq merlin-ready nil)
-  (when (merlin-send-command-async command
-                                   (lambda (data)
-                                     (setq merlin-ready t)
-                                     (setq merlin-result data))
-                                   callback-if-exn)
-    (merlin-wait-for-answer)))
+  (let ((merlin-result nil)
+        (merlin-ready nil))
+    (when (merlin-send-command-async command
+                                     (lambda (data) (setq merlin-result data))
+                                     callback-if-exn)
+      (merlin-wait-for-answer))))
 
 ;; SPECIAL CASE OF COMMANDS
 
