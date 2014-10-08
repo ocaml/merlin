@@ -212,6 +212,7 @@ let rec check_item ~source modules =
 and browse_cmts ~root modules =
   let open Cmt_format in
   let cmt_infos = read_cmt root in
+  debug_log "inspecting %s" root ;
   match
     match cmt_infos.cmt_annots with
     | Interface intf -> `Sg intf, false
