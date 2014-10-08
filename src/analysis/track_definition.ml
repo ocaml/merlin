@@ -139,6 +139,11 @@ let get_top_items browsable =
     | _ -> []
   ) browsable
 
+let repack = function
+  | `Not_included -> None
+  | `Mod_expr me  -> Some (BrowseT.Module_expr me)
+  | `Mod_type mty -> Some (BrowseT.Module_type mty)
+
 let rec check_item ~source modules =
   let get_loc ~name item rest =
     let ident_locs, is_included =
@@ -154,15 +159,11 @@ let rec check_item ~source modules =
       let res = List.assoc name ident_locs in
       if source then `ML res else `MLI res
     with Not_found ->
-      match is_included ~name with
-      | `Not_included -> check_item ~source modules rest
-      | `Mod_expr incl_mod ->
+      match repack (is_included ~name) with
+      | None -> check_item ~source modules rest
+      | Some thing ->
         debug_log "one more include to follow..." ;
-        resolve_mod_alias ~source ~fallback:item.BrowseT.t_loc (BrowseT.Module_expr incl_mod)
-          [ name ] rest
-      | `Mod_type incl_mod ->
-        debug_log "one more include to follow..." ;
-        resolve_mod_alias ~source ~fallback:item.BrowseT.t_loc (BrowseT.Module_type incl_mod)
+        resolve_mod_alias ~source ~fallback:item.BrowseT.t_loc thing
           [ name ] rest
   in
   let get_on_track ~name item =
@@ -170,7 +171,7 @@ let rec check_item ~source modules =
       let open Merlin_types_custom in
       match item.BrowseT.t_node with
       | BrowseT.Structure_item item ->
-        get_mod_expr_if_included ~name item,
+        repack (get_mod_expr_if_included ~name item),
         begin try
           let mbs = expose_module_binding item in
           let mb = List.find ~f:(fun mb -> Ident.name mb.Typedtree.mb_id = name) mbs in
@@ -178,7 +179,7 @@ let rec check_item ~source modules =
           `Direct (BrowseT.Module_expr mb.Typedtree.mb_expr)
         with Not_found -> `Not_found end
       | BrowseT.Signature_item item ->
-        get_mod_type_if_included ~name item,
+        repack (get_mod_type_if_included ~name item),
         begin try
           let mds = expose_module_declaration item in
           let md = List.find ~f:(fun md -> Ident.name md.Typedtree.md_id = name) mds in
@@ -187,13 +188,10 @@ let rec check_item ~source modules =
         with Not_found -> `Not_found end
       | _ -> assert false
     with
-    | `Mod_expr incl_mod, `Not_found ->
+    | None, whatever -> whatever
+    | Some thing, `Not_found ->
       debug_log "(get_on_track) %s is included..." name ;
-      `Included (BrowseT.Module_expr incl_mod)
-    | `Mod_type incl_mod, `Not_found ->
-      debug_log "(get_on_track) %s is included..." name ;
-      `Included (BrowseT.Module_type incl_mod)
-    | `Not_included, otherwise -> otherwise
+      `Included thing
     | _ -> assert false
   in
   function
@@ -205,43 +203,36 @@ let rec check_item ~source modules =
     | [] -> assert false
     | [ str_ident ] -> get_loc ~name:str_ident item rest
     | mod_name :: path ->
-      begin match
-        match get_on_track ~name:mod_name item with
-        | `Not_found -> None
-        | `Direct me -> Some (path, me)
-        | `Included me -> Some (modules, me)
-      with
-      | None -> check_item ~source modules rest
-      | Some (path, me) ->
-        resolve_mod_alias ~source ~fallback:item.BrowseT.t_loc me path rest
-      end
+      let fallback = item.BrowseT.t_loc in
+      match get_on_track ~name:mod_name item with
+      | `Not_found   -> check_item ~source modules rest
+      | `Direct me   -> resolve_mod_alias ~source ~fallback me path rest
+      | `Included me -> resolve_mod_alias ~source ~fallback me modules rest
 
 and browse_cmts ~root modules =
   let open Cmt_format in
   let cmt_infos = read_cmt root in
-  (* TODO: factorize *)
-  match cmt_infos.cmt_annots with
-  | Interface intf ->
+  match
+    match cmt_infos.cmt_annots with
+    | Interface intf -> `Sg intf, false
+    | Implementation impl -> `Str impl, true
+    | Packed (_, files) -> `Pack files, true
+    | _ -> `Not_found, true (* TODO? *)
+  with
+  | `Not_found, _ -> `Not_found
+  | (`Str _ | `Sg _ as typedtree), source ->
     begin match modules with
     | [] ->
+      (* we were looking for a module, we found the right file, we're happy *)
       let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
-      `MLI { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
+      let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
+      if source then `ML loc else `MLI loc
     | _ ->
-      let browses   = Browse.of_typer_contents [ `Sg intf ] in
+      let browses   = Browse.of_typer_contents [ typedtree ] in
       let browsable = get_top_items browses in
-      check_item ~source:false modules browsable
+      check_item ~source modules browsable
     end
-  | Implementation impl ->
-    begin match modules with
-    | [] -> (* we were looking for a module, we found the right file, we're happy *)
-      let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
-      `ML { Location. loc_start = pos ; loc_end = pos ; loc_ghost = false }
-    | _ ->
-      let browses   = Browse.of_typer_contents [ `Str impl ] in
-      let browsable = get_top_items browses in
-      check_item ~source:true modules browsable 
-    end
-  | Packed (_, files) ->
+  | `Pack files, _ ->
     begin match modules with
     | [] -> `Not_found
     | mod_name :: modules ->
@@ -253,7 +244,6 @@ and browse_cmts ~root modules =
       let cmt_file = find_file ~with_fallback:true (CMT file) in
       browse_cmts ~root:cmt_file modules
     end
-  | _ -> `Not_found (* TODO? *)
 
 and from_path ~source ?(fallback=`Not_found) =
   let recover = function
@@ -321,6 +311,14 @@ let path_and_loc_from_label desc env =
 
 exception Not_in_env
 
+let finalize source loc =
+  let fname = loc.Location.loc_start.Lexing.pos_fname in
+  let with_fallback = loc.Location.loc_ghost in
+  let mod_name = file_path_to_mod_name fname in
+  let file = if source then ML mod_name else MLI mod_name in
+  let full_path = find_file ~with_fallback file in
+  `Found (Some full_path, loc.Location.loc_start)
+
 let from_string ~project ~env ~local_defs is_implementation path =
   cwd := "" (* Reset the cwd before doing anything *) ;
   sources_path := Project.source_path project ;
@@ -367,23 +365,12 @@ let from_string ~project ~env ~local_defs is_implementation path =
     if not (is_ghost loc) then
       `Found (None, loc.Location.loc_start)
     else
-      match
-        let modules = path_to_list path in
-        let local_defs = Browse.of_typer_contents local_defs in
-        (* FIXME: that's true only if we are in an ML file, not in an MLI *)
-        check_item ~source:is_implementation modules (get_top_items local_defs)
-      with
+      let modules = path_to_list path in
+      let items   = get_top_items (Browse.of_typer_contents local_defs) in
+      match check_item ~source:is_implementation modules items with
       | `Not_found -> `Not_found
-      | `ML loc ->
-        let fname = loc.Location.loc_start.Lexing.pos_fname in
-        let with_fallback = loc.Location.loc_ghost in
-        let full_path = find_file ~with_fallback (ML (file_path_to_mod_name fname)) in
-        `Found (Some full_path, loc.Location.loc_start)
-      | `MLI loc ->
-        let fname = loc.Location.loc_start.Lexing.pos_fname in
-        let with_fallback = loc.Location.loc_ghost in
-        let full_path = find_file ~with_fallback (MLI (file_path_to_mod_name fname)) in
-        `Found (Some full_path, loc.Location.loc_start)
+      | `ML  loc -> finalize true loc
+      | `MLI loc -> finalize false loc
   with
   | Not_found -> `Not_found
   | File_not_found path ->
