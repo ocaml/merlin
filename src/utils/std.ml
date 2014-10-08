@@ -11,6 +11,8 @@ module Hashtbl = struct
   let find_some tbl key =
     try Some (find tbl key)
     with Not_found -> None
+
+  let elements tbl = Hashtbl.fold (fun _key elt acc -> elt :: acc) tbl []
 end
 
 module List = struct

@@ -335,7 +335,7 @@ let dispatch (state : state) =
       Track_definition.from_string ~project:state.project ~env ~local_defs is_implem path
     with
     | `Found (file, pos) ->
-      Logger.info (Logger.section "locate")
+      Logger.info (Track_definition.section)
         (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)
     | otherwise -> otherwise

@@ -27,6 +27,8 @@ module Section : sig
 
   val general : t
   val project_load : t
+
+  val list : unit -> t list
 end
 
 type section = Section.t

@@ -57,7 +57,7 @@ let copy t = {t with
 let initial = fresh ()
 let set = ref initial
 
-let debug_spec =
+let debug_spec () =
   let f section =
     let split = Misc.rev_string_split in
     let section, dest =
@@ -80,13 +80,13 @@ let debug_spec =
     with Invalid_argument _ -> ()
     end
   in
+  let sections =
+    String.concat ", " (List.map Logger.Section.to_string (Logger.Section.list ()))
+  in
   "-debug",
   Arg.String f,
   "<section>[:level][,<log file path>] Activate logging for given section.\n\
-  \                            Available sections are :\n\
-  \                              - protocol\n\
-  \                              - locate\n\
-  \                              - completion\n\
+  \                            Available sections are : " ^ sections ^ "\n\
   \                            Available levels are :\n\
   \                              - error\n\
   \                              - info (default)\n\
@@ -210,7 +210,7 @@ let transparent_modules () = true
 
 let arg_spec t =
   [
-    debug_spec;
+    debug_spec ();
     applicative_functors_spec t;
     fast_spec t;
     include_dirs_spec t;

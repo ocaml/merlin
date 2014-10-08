@@ -1,3 +1,5 @@
+val section: Logger.section
+
 val from_string
   : project:Merlin_lib.Project.t
   -> env:Env.t

@@ -58,6 +58,8 @@ module Section = struct
     match dest lvl x with
     | Some _ -> true
     | None -> false
+
+  let list () = Hashtbl.elements sections
 end
 
 let section = Section.of_string
