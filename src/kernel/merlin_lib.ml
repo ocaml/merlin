@@ -262,7 +262,7 @@ end = struct
     let result, path_pkg = Dot_merlin.path_of_packages dm.Dm.packages in
     project.dot_merlins <- List.map dm.Dm.dot_merlins
         ~f:(fun file -> file, file_mtime file);
-    cfg.cfg_path_pkg := List.filter_dup (path_pkg @ !(cfg.cfg_path_pkg));
+    cfg.cfg_path_pkg := List.filter_dup path_pkg;
     cfg.cfg_path_build := dm.Dm.build_path;
     cfg.cfg_path_source := dm.Dm.source_path;
     cfg.cfg_path_cmi := dm.Dm.cmi_path;
@@ -398,14 +398,16 @@ end = struct
     let path = Option.bind buffer.path Dot_merlin.find in
     let project' = buffer.project in
     let project, status = Project.get path in
-    buffer.project <- project';
+    buffer.project <- project;
     match status with
-    | _ when project != project' -> invalidate buffer
-    | `Fresh -> invalidate buffer
+    | `Fresh ->
+      invalidate buffer
     | `Cached ->
-      match Project.autoreload_dot_merlin project with
-      | `Ok -> invalidate buffer
-      | _ -> ()
+      match project' != project, Project.autoreload_dot_merlin project with
+      | true, _ | _, `Ok ->
+        invalidate buffer
+      | _ ->
+        ()
 
   let create ?path kind =
     let path, filename = match path with
@@ -453,15 +455,15 @@ end = struct
 
   let typer b =
     setup b;
-    let valid = Typer.is_valid b.typer in
-    let valid = valid &&
+    let valid = Typer.is_valid b.typer &&
                 String.Set.equal
                   (Typer.extensions b.typer)
                   (Project.extensions b.project) in
-    if not valid then b.typer <- Typer.fresh
-          ~unit_name:b.unit_name
-          ~stamp:[Project.validity_stamp b.project; b.stamp]
-          (Project.extensions b.project);
+    if not valid then
+        b.typer <- Typer.fresh
+            ~unit_name:b.unit_name
+            ~stamp:[Project.validity_stamp b.project; b.stamp]
+            (Project.extensions b.project);
     b.typer <- Typer.update (parser b) b.typer;
     b.typer
 
