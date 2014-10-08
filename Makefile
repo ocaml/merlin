@@ -91,14 +91,14 @@ install-binary: $(TARGET)
 	install -d $(BIN_DIR)
 	install $(TARGET) $(BIN_DIR)/ocamlmerlin
 
-install-share: $(TARGET) $(TARGET_EMACS)
+install-share: $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
 	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	-install -m 644 emacs/merlin.elc $(SHARE_DIR)/emacs/site-lisp/merlin.elc
 	install -m 644 emacs/merlin-iedit.el $(SHARE_DIR)/emacs/site-lisp/merlin-iedit.el
 
-install-vim: $(TARGET)
+install-vim:
 	install -d $(VIM_DIR)
 	if [ -n "$(WITH_VIMBUFSYNC)" ]; then \
 		cp -R vim/vimbufsync/* $(VIM_DIR)/; \
