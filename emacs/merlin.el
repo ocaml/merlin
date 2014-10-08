@@ -1252,21 +1252,19 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (if (and (not quiet) bounds)
           (merlin-highlight bounds 'merlin-type-face)))))
 
-(defun merlin--type-region (k)
+(defun merlin--type-region ()
   "Show the type of the region."
   (lexical-let*
-      ((k k)
-       (substring (merlin--buffer-substring (region-beginning) (region-end)))
-       (on-success (lambda (type) (merlin--type-display nil type nil) (funcall k)))
-       (on-error   (lambda (err)
-                     (let ((msg (assoc 'message err))
-                           (typ (assoc 'type err)))
-                       (cond ((and typ (equal (cdr typ) "parser"))
-                              (message "Error: the content of the region failed to parse."))
-                             (msg (message "Error: %s" (cdr msg)))
-			     (t
-			      (message "Unexpected error"))))
-                     (funcall k))))
+    (substring (merlin--buffer-substring (region-beginning) (region-end)))
+    (on-success (lambda (type) (merlin--type-display nil type nil)))
+    (on-error   (lambda (err)
+                  (let ((msg (assoc 'message err))
+                        (typ (assoc 'type err)))
+                    (cond ((and typ (equal (cdr typ) "parser"))
+                           (message "Error: the content of the region failed to parse."))
+                          (msg (message "Error: %s" (cdr msg)))
+                          (t
+                            (message "Unexpected error"))))))
     (merlin--type-expression substring on-success on-error)))
 
 (defun merlin-type-expr (exp)
@@ -1281,26 +1279,25 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (merlin--type-expression exp on-success on-error)))
 
 ;; TYPE ENCLOSING
-(defun merlin--type-enclosing-query (k)
+(defun merlin--type-enclosing-query ()
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
-  (lexical-let* ((k k))
-    (merlin-send-command-async (list 'type 'enclosing 'at (merlin-unmake-point (point)))
-      (lambda (types) ; success continuation
-        (setq merlin-enclosing-types
-              (mapcar (lambda (obj)
-                        (let* ((tail (cdr (assoc 'tail obj)))
-                               (tail (cond ((equal tail "position")
-                                            " (* tail position *)")
-                                           ((equal tail "call")
-                                            " (* tail call *)")
-                                           (t "")))
-                               (type (cdr (assoc 'type obj))))
-                          (cons (concat type tail)
-                                (merlin-make-bounds obj))))
-                      types))
-        (setq merlin-enclosing-offset -1)
-        (funcall k merlin-enclosing-types))
-      (lambda (exn) (funcall k nil))))) ; failure continuation
+  (let ((types (merlin-send-command (list 'type 'enclosing 'at (merlin-unmake-point (point)))
+                                    (lambda (exn) nil))))
+    (when types
+      (setq merlin-enclosing-types
+            (mapcar (lambda (obj)
+                      (let* ((tail (cdr (assoc 'tail obj)))
+                             (tail (cond ((equal tail "position")
+                                          " (* tail position *)")
+                                         ((equal tail "call")
+                                          " (* tail call *)")
+                                         (t "")))
+                             (type (cdr (assoc 'type obj))))
+                        (cons (concat type tail)
+                              (merlin-make-bounds obj))))
+                    types))
+      (setq merlin-enclosing-offset -1)
+      merlin-enclosing-types)))
 
 (defun merlin--type-enclosing-go ()
   "Highlight the given corresponding enclosing data (of the form (TYPE . BOUNDS)."
@@ -1350,11 +1347,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (interactive)
   (merlin-sync-to-point)
   (if (region-active-p)
-      (merlin--type-region #'merlin--type-enclosing-after)
-    (merlin--type-enclosing-query
-     (lambda (success)
-       (when success (merlin-type-enclosing-go-up))
-       (merlin--type-enclosing-after)))))
+      (merlin--type-region)
+    (when (merlin--type-enclosing-query)
+      (merlin-type-enclosing-go-up)
+      (merlin--type-enclosing-after))))
 
 (defun merlin--find-extents (list low high)
   "Return the smallest extent in LIST that LOW and HIGH fit
