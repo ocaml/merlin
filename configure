@@ -7,7 +7,7 @@ WITH_VIMBUFSYNC="1"
 WITH_BIN_ANNOT=""
 
 if ! [ -x $(which ocamlfind) ]; then
-  echo "Ocamlfind is missing. Please install it."
+  echo "OCamlfind is missing. Please install it."
   exit 1
 fi
 
@@ -111,15 +111,15 @@ MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number|cut -d' ' -f2)
 case "$MAGIC_VERSION" in
   "Caml1999I015")
     OCAML_VERSION="ocaml_401"
-    OCAML_VERSION_MESSAGE="Ocaml 4.01.0"
+    OCAML_VERSION_MESSAGE="OCaml 4.01.0"
     ;;
   "Caml1999I016")
     OCAML_VERSION="ocaml_402"
-    OCAML_VERSION_MESSAGE="Ocaml 4.02.0"
+    OCAML_VERSION_MESSAGE="OCaml 4.02.0"
     ;;
   "Caml1999I017")
     OCAML_VERSION="ocaml_402"
-    OCAML_VERSION_MESSAGE="Ocaml 4.02.0"
+    OCAML_VERSION_MESSAGE="OCaml 4.02.0"
     ;;
 esac
 
@@ -131,7 +131,7 @@ fi
 cat <<END
 
 System config:
-  Ocaml ABI version: $OCAML_VERSION_MESSAGE
+  OCaml ABI version: $OCAML_VERSION_MESSAGE
 
 Will install:
   ocamlmerlin binary in: $BIN_DIR
