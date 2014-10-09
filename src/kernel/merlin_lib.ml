@@ -37,6 +37,7 @@ module Project : sig
     val load_packages : t -> string list -> [`Ok | `Failures of (string * exn) list]
     val set_extension : t -> enabled:bool -> string -> unit
     val add_flags : t -> string list -> [`Ok | `Failures of (string * exn) list]
+    val clear_flags : t -> [`Ok | `Failures of (string * exn) list]
   end
 
   (* Path configuration *)
@@ -255,6 +256,13 @@ end = struct
 
     let add_flags project flags =
       project.user_config.cfg_flags <- flags :: project.user_config.cfg_flags ;
+      invalidate ~flush:false project ;
+      match update_flags project with
+      | [] -> `Ok
+      | lst -> `Failures lst
+
+    let clear_flags project =
+      project.user_config.cfg_flags <- [] ;
       invalidate ~flush:false project ;
       match update_flags project with
       | [] -> `Ok

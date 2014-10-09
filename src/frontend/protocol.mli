@@ -75,8 +75,8 @@ type _ request =
   | Which_with_ext
     :  string list
     -> string list request
-  | Flags_add
-    : string list
+  | Flags
+    : [ `Add of string list | `Clear ]
     -> [ `Ok | `Failures of (string * exn) list ] request
   | Findlib_use
     :  string list

@@ -323,11 +323,13 @@ function! merlin#Register()
 
   command! -buffer -complete=custom,merlin#PackageList   -nargs=* Use              call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags         call merlin#AddFlags(<f-args>)
+  command! -buffer -nargs=0 ClearFlags   call merlin#ClearFlags()
   command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* ExtEnable        call merlin#ExtEnable(<f-args>)
   command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* ExtDisable       call merlin#ExtDisable(<f-args>)
 
   command! -buffer -complete=custom,merlin#PackageList   -nargs=* MerlinUse        call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* MerlinAddFlags   call merlin#AddFlags(<f-args>)
+  command! -buffer -nargs=0 MerlinClearFlags   call merlin#ClearFlags()
   command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* MerlinExtEnable  call merlin#ExtEnable(<f-args>)
   command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* MerlinExtDisable call merlin#ExtDisable(<f-args>)
 

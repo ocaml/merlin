@@ -1407,6 +1407,14 @@ loading"
         (find-file-other-window file)
       (message "No project file for the current buffer."))))
 
+(defun merlin-flags-clear ()
+  "Clear flags for the current project"
+  (interactive)
+  (let* ((r (merlin-send-command '(flags clear)))
+         (failed (assoc 'failures r)))
+    (when failed (message (cdr failed))))
+  (merlin-error-reset))
+
 (defun merlin-flags-add (flag-string)
   "Set FLAG for the current project"
   (interactive "sFlag to add: ")

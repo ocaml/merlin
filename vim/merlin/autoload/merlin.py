@@ -155,10 +155,6 @@ def command_tell(content):
     content = "\n".join(content) + "\n"
   return parse_position(command("tell", "source", content))
 
-def command_flags_add(*flags):
-  result = catch_and_print(lambda: command('flags', 'add', flags))
-  return display_load_failures(result)
-
 def command_find_use(*packages):
   result = catch_and_print(lambda: command('find', 'use', packages))
   return display_load_failures(result)
@@ -522,10 +518,12 @@ def vim_ext_list(vimvar,enabled=None):
 
 # Custom flag selection
 def vim_clear_flags():
-  vim_restart()
+  result = catch_and_print(lambda: command('flags', 'clear'))
+  return display_load_failures(result)
 
-def vim_add_flags(*args):
-  return command_flags_add(*args)
+def vim_add_flags(*flags):
+  result = catch_and_print(lambda: command('flags', 'add', flags))
+  return display_load_failures(result)
 
 def vim_selectphrase(l1,c1,l2,c2):
   # In some context, vim set column of '> to 2147483647 (2^31 - 1)

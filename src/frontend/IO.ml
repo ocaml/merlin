@@ -27,6 +27,7 @@
 )* }}} *)
 
 open Std
+open Logger
 
 type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
 type low_io = Json.json Stream.t * (Json.json -> unit)
@@ -312,7 +313,9 @@ module Protocol_io = struct
     | [`String "which"; `String "with_ext"; `List exts] ->
       Request (Which_with_ext (string_list exts))
     | [`String "flags" ; `String "add" ; `List flags ] ->
-      Request (Flags_add (string_list flags))
+      Request (Flags (`Add (string_list flags)))
+    | [`String "flags" ; `String "clear" ] ->
+      Request (Flags `Clear)
     | [`String "find"; `String "use"; `List packages]
     | (`String "find" :: `String "use" :: packages) ->
       Request (Findlib_use (string_list packages))
@@ -395,7 +398,7 @@ module Protocol_io = struct
         | Dump _, json -> json
         | Which_path _, str -> `String str
         | Which_with_ext _, strs -> json_of_string_list strs
-        | Flags_add _, failures ->
+        | Flags _, failures ->
           `Assoc (with_failures ["result", `Bool true] failures)
         | Findlib_use _, failures ->
           `Assoc (with_failures ["result", `Bool true] failures)
