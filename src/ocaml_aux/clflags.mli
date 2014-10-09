@@ -14,13 +14,15 @@
 
 (* Command-line parameters *)
 
+type path_printing_mode = [`Real | `Short | `Slow ]
+
 type set = {
   include_dirs                 : string list ref;
   std_include                  : string list ref;
   mutable fast                 : bool;
   mutable classic              : bool;
   mutable principal            : bool;
-  mutable real_paths           : bool;
+  mutable real_paths           : path_printing_mode;
   mutable timed_logs           : bool;
   mutable recursive_types      : bool;
   mutable strict_sequence      : bool;
@@ -45,7 +47,7 @@ val no_std_include       : unit -> bool
 val fast                 : unit -> bool
 val classic              : unit -> bool
 val principal            : unit -> bool
-val real_paths           : unit -> bool
+val real_paths           : unit -> path_printing_mode
 val timed_logs           : unit -> bool
 val recursive_types      : unit -> bool
 val strict_sequence      : unit -> bool

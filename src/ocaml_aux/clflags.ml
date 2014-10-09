@@ -14,13 +14,15 @@
 
 (* Command-line parameters *)
 
+type path_printing_mode = [`Real | `Short | `Slow ]
+
 type set = {
   include_dirs                 : string list ref;
   std_include                  : string list ref;
   mutable fast                 : bool;
   mutable classic              : bool;
   mutable principal            : bool;
-  mutable real_paths           : bool;
+  mutable real_paths           : path_printing_mode;
   mutable timed_logs           : bool;
   mutable recursive_types      : bool;
   mutable strict_sequence      : bool;
@@ -38,7 +40,7 @@ let fresh () =
     fast                 = false; (* -unsafe *)
     classic              = false; (* -nolabels *)
     principal            = false; (* -principal *)
-    real_paths           = true;  (* -real-paths / ! -short-paths *)
+    real_paths           = `Real;  (* -real-paths / ! -short-paths *)
     timed_logs           = false; (* -timed-logs *)
     recursive_types      = false; (* -rectypes *)
     strict_sequence      = false; (* -strict-sequence *)
@@ -135,12 +137,16 @@ let principal_spec t =
 let real_paths () = !set.real_paths
 let real_paths_spec t =
   "-real-paths",
-  Arg.Unit (fun () -> t.real_paths <- true),
+  Arg.Unit (fun () -> t.real_paths <- `Real),
   " Display real paths in types rather than short ones"
 let short_paths_spec t =
   "-short-paths",
-  Arg.Unit (fun () -> t.real_paths <- false),
-  " Shorten paths in types (opposite of -real-paths)"
+  Arg.Unit (fun () -> t.real_paths <- `Short),
+  " Reasonably short paths in types"
+let slow_paths_spec t =
+  "-slow-paths",
+  Arg.Unit (fun () -> t.real_paths <- `Slow),
+  " Make paths unusably short (opposite of -real-paths)"
 
 let recursive_types () = !set.recursive_types
 let recursive_types_spec t =
@@ -220,6 +226,7 @@ let arg_spec t =
     principal_spec t;
     real_paths_spec t;
     short_paths_spec t;
+    slow_paths_spec t;
     timed_logs_spec t;
     recursive_types_spec t;
     strict_sequence_spec t;

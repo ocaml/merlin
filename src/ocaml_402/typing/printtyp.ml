@@ -216,8 +216,62 @@ let apply_subst s1 tyl =
 type best_path = Paths of Path.t list | Best of Path.t
 
 let printing_env = ref Env.empty
+
 let printing_old = ref Env.empty
 let printing_pers = ref Concr.empty
+
+module StringMap = Map.Make(struct
+    type t = string
+    let compare (a : string) b = compare a b
+  end)
+
+type opened = {
+  opened: bool;
+  subs: opened StringMap.t;
+}
+
+let printing_opened = ref None
+
+let opened_empty = {opened = true; subs = StringMap.empty}
+let get_opened () =
+  if !printing_env == Env.empty then
+    opened_empty
+  else match !printing_opened with
+    | Some map -> map
+    | None ->
+      let rec add_opens map = function
+        | Env.Env_empty -> map
+        | Env.Env_value (s, _, _)
+        | Env.Env_type (s, _, _)
+        | Env.Env_extension (s, _, _)
+        | Env.Env_module (s, _, _)
+        | Env.Env_modtype (s, _, _)
+        | Env.Env_class (s, _, _)
+        | Env.Env_cltype (s, _, _)
+        | Env.Env_functor_arg (s, _) -> add_opens map s
+        | Env.Env_open (s, p) ->
+          let rec create_path = function
+            | x :: xs ->
+              let subs = StringMap.singleton x (create_path xs) in
+              {opened = false; subs}
+            | [] -> opened_empty in
+          let rec add_path map = function
+            | x :: xs ->
+              let map' = match StringMap.find x map.subs with
+                | exception Not_found -> create_path xs
+                | map' -> add_path map' xs in
+              {map with subs = StringMap.add x map' map.subs}
+            | [] -> {map with opened = true} in
+          let rec traverse_path acc = function
+            | Path.Papply _ -> add_opens map s
+            | Path.Pdot (path, name, _) -> traverse_path (name :: acc) path
+            | Path.Pident id -> add_opens (add_path map (Ident.name id :: acc)) s in
+          traverse_path [] p in
+      let opens = add_opens opened_empty (Env.summary !printing_env) in
+      printing_opened := Some opens;
+      opens
+
+
 module Path2 = struct
   include Path
   let rec compare p1 p2 =
@@ -282,7 +336,7 @@ let same_printing_env env =
   Env.same_types !printing_old env && Concr.equal !printing_pers used_pers
 
 let set_printing_env env =
-  printing_env := if Clflags.real_paths () then Env.empty else env;
+  printing_env := if Clflags.real_paths () = `Real then Env.empty else env;
   if !printing_env == Env.empty || same_printing_env env then () else
   begin
     (* printf "Reset printing_map@."; *)
@@ -346,16 +400,49 @@ let rec get_best_path r =
       get_best_path r
 
 let best_type_path p =
-  if Clflags.real_paths () || !printing_env == Env.empty
-  then (p, Id)
-  else
-    let (p', s) = normalize_type_path !printing_env p in
-    let p'' =
-      try get_best_path (PathMap.find  p' (Lazy.force !printing_map))
-      with Not_found -> p'
-    in
-    (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
-    (p'', s)
+  if !printing_env == Env.empty then (p, Id)
+  else match Clflags.real_paths () with
+    | `Real  -> (p, Id)
+    | `Short ->
+      let opened = get_opened () in
+      let rec traverse_path acc = function
+        | Path.Pident id -> `Path (Ident.name id :: acc)
+        | Path.Pdot (p, dot, _) -> traverse_path (dot :: acc) p
+        | Path.Papply (p1,p2) -> `Simplified (Path.Papply (simplify p1, simplify p2))
+      and simplify path =
+        match traverse_path [] path with
+        | `Simplified p -> p
+        | `Path l ->
+          let rec shortest_path map = function
+            | (x :: xs as path) ->
+              begin match StringMap.find x map.subs with
+                | exception Not_found when map.opened -> path
+                | map' -> shortest_path map' xs
+              end
+            | [] -> raise Not_found in
+          let path =
+            match shortest_path opened l with
+            | [] -> l
+            | exception Not_found -> l
+            | l -> l in
+          begin match path with
+            | [] -> assert false
+            | x :: xs ->
+              let rec make_path p = function
+                | x :: xs -> make_path (Path.Pdot (p, x, 0)) xs
+                | [] -> p in
+              make_path (Path.Pident (Ident.create_persistent x)) xs
+          end
+      in
+      (simplify p, Id)
+    | `Slow  ->
+      let (p', s) = normalize_type_path !printing_env p in
+      let p'' =
+        try get_best_path (PathMap.find  p' (Lazy.force !printing_map))
+        with Not_found -> p'
+      in
+      (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
+      (p'', s)
 
 (* Print a type expression *)
 
@@ -1138,7 +1225,7 @@ let dummy =
 
 let hide_rec_items = function
   | Sig_type(id, decl, rs) ::rem
-    when rs <> Trec_next && not (Clflags.real_paths ()) ->
+    when rs <> Trec_next && Clflags.real_paths () = `Slow ->
       let rec get_ids = function
           Sig_type (id, _, Trec_next) :: rem ->
             id :: get_ids rem
