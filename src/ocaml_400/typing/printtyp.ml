@@ -207,6 +207,102 @@ let apply_subst s1 tyl =
 let printing_env = ref Env.empty
 let printing_map = ref (Lazy.lazy_from_val Tbl.empty)
 
+module Shorten_prefix = struct
+  module StringMap = Map.Make(struct
+      type t = string
+      let compare (a : string) b = compare a b
+    end)
+
+  type opened = {
+    opened: bool;
+    subs: opened StringMap.t;
+  }
+
+  let opened = ref None
+
+  let opened_empty = {opened = true; subs = StringMap.empty}
+  let get_opened () =
+    if !printing_env == Env.empty then
+      Tbl.empty
+    else match !opened with
+      | Some map -> map
+      | None ->
+        let rec add_opens map = function
+          | Env.Env_empty -> map
+          | Env.Env_value (s, _, _) | Env.Env_type (s, _, _)
+          | Env.Env_exception (s, _, _)
+          | Env.Env_module (s, _, _) | Env.Env_modtype (s, _, _)
+          | Env.Env_class (s, _, _) | Env.Env_cltype (s, _, _) ->
+            add_opens map s
+          | Env.Env_open (s, p) ->
+            let rec create_path = function
+              | x :: xs ->
+                let subs = StringMap.singleton x (create_path xs) in
+                {opened = false; subs}
+              | [] -> opened_empty in
+            let rec add_path map = function
+              | x :: xs ->
+                let map' = match
+                    try Some (StringMap.find x map.subs) with Not_found -> None
+                  with
+                    | None -> create_path xs
+                    | Some map' -> add_path map' xs in
+                {map with subs = StringMap.add x map' map.subs}
+              | [] -> {map with opened = true} in
+            let add_path map id dots =
+              let sub = match
+                  try Some (Tbl.find id map) with Not_found -> None
+                with
+                  | None -> create_path dots
+                  | Some sub -> add_path sub dots in
+              Tbl.add id sub map in
+            let rec traverse_path acc = function
+              | Path.Papply _ -> add_opens map s
+              | Path.Pdot (path, name, _) -> traverse_path (name :: acc) path
+              | Path.Pident id -> add_opens (add_path map id acc) s in
+            traverse_path [] p in
+        let opens = add_opens Tbl.empty (Env.summary !printing_env) in
+        opened := Some opens;
+        opens
+
+  let shorten path =
+    let opened = get_opened () in
+    let rec apply_dots path = function
+      | x :: xs -> apply_dots (Path.Pdot (path, x, 0)) xs
+      | [] -> path
+    in
+    let rec traverse_path org acc = function
+      | Path.Pident id ->
+        simplify org id acc
+      | Path.Pdot (p, dot, _) ->
+        traverse_path org (dot :: acc) p
+      | Path.Papply (p1,p2) ->
+        let t1 = traverse_path p1 [] p1 and t2 = traverse_path p2 [] p2 in
+        if t1 == p1 && p2 == t2 then
+          org
+        else
+          apply_dots (Path.Papply (t1, t2)) acc
+
+    and simplify org id path =
+      try
+        let rec shortest_path map path = match path with
+          | [] -> raise Not_found
+          | x :: xs ->
+            match
+              try Some (StringMap.find x map.subs)
+              with Not_found when map.opened -> None
+            with
+            | None -> x, xs
+            | Some map' -> shortest_path map' xs in
+        let x, xs = shortest_path (Tbl.find id opened) path in
+        (* FIXME? Fake ident *)
+        apply_dots (Path.Pident (Ident.create_persistent x)) xs
+      with Not_found -> org
+    in
+
+    traverse_path path [] path
+end
+
 let same_type t t' = repr t == repr t'
 
 let rec index l x =
@@ -257,9 +353,10 @@ let rec path_size = function
       (l + fst (path_size p2), b)
 
 let set_printing_env env =
-  if not (Clflags.real_paths ()) && env != !printing_env then begin
+  if not (Clflags.real_paths () = `Real) && env != !printing_env then begin
     (* printf "Reset printing_map@."; *)
     printing_env := env;
+    Shorten_prefix.opened := None;
     printing_map := lazy begin
       (* printf "Recompute printing_map.@."; *)
       let map = ref Tbl.empty in
@@ -288,12 +385,14 @@ let wrap_printing_env env f =
 let curr_printing_env () = !printing_env
 
 let best_type_path p =
-  if Clflags.real_paths () || !printing_env == Env.empty
-  then (p, Id)
-  else
-    let (p', s) = normalize_type_path !printing_env p in
-    (try Tbl.find  p' (Lazy.force !printing_map) with Not_found -> p'),
-    s
+  if !printing_env == Env.empty then (p, Id)
+  else match Clflags.real_paths () with
+    | `Real  -> (p, Id)
+    | `Short -> (Shorten_prefix.shorten p, Id)
+    | `Slow  ->
+      let (p', s) = normalize_type_path !printing_env p in
+      (try Tbl.find  p' (Lazy.force !printing_map) with Not_found -> p'),
+      s
 
 (* Print a type expression *)
 
@@ -751,7 +850,7 @@ let rec tree_of_type_decl id decl =
     | Some ty ->
       Std.Fluid.(
         let fluid = from_ref Clflags.set in
-        let' fluid { (get fluid) with Clflags.real_paths = true }
+        let' fluid { (get fluid) with Clflags.real_paths = `Real }
           (fun () -> Otyp_manifest (tree_of_typexp false ty, ty1))
       )
   in
@@ -765,7 +864,7 @@ let rec tree_of_type_decl id decl =
         | Some ty ->
           Std.Fluid.(
             let fluid = from_ref Clflags.set in
-            let' fluid { (get fluid) with Clflags.real_paths = true }
+            let' fluid { (get fluid) with Clflags.real_paths = `Real }
               (fun () -> tree_of_typexp false ty, decl.type_private)
           )
         end

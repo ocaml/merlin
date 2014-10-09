@@ -216,9 +216,23 @@ let apply_subst s1 tyl =
 type best_path = Paths of Path.t list | Best of Path.t
 
 let printing_env = ref Env.empty
-
 let printing_old = ref Env.empty
 let printing_pers = ref Concr.empty
+module Path2 = struct
+  include Path
+  let rec compare p1 p2 =
+    (* must ignore position when comparing paths *)
+    match (p1, p2) with
+      (Pdot(p1, s1, pos1), Pdot(p2, s2, pos2)) ->
+        let c = compare p1 p2 in
+        if c <> 0 then c else String.compare s1 s2
+    | (Papply(fun1, arg1), Papply(fun2, arg2)) ->
+        let c = compare fun1 fun2 in
+        if c <> 0 then c else compare arg1 arg2
+    | _ -> Pervasives.compare p1 p2
+end
+module PathMap = Map.Make(Path2)
+let printing_map = ref (Lazy.from_val PathMap.empty)
 
 module Shorten_prefix = struct
   module StringMap = Map.Make(struct
@@ -310,22 +324,6 @@ module Shorten_prefix = struct
     traverse_path path [] path
 end
 
-module Path2 = struct
-  include Path
-  let rec compare p1 p2 =
-    (* must ignore position when comparing paths *)
-    match (p1, p2) with
-      (Pdot(p1, s1, pos1), Pdot(p2, s2, pos2)) ->
-        let c = compare p1 p2 in
-        if c <> 0 then c else String.compare s1 s2
-    | (Papply(fun1, arg1), Papply(fun2, arg2)) ->
-        let c = compare fun1 fun2 in
-        if c <> 0 then c else compare arg1 arg2
-    | _ -> Pervasives.compare p1 p2
-end
-module PathMap = Map.Make(Path2)
-let printing_map = ref (Lazy.from_val PathMap.empty)
-
 let same_type t t' = repr t == repr t'
 
 let rec index l x =
@@ -375,6 +373,7 @@ let same_printing_env env =
 
 let set_printing_env env =
   printing_env := if Clflags.real_paths () = `Real then Env.empty else env;
+  Shorten_prefix.opened := None;
   if !printing_env == Env.empty || same_printing_env env then () else
   begin
     (* printf "Reset printing_map@."; *)
