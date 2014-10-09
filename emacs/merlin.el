@@ -191,13 +191,6 @@ field logfile (see `merlin-start-process')"
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;; merlin flags
-(defvar merlin-flags-list '("-rectypes" "-nostdlib" "-absname" "-w" )
-  "List of flags that can be passed to ocamlmerlin.")
-
-(defvar merlin-current-flags merlin-default-flags
-  "The current list of flags to pass to ocamlmerlin.")
-
 ;; Process / Reception related variables
 (defvar merlin-process nil
   "The merlin process for this buffer (only valid in a process buffer).")
@@ -504,23 +497,9 @@ return DEFAULT or the value associated to KEY."
   (interactive)
   (when (get-buffer (merlin-process-buffer))
     (ignore-errors (merlin-kill-process)))
-  (merlin-start-process merlin-current-flags (funcall merlin-grouping-function))
+  (merlin-start-process merlin-default-flags (funcall merlin-grouping-function))
   (setq merlin-pending-errors nil)
   (merlin-load-project-file))
-
-(defun merlin-process-clear-flags ()
-  "Clear all flags set up to be passed to merlin.
-This sets `merlin-current-flags' to nil."
-  (interactive)
-  (setq merlin-current-flags merlin-default-flags))
-
-(defun merlin-process-add-flag (flag-string)
-  "Add FLAG to `merlin-current-flags' to be used when starting ocamlmerlin."
-  (interactive "sFlag to add: ")
-  (let* ((flags     (split-string flag-string))
-         (flag-list (append flags merlin-current-flags)))
-    (setq merlin-current-flags flag-list))
-  (message "Flag %s added.  Restart ocamlmerlin by `merlin-restart-process' to take it into account." flag-string))
 
 (defun merlin-list-instances ()
   "Return the list of instances currently started."
@@ -1417,6 +1396,15 @@ is active)."
       (find-file-other-window file)
       (message "No project file for the current buffer."))))
 
+(defun merlin-flags-add (flag-string)
+  "Set FLAG for the current project"
+  (interactive "sFlag to add: ")
+  (let* ((flag-list (split-string flag-string))
+         (r (merlin-send-command (list 'flags 'add flag-list)))
+         (failed (assoc 'failures r)))
+    (when failed (message (cdr failed))))
+  (merlin-error-reset))
+
 ;;;;;;;;;;;;
 ;; LOCATE ;;
 ;;;;;;;;;;;;
@@ -1725,7 +1713,7 @@ Returns the position."
     (setq merlin-instance instance)
     ; if there is not yet a merlin process
     (unless (merlin-process-started-p instance)
-      (merlin-start-process merlin-current-flags conf))
+      (merlin-start-process merlin-default-flags conf))
     (when (and (fboundp 'auto-complete-mode)
                merlin-use-auto-complete-mode)
       (if (equal merlin-use-auto-complete-mode 'easy)

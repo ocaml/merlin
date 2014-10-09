@@ -36,6 +36,7 @@ module Project : sig
     val path : t -> action:[`Add|`Rem] -> var:[`Build|`Source] -> ?cwd:string -> string -> unit
     val load_packages : t -> string list -> [`Ok | `Failures of (string * exn) list]
     val set_extension : t -> enabled:bool -> string -> unit
+    val add_flags : t -> string list -> [`Ok | `Failures of (string * exn) list]
   end
 
   (* Path configuration *)
@@ -181,6 +182,44 @@ end = struct
       flush_global_modules project
     end
 
+  let update_flags prj =
+    let cl = Clflags.arg_spec prj.flags in
+    let w  = Warnings.arg_spec prj.warnings in
+    let spec = cl @ w in
+    let process_flags flags =
+      let failures = ref [] in
+      let rec loop ?(current=(ref 0)) flags =
+        try Arg.parse_argv ~current flags spec (fun flg -> raise (Arg.Bad flg)) "" with
+        | Arg.Bad _ ->
+          Logger.info Logger.Section.project_load ~title:"flags"
+            (sprintf "unknown flag: %s" flags.(!current));
+          failures := (flags.(!current), Arg.Bad flags.(!current)) :: !failures ;
+          loop ~current flags
+        | Arg.Help _ -> (* ignore *)
+          loop ~current flags
+      in
+      loop (Array.of_list ("merlin" :: flags)) ;
+      !failures
+    in
+    let failures =
+      List.fold_left prj.dot_config.cfg_flags ~init:[] ~f:(fun acc lst ->
+        List.rev_append (process_flags lst) acc
+      )
+    in
+    let failures =
+      List.fold_left prj.user_config.cfg_flags ~init:failures ~f:(fun acc lst ->
+        List.rev_append (process_flags lst) acc
+      )
+    in
+    Clflags.set := prj.flags ;
+    Warnings.set := prj.warnings ;
+    failures
+
+  let invalidate ?(flush=true) project =
+    if flush then Cmi_cache.flush ();
+    project.validity_stamp := false;
+    project.validity_stamp <- ref true
+
   (* Config override by user *)
   module User = struct
     let reset project =
@@ -214,44 +253,18 @@ end = struct
       rpath := List.filter_dup (path @ !rpath);
       result
 
+    let add_flags project flags =
+      project.user_config.cfg_flags <- flags :: project.user_config.cfg_flags ;
+      invalidate ~flush:false project ;
+      match update_flags project with
+      | [] -> `Ok
+      | lst -> `Failures lst
+
     let set_extension project ~enabled path =
       let cfg = project.user_config in
       let f = String.Set.(if enabled then add else remove) in
       cfg.cfg_extensions <- f path cfg.cfg_extensions
   end
-
-  let update_flags prj =
-    let cl = Clflags.arg_spec prj.flags in
-    let w  = Warnings.arg_spec prj.warnings in
-    let spec = cl @ w in
-    let process_flags flags =
-      let failures = ref [] in
-      let rec loop ?(current=(ref 0)) flags =
-        try Arg.parse_argv ~current flags spec (fun flg -> raise (Arg.Bad flg)) "" with
-        | Arg.Bad _ ->
-          Logger.info Logger.Section.project_load ~title:"flags"
-            (sprintf "unknown flag: %s" flags.(!current));
-          failures := (flags.(!current), Arg.Bad flags.(!current)) :: !failures ;
-          loop ~current flags
-        | Arg.Help _ -> (* ignore *)
-          loop ~current flags
-      in
-      loop (Array.of_list ("merlin" :: flags)) ;
-      !failures
-    in
-    let failures =
-      List.fold_left prj.dot_config.cfg_flags ~init:[] ~f:(fun acc lst ->
-        List.rev_append (process_flags lst) acc
-      )
-    in
-    let failures =
-      List.fold_left prj.user_config.cfg_flags ~init:failures ~f:(fun acc lst ->
-        List.rev_append (process_flags lst) acc
-      )
-    in
-    Clflags.set := prj.flags ;
-    Warnings.set := prj.warnings ;
-    failures
 
   let set_dot_merlin project path =
     let module Dm = Dot_merlin in
@@ -333,11 +346,6 @@ end = struct
   let validity_stamp p =
     assert !(p.validity_stamp);
     p.validity_stamp
-
-  let invalidate ?(flush=true) project =
-    if flush then Cmi_cache.flush ();
-    project.validity_stamp := false;
-    project.validity_stamp <- ref true
 
   let flush_cache project =
     Cmi_cache.flush ();

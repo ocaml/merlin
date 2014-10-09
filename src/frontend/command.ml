@@ -541,6 +541,10 @@ let dispatch (state : state) =
     let with_ext ext = modules_in_path ~ext path in
     List.concat_map ~f:with_ext exts
 
+  | (Flags_add flags) ->
+    let project = Buffer.project state.buffer in
+    Merlin_lib.Project.User.add_flags project flags
+
   | (Project_get : a request) ->
     let project = Buffer.project state.buffer in
     (List.map ~f:fst (Project.get_dot_merlins project),

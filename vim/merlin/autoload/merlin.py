@@ -10,7 +10,6 @@ from itertools import groupby
 import vimbufsync
 vimbufsync.check_version("0.1.0",who="merlin")
 
-flags = []
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
@@ -80,7 +79,6 @@ class MerlinProcess:
         pass
     try:
       cmd = [vim.eval("merlin#FindOcamlMerlin()"),"-ignore-sigint"]
-      cmd.extend(flags)
       self.mainpipe = subprocess.Popen(
               cmd,
               stdin=subprocess.PIPE,
@@ -156,6 +154,10 @@ def command_tell(content):
   if isinstance(content,list):
     content = "\n".join(content) + "\n"
   return parse_position(command("tell", "source", content))
+
+def command_flags_add(*flags):
+  result = catch_and_print(lambda: command('flags', 'add', flags))
+  return display_load_failures(result)
 
 def command_find_use(*packages):
   result = catch_and_print(lambda: command('find', 'use', packages))
@@ -508,13 +510,10 @@ def vim_ext_list(vimvar,enabled=None):
 
 # Custom flag selection
 def vim_clear_flags():
-  global flags
-  flags = []
   vim_restart()
 
 def vim_add_flags(*args):
-  flags.extend(args)
-  vim_restart()
+  return command_flags_add(*args)
 
 def vim_selectphrase(l1,c1,l2,c2):
   # In some context, vim set column of '> to 2147483647 (2^31 - 1)
