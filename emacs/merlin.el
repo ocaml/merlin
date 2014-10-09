@@ -73,6 +73,10 @@
   "Show the current instance of the buffer in the lighter."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-report-dot-merlin-in-lighter nil
+  "Report absence of .merlin or errors in .merlin in the lighter."
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-grouping-function 'merlin-one-group
   "The function to know how to group buffers. This function takes
 no argument and should return the configuration (see
@@ -281,10 +285,10 @@ trigger useless merlin calls.")
 (defvar merlin-position-stack nil)
 
 ;; Misc
-(defvar merlin-project-file nil
-  "The .merlin file for current buffer.")
-(make-variable-buffer-local 'merlin-project-file)
-
+(defvar merlin-last-project-failures nil
+  "When loading .merlin, list of errors reported. Only update error messages if
+  error list changes")
+(make-variable-buffer-local 'merlin-last-project-failures)
 
 ;;;;;;;;;;;
 ;; UTILS ;;
@@ -498,8 +502,7 @@ return DEFAULT or the value associated to KEY."
   (when (get-buffer (merlin-process-buffer))
     (ignore-errors (merlin-kill-process)))
   (merlin-start-process merlin-default-flags (funcall merlin-grouping-function))
-  (setq merlin-pending-errors nil)
-  (merlin-load-project-file))
+  (setq merlin-pending-errors nil))
 
 (defun merlin-list-instances ()
   "Return the list of instances currently started."
@@ -550,15 +553,13 @@ the merlin buffer of the current buffer."
     (merlin-error-reset)
     (setq merlin-dirty-point (point-min))))
 
-(defun merlin--acquire-load-project-file ()
-  "Load the .merlin file corresponding to the current buffer."
-  (merlin--reset)
-  (let* ((r (merlin-send-command '(project get)))
-         (failed (assoc 'failures r))
-         (result (assoc 'result r)))
-    (when failed (mapcar #'message (cdr failed)))
-    (when (and result (listp (cdr result)))
-      (setq merlin-project-file (cadr result)))))
+(defun merlin--check-project-file ()
+  "Check if .merlin file loaded successfully."
+  (let* ((project (merlin--project-get))
+         (failures (cdr project)))
+    (unless (equal failures merlin-last-project-failures)
+      (mapcar #'message (cdr failed)))
+    (setq merlin-last-project-failures failures)))
 
 (defun merlin--acquire-buffer (&optional force)
   "Prepare merlin to receive data from current buffer."
@@ -566,7 +567,8 @@ the merlin buffer of the current buffer."
     (let ((name (buffer-name)))
       (with-current-buffer (merlin-process-buffer)
         (setq merlin-process-owner name)))
-    (merlin--acquire-load-project-file)))
+    (merlin--reset)
+    (merlin--check-project-file)))
 
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
@@ -1310,7 +1312,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
                                      (interactive)
                                      (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
                                        (when (cddr data)
-                                           (message "Killed %s" (car data))
+                                           (message "Copied %s to kill-ring" (car data))
                                            (kill-new (car data))))))
 
     keymap)
@@ -1381,19 +1383,23 @@ is active)."
     (when failed (message (cdr failed))))
   (merlin-error-reset))
 
-(defun merlin-load-project-file ()
-  "Load the .merlin file corresponding to the current buffer."
-  (interactive)
-  (when buffer-file-name
-    (merlin--acquire-buffer t)))
+(defun merlin--project-get ()
+  "Returns a pair of two string lists (dot_merlins . failures) with a list of
+.merlins file loaded and a list of error messages, if any error occured during
+loading"
+  (let* ((r (merlin-send-command '(project get)))
+         (failed (cdr (assoc 'failures r)))
+         (result (cdr (assoc 'result r))))
+    (cons result failed)))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
   (interactive)
-  (let* ((file merlin-project-file)
-         (file (if (listp file) (car file) file)))
+  (merlin--acquire-buffer)
+  (let* ((dot_merlins (car (merlin--project-get)))
+         (file (if (listp dot_merlins) (car dot_merlins) nil)))
     (if file
-      (find-file-other-window file)
+        (find-file-other-window file)
       (message "No project file for the current buffer."))))
 
 (defun merlin-flags-add (flag-string)
@@ -1612,7 +1618,22 @@ Returns the position."
 (defun merlin-error-check ()
   "Update merlin to the end-of-file, reporting errors."
   (interactive)
+  (merlin--acquire-buffer)
   (when merlin-mode (merlin--error-check t)))
+
+(defun merlin-project-check ()
+  "Display loaded .merlin files and eventual errors."
+  (interactive)
+  (merlin--acquire-buffer)
+  (let* ((project (merlin--project-get))
+         (dots (car project))
+         (messages (cdr project))) ; failures list
+    (add-to-list 'messages
+                 (if dots (concat "Loaded .merlin files: "
+                                  (mapconcat 'identity dots ", "))
+                   "No .merlin loaded"))
+    (message (mapconcat 'identity messages "\n"))))
+
 (define-obsolete-function-alias 'merlin-to-end 'merlin-error-check)
 
 (defun merlin-customize ()
@@ -1678,6 +1699,9 @@ Returns the position."
     (define-key merlin-menu-map [error]
       '(menu-item "Error check" merlin-error-check
                   :help "Check current buffer for any error."))
+    (define-key merlin-menu-map [dot-merlin]
+      '(menu-item "dot-merlin check" merlin-project-check
+                  :help "Display status of '.merlin'."))
     (define-key merlin-menu-map [addflag]
       '(menu-item "Add a flag" merlin-process-add-flag
                   :help "Add a flag to be passed to ocamlmerlin after restarting it."))
@@ -1722,8 +1746,7 @@ Returns the position."
       (add-to-list 'ac-sources 'merlin-ac-source))
     (add-hook 'completion-at-point-functions
               #'merlin-completion-at-point nil 'local)
-    (add-to-list 'after-change-functions 'merlin-sync-edit)
-    (merlin-load-project-file)))
+    (add-to-list 'after-change-functions 'merlin-sync-edit)))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
@@ -1743,11 +1766,16 @@ Returns the position."
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
-  (if (merlin-process-dead-p)
-      " merlin(??)"
-    (if merlin-show-instance-in-lighter
-        (format " merlin (%s)" merlin-instance)
-      " merlin")))
+  (if (merlin-process-dead-p) " merlin (DEAD)"
+    (let* ((messages nil)
+           (project (merlin--project-get)))
+      (when merlin-report-dot-merlin-in-lighter
+        (cond ((cdr project) (add-to-list 'messages "errors in .merlin"))
+              ((not (car project)) (add-to-list 'messages "no .merlin"))))
+      (when merlin-show-instance-in-lighter
+        (add-to-list 'messages merlin-instance))
+      (if messages (concat " merlin (" (mapconcat 'identity messages ",") ")")
+          " merlin"))))
 
 ;;;###autoload
 
