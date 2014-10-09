@@ -189,8 +189,19 @@ def command_locate(path, line, col):
     else:
       l = pos_or_err['pos']['line']
       c = pos_or_err['pos']['col']
+      split_method = vim.eval('g:merlin_split_method')
       if "file" in pos_or_err:
-        vim.command(":split %s" % pos_or_err['file'])
+          if split_method == "never":
+              vim.commmand(":e %s" % pos_or_err['file'])
+          elif "vertical" in split_method:
+              vim.command(":vsplit %s" % pos_or_err['file'])
+          else:
+              vim.command(":split %s" % pos_or_err['file'])
+      elif "always" in split_method:
+          if "vertical" in split_method:
+              vim.command(":vsplit")
+          else:
+              vim.command(":split")
       vim.current.window.cursor = (l, c)
   except MerlinExc as e:
     try_print_error(e)

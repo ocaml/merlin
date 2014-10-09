@@ -5,6 +5,10 @@ if !has('python')
   finish
 endif
 
+if !exists('g:merlin_split_method')
+    let g:merlin_split_method = 'horizontal'
+endif
+
 if !exists("g:merlin_ignore_warnings")
   " strings are ugly, but at least I'm sure it's not converted in some weird
   " value when passing it to python
