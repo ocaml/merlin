@@ -6,6 +6,28 @@ let cmt_path = ref (Misc.Path_list.of_list [])
 
 let cwd = ref ""
 
+type filetype =
+  | ML   of string
+  | MLI  of string
+  | CMT  of string
+  | CMTI of string
+
+module Preferences : sig
+  val set : [ `ML | `MLI ] -> unit
+
+  val cmt : string -> filetype
+end = struct
+  let prioritize_impl = ref true
+
+  let set choice =
+    prioritize_impl :=
+      match choice with
+      | `ML -> true
+      | _ -> false
+
+  let cmt file = if !prioritize_impl then CMT file else CMTI file
+end
+
 module File_switching : sig
   exception Can't_move
 
@@ -63,12 +85,6 @@ module Utils = struct
   let file_path_to_mod_name f =
     let pref = Misc.chop_extensions f in
     String.capitalize (Filename.basename pref)
-
-  type filetype =
-    | ML   of string
-    | MLI  of string
-    | CMT  of string
-    | CMTI of string
 
   exception File_not_found of filetype
 
@@ -281,7 +297,7 @@ and browse_cmts ~root modules =
       in
       cwd := Filename.dirname root ;
       debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
-      let cmt_file = find_file ~with_fallback:true (CMT file) in
+      let cmt_file = find_file ~with_fallback:true (Preferences.cmt file) in
       browse_cmts ~root:cmt_file modules
     end
 
@@ -299,11 +315,11 @@ and from_path ~source ?(fallback=`Not_found) lst =
     if source then `ML loc else `MLI loc
   | fname :: modules ->
     try
-      let cmt_file = find_file ~with_fallback:true (CMT fname) in
+      let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       recover (browse_cmts ~root:cmt_file modules)
     with
     | Not_found -> fallback
-    | File_not_found (CMT fname) as exn ->
+    | File_not_found (CMT fname | CMTI fname) as exn ->
       debug_log "failed to locate the cmt[i] of '%s'" fname ;
       begin match fallback with
       | `Not_found -> raise exn
@@ -361,12 +377,14 @@ let finalize source loc =
   let full_path = find_file ~with_fallback file in
   `Found (Some full_path, loc.Location.loc_start)
 
-let from_string ~project ~env ~local_defs is_implementation path =
+let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
   File_switching.reset () ;
   cwd := "" (* Reset the cwd before doing anything *) ;
   sources_path := Project.source_path project ;
   cmt_path := Project.cmt_path project ;
-  debug_log "looking for the source of '%s'" path ;
+  Preferences.set ml_or_mli ;
+  debug_log "looking for the source of '%s' (prioritizing %s files)"
+    path (match ml_or_mli with `ML -> ".ml" | `MLI -> ".mli");
   let ident, is_label = keep_suffix (Longident.parse path) in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try

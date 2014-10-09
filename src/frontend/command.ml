@@ -294,7 +294,7 @@ let dispatch (state : state) =
         List.rev compl
     )
 
-  | (Locate (patho, opt_pos) : a request) ->
+  | (Locate (patho, ml_or_mli, opt_pos) : a request) ->
     let env, local_defs =
       with_typer state (
         fun typer ->
@@ -320,10 +320,11 @@ let dispatch (state : state) =
         path
       | Some path, _ -> path
     in
-    let is_implem = Buffer.is_implementation state.buffer in
+    let is_implementation = Buffer.is_implementation state.buffer in
     let project = Buffer.project state.buffer in
     begin match
-      Track_definition.from_string ~project ~env ~local_defs is_implem path
+      Track_definition.from_string ~project ~env ~local_defs ~is_implementation
+        ml_or_mli path
     with
     | `Found (file, pos) ->
       Logger.info (Track_definition.section)

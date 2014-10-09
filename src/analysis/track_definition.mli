@@ -4,7 +4,8 @@ val from_string
   : project:Merlin_lib.Project.t
   -> env:Env.t
   -> local_defs:[`Str of Typedtree.structure | `Sg of Typedtree.signature] list
-  -> bool
+  -> is_implementation:bool
+  -> [ `ML | `MLI ]
   -> string
   -> [> `File_not_found of string
       | `Found of string option * Lexing.position

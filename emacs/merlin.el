@@ -170,6 +170,11 @@ In particular you can specify nil, meaning that the locked zone is not represent
                                 (const :tag "Never open a new window" never)
                                 (const :tag "Open a new window only if the target file is different from current buffer." diff)))
 
+(defcustom merlin-locate-preference 'ml
+  "Determine whether locate should in priority look in ml or mli files."
+  :group 'merlin :type '(choice (const :tag "Look at implementation" ml)
+                                (const :tag "Look at interfaces" mli)))
+
 (defcustom merlin-locate-focus-new-window t
   "If non-nil, when locate opens a new window it will give it the focus."
   :group 'merlin :type 'boolean)
@@ -186,7 +191,7 @@ field logfile (see `merlin-start-process')"
   "If non-nil, after a type enclosing, up and down arrow are used to go up and down the AST."
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-type-after-locate t
+(defcustom merlin-type-after-locate nil
   "If non-nil, use type-enclosing after locate."
   :group 'merlin :type 'boolean)
 
@@ -1419,7 +1424,7 @@ loading"
   "Locate the identifier IDENT at point and return the result."
   (merlin-send-command
    (list 'locate (if ident (substring-no-properties ident) 'null)
-         'at (merlin-unmake-point (point)))))
+         merlin-locate-preference 'at (merlin-unmake-point (point)))))
 
 (defun merlin--locate-pure (&optional ident)
   "Locate the identifier IDENT at point."

@@ -180,10 +180,11 @@ def command_complete_cursor(base,line,col):
 
 def command_locate(path, line, col):
   try:
+    choice = vim.eval('g:merlin_locate_preference')
     if line is None or col is None:
-        return command("locate", path)
+        return command("locate", path, choice)
     else:
-        pos_or_err = command("locate", path, "at", {'line': line, 'col': col})
+        pos_or_err = command("locate", path, choice, "at", {'line': line, 'col': col})
     if not isinstance(pos_or_err, dict):
       print(pos_or_err)
     else:
