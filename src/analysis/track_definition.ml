@@ -6,6 +6,17 @@ let cmt_path = ref (Misc.Path_list.of_list [])
 
 let cwd = ref ""
 
+module Fallback = struct
+  let fallback = ref `Nothing
+
+  let get () = !fallback
+
+  let set ~source loc = fallback := if source then `ML loc else `MLI loc
+  let reset () = fallback := `Nothing
+
+  let is_set () = !fallback <> `Nothing
+end
+
 type filetype =
   | ML   of string
   | MLI  of string
@@ -216,8 +227,8 @@ let rec check_item ~source modules =
       | None -> check_item ~source modules rest
       | Some thing ->
         debug_log "one more include to follow..." ;
-        resolve_mod_alias ~source ~fallback:item.BrowseT.t_loc thing
-          [ name ] rest
+        Fallback.set ~source item.BrowseT.t_loc ;
+        resolve_mod_alias ~source thing [ name ] rest
   in
   let get_on_track ~name item =
     match
@@ -256,11 +267,14 @@ let rec check_item ~source modules =
     | [] -> assert false
     | [ str_ident ] -> get_loc ~name:str_ident item rest
     | mod_name :: path ->
-      let fallback = item.BrowseT.t_loc in
       match get_on_track ~name:mod_name item with
       | `Not_found   -> check_item ~source modules rest
-      | `Direct me   -> resolve_mod_alias ~source ~fallback me path rest
-      | `Included me -> resolve_mod_alias ~source ~fallback me modules rest
+      | `Direct me   ->
+        Fallback.set ~source item.BrowseT.t_loc ;
+        resolve_mod_alias ~source me path rest
+      | `Included me ->
+        Fallback.set ~source item.BrowseT.t_loc ;
+        resolve_mod_alias ~source me modules rest
 
 and browse_cmts ~root modules =
   let open Cmt_format in
@@ -301,13 +315,7 @@ and browse_cmts ~root modules =
       browse_cmts ~root:cmt_file modules
     end
 
-and from_path ~source ?(fallback=`Not_found) lst =
-  let recover = function
-    | `Not_found -> fallback
-    | otherwise  -> otherwise
-  in
-  if not (File_switching.can_move ()) then fallback else
-  match lst with
+and from_path ~source = function
   | [] -> invalid_arg "empty path"
   | [ fname ] ->
     let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
@@ -316,22 +324,12 @@ and from_path ~source ?(fallback=`Not_found) lst =
   | fname :: modules ->
     try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
-      recover (browse_cmts ~root:cmt_file modules)
-    with
-    | Not_found -> fallback
-    | File_not_found (CMT fname | CMTI fname) as exn ->
+      browse_cmts ~root:cmt_file modules
+    with File_not_found (CMT fname | CMTI fname) as exn ->
       debug_log "failed to locate the cmt[i] of '%s'" fname ;
-      begin match fallback with
-      | `Not_found -> raise exn
-      | value -> value
-      end
-    | File_not_found _ -> assert false
+      raise exn
 
-and resolve_mod_alias ~source ~fallback node path rest =
-  let do_fallback = function
-    | `Not_found -> if source then `ML fallback else `MLI fallback
-    | otherwise  -> otherwise
-  in
+and resolve_mod_alias ~source node path rest =
   let direct, loc =
     match node with
     | BrowseT.Module_expr me  ->
@@ -344,20 +342,20 @@ and resolve_mod_alias ~source ~fallback node path rest =
   | `Alias path' ->
     File_switching.allow_movement () ;
     let full_path = (path_to_list path') @ path in
-    do_fallback (check_item ~source full_path rest)
+    check_item ~source full_path rest
   | `Sg _ | `Str _ as x ->
     let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
-    do_fallback (check_item ~source path lst)
+    check_item ~source path lst
   | `Functor msg ->
     debug_log "stopping on functor%s" msg ;
     if source then `ML loc else `MLI loc
   | `Mod_type mod_type ->
-    resolve_mod_alias ~source ~fallback (BrowseT.Module_type mod_type) path rest
+    resolve_mod_alias ~source (BrowseT.Module_type mod_type) path rest
   | `Mod_expr mod_expr ->
-    resolve_mod_alias ~source ~fallback (BrowseT.Module_expr mod_expr) path rest
+    resolve_mod_alias ~source (BrowseT.Module_expr mod_expr) path rest
   | `Unpack -> (* FIXME: should we do something or stop here? *)
     debug_log "found Tmod_unpack, expect random results." ;
-    do_fallback (check_item ~source path rest)
+    check_item ~source path rest
 
 let path_and_loc_from_label desc env =
   let open Types in
@@ -376,6 +374,12 @@ let finalize source loc =
   let file = if source then ML mod_name else MLI mod_name in
   let full_path = find_file ~with_fallback file in
   `Found (Some full_path, loc.Location.loc_start)
+
+let recover () =
+  match Fallback.get () with
+  | `Nothing -> assert false
+  | `ML  loc -> finalize true loc
+  | `MLI loc -> finalize false loc
 
 let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
   File_switching.reset () ;
@@ -429,10 +433,12 @@ let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
       let modules = path_to_list path' in
       let items   = get_top_items (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
+      | `Not_found when Fallback.is_set () -> recover ()
       | `Not_found -> `Not_found (path, File_switching.where_am_i ())
       | `ML  loc   -> finalize true loc
       | `MLI loc   -> finalize false loc
   with
+  | _ when Fallback.is_set () -> recover ()
   | Not_found -> `Not_found (path, File_switching.where_am_i ())
   | File_not_found path ->
     let msg =
