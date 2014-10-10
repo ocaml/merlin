@@ -1409,7 +1409,7 @@ loading"
   "Like `merlin--project-get' but use a cache to prevent to limit number of
 calls (lighter can be updated at a high frequency)"
   (if (and merlin--project-cache
-           (< (abs (- (float-time) (car merlin--project-cache)) 4.)))
+           (< (abs (- (float-time) (car merlin--project-cache))) 4.))
       (cdr merlin--project-cache)
     (merlin--project-get)))
 
