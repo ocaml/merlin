@@ -410,7 +410,36 @@ let dispatch (state : state) =
     cursor_state state
 
   | (Boundary (dir,pos) : a request) ->
-    failwith "TODO"
+    let get_enclosing_str_item pos browses =
+      let enclosings = Browse.enclosing pos browses in
+      match
+        List.drop_while enclosings ~f:(fun t ->
+          match t.BrowseT.t_node with
+          | BrowseT.Structure_item _
+          | BrowseT.Signature_item _ -> false
+          | _ -> true
+        )
+      with
+      | [] -> None
+      | item :: _ -> Some item
+    in
+    with_typer state (fun typer ->
+      let browses  = Browse.of_typer_contents (Typer.contents typer) in
+      Option.bind (get_enclosing_str_item pos browses) ~f:(fun item ->
+        match dir with
+        | `Current -> Some item.BrowseT.t_loc
+        | `Prev ->
+          let pos = item.BrowseT.t_loc.Location.loc_start in
+          let pos = Lexing.({ pos with pos_cnum = pos.pos_cnum - 1 }) in
+          let item= get_enclosing_str_item pos browses in
+          Option.map item ~f:(fun i -> i.BrowseT.t_loc)
+        | `Next ->
+          let pos = item.BrowseT.t_loc.Location.loc_end in
+          let pos = Lexing.({ pos with pos_cnum = pos.pos_cnum + 1 }) in
+          let item= get_enclosing_str_item pos browses in
+          Option.map item ~f:(fun i -> i.BrowseT.t_loc)
+      )
+    )
 
   | (Reset (ml,path) : a request) ->
     let parser = match ml, path with

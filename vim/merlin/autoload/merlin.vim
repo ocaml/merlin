@@ -291,11 +291,18 @@ function! merlin#setVisualSelection(a, b)
   call setpos("'b", markBSave)
 endfunction
 
+let s:phrase_counter = 0
+
 function! merlin#Phrase()
-  let [l1, c1] = getpos("'<")[1:2]
-  let [l2, c2] = getpos("'>")[1:2]
-  py merlin.vim_selectphrase("l1","c1","l2","c2")
-  call merlin#setVisualSelection([l1,c1],[l2,c2])
+  if s:phrase_counter
+      let s:phrase_counter = s:phrase_counter - 1
+  else
+    let [l1, c1] = getpos("'<")[1:2]
+    let [l2, c2] = getpos("'>")[1:2]
+    let s:phrase_counter = l2 - l1
+    py merlin.vim_selectphrase("l1","c1","l2","c2")
+    call merlin#setVisualSelection([l1,c1],[l2,c2])
+  endif
 endfunction
 
 function! merlin#Register()

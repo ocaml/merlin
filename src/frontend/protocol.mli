@@ -56,7 +56,7 @@ type _ request =
     :  [`Marker|`Position|`End|`Before of position|`Exact of position]
     -> cursor_state request
   | Boundary
-    :  [`Prev|`Next|`Current] * position option
+    :  [`Prev|`Next|`Current] * position
     -> Location.t option request
   | Reset
     :  [`ML | `MLI | `Auto ] * string option

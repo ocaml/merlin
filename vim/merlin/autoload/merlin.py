@@ -547,6 +547,22 @@ def vim_add_flags(*flags):
   result = catch_and_print(lambda: command('flags', 'add', flags))
   return display_load_failures(result)
 
+# Boundaries
+
+def min_pos(p1, p2):
+    if p1['line'] < p2['line']:
+        return p1
+    elif p1['line'] > p2['line']:
+        return p2
+    elif p1['col'] <= p2['col']:
+        return p1
+    else:
+        return p2
+
+def max_pos(p1, p2):
+    m = min_pos(p1, p2)
+    return p1 if p2 == m else p2
+
 def vim_selectphrase(l1,c1,l2,c2):
   # In some context, vim set column of '> to 2147483647 (2^31 - 1)
   # This cause the merlin json parser on 32 bit platforms to overflow
@@ -556,28 +572,25 @@ def vim_selectphrase(l1,c1,l2,c2):
   vl2 = min(bound,int(vim.eval(l2)))
   vc2 = min(bound,int(vim.eval(c2)))
   sync_buffer_to(vl2,vc2)
-  command_seek_exact(vl2,vc2)
-  loc2 = command("boundary")
+  loc2 = command("boundary","at",{"line":vl2,"col":vc2})
   if vl2 != vl1 or vc2 != vc1:
-    command_seek_exact(vl1,vc1)
-    loc1 = command("boundary")
+    loc1 = command("boundary","at",{"line":vl1,"col":vc1})
   else:
     loc1 = None
 
   if loc2 == None:
     return
 
-  vl1 = loc2[0]['line']
-  vc1 = loc2[0]['col']
-  vl2 = loc2[1]['line']
-  vc2 = loc2[1]['col']
+  fst = loc2[0]
+  snd = loc2[1]
+
   if loc1 != None:
-    vl1 = min(loc1[0]['line'], vl1)
-    vc1 = min(loc1[0]['col'], vc1)
-    vl2 = max(loc1[1]['line'], vl2)
-    vc2 = max(loc1[1]['col'], vc2)
-  for (var,val) in [(l1,vl1),(l2,vl2),(c1,vc1),(c2,vc2)]:
-    vim.command("let %s = %d" % (var,val))
+    fst = min_pos(loc1[0], loc2[0])
+    snd = max_pos(loc1[1], loc2[1])
+  for (var,val) in [(l1,fst['line']),(l2,snd['line']),(c1,fst['col']),(c2,snd['col'])]:
+      vim.command("let %s = %d" % (var,val))
+
+# Stuff
 
 def setup_merlin():
   sync_buffer_to(1, 0)

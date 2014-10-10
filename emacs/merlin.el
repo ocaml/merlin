@@ -1615,34 +1615,26 @@ calls (lighter can be updated at a high frequency)"
 ;; SEMANTIC MOVEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin--phrase-goto (command indice)
-  "Go to the phrase indicated by COMMAND to the end INDICE.
+(defun merlin--phrase-goto (command)
+  "Go to the phrase indicated by COMMAND.
 Returns the position."
-  (let ((r (merlin-send-command (list 'boundary command))))
+  (let ((r (merlin-send-command
+             (list 'boundary command 'at (merlin-unmake-point (point))))))
     (unless (equal r 'null)
-      (merlin-goto-point (elt r indice))
+      (merlin-goto-point (car r))
       (point))))
 
-(defun merlin-phrase-next (&optional point)
-  "Go to the beginning of the next phrase. FIXME"
+(defun merlin-phrase-next ()
+  "Go to the beginning of the next phrase."
   (interactive)
-  nil)
-;;  (unless point (setq point (point)))
-;;  (merlin-sync-to-point point)
-;;  (cond
-;;    ((merlin--phrase-goto 'next 0))
-;;    ((progn (merlin-tell-definitions 2)
-;;            (goto-char (merlin-seek-exact point))
-;;            (merlin--phrase-goto 'next 0)))
-;;    (t (goto-char (point-max)))))
+  (merlin-sync-to-point (point-max) t)
+  (merlin--phrase-goto 'next))
 
 (defun merlin-phrase-prev ()
   "Go to the beginning of the previous phrase."
   (interactive)
-  (let ((point (point)))
-    (merlin-sync-to-point)
-    (if (equal point (merlin--phrase-goto 'current 0))
-        (merlin--phrase-goto 'prev 0))))
+  (merlin-sync-to-point (point-max) t)
+  (merlin--phrase-goto 'prev))
 
 (defun merlin-error-check ()
   "Update merlin to the end-of-file, reporting errors."
