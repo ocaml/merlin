@@ -35,7 +35,7 @@ module Project : sig
     val reset : t -> unit
     val path : t -> action:[`Add|`Rem] -> var:[`Build|`Source] -> ?cwd:string -> string -> unit
     val load_packages : t -> string list -> [`Ok | `Failures of (string * exn) list]
-    val set_extension : t -> enabled:bool -> string -> unit
+    val set_extension : t -> enabled:bool -> string -> (string * exn) option
     val add_flags : t -> string list -> [`Ok | `Failures of (string * exn) list]
     val clear_flags : t -> [`Ok | `Failures of (string * exn) list]
   end
@@ -133,7 +133,6 @@ end = struct
     let dot_config = empty_config () in
     let user_config = empty_config () in
     let local_path = ref [] in
-    dot_config.cfg_extensions <- String.Set.empty;
     let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
     let flags = Clflags.copy Clflags.initial in
     { dot_merlins = [];
@@ -270,8 +269,15 @@ end = struct
 
     let set_extension project ~enabled path =
       let cfg = project.user_config in
-      let f = String.Set.(if enabled then add else remove) in
-      cfg.cfg_extensions <- f path cfg.cfg_extensions
+      if String.Set.mem path Extension.all then
+        let f  = String.Set.(if enabled then add else remove) in
+        let () = cfg.cfg_extensions <- f path cfg.cfg_extensions in
+        None
+      else begin
+        Logger.info Logger.Section.project_load ~title:"EXT"
+          (sprintf "unknown extensions: \"%s\"" path) ;
+        Some (path, Extension.Unknown)
+      end
   end
 
   let set_dot_merlin project path =
@@ -289,10 +295,20 @@ end = struct
     cfg.cfg_path_cmi := dm.Dm.cmi_path;
     cfg.cfg_path_cmt := dm.Dm.cmt_path;
     cfg.cfg_flags <- dm.Dm.flags;
-    cfg.cfg_extensions <- String.Set.(of_list dm.Dm.extensions);
+    let known_extensions, unknown_extensions =
+      List.partition dm.Dm.extensions ~f:(fun ext ->
+        String.Set.mem ext Extension.all
+      )
+    in
+    List.iter unknown_extensions ~f:(fun ext ->
+      Logger.info Logger.Section.project_load ~title:"EXT"
+        (sprintf "unknown extensions: \"%s\"" ext)
+    ) ;
+    cfg.cfg_extensions <- String.Set.of_list known_extensions;
     flush_global_modules project;
     project.dot_merlins_failures <-
       (match result  with `Ok -> [] | `Failures l -> l) @
+      (List.map unknown_extensions ~f:(fun e -> e, Extension.Unknown)) @
       update_flags project
 
   let store : (string option, t) Hashtbl.t = Hashtbl.create 3

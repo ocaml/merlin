@@ -503,7 +503,8 @@ def vim_which_ext(ext,vimvar):
 # Extension management
 def vim_ext(enable, exts):
   state = enable and 'enable' or 'disable'
-  catch_and_print(lambda: command('extension', state, exts))
+  result= catch_and_print(lambda: command('extension', state, exts))
+  return display_load_failures(result)
 
 def vim_ext_list(vimvar,enabled=None):
   if enabled == None:

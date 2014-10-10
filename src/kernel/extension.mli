@@ -28,6 +28,8 @@
 
 open Std
 
+exception Unknown
+
 (* Adjust typing environment for syntax extensions.
  * See [Fake] for AST part *)
 

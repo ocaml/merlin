@@ -563,7 +563,7 @@ the merlin buffer of the current buffer."
   (let* ((project (merlin--project-get))
          (failures (cdr project)))
     (unless (equal failures merlin-last-project-failures)
-      (mapcar #'message (cdr failed)))
+      (mapcar #'message (cdr failures)))
     (setq merlin-last-project-failures failures)))
 
 (defun merlin--acquire-buffer (&optional force)
@@ -706,7 +706,9 @@ the error message otherwise print a generic error message."
                                         (merlin--acquire-buffer)
                                         (merlin-send-command '(extension list disabled))))))
   (merlin--acquire-buffer)
-  (merlin-send-command `(extension enable (,name)))
+  (let* ((r (merlin-send-command `(extension enable (,name))))
+         (failed (assoc 'failures r)))
+    (when failed (message (cdr failed))))
   (merlin-error-reset))
 
 (defun merlin-extension-disable (name)
@@ -716,7 +718,9 @@ the error message otherwise print a generic error message."
                                         (merlin--acquire-buffer)
                                         (merlin-send-command '(extension list enabled))))))
   (merlin--acquire-buffer)
-  (merlin-send-command `(extension disable (,name)))
+  (let* ((r (merlin-send-command `(extension disable (,name))))
+         (failed (assoc 'failures r)))
+    (when failed (message (cdr failed))))
   (merlin-error-reset))
 
 
@@ -1780,15 +1784,17 @@ Returns the position."
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
   (if (merlin-process-dead-p) " merlin (DEAD)"
-    (let* ((messages nil)
-           (project (merlin--project-get)))
-      (when merlin-report-dot-merlin-in-lighter
-        (cond ((cdr project) (add-to-list 'messages "errors in .merlin"))
-              ((not (car project)) (add-to-list 'messages "no .merlin"))))
-      (when merlin-show-instance-in-lighter
-        (add-to-list 'messages merlin-instance))
-      (if messages (concat " merlin (" (mapconcat 'identity messages ",") ")")
-          " merlin"))))
+    (progn
+      (merlin--acquire-buffer)
+      (let* ((messages nil)
+             (project (merlin--project-get)))
+        (when merlin-report-dot-merlin-in-lighter
+          (cond ((cdr project) (add-to-list 'messages "errors in .merlin"))
+                ((not (car project)) (add-to-list 'messages "no .merlin"))))
+        (when merlin-show-instance-in-lighter
+          (add-to-list 'messages merlin-instance))
+        (if messages (concat " merlin (" (mapconcat 'identity messages ",") ")")
+          " merlin")))))
 
 ;;;###autoload
 

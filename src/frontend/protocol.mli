@@ -88,7 +88,7 @@ type _ request =
     -> string list request
   | Extension_set
     :  [`Enabled|`Disabled] * string list
-    -> unit request
+    -> [`Ok | `Failures of (string * exn) list] request
   | Path
     :  [`Build|`Source]
      * [`Add|`Rem]

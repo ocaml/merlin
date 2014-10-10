@@ -208,13 +208,15 @@ module Protocol_io = struct
   let with_failures assoc = function
     | `Ok -> assoc
     | `Failures failures ->
-      let packages, flags =
-        List.fold_left failures ~init:([],[]) ~f:(fun (packages, flags) (str,exn) ->
-          let str = "\"" ^ str ^ "\"" in
-          match exn with
-          | Fl_package_base.No_such_package _ -> str :: packages, flags
-          | Arg.Bad _ -> packages, str :: flags
-          | exn -> (str ^ " (" ^ Printexc.to_string exn ^ ")") :: packages, flags
+      let packages, flags, extensions =
+        List.fold_left failures ~init:([],[],[]) ~f:(
+          fun (pkgs, flgs, exts) (str,exn) ->
+            let str = "\"" ^ str ^ "\"" in
+            match exn with
+            | Fl_package_base.No_such_package _ -> str :: pkgs, flgs, exts
+            | Arg.Bad _ -> pkgs, str :: flgs, exts
+            | Extension.Unknown -> pkgs, flgs, str :: exts
+            | e -> (str ^ " (" ^ Printexc.to_string e ^ ")") :: pkgs, flgs, exts
         )
       in
       let packages =
@@ -231,7 +233,14 @@ module Protocol_io = struct
           let str = String.concat ~sep:", " failures in
           [ `String ("Unknown flags " ^ str) ]
       in
-      ("failures", `List (packages @ flags)) :: assoc
+      let extensions =
+        match extensions with
+        | [] -> []
+        | failures ->
+          let str = String.concat ~sep:", " failures in
+          [ `String ("Unknown extensions " ^ str) ]
+      in
+      ("failures", `List (packages @ flags @ extensions)) :: assoc
 
   let request_of_json = function
     | (`String "tell" :: `String "start" :: opt_pos) ->
@@ -404,7 +413,8 @@ module Protocol_io = struct
           `Assoc (with_failures ["result", `Bool true] failures)
         | Findlib_list, strs -> json_of_string_list strs
         | Extension_list _, strs -> json_of_string_list strs
-        | Extension_set _, () -> `Bool true
+        | Extension_set _, failures ->
+          `Assoc (with_failures ["result", `Bool true] failures)
         | Path _, () -> `Bool true
         | Path_list _, strs -> json_of_string_list strs
         | Path_reset, () -> `Bool true

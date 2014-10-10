@@ -574,14 +574,18 @@ let dispatch (state : state) =
     in
     String.Set.to_list set
 
-  | (Extension_set (action,extensions) : a request) ->
+  | (Extension_set (action,exts) : a request) ->
     let enabled = match action with
       | `Enabled  -> true
       | `Disabled -> false
     in
     let project = Buffer.project state.buffer in
-    List.iter ~f:(Project.User.set_extension project ~enabled)
-      extensions
+    begin match
+      List.filter_map exts ~f:(Project.User.set_extension project ~enabled)
+    with
+    | [] -> `Ok
+    | lst -> `Failures lst
+    end
 
   | (Path (var,action,pathes) : a request) ->
     let project = Buffer.project state.buffer in

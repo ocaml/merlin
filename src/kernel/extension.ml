@@ -29,6 +29,8 @@
 open Std
 open Raw_parser
 
+exception Unknown
+
 type t = {
   name : string;
   private_def : string list;
