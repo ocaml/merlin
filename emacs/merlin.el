@@ -564,9 +564,9 @@ the merlin buffer of the current buffer."
   "Check if .merlin file loaded successfully."
   (let* ((project (merlin--project-get))
          (failures (cdr project)))
-    (unless (equal failures merlin--project-failures
-      (message (mapconcat 'identity failures "\n")))
-    (setq merlin--project-failures failures))))
+    (unless (equal failures merlin--project-failures)
+      (message (mapconcat 'identity failures "\n"))
+      (setq merlin--project-failures failures))))
 
 (defun merlin--acquire-buffer (&optional force)
   "Prepare merlin to receive data from current buffer."
