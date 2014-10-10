@@ -275,8 +275,9 @@ let __ocaml_lex_tables = {
     \031\005\253\255\249\000\014\001\024\001\106\005\252\255\027\015\
     \251\255\034\001\163\001\252\255\025\009\254\255\255\255\059\001\
     \060\001\253\255\035\015\157\000\160\000\200\000\212\000\169\000\
-    \249\000\173\000\013\000\255\255\214\000\252\255\253\255\201\000\
-    \064\001\255\255\119\015\203\015\254\255";
+    \249\000\173\000\013\000\255\255\001\002\251\255\252\255\253\255\
+    \069\001\201\000\064\001\255\255\119\015\203\015\254\255\078\001\
+    ";
   Lexing.lex_backtrk = 
    "\255\255\255\255\255\255\084\000\083\000\080\000\079\000\072\000\
     \070\000\255\255\061\000\058\000\255\255\051\000\050\000\048\000\
@@ -303,8 +304,9 @@ let __ocaml_lex_tables = {
     \005\000\255\255\001\000\005\000\255\255\255\255\255\255\255\255\
     \255\255\255\255\255\255\255\255\003\000\255\255\255\255\003\000\
     \255\255\255\255\255\255\002\000\255\255\255\255\001\000\255\255\
-    \255\255\255\255\255\255\255\255\255\255\255\255\255\255\003\000\
-    \003\000\255\255\255\255\255\255\255\255";
+    \255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\
+    \004\000\004\000\004\000\255\255\255\255\255\255\255\255\255\255\
+    ";
   Lexing.lex_default = 
    "\001\000\000\000\000\000\255\255\255\255\255\255\255\255\255\255\
     \255\255\000\000\255\255\255\255\000\000\255\255\255\255\255\255\
@@ -331,8 +333,9 @@ let __ocaml_lex_tables = {
     \255\255\000\000\255\255\255\255\255\255\255\255\000\000\255\255\
     \000\000\255\255\187\000\000\000\255\255\000\000\000\000\255\255\
     \255\255\000\000\255\255\255\255\255\255\197\000\200\000\255\255\
-    \200\000\255\255\255\255\000\000\205\000\000\000\000\000\255\255\
-    \255\255\000\000\255\255\255\255\000\000";
+    \200\000\255\255\255\255\000\000\205\000\000\000\000\000\000\000\
+    \255\255\255\255\255\255\000\000\255\255\255\255\000\000\255\255\
+    ";
   Lexing.lex_trans = 
    "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\038\000\039\000\039\000\038\000\040\000\044\000\042\000\
@@ -366,23 +369,23 @@ let __ocaml_lex_tables = {
     \033\000\033\000\033\000\033\000\033\000\033\000\033\000\033\000\
     \033\000\033\000\033\000\033\000\033\000\033\000\033\000\003\000\
     \033\000\033\000\033\000\033\000\033\000\033\000\033\000\033\000\
-    \002\000\005\000\178\000\199\000\005\000\005\000\005\000\212\000\
+    \002\000\005\000\178\000\199\000\005\000\005\000\005\000\214\000\
     \000\000\123\000\005\000\005\000\092\000\005\000\005\000\005\000\
-    \255\255\255\255\208\000\093\000\207\000\003\000\094\000\003\000\
+    \255\255\255\255\000\000\093\000\000\000\003\000\094\000\003\000\
     \178\000\178\000\005\000\180\000\005\000\005\000\005\000\005\000\
     \005\000\000\000\178\000\092\000\006\000\180\000\000\000\006\000\
     \006\000\006\000\000\000\098\000\170\000\006\000\006\000\185\000\
     \006\000\006\000\006\000\091\000\091\000\091\000\091\000\091\000\
     \091\000\091\000\091\000\091\000\091\000\006\000\005\000\006\000\
     \006\000\006\000\006\000\006\000\000\000\190\000\190\000\102\000\
-    \192\000\192\000\102\000\102\000\102\000\000\000\000\000\000\000\
-    \102\000\102\000\000\000\102\000\134\000\102\000\000\000\000\000\
-    \000\000\097\000\093\000\000\000\005\000\094\000\005\000\000\000\
+    \192\000\192\000\102\000\102\000\102\000\000\000\000\000\207\000\
+    \102\000\102\000\215\000\102\000\134\000\102\000\000\000\000\000\
+    \207\000\097\000\093\000\215\000\005\000\094\000\005\000\000\000\
     \102\000\006\000\102\000\133\000\102\000\102\000\102\000\000\000\
     \000\000\000\000\131\000\000\000\000\000\131\000\131\000\131\000\
     \097\000\000\000\096\000\131\000\131\000\000\000\131\000\131\000\
-    \131\000\000\000\211\000\000\000\209\000\000\000\000\000\006\000\
-    \210\000\006\000\000\000\131\000\102\000\131\000\132\000\131\000\
+    \131\000\000\000\213\000\000\000\211\000\000\000\000\000\006\000\
+    \212\000\006\000\000\000\131\000\102\000\131\000\132\000\131\000\
     \131\000\131\000\000\000\000\000\000\000\006\000\000\000\000\000\
     \006\000\006\000\006\000\000\000\000\000\000\000\006\000\006\000\
     \000\000\006\000\006\000\006\000\000\000\000\000\000\000\000\000\
@@ -392,20 +395,20 @@ let __ocaml_lex_tables = {
     \000\000\000\000\000\000\006\000\006\000\000\000\006\000\006\000\
     \006\000\000\000\000\000\000\000\000\000\131\000\173\000\131\000\
     \255\255\130\000\006\000\006\000\000\000\006\000\006\000\006\000\
-    \006\000\006\000\000\000\000\000\255\255\000\000\206\000\006\000\
+    \006\000\006\000\000\000\000\000\255\255\000\000\000\000\006\000\
     \000\000\000\000\006\000\006\000\006\000\000\000\000\000\072\000\
     \006\000\006\000\073\000\006\000\006\000\006\000\000\000\000\000\
     \006\000\129\000\006\000\000\000\000\000\000\000\127\000\006\000\
     \006\000\000\000\006\000\006\000\006\000\006\000\006\000\000\000\
     \000\000\255\255\006\000\000\000\255\255\006\000\006\000\006\000\
     \172\000\000\000\000\000\006\000\006\000\000\000\113\000\006\000\
-    \006\000\255\255\000\000\000\000\000\000\128\000\000\000\006\000\
+    \006\000\255\255\000\000\207\000\000\000\128\000\208\000\006\000\
     \000\000\000\000\000\000\112\000\006\000\110\000\006\000\006\000\
     \006\000\111\000\000\000\000\000\000\000\102\000\000\000\188\000\
     \102\000\102\000\102\000\000\000\000\000\151\000\102\000\102\000\
     \152\000\102\000\103\000\102\000\000\000\000\000\000\000\000\000\
     \000\000\070\000\006\000\000\000\006\000\000\000\102\000\006\000\
-    \102\000\102\000\104\000\102\000\102\000\000\000\000\000\000\000\
+    \102\000\102\000\104\000\102\000\102\000\210\000\000\000\209\000\
     \006\000\000\000\153\000\006\000\006\000\101\000\000\000\000\000\
     \000\000\006\000\006\000\000\000\006\000\006\000\006\000\000\000\
     \255\255\000\000\000\000\000\000\000\000\006\000\000\000\006\000\
@@ -430,7 +433,7 @@ let __ocaml_lex_tables = {
     \069\000\069\000\069\000\069\000\069\000\069\000\069\000\069\000\
     \058\000\068\000\030\000\030\000\030\000\030\000\030\000\030\000\
     \030\000\030\000\030\000\030\000\000\000\000\000\000\000\000\000\
-    \000\000\000\000\000\000\000\000\059\000\000\000\000\000\057\000\
+    \000\000\206\000\000\000\000\000\059\000\000\000\000\000\057\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\055\000\000\000\
     \000\000\060\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\061\000\255\255\000\000\000\000\000\000\000\000\
@@ -833,28 +836,28 @@ let __ocaml_lex_tables = {
     \184\000\184\000\194\000\000\000\194\000\194\000\194\000\194\000\
     \194\000\194\000\194\000\194\000\194\000\194\000\194\000\194\000\
     \194\000\194\000\194\000\194\000\194\000\194\000\194\000\194\000\
-    \194\000\194\000\194\000\194\000\194\000\194\000\210\000\000\000\
-    \193\000\000\000\000\000\000\000\000\000\000\000\000\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\000\000\000\000\209\000\000\000\000\000\000\000\000\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\000\000\000\000\000\000\000\000\210\000\000\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\211\000\000\000\000\000\000\000\000\000\000\000\
-    \000\000\255\255\000\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\000\000\000\000\209\000\
-    \000\000\000\000\000\000\210\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\000\000\000\000\
-    \000\000\000\000\211\000\000\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\000\000\000\000\
+    \194\000\194\000\194\000\194\000\194\000\194\000\212\000\000\000\
+    \193\000\000\000\000\000\000\000\000\000\000\000\000\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\000\000\000\000\211\000\000\000\000\000\000\000\000\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\000\000\000\000\000\000\000\000\212\000\000\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\213\000\000\000\000\000\000\000\000\000\000\000\
+    \000\000\255\255\000\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\000\000\000\000\211\000\
+    \000\000\000\000\000\000\212\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\000\000\000\000\
+    \000\000\000\000\213\000\000\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
@@ -905,23 +908,23 @@ let __ocaml_lex_tables = {
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\004\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
-    \000\000\005\000\178\000\200\000\005\000\005\000\005\000\207\000\
+    \000\000\005\000\178\000\200\000\005\000\005\000\005\000\209\000\
     \255\255\013\000\005\000\005\000\024\000\005\000\005\000\005\000\
-    \095\000\098\000\204\000\096\000\204\000\004\000\096\000\004\000\
+    \095\000\098\000\255\255\096\000\255\255\004\000\096\000\004\000\
     \179\000\178\000\005\000\179\000\005\000\005\000\005\000\005\000\
     \005\000\255\255\180\000\024\000\006\000\180\000\255\255\006\000\
     \006\000\006\000\255\255\096\000\185\000\006\000\006\000\185\000\
     \006\000\006\000\006\000\024\000\024\000\024\000\024\000\024\000\
     \024\000\024\000\024\000\024\000\024\000\006\000\005\000\006\000\
     \006\000\006\000\006\000\006\000\255\255\191\000\192\000\007\000\
-    \191\000\192\000\007\000\007\000\007\000\255\255\255\255\255\255\
-    \007\000\007\000\255\255\007\000\007\000\007\000\255\255\255\255\
-    \255\255\097\000\097\000\255\255\005\000\097\000\005\000\255\255\
+    \191\000\192\000\007\000\007\000\007\000\255\255\255\255\208\000\
+    \007\000\007\000\208\000\007\000\007\000\007\000\255\255\255\255\
+    \215\000\097\000\097\000\215\000\005\000\097\000\005\000\255\255\
     \007\000\006\000\007\000\007\000\007\000\007\000\007\000\255\255\
     \255\255\255\255\008\000\255\255\255\255\008\000\008\000\008\000\
     \097\000\255\255\097\000\008\000\008\000\255\255\008\000\008\000\
-    \008\000\255\255\208\000\255\255\208\000\255\255\255\255\006\000\
-    \208\000\006\000\255\255\008\000\007\000\008\000\008\000\008\000\
+    \008\000\255\255\210\000\255\255\210\000\255\255\255\255\006\000\
+    \210\000\006\000\255\255\008\000\007\000\008\000\008\000\008\000\
     \008\000\008\000\255\255\255\255\255\255\010\000\255\255\255\255\
     \010\000\010\000\010\000\255\255\255\255\255\255\010\000\010\000\
     \255\255\010\000\010\000\010\000\255\255\255\255\255\255\255\255\
@@ -931,20 +934,20 @@ let __ocaml_lex_tables = {
     \255\255\255\255\255\255\011\000\011\000\255\255\011\000\011\000\
     \011\000\255\255\255\255\255\255\255\255\008\000\167\000\008\000\
     \197\000\010\000\010\000\011\000\255\255\011\000\011\000\011\000\
-    \011\000\011\000\255\255\255\255\198\000\255\255\204\000\014\000\
+    \011\000\011\000\255\255\255\255\198\000\255\255\255\255\014\000\
     \255\255\255\255\014\000\014\000\014\000\255\255\255\255\027\000\
     \014\000\014\000\027\000\014\000\014\000\014\000\255\255\255\255\
     \010\000\010\000\010\000\255\255\255\255\255\255\011\000\011\000\
     \014\000\255\255\014\000\014\000\014\000\014\000\014\000\255\255\
     \255\255\200\000\015\000\255\255\027\000\015\000\015\000\015\000\
     \167\000\255\255\255\255\015\000\015\000\255\255\015\000\015\000\
-    \015\000\096\000\255\255\255\255\255\255\011\000\255\255\011\000\
+    \015\000\096\000\255\255\204\000\255\255\011\000\204\000\011\000\
     \255\255\255\255\255\255\015\000\014\000\015\000\015\000\015\000\
     \015\000\015\000\255\255\255\255\255\255\019\000\255\255\186\000\
     \019\000\019\000\019\000\255\255\255\255\140\000\019\000\019\000\
     \140\000\019\000\019\000\019\000\255\255\255\255\255\255\255\255\
     \255\255\027\000\014\000\255\255\014\000\255\255\019\000\015\000\
-    \019\000\019\000\019\000\019\000\019\000\255\255\255\255\255\255\
+    \019\000\019\000\019\000\019\000\019\000\204\000\255\255\204\000\
     \023\000\255\255\140\000\023\000\023\000\023\000\255\255\255\255\
     \255\255\023\000\023\000\255\255\023\000\023\000\023\000\255\255\
     \097\000\255\255\255\255\255\255\255\255\015\000\255\255\015\000\
@@ -969,7 +972,7 @@ let __ocaml_lex_tables = {
     \028\000\028\000\028\000\028\000\028\000\028\000\028\000\028\000\
     \031\000\028\000\031\000\031\000\031\000\031\000\031\000\031\000\
     \031\000\031\000\031\000\031\000\255\255\255\255\255\255\255\255\
-    \255\255\255\255\255\255\255\255\031\000\255\255\255\255\031\000\
+    \255\255\204\000\255\255\255\255\031\000\255\255\255\255\031\000\
     \255\255\255\255\255\255\255\255\255\255\255\255\031\000\255\255\
     \255\255\031\000\255\255\255\255\255\255\255\255\255\255\255\255\
     \255\255\255\255\031\000\140\000\255\255\255\255\255\255\255\255\
@@ -1372,28 +1375,28 @@ let __ocaml_lex_tables = {
     \183\000\183\000\194\000\255\255\194\000\194\000\194\000\194\000\
     \194\000\194\000\194\000\194\000\194\000\194\000\194\000\194\000\
     \194\000\194\000\194\000\194\000\194\000\194\000\194\000\194\000\
-    \194\000\194\000\194\000\194\000\194\000\194\000\210\000\255\255\
-    \194\000\255\255\255\255\255\255\255\255\255\255\255\255\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\255\255\255\255\210\000\255\255\255\255\255\255\255\255\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\255\255\255\255\255\255\255\255\210\000\255\255\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\210\000\210\000\210\000\210\000\210\000\210\000\
-    \210\000\210\000\211\000\255\255\255\255\255\255\255\255\255\255\
-    \255\255\172\000\255\255\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\255\255\255\255\211\000\
-    \255\255\255\255\255\255\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\255\255\255\255\
-    \255\255\255\255\211\000\255\255\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\211\000\211\000\
-    \211\000\211\000\211\000\211\000\211\000\211\000\255\255\255\255\
+    \194\000\194\000\194\000\194\000\194\000\194\000\212\000\255\255\
+    \194\000\255\255\255\255\255\255\255\255\255\255\255\255\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\255\255\255\255\212\000\255\255\255\255\255\255\255\255\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\255\255\255\255\255\255\255\255\212\000\255\255\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\212\000\212\000\212\000\212\000\212\000\212\000\
+    \212\000\212\000\213\000\255\255\255\255\255\255\255\255\255\255\
+    \255\255\172\000\255\255\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\255\255\255\255\213\000\
+    \255\255\255\255\255\255\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\255\255\255\255\
+    \255\255\255\255\213\000\255\255\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\213\000\213\000\
+    \213\000\213\000\213\000\213\000\213\000\213\000\255\255\255\255\
     \255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\
     \255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\
     \255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\255\
@@ -1438,7 +1441,8 @@ let __ocaml_lex_tables = {
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
-    \000\000\000\000\000\000\000\000\000\000";
+    \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
+    ";
   Lexing.lex_backtrk_code = 
    "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
@@ -1466,7 +1470,8 @@ let __ocaml_lex_tables = {
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
-    \000\000\000\000\000\000\000\000\000\000";
+    \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
+    ";
   Lexing.lex_default_code = 
    "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
@@ -1494,7 +1499,8 @@ let __ocaml_lex_tables = {
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
-    \000\000\000\000\000\000\000\000\000\000";
+    \000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
+    ";
   Lexing.lex_trans_code = 
    "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\
     \000\000\001\000\000\000\036\000\036\000\000\000\036\000\000\000\
@@ -1591,7 +1597,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
       | Some _ ->
         update_loc lexbuf None 1 false 0;
         token state lexbuf )
-# 1595 "src/kernel/preprocess/raw_lexer.ml"
+# 1601 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 # 298 "src/kernel/preprocess/raw_lexer.mll"
@@ -1600,47 +1606,47 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         | None -> token state lexbuf
         | Some _ -> return EOL
       )
-# 1604 "src/kernel/preprocess/raw_lexer.ml"
+# 1610 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
 # 304 "src/kernel/preprocess/raw_lexer.mll"
       ( token state lexbuf )
-# 1609 "src/kernel/preprocess/raw_lexer.ml"
+# 1615 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
 # 306 "src/kernel/preprocess/raw_lexer.mll"
       ( return UNDERSCORE )
-# 1614 "src/kernel/preprocess/raw_lexer.ml"
+# 1620 "src/kernel/preprocess/raw_lexer.ml"
 
   | 4 ->
 # 308 "src/kernel/preprocess/raw_lexer.mll"
       ( return TILDE )
-# 1619 "src/kernel/preprocess/raw_lexer.ml"
+# 1625 "src/kernel/preprocess/raw_lexer.ml"
 
   | 5 ->
 # 310 "src/kernel/preprocess/raw_lexer.mll"
       ( lABEL (get_label_name lexbuf) )
-# 1624 "src/kernel/preprocess/raw_lexer.ml"
+# 1630 "src/kernel/preprocess/raw_lexer.ml"
 
   | 6 ->
 # 312 "src/kernel/preprocess/raw_lexer.mll"
       ( warn_latin1 lexbuf; lABEL (get_label_name lexbuf) )
-# 1629 "src/kernel/preprocess/raw_lexer.ml"
+# 1635 "src/kernel/preprocess/raw_lexer.ml"
 
   | 7 ->
 # 314 "src/kernel/preprocess/raw_lexer.mll"
       ( return QUESTION )
-# 1634 "src/kernel/preprocess/raw_lexer.ml"
+# 1640 "src/kernel/preprocess/raw_lexer.ml"
 
   | 8 ->
 # 316 "src/kernel/preprocess/raw_lexer.mll"
       ( oPTLABEL (get_label_name lexbuf) )
-# 1639 "src/kernel/preprocess/raw_lexer.ml"
+# 1645 "src/kernel/preprocess/raw_lexer.ml"
 
   | 9 ->
 # 318 "src/kernel/preprocess/raw_lexer.mll"
       ( warn_latin1 lexbuf; oPTLABEL (get_label_name lexbuf) )
-# 1644 "src/kernel/preprocess/raw_lexer.ml"
+# 1650 "src/kernel/preprocess/raw_lexer.ml"
 
   | 10 ->
 # 320 "src/kernel/preprocess/raw_lexer.mll"
@@ -1650,12 +1656,12 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
               try Hashtbl.find keyword_table s
               with Not_found ->
                 LIDENT s) )
-# 1654 "src/kernel/preprocess/raw_lexer.ml"
+# 1660 "src/kernel/preprocess/raw_lexer.ml"
 
   | 11 ->
 # 327 "src/kernel/preprocess/raw_lexer.mll"
       ( warn_latin1 lexbuf; return (LIDENT (Lexing.lexeme lexbuf)) )
-# 1659 "src/kernel/preprocess/raw_lexer.ml"
+# 1665 "src/kernel/preprocess/raw_lexer.ml"
 
   | 12 ->
 # 329 "src/kernel/preprocess/raw_lexer.mll"
@@ -1666,7 +1672,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
               try Hashtbl.find keyword_table s
               with Not_found ->
                 UIDENT s) )
-# 1670 "src/kernel/preprocess/raw_lexer.ml"
+# 1676 "src/kernel/preprocess/raw_lexer.ml"
 
   | 13 ->
 # 337 "src/kernel/preprocess/raw_lexer.mll"
@@ -1675,12 +1681,12 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         with Failure _ ->
           error (Literal_overflow "int") (Location.curr lexbuf)
       )
-# 1679 "src/kernel/preprocess/raw_lexer.ml"
+# 1685 "src/kernel/preprocess/raw_lexer.ml"
 
   | 14 ->
 # 343 "src/kernel/preprocess/raw_lexer.mll"
       ( return (FLOAT (remove_underscores(Lexing.lexeme lexbuf))) )
-# 1684 "src/kernel/preprocess/raw_lexer.ml"
+# 1690 "src/kernel/preprocess/raw_lexer.ml"
 
   | 15 ->
 # 345 "src/kernel/preprocess/raw_lexer.mll"
@@ -1688,7 +1694,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
           return (INT32 (cvt_int32_literal (Lexing.lexeme lexbuf)))
         with Failure _ ->
           error (Literal_overflow "int32") (Location.curr lexbuf) )
-# 1692 "src/kernel/preprocess/raw_lexer.ml"
+# 1698 "src/kernel/preprocess/raw_lexer.ml"
 
   | 16 ->
 # 350 "src/kernel/preprocess/raw_lexer.mll"
@@ -1696,7 +1702,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
           return (INT64 (cvt_int64_literal (Lexing.lexeme lexbuf)))
         with Failure _ ->
           error (Literal_overflow "int64") (Location.curr lexbuf) )
-# 1700 "src/kernel/preprocess/raw_lexer.ml"
+# 1706 "src/kernel/preprocess/raw_lexer.ml"
 
   | 17 ->
 # 355 "src/kernel/preprocess/raw_lexer.mll"
@@ -1704,7 +1710,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
           return (NATIVEINT (cvt_nativeint_literal (Lexing.lexeme lexbuf)))
         with Failure _ ->
           error (Literal_overflow "nativeint") (Location.curr lexbuf) )
-# 1708 "src/kernel/preprocess/raw_lexer.ml"
+# 1714 "src/kernel/preprocess/raw_lexer.ml"
 
   | 18 ->
 # 360 "src/kernel/preprocess/raw_lexer.mll"
@@ -1715,7 +1721,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         state.string_start_loc <- Location.none;
         return (STRING (Buffer.contents state.buffer, None))
       )
-# 1719 "src/kernel/preprocess/raw_lexer.ml"
+# 1725 "src/kernel/preprocess/raw_lexer.ml"
 
   | 19 ->
 # 368 "src/kernel/preprocess/raw_lexer.mll"
@@ -1727,33 +1733,33 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         lexbuf.lex_start_p <- state.string_start_loc.Location.loc_start;
         state.string_start_loc <- Location.none;
         return (STRING (Buffer.contents state.buffer, Some delim)) )
-# 1731 "src/kernel/preprocess/raw_lexer.ml"
+# 1737 "src/kernel/preprocess/raw_lexer.ml"
 
   | 20 ->
 # 377 "src/kernel/preprocess/raw_lexer.mll"
     ( update_loc lexbuf None 1 false 1;
       return (CHAR (Lexing.lexeme_char lexbuf 1)) )
-# 1737 "src/kernel/preprocess/raw_lexer.ml"
+# 1743 "src/kernel/preprocess/raw_lexer.ml"
 
   | 21 ->
 # 380 "src/kernel/preprocess/raw_lexer.mll"
     ( return (CHAR (Lexing.lexeme_char lexbuf 1)) )
-# 1742 "src/kernel/preprocess/raw_lexer.ml"
+# 1748 "src/kernel/preprocess/raw_lexer.ml"
 
   | 22 ->
 # 382 "src/kernel/preprocess/raw_lexer.mll"
     ( return (CHAR (char_for_backslash (Lexing.lexeme_char lexbuf 2))) )
-# 1747 "src/kernel/preprocess/raw_lexer.ml"
+# 1753 "src/kernel/preprocess/raw_lexer.ml"
 
   | 23 ->
 # 384 "src/kernel/preprocess/raw_lexer.mll"
     ( char_for_decimal_code state lexbuf 2 >>= fun c -> return (CHAR c) )
-# 1752 "src/kernel/preprocess/raw_lexer.ml"
+# 1758 "src/kernel/preprocess/raw_lexer.ml"
 
   | 24 ->
 # 386 "src/kernel/preprocess/raw_lexer.mll"
     ( return (CHAR (char_for_hexadecimal_code lexbuf 3)) )
-# 1757 "src/kernel/preprocess/raw_lexer.ml"
+# 1763 "src/kernel/preprocess/raw_lexer.ml"
 
   | 25 ->
 # 388 "src/kernel/preprocess/raw_lexer.mll"
@@ -1761,7 +1767,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         let esc = String.sub l 1 (String.length l - 1) in
         error (Illegal_escape esc) (Location.curr lexbuf)
       )
-# 1765 "src/kernel/preprocess/raw_lexer.ml"
+# 1771 "src/kernel/preprocess/raw_lexer.ml"
 
   | 26 ->
 # 393 "src/kernel/preprocess/raw_lexer.mll"
@@ -1774,7 +1780,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         return (COMMENT (s, { start_loc with
                               Location.loc_end = end_loc.Location.loc_end }))
       )
-# 1778 "src/kernel/preprocess/raw_lexer.ml"
+# 1784 "src/kernel/preprocess/raw_lexer.ml"
 
   | 27 ->
 # 403 "src/kernel/preprocess/raw_lexer.mll"
@@ -1787,7 +1793,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         Buffer.reset state.buffer;
         return (COMMENT (s, { loc with Location.loc_end = end_loc.Location.loc_end }))
       )
-# 1791 "src/kernel/preprocess/raw_lexer.ml"
+# 1797 "src/kernel/preprocess/raw_lexer.ml"
 
   | 28 ->
 # 413 "src/kernel/preprocess/raw_lexer.mll"
@@ -1798,305 +1804,305 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
         lexbuf.lex_curr_p <- { curpos with pos_cnum = curpos.pos_cnum - 1 };
         return STAR
       )
-# 1802 "src/kernel/preprocess/raw_lexer.ml"
+# 1808 "src/kernel/preprocess/raw_lexer.ml"
 
   | 29 ->
 let
 # 420 "src/kernel/preprocess/raw_lexer.mll"
                                    num
-# 1808 "src/kernel/preprocess/raw_lexer.ml"
+# 1814 "src/kernel/preprocess/raw_lexer.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_mem.(0) lexbuf.Lexing.lex_mem.(1)
 and
 # 421 "src/kernel/preprocess/raw_lexer.mll"
                                            name
-# 1813 "src/kernel/preprocess/raw_lexer.ml"
+# 1819 "src/kernel/preprocess/raw_lexer.ml"
 = Lexing.sub_lexeme_opt lexbuf lexbuf.Lexing.lex_mem.(3) lexbuf.Lexing.lex_mem.(2) in
 # 423 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf name (int_of_string num) true 0;
         token state lexbuf
       )
-# 1819 "src/kernel/preprocess/raw_lexer.ml"
+# 1825 "src/kernel/preprocess/raw_lexer.ml"
 
   | 30 ->
 # 426 "src/kernel/preprocess/raw_lexer.mll"
          ( return SHARP )
-# 1824 "src/kernel/preprocess/raw_lexer.ml"
+# 1830 "src/kernel/preprocess/raw_lexer.ml"
 
   | 31 ->
 # 427 "src/kernel/preprocess/raw_lexer.mll"
          ( return AMPERSAND )
-# 1829 "src/kernel/preprocess/raw_lexer.ml"
+# 1835 "src/kernel/preprocess/raw_lexer.ml"
 
   | 32 ->
 # 428 "src/kernel/preprocess/raw_lexer.mll"
          ( return AMPERAMPER )
-# 1834 "src/kernel/preprocess/raw_lexer.ml"
+# 1840 "src/kernel/preprocess/raw_lexer.ml"
 
   | 33 ->
 # 429 "src/kernel/preprocess/raw_lexer.mll"
          ( return BACKQUOTE )
-# 1839 "src/kernel/preprocess/raw_lexer.ml"
+# 1845 "src/kernel/preprocess/raw_lexer.ml"
 
   | 34 ->
 # 430 "src/kernel/preprocess/raw_lexer.mll"
          ( return QUOTE )
-# 1844 "src/kernel/preprocess/raw_lexer.ml"
+# 1850 "src/kernel/preprocess/raw_lexer.ml"
 
   | 35 ->
 # 431 "src/kernel/preprocess/raw_lexer.mll"
          ( return LPAREN )
-# 1849 "src/kernel/preprocess/raw_lexer.ml"
+# 1855 "src/kernel/preprocess/raw_lexer.ml"
 
   | 36 ->
 # 432 "src/kernel/preprocess/raw_lexer.mll"
          ( return RPAREN )
-# 1854 "src/kernel/preprocess/raw_lexer.ml"
+# 1860 "src/kernel/preprocess/raw_lexer.ml"
 
   | 37 ->
 # 433 "src/kernel/preprocess/raw_lexer.mll"
          ( return STAR )
-# 1859 "src/kernel/preprocess/raw_lexer.ml"
+# 1865 "src/kernel/preprocess/raw_lexer.ml"
 
   | 38 ->
 # 434 "src/kernel/preprocess/raw_lexer.mll"
          ( return COMMA )
-# 1864 "src/kernel/preprocess/raw_lexer.ml"
+# 1870 "src/kernel/preprocess/raw_lexer.ml"
 
   | 39 ->
 # 435 "src/kernel/preprocess/raw_lexer.mll"
          ( return MINUSGREATER )
-# 1869 "src/kernel/preprocess/raw_lexer.ml"
+# 1875 "src/kernel/preprocess/raw_lexer.ml"
 
   | 40 ->
 # 436 "src/kernel/preprocess/raw_lexer.mll"
          ( return DOT )
-# 1874 "src/kernel/preprocess/raw_lexer.ml"
+# 1880 "src/kernel/preprocess/raw_lexer.ml"
 
   | 41 ->
 # 437 "src/kernel/preprocess/raw_lexer.mll"
          ( return DOTDOT )
-# 1879 "src/kernel/preprocess/raw_lexer.ml"
+# 1885 "src/kernel/preprocess/raw_lexer.ml"
 
   | 42 ->
 # 438 "src/kernel/preprocess/raw_lexer.mll"
          ( return COLON )
-# 1884 "src/kernel/preprocess/raw_lexer.ml"
+# 1890 "src/kernel/preprocess/raw_lexer.ml"
 
   | 43 ->
 # 439 "src/kernel/preprocess/raw_lexer.mll"
          ( return COLONCOLON )
-# 1889 "src/kernel/preprocess/raw_lexer.ml"
+# 1895 "src/kernel/preprocess/raw_lexer.ml"
 
   | 44 ->
 # 440 "src/kernel/preprocess/raw_lexer.mll"
          ( return COLONEQUAL )
-# 1894 "src/kernel/preprocess/raw_lexer.ml"
+# 1900 "src/kernel/preprocess/raw_lexer.ml"
 
   | 45 ->
 # 441 "src/kernel/preprocess/raw_lexer.mll"
          ( return COLONGREATER )
-# 1899 "src/kernel/preprocess/raw_lexer.ml"
+# 1905 "src/kernel/preprocess/raw_lexer.ml"
 
   | 46 ->
 # 442 "src/kernel/preprocess/raw_lexer.mll"
          ( return SEMI )
-# 1904 "src/kernel/preprocess/raw_lexer.ml"
+# 1910 "src/kernel/preprocess/raw_lexer.ml"
 
   | 47 ->
 # 443 "src/kernel/preprocess/raw_lexer.mll"
          ( return SEMISEMI )
-# 1909 "src/kernel/preprocess/raw_lexer.ml"
+# 1915 "src/kernel/preprocess/raw_lexer.ml"
 
   | 48 ->
 # 444 "src/kernel/preprocess/raw_lexer.mll"
          ( return LESS )
-# 1914 "src/kernel/preprocess/raw_lexer.ml"
+# 1920 "src/kernel/preprocess/raw_lexer.ml"
 
   | 49 ->
 # 445 "src/kernel/preprocess/raw_lexer.mll"
          ( return LESSMINUS )
-# 1919 "src/kernel/preprocess/raw_lexer.ml"
+# 1925 "src/kernel/preprocess/raw_lexer.ml"
 
   | 50 ->
 # 446 "src/kernel/preprocess/raw_lexer.mll"
          ( return EQUAL )
-# 1924 "src/kernel/preprocess/raw_lexer.ml"
+# 1930 "src/kernel/preprocess/raw_lexer.ml"
 
   | 51 ->
 # 447 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACKET )
-# 1929 "src/kernel/preprocess/raw_lexer.ml"
+# 1935 "src/kernel/preprocess/raw_lexer.ml"
 
   | 52 ->
 # 448 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACKETBAR )
-# 1934 "src/kernel/preprocess/raw_lexer.ml"
+# 1940 "src/kernel/preprocess/raw_lexer.ml"
 
   | 53 ->
 # 449 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACKETLESS )
-# 1939 "src/kernel/preprocess/raw_lexer.ml"
+# 1945 "src/kernel/preprocess/raw_lexer.ml"
 
   | 54 ->
 # 450 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACKETGREATER )
-# 1944 "src/kernel/preprocess/raw_lexer.ml"
+# 1950 "src/kernel/preprocess/raw_lexer.ml"
 
   | 55 ->
 # 451 "src/kernel/preprocess/raw_lexer.mll"
          ( return RBRACKET )
-# 1949 "src/kernel/preprocess/raw_lexer.ml"
+# 1955 "src/kernel/preprocess/raw_lexer.ml"
 
   | 56 ->
 # 452 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACE )
-# 1954 "src/kernel/preprocess/raw_lexer.ml"
+# 1960 "src/kernel/preprocess/raw_lexer.ml"
 
   | 57 ->
 # 453 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACELESS )
-# 1959 "src/kernel/preprocess/raw_lexer.ml"
+# 1965 "src/kernel/preprocess/raw_lexer.ml"
 
   | 58 ->
 # 454 "src/kernel/preprocess/raw_lexer.mll"
          ( return BAR )
-# 1964 "src/kernel/preprocess/raw_lexer.ml"
+# 1970 "src/kernel/preprocess/raw_lexer.ml"
 
   | 59 ->
 # 455 "src/kernel/preprocess/raw_lexer.mll"
          ( return BARBAR )
-# 1969 "src/kernel/preprocess/raw_lexer.ml"
+# 1975 "src/kernel/preprocess/raw_lexer.ml"
 
   | 60 ->
 # 456 "src/kernel/preprocess/raw_lexer.mll"
          ( return BARRBRACKET )
-# 1974 "src/kernel/preprocess/raw_lexer.ml"
+# 1980 "src/kernel/preprocess/raw_lexer.ml"
 
   | 61 ->
 # 457 "src/kernel/preprocess/raw_lexer.mll"
          ( return GREATER )
-# 1979 "src/kernel/preprocess/raw_lexer.ml"
+# 1985 "src/kernel/preprocess/raw_lexer.ml"
 
   | 62 ->
 # 458 "src/kernel/preprocess/raw_lexer.mll"
          ( return GREATERRBRACKET )
-# 1984 "src/kernel/preprocess/raw_lexer.ml"
+# 1990 "src/kernel/preprocess/raw_lexer.ml"
 
   | 63 ->
 # 459 "src/kernel/preprocess/raw_lexer.mll"
          ( return RBRACE )
-# 1989 "src/kernel/preprocess/raw_lexer.ml"
+# 1995 "src/kernel/preprocess/raw_lexer.ml"
 
   | 64 ->
 # 460 "src/kernel/preprocess/raw_lexer.mll"
          ( return GREATERRBRACE )
-# 1994 "src/kernel/preprocess/raw_lexer.ml"
+# 2000 "src/kernel/preprocess/raw_lexer.ml"
 
   | 65 ->
 # 461 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACKETAT )
-# 1999 "src/kernel/preprocess/raw_lexer.ml"
+# 2005 "src/kernel/preprocess/raw_lexer.ml"
 
   | 66 ->
 # 462 "src/kernel/preprocess/raw_lexer.mll"
          ( return LBRACKETPERCENT )
-# 2004 "src/kernel/preprocess/raw_lexer.ml"
+# 2010 "src/kernel/preprocess/raw_lexer.ml"
 
   | 67 ->
 # 463 "src/kernel/preprocess/raw_lexer.mll"
           ( return LBRACKETPERCENTPERCENT )
-# 2009 "src/kernel/preprocess/raw_lexer.ml"
+# 2015 "src/kernel/preprocess/raw_lexer.ml"
 
   | 68 ->
 # 464 "src/kernel/preprocess/raw_lexer.mll"
           ( return LBRACKETATAT )
-# 2014 "src/kernel/preprocess/raw_lexer.ml"
+# 2020 "src/kernel/preprocess/raw_lexer.ml"
 
   | 69 ->
 # 465 "src/kernel/preprocess/raw_lexer.mll"
            ( return LBRACKETATATAT )
-# 2019 "src/kernel/preprocess/raw_lexer.ml"
+# 2025 "src/kernel/preprocess/raw_lexer.ml"
 
   | 70 ->
 # 467 "src/kernel/preprocess/raw_lexer.mll"
          ( return (try Hashtbl.find state.keywords "!"
                    with Not_found -> BANG) )
-# 2025 "src/kernel/preprocess/raw_lexer.ml"
+# 2031 "src/kernel/preprocess/raw_lexer.ml"
 
   | 71 ->
 # 469 "src/kernel/preprocess/raw_lexer.mll"
          ( return (INFIXOP0 "!=") )
-# 2030 "src/kernel/preprocess/raw_lexer.ml"
+# 2036 "src/kernel/preprocess/raw_lexer.ml"
 
   | 72 ->
 # 470 "src/kernel/preprocess/raw_lexer.mll"
          ( return PLUS )
-# 2035 "src/kernel/preprocess/raw_lexer.ml"
+# 2041 "src/kernel/preprocess/raw_lexer.ml"
 
   | 73 ->
 # 471 "src/kernel/preprocess/raw_lexer.mll"
          ( return PLUSDOT )
-# 2040 "src/kernel/preprocess/raw_lexer.ml"
+# 2046 "src/kernel/preprocess/raw_lexer.ml"
 
   | 74 ->
 # 472 "src/kernel/preprocess/raw_lexer.mll"
          ( return PLUSEQ )
-# 2045 "src/kernel/preprocess/raw_lexer.ml"
+# 2051 "src/kernel/preprocess/raw_lexer.ml"
 
   | 75 ->
 # 473 "src/kernel/preprocess/raw_lexer.mll"
          ( return MINUS )
-# 2050 "src/kernel/preprocess/raw_lexer.ml"
+# 2056 "src/kernel/preprocess/raw_lexer.ml"
 
   | 76 ->
 # 474 "src/kernel/preprocess/raw_lexer.mll"
          ( return MINUSDOT )
-# 2055 "src/kernel/preprocess/raw_lexer.ml"
+# 2061 "src/kernel/preprocess/raw_lexer.ml"
 
   | 77 ->
 # 477 "src/kernel/preprocess/raw_lexer.mll"
             ( return (PREFIXOP(Lexing.lexeme lexbuf)) )
-# 2060 "src/kernel/preprocess/raw_lexer.ml"
+# 2066 "src/kernel/preprocess/raw_lexer.ml"
 
   | 78 ->
 # 479 "src/kernel/preprocess/raw_lexer.mll"
             ( return (PREFIXOP(Lexing.lexeme lexbuf)) )
-# 2065 "src/kernel/preprocess/raw_lexer.ml"
+# 2071 "src/kernel/preprocess/raw_lexer.ml"
 
   | 79 ->
 # 481 "src/kernel/preprocess/raw_lexer.mll"
             ( return (INFIXOP0(Lexing.lexeme lexbuf)) )
-# 2070 "src/kernel/preprocess/raw_lexer.ml"
+# 2076 "src/kernel/preprocess/raw_lexer.ml"
 
   | 80 ->
 # 483 "src/kernel/preprocess/raw_lexer.mll"
             ( return (INFIXOP1(Lexing.lexeme lexbuf)) )
-# 2075 "src/kernel/preprocess/raw_lexer.ml"
+# 2081 "src/kernel/preprocess/raw_lexer.ml"
 
   | 81 ->
 # 485 "src/kernel/preprocess/raw_lexer.mll"
             ( return (INFIXOP2(Lexing.lexeme lexbuf)) )
-# 2080 "src/kernel/preprocess/raw_lexer.ml"
+# 2086 "src/kernel/preprocess/raw_lexer.ml"
 
   | 82 ->
 # 487 "src/kernel/preprocess/raw_lexer.mll"
             ( return (INFIXOP4(Lexing.lexeme lexbuf)) )
-# 2085 "src/kernel/preprocess/raw_lexer.ml"
+# 2091 "src/kernel/preprocess/raw_lexer.ml"
 
   | 83 ->
 # 488 "src/kernel/preprocess/raw_lexer.mll"
             ( return PERCENT )
-# 2090 "src/kernel/preprocess/raw_lexer.ml"
+# 2096 "src/kernel/preprocess/raw_lexer.ml"
 
   | 84 ->
 # 490 "src/kernel/preprocess/raw_lexer.mll"
             ( return (INFIXOP3(Lexing.lexeme lexbuf)) )
-# 2095 "src/kernel/preprocess/raw_lexer.ml"
+# 2101 "src/kernel/preprocess/raw_lexer.ml"
 
   | 85 ->
 # 491 "src/kernel/preprocess/raw_lexer.mll"
         ( return EOF )
-# 2100 "src/kernel/preprocess/raw_lexer.ml"
+# 2106 "src/kernel/preprocess/raw_lexer.ml"
 
   | 86 ->
 # 496 "src/kernel/preprocess/raw_lexer.mll"
@@ -2105,14 +2111,14 @@ and
       lexbuf.lex_start_p <- start;
       return P4_QUOTATION
     )
-# 2109 "src/kernel/preprocess/raw_lexer.ml"
+# 2115 "src/kernel/preprocess/raw_lexer.ml"
 
   | 87 ->
 # 503 "src/kernel/preprocess/raw_lexer.mll"
       ( error (Illegal_character (Lexing.lexeme_char lexbuf 0))
               (Location.curr lexbuf)
       )
-# 2116 "src/kernel/preprocess/raw_lexer.ml"
+# 2122 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2128,7 +2134,7 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
       Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
       comment state lexbuf
     )
-# 2132 "src/kernel/preprocess/raw_lexer.ml"
+# 2138 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 # 514 "src/kernel/preprocess/raw_lexer.mll"
@@ -2139,7 +2145,7 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
                   Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
                   comment state lexbuf
        )
-# 2143 "src/kernel/preprocess/raw_lexer.ml"
+# 2149 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
 # 522 "src/kernel/preprocess/raw_lexer.mll"
@@ -2161,7 +2167,7 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
       state.string_start_loc <- Location.none;
       Buffer.add_char state.buffer '"';
       comment state lexbuf )
-# 2165 "src/kernel/preprocess/raw_lexer.ml"
+# 2171 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
 # 541 "src/kernel/preprocess/raw_lexer.mll"
@@ -2187,12 +2193,12 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
         Buffer.add_string state.buffer delim;
         Buffer.add_char state.buffer '}';
         comment state lexbuf )
-# 2191 "src/kernel/preprocess/raw_lexer.ml"
+# 2197 "src/kernel/preprocess/raw_lexer.ml"
 
   | 4 ->
 # 565 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2196 "src/kernel/preprocess/raw_lexer.ml"
+# 2202 "src/kernel/preprocess/raw_lexer.ml"
 
   | 5 ->
 # 567 "src/kernel/preprocess/raw_lexer.mll"
@@ -2200,27 +2206,27 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         comment state lexbuf
       )
-# 2204 "src/kernel/preprocess/raw_lexer.ml"
+# 2210 "src/kernel/preprocess/raw_lexer.ml"
 
   | 6 ->
 # 572 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2209 "src/kernel/preprocess/raw_lexer.ml"
+# 2215 "src/kernel/preprocess/raw_lexer.ml"
 
   | 7 ->
 # 574 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2214 "src/kernel/preprocess/raw_lexer.ml"
+# 2220 "src/kernel/preprocess/raw_lexer.ml"
 
   | 8 ->
 # 576 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2219 "src/kernel/preprocess/raw_lexer.ml"
+# 2225 "src/kernel/preprocess/raw_lexer.ml"
 
   | 9 ->
 # 578 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2224 "src/kernel/preprocess/raw_lexer.ml"
+# 2230 "src/kernel/preprocess/raw_lexer.ml"
 
   | 10 ->
 # 580 "src/kernel/preprocess/raw_lexer.mll"
@@ -2231,7 +2237,7 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
           state.comment_start_loc <- [];
           error (Unterminated_comment start) loc
       )
-# 2235 "src/kernel/preprocess/raw_lexer.ml"
+# 2241 "src/kernel/preprocess/raw_lexer.ml"
 
   | 11 ->
 # 588 "src/kernel/preprocess/raw_lexer.mll"
@@ -2239,12 +2245,12 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         comment state lexbuf
       )
-# 2243 "src/kernel/preprocess/raw_lexer.ml"
+# 2249 "src/kernel/preprocess/raw_lexer.ml"
 
   | 12 ->
 # 593 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2248 "src/kernel/preprocess/raw_lexer.ml"
+# 2254 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2257,39 +2263,39 @@ and __ocaml_lex_string_rec state lexbuf __ocaml_lex_state =
       | 0 ->
 # 597 "src/kernel/preprocess/raw_lexer.mll"
       ( return () )
-# 2261 "src/kernel/preprocess/raw_lexer.ml"
+# 2267 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 let
 # 598 "src/kernel/preprocess/raw_lexer.mll"
                                   space
-# 2267 "src/kernel/preprocess/raw_lexer.ml"
+# 2273 "src/kernel/preprocess/raw_lexer.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_mem.(0) lexbuf.Lexing.lex_curr_pos in
 # 599 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false (String.length space);
         string state lexbuf
       )
-# 2273 "src/kernel/preprocess/raw_lexer.ml"
+# 2279 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
 # 603 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer
           (char_for_backslash (Lexing.lexeme_char lexbuf 1));
         string state lexbuf )
-# 2280 "src/kernel/preprocess/raw_lexer.ml"
+# 2286 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
 # 607 "src/kernel/preprocess/raw_lexer.mll"
       ( char_for_decimal_code state lexbuf 1 >>= fun c ->
         Buffer.add_char state.buffer c;
         string state lexbuf )
-# 2287 "src/kernel/preprocess/raw_lexer.ml"
+# 2293 "src/kernel/preprocess/raw_lexer.ml"
 
   | 4 ->
 # 611 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer (char_for_hexadecimal_code lexbuf 2);
         string state lexbuf )
-# 2293 "src/kernel/preprocess/raw_lexer.ml"
+# 2299 "src/kernel/preprocess/raw_lexer.ml"
 
   | 5 ->
 # 614 "src/kernel/preprocess/raw_lexer.mll"
@@ -2307,7 +2313,7 @@ let
           string state lexbuf
         end
       )
-# 2311 "src/kernel/preprocess/raw_lexer.ml"
+# 2317 "src/kernel/preprocess/raw_lexer.ml"
 
   | 6 ->
 # 629 "src/kernel/preprocess/raw_lexer.mll"
@@ -2317,20 +2323,20 @@ let
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         string state lexbuf
       )
-# 2321 "src/kernel/preprocess/raw_lexer.ml"
+# 2327 "src/kernel/preprocess/raw_lexer.ml"
 
   | 7 ->
 # 636 "src/kernel/preprocess/raw_lexer.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
         error Unterminated_string loc )
-# 2328 "src/kernel/preprocess/raw_lexer.ml"
+# 2334 "src/kernel/preprocess/raw_lexer.ml"
 
   | 8 ->
 # 640 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         string state lexbuf )
-# 2334 "src/kernel/preprocess/raw_lexer.ml"
+# 2340 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2346,14 +2352,14 @@ and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         quoted_string state delim lexbuf
       )
-# 2350 "src/kernel/preprocess/raw_lexer.ml"
+# 2356 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 # 650 "src/kernel/preprocess/raw_lexer.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
         error Unterminated_string loc )
-# 2357 "src/kernel/preprocess/raw_lexer.ml"
+# 2363 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
 # 654 "src/kernel/preprocess/raw_lexer.mll"
@@ -2364,13 +2370,13 @@ and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
         else (Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
               quoted_string state delim lexbuf)
       )
-# 2368 "src/kernel/preprocess/raw_lexer.ml"
+# 2374 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
 # 662 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         quoted_string state delim lexbuf )
-# 2374 "src/kernel/preprocess/raw_lexer.ml"
+# 2380 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2383,17 +2389,17 @@ and __ocaml_lex_skip_sharp_bang_rec lexbuf __ocaml_lex_state =
       | 0 ->
 # 667 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 3 false 0; return () )
-# 2387 "src/kernel/preprocess/raw_lexer.ml"
+# 2393 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 # 669 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false 0; return () )
-# 2392 "src/kernel/preprocess/raw_lexer.ml"
+# 2398 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
 # 670 "src/kernel/preprocess/raw_lexer.mll"
        ( return () )
-# 2397 "src/kernel/preprocess/raw_lexer.ml"
+# 2403 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2406,22 +2412,28 @@ and __ocaml_lex_p4_quotation_rec lexbuf __ocaml_lex_state =
       | 0 ->
 # 674 "src/kernel/preprocess/raw_lexer.mll"
       ( p4_quotation lexbuf )
-# 2410 "src/kernel/preprocess/raw_lexer.ml"
+# 2416 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 # 677 "src/kernel/preprocess/raw_lexer.mll"
       ( return () )
-# 2415 "src/kernel/preprocess/raw_lexer.ml"
+# 2421 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
 # 679 "src/kernel/preprocess/raw_lexer.mll"
-      ( error Unterminated_string (Location.curr lexbuf) )
-# 2420 "src/kernel/preprocess/raw_lexer.ml"
+      ( update_loc lexbuf None 1 false 0;
+        p4_quotation lexbuf )
+# 2427 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
-# 681 "src/kernel/preprocess/raw_lexer.mll"
+# 682 "src/kernel/preprocess/raw_lexer.mll"
+      ( error Unterminated_string (Location.curr lexbuf) )
+# 2432 "src/kernel/preprocess/raw_lexer.ml"
+
+  | 4 ->
+# 684 "src/kernel/preprocess/raw_lexer.mll"
       ( p4_quotation lexbuf )
-# 2425 "src/kernel/preprocess/raw_lexer.ml"
+# 2437 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2429,7 +2441,7 @@ and __ocaml_lex_p4_quotation_rec lexbuf __ocaml_lex_state =
 
 ;;
 
-# 683 "src/kernel/preprocess/raw_lexer.mll"
+# 686 "src/kernel/preprocess/raw_lexer.mll"
  
   type comment = string * Location.t
 
@@ -2442,4 +2454,4 @@ and __ocaml_lex_p4_quotation_rec lexbuf __ocaml_lex_state =
       token_without_comments state lexbuf
     | tok -> return tok
 
-# 2446 "src/kernel/preprocess/raw_lexer.ml"
+# 2458 "src/kernel/preprocess/raw_lexer.ml"

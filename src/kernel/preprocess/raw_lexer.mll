@@ -675,6 +675,9 @@ and p4_quotation = parse
   (* FIXME: This is fake *)
   | ">>"
       { return () }
+  | newline
+      { update_loc lexbuf None 1 false 0;
+        p4_quotation lexbuf }
   | eof
       { error Unterminated_string (Location.curr lexbuf) }
   | _

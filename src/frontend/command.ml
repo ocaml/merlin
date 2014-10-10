@@ -190,10 +190,14 @@ let dispatch (state : state) =
       match expro with
       | None ->
         let lexer = Buffer.lexer state.buffer in
-        let lexer = History.seek_backward (fun (_,item) ->
-            Lexing.compare_pos pos (Lexer.item_start item) < 0)
-            lexer in
-        begin match Lexer.identifier_suffix (Lexer.reconstruct_identifier lexer) with
+        let lexer =
+          History.seek_backward
+            (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) < 0)
+            lexer
+        in
+        let path = Lexer.reconstruct_identifier lexer in
+        let path = Lexer.identifier_suffix path in
+        begin match path with
           | [] -> []
           | base :: tail ->
             [List.fold_left' ~f:(fun {Location. txt = dot; loc = dl}
@@ -305,14 +309,15 @@ let dispatch (state : state) =
             node.BrowseT.t_env, Typer.contents typer
       )
     in
-    let path = match patho, opt_pos with
-      (* Wrong use *)
-      | None, None -> ""
+    let path =
+      match patho, opt_pos with
+      | None, None -> failwith "invalid arguments"
       | None, Some pos ->
         let lexer = Buffer.lexer state.buffer in
-        let lexer = History.seek_backward (fun (_,item) ->
-            Lexing.compare_pos pos (Lexer.item_start item) < 0)
-            lexer in
+        let lexer =
+          History.seek_backward (fun (_,item) ->
+            Lexing.compare_pos pos (Lexer.item_start item) < 0) lexer
+        in
         let path = Lexer.reconstruct_identifier lexer in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
