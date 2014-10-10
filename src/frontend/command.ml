@@ -342,7 +342,7 @@ let dispatch (state : state) =
   | (Outline : a request) ->
     with_typer state (fun typer ->
       let typed_tree = Typer.contents typer in
-      Outline.get typed_tree
+      Outline.get (Browse.of_typer_contents typed_tree)
     )
 
   | (Drop : a request) ->

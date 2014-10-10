@@ -255,6 +255,7 @@ module Option = struct
   module Infix = struct
     let return x  = Some x
     let (>>=) x f = bind x ~f
+    let (>>|) x f = map  x ~f
   end
 
   include Infix
