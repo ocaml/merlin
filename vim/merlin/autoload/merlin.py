@@ -63,9 +63,11 @@ def catch_and_print(f, msg=None):
 ######## PROCESS MANAGEMENT
 
 class MerlinProcess:
-  def __init__(self):
+  def __init__(self, path=None, env=None):
     self.mainpipe = None
     self.saved_sync = None
+    self.path = path
+    self.env = env
 
   def restart(self):
     if self.mainpipe:
@@ -78,12 +80,21 @@ class MerlinProcess:
       except OSError:
         pass
     try:
-      cmd = [vim.eval("merlin#FindOcamlMerlin()"),"-ignore-sigint"]
+      if self.path:
+        path = self.path
+      else:
+        path = vim.eval("merlin#FindBinary()")
+      cmd = [path,"-ignore-sigint"]
+      if self.env:
+        env = self.env
+      else:
+        env = os.environ
       self.mainpipe = subprocess.Popen(
               cmd,
               stdin=subprocess.PIPE,
               stdout=subprocess.PIPE,
               stderr=None,
+              env=env
           )
     except OSError as e:
       print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
@@ -109,22 +120,32 @@ class MerlinProcess:
     elif result[0] == "exception":
       raise MerlinException(content)
 
-## MULTI-PROCESS
-#merlin_processes = {}
-#def merlin_process():
-#  global merlin_processes
-#  name = vim.eval("exists('b:merlin_project') ? b:merlin_project : ''")
-#  if not name in merlin_processes:
-#    merlin_processes[name] = MerlinProcess()
-#  return merlin_processes[name]
-
-# MONO-PROCESS
-merlin_processes = None
+# MULTI-PROCESS
+merlin_processes = {}
 def merlin_process():
   global merlin_processes
-  if not merlin_processes:
-    merlin_processes = MerlinProcess()
-  return merlin_processes
+  instance = vim.eval("merlin#SelectBinary()")
+  if not instance in merlin_processes:
+    env = os.environ
+    if vim.eval("exists('b:merlin_path')") == '1':
+      path = vim.eval("b:merlin_path")
+    else:
+      path = instance
+    if vim.eval("exists('b:merlin_env')") == '1':
+      env = env.copy()
+      newenv = vim.eval("b:merlin_env")
+      for key in newenv:
+        env[key] = newenv[key]
+    merlin_processes[instance] = MerlinProcess(path=path, env=env)
+  return merlin_processes[instance]
+
+# MONO-PROCESS
+#merlin_processes = None
+#def merlin_process():
+#  global merlin_processes
+#  if not merlin_processes:
+#    merlin_processes = MerlinProcess()
+#  return merlin_processes
 
 def command(*cmd):
   return merlin_process().command(*cmd)
