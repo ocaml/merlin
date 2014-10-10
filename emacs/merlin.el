@@ -290,10 +290,12 @@ trigger useless merlin calls.")
 (defvar merlin-position-stack nil)
 
 ;; Misc
-(defvar merlin-last-project-failures nil
+(defvar merlin--project-cache nil "Cache for merlin--project-get")
+(make-variable-buffer-local 'merlin--project-cache)
+(defvar merlin--project-failures nil
   "When loading .merlin, list of errors reported. Only update error messages if
   error list changes")
-(make-variable-buffer-local 'merlin-last-project-failures)
+(make-variable-buffer-local 'merlin--project-failures)
 
 ;;;;;;;;;;;
 ;; UTILS ;;
@@ -562,9 +564,9 @@ the merlin buffer of the current buffer."
   "Check if .merlin file loaded successfully."
   (let* ((project (merlin--project-get))
          (failures (cdr project)))
-    (unless (equal failures merlin-last-project-failures)
-      (mapcar #'message (cdr failures)))
-    (setq merlin-last-project-failures failures)))
+    (unless (equal failures merlin--project-failures
+      (message (mapconcat 'identity failures "\n")))
+    (setq merlin--project-failures failures))))
 
 (defun merlin--acquire-buffer (&optional force)
   "Prepare merlin to receive data from current buffer."
@@ -1398,8 +1400,18 @@ is active)."
 loading"
   (let* ((r (merlin-send-command '(project get)))
          (failed (cdr (assoc 'failures r)))
-         (result (cdr (assoc 'result r))))
-    (cons result failed)))
+         (result (cdr (assoc 'result r)))
+         (ret (cons result failed)))
+    (setq merlin--project-cache (cons (float-time) ret))
+    ret))
+
+(defun merlin--project-get-cached ()
+  "Like `merlin--project-get' but use a cache to prevent to limit number of
+calls (lighter can be updated at a high frequency)"
+  (if (and merlin--project-cache
+           (< (abs (- (float-time) (car merlin--project-cache)) 4.)))
+      (cdr merlin--project-cache)
+    (merlin--project-get)))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
@@ -1787,7 +1799,7 @@ Returns the position."
     (progn
       (merlin--acquire-buffer)
       (let* ((messages nil)
-             (project (merlin--project-get)))
+             (project (merlin--project-get-cached)))
         (when merlin-report-dot-merlin-in-lighter
           (cond ((cdr project) (add-to-list 'messages "errors in .merlin"))
                 ((not (car project)) (add-to-list 'messages "no .merlin"))))
