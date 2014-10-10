@@ -144,6 +144,9 @@ end = struct
           user_config.cfg_path_source;
           dot_config.cfg_path_source;
           local_path;
+          (* Experimental: used by locate *)
+          user_config.cfg_path_pkg;
+          dot_config.cfg_path_pkg;
         ];
       build_path = prepare [
           user_config.cfg_path_cmi;
