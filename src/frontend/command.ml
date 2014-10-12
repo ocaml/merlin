@@ -412,9 +412,12 @@ let dispatch (state : state) =
     failwith "TODO"
 
   | (Reset (ml,path) : a request) ->
-    let parser = match ml with
-      | `ML  -> Raw_parser.implementation_state
-      | `MLI -> Raw_parser.interface_state
+    let parser = match ml, path with
+      | `ML, _  -> Raw_parser.implementation_state
+      | `MLI, _ -> Raw_parser.interface_state
+      | `Auto, Some path when Filename.check_suffix path ".mli" ->
+        Raw_parser.interface_state
+      | `Auto, _ -> Raw_parser.implementation_state
     in
     let buffer = Buffer.create ?path parser in
     buffer_changed state;

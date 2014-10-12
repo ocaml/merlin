@@ -59,7 +59,7 @@ type _ request =
     :  [`Prev|`Next|`Current] * position option
     -> Location.t option request
   | Reset
-    :  [`ML | `MLI] * string option
+    :  [`ML | `MLI | `Auto ] * string option
     -> cursor_state request
   | Refresh
     :  unit request

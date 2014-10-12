@@ -289,6 +289,8 @@ module Protocol_io = struct
     | (`String "boundary" :: `String "current" :: opt_pos)
     | (`String "boundary" :: opt_pos) ->
       Request (Boundary (`Current, optional_position opt_pos))
+    | (`String "reset" :: `String "auto" :: opt_name) ->
+      Request (Reset (`Auto, optional_string opt_name))
     | (`String "reset" :: `String kind :: opt_name) ->
       Request (Reset (ml_or_mli kind, optional_string opt_name))
     | [`String "refresh"] ->
