@@ -2382,28 +2382,28 @@ and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
          __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state) lexbuf
 
-and skip_sharp_bang lexbuf =
-    __ocaml_lex_skip_sharp_bang_rec lexbuf 195
-and __ocaml_lex_skip_sharp_bang_rec lexbuf __ocaml_lex_state =
+and skip_sharp_bang state lexbuf =
+    __ocaml_lex_skip_sharp_bang_rec state lexbuf 195
+and __ocaml_lex_skip_sharp_bang_rec state lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
 # 667 "src/kernel/preprocess/raw_lexer.mll"
-      ( update_loc lexbuf None 3 false 0; return () )
+      ( update_loc lexbuf None 3 false 0; token state lexbuf )
 # 2393 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 # 669 "src/kernel/preprocess/raw_lexer.mll"
-      ( update_loc lexbuf None 1 false 0; return () )
+      ( update_loc lexbuf None 1 false 0; token state lexbuf )
 # 2398 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
 # 670 "src/kernel/preprocess/raw_lexer.mll"
-       ( return () )
+       ( token state lexbuf )
 # 2403 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
-         __ocaml_lex_skip_sharp_bang_rec lexbuf __ocaml_lex_state) lexbuf
+         __ocaml_lex_skip_sharp_bang_rec state lexbuf __ocaml_lex_state) lexbuf
 
 and p4_quotation lexbuf =
     __ocaml_lex_p4_quotation_rec lexbuf 204

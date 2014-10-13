@@ -48,7 +48,7 @@ val make: ?preprocessor:preprocessor -> keywords -> state
 
 (* The lexical analyzer *)
 
-val skip_sharp_bang: Lexing.lexbuf -> unit result
+val skip_sharp_bang: state -> Lexing.lexbuf -> Raw_parser.token result
 val token: state -> Lexing.lexbuf -> Raw_parser.token result
 
 (* Comments are filtered out from the token rule and stored in a global

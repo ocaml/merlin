@@ -662,12 +662,12 @@ and quoted_string state delim = parse
       { Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         quoted_string state delim lexbuf }
 
-and skip_sharp_bang = parse
+and skip_sharp_bang state = parse
   | "#!" [^ '\n']* '\n' [^ '\n']* "\n!#\n"
-      { update_loc lexbuf None 3 false 0; return () }
+      { update_loc lexbuf None 3 false 0; token state lexbuf }
   | "#!" [^ '\n']* '\n'
-      { update_loc lexbuf None 1 false 0; return () }
-  | "" { return () }
+      { update_loc lexbuf None 1 false 0; token state lexbuf }
+  | "" { token state lexbuf }
 
 and p4_quotation = parse
   | "<" (":" identchar*)? ("@" identchar*)? "<"

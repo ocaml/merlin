@@ -105,10 +105,15 @@ let feed t str =
         aux (Raw_lexer.token t.state t.lexbuf)
       in
       begin match t.resume with
+        (* At the beginning *)
+        | None when History.position t.history = 0 ->
+          aux (Raw_lexer.skip_sharp_bang t.state t.lexbuf)
+        (* Next token *)
+        | None -> continue ()
+        (* Resume *)
         | Some f ->
           t.resume <- None;
           aux (f ())
-        | None -> continue ()
       end;
       true
     end
