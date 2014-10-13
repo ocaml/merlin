@@ -152,36 +152,37 @@ let dispatch (state : state) =
     let structures = Browse.of_typer_contents structures in
     let path = Browse.enclosing pos structures in
     let path = Browse.annotate_tail_calls_from_leaf path in
-    let aux (t,tail) = match t with
-      | { t_loc; t_env;
-          t_node = ( Expression {exp_type = t}
-                   | Pattern {pat_type = t}
-                   | Core_type {ctyp_type = t } )
-        } ->
+    let aux (t,tail) =
+      let { t_loc ; t_env ; t_node ; _ } = t in
+      match t_node with
+      | Expression {exp_type = t}
+      | Pattern {pat_type = t}
+      | Core_type {ctyp_type = t}
+      | Value_description { val_desc = { ctyp_type = t } } ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env verbosity
           (fun () -> Printtyp.type_scheme t_env ppf t);
         Some (t_loc, to_string (), tail)
-      | { t_loc; t_env;
-          t_node = Type_declaration { typ_id = id; typ_type = t} } ->
+
+      | Type_declaration { typ_id = id; typ_type = t} ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env verbosity
           (fun () -> Printtyp.type_declaration t_env id ppf t);
         Some (t_loc, to_string (), tail)
-      | { t_loc; t_env;
-          t_node = ( Module_expr {mod_type = m}
-                   | Module_type {mty_type = m}
-                   | Module_binding {mb_expr = {mod_type = m}}
-                   | Module_declaration {md_type = {mty_type = m}}
-                   | Module_type_declaration {mtd_type = Some {mty_type = m}}
-                   | Module_binding_name {mb_expr = {mod_type = m}}
-                   | Module_declaration_name {md_type = {mty_type = m}}
-                   | Module_type_declaration_name {mtd_type = Some {mty_type = m}} )
-        } ->
+
+      | Module_expr {mod_type = m}
+      | Module_type {mty_type = m}
+      | Module_binding {mb_expr = {mod_type = m}}
+      | Module_declaration {md_type = {mty_type = m}}
+      | Module_type_declaration {mtd_type = Some {mty_type = m}}
+      | Module_binding_name {mb_expr = {mod_type = m}}
+      | Module_declaration_name {md_type = {mty_type = m}}
+      | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env verbosity
           (fun () -> Printtyp.modtype t_env ppf m);
         Some (t_loc, to_string (), tail)
+
       | _ -> None
     in
     let result = List.filter_map ~f:aux path in
