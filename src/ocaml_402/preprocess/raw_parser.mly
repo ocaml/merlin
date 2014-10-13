@@ -648,7 +648,7 @@ structure_head:
     { mkstrexp $2 $3 :: $4 }
 | toplevel_directives structure_tail
   @{`Shift_token (1,EXITPOINT)}
-    { $3 }
+    { $2 }
 
 structure_tail:
 | (* empty *)
