@@ -300,7 +300,7 @@ and _ nonterminal_class =
   | N_type_declarations : (Parsetree.type_declaration list) nonterminal_class
   | N_type_declaration : (Parsetree.type_declaration) nonterminal_class
   | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal_class
-  | N_toplevel_directive : (unit) nonterminal_class
+  | N_toplevel_directives : (unit) nonterminal_class
   | N_tag_field : (Parsetree.row_field) nonterminal_class
   | N_subtractive : (string) nonterminal_class
   | N_structure_tail : (Parsetree.structure) nonterminal_class

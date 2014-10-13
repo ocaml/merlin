@@ -633,10 +633,10 @@ structure:
 ;
 
 structure_head:
-  | seq_expr structure_tail @{`Shift_token (1,EXITPOINT)}
-    { mkstrexp $1 :: $2 }
-  | structure_tail @{`Shift_token (1,EXITPOINT)}
-    { $1 }
+  | toplevel_directives seq_expr structure_tail @{`Shift_token (1,EXITPOINT)}
+    { mkstrexp $2 :: $3 }
+  | toplevel_directives structure_tail @{`Shift_token (1,EXITPOINT)}
+    { $2 }
 ;
 
 structure_tail:
@@ -2194,10 +2194,6 @@ signature_item:
       }
 ;
 
-structure_head:
-  | toplevel_directive structure_tail           { $2 }
-;
-
 (* Custom-printf extension *)
 simple_expr:
   | CUSTOM_BANG simple_expr
@@ -2217,11 +2213,12 @@ override_flag:
 ;
 
 (* Toplevel directives *)
-toplevel_directive:
-    SHARP ident { () }
-  | SHARP ident STRING { () }
-  | SHARP ident INT { () }
-  | SHARP ident val_longident { () }
-  | SHARP ident FALSE { () }
-  | SHARP ident TRUE { () }
+toplevel_directives:
+    (* empty *) { () }
+  | toplevel_directives SHARP ident { () }
+  | toplevel_directives SHARP ident STRING { () }
+  | toplevel_directives SHARP ident INT { () }
+  | toplevel_directives SHARP ident val_longident { () }
+  | toplevel_directives SHARP ident FALSE { () }
+  | toplevel_directives SHARP ident TRUE { () }
 ;

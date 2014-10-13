@@ -194,7 +194,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_type_declarations                 -> "type_declarations"
   | N_type_declaration                  -> "type_declaration"
   | N_type_constraint                   -> "type_constraint"
-  | N_toplevel_directive                -> "toplevel_directive"
+  | N_toplevel_directives               -> "toplevel_directives"
   | N_tag_field                         -> "tag_field"
   | N_subtractive                       -> "subtractive"
   | N_structure_tail                    -> "structure_tail"
@@ -809,7 +809,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_type_declaration                  ->
     raise Not_found (*(Parsetree.type_declaration) nonterminal_class*)
   | N_type_constraint                   -> 1, (None, None)
-  | N_toplevel_directive                -> raise Not_found
+  | N_toplevel_directives               -> raise Not_found
   | N_tag_field                         ->
     raise Not_found (*(Parsetree.row_field) nonterminal_class*)
   | N_subtractive                       -> 1, "-"
@@ -1165,7 +1165,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_type_declarations                 -> None
   | N_type_declaration                  -> Some "type declaration"
   | N_type_constraint                   -> Some "type constraint"
-  | N_toplevel_directive                -> None
+  | N_toplevel_directives               -> None
   | N_tag_field                         -> None
   | N_subtractive                       -> None
   | N_structure_tail                    -> None
