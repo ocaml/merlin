@@ -1035,6 +1035,11 @@ let selection_priority = function
   | CN_ (N_structure_item, _) -> 1
   | _ -> 0
 
+let is_lparen =
+  let open Raw_parser in function
+    | LPAREN -> Some "("
+    | _ -> None
+
 let is_operator =
   let open Raw_parser in function
     | PREFIXOP s

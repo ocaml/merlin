@@ -41,5 +41,5 @@ val equal: item -> item -> bool
 val put_mark: t -> Merlin_parser.frame option -> unit
 val get_mark: t -> Merlin_parser.frame option
 
-val reconstruct_identifier: (exn list * item) History.t -> string Location.loc list
+val reconstruct_identifier: ?for_locate:bool -> (exn list * item) History.t -> string Location.loc list
 val identifier_suffix: string Location.loc list -> string Location.loc list

@@ -319,7 +319,7 @@ let dispatch (state : state) =
           History.seek_backward (fun (_,item) ->
             Lexing.compare_pos pos (Lexer.item_start item) < 0) lexer
         in
-        let path = Lexer.reconstruct_identifier lexer in
+        let path = Lexer.reconstruct_identifier ~for_locate:true lexer in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
         let path = String.concat ~sep:"." path in
