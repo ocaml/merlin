@@ -278,7 +278,7 @@ let rec check_item ~source modules =
 
 and browse_cmts ~root modules =
   let open Cmt_format in
-  let cmt_infos = read_cmt root in
+  let cmt_infos = Cmt_cache.read_cmt root in
   debug_log "inspecting %s" root ;
   File_switching.move_to root ;
   match

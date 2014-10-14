@@ -85,6 +85,8 @@ SOURCES = \
 	$(TYPER)/typing/typedtreeMap.ml   \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
+	src/ocaml_aux/cmt_cache.mli       \
+	src/ocaml_aux/cmt_cache.ml        \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \
 	$(TYPER)/typing/oprint.mli        \
