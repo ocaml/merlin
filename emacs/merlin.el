@@ -1073,9 +1073,23 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (complete-with-action action merlin-completion-annotation-table string pred)))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; COMPANY MODE SUPPORT
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; COMPANY MODE SUPPORT ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin--company-doc-buffer (candidate)
+  "Computes the /doc/ of CANDIDATE and returns the buffer where it printed it"
+  ; TODO: at the moment "doc" is understood as "type", but hopefully someday we
+  ; will access ocamldoc comments and display that.
+  (let ((typ (get-text-property 0 'merlin-meta candidate)))
+    (if (not (equal typ " <module>"))
+      (merlin--type-display-in-buffer typ)
+      (let* ((expr (substring-no-properties candidate))
+             (loc  (merlin-unmake-point (point)))
+             (cmd  (list 'type 'expression expr 'at loc))
+             (res  (merlin-send-command cmd)))
+        (merlin--type-display-in-buffer res)))
+    (get-buffer merlin-type-buffer-name)))
 
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
@@ -1086,13 +1100,9 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
            (let ((bounds (merlin--completion-bounds)))
              (merlin--buffer-substring (car bounds) (cdr bounds))))
           (no-cache t)
+          (sorted t)
           (init (merlin-sync-to-point))
-          (doc-buffer
-           (progn
-             (let ((doc (merlin-completion-info arg)))
-               (with-current-buffer merlin-type-buffer-name
-                 (insert doc)
-                 (get-buffer merlin-type-buffer-name)))))
+          (doc-buffer (merlin--company-doc-buffer arg))
           (location
            (let* ((pos (merlin--locate-pos arg))
                   (filename (lookup-default 'file pos (current-buffer)))
@@ -1105,7 +1115,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
           (post-completion
            (prin1 command)
            (prin1 arg)
-           (minibuffer-message "%s: %s" arg (get-text-property 0 'merlin-meta arg)))
+           (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg)))
           (meta
            (prin1 command)
            (prin1 arg)
@@ -1113,7 +1123,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
           (annotation
            (prin1 command)
            (prin1 arg)
-           (concat ": " (get-text-property 0 'merlin-meta arg)))
+           (concat " : " (get-text-property 0 'merlin-meta arg)))
           )))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
