@@ -18,6 +18,8 @@ SOURCES = \
 	src/utils/std.ml                  \
 	src/utils/misc.mli                \
 	src/utils/misc.ml                 \
+	src/utils/file_cache.mli      \
+	src/utils/file_cache.ml       \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
 	src/utils/menhirLib.ml            \
@@ -61,7 +63,6 @@ SOURCES = \
 	src/ocaml_aux/tbl.ml              \
 	$(TYPER)/typing/subst.mli         \
 	$(TYPER)/typing/subst.ml          \
-	src/ocaml_aux/cmi_cache.mli       \
 	src/ocaml_aux/cmi_cache.ml        \
 	$(TYPER)/utils/consistbl.ml       \
 	$(TYPER)/utils/consistbl.mli      \
@@ -85,7 +86,6 @@ SOURCES = \
 	$(TYPER)/typing/typedtreeMap.ml   \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
-	src/ocaml_aux/cmt_cache.mli       \
 	src/ocaml_aux/cmt_cache.ml        \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \

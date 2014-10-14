@@ -293,7 +293,7 @@ let check_consistency filename crcs =
 (* Reading persistent structures from .cmi files *)
 
 let read_pers_struct modname filename =
-  let cmi = Cmi_cache.read_cmi filename in
+  let cmi = Cmi_cache.read filename in
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
@@ -364,7 +364,7 @@ let check_cache_consistency () =
           | _, Some ps when Hashtbl.mem !cache.missing_structures name ->
             true
           | Some filename, Some ps
-            when ps.ps_sig == (Cmi_cache.read_cmi filename).cmi_sign ->
+            when ps.ps_sig == (Cmi_cache.read filename).cmi_sign ->
             false
           | None, None -> false
           | _, _       -> true
