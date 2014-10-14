@@ -1104,25 +1104,20 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
           (init (merlin-sync-to-point))
           (doc-buffer (merlin--company-doc-buffer arg))
           (location
-           (let* ((pos (merlin--locate-pos arg))
-                  (filename (lookup-default 'file pos (current-buffer)))
-                  (pos (merlin-make-point (lookup-default 'pos pos nil))))
-             (cons filename pos)))
+           (let ((data (merlin--locate-pos arg)))
+             (when (listp data)
+               (let ((filename (lookup-default 'file data buffer-file-name))
+                     (linum (cdr (assoc 'line (assoc 'pos data)))))
+                 (cons filename linum)))))
           (candidates
            (merlin-sync-to-point)
            (mapcar #'(lambda (x) (propertize (car x) 'merlin-meta (cadr x)))
                    (merlin-completion-data arg)))
           (post-completion
-           (prin1 command)
-           (prin1 arg)
            (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg)))
           (meta
-           (prin1 command)
-           (prin1 arg)
            (get-text-property 0 'merlin-meta arg))
           (annotation
-           (prin1 command)
-           (prin1 arg)
            (concat " : " (get-text-property 0 'merlin-meta arg)))
           )))
 
