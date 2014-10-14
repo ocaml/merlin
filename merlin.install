@@ -17,4 +17,5 @@ share: [
   "vim/vimbufsync/autoload/vimbufsync.vim" { "vim/autoload/vimbufsync.vim" }
   "emacs/merlin.el" {"../emacs/site-lisp/merlin.el"}
   "?emacs/merlin.elc" {"../emacs/site-lisp/merlin.elc"}
+  "emacs/merlin-iedit.el" {"../emacs/site-lisp/merlin-iedit.el"}
 ]
