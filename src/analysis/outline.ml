@@ -1,14 +1,18 @@
 open Std
 open Option.Infix
 
-let id_of_patt = let open Typedtree in function
+(* Réglisse la police *)
+open Typedtree
+open Typedtree.Override
+
+open BrowseT
+
+let id_of_patt = function
   | { pat_desc = Tpat_var (id, _) ; _ } -> Some id
   | _ -> None
 
 let mk ?(children=[]) ~pos outline_kind id =
   { Protocol. outline_name = Ident.name id; outline_kind; pos; children }
-
-open BrowseT
 
 (* FIXME: pasted from track_definition, share it. *)
 let path_to_list p =
@@ -22,22 +26,21 @@ let path_to_list p =
 let rec summarize node =
   let pos = node.t_loc.Location.loc_start in
   match node.t_node with
-  | Value_binding vb      -> id_of_patt vb.Typedtree.vb_pat >>| mk `Value ~pos
-  | Value_description vd  -> Some (mk `Value ~pos vd.Typedtree.val_id)
+  | Value_binding vb      -> id_of_patt vb.vb_pat >>| mk `Value ~pos
+  | Value_description vd  -> Some (mk `Value ~pos vd.val_id)
 
   | Module_declaration md ->
     let children = get_mod_children node in
-    Some (mk ~children ~pos `Module md.Typedtree.md_id)
+    Some (mk ~children ~pos `Module md.md_id)
   | Module_binding mb     ->
     let children = get_mod_children node in
-    Some (mk ~children ~pos `Module mb.Typedtree.mb_id)
+    Some (mk ~children ~pos `Module mb.mb_id)
 
   | Module_type_declaration mtd ->
     let children = get_mod_children node in
-    Some (mk ~children ~pos `Modtype mtd.Typedtree.mtd_id)
+    Some (mk ~children ~pos `Modtype mtd.mtd_id)
 
   | Type_declaration td ->
-    let open Typedtree in
     let children = 
       let helper kind id loc = mk kind id ~pos:loc.Location.loc_start in
       List.concat_map (Lazy.force node.t_children) ~f:(fun child ->
@@ -55,7 +58,7 @@ let rec summarize node =
     Some (mk ~children ~pos `Type td.typ_id)
 
   | Type_extension te ->
-    let name = String.concat ~sep:"." (path_to_list te.Typedtree.tyext_path) in
+    let name = String.concat ~sep:"." (path_to_list te.tyext_path) in
     let children =
       List.filter_map (Lazy.force node.t_children) ~f:(fun x ->
         summarize x >>| fun x -> { x with Protocol.outline_kind = `Constructor }
@@ -64,7 +67,7 @@ let rec summarize node =
     Some { Protocol. outline_name = name; outline_kind = `Type; pos; children }
 
   | Extension_constructor ec ->
-    Some (mk ~pos `Exn ec.Typedtree.ext_id )
+    Some (mk ~pos `Exn ec.ext_id )
 
   (* TODO: classes *)
   | _ -> None

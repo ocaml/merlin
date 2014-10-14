@@ -471,6 +471,15 @@ type constructor_declaration = {
 }
 
 module Override : sig
+  type value_description = {
+    val_id: Ident.t;
+    val_name: string loc;
+    val_desc: core_type;
+    val_val: Types.value_description;
+    val_prim: string list;
+    val_loc: Location.t;
+  }
+
   type type_declaration = {
     typ_id: Ident.t ;
     typ_name: string loc ;

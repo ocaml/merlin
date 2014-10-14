@@ -25,7 +25,7 @@ type node =
   | Core_type                of core_type
   | Package_type             of package_type
   | Row_field                of row_field
-  | Value_description        of value_description
+  | Value_description        of Override.value_description
   | Type_declaration         of Override.type_declaration
   | Type_kind                of type_kind
   | Type_extension           of type_extension
@@ -94,7 +94,7 @@ let rec of_node t_node =
     | Module_binding          {mb_loc = loc}
     | Module_declaration      {md_loc = loc}
     | Module_type_declaration {mtd_loc = loc}
-    | Value_description       {val_loc = loc}
+    | Value_description       { Override. val_loc = loc}
     | Type_declaration        { Override. typ_loc = loc}
     | Label_declaration       {ld_loc = loc}
     | Constructor_declaration {cd_loc = loc}
@@ -185,7 +185,7 @@ let rec of_node t_node =
       List.map of_core_type cts
     | Row_field (Tinherit ct) ->
       [of_core_type ct]
-    | Value_description { val_desc } ->
+    | Value_description { Override. val_desc } ->
       [of_core_type val_desc]
     | Type_declaration { Override. typ_params; typ_cstrs; typ_kind; typ_manifest } ->
       let of_typ_cstrs (ct1,ct2,_) acc =
@@ -420,7 +420,16 @@ and of_structure_item_desc desc acc = match desc with
       ) vbs
     in
     of_list of_value_binding vbs acc
-  | Tstr_primitive (_,_,vd) ->
+  | Tstr_primitive (val_id,val_name,vd) ->
+    let vd = { Override.
+        val_id ;
+        val_name ;
+        val_desc = vd.val_desc ;
+        val_val = vd.val_val ;
+        val_prim = vd.val_prim ;
+        val_loc = vd.val_loc
+      }
+    in
     of_node (Value_description vd) :: acc
   | Tstr_type tds ->
     of_list (fun (typ_id,typ_name,td) ->
@@ -482,7 +491,16 @@ and of_module_type_desc desc acc = match desc with
 and of_signature_item_desc desc acc = match desc with
   | Tsig_open _ ->
     acc
-  | Tsig_value (_,_,vd) ->
+  | Tsig_value (val_id,val_name,vd) ->
+    let vd = { Override.
+        val_id ;
+        val_name ;
+        val_desc = vd.val_desc ;
+        val_val = vd.val_val ;
+        val_prim = vd.val_prim ;
+        val_loc = vd.val_loc
+      }
+    in
     of_node (Value_description vd) :: acc
   | Tsig_type tds ->
     of_list (fun (typ_id,typ_name,td) ->
