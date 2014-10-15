@@ -1355,9 +1355,11 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (merlin-sync-to-point)
   (if (region-active-p)
       (merlin--type-region)
-    (when (merlin--type-enclosing-query)
-      (merlin-type-enclosing-go-up)
-      (merlin--type-enclosing-after))))
+    (if (merlin--type-enclosing-query)
+      (progn
+        (merlin-type-enclosing-go-up)
+        (merlin--type-enclosing-after))
+      (message "merlin: no result"))))
 
 (defun merlin--find-extents (list low high)
   "Return the smallest extent in LIST that LOW and HIGH fit
