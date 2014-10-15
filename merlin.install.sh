@@ -10,5 +10,6 @@
   sed -e 's%^[^/]*/[^/]*/\(.*\)%  "&" { "vim/\1" }%' | sort -u
   printf '  "emacs/merlin.el" {"../emacs/site-lisp/merlin.el"}\n'
   printf '  "?emacs/merlin.elc" {"../emacs/site-lisp/merlin.elc"}\n'
+  printf '  "emacs/merlin-iedit.el" {"../emacs/site-lisp/merlin-iedit.el"}\n'
   printf ']\n'
 ) > merlin.install
