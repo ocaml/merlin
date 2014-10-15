@@ -908,13 +908,10 @@ The timer fires every 10 seconds of idle time."
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
-  (let ((point- (next-single-char-property-change point prop nil limit)))
-    (if (eq point point-)
-        (setq point (next-single-char-property-change (1+ point) prop nil limit))
-      (setq point point-))
-    (unless (find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
-      (setq point (next-single-char-property-change point prop nil limit)))
-    point))
+  (setq point (next-single-char-property-change point prop nil limit))
+  (unless (find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
+    (setq point (next-single-char-property-change point prop nil limit)))
+  point)
 
 (defun merlin--overlay-previous-property-set (point prop &optional limit)
   "Find previous point where PROP is set (like previous-single-char-property-change but ensure that prop is not-nil)."
