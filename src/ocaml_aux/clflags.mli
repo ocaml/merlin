@@ -10,8 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id: clflags.mli 12800 2012-07-30 18:59:07Z doligez $ *)
-
 (* Command-line parameters *)
 
 type path_printing_mode = [`Real | `Short | `Slow ]
