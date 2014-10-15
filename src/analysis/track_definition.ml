@@ -229,13 +229,15 @@ type result = [
   | `Not_found
 ]
 
-(** Reverse the list of items − we want to start from the bottom of
-    the file − and remove top level indirections. *)
+(* Remove top level indirections (i.e. Structure and Signature) and reverse
+   their children so we start from the bottom of the file.
+   We also remove everything appearing after [pos]: we don't want to consider
+   things declared after the use point of what we are looking for. *)
 let get_top_items ?pos browsable =
   let don't_discard x =
     match pos with
     | None -> true
-    | Some pos -> x.BrowseT.t_loc.Location.loc_start < pos
+    | Some pos -> Lexing.compare_pos x.BrowseT.t_loc.Location.loc_start pos < 0
   in
   List.concat_map (fun bt ->
     let open BrowseT in
@@ -330,7 +332,10 @@ and browse_cmts ~root modules =
     | Interface intf -> `Sg intf, false
     | Implementation impl -> `Str impl, true
     | Packed (_, files) -> `Pack files, true
-    | _ -> `Not_found, true (* TODO? *)
+    | _ ->
+      (* We could try to work with partial cmt files, but it'd probably fail
+       * most of the time so... *)
+      `Not_found, true
   with
   | `Not_found, _ -> `Not_found
   | (`Str _ | `Sg _ as typedtree), source ->
@@ -398,7 +403,8 @@ and resolve_mod_alias ~source node path rest =
     resolve_mod_alias ~source (BrowseT.Module_type mod_type) path rest
   | `Mod_expr mod_expr ->
     resolve_mod_alias ~source (BrowseT.Module_expr mod_expr) path rest
-  | `Unpack -> (* FIXME: should we do something or stop here? *)
+  | `Unpack ->
+    (* FIXME: should we do something or stop here? *)
     info_log "found Tmod_unpack, expect random results." ;
     check_item ~source path rest
 
