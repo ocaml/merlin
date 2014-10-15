@@ -6,12 +6,21 @@ let cmt_path = ref (Misc.Path_list.of_list [])
 
 let cwd = ref ""
 
+let section = Logger.section "locate"
+let debug_log x = Printf.ksprintf (Logger.debug section)  x
+
 module Fallback = struct
   let fallback = ref `Nothing
 
   let get () = !fallback
 
-  let set ~source loc = fallback := if source then `ML loc else `MLI loc
+  let set ~source loc =
+    Logger.debugf section (fun fmt loc ->
+      Format.fprintf fmt "Fallback.set %b" source;
+      Location.print fmt loc
+    ) loc ;
+    fallback := if source then `ML loc else `MLI loc
+
   let reset () = fallback := `Nothing
 
   let is_set () = !fallback <> `Nothing
@@ -44,7 +53,7 @@ module File_switching : sig
 
   val reset : unit -> unit
 
-  val can_move : unit -> bool
+  val check_can_move : unit -> unit
 
   val move_to : string -> unit (* raises Can't_move *)
 
@@ -65,23 +74,25 @@ end = struct
 
   let reset () = state := default
 
-  let can_move () = not !state.already_moved
+  let check_can_move () =
+    if !state.already_moved then raise Can't_move
 
   let move_to file =
     if !state.already_moved then raise Can't_move else
+    debug_log "File_switching.move_to %s" file ;
     state := { already_moved = true ; last_file_visited = Some file }
 
-  let allow_movement () = state := { !state with already_moved = false }
+  let allow_movement () =
+    debug_log "File_switching.allow_movement" ;
+    state := { !state with already_moved = false }
 
   let where_am_i () = !state.last_file_visited
 end
 
-let section = Logger.section "locate"
 
 module Utils = struct
   (* FIXME: turn this into proper debug logging *)
-  let debug_log x =
-    Printf.ksprintf (Logger.info section)  x
+  let info_log  x = Printf.ksprintf (Logger.info  section)  x
 
   let is_ghost { Location. loc_ghost } = loc_ghost = true
 
@@ -148,7 +159,7 @@ module Utils = struct
         | CMT f -> CMTI f
         | CMTI f -> CMT f
       in
-      debug_log "no %s, looking for %s of %s" (ext_of_filetype file)
+      info_log "no %s, looking for %s of %s" (ext_of_filetype file)
         (ext_of_filetype fallback) (filename_of_filetype file);
       try find_file fallback
       with File_not_found _ -> raise exn
@@ -226,7 +237,7 @@ let rec check_item ~source modules =
       match repack (is_included ~name) with
       | None -> check_item ~source modules rest
       | Some thing ->
-        debug_log "one more include to follow..." ;
+        info_log "one more include to follow..." ;
         Fallback.set ~source item.BrowseT.t_loc ;
         resolve_mod_alias ~source thing [ name ] rest
   in
@@ -239,7 +250,7 @@ let rec check_item ~source modules =
         begin try
           let mbs = expose_module_binding item in
           let mb = List.find ~f:(fun mb -> Ident.name mb.Typedtree.mb_id = name) mbs in
-          debug_log "(get_on_track) %s is bound" name ;
+          info_log "(get_on_track) %s is bound" name ;
           `Direct (BrowseT.Module_expr mb.Typedtree.mb_expr)
         with Not_found -> `Not_found end
       | BrowseT.Signature_item item ->
@@ -247,20 +258,20 @@ let rec check_item ~source modules =
         begin try
           let mds = expose_module_declaration item in
           let md = List.find ~f:(fun md -> Ident.name md.Typedtree.md_id = name) mds in
-          debug_log "(get_on_track) %s is bound" name ;
+          info_log "(get_on_track) %s is bound" name ;
           `Direct (BrowseT.Module_type md.Typedtree.md_type)
         with Not_found -> `Not_found end
       | _ -> assert false
     with
     | None, whatever -> whatever
     | Some thing, `Not_found ->
-      debug_log "(get_on_track) %s is included..." name ;
+      info_log "(get_on_track) %s is included..." name ;
       `Included thing
     | _ -> assert false
   in
   function
   | [] ->
-    debug_log "%s not in current file..." (String.concat ~sep:"." modules) ;
+    info_log "%s not in current file..." (String.concat ~sep:"." modules) ;
     from_path ~source modules
   | item :: rest ->
     match modules with
@@ -279,7 +290,7 @@ let rec check_item ~source modules =
 and browse_cmts ~root modules =
   let open Cmt_format in
   let cmt_infos = Cmt_cache.read_cmt root in
-  debug_log "inspecting %s" root ;
+  info_log "inspecting %s" root ;
   File_switching.move_to root ;
   match
     match cmt_infos.cmt_annots with
@@ -302,15 +313,15 @@ and browse_cmts ~root modules =
       check_item ~source modules browsable
     end
   | `Pack files, _ ->
-    File_switching.allow_movement () ;
     begin match modules with
     | [] -> `Not_found
     | mod_name :: modules ->
       let file = 
         List.(find (map files ~f:file_path_to_mod_name)) ~f:((=) mod_name)
       in
+      File_switching.allow_movement () ;
       cwd := Filename.dirname root ;
-      debug_log "Saw packed module => setting cwd to '%s'" !cwd ;
+      info_log "Saw packed module => setting cwd to '%s'" !cwd ;
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt file) in
       browse_cmts ~root:cmt_file modules
     end
@@ -323,10 +334,11 @@ and from_path ~source = function
     if source then `ML loc else `MLI loc
   | fname :: modules ->
     try
+      File_switching.check_can_move () ;
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~root:cmt_file modules
     with File_not_found (CMT fname | CMTI fname) as exn ->
-      debug_log "failed to locate the cmt[i] of '%s'" fname ;
+      info_log "failed to locate the cmt[i] of '%s'" fname ;
       raise exn
 
 and resolve_mod_alias ~source node path rest =
@@ -347,14 +359,14 @@ and resolve_mod_alias ~source node path rest =
     let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
     check_item ~source path lst
   | `Functor msg ->
-    debug_log "stopping on functor%s" msg ;
+    info_log "stopping on functor%s" msg ;
     if source then `ML loc else `MLI loc
   | `Mod_type mod_type ->
     resolve_mod_alias ~source (BrowseT.Module_type mod_type) path rest
   | `Mod_expr mod_expr ->
     resolve_mod_alias ~source (BrowseT.Module_expr mod_expr) path rest
   | `Unpack -> (* FIXME: should we do something or stop here? *)
-    debug_log "found Tmod_unpack, expect random results." ;
+    info_log "found Tmod_unpack, expect random results." ;
     check_item ~source path rest
 
 let path_and_loc_from_label desc env =
@@ -387,7 +399,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
   sources_path := Project.source_path project ;
   cmt_path := Project.cmt_path project ;
   Preferences.set ml_or_mli ;
-  debug_log "looking for the source of '%s' (prioritizing %s files)"
+  info_log "looking for the source of '%s' (prioritizing %s files)"
     path (match ml_or_mli with `ML -> ".ml" | `MLI -> ".mli");
   let ident, is_label = keep_suffix (Longident.parse path) in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
@@ -423,7 +435,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
           let label_desc = Merlin_types_custom.lookup_label ident env in
           path_and_loc_from_label label_desc env
         with Not_found ->
-          debug_log "   ... not in the environment" ;
+          info_log "   ... not in the environment" ;
           raise Not_in_env
       )
     in
@@ -439,7 +451,8 @@ let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
       | `MLI loc   -> finalize false loc
   with
   | _ when Fallback.is_set () -> recover ()
-  | Not_found -> `Not_found (path, File_switching.where_am_i ())
+  | Not_found
+  | File_switching.Can't_move -> `Not_found (path, File_switching.where_am_i ())
   | File_not_found path ->
     let msg =
       match path with
