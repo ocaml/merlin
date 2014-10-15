@@ -29,6 +29,13 @@ module List = struct
       let init = f x init in
       init :: (scan_left ~f xs ~init)
 
+  let rev_filter ~f lst =
+    let rec aux acc = function
+      | [] -> acc
+      | x :: xs -> aux (if f x then x :: acc else acc) xs
+    in
+    aux [] lst
+
   let rec filter_map ~f = function
     | [] -> []
     | x :: xs ->

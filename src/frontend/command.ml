@@ -330,7 +330,7 @@ let dispatch (state : state) =
     let project = Buffer.project state.buffer in
     begin match
       Track_definition.from_string ~project ~env ~local_defs ~is_implementation
-        ml_or_mli path
+        ?pos:opt_pos ml_or_mli path
     with
     | `Found (file, pos) ->
       Logger.info (Track_definition.section)

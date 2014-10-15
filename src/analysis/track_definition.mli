@@ -5,6 +5,7 @@ val from_string
   -> env:Env.t
   -> local_defs:[`Str of Typedtree.structure | `Sg of Typedtree.signature] list
   -> is_implementation:bool
+  -> ?pos:Lexing.position
   -> [ `ML | `MLI ]
   -> string
   -> [> `File_not_found of string

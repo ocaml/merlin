@@ -203,14 +203,19 @@ type result = [
 
 (** Reverse the list of items − we want to start from the bottom of
     the file − and remove top level indirections. *)
-let get_top_items browsable =
+let get_top_items ?pos browsable =
+  let don't_discard x =
+    match pos with
+    | None -> true
+    | Some pos -> x.BrowseT.t_loc.Location.loc_start < pos
+  in
   List.concat_map (fun bt ->
     let open BrowseT in
     match bt.t_node with
     | Signature _
-    | Structure _ -> List.rev (Lazy.force bt.t_children)
+    | Structure _ -> List.rev_filter (Lazy.force bt.t_children) ~f:don't_discard
     | Signature_item _
-    | Structure_item _-> [ bt ]
+    | Structure_item _ when don't_discard bt -> [ bt ]
     | _ -> []
   ) browsable
 
@@ -393,7 +398,7 @@ let recover () =
   | `ML  loc -> finalize true loc
   | `MLI loc -> finalize false loc
 
-let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
+let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
   File_switching.reset () ;
   cwd := "" (* Reset the cwd before doing anything *) ;
   sources_path := Project.source_path project ;
@@ -442,8 +447,11 @@ let from_string ~project ~env ~local_defs ~is_implementation ml_or_mli path =
     if not (is_ghost loc) then
       `Found (None, loc.Location.loc_start)
     else
+      let () = debug_log
+        "present in the environment, but ghost lock. walking up the typedtree."
+      in
       let modules = path_to_list path' in
-      let items   = get_top_items (Browse.of_typer_contents local_defs) in
+      let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
       | `Not_found when Fallback.is_set () -> recover ()
       | `Not_found -> `Not_found (path, File_switching.where_am_i ())
