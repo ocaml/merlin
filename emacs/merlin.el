@@ -953,7 +953,7 @@ The timer fires every 10 seconds of idle time."
       (merlin--acquire-buffer)
       (merlin--error-check nil)
       (setq err (merlin--error-prev-cycle)))
-    (unless err (message "No more errors"))
+    (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
       (message (merlin-chomp (cdr (assoc 'message (cdr err)))))
@@ -967,7 +967,7 @@ The timer fires every 10 seconds of idle time."
       (merlin--acquire-buffer)
       (merlin--error-check nil)
       (setq err (merlin--error-next-cycle)))
-    (unless err (message "No more errors"))
+    (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
       (message (merlin-chomp (cdr (assoc 'message (cdr err)))))
@@ -1044,7 +1044,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
          (errors (if merlin-report-warnings errors
                    (remove-if (lambda (e) (merlin-error-warning-p (cdr (assoc 'message e))))
                               errors))))
-    (if (and (not errors) (not no-loc)) (when view-errors-p (message "ok"))
+    (if (not (or errors no-loc))
+        (when view-errors-p (message "No errors"))
       (progn
         (setq merlin-erroneous-buffer t)
         (when no-loc
