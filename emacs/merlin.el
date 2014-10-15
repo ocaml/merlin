@@ -251,11 +251,7 @@ field logfile (see `merlin-start-process')"
 ;; Errors related variables
 (defvar merlin-erroneous-buffer nil
   "Whether the buffer is erroneous or not")
-(make-variable-buffer-local 'merlin-pending-errors)
-
-(defvar merlin-pending-errors nil
-  "Pending errors.")
-(make-variable-buffer-local 'merlin-pending-errors)
+(make-variable-buffer-local 'merlin-erroneous-buffer)
 
 (defvar merlin-highlight-overlay nil
   "Merlin overlay used for highlights.")
@@ -513,7 +509,7 @@ return DEFAULT or the value associated to KEY."
   (when (get-buffer (merlin-process-buffer))
     (ignore-errors (merlin-kill-process)))
   (merlin-start-process merlin-default-flags (funcall merlin-grouping-function))
-  (setq merlin-pending-errors nil))
+  (setq merlin-erroneous-buffer nil))
 
 (defun merlin-list-instances ()
   "Return the list of instances currently started."
@@ -884,29 +880,98 @@ The timer fires every 10 seconds of idle time."
   "Remove whitespace at the beginning and end of STR."
   (replace-regexp-in-string "^[[:space:]\n]\+\\|[[:space:]\n]\+$" "" str))
 
+(defun merlin--error-position-delta (point err)
+  "Distance between point and error."
+  (setq err (cdr (assoc 'bounds err)))
+  (cond ((< point (car err)) (cons (- (car err) point) 0))
+        ((> point (cdr err)) (cons (- point (cdr err)) 0))
+        (t (cons 0 (min (- (cdr err) point) (- point (car err)))))))
+
+(defun merlin--error-at-position (point errors)
+  "Returns error from ERRORS list most relevant at POINT"
+  (let ((err nil) (d nil))
+    (dolist (err- errors err)
+      (let ((d- (merlin--error-position-delta (point) err-)))
+        (when (or (not err) (< (car d-) (car d))
+                  (and (= (car d-) (car d)) (< (cdr d-) (cdr d))))
+          (setq d d-) (setq err err-))))))
+
 (defun merlin-show-error-on-current-line ()
   "Show the error of the current line in the echo area.
-If there is no error, do nothing."
+  If there is no error, do nothing."
   (when (and merlin-mode (not (current-message)))
-    (lexical-let* ((current-line (line-number-at-pos))
-                   (err (merlin-find-error-for-line
-                         (line-number-at-pos) merlin-pending-errors)))
-      (if err (message (merlin-chomp (cdr (assoc 'message err))))))))
+    (let* ((errors (overlays-in (line-beginning-position) (line-end-position)))
+           (err nil))
+      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+      (setq err (merlin--error-at-position (point) errors))
+      (when err (message (merlin-chomp (cdr (assoc 'message err))))))))
+
+(defun merlin--overlay-next-property-set (point prop &optional limit)
+  "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
+  (let ((point- (next-single-char-property-change point prop nil limit)))
+    (if (eq point point-)
+        (setq point (next-single-char-property-change (1+ point) prop nil limit))
+      (setq point point-))
+    (unless (find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
+      (setq point (next-single-char-property-change point prop nil limit)))
+    point))
+
+(defun merlin--overlay-previous-property-set (point prop &optional limit)
+  "Find previous point where PROP is set (like previous-single-char-property-change but ensure that prop is not-nil)."
+  (setq point (previous-single-char-property-change point prop nil limit))
+  (unless (find-if (lambda (a) (overlay-get a prop)) (overlays-at point))
+    (setq point (previous-single-char-property-change point prop nil limit)))
+  point)
+
+(defun merlin--error-prev-cycle ()
+  "Returns previous error, cycling when reaching beginning of buffer"
+  (let ((point (point)) (errors nil) (err nil))
+    (setq point (merlin--overlay-previous-property-set point 'merlin-pending-error))
+    (when (eq point (point-min))
+      (setq point (merlin--overlay-previous-property-set (point-max) 'merlin-pending-error (point))))
+    (setq errors (overlays-at point))
+    (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+    (setq err (merlin--error-at-position point errors))
+    (if err (cons point err) nil)))
+
+(defun merlin--error-next-cycle ()
+  "Returns next error, cycling when reaching end of buffer"
+  (let ((point (point)) (errors nil) (err nil))
+    (setq point (merlin--overlay-next-property-set point 'merlin-pending-error))
+    (when (eq point (point-max))
+      (setq point (merlin--overlay-next-property-set (point-min) 'merlin-pending-error (point))))
+    (setq errors (overlays-at point))
+    (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+    (setq err (merlin--error-at-position point errors))
+    (if err (cons point err) nil)))
+
+(defun merlin-error-prev ()
+  "Jump back to previous error."
+  (interactive)
+  (let (err (merlin--error-prev-cycle))
+    (unless err
+      (merlin--acquire-buffer)
+      (merlin--error-check nil)
+      (setq err (merlin--error-prev-cycle)))
+    (unless err (message "No more errors"))
+    (when err
+      (goto-char (car err))
+      (message (merlin-chomp (cdr (assoc 'message (cdr err)))))
+      (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin-error-next ()
-  "Jump to the next error."
+  "Jump to next error."
   (interactive)
-  (if merlin-pending-errors
-      (let ((err (pop merlin-pending-errors)))
-        (goto-char (cadr (assoc 'bounds err)))
-        (if merlin-pending-errors
-            (message "%s (%d more errors, use %s to go to the next)"
-                     (cdr (assoc 'message err))
-                     (length merlin-pending-errors)
-                     (substitute-command-keys "\\[merlin-error-next]"))
-          (message "%s" (cdr (assoc 'message err))))
-        (merlin-highlight (cdr (assoc 'bounds err)) 'next-error))
-    (next-error)))
+  (let (err (merlin--error-next-cycle))
+    (unless err
+      (merlin--acquire-buffer)
+      (merlin--error-check nil)
+      (setq err (merlin--error-next-cycle)))
+    (unless err (message "No more errors"))
+    (when err
+      (goto-char (car err))
+      (message (merlin-chomp (cdr (assoc 'message (cdr err)))))
+      (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin-error-delete-overlays ()
   "Remove error overlays."
@@ -919,20 +984,16 @@ If there is no error, do nothing."
 (defun merlin-error-reset ()
   "Clear error list."
   (interactive)
-  (setq merlin-pending-errors nil)
   (setq merlin-erroneous-buffer nil)
   (merlin-error-delete-overlays))
 
-(defun merlin--overlay-p (overlay)
+(defun merlin--overlay (overlay)
   "Returns non-nil if OVERLAY is managed by merlin."
-  (overlay-get overlay 'merlin-kind))
+  (if overlay (overlay-get overlay 'merlin-kind) nil))
 
-(defun merlin--clear-error-overlay (overlay)
-  "Delete an overlay, remove corresponding error from list."
-  (let ((err (overlay-get overlay 'merlin-pending-error)))
-    (when err (setq merlin-pending-errors
-                    (delete err merlin-pending-errors))))
-  (delete-overlay overlay))
+(defun merlin--overlay-pending-error (overlay)
+  "Returns non-nil if OVERLAY is about a pending error."
+  (if overlay (overlay-get overlay 'merlin-pending-error) nil))
 
 (defun merlin--kill-error-if-edited (overlay
 				     is-after
@@ -940,7 +1001,7 @@ If there is no error, do nothing."
 				     end
 				     &optional length)
   "Remove an error from the pending error lists if it is edited by the user."
-  (when is-after (merlin--clear-error-overlay overlay)))
+  (when is-after (delete-overlay overlay)))
 
 (defun merlin-transform-display-errors (errors)
   "Populate the error list with ERRORS, transformed into an
@@ -952,25 +1013,24 @@ If there is no error, do nothing."
                                  (copy-marker (cdr bounds)))))
               (acons 'bounds bounds err))))
          (errors   (mapcar err-point errors)))
-    (setq merlin-pending-errors errors)
-    (when merlin-error-in-fringe
-      (dolist (err errors)
-        (let* ((bounds (cdr (assoc 'bounds err)))
-               (overlay (make-overlay (car bounds) (cdr bounds))))
-          (overlay-put overlay 'merlin-kind 'error)
-          (overlay-put overlay 'merlin-pending-error err)
-          (push #'merlin--kill-error-if-edited
-                (overlay-get overlay 'modification-hooks))
+    (dolist (err errors)
+      (let* ((bounds (cdr (assoc 'bounds err)))
+             (overlay (make-overlay (car bounds) (cdr bounds))))
+        (overlay-put overlay 'merlin-kind 'error)
+        (overlay-put overlay 'merlin-pending-error err)
+        (push #'merlin--kill-error-if-edited
+              (overlay-get overlay 'modification-hooks))
+        (when merlin-error-in-fringe
           (if (merlin-error-warning-p (cdr (assoc 'message err)))
-	      (merlin-add-display-properties overlay
-					     'question-mark
-					     "?"
-					     'merlin-compilation-warning-face)
+              (merlin-add-display-properties overlay
+                                             'question-mark
+                                             "?"
+                                             'merlin-compilation-warning-face)
             (merlin-add-display-properties overlay
-					   'exclamation-mark
-					   "!"
-					   'merlin-compilation-error-face))
-          overlay)))))
+                                           'exclamation-mark
+                                           "!"
+                                           'merlin-compilation-error-face)))
+        overlay))))
 
 (defun merlin--error-check (view-errors-p)
   "Check for errors.
@@ -1040,10 +1100,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin--kill-overlapping-errors (start end)
   "Kill any pending errors that overlap the region START..END."
   ;; fixme: factor out common bits with kill-if-edited
-  (let ((overlays (overlays-in start end)))
-    (delete-if-not 'merlin--overlay-p overlays)
-    (dolist (overlay overlays)
-      (merlin--clear-error-overlay overlay))))
+  (dolist (overlay (overlays-in start end))
+    (when (merlin--overlay overlay) (delete-overlay overlay))))
 
 (defun merlin--completion-bounds ()
   "Returns a pair (start . end) of the content to complete"
@@ -1839,8 +1897,8 @@ Short cuts:
         (delete-overlay merlin-lock-zone-fringe-overlay))
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
-      ;;(merlin-error-delete-overlays)
-     )))
+      (merlin-error-delete-overlays)
+      )))
 
 (defun merlin-after-save ()
   (when (merlin-error-after-save) (merlin-error-check)))
