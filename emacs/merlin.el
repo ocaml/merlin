@@ -73,7 +73,7 @@
   "Show the current instance of the buffer in the lighter."
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-report-dot-merlin-in-lighter nil
+(defcustom merlin-report-errors-in-lighter nil
   "Report absence of .merlin or errors in .merlin in the lighter."
   :group 'merlin :type 'boolean)
 
@@ -249,6 +249,10 @@ field logfile (see `merlin-start-process')"
 (make-variable-buffer-local 'merlin-lock-zone-fringe-overlay)
 
 ;; Errors related variables
+(defvar merlin-erroneous-buffer nil
+  "Whether the buffer is erroneous or not")
+(make-variable-buffer-local 'merlin-pending-errors)
+
 (defvar merlin-pending-errors nil
   "Pending errors.")
 (make-variable-buffer-local 'merlin-pending-errors)
@@ -916,6 +920,7 @@ If there is no error, do nothing."
   "Clear error list."
   (interactive)
   (setq merlin-pending-errors nil)
+  (setq merlin-erroneous-buffer nil)
   (merlin-error-delete-overlays))
 
 (defun merlin--overlay-p (overlay)
@@ -974,17 +979,22 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
   (merlin-sync-to-point (point-max) t)
   (let* ((errors (merlin-send-command 'errors))
-         (errors (delete-if (lambda (e) (not (assoc 'start e))) errors))
+         (no-loc (remove-if (lambda (e) (assoc 'start e)) errors))
+         (errors (remove-if (lambda (e) (not (assoc 'start e))) errors))
          (errors (if merlin-report-warnings errors
-                   (delete-if (lambda (e) (merlin-error-warning-p (cdr (assoc 'message e))))
+                   (remove-if (lambda (e) (merlin-error-warning-p (cdr (assoc 'message e))))
                               errors))))
-    (if (not errors) (when view-errors-p (message "ok"))
+    (if (and (not errors) (not no-loc)) (when view-errors-p (message "ok"))
       (progn
-        (merlin-transform-display-errors errors)
-        (when view-errors-p
-          (message "(%d pending errors, use %s to jump)"
-                   (length errors)
-                   (substitute-command-keys "\\[merlin-error-next]")))))))
+        (setq merlin-erroneous-buffer t)
+        (when no-loc
+          (mapcar (lambda (e) (message (cdr (assoc 'message e)))) no-loc))
+        (when errors
+          (merlin-transform-display-errors errors)
+          (when view-errors-p
+            (message "(%d pending errors, use %s to jump)"
+                     (length errors)
+                     (substitute-command-keys "\\[merlin-error-next]"))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPLETION-AT-POINT SUPPORT ;;
@@ -1797,9 +1807,11 @@ Returns the position."
       (merlin--acquire-buffer)
       (let* ((messages nil)
              (project (merlin--project-get-cached)))
-        (when merlin-report-dot-merlin-in-lighter
+        (when merlin-report-errors-in-lighter
           (cond ((cdr project) (add-to-list 'messages "errors in .merlin"))
                 ((not (car project)) (add-to-list 'messages "no .merlin"))))
+        (when merlin-erroneous-buffer
+          (add-to-list 'messages "errors in buffer"))
         (when merlin-show-instance-in-lighter
           (add-to-list 'messages merlin-instance))
         (if messages (concat " merlin (" (mapconcat 'identity messages ",") ")")
