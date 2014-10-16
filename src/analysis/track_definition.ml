@@ -225,19 +225,45 @@ type result = [
    their children so we start from the bottom of the file.
    We also remove everything appearing after [pos]: we don't want to consider
    things declared after the use point of what we are looking for. *)
-let get_top_items ?pos browsable =
-  let don't_discard x =
+let rec get_top_items ?pos browsable =
+  let starts_before x =
     match pos with
     | None -> true
     | Some pos -> Lexing.compare_pos x.BrowseT.t_loc.Location.loc_start pos < 0
   in
+  let ends_before x =
+    match pos with
+    | None -> true
+    | Some pos -> Lexing.compare_pos x.BrowseT.t_loc.Location.loc_end pos < 0
+  in
   List.concat_map (fun bt ->
+    if not (starts_before bt) then [] else
     let open BrowseT in
     match bt.t_node with
     | Signature _
-    | Structure _ -> List.rev_filter (Lazy.force bt.t_children) ~f:don't_discard
+    | Structure _ ->
+      let children = List.rev (Lazy.force bt.t_children) in
+      if ends_before bt then children else get_top_items ?pos children
     | Signature_item _
-    | Structure_item _ when don't_discard bt -> [ bt ]
+    | Structure_item _  ->
+      if ends_before bt then [ bt ] else
+      let children = List.rev (Lazy.force bt.t_children) in
+      get_top_items ?pos children
+    | Module_binding _
+    | Module_type_declaration _ ->
+      (* N.B. we don't check [ends_before] here, because the fack that these are
+       * not [Structure]/[Structure_item] (resp. sign) nodes means that they end
+       * after [pos] and we should only consider their children. *)
+      List.concat_map (Lazy.force bt.t_children) ~f:(fun bt ->
+        match bt.t_node with
+        | Module_expr _
+        | Module_type _ ->
+          (* FIXME: a bit too rough, [With_constraint] and
+             [Module_type_constraint] nodes are ignored... *)
+          let children = List.rev (Lazy.force bt.t_children) in
+          get_top_items ?pos children
+        | _ -> []
+      )
     | _ -> []
   ) browsable
 
