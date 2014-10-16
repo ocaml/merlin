@@ -945,9 +945,11 @@ The timer fires every 10 seconds of idle time."
 (defun merlin-error-prev ()
   "Jump back to previous error."
   (interactive)
-  (let (err (merlin--error-prev-cycle))
+  (let ((err (merlin--error-prev-cycle)))
+    (prin1 err)
     (unless err
       (merlin--acquire-buffer)
+      (prin1 "ERROR CHECK")
       (merlin--error-check nil)
       (setq err (merlin--error-prev-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
@@ -959,9 +961,10 @@ The timer fires every 10 seconds of idle time."
 (defun merlin-error-next ()
   "Jump to next error."
   (interactive)
-  (let (err (merlin--error-next-cycle))
+  (let ((err (merlin--error-next-cycle)))
     (unless err
       (merlin--acquire-buffer)
+      (prin1 "ERROR CHECK")
       (merlin--error-check nil)
       (setq err (merlin--error-next-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
