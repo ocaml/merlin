@@ -64,6 +64,8 @@ module Preferences : sig
   val set : [ `ML | `MLI ] -> unit
 
   val cmt : string -> filetype
+
+  val final : 'a -> [> `ML of 'a | `MLI of 'a ]
 end = struct
   let prioritize_impl = ref true
 
@@ -74,6 +76,8 @@ end = struct
       | _ -> false
 
   let cmt file = if !prioritize_impl then CMT file else CMTI file
+
+  let final file = if !prioritize_impl then `ML file else `MLI file
 end
 
 module File_switching : sig
@@ -325,7 +329,7 @@ let rec check_item ~source modules =
   function
   | [] ->
     info_log "%s not in current file..." (String.concat ~sep:"." modules) ;
-    from_path ~source modules
+    from_path modules
   | item :: rest ->
     match modules with
     | [] -> assert false
@@ -382,7 +386,7 @@ and browse_cmts ~root modules =
       browse_cmts ~root:cmt_file modules
     end
 
-and from_path ~source path =
+and from_path path =
   File_switching.check_can_move () ;
   match path with
   | [] -> assert false
@@ -390,7 +394,7 @@ and from_path ~source path =
     let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
     let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
     File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
-    if source then `ML loc else `MLI loc
+    Preferences.final loc
   | fname :: modules ->
     try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
