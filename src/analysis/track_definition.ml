@@ -441,8 +441,12 @@ let finalize source loc =
   let with_fallback = loc.Location.loc_ghost in
   let mod_name = file_path_to_mod_name fname in
   let file = if source then ML mod_name else MLI mod_name in
-  let full_path = find_file ~with_fallback file in
-  `Found (Some full_path, loc.Location.loc_start)
+  let full_path =
+    match File_switching.where_am_i () with
+    | None -> (* We have not moved, we don't want to return a filename *) None
+    | _ -> Some (find_file ~with_fallback file)
+  in
+  `Found (full_path, loc.Location.loc_start)
 
 let recover () =
   match Fallback.get () with
