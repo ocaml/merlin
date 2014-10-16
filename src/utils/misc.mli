@@ -55,7 +55,7 @@ end
 
 val find_in_path: Path_list.t -> string -> string
         (* Search a file in a list of directories. *)
-val find_in_path_uncap: Path_list.t -> string -> string
+val find_in_path_uncap: ?fallback:string -> Path_list.t -> string -> string
         (* Same, but search also for uncapitalized name, i.e.
            if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
            to match. *)

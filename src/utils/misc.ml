@@ -173,17 +173,22 @@ let find_in_path path name =
     end
   end
 
-let find_in_path_uncap path name =
+let find_in_path_uncap ?(fallback="") path name =
+  let has_fallback = fallback <> "" in
   canonicalize_filename
   begin
     let uname = String.uncapitalize name in
+    let ufbck = String.uncapitalize fallback in
     let rec try_dir = function
       | List.Lazy.Nil -> raise Not_found
       | List.Lazy.Cons (dir, rem) ->
-          let fullname = Filename.concat dir name
-          and ufullname = Filename.concat dir uname in
+          let fullname = Filename.concat dir name in
+          let ufullname = Filename.concat dir uname in
+          let ufallback = Filename.concat dir ufbck in
           if Sys.file_exists ufullname then ufullname
           else if Sys.file_exists fullname then fullname
+          else if has_fallback && Sys.file_exists ufallback then ufallback
+          else if has_fallback && Sys.file_exists fallback then fallback
           else try_dir (Lazy.force rem)
     in try_dir (Path_list.to_list path)
   end

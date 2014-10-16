@@ -143,13 +143,21 @@ module Utils = struct
     | ML _  -> ".ml"  | MLI _  -> ".mli"
     | CMT _ -> ".cmt" | CMTI _ -> ".cmti"
 
-  let find_file file =
+  let find_file ?(with_fallback=false) file =
     let fname =
       (* FIXME: the [Misc.chop_extension_if_any] should have no effect here,
          make sure of that and then remove it. *)
       Misc.chop_extension_if_any (filename_of_filetype file)
       ^ (ext_of_filetype file)
     in
+    let fallback =
+      if not with_fallback then "" else
+      match file with
+      | ML f   -> Misc.chop_extension_if_any f ^ ".mli"
+      | MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
+      | CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
+      | CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
+      in
     (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
        will most likely not be the one you want to edit.
        However, just using [find_in_path_uncap] won't work either when you have
@@ -163,8 +171,8 @@ module Utils = struct
        when looking for files. *)
     try
       if !cwd = "" then raise Not_found ;
-      Misc.(find_in_path_uncap (Path_list.of_string_list_ref (ref [ !cwd ])))
-        fname
+      let path = Misc.Path_list.of_string_list_ref (ref [ !cwd ]) in
+      Misc.find_in_path_uncap ~fallback path fname
     with Not_found ->
     try
       let path =
@@ -172,25 +180,9 @@ module Utils = struct
         | ML  _ | MLI _  -> !sources_path
         | CMT _ | CMTI _ -> !cmt_path
       in
-      Misc.find_in_path_uncap path fname
+      Misc.find_in_path_uncap ~fallback path fname
     with Not_found ->
       raise (File_not_found file)
-
-  let find_file ?(with_fallback=false) file =
-    try find_file file
-    with File_not_found _ as exn ->
-      if not with_fallback then raise exn else
-      let fallback =
-        match file with
-        | ML f -> MLI f
-        | MLI f -> ML f
-        | CMT f -> CMTI f
-        | CMTI f -> CMT f
-      in
-      info_log "no %s, looking for %s of %s" (ext_of_filetype file)
-        (ext_of_filetype fallback) (filename_of_filetype file);
-      try find_file fallback
-      with File_not_found _ -> raise exn
 
   let keep_suffix =
     let open Longident in
