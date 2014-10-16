@@ -236,23 +236,37 @@ def command_occurrences(line, col):
 
 ######## BUFFER SYNCHRONIZATION
 
-def sync_buffer_to_(to_line, to_col, skip_marker=False):
+def acquire_buffer():
   process = merlin_process()
   saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
+
+  if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
+    return False
+  else:
+    command_reset(
+        kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
+        name=vim.eval("expand('%:p')")
+        )
+    process.saved_sync = curr_sync
+    return True
+
+def sync_buffer_to_(to_line, to_col, skip_marker=False):
+  process = merlin_process()
+  saved_sync = process.saved_sync
+
   cb = vim.current.buffer
   max_line = len(cb)
   end_line = min(to_line, max_line)
 
-  if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
-    line, col = min(saved_sync.pos(),(to_line,to_col))
+  if not acquire_buffer():
+    if saved_sync:
+      line, col = min(saved_sync.pos(), (to_line, to_col))
+    else:
+      line, col = to_line, to_col
     col = 0
     command_seek("exact", line, col)
-  else:
-    command_reset(
-            kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
-            name=vim.eval("expand('%:p')")
-            )
+
   line, col, _ = parse_position(command("tell", "start"))
 
   # Send prefix content
@@ -260,7 +274,6 @@ def sync_buffer_to_(to_line, to_col, skip_marker=False):
     rest    = cb[line-1][col:]
     content = cb[line:end_line]
     content.insert(0, rest)
-    process.saved_sync = curr_sync
     command_tell(content)
 
   # put marker
@@ -509,6 +522,7 @@ def vim_prev_enclosing(vimvar):
 
 # Finding files
 def vim_which(name,ext):
+  acquire_buffer()
   if isinstance(ext, list):
     name = map(lambda ext: name + "." + ext, ext)
   elif ext:
@@ -516,6 +530,7 @@ def vim_which(name,ext):
   return command('which','path',name)
 
 def vim_which_ext(ext,vimvar):
+  acquire_buffer()
   files = command('which', 'with_ext', ext)
   vim.command("let %s = []" % vimvar)
   for f in sorted(set(files)):
@@ -523,11 +538,13 @@ def vim_which_ext(ext,vimvar):
 
 # Extension management
 def vim_ext(enable, exts):
+  acquire_buffer()
   state = enable and 'enable' or 'disable'
-  result= catch_and_print(lambda: command('extension', state, exts))
+  result = catch_and_print(lambda: command('extension', state, exts))
   return display_load_failures(result)
 
 def vim_ext_list(vimvar,enabled=None):
+  acquire_buffer()
   if enabled == None:
     exts = command('extension','list')
   elif enabled:
@@ -540,10 +557,12 @@ def vim_ext_list(vimvar,enabled=None):
 
 # Custom flag selection
 def vim_clear_flags():
+  acquire_buffer()
   result = catch_and_print(lambda: command('flags', 'clear'))
   return display_load_failures(result)
 
 def vim_add_flags(*flags):
+  acquire_buffer()
   result = catch_and_print(lambda: command('flags', 'add', flags))
   return display_load_failures(result)
 
@@ -593,7 +612,7 @@ def vim_selectphrase(l1,c1,l2,c2):
 # Stuff
 
 def setup_merlin():
-  sync_buffer_to(1, 0)
+  acquire_buffer()
   failures = command("project","get")
   if failures != None:
     fnames = display_load_failures(failures)
