@@ -236,7 +236,10 @@ def command_occurrences(line, col):
 
 ######## BUFFER SYNCHRONIZATION
 
-def acquire_buffer():
+def acquire_buffer(force=False):
+  if not force and vim.eval('exists("b:dotmerlin")') == '0':
+    return False
+
   process = merlin_process()
   saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
@@ -259,7 +262,7 @@ def sync_buffer_to_(to_line, to_col, skip_marker=False):
   max_line = len(cb)
   end_line = min(to_line, max_line)
 
-  if not acquire_buffer():
+  if not acquire_buffer(force=True):
     if saved_sync:
       line, col = min(saved_sync.pos(), (to_line, to_col))
     else:
@@ -614,6 +617,7 @@ def vim_selectphrase(l1,c1,l2,c2):
 def setup_merlin():
   acquire_buffer()
   failures = command("project","get")
+  vim.command('let b:dotmerlin=[]')
   if failures != None:
     fnames = display_load_failures(failures)
     if isinstance(fnames, list):
