@@ -216,6 +216,7 @@ let str_ident_locs item =
       | _ -> []
     in
     List.concat_map binding_lst ~f:(fun (pat, _) -> inspect_pattern pat)
+  | Tstr_modtype (id, name, _)
   | Tstr_module (id, name, _) -> [ Ident.name id , name.Asttypes.loc ]
   | Tstr_recmodule mods ->
     List.map mods ~f:(fun (id,name,_,_) -> Ident.name id, name.Asttypes.loc)

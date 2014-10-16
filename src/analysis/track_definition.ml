@@ -494,6 +494,10 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path
           path, Location.symbol_gloc ()
         with Not_found ->
         try
+          let path, _ = Env.lookup_modtype ident env in
+          path, Location.symbol_gloc ()
+        with Not_found ->
+        try
           (* However, [1] is not the only time where we can have a record field,
               we could also have found the ident in a pattern like
                   | { x ; y } -> e
