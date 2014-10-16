@@ -1006,6 +1006,11 @@ The timer fires every 10 seconds of idle time."
   (let* ((err-point
           (lambda (err)
             (let* ((bounds (merlin-make-bounds err))
+                   (bounds (if (= (car bounds) (cdr bounds))
+                               (if (> (car bounds) (point-min))
+                                 (cons (1- (car bounds)) (cdr bounds))
+                                 (cons (car bounds) (1+ (cdr bounds))))
+                             bounds))
                    (bounds (cons (copy-marker (car bounds))
                                  (copy-marker (cdr bounds)))))
               (acons 'bounds bounds err))))
