@@ -382,15 +382,17 @@ and browse_cmts ~root modules =
       browse_cmts ~root:cmt_file modules
     end
 
-and from_path ~source = function
-  | [] -> invalid_arg "empty path"
+and from_path ~source path =
+  File_switching.check_can_move () ;
+  match path with
+  | [] -> assert false
   | [ fname ] ->
     let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
     let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
+    File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
     if source then `ML loc else `MLI loc
   | fname :: modules ->
     try
-      File_switching.check_can_move () ;
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~root:cmt_file modules
     with File_not_found (CMT fname | CMTI fname) as exn ->
