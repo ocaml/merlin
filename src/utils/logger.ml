@@ -108,17 +108,17 @@ let is_monitored x =
   | Some _ -> true
   | None -> false
 
-let start_time = Unix.time ()
+let start_time = Sys.time ()
 
 let format level section ?title content =
-  let at = Unix.time () -. start_time in
+  let at = Sys.time () -. start_time in
   let level = match level with
     | `error -> "error"
     | `info  -> "info"
     | `debug -> "debug"
   in
   `Assoc [
-    "time", `Float at;
+    "time", `Int (int_of_float (at *. 1000.));
     "level", `String level;
     "section", `String (Section.to_string section);
     "title", (match title with None -> `Null | Some s -> `String s);

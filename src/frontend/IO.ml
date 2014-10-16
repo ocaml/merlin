@@ -42,9 +42,8 @@ let log_time fields =
   let old_time = !last_time in
   let new_time = Sys.time () in
   last_time := new_time;
-  ("time", `Float new_time) ::
-    ("delta", `Float (new_time -. old_time)) ::
-    fields
+  ("delta", `Int (int_of_float ((new_time -. old_time) *. 1000.))) ::
+  fields
 
 let json_log (input,output) =
   let wrap json = `Assoc (log_time ["body", json]) in
