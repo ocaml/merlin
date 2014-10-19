@@ -233,8 +233,8 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 ;;
 
-let print_loc ppf loc =
-  let (file, line, startchar) = get_pos_info loc.loc_start in
+let print_loc ppf loc = ()
+  (*let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
   if file = "//toplevel//" then begin
     if highlight_locations ppf loc none then () else
@@ -244,7 +244,7 @@ let print_loc ppf loc =
     fprintf ppf "%s%i" msg_line line;
     if startchar >= 0 then
       fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar
-  end
+  end*)
 ;;
 
 let print ppf loc =
@@ -272,7 +272,7 @@ let print_warning loc ppf w =
   end
 ;;
 
-let prerr_warning_ref = ref (fun loc w -> print_warning loc err_formatter w);; 
+let prerr_warning_ref = ref (fun loc w -> print_warning loc err_formatter w);;
 let prerr_warning loc w = !prerr_warning_ref loc w;;
 
 let echo_eof () =
