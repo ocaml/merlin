@@ -1883,6 +1883,26 @@ Returns the position."
         (if messages (concat " merlin (" (mapconcat 'identity messages ",") ")")
           " merlin")))))
 
+;; keyword list from auto-complete
+(defconst merlin-ac-source-keywords-list '("and" "as" "assert" "begin" "class"
+                                           "constraint" "do" "done" "downto"
+                                           "else" "end" "exception" "external"
+                                           "false" "for" "fun" "function"
+                                           "functor" "if" "in" "include"
+                                           "inherit" "initializer" "lazy" "let"
+                                           "match" "method" "module" "mutable"
+                                           "new" "object" "of" "open" "or"
+                                           "private" "rec" "sig" "struct"
+                                           "then" "to" "true" "try" "type"
+                                           "val" "virtual" "when" "while"
+                                           "with" "mod" "land" "lor" "lxor"
+                                           "lsl" "lsr" "asr"))
+
+(defvar merlin-ac-source-keywords
+  '((candidates . merlin-ac-source-keywords-list)
+    (symbol . "k")
+    (prefix . merlin-ac-prefix)))
+
 ;;;###autoload
 
 (define-minor-mode merlin-mode
@@ -1924,7 +1944,8 @@ Short cuts:
   (set (make-local-variable 'ac-delay) 0.0)
   (set (make-local-variable 'ac-expand-on-auto-complete) nil)
   (set (make-local-variable 'ac-ignore-case) nil)
-  (set (make-local-variable 'ac-trigger-commands) nil))
+  (set (make-local-variable 'ac-trigger-commands) nil)
+  (add-to-list 'ac-sources 'merlin-ac-source-keywords))
 
 (provide 'merlin)
 ;;; merlin.el ends here
