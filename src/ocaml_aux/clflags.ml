@@ -211,6 +211,8 @@ let error_size          () = 500
 let dont_write_files    () = true
 let keep_locs           () = true
 let transparent_modules () = true
+let for_package         () = None
+let debug               () = false
 
 let arg_spec t =
   [

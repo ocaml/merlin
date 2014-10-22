@@ -583,7 +583,7 @@ dummy:
 
 functor_arg:
 | LPAREN RPAREN
-    { mkrhs $startpos($2) $endpos($2) "()", None }
+    { mkrhs $startpos($2) $endpos($2) "*", None }
 | LPAREN functor_arg_name COLON module_type RPAREN
     { mkrhs $startpos($2) $endpos($2) $2, Some $4 }
 
@@ -842,7 +842,7 @@ module_declaration:
 | LPAREN UIDENT COLON module_type RPAREN module_declaration
     { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos($2) $endpos($2) $2, Some $4, $6)) }
 | LPAREN RPAREN module_declaration
-    { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos($1) $endpos($1) "()", None, $3)) }
+    { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos($1) $endpos($1) "*", None, $3)) }
 
 module_rec_declarations:
 | module_rec_declaration

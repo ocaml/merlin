@@ -1,3 +1,5 @@
+OCAMLFLAGS += -w -3
+
 ifdef WITH_BIN_ANNOT
 	OCAMLFLAGS += -bin-annot
 endif
