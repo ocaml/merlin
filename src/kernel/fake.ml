@@ -662,7 +662,7 @@ module Compare = struct
     let cmp = {
       ident = "compare_" ^ name;
       typesig =
-        List.fold_left params ~init:(mk_simpl self) ~f:(fun t param ->
+        List.fold_right params ~init:(mk_simpl self) ~f:(fun param t ->
           Arrow ("", mk_simpl param, t)
         );
       body = AnyVal
