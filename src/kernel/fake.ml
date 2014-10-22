@@ -118,7 +118,7 @@ and translate_expr ?ghost_loc : Ast.expr -> _ =
     )
   | App (f, x) ->
     app (translate_expr ?ghost_loc f) (translate_expr ?ghost_loc x)
-  | Ident i -> 
+  | Ident i ->
     Ast_helper.Exp.ident ~loc (mkoptloc ghost_loc (Longident.parse i))
   | AnyVal -> any_val'
 
@@ -426,7 +426,7 @@ module Variants = struct
     in
 
     let body =
-      mk_labeled_fun 
+      mk_labeled_fun
         (Merlin_types_custom.Parsetree.map_constructors cstrs
           ~f:(fun name _ _ _ -> name, true))
     in
@@ -485,7 +485,7 @@ end
 module Fields = struct
   let gen_field self lbl : top_item list =
     let ({ Location.txt = name }, mut, ty, _) =
-      Merlin_types_custom.Parsetree.inspect_label lbl 
+      Merlin_types_custom.Parsetree.inspect_label lbl
     in
     (* Remove higher-rank quantifiers *)
     let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
@@ -498,7 +498,7 @@ module Fields = struct
       let typesig = Arrow ("", self, Arrow ("", ty, unit_ty)) in
       (Binding { ident = "set_" ^ name; typesig ; body = AnyVal }) :: fields
 
-  let make_fields_module ~self fields : top_item =
+  let make_fields_module ~name ~self fields : top_item =
     let names =
       let typesig = Named ([Named ([], "string")], "list") in
       Binding { ident = "names" ; typesig ; body = AnyVal }
@@ -611,7 +611,7 @@ module Fields = struct
     in
 
     Module (
-      "Fields",
+      (if name = "t" then "Fields" else "Fields_of_" ^ name),
       names :: List.map fields_dot_t ~f:(fun x -> Binding x) @ [
         make_creator ; create ; iter ; map ; fold ; map_poly ; forall ; exists ;
         to_list ; Module ("Direct", [ iter ; fold ])
@@ -626,7 +626,8 @@ module Fields = struct
     let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_record lst ->
-      List.concat_map ~f:(gen_field self) lst @ [make_fields_module ~self lst]
+      List.concat_map ~f:(gen_field self) lst @
+      [make_fields_module ~name ~self lst]
     | _ -> []
 
 end
