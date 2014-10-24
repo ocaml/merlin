@@ -132,6 +132,10 @@ If a string list, check only if the extension of the buffer-file-name is in the 
   "If non-nil, display errors in fringe"
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-error-on-single-line nil
+  "Only highlight first line of multi-line error messages"
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-display-lock-zone nil
   "How to display the locked zone.
 It is a list of methods among:
@@ -1008,16 +1012,21 @@ The timer fires every 10 seconds of idle time."
   emacs-friendly form. Do display of error list."
   (let* ((err-point
           (lambda (err)
-            (let* ((bounds (merlin-make-bounds err))
-                   (bounds (if (= (car bounds) (cdr bounds))
-                               (if (> (car bounds) (point-min))
-                                 (cons (1- (car bounds)) (cdr bounds))
-                                 (cons (car bounds) (1+ (cdr bounds))))
-                             bounds))
-                   (bounds (cons (copy-marker (car bounds))
-                                 (copy-marker (cdr bounds)))))
+            (let ((bounds (merlin-make-bounds err)))
+              (when merlin-error-on-single-line
+                (setq bounds (cons (car bounds)
+                                   (min (cdr bounds)
+                                        (save-excursion
+                                          (goto-char (car bounds))
+                                          (line-end-position))))))
+              (when (= (car bounds) (cdr bounds))
+                (setq bounds (if (> (car bounds) (point-min))
+                               (cons (1- (car bounds)) (cdr bounds))
+                               (cons (car bounds) (1+ (cdr bounds))))))
+              (setq bounds (cons (copy-marker (car bounds))
+                                 (copy-marker (cdr bounds))))
               (acons 'bounds bounds err))))
-         (errors   (mapcar err-point errors)))
+         (errors (mapcar err-point errors)))
     (dolist (err errors)
       (let* ((bounds (cdr (assoc 'bounds err)))
              (overlay (make-overlay (car bounds) (cdr bounds))))
