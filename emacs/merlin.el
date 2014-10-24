@@ -1188,7 +1188,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
            (mapcar #'(lambda (x) (propertize (car x) 'merlin-meta (cadr x)))
                    (merlin-completion-data arg)))
           (post-completion
-           (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg)))
+            (let ((minibuffer-message-timeout nil))
+              (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg))))
           (meta
            (get-text-property 0 'merlin-meta arg))
           (annotation
