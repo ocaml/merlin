@@ -106,20 +106,22 @@ END
 
 check_package EXIT findlib "Install findlib"
 check_package EXIT yojson "Install yojson"
-MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number|cut -d' ' -f2)
+MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number | cut -d' ' -f2)
+FULL_VERSION=$(ocamlfind c -version)
 
 case "$MAGIC_VERSION" in
   "Caml1999I015")
     OCAML_VERSION="ocaml_401"
     OCAML_VERSION_MESSAGE="OCaml 4.01.0"
     ;;
-  "Caml1999I016")
-    OCAML_VERSION="ocaml_402"
-    OCAML_VERSION_MESSAGE="OCaml 4.02.0"
-    ;;
   "Caml1999I017")
     OCAML_VERSION="ocaml_402"
-    OCAML_VERSION_MESSAGE="OCaml 4.02.0"
+    if [ "x$FULL_VERSION" = "x4.02.0" ]; then
+      OCAML_VERSION_MESSAGE="OCaml 4.02.0"
+      sed -i -e '/\(S\|Ignored_s\)can_next_char/d' src/ocaml_402/typing/typecore.ml
+    else
+      OCAML_VERSION_MESSAGE="OCaml 4.02.1"
+    fi
     ;;
 esac
 
