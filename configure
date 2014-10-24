@@ -104,7 +104,7 @@ Merlin configuration
 --------------------
 END
 
-check_package EXIT findlib "Hu! You have ocamlfind but not findlib? Something is wrong with your setup."
+check_package EXIT findlib "Install findlib"
 check_package EXIT yojson "Install yojson"
 MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number|cut -d' ' -f2)
 
