@@ -210,7 +210,7 @@ def command_locate(path, line, col):
       split_method = vim.eval('g:merlin_split_method')
       if "file" in pos_or_err:
           if split_method == "never":
-              vim.commmand(":e %s" % pos_or_err['file'])
+              vim.command(":e %s" % pos_or_err['file'])
           elif "vertical" in split_method:
               vim.command(":vsplit %s" % pos_or_err['file'])
           else:
