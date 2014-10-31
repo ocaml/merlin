@@ -109,6 +109,11 @@ check_package EXIT yojson "Install yojson"
 MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number | cut -d' ' -f2)
 FULL_VERSION=$(ocamlfind c -version)
 
+if [ "Caml1999I017" != "`echo -e 'Caml1999I017\n$MAGIC_VERSION' | sort -V | head -n1`" ]; then
+    OCAML_VERSION="ocaml_402"
+    OCAML_VERSION_MESSAGE="Newer, defaulting to 4.02.0"
+fi
+
 case "$MAGIC_VERSION" in
   "Caml1999I015")
     OCAML_VERSION="ocaml_401"
