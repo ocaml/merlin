@@ -1,3 +1,35 @@
+merlin 1.7.1
+============
+Fri Aug 22 10:01:58 CEST 2014
+
+Minor update to installation procedure
+
+merlin 1.7
+==========
+Mon Aug 18 17:08:00 BST 2014
+
+This release also marks the apparition of a proper opam install script.
+
+  backend:
+    - fixes on locate
+    - print manifests even when -short-paths is set
+    - add an "occurences" command to list every occurence of an identifier ( #156 )
+    - new "version" command ( #180 )
+    - add CPU time to log files ( #192 )
+    - better error reporting from locate ( #190 )
+
+  documentation:
+    - update vim doc file ( #204 )
+    - typo correction in the README by Philippe Wang ( #195 )
+
+  emacs:
+    - fix most byte compilation warnings, by Geoff Gole ( #209 )
+    - numerous fixes
+
+  vim:
+    - add error list independant from syntastic
+    - fix completion for vim<=703 (#223)
+
 merlin 1.6
 ==========
 Tue Mar 11 14:33:55 CET 2014
