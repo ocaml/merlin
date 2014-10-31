@@ -22,12 +22,14 @@ module Parsetree = struct
     | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
     | _ -> `Other
 
-  let map_constructors ~f lst =
-    List.map lst ~f:(fun { pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } ->
-      f pcd_name.Location.txt pcd_args pcd_res pcd_loc
-    )
+  let args_of_constructor c = match c.pcd_args with
+  | Pcstr_tuple args -> args
+  | Pcstr_record _ -> failwith "Record constructors not implemented"
 
-  let args_of_constructor c = c.pcd_args
+  let map_constructors ~f lst =
+    List.map lst ~f:(fun ({ pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } as c) ->
+      f pcd_name.Location.txt (args_of_constructor c) pcd_res pcd_loc
+    )
 
   let inspect_label { pld_name ; pld_mutable ; pld_type ; pld_loc ; _ } =
     pld_name, pld_mutable, pld_type, pld_loc

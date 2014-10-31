@@ -202,17 +202,16 @@ let rec of_node t_node =
       List.fold_right ~f:of_constructors tyext_constructors ~init:[]
     | Extension_constructor { ext_kind = Text_decl (cts,cto) } ->
       of_option of_core_type cto @@
-      of_list of_core_type cts []
+      of_constructor_arguments cts
     | Extension_constructor { ext_kind = Text_rebind _ } ->
       []
     | Label_declaration { ld_type } ->
       [of_core_type ld_type]
     | Constructor_declaration { cd_args; cd_res } ->
-      let args = match cd_res with
-        | None -> cd_args
-        | Some res -> res :: cd_args
-      in
-      List.map of_core_type args
+      begin match cd_res with
+        | None -> of_constructor_arguments cd_args
+        | Some res -> (of_core_type res) :: (of_constructor_arguments cd_args)
+      end
     | Class_type { cltyp_desc } ->
       of_class_type_desc cltyp_desc []
     | Class_signature { csig_self; csig_fields } ->
@@ -488,6 +487,10 @@ and of_class_type_field_desc desc acc = match desc with
     of_core_type ct1 :: of_core_type ct2 :: acc
   | Tctf_attribute _ ->
     acc
+
+and of_constructor_arguments desc = match desc with
+  | Cstr_tuple tes -> List.map of_core_type tes
+  | Cstr_record lds -> List.map (fun ld -> of_node (Label_declaration ld)) lds
 
 let rec annot loc env t =
   let t_loc = if t.t_loc == default_loc then loc else t.t_loc in

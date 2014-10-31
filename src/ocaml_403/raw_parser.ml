@@ -4517,7 +4517,7 @@ module MenhirInterpreterTable = struct
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.constructor_declaration) =     (
       let args,res = _3 in
-      Type.constructor (mkrhs _startpos__1_ _endpos__1_ _1) ~args ?res ~loc:(rloc _startpos _endpos) ~attrs:_2
+      Type.constructor (mkrhs _startpos__1_ _endpos__1_ _1) ~args:(Pcstr_tuple args) ?res ~loc:(rloc _startpos _endpos) ~attrs:_2
     ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -8759,7 +8759,7 @@ module MenhirInterpreterTable = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
         let _v : (Parsetree.extension_constructor) =     ( let args, res = _3 in
-      Te.decl (mkrhs _startpos__1_ _endpos__1_ _1) ~args ?res
+      Te.decl (mkrhs _startpos__1_ _endpos__1_ _1) ~args:(Pcstr_tuple args) ?res
               ~loc:(rloc _startpos _endpos) ~attrs:_2
     ) in
         {
