@@ -1,3 +1,35 @@
+merlin 1.6
+==========
+Tue Mar 11 14:33:55 CET 2014
+
+  backend:
+    - small memory leak fix
+    - major improvements and bugfixes for locate (i.e. "jump to definition")
+
+  emacs:
+    - fixed bug preventing merlin restart ( #167 )
+    - removed keybindings reserved to users ( #170 )
+      the full list is:
+        + `C-c l` previously bound to `merlin-use`
+        + `C-c r` previously bound to `merlin-restart-process`
+        + `C-c t` previously bound to `merlin-type-expr`
+    - removed keybindings on `C-<up>` and `C-<down>` as these already have a
+      meaning in emacs ( #129 )
+      They were bound to `merlin-type-enclosing-go-up` and
+      `merlin-type-enclosing-go-down` respectively.
+    - the emacs mode is now compiled (contribution from Jacques-Pascal Deplaix
+      #158 , with a follow up from Rudy Grinberg #165 )
+    - improved efficiency of completion at point
+
+  extensions:
+    - added support for variantslib ( #132 )
+    - updated fieldslib support ( #169 , #185 )
+    - fix pa_lwt translation ( #182 )
+    - added support for pa_enumerate ( #187 )
+
+  vim:
+    - the split method for locate can now be configured
+
 merlin 1.5
 ==========
 Sat Dec 14 19:45:06 CET 2013
