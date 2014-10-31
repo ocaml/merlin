@@ -208,7 +208,7 @@ def command_locate(path, line, col):
       l = pos_or_err['pos']['line']
       c = pos_or_err['pos']['col']
       split_method = vim.eval('g:merlin_split_method')
-      " save the current position in the jump list
+      # save the current position in the jump list
       vim.command("normal! m'")
       if "file" in pos_or_err:
           if split_method == "never":
