@@ -1,3 +1,24 @@
+merlin 2.0
+==========
+Fri Oct 31 11:04:21 CET 2014
+
+This is a major release which we worked on for several months, rewriting many
+parts of the codebase. An exhaustive list of changes is therefore impossible to
+give, but here are some key points (from an user perspective):
+
+  - support for OCaml 4.02.{0,1}
+  - more precise recovery in presence of syntax errors
+  - more user-friendly messages for syntax errors
+  - locate now works on MLI files
+  - automatic reloading of .merlin files (when they are update or created), it
+    is no longer necessary to restart merlin
+  - introduced a small refactoring command: rename, who renames all occurences
+    of an identifier. See: http://yawdp.com/~def/rename.webm
+
+
+This release also contains contributions from: Yotam Barnoy, Jacques-Pascal
+Deplaix, Geoff Gole, Rudi Grinberg, Steve Purcell and Jan Rehders.
+
 merlin 1.7.1
 ============
 Fri Aug 22 10:01:58 CEST 2014
