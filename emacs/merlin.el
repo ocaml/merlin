@@ -128,7 +128,7 @@ If nil, never check.
 If a string list, check only if the extension of the buffer-file-name is in the list."
   :group 'merlin :type '(choice (repeat string) boolean))
 
-(defcustom merlin-error-in-fringe t
+(defcustom merlin-error-in-fringe (>= emacs-major-version 24)
   "If non-nil, display errors in fringe"
   :group 'merlin :type 'boolean)
 
