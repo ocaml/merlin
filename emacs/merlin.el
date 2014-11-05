@@ -1700,8 +1700,6 @@ calls (lighter can be updated at a high frequency)"
           (merlin-occurrences-list r)
         (error "%s" r)))))
 
-(define-obsolete-function-alias 'merlin-occurences 'merlin-occurrences)
-
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; SEMANTIC MOVEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
@@ -1745,8 +1743,6 @@ Returns the position."
                                   (mapconcat 'identity dots ", "))
                    "No .merlin loaded"))
     (message (mapconcat 'identity messages "\n"))))
-
-(define-obsolete-function-alias 'merlin-to-end 'merlin-error-check)
 
 (defun merlin-customize ()
   "Open the customize buffer for the group merlin."
