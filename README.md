@@ -167,6 +167,7 @@ Other common extensions which are supported :
 - pa\_ounit.syntax as ```ounit```
 - pa\_js.syntax as ```js```
 - ```nonrec``` for declaring non-recursive types
+- custom\_printf.syntax as ```custom_printf```
 
 The list of extensions available in your version can be directly obtained by running ```echo '["extension","list"]' | ocamlmerlin```.
 
