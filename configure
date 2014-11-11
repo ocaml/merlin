@@ -118,7 +118,10 @@ case "$MAGIC_VERSION" in
     OCAML_VERSION="ocaml_402"
     if [ "x$FULL_VERSION" = "x4.02.0" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.0"
-      sed -i -e '/\(S\|Ignored_s\)can_next_char/d' src/ocaml_402/typing/typecore.ml
+      mv src/ocaml_402/typing/typecore.ml src/ocaml_402/typing/typecore.ml.org
+      sed -e '/\(S\|Ignored_s\)can_next_char/d' \
+        <src/ocaml_402/typing/typecore.ml.org >src/ocaml_402/typing/typecore.ml
+      rm src/ocaml_402/typing/typecore.ml.org
     else
       OCAML_VERSION_MESSAGE="OCaml 4.02.1"
     fi
