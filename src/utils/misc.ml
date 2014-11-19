@@ -352,3 +352,22 @@ let (~:) = Lazy.from_val
 let file_mtime filename =
   try Unix.((stat filename).st_mtime)
   with _ -> nan
+
+let file_contents filename =
+  let ic = open_in filename in
+  try
+    let str = String.create 1024 in
+    let buf = Buffer.create 1024 in
+    let rec loop () =
+      match input ic str 0 1024 with
+      | 0 -> ()
+      | n ->
+        Buffer.add_substring buf str 0 n;
+        loop ()
+    in
+    loop ();
+    close_in_noerr ic;
+    Buffer.contents buf
+  with exn ->
+    close_in_noerr ic;
+    raise exn

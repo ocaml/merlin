@@ -161,3 +161,4 @@ val modules_in_path : ext:string -> string list -> string list
 val (~:) : 'a -> 'a Lazy.t
 
 val file_mtime : string -> float
+val file_contents : string -> string

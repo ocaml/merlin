@@ -98,25 +98,32 @@ let dispatch (state : state) =
     buffer_update state (Lexer.history lexer);
     cursor_state state
 
-  | (Tell (`Source "") : a request) ->
-    cursor_state state
-
-  | (Tell (`Source _ | `Eof as source) : a request) ->
+  | (Tell (`File _ | `Source _ | `Eof as source) : a request) ->
     let source = match source with
-      | `Eof -> ""
-      | `Source source -> source in
-    let lexer = match state.lexer with
-      | Some lexer ->
-        assert (not (Lexer.eof lexer));
-        lexer
-      | None ->
-        let lexer = Buffer.start_lexing state.buffer in
-        state.lexer <- Some lexer; lexer in
-    assert (Lexer.feed lexer source);
-    buffer_update state (Lexer.history lexer);
-    (* Stop lexer on EOF *)
-    if Lexer.eof lexer then state.lexer <- None;
-    cursor_state state
+      | `Eof -> Some ""
+      | `Source "" -> None
+      | `Source source -> Some source
+      | `File path ->
+        match Misc.file_contents path with
+        | "" -> None
+        | source -> Some source
+    in
+    begin match source with
+      | None -> cursor_state state
+      | Some source ->
+        let lexer = match state.lexer with
+          | Some lexer ->
+            assert (not (Lexer.eof lexer));
+            lexer
+          | None ->
+            let lexer = Buffer.start_lexing state.buffer in
+            state.lexer <- Some lexer; lexer in
+        assert (Lexer.feed lexer source);
+        buffer_update state (Lexer.history lexer);
+        (* Stop lexer on EOF *)
+        if Lexer.eof lexer then state.lexer <- None;
+        cursor_state state
+    end
 
   | (Tell `Marker : a request) ->
     let lexer = match state.lexer with
