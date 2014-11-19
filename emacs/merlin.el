@@ -1478,9 +1478,10 @@ is active)."
 (defun merlin-use (pkg)
   "Use PKG in the current session of merlin."
   (interactive
-   (list (completing-read "Package to use: " (merlin-get-packages))))
+   (list (completing-read-multiple "Package to use: " (merlin-get-packages))))
   (merlin--acquire-buffer)
-  (let* ((r (merlin-send-command (list 'find 'use (list pkg))))
+  (unless (listp pkg) (setq pkg (list pkg)))
+  (let* ((r (merlin-send-command (list 'find 'use pkg)))
          (failed (assoc 'failures r)))
     (when failed (message (cdr failed))))
   (merlin-error-reset))
