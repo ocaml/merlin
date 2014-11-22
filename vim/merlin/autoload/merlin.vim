@@ -171,6 +171,9 @@ endfunction
 
 function! merlin#Complete(findstart,base)
   if a:findstart
+    " Synchronize merlin before completion, since vim modify the buffer
+    " (prefix is removed)
+    py merlin.sync_buffer()
     " Locate the start of the item, including ".", "->" and "[...]".
     let line = getline('.')
     let start = col('.') - 1

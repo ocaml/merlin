@@ -327,7 +327,6 @@ def vim_complete_cursor(base, vimvar):
   line, col = vim.current.window.cursor
   wspaces = re.compile("[\n ]+")
   try:
-    sync_buffer()
     props = command_complete_cursor(base,line,col)
     for prop in props:
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
