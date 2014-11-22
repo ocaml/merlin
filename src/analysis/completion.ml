@@ -61,7 +61,7 @@ let node_at typer pos_cursor =
   let structures = Browse.of_typer_contents structures in
   try
     let node, _pos_node =
-      match Browse.nearest_before pos_cursor structures with
+      match Browse.deepest_before pos_cursor structures with
       | Some ({BrowseT. t_loc} as node) -> node, t_loc.Location.loc_end
       | None -> raise Not_found
     in
