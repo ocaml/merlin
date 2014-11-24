@@ -301,20 +301,23 @@ let dispatch (state : state) =
   | (Complete_prefix (prefix, pos) : a request) ->
     with_typer state (
       fun typer ->
-        let node = Completion.node_at typer pos in
-        let compl = Completion.node_complete state.buffer node prefix in
+        let env = (Completion.node_at typer pos).BrowseT.t_env in
+        let kind = Track_definition.leaf_node_at typer pos in
+        let compl = Completion.node_complete state.buffer env kind prefix in
         List.rev compl
     )
 
   | (Locate (patho, ml_or_mli, opt_pos) : a request) ->
-    let env, local_defs =
+    let kind, env, local_defs =
       with_typer state (
         fun typer ->
           match opt_pos with
-          | None     -> Typer.env typer, []
+          | None ->
+            None, Typer.env typer, []
           | Some pos ->
-            let node = Completion.node_at typer pos in
-            node.BrowseT.t_env, Typer.contents typer
+            let env = (Completion.node_at typer pos).BrowseT.t_env in
+            let kind = Track_definition.leaf_node_at typer pos in
+            kind, env, Typer.contents typer
       )
     in
     let path =
@@ -337,7 +340,7 @@ let dispatch (state : state) =
     let project = Buffer.project state.buffer in
     begin match
       Track_definition.from_string ~project ~env ~local_defs ~is_implementation
-        ?pos:opt_pos ml_or_mli path
+        ~kind ?pos:opt_pos ml_or_mli path
     with
     | `Found (file, pos) ->
       Logger.info (Track_definition.section)
