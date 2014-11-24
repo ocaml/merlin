@@ -81,6 +81,28 @@ let nearest_before pos envs =
     aux branch
   )
 
+exception Found
+
+let directly_containing pos envs =
+  let answer = ref None in
+  let rec search node =
+    let children = Lazy.force node.BrowseT.t_children in
+    if children = [] then
+      begin
+        if is_enclosing pos node then
+          (answer := Some node; raise Found)
+      end
+    else List.iter search children in
+  let rec loop = function
+    | [] -> ()
+    | node::rest ->
+      let x = Parsing_aux.compare_pos pos node.BrowseT.t_loc in
+      if x < 0 then loop rest
+      else if x = 0 then search node
+      else () in
+  try loop envs; !answer
+  with Found -> !answer
+
 let enclosing pos envs =
   let not_enclosing l = not (is_enclosing pos l) in
   match local_near pos envs with

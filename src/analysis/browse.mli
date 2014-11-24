@@ -48,6 +48,9 @@ val nearest_before : Lexing.position -> t list -> t option
  * will return the contexts of "x", "g x" then "f (g x)". *)
 val enclosing : Lexing.position -> t list -> t list
 
+(* Return a leaf node containing position, if any can be found. *)
+val directly_containing : Lexing.position -> t list -> t option
+
 val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
 
 val of_typer_contents : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list -> t list

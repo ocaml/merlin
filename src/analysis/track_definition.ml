@@ -33,7 +33,7 @@ let sources_path = Fluid.from (Misc.Path_list.of_list [])
 let cmt_path     = Fluid.from (Misc.Path_list.of_list [])
 
 let section = Logger.section "locate"
-let debug_log x = Printf.ksprintf (Logger.debug section)  x
+let debug_log x = Printf.ksprintf (Logger.debug section) x
 
 module Fallback = struct
   let fallback = ref `Nothing
@@ -224,6 +224,12 @@ module Utils = struct
     with Not_found ->
       raise (File_not_found file)
 
+  let starts_uppercase str =
+    if String.length str = 0 then false
+    else match str.[0] with
+      | 'A'..'Z' -> true
+      | _ -> false
+
   let keep_suffix =
     let open Longident in
     let rec aux = function
@@ -243,13 +249,13 @@ module Utils = struct
         Some (t, false) (* don't know what to do here, probably best if I do nothing. *)
     in
     function
-    | Lident s -> Lident s, false
+    | Lident s -> Lident s, false, starts_uppercase s
     | Ldot (t, s) ->
       begin match aux t with
-      | None -> Lident s, true
-      | Some (t, is_label) -> Ldot (t, s), is_label
+      | None -> Lident s, true, starts_uppercase s
+      | Some (t, is_label) -> Ldot (t, s), is_label, starts_uppercase s
       end
-    | otherwise -> otherwise, false
+    | otherwise -> otherwise, false, false
 end
 
 include Utils
@@ -547,57 +553,70 @@ let recover () =
   | `ML  loc -> finalize true loc
   | `MLI loc -> finalize false loc
 
-let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
+let lookup_funs = [|
+  `Values, (fun ident env ->
+      info_log "lookup in value namespace";
+      let path, val_desc = Env.lookup_value ident env in
+      path, val_desc.Types.val_loc);
+  `Types, (fun ident env ->
+      info_log "lookup in type namespace";
+      let path, typ_decl = Env.lookup_type ident env in
+      path, typ_decl.Types.type_loc);
+  `Constructors, (fun ident env ->
+      info_log "lookup in constructor namespace";
+      let cstr_desc = Merlin_types_custom.lookup_constructor ident env in
+      Merlin_types_custom.path_and_loc_of_cstr cstr_desc env);
+  `Modules, (fun ident env ->
+      info_log "lookup in module namespace";
+      let path, _ = Merlin_types_custom.lookup_module ident env in
+      path, Location.symbol_gloc ());
+  `Module_types, (fun ident env ->
+      info_log "lookup in module type namespace";
+      let path, _ = Env.lookup_modtype ident env in
+      path, Location.symbol_gloc ());
+  `Labels, (fun ident env ->
+      info_log "lookup in label namespace";
+      let label_desc = Merlin_types_custom.lookup_label ident env in
+      path_and_loc_from_label label_desc env);
+|]
+
+(* Look IDENT up in ENV, using IS_UPPER and KIND to decide whether to
+ * skip some namespaces.
+ *)
+let lookup kind is_upper ident env =
+  let rec loop i bound namespcs =
+    if i = bound then raise Not_in_env
+    else
+      let spc, f = lookup_funs.(i) in
+      if not (List.mem spc namespcs) then
+        loop (i + 1) bound namespcs
+      else
+        try f ident env
+        with Not_found -> loop (i + 1) bound namespcs
+  in
+  loop 0 (Array.length lookup_funs)
+    (Completion.relevant_namespaces is_upper kind)
+
+let leaf_node_at typer pos_cursor =
+  match Browse.directly_containing pos_cursor
+          (Browse.of_typer_contents (Typer.contents typer)) with
+  | Some node -> Some node.BrowseT.t_node
+  | None -> None
+
+let from_longident ~env ~local_defs ~is_implementation ~kind ?pos ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
-  let ident, is_label = keep_suffix lid in
+  let ident, is_label, is_upper = keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let path', loc =
-      (* [1] If we know it is a record field, we only look for that. *)
+      (* If we know it is a record field, we only look for that. *)
       if is_label then
         let label_desc = Merlin_types_custom.lookup_label ident env in
         path_and_loc_from_label label_desc env
-      else (
-        try
-          if ctxt = Type then raise Context_mismatch ;
-          let path, val_desc = Env.lookup_value ident env in
-          path, val_desc.Types.val_loc
-        with Not_found | Context_mismatch ->
-        try
-          if ctxt <> Type && ctxt <> Unknown then raise Context_mismatch ;
-          let path, typ_decl = Env.lookup_type ident env in
-          path, typ_decl.Types.type_loc
-        with Not_found | Context_mismatch ->
-        try
-          let cstr_desc = Merlin_types_custom.lookup_constructor ident env in
-          Merlin_types_custom.path_and_loc_of_cstr cstr_desc env
-        with Not_found ->
-        try
-          let path, _ = Merlin_types_custom.lookup_module ident env in
-          path, Location.symbol_gloc ()
-        with Not_found ->
-        try
-          let path, _ = Env.lookup_modtype ident env in
-          path, Location.symbol_gloc ()
-        with Not_found ->
-        try
-          (* However, [1] is not the only time where we can have a record field,
-              we could also have found the ident in a pattern like
-                  | { x ; y } -> e
-              in which case the check before [1] won't know that we have a
-              label, but it's worth checking at this point. *)
-          let label_desc = Merlin_types_custom.lookup_label ident env in
-          path_and_loc_from_label label_desc env
-        with Not_found ->
-          info_log "   ... not in the environment%s"
-            begin match ctxt with
-            | Type -> " (we were looking for a type)"
-            | _ -> ""
-            end ;
-          raise Not_in_env
-      )
+      else
+        lookup kind is_upper ident env
     in
     if not (is_ghost loc) then
       `Found (None, loc.Location.loc_start)
@@ -643,12 +662,12 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
         matches
     )
 
-let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
+let from_string ~project ~env ~local_defs ~is_implementation ~kind ?pos switch path =
   let inspect_pattern p =
     let open Typedtree in
     match p.pat_desc with
-    | Tpat_any -> None
-    | Tpat_var _ when String.uncapitalize path = path ->
+    | Tpat_any -> true
+    | Tpat_var _ -> String.uncapitalize path = path
       (* If the guard is not verified it means the pattern variable we find in
          the typedtree doesn't match the ident we reconstructed from the token
          stream.
@@ -670,51 +689,25 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
 
          (where [ ] represents the cursor.)
          So err... TODO? *)
-      None
-    | _ -> Some Patt
-  in
-  let inspect_context pos =
-    let browse = Browse.of_typer_contents local_defs in
-    match Browse.enclosing pos browse with
-    | [] -> None
-    | node :: _ ->
-      let open BrowseT in
-      match node.t_node with
-      | Pattern p -> inspect_pattern p
-      | Value_description _
-      | Type_declaration _
-      | Extension_constructor _
-      | Module_binding_name _
-      | Module_declaration_name _ ->
-        None
-      | Core_type _ -> Some Type
-      | Expression _ -> Some Expr
-      | _ ->
-        Some Unknown
+    | _ -> false
   in
   let lid = Longident.parse path in
-  let context =
-    match pos with
-    | None -> Some Unknown
-    | Some pos ->
-      match inspect_context pos with
-      | None when longident_is_qualified lid ->
-        (* FIXME: is this really necessary since we have the check described
-           above?
-           The only case where [lid] would be qualified but the previous check
-           would not catch it is record field access, which cant possibly happen
-           in the [Tpat_var] case. *)
-        Some Unknown
-      | otherwise -> otherwise
+  let at_origin =
+    let open BrowseT in
+    match kind with
+    | Some (Pattern p) -> inspect_pattern p
+    | Some (Value_description _)
+    | Some (Type_declaration _)
+    | Some (Extension_constructor _)
+    | Some (Module_binding_name _)
+    | Some (Module_declaration_name _) ->
+      true
+    | _ -> false
   in
-  match context with
-  | None -> `At_origin
-  | Some ctxt ->
-    info_log "looking for the source of '%s' (prioritizing %s files) in %s \
-              context" path (match switch with `ML -> ".ml" | `MLI -> ".mli")
-      (match ctxt with Expr -> "an expression" | Patt -> "a pattern"
-       | Type -> "a type" | Unknown -> "an unknown")
-    ;
+  if at_origin then `At_origin else (
+    info_log "looking for the source of '%s' (prioritizing %s files)" path
+      (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
     Fluid.let' sources_path (Project.source_path project) (fun () ->
     Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
-    from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid))
+    from_longident ?pos ~env ~local_defs ~is_implementation ~kind switch lid))
+  )
