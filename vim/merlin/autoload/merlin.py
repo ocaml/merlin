@@ -375,7 +375,7 @@ def vim_findlib_use(*args):
 # Locate
 def vim_locate_at_cursor(path):
   line, col = vim.current.window.cursor
-  sync_buffer_to(line, col)
+  sync_full_buffer()
   command_locate(path, line, col)
 
 def vim_locate_under_cursor():
