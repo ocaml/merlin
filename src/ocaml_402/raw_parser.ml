@@ -9187,7 +9187,7 @@ module MenhirInterpreterTable = struct
           } = _menhir_stack in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (string Asttypes.loc * Parsetree.module_type option) =     ( mkrhs _startpos__2_ _endpos__2_ "()", None ) in
+        let _v : (string Asttypes.loc * Parsetree.module_type option) =     ( mkrhs _startpos__2_ _endpos__2_ "*", None ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_functor_arg, _v);
@@ -12357,7 +12357,7 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : (Parsetree.module_type) =     ( mkmty _startpos _endpos (Pmty_functor(mkrhs _startpos__1_ _endpos__1_ "()", None, _3)) ) in
+        let _v : (Parsetree.module_type) =     ( mkmty _startpos _endpos (Pmty_functor(mkrhs _startpos__1_ _endpos__1_ "*", None, _3)) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_module_declaration, _v);
