@@ -20,8 +20,8 @@ SOURCES = \
 	src/utils/std.ml                  \
 	src/utils/misc.mli                \
 	src/utils/misc.ml                 \
-	src/utils/file_cache.mli      \
-	src/utils/file_cache.ml       \
+	src/utils/file_cache.mli          \
+	src/utils/file_cache.ml           \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
 	src/utils/menhirLib.ml            \
@@ -148,8 +148,8 @@ SOURCES = \
 	src/kernel/merlin_typer.mli       \
 	src/kernel/merlin_typer.ml        \
 	src/kernel/merlin_lib.ml          \
-	$(TYPER)/error_report.mli         \
-	$(TYPER)/error_report.ml          \
+	src/ocaml_aux/error_report.mli    \
+	src/ocaml_aux/error_report.ml     \
 	src/frontend/protocol.mli         \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
