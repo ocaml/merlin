@@ -45,6 +45,8 @@ type error =
 
 exception Error of error
 
+let error err = raise (Error err)
+
 module EnvLazy : sig
   type ('a,'b) t
 
@@ -300,7 +302,7 @@ let check_consistency filename crcs =
   with Consistbl.Inconsistency(name, source, auth) ->
     (* Flush cache, incompatible file might be reloaded on next try *)
     Cmi_cache.flush ();
-    raise(Error(Inconsistent_import(name, auth, source)))
+    error (Inconsistent_import(name, auth, source))
 
 (* Reading persistent structures from .cmi files *)
 
@@ -321,12 +323,12 @@ let read_pers_struct modname filename = (
                ps_filename = filename;
                ps_flags = flags } in
     if ps.ps_name <> modname then
-      raise(Error(Illegal_renaming(modname, ps.ps_name, filename)));
+      error (Illegal_renaming(modname, ps.ps_name, filename));
     check_consistency filename ps.ps_crcs;
     List.iter
       (function Rectypes ->
         if not (Clflags.recursive_types ()) then
-          raise(Error(Need_recursive_types(ps.ps_name, !cache.current_unit))))
+          error (Need_recursive_types(ps.ps_name, !cache.current_unit)))
       ps.ps_flags;
     Hashtbl.add !cache.persistent_structures modname (Some ps);
     ps
@@ -1646,3 +1648,10 @@ let report_error ppf = function
       fprintf ppf
         "@[<hov>Unit %s imports from %s, which uses recursive types.@ %s@]"
         export import "The compilation flag -rectypes is required"
+
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error err -> Some (Location.error_of_printer_file report_error err)
+      | _ -> None
+    )
