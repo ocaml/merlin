@@ -29,6 +29,8 @@ type error =
   | Keyword_as_label of string
   | Literal_overflow of string
 
+exception Error of error * Location.t
+
 (* Monad in which the lexer evaluates *)
 type 'a result =
   | Return of 'a
@@ -254,6 +256,15 @@ let report_error ppf = function
   | Literal_overflow ty ->
       fprintf ppf "Integer literal exceeds the range of representable \
                    integers of type %s" ty
+
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error (err, loc) ->
+        Some (Location.error_of_printer loc report_error err)
+      | _ ->
+        None
+    )
 
 }
 
