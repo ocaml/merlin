@@ -34,67 +34,28 @@ let format ~valid ~where ?(loc=Location.none) text =
   loc, {valid; loc; text; where}
 
 
-let strict_of_exn = function
-  | Cmi_format.Error error ->
-    let ppf, to_string = Format.to_string () in
-    Cmi_format.report_error ppf error ;
-    Some (format ~valid:true ~where:"type" (to_string ()))
-  | Typecore.Error (loc, env, e) ->
-    let ppf, to_string = Format.to_string () in
-    Typecore.report_error env ppf e;
-    Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Typetexp.Error (loc, e) ->
-    let ppf, to_string = Format.to_string () in
-    Typetexp.report_error ppf e;
-    Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Typedecl.Error (loc, e) ->
-    let ppf, to_string = Format.to_string () in
-    Typedecl.report_error ppf e;
-    Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Typemod.Error (loc, env, e) ->
-    let ppf, to_string = Format.to_string () in
-    Typemod.report_error env ppf e;
-    Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Typeclass.Error (loc, env, e) ->
-    let ppf, to_string = Format.to_string () in
-    Typeclass.report_error env ppf e;
-    Some (format ~valid:true ~where:"type" ~loc (to_string ()))
-  | Env.Error e ->
-    let ppf, to_string = Format.to_string () in
-    Env.report_error ppf e;
-    Some (format ~valid:true ~where:"env" (to_string ()))
-  | Syntaxerr.Escape_error pos ->
-    Some (format ~valid:true ~where:"parser"
-            ~loc:{Location. loc_start = pos; loc_end = pos; loc_ghost = true}
-            "Syntax error")
-  | Syntaxerr.Error e ->
-    let ppf, to_string = Format.to_string () in
-    Syntaxerr.report_error ppf e;
-    let loc = match e with
-      | Syntaxerr.Unclosed (loc,_,loc',_) ->
-          Location.({ loc_start = loc.loc_start;
-                      loc_end = loc'.loc_end;
-                      loc_ghost = false;
-                    })
-      | Syntaxerr.Applicative_path loc -> loc
-      | Syntaxerr.Variable_in_scope (loc,_) -> loc
-      | Syntaxerr.Other loc -> loc
-      | Syntaxerr.Expecting (loc,_) -> loc
-    in
-    Some (format ~valid:true ~where:"parser" ~loc (to_string ()))
-  | Parsing_aux.Warning (loc, msg) ->
-    Some (format ~valid:true ~where:"warning" ~loc msg)
-  | Raw_parser.Error ->
-    Some (format ~valid:false ~where:"parser" "Parse error")
-  | Findlib.No_such_package (pkg,msg) ->
-    Some (format ~valid:true ~where:"env" (Printf.sprintf "Package not found %S (%s)" pkg msg))
-  (*| Outline.Malformed_module (_,loc) ->
-    Some (format ~valid:true ~where:"parser" ~loc "Malformed module")*)
-  | Error_classifier.Error c ->
-    let loc = Error_classifier.loc c in
-    let msg = Error_classifier.classify c in
-    Some (format ~valid:true ~where:"parser" ~loc msg)
-  | exn -> None
+let strict_of_exn exn =
+  let valid = true in
+  match Location.error_of_exn exn with
+  | Some {Location. err_loc = loc; msg} ->
+    let where = match exn with
+      | Syntaxerr.Escape_error _ | Syntaxerr.Error _ -> "parser"
+      | _ -> "type" in
+    Some (format ~valid ~where ~loc msg)
+  | None ->
+    match exn with
+    | Parsing_aux.Warning (loc, msg) ->
+      Some (format ~valid:true ~where:"warning" ~loc msg)
+    | Raw_parser.Error ->
+      Some (format ~valid:false ~where:"parser" "Parse error")
+    | Findlib.No_such_package (pkg,msg) ->
+      Some (format ~valid:true ~where:"env"
+              (Printf.sprintf "Package not found %S (%s)" pkg msg))
+    | Error_classifier.Error c ->
+      let loc = Error_classifier.loc c in
+      let msg = Error_classifier.classify c in
+      Some (format ~valid:true ~where:"parser" ~loc msg)
+    | _ -> None
 
 let null_loc =
   let z = {Lexing. pos_fname = ""; pos_bol = 0; pos_lnum = 1; pos_cnum = 0} in
