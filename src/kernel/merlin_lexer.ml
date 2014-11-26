@@ -102,6 +102,10 @@ let feed t str =
     if not t.lexbuf.Lexing.lex_eof_reached then begin
       t.refill := Some str;
       let append item =
+        begin match item with
+          | Error (e,l) -> warnings := Raw_lexer.Error (e,l) :: !warnings
+          | _ -> ()
+        end;
         t.history <- History.insert (!warnings, item) t.history
       in
       let rec aux = function
