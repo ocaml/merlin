@@ -84,7 +84,7 @@ val absname: bool ref
 
 type error =
   {
-    loc: t;
+    err_loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)

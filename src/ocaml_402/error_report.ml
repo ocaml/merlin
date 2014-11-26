@@ -37,7 +37,7 @@ let format ~valid ~where ?(loc=Location.none) text =
 let strict_of_exn exn =
   let valid = true in
   match Location.error_of_exn exn with
-  | Some {Location. loc; msg} ->
+  | Some {Location. err_loc = loc; msg} ->
     let where = match exn with
       | Syntaxerr.Escape_error _ | Syntaxerr.Error _ -> "parser"
       | _ -> "type" in
