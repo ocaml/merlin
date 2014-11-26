@@ -126,7 +126,7 @@ let feed t str =
                         token,
                         t.lexbuf.Lexing.lex_curr_p));
           continue ()
-        | Raw_lexer.Error (e,l) ->
+        | Raw_lexer.Fail (e,l) ->
           append (Error (e,l));
           continue ()
       and continue () =

@@ -20,18 +20,18 @@ type error =
 type 'a result =
   | Return of 'a
   | Refill of (unit -> 'a result)
-  | Error of error * Location.t
+  | Fail of error * Location.t
 
 let return a = Return a
 
-let error e l = Error (e,l)
+let fail e l = Fail (e,l)
 
 let rec (>>=) (m : 'a result) (f : 'a -> 'b result) : 'b result =
   match m with
   | Return a -> f a
   | Refill u ->
     Refill (fun () -> u () >>= f)
-  | Error _ as e -> e
+  | Fail _ as e -> e
 
 type preprocessor = (Lexing.lexbuf -> Raw_parser.token) -> Lexing.lexbuf -> Raw_parser.token
 
@@ -55,7 +55,7 @@ let lABEL m = m >>= fun v -> return (LABEL v)
 let oPTLABEL m = m >>= fun v -> return (OPTLABEL v)
 
 let rec catch m f = match m with
-  | Error (e,l) -> f e l
+  | Fail (e,l) -> f e l
   | Refill next -> Refill (fun () -> catch (next ()) f)
   | Return _ -> m
 
@@ -144,7 +144,7 @@ let char_for_decimal_code state lexbuf i =
   if (c < 0 || c > 255) then
     if in_comment state
     then return 'x'
-    else error (Illegal_escape (Lexing.lexeme lexbuf))
+    else fail (Illegal_escape (Lexing.lexeme lexbuf))
                (Location.curr lexbuf)
   else return (Char.chr c)
 
@@ -192,7 +192,7 @@ let get_label_name lexbuf =
   let s = Lexing.lexeme lexbuf in
   let name = String.sub s 1 (String.length s - 2) in
   if Hashtbl.mem keyword_table name then
-    error (Keyword_as_label name) (Location.curr lexbuf)
+    fail (Keyword_as_label name) (Location.curr lexbuf)
   else
     return name
 ;;
@@ -1592,7 +1592,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
                  (
       match state.preprocessor with
       | None ->
-        error (Illegal_character (Lexing.lexeme_char lexbuf 0))
+        fail (Illegal_character (Lexing.lexeme_char lexbuf 0))
               (Location.curr lexbuf)
       | Some _ ->
         update_loc lexbuf None 1 false 0;
@@ -1679,7 +1679,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
       ( try
           return (INT (cvt_int_literal (Lexing.lexeme lexbuf)))
         with Failure _ ->
-          error (Literal_overflow "int") (Location.curr lexbuf)
+          fail (Literal_overflow "int") (Location.curr lexbuf)
       )
 # 1685 "src/kernel/preprocess/raw_lexer.ml"
 
@@ -1693,7 +1693,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
       ( try
           return (INT32 (cvt_int32_literal (Lexing.lexeme lexbuf)))
         with Failure _ ->
-          error (Literal_overflow "int32") (Location.curr lexbuf) )
+          fail (Literal_overflow "int32") (Location.curr lexbuf) )
 # 1698 "src/kernel/preprocess/raw_lexer.ml"
 
   | 16 ->
@@ -1701,7 +1701,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
       ( try
           return (INT64 (cvt_int64_literal (Lexing.lexeme lexbuf)))
         with Failure _ ->
-          error (Literal_overflow "int64") (Location.curr lexbuf) )
+          fail (Literal_overflow "int64") (Location.curr lexbuf) )
 # 1706 "src/kernel/preprocess/raw_lexer.ml"
 
   | 17 ->
@@ -1709,7 +1709,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
       ( try
           return (NATIVEINT (cvt_nativeint_literal (Lexing.lexeme lexbuf)))
         with Failure _ ->
-          error (Literal_overflow "nativeint") (Location.curr lexbuf) )
+          fail (Literal_overflow "nativeint") (Location.curr lexbuf) )
 # 1714 "src/kernel/preprocess/raw_lexer.ml"
 
   | 18 ->
@@ -1765,7 +1765,7 @@ and __ocaml_lex_token_rec state lexbuf __ocaml_lex_state =
 # 388 "src/kernel/preprocess/raw_lexer.mll"
       ( let l = Lexing.lexeme lexbuf in
         let esc = String.sub l 1 (String.length l - 1) in
-        error (Illegal_escape esc) (Location.curr lexbuf)
+        fail (Illegal_escape esc) (Location.curr lexbuf)
       )
 # 1771 "src/kernel/preprocess/raw_lexer.ml"
 
@@ -2115,7 +2115,7 @@ and
 
   | 87 ->
 # 503 "src/kernel/preprocess/raw_lexer.mll"
-      ( error (Illegal_character (Lexing.lexeme_char lexbuf 0))
+      ( fail (Illegal_character (Lexing.lexeme_char lexbuf 0))
               (Location.curr lexbuf)
       )
 # 2122 "src/kernel/preprocess/raw_lexer.ml"
@@ -2159,9 +2159,9 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
                  | loc :: _ ->
                    let start = List.hd (List.rev state.comment_start_loc) in
                    state.comment_start_loc <- [];
-                   error (Unterminated_string_in_comment (start, l)) loc
+                   fail (Unterminated_string_in_comment (start, l)) loc
                end
-             | e -> error e l
+             | e -> fail e l
            )
         ) >>= fun () ->
       state.string_start_loc <- Location.none;
@@ -2183,9 +2183,9 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
                  | loc :: _ ->
                    let start = List.hd (List.rev state.comment_start_loc) in
                    state.comment_start_loc <- [];
-                   error (Unterminated_string_in_comment (start, l)) loc
+                   fail (Unterminated_string_in_comment (start, l)) loc
                end
-             | e -> error e l
+             | e -> fail e l
            )
         ) >>= fun () ->
         state.string_start_loc <- Location.none;
@@ -2235,7 +2235,7 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
         | loc :: _ ->
           let start = List.hd (List.rev state.comment_start_loc) in
           state.comment_start_loc <- [];
-          error (Unterminated_comment start) loc
+          fail (Unterminated_comment start) loc
       )
 # 2241 "src/kernel/preprocess/raw_lexer.ml"
 
@@ -2303,7 +2303,7 @@ let
         then string state lexbuf
         else begin
 (*  Should be an error, but we are very lax.
-                  error (Illegal_escape (Lexing.lexeme lexbuf),
+                  fail (Illegal_escape (Lexing.lexeme lexbuf),
                         (Location.curr lexbuf)
 *)
           let loc = Location.curr lexbuf in
@@ -2329,7 +2329,7 @@ let
 # 636 "src/kernel/preprocess/raw_lexer.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
-        error Unterminated_string loc )
+        fail Unterminated_string loc )
 # 2334 "src/kernel/preprocess/raw_lexer.ml"
 
   | 8 ->
@@ -2358,7 +2358,7 @@ and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
 # 650 "src/kernel/preprocess/raw_lexer.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
-        error Unterminated_string loc )
+        fail Unterminated_string loc )
 # 2363 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
@@ -2427,7 +2427,7 @@ and __ocaml_lex_p4_quotation_rec lexbuf __ocaml_lex_state =
 
   | 3 ->
 # 682 "src/kernel/preprocess/raw_lexer.mll"
-      ( error Unterminated_string (Location.curr lexbuf) )
+      ( fail Unterminated_string (Location.curr lexbuf) )
 # 2432 "src/kernel/preprocess/raw_lexer.ml"
 
   | 4 ->

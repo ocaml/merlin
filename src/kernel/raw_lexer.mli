@@ -32,7 +32,7 @@ val keywords: (string * Raw_parser.token) list -> keywords
 type 'a result =
   | Return of 'a
   | Refill of (unit -> 'a result)
-  | Error of error * Location.t
+  | Fail of error * Location.t
 
 type preprocessor = (Lexing.lexbuf -> Raw_parser.token) -> Lexing.lexbuf -> Raw_parser.token
 

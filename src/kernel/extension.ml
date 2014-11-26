@@ -204,7 +204,7 @@ let parse_sig =
   let buf = Lexing.from_string str in
   let state = Raw_lexer.make keywords in
   let rec lex parser = function
-    | Raw_lexer.Error (e,l) ->
+    | Raw_lexer.Fail (e,l) ->
       assert false
     | Raw_lexer.Refill f ->
       lex parser (f ())
