@@ -746,3 +746,12 @@ let report_error ppf = function
       fprintf ppf "Unbound class type %a" longident lid
   | Ill_typed_functor_application lid ->
       fprintf ppf "Ill-typed functor application %a" longident lid
+
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error (loc, err) ->
+        Some (Location.error_of_printer loc report_error err)
+      | _ ->
+        None
+    )

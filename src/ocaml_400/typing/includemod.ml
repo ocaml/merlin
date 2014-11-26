@@ -245,8 +245,8 @@ and signatures env cxt subst sig1 sig2 =
             ((item1, item2, pos1) :: paired) unpaired rem
         with Not_found ->
           let unpaired =
-            if report then 
-             match unpaired with 
+            if report then
+             match unpaired with
               | (cxt', env, Missing_fields ids) :: unpaired when cxt == cxt' ->
                   (cxt, env, Missing_fields (id2 :: ids)) :: unpaired
               | _ -> (cxt, env, Missing_fields [id2]) :: unpaired
@@ -486,3 +486,13 @@ let report_error ppf errs =
   in
   let print_errs ppf = List.iter (include_err' ppf) in
   fprintf ppf "@[<v>%a%a@]" print_errs errs include_err err
+
+
+(* We could do a better job to split the individual error items
+   as sub-messages of the main interface mismatch on the whole unit. *)
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error err -> Some (Location.error_of_printer_file report_error err)
+      | _ -> None
+    )

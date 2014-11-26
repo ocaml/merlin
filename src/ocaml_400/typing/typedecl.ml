@@ -862,9 +862,9 @@ let transl_type_decl env name_sdecl_list =
       name_sdecl_list
   in
   let decls  = List.map (fun (id,n) -> Fake.Nonrec.ident_drop id,n) decls in
-  let tdecls = List.map (fun (id,loc,n) -> 
+  let tdecls = List.map (fun (id,loc,n) ->
       Fake.Nonrec.ident_drop id,
-      {loc with txt = Fake.Nonrec.drop loc.txt}, n) tdecls 
+      {loc with txt = Fake.Nonrec.drop loc.txt}, n) tdecls
   in
   let final_decls, final_env =
     compute_variance_fixpoint env decls required (List.map init_variance decls)
@@ -1178,3 +1178,12 @@ let report_error ppf = function
       fprintf ppf "@[%s@ %s@ %s@]"
         "In this GADT definition," "the variance of some parameter"
         "cannot be checked"
+
+let () =
+  Location.register_error_of_exn
+    (function
+      | Error (loc, err) ->
+        Some (Location.error_of_printer loc report_error err)
+      | _ ->
+        None
+    )
