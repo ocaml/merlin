@@ -39,4 +39,5 @@ val from_string
   -> [> `File_not_found of string
       | `Found of string option * Lexing.position
       | `Not_found of string * string option
-      | `Not_in_env of string ]
+      | `Not_in_env of string
+      | `At_origin ]

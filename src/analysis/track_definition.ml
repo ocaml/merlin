@@ -545,3 +545,25 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path
     in
     `File_not_found msg
   | Not_in_env -> `Not_in_env str_ident
+
+let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
+  let inspect_context pos =
+    let browse = Browse.of_typer_contents local_defs in
+    match Browse.enclosing pos browse with
+    | [] -> None
+    | node :: _ ->
+      let open BrowseT in
+      match node.t_node with
+      | Pattern _
+      | Value_description _
+      | Type_declaration _
+      | Extension_constructor _
+      | Module_binding_name _
+      | Module_declaration_name _ ->
+        Some ()
+      | _ ->
+        None
+  in
+  match Option.bind pos ~f:inspect_context with
+  | None -> from_string ~project ~env ~local_defs ~is_implementation switch path
+  | Some () -> `At_origin

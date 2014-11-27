@@ -75,6 +75,7 @@ type _ request =
       | `Not_in_env of string
       | `File_not_found of string
       | `Not_found of string * string option
+      | `At_origin
       ] request
   | Outline
     :  outline request

@@ -385,6 +385,7 @@ module Protocol_io = struct
           `List (List.map json_of_completion compl_list)
         | Locate _, resp ->
           begin match resp with
+          | `At_origin -> `String "Already at definition point"
           | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
           | `Not_found (i, Some f) ->
             `String
