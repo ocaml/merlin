@@ -1135,7 +1135,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (when (or (not merlin-completion-at-point-cache-query)
               (not (equal (cons prefix start)  merlin-completion-at-point-cache-query)))
       (setq merlin-completion-at-point-cache-query (cons prefix start))
-      (merlin-sync-to-point)
+      (merlin-sync-to-point (point-max) t)
       (setq merlin-completion-annotation-table
             (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
                     (merlin-completion-data prefix))))
@@ -1554,7 +1554,7 @@ calls (lighter can be updated at a high frequency)"
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
-  (merlin-sync-to-point)
+  (merlin-sync-to-point (point-max) t)
   (merlin--locate-pure)
   (if merlin-type-after-locate
       (merlin-type-enclosing)))

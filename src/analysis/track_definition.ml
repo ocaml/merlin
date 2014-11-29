@@ -35,7 +35,7 @@ let cmt_path = ref (Misc.Path_list.of_list [])
 let cwd = ref ""
 
 let section = Logger.section "locate"
-let debug_log x = Printf.ksprintf (Logger.debug section)  x
+let debug_log x = Printf.ksprintf (Logger.debug section) x
 
 module Fallback = struct
   let fallback = ref `Nothing
@@ -188,6 +188,12 @@ module Utils = struct
     with Not_found ->
       raise (File_not_found file)
 
+  let starts_uppercase str =
+    if String.length str = 0 then false
+    else match str.[0] with
+      | 'A'..'Z' -> true
+      | _ -> false
+
   let keep_suffix =
     let open Longident in
     let rec aux = function
@@ -207,13 +213,13 @@ module Utils = struct
         Some (t, false) (* don't know what to do here, probably best if I do nothing. *)
     in
     function
-    | Lident s -> Lident s, false
+    | Lident s -> Lident s, false, starts_uppercase s
     | Ldot (t, s) ->
       begin match aux t with
-      | None -> Lident s, true
-      | Some (t, is_label) -> Ldot (t, s), is_label
+      | None -> Lident s, true, starts_uppercase s
+      | Some (t, is_label) -> Ldot (t, s), is_label, starts_uppercase s
       end
-    | otherwise -> otherwise, false
+    | otherwise -> otherwise, false, false
 end
 
 include Utils
@@ -460,7 +466,56 @@ let recover () =
   | `ML  loc -> finalize true loc
   | `MLI loc -> finalize false loc
 
-let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
+let lookup_funs = [|
+  `Values, (fun ident env ->
+      info_log "lookup in value namespace";
+      let path, val_desc = Env.lookup_value ident env in
+      path, val_desc.Types.val_loc);
+  `Types, (fun ident env ->
+      info_log "lookup in type namespace";
+      let path, typ_decl = Env.lookup_type ident env in
+      path, typ_decl.Types.type_loc);
+  `Constructors, (fun ident env ->
+      info_log "lookup in constructor namespace";
+      let cstr_desc = Merlin_types_custom.lookup_constructor ident env in
+      Merlin_types_custom.path_and_loc_of_cstr cstr_desc env);
+  `Modules, (fun ident env ->
+      info_log "lookup in module namespace";
+      let path, _ = Merlin_types_custom.lookup_module ident env in
+      path, Location.symbol_gloc ());
+  `Module_types, (fun ident env ->
+      info_log "lookup in module type namespace";
+      let path, _ = Env.lookup_modtype ident env in
+      path, Location.symbol_gloc ());
+  `Labels, (fun ident env ->
+      info_log "lookup in label namespace";
+      let label_desc = Merlin_types_custom.lookup_label ident env in
+      path_and_loc_from_label label_desc env);
+|]
+
+(* Look IDENT up in ENV, using IS_UPPER and KIND to decide whether to
+ * skip some namespaces.
+ *)
+let lookup kind is_upper ident env =
+  let rec loop i bound namespcs =
+    if i = bound then raise Not_in_env
+    else
+      let spc, f = lookup_funs.(i) in
+      if not (List.mem spc namespcs) then
+        loop (i + 1) bound namespcs
+      else
+        try f ident env
+        with Not_found -> loop (i + 1) bound namespcs in
+  loop 0 (Array.length lookup_funs)
+    (Completion.relevant_namespaces is_upper kind)
+
+let leaf_node_at typer pos_cursor =
+  match Browse.directly_containing pos_cursor
+          (Browse.of_typer_contents (Typer.contents typer)) with
+  | Some node -> Some node.BrowseT.t_node
+  | None -> None
+
+let from_string ~project ~env ~local_defs ~is_implementation ~kind ?pos ml_or_mli path =
   File_switching.reset () ;
   cwd := "" (* Reset the cwd before doing anything *) ;
   sources_path := Project.source_path project ;
@@ -468,7 +523,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path
   Preferences.set ml_or_mli ;
   info_log "looking for the source of '%s' (prioritizing %s files)"
     path (match ml_or_mli with `ML -> ".ml" | `MLI -> ".mli");
-  let ident, is_label = keep_suffix (Longident.parse path) in
+  let ident, is_label, is_upper = keep_suffix (Longident.parse path) in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let path', loc =
@@ -476,40 +531,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path
       if is_label then
         let label_desc = Merlin_types_custom.lookup_label ident env in
         path_and_loc_from_label label_desc env
-      else (
-        try
-          let path, val_desc = Env.lookup_value ident env in
-          path, val_desc.Types.val_loc
-        with Not_found ->
-        try
-          let path, typ_decl = Env.lookup_type ident env in
-          path, typ_decl.Types.type_loc
-        with Not_found ->
-        try
-          let cstr_desc = Merlin_types_custom.lookup_constructor ident env in
-          Merlin_types_custom.path_and_loc_of_cstr cstr_desc env
-        with Not_found ->
-        try
-          let path, _ = Merlin_types_custom.lookup_module ident env in
-          path, Location.symbol_gloc ()
-        with Not_found ->
-        try
-          let path, _ = Env.lookup_modtype ident env in
-          path, Location.symbol_gloc ()
-        with Not_found ->
-        try
-          (* However, [1] is not the only time where we can have a record field,
-              we could also have found the ident in a pattern like
-                  | { x ; y } -> e
-              in which case the check before [1] won't know that we have a
-              label, but it's worth checking at this point. *)
-          let label_desc = Merlin_types_custom.lookup_label ident env in
-          path_and_loc_from_label label_desc env
-        with Not_found ->
-          info_log "   ... not in the environment" ;
-          raise Not_in_env
-      )
-    in
+      else lookup kind is_upper ident env in
     if not (is_ghost loc) then
       `Found (None, loc.Location.loc_start)
     else

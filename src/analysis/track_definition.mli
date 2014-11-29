@@ -28,11 +28,14 @@
 
 val section: Logger.section
 
+val leaf_node_at : Merlin_lib.Typer.t -> Lexing.position -> BrowseT.node option
+
 val from_string
   : project:Merlin_lib.Project.t
   -> env:Env.t
   -> local_defs:[`Str of Typedtree.structure | `Sg of Typedtree.signature] list
   -> is_implementation:bool
+  -> kind:BrowseT.node option
   -> ?pos:Lexing.position
   -> [ `ML | `MLI ]
   -> string
