@@ -530,6 +530,7 @@ let recover () =
 
 let from_string ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
   File_switching.reset () ;
+  Fallback.reset () ;
   Preferences.set ml_or_mli ;
   info_log "looking for the source of '%s' (prioritizing %s files)"
     path (match ml_or_mli with `ML -> ".ml" | `MLI -> ".mli");
