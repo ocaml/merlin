@@ -307,6 +307,17 @@ end
 module String = struct
   include StringLabels
 
+  let reverse s =
+    let len = length s in
+    init len ~f:(fun i -> s.[len - i - 1])
+
+  let common_prefix_len s1 s2 =
+    let rec aux i =
+      if i >= length s1 || i >= length s2 || s1.[i] <> s2.[i] then i else
+      aux (succ i)
+    in
+    aux 0
+
   (* [is_prefixed ~by s] returns [true] iff [by] is a prefix of [s] *)
   let is_prefixed ~by =
     let l = String.length by in

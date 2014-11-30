@@ -29,10 +29,8 @@
 open Std
 open Merlin_lib
 
-let sources_path = ref (Misc.Path_list.of_list [])
-let cmt_path = ref (Misc.Path_list.of_list [])
-
-let cwd = ref ""
+let sources_path = Fluid.from (Misc.Path_list.of_list [])
+let cmt_path     = Fluid.from (Misc.Path_list.of_list [])
 
 let section = Logger.section "locate"
 let debug_log x = Printf.ksprintf (Logger.debug section)  x
@@ -147,10 +145,55 @@ module Utils = struct
     | ML _  -> ".ml"  | MLI _  -> ".mli"
     | CMT _ -> ".cmt" | CMTI _ -> ".cmti"
 
+  (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
+     matching, instead of the first one.
+     This is only used when looking for ml files, not cmts. Indeed for cmts we
+     know that the load path will only ever contain files with uniq names (in
+     the presence of packed modules we refine the loadpath as we go); this in
+     not the case for the "source path" however.
+     We therefore get all matching files and use an heuristic at the call site
+     to choose the appropriate file. *)
+  let find_all_in_path_uncap ?(fallback="") path name =
+    let has_fallback = fallback <> "" in
+    List.map ~f:Misc.canonicalize_filename begin
+      let acc = ref [] in
+      let uname = String.uncapitalize name in
+      let ufbck = String.uncapitalize fallback in
+      let rec try_dir = function
+        | List.Lazy.Nil -> !acc
+        | List.Lazy.Cons (dir, rem) ->
+            let fullname = Filename.concat dir name in
+            let ufullname = Filename.concat dir uname in
+            let ufallback = Filename.concat dir ufbck in
+            if Sys.file_exists ufullname then acc := ufullname :: !acc
+            else if Sys.file_exists fullname then acc := fullname :: !acc
+            else if has_fallback && Sys.file_exists ufallback then
+              acc := ufallback :: !acc
+            else if has_fallback && Sys.file_exists fallback then
+              acc := fallback :: !acc
+            else
+              () ;
+            try_dir (Lazy.force rem)
+      in try_dir (Misc.Path_list.to_list path)
+    end
+
+  let find_all_matches ?(with_fallback=false) file =
+    let fname =
+      Misc.chop_extension_if_any (filename_of_filetype file)
+      ^ (ext_of_filetype file)
+    in
+    let fallback =
+      if not with_fallback then "" else
+      match file with
+      | ML f   -> Misc.chop_extension_if_any f ^ ".mli"
+      | MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
+      | _ -> assert false
+    in
+    let path = Fluid.get sources_path in
+    find_all_in_path_uncap ~fallback path fname
+
   let find_file ?(with_fallback=false) file =
     let fname =
-      (* FIXME: the [Misc.chop_extension_if_any] should have no effect here,
-         make sure of that and then remove it. *)
       Misc.chop_extension_if_any (filename_of_filetype file)
       ^ (ext_of_filetype file)
     in
@@ -161,28 +204,12 @@ module Utils = struct
       | MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
       | CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
       | CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
-      in
-    (* FIXME: that sucks, if [cwd] = ".../_build/..." the ".ml" will exist, but
-       will most likely not be the one you want to edit.
-       However, just using [find_in_path_uncap] won't work either when you have
-       several ml files with the same name (which can only happen in presence of packed
-       modules).
-       Example: scheduler.ml and raw_scheduler.ml are present in both async_core
-       and async_unix. (ofc. "std.ml" is a more common example.)
-
-       N.B. [cwd] is set only when we have encountered a packed module and we
-       use it only when set, we don't want to look in the actual cwd of merlin
-       when looking for files. *)
-    try
-      if !cwd = "" then raise Not_found ;
-      let path = Misc.Path_list.of_string_list_ref (ref [ !cwd ]) in
-      Misc.find_in_path_uncap ~fallback path fname
-    with Not_found ->
+    in
     try
       let path =
         match file with
-        | ML  _ | MLI _  -> !sources_path
-        | CMT _ | CMTI _ -> !cmt_path
+        | ML  _ | MLI _  -> Fluid.get sources_path
+        | CMT _ | CMTI _ -> Fluid.get cmt_path
       in
       Misc.find_in_path_uncap ~fallback path fname
     with Not_found ->
@@ -351,9 +378,9 @@ and browse_cmts ~root modules =
   File_switching.move_to root ;
   match
     match cmt_infos.cmt_annots with
-    | Interface intf -> `Sg intf, false
+    | Interface intf      -> `Sg intf, false
     | Implementation impl -> `Str impl, true
-    | Packed (_, files) -> `Pack files, true
+    | Packed (_, files)   -> `Pack files, true
     | _ ->
       (* We could try to work with partial cmt files, but it'd probably fail
        * most of the time so... *)
@@ -377,13 +404,24 @@ and browse_cmts ~root modules =
     | [] -> `Not_found
     | mod_name :: modules ->
       let file = 
-        List.(find (map files ~f:file_path_to_mod_name)) ~f:((=) mod_name)
+        List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
       in
       File_switching.allow_movement () ;
-      cwd := Filename.dirname root ;
-      info_log "Saw packed module => setting cwd to '%s'" !cwd ;
-      let cmt_file = find_file ~with_fallback:true (Preferences.cmt file) in
-      browse_cmts ~root:cmt_file modules
+      debug_log "Saw packed module => erasing loadpath" ;
+      let str_path_list =
+        List.map cmt_infos.cmt_loadpath ~f:(function
+          | "" ->
+            (* That's the cwd at the time of the generation of the cmt, I'm
+               guessing/hoping it will be the directory where we found it *)
+            Filename.dirname root
+          | x -> x
+        )
+      in
+      let pl = Misc.Path_list.of_string_list_ref (ref str_path_list) in
+      Fluid.let' cmt_path pl (fun () ->
+        let root = find_file ~with_fallback:true (Preferences.cmt file) in
+        browse_cmts ~root modules
+      )
     end
 
 and from_path path =
@@ -441,6 +479,7 @@ let path_and_loc_from_label desc env =
   | _ -> assert false
 
 exception Not_in_env
+exception Multiple_matches of string list
 
 let finalize source loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
@@ -450,7 +489,36 @@ let finalize source loc =
   let full_path =
     match File_switching.where_am_i () with
     | None -> (* We have not moved, we don't want to return a filename *) None
-    | _ -> Some (find_file ~with_fallback file)
+    | Some s ->
+      let dir = Filename.dirname s in
+      debug_log "source fname = %s (in dir : %s)" fname dir ;
+      match find_all_matches ~with_fallback file with
+      | [] -> raise (File_not_found file)
+      | [ x ] -> Some x
+      | files ->
+        info_log "multiple files named %s exist in the source path, using \
+                  heuristic to select the right one" fname ;
+        let rev = String.reverse (Filename.concat dir fname) in
+        let lst =
+          List.map files ~f:(fun path ->
+            let path' = String.reverse path in
+            String.common_prefix_len rev path', path
+          )
+        in
+        let lst =
+          (* TODO: remove duplicates in [source_path] instead of using
+            [sort_uniq] here. *)
+          List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
+            let tmp = compare j i in
+            if tmp <> 0 then tmp else
+            compare s t
+          ) lst
+        in
+        match lst with
+        | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
+          raise (Multiple_matches files)
+        | (_, s) :: _ -> Some s
+        | _ -> assert false
   in
   `Found (full_path, loc.Location.loc_start)
 
@@ -460,11 +528,8 @@ let recover () =
   | `ML  loc -> finalize true loc
   | `MLI loc -> finalize false loc
 
-let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
+let from_string ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
   File_switching.reset () ;
-  cwd := "" (* Reset the cwd before doing anything *) ;
-  sources_path := Project.source_path project ;
-  cmt_path := Project.cmt_path project ;
   Preferences.set ml_or_mli ;
   info_log "looking for the source of '%s' (prioritizing %s files)"
     path (match ml_or_mli with `ML -> ".ml" | `MLI -> ".mli");
@@ -545,6 +610,13 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos ml_or_mli path
     in
     `File_not_found msg
   | Not_in_env -> `Not_in_env str_ident
+  | Multiple_matches lst ->
+    let matches = String.concat lst ~sep:", " in
+    `File_not_found (
+      sprintf "Several source files in your path have the same name, and \
+               merlin doesn't know which is the right one: %s"
+        matches
+    )
 
 let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
   let inspect_context pos =
@@ -565,5 +637,8 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
         None
   in
   match Option.bind pos ~f:inspect_context with
-  | None -> from_string ~project ~env ~local_defs ~is_implementation switch path
+  | None ->
+    Fluid.let' sources_path (Project.source_path project) (fun () ->
+    Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
+    from_string ~env ~local_defs ~is_implementation switch path))
   | Some () -> `At_origin
