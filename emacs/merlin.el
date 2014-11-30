@@ -1336,16 +1336,16 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin--type-region ()
   "Show the type of the region."
   (lexical-let*
-    (substring (merlin--buffer-substring (region-beginning) (region-end)))
-    (on-success (lambda (type) (merlin--type-display nil type nil)))
-    (on-error   (lambda (err)
-                  (let ((msg (assoc 'message err))
-                        (typ (assoc 'type err)))
-                    (cond ((and typ (equal (cdr typ) "parser"))
-                           (message "Error: the content of the region failed to parse."))
-                          (msg (message "Error: %s" (cdr msg)))
-                          (t
-                            (message "Unexpected error"))))))
+    ((substring (merlin--buffer-substring (region-beginning) (region-end)))
+     (on-success (lambda (type) (merlin--type-display nil type nil)))
+     (on-error   (lambda (err)
+                   (let ((msg (assoc 'message err))
+                         (typ (assoc 'type err)))
+                     (cond ((and typ (equal (cdr typ) "parser"))
+                            (message "Error: the content of the region failed to parse."))
+                           (msg (message "Error: %s" (cdr msg)))
+                           (t
+                            (message "Unexpected error")))))))
     (merlin--type-expression substring on-success on-error)))
 
 (defun merlin-type-expr (exp)
