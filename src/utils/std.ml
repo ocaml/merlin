@@ -307,9 +307,13 @@ end
 module String = struct
   include StringLabels
 
-  let reverse s =
-    let len = length s in
-    init len ~f:(fun i -> s.[len - i - 1])
+  let reverse s1 =
+    let len = length s1 in
+    let s2  = make len 'a' in
+    for i = 0 to len - 1 do
+      s2.[i] <- s1.[len - i - 1]
+    done ;
+    s2
 
   let common_prefix_len s1 s2 =
     let rec aux i =
