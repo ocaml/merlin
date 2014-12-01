@@ -127,7 +127,6 @@ end
 
 
 module Utils = struct
-  (* FIXME: turn this into proper debug logging *)
   let info_log  x = Printf.ksprintf (Logger.info  section)  x
 
   let is_ghost { Location. loc_ghost } = loc_ghost = true
@@ -610,17 +609,17 @@ let from_string ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
     let msg =
       match path with
       | ML file ->
-        Printf.sprintf "'%s' seems to originate from '%s' whose ML file could not be found"
-          str_ident file
+        sprintf "'%s' seems to originate from '%s' whose ML file could not be \
+                 found" str_ident file
       | MLI file ->
-        Printf.sprintf "'%s' seems to originate from '%s' whose MLI file could not be found"
-          str_ident file
+        sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
+                 found" str_ident file
       | CMT file ->
-        Printf.sprintf "Needed cmt file of module '%s' to locate '%s' but it is not present"
-          file str_ident
+        sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
       | CMTI file ->
-        Printf.sprintf "Needed cmti file of module '%s' to locate '%s' but it is not present"
-          file str_ident
+        sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
     in
     `File_not_found msg
   | Not_in_env -> `Not_in_env str_ident
@@ -633,6 +632,16 @@ let from_string ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
     )
 
 let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
+  let inspect_pattern p =
+    (* FIXME: that is too crude, for patterns of the for [{ Module.label }]
+       calling locate on the label (or module) will result in nothing, since it
+        is understood as a [Tpat_var], we need to inspect the ancestor of the
+       current node in the browse tree to identify this specific case. *)
+    let open Typedtree in
+    match p.pat_desc with
+    | Tpat_any | Tpat_var _ -> Some ()
+    | _ -> None
+  in
   let inspect_context pos =
     let browse = Browse.of_typer_contents local_defs in
     match Browse.enclosing pos browse with
@@ -640,7 +649,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
     | node :: _ ->
       let open BrowseT in
       match node.t_node with
-      | Pattern _
+      | Pattern p -> inspect_pattern p
       | Value_description _
       | Type_declaration _
       | Extension_constructor _
