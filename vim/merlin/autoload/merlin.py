@@ -153,6 +153,11 @@ def command(*cmd):
 def dump(*cmd):
   print(json.dumps(command('dump', *cmd)))
 
+def dump_to_file(path, *cmd):
+  f = open(path, 'w')
+  j = command('dump', *cmd)
+  f.write(json.dumps(j, indent=4, separators=(',', ': ')))
+
 def dump_at_cursor(*cmd):
   line, col = vim.current.window.cursor
   command_seek("exact", line, col)
@@ -168,7 +173,7 @@ def parse_position(pos):
 def display_load_failures(result):
   if 'failures' in result:
       for failure in result['failures']:
-          print failure
+          print(failure)
   return result['result']
 
 def command_tell(content):
