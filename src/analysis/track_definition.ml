@@ -131,6 +131,10 @@ module Utils = struct
 
   let is_ghost { Location. loc_ghost } = loc_ghost = true
 
+  let longident_is_qualified = function
+    | Longident.Lident _ -> false
+    | _ -> true
+
   let path_to_list p =
     let rec aux acc = function
       | Path.Pident id -> id.Ident.name :: acc
@@ -256,6 +260,9 @@ type result = [
   | `File_not_found of string
   | `Not_found
 ]
+
+type context = Type | Expr | Patt | Unknown
+exception Context_mismatch
 
 (* Remove top level indirections (i.e. Structure and Signature) and reverse
    their children so we start from the bottom of the file.
@@ -540,7 +547,7 @@ let recover () =
   | `ML  loc -> finalize true loc
   | `MLI loc -> finalize false loc
 
-let from_longident ~env ~local_defs ~is_implementation ?pos ml_or_mli lid =
+let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
@@ -554,13 +561,15 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ml_or_mli lid =
         path_and_loc_from_label label_desc env
       else (
         try
+          if ctxt = Type then raise Context_mismatch ;
           let path, val_desc = Env.lookup_value ident env in
           path, val_desc.Types.val_loc
-        with Not_found ->
+        with Not_found | Context_mismatch ->
         try
+          if ctxt <> Type && ctxt <> Unknown then raise Context_mismatch ;
           let path, typ_decl = Env.lookup_type ident env in
           path, typ_decl.Types.type_loc
-        with Not_found ->
+        with Not_found | Context_mismatch ->
         try
           let cstr_desc = Merlin_types_custom.lookup_constructor ident env in
           Merlin_types_custom.path_and_loc_of_cstr cstr_desc env
@@ -582,7 +591,11 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ml_or_mli lid =
           let label_desc = Merlin_types_custom.lookup_label ident env in
           path_and_loc_from_label label_desc env
         with Not_found ->
-          info_log "   ... not in the environment" ;
+          info_log "   ... not in the environment%s"
+            begin match ctxt with
+            | Type -> " (we were looking for a type)"
+            | _ -> ""
+            end ;
           raise Not_in_env
       )
     in
@@ -631,22 +644,34 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ml_or_mli lid =
     )
 
 let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
-  (* If the given ident is qualified, then we can't be at its definition.
-     Otherwise we might be and we have to inspect the context to know whether
-     it's worth looking further or not.
-     That explains the matching [2].
-
-     Note that we might not see that the path is qualified, since we are only
-     given the relevant prefix, we might just have a module name which would be
-     present in the context of a patvar if we have a pattern like
-         | { Foo.bar }
-     That's why we have the guard [1] *)
   let inspect_pattern p =
     let open Typedtree in
     match p.pat_desc with
-    | Tpat_any -> Some ()
-    | Tpat_var _ when String.uncapitalize path = path (* [1] *) -> Some ()
-    | _ -> None
+    | Tpat_any -> None
+    | Tpat_var _ when String.uncapitalize path = path ->
+      (* If the guard is not verified it means the pattern variable we find in
+         the typedtree doesn't match the ident we reconstructed from the token
+         stream.
+         This should only happen in presence of a record pattern, e.g.
+
+             { Location. loc_ghost }
+
+         as is the case at the beginning of this file.
+         However it only catches the cases where the ident we locate is prefixed
+         by a module name, so not everything is handled.
+         Catching everything is harder though, because we need to use the
+         location to distinguish between
+
+             { f[o]o = bar }
+
+         and
+
+             { foo = b[a]r }
+
+         (where [ ] represents the cursor.)
+         So err... TODO? *)
+      None
+    | _ -> Some Patt
   in
   let inspect_context pos =
     let browse = Browse.of_typer_contents local_defs in
@@ -661,20 +686,35 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
       | Extension_constructor _
       | Module_binding_name _
       | Module_declaration_name _ ->
-        Some ()
-      | _ ->
         None
+      | Core_type _ -> Some Type
+      | Expression _ -> Some Expr
+      | _ ->
+        Some Unknown
   in
-  info_log "looking for the source of '%s' (prioritizing %s files)"
-    path (match switch with `ML -> ".ml" | `MLI -> ".mli");
-  Fluid.let' sources_path (Project.source_path project) (fun () ->
-  Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
   let lid = Longident.parse path in
-  match lid with (* [2] *)
-  | Longident.Lident _ ->
-    begin match Option.bind pos ~f:inspect_context with
-    | None -> from_longident ~env ~local_defs ~is_implementation switch lid
-    | Some () -> `At_origin
-    end
-  | _ -> from_longident ~env ~local_defs ~is_implementation switch lid
-  ))
+  let context =
+    match pos with
+    | None -> Some Unknown
+    | Some pos ->
+      match inspect_context pos with
+      | None when longident_is_qualified lid ->
+        (* FIXME: is this really necessary since we have the check described
+           above?
+           The only case where [lid] would be qualified but the previous check
+           would not catch it is record field access, which cant possibly happen
+           in the [Tpat_var] case. *)
+        Some Unknown
+      | otherwise -> otherwise
+  in
+  match context with
+  | None -> `At_origin
+  | Some ctxt ->
+    info_log "looking for the source of '%s' (prioritizing %s files) in %s \
+              context" path (match switch with `ML -> ".ml" | `MLI -> ".mli")
+      (match ctxt with Expr -> "an expression" | Patt -> "a pattern"
+       | Type -> "a type" | Unknown -> "an unknown")
+    ;
+    Fluid.let' sources_path (Project.source_path project) (fun () ->
+    Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
+    from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid))
