@@ -85,20 +85,24 @@ module File_switching : sig
 
   val check_can_move : unit -> unit
 
-  val move_to : string -> unit (* raises Can't_move *)
+  val move_to : ?digest:Digest.t -> string -> unit (* raises Can't_move *)
 
   val allow_movement : unit -> unit
 
   val where_am_i : unit -> string option
+
+  val source_digest : unit -> Digest.t option
 end = struct
   type t = {
     already_moved : bool ;
     last_file_visited : string option ;
+    digest : Digest.t option ;
   }
 
   exception Can't_move
 
-  let default = { already_moved = false ; last_file_visited = None }
+  let default =
+    { already_moved = false ; last_file_visited = None ; digest = None }
 
   let state = ref default
 
@@ -107,16 +111,18 @@ end = struct
   let check_can_move () =
     if !state.already_moved then raise Can't_move
 
-  let move_to file =
+  let move_to ?digest file =
     if !state.already_moved then raise Can't_move else
     debug_log "File_switching.move_to %s" file ;
-    state := { already_moved = true ; last_file_visited = Some file }
+    state := { already_moved = true ; last_file_visited = Some file ; digest }
 
   let allow_movement () =
     debug_log "File_switching.allow_movement" ;
     state := { !state with already_moved = false }
 
   let where_am_i () = !state.last_file_visited
+
+  let source_digest () = !state.digest
 end
 
 
@@ -375,7 +381,7 @@ and browse_cmts ~root modules =
   let open Cmt_format in
   let cmt_infos = Cmt_cache.read root in
   info_log "inspecting %s" root ;
-  File_switching.move_to root ;
+  File_switching.move_to ?digest:cmt_infos.cmt_source_digest root ;
   match
     match cmt_infos.cmt_annots with
     | Interface intf      -> `Sg intf, false
@@ -496,29 +502,36 @@ let finalize source loc =
       | [] -> raise (File_not_found file)
       | [ x ] -> Some x
       | files ->
-        info_log "multiple files named %s exist in the source path, using \
-                  heuristic to select the right one" fname ;
-        let rev = String.reverse (Filename.concat dir fname) in
-        let lst =
-          List.map files ~f:(fun path ->
-            let path' = String.reverse path in
-            String.common_prefix_len rev path', path
-          )
-        in
-        let lst =
-          (* TODO: remove duplicates in [source_path] instead of using
-            [sort_uniq] here. *)
-          List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
-            let tmp = compare j i in
-            if tmp <> 0 then tmp else
-            compare s t
-          ) lst
-        in
-        match lst with
-        | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
-          raise (Multiple_matches files)
-        | (_, s) :: _ -> Some s
-        | _ -> assert false
+        try
+          match File_switching.source_digest () with
+          | None -> raise Not_found
+          | Some digest ->
+            debug_log "Trying to use digest to find the right source file" ;
+            Some (List.find files ~f:(fun f -> Digest.file f = digest))
+        with Not_found ->
+          info_log "multiple files named %s exist in the source path, using \
+                    heuristic to select the right one" fname ;
+          let rev = String.reverse (Filename.concat dir fname) in
+          let lst =
+            List.map files ~f:(fun path ->
+              let path' = String.reverse path in
+              String.common_prefix_len rev path', path
+            )
+          in
+          let lst =
+            (* TODO: remove duplicates in [source_path] instead of using
+              [sort_uniq] here. *)
+            List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
+              let tmp = compare j i in
+              if tmp <> 0 then tmp else
+              compare s t
+            ) lst
+          in
+          match lst with
+          | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
+            raise (Multiple_matches files)
+          | (_, s) :: _ -> Some s
+          | _ -> assert false
   in
   `Found (full_path, loc.Location.loc_start)
 
