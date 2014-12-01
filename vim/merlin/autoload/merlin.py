@@ -391,6 +391,7 @@ def vim_occurrences(vimvar):
     lcol = pos['col']
     if (lnum, lcol) <= (line, col): cursorpos = nr
     text = vim.current.buffer[lnum - 1]
+    text = text.replace("'", "`") # ugly, but no choice
     vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'I','valid':1}" %
         (bufnr, lnum, lcol + 1, nr, text))
     nr = nr + 1
