@@ -540,13 +540,11 @@ let recover () =
   | `ML  loc -> finalize true loc
   | `MLI loc -> finalize false loc
 
-let from_string ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
+let from_longident ~env ~local_defs ~is_implementation ?pos ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
-  info_log "looking for the source of '%s' (prioritizing %s files)"
-    path (match ml_or_mli with `ML -> ".ml" | `MLI -> ".mli");
-  let ident, is_label = keep_suffix (Longident.parse path) in
+  let ident, is_label = keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let path', loc =
@@ -598,13 +596,14 @@ let from_string ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
       let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
       | `Not_found when Fallback.is_set () -> recover ()
-      | `Not_found -> `Not_found (path, File_switching.where_am_i ())
+      | `Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
       | `ML  loc   -> finalize true loc
       | `MLI loc   -> finalize false loc
   with
   | _ when Fallback.is_set () -> recover ()
   | Not_found
-  | File_switching.Can't_move -> `Not_found (path, File_switching.where_am_i ())
+  | File_switching.Can't_move ->
+    `Not_found (str_ident, File_switching.where_am_i ())
   | File_not_found path ->
     let msg =
       match path with
@@ -632,14 +631,21 @@ let from_string ~env ~local_defs ~is_implementation ?pos ml_or_mli path =
     )
 
 let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
+  (* If the given ident is qualified, then we can't be at its definition.
+     Otherwise we might be and we have to inspect the context to know whether
+     it's worth looking further or not.
+     That explains the matching [2].
+
+     Note that we might not see that the path is qualified, since we are only
+     given the relevant prefix, we might just have a module name which would be
+     present in the context of a patvar if we have a pattern like
+         | { Foo.bar }
+     That's why we have the guard [1] *)
   let inspect_pattern p =
-    (* FIXME: that is too crude, for patterns of the for [{ Module.label }]
-       calling locate on the label (or module) will result in nothing, since it
-        is understood as a [Tpat_var], we need to inspect the ancestor of the
-       current node in the browse tree to identify this specific case. *)
     let open Typedtree in
     match p.pat_desc with
-    | Tpat_any | Tpat_var _ -> Some ()
+    | Tpat_any -> Some ()
+    | Tpat_var _ when String.uncapitalize path = path (* [1] *) -> Some ()
     | _ -> None
   in
   let inspect_context pos =
@@ -659,9 +665,16 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
       | _ ->
         None
   in
-  match Option.bind pos ~f:inspect_context with
-  | None ->
-    Fluid.let' sources_path (Project.source_path project) (fun () ->
-    Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
-    from_string ~env ~local_defs ~is_implementation switch path))
-  | Some () -> `At_origin
+  info_log "looking for the source of '%s' (prioritizing %s files)"
+    path (match switch with `ML -> ".ml" | `MLI -> ".mli");
+  Fluid.let' sources_path (Project.source_path project) (fun () ->
+  Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
+  let lid = Longident.parse path in
+  match lid with (* [2] *)
+  | Longident.Lident _ ->
+    begin match Option.bind pos ~f:inspect_context with
+    | None -> from_longident ~env ~local_defs ~is_implementation switch lid
+    | Some () -> `At_origin
+    end
+  | _ -> from_longident ~env ~local_defs ~is_implementation switch lid
+  ))
