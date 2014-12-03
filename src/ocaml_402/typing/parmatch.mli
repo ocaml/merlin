@@ -64,3 +64,12 @@ val check_unused: Env.t -> case list -> unit
 (* Irrefutability tests *)
 val irrefutable : pattern -> bool
 val fluid : pattern -> bool
+
+(*******************)
+(* Merlin specific *)
+(*******************)
+
+val top_pretty : Format.formatter -> pattern -> unit (* already there, only
+                                                       reexported *)
+
+val complete_partial : pattern list list -> pattern option

@@ -46,6 +46,18 @@ end
 module List = struct
   include ListLabels
 
+  let init ~f n =
+    let rec aux i = if i = n then [] else f i :: aux (succ i) in
+    aux 0
+
+  let index ~f l =
+    let rec aux i = function
+      | [] -> raise Not_found
+      | x :: _ when f x -> i
+      | _ :: xs -> aux (succ i) xs
+    in
+    aux 0 l
+
   (* [fold_left] with arguments flipped, because *)
   let rec fold_left' ~f l ~init = match l with
     | [] -> init
@@ -157,7 +169,7 @@ module List = struct
     | [] -> List.rev xs, List.rev ys, List.rev zs
   let split3 l = split3 [] [] [] l
 
-  let rec unfold f a = match f a with
+  let rec unfold ~f a = match f a with
     | None -> []
     | Some a -> a :: unfold f a
 

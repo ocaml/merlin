@@ -346,6 +346,21 @@ let dispatch (state : state) =
     | otherwise -> otherwise
     end
 
+  | (Case_analysis ({ Location. loc_start ; loc_end } as loc) : a request) ->
+    with_typer state (fun typer ->
+      let env = Typer.env typer in
+      let structures = Typer.contents typer in
+      let structures = Browse.of_typer_contents structures in
+      let enclosings = Browse.enclosing loc_start structures in
+      match
+        List.drop_while enclosings ~f:(fun t ->
+          Lexing.compare_pos t.BrowseT.t_loc.Location.loc_end loc_end < 0
+        )
+      with
+      | [] -> failwith "No node at given range"
+      | node :: parents -> Destruct.node ~env ~loc parents node
+    )
+
   | (Outline : a request) ->
     with_typer state (fun typer ->
       let typed_tree = Typer.contents typer in

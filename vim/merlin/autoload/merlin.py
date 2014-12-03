@@ -500,14 +500,64 @@ def bounds_of_ocaml_atom_at_pos(to_line, col):
 def vim_type_reset():
   global enclosing_types
   global current_enclosing
-  sync_buffer()
   enclosing_types = [] # reset
   current_enclosing = -1
+
+def replace_buffer_portion(start, end, txt):
+    start_line = start['line'] - 1
+    b = vim.current.buffer
+
+    fst_line = b[start_line]
+    lst_line = b[end['line'] - 1]
+
+    prefix = fst_line[0:start['col']]
+    suffix = lst_line[end['col']:len(lst_line)]
+
+    for i in range(start_line, end['line']):
+      del b[i]
+
+    txt = prefix + txt + suffix
+    lines = txt.split('\n')
+    lines.reverse()
+    for line in lines:
+        b[start_line:0] = [ line ]
+
+def vim_case_analysis():
+  global enclosing_types
+  global current_enclosing
+
+  if enclosing_types == []:
+    sync_buffer()
+    to_line, to_col = vim.current.window.cursor
+    pos = {'line':to_line, 'col':to_col}
+    try:
+      enclosing_types = command("type", "enclosing", "at", pos)
+      if enclosing_types != []:
+        current_enclosing = 0
+      else:
+        atom, _, _ = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
+        print("didn't manage to destruct '%s'" % atom)
+        return
+    except MerlinExc as e:
+      try_print_error(e)
+      return
+
+  tmp = enclosing_types[current_enclosing]
+  try:
+    result = command("case", "analysis", "from", tmp['start'], "to", tmp['end'])
+    tmp = result[0]
+    txt = result[1]
+    replace_buffer_portion(tmp['start'], tmp['end'], txt)
+  except MerlinExc as e:
+    try_print_error(e)
+
+  reset_enclosings()
 
 def vim_type_enclosing():
   global enclosing_types
   global current_enclosing
   vim_type_reset()
+  sync_buffer()
   to_line, to_col = vim.current.window.cursor
   pos = {'line':to_line, 'col':to_col}
   # deprecated, leave merlin compute the correct identifier

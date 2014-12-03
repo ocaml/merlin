@@ -538,7 +538,10 @@ let of_node ?(loc=default_loc) ?(env=default_env) node =
 
 let string_of_node = function
   | Dummy                     -> "dummy"
-  | Pattern                 _ -> "pattern"
+  | Pattern                 p ->
+    let fmt, printer = Format.to_string () in
+    Printtyped.pattern 0 fmt p ;
+    printer ()
   | Expression              _ -> "expression"
   | Case                    _ -> "case"
   | Class_expr              _ -> "class_expr"

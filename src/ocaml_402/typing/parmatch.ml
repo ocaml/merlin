@@ -715,7 +715,7 @@ let complete_tags nconsts nconstrs tags =
 (* build a pattern from a constructor list *)
 let pat_of_constr ex_pat cstr =
  {ex_pat with pat_desc =
-  Tpat_construct (mknoloc (Longident.Lident "?pat_of_constr?"),
+  Tpat_construct (mknoloc (Longident.Lident cstr.cstr_name),
                   cstr,omegas cstr.cstr_arity)}
 
 let rec pat_of_constrs ex_pat = function
@@ -1774,7 +1774,6 @@ module Conv = struct
     (ps, constrs, labels)
 end
 
-
 let do_check_partial ?pred exhaust loc casel pss = match pss with
 | [] ->
         (*
@@ -2027,3 +2026,43 @@ let check_partial_gadt pred loc casel =
         match casel with [] -> [] | a :: l -> a :: l @ [a] in *)
       check_partial_param (do_check_partial_gadt pred)
         do_check_fragile_gadt loc casel
+
+(*******************)
+(* Merlin specific *)
+(*******************)
+
+let do_complete_partial ?pred exhaust pss =
+  (* c/p of [do_check_partial] without the parts concerning the generation of
+     the error message or the warning emiting. *)
+  match pss with
+  | [] -> None
+  | ps :: _  ->
+    begin match exhaust None pss (List.length ps) with
+    | Rnone -> None
+    | Rsome [u] ->
+      let v =
+        match pred with
+        | Some pred ->
+          let (patterns,constrs,labels) = Conv.conv u in
+          get_first (pred constrs labels) patterns
+        | None -> Some u
+      in
+      begin match v with
+      | None -> None
+      | Some v ->
+        match v.pat_desc with
+        | Tpat_construct (_, {cstr_name="*extension*"}, _) ->
+          (* Matching over values of open types must include a wild card pattern
+            in order to be exhaustive. *)
+          Some omega
+        | _ -> Some v
+      end
+    | _ ->
+      (* FIXME: Are we sure we'll never get [Rsome lst]? This would be better
+         for us. *)
+      fatal_error "Parmatch.check_partial"
+    end
+
+let complete_partial pss =
+  let pss = get_mins le_pats pss in
+  do_complete_partial exhaust pss
