@@ -1260,7 +1260,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_structure_tail                    -> None
   | N_structure_item                    -> Some "any definition"
   | N_structure                         -> Some "structure"
-  | N_strict_binding                    -> Some "'= expression'"
+  | N_strict_binding                    -> Some "`=' expression"
   | N_str_type_extension                -> None
   | N_str_extension_constructors        -> None
   | N_str_exception_declaration         -> None
@@ -1361,7 +1361,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_functor_arg_name                  -> None
   | N_functor_arg                       -> Some "functor argument"
   | N_fun_def                           -> None
-  | N_fun_binding                       -> None
+  | N_fun_binding                       -> Some "`=' function body"
   | N_floating_attribute                -> None
   | N_field_expr_list                   -> Some "field expression"
   | N_field                             -> Some "field"

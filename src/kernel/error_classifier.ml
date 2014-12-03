@@ -47,21 +47,23 @@ let friendly_concat = function
 let classify {explanation = {Ex. item; unclosed; expected}} =
   let inside = match item with
     | None -> ""
-    | Some (name, _) -> " inside " ^ name in
+    | Some (name, _) -> " inside `" ^ name ^ "'" in
   let after = match unclosed with
     | None -> ""
     | Some (name, _) -> " after unclosed " ^ name in
   let friendly_name cls =
     match Raw_parser_values.friendly_name cls, cls with
     | Some name, Raw_parser.CT_ _ -> Some ("`" ^ name ^ "'")
-    | Some name, Raw_parser.CN_ _ -> Some ("<" ^ name ^ ">")
+    | Some name, Raw_parser.CN_ _ -> Some name
     | None, _ -> None in
   let expecting = match expected with
     | [] -> ""
     | classes ->
       let names = List.filter_map ~f:friendly_name classes in
       let names = match names with
-        | [] -> List.map ~f:Raw_parser_values.string_of_class expected
+        | [] ->
+          let f sym = "<" ^ Raw_parser_values.string_of_class sym ^ ">" in
+          List.map ~f expected
         | names -> names in
       let names = List.filter_dup names in
       ", expecting " ^ friendly_concat names
