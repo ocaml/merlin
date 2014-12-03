@@ -77,6 +77,8 @@ type _ request =
       | `Not_found of string * string option
       | `At_origin
       ] request
+  | Case_analysis
+    : Location.t -> (Location.t * string) request
   | Outline
     :  outline request
   | Drop

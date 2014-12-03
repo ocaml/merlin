@@ -43,6 +43,10 @@ SOURCES = \
 	$(TYPER)/parsing/ast_helper.ml    \
 	$(TYPER)/parsing/ast_mapper.mli   \
 	$(TYPER)/parsing/ast_mapper.ml    \
+	$(TYPER)/parsing/printast.mli     \
+	$(TYPER)/parsing/printast.ml      \
+	$(TYPER)/parsing/pprintast.mli    \
+	$(TYPER)/parsing/pprintast.ml     \
 	$(TYPER)/typing/annot.mli         \
 	$(TYPER)/typing/outcometree.mli   \
 	$(TYPER)/typing/ident.mli         \
@@ -72,6 +76,10 @@ SOURCES = \
 	$(TYPER)/typing/env.ml            \
 	$(TYPER)/typing/typedtree.mli     \
 	$(TYPER)/typing/typedtree.ml      \
+	$(TYPER)/typing/printtyped.mli    \
+	$(TYPER)/typing/printtyped.ml     \
+	$(TYPER)/tools/untypeast.mli      \
+	$(TYPER)/tools/untypeast.ml       \
 	$(TYPER)/browseT.mli              \
 	$(TYPER)/browseT.ml               \
 	$(TYPER)/tail_analysis.mli        \
@@ -141,8 +149,6 @@ SOURCES = \
 	src/kernel/merlin_lexer.ml        \
 	src/kernel/merlin_recover.mli     \
 	src/kernel/merlin_recover.ml      \
-	$(TYPER)/parsing/printast.mli     \
-	$(TYPER)/parsing/printast.ml      \
 	$(TYPER)/raw_typer.mli            \
 	$(TYPER)/raw_typer.ml             \
 	src/kernel/merlin_typer.mli       \
@@ -160,6 +166,7 @@ SOURCES = \
 	src/analysis/outline.ml           \
 	src/analysis/track_definition.mli \
 	src/analysis/track_definition.ml  \
+	src/analysis/destruct.ml          \
 	src/config/my_config.ml           \
 	src/frontend/IO_sexp.ml           \
 	src/frontend/main_args.mli        \

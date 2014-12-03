@@ -19,6 +19,7 @@ B src/ocaml
 B src/ocaml/parsing
 B src/ocaml/typing
 B src/ocaml/utils
+B src/ocaml/tools
 B src/ocaml_aux
 B src/utils
 PKG findlib

@@ -263,6 +263,11 @@ module Protocol_io = struct
       Request (Type_enclosing (Some (expr, offset), pos_of_json jpos))
     | [`String "type"; `String "enclosing"; `String "at"; jpos] ->
       Request (Type_enclosing (None, pos_of_json jpos))
+    | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ] ->
+      let loc_start = pos_of_json x in
+      let loc_end = pos_of_json y in
+      let loc_ghost = true in
+      Request (Case_analysis ({ Location. loc_start ; loc_end ; loc_ghost }))
     | [`String "enclosing"; jpos] ->
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
@@ -399,6 +404,14 @@ module Protocol_io = struct
           | `Found (Some file,pos) ->
             `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
           end
+        | Case_analysis _, ({ Location. loc_start ; loc_end }, str) ->
+          let assoc =
+            `Assoc [
+              "start", Lexing.json_of_position loc_start  ;
+              "end", Lexing.json_of_position loc_end ;
+            ]
+          in
+          `List [ assoc ; `String str ]
         | Outline, outlines ->
           `List (json_of_outline outlines)
         | Drop, cursor ->
