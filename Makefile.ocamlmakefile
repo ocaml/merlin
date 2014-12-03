@@ -27,6 +27,8 @@ SOURCES = \
 	src/utils/menhirLib.ml            \
 	src/utils/menhirUtils.mli         \
 	src/utils/menhirUtils.ml          \
+	src/utils/ppxsetup.mli            \
+	src/utils/ppxsetup.ml             \
 	$(TYPER)/utils/warnings.mli       \
 	$(TYPER)/utils/warnings.ml        \
 	$(TYPER)/utils/config.mli         \
@@ -149,6 +151,8 @@ SOURCES = \
 	src/kernel/merlin_lexer.ml        \
 	src/kernel/merlin_recover.mli     \
 	src/kernel/merlin_recover.ml      \
+	$(TYPER)/utils/pparse.mli         \
+	$(TYPER)/utils/pparse.ml          \
 	$(TYPER)/raw_typer.mli            \
 	$(TYPER)/raw_typer.ml             \
 	src/kernel/merlin_typer.mli       \

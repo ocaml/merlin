@@ -69,4 +69,5 @@ val parse : ?config:config -> file List.Lazy.t -> config
 
 (* If any of the dot-merlin specify a project name, return it *)
 val project_name : file List.Lazy.t -> string option
-val path_of_packages : string list -> [> `Failures of (string * exn) list | `Ok ] * string list
+val path_of_packages : string list
+  -> [> `Failures of (string * exn) list | `Ok ] * string list * Ppxsetup.t

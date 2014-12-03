@@ -97,7 +97,8 @@ end = struct
 
   type config = {
     mutable cfg_extensions : Extension.set;
-    mutable cfg_flags     : string list list;
+    mutable cfg_flags      : string list list;
+    mutable cfg_ppxs       : Ppxsetup.t;
     cfg_path_build  : string list ref;
     cfg_path_source : string list ref;
     cfg_path_cmi    : string list ref;
@@ -108,6 +109,7 @@ end = struct
   let empty_config () = {
     cfg_extensions = String.Set.empty;
     cfg_flags = [];
+    cfg_ppxs  = Ppxsetup.empty;
     cfg_path_build  = ref [];
     cfg_path_source = ref [];
     cfg_path_cmi    = ref [];
@@ -213,6 +215,13 @@ end = struct
       flush_global_modules project
     end
 
+  let update_ppxs prj =
+    let ppxs = Ppxsetup.union
+        prj.user_config.cfg_ppxs
+        prj.dot_config.cfg_ppxs in
+    prj.flags.Clflags.ppx <-
+      Ppxsetup.union prj.flags.Clflags.ppx ppxs
+
   let update_flags prj =
     let cl = Clflags.arg_spec prj.flags in
     let w  = Warnings.arg_spec prj.warnings in
@@ -242,6 +251,7 @@ end = struct
         List.rev_append (process_flags lst) acc
       )
     in
+    update_ppxs prj;
     Clflags.set := prj.flags ;
     Warnings.set := prj.warnings ;
     failures
@@ -279,9 +289,12 @@ end = struct
       flush_global_modules project
 
     let load_packages project pkgs =
-      let result, path = Dot_merlin.path_of_packages pkgs in
-      let rpath = project.user_config.cfg_path_pkg in
+      let result, path, ppxs = Dot_merlin.path_of_packages pkgs in
+      let cfg = project.user_config in
+      let rpath = cfg.cfg_path_pkg in
       rpath := List.filter_dup (path @ !rpath);
+      cfg.cfg_ppxs <- Ppxsetup.union ppxs cfg.cfg_ppxs;
+      update_ppxs project;
       result
 
     let add_flags project flags =
@@ -317,7 +330,7 @@ end = struct
       | Some path -> Dm.parse (Dm.read path)
       | None -> Dm.empty_config in
     let cfg = project.dot_config in
-    let result, path_pkg = Dot_merlin.path_of_packages dm.Dm.packages in
+    let result, path_pkg, ppxs = Dot_merlin.path_of_packages dm.Dm.packages in
     project.dot_merlins <- List.map dm.Dm.dot_merlins
         ~f:(fun file -> file, file_mtime file);
     cfg.cfg_path_pkg := List.filter_dup path_pkg;
@@ -326,6 +339,7 @@ end = struct
     cfg.cfg_path_cmi := dm.Dm.cmi_path;
     cfg.cfg_path_cmt := dm.Dm.cmt_path;
     cfg.cfg_flags <- dm.Dm.flags;
+    cfg.cfg_ppxs <- ppxs;
     let known_extensions, unknown_extensions =
       List.partition dm.Dm.extensions ~f:(fun ext ->
         String.Set.mem ext Extension.all

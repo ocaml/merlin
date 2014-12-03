@@ -29,6 +29,8 @@
 open Std
 open Misc
 
+let section = Logger.section "dot_merlin"
+
 type directive = [
   | `B of string
   | `S of string
@@ -187,6 +189,61 @@ let rec parse ?(config=empty_config) =
       flags       = List.rev (List.filter_dup config.flags);
     }
 
+let ppx_of_package ?(predicates=[]) pkg setup =
+  let d = Findlib.package_directory pkg in
+  (* Determine the 'ppx' property: *)
+  let in_words ~comma s =
+    (* splits s in words separated by commas and/or whitespace *)
+    let l = String.length s in
+    let rec split i j =
+      if j < l then
+        match s.[j] with
+        | (' '|'\t'|'\n'|'\r'|',' as c) when c <> ',' || comma ->
+          if i<j then (String.sub s i (j-i)) :: (split (j+1) (j+1))
+          else split (j+1) (j+1)
+        |	_ ->
+          split i (j+1)
+      else
+      if i<j then [ String.sub s i (j-i) ] else []
+    in
+    split 0 0
+  in
+  let resolve_path = Findlib.resolve_path ~base:d ~explicit:true in
+  let ppx =
+    try
+      Some(resolve_path
+             (Findlib.package_property predicates pkg "ppx"))
+    with Not_found -> None
+  and ppxopts =
+    try
+      List.map
+        (fun opt ->
+           match in_words ~comma:true opt with
+           | pkg :: opts ->
+             pkg, List.map resolve_path opts
+           | _ -> assert false)
+        (in_words ~comma:false
+           (Findlib.package_property predicates pkg "ppxopt"))
+    with Not_found -> []
+  in
+  begin match ppx with
+    | None -> ()
+    | Some ppx -> Logger.info section ~title:"ppx" ppx
+  end;
+  begin match ppxopts with
+    | [] -> ()
+    | lst -> Logger.infojf section ~title:"ppxopts"
+               (fun lst -> `List (List.map (fun (ppx,opts) ->
+                    `List [`String ppx; `List (List.map (fun s -> `String s)
+                                                 opts)]) lst)) lst
+  end;
+  let setup = match ppx with
+    | None -> setup
+    | Some ppx -> Ppxsetup.add_ppx ppx setup
+  in
+  List.fold_left' ~f:(fun (ppx,opts) -> Ppxsetup.add_ppxopts ppx opts)
+    ppxopts ~init:setup
+
 let path_of_packages packages =
   let packages =  packages in
   let f pkg =
@@ -201,8 +258,9 @@ let path_of_packages packages =
   let failures, packages = Either.split packages in
   let packages = List.filter_dup (List.concat packages) in
   let path = List.map ~f:Findlib.package_directory packages in
+  let ppxs = List.fold_left' ~f:ppx_of_package packages ~init:Ppxsetup.empty in
   let failures = match failures with
     | [] -> `Ok
     | ls -> `Failures ls
   in
-  failures, path
+  failures, path, ppxs

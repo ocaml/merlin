@@ -14,6 +14,9 @@
 
 type path_printing_mode = [`Real | `Short | `Slow ]
 
+module StringSet = Set.Make(String)
+module StringMap = Map.Make(String)
+
 type set = {
   include_dirs                 : string list ref;
   std_include                  : string list ref;
@@ -29,6 +32,7 @@ type set = {
   mutable nopervasives         : bool;
   mutable strict_formats       : bool;
   mutable open_modules         : string list;
+  mutable ppx                  : Ppxsetup.t;
 }
 
 let fresh () =
@@ -47,6 +51,7 @@ let fresh () =
     nopervasives         = false; (* -nopervasives *)
     strict_formats       = false; (* -strict-formats *)
     open_modules         = [];
+    ppx                  = Ppxsetup.empty;    (* -ppx *)
   }
 
 let copy t = {t with
@@ -202,6 +207,19 @@ let open_modules_spec t =
   Arg.String (fun md -> t.open_modules <- md :: t.open_modules),
   "<module>  Opens the module <module> before typing"
 
+let open_modules () = !set.open_modules
+let open_modules_spec t =
+  "-open",
+  Arg.String (fun md -> t.open_modules <- md :: t.open_modules),
+  "<module>  Opens the module <module> before typing"
+
+let ppx () = Ppxsetup.command_line !set.ppx
+
+let ppx_spec t =
+  "-ppx",
+  Arg.String (fun s -> t.ppx <- Ppxsetup.add_ppx s t.ppx),
+  "<command> Pipe abstract syntax trees through preprocessor <command>"
+
 (* Dummy values *)
 let annotations         () = false
 let binary_annotations  () = false
@@ -237,5 +255,6 @@ let arg_spec t =
     nopervasives_spec t;
     strict_formats_spec t;
     open_modules_spec t;
+    ppx_spec t;
   ]
 

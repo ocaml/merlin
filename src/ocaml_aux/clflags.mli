@@ -14,6 +14,9 @@
 
 type path_printing_mode = [`Real | `Short | `Slow ]
 
+module StringSet : Set.S with type elt = string
+module StringMap : Map.S with type key = string
+
 type set = {
   include_dirs                 : string list ref;
   std_include                  : string list ref;
@@ -29,6 +32,7 @@ type set = {
   mutable nopervasives         : bool;
   mutable strict_formats       : bool;
   mutable open_modules         : string list;
+  mutable ppx                  : Ppxsetup.t;
 }
 
 (* Manage set of flag *)
@@ -54,6 +58,7 @@ val unsafe_string        : unit -> bool
 val nopervasives         : unit -> bool
 val strict_formats       : unit -> bool
 val open_modules         : unit -> string list
+val ppx                  : unit -> string list
 
 (* Dummy values *)
 val annotations          : unit -> bool
