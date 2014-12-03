@@ -109,6 +109,12 @@ function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
   return join(l:files, "\n")
 endfunction
 
+function! merlin#CompletePrefix(ArgLead, CmdLine, CursorPos)
+  let l:compl = []
+  py merlin.vim_complete_prefix(vim.eval("a:ArgLead"), "l:compl")
+  return l:compl
+endfunction
+
 function! merlin#ExtEnable(...)
   py merlin.vim_ext(True, vim.eval("a:000"))
   py merlin.vim_reload()
@@ -322,7 +328,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinShrinkEnclosing call merlin#ShrinkEnclosing()
 
 
-  command! -buffer -nargs=? Locate call merlin#Locate(<q-args>)
+  command! -buffer -complete=customlist,merlin#CompletePrefix -nargs=? Locate call merlin#Locate(<q-args>)
 
   command! -buffer -nargs=0 Occurrences call merlin#Occurrences()
   command! -buffer -nargs=* Rename call merlin#OccurrencesRename(<f-args>)

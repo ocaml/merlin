@@ -163,6 +163,11 @@ def dump_at_cursor(*cmd):
   command_seek("exact", line, col)
   dump(*cmd)
 
+def uniq(seq):
+  seen = set()
+  seen_add = seen.add
+  return [ x for x in seq if not (x in seen or seen_add(x))]
+
 ######## BASIC COMMANDS
 
 def parse_position(pos):
@@ -329,13 +334,31 @@ def vim_complete_cursor(base, vimvar):
   try:
     props = command_complete_cursor(base,line,col)
     for prop in props:
+      name = prop['name'].replace("'", "''")
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-        (prop['name'].replace("'", "''")
+        (name
         ,re.sub(wspaces, " ", prop['desc']).replace("'", "''")
         ,prop['info'].replace("'", "''")
         ,prop['kind'][:1].replace("'", "''")
         ))
       vim.command("call add(%s, l:tmp)" % vimvar)
+  except MerlinExc as e:
+    try_print_error(e)
+
+def vim_complete_prefix(base, vimvar):
+  sync_buffer()
+  vim.command("let %s = []" % vimvar)
+  line, col = vim.current.window.cursor
+  wspaces = re.compile("[\n ]+")
+  prefix = base.rpartition('.')[0]
+  if prefix: prefix += '.'
+  try:
+    props = command_complete_cursor(base,line,col)
+    props = map(lambda prop: prop['name'], props)
+    props = uniq(sorted(props))
+    for prop in props:
+      name = prefix + prop.replace("'", "''")
+      vim.command("call add(%s, '%s')" % (vimvar, name))
   except MerlinExc as e:
     try_print_error(e)
 
