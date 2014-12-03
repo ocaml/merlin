@@ -42,6 +42,7 @@ let caught catch =
 
 type step = {
   raw        : Raw_typer.t;
+  ppx_cookie : Ast_mapper.cache;
   snapshot   : Btype.snapshot;
   env        : Env.t;
   contents   : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list;
@@ -54,13 +55,17 @@ let empty extensions catch  =
   let env = Extension.register extensions env in
   let exns = caught catch in
   let snapshot = Btype.snapshot () in
+  let ppx_cookie = !Ast_mapper.cache in
   { raw = Raw_typer.empty;
     contents = [];
-    snapshot; env; exns }
+    ppx_cookie; snapshot; env; exns }
 
-(* Rewriting to turn partial ASTs into valid OCaml AST chunks *)
+(* Rewriting:
+   - internal, to turn partial ASTs into valid OCaml AST chunks
+   - external by applying ppx preprocessors
+*)
 
-let rewrite loc = function
+let rewrite_raw loc = function
   | Raw_typer.Functor_argument (id,mty) ->
     let mexpr = Ast_helper.Mod.structure ~loc [] in
     let mexpr = Ast_helper.Mod.functor_ ~loc id mty mexpr in
@@ -87,6 +92,13 @@ let rewrite loc = function
     `str str
   | Raw_typer.Signature sg ->
     `sg sg
+
+let rewrite_ppx = function
+  | `str str -> `str (Pparse.apply_rewriters_str ~tool_name:"merlin" str)
+  | `sg sg -> `sg (Pparse.apply_rewriters_sig ~tool_name:"merlin" sg)
+  | `fake str -> `fake (Pparse.apply_rewriters_str ~tool_name:"merlin" str)
+
+let rewrite loc raw = rewrite_ppx (rewrite_raw loc raw)
 
 (* Produce a new step by processing one frame from the parser *)
 
@@ -130,13 +142,14 @@ let append catch loc item step =
       | `none -> step.env, step.contents
     in
     let snapshot = Btype.snapshot () in
+    let ppx_cookie = !Ast_mapper.cache in
     Typecore.reset_delayed_checks ();
-    {env; contents; snapshot;
+    {env; contents; snapshot; ppx_cookie;
      raw = step.raw;
      exns = caught catch @ step.exns}
   with exn ->
-    Typecore.reset_delayed_checks ();
     let snapshot = Btype.snapshot () in
+    Typecore.reset_delayed_checks ();
     {step with snapshot; exns = exn :: caught catch @ step.exns}
 
 (* Incremental synchronization *)
@@ -180,6 +193,7 @@ let sync_stack extensions catch steps current_frame =
       let root = Parser.root_frame frame' current_frame in
       let steps = find_root root steps in
       let (last_frame, last_step as last), steps = find_valid steps in
+      Ast_mapper.cache := last_step.ppx_cookie;
       Btype.backtrack last_step.snapshot;
       List.rev_scan_left steps ~f:(sync_frame catch) ~init:last
         (Parser.unroll_stack ~from:current_frame ~root:last_frame)
@@ -196,6 +210,7 @@ type state = {
 
 let fluid_btype = Fluid.from_ref Btype.cache
 let fluid_env = Fluid.from_ref Env.cache
+let fluid_ast = Fluid.from_ref Ast_mapper.cache
 
 (* Public API *)
 
@@ -206,7 +221,8 @@ type t = {
 
 let with_typer {state} f =
   Fluid.let' fluid_btype state.btype_cache @@ fun () ->
-  Fluid.let' fluid_env state.env_cache     @@ f
+  Fluid.let' fluid_env state.env_cache     @@ fun () ->
+  Fluid.let' fluid_ast (Ast_mapper.new_cache ()) @@ f
 
 let protect_typer t f =
   with_typer t @@ fun () ->

@@ -900,3 +900,10 @@ let run_main mapper =
 
 let register_function = ref (fun _name f -> run_main f)
 let register name f = !register_function name f
+
+(** merlin: manage all internal state *)
+
+type cache = Parsetree.expression StringMap.t
+
+let new_cache () = StringMap.empty
+let cache = cookies

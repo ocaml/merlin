@@ -191,3 +191,11 @@ val drop_ppx_context_sig: restore:bool -> Parsetree.signature -> Parsetree.signa
 
 val set_cookie: string -> Parsetree.expression -> unit
 val get_cookie: string -> Parsetree.expression option
+
+
+(** merlin: manage all internal state *)
+
+type cache
+
+val new_cache : unit -> cache
+val cache : cache ref
