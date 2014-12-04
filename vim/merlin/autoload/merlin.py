@@ -345,19 +345,17 @@ def vim_complete_cursor(base, vimvar):
   except MerlinExc as e:
     try_print_error(e)
 
-def vim_complete_prefix(base, vimvar):
+def vim_expand_prefix(base, vimvar):
   sync_buffer()
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
   wspaces = re.compile("[\n ]+")
-  prefix = base.rpartition('.')[0]
-  if prefix: prefix += '.'
   try:
-    props = command_complete_cursor(base,line,col)
-    props = map(lambda prop: prop['name'], props)
-    props = uniq(sorted(props))
-    for prop in props:
-      name = prefix + prop.replace("'", "''")
+    l = command("expand", "prefix", base, "at", {'line' : line, 'col': col})
+    l = map(lambda prop: prop['name'], l)
+    l = uniq(sorted(l))
+    for prop in l:
+      name = prop.replace("'", "''")
       vim.command("call add(%s, '%s')" % (vimvar, name))
   except MerlinExc as e:
     try_print_error(e)

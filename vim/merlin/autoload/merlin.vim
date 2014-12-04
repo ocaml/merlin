@@ -117,9 +117,9 @@ function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
   return join(l:files, "\n")
 endfunction
 
-function! merlin#CompletePrefix(ArgLead, CmdLine, CursorPos)
+function! merlin#ExpandPrefix(ArgLead, CmdLine, CursorPos)
   let l:compl = []
-  py merlin.vim_complete_prefix(vim.eval("a:ArgLead"), "l:compl")
+  py merlin.vim_expand_prefix(vim.eval("a:ArgLead"), "l:compl")
   return l:compl
 endfunction
 
@@ -401,7 +401,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 Destruct call merlin#Destruct()
 
 
-  command! -buffer -complete=customlist,merlin#CompletePrefix -nargs=? Locate call merlin#Locate(<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Locate call merlin#Locate(<q-args>)
 
   command! -buffer -nargs=0 Outline call merlin#Outline()
 
