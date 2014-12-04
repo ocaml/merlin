@@ -306,6 +306,39 @@ let dispatch (state : state) =
         List.rev compl
     )
 
+  | (Expand_prefix (prefix, pos) : a request) ->
+    with_typer state (
+      fun typer ->
+        let env =
+          let node = Completion.node_at typer pos in
+          node.BrowseT.t_env in
+        let lidents, last =
+          let project = Buffer.project state.buffer in
+          let global_modules = Project.global_modules project in
+          let ts = Expansion.explore ~global_modules env in
+          Expansion.get_lidents ts prefix
+        in
+        let validate =
+          let last = Str.regexp (Expansion.regex_of_path_prefix last) in
+          fun _ _ s -> Str.string_match last s 0
+        in
+        let process_lident lident =
+          let compl =
+            let aux kind compl =
+              Completion.completion_fold "" lident kind ~validate env compl in
+            List.fold_left' ~f:aux Completion.default_kinds ~init:[]
+          in
+          match lident with
+          | None -> compl
+          | Some lident ->
+            let lident = Longident.flatten lident in
+            let lident = String.concat ~sep:"." lident ^ "." in
+            List.map compl
+              ~f:Protocol.(fun comp -> {comp with name = lident ^ comp.name})
+        in
+        List.concat_map ~f:process_lident lidents
+    )
+
   | (Locate (patho, ml_or_mli, opt_pos) : a request) ->
     let env, local_defs =
       with_typer state (

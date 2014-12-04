@@ -162,6 +162,7 @@ SOURCES = \
 	src/analysis/browse_misc.ml       \
 	src/analysis/type_utils.ml        \
 	src/analysis/completion.ml        \
+	src/analysis/expansion.ml         \
 	src/analysis/outline.mli          \
 	src/analysis/outline.ml           \
 	src/analysis/track_definition.mli \
@@ -176,7 +177,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = findlib yojson unix
+PACKS = str findlib yojson unix
 
 ocamlmerlin $(RESULT): native-code
 

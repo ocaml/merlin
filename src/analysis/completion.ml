@@ -252,6 +252,8 @@ let completion_fold prefix path kind ~validate env compl =
   let items = List.rev_map ~f:snd items in
   items @ compl
 
+let default_kinds = [`Values; `Constructor; `Types; `Modules; `Modules_type]
+
 let completion_order = function
   | `Expression  -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
   | `Structure   -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
