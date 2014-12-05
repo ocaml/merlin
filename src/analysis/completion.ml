@@ -157,7 +157,7 @@ let completion_format ~exact name ?path ty =
     | _ -> to_string (), "" in
   {Protocol. name; kind; desc; info}
 
-let completion_fold prefix path kind ~validate env compl =
+let completion_fold prefix path namespc ~validate env compl =
   let fmt ~exact name ?path ty =
     let time =
       try Ident.binding_time (Path.head (Option.get path))
@@ -165,7 +165,7 @@ let completion_fold prefix path kind ~validate env compl =
     let item = completion_format ~exact name ?path ty in
     (- time, name), item in
   let items =
-    match kind with
+    match namespc with
     | `Values ->
       Env.fold_values
         (fun name path v compl ->
@@ -214,8 +214,9 @@ let completion_fold prefix path kind ~validate env compl =
   let items = List.rev_map ~f:snd items in
   items @ compl
 
+let all_namespaces = [`Values;`Types;`Constructors;`Modules;`Labels;`Module_types]
+
 let relevant_namespaces =
-  let all = [`Values;`Types;`Constructors;`Modules;`Labels;`Module_types] in
   let expr_up = [`Constructors; `Modules] in
   let expr_down = [`Values;`Labels] in
   let pattern_up = [`Constructors; `Modules] in
@@ -225,7 +226,7 @@ let relevant_namespaces =
   let open BrowseT in
   fun is_upper node_opt ->
     match node_opt with
-    | None -> all
+    | None -> all_namespaces
     | Some node ->
       match node with
       | Dummy
@@ -261,21 +262,21 @@ let relevant_namespaces =
       | Structure_item _
       | Signature _
       | Signature_item _ ->
-        all
+        all_namespaces
       | Module_expr _
       | Module_binding _
       | Module_declaration _
       | Module_binding_name _
       | Module_declaration_name _ ->
         (* modules *)
-        all (* fixme: is this right? *)
+        all_namespaces (* fixme: is this right? *)
       | Module_type_constraint _
       | Module_type _
       | Module_type_declaration _
       | Package_type _
       | Module_type_declaration_name _ ->
         (* module types *)
-        all
+        all_namespaces
 
 (* fixme: some nodes only get parsed sanely when they have bound
  * identifiers, even though they are *syntactically* fine. This
@@ -290,11 +291,10 @@ let node_complete buffer env node prefix =
      | None -> "unknown"
      | Some n -> BrowseT.string_of_node n);
   let suffix = Longident.last (Longident.parse prefix) in
-  let is_upper = Char.uppercase suffix.[0] = suffix.[0] in
   let prefix =
     if suffix <> ""
       && Char.uppercase prefix.[0] <> prefix.[0]
-      && is_upper
+      && Char.uppercase suffix.[0] = suffix.[0]
     then
       suffix
     else
@@ -318,10 +318,9 @@ let node_complete buffer env node prefix =
       && valid tag name
     in
     try
-      let namespaces = relevant_namespaces is_upper node in
       let add_completions kind compl =
         completion_fold prefix path kind ~validate env compl in
-      List.fold_left' ~f:add_completions namespaces ~init:[]
+      List.fold_left' ~f:add_completions all_namespaces ~init:[]
     with
     | exn ->
       (* Our path might be of the form [Some_path.record.Real_path.prefix] which
