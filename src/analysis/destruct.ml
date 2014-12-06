@@ -17,41 +17,6 @@ let assert_false =
   let _false = Location.mknoloc (Longident.Lident "false") in
   Ast_helper.Exp.assert_ (Ast_helper.Exp.construct _false None)
 
-module Tast_helper = (* TODO: move in dedicated module inside ocaml_XXX/ *)
-struct
-  open Typedtree
-
-  module Pat = struct
-    let pat_extra = []
-    let pat_attributes = []
-
-    let var ?loc pat_env pat_type str =
-      let pat_loc =
-        match loc with
-        | None -> str.Asttypes.loc
-        | Some loc -> loc
-      in
-      let pat_desc = Tpat_var (Ident.create str.Asttypes.txt, str) in
-      { pat_desc; pat_loc; pat_extra; pat_attributes; pat_type; pat_env }
-
-    let record ?(loc=Location.none) pat_env pat_type lst closed_flag =
-      let pat_desc = Tpat_record (lst, closed_flag) in
-      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
-
-    let tuple ?(loc=Location.none) pat_env pat_type lst =
-      let pat_desc = Tpat_tuple lst in
-      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
-
-    let construct ?(loc=Location.none) pat_env pat_type lid cstr_desc args =
-      let pat_desc = Tpat_construct (lid, cstr_desc, args) in
-      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
-
-    let pat_or ?(loc=Location.none) ?row_desc pat_env pat_type p1 p2 =
-      let pat_desc = Tpat_or (p1, p2, row_desc) in
-      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
-  end
-end
-
 let gen_patterns env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
@@ -156,38 +121,6 @@ let rec destructible patt =
   | Tpat_alias (p, _, _)  -> destructible p
   | _ -> false
 
-let subst_patt initial ~by patt =
-  let changed = ref false in
-  let rec f patt =
-    let open Typedtree in
-    if patt == initial then ( changed := true ; by ) else
-    match patt.pat_desc with
-    | Tpat_any
-    | Tpat_var _
-    | Tpat_constant _ -> patt
-    | Tpat_alias (p,x,y) ->
-      { patt with pat_desc = Tpat_alias (f p, x, y) }
-    | Tpat_tuple lst ->
-      { patt with pat_desc = Tpat_tuple (List.map lst ~f)}
-    | Tpat_construct (lid, cd, lst) ->
-      { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f) }
-    | Tpat_variant (lbl, pat_opt, row_desc) ->
-      { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
-    | Tpat_record (sub, flg) ->
-      let sub' =
-        List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
-      in
-      { patt with pat_desc = Tpat_record (sub', flg) }
-    | Tpat_array lst ->
-      { patt with pat_desc = Tpat_array (List.map lst ~f)}
-    | Tpat_or (p1, p2, row) ->
-      { patt with pat_desc = Tpat_or (f p1, f p2, row) }
-    | Tpat_lazy p ->
-      { patt with pat_desc = Tpat_lazy (f p) }
-  in
-  let patt' = f patt in
-  !changed, patt'
-
 let node ~loc ~env parents node =
   match node.t_node with
   | Expression expr ->
@@ -196,7 +129,7 @@ let node ~loc ~env parents node =
     let cases  =
       List.map ps ~f:(fun patt ->
         let pc_lhs = Untypeast.untype_pattern patt in
-        Parsetree.{ pc_lhs ; pc_guard = None ; pc_rhs = assert_false }
+        { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = assert_false }
       )
     in
     let pexp   = Untypeast.untype_expression expr in
@@ -217,9 +150,12 @@ let node ~loc ~env parents node =
     | Some pat ->
       let ppat = Untypeast.untype_pattern pat in
       let case = Ast_helper.Exp.case ppat assert_false in
-      let loc = Location.{last_case_loc with loc_start=last_case_loc.loc_end} in
+      let loc =
+        let open Location in
+        { last_case_loc with loc_start = last_case_loc.loc_end }
+      in
       let fmt, to_string = Format.to_string () in
-      Pprintast.default#case_list fmt [ case ] ;
+      Pprintast.case_list fmt [ case ] ;
       loc, to_string ()
     | None ->
       if not (destructible patt) then raise Nothing_to_do else
@@ -238,7 +174,7 @@ let node ~loc ~env parents node =
         let rep = ref replacement in
         let patterns =
           List.map patterns ~f:(fun p ->
-            let changed, p' = subst_patt patt ~by:replacement p in
+            let changed, p' = Merlin_types_custom.subst_patt patt ~by:replacement p in
             if changed then (
               loc := p.Typedtree.pat_loc ;
               rep := p'

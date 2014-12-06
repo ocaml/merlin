@@ -1244,3 +1244,12 @@ let core_type=default#core_type
 let pattern=default#pattern
 let signature=default#signature
 let structure=default#structure
+
+let case_list fmt lst =
+  let f { pc_lhs ; pc_guard ; pc_rhs } =
+    match pc_guard with
+    | None -> (pc_lhs, pc_rhs)
+    | Some g -> (pc_lhs, { pc_rhs with pexp_desc = Pexp_when (g, pc_rhs) })
+  in
+  let lst = List.map f lst in
+  default#case_list fmt lst
