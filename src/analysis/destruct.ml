@@ -45,13 +45,12 @@ struct
     let construct ?(loc=Location.none) pat_env pat_type lid cstr_desc args =
       let pat_desc = Tpat_construct (lid, cstr_desc, args) in
       { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
+
+    let pat_or ?(loc=Location.none) ?row_desc pat_env pat_type p1 p2 =
+      let pat_desc = Tpat_or (p1, p2, row_desc) in
+      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
   end
 end
-
-let mk_pat_var env typ i =
-  let str = Location.mknoloc (sprintf "_x%d" i) in
-  Tast_helper.Pat.var env typ str
-
 
 let gen_patterns env type_expr =
   let open Types in
@@ -60,7 +59,7 @@ let gen_patterns env type_expr =
   | Tvar _ -> raise (Not_allowed "non-immediate type")
   | Tarrow _ -> raise (Not_allowed "arrow type")
   | Ttuple lst ->
-    let patterns = List.mapi lst ~f:(fun i _ -> mk_pat_var env type_expr i) in
+    let patterns = Parmatch.omega_list lst in
     [ Tast_helper.Pat.tuple env type_expr patterns ]
   | Tconstr (path, _params, _) ->
     begin match Env.find_type_descrs path env with
@@ -79,7 +78,7 @@ let gen_patterns env type_expr =
       List.map constructors ~f:(fun cstr_descr ->
         let args =
           if cstr_descr.cstr_arity <= 0 then [] else
-          List.init cstr_descr.cstr_arity ~f:(mk_pat_var env type_expr)
+          Parmatch.omegas cstr_descr.cstr_arity
         in
         let lidl = Location.mknoloc (Longident.Lident cstr_descr.cstr_name) in
         Tast_helper.Pat.construct env type_expr lidl cstr_descr args
@@ -130,7 +129,9 @@ let rec get_every_pattern = function
         | Case _ ->
           List.filter_map (Lazy.force c.t_children) ~f:(fun patt ->
             match patt.t_node with
-            | Pattern p -> Some p
+            | Pattern p ->
+              Logger.debugf section ~title:"GET EVERY PAT" Location.print_loc p.Typedtree.pat_loc ;
+              Some p
             | _ -> None
           )
         | _ -> []
@@ -158,22 +159,37 @@ let rec destructible patt =
   | Tpat_alias (p, _, _)  -> destructible p
   | _ -> false
 
-let rec subst_patt initial ~by patt =
-  let open Typedtree in
-  if patt == initial then by else
-  match patt.pat_desc with
-  | Tpat_any
-  | Tpat_var _
-  | Tpat_constant _ -> patt
-  | Tpat_alias (p,x,y) ->
-    { patt with pat_desc = Tpat_alias (subst_patt initial ~by p, x, y) }
-  | Tpat_tuple (_x0) -> assert false
-  | Tpat_construct (_x0,_x1,_x2) -> assert false
-  | Tpat_variant (_x0,_x1,_x2) -> assert false
-  | Tpat_record (_x0,_x1) -> assert false
-  | Tpat_array (_x0) -> assert false
-  | Tpat_or (_x0,_x1,_x2) -> assert false
-  | Tpat_lazy (_x0) -> assert false
+let subst_patt initial ~by patt =
+  let changed = ref false in
+  let rec f patt =
+    let open Typedtree in
+    if patt == initial then ( changed := true ; by ) else
+    match patt.pat_desc with
+    | Tpat_any
+    | Tpat_var _
+    | Tpat_constant _ -> patt
+    | Tpat_alias (p,x,y) ->
+      { patt with pat_desc = Tpat_alias (f p, x, y) }
+    | Tpat_tuple lst ->
+      { patt with pat_desc = Tpat_tuple (List.map lst ~f)}
+    | Tpat_construct (lid, cd, lst) ->
+      { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f) }
+    | Tpat_variant (lbl, pat_opt, row_desc) ->
+      { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
+    | Tpat_record (sub, flg) ->
+      let sub' =
+        List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
+      in
+      { patt with pat_desc = Tpat_record (sub', flg) }
+    | Tpat_array lst ->
+      { patt with pat_desc = Tpat_array (List.map lst ~f)}
+    | Tpat_or (p1, p2, row) ->
+      { patt with pat_desc = Tpat_or (f p1, f p2, row) }
+    | Tpat_lazy p ->
+      { patt with pat_desc = Tpat_lazy (f p) }
+  in
+  let patt' = f patt in
+  !changed, patt'
 
 let node ~loc ~env parents node =
   match node.t_node with
@@ -200,8 +216,7 @@ let node ~loc ~env parents node =
       Logger.infof section ~title:"EXISTING" Pprintast.pattern p
     ) ;
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
-    let new_patt_opt = Parmatch.complete_partial pss in
-    begin match new_patt_opt with
+    begin match Parmatch.complete_partial pss with
     | Some p ->
       let pexpr = insert_pattern expr p in
       let fmt, to_string = Format.to_string () in
@@ -213,13 +228,39 @@ let node ~loc ~env parents node =
       let ty = patt.Typedtree.pat_type in
       begin match gen_patterns env ty with
       | [] -> assert false (* we raise Not_allowed, but never return [] *)
+      | [ more_precise ] ->
+        (* If only one pattern is generated, then we're only refining the
+           current pattern, not generating new branches. *)
+        let ppat = Untypeast.untype_pattern more_precise in
+        let fmt, to_string = Format.to_string () in
+        Pprintast.pattern fmt ppat ;
+        patt.Typedtree.pat_loc, to_string ()
       | replacement :: _ ->
-        let patterns = List.map patterns ~f:(subst_patt patt ~by:replacement) in
-        failwith "TODO(patt)"
+        let loc = ref patt.Typedtree.pat_loc in
+        let rep = ref replacement in
+        let patterns =
+          List.map patterns ~f:(fun p ->
+            let changed, p' = subst_patt patt ~by:replacement p in
+            if changed then (
+              loc := p.Typedtree.pat_loc ;
+              rep := p'
+            ) ;
+            p'
+          )
+        in
+        let pss = List.map patterns ~f:(fun x -> [ x ]) in
+        match Parmatch.complete_partial pss with
+        | None ->
+          (* [get_patterns] generated more than one, so we *must* have something
+             here. *)
+          assert false 
+        | Some p ->
+          let p = Tast_helper.Pat.pat_or env p.Typedtree.pat_type !rep p in
+          let ppat = Untypeast.untype_pattern p in
+          let fmt, to_string = Format.to_string () in
+          Pprintast.pattern fmt ppat ;
+          !loc, to_string ()
       end
     end
   | _ ->
     failwith "not handled"
-
-let test (x : int option list) =
-  x
