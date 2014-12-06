@@ -13,13 +13,45 @@ let () =
     | _ -> None
   )
 
-let mk_pat_var i =
-  let str = Location.mknoloc (sprintf "_x%d" i) in
-  Ast_helper.Pat.var str
-
 let assert_false =
   let _false = Location.mknoloc (Longident.Lident "false") in
   Ast_helper.Exp.assert_ (Ast_helper.Exp.construct _false None)
+
+module Tast_helper = (* TODO: move in dedicated module inside ocaml_XXX/ *)
+struct
+  open Typedtree
+
+  module Pat = struct
+    let pat_extra = []
+    let pat_attributes = []
+
+    let var ?loc pat_env pat_type str =
+      let pat_loc =
+        match loc with
+        | None -> str.Asttypes.loc
+        | Some loc -> loc
+      in
+      let pat_desc = Tpat_var (Ident.create str.Asttypes.txt, str) in
+      { pat_desc; pat_loc; pat_extra; pat_attributes; pat_type; pat_env }
+
+    let record ?(loc=Location.none) pat_env pat_type lst closed_flag =
+      let pat_desc = Tpat_record (lst, closed_flag) in
+      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
+
+    let tuple ?(loc=Location.none) pat_env pat_type lst =
+      let pat_desc = Tpat_tuple lst in
+      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
+
+    let construct ?(loc=Location.none) pat_env pat_type lid cstr_desc args =
+      let pat_desc = Tpat_construct (lid, cstr_desc, args) in
+      { pat_desc; pat_loc = loc; pat_extra; pat_attributes; pat_type; pat_env }
+  end
+end
+
+let mk_pat_var env typ i =
+  let str = Location.mknoloc (sprintf "_x%d" i) in
+  Tast_helper.Pat.var env typ str
+
 
 let gen_patterns env type_expr =
   let open Types in
@@ -28,8 +60,8 @@ let gen_patterns env type_expr =
   | Tvar _ -> raise (Not_allowed "non-immediate type")
   | Tarrow _ -> raise (Not_allowed "arrow type")
   | Ttuple lst ->
-    let patterns = List.mapi lst ~f:(fun i _ -> mk_pat_var i) in
-    [ Ast_helper.Pat.tuple patterns ]
+    let patterns = List.mapi lst ~f:(fun i _ -> mk_pat_var env type_expr i) in
+    [ Tast_helper.Pat.tuple env type_expr patterns ]
   | Tconstr (path, _params, _) ->
     begin match Env.find_type_descrs path env with
     | [], [] ->
@@ -38,20 +70,19 @@ let gen_patterns env type_expr =
       let lst =
         List.map labels ~f:(fun lbl_descr ->
           let lidloc = Location.mknoloc (Longident.Lident lbl_descr.lbl_name) in
-          lidloc, Ast_helper.Pat.var (Location.mknoloc lbl_descr.lbl_name)
+          lidloc, lbl_descr,
+          Tast_helper.Pat.var env type_expr (Location.mknoloc lbl_descr.lbl_name)
         )
       in
-      [ Ast_helper.Pat.record lst Asttypes.Closed ]
+      [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
     | constructors, _ ->
       List.map constructors ~f:(fun cstr_descr ->
         let args =
-          if cstr_descr.cstr_arity <= 0 then None else
-          Some (
-            Ast_helper.Pat.tuple (List.init cstr_descr.cstr_arity ~f:mk_pat_var)
-          )
+          if cstr_descr.cstr_arity <= 0 then [] else
+          List.init cstr_descr.cstr_arity ~f:(mk_pat_var env type_expr)
         in
         let lidl = Location.mknoloc (Longident.Lident cstr_descr.cstr_name) in
-        Ast_helper.Pat.construct lidl args
+        Tast_helper.Pat.construct env type_expr lidl cstr_descr args
       )
     end
   | Tvariant row_desc ->
@@ -150,7 +181,8 @@ let node ~loc ~env parents node =
     let ty = expr.Typedtree.exp_type in
     let ps = gen_patterns env ty in
     let cases  =
-      List.map ps ~f:(fun pc_lhs ->
+      List.map ps ~f:(fun patt ->
+        let pc_lhs = Untypeast.untype_pattern patt in
         Parsetree.{ pc_lhs ; pc_guard = None ; pc_rhs = assert_false }
       )
     in
