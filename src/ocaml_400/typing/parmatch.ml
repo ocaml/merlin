@@ -732,8 +732,8 @@ let complete_tags nconsts nconstrs tags =
 (* build a pattern from a constructor list *)
 let pat_of_constr ex_pat cstr =
  {ex_pat with pat_desc =
-  Tpat_construct (Path.Pident (Ident.create "?pat_of_constr?"),
-                  mknoloc (Longident.Lident "?pat_of_constr?"),
+  Tpat_construct (Path.Pident (Ident.create cstr.cstr_name),
+                  mknoloc (Longident.Lident cstr.cstr_name),
                   cstr,omegas cstr.cstr_arity,false)}
 
 let rec pat_of_constrs ex_pat = function

@@ -306,3 +306,37 @@ let dest_tstr_eval str =
   | _ -> failwith "unhandled expression"
 
 let full_scrape = Mtype.scrape
+
+let subst_patt initial ~by patt =
+  let changed = ref false in
+  let rec f patt =
+    let open Typedtree in
+    if patt == initial then ( changed := true ; by ) else
+    match patt.pat_desc with
+    | Tpat_any
+    | Tpat_var _
+    | Tpat_constant _ -> patt
+    | Tpat_alias (p,x,y) ->
+      { patt with pat_desc = Tpat_alias (f p, x, y) }
+    | Tpat_tuple lst ->
+      { patt with pat_desc = Tpat_tuple (List.map lst ~f)}
+    | Tpat_construct (path, lid, cd, lst, b) ->
+      { patt with pat_desc = Tpat_construct (path, lid, cd, List.map lst ~f, b) }
+    | Tpat_variant (lbl, pat_opt, row_desc) ->
+      { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
+    | Tpat_record (sub, flg) ->
+      let sub' =
+        List.map sub ~f:(fun (path, lid, lbl_descr, patt) ->
+          path, lid, lbl_descr, f patt)
+      in
+      { patt with pat_desc = Tpat_record (sub', flg) }
+    | Tpat_array lst ->
+      { patt with pat_desc = Tpat_array (List.map lst ~f)}
+    | Tpat_or (p1, p2, row) ->
+      { patt with pat_desc = Tpat_or (f p1, f p2, row) }
+    | Tpat_lazy p ->
+      { patt with pat_desc = Tpat_lazy (f p) }
+  in
+  let patt' = f patt in
+  !changed, patt'
+
