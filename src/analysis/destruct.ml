@@ -123,34 +123,31 @@ let rec get_every_pattern = function
       get_every_pattern parents
     | Expression e ->
       (* We are on the right node *)
-      e, List.concat_map (Lazy.force parent.t_children) ~f:(fun c ->
-        match c.t_node with
-        | Pattern _ -> (* Not expected here *) assert false
-        | Case _ ->
-          List.filter_map (Lazy.force c.t_children) ~f:(fun patt ->
-            match patt.t_node with
-            | Pattern p ->
-              Logger.debugf section ~title:"GET EVERY PAT" Location.print_loc p.Typedtree.pat_loc ;
-              Some p
-            | _ -> None
-          )
-        | _ -> []
-      )
+      let patterns =
+        List.concat_map (Lazy.force parent.t_children) ~f:(fun c ->
+          match c.t_node with
+          | Pattern _ -> (* Not expected here *) assert false
+          | Case _ ->
+            List.filter_map (Lazy.force c.t_children) ~f:(fun patt ->
+              match patt.t_node with
+              | Pattern p -> Some p
+              | _ -> None
+            )
+          | _ -> []
+        )
+      in
+      let loc =
+        let open Location in
+        let init = none in
+        List.fold_left (Lazy.force parent.t_children) ~init ~f:(fun l t ->
+          if Lexing.compare_pos t.t_loc.loc_end l.loc_end > 0 then t.t_loc else l
+        )
+      in
+      loc, patterns
     | _ ->
       let j = Browse_misc.dump_ts [ parent ] in
       let s = Json.to_string j in
       invalid_arg (sprintf "get_every_pattern: %s" s)(* Something went wrong. *)
-
-let insert_pattern expr pat =
-  let pexpr  = Untypeast.untype_expression expr in
-  let pc_lhs = Untypeast.untype_pattern pat in
-  let open Parsetree in
-  match pexpr.pexp_desc with
-  | Pexp_match (expr, cases) ->
-    let case = { pc_lhs ; pc_guard = None ; pc_rhs = assert_false } in
-    { pexpr with pexp_desc = Pexp_match (expr, cases @ [ case ]) }
-  | _ ->
-    assert false
 
 let rec destructible patt =
   let open Typedtree in
@@ -210,20 +207,21 @@ let node ~loc ~env parents node =
     let str = if needs_parentheses parents then "(" ^ str ^ ")" else str in
     loc, str
   | Pattern patt ->
-    let expr, patterns = get_every_pattern parents in
+    let last_case_loc, patterns = get_every_pattern parents in
     List.iter patterns ~f:(fun p ->
       let p = Untypeast.untype_pattern p in
       Logger.infof section ~title:"EXISTING" Pprintast.pattern p
     ) ;
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
-    | Some p ->
-      let pexpr = insert_pattern expr p in
+    | Some pat ->
+      let ppat = Untypeast.untype_pattern pat in
+      let case = Ast_helper.Exp.case ppat assert_false in
+      let loc = Location.{last_case_loc with loc_start=last_case_loc.loc_end} in
       let fmt, to_string = Format.to_string () in
-      Pprintast.expression fmt pexpr ;
-      expr.Typedtree.exp_loc, to_string ()
+      Pprintast.default#case_list fmt [ case ] ;
+      loc, to_string ()
     | None ->
-      Logger.info section "Total matching" ;
       if not (destructible patt) then raise Nothing_to_do else
       let ty = patt.Typedtree.pat_type in
       begin match gen_patterns env ty with
