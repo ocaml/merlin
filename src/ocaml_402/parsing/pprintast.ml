@@ -1413,3 +1413,5 @@ let core_type=default#core_type
 let pattern=default#pattern
 let signature=default#signature
 let structure=default#structure
+
+let case_list = default#case_list

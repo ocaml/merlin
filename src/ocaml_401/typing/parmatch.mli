@@ -64,3 +64,9 @@ val check_unused: Env.t -> (pattern * expression) list -> unit
 (* Irrefutability tests *)
 val irrefutable : pattern -> bool
 val fluid : pattern -> bool
+
+(*******************)
+(* Merlin specific *)
+(*******************)
+
+val complete_partial : pattern list list -> pattern option
