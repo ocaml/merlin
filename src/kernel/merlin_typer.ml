@@ -143,14 +143,48 @@ module P = struct
     let items = List.map ~f:(rewrite loc) items in
     let t = List.fold_left' ~f:(append catch loc) items ~init:t in
     t
-
-  let delta st f t ~old:_ = frame st f t
-
-  let evict st _ = ()
-
 end
 
-module I = Merlin_parser.Integrate (P)
+module I = struct
+  type t =
+    | Zero of P.t
+    | More of P.t * Merlin_parser.frame * t
+
+  let empty st = Zero (P.empty st)
+
+  let previous = function
+    | Zero _ -> None
+    | More (_,_,t) -> Some t
+
+  let value (Zero x | More (x,_,_)) = x
+
+  let update st f t =
+    let t, frames = match t with
+      | Zero _ -> t, None
+      | More (_,f',_) ->
+        try
+          let f0 = Merlin_parser.root_frame f f' in
+          let rec mount = function
+            | Zero _ as t -> t, None
+            | More (p,f',_) as t
+              when Merlin_parser.Frame.eq f0 f' &&
+                   P.validate st p ->
+              t, Some (Merlin_parser.unroll_stack ~from:f ~root:f')
+            | More (_,_,t) -> mount t
+          in
+          mount t
+        with Not_found ->
+          empty st, None
+    in
+    let frames = match frames with
+      | Some frames -> frames
+      | None -> List.rev (f :: List.unfold Merlin_parser.Frame.next f)
+    in
+    let process_frame f t = More (P.frame st f (value t), f, t) in
+    List.fold_left' ~f:process_frame frames ~init:t
+
+  let update' st p t = update st (Merlin_parser.stack p) t
+end
 
 type t = {
   btype_cache : Btype.cache;

@@ -37,8 +37,8 @@ let section = Logger.section "parser"
 
 type state = Raw_parser.state
 
-type t = Parser of P.feed P.parser * MenhirUtils.witness
-type frame = Frame of int * (P.state, P.symbol) E.stack
+type t = P.feed P.parser
+type frame = (P.state, P.symbol) E.stack
 
 type parser = t
 
@@ -49,7 +49,6 @@ let mk_loc loc_start loc_end = {Location. loc_start; loc_end; loc_ghost = false}
 
 module Frame : sig
   val stack : t -> frame
-  val depth : frame -> int
 
   val value : frame -> P.symbol
   val location : ?pop:int -> frame -> Location.t
@@ -64,38 +63,32 @@ module Frame : sig
   val destruct: frame -> destruct
 end = struct
 
-  let frame_of d stack =
-    if stack.E.next == stack then
-      None
-    else
-      Some (Frame (d,stack))
+  let frame_of = function
+    | stack when stack.E.next == stack -> None
+    | stack -> Some stack
 
-  let stack (Parser (parser,w)) =
-    match frame_of (MenhirUtils.depth w - 1) (get_stack parser) with
-    | Some frame -> frame
-    | None -> assert false
+  let stack parser =
+    let stack = get_stack parser in
+    assert (stack.E.next != stack);
+    stack
 
-  let depth (Frame (d,f)) = d
+  let value frame = frame.E.semv
 
-  let value (Frame (_,frame)) = frame.E.semv
-
-  let location ?(pop=0) (Frame (_,frame)) =
-    let rec aux frame = function
-      | n when n > 0 -> aux frame.E.next (n - 1)
-      | _ -> frame
-    in
-    let frame = aux frame pop in
-    mk_loc frame.E.startp frame.E.endp
-
-  let eq (Frame (_,f)) (Frame (_,f')) = f == f'
-
-  let next ?(n=1) (Frame (d,f)) =
+  let pop n f =
     assert (n >= 0);
     let rec loop f = function
       | 0 -> f
       | n -> loop f.E.next (n - 1)
     in
-    frame_of (d - n) (loop f n)
+    loop f n
+
+  let location ?pop:(n=0) frame =
+    let frame = pop n frame in
+    mk_loc frame.E.startp frame.E.endp
+
+  let next ?(n=1) f = frame_of (pop n f)
+
+  let eq f f' = f == f'
 
   (* Ease pattern matching on parser stack *)
   type destruct = D of P.symbol * destruct lazy_t
@@ -109,8 +102,8 @@ end = struct
     in
     D (v,tl)
 
-  let lr1_state (Frame (_,stack)) = stack.E.state
-  let lr0_state frame = Raw_parser.Query.lr0_state (lr1_state frame)
+  let lr1_state stack = stack.E.state
+  let lr0_state stack = Raw_parser.Query.lr0_state (lr1_state stack)
 end
 
 let implementation = P.implementation_state
@@ -118,19 +111,15 @@ let interface = P.interface_state
 
 let stack = Frame.stack
 
-let pop (Parser (p, depth)) =
+let pop p =
   match MenhirUtils.pop p.P.env with
   | None -> None
-  | Some env ->
-    let p = {p with P.env = env} in
-    Some (Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p)))
+  | Some env -> Some {p with P.env = env}
 
 let get_location ?pop t =
   let pop =
     match pop with
-    | None ->
-      let Parser (s,_) = t in
-      Merlin_recovery_strategy.parser_pos (get_lr0_state s)
+    | None -> Merlin_recovery_strategy.parser_pos (get_lr0_state t)
     | Some pop -> pop
   in
   Frame.location ~pop (stack t)
@@ -139,21 +128,20 @@ let get_guide ?pop t =
   let loc = get_location ?pop t in
   loc.Location.loc_start
 
-let of_feed p depth =
-  Parser (p, MenhirUtils.stack_depth ~hint:depth (get_stack p))
+let of_feed p : parser = p
 
-let rec of_step s depth =
+let rec of_step s =
   match P.step s with
   | `Accept _ as result -> result
   | `Reject p ->
-    `Reject (of_feed (Obj.magic p) depth)
-  | `Feed p -> `Step (of_feed p depth)
-  | `Step p -> of_step p (MenhirUtils.stack_depth ~hint:depth (get_stack p))
+    `Reject (of_feed (Obj.magic p))
+  | `Feed p -> `Step (of_feed p)
+  | `Step p -> of_step p
 
-let to_step (Parser (step,_)) = step
+let to_step p : P.feed P.parser = p
 
 let from state input =
-  match of_step (P.initial state input) MenhirUtils.initial_depth with
+  match of_step (P.initial state input) with
   | `Step p -> p
   | _ -> assert false
 
@@ -161,10 +149,7 @@ let feed (s,t,e as input) parser =
   match t with
   (* Ignore comments *)
   | P.COMMENT _ -> `Step parser
-  | _ ->
-    let Parser (p, depth) = parser in
-    let p' = P.feed p input in
-    of_step p' depth
+  | _ -> of_step (P.feed parser input)
 
 let dump_item (prod, dot_pos) =
   let lhs, rhs = P.Query.production_definition prod in
@@ -196,8 +181,7 @@ let dump_stack xs = dump_stack [] xs
 
 let dump t =
   (* Print current frame, with its itemset *)
-  let Parser (s,_) = t in
-  let lr0 = get_lr0_state s in
+  let lr0 = get_lr0_state t in
   (* Print overview of the stack *)
   `Assoc [
     "guide", Lexing.json_of_position (get_location t).Location.loc_start;
@@ -240,14 +224,14 @@ let dump_strategies (lr0,strategies) =
     "strategies", `List (List.map ~f:dump_strategy strategies)
   ]
 
-let find_strategies (Parser (p,w)) =
+let find_strategies p =
   let lr0 = get_lr0_state p in
   let strategies = Merlin_recovery_strategy.reduction_strategy lr0 in
   Logger.infojf section ~title:"find_strategies" dump_strategies
     (lr0,strategies);
   strategies
 
-let last_token (Parser (raw_parser,_)) =
+let last_token raw_parser =
   let loc_start,t,loc_end = raw_parser.P.env.E.token in
   Location.mkloc t
     {Location. loc_start; loc_end; loc_ghost = false}
@@ -268,11 +252,11 @@ let rec recover ?endp termination parser =
   match Termination.check strat parser termination with
   | parser, termination, false ->
     recover ?endp termination parser
-  | Parser (p,w), termination, true ->
+  | parser, termination, true ->
     (* Feed stack *)
     match strat.action with
     | `Reduce {r_prod; r_symbols; r_action} ->
-      let env = p.P.env in
+      let env = parser.P.env in
       let add_symbol endp stack symbol =
         {stack with E. semv = symbol; startp = stack.E.endp; endp; next = stack}
       in
@@ -307,7 +291,7 @@ let rec recover ?endp termination parser =
       let env = {env with E. current = goto stack.E.state r_prod} in
 
       (* Construct parser *)
-      let parser = of_feed {p with P. env} w in
+      let parser = of_feed {parser with P. env} in
       let priority = parser_priority parser in
       let parser = Location.mkloc parser (get_location parser) in
       Some (termination, (priority, parser))
@@ -326,113 +310,17 @@ let rec recover ?endp termination parser =
         let parser = Location.mkloc parser loc in
         Some (termination, (priority, parser))
 
-module Integrate
-    (P : sig
-       (* Arbitrary state, passed to update functions *)
-       type st
-       type t
-       val empty : st -> t (* Base-case, empty stack *)
-       val frame : st -> frame -> t -> t (* Add frame *)
+let get_lr0_states parser =
+  List.Lazy.Cons (get_lr0_state parser, lazy begin
+      let frames = List.Lazy.unfold Frame.next (stack parser) in
+      List.Lazy.map Frame.lr0_state frames
+    end)
 
-       (* Default: delta st f t ~old:_ = frame st f t *)
-       val delta : st -> frame -> t -> old:(t * frame) -> t
-       (* Check if an intermediate result is still valid *)
-       val validate : st -> t -> bool
-
-       (* [evict st t] is called when [t] is no longer sync *)
-       val evict : st -> t -> unit
-     end) =
-struct
-
-  type t =
-    | Zero of P.t
-    | More of (P.t * frame * t)
-
-  let empty state = Zero (P.empty state)
-
-  let value (Zero p | More (p,_,_)) = p
-
-  let rec drop state n = function
-    | Zero _ as t   -> t
-    | t when n <= 0 -> t
-    | More (p,_,t)  ->
-      P.evict state p;
-      drop state (n - 1) t
-
-  let size = function
-    | Zero _ -> 0
-    | More (_,f,_) ->
-      (* Frames are indexed starting from 0, so total size is depth + 1 *)
-      Frame.depth f + 1
-
-  (* state: data passed to user functor
-   * top: top of the current stack
-   * pre: computed metric for a previous version of the stack
-   *)
-  let update state top int =
-    (* How many steps were computed in previous integratio ? *)
-    let size' = size int in
-    (* Chop the top part of previous larger than current stack *)
-    let int = drop state (size' - (Frame.depth top + 1)) int in
-    (* Conversely, if stack is larger than previous, extract all exceeding
-       frames *)
-    let rec fat_free acc f =
-      if Frame.depth f >= size' then
-        match Frame.next f with
-        | None -> None, (f :: acc)
-        | Some f' -> fat_free (f :: acc) f'
-      else Some f, acc
-    in
-    (* The new top, if any, and all removed frames to be processed *)
-    let top, worklist = fat_free [] top in
-    (* A valid top should now match previous size *)
-    assert (size int - 1 = Option.value_map ~f:Frame.depth ~default:(-1) top);
-    (* Decrease previous result and stack until we find matching frames *)
-    let rec rewind worklist old top int =
-      match int with
-      | More (v, last, int')
-        when not (Frame.eq top last) || not (P.validate state v) ->
-        P.evict state v;
-        begin match Frame.next top, int' with
-          | None, Zero v' ->
-            P.evict state v';
-            worklist, None,
-            (* Either reuse int' (more efficient ?)
-               or regenerate fresh empty value
-               or maybe validate previous one before ? *)
-            (empty state)
-          | None, More _ -> assert false
-          | Some top', _   ->
-            rewind (top :: worklist) (Some (v,last)) top' int'
-        end
-      | int -> worklist, old, int
-    in
-    let worklist, int =
-      match top with
-      | None -> worklist, (empty state)
-      | Some frame ->
-        match rewind worklist None frame int with
-        | work :: worklist', Some old, int ->
-          worklist', More (P.delta state work (value int) ~old, work, int)
-        | worklist, _, int ->
-          worklist, int
-    in
-    List.fold_left' worklist
-      ~init:int
-      ~f:(fun frame int ->
-          More (P.frame state frame (value int), frame, int))
-
-  let update' st p t =
-    update st (Frame.stack p) t
-
-  let previous = function
-    | Zero _ -> None
-    | More (_,_,t) -> Some t
-
-  let modify f = function
-    | Zero v -> Zero (f v)
-    | More (v,s,t) -> More (f v, s, t)
-end
+let get_lr1_states parser =
+  List.Lazy.Cons (get_lr1_state parser, lazy begin
+      let frames = List.Lazy.unfold Frame.next (stack parser) in
+      List.Lazy.map Frame.lr1_state frames
+    end)
 
 let find_marker t =
   let is_rec frame = match Frame.value frame with
@@ -467,42 +355,66 @@ let find_marker t =
   else
     None
 
-let has_marker t f' =
-  let d = Frame.depth f' in
-  if d = 0 then
-    false
+let rec next_s s =
+  if s.E.startp == Lexing.dummy_pos then
+    let s' = s.E.next in
+    if s == s'
+    then raise Not_found
+    else next_s s'
+  else s
+
+let next_s {E. next = s} =
+  if s.E.startp == Lexing.dummy_pos
+  then next_s s
+  else s
+
+let rec root_frame s1 s2 =
+  if s1 == s2 then s1
   else
-    let rec aux = function
-      | None -> false
-      | Some f when Frame.eq f f' -> true
-      | Some f when Frame.depth f <= d -> false
-      | Some f -> aux (Frame.next f)
-    in
-    aux (Some (stack t))
+    let c = Lexing.compare_pos s1.E.startp s2.E.startp in
+    if c > 0 then
+      root_frame (next_s s1) s2
+    else if c < 0 then
+      root_frame s1 (next_s s2)
+    else
+      root_frame (next_s s1) (next_s s2)
+
+let has_marker t f' =
+  let rec aux = function
+    | {E.next} as f when f == next -> false
+    | f when Frame.eq f f' -> true
+    | f when Lexing.compare_pos f.E.startp f'.E.startp < 0 -> false
+    | {E.next} -> aux next
+  in
+  aux (stack t)
 
 let has_marker ?diff t f' =
   match diff with
   | None -> has_marker t f'
   | Some (t',result) ->
     let s, s' = stack t, stack t' in
-    let d_inf = min (Frame.depth s) (Frame.depth s') - 1 in
-    let d' = Frame.depth f' in
-    if d_inf > d' then
-      result
+    try
+      let p = root_frame s s' in
+      if Lexing.compare_pos p.E.startp f'.E.startp > 0 then
+        result
+      else
+        raise Not_found
+    with Not_found -> has_marker t f'
+
+let rec unroll_stack acc s' s =
+  if s == s' then acc
+  else
+    let {E.next} = s in
+    if next == s then
+      invalid_arg "unroll_stack" (* [s'] is not an ancestor *)
     else
-      has_marker t f'
+      unroll_stack (s :: acc) s' next
 
-let get_lr0_state (Parser (s,_)) = get_lr0_state s
-let get_lr1_state (Parser (s,_)) = get_lr1_state s
+let unroll_stack ~from ~root = unroll_stack [] root from
 
-let get_lr0_states parser =
-  List.Lazy.Cons (get_lr0_state parser, lazy begin
-      let frames = List.Lazy.unfold Frame.next (stack parser) in
-      List.Lazy.map Frame.lr0_state frames
-    end)
-
-let get_lr1_states parser =
-  List.Lazy.Cons (get_lr1_state parser, lazy begin
-      let frames = List.Lazy.unfold Frame.next (stack parser) in
-      List.Lazy.map Frame.lr1_state frames
-    end)
+(*let diff_frame f1 f2 =
+  try
+    let r = root_frame f1.E.stack f2.E.stack  in
+    Some (unroll_stack [] r f2.E.stack)
+  with Not_found ->
+    None*)
