@@ -158,6 +158,10 @@ function! s:ShowTypeEnclosing(type)
 
   call merlin#StopHighlight()
   let w:enclosing_zone = matchadd('EnclosingExpr', a:type['matcher'])
+  augroup MerlinHighlighting
+    au!
+    autocmd InsertEnter <buffer> call merlin#StopHighlight()
+  augroup END
 
   if ! has_key(a:type, 'type')
     echohl WarningMsg
@@ -204,6 +208,9 @@ function! merlin#StopHighlight()
   if exists('w:enclosing_zone') && w:enclosing_zone != -1
     call matchdelete(w:enclosing_zone)
     let w:enclosing_zone = -1
+    augroup MerlinHighlighting
+      au!
+    augroup END
   endif
 endfunction
 
