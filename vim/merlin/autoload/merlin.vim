@@ -424,21 +424,29 @@ function! merlin#Register()
   nmap <silent><buffer> <LocalLeader>R :call merlin_find#IncrementalRename()<cr>//e<cr>a
 
   " Text Objects
-  vmap <silent><buffer> m  :<C-U>call merlin_visual#Grow('v')<return>
-  vmap <silent><buffer> am :<C-U>call merlin_visual#GrowAround('v')<return>
-  vmap <silent><buffer> im :<C-U>call merlin_visual#GrowInside('v')<return>
+  if exists("g:merlin_textobject_grow") && g:merlin_textobject_grow != ''
+    let l:k = g:merlin_textobject_grow
 
-  omap <silent><buffer> m  :<C-U>call merlin_visual#Grow('o')<return>
-  omap <silent><buffer> am :<C-U>call merlin_visual#GrowAround('o')<return>
-  omap <silent><buffer> im :<C-U>call merlin_visual#GrowInside('o')<return>
+    exe "vmap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Grow('v')<return>"
+    exe "vmap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#GrowAround('v')<return>"
+    exe "vmap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#GrowInside('v')<return>"
 
-  vmap <silent><buffer> M  :<C-U>call merlin_visual#Shrink('v')<return>
-  vmap <silent><buffer> aM :<C-U>call merlin_visual#ShrinkAround('v')<return>
-  vmap <silent><buffer> iM :<C-U>call merlin_visual#ShrinkInside('v')<return>
+    exe "omap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Grow('o')<return>"
+    exe "omap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#GrowAround('o')<return>"
+    exe "omap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#GrowInside('o')<return>"
+  endif
 
-  omap <silent><buffer> M  :<C-U>call merlin_visual#Shrink('o')<return>
-  omap <silent><buffer> iM :<C-U>call merlin_visual#ShrinkInside('o')<return>
-  omap <silent><buffer> aM :<C-U>call merlin_visual#ShrinkAround('o')<return>
+  if exists("g:merlin_textobject_shrink") && g:merlin_textobject_shrink != ''
+    let l:k = g:merlin_textobject_shrink
+
+    exe "vmap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Shrink('v')<return>"
+    exe "vmap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#ShrinkAround('v')<return>"
+    exe "vmap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#ShrinkInside('v')<return>"
+
+    exe "omap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Shrink('o')<return>"
+    exe "omap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#ShrinkInside('o')<return>"
+    exe "omap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#ShrinkAround('o')<return>"
+  endif
 endfunction
 
 function! merlin#LoadProject()
