@@ -229,6 +229,15 @@ function! merlin#Locate(...)
   endif
 endfunction
 
+function! merlin#Outline()
+  if !exists('g:loaded_ctrlp')
+    echo "This function requires the CtrlP plugin to work"
+    " ctrl doesn't exist? Exiting.
+  else
+    call ctrlp#init(ctrlp#merlin#id())
+  endif
+endfunction
+
 function! merlin#Occurrences()
   let l:occurrences = []
   let l:pos = 0
@@ -422,6 +431,8 @@ endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList  ML  call merlin#FindFile(["ml","mli"],<f-args>)
 command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile(["mli","ml"],<f-args>)
+
+command! Outline call merlin#Outline()
 
 " Flush buffer and dependencies after :make
 au QuickFixCmdPost * call merlin#Reload()
