@@ -383,6 +383,23 @@ function! merlin#Register()
   map  <buffer> <LocalLeader>p :ShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
   vmap <buffer> <TAB>          :call merlin#Phrase()<return>
+
+  " Text Objects
+  vmap <silent><buffer> m  :<C-U>call merlin_visual#Grow('v')<return>
+  vmap <silent><buffer> am :<C-U>call merlin_visual#GrowAround('v')<return>
+  vmap <silent><buffer> im :<C-U>call merlin_visual#GrowInside('v')<return>
+
+  omap <silent><buffer> m  :<C-U>call merlin_visual#Grow('o')<return>
+  omap <silent><buffer> am :<C-U>call merlin_visual#GrowAround('o')<return>
+  omap <silent><buffer> im :<C-U>call merlin_visual#GrowInside('o')<return>
+
+  vmap <silent><buffer> M  :<C-U>call merlin_visual#Shrink('v')<return>
+  vmap <silent><buffer> aM :<C-U>call merlin_visual#ShrinkAround('v')<return>
+  vmap <silent><buffer> iM :<C-U>call merlin_visual#ShrinkInside('v')<return>
+
+  omap <silent><buffer> M  :<C-U>call merlin_visual#Shrink('o')<return>
+  omap <silent><buffer> iM :<C-U>call merlin_visual#ShrinkInside('o')<return>
+  omap <silent><buffer> aM :<C-U>call merlin_visual#ShrinkAround('o')<return>
 endfunction
 
 function! merlin#LoadProject()
