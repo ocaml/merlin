@@ -27,7 +27,7 @@ let gen_patterns env type_expr =
     let patterns = Parmatch.omega_list lst in
     [ Tast_helper.Pat.tuple env type_expr patterns ]
   | Tconstr (path, _params, _) ->
-    begin match assert false (* Env.find_type_descrs path env *) with
+    begin match Env.find_type_descrs path env with
     | [], [] ->
       raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
     | [], labels ->
