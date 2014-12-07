@@ -2095,22 +2095,11 @@ let do_complete_partial ?pred exhaust pss =
     begin match exhaust None pss (List.length ps) with
     | Rnone -> None
     | Rsome [u] ->
-      let v =
-        match pred with
-        | Some pred ->
-          let (patterns,constrs,labels) = Conv.conv u in
-          get_first (pred constrs labels) patterns
-        | None -> Some u
-      in
-      begin match v with
-      | None -> None
-      | Some v ->
-        match v.pat_desc with
-        | Tpat_construct (_, {cstr_name="*extension*"}, _, _) ->
-          (* Matching over values of open types must include a wild card pattern
-            in order to be exhaustive. *)
-          Some omega
-        | _ -> Some v
+      begin match pred with
+      | Some pred ->
+        let (patterns,constrs,labels) = Conv.conv u in
+        get_first (pred constrs labels) patterns
+      | None -> Some u
       end
     | _ ->
       (* FIXME: Are we sure we'll never get [Rsome lst]? This would be better

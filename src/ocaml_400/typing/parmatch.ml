@@ -2091,3 +2091,32 @@ let check_partial_gadt pred loc casel =
       (* checks for missing GADT constructors *)
       check_partial_param (do_check_partial_gadt pred)
         do_check_fragile_gadt loc casel
+
+(*******************)
+(* Merlin specific *)
+(*******************)
+
+let do_complete_partial ?pred exhaust pss =
+  (* c/p of [do_check_partial] without the parts concerning the generation of
+     the error message or the warning emiting. *)
+  match pss with
+  | [] -> None
+  | ps :: _  ->
+    begin match exhaust None pss (List.length ps) with
+    | Rnone -> None
+    | Rsome [u] ->
+      begin match pred with
+      | Some pred ->
+        let (patterns,constrs,labels) = Conv.conv u in
+        get_first (pred constrs labels) patterns
+      | None -> Some u
+      end
+    | _ ->
+      (* FIXME: Are we sure we'll never get [Rsome lst]? This would be better
+         for us. *)
+      fatal_error "Parmatch.check_partial"
+    end
+
+let complete_partial pss =
+  let pss = get_mins le_pats pss in
+  do_complete_partial exhaust pss

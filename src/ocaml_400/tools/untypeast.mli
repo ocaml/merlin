@@ -16,4 +16,5 @@ val untype_signature : Typedtree.signature -> Parsetree.signature
 val lident_of_path : Path.t -> Longident.t
 
 (* Merlin *)
+val untype_expression : Typedtree.expression -> Parsetree.expression
 val untype_pattern : Typedtree.pattern -> Parsetree.pattern
