@@ -411,17 +411,17 @@ function! merlin#Register()
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
   vmap <buffer> <TAB>          :call merlin#Phrase()<return>
 
-  nmap <silent><buffer> <LocalLeader>yt :YankLatestType<return>
-  nmap <silent><buffer> <LocalLeader>qt :ToggleTypeHistory<return>
+  " nmap <silent><buffer> <LocalLeader>yt :YankLatestType<return>
+  " nmap <silent><buffer> <LocalLeader>qt :ToggleTypeHistory<return>
 
   " Search
   nmap <silent><buffer> gd  :Locate<return>
-  nmap <silent><buffer> <LocalLeader>* :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
-  nmap <silent><buffer> <LocalLeader># :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
+  nmap <silent><buffer> <Plug>(MerlinSearchOccurencesForward)   :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
+  nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesBackward) :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
 
   " Rename
-  nmap <silent><buffer> <LocalLeader>r :call merlin_find#IncrementalRename()<cr>//<cr>c//e<cr>
-  nmap <silent><buffer> <LocalLeader>R :call merlin_find#IncrementalRename()<cr>//e<cr>a
+  nmap <silent><buffer> <Plug>(MerlinRename) :call merlin_find#IncrementalRename()<cr>//<cr>c//e<cr>
+  nmap <silent><buffer> <Plug>(MerlinRenameAppend) :call merlin_find#IncrementalRename()<cr>//e<cr>a
 
   " Text Objects
   if exists("g:merlin_textobject_grow") && g:merlin_textobject_grow != ''
