@@ -389,6 +389,10 @@ function! merlin#Register()
   nmap <silent><buffer> <LocalLeader>* :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
   nmap <silent><buffer> <LocalLeader># :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
 
+  " Rename
+  nmap <silent><buffer> <LocalLeader>r :call merlin_find#IncrementalRename()<cr>//<cr>c//e<cr>
+  nmap <silent><buffer> <LocalLeader>R :call merlin_find#IncrementalRename()<cr>//e<cr>a
+
   " Text Objects
   vmap <silent><buffer> m  :<C-U>call merlin_visual#Grow('v')<return>
   vmap <silent><buffer> am :<C-U>call merlin_visual#GrowAround('v')<return>
