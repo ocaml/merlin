@@ -312,7 +312,7 @@ function! merlin#setVisualSelection(a, b)
 " Move to a, enter visual mode, and move to b
   call setpos("'a", [0, a:a[0], a:a[1], 0])
   call setpos("'b", [0, a:b[0], a:b[1], 0])
-  normal! `av`b
+  normal! `bv`a
 " Restore positions of marks 'a and 'b
   call setpos("'a", markASave)
   call setpos("'b", markBSave)

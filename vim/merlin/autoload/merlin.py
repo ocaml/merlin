@@ -476,12 +476,17 @@ def bounds_of_ocaml_atom_at_pos(to_line, col):
             stop += 1
     return (line[start:stop], start, stop)
 
-def vim_type_enclosing():
+def vim_type_reset():
   global enclosing_types
   global current_enclosing
   sync_buffer()
   enclosing_types = [] # reset
   current_enclosing = -1
+
+def vim_type_enclosing():
+  global enclosing_types
+  global current_enclosing
+  vim_type_reset()
   to_line, to_col = vim.current.window.cursor
   pos = {'line':to_line, 'col':to_col}
   # deprecated, leave merlin compute the correct identifier
