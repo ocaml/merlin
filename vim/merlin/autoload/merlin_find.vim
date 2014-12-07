@@ -14,11 +14,13 @@ function! merlin_find#IncrementalRename()
     echoerr "No occurrences found!"
     return
   endif
-  let w:enclosing_rename = matchadd('EnclosingExpr', w:start_rename_col . ".*\\%#\\|" . w:rename_target)
+  let l:edit_target = '\%' . line(".") . 'l\%' . (w:start_rename_col + 1) . 'c' . '.*\%#'
+  let w:enclosing_rename = matchadd('EnclosingExpr', l:edit_target . '\|' . w:rename_target)
   let @/ = l:current
   call merlin#StopHighlight()
   augroup MerlinAutocmd
     au!
+    autocmd InsertEnter <buffer> :let @/=''
     autocmd InsertLeave <buffer> :call s:IncrementalRenameTerminate()
   augroup END
 endfunction
