@@ -32,13 +32,20 @@ type t
 val empty: t
 val initial: t
 val diff: t -> t -> Ident.t list
-val iter_types: (Path.t -> Path.t * type_declaration -> unit) -> t -> unit
+
+type type_descriptions =
+    constructor_description list * label_description list
+
+val iter_types:
+    (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
+    t -> unit
 
 (* Lookup by paths *)
 
 val find_value: Path.t -> t -> value_description
 val find_annot: Path.t -> t -> Annot.ident
 val find_type: Path.t -> t -> type_declaration
+val find_type_descrs: Path.t -> t -> type_descriptions
 val find_constructors: Path.t -> t -> constructor_description list
 val find_module: Path.t -> t -> module_type
 val find_modtype: Path.t -> t -> modtype_declaration
@@ -193,7 +200,7 @@ val fold_values:
   (string -> Path.t -> Types.value_description -> 'a -> 'a) ->
   Longident.t option -> t -> 'a -> 'a
 val fold_types:
-  (string -> Path.t -> Types.type_declaration -> 'a -> 'a) ->
+  (string -> Path.t -> Types.type_declaration * type_descriptions -> 'a -> 'a) ->
   Longident.t option -> t -> 'a -> 'a
 val fold_constructors:
   (string -> Path.t -> Types.constructor_description -> 'a -> 'a) ->
