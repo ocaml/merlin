@@ -31,6 +31,10 @@ if !exists("g:merlin_close_error_list")
   let g:merlin_close_error_list = 1
 endif
 
+if !exists("g:merlin_type_history_height")
+  let g:merlin_type_history_height = 5
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -158,7 +162,12 @@ function! s:ShowTypeEnclosing(type)
     return
   endif
 
-  echo a:type['type'] . a:type['tail_info']
+  if g:merlin_type_history_height <= 0
+    echo a:type['type'] . a:type['tail_info']
+    return
+  endif
+
+  call merlin_type#Show(a:type['type'], a:type['tail_info'])
 endfunction
 
 function! merlin#TypeOf(...)
