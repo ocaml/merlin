@@ -133,13 +133,16 @@ module EnvTbl =
       Ident.keys tbl
   end
 
+type type_descriptions =
+    constructor_description list * label_description list
+
 type t = {
   values: (Path.t * value_description) EnvTbl.t;
   annotations: (Path.t * Annot.ident) EnvTbl.t;
   constrs: (Path.t * constructor_description) EnvTbl.t;
   labels: (Path.t * label_description) EnvTbl.t;
   constrs_by_path: (Path.t * (constructor_description list)) EnvTbl.t;
-  types: (Path.t * type_declaration) EnvTbl.t;
+  types: (Path.t * (type_declaration * type_descriptions)) EnvTbl.t;
   modules: (Path.t * module_type) EnvTbl.t;
   modtypes: (Path.t * modtype_declaration) EnvTbl.t;
   components: (Path.t * module_components) EnvTbl.t;
@@ -165,7 +168,8 @@ and structure_components = {
   mutable comp_labels: (string, (label_description * int)) Tbl.t;
   mutable comp_constrs_by_path:
       (string, (constructor_description list * int)) Tbl.t;
-  mutable comp_types: (string, (type_declaration * int)) Tbl.t;
+  mutable comp_types:
+    (string, ((type_declaration * type_descriptions) * int)) Tbl.t;
   mutable comp_modules:
    (string, ((Subst.t * Types.module_type,module_type) EnvLazy.t * int)) Tbl.t;
   mutable comp_modtypes: (string, (modtype_declaration * int)) Tbl.t;
@@ -442,7 +446,7 @@ let find_value =
   find (fun env -> env.values) (fun sc -> sc.comp_values)
 and find_annot =
   find (fun env -> env.annotations) (fun sc -> sc.comp_annotations)
-and find_type =
+and find_type_full =
   find (fun env -> env.types) (fun sc -> sc.comp_types)
 and find_constructors =
   find (fun env -> env.constrs_by_path) (fun sc -> sc.comp_constrs_by_path)
@@ -452,6 +456,11 @@ and find_class =
   find (fun env -> env.classes) (fun sc -> sc.comp_classes)
 and find_cltype =
   find (fun env -> env.cltypes) (fun sc -> sc.comp_cltypes)
+
+let find_type p env =
+  fst (find_type_full p env)
+let find_type_descrs p env =
+  snd (find_type_full p env)
 
 (* Find the manifest type associated to a type when appropriate:
    - the type should be public or should have a private row,
@@ -666,9 +675,9 @@ let lookup_value lid env =
   r
 
 let lookup_type lid env =
-  let (_, desc) as r = lookup_type lid env in
-  mark_type_used (Longident.last lid) desc;
-  r
+  let (path, (decl, _)) = lookup_type lid env in
+  mark_type_used (Longident.last lid) decl;
+  (path, decl)
 
 (* [path] must be the path to a type, not to a module ! *)
 let rec path_subst_last path id =
@@ -907,10 +916,14 @@ and components_of_module_maker (env, sub, path, mty) =
               Val_prim _ -> () | _ -> incr pos
             end
         | Sig_type(id, decl, _) ->
+            let snd' l = List.map snd l in
             let decl' = Subst.type_declaration sub decl in
-            c.comp_types <-
-              Tbl.add (Ident.name id) (decl', nopos) c.comp_types;
             let constructors = constructors_of_type path decl' in
+            let labels = labels_of_type path decl' in
+            c.comp_types <-
+              Tbl.add (Ident.name id)
+                ((decl', (snd' constructors, snd' labels)), nopos)
+                  c.comp_types;
             c.comp_constrs_by_path <-
               Tbl.add (Ident.name id)
                 (List.map snd constructors, nopos) c.comp_constrs_by_path;
@@ -919,12 +932,11 @@ and components_of_module_maker (env, sub, path, mty) =
                 c.comp_constrs <-
                   Tbl.add (Ident.name name) (descr, nopos) c.comp_constrs)
               constructors;
-            let labels = labels_of_type path decl' in
             List.iter
               (fun (name, descr) ->
                 c.comp_labels <-
                   Tbl.add (Ident.name name) (descr, nopos) c.comp_labels)
-              (labels);
+              labels;
             env := store_type_infos id path decl !env
         | Sig_exception(id, decl) ->
             let decl' = Subst.exception_declaration sub decl in
@@ -1011,6 +1023,7 @@ and store_type id path info env =
     !cache.type_declarations;
   let constructors = constructors_of_type path info in
   let labels = labels_of_type path info in
+  let descrs = (List.map snd constructors, List.map snd labels) in
 
   if not loc.Location.loc_ghost &&
     Warnings.is_active (Warnings.Unused_constructor ("", false, false))
@@ -1050,7 +1063,7 @@ and store_type id path info env =
           EnvTbl.add name (path_subst_last path name, descr) labels)
         labels
         env.labels;
-    types = EnvTbl.add id (path, info) env.types;
+    types = EnvTbl.add id (path, (info, descrs)) env.types;
     summary = Env_type(env.summary, id, info) }
 
 and store_type_infos id path info env =
@@ -1060,7 +1073,7 @@ and store_type_infos id path info env =
      keep track of type abbreviations (e.g. type t = float) in the
      computation of label representations. *)
   { env with
-    types = EnvTbl.add id (path, info) env.types;
+    types = EnvTbl.add id (path, (info, ([],[]))) env.types;
     summary = Env_type(env.summary, id, info) }
 
 and store_exception id path decl env =

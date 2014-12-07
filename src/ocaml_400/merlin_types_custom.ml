@@ -68,7 +68,9 @@ let include_idents l = List.map signature_item_ident l
 
 let lookup_constructor id env = snd (Env.lookup_constructor id env)
 let lookup_label id env = snd (Env.lookup_label id env)
-let fold_types = Env.fold_types
+let fold_types f id env acc =
+  Env.fold_types (fun s p (decl,descr) acc -> f s p decl acc) id env acc
+
 
 let fold_constructors f =
   Env.fold_constructors (fun name _ descr -> f name descr)
