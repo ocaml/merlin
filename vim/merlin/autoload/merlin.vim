@@ -143,12 +143,30 @@ function! merlin#AddFlags(...)
   py merlin.vim_add_flags(*vim.eval("a:000"))
 endfunction
 
+function! s:ShowTypeEnclosing(type)
+  if empty(a:type)
+    return
+  endif
+
+  call merlin#StopHighlight()
+  let w:enclosing_zone = matchadd('EnclosingExpr', a:type['matcher'])
+
+  if ! has_key(a:type, 'type')
+    echohl WarningMsg
+    echo "didn't manage to type '" . a:type['atom'] . "'"
+    echohl None
+    return
+  endif
+
+  echo a:type['type'] . a:type['tail_info']
+endfunction
+
 function! merlin#TypeOf(...)
     if (a:0 > 1)
         echoerr "TypeOf: too many arguments (expected 0 or 1)"
     elseif (a:0 == 0) || (a:1 == "")
-        call merlin#StopHighlight()
-        py merlin.vim_type_enclosing("w:enclosing_zone")
+        py vim.command("let l:type = " + merlin.vim_type_enclosing())
+        call s:ShowTypeEnclosing(l:type)
     else
         py merlin.vim_type(vim.eval("a:1"))
     endif
@@ -166,13 +184,13 @@ function! merlin#StopHighlight()
 endfunction
 
 function! merlin#GrowEnclosing()
-  call merlin#StopHighlight()
-  py merlin.vim_next_enclosing("w:enclosing_zone")
+  py vim.command("let l:type = " + merlin.vim_next_enclosing())
+  call s:ShowTypeEnclosing(l:type)
 endfunction
 
 function! merlin#ShrinkEnclosing()
-  call merlin#StopHighlight()
-  py merlin.vim_prev_enclosing("w:enclosing_zone")
+  py vim.command("let l:type = " + merlin.vim_prev_enclosing())
+  call s:ShowTypeEnclosing(l:type)
 endfunction
 
 function! merlin#Complete(findstart,base)
