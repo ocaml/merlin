@@ -206,6 +206,7 @@ endfunction
 
 function! merlin#StopHighlight()
   if exists('w:enclosing_zone') && w:enclosing_zone != -1
+    py merlin.vim_type_reset()
     call matchdelete(w:enclosing_zone)
     let w:enclosing_zone = -1
     augroup MerlinHighlighting
