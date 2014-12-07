@@ -162,12 +162,23 @@ function! s:ShowTypeEnclosing(type)
     return
   endif
 
+  let g:merlin_latest_type = a:type['type']
+
   if g:merlin_type_history_height <= 0
     echo a:type['type'] . a:type['tail_info']
     return
   endif
 
   call merlin_type#Show(a:type['type'], a:type['tail_info'])
+endfunction
+
+function! merlin#YankLatestType()
+  if ! exists("g:merlin_latest_type")
+    echohl ErrorMsg | echo "no type available" | echohl None
+    return
+  endif
+  call setreg(v:register, g:merlin_latest_type)
+  echo "yanked" g:merlin_latest_type
 endfunction
 
 function! merlin#TypeOf(...)
@@ -354,6 +365,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinGrowEnclosing   call merlin#GrowEnclosing()
   command! -buffer -nargs=0 MerlinShrinkEnclosing call merlin#ShrinkEnclosing()
 
+  command! -buffer -nargs=0 YankLatestType    call merlin#YankLatestType()
   command! -buffer -nargs=0 ToggleTypeHistory call merlin_type#ToggleTypeHistory()
 
 
@@ -395,6 +407,7 @@ function! merlin#Register()
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
   vmap <buffer> <TAB>          :call merlin#Phrase()<return>
 
+  nmap <silent><buffer> <LocalLeader>yt :YankLatestType<return>
   nmap <silent><buffer> <LocalLeader>qt :ToggleTypeHistory<return>
 
   " Search
