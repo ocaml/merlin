@@ -384,6 +384,11 @@ function! merlin#Register()
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
   vmap <buffer> <TAB>          :call merlin#Phrase()<return>
 
+  " Search
+  nmap <silent><buffer> gd  :Locate<return>
+  nmap <silent><buffer> <LocalLeader>* :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
+  nmap <silent><buffer> <LocalLeader># :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
+
   " Text Objects
   vmap <silent><buffer> m  :<C-U>call merlin_visual#Grow('v')<return>
   vmap <silent><buffer> am :<C-U>call merlin_visual#GrowAround('v')<return>
