@@ -426,6 +426,27 @@ def vim_occurrences(vimvar):
     vim.command("call add(%s, l:tmp)" % vimvar)
   return cursorpos + 1
 
+def vim_occurrences_search():
+  line, col = vim.current.window.cursor
+  sync_full_buffer()
+  lst = command_occurrences(line, col)
+  result = ""
+  over = ""
+  start_col = 0
+  for pos in lst:
+    current = easy_matcher_wide(pos['start'], pos['end'])
+    l1 = pos['start']['line']
+    c1 = pos['start']['col']
+    c2 = pos['end']['col']
+    if line == l1 and col >= c1 and col <= c2:
+      over = current
+      start_col  = c1
+    elif result == "":
+      result = current
+    else:
+      result = result + "\\|" + current
+  return "[%s, '%s', '%s']" % (start_col, over, result)
+
 def vim_occurrences_replace(content):
   sync_full_buffer()
   line, col = vim.current.window.cursor
@@ -509,6 +530,15 @@ def vim_type_enclosing():
   except MerlinExc as e:
     try_print_error(e)
     return '{}'
+
+def easy_matcher_wide(start, stop):
+  startl = ""
+  startc = ""
+  if start['line'] > 0:
+    startl = "\%{0}l".format(start['line'])
+  if start['col'] > 0:
+    startc = "\%{0}c".format(start['col'] + 1)
+  return '{0}{1}.*\%{2}l\%{3}c'.format(startl, startc, stop['line'], stop['col'] + 1)
 
 def easy_matcher(start, stop):
   startl = ""
