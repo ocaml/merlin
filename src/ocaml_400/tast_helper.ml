@@ -14,6 +14,13 @@ module Pat = struct
     { pat_desc; pat_loc; pat_extra; pat_type; pat_env }
 
   let record ?(loc=Location.none) pat_env pat_type lst closed_flag =
+    let lst =
+      List.map lst ~f:(fun (lid, descr, pat) ->
+        let str = Longident.last lid.Asttypes.txt in
+        let path = Path.Pident (Ident.create str) in
+        (path, lid, descr, pat)
+      )
+    in
     let pat_desc = Tpat_record (lst, closed_flag) in
     { pat_desc; pat_loc = loc; pat_extra; pat_type; pat_env }
 
