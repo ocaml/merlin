@@ -354,6 +354,8 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinGrowEnclosing   call merlin#GrowEnclosing()
   command! -buffer -nargs=0 MerlinShrinkEnclosing call merlin#ShrinkEnclosing()
 
+  command! -buffer -nargs=0 ToggleTypeHistory call merlin_type#ToggleTypeHistory()
+
 
   command! -buffer -complete=customlist,merlin#CompletePrefix -nargs=? Locate call merlin#Locate(<q-args>)
 
@@ -392,6 +394,8 @@ function! merlin#Register()
   map  <buffer> <LocalLeader>p :ShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
   vmap <buffer> <TAB>          :call merlin#Phrase()<return>
+
+  nmap <silent><buffer> <LocalLeader>qt :ToggleTypeHistory<return>
 
   " Search
   nmap <silent><buffer> gd  :Locate<return>
