@@ -76,6 +76,14 @@ function! merlin_type#Show(type, tail_info)
     call s:TemporaryResize(l:length)
     normal! Gzb
     execute "normal! " . l:cur . "\<c-w>w"
+  elseif l:length >= g:merlin_type_history_auto_open
+    call merlin_type#ShowTypeHistory()
+    call s:TemporaryResize(l:length)
+    normal! Gzb
+    augroup MerlinTypeHistory
+      autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory()
+    augroup END
+    execute "normal! " . l:cur . "\<c-w>w"
   else
     echo l:msg
   endif

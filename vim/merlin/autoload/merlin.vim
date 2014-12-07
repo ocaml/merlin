@@ -35,6 +35,10 @@ if !exists("g:merlin_type_history_height")
   let g:merlin_type_history_height = 5
 endif
 
+if !exists("g:merlin_type_history_auto_open")
+  let g:merlin_type_history_auto_open = 5
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
