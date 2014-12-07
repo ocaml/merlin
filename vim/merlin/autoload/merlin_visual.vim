@@ -19,7 +19,7 @@ function! merlin_visual#GrowEnclosing(mode)
   let init = 0
 
   if a:mode == 'v' && exists('w:l1') && w:l1 != -1
-    if w:l1 == l1 && (w:c1 == c1 || w:c1 + 1 == c1) && w:l2 == l2 && (w:c2 == c2 || w:c2 + 1 == c2)
+    if w:l1 == l1 && abs(w:c1 - c1) <= 1 && w:l2 == l2 && abs(w:c2 - c2) <= 1
       let c1 = c1 - 1
     else
       py merlin.vim_type_reset()
@@ -102,7 +102,7 @@ function! merlin_visual#ShrinkEnclosing(mode)
   let init = 0
 
   if a:mode == 'v' && exists('w:l1') && w:l1 != -1
-    if w:l1 == l1 && (w:c1 == c1 || w:c1 + 1 == c1) && w:l2 == l2 && (w:c2 == c2 || w:c2 + 1 == c2)
+    if w:l1 == l1 && abs(w:c1 - c1) <= 1 && w:l2 == l2 && abs(w:c2 - c2) <= 1
     else
       py merlin.vim_type_reset()
       let init = 1
@@ -219,7 +219,7 @@ function! merlin_visual#AroundSpaces()
 
   let right = getline(w:l2)
   let r = left[w:c2]
-  if r != ')' && r != ']'
+  if r != ')' && r != ']' && w:c2 >= 1
     let w:c2 = w:c2 - 1
   endif
 endfunction
