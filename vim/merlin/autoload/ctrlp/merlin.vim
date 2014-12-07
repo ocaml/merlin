@@ -44,9 +44,9 @@ fu! ctrlp#merlin#init()
 get_outlines()
 longest = reduce(lambda x, y: max(x,len(y['name'])), outlines, 0)
 for x in outlines:
+  name = x['name'].replace("'", "''")
   # Listing only top bindings because fuck it.
-  vim.command("call add(l:modules, '%*s\t--\t%s')" %
-    (longest, x['name'], x['kind']))
+  vim.command("call add(l:modules, '%*s\t--\t%s')" % (longest, name, x['kind']))
 EOF
   return l:modules
 endf

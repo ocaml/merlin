@@ -234,6 +234,7 @@ function! merlin#Outline()
     echo "This function requires the CtrlP plugin to work"
     " ctrl doesn't exist? Exiting.
   else
+    py merlin.sync_full_buffer()
     call ctrlp#init(ctrlp#merlin#id())
   endif
 endfunction
