@@ -513,8 +513,7 @@ def replace_buffer_portion(start, end, txt):
     prefix = fst_line[0:start['col']]
     suffix = lst_line[end['col']:len(lst_line)]
 
-    for i in range(start_line, end['line']):
-      del b[i]
+    del b[start_line:end['line']]
 
     txt = prefix + txt + suffix
     lines = txt.split('\n')
