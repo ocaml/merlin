@@ -21,8 +21,11 @@ let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
-  | Tvar _ -> raise (Not_allowed "non-immediate type")
-  | Tarrow _ -> raise (Not_allowed "arrow type")
+  | Tlink _    -> assert false (* impossible after [Btype.repr] *)
+  | Tvar _     -> raise (Not_allowed "non-immediate type")
+  | Tarrow _   -> raise (Not_allowed "arrow type")
+  | Tobject _  -> raise (Not_allowed "object type")
+  | Tpackage _ -> raise (Not_allowed "modules")
   | Ttuple lst ->
     let patterns = Parmatch.omega_list lst in
     [ Tast_helper.Pat.tuple env type_expr patterns ]
@@ -136,23 +139,36 @@ let rec destructible patt =
   | Tpat_alias (p, _, _)  -> destructible p
   | _ -> false
 
+let is_package ty =
+  match ty.Types.desc with
+  | Types.Tpackage _ -> true
+  | _ -> false
+
 let node ~loc ~env parents node =
   match node.t_node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
-    let ps = gen_patterns env ty in
-    let cases  =
-      List.map ps ~f:(fun patt ->
-        let pc_lhs = Untypeast.untype_pattern patt in
-        { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = assert_false }
+    let pexp = Untypeast.untype_expression expr in
+    let needs_parentheses, result =
+      if is_package ty then (
+        let name = Location.mknoloc "M" in
+        let mode = Ast_helper.Mod.unpack pexp in
+        false, Ast_helper.Exp.letmodule name mode assert_false
+      ) else (
+        let ps = gen_patterns env ty in
+        let cases  =
+          List.map ps ~f:(fun patt ->
+            let pc_lhs = Untypeast.untype_pattern patt in
+            { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = assert_false }
+          )
+        in
+        needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
       )
     in
-    let pexp   = Untypeast.untype_expression expr in
-    let match_ = Ast_helper.Exp.match_ pexp cases in
     let fmt, to_string = Format.to_string () in
-    Pprintast.expression fmt match_ ;
+    Pprintast.expression fmt result ;
     let str = to_string () in
-    let str = if needs_parentheses parents then "(" ^ str ^ ")" else str in
+    let str = if needs_parentheses then "(" ^ str ^ ")" else str in
     loc, str
   | Pattern patt ->
     let last_case_loc, patterns = get_every_pattern parents in
