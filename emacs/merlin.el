@@ -1466,6 +1466,40 @@ is active)."
       (push-mark (merlin-point-of-pos (cdr (assoc 'end extents)))
 		 t t))))
 
+;; Destruct
+(defun merlin--replace-buff-portion (start stop txt)
+  (let ((start (merlin-point-of-pos start))
+        (stop  (merlin-point-of-pos stop)))
+    (save-excursion
+      (delete-region start stop)
+      (goto-char start)
+      (insert txt))))
+
+(defun merlin--destruct-enclosing ()
+  (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
+         (start  (merlin-unmake-point (car bounds)))
+         (stop   (merlin-unmake-point (cdr bounds)))
+         (cmd    (list 'case 'analysis 'from start 'to stop))
+         (result (merlin-send-command cmd))
+         (loc    (car result))
+         (start  (cdr (assoc 'start loc)))
+         (stop   (cdr (assoc 'end loc))))
+    (merlin--replace-buff-portion start stop (cadr result))))
+
+(defun merlin-destruct ()
+  "Case analyse the current enclosing"
+  (interactive)
+  (if (not merlin-enclosing-types)
+    (progn
+      (merlin-sync-to-point)
+      (if (merlin--type-enclosing-query)
+        (progn
+          (setq merlin-enclosing-offset -1)
+          (merlin--destruct-enclosing))
+        (message "merlin: no result")))
+    (merlin--destruct-enclosing)))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1785,6 +1819,7 @@ Returns the position."
     (define-key merlin-map (kbd "C-c C-r") 'merlin-error-check)
     (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
+    (define-key merlin-map (kbd "C-c C-d") 'merlin-destruct)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-phrase-next)
     (define-key merlin-map (kbd "C-c C-p") 'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]
