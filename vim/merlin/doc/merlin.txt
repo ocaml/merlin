@@ -158,6 +158,33 @@ the type history window automatically. >
   let g:merlin_type_history_auto_open = 9999
 <
 
+                                                     *'merlin_textobject_grow'*
+                                                   *'merlin_textobject_shrink'*
+Default: unset.
+Binds |text-objects| on the ocaml AST. For example: >
+  let g:merlin_textobject_grow   = 'm'
+  let g:merlin_textobject_shrink = 'M'
+<
+On their first call, `M` selects the current node while `m` selects something
+bigger than a leaf.  Repeated use of `m` grow the selection and `M` shrinks
+it back.  The variants `im` and `aM` behave similarly, but reduce the
+selection by avoiding spaces and parenthesis; while `am` and `aM` expand it by
+capturing the surrounding spaces.
+
+In the following illustration, the cursor is represented by `[n]`:
+>
+                       ┌── aM ──┐
+                       │ ┌─ M ─┐│
+                       ↓ ↓     ↓↓
+  let def = outer     (  in[n]er  stuff  )    more
+            ↑     ↑   ↑  ↑            ↑  ↑  ↑    ↑
+            │     │   │  └─ im ───────┘  │  │    │
+            │     │   └────  m ──────────┘  │    │
+            │     └──────── am ─────────────┘    │
+            └────────────── 2m ──────────────────┘
+                        (or mm)
+<
+
 ==============================================================================
 EXTRAS                                                         *merlin-extras*
 
