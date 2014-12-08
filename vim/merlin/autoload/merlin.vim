@@ -156,7 +156,7 @@ function! s:ShowTypeEnclosing(type)
     return
   endif
 
-  call merlin#StopHighlight()
+  call s:StopHighlight()
   let w:enclosing_zone = matchadd('EnclosingExpr', a:type['matcher'])
   augroup MerlinHighlighting
     au!
@@ -204,15 +204,19 @@ function! merlin#TypeOfSel()
   call merlin#TypeOf(s:get_visual_selection())
 endfunction
 
-function! merlin#StopHighlight()
+function! s:StopHighlight()
   if exists('w:enclosing_zone') && w:enclosing_zone != -1
-    py merlin.vim_type_reset()
     call matchdelete(w:enclosing_zone)
     let w:enclosing_zone = -1
-    augroup MerlinHighlighting
-      au!
-    augroup END
   endif
+endfunction
+
+function! merlin#StopHighlight()
+  py merlin.vim_type_reset()
+  call s:StopHighlight()
+  augroup MerlinHighlighting
+    au!
+  augroup END
 endfunction
 
 function! merlin#GrowEnclosing()
