@@ -551,7 +551,7 @@ def vim_case_analysis():
   except MerlinExc as e:
     try_print_error(e)
 
-  reset_enclosings()
+  vim_type_reset()
 
 def vim_type_enclosing():
   global enclosing_types
