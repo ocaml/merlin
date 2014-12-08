@@ -17,7 +17,7 @@ let assert_false =
   let _false = Location.mknoloc (Longident.Lident "false") in
   Ast_helper.Exp.assert_ (Ast_helper.Exp.construct _false None)
 
-let gen_patterns env type_expr =
+let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
@@ -29,6 +29,7 @@ let gen_patterns env type_expr =
   | Tconstr (path, _params, _) ->
     begin match Env.find_type_descrs path env with
     | [], [] ->
+      if recurse then from_type_decl env path else
       raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
     | [], labels ->
       let lst =
@@ -50,10 +51,24 @@ let gen_patterns env type_expr =
       )
     end
   | Tvariant row_desc ->
-    (* TODO: use [row_name]? *)
-    failwith "TODO(polymorphic variants)"
+    List.filter_map row_desc.row_fields ~f:(function
+      | lbl, Rpresent param_opt ->
+        let popt = Option.map param_opt ~f:(fun _ -> Parmatch.omega) in
+        Some (Tast_helper.Pat.variant env type_expr lbl popt (ref row_desc))
+      | _, _ -> None
+    )
   | _ ->
     failwith "TODO(get_patterns)"
+
+and from_type_decl env path =
+  let tdecl = Env.find_type path env in
+  match tdecl.Types.type_manifest with
+  | Some te -> gen_patterns ~recurse:false env te
+  | None ->
+    (* TODO: use [Predef] to identify int, string, etc. and destruct them in a
+       meaningful way. *)
+    raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
+
 
 let rec needs_parentheses = function
   | [] -> false
