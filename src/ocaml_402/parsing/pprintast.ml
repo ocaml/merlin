@@ -337,7 +337,7 @@ class printer  ()= object(self:'self)
     | Ppat_alias (p, s) -> pp f "@[<2>%a@;as@;%a@]"
           self#pattern p protect_ident s.txt (* RA*)
     | Ppat_or (p1, p2) -> (* *)
-        pp f "@[<hov0>%a@]" (self#list ~sep:"@,|" self#pattern)
+        pp f "@[<hov0>%a@]" (self#list ~sep:"@ | " self#pattern)
            (list_of_pattern [] x)
     | _ -> self#pattern1 f x
   method pattern1 (f:Format.formatter) (x:pattern) :unit =
@@ -347,7 +347,7 @@ class printer  ()= object(self:'self)
            ({ txt = Lident("::") ;_},
             Some ({ppat_desc = Ppat_tuple([pat1; pat2]);_})); _}
             ->
-              pp f "%a::%a"  self#simple_pattern  pat1  pattern_list_helper pat2 (*RA*)
+              pp f "%a :: %a"  self#simple_pattern  pat1  pattern_list_helper pat2 (*RA*)
       | p -> self#pattern1 f p in
     if x.ppat_attributes <> [] then self#pattern f x
     else match x.ppat_desc with

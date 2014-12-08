@@ -345,7 +345,7 @@ class printer  ()= object(self:'self)
             (match pattern_or_helper a p2 with
             |Some b -> pp f "@[<2>%C..%C@]" a b
             |None ->
-                pp f "@[<hov0>%a@]" (self#list ~sep:"@,|" self#pattern)
+                pp f "@[<hov0>%a@]" (self#list ~sep:"@ | " self#pattern)
                    (list_of_pattern [] x))
         | _ ->
             pp f "@[<hov0>%a@]" (self#list ~sep:"@,|" self#pattern)
@@ -359,7 +359,7 @@ class printer  ()= object(self:'self)
            ({ txt = Lident("::") ;_},
             Some ({ppat_desc = Ppat_tuple([pat1; pat2]);_}),
             _);_} ->
-              pp f "%a::%a"  self#simple_pattern  pat1  pattern_list_helper pat2 (*RA*)
+              pp f "%a :: %a"  self#simple_pattern  pat1  pattern_list_helper pat2 (*RA*)
       | p -> self#pattern1 f p in
     match x.ppat_desc with
     | Ppat_variant (l, Some p) ->  pp f "@[<2>`%s@;%a@]" l self#pattern1 p (*RA*)
