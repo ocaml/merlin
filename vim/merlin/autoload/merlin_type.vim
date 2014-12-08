@@ -16,8 +16,9 @@ function! merlin_type#HideTypeHistory()
   let l:win = bufwinnr(g:merlin_type_history)
   let l:cur = winnr()
   if l:win >= 0 && l:cur != l:win
-    execute "normal! " . l:win . "\<c-w>w"
+    exe l:win . "wincmd w"
     close
+    exe l:cur . "wincmd w"
     augroup MerlinTypeHistory
       au!
     augroup END
@@ -31,7 +32,7 @@ function! merlin_type#ShowTypeHistory()
     silent execute "bot " . g:merlin_type_history_height . "split"
     execute "buffer" g:merlin_type_history
   elseif winnr() != l:win
-    execute "normal! " . l:win . "\<c-w>w"
+    exe l:win . "wincmd w"
   endif
   normal! Gzb
 endfunction
@@ -48,8 +49,10 @@ endfunction
 
 function! s:RecordType(type)
   if ! exists("g:merlin_type_history")
+    let l:cur = winnr()
     silent call s:CreateTypeHistory()
     close
+    exe l:cur . "wincmd w"
   endif
 
   " vimscript can't append to a buffer without a refresh (?!)
@@ -72,10 +75,9 @@ function! merlin_type#Show(type, tail_info)
   let l:win = bufwinnr(g:merlin_type_history)
   let l:cur = winnr()
   if l:win >= 0
-    execute "normal! " . l:win . "\<c-w>w"
+    exe l:win . "wincmd w"
     call s:TemporaryResize(l:length)
     normal! Gzb
-    execute "normal! " . l:cur . "\<c-w>w"
   elseif l:length >= g:merlin_type_history_auto_open
     call merlin_type#ShowTypeHistory()
     call s:TemporaryResize(l:length)
@@ -83,7 +85,6 @@ function! merlin_type#Show(type, tail_info)
     augroup MerlinTypeHistory
       autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory()
     augroup END
-    execute "normal! " . l:cur . "\<c-w>w"
   else
     silent call merlin_type#ShowTypeHistory()
     let l:end = line("$")
@@ -95,6 +96,7 @@ function! merlin_type#Show(type, tail_info)
     redrawstatus
     execute l:msg
   endif
+  exe l:cur . "wincmd w"
 
   if l:user_lazyredraw == 0
     set nolazyredraw
