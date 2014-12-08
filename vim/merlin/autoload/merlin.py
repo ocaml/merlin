@@ -519,8 +519,14 @@ def replace_buffer_portion(start, end, txt):
     txt = prefix + txt + suffix
     lines = txt.split('\n')
     lines.reverse()
+    nb_lines = 0
     for line in lines:
+        nb_lines += 1
         b[start_line:0] = [ line ]
+
+    # Properly reindent the modified lines
+    vim.current.window.cursor = (start['line'], 0)
+    vim.command("call feedkeys('%d==', 'n')" % nb_lines)
 
 def vim_case_analysis():
   global enclosing_types
