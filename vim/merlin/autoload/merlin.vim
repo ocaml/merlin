@@ -341,6 +341,10 @@ function! merlin#Errors()
   endif
 endfunction
 
+function! merlin#Destruct()
+  py merlin.vim_case_analysis()
+endfunction
+
 function! merlin#Restart()
   py merlin.vim_restart()
 endfunction
@@ -394,8 +398,12 @@ function! merlin#Register()
   command! -buffer -nargs=0 YankLatestType    call merlin#YankLatestType()
   command! -buffer -nargs=0 ToggleTypeHistory call merlin_type#ToggleTypeHistory()
 
+  command! -buffer -nargs=0 Destruct call merlin#Destruct()
+
 
   command! -buffer -complete=customlist,merlin#CompletePrefix -nargs=? Locate call merlin#Locate(<q-args>)
+
+  command! -buffer -nargs=0 Outline call merlin#Outline()
 
   command! -buffer -nargs=0 Occurrences call merlin#Occurrences()
   command! -buffer -nargs=* Rename call merlin#OccurrencesRename(<f-args>)
@@ -526,8 +534,6 @@ endfunction
 
 command! -nargs=1 -complete=custom,merlin#MLList  ML  call merlin#FindFile(["ml","mli"],<f-args>)
 command! -nargs=1 -complete=custom,merlin#MLIList MLI call merlin#FindFile(["mli","ml"],<f-args>)
-
-command! Outline call merlin#Outline()
 
 " Flush buffer and dependencies after :make
 au QuickFixCmdPost * call merlin#Reload()
