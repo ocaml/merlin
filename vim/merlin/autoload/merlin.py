@@ -418,12 +418,33 @@ def vim_occurrences(vimvar):
     lcol = pos['col']
     if (lnum, lcol) <= (line, col): cursorpos = nr
     text = vim.current.buffer[lnum - 1]
-    text = text.replace("'", "`") # ugly, but no choice
+    text = text.replace("'", "''")
     vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'I','valid':1}" %
         (bufnr, lnum, lcol + 1, nr, text))
     nr = nr + 1
     vim.command("call add(%s, l:tmp)" % vimvar)
   return cursorpos + 1
+
+def vim_occurrences_search():
+  line, col = vim.current.window.cursor
+  sync_full_buffer()
+  lst = command_occurrences(line, col)
+  result = ""
+  over = ""
+  start_col = 0
+  for pos in lst:
+    current = easy_matcher_wide(pos['start'], pos['end'])
+    l1 = pos['start']['line']
+    c1 = pos['start']['col']
+    c2 = pos['end']['col']
+    if line == l1 and col >= c1 and col <= c2:
+      over = current
+      start_col  = c1
+    elif result == "":
+      result = current
+    else:
+      result = result + "\\|" + current
+  return "[%s, '%s', '%s']" % (start_col, over, result)
 
 def vim_occurrences_replace(content):
   sync_full_buffer()
@@ -476,12 +497,17 @@ def bounds_of_ocaml_atom_at_pos(to_line, col):
             stop += 1
     return (line[start:stop], start, stop)
 
-def vim_type_enclosing(vimvar):
+def vim_type_reset():
   global enclosing_types
   global current_enclosing
   sync_buffer()
   enclosing_types = [] # reset
   current_enclosing = -1
+
+def vim_type_enclosing():
+  global enclosing_types
+  global current_enclosing
+  vim_type_reset()
   to_line, to_col = vim.current.window.cursor
   pos = {'line':to_line, 'col':to_col}
   # deprecated, leave merlin compute the correct identifier
@@ -492,12 +518,26 @@ def vim_type_enclosing(vimvar):
   try:
     enclosing_types = command("type", "enclosing", "at", pos)
     if enclosing_types != []:
-      vim_next_enclosing(vimvar)
+      return vim_next_enclosing()
     else:
-      atom, _, _ = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
-      print("didn't manage to type '%s'" % atom)
+      atom, start, stop = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
+      tmp = {'start': {'line':to_line, 'col':start},
+             'end':   {'line':to_line, 'col':stop }}
+      tmp['matcher'] = make_matcher(tmp['start'], tmp['end'])
+      tmp['atom'] = atom
+      return json.dumps(tmp)
   except MerlinExc as e:
     try_print_error(e)
+    return '{}'
+
+def easy_matcher_wide(start, stop):
+  startl = ""
+  startc = ""
+  if start['line'] > 0:
+    startl = "\%{0}l".format(start['line'])
+  if start['col'] > 0:
+    startc = "\%{0}c".format(start['col'] + 1)
+  return '{0}{1}.*\%{2}l\%{3}c'.format(startl, startc, stop['line'], stop['col'] + 1)
 
 def easy_matcher(start, stop):
   startl = ""
@@ -531,27 +571,31 @@ def enclosing_tail_info(record):
   if record['tail'] == 'position': return ' (* tail position *)'
   return ''
 
-def vim_next_enclosing(vimvar):
+def vim_current_enclosing():
+  global enclosing_types
+  global current_enclosing
+  tmp = enclosing_types[current_enclosing]
+  tmp['matcher'] = make_matcher(tmp['start'], tmp['end'])
+  tmp['tail_info'] = enclosing_tail_info(tmp)
+  return json.dumps(tmp)
+
+def vim_next_enclosing():
   if enclosing_types != []:
     global current_enclosing
     if current_enclosing < len(enclosing_types):
         current_enclosing += 1
     if current_enclosing < len(enclosing_types):
-      tmp = enclosing_types[current_enclosing]
-      matcher = make_matcher(tmp['start'], tmp['end'])
-      vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-      print(tmp['type'] + enclosing_tail_info(tmp))
+        return vim_current_enclosing()
+  return '{}'
 
-def vim_prev_enclosing(vimvar):
+def vim_prev_enclosing():
   if enclosing_types != []:
     global current_enclosing
     if current_enclosing >= 0:
       current_enclosing -= 1
     if current_enclosing >= 0:
-      tmp = enclosing_types[current_enclosing]
-      matcher = make_matcher(tmp['start'], tmp['end'])
-      vim.command("let {0} = matchadd('EnclosingExpr', '{1}')".format(vimvar, matcher))
-      print(tmp['type'] + enclosing_tail_info(tmp))
+      return vim_current_enclosing()
+  return '{}'
 
 # Finding files
 def vim_which(name,ext):

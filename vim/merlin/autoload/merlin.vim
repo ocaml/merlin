@@ -31,6 +31,14 @@ if !exists("g:merlin_close_error_list")
   let g:merlin_close_error_list = 1
 endif
 
+if !exists("g:merlin_type_history_height")
+  let g:merlin_type_history_height = 5
+endif
+
+if !exists("g:merlin_type_history_auto_open")
+  let g:merlin_type_history_auto_open = 5
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -143,12 +151,50 @@ function! merlin#AddFlags(...)
   py merlin.vim_add_flags(*vim.eval("a:000"))
 endfunction
 
+function! s:ShowTypeEnclosing(type)
+  if empty(a:type)
+    return
+  endif
+
+  call merlin#StopHighlight()
+  let w:enclosing_zone = matchadd('EnclosingExpr', a:type['matcher'])
+  augroup MerlinHighlighting
+    au!
+    autocmd InsertEnter <buffer> call merlin#StopHighlight()
+  augroup END
+
+  if ! has_key(a:type, 'type')
+    echohl WarningMsg
+    echo "didn't manage to type '" . a:type['atom'] . "'"
+    echohl None
+    return
+  endif
+
+  let g:merlin_latest_type = a:type['type']
+
+  if g:merlin_type_history_height <= 0
+    echo a:type['type'] . a:type['tail_info']
+    return
+  endif
+
+  call merlin_type#Show(a:type['type'], a:type['tail_info'])
+endfunction
+
+function! merlin#YankLatestType()
+  if ! exists("g:merlin_latest_type")
+    echohl ErrorMsg | echo "no type available" | echohl None
+    return
+  endif
+  call setreg(v:register, g:merlin_latest_type)
+  echo "yanked" g:merlin_latest_type
+endfunction
+
 function! merlin#TypeOf(...)
     if (a:0 > 1)
         echoerr "TypeOf: too many arguments (expected 0 or 1)"
     elseif (a:0 == 0) || (a:1 == "")
-        call merlin#StopHighlight()
-        py merlin.vim_type_enclosing("w:enclosing_zone")
+        py vim.command("let l:type = " + merlin.vim_type_enclosing())
+        call s:ShowTypeEnclosing(l:type)
     else
         py merlin.vim_type(vim.eval("a:1"))
     endif
@@ -160,19 +206,23 @@ endfunction
 
 function! merlin#StopHighlight()
   if exists('w:enclosing_zone') && w:enclosing_zone != -1
+    py merlin.vim_type_reset()
     call matchdelete(w:enclosing_zone)
     let w:enclosing_zone = -1
+    augroup MerlinHighlighting
+      au!
+    augroup END
   endif
 endfunction
 
 function! merlin#GrowEnclosing()
-  call merlin#StopHighlight()
-  py merlin.vim_next_enclosing("w:enclosing_zone")
+  py vim.command("let l:type = " + merlin.vim_next_enclosing())
+  call s:ShowTypeEnclosing(l:type)
 endfunction
 
 function! merlin#ShrinkEnclosing()
-  call merlin#StopHighlight()
-  py merlin.vim_prev_enclosing("w:enclosing_zone")
+  py vim.command("let l:type = " + merlin.vim_prev_enclosing())
+  call s:ShowTypeEnclosing(l:type)
 endfunction
 
 function! merlin#Complete(findstart,base)
@@ -304,7 +354,7 @@ function! merlin#setVisualSelection(a, b)
 " Move to a, enter visual mode, and move to b
   call setpos("'a", [0, a:a[0], a:a[1], 0])
   call setpos("'b", [0, a:b[0], a:b[1], 0])
-  normal! `av`b
+  normal! `bv`a
 " Restore positions of marks 'a and 'b
   call setpos("'a", markASave)
   call setpos("'b", markBSave)
@@ -336,6 +386,9 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinClearEnclosing  call merlin#StopHighlight()
   command! -buffer -nargs=0 MerlinGrowEnclosing   call merlin#GrowEnclosing()
   command! -buffer -nargs=0 MerlinShrinkEnclosing call merlin#ShrinkEnclosing()
+
+  command! -buffer -nargs=0 YankLatestType    call merlin#YankLatestType()
+  command! -buffer -nargs=0 ToggleTypeHistory call merlin_type#ToggleTypeHistory()
 
 
   command! -buffer -complete=customlist,merlin#CompletePrefix -nargs=? Locate call merlin#Locate(<q-args>)
@@ -375,6 +428,43 @@ function! merlin#Register()
   map  <buffer> <LocalLeader>p :ShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :TypeOfSel<return>
   vmap <buffer> <TAB>          :call merlin#Phrase()<return>
+
+  " nmap <silent><buffer> <LocalLeader>yt :YankLatestType<return>
+  " nmap <silent><buffer> <LocalLeader>qt :ToggleTypeHistory<return>
+
+  " Search
+  nmap <silent><buffer> gd  :Locate<return>
+  nmap <silent><buffer> <Plug>(MerlinSearchOccurencesForward)   :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
+  nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesBackward) :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
+
+  " Rename
+  nmap <silent><buffer> <Plug>(MerlinRename) :call merlin_find#IncrementalRename()<cr>//<cr>c//e<cr>
+  nmap <silent><buffer> <Plug>(MerlinRenameAppend) :call merlin_find#IncrementalRename()<cr>//e<cr>a
+
+  " Text Objects
+  if exists("g:merlin_textobject_grow") && g:merlin_textobject_grow != ''
+    let l:k = g:merlin_textobject_grow
+
+    exe "vmap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Grow('v')<return>"
+    exe "vmap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#GrowAround('v')<return>"
+    exe "vmap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#GrowInside('v')<return>"
+
+    exe "omap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Grow('o')<return>"
+    exe "omap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#GrowAround('o')<return>"
+    exe "omap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#GrowInside('o')<return>"
+  endif
+
+  if exists("g:merlin_textobject_shrink") && g:merlin_textobject_shrink != ''
+    let l:k = g:merlin_textobject_shrink
+
+    exe "vmap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Shrink('v')<return>"
+    exe "vmap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#ShrinkAround('v')<return>"
+    exe "vmap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#ShrinkInside('v')<return>"
+
+    exe "omap <silent><buffer>  " . l:k ":<C-U>call merlin_visual#Shrink('o')<return>"
+    exe "omap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#ShrinkInside('o')<return>"
+    exe "omap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#ShrinkAround('o')<return>"
+  endif
 endfunction
 
 function! merlin#LoadProject()

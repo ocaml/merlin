@@ -67,14 +67,31 @@ expression. (i.e. the largest expression, centered around the position where
 |:TypeEnclosing| was called, which is contained in the currently highlighted
 expression).
 
+["r] :YankLatestType                                         *:YankLatestType*
+
+Copy the latest shown type into register `"r`, or `""` if unspecified.
+
+:ToggleTypeHistory                                        *:ToggleTypeHistory*
+
+Reveals or hides a buffer containing a trace of all computed types.
+See |merlin_type_history_height| and |merlin_type_history_auto_open|.
+
 :Occurrences                                                    *:Occurrences*
 
 List all occurrences of identifier under cursor in current buffer.
 See |merlin_display_occurrence_list|.
+Add these bindings to integrate the results into vim search (see |star|) >
+  nmap <LocalLeader>*  <Plug>(MerlinSearchOccurencesForward)
+  nmap <LocalLeader>#  <Plug>(MerlinSearchOccurencesBackward)
+<
 
 :Rename <ident>                                                      *:Rename*
 
 Rename all occurrences of identifier under cursor to <ident>.
+Add these bindings to rename interactively: >
+  nmap <LocalLeader>r  <Plug>(MerlinRename)
+  nmap <LocalLeader>R  <Plug>(MerlinRenameAppend)
+<
 
 ==============================================================================
 OPTIONS                                                       *merlin-options*
@@ -124,6 +141,48 @@ Default: true.
 If set to true, merlin automatically closes the list of errors if no error
 was found after a :ErrorCheck command. >
   let g:merlin_close_error_list = 0
+<
+                                                 *'merlin_type_history_height'*
+
+Default: 5.
+The default height of the type history window.  If set to zero, merlin never
+records any types in the history buffer. >
+  let g:merlin_type_history_height = 0
+<
+                                              *'merlin_type_history_auto_open'*
+
+Default: 5.
+The maximum number of type lines to print in the statusbar before opening the
+type history window.  If set to a very large number, merlin will never open
+the type history window automatically. >
+  let g:merlin_type_history_auto_open = 9999
+<
+
+                                                     *'merlin_textobject_grow'*
+                                                   *'merlin_textobject_shrink'*
+Default: unset.
+Binds |text-objects| on the ocaml AST. For example: >
+  let g:merlin_textobject_grow   = 'm'
+  let g:merlin_textobject_shrink = 'M'
+<
+On their first call, `M` selects the current node while `m` selects something
+bigger than a leaf.  Repeated use of `m` grow the selection and `M` shrinks
+it back.  The variants `im` and `aM` behave similarly, but reduce the
+selection by avoiding spaces and parenthesis; while `am` and `aM` expand it by
+capturing the surrounding spaces.
+
+In the following illustration, the cursor is represented by `[n]`:
+>
+                       ┌── aM ──┐
+                       │ ┌─ M ─┐│
+                       ↓ ↓     ↓↓
+  let def = outer     (  in[n]er  stuff  )    more
+            ↑     ↑   ↑  ↑            ↑  ↑  ↑    ↑
+            │     │   │  └─ im ───────┘  │  │    │
+            │     │   └────  m ──────────┘  │    │
+            │     └──────── am ─────────────┘    │
+            └────────────── 2m ──────────────────┘
+                        (or mm)
 <
 
 ==============================================================================
