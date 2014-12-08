@@ -80,10 +80,18 @@ See |merlin_type_history_height| and |merlin_type_history_auto_open|.
 
 List all occurrences of identifier under cursor in current buffer.
 See |merlin_display_occurrence_list|.
+Add these bindings to integrate the results into vim search (see |star|) >
+  nmap <LocalLeader>*  <Plug>(MerlinSearchOccurencesForward)
+  nmap <LocalLeader>#  <Plug>(MerlinSearchOccurencesBackward)
+<
 
 :Rename <ident>                                                      *:Rename*
 
 Rename all occurrences of identifier under cursor to <ident>.
+Add these bindings to rename interactively: >
+  nmap <LocalLeader>r  <Plug>(MerlinRename)
+  nmap <LocalLeader>R  <Plug>(MerlinRenameAppend)
+<
 
 ==============================================================================
 OPTIONS                                                       *merlin-options*
