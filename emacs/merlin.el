@@ -1481,17 +1481,17 @@ is active)."
       (indent-region start (point)))))
 
 (defun merlin--destruct-enclosing ()
-  (lexical-let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
-		 (start  (merlin-unmake-point (car bounds)))
-		 (stop   (merlin-unmake-point (cdr bounds)))
-		 (result
-		  (merlin-send-command
-		   (list 'case 'analysis 'from start 'to stop)
-		   (lambda (errinfo)
-		     (let ((msg (cdr (assoc 'message errinfo))))
-		       (if msg
-			   (message "%s" msg)
-			 (message "bug in merlin: failed to destructure error")))))))
+  (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
+	 (start  (merlin-unmake-point (car bounds)))
+	 (stop   (merlin-unmake-point (cdr bounds)))
+	 (result
+	  (merlin-send-command
+	   (list 'case 'analysis 'from start 'to stop)
+	   (lambda (errinfo)
+	     (let ((msg (cdr (assoc 'message errinfo))))
+	       (if msg
+		   (message "%s" msg)
+		 (message "bug in merlin: failed to destructure error")))))))
     (when result
       (let* ((loc (car result))
 	     (start (cdr (assoc 'start loc)))
