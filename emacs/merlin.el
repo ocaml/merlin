@@ -1473,31 +1473,35 @@ is active)."
     (save-excursion
       (delete-region start stop)
       (goto-char start)
-      (insert txt))))
+      (insert txt)
+      (indent-region start (point)))))
 
 (defun merlin--destruct-enclosing ()
-  (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
-         (start  (merlin-unmake-point (car bounds)))
-         (stop   (merlin-unmake-point (cdr bounds)))
-         (cmd    (list 'case 'analysis 'from start 'to stop))
-         (result (merlin-send-command cmd))
-         (loc    (car result))
-         (start  (cdr (assoc 'start loc)))
-         (stop   (cdr (assoc 'end loc))))
-    (merlin--replace-buff-portion start stop (cadr result))))
+  (lexical-let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
+		 (start  (merlin-unmake-point (car bounds)))
+		 (stop   (merlin-unmake-point (cdr bounds))))
+    (merlin-send-command-async
+     (list 'case 'analysis 'from start 'to stop)
+     (lambda (result)
+       (let* ((loc (car result))
+	      (start (cdr (assoc 'start loc)))
+	      (stop (cdr (assoc 'end loc))))
+	 (merlin--replace-buff-portion start stop (cadr result))))
+     (lambda (errinfo)
+       (let ((msg (cdr (assoc 'message errinfo))))
+	 (if msg
+	     (message "%s" msg)
+	   (message "bug in merlin: failed to destructure error")))))))
 
 (defun merlin-destruct ()
   "Case analyse the current enclosing"
   (interactive)
-  (if (not merlin-enclosing-types)
-    (progn
-      (merlin-sync-to-point)
-      (if (merlin--type-enclosing-query)
-        (progn
-          (setq merlin-enclosing-offset -1)
-          (merlin--destruct-enclosing))
-        (message "merlin: no result")))
-    (merlin--destruct-enclosing)))
+  (merlin-sync-to-point)
+  (if (merlin--type-enclosing-query)
+      (progn
+	(setq merlin-enclosing-offset -1)
+	(merlin--destruct-enclosing))
+    (error "merlin: no result")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
