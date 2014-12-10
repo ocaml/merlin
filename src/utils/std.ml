@@ -96,10 +96,12 @@ module List = struct
     in
     aux [] elem n
 
-  let rec remove x = function
+  let rec remove ?(phys=false) x =
+    let check = if phys then (==) else (=) in
+    function
     | [] -> []
-    | hd :: tl when x = hd -> tl
-    | hd :: tl -> hd :: remove x tl
+    | hd :: tl when check x hd -> tl
+    | hd :: tl -> hd :: remove ~phys x tl
 
   let rec remove_all x = function
     | [] -> []

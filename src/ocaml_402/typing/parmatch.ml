@@ -2066,3 +2066,25 @@ let do_complete_partial ?pred exhaust pss =
 let complete_partial pss =
   let pss = get_mins le_pats pss in
   do_complete_partial exhaust pss
+
+let return_unused casel =
+  let rec do_rec acc pref = function
+    | [] -> acc
+    | q :: rem ->
+      let qs = [q] in
+      let acc =
+        try
+          let pss = get_mins le_pats (List.filter (compats qs) pref) in
+          let r = every_satisfiables (make_rows pss) (make_row qs) in
+          match r with
+          | Unused -> `Unused q :: acc
+          | Upartial ps -> `Unused_subs (q, ps) :: acc
+          | Used -> acc
+        with Empty | Not_found | NoGuard -> assert false
+      in
+      (* FIXME: we need to know whether there is a guard here, because if there
+         is, we dont want to add [[q]] to [pref]. *)
+      do_rec acc ([q]::pref) rem
+  in
+  do_rec [] [] casel
+

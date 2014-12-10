@@ -202,47 +202,40 @@ let node ~loc ~env parents node =
         let fmt, to_string = Format.to_string () in
         Pprintast.pattern fmt ppat ;
         patt.Typedtree.pat_loc, to_string ()
-      | replacement :: _ ->
-        (* FIXME: this part is aweful.
-           The pattern we are introducing (i.e. replacement) might already be
-           matched by another pattern.
-           For example:
-              | [] -> ...
-              | _ -> ...
-          get rewriten to
-              | [] -> ...
-              | [] | _ :: _ -> ...
-          which *sucks*!
-
-          Do we want to check for unused patterns?  *)
-        let loc = ref patt.Typedtree.pat_loc in
-        let rep = ref replacement in
-        let patterns =
-          List.map patterns ~f:(fun p ->
-            let changed, p' = Merlin_types_custom.subst_patt patt ~by:replacement p in
-            if changed then (
-              loc := p.Typedtree.pat_loc ;
-              rep := p'
-            ) ;
-            p'
+      | sub_patterns ->
+        let rev_before, after, top_patt =
+          Merlin_types_custom.find_branch patterns patt
+        in
+        let new_branches =
+          List.rev_map sub_patterns ~f:(fun by ->
+            Merlin_types_custom.subst_patt patt ~by top_patt
           )
         in
-        let pss = List.map patterns ~f:(fun x -> [ x ]) in
-        let p =
-          match Parmatch.complete_partial pss with
-          | None ->
-            (* Apparently we only needed "replacement" to make the matching
-              total...
-              Note: This might not actually be true, we might be refining an
-              unused pattern. *)
-            !rep
-          | Some p ->
-            Tast_helper.Pat.pat_or env p.Typedtree.pat_type !rep p
+        let patterns =
+          List.rev_append rev_before
+            (List.rev_append new_branches after)
         in
-        let ppat = Untypeast.untype_pattern p in
-        let fmt, to_string = Format.to_string () in
-        Pprintast.pattern fmt ppat ;
-        !loc, to_string ()
+        let unused = Parmatch.return_unused patterns in
+        let new_branches =
+          List.fold_left unused ~init:new_branches ~f:(fun branches u ->
+            match u with
+            | `Unused p -> List.remove ~phys:true p branches
+            | `Unused_subs _ -> (* TODO *) branches
+          )
+        in
+        match new_branches with
+        | [] -> raise Nothing_to_do (* FIXME: give a more informative message *)
+        | p :: ps ->
+          let p =
+            List.fold_left ps ~init:p ~f:(fun acc p ->
+              Tast_helper.Pat.pat_or top_patt.Typedtree.pat_env
+                top_patt.Typedtree.pat_type acc p
+            )
+          in
+          let ppat = Untypeast.untype_pattern p in
+          let fmt, to_string = Format.to_string () in
+          Pprintast.pattern fmt ppat ;
+          top_patt.Typedtree.pat_loc, to_string ()
       end
     end
   | _ ->

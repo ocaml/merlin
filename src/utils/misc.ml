@@ -43,7 +43,7 @@ let for_all2 pred l1 l2 = List.for_all2 ~f:pred l1 l2
 
 let replicate_list = List.replicate
 
-let list_remove = List.remove
+let list_remove x = List.remove ~phys:false x
 
 let rec split_last = function
     [] -> assert false
