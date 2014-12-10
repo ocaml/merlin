@@ -1,15 +1,15 @@
 " merlin extension to CtrlP <https://github.com/ctrlpvim/ctrlp.vim>
 
 " Init {{{1
-if exists('g:loaded_ctrlp_merlin') && g:loaded_ctrlp_merlin
+if exists('g:loaded_ctrlp_outline') && g:loaded_ctrlp_outline
 	fini
 en
-let g:loaded_ctrlp_merlin = 1
+let g:loaded_ctrlp_outline = 1
 
 cal add(g:ctrlp_ext_vars, {
-	\ 'init': 'ctrlp#merlin#init()',
-	\ 'accept': 'ctrlp#merlin#accept',
-	\ 'lname': 'merlin',
+	\ 'init': 'ctrlp#outline#init()',
+	\ 'accept': 'ctrlp#outline#accept',
+	\ 'lname': 'outline',
 	\ 'sname': 'ml',
 	\ 'type': 'tabs',
 	\ 'sort': 0,
@@ -35,7 +35,7 @@ def get_outlines():
 EOF
 
 " Public {{{1
-fu! ctrlp#merlin#init()
+fu! ctrlp#outline#init()
   let l:modules = []
   python << EOF
 get_outlines()
@@ -47,7 +47,7 @@ EOF
   return l:modules
 endf
 
-fu! ctrlp#merlin#accept(mode, str)
+fu! ctrlp#outline#accept(mode, str)
   call ctrlp#exit()
   python << EOF
 matching_name = vim.eval("a:str").strip().split('\t')[0]
@@ -63,7 +63,7 @@ EOF
 silent! normal! zvzz
 endf
 
-fu! ctrlp#merlin#id()
+fu! ctrlp#outline#id()
 	retu s:id
 endf
 "}}}

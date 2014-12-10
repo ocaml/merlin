@@ -318,7 +318,7 @@ function! merlin#Outline()
     " ctrl doesn't exist? Exiting.
   else
     py merlin.sync_full_buffer()
-    call ctrlp#init(ctrlp#merlin#id())
+    call ctrlp#init(ctrlp#outline#id())
   endif
 endfunction
 
