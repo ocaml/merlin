@@ -238,11 +238,11 @@ let node ~loc ~env parents node =
         patt.Typedtree.pat_loc, to_string ()
       | sub_patterns ->
         let rev_before, after, top_patt =
-          Merlin_types_custom.find_branch patterns patt
+          Raw_compat.find_branch patterns patt
         in
         let new_branches =
           List.map sub_patterns ~f:(fun by ->
-            Merlin_types_custom.subst_patt patt ~by top_patt
+            Raw_compat.subst_patt patt ~by top_patt
           )
         in
         let patterns =
@@ -257,7 +257,7 @@ let node ~loc ~env parents node =
             | `Unused_subs (p, lst) ->
               List.map branches ~f:(fun branch ->
                 if branch != p then branch else
-                List.fold_left lst ~init:branch ~f:Merlin_types_custom.rm_sub
+                List.fold_left lst ~init:branch ~f:Raw_compat.rm_sub
               )
           )
         in

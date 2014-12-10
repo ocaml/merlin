@@ -318,7 +318,7 @@ let repack = function
 let rec check_item ~source modules =
   let get_loc ~name item rest =
     let ident_locs, is_included =
-      let open Merlin_types_custom in
+      let open Raw_compat in
       match item.BrowseT.t_node with
       | BrowseT.Structure_item item ->
         str_ident_locs item, get_mod_expr_if_included item
@@ -339,7 +339,7 @@ let rec check_item ~source modules =
   in
   let get_on_track ~name item =
     match
-      let open Merlin_types_custom in
+      let open Raw_compat in
       match item.BrowseT.t_node with
       | BrowseT.Structure_item item ->
         repack (get_mod_expr_if_included ~name item),
@@ -457,9 +457,9 @@ and resolve_mod_alias ~source node path rest =
   let direct, loc =
     match node with
     | BrowseT.Module_expr me  ->
-      Merlin_types_custom.remove_indir_me me, me.Typedtree.mod_loc
+      Raw_compat.remove_indir_me me, me.Typedtree.mod_loc
     | BrowseT.Module_type mty ->
-      Merlin_types_custom.remove_indir_mty mty, mty.Typedtree.mty_loc
+      Raw_compat.remove_indir_mty mty, mty.Typedtree.mty_loc
     | _ -> assert false (* absurd *)
   in
   match direct with
@@ -557,7 +557,7 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
     let path', loc =
       (* [1] If we know it is a record field, we only look for that. *)
       if is_label then
-        let label_desc = Merlin_types_custom.lookup_label ident env in
+        let label_desc = Raw_compat.lookup_label ident env in
         path_and_loc_from_label label_desc env
       else (
         try
@@ -571,11 +571,11 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
           path, typ_decl.Types.type_loc
         with Not_found | Context_mismatch ->
         try
-          let cstr_desc = Merlin_types_custom.lookup_constructor ident env in
-          Merlin_types_custom.path_and_loc_of_cstr cstr_desc env
+          let cstr_desc = Raw_compat.lookup_constructor ident env in
+          Raw_compat.path_and_loc_of_cstr cstr_desc env
         with Not_found ->
         try
-          let path, _ = Merlin_types_custom.lookup_module ident env in
+          let path, _ = Raw_compat.lookup_module ident env in
           path, Location.symbol_gloc ()
         with Not_found ->
         try
@@ -588,7 +588,7 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
                   | { x ; y } -> e
               in which case the check before [1] won't know that we have a
               label, but it's worth checking at this point. *)
-          let label_desc = Merlin_types_custom.lookup_label ident env in
+          let label_desc = Raw_compat.lookup_label ident env in
           path_and_loc_from_label label_desc env
         with Not_found ->
           info_log "   ... not in the environment%s"

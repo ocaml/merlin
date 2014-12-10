@@ -213,12 +213,12 @@ module Make_simple (Conv : Simple_conv_intf) = struct
   let named params ty = Named (params, ty)
 
   let conv_of_sig params ty =
-    let params = Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v) params in
+    let params = Raw_compat.Parsetree.format_params ~f:(fun v -> Var v) params in
     List.fold_right ~f:(fun var acc -> mk_arrow (mk_arrow var Conv.t) acc) params
       ~init:(mk_arrow (named params ty) Conv.t)
 
   let of_conv_sig params ty =
-    let params = Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v) params in
+    let params = Raw_compat.Parsetree.format_params ~f:(fun v -> Var v) params in
     List.fold_right ~f:(fun var acc -> mk_arrow (mk_arrow Conv.t var) acc) params
       ~init:(mk_arrow Conv.t (Named (params, ty)))
 
@@ -226,7 +226,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
     let ty = located_name.Location.txt in
     let args =
       let f x = Conv.name ^ "_of_" ^ x in
-      Merlin_types_custom.Parsetree.format_params ~f type_infos.ptype_params
+      Raw_compat.Parsetree.format_params ~f type_infos.ptype_params
     in
     Binding {
       ident = Conv.name ^ "_of_" ^ ty ;
@@ -238,7 +238,7 @@ module Make_simple (Conv : Simple_conv_intf) = struct
     let ty = located_name.Location.txt in
     let args =
       let f x = x ^ "_of_" ^ Conv.name in
-      Merlin_types_custom.Parsetree.format_params ~f type_infos.ptype_params
+      Raw_compat.Parsetree.format_params ~f type_infos.ptype_params
     in
     Binding {
       ident = ty ^ "_of_" ^ Conv.name ;
@@ -267,7 +267,7 @@ module Binprot = struct
   let binding ~prefix ?(suffix="") ~typesig ty =
     let (located_name, ty_infos) = ty in
     let tyname = located_name.Location.txt in
-    let args = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> prefix ^ x ^ suffix) ty_infos.ptype_params in
+    let args = Raw_compat.Parsetree.format_params ~f:(fun x -> prefix ^ x ^ suffix) ty_infos.ptype_params in
     Binding {
       ident = prefix ^ tyname ^ suffix;
       typesig = typesig ty ;
@@ -278,7 +278,7 @@ module Binprot = struct
     let int = Named ([], "int")
 
     let typesig (name, ty_infos) =
-      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Raw_compat.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       List.fold_right ~f:(fun v acc -> Arrow ("", Arrow ("", Var v, int), acc)) params
         ~init:(Arrow ("", Named (List.map (fun x -> Var x) params, name.Location.txt), int))
 
@@ -291,7 +291,7 @@ module Binprot = struct
     let writer t = Named ([t], "Bin_prot.Write.writer")
 
     let typesig (name, ty_infos) =
-      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Raw_compat.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let t = Named (List.map (fun x -> Var x) params, name.Location.txt) in
       let init = writer t in
       let make_var str = writer (Var str) in
@@ -304,7 +304,7 @@ module Binprot = struct
 
   module Writer = struct
     let typesig (name, ty_infos) =
-      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
+      let params = Raw_compat.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right params
         ~init:(Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.writer"))
         ~f:(fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.writer"), acc))
@@ -317,7 +317,7 @@ module Binprot = struct
   module Read = struct
     let reader t = Named ([t], "Bin_prot.Read.reader")
     let typesig (name, ty_infos) =
-      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Raw_compat.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let init = reader
         (Named (List.map (fun x -> Var x) params, name.Location.txt))
       in
@@ -331,7 +331,7 @@ module Binprot = struct
 
   module Read__ = struct
     let typesig (name, ty_infos) =
-      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
+      let params = Raw_compat.Parsetree.format_params ~f:(fun x -> x) ty_infos.ptype_params in
       let res = Named (List.map (fun x -> Var x) params, name.Location.txt) in
       let init = Read.reader (Arrow ("", Named ([], "int"), res)) in
       let make_var str = Read.reader (Var str) in
@@ -345,7 +345,7 @@ module Binprot = struct
 
   module Reader = struct
     let typesig (name, ty_infos) =
-      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
+      let params = Raw_compat.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right params
         ~init:(Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.reader"))
         ~f:(fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.reader"), acc))
@@ -357,7 +357,7 @@ module Binprot = struct
 
   module Type_class = struct
     let typesig (name, ty_infos) =
-      let params = Merlin_types_custom.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
+      let params = Raw_compat.Parsetree.format_params ~f:(fun x -> Var x) ty_infos.ptype_params in
       List.fold_right params
         ~init:(Named ([Named (params, name.Location.txt)], "Bin_prot.Type_class.t"))
         ~f:(fun param acc -> Arrow ("", Named ([param], "Bin_prot.Type_class.t"), acc))
@@ -410,7 +410,7 @@ module Variants = struct
     )
 
   let constructors ~self cstrs =
-    Merlin_types_custom.Parsetree.map_constructors cstrs ~f:(
+    Raw_compat.Parsetree.map_constructors cstrs ~f:(
       fun name args res_opt loc ->
         let typesig = mk_cstr_typesig ~self args res_opt in
         Binding { ident = String.lowercase name ; typesig ; body = AnyVal }
@@ -418,7 +418,7 @@ module Variants = struct
 
   let mk_module ~self cstrs =
     let cstrs_dot_t =
-      Merlin_types_custom.Parsetree.map_constructors cstrs ~f:(
+      Raw_compat.Parsetree.map_constructors cstrs ~f:(
         fun name args res_opt loc ->
           let t = Named ([mk_cstr_typesig ~self args res_opt], "Variant.t") in
           { ident = String.lowercase name ; typesig = t ; body = AnyVal }
@@ -427,7 +427,7 @@ module Variants = struct
 
     let body =
       mk_labeled_fun
-        (Merlin_types_custom.Parsetree.map_constructors cstrs
+        (Raw_compat.Parsetree.map_constructors cstrs
           ~f:(fun name _ _ _ -> name, true))
     in
 
@@ -444,7 +444,7 @@ module Variants = struct
         let ret_ty = Var (new_var ()) in
         List.fold_right2 cstrs_dot_t cstrs ~init:ret_ty ~f:(
           fun cstr c acc ->
-            let args = Merlin_types_custom.Parsetree.args_of_constructor c in
+            let args = Raw_compat.Parsetree.args_of_constructor c in
             let tmp =
               List.fold_right args ~init:ret_ty
                 ~f:(fun arg acc -> Arrow ("", Core_type arg, acc))
@@ -474,7 +474,7 @@ module Variants = struct
     ])
 
   let top_lvl ({ Location.txt = name },ty) =
-    let params = Merlin_types_custom.Parsetree.format_params ~f:(fun s -> Var s) ty.ptype_params in
+    let params = Raw_compat.Parsetree.format_params ~f:(fun s -> Var s) ty.ptype_params in
     let self = Named (params, name) in
     match ty.ptype_kind with
     | Parsetree.Ptype_variant cstrs ->
@@ -485,7 +485,7 @@ end
 module Fields = struct
   let gen_field self lbl : top_item list =
     let ({ Location.txt = name }, mut, ty, _) =
-      Merlin_types_custom.Parsetree.inspect_label lbl
+      Raw_compat.Parsetree.inspect_label lbl
     in
     (* Remove higher-rank quantifiers *)
     let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
@@ -508,7 +508,7 @@ module Fields = struct
       let perms = sub_of_simple_variants [ "Read" ; "Set_and_create" ] in
       List.map fields ~f:(fun lbl ->
         let ({ Location.txt = name }, _, ty, _) =
-          Merlin_types_custom.Parsetree.inspect_label lbl
+          Raw_compat.Parsetree.inspect_label lbl
         in
         let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
         let t = Named ([ perms ; self ; Core_type ty ], "Field.t_with_perm") in
@@ -519,7 +519,7 @@ module Fields = struct
     (* Helper, used in the next few functions *)
     let body =
       mk_labeled_fun (List.map fields ~f:(fun lbl ->
-        let (l,_,_,_) = Merlin_types_custom.Parsetree.inspect_label lbl in
+        let (l,_,_,_) = Raw_compat.Parsetree.inspect_label lbl in
         l.Location.txt,true)
       )
     in
@@ -547,7 +547,7 @@ module Fields = struct
       in
       let lst =
         List.map2 fields fields_dot_t ~f:(fun f fdt ->
-          let (name,_,ty,_) = Merlin_types_custom.Parsetree.inspect_label f in
+          let (name,_,ty,_) = Raw_compat.Parsetree.inspect_label f in
           (name.Location.txt, ty, fdt)
         )
       in
@@ -567,7 +567,7 @@ module Fields = struct
     let create =
       let typesig =
         List.fold_right fields ~init:self ~f:(fun f acc ->
-          let (name, _, t, _) = Merlin_types_custom.Parsetree.inspect_label f in
+          let (name, _, t, _) = Raw_compat.Parsetree.inspect_label f in
           Arrow (name.Location.txt, Core_type t, acc)
         )
       in
@@ -592,7 +592,7 @@ module Fields = struct
       let typesig =
         List.fold_right2 fields_dot_t fields ~init:self ~f:(
           fun field_t f acc_ty ->
-            let (_, _, ty, _) = Merlin_types_custom.Parsetree.inspect_label f in
+            let (_, _, ty, _) = Raw_compat.Parsetree.inspect_label f in
             let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
             Arrow (field_t.ident,
               Arrow ("", field_t.typesig, Core_type ty), acc_ty
@@ -620,7 +620,7 @@ module Fields = struct
 
   let top_lvl ({ Location.txt = name },ty) =
     let params =
-      Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v)
+      Raw_compat.Parsetree.format_params ~f:(fun v -> Var v)
         ty.ptype_params
     in
     let self = Named (params, name) in
@@ -637,7 +637,7 @@ module Enumerate = struct
     let ident = if name = "t" then "all" else "all_of_" ^ name in
     let typesig =
       let params =
-        Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v)
+        Raw_compat.Parsetree.format_params ~f:(fun v -> Var v)
           ty.ptype_params
       in
       let param =
@@ -655,7 +655,7 @@ module Compare = struct
 
   let bindings ~kind ({ Location.txt = name },ty) =
     let params =
-      Merlin_types_custom.Parsetree.format_params ~f:(fun v -> Var v)
+      Raw_compat.Parsetree.format_params ~f:(fun v -> Var v)
         ty.ptype_params
     in
     let self = Named (params, name) in
@@ -774,7 +774,7 @@ module Custom_printf = struct
 
   let bang loc_start loc_end expr = match expr with
     | { pexp_desc = Pexp_constant (Asttypes.Const_string _ as cs) } ->
-      let _str = Merlin_types_custom.extract_const_string cs in
+      let _str = Raw_compat.extract_const_string cs in
       let pexp_loc = {any_val'.pexp_loc with Location. loc_start; loc_end} in
       Some {any_val' with pexp_loc}
     | _ -> None

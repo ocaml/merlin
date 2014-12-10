@@ -53,10 +53,10 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
 
 let lookup_module_or_modtype name env =
   try
-    let path, mty = Merlin_types_custom.lookup_module name env in
+    let path, mty = Raw_compat.lookup_module name env in
     path, Some mty
   with Not_found ->
-    Merlin_types_custom.lookup_modtype name env
+    Raw_compat.lookup_modtype name env
 
 let verbosity = Fluid.from 0
 
@@ -70,7 +70,7 @@ module Printtyp = struct
     | Some m -> {ty with Types.type_manifest = Some (expand_type env m)}
     | None -> ty
 
-  let expand_sig = Merlin_types_custom.full_scrape
+  let expand_sig = Raw_compat.full_scrape
 
   let verbose_type_scheme env ppf t =
     Printtyp.type_scheme ppf (expand_type env t)
@@ -122,19 +122,19 @@ let rec mod_smallerthan n m =
         | None, _ -> None
         | Some n', _ when n' > n -> None
         | Some n1, Sig_modtype (_,m) ->
-            begin match Merlin_types_custom.extract_modtype_declaration m with
+            begin match Raw_compat.extract_modtype_declaration m with
               | Some m -> sub n1 m
               | None -> None
             end
         | Some n1, Sig_module (_,m,_) ->
-          sub n1 (Merlin_types_custom.extract_module_declaration m)
+          sub n1 (Raw_compat.extract_module_declaration m)
 
         | Some n', _ -> Some (succ n')
       end
     end
   | Mty_functor (_,m1,m2) ->
     begin
-      match Merlin_types_custom.extract_functor_arg m1 with
+      match Raw_compat.extract_functor_arg m1 with
       | None -> None
       | Some m1 ->
       match mod_smallerthan n m1 with
@@ -157,7 +157,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     in
     (*let sg' = Typemod.simplify_signature sg in*)
     let open Typedtree in
-    let exp = Merlin_types_custom.dest_tstr_eval str in
+    let exp = Raw_compat.dest_tstr_eval str in
     Printtyp.type_scheme env ppf exp.exp_type;
   in
   Printtyp.wrap_printing_env env verbosity
@@ -170,7 +170,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         false
 
       | Some e ->
-        begin match Merlin_types_custom.Parsetree.extract_specific_parsing_info e with
+        begin match Raw_compat.Parsetree.extract_specific_parsing_info e with
         | `Ident longident ->
           begin
             try
@@ -207,7 +207,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
               with _ ->
                 try
                   let cstr_desc =
-                    Merlin_types_custom.lookup_constructor longident.Asttypes.txt env
+                    Raw_compat.lookup_constructor longident.Asttypes.txt env
                   in
                   (*
                   Format.pp_print_string ppf name;

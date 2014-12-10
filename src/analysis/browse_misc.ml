@@ -42,7 +42,7 @@ let print_constructor ppf c =
 let summary_at pos sum =
   let cmp = Parsing_aux.compare_pos pos in
   let rec aux sum =
-    let open Merlin_types_custom in
+    let open Raw_compat in
     match signature_of_summary sum >>= signature_loc with
     | None -> summary_prev sum >>= aux
     | Some loc ->
@@ -61,7 +61,7 @@ let signature_of_env ?(ignore_extensions=true) env =
     | Env.Env_module (_,i,_)
       when ignore_extensions && i = Extension.ident -> ()
     | summary ->
-      let open Merlin_types_custom in
+      let open Raw_compat in
       Option.iter ~f:append (signature_of_summary summary);
       Option.iter aux (summary_prev summary)
   in

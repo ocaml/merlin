@@ -109,7 +109,7 @@ SOURCES = \
 	$(TYPER)/typing/includecore.ml    \
 	$(TYPER)/typing/mtype.mli         \
 	$(TYPER)/typing/mtype.ml          \
-	$(TYPER)/merlin_types_custom.ml   \
+	$(TYPER)/raw_compat.ml   \
 	src/kernel/fake.mli               \
 	src/kernel/fake.ml                \
 	$(TYPER)/typing/includemod.mli    \

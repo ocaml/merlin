@@ -161,7 +161,7 @@ let same_constructor env a b =
         let ty = normalize_type_expr env d.Types.cstr_res in
         begin match ty.Types.type_kind with
         | Types.Type_variant decls ->
-          List.map decls ~f:Merlin_types_custom.id_of_constr_decl
+          List.map decls ~f:Raw_compat.id_of_constr_decl
         | _ -> assert false
         end
       | `Declaration d ->

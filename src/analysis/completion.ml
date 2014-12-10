@@ -219,14 +219,14 @@ let completion_fold prefix path kind ~validate env compl =
            else compl)
         path env []
     | `Constructor ->
-      Merlin_types_custom.fold_constructors
+      Raw_compat.fold_constructors
         (fun name v compl ->
            if validate `Lident `Cons name
            then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
            else compl)
         path env []
     | `Types ->
-      Merlin_types_custom.fold_types
+      Raw_compat.fold_types
         (fun name path decl compl ->
            if validate `Lident `Typ name
            then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
@@ -235,7 +235,7 @@ let completion_fold prefix path kind ~validate env compl =
     | `Modules ->
       Env.fold_modules
         (fun name path v compl ->
-           let v = Merlin_types_custom.extract_module_declaration v in
+           let v = Raw_compat.extract_module_declaration v in
            if validate `Uident `Mod name
            then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
            else compl)
@@ -325,7 +325,7 @@ let node_complete buffer node prefix =
       | None -> raise exn (* clearly the hypothesis is wrong here *)
       | Some long_ident ->
         let path = keep_until_lowercase long_ident in
-       Merlin_types_custom.fold_labels
+       Raw_compat.fold_labels
           (fun ({Types.lbl_name = name} as l) compl ->
             if valid `Label name then
               (completion_format ~exact:(name = prefix) name (`Label l)) :: compl
@@ -373,7 +373,7 @@ let node_complete buffer node prefix =
           match modname with
           | modname when modname = prefix && uniq (`Mod,modname) ->
             (try let path, md =
-              Merlin_types_custom.lookup_module (Longident.Lident modname) env in
+              Raw_compat.lookup_module (Longident.Lident modname) env in
                completion_format ~exact:true modname ~path (`Mod md) :: compl
              with Not_found -> default :: compl)
           | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
