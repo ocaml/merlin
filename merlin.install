@@ -5,6 +5,9 @@ bin: [
 share: [
   "vim/merlin/autoload/merlin.py" { "vim/autoload/merlin.py" }
   "vim/merlin/autoload/merlin.vim" { "vim/autoload/merlin.vim" }
+  "vim/merlin/autoload/merlin_type.vim" { "vim/autoload/merlin_type.vim" }
+  "vim/merlin/autoload/merlin_visual.vim" { "vim/autoload/merlin_visual.vim" }
+  "vim/merlin/autoload/merlin_find.vim" { "vim/autoload/merlin_find.vim" }
   "vim/merlin/doc/merlin.txt" { "vim/doc/merlin.txt" }
   "vim/merlin/ftdetect/merlin.vim" { "vim/ftdetect/merlin.vim" }
   "vim/merlin/ftplugin/ocaml.vim" { "vim/ftplugin/ocaml.vim" }
