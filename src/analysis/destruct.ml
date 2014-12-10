@@ -15,9 +15,11 @@ let () =
     | _ -> None
   )
 
-let assert_false =
-  let _false = Location.mknoloc (Longident.Lident "false") in
-  Ast_helper.Exp.assert_ (Ast_helper.Exp.construct _false None)
+let placeholder =
+  let mk_id s = Location.mknoloc (Longident.Lident s) in
+  let failwith = Ast_helper.Exp.ident (mk_id "failwith") in
+  let todo = Ast_helper.Exp.constant (Asttypes.Const_string ("TODO", None)) in
+  Ast_helper.Exp.apply failwith [ "", todo ]
 
 let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
@@ -157,13 +159,13 @@ let node ~loc ~env parents node =
       if is_package ty then (
         let name = Location.mknoloc "M" in
         let mode = Ast_helper.Mod.unpack pexp in
-        false, Ast_helper.Exp.letmodule name mode assert_false
+        false, Ast_helper.Exp.letmodule name mode placeholder
       ) else (
         let ps = gen_patterns env ty in
         let cases  =
           List.map ps ~f:(fun patt ->
             let pc_lhs = Untypeast.untype_pattern patt in
-            { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = assert_false }
+            { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = placeholder }
           )
         in
         needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
@@ -184,7 +186,7 @@ let node ~loc ~env parents node =
     begin match Parmatch.complete_partial pss with
     | Some pat ->
       let ppat = Untypeast.untype_pattern pat in
-      let case = Ast_helper.Exp.case ppat assert_false in
+      let case = Ast_helper.Exp.case ppat placeholder in
       let loc =
         let open Location in
         { last_case_loc with loc_start = last_case_loc.loc_end }
