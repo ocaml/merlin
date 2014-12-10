@@ -19,22 +19,19 @@ cal add(g:ctrlp_ext_vars, {
 let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)
 
 python << EOF
-outlines = []
+outlines = dict()
 
-def qualify(prefix, node):
-  tmp = "%s.%s" % (prefix, node['name'])
-  node['name'] = tmp
-  return node
-
-def children(node):
-  return map(lambda x: qualify(node['name'], x), node['children'])
+def linearize(prefix, lst):
+  for x in lst:
+    name = "%s%s" % (prefix, x['name'])
+    outlines[name] = {'pos': x['pos'], 'kind': x['kind']}
+    linearize(name + ".", x['children'])
 
 def get_outlines():
   global outlines
-  outlines = []
-  tmp1 = merlin.command("outline")
-  tmp2 = map(lambda x: [x] if x['kind'] != "Module" else children(x), tmp1)
-  map(outlines.extend, tmp2)
+  outlines = dict()
+  result = merlin.command("outline")
+  linearize("", result)
 EOF
 
 " Public {{{1
@@ -42,10 +39,9 @@ fu! ctrlp#merlin#init()
   let l:modules = []
   python << EOF
 get_outlines()
-longest = reduce(lambda x, y: max(x,len(y['name'])), outlines, 0)
-for x in outlines:
-  name = x['name'].replace("'", "''")
-  # Listing only top bindings because fuck it.
+longest = reduce(lambda x, y: max(x,len(y)), outlines.keys(), 0)
+for key, x in outlines.iteritems():
+  name = key.replace("'", "''")
   vim.command("call add(l:modules, '%*s\t--\t%s')" % (longest, name, x['kind']))
 EOF
   return l:modules
@@ -56,11 +52,13 @@ fu! ctrlp#merlin#accept(mode, str)
   python << EOF
 matching_name = vim.eval("a:str").strip().split('\t')[0]
 
-for x in outlines:
-  if x['name'] == matching_name:
-    l = x['pos']['line']
-    c = x['pos']['col']
-    vim.current.window.cursor = (l, c)
+try:
+  x = outlines[matching_name]
+  l = x['pos']['line']
+  c = x['pos']['col']
+  vim.current.window.cursor = (l, c)
+except KeyError, e:
+  print(str(e))
 EOF
 silent! normal! zvzz
 endf
