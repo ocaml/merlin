@@ -49,9 +49,6 @@ val feed : Lexing.position * Raw_parser.token * Lexing.position
         -> [ `Accept of Raw_parser.symbol | `Step of t
            | `Reject of t ]
 
-(* Dump internal state for debugging purpose *)
-val dump : t -> Std.json
-
 (* Location of top frame in stack *)
 (* for recovery: approximate position of last correct construction *)
 val get_location : ?pop:int -> t -> Location.t
@@ -85,6 +82,10 @@ module Frame : sig
   val lr1_state : frame -> int
   val lr0_state : frame -> int
 end
+
+(* Dump internal state for debugging purpose *)
+val dump : t -> Std.json
+val dump_frame : frame -> Std.json
 
 (** [find_marker] return the first frame that might be unsafe for the parser *)
 val find_marker : t -> frame option

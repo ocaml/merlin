@@ -38,8 +38,7 @@ let raise_error exn =
   | None -> raise exn
 
 let catch_errors caught f =
-  Either.try' (fun () ->
-      Fluid.let' errors (Some (caught,Hashtbl.create 3)) f)
+  Fluid.let' errors (Some (caught,Hashtbl.create 3)) f
 
 let erroneous_type_register te =
   match ~!errors with

@@ -63,11 +63,14 @@ module List = struct
     | [] -> init
     | x :: xs -> fold_left' ~f ~init:(f x init) xs
 
-  let rec scan_left ~f l ~init = match l with
-    | [] -> []
+  let rec rev_scan_left acc ~f l ~init = match l with
+    | [] -> acc
     | x :: xs ->
       let init = f x init in
-      init :: (scan_left ~f xs ~init)
+      rev_scan_left (init :: acc) ~f xs ~init
+
+  let scan_left ~f l ~init =
+      List.rev (rev_scan_left [] ~f l ~init)
 
   let rev_filter ~f lst =
     let rec aux acc = function
@@ -174,6 +177,10 @@ module List = struct
   let rec unfold ~f a = match f a with
     | None -> []
     | Some a -> a :: unfold f a
+
+  let rec rev_unfold acc ~f a = match f a with
+    | None -> acc
+    | Some a -> rev_unfold (a :: acc) ~f a
 
   let rec fold_n_map ~f ~init = function
     | [] -> init, []

@@ -136,18 +136,18 @@ let dump_item (prod, dot_pos) =
 let dump_itemset l =
   `List (List.map dump_item l)
 
+let dump_frame frame =
+  let v = Frame.value frame in
+  let position = (Frame.location frame).Location.loc_start in
+  `Assoc [
+    "position", Lexing.json_of_position position;
+    "content", `String (Values.(string_of_class (class_of_symbol v)));
+  ]
+
 let rec dump_stack acc = function
   | None -> `List (List.rev acc)
   | Some frame ->
-    let v = Frame.value frame in
-    let position = (Frame.location frame).Location.loc_start in
-    let json =
-      `Assoc [
-        "position", Lexing.json_of_position position;
-        "content", `String (Values.(string_of_class (class_of_symbol v)));
-      ]
-    in
-    dump_stack (json :: acc) (Frame.next frame)
+    dump_stack ((dump_frame frame) :: acc) (Frame.next frame)
 let dump_stack xs = dump_stack [] xs
 
 let dump t =
