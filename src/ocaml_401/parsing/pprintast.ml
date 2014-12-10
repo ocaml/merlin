@@ -407,6 +407,7 @@ class printer  ()= object(self:'self)
               (self#list longident_x_pattern ~sep:";@;") l)
     | Ppat_tuple l -> pp f "@[<1>(%a)@]" (self#list  ~sep:"," self#pattern1)  l (* level1*)
     | Ppat_constant (c) -> pp f "%a" self#constant c
+    | Ppat_construct (li, None, _) -> pp f "%a" self#longident_loc li
     | Ppat_variant (l,None) ->  pp f "`%s" l
     | Ppat_constraint (p, ct) ->
         pp f "@[<2>(%a@;:@;%a)@]" self#pattern1 p self#core_type ct
