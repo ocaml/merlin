@@ -61,7 +61,9 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       | _, _ -> None
     )
   | _ ->
-    failwith "TODO(get_patterns)"
+    let fmt, to_string = Format.to_string () in
+    Printtyp.type_expr fmt type_expr ;
+    raise (Not_allowed (to_string ()))
 
 and from_type_decl env path =
   let tdecl = Env.find_type path env in
@@ -201,6 +203,18 @@ let node ~loc ~env parents node =
         Pprintast.pattern fmt ppat ;
         patt.Typedtree.pat_loc, to_string ()
       | replacement :: _ ->
+        (* FIXME: this part is aweful.
+           The pattern we are introducing (i.e. replacement) might already be
+           matched by another pattern.
+           For example:
+              | [] -> ...
+              | _ -> ...
+          get rewriten to
+              | [] -> ...
+              | [] | _ :: _ -> ...
+          which *sucks*!
+
+          Do we want to check for unused patterns?  *)
         let loc = ref patt.Typedtree.pat_loc in
         let rep = ref replacement in
         let patterns =
@@ -214,17 +228,21 @@ let node ~loc ~env parents node =
           )
         in
         let pss = List.map patterns ~f:(fun x -> [ x ]) in
-        match Parmatch.complete_partial pss with
-        | None ->
-          (* [get_patterns] generated more than one, so we *must* have something
-             here. *)
-          assert false 
-        | Some p ->
-          let p = Tast_helper.Pat.pat_or env p.Typedtree.pat_type !rep p in
-          let ppat = Untypeast.untype_pattern p in
-          let fmt, to_string = Format.to_string () in
-          Pprintast.pattern fmt ppat ;
-          !loc, to_string ()
+        let p =
+          match Parmatch.complete_partial pss with
+          | None ->
+            (* Apparently we only needed "replacement" to make the matching
+              total...
+              Note: This might not actually be true, we might be refining an
+              unused pattern. *)
+            !rep
+          | Some p ->
+            Tast_helper.Pat.pat_or env p.Typedtree.pat_type !rep p
+        in
+        let ppat = Untypeast.untype_pattern p in
+        let fmt, to_string = Format.to_string () in
+        Pprintast.pattern fmt ppat ;
+        !loc, to_string ()
       end
     end
   | _ ->
