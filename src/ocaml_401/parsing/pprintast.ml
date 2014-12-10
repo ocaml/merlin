@@ -348,7 +348,7 @@ class printer  ()= object(self:'self)
                 pp f "@[<hov0>%a@]" (self#list ~sep:"@ | " self#pattern)
                    (list_of_pattern [] x))
         | _ ->
-            pp f "@[<hov0>%a@]" (self#list ~sep:"@,|" self#pattern)
+            pp f "@[<hov0>%a@]" (self#list ~sep:"@\n|@ " self#pattern)
                (list_of_pattern [] x)
         )
     | _ -> self#pattern1 f x
@@ -1166,7 +1166,7 @@ class printer  ()= object(self:'self)
         (match e with
         | {pexp_desc = Pexp_when (e1, e2);_} -> (e2, Some (e1))
         | _ -> (e, None)) in
-      pp f "@;| @[<2>%a%a@;->@;%a@]"
+      pp f "@\n| @[<2>%a%a@;->@;%a@]"
         self#pattern p (self#option self#expression ~first:"@;when@;") w self#under_pipe#expression e in
     self#list aux f l ~sep:""
   method label_x_expression_param f (l,e) =
