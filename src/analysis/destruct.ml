@@ -4,12 +4,14 @@ open BrowseT
 let section = Logger.Section.of_string "destruct"
 
 exception Not_allowed of string
+exception Useless_refine
 exception Nothing_to_do
 
 let () =
   Location.register_error_of_exn (function
-    | Not_allowed s -> Some (Location.error ("Destruct not allowed on " ^ s))
-    | Nothing_to_do -> Some (Location.error "Nothing to do")
+    | Not_allowed s  -> Some (Location.error ("Destruct not allowed on " ^ s))
+    | Useless_refine -> Some (Location.error "Cannot refine an useless branch")
+    | Nothing_to_do  -> Some (Location.error "Nothing to do")
     | _ -> None
   )
 
@@ -224,7 +226,7 @@ let node ~loc ~env parents node =
           )
         in
         match new_branches with
-        | [] -> raise Nothing_to_do (* FIXME: give a more informative message *)
+        | [] -> raise Useless_refine
         | p :: ps ->
           let p =
             List.fold_left ps ~init:p ~f:(fun acc p ->
