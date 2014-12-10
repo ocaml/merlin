@@ -101,13 +101,14 @@ let rec summarize node =
   | _ -> None
 
 and get_mod_children node =
-  List.concat_map (Lazy.force node.t_children) ~f:(fun child ->
-    match child.t_node with
-    | Module_expr _
-    | Module_type _ ->
-      List.concat_map (Lazy.force child.t_children) ~f:remove_top_indir
-    | _ -> []
-  )
+  List.concat_map (Lazy.force node.t_children) ~f:remove_mod_indir
+
+and remove_mod_indir node =
+  match node.t_node with
+  | Module_expr _
+  | Module_type _ ->
+    List.concat_map (Lazy.force node.t_children) ~f:remove_mod_indir
+  | _ -> remove_top_indir node
 
 and remove_top_indir t =
   match t.t_node with
