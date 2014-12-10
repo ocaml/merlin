@@ -211,13 +211,13 @@ let node ~loc ~env parents node =
           Merlin_types_custom.find_branch patterns patt
         in
         let new_branches =
-          List.rev_map sub_patterns ~f:(fun by ->
+          List.map sub_patterns ~f:(fun by ->
             Merlin_types_custom.subst_patt patt ~by top_patt
           )
         in
         let patterns =
           List.rev_append rev_before
-            (List.rev_append new_branches after)
+            (List.append new_branches after)
         in
         let unused = Parmatch.return_unused patterns in
         let new_branches =
