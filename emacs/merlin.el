@@ -469,7 +469,11 @@ return DEFAULT or the value associated to KEY."
                                       (list (format "MERLIN_LOG=%s" (expand-file-name logfile))))
                                     environment
                                     process-environment))
-             (p (apply #'start-file-process "merlin" buffer-name
+             (start-file-process
+               (if (boundp 'start-file-process)
+                 #'start-file-process
+                 #'start-process))
+             (p (apply start-file-process "merlin" buffer-name
                        command `("-protocol" "sexp" . ,(append extra-flags flags)))))
         (with-current-buffer buffer
           (set-process-query-on-exit-flag p nil)
