@@ -2,6 +2,7 @@ function! s:CreateTypeHistory()
   if exists("g:merlin_type_history")
     return
   endif
+  let t:merlin_restore_windows = winrestcmd()
   silent execute "bot " . g:merlin_type_history_height . "split *merlin-type-history*"
   setlocal filetype=ocaml
   setlocal buftype=nofile
@@ -12,13 +13,14 @@ function! s:CreateTypeHistory()
   let g:merlin_type_history = bufnr("%")
 endfunction
 
-function! merlin_type#HideTypeHistory()
+function! merlin_type#HideTypeHistory(force)
   let l:win = bufwinnr(g:merlin_type_history)
   let l:cur = winnr()
-  if l:win >= 0 && l:cur != l:win
+  if l:win >= 0 && (a:force || l:cur != l:win)
     exe l:win . "wincmd w"
     close
     exe l:cur . "wincmd w"
+    exe t:merlin_restore_windows
     augroup MerlinTypeHistory
       au!
     augroup END
@@ -29,6 +31,7 @@ function! merlin_type#ShowTypeHistory()
   call s:CreateTypeHistory()
   let l:win = bufwinnr(g:merlin_type_history)
   if l:win < 0
+    let t:merlin_restore_windows = winrestcmd()
     silent execute "bot " . g:merlin_type_history_height . "split"
     execute "buffer" g:merlin_type_history
   elseif winnr() != l:win
@@ -43,7 +46,7 @@ function! merlin_type#ToggleTypeHistory()
   if l:win < 0
     call merlin_type#ShowTypeHistory()
   else
-    call merlin_type#HideTypeHistory()
+    call merlin_type#HideTypeHistory(1)
   endif
 endfunction
 
@@ -53,6 +56,7 @@ function! s:RecordType(type)
     silent call s:CreateTypeHistory()
     close
     exe l:cur . "wincmd w"
+    exe t:merlin_restore_windows
   endif
 
   " vimscript can't append to a buffer without a refresh (?!)
@@ -83,7 +87,7 @@ function! merlin_type#Show(type, tail_info)
     call s:TemporaryResize(l:length)
     normal! Gzb
     augroup MerlinTypeHistory
-      autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory()
+      autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory(0)
     augroup END
   else
     silent call merlin_type#ShowTypeHistory()
@@ -92,6 +96,7 @@ function! merlin_type#Show(type, tail_info)
     " normal! G
     let l:msg = merlin_type#ShowLines(l:start, l:end)
     close
+    exe t:merlin_restore_windows
     " The message isn't always visible if we don't force a refresh here (?!)
     redrawstatus
     execute l:msg
