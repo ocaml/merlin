@@ -224,7 +224,11 @@ let node ~loc ~env parents node =
           List.fold_left unused ~init:new_branches ~f:(fun branches u ->
             match u with
             | `Unused p -> List.remove ~phys:true p branches
-            | `Unused_subs _ -> (* TODO *) branches
+            | `Unused_subs (p, lst) ->
+              List.map branches ~f:(fun branch ->
+                if branch != p then branch else
+                List.fold_left lst ~init:branch ~f:Merlin_types_custom.rm_sub
+              )
           )
         in
         match new_branches with

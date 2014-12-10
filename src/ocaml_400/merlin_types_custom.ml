@@ -338,6 +338,35 @@ let rec subst_patt initial ~by patt =
   | Tpat_lazy p ->
     { patt with pat_desc = Tpat_lazy (f p) }
 
+let rec rm_sub patt sub =
+  let f p = rm_sub p sub in
+  let open Typedtree in
+  match patt.pat_desc with
+  | Tpat_any
+  | Tpat_var _
+  | Tpat_constant _ -> patt
+  | Tpat_alias (p,x,y) ->
+    { patt with pat_desc = Tpat_alias (f p, x, y) }
+  | Tpat_tuple lst ->
+    { patt with pat_desc = Tpat_tuple (List.map lst ~f)}
+  | Tpat_construct (path, lid, cd, lst, b) ->
+    { patt with pat_desc = Tpat_construct (path, lid, cd, List.map lst ~f, b) }
+  | Tpat_variant (lbl, pat_opt, row_desc) ->
+    { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
+  | Tpat_record (sub, flg) ->
+    let sub' =
+      List.map sub ~f:(fun (path, lid, lbl_descr, patt) ->
+        path, lid, lbl_descr, f patt)
+    in
+    { patt with pat_desc = Tpat_record (sub', flg) }
+  | Tpat_array lst ->
+    { patt with pat_desc = Tpat_array (List.map lst ~f)}
+  | Tpat_or (p1, p2, row) ->
+    if p1 == sub then p2 else if p2 == sub then p1 else
+    { patt with pat_desc = Tpat_or (f p1, f p2, row) }
+  | Tpat_lazy p ->
+    { patt with pat_desc = Tpat_lazy (f p) }
+
 let rec is_sub_patt patt ~sub =
   let open Typedtree in
   if patt == sub then true else
