@@ -69,6 +69,9 @@ type _ request =
   | Complete_prefix
     :  string * position
     -> completion list request
+  | Expand_prefix
+    :  string * position
+    -> completion list request
   | Locate
     : string option * [ `ML | `MLI ] * position option
     -> [ `Found of string option * Lexing.position

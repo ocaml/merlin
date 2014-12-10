@@ -272,6 +272,8 @@ module Protocol_io = struct
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       Request (Complete_prefix (prefix, pos_of_json jpos))
+    | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
+      Request (Expand_prefix (prefix, pos_of_json jpos))
     | (`String "locate" :: (`String "" | `Null) :: `String choice :: opt_pos) ->
       Request (Locate (None, ml_or_mli choice, optional_position opt_pos))
     | (`String "locate" :: `String path :: `String choice :: opt_pos) ->
@@ -387,6 +389,8 @@ module Protocol_io = struct
         | Enclosing _, results ->
           `List (List.map (fun loc -> with_location loc []) results)
         | Complete_prefix _, compl_list ->
+          `List (List.map json_of_completion compl_list)
+        | Expand_prefix _, compl_list ->
           `List (List.map json_of_completion compl_list)
         | Locate _, resp ->
           begin match resp with

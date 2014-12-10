@@ -39,6 +39,10 @@ if !exists("g:merlin_type_history_auto_open")
   let g:merlin_type_history_auto_open = 5
 endif
 
+if !exists("g:merlin_dwim_completion")
+  let g:merlin_dwim_completion = 1
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -117,9 +121,9 @@ function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
   return join(l:files, "\n")
 endfunction
 
-function! merlin#CompletePrefix(ArgLead, CmdLine, CursorPos)
+function! merlin#ExpandPrefix(ArgLead, CmdLine, CursorPos)
   let l:compl = []
-  py merlin.vim_complete_prefix(vim.eval("a:ArgLead"), "l:compl")
+  py merlin.vim_expand_prefix(vim.eval("a:ArgLead"), "l:compl")
   return l:compl
 endfunction
 
@@ -250,22 +254,47 @@ function! merlin#Complete(findstart,base)
         break
       endif
     endwhile
+
     " Return the column of the last word, which is going to be changed.
-    " Remember the text that comes before it in s:prepended.
+    " Remember the text that comes before it in s:compl_prefix.
     if lastword == -1
-      let s:prepended = ''
-      return start
+      let s:compl_prefix = ''
+    else
+      let s:compl_prefix = strpart(line, start, lastword - start)
     endif
-    let s:prepended = strpart(line, start, lastword - start)
-    return lastword
+
+    " Query completion
+    let s:compl_base = strpart(line, start, col('.') - 1 - start)
+    let s:compl_result = []
+    py merlin.vim_complete_cursor(vim.eval("s:compl_base"),"s:compl_result")
+   
+    " If empty, switch to dwim
+    let s:compl_dwim = g:merlin_dwim_completion && s:compl_result == []
+    if s:compl_dwim
+      let s:compl_prefix = ''
+      py merlin.vim_expand_prefix(vim.eval("s:compl_base"),"s:compl_result")
+    endif
+
+    if lastword == -1 || s:compl_dwim
+      return start
+    else
+      return lastword
+    end
   endif
 
-  let base = s:prepended . a:base
-  let l:props = []
-  py merlin.vim_complete_cursor(vim.eval("base"),"l:props")
+  " If prefix changed, update completion
+  let base = s:compl_prefix . a:base
+  if base != s:compl_base
+    let s:compl_base = base
+    if s:compl_dwim
+      py merlin.vim_expand_prefix(vim.eval("base"),"s:compl_result")
+    else
+      py merlin.vim_complete_cursor(vim.eval("base"),"s:compl_result")
+    endif
+  endif
 
   " Workaround https://github.com/the-lambda-church/merlin/issues/223 vim 704
-  return l:props
+  return s:compl_result
   "if v:version <= 703
   "  return l:props
   "else
@@ -401,7 +430,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 Destruct call merlin#Destruct()
 
 
-  command! -buffer -complete=customlist,merlin#CompletePrefix -nargs=? Locate call merlin#Locate(<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Locate call merlin#Locate(<q-args>)
 
   command! -buffer -nargs=0 Outline call merlin#Outline()
 
