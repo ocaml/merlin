@@ -18,7 +18,7 @@ let () =
 let placeholder =
   let mk_id s = Location.mknoloc (Longident.Lident s) in
   let failwith = Ast_helper.Exp.ident (mk_id "failwith") in
-  let todo = Ast_helper.Exp.constant (Asttypes.Const_string ("TODO", None)) in
+  let todo = Ast_helper.Exp.constant (Ast_helper.const_string "TODO") in
   Ast_helper.Exp.apply failwith [ "", todo ]
 
 let rec gen_patterns ?(recurse=true) env type_expr =

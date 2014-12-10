@@ -71,3 +71,5 @@ val fluid : pattern -> bool
 (*******************)
 
 val complete_partial : pattern list list -> pattern option
+val return_unused: pattern list ->
+  [ `Unused of pattern | `Unused_subs of pattern * pattern list ] list

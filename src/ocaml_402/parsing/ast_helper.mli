@@ -30,6 +30,8 @@ val with_default_loc: loc -> (unit -> 'a) -> 'a
 
 val rtag : ?attrs:attrs -> label -> bool -> core_type list -> row_field
 
+val const_string : string -> constant
+
 (** {2 Core language} *)
 
 (** Type expressions *)
