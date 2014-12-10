@@ -4,6 +4,10 @@ open Typedtree
 module Pat = struct
   let pat_extra = []
 
+  let constant ?(loc=Location.none) pat_env pat_type c =
+    let pat_desc = Tpat_constant c in
+    { pat_desc; pat_loc = loc; pat_extra; pat_type; pat_env }
+
   let var ?loc pat_env pat_type str =
     let pat_loc =
       match loc with

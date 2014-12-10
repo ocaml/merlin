@@ -15,8 +15,36 @@ let () =
     | _ -> None
   )
 
+let mk_id s  = Location.mknoloc (Longident.Lident s)
+let mk_var s = Location.mknoloc s
+
+module Predef_types = struct
+  let char_ env ty =
+    let a = Tast_helper.Pat.constant env ty (Asttypes.Const_char 'a') in
+    let z = Parmatch.omega in
+    [ a ; z ]
+
+  let int_ env ty =
+    let zero = Tast_helper.Pat.constant env ty (Asttypes.Const_int 0) in
+    let n = Parmatch.omega in
+    [ zero ; n ]
+
+  let string_ env ty =
+    let empty = Tast_helper.Pat.constant env ty (Ast_helper.const_string "") in
+    let s = Parmatch.omega in
+    [ empty ; s ]
+
+  let tbl = Hashtbl.create 3
+
+  let () =
+    List.iter ~f:(fun (k, v) -> Hashtbl.add tbl k v) [
+      Predef.path_char, char_ ;
+      Predef.path_int, int_ ;
+      Predef.path_string, string_ ;
+    ]
+end
+
 let placeholder =
-  let mk_id s = Location.mknoloc (Longident.Lident s) in
   let failwith = Ast_helper.Exp.ident (mk_id "failwith") in
   let todo = Ast_helper.Exp.constant (Ast_helper.const_string "TODO") in
   Ast_helper.Exp.apply failwith [ "", todo ]
@@ -36,14 +64,14 @@ let rec gen_patterns ?(recurse=true) env type_expr =
   | Tconstr (path, _params, _) ->
     begin match Env.find_type_descrs path env with
     | [], [] ->
-      if recurse then from_type_decl env path else
+      if recurse then from_type_decl env path type_expr else
       raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
     | [], labels ->
       let lst =
         List.map labels ~f:(fun lbl_descr ->
-          let lidloc = Location.mknoloc (Longident.Lident lbl_descr.lbl_name) in
+          let lidloc = mk_id lbl_descr.lbl_name in
           lidloc, lbl_descr,
-          Tast_helper.Pat.var env type_expr (Location.mknoloc lbl_descr.lbl_name)
+          Tast_helper.Pat.var env type_expr (mk_var lbl_descr.lbl_name)
         )
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
@@ -69,14 +97,16 @@ let rec gen_patterns ?(recurse=true) env type_expr =
     Printtyp.type_expr fmt type_expr ;
     raise (Not_allowed (to_string ()))
 
-and from_type_decl env path =
+and from_type_decl env path texpr =
   let tdecl = Env.find_type path env in
   match tdecl.Types.type_manifest with
   | Some te -> gen_patterns ~recurse:false env te
   | None ->
     (* TODO: use [Predef] to identify int, string, etc. and destruct them in a
        meaningful way. *)
-    raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
+    try Hashtbl.find Predef_types.tbl path env texpr
+    with Not_found ->
+      raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
 
 
 let rec needs_parentheses = function
