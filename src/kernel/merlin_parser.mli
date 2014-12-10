@@ -72,13 +72,8 @@ val recover : ?endp:Lexing.position
   -> termination -> t
   -> (termination * (int * t Location.loc)) option
 
-(* Access to underlying raw parser *)
-val to_step : t -> Raw_parser.feed Raw_parser.parser
-
-
 (** Stack inspection *)
 type frame
-
 val stack : t -> frame
 
 module Frame : sig
@@ -89,10 +84,6 @@ module Frame : sig
 
   val lr1_state : frame -> int
   val lr0_state : frame -> int
-
-  (* Ease pattern matching on parser stack *)
-  type destruct = D of Raw_parser.symbol * destruct lazy_t
-  val destruct: frame -> destruct
 end
 
 (** [find_marker] return the first frame that might be unsafe for the parser *)

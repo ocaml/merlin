@@ -40,16 +40,11 @@ type state = Raw_parser.state
 type t = P.feed P.parser
 type frame = (P.state, P.symbol) E.stack
 
-type parser = t
-
-let get_stack s = s.P.env.E.stack
+let stack s = s.P.env.E.stack
 let get_lr1_state s = s.P.env.E.current
 let get_lr0_state s = P.Query.lr0_state (get_lr1_state s)
-let mk_loc loc_start loc_end = {Location. loc_start; loc_end; loc_ghost = false}
 
 module Frame : sig
-  val stack : t -> frame
-
   val value : frame -> P.symbol
   val location : ?pop:int -> frame -> Location.t
   val eq    : frame -> frame -> bool
@@ -57,20 +52,11 @@ module Frame : sig
 
   val lr1_state : frame -> int
   val lr0_state : frame -> int
-
-  (* Ease pattern matching on parser stack *)
-  type destruct = D of P.symbol * destruct lazy_t
-  val destruct: frame -> destruct
 end = struct
 
   let frame_of = function
     | stack when stack.E.next == stack -> None
     | stack -> Some stack
-
-  let stack parser =
-    let stack = get_stack parser in
-    assert (stack.E.next != stack);
-    stack
 
   let value frame = frame.E.semv
 
@@ -84,32 +70,21 @@ end = struct
 
   let location ?pop:(n=0) frame =
     let frame = pop n frame in
-    mk_loc frame.E.startp frame.E.endp
+    { Location.
+      loc_start = frame.E.startp;
+      loc_end   = frame.E.endp;
+      loc_ghost = false }
 
   let next ?(n=1) f = frame_of (pop n f)
 
   let eq f f' = f == f'
 
-  (* Ease pattern matching on parser stack *)
-  type destruct = D of P.symbol * destruct lazy_t
-  let rec destruct_bottom = D (P.Bottom, lazy destruct_bottom)
-
-  let rec destruct f =
-    let v = value f in
-    let tl = match next f with
-      | Some f' -> lazy (destruct f')
-      | None -> lazy destruct_bottom
-    in
-    D (v,tl)
-
   let lr1_state stack = stack.E.state
-  let lr0_state stack = Raw_parser.Query.lr0_state (lr1_state stack)
+  let lr0_state stack = P.Query.lr0_state (lr1_state stack)
 end
 
 let implementation = P.implementation_state
 let interface = P.interface_state
-
-let stack = Frame.stack
 
 let pop p =
   match MenhirUtils.pop p.P.env with
@@ -128,17 +103,13 @@ let get_guide ?pop t =
   let loc = get_location ?pop t in
   loc.Location.loc_start
 
-let of_feed p : parser = p
-
 let rec of_step s =
   match P.step s with
   | `Accept _ as result -> result
   | `Reject p ->
-    `Reject (of_feed (Obj.magic p))
-  | `Feed p -> `Step (of_feed p)
+    `Reject (Obj.magic p : t)
+  | `Feed p -> `Step p
   | `Step p -> of_step p
-
-let to_step p : P.feed P.parser = p
 
 let from state input =
   match of_step (P.initial state input) with
@@ -187,7 +158,7 @@ let dump t =
     "guide", Lexing.json_of_position (get_location t).Location.loc_start;
     "lr0", `Int lr0;
     "itemset", dump_itemset (P.Query.itemset lr0);
-    "stack", dump_stack (Some (Frame.stack t));
+    "stack", dump_stack (Some (stack t));
   ]
 
 let dump_strategy {Merlin_recovery_strategy. cost; action} =
@@ -291,7 +262,7 @@ let rec recover ?endp termination parser =
       let env = {env with E. current = goto stack.E.state r_prod} in
 
       (* Construct parser *)
-      let parser = of_feed {parser with P. env} in
+      let parser = {parser with P. env} in
       let priority = parser_priority parser in
       let parser = Location.mkloc parser (get_location parser) in
       Some (termination, (priority, parser))
@@ -357,13 +328,13 @@ let find_marker t =
 
 let rec next_s s =
   if s.E.startp == Lexing.dummy_pos then
-    let s' = s.E.next in
-    if s == s'
-    then raise Not_found
-    else next_s s'
+    match s with
+    | {E.next} when s == next ->
+      raise Not_found
+    | {E.next} -> next_s next
   else s
 
-let next_s {E. next = s} =
+let next_s {E.next = s} =
   if s.E.startp == Lexing.dummy_pos
   then next_s s
   else s
@@ -406,15 +377,9 @@ let rec unroll_stack acc s' s =
   else
     let {E.next} = s in
     if next == s then
-      invalid_arg "unroll_stack" (* [s'] is not an ancestor *)
+      (* [s'] is not an ancestor *)
+      invalid_arg "unroll_stack"
     else
       unroll_stack (s :: acc) s' next
 
 let unroll_stack ~from ~root = unroll_stack [] root from
-
-(*let diff_frame f1 f2 =
-  try
-    let r = root_frame f1.E.stack f2.E.stack  in
-    Some (unroll_stack [] r f2.E.stack)
-  with Not_found ->
-    None*)
