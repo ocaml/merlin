@@ -205,7 +205,18 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
                   end;
                   true
               with _ ->
-                raise exn
+                try
+                  let cstr_desc =
+                    Merlin_types_custom.lookup_constructor longident.Asttypes.txt env
+                  in
+                  (*
+                  Format.pp_print_string ppf name;
+                  Format.pp_print_string ppf " : ";
+                  *)
+                  Browse_misc.print_constructor ppf cstr_desc;
+                  true
+                with _ ->
+                  raise exn
           end
 
         | `Other -> print_expr e; true

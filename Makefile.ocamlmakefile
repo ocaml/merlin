@@ -159,8 +159,8 @@ SOURCES = \
 	src/frontend/protocol.mli         \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
-	src/analysis/type_utils.ml        \
 	src/analysis/browse_misc.ml       \
+	src/analysis/type_utils.ml        \
 	src/analysis/completion.ml        \
 	src/analysis/outline.mli          \
 	src/analysis/outline.ml           \
