@@ -741,7 +741,7 @@ def vim_selectphrase(l1,c1,l2,c2):
 # Stuff
 
 def setup_merlin():
-  acquire_buffer()
+  acquire_buffer(force=True)
   failures = command("project","get")
   vim.command('let b:dotmerlin=[]')
   if failures != None:
