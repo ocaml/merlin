@@ -312,6 +312,21 @@ function! merlin#Locate(...)
   endif
 endfunction
 
+function! merlin#InteractiveLocate()
+  if exists('g:ctrlp_match_func')
+    let l:match_fun = g:ctrlp_match_func
+  else
+    let l:match_fun = {}
+  endif
+
+  py merlin.sync_buffer()
+  call ctrlp#locate#update_cursor_pos()
+
+  let g:ctrlp_match_func = { 'match': 'ctrlp#locate#filter' }
+  call ctrlp#init(ctrlp#locate#id())
+  let g:ctrlp_match_func = l:match_fun
+endfunction
+
 function! merlin#Outline()
   if !exists('g:loaded_ctrlp')
     echo "This function requires the CtrlP plugin to work"
@@ -431,6 +446,7 @@ function! merlin#Register()
 
 
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Locate call merlin#Locate(<q-args>)
+  command! -buffer -nargs=0 ILocate call merlin#InteractiveLocate()
 
   command! -buffer -nargs=0 Outline call merlin#Outline()
 
