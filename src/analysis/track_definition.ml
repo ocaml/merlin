@@ -547,6 +547,50 @@ let recover () =
   | `ML  loc -> finalize true loc
   | `MLI loc -> finalize false loc
 
+let namespaces = function
+  | Type        -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
+  | Expr | Patt -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
+  | Unknown     -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
+
+exception Found of (Path.t * Location.t)
+
+let lookup ctxt ident env =
+  try
+    List.iter (namespaces ctxt) ~f:(fun namespace ->
+      try
+        match namespace with
+        | `Constr ->
+          info_log "lookup in constructor namespace" ;
+          let cstr_desc = Raw_compat.lookup_constructor ident env in
+          raise (Found (Raw_compat.path_and_loc_of_cstr cstr_desc env))
+        | `Mod ->
+          info_log "lookup in module namespace" ;
+          let path, _ = Raw_compat.lookup_module ident env in
+          raise (Found (path, Location.symbol_gloc ()))
+        | `Modtype ->
+          info_log "lookup in module type namespace" ;
+          let path, _ = Raw_compat.lookup_modtype ident env in
+          raise (Found (path, Location.symbol_gloc ()))
+        | `Type ->
+          info_log "lookup in type namespace" ;
+          let path, typ_decl = Env.lookup_type ident env in
+          raise (Found (path, typ_decl.Types.type_loc))
+        | `Vals ->
+          info_log "lookup in value namespace" ;
+          let path, val_desc = Env.lookup_value ident env in
+          raise (Found (path, val_desc.Types.val_loc))
+        | `Labels ->
+          info_log "lookup in label namespace" ;
+          let label_desc = Raw_compat.lookup_label ident env in
+          raise (Found (path_and_loc_from_label label_desc env))
+      with Not_found -> ()
+    ) ;
+    info_log "   ... not in the environment" ;
+    raise Not_in_env
+  with Found x ->
+    x
+
+
 let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
@@ -555,49 +599,10 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let path', loc =
-      (* [1] If we know it is a record field, we only look for that. *)
-      if is_label then
-        let label_desc = Raw_compat.lookup_label ident env in
-        path_and_loc_from_label label_desc env
-      else (
-        try
-          if ctxt = Type then raise Context_mismatch ;
-          let path, val_desc = Env.lookup_value ident env in
-          path, val_desc.Types.val_loc
-        with Not_found | Context_mismatch ->
-        try
-          if ctxt <> Type && ctxt <> Unknown then raise Context_mismatch ;
-          let path, typ_decl = Env.lookup_type ident env in
-          path, typ_decl.Types.type_loc
-        with Not_found | Context_mismatch ->
-        try
-          let cstr_desc = Raw_compat.lookup_constructor ident env in
-          Raw_compat.path_and_loc_of_cstr cstr_desc env
-        with Not_found ->
-        try
-          let path, _ = Raw_compat.lookup_module ident env in
-          path, Location.symbol_gloc ()
-        with Not_found ->
-        try
-          let path, _ = Env.lookup_modtype ident env in
-          path, Location.symbol_gloc ()
-        with Not_found ->
-        try
-          (* However, [1] is not the only time where we can have a record field,
-              we could also have found the ident in a pattern like
-                  | { x ; y } -> e
-              in which case the check before [1] won't know that we have a
-              label, but it's worth checking at this point. *)
-          let label_desc = Raw_compat.lookup_label ident env in
-          path_and_loc_from_label label_desc env
-        with Not_found ->
-          info_log "   ... not in the environment%s"
-            begin match ctxt with
-            | Type -> " (we were looking for a type)"
-            | _ -> ""
-            end ;
-          raise Not_in_env
-      )
+      if not is_label then lookup ctxt ident env else
+      (* If we know it is a record field, we only look for that. *)
+      let label_desc = Raw_compat.lookup_label ident env in
+      path_and_loc_from_label label_desc env
     in
     if not (is_ghost loc) then
       `Found (None, loc.Location.loc_start)
@@ -696,25 +701,13 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
   let context =
     match pos with
     | None -> Some Unknown
-    | Some pos ->
-      match inspect_context pos with
-      | None when longident_is_qualified lid ->
-        (* FIXME: is this really necessary since we have the check described
-           above?
-           The only case where [lid] would be qualified but the previous check
-           would not catch it is record field access, which cant possibly happen
-           in the [Tpat_var] case. *)
-        Some Unknown
-      | otherwise -> otherwise
+    | Some pos -> inspect_context pos
   in
   match context with
   | None -> `At_origin
   | Some ctxt ->
-    info_log "looking for the source of '%s' (prioritizing %s files) in %s \
-              context" path (match switch with `ML -> ".ml" | `MLI -> ".mli")
-      (match ctxt with Expr -> "an expression" | Patt -> "a pattern"
-       | Type -> "a type" | Unknown -> "an unknown")
-    ;
+    info_log "looking for the source of '%s' (prioritizing %s files)" path
+      (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
     Fluid.let' sources_path (Project.source_path project) (fun () ->
     Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
     from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid))
