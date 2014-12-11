@@ -349,7 +349,6 @@ def vim_expand_prefix(base, vimvar):
   sync_buffer()
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
-  wspaces = re.compile("[\n ]+")
   try:
     l = command("expand", "prefix", base, "at", {'line' : line, 'col': col})
     l = map(lambda prop: prop['name'], l)
