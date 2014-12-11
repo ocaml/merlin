@@ -276,5 +276,5 @@ let node ~loc ~env parents node =
           top_patt.Typedtree.pat_loc, to_string ()
       end
     end
-  | _ ->
-    failwith "not handled"
+  | node ->
+    raise (Not_allowed (BrowseT.string_of_node node))
