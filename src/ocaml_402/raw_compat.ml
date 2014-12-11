@@ -317,9 +317,7 @@ let path_and_loc_of_cstr desc env =
   | Cstr_extension (path, loc) -> path, desc.cstr_loc
   | _ ->
     match desc.cstr_res.desc with
-    | Tconstr (path, _, _) ->
-      let typ_decl = Env.find_type path env in
-      path, typ_decl.Types.type_loc
+    | Tconstr (path, _, _) -> path, desc.cstr_loc
     | _ -> assert false
 
 (* TODO: remove *)
