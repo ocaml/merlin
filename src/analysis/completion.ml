@@ -202,6 +202,9 @@ let completion_format ~exact name ?path ty =
     | _ -> to_string (), "" in
   {Protocol. name; kind; desc; info}
 
+let item_for_global_module name =
+  {Protocol. name; kind = `Module; desc = ""; info = ""}
+
 let completion_fold prefix path kind ~validate env compl =
   let fmt ~exact name ?path ty =
     let time =

@@ -312,16 +312,16 @@ let dispatch (state : state) =
         let env =
           let node = Completion.node_at typer pos in
           node.BrowseT.t_env in
+        let global_modules = Buffer.global_modules state.buffer in
         let lidents, last =
-          let project = Buffer.project state.buffer in
-          let global_modules = Project.global_modules project in
           let ts = Expansion.explore ~global_modules env in
           Expansion.get_lidents ts prefix
         in
-        let validate =
+        let validate' =
           let last = Str.regexp (Expansion.regex_of_path_prefix last) in
-          fun _ _ s -> Str.string_match last s 0
+          fun s -> Str.string_match last s 0
         in
+        let validate _ _ s = validate' s in
         let process_lident lident =
           let compl =
             let aux kind compl =
@@ -329,7 +329,9 @@ let dispatch (state : state) =
             List.fold_left' ~f:aux Completion.default_kinds ~init:[]
           in
           match lident with
-          | None -> compl
+          | None -> compl @
+                    List.map (List.filter ~f:validate' global_modules)
+                      ~f:Completion.item_for_global_module
           | Some lident ->
             let lident = Longident.flatten lident in
             let lident = String.concat ~sep:"." lident ^ "." in
