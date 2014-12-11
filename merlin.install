@@ -8,6 +8,9 @@ share: [
   "vim/merlin/autoload/merlin_type.vim" { "vim/autoload/merlin_type.vim" }
   "vim/merlin/autoload/merlin_visual.vim" { "vim/autoload/merlin_visual.vim" }
   "vim/merlin/autoload/merlin_find.vim" { "vim/autoload/merlin_find.vim" }
+  "vim/merlin/autoload/ctrlp/outline.vim" { "vim/autoload/ctrlp/outline.vim" }
+  "vim/merlin/autoload/ctrlp/locate.vim" { "vim/autoload/ctrlp/locate.vim" }
+  "vim/merlin/autoload/ctrlp/locate.py" { "vim/autoload/ctrlp/locate.py" }
   "vim/merlin/doc/merlin.txt" { "vim/doc/merlin.txt" }
   "vim/merlin/ftdetect/merlin.vim" { "vim/ftdetect/merlin.vim" }
   "vim/merlin/ftplugin/ocaml.vim" { "vim/ftplugin/ocaml.vim" }
