@@ -522,6 +522,8 @@ function! merlin#Register()
     exe "omap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#ShrinkInside('o')<return>"
     exe "omap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#ShrinkAround('o')<return>"
   endif
+
+  call merlin#LoadProject()
 endfunction
 
 function! merlin#LoadProject()
