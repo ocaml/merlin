@@ -40,6 +40,9 @@ let raise_error exn =
 let catch_errors caught f =
   Fluid.let' errors (Some (caught,Hashtbl.create 3)) f
 
+let uncatch_errors f =
+  Fluid.let' errors None f
+
 let erroneous_type_register te =
   match ~!errors with
   | Some (l,h) -> Hashtbl.replace h te.Types.id ()
