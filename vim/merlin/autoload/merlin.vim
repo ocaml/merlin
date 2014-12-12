@@ -427,6 +427,9 @@ function! merlin#Phrase()
 endfunction
 
 function! merlin#Register()
+  if @% == "*merlin-type-history*"
+    return
+  endif
   command! -buffer        -nargs=? TypeOf          call merlin#TypeOf(<q-args>)
   command! -buffer -range -nargs=0 TypeOfSel       call merlin#TypeOfSel()
   command! -buffer        -nargs=? MerlinTypeOf    call merlin#TypeOf(<q-args>)
