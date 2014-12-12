@@ -63,7 +63,31 @@ let verbosity = Fluid.from 0
 module Printtyp = struct
   include Printtyp
 
-  let expand_type env ty = Ctype.full_expand env ty
+  let expand_type env ty =
+    if Fluid.get verbosity = 0 then ty
+    else
+      (* Fresh copy of the type to mutilate *)
+      let ty = Subst.type_expr Subst.identity ty in
+      let marks = Hashtbl.create 7 in
+      let mark ty =
+        if Hashtbl.mem marks ty.Types.id then false
+        else (Hashtbl.add marks ty.Types.id (); true)
+      in
+      let rec iter d ty0 =
+        let ty' = Ctype.repr ty0 in
+        if mark ty' then
+          let ty'' = Ctype.full_expand env ty' in
+          if ty''.Types.desc == ty'.Types.desc then
+            Btype.iter_type_expr (iter d) ty0
+          else
+            begin
+              ty0.Types.desc <- ty''.Types.desc;
+              if d > 0 then
+                Btype.iter_type_expr (iter (pred d)) ty0
+            end
+      in
+      iter (Fluid.get verbosity) ty;
+      ty
 
   let expand_type_decl env ty =
     match ty.Types.type_manifest with
