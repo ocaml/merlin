@@ -184,65 +184,65 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     let exp = Raw_compat.dest_tstr_eval str in
     Printtyp.type_scheme env ppf exp.exp_type;
   in
-  Printtyp.wrap_printing_env env verbosity
+  let (>>=) f x = f x in
+  Printtyp.wrap_printing_env env verbosity >>= fun () ->
+  Typing_aux.uncatch_errors >>= fun () ->
+  match parse_expr ?keywords expr with
 
-    begin fun () ->
-      match parse_expr ?keywords expr with
+  | None ->
+    Format.pp_print_string ppf "Syntax error";
+    false
 
-      | None ->
-        Format.pp_print_string ppf "Syntax error";
-        false
-
-      | Some e ->
-        begin match Raw_compat.Parsetree.extract_specific_parsing_info e with
-        | `Ident longident ->
-          begin
-            try
-              print_expr e;
-              true
-            with exn ->
-              try let p, t = Env.lookup_type longident.Asttypes.txt env in
+  | Some e ->
+    begin match Raw_compat.Parsetree.extract_specific_parsing_info e with
+      | `Ident longident ->
+        begin
+          try
+            (* Don't catch type errors *)
+            print_expr e;
+            true
+          with exn ->
+            try let p, t = Env.lookup_type longident.Asttypes.txt env in
               Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;
               true
-              with _ ->
-                raise exn
-          end
+            with _ ->
+              raise exn
+        end
 
-        | `Constr longident ->
-          begin
+      | `Constr longident ->
+        begin
+          try
+            print_expr e;
+            true
+          with exn ->
             try
-              print_expr e;
-              true
-            with exn ->
-              try
-                (* TODO: special processing for module aliases? *)
-                match lookup_module_or_modtype longident.Asttypes.txt env with
-                | _path, None ->
-                  Format.pp_print_string ppf "(* abstract module *)";
-                  true
-                | _path, Some md ->
-                  begin match mod_smallerthan 1000 md with
+              (* TODO: special processing for module aliases? *)
+              match lookup_module_or_modtype longident.Asttypes.txt env with
+              | _path, None ->
+                Format.pp_print_string ppf "(* abstract module *)";
+                true
+              | _path, Some md ->
+                begin match mod_smallerthan 1000 md with
                   | None when verbosity = 0 ->
                     Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
                   | _ ->
                     Printtyp.modtype env ppf md
-                  end;
-                  true
-              with _ ->
-                try
-                  let cstr_desc =
-                    Raw_compat.lookup_constructor longident.Asttypes.txt env
-                  in
+                end;
+                true
+            with _ ->
+              try
+                let cstr_desc =
+                  Raw_compat.lookup_constructor longident.Asttypes.txt env
+                in
                   (*
                   Format.pp_print_string ppf name;
                   Format.pp_print_string ppf " : ";
                   *)
-                  Browse_misc.print_constructor ppf cstr_desc;
-                  true
-                with _ ->
-                  raise exn
-          end
-
-        | `Other -> print_expr e; true
+                Browse_misc.print_constructor ppf cstr_desc;
+                true
+              with _ ->
+                raise exn
         end
+
+      | `Other -> print_expr e; true
     end
