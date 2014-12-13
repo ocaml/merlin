@@ -39,6 +39,10 @@ if !exists("g:merlin_type_history_auto_open")
   let g:merlin_type_history_auto_open = 5
 endif
 
+if !exists("g:merlin_type_history_auto_close")
+  let g:merlin_type_history_auto_close = 3
+endif
+
 if !exists("g:merlin_dwim_completion")
   let g:merlin_dwim_completion = 1
 endif
