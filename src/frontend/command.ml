@@ -150,7 +150,6 @@ let dispatch (state : state) =
     )
 
   | (Type_enclosing (expro, pos) : a request) ->
-    let (@@) f x = f x in
     let open BrowseT in
     let open Typedtree in
     let open Override in
@@ -565,7 +564,6 @@ let dispatch (state : state) =
     Merlin_recover.dump_recoverable (Buffer.recover state.buffer);
 
   | (Dump (`Env (kind, pos)) : a request) ->
-    let (@@) f x = f x in
     with_typer state @@ fun typer ->
     let env = match pos with
       | None -> Typer.env typer
@@ -700,7 +698,6 @@ let dispatch (state : state) =
     Project.User.reset project
 
   | (Occurrences (`Ident_at pos) : a request) ->
-    let (@@) f x = f x in
     with_typer state @@ fun typer ->
     let str = Typer.contents typer in
     let str = Browse.of_typer_contents str in
