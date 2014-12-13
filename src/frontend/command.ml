@@ -139,16 +139,14 @@ let dispatch (state : state) =
     cursor_state state
 
   | (Type_expr (source, pos) : a request) ->
-    with_typer state (
-      fun typer ->
-        let env = match pos with
-          | None -> Typer.env typer
-          | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
-        in
-        let ppf, to_string = Format.to_string () in
-        ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
-        to_string ()
-    )
+    with_typer state @@ fun typer ->
+    let env = match pos with
+      | None -> Typer.env typer
+      | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
+    in
+    let ppf, to_string = Format.to_string () in
+    ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
+    to_string ()
 
   | (Type_enclosing (expro, pos) : a request) ->
     let open BrowseT in
@@ -289,68 +287,60 @@ let dispatch (state : state) =
       (small_enclosings @ result)
 
   | (Enclosing pos : a request) ->
-    with_typer state (
-      fun typer ->
-        let open BrowseT in
-        let structures = Typer.contents typer in
-        let structures = Browse.of_typer_contents structures in
-        let path = Browse.enclosing pos structures in
-        List.map (fun t -> t.BrowseT.t_loc) path
-    )
+    with_typer state @@ fun typer ->
+    let open BrowseT in
+    let structures = Typer.contents typer in
+    let structures = Browse.of_typer_contents structures in
+    let path = Browse.enclosing pos structures in
+    List.map (fun t -> t.BrowseT.t_loc) path
 
   | (Complete_prefix (prefix, pos) : a request) ->
-    with_typer state (
-      fun typer ->
-        let node = Completion.node_at typer pos in
-        let compl = Completion.node_complete state.buffer node prefix in
-        List.rev compl
-    )
+    with_typer state @@ fun typer ->
+    let node = Completion.node_at typer pos in
+    let compl = Completion.node_complete state.buffer node prefix in
+    List.rev compl
 
   | (Expand_prefix (prefix, pos) : a request) ->
-    with_typer state (
-      fun typer ->
-        let env =
-          let node = Completion.node_at typer pos in
-          node.BrowseT.t_env in
-        let global_modules = Buffer.global_modules state.buffer in
-        let lidents, last =
-          let ts = Expansion.explore ~global_modules env in
-          Expansion.get_lidents ts prefix
-        in
-        let validate' =
-          let last = Str.regexp (Expansion.regex_of_path_prefix last) in
-          fun s -> Str.string_match last s 0
-        in
-        let validate _ _ s = validate' s in
-        let process_lident lident =
-          let compl =
-            let aux kind compl =
-              Completion.completion_fold "" lident kind ~validate env compl in
-            List.fold_left' ~f:aux Completion.default_kinds ~init:[]
-          in
-          match lident with
-          | None -> compl @
-                    List.map (List.filter ~f:validate' global_modules)
-                      ~f:Completion.item_for_global_module
-          | Some lident ->
-            let lident = Longident.flatten lident in
-            let lident = String.concat ~sep:"." lident ^ "." in
-            List.map compl
-              ~f:Protocol.(fun comp -> {comp with name = lident ^ comp.name})
-        in
-        List.concat_map ~f:process_lident lidents
-    )
+    with_typer state @@ fun typer ->
+    let env =
+      let node = Completion.node_at typer pos in
+      node.BrowseT.t_env in
+    let global_modules = Buffer.global_modules state.buffer in
+    let lidents, last =
+      let ts = Expansion.explore ~global_modules env in
+      Expansion.get_lidents ts prefix
+    in
+    let validate' =
+      let last = Str.regexp (Expansion.regex_of_path_prefix last) in
+      fun s -> Str.string_match last s 0
+    in
+    let validate _ _ s = validate' s in
+    let process_lident lident =
+      let compl =
+        let aux kind compl =
+          Completion.completion_fold "" lident kind ~validate env compl in
+        List.fold_left' ~f:aux Completion.default_kinds ~init:[]
+      in
+      match lident with
+      | None -> compl @
+                List.map (List.filter ~f:validate' global_modules)
+                  ~f:Completion.item_for_global_module
+      | Some lident ->
+        let lident = Longident.flatten lident in
+        let lident = String.concat ~sep:"." lident ^ "." in
+        List.map compl
+          ~f:Protocol.(fun comp -> {comp with name = lident ^ comp.name})
+    in
+    List.concat_map ~f:process_lident lidents
 
   | (Locate (patho, ml_or_mli, opt_pos) : a request) ->
     let env, local_defs =
-      with_typer state (
-        fun typer ->
-          match opt_pos with
-          | None     -> Typer.env typer, []
-          | Some pos ->
-            let node = Completion.node_at typer pos in
-            node.BrowseT.t_env, Typer.contents typer
-      )
+      with_typer state @@ fun typer ->
+      match opt_pos with
+      | None     -> Typer.env typer, []
+      | Some pos ->
+        let node = Completion.node_at typer pos in
+        node.BrowseT.t_env, Typer.contents typer
     in
     let path =
       match patho, opt_pos with
@@ -382,25 +372,24 @@ let dispatch (state : state) =
     end
 
   | (Case_analysis ({ Location. loc_start ; loc_end } as loc) : a request) ->
-    with_typer state (fun typer ->
-      let env = Typer.env typer in
-      let structures = Typer.contents typer in
-      let structures = Browse.of_typer_contents structures in
-      let enclosings = Browse.enclosing loc_start structures in
-      match
+    with_typer state @@ fun typer ->
+    let env = Typer.env typer in
+    let structures = Typer.contents typer in
+    let structures = Browse.of_typer_contents structures in
+    let enclosings = Browse.enclosing loc_start structures in
+    begin match
         List.drop_while enclosings ~f:(fun t ->
-          Lexing.compare_pos t.BrowseT.t_loc.Location.loc_end loc_end < 0
-        )
+            Lexing.compare_pos t.BrowseT.t_loc.Location.loc_end loc_end < 0
+          )
       with
       | [] -> failwith "No node at given range"
       | node :: parents -> Destruct.node ~env ~loc parents node
-    )
+    end
 
   | (Outline : a request) ->
-    with_typer state (fun typer ->
-      let typed_tree = Typer.contents typer in
-      Outline.get (Browse.of_typer_contents typed_tree)
-    )
+    with_typer state @@ fun typer ->
+    let typed_tree = Typer.contents typer in
+    Outline.get (Browse.of_typer_contents typed_tree)
 
   | (Drop : a request) ->
     let lexer = Buffer.lexer state.buffer in
@@ -480,9 +469,9 @@ let dispatch (state : state) =
       | [] -> None
       | item :: _ -> Some item
     in
-    with_typer state (fun typer ->
-      let browses  = Browse.of_typer_contents (Typer.contents typer) in
-      Option.bind (get_enclosing_str_item pos browses) ~f:(fun item ->
+    with_typer state @@ fun typer ->
+    let browses  = Browse.of_typer_contents (Typer.contents typer) in
+    Option.bind (get_enclosing_str_item pos browses) ~f:(fun item ->
         match dir with
         | `Current -> Some item.BrowseT.t_loc
         | `Prev ->
@@ -496,7 +485,6 @@ let dispatch (state : state) =
           let item= get_enclosing_str_item pos browses in
           Option.map item ~f:(fun i -> i.BrowseT.t_loc)
       )
-    )
 
   | (Reset (ml,path) : a request) ->
     let parser = match ml, path with
@@ -555,11 +543,10 @@ let dispatch (state : state) =
     Merlin_recover.dump (Buffer.recover state.buffer);
 
   | (Dump `Typer_input : a request) ->
-    with_typer state (fun typer ->
-      let ppf, to_string = Format.to_string () in
-      Typer.dump ppf typer;
-      `String (to_string ())
-    )
+    with_typer state @@ fun typer ->
+    let ppf, to_string = Format.to_string () in
+    Typer.dump ppf typer;
+    `String (to_string ())
 
   | (Dump `Recover : a request) ->
     Merlin_recover.dump_recoverable (Buffer.recover state.buffer);
@@ -586,11 +573,10 @@ let dispatch (state : state) =
     `List (List.map ~f:aux sg)
 
   | (Dump `Browse : a request) ->
-    with_typer state (fun typer ->
-      let structures = Typer.contents typer in
-      let structures = Browse.of_typer_contents structures in
-      Browse_misc.dump_ts structures
-    )
+    with_typer state @@ fun typer ->
+    let structures = Typer.contents typer in
+    let structures = Browse.of_typer_contents structures in
+    Browse_misc.dump_ts structures
 
   | (Dump `Tokens : a request) ->
     let tokens = Buffer.lexer state.buffer in
