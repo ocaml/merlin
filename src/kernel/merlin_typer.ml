@@ -197,21 +197,23 @@ type state = {
 let fluid_btype = Fluid.from_ref Btype.cache
 let fluid_env = Fluid.from_ref Env.cache
 
-let protect_typer state f =
-  let caught = ref [] in
-  let (>>=) f x = f x in
-  Fluid.let' fluid_btype state.btype_cache >>= fun () ->
-  Fluid.let' fluid_env state.env_cache     >>= fun () ->
-  Parsing_aux.catch_warnings caught >>= fun () ->
-  Typing_aux.catch_errors caught    >>= fun () ->
-  f caught
-
 (* Public API *)
 
 type t = {
   state : state;
   steps : sync_step list;
 }
+
+let with_typer {state} f =
+  Fluid.let' fluid_btype state.btype_cache @@ fun () ->
+  Fluid.let' fluid_env state.env_cache     @@ f
+
+let protect_typer t f =
+  with_typer t @@ fun () ->
+  let caught = ref [] in
+  Parsing_aux.catch_warnings caught @@ fun () ->
+  Typing_aux.catch_errors caught    @@ fun () ->
+  f caught
 
 let dump ppf t =
   let ts = List.map t.steps ~f:(fun (_,x) -> x.raw) in
@@ -223,19 +225,18 @@ let fresh ~unit_name ~stamp extensions =
   let state = { stamp; extensions; env_cache; btype_cache } in
   { state; steps = [] }
 
-let get_value = function
-  | { state; steps = (_,step) :: _ } -> step
-  | { state; steps = [] } ->
-    protect_typer state (empty state.extensions)
+let get_value t = match t.steps with
+  | (_,step) :: _ -> step
+  | [] ->
+    protect_typer t (empty t.state.extensions)
 
-let update parser {state; steps} =
+let update parser t =
   let steps =
-    protect_typer state
-      (fun caught ->
-         sync_stack state.extensions caught steps
-           (Parser.stack parser))
+    protect_typer t @@ fun caught ->
+    sync_stack t.state.extensions caught t.steps
+      (Parser.stack parser)
   in
-  {state; steps}
+  {t with steps}
 
 let env t      = (get_value t).env
 let exns t     = (get_value t).exns
@@ -244,9 +245,5 @@ let extensions t = t.state.extensions
 
 let is_valid t =
   List.for_all ~f:(!) t.state.stamp &&
-  try protect_typer t.state
-          (fun _ -> Env.check_cache_consistency ())
+  try with_typer t Env.check_cache_consistency
   with _exn -> false
-
-let with_typer t f =
-  protect_typer t.state (fun _ -> f t)

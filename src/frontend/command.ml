@@ -42,7 +42,8 @@ let new_state () =
   {buffer; lexer = None}
 
 let with_typer state f =
-  Typer.with_typer (Buffer.typer state.buffer) f
+  let typer = Buffer.typer state.buffer in
+  Typer.with_typer typer (fun () -> f typer)
 
 let cursor_state state =
   let cursor, marker =

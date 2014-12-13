@@ -40,4 +40,4 @@ val extensions : t -> Extension.set
 
 val dump : Format.formatter -> t -> unit
 
-val with_typer : t -> (t -> 'a) -> 'a
+val with_typer : t -> (unit -> 'a) -> 'a
