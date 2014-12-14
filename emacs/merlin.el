@@ -1914,7 +1914,8 @@ Returns the position."
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
-  buffer-file-name)
+  (cond ((equal (buffer-name) merlin-type-buffer-name) nil)
+        (buffer-file-name)))
 
 (defun merlin-view-log ()
   "Jump to the log file of merlin."
@@ -1956,8 +1957,10 @@ Short cuts:
   nil :lighter (:eval (merlin-lighter))
   :keymap merlin-mode-map
   (if merlin-mode
-      (merlin-setup)
-    (when (merlin-can-handle-buffer)
+      (if (merlin-can-handle-buffer)
+          (merlin-setup)
+        (merlin-mode -1))
+    (progn
       (merlin-error-gc)
       (when merlin-lock-zone-highlight-overlay
         (delete-overlay merlin-lock-zone-highlight-overlay))
