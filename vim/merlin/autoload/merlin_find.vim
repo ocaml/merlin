@@ -9,19 +9,19 @@ function! merlin_find#OccurrencesSearch(mode)
 endfunction
 
 function! merlin_find#IncrementalRename()
-  py vim.command("let [w:start_rename_col,l:current,w:rename_target] = " + merlin.vim_occurrences_search())
+  py vim.command("let [w:start_rename_col,w:current_target,w:rename_target] = " + merlin.vim_occurrences_search())
   if w:rename_target == ""
     echoerr "No occurrences found!"
     return
   endif
   let l:edit_target = '\%' . line(".") . 'l\%' . (w:start_rename_col + 1) . 'c' . '.*\%#'
   let w:enclosing_rename = matchadd('EnclosingExpr', l:edit_target . '\|' . w:rename_target)
-  let @/ = l:current
+  let @/ = w:current_target
   call merlin#StopHighlight()
   augroup MerlinAutocmd
     au!
     autocmd InsertEnter <buffer> :let @/=''
-    autocmd InsertLeave <buffer> :call s:IncrementalRenameTerminate()
+    autocmd InsertLeave <buffer> :silent call s:IncrementalRenameTerminate()
   augroup END
 endfunction
 
@@ -36,6 +36,11 @@ function! s:IncrementalRenameTerminate()
   augroup END
   let [l:buffer,l:line,l:col,l:off] = getpos(".")
   let l:inserted = strpart(getline("."), w:start_rename_col, l:col - w:start_rename_col)
-  execute "normal! :%s/" . w:rename_target . "/" . l:inserted . "/g\<cr>"
+  silent! undo
+  let l:target = w:current_target . '\|' . w:rename_target
+  let l:prev_gd=&gdefault
+  let &gdefault=0
+  silent execute '%sm/' . l:target . '/' . l:inserted . '/g'
+  let &gdefault=l:prev_gd
   call setpos(".", [l:buffer, l:line, w:start_rename_col + 1, l:off])
 endfunction
