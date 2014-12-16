@@ -32,6 +32,8 @@
 (require 'cl)
 ;; auto-complete is not
 (require 'auto-complete nil 'noerror)
+;; caml-types for highlighting (https://github.com/the-lambda-church/merlin/issues/331)
+(require 'caml-types nil 'noerror)
 
 ;; silence free variable warning
 (defvar merlin-mode)
