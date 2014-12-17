@@ -75,6 +75,11 @@ function! merlin_type#Show(type, tail_info)
   let l:lines = split(l:msg, '\n')
   call s:RecordType(l:lines)
 
+  if exists("t:merlin_autohide") && t:merlin_autohide == 1
+    let t:merlin_autohide = 0
+    call merlin_type#HideTypeHistory(0)
+  endif
+
   let l:length = len(l:lines)
 
   let l:win = bufwinnr(g:merlin_type_history)
@@ -86,6 +91,7 @@ function! merlin_type#Show(type, tail_info)
   elseif l:length >= g:merlin_type_history_auto_open
     call merlin_type#ShowTypeHistory()
     call s:TemporaryResize(l:length)
+    let t:merlin_autohide=1
     normal! Gzb
     augroup MerlinTypeHistory
       autocmd CursorMoved,InsertEnter * call merlin_type#HideTypeHistory(0)
@@ -94,7 +100,6 @@ function! merlin_type#Show(type, tail_info)
     silent call merlin_type#ShowTypeHistory()
     let l:end = line("$")
     let l:start = l:end - l:length + 1
-    " normal! G
     let l:msg = merlin_type#ShowLines(l:start, l:end)
     close
     exe t:merlin_restore_windows
