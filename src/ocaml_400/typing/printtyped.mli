@@ -17,3 +17,6 @@ open Format;;
 
 val interface : formatter -> signature -> unit;;
 val implementation : formatter -> structure -> unit;;
+
+(* Added by merlin for debugging purposes *)
+val pattern : int -> formatter -> pattern -> unit
