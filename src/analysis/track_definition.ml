@@ -681,16 +681,27 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
   let inspect_context pos =
     let browse = Browse.of_typer_contents local_defs in
     match Browse.enclosing pos browse with
-    | [] -> None
+    | [] ->
+      Logger.infof section (fun fmt pos ->
+        Format.pp_print_string fmt "no enclosing around: " ;
+        Lexing.print_position fmt pos
+      ) pos ;
+      None
     | node :: _ ->
       let open BrowseT in
       match node.t_node with
-      | Pattern p -> inspect_pattern p
+      | Pattern p -> 
+        Logger.debugf section (fun fmt p ->
+          Format.pp_print_string fmt "current node is: " ;
+          Printtyped.pattern 0 fmt p
+        ) p ;
+        inspect_pattern p
       | Value_description _
       | Type_declaration _
       | Extension_constructor _
       | Module_binding_name _
       | Module_declaration_name _ ->
+        debug_log "current node is : %s" @@ BrowseT.string_of_node node.t_node ;
         None
       | Core_type _ -> Some Type
       | Expression _ -> Some Expr
@@ -700,11 +711,15 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
   let lid = Longident.parse path in
   let context =
     match pos with
-    | None -> Some Unknown
+    | None ->
+      info_log "no position available, unable to determine context" ;
+      Some Unknown
     | Some pos -> inspect_context pos
   in
   match context with
-  | None -> `At_origin
+  | None ->
+    info_log "already at origin, doing nothing" ;
+    `At_origin
   | Some ctxt ->
     info_log "looking for the source of '%s' (prioritizing %s files)" path
       (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
