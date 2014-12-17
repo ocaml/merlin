@@ -182,8 +182,7 @@ def display_load_failures(result):
   return result['result']
 
 def command_tell(content):
-  if isinstance(content,list):
-    content = "\n".join(content) + "\n"
+  content = "\n".join(content) + "\n"
   return parse_position(command("tell", "source", content))
 
 def command_find_use(*packages):
@@ -296,6 +295,9 @@ def sync_buffer_to_(to_line, to_col, skip_marker=False):
     rest    = cb[line-1][col:]
     content = cb[line:end_line]
     content.insert(0, rest)
+    encoding = vim.eval("&fileencoding")
+    if not encoding: encoding = "ascii"
+    content = map(lambda str: str.decode(encoding), content)
     command_tell(content)
 
   # put marker
