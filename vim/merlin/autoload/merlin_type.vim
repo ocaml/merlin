@@ -84,7 +84,7 @@ function! merlin_type#Show(type, tail_info)
 
   let l:win = bufwinnr(g:merlin_type_history)
   let l:cur = winnr()
-  if l:win >= 0 && l:length > g:merlin_type_history_auto_close
+  if l:win >= 0
     exe l:win . "wincmd w"
     call s:TemporaryResize(l:length)
     normal! Gzb
