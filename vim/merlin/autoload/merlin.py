@@ -223,12 +223,19 @@ def command_locate(path, line, col):
       if "file" in pos_or_err:
           if split_method == "never":
               vim.command(":keepjumps e %s" % pos_or_err['file'])
+          elif "tab" in split_method:
+              if "always" in split_method:
+                  vim.command(":keepjumps tab edit %s" % pos_or_err['file'])
+              else:
+                  vim.command(":keepjumps tab drop %s" % pos_or_err['file'])
           elif "vertical" in split_method:
               vim.command(":keepjumps vsplit %s" % pos_or_err['file'])
           else:
               vim.command(":keepjumps split %s" % pos_or_err['file'])
       elif "always" in split_method:
-          if "vertical" in split_method:
+          if "tab" in split_method:
+              vim.command(":tab split")
+          elif "vertical" in split_method:
               vim.command(":vsplit")
           else:
               vim.command(":split")
