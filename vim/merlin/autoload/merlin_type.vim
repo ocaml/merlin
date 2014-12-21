@@ -60,8 +60,23 @@ function! s:RecordType(type)
   endif
 
   " vimscript can't append to a buffer without a refresh (?!)
-  py del vim.buffers[int(vim.eval("g:merlin_type_history"))][:]
-  py vim.buffers[int(vim.eval("g:merlin_type_history"))].append(vim.eval("a:type"))
+  py << EOF
+idx = int(vim.eval("g:merlin_type_history"))
+typ = vim.eval("a:type")
+buf = vim.buffers[idx]
+l = len(buf)
+if l > 1:
+    # The following is an ugly hack: if we clear the buffer vim deletes it, so
+    # the user don't get to see every other type.
+    del buf[1:len(buf)]
+    buf.append(typ)
+else:
+    buf.append(typ)
+
+# Note that this leaves a blank line at the beginning of the buffer, but
+# it is apparently the desired behavior.
+
+EOF
 endfunction
 
 function! merlin_type#Show(type, tail_info)
