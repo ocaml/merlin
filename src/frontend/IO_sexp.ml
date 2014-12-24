@@ -263,6 +263,24 @@ let rec json_of_sexp =
   | Sym s -> `String s
 
 let sexp_make ~input ~output =
+  (* Fix for emacs: emacs start-process doesn't distinguish between stdout and
+     stderr.  So we redirect stderr to /dev/null with sexp frontend. *)
+  begin match
+      begin
+        try Some (Unix.openfile "/dev/null" [Unix.O_WRONLY] 0o600)
+        with
+        | Unix.Unix_error _  ->
+          if Sys.os_type = "Win32" then
+            try Some (Unix.openfile "NUL" [Unix.O_WRONLY] 0o600)
+            with Unix.Unix_error _ -> None
+          else None
+      end
+      with
+      | None -> ()
+      | Some fd ->
+        Unix.dup2 fd Unix.stderr;
+        Unix.close fd
+  end;
   let input' = Sexp.of_channel input in
   let input' = Stream.from (fun _ -> Option.map json_of_sexp (input' ())) in
   let output' = Unix.descr_of_out_channel output in
