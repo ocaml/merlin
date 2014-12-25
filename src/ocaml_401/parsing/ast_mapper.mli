@@ -290,3 +290,10 @@ module CE:
     val map_structure: mapper -> class_structure -> class_structure
     val class_infos: mapper -> ('a -> 'b) -> 'a class_infos -> 'b class_infos
   end
+
+(** merlin: manage all internal state *)
+
+type cache
+
+val new_cache : unit -> cache
+val cache : cache ref

@@ -564,3 +564,10 @@ let main mapper = run_main (fun _ -> mapper)
 
 let register_function = ref (fun _name f -> run_main f)
 let register name f = !register_function name (f :> string list -> mapper)
+
+(** merlin: manage all internal state *)
+
+type cache = unit
+
+let new_cache () = ()
+let cache = ref ()
