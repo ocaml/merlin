@@ -231,16 +231,6 @@ field logfile (see `merlin-start-process')"
   "Buffer for merlin input.")
 (make-variable-buffer-local 'merlin-buffer)
 
-;; Those variables will be bound dynamically in the scope of asynchronous
-;; closures (merlin-send-command-async & merlin-wait-for-answer)
-; (defvar merlin-result nil
-;   "Temporary variables to store command results.")
-; (make-variable-buffer-local 'merlin-result)
-
-; (defvar merlin-ready nil
-;   "If non-nil, the reception is done.")
-; (make-variable-buffer-local 'merlin-ready)
-
 (defvar merlin-dirty-point 0
   "Position after which buffer content may differ.")
 (make-variable-buffer-local 'merlin-dirty-point)
@@ -552,12 +542,13 @@ the merlin buffer of the current buffer."
       (ignore-errors (kill-process merlin-process)))
     (kill-buffer buffer)))
 
-(defun merlin-wait-for-answer ()
+(defun merlin--wait-for-answer (promise)
   "Waits for merlin to answer."
-  (let ((w32-pipe-read-delay 0)) ;; fix 50ms latency of emacs on win32
-    (while (not merlin-ready)
-      (accept-process-output (merlin-process) 0.1 nil t)))
-  merlin-result)
+  (when promise
+    (let ((w32-pipe-read-delay 0)) ;; fix 50ms latency of emacs on win32
+      (while (not (car promise))
+        (accept-process-output (merlin-process) 1.0)))
+    (cdr promise)))
 
 (defun merlin--reset ()
   "Rewind the knowledge of merlin of the current buffer to zero."
@@ -587,53 +578,55 @@ the merlin buffer of the current buffer."
     (merlin--reset)
     (merlin--check-project-file)))
 
+(defun merlin-send-command-async-handler (closure answer)
+  "Callback sent by merlin-send-command-async to tq-enqueue."
+  (let ((promise       (elt closure 0))
+        (cb-if-success (elt closure 1))
+        (cb-if-exn     (elt closure 2))
+        (command       (elt closure 3))
+        (buffer        (elt closure 4)))
+    (setcar promise t)
+    (with-current-buffer buffer
+      (when merlin-debug (merlin-debug (format "<%s" answer)))
+      (setq answer (car (read-from-string answer)))
+      (cond ((not answer)
+             (message "Invalid answer received from merlin."))
+            ((string-equal (elt answer 0) "return")
+             (setcdr promise (funcall cb-if-success (elt answer 1)))
+             ((string-equal (elt answer 0) "exception")
+              (message "Merlin failed with exception: %s" (elt answer 1)))
+             ((if (functionp cb-if-exn)
+                  (setcdr promise (funcall cb-if-exn (elt answer 1)))
+                (message "Command %s failed with error %s" command (elt answer 1)))))))))
+
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
 Give the result to callback-if-success.  If merlin reported an
 error and if CALLBACK-IF-EXN is non-nil, call the function with
 the error message otherwise print a generic error message."
   (assert (merlin--acquired-buffer))
-  (lexical-let*
-      ((string (concat (prin1-to-string (if (listp command) command (list command)))
-                        "\n"))
-       (buffer (current-buffer))
-       (name (buffer-name)))
+  (let* ((string (concat (prin1-to-string (if (listp command) command (list command))) "\n"))
+         (promise (cons nil nil))
+         (closure (list promise
+                        callback-if-success
+                        callback-if-exn
+                        command
+                        (current-buffer))))
     (if (not (equal (process-status (merlin-process)) 'run))
-        (progn
-          (error "Merlin process not running (try restarting with %s)"
-                 (substitute-command-keys "\\[merlin-restart-process]"))
-          nil)
+        (progn (error "Merlin process not running (try restarting with %s)"
+                      (substitute-command-keys "\\[merlin-restart-process]"))
+               nil)
       (with-current-buffer (merlin-process-buffer)
-        (if merlin-debug (merlin-debug (format ">%s" string)))
+        (when merlin-debug
+          (merlin-debug (format ">%s" string)))
         (tq-enqueue merlin-process-queue string "\n"
-                    (cons callback-if-success (cons callback-if-exn command))
-                    #'(lambda (closure answer)
-                        (with-current-buffer buffer
-                          (setq merlin-ready t)
-                          (if merlin-debug (merlin-debug (format "<%s" answer)))
-                          (let ((a (car (read-from-string answer))))
-                            (if a
-                                (cond ((string-equal (elt a 0) "return")
-                                       (funcall (car closure) (elt a 1)))
-                                      ((string-equal (elt a 0) "exception")
-                                       (message "Merlin failed with exception: %s" (elt a 1)))
-                                      ((progn
-                                         (if (functionp (cadr closure))
-                                             (funcall (cadr closure) (elt a 1))
-                                           (message "Command %s failed with error %s" (cddr closure) (elt a 1))))))
-                              (message "Invalid answer received from merlin.")))))
-                    nil)
-        nil)
-      t)))
+                    closure #'merlin-send-command-async-handler)
+        promise))))
 
 (defun merlin-send-command (command &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
-  (let ((merlin-result nil)
-        (merlin-ready nil))
-    (when (merlin-send-command-async command
-                                     (lambda (data) (setq merlin-result data))
-                                     callback-if-exn)
-      (merlin-wait-for-answer))))
+  (merlin--wait-for-answer (merlin-send-command-async
+                            command (lambda (data) data) callback-if-exn)))
 
 ;; SPECIAL CASE OF COMMANDS
 
