@@ -109,9 +109,9 @@ let feed t str =
         t.history <- History.insert (!warnings, item) t.history
       in
       let rec aux = function
-        (* Lexer interrupted, there is data to refill: continue. *)
+        (* Lexer interrupted, there is data to refill or eof reached: continue. *)
         | Raw_lexer.Refill f
-          when !(t.refill) <> None || not !(t.refill_empty) ->
+          when !(t.refill) <> None || not !(t.refill_empty) || str = "" ->
           aux (f ())
         (* Lexer interrupted, nothing to refill, return to caller. *)
         | Raw_lexer.Refill r ->
