@@ -213,8 +213,6 @@ let apply_subst s1 tyl =
   | Map l1 -> List.map (List.nth tyl) l1
   | Id -> tyl
 
-type best_path = Paths of Path.t list | Best of Path.t
-
 let printing_env = ref Env.empty
 let printing_old = ref Env.empty
 let printing_pers = ref Concr.empty
@@ -417,7 +415,11 @@ let set_printing_env env =
       let maps = map :: Concr.fold (fun name l -> pers_map name ::l )
                    (Env.used_persistent ()) [] in
       let final = ref PathMap.empty in
-      fun path ->
+      function
+      (* Predefined types have binding_time < 1000 (see [Predef]) *)
+      | (Pident id) as path when Ident.binding_time id < 1000 ->
+        path
+      | path ->
         try PathMap.find path !final
         with Not_found ->
           let path', _ =
