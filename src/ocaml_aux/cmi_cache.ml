@@ -26,7 +26,15 @@
 
 )* }}} *)
 
+type cmi_item = {
+  cmi_infos: Cmi_format.cmi_infos;
+  cmi_typemap: (Path.t list Path.PathMap.t option) ref;
+}
+
 include File_cache.Make (struct
-  type t   = Cmi_format.cmi_infos
-  let read = Cmi_format.read_cmi
+  type t = cmi_item
+  let read name = {
+    cmi_infos = Cmi_format.read_cmi name;
+    cmi_typemap = ref None;
+  }
 end)

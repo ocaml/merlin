@@ -251,7 +251,7 @@ type pers_struct = {
   ps_crcs: (string * Digest.t) list;
   ps_filename: string;
   ps_flags: pers_flags list;
-  mutable ps_typemap: (Path.t list Path.PathMap.t) option;
+  ps_typemap: (Path.t list Path.PathMap.t) option ref;
 }
 
 (* Regroup all internal state *)
@@ -301,7 +301,7 @@ let check_consistency filename crcs =
 (* Reading persistent structures from .cmi files *)
 
 let read_pers_struct modname filename =
-  let cmi = Cmi_cache.read filename in
+  let {Cmi_cache. cmi_infos = cmi; cmi_typemap = typemap} = Cmi_cache.read filename in
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
@@ -316,7 +316,7 @@ let read_pers_struct modname filename =
                ps_crcs = crcs;
                ps_filename = filename;
                ps_flags = flags;
-               ps_typemap = None; } in
+               ps_typemap = typemap; } in
     if ps.ps_name <> modname then
       error (Illegal_renaming(ps.ps_name, filename));
     check_consistency filename ps.ps_crcs;
@@ -373,7 +373,7 @@ let check_cache_consistency () =
           | _, Some ps when Hashtbl.mem !cache.missing_structures name ->
             true
           | Some filename, Some ps
-            when ps.ps_sig == (Cmi_cache.read filename).cmi_sign ->
+            when ps.ps_sig == Cmi_cache.((read filename).cmi_infos).cmi_sign ->
             false
           | None, None -> false
           | _, _       -> true
@@ -781,12 +781,12 @@ let used_persistent () =
 
 let find_pers_map name =
   match Hashtbl.find !cache.persistent_structures name with
-  | Some {ps_typemap = Some map} -> map
+  | Some {ps_typemap = {contents = Some map}} -> map
   | _ -> raise Not_found
 
 let set_pers_map name map =
   match Hashtbl.find !cache.persistent_structures name with
-  | Some ps -> ps.ps_typemap <- Some map
+  | Some ps -> ps.ps_typemap := Some map
   | None -> raise Not_found
 
 (* GADT instance tracking *)
@@ -1336,7 +1336,7 @@ let save_signature_with_imports sg modname filename imports =
         ps_crcs = (cmi.cmi_name, crc) :: imports;
         ps_filename = filename;
         ps_flags = cmi.cmi_flags;
-        ps_typemap = None; } in
+        ps_typemap = ref None; } in
     Hashtbl.add !cache.persistent_structures modname (Some ps);
     Consistbl.set !cache.crc_units modname crc filename;
     sg
