@@ -968,33 +968,40 @@ let lookup_cltype lid env =
 (* Iter on an environment (ignoring the body of functors and
    not yet evaluated structures) *)
 
+let rec iter_env_components proj path path' mcomps f =
+  (* if EnvLazy.is_val mcomps then *)
+  match EnvLazy.force !components_of_module_maker' mcomps with
+    Structure_comps comps ->
+    Tbl.iter
+      (fun s (d, n) -> f (Pdot (path, s, n)) (Pdot (path', s, n), d))
+      (proj comps);
+    Tbl.iter
+      (fun s (c, n) ->
+         iter_env_components proj (Pdot (path, s, n)) (Pdot (path', s, n)) c f)
+      comps.comp_components
+  | Functor_comps _ -> ()
+
 let iter_env proj1 proj2 f env =
   Ident.iter (fun id (x,_) -> f (Pident id) x) (proj1 env);
-  let rec iter_components path path' mcomps =
-    (* if EnvLazy.is_val mcomps then *)
-    match EnvLazy.force !components_of_module_maker' mcomps with
-      Structure_comps comps ->
-        Tbl.iter
-          (fun s (d, n) -> f (Pdot (path, s, n)) (Pdot (path', s, n), d))
-          (proj2 comps);
-        Tbl.iter
-          (fun s (c, n) ->
-            iter_components (Pdot (path, s, n)) (Pdot (path', s, n)) c)
-          comps.comp_components
-    | Functor_comps _ -> ()
-  in
-  Hashtbl.iter
-    (fun s pso ->
-      match pso with None -> ()
-      | Some ps ->
-          let id = Pident (Ident.create_persistent s) in
-          iter_components id id ps.ps_comps)
-    !cache.persistent_structures;
-  Ident.iter
-    (fun id ((path, comps), _) -> iter_components (Pident id) path comps)
+  Ident.iter (fun id ((path, comps), _) ->
+      iter_env_components proj2 (Pident id) path comps f)
     env.components
 
-let iter_types f = iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
+let iter_pers_env proj1 proj2 f name env =
+  match
+    (try Hashtbl.find !cache.persistent_structures name
+     with Not_found -> None)
+  with
+  | Some ps ->
+    let id = Pident (Ident.create_persistent name) in
+    iter_env_components proj2 id id ps.ps_comps f
+  | None -> ()
+
+let iter_types f =
+  iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
+
+let iter_pers_types name f =
+  iter_pers_env (fun env -> env.types) (fun sc -> sc.comp_types) name f
 
 let same_types env1 env2 =
   env1.types == env2.types && env1.components == env2.components

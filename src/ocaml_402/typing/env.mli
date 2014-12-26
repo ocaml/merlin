@@ -40,6 +40,11 @@ type type_descriptions =
 val iter_types:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
     t -> unit
+
+val iter_pers_types:
+    (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
+    string -> t -> unit
+
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t
 val find_shadowed_types: Path.t -> t -> Path.t list
