@@ -52,3 +52,19 @@ let rec last = function
   | Pident id -> Ident.name id
   | Pdot(_, s, _) -> s
   | Papply(_, p) -> last p
+
+module PathMap = Map.Make (struct
+    type path = t
+    type t = path
+    let rec compare p1 p2 =
+      (* must ignore position when comparing paths *)
+      if p1 == p2 then 0 else
+      match (p1, p2) with
+        (Pdot(p1, s1, pos1), Pdot(p2, s2, pos2)) ->
+        let c = compare p1 p2 in
+        if c <> 0 then c else String.compare s1 s2
+      | (Papply(fun1, arg1), Papply(fun2, arg2)) ->
+        let c = compare fun1 fun2 in
+        if c <> 0 then c else compare arg1 arg2
+      | _ -> Pervasives.compare p1 p2
+  end)

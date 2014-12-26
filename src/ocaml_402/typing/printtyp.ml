@@ -218,20 +218,6 @@ type best_path = Paths of Path.t list | Best of Path.t
 let printing_env = ref Env.empty
 let printing_old = ref Env.empty
 let printing_pers = ref Concr.empty
-module Path2 = struct
-  include Path
-  let rec compare p1 p2 =
-    (* must ignore position when comparing paths *)
-    match (p1, p2) with
-      (Pdot(p1, s1, pos1), Pdot(p2, s2, pos2)) ->
-        let c = compare p1 p2 in
-        if c <> 0 then c else String.compare s1 s2
-    | (Papply(fun1, arg1), Papply(fun2, arg2)) ->
-        let c = compare fun1 fun2 in
-        if c <> 0 then c else compare arg1 arg2
-    | _ -> Pervasives.compare p1 p2
-end
-module PathMap = Map.Make(Path2)
 let printing_map = ref (lazy (fun p -> p))
 
 module Shorten_prefix = struct
@@ -371,8 +357,6 @@ let same_printing_env env =
   let used_pers = Env.used_persistent () in
   Env.same_types !printing_old env && Concr.equal !printing_pers used_pers
 
-let pers_maps = Hashtbl.create 7
-
 let register_short_type map env p (p', decl) =
   let (p1, s1) = normalize_type_path env p' ~cache:true in
   (* Format.eprintf "%a -> %a = %a@." path p path p' path p1 *)
@@ -384,12 +368,15 @@ let register_short_type map env p (p', decl) =
     map := PathMap.add p1 (ref [p]) !map
 
 let pers_map name =
-  try Hashtbl.find pers_maps name
+  try Env.find_pers_map name
   with Not_found ->
     let map = ref PathMap.empty in
     Env.iter_pers_types (register_short_type map Env.empty) name Env.empty;
     let map = PathMap.map (!) !map in
-    Hashtbl.add pers_maps name map;
+    begin try Env.set_pers_map name map
+      with Not_found ->
+        prerr_endline ("Env.set_pers_map: " ^ name ^ " not found")
+    end;
     map
 
 let is_unambiguous path env =

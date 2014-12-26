@@ -202,14 +202,16 @@ and functor_components = {
 
 (* Persistent structure descriptions *)
 
-type pers_struct =
-  { ps_name: string;
-    ps_sig: signature;
-    ps_comps: module_components;
-    ps_crcs: (string * Digest.t option) list;
-    mutable ps_crcs_checked: bool;
-    ps_filename: string;
-    ps_flags: pers_flags list }
+type pers_struct = {
+  ps_name: string;
+  ps_sig: signature;
+  ps_comps: module_components;
+  ps_crcs: (string * Digest.t option) list;
+  mutable ps_crcs_checked: bool;
+  ps_filename: string;
+  ps_flags: pers_flags list;
+  mutable ps_typemap: (Path.t list Path.PathMap.t) option;
+}
 
 
 (* Regroup all internal state *)
@@ -365,6 +367,7 @@ let read_pers_struct modname filename =
              ps_filename = filename;
              ps_flags = flags;
              ps_crcs_checked = false;
+             ps_typemap = None;
            } in
   if ps.ps_name <> modname then
     error (Illegal_renaming(modname, ps.ps_name, filename));
@@ -1011,6 +1014,16 @@ let used_persistent () =
   Hashtbl.iter (fun s pso -> if pso != None then r := Concr.add s !r)
     !cache.persistent_structures;
   !r
+
+let find_pers_map name =
+  match Hashtbl.find !cache.persistent_structures name with
+  | Some {ps_typemap = Some map} -> map
+  | _ -> raise Not_found
+
+let set_pers_map name map =
+  match Hashtbl.find !cache.persistent_structures name with
+  | Some ps -> ps.ps_typemap <- Some map
+  | None -> raise Not_found
 
 let find_all_comps proj s (p,mcomps) =
   match EnvLazy.force !components_of_module_maker' mcomps with
@@ -1690,6 +1703,7 @@ let save_signature_with_imports sg modname filename imports =
         ps_filename = filename;
         ps_flags = cmi.cmi_flags;
         ps_crcs_checked = false;
+        ps_typemap = None;
       } in
     Hashtbl.add !cache.persistent_structures modname (Some ps);
     Consistbl.set !cache.crc_units modname crc filename;
