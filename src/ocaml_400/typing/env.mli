@@ -40,6 +40,15 @@ val iter_types:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
     t -> unit
 
+val iter_pers_types:
+    (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
+    string -> t -> unit
+
+val used_persistent: unit -> Concr.t
+
+val find_pers_map: string -> Path.t list Path.PathMap.t
+val set_pers_map: string -> Path.t list Path.PathMap.t -> unit
+
 (* Lookup by paths *)
 
 val find_value: Path.t -> t -> value_description

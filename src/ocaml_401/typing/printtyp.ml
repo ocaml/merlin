@@ -218,21 +218,7 @@ type best_path = Paths of Path.t list | Best of Path.t
 let printing_env = ref Env.empty
 let printing_old = ref Env.empty
 let printing_pers = ref Concr.empty
-module Path2 = struct
-  include Path
-  let rec compare p1 p2 =
-    (* must ignore position when comparing paths *)
-    match (p1, p2) with
-      (Pdot(p1, s1, pos1), Pdot(p2, s2, pos2)) ->
-        let c = compare p1 p2 in
-        if c <> 0 then c else String.compare s1 s2
-    | (Papply(fun1, arg1), Papply(fun2, arg2)) ->
-        let c = compare fun1 fun2 in
-        if c <> 0 then c else compare arg1 arg2
-    | _ -> Pervasives.compare p1 p2
-end
-module PathMap = Map.Make(Path2)
-let printing_map = ref (Lazy.lazy_from_val PathMap.empty)
+let printing_map = ref (lazy (fun x -> x))
 
 module Shorten_prefix = struct
   module StringMap = Map.Make(struct
@@ -383,39 +369,27 @@ let same_printing_env env =
   let used_pers = Env.used_persistent () in
   Env.same_types !printing_old env && Concr.equal !printing_pers used_pers
 
-let set_printing_env env =
-  printing_env := if Clflags.real_paths () = `Real then Env.empty else env;
-  Shorten_prefix.opened := None;
-  if !printing_env == Env.empty || same_printing_env env then () else
-  begin
-    (* printf "Reset printing_map@."; *)
-    printing_old := env;
-    printing_pers := Env.used_persistent ();
-    printing_map := lazy begin
-      (* printf "Recompute printing_map.@."; *)
-      let map = ref PathMap.empty in
-      Env.iter_types
-        (fun p (p', decl) ->
-          let (p1, s1) = normalize_type_path env p' ~cache:true in
-          (* Format.eprintf "%a -> %a = %a@." path p path p' path p1 *)
-          if s1 = Id then
-          try
-            let r = PathMap.find p1 !map in
-            match !r with
-              Paths l -> r := Paths (p :: l)
-            | Best _  -> assert false
-          with Not_found ->
-            map := PathMap.add p1 (ref (Paths [p])) !map)
-        env;
-      !map
-    end
-  end
+let register_short_type map env p (p', decl) =
+  let (p1, s1) = normalize_type_path env p' ~cache:true in
+  (* Format.eprintf "%a -> %a = %a@." path p path p' path p1 *)
+  if s1 = Id then
+  try
+    let r = PathMap.find p1 !map in
+    r := p :: !r
+  with Not_found ->
+    map := PathMap.add p1 (ref [p]) !map
 
-let wrap_printing_env env f =
-  set_printing_env env;
-  try_finally f (fun () -> set_printing_env Env.empty)
-
-let curr_printing_env () = !printing_env
+let pers_map name =
+  try Env.find_pers_map name
+  with Not_found ->
+    let map = ref PathMap.empty in
+    Env.iter_pers_types (register_short_type map Env.empty) name Env.empty;
+    let map = PathMap.map (!) !map in
+    begin try Env.set_pers_map name map
+      with Not_found ->
+        prerr_endline ("Env.set_pers_map: " ^ name ^ " not found")
+    end;
+    map
 
 let is_unambiguous path env =
   let l = Env.find_shadowed_types path env in
@@ -432,21 +406,49 @@ let is_unambiguous path env =
       List.for_all (fun p -> lid_of_path p = id) rem &&
       Path.same p (fst (Env.lookup_type id env))
 
-let rec get_best_path r =
-  match !r with
-    Best p' -> p'
-  | Paths [] -> raise Not_found
-  | Paths l ->
-      r := Paths [];
-      List.iter
-        (fun p ->
-          (* Format.eprintf "evaluating %a@." path p; *)
-          match !r with
-            Best p' when path_size p >= path_size p' -> ()
-          | _ -> if is_unambiguous p !printing_env then r := Best p)
-              (* else Format.eprintf "%a ignored as ambiguous@." path p *)
-        l;
-      get_best_path r
+let best_path (_,size as acc) path' =
+  let size' = path_size path' in
+  if size' < size && is_unambiguous path' !printing_env then
+    (path', size')
+  else
+    acc
+
+let set_printing_env env =
+  printing_env := if Clflags.real_paths () = `Real then Env.empty else env;
+  Shorten_prefix.opened := None;
+  if !printing_env == Env.empty || same_printing_env env then () else
+  begin
+    (* printf "Reset printing_map@."; *)
+    printing_old := env;
+    printing_pers := Env.used_persistent ();
+    printing_map := lazy begin
+      (* printf "Recompute printing_map.@."; *)
+      let map = ref PathMap.empty in
+      Env.iter_types (register_short_type map env) env;
+      let map = PathMap.map (!) !map in
+      let maps = map :: Concr.fold (fun name l -> pers_map name ::l )
+                   (Env.used_persistent ()) [] in
+      let final = ref PathMap.empty in
+      fun path ->
+        try PathMap.find path !final
+        with Not_found ->
+          let path', _ =
+            List.fold_left (fun acc map ->
+                try List.fold_left best_path acc (PathMap.find path map)
+                with Not_found -> acc)
+              (path, path_size path)
+              maps
+          in
+          final := PathMap.add path path' !final;
+          path'
+    end
+  end
+
+let wrap_printing_env env f =
+  set_printing_env env;
+  try_finally f (fun () -> set_printing_env Env.empty)
+
+let curr_printing_env () = !printing_env
 
 let best_type_path p =
   if !printing_env == Env.empty then (p, Id)
@@ -456,7 +458,7 @@ let best_type_path p =
     | `Slow  ->
       let (p', s) = normalize_type_path !printing_env p in
       let p'' =
-        try get_best_path (PathMap.find  p' (Lazy.force !printing_map))
+        try Lazy.force !printing_map p'
         with Not_found -> p'
       in
       (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)

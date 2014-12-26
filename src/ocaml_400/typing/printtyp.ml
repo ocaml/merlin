@@ -205,7 +205,7 @@ let apply_subst s1 tyl =
   | Id -> tyl
 
 let printing_env = ref Env.empty
-let printing_map = ref (Lazy.lazy_from_val Tbl.empty)
+let printing_map = ref (lazy (fun x -> x))
 
 module Shorten_prefix = struct
   module StringMap = Map.Make(struct
@@ -352,6 +352,35 @@ let rec path_size = function
       let (l, b) = path_size p1 in
       (l + fst (path_size p2), b)
 
+let register_short_type map env p (p', decl) =
+  let (p1, s1) = normalize_type_path env p' ~cache:true in
+  (* Format.eprintf "%a -> %a = %a@." path p path p' path p1 *)
+  if s1 = Id then
+  try
+    let r = PathMap.find p1 !map in
+    r := p :: !r
+  with Not_found ->
+    map := PathMap.add p1 (ref [p]) !map
+
+let pers_map name =
+  try Env.find_pers_map name
+  with Not_found ->
+    let map = ref PathMap.empty in
+    Env.iter_pers_types (register_short_type map Env.empty) name Env.empty;
+    let map = PathMap.map (!) !map in
+    begin try Env.set_pers_map name map
+      with Not_found ->
+        prerr_endline ("Env.set_pers_map: " ^ name ^ " not found")
+    end;
+    map
+
+let best_path (_,size as acc) path' =
+  let size' = path_size path' in
+  if size' < size then
+    (path', size')
+  else
+    acc
+
 let set_printing_env env =
   if not (Clflags.real_paths () = `Real) && env != !printing_env then begin
     (* printf "Reset printing_map@."; *)
@@ -359,19 +388,24 @@ let set_printing_env env =
     Shorten_prefix.opened := None;
     printing_map := lazy begin
       (* printf "Recompute printing_map.@."; *)
-      let map = ref Tbl.empty in
-      Env.iter_types
-        (fun p (p', decl) ->
-          let (p1, s1) = normalize_type_path env p' ~cache:true in
-          if s1 = Id then
-          try
-            let p2 = Tbl.find p1 !map in
-            if path_size p < path_size p2 then raise Not_found
-          with Not_found ->
-            (* printf "%a --> %a@." path p1 path p; *)
-            map := Tbl.add p1 p !map)
-        env;
-      !map
+      let map = ref PathMap.empty in
+      Env.iter_types (register_short_type map env) env;
+      let map = PathMap.map (!) !map in
+      let maps = map :: Concr.fold (fun name l -> pers_map name ::l )
+                   (Env.used_persistent ()) [] in
+      let final = ref PathMap.empty in
+      fun path ->
+        try PathMap.find path !final
+        with Not_found ->
+          let path', _ =
+            List.fold_left (fun acc map ->
+                try List.fold_left best_path acc (PathMap.find path map)
+                with Not_found -> acc)
+              (path, path_size path)
+              maps
+          in
+          final := PathMap.add path path' !final;
+          path'
     end
   end
 
@@ -391,7 +425,7 @@ let best_type_path p =
     | `Short -> (Shorten_prefix.shorten p, Id)
     | `Slow  ->
       let (p', s) = normalize_type_path !printing_env p in
-      (try Tbl.find  p' (Lazy.force !printing_map) with Not_found -> p'),
+      (try Lazy.force !printing_map p' with Not_found -> p'),
       s
 
 (* Print a type expression *)

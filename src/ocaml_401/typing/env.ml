@@ -250,13 +250,15 @@ let check_modtype_inclusion =
 
 (* Persistent structure descriptions *)
 
-type pers_struct =
-  { ps_name: string;
-    ps_sig: signature;
-    ps_comps: module_components;
-    ps_crcs: (string * Digest.t) list;
-    ps_filename: string;
-    ps_flags: pers_flags list }
+type pers_struct = {
+  ps_name: string;
+  ps_sig: signature;
+  ps_comps: module_components;
+  ps_crcs: (string * Digest.t) list;
+  ps_filename: string;
+  ps_flags: pers_flags list;
+  mutable ps_typemap: (Path.t list Path.PathMap.t) option;
+}
 
 (* Regroup all internal state *)
 type cache = {
@@ -321,7 +323,8 @@ let read_pers_struct modname filename = (
                ps_comps = comps;
                ps_crcs = crcs;
                ps_filename = filename;
-               ps_flags = flags } in
+               ps_flags = flags;
+               ps_typemap = None; } in
     if ps.ps_name <> modname then
       error (Illegal_renaming(modname, ps.ps_name, filename));
     check_consistency filename ps.ps_crcs;
@@ -831,33 +834,39 @@ let lookup_cltype lid env =
 (* Iter on an environment (ignoring the body of functors and
    not yet evaluated structures) *)
 
+let rec iter_env_components proj path path' mcomps f =
+  (* if EnvLazy.is_val mcomps then *)
+  match EnvLazy.force !components_of_module_maker' mcomps with
+    Structure_comps comps ->
+    Tbl.iter
+      (fun s (d, n) -> f (Pdot (path, s, n)) (Pdot (path', s, n), d))
+      (proj comps);
+    Tbl.iter
+      (fun s (c, n) ->
+         iter_env_components proj (Pdot (path, s, n)) (Pdot (path', s, n)) c f)
+      comps.comp_components
+  | Functor_comps _ -> ()
+
 let iter_env proj1 proj2 f env =
   Ident.iter (fun id (x,_) -> f (Pident id) x) (proj1 env);
-  let rec iter_components path path' mcomps =
-    (* if EnvLazy.is_val mcomps then *)
-    match EnvLazy.force !components_of_module_maker' mcomps with
-      Structure_comps comps ->
-        Tbl.iter
-          (fun s (d, n) -> f (Pdot (path, s, n)) (Pdot (path', s, n), d))
-          (proj2 comps);
-        Tbl.iter
-          (fun s (c, n) ->
-            iter_components (Pdot (path, s, n)) (Pdot (path', s, n)) c)
-          comps.comp_components
-    | Functor_comps _ -> ()
-  in
-  Hashtbl.iter
-    (fun s pso ->
-      match pso with None -> ()
-      | Some ps ->
-          let id = Pident (Ident.create_persistent s) in
-          iter_components id id ps.ps_comps)
-    !cache.persistent_structures;
-  Ident.iter
-    (fun id ((path, comps), _) -> iter_components (Pident id) path comps)
+  Ident.iter (fun id ((path, comps), _) ->
+      iter_env_components proj2 (Pident id) path comps f)
     env.components
 
+let iter_pers_env proj1 proj2 f name env =
+  match
+    (try Hashtbl.find !cache.persistent_structures name
+     with Not_found -> None)
+  with
+  | Some ps ->
+    let id = Pident (Ident.create_persistent name) in
+    iter_env_components proj2 id id ps.ps_comps f
+  | None -> ()
+
 let iter_types f = iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
+
+let iter_pers_types name f =
+  iter_pers_env (fun env -> env.types) (fun sc -> sc.comp_types) name f
 
 let same_types env1 env2 =
   env1.types == env2.types && env1.components == env2.components
@@ -867,6 +876,16 @@ let used_persistent () =
   Hashtbl.iter (fun s pso -> if pso != None then r := Concr.add s !r)
     !cache.persistent_structures;
   !r
+
+let find_pers_map name =
+  match Hashtbl.find !cache.persistent_structures name with
+  | Some {ps_typemap = Some map} -> map
+  | _ -> raise Not_found
+
+let set_pers_map name map =
+  match Hashtbl.find !cache.persistent_structures name with
+  | Some ps -> ps.ps_typemap <- Some map
+  | None -> raise Not_found
 
 let find_all_comps proj s (p,mcomps) =
   match EnvLazy.force !components_of_module_maker' mcomps with
@@ -1497,7 +1516,8 @@ let save_signature_with_imports sg modname filename imports =
         ps_comps = comps;
         ps_crcs = (cmi.cmi_name, crc) :: imports;
         ps_filename = filename;
-        ps_flags = cmi.cmi_flags } in
+        ps_flags = cmi.cmi_flags;
+        ps_typemap = None; } in
     Hashtbl.add !cache.persistent_structures modname (Some ps);
     Consistbl.set !cache.crc_units modname crc filename;
     sg

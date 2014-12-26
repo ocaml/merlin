@@ -28,3 +28,5 @@ val name: ?paren:(string -> bool) -> t -> string
 val head: t -> Ident.t
 
 val last: t -> string
+
+module PathMap: Map.S with type key = t
