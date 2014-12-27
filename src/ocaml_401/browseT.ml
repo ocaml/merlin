@@ -668,6 +668,9 @@ let string_of_node = function
   | Module_declaration_name _ -> "module_declaration_name"
   | Module_type_declaration_name _ -> "module_type_declaration_name"
 
+let mkloc = Location.mkloc
+let reloc txt loc = {loc with Location. txt}
+
 let pattern_paths { Typedtree. pat_desc; pat_extra; pat_loc } =
   let init =
     match pat_desc with
@@ -690,6 +693,103 @@ let expression_paths { Typedtree. exp_desc; exp_extra } =
   | Texp_override (_,ps) ->
     List.map (fun (path,loc,_) -> {loc with Location.txt = path}) ps
   | Texp_letmodule (id,loc,_,_) -> [{loc with Location.txt = Path.Pident id}]
+  | _ -> []
+
+let core_type_paths { Typedtree. ctyp_desc } =
+  match ctyp_desc with
+  | Ttyp_constr (path,loc,_) -> [reloc path loc]
+  | Ttyp_class (path,loc,_,_) -> [reloc path loc]
+  | _ -> []
+
+let class_expr_paths { Typedtree. cl_desc } =
+  match cl_desc with
+  | Tcl_ident (path, loc, _) -> [reloc path loc]
+  | _ -> []
+
+let class_field_paths { Typedtree. cf_desc } =
+  match cf_desc with
+  | Tcf_val (_,loc,_,id,_,_) -> [reloc (Path.Pident id) loc]
+  | _ -> []
+
+let module_expr_paths { Typedtree. mod_desc } =
+  match mod_desc with
+  | Tmod_ident (path, loc) -> [reloc path loc]
+  | Tmod_functor (id, loc, _, _) -> [reloc (Path.Pident id) loc]
+  | _ -> []
+
+let structure_item_paths { Typedtree. str_desc } =
+  match str_desc with
+  | Tstr_class_type cls ->
+    List.map ~f:(fun (id,loc,_) -> reloc (Path.Pident id) loc) cls
+  | Tstr_open (_,open_path,open_loc) ->
+    [reloc open_path open_loc]
+  | Tstr_primitive (id,loc,_) | Tstr_modtype (id,loc,_)
+  | Tstr_exception (id,loc,_) | Tstr_module (id,loc,_) ->
+    [reloc (Path.Pident id) loc]
+  | Tstr_type idlocs ->
+    List.map ~f:(fun (id,loc,_) -> reloc (Path.Pident id) loc) idlocs
+  | Tstr_exn_rebind (id,loc,path,path_loc) ->
+    [reloc (Path.Pident id) loc; reloc path path_loc]
+  | Tstr_recmodule idlocs ->
+    List.map ~f:(fun (id,loc,_,_) -> reloc (Path.Pident id) loc) idlocs
+  | _ -> []
+
+let module_type_paths { Typedtree. mty_desc } =
+  match mty_desc with
+  | Tmty_ident (path, loc) ->
+    [reloc path loc]
+  | Tmty_functor (id,loc,_,_) ->
+    [reloc (Path.Pident id) loc]
+  | Tmty_with (_,ls) ->
+    List.map ~f:(fun (p,l,_) -> reloc p l) ls
+  | _ -> []
+
+let signature_item_paths { Typedtree. sig_desc } =
+  match sig_desc with
+  | Tsig_open (_,open_path,open_loc) ->
+    [reloc open_path open_loc]
+  | _ -> []
+
+let with_constraint_paths = function
+  | Twith_module (path,loc) | Twith_modsubst (path,loc) ->
+    [reloc path loc]
+  | _ -> []
+
+let ci_paths {Typedtree. ci_id_name; ci_id_class } =
+  [reloc (Path.Pident ci_id_class) ci_id_name]
+
+let node_paths =
+  let open Typedtree in function
+  | Pattern p -> pattern_paths p
+  | Expression e -> expression_paths e
+  | Class_expr e -> class_expr_paths e
+  | Class_field f -> class_field_paths f
+  | Module_expr me -> module_expr_paths me
+  | Structure_item i -> structure_item_paths i
+  | Module_binding { mb_id; mb_name } ->
+    [reloc (Path.Pident mb_id) mb_name]
+  | Module_type mt -> module_type_paths mt
+  | Signature_item i -> signature_item_paths i
+  | Module_declaration { md_id; md_name } ->
+    [reloc (Path.Pident md_id) md_name]
+  | Module_type_declaration { mtd_id; mtd_name } ->
+    [reloc (Path.Pident mtd_id) mtd_name]
+  | With_constraint c -> with_constraint_paths c
+  | Core_type ct -> core_type_paths ct
+  | Package_type { pack_name; pack_txt } ->
+    [reloc pack_name pack_txt]
+  | Type_extension { tyext_path; tyext_txt } ->
+    [reloc tyext_path tyext_txt]
+  | Extension_constructor { ext_id; ext_name } ->
+    [reloc (Path.Pident ext_id) ext_name]
+  | Label_declaration { ld_id; ld_name } ->
+    [reloc (Path.Pident ld_id) ld_name]
+  | Constructor_declaration { cd_id; cd_name } ->
+    [reloc (Path.Pident cd_id) cd_name]
+  | Class_declaration ci -> ci_paths ci
+  | Class_description ci -> ci_paths ci
+  | Class_type_declaration ci -> ci_paths ci
+
   | _ -> []
 
 let is_constructor t =

@@ -707,12 +707,7 @@ let dispatch (state : state) =
     in
     let get_loc {Location.txt = _; loc} = loc in
     let ident_occurrence () =
-      let paths =
-        match node.BrowseT.t_node with
-        | BrowseT.Expression e -> BrowseT.expression_paths e
-        | BrowseT.Pattern p -> BrowseT.pattern_paths p
-        | _ -> []
-      in
+      let paths = BrowseT.node_paths node.BrowseT.t_node in
       let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
       Logger.infojf (Logger.section "occurences") ~title:"Occurrences paths"
         (fun paths ->

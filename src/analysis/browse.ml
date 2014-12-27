@@ -92,12 +92,7 @@ let enclosing pos envs =
 let all_occurrences path =
   let rec aux acc t =
     let acc =
-      let paths =
-        match t.t_node with
-        | Pattern p -> pattern_paths p
-        | Expression e -> expression_paths e
-        | _ -> []
-      in
+      let paths = node_paths t.t_node in
       let same l = Path.same path l.Location.txt in
       match List.filter ~f:same paths with
       | [] -> acc
