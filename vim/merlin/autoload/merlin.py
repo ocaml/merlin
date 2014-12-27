@@ -510,6 +510,9 @@ def vim_type_reset():
   current_enclosing = -1
 
 def replace_buffer_portion(start, end, txt):
+    encoding = vim.eval("&fileencoding")
+    if not encoding: encoding = "ascii"
+
     start_line = start['line'] - 1
     b = vim.current.buffer
 
@@ -527,7 +530,7 @@ def replace_buffer_portion(start, end, txt):
     nb_lines = 0
     for line in lines:
         nb_lines += 1
-        b[start_line:0] = [ line ]
+        b[start_line:0] = [ line.encode(encoding) ]
 
     # Properly reindent the modified lines
     vim.current.window.cursor = (start['line'], 0)
