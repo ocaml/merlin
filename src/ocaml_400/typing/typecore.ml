@@ -606,7 +606,22 @@ type type_pat_mode =
 (* type_pat propagates the expected type as well as maps for
    constructors and labels.
    Unification may update the typing environment. *)
+
 let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
+  let snap = snapshot () and env' = !env in
+  try type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty
+  with exn ->
+    Typing_aux.raise_error exn;
+    Btype.backtrack snap;
+    env := env';
+    { pat_desc = Tpat_any;
+      pat_loc = sp.ppat_loc;
+      pat_type = expected_ty;
+      pat_extra = [];
+      pat_env = env';
+    }
+
+and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
   let type_pat ?(mode=mode) ?(env=env) =
     type_pat ~constrs ~labels ~no_existentials ~mode ~env in
   let loc = sp.ppat_loc in
