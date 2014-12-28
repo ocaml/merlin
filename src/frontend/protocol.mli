@@ -37,7 +37,7 @@ type cursor_state = {
 
 type completion = {
   name: string;
-  kind: [`Value|`Constructor|`Label|
+  kind: [`Value|`Constructor|`Variant|`Label|
                `Module|`Modtype|`Type|`MethodCall];
   desc: string;
   info: string;

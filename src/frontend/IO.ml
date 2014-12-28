@@ -168,6 +168,7 @@ module Protocol_io = struct
 
   let string_of_kind = function
     | `Value       -> "Value"
+    | `Variant     -> "Variant"
     | `Constructor -> "Constructor"
     | `Label       -> "Label"
     | `Module      -> "Module"

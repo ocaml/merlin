@@ -182,6 +182,17 @@ let completion_format ~exact name ?path ty =
       Printtyp.type_declaration ident ppf
         (*if exact then verbose_type_decl env t else*)( t);
       `Type
+    | `Variant (label,arg) ->
+      Format.pp_print_string ppf label;
+      Option.iter ~f:(fun t ->
+          Format.pp_print_string ppf " of ";
+          Printtyp.type_scheme ppf t)
+        arg;
+      `Variant
+  in
+  let name = match ty with
+    | `Variant (_, Some _) -> "(" ^ name ^ " )"
+    | _ -> name
   in
   let desc, info =
     match kind with
@@ -202,6 +213,32 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
   let items =
     match kind with
     | `Values ->
+      let all_variants = match target_type with
+        | None -> []
+        | Some t ->
+          let rec variants acc t =
+            let t = Ctype.repr t in
+            match t.Types.desc with
+            | Types.Tvariant { Types. row_fields; row_more } ->
+              let acc = List.fold_left' ~init:acc row_fields
+                  ~f:(fun (label, row_field) acc ->
+                      match row_field with
+                      | Types.Rpresent arg -> ("`" ^ label, arg) :: acc
+                      | _ -> acc)
+              in
+              variants acc row_more
+            | Types.Tconstr _ -> (* FIXME: keep track of parameters *)
+              let t' = try Ctype.full_expand env t with _ -> t in
+              if Types.TypeOps.equal t t' then
+                acc
+              else
+                variants acc t'
+            | _ -> acc
+          in
+          List.fold_left' (variants [] t) ~init:[]
+            ~f:(fun (label,_ as arg) acc ->
+                fmt ~priority:true label (`Variant arg) ~exact:false :: acc)
+      in
       let type_check = match target_type with
         | None -> fun _ -> true
         | Some t ->
@@ -223,7 +260,7 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
              else compl)
           path env []
       in
-      List.map ~f:fst all_values
+      all_variants @ List.map ~f:fst all_values
     | `Constructor ->
       Raw_compat.fold_constructors
         (fun name v compl ->
