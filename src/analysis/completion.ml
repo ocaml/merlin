@@ -190,10 +190,12 @@ let completion_format ~exact name ?path ty =
         arg;
       `Variant
   in
+  (* FIXME: When suggesting variants (and constructors) with parameters,
+     it could be nice to check precedence and add or not parenthesis.
   let name = match ty with
     | `Variant (_, Some _) -> "(" ^ name ^ " )"
     | _ -> name
-  in
+  in*)
   let desc, info =
     match kind with
     | `Module|`Modtype -> "", to_string ()
@@ -211,61 +213,71 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
     let item = completion_format ~exact name ?path ty in
     ((if priority then -1000000 else 0) - time, name), item in
   let items =
+    let snap = Btype.snapshot () in
+    let type_check = match target_type with
+      | None -> fun scheme -> true
+      | Some ty -> fun scheme ->
+        let result =
+          try Ctype.unify_var env ty (Ctype.instance env scheme); true
+          with _ -> false
+        in
+        Btype.backtrack snap;
+        result
+    in
     match kind with
-    | `Values ->
-      let all_variants = match target_type with
+    | `Variants ->
+      begin match target_type with
         | None -> []
         | Some t ->
           let rec variants acc t =
             let t = Ctype.repr t in
             match t.Types.desc with
-            | Types.Tvariant { Types. row_fields; row_more } ->
+            | Types.Tvariant { Types. row_fields; row_more; row_name } ->
               let acc = List.fold_left' ~init:acc row_fields
                   ~f:(fun (label, row_field) acc ->
                       match row_field with
-                      | Types.Rpresent arg -> ("`" ^ label, arg) :: acc
+                      | Types.Rpresent arg when label <> "" ->
+                        ("`" ^ label, arg) :: acc
                       | _ -> acc)
               in
+              let acc = match row_name with
+                | None -> acc
+                | Some (path,te) ->
+                  match (Env.find_type path env).Types.type_manifest with
+                  | None -> acc
+                  | Some te -> variants acc te
+              in
               variants acc row_more
-            | Types.Tconstr _ -> (* FIXME: keep track of parameters *)
-              let t' = try Ctype.full_expand env t with _ -> t in
-              if Types.TypeOps.equal t t' then
-                acc
-              else
-                variants acc t'
+            | Types.Tconstr _ ->
+              expand acc t
             | _ -> acc
+          and expand acc t =
+              (* FIXME: keep track of parameters *)
+            let t' = try Ctype.full_expand env t with _ -> t in
+            if Types.TypeOps.equal t t' then
+              acc
+            else
+              variants acc t'
           in
           List.fold_left' (variants [] t) ~init:[]
             ~f:(fun (label,_ as arg) acc ->
                 fmt ~priority:true label (`Variant arg) ~exact:false :: acc)
-      in
-      let type_check = match target_type with
-        | None -> fun _ -> true
-        | Some t ->
-          let snap = Btype.snapshot () in
-          fun {Types. val_type} ->
-            let result =
-              try Ctype.unify_var env t (Ctype.instance env val_type); true
-              with _ -> false
-            in
-            Btype.backtrack snap;
-            result
-      in
-      let all_values =
-        Env.fold_values
-          (fun name path v compl ->
-             if validate `Lident `Value name
-             then (fmt ~priority:(type_check v) ~exact:(name = prefix)
-                     name ~path (`Value v), v) :: compl
-             else compl)
-          path env []
-      in
-      all_variants @ List.map ~f:fst all_values
+      end
+    | `Values ->
+      let type_check {Types. val_type} = type_check val_type in
+      Env.fold_values
+        (fun name path v compl ->
+           if validate `Lident `Value name then
+             fmt ~priority:(type_check v) ~exact:(name = prefix)
+               name ~path (`Value v) :: compl
+           else compl)
+        path env []
     | `Constructor ->
+      let type_check {Types. cstr_res} = type_check cstr_res in
       Raw_compat.fold_constructors
         (fun name v compl ->
            if validate `Lident `Cons name
-           then (fmt ~exact:(name = prefix) name (`Cons v)) :: compl
+           then (fmt ~priority:(type_check v) ~exact:(name = prefix) name (`Cons v)) :: compl
            else compl)
         path env []
     | `Types ->
@@ -295,12 +307,12 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
   let items = List.rev_map ~f:snd items in
   items @ compl
 
-let default_kinds = [`Values; `Constructor; `Types; `Modules; `Modules_type]
+let default_kinds = [`Variants; `Values; `Constructor; `Types; `Modules; `Modules_type]
 
 let completion_order = function
-  | `Expression  -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
+  | `Expression  -> [`Variants; `Values; `Constructor; `Types; `Modules; `Modules_type]
   | `Structure   -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
-  | `Pattern     -> [`Constructor; `Modules; `Values; `Types; `Modules_type]
+  | `Pattern     -> [`Variants; `Constructor; `Modules; `Values; `Types; `Modules_type]
   | `Module      -> [`Modules; `Modules_type; `Types; `Constructor; `Values]
   | `Module_type -> [`Modules_type; `Modules; `Types; `Constructor; `Values]
   | `Signature   -> [`Types; `Modules; `Modules_type; `Constructor; `Values]
