@@ -302,13 +302,14 @@ let dispatch (state : state) =
       let node, ancestors = Completion.node_at typer pos in
       let open BrowseT in let open Typedtree in
       let target_type = match node with
-        | { t_node = Expression { exp_type } } -> Some exp_type
+        | { t_node = Expression { exp_type = ty} }
+        | { t_node = Pattern { pat_type = ty} } -> Some ty
         | _ -> None
       in
       let context =
         match node, ancestors with
-        | { t_node = Expression { exp_type = arg_type } },
-          { t_node = Expression { exp_desc = Texp_apply ({ exp_type = fun_type }, _);
+        | { t_node = Expression earg },
+          { t_node = Expression { exp_desc = Texp_apply (efun, _);
                                   exp_type = app_type; exp_env } } :: _ ->
           let pr t =
             let ppf, to_string = Format.to_string () in
@@ -316,7 +317,7 @@ let dispatch (state : state) =
               (fun () -> Printtyp.type_scheme exp_env ppf t);
             to_string ()
           in
-          `Application (pr fun_type, pr arg_type, pr app_type)
+          `Application (pr efun.exp_type, pr earg.exp_type, pr app_type)
         | _ -> `Unknown
       in
       let entries =
