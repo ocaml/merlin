@@ -300,7 +300,7 @@ let dispatch (state : state) =
   | (Complete_prefix (prefix, pos) : a request) ->
     let complete typer =
       let node, ancestors = Completion.node_at typer pos in
-      let context =
+      let target_type, context =
         let open BrowseT in
         let open Typedtree in
         match node, ancestors with
@@ -313,10 +313,13 @@ let dispatch (state : state) =
               (fun () -> Printtyp.type_scheme exp_env ppf t);
             to_string ()
           in
+          Some arg_type,
           `Application (pr fun_type, pr arg_type, pr app_type)
-        | _ -> `Unknown
+        | _ ->
+          None, `Unknown
       in
-      let entries = Completion.node_complete state.buffer node prefix in
+      let entries =
+        Completion.node_complete ?target_type state.buffer node prefix in
       { entries = List.rev entries; context }
     in
     let lexer0 = Buffer.lexer state.buffer in

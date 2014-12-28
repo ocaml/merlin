@@ -192,22 +192,38 @@ let completion_format ~exact name ?path ty =
 let item_for_global_module name =
   {Protocol. name; kind = `Module; desc = ""; info = ""}
 
-let completion_fold prefix path kind ~validate env compl =
-  let fmt ~exact name ?path ty =
+let completion_fold ?target_type prefix path kind ~validate env compl =
+  let fmt ?(priority=false) ~exact name ?path ty =
     let time =
       try Ident.binding_time (Path.head (Option.get path))
       with _ -> 0 in
     let item = completion_format ~exact name ?path ty in
-    (- time, name), item in
+    ((if priority then -1000000 else 0) - time, name), item in
   let items =
     match kind with
     | `Values ->
-      Env.fold_values
-        (fun name path v compl ->
-           if validate `Lident `Value name
-           then (fmt ~exact:(name = prefix) name ~path (`Value v)) :: compl
-           else compl)
-        path env []
+      let type_check = match target_type with
+        | None -> fun _ -> true
+        | Some t ->
+          let snap = Btype.snapshot () in
+          fun {Types. val_type} ->
+            let result =
+              try Ctype.unify_var env t (Ctype.instance env val_type); true
+              with _ -> false
+            in
+            Btype.backtrack snap;
+            result
+      in
+      let all_values =
+        Env.fold_values
+          (fun name path v compl ->
+             if validate `Lident `Value name
+             then (fmt ~priority:(type_check v) ~exact:(name = prefix)
+                     name ~path (`Value v), v) :: compl
+             else compl)
+          path env []
+      in
+      List.map ~f:fst all_values
     | `Constructor ->
       Raw_compat.fold_constructors
         (fun name v compl ->
@@ -254,7 +270,7 @@ let completion_order = function
   | `Type        -> [`Types; `Modules; `Modules_type; `Constructor; `Values]
 
 (* Propose completion from a particular node *)
-let node_complete buffer node prefix =
+let node_complete buffer ?target_type node prefix =
   let prefix =
     let li = Longident.parse prefix in
     let suffix = Longident.last li in
@@ -294,7 +310,7 @@ let node_complete buffer node prefix =
       let kind = classify_node node.BrowseT.t_node in
       let order = completion_order kind in
       let add_completions kind compl =
-        completion_fold prefix path kind ~validate env compl in
+        completion_fold ?target_type prefix path kind ~validate env compl in
       List.fold_left' ~f:add_completions order ~init:[]
     with
     | exn ->
