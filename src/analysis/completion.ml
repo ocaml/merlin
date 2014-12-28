@@ -59,15 +59,9 @@ end*)
 let node_at typer pos_cursor =
   let structures = Typer.contents typer in
   let structures = Browse.of_typer_contents structures in
-  try
-    let node, _pos_node =
-      match Browse.deepest_before pos_cursor structures with
-      | Some ({BrowseT. t_loc} as node) -> node, t_loc.Location.loc_end
-      | None -> raise Not_found
-    in
-    node
-  with Not_found ->
-    {BrowseT.dummy with BrowseT.t_env = Typer.env typer}
+  match Browse.deepest_before pos_cursor structures with
+  | node :: ancestors -> node, ancestors
+  | [] -> {BrowseT.dummy with BrowseT.t_env = Typer.env typer}, []
 
 (* List methods of an object.
  * Code taken from [uTop](https://github.com/diml/utop

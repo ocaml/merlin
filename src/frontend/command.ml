@@ -67,6 +67,7 @@ let track_verbosity =
     | Type_enclosing _ -> obj
     | Enclosing _ -> obj
     | Complete_prefix _ -> obj
+    | Expand_prefix _ -> obj
     | _ -> None in
   fun (type a) (request : a request) ->
     match classify request with
@@ -142,7 +143,9 @@ let dispatch (state : state) =
     with_typer state @@ fun typer ->
     let env = match pos with
       | None -> Typer.env typer
-      | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
+      | Some pos ->
+        let node, _ancestors = Completion.node_at typer pos in
+        node.BrowseT.t_env
     in
     let ppf, to_string = Format.to_string () in
     ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
@@ -242,7 +245,7 @@ let dispatch (state : state) =
         aux [] offset
     in
     let small_enclosings =
-      let node = Completion.node_at typer pos in
+      let node, _ = Completion.node_at typer pos in
       let env = node.BrowseT.t_env in
       let include_lident = match node.BrowseT.t_node with
         | BrowseT.Pattern _ -> false
@@ -296,14 +299,25 @@ let dispatch (state : state) =
 
   | (Complete_prefix (prefix, pos) : a request) ->
     with_typer state @@ fun typer ->
-    let node = Completion.node_at typer pos in
-    let compl = Completion.node_complete state.buffer node prefix in
-    List.rev compl
+        let node, ancestors = Completion.node_at typer pos in
+        let context =
+          let open BrowseT in
+          let open Typedtree in
+          match ancestors with
+          | { t_node = Expression { exp_desc = Texp_apply ({ exp_type }, _); exp_env } } :: _ ->
+            let ppf, to_string = Format.to_string () in
+            Printtyp.wrap_printing_env exp_env verbosity
+              (fun () -> Printtyp.type_scheme exp_env ppf exp_type);
+            `Application (to_string ())
+          | _ -> `Unknown
+        in
+        let entries = Completion.node_complete state.buffer node prefix in
+        { entries = List.rev entries; context }
 
   | (Expand_prefix (prefix, pos) : a request) ->
     with_typer state @@ fun typer ->
     let env =
-      let node = Completion.node_at typer pos in
+      let node, _ = Completion.node_at typer pos in
       node.BrowseT.t_env in
     let global_modules = Buffer.global_modules state.buffer in
     let lidents, last =
@@ -331,7 +345,8 @@ let dispatch (state : state) =
         List.map compl
           ~f:Protocol.(fun comp -> {comp with name = lident ^ comp.name})
     in
-    List.concat_map ~f:process_lident lidents
+    { entries = List.concat_map ~f:process_lident lidents;
+      context = `Unknown }
 
   | (Locate (patho, ml_or_mli, opt_pos) : a request) ->
     let env, local_defs =
@@ -339,7 +354,7 @@ let dispatch (state : state) =
       match opt_pos with
       | None     -> Typer.env typer, []
       | Some pos ->
-        let node = Completion.node_at typer pos in
+        let node, _ = Completion.node_at typer pos in
         node.BrowseT.t_env, Typer.contents typer
     in
     let path =
@@ -564,7 +579,9 @@ let dispatch (state : state) =
     with_typer state @@ fun typer ->
     let env = match pos with
       | None -> Typer.env typer
-      | Some pos -> (Completion.node_at typer pos).BrowseT.t_env
+      | Some pos ->
+        let node, _ = Completion.node_at typer pos in
+        node.BrowseT.t_env
     in
     let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
     let aux item =

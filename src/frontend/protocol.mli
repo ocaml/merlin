@@ -43,6 +43,11 @@ type completion = {
   info: string;
 }
 
+type completions = {
+  entries: completion list;
+  context: [`Unknown | `Application of string];
+}
+
 type outline = item list
 and item = {
   outline_name : string ;
@@ -68,10 +73,10 @@ type _ request =
     -> Location.t list request
   | Complete_prefix
     :  string * position
-    -> completion list request
+    -> completions request
   | Expand_prefix
     :  string * position
-    -> completion list request
+    -> completions request
   | Locate
     : string option * [ `ML | `MLI ] * position option
     -> [ `Found of string option * Lexing.position

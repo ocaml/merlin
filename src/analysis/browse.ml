@@ -66,20 +66,23 @@ let traverse_branch pos tree =
   traverse tree [tree]
 
 let deepest_before pos envs =
-  Option.map (local_near pos envs) ~f:(fun t -> List.hd (traverse_branch pos t))
+  match local_near pos envs with
+  | None -> []
+  | Some t -> traverse_branch pos t
 
 let nearest_before pos envs =
-  Option.bind (local_near pos envs) ~f:(fun t ->
+  match local_near pos envs with
+  | None -> []
+  | Some t ->
     let branch = traverse_branch pos t in
-    let rec aux = function
-      | a :: b :: _tail when is_enclosing pos b -> Some a
+    let rec aux l = match l with
+      | a :: b :: _ when is_enclosing pos b -> l
       (* No node matched: fallback to deepest before behavior *)
-      | [_] -> Some (List.hd branch)
-      | [] -> None
+      | [_] -> branch
+      | [] -> []
       | _ :: tail -> aux tail
     in
     aux branch
-  )
 
 let enclosing pos envs =
   let not_enclosing l = not (is_enclosing pos l) in

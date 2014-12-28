@@ -182,6 +182,14 @@ module Protocol_io = struct
             "desc", `String desc;
             "info", `String info]
 
+  let json_of_completions { entries; context } =
+    `Assoc [
+      "entries", `List (List.map json_of_completion entries);
+      "context", (match context with
+          | `Unknown -> `Null
+          | `Application s -> `List [`String "application"; `String s])
+    ]
+
   let rec json_of_outline outline =
     let json_of_item { outline_name ; outline_kind ; pos ; children } =
       `Assoc [
@@ -407,10 +415,10 @@ module Protocol_io = struct
           `List (List.map json_of_type_loc results)
         | Enclosing _, results ->
           `List (List.map (fun loc -> with_location loc []) results)
-        | Complete_prefix _, compl_list ->
-          `List (List.map json_of_completion compl_list)
-        | Expand_prefix _, compl_list ->
-          `List (List.map json_of_completion compl_list)
+        | Complete_prefix _, compl ->
+          json_of_completions compl
+        | Expand_prefix _, compl ->
+          json_of_completions compl
         | Locate _, resp ->
           begin match resp with
           | `At_origin -> `String "Already at definition point"

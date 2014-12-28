@@ -32,16 +32,18 @@ open BrowseT
 (* The deepest context inside or before the node, for instance, navigating
  * through:
  *    foo bar (baz :: tail) <cursor>
- * asking for node from cursor position will return context of "tail". *)
-val deepest_before : Lexing.position -> t list -> t option
+ * asking for node from cursor position will return context of "tail".
+ * Returns the matching node and all its ancestors or the empty list. *)
+val deepest_before : Lexing.position -> t list -> t list
 (* The nearest context inside or before the node, though stopping after
  * leaving enclosing subtree. For instance, navigating
  * through:
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of the complete,
  * application, since none of the arguments or the function expression will
- * get us closer to cursor. *)
-val nearest_before : Lexing.position -> t list -> t option
+ * get us closer to cursor.
+ * Returns the matching node and all its ancestors or the empty list. *)
+val nearest_before : Lexing.position -> t list -> t list
 (* Return the path of nodes enclosing expression at cursor.
  * For instance, navigating through:
  *    f (g x<cursor>))

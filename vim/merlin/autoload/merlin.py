@@ -337,13 +337,17 @@ def vim_complete_cursor(base, vimvar):
   line, col = vim.current.window.cursor
   wspaces = re.compile("[\n ]+")
   try:
-    props = command_complete_cursor(base,line,col)
-    for prop in props:
+    completions = command_complete_cursor(base,line,col)
+    if completions['context']:
+      context = completions['context'][1]
+    else:
+      context = ""
+    for prop in completions['entries']:
       name = prop['name'].replace("'", "''")
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
         (name
         ,re.sub(wspaces, " ", prop['desc']).replace("'", "''")
-        ,prop['info'].replace("'", "''")
+        ,prop['info'].replace("'", "''") or context
         ,prop['kind'][:1].replace("'", "''")
         ))
       vim.command("call add(%s, l:tmp)" % vimvar)
@@ -356,6 +360,7 @@ def vim_expand_prefix(base, vimvar):
   line, col = vim.current.window.cursor
   try:
     l = command("expand", "prefix", base, "at", {'line' : line, 'col': col})
+    l = l['entries']
     l = map(lambda prop: prop['name'], l)
     l = uniq(sorted(l))
     for prop in l:
