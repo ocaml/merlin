@@ -524,7 +524,7 @@ def replace_buffer_portion(start, end, txt):
 
     del b[start_line:end['line']]
 
-    txt = prefix + txt + suffix
+    txt = prefix.decode(encoding) + txt + suffix.decode(encoding)
     lines = txt.split('\n')
     lines.reverse()
     nb_lines = 0
