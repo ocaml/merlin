@@ -300,9 +300,12 @@ let dispatch (state : state) =
   | (Complete_prefix (prefix, pos) : a request) ->
     let complete typer =
       let node, ancestors = Completion.node_at typer pos in
-      let target_type, context =
-        let open BrowseT in
-        let open Typedtree in
+      let open BrowseT in let open Typedtree in
+      let target_type = match node with
+        | { t_node = Expression { exp_type } } -> Some exp_type
+        | _ -> None
+      in
+      let context =
         match node, ancestors with
         | { t_node = Expression { exp_type = arg_type } },
           { t_node = Expression { exp_desc = Texp_apply ({ exp_type = fun_type }, _);
@@ -313,10 +316,8 @@ let dispatch (state : state) =
               (fun () -> Printtyp.type_scheme exp_env ppf t);
             to_string ()
           in
-          Some arg_type,
           `Application (pr fun_type, pr arg_type, pr app_type)
-        | _ ->
-          None, `Unknown
+        | _ -> `Unknown
       in
       let entries =
         Completion.node_complete ?target_type state.buffer node prefix in
@@ -325,16 +326,21 @@ let dispatch (state : state) =
     let lexer0 = Buffer.lexer state.buffer in
     let lexer =
       History.seek_backward
-        (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) < 0)
+        (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) <= 0)
         lexer0
     in
     let need_token =
+      let open Raw_parser in
       let exns, item = History.focused lexer in
       let loc = Lexer.item_location item in
-      if Parsing_aux.compare_pos pos loc = 0 then
+      if Parsing_aux.compare_pos pos loc = 0 &&
+         (match item with
+          | Lexer.Valid (_, (LIDENT _ | UIDENT _), _) -> true
+          | _ -> false)
+      then
         None
       else
-        Some (exns, Lexer.Valid (pos, Raw_parser.LIDENT "", pos))
+        Some (exns, Lexer.Valid (pos, LIDENT "", pos))
     in
     begin match need_token with
       | None -> with_typer state complete
