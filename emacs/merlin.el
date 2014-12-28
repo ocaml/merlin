@@ -1121,8 +1121,9 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-completion-data (ident)
   "Return the data for completion of IDENT, i.e. a list of pairs (NAME . TYPE)."
-  (let ((prefix (merlin-completion-prefix ident))
-        (data (append (merlin-get-completion ident) nil)))
+  (let* ((prefix (merlin-completion-prefix ident))
+         (completion (merlin-get-completion ident))
+         (data (append (cdr (assoc 'entries completion)) nil)))
     (mapcar (lambda (entry)
                 (list (concat prefix (cdr (assoc 'name entry)))
                       (merlin-completion-format-entry entry)
