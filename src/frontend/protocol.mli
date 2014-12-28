@@ -45,7 +45,9 @@ type completion = {
 
 type completions = {
   entries: completion list;
-  context: [`Unknown | `Application of string];
+  context: [ `Unknown
+           | `Application of string * string * string
+           ]
 }
 
 type outline = item list

@@ -298,21 +298,54 @@ let dispatch (state : state) =
     List.map (fun t -> t.BrowseT.t_loc) path
 
   | (Complete_prefix (prefix, pos) : a request) ->
-    with_typer state @@ fun typer ->
-        let node, ancestors = Completion.node_at typer pos in
-        let context =
-          let open BrowseT in
-          let open Typedtree in
-          match ancestors with
-          | { t_node = Expression { exp_desc = Texp_apply ({ exp_type }, _); exp_env } } :: _ ->
+    let complete typer =
+      let node, ancestors = Completion.node_at typer pos in
+      let context =
+        let open BrowseT in
+        let open Typedtree in
+        match node, ancestors with
+        | { t_node = Expression { exp_type = arg_type } },
+          { t_node = Expression { exp_desc = Texp_apply ({ exp_type = fun_type }, _);
+                                  exp_type = app_type; exp_env } } :: _ ->
+          let pr t =
             let ppf, to_string = Format.to_string () in
             Printtyp.wrap_printing_env exp_env verbosity
-              (fun () -> Printtyp.type_scheme exp_env ppf exp_type);
-            `Application (to_string ())
-          | _ -> `Unknown
-        in
-        let entries = Completion.node_complete state.buffer node prefix in
-        { entries = List.rev entries; context }
+              (fun () -> Printtyp.type_scheme exp_env ppf t);
+            to_string ()
+          in
+          `Application (pr fun_type, pr arg_type, pr app_type)
+        | _ -> `Unknown
+      in
+      let entries = Completion.node_complete state.buffer node prefix in
+      { entries = List.rev entries; context }
+    in
+    let lexer0 = Buffer.lexer state.buffer in
+    let lexer =
+      History.seek_backward
+        (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) < 0)
+        lexer0
+    in
+    let need_token =
+      let exns, item = History.focused lexer in
+      let loc = Lexer.item_location item in
+      if Parsing_aux.compare_pos pos loc = 0 then
+        None
+      else
+        Some (exns, Lexer.Valid (pos, Raw_parser.LIDENT "", pos))
+    in
+    begin match need_token with
+      | None -> with_typer state complete
+      | Some token ->
+        (* Setup fake AST *)
+        let lexer' = History.fake_insert token lexer in
+        let lexer' = History.seek (History.position lexer0 + 1) lexer' in
+        ignore (Buffer.update state.buffer lexer' : [> ]);
+        try_finally
+          (* Complete on adjusted buffer *)
+          (fun () -> with_typer state complete)
+          (* Restore original buffer *)
+          (fun () -> ignore (Buffer.update state.buffer lexer0 : [> ]))
+    end
 
   | (Expand_prefix (prefix, pos) : a request) ->
     with_typer state @@ fun typer ->

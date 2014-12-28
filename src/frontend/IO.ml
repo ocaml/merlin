@@ -187,7 +187,14 @@ module Protocol_io = struct
       "entries", `List (List.map json_of_completion entries);
       "context", (match context with
           | `Unknown -> `Null
-          | `Application s -> `List [`String "application"; `String s])
+          | `Application (s1,s2,s3) ->
+            let a = `Assoc [
+                "fun_type", `String s1;
+                "arg_type", `String s2;
+                "app_type", `String s3;
+              ]
+            in
+            `List [`String "application"; a])
     ]
 
   let rec json_of_outline outline =

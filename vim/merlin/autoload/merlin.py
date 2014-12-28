@@ -339,7 +339,7 @@ def vim_complete_cursor(base, vimvar):
   try:
     completions = command_complete_cursor(base,line,col)
     if completions['context']:
-      context = completions['context'][1]
+      context = str(completions['context'][1]).replace("'", "''")
     else:
       context = ""
     for prop in completions['entries']:

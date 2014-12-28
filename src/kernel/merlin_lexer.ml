@@ -173,6 +173,12 @@ let put_mark t mark =
 
 let get_mark t = t.marker
 
+let item_location = function
+  | Valid (loc_start,_,loc_end) ->
+    {Location. loc_start; loc_end; loc_ghost = false}
+  | Error (_,loc) ->
+    loc
+
 let token is = function
   | Valid (_,op,_) -> (is op <> None)
   | _ -> false

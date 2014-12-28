@@ -57,9 +57,19 @@ val seek_backward : ('a -> bool) -> 'a t -> 'a t
  *)
 val move : int -> 'a t -> 'a t
 
+(** Seek a precise position.
+  *
+  * May stop earlier if it reaches an end of history.
+ *)
+val seek : int -> 'a t -> 'a t
+
 (** Adds an element to the left of the cursor and drops the tail:
   * insert w [..zyx|abc..] = [..zyxw|] *)
 val insert : 'a -> 'a t -> 'a t
+
+(** Adds an element to the left of the cursor and keep the tail:
+  * insert w [..zyx|abc..] = [..zyxw|abc] *)
+val fake_insert : 'a -> 'a t -> 'a t
 
 (** Modifies focused element. *)
 val modify : ('a -> 'a) -> 'a t -> 'a t

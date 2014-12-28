@@ -85,10 +85,21 @@ let move n = function
     move (n + 1) head (position - 1) (x :: tail)
   | t -> t
 
+(** Seek a precise position.
+  *
+  * May stop earlier if it reaches an end of history.
+  *)
+let seek n h = move (n - position h) h
+
 (** Adds an element to the left of the cursor:
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)
 let insert x h =
   {head = List.More (x, h.head); position = h.position + 1; tail = []}
+
+(** Adds an element to the left of the cursor and keep the tail:
+  * insert w [..zyx|abc..] = [..zyxw|abc] *)
+let fake_insert x h =
+  {head = List.More (x, h.head); position = h.position + 1; tail = h.tail}
 
 (** Modifies focused element. *)
 let modify f = function
