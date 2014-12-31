@@ -200,10 +200,10 @@ let completion_format ~exact name ?path ty =
     match kind with
     | `Module|`Modtype -> "", to_string ()
     | _ -> to_string (), "" in
-  {Protocol. name; kind; desc; info}
+  {Protocol.Compl. name; kind; desc; info}
 
 let item_for_global_module name =
-  {Protocol. name; kind = `Module; desc = ""; info = ""}
+  {Protocol.Compl. name; kind = `Module; desc = ""; info = ""}
 
 let completion_fold ?target_type prefix path kind ~validate env compl =
   let fmt ?(priority=false) ~exact name ?path ty =
@@ -405,7 +405,7 @@ let node_complete buffer ?target_type node prefix =
     List.map (fun (name,ty) ->
       let ppf, to_string = Format.to_string () in
       Printtyp.type_scheme ppf ty;
-      {Protocol.
+      {Protocol.Compl.
         name;
         kind = `MethodCall;
         desc = to_string ();
@@ -421,7 +421,7 @@ let node_complete buffer ?target_type node prefix =
         let compl = find prefix in
         List.fold_left (Buffer.global_modules buffer) ~init:compl
           ~f:begin fun compl modname ->
-          let default = { Protocol.
+          let default = { Protocol.Compl.
             name = modname;
             kind = `Module;
             desc = "";
@@ -439,3 +439,28 @@ let node_complete buffer ?target_type node prefix =
         end
       | _ -> find prefix
     with Not_found -> []
+
+let labels_of_application =
+  let open Typedtree in function
+    | {exp_env; exp_desc = Texp_apply ({exp_type = fun_type}, args) } ->
+      let fun_type = Ctype.full_expand exp_env fun_type in
+      let rec labels t = match (Ctype.repr t).Types.desc with
+        | Types.Tarrow (label, lhs, rhs, _) ->
+          (label, lhs) :: labels rhs
+        | _ -> []
+      in
+      let labels = labels fun_type in
+      let is_application_of label (label',expr,_) =
+        label = label' && expr <> None
+      in
+      let unapplied_label (label,_) =
+        label <> "" &&
+        not (List.exists (is_application_of label) args)
+      in
+      let labels = List.filter labels ~f:unapplied_label in
+      List.map labels
+        ~f:(fun (label,ty as acc) ->
+            if label.[0] <> '?' then
+              "~" ^ label, ty
+            else acc)
+    | _ -> []

@@ -177,24 +177,22 @@ module Protocol_io = struct
     | `MethodCall  -> "#"
     | `Exn         -> "Exn"
 
-  let json_of_completion { name; kind; desc; info} =
+  let json_of_completion {Compl. name; kind; desc; info} =
     `Assoc ["name", `String name;
             "kind", `String (string_of_kind kind);
             "desc", `String desc;
             "info", `String info]
 
-  let json_of_completions { entries; context } =
+  let json_of_completions {Compl. entries; context } =
     `Assoc [
       "entries", `List (List.map json_of_completion entries);
       "context", (match context with
           | `Unknown -> `Null
-          | `Application (s1,s2,s3) ->
-            let a = `Assoc [
-                "fun_type", `String s1;
-                "arg_type", `String s2;
-                "app_type", `String s3;
-              ]
-            in
+          | `Application {Compl. argument_type; labels} ->
+            let label (name,ty) = `Assoc ["name", `String name;
+                                          "type", `String ty] in
+            let a = `Assoc ["argument_type", `String argument_type;
+                            "labels", `List (List.map label labels)] in
             `List [`String "application"; a])
     ]
 

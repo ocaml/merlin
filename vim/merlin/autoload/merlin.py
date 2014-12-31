@@ -11,6 +11,9 @@ vimbufsync.check_version("0.1.0",who="merlin")
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
+re_wspaces = re.compile("[\n ]+")
+re_shorten_start = re.compile("^(val|external).* : *")
+re_shorten_end = re.compile(" = .*$")
 
 ######## ERROR MANAGEMENT
 
@@ -168,6 +171,13 @@ def uniq(seq):
   seen = set()
   seen_add = seen.add
   return [ x for x in seq if not (x in seen or seen_add(x))]
+
+def shorten_desc(prop):
+  if prop['kind'] == 'Value':
+    return re.sub(re_shorten_end, "",
+            re.sub(re_shorten_start, ": ", prop['desc']))
+  else:
+    return prop['desc']
 
 ######## BASIC COMMANDS
 
@@ -335,21 +345,25 @@ def vim_reload():
 def vim_complete_cursor(base, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
-  wspaces = re.compile("[\n ]+")
+  prep = lambda str: re.sub(re_wspaces, " ", str).replace("'", "''")
+  if vim.eval("g:merlin_short_completion") in ["", "0"]:
+      desc = lambda prop: prop['desc']
+  else:
+      desc = shorten_desc
   try:
     completions = command_complete_cursor(base,line,col)
-    if completions['context']:
-      context = str(completions['context'][1]).replace("'", "''")
-    else:
-      context = ""
+    if completions['context'] and completions['context'][0] == 'application':
+      app = completions['context'][1]
+      vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s', 'empty':1}" %
+        (prep(base),prep(app['argument_type']),'',':'))
+      vim.command("call add(%s, l:tmp)" % vimvar)
+      for label in app['labels']:
+        vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+                (prep(label['name']),prep(label['type']),'','~'))
+        vim.command("call add(%s, l:tmp)" % vimvar)
     for prop in completions['entries']:
-      name = prop['name'].replace("'", "''")
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-        (name
-        ,re.sub(wspaces, " ", prop['desc']).replace("'", "''")
-        ,prop['info'].replace("'", "''") or context
-        ,prop['kind'][:1].replace("'", "''")
-        ))
+        (prep(prop['name']),prep(desc(prop)),prep(prop['info']),prep(prop['kind'][:1])))
       vim.command("call add(%s, l:tmp)" % vimvar)
   except MerlinExc as e:
     try_print_error(e)

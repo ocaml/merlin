@@ -35,20 +35,28 @@ type cursor_state = {
   marker: bool;
 }
 
-type completion = {
-  name: string;
-  kind: [`Value|`Constructor|`Variant|`Label|
-               `Module|`Modtype|`Type|`MethodCall];
-  desc: string;
-  info: string;
-}
+module Compl : sig
+  type entry = {
+    name: string;
+    kind: [`Value|`Constructor|`Variant|`Label|
+           `Module|`Modtype|`Type|`MethodCall];
+    desc: string;
+    info: string;
+  }
 
-type completions = {
-  entries: completion list;
-  context: [ `Unknown
-           | `Application of string * string * string
-           ]
-}
+  type application_context = {
+    argument_type: string;
+    labels : (string * string) list;
+  }
+
+  type t = {
+    entries: entry list;
+    context: [ `Unknown
+             | `Application of application_context
+             ]
+  }
+end
+type completions = Compl.t
 
 type outline = item list
 and item = {

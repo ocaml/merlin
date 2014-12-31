@@ -309,20 +309,24 @@ let dispatch (state : state) =
       let context =
         match node, ancestors with
         | { t_node = Expression earg },
-          { t_node = Expression { exp_desc = Texp_apply (efun, _);
-                                  exp_type = app_type; exp_env } } :: _ ->
+          { t_node = Expression ({ exp_desc = Texp_apply (efun, _);
+                                   exp_type = app_type; exp_env } as app) } :: _ ->
           let pr t =
             let ppf, to_string = Format.to_string () in
             Printtyp.wrap_printing_env exp_env verbosity
               (fun () -> Printtyp.type_scheme exp_env ppf t);
             to_string ()
           in
-          `Application (pr efun.exp_type, pr earg.exp_type, pr app_type)
+          let labels = Completion.labels_of_application app in
+          `Application { Compl.
+                         argument_type = pr earg.exp_type;
+                         labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
+                       }
         | _ -> `Unknown
       in
       let entries =
         Completion.node_complete ?target_type state.buffer node prefix in
-      { entries = List.rev entries; context }
+      {Compl. entries = List.rev entries; context }
     in
     let lexer0 = Buffer.lexer state.buffer in
     let lexer =
@@ -372,6 +376,7 @@ let dispatch (state : state) =
       fun s -> Str.string_match last s 0
     in
     let validate _ _ s = validate' s in
+    let open Compl in
     let process_lident lident =
       let compl =
         let aux kind compl =

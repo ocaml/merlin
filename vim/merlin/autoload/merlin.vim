@@ -43,6 +43,10 @@ if !exists("g:merlin_dwim_completion")
   let g:merlin_dwim_completion = 1
 endif
 
+if !exists("g:merlin_short_completion")
+  let g:merlin_short_completion = 1
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
