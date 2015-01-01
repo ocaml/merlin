@@ -359,7 +359,7 @@ endfunction
 
 function! merlin#ErrorLocList()
   let l:errors = []
-  if expand('%:e') == 'ml'
+  if !exists('b:merlin_error_check') || b:merlin_error_check == 1
     py <<EOF
 try:
   merlin.sync_full_buffer()
