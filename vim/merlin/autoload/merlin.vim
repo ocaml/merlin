@@ -277,21 +277,25 @@ function! merlin#Complete(findstart,base)
       let start -= 1
     endif
 
+    let s:compl_base = strpart(line, start, col('.') - 1 - start)
+
     " Return the column of the last word, which is going to be changed.
     " Remember the text that comes before it in s:compl_prefix.
     if lastword == -1
       let s:compl_prefix = ''
+      let s:compl_suffix = s:compl_base
     else
       let s:compl_prefix = strpart(line, start, lastword - start)
+      let s:compl_suffix = strpart(line, lastword, col('.') - 1 - lastword)
     endif
 
     " Query completion
-    let s:compl_base = strpart(line, start, col('.') - 1 - start)
     let s:compl_result = []
-    py merlin.vim_complete_cursor(vim.eval("s:compl_base"),"s:compl_result")
+    py vim.command("let l:compl_succeed = %d" %
+\    merlin.vim_complete_cursor(vim.eval("s:compl_base"),vim.eval("s:compl_suffix"),"s:compl_result"))
    
     " If empty, switch to dwim
-    let s:compl_dwim = g:merlin_completion_dwim && s:compl_result == []
+    let s:compl_dwim = g:merlin_completion_dwim && !l:compl_succeed
     if s:compl_dwim
       let s:compl_prefix = ''
       py merlin.vim_expand_prefix(vim.eval("s:compl_base"),"s:compl_result")
@@ -311,7 +315,7 @@ function! merlin#Complete(findstart,base)
     if s:compl_dwim
       py merlin.vim_expand_prefix(vim.eval("base"),"s:compl_result")
     else
-      py merlin.vim_complete_cursor(vim.eval("base"),"s:compl_result")
+      py merlin.vim_complete_cursor(vim.eval("base"),vim.eval("s:compl_suffix"),"s:compl_result")
     endif
   endif
 

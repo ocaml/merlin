@@ -345,7 +345,7 @@ def vim_reload():
   return command("refresh")
 
 # Complete
-def vim_complete_cursor(base, vimvar):
+def vim_complete_cursor(base, suffix, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
   prep = lambda str: re.sub(re_wspaces, " ", str).replace("'", "''")
@@ -355,16 +355,18 @@ def vim_complete_cursor(base, vimvar):
       desc = lambda prop: prop['desc']
   try:
     completions = command_complete_cursor(base,line,col)
+    success = len(completions['entries']) > 0
     if completions['context'] and completions['context'][0] == 'application':
       app = completions['context'][1]
-      if vim_is_set("g:merlin_completion_argtype") and (not base or atom_bound.match(base[0])):
+      if vim_is_set("g:merlin_completion_argtype") and (not suffix or atom_bound.match(suffix[0])):
         vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s', 'empty':1}" %
-                (prep(base),prep(app['argument_type']),'',':'))
+                (prep(suffix),prep(app['argument_type']),'',':'))
         vim.command("call add(%s, l:tmp)" % vimvar)
       for label in app['labels']:
         name = label['name']
-        if not name.startswith(base): name = name.replace("?","~")
-        if name.startswith(base):
+        if not name.startswith(suffix): name = name.replace("?","~")
+        if name.startswith(suffix):
+          success = True
           vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
                   (prep(name),prep(label['name'] + ':' + label['type']),'','~'))
           vim.command("call add(%s, l:tmp)" % vimvar)
@@ -372,8 +374,10 @@ def vim_complete_cursor(base, vimvar):
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
         (prep(prop['name']),prep(desc(prop)),prep(prop['info']),prep(prop['kind'][:1])))
       vim.command("call add(%s, l:tmp)" % vimvar)
+    return success
   except MerlinExc as e:
     try_print_error(e)
+    return False
 
 def vim_expand_prefix(base, vimvar):
   sync_buffer()
