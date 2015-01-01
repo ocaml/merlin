@@ -311,10 +311,18 @@ let dispatch (state : state) =
         | { t_node = Expression earg },
           { t_node = Expression ({ exp_desc = Texp_apply (efun, _);
                                    exp_type = app_type; exp_env } as app) } :: _ ->
+          Printtyp.wrap_printing_env exp_env verbosity @@ fun () ->
+          (* Type variables shared accross arguments should all be
+             printed with the same name.
+             [Printtyp.type_scheme] ensure that a name is unique within a given
+             type, but not accross different invocations.
+             [reset] followed by calls to [mark_loops] and [type_sch] provide
+             that *)
+          Printtyp.reset ();
           let pr t =
             let ppf, to_string = Format.to_string () in
-            Printtyp.wrap_printing_env exp_env verbosity
-              (fun () -> Printtyp.type_scheme exp_env ppf t);
+            Printtyp.mark_loops t;
+            Printtyp.type_sch ppf t;
             to_string ()
           in
           let labels = Completion.labels_of_application app in
