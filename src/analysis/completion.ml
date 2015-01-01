@@ -224,99 +224,105 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
         Btype.backtrack snap;
         result
     in
-    match kind with
-    | `Variants ->
-      begin match target_type with
-        | None -> []
-        | Some t ->
-          let rec variants acc t =
-            let t = Ctype.repr t in
-            match t.Types.desc with
-            | Types.Tvariant { Types. row_fields; row_more; row_name } ->
-              let acc = List.fold_left' ~init:acc row_fields
-                  ~f:(fun (label, row_field) acc ->
-                      match row_field with
-                      | Types.Rpresent arg when label <> "" ->
-                        ("`" ^ label, arg) :: acc
-                      | _ -> acc)
-              in
-              let acc = match row_name with
-                | None -> acc
-                | Some (path,te) ->
-                  match (Env.find_type path env).Types.type_manifest with
+    let rec of_kind = function
+      | `Variants ->
+        begin match target_type with
+          | None -> []
+          | Some t ->
+            let rec variants acc t =
+              let t = Ctype.repr t in
+              match t.Types.desc with
+              | Types.Tvariant { Types. row_fields; row_more; row_name } ->
+                let acc = List.fold_left' ~init:acc row_fields
+                    ~f:(fun (label, row_field) acc ->
+                        match row_field with
+                        | Types.Rpresent arg when label <> "" ->
+                          ("`" ^ label, arg) :: acc
+                        | _ -> acc)
+                in
+                let acc = match row_name with
                   | None -> acc
-                  | Some te -> variants acc te
-              in
-              variants acc row_more
-            | Types.Tconstr _ ->
-              expand acc t
-            | _ -> acc
-          and expand acc t =
+                  | Some (path,te) ->
+                    match (Env.find_type path env).Types.type_manifest with
+                    | None -> acc
+                    | Some te -> variants acc te
+                in
+                variants acc row_more
+              | Types.Tconstr _ ->
+                expand acc t
+              | _ -> acc
+            and expand acc t =
               (* FIXME: keep track of parameters *)
-            let t' = try Ctype.full_expand env t with _ -> t in
-            if Types.TypeOps.equal t t' then
-              acc
-            else
-              variants acc t'
-          in
-          List.fold_left' (variants [] t) ~init:[]
-            ~f:(fun (label,_ as arg) acc ->
-                fmt ~priority:true label (`Variant arg) ~exact:false :: acc)
-      end
-    | `Values ->
-      let type_check {Types. val_type} = type_check val_type in
-      Env.fold_values
-        (fun name path v compl ->
-           if validate `Lident `Value name then
-             fmt ~priority:(type_check v) ~exact:(name = prefix)
-               name ~path (`Value v) :: compl
-           else compl)
-        path env []
-    | `Constructor ->
-      let type_check {Types. cstr_res} = type_check cstr_res in
-      Raw_compat.fold_constructors
-        (fun name v compl ->
-           if validate `Lident `Cons name
-           then (fmt ~priority:(type_check v) ~exact:(name = prefix) name (`Cons v)) :: compl
-           else compl)
-        path env []
-    | `Types ->
-      Raw_compat.fold_types
-        (fun name path decl compl ->
-           if validate `Lident `Typ name
-           then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
-           else compl)
-        path env []
-    | `Modules ->
-      Env.fold_modules
-        (fun name path v compl ->
-           let v = Raw_compat.extract_module_declaration v in
-           if validate `Uident `Mod name
-           then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
-           else compl)
-        path env []
-    | `Modules_type ->
-      Env.fold_modtypes
-        (fun name path v compl ->
-           if validate `Uident `Mod name
-           then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
-           else compl)
-        path env []
+              let t' = try Ctype.full_expand env t with _ -> t in
+              if Types.TypeOps.equal t t' then
+                acc
+              else
+                variants acc t'
+            in
+            List.fold_left' (variants [] t) ~init:[]
+              ~f:(fun (label,_ as arg) acc ->
+                  fmt ~priority:true label (`Variant arg) ~exact:false :: acc)
+        end
+      | `Values ->
+        let type_check {Types. val_type} = type_check val_type in
+        Env.fold_values
+          (fun name path v compl ->
+             if validate `Lident `Value name then
+               fmt ~priority:(type_check v) ~exact:(name = prefix)
+                 name ~path (`Value v) :: compl
+             else compl)
+          path env []
+      | `Constructor ->
+        let type_check {Types. cstr_res} = type_check cstr_res in
+        Raw_compat.fold_constructors
+          (fun name v compl ->
+             if validate `Lident `Cons name
+             then (fmt ~priority:(type_check v) ~exact:(name = prefix) name (`Cons v)) :: compl
+             else compl)
+          path env []
+      | `Types ->
+        Raw_compat.fold_types
+          (fun name path decl compl ->
+             if validate `Lident `Typ name
+             then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
+             else compl)
+          path env []
+      | `Modules ->
+        Env.fold_modules
+          (fun name path v compl ->
+             let v = Raw_compat.extract_module_declaration v in
+             if validate `Uident `Mod name
+             then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
+             else compl)
+          path env []
+      | `Modules_type ->
+        Env.fold_modtypes
+          (fun name path v compl ->
+             if validate `Uident `Mod name
+             then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
+             else compl)
+          path env []
+      | `Group (kinds) ->
+        List.concat_map ~f:of_kind kinds
+    in
+    of_kind kind
   in
   let items = List.sort items ~cmp:(fun (a,_) (b,_) -> compare a b) in
   let items = List.rev_map ~f:snd items in
   items @ compl
 
-let default_kinds = [`Variants; `Values; `Constructor; `Types; `Modules; `Modules_type]
+let gen_values = `Group [`Values; `Constructor]
+
+let default_kinds = [`Variants; gen_values; `Types; `Modules; `Modules_type]
 
 let completion_order = function
-  | `Expression  -> [`Variants; `Values; `Constructor; `Types; `Modules; `Modules_type]
-  | `Structure   -> [`Values; `Constructor; `Types; `Modules; `Modules_type]
+  | `Expression  -> [`Variants; gen_values; `Types; `Modules; `Modules_type]
+  | `Structure   -> [gen_values; `Types; `Modules; `Modules_type]
   | `Pattern     -> [`Variants; `Constructor; `Modules; `Values; `Types; `Modules_type]
-  | `Module      -> [`Modules; `Modules_type; `Types; `Constructor; `Values]
-  | `Module_type -> [`Modules_type; `Modules; `Types; `Constructor; `Values]
-  | `Signature   -> [`Types; `Modules; `Modules_type; `Constructor; `Values]
-  | `Type        -> [`Types; `Modules; `Modules_type; `Constructor; `Values]
+  | `Module      -> [`Modules; `Modules_type; `Types; gen_values]
+  | `Module_type -> [`Modules_type; `Modules; `Types; gen_values]
+  | `Signature   -> [`Types; `Modules; `Modules_type; gen_values]
+  | `Type        -> [`Types; `Modules; `Modules_type; gen_values]
 
 (* Propose completion from a particular node *)
 let node_complete buffer ?target_type node prefix =
