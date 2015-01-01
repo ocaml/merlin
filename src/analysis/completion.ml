@@ -443,11 +443,17 @@ let node_complete buffer ?target_type node prefix =
 let labels_of_application =
   let open Typedtree in function
     | {exp_env; exp_desc = Texp_apply ({exp_type = fun_type}, args) } ->
-      let fun_type = Ctype.full_expand exp_env fun_type in
-      let rec labels t = match (Ctype.repr t).Types.desc with
+      let rec labels t =
+        let t = Ctype.repr t in
+        match t.Types.desc with
         | Types.Tarrow (label, lhs, rhs, _) ->
           (label, lhs) :: labels rhs
-        | _ -> []
+        | _ ->
+          let t' = Ctype.full_expand exp_env t in
+          if Types.TypeOps.equal t t' then
+            []
+          else
+            labels t'
       in
       let labels = labels fun_type in
       let is_application_of label (label',expr,_) =
