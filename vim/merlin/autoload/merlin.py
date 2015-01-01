@@ -359,7 +359,7 @@ def vim_complete_cursor(base, vimvar):
       vim.command("call add(%s, l:tmp)" % vimvar)
       for label in app['labels']:
         vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-                (prep(label['name']),prep(label['type']),'','~'))
+                (prep(label['name'].replace("?","~")),prep(label['name'].replace("~","") + ':' + label['type']),'','~'))
         vim.command("call add(%s, l:tmp)" % vimvar)
     for prop in completions['entries']:
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %

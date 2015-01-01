@@ -451,7 +451,9 @@ let labels_of_application =
       in
       let labels = labels fun_type in
       let is_application_of label (label',expr,_) =
-        label = label' && expr <> None
+        label = label' && match expr with
+        | Some {exp_loc} -> not exp_loc.Location.loc_ghost
+        | None -> false
       in
       let unapplied_label (label,_) =
         label <> "" &&
