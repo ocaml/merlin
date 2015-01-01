@@ -31,6 +31,7 @@ open Std
 exception Weak_error of exn
 
 val raise_error: exn -> unit
+val weak_raise: exn -> 'a
 val catch_errors: exn list ref -> (unit -> 'a) -> 'a
 val uncatch_errors: (unit -> 'a) -> 'a
 

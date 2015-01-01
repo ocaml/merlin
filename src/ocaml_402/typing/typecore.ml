@@ -3248,7 +3248,8 @@ and type_application env funct sargs =
            (List.rev args),
          instance env (result_type omitted ty_fun))
     | (l1, sarg1) :: sargl ->
-        let (ty1, ty2) =
+      let ty1, ty2 =
+        try
           let ty_fun = expand_head env ty_fun in
           match ty_fun.desc with
             Tvar _ ->
@@ -3274,22 +3275,24 @@ and type_application env funct sargs =
               match ty_res.desc with
                 Tarrow _ ->
                   if (Clflags.classic () || not (has_label l1 ty_fun)) then
-                    raise (Error(sarg1.pexp_loc, env,
-                                 apply_wrong_label l1 ty_res))
+                    Typing_aux.weak_raise (Error(sarg1.pexp_loc, env,
+                                    apply_wrong_label l1 ty_res))
                   else
-                    raise (Error(funct.exp_loc, env, Incoherent_label_order))
+                    Typing_aux.weak_raise (Error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
-                  raise(Error(funct.exp_loc, env, apply_non_function
-                                (expand_head env funct.exp_type)))
-        in
-        let optional = if is_optional l1 then Optional else Required in
-        let arg1 () =
-          let arg1 = type_expect env sarg1 ty1 in
-          if optional = Optional then
-            unify_exp env arg1 (type_option(newvar()));
-          arg1
-        in
-        type_unknown_args ((l1, Some arg1, optional) :: args) omitted ty2 sargl
+                  Typing_aux.weak_raise(Error(funct.exp_loc, env, apply_non_function
+                                    (expand_head env funct.exp_type)))
+        with Typing_aux.Weak_error _ ->
+          newvar(), ty_fun
+      in
+      let optional = if is_optional l1 then Optional else Required in
+      let arg1 () =
+        let arg1 = type_expect env sarg1 ty1 in
+        if optional = Optional then
+          unify_exp env arg1 (type_option(newvar()));
+        arg1
+      in
+      type_unknown_args ((l1, Some arg1, optional) :: args) omitted ty2 sargl
   in
   let ignore_labels =
     Clflags.classic () ||

@@ -37,6 +37,10 @@ let raise_error exn =
   | Some (l,h) -> l := (*if ~!relax_typer then Weak_error exn else exn*) exn :: !l
   | None -> raise exn
 
+let weak_raise exn =
+  raise_error exn;
+  raise (Weak_error exn)
+
 let catch_errors caught f =
   Fluid.let' errors (Some (caught,Hashtbl.create 3)) f
 
