@@ -310,7 +310,8 @@ let dispatch (state : state) =
         match node, ancestors with
         | { t_node = Expression earg },
           { t_node = Expression ({ exp_desc = Texp_apply (efun, _);
-                                   exp_type = app_type; exp_env } as app) } :: _ ->
+                                   exp_type = app_type; exp_env } as app) } :: _
+          when earg != efun ->
           Printtyp.wrap_printing_env exp_env verbosity @@ fun () ->
           (* Type variables shared accross arguments should all be
              printed with the same name.
