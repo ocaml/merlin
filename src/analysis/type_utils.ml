@@ -176,9 +176,6 @@ let rec mod_smallerthan n m =
 
 
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
-  let module Print = struct
-  end
-  in
   let print_expr expression =
     let (str, _sg, _) =
       Typemod.type_toplevel_phrase env [Ast_helper.Str.eval expression]
