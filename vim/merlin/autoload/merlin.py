@@ -179,6 +179,9 @@ def shorten_desc(prop):
   else:
     return prop['desc']
 
+def vim_is_set(name):
+  return not (vim.eval('exists("%s") && %s' % (name,name)) in ["", "0"])
+
 ######## BASIC COMMANDS
 
 def parse_position(pos):
@@ -346,21 +349,25 @@ def vim_complete_cursor(base, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
   prep = lambda str: re.sub(re_wspaces, " ", str).replace("'", "''")
-  if vim.eval("g:merlin_short_completion") in ["", "0"]:
-      desc = lambda prop: prop['desc']
-  else:
+  if vim_is_set("g:merlin_completion_short"):
       desc = shorten_desc
+  else:
+      desc = lambda prop: prop['desc']
   try:
     completions = command_complete_cursor(base,line,col)
     if completions['context'] and completions['context'][0] == 'application':
       app = completions['context'][1]
-      vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s', 'empty':1}" %
-        (prep(base),prep(app['argument_type']),'',':'))
-      vim.command("call add(%s, l:tmp)" % vimvar)
-      for label in app['labels']:
-        vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-                (prep(label['name'].replace("?","~")),prep(label['name'].replace("~","") + ':' + label['type']),'','~'))
+      if vim_is_set("g:merlin_completion_argtype") and (not base or atom_bound.match(base[0])):
+        vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s', 'empty':1}" %
+                (prep(base),prep(app['argument_type']),'',':'))
         vim.command("call add(%s, l:tmp)" % vimvar)
+      for label in app['labels']:
+        name = label['name']
+        if not name.startswith(base): name = name.replace("?","~")
+        if name.startswith(base):
+          vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+                  (prep(name),prep(label['name'] + ':' + label['type']),'','~'))
+          vim.command("call add(%s, l:tmp)" % vimvar)
     for prop in completions['entries']:
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
         (prep(prop['name']),prep(desc(prop)),prep(prop['info']),prep(prop['kind'][:1])))

@@ -39,12 +39,16 @@ if !exists("g:merlin_type_history_auto_open")
   let g:merlin_type_history_auto_open = 5
 endif
 
-if !exists("g:merlin_dwim_completion")
-  let g:merlin_dwim_completion = 1
+if !exists("g:merlin_completion_dwim")
+  let g:merlin_completion_dwim = 1
 endif
 
-if !exists("g:merlin_short_completion")
-  let g:merlin_short_completion = 1
+if !exists("g:merlin_completion_short")
+  let g:merlin_completion_short = 1
+endif
+
+if !exists("g:merlin_completion_argtype")
+  let g:merlin_completion_argtype = 1
 endif
 
 let s:current_dir=expand("<sfile>:p:h")
@@ -269,6 +273,9 @@ function! merlin#Complete(findstart,base)
         break
       endif
     endwhile
+    if start > 0 && line[start - 1] =~ '[~?]'
+      let start -= 1
+    endif
 
     " Return the column of the last word, which is going to be changed.
     " Remember the text that comes before it in s:compl_prefix.
@@ -284,7 +291,7 @@ function! merlin#Complete(findstart,base)
     py merlin.vim_complete_cursor(vim.eval("s:compl_base"),"s:compl_result")
    
     " If empty, switch to dwim
-    let s:compl_dwim = g:merlin_dwim_completion && s:compl_result == []
+    let s:compl_dwim = g:merlin_completion_dwim && s:compl_result == []
     if s:compl_dwim
       let s:compl_prefix = ''
       py merlin.vim_expand_prefix(vim.eval("s:compl_base"),"s:compl_result")
