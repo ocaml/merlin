@@ -262,7 +262,7 @@ function! merlin#Complete(findstart,base)
     let start = col('.') - 1
     let lastword = -1
     while start > 0
-      if line[start - 1] =~ '\(\w\|`\|''\)'
+      if line[start - 1] =~ '\(\w\|''\)'
         let start -= 1
       elseif line[start - 1] =~ '\.'
         if lastword == -1
@@ -273,7 +273,7 @@ function! merlin#Complete(findstart,base)
         break
       endif
     endwhile
-    if start > 0 && line[start - 1] =~ '[~?]'
+    if start > 0 && line[start - 1] =~ '[~?`]'
       let start -= 1
     endif
 
