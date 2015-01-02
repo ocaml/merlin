@@ -94,6 +94,9 @@ no argument and should return the configuration (see
   :group 'merlin :type '(choice (file :tag "Filename")
                                 (const :tag "Use current opam switch" opam)))
 
+(defcustom merlin-completion-dwim t
+  "If non-nil, fallback to fuzzier completion when normal completion gives no result."
+  :group 'merlin :type 'boolean)
 
 (defcustom merlin-completion-types t
   "If non-nil, print the types of the variables during completion with `auto-complete'."
@@ -372,7 +375,9 @@ return (LOC1 . LOC2)."
 An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
     (skip-chars-backward "[a-z_0-9A-Z'`.]")
-    (if (looking-at "['a-z_0-9A-Z`.]*['a-z_A-Z0-9]")
+    (skip-chars-backward "[~?]" (1- (point)))
+    (if (or (looking-at "['a-z_0-9A-Z`.]*['a-z_A-Z0-9]")
+            (looking-at "[~?]"))
         (cons (point) (match-end 0)) ; returns the bounds
       nil))) ; no atom at point
 
@@ -666,11 +671,6 @@ the error message otherwise print a generic error message."
   (merlin--acquire-buffer)
   (merlin-send-command 'refresh)
   (merlin-after-save))
-
-(defun merlin-get-completion (ident)
-  "Return the completion for ident IDENT."
-  (merlin-send-command
-    `(complete prefix ,ident at ,(merlin-unmake-point (- (point) (length ident))))))
 
 (defun merlin-parse-position (result)
   "Returns a pair whose first member is a point set at merlin cursor position
@@ -1104,7 +1104,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;; COMPLETION-AT-POINT SUPPORT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin-completion-format-entry (entry)
+(defun merlin--completion-format-entry (entry)
   "Format the completion entry ENTRY."
   (let* ((kind (cdr (assoc 'kind entry)))
          (desc (cdr (assoc 'desc entry)))
@@ -1113,37 +1113,82 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                      (t desc))))
     (replace-regexp-in-string "[\n ]+" " " type)))
 
-(defun merlin-completion-prefix (ident)
-  "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the prefix of `bar' is `'."
-  (let* ((l (butlast (split-string ident "\\.")))
-         (s (mapconcat 'identity l ".")))
-    (if (string-equal s "") s (concat s "."))))
+(defun merlin--completion-split-ident (ident)
+  "Split IDENT into a (cons prefix suffix). See merlin--completion-prefix."
+  (let* ((l (split-string ident "\\."))
+         (s (mapconcat 'identity (butlast l) "."))
+         (suffix (if l (car (last l)) ident))
+         (prefix (if (string-equal s "") s (concat s "."))))
+    (cons prefix suffix)))
 
-(defun merlin-completion-data (ident)
+(defun merlin--completion-prefix (ident)
+  "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the prefix of `bar' is `'."
+  (car (merlin--completion-split-ident ident)))
+
+(defun merlin--completion-prepare-labels (labels suffix)
+  ; Remove non-matching entry, adjusting optional labels if needed
+  (setq labels (delete-if-not (lambda (x)
+                                (let ((name (cdr (assoc 'name x))))
+                                  (or (string-prefix-p suffix name)
+                                      (when (equal (aref name 0) ??)
+                                        (aset name 0 ?~)
+                                        (string-prefix-p suffix name)))))
+                              labels))
+  ; Format labels
+  (mapcar (lambda (x) (list (cdr (assoc 'name x)) (cdr (assoc 'type x)) "Label" nil))
+          labels))
+
+(defun merlin--completion-data (ident)
   "Return the data for completion of IDENT, i.e. a list of pairs (NAME . TYPE)."
-  (let* ((prefix (merlin-completion-prefix ident))
-         (completion (merlin-get-completion ident))
-         (data (append (cdr (assoc 'entries completion)) nil)))
-    (mapcar (lambda (entry)
+  (let* ((ident- (merlin--completion-split-ident ident))
+         (suffix (cdr ident-))
+         (prefix (car ident-))
+         (pos    (merlin-unmake-point (- (point) (length ident))))
+         (data   (merlin-send-command `(complete prefix ,ident at ,pos)))
+         ;; all classic entries
+         (entries (cdr (assoc 'entries data)))
+         ;; context is 'null or ('application ...)
+         (context (cdr (assoc 'context data)))
+         (application (and (listp context)
+                           (equal (car context) "application")
+                           (cadr context)))
+         ;; labels
+         (labels (and application (cdr (assoc 'labels application)))))
+    (setq labels (merlin--completion-prepare-labels labels suffix))
+    ; DWIM completion
+    (when (and merlin-completion-dwim (not labels) (not entries))
+      (setq data (merlin-send-command `(expand prefix ,ident at ,pos)))
+      (setq entries (cdr (assoc 'entries data)))
+      (setq prefix ""))
+    ; Type information
+    (when application
+      (merlin--type-display nil (cdr (assoc 'argument_type application)) t))
+    ; Concat results
+    (append
+      labels
+      (mapcar (lambda (entry)
                 (list (concat prefix (cdr (assoc 'name entry)))
-                      (merlin-completion-format-entry entry)
+                      (merlin--completion-format-entry entry)
                       (cdr (assoc 'kind entry))
                       (cdr (assoc 'info entry))))
-            data)))
-(defun merlin-completion-info (ident)
-  "Return the info of IDENT."
-  (cadddr (assoc ident (merlin-completion-data ident))))
+              (append entries nil)))))
 
-(defun merlin-completion-lookup (string state)
+(defun merlin--completion-lookup (string state)
   "Lookup the entry STRING inside the completion table."
   (let ((ret (assoc string merlin-completion-annotation-table)))
     (if ret (message "%s%s" (car ret) (cdr ret)))))
 
-(defun merlin--kill-overlapping-errors (start end)
-  "Kill any pending errors that overlap the region START..END."
-  ;; fixme: factor out common bits with kill-if-edited
-  (dolist (overlay (overlays-in start end))
-    (when (merlin--overlay overlay) (delete-overlay overlay))))
+(defun merlin--completion-annotate (candidate)
+  "Retrieve the annotation for candidate CANDIDATE in `merlin-completion-annotate-table'."
+  (cdr (assoc candidate merlin-completion-annotation-table)))
+
+(defun merlin--completion-table (string pred action)
+  "Implement completion for merlin using `completion-at-point' API."
+  (if (eq 'metadata action)
+      (when merlin-completion-types
+        '(metadata ((annotation-function . merlin--completion-annotate)
+                    (exit-function . merlin--completion-lookup))))
+    (complete-with-action action merlin-completion-annotation-table string pred)))
 
 (defun merlin--completion-bounds ()
   "Returns a pair (start . end) of the content to complete"
@@ -1158,30 +1203,16 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
        (start  (car bounds))
        (end    (cdr bounds))
        (prefix (merlin--buffer-substring start end)))
-    (merlin--kill-overlapping-errors start end)
     (when (or (not merlin-completion-at-point-cache-query)
               (not (equal (cons prefix start)  merlin-completion-at-point-cache-query)))
       (setq merlin-completion-at-point-cache-query (cons prefix start))
       (merlin-sync-to-point (point-max) t)
       (setq merlin-completion-annotation-table
             (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
-                    (merlin-completion-data prefix))))
-    (list start end #'merlin-completion-table
-          . (:exit-function #'merlin-completion-lookup
-             :annotation-function #'merlin-completion-annotate))))
-
-(defun merlin-completion-annotate (candidate)
-  "Retrieve the annotation for candidate CANDIDATE in `merlin-completion-annotate-table'."
-  (cdr (assoc candidate merlin-completion-annotation-table)))
-
-(defun merlin-completion-table (string pred action)
-  "Implement completion for merlin using `completion-at-point' API."
-  (if (eq 'metadata action)
-      (when merlin-completion-types
-        '(metadata ((annotation-function . merlin-completion-annotate)
-                    (exit-function . merlin-completion-lookup))))
-    (complete-with-action action merlin-completion-annotation-table string pred)))
-
+                    (merlin--completion-data prefix))))
+    (list start end #'merlin--completion-table
+          . (:exit-function #'merlin--completion-lookup
+             :annotation-function #'merlin--completion-annotate))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; COMPANY MODE SUPPORT ;;;
@@ -1222,7 +1253,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
           (candidates
            (merlin-sync-to-point)
            (mapcar #'(lambda (x) (propertize (car x) 'merlin-meta (cadr x)))
-                   (merlin-completion-data arg)))
+                   (merlin--completion-data arg)))
           (post-completion
             (let ((minibuffer-message-timeout nil))
               (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg))))
@@ -1262,10 +1293,10 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-ac-source-refresh-cache()
   "Refresh the cache of completion."
-  (setq merlin-ac-prefix (merlin-completion-prefix ac-prefix))
+  (setq merlin-ac-prefix (merlin--completion-prefix ac-prefix))
   (setq merlin-ac-ac-prefix ac-prefix)
   (setq merlin-ac-cache (mapcar #'merlin-ac-make-popup-item
-                                (merlin-completion-data ac-prefix))))
+                                (merlin--completion-data ac-prefix))))
 
 
 (defun merlin-ac-source-init ()
@@ -1297,7 +1328,7 @@ variable `merlin-ac-cache')."
 (defun merlin-auto-complete-candidates ()
   "Return the candidates for auto-completion with
   auto-complete. If the cache is wrong then recompute it."
-  (if (not (and (equal (merlin-completion-prefix ac-prefix) merlin-ac-prefix)
+  (if (not (and (equal (merlin--completion-prefix ac-prefix) merlin-ac-prefix)
                 (string-prefix-p merlin-ac-ac-prefix ac-prefix)))
       (merlin-ac-source-refresh-cache))
   merlin-ac-cache)
