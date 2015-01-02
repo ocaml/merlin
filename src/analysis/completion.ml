@@ -222,6 +222,7 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
       with _ -> 0 in
     let item = completion_format ~exact name ?path ty in
     ((if priority then -1000000 else 0) - time, name), item in
+  let not_internal name = name <> "" && name.[0] <> '_' in
   let items =
     let snap = Btype.snapshot () in
     let type_check = match target_type with
@@ -262,7 +263,6 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
                 expand acc t
               | _ -> acc
             and expand acc t =
-              (* FIXME: keep track of parameters *)
               let t' = try Ctype.full_expand env t with _ -> t in
               if Types.TypeOps.equal t t' then
                 acc
@@ -271,45 +271,49 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
             in
             List.fold_left' (variants [] t) ~init:[]
               ~f:(fun (label,_ as arg) acc ->
-                  fmt ~priority:true label (`Variant arg) ~exact:false :: acc)
+                  prerr_endline ("Validating " ^ label ^ " against " ^ prefix);
+                  if validate `Variant `Variant label then
+                    fmt label (`Variant arg) ~exact:false ~priority:true :: acc
+                  else acc)
         end
       | `Values ->
         let type_check {Types. val_type} = type_check val_type in
         Env.fold_values
           (fun name path v compl ->
              if validate `Lident `Value name then
-               fmt ~priority:(type_check v) ~exact:(name = prefix)
-                 name ~path (`Value v) :: compl
+               fmt ~exact:(name = prefix) name ~path (`Value v)
+                 ~priority:(type_check v && not_internal name) :: compl
              else compl)
           path env []
       | `Constructor ->
         let type_check {Types. cstr_res} = type_check cstr_res in
         Raw_compat.fold_constructors
           (fun name v compl ->
-             if validate `Lident `Cons name
-             then (fmt ~priority:(type_check v) ~exact:(name = prefix) name (`Cons v)) :: compl
+             if validate `Lident `Cons name then
+               fmt ~exact:(name = prefix) name (`Cons v)
+                 ~priority:(type_check v && not_internal name) :: compl
              else compl)
           path env []
       | `Types ->
         Raw_compat.fold_types
           (fun name path decl compl ->
-             if validate `Lident `Typ name
-             then (fmt ~exact:(name = prefix) name ~path (`Typ decl)) :: compl
+             if validate `Lident `Typ name then
+               fmt ~exact:(name = prefix) name ~path (`Typ decl) :: compl
              else compl)
           path env []
       | `Modules ->
         Env.fold_modules
           (fun name path v compl ->
              let v = Raw_compat.extract_module_declaration v in
-             if validate `Uident `Mod name
-             then (fmt ~exact:(name = prefix) name ~path (`Mod v)) :: compl
+             if validate `Uident `Mod name then
+               fmt ~exact:(name = prefix) name ~path (`Mod v) :: compl
              else compl)
           path env []
       | `Modules_type ->
         Env.fold_modtypes
           (fun name path v compl ->
-             if validate `Uident `Mod name
-             then (fmt ~exact:(name = prefix) name ~path (`ModType v)) :: compl
+             if validate `Uident `Mod name then
+               fmt ~exact:(name = prefix) name ~path (`ModType v) :: compl
              else compl)
           path env []
       | `Group (kinds) ->
@@ -366,7 +370,7 @@ let node_complete buffer ?target_type node prefix =
     in
     (* Hack to prevent extensions namespace to leak *)
     let validate ident tag name =
-      (if ident = `UIdent
+      (if ident = `Uident
        then name <> "" && name.[0] <> '_'
        else name <> "_")
       && valid tag name
