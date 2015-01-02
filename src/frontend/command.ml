@@ -299,7 +299,8 @@ let dispatch (state : state) =
 
   | (Complete_prefix (prefix, pos) : a request) ->
     let complete typer =
-      let node, ancestors = Completion.node_at typer pos in
+      let node, ancestors =
+        Completion.node_at ~skip_recovered:true typer pos in
       let open BrowseT in let open Typedtree in
       let target_type = match node with
         | { t_node = Expression { exp_type = ty} }

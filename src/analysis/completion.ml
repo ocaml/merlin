@@ -42,6 +42,12 @@ open Merlin_lib
     Printtyp.modtype_declaration id ppf (verbose_sig env t)
 end*)
 
+let is_recovered = function
+  | {BrowseT.t_node = BrowseT.Expression
+         { Typedtree.exp_desc = Typedtree.Texp_tuple [_] }} ->
+    true
+  | _ -> false
+
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.
  *  2. Check if there is an invalid construct between found env and cursor :
@@ -56,12 +62,16 @@ end*)
  *      preferable to use env from enclosing module rather than an env from
  *      inside x definition.
  *)
-let node_at typer pos_cursor =
+let node_at ?(skip_recovered=false) typer pos_cursor =
   let structures = Typer.contents typer in
   let structures = Browse.of_typer_contents structures in
-  match Browse.deepest_before pos_cursor structures with
-  | node :: ancestors -> node, ancestors
-  | [] -> {BrowseT.dummy with BrowseT.t_env = Typer.env typer}, []
+  let rec select = function
+    | node :: (node' :: _ as ancestors)
+      when skip_recovered && is_recovered node' -> select ancestors
+    | node :: ancestors -> node, ancestors
+    | [] -> {BrowseT.dummy with BrowseT.t_env = Typer.env typer}, []
+  in
+  select (Browse.deepest_before pos_cursor structures)
 
 (* List methods of an object.
  * Code taken from [uTop](https://github.com/diml/utop
