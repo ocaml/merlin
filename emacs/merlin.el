@@ -374,10 +374,10 @@ return (LOC1 . LOC2)."
   "Return the start and end points of an ocaml atom near point.
 An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
-    (skip-chars-backward "[a-z_0-9A-Z'`.]")
-    (skip-chars-backward "[~?]" (1- (point)))
-    (if (or (looking-at "['a-z_0-9A-Z`.]*['a-z_A-Z0-9]")
-            (looking-at "[~?]"))
+    (skip-chars-backward "[a-z_0-9A-Z'.]")
+    (skip-chars-backward "[~?`]" (1- (point)))
+    (if (or (looking-at "[~?`]?['a-z_0-9A-Z.]*['a-z_A-Z0-9]")
+            (looking-at "[~?`]"))
         (cons (point) (match-end 0)) ; returns the bounds
       nil))) ; no atom at point
 
@@ -1171,7 +1171,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                       (merlin--completion-format-entry entry)
                       (cdr (assoc 'kind entry))
                       (cdr (assoc 'info entry))))
-              (append entries nil)))))
+              entries))))
 
 (defun merlin--completion-lookup (string state)
   "Lookup the entry STRING inside the completion table."
@@ -1314,7 +1314,13 @@ variable `merlin-ac-cache')."
 
 (defun merlin-ac-prefix ()
   "Retrieve the prefix for completion with merlin."
-  (car (merlin--completion-bounds)))
+  (let* ((bounds (merlin--completion-bounds))
+         (start  (car-safe bounds))
+         (end    (cdr-safe bounds)))
+    (if (and bounds merlin-ac-prefix-size
+             (< (- start end) merlin-ac-prefix-size))
+        nil
+      bounds)))
 
 (defun merlin-ac-fetch-type ()
   "Prints the type of the selected candidate"
@@ -1334,15 +1340,10 @@ variable `merlin-ac-cache')."
   merlin-ac-cache)
 
 (defvar merlin-ac-source
-  (if merlin-ac-prefix-size
-  `((init . merlin-ac-source-init)
-    (candidates . merlin-auto-complete-candidates)
-    (action . merlin-ac-fetch-type)
-    (prefix . ,merlin-ac-prefix-size))
   '((init . merlin-ac-source-init)
     (candidates . merlin-auto-complete-candidates)
     (action . merlin-ac-fetch-type)
-    (prefix . merlin-ac-prefix))))
+    (prefix . merlin-ac-prefix)))
 
 (when (featurep 'auto-complete)
   (eval '(ac-define-source "merlin" merlin-ac-source)))
