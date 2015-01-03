@@ -1143,7 +1143,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (let* ((ident- (merlin--completion-split-ident ident))
          (suffix (cdr ident-))
          (prefix (car ident-))
-         (pos    (merlin-unmake-point (- (point) (length ident))))
+         (pos    (merlin-unmake-point (point)))
          (data   (merlin-send-command `(complete prefix ,ident at ,pos)))
          ;; all classic entries
          (entries (cdr (assoc 'entries data)))
