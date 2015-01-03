@@ -400,7 +400,7 @@ let rec is_sub_patt patt ~sub =
   | Tpat_lazy p ->
     is_sub_patt p ~sub
 
-  | Tpat_tuple lst 
+  | Tpat_tuple lst
   | Tpat_construct (_, _, _, lst, _)
   | Tpat_array lst ->
     List.exists lst ~f:(is_sub_patt ~sub)
@@ -464,3 +464,8 @@ let find_branch patterns sub =
     | p :: ps -> aux (p :: before) ps
   in
   aux [] patterns
+
+let construct_ident_and_expressions = function
+  | Typedtree.Texp_construct (_, id, _, es, _) ->
+    id, es
+  | _ -> assert false

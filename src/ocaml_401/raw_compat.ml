@@ -464,3 +464,8 @@ let find_branch patterns sub =
     | p :: ps -> aux (p :: before) ps
   in
   aux [] patterns
+
+let construct_ident_and_expressions = function
+  | Typedtree.Texp_construct (id, _, es, _) ->
+    id, es
+  | _ -> assert false

@@ -51,11 +51,17 @@ let rec is_recovered_expression = function
     when Ident.name id = "*type-error*" ->
     true
   | (* Recovery on desugared optional label application *)
-    { Typedtree.exp_desc = Typedtree.Texp_construct (id, _, [e]) }
-    when id.Location.loc.Location.loc_ghost &&
-         id.Location.txt = Longident.Lident "Some" &&
-         is_recovered_expression e ->
+    { Typedtree.exp_desc = (Typedtree.Texp_construct _ as cstr) }
+    when is_recovered_Texp_construct cstr ->
     true
+  | _ -> false
+
+and is_recovered_Texp_construct cstr =
+  match Raw_compat.construct_ident_and_expressions cstr with
+  | id, [e] ->
+    id.Location.loc.Location.loc_ghost &&
+    id.Location.txt = Longident.Lident "Some" &&
+    is_recovered_expression e
   | _ -> false
 
 let is_recovered = function
