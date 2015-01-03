@@ -30,18 +30,6 @@
 open Std
 open Merlin_lib
 
-(*module Verbose_print = struct
-  let type_scheme ppf t =
-    let env = Printtyp.curr_printing_env () in
-    Printtyp.type_scheme ppf (verbose_type env t)
-  let type_declaration id ppf t =
-    let env = Printtyp.curr_printing_env () in
-    Printtyp.type_declaration id ppf (verbose_type_decl env t)
-  let modtype_declaration id ppf t =
-    let env = Printtyp.curr_printing_env () in
-    Printtyp.modtype_declaration id ppf (verbose_sig env t)
-end*)
-
 let rec is_recovered_expression = function
   | (* Recovery on arbitrary expressions *)
     { Typedtree.exp_desc = Typedtree.Texp_tuple [_] } ->
@@ -291,7 +279,6 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
             in
             List.fold_left' (variants [] t) ~init:[]
               ~f:(fun (label,_ as arg) acc ->
-                  prerr_endline ("Validating " ^ label ^ " against " ^ prefix);
                   if validate `Variant `Variant label then
                     fmt label (`Variant arg) ~exact:false ~priority:true :: acc
                   else acc)
@@ -443,14 +430,14 @@ let node_complete buffer ?target_type node prefix =
     in
     let methods = List.filter has_prefix (methods_of_type env t) in
     List.map (fun (name,ty) ->
-      let ppf, to_string = Format.to_string () in
-      Printtyp.type_scheme ppf ty;
-      {Protocol.Compl.
-        name;
-        kind = `MethodCall;
-        desc = to_string ();
-        info = "";
-      })
+        let ppf, to_string = Format.to_string () in
+        Printtyp.type_scheme ppf ty;
+        {Protocol.Compl.
+          name;
+          kind = `MethodCall;
+          desc = to_string ();
+          info = "";
+        })
       methods
   | _ ->
     try
@@ -461,22 +448,22 @@ let node_complete buffer ?target_type node prefix =
         let compl = find prefix in
         List.fold_left (Buffer.global_modules buffer) ~init:compl
           ~f:begin fun compl modname ->
-          let default = { Protocol.Compl.
-            name = modname;
-            kind = `Module;
-            desc = "";
-            info = "";
-          } in
-          match modname with
-          | modname when modname = prefix && uniq (`Mod,modname) ->
-            (try let path, md =
-              Raw_compat.lookup_module (Longident.Lident modname) env in
-               completion_format ~exact:true modname ~path (`Mod md) :: compl
-             with Not_found -> default :: compl)
-          | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
-            default :: compl
-          | _ -> compl
-        end
+            let default = { Protocol.Compl.
+                            name = modname;
+                            kind = `Module;
+                            desc = "";
+                            info = "";
+                          } in
+            match modname with
+            | modname when modname = prefix && uniq (`Mod,modname) ->
+              (try let path, md =
+                Raw_compat.lookup_module (Longident.Lident modname) env in
+                 completion_format ~exact:true modname ~path (`Mod md) :: compl
+               with Not_found -> default :: compl)
+            | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
+              default :: compl
+            | _ -> compl
+          end
       | _ -> find prefix
     with Not_found -> []
 
