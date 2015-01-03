@@ -625,10 +625,19 @@ let dispatch (state : state) =
   | (Dump `Parser : a request) ->
     Merlin_recover.dump (Buffer.recover state.buffer);
 
-  | (Dump `Typer_input : a request) ->
+  | (Dump (`Typer `Input) : a request) ->
     with_typer state @@ fun typer ->
     let ppf, to_string = Format.to_string () in
     Typer.dump ppf typer;
+    `String (to_string ())
+
+  | (Dump (`Typer `Output) : a request) ->
+    with_typer state @@ fun typer ->
+    let ppf, to_string = Format.to_string () in
+    List.iter (function
+        | `Sg sg -> Printtyped.interface ppf sg
+        | `Str str -> Printtyped.implementation ppf str
+      ) (Typer.contents typer);
     `String (to_string ())
 
   | (Dump `Recover : a request) ->

@@ -353,7 +353,9 @@ module Protocol_io = struct
     | [`String "dump"; `String "browse"] ->
       Request (Dump `Browse)
     | [`String "dump"; `String "typer"; `String "input"] ->
-      Request (Dump `Typer_input)
+      Request (Dump (`Typer `Input))
+    | [`String "dump"; `String "typer"; `String "output"] ->
+      Request (Dump (`Typer `Output))
     | [`String "dump"; `String "tokens"] ->
       Request (Dump `Tokens)
     | [`String "dump"; `String "flags"] ->
