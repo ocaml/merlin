@@ -42,10 +42,24 @@ open Merlin_lib
     Printtyp.modtype_declaration id ppf (verbose_sig env t)
 end*)
 
-let is_recovered = function
-  | {BrowseT.t_node = BrowseT.Expression
-         { Typedtree.exp_desc = Typedtree.Texp_tuple [_] }} ->
+let rec is_recovered_expression = function
+  | (* Recovery on arbitrary expressions *)
+    { Typedtree.exp_desc = Typedtree.Texp_tuple [_] } ->
     true
+  | (* Recovery on unbound identifier *)
+    { Typedtree.exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) }
+    when Ident.name id = "*type-error*" ->
+    true
+  | (* Recovery on desugared optional label application *)
+    { Typedtree.exp_desc = Typedtree.Texp_construct (id, _, [e]) }
+    when id.Location.loc.Location.loc_ghost &&
+         id.Location.txt = Longident.Lident "Some" &&
+         is_recovered_expression e ->
+    true
+  | _ -> false
+
+let is_recovered = function
+  | {BrowseT.t_node = BrowseT.Expression e } -> is_recovered_expression e
   | _ -> false
 
 (** Heuristic to find suitable environment to complete / type at given position.
@@ -460,7 +474,13 @@ let node_complete buffer ?target_type node prefix =
       | _ -> find prefix
     with Not_found -> []
 
-let labels_of_application =
+let labels_of_application ?(prefix="") =
+  let prefix =
+    if prefix <> "" && prefix.[0] = '~' then
+      String.sub prefix ~pos:1 ~len:(String.length prefix - 1)
+    else
+      prefix
+  in
   let open Typedtree in function
     | {exp_env; exp_desc = Texp_apply ({exp_type = fun_type}, args) } ->
       let rec labels t =
@@ -477,7 +497,7 @@ let labels_of_application =
       in
       let labels = labels fun_type in
       let is_application_of label (label',expr,_) =
-        label = label' && match expr with
+        label = label' && label <> prefix && match expr with
         | Some {exp_loc} -> not exp_loc.Location.loc_ghost
         | None -> false
       in

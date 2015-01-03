@@ -327,7 +327,7 @@ let dispatch (state : state) =
             Printtyp.type_sch ppf t;
             to_string ()
           in
-          let labels = Completion.labels_of_application app in
+          let labels = Completion.labels_of_application ~prefix app in
           `Application { Compl.
                          argument_type = pr earg.exp_type;
                          labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
@@ -339,11 +339,12 @@ let dispatch (state : state) =
       {Compl. entries = List.rev entries; context }
     in
     let lexer0 = Buffer.lexer state.buffer in
-    let lexer =
-      History.seek_backward
+    let lexer = History.seek_backward
         (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) <= 0)
-        lexer0
-    in
+        lexer0 in
+    let lexer = History.seek_forward ~last:true
+        (fun (_,item) -> Lexing.compare_pos (Lexer.item_end item) pos <= 0)
+        lexer in
     let need_token =
       let open Raw_parser in
       let exns, item = History.focused lexer in

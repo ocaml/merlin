@@ -47,9 +47,9 @@ val tail : 'a t -> 'a list
 val position : 'a t -> int
 
 (** Move forward while item under cursor satisfy predicate *)
-val seek_forward  : ('a -> bool) -> 'a t -> 'a t
+val seek_forward  : ?last:bool -> ('a -> bool) -> 'a t -> 'a t
 (** Move backward while item under cursor satisfy predicate *)
-val seek_backward : ('a -> bool) -> 'a t -> 'a t
+val seek_backward : ?last:bool -> ('a -> bool) -> 'a t -> 'a t
 
 (** Moves an arbitrary number of steps.
   *

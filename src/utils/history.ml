@@ -47,26 +47,6 @@ let position x = x.position
 let focused' (List.More (x,_) | List.One x) = x
 let focused t = focused' t.head
 
-(** Move forward while item under cursor satisfy predicate *)
-let rec seek_forward pred head position = function
-  | x :: tail when pred (focused' head) ->
-    seek_forward pred (List.More (x,head)) (position + 1) tail
-  | tail -> {head; position; tail}
-let seek_forward pred = function
-  | {head; position; tail = x :: tail} when pred (focused' head) ->
-    seek_forward pred (List.More (x,head)) (position + 1) tail
-  | t -> t
-
-(** Move backward while item under cursor satisfy predicate *)
-let rec seek_backward pred position tail = function
-  | List.More (x,head) when pred x ->
-    seek_backward pred (position - 1) (x :: tail) head
-  | head -> {head; position; tail}
-let seek_backward pred = function
-  | {head = List.More (x,head); position; tail} when pred x ->
-    seek_backward pred (position - 1) (x :: tail) head
-  | t -> t
-
 (** Moves an arbitrary number of steps.
   *
   * May stop earlier if it reaches an end of history.
@@ -90,6 +70,34 @@ let move n = function
   * May stop earlier if it reaches an end of history.
   *)
 let seek n h = move (n - position h) h
+
+(** Move forward while item under cursor satisfy predicate *)
+let rec seek_forward pred head position = function
+  | x :: tail when pred (focused' head) ->
+    seek_forward pred (List.More (x,head)) (position + 1) tail
+  | tail -> {head; position; tail}
+let seek_forward ?(last=false) pred = function
+  | {head; position; tail = x :: tail} when pred (focused' head) ->
+    let result = seek_forward pred (List.More (x,head)) (position + 1) tail in
+    if last then
+      move (-1) result
+    else
+      result
+  | t -> t
+
+(** Move backward while item under cursor satisfy predicate *)
+let rec seek_backward pred position tail = function
+  | List.More (x,head) when pred x ->
+    seek_backward pred (position - 1) (x :: tail) head
+  | head -> {head; position; tail}
+let seek_backward ?(last=false) pred = function
+  | {head = List.More (x,head); position; tail} when pred x ->
+    let result = seek_backward pred (position - 1) (x :: tail) head in
+    if last then
+      move 1 result
+    else
+      result
+  | t -> t
 
 (** Adds an element to the left of the cursor:
   * insert w [..zyx|abc..] = [..zyxw|abc..] *)
