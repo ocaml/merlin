@@ -232,21 +232,38 @@ let item_for_global_module name =
   {Protocol.Compl. name; kind = `Module; desc = ""; info = ""}
 
 let completion_fold ?target_type prefix path kind ~validate env compl =
-  let fmt ?(priority=false) ~exact name ?path ty =
+  let fmt ?(priority=0) ~exact name ?path ty =
     let time =
       try Ident.binding_time (Path.head (Option.get path))
       with _ -> 0 in
     let item = completion_format ~exact name ?path ty in
-    ((if priority then -1000000 else 0) - time, name), item in
+    (- priority, - time, name), item in
   let not_internal name = name <> "" && name.[0] <> '_' in
   let items =
     let snap = Btype.snapshot () in
+    let rec arrow_arity n t = match (Ctype.repr t).Types.desc with
+      | Types.Tarrow (_,_,rhs,_) -> arrow_arity (n + 1) rhs
+      | _ -> n
+    in
+    let rec nth_arrow n t =
+      if n = 0 then t else
+        match (Ctype.repr t).Types.desc with
+        | Types.Tarrow (_,_,rhs,_) -> nth_arrow (n - 1) rhs
+        | _ -> t
+    in
     let type_check = match target_type with
-      | None -> fun scheme -> true
-      | Some ty -> fun scheme ->
+      | None -> fun scheme -> 1
+      | Some ty ->
+        let arity = arrow_arity 0 ty in
+        fun scheme ->
         let result =
-          try Ctype.unify_var env ty (Ctype.instance env scheme); true
-          with _ -> false
+          try Ctype.unify_var env ty (Ctype.instance env scheme); 2
+          with _ ->
+            let ty' = Ctype.instance env scheme in
+            let arity = arrow_arity (-arity) ty' in
+            let ty' = nth_arrow arity ty' in
+            try Ctype.unify_var env ty ty'; 1
+            with _ -> 0
         in
         Btype.backtrack snap;
         result
@@ -288,7 +305,7 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
             List.fold_left' (variants [] t) ~init:[]
               ~f:(fun (label,_ as arg) acc ->
                   if validate `Variant `Variant label then
-                    fmt label (`Variant arg) ~exact:false ~priority:true :: acc
+                    fmt label (`Variant arg) ~exact:false ~priority:2 :: acc
                   else acc)
         end
       | `Values ->
@@ -296,8 +313,8 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
         Env.fold_values
           (fun name path v compl ->
              if validate `Lident `Value name then
-               fmt ~exact:(name = prefix) name ~path (`Value v)
-                 ~priority:(type_check v && not_internal name) :: compl
+               let priority = if not_internal name then type_check v else 0 in
+               fmt ~exact:(name = prefix) name ~path (`Value v) ~priority :: compl
              else compl)
           path env []
       | `Constructor ->
@@ -305,8 +322,8 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
         Raw_compat.fold_constructors
           (fun name v compl ->
              if validate `Lident `Cons name then
-               fmt ~exact:(name = prefix) name (`Cons v)
-                 ~priority:(type_check v && not_internal name) :: compl
+               let priority = if not_internal name then type_check v else 0 in
+               fmt ~exact:(name = prefix) name (`Cons v) ~priority :: compl
              else compl)
           path env []
       | `Types ->
