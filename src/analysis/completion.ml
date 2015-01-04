@@ -30,6 +30,17 @@
 open Std
 open Merlin_lib
 
+let optional_label_sugar = function
+  | (Typedtree.Texp_construct _) as cstr ->
+    begin match Raw_compat.construct_ident_and_expressions cstr with
+      | id, [e] when
+          id.Location.loc.Location.loc_ghost &&
+          id.Location.txt = Longident.Lident "Some" ->
+        Some e
+      | _ -> None
+    end
+  | _ -> None
+
 let rec is_recovered_expression = function
   | (* Recovery on arbitrary expressions *)
     { Typedtree.exp_desc = Typedtree.Texp_tuple [_] } ->
@@ -45,11 +56,8 @@ let rec is_recovered_expression = function
   | _ -> false
 
 and is_recovered_Texp_construct cstr =
-  match Raw_compat.construct_ident_and_expressions cstr with
-  | id, [e] ->
-    id.Location.loc.Location.loc_ghost &&
-    id.Location.txt = Longident.Lident "Some" &&
-    is_recovered_expression e
+  match optional_label_sugar cstr with
+  | Some e -> is_recovered_expression e
   | _ -> false
 
 let is_recovered = function

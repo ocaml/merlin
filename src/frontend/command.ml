@@ -302,10 +302,10 @@ let dispatch (state : state) =
       let node, ancestors =
         Completion.node_at ~skip_recovered:true typer pos in
       let open BrowseT in let open Typedtree in
-      let target_type = match node with
-        | { t_node = Expression { exp_type = ty} }
-        | { t_node = Pattern { pat_type = ty} } -> Some ty
-        | _ -> None
+      let target_type = ref (match node with
+          | { t_node = Expression { exp_type = ty} }
+          | { t_node = Pattern { pat_type = ty} } -> Some ty
+          | _ -> None)
       in
       let context =
         match node, ancestors with
@@ -327,6 +327,15 @@ let dispatch (state : state) =
             Printtyp.type_sch ppf t;
             to_string ()
           in
+          (* Special case for optional arguments applied with ~,
+             get the argument wrapped inside Some _ *)
+          let earg =
+            match Completion.optional_label_sugar earg.Typedtree.exp_desc with
+            | None -> earg
+            | Some earg ->
+              target_type := Some earg.Typedtree.exp_type;
+              earg
+          in
           let labels = Completion.labels_of_application ~prefix app in
           `Application { Compl.
                          argument_type = pr earg.exp_type;
@@ -334,6 +343,7 @@ let dispatch (state : state) =
                        }
         | _ -> `Unknown
       in
+      let target_type = !target_type in
       let entries =
         Completion.node_complete ?target_type state.buffer node prefix in
       {Compl. entries = List.rev entries; context }
