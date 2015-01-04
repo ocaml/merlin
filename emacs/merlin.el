@@ -1173,6 +1173,10 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                       (cdr (assoc 'info entry))))
               entries))))
 
+; Alias returning only entries, eventually called by external code, while
+; merlin--completion-data is free to change the format of returned values.
+(defalias 'merlin-completion-data 'merlin--completion-data)
+
 (defun merlin--completion-lookup (string state)
   "Lookup the entry STRING inside the completion table."
   (let ((ret (assoc string merlin-completion-annotation-table)))
