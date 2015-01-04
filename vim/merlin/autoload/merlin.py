@@ -358,7 +358,7 @@ def vim_complete_cursor(base, suffix, vimvar):
     success = len(completions['entries']) > 0
     if completions['context'] and completions['context'][0] == 'application':
       app = completions['context'][1]
-      if vim_is_set("g:merlin_completion_argtype") and (not suffix or atom_bound.match(suffix[0])):
+      if vim_is_set("g:merlin_completion_argtype") and (not suffix or atom_bound.match(suffix[0])) and (app['argument_type'] != "'_a"):
         vim.command("let l:tmp = {'word':'%s','abbr':'<type>','kind':':','menu':'%s','empty':1}" %
                 (prep(suffix),prep(app['argument_type'])))
         vim.command("call add(%s, l:tmp)" % vimvar)
