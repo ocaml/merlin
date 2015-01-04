@@ -500,8 +500,13 @@ let labels_of_application ?(prefix="") =
       in
       let labels = List.filter labels ~f:unapplied_label in
       List.map labels
-        ~f:(fun (label,ty as acc) ->
+        ~f:(fun (label, ty) ->
             if label.[0] <> '?' then
               "~" ^ label, ty
-            else acc)
+            else match (Ctype.repr ty).Types.desc with
+              | Types.Tconstr (path, [ty], _) when
+                  Path.same path Predef.path_option ->
+                label, ty
+              | _ -> label, ty
+          )
     | _ -> []
