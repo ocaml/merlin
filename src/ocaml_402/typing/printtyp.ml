@@ -353,9 +353,9 @@ let curr_printing_env () = !printing_env
 let best_type_path p =
   if !printing_env == Env.empty then (p, Id)
   else match Clflags.real_paths () with
-    | `Real  -> (p, Id)
-    | `Short -> (Shorten_prefix.shorten !printing_env p, Id)
-    | `Slow  ->
+    | `Real   -> (p, Id)
+    | `Opened -> (Shorten_prefix.shorten !printing_env p, Id)
+    | `Short  ->
       let (p', s) = normalize_type_path !printing_env p in
       let p'' =
         try Lazy.force !printing_map p'
@@ -1145,7 +1145,7 @@ let dummy =
 
 let hide_rec_items = function
   | Sig_type(id, decl, rs) ::rem
-    when rs <> Trec_next && Clflags.real_paths () = `Slow ->
+    when rs <> Trec_next && Clflags.real_paths () = `Short ->
       let rec get_ids = function
           Sig_type (id, _, Trec_next) :: rem ->
             id :: get_ids rem

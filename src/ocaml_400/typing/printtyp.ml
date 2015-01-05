@@ -329,9 +329,9 @@ let curr_printing_env () = !printing_env
 let best_type_path p =
   if !printing_env == Env.empty then (p, Id)
   else match Clflags.real_paths () with
-    | `Real  -> (p, Id)
-    | `Short -> (Shorten_prefix.shorten !printing_env p, Id)
-    | `Slow  ->
+    | `Real   -> (p, Id)
+    | `Opened -> (Shorten_prefix.shorten !printing_env p, Id)
+    | `Short  ->
       let (p', s) = normalize_type_path !printing_env p in
       (try Lazy.force !printing_map p' with Not_found -> p'),
       s

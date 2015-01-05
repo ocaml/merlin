@@ -12,7 +12,7 @@
 
 (* Command-line parameters *)
 
-type path_printing_mode = [`Real | `Short | `Slow ]
+type path_printing_mode = [`Real | `Short | `Opened ]
 
 module StringSet = Set.Make(String)
 module StringMap = Map.Make(String)
@@ -145,11 +145,11 @@ let real_paths_spec t =
 let short_paths_spec t =
   "-short-paths",
   Arg.Unit (fun () -> t.real_paths <- `Short),
-  " Reasonably short paths in types"
-let slow_paths_spec t =
-  "-slow-paths",
-  Arg.Unit (fun () -> t.real_paths <- `Slow),
-  " Make paths unusably short (opposite of -real-paths)"
+  " Shorten paths in types"
+let opened_paths_spec t =
+  "-opened-paths",
+  Arg.Unit (fun () -> t.real_paths <- `Opened),
+  " Remove opened prefix from displayed types"
 
 let recursive_types () = !set.recursive_types
 let recursive_types_spec t =
@@ -244,7 +244,7 @@ let arg_spec t =
     principal_spec t;
     real_paths_spec t;
     short_paths_spec t;
-    slow_paths_spec t;
+    opened_paths_spec t;
     timed_logs_spec t;
     recursive_types_spec t;
     strict_sequence_spec t;

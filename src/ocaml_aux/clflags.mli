@@ -12,7 +12,7 @@
 
 (* Command-line parameters *)
 
-type path_printing_mode = [`Real | `Short | `Slow ]
+type path_printing_mode = [`Real | `Short | `Opened ]
 
 module StringSet : Set.S with type elt = string
 module StringMap : Map.S with type key = string
