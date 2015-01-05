@@ -2960,38 +2960,41 @@ and type_application env funct sargs =
          instance env (result_type omitted ty_fun))
     | (l1, sarg1) :: sargl ->
         let (ty1, ty2) =
-          let ty_fun = expand_head env ty_fun in
-          match ty_fun.desc with
-            Tvar _ ->
-              let t1 = newvar () and t2 = newvar () in
-              let not_identity = function
-                  Texp_ident(_,_,{val_kind=Val_prim
-                                  {Primitive.prim_name="%identity"}}) ->
-                    false
-                | _ -> true
-              in
-              if ty_fun.level >= t1.level && not_identity funct.exp_desc
-                && not (Typing_aux.erroneous_expr_check funct) then
-                Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
-              unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
-              (t1, t2)
-          | Tarrow (l,t1,t2,_) when l = l1
-            || Clflags.classic () && l1 = "" && not (is_optional l) ->
-              (t1, t2)
-          | td ->
-              let ty_fun =
-                match td with Tarrow _ -> newty td | _ -> ty_fun in
-              let ty_res = result_type (omitted @ !ignored) ty_fun in
-              match ty_res.desc with
-                Tarrow _ ->
-                  if (Clflags.classic () || not (has_label l1 ty_fun)) then
-                    raise (Error(sarg1.pexp_loc, env,
-                                 Apply_wrong_label(l1, ty_res)))
-                  else
-                    raise (Error(funct.exp_loc, env, Incoherent_label_order))
-              | _ ->
-                  raise(Error(funct.exp_loc, env, Apply_non_function
-                                (expand_head env funct.exp_type)))
+          try
+            let ty_fun = expand_head env ty_fun in
+            match ty_fun.desc with
+              Tvar _ ->
+                let t1 = newvar () and t2 = newvar () in
+                let not_identity = function
+                    Texp_ident(_,_,{val_kind=Val_prim
+                                    {Primitive.prim_name="%identity"}}) ->
+                      false
+                  | _ -> true
+                in
+                if ty_fun.level >= t1.level && not_identity funct.exp_desc
+                  && not (Typing_aux.erroneous_expr_check funct) then
+                  Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
+                unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
+                (t1, t2)
+            | Tarrow (l,t1,t2,_) when l = l1
+              || Clflags.classic () && l1 = "" && not (is_optional l) ->
+                (t1, t2)
+            | td ->
+                let ty_fun =
+                  match td with Tarrow _ -> newty td | _ -> ty_fun in
+                let ty_res = result_type (omitted @ !ignored) ty_fun in
+                match ty_res.desc with
+                  Tarrow _ ->
+                    if (Clflags.classic () || not (has_label l1 ty_fun)) then
+                      Typing_aux.weak_raise (Error(sarg1.pexp_loc, env,
+                                                   Apply_wrong_label(l1, ty_res)))
+                    else
+                      Typing_aux.weak_raise (Error(funct.exp_loc, env, Incoherent_label_order))
+                | _ ->
+                    Typing_aux.weak_raise(Error(funct.exp_loc, env, Apply_non_function
+                                                  (expand_head env funct.exp_type)))
+          with Typing_aux.Weak_error _ ->
+            newvar(), ty_fun
         in
         let optional = if is_optional l1 then Optional else Required in
         let arg1 () =
