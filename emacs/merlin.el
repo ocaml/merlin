@@ -1426,8 +1426,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin--type-enclosing-after ()
   (when (and (fboundp 'set-temporary-overlay-map)
              merlin-arrow-keys-type-enclosing)
-    (set-temporary-overlay-map merlin-type-enclosing-map t
-                               'merlin--type-enclosing-reset)))
+    (if (version< emacs-version "24.4")
+        (set-temporary-overlay-map merlin-type-enclosing-map t)
+      (set-temporary-overlay-map merlin-type-enclosing-map t
+                                 'merlin--type-enclosing-reset))))
 
 (defun merlin-type-enclosing ()
   "Print the type of the expression under point (or of the region, if it exists)."
