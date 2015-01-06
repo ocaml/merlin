@@ -1360,8 +1360,17 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 
 ;; TYPE ENCLOSING
 (defun merlin--type-enclosing-reset ()
+  "Clear enclosing information, necessary for destruct"
   (setq merlin-enclosing-types nil)
   (setq merlin-enclosing-offset -1))
+
+(defun merlin--type-enclosing-reset-hooked ()
+  "Reimplement on-exit logic from set-temporary-overlay-map for emacs pre 24.4"
+  (let ((map merlin-type-enclosing-map))
+    (unless (or (not (eq map (cadr overriding-terminal-local-map)))
+                (eq this-command (lookup-key map (this-command-keys-vector))))
+      (merlin--type-enclosing-reset)
+      (remove-hook 'pre-command-hook 'merlin--type-enclosing-reset-hooked))))
 
 (defun merlin--type-enclosing-query ()
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
@@ -1427,7 +1436,9 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (when (and (fboundp 'set-temporary-overlay-map)
              merlin-arrow-keys-type-enclosing)
     (if (version< emacs-version "24.4")
-        (set-temporary-overlay-map merlin-type-enclosing-map t)
+        (progn
+          (set-temporary-overlay-map merlin-type-enclosing-map t)
+          (add-hook 'pre-command-hook 'merlin--type-enclosing-reset-hooked))
       (set-temporary-overlay-map merlin-type-enclosing-map t
                                  'merlin--type-enclosing-reset))))
 
