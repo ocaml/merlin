@@ -63,7 +63,7 @@ type config = {
 val find : string -> string option
 
 (* Parse a file from the filesystem. Path is a filename *)
-val read : string -> file List.Lazy.t
+val read : ?tail:file List.Lazy.t lazy_t -> string -> file List.Lazy.t
 val empty_config : config
 val parse : ?config:config -> file List.Lazy.t -> config
 

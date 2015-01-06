@@ -45,14 +45,13 @@ module Project : sig
   type t
 
   (* A global store mapping (.merlin-)path to projects *)
-  val get : string option -> t * [`Fresh | `Cached]
+  val get : string list -> t * [`Fresh | `Cached]
 
   (* Current buffer path *)
   val set_local_path : t -> string list -> unit
 
   (* Project-wide configuration *)
-  val reload_dot_merlin : t -> [`Ok | `Failures of (string * exn) list]
-  val autoreload_dot_merlin : t -> [`No | `Ok | `Failures of (string * exn) list]
+  val autoreload_dot_merlin : t -> unit
   val get_dot_merlins_failure : t -> (string * exn) list
 
   (* paths of dot_merlins with mtime at time of load *)
@@ -125,6 +124,7 @@ end = struct
     cfg.cfg_path_pkg := []
 
   type t = {
+    mutable dot_merlins_path : (string * float) list;
     mutable dot_merlins : (string * float) list;
     mutable dot_merlins_failures : (string * exn) list;
 
@@ -158,52 +158,6 @@ end = struct
       in
       project.global_modules <- Some lst;
       lst
-
-  let create () =
-    let dot_config = empty_config () in
-    let user_config = empty_config () in
-    let local_path = ref [] in
-    let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
-    let flags = Clflags.copy Clflags.initial in
-    { dot_merlins = [];
-      dot_merlins_failures = [];
-      dot_config; user_config; flags;
-      warnings = Warnings.copy Warnings.initial;
-      local_path;
-      source_path = prepare [
-          user_config.cfg_path_source;
-          local_path;
-          dot_config.cfg_path_source;
-          (* Experimental: used by locate *)
-          user_config.cfg_path_pkg;
-          dot_config.cfg_path_pkg;
-        ];
-      build_path = prepare [
-          user_config.cfg_path_cmi;
-          user_config.cfg_path_build;
-          local_path;
-          dot_config.cfg_path_cmi;
-          dot_config.cfg_path_build;
-          user_config.cfg_path_pkg;
-          dot_config.cfg_path_pkg;
-          flags.Clflags.include_dirs;
-          flags.Clflags.std_include;
-        ];
-      cmt_path = prepare [
-          user_config.cfg_path_cmt;
-          user_config.cfg_path_build;
-          local_path;
-          dot_config.cfg_path_cmt;
-          dot_config.cfg_path_build;
-          user_config.cfg_path_pkg;
-          dot_config.cfg_path_pkg;
-          flags.Clflags.include_dirs;
-          flags.Clflags.std_include;
-        ];
-      global_modules = None;
-      keywords_cache = Raw_lexer.keywords [], String.Set.empty;
-      validity_stamp = ref true;
-    }
 
   let source_path p = p.source_path
   let build_path  p = p.build_path
@@ -324,11 +278,14 @@ end = struct
       end
   end
 
-  let set_dot_merlin project path =
+  let set_dot_merlin project paths =
+    project.dot_merlins_path <- List.map (fun p -> p, file_mtime p) paths;
     let module Dm = Dot_merlin in
-    let dm = match path with
-      | Some path -> Dm.parse (Dm.read path)
-      | None -> Dm.empty_config in
+    let rec aux = function
+      | [] -> List.Lazy.Nil
+      | x :: xs -> Dm.read ~tail:(lazy (aux xs)) x
+    in
+    let dm = Dm.parse (aux paths) in
     let cfg = project.dot_config in
     let result, path_pkg, ppxs = Dot_merlin.path_of_packages dm.Dm.packages in
     project.dot_merlins <- List.map dm.Dm.dot_merlins
@@ -354,40 +311,84 @@ end = struct
     project.dot_merlins_failures <-
       (match result  with `Ok -> [] | `Failures l -> l) @
       (List.map unknown_extensions ~f:(fun e -> e, Extension.Unknown)) @
-      update_flags project
+      update_flags project;
+    invalidate project
 
-  let store : (string option, t) Hashtbl.t = Hashtbl.create 3
+  let create dot_merlins =
+    let dot_config = empty_config () in
+    let user_config = empty_config () in
+    let local_path = ref [] in
+    let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
+    let flags = Clflags.copy Clflags.initial in
+    let project =
+      { dot_merlins_path = [];
+        dot_merlins = [];
+        dot_merlins_failures = [];
+        dot_config; user_config; flags;
+        warnings = Warnings.copy Warnings.initial;
+        local_path;
+        source_path = prepare [
+            user_config.cfg_path_source;
+            local_path;
+            dot_config.cfg_path_source;
+            (* Experimental: used by locate *)
+            user_config.cfg_path_pkg;
+            dot_config.cfg_path_pkg;
+          ];
+        build_path = prepare [
+            user_config.cfg_path_cmi;
+            user_config.cfg_path_build;
+            local_path;
+            dot_config.cfg_path_cmi;
+            dot_config.cfg_path_build;
+            user_config.cfg_path_pkg;
+            dot_config.cfg_path_pkg;
+            flags.Clflags.include_dirs;
+            flags.Clflags.std_include;
+          ];
+        cmt_path = prepare [
+            user_config.cfg_path_cmt;
+            user_config.cfg_path_build;
+            local_path;
+            dot_config.cfg_path_cmt;
+            dot_config.cfg_path_build;
+            user_config.cfg_path_pkg;
+            dot_config.cfg_path_pkg;
+            flags.Clflags.include_dirs;
+            flags.Clflags.std_include;
+          ];
+        global_modules = None;
+        keywords_cache = Raw_lexer.keywords [], String.Set.empty;
+        validity_stamp = ref true;
+      }
+    in
+    set_dot_merlin project dot_merlins;
+    project
+
+  let store : (string list, t) Hashtbl.t = Hashtbl.create 3
   let get path =
     try Hashtbl.find store path, `Cached
     with Not_found ->
-      let project = create () in
-      set_dot_merlin project path;
+      let project = create path in
       Hashtbl.replace store path project;
       project, `Fresh
 
-  let reload_dot_merlin project =
-    try match project.dot_merlins with
-      | [] -> `Ok
-      | (path, _) :: _ ->
-        set_dot_merlin project (Some path);
-        match project.dot_merlins_failures with
-        | [] -> `Ok
-        | lst -> `Failures lst
-    with exn -> `Failures ["reloading", exn]
+  let autoreload_dot_merlin project =
+    let out_of_date (path, mtime) =
+      let mtime' = file_mtime path in
+      mtime <> mtime' &&
+      (classify_float mtime, classify_float mtime') <> (FP_nan,FP_nan)
+    in
+    if List.exists ~f:out_of_date project.dot_merlins ||
+       List.exists ~f:out_of_date project.dot_merlins_path
+    then
+      try
+        set_dot_merlin project (List.map fst project.dot_merlins_path);
+      with exn ->
+        project.dot_merlins_failures <- ["reloading", exn]
 
   let get_dot_merlins project =
     project.dot_merlins
-
-  let autoreload_dot_merlin project =
-    match project.dot_merlins with
-    | [] -> `No
-    | (path, mtime) :: _ ->
-      let mtime' = file_mtime path in
-      if mtime <> mtime' &&
-         (classify_float mtime, classify_float mtime') <> (FP_nan,FP_nan) then
-        (reload_dot_merlin project :> [> `Ok | `Failures of _])
-      else
-        `No
 
   let get_dot_merlins_failure project =
     project.dot_merlins_failures
@@ -422,7 +423,7 @@ end
 
 module Buffer : sig
   type t
-  val create: ?path:string -> Parser.state -> t
+  val create: ?dot_merlins:string list -> ?path:string -> Parser.state -> t
 
   val project: t -> Project.t
 
@@ -449,6 +450,7 @@ end = struct
   type t = {
     kind: Parser.state;
     path: string option;
+    dot_merlins: string list;
     unit_name : string;
     mutable project : Project.t;
     mutable stamp : bool ref;
@@ -471,25 +473,29 @@ end = struct
     in
     (token, Recover.fresh (Parser.from kind input))
 
+  let find_dot_merlins dot_merlins =
+    List.filter_map ~f:Dot_merlin.find dot_merlins
+
   let autoreload_dot_merlin buffer =
-    let path = Option.bind buffer.path Dot_merlin.find in
     let project' = buffer.project in
-    let project, status = Project.get path in
+    let project, status = Project.get (find_dot_merlins buffer.dot_merlins) in
     buffer.project <- project;
     match status with
-    | `Fresh ->
-      invalidate buffer
+    | `Fresh -> invalidate buffer
     | `Cached ->
-      match project' != project, Project.autoreload_dot_merlin project with
-      | true, _ | _, `Ok ->
+      Project.autoreload_dot_merlin project;
+      if project' != project then
         invalidate buffer
-      | _ ->
-        ()
 
-  let create ?path kind =
+  let create ?(dot_merlins=[]) ?path kind =
     let path, filename = match path with
       | None -> None, "*buffer*"
       | Some path -> Some (Filename.dirname path), Filename.basename path
+    in
+    let dot_merlins = match dot_merlins, path with
+      | [], Some path -> [path]
+      | [], None -> []
+      | xs, cwd -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
     in
     let unit_name =
       try String.sub filename ~pos:0 ~len:(String.index filename '.')
@@ -497,15 +503,17 @@ end = struct
     in
     let unit_name = String.capitalize unit_name in
     let lexer = Lexer.empty ~filename in
-    let project = match Project.get (Option.bind path Dot_merlin.find) with
+    let project =
+      match Project.get (find_dot_merlins dot_merlins) with
       | project, `Fresh -> project
       | project, `Cached ->
         ignore (Project.autoreload_dot_merlin project);
-        project in
+        project
+    in
     let stamp = ref true in
     Project.setup project;
     {
-      path; project; lexer; kind; unit_name; stamp;
+      dot_merlins; path; project; lexer; kind; unit_name; stamp;
       keywords = Project.keywords project;
       recover = History.initial (initial_step kind (History.focused lexer));
       typer = Typer.fresh

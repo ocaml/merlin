@@ -105,21 +105,26 @@ let rec find dir =
     then find parent
     else None
 
-let rec read path =
+let find fname =
+  if Sys.file_exists fname && not (Sys.is_directory fname) then
+    Some fname
+  else find fname
+
+let rec read tail path =
   let recurse, dot_merlin = parse_dot_merlin_file path in
   let next = if recurse
-    then lazy (find_next (Filename.dirname (Filename.dirname path)))
-    else lazy List.Lazy.Nil
+    then lazy (find_next tail (Filename.dirname (Filename.dirname path)))
+    else tail
   in
   List.Lazy.Cons (dot_merlin, next)
 
-and find_next path =
+and find_next tail path =
   match find path with
-  | Some path -> read path
-  | None -> List.Lazy.Nil
+  | Some path -> read tail path
+  | None -> Lazy.force tail
 
 let find path = find (canonicalize_filename path)
-let read path = read (canonicalize_filename path)
+let read ?(tail=lazy List.Lazy.Nil) path = read tail (canonicalize_filename path)
 
 let rec project_name = function
   | List.Lazy.Cons (({project = Some ""; path = name} | {project = Some name}), _) ->
