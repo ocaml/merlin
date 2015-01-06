@@ -461,10 +461,13 @@ return DEFAULT or the value associated to KEY."
                                       (list (format "MERLIN_LOG=%s" (expand-file-name logfile))))
                                     environment
                                     process-environment))
+             ;; issue #321, start-file-process not always defined
              (start-file-process
                (if (boundp 'start-file-process)
                  #'start-file-process
                  #'start-process))
+             ;; issue #341, emacs-pty broken with lines >=1024 chars on OSX
+             (process-connection-type nil)
              (p (apply start-file-process "merlin" buffer-name
                        command `("-protocol" "sexp" . ,(append extra-flags flags)))))
         (with-current-buffer buffer
