@@ -223,6 +223,10 @@ field logfile (see `merlin-start-process')"
   "The process data (as returned by the grouping function) (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin-process-data)
 
+(defvar merlin-grouping nil
+  "Configuration returned by merlin-grouping-function.")
+(make-variable-buffer-local 'merlin-grouping)
+
 (defvar merlin-process-owner nil
   "Name of the buffer owning the local process (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin-process-owner)
@@ -506,12 +510,17 @@ return DEFAULT or the value associated to KEY."
       (message "Errors are not reported anymore. Use %s to start again reporting them."
                (substitute-command-keys "\\[merlin-toggle-view-errors]")))))
 
+(defun merlin--grouping-function ()
+  "Wrapper to call merlin-grouping-function and update internal variable."
+  (setq merlin-grouping (funcall merlin-grouping-function))
+  merlin-grouping)
+
 (defun merlin-restart-process ()
   "Restart the merlin toplevel for this buffer, taking into account new flags."
   (interactive)
   (when (get-buffer (merlin-process-buffer))
     (ignore-errors (merlin-kill-process)))
-  (merlin-start-process merlin-default-flags (funcall merlin-grouping-function))
+  (merlin-start-process merlin-default-flags (merlin--grouping-function))
   (setq merlin-erroneous-buffer nil))
 
 (defun merlin-list-instances ()
@@ -555,12 +564,15 @@ the merlin buffer of the current buffer."
 
 (defun merlin--reset ()
   "Rewind the knowledge of merlin of the current buffer to zero."
-  (let* ((ext (if buffer-file-name
-                  (file-name-extension buffer-file-name)
-                "ml"))
-         (ext (if (string-equal ext "mli") 'mli 'ml))
-         (name (or buffer-file-name "toplevel")))
-    (merlin-send-command (list 'reset ext name))
+  (let* ((name (or buffer-file-name "toplevel"))
+         (dot-merlin (lookup-default 'dot-merlin merlin-grouping nil))
+         (dot-merlins (lookup-default 'dot-merlins merlin-grouping nil)))
+    (setq dot-merlins
+          (append (if (stringp dot-merlin)  (list dot-merlin)  dot-merlin)
+                  (if (stringp dot-merlins) (list dot-merlins) dot-merlins)))
+    (merlin-send-command (if dot-merlins
+                           (list 'reset 'dot_merlin dot-merlins 'auto name)
+                           (list 'reset 'auto name)))
     (merlin-error-reset)
     (setq merlin-dirty-point (point-min))))
 
@@ -1905,7 +1917,7 @@ Returns the position."
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
   (interactive)
-  (let* ((conf (funcall merlin-grouping-function))
+  (let* ((conf (merlin--grouping-function))
          (instance (lookup-default 'name conf "default")))
     (setq merlin-instance instance)
     ; if there is not yet a merlin process
