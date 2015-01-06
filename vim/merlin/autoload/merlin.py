@@ -189,7 +189,7 @@ def command_find_use(*packages):
   result = catch_and_print(lambda: command('find', 'use', packages))
   return display_load_failures(result)
 
-def command_reset(kind="ml",name=None):
+def command_reset(kind="auto",name=None):
   global saved_sync
   if name: r = command("reset",kind,name)
   else:    r = command("reset",kind)
@@ -266,10 +266,7 @@ def acquire_buffer(force=False):
   if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
     return False
   else:
-    command_reset(
-        kind=(vim.eval("expand('%:e')") == "mli") and "mli" or "ml",
-        name=vim.eval("expand('%:p')")
-        )
+    command_reset(name=vim.eval("expand('%:p')"))
     process.saved_sync = curr_sync
     return True
 
