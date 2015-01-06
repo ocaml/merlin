@@ -486,7 +486,7 @@ let dispatch (state : state) =
           Option.map item ~f:(fun i -> i.BrowseT.t_loc)
       )
 
-  | (Reset (ml,path) : a request) ->
+  | (Reset (ml,path,dot_merlins) : a request) ->
     let parser = match ml, path with
       | `ML, _  -> Raw_parser.implementation_state
       | `MLI, _ -> Raw_parser.interface_state
@@ -494,7 +494,7 @@ let dispatch (state : state) =
         Raw_parser.interface_state
       | `Auto, _ -> Raw_parser.implementation_state
     in
-    let buffer = Buffer.create ?path parser in
+    let buffer = Buffer.create ?dot_merlins ?path parser in
     buffer_changed state;
     state.buffer <- buffer;
     cursor_state state

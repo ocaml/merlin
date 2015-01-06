@@ -93,7 +93,7 @@ type _ request =
     :  [`Prev|`Next|`Current] * position
     -> Location.t option request
   | Reset
-    :  [`ML | `MLI | `Auto ] * string option
+    :  [`ML | `MLI | `Auto ] * string option * string list option
     -> cursor_state request
   | Refresh
     :  unit request

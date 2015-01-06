@@ -198,6 +198,10 @@ module Protocol_io = struct
     | "mli"  -> `MLI
     | _ -> invalid_arguments ()
 
+  let auto_ml_or_mli = function
+    | "auto" -> `Auto
+    | x -> ml_or_mli x
+
   let add_or_remove = function
     | "add"    -> `Add
     | "remove" -> `Rem
@@ -301,10 +305,10 @@ module Protocol_io = struct
     | (`String "boundary" :: `String "current" :: opt_pos)
     | (`String "boundary" :: opt_pos) ->
       Request (Boundary (`Current, mandatory_position opt_pos))
-    | (`String "reset" :: `String "auto" :: opt_name) ->
-      Request (Reset (`Auto, optional_string opt_name))
+    | (`String "reset" :: `String "dot_merlin" :: `List dot_merlins :: `String kind :: opt_name) ->
+      Request (Reset (auto_ml_or_mli kind, optional_string opt_name, Some (string_list dot_merlins)))
     | (`String "reset" :: `String kind :: opt_name) ->
-      Request (Reset (ml_or_mli kind, optional_string opt_name))
+      Request (Reset (auto_ml_or_mli kind, optional_string opt_name, None))
     | [`String "refresh"] ->
       Request Refresh
     | [`String "errors"] ->
