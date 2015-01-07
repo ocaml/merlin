@@ -552,7 +552,7 @@ the merlin buffer of the current buffer."
     (with-current-buffer buffer
       (tq-close merlin-process-queue)
       (ignore-errors (kill-process merlin-process)))
-    (kill-buffer buffer)))
+    (unless merlin-debug (kill-buffer buffer))))
 
 (defun merlin--wait-for-answer (promise)
   "Waits for merlin to answer."
@@ -614,13 +614,24 @@ the merlin buffer of the current buffer."
                (setcdr promise (funcall cb-if-exn (elt answer 1)))))
             (t (message "Command %s failed with error %s" command (elt answer 1)))))))
 
+(defun merlin--sexp-remove-string-properties (sexp)
+  "Workaround retarded emacs objects printing API.
+See http://lists.gnu.org/archive/html/help-gnu-emacs/2013-09/msg00376.html"
+  (cond
+    ((stringp sexp) (substring-no-properties sexp))
+    ((atom sexp) sexp)
+    (t (cons (merlin--sexp-remove-string-properties (car sexp))
+             (merlin--sexp-remove-string-properties (cdr sexp))))))
+
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
 Give the result to callback-if-success.  If merlin reported an
 error and if CALLBACK-IF-EXN is non-nil, call the function with
 the error message otherwise print a generic error message."
   (assert (merlin--acquired-buffer))
-  (let* ((string (concat (prin1-to-string (if (listp command) command (list command))) "\n"))
+  (setq command (merlin--sexp-remove-string-properties command))
+  (unless (listp command) (setq command (list command)))
+  (let* ((string (concat (prin1-to-string command) "\n"))
          (promise (cons nil nil))
          (closure (list promise
                         callback-if-success
