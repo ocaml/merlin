@@ -595,12 +595,12 @@ the merlin buffer of the current buffer."
       (cond ((not answer)
              (message "Invalid answer received from merlin."))
             ((string-equal (elt answer 0) "return")
-             (setcdr promise (funcall cb-if-success (elt answer 1)))
-             ((string-equal (elt answer 0) "exception")
-              (message "Merlin failed with exception: %s" (elt answer 1)))
-             ((if (functionp cb-if-exn)
-                  (setcdr promise (funcall cb-if-exn (elt answer 1)))
-                (message "Command %s failed with error %s" command (elt answer 1)))))))))
+             (setcdr promise (funcall cb-if-success (elt answer 1))))
+            ((string-equal (elt answer 0) "exception")
+             (message "Merlin failed with exception: %s" (elt answer 1))
+             (when (functionp cb-if-exn)
+               (setcdr promise (funcall cb-if-exn (elt answer 1)))))
+            (t (message "Command %s failed with error %s" command (elt answer 1)))))))
 
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
