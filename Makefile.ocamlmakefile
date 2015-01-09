@@ -9,8 +9,8 @@ ifdef WITH_DEBUG
 	OCAMLLDFLAGS += -g
 endif
 
-RESULT ?= ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
-TYPER  ?= src/ocaml$(MERLIN_OCAML_VERSION)
+RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
+TYPER  = src/ocaml$(MERLIN_OCAML_VERSION)
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 
