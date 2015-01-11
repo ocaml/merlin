@@ -1,11 +1,43 @@
-merlin HEAD
+merlin 2.1
 ===========
+Sun Jan 11 21:52:38 CET 2015
 
-Emacs:
-  - don't use fringe in emacs23 (broken)
-  - remove obsolete aliases:
-      merlin-occurences => merlin-occurrences
-      merlin-to-end => merlin-error-check
+  backend:
+    - add PPX support
+    - make use of context before locating (#308, #316, #318). 
+    - generate match patterns for arbitrary expressions and missing patterns
+      for incomplete matchings (#123).
+    - reintroduce type expansion (asking the times of the same expression
+      several times will resolve type aliases).
+    - "smart" (a.k.a "do what I mean") completion:
+          `L.m` will expand to `List.map ; List.m... ; ListLabels.map ; ...` if
+          `L` doesn't exist.
+    - simplify incremental parser and typer interfaces
+
+  emacs:
+    - don't use fringe in emacs23 (broken)
+    - remove obsolete aliases:
+        merlin-occurences => merlin-occurrences
+        merlin-to-end => merlin-error-check
+    - disable merlin-mode on type buffer
+    - require caml-types (needed for highlighting) (#331).
+
+  misc:
+    - update README (#301).
+
+  vim:
+    - add a type history buffer (#313, #322) -- only available for vim > 7.3.
+    - highlight types when displaying them in the command line -- only for vim >
+      7.3
+    - add tab completion for the argument of the `:Locate` command
+    - add support for text objects based on type enclosing
+    - introduce an interactive version of `:Rename`
+    - locate results can now be shown in a new or existing tab (#335)
+    - use `fileencoding` where necessary (#332)
+    - ctrlp bindings for outline and locate
+
+This release also contains contributions from: Geoff Gole, Rudi Grinberg, Markus
+Mottl, Roman Vorobets and Arthur Wendling.
 
 merlin 2.0
 ==========
