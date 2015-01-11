@@ -1,6 +1,6 @@
 merlin 2.1
 ===========
-Sun Jan 11 21:52:38 CET 2015
+Sun Jan 11 22:20:23 CET 2015
 
   backend:
     - add PPX support
@@ -13,6 +13,10 @@ Sun Jan 11 21:52:38 CET 2015
           `L.m` will expand to `List.map ; List.m... ; ListLabels.map ; ...` if
           `L` doesn't exist.
     - simplify incremental parser and typer interfaces
+    - locate: better handling of packed modules (supposedly)
+    - more precise recovery on patterns (before the recovery was done at the
+      expression level, so the whole match was discarded, now only the pattern
+      is)
 
   emacs:
     - don't use fringe in emacs23 (broken)
