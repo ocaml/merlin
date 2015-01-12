@@ -201,7 +201,7 @@ module Utils = struct
     let path = Fluid.get sources_path in
     find_all_in_path_uncap ~fallback path fname
 
-  let find_file ?(with_fallback=false) file =
+  let find_file_with_path ?(with_fallback=false) file path =
     let fname =
       Misc.chop_extension_if_any (filename_of_filetype file)
       ^ (ext_of_filetype file)
@@ -214,15 +214,15 @@ module Utils = struct
       | CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
       | CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
     in
-    try
-      let path =
+    try Misc.find_in_path_uncap ~fallback path fname
+    with Not_found ->
+      raise (File_not_found file)
+
+  let find_file ?with_fallback file =
+    find_file_with_path ?with_fallback file @@
         match file with
         | ML  _ | MLI _  -> Fluid.get sources_path
         | CMT _ | CMTI _ -> Fluid.get cmt_path
-      in
-      Misc.find_in_path_uncap ~fallback path fname
-    with Not_found ->
-      raise (File_not_found file)
 
   let keep_suffix =
     let open Longident in
@@ -525,10 +525,11 @@ let finalize source loc =
       | [] ->
         debug_log "failed to find \"%s\" in source path (fallback = %b)"
           (filename_of_filetype file) with_fallback ;
-        debug_log "looking for %s (in dir : %s)" fname dir ;
-        let full_path = Filename.concat dir fname in
-        if Sys.file_exists full_path then Some full_path else
-        raise (File_not_found file)
+        debug_log "looking in '%s'" dir ;
+        Some (
+          find_file_with_path ~with_fallback file @@
+            Misc.Path_list.of_string_list_ref (ref [ dir ])
+        )
       | [ x ] -> Some x
       | files ->
         try
