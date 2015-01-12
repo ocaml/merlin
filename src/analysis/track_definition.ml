@@ -250,6 +250,24 @@ module Utils = struct
       | Some (t, is_label) -> Ldot (t, s), is_label
       end
     | otherwise -> otherwise, false
+
+  let explain_file_not_found str_ident path =
+    let msg =
+      match path with
+      | ML file ->
+        sprintf "'%s' seems to originate from '%s' whose ML file could not be \
+                 found" str_ident file
+      | MLI file ->
+        sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
+                 found" str_ident file
+      | CMT file ->
+        sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+      | CMTI file ->
+        sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+    in
+    `File_not_found msg
 end
 
 include Utils
@@ -503,9 +521,14 @@ let finalize source loc =
     | None -> (* We have not moved, we don't want to return a filename *) None
     | Some s ->
       let dir = Filename.dirname s in
-      debug_log "source fname = %s (in dir : %s)" fname dir ;
       match find_all_matches ~with_fallback file with
-      | [] -> raise (File_not_found file)
+      | [] ->
+        debug_log "failed to find \"%s\" in source path (fallback = %b)"
+          (filename_of_filetype file) with_fallback ;
+        debug_log "looking for %s (in dir : %s)" fname dir ;
+        let full_path = Filename.concat dir fname in
+        if Sys.file_exists full_path then Some full_path else
+        raise (File_not_found file)
       | [ x ] -> Some x
       | files ->
         try
@@ -541,11 +564,18 @@ let finalize source loc =
   in
   `Found (full_path, loc.Location.loc_start)
 
-let recover () =
-  match Fallback.get () with
-  | `Nothing -> assert false
-  | `ML  loc -> finalize true loc
-  | `MLI loc -> finalize false loc
+let recover ident =
+  debug_log "recovering..." ;
+  try
+    match Fallback.get () with
+    | `Nothing -> assert false
+    | `ML  loc -> finalize true loc
+    | `MLI loc -> finalize false loc
+  with
+  | File_not_found path -> explain_file_not_found ident path
+  | e ->
+    debug_log "recovery raised: %s" (Printexc.to_string e) ;
+    raise e
 
 let namespaces = function
   | Type        -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
@@ -613,32 +643,16 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
       let modules = path_to_list path' in
       let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
-      | `Not_found when Fallback.is_set () -> recover ()
+      | `Not_found when Fallback.is_set () -> recover str_ident
       | `Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
       | `ML  loc   -> finalize true loc
       | `MLI loc   -> finalize false loc
   with
-  | _ when Fallback.is_set () -> recover ()
+  | _ when Fallback.is_set () -> recover str_ident
   | Not_found
   | File_switching.Can't_move ->
     `Not_found (str_ident, File_switching.where_am_i ())
-  | File_not_found path ->
-    let msg =
-      match path with
-      | ML file ->
-        sprintf "'%s' seems to originate from '%s' whose ML file could not be \
-                 found" str_ident file
-      | MLI file ->
-        sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
-                 found" str_ident file
-      | CMT file ->
-        sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
-                 present" file str_ident
-      | CMTI file ->
-        sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
-                 present" file str_ident
-    in
-    `File_not_found msg
+  | File_not_found path -> explain_file_not_found str_ident path
   | Not_in_env -> `Not_in_env str_ident
   | Multiple_matches lst ->
     let matches = String.concat lst ~sep:", " in
