@@ -254,6 +254,21 @@ module Sexp = Make_simple(struct
   let name = "sexp"
 end)
 
+module Typerep = struct
+  (* TODO: typename_of_t, module Typename_of_t *)
+  let typerep_of_ ({ Location. txt }, ty_decl) =
+    let args =
+      Raw_compat.Parsetree.format_params ~f:(fun v -> Var v) ty_decl.ptype_params
+    in
+    Binding {
+      ident = "typerep_of_" ^ txt ;
+      body = AnyVal ;
+      typesig = Named ([Named (args, txt)], "Typerep_lib.Std.Typerep.t") ;
+    }
+
+  let top_items t = [ typerep_of_ t ]
+end
+
 (* the Cow generators are parametrized by the extension name *)
 let cow_supported_extension ext = List.mem ext ["json"; "xml"; "html";]
 module Make_cow (Ext : sig val name : string end) =
@@ -713,6 +728,9 @@ module TypeWith = struct
           Type_class.binding ty ;
         ]
       ) ty
+
+    | "typerep" ->
+      List.concat_map ~f:Typerep.top_items ty
 
     | "fields" ->
       List.concat_map ~f:Fields.top_lvl ty
