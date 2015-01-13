@@ -512,7 +512,8 @@ return DEFAULT or the value associated to KEY."
 
 (defun merlin--grouping-function ()
   "Wrapper to call merlin-grouping-function and update internal variable."
-  (setq merlin-grouping (funcall merlin-grouping-function))
+  (setq merlin-grouping (merlin--sexp-remove-string-properties
+                          (funcall merlin-grouping-function)))
   merlin-grouping)
 
 (defun merlin-restart-process ()
@@ -629,7 +630,6 @@ Give the result to callback-if-success.  If merlin reported an
 error and if CALLBACK-IF-EXN is non-nil, call the function with
 the error message otherwise print a generic error message."
   (assert (merlin--acquired-buffer))
-  (setq command (merlin--sexp-remove-string-properties command))
   (unless (listp command) (setq command (list command)))
   (let* ((string (concat (prin1-to-string command) "\n"))
          (promise (cons nil nil))
