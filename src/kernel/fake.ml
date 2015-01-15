@@ -255,18 +255,39 @@ module Sexp = Make_simple(struct
 end)
 
 module Typerep = struct
-  (* TODO: typename_of_t, module Typename_of_t *)
-  let typerep_of_ ({ Location. txt }, ty_decl) =
-    let args =
+  let typename_of_ name ?(suffix=name) params =
+    let mk_name x = Named ([x], "Typerep_lib.Typename.t") in
+    let typesig =
+      List.fold_right ~f:(fun p acc -> Arrow ("", mk_name p, acc)) params
+        ~init:(mk_name (Named (params, name)))
+    in
+    Binding { ident = "typename_of_" ^ suffix ; body = AnyVal ; typesig }
+
+  let mk_rep x = Named ([x], "Typerep_lib.Std.Typerep.t")
+
+  let typerep_of_ name params =
+    let typesig =
+      List.fold_right ~f:(fun p acc -> Arrow ("", mk_rep p, acc)) params
+        ~init:(mk_rep (Named (params, name)))
+    in
+    Binding { ident = "typerep_of_" ^ name ; body = AnyVal ; typesig }
+
+  let typename_mod name params =
+    let named =
+      let typesig =
+        List.fold_right ~f:(fun p acc -> Arrow ("", mk_rep p, acc)) params
+          ~init:(Named ([Named (params, name)], "Typerep_lib.Std.Typerep.Named.t"))
+      in
+      Binding { ident = "named" ; body = AnyVal ; typesig }
+    in
+    let bindings = [ typename_of_ name ~suffix:"t" params ; named ] in
+    Module ("Typename_of_" ^ name, bindings)
+
+  let top_items ({ Location. txt }, ty_decl) =
+    let params =
       Raw_compat.Parsetree.format_params ~f:(fun v -> Var v) ty_decl.ptype_params
     in
-    Binding {
-      ident = "typerep_of_" ^ txt ;
-      body = AnyVal ;
-      typesig = Named ([Named (args, txt)], "Typerep_lib.Std.Typerep.t") ;
-    }
-
-  let top_items t = [ typerep_of_ t ]
+    [ typename_mod txt params ; typename_of_ txt params ; typerep_of_ txt params ]
 end
 
 (* the Cow generators are parametrized by the extension name *)
