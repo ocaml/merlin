@@ -1,3 +1,15 @@
+HEAD
+====
+
+  backend:
+    - locate: merlin refused to locate things when it had no context (happens
+      when the buffer didn't parse for example) claiming it was at the
+      "definition point". Fixed.
+    - locate: use the cmt path when no ml file was found in the source path
+      (this might not be such a good idea, the cases when this work are the ones
+      where the user configuration is wrong...)
+    - fake: add typerep support
+
 merlin 2.1
 ===========
 Sun Jan 11 22:20:23 CET 2015
