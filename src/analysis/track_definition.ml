@@ -516,6 +516,7 @@ let finalize source loc =
   let with_fallback = loc.Location.loc_ghost in
   let mod_name = file_path_to_mod_name fname in
   let file = if source then ML mod_name else MLI mod_name in
+  let filename = filename_of_filetype file in
   let full_path =
     match File_switching.where_am_i () with
     | None -> (* We have not moved, we don't want to return a filename *) None
@@ -524,7 +525,7 @@ let finalize source loc =
       match find_all_matches ~with_fallback file with
       | [] ->
         debug_log "failed to find \"%s\" in source path (fallback = %b)"
-          (filename_of_filetype file) with_fallback ;
+           filename with_fallback ;
         debug_log "looking in '%s'" dir ;
         Some (
           find_file_with_path ~with_fallback file @@
@@ -532,15 +533,24 @@ let finalize source loc =
         )
       | [ x ] -> Some x
       | files ->
+        info_log "multiple files named %s exist in the source path..." filename;
         try
           match File_switching.source_digest () with
-          | None -> raise Not_found
+          | None ->
+            info_log "... no source digest available to select the right one" ;
+            raise Not_found
           | Some digest ->
-            debug_log "Trying to use digest to find the right source file" ;
-            Some (List.find files ~f:(fun f -> Digest.file f = digest))
+            info_log "... trying to use source digest to find the right one" ;
+            debug_log "Source digest: %s" (Digest.to_hex digest) ;
+            Some (
+              List.find files ~f:(fun f ->
+                let fdigest = Digest.file f in
+                debug_log "  %s (%s)" f (Digest.to_hex fdigest) ;
+                fdigest = digest
+              )
+            )
         with Not_found ->
-          info_log "multiple files named %s exist in the source path, using \
-                    heuristic to select the right one" fname ;
+          info_log "... using heuristic to select the right one" ;
           let rev = String.reverse (Filename.concat dir fname) in
           let lst =
             List.map files ~f:(fun path ->
