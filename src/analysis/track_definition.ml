@@ -701,7 +701,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
         Format.pp_print_string fmt "no enclosing around: " ;
         Lexing.print_position fmt pos
       ) pos ;
-      None
+      Some Unknown
     | node :: _ ->
       let open BrowseT in
       match node.t_node with
