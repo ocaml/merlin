@@ -165,13 +165,13 @@ let dispatch (state : state) =
       | Core_type {ctyp_type = t}
       | Value_description { val_desc = { ctyp_type = t } } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env verbosity
+        Printtyp.wrap_printing_typemap (Typer.typemap typer) verbosity
           (fun () -> Printtyp.type_scheme t_env ppf t);
         Some (t_loc, to_string (), tail)
 
       | Type_declaration { typ_id = id; typ_type = t} ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env verbosity
+        Printtyp.wrap_printing_typemap (Typer.typemap typer) verbosity
           (fun () -> Printtyp.type_declaration t_env id ppf t);
         Some (t_loc, to_string (), tail)
 
@@ -184,7 +184,7 @@ let dispatch (state : state) =
       | Module_declaration_name {md_type = {mty_type = m}}
       | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env verbosity
+        Printtyp.wrap_printing_typemap (Typer.typemap typer) verbosity
           (fun () -> Printtyp.modtype t_env ppf m);
         Some (t_loc, to_string (), tail)
 

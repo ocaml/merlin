@@ -120,6 +120,10 @@ module Printtyp = struct
   let wrap_printing_env env verbosity' f =
     Fluid.let' verbosity verbosity'
       (fun () -> wrap_printing_env env f)
+
+  let wrap_printing_typemap tm verbosity' f =
+    Fluid.let' verbosity verbosity'
+      (fun () -> wrap_printing_typemap tm f)
 end
 
 (* Check if module is smaller (= has less definition, counting nested ones)
@@ -184,9 +188,8 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     let exp = Raw_compat.dest_tstr_eval str in
     Printtyp.type_scheme env ppf exp.exp_type;
   in
-  let (>>=) f x = f x in
-  Printtyp.wrap_printing_env env verbosity >>= fun () ->
-  Typing_aux.uncatch_errors >>= fun () ->
+  Printtyp.wrap_printing_env env verbosity @@ fun () ->
+  Typing_aux.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
 
   | None ->

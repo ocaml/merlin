@@ -45,6 +45,7 @@ type step = {
   ppx_cookie : Ast_mapper.cache;
   snapshot   : Btype.snapshot;
   env        : Env.t;
+  typemap    : Printtyp.typemap;
   contents   : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list;
   exns       : exn list;
   delayed_checks : Typecore.delayed_check list;
@@ -61,6 +62,7 @@ let empty extensions catch  =
     contents = [];
     ppx_cookie; snapshot; env; exns;
     delayed_checks = [];
+    typemap = Printtyp.fresh_typemap env;
   }
 
 (* Rewriting:
@@ -149,7 +151,8 @@ let append catch loc item step =
     {env; contents; snapshot; ppx_cookie;
      raw = step.raw;
      delayed_checks = !Typecore.delayed_checks;
-     exns = caught catch @ step.exns}
+     exns = caught catch @ step.exns;
+     typemap = Printtyp.update_typemap env step.typemap}
   with exn ->
     let snapshot = Btype.snapshot () in
     {step with snapshot; exns = exn :: caught catch @ step.exns;
@@ -273,6 +276,7 @@ let delayed_checks t =
   !exns
 
 let contents t = (get_value t).contents
+let typemap t  = (get_value t).typemap
 let extensions t = t.state.extensions
 
 let is_valid t =

@@ -1001,21 +1001,26 @@ let iter_env proj1 proj2 f env =
       iter_env_components proj2 (Pident id) path comps f)
     env.components
 
-let iter_pers_env proj1 proj2 f name env =
+let iter_pers_env proj f name env =
   match
     (try Hashtbl.find !cache.persistent_structures name
      with Not_found -> None)
   with
   | Some ps ->
     let id = Pident (Ident.create_persistent name) in
-    iter_env_components proj2 id id ps.ps_comps f
+    iter_env_components proj id id ps.ps_comps f
   | None -> ()
 
 let iter_types f =
   iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
 
-let iter_pers_types name f =
-  iter_pers_env (fun env -> env.types) (fun sc -> sc.comp_types) name f
+let iter_module_types f ident env =
+  if Ident.persistent ident then
+    iter_pers_env (fun sc -> sc.comp_types) f (Ident.name ident) env
+  else
+    Ident.iter (fun id ((path, comps), _) ->
+        iter_env_components (fun sc -> sc.comp_types) (Pident id) path comps f)
+      env.components
 
 let same_types env1 env2 =
   env1.types == env2.types && env1.components == env2.components
@@ -1246,6 +1251,47 @@ let prefix_idents_and_subst root sub sg =
       r
   else
     prefix_idents_and_subst root sub sg
+
+(* Compute type differences between two environments *)
+
+let diff_open_types acc item p = match item with
+  | Sig_type(id, _, _) ->
+    `Type (Ident.hide id, p) :: acc
+  | Sig_module(id, _, _) ->
+    `Module (Ident.hide id) :: acc
+  | _ -> acc
+
+let diff_open_types acc root sg =
+  (* First build the paths and substitution *)
+  let (pl, sub, sg) = prefix_idents_and_subst root Subst.identity sg in
+  let sg = Lazy.force sg in
+  (* Append new defs *)
+  List.fold_left2 diff_open_types acc sg pl
+
+let rec diff_env_types env s1 s2 acc =
+  if s2 == s1 then acc
+  else match s2 with
+    | Env_empty -> raise Not_found
+    | Env_value (s, _, _)
+    | Env_extension (s, _, _)
+    | Env_modtype (s, _, _)
+    | Env_class (s, _, _)
+    | Env_cltype (s, _, _)
+    | Env_functor_arg (s, _) -> diff_env_types env s1 s acc
+    | Env_open (s, path) ->
+      let md = find_module path env in
+      let sg = match scrape_alias env md.md_type with
+        | Mty_signature (lazy sg) -> sg
+        | _ -> assert false
+      in
+      diff_env_types env s1 s (diff_open_types acc path sg)
+    | Env_type (s, id, decl) ->
+      diff_env_types env s1 s (`Type (id, Path.Pident id) :: acc)
+    | Env_module (s, id, _) ->
+      diff_env_types env s1 s (`Module id :: acc)
+
+let diff_env_types env1 env2 =
+  diff_env_types env2 env1.summary env2.summary []
 
 (* Compute structure descriptions *)
 

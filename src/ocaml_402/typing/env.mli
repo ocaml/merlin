@@ -41,9 +41,11 @@ val iter_types:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
     t -> unit
 
-val iter_pers_types:
+val iter_module_types:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
-    string -> t -> unit
+    Ident.t -> t -> unit
+
+val diff_env_types: t -> t -> [`Type of Ident.t * Path.t | `Module of Ident.t] list
 
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t

@@ -338,8 +338,7 @@ let node_complete buffer node prefix =
           path env []
       end
   in
-  Printtyp.wrap_printing_env env
-  begin fun () ->
+  Printtyp.wrap_printing_env env @@ fun () ->
   match node.BrowseT.t_node with
   | BrowseT.Method_call (exp',_) ->
     let t = exp'.Typedtree.exp_type in
@@ -387,5 +386,3 @@ let node_complete buffer node prefix =
         end
       | _ -> find prefix
     with Not_found -> []
-  end
-
