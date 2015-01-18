@@ -1268,8 +1268,8 @@ let diff_open_types acc root sg =
   (* Append new defs *)
   List.fold_left2 diff_open_types acc sg pl
 
-let rec diff_env_types env s1 s2 acc =
-  if s2 == s1 then acc
+let rec diff_env_types env s1 s2 newdefs acc =
+  if s2 == s1 then newdefs, acc
   else match s2 with
     | Env_empty -> raise Not_found
     | Env_value (s, _, _)
@@ -1277,21 +1277,21 @@ let rec diff_env_types env s1 s2 acc =
     | Env_modtype (s, _, _)
     | Env_class (s, _, _)
     | Env_cltype (s, _, _)
-    | Env_functor_arg (s, _) -> diff_env_types env s1 s acc
+    | Env_functor_arg (s, _) -> diff_env_types env s1 s newdefs acc
     | Env_open (s, path) ->
       let md = find_module path env in
       let sg = match scrape_alias env md.md_type with
         | Mty_signature (lazy sg) -> sg
         | _ -> assert false
       in
-      diff_env_types env s1 s (diff_open_types acc path sg)
+      diff_env_types env s1 s newdefs (diff_open_types acc path sg)
     | Env_type (s, id, decl) ->
-      diff_env_types env s1 s (`Type (id, Path.Pident id) :: acc)
+      diff_env_types env s1 s true (`Type (id, Path.Pident id) :: acc)
     | Env_module (s, id, _) ->
-      diff_env_types env s1 s (`Module id :: acc)
+      diff_env_types env s1 s true (`Module id :: acc)
 
 let diff_env_types env1 env2 =
-  diff_env_types env2 env1.summary env2.summary []
+  diff_env_types env2 env1.summary env2.summary false []
 
 (* Compute structure descriptions *)
 
