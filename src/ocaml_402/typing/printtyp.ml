@@ -279,7 +279,8 @@ let pers_map name =
   try Env.find_pers_map name
   with Not_found ->
     let map = ref PathMap.empty in
-    Env.iter_pers_types (register_short_type map Env.empty) name Env.empty;
+    Env.iter_module_types (register_short_type map Env.empty)
+      (Ident.create_persistent name) Env.empty;
     let map = PathMap.map (!) !map in
     begin try Env.set_pers_map name map
       with Not_found ->
@@ -309,19 +310,54 @@ let best_path (_,size as acc) path' =
   else
     acc
 
-let set_printing_env env =
-  printing_env := if Clflags.real_paths () = `Real then Env.empty else env;
+type typemap = {
+  tm_map: Path.t list PathMap.t lazy_t;
+  tm_env: Env.t;
+}
+let typemap_empty = { tm_map = lazy PathMap.empty;
+                      tm_env = Env.empty }
+
+let fresh_typemap env =
+  let map = ref PathMap.empty in
+  Env.iter_types (register_short_type map env) env;
+  PathMap.map (!) !map
+
+let update_typemap env tm =
+  { tm_map = lazy begin
+       match Env.diff_env_types tm.tm_env env with
+       | worklist ->
+         let map = ref PathMap.empty in
+         List.iter (function
+             | `Type (id, path) ->
+               register_short_type map env (Path.Pident id) (path, ())
+             | `Module id ->
+               Env.iter_module_types (register_short_type map env)
+                 id env
+           ) worklist;
+         let map = PathMap.map (!) !map in
+         PathMap.union (fun _ a b -> a @ b) map (Lazy.force tm.tm_map)
+       | exception Not_found ->
+         fresh_typemap env
+     end;
+    tm_env = env;
+  }
+
+let fresh_typemap env =
+  { tm_map = lazy (fresh_typemap env);
+    tm_env = env;
+  }
+
+let set_printing_typemap { tm_env; tm_map } =
+  printing_env := if Clflags.real_paths () = `Real then Env.empty else tm_env;
   Shorten_prefix.opened := None;
-  if !printing_env == Env.empty || same_printing_env env then () else
+  if !printing_env == Env.empty || same_printing_env tm_env then () else
   begin
     (* printf "Reset printing_map@."; *)
-    printing_old := env;
+    printing_old := tm_env;
     printing_pers := Env.used_persistent ();
     printing_map := lazy begin
       (* printf "Recompute printing_map.@."; *)
-      let map = ref PathMap.empty in
-      Env.iter_types (register_short_type map env) env;
-      let map = PathMap.map (!) !map in
+      let map = Lazy.force tm_map in
       let maps = map :: Concr.fold (fun name l -> pers_map name ::l )
                    (Env.used_persistent ()) [] in
       let final = ref PathMap.empty in
@@ -344,9 +380,12 @@ let set_printing_env env =
     end
   end
 
+let wrap_printing_typemap tm f =
+  set_printing_typemap tm;
+  try_finally f (fun () -> set_printing_typemap (fresh_typemap Env.empty))
+
 let wrap_printing_env env f =
-  set_printing_env env;
-  try_finally f (fun () -> set_printing_env Env.empty)
+  wrap_printing_typemap (fresh_typemap env) f
 
 let curr_printing_env () = !printing_env
 
@@ -1122,9 +1161,9 @@ let cltype_declaration id ppf cl =
 
 let wrap_env fenv ftree arg =
   let env = !printing_env in
-  set_printing_env (fenv env);
+  set_printing_typemap (fresh_typemap (fenv env));
   let tree = ftree arg in
-  set_printing_env env;
+  set_printing_typemap (fresh_typemap env);
   tree
 
 let filter_rem_sig item rem =
@@ -1152,10 +1191,13 @@ let hide_rec_items = function
         | _ -> []
       in
       let ids = id :: get_ids rem in
-      set_printing_env
-        (List.fold_right
-           (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
-           ids !printing_env)
+      let env =
+        List.fold_right
+          (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
+          ids !printing_env
+      in
+      set_printing_typemap (fresh_typemap env)
+
   | _ -> ()
 
 let rec tree_of_modtype = function
@@ -1181,7 +1223,7 @@ and tree_of_signature_rec env' = function
   | item :: rem ->
       begin match item with
         Sig_type (_, _, rs) when rs <> Trec_next -> ()
-      | _ -> set_printing_env env'
+      | _ -> set_printing_typemap (fresh_typemap env')
       end;
       let (sg, rem) = filter_rem_sig item rem in
       let trees =
@@ -1454,7 +1496,8 @@ let unification_error unif tr txt1 ppf txt2 =
 
 let report_unification_error ppf env ?(unif=true)
     tr txt1 txt2 =
-  wrap_printing_env env (fun () -> unification_error unif tr txt1 ppf txt2)
+  wrap_printing_env env
+    (fun () -> unification_error unif tr txt1 ppf txt2)
 ;;
 
 let trace fst keep_last txt ppf tr =
@@ -1471,36 +1514,38 @@ let trace fst keep_last txt ppf tr =
     raise exn
 
 let report_subtyping_error ppf env tr1 txt1 tr2 =
-  wrap_printing_env env (fun () ->
-    reset ();
-    let tr1 = List.map prepare_expansion tr1
-    and tr2 = List.map prepare_expansion tr2 in
-    fprintf ppf "@[<v>%a" (trace true (tr2 = []) txt1) tr1;
-    if tr2 = [] then fprintf ppf "@]" else
-    let mis = mismatch true tr2 in
-    fprintf ppf "%a%t@]"
-      (trace false (mis = None) "is not compatible with type") tr2
-      (explanation true mis))
+  wrap_printing_env env
+    (fun () ->
+       reset ();
+       let tr1 = List.map prepare_expansion tr1
+       and tr2 = List.map prepare_expansion tr2 in
+       fprintf ppf "@[<v>%a" (trace true (tr2 = []) txt1) tr1;
+       if tr2 = [] then fprintf ppf "@]" else
+         let mis = mismatch true tr2 in
+         fprintf ppf "%a%t@]"
+           (trace false (mis = None) "is not compatible with type") tr2
+           (explanation true mis))
 
 let report_ambiguous_type_error ppf env (tp0, tp0') tpl txt1 txt2 txt3 =
-  wrap_printing_env env (fun () ->
-    reset ();
-    List.iter
-      (fun (tp, tp') -> path_same_name tp0 tp; path_same_name tp0' tp')
-      tpl;
-    match tpl with
-      [] -> assert false
-    | [tp, tp'] ->
-        fprintf ppf
-          "@[%t@;<1 2>%a@ \
-             %t@;<1 2>%a\
-           @]"
-          txt1 (type_path_expansion tp) tp'
-          txt3 (type_path_expansion tp0) tp0'
-    | _ ->
-        fprintf ppf
-          "@[%t@;<1 2>@[<hv>%a@]\
-             @ %t@;<1 2>%a\
-           @]"
-          txt2 type_path_list tpl
-          txt3 (type_path_expansion tp0) tp0')
+  wrap_printing_env env
+    (fun () ->
+       reset ();
+       List.iter
+         (fun (tp, tp') -> path_same_name tp0 tp; path_same_name tp0' tp')
+         tpl;
+       match tpl with
+         [] -> assert false
+       | [tp, tp'] ->
+         fprintf ppf
+           "@[%t@;<1 2>%a@ \
+            %t@;<1 2>%a\
+            @]"
+           txt1 (type_path_expansion tp) tp'
+           txt3 (type_path_expansion tp0) tp0'
+       | _ ->
+         fprintf ppf
+           "@[%t@;<1 2>@[<hv>%a@]\
+            @ %t@;<1 2>%a\
+            @]"
+           txt2 type_path_list tpl
+           txt3 (type_path_expansion tp0) tp0')

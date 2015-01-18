@@ -23,6 +23,11 @@ val path: formatter -> Path.t -> unit
 val string_of_path: Path.t -> string
 val raw_type_expr: formatter -> type_expr -> unit
 
+type typemap
+val typemap_empty: typemap
+val fresh_typemap: Env.t -> typemap
+val update_typemap: Env.t -> typemap -> typemap
+val wrap_printing_typemap: typemap -> (unit -> 'a) -> 'a
 val wrap_printing_env: Env.t -> (unit -> 'a) -> 'a
     (* Call the function using the environment for type path shortening *)
     (* This affects all the printing functions below *)
