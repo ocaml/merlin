@@ -61,7 +61,7 @@ let to_string_list p =
   in
   aux [] p
 
-module PathMap = Map.Make (struct
+module PathMap = Mymap.Make (struct
     type path = t
     type t = path
     let rec compare p1 p2 =

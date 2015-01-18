@@ -32,4 +32,4 @@ val last: t -> string
 val to_string_list : t -> string list
 (* Added for merlin. *)
 
-module PathMap: Map.S with type key = t
+module PathMap: Mymap.S with type key = t
