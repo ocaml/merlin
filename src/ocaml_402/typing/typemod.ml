@@ -1065,7 +1065,21 @@ let wrap_constraint env arg mty explicit =
 
 (* Type a module value expression *)
 
-let rec type_module ?(alias=false) sttn funct_body anchor env smod =
+let rec type_module ?alias sttn funct_body anchor env smod =
+  try type_module_ ?alias sttn funct_body anchor env smod
+  with exn ->
+    Typing_aux.raise_error exn;
+    { mod_desc = Tmod_structure {
+         str_items = [];
+         str_type = [];
+         str_final_env = env;
+       };
+      mod_type = Mty_signature ~:[];
+      mod_env = env;
+      mod_attributes = smod.pmod_attributes;
+      mod_loc = smod.pmod_loc }
+
+and type_module_ ?(alias=false) sttn funct_body anchor env smod =
   match smod.pmod_desc with
     Pmod_ident lid ->
       let path =
@@ -1132,11 +1146,13 @@ let rec type_module ?(alias=false) sttn funct_body anchor env smod =
             if funct_body && Mtype.contains_type env funct.mod_type then
               raise (Error (smod.pmod_loc, env, Not_allowed_in_functor_body));
           end;
-          let coercion =
+          let arg, coercion =
             try
-              Includemod.modtypes env arg.mod_type mty_param
+              arg, Includemod.modtypes env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise(Error(sarg.pmod_loc, env, Not_included msg)) in
+              Typing_aux.raise_error (Error(sarg.pmod_loc, env, Not_included msg)) ;
+              {arg with mod_type = mty_param}, Tcoerce_none
+          in
           let mty_appl =
             match path with
               Some path ->
