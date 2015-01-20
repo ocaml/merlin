@@ -172,8 +172,8 @@ end = struct
       local_path;
       source_path = prepare [
           user_config.cfg_path_source;
-          dot_config.cfg_path_source;
           local_path;
+          dot_config.cfg_path_source;
           (* Experimental: used by locate *)
           user_config.cfg_path_pkg;
           dot_config.cfg_path_pkg;
@@ -181,22 +181,22 @@ end = struct
       build_path = prepare [
           user_config.cfg_path_cmi;
           user_config.cfg_path_build;
+          local_path;
           dot_config.cfg_path_cmi;
           dot_config.cfg_path_build;
           user_config.cfg_path_pkg;
           dot_config.cfg_path_pkg;
-          local_path;
           flags.Clflags.include_dirs;
           flags.Clflags.std_include;
         ];
       cmt_path = prepare [
           user_config.cfg_path_cmt;
-          dot_config.cfg_path_cmt;
           user_config.cfg_path_build;
+          local_path;
+          dot_config.cfg_path_cmt;
           dot_config.cfg_path_build;
           user_config.cfg_path_pkg;
           dot_config.cfg_path_pkg;
-          local_path;
           flags.Clflags.include_dirs;
           flags.Clflags.std_include;
         ];
