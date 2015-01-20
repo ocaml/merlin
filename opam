@@ -6,7 +6,7 @@ build: [
   [make "-j" jobs]
 ]
 depends: [
-  "ocamlfind"
+  "ocamlfind" {>= "1.5.2"}
   "yojson"
 ]
 ocaml-version: [>= "4.00.0"]
