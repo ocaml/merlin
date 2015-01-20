@@ -199,7 +199,7 @@ module Utils = struct
       | _ -> assert false
     in
     let path = Fluid.get sources_path in
-    find_all_in_path_uncap ~fallback path fname
+    List.uniq (find_all_in_path_uncap ~fallback path fname) ~cmp:String.compare
 
   let find_file_with_path ?(with_fallback=false) file path =
     let fname =
