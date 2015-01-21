@@ -104,6 +104,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
     | constructors, _ ->
+      Shorten_prefix.opened := None ;
       let prefix =
         let path = Shorten_prefix.shorten env path in
         match Path.to_string_list path with
@@ -255,6 +256,8 @@ let node ~loc ~env parents node =
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
     | Some pat ->
+      Shorten_prefix.opened := None ;
+      let pat  = Raw_compat.qualify_constructors Shorten_prefix.shorten pat in
       let ppat = Untypeast.untype_pattern pat in
       let case = Ast_helper.Exp.case ppat placeholder in
       let loc =

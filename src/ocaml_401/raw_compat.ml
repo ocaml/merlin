@@ -397,6 +397,50 @@ let rec is_sub_patt patt ~sub =
   | Tpat_or (p1, p2, row) ->
     is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
 
+let rec qualify_constructors f pat =
+  let open Typedtree in
+  let pat_desc =
+    match pat.pat_desc with
+    | Tpat_alias (p, id, loc) -> Tpat_alias (qualify_constructors f p, id, loc)
+    | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
+    | Tpat_record (labels, closed) ->
+      let labels =
+        List.map labels
+          ~f:(fun (lid, descr, pat) -> lid, descr, qualify_constructors f pat)
+      in
+      Tpat_record (labels, closed)
+    | Tpat_construct (lid, cstr_desc, ps, b) ->
+      let lid =
+        match lid.Asttypes.txt with
+        | Longident.Lident name ->
+          begin match (Btype.repr pat.pat_type).Types.desc with
+          | Types.Tconstr (path, _, _) ->
+            let path = f pat.pat_env path in
+            begin match Path.to_string_list path with
+            | [] -> assert false
+            | p :: ps ->
+              let open Longident in
+              match
+                List.fold_left ps ~init:(Lident p)
+                  ~f:(fun lid p -> Ldot (lid, p))
+              with
+              | Lident _ -> { lid with Asttypes.txt = Lident name }
+              | Ldot (path, _) -> { lid with Asttypes.txt = Ldot (path, name) }
+              | _ -> assert false
+            end
+          | _ -> lid
+          end
+        | _ -> lid (* already qualified *)
+      in
+      Tpat_construct (lid, cstr_desc, List.map ps ~f:(qualify_constructors f), b)
+    | Tpat_array ps -> Tpat_array (List.map ps ~f:(qualify_constructors f))
+    | Tpat_or (p1, p2, row_desc) ->
+      Tpat_or (qualify_constructors f p1, qualify_constructors f p2, row_desc)
+    | Tpat_lazy p -> Tpat_lazy (qualify_constructors f p)
+    | desc -> desc
+  in
+  { pat with pat_desc = pat_desc }
+
 
 let find_branch patterns sub =
   let rec aux before = function
