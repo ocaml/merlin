@@ -76,12 +76,25 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
     | constructors, _ ->
+      let prefix =
+        match Path.to_string_list path with
+        | [] -> assert false
+        | p :: ps ->
+          fun name ->
+            let open Longident in
+            match
+              List.fold_left ps ~init:(Lident p) ~f:(fun lid p -> Ldot (lid, p))
+            with
+            | Lident _ -> Lident name
+            | Ldot (lid, _) -> Ldot (lid, name)
+            | _ -> assert false
+      in
       List.map constructors ~f:(fun cstr_descr ->
         let args =
           if cstr_descr.cstr_arity <= 0 then [] else
           Parmatch.omegas cstr_descr.cstr_arity
         in
-        let lidl = Location.mknoloc (Longident.Lident cstr_descr.cstr_name) in
+        let lidl = Location.mknoloc (prefix cstr_descr.cstr_name) in
         Tast_helper.Pat.construct env type_expr lidl cstr_descr args
       )
     end
@@ -102,8 +115,6 @@ and from_type_decl env path texpr =
   match tdecl.Types.type_manifest with
   | Some te -> gen_patterns ~recurse:false env te
   | None ->
-    (* TODO: use [Predef] to identify int, string, etc. and destruct them in a
-       meaningful way. *)
     try Hashtbl.find Predef_types.tbl path env texpr
     with Not_found ->
       raise (Not_allowed (sprintf "non-destructible type: %s" (Path.last path)))
