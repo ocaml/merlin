@@ -77,6 +77,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
     | constructors, _ ->
       let prefix =
+        let path = Shorten_prefix.shorten env path in
         match Path.to_string_list path with
         | [] -> assert false
         | p :: ps ->
