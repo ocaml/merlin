@@ -173,6 +173,7 @@ SOURCES = \
 	src/analysis/track_definition.mli \
 	src/analysis/track_definition.ml  \
 	$(TYPER)/tast_helper.ml           \
+	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \
 	src/config/my_config.ml           \
 	src/frontend/IO_sexp.ml           \
