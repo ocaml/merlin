@@ -55,6 +55,14 @@ let rec last = function
   | Pdot(_, s, _) -> s
   | Papply(_, p) -> last p
 
+let to_string_list p =
+  let rec aux acc = function
+    | Pident id -> id.Ident.name :: acc
+    | Pdot (p, str, _) -> aux (str :: acc) p
+    | _ -> assert false
+  in
+  aux [] p
+
 module PathMap = Map.Make (struct
     type path = t
     type t = path

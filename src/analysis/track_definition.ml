@@ -135,14 +135,6 @@ module Utils = struct
     | Longident.Lident _ -> false
     | _ -> true
 
-  let path_to_list p =
-    let rec aux acc = function
-      | Path.Pident id -> id.Ident.name :: acc
-      | Path.Pdot (p, str, _) -> aux (str :: acc) p
-      | _ -> assert false
-    in
-    aux [] p
-
   let file_path_to_mod_name f =
     let pref = Misc.chop_extensions f in
     String.capitalize (Filename.basename pref)
@@ -483,7 +475,7 @@ and resolve_mod_alias ~source node path rest =
   match direct with
   | `Alias path' ->
     File_switching.allow_movement () ;
-    let full_path = (path_to_list path') @ path in
+    let full_path = (Path.to_string_list path') @ path in
     check_item ~source full_path rest
   | `Sg _ | `Str _ as x ->
     let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
@@ -651,7 +643,7 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
       let () = debug_log
         "present in the environment, but ghost lock. walking up the typedtree."
       in
-      let modules = path_to_list path' in
+      let modules = Path.to_string_list path' in
       let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
       | `Not_found when Fallback.is_set () -> recover str_ident

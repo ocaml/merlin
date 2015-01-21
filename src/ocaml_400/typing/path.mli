@@ -31,4 +31,7 @@ val head: t -> Ident.t
 
 val last: t -> string
 
+val to_string_list : t -> string list
+(* Added for merlin. *)
+
 module PathMap: Map.S with type key = t
