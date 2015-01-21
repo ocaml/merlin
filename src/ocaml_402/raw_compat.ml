@@ -131,6 +131,10 @@ let summary_prev =
   | Env_functor_arg (s,_) ->
     Some s
 
+let summary_open_path = function
+  | Env.Env_open (_, path) -> Some path
+  | _ -> None
+
 let signature_of_summary =
   let open Env in
   let open Types in

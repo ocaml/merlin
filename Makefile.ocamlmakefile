@@ -103,15 +103,16 @@ SOURCES = \
 	$(TYPER)/typing/ctype.ml          \
 	$(TYPER)/typing/oprint.mli        \
 	$(TYPER)/typing/oprint.ml         \
+	$(TYPER)/typing/mtype.mli         \
+	$(TYPER)/typing/mtype.ml          \
+	$(TYPER)/raw_compat.ml            \
+	src/analysis/shorten_prefix.ml    \
 	$(TYPER)/typing/printtyp.mli      \
 	$(TYPER)/typing/printtyp.ml       \
 	$(TYPER)/typing/includeclass.mli  \
 	$(TYPER)/typing/includeclass.ml   \
 	$(TYPER)/typing/includecore.mli   \
 	$(TYPER)/typing/includecore.ml    \
-	$(TYPER)/typing/mtype.mli         \
-	$(TYPER)/typing/mtype.ml          \
-	$(TYPER)/raw_compat.ml   \
 	src/kernel/fake.mli               \
 	src/kernel/fake.ml                \
 	$(TYPER)/typing/includemod.mli    \
