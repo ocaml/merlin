@@ -244,6 +244,8 @@ let check_modtype_inclusion =
 
 (* Persistent structure descriptions *)
 
+type pers_typemap = Path.t list Path.PathMap.t option
+
 type pers_struct = {
   ps_name: string;
   ps_sig: signature;
@@ -251,7 +253,7 @@ type pers_struct = {
   ps_crcs: (string * Digest.t) list;
   ps_filename: string;
   ps_flags: pers_flags list;
-  ps_typemap: (Path.t list Path.PathMap.t) option ref;
+  ps_typemap: pers_typemap ref;
 }
 
 (* Regroup all internal state *)
@@ -300,33 +302,44 @@ let check_consistency filename crcs =
 
 (* Reading persistent structures from .cmi files *)
 
+exception Cmi_cache_store of module_components * pers_typemap ref
+
 let read_pers_struct modname filename =
-  let {Cmi_cache. cmi_infos = cmi; cmi_typemap = typemap} = Cmi_cache.read filename in
+  let {Cmi_cache. cmi_infos = cmi; cmi_env_store} = Cmi_cache.read filename in
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
   let flags = cmi.cmi_flags in
-  let comps =
-      !components_of_module' empty Subst.identity
-                             (Pident(Ident.create_persistent name))
-                             (Mty_signature ~:sign) in
-    let ps = { ps_name = name;
-               ps_sig = sign;
-               ps_comps = comps;
-               ps_crcs = crcs;
-               ps_filename = filename;
-               ps_flags = flags;
-               ps_typemap = typemap; } in
-    if ps.ps_name <> modname then
-      error (Illegal_renaming(ps.ps_name, filename));
-    check_consistency filename ps.ps_crcs;
-    List.iter
-      (function Rectypes ->
-        if not (Clflags.recursive_types ()) then
-          error (Need_recursive_types(ps.ps_name, !cache.current_unit)))
-      ps.ps_flags;
-    Hashtbl.add !cache.persistent_structures modname (Some ps);
-    ps
+  let comps, ps_typemap = match !cmi_env_store with
+    | Cmi_cache_store (comps, ps_typemap) -> comps, ps_typemap
+    | _ ->
+      let ps_typemap = ref None in
+      let comps =
+        !components_of_module' empty Subst.identity
+          (Pident(Ident.create_persistent name))
+          (Mty_signature ~:sign)
+      in
+      cmi_env_store := Cmi_cache_store (comps, ps_typemap);
+      comps, ps_typemap
+  in
+  let ps = { ps_name = name;
+             ps_sig = sign;
+             ps_comps = comps;
+             ps_crcs = crcs;
+             ps_filename = filename;
+             ps_flags = flags;
+             ps_typemap;
+           } in
+  if ps.ps_name <> modname then
+    error (Illegal_renaming(ps.ps_name, filename));
+  check_consistency filename ps.ps_crcs;
+  List.iter
+    (function Rectypes ->
+      if not (Clflags.recursive_types ()) then
+        error (Need_recursive_types(ps.ps_name, !cache.current_unit)))
+    ps.ps_flags;
+  Hashtbl.add !cache.persistent_structures modname (Some ps);
+  ps
 
 let find_pers_struct name =
   if name = "*predef*" then raise Not_found;
