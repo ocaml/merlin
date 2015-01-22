@@ -33,3 +33,4 @@ val to_string_list : t -> string list
 (* Added for merlin. *)
 
 module PathMap: Mymap.S with type key = t
+module PathSet: Set.S with type elt = t
