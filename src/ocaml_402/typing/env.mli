@@ -37,12 +37,14 @@ type type_descriptions =
     constructor_description list * label_description list
 
 (* For short-paths *)
-val iter_types:
+val iter_types_and_global_aliases:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
+    (Path.t -> Path.t -> unit) ->
     t -> unit
 
-val iter_module_types:
+val iter_module_types_and_global_aliases:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
+    (Path.t -> Path.t -> unit) ->
     Ident.t -> t -> unit
 
 type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
@@ -51,8 +53,8 @@ val diff_env_types: t -> t -> type_diff list
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t
 
-val find_pers_map: string -> Path.t list Path.PathMap.t
-val set_pers_map: string -> Path.t list Path.PathMap.t -> unit
+val find_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t
+val set_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t -> unit
 
 val find_shadowed_types: Path.t -> t -> Path.t list
 

@@ -218,6 +218,7 @@ let printing_old = ref Env.empty
 let printing_pers = ref Concr.empty
 let printing_map = ref (lazy (fun p -> p))
 let printing_opened = ref (lazy PathSet.empty)
+let printing_module_aliases = ref (lazy PathMap.empty)
 
 let same_type t t' = repr t == repr t'
 
@@ -255,21 +256,32 @@ let rec normalize_type_path ?(cache=false) env p =
 let penality id =
   if id <> "" && id.[0] = '_' then 10 else 1
 
-let rec path_size n opened = function
+let rec direct_path_size n = function
+  | Pident _ -> n
+  | Pdot (p, _, _) -> direct_path_size (n + 1) p
+  | _ -> assert false
+let direct_path_size p = direct_path_size 1 p
+
+let rec path_size n opened aliases = function
     Pident id ->
-    n + penality (Ident.name id),
-      -Ident.binding_time id
-  | Pdot (p, dot, _) when PathSet.mem p opened ->
-    n + penality dot, 0
-  | Pdot (p, _, _) ->
-      path_size (n + 1) opened p
+    n + penality (Ident.name id), -Ident.binding_time id
+  | Pdot (p, dot, _) ->
+    if PathSet.mem p opened then
+      n + penality dot, 0
+    else begin try
+        let lazy (_, n') = PathMap.find p aliases in
+        n + n' + penality dot, 0
+      with Not_found ->
+      path_size (n + 1) opened aliases p
+    end
   | Papply (p1, p2) ->
-      let (n', _) = path_size n opened p2 in
-      path_size n' opened p1
+    let (n', _) = path_size n opened aliases p2 in
+    path_size n' opened aliases p1
 
 let path_size p =
   let lazy opened = !printing_opened in
-  path_size 0 opened p
+  let lazy aliases = !printing_module_aliases in
+  path_size 0 opened aliases p
 
 let same_printing_env env =
   let used_pers = Env.used_persistent () in
@@ -285,13 +297,26 @@ let register_short_type map env p (p', decl) =
   with Not_found ->
     map := PathMap.add p1 (ref [p]) !map
 
+let register_short_module map env p p' =
+  let p' = Env.normalize_path None env p' in
+  try
+    let r = PathMap.find p' !map in
+    r := p :: !r
+  with Not_found ->
+    map := PathMap.add p' (ref [p]) !map
+
 let pers_map name =
   try Env.find_pers_map name
   with Not_found ->
-    let map = ref PathMap.empty in
-    Env.iter_module_types (register_short_type map Env.empty)
+    let types = ref PathMap.empty in
+    let modules = ref PathMap.empty in
+    Env.iter_module_types_and_global_aliases
+      (register_short_type types Env.empty)
+      (register_short_module modules Env.empty)
       (Ident.create_persistent name) Env.empty;
-    let map = PathMap.map (!) !map in
+    let types = PathMap.map (!) !types in
+    let modules = PathMap.map (!) !modules in
+    let map = (types, modules) in
     begin try Env.set_pers_map name map
       with Not_found ->
         prerr_endline ("Env.set_pers_map: " ^ name ^ " not found")
@@ -313,6 +338,13 @@ let is_unambiguous path env =
       List.for_all (fun p -> lid_of_path p = id) rem &&
       Path.same p (fst (Env.lookup_type id env))
 
+let best_direct_path (_,size as acc) path' =
+  let size' = direct_path_size path' in
+  if size' < size then
+    (path', size')
+  else
+    acc
+
 let best_path (_,size as acc) path' =
   let size' = path_size path' in
   if size' < size && is_unambiguous path' !printing_env then
@@ -321,29 +353,38 @@ let best_path (_,size as acc) path' =
     acc
 
 type pathmap = Path.t list PathMap.t
-type typemap = {
-  tm_map: pathmap lazy_t;
-  tm_open: PathSet.t lazy_t;
-  tm_env: Env.t;
-}
-let typemap_empty =
-  { tm_map = lazy PathMap.empty;
-    tm_open = lazy PathSet.empty;
-    tm_env = Env.empty }
 
-let pathmap_with_idents map0 env idents =
-  let map = ref PathMap.empty in
+type aliasmap = {
+  am_map: (pathmap * pathmap) lazy_t;
+  am_open: PathSet.t lazy_t;
+  am_env: Env.t;
+}
+type typemap = aliasmap (*fixme*)
+
+let typemap_empty = {
+  am_map = lazy (PathMap.empty, PathMap.empty);
+  am_open = lazy PathSet.empty;
+  am_env = Env.empty;
+}
+
+let pathmap_with_idents (types0,modules0) env idents =
+  let types = ref PathMap.empty in
+  let modules = ref PathMap.empty in
   let register_type_diff = function
     | `Type (id, path) ->
-      register_short_type map env (Path.Pident id) (path, ())
+      register_short_type types env (Path.Pident id) (path, ())
     | `Module id ->
-      Env.iter_module_types (register_short_type map env)
+      Env.iter_module_types_and_global_aliases
+        (register_short_type types env)
+        (register_short_module modules env)
         id env
     | `Open _ -> ()
   in
   List.iter register_type_diff idents;
-  let map = PathMap.map (!) !map in
-  PathMap.union (fun _ a b -> a @ b) map map0
+  let types = PathMap.map (!) !types in
+  let modules = PathMap.map (!) !modules in
+  PathMap.union (fun _ a b -> a @ b) types types0,
+  PathMap.union (fun _ a b -> a @ b) modules modules0
 
 let openmap_with_idents open0 idents =
   List.fold_left (fun acc -> function
@@ -378,46 +419,68 @@ let shorten_path ?env p =
   in
   shorten_path opened p
 
+let rec shorten_path_with_aliases opened aliases = function
+  | Pident _ as p0 -> p0
+  | Pdot (p, s, i) as p0  ->
+    if PathSet.mem p opened then
+      Pident (Ident.hide (Ident.create_persistent s))
+    else begin try
+        Pdot (fst (Lazy.force (PathMap.find p aliases)), s, i)
+      with Not_found ->
+        let p' = shorten_path_with_aliases opened aliases p in
+        if p == p' then p0
+        else Pdot (p', s, i)
+    end
+  | Papply (p1, p2) as p0 ->
+    let p1' = shorten_path_with_aliases opened aliases p1 in
+    let p2' = shorten_path_with_aliases opened aliases p2 in
+    if p1 == p1' && p2 == p2' then p0
+    else Papply (p1', p2')
+
+let shorten_path_with_aliases p =
+  let lazy opened = !printing_opened in
+  let lazy aliases = !printing_module_aliases in
+  shorten_path_with_aliases opened aliases p
+
 let update_typemap env tm =
   let diff = lazy (
-    try `Diff (Env.diff_env_types tm.tm_env env)
+    try `Diff (Env.diff_env_types tm.am_env env)
     with Not_found -> `Init (Env.diff_env_types Env.empty env))
   in
-  { tm_map = lazy begin
+  { am_map = lazy begin
        match Lazy.force diff with
        | `Diff idents ->
-         pathmap_with_idents (Lazy.force tm.tm_map) env idents
+         pathmap_with_idents (Lazy.force tm.am_map) env idents
        | `Init idents ->
-         pathmap_with_idents PathMap.empty env idents
+         pathmap_with_idents (PathMap.empty, PathMap.empty) env idents
      end;
-    tm_open = lazy begin
+    am_open = lazy begin
       match Lazy.force diff with
       | `Diff idents ->
-        openmap_with_idents (Lazy.force tm.tm_open) idents
+        openmap_with_idents (Lazy.force tm.am_open) idents
       | `Init idents ->
         openmap_with_idents PathSet.empty idents
     end;
-    tm_env = env;
+    am_env = env;
   }
 
 let fresh_typemap env = update_typemap env typemap_empty
 
-let set_printing_typemap { tm_env; tm_map; tm_open } =
-  printing_env := if Clflags.real_paths () = `Real then Env.empty else tm_env;
-  if !printing_env == Env.empty || same_printing_env tm_env then () else
+let set_printing_typemap { am_env; am_map; am_open } =
+  printing_env := if Clflags.real_paths () = `Real then Env.empty else am_env;
+  if !printing_env == Env.empty || same_printing_env am_env then () else
   begin
     (* printf "Reset printing_map@."; *)
-    printing_old := tm_env;
+    printing_old := am_env;
     printing_pers := Env.used_persistent ();
-    printing_map :=
-      begin match Clflags.real_paths () with
-        | `Short -> lazy begin
-          (* printf "Recompute printing_map.@."; *)
-          let lazy map = tm_map in
-          let maps = map :: Concr.fold (fun name l -> pers_map name ::l )
-                       (Env.used_persistent ()) [] in
-          let final = ref PathMap.empty in
-          function
+    let maps = match Clflags.real_paths () with
+      | `Short -> lazy begin
+        (* printf "Recompute printing_map.@."; *)
+        let lazy map = am_map in
+        let maps = map :: Concr.fold (fun name l -> pers_map name ::l )
+                     (Env.used_persistent ()) [] in
+        let final = ref PathMap.empty in
+        let type_alias = function
           (* Predefined types have binding_time < 1000 (see [Predef]) *)
           | (Pident id) as path when Ident.binding_time id < 1000 ->
             path
@@ -425,19 +488,38 @@ let set_printing_typemap { tm_env; tm_map; tm_open } =
             try PathMap.find path !final
             with Not_found ->
               let path', _ =
-                List.fold_left (fun acc map ->
+                List.fold_left (fun acc (map,_) ->
                     try List.fold_left best_path acc (PathMap.find path map)
                     with Not_found -> acc)
                   (path, path_size path)
                   maps
               in
-              let path' = shorten_path path' in
+              let path' = shorten_path_with_aliases path' in
               final := PathMap.add path path' !final;
-              path';
-        end
-        | `Opened | `Real -> lazy (fun p -> p)
-      end;
-    printing_opened := tm_open
+              path'
+        in
+        let module_alias = List.fold_left (fun aliases (_,aliases') ->
+            PathMap.union (fun _ a b -> a @ b) aliases' aliases)
+            PathMap.empty maps
+        in
+        let module_alias =
+          PathMap.map (fun paths -> lazy (
+              match paths with
+              | x :: xs ->
+                List.fold_left (fun acc path ->
+                    best_direct_path acc (shorten_path path))
+                  (x, direct_path_size x) paths
+              | [] -> assert false
+            ))
+            module_alias
+        in
+        type_alias, module_alias
+      end
+      | `Opened | `Real -> lazy ((fun p -> p), PathMap.empty)
+    in
+    printing_map := lazy (fst (Lazy.force maps));
+    printing_module_aliases := lazy (snd (Lazy.force maps));
+    printing_opened := am_open
   end
 
 let wrap_printing_typemap tm f =

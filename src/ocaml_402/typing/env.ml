@@ -51,15 +51,22 @@ let error err = raise (Error err)
 module EnvLazy : sig
   type ('a,'b) t
 
+  type ('a,'b) view =
+      Done of 'b
+    | Raise of exn
+    | Thunk of 'a
+
   val force : ('a -> 'b) -> ('a,'b) t -> 'b
   val create : 'a -> ('a,'b) t
   val is_val : ('a,'b) t -> bool
 
+  val view : ('a,'b) t ->  ('a,'b) view
+
 end  = struct
 
-  type ('a,'b) t = ('a,'b) eval ref
+  type ('a,'b) t = ('a,'b) view ref
 
-  and ('a,'b) eval =
+  and ('a,'b) view =
       Done of 'b
     | Raise of exn
     | Thunk of 'a
@@ -84,6 +91,7 @@ end  = struct
     let x = ref (Thunk x) in
     x
 
+  let view x = !x
 end
 
 
@@ -202,7 +210,8 @@ and functor_components = {
 
 (* Persistent structure descriptions *)
 
-type pers_typemap = Path.t list Path.PathMap.t option
+type pers_typemap = (Path.t list Path.PathMap.t
+                     * Path.t list Path.PathMap.t) option
 
 type pers_struct = {
   ps_name: string;
@@ -982,44 +991,58 @@ let lookup_cltype lid env =
 (* Iter on an environment (ignoring the body of functors and
    not yet evaluated structures) *)
 
-let rec iter_env_components proj path path' mcomps f =
+let rec iter_env_components proj path path' mcomps ft fma =
   (* if EnvLazy.is_val mcomps then *)
   match EnvLazy.force !components_of_module_maker' mcomps with
     Structure_comps comps ->
     Tbl.iter
-      (fun s (d, n) -> f (Pdot (path, s, n)) (Pdot (path', s, n), d))
+      (fun s (d, n) -> ft (Pdot (path, s, n)) (Pdot (path', s, n), d))
       (proj comps);
     Tbl.iter
       (fun s (c, n) ->
-         iter_env_components proj (Pdot (path, s, n)) (Pdot (path', s, n)) c f)
+         let is_alias =
+           try
+             let envl, _ = Tbl.find s comps.comp_modules in
+             match EnvLazy.view envl with
+             | EnvLazy.Raise _ -> false
+             | EnvLazy.Done mty | EnvLazy.Thunk (_,mty) ->
+               match mty with
+               | Types.Mty_alias alias when Ident.persistent (Path.head alias) ->
+                 fma (Pdot (path, s, n)) alias;
+                 true
+               | _ -> false
+           with Not_found -> false
+         in
+         if not is_alias then
+           iter_env_components proj (Pdot (path, s, n)) (Pdot (path', s, n)) c ft fma)
       comps.comp_components
   | Functor_comps _ -> ()
 
-let iter_env proj1 proj2 f env =
-  Ident.iter (fun id (x,_) -> f (Pident id) x) (proj1 env);
+let iter_env proj1 proj2 ft fma env =
+  Ident.iter (fun id (x,_) -> ft (Pident id) x) (proj1 env);
   Ident.iter (fun id ((path, comps), _) ->
-      iter_env_components proj2 (Pident id) path comps f)
+      iter_env_components proj2 (Pident id) path comps ft fma)
     env.components
 
-let iter_pers_env proj f name env =
+let iter_pers_env proj ft fma name env =
   match
     (try Hashtbl.find !cache.persistent_structures name
      with Not_found -> None)
   with
   | Some ps ->
     let id = Pident (Ident.create_persistent name) in
-    iter_env_components proj id id ps.ps_comps f
+    iter_env_components proj id id ps.ps_comps ft fma
   | None -> ()
 
-let iter_types f =
+let iter_types_and_global_aliases f =
   iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
 
-let iter_module_types f ident env =
+let iter_module_types_and_global_aliases ft fma ident env =
   if Ident.persistent ident then
-    iter_pers_env (fun sc -> sc.comp_types) f (Ident.name ident) env
+    iter_pers_env (fun sc -> sc.comp_types) ft fma (Ident.name ident) env
   else
     Ident.iter (fun id ((path, comps), _) ->
-        iter_env_components (fun sc -> sc.comp_types) (Pident id) path comps f)
+        iter_env_components (fun sc -> sc.comp_types) (Pident id) path comps ft fma)
       env.components
 
 let same_types env1 env2 =
