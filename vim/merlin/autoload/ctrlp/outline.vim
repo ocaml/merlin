@@ -39,10 +39,11 @@ fu! ctrlp#outline#init()
   let l:modules = []
   python << EOF
 get_outlines()
-longest = reduce(lambda x, y: max(x,len(y)), outlines.keys(), 0)
-for key, x in outlines.iteritems():
+keys = sorted(outlines.keys(), key=len)
+longest = len(keys[-1])
+for key in keys:
   name = key.replace("'", "''")
-  vim.command("call add(l:modules, '%*s\t--\t%s')" % (longest, name, x['kind']))
+  vim.command("call add(l:modules, '%*s\t--\t%s')" % (longest, name, outlines[key]['kind']))
 EOF
   return l:modules
 endf
