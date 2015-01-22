@@ -373,6 +373,7 @@ let dispatch (state : state) =
 
   | (Case_analysis ({ Location. loc_start ; loc_end } as loc) : a request) ->
     with_typer state @@ fun typer ->
+    Printtyp.wrap_printing_typemap (Typer.typemap typer) verbosity @@ fun () ->
     let env = Typer.env typer in
     let structures = Typer.contents typer in
     let structures = Browse.of_typer_contents structures in

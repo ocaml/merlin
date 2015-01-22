@@ -28,7 +28,7 @@
 
 open Std
 open BrowseT
-       
+
 let section = Logger.Section.of_string "destruct"
 
 exception Not_allowed of string
@@ -77,6 +77,9 @@ let placeholder =
   let todo = Ast_helper.Exp.constant (Ast_helper.const_string "TODO") in
   Ast_helper.Exp.apply failwith [ "", todo ]
 
+let shorten_path env path =
+  Printtyp.shorten_path ~env path
+
 let rec gen_patterns ?(recurse=true) env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
@@ -104,9 +107,8 @@ let rec gen_patterns ?(recurse=true) env type_expr =
       in
       [ Tast_helper.Pat.record env type_expr lst Asttypes.Closed ]
     | constructors, _ ->
-      Shorten_prefix.opened := None ;
       let prefix =
-        let path = Shorten_prefix.shorten env path in
+        let path = shorten_path env path in
         match Path.to_string_list path with
         | [] -> assert false
         | p :: ps ->
@@ -193,7 +195,7 @@ let rec needs_parentheses = function
     | _ -> needs_parentheses ts
 
 let rec get_every_pattern = function
-  | [] -> assert false 
+  | [] -> assert false
   | parent :: parents ->
     match parent.t_node with
     | Case _
@@ -275,8 +277,7 @@ let node ~loc ~env parents node =
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
     | Some pat ->
-      Shorten_prefix.opened := None ;
-      let pat  = Raw_compat.qualify_constructors Shorten_prefix.shorten pat in
+      let pat  = Raw_compat.qualify_constructors shorten_path pat in
       let ppat = Untypeast.untype_pattern pat in
       let case = Ast_helper.Exp.case ppat placeholder in
       let loc =

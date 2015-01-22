@@ -217,6 +217,7 @@ let printing_env = ref Env.empty
 let printing_old = ref Env.empty
 let printing_pers = ref Concr.empty
 let printing_map = ref (lazy (fun p -> p))
+let printing_opened = ref (lazy PathSet.empty)
 
 let same_type t t' = repr t == repr t'
 
@@ -251,8 +252,6 @@ let rec normalize_type_path ?(cache=false) env p =
   with
     Not_found -> (p, Id)
 
-let printing_opened = ref (lazy PathSet.empty)
-
 let rec path_size n opened = function
     Pident id ->
     (let s = Ident.name id in
@@ -269,24 +268,6 @@ let rec path_size n opened = function
 let path_size p =
   let lazy opened = !printing_opened in
   path_size 0 opened p
-
-let rec shorten_path opened = function
-  | Pident _ as p0 -> p0
-  | Pdot (p, s, _) when PathSet.mem p opened ->
-    Pident (Ident.hide (Ident.create_persistent s))
-  | Pdot (p, s, i) as p0 ->
-    let p' = shorten_path opened p in
-    if p == p' then p0
-    else Pdot (p', s, i)
-  | Papply (p1, p2) as p0 ->
-    let p1' = shorten_path opened p1 in
-    let p2' = shorten_path opened p2 in
-    if p1 == p1' && p2 == p2' then p0
-    else Papply (p1', p2')
-
-let shorten_path p =
-  let lazy opened = !printing_opened in
-  shorten_path opened p
 
 let same_printing_env env =
   let used_pers = Env.used_persistent () in
@@ -367,6 +348,33 @@ let openmap_with_idents open0 idents =
       | `Open path -> PathSet.add path acc
       | _ -> acc)
     open0 idents
+
+let rec shorten_path opened = function
+  | Pident _ as p0 -> p0
+  | Pdot (p, s, _) when PathSet.mem p opened ->
+    Pident (Ident.hide (Ident.create_persistent s))
+  | Pdot (p, s, i) as p0 ->
+    let p' = shorten_path opened p in
+    if p == p' then p0
+    else Pdot (p', s, i)
+  | Papply (p1, p2) as p0 ->
+    let p1' = shorten_path opened p1 in
+    let p2' = shorten_path opened p2 in
+    if p1 == p1' && p2 == p2' then p0
+    else Papply (p1', p2')
+
+let shorten_path ?env p =
+  let lazy opened = !printing_opened in
+  let opened = match env with
+    | None -> opened
+    | Some env ->
+      match Env.diff_env_types !printing_env env with
+      | exception Not_found ->
+        openmap_with_idents PathSet.empty (Env.diff_env_types Env.empty env)
+      | idents ->
+        openmap_with_idents opened idents
+  in
+  shorten_path opened p
 
 let update_typemap env tm =
   let diff = lazy (

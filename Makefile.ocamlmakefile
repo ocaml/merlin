@@ -118,7 +118,6 @@ SOURCES = \
 	$(TYPER)/typing/mtype.mli         \
 	$(TYPER)/typing/mtype.ml          \
 	$(TYPER)/raw_compat.ml            \
-	src/analysis/shorten_prefix.ml    \
 	$(TYPER)/typing/printtyp.mli      \
 	$(TYPER)/typing/printtyp.ml       \
 	$(TYPER)/typing/includeclass.mli  \
