@@ -29,11 +29,33 @@
 open Std
 open Merlin_lib
 
-let sources_path = Fluid.from (Misc.Path_list.of_list [])
-let cmt_path     = Fluid.from (Misc.Path_list.of_list [])
-
 let section = Logger.section "locate"
+let info_log  x = Printf.ksprintf (Logger.info  section)  x
 let debug_log x = Printf.ksprintf (Logger.debug section)  x
+
+let sources_path = Fluid.from (Misc.Path_list.of_list [])
+let cfg_cmt_path = Fluid.from (Misc.Path_list.of_list [])
+let loadpath     = Fluid.from (Misc.Path_list.of_list [])
+
+let erase_loadpath ~cwd ~new_path k =
+  let str_path_list =
+    List.map new_path ~f:(function
+      | "" ->
+        (* That's the cwd at the time of the generation of the cmt, I'm
+            guessing/hoping it will be the directory where we found it *)
+        Logger.debugf section ~title:"loadpath" Format.pp_print_string cwd ;
+        cwd
+      | x ->
+        Logger.debugf section ~title:"loadpath" Format.pp_print_string x ;
+        x
+    )
+  in
+  let pl = Misc.Path_list.of_string_list_ref (ref str_path_list) in
+  Fluid.let' loadpath pl k
+
+let restore_loadpath k =
+  Logger.debug section ~title:"loadpath" "Restored load path" ;
+  Fluid.let' loadpath (Fluid.get cfg_cmt_path) k
 
 module Fallback = struct
   let fallback = ref `Nothing
@@ -127,8 +149,6 @@ end
 
 
 module Utils = struct
-  let info_log  x = Printf.ksprintf (Logger.info  section)  x
-
   let is_ghost { Location. loc_ghost } = loc_ghost = true
 
   let longident_is_qualified = function
@@ -214,7 +234,7 @@ module Utils = struct
     find_file_with_path ?with_fallback file @@
         match file with
         | ML  _ | MLI _  -> Fluid.get sources_path
-        | CMT _ | CMTI _ -> Fluid.get cmt_path
+        | CMT _ | CMTI _ -> Fluid.get loadpath
 
   let keep_suffix =
     let open Longident in
@@ -429,18 +449,9 @@ and browse_cmts ~root modules =
         List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
       in
       File_switching.allow_movement () ;
-      debug_log "Saw packed module => erasing loadpath" ;
-      let str_path_list =
-        List.map cmt_infos.cmt_loadpath ~f:(function
-          | "" ->
-            (* That's the cwd at the time of the generation of the cmt, I'm
-               guessing/hoping it will be the directory where we found it *)
-            Filename.dirname root
-          | x -> x
-        )
-      in
-      let pl = Misc.Path_list.of_string_list_ref (ref str_path_list) in
-      Fluid.let' cmt_path pl (fun () ->
+      Logger.debug section ~title:"loadpath" "Saw packed module => erasing loadpath" ;
+      let new_path = cmt_infos.cmt_loadpath in
+      erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
         let root = find_file ~with_fallback:true (Preferences.cmt file) in
         browse_cmts ~root modules
       )
@@ -456,12 +467,31 @@ and from_path path =
     File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
     Preferences.final loc
   | fname :: modules ->
+    debug_log "from_path '%s'" fname ;
+    (* The following is ugly, and deserves some explanations:
+         As can be seen above, when encountering packed modules we override the
+         loadpath by the one used to create the pack.
+         This means that if the cmt files haven't been moved, we have access to
+         the cmt file of every unit included in the pack.
+         However, we might not have access to any other cmt (e.g. if others
+         paths in the loadpath reference only cmis of packs).
+         (Note that if we had access to other cmts, there might be conflicts,
+         and the paths order would matter unless we have reliable digests...)
+         Assuming we are in such a situation, if we do not find something in our
+         "erased" loadpath, it could mean that we are looking for a persistent
+         unit, and that's why we restore the initial loadpath. *)
     try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~root:cmt_file modules
     with File_not_found (CMT fname | CMTI fname) as exn ->
-      info_log "failed to locate the cmt[i] of '%s'" fname ;
-      raise exn
+      restore_loadpath (fun () ->
+        try
+          let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
+          browse_cmts ~root:cmt_file modules
+        with File_not_found (CMT fname | CMTI fname) as exn ->
+          info_log "failed to locate the cmt[i] of '%s'" fname ;
+          raise exn
+      )
 
 and resolve_mod_alias ~source node path rest =
   let direct, loc =
@@ -741,5 +771,6 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
     info_log "looking for the source of '%s' (prioritizing %s files)" path
       (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
     Fluid.let' sources_path (Project.source_path project) (fun () ->
-    Fluid.let' cmt_path (Project.cmt_path project) (fun () ->
-    from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid))
+    Fluid.let' cfg_cmt_path (Project.cmt_path project) (fun () ->
+    Fluid.let' loadpath     (Project.cmt_path project) (fun () ->
+    from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid)))
