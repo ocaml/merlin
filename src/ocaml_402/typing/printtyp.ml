@@ -252,13 +252,15 @@ let rec normalize_type_path ?(cache=false) env p =
   with
     Not_found -> (p, Id)
 
+let penality id =
+  if id <> "" && id.[0] = '_' then 10 else 1
+
 let rec path_size n opened = function
     Pident id ->
-    (let s = Ident.name id in
-     n + if s <> "" && s.[0] = '_' then 10 else 1),
+    n + penality (Ident.name id),
       -Ident.binding_time id
-  | Pdot (p, _, _) when PathSet.mem p opened ->
-    n, 0
+  | Pdot (p, dot, _) when PathSet.mem p opened ->
+    n + penality dot, 0
   | Pdot (p, _, _) ->
       path_size (n + 1) opened p
   | Papply (p1, p2) ->
