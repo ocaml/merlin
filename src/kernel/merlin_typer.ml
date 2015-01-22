@@ -276,10 +276,41 @@ let delayed_checks t =
   !exns
 
 let contents t = (get_value t).contents
-let typemap t  = (get_value t).typemap
 let extensions t = t.state.extensions
 
 let is_valid t =
   List.for_all ~f:(!) t.state.stamp &&
   try with_typer t Env.check_cache_consistency
   with _exn -> false
+
+let rec last_ident = function
+  | Env.Env_value (_,id,_)
+  | Env.Env_type (_,id,_)
+  | Env.Env_extension  (_,id,_)
+  | Env.Env_module (_,id,_)
+  | Env.Env_modtype(_,id,_)
+  | Env.Env_class (_,id,_)
+  | Env.Env_cltype (_,id,_)
+  | Env.Env_functor_arg (_,id) -> id
+  | Env.Env_empty -> raise Not_found
+  | Env.Env_open (s,_) -> last_ident s
+
+let last_ident env = last_ident (Env.summary env)
+
+let typemap ?from t  =
+  match from with
+  | None -> (get_value t).typemap
+  | Some env ->
+    try
+      let time = Ident.binding_time (last_ident env) in
+      let rec aux = function
+        | [] -> raise Not_found
+        | (_,step) :: steps ->
+          match last_ident step.env with
+          | id when Ident.binding_time id <= time ->
+            step.typemap
+          | _ -> aux steps
+      in
+      Printtyp.update_typemap env (aux t.steps)
+    with Not_found ->
+      Printtyp.fresh_typemap env
