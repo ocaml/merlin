@@ -338,7 +338,8 @@ let node_complete buffer node prefix =
           path env []
       end
   in
-  Printtyp.wrap_printing_env env @@ fun () ->
+  let typer = Buffer.typer buffer in
+  Printtyp.wrap_printing_typemap (Typer.typemap ~from:env typer) @@ fun () ->
   match node.BrowseT.t_node with
   | BrowseT.Method_call (exp',_) ->
     let t = exp'.Typedtree.exp_type in
