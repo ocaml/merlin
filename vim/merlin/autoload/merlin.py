@@ -224,7 +224,7 @@ def command_locate(path, line, col):
               vim.command(":keepjumps e %s" % pos_or_err['file'])
           elif "tab" in split_method:
               if "always" in split_method:
-                  vim.command(":keepjumps tab edit %s" % pos_or_err['file'])
+                  vim.command(":keepjumps tab split %s" % pos_or_err['file'])
               else:
                   vim.command(":keepjumps tab drop %s" % pos_or_err['file'])
           elif "vertical" in split_method:
@@ -238,6 +238,7 @@ def command_locate(path, line, col):
               vim.command(":vsplit")
           else:
               vim.command(":split")
+      # TODO: move the cursor using vimscript, so we can :keepjumps?
       vim.current.window.cursor = (l, c)
   except MerlinExc as e:
     try_print_error(e)
