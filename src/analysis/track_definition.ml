@@ -488,7 +488,7 @@ and from_path path =
         try
           let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
           browse_cmts ~root:cmt_file modules
-        with File_not_found (CMT fname | CMTI fname) as exn ->
+        with File_not_found (CMT fname | CMTI fname) ->
           info_log "failed to locate the cmt[i] of '%s'" fname ;
           raise exn
       )
