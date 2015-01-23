@@ -19,19 +19,20 @@ cal add(g:ctrlp_ext_vars, {
 let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)
 
 python << EOF
-outlines = dict()
+outlines = []
 
 def linearize(prefix, lst):
   for x in lst:
     name = "%s%s" % (prefix, x['name'])
-    outlines[name] = {'pos': x['pos'], 'kind': x['kind']}
+    outlines.append({'name': name, 'pos': x['pos'], 'kind': x['kind']})
     linearize(name + ".", x['children'])
 
 def get_outlines():
   global outlines
-  outlines = dict()
+  outlines = []
   result = merlin.command("outline")
   linearize("", result)
+  outlines.sort(key = lambda x: len(x['name']))
 EOF
 
 " Public {{{1
@@ -39,11 +40,12 @@ fu! ctrlp#outline#init()
   let l:modules = []
   python << EOF
 get_outlines()
-keys = sorted(outlines.keys(), key=len)
-longest = len(keys[-1])
-for key in keys:
-  name = key.replace("'", "''")
-  vim.command("call add(l:modules, '%*s\t--\t%s')" % (longest, name, outlines[key]['kind']))
+longest = len(outlines[-1]['name'])
+i = 0
+for x in outlines:
+  name = x['name'].replace("'", "''")
+  vim.command("call add(l:modules, '%4d : %*s\t--\t%s')" % (i, longest, name, x['kind']))
+  i += 1
 EOF
   return l:modules
 endf
@@ -51,10 +53,10 @@ endf
 fu! ctrlp#outline#accept(mode, str)
   call ctrlp#exit()
   python << EOF
-matching_name = vim.eval("a:str").strip().split('\t')[0]
+idx = int(vim.eval("a:str").strip().split(' ')[0])
 
 try:
-  x = outlines[matching_name]
+  x = outlines[idx]
   l = x['pos']['line']
   c = x['pos']['col']
   vim.current.window.cursor = (l, c)
