@@ -119,13 +119,32 @@ let rec gen_patterns ?(recurse=true) env type_expr =
             | Ldot (lid, _) -> Ldot (lid, name)
             | _ -> assert false
       in
-      List.map constructors ~f:(fun cstr_descr ->
-        let args =
-          if cstr_descr.cstr_arity <= 0 then [] else
-          Parmatch.omegas cstr_descr.cstr_arity
+      let are_types_unifiable typ =
+        let snap = Btype.snapshot () in
+        let res =
+          try Ctype.unify_gadt ~newtype_level:0 (ref env) type_expr typ ; true
+          with Ctype.Unify _trace -> false
         in
-        let lidl = Location.mknoloc (prefix cstr_descr.cstr_name) in
-        Tast_helper.Pat.construct env type_expr lidl cstr_descr args
+        Btype.backtrack snap ;
+        res
+      in
+      List.filter_map constructors ~f:(fun cstr_descr ->
+        if cstr_descr.cstr_generalized &&
+           not (are_types_unifiable cstr_descr.cstr_res)
+        then (
+          Logger.debugf section (fun fmt name ->
+            Format.fprintf fmt "Eliminating '%s' branch, its return type is not\
+                               compatible with the expected type (%a)"
+              name Printtyp.type_expr type_expr
+          ) cstr_descr.cstr_name ;
+          None
+        ) else
+          let args =
+            if cstr_descr.cstr_arity <= 0 then [] else
+              Parmatch.omegas cstr_descr.cstr_arity
+          in
+          let lidl = Location.mknoloc (prefix cstr_descr.cstr_name) in
+          Some (Tast_helper.Pat.construct env type_expr lidl cstr_descr args)
       )
     end
   | Tvariant row_desc ->
