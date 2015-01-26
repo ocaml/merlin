@@ -479,7 +479,8 @@ let is_big obj =
 
 let report_error ppf errs =
   if errs = [] then () else
-  let (errs , err) = split_last errs in
+  let (_errs , err) = split_last errs in
+  (*
   let pe = ref true in
   let include_err' ppf (_,_,obj as err) =
     if not (is_big obj) then fprintf ppf "%a@ " include_err err
@@ -487,6 +488,8 @@ let report_error ppf errs =
   in
   let print_errs ppf = List.iter (include_err' ppf) in
   fprintf ppf "@[<v>%a%a@]" print_errs errs include_err err
+  *)
+  fprintf ppf "@[<v>%a@]" include_err err
 
 
 (* We could do a better job to split the individual error items
