@@ -349,10 +349,11 @@ let type_declarations env id decl1 decl2 =
 open Format
 open Printtyp
 
-let show_loc msg ppf loc =
+let show_loc msg ppf loc = () (*
   let pos = loc.Location.loc_start in
   if List.mem pos.Lexing.pos_fname [""; "_none_"; "//toplevel//"] then ()
   else fprintf ppf "@\n@[<2>%a:@ %s@]" Location.print_loc loc msg
+*)
 
 let show_locs ppf (loc1, loc2) =
   show_loc "Expected declaration" ppf loc2;
