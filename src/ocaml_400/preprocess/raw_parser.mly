@@ -521,7 +521,7 @@ The precedences must be listed from low to high.
 %right    INFIXOP1                      (* expr (e OP e OP e) *)
 %right    COLONCOLON                    (* expr (e :: e :: e) *)
 %left     INFIXOP2 PLUS PLUSDOT MINUS MINUSDOT  (* expr (e OP e OP e) *)
-%left     INFIXOP3 STAR                 (* expr (e OP e OP e) *)
+%left     PERCENT INFIXOP3 STAR                 (* expr (e OP e OP e) *)
 %right    INFIXOP4                      (* expr (e OP e OP e) *)
 %nonassoc prec_unary_minus prec_unary_plus (* unary - *)
 %nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
@@ -589,7 +589,6 @@ dummy:
   | OUNIT_BENCH_FUN
   | OUNIT_BENCH_INDEXED
   | OUNIT_BENCH_MODULE
-  | PERCENT
     { () }
 ;
 
@@ -1142,6 +1141,8 @@ expr:
       { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
   | expr INFIXOP2 expr
       { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
+  | expr PERCENT expr
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "%" $3 }
   | expr INFIXOP3 expr
       { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
   | expr INFIXOP4 expr
@@ -1886,6 +1887,7 @@ operator:
   | INFIXOP0                                    { $1 }
   | INFIXOP1                                    { $1 }
   | INFIXOP2                                    { $1 }
+  | PERCENT                                     { "%" }
   | INFIXOP3                                    { $1 }
   | INFIXOP4                                    { $1 }
   | BANG                                        { "!" }
