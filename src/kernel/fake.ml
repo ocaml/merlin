@@ -92,6 +92,7 @@ let bool_ty = Named ([],"bool")
 let rec translate_ts ?ghost_loc =
   let loc = default_loc ghost_loc in
   function
+  | Var "_" -> Ast_helper.Typ.any ~loc ()
   | Var ident -> Ast_helper.Typ.var ~loc ident
   | Arrow (label, a, b) ->
     let a = translate_ts ?ghost_loc a in
