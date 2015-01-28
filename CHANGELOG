@@ -1,5 +1,6 @@
-HEAD
-====
+merlin 2.1.1
+============
+Wed Jan 28 08:59:20 GMT 2015
 
   backend:
     - locate: merlin refused to locate things when it had no context (happens
@@ -8,7 +9,18 @@ HEAD
     - locate: use the cmt path when no ml file was found in the source path
       (this might not be such a good idea, the cases when this work are the ones
       where the user configuration is wrong...)
-    - fake: add typerep support
+    - destruct: qualify introduced constructors
+    - destruct: eliminate "impossible" GADT branches
+    - parser: handle '%' as an operator for 4.00 and 4.01 ( #345 )
+
+  fake:
+    - add typerep support
+    - never generate ['_] type variables.
+
+  vim:
+    - show duplicated outlines in CtrlP
+    - sort outlines by name length in CtrlP
+    - when split method is set to 'tab' *always* open a new tab.
 
 merlin 2.1
 ===========
