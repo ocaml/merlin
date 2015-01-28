@@ -314,7 +314,7 @@ let pers_map name =
   with Not_found ->
     let types = ref PathMap.empty in
     let modules = ref PathMap.empty in
-    Env.iter_module_types_and_global_aliases
+    Env.iter_module_types_and_aliases
       (register_short_type types Env.empty)
       (register_short_module modules Env.empty)
       (Ident.create_persistent name) Env.empty;
@@ -393,7 +393,7 @@ let pathmap_with_idents (types0,modules0) env idents =
     | `Type (id, path) ->
       register_short_type types env (Path.Pident id) (path, ())
     | `Module id ->
-      Env.iter_module_types_and_global_aliases
+      Env.iter_module_types_and_aliases
         (register_short_type types env)
         (register_short_module modules env)
         id env

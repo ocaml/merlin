@@ -37,12 +37,12 @@ type type_descriptions =
     constructor_description list * label_description list
 
 (* For short-paths *)
-val iter_types_and_global_aliases:
+val iter_types_and_aliases:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
     (Path.t -> Path.t -> unit) ->
     t -> unit
 
-val iter_module_types_and_global_aliases:
+val iter_module_types_and_aliases:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
     (Path.t -> Path.t -> unit) ->
     Ident.t -> t -> unit
