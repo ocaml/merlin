@@ -264,7 +264,7 @@ let rec path_size n ofun afun = function
     Pident id ->
     n + penality (Ident.name id), -Ident.binding_time id
   | Pdot (p, dot, _) when ofun p ->
-    dprintf "OPENED %s, cost 0\n%!" (to_str p);
+    (*dprintf "OPENED %s, cost 0\n%!" (to_str p);*)
     n + penality dot, 0
   | Pdot (p, dot, _) ->
     begin match afun p with
@@ -277,7 +277,7 @@ let rec path_size n ofun afun = function
 
 let path_size ofun afun p =
   let (n, _) as result = path_size 0 ofun afun p in
-  dprintf "SIZE %s = %d\n%!" (String.concat "." (Path.to_string_list p)) n;
+  (*dprintf "SIZE %s = %d\n%!" (String.concat "." (Path.to_string_list p)) n;*)
   result
 
 let module_path_size ofun afun p =
@@ -302,7 +302,7 @@ let register_short_type map env p (p', decl) =
 
 let register_short_module map env p p' =
   let p' = Env.normalize_path None env p' in
-  dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');
+  (*dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');*)
   try
     let r = PathMap.find p' !map in
     r := p :: !r
@@ -494,10 +494,10 @@ let set_printing_typemap { am_env; am_map; am_open } =
           let union aliases (_,aliases') = pathmap_append aliases' aliases in
           List.fold_left union PathMap.empty maps
         in
-        PathMap.iter (fun p ps ->
+        (*PathMap.iter (fun p ps ->
             dprintf "REGISTERED %s ALIASING %s\n%!" (to_str p)
               (String.concat ";" (List.map to_str ps))
-          ) module_alias;
+          ) module_alias;*)
         let select_alias paths = lazy
           begin
             let best_module_path = best_path opened no_aliases in
@@ -507,26 +507,26 @@ let set_printing_typemap { am_env; am_map; am_open } =
                 paths
             in
             let path = shorten_path' opened no_aliases path in
-            dprintf "SELECTED %s AMONG %s\n%!"
-              (to_str path) (String.concat ", " (List.map to_str paths));
+            (*dprintf "SELECTED %s AMONG %s\n%!"
+              (to_str path) (String.concat ", " (List.map to_str paths));*)
             path, n
           end
         in
         let module_alias = PathMap.map select_alias module_alias in
         let aliased p =
           let p' = Env.normalize_path None am_env p in
-          dprintf "ALIAS FOR %s = %s? (in %d aliases)\n%!"
+          (*dprintf "ALIAS FOR %s = %s? (in %d aliases)\n%!"
             (to_str p)
             (to_str p')
-            (PathMap.cardinal module_alias);
+            (PathMap.cardinal module_alias);*)
           match PathMap.find p' module_alias with
           | exception Not_found ->
-            dprintf "\tNO\n%!";
+            (*dprintf "\tNO\n%!";*)
             None
           | result ->
-            dprintf "\tYES\n%!";
+            (*dprintf "\tYES\n%!";*)
             let lazy result = result in
-            dprintf "\tALIASING TO %s\n%!" (to_str (fst result));
+            (*dprintf "\tALIASING TO %s\n%!" (to_str (fst result));*)
             Some result
         in
         let final = ref PathMap.empty in
