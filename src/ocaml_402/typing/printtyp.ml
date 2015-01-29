@@ -539,8 +539,6 @@ let set_printing_typemap { am_env; am_map; am_open } =
             with Not_found ->
               let path', _ =
                 let best_path = best_path opened aliased in
-                let best_path acc p =
-                  best_path acc (Env.normalize_path None am_env p) in
                 List.fold_left
                   (fun acc (map,_) ->
                      try List.fold_left best_path acc (PathMap.find path map)
