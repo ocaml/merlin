@@ -493,7 +493,7 @@ let set_printing_typemap { am_env; am_map; am_open } =
         let lazy map, lazy opened = am_map, am_open in
         let opened p = PathSet.mem p opened in
         let maps = map :: pers_maps () in
-        let module_alias =
+        let module_alias' =
           let union aliases (_,aliases') = pathmap_append aliases' aliases in
           List.fold_left union PathMap.empty maps
         in
@@ -501,24 +501,24 @@ let set_printing_typemap { am_env; am_map; am_open } =
           PathMap.iter (fun p ps ->
               dprintf "REGISTERED %s ALIASING %s\n%!" (to_str p)
                 (String.concat ";" (List.map to_str ps))
-            ) module_alias;
-        let select_alias path paths = lazy
+            ) module_alias';
+        let rec select_alias path paths = lazy
           begin
-            let best_module_path = best_path opened no_aliases in
+            let best_module_path = best_path opened aliased in
             let path, (n, _) =
               List.fold_left best_module_path
-                (Predef.path_unit, (max_int, max_int))
-                (path :: paths)
+                (path, path_size opened aliased path)
+                paths
             in
-            let path = shorten_path' opened no_aliases path in
+            let path = shorten_path' opened aliased path in
             if debug then
               dprintf "SELECTED %s AMONG %s\n%!"
                 (to_str path) (String.concat ", " (List.map to_str paths));
             path, n
           end
-        in
-        let module_alias = PathMap.mapi select_alias module_alias in
-        let aliased p =
+        and module_alias = lazy (PathMap.mapi select_alias module_alias')
+        and aliased p =
+          let lazy module_alias = module_alias in
           let p' = Env.normalize_path None am_env p in
           if debug then
             dprintf "ALIAS FOR %s = %s? (in %d aliases)\n%!"
@@ -533,13 +533,13 @@ let set_printing_typemap { am_env; am_map; am_open } =
             if debug then
               dprintf "\tYES\n%!";
             let lazy result = result in
-            let size', _ = path_size (fun _ -> false) no_aliases p in
+            (*let size', _ = path_size (fun _ -> false) no_aliases p in
             let result =
               if size' < snd result then
                 (p, size')
               else
                 result
-            in
+            in*)
             if debug then
               dprintf "\tALIASING TO %s\n%!" (to_str (fst result));
             Some result
