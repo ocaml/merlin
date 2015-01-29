@@ -362,14 +362,15 @@ def vim_complete_cursor(base, suffix, vimvar):
         vim.command("let l:tmp = {'word':'%s','abbr':'<type>','kind':':','menu':'%s','empty':1}" %
                 (prep(suffix),prep(app['argument_type'])))
         vim.command("call add(%s, l:tmp)" % vimvar)
-      for label in app['labels']:
-        name = label['name']
-        if not name.startswith(suffix): name = name.replace("?","~")
-        if name.startswith(suffix):
-          success = True
-          vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-                  (prep(name),prep(label['name'] + ':' + label['type']),'','~'))
-          vim.command("call add(%s, l:tmp)" % vimvar)
+      if not base:
+        for label in app['labels']:
+          name = label['name']
+          if not name.startswith(suffix): name = name.replace("?","~")
+          if name.startswith(suffix):
+            success = True
+            vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
+                    (prep(name),prep(label['name'] + ':' + label['type']),'','~'))
+            vim.command("call add(%s, l:tmp)" % vimvar)
     for prop in completions['entries']:
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
         (prep(prop['name']),prep(desc(prop)),prep(prop['info']),prep(prop['kind'][:1])))
