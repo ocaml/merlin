@@ -1,3 +1,13 @@
+ifndef OVERRIDE_ENV
+	OCAMLFIND := ocamlfind
+	OCAML := ocaml
+	OCAMLC := ocamlc
+	OCAMLOPT := ocamlopt
+	OCAMLMKTOP := ocamlmktop
+	OCAMLCP := ocamlcp
+	OCAMLDEP := ocamldep
+endif
+
 OCAMLFLAGS += -w -3
 
 ifdef WITH_BIN_ANNOT
