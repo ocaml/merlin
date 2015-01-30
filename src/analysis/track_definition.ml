@@ -40,6 +40,8 @@ let loadpath     = Fluid.from (Misc.Path_list.of_list [])
 
 let last_location = Fluid.from Location.none
 
+let target_is_module = ref false
+
 let erase_loadpath ~cwd ~new_path k =
   let str_path_list =
     List.map new_path ~f:(function
@@ -341,25 +343,32 @@ let repack = function
   | `Mod_expr me  -> Some (BrowseT.Module_expr me)
   | `Mod_type mty -> Some (BrowseT.Module_type mty)
 
+let find_mod_expr ~name str_item =
+  let mbs = Raw_compat.expose_module_binding str_item in
+  let mb = List.find ~f:(fun mb -> Ident.name mb.Typedtree.mb_id = name) mbs in
+  mb.Typedtree.mb_expr
+
+let find_mod_type ~name sig_item =
+  let mds = Raw_compat.expose_module_declaration sig_item in
+  let md = List.find ~f:(fun md -> Ident.name md.Typedtree.md_id = name) mds in
+  md.Typedtree.md_type
+
 let get_on_track ~name item =
   match
-    let open Raw_compat in
     match item.BrowseT.t_node with
     | BrowseT.Structure_item item ->
-      repack (get_mod_expr_if_included ~name item),
+      repack (Raw_compat.get_mod_expr_if_included ~name item),
       begin try
-        let mbs = expose_module_binding item in
-        let mb = List.find ~f:(fun mb -> Ident.name mb.Typedtree.mb_id = name) mbs in
+        let me = find_mod_expr ~name item in
         info_log "(get_on_track) %s is bound" name ;
-        `Direct (BrowseT.Module_expr mb.Typedtree.mb_expr)
+        `Direct (BrowseT.Module_expr me)
       with Not_found -> `Not_found end
     | BrowseT.Signature_item item ->
-      repack (get_mod_type_if_included ~name item),
+      repack (Raw_compat.get_mod_type_if_included ~name item),
       begin try
-        let mds = expose_module_declaration item in
-        let md = List.find ~f:(fun md -> Ident.name md.Typedtree.md_id = name) mds in
+        let mty = find_mod_type ~name item in
         info_log "(get_on_track) %s is bound" name ;
-        `Direct (BrowseT.Module_type md.Typedtree.md_type)
+        `Direct (BrowseT.Module_type mty)
       with Not_found -> `Not_found end
     | _ -> assert false
   with
@@ -405,22 +414,37 @@ let rec check_item ~source modules =
     | Some (path, items) -> check_item ~source path items
   in
   let get_loc ~name item rest =
-    let ident_locs, is_included =
+    let tagged_item, ident_locs, is_included =
       let open Raw_compat in
       match item.BrowseT.t_node with
       | BrowseT.Structure_item item ->
-        str_ident_locs item, get_mod_expr_if_included item
+        `Str item, str_ident_locs item, get_mod_expr_if_included item
       | BrowseT.Signature_item item ->
-        sig_ident_locs item, get_mod_type_if_included item
+        `Sig item, sig_ident_locs item, get_mod_type_if_included item
       | _ -> assert false
     in
     try
-      let res = List.assoc name ident_locs in
-      Logger.debugf section (fun fmt loc ->
-        Format.pp_print_string fmt "[get_loc] found at " ;
-        Location.print_loc fmt loc
-      ) res ;
-      if source then `ML res else `MLI res
+      let loc = List.assoc name ident_locs in
+      if not !target_is_module then (
+        Logger.debugf section (fun fmt loc ->
+          Format.pp_print_string fmt "[get_loc] found at " ;
+          Location.print_loc fmt loc
+        ) loc ;
+        if source then `ML loc else `MLI loc
+      ) else (
+        match
+          match tagged_item with
+          | `Str item -> Raw_compat.remove_indir_me @@ find_mod_expr ~name item
+          | `Sig item -> Raw_compat.remove_indir_mty @@ find_mod_type ~name item
+        with
+        | `Alias target ->
+          File_switching.allow_movement () ;
+          check_item ~source (Path.to_string_list target) rest
+        | _ ->
+          debug_log "We found the module we were looking for, it's not an alias\
+                     , stopping there." ;
+          if source then `ML loc else `MLI loc
+      )
     with Not_found ->
       match repack (is_included ~name) with
       | None ->
@@ -631,6 +655,7 @@ let namespaces = function
 exception Found of (Path.t * Location.t)
 
 let lookup ctxt ident env =
+  target_is_module := false ;
   try
     List.iter (namespaces ctxt) ~f:(fun namespace ->
       try
@@ -642,10 +667,12 @@ let lookup ctxt ident env =
         | `Mod ->
           info_log "lookup in module namespace" ;
           let path, _ = Raw_compat.lookup_module ident env in
+          target_is_module := true ;
           raise (Found (path, Location.symbol_gloc ()))
         | `Modtype ->
           info_log "lookup in module type namespace" ;
           let path, _ = Raw_compat.lookup_modtype ident env in
+          target_is_module := true ;
           raise (Found (path, Location.symbol_gloc ()))
         | `Type ->
           info_log "lookup in type namespace" ;
