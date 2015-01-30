@@ -87,6 +87,14 @@ type _ request =
   | Expand_prefix
     :  string * position
     -> completions request
+  | Document
+    : string option * position option
+    -> [ `Found of string
+      | `Not_in_env of string
+      | `File_not_found of string
+      | `Not_found of string * string option
+      | `No_documentation
+      ] request
   | Locate
     : string option * [ `ML | `MLI ] * position option
     -> [ `Found of string option * Lexing.position

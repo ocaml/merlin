@@ -303,6 +303,10 @@ module Protocol_io = struct
       Request (Complete_prefix (prefix, pos_of_json jpos))
     | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       Request (Expand_prefix (prefix, pos_of_json jpos))
+    | (`String "document" :: (`String "" | `Null) :: opt_pos) ->
+      Request (Document (None, optional_position opt_pos))
+    | (`String "document" :: `String path :: opt_pos) ->
+      Request (Document (Some path, optional_position opt_pos))
     | (`String "locate" :: (`String "" | `Null) :: `String choice :: opt_pos) ->
       Request (Locate (None, ml_or_mli choice, optional_position opt_pos))
     | (`String "locate" :: `String path :: `String choice :: opt_pos) ->
@@ -427,6 +431,20 @@ module Protocol_io = struct
           json_of_completions compl
         | Expand_prefix _, compl ->
           json_of_completions compl
+        | Document _, resp ->
+          begin match resp with
+          | `No_documentation -> `String "No documentation available"
+          | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
+          | `Not_found (i, Some f) ->
+            `String
+              (sprintf "%s was supposed to be in %s but could not be found" i f)
+          | `Not_in_env str ->
+            `String (Printf.sprintf "Not in environment '%s'" str)
+          | `File_not_found msg ->
+            `String msg
+          | `Found doc ->
+            `String doc
+          end
         | Locate _, resp ->
           begin match resp with
           | `At_origin -> `String "Already at definition point"

@@ -29,6 +29,7 @@
 open Std
 open Merlin_lib
 
+
 let section = Logger.section "locate"
 let info_log  x = Printf.ksprintf (Logger.info  section)  x
 let debug_log x = Printf.ksprintf (Logger.debug section)  x
@@ -36,6 +37,8 @@ let debug_log x = Printf.ksprintf (Logger.debug section)  x
 let sources_path = Fluid.from (Misc.Path_list.of_list [])
 let cfg_cmt_path = Fluid.from (Misc.Path_list.of_list [])
 let loadpath     = Fluid.from (Misc.Path_list.of_list [])
+
+let last_location = Fluid.from Location.none
 
 let erase_loadpath ~cwd ~new_path k =
   let str_path_list =
@@ -284,13 +287,6 @@ end
 
 include Utils
 
-type result = [
-  | `Found of string option * Lexing.position
-  | `Not_in_env of string
-  | `File_not_found of string
-  | `Not_found
-]
-
 type context = Type | Expr | Patt | Unknown
 exception Context_mismatch
 
@@ -358,10 +354,17 @@ let rec check_item ~source modules =
     in
     try
       let res = List.assoc name ident_locs in
+      Logger.debugf section (fun fmt loc ->
+        Format.pp_print_string fmt "[get_loc] found at " ;
+        Location.print_loc fmt loc
+      ) res ;
       if source then `ML res else `MLI res
     with Not_found ->
       match repack (is_included ~name) with
-      | None -> check_item ~source modules rest
+      | None ->
+        Fluid.let' last_location item.BrowseT.t_loc @@ fun () ->
+        debug_log "[get_loc] saving last_location" ;
+        check_item ~source modules rest
       | Some thing ->
         info_log "one more include to follow..." ;
         Fallback.set ~source item.BrowseT.t_loc ;
@@ -405,11 +408,16 @@ let rec check_item ~source modules =
     | [ str_ident ] -> get_loc ~name:str_ident item rest
     | mod_name :: path ->
       match get_on_track ~name:mod_name item with
-      | `Not_found   -> check_item ~source modules rest
+      | `Not_found   ->
+        Fluid.let' last_location item.BrowseT.t_loc @@ fun () ->
+        debug_log "[get_on_track `Not_found] saving last_location" ;
+        check_item ~source modules rest
       | `Direct me   ->
+        debug_log "[get_on_track `Direct] setting fallback" ;
         Fallback.set ~source item.BrowseT.t_loc ;
         resolve_mod_alias ~source me path rest
       | `Included me ->
+        debug_log "[get_on_track `Included] setting fallback" ;
         Fallback.set ~source item.BrowseT.t_loc ;
         resolve_mod_alias ~source me modules rest
 
@@ -533,7 +541,7 @@ let path_and_loc_from_label desc env =
 exception Not_in_env
 exception Multiple_matches of string list
 
-let finalize source loc =
+let finalize_locating source loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
   let mod_name = file_path_to_mod_name fname in
@@ -595,9 +603,9 @@ let finalize source loc =
           | (_, s) :: _ -> Some s
           | _ -> assert false
   in
-  `Found (full_path, loc.Location.loc_start)
+  `Found (full_path, loc)
 
-let recover ident =
+let recover ~finalize ident =
   debug_log "recovering..." ;
   try
     match Fallback.get () with
@@ -654,7 +662,8 @@ let lookup ctxt ident env =
     x
 
 
-let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
+let from_longident ~env ~local_defs ~is_implementation ?pos 
+  ~finalize ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
@@ -667,21 +676,19 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
       let label_desc = Raw_compat.lookup_label ident env in
       path_and_loc_from_label label_desc env
     in
-    if not (is_ghost loc) then
-      `Found (None, loc.Location.loc_start)
-    else
+    if not (is_ghost loc) then `Found (None, loc) else
       let () = debug_log
         "present in the environment, but ghost lock. walking up the typedtree."
       in
       let modules = Path.to_string_list path' in
       let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
-      | `Not_found when Fallback.is_set () -> recover str_ident
+      | `Not_found when Fallback.is_set () -> recover ~finalize str_ident
       | `Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
       | `ML  loc   -> finalize true loc
       | `MLI loc   -> finalize false loc
   with
-  | _ when Fallback.is_set () -> recover str_ident
+  | _ when Fallback.is_set () -> recover ~finalize str_ident
   | Not_found
   | File_switching.Can't_move ->
     `Not_found (str_ident, File_switching.where_am_i ())
@@ -695,38 +702,40 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
         matches
     )
 
-let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
-  let inspect_pattern p =
-    let open Typedtree in
-    match p.pat_desc with
-    | Tpat_any -> None
-    | Tpat_var _ when String.uncapitalize path = path ->
-      (* If the guard is not verified it means the pattern variable we find in
-         the typedtree doesn't match the ident we reconstructed from the token
-         stream.
-         This should only happen in presence of a record pattern, e.g.
+let inspect_pattern is_path_capitalized p =
+  let open Typedtree in
+  match p.pat_desc with
+  | Tpat_any -> None
+  | Tpat_var _ when not is_path_capitalized ->
+    (* If the guard is not verified it means the pattern variable we find in
+        the typedtree doesn't match the ident we reconstructed from the token
+        stream.
+        This should only happen in presence of a record pattern, e.g.
 
-             { Location. loc_ghost }
+            { Location. loc_ghost }
 
-         as is the case at the beginning of this file.
-         However it only catches the cases where the ident we locate is prefixed
-         by a module name, so not everything is handled.
-         Catching everything is harder though, because we need to use the
-         location to distinguish between
+        as is the case at the beginning of this file.
+        However it only catches the cases where the ident we locate is prefixed
+        by a module name, so not everything is handled.
+        Catching everything is harder though, because we need to use the
+        location to distinguish between
 
-             { f[o]o = bar }
+            { f[o]o = bar }
 
-         and
+        and
 
-             { foo = b[a]r }
+            { foo = b[a]r }
 
-         (where [ ] represents the cursor.)
-         So err... TODO? *)
-      None
-    | _ -> Some Patt
-  in
-  let inspect_context pos =
-    let browse = Browse.of_typer_contents local_defs in
+        (where [ ] represents the cursor.)
+        So err... TODO? *)
+    None
+  | _ -> Some Patt
+
+let inspect_context browse path = function
+  | None ->
+    info_log "no position available, unable to determine context" ;
+    Some Unknown
+  | Some pos ->
     match Browse.enclosing pos browse with
     | [] ->
       Logger.infof section (fun fmt pos ->
@@ -742,7 +751,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
           Format.pp_print_string fmt "current node is: " ;
           Printtyped.pattern 0 fmt p
         ) p ;
-        inspect_pattern p
+        inspect_pattern (String.capitalize path = path) p
       | Value_description _
       | Type_declaration _
       | Extension_constructor _
@@ -754,23 +763,74 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
       | Expression _ -> Some Expr
       | _ ->
         Some Unknown
-  in
+
+let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
+  let browse = Browse.of_typer_contents local_defs in
   let lid = Longident.parse path in
-  let context =
-    match pos with
-    | None ->
-      info_log "no position available, unable to determine context" ;
-      Some Unknown
-    | Some pos -> inspect_context pos
-  in
-  match context with
+  match inspect_context browse path pos with
   | None ->
     info_log "already at origin, doing nothing" ;
     `At_origin
   | Some ctxt ->
     info_log "looking for the source of '%s' (prioritizing %s files)" path
       (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
-    Fluid.let' sources_path (Project.source_path project) (fun () ->
-    Fluid.let' cfg_cmt_path (Project.cmt_path project) (fun () ->
-    Fluid.let' loadpath     (Project.cmt_path project) (fun () ->
-    from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid)))
+    let finalize = finalize_locating in
+    Fluid.let' sources_path (Project.source_path project) @@ fun () ->
+    Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
+    Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
+    match
+      from_longident ?pos ~env ~local_defs ~is_implementation ~finalize
+        ctxt switch lid
+    with
+    | `Found (opt, loc) -> `Found (opt, loc.Location.loc_start)
+    | otherwise -> Obj.magic otherwise
+
+
+let get_doc ~project ~env ~local_defs ~is_implementation ?pos source path =
+  let browse = Browse.of_typer_contents local_defs in
+  let lid    = Longident.parse path in
+  Fluid.let' sources_path (Project.source_path project) @@ fun () ->
+  Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
+  Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
+  Fluid.let' last_location Location.none @@ fun () ->
+  match
+    match inspect_context browse path pos with
+    | None ->
+      (* We know that [pos <> None] otherwise we would have an [Unknown] ctxt. *)
+      let pos = Option.get pos in
+      `Found (None, { Location. loc_start=pos; loc_end=pos ; loc_ghost=true })
+    | Some ctxt ->
+      info_log "looking for the doc of '%s'" path ;
+      let finalize _is_source loc = `Found (None, loc) in
+      from_longident ?pos ~env ~local_defs ~is_implementation ~finalize
+        ctxt `MLI lid
+  with
+  | `Found (_, loc) ->
+    begin try
+      let cmt_path =
+        match File_switching.where_am_i () with
+        | None -> find_file ~with_fallback:true (CMTI source)
+        | Some cmt_path -> cmt_path
+      in
+      let cmt_infos = Cmt_cache.read cmt_path in
+      match
+        Ocamldoc.associate_comment cmt_infos.Cmt_format.cmt_comments loc
+          (Fluid.get last_location)
+      with
+      | None, _     -> `No_documentation
+      | Some doc, _ -> `Found doc
+    with
+    | File_not_found file ->
+      let msg =
+        match file with
+        | CMTI file when file = source ->
+          sprintf "The documentation for '%s' originates in the current file, \
+                  but no cmt is available" path
+        | _ ->
+          (* The only call to [find_file] whose error is not catched is done on
+             [CMTI source] *)
+          assert false 
+      in
+      `File_not_found msg
+    end
+  | otherwise -> Obj.magic otherwise (* RÉGLISSE LA POLICE *)

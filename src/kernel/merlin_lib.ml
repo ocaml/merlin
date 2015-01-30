@@ -434,6 +434,7 @@ module Buffer : sig
   type t
   val create: ?dot_merlins:string list -> ?path:string -> Parser.state -> t
 
+  val unit_name : t -> string
   val project: t -> Project.t
 
   val lexer: t -> (exn list * Lexer.item) History.t
@@ -540,6 +541,8 @@ end = struct
       | None -> ()
     end;
     Project.setup buffer.project
+
+  let unit_name t = t.unit_name
 
   let project t = t.project
 

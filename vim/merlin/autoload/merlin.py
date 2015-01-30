@@ -214,6 +214,15 @@ def command_seek(mtd,line,col):
 def command_complete_cursor(base,line,col):
   return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
 
+def command_document(path, line, col):
+  try:
+    if line is None or col is None:
+        print(command("document", path))
+    else:
+        print(command("document", path, "at", {'line': line, 'col': col}))
+  except MerlinExc as e:
+    try_print_error(e)
+
 def command_locate(path, line, col):
   try:
     choice = vim.eval('g:merlin_locate_preference')
@@ -432,6 +441,15 @@ def vim_locate_at_cursor(path):
 
 def vim_locate_under_cursor():
   vim_locate_at_cursor(None)
+
+# Document
+def vim_document_at_cursor(path):
+  line, col = vim.current.window.cursor
+  sync_full_buffer()
+  command_document(path, line, col)
+
+def vim_document_under_cursor():
+  vim_document_at_cursor(None)
 
 # Occurrences
 def vim_occurrences(vimvar):

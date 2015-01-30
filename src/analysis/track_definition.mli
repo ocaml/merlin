@@ -43,3 +43,17 @@ val from_string
       | `Not_found of string * string option
       | `Not_in_env of string
       | `At_origin ]
+
+val get_doc
+  : project:Merlin_lib.Project.t
+  -> env:Env.t
+  -> local_defs:[`Str of Typedtree.structure | `Sg of Typedtree.signature] list
+  -> is_implementation:bool
+  -> ?pos:Lexing.position
+  -> string
+  -> string
+  -> [> `File_not_found of string
+      | `Found of string
+      | `Not_found of string * string option
+      | `Not_in_env of string
+      | `No_documentation ]

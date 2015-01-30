@@ -417,6 +417,37 @@ let dispatch (state : state) =
     { entries = List.concat_map ~f:process_lident lidents;
       context = `Unknown }
 
+  | (Document (patho, opt_pos) : a request) ->
+    let env, local_defs =
+      with_typer state @@ fun typer ->
+      match opt_pos with
+      | None     -> Typer.env typer, []
+      | Some pos ->
+        let node, _ = Completion.node_at typer pos in
+        node.BrowseT.t_env, Typer.contents typer
+    in
+    let path =
+      match patho, opt_pos with
+      | None, None -> failwith "invalid arguments"
+      | None, Some pos ->
+        let lexer = Buffer.lexer state.buffer in
+        let lexer =
+          History.seek_backward (fun (_,item) ->
+            Lexing.compare_pos pos (Lexer.item_start item) < 0) lexer
+        in
+        let path = Lexer.reconstruct_identifier ~for_locate:true lexer in
+        let path = Lexer.identifier_suffix path in
+        let path = List.map ~f:(fun {Location. txt} -> txt) path in
+        let path = String.concat ~sep:"." path in
+        path
+      | Some path, _ -> path
+    in
+    let is_implementation = Buffer.is_implementation state.buffer in
+    let source  = Buffer.unit_name state.buffer in
+    let project = Buffer.project state.buffer in
+    Track_definition.get_doc ~project ~env ~local_defs ~is_implementation
+      ?pos:opt_pos source path
+
   | (Locate (patho, ml_or_mli, opt_pos) : a request) ->
     let env, local_defs =
       with_typer state @@ fun typer ->
@@ -447,6 +478,10 @@ let dispatch (state : state) =
     begin match
       Track_definition.from_string ~project ~env ~local_defs ~is_implementation
         ?pos:opt_pos ml_or_mli path
+(*
+      Track_definition.get_doc ~project ~env ~local_defs ~is_implementation
+        ?pos:opt_pos path
+*)
     with
     | `Found (file, pos) ->
       Logger.info (Track_definition.section)
