@@ -26,16 +26,14 @@
 
 )* }}} *)
 
-open Merlin_lib
-
 val section: Logger.section
 
 val from_string
-  : project:Project.t
-  -> env:Env.t
-  -> local_defs:Typer.content list
+  : project:Merlin_lib.Project.t
   -> is_implementation:bool
   -> ?pos:Lexing.position
+  -> node:BrowseT.t
+  -> ancestors:BrowseT.t list
   -> [ `ML | `MLI ]
   -> string
   -> [> `File_not_found of string
@@ -46,10 +44,10 @@ val from_string
 
 val get_doc
   : project:Merlin_lib.Project.t
-  -> env:Env.t
-  -> local_defs:[`Str of Typedtree.structure | `Sg of Typedtree.signature] list
   -> is_implementation:bool
   -> ?pos:Lexing.position
+  -> node:BrowseT.t
+  -> ancestors:BrowseT.t list
   -> string
   -> string
   -> [> `File_not_found of string
