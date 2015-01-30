@@ -338,6 +338,16 @@ function! merlin#Locate(...)
   endif
 endfunction
 
+function! merlin#Document(...)
+  if (a:0 > 1)
+    echoerr "Document: to many arguments (expected 0 or 1)"
+  elseif (a:0 == 0) || (a:1 == "")
+    py merlin.vim_document_under_cursor()
+  else
+    py merlin.vim_document_at_cursor(vim.eval("a:1"))
+  endif
+endfunction
+
 function! merlin#InteractiveLocate()
   if !exists('g:loaded_ctrlp')
     echo "This function requires the CtrlP plugin to work"
@@ -484,6 +494,8 @@ function! merlin#Register()
 
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Locate call merlin#Locate(<q-args>)
   command! -buffer -nargs=0 ILocate call merlin#InteractiveLocate()
+
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Document call merlin#Document(<q-args>)
 
   command! -buffer -nargs=0 Outline call merlin#Outline()
 

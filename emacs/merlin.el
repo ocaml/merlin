@@ -1754,6 +1754,27 @@ calls (lighter can be updated at a high frequency)"
            (select-window (display-buffer (car r)))))
     (when r (goto-char (cdr r)))))
 
+;;;;;;;;;;;;;;
+;; DOCUMENT ;;
+;;;;;;;;;;;;;;
+
+(defun merlin--document-pos (ident)
+  "Document the identifier IDENT at point and return the result."
+  (merlin-send-command
+   (list 'document (if ident (substring-no-properties ident) 'null)
+         'at (merlin-unmake-point (point)))))
+
+(defun merlin--document-pure (&optional ident)
+  "Document the identifier IDENT at point."
+  (let ((r (merlin--document-pos ident)))
+    (message r)))
+
+(defun merlin-document ()
+  "Document the identifier under point"
+  (interactive)
+  (merlin-sync-to-point (point-max) t)
+  (merlin--document-pure))
+
 ;;;;;;;;;;;;;;;;;
 ;; OCCURRENCES ;;
 ;;;;;;;;;;;;;;;;;
