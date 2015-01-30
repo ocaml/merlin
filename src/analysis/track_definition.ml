@@ -523,29 +523,52 @@ and browse_cmts ~root modules =
       )
     end
 
+(* The following is ugly, and deserves some explanations:
+      As can be seen above, when encountering packed modules we override the
+      loadpath by the one used to create the pack.
+      This means that if the cmt files haven't been moved, we have access to
+      the cmt file of every unit included in the pack.
+      However, we might not have access to any other cmt (e.g. if others
+      paths in the loadpath reference only cmis of packs).
+      (Note that if we had access to other cmts, there might be conflicts,
+      and the paths order would matter unless we have reliable digests...)
+      Assuming we are in such a situation, if we do not find something in our
+      "erased" loadpath, it could mean that we are looking for a persistent
+      unit, and that's why we restore the initial loadpath. *)
 and from_path path =
   File_switching.check_can_move () ;
   match path with
   | [] -> assert false
   | [ fname ] ->
-    let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
-    let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
-    File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
-    Preferences.final loc
+    let save_digest_and_return root =
+      let cmt_infos = Cmt_cache.read root in
+      File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
+      let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
+      let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
+      Preferences.final loc
+    in
+    begin try
+      let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
+      save_digest_and_return cmt_file
+    with File_not_found (CMT fname | CMTI fname) as exn ->
+      restore_loadpath (fun () ->
+        try
+          let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
+          save_digest_and_return cmt_file
+        with File_not_found (CMT fname | CMTI fname) ->
+          (* In that special case, we haven't managed to find any cmt. But we
+             only need the cmt for the source digest in contains. Even if we
+             don't have that we can blindly look for the source file and hope
+             there are no duplicates. *)
+          info_log "failed to locate the cmt[i] of '%s'" fname ;
+          let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
+          let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
+          File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
+          Preferences.final loc
+      )
+    end
   | fname :: modules ->
     debug_log "from_path '%s'" fname ;
-    (* The following is ugly, and deserves some explanations:
-         As can be seen above, when encountering packed modules we override the
-         loadpath by the one used to create the pack.
-         This means that if the cmt files haven't been moved, we have access to
-         the cmt file of every unit included in the pack.
-         However, we might not have access to any other cmt (e.g. if others
-         paths in the loadpath reference only cmis of packs).
-         (Note that if we had access to other cmts, there might be conflicts,
-         and the paths order would matter unless we have reliable digests...)
-         Assuming we are in such a situation, if we do not find something in our
-         "erased" loadpath, it could mean that we are looking for a persistent
-         unit, and that's why we restore the initial loadpath. *)
     try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~root:cmt_file modules
@@ -610,6 +633,7 @@ let finalize_locating source loc =
             )
         with Not_found ->
           info_log "... using heuristic to select the right one" ;
+          debug_log "we are looking for files in %s" dir ;
           let rev = String.reverse (Filename.concat dir fname) in
           let lst =
             List.map files ~f:(fun path ->
