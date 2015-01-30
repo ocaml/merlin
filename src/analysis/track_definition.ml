@@ -341,7 +341,69 @@ let repack = function
   | `Mod_expr me  -> Some (BrowseT.Module_expr me)
   | `Mod_type mty -> Some (BrowseT.Module_type mty)
 
+let get_on_track ~name item =
+  match
+    let open Raw_compat in
+    match item.BrowseT.t_node with
+    | BrowseT.Structure_item item ->
+      repack (get_mod_expr_if_included ~name item),
+      begin try
+        let mbs = expose_module_binding item in
+        let mb = List.find ~f:(fun mb -> Ident.name mb.Typedtree.mb_id = name) mbs in
+        info_log "(get_on_track) %s is bound" name ;
+        `Direct (BrowseT.Module_expr mb.Typedtree.mb_expr)
+      with Not_found -> `Not_found end
+    | BrowseT.Signature_item item ->
+      repack (get_mod_type_if_included ~name item),
+      begin try
+        let mds = expose_module_declaration item in
+        let md = List.find ~f:(fun md -> Ident.name md.Typedtree.md_id = name) mds in
+        info_log "(get_on_track) %s is bound" name ;
+        `Direct (BrowseT.Module_type md.Typedtree.md_type)
+      with Not_found -> `Not_found end
+    | _ -> assert false
+  with
+  | None, whatever -> whatever
+  | Some thing, `Not_found ->
+    info_log "(get_on_track) %s is included..." name ;
+    `Included thing
+  | _ -> assert false
+
+let rec resolve_mod_alias t_node path rest =
+  match
+    match t_node with
+    | BrowseT.Module_expr me  ->
+      Raw_compat.remove_indir_me me
+    | BrowseT.Module_type mty ->
+      Raw_compat.remove_indir_mty mty
+    | _ -> assert false (* absurd *)
+  with
+  | `Alias path' ->
+    File_switching.allow_movement () ;
+    let full_path = (Path.to_string_list path') @ path in
+    Some (full_path, rest)
+  | `Sg _ | `Str _ as x ->
+    let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
+    Some (path, lst)
+  | `Functor msg ->
+    info_log "stopping on functor%s" msg ;
+    None
+  | `Mod_type mod_type ->
+    resolve_mod_alias (BrowseT.Module_type mod_type) path rest
+  | `Mod_expr mod_expr ->
+    resolve_mod_alias (BrowseT.Module_expr mod_expr) path rest
+  | `Unpack ->
+    (* FIXME: should we do something or stop here? *)
+    info_log "found Tmod_unpack, expect random results." ;
+    Some (path, rest)
+
 let rec check_item ~source modules =
+  let keep_looking = function
+    | None ->
+      (* Assumption: fallback is always set before calling this function *)
+      `Not_found
+    | Some (path, items) -> check_item ~source path items
+  in
   let get_loc ~name item rest =
     let ident_locs, is_included =
       let open Raw_compat in
@@ -368,35 +430,7 @@ let rec check_item ~source modules =
       | Some thing ->
         info_log "one more include to follow..." ;
         Fallback.set ~source item.BrowseT.t_loc ;
-        resolve_mod_alias ~source thing [ name ] rest
-  in
-  let get_on_track ~name item =
-    match
-      let open Raw_compat in
-      match item.BrowseT.t_node with
-      | BrowseT.Structure_item item ->
-        repack (get_mod_expr_if_included ~name item),
-        begin try
-          let mbs = expose_module_binding item in
-          let mb = List.find ~f:(fun mb -> Ident.name mb.Typedtree.mb_id = name) mbs in
-          info_log "(get_on_track) %s is bound" name ;
-          `Direct (BrowseT.Module_expr mb.Typedtree.mb_expr)
-        with Not_found -> `Not_found end
-      | BrowseT.Signature_item item ->
-        repack (get_mod_type_if_included ~name item),
-        begin try
-          let mds = expose_module_declaration item in
-          let md = List.find ~f:(fun md -> Ident.name md.Typedtree.md_id = name) mds in
-          info_log "(get_on_track) %s is bound" name ;
-          `Direct (BrowseT.Module_type md.Typedtree.md_type)
-        with Not_found -> `Not_found end
-      | _ -> assert false
-    with
-    | None, whatever -> whatever
-    | Some thing, `Not_found ->
-      info_log "(get_on_track) %s is included..." name ;
-      `Included thing
-    | _ -> assert false
+        keep_looking @@ resolve_mod_alias thing [ name ] rest
   in
   function
   | [] ->
@@ -415,11 +449,11 @@ let rec check_item ~source modules =
       | `Direct me   ->
         debug_log "[get_on_track `Direct] setting fallback" ;
         Fallback.set ~source item.BrowseT.t_loc ;
-        resolve_mod_alias ~source me path rest
+        keep_looking @@ resolve_mod_alias me path rest
       | `Included me ->
         debug_log "[get_on_track `Included] setting fallback" ;
         Fallback.set ~source item.BrowseT.t_loc ;
-        resolve_mod_alias ~source me modules rest
+        keep_looking @@ resolve_mod_alias me modules rest
 
 and browse_cmts ~root modules =
   let open Cmt_format in
@@ -500,35 +534,6 @@ and from_path path =
           info_log "failed to locate the cmt[i] of '%s'" fname ;
           raise exn
       )
-
-and resolve_mod_alias ~source node path rest =
-  let direct, loc =
-    match node with
-    | BrowseT.Module_expr me  ->
-      Raw_compat.remove_indir_me me, me.Typedtree.mod_loc
-    | BrowseT.Module_type mty ->
-      Raw_compat.remove_indir_mty mty, mty.Typedtree.mty_loc
-    | _ -> assert false (* absurd *)
-  in
-  match direct with
-  | `Alias path' ->
-    File_switching.allow_movement () ;
-    let full_path = (Path.to_string_list path') @ path in
-    check_item ~source full_path rest
-  | `Sg _ | `Str _ as x ->
-    let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
-    check_item ~source path lst
-  | `Functor msg ->
-    info_log "stopping on functor%s" msg ;
-    if source then `ML loc else `MLI loc
-  | `Mod_type mod_type ->
-    resolve_mod_alias ~source (BrowseT.Module_type mod_type) path rest
-  | `Mod_expr mod_expr ->
-    resolve_mod_alias ~source (BrowseT.Module_expr mod_expr) path rest
-  | `Unpack ->
-    (* FIXME: should we do something or stop here? *)
-    info_log "found Tmod_unpack, expect random results." ;
-    check_item ~source path rest
 
 let path_and_loc_from_label desc env =
   let open Types in
