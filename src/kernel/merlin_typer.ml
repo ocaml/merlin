@@ -40,6 +40,12 @@ let caught catch =
   catch := [];
   caught
 
+type content =
+  [ `Str of Typedtree.structure
+  | `Sg of Typedtree.signature
+  | `Fail of Env.t * Location.t
+  ]
+
 (* Intermediate, resumable type checking state *)
 
 type step = {
@@ -48,7 +54,7 @@ type step = {
   snapshot   : Btype.snapshot;
   env        : Env.t;
   aliasmap   : Printtyp.aliasmap;
-  contents   : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list;
+  contents   : content list;
   exns       : exn list;
   delayed_checks : Typecore.delayed_check list;
 }
@@ -157,7 +163,9 @@ let append catch loc item step =
      aliasmap = Printtyp.update_aliasmap env step.aliasmap}
   with exn ->
     let snapshot = Btype.snapshot () in
-    {step with snapshot; exns = exn :: caught catch @ step.exns;
+    {step with snapshot;
+               exns = exn :: caught catch @ step.exns;
+               contents = `Fail (step.env, loc) :: step.contents;
                delayed_checks = !Typecore.delayed_checks}
 
 (* Incremental synchronization *)

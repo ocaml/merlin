@@ -129,13 +129,18 @@ let rec fix_loc env t =
     {t with t_env; t_children = lazy (List.map (fix_loc t_env) (Lazy.force t_children))}
 
 let of_typer_contents contents =
-  let of_content item =
-    let node, env = match item with
-      | `Str str -> BrowseT.Structure str, str.str_final_env
-      | `Sg sg -> BrowseT.Signature sg, sg.sig_final_env in
-    let browse = BrowseT.of_node node in
-    let browse = fix_loc env browse in
-    browse in
+  let of_content = function
+    | `Fail (env, loc) ->
+      BrowseT.of_node ~loc ~env BrowseT.Dummy
+    | (`Str _ | `Sg _) as item ->
+      let node, env = match item with
+        | `Str str -> BrowseT.Structure str, str.str_final_env
+        | `Sg sg -> BrowseT.Signature sg, sg.sig_final_env
+      in
+      let browse = BrowseT.of_node node in
+      let browse = fix_loc env browse in
+      browse
+  in
   List.map ~f:of_content contents
 
 let rec normalize_type_expr env = function

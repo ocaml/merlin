@@ -34,7 +34,14 @@ val fresh : unit_name:string -> stamp:bool ref list -> Extension.set -> t
 val update : Merlin_parser.t -> t -> t
 
 val env : t -> Env.t
-val contents : t -> [`Str of Typedtree.structure | `Sg of Typedtree.signature] list
+
+type content =
+  [ `Str of Typedtree.structure
+  | `Sg of Typedtree.signature
+  | `Fail of Env.t * Location.t
+  ]
+
+val contents : t -> content list
 val exns : t -> exn list
 val delayed_checks : t -> exn list
 val extensions : t -> Extension.set

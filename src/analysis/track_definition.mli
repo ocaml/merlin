@@ -26,12 +26,14 @@
 
 )* }}} *)
 
+open Merlin_lib
+
 val section: Logger.section
 
 val from_string
-  : project:Merlin_lib.Project.t
+  : project:Project.t
   -> env:Env.t
-  -> local_defs:[`Str of Typedtree.structure | `Sg of Typedtree.signature] list
+  -> local_defs:Typer.content list
   -> is_implementation:bool
   -> ?pos:Lexing.position
   -> [ `ML | `MLI ]
