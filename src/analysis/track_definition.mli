@@ -49,6 +49,7 @@ val get_doc
   -> env:Env.t
   -> local_defs:Typer.content list
   -> is_implementation:bool
+  -> comments:(string * Location.t) list
   -> ?pos:Lexing.position
   -> string
   -> string

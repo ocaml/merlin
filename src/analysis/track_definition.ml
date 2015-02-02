@@ -820,7 +820,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
     | `Not_in_env _ as otherwise -> otherwise
 
 
-let get_doc ~project ~env ~local_defs ~is_implementation ?pos source path =
+let get_doc ~project ~env ~local_defs ~is_implementation ~comments ?pos source path =
   let browse = Browse.of_typer_contents local_defs in
   let lid    = Longident.parse path in
   Fluid.let' sources_path (Project.source_path project) @@ fun () ->
@@ -840,21 +840,18 @@ let get_doc ~project ~env ~local_defs ~is_implementation ?pos source path =
         ctxt `MLI lid
   with
   | `Found (_, loc) ->
-    begin try
-      let cmt_path =
-        match File_switching.where_am_i () with
-        | None -> find_file ~with_fallback:true (CMTI source)
-        | Some cmt_path -> cmt_path
-      in
-      let cmt_infos = Cmt_cache.read cmt_path in
-      match
-        Ocamldoc.associate_comment cmt_infos.Cmt_format.cmt_comments loc
-          (Fluid.get last_location)
-      with
-      | None, _     -> `No_documentation
-      | Some doc, _ -> `Found doc
+    let comments =
+      match File_switching.where_am_i () with
+      | None -> List.rev comments
+      | Some cmt_path ->
+        let cmt_infos = Cmt_cache.read cmt_path in
+        cmt_infos.Cmt_format.cmt_comments
+    in
+    begin match
+      Ocamldoc.associate_comment comments loc (Fluid.get last_location)
     with
-    | File_not_found file -> explain_file_not_found ~doc_from:source path file
+    | None, _     -> `No_documentation
+    | Some doc, _ -> `Found doc
     end
   | `File_not_found _
   | `Not_found _

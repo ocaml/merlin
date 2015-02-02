@@ -418,6 +418,7 @@ let dispatch (state : state) =
       context = `Unknown }
 
   | (Document (patho, opt_pos) : a request) ->
+    let comments = Buffer.comments state.buffer in
     let env, local_defs =
       with_typer state @@ fun typer ->
       match opt_pos with
@@ -446,7 +447,7 @@ let dispatch (state : state) =
     let source  = Buffer.unit_name state.buffer in
     let project = Buffer.project state.buffer in
     Track_definition.get_doc ~project ~env ~local_defs ~is_implementation
-      ?pos:opt_pos source path
+      ~comments ?pos:opt_pos source path
 
   | (Locate (patho, ml_or_mli, opt_pos) : a request) ->
     let env, local_defs =
