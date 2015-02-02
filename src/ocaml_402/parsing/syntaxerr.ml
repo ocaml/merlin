@@ -59,6 +59,7 @@ let () =
   Location.register_error_of_exn
     (function
       | Error err -> Some (prepare_error err)
+      | Escape_error loc -> Some (prepare_error (Other loc))
       | _ -> None
     )
 

@@ -54,6 +54,10 @@ let () =
   Location.register_error_of_exn
     (function
       | Error err -> Some (prepare_error err)
+      | Escape_error pos ->
+        let loc = {Location. loc_start = pos; loc_end = pos;
+                   loc_ghost = false} in
+        Some (prepare_error (Other loc))
       | _ -> None
     )
 
