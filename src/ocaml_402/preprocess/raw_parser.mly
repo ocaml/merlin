@@ -1893,7 +1893,11 @@ simple_core_type:
 | simple_core_type2 %prec below_SHARP
     { $1 }
 | LPAREN core_type_comma_list RPAREN %prec below_SHARP
-    { match $2 with [sty] -> sty | _ -> syntax_error $startpos $endpos; failwith "TODO" }
+    { match $2 with [sty] -> sty
+                  | _ ->
+                    syntax_error $startpos $endpos;
+                    mktyp $startpos $endpos (Ptyp_any)
+    }
 | simple_core_type attribute
     { Typ.attr $1 $2 }
 
@@ -1901,7 +1905,11 @@ simple_core_type_no_attr:
 | simple_core_type2 %prec below_SHARP
     { $1 }
 | LPAREN core_type_comma_list RPAREN %prec below_SHARP
-    { match $2 with [sty] -> sty | _ -> syntax_error $startpos $endpos; failwith "TODO" }
+    { match $2 with [sty] -> sty
+                  | _ ->
+                    syntax_error $startpos $endpos;
+                    mktyp $startpos $endpos (Ptyp_any)
+    }
 
 simple_core_type2:
 | QUOTE ident

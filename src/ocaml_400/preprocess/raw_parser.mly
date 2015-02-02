@@ -1712,7 +1712,11 @@ simple_core_type:
     simple_core_type2
       { $1 }
   | LPAREN core_type_comma_list RPAREN
-      { match $2 with [sty] -> sty | _ -> raise Parsing.Parse_error }
+    { match $2 with [sty] -> sty
+                  | _ ->
+                    syntax_error $startpos;
+                    mktyp $startpos $endpos (Ptyp_any)
+    }
 ;
 
 simple_core_type2:

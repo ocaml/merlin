@@ -15099,7 +15099,11 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__3_ in
-        let _v : (Parsetree.core_type) =       ( match _2 with [sty] -> sty | _ -> raise Parsing.Parse_error ) in
+        let _v : (Parsetree.core_type) =     ( match _2 with [sty] -> sty
+                  | _ ->
+                    syntax_error _startpos;
+                    mktyp _startpos _endpos (Ptyp_any)
+    ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_simple_core_type, _v);
