@@ -613,7 +613,7 @@ the merlin buffer of the current buffer."
              (message "Merlin failed with exception: %s" (elt answer 1))
              (when (functionp cb-if-exn)
                (setcdr promise (funcall cb-if-exn (elt answer 1)))))
-            (t (message "Command %s failed with error %s" command (elt answer 1)))))))
+            (t (error "Command %s failed with error %s" command (elt answer 1)))))))
 
 (defun merlin--sexp-remove-string-properties (sexp)
   "Workaround retarded emacs objects printing API.
