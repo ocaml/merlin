@@ -268,7 +268,7 @@ module Utils = struct
       end
     | otherwise -> otherwise, false
 
-  let explain_file_not_found str_ident path =
+  let explain_file_not_found ?(doc_from="") str_ident path =
     let msg =
       match path with
       | ML file ->
@@ -280,9 +280,12 @@ module Utils = struct
       | CMT file ->
         sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
                  present" file str_ident
-      | CMTI file ->
+      | CMTI file when file <> doc_from ->
         sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
                  present" file str_ident
+      | CMTI _ ->
+        sprintf "The documentation for '%s' originates in the current file, \
+                 but no cmt is available" str_ident
     in
     `File_not_found msg
 end
@@ -876,18 +879,7 @@ let get_doc ~project ~is_implementation ?pos ~node ~ancestors source path =
       | None, _     -> `No_documentation
       | Some doc, _ -> `Found doc
     with
-    | File_not_found file ->
-      let msg =
-        match file with
-        | CMTI file when file = source ->
-          sprintf "The documentation for '%s' originates in the current file, \
-                  but no cmt is available" path
-        | _ ->
-          (* The only call to [find_file] whose error is not catched is done on
-             [CMTI source] *)
-          assert false 
-      in
-      `File_not_found msg
+    | File_not_found file -> explain_file_not_found ~doc_from:source path file
     end
   | `File_not_found _
   | `Not_found _
