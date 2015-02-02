@@ -442,8 +442,11 @@ module Buffer : sig
   val start_lexing: ?pos:Lexing.position -> t -> Lexer.t
   val lexer_errors: t -> exn list
 
+  val comments: t -> (string * Location.t) list
+
   val parser: t -> Parser.t
   val parser_errors: t -> exn list
+
   val recover: t -> Recover.t
   val recover_history : t -> (Lexer.item * Recover.t) History.t
 
@@ -548,8 +551,12 @@ end = struct
 
   let lexer b = b.lexer
   let lexer_errors b = fst (History.focused b.lexer)
+
   let recover_history b = b.recover
   let recover b = snd (History.focused b.recover)
+
+  let comments b = Recover.comments (recover b)
+
   let parser b = Recover.parser (recover b)
   let parser_errors b = Recover.exns (recover b)
 

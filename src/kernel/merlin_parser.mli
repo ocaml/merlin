@@ -45,6 +45,7 @@ val from : state -> Lexing.position * Raw_parser.token * Lexing.position -> t
 
 (* Feed new token *)
 val feed : Lexing.position * Raw_parser.token * Lexing.position
+        -> ?record_comment:(string * Location.t -> unit)
         -> t
         -> [ `Accept of Raw_parser.symbol | `Step of t
            | `Reject of t ]

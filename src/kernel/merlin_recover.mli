@@ -30,11 +30,14 @@ type t
 
 val fresh : Merlin_parser.t -> t
 
-val fold : Merlin_lexer.item -> t -> t
+val fold : ?record_comment:(string * Location.t -> unit)
+  -> Merlin_lexer.item -> t -> t
 
 val parser : t -> Merlin_parser.t
 
 val exns : t -> exn list
+
+val comments : t -> (string * Location.t) list
 
 val dump : t -> Std.json
 val dump_recoverable : t -> Std.json

@@ -116,10 +116,12 @@ let from state input =
   | `Step p -> p
   | _ -> assert false
 
-let feed (s,t,e as input) parser =
+let feed (s,t,e as input) ?(record_comment=ignore) parser =
   match t with
   (* Ignore comments *)
-  | P.COMMENT _ -> `Step parser
+  | P.COMMENT c ->
+    record_comment c ;
+    `Step parser
   | _ -> of_step (P.feed parser input)
 
 let dump_item (prod, dot_pos) =
