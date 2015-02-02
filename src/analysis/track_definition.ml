@@ -694,11 +694,11 @@ let lookup ctxt ident env =
     x
 
 
-let from_longident ~is_implementation ?pos ~finalize ctxt ml_or_mli lid node ancestors =
+let from_longident ~env ~local_defs ~is_implementation ?pos 
+  ~finalize ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
-  let env = node.BrowseT.t_env in
   let ident, is_label = keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
@@ -713,7 +713,7 @@ let from_longident ~is_implementation ?pos ~finalize ctxt ml_or_mli lid node anc
         "present in the environment, but ghost lock. walking up the typedtree."
       in
       let modules = Path.to_string_list path' in
-      let items   = get_top_items ?pos ancestors in
+      let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
       match check_item ~source:is_implementation modules items with
       | `Not_found when Fallback.is_set () -> recover ~finalize str_ident
       | `Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
@@ -768,7 +768,7 @@ let inspect_context browse path = function
     info_log "no position available, unable to determine context" ;
     Some Unknown
   | Some pos ->
-    match browse with
+    match Browse.enclosing pos browse with
     | [] ->
       Logger.infof section (fun fmt pos ->
         Format.pp_print_string fmt "no enclosing around: " ;
@@ -796,9 +796,10 @@ let inspect_context browse path = function
       | _ ->
         Some Unknown
 
-let from_string ~project ~is_implementation ?pos ~node ~ancestors switch path =
+let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
+  let browse = Browse.of_typer_contents local_defs in
   let lid = Longident.parse path in
-  match inspect_context (node :: ancestors) path pos with
+  match inspect_context browse path pos with
   | None ->
     info_log "already at origin, doing nothing" ;
     `At_origin
@@ -810,8 +811,8 @@ let from_string ~project ~is_implementation ?pos ~node ~ancestors switch path =
     Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
     Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
     match
-      from_longident ?pos ~is_implementation ~finalize ctxt switch lid
-        node ancestors
+      from_longident ?pos ~env ~local_defs ~is_implementation ~finalize
+        ctxt switch lid
     with
     | `Found (opt, loc) -> `Found (opt, loc.Location.loc_start)
     | `File_not_found _
@@ -819,14 +820,15 @@ let from_string ~project ~is_implementation ?pos ~node ~ancestors switch path =
     | `Not_in_env _ as otherwise -> otherwise
 
 
-let get_doc ~project ~is_implementation ?pos ~node ~ancestors source path =
+let get_doc ~project ~env ~local_defs ~is_implementation ?pos source path =
+  let browse = Browse.of_typer_contents local_defs in
   let lid    = Longident.parse path in
   Fluid.let' sources_path (Project.source_path project) @@ fun () ->
   Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
   Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
   Fluid.let' last_location Location.none @@ fun () ->
   match
-    match inspect_context (node :: ancestors) path pos with
+    match inspect_context browse path pos with
     | None ->
       (* We know that [pos <> None] otherwise we would have an [Unknown] ctxt. *)
       let pos = Option.get pos in
@@ -834,8 +836,8 @@ let get_doc ~project ~is_implementation ?pos ~node ~ancestors source path =
     | Some ctxt ->
       info_log "looking for the doc of '%s'" path ;
       let finalize _is_source loc = `Found (None, loc) in
-      from_longident ?pos ~is_implementation ~finalize ctxt `MLI lid node
-        ancestors
+      from_longident ?pos ~env ~local_defs ~is_implementation ~finalize
+        ctxt `MLI lid
   with
   | `Found (_, loc) ->
     begin try
