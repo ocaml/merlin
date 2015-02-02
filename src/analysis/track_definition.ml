@@ -550,7 +550,7 @@ and from_path path =
     begin try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       save_digest_and_return cmt_file
-    with File_not_found (CMT fname | CMTI fname) as exn ->
+    with File_not_found (CMT fname | CMTI fname) ->
       restore_loadpath (fun () ->
         try
           let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
@@ -838,7 +838,9 @@ let from_string ~project ~is_implementation ?pos ~node ~ancestors switch path =
         node ancestors
     with
     | `Found (opt, loc) -> `Found (opt, loc.Location.loc_start)
-    | otherwise -> Obj.magic otherwise
+    | `File_not_found _
+    | `Not_found _
+    | `Not_in_env _ as otherwise -> otherwise
 
 
 let get_doc ~project ~is_implementation ?pos ~node ~ancestors source path =
@@ -887,4 +889,6 @@ let get_doc ~project ~is_implementation ?pos ~node ~ancestors source path =
       in
       `File_not_found msg
     end
-  | otherwise -> Obj.magic otherwise (* RÉGLISSE LA POLICE *)
+  | `File_not_found _
+  | `Not_found _
+  | `Not_in_env _ as otherwise -> otherwise
