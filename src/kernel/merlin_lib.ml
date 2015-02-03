@@ -450,6 +450,9 @@ module Buffer : sig
 
   (* All top modules of current project, with current module removed *)
   val global_modules: t -> string list
+
+  (* Try to do a background job, return false if nothing has to be done *)
+  val idle_job : t -> bool
 end = struct
   type t = {
     kind: Parser.state;
@@ -604,4 +607,12 @@ end = struct
   let global_modules t =
     setup t;
     List.remove t.unit_name (Project.global_modules t.project)
+
+  exception Break
+  let idle_job t =
+    Typer.with_typer (typer t) @@ fun () ->
+    Clflags.real_paths () <> `Real &&
+    let concr = Env.used_persistent () in
+    Types.Concr.exists Printtyp.compute_map_for_pers concr
+
 end
