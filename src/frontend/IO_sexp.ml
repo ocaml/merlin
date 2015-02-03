@@ -191,8 +191,7 @@ module Sexp = struct
   let of_string str =
     fst (read_sexp (getch_of_string str))
 
-  let of_channel ic =
-    let fd = Unix.descr_of_in_channel ic in
+  let of_file_descr ~on_read fd =
     let getch = ref (fun () -> '\000') in
     let rest = ref None in
     let buffer = String.create 1024 in
@@ -204,6 +203,7 @@ module Sexp = struct
       | None ->
         match !getch () with
         | '\000' ->
+          on_read fd;
           let read = Unix.read fd buffer 0 1024 in
           if read = 0 then '\000'
           else
@@ -219,6 +219,8 @@ module Sexp = struct
         rest := rest';
         Some sexp
       with End_of_file -> None
+
+  let of_channel ic = of_file_descr (Unix.descr_of_in_channel ic)
 end
 
 let rec sexp_of_json =
@@ -262,7 +264,7 @@ let rec json_of_sexp =
   | Cons (hd, tl) -> `List (json_of_sexp hd :: list_items tl)
   | Sym s -> `String s
 
-let sexp_make ~input ~output =
+let sexp_make ~on_read ~input ~output =
   (* Fix for emacs: emacs start-process doesn't distinguish between stdout and
      stderr.  So we redirect stderr to /dev/null with sexp frontend. *)
   begin match
@@ -281,9 +283,8 @@ let sexp_make ~input ~output =
         Unix.dup2 fd Unix.stderr;
         Unix.close fd
   end;
-  let input' = Sexp.of_channel input in
+  let input' = Sexp.of_file_descr ~on_read input in
   let input' = Stream.from (fun _ -> Option.map json_of_sexp (input' ())) in
-  let output' = Unix.descr_of_out_channel output in
   let buf = Buffer.create 8192 in
   let output json =
     let sexp = sexp_of_json json in
@@ -292,7 +293,7 @@ let sexp_make ~input ~output =
     let contents = Buffer.contents buf in
     let rec write_contents n l =
       if l > 0 then
-        let l' = Unix.write output' contents n l in
+        let l' = Unix.write output contents n l in
         if l' > 0 then
           write_contents (n + l') (l - l')
     in

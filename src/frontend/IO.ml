@@ -31,7 +31,10 @@ open Logger
 
 type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
 type low_io = Json.json Stream.t * (Json.json -> unit)
-type io_maker = input:in_channel -> output:out_channel -> low_io
+type io_maker =
+  on_read:(Unix.file_descr -> unit) -> input:Unix.file_descr ->
+  output:Unix.file_descr ->
+  low_io
 
 let section = Logger.section "protocol"
 
@@ -57,8 +60,16 @@ let json_log (input,output) =
   let output' json = output (log_output json) in
   input', output'
 
-let json_make ~input ~output =
-  let input   = Json.stream_from_channel input in
+let json_make ~on_read ~input ~output =
+  let rec read buf len =
+    on_read input;
+    try Unix.read input buf 0 len
+    with Unix.Unix_error (Unix.EINTR,_,_) ->
+      read buf len
+  in
+  let lexbuf = Lexing.from_function read in
+  let input = Json.stream_from_lexbuf (Json.init_lexer ()) lexbuf in
+  let output = Unix.out_channel_of_descr output in
   let output' = Json.to_channel output in
   let output json =
     output' json;
@@ -73,8 +84,8 @@ let register_protocol ~name ~desc inst =
   makers := (name, (desc,inst)) :: !makers
 
 let make' = ref json_make
-let make ~input ~output =
-  let io = !make' ~input ~output in
+let make ~on_read ~input ~output =
+  let io = !make' ~on_read ~input ~output in
   if Logger.is_monitored section then json_log io else io
 
 let select_frontend name =

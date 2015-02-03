@@ -100,8 +100,26 @@ let signal behavior =
   in
   Misc.try_finally f (fun () -> ignore (signal previous))*)
 
+let idle_job () =
+  (*prerr_endline "IDLE JOB?";*)
+  false
+
+let rec on_read timeout fd =
+  try match Unix.select [fd] [] [] timeout with
+    | [], [], [] ->
+      if idle_job () then
+        on_read 0.0 fd
+      else
+        on_read (-1.0) fd
+    | _, _, _ -> ()
+  with Unix.Unix_error (Unix.EINTR, _, _) ->
+    on_read timeout fd
+
+let on_read fd = on_read 0.050 fd
+
 let main_loop () =
-  let input, output as io = IO.(lift (make ~input:stdin ~output:stdout)) in
+  let input, output as io =
+    IO.(lift (make ~on_read ~input:Unix.stdin ~output:Unix.stdout)) in
   try
     let rec loop state =
       let state, answer =
