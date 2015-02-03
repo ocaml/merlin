@@ -613,6 +613,10 @@ the merlin buffer of the current buffer."
              (message "Merlin failed with exception: %s" (elt answer 1))
              (when (functionp cb-if-exn)
                (setcdr promise (funcall cb-if-exn (elt answer 1)))))
+            ((and (string-equal (elt answer 0) "error")
+                  (assoc 'message (elt answer 1)))
+             (message "Merlin failed with error: \"%s\""
+                      (cdr (assoc 'message (elt answer 1)))))
             (t (error "Command %s failed with error %s" command (elt answer 1)))))))
 
 (defun merlin--sexp-remove-string-properties (sexp)
@@ -1630,12 +1634,10 @@ calls (lighter can be updated at a high frequency)"
 
 (defun merlin--locate-pure (&optional ident)
   "Locate the identifier IDENT at point."
-  (let* ((r (merlin--locate-pos ident)))
-    (if r
-        (if (listp r)
-            (merlin-goto-file-and-point r)
-          (error "%s" r))
-      (error "%s not found. (No answer from merlin)" ident))))
+  (let ((answer (merlin--locate-pos ident)))
+    (if (and answer (listp answer))
+      (merlin-goto-file-and-point answer)
+      (error "Not found. (Check *Messages* for potential errors)"))))
 
 (defun merlin-locate ()
   "Locate the identifier under point"
