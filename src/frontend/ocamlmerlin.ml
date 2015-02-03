@@ -100,28 +100,28 @@ let signal behavior =
   in
   Misc.try_finally f (fun () -> ignore (signal previous))*)
 
-let idle_job () =
-  (*prerr_endline "IDLE JOB?";*)
-  false
+let section = Logger.section "main"
 
-let rec on_read timeout fd =
+let rec on_read state ~timeout fd =
   try match Unix.select [fd] [] [] timeout with
     | [], [], [] ->
-      if idle_job () then
-        on_read 0.0 fd
+      if Command.dispatch state Protocol.Idle_job then
+        on_read state ~timeout:0.0 fd
       else
-        on_read (-1.0) fd
+        on_read state ~timeout:(-1.0) fd
     | _, _, _ -> ()
   with Unix.Unix_error (Unix.EINTR, _, _) ->
-    on_read timeout fd
-
-let on_read fd = on_read 0.050 fd
+    on_read state ~timeout fd
+     | exn -> Logger.error section
+                ~title:"on_read" (Printexc.to_string exn)
 
 let main_loop () =
+  let state = Command.new_state () in
   let input, output as io =
-    IO.(lift (make ~on_read ~input:Unix.stdin ~output:Unix.stdout)) in
+    IO.(lift (make ~on_read:(on_read state ~timeout:0.050)
+                ~input:Unix.stdin ~output:Unix.stdout)) in
   try
-    let rec loop state =
+    while true do
       let state, answer =
         let state' = ref state in
         try
@@ -133,14 +133,12 @@ let main_loop () =
           state,
           Protocol.Return (request, response)
         with
-          | Stream.Failure as exn -> raise exn
-          | exn -> !state', Protocol.Exception exn
+        | Stream.Failure as exn -> raise exn
+        | exn -> !state', Protocol.Exception exn
       in
-      (try output answer
-       with exn -> output (Protocol.Exception exn));
-      loop state
-    in
-    loop (Command.new_state ())
+      try output answer
+       with exn -> output (Protocol.Exception exn);
+    done
   with Stream.Failure -> ()
 
 let () =

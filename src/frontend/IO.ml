@@ -467,6 +467,7 @@ module Protocol_io = struct
         | Occurrences _, locations ->
           `List (List.map locations
                    ~f:(fun loc -> with_location loc []))
+        | Idle_job, b -> `Bool b
         | Version, version ->
           `String version
       end]
