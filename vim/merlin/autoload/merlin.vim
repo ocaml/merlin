@@ -48,7 +48,7 @@ if !exists("g:merlin_completion_short")
 endif
 
 if !exists("g:merlin_completion_argtype")
-  let g:merlin_completion_argtype = 1
+  let g:merlin_completion_argtype = 'several'
 endif
 
 let s:current_dir=expand("<sfile>:p:h")

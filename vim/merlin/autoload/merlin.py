@@ -355,27 +355,30 @@ def vim_complete_cursor(base, suffix, vimvar):
       desc = lambda prop: prop['desc']
   try:
     completions = command_complete_cursor(base,line,col)
-    success = len(completions['entries']) > 0
+    nb_entries = len(completions['entries'])
     if completions['context'] and completions['context'][0] == 'application':
       app = completions['context'][1]
-      if vim_is_set("g:merlin_completion_argtype") and (not suffix or atom_bound.match(suffix[0])) and (app['argument_type'] != "'_a"):
-        vim.command("let l:tmp = {'word':'%s','abbr':'<type>','kind':':','menu':'%s','empty':1}" %
-                (prep(suffix),prep(app['argument_type'])))
-        vim.command("call add(%s, l:tmp)" % vimvar)
       if not base or base == suffix:
         for label in app['labels']:
           name = label['name']
           if not name.startswith(suffix): name = name.replace("?","~")
           if name.startswith(suffix):
-            success = True
+            nb_entries = nb_entries + 1
             vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
                     (prep(name),prep(label['name'] + ':' + label['type']),'','~'))
             vim.command("call add(%s, l:tmp)" % vimvar)
+      show_argtype = vim.eval("g:merlin_completion_argtype")
+      if ((show_argtype == 'always' or (show_argtype == 'several' and nb_entries > 1))
+          and (not suffix or atom_bound.match(suffix[0]))
+          and app['argument_type'] != "'_a"):
+        vim.command("let l:tmp = {'word':'%s','abbr':'<type>','kind':':','menu':'%s','empty':1}" %
+                (prep(suffix),prep(app['argument_type'])))
+        vim.command("call insert(%s, l:tmp)" % vimvar)
     for prop in completions['entries']:
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
         (prep(prop['name']),prep(desc(prop)),prep(prop['info']),prep(prop['kind'][:1])))
       vim.command("call add(%s, l:tmp)" % vimvar)
-    return success
+    return (nb_entries > 0)
   except MerlinExc as e:
     try_print_error(e)
     return False
