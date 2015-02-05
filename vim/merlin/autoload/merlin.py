@@ -362,7 +362,7 @@ def vim_complete_cursor(base, suffix, vimvar):
         vim.command("let l:tmp = {'word':'%s','abbr':'<type>','kind':':','menu':'%s','empty':1}" %
                 (prep(suffix),prep(app['argument_type'])))
         vim.command("call add(%s, l:tmp)" % vimvar)
-      if not base:
+      if not base or base == suffix:
         for label in app['labels']:
           name = label['name']
           if not name.startswith(suffix): name = name.replace("?","~")
