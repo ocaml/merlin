@@ -494,7 +494,7 @@ function! merlin#Register()
 
   " Search
   nmap <silent><buffer> gd  :Locate<return>
-  nmap <silent><buffer> <Plug>(MerlinSearchOccurencesForward)   :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
+  nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesForward)  :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesBackward) :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
 
   " Rename
