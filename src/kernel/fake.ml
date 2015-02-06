@@ -457,7 +457,7 @@ module Variants = struct
     let cstrs_dot_t =
       Raw_compat.Parsetree.map_constructors cstrs ~f:(
         fun name args res_opt loc ->
-          let t = Named ([mk_cstr_typesig ~self args res_opt], "Variant.t") in
+          let t = Named ([mk_cstr_typesig ~self args res_opt], "Variantslib.Variant.t") in
           { ident = String.lowercase name ; typesig = t ; body = AnyVal }
       )
     in
@@ -465,7 +465,7 @@ module Variants = struct
     let body =
       mk_labeled_fun
         (Raw_compat.Parsetree.map_constructors cstrs
-          ~f:(fun name _ _ _ -> name, true))
+          ~f:(fun name _ _ _ -> String.lowercase name, true))
     in
 
     let fold = FV_helpers.mk_fold ~body cstrs_dot_t in
@@ -548,7 +548,7 @@ module Fields = struct
           Raw_compat.Parsetree.inspect_label lbl
         in
         let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
-        let t = Named ([ perms ; self ; Core_type ty ], "Field.t_with_perm") in
+        let t = Named ([ perms ; self ; Core_type ty ], "Fieldslib.Field.t_with_perm") in
         { ident = name ; typesig = t ; body = AnyVal }
       )
     in
@@ -642,7 +642,7 @@ module Fields = struct
     let map_poly =
       let var = Var (new_var ()) in
       let perms = sub_of_simple_variants [ "Read" ; "Set_and_create" ] in
-      let user = Named ([ perms ; self ; var ], "Field.user") in
+      let user = Named ([ perms ; self ; var ], "Fieldslib.Field.user") in
       let typesig = Arrow ("", user, Named ([var], "list")) in
       Binding { ident = "map_poly" ; typesig ; body = AnyVal }
     in
