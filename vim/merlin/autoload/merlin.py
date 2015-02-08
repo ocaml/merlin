@@ -1,11 +1,9 @@
 import subprocess
-import signal
 import json
 import vim
 import re
 import os
 import sys
-from itertools import groupby
 
 import vimbufsync
 vimbufsync.check_version("0.1.0",who="merlin")
@@ -53,6 +51,9 @@ def try_print_error(e, msg=None):
           print ("The version of merlin you're using doesn't support this version of ocaml")
         return None
       print (msg)
+
+def vim_encoding():
+  return vim.eval("&fileencoding") or vim.eval("&encoding") or "ascii"
 
 def catch_and_print(f, msg=None):
   try:
@@ -293,8 +294,7 @@ def sync_buffer_to_(to_line, to_col, skip_marker=False):
     rest    = cb[line-1][col:]
     content = cb[line:end_line]
     content.insert(0, rest)
-    encoding = vim.eval("&fileencoding")
-    if not encoding: encoding = "ascii"
+    encoding = vim_encoding()
     content = map(lambda str: str.decode(encoding), content)
     command_tell(content)
 
@@ -455,8 +455,6 @@ def vim_occurrences_replace(content):
   line, col = vim.current.window.cursor
   lst = command_occurrences(line, col)
   lst.reverse()
-  bufnr = vim.current.buffer.number
-  nr, cursorpos = 0, 0
   for pos in lst:
     if pos['start']['line'] == pos['end']['line']:
       mlen = pos['end']['col'] - pos['start']['col']
@@ -508,8 +506,7 @@ def vim_type_reset():
   current_enclosing = -1
 
 def replace_buffer_portion(start, end, txt):
-    encoding = vim.eval("&fileencoding")
-    if not encoding: encoding = "ascii"
+    encoding = vim_encoding()
 
     start_line = start['line'] - 1
     b = vim.current.buffer
