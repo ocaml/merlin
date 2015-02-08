@@ -52,6 +52,9 @@ def try_print_error(e, msg=None):
         return None
       print (msg)
 
+def vim_encoding():
+  return vim.eval("&fileencoding") or vim.eval("&encoding") or "ascii"
+
 def catch_and_print(f, msg=None):
   try:
     return f()
@@ -291,8 +294,7 @@ def sync_buffer_to_(to_line, to_col, skip_marker=False):
     rest    = cb[line-1][col:]
     content = cb[line:end_line]
     content.insert(0, rest)
-    encoding = vim.eval("&fileencoding")
-    if not encoding: encoding = "ascii"
+    encoding = vim_encoding()
     content = map(lambda str: str.decode(encoding), content)
     command_tell(content)
 
@@ -504,8 +506,7 @@ def vim_type_reset():
   current_enclosing = -1
 
 def replace_buffer_portion(start, end, txt):
-    encoding = vim.eval("&fileencoding")
-    if not encoding: encoding = "ascii"
+    encoding = vim_encoding()
 
     start_line = start['line'] - 1
     b = vim.current.buffer
