@@ -1,11 +1,9 @@
 import subprocess
-import signal
 import json
 import vim
 import re
 import os
 import sys
-from itertools import groupby
 
 import vimbufsync
 vimbufsync.check_version("0.1.0",who="merlin")
@@ -455,8 +453,6 @@ def vim_occurrences_replace(content):
   line, col = vim.current.window.cursor
   lst = command_occurrences(line, col)
   lst.reverse()
-  bufnr = vim.current.buffer.number
-  nr, cursorpos = 0, 0
   for pos in lst:
     if pos['start']['line'] == pos['end']['line']:
       mlen = pos['end']['col'] - pos['start']['col']
