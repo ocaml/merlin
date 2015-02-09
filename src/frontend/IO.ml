@@ -303,14 +303,14 @@ module Protocol_io = struct
       Request (Complete_prefix (prefix, pos_of_json jpos))
     | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       Request (Expand_prefix (prefix, pos_of_json jpos))
-    | (`String "document" :: (`String "" | `Null) :: opt_pos) ->
-      Request (Document (None, optional_position opt_pos))
-    | (`String "document" :: `String path :: opt_pos) ->
-      Request (Document (Some path, optional_position opt_pos))
-    | (`String "locate" :: (`String "" | `Null) :: `String choice :: opt_pos) ->
-      Request (Locate (None, ml_or_mli choice, optional_position opt_pos))
-    | (`String "locate" :: `String path :: `String choice :: opt_pos) ->
-      Request (Locate (Some path, ml_or_mli choice, optional_position opt_pos))
+    | (`String "document" :: (`String "" | `Null) :: pos) ->
+      Request (Document (None, mandatory_position pos))
+    | (`String "document" :: `String path :: pos) ->
+      Request (Document (Some path, mandatory_position pos))
+    | (`String "locate" :: (`String "" | `Null) :: `String choice :: pos) ->
+      Request (Locate (None, ml_or_mli choice, mandatory_position pos))
+    | (`String "locate" :: `String path :: `String choice :: pos) ->
+      Request (Locate (Some path, ml_or_mli choice, mandatory_position pos))
     | [`String "outline"] ->
       Request Outline
     | [`String "drop"] ->

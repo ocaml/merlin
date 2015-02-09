@@ -237,25 +237,26 @@ let rec signature_loc =
   | Sig_class (_,_,_)
   | Sig_class_type (_,_,_) -> None
 
+let rec pattern_idlocs pat =
+  let open Typedtree in
+  match pat.pat_desc with
+  | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
+  | Tpat_tuple patts
+  | Tpat_array patts
+  | Tpat_construct (_, _, patts) ->
+    List.concat_map patts ~f:pattern_idlocs
+  | Tpat_record (lst, _) ->
+    List.map lst ~f:(fun (lid_loc, _, _pattern) ->
+      Longident.last lid_loc.Asttypes.txt, lid_loc.Asttypes.loc
+    ) (* TODO: handle rhs, i.e. [_pattern] *)
+  | Tpat_variant (_, Some pat, _) -> pattern_idlocs pat
+  | _ -> []
+
 let str_ident_locs item =
   let open Typedtree in
   match item.str_desc with
   | Tstr_value (_, binding_lst) ->
-    let rec inspect_pattern pat =
-      match pat.pat_desc with
-      | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
-      | Tpat_tuple patts
-      | Tpat_array patts
-      | Tpat_construct (_, _, patts) ->
-        List.concat_map patts ~f:inspect_pattern
-      | Tpat_record (lst, _) ->
-        List.map lst ~f:(fun (lid_loc, _, _pattern) ->
-          Longident.last lid_loc.Asttypes.txt, lid_loc.Asttypes.loc
-        ) (* TODO: handle rhs, i.e. [_pattern] *)
-      | Tpat_variant (_, Some pat, _) -> inspect_pattern pat
-      | _ -> []
-    in
-    List.concat_map binding_lst ~f:(fun b -> inspect_pattern b.vb_pat)
+    List.concat_map binding_lst ~f:(fun b -> pattern_idlocs b.vb_pat)
   | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
   | Tstr_recmodule mbs ->
     List.map mbs ~f:(fun mb -> Ident.name mb.mb_id , mb.mb_loc)
@@ -272,6 +273,18 @@ let get_mod_expr_if_included ~name item =
   | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } when
     List.exists (include_idents incl_type) ~f:(fun x -> Ident.name x = name) ->
     `Mod_expr incl_mod
+  | _ -> `Not_included
+
+let identify_str_includes item =
+  match item.Typedtree.str_desc with
+  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_expr incl_mod)
+  | _ -> `Not_included
+
+let identify_sig_includes item =
+  match item.Typedtree.sig_desc with
+  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_type incl_mod)
   | _ -> `Not_included
 
 let sig_ident_locs item =

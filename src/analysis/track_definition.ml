@@ -72,6 +72,10 @@ module Fallback = struct
     ) loc ;
     fallback := Some loc
 
+  let setopt = function
+    | None -> debug_log "Fallback.setopt None"
+    | Some loc -> set loc
+
   let reset () = fallback := None
 
   let is_set () = !fallback <> None
@@ -100,46 +104,28 @@ end = struct
 end
 
 module File_switching : sig
-  exception Can't_move
-
   val reset : unit -> unit
 
-  val check_can_move : unit -> unit
-
   val move_to : ?digest:Digest.t -> string -> unit (* raises Can't_move *)
-
-  val allow_movement : unit -> unit
 
   val where_am_i : unit -> string option
 
   val source_digest : unit -> Digest.t option
 end = struct
   type t = {
-    already_moved : bool ;
     last_file_visited : string option ;
     digest : Digest.t option ;
   }
 
-  exception Can't_move
-
-  let default =
-    { already_moved = false ; last_file_visited = None ; digest = None }
+  let default = { last_file_visited = None ; digest = None }
 
   let state = ref default
 
   let reset () = state := default
 
-  let check_can_move () =
-    if !state.already_moved then raise Can't_move
-
   let move_to ?digest file =
-    if !state.already_moved then raise Can't_move else
     debug_log "File_switching.move_to %s" file ;
-    state := { already_moved = true ; last_file_visited = Some file ; digest }
-
-  let allow_movement () =
-    debug_log "File_switching.allow_movement" ;
-    state := { !state with already_moved = false }
+    state := { last_file_visited = Some file ; digest }
 
   let where_am_i () = !state.last_file_visited
 
@@ -289,214 +275,65 @@ include Utils
 type context = Type | Expr | Patt | Unknown
 exception Context_mismatch
 
-(* Remove top level indirections (i.e. Structure and Signature) and reverse
-   their children so we start from the bottom of the file.
-   We also remove everything appearing after [pos]: we don't want to consider
-   things declared after the use point of what we are looking for. *)
-let rec get_top_items ?pos browsable =
-  let starts_before x =
-    match pos with
-    | None -> true
-    | Some pos -> Lexing.compare_pos x.BrowseT.t_loc.Location.loc_start pos < 0
-  in
-  let ends_before x =
-    match pos with
-    | None -> true
-    | Some pos -> Lexing.compare_pos x.BrowseT.t_loc.Location.loc_end pos < 0
-  in
-  List.concat_map (fun bt ->
-    if not (starts_before bt) then [] else
-    let open BrowseT in
-    match bt.t_node with
-    | Signature _
-    | Structure _ ->
-      let children = List.rev (Lazy.force bt.t_children) in
-      if ends_before bt then children else get_top_items ?pos children
-    | Signature_item _
-    | Structure_item _  ->
-      if ends_before bt then [ bt ] else
-      let children = List.rev (Lazy.force bt.t_children) in
-      get_top_items ?pos children
-    | Module_binding _
-    | Module_type_declaration _ ->
-      (* N.B. we don't check [ends_before] here, because the fack that these are
-       * not [Structure]/[Structure_item] (resp. sign) nodes means that they end
-       * after [pos] and we should only consider their children. *)
-      List.concat_map (Lazy.force bt.t_children) ~f:(fun bt ->
-        match bt.t_node with
-        | Module_expr _
-        | Module_type _ ->
-          (* FIXME: a bit too rough, [With_constraint] and
-             [Module_type_constraint] nodes are ignored... *)
-          let children = List.rev (Lazy.force bt.t_children) in
-          get_top_items ?pos children
-        | _ -> []
-      )
-    | _ -> []
-  ) browsable
-
-let repack = function
-  | `Not_included -> None
-  | `Mod_expr me  -> Some (BrowseT.Module_expr me)
-  | `Mod_type mty -> Some (BrowseT.Module_type mty)
-
-let get_on_track ~name item =
-  match
-    let open Raw_compat in
-    match item.BrowseT.t_node with
-    | BrowseT.Structure_item item ->
-      repack (get_mod_expr_if_included ~name item),
-      begin try
-        let mbs = expose_module_binding item in
-        let mb = List.find ~f:(fun mb -> Ident.name mb.Typedtree.mb_id = name) mbs in
-        info_log "(get_on_track) %s is bound" name ;
-        `Direct (BrowseT.Module_expr mb.Typedtree.mb_expr)
-      with Not_found -> `Not_found end
-    | BrowseT.Signature_item item ->
-      repack (get_mod_type_if_included ~name item),
-      begin try
-        let mds = expose_module_declaration item in
-        let md = List.find ~f:(fun md -> Ident.name md.Typedtree.md_id = name) mds in
-        info_log "(get_on_track) %s is bound" name ;
-        `Direct (BrowseT.Module_type md.Typedtree.md_type)
-      with Not_found -> `Not_found end
-    | _ -> assert false
-  with
-  | None, whatever -> whatever
-  | Some thing, `Not_found ->
-    info_log "(get_on_track) %s is included..." name ;
-    `Included thing
-  | _ -> assert false
-
-let rec resolve_mod_alias t_node path rest =
-  match
-    match t_node with
-    | BrowseT.Module_expr me  ->
-      Raw_compat.remove_indir_me me
-    | BrowseT.Module_type mty ->
-      Raw_compat.remove_indir_mty mty
-    | _ -> assert false (* absurd *)
-  with
-  | `Alias path' ->
-    File_switching.allow_movement () ;
-    let full_path = (Path.to_string_list path') @ path in
-    Some (full_path, rest)
-  | `Sg _ | `Str _ as x ->
-    let lst = get_top_items (Browse.of_typer_contents [ x ]) @ rest in
-    Some (path, lst)
-  | `Functor msg ->
-    info_log "stopping on functor%s" msg ;
-    None
-  | `Mod_type mod_type ->
-    resolve_mod_alias (BrowseT.Module_type mod_type) path rest
-  | `Mod_expr mod_expr ->
-    resolve_mod_alias (BrowseT.Module_expr mod_expr) path rest
-  | `Unpack ->
-    (* FIXME: should we do something or stop here? *)
-    info_log "found Tmod_unpack, expect random results." ;
-    Some (path, rest)
-
-let rec check_item modules =
-  let keep_looking = function
-    | None ->
-      (* Assumption: fallback is always set before calling this function *)
-      None
-    | Some (path, items) -> check_item path items
-  in
-  let get_loc ~name item rest =
-    let ident_locs, is_included =
-      let open Raw_compat in
-      match item.BrowseT.t_node with
-      | BrowseT.Structure_item item ->
-        str_ident_locs item, get_mod_expr_if_included item
-      | BrowseT.Signature_item item ->
-        sig_ident_locs item, get_mod_type_if_included item
-      | _ -> assert false
-    in
-    try
-      let res = List.assoc name ident_locs in
-      Logger.debugf section (fun fmt loc ->
-        Format.pp_print_string fmt "[get_loc] found at " ;
-        Location.print_loc fmt loc
-      ) res ;
-      Some res
-    with Not_found ->
-      match repack (is_included ~name) with
-      | None ->
-        Fluid.let' last_location item.BrowseT.t_loc @@ fun () ->
-        debug_log "[get_loc] saving last_location" ;
-        check_item modules rest
-      | Some thing ->
-        info_log "one more include to follow..." ;
-        Fallback.set item.BrowseT.t_loc ;
-        keep_looking @@ resolve_mod_alias thing [ name ] rest
-  in
-  function
-  | [] ->
-    info_log "%s not in current file..." (String.concat ~sep:"." modules) ;
-    from_path modules
-  | item :: rest ->
-    match modules with
-    | [] -> assert false
-    | [ str_ident ] -> get_loc ~name:str_ident item rest
-    | mod_name :: path ->
-      match get_on_track ~name:mod_name item with
-      | `Not_found   ->
-        Fluid.let' last_location item.BrowseT.t_loc @@ fun () ->
-        debug_log "[get_on_track `Not_found] saving last_location" ;
-        check_item modules rest
-      | `Direct me   ->
-        debug_log "[get_on_track `Direct] setting fallback" ;
-        Fallback.set item.BrowseT.t_loc ;
-        keep_looking @@ resolve_mod_alias me path rest
-      | `Included me ->
-        debug_log "[get_on_track `Included] setting fallback" ;
-        Fallback.set item.BrowseT.t_loc ;
-        keep_looking @@ resolve_mod_alias me modules rest
+let rec locate ?pos path trie =
+  match Typedtrie.follow ?before:pos trie path with
+  | Typedtrie.Found loc -> Some loc
+  | Typedtrie.Resolves_to (new_path, fallback) ->
+    debug_log "resolves to %s" (String.concat ~sep:"." new_path) ;
+    Fallback.setopt fallback ;
+    from_path new_path
+  | Typedtrie.Alias_of (loc, new_path) ->
+    debug_log "alias of %s" (String.concat ~sep:"." new_path) ;
+    (* TODO: optionally follow module aliases *)
+    Some loc
 
 and browse_cmts ~root modules =
   let open Cmt_format in
-  let cmt_infos = Cmt_cache.read root in
+  let cached = Cmt_cache.read root in
   info_log "inspecting %s" root ;
-  File_switching.move_to ?digest:cmt_infos.cmt_source_digest root ;
-  match
-    match cmt_infos.cmt_annots with
-    | Interface intf      -> `Sg intf
-    | Implementation impl -> `Str impl
-    | Packed (_, files)   -> `Pack files
-    | _ ->
-      (* We could try to work with partial cmt files, but it'd probably fail
-       * most of the time so... *)
-      `Not_found
-  with
-  | `Not_found -> None
-  | (`Str _ | `Sg _ as typedtree) ->
-    begin match modules with
-    | [] ->
-      (* we were looking for a module, we found the right file, we're happy *)
-      let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
-      let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
-      Some loc
-    | _ ->
-      let browses   = Browse.of_typer_contents [ typedtree ] in
-      let browsable = get_top_items browses in
-      check_item modules browsable
-    end
-  | `Pack files ->
-    begin match modules with
-    | [] -> None
-    | mod_name :: modules ->
-      let file = 
-        List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
-      in
-      File_switching.allow_movement () ;
-      Logger.debug section ~title:"loadpath" "Saw packed module => erasing loadpath" ;
-      let new_path = cmt_infos.cmt_loadpath in
-      erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
-        let root = find_file ~with_fallback:true (Preferences.cmt file) in
-        browse_cmts ~root modules
-      )
-    end
+  File_switching.move_to ?digest:cached.Cmt_cache.cmt_infos.cmt_source_digest root ;
+  if cached.Cmt_cache.location_trie <> String.Map.empty then
+    let () = debug_log "cmt already cached" in
+    locate modules cached.Cmt_cache.location_trie
+  else
+    match
+      match cached.Cmt_cache.cmt_infos.cmt_annots with
+      | Interface intf      -> `Sg intf
+      | Implementation impl -> `Str impl
+      | Packed (_, files)   -> `Pack files
+      | _ ->
+        (* We could try to work with partial cmt files, but it'd probably fail
+        * most of the time so... *)
+        `Not_found
+    with
+    | `Not_found -> None
+    | (`Str _ | `Sg _ as typedtree) ->
+      begin match modules with
+      | [] ->
+        (* we were looking for a module, we found the right file, we're happy *)
+        let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
+        let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
+        Some loc
+      | _ ->
+        let browses = Browse.of_typer_contents [ typedtree ] in
+        let trie = Typedtrie.of_browses browses in
+        cached.Cmt_cache.location_trie <- trie ;
+        locate modules trie
+      end
+    | `Pack files ->
+      begin match modules with
+      | [] -> None
+      | mod_name :: modules ->
+        let file = 
+          List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
+        in
+        Logger.debug section ~title:"loadpath" "Saw packed module => erasing loadpath" ;
+        let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
+        erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
+          let root = find_file ~with_fallback:true (Preferences.cmt file) in
+          browse_cmts ~root modules
+        )
+      end
 
 (* The following is ugly, and deserves some explanations:
       As can be seen above, when encountering packed modules we override the
@@ -511,12 +348,11 @@ and browse_cmts ~root modules =
       "erased" loadpath, it could mean that we are looking for a persistent
       unit, and that's why we restore the initial loadpath. *)
 and from_path path =
-  File_switching.check_can_move () ;
   match path with
   | [] -> assert false
   | [ fname ] ->
     let save_digest_and_return root =
-      let cmt_infos = Cmt_cache.read root in
+      let {Cmt_cache. cmt_infos} = Cmt_cache.read root in
       File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
       let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
       let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
@@ -679,7 +515,7 @@ let lookup ctxt ident env =
     x
 
 
-let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
+let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
@@ -697,16 +533,14 @@ let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
         "present in the environment, but ghost lock. walking up the typedtree."
       in
       let modules = Path.to_string_list path' in
-      let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
-      match check_item modules items with
+      let trie    = Typedtrie.of_browses (Browse.of_typer_contents local_defs) in
+      match locate ~pos modules trie with
       | None when Fallback.is_set () -> recover str_ident
       | None -> `Not_found (str_ident, File_switching.where_am_i ())
       | Some loc -> `Found loc
   with
   | _ when Fallback.is_set () -> recover str_ident
-  | Not_found
-  | File_switching.Can't_move ->
-    `Not_found (str_ident, File_switching.where_am_i ())
+  | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
   | File_not_found path -> explain_file_not_found str_ident path
   | Not_in_env -> `Not_in_env str_ident
 
@@ -739,40 +573,36 @@ let inspect_pattern is_path_capitalized p =
     None
   | _ -> Some Patt
 
-let inspect_context browse path = function
-  | None ->
-    info_log "no position available, unable to determine context" ;
+let inspect_context browse path pos =
+  match Browse.enclosing pos browse with
+  | [] ->
+    Logger.infof section (fun fmt pos ->
+      Format.pp_print_string fmt "no enclosing around: " ;
+      Lexing.print_position fmt pos
+    ) pos ;
     Some Unknown
-  | Some pos ->
-    match Browse.enclosing pos browse with
-    | [] ->
-      Logger.infof section (fun fmt pos ->
-        Format.pp_print_string fmt "no enclosing around: " ;
-        Lexing.print_position fmt pos
-      ) pos ;
+  | node :: _ ->
+    let open BrowseT in
+    match node.t_node with
+    | Pattern p -> 
+      Logger.debugf section (fun fmt p ->
+        Format.pp_print_string fmt "current node is: " ;
+        Printtyped.pattern 0 fmt p
+      ) p ;
+      inspect_pattern (String.capitalize path = path) p
+    | Value_description _
+    | Type_declaration _
+    | Extension_constructor _
+    | Module_binding_name _
+    | Module_declaration_name _ ->
+      debug_log "current node is : %s" @@ BrowseT.string_of_node node.t_node ;
+      None
+    | Core_type _ -> Some Type
+    | Expression _ -> Some Expr
+    | _ ->
       Some Unknown
-    | node :: _ ->
-      let open BrowseT in
-      match node.t_node with
-      | Pattern p -> 
-        Logger.debugf section (fun fmt p ->
-          Format.pp_print_string fmt "current node is: " ;
-          Printtyped.pattern 0 fmt p
-        ) p ;
-        inspect_pattern (String.capitalize path = path) p
-      | Value_description _
-      | Type_declaration _
-      | Extension_constructor _
-      | Module_binding_name _
-      | Module_declaration_name _ ->
-        debug_log "current node is : %s" @@ BrowseT.string_of_node node.t_node ;
-        None
-      | Core_type _ -> Some Type
-      | Expression _ -> Some Expr
-      | _ ->
-        Some Unknown
 
-let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
+let from_string ~project ~env ~local_defs ~pos switch path =
   let browse = Browse.of_typer_contents local_defs in
   let lid = Longident.parse path in
   match inspect_context browse path pos with
@@ -786,7 +616,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
     Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
     Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
     match
-      from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid
+      from_longident ~pos ~env ~local_defs ctxt switch lid
     with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as error -> error
     | `Found loc ->
@@ -805,7 +635,7 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
         `Found (Some src, loc.Location.loc_start)
 
 
-let get_doc ~project ~env ~local_defs ~is_implementation ~comments ?pos source path =
+let get_doc ~project ~env ~local_defs ~comments ~pos source path =
   let browse = Browse.of_typer_contents local_defs in
   let lid    = Longident.parse path in
   Fluid.let' sources_path (Project.source_path project) @@ fun () ->
@@ -814,20 +644,17 @@ let get_doc ~project ~env ~local_defs ~is_implementation ~comments ?pos source p
   Fluid.let' last_location Location.none @@ fun () ->
   match
     match inspect_context browse path pos with
-    | None ->
-      (* We know that [pos <> None] otherwise we would have an [Unknown] ctxt. *)
-      let pos = Option.get pos in
-      `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
+    | None -> `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
     | Some ctxt ->
       info_log "looking for the doc of '%s'" path ;
-      from_longident ?pos ~env ~local_defs ~is_implementation ctxt `MLI lid
+      from_longident ~pos ~env ~local_defs ctxt `MLI lid
   with
   | `Found loc ->
     let comments =
       match File_switching.where_am_i () with
       | None -> List.rev comments
       | Some cmt_path ->
-        let cmt_infos = Cmt_cache.read cmt_path in
+        let {Cmt_cache. cmt_infos} = Cmt_cache.read cmt_path in
         cmt_infos.Cmt_format.cmt_comments
     in
     begin match

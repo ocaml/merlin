@@ -2,7 +2,7 @@
 
   This file is part of Merlin, an helper for ocaml editors
 
-  Copyright (C) 2013 - 2014  Frédéric Bour  <frederic.bour(_)lakaban.net>
+  Copyright (C) 2013 - 2015  Frédéric Bour  <frederic.bour(_)lakaban.net>
                              Thomas Refis  <refis.thomas(_)gmail.com>
                              Simon Castellan  <simon.castellan(_)iuwt.fr>
 
@@ -26,33 +26,20 @@
 
 )* }}} *)
 
-open Merlin_lib
+type t = Cmt_cache.trie
+type result =
+  | Found of Location.t
+    (** Found at location *)
+  | Alias_of of Location.t * string list
+    (** Alias of [string list], introduced at [Location.t] *)
+  | Resolves_to of string list * Location.t option
+    (** Not found in trie, look for [string list] in loadpath.
+        If the second parameter is [Some] it means we encountered an include or
+        module alias at some point, so we can always fallback there if we don't
+        find anything in the loadpath. *)
 
-val section: Logger.section
+val of_browses : BrowseT.t list -> t
 
-val from_string
-  : project:Project.t
-  -> env:Env.t
-  -> local_defs:Typer.content list
-  -> pos:Lexing.position
-  -> [ `ML | `MLI ]
-  -> string
-  -> [> `File_not_found of string
-      | `Found of string option * Lexing.position
-      | `Not_found of string * string option
-      | `Not_in_env of string
-      | `At_origin ]
+val follow : ?before:Lexing.position -> t -> string list -> result
 
-val get_doc
-  : project:Merlin_lib.Project.t
-  -> env:Env.t
-  -> local_defs:Typer.content list
-  -> comments:(string * Location.t) list
-  -> pos:Lexing.position
-  -> string
-  -> string
-  -> [> `File_not_found of string
-      | `Found of string
-      | `Not_found of string * string option
-      | `Not_in_env of string
-      | `No_documentation ]
+val dump : Format.formatter -> t -> unit

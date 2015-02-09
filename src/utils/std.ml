@@ -372,6 +372,14 @@ module String = struct
 
     let keys m = fold (fun k _ xs -> k :: xs) m []
     let values m = fold (fun _ v xs -> v :: xs) m []
+
+    let add_multiple key data t =
+      let current =
+        try find key t
+        with Not_found -> []
+      in
+      let data = data :: current in
+      add key data t
   end
 
   let mem c s =

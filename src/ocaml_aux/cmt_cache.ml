@@ -26,7 +26,26 @@
 
 )* }}} *)
 
+open Std
+
+type trie = (Location.t * node) list String.Map.t
+ and node =
+   | Leaf
+   | Internal of trie
+   | Included of string list (* Could be Path.t *)
+   | Alias    of string list (* Here too. *)
+
+
+type cmt_item = {
+  cmt_infos : Cmt_format.cmt_infos ;
+  mutable location_trie : trie ;
+}
+
 include File_cache.Make (struct
-  type t   = Cmt_format.cmt_infos
-  let read = Cmt_format.read_cmt
+  type t = cmt_item
+
+  let read file = {
+    cmt_infos = Cmt_format.read_cmt file ;
+    location_trie = String.Map.empty ;
+  }
 end)

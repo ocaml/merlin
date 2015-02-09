@@ -88,7 +88,7 @@ type _ request =
     :  string * position
     -> completions request
   | Document
-    : string option * position option
+    : string option * position
     -> [ `Found of string
       | `Not_in_env of string
       | `File_not_found of string
@@ -96,7 +96,7 @@ type _ request =
       | `No_documentation
       ] request
   | Locate
-    : string option * [ `ML | `MLI ] * position option
+    : string option * [ `ML | `MLI ] * position
     -> [ `Found of string option * Lexing.position
        | `Invalid_context
        | `Not_in_env of string
