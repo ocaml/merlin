@@ -61,20 +61,20 @@ let restore_loadpath k =
   Fluid.let' loadpath (Fluid.get cfg_cmt_path) k
 
 module Fallback = struct
-  let fallback = ref `Nothing
+  let fallback = ref None
 
   let get () = !fallback
 
-  let set ~source loc =
+  let set loc =
     Logger.debugf section (fun fmt loc ->
-      Format.fprintf fmt "Fallback.set %b" source;
+      Format.fprintf fmt "Fallback.set" ;
       Location.print fmt loc
     ) loc ;
-    fallback := if source then `ML loc else `MLI loc
+    fallback := Some loc
 
-  let reset () = fallback := `Nothing
+  let reset () = fallback := None
 
-  let is_set () = !fallback <> `Nothing
+  let is_set () = !fallback <> None
 end
 
 type filetype =
@@ -87,8 +87,6 @@ module Preferences : sig
   val set : [ `ML | `MLI ] -> unit
 
   val cmt : string -> filetype
-
-  val final : 'a -> [> `ML of 'a | `MLI of 'a ]
 end = struct
   let prioritize_impl = ref true
 
@@ -99,8 +97,6 @@ end = struct
       | _ -> false
 
   let cmt file = if !prioritize_impl then CMT file else CMTI file
-
-  let final file = if !prioritize_impl then `ML file else `MLI file
 end
 
 module File_switching : sig
@@ -400,12 +396,12 @@ let rec resolve_mod_alias t_node path rest =
     info_log "found Tmod_unpack, expect random results." ;
     Some (path, rest)
 
-let rec check_item ~source modules =
+let rec check_item modules =
   let keep_looking = function
     | None ->
       (* Assumption: fallback is always set before calling this function *)
-      `Not_found
-    | Some (path, items) -> check_item ~source path items
+      None
+    | Some (path, items) -> check_item path items
   in
   let get_loc ~name item rest =
     let ident_locs, is_included =
@@ -423,16 +419,16 @@ let rec check_item ~source modules =
         Format.pp_print_string fmt "[get_loc] found at " ;
         Location.print_loc fmt loc
       ) res ;
-      if source then `ML res else `MLI res
+      Some res
     with Not_found ->
       match repack (is_included ~name) with
       | None ->
         Fluid.let' last_location item.BrowseT.t_loc @@ fun () ->
         debug_log "[get_loc] saving last_location" ;
-        check_item ~source modules rest
+        check_item modules rest
       | Some thing ->
         info_log "one more include to follow..." ;
-        Fallback.set ~source item.BrowseT.t_loc ;
+        Fallback.set item.BrowseT.t_loc ;
         keep_looking @@ resolve_mod_alias thing [ name ] rest
   in
   function
@@ -448,14 +444,14 @@ let rec check_item ~source modules =
       | `Not_found   ->
         Fluid.let' last_location item.BrowseT.t_loc @@ fun () ->
         debug_log "[get_on_track `Not_found] saving last_location" ;
-        check_item ~source modules rest
+        check_item modules rest
       | `Direct me   ->
         debug_log "[get_on_track `Direct] setting fallback" ;
-        Fallback.set ~source item.BrowseT.t_loc ;
+        Fallback.set item.BrowseT.t_loc ;
         keep_looking @@ resolve_mod_alias me path rest
       | `Included me ->
         debug_log "[get_on_track `Included] setting fallback" ;
-        Fallback.set ~source item.BrowseT.t_loc ;
+        Fallback.set item.BrowseT.t_loc ;
         keep_looking @@ resolve_mod_alias me modules rest
 
 and browse_cmts ~root modules =
@@ -465,30 +461,30 @@ and browse_cmts ~root modules =
   File_switching.move_to ?digest:cmt_infos.cmt_source_digest root ;
   match
     match cmt_infos.cmt_annots with
-    | Interface intf      -> `Sg intf, false
-    | Implementation impl -> `Str impl, true
-    | Packed (_, files)   -> `Pack files, true
+    | Interface intf      -> `Sg intf
+    | Implementation impl -> `Str impl
+    | Packed (_, files)   -> `Pack files
     | _ ->
       (* We could try to work with partial cmt files, but it'd probably fail
        * most of the time so... *)
-      `Not_found, true
+      `Not_found
   with
-  | `Not_found, _ -> `Not_found
-  | (`Str _ | `Sg _ as typedtree), source ->
+  | `Not_found -> None
+  | (`Str _ | `Sg _ as typedtree) ->
     begin match modules with
     | [] ->
       (* we were looking for a module, we found the right file, we're happy *)
       let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
       let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
-      if source then `ML loc else `MLI loc
+      Some loc
     | _ ->
       let browses   = Browse.of_typer_contents [ typedtree ] in
       let browsable = get_top_items browses in
-      check_item ~source modules browsable
+      check_item modules browsable
     end
-  | `Pack files, _ ->
+  | `Pack files ->
     begin match modules with
-    | [] -> `Not_found
+    | [] -> None
     | mod_name :: modules ->
       let file = 
         List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
@@ -524,7 +520,7 @@ and from_path path =
       File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
       let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
       let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
-      Preferences.final loc
+      Some loc
     in
     begin try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
@@ -543,7 +539,7 @@ and from_path path =
           let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
           let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
           File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
-          Preferences.final loc
+          Some loc
       )
     end
   | fname :: modules ->
@@ -572,83 +568,72 @@ let path_and_loc_from_label desc env =
 exception Not_in_env
 exception Multiple_matches of string list
 
-let finalize_locating source loc =
+let find_source loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
   let mod_name = file_path_to_mod_name fname in
-  let file = if source then ML mod_name else MLI mod_name in
+  let file = if Filename.check_suffix fname "i" then MLI mod_name else ML mod_name in
   let filename = filename_of_filetype file in
-  let full_path =
-    match File_switching.where_am_i () with
-    | None -> (* We have not moved, we don't want to return a filename *) None
-    | Some s ->
-      let dir = Filename.dirname s in
-      match find_all_matches ~with_fallback file with
-      | [] ->
-        debug_log "failed to find \"%s\" in source path (fallback = %b)"
-           filename with_fallback ;
-        debug_log "looking in '%s'" dir ;
-        Some (
-          find_file_with_path ~with_fallback file @@
-            Misc.Path_list.of_string_list_ref (ref [ dir ])
-        )
-      | [ x ] -> Some x
-      | files ->
-        info_log "multiple files named %s exist in the source path..." filename;
-        try
-          match File_switching.source_digest () with
-          | None ->
-            info_log "... no source digest available to select the right one" ;
-            raise Not_found
-          | Some digest ->
-            info_log "... trying to use source digest to find the right one" ;
-            debug_log "Source digest: %s" (Digest.to_hex digest) ;
-            Some (
-              List.find files ~f:(fun f ->
-                let fdigest = Digest.file f in
-                debug_log "  %s (%s)" f (Digest.to_hex fdigest) ;
-                fdigest = digest
-              )
+  match File_switching.where_am_i () with
+  | None -> (* We have not moved, we don't want to return a filename *) None
+  | Some s ->
+    let dir = Filename.dirname s in
+    match find_all_matches ~with_fallback file with
+    | [] ->
+      debug_log "failed to find \"%s\" in source path (fallback = %b)"
+          filename with_fallback ;
+      debug_log "looking in '%s'" dir ;
+      Some (
+        find_file_with_path ~with_fallback file @@
+          Misc.Path_list.of_string_list_ref (ref [ dir ])
+      )
+    | [ x ] -> Some x
+    | files ->
+      info_log "multiple files named %s exist in the source path..." filename;
+      try
+        match File_switching.source_digest () with
+        | None ->
+          info_log "... no source digest available to select the right one" ;
+          raise Not_found
+        | Some digest ->
+          info_log "... trying to use source digest to find the right one" ;
+          debug_log "Source digest: %s" (Digest.to_hex digest) ;
+          Some (
+            List.find files ~f:(fun f ->
+              let fdigest = Digest.file f in
+              debug_log "  %s (%s)" f (Digest.to_hex fdigest) ;
+              fdigest = digest
             )
-        with Not_found ->
-          info_log "... using heuristic to select the right one" ;
-          debug_log "we are looking for files in %s" dir ;
-          let rev = String.reverse (Filename.concat dir fname) in
-          let lst =
-            List.map files ~f:(fun path ->
-              let path' = String.reverse path in
-              String.common_prefix_len rev path', path
-            )
-          in
-          let lst =
-            (* TODO: remove duplicates in [source_path] instead of using
-              [sort_uniq] here. *)
-            List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
-              let tmp = compare j i in
-              if tmp <> 0 then tmp else
-              compare s t
-            ) lst
-          in
-          match lst with
-          | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
-            raise (Multiple_matches files)
-          | (_, s) :: _ -> Some s
-          | _ -> assert false
-  in
-  `Found (full_path, loc)
+          )
+      with Not_found ->
+        info_log "... using heuristic to select the right one" ;
+        debug_log "we are looking for files in %s" dir ;
+        let rev = String.reverse (Filename.concat dir fname) in
+        let lst =
+          List.map files ~f:(fun path ->
+            let path' = String.reverse path in
+            String.common_prefix_len rev path', path
+          )
+        in
+        let lst =
+          (* TODO: remove duplicates in [source_path] instead of using
+            [sort_uniq] here. *)
+          List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
+            let tmp = compare j i in
+            if tmp <> 0 then tmp else
+            compare s t
+          ) lst
+        in
+        match lst with
+        | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
+          raise (Multiple_matches files)
+        | (_, s) :: _ -> Some s
+        | _ -> assert false
 
-let recover ~finalize ident =
-  debug_log "recovering..." ;
-  try
-    match Fallback.get () with
-    | `Nothing -> assert false
-    | `ML  loc -> finalize true loc
-    | `MLI loc -> finalize false loc
-  with
-  | File_not_found path -> explain_file_not_found ident path
-  | e ->
-    debug_log "recovery raised: %s" (Printexc.to_string e) ;
-    raise e
+let recover ident =
+  match Fallback.get () with
+  | None -> assert false
+  | Some loc -> `Found loc
 
 let namespaces = function
   | Type        -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
@@ -694,8 +679,7 @@ let lookup ctxt ident env =
     x
 
 
-let from_longident ~env ~local_defs ~is_implementation ?pos 
-  ~finalize ctxt ml_or_mli lid =
+let from_longident ~env ~local_defs ~is_implementation ?pos ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
@@ -708,31 +692,23 @@ let from_longident ~env ~local_defs ~is_implementation ?pos
       let label_desc = Raw_compat.lookup_label ident env in
       path_and_loc_from_label label_desc env
     in
-    if not (is_ghost loc) then `Found (None, loc) else
+    if not (is_ghost loc) then `Found loc else
       let () = debug_log
         "present in the environment, but ghost lock. walking up the typedtree."
       in
       let modules = Path.to_string_list path' in
       let items   = get_top_items ?pos (Browse.of_typer_contents local_defs) in
-      match check_item ~source:is_implementation modules items with
-      | `Not_found when Fallback.is_set () -> recover ~finalize str_ident
-      | `Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-      | `ML  loc   -> finalize true loc
-      | `MLI loc   -> finalize false loc
+      match check_item modules items with
+      | None when Fallback.is_set () -> recover str_ident
+      | None -> `Not_found (str_ident, File_switching.where_am_i ())
+      | Some loc -> `Found loc
   with
-  | _ when Fallback.is_set () -> recover ~finalize str_ident
+  | _ when Fallback.is_set () -> recover str_ident
   | Not_found
   | File_switching.Can't_move ->
     `Not_found (str_ident, File_switching.where_am_i ())
   | File_not_found path -> explain_file_not_found str_ident path
   | Not_in_env -> `Not_in_env str_ident
-  | Multiple_matches lst ->
-    let matches = String.concat lst ~sep:", " in
-    `File_not_found (
-      sprintf "Several source files in your path have the same name, and \
-               merlin doesn't know which is the right one: %s"
-        matches
-    )
 
 let inspect_pattern is_path_capitalized p =
   let open Typedtree in
@@ -806,18 +782,27 @@ let from_string ~project ~env ~local_defs ~is_implementation ?pos switch path =
   | Some ctxt ->
     info_log "looking for the source of '%s' (prioritizing %s files)" path
       (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
-    let finalize = finalize_locating in
     Fluid.let' sources_path (Project.source_path project) @@ fun () ->
     Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
     Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
     match
-      from_longident ?pos ~env ~local_defs ~is_implementation ~finalize
-        ctxt switch lid
+      from_longident ?pos ~env ~local_defs ~is_implementation ctxt switch lid
     with
-    | `Found (opt, loc) -> `Found (opt, loc.Location.loc_start)
-    | `File_not_found _
-    | `Not_found _
-    | `Not_in_env _ as otherwise -> otherwise
+    | `File_not_found _ | `Not_found _ | `Not_in_env _ as error -> error
+    | `Found loc ->
+      match find_source loc with
+      | exception (File_not_found ft) ->
+        explain_file_not_found path ft
+      | exception (Multiple_matches lst) ->
+        let matches = String.concat lst ~sep:", " in
+        `File_not_found (
+          sprintf "Several source files in your path have the same name, and \
+                   merlin doesn't know which is the right one: %s"
+            matches
+        )
+      | None -> `Found (None, loc.Location.loc_start)
+      | Some src ->
+        `Found (Some src, loc.Location.loc_start)
 
 
 let get_doc ~project ~env ~local_defs ~is_implementation ~comments ?pos source path =
@@ -832,14 +817,12 @@ let get_doc ~project ~env ~local_defs ~is_implementation ~comments ?pos source p
     | None ->
       (* We know that [pos <> None] otherwise we would have an [Unknown] ctxt. *)
       let pos = Option.get pos in
-      `Found (None, { Location. loc_start=pos; loc_end=pos ; loc_ghost=true })
+      `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
     | Some ctxt ->
       info_log "looking for the doc of '%s'" path ;
-      let finalize _is_source loc = `Found (None, loc) in
-      from_longident ?pos ~env ~local_defs ~is_implementation ~finalize
-        ctxt `MLI lid
+      from_longident ?pos ~env ~local_defs ~is_implementation ctxt `MLI lid
   with
-  | `Found (_, loc) ->
+  | `Found loc ->
     let comments =
       match File_switching.where_am_i () with
       | None -> List.rev comments
