@@ -528,4 +528,4 @@ let arg_spec t =
 
 type state = set
 let backup () = copy !set
-let restore aset = set := copy aset
+let restore aset = set := aset

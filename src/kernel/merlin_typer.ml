@@ -47,6 +47,7 @@ type step = {
   env        : Env.t;
   contents   : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list;
   exns       : exn list;
+  delayed_checks : Typecore.delayed_check list;
 }
 
 let empty extensions catch  =
@@ -58,7 +59,9 @@ let empty extensions catch  =
   let ppx_cookie = !Ast_mapper.cache in
   { raw = Raw_typer.empty;
     contents = [];
-    ppx_cookie; snapshot; env; exns }
+    ppx_cookie; snapshot; env; exns;
+    delayed_checks = [];
+  }
 
 (* Rewriting:
    - internal, to turn partial ASTs into valid OCaml AST chunks
@@ -143,14 +146,14 @@ let append catch loc item step =
     in
     let snapshot = Btype.snapshot () in
     let ppx_cookie = !Ast_mapper.cache in
-    Typecore.reset_delayed_checks ();
     {env; contents; snapshot; ppx_cookie;
      raw = step.raw;
+     delayed_checks = !Typecore.delayed_checks;
      exns = caught catch @ step.exns}
   with exn ->
     let snapshot = Btype.snapshot () in
-    Typecore.reset_delayed_checks ();
-    {step with snapshot; exns = exn :: caught catch @ step.exns}
+    {step with snapshot; exns = exn :: caught catch @ step.exns;
+               delayed_checks = !Typecore.delayed_checks}
 
 (* Incremental synchronization *)
 
@@ -171,6 +174,7 @@ let new_stack extensions catch frame =
     let step = empty extensions catch in
     let init = (first, step) in
     Btype.backtrack step.snapshot;
+    Typecore.delayed_checks := step.delayed_checks;
     List.rev_scan_left [init] ~f:(sync_frame catch) rest ~init
 
 let sync_stack extensions catch steps current_frame =
@@ -195,9 +199,15 @@ let sync_stack extensions catch steps current_frame =
       let (last_frame, last_step as last), steps = find_valid steps in
       Ast_mapper.cache := last_step.ppx_cookie;
       Btype.backtrack last_step.snapshot;
+      Typecore.delayed_checks := last_step.delayed_checks;
       List.rev_scan_left steps ~f:(sync_frame catch) ~init:last
         (Parser.unroll_stack ~from:current_frame ~root:last_frame)
   with Not_found -> new_stack extensions catch current_frame
+
+let sync_stack extensions catch steps current_frame =
+  let result = sync_stack extensions catch steps current_frame in
+  Typecore.reset_delayed_checks ();
+  result
 
 (* Compiler state *)
 
@@ -256,6 +266,12 @@ let update parser t =
 
 let env t      = (get_value t).env
 let exns t     = (get_value t).exns
+let delayed_checks t =
+  protect_typer t @@ fun exns ->
+  Typecore.delayed_checks := (get_value t).delayed_checks;
+  Typecore.force_delayed_checks ();
+  !exns
+
 let contents t = (get_value t).contents
 let extensions t = t.state.extensions
 
