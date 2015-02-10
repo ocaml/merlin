@@ -36,6 +36,7 @@ val update : Merlin_parser.t -> t -> t
 val env : t -> Env.t
 val contents : t -> [`Str of Typedtree.structure | `Sg of Typedtree.signature] list
 val exns : t -> exn list
+val delayed_checks : t -> exn list
 val extensions : t -> Extension.set
 
 val dump : Format.formatter -> t -> unit

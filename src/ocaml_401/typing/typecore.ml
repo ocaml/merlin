@@ -1267,6 +1267,8 @@ let type_self_pattern cl_num privty val_env met_env par_env spat =
   in
   (pat, meths, vars, val_env, met_env, par_env)
 
+type delayed_check = (unit -> unit)
+
 let delayed_checks = ref []
 let reset_delayed_checks () = delayed_checks := []
 let add_delayed_check f = delayed_checks := f :: !delayed_checks
