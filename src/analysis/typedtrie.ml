@@ -30,6 +30,9 @@ open Std
 open BrowseT
 
 open Cmt_cache
+module Trie = String.Map
+
+let section = Logger.section "typedtrie"
 
 type t = trie
 
@@ -53,7 +56,7 @@ let rec build ~trie browses =
       Alias p
     | `Str _
     | `Sg  _ as s ->
-      Internal (build ~trie:String.Map.empty (Browse.of_typer_contents [s]))
+      Internal (build ~trie:Trie.empty (Browse.of_typer_contents [s]))
     | `Mod_expr me -> node_for_direct_mod (Raw_compat.remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod (Raw_compat.remove_indir_mty mty)
     | _ ->
@@ -80,7 +83,7 @@ let rec build ~trie browses =
           let f data =
             let data = (t.t_loc, data) in
             List.fold_left included_idents ~init:trie
-              ~f:(fun trie id -> String.Map.add_multiple (Ident.name id) data trie)
+              ~f:(fun trie id -> Trie.add_multiple (Ident.name id) data trie)
           in
           match
             match packed with
@@ -100,41 +103,51 @@ let rec build ~trie browses =
     | Value_binding vb ->
       let idlocs = Raw_compat.pattern_idlocs vb.Typedtree.vb_pat in
       List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
-        String.Map.add_multiple id (loc, Leaf) trie
+        Trie.add_multiple id (loc, Leaf) trie
       )
     | Value_description vd ->
-      String.Map.add_multiple (Ident.name vd.Typedtree.val_id) (t.t_loc, Leaf) trie
+      Trie.add_multiple (Ident.name vd.Typedtree.val_id) (t.t_loc, Leaf) trie
     | Module_binding mb ->
       let node =
         node_for_direct_mod
           (Raw_compat.remove_indir_me mb.Typedtree.mb_expr)
       in
-      String.Map.add_multiple (Ident.name mb.Typedtree.mb_id) (t.t_loc, node) trie
+      Trie.add_multiple (Ident.name mb.Typedtree.mb_id) (t.t_loc, node) trie
     | Module_declaration md ->
       let node =
         node_for_direct_mod
           (Raw_compat.remove_indir_mty md.Typedtree.md_type)
       in
-      String.Map.add_multiple (Ident.name md.Typedtree.md_id) (t.t_loc, node) trie
+      Trie.add_multiple (Ident.name md.Typedtree.md_id) (t.t_loc, node) trie
     | Module_type_declaration mtd ->
       let node =
         match mtd.Typedtree.mtd_type with
         | None -> Leaf
         | Some m -> node_for_direct_mod (Raw_compat.remove_indir_mty m)
       in
-      String.Map.add_multiple (Ident.name mtd.Typedtree.mtd_id) (t.t_loc, node) trie
-    | _ ->
-      (* Ignore the rest for the moment *)
+      Trie.add_multiple (Ident.name mtd.Typedtree.mtd_id) (t.t_loc, node) trie
+    | Type_declaration td ->
+      (* TODO: add constructors and labels as well.
+         Because why the hell not. *)
+      Trie.add_multiple (Ident.name td.Typedtree.typ_id) (t.t_loc, Leaf) trie
+    | Type_extension te ->
+      (* TODO: add constructors and labels as well.
+         Because why the hell not. *)
+      Trie.add_multiple (Path.last te.Typedtree.tyext_path) (t.t_loc, Leaf) trie
+    | ignored_node ->
+      Logger.debugf section (fun fmt node ->
+        Format.fprintf fmt "IGNORED: %s" @@ BrowseT.string_of_node node
+      ) ignored_node ;
       trie
   )
 
-let of_browses = build ~trie:String.Map.empty
+let of_browses = build ~trie:Trie.empty
 
 let rec follow ?before trie = function
   | [] -> invalid_arg "Typedtrie.follow"
   | x :: xs as path ->
     try
-      let lst = String.Map.find x trie in
+      let lst = Trie.find x trie in
       let lst =
         match before with
         | None -> lst
@@ -147,10 +160,19 @@ let rec follow ?before trie = function
           Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start)
       with
       | [] -> Resolves_to (path, None)
-      | (loc, Leaf)       :: _ -> Found loc
+      | (loc, Leaf)       :: _ ->
+        (* FIXME: it seems wrong to return [Resolves_to] here.
+           The prefix of the path is a leaf, anything else we might look up will
+           be *wrong* *)
+        if xs = [] then Found loc else Resolves_to (path, None)
       | (loc, Alias path) :: _ ->
         begin match xs with
-        | [] -> Alias_of (loc, path)
+        | [] ->
+          (* FIXME: at this point, we might be deep in the trie, and [path]
+             might only make sense for a few steps, but in the upper nodes it
+             might need to be prefixed.
+             We need to recurse like we do for [Resolves_to] *)
+          Alias_of (loc, path)
         | _ -> Resolves_to (path @ xs, Some loc)
         end
       | (l, Included p) :: _ -> Resolves_to (p @ path, Some l)
@@ -181,7 +203,7 @@ let rec dump fmt trie =
       Format.fprintf fmt "%a = %a" Location.print_loc loc dump t
   in
   Format.pp_print_string fmt "{\n" ;
-  String.Map.iter (fun key nodes ->
+  Trie.iter (fun key nodes ->
     Format.fprintf fmt "%s -> " key ;
     begin match nodes with
     | [] -> assert false
