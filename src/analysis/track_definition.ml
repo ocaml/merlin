@@ -68,7 +68,7 @@ module Fallback = struct
   let set loc =
     Logger.debugf section (fun fmt loc ->
       Format.fprintf fmt "Fallback.set" ;
-      Location.print fmt loc
+      Location.print_loc' fmt loc
     ) loc ;
     fallback := Some loc
 

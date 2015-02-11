@@ -38,8 +38,11 @@ type result =
         module alias at some point, so we can always fallback there if we don't
         find anything in the loadpath. *)
 
+val section : Logger.Section.t
+
 val of_browses : BrowseT.t list -> t
 
 val follow : ?before:Lexing.position -> t -> string list -> result
 
+(* For debugging purposes. *)
 val dump : Format.formatter -> t -> unit

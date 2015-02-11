@@ -192,15 +192,15 @@ let rec follow ?before trie = function
 let rec dump fmt trie =
   let dump_node (loc, node) =
     match node with
-    | Leaf -> Location.print_loc fmt loc
+    | Leaf -> Location.print_loc' fmt loc
     | Included path ->
-      Format.fprintf fmt "%a <%s>" Location.print_loc loc
+      Format.fprintf fmt "%a <%s>" Location.print_loc' loc
         (String.concat ~sep:"." path)
     | Alias path ->
-      Format.fprintf fmt "%a = %s" Location.print_loc loc
+      Format.fprintf fmt "%a = %s" Location.print_loc' loc
         (String.concat ~sep:"." path)
     | Internal t ->
-      Format.fprintf fmt "%a = %a" Location.print_loc loc dump t
+      Format.fprintf fmt "%a = %a" Location.print_loc' loc dump t
   in
   Format.pp_print_string fmt "{\n" ;
   Trie.iter (fun key nodes ->
