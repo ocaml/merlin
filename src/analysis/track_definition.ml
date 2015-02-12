@@ -485,7 +485,9 @@ let namespaces = function
   | Expr | Patt -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
   | Unknown     -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
 
-exception Found of (Cmt_cache.namespace * Path.t * Location.t)
+exception Found of (Cmt_cache.path * Location.t)
+
+let tag namespace p = Typedtrie.tag_path ~namespace (Path.to_string_list p)
 
 let lookup ctxt ident env =
   try
@@ -496,28 +498,30 @@ let lookup ctxt ident env =
           info_log "lookup in constructor namespace" ;
           let cstr_desc = Raw_compat.lookup_constructor ident env in
           let path, loc = Raw_compat.path_and_loc_of_cstr cstr_desc env in
-          raise (Found (`Constr, path, loc))
+          let path = tag `Type path in (* TODO: Use [`Constr] here *)
+          raise (Found (path, loc))
         | `Mod ->
           info_log "lookup in module namespace" ;
           let path, _ = Raw_compat.lookup_module ident env in
-          raise (Found (`Mod, path, Location.symbol_gloc ()))
+          raise (Found (tag `Mod path, Location.symbol_gloc ()))
         | `Modtype ->
           info_log "lookup in module type namespace" ;
           let path, _ = Raw_compat.lookup_modtype ident env in
-          raise (Found (`Modtype, path, Location.symbol_gloc ()))
+          raise (Found (tag `Modtype path, Location.symbol_gloc ()))
         | `Type ->
           info_log "lookup in type namespace" ;
           let path, typ_decl = Env.lookup_type ident env in
-          raise (Found (`Type, path, typ_decl.Types.type_loc))
+          raise (Found (tag `Type path, typ_decl.Types.type_loc))
         | `Vals ->
           info_log "lookup in value namespace" ;
           let path, val_desc = Env.lookup_value ident env in
-          raise (Found (`Vals, path, val_desc.Types.val_loc))
+          raise (Found (tag `Vals path, val_desc.Types.val_loc))
         | `Labels ->
           info_log "lookup in label namespace" ;
           let label_desc = Raw_compat.lookup_label ident env in
           let path, loc = path_and_loc_from_label label_desc env in
-          raise (Found (`Labels, path, loc))
+          let path = tag `Type path in (* TODO: Use [`Labels] here *)
+          raise (Found (path, loc))
       with Not_found -> ()
     ) ;
     info_log "   ... not in the environment" ;
@@ -532,15 +536,15 @@ let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
   let ident, is_label = keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
-    let namespace, path', loc =
+    let modules, loc =
       if not is_label then lookup ctxt ident env else
       (* If we know it is a record field, we only look for that. *)
       let label_desc = Raw_compat.lookup_label ident env in
       let path, loc = path_and_loc_from_label label_desc env in
-      `Labels, path, loc
+      (* TODO: Use [`Labels] here *)
+      tag `Type path, loc
     in
     if not (is_ghost loc) then `Found loc else
-      let modules = Typedtrie.tag_path ~namespace (Path.to_string_list path') in
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
