@@ -283,19 +283,7 @@ let is_valid t =
   try with_typer t Env.check_cache_consistency
   with _exn -> false
 
-let rec last_ident = function
-  | Env.Env_value (_,id,_)
-  | Env.Env_type (_,id,_)
-  | Env.Env_extension  (_,id,_)
-  | Env.Env_module (_,id,_)
-  | Env.Env_modtype(_,id,_)
-  | Env.Env_class (_,id,_)
-  | Env.Env_cltype (_,id,_)
-  | Env.Env_functor_arg (_,id) -> id
-  | Env.Env_empty -> raise Not_found
-  | Env.Env_open (s,_) -> last_ident s
-
-let last_ident env = last_ident (Env.summary env)
+let last_ident env = Raw_compat.last_ident (Env.summary env)
 
 let aliasmap ?from t  =
   match from with
