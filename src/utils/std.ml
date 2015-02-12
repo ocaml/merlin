@@ -58,6 +58,10 @@ module List = struct
     in
     aux 0 l
 
+  let find_some ~f l =
+    try Some (find ~f l)
+    with Not_found -> None
+
   (* [fold_left] with arguments flipped, because *)
   let rec fold_left' ~f l ~init = match l with
     | [] -> init

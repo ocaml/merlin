@@ -30,7 +30,29 @@ open Std
 open BrowseT
 
 open Cmt_cache
-module Trie = String.Map
+module Trie = struct
+  include String.Map
+
+  let get k t = find k t
+
+  exception Found of string * Location.t * node
+
+  let find f t =
+    try
+      iter (fun k v ->
+        List.iter v ~f:(fun (l, node) ->
+          if f k l node then
+            raise (Found (k, l, node))
+        )
+      ) t ;
+      raise Not_found
+    with
+    | Found (k, l, v) -> (k, l, v)
+
+  let find_some f t =
+    try Some (find f t)
+    with Not_found -> None
+end
 
 let section = Logger.section "typedtrie"
 
@@ -147,7 +169,7 @@ let rec follow ?before trie = function
   | [] -> invalid_arg "Typedtrie.follow"
   | x :: xs as path ->
     try
-      let lst = Trie.find x trie in
+      let lst = Trie.get x trie in
       let lst =
         match before with
         | None -> lst
@@ -157,7 +179,8 @@ let rec follow ?before trie = function
       in
       match
         List.sort lst ~cmp:(fun (l1, _) (l2, _) ->
-          Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start)
+          (* We wants the ones closed last to be at the beginning of the list. *)
+          Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
       with
       | [] -> Resolves_to (path, None)
       | (loc, Leaf)       :: _ ->
@@ -188,6 +211,29 @@ let rec follow ?before trie = function
     with
     | Not_found ->
       Resolves_to (path, None)
+
+let rec find ~before trie path =
+  match
+    Trie.find_some (fun _name loc _node ->
+      Lexing.compare_pos loc.Location.loc_start before < 0
+      && Lexing.compare_pos loc.Location.loc_end before > 0
+    ) trie
+  with
+  | Some (_name, loc, Internal subtrie) ->
+    begin match find ~before subtrie path with
+    | Resolves_to (p, x) as checkpoint ->
+      begin match follow ~before:loc.Location.loc_start trie p with
+      | Resolves_to (_, None) -> checkpoint
+      | otherwise -> otherwise
+      end
+    | otherwise -> otherwise
+    end
+  | _ -> follow ~before trie path
+
+let find ?before trie path =
+  match before with
+  | None -> follow trie path
+  | Some before -> find ~before trie path
 
 let rec dump fmt trie =
   let dump_node (loc, node) =

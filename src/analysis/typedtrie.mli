@@ -43,6 +43,15 @@ val section : Logger.Section.t
 val of_browses : BrowseT.t list -> t
 
 val follow : ?before:Lexing.position -> t -> string list -> result
+(** [follow ?before t path] will follow [path] in [t], using [before] to
+    select the right branch in presence of shadowing. *)
+
+val find : ?before:Lexing.position -> t -> string list -> result
+(** [find ?before t path] starts by going down in [t] following branches
+    enclosing [before]. Then it will behave as [follow ?before].
+    If [follow] returns [Resolves_to (p, _)] it will go back up in the trie, and
+    will try to [follow] again with [before] set to the the start of the node we
+    just got up from. *)
 
 (* For debugging purposes. *)
 val dump : Format.formatter -> t -> unit

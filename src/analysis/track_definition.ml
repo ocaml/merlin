@@ -276,7 +276,7 @@ type context = Type | Expr | Patt | Unknown
 exception Context_mismatch
 
 let rec locate ?pos path trie =
-  match Typedtrie.follow ?before:pos trie path with
+  match Typedtrie.find ?before:pos trie path with
   | Typedtrie.Found loc -> Some loc
   | Typedtrie.Resolves_to (new_path, fallback) ->
     debug_log "resolves to %s" (String.concat ~sep:"." new_path) ;
