@@ -771,20 +771,26 @@ let iter_env proj1 proj2 f env =
       iter_env_components proj2 (Pident id) path comps f)
     env.components
 
-let iter_pers_env proj1 proj2 f name env =
+let iter_pers_env proj ft name env =
   match
     (try Hashtbl.find !cache.persistent_structures name
      with Not_found -> None)
   with
   | Some ps ->
     let id = Pident (Ident.create_persistent name) in
-    iter_env_components proj2 id id ps.ps_comps f
+    iter_env_components proj id id ps.ps_comps ft
   | None -> ()
 
-let iter_types f = iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
+let iter_types f =
+  iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
 
-let iter_pers_types name f =
-  iter_pers_env (fun env -> env.types) (fun sc -> sc.comp_types) name f
+let iter_module_types ft ident env =
+  if Ident.persistent ident then
+    iter_pers_env (fun sc -> sc.comp_types) ft (Ident.name ident) env
+  else
+    Ident.iter (fun id ((path, comps), _) ->
+        iter_env_components (fun sc -> sc.comp_types) (Pident id) path comps ft)
+      env.components
 
 let used_persistent () =
   let r = ref Concr.empty in
@@ -919,6 +925,29 @@ let rec prefix_idents root pos sub = function
       let p = Pdot(root, Ident.name id, nopos) in
       let (pl, final_sub) = prefix_idents root pos sub rem in
       (p::pl, final_sub)
+
+(* Compute type differences between two environments *)
+
+type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
+
+let rec diff_env_types env s1 s2 acc =
+  if s2 == s1 then acc
+  else match s2 with
+    | Env_empty -> raise Not_found
+    | Env_value (s, _, _)
+    | Env_exception (s, _, _)
+    | Env_modtype (s, _, _)
+    | Env_class (s, _, _)
+    | Env_cltype (s, _, _) -> diff_env_types env s1 s acc
+    | Env_open (s, path) ->
+      diff_env_types env s1 s (`Open path :: acc)
+    | Env_type (s, id, decl) ->
+      diff_env_types env s1 s (`Type (id, Path.Pident id) :: acc)
+    | Env_module (s, id, _) ->
+      diff_env_types env s1 s (`Module id :: acc)
+
+let diff_env_types env1 env2 =
+  diff_env_types env2 env1.summary env2.summary []
 
 (* Compute structure descriptions *)
 

@@ -143,6 +143,19 @@ let signature_of_summary =
   | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
   | Env_open _ | Env_empty -> None
 
+let rec last_ident =
+  let open Env in
+  function
+  | Env_value (_,id,_)
+  | Env_type (_,id,_)
+  | Env_exception  (_,id,_)
+  | Env_module (_,id,_)
+  | Env_modtype(_,id,_)
+  | Env_class (_,id,_)
+  | Env_cltype (_,id,_) -> id
+  | Env_empty -> raise Not_found
+  | Env_open (s,_) -> last_ident s
+
 let id_of_constr_decl (id, _, _) = id
 
 let add_hidden_signature env sign =
@@ -386,7 +399,7 @@ let rec is_sub_patt patt ~sub =
   | Tpat_lazy p ->
     is_sub_patt p ~sub
 
-  | Tpat_tuple lst 
+  | Tpat_tuple lst
   | Tpat_construct (_, _, lst, _)
   | Tpat_array lst ->
     List.exists lst ~f:(is_sub_patt ~sub)

@@ -24,9 +24,17 @@ val tree_of_path: Path.t -> out_ident
 val path: formatter -> Path.t -> unit
 val raw_type_expr: formatter -> type_expr -> unit
 
+type aliasmap
+val aliasmap_empty: aliasmap
+val fresh_aliasmap: Env.t -> aliasmap
+val update_aliasmap: Env.t -> aliasmap -> aliasmap
+val wrap_printing_aliasmap: aliasmap -> (unit -> 'a) -> 'a
 val wrap_printing_env: Env.t -> (unit -> 'a) -> 'a
+val compute_map_for_pers: string -> bool
     (* Call the function using the environment for type path shortening *)
     (* This affects all the printing functions below *)
+val shorten_path: ?env:Env.t -> Path.t -> Path.t
+
 val curr_printing_env: unit -> Env.t
 
 val reset: unit -> unit
