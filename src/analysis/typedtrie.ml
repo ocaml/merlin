@@ -243,6 +243,10 @@ let rec find ~before trie path =
       end
     | otherwise -> otherwise
     end
+  | Some (name, loc, _namespace, _) ->
+    Logger.debug (Logger.section "locate")
+      "cursor is in a leaf, so we look only before the leaf" ;
+    follow ~before:loc.Location.loc_start trie path
   | _ -> follow ~before trie path
 
 let find ?before trie path =
