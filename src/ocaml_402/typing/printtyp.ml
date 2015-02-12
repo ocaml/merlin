@@ -386,9 +386,8 @@ type aliasmap = {
   am_open: PathSet.t lazy_t;
   am_env: Env.t;
 }
-type typemap = aliasmap (*fixme*)
 
-let typemap_empty = {
+let aliasmap_empty = {
   am_map = lazy (PathMap.empty, PathMap.empty);
   am_open = lazy PathSet.empty;
   am_env = Env.empty;
@@ -464,7 +463,7 @@ let shorten_path ?env p =
   in
   shorten_path' (fun p -> PathSet.mem p opened) no_aliases p
 
-let update_typemap env tm =
+let update_aliasmap env tm =
   let diff = lazy (
     try `Diff (Env.diff_env_types tm.am_env env)
     with Not_found -> `Init (Env.diff_env_types Env.empty env))
@@ -486,9 +485,9 @@ let update_typemap env tm =
     am_env = env;
   }
 
-let fresh_typemap env = update_typemap env typemap_empty
+let fresh_aliasmap env = update_aliasmap env aliasmap_empty
 
-let set_printing_typemap { am_env; am_map; am_open } =
+let set_printing_aliasmap { am_env; am_map; am_open } =
   printing_env := if Clflags.real_paths () = `Real then Env.empty else am_env;
   if !printing_env == Env.empty || same_printing_env am_env then () else
   begin
@@ -581,12 +580,12 @@ let set_printing_typemap { am_env; am_map; am_open } =
     printing_opened := am_open
   end
 
-let wrap_printing_typemap tm f =
-  set_printing_typemap tm;
-  try_finally f (fun () -> set_printing_typemap (fresh_typemap Env.empty))
+let wrap_printing_aliasmap tm f =
+  set_printing_aliasmap tm;
+  try_finally f (fun () -> set_printing_aliasmap (fresh_aliasmap Env.empty))
 
 let wrap_printing_env env f =
-  wrap_printing_typemap (fresh_typemap env) f
+  wrap_printing_aliasmap (fresh_aliasmap env) f
 
 let curr_printing_env () = !printing_env
 
@@ -1361,9 +1360,9 @@ let cltype_declaration id ppf cl =
 
 let wrap_env fenv ftree arg =
   let env = !printing_env in
-  set_printing_typemap (fresh_typemap (fenv env));
+  set_printing_aliasmap (fresh_aliasmap (fenv env));
   let tree = ftree arg in
-  set_printing_typemap (fresh_typemap env);
+  set_printing_aliasmap (fresh_aliasmap env);
   tree
 
 let filter_rem_sig item rem =
@@ -1396,7 +1395,7 @@ let hide_rec_items = function
           (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
           ids !printing_env
       in
-      set_printing_typemap (fresh_typemap env)
+      set_printing_aliasmap (fresh_aliasmap env)
 
   | _ -> ()
 
@@ -1423,7 +1422,7 @@ and tree_of_signature_rec env' = function
   | item :: rem ->
       begin match item with
         Sig_type (_, _, rs) when rs <> Trec_next -> ()
-      | _ -> set_printing_typemap (fresh_typemap env')
+      | _ -> set_printing_aliasmap (fresh_aliasmap env')
       end;
       let (sg, rem) = filter_rem_sig item rem in
       let trees =

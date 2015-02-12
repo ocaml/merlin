@@ -121,9 +121,9 @@ module Printtyp = struct
     Fluid.let' verbosity verbosity'
       (fun () -> wrap_printing_env env f)
 
-  let wrap_printing_typemap tm verbosity' f =
+  let wrap_printing_aliasmap tm verbosity' f =
     Fluid.let' verbosity verbosity'
-      (fun () -> wrap_printing_typemap tm f)
+      (fun () -> wrap_printing_aliasmap tm f)
 end
 
 (* Check if module is smaller (= has less definition, counting nested ones)

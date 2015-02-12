@@ -45,7 +45,7 @@ type step = {
   ppx_cookie : Ast_mapper.cache;
   snapshot   : Btype.snapshot;
   env        : Env.t;
-  typemap    : Printtyp.typemap;
+  aliasmap   : Printtyp.aliasmap;
   contents   : [`Str of Typedtree.structure | `Sg of Typedtree.signature] list;
   exns       : exn list;
   delayed_checks : Typecore.delayed_check list;
@@ -62,7 +62,7 @@ let empty extensions catch  =
     contents = [];
     ppx_cookie; snapshot; env; exns;
     delayed_checks = [];
-    typemap = Printtyp.fresh_typemap env;
+    aliasmap = Printtyp.fresh_aliasmap env;
   }
 
 (* Rewriting:
@@ -152,7 +152,7 @@ let append catch loc item step =
      raw = step.raw;
      delayed_checks = !Typecore.delayed_checks;
      exns = caught catch @ step.exns;
-     typemap = Printtyp.update_typemap env step.typemap}
+     aliasmap = Printtyp.update_aliasmap env step.aliasmap}
   with exn ->
     let snapshot = Btype.snapshot () in
     {step with snapshot; exns = exn :: caught catch @ step.exns;
@@ -297,9 +297,9 @@ let rec last_ident = function
 
 let last_ident env = last_ident (Env.summary env)
 
-let typemap ?from t  =
+let aliasmap ?from t  =
   match from with
-  | None -> (get_value t).typemap
+  | None -> (get_value t).aliasmap
   | Some env ->
     try
       let time = Ident.binding_time (last_ident env) in
@@ -308,9 +308,9 @@ let typemap ?from t  =
         | (_,step) :: steps ->
           match last_ident step.env with
           | id when Ident.binding_time id <= time ->
-            step.typemap
+            step.aliasmap
           | _ -> aux steps
       in
-      Printtyp.update_typemap env (aux t.steps)
+      Printtyp.update_aliasmap env (aux t.steps)
     with Not_found ->
-      Printtyp.fresh_typemap env
+      Printtyp.fresh_aliasmap env
