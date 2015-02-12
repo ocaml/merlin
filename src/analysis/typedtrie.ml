@@ -35,19 +35,19 @@ module Trie = struct
 
   let get k t = find k t
 
-  exception Found of string * Location.t * node
+  exception Found of string * Location.t * namespace * node
 
   let find f t =
     try
       iter (fun k v ->
-        List.iter v ~f:(fun (l, node) ->
-          if f k l node then
-            raise (Found (k, l, node))
+        List.iter v ~f:(fun (l, ns, node) ->
+          if f k l ns node then
+            raise (Found (k, l, ns, node))
         )
       ) t ;
       raise Not_found
     with
-    | Found (k, l, v) -> (k, l, v)
+    | Found (k, l, n, v) -> (k, l, n, v)
 
   let find_some f t =
     try Some (find f t)
@@ -58,10 +58,11 @@ let section = Logger.section "typedtrie"
 
 type t = trie
 
+(* See mli for documentation. *)
 type result =
   | Found of Location.t
-  | Alias_of of Location.t * string list
-  | Resolves_to of string list * Location.t option
+  | Alias_of of Location.t * path
+  | Resolves_to of path * Location.t option
 
 let rec remove_top_indir =
   List.concat_map ~f:(fun bt ->
@@ -71,16 +72,21 @@ let rec remove_top_indir =
     | _ -> [ bt ]
   )
 
+let rec tag_path ~namespace = function
+  | [] -> invalid_arg "Typedtrie.tag_path"
+  | [ x ] -> [ x, namespace ]
+  | x :: xs -> (x, `Mod) :: tag_path ~namespace xs
+
 let rec build ~trie browses =
-  let rec node_for_direct_mod = function
+  let rec node_for_direct_mod namespace = function
     | `Alias path ->
       let p = Path.to_string_list path in
-      Alias p
+      Alias (tag_path ~namespace p)
     | `Str _
     | `Sg  _ as s ->
       Internal (build ~trie:Trie.empty (Browse.of_typer_contents [s]))
-    | `Mod_expr me -> node_for_direct_mod (Raw_compat.remove_indir_me me)
-    | `Mod_type mty -> node_for_direct_mod (Raw_compat.remove_indir_mty mty)
+    | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
+    | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
     | _ ->
       Leaf
   in
@@ -103,16 +109,24 @@ let rec build ~trie browses =
       | `Included (included_idents, packed) ->
         let rec helper packed =
           let f data =
-            let data = (t.t_loc, data) in
-            List.fold_left included_idents ~init:trie
-              ~f:(fun trie id -> Trie.add_multiple (Ident.name id) data trie)
+            List.fold_left included_idents ~init:trie ~f:(fun trie (id, ns) ->
+              let data = (t.t_loc, ns, data) in
+              Trie.add_multiple (Ident.name id) data trie
+            )
           in
           match
             match packed with
             | `Mod_expr me -> Raw_compat.remove_indir_me  me
             | `Mod_type mt -> Raw_compat.remove_indir_mty mt
           with
-          | `Alias path -> f (Included (Path.to_string_list path))
+          | `Alias path ->
+            let namespace =
+              match packed with
+              | `Mod_expr _ -> `Mod
+              | `Mod_type _ -> `Modtype
+            in
+            let p = tag_path ~namespace (Path.to_string_list path) in
+            f (Included p)
           | `Mod_type _
           | `Mod_expr _ as packed -> helper packed
           | `Unpack
@@ -125,37 +139,37 @@ let rec build ~trie browses =
     | Value_binding vb ->
       let idlocs = Raw_compat.pattern_idlocs vb.Typedtree.vb_pat in
       List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
-        Trie.add_multiple id (loc, Leaf) trie
+        Trie.add_multiple id (loc, `Vals, Leaf) trie
       )
     | Value_description vd ->
-      Trie.add_multiple (Ident.name vd.Typedtree.val_id) (t.t_loc, Leaf) trie
+      Trie.add_multiple (Ident.name vd.Typedtree.val_id) (t.t_loc, `Vals, Leaf) trie
     | Module_binding mb ->
       let node =
-        node_for_direct_mod
+        node_for_direct_mod `Mod
           (Raw_compat.remove_indir_me mb.Typedtree.mb_expr)
       in
-      Trie.add_multiple (Ident.name mb.Typedtree.mb_id) (t.t_loc, node) trie
+      Trie.add_multiple (Ident.name mb.Typedtree.mb_id) (t.t_loc, `Mod, node) trie
     | Module_declaration md ->
       let node =
-        node_for_direct_mod
+        node_for_direct_mod `Mod
           (Raw_compat.remove_indir_mty md.Typedtree.md_type)
       in
-      Trie.add_multiple (Ident.name md.Typedtree.md_id) (t.t_loc, node) trie
+      Trie.add_multiple (Ident.name md.Typedtree.md_id) (t.t_loc, `Mod, node) trie
     | Module_type_declaration mtd ->
       let node =
         match mtd.Typedtree.mtd_type with
         | None -> Leaf
-        | Some m -> node_for_direct_mod (Raw_compat.remove_indir_mty m)
+        | Some m -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty m)
       in
-      Trie.add_multiple (Ident.name mtd.Typedtree.mtd_id) (t.t_loc, node) trie
+      Trie.add_multiple (Ident.name mtd.Typedtree.mtd_id) (t.t_loc, `Modtype, node) trie
     | Type_declaration td ->
       (* TODO: add constructors and labels as well.
          Because why the hell not. *)
-      Trie.add_multiple (Ident.name td.Typedtree.typ_id) (t.t_loc, Leaf) trie
+      Trie.add_multiple (Ident.name td.Typedtree.typ_id) (t.t_loc, `Type, Leaf) trie
     | Type_extension te ->
       (* TODO: add constructors and labels as well.
          Because why the hell not. *)
-      Trie.add_multiple (Path.last te.Typedtree.tyext_path) (t.t_loc, Leaf) trie
+      Trie.add_multiple (Path.last te.Typedtree.tyext_path) (t.t_loc, `Type, Leaf) trie
     | ignored_node ->
       Logger.debugf section (fun fmt node ->
         Format.fprintf fmt "IGNORED: %s" @@ BrowseT.string_of_node node
@@ -167,28 +181,29 @@ let of_browses = build ~trie:Trie.empty
 
 let rec follow ?before trie = function
   | [] -> invalid_arg "Typedtrie.follow"
-  | x :: xs as path ->
+  | (x, namespace) :: xs as path ->
     try
       let lst = Trie.get x trie in
+      let lst = List.filter lst ~f:(fun (_, ns, _) -> ns = namespace) in
       let lst =
         match before with
         | None -> lst
         | Some before ->
-          List.filter lst ~f:(fun (l1, _) ->
+          List.filter lst ~f:(fun (l1, _, _) ->
             Lexing.compare_pos l1.Location.loc_start before < 0)
       in
       match
-        List.sort lst ~cmp:(fun (l1, _) (l2, _) ->
+        List.sort lst ~cmp:(fun (l1, _, _) (l2, _, _) ->
           (* We wants the ones closed last to be at the beginning of the list. *)
           Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end)
       with
       | [] -> Resolves_to (path, None)
-      | (loc, Leaf)       :: _ ->
+      | (loc, _, Leaf) :: _ ->
         (* FIXME: it seems wrong to return [Resolves_to] here.
            The prefix of the path is a leaf, anything else we might look up will
            be *wrong* *)
         if xs = [] then Found loc else Resolves_to (path, None)
-      | (loc, Alias path) :: _ ->
+      | (loc, _, Alias path) :: _ ->
         begin match xs with
         | [] ->
           (* FIXME: at this point, we might be deep in the trie, and [path]
@@ -198,8 +213,8 @@ let rec follow ?before trie = function
           Alias_of (loc, path)
         | _ -> Resolves_to (path @ xs, Some loc)
         end
-      | (l, Included p) :: _ -> Resolves_to (p @ path, Some l)
-      | (l, Internal t) :: _ ->
+      | (l, _, Included p) :: _ -> Resolves_to (p @ path, Some l)
+      | (l, _, Internal t) :: _ ->
         if xs = [] then Found l else
           match follow ?before t xs with
           | Resolves_to (p, x) as checkpoint ->
@@ -214,12 +229,12 @@ let rec follow ?before trie = function
 
 let rec find ~before trie path =
   match
-    Trie.find_some (fun _name loc _node ->
+    Trie.find_some (fun _name loc _namespace _node ->
       Lexing.compare_pos loc.Location.loc_start before < 0
       && Lexing.compare_pos loc.Location.loc_end before > 0
     ) trie
   with
-  | Some (_name, loc, Internal subtrie) ->
+  | Some (_name, loc, _namespace, Internal subtrie) ->
     begin match find ~before subtrie path with
     | Resolves_to (p, x) as checkpoint ->
       begin match follow ~before:loc.Location.loc_start trie p with
@@ -235,16 +250,37 @@ let find ?before trie path =
   | None -> follow trie path
   | Some before -> find ~before trie path
 
+let path_to_string (p : path) =
+  let p =
+    List.map p ~f:(function
+      | (str, `Mod) -> str
+      | (str,`Labels) -> str ^ "[label]"
+      | (str,`Constr) -> str ^ "[cstr]"
+      | (str,`Type) -> str ^ "[type]"
+      | (str,`Vals) -> str ^ "[val]"
+      | (str,`Modtype) -> str ^ "[Mty]"
+    )
+  in
+  String.concat ~sep:"." p
+
 let rec dump fmt trie =
-  let dump_node (loc, node) =
+  let dump_node (loc, namespace, node) =
+    Format.pp_print_string fmt
+      (match namespace with
+       | `Mod -> "(Mod) "
+       | `Labels -> "(lbl) "
+       | `Constr -> "(cstr) "
+       | `Type -> "(typ) "
+       | `Vals -> "(val) "
+       | `Modtype -> "(Mty) ") ;
     match node with
     | Leaf -> Location.print_loc' fmt loc
     | Included path ->
       Format.fprintf fmt "%a <%s>" Location.print_loc' loc
-        (String.concat ~sep:"." path)
+        (path_to_string path)
     | Alias path ->
       Format.fprintf fmt "%a = %s" Location.print_loc' loc
-        (String.concat ~sep:"." path)
+        (path_to_string path)
     | Internal t ->
       Format.fprintf fmt "%a = %a" Location.print_loc' loc dump t
   in

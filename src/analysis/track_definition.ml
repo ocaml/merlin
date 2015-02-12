@@ -67,7 +67,7 @@ module Fallback = struct
 
   let set loc =
     Logger.debugf section (fun fmt loc ->
-      Format.fprintf fmt "Fallback.set" ;
+      Format.fprintf fmt "Fallback.set: " ;
       Location.print_loc' fmt loc
     ) loc ;
     fallback := Some loc
@@ -279,11 +279,19 @@ let rec locate ?pos path trie =
   match Typedtrie.find ?before:pos trie path with
   | Typedtrie.Found loc -> Some loc
   | Typedtrie.Resolves_to (new_path, fallback) ->
-    debug_log "resolves to %s" (String.concat ~sep:"." new_path) ;
-    Fallback.setopt fallback ;
-    from_path new_path
+    begin match new_path with
+    | (_, `Mod) :: _ ->
+      debug_log "resolves to %s" (Typedtrie.path_to_string new_path) ;
+      Fallback.setopt fallback ;
+      from_path new_path
+    | _ ->
+      debug_log "new path (%s) is not a real path. fallbacking..."
+        (Typedtrie.path_to_string new_path) ;
+      Logger.debugf section Typedtrie.dump trie ;
+      fallback
+    end
   | Typedtrie.Alias_of (loc, new_path) ->
-    debug_log "alias of %s" (String.concat ~sep:"." new_path) ;
+    debug_log "alias of %s" (Typedtrie.path_to_string new_path) ;
     (* TODO: optionally follow module aliases *)
     Some loc
 
@@ -322,8 +330,7 @@ and browse_cmts ~root modules =
       end
     | `Pack files ->
       begin match modules with
-      | [] -> None
-      | mod_name :: modules ->
+      | (mod_name, `Mod) :: modules ->
         let file = 
           List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
         in
@@ -333,6 +340,7 @@ and browse_cmts ~root modules =
           let root = find_file ~with_fallback:true (Preferences.cmt file) in
           browse_cmts ~root modules
         )
+      | _ -> None
       end
 
 (* The following is ugly, and deserves some explanations:
@@ -349,8 +357,7 @@ and browse_cmts ~root modules =
       unit, and that's why we restore the initial loadpath. *)
 and from_path path =
   match path with
-  | [] -> assert false
-  | [ fname ] ->
+  | [ fname, `Mod ] ->
     let save_digest_and_return root =
       let {Cmt_cache. cmt_infos} = Cmt_cache.read root in
       File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
@@ -378,9 +385,9 @@ and from_path path =
           Some loc
       )
     end
-  | fname :: modules ->
+  | (fname, `Mod) :: modules ->
     debug_log "from_path '%s'" fname ;
-    try
+    begin try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~root:cmt_file modules
     with File_not_found (CMT fname | CMTI fname) as exn ->
@@ -392,6 +399,8 @@ and from_path path =
           info_log "failed to locate the cmt[i] of '%s'" fname ;
           raise exn
       )
+    end
+  | _ -> assert false (* Really? *)
 
 let path_and_loc_from_label desc env =
   let open Types in
@@ -476,7 +485,7 @@ let namespaces = function
   | Expr | Patt -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
   | Unknown     -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
 
-exception Found of (Path.t * Location.t)
+exception Found of (Cmt_cache.namespace * Path.t * Location.t)
 
 let lookup ctxt ident env =
   try
@@ -486,34 +495,35 @@ let lookup ctxt ident env =
         | `Constr ->
           info_log "lookup in constructor namespace" ;
           let cstr_desc = Raw_compat.lookup_constructor ident env in
-          raise (Found (Raw_compat.path_and_loc_of_cstr cstr_desc env))
+          let path, loc = Raw_compat.path_and_loc_of_cstr cstr_desc env in
+          raise (Found (`Constr, path, loc))
         | `Mod ->
           info_log "lookup in module namespace" ;
           let path, _ = Raw_compat.lookup_module ident env in
-          raise (Found (path, Location.symbol_gloc ()))
+          raise (Found (`Mod, path, Location.symbol_gloc ()))
         | `Modtype ->
           info_log "lookup in module type namespace" ;
           let path, _ = Raw_compat.lookup_modtype ident env in
-          raise (Found (path, Location.symbol_gloc ()))
+          raise (Found (`Modtype, path, Location.symbol_gloc ()))
         | `Type ->
           info_log "lookup in type namespace" ;
           let path, typ_decl = Env.lookup_type ident env in
-          raise (Found (path, typ_decl.Types.type_loc))
+          raise (Found (`Type, path, typ_decl.Types.type_loc))
         | `Vals ->
           info_log "lookup in value namespace" ;
           let path, val_desc = Env.lookup_value ident env in
-          raise (Found (path, val_desc.Types.val_loc))
+          raise (Found (`Vals, path, val_desc.Types.val_loc))
         | `Labels ->
           info_log "lookup in label namespace" ;
           let label_desc = Raw_compat.lookup_label ident env in
-          raise (Found (path_and_loc_from_label label_desc env))
+          let path, loc = path_and_loc_from_label label_desc env in
+          raise (Found (`Labels, path, loc))
       with Not_found -> ()
     ) ;
     info_log "   ... not in the environment" ;
     raise Not_in_env
   with Found x ->
     x
-
 
 let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
   File_switching.reset () ;
@@ -522,18 +532,21 @@ let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
   let ident, is_label = keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
-    let path', loc =
+    let namespace, path', loc =
       if not is_label then lookup ctxt ident env else
       (* If we know it is a record field, we only look for that. *)
       let label_desc = Raw_compat.lookup_label ident env in
-      path_and_loc_from_label label_desc env
+      let path, loc = path_and_loc_from_label label_desc env in
+      `Labels, path, loc
     in
     if not (is_ghost loc) then `Found loc else
-      let () = debug_log
-        "present in the environment, but ghost lock. walking up the typedtree."
+      let modules = Typedtrie.tag_path ~namespace (Path.to_string_list path') in
+      let () =
+        debug_log "present in the environment, but ghost lock.\n\
+                   walking up the typedtree looking for '%s'"
+          (Typedtrie.path_to_string modules)
       in
-      let modules = Path.to_string_list path' in
-      let trie    = Typedtrie.of_browses (Browse.of_typer_contents local_defs) in
+      let trie = Typedtrie.of_browses (Browse.of_typer_contents local_defs) in
       match locate ~pos modules trie with
       | None when Fallback.is_set () -> recover str_ident
       | None -> `Not_found (str_ident, File_switching.where_am_i ())

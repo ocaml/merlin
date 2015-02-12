@@ -25,28 +25,34 @@
   in the Software.
 
 )* }}} *)
+val section : Logger.Section.t
 
-type t = Cmt_cache.trie
+open Cmt_cache
+
+type t = trie
+
+val of_browses : BrowseT.t list -> t
+
+val tag_path : namespace:namespace -> string list -> path
+
+val path_to_string : path -> string
+
 type result =
   | Found of Location.t
     (** Found at location *)
-  | Alias_of of Location.t * string list
-    (** Alias of [string list], introduced at [Location.t] *)
-  | Resolves_to of string list * Location.t option
-    (** Not found in trie, look for [string list] in loadpath.
+  | Alias_of of Location.t * path
+    (** Alias of [path], introduced at [Location.t] *)
+  | Resolves_to of path * Location.t option
+    (** Not found in trie, look for [path] in loadpath.
         If the second parameter is [Some] it means we encountered an include or
         module alias at some point, so we can always fallback there if we don't
         find anything in the loadpath. *)
 
-val section : Logger.Section.t
-
-val of_browses : BrowseT.t list -> t
-
-val follow : ?before:Lexing.position -> t -> string list -> result
+val follow : ?before:Lexing.position -> t -> path -> result
 (** [follow ?before t path] will follow [path] in [t], using [before] to
     select the right branch in presence of shadowing. *)
 
-val find : ?before:Lexing.position -> t -> string list -> result
+val find : ?before:Lexing.position -> t -> path -> result
 (** [find ?before t path] starts by going down in [t] following branches
     enclosing [before]. Then it will behave as [follow ?before].
     If [follow] returns [Resolves_to (p, _)] it will go back up in the trie, and

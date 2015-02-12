@@ -65,17 +65,17 @@ module Parsetree = struct
     pld_name, pld_mutable, pld_type, pld_loc
 end
 
-let signature_item_ident =
+let sig_item_idns =
   let open Types in function
-  | Sig_value (id, _)
-  | Sig_type (id, _, _)
-  | Sig_typext (id, _, _)
-  | Sig_module (id, _, _)
-  | Sig_modtype (id, _)
-  | Sig_class (id, _, _)
-  | Sig_class_type (id, _, _) -> id
+  | Sig_value (id, _) -> id, `Vals
+  | Sig_type (id, _, _) -> id, `Type
+  | Sig_typext (id, _, _) -> id, `Type
+  | Sig_module (id, _, _) -> id, `Mod
+  | Sig_modtype (id, _) -> id, `Modtype
+  | Sig_class (id, _, _) -> id, `Vals (* that's just silly *)
+  | Sig_class_type (id, _, _) -> id, `Type (* :_D *)
 
-let include_idents l = List.map signature_item_ident l
+let include_idents l = List.map sig_item_idns l
 
 let lookup_constructor = Env.lookup_constructor
 let lookup_label       = Env.lookup_label
@@ -268,13 +268,6 @@ let str_ident_locs item =
   | Tstr_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
   | _ -> []
 
-let get_mod_expr_if_included ~name item =
-  match item.Typedtree.str_desc with
-  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } when
-    List.exists (include_idents incl_type) ~f:(fun x -> Ident.name x = name) ->
-    `Mod_expr incl_mod
-  | _ -> `Not_included
-
 let identify_str_includes item =
   match item.Typedtree.str_desc with
   | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
@@ -308,13 +301,6 @@ let sig_ident_locs item =
     List.map mds ~f:(fun md -> Ident.name md.md_id , md.md_loc)
   | Tsig_modtype mtd -> [ Ident.name mtd.mtd_id , mtd.mtd_loc ]
   | _ -> []
-
-let get_mod_type_if_included ~name item =
-  match item.Typedtree.sig_desc with
-  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } when
-    List.exists (include_idents incl_type) ~f:(fun x -> Ident.name x = name) ->
-    `Mod_type incl_mod
-  | _ -> `Not_included
 
 let expose_module_binding item =
   match item.Typedtree.str_desc with

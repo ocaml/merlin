@@ -28,12 +28,15 @@
 
 open Std
 
-type trie = (Location.t * node) list String.Map.t
+type namespace = [ `Vals | `Type | `Constr | `Mod | `Modtype | `Labels ]
+type path = (string * namespace) list
+
+type trie = (Location.t * namespace * node) list String.Map.t
  and node =
    | Leaf
    | Internal of trie
-   | Included of string list (* Could be Path.t *)
-   | Alias    of string list (* Here too. *)
+   | Included of path
+   | Alias    of path
 
 
 type cmt_item = {
