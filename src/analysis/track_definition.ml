@@ -529,6 +529,32 @@ let lookup ctxt ident env =
   with Found x ->
     x
 
+(* Only used to retrieve documentation *)
+let from_completion_entry ~env ~local_defs ~pos (namespace, path, loc) =
+  File_switching.reset () ;
+  Fallback.reset () ;
+  Preferences.set `MLI ;
+  let path_lst  = Path.to_string_list path in
+  let str_ident = String.concat ~sep:"." path_lst in
+  try
+    let modules = tag namespace path in
+    if not (is_ghost loc) then `Found loc else
+      let () =
+        debug_log "present in the environment, but ghost lock.\n\
+                   walking up the typedtree looking for '%s'"
+          (Typedtrie.path_to_string modules)
+      in
+      let trie = Typedtrie.of_browses (Browse.of_typer_contents local_defs) in
+      match locate ~pos modules trie with
+      | None when Fallback.is_set () -> recover str_ident
+      | None -> `Not_found (str_ident, File_switching.where_am_i ())
+      | Some loc -> `Found loc
+  with
+  | _ when Fallback.is_set () -> recover str_ident
+  | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
+  | File_not_found path -> explain_file_not_found str_ident path
+  | Not_in_env -> `Not_in_env str_ident
+
 let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
@@ -654,17 +680,22 @@ let from_string ~project ~env ~local_defs ~pos switch path =
 
 let get_doc ~project ~env ~local_defs ~comments ~pos source path =
   let browse = Browse.of_typer_contents local_defs in
-  let lid    = Longident.parse path in
   Fluid.let' sources_path (Project.source_path project) @@ fun () ->
   Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
   Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
   Fluid.let' last_location Location.none @@ fun () ->
   match
-    match inspect_context browse path pos with
-    | None -> `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
-    | Some ctxt ->
-      info_log "looking for the doc of '%s'" path ;
-      from_longident ~pos ~env ~local_defs ctxt `MLI lid
+    match path with
+    | `User_input path ->
+      let lid    = Longident.parse path in
+      begin match inspect_context browse path pos with
+      | None -> `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
+      | Some ctxt ->
+        info_log "looking for the doc of '%s'" path ;
+        from_longident ~pos ~env ~local_defs ctxt `MLI lid
+      end
+    | `Completion_entry entry ->
+      from_completion_entry ~pos ~env ~local_defs entry
   with
   | `Found loc ->
     let comments =

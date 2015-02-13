@@ -344,8 +344,17 @@ let dispatch (state : state) =
         | _ -> `Unknown
       in
       let target_type = !target_type in
+      let get_doc =
+        let project    = Buffer.project state.buffer in
+        let comments   = Buffer.comments state.buffer in
+        let source     = Buffer.unit_name state.buffer in
+        let local_defs = Typer.contents typer in
+        Track_definition.get_doc ~project ~env:node.BrowseT.t_env ~local_defs
+          ~comments ~pos source
+      in
       let entries =
-        Completion.node_complete ?target_type state.buffer node prefix in
+        Completion.node_complete ~get_doc ?target_type state.buffer node prefix
+      in
       {Compl. entries = List.rev entries; context }
     in
     let lexer0 = Buffer.lexer state.buffer in
@@ -440,7 +449,8 @@ let dispatch (state : state) =
     in
     let source  = Buffer.unit_name state.buffer in
     let project = Buffer.project state.buffer in
-    Track_definition.get_doc ~project ~env ~local_defs ~comments ~pos source path
+    Track_definition.get_doc ~project ~env ~local_defs ~comments ~pos source
+      (`User_input path)
 
   | (Locate (patho, ml_or_mli, pos) : a request) ->
     let env, local_defs =

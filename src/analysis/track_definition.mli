@@ -50,7 +50,7 @@ val get_doc
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
   -> string
-  -> string
+  -> [ `User_input of string | `Completion_entry of (Cmt_cache.namespace * Path.t * Location.t) ]
   -> [> `File_not_found of string
       | `Found of string
       | `Not_found of string * string option
