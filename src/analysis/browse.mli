@@ -29,13 +29,14 @@
 open BrowseT
 (* Navigate through tree *)
 
-(* The deepest context inside or before the node, for instance, navigating
+(** The deepest context inside or before the node, for instance, navigating
  * through:
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail".
  * Returns the matching node and all its ancestors or the empty list. *)
 val deepest_before : Lexing.position -> t list -> t list
-(* The nearest context inside or before the node, though stopping after
+
+(** The nearest context inside or before the node, though stopping after
  * leaving enclosing subtree. For instance, navigating
  * through:
  *    foo bar (baz :: tail) <cursor>
@@ -44,7 +45,8 @@ val deepest_before : Lexing.position -> t list -> t list
  * get us closer to cursor.
  * Returns the matching node and all its ancestors or the empty list. *)
 val nearest_before : Lexing.position -> t list -> t list
-(* Return the path of nodes enclosing expression at cursor.
+
+(** Return the path of nodes enclosing expression at cursor.
  * For instance, navigating through:
  *    f (g x<cursor>))
  * will return the contexts of "x", "g x" then "f (g x)". *)
@@ -59,10 +61,10 @@ val all_constructor_occurrences :
       | `Declaration of Typedtree.constructor_declaration ]
   -> t -> t Location.loc list
 
-(* From a chain of nodes, going from the root to the leaf, returns a list in
+(** From a chain of nodes, going from the root to the leaf, returns a list in
    the same ordering about what is known about tail positions *)
 val annotate_tail_calls : t list -> (t * Protocol.is_tail_position) list
 
-(* Same function, but operating from leaves to root *)
+(** Same function, but operating from leaves to root *)
 val annotate_tail_calls_from_leaf
   : t list -> (t * Protocol.is_tail_position) list
