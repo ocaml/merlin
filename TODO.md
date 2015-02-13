@@ -1,3 +1,5 @@
+- Locate: handle local module aliases (i.e. [let module X = Y])
+
 - Relegated to next menhir version:
   Find proper API for incremental parser
   -> goto table should not be manipulated explicitly
@@ -9,6 +11,7 @@
   -> locate
   -> type enclosing / type expr
   -> occurrences
+
 - Module constraint relaxation is wrong on functors argument. 
   Check how typer behaves with incorrect functors.
   Behavior of module error recovery is unclear.
@@ -21,4 +24,4 @@ IDEA (later)
   learn from suffix to target specific states during recovery
 - error explanation:
   use machine-learning techniques to scan opam codebase, identify common
-  patterns, sugges common solution in presence of an error
+  patterns, suggest common solution in presence of an error
