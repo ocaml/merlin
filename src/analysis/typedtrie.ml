@@ -54,6 +54,19 @@ module Trie = struct
     with Not_found -> None
 end
 
+let path_to_string (p : path) =
+  let p =
+    List.map p ~f:(function
+      | (str, `Mod) -> str
+      | (str,`Labels) -> str ^ "[label]"
+      | (str,`Constr) -> str ^ "[cstr]"
+      | (str,`Type) -> str ^ "[type]"
+      | (str,`Vals) -> str ^ "[val]"
+      | (str,`Modtype) -> str ^ "[Mty]"
+    )
+  in
+  String.concat ~sep:"." p
+
 let section = Logger.section "typedtrie"
 
 type t = trie
@@ -211,7 +224,12 @@ let rec follow ?before trie = function
              might need to be prefixed.
              We need to recurse like we do for [Resolves_to] *)
           Alias_of (loc, path)
-        | _ -> Resolves_to (path @ xs, Some loc)
+        | _ ->
+          let new_path = path @ xs in
+          begin match follow ~before:loc.Location.loc_start trie new_path with
+          | Resolves_to (p, None) -> Resolves_to (p, Some loc)
+          | otherwise -> otherwise
+          end
         end
       | (l, _, Included p) :: _ -> Resolves_to (p @ path, Some l)
       | (l, _, Internal t) :: _ ->
@@ -253,19 +271,6 @@ let find ?before trie path =
   match before with
   | None -> follow trie path
   | Some before -> find ~before trie path
-
-let path_to_string (p : path) =
-  let p =
-    List.map p ~f:(function
-      | (str, `Mod) -> str
-      | (str,`Labels) -> str ^ "[label]"
-      | (str,`Constr) -> str ^ "[cstr]"
-      | (str,`Type) -> str ^ "[type]"
-      | (str,`Vals) -> str ^ "[val]"
-      | (str,`Modtype) -> str ^ "[Mty]"
-    )
-  in
-  String.concat ~sep:"." p
 
 let rec dump fmt trie =
   let dump_node (loc, namespace, node) =
