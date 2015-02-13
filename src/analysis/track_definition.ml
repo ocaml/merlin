@@ -91,6 +91,7 @@ module Preferences : sig
   val set : [ `ML | `MLI ] -> unit
 
   val cmt : string -> filetype
+  val ml  : string -> filetype
 end = struct
   let prioritize_impl = ref true
 
@@ -101,6 +102,7 @@ end = struct
       | _ -> false
 
   let cmt file = if !prioritize_impl then CMT file else CMTI file
+  let ml file = if !prioritize_impl then ML file else MLI file
 end
 
 module File_switching : sig
@@ -161,27 +163,28 @@ module Utils = struct
      to choose the appropriate file. *)
   let find_all_in_path_uncap ?(fallback="") path name =
     let has_fallback = fallback <> "" in
-    List.map ~f:Misc.canonicalize_filename begin
+    let files =
       let acc = ref [] in
       let uname = String.uncapitalize name in
       let ufbck = String.uncapitalize fallback in
       let rec try_dir = function
         | List.Lazy.Nil -> !acc
         | List.Lazy.Cons (dir, rem) ->
-            let fullname = Filename.concat dir name in
-            let ufullname = Filename.concat dir uname in
-            let ufallback = Filename.concat dir ufbck in
-            if Sys.file_exists ufullname then acc := ufullname :: !acc
-            else if Sys.file_exists fullname then acc := fullname :: !acc
-            else if has_fallback && Sys.file_exists ufallback then
-              acc := ufallback :: !acc
-            else if has_fallback && Sys.file_exists fallback then
-              acc := fallback :: !acc
-            else
-              () ;
-            try_dir (Lazy.force rem)
-      in try_dir (Misc.Path_list.to_list path)
-    end
+          let fullname = Filename.concat dir name in
+          let fallback = Filename.concat dir fallback in
+          let ufullname = Filename.concat dir uname in
+          let ufallback = Filename.concat dir ufbck in
+          if Sys.file_exists ufullname then acc := ufullname :: !acc ;
+          if Sys.file_exists fullname then acc := fullname :: !acc ;
+          if has_fallback && Sys.file_exists ufallback then
+            acc := ufallback :: !acc ;
+          if has_fallback && Sys.file_exists fallback then
+            acc := fallback :: !acc ;
+          try_dir (Lazy.force rem)
+      in
+      try_dir (Misc.Path_list.to_list path)
+    in
+    List.map files ~f:Misc.canonicalize_filename
 
   let find_all_matches ?(with_fallback=false) file =
     let fname =
@@ -195,8 +198,9 @@ module Utils = struct
       | MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
       | _ -> assert false
     in
-    let path = Fluid.get sources_path in
-    List.uniq (find_all_in_path_uncap ~fallback path fname) ~cmp:String.compare
+    let path  = Fluid.get sources_path in
+    let files = find_all_in_path_uncap ~fallback path fname in
+    List.uniq files ~cmp:String.compare
 
   let find_file_with_path ?(with_fallback=false) file path =
     let fname =
@@ -330,15 +334,12 @@ and browse_cmts ~root modules =
       end
     | `Pack files ->
       begin match modules with
-      | (mod_name, `Mod) :: modules ->
-        let file = 
-          List.find files ~f:(fun s -> file_path_to_mod_name s = mod_name)
-        in
+      | (mod_name, `Mod) :: _ ->
+        assert (List.exists files ~f:(fun s -> file_path_to_mod_name s = mod_name)) ;
         Logger.debug section ~title:"loadpath" "Saw packed module => erasing loadpath" ;
         let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
         erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
-          let root = find_file ~with_fallback:true (Preferences.cmt file) in
-          browse_cmts ~root modules
+          from_path modules
         )
       | _ -> None
       end
@@ -356,6 +357,7 @@ and browse_cmts ~root modules =
       "erased" loadpath, it could mean that we are looking for a persistent
       unit, and that's why we restore the initial loadpath. *)
 and from_path path =
+  debug_log "from_path '%s'" (Typedtrie.path_to_string path) ;
   match path with
   | [ fname, `Mod ] ->
     let save_digest_and_return root =
@@ -386,7 +388,6 @@ and from_path path =
       )
     end
   | (fname, `Mod) :: modules ->
-    debug_log "from_path '%s'" fname ;
     begin try
       let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~root:cmt_file modules
@@ -400,7 +401,7 @@ and from_path path =
           raise exn
       )
     end
-  | _ -> assert false (* Really? *)
+  | _ -> assert false
 
 let path_and_loc_from_label desc env =
   let open Types in
@@ -417,7 +418,11 @@ let find_source loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
   let mod_name = file_path_to_mod_name fname in
-  let file = if Filename.check_suffix fname "i" then MLI mod_name else ML mod_name in
+  let file =
+    let extensionless = Misc.chop_extension_if_any fname = fname in
+    if extensionless then Preferences.ml mod_name else
+    if Filename.check_suffix fname "i" then MLI mod_name else ML mod_name
+  in
   let filename = filename_of_filetype file in
   match File_switching.where_am_i () with
   | None -> (* We have not moved, we don't want to return a filename *) None
