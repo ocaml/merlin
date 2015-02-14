@@ -200,6 +200,20 @@ let () = Btype.print_raw := raw_type_expr
 
 (* Normalize paths *)
 
+type pathmap = Path.t list PathMap.t
+
+type aliasmap = {
+  am_map: (pathmap * pathmap) lazy_t;
+  am_open: PathSet.t lazy_t;
+  am_env: Env.t;
+}
+
+let aliasmap_empty = {
+  am_map = lazy (PathMap.empty, PathMap.empty);
+  am_open = lazy PathSet.empty;
+  am_env = Env.empty;
+}
+
 type param_subst = Id | Nth of int | Map of int list
 
 let compose l1 = function
@@ -213,11 +227,15 @@ let apply_subst s1 tyl =
   | Map l1 -> List.map (List.nth tyl) l1
   | Id -> tyl
 
-let printing_env = ref Env.empty
-let printing_old = ref Env.empty
-let printing_pers = ref Concr.empty
-let printing_map = ref (lazy (fun p -> p))
-let printing_opened = ref (lazy PathSet.empty)
+type printing_state = {
+  aliasmap : aliasmap;
+  pathmap : (Path.t -> Path.t) lazy_t;
+}
+
+let printing_empty = { aliasmap = aliasmap_empty;
+                       pathmap = lazy (fun x -> x);
+                     }
+let printing_state = ref printing_empty
 
 let same_type t t' = repr t == repr t'
 
@@ -287,10 +305,6 @@ let module_path_size ofun afun p =
   else match afun p with
     | None -> path_size ofun afun p
     | Some (_,n) -> n, 0
-
-let same_printing_env env =
-  let used_pers = Env.used_persistent () in
-  Env.same_types !printing_old env && Concr.equal !printing_pers used_pers
 
 let register_short_type map env p (p', decl) =
   let (p1, s1) = normalize_type_path env p' ~cache:true in
@@ -367,7 +381,8 @@ let is_unambiguous path env =
 
 let best_path ofun afun (_,size as acc) path' =
   let size' = path_size ofun afun path' in
-  if size' < size && is_unambiguous path' !printing_env then
+  if size' < size &&
+     is_unambiguous path' !printing_state.aliasmap.am_env then
     (path', size')
   else
     acc
@@ -378,20 +393,6 @@ let best_module_path ofun afun (_,size as acc) path' =
     (path', size')
   else
     acc
-
-type pathmap = Path.t list PathMap.t
-
-type aliasmap = {
-  am_map: (pathmap * pathmap) lazy_t;
-  am_open: PathSet.t lazy_t;
-  am_env: Env.t;
-}
-
-let aliasmap_empty = {
-  am_map = lazy (PathMap.empty, PathMap.empty);
-  am_open = lazy PathSet.empty;
-  am_env = Env.empty;
-}
 
 let pathmap_append ta tb =
   PathMap.union (fun _ a b -> a @ b) ta tb
@@ -451,11 +452,11 @@ let rec shorten_path' opened aliased = function
 let no_aliases _ = None
 
 let shorten_path ?env p =
-  let lazy opened = !printing_opened in
+  let lazy opened = !printing_state.aliasmap.am_open in
   let opened = match env with
     | None -> opened
     | Some env ->
-      match Env.diff_env_types !printing_env env with
+      match Env.diff_env_types !printing_state.aliasmap.am_env env with
       | exception Not_found ->
         openmap_with_idents PathSet.empty (Env.diff_env_types Env.empty env)
       | idents ->
@@ -487,14 +488,12 @@ let update_aliasmap env tm =
 
 let fresh_aliasmap env = update_aliasmap env aliasmap_empty
 
-let set_printing_aliasmap { am_env; am_map; am_open } =
-  printing_env := if Clflags.real_paths () = `Real then Env.empty else am_env;
-  if !printing_env == Env.empty || same_printing_env am_env then () else
-  begin
+let set_printing_aliasmap ({ am_env; am_map; am_open } as aliasmap) =
+  if Clflags.real_paths () = `Real then
+    printing_state := printing_empty
+  else
     (* printf "Reset printing_map@."; *)
-    printing_old := am_env;
-    printing_pers := Env.used_persistent ();
-    let maps = match Clflags.real_paths () with
+    let pathmap = match Clflags.real_paths () with
       | `Short -> lazy begin
         (* printf "Recompute printing_map.@."; *)
         let lazy map, lazy opened = am_map, am_open in
@@ -541,12 +540,12 @@ let set_printing_aliasmap { am_env; am_map; am_open } =
               dprintf "\tYES\n%!";
             let lazy result = result in
             (*let size', _ = path_size (fun _ -> false) no_aliases p in
-            let result =
+              let result =
               if size' < snd result then
                 (p, size')
               else
                 result
-            in*)
+              in*)
             if debug then
               dprintf "\tALIASING TO %s\n%!" (to_str (fst result));
             Some result
@@ -576,27 +575,33 @@ let set_printing_aliasmap { am_env; am_map; am_open } =
       end
       | `Opened | `Real -> lazy (fun p -> p)
     in
-    printing_map := maps;
-    printing_opened := am_open
-  end
+    printing_state := { aliasmap; pathmap }
+
+let update_current_aliasmap env =
+  update_aliasmap env !printing_state.aliasmap
+
+let set_printing_env env =
+  if Clflags.real_paths () <> `Real then
+    set_printing_aliasmap (update_current_aliasmap env)
 
 let wrap_printing_aliasmap tm f =
+  let printing_state' = !printing_state in
   set_printing_aliasmap tm;
-  try_finally f (fun () -> set_printing_aliasmap (fresh_aliasmap Env.empty))
+  try_finally f (fun () -> printing_state := printing_state')
 
 let wrap_printing_env env f =
-  wrap_printing_aliasmap (fresh_aliasmap env) f
+  wrap_printing_aliasmap (update_current_aliasmap env) f
 
-let curr_printing_env () = !printing_env
+let curr_printing_env () = !printing_state.aliasmap.am_env
 
 let best_type_path p =
-  if !printing_env == Env.empty then (p, Id)
+  if !printing_state == printing_empty then (p, Id)
   else match Clflags.real_paths () with
     | `Real  -> (p, Id)
     | _  ->
-      let (p', s) = normalize_type_path !printing_env p in
+      let (p', s) = normalize_type_path !printing_state.aliasmap.am_env p in
       let p'' =
-        try Lazy.force !printing_map p'
+        try Lazy.force !printing_state.pathmap p'
         with Not_found -> p'
       in
       (* Format.eprintf "%a = %a -> %a@." path p path p' path p''; *)
@@ -1359,11 +1364,9 @@ let cltype_declaration id ppf cl =
 (* Print a module type *)
 
 let wrap_env fenv ftree arg =
-  let env = !printing_env in
-  set_printing_aliasmap (fresh_aliasmap (fenv env));
-  let tree = ftree arg in
-  set_printing_aliasmap (fresh_aliasmap env);
-  tree
+  let env = !printing_state.aliasmap.am_env in
+  wrap_printing_aliasmap (update_current_aliasmap (fenv env))
+    (fun () -> ftree arg)
 
 let filter_rem_sig item rem =
   match item, rem with
@@ -1393,9 +1396,9 @@ let hide_rec_items = function
       let env =
         List.fold_right
           (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
-          ids !printing_env
+          ids !printing_state.aliasmap.am_env
       in
-      set_printing_aliasmap (fresh_aliasmap env)
+      set_printing_env env
 
   | _ -> ()
 
@@ -1415,14 +1418,14 @@ let rec tree_of_modtype = function
       Omty_alias (tree_of_path p)
 
 and tree_of_signature sg =
-  wrap_env (fun env -> env) (tree_of_signature_rec !printing_env) sg
+  wrap_env (fun env -> env) (tree_of_signature_rec !printing_state.aliasmap.am_env) sg
 
 and tree_of_signature_rec env' = function
     [] -> []
   | item :: rem ->
       begin match item with
         Sig_type (_, _, rs) when rs <> Trec_next -> ()
-      | _ -> set_printing_aliasmap (fresh_aliasmap env')
+      | _ -> set_printing_env env'
       end;
       let (sg, rem) = filter_rem_sig item rem in
       let trees =
