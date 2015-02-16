@@ -465,32 +465,38 @@ let shorten_path ?env p =
   shorten_path' (fun p -> PathSet.mem p opened) no_aliases p
 
 let update_aliasmap env tm =
-  let diff = lazy (
-    try `Diff (Env.diff_env_types tm.am_env env)
-    with Not_found -> `Init (Env.diff_env_types Env.empty env))
-  in
-  { am_map = lazy begin
-       match Lazy.force diff with
-       | `Diff idents ->
-         pathmap_with_idents (Lazy.force tm.am_map) env idents
-       | `Init idents ->
-         pathmap_with_idents (PathMap.empty, PathMap.empty) env idents
-     end;
-    am_open = lazy begin
-      match Lazy.force diff with
-      | `Diff idents ->
-        openmap_with_idents (Lazy.force tm.am_open) idents
-      | `Init idents ->
-        openmap_with_idents PathSet.empty idents
-    end;
-    am_env = env;
-  }
+  if env == tm.am_env then
+    tm
+  else
+    let diff =
+      try `Diff (Env.diff_env_types tm.am_env env)
+      with Not_found -> `Init (Env.diff_env_types Env.empty env)
+    in
+    { am_map = lazy begin
+         match diff with
+         | `Diff idents ->
+           pathmap_with_idents (Lazy.force tm.am_map) env idents
+         | `Init idents ->
+           pathmap_with_idents (PathMap.empty, PathMap.empty) env idents
+       end;
+      am_open = lazy begin
+        match diff with
+        | `Diff idents ->
+          openmap_with_idents (Lazy.force tm.am_open) idents
+        | `Init idents ->
+          openmap_with_idents PathSet.empty idents
+      end;
+      am_env = env;
+    }
 
 let fresh_aliasmap env = update_aliasmap env aliasmap_empty
 
 let set_printing_aliasmap ({ am_env; am_map; am_open } as aliasmap) =
   if Clflags.real_paths () = `Real then
     printing_state := printing_empty
+  else if (!printing_state.aliasmap.am_open == am_open) &&
+          (!printing_state.aliasmap.am_map == am_map) then
+    ()
   else
     (* printf "Reset printing_map@."; *)
     let pathmap = match Clflags.real_paths () with
@@ -1385,7 +1391,7 @@ let dummy =
   }
 
 let hide_rec_items = function
-  | Sig_type(id, decl, rs) ::rem
+  (*| Sig_type(id, decl, rs) ::rem
     when rs <> Trec_next && Clflags.real_paths () = `Short ->
       let rec get_ids = function
           Sig_type (id, _, Trec_next) :: rem ->
@@ -1399,7 +1405,7 @@ let hide_rec_items = function
           ids !printing_state.aliasmap.am_env
       in
       set_printing_env env
-
+  *)
   | _ -> ()
 
 let rec tree_of_modtype = function
@@ -1423,10 +1429,10 @@ and tree_of_signature sg =
 and tree_of_signature_rec env' = function
     [] -> []
   | item :: rem ->
-      begin match item with
+      (*begin match item with
         Sig_type (_, _, rs) when rs <> Trec_next -> ()
       | _ -> set_printing_env env'
-      end;
+      end;*)
       let (sg, rem) = filter_rem_sig item rem in
       let trees =
         match item with

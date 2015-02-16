@@ -409,32 +409,38 @@ let shorten_path ?env p =
   shorten_path' (fun p -> PathSet.mem p opened) p
 
 let update_aliasmap env tm =
-  let diff = lazy (
-    try `Diff (Env.diff_env_types tm.am_env env)
-    with Not_found -> `Init (Env.diff_env_types Env.empty env))
-  in
-  { am_map = lazy begin
-       match Lazy.force diff with
-       | `Diff idents ->
-         pathmap_with_idents (Lazy.force tm.am_map) env idents
-       | `Init idents ->
-         pathmap_with_idents PathMap.empty env idents
-     end;
-    am_open = lazy begin
-      match Lazy.force diff with
-      | `Diff idents ->
-        openmap_with_idents (Lazy.force tm.am_open) idents
-      | `Init idents ->
-        openmap_with_idents PathSet.empty idents
-    end;
-    am_env = env;
-  }
+  if env == tm.am_env then
+    tm
+  else
+    let diff =
+      try `Diff (Env.diff_env_types tm.am_env env)
+      with Not_found -> `Init (Env.diff_env_types Env.empty env)
+    in
+    { am_map = lazy begin
+         match diff with
+         | `Diff idents ->
+           pathmap_with_idents (Lazy.force tm.am_map) env idents
+         | `Init idents ->
+           pathmap_with_idents PathMap.empty env idents
+       end;
+      am_open = lazy begin
+        match diff with
+        | `Diff idents ->
+          openmap_with_idents (Lazy.force tm.am_open) idents
+        | `Init idents ->
+          openmap_with_idents PathSet.empty idents
+      end;
+      am_env = env;
+    }
 
 let fresh_aliasmap env = update_aliasmap env aliasmap_empty
 
 let set_printing_aliasmap ({ am_env; am_map; am_open } as aliasmap) =
   if Clflags.real_paths () = `Real then
     printing_state := printing_empty
+  else if (!printing_state.aliasmap.am_open == am_open) &&
+          (!printing_state.aliasmap.am_map == am_map) then
+    ()
   else
     let pathmap = match Clflags.real_paths () with
       | `Short -> lazy begin
@@ -1249,7 +1255,7 @@ and tree_of_signature_rec = function
         | Sig_class_type(id, decl, rs) ->
             [tree_of_cltype_declaration id decl rs]
       in
-      set_printing_env (Env.add_signature (item :: sg) (curr_printing_env ()));
+      (*set_printing_env (Env.add_signature (item :: sg) (curr_printing_env ()));*)
       trees @ tree_of_signature_rec rem
 
 and tree_of_modtype_declaration id decl =
