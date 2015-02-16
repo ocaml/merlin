@@ -252,22 +252,6 @@ let rec pattern_idlocs pat =
   | Tpat_variant (_, Some pat, _) -> pattern_idlocs pat
   | _ -> []
 
-let str_ident_locs item =
-  let open Typedtree in
-  match item.str_desc with
-  | Tstr_value (_, binding_lst) ->
-    List.concat_map binding_lst ~f:(fun b -> pattern_idlocs b.vb_pat)
-  | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
-  | Tstr_recmodule mbs ->
-    List.map mbs ~f:(fun mb -> Ident.name mb.mb_id , mb.mb_loc)
-  | Tstr_modtype mtd -> [ Ident.name mtd.mtd_id , mtd.mtd_loc ]
-  | Tstr_type td_list ->
-    List.map td_list ~f:(fun { typ_id ; typ_loc } ->
-      Ident.name typ_id, typ_loc
-    )
-  | Tstr_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
-  | _ -> []
-
 let identify_str_includes item =
   match item.Typedtree.str_desc with
   | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
@@ -279,40 +263,6 @@ let identify_sig_includes item =
   | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } ->
     `Included (include_idents incl_type, `Mod_type incl_mod)
   | _ -> `Not_included
-
-let sig_ident_locs item =
-  let open Typedtree in
-  match item.sig_desc with
-  | Tsig_value vd -> [ Ident.name vd.val_id , vd.val_loc ]
-  | Tsig_type td_list ->
-    List.map td_list ~f:(fun { typ_id ; typ_loc } ->
-      Ident.name typ_id, typ_loc
-    )
-  | Tsig_typext te ->
-    (* N.B. we don't want to stop on "type M.t += ..." when looking for "M.t", but we do
-     * want to stop here if we are looking for a constructor added at this particular
-     * point. That's why we only get information about the constructors. *)
-    List.map te.tyext_constructors ~f:(fun ec ->
-      Ident.name ec.ext_id , ec.ext_loc
-    )
-  | Tsig_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
-  | Tsig_module md -> [ Ident.name md.md_id , md.md_loc ]
-  | Tsig_recmodule mds ->
-    List.map mds ~f:(fun md -> Ident.name md.md_id , md.md_loc)
-  | Tsig_modtype mtd -> [ Ident.name mtd.mtd_id , mtd.mtd_loc ]
-  | _ -> []
-
-let expose_module_binding item =
-  match item.Typedtree.str_desc with
-  | Typedtree.Tstr_module mb -> [mb]
-  | Typedtree.Tstr_recmodule mbs -> mbs
-  | _ -> []
-
-let expose_module_declaration item =
-  match item.Typedtree.sig_desc with
-  | Typedtree.Tsig_module md -> [md]
-  | Typedtree.Tsig_recmodule mds -> mds
-  | _ -> []
 
 let remove_indir_me me =
   match me.Typedtree.mod_desc with
