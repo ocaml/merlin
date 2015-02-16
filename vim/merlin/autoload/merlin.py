@@ -463,25 +463,22 @@ def vim_occurrences_replace(content):
       vim.command(query)
 
 # Expression typing
-def vim_type(expr,is_approx=False):
+def vim_type(expr):
   to_line, to_col = vim.current.window.cursor
   cmd_at = ["at", {'line':to_line,'col':to_col}]
   sync_buffer_to(to_line,to_col)
-  cmd_expr = ["expression", expr] if expr else []
+  cmd_expr = ["expression", expr]
   try:
     cmd = ["type"] + cmd_expr + cmd_at
     ty = command(*cmd)
-    if isinstance(ty,dict):
-      if "type" in ty: ty = ty['type']
-      else: ty = str(ty)
-    if is_approx: sys.stdout.write("(approx) ")
-    if expr: print(expr + " : " + ty)
-    else: print(ty)
+    res = {'type': str(ty), 'matcher': '', 'tail_info':''}
+    return json.dumps(res)
   except MerlinExc as e:
     if re.search('Not_found',str(e)):
-      pass
+      return '{}'
     else:
       try_print_error(e)
+      return '{}'
 
 def bounds_of_ocaml_atom_at_pos(to_line, col):
     line = vim.current.buffer[to_line]
