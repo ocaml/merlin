@@ -1151,7 +1151,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (mapcar (lambda (x) (append x '((kind . "Label") (info . nil)))) labels))
 
 (defun merlin--completion-data (ident)
-  "Return the data for completion of IDENT, i.e. a list of pairs (NAME . TYPE)."
+  "Return the data for completion of IDENT, i.e. a list of lists of the form
+  '(NAME TYPE KIND INFO)."
   (setq-local dwimed nil)
   (let* ((ident- (merlin--completion-split-ident ident))
          (suffix (cdr ident-))
@@ -1249,19 +1250,57 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;;; COMPANY MODE SUPPORT ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun merlin--company-get-candidate-type (candidate)
+  (get-text-property 0 'merlin-compl-type candidate))
+
+(defun merlin--company-get-candidate-doc (candidate)
+  (get-text-property 0 'merlin-compl-doc candidate))
+
+(defun merlin--company-is-module (candidate)
+  (string-equal (merlin--company-get-candidate-type candidate) " <module>"))
+
+(defun merlin--company-has-doc (candidate)
+  (not (or (string-equal (merlin--company-get-candidate-doc candidate) "")
+           (merlin--company-is-module candidate))))
+
 (defun merlin--company-doc-buffer (candidate)
   "Computes the /doc/ of CANDIDATE and returns the buffer where it printed it"
-  ; TODO: at the moment "doc" is understood as "type", but hopefully someday we
-  ; will access ocamldoc comments and display that.
-  (let ((typ (get-text-property 0 'merlin-meta candidate)))
-    (if (not (equal typ " <module>"))
-      (merlin--type-display-in-buffer typ)
-      (let* ((expr (substring-no-properties candidate))
-             (loc  (merlin-unmake-point (point)))
-             (cmd  (list 'type 'expression expr 'at loc))
-             (res  (merlin-send-command cmd)))
-        (merlin--type-display-in-buffer res)))
-    (get-buffer merlin-type-buffer-name)))
+  (cond
+    ((merlin--company-has-doc candidate)
+     (let* ((doc (merlin--company-get-candidate-doc candidate))
+            ; We add (** and *) around documentation so we can reuse the type buffer
+            ; without getting some weird highlighting.
+            (doc (concat
+                   "val " candidate " : "
+                   (merlin--company-get-candidate-type candidate)
+                   "\n\n(** " doc " *)")))
+       (merlin--type-display-in-buffer doc)))
+
+    ((merlin--company-is-module candidate)
+     (let* ((expr (substring-no-properties candidate))
+            (loc  (merlin-unmake-point (point)))
+            (cmd  (list 'type 'expression expr 'at loc))
+            (res  (merlin-send-command cmd)))
+       (merlin--type-display-in-buffer res)))
+    
+    (t (merlin--type-display-in-buffer
+         (merlin--company-get-candidate-type candidate))))
+  (get-buffer merlin-type-buffer-name))
+
+(defun merlin--company-meta (candidate)
+  "Computes the information to display in the minibuffer for CANDIDATE"
+  (let* ((arg-type (get-text-property 0 'merlin-arg-type candidate))
+         (entry-ty (merlin--company-get-candidate-type candidate))
+         (default  (if (and merlin-completion-arg-type arg-type)
+                     (concat "Expected argument type: " arg-type)
+                     entry-ty)))
+    (cond
+      ((merlin--company-has-doc candidate)
+       (concat default " (press F1 to display documentation of " candidate ")"))
+      ((merlin--company-is-module candidate)
+       (concat "Press F1 to display the signature of module " candidate
+               " (successive calls will expand aliases)"))
+      (t default))))
 
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
@@ -1287,24 +1326,21 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
               (mapcar #'(lambda (x)
                           (propertize
                             (propertize
-                              (merlin--completion-full-entry-name prefix x)
-                              'merlin-meta
-                              (merlin--completion-format-entry x))
-                            'merlin-arg-type
-                            (cdr (assoc 'argument_type x))))
+                              (propertize
+                                (merlin--completion-full-entry-name prefix x)
+                                'merlin-compl-type
+                                (merlin--completion-format-entry x))
+                              'merlin-arg-type
+                              (cdr (assoc 'argument_type x))))
+                          'merlin-compl-doc
+                          (cdr (assoc 'info x)))
                       (merlin--completion-data arg))))
           (post-completion
             (let ((minibuffer-message-timeout nil))
-              (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg))))
-          (meta
-            (let ((arg-type (get-text-property 0 'merlin-arg-type arg))
-                  (entry-ty (get-text-property 0 'merlin-meta arg)))
-              (if (and merlin-completion-arg-type arg-type)
-                (concat "Expected argument type: " arg-type)
-                entry-ty)))
+              (minibuffer-message "%s : %s" arg (merlin--company-get-candidate-type arg))))
+          (meta (merlin--company-meta arg))
           (annotation
-           (concat " : " (get-text-property 0 'merlin-meta arg)))
-          )))
+            (concat " : " (merlin--company-get-candidate-type arg))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUTO-COMPLETE SUPPORT ;;
