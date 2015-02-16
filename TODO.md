@@ -1,4 +1,8 @@
-- Locate: handle local module aliases (i.e. [let module X = Y])
+- Completion: make retrieval of ocamldoc comments optionnal
+
+- Locate:
+  -> handle local module aliases (i.e. [let module X = Y])
+  -> associate ocamldoc comments to trie nodes when building the trie.
 
 - Relegated to next menhir version:
   Find proper API for incremental parser
