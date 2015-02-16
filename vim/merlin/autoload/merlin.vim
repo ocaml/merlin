@@ -200,7 +200,8 @@ function! merlin#TypeOf(...)
         py vim.command("let l:type = " + merlin.vim_type_enclosing())
         call s:ShowTypeEnclosing(l:type)
     else
-        py merlin.vim_type(vim.eval("a:1"))
+        py vim.command("let l:type = " + merlin.vim_type(vim.eval("a:1")))
+        call s:ShowTypeEnclosing(l:type)
     endif
 endfunction
 
