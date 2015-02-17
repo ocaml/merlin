@@ -104,7 +104,7 @@ let rec build ~trie browses =
       Leaf
   in
   List.fold_left (remove_top_indir browses) ~init:trie ~f:(fun trie t ->
-    let open BrowseT in
+    let open Typedtree in
     match t.t_node with
     | Signature _
     | Structure _ ->
@@ -150,39 +150,41 @@ let rec build ~trie browses =
         helper packed
       end
     | Value_binding vb ->
-      let idlocs = Raw_compat.pattern_idlocs vb.Typedtree.vb_pat in
+      let idlocs = Raw_compat.pattern_idlocs vb.vb_pat in
       List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
         Trie.add_multiple id (loc, `Vals, Leaf) trie
       )
     | Value_description vd ->
-      Trie.add_multiple (Ident.name vd.Typedtree.val_id) (t.t_loc, `Vals, Leaf) trie
+      let open Typedtree.Override in
+      Trie.add_multiple (Ident.name vd.val_id) (t.t_loc, `Vals, Leaf) trie
     | Module_binding mb ->
       let node =
         node_for_direct_mod `Mod
-          (Raw_compat.remove_indir_me mb.Typedtree.mb_expr)
+          (Raw_compat.remove_indir_me mb.mb_expr)
       in
-      Trie.add_multiple (Ident.name mb.Typedtree.mb_id) (t.t_loc, `Mod, node) trie
+      Trie.add_multiple (Ident.name mb.mb_id) (t.t_loc, `Mod, node) trie
     | Module_declaration md ->
       let node =
         node_for_direct_mod `Mod
-          (Raw_compat.remove_indir_mty md.Typedtree.md_type)
+          (Raw_compat.remove_indir_mty md.md_type)
       in
-      Trie.add_multiple (Ident.name md.Typedtree.md_id) (t.t_loc, `Mod, node) trie
+      Trie.add_multiple (Ident.name md.md_id) (t.t_loc, `Mod, node) trie
     | Module_type_declaration mtd ->
       let node =
-        match mtd.Typedtree.mtd_type with
+        match mtd.mtd_type with
         | None -> Leaf
         | Some m -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty m)
       in
-      Trie.add_multiple (Ident.name mtd.Typedtree.mtd_id) (t.t_loc, `Modtype, node) trie
+      Trie.add_multiple (Ident.name mtd.mtd_id) (t.t_loc, `Modtype, node) trie
     | Type_declaration td ->
       (* TODO: add constructors and labels as well.
          Because why the hell not. *)
-      Trie.add_multiple (Ident.name td.Typedtree.typ_id) (t.t_loc, `Type, Leaf) trie
+      let open Typedtree.Override in
+      Trie.add_multiple (Ident.name td.typ_id) (t.t_loc, `Type, Leaf) trie
     | Type_extension te ->
       (* TODO: add constructors and labels as well.
          Because why the hell not. *)
-      Trie.add_multiple (Path.last te.Typedtree.tyext_path) (t.t_loc, `Type, Leaf) trie
+      Trie.add_multiple (Path.last te.tyext_path) (t.t_loc, `Type, Leaf) trie
     | ignored_node ->
       Logger.debugf section (fun fmt node ->
         Format.fprintf fmt "IGNORED: %s" @@ BrowseT.string_of_node node
