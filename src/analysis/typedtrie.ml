@@ -63,6 +63,7 @@ let path_to_string (p : path) =
       | (str,`Type) -> str ^ "[type]"
       | (str,`Vals) -> str ^ "[val]"
       | (str,`Modtype) -> str ^ "[Mty]"
+      | (str, `Unknown) -> str ^ "[?]"
     )
   in
   String.concat ~sep:"." p
@@ -199,7 +200,9 @@ let rec follow ?before trie = function
   | (x, namespace) :: xs as path ->
     try
       let lst = Trie.get x trie in
-      let lst = List.filter lst ~f:(fun (_, ns, _) -> ns = namespace) in
+      let lst =
+        List.filter lst ~f:(fun (_, ns, _) -> ns = namespace || ns = `Unknown)
+      in
       let lst =
         match before with
         | None -> lst
@@ -283,7 +286,8 @@ let rec dump fmt trie =
        | `Constr -> "(cstr) "
        | `Type -> "(typ) "
        | `Vals -> "(val) "
-       | `Modtype -> "(Mty) ") ;
+       | `Modtype -> "(Mty) "
+       | `Unknown -> "(?)") ;
     match node with
     | Leaf -> Location.print_loc' fmt loc
     | Included path ->

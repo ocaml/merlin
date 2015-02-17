@@ -28,7 +28,7 @@
 
 open Std
 
-type namespace = [ `Vals | `Type | `Constr | `Mod | `Modtype | `Labels ]
+type namespace = [ `Vals | `Type | `Constr | `Mod | `Modtype | `Labels | `Unknown ]
 type path = (string * namespace) list
 
 type trie = (Location.t * namespace * node) list String.Map.t
