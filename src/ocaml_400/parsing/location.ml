@@ -232,6 +232,14 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 ;;
 
+let print_loc' ppf loc =
+  let (file, line, startchar) = get_pos_info loc.loc_start in
+  let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
+    fprintf ppf "%s%i" msg_line line;
+  if startchar >= 0 then
+    fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar
+;;
+
 let print_loc ppf loc = ()
   (*let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
