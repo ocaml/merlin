@@ -68,7 +68,7 @@ let sig_item_idns =
   | Sig_class (id, _, _) -> id, `Vals (* that's just silly *)
   | Sig_class_type (id, _, _) -> id, `Type (* :_D *)
 
-let include_idents ids = List.map ids ~f:(fun id -> id, `Unknown)
+let include_idents l = List.map sig_item_idns l
 
 let lookup_constructor id env = snd (Env.lookup_constructor id env)
 let lookup_label id env = snd (Env.lookup_label id env)
@@ -234,7 +234,7 @@ let rec pattern_idlocs pat =
 let identify_str_includes item =
   match item.Typedtree.str_desc with
   | Typedtree.Tstr_include (mod_expr, ids)  ->
-    `Included (include_idents ids, `Mod_expr mod_expr)
+    `Included (List.map ids ~f:(fun x -> x, `Unknown), `Mod_expr mod_expr)
   | _ -> `Not_included
 
 let identify_sig_includes item =
