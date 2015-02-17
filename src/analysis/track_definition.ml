@@ -668,19 +668,19 @@ let from_string ~project ~env ~local_defs ~pos switch path =
     with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as error -> error
     | `Found loc ->
-      match find_source loc with
-      | exception (File_not_found ft) ->
-        explain_file_not_found path ft
-      | exception (Multiple_matches lst) ->
+      try
+        match find_source loc with
+        | None     -> `Found (None, loc.Location.loc_start)
+        | Some src -> `Found (Some src, loc.Location.loc_start)
+      with
+      | File_not_found ft -> explain_file_not_found path ft
+      | Multiple_matches lst ->
         let matches = String.concat lst ~sep:", " in
         `File_not_found (
           sprintf "Several source files in your path have the same name, and \
                    merlin doesn't know which is the right one: %s"
             matches
         )
-      | None -> `Found (None, loc.Location.loc_start)
-      | Some src ->
-        `Found (Some src, loc.Location.loc_start)
 
 
 let get_doc ~project ~env ~local_defs ~comments ~pos source path =
