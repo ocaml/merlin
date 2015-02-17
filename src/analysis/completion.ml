@@ -367,18 +367,16 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
       | `Modules ->
         Env.fold_modules
           (fun name path v compl ->
-             let loc = v.Types.md_loc in
              let v = Raw_compat.extract_module_declaration v in
              if validate `Uident `Mod name then
-               fmt ~exact:(name = prefix) name ~loc ~path (`Mod v) :: compl
+               fmt ~exact:(name = prefix) name ~path (`Mod v) :: compl
              else compl)
           path env []
       | `Modules_type ->
         Env.fold_modtypes
           (fun name path v compl ->
              if validate `Uident `Mod name then
-               let loc = v.Types.mtd_loc in
-               fmt ~exact:(name = prefix) name ~loc ~path (`ModType v) :: compl
+               fmt ~exact:(name = prefix) name ~path (`ModType v) :: compl
              else compl)
           path env []
       | `Group (kinds) ->
