@@ -1,5 +1,5 @@
-- Add support for ppx
-- Find proper API for incremental parser
+- Relegated to next menhir version:
+  Find proper API for incremental parser
   -> goto table should not be manipulated explicitly
   -> exceptions from semantic action should be caught and treated differently
   -> relying on special handling of stack bottom is not good either
@@ -11,38 +11,14 @@
   -> occurrences
 - Module constraint relaxation is wrong on functors argument. 
   Check how typer behaves with incorrect functors.
+  Behavior of module error recovery is unclear.
 
 IDEA (later)
-- perf: send batches of token rather than entering/exiting the whole
-  parser barrier for each token
-
-DONE
-- recovery heuristic is really not sufficient, a few test cases easily trigger
-  bad recursion:
-  let f =
-    let bad
-    let x = () in
-  fixed in b5cf1991705ea7f2138602875fe774e20b4a0a49
-
-- with this input:
-    let xxy =
-      let xx = with
-    let xxz : int = "hello"
-
-    let _ = xx |;;
-  completion at "|" is correct without the preceding "xx", wrong otherwise
-  Also, xx generate one expected error and a Not_found exception.
-  Both were due to a special case with Pexp_ident in typecore
-  fixed in 8f0fd7cf0e5b7c19270c792c4bbda8f067936c5f
-- Improve js_of_ocaml support
-- Reimplement verbosity, expand module aliases
-- Replace Browse by a propper wrapping of Typedtree (~60%)
-- have a way to get the types of modules
-  partially done by 6f7e89e6f6d0915f5b2f76d892c99434399e9a76
-  now we need a clean/generic way
-- write syntax error message generating heuristic
-- there is a bug in cmi refreshing
-- catch "different assumptions" exception
-- Backport support for ocaml 4.00
-- When resuming after a (, lexer can get confused if it receives *:
-  it will be lexed as STAR token and not beginning of comment
+- lexing: 
+  composable lexers with a clean interface for resumption would make support
+  for other languages / preprocessors easier
+- syntax recovery (studious-parser branch):
+  learn from suffix to target specific states during recovery
+- error explanation:
+  use machine-learning techniques to scan opam codebase, identify common
+  patterns, sugges common solution in presence of an error
