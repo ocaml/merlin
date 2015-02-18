@@ -147,11 +147,21 @@ function! merlin#RelevantFlags(ArgLead, CmdLine, CursorPos)
   return join(l:flags, "\n")
 endfunction
 
+function! merlin#CompleteFlags(ArgLead, CmdLine, CursorPos)
+  py merlin.vim_get_flags("l:flags")
+  return l:flags . "\n" . merlin#RelevantFlags(a:ArgLead, a:CmdLine, a:CursorPos)
+endfunction
+
 function! merlin#ClearFlags()
   py merlin.vim_clear_flags()
 endfunction
 
 function! merlin#AddFlags(...)
+  py merlin.vim_add_flags(*vim.eval("a:000"))
+endfunction
+
+function! merlin#SetFlags(...)
+  py merlin.vim_clear_flags()
   py merlin.vim_add_flags(*vim.eval("a:000"))
 endfunction
 
@@ -463,13 +473,15 @@ function! merlin#Register()
 
   command! -buffer -complete=custom,merlin#PackageList   -nargs=* Use              call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags         call merlin#AddFlags(<f-args>)
-  command! -buffer -nargs=0 ClearFlags   call merlin#ClearFlags()
+  command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* SetFlags         call merlin#SetFlags(<f-args>)
+  command! -buffer -nargs=0                                       ClearFlags       call merlin#ClearFlags()
   command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* ExtEnable        call merlin#ExtEnable(<f-args>)
   command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* ExtDisable       call merlin#ExtDisable(<f-args>)
 
   command! -buffer -complete=custom,merlin#PackageList   -nargs=* MerlinUse        call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* MerlinAddFlags   call merlin#AddFlags(<f-args>)
-  command! -buffer -nargs=0 MerlinClearFlags   call merlin#ClearFlags()
+  command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* MerlinSetFlags   call merlin#SetFlags(<f-args>)
+  command! -buffer -nargs=0                                       MerlinClearFlags call merlin#ClearFlags()
   command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* MerlinExtEnable  call merlin#ExtEnable(<f-args>)
   command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* MerlinExtDisable call merlin#ExtDisable(<f-args>)
 
