@@ -699,6 +699,12 @@ def vim_add_flags(*flags):
   result = catch_and_print(lambda: command('flags', 'add', flags))
   return display_load_failures(result)
 
+def vim_get_flags(var):
+  acquire_buffer()
+  result = catch_and_print(lambda: command('flags', 'get'))
+  result = " ".join(map(" ".join, result))
+  vim.command('let %s = "%s"' % (var, result.replace('"','\\"')))
+
 # Boundaries
 
 def min_pos(p1, p2):
