@@ -343,6 +343,8 @@ module Protocol_io = struct
       Request (Flags (`Add (string_list flags)))
     | [`String "flags" ; `String "clear" ] ->
       Request (Flags `Clear)
+    | [`String "flags" ; `String "get" ] ->
+      Request (Flags_get)
     | [`String "find"; `String "use"; `List packages]
     | (`String "find" :: `String "use" :: packages) ->
       Request (Findlib_use (string_list packages))
@@ -438,6 +440,8 @@ module Protocol_io = struct
         | Which_with_ext _, strs -> json_of_string_list strs
         | Flags _, failures ->
           `Assoc (with_failures ["result", `Bool true] failures)
+        | Flags_get, flags ->
+          `List (List.map json_of_string_list flags)
         | Findlib_use _, failures ->
           `Assoc (with_failures ["result", `Bool true] failures)
         | Findlib_list, strs -> json_of_string_list strs

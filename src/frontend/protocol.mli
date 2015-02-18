@@ -112,6 +112,8 @@ type _ request =
   | Flags
     : [ `Add of string list | `Clear ]
     -> [ `Ok | `Failures of (string * exn) list ] request
+  | Flags_get
+    :  string list list request
   | Findlib_use
     :  string list
     -> [`Ok | `Failures of (string * exn) list] request

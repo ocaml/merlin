@@ -64,6 +64,7 @@ module Project : sig
     val load_packages : t -> string list -> [`Ok | `Failures of (string * exn) list]
     val set_extension : t -> enabled:bool -> string -> (string * exn) option
     val add_flags : t -> string list -> [`Ok | `Failures of (string * exn) list]
+    val get_flags : t -> string list list
     val clear_flags : t -> [`Ok | `Failures of (string * exn) list]
   end
 
@@ -257,6 +258,9 @@ end = struct
       match update_flags project with
       | [] -> `Ok
       | lst -> `Failures lst
+
+    let get_flags project =
+      project.user_config.cfg_flags
 
     let clear_flags project =
       project.user_config.cfg_flags <- [] ;

@@ -631,6 +631,10 @@ let dispatch (state : state) =
     let project = Buffer.project state.buffer in
     Merlin_lib.Project.User.clear_flags project
 
+  | (Flags_get : a request) ->
+    let project = Buffer.project state.buffer in
+    Merlin_lib.Project.User.get_flags project
+
   | (Project_get : a request) ->
     let project = Buffer.project state.buffer in
     (List.map ~f:fst (Project.get_dot_merlins project),
