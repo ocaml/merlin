@@ -64,6 +64,13 @@ type error =
 
 exception Error of Location.t * Env.t * error
 
+(* merlin: Test whether we should trigger type recovery or not.
+   Beside signaling errors, type errors are also used in the process of type
+   checking branches impossible because of GADT. *)
+let can_recover = function
+  | Error (loc, _, _) -> loc <> Location.none
+  | _ -> true
+
 (* Forward declaration, to be filled in by Typemod.type_module *)
 
 let type_module =
@@ -610,7 +617,7 @@ type type_pat_mode =
 let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
   let snap = snapshot () and env' = !env in
   try type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty
-  with exn ->
+  with exn when can_recover exn ->
     Typing_aux.raise_error exn;
     Btype.backtrack snap;
     env := env';
@@ -1525,11 +1532,11 @@ and type_relax ?in_function env sexp ty_expected =
     try
       unify_exp_types sexp.pexp_loc env ty ty_expected;
       exp
-    with (Typetexp.Error _ | Error _) as exn ->
+    with (Typetexp.Error _ | Error _) as exn when can_recover exn ->
       Btype.backtrack snap;
       (* FIXME: Ugly, a 1-uple is probably malformed typeexp… *)
       failwith_exn ~exn (Texp_tuple [exp])
-  with (Typetexp.Error _ | Error _) as exn ->
+  with (Typetexp.Error _ | Error _) as exn when can_recover exn ->
     Btype.backtrack snap;
     failwith_exn ~exn
       (Texp_ident
@@ -1550,7 +1557,7 @@ and type_expect_ ?in_function env sexp ty_expected =
     try
       unify_exp env exp (instance env ty_expected);
       exp
-    with (Typetexp.Error _ | Error _) as exn ->
+    with (Typetexp.Error _ | Error _) as exn when can_recover exn ->
       Typing_aux.erroneous_type_register ty_expected;
       Typing_aux.raise_error exn;
       {
