@@ -194,8 +194,6 @@ def command_reset(kind="auto",name=None):
   global saved_sync
   if name: r = command("reset",kind,name)
   else:    r = command("reset",kind)
-  if name == "myocamlbuild.ml":
-    command_find_use("ocamlbuild")
   saved_sync = None
   return r
 
