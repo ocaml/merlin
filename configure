@@ -133,10 +133,17 @@ if [ -e "src/${OCAML_VERSION}.git/.git" ]; then
   OCAML_VERSION_MESSAGE="${OCAML_VERSION_MESSAGE} (git version)"
 fi
 
+if ocamlfind ocamlopt; then
+  NATIVE=true
+else
+  NATIVE=false
+fi
+
 cat <<END
 
 System config:
   OCaml ABI version: $OCAML_VERSION_MESSAGE
+  Native code: $NATIVE
 
 Will install:
   ocamlmerlin binary in: $BIN_DIR
@@ -159,6 +166,7 @@ if [ -d "$BIN_DIR" ]; then
 BIN_DIR=$BIN_DIR
 SHARE_DIR=$SHARE_DIR
 VIM_DIR=$VIM_DIR
+NATIVE=$NATIVE
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
