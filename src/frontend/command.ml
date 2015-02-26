@@ -495,6 +495,13 @@ let dispatch (state : state) =
       | `Auto, _ -> Raw_parser.implementation_state
     in
     let buffer = Buffer.create ?dot_merlins ?path parser in
+    begin match path with
+    | Some path when Filename.check_suffix path "myocamlbuild.ml" ->
+      let project = Buffer.project buffer in
+      (* Failure is not an issue. *)
+      ignore @@ Project.User.load_packages project ["ocamlbuild"]
+    | _ -> ()
+    end ;
     buffer_changed state;
     state.buffer <- buffer;
     cursor_state state
