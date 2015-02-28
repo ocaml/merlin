@@ -195,10 +195,10 @@ SOURCES = \
 
 PACKS = str findlib yojson unix
 
-ifeq "$(NATIVE)" "true"
-ocamlmerlin $(RESULT): native-code
-else
+ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code
+else
+ocamlmerlin $(RESULT): native-code
 endif
 
 -include OCamlMakefile
