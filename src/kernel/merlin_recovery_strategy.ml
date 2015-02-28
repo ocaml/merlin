@@ -205,3 +205,15 @@ end = struct
 
 end
 
+let observable_state lr0 =
+  let is_final (prod, pos) =
+    let _, symbols = Query.production_definition prod in
+    match List.drop_n pos symbols with
+    | [] | [CN_ _] -> true
+    | _ -> false
+  in
+  let itemset = Query.itemset lr0 in
+  not (List.for_all ~f:is_final itemset)
+
+let observable_state = Array.memoize Query.lr0_states ~f:observable_state
+let observable_state lr1 = observable_state (Query.lr0_state lr1)
