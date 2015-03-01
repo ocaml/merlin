@@ -108,6 +108,20 @@ let hole t env =
   let hole = Ast_helper.Exp.ident (mk_id name) in
   hole, env'
 
+let prefix env path =
+  let path = Printtyp.shorten_path ~env path in
+  match Path.to_string_list path with
+  | [] -> assert false
+  | p :: ps ->
+    fun name ->
+      let open Longident in
+      match
+        List.fold_left ps ~init:(Lident p) ~f:(fun lid p -> Ldot (lid, p))
+      with
+      | Lident _ -> Lident name
+      | Ldot (lid, _) -> Ldot (lid, name)
+      | _ -> assert false
+
 let rec gen_expr env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
@@ -126,23 +140,45 @@ let rec gen_expr env type_expr =
               ~f:(fun (fields, env) lbl ->
                  Ctype.unify env lbl.lbl_res type_expr ;
                  let expr, env' = gen_expr env lbl.lbl_arg in
-                 let field = mk_id lbl.lbl_name in
+                 let field =
+                   match fields with
+                   | [] -> mk_var (prefix env path lbl.lbl_name)
+                   | _ -> mk_id lbl.lbl_name in
                  (field, expr) :: fields, env') in
           let fields = List.rev fields in
           Ast_helper.Exp.record fields None, env'
+      | constrs, [] ->
+        let are_types_unifiable typ =
+          let snap = Btype.snapshot () in
+          let res =
+            try Ctype.unify_gadt ~newtype_level:0 (ref env) type_expr typ ; true
+            with Ctype.Unify _trace -> false in
+          Btype.backtrack snap ;
+          res in
+        let constrs =
+          List.filter_map constrs ~f:(fun cstr_descr ->
+            if cstr_descr.cstr_generalized
+               && not (are_types_unifiable cstr_descr.cstr_res)
+            then None
+            else Some cstr_descr) in
+        begin match constrs with
+          | [] -> raise (Not_allowed "no constructor")
+          | cstr_descr :: _ ->
+            let args, env' =
+              if cstr_descr.cstr_arity <= 0
+              then None, env
+              else let t, env' = gen_tuple env cstr_descr.cstr_args in
+                   Some t, env' in
+            let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
+            Ast_helper.Exp.construct lidl args, env
+        end
       | _ -> raise (Not_allowed "constr")
       end
   | Tpackage (path, ids, args) -> raise (Not_allowed "modules")
   | Tvariant row_desc -> raise (Not_allowed "variant type")
 
   | Ttuple ts ->
-    let rec go acc env = function
-      | [] -> List.rev acc, env
-      | t::ts ->
-        let h, env' = try gen_expr env t with Not_allowed _ -> hole t env in
-        go (h::acc) env' ts in
-    let holes, env' = go [] env ts in
-    Ast_helper.Exp.tuple holes, env'
+    gen_tuple env ts
 
   | Tarrow (label, t0, t1, _) ->
     let lbl =
@@ -164,6 +200,15 @@ let rec gen_expr env type_expr =
     let fmt, to_string = Format.to_string () in
     Printtyp.type_expr fmt type_expr ;
     raise (Not_allowed (to_string ()))
+
+and gen_tuple env types =
+  let rec go acc env = function
+    | [] -> List.rev acc, env
+    | t::ts ->
+      let h, env' = try gen_expr env t with Not_allowed _ -> hole t env in
+      go (h::acc) env' ts in
+  let holes, env' = go [] env types in
+  Ast_helper.Exp.tuple holes, env'
 
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
