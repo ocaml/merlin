@@ -40,6 +40,41 @@ let () =
     | _ -> None
   )
 
+let mk_id s  = Location.mknoloc (Longident.Lident s)
+let mk_var s = Location.mknoloc s
+
+module Predef_types = struct
+  let unit_ () =
+    Ast_helper.Exp.construct (mk_var (Longident.Lident "()")) None
+
+  let char_ () =
+    Ast_helper.Exp.constant (Asttypes.Const_char 'c')
+
+  let int_ () =
+    Ast_helper.Exp.constant (Asttypes.Const_int 0)
+
+  let string_ () =
+    Ast_helper.Exp.constant (Ast_helper.const_string "")
+
+  let list_ () =
+    Ast_helper.Exp.construct (mk_var (Longident.Lident "[]")) None
+
+  let array_ () =
+    Ast_helper.Exp.array []
+
+  let tbl = Hashtbl.create 6
+
+  let () =
+    List.iter ~f:(fun (k, v) -> Hashtbl.add tbl k v) [
+      Predef.path_unit, unit_ ;
+      Predef.path_char, char_ ;
+      Predef.path_int, int_ ;
+      Predef.path_string, string_ ;
+      Predef.path_list, list_ ;
+      Predef.path_array, array_ ;
+    ]
+end
+
 let rec gen_expr env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
@@ -49,7 +84,10 @@ let rec gen_expr env type_expr =
   | Tobject _  -> raise (Not_allowed "object type")
   | Ttuple ts -> raise (Not_allowed "tuple")
   | Tarrow (label, t0, t1, commut) -> raise (Not_allowed "arrow")
-  | Tconstr (path, _params, _) -> raise (Not_allowed "constr")
+  | Tconstr (path, _params, _) ->
+    begin try Hashtbl.find Predef_types.tbl path (), env
+    with Not_found -> raise (Not_allowed "constr")
+    end
   | Tpackage (path, ids, args) -> raise (Not_allowed "modules")
   | Tvariant row_desc -> raise (Not_allowed "variant type")
   | _ ->
