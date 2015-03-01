@@ -86,6 +86,17 @@ let cursor_state state =
   in
   { cursor; marker }
 
+let find_enclosing_node typer { Location.loc_start ; loc_end } =
+  let structures = Typer.contents typer in
+  let structures = Browse.of_typer_contents structures in
+  let enclosings = Browse.enclosing loc_start structures in
+  let enclosings =
+    List.drop_while enclosings ~f:(fun t ->
+        Lexing.compare_pos t.BrowseT.t_loc.Location.loc_end loc_end < 0) in
+  match enclosings with
+  | [] -> failwith "No node at given range"
+  | node::parents -> node, parents
+
 let verbosity_last = ref None and verbosity_counter = ref 0
 
 let track_verbosity =
@@ -451,21 +462,17 @@ let dispatch (state : state) =
     | otherwise -> otherwise
     end
 
-  | (Case_analysis ({ Location. loc_start ; loc_end } as loc) : a request) ->
+  | (Case_analysis loc : a request) ->
     with_typer state @@ fun typer ->
-    let env = Typer.env typer in
-    Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-    let structures = Typer.contents typer in
-    let structures = Browse.of_typer_contents structures in
-    let enclosings = Browse.enclosing loc_start structures in
-    begin match
-        List.drop_while enclosings ~f:(fun t ->
-            Lexing.compare_pos t.BrowseT.t_loc.Location.loc_end loc_end < 0
-          )
-      with
-      | [] -> failwith "No node at given range"
-      | node :: parents -> Destruct.node ~loc parents node
-    end
+    Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
+    let node, parents = find_enclosing_node typer loc in
+    Destruct.node ~loc parents node
+
+  | (Construct loc : a request) ->
+    with_typer state @@ fun typer ->
+    Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
+    let node, parents = find_enclosing_node typer loc in
+    failwith "construct"
 
   | (Outline : a request) ->
     with_typer state @@ fun typer ->
