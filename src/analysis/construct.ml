@@ -210,6 +210,33 @@ and gen_tuple env types =
   let holes, env' = go [] env types in
   Ast_helper.Exp.tuple holes, env'
 
+and gen_module env mod_type =
+  let open Types in
+  match mod_type with
+  | Mty_signature lazy_sig ->
+    let sg = Lazy.force lazy_sig in
+    let items = List.map (gen_signature_item env) sg in
+    Ast_helper.Mod.structure items
+  | Mty_ident path ->
+    let m = Env.find_modtype path env in
+    begin match m.mtd_type with
+      | Some t -> gen_module env t
+      | None -> raise (Not_allowed "module type")
+    end
+  | _ -> raise (Not_allowed "module type")
+
+and gen_signature_item env sig_item =
+  let open Types in
+  match sig_item with
+  | Sig_value (id, descr) ->
+    let expr, _ = gen_expr env descr.Types.val_type in
+    Ast_helper.Str.value
+      Asttypes.Nonrecursive
+      [ Ast_helper.Vb.mk
+         (Ast_helper.Pat.var (mk_var id.Ident.name))
+         expr ]
+  | _ -> raise (Not_allowed "signature item")
+
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
   | Parsetree.Pexp_fun _ -> true
@@ -224,6 +251,13 @@ let node ~loc ~env parents node =
     Pprintast.expression fmt result ;
     let str = to_string () in
     let str = if needs_parentheses result then "(" ^ str ^ ")" else str in
+    loc, str
+  | Module_expr expr ->
+    let ty = expr.Typedtree.mod_type in
+    let result = gen_module env ty in
+    let fmt, to_string = Format.to_string () in
+    Pprintast.default#module_expr fmt result ;
+    let str = to_string () in
     loc, str
   | node ->
     raise (Not_allowed (BrowseT.string_of_node node))
