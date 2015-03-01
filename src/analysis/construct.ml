@@ -235,7 +235,63 @@ and gen_signature_item env sig_item =
       [ Ast_helper.Vb.mk
          (Ast_helper.Pat.var (mk_var id.Ident.name))
          expr ]
+  | Sig_type (id, type_decl, rec_status) ->
+    Ast_helper.Str.type_
+      [ Ast_helper.Type.mk
+          ?manifest:
+            (match type_decl.type_manifest with
+             | None -> None
+             | Some m -> Some (gen_core_type m))
+          ~params:
+            (List.map
+               (fun t ->
+                 let ct = gen_core_type t in
+                 ct, Asttypes.Invariant)
+               type_decl.type_params)
+          ~kind:
+            (match type_decl.type_kind with
+             | Type_open -> Parsetree.Ptype_open
+             | Type_abstract -> Parsetree.Ptype_abstract
+             | Type_record (labels, _) ->
+               Parsetree.Ptype_record
+                 (List.map (fun lbl ->
+                      { Parsetree.pld_name = mk_var lbl.ld_id.Ident.name
+                      ; pld_mutable = lbl.ld_mutable
+                      ; pld_type = gen_core_type lbl.ld_type
+                      ; pld_loc = Location.none
+                      ; pld_attributes = lbl.ld_attributes
+                      })
+                     labels)
+             | Type_variant cstrs ->
+               Parsetree.Ptype_variant
+                 (List.map (fun c ->
+                      { Parsetree.pcd_name = mk_var c.cd_id.Ident.name
+                      ; pcd_args = List.map gen_core_type c.cd_args
+                      ; pcd_res =
+                          (match c.cd_res with
+                           | None -> None
+                           | Some t -> Some (gen_core_type t))
+                      ; pcd_loc = Location.none
+                      ; pcd_attributes = c.cd_attributes
+                      })
+                     cstrs))
+          (mk_var id.Ident.name)    ]
   | _ -> raise (Not_allowed "signature item")
+
+and gen_core_type type_expr =
+  let open Types in
+  let type_expr = Btype.repr type_expr in
+  match type_expr.desc with
+  | Tlink _    -> assert false (* impossible after [Btype.repr] *)
+  | Tvar None -> Ast_helper.Typ.any ()
+  | Tvar (Some name) -> Ast_helper.Typ.var name
+  | Tconstr (path, params, _) ->
+    Ast_helper.Typ.constr
+      (mk_var (Untypeast.lident_of_path path))
+      (List.map gen_core_type params)
+  | Tarrow (label, t0, t1, _) ->
+    Ast_helper.Typ.arrow label (gen_core_type t0) (gen_core_type t1)
+  | _ -> Ast_helper.Typ.var "hello"
 
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
