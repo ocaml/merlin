@@ -75,6 +75,39 @@ module Predef_types = struct
     ]
 end
 
+let bind name t env =
+  let vd = {
+    Types.val_type = t ;
+    val_kind = Types.Val_unbound ;
+    val_loc = Location.none ;
+    val_attributes = []
+  } in
+  Env.add_value (Ident.create name) vd env
+
+let already_defined name env =
+  try let _ = Env.lookup_value (Longident.Lident name) env in true
+  with Not_found -> false
+
+let freevar ?(prefix = "") t env =
+  let rec to_string i =
+    let n, m = i mod 26, i / 26 in
+    let s = String.make 1 (Char.chr (Char.code 'a' + n)) in
+    if m = 0
+    then s
+    else to_string (m - 1) ^ s in
+  let rec go i =
+    let name = prefix ^ to_string i in
+    if already_defined name env
+    then go (i + 1)
+    else name in
+  let name = go 0 in
+  name, bind name t env
+
+let hole t env =
+  let name, env' = freevar ~prefix:"_" t env in
+  let hole = Ast_helper.Exp.ident (mk_id name) in
+  hole, env'
+
 let rec gen_expr env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
@@ -82,7 +115,6 @@ let rec gen_expr env type_expr =
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tvar _     -> raise (Not_allowed "non-immediate type")
   | Tobject _  -> raise (Not_allowed "object type")
-  | Ttuple ts -> raise (Not_allowed "tuple")
   | Tarrow (label, t0, t1, commut) -> raise (Not_allowed "arrow")
   | Tconstr (path, _params, _) ->
     begin try Hashtbl.find Predef_types.tbl path (), env
@@ -90,6 +122,16 @@ let rec gen_expr env type_expr =
     end
   | Tpackage (path, ids, args) -> raise (Not_allowed "modules")
   | Tvariant row_desc -> raise (Not_allowed "variant type")
+
+  | Ttuple ts ->
+    let rec go acc env = function
+      | [] -> List.rev acc, env
+      | t::ts ->
+        let h, env' = try gen_expr env t with Not_allowed _ -> hole t env in
+        go (h::acc) env' ts in
+    let holes, env' = go [] env ts in
+    Ast_helper.Exp.tuple holes, env'
+
   | _ ->
     let fmt, to_string = Format.to_string () in
     Printtyp.type_expr fmt type_expr ;
