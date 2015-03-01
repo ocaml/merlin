@@ -115,7 +115,6 @@ let rec gen_expr env type_expr =
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tvar _     -> raise (Not_allowed "non-immediate type")
   | Tobject _  -> raise (Not_allowed "object type")
-  | Tarrow (label, t0, t1, commut) -> raise (Not_allowed "arrow")
   | Tconstr (path, _params, _) ->
     begin try Hashtbl.find Predef_types.tbl path (), env
     with Not_found -> raise (Not_allowed "constr")
@@ -132,10 +131,31 @@ let rec gen_expr env type_expr =
     let holes, env' = go [] env ts in
     Ast_helper.Exp.tuple holes, env'
 
+  | Tarrow (label, t0, t1, _) ->
+    let lbl =
+      if label <> "" && label.[0] = '?'
+      then String.sub label 1 (String.length label - 1)
+      else label in
+    let name, env' =
+      if lbl = "" || already_defined lbl env
+      then freevar t0 env
+      else lbl, bind lbl t0 env in
+    let out, env'' = try gen_expr env' t1 with Not_allowed _ -> hole t1 env' in
+    let ast =
+      Ast_helper.Exp.fun_ label None
+        (Ast_helper.Pat.var (mk_var name))
+        out in
+    ast, env''
+
   | _ ->
     let fmt, to_string = Format.to_string () in
     Printtyp.type_expr fmt type_expr ;
     raise (Not_allowed (to_string ()))
+
+
+let needs_parentheses e = match e.Parsetree.pexp_desc with
+  | Parsetree.Pexp_fun _ -> true
+  | _ -> false
 
 let node ~loc ~env parents node =
   match node.t_node with
@@ -145,6 +165,7 @@ let node ~loc ~env parents node =
     let fmt, to_string = Format.to_string () in
     Pprintast.expression fmt result ;
     let str = to_string () in
+    let str = if needs_parentheses result then "(" ^ str ^ ")" else str in
     loc, str
   | node ->
     raise (Not_allowed (BrowseT.string_of_node node))
