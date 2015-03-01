@@ -472,7 +472,7 @@ let dispatch (state : state) =
     with_typer state @@ fun typer ->
     Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
     let node, parents = find_enclosing_node typer loc in
-    failwith "construct"
+    Construct.node ~env:(Typer.env typer) ~loc parents node
 
   | (Outline : a request) ->
     with_typer state @@ fun typer ->
