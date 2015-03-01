@@ -225,63 +225,6 @@ and gen_module env mod_type =
     end
   | _ -> raise (Not_allowed "module type")
 
-and gen_signature_item env sig_item =
-  let open Types in
-  match sig_item with
-  | Sig_value (id, descr) ->
-    let expr, _ = gen_expr env descr.Types.val_type in
-    Ast_helper.Str.value
-      Asttypes.Nonrecursive
-      [ Ast_helper.Vb.mk
-         (Ast_helper.Pat.var (mk_var id.Ident.name))
-         expr ]
-  | Sig_type (id, type_decl, rec_status) ->
-    Ast_helper.Str.type_
-      [ Ast_helper.Type.mk
-          ?manifest:
-            (match type_decl.type_manifest with
-             | None -> None
-             | Some m -> Some (gen_core_type m))
-          ~params:
-            (List.map
-               (fun t ->
-                 let ct = gen_core_type t in
-                 ct, Asttypes.Invariant)
-               type_decl.type_params)
-          ~kind:
-            (match type_decl.type_kind with
-             | Type_open -> Parsetree.Ptype_open
-             | Type_abstract -> Parsetree.Ptype_abstract
-             | Type_record (labels, _) ->
-               Parsetree.Ptype_record
-                 (List.map (fun lbl ->
-                      { Parsetree.pld_name = mk_var lbl.ld_id.Ident.name
-                      ; pld_mutable = lbl.ld_mutable
-                      ; pld_type = gen_core_type lbl.ld_type
-                      ; pld_loc = Location.none
-                      ; pld_attributes = lbl.ld_attributes
-                      })
-                     labels)
-             | Type_variant cstrs ->
-               Parsetree.Ptype_variant
-                 (List.map (fun c ->
-                      { Parsetree.pcd_name = mk_var c.cd_id.Ident.name
-                      ; pcd_args = List.map gen_core_type c.cd_args
-                      ; pcd_res =
-                          (match c.cd_res with
-                           | None -> None
-                           | Some t -> Some (gen_core_type t))
-                      ; pcd_loc = Location.none
-                      ; pcd_attributes = c.cd_attributes
-                      })
-                     cstrs))
-          (mk_var id.Ident.name)    ]
-  | Sig_module (id, mod_decl, _) ->
-    Ast_helper.Str.module_
-      (Ast_helper.Mb.mk
-         (mk_var id.Ident.name)
-         (gen_module env mod_decl.md_type))
-  | _ -> raise (Not_allowed "signature item")
 
 and gen_core_type type_expr =
   let open Types in
@@ -297,6 +240,116 @@ and gen_core_type type_expr =
   | Tarrow (label, t0, t1, _) ->
     Ast_helper.Typ.arrow label (gen_core_type t0) (gen_core_type t1)
   | _ -> Ast_helper.Typ.var "hello"
+
+and gen_modtype module_type =
+  let open Types in
+  match module_type with
+  | Mty_ident path ->
+    Ast_helper.Mty.ident (mk_var (Untypeast.lident_of_path path))
+  | Mty_alias path ->
+    Ast_helper.Mty.alias (mk_var (Untypeast.lident_of_path path))
+  | Mty_signature s ->
+    let s = Lazy.force s in
+    Ast_helper.Mty.signature (List.map gen_sig_item s)
+    (* Ast_helper.Mty.alias (mk_var (Longident.Lident "Looool")) *)
+  | _ -> failwith "todo"
+
+and gen_sig_value id vd =
+  let open Types in
+  { Parsetree.pval_name = mk_var id.Ident.name
+  ; pval_type = gen_core_type vd.val_type
+  ; pval_prim = []
+  ; pval_attributes = vd.val_attributes
+  ; pval_loc = Location.none
+  }
+
+and gen_type_decl id type_decl =
+  let open Types in
+  [ Ast_helper.Type.mk
+      ?manifest:
+        (match type_decl.type_manifest with
+         | None -> None
+         | Some m -> Some (gen_core_type m))
+      ~params:
+        (List.map
+           (fun t ->
+             let ct = gen_core_type t in
+             ct, Asttypes.Invariant)
+           type_decl.type_params)
+      ~kind:
+        (match type_decl.type_kind with
+         | Type_open -> Parsetree.Ptype_open
+         | Type_abstract -> Parsetree.Ptype_abstract
+         | Type_record (labels, _) ->
+           Parsetree.Ptype_record
+             (List.map (fun lbl ->
+                  { Parsetree.pld_name = mk_var lbl.ld_id.Ident.name
+                  ; pld_mutable = lbl.ld_mutable
+                  ; pld_type = gen_core_type lbl.ld_type
+                  ; pld_loc = Location.none
+                  ; pld_attributes = lbl.ld_attributes
+                  })
+                 labels)
+         | Type_variant cstrs ->
+           Parsetree.Ptype_variant
+             (List.map (fun c ->
+                  { Parsetree.pcd_name = mk_var c.cd_id.Ident.name
+                  ; pcd_args = List.map gen_core_type c.cd_args
+                  ; pcd_res =
+                      (match c.cd_res with
+                       | None -> None
+                       | Some t -> Some (gen_core_type t))
+                  ; pcd_loc = Location.none
+                  ; pcd_attributes = c.cd_attributes
+                  })
+                 cstrs))
+      (mk_var id.Ident.name)    ]
+
+and gen_modtype_decl id modtype_decl =
+  let open Types in
+  Ast_helper.Mtd.mk
+    ?typ:
+      (match modtype_decl.mtd_type with
+       | None -> None
+       | Some t -> Some (gen_modtype t))
+    (mk_var id.Ident.name)
+
+and gen_sig_item sig_item =
+  let open Types in
+  match sig_item with
+  | Sig_value (id, vd) ->
+    Ast_helper.Sig.value (gen_sig_value id vd)
+  | Sig_type (id, type_decl, _) ->
+    Ast_helper.Sig.type_ (gen_type_decl id type_decl)
+  | Sig_modtype (id, modtype_decl) ->
+    Ast_helper.Sig.modtype (gen_modtype_decl id modtype_decl)
+  | Sig_module (id, mod_decl, _) ->
+    Ast_helper.Sig.module_
+      (Ast_helper.Md.mk
+         (mk_var id.Ident.name)
+         (gen_modtype mod_decl.md_type))
+  | _ -> failwith "todo"
+
+and gen_signature_item env sig_item =
+  let open Types in
+  match sig_item with
+  | Sig_value (id, vd) ->
+    let expr, _ = gen_expr env vd.Types.val_type in
+    Ast_helper.Str.value
+      Asttypes.Nonrecursive
+      [ Ast_helper.Vb.mk
+         (Ast_helper.Pat.var (mk_var id.Ident.name))
+         expr ]
+  | Sig_type (id, type_decl, _) ->
+    Ast_helper.Str.type_ (gen_type_decl id type_decl)
+  | Sig_modtype (id, modtype_decl) ->
+    Ast_helper.Str.modtype (gen_modtype_decl id modtype_decl)
+  | Sig_module (id, mod_decl, _) ->
+    Ast_helper.Str.module_
+      (Ast_helper.Mb.mk
+         (mk_var id.Ident.name)
+         (gen_module env mod_decl.md_type))
+  | _ -> failwith "todo"
 
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
