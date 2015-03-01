@@ -115,10 +115,23 @@ let rec gen_expr env type_expr =
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tvar _     -> raise (Not_allowed "non-immediate type")
   | Tobject _  -> raise (Not_allowed "object type")
-  | Tconstr (path, _params, _) ->
+  | Tconstr (path, params, _) ->
     begin try Hashtbl.find Predef_types.tbl path (), env
-    with Not_found -> raise (Not_allowed "constr")
-    end
+    with Not_found ->
+      match Env.find_type_descrs path env with
+      | [], labels when labels <> [] ->
+          let fields, env' =
+            List.fold_left labels
+              ~init:([], env)
+              ~f:(fun (fields, env) lbl ->
+                 Ctype.unify env lbl.lbl_res type_expr ;
+                 let expr, env' = gen_expr env lbl.lbl_arg in
+                 let field = mk_id lbl.lbl_name in
+                 (field, expr) :: fields, env') in
+          let fields = List.rev fields in
+          Ast_helper.Exp.record fields None, env'
+      | _ -> raise (Not_allowed "constr")
+      end
   | Tpackage (path, ids, args) -> raise (Not_allowed "modules")
   | Tvariant row_desc -> raise (Not_allowed "variant type")
 
