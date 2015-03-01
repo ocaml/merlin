@@ -276,6 +276,11 @@ and gen_signature_item env sig_item =
                       })
                      cstrs))
           (mk_var id.Ident.name)    ]
+  | Sig_module (id, mod_decl, _) ->
+    Ast_helper.Str.module_
+      (Ast_helper.Mb.mk
+         (mk_var id.Ident.name)
+         (gen_module env mod_decl.md_type))
   | _ -> raise (Not_allowed "signature item")
 
 and gen_core_type type_expr =
