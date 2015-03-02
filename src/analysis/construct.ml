@@ -128,7 +128,6 @@ let rec gen_expr env type_expr =
   match type_expr.desc with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tunivar _ | Tvar _ -> raise (Not_allowed "non-immediate type")
-  | Tobject _  -> raise (Not_allowed "object type")
   | Tsubst t -> gen_expr env t
   | Tpoly (t, _) -> gen_expr env t
 
@@ -235,10 +234,32 @@ let rec gen_expr env type_expr =
     with Typemod.Error _ -> raise (Not_allowed "first-class module")
     end
 
-  | _ ->
-    let fmt, to_string = Format.to_string () in
-    Printtyp.type_expr fmt type_expr ;
-    raise (Not_allowed (to_string ()))
+  | Tobject (fields, _) ->
+    let rec go acc type_expr =
+       let type_expr = Btype.repr type_expr in
+       match type_expr.desc with
+       | Tnil | Tvar None -> List.rev acc
+       | Tfield (name, kind, ty, tail) ->
+         let expr, _ = gen_expr env ty in
+         let field =
+           Ast_helper.Cf.method_ (mk_var name) Asttypes.Public
+             (Ast_helper.Cf.concrete Asttypes.Fresh expr) in
+         go (field :: acc) tail
+       | _ ->
+          Logger.errorf section (fun fmt () ->
+            Format.fprintf fmt "object type ends in %a"
+              Printtyp.type_expr type_expr
+          ) () ;
+         assert false in
+    let fields = go [] fields in
+    let ast =
+      Ast_helper.Exp.object_
+        (Ast_helper.Cstr.mk
+           (Ast_helper.Pat.any ())
+           fields) in
+    ast, env
+  | Tfield _ -> raise (Not_allowed "field")
+  | Tnil -> raise (Not_allowed "nil")
 
 and gen_tuple env types =
   let rec go acc env = function
@@ -327,7 +348,25 @@ and gen_core_type type_expr =
          row_desc.row_fields)
       (if row_desc.row_closed then Asttypes.Closed else Asttypes.Open)
       None
-  | _ -> Ast_helper.Typ.var "hello"
+  | Tobject (fields, _) ->
+    let rec go acc type_expr =
+       let type_expr = Btype.repr type_expr in
+       match type_expr.desc with
+       | Tnil      -> List.rev acc, Asttypes.Closed
+       | Tvar None -> List.rev acc, Asttypes.Open
+       | Tfield (name, kind, def, tail) ->
+         let field = (name, [], gen_core_type def) in
+         go (field :: acc) tail
+       | other ->
+          Logger.errorf section (fun fmt () ->
+            Format.fprintf fmt "object type ends in %a"
+              Printtyp.type_expr type_expr
+          ) () ;
+         assert false in
+    let fields, closed = go [] fields in
+    Ast_helper.Typ.object_ fields closed
+  | Tfield _ -> raise (Not_allowed "field")
+  | Tnil -> raise (Not_allowed "nil")
 
 and gen_sig_value id vd =
   let open Types in
