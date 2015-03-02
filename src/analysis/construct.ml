@@ -183,7 +183,27 @@ let rec gen_expr env type_expr =
         end
       | _ -> raise (Not_allowed "constr")
       end
-  | Tvariant row_desc -> raise (Not_allowed "variant type")
+
+  | Tvariant row_desc ->
+    let fields =
+      List.filter
+        (fun (lbl, row_field) -> match row_field with
+           | Rpresent _
+           | Reither (true, [], _, _)
+           | Reither (false, [_], _, _) -> true
+           | _ -> false)
+        row_desc.row_fields in
+    begin match fields with
+      | (lbl, row_field) :: _ ->
+        let arg, env' = match row_field with
+          | Reither (false, [ty], _, _) | Rpresent (Some ty) ->
+            let expr, env' = gen_expr env ty in
+            Some expr, env'
+          | _ -> None, env in
+        Ast_helper.Exp.variant lbl arg, env'
+      | _ ->
+        raise (Not_allowed "empty variant type")
+    end
 
   | Ttuple ts ->
     gen_tuple env ts
@@ -270,6 +290,8 @@ and gen_core_type type_expr =
   | Tsubst e -> gen_core_type e
   | Tunivar None | Tvar None -> Ast_helper.Typ.any ()
   | Tunivar (Some name) | Tvar (Some name) -> Ast_helper.Typ.var name
+  | Ttuple ts ->
+    Ast_helper.Typ.tuple (List.map gen_core_type ts)
   | Tpoly (t, vs) ->
     Ast_helper.Typ.poly
       (List.map
@@ -291,6 +313,20 @@ and gen_core_type type_expr =
          (fun id t -> (mk_var id), gen_core_type t)
          lids
          args)
+  | Tvariant row_desc ->
+    Ast_helper.Typ.variant
+      (List.map
+         (fun (lbl, row_field) -> match row_field with
+            | Rpresent None ->
+              Parsetree.Rtag (lbl, [], true, [])
+            | Rpresent (Some t) ->
+              Parsetree.Rtag (lbl, [], false, [gen_core_type t])
+            | Reither (is_empty, ts, _, _) ->
+              Parsetree.Rtag (lbl, [], is_empty, List.map gen_core_type ts)
+            | Rabsent -> assert false)
+         row_desc.row_fields)
+      (if row_desc.row_closed then Asttypes.Closed else Asttypes.Open)
+      None
   | _ -> Ast_helper.Typ.var "hello"
 
 and gen_sig_value id vd =
