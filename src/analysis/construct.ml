@@ -167,8 +167,14 @@ let rec gen_expr env type_expr =
             let args, env' =
               if cstr_descr.cstr_arity <= 0
               then None, env
-              else let t, env' = gen_tuple env cstr_descr.cstr_args in
-                   Some t, env' in
+              else begin
+                let r_env = ref env in
+                let ty_args, ty_res = Ctype.instance_constructor cstr_descr in
+                Ctype.unify_gadt ~newtype_level:0 r_env type_expr ty_res ;
+                let env = !r_env in
+                let t, env' = gen_tuple env ty_args in
+                Some t, env'
+              end in
             let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
             Ast_helper.Exp.construct lidl args, env
         end
