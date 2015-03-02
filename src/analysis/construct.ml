@@ -305,6 +305,22 @@ and gen_type_decl id type_decl =
                  cstrs))
       (mk_var id.Ident.name)    ]
 
+and gen_extension_constructor id ext =
+  let open Types in
+  { Parsetree.pext_name = mk_var id.Ident.name
+  ; pext_kind =
+      Parsetree.Pext_decl
+        (List.map gen_core_type ext.ext_args,
+         Option.map gen_core_type ext.ext_ret_type)
+  ; pext_loc = Location.none
+  ; pext_attributes = ext.ext_attributes
+  }
+
+and gen_type_extension id ext =
+  let open Types in
+  Ast_helper.Te.mk (mk_id (Path.name ext.ext_type_path))
+    [ gen_extension_constructor id ext ]
+
 and gen_modtype_decl id modtype_decl =
   let open Types in
   Ast_helper.Mtd.mk
@@ -321,6 +337,10 @@ and gen_sig_item sig_item =
     Ast_helper.Sig.value (gen_sig_value id vd)
   | Sig_type (id, type_decl, _) ->
     Ast_helper.Sig.type_ (gen_type_decl id type_decl)
+  | Sig_typext (id, ext, Text_exception) ->
+    Ast_helper.Sig.exception_ (gen_extension_constructor id ext)
+  | Sig_typext (id, ext, _) ->
+    Ast_helper.Sig.type_extension (gen_type_extension id ext)
   | Sig_modtype (id, modtype_decl) ->
     Ast_helper.Sig.modtype (gen_modtype_decl id modtype_decl)
   | Sig_module (id, mod_decl, _) ->
@@ -342,6 +362,10 @@ and gen_signature_item env sig_item =
          expr ]
   | Sig_type (id, type_decl, _) ->
     Ast_helper.Str.type_ (gen_type_decl id type_decl)
+  | Sig_typext (id, ext, Text_exception) ->
+    Ast_helper.Str.exception_ (gen_extension_constructor id ext)
+  | Sig_typext (id, ext, _) ->
+    Ast_helper.Str.type_extension (gen_type_extension id ext)
   | Sig_modtype (id, modtype_decl) ->
     Ast_helper.Str.modtype (gen_modtype_decl id modtype_decl)
   | Sig_module (id, mod_decl, _) ->
