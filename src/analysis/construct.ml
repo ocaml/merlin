@@ -122,6 +122,17 @@ let prefix env path =
       | Ldot (lid, _) -> Ldot (lid, name)
       | _ -> assert false
 
+let map_signature f items =
+  List.filter_map items
+    ~f:(function
+      | Types.Sig_type (id, _, _)
+        when id.Ident.name.[0] = '#'
+        (* type #class = < .. > *)
+      -> None
+      | sig_item ->
+        Some (f sig_item))
+
+
 let rec gen_expr env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
@@ -275,7 +286,7 @@ and gen_module env mod_type =
   match mod_type with
   | Mty_signature lazy_sig ->
     let sg = Lazy.force lazy_sig in
-    let items = List.map (gen_signature_item env) sg in
+    let items = map_signature (gen_signature_item env) sg in
     Ast_helper.Mod.structure items
   | Mty_ident path | Mty_alias path ->
     let m = Env.find_modtype path env in
@@ -297,7 +308,7 @@ and gen_modtype module_type =
     Ast_helper.Mty.alias (mk_var (Untypeast.lident_of_path path))
   | Mty_signature s ->
     let s = Lazy.force s in
-    Ast_helper.Mty.signature (List.map gen_sig_item s)
+    Ast_helper.Mty.signature (map_signature gen_sig_item s)
   | Mty_functor (id, arg, out) ->
     Ast_helper.Mty.functor_ (mk_var id.Ident.name)
       (Option.map gen_modtype arg)
