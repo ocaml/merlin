@@ -183,7 +183,6 @@ let rec gen_expr env type_expr =
         end
       | _ -> raise (Not_allowed "constr")
       end
-  | Tpackage (path, ids, args) -> raise (Not_allowed "modules")
   | Tvariant row_desc -> raise (Not_allowed "variant type")
 
   | Ttuple ts ->
@@ -204,6 +203,17 @@ let rec gen_expr env type_expr =
         (Ast_helper.Pat.var (mk_var name))
         out in
     ast, env''
+
+  | Tpackage (path, ids, args) ->
+    begin try
+      let ty = Typemod.modtype_of_package env Location.none path ids args in
+      let ast =
+        Ast_helper.Exp.constraint_
+          (Ast_helper.Exp.pack (gen_module env ty))
+          (gen_core_type type_expr) in
+      ast, env
+    with Typemod.Error _ -> raise (Not_allowed "first-class module")
+    end
 
   | _ ->
     let fmt, to_string = Format.to_string () in
@@ -274,6 +284,13 @@ and gen_core_type type_expr =
       (List.map gen_core_type params)
   | Tarrow (label, t0, t1, _) ->
     Ast_helper.Typ.arrow label (gen_core_type t0) (gen_core_type t1)
+  | Tpackage (path, lids, args) ->
+    Ast_helper.Typ.package
+      (mk_var (Untypeast.lident_of_path path))
+      (List.map2
+         (fun id t -> (mk_var id), gen_core_type t)
+         lids
+         args)
   | _ -> Ast_helper.Typ.var "hello"
 
 and gen_sig_value id vd =
