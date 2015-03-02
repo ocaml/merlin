@@ -223,14 +223,31 @@ and gen_module env mod_type =
     let sg = Lazy.force lazy_sig in
     let items = List.map (gen_signature_item env) sg in
     Ast_helper.Mod.structure items
-  | Mty_ident path ->
+  | Mty_ident path | Mty_alias path ->
     let m = Env.find_modtype path env in
     begin match m.mtd_type with
       | Some t -> gen_module env t
       | None -> raise (Not_allowed "module type")
     end
-  | _ -> raise (Not_allowed "module type")
+  | Mty_functor (id, arg, out) ->
+    Ast_helper.Mod.functor_ (mk_var id.Ident.name)
+      (Option.map gen_modtype arg)
+      (gen_module env out)
 
+and gen_modtype module_type =
+  let open Types in
+  match module_type with
+  | Mty_ident path ->
+    Ast_helper.Mty.ident (mk_var (Untypeast.lident_of_path path))
+  | Mty_alias path ->
+    Ast_helper.Mty.alias (mk_var (Untypeast.lident_of_path path))
+  | Mty_signature s ->
+    let s = Lazy.force s in
+    Ast_helper.Mty.signature (List.map gen_sig_item s)
+  | Mty_functor (id, arg, out) ->
+    Ast_helper.Mty.functor_ (mk_var id.Ident.name)
+      (Option.map gen_modtype arg)
+      (gen_modtype out)
 
 and gen_core_type type_expr =
   let open Types in
@@ -246,19 +263,6 @@ and gen_core_type type_expr =
   | Tarrow (label, t0, t1, _) ->
     Ast_helper.Typ.arrow label (gen_core_type t0) (gen_core_type t1)
   | _ -> Ast_helper.Typ.var "hello"
-
-and gen_modtype module_type =
-  let open Types in
-  match module_type with
-  | Mty_ident path ->
-    Ast_helper.Mty.ident (mk_var (Untypeast.lident_of_path path))
-  | Mty_alias path ->
-    Ast_helper.Mty.alias (mk_var (Untypeast.lident_of_path path))
-  | Mty_signature s ->
-    let s = Lazy.force s in
-    Ast_helper.Mty.signature (List.map gen_sig_item s)
-    (* Ast_helper.Mty.alias (mk_var (Longident.Lident "Looool")) *)
-  | _ -> failwith "todo"
 
 and gen_sig_value id vd =
   let open Types in
