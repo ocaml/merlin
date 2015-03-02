@@ -127,8 +127,11 @@ let rec gen_expr env type_expr =
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
-  | Tvar _     -> raise (Not_allowed "non-immediate type")
+  | Tunivar _ | Tvar _ -> raise (Not_allowed "non-immediate type")
   | Tobject _  -> raise (Not_allowed "object type")
+  | Tsubst t -> gen_expr env t
+  | Tpoly (t, _) -> gen_expr env t
+
   | Tconstr (path, params, _) ->
     begin try Hashtbl.find Predef_types.tbl path (), env
     with Not_found ->
@@ -254,8 +257,17 @@ and gen_core_type type_expr =
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
-  | Tvar None -> Ast_helper.Typ.any ()
-  | Tvar (Some name) -> Ast_helper.Typ.var name
+  | Tsubst e -> gen_core_type e
+  | Tunivar None | Tvar None -> Ast_helper.Typ.any ()
+  | Tunivar (Some name) | Tvar (Some name) -> Ast_helper.Typ.var name
+  | Tpoly (t, vs) ->
+    Ast_helper.Typ.poly
+      (List.map
+         (fun v -> match v.desc with
+           | Tunivar (Some name) | Tvar (Some name) -> name
+           | _ -> failwith "poly: not a var")
+          vs)
+      (gen_core_type t)
   | Tconstr (path, params, _) ->
     Ast_helper.Typ.constr
       (mk_var (Untypeast.lident_of_path path))
