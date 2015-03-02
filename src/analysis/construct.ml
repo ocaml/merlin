@@ -354,6 +354,8 @@ and gen_core_type type_expr =
        match type_expr.desc with
        | Tnil      -> List.rev acc, Asttypes.Closed
        | Tvar None -> List.rev acc, Asttypes.Open
+       | Tfield ("*dummy method*", _, _, tail) ->
+         go acc tail
        | Tfield (name, kind, def, tail) ->
          let field = (name, [], gen_core_type def) in
          go (field :: acc) tail
@@ -444,6 +446,117 @@ and gen_modtype_decl id modtype_decl =
        | Some t -> Some (gen_modtype t))
     (mk_var id.Ident.name)
 
+and gen_class_descr params path type_ =
+  gen_class_infos params path (gen_class_type type_)
+
+and gen_class_decl env params path type_ =
+  gen_class_infos params path (gen_class_expr env type_)
+
+and gen_class_infos
+  : type a. Types.type_expr list -> Path.t -> a -> a Parsetree.class_infos
+  = fun params path expr ->
+  let open Types in
+  let open Parsetree in
+  { Parsetree.pci_virt = Asttypes.Concrete
+  ; pci_params = List.map (fun t -> gen_core_type t, Asttypes.Invariant) params
+  ; pci_name = mk_var (Path.last path)
+  ; pci_expr = expr
+  ; pci_loc = Location.none
+  ; pci_attributes = []
+  }
+
+and gen_class_type cty : Parsetree.class_type =
+  let open Types in
+  let open Parsetree in
+  { pcty_loc = Location.none
+  ; pcty_attributes = []
+  ; pcty_desc =
+      match cty with
+      | Cty_constr (path, args, cty) ->
+        Parsetree.Pcty_constr
+          (mk_var (Untypeast.lident_of_path path),
+           List.map gen_core_type args)
+      | Cty_signature class_sig ->
+        Pcty_signature
+          { pcsig_self = gen_core_type class_sig.csig_self
+          ; pcsig_fields = [] (* todo *)
+          }
+      | Cty_arrow (lbl, ty, cty) ->
+        Pcty_arrow (lbl, gen_core_type ty, gen_class_type cty)
+  }
+
+and gen_class_expr env cty : Parsetree.class_expr =
+  let open Types in
+  let open Parsetree in
+  { pcl_loc = Location.none
+  ; pcl_attributes = []
+  ; pcl_desc =
+      match cty with
+      | Cty_constr (path, args, cty) ->
+        Parsetree.Pcl_constr
+          (mk_var (Untypeast.lident_of_path path),
+           List.map gen_core_type args)
+      | Cty_arrow (lbl, ty, cty) ->
+        let var, env = freevar ty env in
+        let var = Ast_helper.Pat.var (mk_var var) in
+        Pcl_fun (lbl, None, var, gen_class_expr env cty)
+      | Cty_signature class_sig ->
+        let type_expr = Btype.repr class_sig.csig_self in
+        begin match type_expr.desc with
+          | Tobject (fields, _) ->
+            let rec go acc type_expr =
+               let type_expr = Btype.repr type_expr in
+               match type_expr.desc with
+               | Tnil | Tvar None -> List.rev acc
+               | Tfield ("*dummy method*", _, _, tail) ->
+                 go acc tail
+               | Tfield (name, kind, def, tail) ->
+                 let expr, _ = gen_expr env def in
+                 let field =
+                   gen_class_field
+                     (Parsetree.Pcf_method
+                        (mk_var name,
+                         Asttypes.Public,
+                         Cfk_concrete (Asttypes.Fresh, expr))) in
+
+                 go (field :: acc) tail
+               | other ->
+                  Logger.errorf section (fun fmt () ->
+                    Format.fprintf fmt "object type ends in %a"
+                      Printtyp.type_expr type_expr
+                  ) () ;
+                 assert false in
+            let methods = go [] fields in
+            let vars =
+              Types.Vars.fold
+                (fun name (is_mutable, is_virtual, ty) lst ->
+                   let def =
+                     match is_virtual with
+                     | Asttypes.Virtual ->
+                       Parsetree.Cfk_virtual (gen_core_type ty)
+                     | Asttypes.Concrete ->
+                       let expr, _ = gen_expr env ty in
+                       Cfk_concrete (Asttypes.Fresh, expr) in
+                   let var =
+                     gen_class_field
+                       (Parsetree.Pcf_val (mk_var name, is_mutable, def)) in
+                   var :: lst)
+                class_sig.csig_vars
+                [] in
+            Pcl_structure
+              { pcstr_self = Ast_helper.Pat.any ()
+              ; pcstr_fields = vars @ methods
+              }
+          | _ -> failwith "not an object"
+        end
+  }
+
+and gen_class_field f =
+  { Parsetree.pcf_loc = Location.none
+  ; pcf_attributes = []
+  ; pcf_desc = f
+  }
+
 and gen_sig_item sig_item =
   let open Types in
   match sig_item with
@@ -462,7 +575,12 @@ and gen_sig_item sig_item =
       (Ast_helper.Md.mk
          (mk_var id.Ident.name)
          (gen_modtype mod_decl.md_type))
-  | _ -> failwith "todo"
+  | Sig_class (_, c, _) ->
+    Ast_helper.Sig.class_
+      [ gen_class_descr c.cty_params c.cty_path c.cty_type ]
+  | Sig_class_type (_, c, _) ->
+    Ast_helper.Sig.class_type
+      [ gen_class_descr c.clty_params c.clty_path c.clty_type ]
 
 and gen_signature_item env sig_item =
   let open Types in
@@ -487,7 +605,12 @@ and gen_signature_item env sig_item =
       (Ast_helper.Mb.mk
          (mk_var id.Ident.name)
          (gen_module env mod_decl.md_type))
-  | _ -> failwith "todo"
+  | Sig_class (_, c, _) ->
+    Ast_helper.Str.class_
+      [ gen_class_decl env c.cty_params c.cty_path c.cty_type ]
+  | Sig_class_type (_, c, _) ->
+    Ast_helper.Str.class_type
+      [ gen_class_descr c.clty_params c.clty_path c.clty_type ]
 
 
 let needs_parentheses e = match e.Parsetree.pexp_desc with
