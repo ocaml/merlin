@@ -29,6 +29,9 @@
 
 open Std
 open BrowseT
+open Types
+open Parsetree
+module A = Ast_helper
 
 let section = Logger.Section.of_string "construct"
 
@@ -43,25 +46,27 @@ let () =
 
 let mk_id s  = Location.mknoloc (Longident.Lident s)
 let mk_var s = Location.mknoloc s
+let id_of_path path = mk_var (Untypeast.lident_of_path path)
+let var_of_id id = mk_var id.Ident.name
 
 module Predef_types = struct
   let unit_ () =
-    Ast_helper.Exp.construct (mk_var (Longident.Lident "()")) None
+    A.Exp.construct (mk_id "()") None
 
   let char_ () =
-    Ast_helper.Exp.constant (Asttypes.Const_char 'c')
+    A.Exp.constant (Asttypes.Const_char 'c')
 
   let int_ () =
-    Ast_helper.Exp.constant (Asttypes.Const_int 0)
+    A.Exp.constant (Asttypes.Const_int 0)
 
   let string_ () =
-    Ast_helper.Exp.constant (Ast_helper.const_string "")
+    A.Exp.constant (A.const_string "")
 
   let list_ () =
-    Ast_helper.Exp.construct (mk_var (Longident.Lident "[]")) None
+    A.Exp.construct (mk_id "[]") None
 
   let array_ () =
-    Ast_helper.Exp.array []
+    A.Exp.array []
 
   let tbl = Hashtbl.create 6
 
@@ -78,8 +83,8 @@ end
 
 let bind name t env =
   let vd = {
-    Types.val_type = t ;
-    val_kind = Types.Val_unbound ;
+    val_type = t ;
+    val_kind = Val_unbound ;
     val_loc = Location.none ;
     val_attributes = []
   } in
@@ -106,7 +111,7 @@ let freevar ?(prefix = "") t env =
 
 let hole t env =
   let name, env' = freevar ~prefix:"_" t env in
-  let hole = Ast_helper.Exp.ident (mk_id name) in
+  let hole = A.Exp.ident (mk_id name) in
   hole, env'
 
 let prefix env path =
@@ -126,7 +131,7 @@ let prefix env path =
 let map_signature f items =
   List.filter_map items
     ~f:(function
-      | Types.Sig_type (id, _, _)
+      | Sig_type (id, _, _)
         when id.Ident.name.[0] = '#'
         (* type #class = < .. > *)
       -> None
@@ -165,7 +170,6 @@ and gen_expr ~many env type_expr =
   res
 
 and gen_expr' ~many env type_expr =
-  let open Types in
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
@@ -201,8 +205,8 @@ and gen_expr' ~many env type_expr =
       else lbl, bind lbl t0 env in
     gen_expr ~many env' t1 >>= fun (out, env'') ->
     let ast =
-      Ast_helper.Exp.fun_ label None
-        (Ast_helper.Pat.var (mk_var name))
+      A.Exp.fun_ label None
+        (A.Pat.var (mk_var name))
         out in
     [ ast, env'' ]
 
@@ -210,8 +214,8 @@ and gen_expr' ~many env type_expr =
     begin try
       let ty = Typemod.modtype_of_package env Location.none path ids args in
       let ast =
-        Ast_helper.Exp.constraint_
-          (Ast_helper.Exp.pack (gen_module env ty))
+        A.Exp.constraint_
+          (A.Exp.pack (gen_module env ty))
           (gen_core_type type_expr) in
       [ ast, env ]
     with Typemod.Error _ -> raise (Not_allowed "first-class module")
@@ -225,8 +229,8 @@ and gen_expr' ~many env type_expr =
        | Tfield (name, kind, ty, tail) ->
          let expr, _ = gen_expr1 env ty in
          let field =
-           Ast_helper.Cf.method_ (mk_var name) Asttypes.Public
-             (Ast_helper.Cf.concrete Asttypes.Fresh expr) in
+           A.Cf.method_ (mk_var name) Asttypes.Public
+             (A.Cf.concrete Asttypes.Fresh expr) in
          go (field :: acc) tail
        | _ ->
           Logger.errorf section (fun fmt () ->
@@ -236,9 +240,9 @@ and gen_expr' ~many env type_expr =
          assert false in
     let fields = go [] fields in
     let ast =
-      Ast_helper.Exp.object_
-        (Ast_helper.Cstr.mk
-           (Ast_helper.Pat.any ())
+      A.Exp.object_
+        (A.Cstr.mk
+           (A.Pat.any ())
            fields) in
     [ ast, env ]
   | Tfield _ -> raise (Not_allowed "field")
@@ -246,7 +250,7 @@ and gen_expr' ~many env type_expr =
 
 and from_type_decl ~many env path texpr =
   let tdecl = Env.find_type path env in
-  match tdecl.Types.type_manifest with
+  match tdecl.type_manifest with
   | Some te -> gen_expr ~many env te
   | None ->
     try [ Hashtbl.find Predef_types.tbl path (), env ]
@@ -265,10 +269,9 @@ and gen_product ~many env types =
 
 and gen_tuple ~many env types =
   gen_product ~many env types >>= fun (holes, env') ->
-  [ Ast_helper.Exp.tuple holes, env' ]
+  [ A.Exp.tuple holes, env' ]
 
 and gen_record ~many env path labels type_expr =
-  let open Types in
   let types =
     List.map labels ~f:(fun lbl ->
         let _, arg, res = Ctype.instance_label true lbl in
@@ -284,10 +287,9 @@ and gen_record ~many env path labels type_expr =
         else mk_id lbl.lbl_name in
       is_first := false ;
       field, expr) in
-  [ Ast_helper.Exp.record fields None, env' ]
+  [ A.Exp.record fields None, env' ]
 
 and gen_constrs ~many env path constrs type_expr =
-  let open Types in
   let are_types_unifiable typ =
     let snap = Btype.snapshot () in
     let res =
@@ -323,11 +325,10 @@ and gen_constrs ~many env path constrs type_expr =
        end)
       >>= fun (args, env') ->
       let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
-      [ Ast_helper.Exp.construct lidl args, env ]
+      [ A.Exp.construct lidl args, env ]
     end
 
 and gen_variant ~many env row_desc type_expr =
-  let open Types in
   let fields =
     List.filter
       (fun (lbl, row_field) -> match row_field with
@@ -349,16 +350,15 @@ and gen_variant ~many env row_desc type_expr =
        | _ ->
          ret [ None, env ])
        >>= fun (arg, env') ->
-       [ Ast_helper.Exp.variant lbl arg, env' ]
+       [ A.Exp.variant lbl arg, env' ]
     end
 
 and gen_module env mod_type =
-  let open Types in
   match mod_type with
   | Mty_signature lazy_sig ->
     let sg = Lazy.force lazy_sig in
     let items = map_signature (gen_signature_item env) sg in
-    Ast_helper.Mod.structure items
+    A.Mod.structure items
   | Mty_ident path | Mty_alias path ->
     let m = Env.find_modtype path env in
     begin match m.mtd_type with
@@ -366,37 +366,33 @@ and gen_module env mod_type =
       | None -> raise (Not_allowed "module type")
     end
   | Mty_functor (id, arg, out) ->
-    Ast_helper.Mod.functor_ (mk_var id.Ident.name)
+    A.Mod.functor_ (var_of_id id)
       (Option.map gen_modtype arg)
       (gen_module env out)
 
 and gen_modtype module_type =
-  let open Types in
   match module_type with
-  | Mty_ident path ->
-    Ast_helper.Mty.ident (mk_var (Untypeast.lident_of_path path))
-  | Mty_alias path ->
-    Ast_helper.Mty.alias (mk_var (Untypeast.lident_of_path path))
+  | Mty_ident path -> A.Mty.ident (id_of_path path)
+  | Mty_alias path -> A.Mty.alias (id_of_path path)
   | Mty_signature s ->
     let s = Lazy.force s in
-    Ast_helper.Mty.signature (map_signature gen_sig_item s)
+    A.Mty.signature (map_signature gen_sig_item s)
   | Mty_functor (id, arg, out) ->
-    Ast_helper.Mty.functor_ (mk_var id.Ident.name)
+    A.Mty.functor_ (var_of_id id)
       (Option.map gen_modtype arg)
       (gen_modtype out)
 
 and gen_core_type type_expr =
-  let open Types in
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tsubst e -> gen_core_type e
-  | Tunivar None | Tvar None -> Ast_helper.Typ.any ()
-  | Tunivar (Some name) | Tvar (Some name) -> Ast_helper.Typ.var name
+  | Tunivar None | Tvar None -> A.Typ.any ()
+  | Tunivar (Some name) | Tvar (Some name) -> A.Typ.var name
   | Ttuple ts ->
-    Ast_helper.Typ.tuple (List.map gen_core_type ts)
+    A.Typ.tuple (List.map gen_core_type ts)
   | Tpoly (t, vs) ->
-    Ast_helper.Typ.poly
+    A.Typ.poly
       (List.map
          (fun v -> match v.desc with
            | Tunivar (Some name) | Tvar (Some name) -> name
@@ -404,30 +400,25 @@ and gen_core_type type_expr =
           vs)
       (gen_core_type t)
   | Tconstr (path, params, _) ->
-    Ast_helper.Typ.constr
-      (mk_var (Untypeast.lident_of_path path))
+    A.Typ.constr (id_of_path path)
       (List.map gen_core_type params)
   | Tarrow (label, t0, t1, _) ->
-    Ast_helper.Typ.arrow label (gen_core_type t0) (gen_core_type t1)
+    A.Typ.arrow label (gen_core_type t0) (gen_core_type t1)
   | Tpackage (path, lids, args) ->
-    Ast_helper.Typ.package
-      (mk_var (Untypeast.lident_of_path path))
-      (List.map2
-         (fun id t -> (mk_var id), gen_core_type t)
-         lids
-         args)
+    A.Typ.package (id_of_path path)
+      (List.map2 lids args
+         ~f:(fun id t -> (mk_var id), gen_core_type t))
   | Tvariant row_desc ->
-    Ast_helper.Typ.variant
-      (List.map
-         (fun (lbl, row_field) -> match row_field with
+    A.Typ.variant
+      (List.map row_desc.row_fields
+         ~f:(fun (lbl, row_field) -> match row_field with
             | Rpresent None ->
-              Parsetree.Rtag (lbl, [], true, [])
+              Rtag (lbl, [], true, [])
             | Rpresent (Some t) ->
-              Parsetree.Rtag (lbl, [], false, [gen_core_type t])
+              Rtag (lbl, [], false, [gen_core_type t])
             | Reither (is_empty, ts, _, _) ->
-              Parsetree.Rtag (lbl, [], is_empty, List.map gen_core_type ts)
-            | Rabsent -> assert false)
-         row_desc.row_fields)
+              Rtag (lbl, [], is_empty, List.map gen_core_type ts)
+            | Rabsent -> assert false))
       (if row_desc.row_closed then Asttypes.Closed else Asttypes.Open)
       None
   | Tobject (fields, _) ->
@@ -448,13 +439,12 @@ and gen_core_type type_expr =
           ) () ;
          assert false in
     let fields, closed = go [] fields in
-    Ast_helper.Typ.object_ fields closed
+    A.Typ.object_ fields closed
   | Tfield _ -> raise (Not_allowed "field")
   | Tnil -> raise (Not_allowed "nil")
 
 and gen_sig_value id vd =
-  let open Types in
-  { Parsetree.pval_name = mk_var id.Ident.name
+  { pval_name = var_of_id id
   ; pval_type = gen_core_type vd.val_type
   ; pval_prim = []
   ; pval_attributes = vd.val_attributes
@@ -462,8 +452,7 @@ and gen_sig_value id vd =
   }
 
 and gen_type_decl id type_decl =
-  let open Types in
-  [ Ast_helper.Type.mk
+  [ A.Type.mk
       ?manifest:
         (match type_decl.type_manifest with
          | None -> None
@@ -476,12 +465,12 @@ and gen_type_decl id type_decl =
            type_decl.type_params)
       ~kind:
         (match type_decl.type_kind with
-         | Type_open -> Parsetree.Ptype_open
-         | Type_abstract -> Parsetree.Ptype_abstract
+         | Type_open -> Ptype_open
+         | Type_abstract -> Ptype_abstract
          | Type_record (labels, _) ->
-           Parsetree.Ptype_record
+           Ptype_record
              (List.map (fun lbl ->
-                  { Parsetree.pld_name = mk_var lbl.ld_id.Ident.name
+                  { pld_name = var_of_id lbl.ld_id
                   ; pld_mutable = lbl.ld_mutable
                   ; pld_type = gen_core_type lbl.ld_type
                   ; pld_loc = Location.none
@@ -489,9 +478,9 @@ and gen_type_decl id type_decl =
                   })
                  labels)
          | Type_variant cstrs ->
-           Parsetree.Ptype_variant
+           Ptype_variant
              (List.map (fun c ->
-                  { Parsetree.pcd_name = mk_var c.cd_id.Ident.name
+                  { pcd_name = var_of_id c.cd_id
                   ; pcd_args = List.map gen_core_type c.cd_args
                   ; pcd_res =
                       (match c.cd_res with
@@ -501,13 +490,12 @@ and gen_type_decl id type_decl =
                   ; pcd_attributes = c.cd_attributes
                   })
                  cstrs))
-      (mk_var id.Ident.name)    ]
+      (var_of_id id) ]
 
 and gen_extension_constructor id ext =
-  let open Types in
-  { Parsetree.pext_name = mk_var id.Ident.name
+  { pext_name = var_of_id id
   ; pext_kind =
-      Parsetree.Pext_decl
+      Pext_decl
         (List.map gen_core_type ext.ext_args,
          Option.map gen_core_type ext.ext_ret_type)
   ; pext_loc = Location.none
@@ -515,18 +503,16 @@ and gen_extension_constructor id ext =
   }
 
 and gen_type_extension id ext =
-  let open Types in
-  Ast_helper.Te.mk (mk_id (Path.name ext.ext_type_path))
+  A.Te.mk (mk_id (Path.name ext.ext_type_path))
     [ gen_extension_constructor id ext ]
 
 and gen_modtype_decl id modtype_decl =
-  let open Types in
-  Ast_helper.Mtd.mk
+  A.Mtd.mk
     ?typ:
       (match modtype_decl.mtd_type with
        | None -> None
        | Some t -> Some (gen_modtype t))
-    (mk_var id.Ident.name)
+    (var_of_id id)
 
 and gen_class_descr params path type_ =
   gen_class_infos params path (gen_class_type type_)
@@ -535,11 +521,9 @@ and gen_class_decl env params path type_ =
   gen_class_infos params path (gen_class_expr env type_)
 
 and gen_class_infos
-  : type a. Types.type_expr list -> Path.t -> a -> a Parsetree.class_infos
+  : type a. type_expr list -> Path.t -> a -> a class_infos
   = fun params path expr ->
-  let open Types in
-  let open Parsetree in
-  { Parsetree.pci_virt = Asttypes.Concrete
+  { pci_virt = Asttypes.Concrete
   ; pci_params = List.map (fun t -> gen_core_type t, Asttypes.Invariant) params
   ; pci_name = mk_var (Path.last path)
   ; pci_expr = expr
@@ -547,16 +531,14 @@ and gen_class_infos
   ; pci_attributes = []
   }
 
-and gen_class_type cty : Parsetree.class_type =
-  let open Types in
-  let open Parsetree in
+and gen_class_type cty =
   { pcty_loc = Location.none
   ; pcty_attributes = []
   ; pcty_desc =
       match cty with
       | Cty_constr (path, args, cty) ->
-        Parsetree.Pcty_constr
-          (mk_var (Untypeast.lident_of_path path),
+        Pcty_constr
+          (id_of_path path,
            List.map gen_core_type args)
       | Cty_signature class_sig ->
         Pcty_signature
@@ -567,20 +549,17 @@ and gen_class_type cty : Parsetree.class_type =
         Pcty_arrow (lbl, gen_core_type ty, gen_class_type cty)
   }
 
-and gen_class_expr env cty : Parsetree.class_expr =
-  let open Types in
-  let open Parsetree in
+and gen_class_expr env cty =
   { pcl_loc = Location.none
   ; pcl_attributes = []
   ; pcl_desc =
       match cty with
       | Cty_constr (path, args, cty) ->
-        Parsetree.Pcl_constr
-          (mk_var (Untypeast.lident_of_path path),
-           List.map gen_core_type args)
+        Pcl_constr (id_of_path path,
+                    List.map gen_core_type args)
       | Cty_arrow (lbl, ty, cty) ->
         let var, env = freevar ty env in
-        let var = Ast_helper.Pat.var (mk_var var) in
+        let var = A.Pat.var (mk_var var) in
         Pcl_fun (lbl, None, var, gen_class_expr env cty)
       | Cty_signature class_sig ->
         let type_expr = Btype.repr class_sig.csig_self in
@@ -596,7 +575,7 @@ and gen_class_expr env cty : Parsetree.class_expr =
                  let expr, _ = gen_expr1 env def in
                  let field =
                    gen_class_field
-                     (Parsetree.Pcf_method
+                     (Pcf_method
                         (mk_var name,
                          Asttypes.Public,
                          Cfk_concrete (Asttypes.Fresh, expr))) in
@@ -610,23 +589,23 @@ and gen_class_expr env cty : Parsetree.class_expr =
                  assert false in
             let methods = go [] fields in
             let vars =
-              Types.Vars.fold
+              Vars.fold
                 (fun name (is_mutable, is_virtual, ty) lst ->
                    let def =
                      match is_virtual with
                      | Asttypes.Virtual ->
-                       Parsetree.Cfk_virtual (gen_core_type ty)
+                       Cfk_virtual (gen_core_type ty)
                      | Asttypes.Concrete ->
                        let expr, _ = gen_expr1 env ty in
                        Cfk_concrete (Asttypes.Fresh, expr) in
                    let var =
                      gen_class_field
-                       (Parsetree.Pcf_val (mk_var name, is_mutable, def)) in
+                       (Pcf_val (mk_var name, is_mutable, def)) in
                    var :: lst)
                 class_sig.csig_vars
                 [] in
             Pcl_structure
-              { pcstr_self = Ast_helper.Pat.any ()
+              { pcstr_self = A.Pat.any ()
               ; pcstr_fields = vars @ methods
               }
           | _ -> failwith "not an object"
@@ -634,69 +613,63 @@ and gen_class_expr env cty : Parsetree.class_expr =
   }
 
 and gen_class_field f =
-  { Parsetree.pcf_loc = Location.none
+  { pcf_loc = Location.none
   ; pcf_attributes = []
   ; pcf_desc = f
   }
 
 and gen_sig_item sig_item =
-  let open Types in
   match sig_item with
   | Sig_value (id, vd) ->
-    Ast_helper.Sig.value (gen_sig_value id vd)
+    A.Sig.value (gen_sig_value id vd)
   | Sig_type (id, type_decl, _) ->
-    Ast_helper.Sig.type_ (gen_type_decl id type_decl)
+    A.Sig.type_ (gen_type_decl id type_decl)
   | Sig_typext (id, ext, Text_exception) ->
-    Ast_helper.Sig.exception_ (gen_extension_constructor id ext)
+    A.Sig.exception_ (gen_extension_constructor id ext)
   | Sig_typext (id, ext, _) ->
-    Ast_helper.Sig.type_extension (gen_type_extension id ext)
+    A.Sig.type_extension (gen_type_extension id ext)
   | Sig_modtype (id, modtype_decl) ->
-    Ast_helper.Sig.modtype (gen_modtype_decl id modtype_decl)
+    A.Sig.modtype (gen_modtype_decl id modtype_decl)
   | Sig_module (id, mod_decl, _) ->
-    Ast_helper.Sig.module_
-      (Ast_helper.Md.mk
-         (mk_var id.Ident.name)
+    A.Sig.module_
+      (A.Md.mk (var_of_id id)
          (gen_modtype mod_decl.md_type))
   | Sig_class (_, c, _) ->
-    Ast_helper.Sig.class_
+    A.Sig.class_
       [ gen_class_descr c.cty_params c.cty_path c.cty_type ]
   | Sig_class_type (_, c, _) ->
-    Ast_helper.Sig.class_type
+    A.Sig.class_type
       [ gen_class_descr c.clty_params c.clty_path c.clty_type ]
 
 and gen_signature_item env sig_item =
-  let open Types in
   match sig_item with
   | Sig_value (id, vd) ->
-    let expr, _ = gen_expr1 env vd.Types.val_type in
-    Ast_helper.Str.value
+    let expr, _ = gen_expr1 env vd.val_type in
+    A.Str.value
       Asttypes.Nonrecursive
-      [ Ast_helper.Vb.mk
-         (Ast_helper.Pat.var (mk_var id.Ident.name))
-         expr ]
+      [ A.Vb.mk (A.Pat.var (var_of_id id)) expr ]
   | Sig_type (id, type_decl, _) ->
-    Ast_helper.Str.type_ (gen_type_decl id type_decl)
+    A.Str.type_ (gen_type_decl id type_decl)
   | Sig_typext (id, ext, Text_exception) ->
-    Ast_helper.Str.exception_ (gen_extension_constructor id ext)
+    A.Str.exception_ (gen_extension_constructor id ext)
   | Sig_typext (id, ext, _) ->
-    Ast_helper.Str.type_extension (gen_type_extension id ext)
+    A.Str.type_extension (gen_type_extension id ext)
   | Sig_modtype (id, modtype_decl) ->
-    Ast_helper.Str.modtype (gen_modtype_decl id modtype_decl)
+    A.Str.modtype (gen_modtype_decl id modtype_decl)
   | Sig_module (id, mod_decl, _) ->
-    Ast_helper.Str.module_
-      (Ast_helper.Mb.mk
-         (mk_var id.Ident.name)
+    A.Str.module_
+      (A.Mb.mk (var_of_id id)
          (gen_module env mod_decl.md_type))
   | Sig_class (_, c, _) ->
-    Ast_helper.Str.class_
+    A.Str.class_
       [ gen_class_decl env c.cty_params c.cty_path c.cty_type ]
   | Sig_class_type (_, c, _) ->
-    Ast_helper.Str.class_type
+    A.Str.class_type
       [ gen_class_descr c.clty_params c.clty_path c.clty_type ]
 
 
-let needs_parentheses e = match e.Parsetree.pexp_desc with
-  | Parsetree.Pexp_fun _ -> true
+let needs_parentheses e = match e.pexp_desc with
+  | Pexp_fun _ -> true
   | _ -> false
 
 let node ~max_depth:d ~loc ~env parents node =
