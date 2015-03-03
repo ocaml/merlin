@@ -33,6 +33,7 @@ open BrowseT
 let section = Logger.Section.of_string "construct"
 
 exception Not_allowed of string
+exception Too_many
 
 let () =
   Location.register_error_of_exn (function
@@ -134,6 +135,16 @@ let map_signature f items =
 
 let ( >>= ) xs f = List.concat_map ~f xs
 let too_many type_expr env = [ hole type_expr env ]
+
+let counting ~many env type_expr f =
+  let count = ref 0 in
+  try f ~many:(fun () -> many && !count = 0)
+        ~ret:(fun xs ->
+                count := !count + List.length xs ;
+                if not many && !count > 1 then raise Too_many ;
+                xs)
+  with Too_many ->
+    [ hole type_expr env ]
 
 let rec gen_expr1 env type_expr =
   match gen_expr ~many:false env type_expr with
@@ -281,29 +292,27 @@ and gen_constrs ~many env path constrs type_expr =
   match constrs with
   | [] -> raise (Not_allowed "no constructor")
   | cstr_descrs ->
-    let is_single = List.length cstr_descrs = 1 in
-    if not many && not is_single
-    then too_many type_expr env
-    else let many = many && is_single in
-         cstr_descrs >>= fun cstr_descr ->
-         (if cstr_descr.cstr_arity <= 0
-          then [ None, env ]
-          else begin
-            let snap = Btype.snapshot () in
-            let r_env = ref env in
-            let ty_args, ty_res = Ctype.instance_constructor cstr_descr in
-            Ctype.unify_gadt ~newtype_level:0 r_env type_expr ty_res ;
-            let env = !r_env in
-            let res =
-              try gen_tuple ~many env ty_args >>= fun (t, env') ->
-                  [ Some t, env' ]
-              with Not_allowed _ -> [] in
-            Btype.backtrack snap ;
-            res
-          end)
-         >>= fun (args, env') ->
-         let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
-         [ Ast_helper.Exp.construct lidl args, env ]
+    counting ~many env type_expr begin fun ~many ~ret ->
+      cstr_descrs >>= fun cstr_descr ->
+      (if cstr_descr.cstr_arity <= 0
+       then ret [ None, env ]
+       else begin
+         let snap = Btype.snapshot () in
+         let r_env = ref env in
+         let ty_args, ty_res = Ctype.instance_constructor cstr_descr in
+         Ctype.unify_gadt ~newtype_level:0 r_env type_expr ty_res ;
+         let env = !r_env in
+         let res =
+           try gen_tuple ~many:(many ()) env ty_args >>= fun (t, env') ->
+               [ Some t, env' ]
+           with Not_allowed _ -> [] in
+         Btype.backtrack snap ;
+         ret res
+       end)
+      >>= fun (args, env') ->
+      let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
+      [ Ast_helper.Exp.construct lidl args, env ]
+    end
 
 and gen_variant ~many env row_desc type_expr =
   let open Types in
@@ -318,21 +327,18 @@ and gen_variant ~many env row_desc type_expr =
   match fields with
   | [] -> raise (Not_allowed "empty variant type")
   | row_descrs ->
-    let is_single = List.length row_descrs = 1 in
-    if not many && not is_single
-    then too_many type_expr env
-    else let many = many && is_single in
-         row_descrs >>= fun (lbl, row_field) ->
-         (match row_field with
-           | Reither (false, [ty], _, _) | Rpresent (Some ty) ->
-             (try gen_expr ~many env ty >>= fun (expr, env') ->
-                 [ Some expr, env' ]
-              with Not_allowed _ ->
-                 [ ])
-           | _ ->
-             [ None, env ])
-         >>= fun (arg, env') ->
-         [ Ast_helper.Exp.variant lbl arg, env' ]
+    counting ~many env type_expr begin fun ~many ~ret ->
+      List.rev row_descrs >>= fun (lbl, row_field) ->
+      (match row_field with
+       | Reither (false, [ty], _, _) | Rpresent (Some ty) ->
+         (try gen_expr ~many:(many ()) env ty >>= fun (expr, env') ->
+              ret [ Some expr, env' ]
+          with Not_allowed _ -> [ ])
+       | _ ->
+         ret [ None, env ])
+       >>= fun (arg, env') ->
+       [ Ast_helper.Exp.variant lbl arg, env' ]
+    end
 
 and gen_module env mod_type =
   let open Types in
