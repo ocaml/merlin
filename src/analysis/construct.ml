@@ -132,91 +132,40 @@ let map_signature f items =
       | sig_item ->
         Some (f sig_item))
 
+let ( >>= ) xs f = List.concat_map ~f xs
+let too_many type_expr env = [ hole type_expr env ]
 
-let rec gen_expr env type_expr =
+let rec gen_expr1 env type_expr =
+  match gen_expr ~many:false env type_expr with
+  | [] -> raise (Not_allowed "no results") (* impossible *)
+  | [res] -> res
+  | _ -> assert false
+
+and gen_expr ~many env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
   | Tunivar _ | Tvar _ -> raise (Not_allowed "non-immediate type")
-  | Tsubst t -> gen_expr env t
-  | Tpoly (t, _) -> gen_expr env t
+  | Tsubst t -> gen_expr ~many env t
+  | Tpoly (t, _) -> gen_expr ~many env t
 
   | Tconstr (path, params, _) ->
-    begin try Hashtbl.find Predef_types.tbl path (), env
+    begin try [ Hashtbl.find Predef_types.tbl path (), env ]
     with Not_found ->
       match Env.find_type_descrs path env with
       | [], labels when labels <> [] ->
-          let fields, env' =
-            List.fold_left labels
-              ~init:([], env)
-              ~f:(fun (fields, env) lbl ->
-                 Ctype.unify env lbl.lbl_res type_expr ;
-                 let expr, env' = gen_expr env lbl.lbl_arg in
-                 let field =
-                   match fields with
-                   | [] -> mk_var (prefix env path lbl.lbl_name)
-                   | _ -> mk_id lbl.lbl_name in
-                 (field, expr) :: fields, env') in
-          let fields = List.rev fields in
-          Ast_helper.Exp.record fields None, env'
+        gen_record ~many env path labels type_expr
       | constrs, [] ->
-        let are_types_unifiable typ =
-          let snap = Btype.snapshot () in
-          let res =
-            try Ctype.unify_gadt ~newtype_level:0 (ref env) type_expr typ ; true
-            with Ctype.Unify _trace -> false in
-          Btype.backtrack snap ;
-          res in
-        let constrs =
-          List.filter_map constrs ~f:(fun cstr_descr ->
-            if cstr_descr.cstr_generalized
-               && not (are_types_unifiable cstr_descr.cstr_res)
-            then None
-            else Some cstr_descr) in
-        begin match constrs with
-          | [] -> raise (Not_allowed "no constructor")
-          | cstr_descr :: _ ->
-            let args, env' =
-              if cstr_descr.cstr_arity <= 0
-              then None, env
-              else begin
-                let r_env = ref env in
-                let ty_args, ty_res = Ctype.instance_constructor cstr_descr in
-                Ctype.unify_gadt ~newtype_level:0 r_env type_expr ty_res ;
-                let env = !r_env in
-                let t, env' = gen_tuple env ty_args in
-                Some t, env'
-              end in
-            let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
-            Ast_helper.Exp.construct lidl args, env
-        end
+        gen_constrs ~many env path constrs type_expr
       | _ -> raise (Not_allowed "constr")
       end
 
   | Tvariant row_desc ->
-    let fields =
-      List.filter
-        (fun (lbl, row_field) -> match row_field with
-           | Rpresent _
-           | Reither (true, [], _, _)
-           | Reither (false, [_], _, _) -> true
-           | _ -> false)
-        row_desc.row_fields in
-    begin match fields with
-      | (lbl, row_field) :: _ ->
-        let arg, env' = match row_field with
-          | Reither (false, [ty], _, _) | Rpresent (Some ty) ->
-            let expr, env' = gen_expr env ty in
-            Some expr, env'
-          | _ -> None, env in
-        Ast_helper.Exp.variant lbl arg, env'
-      | _ ->
-        raise (Not_allowed "empty variant type")
-    end
+    gen_variant ~many env row_desc type_expr
 
   | Ttuple ts ->
-    gen_tuple env ts
+    gen_tuple ~many env ts
 
   | Tarrow (label, t0, t1, _) ->
     let lbl =
@@ -227,12 +176,12 @@ let rec gen_expr env type_expr =
       if lbl = "" || already_defined lbl env
       then freevar t0 env
       else lbl, bind lbl t0 env in
-    let out, env'' = try gen_expr env' t1 with Not_allowed _ -> hole t1 env' in
+    gen_expr ~many env' t1 >>= fun (out, env'') ->
     let ast =
       Ast_helper.Exp.fun_ label None
         (Ast_helper.Pat.var (mk_var name))
         out in
-    ast, env''
+    [ ast, env'' ]
 
   | Tpackage (path, ids, args) ->
     begin try
@@ -241,7 +190,7 @@ let rec gen_expr env type_expr =
         Ast_helper.Exp.constraint_
           (Ast_helper.Exp.pack (gen_module env ty))
           (gen_core_type type_expr) in
-      ast, env
+      [ ast, env ]
     with Typemod.Error _ -> raise (Not_allowed "first-class module")
     end
 
@@ -251,7 +200,7 @@ let rec gen_expr env type_expr =
        match type_expr.desc with
        | Tnil | Tvar None -> List.rev acc
        | Tfield (name, kind, ty, tail) ->
-         let expr, _ = gen_expr env ty in
+         let expr, _ = gen_expr1 env ty in
          let field =
            Ast_helper.Cf.method_ (mk_var name) Asttypes.Public
              (Ast_helper.Cf.concrete Asttypes.Fresh expr) in
@@ -268,18 +217,101 @@ let rec gen_expr env type_expr =
         (Ast_helper.Cstr.mk
            (Ast_helper.Pat.any ())
            fields) in
-    ast, env
+    [ ast, env ]
   | Tfield _ -> raise (Not_allowed "field")
   | Tnil -> raise (Not_allowed "nil")
 
-and gen_tuple env types =
+and gen_tuple ~many env types =
   let rec go acc env = function
     | [] -> List.rev acc, env
     | t::ts ->
-      let h, env' = try gen_expr env t with Not_allowed _ -> hole t env in
+      let h, env' = try gen_expr1 env t with Not_allowed _ -> hole t env in
       go (h::acc) env' ts in
   let holes, env' = go [] env types in
-  Ast_helper.Exp.tuple holes, env'
+  [ Ast_helper.Exp.tuple holes, env' ]
+
+and gen_record ~many env path labels type_expr =
+  let open Types in
+  let fields, env' =
+    List.fold_left labels
+      ~init:([], env)
+      ~f:(fun (fields, env) lbl ->
+         Ctype.unify env lbl.lbl_res type_expr ;
+         let expr, env' = gen_expr1 env lbl.lbl_arg in
+         let field =
+           match fields with
+           | [] -> mk_var (prefix env path lbl.lbl_name)
+           | _ -> mk_id lbl.lbl_name in
+         (field, expr) :: fields, env') in
+  let fields = List.rev fields in
+  [ Ast_helper.Exp.record fields None, env' ]
+
+and gen_constrs ~many env path constrs type_expr =
+  let open Types in
+  let are_types_unifiable typ =
+    let snap = Btype.snapshot () in
+    let res =
+      try Ctype.unify_gadt ~newtype_level:0 (ref env) type_expr typ ; true
+      with Ctype.Unify _trace -> false in
+    Btype.backtrack snap ;
+    res in
+  let constrs =
+    List.filter_map constrs ~f:(fun cstr_descr ->
+      if cstr_descr.cstr_generalized
+         && not (are_types_unifiable cstr_descr.cstr_res)
+      then None
+      else Some cstr_descr) in
+  match constrs with
+  | [] -> raise (Not_allowed "no constructor")
+  | cstr_descrs ->
+    let is_single = List.length cstr_descrs = 1 in
+    if not many && not is_single
+    then too_many type_expr env
+    else let many = is_single in
+         cstr_descrs >>= fun cstr_descr ->
+         (if cstr_descr.cstr_arity <= 0
+          then [ None, env ]
+          else begin
+            let snap = Btype.snapshot () in
+            let r_env = ref env in
+            let ty_args, ty_res = Ctype.instance_constructor cstr_descr in
+            Ctype.unify_gadt ~newtype_level:0 r_env type_expr ty_res ;
+            let env = !r_env in
+            gen_tuple ~many env ty_args >>= fun (t, env') ->
+            Btype.backtrack snap ;
+            [ Some t, env' ]
+          end)
+         >>= fun (args, env') ->
+         let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
+         [ Ast_helper.Exp.construct lidl args, env ]
+
+and gen_variant ~many env row_desc type_expr =
+  let open Types in
+  let fields =
+    List.filter
+      (fun (lbl, row_field) -> match row_field with
+         | Rpresent _
+         | Reither (true, [], _, _)
+         | Reither (false, [_], _, _) -> true
+         | _ -> false)
+      row_desc.row_fields in
+  match fields with
+  | [] -> raise (Not_allowed "empty variant type")
+  | row_descrs ->
+    let is_single = List.length row_descrs = 1 in
+    if not many && not is_single
+    then too_many type_expr env
+    else let many = is_single in
+         row_descrs >>= fun (lbl, row_field) ->
+         (match row_field with
+           | Reither (false, [ty], _, _) | Rpresent (Some ty) ->
+             (gen_expr ~many env ty)
+             >>= fun (expr, env') ->
+             [ Some expr, env' ]
+           | _ ->
+             [ None, env ])
+         >>= fun (arg, env') ->
+         [ Ast_helper.Exp.variant lbl arg, env' ]
 
 and gen_module env mod_type =
   let open Types in
@@ -522,7 +554,7 @@ and gen_class_expr env cty : Parsetree.class_expr =
                | Tfield ("*dummy method*", _, _, tail) ->
                  go acc tail
                | Tfield (name, kind, def, tail) ->
-                 let expr, _ = gen_expr env def in
+                 let expr, _ = gen_expr1 env def in
                  let field =
                    gen_class_field
                      (Parsetree.Pcf_method
@@ -546,7 +578,7 @@ and gen_class_expr env cty : Parsetree.class_expr =
                      | Asttypes.Virtual ->
                        Parsetree.Cfk_virtual (gen_core_type ty)
                      | Asttypes.Concrete ->
-                       let expr, _ = gen_expr env ty in
+                       let expr, _ = gen_expr1 env ty in
                        Cfk_concrete (Asttypes.Fresh, expr) in
                    let var =
                      gen_class_field
@@ -597,7 +629,7 @@ and gen_signature_item env sig_item =
   let open Types in
   match sig_item with
   | Sig_value (id, vd) ->
-    let expr, _ = gen_expr env vd.Types.val_type in
+    let expr, _ = gen_expr1 env vd.Types.val_type in
     Ast_helper.Str.value
       Asttypes.Nonrecursive
       [ Ast_helper.Vb.mk
@@ -632,18 +664,20 @@ let node ~loc ~env parents node =
   match node.t_node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
-    let result, _ = gen_expr env ty in
-    let fmt, to_string = Format.to_string () in
-    Pprintast.expression fmt result ;
-    let str = to_string () in
-    let str = if needs_parentheses result then "(" ^ str ^ ")" else str in
-    loc, str
+    let strs =
+      gen_expr ~many:true env ty >>= fun (result, _) ->
+      let fmt, to_string = Format.to_string () in
+      Pprintast.expression fmt result ;
+      let str = to_string () in
+      let str = if needs_parentheses result then "(" ^ str ^ ")" else str in
+      [ str ] in
+    loc, strs
   | Module_expr expr ->
     let ty = expr.Typedtree.mod_type in
     let result = gen_module env ty in
     let fmt, to_string = Format.to_string () in
     Pprintast.default#module_expr fmt result ;
     let str = to_string () in
-    loc, str
+    loc, [ str ]
   | node ->
     raise (Not_allowed (BrowseT.string_of_node node))

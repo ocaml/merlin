@@ -474,8 +474,11 @@ module Protocol_io = struct
           end
         | Case_analysis _, (loc, str) ->
           `List [ with_location loc [] ; `String str ]
-        | Construct _, (loc, str) ->
-          `List [ with_location loc [] ; `String str ]
+        | Construct _, (loc, strs) ->
+          `List
+            [ with_location loc []
+            ; `List (List.map (fun str -> `String str) strs)
+            ]
         | Outline, outlines ->
           `List (json_of_outline outlines)
         | Drop, cursor ->
