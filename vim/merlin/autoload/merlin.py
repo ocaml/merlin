@@ -225,6 +225,29 @@ def command_document(path, line, col):
   except MerlinExc as e:
     try_print_error(e)
 
+def nonempty_enclosing_types(name):
+  global enclosing_types
+  global current_enclosing
+  if enclosing_types == []:
+    sync_buffer()
+    to_line, to_col = vim.current.window.cursor
+    pos = {'line':to_line, 'col':to_col}
+    try:
+      enclosing_types = command("type", "enclosing", "at", pos)
+      if enclosing_types != []:
+        current_enclosing = 0
+      else:
+        atom, _, _ = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
+        print("didn't manage to %s '%s'" % (name, atom))
+        return False
+    except MerlinExc as e:
+      try_print_error(e)
+      return False
+  return True
+
+def command_construct_cursor(maxdepth, start, end):
+  return command("construct", "maxdepth", maxdepth, "from", start, "to", end)
+
 def command_locate(path, line, col):
   try:
     choice = vim.eval('g:merlin_locate_preference')
@@ -404,6 +427,27 @@ def vim_expand_prefix(base, vimvar):
   except MerlinExc as e:
     try_print_error(e)
 
+# Construct
+def vim_construct_cursor(maxdepth, vimvar):
+  global enclosing_types
+  global current_enclosing
+  vim.command("let %s = []" % vimvar)
+  if not nonempty_enclosing_types("construct"):
+      return
+  tmp = enclosing_types[current_enclosing]
+  try:
+    loc, txts = command_construct_cursor(int(maxdepth), tmp['start'], tmp['end'])
+    replace_buffer_portion(tmp['start'], tmp['end'], "", reindent = False)
+    vim.current.window.cursor = (tmp['start']['line'], tmp['start']['col'] - 1)
+    for txt in txts:
+      txt = txt.replace("'", "''")
+      vim.command("let l:tmp = {'word':'%s'}" % txt)
+      vim.command("call add(%s, l:tmp)" % vimvar)
+  except MerlinExc as e:
+    try_print_error(e)
+  finally:
+    vim_type_reset()
+
 # Error listing
 def vim_loclist(vimvar, ignore_warnings):
   vim.command("let %s = []" % vimvar)
@@ -549,7 +593,7 @@ def vim_type_reset():
   enclosing_types = [] # reset
   current_enclosing = -1
 
-def replace_buffer_portion(start, end, txt):
+def replace_buffer_portion(start, end, txt, reindent = True):
     encoding = vim_encoding()
 
     start_line = start['line'] - 1
@@ -572,27 +616,15 @@ def replace_buffer_portion(start, end, txt):
         b[start_line:0] = [ line.encode(encoding) ]
 
     # Properly reindent the modified lines
-    vim.current.window.cursor = (start['line'], 0)
-    vim.command("call feedkeys('%d==', 'n')" % nb_lines)
+    if reindent:
+        vim.current.window.cursor = (start['line'], 0)
+        vim.command("call feedkeys('%d==', 'n')" % nb_lines)
 
 def vim_case_analysis():
   global enclosing_types
   global current_enclosing
 
-  if enclosing_types == []:
-    sync_buffer()
-    to_line, to_col = vim.current.window.cursor
-    pos = {'line':to_line, 'col':to_col}
-    try:
-      enclosing_types = command("type", "enclosing", "at", pos)
-      if enclosing_types != []:
-        current_enclosing = 0
-      else:
-        atom, _, _ = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
-        print("didn't manage to destruct '%s'" % atom)
-        return
-    except MerlinExc as e:
-      try_print_error(e)
+  if not nonempty_enclosing_types("destruct"):
       return
 
   tmp = enclosing_types[current_enclosing]
