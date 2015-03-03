@@ -151,15 +151,15 @@ and gen_expr ~many env type_expr =
   | Tpoly (t, _) -> gen_expr ~many env t
 
   | Tconstr (path, params, _) ->
-    begin try [ Hashtbl.find Predef_types.tbl path (), env ]
-    with Not_found ->
-      match Env.find_type_descrs path env with
-      | [], labels when labels <> [] ->
-        gen_record ~many env path labels type_expr
-      | constrs, [] ->
-        gen_constrs ~many env path constrs type_expr
-      | _ -> raise (Not_allowed "constr")
-      end
+    begin match Env.find_type_descrs path env with
+    | [], [] ->
+      from_type_decl ~many env path type_expr
+    | [], labels ->
+      gen_record ~many env path labels type_expr
+    | constrs, [] ->
+      gen_constrs ~many env path constrs type_expr
+    | _ -> assert false
+    end
 
   | Tvariant row_desc ->
     gen_variant ~many env row_desc type_expr
@@ -220,6 +220,15 @@ and gen_expr ~many env type_expr =
     [ ast, env ]
   | Tfield _ -> raise (Not_allowed "field")
   | Tnil -> raise (Not_allowed "nil")
+
+and from_type_decl ~many env path texpr =
+  let tdecl = Env.find_type path env in
+  match tdecl.Types.type_manifest with
+  | Some te -> gen_expr ~many env te
+  | None ->
+    try [ Hashtbl.find Predef_types.tbl path (), env ]
+    with Not_found ->
+      raise (Not_allowed (sprintf "non-constructible type: %s" (Path.last path)))
 
 and gen_product ~many env types =
   let rec go ~many acc env = function
