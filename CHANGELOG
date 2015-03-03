@@ -1,3 +1,33 @@
+merlin 2.1.2
+============
+Tue Mar  3 12:20:08 UTC 2015
+
+  Main new feature is a faster short-path, and also a lot of buxfixes.
+
+  backend:
+    - merge new implementation of short-path
+    - infrastructure for doing background computations
+    - fix exhaustivity checking of GADTs
+    - fix Typecore error reporting in 4.00.1 & 4.01.0
+    - delayed checks are now enabled (e.g warnings)
+    - special handling of "myocamlbuild.ml" (issue #363)
+    - better sharing/caching of global modules
+    - more customizable .merlin loading
+    - minor fixes (better error messages, typos, "fake" extensions)
+
+  build system:
+    - allow bytecode builds, support OpenBSD (pull request #364 by madroach)
+    - Refuse/Resist... environment variables redefinition
+
+  vim:
+    - fix charset/encoding detection (pull request #352 by rgrinberg)
+    - minor fixes and simplification
+
+  emacs:
+    - better integration with emacs error management and asynchronous handling
+    - expose custom .merlin loading in merlin-grouping-function
+    - fixes, printf-debugging cleanup
+
 merlin 2.1.1
 ============
 Wed Jan 28 08:59:20 GMT 2015
