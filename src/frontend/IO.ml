@@ -299,8 +299,9 @@ module Protocol_io = struct
       Request (Type_enclosing (None, pos_of_json jpos))
     | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ] ->
       Request (Case_analysis (loc_of_json x y))
-    | [ `String "construct"; `String "from"; x; `String "to"; y ] ->
-      Request (Construct (loc_of_json x y))
+    | [ `String "construct"; `String "maxdepth"; `Int d;
+                             `String "from"; x; `String "to"; y ] ->
+      Request (Construct (d, loc_of_json x y))
     | [`String "enclosing"; jpos] ->
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->

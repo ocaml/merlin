@@ -146,6 +146,9 @@ let counting ~many env type_expr f =
   with Too_many ->
     [ hole type_expr env ]
 
+(* Stop constructing when max_depth < 0 *)
+let max_depth = ref (-1)
+
 let rec gen_expr1 env type_expr =
   match gen_expr ~many:false env type_expr with
   | [] -> raise (Not_allowed "no results") (* impossible *)
@@ -153,6 +156,15 @@ let rec gen_expr1 env type_expr =
   | _ -> assert false
 
 and gen_expr ~many env type_expr =
+  decr max_depth ;
+  let res =
+    if !max_depth < 0
+    then [ hole type_expr env ]
+    else gen_expr' ~many env type_expr in
+  incr max_depth ;
+  res
+
+and gen_expr' ~many env type_expr =
   let open Types in
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
@@ -687,7 +699,8 @@ let needs_parentheses e = match e.Parsetree.pexp_desc with
   | Parsetree.Pexp_fun _ -> true
   | _ -> false
 
-let node ~loc ~env parents node =
+let node ~max_depth:d ~loc ~env parents node =
+  max_depth := d ;
   match node.t_node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
