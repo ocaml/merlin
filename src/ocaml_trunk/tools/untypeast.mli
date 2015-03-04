@@ -18,3 +18,6 @@ val untype_type_declaration :
 val untype_module_type : Typedtree.module_type -> Parsetree.module_type
 
 val lident_of_path : Path.t -> Longident.t
+
+(* Merlin *)
+val untype_pattern : Typedtree.pattern -> Parsetree.pattern
