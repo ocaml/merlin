@@ -178,13 +178,11 @@ and gen_expr' ~many env type_expr =
   | Tpoly (t, _) -> gen_expr ~many env t
 
   | Tconstr (path, params, _) ->
-    begin match Env.find_type_descrs path env with
-    | [], [] ->
-      from_type_decl ~many env path type_expr
-    | [], labels ->
-      gen_record ~many env path labels type_expr
-    | constrs, [] ->
-      gen_constrs ~many env path constrs type_expr
+    let def = try Env.find_type_descrs path env with Not_found -> [], [] in
+    begin match def with
+    | [], [] -> from_type_decl ~many env path type_expr
+    | [], labels -> gen_record ~many env path labels type_expr
+    | constrs, [] -> gen_constrs ~many env path constrs type_expr
     | _ -> assert false
     end
 
@@ -249,13 +247,13 @@ and gen_expr' ~many env type_expr =
   | Tnil -> raise (Not_allowed "nil")
 
 and from_type_decl ~many env path texpr =
-  let tdecl = Env.find_type path env in
-  match tdecl.type_manifest with
-  | Some te -> gen_expr ~many env te
-  | None ->
+  try let tdecl = Env.find_type path env in
+      match tdecl.type_manifest with
+      | Some te -> gen_expr ~many env te
+      | None -> raise Not_found
+  with Not_found ->
     try [ Hashtbl.find Predef_types.tbl path (), env ]
-    with Not_found ->
-      raise (Not_allowed (sprintf "non-constructible type: %s" (Path.last path)))
+    with Not_found -> [ hole texpr env ]
 
 and gen_product ~many env types =
   let rec go ~many acc env = function
@@ -290,17 +288,18 @@ and gen_record ~many env path labels type_expr =
   [ A.Exp.record fields None, env' ]
 
 and gen_constrs ~many env path constrs type_expr =
-  let are_types_unifiable typ =
+  let are_types_unifiable cstr_descr =
     let snap = Btype.snapshot () in
+    let _, ty_res = Ctype.instance_constructor cstr_descr in
     let res =
-      try Ctype.unify_gadt ~newtype_level:0 (ref env) type_expr typ ; true
-      with Ctype.Unify _trace -> false in
+      try Ctype.unify_gadt ~newtype_level:0 (ref env) type_expr ty_res ; true
+      with Ctype.Unify _ -> false in
     Btype.backtrack snap ;
     res in
   let constrs =
     List.filter_map constrs ~f:(fun cstr_descr ->
       if cstr_descr.cstr_generalized
-         && not (are_types_unifiable cstr_descr.cstr_res)
+         && not (are_types_unifiable cstr_descr)
       then None
       else Some cstr_descr) in
   match constrs with
@@ -314,12 +313,12 @@ and gen_constrs ~many env path constrs type_expr =
          let snap = Btype.snapshot () in
          let r_env = ref env in
          let ty_args, ty_res = Ctype.instance_constructor cstr_descr in
-         Ctype.unify_gadt ~newtype_level:0 r_env type_expr ty_res ;
-         let env = !r_env in
          let res =
-           try gen_tuple ~many:(many ()) env ty_args >>= fun (t, env') ->
+           try Ctype.unify_gadt ~newtype_level:0 r_env type_expr ty_res ;
+               let env = !r_env in
+               gen_tuple ~many:(many ()) env ty_args >>= fun (t, env') ->
                [ Some t, env' ]
-           with Not_allowed _ -> [] in
+           with Ctype.Unify _ | Not_allowed _ -> [] in
          Btype.backtrack snap ;
          ret res
        end)
