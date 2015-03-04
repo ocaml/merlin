@@ -52,7 +52,7 @@ if !exists("g:merlin_completion_with_doc")
 endif
 
 if !exists("g:merlin_construct_max_depth")
-  let g:merlin_construct_max_depth = 5
+  let g:merlin_construct_max_depth = 1
 endif
 
 let s:current_dir=expand("<sfile>:p:h")
@@ -446,9 +446,13 @@ function! merlin#ConstructComplete(findstart, base)
   return b:constr_result
 endfunction
 
-function! merlin#Construct()
+function! merlin#Construct(count)
+  let l:count = a:count
+  if l:count == 0
+     let l:count = g:merlin_construct_max_depth
+  endif
   py merlin.sync_buffer()
-  py merlin.vim_construct_cursor(vim.eval("g:merlin_construct_max_depth"), "b:constr_result")
+  py merlin.vim_construct_cursor(vim.eval("l:count"), "b:constr_result")
 
   setlocal omnifunc=merlin#ConstructComplete
 
@@ -529,7 +533,7 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinDestruct call merlin#Destruct()
 
   """ Construct  ----------------------------------------------------------------
-  nmap <buffer> <Plug>(MerlinConstruct) :call merlin#Construct()<cr>a<c-x><c-o>
+  nmap <buffer> <Plug>(MerlinConstruct) :<c-u>call merlin#Construct(v:count)<cr>a<c-x><c-o>
 
   """ Locate  ------------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)
