@@ -358,12 +358,16 @@ and gen_module env mod_type =
     let sg = Lazy.force lazy_sig in
     let items = map_signature (gen_signature_item env) sg in
     A.Mod.structure items
-  | Mty_ident path | Mty_alias path ->
-    let m = Env.find_modtype path env in
-    begin match m.mtd_type with
-      | Some t -> gen_module env t
-      | None -> raise (Not_allowed "module type")
-    end
+   | Mty_ident path ->
+    (try let m = Env.find_modtype path env in
+         match m.mtd_type with
+         | Some t -> gen_module env t
+         | None -> raise Not_found
+     with Not_found -> raise (Not_allowed "module ident"))
+   | Mty_alias path ->
+    (try let m = Env.find_module path env in
+         gen_module env m.md_type
+     with Not_found -> raise (Not_allowed "module alias"))
   | Mty_functor (id, arg, out) ->
     A.Mod.functor_ (var_of_id id)
       (Option.map gen_modtype arg)
@@ -673,11 +677,16 @@ let needs_parentheses e = match e.pexp_desc with
   -> true
   | _ -> false
 
-let string_of_expr ~parens e =
+let string_of_format ~parens print e =
   let fmt, to_string = Format.to_string () in
-  Pprintast.expression fmt e ;
+  print fmt e ;
   let str = to_string () in
   if parens then "(" ^ str ^ ")" else str
+
+let string_of_expr ~parens e =
+  string_of_format ~parens Pprintast.default#expression e
+let string_of_module m =
+  string_of_format ~parens:false Pprintast.default#module_expr m
 
 let node ~max_depth:d ~loc ~env parents node =
   max_depth := d ;
@@ -691,10 +700,7 @@ let node ~max_depth:d ~loc ~env parents node =
   | Module_expr expr ->
     let ty = expr.Typedtree.mod_type in
     let result = gen_module env ty in
-    let fmt, to_string = Format.to_string () in
-    Pprintast.default#module_expr fmt result ;
-    let str = to_string () in
-    loc, [ str ]
+    loc, [ string_of_module result ]
   | node ->
     raise (Not_allowed (BrowseT.string_of_node node))
 
@@ -713,15 +719,30 @@ let rec argument_types env type_expr =
      with Not_found -> [])
   | _ -> []
 
+let rec functor_argument_types env mod_type =
+  try match mod_type with
+  | Mty_signature _ -> []
+  | Mty_functor (id, arg, out) ->
+    (id, arg) :: functor_argument_types env out
+  | Mty_alias path ->
+     let m = Env.find_module path env in
+     functor_argument_types env m.md_type
+  | Mty_ident path ->
+    let m = Env.find_modtype path env in
+    match m.mtd_type with
+    | Some t -> functor_argument_types env t
+    | None -> []
+  with Not_found -> []
+
 let apply ~max_depth:d ~loc ~env parents node =
   max_depth := d - 1 ;
+  let loc = { loc with Location.loc_start = loc.Location.loc_end } in
   match node.t_node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
     let args = argument_types env ty in
     let labels, types = List.split args in
     let it = Untypeast.untype_expression expr in
-    let loc = { loc with Location.loc_start = loc.Location.loc_end } in
     let strs =
       gen_product ~many:true env types >>= fun (exprs, _) ->
       let args = List.combine labels exprs in
@@ -729,5 +750,24 @@ let apply ~max_depth:d ~loc ~env parents node =
       let str = string_of_expr ~parens:false result in
       [ String.sub str ~pos:1 ~len:(String.length str - 1) ] in
     loc, strs
+  | Module_expr expr ->
+    let ty = expr.Typedtree.mod_type in
+    let args = functor_argument_types env ty in
+    let ids, modtypes = List.split args in
+    let modules =
+      List.map2 ids modtypes ~f:(fun id mty ->
+          match mty with
+          | None -> (* no module type available *)
+            A.Mod.ident (mk_id id.Ident.name)
+          | Some modtype ->
+            if !max_depth > 0
+            then gen_module env modtype
+            else A.Mod.constraint_ (* module type hole *)
+                   (A.Mod.unpack (A.Exp.ident (mk_id ("_" ^ id.Ident.name))))
+                   (gen_modtype modtype)) in
+    let result =
+      List.fold_left modules ~init:(A.Mod.ident (mk_id " "))
+        ~f:(fun acc m -> A.Mod.apply acc m) in
+    loc, [ string_of_module result ]
   | node ->
     raise (Not_allowed (BrowseT.string_of_node node))
