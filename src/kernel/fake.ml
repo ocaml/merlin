@@ -40,7 +40,7 @@ let mkoptloc opt x =
 
 let app a b =
   let loc = { b.pexp_loc with Location.loc_ghost = true } in
-  Ast_helper.Exp.apply ~loc a ["", b]
+  Ast_helper.Exp.apply ~loc a [Raw_compat.Parsetree.arg_label_of_str "", b]
 
 let pat_app f (pat,expr) = pat, app f expr
 
@@ -97,7 +97,7 @@ let rec translate_ts ?ghost_loc =
   | Arrow (label, a, b) ->
     let a = translate_ts ?ghost_loc a in
     let b = translate_ts ?ghost_loc b in
-    Ast_helper.Typ.arrow ~loc label a b
+    Ast_helper.Typ.arrow ~loc (Raw_compat.Parsetree.arg_label_of_str label) a b
   | Tuple lst ->
     let lst = List.map lst ~f:(translate_ts ?ghost_loc) in
     Ast_helper.Typ.tuple ~loc lst
@@ -115,7 +115,7 @@ and translate_expr ?ghost_loc : Ast.expr -> _ =
       fun (simple_pattern, is_label) body ->
         let pat = Ast_helper.Pat.var ~loc (mkoptloc ghost_loc simple_pattern) in
         let lbl = if is_label then simple_pattern else "" in
-        Ast_helper.Exp.fun_ ~loc lbl None pat body
+        Ast_helper.Exp.fun_ ~loc (Raw_compat.Parsetree.arg_label_of_str lbl) None pat body
     )
   | App (f, x) ->
     app (translate_expr ?ghost_loc f) (translate_expr ?ghost_loc x)

@@ -36,6 +36,15 @@ let extract_const_string = function
 module Parsetree = struct
   open Parsetree
 
+  let arg_label_of_str = function
+    | "" -> Asttypes.Nolabel
+    | str ->
+      if str.[0] = '?' then
+        (* FIXME: drop the '?'? *)
+        Asttypes.Optional str
+      else
+        Asttypes.Labelled str
+
   let format_params ~f params =
     let format_param (param,_variance) =
       match param.ptyp_desc with
@@ -50,12 +59,17 @@ module Parsetree = struct
     | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
     | _ -> `Other
 
+  let core_args = function
+    | Pcstr_tuple lst -> lst
+    | Pcstr_record lst -> List.map lst ~f:(fun lbl -> lbl.pld_type)
+
   let map_constructors ~f lst =
     List.map lst ~f:(fun { pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } ->
+      let pcd_args = core_args pcd_args in
       f pcd_name.Location.txt pcd_args pcd_res pcd_loc
     )
 
-  let args_of_constructor c = c.pcd_args
+  let args_of_constructor c = core_args c.pcd_args
 
   let inspect_label { pld_name ; pld_mutable ; pld_type ; pld_loc ; _ } =
     pld_name, pld_mutable, pld_type, pld_loc
