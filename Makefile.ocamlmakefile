@@ -108,6 +108,8 @@ SOURCES = \
 	$(TYPER)/parsing/syntaxerr.ml     \
 	$(TYPER)/typing/typedtreeMap.mli  \
 	$(TYPER)/typing/typedtreeMap.ml   \
+	$(TYPER)/typing/tast_mapper.mli   \
+	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
 	src/ocaml_aux/cmt_cache.ml        \
