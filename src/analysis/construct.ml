@@ -173,7 +173,7 @@ and gen_expr' ~many env type_expr =
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
   | Tlink _    -> assert false (* impossible after [Btype.repr] *)
-  | Tunivar _ | Tvar _ -> raise (Not_allowed "non-immediate type")
+  | Tunivar _ | Tvar _ -> [ hole type_expr env ]
   | Tsubst t -> gen_expr ~many env t
   | Tpoly (t, _) -> gen_expr ~many env t
 
@@ -668,8 +668,16 @@ and gen_signature_item env sig_item =
 
 
 let needs_parentheses e = match e.pexp_desc with
-  | Pexp_fun _ -> true
+  | Pexp_fun _
+  | Pexp_construct (_, Some _)
+  -> true
   | _ -> false
+
+let string_of_expr ~parens e =
+  let fmt, to_string = Format.to_string () in
+  Pprintast.expression fmt e ;
+  let str = to_string () in
+  if parens then "(" ^ str ^ ")" else str
 
 let node ~max_depth:d ~loc ~env parents node =
   max_depth := d ;
@@ -677,12 +685,8 @@ let node ~max_depth:d ~loc ~env parents node =
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
     let strs =
-      gen_expr ~many:true env ty >>= fun (result, _) ->
-      let fmt, to_string = Format.to_string () in
-      Pprintast.expression fmt result ;
-      let str = to_string () in
-      let str = if needs_parentheses result then "(" ^ str ^ ")" else str in
-      [ str ] in
+      gen_expr ~many:true env ty >>= fun (e, _) ->
+      [ string_of_expr ~parens:(needs_parentheses e) e ] in
     loc, strs
   | Module_expr expr ->
     let ty = expr.Typedtree.mod_type in
@@ -691,5 +695,39 @@ let node ~max_depth:d ~loc ~env parents node =
     Pprintast.default#module_expr fmt result ;
     let str = to_string () in
     loc, [ str ]
+  | node ->
+    raise (Not_allowed (BrowseT.string_of_node node))
+
+
+(* Apply: construct arguments *)
+
+let rec argument_types env type_expr =
+  let type_expr = Btype.repr type_expr in
+  match type_expr.desc with
+  | Tarrow (label, t0, t1, _) -> (label, t0) :: argument_types env t1
+  | Tconstr (path, _, _) ->
+    (try let tdecl = Env.find_type path env in
+         match tdecl.type_manifest with
+         | Some te -> argument_types env te
+         | None -> raise Not_found
+     with Not_found -> [])
+  | _ -> []
+
+let apply ~max_depth:d ~loc ~env parents node =
+  max_depth := d - 1 ;
+  match node.t_node with
+  | Expression expr ->
+    let ty = expr.Typedtree.exp_type in
+    let args = argument_types env ty in
+    let labels, types = List.split args in
+    let it = Untypeast.untype_expression expr in
+    let loc = { loc with Location.loc_start = loc.Location.loc_end } in
+    let strs =
+      gen_product ~many:true env types >>= fun (exprs, _) ->
+      let args = List.combine labels exprs in
+      let result = A.Exp.apply (A.Exp.ident (mk_id "_")) args in
+      let str = string_of_expr ~parens:false result in
+      [ String.sub str ~pos:1 ~len:(String.length str - 1) ] in
+    loc, strs
   | node ->
     raise (Not_allowed (BrowseT.string_of_node node))
