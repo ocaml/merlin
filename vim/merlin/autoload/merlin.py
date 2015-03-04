@@ -245,8 +245,8 @@ def nonempty_enclosing_types(name):
       return False
   return True
 
-def command_construct_cursor(maxdepth, start, end):
-  return command("construct", "maxdepth", maxdepth, "from", start, "to", end)
+def command_construct_cursor(kind, maxdepth, start, end):
+  return command("construct", kind, "maxdepth", maxdepth, "from", start, "to", end)
 
 def command_locate(path, line, col):
   try:
@@ -428,7 +428,7 @@ def vim_expand_prefix(base, vimvar):
     try_print_error(e)
 
 # Construct
-def vim_construct_cursor(maxdepth, vimvar):
+def vim_construct_cursor(kind, maxdepth, vimvar):
   global enclosing_types
   global current_enclosing
   vim.command("let %s = []" % vimvar)
@@ -436,9 +436,10 @@ def vim_construct_cursor(maxdepth, vimvar):
       return
   tmp = enclosing_types[current_enclosing]
   try:
-    loc, txts = command_construct_cursor(int(maxdepth), tmp['start'], tmp['end'])
-    replace_buffer_portion(tmp['start'], tmp['end'], "", reindent = False)
-    vim.current.window.cursor = (tmp['start']['line'], tmp['start']['col'] - 1)
+    loc, txts = command_construct_cursor(kind, int(maxdepth), tmp['start'], tmp['end'])
+    if loc['start'] != loc['end']:
+      replace_buffer_portion(loc['start'], loc['end'], "", reindent = False)
+    vim.current.window.cursor = (loc['start']['line'], loc['start']['col'])
     for txt in txts:
       txt = txt.replace("'", "''")
       vim.command("let l:tmp = {'word':'%s'}" % txt)
