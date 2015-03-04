@@ -212,8 +212,8 @@ field logfile (see `merlin-start-process')"
   "If non-nil, use type-enclosing after locate."
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-construct-max-depth 5
-  "Maximum search depth for construct_."
+(defcustom merlin-construct-max-depth 1
+  "Maximum search depth for construct."
   :group 'merlin :type 'integer)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1764,11 +1764,12 @@ is active)."
   (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
 	       (start  (merlin-unmake-point (car bounds)))
 	       (stop   (merlin-unmake-point (cdr bounds)))
+         (depth  (if (integerp current-prefix-arg)
+                   current-prefix-arg
+                   merlin-construct-max-depth))
 	       (result
 	        (merlin-send-command
-	         (list 'construct
-                 'maxdepth merlin-construct-max-depth
-                 'from start 'to stop)
+	         (list 'construct 'maxdepth depth 'from start 'to stop)
 	         (lambda (errinfo)
 	           (let ((msg (cdr (assoc 'message errinfo))))
 	             (if msg
