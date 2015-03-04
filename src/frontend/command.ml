@@ -474,6 +474,12 @@ let dispatch (state : state) =
     let node, parents = find_enclosing_node typer loc in
     Construct.node ~max_depth ~env:(Typer.env typer) ~loc parents node
 
+  | (Construct_apply (max_depth, loc) : a request) ->
+    with_typer state @@ fun typer ->
+    Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
+    let node, parents = find_enclosing_node typer loc in
+    Construct.apply ~max_depth ~env:(Typer.env typer) ~loc parents node
+
   | (Outline : a request) ->
     with_typer state @@ fun typer ->
     let typed_tree = Typer.contents typer in

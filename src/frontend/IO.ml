@@ -299,9 +299,14 @@ module Protocol_io = struct
       Request (Type_enclosing (None, pos_of_json jpos))
     | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ] ->
       Request (Case_analysis (loc_of_json x y))
-    | [ `String "construct"; `String "maxdepth"; `Int d;
+    | [ `String "construct"; `String "node" ;
+                             `String "maxdepth"; `Int d;
                              `String "from"; x; `String "to"; y ] ->
       Request (Construct (d, loc_of_json x y))
+    | [ `String "construct"; `String "apply" ;
+                             `String "maxdepth"; `Int d;
+                             `String "from"; x; `String "to"; y ] ->
+      Request (Construct_apply (d, loc_of_json x y))
     | [`String "enclosing"; jpos] ->
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
@@ -476,10 +481,11 @@ module Protocol_io = struct
         | Case_analysis _, (loc, str) ->
           `List [ with_location loc [] ; `String str ]
         | Construct _, (loc, strs) ->
-          `List
-            [ with_location loc []
-            ; `List (List.map (fun str -> `String str) strs)
-            ]
+          `List [ with_location loc []
+                ; `List (List.map (fun str -> `String str) strs) ]
+        | Construct_apply _, (loc, strs) ->
+          `List [ with_location loc []
+                ; `List (List.map (fun str -> `String str) strs) ]
         | Outline, outlines ->
           `List (json_of_outline outlines)
         | Drop, cursor ->
