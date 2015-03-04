@@ -53,6 +53,7 @@ val print_error: formatter -> t -> unit
 val print_error_cur_file: formatter -> unit
 val print_warning: t -> formatter -> Warnings.t -> unit
 val prerr_warning: t -> Warnings.t -> unit
+val prerr_warning_ref: (t -> Warnings.t -> unit) ref
 val echo_eof: unit -> unit
 val reset: unit -> unit
 
@@ -83,7 +84,7 @@ val absname: bool ref
 
 type error =
   {
-    loc: t;
+    err_loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
