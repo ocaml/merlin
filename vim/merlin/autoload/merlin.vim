@@ -463,7 +463,7 @@ function! merlin#Construct(kind, count)
 endfunction
 
 function! merlin#ConstructDone()
-  execute "normal :s/\<c-v>\<c-@>/\<c-v>\<c-m>/g\<cr>"
+  execute "normal :s/\<c-v>\<c-@>/\<c-v>\<c-m>/ge\<cr>"
   setlocal omnifunc=merlin#Complete
 endfunction
 

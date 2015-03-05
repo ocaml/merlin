@@ -439,7 +439,7 @@ def vim_construct_cursor(kind, maxdepth, vimvar):
     loc, txts = command_construct_cursor(kind, int(maxdepth), tmp['start'], tmp['end'])
     if loc['start'] != loc['end']:
       replace_buffer_portion(loc['start'], loc['end'], "", reindent = False)
-    vim.current.window.cursor = (loc['start']['line'], loc['start']['col'])
+    vim.current.window.cursor = (loc['start']['line'], loc['start']['col'] - 1)
     for txt in txts:
       txt = txt.replace("'", "''")
       vim.command("let l:tmp = {'word':'%s'}" % txt)
