@@ -50,34 +50,26 @@ let id_of_path path = mk_var (Untypeast.lident_of_path path)
 let var_of_id id = mk_var id.Ident.name
 
 module Predef_types = struct
-  let unit_ () =
-    A.Exp.construct (mk_id "()") None
-
-  let char_ () =
-    A.Exp.constant (Asttypes.Const_char 'c')
-
-  let int_ () =
-    A.Exp.constant (Asttypes.Const_int 0)
-
-  let string_ () =
-    A.Exp.constant (A.const_string "")
-
-  let list_ () =
-    A.Exp.construct (mk_id "[]") None
-
-  let array_ () =
-    A.Exp.array []
-
-  let tbl = Hashtbl.create 6
+  let tbl = Hashtbl.create 14
 
   let () =
+    let mk s = A.Exp.construct (mk_id s) None in
     List.iter ~f:(fun (k, v) -> Hashtbl.add tbl k v) [
-      Predef.path_unit, unit_ ;
-      Predef.path_char, char_ ;
-      Predef.path_int, int_ ;
-      Predef.path_string, string_ ;
-      Predef.path_list, list_ ;
-      Predef.path_array, array_ ;
+      Predef.path_int, mk "0" ;
+      Predef.path_char, mk "'c'" ;
+      Predef.path_string, mk "\"\"" ;
+      Predef.path_float, mk "0.0" ;
+      Predef.path_bool, mk "true" ;
+      Predef.path_unit, mk "()" ;
+      Predef.path_exn, mk "exn" ;
+      Predef.path_array, mk "[| |]" ;
+      Predef.path_list, mk "[ ]" ;
+      (* The extra space is used to avoid the sugar [_a] in (_a :: []) *)
+      Predef.path_option, mk "None" ;
+      Predef.path_nativeint, mk "0n" ;
+      Predef.path_int32, mk "0l" ;
+      Predef.path_int64, mk "0L" ;
+      Predef.path_lazy_t, mk "(lazy)" ;
     ]
 end
 
@@ -109,10 +101,15 @@ let freevar ?(prefix = "") t env =
   let name = go 0 in
   name, bind name t env
 
-let hole t env =
-  let name, env' = freevar ~prefix:"_" t env in
-  let hole = A.Exp.ident (mk_id name) in
-  hole, env'
+let rec hole type_expr env =
+  let type_expr = Btype.repr type_expr in
+  try match type_expr.desc with
+  | Tconstr (path, _, _) -> Hashtbl.find Predef_types.tbl path, env
+  | _ -> raise Not_found
+  with Not_found ->
+    let name, env' = freevar ~prefix:"_" type_expr env in
+    let v = A.Exp.ident (mk_id name) in
+    v, env'
 
 let prefix env path =
   let path = Printtyp.shorten_path ~env path in
@@ -249,11 +246,9 @@ and gen_expr' ~many env type_expr =
 and from_type_decl ~many env path texpr =
   try let tdecl = Env.find_type path env in
       match tdecl.type_manifest with
-      | Some te -> gen_expr ~many env te
+      | Some te -> gen_expr' ~many env te
       | None -> raise Not_found
-  with Not_found ->
-    try [ Hashtbl.find Predef_types.tbl path (), env ]
-    with Not_found -> [ hole texpr env ]
+  with Not_found -> [ hole texpr env ]
 
 and gen_product ~many env types =
   let rec go ~many acc env = function
