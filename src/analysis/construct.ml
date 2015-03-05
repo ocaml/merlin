@@ -174,6 +174,10 @@ and gen_expr' ~many env type_expr =
   | Tsubst t -> gen_expr ~many env t
   | Tpoly (t, _) -> gen_expr ~many env t
 
+  | Tconstr (path, [t], _) when path = Predef.path_lazy_t ->
+    gen_expr ~many env t >>= fun (e, env') ->
+    [ A.Exp.lazy_ e, env' ]
+
   | Tconstr (path, params, _) ->
     let def = try Env.find_type_descrs path env with Not_found -> [], [] in
     begin match def with
@@ -670,6 +674,7 @@ and gen_signature_item env sig_item =
 
 let needs_parentheses e = match e.pexp_desc with
   | Pexp_fun _
+  | Pexp_lazy _
   | Pexp_construct (_, Some _)
   -> true
   | _ -> false
