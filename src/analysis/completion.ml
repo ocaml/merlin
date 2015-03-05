@@ -172,7 +172,8 @@ let completion_format ~exact name ?path ty =
       `Constructor
     | `Label label_descr ->
       let desc =
-        Types.(Tarrow ("", label_descr.lbl_res, label_descr.lbl_arg, Cok))
+        Types.(Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
+                       label_descr.lbl_res, label_descr.lbl_arg, Cok))
       in
       Format.pp_print_string ppf name;
       Format.pp_print_string ppf " : ";
