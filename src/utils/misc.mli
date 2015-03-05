@@ -173,14 +173,14 @@ val file_contents : string -> string
 
 module LongString :
   sig
-    type t = bytes array
+    type t = string array
     val create : int -> t
     val length : t -> int
     val get : t -> int -> char
     val set : t -> int -> char -> unit
     val blit : t -> int -> t -> int -> int -> unit
     val output : out_channel -> t -> int -> int -> unit
-    val unsafe_blit_to_bytes : t -> int -> bytes -> int -> int -> unit
+    val unsafe_blit_to_bytes : t -> int -> string -> int -> int -> unit
     val input_bytes : in_channel -> int -> t
   end
 

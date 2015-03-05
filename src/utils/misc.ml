@@ -339,26 +339,26 @@ let fth4 (_,_,_,x) = x
 
 
 module LongString = struct
-  type t = bytes array
+  type t = string array
 
   let create str_size =
     let tbl_size = str_size / Sys.max_string_length + 1 in
-    let tbl = Array.make tbl_size Bytes.empty in
+    let tbl = Array.make tbl_size "" in
     for i = 0 to tbl_size - 2 do
-      tbl.(i) <- Bytes.create Sys.max_string_length;
+      tbl.(i) <- String.create Sys.max_string_length;
     done;
-    tbl.(tbl_size - 1) <- Bytes.create (str_size mod Sys.max_string_length);
+    tbl.(tbl_size - 1) <- String.create (str_size mod Sys.max_string_length);
     tbl
 
   let length tbl =
     let tbl_size = Array.length tbl in
-    Sys.max_string_length * (tbl_size - 1) + Bytes.length tbl.(tbl_size - 1)
+    Sys.max_string_length * (tbl_size - 1) + String.length tbl.(tbl_size - 1)
 
   let get tbl ind =
-    Bytes.get tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
+    String.get tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
 
   let set tbl ind c =
-    Bytes.set tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
+    String.set tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
               c
 
   let blit src srcoff dst dstoff len =
@@ -373,12 +373,12 @@ module LongString = struct
 
   let unsafe_blit_to_bytes src srcoff dst dstoff len =
     for i = 0 to len - 1 do
-      Bytes.unsafe_set dst (dstoff + i) (get src (srcoff + i))
+      String.unsafe_set dst (dstoff + i) (get src (srcoff + i))
     done
 
   let input_bytes ic len =
     let tbl = create len in
-    Array.iter (fun str -> really_input ic str 0 (Bytes.length str)) tbl;
+    Array.iter (fun str -> really_input ic str 0 (String.length str)) tbl;
     tbl
 end
 
