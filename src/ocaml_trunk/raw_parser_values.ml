@@ -277,6 +277,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_opt_semi                          -> "opt_semi"
   | N_opt_default                       -> "opt_default"
   | N_opt_bar                           -> "opt_bar"
+  | N_opt_assign_arrow                  -> "opt_assign_arrow"
   | N_opt_ampersand                     -> "opt_ampersand"
   | N_operator                          -> "operator"
   | N_open_statement                    -> "open_statement"
@@ -321,6 +322,8 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_label                             -> "label"
   | N_item_extension                    -> "item_extension"
   | N_interface                         -> "interface"
+  | N_index_operator_core               -> "index_operator_core"
+  | N_index_operator                    -> "index_operator"
   | N_implementation                    -> "implementation"
   | N_ident                             -> "ident"
   | N_generalized_constructor_arguments -> "generalized_constructor_arguments"
@@ -331,6 +334,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_fun_binding                       -> "fun_binding"
   | N_floating_attribute                -> "floating_attribute"
   | N_field_expr_list                   -> "field_expr_list"
+  | N_field_expr                        -> "field_expr"
   | N_field                             -> "field"
   | N_extension_constructor_rebind      -> "extension_constructor_rebind"
   | N_extension_constructor_declaration -> "extension_constructor_declaration"
@@ -350,6 +354,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_core_type                         -> "core_type"
   | N_constructor_declarations          -> "constructor_declarations"
   | N_constructor_declaration           -> "constructor_declaration"
+  | N_constructor_arguments             -> "constructor_arguments"
   | N_constraints                       -> "constraints"
   | N_constrain_field                   -> "constrain_field"
   | N_constrain                         -> "constrain"
@@ -914,6 +919,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_opt_semi                          -> 0, ()
   | N_opt_default                       -> 1, None
   | N_opt_bar                           -> 0, ()
+  | N_opt_assign_arrow                  -> 0, ""
   | N_opt_ampersand                     -> 1, false
   | N_operator                          -> 1, "_"
   | N_open_statement                    ->
@@ -951,13 +957,13 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_lbl_pattern                       -> 2, (default_longident_loc, default_pattern)
   | N_lbl_expr_list                     -> 0, []
   | N_lbl_expr                          -> 2, (default_longident_loc, default_expr)
-  | N_labeled_simple_pattern            -> 1, ("", None, default_pattern)
-  | N_labeled_simple_expr               -> 1, ("", default_expr)
+  | N_labeled_simple_pattern            -> 1, (Asttypes.Nolabel, None, default_pattern)
+  | N_labeled_simple_expr               -> 1, (Asttypes.Nolabel, default_expr)
   | N_label_var                         -> 1, ("", default_pattern)
   | N_label_longident                   -> 2, default_longident
   | N_label_let_pattern                 -> 1, ("", default_pattern)
   | N_label_ident                       -> 2, ("", default_expr)
-  | N_label_expr                        -> 1, ("", default_expr)
+  | N_label_expr                        -> 1, (Asttypes.Nolabel, default_expr)
   | N_label_declarations                -> 0, []
   | N_label_declaration                 ->
     raise Not_found (*(Parsetree.label_declaration) nonterminal_class*)
@@ -965,9 +971,11 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_item_extension                    ->
     raise Not_found (*(Parsetree.extension) nonterminal_class*)
   | N_interface                         -> 0, []
+  | N_index_operator_core               -> 0, ".()"
+  | N_index_operator                    -> 0, ".()"
   | N_implementation                    -> 0, []
   | N_ident                             -> 2, ""
-  | N_generalized_constructor_arguments -> 1, ([], None)
+  | N_generalized_constructor_arguments -> 1, (Parsetree.Pcstr_tuple [], None)
   | N_functor_args                      -> 0, []
   | N_functor_arg_name                  -> 1, ""
   | N_functor_arg                       -> 1, (Location.mknoloc "", None)
@@ -975,6 +983,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_fun_binding                       -> 1, default_expr
   | N_floating_attribute                -> 1, default_attribute
   | N_field_expr_list                   -> 0, []
+  | N_field_expr                        -> 2, (Location.mknoloc "", default_expr)
   | N_field                             ->
     raise Not_found (*(string * Parsetree.attributes * Parsetree.core_type) nonterminal_class*)
   | N_extension_constructor_rebind      ->
@@ -1000,6 +1009,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_constructor_declarations          -> 0, []
   | N_constructor_declaration           ->
     raise Not_found (*(Parsetree.constructor_declaration) nonterminal_class*)
+  | N_constructor_arguments             -> 0, Parsetree.Pcstr_tuple []
   | N_constraints                       -> 0, []
   | N_constrain_field                   -> 1, (default_type, default_type)
   | N_constrain                         -> 1, (default_type, default_type, Location.none)
@@ -1310,6 +1320,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_opt_semi                          -> None
   | N_opt_default                       -> None
   | N_opt_bar                           -> None
+  | N_opt_assign_arrow                  -> None
   | N_opt_ampersand                     -> None
   | N_operator                          -> Some "operator"
   | N_open_statement                    -> Some "open statement"
@@ -1354,6 +1365,8 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_label                             -> Some "label"
   | N_item_extension                    -> None
   | N_interface                         -> None
+  | N_index_operator_core               -> None
+  | N_index_operator                    -> None
   | N_implementation                    -> None
   | N_ident                             -> Some "ident"
   | N_generalized_constructor_arguments -> Some "constructor arguments"
@@ -1364,6 +1377,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_fun_binding                       -> Some "`=' function body"
   | N_floating_attribute                -> None
   | N_field_expr_list                   -> Some "field expression"
+  | N_field_expr                        -> Some "field expression"
   | N_field                             -> Some "field"
   | N_extension_constructor_rebind      -> None
   | N_extension_constructor_declaration -> None
@@ -1383,6 +1397,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_core_type                         -> Some "type expression"
   | N_constructor_declarations          -> None
   | N_constructor_declaration           -> Some "constructor declaration"
+  | N_constructor_arguments             -> Some "constructor arguments"
   | N_constraints                       -> None
   | N_constrain_field                   -> None
   | N_constrain                         -> Some "constraint"
