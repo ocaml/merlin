@@ -67,7 +67,7 @@ let ghloc startpos endpos d = { txt = d; loc = gloc startpos endpos }
 
 let mkinfix startpos endpos arg1 startpos2 endpos2 name arg2 =
   mkexp startpos endpos
-    (Pexp_apply(mkoperator startpos2 endpos2 name, ["", arg1; "", arg2]))
+    (Pexp_apply(mkoperator startpos2 endpos2 name, [Nolabel, arg1; Nolabel, arg2]))
 
 let neg_float_string f =
   if String.length f > 0 && f.[0] = '-'
@@ -87,7 +87,7 @@ let mkuminus startpos endpos name arg =
   | ("-" | "-."), Pexp_constant(Const_float f) ->
       mkexp startpos endpos (Pexp_constant(Const_float(neg_float_string f)))
   | _ ->
-      mkexp startpos endpos (Pexp_apply(mkoperator startpos endpos ("~" ^ name), ["", arg]))
+      mkexp startpos endpos (Pexp_apply(mkoperator startpos endpos ("~" ^ name), [Nolabel, arg]))
 
 let mkuplus startpos endpos name arg =
   let desc = arg.pexp_desc in
@@ -98,7 +98,7 @@ let mkuplus startpos endpos name arg =
   | "+", Pexp_constant(Const_nativeint _)
   | ("+" | "+."), Pexp_constant(Const_float _) -> mkexp startpos endpos desc
   | _ ->
-      mkexp startpos endpos (Pexp_apply(mkoperator startpos endpos ("~" ^ name), ["", arg]))
+      mkexp startpos endpos (Pexp_apply(mkoperator startpos endpos ("~" ^ name), [Nolabel, arg]))
 
 let mkexp_cons consloc args loc =
   Exp.mk ~loc (Pexp_construct(mkloc (Lident "::") consloc, Some args))
@@ -139,9 +139,9 @@ let mkexp_constraint startpos endpos e (t1, t2) =
   | _, Some t -> ghexp startpos endpos (Pexp_coerce(e, t1, t))
   | None, None -> e
 
-let array_function startpos endpos str name =
-  ghloc startpos endpos
-    (Ldot(Lident str, (if Clflags.fast () then "unsafe_" ^ name else name)))
+let array_function startpos endpos par assign =
+  let op = if assign then par^"<-" else par in
+  ghloc startpos endpos (Lident op)
 
 let syntax_error startpos endpos =
   Parsing_aux.raise_warning (Syntaxerr.Escape_error (rloc startpos endpos))
@@ -159,52 +159,60 @@ let not_expecting startpos endpos nonterm =
   Parsing_aux.raise_warning
     Syntaxerr.(Error (Not_expecting (rloc startpos endpos, nonterm)))
 
-let bigarray_function startpos endpos str name =
-  ghloc startpos endpos (Ldot(Ldot(Lident "Bigarray", str), name))
+let bigarray_function startpos endpos order assign =
+  let op =
+    match order with
+    | 1 -> ".{}"
+    | 2 -> ".{,}"
+    | 3 -> ".{,,}"
+    | _ -> ".{,..,}"
+  in
+  let op = if assign then op^"<-" else op in
+  ghloc startpos endpos (Lident op)
 
 let bigarray_untuplify = function
     { pexp_desc = Pexp_tuple explist; pexp_loc = _ } -> explist
   | exp -> [exp]
 
 let bigarray_get (startpos,endpos) (startop,endop) arr arg =
-  let get = if Clflags.fast () then "unsafe_get" else "get" in
   let ghexp = ghexp startop endop in
   let mkexp = mkexp startpos endpos in
   let bigarray_function = bigarray_function startop endop in
+  let get order = bigarray_function order false in
   match bigarray_untuplify arg with
     [c1] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array1" get)),
-                       ["", arr; "", c1]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(get 1)),
+                       [Nolabel, arr; Nolabel, c1]))
   | [c1;c2] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array2" get)),
-                       ["", arr; "", c1; "", c2]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(get 2)),
+                       [Nolabel, arr; Nolabel, c1; Nolabel, c2]))
   | [c1;c2;c3] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array3" get)),
-                       ["", arr; "", c1; "", c2; "", c3]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(get 3)),
+                       [Nolabel, arr; Nolabel, c1; Nolabel, c2; Nolabel, c3]))
   | coords ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Genarray" "get")),
-                       ["", arr; "", ghexp(Pexp_array coords)]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(get 0)),
+                       [Nolabel, arr; Nolabel, ghexp(Pexp_array coords)]))
 
 let bigarray_set (startpos,endpos) (startop,endop) arr arg newval =
-  let set = if Clflags.fast () then "unsafe_set" else "set" in
   let ghexp = ghexp startop endop in
   let mkexp = mkexp startpos endpos in
   let bigarray_function = bigarray_function startop endop in
+  let set order = bigarray_function order true in
   match bigarray_untuplify arg with
     [c1] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array1" set)),
-                       ["", arr; "", c1; "", newval]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(set 1)),
+                       [Nolabel, arr; Nolabel, c1; Nolabel, newval]))
   | [c1;c2] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array2" set)),
-                       ["", arr; "", c1; "", c2; "", newval]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(set 2)),
+                       [Nolabel, arr; Nolabel, c1; Nolabel, c2; Nolabel, newval]))
   | [c1;c2;c3] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array3" set)),
-                       ["", arr; "", c1; "", c2; "", c3; "", newval]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(set 3)),
+                       [Nolabel, arr; Nolabel, c1; Nolabel, c2; Nolabel, c3; Nolabel, newval]))
   | coords ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Genarray" "set")),
-                       ["", arr;
-                        "", ghexp(Pexp_array coords);
-                        "", newval]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(set 0)),
+                       [Nolabel, arr;
+                        Nolabel, ghexp(Pexp_array coords);
+                        Nolabel, newval]))
 
 let lapply startpos endpos p1 p2 =
   if Clflags.applicative_functors ()
@@ -683,6 +691,11 @@ structure_item:
     { mkstr $startpos $endpos
         (Pstr_primitive (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4
                            ~prim:$6 ~attrs:$7 ~loc:(rloc $startpos $endpos))) }
+| VAL @{`Item "val"}
+  val_ident COLON core_type post_item_attributes
+    { mkstr $startpos $endpos
+        (Pstr_primitive (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4
+                           ~attrs:$5 ~loc:(rloc $startpos $endpos)))}
 | TYPE @{`Item "type"}
   decls = type_declarations
     { mkstr $startpos $endpos (Pstr_type (List.rev decls) ) }
@@ -993,13 +1006,13 @@ class_type:
 | class_signature
     { $1 }
 | QUESTION LIDENT COLON simple_core_type_or_tuple_no_attr MINUSGREATER class_type
-    { mkcty $startpos $endpos (Pcty_arrow("?" ^ $2 , mkoption $4, $6)) }
+    { mkcty $startpos $endpos (Pcty_arrow(Optional $2 , mkoption $4, $6)) }
 | OPTLABEL simple_core_type_or_tuple_no_attr MINUSGREATER class_type
-    { mkcty $startpos $endpos (Pcty_arrow("?" ^ $1, mkoption $2, $4)) }
+    { mkcty $startpos $endpos (Pcty_arrow(Optional $1, mkoption $2, $4)) }
 | LIDENT COLON simple_core_type_or_tuple_no_attr MINUSGREATER class_type
-    { mkcty $startpos $endpos (Pcty_arrow($1, $3, $5)) }
+    { mkcty $startpos $endpos (Pcty_arrow(Labelled $1, $3, $5)) }
 | simple_core_type_or_tuple_no_attr MINUSGREATER class_type
-    { mkcty $startpos $endpos (Pcty_arrow("", $1, $3)) }
+    { mkcty $startpos $endpos (Pcty_arrow(Nolabel, $1, $3)) }
 
 class_signature:
 | LBRACKET core_type_comma_list RBRACKET clty_longident
@@ -1102,21 +1115,21 @@ seq_expr:
 
 labeled_simple_pattern:
 | QUESTION LPAREN label_let_pattern opt_default RPAREN
-    { ("?" ^ fst $3, $4, snd $3) }
+    { (Optional (fst $3), $4, snd $3) }
 | QUESTION label_var
-    { ("?" ^ fst $2, None, snd $2) }
+    { (Optional (fst $2), None, snd $2) }
 | OPTLABEL LPAREN let_pattern opt_default RPAREN
-    { ("?" ^ $1, $4, $3) }
+    { (Optional $1, $4, $3) }
 | OPTLABEL pattern_var
-    { ("?" ^ $1, None, $2) }
+    { (Optional $1, None, $2) }
 | TILDE LPAREN label_let_pattern RPAREN
-    { (fst $3, None, snd $3) }
+    { (Labelled (fst $3), None, snd $3) }
 | TILDE label_var
-    { (fst $2, None, snd $2) }
+    { (Labelled (fst $2), None, snd $2) }
 | LABEL simple_pattern
-    { ($1, None, $2) }
+    { (Labelled $1, None, $2) }
 | simple_pattern
-    { ("", None, $1) }
+    { (Nolabel, None, $1) }
 
 pattern_var:
 | LIDENT
@@ -1254,13 +1267,13 @@ expr:
 | simple_expr _ops = DOT _ope = LPAREN seq_expr RPAREN LESSMINUS expr
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
-                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "Array" "set")),
-                         ["",$1; "",$4; "",$7])) }
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".()" false)),
+                         [Nolabel,$1; Nolabel,$4; Nolabel,$7])) }
 | simple_expr _ops = DOT _ope = LBRACKET seq_expr RBRACKET LESSMINUS expr
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
-                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "String" "set")),
-                         ["",$1; "",$4; "",$7])) }
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".[]" false)),
+                         [Nolabel,$1; Nolabel,$4; Nolabel,$7])) }
 | simple_expr _ops = DOT _ope = LBRACE expr RBRACE LESSMINUS expr
     { bigarray_set ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) $1 $4 $7 }
 | label LESSMINUS expr
@@ -1299,13 +1312,13 @@ simple_expr:
 | simple_expr _ops = DOT _ope = LPAREN @{`Unclosed "("} seq_expr RPAREN @{`Close}
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
-                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "Array" "get")),
-                         ["",$1; "",$4])) }
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".()" false)),
+                         [Nolabel,$1; Nolabel,$4])) }
 | simple_expr _ops = DOT _ope = LBRACKET @{`Unclosed "["} seq_expr RBRACKET @{`Close}
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
-                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "String" "get")),
-                         ["",$1; "",$4])) }
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".[]" false)),
+                         [Nolabel,$1; Nolabel,$4])) }
 | simple_expr _ops = DOT _ope = LBRACE @{`Unclosed "{"} expr RBRACE @{`Close}
     { bigarray_get ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) $1 $4 }
 | LBRACE @{`Unclosed "{"} record_expr RBRACE @{`Close}
@@ -1326,17 +1339,17 @@ simple_expr:
     { let list_exp = reloc_exp $startpos $endpos (mktailexp $startpos($6) $endpos($6) (List.rev $4)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, list_exp)) }
 | PREFIXOP simple_expr
-    { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) $1, ["",$2])) }
+    { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) $1, [Nolabel,$2])) }
 | BANG simple_expr
-    { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) "!", ["",$2])) }
+    { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) "!", [Nolabel,$2])) }
 | NEW ext_attributes class_longident
     { mkexp_attrs $startpos $endpos (Pexp_new(mkrhs $startpos($3) $endpos($3) $3)) $2 }
-| LBRACELESS @{`Unclosed "{<"} field_expr_list opt_semi GREATERRBRACE
-    { mkexp $startpos $endpos  (Pexp_override(List.rev $2)) }
+| LBRACELESS @{`Unclosed "{<"} field_expr_list GREATERRBRACE
+    { mkexp $startpos $endpos  (Pexp_override $2) }
 | LBRACELESS GREATERRBRACE
     { mkexp $startpos $endpos  (Pexp_override [])}
-| mod_longident DOT LBRACELESS @{`Unclosed "{<"} field_expr_list opt_semi GREATERRBRACE @{`Close}
-    { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_override(List.rev $4)))) }
+| mod_longident DOT LBRACELESS @{`Unclosed "{<"} field_expr_list GREATERRBRACE @{`Close}
+    { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_override $4))) }
 | simple_expr SHARP @{`Shift_token (1,LIDENT "")} label
     { mkexp $startpos $endpos (Pexp_send($1, $3)) }
 | LPAREN @{`Unclosed "("} MODULE module_expr RPAREN @{`Close}
@@ -1359,19 +1372,19 @@ simple_labeled_expr_list:
 
 labeled_simple_expr:
 | simple_expr %prec below_SHARP
-    { ("", $1) }
+    { (Nolabel, $1) }
 | label_expr
     { $1 }
 
 label_expr:
 | LABEL simple_expr %prec below_SHARP
-    { ($1, $2) }
+    { (Labelled $1, $2) }
 | TILDE label_ident
-    { $2 }
+    { (Labelled (fst $2), snd $2) }
 | QUESTION label_ident
-    { ("?" ^ fst $2, snd $2) }
+    { (Optional (fst $2), snd $2) }
 | OPTLABEL simple_expr %prec below_SHARP
-    { ("?" ^ $1, $2) }
+    { (Optional $1, $2) }
 
 label_ident:
 | LIDENT
@@ -1484,10 +1497,14 @@ lbl_expr:
     { (mkrhs $startpos($1) $endpos($1) $1, exp_of_label $startpos($1) $endpos($1) $1) }
 
 field_expr_list:
+| field_expr opt_semi { [$1] }
+| field_expr SEMI field_expr_list { $1 :: $3 }
+
+field_expr:
 | label EQUAL expr
-    { [mkrhs $startpos($1) $endpos($1) $1,$3] }
-| field_expr_list SEMI label EQUAL expr
-    { (mkrhs $startpos($3) $endpos($3) $3, $5) :: $1 }
+    { (mkrhs $startpos($1) $endpos($1) $1,$3) }
+| label
+    { (mkrhs $startpos($1) $endpos($1) $1, exp_of_label $startpos($1) $endpos($1) (Lident $1)) }
 
 expr_semi_list:
 | expr
@@ -1754,13 +1771,17 @@ sig_exception_declaration:
 
 generalized_constructor_arguments:
 | (* empty *)
-    { ([],None) }
-| OF core_type_list
-    { (List.rev $2,None) }
-| COLON core_type_list MINUSGREATER simple_core_type
-    { (List.rev $2,Some $4) }
+    { (Pcstr_tuple [],None) }
+| OF constructor_arguments
+    { ($2,None) }
+| COLON constructor_arguments MINUSGREATER simple_core_type
+    { ($2,Some $4) }
 | COLON simple_core_type
-    { ([],Some $2) }
+    { (Pcstr_tuple [],Some $2) }
+
+constructor_arguments:
+| core_type_list { Pcstr_tuple (List.rev $1) }
+| LBRACE label_declarations opt_semi RBRACE { Pcstr_record (List.rev $2) }
 
 label_declarations:
 | label_declaration
@@ -1881,13 +1902,13 @@ core_type2:
 | simple_core_type_or_tuple
     { $1 }
 | QUESTION LIDENT COLON core_type2 MINUSGREATER core_type2
-    { mktyp $startpos $endpos (Ptyp_arrow("?" ^ $2 , mkoption $4, $6)) }
+    { mktyp $startpos $endpos (Ptyp_arrow(Optional $2 , mkoption $4, $6)) }
 | OPTLABEL core_type2 MINUSGREATER core_type2
-    { mktyp $startpos $endpos (Ptyp_arrow("?" ^ $1 , mkoption $2, $4)) }
+    { mktyp $startpos $endpos (Ptyp_arrow(Optional $1 , mkoption $2, $4)) }
 | LIDENT COLON core_type2 MINUSGREATER core_type2
-    { mktyp $startpos $endpos (Ptyp_arrow($1, $3, $5)) }
+    { mktyp $startpos $endpos (Ptyp_arrow(Labelled $1, $3, $5)) }
 | core_type2 MINUSGREATER core_type2
-    { mktyp $startpos $endpos (Ptyp_arrow("", $1, $3)) }
+    { mktyp $startpos $endpos (Ptyp_arrow(Nolabel, $1, $3)) }
 
 simple_core_type:
 | simple_core_type2 %prec below_SHARP
@@ -2158,6 +2179,23 @@ operator:
     { "+=" }
 | PERCENT
     { "%" }
+| index_operator
+    { $1 }
+
+index_operator:
+| DOT index_operator_core opt_assign_arrow { $2^$3 }
+
+index_operator_core:
+| LPAREN RPAREN                         { ".()" }
+| LBRACKET RBRACKET                     { ".[]" }
+| LBRACE RBRACE                         { ".{}" }
+| LBRACE COMMA RBRACE                   { ".{,}" }
+| LBRACE COMMA COMMA RBRACE             { ".{,,}" }
+| LBRACE COMMA DOTDOT COMMA RBRACE      { ".{,..,}" }
+
+opt_assign_arrow:
+| (* empty *) { "" }
+| LESSMINUS   { "<-" }
 
 constr_ident:
 | UIDENT
@@ -2551,7 +2589,7 @@ structure_item:
                       (Ppat_var (mkrhs $startpos($3) $endpos($3) $3))
       in
       let f_fun = mkexp $startpos $endpos
-          (Pexp_fun("", None, f_arg, $6))
+          (Pexp_fun(Nolabel, None, f_arg, $6))
       in
       let expr = Fake.(app (app OUnit.force_indexed f_fun) $4) in
       mkstr $startpos $endpos (Pstr_eval (expr,[]))
@@ -2709,7 +2747,7 @@ expr_comma_opt_list:
 simple_expr:
 | CUSTOM_BANG simple_expr
     { match Fake.Custom_printf.bang $startpos $endpos $2 with
-      | None -> mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) "!", ["",$2]))
+      | None -> mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) "!", [Nolabel,$2]))
       | Some expr -> expr }
 
 operator:
