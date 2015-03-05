@@ -177,7 +177,7 @@ and gen_expr' ~many env type_expr =
   | Tconstr (path, params, _) ->
     let def = try Env.find_type_descrs path env with Not_found -> [], [] in
     begin match def with
-    | [], [] -> from_type_decl ~many env path type_expr
+    | [], [] -> from_type_decl ~many env path params type_expr
     | [], labels -> gen_record ~many env path labels type_expr
     | constrs, [] -> gen_constrs ~many env path constrs type_expr
     | _ -> assert false
@@ -243,10 +243,12 @@ and gen_expr' ~many env type_expr =
   | Tfield _ -> raise (Not_allowed "field")
   | Tnil -> raise (Not_allowed "nil")
 
-and from_type_decl ~many env path texpr =
-  try let tdecl = Env.find_type path env in
+and from_type_decl ~many env path params texpr =
+  try let tdecl = Ctype.instance_declaration (Env.find_type path env) in
       match tdecl.type_manifest with
-      | Some te -> gen_expr' ~many env te
+      | Some te ->
+        List.iter2 ~f:(Ctype.unify env) params tdecl.type_params ;
+        gen_expr' ~many env te
       | None -> raise Not_found
   with Not_found -> [ hole texpr env ]
 
@@ -706,12 +708,14 @@ let rec argument_types env type_expr =
   let type_expr = Btype.repr type_expr in
   match type_expr.desc with
   | Tarrow (label, t0, t1, _) -> (label, t0) :: argument_types env t1
-  | Tconstr (path, _, _) ->
-    (try let tdecl = Env.find_type path env in
+  | Tconstr (path, params, _) ->
+    (try let tdecl = Ctype.instance_declaration (Env.find_type path env) in
          match tdecl.type_manifest with
-         | Some te -> argument_types env te
+         | Some te ->
+           List.iter2 ~f:(Ctype.unify env) params tdecl.type_params ;
+           argument_types env te
          | None -> raise Not_found
-     with Not_found -> [])
+     with Ctype.Unify _ | Not_found -> [])
   | _ -> []
 
 let rec functor_argument_types env mod_type =
