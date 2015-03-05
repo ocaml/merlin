@@ -224,7 +224,7 @@ and gen_expr' ~many env type_expr =
     let rec go acc type_expr =
        let type_expr = Btype.repr type_expr in
        match type_expr.desc with
-       | Tnil | Tvar None -> List.rev acc
+       | Tnil | Tvar None -> acc
        | Tfield (name, kind, ty, tail) ->
          let expr, _ = gen_expr1 env ty in
          let field =
@@ -325,7 +325,7 @@ and gen_constrs ~many env path constrs type_expr =
        end)
       >>= fun (args, env') ->
       let lidl = mk_var (prefix env path cstr_descr.cstr_name) in
-      [ A.Exp.construct lidl args, env ]
+      [ A.Exp.construct lidl args, env' ]
     end
 
 and gen_variant ~many env row_desc type_expr =
