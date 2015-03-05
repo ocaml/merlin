@@ -33,6 +33,8 @@ module Parser = Merlin_parser
    rest of the file.
    This helper just extracs exceptions and reset the list. *)
 
+let mk_arg_lbl = Raw_compat.Parsetree.arg_label_of_str
+
 let caught catch =
   let caught = !catch in
   catch := [];
@@ -83,7 +85,7 @@ let rewrite_raw loc = function
   | Raw_typer.Newtype s ->
     let expr = Ast_helper.Exp.constant (Asttypes.Const_int 0) in
     let patt = Ast_helper.Pat.any () in
-    let expr = Ast_helper.Exp.fun_ "" None patt expr in
+    let expr = Ast_helper.Exp.fun_ (mk_arg_lbl "") None patt expr in
     let expr = Ast_helper.Exp.newtype ~loc s expr in
     `fake [Ast_helper.Str.eval ~loc expr]
   | Raw_typer.Bindings (rec_,e) ->
