@@ -817,6 +817,6 @@ module Custom_printf = struct
       let _str = Raw_compat.extract_const_string cs in
       let loc = {any_val'.pexp_loc with Location. loc_start; loc_end} in
       Some (Ast_helper.Exp.constraint_ ~loc {any_val' with pexp_loc = loc}
-              (Ast_helper.Typ.var (Ast.new_var ())))
+              (Ast_helper.Typ.any ~loc ()))
     | _ -> None
 end
