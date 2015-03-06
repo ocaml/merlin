@@ -126,6 +126,10 @@ case "$MAGIC_VERSION" in
       OCAML_VERSION_MESSAGE="OCaml 4.02.1"
     fi
     ;;
+  "Caml1999I019")
+    OCAML_VERSION="ocaml_trunk"
+    OCAML_VERSION_MESSAGE="OCaml 4.03 (trunk)"
+    ;;
 esac
 
 if [ -e "src/${OCAML_VERSION}.git/.git" ]; then

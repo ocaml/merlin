@@ -36,6 +36,8 @@ let extract_const_string = function
 module Parsetree = struct
   open Parsetree
 
+  let arg_label_of_str x = x
+
   let format_params ~f =
     List.map ~f:(function None -> f "_" | Some id -> f id.Location.txt)
 

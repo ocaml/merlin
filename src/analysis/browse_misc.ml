@@ -36,7 +36,9 @@ let print_constructor ppf c =
   | [] ->
     Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc = c.cstr_res.desc })
   | args ->
-    let desc = Tarrow ("",{ level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok) in
+    let desc = Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
+                       { level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok)
+    in
     Printtyp.type_expr ppf ({ level = 0 ; id = 0 ; desc  })
 
 let summary_at pos sum =

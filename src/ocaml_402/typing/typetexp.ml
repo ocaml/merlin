@@ -858,6 +858,8 @@ let transl_type_scheme env styp =
 open Format
 open Printtyp
 
+(* TODO: remove that and use the version of spellcheck from [Misc].
+   See src/ocaml_trunk/typing/typetexp.ml for the merge. *)
 let spellcheck ppf fold env lid = ()
   (*let cutoff =
     match String.length (Longident.last lid) with

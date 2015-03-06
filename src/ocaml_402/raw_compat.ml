@@ -36,6 +36,8 @@ let extract_const_string = function
 module Parsetree = struct
   open Parsetree
 
+  let arg_label_of_str x = x
+
   let format_params ~f params =
     let format_param (param,_variance) =
       match param.ptyp_desc with

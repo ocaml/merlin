@@ -258,7 +258,9 @@ let no_overflow_add a b = (a lxor b) lor (a lxor (lnot (a+b))) < 0
 
 let no_overflow_sub a b = (a lxor (lnot b)) lor (b lxor (a-b)) < 0
 
-let no_overflow_lsl a = min_int asr 1 <= a && a <= max_int asr 1
+let no_overflow_mul a b = b <> 0 && (a * b) / b = a
+
+let no_overflow_lsl a k = 0 <= k && k < Sys.word_size && min_int asr k <= a && a <= max_int asr k
 
 (* String operations *)
 
@@ -283,6 +285,19 @@ let search_substring pat str start =
     else if str.[i + j] = pat.[j] then search i (j+1)
     else search (i+1) 0
   in search start 0
+
+let replace_substring ~before ~after str =
+  let rec search acc curr =
+    match
+      try Some (search_substring before str curr) with Not_found -> None
+    with
+    | Some next ->
+      let prefix = String.sub str curr (next - curr) in
+      search (prefix :: acc) (next + String.length before)
+    | None ->
+      let suffix = String.sub str curr (String.length str - curr) in
+      List.rev (suffix :: acc)
+  in String.concat after (search [] 0)
 
 let rev_split_string cond s =
   let rec split1 res i =
@@ -323,6 +338,52 @@ let fst4 (x,_,_,_) = x
 let snd4 (_,x,_,_) = x
 let thd4 (_,_,x,_) = x
 let fth4 (_,_,_,x) = x
+
+
+module LongString = struct
+  type t = string array
+
+  let create str_size =
+    let tbl_size = str_size / Sys.max_string_length + 1 in
+    let tbl = Array.make tbl_size "" in
+    for i = 0 to tbl_size - 2 do
+      tbl.(i) <- String.create Sys.max_string_length;
+    done;
+    tbl.(tbl_size - 1) <- String.create (str_size mod Sys.max_string_length);
+    tbl
+
+  let length tbl =
+    let tbl_size = Array.length tbl in
+    Sys.max_string_length * (tbl_size - 1) + String.length tbl.(tbl_size - 1)
+
+  let get tbl ind =
+    String.get tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
+
+  let set tbl ind c =
+    String.set tbl.(ind / Sys.max_string_length) (ind mod Sys.max_string_length)
+              c
+
+  let blit src srcoff dst dstoff len =
+    for i = 0 to len - 1 do
+      set dst (dstoff + i) (get src (srcoff + i))
+    done
+
+  let output oc tbl pos len =
+    for i = pos to pos + len - 1 do
+      output_char oc (get tbl i)
+    done
+
+  let unsafe_blit_to_bytes src srcoff dst dstoff len =
+    for i = 0 to len - 1 do
+      String.unsafe_set dst (dstoff + i) (get src (srcoff + i))
+    done
+
+  let input_bytes ic len =
+    let tbl = create len in
+    Array.iter (fun str -> really_input ic str 0 (String.length str)) tbl;
+    tbl
+end
+
 
         (* [modules_in_path ~ext path] lists ocaml modules corresponding to
          * filenames with extension [ext] in given [path]es.
@@ -371,3 +432,102 @@ let file_contents filename =
   with exn ->
     close_in_noerr ic;
     raise exn
+
+let edit_distance a b cutoff =
+  let la, lb = String.length a, String.length b in
+  let cutoff =
+    (* using max_int for cutoff would cause overflows in (i + cutoff + 1);
+       we bring it back to the (max la lb) worstcase *)
+    min (max la lb) cutoff in
+  if abs (la - lb) > cutoff then None
+  else begin
+    (* initialize with 'cutoff + 1' so that not-yet-written-to cases have
+       the worst possible cost; this is useful when computing the cost of
+       a case just at the boundary of the cutoff diagonal. *)
+    let m = Array.make_matrix (la + 1) (lb + 1) (cutoff + 1) in
+    m.(0).(0) <- 0;
+    for i = 1 to la do
+      m.(i).(0) <- i;
+    done;
+    for j = 1 to lb do
+      m.(0).(j) <- j;
+    done;
+    for i = 1 to la do
+      for j = max 1 (i - cutoff - 1) to min lb (i + cutoff + 1) do
+        let cost = if a.[i-1] = b.[j-1] then 0 else 1 in
+        let best =
+          (* insert, delete or substitute *)
+          min (1 + min m.(i-1).(j) m.(i).(j-1)) (m.(i-1).(j-1) + cost)
+        in
+        let best =
+          (* swap two adjacent letters; we use "cost" again in case of
+             a swap between two identical letters; this is slightly
+             redundant as this is a double-substitution case, but it
+             was done this way in most online implementations and
+             imitation has its virtues *)
+          if not (i > 1 && j > 1 && a.[i-1] = b.[j-2] && a.[i-2] = b.[j-1])
+          then best
+          else min best (m.(i-2).(j-2) + cost)
+        in
+        m.(i).(j) <- best
+      done;
+    done;
+    let result = m.(la).(lb) in
+    if result > cutoff
+    then None
+    else Some result
+  end
+
+let spellcheck env name =
+  let cutoff =
+    match String.length name with
+      | 1 | 2 -> 0
+      | 3 | 4 -> 1
+      | 5 | 6 -> 2
+      | _ -> 3
+  in
+  let compare target acc head =
+    match edit_distance target head cutoff with
+      | None -> acc
+      | Some dist ->
+	 let (best_choice, best_dist) = acc in
+	 if dist < best_dist then ([head], dist)
+	 else if dist = best_dist then (head :: best_choice, dist)
+	 else acc
+  in
+  fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
+
+let did_you_mean ppf get_choices =
+  (* flush now to get the error report early, in the (unheard of) case
+     where the search in the get_choices function would take a bit of
+     time; in the worst case, the user has seen the error, she can
+     interrupt the process before the spell-checking terminates. *)
+  Format.fprintf ppf "@?";
+  match get_choices () with
+  | [] -> ()
+  | choices ->
+     let rest, last = split_last choices in
+     Format.fprintf ppf "@\nHint: Did you mean %s%s%s?"
+       (String.concat ", " rest)
+       (if rest = [] then "" else " or ")
+       last
+
+(* split a string [s] at every char [c], and return the list of sub-strings *)
+let split s c =
+  let len = String.length s in
+  let rec iter pos to_rev =
+    if pos = len then List.rev ("" :: to_rev) else
+      match try
+              Some ( String.index_from s pos c )
+        with Not_found -> None
+      with
+          Some pos2 ->
+            if pos2 = pos then iter (pos+1) ("" :: to_rev) else
+              iter (pos2+1) ((String.sub s pos (pos2-pos)) :: to_rev)
+        | None -> List.rev ( String.sub s pos (len-pos) :: to_rev )
+  in
+  iter 0 []
+
+let cut_at s c =
+  let pos = String.index s c in
+  String.sub s 0 pos, String.sub s (pos+1) (String.length s - pos - 1)

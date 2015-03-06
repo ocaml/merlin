@@ -109,9 +109,12 @@ val no_overflow_add: int -> int -> bool
 val no_overflow_sub: int -> int -> bool
         (* [no_overflow_add n1 n2] returns [true] if the computation of
            [n1 - n2] does not overflow. *)
-val no_overflow_lsl: int -> bool
-        (* [no_overflow_add n] returns [true] if the computation of
-           [n lsl 1] does not overflow. *)
+val no_overflow_mul: int -> int -> bool
+        (* [no_overflow_mul n1 n2] returns [true] if the computation of
+           [n1 * n2] does not overflow. *)
+val no_overflow_lsl: int -> int -> bool
+        (* [no_overflow_lsl n k] returns [true] if the computation of
+           [n lsl k] does not overflow. *)
 
 val chop_extension_if_any: string -> string
         (* Like Filename.chop_extension but returns the initial file
@@ -130,6 +133,10 @@ val search_substring: string -> string -> int -> int
            at offset [start] in [str].  Raise [Not_found] if [pat]
            does not occur. *)
 
+val replace_substring: before:string -> after:string -> string -> string
+        (* [search_substring ~before ~after str] replaces all occurences
+           of [before] with [after] in [str] and returns the resulting string. *)
+
 val rev_split_words: string -> string list
         (* [rev_split_words s] splits [s] in blank-separated words, and return
            the list of words in reverse order. *)
@@ -141,6 +148,7 @@ val rev_string_split: on:char -> string -> string list
 val get_ref: 'a list ref -> 'a list
         (* [get_ref lr] returns the content of the list reference [lr] and reset
            its content to the empty list. *)
+
 
 val fst3: 'a * 'b * 'c -> 'a
 val snd3: 'a * 'b * 'c -> 'b
@@ -162,3 +170,65 @@ val (~:) : 'a -> 'a Lazy.t
 
 val file_mtime : string -> float
 val file_contents : string -> string
+
+module LongString :
+  sig
+    type t = string array
+    val create : int -> t
+    val length : t -> int
+    val get : t -> int -> char
+    val set : t -> int -> char -> unit
+    val blit : t -> int -> t -> int -> int -> unit
+    val output : out_channel -> t -> int -> int -> unit
+    val unsafe_blit_to_bytes : t -> int -> string -> int -> int -> unit
+    val input_bytes : in_channel -> int -> t
+  end
+
+val edit_distance : string -> string -> int -> int option
+(** [edit_distance a b cutoff] computes the edit distance between
+    strings [a] and [b]. To help efficiency, it uses a cutoff: if the
+    distance [d] is smaller than [cutoff], it returns [Some d], else
+    [None].
+
+    The distance algorithm currently used is Damerau-Levenshtein: it
+    computes the number of insertion, deletion, substitution of
+    letters, or swapping of adjacent letters to go from one word to the
+    other. The particular algorithm may change in the future.
+*)
+
+val spellcheck : string list -> string -> string list
+(** [spellcheck env name] takes a list of names [env] that exist in
+    the current environment and an erroneous [name], and returns a
+    list of suggestions taken from [env], that are close enough to
+    [name] that it may be a typo for one of them. *)
+
+val did_you_mean : Format.formatter -> (unit -> string list) -> unit
+(** [did_you_mean ppf get_choices] hints that the user may have meant
+    one of the option returned by calling [get_choices]. It does nothing
+    if the returned list is empty.
+
+    The [unit -> ...] thunking is meant to delay any potentially-slow
+    computation (typically computing edit-distance with many things
+    from the current environment) to when the hint message is to be
+    printed. You should print an understandable error message before
+    calling [did_you_mean], so that users get a clear notification of
+    the failure even if producing the hint is slow.
+*)
+
+val split : string -> char -> string list
+(** [String.split string char] splits the string [string] at every char
+    [char], and returns the list of sub-strings between the chars.
+    [String.concat (String.make 1 c) (String.split s c)] is the identity.
+    @since 4.01
+ *)
+
+val cut_at : string -> char -> string * string
+(** [String.cut_at s c] returns a pair containing the sub-string before
+   the first occurrence of [c] in [s], and the sub-string after the
+   first occurrence of [c] in [s].
+   [let (before, after) = String.cut_at s c in
+    before ^ String.make 1 c ^ after] is the identity if [s] contains [c].
+
+   Raise [Not_found] if the character does not appear in the string
+   @since 4.01
+*)
