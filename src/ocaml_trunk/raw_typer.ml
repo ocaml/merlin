@@ -82,7 +82,7 @@ let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
   | N_functor_arg, arg            -> default, functor_arg arg
   | N_functor_args, args          -> default, functor_args [] args
   | N_labeled_simple_pattern, pat -> default, [Pattern pat]
-  | N_pattern, pat                -> default, [Pattern (Nolabel,None,pat)]
+  | N_pattern, pat                -> default, [Pattern (Asttypes.Nolabel,None,pat)]
   | N_match_cases, cases          -> default, [Eval (Ast_helper.Exp.function_ cases)]
   | N_match_case,  case           -> default, [Eval (Ast_helper.Exp.function_ [case])]
   | _                             -> empty
