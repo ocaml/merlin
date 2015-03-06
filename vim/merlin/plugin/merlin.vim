@@ -12,4 +12,4 @@ let g:merlin_ignore_warnings = "false"
 let s:c.merlin_home = expand('<sfile>:h:h:h:h')
 
 " Highlight the expression which type is given
-hi EnclosingExpr ctermbg=17 guibg=LightGreen
+hi def link EnclosingExpr IncSearch
