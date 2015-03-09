@@ -16,6 +16,10 @@ open Asttypes
 open Types
 
 exception Unify of (type_expr * type_expr) list
+
+val dupty : type_expr -> type_expr
+val duptrace : (type_expr * type_expr) list -> (type_expr * type_expr) list
+
 exception Tags of label * label
 exception Subtype of
         (type_expr * type_expr) list * (type_expr * type_expr) list

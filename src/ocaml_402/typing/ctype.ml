@@ -82,6 +82,11 @@ open Btype
 
 exception Unify of (type_expr * type_expr) list
 
+let dupty ty = Subst.type_expr Subst.identity ty
+let duptrace trace =
+  let duppair (t1, t2) = dupty t1, dupty t2 in
+  List.map duppair trace
+
 exception Tags of label * label
 
 let () =
