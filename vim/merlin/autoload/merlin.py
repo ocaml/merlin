@@ -12,8 +12,6 @@ enclosing_types = [] # nothing to see here
 current_enclosing = -1
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
 re_wspaces = re.compile("[\n ]+")
-re_shorten_start = re.compile("^(val|external).* : *")
-re_shorten_end = re.compile(" = .*$")
 
 ######## ERROR MANAGEMENT
 
@@ -171,13 +169,6 @@ def uniq(seq):
   seen = set()
   seen_add = seen.add
   return [ x for x in seq if not (x in seen or seen_add(x))]
-
-def shorten_desc(prop):
-  if prop['kind'] == 'Value':
-    return re.sub(re_shorten_end, "",
-            re.sub(re_shorten_start, ": ", prop['desc']))
-  else:
-    return prop['desc']
 
 def vim_is_set(name):
   return not (vim.eval('exists("%s") && %s' % (name,name)) in ["", "0"])
@@ -349,10 +340,6 @@ def vim_complete_cursor(base, suffix, vimvar):
   vim.command("let %s = []" % vimvar)
   line, col = vim.current.window.cursor
   prep = lambda str: re.sub(re_wspaces, " ", str).replace("'", "''")
-  if vim_is_set("g:merlin_completion_short"):
-      desc = shorten_desc
-  else:
-      desc = lambda prop: prop['desc']
   try:
     completions = command_complete_cursor(base,line,col)
     nb_entries = len(completions['entries'])
@@ -376,7 +363,7 @@ def vim_complete_cursor(base, suffix, vimvar):
         vim.command("call insert(%s, l:tmp)" % vimvar)
     for prop in completions['entries']:
       vim.command("let l:tmp = {'word':'%s','menu':'%s','info':'%s','kind':'%s'}" %
-        (prep(prop['name']),prep(desc(prop)),prep(prop['info']),prep(prop['kind'][:1])))
+        (prep(prop['name']),prep(prop['desc']),prep(prop['info']),prep(prop['kind'][:1])))
       vim.command("call add(%s, l:tmp)" % vimvar)
     return (nb_entries > 0)
   except MerlinExc as e:

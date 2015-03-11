@@ -43,10 +43,6 @@ if !exists("g:merlin_completion_dwim")
   let g:merlin_completion_dwim = 1
 endif
 
-if !exists("g:merlin_completion_short")
-  let g:merlin_completion_short = 1
-endif
-
 if !exists("g:merlin_completion_argtype")
   let g:merlin_completion_argtype = 'several'
 endif
