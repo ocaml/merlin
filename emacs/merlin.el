@@ -1106,14 +1106,11 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-completion-format-entry (entry)
   "Format the completion entry ENTRY."
-  (let ((type
-         (cond
-          ((member (cdr (assoc 'kind entry)) '("Module" "module"))
-           " <module>")
-          ((string-equal (cdr (assoc 'kind entry)) "Type")
-           (format " [%s]" (cdr (assoc 'desc entry))))
-          (t
-           (replace-regexp-in-string "^[^:]+:[ \n]+" "" (cdr (assoc 'desc entry)))))))
+  (let* ((kind (cdr (assoc 'kind entry)))
+         (desc (cdr (assoc 'desc entry)))
+         (type (cond ((member kind '("Module" "module")) " <module>")
+                     ((string-equal kind "Type") (format " [%s]" desc))
+                     (t desc))))
     (replace-regexp-in-string "[\n ]+" " " type)))
 
 (defun merlin-completion-prefix (ident)

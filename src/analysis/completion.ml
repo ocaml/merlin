@@ -159,15 +159,9 @@ let completion_format ~exact name ?path ty =
   let kind =
     match ty with
     | `Value v ->
-      let v = (*if exact
-                 then Types.({v with val_type = verbose_type env v.val_type})
-                 else*) v
-      in
-      Printtyp.value_description ident ppf v;
+      Printtyp.type_expr ppf v.Types.val_type;
       `Value
     | `Cons c  ->
-      Format.pp_print_string ppf name;
-      Format.pp_print_string ppf " : ";
       Browse_misc.print_constructor ppf c;
       `Constructor
     | `Label label_descr ->
@@ -175,8 +169,6 @@ let completion_format ~exact name ?path ty =
         Types.(Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
                        label_descr.lbl_res, label_descr.lbl_arg, Cok))
       in
-      Format.pp_print_string ppf name;
-      Format.pp_print_string ppf " : ";
       Printtyp.type_scheme ppf (Btype.newgenty desc);
       `Label
     | `Mod m   ->
