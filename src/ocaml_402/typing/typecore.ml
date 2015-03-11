@@ -3506,6 +3506,46 @@ and type_statement env sexp =
 (* Typing of match cases *)
 
 and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
+  let snap = snapshot () in
+  let delayed_checks' = !delayed_checks in
+  let errors = ref [] in
+  let result =
+    Typing_aux.catch_errors errors (fun () ->
+      let (case_list, _ as result) =
+        type_cases' ?in_function env ty_arg ty_res partial_flag loc caselist
+      in
+      let all_erroneous =
+        !errors <> [] &&
+        List.for_all (fun case -> Typing_aux.erroneous_patt_check case.c_lhs)
+          case_list
+      in
+      (* Heuristic: if every pattern is recovered, then the type error is
+         probably in the expression being matched.
+
+         Note: currently this heuristic will not trigger if one branch is a
+         wildcard, so we will still get a lot of noise.
+         We could improve that... someday. *)
+      if not all_erroneous then result else (
+        (* We restore the typer to its previous state *)
+        Btype.backtrack snap;
+        delayed_checks := delayed_checks';
+        (* We only keep the first error (which is the first erroneous pattern),
+           so we can report the problem to the user. *)
+        errors := [ List.hd (List.rev !errors) ];
+        Typing_aux.catch_errors errors @@ fun () ->
+        (* We generate a new (polymorphic) type for the matched expression. *)
+        let ty_arg = newvar () in
+        generalize ty_arg;
+        Typing_aux.erroneous_type_register ty_arg;
+        (* And we try again. *)
+        type_cases' ?in_function env ty_arg ty_res partial_flag loc caselist
+      )
+    )
+  in
+  List.iter Typing_aux.raise_error !errors ;
+  result
+
+and type_cases' ?in_function env ty_arg ty_res partial_flag loc caselist =
   (* ty_arg is _fully_ generalized *)
   let patterns = List.map (fun {pc_lhs=p} -> p) caselist in
   let erase_either =

@@ -40,4 +40,6 @@ val erroneous_type_register: Types.type_expr -> unit
 val erroneous_type_check: Types.type_expr -> bool
 val erroneous_expr_check: Typedtree.expression -> bool
 
+val erroneous_patt_check: Typedtree.pattern -> bool
+
 val relax_typer: bool fluid

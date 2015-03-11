@@ -64,3 +64,7 @@ let rec erroneous_expr_check e =
     when Ident.name (Path.head p) = "_" -> true
   | Typedtree.Texp_apply (e',_) -> erroneous_expr_check e'
   | _ -> false
+
+let erroneous_patt_check p =
+  List.exists p.Typedtree.pat_attributes
+    ~f:(fun (str_loc, _) -> str_loc.Location.txt = "merlin.incorrect")
