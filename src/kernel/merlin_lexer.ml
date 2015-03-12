@@ -197,6 +197,80 @@ let extract_ident = function
     in
     Location.mkloc t {Location. loc_start = s; loc_end = e; loc_ghost = false}
 
+(* [reconstruct_identifier] is impossible to read at the moment, here is a
+   pseudo code version of the function:
+   (many thanks to Gabriel for this contribution)
+
+        00| let h = parse (focus h) with
+        01|   | . { h+1 }
+        02|   | _ { h }
+        03| in
+        04| parse h with
+        05| | BOF x=operator       { [x] }
+        06| | ¬( x=operator        { [x] }
+        07| | ' x=ident            { [] }
+        08| | _ {
+        09|   let acc, h = parse (h ! tail h) with
+        10|     | x=ident !          { [x], h }
+        11|     | ( ! x=operator )   { [x], h }
+        12|     | ( x=operator ! )   { [x], h - 1 }
+        13|     | ( x=operator ) !   { [x], h - 2 }
+        14|     | _ { [], h }
+        15|   in
+        16|   let h = h - 1 in
+        17|   let rec head acc = parse (h !) with
+        18|     | tl x=ident . ! { head (x :: acc) tl }
+        19|     | x=ident . !    { ident :: acc }
+        20|     | _              { acc }
+        21|   in head acc
+        22| }
+
+   Now for the explainations:
+     line 0-3:  if we're on a dot, skip it and move to the right
+
+     line 5,6:  if we're on an operator not preceeded by an opening parenthesis,
+                just return that.
+
+     line 7:    if we're on a type variable, don't return anything.
+                reconstruct_identifier is called when locating and getting the
+                type of an expression, in both cases there's nothing we can do
+                with a type variable.
+                See #317
+
+     line 8-22: two step approach:
+       - line 9-15:  retrieve the identifier
+                     OR retrieve the parenthesed operator and move before the
+                        opening parenthesis
+
+       - line 16-21: retrieve the "path" prefix of the identifier/operator we
+                     got in the previous step.
+
+
+   Additionnaly, the message of commit fc0b152 explains what we consider is an
+   identifier:
+
+     «
+        Interpreting an OCaml identifier out of context is a bit ambiguous.
+
+        A prefix of the form (UIDENT DOT)* is the module path,
+        A UIDENT suffix is either a module name, a module type name (in case the
+        whole path is a module path), or a value constructor.
+        A LIDENT suffix is either a value name, a type constructor or a module
+        type name.
+        A LPAREN OPERATOR RPAREN suffix is a value name (and soon, maybe a
+        value constructor if beginning by ':' ?!) .
+
+        In the middle, LIDENT DOT (UIDENT DOT)* is projection of the field of a
+        record.  In this case, merlin will drop everything up to the first
+        UIDENT and complete in the scope of the (UIDENT DOT)* interpreted as a
+        module path.
+        Soon, the last UIDENT might also be the type of an inline record.
+        (Module2.f.Module1.A <- type of the record of the value constructor named A of
+        type f, defined in Module1 and aliased in Module2, pfffff).
+     »
+*)
+
+
 let reconstruct_identifier ?(for_locate=false) h =
   (*List.iter (fun (_,item) ->
       match item with
@@ -214,8 +288,13 @@ let reconstruct_identifier ?(for_locate=false) h =
     [ extract_op for_locate op ]
   | List.More ((_, op), (List.More ((_, rest), _) | List.One (_, rest)))
     when token Raw_parser_values.is_operator op
-    && not (token Raw_parser_values.is_lparen rest) ->
+      && not (token Raw_parser_values.is_lparen rest) ->
     [ extract_op for_locate op ]
+  | List.More ((_, id), ( List.More ((_, quote), _)
+                        | List.One (_, quote)))
+    when token Raw_parser_values.is_ident id
+      && token Raw_parser_values.is_quote quote ->
+    []
   | _ ->
     let acc, h = match History.head h, History.tail h with
       | (List.More((_, ident), _) | List.One (_, ident)), _

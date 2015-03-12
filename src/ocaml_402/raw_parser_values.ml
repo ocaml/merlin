@@ -1068,6 +1068,10 @@ let is_lparen =
     | LPAREN -> Some "("
     | _ -> None
 
+let is_quote = function
+  | Raw_parser.QUOTE -> Some "'"
+  | _ -> None
+
 let is_operator =
   let open Raw_parser in function
     | PREFIXOP s

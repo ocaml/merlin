@@ -64,6 +64,7 @@ val selection_priority: symbol_class -> int
 
 val token_of_symbol: 'a token_class -> 'a -> token
 
+val is_quote : token -> string option
 val is_lparen : token -> string option
 val is_ident : token -> string option
 val is_uident : token -> string option

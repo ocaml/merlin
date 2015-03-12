@@ -1093,6 +1093,10 @@ let is_operator =
     | COLONEQUAL -> Some ":=" | PLUSEQ -> Some "+="
     | _ -> None
 
+let is_quote = function
+  | Raw_parser.QUOTE -> Some "'"
+  | _ -> None
+
 let is_ident =
   let open Raw_parser in function
     | UIDENT s | LIDENT s -> Some s
