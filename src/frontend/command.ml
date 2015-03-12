@@ -354,10 +354,10 @@ let dispatch (state : state) =
         let path = Lexer.reconstruct_identifier ~for_locate:true lexer in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
-        let path = String.concat ~sep:"." path in
-        path
+        String.concat ~sep:"." path
       | Some path, _ -> path
     in
+    if path = "" then `Invalid_context else
     let is_implementation = Buffer.is_implementation state.buffer in
     let project = Buffer.project state.buffer in
     begin match

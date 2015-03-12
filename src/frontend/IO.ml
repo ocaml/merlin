@@ -412,6 +412,7 @@ module Protocol_io = struct
         | Locate _, resp ->
           begin match resp with
           | `At_origin -> `String "Already at definition point"
+          | `Invalid_context -> `String "Not a valid identifier"
           | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
           | `Not_found (i, Some f) ->
             `String

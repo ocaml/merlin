@@ -75,11 +75,12 @@ type _ request =
   | Locate
     : string option * [ `ML | `MLI ] * position option
     -> [ `Found of string option * Lexing.position
-      | `Not_in_env of string
-      | `File_not_found of string
-      | `Not_found of string * string option
-      | `At_origin
-      ] request
+       | `Invalid_context
+       | `Not_in_env of string
+       | `File_not_found of string
+       | `Not_found of string * string option
+       | `At_origin
+       ] request
   | Case_analysis
     : Location.t -> (Location.t * string) request
   | Outline
