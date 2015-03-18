@@ -10,6 +10,8 @@
 (*                                                                     *)
 (***********************************************************************)
 
+val flags : (string * Arg.spec * string) list
+
 val chosen_protocol : string option
 
 val version_spec : string

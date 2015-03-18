@@ -180,8 +180,7 @@ end = struct
   let update_flags prj =
     let cl = Clflags.arg_spec prj.flags in
     let w  = Warnings.arg_spec prj.warnings in
-    let spec = cl @ w in
-    let process_flags flags =
+    let process_flags spec flags =
       let failures = ref [] in
       let rec loop ?(current=(ref 0)) flags =
         try Arg.parse_argv ~current flags spec (fun flg -> raise (Arg.Bad flg)) "" with
@@ -193,19 +192,18 @@ end = struct
         | Arg.Help _ -> (* ignore *)
           loop ~current flags
       in
-      loop (Array.of_list ("merlin" :: flags)) ;
+      loop flags ;
       !failures
     in
-    let failures =
-      List.fold_left prj.dot_config.cfg_flags ~init:[] ~f:(fun acc lst ->
-        List.rev_append (process_flags lst) acc
+    let process_flags_list lst ~init =
+      List.fold_left lst ~init ~f:(fun acc lst ->
+        let flags = Array.of_list ("merlin" :: lst) in
+        List.rev_append (process_flags (cl @ w) flags) acc
       )
     in
-    let failures =
-      List.fold_left prj.user_config.cfg_flags ~init:failures ~f:(fun acc lst ->
-        List.rev_append (process_flags lst) acc
-      )
-    in
+    let failures = process_flags_list prj.dot_config.cfg_flags ~init:[] in
+    let failures = List.rev_append (process_flags (Main_args.flags @ cl @w) Sys.argv) failures in
+    let failures = process_flags_list prj.user_config.cfg_flags ~init:failures in
     update_ppxs prj;
     Clflags.set := prj.flags ;
     Warnings.set := prj.warnings ;

@@ -171,6 +171,9 @@ SOURCES = \
 	$(TYPER)/raw_typer.ml             \
 	src/kernel/merlin_typer.mli       \
 	src/kernel/merlin_typer.ml        \
+	src/config/my_config.ml           \
+	src/frontend/main_args.mli        \
+	src/frontend/main_args.ml         \
 	src/kernel/merlin_lib.ml          \
 	src/ocaml_aux/error_report.mli    \
 	src/ocaml_aux/error_report.ml     \
@@ -188,10 +191,7 @@ SOURCES = \
 	$(TYPER)/tast_helper.ml           \
 	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \
-	src/config/my_config.ml           \
 	src/frontend/IO_sexp.ml           \
-	src/frontend/main_args.mli        \
-	src/frontend/main_args.ml         \
 	src/frontend/command.mli          \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
