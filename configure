@@ -5,6 +5,7 @@ SHARE_DIR=/usr/local/share
 VIM_DIR=/usr/local/share/ocamlmerlin/vim
 WITH_VIMBUFSYNC="1"
 WITH_BIN_ANNOT=""
+VERSION_STRING=""
 
 if ! [ -x $(which ocamlfind) ]; then
   echo "OCamlfind is missing. Please install it."
@@ -54,6 +55,9 @@ The options available for better control are as follow:
 
     --enable-compiled-emacs-mode    compiles the emacs mode.
                                     Makes the plugin load slightly faster.
+
+    --with-version-string <str>     Overwrite the version message printed by
+                                    merlin when called with -version or -vnum.
 END
 }
 
@@ -88,6 +92,10 @@ while [ -n "$1" ]; do
       ;;
     --enable-compiled-emacs-mode)
       ENABLE_COMPILED_EMACS_MODE=true
+      ;;
+    --with-version-string)
+      shift 1
+      VERSION_STRING="$1"
       ;;
     --help|-help|-h)
       usage
@@ -176,15 +184,17 @@ WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 END
 
-  if [ -d ".git" ]; then
-    version="git-`git rev-parse HEAD`"
+  if [ -n $VERSION_STRING ]; then
+    true
+  elif [ -d ".git" ]; then
+    VERSION_STRING="git-`git rev-parse HEAD`"
   elif [ -f "CHANGELOG" ]; then
-    version=`head -n1 CHANGELOG | cut -d' ' -f2`
+    VERSION_STRING=`head -n1 CHANGELOG | cut -d' ' -f2`
   else
-    version="unknown"
+    VERSION_STRING="unknown"
   fi
 
-  echo >src/config/my_config.ml "let version = \"$version\";;"
+  echo >src/config/my_config.ml "let version = \"$VERSION_STRING\";;"
 
   if [ "$EXIT" -eq 0 ]; then
     echo "Now, type 'make' to compile then 'make install'."
