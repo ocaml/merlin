@@ -159,7 +159,7 @@ let completion_format ~exact name ?path ty =
   let kind =
     match ty with
     | `Value v ->
-      Printtyp.type_expr ppf v.Types.val_type;
+      Printtyp.type_scheme ppf v.Types.val_type;
       `Value
     | `Cons c  ->
       Browse_misc.print_constructor ppf c;
