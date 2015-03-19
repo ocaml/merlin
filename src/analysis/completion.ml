@@ -283,6 +283,13 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
                 let keep_if_present acc (lbl, row_field) =
                   match row_field with
                   | Types.Rpresent arg when lbl <> "" -> ("`" ^ lbl, arg) :: acc
+                  | Types.Reither (_, lst, _, _) when lbl <> "" ->
+                    let arg =
+                      match lst with
+                      | [ well_typed ] -> Some well_typed
+                      | _ -> None
+                    in
+                    ("`" ^ lbl, arg) :: acc
                   | _ -> acc
                 in
                 List.fold_left ~init:acc row_fields ~f:keep_if_present
