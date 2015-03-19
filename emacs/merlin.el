@@ -102,6 +102,10 @@ no argument and should return the configuration (see
   "If non-nil, print the types of the variables during completion with `auto-complete'."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-completion-arg-type t
+  "If non-nil, print the type of the expected argument during completion on an application."
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-debug nil
   "If non-nil, log the data sent and received from merlin."
   :group 'merlin :type 'boolean)
@@ -1134,9 +1138,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                                         (aset name 0 ?~)
                                         (string-prefix-p suffix name)))))
                               labels))
-  ; Format labels
-  (mapcar (lambda (x) (list (cdr (assoc 'name x)) (cdr (assoc 'type x)) "Label" nil))
-          labels))
+  (mapcar (lambda (x) (append x '((kind . "Label") (info . nil)))) labels))
 
 (defun merlin--completion-data (ident)
   "Return the data for completion of IDENT, i.e. a list of pairs (NAME . TYPE)."
@@ -1152,6 +1154,11 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
          (application (and (listp context)
                            (equal (car context) "application")
                            (cadr context)))
+         ;; Argument-type
+         (expected-ty (and application
+                           (not (string-equal "'_a"
+                                  (cdr (assoc 'argument_type application))))
+                           (cdr (assoc 'argument_type application))))
          ;; labels
          (labels (and application (cdr (assoc 'labels application)))))
     (setq labels (merlin--completion-prepare-labels labels suffix))
@@ -1160,22 +1167,25 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
       (setq data (merlin-send-command `(expand prefix ,ident at ,pos)))
       (setq entries (cdr (assoc 'entries data)))
       (setq prefix ""))
-    ; Type information
-    (when application
-      (merlin--type-display nil (cdr (assoc 'argument_type application)) t))
     ; Concat results
-    (append
-      labels
-      (mapcar (lambda (entry)
-                (list (concat prefix (cdr (assoc 'name entry)))
-                      (merlin--completion-format-entry entry)
-                      (cdr (assoc 'kind entry))
-                      (cdr (assoc 'info entry))))
-              entries))))
+    (let ((result (append labels entries)))
+      (if expected-ty
+        (mapcar (lambda (x) (append x `((argument_type . ,expected-ty))))
+                result)
+        result))))
 
-; Alias returning only entries, eventually called by external code, while
-; merlin--completion-data is free to change the format of returned values.
-(defalias 'merlin-completion-data 'merlin--completion-data)
+; Here for backward compatibility: this function is called by external code, the
+; format of merlin--completion-data changed, this function translates it back to
+; the old format.
+(defun merlin-completion-data (ident)
+  "Backward compatible version of merlin--completion-data"
+  (let (entries (merlin--completion-data ident))
+    (mapcar (lambda (entry)
+              (list (concat prefix (cdr (assoc 'name entry)))
+                    (merlin--completion-format-entry entry)
+                    (cdr (assoc 'kind entry))
+                    (cdr (assoc 'info entry))))
+            entries)))
 
 (defun merlin--completion-lookup (string state)
   "Lookup the entry STRING inside the completion table."
@@ -1256,13 +1266,23 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                  (cons filename linum)))))
           (candidates
            (merlin-sync-to-point)
-           (mapcar #'(lambda (x) (propertize (car x) 'merlin-meta (cadr x)))
+           (mapcar #'(lambda (x)
+                       (propertize
+                         (propertize (cdr (assoc 'name x))
+                                     'merlin-meta
+                                     (merlin--completion-format-entry x))
+                         'merlin-arg-type
+                         (cdr (assoc 'argument_type x))))
                    (merlin--completion-data arg)))
           (post-completion
             (let ((minibuffer-message-timeout nil))
               (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg))))
           (meta
-           (get-text-property 0 'merlin-meta arg))
+            (let ((arg-type (get-text-property 0 'merlin-arg-type arg))
+                  (entry-ty (get-text-property 0 'merlin-meta arg)))
+              (if (and merlin-completion-arg-type arg-type)
+                (concat "Expected argument type: " arg-type)
+                entry-ty)))
           (annotation
            (concat " : " (get-text-property 0 'merlin-meta arg)))
           )))
