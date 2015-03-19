@@ -273,42 +273,41 @@ let completion_fold ?target_type prefix path kind ~validate env compl =
     let rec of_kind = function
       | `Variants ->
         begin match target_type with
-          | None -> []
-          | Some t ->
-            let rec variants acc t =
-              let t = Ctype.repr t in
-              match t.Types.desc with
-              | Types.Tvariant { Types. row_fields; row_more; row_name } ->
-                let acc = List.fold_left' ~init:acc row_fields
-                    ~f:(fun (label, row_field) acc ->
-                        match row_field with
-                        | Types.Rpresent arg when label <> "" ->
-                          ("`" ^ label, arg) :: acc
-                        | _ -> acc)
+        | None -> []
+        | Some t ->
+          let rec collect_constructors acc t =
+            let t = Ctype.repr t in
+            match t.Types.desc with
+            | Types.Tvariant { Types. row_fields; row_more; row_name } ->
+              let acc =
+                let keep_if_present acc (lbl, row_field) =
+                  match row_field with
+                  | Types.Rpresent arg when lbl <> "" -> ("`" ^ lbl, arg) :: acc
+                  | _ -> acc
                 in
-                let acc = match row_name with
+                List.fold_left ~init:acc row_fields ~f:keep_if_present
+              in
+              let acc =
+                match row_name with
+                | None -> acc
+                | Some (path,te) ->
+                  match (Env.find_type path env).Types.type_manifest with
                   | None -> acc
-                  | Some (path,te) ->
-                    match (Env.find_type path env).Types.type_manifest with
-                    | None -> acc
-                    | Some te -> variants acc te
-                in
-                variants acc row_more
-              | Types.Tconstr _ ->
-                expand acc t
-              | _ -> acc
-            and expand acc t =
+                  | Some te -> collect_constructors acc te
+              in
+              collect_constructors acc row_more
+            | Types.Tconstr _ ->
               let t' = try Ctype.full_expand env t with _ -> t in
               if Types.TypeOps.equal t t' then
                 acc
               else
-                variants acc t'
-            in
-            List.fold_left' (variants [] t) ~init:[]
-              ~f:(fun (label,_ as arg) acc ->
-                  if validate `Variant `Variant label then
-                    fmt label (`Variant arg) ~exact:false ~priority:2 :: acc
-                  else acc)
+                collect_constructors acc t'
+            | _ -> acc
+          in
+          List.filter_map (collect_constructors [] t) ~f:(fun (name,_ as arg) ->
+            if not (validate `Variant `Variant name) then None else
+            Some (fmt name (`Variant arg) ~exact:false ~priority:2)
+          )
         end
       | `Values ->
         let type_check {Types. val_type} = type_check val_type in
