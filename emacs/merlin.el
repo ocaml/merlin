@@ -1222,7 +1222,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
       (setq merlin-completion-at-point-cache-query (cons prefix start))
       (merlin-sync-to-point (point-max) t)
       (setq merlin-completion-annotation-table
-            (mapcar (lambda (a) (cons (car a) (concat ": " (cadr a))))
+            (mapcar (lambda (a) (cons (cdr (assoc 'name a))
+                                      (concat ": " (merlin--completion-format-entry a))))
                     (merlin--completion-data prefix))))
     (list start end #'merlin--completion-table
           . (:exit-function #'merlin--completion-lookup
