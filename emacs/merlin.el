@@ -1111,7 +1111,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin--completion-format-entry (entry)
   "Format the completion entry ENTRY."
   (let* ((kind (cdr (assoc 'kind entry)))
-         (desc (cdr (assoc 'desc entry)))
+         (desc (or  (cdr (assoc 'desc entry)) (cdr (assoc 'type entry))))
          (type (cond ((member kind '("Module" "module")) " <module>")
                      ((string-equal kind "Type") (format " [%s]" desc))
                      (t desc))))
