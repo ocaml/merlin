@@ -606,6 +606,16 @@ let dispatch (state : state) =
              )
           )
 
+  | (Dump `Flags : a request) ->
+    let flags = Project.get_flags (Buffer.project state.buffer) in
+    let assoc =
+      List.map flags ~f:(fun (src, flag_lists) ->
+        let l = List.concat_map flag_lists ~f:(List.map ~f:(fun s -> `String s)) in
+        src, `List l
+      )
+    in
+    `Assoc assoc
+
   | (Dump _ : a request) ->
     failwith "TODO"
 

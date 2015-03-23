@@ -57,6 +57,9 @@ module Project : sig
   (* paths of dot_merlins with mtime at time of load *)
   val get_dot_merlins : t -> (string * float) list
 
+  (* Dump all the flags given to merlin. *)
+  val get_flags : t -> (string * string list list) list
+
   (* Config override by user *)
   module User : sig
     val reset : t -> unit
@@ -208,6 +211,12 @@ end = struct
     Clflags.set := prj.flags ;
     Warnings.set := prj.warnings ;
     failures
+
+  let get_flags project = [
+    "user", project.user_config.cfg_flags;
+    "cmd line", [ List.tl @@ Array.to_list Sys.argv ];
+    ".merlin", project.dot_config.cfg_flags;
+  ]
 
   let invalidate ?(flush=true) project =
     if flush then Cmi_cache.flush ();
