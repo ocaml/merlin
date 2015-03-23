@@ -184,7 +184,7 @@ WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 END
 
-  if [ -n $VERSION_STRING ]; then
+  if [ -n "$VERSION_STRING" ]; then
     true
   elif [ -d ".git" ]; then
     VERSION_STRING="git-`git rev-parse HEAD`"
