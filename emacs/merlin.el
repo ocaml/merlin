@@ -1308,13 +1308,12 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-ac-make-popup-item (data)
   "Create a popup item from data DATA."
-  (popup-make-item
-   (car data)
-   :summary (if (and merlin-completion-types
-                     merlin-ac-use-summary) (cadr data))
-   :symbol (format "%c" (elt (caddr data) 0))
-   :document (if (and merlin-completion-types
-                      merlin-ac-use-document) (cadr data))))
+  (let ((typ (merlin--completion-format-entry data)))
+    (popup-make-item
+      (concat merlin-ac-prefix (cdr (assoc 'name data))) ; if the candidate doesn't start with the prefix, ac won't display it...
+      :summary (when (and merlin-completion-types merlin-ac-use-summary) typ)
+      :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
+      :document (if (and merlin-completion-types merlin-ac-use-document) typ))))
 
 (defun merlin-ac-source-refresh-cache()
   "Refresh the cache of completion."
@@ -1345,7 +1344,7 @@ variable `merlin-ac-cache')."
     (if (and bounds merlin-ac-prefix-size
              (< (- start end) merlin-ac-prefix-size))
         nil
-      bounds)))
+      start)))
 
 (defun merlin-ac-fetch-type ()
   "Prints the type of the selected candidate"
