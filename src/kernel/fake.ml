@@ -647,11 +647,50 @@ module Fields = struct
       Binding { ident = "map_poly" ; typesig ; body = AnyVal }
     in
 
+    let direct_iter =
+      let typesig =
+        List.fold_right2 fields_dot_t fields ~init:unit_ty ~f:(
+          fun cstr f acc_ty ->
+            let (_, _, ty, _) = Raw_compat.Parsetree.inspect_label f in
+            let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
+            let f =
+              let tail = Arrow ("", self, Arrow ("", Core_type ty, unit_ty)) in
+              Arrow ("", cstr.typesig, tail)
+            in
+            Arrow (cstr.ident, f, acc_ty)
+        )
+      in
+      let body = Fun (["t", false], body) in
+      Binding { ident = "iter" ; typesig = Arrow ("", self, typesig); body }
+    in
+
+    let direct_fold =
+      let typesig =
+        let a = new_var () in
+        let init_ty, arrows =
+          List.fold_right2 fields_dot_t fields ~init:(a, Var a) ~f:(
+            fun cstr f (fun_res, acc) ->
+              let (_, _, ty, _) = Raw_compat.Parsetree.inspect_label f in
+              let ty = match ty.ptyp_desc with Ptyp_poly (_,ty) -> ty | _ -> ty in
+              let param = new_var () in
+              let f =
+                let tail = Arrow ("", self, Arrow ("", Core_type ty, Var fun_res)) in
+                Arrow ("", Var param, Arrow ("", cstr.typesig, tail))
+              in
+              (param, Arrow (cstr.ident, f, acc))
+          )
+        in
+        Arrow ("", self, Arrow ("init", Var init_ty, arrows))
+      in
+      let body = Fun (["t", false; "init", true], body) in
+      Binding { ident = "fold" ; typesig ; body }
+    in
+
     Module (
       (if name = "t" then "Fields" else "Fields_of_" ^ name),
       names :: List.map fields_dot_t ~f:(fun x -> Binding x) @ [
         make_creator ; create ; iter ; map ; fold ; map_poly ; forall ; exists ;
-        to_list ; Module ("Direct", [ iter ; fold ])
+        to_list ; Module ("Direct", [ direct_iter ; direct_fold ])
       ]
     )
 
