@@ -1853,6 +1853,15 @@ Returns the position."
        "/ocamlmerlin")
     merlin-command))
 
+;;;;;;;;;;;;;;;
+;; DEBUGGING ;;
+;;;;;;;;;;;;;;;
+
+(defun merlin-dump (arg)
+  (interactive "sWhat to dump: ")
+  (let ((res (merlin-send-command (list 'dump arg))))
+    (print res)))
+
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
 ;;;;;;;;;;;;;;;;
