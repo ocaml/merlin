@@ -625,8 +625,14 @@ let dispatch (state : state) =
             List.take_while ~f:(fun err' -> cmp err' err < 0) err_typer
           | [] ->
             List.rev acc, err_typer in
+        (* Filter duplicate error messages *)
         let err_parser, err_typer = extract_warnings [] err_parser in
-        List.(map ~f:snd (merge ~cmp err_lexer (merge ~cmp err_parser err_typer)))
+        let errors =
+          List.map ~f:snd @@
+          List.merge ~cmp err_lexer @@
+          List.merge ~cmp err_parser err_typer
+        in
+        List.filter_dup' ~equiv:(fun e -> e.Error_report.text) errors
       with exn -> match Error_report.strict_of_exn exn with
         | None -> raise exn
         | Some (_loc, err) -> [err]
