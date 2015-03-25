@@ -513,7 +513,7 @@ let labels_of_application ?(prefix="") =
         let t = Ctype.repr t in
         match t.Types.desc with
         | Types.Tarrow (label, lhs, rhs, _) ->
-          (label, lhs) :: labels rhs
+          (Raw_compat.arg_label_to_str label, lhs) :: labels rhs
         | _ ->
           let t' = Ctype.full_expand exp_env t in
           if Types.TypeOps.equal t t' then
@@ -523,6 +523,7 @@ let labels_of_application ?(prefix="") =
       in
       let labels = labels fun_type in
       let is_application_of label (label',expr,_) =
+        let label' = Raw_compat.arg_label_to_str label' in
         label = label' && label <> prefix && match expr with
         | Some {exp_loc} -> not exp_loc.Location.loc_ghost
         | None -> false

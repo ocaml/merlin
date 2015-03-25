@@ -33,6 +33,8 @@ let extract_const_string = function
   | Asttypes.Const_string (str, _) -> str
   | _ -> assert false
 
+let arg_label_to_str s = s
+
 module Parsetree = struct
   open Parsetree
 

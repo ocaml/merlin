@@ -33,6 +33,15 @@ let extract_const_string = function
   | Asttypes.Const_string (str, _) -> str
   | _ -> assert false
 
+(* FIXME: This is ugly and should not be used. It would be better to do the
+   conversion the other way around. (arg_label_of_str doesn't do the trick here,
+   we want [normalize_arg_label] or something, which would be the identity on
+   >=4.03 and convert before that). *)
+let arg_label_to_str = function
+  | Asttypes.Nolabel -> ""
+  | Asttypes.Optional str -> "?" ^ str
+  | Asttypes.Labelled str -> str
+
 module Parsetree = struct
   open Parsetree
 
@@ -494,3 +503,9 @@ let find_branch patterns sub =
     | p :: ps -> aux (p :: before) ps
   in
   aux [] patterns
+
+let construct_ident_and_expressions = function
+  | Typedtree.Texp_construct (id, _, es) ->
+    id, es
+  | _ -> assert false
+
