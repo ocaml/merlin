@@ -414,6 +414,7 @@ let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 %token SEMI
 %token SEMISEMI
 %token SHARP
+%token <string> SHARPOP
 %token SIG
 %token STAR
 %token <string * string option> STRING
@@ -512,6 +513,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
 %nonassoc below_SHARP
 %nonassoc SHARP                         (* simple_expr/toplevel_directive *)
+%left     SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
 
@@ -557,6 +559,7 @@ parse_expression:
     { $2 }
 
 dummy:
+| SHARPOP
 | EOL
 | NONREC
 | COMMENT

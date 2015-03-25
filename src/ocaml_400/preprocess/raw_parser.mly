@@ -454,6 +454,8 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 
 %token EOL
 
+%token <string> SHARPOP
+
 %token LET_LWT
 %token TRY_LWT
 %token MATCH_LWT
@@ -527,6 +529,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
 %nonassoc SHARP                         (* simple_expr/toplevel_directive *)
+%left     SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
 (* Finally, the first tokens of simple_expr are above everything else. *)
@@ -570,6 +573,7 @@ parse_expression:
 ;
 
 dummy:
+  | SHARPOP
   | NONREC
   | COMMENT
   | GREATERRBRACKET

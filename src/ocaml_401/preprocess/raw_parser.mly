@@ -435,6 +435,7 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %token SEMI
 %token SEMISEMI
 %token SHARP
+%token <string> SHARPOP
 %token SIG
 %token STAR
 %token <string * string option> STRING
@@ -529,6 +530,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
 %nonassoc SHARP                         (* simple_expr/toplevel_directive *)
+%left     SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
 (* Finally, the first tokens of simple_expr are above everything else. *)
@@ -572,6 +574,7 @@ parse_expression:
 ;
 
 dummy:
+| SHARPOP
 | NONREC
 | COMMENT
 | GREATERRBRACKET
