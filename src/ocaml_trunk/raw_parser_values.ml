@@ -81,6 +81,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_STAR                 -> "STAR"
   | T_SIG                  -> "SIG"
   | T_SHARP                -> "SHARP"
+  | T_SHARPOP              -> "SHARPOP"
   | T_SEMISEMI             -> "SEMISEMI"
   | T_SEMI                 -> "SEMI"
   | T_RPAREN               -> "RPAREN"
@@ -252,12 +253,14 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_row_field                         -> "row_field"
   | N_record_expr                       -> "record_expr"
   | N_rec_flag                          -> "rec_flag"
+  | N_nonrec_flag                       -> "nonrec_flag"
   | N_private_virtual_flags             -> "private_virtual_flags"
   | N_private_flag                      -> "private_flag"
   | N_primitive_declaration             -> "primitive_declaration"
   | N_post_item_attributes              -> "post_item_attributes"
   | N_post_item_attribute               -> "post_item_attribute"
   | N_poly_type                         -> "poly_type"
+  | N_poly_type_no_attr                 -> "poly_type_no_attr"
   | N_payload                           -> "payload"
   | N_pattern_var                       -> "pattern_var"
   | N_pattern_semi_list                 -> "pattern_semi_list"
@@ -352,6 +355,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_core_type_comma_list              -> "core_type_comma_list"
   | N_core_type2                        -> "core_type2"
   | N_core_type                         -> "core_type"
+  | N_core_type_no_attr                 -> "core_type_no_attr"
   | N_constructor_declarations          -> "constructor_declarations"
   | N_constructor_declaration           -> "constructor_declaration"
   | N_constructor_arguments             -> "constructor_arguments"
@@ -415,6 +419,7 @@ let symbol_of_token = function
   | STAR                         -> T_ (T_STAR, ())
   | SIG                          -> T_ (T_SIG, ())
   | SHARP                        -> T_ (T_SHARP, ())
+  | SHARPOP v                    -> T_ (T_SHARPOP, v)
   | SEMISEMI                     -> T_ (T_SEMISEMI, ())
   | SEMI                         -> T_ (T_SEMI, ())
   | RPAREN                       -> T_ (T_RPAREN, ())
@@ -555,6 +560,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_STAR                   -> STAR
   | T_SIG                    -> SIG
   | T_SHARP                  -> SHARP
+  | T_SHARPOP                -> SHARPOP v
   | T_SEMISEMI               -> SEMISEMI
   | T_SEMI                   -> SEMI
   | T_RPAREN                 -> RPAREN
@@ -693,6 +699,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_STAR                    -> 0, ()
   | T_SIG                     -> 0, ()
   | T_SHARP                   -> 0, ()
+  | T_SHARPOP                 -> 2, "_"
   | T_SEMISEMI                -> 0, ()
   | T_SEMI                    -> 0, ()
   | T_RPAREN                  -> 0, ()
@@ -893,6 +900,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     raise Not_found (*(Parsetree.row_field) nonterminal_class*)
   | N_record_expr                       -> 0, (None, [])
   | N_rec_flag                          -> 1, Asttypes.Nonrecursive
+  | N_nonrec_flag                       -> 1, Asttypes.Recursive
   | N_private_virtual_flags             ->
     raise Not_found (*(Asttypes.private_flag * Asttypes.virtual_flag) nonterminal_class*)
   | N_private_flag                      -> 1, Asttypes.Public
@@ -900,6 +908,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_post_item_attributes              -> 0, []
   | N_post_item_attribute               -> 1, (Location.mknoloc "", default_payload)
   | N_poly_type                         -> 1, default_type
+  | N_poly_type_no_attr                 -> 1, default_type
   | N_payload                           -> 1, default_payload
   | N_pattern_var                       -> 0, default_pattern
   | N_pattern_semi_list                 -> 0, []
@@ -1006,6 +1015,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_core_type_comma_list              -> 0, []
   | N_core_type2                        -> 1, default_type
   | N_core_type                         -> 1, default_type
+  | N_core_type_no_attr                 -> 1, default_type
   | N_constructor_declarations          -> 0, []
   | N_constructor_declaration           ->
     raise Not_found (*(Parsetree.constructor_declaration) nonterminal_class*)
@@ -1128,6 +1138,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_STAR                 -> Some "*"
   | T_SIG                  -> Some "sig"
   | T_SHARP                -> Some "#"
+  | T_SHARPOP              -> Some "#_"
   | T_SEMISEMI             -> Some ";;"
   | T_SEMI                 -> Some ";"
   | T_RPAREN               -> Some ")"
@@ -1299,12 +1310,14 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_row_field                         -> Some "row field"
   | N_record_expr                       -> None
   | N_rec_flag                          -> None
+  | N_nonrec_flag                       -> None
   | N_private_virtual_flags             -> None
   | N_private_flag                      -> None
   | N_primitive_declaration             -> Some "primitive declaration"
   | N_post_item_attributes              -> None
   | N_post_item_attribute               -> None
   | N_poly_type                         -> None
+  | N_poly_type_no_attr                 -> None
   | N_payload                           -> None
   | N_pattern_var                       -> None
   | N_pattern_semi_list                 -> None
@@ -1399,6 +1412,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_core_type_comma_list              -> None
   | N_core_type2                        -> Some "type expression"
   | N_core_type                         -> Some "type expression"
+  | N_core_type_no_attr                 -> Some "type expression"
   | N_constructor_declarations          -> None
   | N_constructor_declaration           -> Some "constructor declaration"
   | N_constructor_arguments             -> Some "constructor arguments"
