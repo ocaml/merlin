@@ -43,6 +43,7 @@ type error =
   | Inconsistent_import of string * string * string
   | Need_recursive_types of string * string
   | Missing_module of Location.t * Path.t * Path.t
+  | Illegal_value_name of Location.t * string
 
 exception Error of error
 
@@ -59,6 +60,7 @@ module EnvLazy : sig
   val force : ('a -> 'b) -> ('a,'b) t -> 'b
   val create : 'a -> ('a,'b) t
   val is_val : ('a,'b) t -> bool
+  val get_arg : ('a, 'b) t -> 'a option
 
   val view : ('a,'b) t ->  ('a,'b) view
 
@@ -86,6 +88,9 @@ end  = struct
 
   let is_val x =
     match !x with Done _ -> true | _ -> false
+
+  let get_arg x =
+    match !x with Thunk a -> Some a | _ -> None
 
   let create x =
     let x = ref (Thunk x) in
@@ -1038,8 +1043,20 @@ let lookup_cltype lid env =
 (* Iter on an environment (ignoring the body of functors and
    not yet evaluated structures) *)
 
+let rec scrape_alias_safe env mty =
+  match mty with
+  | Mty_alias (Pident id) when Ident.persistent id -> false
+  | Mty_alias path ->
+      scrape_alias_safe env (find_module path env).md_type
+  | _ -> true
+
 let rec iter_env_components env proj path path' mcomps ft fma =
-  (* if EnvLazy.is_val mcomps then *)
+  let safe =
+    match EnvLazy.get_arg mcomps with
+      None -> true
+    | Some (env, sub, path, mty) -> scrape_alias_safe env mty
+  in
+  if not safe then () else
   match EnvLazy.force !components_of_module_maker' mcomps with
     Structure_comps comps ->
     Tbl.iter
@@ -1455,7 +1472,20 @@ and check_usage loc id warn tbl =
         (fun () -> if not !used then Location.prerr_warning loc (warn name))
   end;
 
+and check_value_name name loc =
+  (* Note: we could also check here general validity of the
+     identifier, to protect against bad identifiers forged by -pp or
+     -ppx preprocessors. *)
+
+  if String.length name > 0 && (name.[0] = '#') then
+    for i = 1 to String.length name - 1 do
+      if name.[i] = '#' then
+        raise (Error(Illegal_value_name(loc, name)))
+    done
+
+
 and store_value ?check slot id path decl env renv =
+  check_value_name (Ident.name id) decl.val_loc;
   may (fun f -> check_usage decl.val_loc id f !cache.value_declarations) check;
   { env with
     values = EnvTbl.add "value" slot id (path, decl) env.values renv.values;
@@ -1967,11 +1997,16 @@ let report_error ppf = function
       fprintf ppf "@]@ @[%s@ %s@ %s.@]@]"
         "The compiled interface for module" (Ident.name (Path.head path2))
         "was not found"
+  | Illegal_value_name(_loc, name) ->
+      fprintf ppf "'%s' is not a valid value identifier."
+        name
 
 let () =
   Location.register_error_of_exn
     (function
-      | Error (Missing_module (loc, _, _) as err) when loc <> Location.none ->
+      | Error (Missing_module (loc, _, _)
+              | Illegal_value_name (loc, _)
+               as err) when loc <> Location.none ->
           Some (Location.error_of_printer loc report_error err)
       | Error err -> Some (Location.error_of_printer_file report_error err)
       | _ -> None

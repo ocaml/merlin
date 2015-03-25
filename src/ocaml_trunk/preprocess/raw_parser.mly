@@ -294,7 +294,6 @@ let mkexp_attrs startpos endpos d attrs =
 
 let fake_tydecl tydecl = tydecl.ptype_name, tydecl
 let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
-let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
 let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
 %}
@@ -422,6 +421,7 @@ let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 %token SEMI
 %token SEMISEMI
 %token SHARP
+%token <string> SHARPOP
 %token SIG
 %token STAR
 %token <string * string option> STRING
@@ -520,6 +520,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
 %nonassoc below_SHARP
 %nonassoc SHARP                         (* simple_expr/toplevel_directive *)
+%left     SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
 
@@ -566,7 +567,6 @@ parse_expression:
 
 dummy:
 | EOL
-| NONREC
 | COMMENT
 | GREATERRBRACKET
 | ENTRYPOINT
@@ -697,11 +697,12 @@ structure_item:
         (Pstr_primitive (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4
                            ~attrs:$5 ~loc:(rloc $startpos $endpos)))}
 | TYPE @{`Item "type"}
-  decls = type_declarations
-    { mkstr $startpos $endpos (Pstr_type (List.rev decls) ) }
-| TYPE  @{`Item "type"}
-  str_type_extension
-    { mkstr $startpos $endpos (Pstr_typext $2) }
+  rf = nonrec_flag decls = type_declarations
+    { mkstr $startpos $endpos (Pstr_type (rf, List.rev decls) ) }
+| TYPE @{`Item "type"}
+  rf = nonrec_flag exts = str_type_extension
+     { if rf <> Recursive then not_expecting $startpos(rf) $endpos(rf) "nonrec flag";
+       mkstr $startpos $endpos (Pstr_typext exts) }
 | EXCEPTION @{`Item "exception"}
   str_exception_declaration
     { mkstr $startpos $endpos (Pstr_exception $2) }
@@ -795,11 +796,12 @@ signature_item:
                 (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4 ~prim:$6 ~attrs:$7
                    ~loc:(rloc $startpos $endpos))) }
 | TYPE @{`Item "type"}
-  type_declarations
-    { mksig $startpos $endpos (Psig_type (List.rev $2)) }
+  nonrec_flag type_declarations
+    { mksig $startpos $endpos (Psig_type ($2, List.rev $3)) }
 | TYPE @{`Item "type"}
-  sig_type_extension
-    { mksig $startpos $endpos (Psig_typext $2) }
+  nonrec_flag sig_type_extension
+    { if $2 <> Recursive then not_expecting $startpos($2) $endpos($2) "nonrec flag";
+      mksig $startpos $endpos (Psig_typext $3) }
 | EXCEPTION @{`Item "exception"}
   sig_exception_declaration
     { mksig $startpos $endpos (Psig_exception $2) }
@@ -1352,6 +1354,8 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_override $4))) }
 | simple_expr SHARP @{`Shift_token (1,LIDENT "")} label
     { mkexp $startpos $endpos (Pexp_send($1, $3)) }
+| simple_expr SHARPOP simple_expr
+    { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
 | LPAREN @{`Unclosed "("} MODULE module_expr RPAREN @{`Close}
     { mkexp $startpos $endpos  (Pexp_pack $3) }
 | LPAREN @{`Unclosed "("} MODULE module_expr COLON package_type RPAREN @{`Close}
@@ -1744,10 +1748,10 @@ constructor_declarations:
     { $3 :: $1 }
 
 constructor_declaration:
-| constr_ident attributes generalized_constructor_arguments
+| constr_ident generalized_constructor_arguments attributes
     {
-      let args,res = $3 in
-      Type.constructor (mkrhs $startpos($1) $endpos($1) $1) ~args ?res ~loc:(rloc $startpos $endpos) ~attrs:$2
+      let args,res = $2 in
+      Type.constructor (mkrhs $startpos($1) $endpos($1) $1) ~args ?res ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
 str_exception_declaration:
@@ -1774,9 +1778,9 @@ generalized_constructor_arguments:
     { (Pcstr_tuple [],None) }
 | OF constructor_arguments
     { ($2,None) }
-| COLON constructor_arguments MINUSGREATER simple_core_type
+| COLON constructor_arguments MINUSGREATER simple_core_type_no_attr
     { ($2,Some $4) }
-| COLON simple_core_type
+| COLON simple_core_type_no_attr
     { (Pcstr_tuple [],Some $2) }
 
 constructor_arguments:
@@ -1790,9 +1794,9 @@ label_declarations:
     { $3 :: $1 }
 
 label_declaration:
-| mutable_flag label attributes COLON poly_type
+| mutable_flag label COLON poly_type_no_attr attributes
   {
-    Type.field (mkrhs $startpos($2) $endpos($2) $2) $5 ~mut:$1 ~attrs:$3 ~loc:(rloc $startpos $endpos)
+    Type.field (mkrhs $startpos($2) $endpos($2) $2) $4 ~mut:$1 ~attrs:$5 ~loc:(rloc $startpos $endpos)
   }
 
 (* Type extensions *)
@@ -1828,17 +1832,17 @@ sig_extension_constructors:
     { $3 :: $1 }
 
 extension_constructor_declaration:
-| constr_ident attributes generalized_constructor_arguments
-    { let args, res = $3 in
+| constr_ident generalized_constructor_arguments attributes
+    { let args, res = $2 in
       Te.decl (mkrhs $startpos($1) $endpos($1) $1) ~args ?res
-              ~loc:(rloc $startpos $endpos) ~attrs:$2
+              ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
 extension_constructor_rebind:
-| constr_ident attributes EQUAL constr_longident
+| constr_ident EQUAL constr_longident attributes
     { Te.rebind (mkrhs $startpos($1) $endpos($1) $1)
-                (mkrhs $startpos($4) $endpos($4) $4)
-                ~loc:(rloc $startpos $endpos) ~attrs:$2
+                (mkrhs $startpos($3) $endpos($3) $3)
+                ~loc:(rloc $startpos $endpos) ~attrs:$4
     }
 
 (* "with" constraints (additional type equations over signature components) *)
@@ -1850,7 +1854,7 @@ with_constraints:
     { $3 @ $1 }
 
 with_constraint:
-| TYPE type_parameters label_longident with_type_binder core_type constraints
+| TYPE type_parameters label_longident with_type_binder core_type_no_attr constraints
     { [Pwith_type
           (mkrhs $startpos($3) $endpos($3) $3,
            (Type.mk (mkrhs $startpos($3) $endpos($3) (Longident.last $3))
@@ -1859,7 +1863,7 @@ with_constraint:
               ~manifest:$5
               ~priv:$4
               ~loc:(rloc $startpos $endpos)))] }
-| TYPE type_parameters label COLONEQUAL core_type
+| TYPE type_parameters label COLONEQUAL core_type_no_attr
     { [Pwith_typesubst
           (Type.mk (mkrhs $startpos($3) $endpos($3) $3)
              ~params:$2
@@ -1890,9 +1894,21 @@ poly_type:
 | typevar_list DOT core_type
     { mktyp $startpos $endpos (Ptyp_poly(List.rev $1, $3)) }
 
+poly_type_no_attr:
+| core_type_no_attr
+    { $1 }
+| typevar_list DOT core_type_no_attr
+    { mktyp $startpos $endpos (Ptyp_poly(List.rev $1, $3)) }
+
 (* Core types *)
 
 core_type:
+| core_type_no_attr
+    { $1 }
+| core_type attribute
+    { Typ.attr $1 $2 }
+
+core_type_no_attr:
 | core_type2
     { $1 }
 | core_type2 AS QUOTE ident
@@ -1919,8 +1935,6 @@ simple_core_type:
                     syntax_error $startpos $endpos;
                     mktyp $startpos $endpos (Ptyp_any)
     }
-| simple_core_type attribute
-    { Typ.attr $1 $2 }
 
 simple_core_type_no_attr:
 | simple_core_type2 %prec below_SHARP
@@ -2005,8 +2019,8 @@ row_field:
     { Rinherit $1 }
 
 tag_field:
-| name_tag attributes OF opt_ampersand amper_type_list
-    { Rtag ($1, $2, $4, List.rev $5) }
+| name_tag OF opt_ampersand amper_type_list attributes
+    { Rtag ($1, $5, $3, List.rev $4) }
 | name_tag attributes
     { Rtag ($1, $2, true, []) }
 
@@ -2017,9 +2031,9 @@ opt_ampersand:
     { false }
 
 amper_type_list:
-| core_type
+| core_type_no_attr
     { [$1] }
-| amper_type_list AMPERSAND core_type
+| amper_type_list AMPERSAND core_type_no_attr
     { $3 :: $1 }
 
 name_tag_list:
@@ -2067,8 +2081,8 @@ meth_list:
     { [], Open }
 
 field:
-| label attributes COLON poly_type
-    { ($1, $2, $4) }
+| label COLON poly_type_no_attr attributes
+    { ($1, $4, $3) }
 
 label:
 | LIDENT
@@ -2146,6 +2160,8 @@ operator:
 | INFIXOP3
     { $1 }
 | INFIXOP4
+    { $1 }
+| SHARPOP
     { $1 }
 | BANG
     { "!" }
@@ -2284,6 +2300,12 @@ rec_flag:
     { Nonrecursive }
 | REC
     { Recursive }
+
+nonrec_flag:
+| (* empty *)
+    { Recursive }
+| NONREC
+    { Nonrecursive }
 
 direction_flag:
 | TO
@@ -2543,22 +2565,12 @@ structure_item:
       | None -> str
       | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr str), []))
     }
-| TYPE NONREC @{`Item "type nonrec"} decls = type_declarations
-    { let ty = List.map fake_tydecl decls in
-      mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec ty)) }
-| TYPE @{`Item "type"} type_declarations WITH with_extensions
-    {
-      let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
-      let ty = List.map fake_tydecl $2 in
-      let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $4 in
-      mkstr $startpos $endpos (Pstr_type(List.rev $2)) @ ast
-    }
-| TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
+| TYPE @{`Item "type"} nonrec_flag type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
       let ty = List.map fake_tydecl $3 in
       let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $5 in
-      mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec ty)) @ ast
+      mkstr $startpos $endpos (Pstr_type($2, List.rev $3)) @ ast
     }
 | EXCEPTION @{`Item "exception"}
   str_exception_declaration WITH with_extensions
@@ -2602,22 +2614,12 @@ structure_item:
 ;
 
 signature_item:
-| TYPE NONREC @{`Item "type nonrec"} decls = type_declarations
-    { let ty = List.map fake_tydecl decls in
-      mksig $startpos $endpos (Psig_type (List.rev_map tag_nonrec ty)) }
-| TYPE @{`Item "type"} type_declarations WITH with_extensions
-    {
-      let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
-      let ty = List.map fake_tydecl $2 in
-      let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $4 in
-      mksig $startpos $endpos (Psig_type(List.rev $2)) @ decls
-    }
-| TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
+| TYPE @{`Item "type"} nonrec_flag type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
       let ty = List.map fake_tydecl $3 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $5 in
-      mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec ty)) @ decls
+      mksig $startpos $endpos (Psig_type($2, List.rev $3)) @ decls
     }
 | EXCEPTION @{`Item "exception"}
   sig_exception_declaration WITH with_extensions

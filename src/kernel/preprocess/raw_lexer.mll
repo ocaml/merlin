@@ -499,6 +499,8 @@ rule token state = parse
   | '%'     { return PERCENT }
   | ['*' '/' '%'] symbolchar *
             { return (INFIXOP3(Lexing.lexeme lexbuf)) }
+  | '#' (symbolchar | '#') +
+            { return (SHARPOP(Lexing.lexeme lexbuf)) }
   | eof { return EOF }
 
   | "<:" identchar* ("@" identchar*)? "<"

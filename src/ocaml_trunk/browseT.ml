@@ -427,7 +427,7 @@ and of_structure_item_desc desc acc = match desc with
     of_list of_value_binding vbs acc
   | Tstr_primitive vd ->
     of_node (Value_description vd) :: acc
-  | Tstr_type tds ->
+  | Tstr_type (_rf, tds) ->
     of_list (fun td -> of_node (Type_declaration td)) tds acc
   | Tstr_typext text ->
     of_node (Type_extension text) :: acc
@@ -468,7 +468,7 @@ and of_signature_item_desc desc acc = match desc with
     acc
   | Tsig_value vd ->
     of_node (Value_description vd) :: acc
-  | Tsig_type tds ->
+  | Tsig_type (_rf, tds) ->
     of_list (fun td -> of_node (Type_declaration td)) tds acc
   | Tsig_typext text ->
     of_node (Type_extension text) :: acc

@@ -279,7 +279,7 @@ let str_ident_locs item =
   | Tstr_recmodule mbs ->
     List.map mbs ~f:(fun mb -> Ident.name mb.mb_id , mb.mb_loc)
   | Tstr_modtype mtd -> [ Ident.name mtd.mtd_id , mtd.mtd_loc ]
-  | Tstr_type td_list ->
+  | Tstr_type (rf, td_list) ->
     List.map td_list ~f:(fun { typ_id ; typ_loc } ->
       Ident.name typ_id, typ_loc
     )
@@ -297,7 +297,7 @@ let sig_ident_locs item =
   let open Typedtree in
   match item.sig_desc with
   | Tsig_value vd -> [ Ident.name vd.val_id , vd.val_loc ]
-  | Tsig_type td_list ->
+  | Tsig_type (rf, td_list) ->
     List.map td_list ~f:(fun { typ_id ; typ_loc } ->
       Ident.name typ_id, typ_loc
     )
