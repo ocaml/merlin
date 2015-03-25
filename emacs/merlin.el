@@ -1266,15 +1266,16 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                      (linum (cdr (assoc 'line (assoc 'pos data)))))
                  (cons filename linum)))))
           (candidates
-           (merlin-sync-to-point)
-           (mapcar #'(lambda (x)
-                       (propertize
-                         (propertize (cdr (assoc 'name x))
-                                     'merlin-meta
-                                     (merlin--completion-format-entry x))
-                         'merlin-arg-type
-                         (cdr (assoc 'argument_type x))))
-                   (merlin--completion-data arg)))
+            (merlin-sync-to-point)
+            (let ((prefix (merlin--completion-prefix arg)))
+              (mapcar #'(lambda (x)
+                          (propertize
+                            (propertize (concat prefix (cdr (assoc 'name x)))
+                                        'merlin-meta
+                                        (merlin--completion-format-entry x))
+                            'merlin-arg-type
+                            (cdr (assoc 'argument_type x))))
+                      (merlin--completion-data arg))))
           (post-completion
             (let ((minibuffer-message-timeout nil))
               (minibuffer-message "%s : %s" arg (get-text-property 0 'merlin-meta arg))))
