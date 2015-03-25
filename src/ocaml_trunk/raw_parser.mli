@@ -20,6 +20,7 @@ type token =
   | STRING of (string * string option)
   | STAR
   | SIG
+  | SHARPOP of (string)
   | SHARP
   | SEMISEMI
   | SEMI
@@ -159,6 +160,7 @@ and _ token_class =
   | T_STRING : (string * string option) token_class
   | T_STAR : unit token_class
   | T_SIG : unit token_class
+  | T_SHARPOP : (string) token_class
   | T_SHARP : unit token_class
   | T_SEMISEMI : unit token_class
   | T_SEMI : unit token_class
@@ -338,6 +340,7 @@ and _ nonterminal_class =
   | N_primitive_declaration : (string list) nonterminal_class
   | N_post_item_attributes : (Ast_helper.attrs) nonterminal_class
   | N_post_item_attribute : (Parsetree.attribute) nonterminal_class
+  | N_poly_type_no_attr : (Parsetree.core_type) nonterminal_class
   | N_poly_type : (Parsetree.core_type) nonterminal_class
   | N_payload : (Parsetree.payload) nonterminal_class
   | N_pattern_var : (Parsetree.pattern) nonterminal_class
@@ -362,6 +365,7 @@ and _ nonterminal_class =
   | N_opt_ampersand : (bool) nonterminal_class
   | N_operator : (string) nonterminal_class
   | N_open_statement : (Parsetree.open_description) nonterminal_class
+  | N_nonrec_flag : (Asttypes.rec_flag) nonterminal_class
   | N_newtype : (string) nonterminal_class
   | N_name_tag_list : (Asttypes.label list) nonterminal_class
   | N_name_tag : (Asttypes.label) nonterminal_class
@@ -430,6 +434,7 @@ and _ nonterminal_class =
   | N_expr : (Parsetree.expression) nonterminal_class
   | N_dummy : (unit) nonterminal_class
   | N_direction_flag : (Asttypes.direction_flag) nonterminal_class
+  | N_core_type_no_attr : (Parsetree.core_type) nonterminal_class
   | N_core_type_list_no_attr : (Parsetree.core_type list) nonterminal_class
   | N_core_type_list : (Parsetree.core_type list) nonterminal_class
   | N_core_type_comma_list : (Parsetree.core_type list) nonterminal_class
