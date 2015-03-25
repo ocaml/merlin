@@ -81,6 +81,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_STAR                 -> "STAR"
   | T_SIG                  -> "SIG"
   | T_SHARP                -> "SHARP"
+  | T_SHARPOP              -> "SHARPOP"
   | T_SEMISEMI             -> "SEMISEMI"
   | T_SEMI                 -> "SEMI"
   | T_RPAREN               -> "RPAREN"
@@ -391,6 +392,7 @@ let symbol_of_token = function
   | STAR                         -> T_ (T_STAR, ())
   | SIG                          -> T_ (T_SIG, ())
   | SHARP                        -> T_ (T_SHARP, ())
+  | SHARPOP v                    -> T_ (T_SHARPOP, v)
   | SEMISEMI                     -> T_ (T_SEMISEMI, ())
   | SEMI                         -> T_ (T_SEMI, ())
   | RPAREN                       -> T_ (T_RPAREN, ())
@@ -524,6 +526,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_STAR                   -> STAR
   | T_SIG                    -> SIG
   | T_SHARP                  -> SHARP
+  | T_SHARPOP                -> SHARPOP v
   | T_SEMISEMI               -> SEMISEMI
   | T_SEMI                   -> SEMI
   | T_RPAREN                 -> RPAREN
@@ -662,6 +665,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_STAR                    -> 0, ()
   | T_SIG                     -> 0, ()
   | T_SHARP                   -> 0, ()
+  | T_SHARPOP                 -> 2, "_"
   | T_SEMISEMI                -> 0, ()
   | T_SEMI                    -> 0, ()
   | T_RPAREN                  -> 0, ()
@@ -1061,6 +1065,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_STAR                 -> Some "*"
   | T_SIG                  -> Some "sig"
   | T_SHARP                -> Some "#"
+  | T_SHARPOP              -> Some "#_"
   | T_SEMISEMI             -> Some ";;"
   | T_SEMI                 -> Some ";"
   | T_RPAREN               -> Some ")"
