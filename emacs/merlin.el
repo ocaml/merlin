@@ -1129,6 +1129,11 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the prefix of `bar' is `'."
   (car (merlin--completion-split-ident ident)))
 
+(defun merlin--completion-full-entry-name (prefix compl-prefix entry)
+  (let* ((short-name (cdr (assoc 'name entry)))
+         (long-name  (concat compl-prefix short-name)))
+    (if (string-prefix-p prefix long-name) long-name short-name)))
+
 (defun merlin--completion-prepare-labels (labels suffix)
   ; Remove non-matching entry, adjusting optional labels if needed
   (setq labels (delete-if-not (lambda (x)
@@ -1270,9 +1275,10 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
             (let ((prefix (merlin--completion-prefix arg)))
               (mapcar #'(lambda (x)
                           (propertize
-                            (propertize (concat prefix (cdr (assoc 'name x)))
-                                        'merlin-meta
-                                        (merlin--completion-format-entry x))
+                            (propertize
+                              (merlin--completion-full-entry-name arg prefix x)
+                              'merlin-meta
+                              (merlin--completion-format-entry x))
                             'merlin-arg-type
                             (cdr (assoc 'argument_type x))))
                       (merlin--completion-data arg))))
@@ -1311,7 +1317,9 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   "Create a popup item from data DATA."
   (let ((typ (merlin--completion-format-entry data)))
     (popup-make-item
-      (concat merlin-ac-prefix (cdr (assoc 'name data))) ; if the candidate doesn't start with the prefix, ac won't display it...
+      ; Note: ac refuses to display an item if merlin-ac-ac-prefix is not a
+      ; prefix the item. So "dwim" completion won't work with ac.
+      (merlin--completion-full-entry-name merlin-ac-ac-prefix merlin-ac-prefix data)
       :summary (when (and merlin-completion-types merlin-ac-use-summary) typ)
       :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
       :document (if (and merlin-completion-types merlin-ac-use-document) typ))))
@@ -1321,7 +1329,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (setq merlin-ac-prefix (merlin--completion-prefix ac-prefix))
   (setq merlin-ac-ac-prefix ac-prefix)
   (setq merlin-ac-cache (mapcar #'merlin-ac-make-popup-item
-                                (merlin--completion-data ac-prefix))))
+                                (merlin--completion-data merlin-ac-prefix))))
 
 
 (defun merlin-ac-source-init ()
