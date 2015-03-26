@@ -1218,18 +1218,21 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin-completion-at-point ()
   "Perform completion at point with merlin."
   (lexical-let*
-      ((bounds (merlin--completion-bounds))
-       (start  (car bounds))
-       (end    (cdr bounds))
-       (prefix (merlin--buffer-substring start end)))
+      ((bounds       (merlin--completion-bounds))
+       (start        (car bounds))
+       (end          (cdr bounds))
+       (prefix       (merlin--buffer-substring start end))
+       (compl-prefix (merlin--completion-prefix prefix)))
     (when (or (not merlin-completion-at-point-cache-query)
               (not (equal (cons prefix start)  merlin-completion-at-point-cache-query)))
       (setq merlin-completion-at-point-cache-query (cons prefix start))
       (merlin-sync-to-point (point-max) t)
       (setq merlin-completion-annotation-table
-            (mapcar (lambda (a) (cons (cdr (assoc 'name a))
-                                      (concat ": " (merlin--completion-format-entry a))))
-                    (merlin--completion-data prefix))))
+            (mapcar
+              (lambda (a)
+                (cons (merlin--completion-full-entry-name prefix compl-prefix a)
+                      (concat ": " (merlin--completion-format-entry a))))
+              (merlin--completion-data prefix))))
     (list start end #'merlin--completion-table
           . (:exit-function #'merlin--completion-lookup
              :annotation-function #'merlin--completion-annotate))))
