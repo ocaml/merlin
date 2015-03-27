@@ -212,7 +212,11 @@ def command_seek(mtd,line,col):
   return parse_position(command("seek", mtd, {'line' : line, 'col': col}))
 
 def command_complete_cursor(base,line,col):
-  return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
+  with_doc = vim.eval('g:merlin_completion_with_doc')
+  if with_doc == "false":
+    return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
+  else:
+    return command("complete", "prefix", base, "at", {'line' : line, 'col': col}, "with", "doc")
 
 def command_document(path, line, col):
   try:

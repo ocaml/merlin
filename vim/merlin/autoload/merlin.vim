@@ -47,6 +47,10 @@ if !exists("g:merlin_completion_argtype")
   let g:merlin_completion_argtype = 'several'
 endif
 
+if !exists("g:merlin_completion_with_doc")
+    let g:merlin_completion_with_doc = "false"
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
