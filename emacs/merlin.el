@@ -94,6 +94,10 @@ no argument and should return the configuration (see
   :group 'merlin :type '(choice (file :tag "Filename")
                                 (const :tag "Use current opam switch" opam)))
 
+(defcustom merlin-completion-with-doc nil
+  "If non-nil, tries to retrieve ocamldoc comments associated with each completion candidate"
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-completion-dwim t
   "If non-nil, fallback to fuzzier completion when normal completion gives no result."
   :group 'merlin :type 'boolean)
@@ -1158,7 +1162,10 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
          (suffix (cdr ident-))
          (prefix (car ident-))
          (pos    (merlin-unmake-point (point)))
-         (data   (merlin-send-command `(complete prefix ,ident at ,pos)))
+         (data   (merlin-send-command
+                   (if merlin-completion-with-doc
+                     `(complete prefix ,ident at ,pos with doc)
+                     `(complete prefix ,ident at ,pos))))
          ;; all classic entries
          (entries (cdr (assoc 'entries data)))
          ;; context is 'null or ('application ...)
