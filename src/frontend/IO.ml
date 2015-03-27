@@ -434,6 +434,7 @@ module Protocol_io = struct
         | Document _, resp ->
           begin match resp with
           | `No_documentation -> `String "No documentation available"
+          | `Invalid_context -> `String "Not a valid identifier"
           | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
           | `Not_found (i, Some f) ->
             `String

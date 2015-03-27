@@ -447,6 +447,7 @@ let dispatch (state : state) =
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
         String.concat ~sep:"." path
     in
+    if path = "" then `Invalid_context else
     let source  = Buffer.unit_name state.buffer in
     let project = Buffer.project state.buffer in
     Track_definition.get_doc ~project ~env ~local_defs ~comments ~pos source
