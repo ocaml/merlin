@@ -249,8 +249,9 @@ let remove_indir_me me =
   match me.Typedtree.mod_desc with
   | Typedtree.Tmod_ident (path, _) -> `Alias path
   | Typedtree.Tmod_structure str -> `Str str
-  | Typedtree.Tmod_functor _ -> `Functor ""
-  | Typedtree.Tmod_apply (_,_,_) -> `Functor " instantiation"
+  | Typedtree.Tmod_functor (_param_id, param_name, _param_sig, me) ->
+    `Functor (param_name, me.Typedtree.mod_loc, `Mod_expr me)
+  | Typedtree.Tmod_apply (me1, me2, _) -> `Apply (me1, me2)
   | Typedtree.Tmod_constraint (me, _, _, _) -> `Mod_expr me
   | Typedtree.Tmod_unpack _ -> `Unpack
 
@@ -258,7 +259,8 @@ let remove_indir_mty mty =
   match mty.Typedtree.mty_desc with
   | Typedtree.Tmty_ident (path, _) -> `Alias path
   | Typedtree.Tmty_signature sg -> `Sg sg
-  | Typedtree.Tmty_functor _ -> `Functor " signature"
+  | Typedtree.Tmty_functor (_param_id, param_name, _param_sig, mty) ->
+    `Functor (param_name, mty.Typedtree.mty_loc, `Mod_type mty)
   | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
   | Typedtree.Tmty_typeof me -> `Mod_expr me
 

@@ -58,6 +58,7 @@ let path_to_string (p : path) =
   let p =
     List.map p ~f:(function
       | (str, `Mod) -> str
+      | (str, `Functor) -> str ^ "[functor]"
       | (str,`Labels) -> str ^ "[label]"
       | (str,`Constr) -> str ^ "[cstr]"
       | (str,`Type) -> str ^ "[type]"
@@ -101,7 +102,28 @@ let rec build ~trie browses =
       Internal (build ~trie:Trie.empty (Browse.of_typer_contents [s]))
     | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
-    | _ ->
+    | `Functor (located_name, pack_loc, packed) ->
+      (* We don't actually care about the namespace here. But whatever. *)
+      let result = [ pack_loc, `Functor, node_for_direct_mod `Functor packed ] in
+      let param  = [ located_name.Asttypes.loc, `Modtype, Leaf ] in
+      let trie =
+        Trie.of_list [
+          located_name.Asttypes.txt, param;
+          "0", result;
+        ]
+      in
+      Internal trie
+    | `Apply (me1, me2) ->
+      let node1 = node_for_direct_mod `Mod (Raw_compat.remove_indir_me me1) in
+      let node2 = node_for_direct_mod `Mod (Raw_compat.remove_indir_me me2) in
+      let trie  =
+        Trie.of_list [
+          "1", [ me1.Typedtree.mod_loc, `Mod, node1 ];
+          "2", [ me2.Typedtree.mod_loc, `Mod, node2 ];
+        ]
+      in
+      Internal trie
+    | `Unpack -> (* TODO! *)
       Leaf
   in
   List.fold_left (remove_top_indir browses) ~init:trie ~f:(fun trie t ->
@@ -144,7 +166,10 @@ let rec build ~trie browses =
           | `Mod_type _
           | `Mod_expr _ as packed -> helper packed
           | `Unpack
-          | `Functor _ -> f Leaf
+          | `Functor _ ->
+            (* You can't include a functor, you can only include "structures". *)
+            assert false
+          | `Apply _ -> f Leaf
           | `Str _
           | `Sg  _ as s -> build ~trie (Browse.of_typer_contents [ s ])
         in
@@ -282,6 +307,7 @@ let rec dump fmt trie =
     Format.pp_print_string fmt
       (match namespace with
        | `Mod -> "(Mod) "
+       | `Functor -> "(functor)"
        | `Labels -> "(lbl) "
        | `Constr -> "(cstr) "
        | `Type -> "(typ) "
