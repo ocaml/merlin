@@ -297,7 +297,7 @@ let dispatch (state : state) =
     let path = Browse.enclosing pos structures in
     List.map (fun t -> t.BrowseT.t_loc) path
 
-  | (Complete_prefix (prefix, pos) : a request) ->
+  | (Complete_prefix (prefix, pos, with_doc) : a request) ->
     let complete typer =
       let node, ancestors =
         Completion.node_at ~skip_recovered:true typer pos in
@@ -345,15 +345,18 @@ let dispatch (state : state) =
       in
       let target_type = !target_type in
       let get_doc =
+        if not with_doc then None else
         let project    = Buffer.project state.buffer in
         let comments   = Buffer.comments state.buffer in
         let source     = Buffer.unit_name state.buffer in
         let local_defs = Typer.contents typer in
-        Track_definition.get_doc ~project ~env:node.BrowseT.t_env ~local_defs
-          ~comments ~pos source
+        Some (
+          Track_definition.get_doc ~project ~env:node.BrowseT.t_env ~local_defs
+            ~comments ~pos source
+        )
       in
       let entries =
-        Completion.node_complete ~get_doc ?target_type state.buffer node prefix
+        Completion.node_complete ?get_doc ?target_type state.buffer node prefix
       in
       {Compl. entries = List.rev entries; context }
     in

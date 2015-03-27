@@ -300,7 +300,10 @@ module Protocol_io = struct
     | [`String "enclosing"; jpos] ->
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
-      Request (Complete_prefix (prefix, pos_of_json jpos))
+      Request (Complete_prefix (prefix, pos_of_json jpos, false))
+    | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos;
+       `String "with"; `String "doc"] ->
+      Request (Complete_prefix (prefix, pos_of_json jpos, true))
     | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       Request (Expand_prefix (prefix, pos_of_json jpos))
     | (`String "document" :: (`String "" | `Null) :: pos) ->

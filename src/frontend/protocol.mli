@@ -82,7 +82,7 @@ type _ request =
     :  position
     -> Location.t list request
   | Complete_prefix
-    :  string * position
+    :  string * position * bool
     -> completions request
   | Expand_prefix
     :  string * position
