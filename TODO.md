@@ -3,6 +3,8 @@
 - Locate:
   -> handle local module aliases (i.e. [let module X = Y])
   -> associate ocamldoc comments to trie nodes when building the trie.
+  -> locate from inside a functor [application]
+     (which is different from locating through a functor application)
 
 - Relegated to next menhir version:
   Find proper API for incremental parser
@@ -10,7 +12,8 @@
   -> exceptions from semantic action should be caught and treated differently
   -> relying on special handling of stack bottom is not good either
      Bottom handling code improved, but we should make sure it s stable.
-- Test:
+
+- Test: (gooby pls)
   -> completion
   -> locate
   -> type enclosing / type expr
