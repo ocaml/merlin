@@ -1331,9 +1331,9 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                                 'merlin-compl-type
                                 (merlin--completion-format-entry x))
                               'merlin-arg-type
-                              (cdr (assoc 'argument_type x))))
-                          'merlin-compl-doc
-                          (cdr (assoc 'info x)))
+                              (cdr (assoc 'argument_type x)))
+                            'merlin-compl-doc
+                            (cdr (assoc 'info x))))
                       (merlin--completion-data arg))))
           (post-completion
             (let ((minibuffer-message-timeout nil))
