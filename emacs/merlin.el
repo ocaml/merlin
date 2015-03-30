@@ -1129,10 +1129,12 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the prefix of `bar' is `'."
   (car (merlin--completion-split-ident ident)))
 
-(defun merlin--completion-full-entry-name (prefix compl-prefix entry)
-  (let* ((short-name (cdr (assoc 'name entry)))
-         (long-name  (concat compl-prefix short-name)))
-    (if (string-prefix-p prefix long-name) long-name short-name)))
+(defvar-local dwimed nil
+  "Remember if we used dwim for the current completion or not")
+
+(defun merlin--completion-full-entry-name (compl-prefix entry)
+  (let ((entry-name (cdr (assoc 'name entry))))
+    (if dwimed entry-name (concat compl-prefix entry-name))))
 
 (defun merlin--completion-prepare-labels (labels suffix)
   ; Remove non-matching entry, adjusting optional labels if needed
@@ -1147,6 +1149,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin--completion-data (ident)
   "Return the data for completion of IDENT, i.e. a list of pairs (NAME . TYPE)."
+  (setq-local dwimed nil)
   (let* ((ident- (merlin--completion-split-ident ident))
          (suffix (cdr ident-))
          (prefix (car ident-))
@@ -1171,6 +1174,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (when (and merlin-completion-dwim (not labels) (not entries))
       (setq data (merlin-send-command `(expand prefix ,ident at ,pos)))
       (setq entries (cdr (assoc 'entries data)))
+      (setq-local dwimed t)
       (setq prefix ""))
     ; Concat results
     (let ((result (append labels entries)))
@@ -1230,7 +1234,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
       (setq merlin-completion-annotation-table
             (mapcar
               (lambda (a)
-                (cons (merlin--completion-full-entry-name prefix compl-prefix a)
+                (cons (merlin--completion-full-entry-name compl-prefix a)
                       (concat ": " (merlin--completion-format-entry a))))
               (merlin--completion-data prefix))))
     (list start end #'merlin--completion-table
@@ -1279,7 +1283,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
               (mapcar #'(lambda (x)
                           (propertize
                             (propertize
-                              (merlin--completion-full-entry-name arg prefix x)
+                              (merlin--completion-full-entry-name prefix x)
                               'merlin-meta
                               (merlin--completion-format-entry x))
                             'merlin-arg-type
@@ -1322,7 +1326,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (popup-make-item
       ; Note: ac refuses to display an item if merlin-ac-ac-prefix is not a
       ; prefix the item. So "dwim" completion won't work with ac.
-      (merlin--completion-full-entry-name merlin-ac-ac-prefix merlin-ac-prefix data)
+      (merlin--completion-full-entry-name merlin-ac-prefix data)
       :summary (when (and merlin-completion-types merlin-ac-use-summary) typ)
       :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
       :document (if (and merlin-completion-types merlin-ac-use-document) typ))))
