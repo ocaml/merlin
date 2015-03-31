@@ -175,6 +175,13 @@ def vim_is_set(name):
 
 ######## BASIC COMMANDS
 
+def command_version():
+  try:
+    str = command("version")
+    print(str)
+  except MerlinExc as e:
+    try_print_error(e)
+
 def parse_position(pos):
   position = pos['cursor']
   marker = pos['marker']

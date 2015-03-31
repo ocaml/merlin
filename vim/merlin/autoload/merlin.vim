@@ -75,6 +75,10 @@ if fname != None: vim.command("e "+ fname)
 EOF
 endfunction
 
+function! merlin#Version()
+  py merlin.command_version()
+endfunction
+
 function! merlin#Path(var,path)
   if a:path == ""
     let l:path = ""
@@ -452,6 +456,9 @@ function! merlin#Register()
   if @% == "*merlin-type-history*"
     return
   endif
+
+  command! -buffer -nargs=0 MerlinVersion call merlin#Version()
+
   command! -buffer        -nargs=? TypeOf          call merlin#TypeOf(<q-args>)
   command! -buffer -range -nargs=0 TypeOfSel       call merlin#TypeOfSel()
   command! -buffer        -nargs=? MerlinTypeOf    call merlin#TypeOf(<q-args>)
