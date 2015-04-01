@@ -169,8 +169,6 @@ end
 
 
 module Utils = struct
-  let is_ghost { Location. loc_ghost } = loc_ghost = true
-
   let longident_is_qualified = function
     | Longident.Lident _ -> false
     | _ -> true
@@ -542,7 +540,7 @@ let from_completion_entry ~env ~local_defs ~pos (namespace, path, loc) =
   let str_ident = String.concat ~sep:"." path_lst in
   try
     let modules = tag namespace path in
-    if not (Utils.is_ghost loc) then `Found loc else
+    if loc <> Location.none then `Found loc else
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
@@ -574,7 +572,7 @@ let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
       (* TODO: Use [`Labels] here *)
       tag `Type path, loc
     in
-    if not (Utils.is_ghost loc) then `Found loc else
+    if loc <> Location.none then `Found loc else
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
