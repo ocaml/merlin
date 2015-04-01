@@ -479,22 +479,21 @@ function! merlin#Register()
   command! -buffer -nargs=0 YankLatestType    call merlin#YankLatestType()
   command! -buffer -nargs=0 ToggleTypeHistory call merlin_type#ToggleTypeHistory()
 
-  command! -buffer -nargs=0 Destruct call merlin#Destruct()
+  command! -buffer -nargs=0 MerlinDestruct call merlin#Destruct()
 
 
-  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Locate call merlin#Locate(<q-args>)
-  command! -buffer -nargs=0 ILocate call merlin#InteractiveLocate()
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)
+  command! -buffer -nargs=0 MerlinILocate call merlin#InteractiveLocate()
 
-  command! -buffer -nargs=0 Outline call merlin#Outline()
+  command! -buffer -nargs=0 MerlinOutline call merlin#Outline()
 
-  command! -buffer -nargs=0 Occurrences call merlin#Occurrences()
-  command! -buffer -nargs=* Rename call merlin#OccurrencesRename(<f-args>)
+  command! -buffer -nargs=0 MerlinOccurrences call merlin#Occurrences()
+  command! -buffer -nargs=* MerlinRename call merlin#OccurrencesRename(<f-args>)
 
   command! -buffer -nargs=? -complete=dir SourcePath call merlin#Path("source", <q-args>)
   command! -buffer -nargs=? -complete=dir BuildPath  call merlin#Path("build", <q-args>)
-  command! -buffer -nargs=0 Reload       call merlin#Reload()
+  command! -buffer -nargs=0 MerlinReload       call merlin#Reload()
 
-  command! -buffer -complete=custom,merlin#PackageList   -nargs=* Use              call merlin#Use(<f-args>)
   command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* AddFlags         call merlin#AddFlags(<f-args>)
   command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* SetFlags         call merlin#SetFlags(<f-args>)
   command! -buffer -nargs=0                                       ClearFlags       call merlin#ClearFlags()
@@ -529,7 +528,7 @@ function! merlin#Register()
   " nmap <silent><buffer> <LocalLeader>qt :ToggleTypeHistory<return>
 
   " Search
-  nmap <silent><buffer> gd  :Locate<return>
+  nmap <silent><buffer> gd  :MerlinLocate<return>
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesForward)  :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesBackward) :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
 
