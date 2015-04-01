@@ -23,14 +23,16 @@ cal add(g:ctrlp_ext_vars, {
 	\ })
 
 let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)
+let s:init_string = "(* Start typing to get a list of identifiers. *)"
 
 " Public {{{1
 function! ctrlp#locate#update_cursor_pos()
   py locate.update_cursor_pos()
 endfunction
 
+
 function! ctrlp#locate#init()
-  return []
+  return [s:init_string]
 endfunction
 
 function! ctrlp#locate#filter(items, str, limit, mmode, ispath, crfile, regex)
@@ -41,8 +43,12 @@ endfunction
 
 fu! ctrlp#locate#accept(mode, str)
   call ctrlp#exit()
-  py merlin.vim_locate_at_cursor(vim.eval("a:str"))
-  silent! normal! zvzz
+  if a:str == s:init_string
+    " do nothing
+  else
+    py merlin.vim_locate_at_cursor(vim.eval("a:str"))
+    silent! normal! zvzz
+  endif
 endf
 
 fu! ctrlp#locate#id()
