@@ -1712,6 +1712,14 @@ calls (lighter can be updated at a high frequency)"
       (merlin-goto-file-and-point answer)
       (error "Not found. (Check *Messages* for potential errors)"))))
 
+(defun merlin-locate-ident (ident)
+  "Locate the inputed identifier"
+  (interactive "s> ")
+  (merlin-sync-to-point (point-max) t)
+  (merlin--locate-pure ident)
+  (if merlin-type-after-locate
+      (merlin-type-enclosing)))
+
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
