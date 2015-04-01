@@ -531,15 +531,11 @@ let lookup ctxt ident env =
   with Found x ->
     x
 
-(* Only used to retrieve documentation *)
-let from_completion_entry ~env ~local_defs ~pos (namespace, path, loc) =
-  File_switching.reset () ;
-  Fallback.reset () ;
-  Preferences.set `MLI ;
-  let path_lst  = Path.to_string_list path in
-  let str_ident = String.concat ~sep:"." path_lst in
+let locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc =
+  File_switching.reset ();
+  Fallback.reset ();
+  Preferences.set ml_or_mli;
   try
-    let modules = tag namespace path in
     if loc <> Location.none then `Found loc else
       let () =
         debug_log "present in the environment, but ghost lock.\n\
@@ -555,12 +551,15 @@ let from_completion_entry ~env ~local_defs ~pos (namespace, path, loc) =
   | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
   | File.Not_found path -> File.explain_not_found str_ident path
-  | Not_in_env -> `Not_in_env str_ident
+
+(* Only used to retrieve documentation *)
+let from_completion_entry ~local_defs ~pos (namespace, path, loc) =
+  let path_lst  = Path.to_string_list path in
+  let str_ident = String.concat ~sep:"." path_lst in
+  let modules = tag namespace path in
+  locate ~ml_or_mli:`MLI ~modules ~local_defs ~pos ~str_ident loc
 
 let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
-  File_switching.reset () ;
-  Fallback.reset () ;
-  Preferences.set ml_or_mli ;
   let ident, is_label = Utils.keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
@@ -572,21 +571,9 @@ let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
       (* TODO: Use [`Labels] here *)
       tag `Type path, loc
     in
-    if loc <> Location.none then `Found loc else
-      let () =
-        debug_log "present in the environment, but ghost lock.\n\
-                   walking up the typedtree looking for '%s'"
-          (Typedtrie.path_to_string modules)
-      in
-      let trie = Typedtrie.of_browses (Browse.of_typer_contents local_defs) in
-      match locate ~pos modules trie with
-      | None when Fallback.is_set () -> recover str_ident
-      | None -> `Not_found (str_ident, File_switching.where_am_i ())
-      | Some loc -> `Found loc
+    locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc
   with
-  | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-  | File.Not_found path -> File.explain_not_found str_ident path
   | Not_in_env -> `Not_in_env str_ident
 
 let inspect_pattern is_path_capitalized p =
@@ -697,7 +684,7 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source path =
         from_longident ~pos ~env ~local_defs ctxt `MLI lid
       end
     | `Completion_entry entry ->
-      from_completion_entry ~pos ~env ~local_defs entry
+      from_completion_entry ~pos ~local_defs entry
   with
   | `Found loc ->
     let comments =
