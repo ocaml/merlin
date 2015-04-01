@@ -93,6 +93,37 @@ Add these bindings to rename interactively: >
   nmap <LocalLeader>R  <Plug>(MerlinRenameAppend)
 <
 
+:Destruct                                                          *:Destruct*
+
+"destructs" the thing under the cursor, i.e.
+- if the thing under the cursor is an expression, generates a pattern matching
+  on it.
+- if the thing under the cursor is a non-exhaustive pattern matching, makes
+  the matching exhaustive
+- if the thing under the cursor is a pattern variable or a pattern wildcard,
+  refines that pattern (if possible).
+
+See http://the-lambda-church.github.io/merlin/destruct.ogv
+
+:Outline                                                           *:Outline*
+
+Gives an "outline" of the current buffer, i.e. lists all the "definitions"
+made in the buffer along with their kind (type definition, value definition,
+module, etc.) and allows one to quickly jump at the (interactively) selected
+definition.
+
+The rendering (and interactivity) is provided by
+[ctrl-p](https://github.com/ctrlpvim/ctrlp.vim).
+
+:ILocate                                                           *:ILocate*
+
+This is an interactive version of |:Locate|, which relies on 
+[ctrl-p](https://github.com/ctrlpvim/ctrlp.vim).
+It expects some input from the user, and then will list things in the
+environment which name matches the user input.
+
+Hitting enter will move you to the definition of the selected element.
+
 ==============================================================================
 OPTIONS                                                       *merlin-options*
 
@@ -183,6 +214,45 @@ In the following illustration, the cursor is represented by `[n]`:
             │     └──────── am ─────────────┘    │
             └────────────── 2m ──────────────────┘
                         (or mm)
+<
+
+                                                     *'merlin_completion_dwim'*
+Default: true.
+Whether to enable "smart" (a.k.a "do what I mean") completion.
+If true, `L.m` will expand to >
+  List.map
+  List.m...
+  ListLabels.map
+  ...
+<
+if `L` doesn't exist.
+
+Disable with: >
+  let g:merlin_completion_dwim = 0
+<
+
+                                                 *'merlin_completion_arg_type'*
+Default: "several".
+Whether merlin should print the type of the expected parameter when completing
+in an application context.
+Possible option are:
+>
+  " always show the expected type
+  let g:merlin_completion_arg_type = "always"
+
+  " only show the expected type when there are more than one candidate
+  let g:merlin_completion_arg_type = "several"
+
+  " never show the expected type
+  let g:merlin_completion_arg_type = "never"
+<
+
+
+                                                   *'merlin_locate_preference'*
+Default: "ml".
+Specifies whether you'd prefer |:Locate| and |:ILocate| to take you to .ml or
+.mli files. >
+    let g:merlin_locate_preference = 'mli'
 <
 
 ==============================================================================
