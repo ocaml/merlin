@@ -634,8 +634,10 @@ See http://lists.gnu.org/archive/html/help-gnu-emacs/2013-09/msg00376.html"
   (cond
     ((stringp sexp) (substring-no-properties sexp))
     ((atom sexp) sexp)
-    (t (cons (merlin--sexp-remove-string-properties (car sexp))
-             (merlin--sexp-remove-string-properties (cdr sexp))))))
+    ((consp sexp)
+     (cons (merlin--sexp-remove-string-properties (car sexp))
+           (merlin--sexp-remove-string-properties (cdr sexp))))
+    (t sexp)))
 
 (defun merlin-send-command-async (command callback-if-success &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin asynchronously.
@@ -644,6 +646,7 @@ error and if CALLBACK-IF-EXN is non-nil, call the function with
 the error message otherwise print a generic error message."
   (assert (merlin--acquired-buffer))
   (unless (listp command) (setq command (list command)))
+  (setq command (merlin--sexp-remove-string-properties command))
   (let* ((string (concat (prin1-to-string command) "\n"))
          (promise (cons nil nil))
          (closure (list promise
