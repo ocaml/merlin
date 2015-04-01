@@ -10,9 +10,9 @@ def update_cursor_pos():
     line, col = vim.current.window.cursor
 
 def do_expand(base, vimvar):
-  print("test")
   try:
     l = merlin.command("expand", "prefix", base, "at", {'line' : line, 'col': col})
+    l = l['entries']
     l = map(lambda prop: prop['name'], l)
     l = merlin.uniq(sorted(l))
     for prop in l:
