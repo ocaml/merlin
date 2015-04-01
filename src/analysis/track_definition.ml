@@ -81,17 +81,48 @@ module Fallback = struct
   let is_set () = !fallback <> None
 end
 
-type filetype =
-  | ML   of string
-  | MLI  of string
-  | CMT  of string
-  | CMTI of string
+module File = struct
+  type t =
+    | ML   of string
+    | MLI  of string
+    | CMT  of string
+    | CMTI of string
+
+  let name = function ML name | MLI name | CMT name | CMTI name -> name
+
+  let ext = function
+    | ML _  -> ".ml"  | MLI _  -> ".mli"
+    | CMT _ -> ".cmt" | CMTI _ -> ".cmti"
+
+  exception Not_found of t
+
+  let explain_not_found ?(doc_from="") str_ident path =
+    let msg =
+      match path with
+      | ML file ->
+        sprintf "'%s' seems to originate from '%s' whose ML file could not be \
+                 found" str_ident file
+      | MLI file ->
+        sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
+                 found" str_ident file
+      | CMT file ->
+        sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+      | CMTI file when file <> doc_from ->
+        sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
+                 present" file str_ident
+      | CMTI _ ->
+        sprintf "The documentation for '%s' originates in the current file, \
+                 but no cmt is available" str_ident
+    in
+    `File_not_found msg
+end
 
 module Preferences : sig
   val set : [ `ML | `MLI ] -> unit
 
-  val cmt : string -> filetype
-  val ml  : string -> filetype
+  val cmt : string -> File.t
+  val ml  : string -> File.t
 end = struct
   let prioritize_impl = ref true
 
@@ -100,6 +131,8 @@ end = struct
       match choice with
       | `ML -> true
       | _ -> false
+
+  open File
 
   let cmt file = if !prioritize_impl then CMT file else CMTI file
   let ml file = if !prioritize_impl then ML file else MLI file
@@ -146,12 +179,6 @@ module Utils = struct
     let pref = Misc.chop_extensions f in
     String.capitalize (Filename.basename pref)
 
-  exception File_not_found of filetype
-
-  let filename_of_filetype = function ML name | MLI name | CMT name | CMTI name -> name
-  let ext_of_filetype = function
-    | ML _  -> ".ml"  | MLI _  -> ".mli"
-    | CMT _ -> ".cmt" | CMTI _ -> ".cmti"
 
   (* Reuse the code of [Misc.find_in_path_uncap] but returns all the files
      matching, instead of the first one.
@@ -187,15 +214,12 @@ module Utils = struct
     List.map files ~f:Misc.canonicalize_filename
 
   let find_all_matches ?(with_fallback=false) file =
-    let fname =
-      Misc.chop_extension_if_any (filename_of_filetype file)
-      ^ (ext_of_filetype file)
-    in
+    let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
     let fallback =
       if not with_fallback then "" else
       match file with
-      | ML f   -> Misc.chop_extension_if_any f ^ ".mli"
-      | MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
+      | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
+      | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
       | _ -> assert false
     in
     let path  = Fluid.get sources_path in
@@ -203,27 +227,24 @@ module Utils = struct
     List.uniq files ~cmp:String.compare
 
   let find_file_with_path ?(with_fallback=false) file path =
-    let fname =
-      Misc.chop_extension_if_any (filename_of_filetype file)
-      ^ (ext_of_filetype file)
-    in
+    let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
     let fallback =
       if not with_fallback then "" else
       match file with
-      | ML f   -> Misc.chop_extension_if_any f ^ ".mli"
-      | MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
-      | CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
-      | CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
+      | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
+      | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
+      | File.CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
+      | File.CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
     in
     try Misc.find_in_path_uncap ~fallback path fname
     with Not_found ->
-      raise (File_not_found file)
+      raise (File.Not_found file)
 
   let find_file ?with_fallback file =
     find_file_with_path ?with_fallback file @@
         match file with
-        | ML  _ | MLI _  -> Fluid.get sources_path
-        | CMT _ | CMTI _ -> Fluid.get loadpath
+        | File.ML  _ | File.MLI _  -> Fluid.get sources_path
+        | File.CMT _ | File.CMTI _ -> Fluid.get loadpath
 
   let keep_suffix =
     let open Longident in
@@ -252,29 +273,7 @@ module Utils = struct
       end
     | otherwise -> otherwise, false
 
-  let explain_file_not_found ?(doc_from="") str_ident path =
-    let msg =
-      match path with
-      | ML file ->
-        sprintf "'%s' seems to originate from '%s' whose ML file could not be \
-                 found" str_ident file
-      | MLI file ->
-        sprintf "'%s' seems to originate from '%s' whose MLI file could not be \
-                 found" str_ident file
-      | CMT file ->
-        sprintf "Needed cmt file of module '%s' to locate '%s' but it is not \
-                 present" file str_ident
-      | CMTI file when file <> doc_from ->
-        sprintf "Needed cmti file of module '%s' to locate '%s' but it is not \
-                 present" file str_ident
-      | CMTI _ ->
-        sprintf "The documentation for '%s' originates in the current file, \
-                 but no cmt is available" str_ident
-    in
-    `File_not_found msg
 end
-
-include Utils
 
 type context = Type | Expr | Patt | Unknown
 exception Context_mismatch
@@ -335,7 +334,7 @@ and browse_cmts ~root modules =
     | `Pack files ->
       begin match modules with
       | (mod_name, `Mod) :: _ ->
-        assert (List.exists files ~f:(fun s -> file_path_to_mod_name s = mod_name)) ;
+        assert (List.exists files ~f:(fun s -> Utils.file_path_to_mod_name s = mod_name)) ;
         Logger.debug section ~title:"loadpath" "Saw packed module => erasing loadpath" ;
         let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
         erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
@@ -368,14 +367,14 @@ and from_path path =
       Some loc
     in
     begin try
-      let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
+      let cmt_file = Utils.find_file ~with_fallback:true (Preferences.cmt fname) in
       save_digest_and_return cmt_file
-    with File_not_found (CMT fname | CMTI fname) ->
+    with File.Not_found (File.CMT fname | File.CMTI fname) ->
       restore_loadpath (fun () ->
         try
-          let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
+          let cmt_file = Utils.find_file ~with_fallback:true (Preferences.cmt fname) in
           save_digest_and_return cmt_file
-        with File_not_found (CMT fname | CMTI fname) ->
+        with File.Not_found (File.CMT fname | File.CMTI fname) ->
           (* In that special case, we haven't managed to find any cmt. But we
              only need the cmt for the source digest in contains. Even if we
              don't have that we can blindly look for the source file and hope
@@ -389,14 +388,14 @@ and from_path path =
     end
   | (fname, `Mod) :: modules ->
     begin try
-      let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
+      let cmt_file = Utils.find_file ~with_fallback:true (Preferences.cmt fname) in
       browse_cmts ~root:cmt_file modules
-    with File_not_found (CMT fname | CMTI fname) as exn ->
+    with File.Not_found (File.CMT fname | File.CMTI fname) as exn ->
       restore_loadpath (fun () ->
         try
-          let cmt_file = find_file ~with_fallback:true (Preferences.cmt fname) in
+          let cmt_file = Utils.find_file ~with_fallback:true (Preferences.cmt fname) in
           browse_cmts ~root:cmt_file modules
-        with File_not_found (CMT fname | CMTI fname) ->
+        with File.Not_found (File.CMT fname | File.CMTI fname) ->
           info_log "failed to locate the cmt[i] of '%s'" fname ;
           raise exn
       )
@@ -417,24 +416,24 @@ exception Multiple_matches of string list
 let find_source loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
-  let mod_name = file_path_to_mod_name fname in
+  let mod_name = Utils.file_path_to_mod_name fname in
   let file =
     let extensionless = Misc.chop_extension_if_any fname = fname in
     if extensionless then Preferences.ml mod_name else
-    if Filename.check_suffix fname "i" then MLI mod_name else ML mod_name
+    if Filename.check_suffix fname "i" then File.MLI mod_name else File.ML mod_name
   in
-  let filename = filename_of_filetype file in
+  let filename = File.name file in
   match File_switching.where_am_i () with
   | None -> (* We have not moved, we don't want to return a filename *) None
   | Some s ->
     let dir = Filename.dirname s in
-    match find_all_matches ~with_fallback file with
+    match Utils.find_all_matches ~with_fallback file with
     | [] ->
       debug_log "failed to find \"%s\" in source path (fallback = %b)"
           filename with_fallback ;
       debug_log "looking in '%s'" dir ;
       Some (
-        find_file_with_path ~with_fallback file @@
+        Utils.find_file_with_path ~with_fallback file @@
           Misc.Path_list.of_string_list_ref (ref [ dir ])
       )
     | [ x ] -> Some x
@@ -543,7 +542,7 @@ let from_completion_entry ~env ~local_defs ~pos (namespace, path, loc) =
   let str_ident = String.concat ~sep:"." path_lst in
   try
     let modules = tag namespace path in
-    if not (is_ghost loc) then `Found loc else
+    if not (Utils.is_ghost loc) then `Found loc else
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
@@ -557,14 +556,14 @@ let from_completion_entry ~env ~local_defs ~pos (namespace, path, loc) =
   with
   | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-  | File_not_found path -> explain_file_not_found str_ident path
+  | File.Not_found path -> File.explain_not_found str_ident path
   | Not_in_env -> `Not_in_env str_ident
 
 let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
   File_switching.reset () ;
   Fallback.reset () ;
   Preferences.set ml_or_mli ;
-  let ident, is_label = keep_suffix lid in
+  let ident, is_label = Utils.keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let modules, loc =
@@ -575,7 +574,7 @@ let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
       (* TODO: Use [`Labels] here *)
       tag `Type path, loc
     in
-    if not (is_ghost loc) then `Found loc else
+    if not (Utils.is_ghost loc) then `Found loc else
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
@@ -589,7 +588,7 @@ let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
   with
   | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
-  | File_not_found path -> explain_file_not_found str_ident path
+  | File.Not_found path -> File.explain_not_found str_ident path
   | Not_in_env -> `Not_in_env str_ident
 
 let inspect_pattern is_path_capitalized p =
@@ -673,7 +672,7 @@ let from_string ~project ~env ~local_defs ~pos switch path =
         | None     -> `Found (None, loc.Location.loc_start)
         | Some src -> `Found (Some src, loc.Location.loc_start)
       with
-      | File_not_found ft -> explain_file_not_found path ft
+      | File.Not_found ft -> File.explain_not_found path ft
       | Multiple_matches lst ->
         let matches = String.concat lst ~sep:", " in
         `File_not_found (
