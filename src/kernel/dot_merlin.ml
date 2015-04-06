@@ -148,9 +148,13 @@ type config =
 let parse_dot_merlin {path; directives} config =
   let cwd = Filename.dirname path in
   let expand path acc =
+    let filter name =
+      try Sys.is_directory name
+      with _ -> false
+    in
     let path = expand_directory Config.standard_library path in
     let path = canonicalize_filename ~cwd path in
-    expand_glob ~filter:Sys.is_directory path acc
+    expand_glob ~filter path acc
   in
   List.fold_left ~init:{config with dot_merlins = path :: config.dot_merlins}
   ~f:(fun config ->

@@ -107,10 +107,7 @@ let rec expand_glob ~filter acc root = function
     append acc root
   | [Glob.Exact component] :: tl ->
     let filename = Filename.concat root component in
-    if Sys.file_exists filename && filter filename then
-      expand_glob ~filter acc filename tl
-    else
-      acc
+    expand_glob ~filter acc filename tl
   | pattern :: tl ->
     let items = try Sys.readdir root with Sys_error _ -> [||] in
     let process acc dir =
