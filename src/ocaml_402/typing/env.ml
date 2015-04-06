@@ -242,7 +242,6 @@ type cache = {
   used_constructors :
     (string * Location.t * string, (constructor_usage -> unit)) Hashtbl.t;
   persistent_structures : (string, pers_struct option) Hashtbl.t;
-  missing_structures : (string, unit) Hashtbl.t;
   prefixed_sg : (Path.t, (signature * (Path.t list * Subst.t * signature_item list lazy_t)) list ref) Hashtbl.t;
   (* Consistency between persistent structures *)
   crc_units : Consistbl.t;
@@ -252,7 +251,6 @@ type cache = {
 
 let new_cache ~unit_name = {
   persistent_structures = Hashtbl.create 17;
-  missing_structures = Hashtbl.create 17;
   crc_units = Consistbl.create ();
   value_declarations = Hashtbl.create 16;
   used_constructors = Hashtbl.create 16;
@@ -402,22 +400,16 @@ let read_pers_struct modname filename =
 
 let find_pers_struct ?(check=true) name =
   if name = "*predef*" then raise Not_found;
-  let r =
-    try Some (Hashtbl.find !cache.persistent_structures name)
-    with Not_found -> None
-  in
   let ps =
-    match r with
-    | Some None -> raise Not_found
-    | Some (Some sg) -> sg
-    | None ->
-        let filename =
-          try find_in_path_uncap !load_path (name ^ ".cmi")
-          with Not_found ->
-            Hashtbl.add !cache.persistent_structures name None;
-            raise Not_found
-        in
-        read_pers_struct name filename
+    match Hashtbl.find !cache.persistent_structures name with
+    | Some sg -> sg
+    | None -> raise Not_found
+    | exception Not_found ->
+      match find_in_path_uncap !load_path (name ^ ".cmi") with
+      | filename -> read_pers_struct name filename
+      | exception Not_found ->
+        Hashtbl.add !cache.persistent_structures name None;
+        raise Not_found
   in
   if check then check_consistency ps;
   ps
@@ -453,25 +445,13 @@ let check_cache_consistency () =
         in
         let invalid =
           match filename, ps with
-          | _, Some ps when Hashtbl.mem !cache.missing_structures name ->
-            true
-          | Some filename, Some ps
-            when ps.ps_sig == Cmi_cache.((read filename).cmi_infos).cmi_sign ->
-            false
           | None, None -> false
+          | Some filename, Some ps ->
+            ps.ps_sig != Cmi_cache.((read filename).cmi_infos).cmi_sign
           | _, _       -> true
         in
-        Hashtbl.remove !cache.missing_structures name;
         if invalid then raise Not_found
       ) !cache.persistent_structures;
-    Hashtbl.iter (fun name () ->
-        let invalid =
-          try ignore (find_in_path_uncap !load_path (name ^ ".cmi"));
-            true;
-          with Not_found -> false
-        in
-        if invalid then raise Not_found
-      ) !cache.missing_structures;
     true
   with Not_found -> false
 
