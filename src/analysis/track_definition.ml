@@ -169,6 +169,8 @@ end
 
 
 module Utils = struct
+  let is_ghost_loc { Location. loc_ghost } = loc_ghost
+
   let longident_is_qualified = function
     | Longident.Lident _ -> false
     | _ -> true
@@ -536,7 +538,7 @@ let locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc =
   Fallback.reset ();
   Preferences.set ml_or_mli;
   try
-    if loc <> Location.none then `Found loc else
+    if not (Utils.is_ghost_loc loc) then `Found loc else
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
