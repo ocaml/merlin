@@ -30,19 +30,19 @@ module Make(Input : sig
   type t
   val read : string -> t
 end) = struct
-  let cache : (string, float * Input.t) Hashtbl.t
+  let cache : (string, Misc.file_id * Input.t) Hashtbl.t
             = Hashtbl.create 17
 
   let read filename =
-    let mtime = Misc.file_mtime filename in
+    let fid = Misc.file_id filename in
     try
-      let mtime', file = Hashtbl.find cache filename in
-      if mtime <> mtime' then raise Not_found;
+      let fid', file = Hashtbl.find cache filename in
+      if fid <> fid' then raise Not_found;
       file
     with Not_found ->
     try
       let file = Input.read filename in
-      Hashtbl.replace cache filename (mtime, file);
+      Hashtbl.replace cache filename (fid, file);
       file
     with exn ->
       Hashtbl.remove cache filename;
@@ -51,8 +51,8 @@ end) = struct
   let flush () =
     let invalid =
       Hashtbl.fold
-        (fun filename (mtime, _) lst ->
-          if Misc.file_mtime filename <> mtime
+        (fun filename (fid, _) lst ->
+          if Misc.file_id filename <> fid
           then filename :: lst
           else lst)
         cache []

@@ -55,7 +55,7 @@ module Project : sig
   val get_dot_merlins_failure : t -> (string * exn) list
 
   (* paths of dot_merlins with mtime at time of load *)
-  val get_dot_merlins : t -> (string * float) list
+  val get_dot_merlins : t -> (string * Misc.file_id) list
 
   (* Dump all the flags given to merlin. *)
   val get_flags : t -> (string * string list list) list
@@ -128,8 +128,8 @@ end = struct
     cfg.cfg_path_pkg := []
 
   type t = {
-    mutable dot_merlins_path : (string * float) list;
-    mutable dot_merlins : (string * float) list;
+    mutable dot_merlins_path : (string * Misc.file_id) list;
+    mutable dot_merlins : (string * Misc.file_id) list;
     mutable dot_merlins_failures : (string * exn) list;
 
     dot_config : config;
@@ -290,7 +290,7 @@ end = struct
   end
 
   let set_dot_merlin project paths =
-    project.dot_merlins_path <- List.map (fun p -> p, file_mtime p) paths;
+    project.dot_merlins_path <- List.map (fun p -> p, Misc.file_id p) paths;
     let module Dm = Dot_merlin in
     let rec aux = function
       | [] -> List.Lazy.Nil
@@ -300,7 +300,7 @@ end = struct
     let cfg = project.dot_config in
     let result, path_pkg, ppxs = Dot_merlin.path_of_packages dm.Dm.packages in
     project.dot_merlins <- List.map dm.Dm.dot_merlins
-        ~f:(fun file -> file, file_mtime file);
+        ~f:(fun file -> file, Misc.file_id file);
     cfg.cfg_path_pkg := List.filter_dup path_pkg;
     cfg.cfg_path_build := dm.Dm.build_path;
     cfg.cfg_path_source := dm.Dm.source_path;
@@ -385,10 +385,8 @@ end = struct
       project, `Fresh
 
   let autoreload_dot_merlin project =
-    let out_of_date (path, mtime) =
-      let mtime' = file_mtime path in
-      mtime <> mtime' &&
-      (classify_float mtime, classify_float mtime') <> (FP_nan,FP_nan)
+    let out_of_date (path, fid) =
+      not (Misc.file_id_check (Misc.file_id path) fid)
     in
     if List.exists ~f:out_of_date project.dot_merlins ||
        List.exists ~f:out_of_date project.dot_merlins_path

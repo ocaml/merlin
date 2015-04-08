@@ -168,7 +168,6 @@ val modules_in_path : ext:string -> string list -> string list
 
 val (~:) : 'a -> 'a Lazy.t
 
-val file_mtime : string -> float
 val file_contents : string -> string
 
 module LongString :
@@ -232,3 +231,18 @@ val cut_at : string -> char -> string * string
    Raise [Not_found] if the character does not appear in the string
    @since 4.01
 *)
+
+type file_id
+(** An instance of file_id represents the identity of a file contents.
+    Use this to quickly detect if a file has changed.
+    (Detection is done by checking some fields from stat syscall,
+    it an be tricked but should behave well in regular cases.
+    FIXME: precision of mtime is still the second?!
+*)
+
+val file_id_check: file_id -> file_id -> bool
+(** Returns true iff the heuristic determines that the file contents has not
+    changed. *)
+
+val file_id: string -> file_id
+(** [file_id filename] computes an id for the current contents of [filename] *)

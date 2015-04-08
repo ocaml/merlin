@@ -407,10 +407,6 @@ let modules_in_path ~ext path =
 
 let (~:) = Lazy.from_val
 
-let file_mtime filename =
-  try Unix.((stat filename).st_mtime)
-  with _ -> nan
-
 let file_contents filename =
   let ic = open_in filename in
   try
@@ -528,3 +524,21 @@ let split s c =
 let cut_at s c =
   let pos = String.index s c in
   String.sub s 0 pos, String.sub s (pos+1) (String.length s - pos - 1)
+
+type file_id = Unix.stats option
+
+let file_id filename =
+  try Some (Unix.stat filename)
+  with _ -> None
+
+let file_id_check a b =
+  let open Unix in
+  match a, b with
+  | None, None -> true
+  | Some a, Some b ->
+    a.st_mtime = b.st_mtime &&
+    a.st_size = b.st_size &&
+    a.st_ino = b.st_ino &&
+    a.st_dev = b.st_dev
+  | Some _, None | None, Some _ -> false
+
