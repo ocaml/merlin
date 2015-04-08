@@ -1991,10 +1991,10 @@ Returns the position."
       '(menu-item "dot-merlin check" merlin-project-check
                   :help "Display status of '.merlin'."))
     (define-key merlin-menu-map [addflag]
-      '(menu-item "Add a flag" merlin-process-add-flag
+      '(menu-item "Add a flag" merlin-flags-add
                   :help "Add a flag to be passed to ocamlmerlin after restarting it."))
     (define-key merlin-menu-map [clearflag]
-      '(menu-item "Clear flags" merlin-process-clear-flags
+      '(menu-item "Clear flags" merlin-flags-clear
                   :help "Clear all flags set up to be passed to ocamlmerlin."))
     (define-key merlin-menu-map [restartmerlin]
       '(menu-item "Restart merlin" merlin-restart-process
