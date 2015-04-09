@@ -1191,7 +1191,8 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ; the old format.
 (defun merlin-completion-data (ident)
   "Backward compatible version of merlin--completion-data"
-  (let (entries (merlin--completion-data ident))
+  (let ((entries (merlin--completion-data ident))
+        (prefix  (merlin--completion-prefix ident)))
     (mapcar (lambda (entry)
               (list (concat prefix (cdr (assoc 'name entry)))
                     (merlin--completion-format-entry entry)
