@@ -231,9 +231,8 @@ let completion_format ?get_doc ~exact name ?loc ?path ty =
   in
   let info =
     match get_doc, kind with
-    | None, _
     | _, (`Module | `Modtype) -> to_string ()
-    | _, (`Variant | `Label | `Constructor) -> "" (* TODO! *)
+    | None, _ -> ""
     | Some get_doc, kind ->
       match path, loc with
       | Some p, Some loc ->
