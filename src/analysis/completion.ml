@@ -416,6 +416,86 @@ let complete_methods ~env ~prefix obj =
     { Protocol.Compl. name; kind = `MethodCall; desc = to_string (); info }
   )
 
+let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
+  let open Longident in
+  let seen = Hashtbl.create 7 in
+  let uniq n = if Hashtbl.mem seen n
+    then false
+    else (Hashtbl.add seen n (); true)
+  in
+  let find ?path prefix =
+    let valid tag name =
+      try
+        (* Prevent identifiers introduced by type checker to leak *)
+        ignore (String.index name '-' : int);
+        false
+      with Not_found ->
+        String.is_prefixed ~by:prefix name && uniq (tag,name)
+    in
+    (* Hack to prevent extensions namespace to leak *)
+    let validate ident tag name =
+      (if ident = `Uident
+       then name <> "" && name.[0] <> '_'
+       else name <> "_")
+      && valid tag name
+    in
+    try
+      let kind = classify_node node.BrowseT.t_node in
+      let order = completion_order kind in
+      let add_completions compl kind =
+        completion_fold ?get_doc ?target_type prefix path kind ~validate env compl
+      in
+      List.fold_left ~f:add_completions order ~init:[]
+    with
+    | exn ->
+      (* Our path might be of the form [Some_path.record.Real_path.prefix] which
+       * would explain why the previous cases failed.
+       * We only keep [Real_path] for our path. *)
+      let is_lowercase c = c = Char.lowercase c in
+      let rec keep_until_lowercase li =
+        match li with
+        | Lident id when id <> "" && not (is_lowercase id.[0]) -> Some li
+        | Ldot (path, id) when id <> "" && not (is_lowercase id.[0]) ->
+          begin match keep_until_lowercase path with
+          | None -> Some (Lident id)
+          | Some path -> Some (Ldot (path, id))
+          end
+        | _ -> None
+      in
+      match path with
+      | None -> raise exn (* clearly the hypothesis is wrong here *)
+      | Some long_ident ->
+        let path = keep_until_lowercase long_ident in
+        Raw_compat.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
+          if not (valid `Label name) then candidates else
+          completion_format ~exact:(name = prefix) name (`Label l) :: candidates
+        ) path env []
+  in
+  try
+    match parse prefix with
+    | Ldot (path, prefix) -> find ~path prefix
+    | Lident prefix ->
+      let compl = find prefix in
+      (* Add modules on path but not loaded *)
+      List.fold_left (Buffer.global_modules buffer) ~init:compl ~f:(
+        fun candidates name ->
+          let default =
+            { Protocol.Compl.name; kind = `Module; desc = ""; info = "" }
+          in
+          if name = prefix && uniq (`Mod, name) then
+            try
+              let path, md = Raw_compat.lookup_module (Lident name) env in
+              completion_format ~exact:true name ~path (`Mod md) :: candidates
+            with Not_found ->
+              default :: candidates
+          else if String.is_prefixed ~by:prefix name && uniq (`Mod,name) then
+            default :: candidates
+          else
+            candidates
+      )
+    | _ -> find prefix
+  with Not_found -> []
+
 (* Propose completion from a particular node *)
 let node_complete buffer ?get_doc ?target_type node prefix =
   let prefix =
@@ -430,95 +510,11 @@ let node_complete buffer ?get_doc ?target_type node prefix =
       prefix
   in
   let env = node.BrowseT.t_env in
-  let seen = Hashtbl.create 7 in
-  let uniq n = if Hashtbl.mem seen n
-    then false
-    else (Hashtbl.add seen n (); true)
-  in
-  let find ?path prefix =
-    let valid tag name =
-      String.is_prefixed ~by:prefix name && uniq (tag,name)
-    in
-    (* Prevent identifiers introduced by type checker to leak *)
-    let valid tag name =
-      try
-        ignore (String.index name '-' : int);
-        false
-      with Not_found -> valid tag name
-    in
-    (* Hack to prevent extensions namespace to leak *)
-    let validate ident tag name =
-      (if ident = `Uident
-       then name <> "" && name.[0] <> '_'
-       else name <> "_")
-      && valid tag name
-    in
-    try
-      let kind = classify_node node.BrowseT.t_node in
-      let order = completion_order kind in
-      let add_completions kind compl =
-        completion_fold ?get_doc ?target_type prefix path kind ~validate env compl in
-      List.fold_left' ~f:add_completions order ~init:[]
-    with
-    | exn ->
-      (* Our path might be of the form [Some_path.record.Real_path.prefix] which
-       * would explain why the previous cases failed.
-       * We only keep [Real_path] for our path. *)
-      let is_lowercase c = c = Char.lowercase c in
-      let rec keep_until_lowercase li =
-        let open Longident in
-        match li with
-        | Lident id when id <> "" && not (is_lowercase id.[0]) -> Some li
-        | Ldot (path, id) when id <> "" && not (is_lowercase id.[0]) ->
-          begin match keep_until_lowercase path with
-          | None -> Some (Lident id)
-          | Some path -> Some (Ldot (path, id))
-          end
-        | _ -> None
-      in
-      begin match path with
-      | None -> raise exn (* clearly the hypothesis is wrong here *)
-      | Some long_ident ->
-        let path = keep_until_lowercase long_ident in
-       Raw_compat.fold_labels
-          (fun ({Types.lbl_name = name} as l) compl ->
-            if valid `Label name then
-              (completion_format ~exact:(name = prefix) name (`Label l)) :: compl
-            else compl)
-          path env []
-      end
-  in
   let typer = Buffer.typer buffer in
   Printtyp.wrap_printing_aliasmap (Typer.aliasmap ~from:env typer) @@ fun () ->
   match node.BrowseT.t_node with
   | BrowseT.Method_call (obj,_) -> complete_methods ~env ~prefix obj
-  | _ ->
-    try
-      match Longident.parse prefix with
-      | Longident.Ldot (path,prefix) -> find ~path prefix
-      | Longident.Lident prefix ->
-        (* Add modules on path but not loaded *)
-        let compl = find prefix in
-        List.fold_left (Buffer.global_modules buffer) ~init:compl
-          ~f:begin fun compl modname ->
-            let default = { Protocol.Compl.
-                            name = modname;
-                            kind = `Module;
-                            desc = "";
-                            info = "";
-                          } in
-            match modname with
-            | modname when modname = prefix && uniq (`Mod,modname) ->
-              (try let path, md =
-                Raw_compat.lookup_module (Longident.Lident modname) env in
-                 completion_format ~exact:true modname ~path (`Mod md) :: compl
-               with Not_found -> default :: compl)
-            | modname when String.is_prefixed ~by:prefix modname && uniq (`Mod,modname) ->
-              default :: compl
-            | _ -> compl
-          end
-      | _ -> find prefix
-    with Not_found -> []
+  | _ -> complete_prefix ~env ~prefix buffer node
 
 open Typedtree
 
