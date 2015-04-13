@@ -50,7 +50,7 @@ val node_complete
   -> Protocol.Compl.entry list
 
 val expand_prefix : global_modules:string list -> Env.t -> string
-  -> Protocol.Compl.t
+  -> Protocol.Compl.entry list
 
 val labels_of_application : ?prefix:Asttypes.label -> Typedtree.expression
   -> (Asttypes.label * Types.type_expr) list

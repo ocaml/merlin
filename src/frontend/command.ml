@@ -400,7 +400,8 @@ let dispatch (state : state) =
       let node, _ = Completion.node_at typer pos in
       node.BrowseT.t_env in
     let global_modules = Buffer.global_modules state.buffer in
-    Completion.expand_prefix env ~global_modules prefix
+    let entries = Completion.expand_prefix env ~global_modules prefix in
+    Compl.{ entries ; context = `Unknown }
 
   | (Document (patho, pos) : a request) ->
     let comments = Buffer.comments state.buffer in

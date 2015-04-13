@@ -532,15 +532,17 @@ let expand_prefix ~global_modules env prefix =
     in
     match lident with
     | None ->
-      candidates @ List.map (List.filter ~f:validate' global_modules)
-                     ~f:item_for_global_module
+      let f name =
+        if not (validate' name) then None else
+        Some (item_for_global_module name)
+      in
+      candidates @ List.filter_map global_modules ~f
     | Some lident ->
       let lident = Longident.flatten lident in
       let lident = String.concat ~sep:"." lident ^ "." in
       List.map candidates ~f:(fun c -> { c with name = lident ^ c.name })
   in
-  { entries = List.concat_map ~f:process_lident lidents;
-    context = `Unknown }
+  List.concat_map ~f:process_lident lidents
 
 open Typedtree
 
