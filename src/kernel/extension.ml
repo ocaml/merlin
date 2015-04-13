@@ -164,9 +164,8 @@ let ext_custom_printf = {
 (* Known extensions *)
 let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec;ext_custom_printf]
 let registry =
-  List.fold_left' registry
-    ~f:(fun ext -> String.Map.add ext.name ext)
-    ~init:String.Map.empty
+  List.fold_left registry ~init:String.Map.empty
+    ~f:(fun map ext -> String.Map.add ext.name ext map)
 let all = String.Set.of_list (String.Map.keys registry)
 
 let lookup s =

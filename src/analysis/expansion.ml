@@ -14,14 +14,14 @@ let explore ?(global_modules=[]) env =
     let tbl = Hashtbl.create 7 in
     fun name -> Hashtbl.mem tbl name || (Hashtbl.add tbl name (); false)
   in
-  let add_module name l =
+  let add_module l name =
     if seen name then l
     else
       let lident = Longident.Lident name in
       Trie (name, lident, lazy (explore_node lident env)) :: l
   in
-  let add_module' name _ _ l = add_module name l in
-  List.fold_left' ~f:add_module global_modules
+  let add_module' name _ _ l = add_module l name in
+  List.fold_left ~f:add_module global_modules
     ~init:(Env.fold_modules add_module' None env [])
 
 let regex_of_path_prefix pattern =

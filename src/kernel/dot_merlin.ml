@@ -198,7 +198,7 @@ let rec parse ?(config=empty_config) =
       flags       = List.rev (List.filter_dup config.flags);
     }
 
-let ppx_of_package ?(predicates=[]) pkg setup =
+let ppx_of_package ?(predicates=[]) setup pkg =
   let d = Findlib.package_directory pkg in
   (* Determine the 'ppx' property: *)
   let in_words ~comma s =
@@ -250,8 +250,8 @@ let ppx_of_package ?(predicates=[]) pkg setup =
     | None -> setup
     | Some ppx -> Ppxsetup.add_ppx ppx setup
   in
-  List.fold_left' ~f:(fun (ppx,opts) -> Ppxsetup.add_ppxopts ppx opts)
-    ppxopts ~init:setup
+  List.fold_left ppxopts ~init:setup
+    ~f:(fun setup (ppx,opts) -> Ppxsetup.add_ppxopts ppx opts setup)
 
 let path_of_packages packages =
   let packages =  packages in
@@ -267,7 +267,7 @@ let path_of_packages packages =
   let failures, packages = Either.split packages in
   let packages = List.filter_dup (List.concat packages) in
   let path = List.map ~f:Findlib.package_directory packages in
-  let ppxs = List.fold_left' ~f:ppx_of_package packages ~init:Ppxsetup.empty in
+  let ppxs = List.fold_left ~f:ppx_of_package packages ~init:Ppxsetup.empty in
   let failures = match failures with
     | [] -> `Ok
     | ls -> `Failures ls

@@ -133,7 +133,7 @@ let rec last_env t =
   else
     last_env t'
 
-let append catch loc item step =
+let append catch loc step item =
   try
     let env, contents =
       match item with
@@ -178,7 +178,7 @@ let sync_frame catch frame (_,step) =
   let raw   = Raw_typer.step value step.raw in
   let items = Raw_typer.observe raw in
   let items = List.map ~f:(rewrite loc) items in
-  (frame, List.fold_left' ~f:(append catch loc) items ~init:{step with raw})
+  (frame, List.fold_left ~f:(append catch loc) items ~init:{step with raw})
 
 let new_stack extensions catch frame =
   match List.rev_unfold [frame] ~f:Parser.Frame.next frame with

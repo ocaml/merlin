@@ -116,8 +116,8 @@ let rec fix_loc env t =
     let t_children = List.map (fix_loc t_env) (Lazy.force t_children) in
     {t with
      t_env;
-     t_loc = List.fold_left' ~init:BrowseT.default_loc t_children
-         ~f:(fun t l ->
+     t_loc = List.fold_left ~init:BrowseT.default_loc t_children
+         ~f:(fun l t ->
              if t.t_loc == BrowseT.default_loc then
                l
              else if l == BrowseT.default_loc then

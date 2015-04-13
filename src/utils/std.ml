@@ -62,11 +62,6 @@ module List = struct
     try Some (find ~f l)
     with Not_found -> None
 
-  (* [fold_left] with arguments flipped, because *)
-  let rec fold_left' ~f l ~init = match l with
-    | [] -> init
-    | x :: xs -> fold_left' ~f ~init:(f x init) xs
-
   let rec rev_scan_left acc ~f l ~init = match l with
     | [] -> acc
     | x :: xs ->
@@ -365,13 +360,13 @@ module String = struct
 
   module Set = struct
     include Set.Make (struct type t = string let compare = compare end)
-    let of_list l = List.fold_left' ~f:add l ~init:empty
+    let of_list l = List.fold_left ~f:(fun s elt -> add elt s) l ~init:empty
     let to_list s = fold (fun x xs -> x :: xs) s []
   end
 
   module Map = struct
     include Map.Make (struct type t = string let compare = compare end)
-    let of_list l = List.fold_left' ~f:(fun (k,v) m -> add k v m) l ~init:empty
+    let of_list l = List.fold_left ~f:(fun m (k,v) -> add k v m) l ~init:empty
     let to_list m = fold (fun k v xs -> (k,v) :: xs) m []
 
     let keys m = fold (fun k _ xs -> k :: xs) m []
@@ -691,14 +686,15 @@ end = struct
       else dispatch (Exact (String.sub s ~pos:i0 ~len:(i - i0)) :: acc) i
     in
     let parts = dispatch [] 0 in
-    let normalize x xs = match x, xs with
+    let normalize xs x =
+      match x, xs with
       | Joker, (Joker :: _) | Skip 0, _ | Exact "", _ -> xs
       | Joker, ((Skip _ as skip) :: xs) -> skip :: Joker :: xs
       | Skip n, (Skip m :: xs) -> Skip (n + m) :: xs
       | Exact s, (Exact t :: xs) -> Exact (s ^ t) :: xs
       | _ -> x :: xs
     in
-    List.fold_left' ~f:normalize ~init:[] parts
+    List.fold_left ~f:normalize ~init:[] parts
 
   let match_pattern s = function
     | [Joker] -> true

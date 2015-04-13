@@ -207,14 +207,14 @@ let dispatch (state : state) =
         let path = Lexer.reconstruct_identifier lexer in
         let path = Lexer.identifier_suffix path in
         begin match path with
-          | [] -> []
-          | base :: tail ->
-            [List.fold_left' ~f:(fun {Location. txt = dot; loc = dl}
-                                  {Location. txt = base; loc = bl} ->
-                                  let loc = Parsing_aux.location_union bl dl in
-                                  let txt = base ^ "." ^ dot in
-                                  Location.mkloc txt loc)
-               ~init:base tail]
+        | [] -> []
+        | base :: tail ->
+          let f {Location. txt=base; loc=bl} {Location. txt=dot; loc=dl} =
+            let loc = Parsing_aux.location_union bl dl in
+            let txt = base ^ "." ^ dot in
+            Location.mkloc txt loc
+          in
+          [ List.fold_left tail ~init:base ~f ]
         end
       | Some (expr, offset) ->
         let loc_start =
@@ -412,9 +412,9 @@ let dispatch (state : state) =
     let open Compl in
     let process_lident lident =
       let compl =
-        let aux kind compl =
+        let aux compl kind =
           Completion.completion_fold "" lident kind ~validate env compl in
-        List.fold_left' ~f:aux Completion.default_kinds ~init:[]
+        List.fold_left ~f:aux Completion.default_kinds ~init:[]
       in
       match lident with
       | None -> compl @

@@ -179,8 +179,8 @@ let sync ~strong_check ~weak_check ~init ~strong_fold ~weak_update a = function
         { b with head = hb },
         `Nothing_done
       | worklist ->
-        let hb = List.fold_left' worklist ~init:hb
-            ~f:(fun a hb -> List.More (strong_fold a (focused' hb), hb)) in
+        let hb = List.fold_left worklist ~init:hb
+            ~f:(fun hb a -> List.More (strong_fold a (focused' hb), hb)) in
         { head = hb; tail = []; position = a.position },
         `Updated
       end
