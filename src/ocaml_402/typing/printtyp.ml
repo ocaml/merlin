@@ -517,58 +517,57 @@ let set_printing_aliasmap ({ am_env; am_map; am_open } as aliasmap) =
           let lazy opened = am_open in
           fun p -> PathSet.mem p opened
         in
-        let type_aliases, module_aliases' =
-          let lazy (type_aliases, module_aliases) = am_map in
-          let type_aliases', module_aliases' = pers_maps () in
-          pathmap_append type_aliases type_aliases',
-          pathmap_append module_aliases module_aliases'
-        in
+        let lazy (type_alias0, module_alias0) = am_map in
+        let type_alias1, module_alias1 = pers_maps () in
         if debug then
-          PathMap.iter (fun p ps ->
-              dprintf "REGISTERED %s ALIASING %s\n%!" (to_str p)
-                (String.concat ";" (List.map to_str ps))
-            ) module_aliases';
-        let rec select_alias path paths = lazy
-          begin
-            let best_module_path = best_path opened aliased in
-            let path, (n, _) =
-              List.fold_left best_module_path
-                (path, path_size opened aliased path)
-                paths
-            in
-            let path = shorten_path' opened aliased path in
-            if debug then
-              dprintf "SELECTED %s AMONG %s\n%!"
-                (to_str path) (String.concat ", " (List.map to_str paths));
-            path, n
-          end
-        and module_alias = lazy (PathMap.mapi select_alias module_aliases')
-        and aliased p =
-          let lazy module_alias = module_alias in
-          let p' = Env.normalize_path None am_env p in
+          (let dbg p ps =
+             dprintf "REGISTERED %s ALIASING %s\n%!" (to_str p)
+               (String.concat ";" (List.map to_str ps))
+           in
+           PathMap.iter dbg module_alias0;
+           PathMap.iter dbg module_alias1);
+        let rec select_alias path paths =
+          let best_module_path = best_path opened aliased in
+          let path, (n, _) =
+            List.fold_left best_module_path
+              (path, path_size opened aliased path)
+              paths
+          in
+          let path = shorten_path' opened aliased path in
           if debug then
-            dprintf "ALIAS FOR %s = %s? (in %d aliases)\n%!"
-              (to_str p) (to_str p')
-              (PathMap.cardinal module_alias);
-          match PathMap.find p' module_alias with
-          | exception Not_found ->
-            if debug then
-              dprintf "\tNO\n%!";
-            None
-          | result ->
-            if debug then
-              dprintf "\tYES\n%!";
-            let lazy result = result in
-            (*let size', _ = path_size (fun _ -> false) no_aliases p in
-              let result =
-              if size' < snd result then
-                (p, size')
-              else
-                result
-              in*)
-            if debug then
-              dprintf "\tALIASING TO %s\n%!" (to_str (fst result));
-            Some result
+            dprintf "SELECTED %s AMONG %s\n%!"
+              (to_str path) (String.concat ", " (List.map to_str paths));
+          path, n
+        and module_alias_store = ref PathMap.empty
+        and aliased p =
+          let p' = Env.normalize_path None am_env p in
+          try PathMap.find p' !module_alias_store
+          with Not_found ->
+            let l0 = try PathMap.find p' module_alias0 with Not_found -> [] in
+            let l1 = try PathMap.find p' module_alias1 with Not_found -> [] in
+            let result =
+              match l0 @ l1 with
+              | [] ->
+                if debug then
+                  dprintf "\tNO\n%!";
+                None
+              | aliases ->
+                if debug then
+                  dprintf "\tYES\n%!";
+                let selected = select_alias p' aliases in
+                (*let size', _ = path_size (fun _ -> false) no_aliases p in
+                  let result =
+                  if size' < snd result then
+                    (p, size')
+                  else
+                    result
+                  in*)
+                if debug then
+                  dprintf "\tALIASING TO %s\n%!" (to_str (fst selected));
+                Some selected
+            in
+            module_alias_store := PathMap.add p' result !module_alias_store;
+            result
         in
         let final = ref PathMap.empty in
         let type_alias = function
@@ -581,9 +580,10 @@ let set_printing_aliasmap ({ am_env; am_map; am_open } as aliasmap) =
               let path', _ =
                 let best_path = best_path opened aliased in
                 let best = path, path_size opened aliased path in
-                try List.fold_left best_path best
-                   (PathMap.find path type_aliases)
-                with Not_found -> best
+                List.fold_left best_path
+                  (List.fold_left best_path best
+                     (try PathMap.find path type_alias0 with Not_found -> []))
+                  (try PathMap.find path type_alias1 with Not_found -> [])
               in
               let path' = shorten_path' opened aliased path' in
               final := PathMap.add path path' !final;
