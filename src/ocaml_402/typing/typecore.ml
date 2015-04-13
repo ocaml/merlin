@@ -68,25 +68,28 @@ type error =
   | No_value_clauses
   | Exception_pattern_below_toplevel
 
-let label_mismatch li trace = Label_mismatch (li, duptrace trace)
-let pattern_type_clash trace = Pattern_type_clash (duptrace trace)
-let or_pattern_type_clash i trace = Or_pattern_type_clash (i, duptrace trace)
-let expr_type_clash trace = Expr_type_clash (duptrace trace)
-let apply_non_function t = Apply_non_function (dupty t)
-let apply_wrong_label l t = Apply_wrong_label (l, dupty t)
-let wrong_name s t s p l = Wrong_name (s, dupty t, s, p, l)
-let undefined_method t s = Undefined_method (dupty t, s)
-let private_type t = Private_type (dupty t)
-let private_label li t = Private_label (li, dupty t)
-let not_subtype t1 t2 = Not_subtype (duptrace t1, duptrace t2)
+let trace_copy tr =
+  List.map (fun (a, b) -> simple_copy a, simple_copy b) tr
+
+let label_mismatch li trace = Label_mismatch (li, trace_copy trace)
+let pattern_type_clash trace = Pattern_type_clash (trace_copy trace)
+let or_pattern_type_clash i trace = Or_pattern_type_clash (i, trace_copy trace)
+let expr_type_clash trace = Expr_type_clash (trace_copy trace)
+let apply_non_function t = Apply_non_function (simple_copy t)
+let apply_wrong_label l t = Apply_wrong_label (l, simple_copy t)
+let wrong_name s t s p l = Wrong_name (s, simple_copy t, s, p, l)
+let undefined_method t s = Undefined_method (simple_copy t, s)
+let private_type t = Private_type (simple_copy t)
+let private_label li t = Private_label (li, simple_copy t)
+let not_subtype t1 t2 = Not_subtype (trace_copy t1, trace_copy t2)
 let coercion_failure t1 t2 ts b =
-  Coercion_failure (dupty t1, dupty t2, duptrace ts, b)
-let too_many_arguments b t = Too_many_arguments (b, dupty t)
-let abstract_wrong_label l t = Abstract_wrong_label (l, dupty t)
-let scoping_let_module s t = Scoping_let_module (s, dupty t)
-let less_general s tr = Less_general (s, duptrace tr)
-let not_a_packed_module t = Not_a_packed_module (dupty t)
-let recursive_local_constraint tr = Recursive_local_constraint (duptrace tr)
+  Coercion_failure (simple_copy t1, simple_copy t2, trace_copy ts, b)
+let too_many_arguments b t = Too_many_arguments (b, simple_copy t)
+let abstract_wrong_label l t = Abstract_wrong_label (l, simple_copy t)
+let scoping_let_module s t = Scoping_let_module (s, simple_copy t)
+let less_general s tr = Less_general (s, trace_copy tr)
+let not_a_packed_module t = Not_a_packed_module (simple_copy t)
+let recursive_local_constraint tr = Recursive_local_constraint (trace_copy tr)
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
