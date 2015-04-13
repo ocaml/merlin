@@ -13,8 +13,6 @@ module Printtyp : sig
   val modtype : Env.t -> Format.formatter -> Types.module_type -> unit
 
   val wrap_printing_env : Env.t -> verbosity:int -> (unit -> 'a) -> 'a
-
-  val wrap_printing_aliasmap : aliasmap -> verbosity:int -> (unit -> 'a) -> 'a
 end
 
 val mod_smallerthan : int -> Types.module_type -> int option

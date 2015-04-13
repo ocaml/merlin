@@ -53,7 +53,6 @@ type step = {
   ppx_cookie : Ast_mapper.cache;
   snapshot   : Btype.snapshot;
   env        : Env.t;
-  aliasmap   : Printtyp.aliasmap;
   contents   : content list;
   exns       : exn list;
   delayed_checks : Typecore.delayed_check list;
@@ -70,7 +69,6 @@ let empty extensions catch  =
     contents = [];
     ppx_cookie; snapshot; env; exns;
     delayed_checks = [];
-    aliasmap = Printtyp.fresh_aliasmap env;
   }
 
 (* Rewriting:
@@ -159,8 +157,7 @@ let append catch loc step item =
     {env; contents; snapshot; ppx_cookie;
      raw = step.raw;
      delayed_checks = !Typecore.delayed_checks;
-     exns = caught catch @ step.exns;
-     aliasmap = Printtyp.update_aliasmap env step.aliasmap}
+     exns = caught catch @ step.exns}
   with exn ->
     let snapshot = Btype.snapshot () in
     {step with snapshot;
@@ -308,21 +305,3 @@ let is_valid t =
   with _exn -> false
 
 let last_ident env = Raw_compat.last_ident (Env.summary env)
-
-let aliasmap ?from t  =
-  match from with
-  | None -> (get_value t).aliasmap
-  | Some env ->
-    try
-      let time = Ident.binding_time (last_ident env) in
-      let rec aux = function
-        | [] -> raise Not_found
-        | (_,step) :: steps ->
-          match last_ident step.env with
-          | id when Ident.binding_time id <= time ->
-            step.aliasmap
-          | _ -> aux steps
-      in
-      Printtyp.update_aliasmap env (aux t.steps)
-    with Not_found ->
-      Printtyp.fresh_aliasmap env

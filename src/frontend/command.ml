@@ -197,13 +197,13 @@ let dispatch (state : state) =
       | Core_type {ctyp_type = t}
       | Value_description { val_desc = { ctyp_type = t } } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_aliasmap (Typer.aliasmap typer) ~verbosity
+        Printtyp.wrap_printing_env t_env ~verbosity
           (fun () -> Printtyp.type_scheme t_env ppf t);
         Some (t_loc, to_string (), tail)
 
       | Type_declaration { typ_id = id; typ_type = t} ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_aliasmap (Typer.aliasmap typer) ~verbosity
+        Printtyp.wrap_printing_env t_env ~verbosity
           (fun () -> Printtyp.type_declaration t_env id ppf t);
         Some (t_loc, to_string (), tail)
 
@@ -216,7 +216,7 @@ let dispatch (state : state) =
       | Module_declaration_name {md_type = {mty_type = m}}
       | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_aliasmap (Typer.aliasmap typer) ~verbosity
+        Printtyp.wrap_printing_env t_env ~verbosity
           (fun () -> Printtyp.modtype t_env ppf m);
         Some (t_loc, to_string (), tail)
 
@@ -493,8 +493,8 @@ let dispatch (state : state) =
 
   | (Case_analysis ({ Location. loc_start ; loc_end } as loc) : a request) ->
     with_typer state @@ fun typer ->
-    Printtyp.wrap_printing_aliasmap (Typer.aliasmap typer) ~verbosity @@ fun () ->
     let env = Typer.env typer in
+    Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
     let structures = Typer.contents typer in
     let structures = Browse.of_typer_contents structures in
     let enclosings = Browse.enclosing loc_start structures in
@@ -623,7 +623,11 @@ let dispatch (state : state) =
     Project.invalidate ~flush:true (Buffer.project state.buffer)
 
   | (Errors : a request) ->
-    begin try
+    begin
+      with_typer state @@ fun typer ->
+      Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
+      try
+        let typer = Buffer.typer state.buffer in
         let cmp (l1,_) (l2,_) =
           Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
         let err exns =
@@ -634,7 +638,6 @@ let dispatch (state : state) =
         let err_typer  =
           (* When there is a cmi error, we will have a lot of meaningless errors,
            * there is no need to report them. *)
-          let typer = Buffer.typer state.buffer in
           let exns = Typer.exns typer @ Typer.delayed_checks typer in
           let exns =
             let cmi_error = function Cmi_format.Error _ -> true | _ -> false in

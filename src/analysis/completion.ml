@@ -282,7 +282,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
   let make_weighted_candidate ?(priority=0) ~exact name ?loc ?path ty =
     (* Just like [make_candidate] but associates some metadata to the candidate.
        The candidates are later sorted using these metadata.
-    
+
        The ordering works as follow:
        - first we compare the priority of the candidates
        - if they are equal, then we compare their "binding time": things
@@ -320,7 +320,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
                  target_type =                    a -> b -> c
                  type        = p1 -> ... -> pN -> a -> b -> c
          - 0 otherwise
-      
+
          Note that if no type is expected (i.e. if we're not in an application),
          then 1 will be returned. *)
       match target_type with
@@ -350,7 +350,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
             make_weighted_candidate name ~exact:false ~priority:2
                 (`Variant (name, param))
             :: candidates
-          ) ~env 
+          ) ~env
         end
 
       | `Values ->
@@ -494,8 +494,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
 (* Propose completion from a particular node *)
 let node_complete buffer ?get_doc ?target_type node prefix =
   let env = node.BrowseT.t_env in
-  let typer = Buffer.typer buffer in
-  Printtyp.wrap_printing_aliasmap (Typer.aliasmap ~from:env typer) @@ fun () ->
+  Printtyp.wrap_printing_env env @@ fun () ->
   match node.BrowseT.t_node with
   | BrowseT.Method_call (obj,_) -> complete_methods ~env ~prefix obj
   | _ -> complete_prefix ~env ~prefix buffer node

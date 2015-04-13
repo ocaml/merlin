@@ -119,9 +119,6 @@ module Printtyp = struct
 
   let wrap_printing_env env ~verbosity:v f =
     Fluid.let' verbosity v (fun () -> wrap_printing_env env f)
-
-  let wrap_printing_aliasmap tm ~verbosity:v f =
-    Fluid.let' verbosity v (fun () -> wrap_printing_aliasmap tm f)
 end
 
 (* Check if module is smaller (= has less definition, counting nested ones)

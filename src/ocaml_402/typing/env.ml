@@ -94,6 +94,17 @@ end  = struct
   let view x = !x
 end
 
+type aliasmap = {
+  am_typ: Path.t list PathMap.t;
+  am_mod: Path.t list PathMap.t;
+  am_open: PathSet.t;
+}
+
+let aliasmap_empty = {
+  am_typ = PathMap.empty;
+  am_mod = PathMap.empty;
+  am_open = PathSet.empty;
+}
 
 type summary =
     Env_empty
@@ -106,6 +117,9 @@ type summary =
   | Env_cltype of summary * Ident.t * class_type_declaration
   | Env_open of summary * Path.t
   | Env_functor_arg of summary * Ident.t
+  | Env_aliasmap of summary * aliasmap ref
+
+let alias_point summary = Env_aliasmap (summary, ref aliasmap_empty)
 
 module EnvTbl =
   struct
@@ -1265,25 +1279,30 @@ let prefix_idents_and_subst root sub sg =
 
 type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
 
-let rec diff_env_types env s1 s2 acc =
-  if s2 == s1 then acc
-  else match s2 with
-    | Env_empty -> raise Not_found
-    | Env_value (s, _, _)
-    | Env_extension (s, _, _)
-    | Env_modtype (s, _, _)
-    | Env_class (s, _, _)
-    | Env_cltype (s, _, _)
-    | Env_functor_arg (s, _) -> diff_env_types env s1 s acc
-    | Env_open (s, path) ->
-      diff_env_types env s1 s (`Open path :: acc)
-    | Env_type (s, id, decl) ->
-      diff_env_types env s1 s (`Type (id, Path.Pident id) :: acc)
-    | Env_module (s, id, _) ->
-      diff_env_types env s1 s (`Module id :: acc)
+let ret_aliasmap f map = function
+  | [] -> map
+  | acc -> f map acc
 
-let diff_env_types env1 env2 =
-  diff_env_types env2 env1.summary env2.summary []
+let rec get_aliasmap f acc = function
+  | Env_empty -> ret_aliasmap f aliasmap_empty acc
+  | Env_value (s, _, _)
+  | Env_extension (s, _, _)
+  | Env_modtype (s, _, _)
+  | Env_class (s, _, _)
+  | Env_cltype (s, _, _)
+  | Env_functor_arg (s, _) -> get_aliasmap f acc s
+  | Env_open (s, path) ->
+    get_aliasmap f (`Open path :: acc) s
+  | Env_type (s, id, decl) ->
+    get_aliasmap f (`Type (id, Path.Pident id) :: acc) s
+  | Env_module (s, id, _) ->
+    get_aliasmap f (`Module id :: acc) s
+  | Env_aliasmap (s, r) ->
+    if !r == aliasmap_empty then
+      r := get_aliasmap f [] s;
+    ret_aliasmap f !r acc
+
+let get_aliasmap t f = get_aliasmap f [] t.summary
 
 (* Compute structure descriptions *)
 
@@ -1456,7 +1475,7 @@ and store_type ~check slot id path info env renv =
         env.labels;
     types = EnvTbl.add "type" slot id (path, (info, descrs)) env.types
                        renv.types;
-    summary = Env_type(env.summary, id, info) }
+    summary = alias_point (Env_type(env.summary, id, info)) }
 
 and store_type_infos slot id path info env renv =
   (* Simplified version of store_type that doesn't compute and store
@@ -1467,7 +1486,7 @@ and store_type_infos slot id path info env renv =
   { env with
     types = EnvTbl.add "type" slot id (path, (info,([],[]))) env.types
                        renv.types;
-    summary = Env_type(env.summary, id, info) }
+    summary = alias_point (Env_type(env.summary, id, info)) }
 
 and store_extension ~check slot id path ext env renv =
   let loc = ext.ext_loc in
@@ -1503,7 +1522,7 @@ and store_module slot id path md env renv =
       EnvTbl.add "module" slot id
                  (path, components_of_module env Subst.identity path md.md_type)
                    env.components renv.components;
-    summary = Env_module(env.summary, id, md) }
+    summary = alias_point (Env_module(env.summary, id, md)) }
 
 and store_modtype slot id path info env renv =
   { env with
@@ -1549,7 +1568,7 @@ let add_functor_arg ?(arg=false) id env =
   if not arg then env else
   {env with
    functor_args = Ident.add id () env.functor_args;
-   summary = Env_functor_arg (env.summary, id)}
+   summary = alias_point (Env_functor_arg (env.summary, id))}
 
 let add_value ?check id desc env =
   store_value None ?check id (Pident id) desc env env
@@ -1657,7 +1676,7 @@ let open_signature slot root sg env0 =
             store_cltype slot (Ident.hide id) p decl env env0
       )
       env0 sg pl in
-  { newenv with summary = Env_open(env0.summary, root) }
+  { newenv with summary = alias_point (Env_open(env0.summary, root)) }
 
 (* Open a signature from a file *)
 
