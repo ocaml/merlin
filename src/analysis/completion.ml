@@ -2,7 +2,7 @@
 
   This file is part of Merlin, an helper for ocaml editors
 
-  Copyright (C) 2013 - 2014  Frédéric Bour  <frederic.bour(_)lakaban.net>
+  Copyright (C) 2013 - 2015  Frédéric Bour  <frederic.bour(_)lakaban.net>
                              Thomas Refis  <refis.thomas(_)gmail.com>
                              Simon Castellan  <simon.castellan(_)iuwt.fr>
                              Jeremie Dimino  <jeremie(_)dimino.org>
@@ -172,7 +172,9 @@ let classify_node =
   | Module_type_declaration_name _ -> `Module_type
 
 
-let completion_format ?get_doc ~exact name ?loc ?path ty =
+open Protocol.Compl
+
+let make_candidate ?get_doc ~exact name ?loc ?path ty =
   let ident = match path with
     | Some path -> Ident.create (Path.last path)
     | None -> Extension.ident
@@ -248,17 +250,16 @@ let completion_format ?get_doc ~exact name ?loc ?path ty =
         end
       | _, _ -> ""
   in
-  {Protocol.Compl. name; kind; desc; info}
+  {name; kind; desc; info}
 
-let item_for_global_module name =
-  {Protocol.Compl. name; kind = `Module; desc = ""; info = ""}
+let item_for_global_module name = {name; kind = `Module; desc = ""; info = ""}
 
 let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
   let fmt ?(priority=0) ~exact name ?loc ?path ty =
     let time =
       try Ident.binding_time (Path.head (Option.get path))
       with _ -> 0 in
-    let item = completion_format ?get_doc ~exact name ?loc ?path ty in
+    let item = make_candidate ?get_doc ~exact name ?loc ?path ty in
     (- priority, - time, name), item in
   let not_internal name = name <> "" && name.[0] <> '_' in
   let items =
@@ -413,7 +414,7 @@ let complete_methods ~env ~prefix obj =
     let info = "" (* TODO: get documentation. *) in
     let ppf, to_string = Format.to_string () in
     Printtyp.type_scheme ppf ty;
-    { Protocol.Compl. name; kind = `MethodCall; desc = to_string (); info }
+    { name; kind = `MethodCall; desc = to_string (); info }
   )
 
 let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
@@ -468,7 +469,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
         let path = keep_until_lowercase long_ident in
         Raw_compat.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
           if not (valid `Label name) then candidates else
-          completion_format ~exact:(name = prefix) name (`Label l) :: candidates
+          make_candidate ~exact:(name = prefix) name (`Label l) :: candidates
         ) path env []
   in
   try
@@ -479,13 +480,11 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
       (* Add modules on path but not loaded *)
       List.fold_left (Buffer.global_modules buffer) ~init:compl ~f:(
         fun candidates name ->
-          let default =
-            { Protocol.Compl.name; kind = `Module; desc = ""; info = "" }
-          in
+          let default = { name; kind = `Module; desc = ""; info = "" } in
           if name = prefix && uniq (`Mod, name) then
             try
               let path, md = Raw_compat.lookup_module (Lident name) env in
-              completion_format ~exact:true name ~path (`Mod md) :: candidates
+              make_candidate ~exact:true name ~path (`Mod md) :: candidates
             with Not_found ->
               default :: candidates
           else if String.is_prefixed ~by:prefix name && uniq (`Mod,name) then
@@ -515,6 +514,33 @@ let node_complete buffer ?get_doc ?target_type node prefix =
   match node.BrowseT.t_node with
   | BrowseT.Method_call (obj,_) -> complete_methods ~env ~prefix obj
   | _ -> complete_prefix ~env ~prefix buffer node
+
+let expand_prefix ~global_modules env prefix =
+  let lidents, last =
+    let ts = Expansion.explore ~global_modules env in
+    Expansion.get_lidents ts prefix
+  in
+  let validate' =
+    let last = Str.regexp (Expansion.regex_of_path_prefix last) in
+    fun s -> Str.string_match last s 0
+  in
+  let validate _ _ s = validate' s in
+  let process_lident lident =
+    let candidates =
+      let aux compl kind = completion_fold "" lident kind ~validate env compl in
+      List.fold_left ~f:aux default_kinds ~init:[]
+    in
+    match lident with
+    | None ->
+      candidates @ List.map (List.filter ~f:validate' global_modules)
+                     ~f:item_for_global_module
+    | Some lident ->
+      let lident = Longident.flatten lident in
+      let lident = String.concat ~sep:"." lident ^ "." in
+      List.map candidates ~f:(fun c -> { c with name = lident ^ c.name })
+  in
+  { entries = List.concat_map ~f:process_lident lidents;
+    context = `Unknown }
 
 open Typedtree
 

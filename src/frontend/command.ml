@@ -400,34 +400,7 @@ let dispatch (state : state) =
       let node, _ = Completion.node_at typer pos in
       node.BrowseT.t_env in
     let global_modules = Buffer.global_modules state.buffer in
-    let lidents, last =
-      let ts = Expansion.explore ~global_modules env in
-      Expansion.get_lidents ts prefix
-    in
-    let validate' =
-      let last = Str.regexp (Expansion.regex_of_path_prefix last) in
-      fun s -> Str.string_match last s 0
-    in
-    let validate _ _ s = validate' s in
-    let open Compl in
-    let process_lident lident =
-      let compl =
-        let aux compl kind =
-          Completion.completion_fold "" lident kind ~validate env compl in
-        List.fold_left ~f:aux Completion.default_kinds ~init:[]
-      in
-      match lident with
-      | None -> compl @
-                List.map (List.filter ~f:validate' global_modules)
-                  ~f:Completion.item_for_global_module
-      | Some lident ->
-        let lident = Longident.flatten lident in
-        let lident = String.concat ~sep:"." lident ^ "." in
-        List.map compl
-          ~f:Protocol.(fun comp -> {comp with name = lident ^ comp.name})
-    in
-    { entries = List.concat_map ~f:process_lident lidents;
-      context = `Unknown }
+    Completion.expand_prefix env ~global_modules prefix
 
   | (Document (patho, pos) : a request) ->
     let comments = Buffer.comments state.buffer in
