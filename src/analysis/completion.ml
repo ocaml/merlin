@@ -400,6 +400,22 @@ let completion_order = function
   | `Signature   -> [`Types; `Modules; `Modules_type; gen_values]
   | `Type        -> [`Types; `Modules; `Modules_type; gen_values]
 
+let complete_methods ~env ~prefix obj =
+  let t = obj.Typedtree.exp_type in
+  let has_prefix (name,_) =
+    String.is_prefixed ~by:prefix name &&
+    (* Prevent identifiers introduced by type checker to leak *)
+    try ignore (String.index name ' ' : int); false
+    with Not_found -> true
+  in
+  let methods = List.filter has_prefix (methods_of_type env t) in
+  List.map methods ~f:(fun (name,ty) ->
+    let info = "" (* TODO: get documentation. *) in
+    let ppf, to_string = Format.to_string () in
+    Printtyp.type_scheme ppf ty;
+    { Protocol.Compl. name; kind = `MethodCall; desc = to_string (); info }
+  )
+
 (* Propose completion from a particular node *)
 let node_complete buffer ?get_doc ?target_type node prefix =
   let prefix =
@@ -475,25 +491,7 @@ let node_complete buffer ?get_doc ?target_type node prefix =
   let typer = Buffer.typer buffer in
   Printtyp.wrap_printing_aliasmap (Typer.aliasmap ~from:env typer) @@ fun () ->
   match node.BrowseT.t_node with
-  | BrowseT.Method_call (exp',_) ->
-    let t = exp'.Typedtree.exp_type in
-    let has_prefix (name,_) =
-      String.is_prefixed ~by:prefix name &&
-      (* Prevent identifiers introduced by type checker to leak *)
-      try ignore (String.index name ' ' : int); false
-      with Not_found -> true
-    in
-    let methods = List.filter has_prefix (methods_of_type env t) in
-    List.map (fun (name,ty) ->
-        let ppf, to_string = Format.to_string () in
-        Printtyp.type_scheme ppf ty;
-        {Protocol.Compl.
-          name;
-          kind = `MethodCall;
-          desc = to_string ();
-          info = "";
-        })
-      methods
+  | BrowseT.Method_call (obj,_) -> complete_methods ~env ~prefix obj
   | _ ->
     try
       match Longident.parse prefix with
@@ -522,47 +520,50 @@ let node_complete buffer ?get_doc ?target_type node prefix =
       | _ -> find prefix
     with Not_found -> []
 
-let labels_of_application ?(prefix="") =
+open Typedtree
+
+let labels_of_application ~env ~prefix f args =
+  let rec labels t =
+    let t = Ctype.repr t in
+    match t.Types.desc with
+    | Types.Tarrow (label, lhs, rhs, _) ->
+      (Raw_compat.arg_label_to_str label, lhs) :: labels rhs
+    | _ ->
+      let t' = Ctype.full_expand env t in
+      if Types.TypeOps.equal t t' then
+        []
+      else
+        labels t'
+  in
+  let labels = labels f.exp_type in
+  let is_application_of label (label',expr,_) =
+    let label' = Raw_compat.arg_label_to_str label' in
+    match expr with
+    | Some { exp_loc } ->
+      label = label' && label <> prefix && not exp_loc.Location.loc_ghost
+    | None -> false
+  in
+  let unapplied_label (label,_) =
+    label <> "" && not (List.exists (is_application_of label) args)
+  in
+  List.map (List.filter labels ~f:unapplied_label) ~f:(fun (label, ty) ->
+    if label.[0] <> '?' then
+      "~" ^ label, ty
+    else
+      match (Ctype.repr ty).Types.desc with
+      | Types.Tconstr (path, [ty], _) when Path.same path Predef.path_option ->
+        label, ty
+      | _ -> label, ty
+  )
+
+
+let labels_of_application ?(prefix="") node =
   let prefix =
     if prefix <> "" && prefix.[0] = '~' then
       String.sub prefix ~pos:1 ~len:(String.length prefix - 1)
     else
       prefix
   in
-  let open Typedtree in function
-    | {exp_env; exp_desc = Texp_apply ({exp_type = fun_type}, args) } ->
-      let rec labels t =
-        let t = Ctype.repr t in
-        match t.Types.desc with
-        | Types.Tarrow (label, lhs, rhs, _) ->
-          (Raw_compat.arg_label_to_str label, lhs) :: labels rhs
-        | _ ->
-          let t' = Ctype.full_expand exp_env t in
-          if Types.TypeOps.equal t t' then
-            []
-          else
-            labels t'
-      in
-      let labels = labels fun_type in
-      let is_application_of label (label',expr,_) =
-        let label' = Raw_compat.arg_label_to_str label' in
-        label = label' && label <> prefix && match expr with
-        | Some {exp_loc} -> not exp_loc.Location.loc_ghost
-        | None -> false
-      in
-      let unapplied_label (label,_) =
-        label <> "" &&
-        not (List.exists (is_application_of label) args)
-      in
-      let labels = List.filter labels ~f:unapplied_label in
-      List.map labels
-        ~f:(fun (label, ty) ->
-            if label.[0] <> '?' then
-              "~" ^ label, ty
-            else match (Ctype.repr ty).Types.desc with
-              | Types.Tconstr (path, [ty], _) when
-                  Path.same path Predef.path_option ->
-                label, ty
-              | _ -> label, ty
-          )
-    | _ -> []
+  match node.exp_desc with
+  | Texp_apply (f, args) -> labels_of_application ~prefix ~env:node.exp_env f args
+  | _ -> []
