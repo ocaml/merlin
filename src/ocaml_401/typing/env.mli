@@ -14,6 +14,13 @@
 
 open Types
 
+type aliasmap = {
+  am_typ: Path.t list Path.PathMap.t;
+  am_open: Path.PathSet.t;
+}
+
+val aliasmap_empty: aliasmap
+
 type summary =
     Env_empty
   | Env_value of summary * Ident.t * value_description
@@ -24,6 +31,7 @@ type summary =
   | Env_class of summary * Ident.t * class_declaration
   | Env_cltype of summary * Ident.t * class_type_declaration
   | Env_open of summary * Path.t
+  | Env_aliasmap of summary * aliasmap ref
 
 type t
 
@@ -44,7 +52,7 @@ val iter_module_types:
     Ident.t -> t -> unit
 
 type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
-val diff_env_types: t -> t -> type_diff list
+val get_aliasmap: t -> (aliasmap -> type_diff list -> aliasmap) -> aliasmap
 
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t

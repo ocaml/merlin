@@ -200,22 +200,8 @@ let () = Btype.print_raw := raw_type_expr
 
 (* Normalize paths *)
 
-type pathmap = Path.t list PathMap.t
-
 let pathmap_append ta tb =
   PathMap.union (fun _ a b -> a @ b) ta tb
-
-type aliasmap = {
-  am_map: pathmap lazy_t;
-  am_open: PathSet.t lazy_t;
-  am_env: Env.t;
-}
-
-let aliasmap_empty = {
-  am_map = lazy PathMap.empty;
-  am_open = lazy PathSet.empty;
-  am_env = Env.empty;
-}
 
 type param_subst = Id | Nth of int | Map of int list
 
@@ -231,13 +217,17 @@ let apply_subst s1 tyl =
   | Id -> tyl
 
 type printing_state = {
-  aliasmap : aliasmap;
+  printenv: Env.t;
+  aliasmap: Env.aliasmap;
   pathmap: (Path.t -> Path.t) lazy_t;
 }
 
-let printing_empty = { aliasmap = aliasmap_empty;
-                       pathmap = lazy (fun x -> x);
-                     }
+let printing_empty = {
+  printenv = Env.empty;
+  aliasmap = Env.aliasmap_empty;
+  pathmap = lazy (fun x -> x);
+}
+
 let printing_state = ref printing_empty
 
 let same_type t t' = repr t == repr t'
@@ -381,7 +371,7 @@ let is_unambiguous path env =
 let best_path ofun (_,size as acc) path' =
   let size' = path_size ofun path' in
   if size' < size &&
-     is_unambiguous path' !printing_state.aliasmap.am_env then
+     is_unambiguous path' !printing_state.printenv then
     (path', size')
   else
     acc
@@ -393,26 +383,27 @@ let best_module_path ofun (_,size as acc) path' =
   else
     acc
 
-let pathmap_with_idents types0 env idents =
-  let types = ref PathMap.empty in
+let update_aliasmap env am idents =
+  let typ_ = ref PathMap.empty in
+  let open_ = ref am.Env.am_open in
   let register_type_diff = function
     | `Type (id, path) ->
-      register_short_type types env (Path.Pident id) (path, ())
+      register_short_type typ_ env (Path.Pident id) (path, ())
     | `Module id ->
       Env.iter_module_types
-        (register_short_type types env)
+        (register_short_type typ_ env)
         id env
-    | `Open _ -> ()
+    | `Open path -> open_ := PathSet.add path !open_
   in
   List.iter register_type_diff idents;
-  let types = PathMap.map (!) !types in
-  pathmap_append types types0
+  let typ_ = PathMap.map (!) !typ_ in
+  {Env.
+    am_typ = pathmap_append typ_ am.Env.am_typ;
+    am_open = !open_;
+  }
 
-let openmap_with_idents open0 idents =
-  List.fold_left (fun acc -> function
-      | `Open path -> PathSet.add path acc
-      | _ -> acc)
-    open0 idents
+let aliasmap env = Env.get_aliasmap env
+    (fun am idents -> update_aliasmap env am idents)
 
 let rec shorten_path' opened = function
   | Pident _ as p0 -> p0
@@ -429,115 +420,68 @@ let rec shorten_path' opened = function
     else Papply (p1', p2')
 
 let shorten_path ?env p =
-  let lazy opened = !printing_state.aliasmap.am_open in
   let opened = match env with
-    | None -> opened
-    | Some env ->
-      match (try Some (Env.diff_env_types !printing_state.aliasmap.am_env env)
-             with Not_found -> None)
-      with
-      | None ->
-        openmap_with_idents PathSet.empty (Env.diff_env_types Env.empty env)
-      | Some idents ->
-        openmap_with_idents opened idents
+    | None -> !printing_state.aliasmap.Env.am_open
+    | Some env -> (aliasmap env).Env.am_open
   in
   shorten_path' (fun p -> PathSet.mem p opened) p
 
-let update_aliasmap env tm =
-  if env == tm.am_env then
-    tm
-  else
-    let diff =
-      try `Diff (Env.diff_env_types tm.am_env env)
-      with Not_found -> `Init (Env.diff_env_types Env.empty env)
-    in
-    { am_map = lazy begin
-         match diff with
-         | `Diff idents ->
-           pathmap_with_idents (Lazy.force tm.am_map) env idents
-         | `Init idents ->
-           pathmap_with_idents PathMap.empty env idents
-       end;
-      am_open = lazy begin
-        match diff with
-        | `Diff idents ->
-          openmap_with_idents (Lazy.force tm.am_open) idents
-        | `Init idents ->
-          openmap_with_idents PathSet.empty idents
-      end;
-      am_env = env;
-    }
-
-let fresh_aliasmap env = update_aliasmap env aliasmap_empty
-
-let set_printing_aliasmap ({ am_env; am_map; am_open } as aliasmap) =
+let set_printing_env env =
   if Clflags.real_paths () = `Real then
     printing_state := printing_empty
-  else if (!printing_state.aliasmap.am_open == am_open) &&
-          (!printing_state.aliasmap.am_map == am_map) then
-    ()
   else
-    (* printf "Reset printing_map@."; *)
-    let pathmap = match Clflags.real_paths () with
-      | `Short -> lazy begin
-        (* printf "Recompute printing_map.@."; *)
-        let opened =
-          let lazy opened = am_open in
-          fun p -> PathSet.mem p opened
-        in
-        let type_aliases =
-          let lazy type_aliases = am_map in
-          let type_aliases' = pers_maps () in
-          pathmap_append type_aliases type_aliases'
-        in
-        let final = ref PathMap.empty in
-        let type_alias = function
-          (* Predefined types have binding_time < 1000 (see [Predef]) *)
-          | (Pident id) as path when Ident.binding_time id < 1000 ->
-            path
-          | path ->
-            try PathMap.find path !final
-            with Not_found ->
-              let path', _ =
-                let best_path = best_path opened in
-                let best = path, path_size opened path in
-                try List.fold_left best_path best
-                      (PathMap.find path type_aliases)
-                with Not_found -> best
-              in
-              let path' = shorten_path' opened path' in
-              final := PathMap.add path path' !final;
-              path'
-        in
-        type_alias
-      end
-      | `Opened | `Real -> lazy (fun p -> p)
-    in
-    printing_state := { aliasmap; pathmap }
-
-let update_current_aliasmap env =
-  update_aliasmap env !printing_state.aliasmap
-
-let set_printing_env env =
-  if Clflags.real_paths () <> `Real then
-    set_printing_aliasmap (update_current_aliasmap env)
-
-let wrap_printing_aliasmap tm f =
-  let printing_state' = !printing_state in
-  set_printing_aliasmap tm;
-  try_finally f (fun () -> printing_state := printing_state')
+    let am = aliasmap env in
+    if !printing_state.aliasmap == am then ()
+    else
+      (* printf "Reset printing_map@."; *)
+      let pathmap = match Clflags.real_paths () with
+        | `Short -> lazy begin
+          (* printf "Recompute printing_map.@."; *)
+          let opened =
+            let opened = am.Env.am_open in
+            fun p -> PathSet.mem p opened
+          in
+          let type_alias0 = am.Env.am_typ in
+          let type_alias1 = pers_maps () in
+          let final = ref PathMap.empty in
+          let type_alias = function
+            (* Predefined types have binding_time < 1000 (see [Predef]) *)
+            | (Pident id) as path when Ident.binding_time id < 1000 ->
+              path
+            | path ->
+              try PathMap.find path !final
+              with Not_found ->
+                let path', _ =
+                  let best_path = best_path opened in
+                  let best = path, path_size opened path in
+                  List.fold_left best_path
+                    (List.fold_left best_path best
+                       (try PathMap.find path type_alias0 with Not_found -> []))
+                    (try PathMap.find path type_alias1 with Not_found -> [])
+                in
+                let path' = shorten_path' opened path' in
+                final := PathMap.add path path' !final;
+                path'
+          in
+          type_alias
+        end
+        | `Opened | `Real -> lazy (fun p -> p)
+      in
+      printing_state := { aliasmap = am; pathmap; printenv = env  }
 
 let wrap_printing_env env f =
-  wrap_printing_aliasmap (update_current_aliasmap env) f
+  let printing_state' = !printing_state in
+  set_printing_env env;
+  try_finally f (fun () -> printing_state := printing_state')
 
-let curr_printing_env () = !printing_state.aliasmap.am_env
+let curr_printing_env () = !printing_state.printenv
 
 let best_type_path p =
   if !printing_state == printing_empty then (p, Id)
   else match Clflags.real_paths () with
     | `Real   -> (p, Id)
     | _ ->
-      let (p', s) = normalize_type_path !printing_state.aliasmap.am_env p in
+      let (p', s) = normalize_type_path !printing_state.printenv p in
       let p'' =
         try Lazy.force !printing_state.pathmap p'
         with Not_found -> p'
@@ -1265,8 +1209,8 @@ let cltype_declaration id ppf cl =
 (* Print a module type *)
 
 let wrap_env fenv ftree arg =
-  let env = !printing_state.aliasmap.am_env in
-  wrap_printing_aliasmap (update_current_aliasmap (fenv env))
+  let env = !printing_state.printenv in
+  wrap_printing_env (fenv env)
     (fun () -> ftree arg)
 
 let filter_rem_sig item rem =
@@ -1294,7 +1238,7 @@ let hide_rec_items = function
       let ids = id :: get_ids rem in
       let env = List.fold_right
           (fun id -> Env.add_type (Ident.rename id) dummy)
-          ids !printing_state.aliasmap.am_env
+          ids !printing_state.printenv
       in
       set_printing_env env
   *)
@@ -1312,7 +1256,7 @@ let rec tree_of_modtype = function
 
 and tree_of_signature sg =
   wrap_env (fun env -> env)
-    (tree_of_signature_rec !printing_state.aliasmap.am_env) sg
+    (tree_of_signature_rec !printing_state.printenv) sg
 
 and tree_of_signature_rec env' = function
     [] -> []

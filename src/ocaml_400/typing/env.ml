@@ -86,6 +86,15 @@ end  = struct
 
 end
 
+type aliasmap = {
+  am_typ: Path.t list Path.PathMap.t;
+  am_open: Path.PathSet.t;
+}
+
+let aliasmap_empty = {
+  am_typ = PathMap.empty;
+  am_open = PathSet.empty;
+}
 
 type summary =
     Env_empty
@@ -97,6 +106,9 @@ type summary =
   | Env_class of summary * Ident.t * class_declaration
   | Env_cltype of summary * Ident.t * class_type_declaration
   | Env_open of summary * Path.t
+  | Env_aliasmap of summary * aliasmap ref
+
+let aliasmap_point summary = Env_aliasmap (summary, ref aliasmap_empty)
 
 module EnvTbl =
   struct
@@ -930,24 +942,29 @@ let rec prefix_idents root pos sub = function
 
 type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
 
-let rec diff_env_types env s1 s2 acc =
-  if s2 == s1 then acc
-  else match s2 with
-    | Env_empty -> raise Not_found
-    | Env_value (s, _, _)
-    | Env_exception (s, _, _)
-    | Env_modtype (s, _, _)
-    | Env_class (s, _, _)
-    | Env_cltype (s, _, _) -> diff_env_types env s1 s acc
-    | Env_open (s, path) ->
-      diff_env_types env s1 s (`Open path :: acc)
-    | Env_type (s, id, decl) ->
-      diff_env_types env s1 s (`Type (id, Path.Pident id) :: acc)
-    | Env_module (s, id, _) ->
-      diff_env_types env s1 s (`Module id :: acc)
+let ret_aliasmap f map = function
+  | [] -> map
+  | acc -> f map acc
 
-let diff_env_types env1 env2 =
-  diff_env_types env2 env1.summary env2.summary []
+let rec get_aliasmap f acc = function
+  | Env_empty -> ret_aliasmap f aliasmap_empty acc
+  | Env_value (s, _, _)
+  | Env_exception (s, _, _)
+  | Env_modtype (s, _, _)
+  | Env_class (s, _, _)
+  | Env_cltype (s, _, _) -> get_aliasmap f acc s
+  | Env_open (s, path) ->
+    get_aliasmap f (`Open path :: acc) s
+  | Env_type (s, id, decl) ->
+    get_aliasmap f (`Type (id, Path.Pident id) :: acc) s
+  | Env_module (s, id, _) ->
+    get_aliasmap f (`Module id :: acc) s
+  | Env_aliasmap (s, r) ->
+    if !r == aliasmap_empty then
+      r := get_aliasmap f [] s;
+    ret_aliasmap f !r acc
+
+let get_aliasmap t f = get_aliasmap f [] t.summary
 
 (* Compute structure descriptions *)
 
@@ -1131,7 +1148,7 @@ and store_type id path info env =
         labels
         env.labels;
     types = EnvTbl.add id (path, (info, descrs)) env.types;
-    summary = Env_type(env.summary, id, info) }
+    summary = aliasmap_point (Env_type(env.summary, id, info)) }
 
 and store_type_infos id path info env =
   (* Simplified version of store_type that doesn't compute and store
@@ -1141,7 +1158,7 @@ and store_type_infos id path info env =
      computation of label representations. *)
   { env with
     types = EnvTbl.add id (path, (info, ([],[]))) env.types;
-    summary = Env_type(env.summary, id, info) }
+    summary = aliasmap_point (Env_type(env.summary, id, info)) }
 
 and store_exception id path decl env =
   let loc = decl.exn_loc in
@@ -1175,7 +1192,7 @@ and store_module id path mty env =
     components =
       EnvTbl.add id (path, components_of_module env Subst.identity path mty)
                    env.components;
-    summary = Env_module(env.summary, id, mty) }
+    summary = aliasmap_point (Env_module(env.summary, id, mty)) }
 
 and store_modtype id path info env =
   { env with
@@ -1310,7 +1327,7 @@ let open_signature root sg env =
             store_cltype (Ident.hide id) p
                          (Subst.cltype_declaration sub decl) env)
       env sg pl in
-  { newenv with summary = Env_open(env.summary, root) }
+  { newenv with summary = aliasmap_point (Env_open(env.summary, root)) }
 
 (* Open a signature from a file *)
 
