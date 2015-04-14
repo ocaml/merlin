@@ -22,3 +22,12 @@ type t =
 val flatten: t -> string list
 val last: t -> string
 val parse: string -> t
+
+(* Merlin specific. *)
+
+val keep_suffix : t -> t * bool
+(** if [li', b = keep_suffix li] then:
+    - the prefix of [li'] is a module path
+    - [b = false] iff [li' = li].
+    Corollary: [b = true] if [li] is a label access
+               (i.e. [li = X.Y.z.Foo.Bar...]) *)

@@ -503,7 +503,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
         ) path env []
   in
   try
-    match parse prefix with
+    match prefix with
     | Ldot (path, prefix) -> find ~path prefix
     | Lident prefix ->
       let compl = find prefix in
@@ -522,30 +522,23 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
           else
             candidates
       )
-    | _ -> find prefix
+    | _ -> find (String.concat ~sep:"." @@ flatten prefix)
   with Not_found -> []
 
 (* Propose completion from a particular node *)
 let node_complete buffer ?get_doc ?target_type node prefix =
   let prefix =
     let li = Longident.parse prefix in
-    let suffix = Longident.last li in
-    (* If I understand what is going on here, we return [suffix] if [prefix] is
-       of the form "lowercased.….Suffix" otherwise, we return [prefix].
-       What is the reason for that? *)
-    if suffix <> ""
-      && Char.uppercase prefix.[0] <> prefix.[0]
-      && Char.uppercase suffix.[0] = suffix.[0]
-    then
-      suffix
-    else
-      prefix
+    let suffix, _is_label = Longident.keep_suffix li in
+    suffix
   in
   let env = node.BrowseT.t_env in
   let typer = Buffer.typer buffer in
   Printtyp.wrap_printing_aliasmap (Typer.aliasmap ~from:env typer) @@ fun () ->
   match node.BrowseT.t_node with
-  | BrowseT.Method_call (obj,_) -> complete_methods ~env ~prefix obj
+  | BrowseT.Method_call (obj,_) ->
+    let prefix = String.concat ~sep:"." @@ Longident.flatten prefix in
+    complete_methods ~env ~prefix obj
   | _ -> complete_prefix ~env ~prefix buffer node
 
 let expand_prefix ~global_modules env prefix =

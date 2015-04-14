@@ -245,34 +245,6 @@ module Utils = struct
         match file with
         | File.ML  _ | File.MLI _  -> Fluid.get sources_path
         | File.CMT _ | File.CMTI _ -> Fluid.get loadpath
-
-  let keep_suffix =
-    let open Longident in
-    let rec aux = function
-      | Lident str ->
-        if String.lowercase str <> str then
-          Some (Lident str, false)
-        else
-          None
-      | Ldot (t, str) ->
-        if String.lowercase str <> str then
-          match aux t with
-          | None -> Some (Lident str, true)
-          | Some (t, is_label) -> Some (Ldot (t, str), is_label)
-        else
-          None
-      | t ->
-        Some (t, false) (* don't know what to do here, probably best if I do nothing. *)
-    in
-    function
-    | Lident s -> Lident s, false
-    | Ldot (t, s) ->
-      begin match aux t with
-      | None -> Lident s, true
-      | Some (t, is_label) -> Ldot (t, s), is_label
-      end
-    | otherwise -> otherwise, false
-
 end
 
 type context = Type | Expr | Patt | Unknown
@@ -562,7 +534,7 @@ let from_completion_entry ~local_defs ~pos (namespace, path, loc) =
   locate ~ml_or_mli:`MLI ~modules ~local_defs ~pos ~str_ident loc
 
 let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
-  let ident, is_label = Utils.keep_suffix lid in
+  let ident, is_label = Longident.keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
     let modules, loc =
