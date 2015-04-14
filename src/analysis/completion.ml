@@ -31,13 +31,13 @@ open Std
 open Merlin_lib
 
 let optional_label_sugar = function
-  | (Typedtree.Texp_construct _) as cstr ->
+  | Typedtree.Texp_construct _ as cstr ->
     begin match Raw_compat.construct_ident_and_expressions cstr with
-      | id, [e] when
-          id.Location.loc.Location.loc_ghost &&
-          id.Location.txt = Longident.Lident "Some" ->
-        Some e
-      | _ -> None
+    | id, [e] when
+        id.Location.loc.Location.loc_ghost &&
+        id.Location.txt = Longident.Lident "Some" ->
+      Some e
+    | _ -> None
     end
   | _ -> None
 

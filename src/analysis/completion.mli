@@ -28,9 +28,9 @@
 
 (* TODO: document all the following functions *)
 
-(* This should NOT be here. *)
-val optional_label_sugar :
-  Typedtree.expression_desc -> Typedtree.expression option
+val optional_label_sugar : Typedtree.expression_desc -> Typedtree.expression option
+(** optional_label_sugar [%expr Some e] = Some [%expr e]
+    optional_label_sugar [%expr None  ] = None *)
 
 (* This function might be better somewhere else, considering other analysis
    tools use it as well (locate, destruct, etc).
