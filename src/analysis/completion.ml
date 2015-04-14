@@ -254,7 +254,46 @@ let make_candidate ?get_doc ~exact name ?loc ?path ty =
 
 let item_for_global_module name = {name; kind = `Module; desc = ""; info = ""}
 
-let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
+let fold_variant_constructors ~env ~init ~f =
+  let rec aux acc t =
+    let t = Ctype.repr t in
+    match t.Types.desc with
+    | Types.Tvariant { Types. row_fields; row_more; row_name } ->
+      let acc =
+        let keep_if_present acc (lbl, row_field) =
+          match row_field with
+          | Types.Rpresent arg when lbl <> "" -> f ("`" ^ lbl) arg acc
+          | Types.Reither (_, lst, _, _) when lbl <> "" ->
+            let arg =
+              match lst with
+              | [ well_typed ] -> Some well_typed
+              | _ -> None
+            in
+            f ("`" ^ lbl) arg acc
+          | _ -> acc
+        in
+        List.fold_left ~init:acc row_fields ~f:keep_if_present
+      in
+      let acc =
+        match row_name with
+        | None -> acc
+        | Some (path,te) ->
+          match (Env.find_type path env).Types.type_manifest with
+          | None -> acc
+          | Some te -> aux acc te
+      in
+      aux acc row_more
+    | Types.Tconstr _ ->
+      let t' = try Ctype.full_expand env t with _ -> t in
+      if Types.TypeOps.equal t t' then
+        acc
+      else
+        aux acc t'
+    | _ -> acc
+  in
+  aux init
+
+let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
   let make_weighted_candidate ?(priority=0) ~exact name ?loc ?path ty =
     (* Just like [make_candidate] but associates some metadata to the candidate.
        The candidates are later sorted using these metadata.
@@ -273,7 +312,7 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
     let item = make_candidate ?get_doc ~exact name ?loc ?path ty in
     (- priority, - time, name), item
   in
-  let internal name = name = "" || name.[0] = '_' in
+  let is_internal name = name = "" || name.[0] = '_' in
   let items =
     let snap = Btype.snapshot () in
     let rec arrow_arity n t =
@@ -321,65 +360,29 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
         begin match target_type with
         | None -> []
         | Some t ->
-          let rec collect_constructors acc t =
-            let t = Ctype.repr t in
-            match t.Types.desc with
-            | Types.Tvariant { Types. row_fields; row_more; row_name } ->
-              let acc =
-                let keep_if_present acc (lbl, row_field) =
-                  match row_field with
-                  | Types.Rpresent arg when lbl <> "" -> ("`" ^ lbl, arg) :: acc
-                  | Types.Reither (_, lst, _, _) when lbl <> "" ->
-                    let arg =
-                      match lst with
-                      | [ well_typed ] -> Some well_typed
-                      | _ -> None
-                    in
-                    ("`" ^ lbl, arg) :: acc
-                  | _ -> acc
-                in
-                List.fold_left ~init:acc row_fields ~f:keep_if_present
-              in
-              let acc =
-                match row_name with
-                | None -> acc
-                | Some (path,te) ->
-                  match (Env.find_type path env).Types.type_manifest with
-                  | None -> acc
-                  | Some te -> collect_constructors acc te
-              in
-              collect_constructors acc row_more
-            | Types.Tconstr _ ->
-              let t' = try Ctype.full_expand env t with _ -> t in
-              if Types.TypeOps.equal t t' then
-                acc
-              else
-                collect_constructors acc t'
-            | _ -> acc
-          in
-          List.filter_map (collect_constructors [] t) ~f:(fun (name,_ as arg) ->
-            if not (validate `Variant `Variant name) then None else
-            Some (make_weighted_candidate name (`Variant arg) ~exact:false ~priority:2)
-          )
+          fold_variant_constructors t ~init:[] ~f:(fun name param candidates ->
+            if not @@ validate `Variant `Variant name then candidates else
+            make_weighted_candidate name ~exact:false ~priority:2
+                (`Variant (name, param))
+            :: candidates
+          ) ~env 
         end
 
       | `Values ->
         let type_check {Types. val_type} = type_check val_type in
         Env.fold_values (fun name path v candidates ->
           if not (validate `Lident `Value name) then candidates else
-          let priority = if internal name then 0 else type_check v in
-          let candidate =
-            make_weighted_candidate ~exact:(name = prefix) name ~priority ~path
-              (`Value v) ~loc:v.Types.val_loc
-          in
-          candidate :: candidates
+          let priority = if is_internal name then 0 else type_check v in
+          make_weighted_candidate ~exact:(name = prefix) name ~priority ~path
+            (`Value v) ~loc:v.Types.val_loc
+          :: candidates
         ) path env []
 
       | `Constructor ->
         let type_check {Types. cstr_res} = type_check cstr_res in
         Raw_compat.fold_constructors (fun name v candidates ->
           if not @@ validate `Lident `Cons name then candidates else
-          let priority = if internal name then 0 else type_check v in
+          let priority = if is_internal name then 0 else type_check v in
           make_weighted_candidate ~exact:(name=prefix) name (`Cons v) ~priority
           :: candidates
         ) path env []
@@ -413,7 +416,7 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
   in
   let items = List.sort items ~cmp:(fun (a,_) (b,_) -> compare a b) in
   let items = List.rev_map ~f:snd items in
-  items @ compl
+  items
 
 let gen_values = `Group [`Values; `Constructor]
 
@@ -471,7 +474,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
       let kind = classify_node node.BrowseT.t_node in
       let order = completion_order kind in
       let add_completions acc kind =
-        completion_fold ?get_doc ?target_type prefix path kind ~validate env acc
+        get_candidates ?get_doc ?target_type prefix path kind ~validate env @ acc
       in
       List.fold_left ~f:add_completions order ~init:[]
     with
@@ -557,7 +560,7 @@ let expand_prefix ~global_modules env prefix =
   let validate _ _ s = validate' s in
   let process_lident lident =
     let candidates =
-      let aux compl kind = completion_fold "" lident kind ~validate env compl in
+      let aux compl kind = get_candidates "" lident kind ~validate env @ compl in
       List.fold_left ~f:aux default_kinds ~init:[]
     in
     match lident with
