@@ -359,18 +359,18 @@ module String = struct
   let drop n s = sub s n (length s - n)
 
   module Set = struct
-    include Set.Make (struct type t = string let compare = compare end)
+    include MoreLabels.Set.Make (struct type t = string let compare = compare end)
     let of_list l = List.fold_left ~f:(fun s elt -> add elt s) l ~init:empty
-    let to_list s = fold (fun x xs -> x :: xs) s []
+    let to_list s = fold ~f:(fun x xs -> x :: xs) s ~init:[]
   end
 
   module Map = struct
-    include Map.Make (struct type t = string let compare = compare end)
+    include MoreLabels.Map.Make (struct type t = string let compare = compare end)
     let of_list l = List.fold_left ~f:(fun m (k,v) -> add k v m) l ~init:empty
-    let to_list m = fold (fun k v xs -> (k,v) :: xs) m []
+    let to_list m = fold ~f:(fun ~key ~data xs -> (key,data) :: xs) m ~init:[]
 
-    let keys m = fold (fun k _ xs -> k :: xs) m []
-    let values m = fold (fun _ v xs -> v :: xs) m []
+    let keys   m = fold ~f:(fun ~key ~data:_ xs -> key  :: xs) m ~init:[]
+    let values m = fold ~f:(fun ~key:_ ~data xs -> data :: xs) m ~init:[]
 
     let add_multiple key data t =
       let current =

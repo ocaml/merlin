@@ -39,12 +39,12 @@ module Trie = struct
 
   let find f t =
     try
-      iter (fun k v ->
-        List.iter v ~f:(fun (l, ns, node) ->
-          if f k l ns node then
-            raise (Found (k, l, ns, node))
+      iter t ~f:(fun ~key ~data ->
+        List.iter data ~f:(fun (l, ns, node) ->
+          if f key l ns node then
+            raise (Found (key, l, ns, node))
         )
-      ) t ;
+      );
       raise Not_found
     with
     | Found (k, l, n, v) -> (k, l, n, v)
@@ -326,7 +326,7 @@ let rec dump fmt trie =
       Format.fprintf fmt "%a = %a" Location.print_loc' loc dump t
   in
   Format.pp_print_string fmt "{\n" ;
-  Trie.iter (fun key nodes ->
+  Trie.iter trie ~f:(fun ~key ~data:nodes ->
     Format.fprintf fmt "%s -> " key ;
     begin match nodes with
     | [] -> assert false
@@ -339,5 +339,5 @@ let rec dump fmt trie =
       )
     end ;
     Format.pp_print_newline fmt ()
-  ) trie ;
+  );
   Format.pp_print_string fmt "}\n"

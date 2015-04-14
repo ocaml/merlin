@@ -165,7 +165,7 @@ let ext_custom_printf = {
 let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec;ext_custom_printf]
 let registry =
   List.fold_left registry ~init:String.Map.empty
-    ~f:(fun map ext -> String.Map.add ext.name ext map)
+    ~f:(fun map ext -> String.Map.add map ~key:ext.name ~data:ext)
 let all = String.Set.of_list (String.Map.keys registry)
 
 let lookup s =
@@ -177,11 +177,11 @@ let empty = String.Set.empty
 (* Compute set of extensions from package names (used to enable support for
   "lwt" if "lwt.syntax" is loaded by user. *)
 let from_packages pkgs =
-  String.Map.fold (fun name ext set ->
-      if List.exists ~f:(List.mem ~set:ext.packages) pkgs
-      then String.Set.add name set
-      else set)
-    registry empty
+  String.Map.fold registry ~init:empty ~f:(fun ~key:name ~data:ext set ->
+    if List.exists ~f:(List.mem ~set:ext.packages) pkgs
+    then String.Set.add name set
+    else set
+  )
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
@@ -194,7 +194,7 @@ let keywords set =
     | None -> kws
     | Some def -> def.keywords @ kws
   in
-  let all = String.Set.fold add_kw set [] in
+  let all = String.Set.fold set ~init:[] ~f:add_kw in
   Raw_lexer.keywords all
 
 (* Register extensions in typing environment *)
@@ -227,11 +227,11 @@ let register exts env =
   (* Log errors ? *)
   let try_type sg' = try type_sig env sg' with _exn -> [] in
   let exts =
-    String.Map.fold (fun name ext list ->
-        if String.Set.mem name exts
-        then ext :: list
-        else list
-      ) registry default
+    String.Map.fold registry ~init:default ~f:(fun ~key:name ~data:ext list ->
+      if String.Set.mem name exts
+      then ext :: list
+      else list
+    )
   in
   let process_ext e =
     let prv = List.concat_map ~f:parse_sig e.private_def in
