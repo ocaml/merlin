@@ -1,3 +1,25 @@
+merlin HEAD
+===========
+
+  backend:
+    - completion: return the type of the expected argument when completing an
+      application (also offers completion for named and optional parameters)
+    - completion: optionally associates ocamldoc comments to candidates
+    - locate: partially rewritten, introduces a cache (so potentially noticeably
+      bigger memory consumption)
+    - locate: better handling of functors
+    - fix type error reporting
+    - add support for trunk
+    - add a "document" command: takes an ident and return its documentation (if
+      any)
+
+  emacs:
+    - fix bindings of every completion backend
+    - bind ocamldoc comments to company (optional)
+
+  vim:
+    - fix ctrlp binding for locate
+
 merlin 2.1.2
 ============
 Tue Mar  3 12:20:08 UTC 2015
