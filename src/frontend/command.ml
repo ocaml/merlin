@@ -401,7 +401,7 @@ let dispatch (state : state) =
       node.BrowseT.t_env in
     let global_modules = Buffer.global_modules state.buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
-    Compl.{ entries ; context = `Unknown }
+    { Compl. entries ; context = `Unknown }
 
   | (Document (patho, pos) : a request) ->
     let comments = Buffer.comments state.buffer in
