@@ -255,26 +255,51 @@ let make_candidate ?get_doc ~exact name ?loc ?path ty =
 let item_for_global_module name = {name; kind = `Module; desc = ""; info = ""}
 
 let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
-  let fmt ?(priority=0) ~exact name ?loc ?path ty =
+  let make_weighted_candidate ?(priority=0) ~exact name ?loc ?path ty =
+    (* Just like [make_candidate] but associates some metadata to the candidate.
+       The candidates are later sorted using these metadata.
+    
+       The ordering works as follow:
+       - first we compare the priority of the candidates
+       - if they are equal, then we compare their "binding time": things
+         introduced more recently will come before older bindings (i.e. we
+         prioritize the local context)
+       - if these are also equal, then we just use classic string ordering on
+         the candidate name. *)
     let time =
       try Ident.binding_time (Path.head (Option.get path))
-      with _ -> 0 in
+      with _ -> 0
+    in
     let item = make_candidate ?get_doc ~exact name ?loc ?path ty in
-    (- priority, - time, name), item in
-  let not_internal name = name <> "" && name.[0] <> '_' in
+    (- priority, - time, name), item
+  in
+  let internal name = name = "" || name.[0] = '_' in
   let items =
     let snap = Btype.snapshot () in
-    let rec arrow_arity n t = match (Ctype.repr t).Types.desc with
+    let rec arrow_arity n t =
+      match (Ctype.repr t).Types.desc with
       | Types.Tarrow (_,_,rhs,_) -> arrow_arity (n + 1) rhs
       | _ -> n
     in
     let rec nth_arrow n t =
-      if n = 0 then t else
-        match (Ctype.repr t).Types.desc with
-        | Types.Tarrow (_,_,rhs,_) -> nth_arrow (n - 1) rhs
-        | _ -> t
+      if n <= 0 then t else
+      match (Ctype.repr t).Types.desc with
+      | Types.Tarrow (_,_,rhs,_) -> nth_arrow (n - 1) rhs
+      | _ -> t
     in
-    let type_check = match target_type with
+    let type_check =
+      (* Defines the priority of a candidate.
+         Given the type of a candidate it will return:
+         - 2 if the type can be unified with the expected one
+         - 1 if a value of that type applied to some parameters returns a value
+             of the expected type, i.e. if
+                 target_type =                    a -> b -> c
+                 type        = p1 -> ... -> pN -> a -> b -> c
+         - 0 otherwise
+      
+         Note that if no type is expected (i.e. if we're not in an application),
+         then 1 will be returned. *)
+      match target_type with
       | None -> fun scheme -> 1
       | Some ty ->
         let arity = arrow_arity 0 ty in
@@ -334,7 +359,7 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
           in
           List.filter_map (collect_constructors [] t) ~f:(fun (name,_ as arg) ->
             if not (validate `Variant `Variant name) then None else
-            Some (fmt name (`Variant arg) ~exact:false ~priority:2)
+            Some (make_weighted_candidate name (`Variant arg) ~exact:false ~priority:2)
           )
         end
       | `Values ->
@@ -343,8 +368,8 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
           (fun name path v compl ->
              if validate `Lident `Value name then
                let loc = v.Types.val_loc in
-               let priority = if not_internal name then type_check v else 0 in
-               fmt ~exact:(name = prefix) name ~loc ~path (`Value v) ~priority :: compl
+               let priority = if internal name then 0 else type_check v in
+               make_weighted_candidate ~exact:(name = prefix) name ~loc ~path (`Value v) ~priority :: compl
              else compl)
           path env []
       | `Constructor ->
@@ -352,8 +377,8 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
         Raw_compat.fold_constructors
           (fun name v compl ->
              if validate `Lident `Cons name then
-               let priority = if not_internal name then type_check v else 0 in
-               fmt ~exact:(name = prefix) name (`Cons v) ~priority :: compl
+               let priority = if internal name then 0 else type_check v in
+               make_weighted_candidate ~exact:(name = prefix) name (`Cons v) ~priority :: compl
              else compl)
           path env []
       | `Types ->
@@ -361,7 +386,7 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
           (fun name path decl compl ->
              if validate `Lident `Typ name then
                let loc = decl.Types.type_loc in
-               fmt ~exact:(name = prefix) name ~loc ~path (`Typ decl) :: compl
+               make_weighted_candidate ~exact:(name = prefix) name ~loc ~path (`Typ decl) :: compl
              else compl)
           path env []
       | `Modules ->
@@ -369,14 +394,14 @@ let completion_fold ?get_doc ?target_type prefix path kind ~validate env compl =
           (fun name path v compl ->
              let v = Raw_compat.extract_module_declaration v in
              if validate `Uident `Mod name then
-               fmt ~exact:(name = prefix) name ~path (`Mod v) :: compl
+               make_weighted_candidate ~exact:(name = prefix) name ~path (`Mod v) :: compl
              else compl)
           path env []
       | `Modules_type ->
         Env.fold_modtypes
           (fun name path v compl ->
              if validate `Uident `Mod name then
-               fmt ~exact:(name = prefix) name ~path (`ModType v) :: compl
+               make_weighted_candidate ~exact:(name = prefix) name ~path (`ModType v) :: compl
              else compl)
           path env []
       | `Group (kinds) ->
@@ -500,6 +525,9 @@ let node_complete buffer ?get_doc ?target_type node prefix =
   let prefix =
     let li = Longident.parse prefix in
     let suffix = Longident.last li in
+    (* If I understand what is going on here, we return [suffix] if [prefix] is
+       of the form "lowercased.….Suffix" otherwise, we return [prefix].
+       What is the reason for that? *)
     if suffix <> ""
       && Char.uppercase prefix.[0] <> prefix.[0]
       && Char.uppercase suffix.[0] = suffix.[0]
