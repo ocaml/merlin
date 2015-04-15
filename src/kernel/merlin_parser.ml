@@ -296,37 +296,50 @@ let get_lr1_states parser =
     end)
 
 let find_marker t =
-  let is_rec frame = match Frame.value frame with
-    | P.T_ (P.T_REC, ()) -> true
-    | P.N_ (P.N_rec_flag, Asttypes.Recursive) -> true
-    | P.N_ (P.N_class_fields, _) -> true
-    | P.N_ (P.N_class_declarations, _) -> true
-    | P.N_ (P.N_class_descriptions, _) -> true
-    | _ -> false
-  in
-  let end_top frame = match Frame.value frame with
-    | P.N_ (P.N_structure_item, _) -> true
-    | P.N_ (P.N_structure, _) -> true
-    | P.N_ (P.N_signature_item, _) -> true
-    | P.N_ (P.N_signature, _) -> true
-    | P.T_ (P.T_ENTRYPOINT, ()) -> true
-    | _ -> false
-  in
-  let rec find_rec acc = function
-    | None -> acc
-    | Some frame ->
-      find_rec (if is_rec frame then frame else acc) (Frame.next frame)
-  in
-  let rec find_first acc = function
-    | None -> acc
-    | Some frame when end_top frame -> find_rec acc (Frame.next frame)
-    | Some frame -> find_first frame (Frame.next frame)
-  in
+  (* FIXME: rather than hardcoded heuristic to find marker, annotate the
+     grammar to know which states can serve as markers *)
   let frame = stack t in
-  if Frame.value frame <> P.T_ (P.T_ENTRYPOINT, ()) then
-    Some (find_first frame (Some frame))
-  else
+  if Frame.value frame = P.T_ (P.T_ENTRYPOINT, ()) then
+    (* No marker in empty parser *)
     None
+  else
+    (* Searching for marker position is split in two steps.
+       First, finds the top marker: last state of the stack that belongs to
+       current definition, so that when the marker is removed, current definition
+       is complete. *)
+    let end_top frame = match Frame.value frame with
+      | P.N_ (P.N_structure_item, _) -> true
+      | P.N_ (P.N_structure, _) -> true
+      | P.N_ (P.N_signature_item, _) -> true
+      | P.N_ (P.N_signature, _) -> true
+      | P.T_ (P.T_SEMISEMI, ()) -> true
+      | P.N_ (P.N_toplevel_directives, ()) -> true
+      | P.T_ (P.T_ENTRYPOINT, ()) -> true
+      | _ -> false
+    in
+    let rec find_top acc = function
+      | None -> acc, None
+      | Some frame when end_top frame -> acc, (Frame.next frame)
+      | Some frame -> find_top frame (Frame.next frame)
+    in
+    let marker, rest = find_top frame (Some frame) in
+    (* Second step: we look for recursive definitions in the rest of the stack.
+       If there are some, marker should be put at beginning of the first one. *)
+    let if_rec frame acc = match Frame.value frame with
+      | P.T_ (P.T_REC, ()) -> frame
+      | P.N_ (P.N_rec_flag, Asttypes.Recursive) -> frame
+      | P.N_ (P.N_class_fields, _) -> frame
+      | P.N_ (P.N_class_declarations, _) -> frame
+      | P.N_ (P.N_class_descriptions, _) -> frame
+      | P.N_ (P.N_module_rec_declarations, _) -> frame
+      | _ -> acc
+    in
+    let rec find_rec acc = function
+      | None -> acc
+      | Some frame -> find_rec (if_rec frame acc) (Frame.next frame)
+    in
+    let marker = find_rec marker rest in
+    Some marker
 
 let rec next_s s =
   if s.E.startp == Lexing.dummy_pos then
