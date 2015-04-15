@@ -208,8 +208,8 @@ let feed_recover ~record_comment original (s,tok,e as input) zipper =
   aux_feed 0 candidates
 
 let drop_comments_after pos comments =
-  List.take_while comments ~f:(fun (_, loc) ->
-    Lexing.compare_pos loc.Location.loc_end pos <= 0
+  List.drop_while comments ~f:(fun (_, loc) ->
+    Lexing.compare_pos loc.Location.loc_end pos > 0
   )
 
 let fold warnings token t =
