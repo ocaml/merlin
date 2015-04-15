@@ -344,8 +344,9 @@ and of_expression_desc exp desc acc = match desc with
     lhs :: meth :: of_option of_expression eo acc
   | Texp_override (_,ls) ->
     of_list (fun (_,_,e) -> of_expression e) ls acc
-  | Texp_letmodule (_,_,me,e) ->
-    of_module_expr me :: of_expression e :: acc
+  | Texp_letmodule (mb_id, mb_name, mb_expr, e) ->
+    let mb = {mb_id;mb_name;mb_expr;mb_loc=Location.none;mb_attributes=[]} in
+    of_node (Module_binding mb) :: of_expression e :: acc
   | Texp_object (cs,_) ->
     of_node (Class_structure cs) :: acc
   | Texp_pack me ->
