@@ -478,7 +478,7 @@ function! merlin#Register()
 
   command! -buffer -nargs=0 MerlinVersion call merlin#Version()
 
-  command! -buffer        -nargs=? TypeOf          call merlin#TypeOf(<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? TypeOf call merlin#TypeOf(<q-args>)
   command! -buffer -range -nargs=0 TypeOfSel       call merlin#TypeOfSel()
   command! -buffer        -nargs=? MerlinTypeOf    call merlin#TypeOf(<q-args>)
   command! -buffer -range -nargs=0 MerlinTypeOfSel call merlin#TypeOfSel()

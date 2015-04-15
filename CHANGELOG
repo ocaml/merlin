@@ -19,6 +19,7 @@ merlin HEAD
 
   vim:
     - fix ctrlp binding for locate
+    - add (dwim) completion on :TypeOf
 
 merlin 2.1.2
 ============
