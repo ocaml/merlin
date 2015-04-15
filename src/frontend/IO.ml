@@ -367,6 +367,8 @@ module Protocol_io = struct
       Request (Dump `Tokens)
     | [`String "dump"; `String "flags"] ->
       Request (Dump `Flags)
+    | [`String "dump"; `String "warnings"] ->
+      Request (Dump `Warnings)
     | [`String "which"; `String "path"; `String name] ->
       Request (Which_path [name])
     | [`String "which"; `String "path"; `List names] ->

@@ -727,6 +727,10 @@ let dispatch (state : state) =
     in
     `Assoc assoc
 
+  | (Dump `Warnings : a request) ->
+    with_typer state @@ fun _typer ->
+    Warnings.dump ()
+
   | (Dump _ : a request) ->
     failwith "TODO"
 

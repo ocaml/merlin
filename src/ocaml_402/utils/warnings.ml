@@ -529,3 +529,27 @@ let arg_spec t =
 type state = set
 let backup () = copy !set
 let restore aset = set := aset
+
+let dump () =
+  let actives =
+    active ()
+    |> Array.mapi (fun i b ->
+      let i = i + 1 in
+      try if b then string_of_int i ^ ": " ^ List.assoc i descriptions else ""
+      with Not_found -> string_of_int i ^ ": Not found !")
+    |> Array.to_list
+    |> List.filter (function "" -> false | _ -> true)
+  in
+  let error =
+    error ()
+    |> Array.mapi (fun i b ->
+      let i = i + 1 in
+      try if b then string_of_int i ^ ": " ^ List.assoc i descriptions else ""
+      with Not_found -> string_of_int i ^ ": Not found !")
+    |> Array.to_list
+    |> List.filter (function "" -> false | _ -> true)
+  in
+  `Assoc [
+    "actives", `List (List.map (fun x -> `String x) actives);
+    "warn_error", `List (List.map (fun x -> `String x) error)
+  ]
