@@ -135,8 +135,8 @@ end = struct
     dot_config : config;
     user_config : config;
 
-    mutable flags : Clflags.set;
-    mutable warnings : Warnings.set;
+    flags : Clflags.set;
+    warnings : Warnings.set;
 
     local_path : string list ref;
 
@@ -181,8 +181,10 @@ end = struct
       Ppxsetup.union prj.flags.Clflags.ppx ppxs
 
   let update_flags prj =
-    let cl = Clflags.arg_spec prj.flags in
-    let w  = Warnings.arg_spec prj.warnings in
+    let spec =
+      Clflags.arg_spec prj.flags @
+      Warnings.arg_spec prj.warnings
+    in
     let process_flags spec flags =
       let failures = ref [] in
       let rec loop ?(current=(ref 0)) flags =
@@ -201,15 +203,13 @@ end = struct
     let process_flags_list lst ~init =
       List.fold_left lst ~init ~f:(fun acc lst ->
         let flags = Array.of_list ("merlin" :: lst) in
-        List.rev_append (process_flags (cl @ w) flags) acc
+        List.rev_append (process_flags spec flags) acc
       )
     in
     let failures = process_flags_list prj.dot_config.cfg_flags ~init:[] in
-    let failures = List.rev_append (process_flags (Main_args.flags @ cl @w) Sys.argv) failures in
+    let failures = List.rev_append (process_flags (Main_args.flags @ spec) Sys.argv) failures in
     let failures = process_flags_list prj.user_config.cfg_flags ~init:failures in
     update_ppxs prj;
-    Clflags.set := prj.flags ;
-    Warnings.set := prj.warnings ;
     failures
 
   let get_flags project = [
@@ -404,6 +404,8 @@ end = struct
 
   (* Make global state point to current project *)
   let setup project =
+    Clflags.set := project.flags;
+    Warnings.set := project.warnings;
     Config.load_path := project.build_path
 
   (* Enabled extensions *)
