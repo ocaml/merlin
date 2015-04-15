@@ -42,15 +42,6 @@ let id_of_patt = function
 let mk ?(children=[]) ~pos outline_kind id =
   { Protocol. outline_name = Ident.name id; outline_kind; pos; children }
 
-(* FIXME: pasted from track_definition, share it. *)
-let path_to_list p =
-  let rec aux acc = function
-    | Path.Pident id -> id.Ident.name :: acc
-    | Path.Pdot (p, str, _) -> aux (str :: acc) p
-    | _ -> assert false
-  in
-  aux [] p
-
 let rec summarize node =
   let pos = node.t_loc.Location.loc_start in
   match node.t_node with
@@ -86,7 +77,7 @@ let rec summarize node =
     Some (mk ~children ~pos `Type td.typ_id)
 
   | Type_extension te ->
-    let name = String.concat ~sep:"." (path_to_list te.tyext_path) in
+    let name = String.concat ~sep:"." (Path.to_string_list te.tyext_path) in
     let children =
       List.filter_map (Lazy.force node.t_children) ~f:(fun x ->
         summarize x >>| fun x -> { x with Protocol.outline_kind = `Constructor }
