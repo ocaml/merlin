@@ -108,23 +108,6 @@ let fold_constructors f id env acc =
     id env acc
 let fold_labels = Env.fold_labels
 
-let extract_subpatterns =
-  let open Typedtree in function
-  | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> []
-  | Tpat_alias (p,_,_) | Tpat_lazy p | Tpat_variant (_,Some p,_) -> [p]
-  | Tpat_array ps | Tpat_tuple ps | Tpat_construct (_,_,ps) -> ps
-  | Tpat_or (p1,p2,_) -> [p1;p2]
-  | Tpat_record (r,_) -> List.map ~f:thd3 r
-
-let extract_specific_subexpressions =
-  let open Typedtree in function
-  | Texp_construct (_,_,es)  -> es
-  | Texp_record (pldes,Some e) -> e :: List.map ~f:thd3 pldes
-  | Texp_record (pldes,None)   -> List.map ~f:thd3 pldes
-  | Texp_field (ea,_,_)        -> [ea]
-  | Texp_setfield (ea,_,_,eb)  -> [ea;eb]
-  | _ -> assert false
-
 let exp_open_env = function
   | Typedtree.Texp_open (_,_,_,env) -> env
   | _ -> assert false
