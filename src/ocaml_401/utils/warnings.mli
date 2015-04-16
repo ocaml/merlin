@@ -61,16 +61,7 @@ type t =
   | Bad_env_variable of string * string
 ;;
 
-type set
-
-(* Manage set of flag *)
-val initial : set
-
-val fresh : unit -> set
-val copy : set -> set
-
-(* Current state *)
-val set : set ref
+type state
 
 val is_active : t -> bool;;
 val is_error : t -> bool;;
@@ -90,5 +81,16 @@ val check_fatal : unit -> unit;;
 
 val help_warnings: unit -> unit
 
+val backup: unit -> state
+val restore: state -> unit
+
+(* merlin extension *)
+val initial : state
+
+(* Current state *)
+val current : state ref
+
 (* Compute arguments specification *)
-val arg_spec : set -> (string * Arg.spec * string) list
+val arg_spec : state -> (string * Arg.spec * string) list
+(* Parsing arguments is effectful, you might want to copy state before *)
+val copy : state -> state

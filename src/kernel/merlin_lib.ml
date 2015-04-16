@@ -136,7 +136,7 @@ end = struct
     user_config : config;
 
     flags : Clflags.set;
-    warnings : Warnings.set;
+    mutable warnings : Warnings.state;
 
     local_path : string list ref;
 
@@ -181,6 +181,7 @@ end = struct
       Ppxsetup.union prj.flags.Clflags.ppx ppxs
 
   let update_flags prj =
+    prj.warnings <- Warnings.copy prj.warnings;
     let spec =
       Clflags.arg_spec prj.flags @
       Warnings.arg_spec prj.warnings
@@ -336,7 +337,7 @@ end = struct
         dot_merlins = [];
         dot_merlins_failures = [];
         dot_config; user_config; flags;
-        warnings = Warnings.copy Warnings.initial;
+        warnings = Warnings.initial;
         local_path;
         source_path = prepare [
             user_config.cfg_path_source;
@@ -405,7 +406,7 @@ end = struct
   (* Make global state point to current project *)
   let setup project =
     Clflags.set := project.flags;
-    Warnings.set := project.warnings;
+    Warnings.current := project.warnings;
     Config.load_path := project.build_path
 
   (* Enabled extensions *)

@@ -156,31 +156,30 @@ let letter = function
   | _ -> assert false
 ;;
 
-type set = bool array * bool array
+type state =
+  {
+    active: bool array;
+    error: bool array;
+  }
 
-let fresh () =
-  let active = Array.create (last_warning_number + 1) true in
-  let error = Array.create (last_warning_number + 1) false in
-  active, error
+let current =
+  ref
+    {
+      active = Array.make (last_warning_number + 1) true;
+      error = Array.make (last_warning_number + 1) false;
+    }
 
-(* Manage set of flag *)
-let initial = fresh ()
+let backup () = !current
 
-let copy (a,b) = (Array.copy a, Array.copy b)
+let restore x = current := x
 
-(* Current state *)
-let set = ref initial
+let is_active x = (!current).active.(number x);;
+let is_error x = (!current).error.(number x);;
 
-let active () = fst !set
-let error () = snd !set
-
-let is_active x = (active ()).(number x);;
-let is_error x = (error ()).(number x);;
-
-let parse_opt flags s =
+let parse_opt error active flags s =
   let set i = flags.(i) <- true in
   let clear i = flags.(i) <- false in
-  let set_all i = (active ()).(i) <- true; (error ()).(i) <- true in
+  let set_all i = active.(i) <- true; error.(i) <- true in
   let error () = raise (Arg.Bad "Ill-formed list of warnings") in
   let rec get_num n i =
     if i >= String.length s then i, n
@@ -228,15 +227,24 @@ let parse_opt flags s =
   loop 0
 ;;
 
-let parse_options set errflag s =
-  parse_opt (if errflag then snd set else fst set) s;;
+let copy {active; error} =
+  {active = Array.copy active; error = Array.copy error}
+
+let parse_options ?state errflag s =
+  let {error; active} = match state with
+    | None -> copy !current
+    | Some set -> set
+  in
+  parse_opt error active (if errflag then error else active) s;
+  current := {error; active}
 
 (* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-6-7-9-27-29-32..39-41..42-44-45";;
 let defaults_warn_error = "-a";;
 
-let () = parse_options initial false defaults_w;;
-let () = parse_options initial true defaults_warn_error;;
+let initial = !current
+let () = parse_options ~state:initial false defaults_w;;
+let () = parse_options ~state:initial true defaults_warn_error;;
 
 let message = function
   | Comment_start -> "this is the start of a comment."
@@ -383,7 +391,7 @@ let print ppf w =
   Format.fprintf ppf "%d: %s" num msg;
   Format.pp_print_flush ppf ();
   Format.pp_set_all_formatter_output_functions ppf out flush newline space;
-  if (error ()).(num) then incr nerrors;
+  if (!current).error.(num) then incr nerrors;
   !newlines
 ;;
 
@@ -475,9 +483,9 @@ let help_warnings () =
   exit 0
 ;;
 
-let w_spec t =
+let w_spec state =
   "-w",
-  Arg.String (parse_options t false),
+  Arg.String (parse_options ~state false),
   Printf.sprintf
     "<list>  Enable or disable warnings according to <list>:\n\
     \        +<spec>   enable warnings in <spec>\n\
@@ -490,19 +498,19 @@ let w_spec t =
     \     default setting is %S"
     defaults_w
 
-let warn_error_spec t =
+let warn_error_spec state =
   "-warn-error",
-  Arg.String (parse_options t true),
+  Arg.String (parse_options ~state true),
   Printf.sprintf
     "<list> Enable or disable error status for warnings according\n\
     \     to <list>.  See option -w for the syntax of <list>.\n\
     \     Default setting is %S"
     defaults_warn_error
 
-let arg_spec t =
+let arg_spec state =
   [
-    w_spec t;
-    warn_error_spec t;
+    w_spec state;
+    warn_error_spec state;
   ]
 
 open Std
@@ -520,6 +528,6 @@ let dump () =
     |> List.filter_map ~f:(function "" -> None | s -> Some (`String s))
   in
   `Assoc [
-    "actives", `List (actives (active ()));
-    "warn_error", `List (actives (error ()));
+    "actives", `List (actives !current.active);
+    "warn_error", `List (actives !current.error);
   ]
