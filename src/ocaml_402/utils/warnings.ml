@@ -530,26 +530,21 @@ type state = set
 let backup () = copy !set
 let restore aset = set := aset
 
+open Std
+
 let dump () =
-  let actives =
-    active ()
-    |> Array.mapi (fun i b ->
+  let actives arr =
+    Array.mapi (fun i b ->
       let i = i + 1 in
-      try if b then string_of_int i ^ ": " ^ List.assoc i descriptions else ""
-      with Not_found -> string_of_int i ^ ": Not found !")
+      if b && i <= last_warning_number then
+        string_of_int i ^ ": " ^ List.assoc i descriptions
+      else
+        ""
+    ) arr
     |> Array.to_list
-    |> List.filter (function "" -> false | _ -> true)
-  in
-  let error =
-    error ()
-    |> Array.mapi (fun i b ->
-      let i = i + 1 in
-      try if b then string_of_int i ^ ": " ^ List.assoc i descriptions else ""
-      with Not_found -> string_of_int i ^ ": Not found !")
-    |> Array.to_list
-    |> List.filter (function "" -> false | _ -> true)
+    |> List.filter_map ~f:(function "" -> None | s -> Some (`String s))
   in
   `Assoc [
-    "actives", `List (List.map (fun x -> `String x) actives);
-    "warn_error", `List (List.map (fun x -> `String x) error)
+    "actives", `List (actives (active ()));
+    "warn_error", `List (actives (error ()));
   ]

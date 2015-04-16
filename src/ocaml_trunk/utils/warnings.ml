@@ -534,3 +534,22 @@ let arg_spec t =
 type state = set
 let backup () = copy !set
 let restore aset = set := aset
+
+open Std
+
+let dump () =
+  let actives arr =
+    Array.mapi (fun i b ->
+      let i = i + 1 in
+      if b && i <= last_warning_number then
+        string_of_int i ^ ": " ^ List.assoc i descriptions
+      else
+        ""
+    ) arr
+    |> Array.to_list
+    |> List.filter_map ~f:(function "" -> None | s -> Some (`String s))
+  in
+  `Assoc [
+    "actives", `List (actives (active ()));
+    "warn_error", `List (actives (error ()));
+  ]

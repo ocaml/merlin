@@ -73,6 +73,8 @@ val is_error : t -> bool;;
 val set_active : t -> bool -> unit;;
 val set_error : t -> bool -> unit;;
 
+val dump : unit -> Yojson.Basic.json
+
 val defaults_w : string;;
 val defaults_warn_error : string;;
 
