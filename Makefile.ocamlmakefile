@@ -181,6 +181,7 @@ SOURCES = \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
 	src/analysis/browse_misc.ml       \
+	src/analysis/type_utils.mli       \
 	src/analysis/type_utils.ml        \
 	src/analysis/typedtrie.mli        \
 	src/analysis/typedtrie.ml         \

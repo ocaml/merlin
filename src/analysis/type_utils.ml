@@ -111,19 +111,17 @@ module Printtyp = struct
   let type_scheme env ppf ty =
     select_verbose type_scheme verbose_type_scheme env ppf ty
 
-  let type_declaration env ppf tdecl =
-    select_verbose type_declaration verbose_type_declaration env ppf tdecl
+  let type_declaration env id ppf =
+    select_verbose type_declaration verbose_type_declaration env id ppf
 
   let modtype env ppf mty =
     select_verbose modtype verbose_modtype env ppf mty
 
-  let wrap_printing_env env verbosity' f =
-    Fluid.let' verbosity verbosity'
-      (fun () -> wrap_printing_env env f)
+  let wrap_printing_env env ~verbosity:v f =
+    Fluid.let' verbosity v (fun () -> wrap_printing_env env f)
 
-  let wrap_printing_aliasmap tm verbosity' f =
-    Fluid.let' verbosity verbosity'
-      (fun () -> wrap_printing_aliasmap tm f)
+  let wrap_printing_aliasmap tm ~verbosity:v f =
+    Fluid.let' verbosity v (fun () -> wrap_printing_aliasmap tm f)
 end
 
 (* Check if module is smaller (= has less definition, counting nested ones)
@@ -185,64 +183,60 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     let exp = Raw_compat.dest_tstr_eval str in
     Printtyp.type_scheme env ppf exp.exp_type;
   in
-  Printtyp.wrap_printing_env env verbosity @@ fun () ->
+  Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Typing_aux.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
-
   | None ->
     Format.pp_print_string ppf "Syntax error";
     false
 
   | Some e ->
-    begin match Raw_compat.Parsetree.extract_specific_parsing_info e with
-      | `Ident longident ->
-        begin
-          try
-            (* Don't catch type errors *)
-            print_expr e;
-            true
-          with exn ->
-            try let p, t = Env.lookup_type longident.Asttypes.txt env in
-              Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;
-              true
-            with _ ->
-              raise exn
-        end
+    match Raw_compat.Parsetree.extract_specific_parsing_info e with
+    | `Ident longident ->
+      begin try
+        (* Don't catch type errors *)
+        print_expr e;
+        true
+      with exn ->
+        try let p, t = Env.lookup_type longident.Asttypes.txt env in
+          Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;
+          true
+        with _ ->
+          raise exn
+      end
 
-      | `Constr longident ->
-        begin
-          try
-            print_expr e;
+    | `Constr longident ->
+      begin try
+        print_expr e;
+        true
+      with exn ->
+        try
+          (* TODO: special processing for module aliases? *)
+          match lookup_module_or_modtype longident.Asttypes.txt env with
+          | _path, None ->
+            Format.pp_print_string ppf "(* abstract module *)";
             true
-          with exn ->
-            try
-              (* TODO: special processing for module aliases? *)
-              match lookup_module_or_modtype longident.Asttypes.txt env with
-              | _path, None ->
-                Format.pp_print_string ppf "(* abstract module *)";
-                true
-              | _path, Some md ->
-                begin match mod_smallerthan 1000 md with
-                  | None when verbosity = 0 ->
-                    Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
-                  | _ ->
-                    Printtyp.modtype env ppf md
-                end;
-                true
-            with _ ->
-              try
-                let cstr_desc =
-                  Raw_compat.lookup_constructor longident.Asttypes.txt env
-                in
+          | _path, Some md ->
+            begin match mod_smallerthan 1000 md with
+            | None when verbosity = 0 ->
+              Format.pp_print_string ppf "(* large signature, repeat to confirm *)";
+            | _ ->
+              Printtyp.modtype env ppf md
+            end;
+            true
+        with _ ->
+          try
+            let cstr_desc =
+              Raw_compat.lookup_constructor longident.Asttypes.txt env
+            in
                   (*
-                  Format.pp_print_string ppf name;
-                  Format.pp_print_string ppf " : ";
+                     Format.pp_print_string ppf name;
+                     Format.pp_print_string ppf " : ";
                   *)
-                Browse_misc.print_constructor ppf cstr_desc;
-                true
-              with _ ->
-                raise exn
-        end
+            Browse_misc.print_constructor ppf cstr_desc;
+            true
+          with _ ->
+            raise exn
+      end
 
-      | `Other -> print_expr e; true
-    end
+    | `Other -> print_expr e; true

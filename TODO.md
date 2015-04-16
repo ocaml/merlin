@@ -1,8 +1,6 @@
 - Locate:
   -> handle local module aliases (i.e. [let module X = Y])
   -> associate ocamldoc comments to trie nodes when building the trie.
-  -> locate from inside a functor [application]
-     (which is different from locating through a functor application)
 
 - Relegated to next menhir version:
   Find proper API for incremental parser
