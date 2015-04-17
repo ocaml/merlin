@@ -404,9 +404,9 @@ let dispatch (state : state) =
     { Compl. entries ; context = `Unknown }
 
   | (Document (patho, pos) : a request) ->
+    with_typer state @@ fun typer ->
     let comments = Buffer.comments state.buffer in
     let env, local_defs =
-      with_typer state @@ fun typer ->
       let node, _ = Completion.node_at typer pos in
       node.BrowseT.t_env, Typer.contents typer
     in
@@ -431,8 +431,8 @@ let dispatch (state : state) =
       (`User_input path)
 
   | (Locate (patho, ml_or_mli, pos) : a request) ->
+    with_typer state @@ fun typer ->
     let env, local_defs =
-      with_typer state @@ fun typer ->
       let node, _ = Completion.node_at typer pos in
       node.BrowseT.t_env, Typer.contents typer
     in
