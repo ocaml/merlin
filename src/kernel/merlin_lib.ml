@@ -135,7 +135,7 @@ end = struct
     dot_config : config;
     user_config : config;
 
-    flags : Clflags.set;
+    mutable flags : Clflags.set;
     mutable warnings : Warnings.state;
 
     local_path : string list ref;
@@ -181,7 +181,8 @@ end = struct
       Ppxsetup.union prj.flags.Clflags.ppx ppxs
 
   let update_flags prj =
-    prj.warnings <- Warnings.copy prj.warnings;
+    prj.flags <- Clflags.copy Clflags.initial;
+    prj.warnings <- Warnings.copy Warnings.initial;
     let spec =
       Clflags.arg_spec prj.flags @
       Warnings.arg_spec prj.warnings
