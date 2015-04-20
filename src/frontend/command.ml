@@ -106,16 +106,13 @@ let track_verbosity =
     | value ->
       verbosity_last := value; verbosity_counter := 0; 0
 
-let buffer_changed state =
-  state.lexer <- None
-
 let buffer_update state items =
   if Buffer.update state.buffer items = `Updated then
     verbosity_last := None
 
 let buffer_freeze state items =
   buffer_update state items;
-  buffer_changed state
+  state.lexer <- None
 
 module Printtyp = Type_utils.Printtyp
 
@@ -514,8 +511,7 @@ let dispatch (state : state) =
 
   | (Drop : a request) ->
     let lexer = Buffer.lexer state.buffer in
-    buffer_update state (History.drop_tail lexer);
-    buffer_changed state;
+    buffer_freeze state (History.drop_tail lexer);
     cursor_state state
 
   | (Seek `Position : a request) ->
@@ -614,7 +610,7 @@ let dispatch (state : state) =
       | `Auto, _ -> `ML
     in
     let buffer = checkout_buffer ?dot_merlins ?path ft in
-    buffer_changed state;
+    state.lexer <- None;
     state.buffer <- buffer;
     cursor_state state
 
