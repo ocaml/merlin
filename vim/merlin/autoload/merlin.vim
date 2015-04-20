@@ -499,7 +499,7 @@ function! merlin#Register()
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Locate call merlin#Locate(<q-args>)
   command! -buffer -nargs=0 ILocate call merlin#InteractiveLocate()
 
-  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? Document call merlin#Document(<q-args>)
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinDocument call merlin#Document(<q-args>)
 
   command! -buffer -nargs=0 Outline call merlin#Outline()
 
