@@ -33,7 +33,7 @@ val section: Logger.section
 val from_string
   : project:Project.t
   -> env:Env.t
-  -> local_defs:Typer.content list
+  -> local_defs:(Typer.content * _) list
   -> pos:Lexing.position
   -> [ `ML | `MLI ]
   -> string
@@ -46,7 +46,7 @@ val from_string
 val get_doc
   : project:Merlin_lib.Project.t
   -> env:Env.t
-  -> local_defs:Typer.content list
+  -> local_defs:(Typer.content * _) list
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
   -> string

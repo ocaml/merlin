@@ -298,7 +298,7 @@ and browse_cmts ~root modules =
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
         Some loc
       | _ ->
-        let browses = Browse.of_typer_contents [ typedtree ] in
+        let browses = Browse.of_typer_contents [(typedtree, [])] in
         let trie = Typedtrie.of_browses browses in
         cached.Cmt_cache.location_trie <- trie ;
         locate modules trie
@@ -590,7 +590,7 @@ let inspect_context browse path pos =
   | node :: _ ->
     let open BrowseT in
     match node.t_node with
-    | Pattern p -> 
+    | Pattern p ->
       Logger.debugf section (fun fmt p ->
         Format.pp_print_string fmt "current node is: " ;
         Printtyped.pattern 0 fmt p

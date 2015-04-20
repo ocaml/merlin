@@ -150,6 +150,12 @@ let () =
   with _ ->
     ()
   end;
+  Printexc.register_printer (function
+      | Env.Error error ->
+        let ppf, to_string = Format.to_string () in
+        Env.report_error ppf error;
+        Some (to_string ())
+      | _ -> None);
   at_exit Logger.shutdown;
   (* Setup signals *)
   ignore (signal Sys.Signal_ignore);

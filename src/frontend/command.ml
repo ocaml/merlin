@@ -681,7 +681,7 @@ let dispatch (state : state) =
   | (Dump (`Typer `Output) : a request) ->
     with_typer state @@ fun typer ->
     let ppf, to_string = Format.to_string () in
-    List.iter (function
+    List.iter (fun (content,_) -> match content with
         | `Sg sg -> Printtyped.interface ppf sg
         | `Str str -> Printtyped.implementation ppf str
         | `Fail (_,loc) ->

@@ -41,7 +41,7 @@ type content =
   | `Fail of Env.t * Location.t
   ]
 
-val contents : t -> content list
+val contents : t -> (content * Typecore.delayed_check list) list
 val exns : t -> exn list
 val delayed_checks : t -> exn list
 val extensions : t -> Extension.set

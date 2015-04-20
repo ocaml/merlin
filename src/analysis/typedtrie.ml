@@ -99,7 +99,7 @@ let rec build ~trie browses =
       Alias (tag_path ~namespace p)
     | `Str _
     | `Sg  _ as s ->
-      Internal (build ~trie:Trie.empty (Browse.of_typer_contents [s]))
+      Internal (build ~trie:Trie.empty (Browse.of_typer_contents [(s, [])]))
     | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
     | `Functor (located_name, pack_loc, packed) ->
@@ -171,7 +171,7 @@ let rec build ~trie browses =
             assert false
           | `Apply _ -> f Leaf
           | `Str _
-          | `Sg  _ as s -> build ~trie (Browse.of_typer_contents [ s ])
+          | `Sg  _ as s -> build ~trie (Browse.of_typer_contents [(s, [])])
         in
         helper packed
       end

@@ -129,7 +129,7 @@ let rec fix_loc env t =
     {t with t_env; t_children = lazy (List.map (fix_loc t_env) (Lazy.force t_children))}
 
 let of_typer_contents contents =
-  let of_content = function
+  let of_content (content,_) = match content with
     | `Fail (env, loc) ->
       BrowseT.of_node ~loc ~env BrowseT.Dummy
     | (`Str _ | `Sg _) as item ->
