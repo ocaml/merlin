@@ -829,10 +829,9 @@ let dispatch (state : state) =
     | lst -> `Failures lst
     end
 
-  | (Path (var,action,pathes) : a request) ->
+  | (Path (var,action,paths) : a request) ->
     let project = Buffer.project state.buffer in
-    List.iter pathes
-      ~f:(Project.User.path project ~action ~var ?cwd:None)
+    List.iter paths ~f:(Project.User.path project ~action ~var ?cwd:None)
 
   | (Path_list `Build : a request) ->
     let project = Buffer.project state.buffer in
