@@ -1752,8 +1752,10 @@ calls (lighter can be updated at a high frequency)"
 (defun merlin--locate-pure (&optional ident)
   "Locate the identifier IDENT at point."
   (let ((answer (merlin--locate-pos ident)))
-    (if (and answer (listp answer))
-      (merlin-goto-file-and-point answer)
+    (if answer
+      (if (listp answer)
+        (merlin-goto-file-and-point answer)
+        (error answer))
       (error "Not found. (Check *Messages* for potential errors)"))))
 
 (defun merlin-locate-ident (ident)
