@@ -41,6 +41,35 @@ let new_state () =
   let buffer = Buffer.create Parser.implementation in
   {buffer; lexer = None}
 
+let checkout_buffer_cache = ref []
+let checkout_buffer =
+  let cache_size = 8 in
+  fun ?dot_merlins ?path ft ->
+    try
+      match path with
+      | None -> raise Not_found
+      | Some path -> List.assoc (ft,path,dot_merlins) !checkout_buffer_cache
+    with Not_found ->
+      let parser = match ft with
+        | `ML -> Raw_parser.implementation_state
+        | `MLI ->  Raw_parser.interface_state
+      in
+      let buffer = Buffer.create ?dot_merlins ?path parser in
+      begin match path with
+        | Some path ->
+          checkout_buffer_cache := ((ft,path,dot_merlins), buffer) ::
+                                   List.take_n cache_size !checkout_buffer_cache
+        | None -> ()
+      end;
+      begin match path with
+        | Some path when Filename.check_suffix path "myocamlbuild.ml" ->
+          let project = Buffer.project buffer in
+          (* Failure is not an issue. *)
+          ignore @@ Project.User.load_packages project ["ocamlbuild"]
+        | _ -> ()
+      end;
+      buffer
+
 let with_typer state f =
   let typer = Buffer.typer state.buffer in
   Typer.with_typer typer (fun () -> f typer)
@@ -578,27 +607,19 @@ let dispatch (state : state) =
           Option.map item ~f:(fun i -> i.BrowseT.t_loc)
       )
 
-  | (Reset (ml,path,dot_merlins) : a request) ->
-    let parser = match ml, path with
-      | `ML, _  -> Raw_parser.implementation_state
-      | `MLI, _ -> Raw_parser.interface_state
-      | `Auto, Some path when Filename.check_suffix path ".mli" ->
-        Raw_parser.interface_state
-      | `Auto, _ -> Raw_parser.implementation_state
+  | (Reset (ft,path,dot_merlins) : a request) ->
+    let ft = match ft, path with
+      | (`ML | `MLI as ft), _  -> ft
+      | `Auto, Some path when Filename.check_suffix path ".mli" -> `MLI
+      | `Auto, _ -> `ML
     in
-    let buffer = Buffer.create ?dot_merlins ?path parser in
-    begin match path with
-    | Some path when Filename.check_suffix path "myocamlbuild.ml" ->
-      let project = Buffer.project buffer in
-      (* Failure is not an issue. *)
-      ignore @@ Project.User.load_packages project ["ocamlbuild"]
-    | _ -> ()
-    end ;
+    let buffer = checkout_buffer ?dot_merlins ?path ft in
     buffer_changed state;
     state.buffer <- buffer;
     cursor_state state
 
   | (Refresh : a request) ->
+    checkout_buffer_cache := [];
     Project.invalidate ~flush:true (Buffer.project state.buffer)
 
   | (Errors : a request) ->
