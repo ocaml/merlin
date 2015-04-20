@@ -427,18 +427,19 @@ return DEFAULT or the value associated to KEY."
   "Return the buffer name corresponding to the merlin instance NAME."
   (format " *merlin (%s)*" name))
 
-(defun merlin-process-buffer ()
+(defun merlin-process-buffer (&optional instance-name)
   "Return the process buffer of the current buffer."
-  (get-buffer (merlin-instance-buffer-name merlin-instance)))
+  (get-buffer (merlin-instance-buffer-name
+                (if instance-name instance-name merlin-instance))))
 
-(defun merlin-process ()
+(defun merlin-process (&optional instance-name)
   "Return the process of the current buffer."
-  (and (merlin-process-buffer)
-       (buffer-local-value 'merlin-process (merlin-process-buffer))))
+  (and (merlin-process-buffer instance-name)
+       (buffer-local-value 'merlin-process (merlin-process-buffer instance-name))))
 
-(defun merlin-process-owner ()
+(defun merlin-process-owner (&optional instance-name)
   "Return the last user of the process of the current buffer."
-  (buffer-local-value 'merlin-process-owner (merlin-process-buffer)))
+  (buffer-local-value 'merlin-process-owner (merlin-process-buffer instance-name)))
 
 (defun merlin-start-process (flags &optional configuration)
   "Start the merlin process by fetching the information inside CONFIGURATION. FLAGS contains the list of flags to give merlin.
@@ -471,7 +472,7 @@ return DEFAULT or the value associated to KEY."
       (message "Starting merlin instance: %s (binary=%s)."
 	       name command))
     (setq merlin-instance name)
-    (when (not (merlin-process-started-p name))
+    (when (merlin-process-dead-p name)
       (let* ((buffer (get-buffer-create buffer-name))
              (process-environment (append
                                     (if logfile
@@ -555,9 +556,14 @@ return DEFAULT or the value associated to KEY."
   "Return whether the current buffer was the current user of the merlin process."
   (equal (merlin-process-owner) (buffer-name)))
 
-(defun merlin-process-started-p (name)
+(defun merlin-process-started-p (&optional name)
   "Return non-nil if the merlin process for the instance NAME is already started."
-  (get-buffer (merlin-instance-buffer-name name)))
+  (and (merlin-process name)
+       (equal (process-status (merlin-process name)) 'run)))
+
+(defun merlin-process-dead-p (&optional name)
+  "Return non-nil if merlin process is dead."
+  (not (merlin-process-started-p name)))
 
 (defun merlin-kill-process (&optional buffer)
   "Kill the merlin process inside BUFFER. If BUFFER is nil, use
@@ -1289,7 +1295,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
             (cmd  (list 'type 'expression expr 'at loc))
             (res  (merlin-send-command cmd)))
        (merlin--type-display-in-buffer res)))
-    
+
     (t (merlin--type-display-in-buffer
          (merlin--company-get-candidate-type candidate))))
   (get-buffer merlin-type-buffer-name))
@@ -2091,7 +2097,7 @@ Returns the position."
          (instance (lookup-default 'name conf "default")))
     (setq merlin-instance instance)
     ; if there is not yet a merlin process
-    (unless (merlin-process-started-p instance)
+    (when (merlin-process-dead-p instance)
       (merlin-start-process merlin-default-flags conf))
     (when (and (fboundp 'auto-complete-mode)
                merlin-use-auto-complete-mode)
@@ -2114,11 +2120,6 @@ Returns the position."
   (let ((file (lookup-default 'logfile (merlin-process-data) nil)))
     (if file (find-file-other-window file)
       (message "No log file for this instance."))))
-
-(defun merlin-process-dead-p ()
-  "Return non-nil if merlin process is dead."
-  (not (and (merlin-process)
-            (equal (process-status (merlin-process)) 'run))))
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
