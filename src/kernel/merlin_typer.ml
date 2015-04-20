@@ -281,7 +281,21 @@ let env t      = (get_value t).env
 let exns t     = (get_value t).exns
 let delayed_checks t =
   protect_typer t @@ fun exns ->
-  Typecore.delayed_checks := (get_value t).delayed_checks;
+  let st = get_value t in
+  List.iter ~f:(fun content ->
+      try match content with
+        | `Str str ->
+          ignore (Includemod.signatures st.env
+                    str.Typedtree.str_type
+                    str.Typedtree.str_type : Typedtree.module_coercion);
+        | `Sg sg ->
+          ignore (Includemod.signatures st.env
+                    sg.Typedtree.sig_type
+                    sg.Typedtree.sig_type : Typedtree.module_coercion);
+        | `Fail _ -> ()
+      with exn -> exns := exn :: !exns
+    ) st.contents;
+  Typecore.delayed_checks := st.delayed_checks;
   Typecore.force_delayed_checks ();
   !exns
 
