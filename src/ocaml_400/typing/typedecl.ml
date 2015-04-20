@@ -49,7 +49,7 @@ exception Error of Location.t * error
 
 (* Enter all declared types in the environment as abstract types *)
 
-let enter_type env (name, sdecl) id =
+let enter_type env (_name, sdecl) id =
   let decl =
     { type_params =
         List.map (fun _ -> Btype.newgenvar ()) sdecl.ptype_params;
@@ -136,6 +136,7 @@ let make_params sdecl =
     raise(Error(sdecl.ptype_loc, Repeated_parameter))
 
 let transl_declaration env (name, sdecl) id =
+  let name = Fake.Nonrec.drop_loc name in
   (* Bind type parameters *)
   reset_type_variables();
   Ctype.begin_def ();
@@ -717,28 +718,30 @@ let compute_variance_decls env cldecls =
 let check_duplicates name_sdecl_list =
   let labels = Hashtbl.create 7 and constrs = Hashtbl.create 7 in
   List.iter
-    (fun (name, sdecl) -> match sdecl.ptype_kind with
-      Ptype_variant cl ->
-        List.iter
-          (fun (cname, _, _, loc) ->
-            try
-              let name' = Hashtbl.find constrs cname.txt in
-              Location.prerr_warning loc
-                (Warnings.Duplicate_definitions
-                   ("constructor", cname.txt, name', name.txt))
-            with Not_found -> Hashtbl.add constrs cname.txt name.txt)
-          cl
-    | Ptype_record fl ->
-        List.iter
-          (fun (cname, _, _, loc) ->
-            try
-              let name' = Hashtbl.find labels cname.txt in
-              Location.prerr_warning loc
-                (Warnings.Duplicate_definitions
-                   ("label", cname.txt, name', name.txt))
-            with Not_found -> Hashtbl.add labels cname.txt name.txt)
-          fl
-    | Ptype_abstract -> ())
+    (fun (name, sdecl) ->
+       let name = Fake.Nonrec.drop_loc name in
+       match sdecl.ptype_kind with
+         Ptype_variant cl ->
+         List.iter
+           (fun (cname, _, _, loc) ->
+              try
+                let name' = Hashtbl.find constrs cname.txt in
+                Location.prerr_warning loc
+                  (Warnings.Duplicate_definitions
+                     ("constructor", cname.txt, name', name.txt))
+              with Not_found -> Hashtbl.add constrs cname.txt name.txt)
+           cl
+       | Ptype_record fl ->
+         List.iter
+           (fun (cname, _, _, loc) ->
+              try
+                let name' = Hashtbl.find labels cname.txt in
+                Location.prerr_warning loc
+                  (Warnings.Duplicate_definitions
+                     ("label", cname.txt, name', name.txt))
+              with Not_found -> Hashtbl.add labels cname.txt name.txt)
+           fl
+       | Ptype_abstract -> ())
     name_sdecl_list
 
 (* Force recursion to go through id for private types*)
@@ -758,6 +761,11 @@ let name_recursion sdecl id decl =
 
 (* Translate a set of mutually recursive type declarations *)
 let transl_type_decl env name_sdecl_list =
+  let is_nonrec = List.exists (fun (n,_) -> Fake.Nonrec.is n.txt) name_sdecl_list in
+  let name_sdecl_list = List.map (fun (n,sdecl) ->
+      ({n with txt = Fake.Nonrec.drop n.txt}, sdecl))
+      name_sdecl_list
+  in
   (* Add dummy types for fixed rows *)
   let fixed_types =
     List.filter (fun (_, sd) -> is_fixed_type sd) name_sdecl_list
@@ -783,12 +791,17 @@ let transl_type_decl env name_sdecl_list =
   Ctype.init_def(Ident.current_time());
   Ctype.begin_def();
   (* Enter types. *)
-  let temp_env = List.fold_left2 enter_type env name_sdecl_list id_list in
+  let temp_env =
+    if is_nonrec then
+      env
+    else
+      List.fold_left2 enter_type env name_sdecl_list id_list
+  in
   (* Translate each declaration. *)
   let current_slot = ref None in
   let warn_unused = Warnings.is_active (Warnings.Unused_type_declaration "") in
   let id_slots id =
-    if not warn_unused then id, None
+    if is_nonrec || not warn_unused then id, None
     else
       (* See typecore.ml for a description of the algorithm used
          to detect unused declarations in a set of recursive definitions. *)
@@ -823,9 +836,11 @@ let transl_type_decl env name_sdecl_list =
       decls env
   in
   (* Update stubs *)
-  List.iter2
-    (fun id (_, sdecl) -> update_type temp_env newenv id sdecl.ptype_loc)
-    id_list name_sdecl_list;
+  if is_nonrec then ()
+  else
+    List.iter2
+      (fun id (_, sdecl) -> update_type temp_env newenv id sdecl.ptype_loc)
+      id_list name_sdecl_list;
   (* Generalize type declarations. *)
   Ctype.end_def();
   List.iter (fun (_, decl) -> generalize_decl decl) decls;
@@ -860,11 +875,6 @@ let transl_type_decl env name_sdecl_list =
   let required =
     List.map (fun (_, sdecl) -> sdecl.ptype_variance, sdecl.ptype_loc)
       name_sdecl_list
-  in
-  let decls  = List.map (fun (id,n) -> Fake.Nonrec.ident_drop id,n) decls in
-  let tdecls = List.map (fun (id,loc,n) ->
-      Fake.Nonrec.ident_drop id,
-      {loc with txt = Fake.Nonrec.drop loc.txt}, n) tdecls
   in
   let final_decls, final_env =
     compute_variance_fixpoint env decls required (List.map init_variance decls)
@@ -1021,7 +1031,7 @@ let abstract_type_decl arity =
 let approx_type_decl env name_sdecl_list =
   List.map
     (fun (name, sdecl) ->
-      (Ident.create name.txt,
+      (Ident.create (Fake.Nonrec.drop name.txt),
        abstract_type_decl (List.length sdecl.ptype_params)))
     name_sdecl_list
 

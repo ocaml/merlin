@@ -837,15 +837,17 @@ module Nonrec = struct
     with Not_found -> false
 
   let drop t =
-    let l = String.length t in
     if is t
-    then String.sub t type_nonrec_prefix_l (l - type_nonrec_prefix_l)
+    then
+      let l = String.length t in
+      String.sub t type_nonrec_prefix_l (l - type_nonrec_prefix_l)
     else t
 
-  let ident_drop id =
-    if is id.Ident.name
-    then { id with Ident.name = drop id.Ident.name }
-    else id
+  let drop_loc t =
+    if is t.Location.txt then
+      {t with Location.txt = drop t.Location.txt}
+    else
+      t
 end
 
 (* Custom printf extension *)

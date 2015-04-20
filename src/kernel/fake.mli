@@ -86,7 +86,7 @@ module Nonrec : sig
   val add  : string Location.loc -> string Location.loc
   val is   : string -> bool
   val drop : string -> string
-  val ident_drop : Ident.t -> Ident.t
+  val drop_loc : string Location.loc -> string Location.loc
 end
 
 (* Custom printf extension *)
