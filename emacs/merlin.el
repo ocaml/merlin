@@ -230,6 +230,10 @@ field logfile (see `merlin-start-process')"
   "The transaction queue for the local process (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin-process-queue)
 
+(defvar merlin--process-busy nil
+  "Non-nil if process is busy treating a synchronous operation.")
+(make-variable-buffer-local 'merlin--process-busy)
+
 (defvar merlin-process-data nil
   "The process data (as returned by the grouping function) (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin-process-data)
@@ -441,6 +445,14 @@ return DEFAULT or the value associated to KEY."
   "Return the last user of the process of the current buffer."
   (buffer-local-value 'merlin-process-owner (merlin-process-buffer instance-name)))
 
+(defun merlin--process-busy (&optional instance-name)
+  (buffer-local-value 'merlin--process-busy (merlin-process-buffer instance-name)))
+
+(defun merlin--process-busy-set (value &optional instance-name)
+  (with-current-buffer (merlin-process-buffer instance-name)
+     (assert (eq merlin--process-busy (not value)))
+     (setq merlin--process-busy value)))
+
 (defun merlin-start-process (flags &optional configuration)
   "Start the merlin process by fetching the information inside CONFIGURATION. FLAGS contains the list of flags to give merlin.
    CONFIGURATION is an association list with the following keys:
@@ -574,14 +586,6 @@ the merlin buffer of the current buffer."
       (ignore-errors (kill-process merlin-process)))
     (unless merlin-debug (kill-buffer buffer))))
 
-(defun merlin--wait-for-answer (promise)
-  "Waits for merlin to answer."
-  (when promise
-    (let ((w32-pipe-read-delay 0)) ;; fix 50ms latency of emacs on win32
-      (while (not (car promise))
-        (accept-process-output (merlin-process) 1.0)))
-    (cdr promise)))
-
 (defun merlin--reset ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (let* ((name (or buffer-file-name "toplevel"))
@@ -677,8 +681,15 @@ the error message otherwise print a generic error message."
 
 (defun merlin-send-command (command &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
-  (merlin--wait-for-answer (merlin-send-command-async
+  (let ((promise (merlin-send-command-async
                             command (lambda (data) data) callback-if-exn)))
+    (when promise
+      (merlin--process-busy-set t)
+      (let ((w32-pipe-read-delay 0)) ;; fix 50ms latency of emacs on win32
+        (while (not (car promise))
+               (accept-process-output (merlin-process) 1.0)))
+      (merlin--process-busy-set nil)
+      (cdr promise))))
 
 ;; SPECIAL CASE OF COMMANDS
 
@@ -1703,12 +1714,13 @@ is active)."
   "Returns a pair of two string lists (dot_merlins . failures) with a list of
 .merlins file loaded and a list of error messages, if any error occured during
 loading"
-  (let* ((r (merlin-send-command '(project get)))
-         (failed (cdr (assoc 'failures r)))
-         (result (cdr (assoc 'result r)))
-         (ret (cons result failed)))
-    (setq merlin--project-cache (cons (float-time) ret))
-    ret))
+  (if (merlin--process-busy) (cons nil nil)
+    (let* ((r (merlin-send-command '(project get)))
+           (failed (cdr (assoc 'failures r)))
+           (result (cdr (assoc 'result r)))
+           (ret (cons result failed)))
+      (setq merlin--project-cache (cons (float-time) ret))
+      ret)))
 
 (defun merlin--project-get-cached ()
   "Like `merlin--project-get' but use a cache to prevent to limit number of
