@@ -91,7 +91,7 @@ let rec tag_path ~namespace = function
   | [] -> invalid_arg "Typedtrie.tag_path"
   | [ x ] -> [ x, namespace ]
   | x :: xs -> (x, `Mod) :: tag_path ~namespace xs
-
+                              
 let rec build ?(local_buffer=false) ~trie browses =
   let rec node_for_direct_mod namespace = function
     | `Alias path ->
@@ -99,7 +99,7 @@ let rec build ?(local_buffer=false) ~trie browses =
       Alias (tag_path ~namespace p)
     | `Str _
     | `Sg  _ as s ->
-      Internal (build ~trie:Trie.empty (Browse.of_typer_contents [(s, [])]))
+      Internal (build ~local_buffer ~trie:Trie.empty (Browse.of_typer_contents [(s, [])]))
     | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
     | `Functor (located_name, pack_loc, packed) when local_buffer ->
@@ -126,6 +126,29 @@ let rec build ?(local_buffer=false) ~trie browses =
     | `Unpack | `Functor _ -> (* TODO! *)
       Leaf
   in
+  let rec collect_local_modules trie nodes =
+    let aux trie t =
+      match t.t_node with
+      (* Traverse expressions (there are no "match" nodes, only cases). *)
+      | Case _ 
+      | Expression _
+      (* Traverse [let .. in], no need to create node for these, if we were
+         looking for a local binding, its location would have been in the
+         environment. *)
+      | Value_binding _ -> collect_local_modules trie t.t_children
+      (* Record local module bindings *)
+      | Module_binding mb ->
+        let node =
+          node_for_direct_mod `Mod
+            (Raw_compat.remove_indir_me mb.Typedtree.mb_expr)
+        in
+        Trie.add_multiple (Ident.name mb.Typedtree.mb_id) (t.t_loc, `Mod, node)
+          trie
+      (* Ignore patterns. *)
+      | _ -> trie
+    in
+    List.fold_left (Lazy.force nodes) ~init:trie ~f:aux
+  in
   List.fold_left (remove_top_indir browses) ~init:trie ~f:(fun trie t ->
     let open Typedtree in
     match t.t_node with
@@ -141,7 +164,7 @@ let rec build ?(local_buffer=false) ~trie browses =
         | Structure_item item -> Raw_compat.identify_str_includes item
         | _ -> assert false
       with
-      | `Not_included -> build ~trie (Lazy.force t.t_children)
+      | `Not_included -> build ~local_buffer ~trie (Lazy.force t.t_children)
       | `Included (included_idents, packed) ->
         let rec helper packed =
           let f data =
@@ -171,14 +194,21 @@ let rec build ?(local_buffer=false) ~trie browses =
             assert false
           | `Apply _ -> f Leaf
           | `Str _
-          | `Sg  _ as s -> build ~trie (Browse.of_typer_contents [(s, [])])
+          | `Sg  _ as s -> build ~local_buffer ~trie (Browse.of_typer_contents [(s, [])])
         in
         helper packed
       end
     | Value_binding vb ->
       let idlocs = Raw_compat.pattern_idlocs vb.vb_pat in
       List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
-        Trie.add_multiple id (loc, `Vals, Leaf) trie
+        if local_buffer then
+          let children = collect_local_modules Trie.empty t.t_children in
+          if Trie.is_empty children then
+            Trie.add_multiple id (t.t_loc, `Vals, Leaf) trie
+          else
+            Trie.add_multiple id (t.t_loc, `Vals, Internal children) trie
+        else
+          Trie.add_multiple id (loc, `Vals, Leaf) trie
       )
     | Value_description vd ->
       let open Typedtree.Override in
@@ -275,6 +305,18 @@ let rec follow ?before trie = function
     | Not_found ->
       Resolves_to (path, None)
 
+let dump_namespace fmt namespace =
+  Format.pp_print_string fmt
+    (match namespace with
+     | `Mod -> "(Mod) "
+     | `Functor -> "(functor)"
+     | `Labels -> "(lbl) "
+     | `Constr -> "(cstr) "
+     | `Type -> "(typ) "
+     | `Vals -> "(val) "
+     | `Modtype -> "(Mty) "
+     | `Unknown -> "(?)")
+
 let rec find ~before trie path =
   match
     Trie.find_some (fun _name loc _namespace _node ->
@@ -304,16 +346,7 @@ let find ?before trie path =
 
 let rec dump fmt trie =
   let dump_node (loc, namespace, node) =
-    Format.pp_print_string fmt
-      (match namespace with
-       | `Mod -> "(Mod) "
-       | `Functor -> "(functor)"
-       | `Labels -> "(lbl) "
-       | `Constr -> "(cstr) "
-       | `Type -> "(typ) "
-       | `Vals -> "(val) "
-       | `Modtype -> "(Mty) "
-       | `Unknown -> "(?)") ;
+    dump_namespace fmt namespace;
     match node with
     | Leaf -> Location.print_loc' fmt loc
     | Included path ->

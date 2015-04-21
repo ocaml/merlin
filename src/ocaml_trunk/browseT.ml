@@ -126,6 +126,7 @@ let rec of_node t_node =
     | Module_binding          {mb_loc = loc}
     | Module_declaration      {md_loc = loc}
     | Module_type_declaration {mtd_loc = loc}
+    | Value_binding           {vb_loc = loc}
     | Value_description       {val_loc = loc}
     | Type_declaration        {typ_loc = loc}
     | Label_declaration       {ld_loc = loc}
@@ -142,7 +143,7 @@ let rec of_node t_node =
       -> Some loc.Location.loc, None
     | Structure {str_final_env = env} | Signature {sig_final_env = env}
       -> None, Some env
-    | Case _ | Class_structure _ | Value_binding _ | Type_extension _
+    | Case _ | Class_structure _ | Type_extension _
     | Class_field_kind _ | Module_type_constraint _ | With_constraint _
     | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
     | Dummy
