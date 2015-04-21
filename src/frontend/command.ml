@@ -317,7 +317,6 @@ let dispatch (state : state) =
 
   | (Enclosing pos : a request) ->
     with_typer state @@ fun typer ->
-    let open BrowseT in
     let structures = Typer.contents typer in
     let structures = Browse.of_typer_contents structures in
     let path = Browse.enclosing pos structures in
@@ -325,51 +324,10 @@ let dispatch (state : state) =
 
   | (Complete_prefix (prefix, pos, with_doc) : a request) ->
     let complete typer =
-      let node, ancestors =
-        Browse.node_at ~skip_recovered:true typer pos in
-      let open BrowseT in let open Typedtree in
-      let target_type = ref (match node with
-          | { t_node = Expression { exp_type = ty} }
-          | { t_node = Pattern { pat_type = ty} } -> Some ty
-          | _ -> None)
+      let node, ancestors = Browse.node_at ~skip_recovered:true typer pos in
+      let target_type, context =
+        Completion.application_context ~verbosity ~prefix node ancestors
       in
-      let context =
-        match node, ancestors with
-        | { t_node = Expression earg },
-          { t_node = Expression ({ exp_desc = Texp_apply (efun, _);
-                                   exp_type = app_type; exp_env } as app) } :: _
-          when earg != efun ->
-          Printtyp.wrap_printing_env exp_env ~verbosity @@ fun () ->
-          (* Type variables shared accross arguments should all be
-             printed with the same name.
-             [Printtyp.type_scheme] ensure that a name is unique within a given
-             type, but not accross different invocations.
-             [reset] followed by calls to [mark_loops] and [type_sch] provide
-             that *)
-          Printtyp.reset ();
-          let pr t =
-            let ppf, to_string = Format.to_string () in
-            Printtyp.mark_loops t;
-            Printtyp.type_sch ppf t;
-            to_string ()
-          in
-          (* Special case for optional arguments applied with ~,
-             get the argument wrapped inside Some _ *)
-          let earg =
-            match Raw_compat.optional_label_sugar earg.Typedtree.exp_desc with
-            | None -> earg
-            | Some earg ->
-              target_type := Some earg.Typedtree.exp_type;
-              earg
-          in
-          let labels = Completion.labels_of_application ~prefix app in
-          `Application { Compl.
-                         argument_type = pr earg.exp_type;
-                         labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
-                       }
-        | _ -> `Unknown
-      in
-      let target_type = !target_type in
       let get_doc =
         if not with_doc then None else
         let project    = Buffer.project state.buffer in
@@ -387,12 +345,16 @@ let dispatch (state : state) =
       {Compl. entries = List.rev entries; context }
     in
     let lexer0 = Buffer.lexer state.buffer in
-    let lexer = History.seek_backward
+    let lexer =
+      History.seek_backward
         (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) <= 0)
-        lexer0 in
-    let lexer = History.seek_forward ~last:true
+        lexer0
+    in
+    let lexer =
+      History.seek_forward ~last:true
         (fun (_,item) -> Lexing.compare_pos (Lexer.item_end item) pos <= 0)
-        lexer in
+        lexer
+    in
     let need_token =
       let open Raw_parser in
       let exns, item = History.focused lexer in
@@ -407,24 +369,25 @@ let dispatch (state : state) =
         Some (exns, Lexer.Valid (pos, LIDENT "", pos))
     in
     begin match need_token with
-      | None -> with_typer state complete
-      | Some token ->
-        (* Setup fake AST *)
-        let lexer' = History.fake_insert token lexer in
-        let lexer' = History.seek (History.position lexer0 + 1) lexer' in
-        ignore (Buffer.update state.buffer lexer' : [> ]);
-        try_finally
-          (* Complete on adjusted buffer *)
-          (fun () -> with_typer state complete)
-          (* Restore original buffer *)
-          (fun () -> ignore (Buffer.update state.buffer lexer0 : [> ]))
+    | None -> with_typer state complete
+    | Some token ->
+      (* Setup fake AST *)
+      let lexer' = History.fake_insert token lexer in
+      let lexer' = History.seek (History.position lexer0 + 1) lexer' in
+      ignore (Buffer.update state.buffer lexer' : [> ]);
+      try_finally
+        (* Complete on adjusted buffer *)
+        (fun () -> with_typer state complete)
+        (* Restore original buffer *)
+        (fun () -> ignore (Buffer.update state.buffer lexer0 : [> ]))
     end
 
   | (Expand_prefix (prefix, pos) : a request) ->
     with_typer state @@ fun typer ->
     let env =
       let node, _ = Browse.node_at typer pos in
-      node.BrowseT.t_env in
+      node.BrowseT.t_env
+    in
     let global_modules = Buffer.global_modules state.buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
     { Compl. entries ; context = `Unknown }
@@ -567,7 +530,7 @@ let dispatch (state : state) =
         let recoveries = History.move 1 recoveries in
         let item, _ = History.focused recoveries in
         let items = Buffer.lexer state.buffer in
-        let items = History.seek_backward (fun (_,item') -> item' != item) items in
+        let items = History.seek_backward (fun (_,i) -> i != item) items in
         buffer_freeze state items;
     end;
     cursor_state state

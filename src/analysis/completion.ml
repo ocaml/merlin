@@ -29,6 +29,8 @@
 
 open Std
 open Merlin_lib
+    
+open BrowseT
 
 (* List methods of an object.
    Code taken from [uTop](https://github.com/diml/utop
@@ -52,8 +54,7 @@ let rec methods_of_type env ?(acc=[]) type_expr =
     end
   | _ -> acc
 
-let classify_node =
-  let open BrowseT in function
+let classify_node = function
   | Dummy                      -> `Expression
   | Pattern                  _ -> `Pattern
   | Expression               _ -> `Expression
@@ -394,7 +395,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
       && valid tag name
     in
     if not is_label then
-      let kind = classify_node node.BrowseT.t_node in
+      let kind = classify_node node.t_node in
       let order = completion_order kind in
       let add_completions acc kind =
         get_candidates ?get_doc ?target_type prefix path kind ~validate env @ acc
@@ -432,10 +433,10 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
 
 (* Propose completion from a particular node *)
 let node_complete buffer ?get_doc ?target_type node prefix =
-  let env = node.BrowseT.t_env in
+  let env = node.t_env in
   Printtyp.wrap_printing_env env @@ fun () ->
-  match node.BrowseT.t_node with
-  | BrowseT.Method_call (obj,_) -> complete_methods ~env ~prefix obj
+  match node.t_node with
+  | Method_call (obj,_) -> complete_methods ~env ~prefix obj
   | _ -> complete_prefix ~env ~prefix buffer node
 
 let expand_prefix ~global_modules env prefix =
@@ -514,3 +515,50 @@ let labels_of_application ?(prefix="") node =
   match node.exp_desc with
   | Texp_apply (f, args) -> labels_of_application ~prefix ~env:node.exp_env f args
   | _ -> []
+
+let application_context ~verbosity ~prefix node ancestors =
+  let module Printtyp = Type_utils.Printtyp in
+  let target_type = ref (
+    match node with
+    | { t_node = Expression { exp_type = ty } }
+    | { t_node = Pattern { pat_type = ty } } -> Some ty
+    | _ -> None
+  )
+  in
+  let context =
+    match node, ancestors with
+    | { t_node = Expression earg },
+      { t_node = Expression ({ exp_desc = Texp_apply (efun, _);
+                               exp_type = app_type; exp_env } as app) } :: _
+      when earg != efun ->
+      Printtyp.wrap_printing_env exp_env ~verbosity @@ fun () ->
+      (* Type variables shared accross arguments should all be
+         printed with the same name.
+         [Printtyp.type_scheme] ensure that a name is unique within a given
+         type, but not accross different invocations.
+         [reset] followed by calls to [mark_loops] and [type_sch] provide
+         that *)
+      Printtyp.reset ();
+      let pr t =
+        let ppf, to_string = Format.to_string () in
+        Printtyp.mark_loops t;
+        Printtyp.type_sch ppf t;
+        to_string ()
+      in
+      (* Special case for optional arguments applied with ~,
+         get the argument wrapped inside Some _ *)
+      let earg =
+        match Raw_compat.optional_label_sugar earg.exp_desc with
+        | None -> earg
+        | Some earg ->
+          target_type := Some earg.exp_type;
+          earg
+      in
+      let labels = labels_of_application ~prefix app in
+      `Application { Protocol.Compl.
+                     argument_type = pr earg.exp_type;
+                     labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
+                   }
+    | _ -> `Unknown
+  in
+  !target_type, context
