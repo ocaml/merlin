@@ -404,7 +404,8 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
     else
       Raw_compat.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
         if not (valid `Label name) then candidates else
-          make_candidate ~exact:(name = prefix) name (`Label l) :: candidates
+          make_candidate ?get_doc ~exact:(name = prefix) name (`Label l)
+          :: candidates
       ) path env []
   in
   let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
@@ -420,7 +421,8 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
           if name = prefix && uniq (`Mod, name) then
             try
               let path, md = Raw_compat.lookup_module (Longident.Lident name) env in
-              make_candidate ~exact:true name ~path (`Mod md) :: candidates
+              make_candidate ?get_doc ~exact:true name ~path (`Mod md)
+              :: candidates
             with Not_found ->
               default :: candidates
           else if String.is_prefixed ~by:prefix name && uniq (`Mod,name) then
@@ -437,7 +439,7 @@ let node_complete buffer ?get_doc ?target_type node prefix =
   Printtyp.wrap_printing_env env @@ fun () ->
   match node.t_node with
   | Method_call (obj,_) -> complete_methods ~env ~prefix obj
-  | _ -> complete_prefix ~env ~prefix buffer node
+  | _ -> complete_prefix ?get_doc ~env ~prefix buffer node
 
 let expand_prefix ~global_modules env prefix =
   let lidents, last =

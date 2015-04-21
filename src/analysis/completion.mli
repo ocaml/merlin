@@ -30,7 +30,7 @@
 
 val node_complete
   : Merlin_lib.Buffer.t
-  -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * 'a ]
+  -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
                -> [> `Found of string ])
   -> ?target_type:Types.type_expr
   -> BrowseT.t
