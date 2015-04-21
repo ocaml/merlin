@@ -84,17 +84,17 @@ module Parsetree = struct
     pld_name, pld_mutable, pld_type, pld_loc
 end
 
-let signature_item_ident =
+let sig_item_idns =
   let open Types in function
-  | Sig_value (id, _)
-  | Sig_type (id, _, _)
-  | Sig_typext (id, _, _)
-  | Sig_module (id, _, _)
-  | Sig_modtype (id, _)
-  | Sig_class (id, _, _)
-  | Sig_class_type (id, _, _) -> id
+  | Sig_value (id, _) -> id, `Vals
+  | Sig_type (id, _, _) -> id, `Type
+  | Sig_typext (id, _, _) -> id, `Type
+  | Sig_module (id, _, _) -> id, `Mod
+  | Sig_modtype (id, _) -> id, `Modtype
+  | Sig_class (id, _, _) -> id, `Vals (* that's just silly *)
+  | Sig_class_type (id, _, _) -> id, `Type (* :_D *)
 
-let include_idents l = List.map signature_item_ident l
+let include_idents l = List.map sig_item_idns l
 
 let lookup_constructor = Env.lookup_constructor
 let lookup_label       = Env.lookup_label
@@ -239,83 +239,44 @@ let rec signature_loc =
   | Sig_class (_,_,_)
   | Sig_class_type (_,_,_) -> None
 
-let str_ident_locs item =
+let rec pattern_idlocs pat =
   let open Typedtree in
-  match item.str_desc with
-  | Tstr_value (_, binding_lst) ->
-    let rec inspect_pattern pat =
-      match pat.pat_desc with
-      | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
-      | Tpat_tuple patts
-      | Tpat_array patts
-      | Tpat_construct (_, _, patts) ->
-        List.concat_map patts ~f:inspect_pattern
-      | Tpat_record (lst, _) ->
-        List.map lst ~f:(fun (lid_loc, _, _pattern) ->
-          Longident.last lid_loc.Asttypes.txt, lid_loc.Asttypes.loc
-        ) (* TODO: handle rhs, i.e. [_pattern] *)
-      | Tpat_variant (_, Some pat, _) -> inspect_pattern pat
-      | _ -> []
-    in
-    List.concat_map binding_lst ~f:(fun b -> inspect_pattern b.vb_pat)
-  | Tstr_module mb -> [ Ident.name mb.mb_id , mb.mb_loc ]
-  | Tstr_recmodule mbs ->
-    List.map mbs ~f:(fun mb -> Ident.name mb.mb_id , mb.mb_loc)
-  | Tstr_modtype mtd -> [ Ident.name mtd.mtd_id , mtd.mtd_loc ]
-  | Tstr_type (rf, td_list) ->
-    List.map td_list ~f:(fun { typ_id ; typ_loc } ->
-      Ident.name typ_id, typ_loc
-    )
-  | Tstr_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
+  match pat.pat_desc with
+  | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
+  | Tpat_tuple patts
+  | Tpat_array patts
+  | Tpat_construct (_, _, patts) ->
+    List.concat_map patts ~f:pattern_idlocs
+  | Tpat_record (lst, _) ->
+    List.map lst ~f:(fun (lid_loc, _, _pattern) ->
+      Longident.last lid_loc.Asttypes.txt, lid_loc.Asttypes.loc
+    ) (* TODO: handle rhs, i.e. [_pattern] *)
+  | Tpat_variant (_, Some pat, _) -> pattern_idlocs pat
   | _ -> []
 
-let get_mod_expr_if_included ~name item =
+let identify_str_includes item =
   match item.Typedtree.str_desc with
-  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } when
-    List.exists (include_idents incl_type) ~f:(fun x -> Ident.name x = name) ->
-    `Mod_expr incl_mod
+  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_expr incl_mod)
   | _ -> `Not_included
 
-let sig_ident_locs item =
-  let open Typedtree in
-  match item.sig_desc with
-  | Tsig_value vd -> [ Ident.name vd.val_id , vd.val_loc ]
-  | Tsig_type (rf, td_list) ->
-    List.map td_list ~f:(fun { typ_id ; typ_loc } ->
-      Ident.name typ_id, typ_loc
-    )
-  | Tsig_typext te ->
-    (* N.B. we don't want to stop on "type M.t += ..." when looking for "M.t", but we do
-     * want to stop here if we are looking for a constructor added at this particular
-     * point. That's why we only get information about the constructors. *)
-    List.map te.tyext_constructors ~f:(fun ec ->
-      Ident.name ec.ext_id , ec.ext_loc
-    )
-  | Tsig_exception ec -> [ Ident.name ec.ext_id , ec.ext_loc ]
-  | Tsig_module md -> [ Ident.name md.md_id , md.md_loc ]
-  | Tsig_recmodule mds ->
-    List.map mds ~f:(fun md -> Ident.name md.md_id , md.md_loc)
-  | Tsig_modtype mtd -> [ Ident.name mtd.mtd_id , mtd.mtd_loc ]
-  | _ -> []
-
-let get_mod_type_if_included ~name item =
+let identify_sig_includes item =
   match item.Typedtree.sig_desc with
-  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } when
-    List.exists (include_idents incl_type) ~f:(fun x -> Ident.name x = name) ->
-    `Mod_type incl_mod
+  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_type incl_mod)
   | _ -> `Not_included
 
-let expose_module_binding item =
+let identify_str_includes item =
   match item.Typedtree.str_desc with
-  | Typedtree.Tstr_module mb -> [mb]
-  | Typedtree.Tstr_recmodule mbs -> mbs
-  | _ -> []
+  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_expr incl_mod)
+  | _ -> `Not_included
 
-let expose_module_declaration item =
+let identify_sig_includes item =
   match item.Typedtree.sig_desc with
-  | Typedtree.Tsig_module md -> [md]
-  | Typedtree.Tsig_recmodule mds -> mds
-  | _ -> []
+  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_type incl_mod)
+  | _ -> `Not_included
 
 let remove_indir_me me =
   match me.Typedtree.mod_desc with

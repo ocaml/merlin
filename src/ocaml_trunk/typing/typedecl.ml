@@ -1107,12 +1107,6 @@ let transl_type_decl env rec_flag sdecl_list =
       )
       sdecl_list
   in
-  let decls  = List.map (fun (id,n) -> Fake.Nonrec.ident_drop id,n) decls in
-  let tdecls = List.map (fun ({typ_id; typ_name} as tdecl) ->
-      {tdecl with
-       typ_id = Fake.Nonrec.ident_drop typ_id;
-       typ_name = {typ_name with txt = Fake.Nonrec.drop typ_name.txt}}) tdecls
-  in
   let final_decls, final_env =
     compute_variance_fixpoint env decls required (List.map init_variance decls)
   in
