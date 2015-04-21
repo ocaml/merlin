@@ -516,7 +516,8 @@ let locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc =
                    walking up the typedtree looking for '%s'"
           (Typedtrie.path_to_string modules)
       in
-      let trie = Typedtrie.of_browses (Browse.of_typer_contents local_defs) in
+      let browses = Browse.of_typer_contents local_defs in
+      let trie = Typedtrie.of_browses ~local_buffer:true browses in
       match locate ~pos modules trie with
       | None when Fallback.is_set () -> recover str_ident
       | None -> `Not_found (str_ident, File_switching.where_am_i ())

@@ -92,7 +92,7 @@ let rec tag_path ~namespace = function
   | [ x ] -> [ x, namespace ]
   | x :: xs -> (x, `Mod) :: tag_path ~namespace xs
 
-let rec build ~trie browses =
+let rec build ?(local_buffer=false) ~trie browses =
   let rec node_for_direct_mod namespace = function
     | `Alias path ->
       let p = Path.to_string_list path in
@@ -102,7 +102,7 @@ let rec build ~trie browses =
       Internal (build ~trie:Trie.empty (Browse.of_typer_contents [(s, [])]))
     | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
-    | `Functor (located_name, pack_loc, packed) ->
+    | `Functor (located_name, pack_loc, packed) when local_buffer ->
       (* We don't actually care about the namespace here. But whatever. *)
       let result = [ pack_loc, `Functor, node_for_direct_mod `Functor packed ] in
       let param  = [ located_name.Asttypes.loc, `Modtype, Leaf ] in
@@ -123,7 +123,7 @@ let rec build ~trie browses =
         ]
       in
       Internal trie
-    | `Unpack -> (* TODO! *)
+    | `Unpack | `Functor _ -> (* TODO! *)
       Leaf
   in
   List.fold_left (remove_top_indir browses) ~init:trie ~f:(fun trie t ->

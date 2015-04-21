@@ -31,7 +31,18 @@ open Cmt_cache
 
 type t = trie
 
-val of_browses : BrowseT.t list -> t
+val of_browses : ?local_buffer:bool -> BrowseT.t list -> t
+(** Constructs a trie from a list of [BrowseT.t].
+
+    If [?local_buffer] is [false] (the default) functor declaration, functor
+    application and value bindings will be leafs of the trie.
+    Otherwise they will be internal nodes; children of a value binding are local
+    module bindings (and their children). This is because [find] (see below)
+    first goes down the trie according to its [Lexing.position] parameter,
+    disregarding the path.
+    We don't create such nodes when [?local_buffer] is false because there is no
+    [cursor] in this case, so we can't be inside an expression, or a functor, …
+*)
 
 val tag_path : namespace:namespace -> string list -> path
 
