@@ -170,7 +170,7 @@ let dispatch (state : state) =
     let env = match pos with
       | None -> Typer.env typer
       | Some pos ->
-        let node, _ancestors = Completion.node_at typer pos in
+        let node, _ancestors = Browse.node_at typer pos in
         node.BrowseT.t_env
     in
     let ppf, to_string = Format.to_string () in
@@ -271,7 +271,7 @@ let dispatch (state : state) =
         aux [] offset
     in
     let small_enclosings =
-      let node, _ = Completion.node_at typer pos in
+      let node, _ = Browse.node_at typer pos in
       let env = node.BrowseT.t_env in
       let include_lident = match node.BrowseT.t_node with
         | BrowseT.Pattern _ -> false
@@ -326,7 +326,7 @@ let dispatch (state : state) =
   | (Complete_prefix (prefix, pos, with_doc) : a request) ->
     let complete typer =
       let node, ancestors =
-        Completion.node_at ~skip_recovered:true typer pos in
+        Browse.node_at ~skip_recovered:true typer pos in
       let open BrowseT in let open Typedtree in
       let target_type = ref (match node with
           | { t_node = Expression { exp_type = ty} }
@@ -356,7 +356,7 @@ let dispatch (state : state) =
           (* Special case for optional arguments applied with ~,
              get the argument wrapped inside Some _ *)
           let earg =
-            match Completion.optional_label_sugar earg.Typedtree.exp_desc with
+            match Raw_compat.optional_label_sugar earg.Typedtree.exp_desc with
             | None -> earg
             | Some earg ->
               target_type := Some earg.Typedtree.exp_type;
@@ -423,7 +423,7 @@ let dispatch (state : state) =
   | (Expand_prefix (prefix, pos) : a request) ->
     with_typer state @@ fun typer ->
     let env =
-      let node, _ = Completion.node_at typer pos in
+      let node, _ = Browse.node_at typer pos in
       node.BrowseT.t_env in
     let global_modules = Buffer.global_modules state.buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
@@ -433,7 +433,7 @@ let dispatch (state : state) =
     with_typer state @@ fun typer ->
     let comments = Buffer.comments state.buffer in
     let env, local_defs =
-      let node, _ = Completion.node_at typer pos in
+      let node, _ = Browse.node_at typer pos in
       node.BrowseT.t_env, Typer.contents typer
     in
     let path =
@@ -459,7 +459,7 @@ let dispatch (state : state) =
   | (Locate (patho, ml_or_mli, pos) : a request) ->
     with_typer state @@ fun typer ->
     let env, local_defs =
-      let node, _ = Completion.node_at typer pos in
+      let node, _ = Browse.node_at typer pos in
       node.BrowseT.t_env, Typer.contents typer
     in
     let path =
@@ -694,7 +694,7 @@ let dispatch (state : state) =
     let env = match pos with
       | None -> Typer.env typer
       | Some pos ->
-        let node, _ = Completion.node_at typer pos in
+        let node, _ = Browse.node_at typer pos in
         node.BrowseT.t_env
     in
     let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in

@@ -36,6 +36,23 @@ open BrowseT
  * Returns the matching node and all its ancestors or the empty list. *)
 val deepest_before : Lexing.position -> t list -> t list
 
+(** Heuristic to find suitable environment to complete / type at given position.
+ *  1. Try to find environment near given cursor.
+ *  2. Check if there is an invalid construct between found env and cursor :
+ *    Case a.
+ *      > let x = valid_expr ||
+ *      The env found is the right most env from valid_expr, it's a correct
+ *      answer.
+ *    Case b.
+ *      > let x = valid_expr
+ *      > let y = invalid_construction||
+ *      In this case, the env found is the same as in case a, however it is
+ *      preferable to use env from enclosing module rather than an env from
+ *      inside x definition.
+ *)
+val node_at : ?skip_recovered:bool -> Merlin_lib.Typer.t -> Lexing.position ->
+  BrowseT.t * BrowseT.t list
+
 (** The nearest context inside or before the node, though stopping after
  * leaving enclosing subtree. For instance, navigating
  * through:
@@ -62,7 +79,7 @@ val all_constructor_occurrences :
   -> t -> t Location.loc list
 
 (** From a chain of nodes, going from the root to the leaf, returns a list in
-   the same ordering about what is known about tail positions *)
+ *  the same ordering about what is known about tail positions *)
 val annotate_tail_calls : t list -> (t * Protocol.is_tail_position) list
 
 (** Same function, but operating from leaves to root *)

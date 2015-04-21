@@ -28,18 +28,6 @@
 
 (* TODO: document all the following functions *)
 
-val optional_label_sugar : Typedtree.expression_desc -> Typedtree.expression option
-(** optional_label_sugar [%expr Some e] = Some [%expr e]
-    optional_label_sugar [%expr None  ] = None *)
-
-(* This function might be better somewhere else, considering other analysis
-   tools use it as well (locate, destruct, etc).
-   
-   Is there some completion-specific reason explaining why it's not in [Browse]?
-   We need more documentation. *)
-val node_at : ?skip_recovered:bool -> Merlin_lib.Typer.t -> Lexing.position
- -> BrowseT.t * BrowseT.t list
-
 val node_complete
   : Merlin_lib.Buffer.t
   -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * 'a ]

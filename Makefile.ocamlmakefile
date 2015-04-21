@@ -155,8 +155,6 @@ SOURCES = \
 	src/kernel/error_classifier.ml    \
 	src/kernel/raw_lexer.mli          \
 	src/kernel/raw_lexer.ml           \
-	src/analysis/browse.mli           \
-	src/analysis/browse.ml            \
 	src/kernel/extension.mli          \
 	src/kernel/extension.ml           \
 	src/utils/history.mli             \
@@ -180,6 +178,8 @@ SOURCES = \
 	src/frontend/protocol.mli         \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
+	src/analysis/browse.mli           \
+	src/analysis/browse.ml            \
 	src/analysis/browse_misc.ml       \
 	src/analysis/type_utils.mli       \
 	src/analysis/type_utils.ml        \

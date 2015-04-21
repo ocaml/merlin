@@ -213,3 +213,54 @@ let annotate_tail_calls ts : (t * Protocol.is_tail_position) list =
 
 let annotate_tail_calls_from_leaf ts =
   List.rev (annotate_tail_calls (List.rev ts))
+
+let rec is_recovered_expression = function
+  | (* Recovery on arbitrary expressions *)
+    { Typedtree.exp_desc = Typedtree.Texp_tuple [_] } ->
+    true
+  | (* Recovery on unbound identifier *)
+    { Typedtree.exp_desc = Typedtree.Texp_ident (Path.Pident id, _, _) }
+    when Ident.name id = "*type-error*" ->
+    true
+  | (* Recovery on desugared optional label application *)
+    { Typedtree.exp_desc = (Typedtree.Texp_construct _ as cstr) }
+    when is_recovered_Texp_construct cstr ->
+    true
+  | _ -> false
+
+and is_recovered_Texp_construct cstr =
+  match Raw_compat.optional_label_sugar cstr with
+  | Some e -> is_recovered_expression e
+  | _ -> false
+
+let is_recovered = function
+  | {BrowseT.t_node = BrowseT.Expression e } -> is_recovered_expression e
+  | _ -> false
+
+(** Heuristic to find suitable environment to complete / type at given position.
+    1. Try to find environment near given cursor.
+    2. Check if there is an invalid construct between found env and cursor :
+      Case a.
+        > let x = valid_expr ||
+        The env found is the right most env from valid_expr, it's a correct
+        answer.
+      Case b.
+        > let x = valid_expr
+        > let y = invalid_construction||
+        In this case, the env found is the same as in case a, however it is
+        preferable to use env from enclosing module rather than an env from
+        inside x definition.
+ *)
+let node_at ?(skip_recovered=false) typer pos_cursor =
+  let open Merlin_lib in
+  let structures = Typer.contents typer in
+  let structures = of_typer_contents structures in
+  let rec select = function
+    (* If recovery happens, the incorrect node is kept and a recovery node
+       is introduced, so the node to check for recovery is the second one. *)
+    | node :: (node' :: _ as ancestors)
+      when skip_recovered && is_recovered node' -> select ancestors
+    | node :: ancestors -> node, ancestors
+    | [] -> {BrowseT.dummy with BrowseT.t_env = Typer.env typer}, []
+  in
+  select (deepest_before pos_cursor structures)

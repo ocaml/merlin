@@ -403,7 +403,12 @@ let find_branch patterns sub =
   in
   aux [] patterns
 
-let construct_ident_and_expressions = function
+let optional_label_sugar = function
   | Typedtree.Texp_construct (id, _, es, _) ->
-    id, es
+    begin match es with
+    | [e] when id.Location.loc.Location.loc_ghost
+               && id.Location.txt = Longident.Lident "Some" ->
+      Some e
+    | _ -> None
+    end
   | _ -> assert false
