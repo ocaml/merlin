@@ -1,5 +1,4 @@
 - Locate:
-  -> handle local module aliases (i.e. [let module X = Y])
   -> associate ocamldoc comments to trie nodes when building the trie.
 
 - Relegated to next menhir version:
