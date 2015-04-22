@@ -242,7 +242,7 @@ let is_package ty =
   | Types.Tpackage _ -> true
   | _ -> false
 
-let node ~loc ~env parents node =
+let node ~loc parents node =
   match node.t_node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
@@ -253,7 +253,7 @@ let node ~loc ~env parents node =
         let mode = Ast_helper.Mod.unpack pexp in
         false, Ast_helper.Exp.letmodule name mode placeholder
       ) else (
-        let ps = gen_patterns env ty in
+        let ps = gen_patterns expr.Typedtree.exp_env ty in
         let cases  =
           List.map ps ~f:(fun patt ->
             let pc_lhs = Untypeast.untype_pattern patt in
@@ -290,7 +290,7 @@ let node ~loc ~env parents node =
     | None ->
       if not (destructible patt) then raise Nothing_to_do else
       let ty = patt.Typedtree.pat_type in
-      begin match gen_patterns env ty with
+      begin match gen_patterns patt.Typedtree.pat_env ty with
       | [] -> assert false (* we raise Not_allowed, but never return [] *)
       | [ more_precise ] ->
         (* If only one pattern is generated, then we're only refining the

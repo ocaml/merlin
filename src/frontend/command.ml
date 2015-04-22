@@ -464,7 +464,7 @@ let dispatch (state : state) =
           )
       with
       | [] -> failwith "No node at given range"
-      | node :: parents -> Destruct.node ~env ~loc parents node
+      | node :: parents -> Destruct.node ~loc parents node
     end
 
   | (Outline : a request) ->
