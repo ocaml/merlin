@@ -2,24 +2,54 @@ merlin HEAD
 ===========
 
   backend:
-    - completion: return the type of the expected argument when completing an
-      application (also offers completion for named and optional parameters)
-    - completion: optionally associates ocamldoc comments to candidates
-    - locate: partially rewritten, introduces a cache (so potentially noticeably
-      bigger memory consumption)
-    - locate: better handling of functors
+    - completion
+        + return the type of the expected argument when completing an
+          application.
+          This allows us to offer completion for named and optional parameters,
+          as well as polymorphic variants
+        + optionally associates ocamldoc comments to candidates
+    - locate:
+        + partially rewritten, introduces a cache (so potentially noticeably
+          bigger memory consumption)
+        + better handling of functors
+        + handle local modules
+        + fix occasional "inconsistent assumptions"
+    - error reporting:
+        + handle environment errors (inconsistent assumptions, …)
+        + filter duplicated messages
+        + fix type error reporting:
+            "this expression has type t = t but an expression was expected of
+            type u = u"
+          we now only print the equality when it adds some information
     - fix type error reporting
     - add support for trunk
     - add a "document" command: takes an ident and return its documentation (if
       any)
+    - destruct: use more precise environments ( #389 )
+    - warnings:
+        + check signature inclusion to prevent spurious warnings about unused
+          declarations
+        + backport 4.02-style warning management
+        + add a dump command
+    - nonrec: update implementation to more-or-less match the upstream one
+      (upstream >= 4.02.2)
+    - parser: improve marking heuristic in presence of ;; or toplevel
+      directives.
 
   emacs:
     - fix bindings of every completion backend
     - bind ocamldoc comments to company (optional)
+    - detect race conditions when running synchronous commands
+    - cleanup "merlin-process-started-p"
+    - locate error messages were silently ignored, they are now printed
+    - drop text properties from commands sent to merlin (pull request #383 by
+      milanst)
 
   vim:
     - fix ctrlp binding for locate
     - add (dwim) completion on :TypeOf
+    - while completing, candidates documentation can be displayed in the
+      "preview" window
 
 merlin 2.1.2
 ============
