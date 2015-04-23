@@ -78,7 +78,7 @@ let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
   | N_expr_comma_list, el         -> default, List.map (fun e -> Eval e) el
   | N_interface, sg               -> default, [Signature sg]
   | N_signature_item, sg          -> default, [Signature sg]
-  | N_signature, sg               -> default, [Signature (List.rev sg)]
+  | N_signature, sg               -> default, [Signature sg]
   | N_functor_arg, arg            -> default, functor_arg arg
   | N_functor_args, args          -> default, functor_args [] args
   | N_labeled_simple_pattern, pat -> default, [Pattern pat]
