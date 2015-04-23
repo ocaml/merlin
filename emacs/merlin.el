@@ -605,7 +605,7 @@ the merlin buffer of the current buffer."
   (let* ((project (merlin--project-get))
          (failures (cdr project)))
     (unless (equal failures merlin--project-failures)
-      (message (mapconcat 'identity failures "\n"))
+      (message "%s" (mapconcat 'identity failures "\n"))
       (setq merlin--project-failures failures))))
 
 (defun merlin--acquire-buffer (&optional force)
@@ -771,7 +771,7 @@ the error message otherwise print a generic error message."
   (merlin--acquire-buffer)
   (let* ((r (merlin-send-command `(extension enable (,name))))
          (failed (assoc 'failures r)))
-    (when failed (message (cdr failed))))
+    (when failed (message "%s" (cdr failed))))
   (merlin-error-reset))
 
 (defun merlin-extension-disable (name)
@@ -783,7 +783,7 @@ the error message otherwise print a generic error message."
   (merlin--acquire-buffer)
   (let* ((r (merlin-send-command `(extension disable (,name))))
          (failed (assoc 'failures r)))
-    (when failed (message (cdr failed))))
+    (when failed (message "%s" (cdr failed))))
   (merlin-error-reset))
 
 
@@ -965,7 +965,7 @@ The timer fires every 10 seconds of idle time."
            (err nil))
       (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
       (setq err (merlin--error-at-position (point) errors))
-      (when err (message (merlin-chomp (cdr (assoc 'message err))))))))
+      (when err (message "%s" (merlin-chomp (cdr (assoc 'message err))))))))
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
@@ -1016,7 +1016,7 @@ The timer fires every 10 seconds of idle time."
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
-      (message (merlin-chomp (cdr (assoc 'message (cdr err)))))
+      (message "%s" (merlin-chomp (cdr (assoc 'message (cdr err)))))
       (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin-error-next ()
@@ -1031,7 +1031,7 @@ The timer fires every 10 seconds of idle time."
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
-      (message (merlin-chomp (cdr (assoc 'message (cdr err)))))
+      (message "%s" (merlin-chomp (cdr (assoc 'message (cdr err)))))
       (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin-error-delete-overlays ()
@@ -1120,7 +1120,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
       (progn
         (setq merlin-erroneous-buffer t)
         (when no-loc
-          (mapcar (lambda (e) (message (cdr (assoc 'message e)))) no-loc))
+          (mapcar (lambda (e) (message "%s" (cdr (assoc 'message e)))) no-loc))
         (when errors
           (merlin-transform-display-errors errors)
           (when view-errors-p
@@ -1707,7 +1707,7 @@ is active)."
   (unless (listp pkg) (setq pkg (list pkg)))
   (let* ((r (merlin-send-command (list 'find 'use pkg)))
          (failed (assoc 'failures r)))
-    (when failed (message (cdr failed))))
+    (when failed (message "%s" (cdr failed))))
   (merlin-error-reset))
 
 (defun merlin--project-get ()
@@ -1745,7 +1745,7 @@ calls (lighter can be updated at a high frequency)"
   (interactive)
   (let* ((r (merlin-send-command '(flags clear)))
          (failed (assoc 'failures r)))
-    (when failed (message (cdr failed))))
+    (when failed (message "%s" (cdr failed))))
   (merlin-error-reset))
 
 (defun merlin-flags-add (flag-string)
@@ -1754,7 +1754,7 @@ calls (lighter can be updated at a high frequency)"
   (let* ((flag-list (split-string flag-string))
          (r (merlin-send-command (list 'flags 'add flag-list)))
          (failed (assoc 'failures r)))
-    (when failed (message (cdr failed))))
+    (when failed (message "%s" (cdr failed))))
   (merlin-error-reset))
 
 ;;;;;;;;;;;;
@@ -1830,7 +1830,7 @@ calls (lighter can be updated at a high frequency)"
 (defun merlin--document-pure (&optional ident)
   "Document the identifier IDENT at point."
   (let ((r (merlin--document-pos ident)))
-    (message r)))
+    (message "%s" r)))
 
 (defun merlin-document ()
   "Document the identifier under point"
@@ -1992,12 +1992,12 @@ Returns the position."
   (merlin--acquire-buffer)
   (let* ((project (merlin--project-get))
          (dots (car project))
-         (messages (cdr project))) ; failures list
+         (messages "%s" (cdr project))) ; failures list
     (add-to-list 'messages
                  (if dots (concat "Loaded .merlin files: "
                                   (mapconcat 'identity dots ", "))
                    "No .merlin loaded"))
-    (message (mapconcat 'identity messages "\n"))))
+    (message "%s" (mapconcat 'identity messages "\n"))))
 
 (defun merlin-customize ()
   "Open the customize buffer for the group merlin."
