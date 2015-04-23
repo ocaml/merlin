@@ -451,12 +451,8 @@ let find_branch patterns sub =
   aux [] patterns
 
 let optional_label_sugar = function
-  | Typedtree.Texp_construct (id, _, es) ->
-    begin match es with
-    | [e] when id.Location.loc.Location.loc_ghost
-               && id.Location.txt = Longident.Lident "Some" ->
-      Some e
-    | _ -> None
-    end
-  | _ -> assert false
-
+  | Typedtree.Texp_construct (id, _, [e])
+    when id.Location.loc.Location.loc_ghost
+         && id.Location.txt = Longident.Lident "Some" ->
+    Some e
+  | _ -> None
