@@ -623,7 +623,7 @@ let dispatch (state : state) =
           List.merge ~cmp err_lexer @@
           List.merge ~cmp err_parser err_typer
         in
-        List.filter_dup' ~equiv:(fun e -> e.Error_report.text) errors
+        Error_report.flood_barrier errors
       with exn -> match Error_report.strict_of_exn exn with
         | None -> raise exn
         | Some (_loc, err) -> [err]

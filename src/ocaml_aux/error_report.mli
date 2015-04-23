@@ -47,3 +47,7 @@ val strict_of_exn  : exn -> (Location.t * t) option
 val of_exn : exn -> Location.t * t
 
 val error_catcher : exn -> (Location.t * t) option
+
+val flood_barrier : ?threshold:int -> t list -> t list
+(** Filters the input such that any error in the list is present at most
+    [?threshold] (default = 10) times. *)

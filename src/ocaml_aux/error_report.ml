@@ -71,3 +71,20 @@ let of_exn exn = match strict_of_exn exn with
               (Printexc.to_string exn)
 
 let error_catcher = strict_of_exn
+
+let flood_barrier ?(threshold=10) errors =
+  let dam = Hashtbl.create 17 in
+  let f reported error =
+    try
+      let nb_occurences = Hashtbl.find dam error.text in
+      if nb_occurences >= threshold then
+        reported
+      else (
+        Hashtbl.replace dam error.text (nb_occurences + 1);
+        error :: reported
+      )
+    with Not_found ->
+      Hashtbl.add dam error.text 1;
+      error :: reported
+  in
+  List.(rev @@ fold_left ~f ~init:[] errors)
