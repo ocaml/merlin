@@ -202,10 +202,8 @@ def command_find_use(*packages):
   return display_load_failures(result)
 
 def command_reset(kind="auto",name=None):
-  global saved_sync
   if name: r = command("reset",kind,name)
   else:    r = command("reset",kind)
-  saved_sync = None
   return r
 
 def command_seek(mtd,line,col):
@@ -286,28 +284,26 @@ def acquire_buffer(force=False):
   saved_sync = process.saved_sync
   curr_sync = vimbufsync.sync()
 
-  if saved_sync and curr_sync.bufnr() == saved_sync.bufnr():
-    return False
-  else:
+  if not (saved_sync and (curr_sync.bufnr() == saved_sync.bufnr())):
+    process.saved_sync = None
     command_reset(name=vim.eval("expand('%:p')"))
-    process.saved_sync = curr_sync
-    return True
+
+  return process.saved_sync
 
 def sync_buffer_to_(to_line, to_col, skip_marker=False):
   process = merlin_process()
-  saved_sync = process.saved_sync
 
   cb = vim.current.buffer
   max_line = len(cb)
   end_line = min(to_line, max_line)
 
-  if not acquire_buffer(force=True):
-    if saved_sync:
-      line, col = min(saved_sync.pos(), (to_line, to_col))
-    else:
-      line, col = to_line, to_col
-    col = 0
-    command_seek("exact", line, col)
+  saved_sync = acquire_buffer(force=True)
+  if saved_sync:
+    line, col = min(saved_sync.pos(), (to_line, to_col))
+  else:
+    line, col = 1, 0
+  col = 0
+  command_seek("exact", line, col)
 
   line, col, _ = parse_position(command("tell", "start"))
 
@@ -332,6 +328,9 @@ def sync_buffer_to_(to_line, to_col, skip_marker=False):
   # put eof if marker still on stack at max_line
   if marker: command("tell","eof")
   if not skip_marker: command("seek","marker")
+
+  # save synchronisation point
+  process.saved_sync = vimbufsync.sync()
 
 def sync_buffer_to(to_line, to_col, skip_marker=False):
   return catch_and_print(lambda: sync_buffer_to_(to_line, to_col, skip_marker=skip_marker))
