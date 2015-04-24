@@ -1992,7 +1992,7 @@ Returns the position."
   (merlin--acquire-buffer)
   (let* ((project (merlin--project-get))
          (dots (car project))
-         (messages "%s" (cdr project))) ; failures list
+         (messages (cdr project))) ; failures list
     (add-to-list 'messages
                  (if dots (concat "Loaded .merlin files: "
                                   (mapconcat 'identity dots ", "))
