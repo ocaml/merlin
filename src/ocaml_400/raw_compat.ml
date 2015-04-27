@@ -409,3 +409,5 @@ let optional_label_sugar = function
          && id.Location.txt = Longident.Lident "Some" ->
     Some e
   | _ -> None
+
+let pat_attributes _ = []

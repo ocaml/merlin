@@ -66,5 +66,5 @@ let rec erroneous_expr_check e =
   | _ -> false
 
 let erroneous_patt_check p =
-  List.exists p.Typedtree.pat_attributes
+  List.exists (Raw_compat.pat_attributes p)
     ~f:(fun (str_loc, _) -> str_loc.Location.txt = "merlin.incorrect")
