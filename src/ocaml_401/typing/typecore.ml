@@ -64,6 +64,64 @@ type error =
   | Unexpected_existential
   | Unqualified_gadt_pattern of Path.t * string
 
+(* merlin: deep copy types in errors, to keep them meaningful after
+   backtracking *)
+let deep_copy () =
+  let table = TypeHash.create 7 in
+  let rec copy ty =
+    let ty = repr ty in
+    try TypeHash.find table ty
+    with Not_found ->
+      let desc =
+        match ty.desc with
+        | Tvar _ | Tnil | Tunivar _ as desc -> desc
+        | Tvariant _ as desc -> (* fixme *) desc
+        | Tarrow (l,t1,t2,c) -> Tarrow (l, copy t1, copy t2, c)
+        | Ttuple tl -> Ttuple (List.map copy tl)
+        | Tconstr (p, tl, _) -> Tconstr (p, List.map copy tl, ref Mnil)
+        | Tobject (t1, r) ->
+          let r = match !r with
+            | None -> None
+            | Some (p,tl) -> Some (p, List.map copy tl)
+          in
+          Tobject (copy t1, ref r)
+        | Tfield (s,fk,t1,t2) -> Tfield (s, fk, copy t1, copy t2)
+        | Tpoly (t,tl) -> Tpoly (copy t, List.map copy tl)
+        | Tpackage (p,l,tl) -> Tpackage (p,l,List.map copy tl)
+        | Tlink _ | Tsubst _ -> assert false
+      in
+      let ty' = {ty with desc} in
+      TypeHash.add table ty ty';
+      ty'
+  in
+  copy
+
+let trace_copy ?(copy=deep_copy ()) tr =
+  List.map (fun (a, b) -> copy a, copy b) tr
+
+let label_mismatch li trace = Label_mismatch (li, trace_copy trace)
+let pattern_type_clash trace = Pattern_type_clash (trace_copy trace)
+let expr_type_clash trace = Expr_type_clash (trace_copy trace)
+let apply_non_function t = Apply_non_function (deep_copy () t)
+let apply_wrong_label l t = Apply_wrong_label (l, deep_copy () t)
+let undefined_method t s = Undefined_method (deep_copy () t, s)
+let private_type t = Private_type (deep_copy () t)
+let private_label li t = Private_label (li, deep_copy () t)
+let not_subtype t1 t2 =
+  let copy = deep_copy () in
+  Not_subtype (trace_copy ~copy t1, trace_copy ~copy t2)
+let coercion_failure t1 t2 ts b =
+  let copy = deep_copy () in
+  Coercion_failure (copy t1, copy t2, trace_copy ~copy ts, b)
+
+let too_many_arguments b t = Too_many_arguments (b, deep_copy () t)
+let abstract_wrong_label l t = Abstract_wrong_label (l, deep_copy () t)
+let scoping_let_module s t = Scoping_let_module (s, deep_copy () t)
+let less_general s tr = Less_general (s, trace_copy tr)
+let not_a_packed_module t = Not_a_packed_module (deep_copy () t)
+let recursive_local_constraint tr = Recursive_local_constraint (trace_copy tr)
+
+
 exception Error of Location.t * Env.t * error
 
 (* merlin: Test whether we should trigger type recovery or not.
@@ -278,7 +336,7 @@ let unify_pat_types loc env ty ty' =
     unify env ty ty'
   with
     Unify trace ->
-      raise(Error(loc, env, Pattern_type_clash(trace)))
+      raise(Error(loc, env, pattern_type_clash trace))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
@@ -290,7 +348,7 @@ let unify_exp_types loc env ty expected_ty =
     unify env ty expected_ty
   with
     Unify trace ->
-      raise(Error(loc, env, Expr_type_clash(trace)))
+      raise(Error(loc, env, expr_type_clash trace))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
@@ -311,11 +369,11 @@ let unify_pat_types_gadt loc env ty ty' =
     unify_gadt ~newtype_level env ty ty'
   with
     Unify trace ->
-      raise(Error(loc, !env, Pattern_type_clash(trace)))
+      raise(Error(loc, !env, pattern_type_clash trace))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
   | Unification_recursive_abbrev trace ->
-      raise(Error(loc, !env, Recursive_local_constraint trace))
+      raise(Error(loc, !env, recursive_local_constraint trace))
 
 
 (* Creating new conjunctive types is not allowed when typing patterns *)
@@ -418,7 +476,7 @@ let enter_orpat_variables loc env  p1_vs p2_vs =
               unify env t1 t2
             with
             | Unify trace ->
-                raise(Error(loc, env, Pattern_type_clash(trace)))
+                raise(Error(loc, env, pattern_type_clash trace))
             end;
           (x2,x1)::unify_vars rem1 rem2
           end
@@ -1045,7 +1103,7 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
           unify_pat_types loc !env ty_res record_ty
         with Unify trace ->
           raise(Error(label_lid.loc, !env,
-                      Label_mismatch(label_lid.txt, trace)))
+                      label_mismatch label_lid.txt  trace))
         end;
         let arg = type_pat sarg ty_arg in
         if vars <> [] then begin
@@ -1629,7 +1687,7 @@ let rec type_approx env sexp =
       and ty1 = approx_ty_opt sty1
       and ty2 = approx_ty_opt sty2 in
       begin try unify env ty ty1 with Unify trace ->
-        raise(Error(sexp.pexp_loc, env, Expr_type_clash trace))
+        raise(Error(sexp.pexp_loc, env, expr_type_clash trace))
       end;
       if sty2 = None then ty1 else ty2
   | _ -> newvar ()
@@ -1668,7 +1726,7 @@ let check_univars env expans kind exp ty_expected vars =
   let ty = newgenty (Tpoly(repr exp.exp_type, vars'))
   and ty_expected = repr ty_expected in
   raise (Error (exp.exp_loc, env,
-                Less_general(kind, [ty, ty; ty_expected, ty_expected])))
+                less_general kind [ty, ty; ty_expected, ty_expected]))
 
 (* Check that a type is not a function *)
 let check_application_result env statement exp =
@@ -2028,10 +2086,10 @@ and type_expect_ ?in_function env sexp ty_expected =
         with Unify _ ->
           match expand_head env ty_expected with
             {desc = Tarrow _} as ty ->
-              raise(Error(loc, env, Abstract_wrong_label(l, ty)))
+              raise(Error(loc, env, abstract_wrong_label l ty))
           | _ ->
               raise(Error(loc_fun, env,
-                          Too_many_arguments (in_function <> None, ty_fun)))
+                          too_many_arguments (in_function <> None) ty_fun))
       in
       let ty_arg =
         if is_optional l then
@@ -2397,14 +2455,14 @@ and type_expect_ ?in_function env sexp ty_expected =
                       (Warnings.Not_principal "this ground coercion");
                 with Subtype (tr1, tr2) ->
                   (* prerr_endline "coercion failed"; *)
-                  raise(Error(loc, env, Not_subtype(tr1, tr2)))
+                  raise(Error(loc, env, not_subtype tr1 tr2))
                 end;
             | _ ->
                 let ty, b = enlarge_type env ty' in
                 force ();
                 begin try Ctype.unify env arg.exp_type ty with Unify trace ->
                   raise(Error(sarg.pexp_loc, env,
-                        Coercion_failure(ty', full_expand env ty', trace, b)))
+                        coercion_failure ty' (full_expand env ty') trace b))
                 end
             end;
             (arg, ty', None, Some cty')
@@ -2421,7 +2479,7 @@ and type_expect_ ?in_function env sexp ty_expected =
               let force'' = subtype env ty ty' in
               force (); force' (); force'' ()
             with Subtype (tr1, tr2) ->
-              raise(Error(loc, env, Not_subtype(tr1, tr2)))
+              raise(Error(loc, env, not_subtype tr1 tr2))
             end;
             if separate then begin
               end_def ();
@@ -2535,7 +2593,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_type = typ;
           exp_env = env }
       with Unify _ ->
-        Typing_aux.raise_error (Error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
+        Typing_aux.raise_error (Error(e.pexp_loc, env, undefined_method obj.exp_type met));
         rue {
           exp_desc = Texp_send(obj, Tmeth_name met, None);
           exp_loc = loc; exp_extra = [];
@@ -2635,7 +2693,7 @@ and type_expect_ ?in_function env sexp ty_expected =
       begin try
         Ctype.unify_var new_env ty body.exp_type
       with Unify _ ->
-        raise(Error(loc, env, Scoping_let_module(name.txt, body.exp_type)))
+        raise(Error(loc, env, scoping_let_module name.txt body.exp_type))
       end;
       re {
         exp_desc = Texp_letmodule(id, name, modl, body);
@@ -2774,7 +2832,7 @@ and type_expect_ ?in_function env sexp ty_expected =
         | {desc = Tvar _} ->
             raise (Error (loc, env, Cannot_infer_signature))
         | _ ->
-            raise (Error (loc, env, Not_a_packed_module ty_expected))
+            raise (Error (loc, env, not_a_packed_module ty_expected))
       in
       let (modl, tl') = !type_package env m p nl tl in
       rue {
@@ -2824,7 +2882,7 @@ and type_label_exp create env loc ty_expected
   begin try
     unify env (instance_def ty_res) (instance env ty_expected)
   with Unify trace ->
-    raise (Error(lid.loc, env, Label_mismatch(lid.txt, trace)))
+    raise (Error(lid.loc, env, label_mismatch lid.txt trace))
   end;
   (* Instantiate so that we can generalize internal nodes *)
   let ty_arg = instance_def ty_arg in
@@ -2835,9 +2893,9 @@ and type_label_exp create env loc ty_expected
   end;
   if label.lbl_private = Private then
     if create then
-      raise (Error(loc, env, Private_type ty_expected))
+      raise (Error(loc, env, private_type ty_expected))
     else
-      raise (Error(lid.loc, env, Private_label(lid.txt, ty_expected)));
+      raise (Error(lid.loc, env, private_label lid.txt ty_expected));
   let arg =
     let snap = if vars = [] then None else Some (Btype.snapshot ()) in
     let arg = type_argument env sarg ty_arg (instance env ty_arg) in
@@ -2987,11 +3045,11 @@ and type_application env funct sargs =
                   Tarrow _ ->
                     if (Clflags.classic () || not (has_label l1 ty_fun)) then
                       Typing_aux.weak_raise (Error(sarg1.pexp_loc, env,
-                                                   Apply_wrong_label(l1, ty_res)))
+                                                   apply_wrong_label l1 ty_res))
                     else
                       Typing_aux.weak_raise (Error(funct.exp_loc, env, Incoherent_label_order))
                 | _ ->
-                    Typing_aux.weak_raise(Error(funct.exp_loc, env, Apply_non_function
+                    Typing_aux.weak_raise(Error(funct.exp_loc, env, apply_non_function
                                                   (expand_head env funct.exp_type)))
           with Typing_aux.Weak_error _ ->
             newvar(), ty_fun
@@ -3039,11 +3097,11 @@ and type_application env funct sargs =
             match sargs, more_sargs with
               (l', sarg0) :: _, _ ->
                 raise(Error(sarg0.pexp_loc, env,
-                            Apply_wrong_label(l', ty_old)))
+                            apply_wrong_label l' ty_old))
             | _, (l', sarg0) :: more_sargs ->
                 if l <> l' && l' <> "" then
                   raise(Error(sarg0.pexp_loc, env,
-                              Apply_wrong_label(l', ty_fun')))
+                              apply_wrong_label l' ty_fun'))
                 else
                   ([], more_sargs,
                    Some (fun () -> type_argument env sarg0 ty ty0))
@@ -3102,7 +3160,7 @@ and type_application env funct sargs =
         match sargs with
           (l, sarg0) :: _ when ignore_labels ->
             raise(Error(sarg0.pexp_loc, env,
-                        Apply_wrong_label(l, ty_old)))
+                        apply_wrong_label l ty_old))
         | _ ->
             type_unknown_args args omitted ty_fun0
               (sargs @ more_sargs)
@@ -3175,7 +3233,7 @@ and type_construct env loc lid sarg explicit_arity ty_expected =
   let args = List.map2 (fun e (t,t0) -> type_argument env e t t0) sargs
       (List.combine ty_args ty_args0) in
   if constr.cstr_private = Private then
-    raise(Error(loc, env, Private_type ty_res));
+    raise(Error(loc, env, private_type ty_res));
   { texp with
     exp_desc = Texp_construct(lid, constr, args, explicit_arity) }
 

@@ -68,27 +68,63 @@ type error =
   | No_value_clauses
   | Exception_pattern_below_toplevel
 
-let trace_copy tr =
-  List.map (fun (a, b) -> simple_copy a, simple_copy b) tr
+(* merlin: deep copy types in errors, to keep them meaningful after
+   backtracking *)
+let deep_copy () =
+  let table = TypeHash.create 7 in
+  let rec copy ty =
+    let ty = repr ty in
+    try TypeHash.find table ty
+    with Not_found ->
+      let desc =
+        match ty.desc with
+        | Tvar _ | Tnil | Tunivar _ as desc -> desc
+        | Tvariant _ as desc -> (* fixme *) desc
+        | Tarrow (l,t1,t2,c) -> Tarrow (l, copy t1, copy t2, c)
+        | Ttuple tl -> Ttuple (List.map copy tl)
+        | Tconstr (p, tl, _) -> Tconstr (p, List.map copy tl, ref Mnil)
+        | Tobject (t1, r) ->
+          let r = match !r with
+            | None -> None
+            | Some (p,tl) -> Some (p, List.map copy tl)
+          in
+          Tobject (copy t1, ref r)
+        | Tfield (s,fk,t1,t2) -> Tfield (s, fk, copy t1, copy t2)
+        | Tpoly (t,tl) -> Tpoly (copy t, List.map copy tl)
+        | Tpackage (p,l,tl) -> Tpackage (p,l,List.map copy tl)
+        | Tlink _ | Tsubst _ -> assert false
+      in
+      let ty' = {ty with desc} in
+      TypeHash.add table ty ty';
+      ty'
+  in
+  copy
+
+let trace_copy ?(copy=deep_copy ()) tr =
+  List.map (fun (a, b) -> copy a, copy b) tr
 
 let label_mismatch li trace = Label_mismatch (li, trace_copy trace)
 let pattern_type_clash trace = Pattern_type_clash (trace_copy trace)
 let or_pattern_type_clash i trace = Or_pattern_type_clash (i, trace_copy trace)
 let expr_type_clash trace = Expr_type_clash (trace_copy trace)
-let apply_non_function t = Apply_non_function (simple_copy t)
-let apply_wrong_label l t = Apply_wrong_label (l, simple_copy t)
-let wrong_name s t s p l = Wrong_name (s, simple_copy t, s, p, l)
-let undefined_method t s = Undefined_method (simple_copy t, s)
-let private_type t = Private_type (simple_copy t)
-let private_label li t = Private_label (li, simple_copy t)
-let not_subtype t1 t2 = Not_subtype (trace_copy t1, trace_copy t2)
+let apply_non_function t = Apply_non_function (deep_copy () t)
+let apply_wrong_label l t = Apply_wrong_label (l, deep_copy () t)
+let wrong_name s1 t s2 p l = Wrong_name (s1, deep_copy () t, s2, p, l)
+let undefined_method t s = Undefined_method (deep_copy () t, s)
+let private_type t = Private_type (deep_copy () t)
+let private_label li t = Private_label (li, deep_copy () t)
+let not_subtype t1 t2 =
+  let copy = deep_copy () in
+  Not_subtype (trace_copy ~copy t1, trace_copy ~copy t2)
 let coercion_failure t1 t2 ts b =
-  Coercion_failure (simple_copy t1, simple_copy t2, trace_copy ts, b)
-let too_many_arguments b t = Too_many_arguments (b, simple_copy t)
-let abstract_wrong_label l t = Abstract_wrong_label (l, simple_copy t)
-let scoping_let_module s t = Scoping_let_module (s, simple_copy t)
+  let copy = deep_copy () in
+  Coercion_failure (copy t1, copy t2, trace_copy ~copy ts, b)
+
+let too_many_arguments b t = Too_many_arguments (b, deep_copy () t)
+let abstract_wrong_label l t = Abstract_wrong_label (l, deep_copy () t)
+let scoping_let_module s t = Scoping_let_module (s, deep_copy () t)
 let less_general s tr = Less_general (s, trace_copy tr)
-let not_a_packed_module t = Not_a_packed_module (simple_copy t)
+let not_a_packed_module t = Not_a_packed_module (deep_copy () t)
 let recursive_local_constraint tr = Recursive_local_constraint (trace_copy tr)
 
 exception Error of Location.t * Env.t * error
