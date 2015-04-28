@@ -476,8 +476,16 @@ function! merlin#Register()
     return
   endif
 
+  """ Version  -----------------------------------------------------------------
   command! -buffer -nargs=0 MerlinVersion call merlin#Version()
 
+  """ Error reporting  ---------------------------------------------------------
+  command! -buffer -nargs=0 MerlinErrorCheck call merlin#Errors()
+
+  """ Completion  --------------------------------------------------------------
+  setlocal omnifunc=merlin#Complete
+
+  """ TypeOf  ------------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinTypeOf call merlin#TypeOf(<q-args>)
   command! -buffer -range -nargs=0 MerlinTypeOfSel call merlin#TypeOfSel()
 
@@ -488,53 +496,34 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinYankLatestType    call merlin#YankLatestType()
   command! -buffer -nargs=0 MerlinToggleTypeHistory call merlin_type#ToggleTypeHistory()
 
-  command! -buffer -nargs=0 MerlinDestruct call merlin#Destruct()
-
-
-  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)
-  command! -buffer -nargs=0 MerlinILocate call merlin#InteractiveLocate()
-
-  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinDocument call merlin#Document(<q-args>)
-
-  command! -buffer -nargs=0 MerlinOutline call merlin#Outline()
-
-  command! -buffer -nargs=0 MerlinOccurrences call merlin#Occurrences()
-  command! -buffer -nargs=* MerlinRename call merlin#OccurrencesRename(<f-args>)
-
-  command! -buffer -nargs=? -complete=dir MerlinSourcePath call merlin#Path("source", <q-args>)
-  command! -buffer -nargs=? -complete=dir MerlinBuildPath  call merlin#Path("build", <q-args>)
-  " command! -buffer -nargs=0 Reload       call merlin#Reload()
-
-  command! -buffer -complete=custom,merlin#PackageList   -nargs=* MerlinUse        call merlin#Use(<f-args>)
-  command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* MerlinAddFlags   call merlin#AddFlags(<f-args>)
-  command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* MerlinSetFlags   call merlin#SetFlags(<f-args>)
-  command! -buffer -nargs=0                                       MerlinClearFlags call merlin#ClearFlags()
-  command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* MerlinExtEnable  call merlin#ExtEnable(<f-args>)
-  command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* MerlinExtDisable call merlin#ExtDisable(<f-args>)
-
-  command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
-  command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
-  command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
-  command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
-
-  command! -buffer -nargs=0 MerlinErrorCheck call merlin#Errors()
-
-  setlocal omnifunc=merlin#Complete
   map  <buffer> <LocalLeader>t :MerlinTypeOf<return>
   map  <buffer> <LocalLeader>n :MerlinGrowEnclosing<return>
   map  <buffer> <LocalLeader>p :MerlinShrinkEnclosing<return>
   vmap <buffer> <LocalLeader>t :MerlinTypeOfSel<return>
-  vmap <buffer> <TAB>          :call merlin#Phrase()<return>
 
-  " nmap <silent><buffer> <LocalLeader>yt :YankLatestType<return>
-  " nmap <silent><buffer> <LocalLeader>qt :ToggleTypeHistory<return>
+  """ Destruct  ----------------------------------------------------------------
+  command! -buffer -nargs=0 MerlinDestruct call merlin#Destruct()
 
-  " Search
+  """ Locate  ------------------------------------------------------------------
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)
+  command! -buffer -nargs=0 MerlinILocate call merlin#InteractiveLocate()
+
   nmap <silent><buffer> gd  :MerlinLocate<return>
+
+  """ Document  ----------------------------------------------------------------
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinDocument call merlin#Document(<q-args>)
+
+  """ Outline  -----------------------------------------------------------------
+  command! -buffer -nargs=0 MerlinOutline call merlin#Outline()
+
+  """ Occurrences  -------------------------------------------------------------
+  " Search
+  command! -buffer -nargs=0 MerlinOccurrences call merlin#Occurrences()
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesForward)  :call merlin_find#OccurrencesSearch('/')<cr>:let v:searchforward=1<cr>
   nmap <silent><buffer> <Plug>(MerlinSearchOccurrencesBackward) :call merlin_find#OccurrencesSearch('?')<cr>:let v:searchforward=0<cr>
 
   " Rename
+  command! -buffer -nargs=* MerlinRename call merlin#OccurrencesRename(<f-args>)
   nmap <silent><buffer> <Plug>(MerlinRename) :call merlin_find#IncrementalRename()<cr>//<cr>c//e<cr>
   nmap <silent><buffer> <Plug>(MerlinRenameAppend) :call merlin_find#IncrementalRename()<cr>//e<cr>a
 
@@ -562,6 +551,32 @@ function! merlin#Register()
     exe "omap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#ShrinkInside('o')<return>"
     exe "omap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#ShrinkAround('o')<return>"
   endif
+
+  """ Path management  ---------------------------------------------------------
+  command! -buffer -nargs=? -complete=dir MerlinSourcePath call merlin#Path("source", <q-args>)
+  command! -buffer -nargs=? -complete=dir MerlinBuildPath  call merlin#Path("build", <q-args>)
+
+  """ Findlib  -----------------------------------------------------------------
+  command! -buffer -complete=custom,merlin#PackageList   -nargs=* MerlinUse        call merlin#Use(<f-args>)
+
+  """ Flags management  --------------------------------------------------------
+  command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* MerlinAddFlags   call merlin#AddFlags(<f-args>)
+  command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* MerlinSetFlags   call merlin#SetFlags(<f-args>)
+  command! -buffer -nargs=0                                       MerlinClearFlags call merlin#ClearFlags()
+
+  """ Extensions  --------------------------------------------------------------
+  command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* MerlinExtEnable  call merlin#ExtEnable(<f-args>)
+  command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* MerlinExtDisable call merlin#ExtDisable(<f-args>)
+
+  """ .merlin  -----------------------------------------------------------------
+  command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()
+  command! -buffer -nargs=0 EchoDotMerlin call merlin#EchoDotMerlin()
+  command! -buffer -nargs=0 MerlinGotoDotMerlin call merlin#GotoDotMerlin()
+  command! -buffer -nargs=0 MerlinEchoDotMerlin call merlin#EchoDotMerlin()
+
+  """ 'semantic movement'  -----------------------------------------------------
+  " TODO: bind (,),{,} ?
+  vmap <buffer> <TAB>          :call merlin#Phrase()<return>
 
   call merlin#LoadProject()
 endfunction

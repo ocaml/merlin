@@ -7,25 +7,25 @@
 ==============================================================================
 COMMANDS                                                     *merlin-commands*
 
-:SourcePath [dir]                                                *:SourcePath*
+:MerlinSourcePath [dir]                      *:MerlinSourcePath* *:SourcePath*
 
 When dir is given adds, for the current session, the directory to the list of
 directories where merlin looks for ml[i] files.
 
 If no argument is given, it will list those directories.
 
-:BuildPath [dir]                                                  *:BuildPath*
+:MerlinBuildPath [dir]                         *:MerlinBuildPath* *:BuildPath*
 
 Same as |:SourcePath| but for cmi files.
 
-:Use package [, package]*                                               *:Use*
+:MerlinUse package [, package]*                            *:MerlinUse* *:Use*
 
 Loads findlib packages (with completion) by adjusting buildpath to find files
 from packages.
 
 Tab completion on packages name is provided.
 
-:Locate                                                               *Locate*
+:MerlinLocate                                        *:MerlinLocate* *:Locate*
 
 When called with no arguments tries to jump at the definition of the identifier
 under the cursor.
@@ -41,42 +41,42 @@ For instance, given moduleA.ml and moduleB.mli in source path, use: >
     :MLI ModuleB
 <
 
-:TypeOf [expr]                                                       *:TypeOf*
+:MerlinTypeOf [expr]                                 *:MerlinTypeOf* *:TypeOf*
 
 If given an expression, returns its type.
 Otherwise, highlights the expression under the cursor and prints its type.
-Use in conjunction with |:GrowEnclosing| and |:ShrinkEnclosing|.
+Use in conjunction with |:MerlinGrowEnclosing| and |:MerlinShrinkEnclosing|.
 
 Bound to <LocalLeader>t by default in normal mode.
 
-:TypeOfSel                                                        *:TypeOfSel*
+:MerlinTypeOfSel                               *:MerlinTypeOfSel* *:TypeOfSel*
 
 In visual mode, returns the type of the selected expression.
 
 Bound to <LocalLeader>t by default in visual mode.
 
-:GrowEnclosing                                                *:GrowEnclosing*
+:MerlinGrowEnclosing                   *:MerlinGrowEnclosing* *:GrowEnclosing*
 
-When |:TypeEnclosing| has been called, select the smallest expression
+When |:MerlinTypeOf| has been called, select the smallest expression
 containing the previously highlighted expression.
 
-:ShrinkEnclosing                                            *:ShrinkEnclosing*
+:MerlinShrinkEnclosing             *:MerlinShrinkEnclosing* *:ShrinkEnclosing*
 
-When |:GrowEnclosing| has been called, revert to the previously selected
+When |:MerlinGrowEnclosing| has been called, revert to the previously selected
 expression. (i.e. the largest expression, centered around the position where
-|:TypeEnclosing| was called, which is contained in the currently highlighted
+|:MerlinTypeOf| was called, which is contained in the currently highlighted
 expression).
 
-["r] :YankLatestType                                         *:YankLatestType*
+["r] :MerlinYankLatestType           *:MerlinYankLatestType* *:YankLatestType*
 
 Copy the latest shown type into register `"r`, or `""` if unspecified.
 
-:ToggleTypeHistory                                        *:ToggleTypeHistory*
+:MerlinToggleTypeHistory       *:MerlinToggleTypeHistory* *:ToggleTypeHistory*
 
 Reveals or hides a buffer containing a trace of all computed types.
 See |merlin_type_history_height| and |merlin_type_history_auto_open|.
 
-:Occurrences                                                    *:Occurrences*
+:MerlinOccurrences                          *:MerlinOccurences* *:Occurrences*
 
 List all occurrences of identifier under cursor in current buffer.
 See |merlin_display_occurrence_list|.
@@ -85,7 +85,7 @@ Add these bindings to integrate the results into vim search (see |star|) >
   nmap <LocalLeader>#  <Plug>(MerlinSearchOccurrencesBackward)
 <
 
-:Rename <ident>                                                      *:Rename*
+:MerlinRename <ident>                                *:MerlinRename* *:Rename*
 
 Rename all occurrences of identifier under cursor to <ident>.
 Add these bindings to rename interactively: >
@@ -93,7 +93,7 @@ Add these bindings to rename interactively: >
   nmap <LocalLeader>R  <Plug>(MerlinRenameAppend)
 <
 
-:Destruct                                                          *:Destruct*
+:MerlinDestruct                                  *:MerlinDestruct* *:Destruct*
 
 "destructs" the thing under the cursor, i.e.
 - if the thing under the cursor is an expression, generates a pattern matching
@@ -105,7 +105,7 @@ Add these bindings to rename interactively: >
 
 See http://the-lambda-church.github.io/merlin/destruct.ogv
 
-:Outline                                                           *:Outline*
+:MerlinOutline                                     *:MerlinOutline* *:Outline*
 
 Gives an "outline" of the current buffer, i.e. lists all the "definitions"
 made in the buffer along with their kind (type definition, value definition,
@@ -115,9 +115,9 @@ definition.
 The rendering (and interactivity) is provided by
 [ctrl-p](https://github.com/ctrlpvim/ctrlp.vim).
 
-:ILocate                                                           *:ILocate*
+:MerlinILocate                                                *:MerlinILocate*
 
-This is an interactive version of |:Locate|, which relies on 
+This is an interactive version of |:MerlinLocate|, which relies on
 [ctrl-p](https://github.com/ctrlpvim/ctrlp.vim).
 It expects some input from the user, and then will list things in the
 environment which name matches the user input.
@@ -250,8 +250,8 @@ Possible option are:
 
                                                    *'merlin_locate_preference'*
 Default: "ml".
-Specifies whether you'd prefer |:Locate| and |:ILocate| to take you to .ml or
-.mli files. >
+Specifies whether you'd prefer |:MerlinLocate| and |:MerlinILocate| to take you
+to .ml or .mli files. >
     let g:merlin_locate_preference = 'mli'
 <
 
@@ -283,9 +283,15 @@ People using Supertab can do: >
 
 As suggested in the Supertab documentation.
 
+CtrlP ~
+
+Some "interactive" commands (|:MerlinIlocate|, |:MerlinOutline|) depend on
+[ctrlp](https://github.com/ctrlpvim/ctrlp.vim).
+If the plugin is installed, they will work out of the box.
+
 Contact us ~
 
 If you have any comment, question or bug to report, you can contact us through
-github : https://github.com/def-lkb/merlin/issues
+github : https://github.com/the-lambda-church/merlin/issues
 
  vim:tw=78:et:ft=help:norl:
