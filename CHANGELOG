@@ -21,7 +21,9 @@ merlin HEAD
             "this expression has type t = t but an expression was expected of
             type u = u"
           we now only print the equality when it adds some information
-    - fix type error reporting
+        + less noisy pattern recovery: when every pattern is recovered, consider
+          that the matched expression is the the source of the problem, and
+          retry typing with "'a" as the type of the matched expression.
     - add support for trunk
     - add a "document" command: takes an ident and return its documentation (if
       any)
@@ -50,6 +52,7 @@ merlin HEAD
     - add (dwim) completion on :TypeOf
     - while completing, candidates documentation can be displayed in the
       "preview" window
+    - prefix every command name by "Merlin" ( #379 )
 
 merlin 2.1.2
 ============
