@@ -325,6 +325,7 @@ let pers_map name =
     let types = ref PathMap.empty in
     let modules = ref PathMap.empty in
     Env.iter_module_types_and_aliases
+      ~only_val:false
       (register_short_type types Env.empty)
       (register_short_module modules Env.empty)
       (Ident.create_persistent name) Env.empty;
@@ -406,6 +407,7 @@ let update_aliasmap env am idents =
       register_short_type typ_ env (Path.Pident id) (path, ())
     | `Module id ->
       Env.iter_module_types_and_aliases
+        ~only_val:true
         (register_short_type typ_ env)
         (register_short_module mod_ env)
         id env

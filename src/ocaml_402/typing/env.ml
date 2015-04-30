@@ -985,8 +985,8 @@ let lookup_cltype lid env =
 (* Iter on an environment (ignoring the body of functors and
    not yet evaluated structures) *)
 
-let rec iter_env_components env proj path path' mcomps ft fma =
-  (* if EnvLazy.is_val mcomps then *)
+let rec iter_env_components only_val env proj path path' mcomps ft fma =
+  if not only_val || EnvLazy.is_val mcomps then
   match EnvLazy.force !components_of_module_maker' mcomps with
     Structure_comps comps ->
     Tbl.iter
@@ -1014,35 +1014,37 @@ let rec iter_env_components env proj path path' mcomps ft fma =
            with Not_found -> false
          in
          if not is_alias then
-           iter_env_components env proj (Pdot (path, s, n)) (Pdot (path', s, n)) c ft fma)
+           iter_env_components only_val env proj
+             (Pdot (path, s, n)) (Pdot (path', s, n)) c ft fma)
       comps.comp_components
   | Functor_comps _ -> ()
 
-let iter_env proj1 proj2 ft fma env =
-  Ident.iter (fun id (x,_) -> ft (Pident id) x) (proj1 env);
-  Ident.iter (fun id ((path, comps), _) ->
-      iter_env_components env proj2 (Pident id) path comps ft fma)
-    env.components
-
-let iter_pers_env proj ft fma name env =
+let iter_pers_env only_val proj ft fma name env =
   match
     (try Hashtbl.find !cache.persistent_structures name
      with Not_found -> None)
   with
   | Some ps ->
     let id = Pident (Ident.create_persistent name) in
-    iter_env_components env proj id id ps.ps_comps ft fma
+    iter_env_components only_val env proj id id ps.ps_comps ft fma
   | None -> ()
 
-let iter_types_and_aliases f =
-  iter_env (fun env -> env.types) (fun sc -> sc.comp_types) f
+let iter_env ?(only_val=false) proj1 proj2 ft fma env =
+  Ident.iter (fun id (x,_) -> ft (Pident id) x) (proj1 env);
+  Ident.iter (fun id ((path, comps), _) ->
+      iter_env_components only_val env proj2 (Pident id) path comps ft fma)
+    env.components
 
-let iter_module_types_and_aliases ft fma ident env =
+let iter_types_and_aliases ?only_val f =
+  iter_env ?only_val (fun env -> env.types) (fun sc -> sc.comp_types) f
+
+let iter_module_types_and_aliases ?(only_val=false) ft fma ident env =
   if Ident.persistent ident then
-    iter_pers_env (fun sc -> sc.comp_types) ft fma (Ident.name ident) env
+    iter_pers_env only_val (fun sc -> sc.comp_types) ft fma (Ident.name ident) env
   else
     Ident.iter (fun id ((path, comps), _) ->
-        iter_env_components env (fun sc -> sc.comp_types) (Pident id) path comps ft fma)
+        iter_env_components only_val env (fun sc -> sc.comp_types)
+          (Pident id) path comps ft fma)
       env.components
 
 let same_types env1 env2 =

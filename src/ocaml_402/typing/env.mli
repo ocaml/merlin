@@ -47,11 +47,13 @@ type type_descriptions =
 
 (* For short-paths *)
 val iter_types_and_aliases:
+    ?only_val:bool ->
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
     (Path.t -> Path.t -> unit) ->
     t -> unit
 
 val iter_module_types_and_aliases:
+    ?only_val:bool ->
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
     (Path.t -> Path.t -> unit) ->
     Ident.t -> t -> unit
