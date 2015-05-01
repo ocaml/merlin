@@ -505,7 +505,7 @@ let lookup ctxt ident env =
   with Found x ->
     x
 
-let locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc =
+let locate ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   File_switching.reset ();
   Fallback.reset ();
   Preferences.set ml_or_mli;
@@ -514,11 +514,10 @@ let locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc =
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
-          (Typedtrie.path_to_string modules)
+          (Typedtrie.path_to_string path)
       in
-      let browses = Browse.of_typer_contents local_defs in
-      let trie = Typedtrie.of_browses ~local_buffer:true browses in
-      match locate ~pos modules trie with
+      let trie = Lazy.force lazy_trie in
+      match locate ~pos path trie with
       | None when Fallback.is_set () -> recover str_ident
       | None -> `Not_found (str_ident, File_switching.where_am_i ())
       | Some loc -> `Found loc
@@ -528,17 +527,18 @@ let locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc =
   | File.Not_found path -> File.explain_not_found str_ident path
 
 (* Only used to retrieve documentation *)
-let from_completion_entry ~local_defs ~pos (namespace, path, loc) =
+let from_completion_entry ~lazy_trie ~pos (namespace, path, loc) =
   let path_lst  = Path.to_string_list path in
   let str_ident = String.concat ~sep:"." path_lst in
-  let modules = tag namespace path in
-  locate ~ml_or_mli:`MLI ~modules ~local_defs ~pos ~str_ident loc
+  let tagged_path = tag namespace path in
+  locate ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
+    ~lazy_trie
 
-let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
+let from_longident ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   let ident, is_label = Longident.keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
-    let modules, loc =
+    let tagged_path, loc =
       if not is_label then lookup ctxt ident env else
       (* If we know it is a record field, we only look for that. *)
       let label_desc = Raw_compat.lookup_label ident env in
@@ -546,7 +546,7 @@ let from_longident ~env ~local_defs ~pos ctxt ml_or_mli lid =
       (* TODO: Use [`Labels] here *)
       tag `Type path, loc
     in
-    locate ~ml_or_mli ~modules ~local_defs ~pos ~str_ident loc
+    locate ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
   with
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
   | Not_in_env -> `Not_in_env str_ident
@@ -611,6 +611,7 @@ let inspect_context browse path pos =
 
 let from_string ~project ~env ~local_defs ~pos switch path =
   let browse = Browse.of_typer_contents local_defs in
+  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true browse) in
   let lid = Longident.parse path in
   match inspect_context browse path pos with
   | None ->
@@ -623,7 +624,7 @@ let from_string ~project ~env ~local_defs ~pos switch path =
     Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
     Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
     match
-      from_longident ~pos ~env ~local_defs ctxt switch lid
+      from_longident ~pos ~env ~lazy_trie ctxt switch lid
     with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as error -> error
     | `Found loc ->
@@ -642,24 +643,25 @@ let from_string ~project ~env ~local_defs ~pos switch path =
         )
 
 
-let get_doc ~project ~env ~local_defs ~comments ~pos source path =
+let get_doc ~project ~env ~local_defs ~comments ~pos source =
   let browse = Browse.of_typer_contents local_defs in
+  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true browse) in
+  fun path ->
   Fluid.let' sources_path (Project.source_path project) @@ fun () ->
   Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
   Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
   Fluid.let' last_location Location.none @@ fun () ->
   match
     match path with
+    | `Completion_entry entry -> from_completion_entry ~pos ~lazy_trie entry
     | `User_input path ->
       let lid    = Longident.parse path in
       begin match inspect_context browse path pos with
       | None -> `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
       | Some ctxt ->
         info_log "looking for the doc of '%s'" path ;
-        from_longident ~pos ~env ~local_defs ctxt `MLI lid
+        from_longident ~pos ~env ~lazy_trie ctxt `MLI lid
       end
-    | `Completion_entry entry ->
-      from_completion_entry ~pos ~local_defs entry
   with
   | `Found loc ->
     let comments =
