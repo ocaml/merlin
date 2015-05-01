@@ -598,7 +598,12 @@ the merlin buffer of the current buffer."
                            (list 'reset 'dot_merlin dot-merlins 'auto name)
                            (list 'reset 'auto name)))
     (merlin-error-reset)
-    (setq merlin-dirty-point (point-min))))
+    (setq merlin-dirty-point (point-min))
+    ; Synchronizing should only do parsing and no typing.
+    ; That should be fast enough that the user don't realize.
+    ; Having knowledge of the buffer content, merlin idle jobs will be able to preload
+    ; type information to make upcoming requests much faster.
+    (merlin-sync-to-point (point-max) t)))
 
 (defun merlin--check-project-file ()
   "Check if .merlin file loaded successfully."

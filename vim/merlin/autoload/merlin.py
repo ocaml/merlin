@@ -801,6 +801,9 @@ def setup_merlin():
   acquire_buffer(force=True)
   failures = command("project","get")
   vim.command('let b:dotmerlin=[]')
+  # Tell merlin the content of the buffer.
+  # This allows merlin idle-job to preload content if nothing else is requested.
+  sync_full_buffer()
   if failures != None:
     fnames = display_load_failures(failures)
     if isinstance(fnames, list):
