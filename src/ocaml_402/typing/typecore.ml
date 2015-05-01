@@ -2137,6 +2137,8 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_env = env }
       end
   | Pexp_record(lid_sexp_list, opt_sexp) ->
+    let opt_exp_for_recovery = ref None in
+    let label_list_for_recovery = ref [] in
     begin try
       if lid_sexp_list = [] then
         Syntaxerr.ill_formed_ast loc "Records cannot be empty.";
@@ -2186,6 +2188,7 @@ and type_expect_ ?in_function env sexp ty_expected =
              opath)
           lid_sexp_list
       in
+      label_list_for_recovery := lbl_exp_list;
       unify_exp_types loc env ty_record (instance env ty_expected);
 
       (* type_label_a_list returns a list of labels sorted by lbl_pos *)
@@ -2198,7 +2201,6 @@ and type_expect_ ?in_function env sexp ty_expected =
             check_duplicates rem
         | [] -> ()
       in
-      check_duplicates lbl_exp_list;
       let opt_exp =
         match opt_exp, lbl_exp_list with
           None, _ -> None
@@ -2220,6 +2222,8 @@ and type_expect_ ?in_function env sexp ty_expected =
             Some {exp with exp_type = ty_exp}
         | _ -> assert false
       in
+      opt_exp_for_recovery := opt_exp;
+      check_duplicates lbl_exp_list;
       let num_fields =
         match lbl_exp_list with [] -> assert false
         | (_, lbl,_)::_ -> Array.length lbl.lbl_all in
@@ -2247,7 +2251,7 @@ and type_expect_ ?in_function env sexp ty_expected =
     with exn ->
       Typing_aux.raise_error exn;
       re {
-        exp_desc = Texp_record([], None);
+        exp_desc = Texp_record(!label_list_for_recovery, !opt_exp_for_recovery);
         exp_loc = loc; exp_extra = [];
         exp_type = instance env ty_expected;
         exp_attributes = merlin_incorrect_attribute :: sexp.pexp_attributes;
