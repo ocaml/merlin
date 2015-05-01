@@ -1347,7 +1347,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_let_binding_                      -> None
   | N_let_binding                       -> Some "binding"
   | N_let_bindings_no_attrs             -> None
-  | N_lbl_pattern_list                  -> None
+  | N_lbl_pattern_list                  -> Some "labeled pattern list"
   | N_lbl_pattern                       -> Some "labeled pattern"
   | N_lbl_expr_list                     -> Some "field list"
   | N_lbl_expr                          -> Some "field expression"
