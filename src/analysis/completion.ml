@@ -29,7 +29,7 @@
 
 open Std
 open Merlin_lib
-    
+
 open BrowseT
 
 (* List methods of an object.
@@ -372,7 +372,7 @@ let complete_methods ~env ~prefix obj =
     { name; kind = `MethodCall; desc = to_string (); info }
   )
 
-let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
+let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
     then false
@@ -408,7 +408,6 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix buffer node =
           :: candidates
       ) path env []
   in
-  let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
   try
     match prefix with
     | Longident.Ldot (path, prefix) -> find ~path ~is_label prefix
@@ -439,7 +438,12 @@ let node_complete buffer ?get_doc ?target_type node prefix =
   Printtyp.wrap_printing_env env @@ fun () ->
   match node.t_node with
   | Method_call (obj,_) -> complete_methods ~env ~prefix obj
-  | _ -> complete_prefix ?get_doc ~env ~prefix buffer node
+  | Expression { Typedtree.exp_desc = Typedtree.Texp_record (_, _) ; _ } ->
+    let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
+    complete_prefix ?get_doc ~env ~prefix ~is_label:true buffer node
+  | x ->
+    let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
+    complete_prefix ?get_doc ~env ~prefix ~is_label buffer node
 
 let expand_prefix ~global_modules env prefix =
   let lidents, last =
