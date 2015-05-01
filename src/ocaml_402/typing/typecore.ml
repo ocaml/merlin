@@ -20,6 +20,9 @@ open Typedtree
 open Btype
 open Ctype
 
+let merlin_incorrect_attribute =
+  Location.mknoloc "merlin.incorrect", Parsetree.PStr []
+
 type error =
     Polymorphic_label of Longident.t
   | Constructor_arity_mismatch of Longident.t * int * int
@@ -976,7 +979,7 @@ let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
     { pat_desc = Tpat_any;
       pat_loc = sp.ppat_loc;
       pat_type = expected_ty;
-      pat_attributes = [Location.mknoloc "merlin.incorrect", Parsetree.PStr []];
+      pat_attributes = [merlin_incorrect_attribute];
       pat_extra = [];
       pat_env = env';
     }
@@ -2134,6 +2137,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_env = env }
       end
   | Pexp_record(lid_sexp_list, opt_sexp) ->
+    begin try
       if lid_sexp_list = [] then
         Syntaxerr.ill_formed_ast loc "Records cannot be empty.";
       let opt_exp =
@@ -2240,6 +2244,16 @@ and type_expect_ ?in_function env sexp ty_expected =
         exp_type = instance env ty_expected;
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
+    with exn ->
+      Typing_aux.raise_error exn;
+      re {
+        exp_desc = Texp_record([], None);
+        exp_loc = loc; exp_extra = [];
+        exp_type = instance env ty_expected;
+        exp_attributes = merlin_incorrect_attribute :: sexp.pexp_attributes;
+        exp_env = env
+      }
+    end
   | Pexp_field(srecord, lid) ->
       let (record, label, _) = type_label_access env loc srecord lid in
       let (_, ty_arg, ty_res) = instance_label false label in
