@@ -1169,6 +1169,8 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
         pat_attributes = sp.ppat_attributes;
         pat_env = !env }
   | Ppat_record(lid_sp_list, closed) ->
+    let label_list_for_recovery = ref [] in
+    begin try
       if lid_sp_list = [] then
         Syntaxerr.ill_formed_ast loc "Records cannot be empty.";
       let opath, record_ty =
@@ -1205,6 +1207,7 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
           (type_label_a_list ?labels loc false !env type_label_pat opath)
           lid_sp_list
       in
+      label_list_for_recovery := lbl_pat_list;
       check_recordpat_labels loc lbl_pat_list closed;
       unify_pat_types loc !env record_ty expected_ty;
       rp {
@@ -1213,6 +1216,15 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
         pat_type = expected_ty;
         pat_attributes = sp.ppat_attributes;
         pat_env = !env }
+    with exn when can_recover exn ->
+      rp {
+        pat_desc = Tpat_record (!label_list_for_recovery, closed);
+        pat_loc = loc; pat_extra=[];
+        pat_type = expected_ty;
+        pat_attributes = merlin_incorrect_attribute :: sp.ppat_attributes;
+        (* FIXME: do we want [!env] here or a copy of the initial env? *)
+        pat_env = !env }
+    end
   | Ppat_array spl ->
       let ty_elt = newvar() in
       unify_pat_types
