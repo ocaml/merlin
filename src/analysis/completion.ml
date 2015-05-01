@@ -438,6 +438,7 @@ let node_complete buffer ?get_doc ?target_type node prefix =
   Printtyp.wrap_printing_env env @@ fun () ->
   match node.t_node with
   | Method_call (obj,_) -> complete_methods ~env ~prefix obj
+  | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; _ }
   | Expression { Typedtree.exp_desc = Typedtree.Texp_record (_, _) ; _ } ->
     let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
     complete_prefix ?get_doc ~env ~prefix ~is_label:true buffer node
