@@ -48,7 +48,15 @@ let rollbacks endp parser =
       match Merlin_parser.recover ~endp termination parser with
       | Some _ as r -> r
       | None ->
-        Option.map (Merlin_parser.pop parser) ~f:(fun parser ->
+        let rec pop = function
+          | None -> None
+          | Some parser ->
+            if Merlin_recovery_strategy.observable_state
+                (Merlin_parser.get_lr1_state parser)
+            then Some parser
+            else pop (Merlin_parser.pop parser)
+        in
+        Option.map (pop (Merlin_parser.pop parser)) ~f:(fun parser ->
           Merlin_parser.termination, (0, locate parser))
     with _ -> None
   in
