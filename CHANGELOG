@@ -8,6 +8,7 @@ merlin HEAD
           This allows us to offer completion for named and optional parameters,
           as well as polymorphic variants
         + optionally associates ocamldoc comments to candidates
+        + adds field completion inside records ( #296 )
     - locate:
         + partially rewritten, introduces a cache (so potentially noticeably
           bigger memory consumption)
@@ -46,6 +47,9 @@ merlin HEAD
     - locate error messages were silently ignored, they are now printed
     - drop text properties from commands sent to merlin (pull request #383 by
       milanst)
+    - Tell merlin the content of the buffer.
+      This allows merlin idle-job to preload content if nothing else is
+      requested.
 
   vim:
     - fix ctrlp binding for locate
@@ -53,6 +57,9 @@ merlin HEAD
     - while completing, candidates documentation can be displayed in the
       "preview" window
     - prefix every command name by "Merlin" ( #379 )
+    - Tell merlin the content of the buffer.
+      This allows merlin idle-job to preload content if nothing else is
+      requested.
 
 merlin 2.1.2
 ============
@@ -114,7 +121,7 @@ Sun Jan 11 22:20:23 CET 2015
 
   backend:
     - add PPX support
-    - make use of context before locating (#308, #316, #318). 
+    - make use of context before locating (#308, #316, #318).
     - generate match patterns for arbitrary expressions and missing patterns
       for incomplete matchings (#123).
     - reintroduce type expansion (asking the times of the same expression
@@ -273,7 +280,7 @@ merlin 1.4.1
 ============
 Thu Sep 26 21:29:56 BST 2013
 
-  documentation: 
+  documentation:
     - updates of the emacs section of the readme by Ronan Lehy.
 
   emacs:
@@ -285,7 +292,7 @@ Thu Sep 26 21:29:56 BST 2013
       causing complete desynchronisation between vim and merlin.
     - better formatting for completion suggestions.
 
-merlin 1.4.0 
+merlin 1.4.0
 ============
 Tue Sep 24 23:02:04 BST 2013
 
