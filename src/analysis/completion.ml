@@ -335,6 +335,13 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
             :: candidates
         ) path env []
 
+      | `Labels ->
+        Raw_compat.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
+          if not (validate `Lident `Label name) then candidates else
+            make_weighted_candidate ~exact:(name = prefix) name (`Label l)
+            :: candidates
+        ) path env []
+
       | `Group (kinds) -> List.concat_map ~f:of_kind kinds
     in
     of_kind kind
@@ -350,7 +357,7 @@ let default_kinds = [`Variants; gen_values; `Types; `Modules; `Modules_type]
 let completion_order = function
   | `Expression  -> [`Variants; gen_values; `Types; `Modules; `Modules_type]
   | `Structure   -> [gen_values; `Types; `Modules; `Modules_type]
-  | `Pattern     -> [`Variants; `Constructor; `Modules; `Values; `Types; `Modules_type]
+  | `Pattern     -> [`Variants; `Constructor; `Modules; `Labels; `Values; `Types; `Modules_type]
   | `Module      -> [`Modules; `Modules_type; `Types; gen_values]
   | `Module_type -> [`Modules_type; `Modules; `Types; gen_values]
   | `Signature   -> [`Types; `Modules; `Modules_type; gen_values]
