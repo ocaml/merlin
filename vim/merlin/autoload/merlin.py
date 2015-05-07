@@ -795,6 +795,18 @@ def vim_selectphrase(l1,c1,l2,c2):
   for (var,val) in [(l1,fst['line']),(l2,snd['line']),(c1,fst['col']),(c2,snd['col'])]:
       vim.command("let %s = %d" % (var,val))
 
+def highlighting():
+    sync_buffer()
+    update_highlighting(command("highlighting"))
+
+def update_highlighting(infos):
+    for info in infos:
+        for location in info['locations']:
+            line  = location['start']['line']
+            col   = location['start']['col'] + 1
+            count = location['end']['col'] + 1 - col
+            vim.eval('matchaddpos("Constant", [[%d, %d, %d]])' % (line,col,count))
+
 # Stuff
 
 def setup_merlin():

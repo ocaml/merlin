@@ -1,4 +1,4 @@
-if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
+    if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 
 if !has('python')
   echo "Error: Required vim compiled with +python"
@@ -409,6 +409,7 @@ function! merlin#ErrorLocList()
 try:
   merlin.sync_full_buffer()
   merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
+  merlin.update_highlighting(merlin.command("highlighting"))
 except merlin.MerlinException as e:
   merlin.try_print_error(e)
 EOF
