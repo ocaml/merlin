@@ -166,6 +166,14 @@ module Protocol_io = struct
           | `Tail_call -> "call")
     ]
 
+  let json_of_highlighting_info {Highlighting. path; index; locations} =
+    `Assoc [
+      "path", json_of_string_list path;
+      "index", `Int index;
+      "locations", `List (List.map ~f:(fun l -> with_location l []) locations)
+    ]
+
+
   let string_of_kind = function
     | `Value       -> "Value"
     | `Variant     -> "Variant"
@@ -410,6 +418,10 @@ module Protocol_io = struct
       Request (Project_get)
     | [`String "version"] ->
       Request (Version)
+    | [`String "highlighting"] ->
+      Request (Highlighting `Incremental)
+    | [`String "highlighting"; `String "fresh"] ->
+      Request (Highlighting `Fresh)
     | _ -> invalid_arguments ()
 
   let json_of_response = function
@@ -513,6 +525,8 @@ module Protocol_io = struct
         | Idle_job, b -> `Bool b
         | Version, version ->
           `String version
+        | Highlighting _, infos ->
+          `List (List.map json_of_highlighting_info infos)
       end]
 
   let request_of_json = function

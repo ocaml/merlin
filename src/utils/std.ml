@@ -279,6 +279,8 @@ module List = struct
 
   let sort_uniq ~cmp l =
     uniq ~cmp (sort ~cmp l)
+
+  let cons_count c (n,l) = (n + 1, (c :: l))
 end
 
 module Option = struct

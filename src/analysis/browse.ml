@@ -187,7 +187,9 @@ let all_constructor_occurrences ({t_env = env},d) t =
   in
   aux [] t
 
-let annotate_tail_calls ts : (t * Protocol.is_tail_position) list =
+type is_tail_position = [`No | `Tail_position | `Tail_call]
+
+let annotate_tail_calls ts : (t * is_tail_position) list =
   let open BrowseT in
   let is_one_of candidates t = List.mem t.t_node ~set:candidates in
   let find_entry_points candidates t =
@@ -252,8 +254,7 @@ let is_recovered = function
         inside x definition.
  *)
 let node_at ?(skip_recovered=false) typer pos_cursor =
-  let open Merlin_lib in
-  let structures = Typer.contents typer in
+  let structures = Merlin_typer.contents typer in
   let structures = of_typer_contents structures in
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node
@@ -261,6 +262,6 @@ let node_at ?(skip_recovered=false) typer pos_cursor =
     | node :: (node' :: _ as ancestors)
       when skip_recovered && is_recovered node' -> select ancestors
     | node :: ancestors -> node, ancestors
-    | [] -> {BrowseT.dummy with BrowseT.t_env = Typer.env typer}, []
+    | [] -> {BrowseT.dummy with BrowseT.t_env = Merlin_typer.env typer}, []
   in
   select (deepest_before pos_cursor structures)

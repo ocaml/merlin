@@ -859,4 +859,11 @@ let dispatch (state : state) =
   | (Idle_job : a request) ->
     Buffer.idle_job state.buffer
 
+  | (Highlighting kind : a request) ->
+    begin match kind with
+      | `Fresh -> Buffer.clear_highlighting state.buffer;
+      | `Incremental -> ()
+    end;
+    Buffer.update_highlighting state.buffer
+
   : a)

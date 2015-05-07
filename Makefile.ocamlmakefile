@@ -172,17 +172,17 @@ SOURCES = \
 	src/config/my_config.ml           \
 	src/frontend/main_args.mli        \
 	src/frontend/main_args.ml         \
+	src/analysis/browse.mli           \
+	src/analysis/browse.ml            \
+	src/analysis/highlighting.mli     \
+	src/analysis/highlighting.ml      \
 	src/kernel/merlin_lib.ml          \
 	src/ocaml_aux/error_report.mli    \
 	src/ocaml_aux/error_report.ml     \
 	src/frontend/protocol.mli         \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
-	src/analysis/browse.mli           \
-	src/analysis/browse.ml            \
 	src/analysis/browse_misc.ml       \
-	src/analysis/highlighting.mli     \
-	src/analysis/highlighting.ml      \
 	src/analysis/type_utils.mli       \
 	src/analysis/type_utils.ml        \
 	src/analysis/typedtrie.mli        \

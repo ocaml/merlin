@@ -1,9 +1,15 @@
 type t
+type diff
 
 type info = {
-  color_index: string list * int;
+  path: string list;
+  index: int;
   locations: Location.t list;
 }
 
 val empty : t
-val update : Merlin_typer.content -> t -> info list * t
+val empty_diff: diff
+
+val update : Merlin_typer.content -> diff * t -> diff * t
+
+val get_diff: diff -> info list

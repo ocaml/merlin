@@ -42,6 +42,8 @@ type content =
   ]
 
 val contents : t -> (content * Typecore.delayed_check list) list
+val contents_count : t -> int
+
 val exns : t -> exn list
 val delayed_checks : t -> exn list
 val extensions : t -> Extension.set

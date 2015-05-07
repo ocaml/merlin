@@ -466,6 +466,10 @@ module Buffer : sig
 
   (* Try to do a background job, return false if nothing has to be done *)
   val idle_job : t -> bool
+
+  val update_highlighting : t -> Highlighting.info list
+  val clear_highlighting : t -> unit
+
 end = struct
   type t = {
     kind: Parser.state;
@@ -478,6 +482,7 @@ end = struct
     mutable lexer: (exn list * Lexer.item) History.t;
     mutable recover: (Lexer.item * Recover.t) History.t;
     mutable typer: Typer.t;
+    mutable highlighters: int * (Typer.content * Highlighting.t) list;
   }
 
   let invalidate t =
@@ -539,6 +544,7 @@ end = struct
       typer = Typer.fresh
           ~unit_name ~stamp:[Project.validity_stamp project; stamp]
           (Project.extensions project);
+      highlighters = 0, [];
     }
 
   let setup buffer =
@@ -633,5 +639,36 @@ end = struct
     Clflags.real_paths () <> `Real &&
     let concr = Env.used_persistent () in
     Types.Concr.exists Printtyp.compute_map_for_pers concr
+
+  let update_highlighting t =
+    let typ = typer t in
+    Typer.with_typer typ @@ fun () ->
+    let contents = Typer.contents typ in
+    let count = Typer.contents_count typ in
+    let count', highlighters = t.highlighters in
+    let bottom = min count count' in
+    let highlighters = List.drop_n (count' - bottom) highlighters in
+    let acc, contents = List.split_n (count - bottom) contents in
+    let rec sync acc highlighters contents = match highlighters, contents with
+      | (th, h) :: _, (tc, _)  :: _ when th == tc -> acc, highlighters, h
+      | _ :: highlighters, c :: contents -> sync (c :: acc) highlighters contents
+      | [], [] -> acc, [], Highlighting.empty
+      | _ -> assert false
+    in
+    let acc, highlighters, highlighter = sync (List.rev acc) highlighters contents in
+    let diff = ref Highlighting.empty_diff in
+    let highlighters', _ =
+      List.fold_left ~f:(fun (highlighters,highlighter) (content,_) ->
+          let diff', highlighter' = Highlighting.update content (!diff, highlighter) in
+          diff := diff';
+          (((content, highlighter') :: highlighters), highlighter'))
+      ~init:(highlighters,highlighter)
+      acc
+    in
+    t.highlighters <- count, highlighters';
+    Highlighting.get_diff !diff
+
+  let clear_highlighting t =
+    t.highlighters <- 0, []
 
 end

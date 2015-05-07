@@ -66,8 +66,6 @@ and item = {
   children : outline ;
 }
 
-type is_tail_position = [`No | `Tail_position | `Tail_call]
-
 type _ request =
   | Tell
     : [ `Start of position option | `Source of string | `File of string | `Eof | `Marker]
@@ -77,7 +75,7 @@ type _ request =
     -> string request
   | Type_enclosing
     :  (string * int) option * position
-    -> (Location.t * string * is_tail_position) list request
+    -> (Location.t * string * Browse.is_tail_position) list request
   | Enclosing
     :  position
     -> Location.t list request
@@ -165,6 +163,8 @@ type _ request =
   | Occurrences
     : [`Ident_at of position]
     -> Location.t list request
+  | Highlighting
+    : [`Incremental | `Fresh] -> Highlighting.info list request
   | Idle_job
     : bool request
   | Version

@@ -53,7 +53,7 @@ type step = {
   ppx_cookie : Ast_mapper.cache;
   snapshot   : Btype.snapshot;
   env        : Env.t;
-  contents   : (content * Typecore.delayed_check list) list;
+  contents   : int * (content * Typecore.delayed_check list) list;
   exns       : exn list;
 }
 
@@ -65,7 +65,7 @@ let empty extensions catch  =
   let snapshot = Btype.snapshot () in
   let ppx_cookie = !Ast_mapper.cache in
   { raw = Raw_typer.empty;
-    contents = [];
+    contents = (0, []);
     ppx_cookie; snapshot; env; exns;
   }
 
@@ -137,11 +137,11 @@ let append catch loc step item =
       | `str str ->
         let structure,t,env = Typemod.type_structure step.env str loc in
         env,
-        (`Str structure, !Typecore.delayed_checks) :: step.contents
+        List.cons_count (`Str structure, !Typecore.delayed_checks) step.contents
       | `sg sg ->
         let sg = Typemod.transl_signature step.env sg in
         sg.Typedtree.sig_final_env,
-        (`Sg sg, !Typecore.delayed_checks) :: step.contents
+        List.cons_count (`Sg sg, !Typecore.delayed_checks) step.contents
       | `fake str ->
         let structure,_,_ =
           Parsing_aux.catch_warnings (ref [])
@@ -151,7 +151,7 @@ let append catch loc step item =
           BrowseT.of_node ~loc ~env:step.env (BrowseT.Structure structure)
         in
         (last_env browse).BrowseT.t_env,
-        (`Str structure, !Typecore.delayed_checks) :: step.contents
+        List.cons_count (`Str structure, !Typecore.delayed_checks) step.contents
       | `none -> step.env, step.contents
     in
     let snapshot = Btype.snapshot () in
@@ -163,7 +163,7 @@ let append catch loc step item =
     let snapshot = Btype.snapshot () in
     {step with snapshot;
                exns = exn :: caught catch @ step.exns;
-               contents = (`Fail (step.env, loc), []) :: step.contents}
+               contents = List.cons_count (`Fail (step.env, loc), []) step.contents}
 
 (* Incremental synchronization *)
 
@@ -278,17 +278,17 @@ let env t      = (get_value t).env
 let exns t     = (get_value t).exns
 let delayed_checks t =
   protect_typer t @@ fun exns ->
-  let st = get_value t in
+  let {contents = (_,contents); env} = get_value t in
   let checks =
     List.fold_left ~f:(fun acc (content,checks) ->
         try match content with
           | `Str str ->
-            ignore (Includemod.signatures st.env
+            ignore (Includemod.signatures env
                       str.Typedtree.str_type
                       str.Typedtree.str_type : Typedtree.module_coercion);
             checks @ acc
           | `Sg sg ->
-            ignore (Includemod.signatures st.env
+            ignore (Includemod.signatures env
                       sg.Typedtree.sig_type
                       sg.Typedtree.sig_type : Typedtree.module_coercion);
             checks @ acc
@@ -296,13 +296,14 @@ let delayed_checks t =
         with exn ->
           exns := exn :: !exns;
           acc
-      ) ~init:[] st.contents
+      ) ~init:[] contents
   in
   Typecore.delayed_checks := checks;
   Typecore.force_delayed_checks ();
   !exns
 
-let contents t = (get_value t).contents
+let contents t = snd (get_value t).contents
+let contents_count t = fst (get_value t).contents
 let extensions t = t.state.extensions
 
 let is_valid t =

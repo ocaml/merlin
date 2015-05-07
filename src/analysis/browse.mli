@@ -50,7 +50,7 @@ val deepest_before : Lexing.position -> t list -> t list
  *      preferable to use env from enclosing module rather than an env from
  *      inside x definition.
  *)
-val node_at : ?skip_recovered:bool -> Merlin_lib.Typer.t -> Lexing.position ->
+val node_at : ?skip_recovered:bool -> Merlin_typer.t -> Lexing.position ->
   BrowseT.t * BrowseT.t list
 
 (** The nearest context inside or before the node, though stopping after
@@ -80,8 +80,9 @@ val all_constructor_occurrences :
 
 (** From a chain of nodes, going from the root to the leaf, returns a list in
  *  the same ordering about what is known about tail positions *)
-val annotate_tail_calls : t list -> (t * Protocol.is_tail_position) list
+type is_tail_position = [`No | `Tail_position | `Tail_call]
+val annotate_tail_calls : t list -> (t * is_tail_position) list
 
 (** Same function, but operating from leaves to root *)
 val annotate_tail_calls_from_leaf
-  : t list -> (t * Protocol.is_tail_position) list
+  : t list -> (t * is_tail_position) list

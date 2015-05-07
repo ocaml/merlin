@@ -1,7 +1,8 @@
 open Std
 
 type info = {
-  color_index: string list * int;
+  path: string list;
+  index: int;
   locations: Location.t list;
 }
 
@@ -36,11 +37,14 @@ end
 
 type t = IdentCounter.t
 
+type diff = info Path.PathMap.t
+
 let rec all_paths acc t =
   let acc = BrowseT.node_paths t.BrowseT.t_node @ acc in
   List.fold_left ~f:all_paths ~init:acc (Lazy.force t.BrowseT.t_children)
 
 let empty = IdentCounter.empty
+let empty_diff = Path.PathMap.empty
 
 (*FIXME: won't work with applicative paths *)
 let rec naive_head = function
@@ -60,12 +64,12 @@ let add_path index pathmap path_loc =
     with Not_found ->
       let names, ident = naive_name [] path in
       let color = IdentCounter.index ident index in
-      { color_index = names, color; locations = [] }
+      { path = names; index = color; locations = [] }
   in
   let info = {info with locations = location :: info.locations} in
   Path.PathMap.add path info pathmap
 
-let update content t =
+let update content (diff,t) =
   let browse = Browse.of_typer_contents [content, ()] in
   let paths = List.fold_left ~f:all_paths ~init:[] browse in
   let naive_head t = naive_head t.Location.txt in
@@ -76,5 +80,7 @@ let update content t =
       idents
   in
   let t = List.fold_left ~f:IdentCounter.add ~init:t idents in
-  let map = List.fold_left ~f:(add_path t) paths ~init:Path.PathMap.empty in
-  Path.PathMap.fold (fun _ info acc -> info :: acc) map [], t
+  List.fold_left ~f:(add_path t) paths ~init:diff, t
+
+let get_diff diff =
+  Path.PathMap.fold (fun _ info acc -> info :: acc) diff []
