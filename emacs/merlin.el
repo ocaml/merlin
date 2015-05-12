@@ -450,7 +450,10 @@ return DEFAULT or the value associated to KEY."
 
 (defun merlin--process-busy-set (value &optional instance-name)
   (with-current-buffer (merlin-process-buffer instance-name)
-     (assert (eq merlin--process-busy (not value)))
+     (assert (not (and merlin--process-busy value))
+             nil
+             "Merlin was already processing %S while %S was attempted"
+             merlin--process-busy value)
      (setq merlin--process-busy value)))
 
 (defun merlin-start-process (flags &optional configuration)
@@ -689,7 +692,7 @@ the error message otherwise print a generic error message."
   (let ((promise (merlin-send-command-async
                             command (lambda (data) data) callback-if-exn)))
     (when promise
-      (merlin--process-busy-set t)
+      (merlin--process-busy-set (list command))
       (let ((w32-pipe-read-delay 0)) ;; fix 50ms latency of emacs on win32
         (while (not (car promise))
                (accept-process-output (merlin-process) 1.0)))
