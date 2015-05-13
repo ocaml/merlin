@@ -310,10 +310,10 @@ trigger useless merlin calls.")
 
 ;; Misc
 (defvar merlin--project-cache nil "Cache for merlin--project-get")
-(make-variable-buffer-local 'merlin--project-cache)
 (defvar merlin--project-failures nil
   "When loading .merlin, list of errors reported. Only update error messages if
   error list changes")
+(make-variable-buffer-local 'merlin--project-cache)
 (make-variable-buffer-local 'merlin--project-failures)
 
 ;;;;;;;;;;;
@@ -1728,37 +1728,12 @@ is active)."
   "Returns a pair of two string lists (dot_merlins . failures) with a list of
 .merlins file loaded and a list of error messages, if any error occured during
 loading"
-  (if (merlin--process-busy) (cons nil nil)
-    (progn
-      (merlin--acquire-buffer)
-      (let* ((r (merlin-send-command '(project get)))
-             (failed (cdr (assoc 'failures r)))
-             (result (cdr (assoc 'result r)))
-             (ret (cons result failed)))
-        (setq merlin--project-cache (cons (float-time) ret))
-        ret))))
-
-(defun merlin--project-get-async ()
-  "Update merlin--project-cache in background"
-  (if merlin--project-cache
-    (setcar merlin--project-cache (float-time))
-    (setq merlin--project-cache (cons (float-time) nil)))
-  (unless (merlin--process-busy) (merlin--acquire-buffer))
-  (when (merlin--acquired-buffer)
-    (merlin-send-command-async
-      '(project get)
-      (lambda (project)
-        (let* ((failed (cdr (assoc 'failures r)))
-               (result (cdr (assoc 'result r))))
-          (setcdr merlin--project-cache (cons result failed)))))))
-
-(defun merlin--project-get-cached ()
-  "Like `merlin--project-get' but use a cache to prevent to limit number of
-calls (lighter can be updated at a high frequency)"
-  (unless (and merlin--project-cache
-               (< (- (float-time) (car merlin--project-cache)) 10.))
-    (merlin--project-get-async))
-  (cdr merlin--project-cache))
+  (let* ((r (merlin-send-command '(project get)))
+         (failed (cdr (assoc 'failures r)))
+         (result (cdr (assoc 'result r)))
+         (ret (cons result failed)))
+    (setq merlin--project-cache ret)
+    ret))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
@@ -2167,11 +2142,11 @@ Returns the position."
   "Return the lighter for merlin which indicates the status of merlin process."
   (if (merlin-process-dead-p) " merlin (DEAD)"
     (progn
-      (let* ((messages nil)
-             (project (merlin--project-get-cached)))
+      (let ((messages nil))
         (when merlin-report-errors-in-lighter
-          (cond ((cdr project) (add-to-list 'messages "errors in .merlin"))
-                ((not (car project)) (add-to-list 'messages "no .merlin"))))
+          (cond ((not merlin--project-cache) nil)
+                ((cdr merlin--project-cache) (add-to-list 'messages "errors in .merlin"))
+                ((not (car merlin--project-cache)) (add-to-list 'messages "no .merlin"))))
         (when merlin-erroneous-buffer
           (add-to-list 'messages "errors in buffer"))
         (when merlin-show-instance-in-lighter
