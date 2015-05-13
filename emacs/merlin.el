@@ -254,6 +254,10 @@ field logfile (see `merlin-start-process')"
   "Position after which buffer content may differ.")
 (make-variable-buffer-local 'merlin-dirty-point)
 
+(defvar merlin-loaded-once nil
+  "Set to nil if buffer has not been loaded at least once in merlin.")
+(make-variable-buffer-local 'merlin-loaded-once)
+
 ;; Overlays
 (defvar merlin-lock-zone-highlight-overlay nil
   "Overlay used for the lock zone highlighting.")
@@ -602,11 +606,13 @@ the merlin buffer of the current buffer."
                            (list 'reset 'auto name)))
     (merlin-error-reset)
     (setq merlin-dirty-point (point-min))
-    ; Synchronizing should only do parsing and no typing.
+    ; Synchronizing will only do parsing and no typing.
     ; That should be fast enough that the user don't realize.
     ; Having knowledge of the buffer content, merlin idle jobs will be able to preload
     ; type information to make upcoming requests much faster.
-    (merlin-sync-to-point (point-max) t)))
+    (unless merlin-loaded-once
+      (merlin-sync-to-point (point-max) t)
+      (setq merlin-loaded-once t))))
 
 (defun merlin--check-project-file ()
   "Check if .merlin file loaded successfully."
