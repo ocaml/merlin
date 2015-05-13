@@ -231,7 +231,7 @@ field logfile (see `merlin-start-process')"
 (make-variable-buffer-local 'merlin-process-queue)
 
 (defvar merlin--process-busy nil
-  "Non-nil if process is busy treating a synchronous operation.")
+  "Non-nil if process is busy treating a synchronous operation (only valid in a process buffer).")
 (make-variable-buffer-local 'merlin--process-busy)
 
 (defvar merlin-process-data nil
@@ -1723,20 +1723,36 @@ is active)."
 .merlins file loaded and a list of error messages, if any error occured during
 loading"
   (if (merlin--process-busy) (cons nil nil)
-    (let* ((r (merlin-send-command '(project get)))
-           (failed (cdr (assoc 'failures r)))
-           (result (cdr (assoc 'result r)))
-           (ret (cons result failed)))
-      (setq merlin--project-cache (cons (float-time) ret))
-      ret)))
+    (progn
+      (merlin--acquire-buffer)
+      (let* ((r (merlin-send-command '(project get)))
+             (failed (cdr (assoc 'failures r)))
+             (result (cdr (assoc 'result r)))
+             (ret (cons result failed)))
+        (setq merlin--project-cache (cons (float-time) ret))
+        ret))))
+
+(defun merlin--project-get-async ()
+  "Update merlin--project-cache in background"
+  (if merlin--project-cache
+    (setcar merlin--project-cache (float-time))
+    (setq merlin--project-cache (cons (float-time) nil)))
+  (unless (merlin--process-busy) (merlin--acquire-buffer))
+  (when (merlin--acquired-buffer)
+    (merlin-send-command-async
+      '(project get)
+      (lambda (project)
+        (let* ((failed (cdr (assoc 'failures r)))
+               (result (cdr (assoc 'result r))))
+          (setcdr merlin--project-cache (cons result failed)))))))
 
 (defun merlin--project-get-cached ()
   "Like `merlin--project-get' but use a cache to prevent to limit number of
 calls (lighter can be updated at a high frequency)"
-  (if (and merlin--project-cache
-           (< (abs (- (float-time) (car merlin--project-cache))) 4.))
-      (cdr merlin--project-cache)
-    (merlin--project-get)))
+  (unless (and merlin--project-cache
+               (< (- (float-time) (car merlin--project-cache)) 10.))
+    (merlin--project-get-async))
+  (cdr merlin--project-cache))
 
 (defun merlin-goto-project-file ()
   "Goto the merlin file corresponding to the current file."
@@ -2145,7 +2161,6 @@ Returns the position."
   "Return the lighter for merlin which indicates the status of merlin process."
   (if (merlin-process-dead-p) " merlin (DEAD)"
     (progn
-      (merlin--acquire-buffer)
       (let* ((messages nil)
              (project (merlin--project-get-cached)))
         (when merlin-report-errors-in-lighter
