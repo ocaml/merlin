@@ -170,10 +170,12 @@ let rec mod_smallerthan n m =
   | _ -> Some 1
 
 let print_type_with_decl ~verbosity env ppf typ =
-  Printtyp.type_scheme env ppf typ;
   if verbosity > 0 then
     match (Ctype.repr typ).Types.desc with
-    | Types.Tconstr (path, _, _) ->
+    | Types.Tconstr (path, params, _) ->
+      (* Print expression only if it is parameterized *)
+      if params <> [] then
+        Printtyp.type_scheme env ppf typ;
       let ident = match path with
         | Path.Papply _ -> assert false
         | Path.Pdot (_,name,_) -> Ident.create_persistent name
@@ -183,7 +185,9 @@ let print_type_with_decl ~verbosity env ppf typ =
       Format.pp_print_newline ppf ();
       Printtyp.type_declaration env ident ppf
         (Env.find_type path env)
-    | _ -> ()
+    | _ -> Printtyp.type_scheme env ppf typ
+  else
+    Printtyp.type_scheme env ppf typ
 
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   let print_expr expression =
