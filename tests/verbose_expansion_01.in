@@ -1,5 +1,10 @@
-["tell","source","type t = int * string\nlet x : t = 5, \"lol\"\n"]
-["tell","end"]
-["seek","exact",{"line":2,"col":4}]
-["type","enclosing",{"expr":"x","offset":0},{"line":2,"col":4}]
-["type","enclosing",{"expr":"x","offset":0},{"line":2,"col":4}]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset sexp_01.ml
+tell <<END
+type t = int * string
+let x : t = 5, "lol"
+END
+cmd type enclosing '{"expr":"x","offset":0}' `pos 2 4`
+cmd type enclosing '{"expr":"x","offset":0}' `pos 2 4`

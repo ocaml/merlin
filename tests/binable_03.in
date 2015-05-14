@@ -1,4 +1,11 @@
-["find", "use", "bin_prot"]
-["tell", "source", "module Test_binprot : Bin_prot.Binable.S2 = struct type ('a,'b) t = T of 'a * 'b with bin_io end"]
-["tell", "end"]
-["errors"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset binable_03.ml
+package bin_prot
+tell <<END
+module Test_binprot : Bin_prot.Binable.S2 = struct
+  type ('a, 'b) t = T of 'a * 'b with bin_io
+end
+END
+cmd errors

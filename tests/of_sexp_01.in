@@ -1,5 +1,11 @@
-["find", "use", "sexplib"]
-["tell", "source", "type t = int with of_sexp\n"]
-["tell", "end"]
-["errors"]
-["dump", "env"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset of_sexp_01.ml
+package sexplib
+tell <<END
+open Fieldslib
+type t = int with of_sexp
+END
+cmd errors
+cmd dump env

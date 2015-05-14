@@ -1,4 +1,12 @@
-["find", "use", "bin_prot"]
-["tell", "source", "module T : sig type 'a t with bin_io end = struct type 'a t = T of 'a with bin_io end\nmodule T1 : Bin_prot.Binable.S1 = T"]
-["tell", "end"]
-["errors"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset binable_sig_02.ml
+package bin_prot
+tell <<END
+module T : sig type 'a t with bin_io end = struct
+  type 'a t = T of 'a with bin_io
+end
+module T1 : Bin_prot.Binable.S1 = T
+END
+cmd errors

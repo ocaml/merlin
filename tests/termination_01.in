@@ -1,2 +1,0 @@
-["tell", "source", "let x = function\n  | a -> ()\n  | b -> ()\n  | c -> ()\n  | d -> ()\nend\n  | P of int\n"]
-["tell", "end"]

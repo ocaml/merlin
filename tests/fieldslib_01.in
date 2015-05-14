@@ -1,5 +1,10 @@
-["find", "use", "fieldslib"]
-["tell", "source", "open Fieldslib\n"]
-["tell", "source", "\ntype t = { x : int ; y : float ref } with fields"]
-["tell", "end"]
-["dump", "env"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset fieldslib_01.ml
+package fieldslib
+tell <<END
+open Fieldslib
+type t = { x : int ; y : float ref } with fields
+END
+cmd dump env

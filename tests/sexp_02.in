@@ -1,7 +1,12 @@
-["find", "use", "sexplib"]
-["tell", "source", "module Test_sexp = struct "]
-["tell", "source", "type t = int with sexp "]
-["tell", "source", "let test = sexp_of_t "]
-["tell", "source", "end"]
-["tell", "end"]
-["errors"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset sexp_02.ml
+package sexplib
+tell <<END
+module Test_sexp = struct
+  type t = int with sexp
+  let test = sexp_of_t
+end
+END
+cmd errors

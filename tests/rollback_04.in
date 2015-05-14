@@ -1,6 +1,0 @@
-["tell","source","module X = struct\n  List\nend\n"]
-["tell","end"]
-["seek","before",{"line":2,"col":0}]
-["tell","source","\n  include List\nend\n"]
-["tell","end"]
-["errors"]

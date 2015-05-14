@@ -1,8 +1,0 @@
-["reset","name","test.ml"]
-["tell","source","let x = \"hello\"\nmodule A = struct\n  let x = 5\nend\nlet _ = x\n"]
-["tell","end"]
-["type","enclosing",{"expr":"x","offset":0},{"line":5,"col":8}]
-["seek","before",{"line":5,"col":0}]
-["tell","source","\nlet _ = x\n"]
-["tell","end"]
-["type","enclosing",{"expr":"x","offset":0},{"line":5,"col":8}]

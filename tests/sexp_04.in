@@ -1,7 +1,12 @@
-["find", "use", "sexplib"]
-["tell", "source", "module Test_sexp = struct "]
-["tell", "source", "exception E of int with sexp "]
-["tell", "source", "end"]
-["tell", "end"]
-["errors"]
-["dump", "env"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset sexp_04.ml
+package sexplib
+tell <<END
+module Test_sexp = struct
+  exception E of int with sexp
+end
+END
+cmd errors
+cmd dump env

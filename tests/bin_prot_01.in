@@ -1,4 +1,12 @@
-["find", "use", "bin_prot"]
-["tell", "source", "module Test_binprot = struct type 'a t = T with bin_io end"]
-["tell", "end"]
-["dump", "env"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset bin_prot_01.ml
+package bin_prot
+tell <<END
+module Test_binprot = struct 
+  type t = T with bin_io 
+end
+END
+echo >&2 WARNING: fix command dump env 
+cmd dump env

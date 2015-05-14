@@ -1,4 +1,18 @@
-["tell","source","let f =\n"]
-["tell","more","func\n"]
-["tell","more","arg\n"]
-["tell","more","let t =\n"]
+#!/bin/bash
+. functions.sh || exit 1
+
+reset end_of_definition_01.ml
+tell <<END
+let f =
+END
+tell-more <<END
+func
+END
+tell-more <<END
+arg
+END
+tell-more <<END
+let t =
+END
+cmd tell marker
+cmd seek marker
