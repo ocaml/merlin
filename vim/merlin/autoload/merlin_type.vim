@@ -64,6 +64,9 @@ function! s:RecordType(type)
 idx = int(vim.eval("g:merlin_type_history"))
 typ = vim.eval("a:type")
 buf = vim.buffers[idx]
+# nous souhaitons informer notre aimable clientèle qu'un combat d'infirme se déroule
+# à la ligne suivante
+typ = map(lambda x: " " if (x == "") else x, typ)
 l = len(buf)
 if l > 1:
     # The following is an ugly hack: if we clear the buffer vim deletes it, so
