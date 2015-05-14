@@ -1043,6 +1043,9 @@ The timer fires every 10 seconds of idle time."
       (merlin--error-check nil)
       (setq err (merlin--error-next-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
+    (when (and err (tq-queue-empty
+                     (buffer-local-value 'merlin-process-queue (merlin-process-buffer))))
+      (merlin--error-check-async))
     (when err
       (goto-char (car err))
       (message "%s" (merlin-chomp (cdr (assoc 'message (cdr err)))))
@@ -1116,6 +1119,24 @@ The timer fires every 10 seconds of idle time."
                                            "!"
                                            'merlin-compilation-error-face)))
         overlay))))
+
+(defun merlin--error-check-async ()
+  (merlin-sync-to-point (point-max) t)
+  (merlin-send-command-async 'errors
+    (lambda (errors)
+      (merlin-error-reset)
+      (let ((no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
+        (setq errors (remove-if (lambda (e) (not (assoc 'start e))) errors))
+        (unless merlin-report-warnings
+          (setq errors (remove-if (lambda (e)
+                                    (merlin-error-warning-p (cdr (assoc 'message e))))
+                                  errors)))
+        (when (or errors no-loc)
+          (setq merlin-erroneous-buffer t)
+          (when no-loc
+            (mapcar (lambda (e) (message "%s" (cdr (assoc 'message e)))) no-loc))
+          (when errors
+            (merlin-transform-display-errors errors)))))))
 
 (defun merlin--error-check (view-errors-p)
   "Check for errors.
