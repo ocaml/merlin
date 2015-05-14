@@ -1363,43 +1363,41 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
-    (if merlin-mode
-        (case command
-          (interactive (company-begin-backend 'company-my-backend))
-          (prefix
-           (let ((bounds (merlin--completion-bounds)))
-             (merlin--buffer-substring (car bounds) (cdr bounds))))
-          (no-cache t)
-          (sorted t)
-          (init (merlin-sync-to-point))
-          (doc-buffer (merlin--company-doc-buffer arg))
-          (location
-           (let ((data (merlin--locate-pos arg)))
-             (when (listp data)
-               (let ((filename (lookup-default 'file data buffer-file-name))
-                     (linum (cdr (assoc 'line (assoc 'pos data)))))
-                 (cons filename linum)))))
-          (candidates
-            (merlin-sync-to-point)
-            (let ((prefix (merlin--completion-prefix arg)))
-              (mapcar #'(lambda (x)
-                          (propertize
-                            (propertize
-                              (propertize
-                                (merlin--completion-full-entry-name prefix x)
-                                'merlin-compl-type
-                                (merlin--completion-format-entry x))
-                              'merlin-arg-type
-                              (cdr (assoc 'argument_type x)))
-                            'merlin-compl-doc
-                            (cdr (assoc 'info x))))
-                      (merlin--completion-data arg))))
-          (post-completion
-            (let ((minibuffer-message-timeout nil))
-              (minibuffer-message "%s : %s" arg (merlin--company-get-candidate-type arg))))
-          (meta (merlin--company-meta arg))
-          (annotation
-            (concat " : " (merlin--company-get-candidate-type arg))))))
+    (when merlin-mode
+      (case command
+        (interactive (company-begin-backend 'company-my-backend))
+        (prefix
+         (let* ((bounds (merlin--completion-bounds))
+                (result (merlin--buffer-substring (car bounds) (cdr bounds))))
+           (when (and (boundp 'company-candidates-cache) (string-match "\\.$" result))
+             ;; for some reason, company doesn't always clear its cache
+             (setq company-candidates-cache nil))
+           result))
+        (no-cache t)
+        (sorted t)
+        (init t)
+        (doc-buffer (merlin--company-doc-buffer arg))
+        (location
+         (let ((data (merlin--locate-pos arg)))
+           (when (listp data)
+             (let ((filename (lookup-default 'file data buffer-file-name))
+                   (linum (cdr (assoc 'line (assoc 'pos data)))))
+               (cons filename linum)))))
+        (candidates
+         (merlin-sync-to-point)
+         (let ((prefix (merlin--completion-prefix arg)))
+           (mapcar #'(lambda (x)
+                       (propertize (merlin--completion-full-entry-name prefix x)
+                                   'merlin-compl-type (merlin--completion-format-entry x)
+                                   'merlin-arg-type (cdr (assoc 'argument_type x))
+                                   'merlin-compl-doc (cdr (assoc 'info x))))
+                   (merlin--completion-data arg))))
+        (post-completion
+         (let ((minibuffer-message-timeout nil))
+           (minibuffer-message "%s : %s" arg (merlin--company-get-candidate-type arg))))
+        (meta (merlin--company-meta arg))
+        (annotation
+         (concat " : " (merlin--company-get-candidate-type arg))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AUTO-COMPLETE SUPPORT ;;
