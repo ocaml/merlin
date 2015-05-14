@@ -195,7 +195,7 @@ let dispatch (state : state) =
       | Value_description { val_desc = { ctyp_type = t } } ->
         let ppf, to_string = Format.to_string () in
         Printtyp.wrap_printing_env t_env ~verbosity
-          (fun () -> Printtyp.type_scheme t_env ppf t);
+          (fun () -> Type_utils.print_type_with_decl ~verbosity t_env ppf t);
         Some (t_loc, to_string (), tail)
 
       | Type_declaration { typ_id = id; typ_type = t} ->

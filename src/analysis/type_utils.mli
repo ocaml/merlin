@@ -22,6 +22,12 @@ val mod_smallerthan : int -> Types.module_type -> int option
     Used to skip printing big modules in completion. *)
 
 val type_in_env : ?verbosity:int -> ?keywords:Raw_lexer.keywords ->
-  Env.t -> Std.Format.formatter -> string -> bool
+  Env.t -> Format.formatter -> string -> bool
 (** [type_in_env env ppf input] parses [input] and prints its type on [ppf].
     Returning true if it printed a type, false otherwise. *)
+
+val print_type_with_decl : verbosity:int ->
+  Env.t -> Format.formatter -> Types.type_expr -> unit
+(** [print_type_or_decl] behaves like [Printtyp.type_scheme], it prints the
+    type expression, except if it is a type constructor and verbosity is set then
+    it also prints the type declaration. *)

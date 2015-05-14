@@ -169,6 +169,21 @@ let rec mod_smallerthan n m =
     end
   | _ -> Some 1
 
+let print_type_with_decl ~verbosity env ppf typ =
+  Printtyp.type_scheme env ppf typ;
+  if verbosity > 0 then
+    match (Ctype.repr typ).Types.desc with
+    | Types.Tconstr (path, _, _) ->
+      let ident = match path with
+        | Path.Papply _ -> assert false
+        | Path.Pdot (_,name,_) -> Ident.create_persistent name
+        | Path.Pident ident -> ident
+      in
+      Format.pp_print_newline ppf ();
+      Format.pp_print_newline ppf ();
+      Printtyp.type_declaration env ident ppf
+        (Env.find_type path env)
+    | _ -> ()
 
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   let print_expr expression =
@@ -178,7 +193,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     (*let sg' = Typemod.simplify_signature sg in*)
     let open Typedtree in
     let exp = Raw_compat.dest_tstr_eval str in
-    Printtyp.type_scheme env ppf exp.exp_type;
+    print_type_with_decl ~verbosity env ppf exp.exp_type
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Typing_aux.uncatch_errors @@ fun () ->
