@@ -51,6 +51,7 @@ type trie = (Location.t * namespace * node) list String.Map.t
 type cmt_item = {
   cmt_infos : Cmt_format.cmt_infos ;
   mutable location_trie : trie ;
+  doc_table: (namespace * string list, string option ref) Hashtbl.t;
 }
 
 include File_cache.Make (struct
@@ -59,5 +60,6 @@ include File_cache.Make (struct
   let read file = {
     cmt_infos = Cmt_format.read_cmt file ;
     location_trie = String.Map.empty ;
+    doc_table = Hashtbl.create 7 ;
   }
 end)

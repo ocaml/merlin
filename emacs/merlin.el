@@ -1043,7 +1043,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
          (prefix (car ident-))
          (pos    (merlin-unmake-point (point)))
          (data   (merlin-send-command
-                   (if merlin-completion-with-doc
+                   (if (and merlin-completion-with-doc);; (> (length ident) 0))
                      `(complete prefix ,ident at ,pos with doc)
                      `(complete prefix ,ident at ,pos))))
          ;; all classic entries
