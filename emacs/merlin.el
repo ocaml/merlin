@@ -218,103 +218,82 @@ field logfile (see `merlin-start-process')"
 
 
 ;; Process / Reception related variables
-(defvar merlin-process nil
+(defvar-local merlin-process nil
   "The merlin process for this buffer (only valid in a process buffer).")
-(make-variable-buffer-local 'merlin-process)
 
-(defvar merlin-instance nil
+(defvar-local merlin-instance nil
   "The name of the merlin instance for this buffer.")
-(make-variable-buffer-local 'merlin-instance)
 
-(defvar merlin-process-queue nil
+(defvar-local merlin-process-queue nil
   "The transaction queue for the local process (only valid in a process buffer).")
-(make-variable-buffer-local 'merlin-process-queue)
 
-(defvar merlin--process-busy nil
+(defvar-local merlin--process-busy nil
   "Non-nil if process is busy treating a synchronous operation (only valid in a process buffer).")
-(make-variable-buffer-local 'merlin--process-busy)
 
-(defvar merlin-process-data nil
+(defvar-local merlin-process-data nil
   "The process data (as returned by the grouping function) (only valid in a process buffer).")
-(make-variable-buffer-local 'merlin-process-data)
 
-(defvar merlin-grouping nil
+(defvar-local merlin-grouping nil
   "Configuration returned by merlin-grouping-function.")
-(make-variable-buffer-local 'merlin-grouping)
 
-(defvar merlin-process-owner nil
+(defvar-local merlin-process-owner nil
   "Name of the buffer owning the local process (only valid in a process buffer).")
-(make-variable-buffer-local 'merlin-process-owner)
 
-(defvar merlin-buffer nil
+(defvar-local merlin-buffer nil
   "Buffer for merlin input.")
-(make-variable-buffer-local 'merlin-buffer)
 
-(defvar merlin-dirty-point 0
+(defvar-local merlin-dirty-point 0
   "Position after which buffer content may differ.")
-(make-variable-buffer-local 'merlin-dirty-point)
 
-(defvar merlin-loaded-once nil
+(defvar-local merlin-loaded-once nil
   "Set to nil if buffer has not been loaded at least once in merlin.")
-(make-variable-buffer-local 'merlin-loaded-once)
 
 ;; Overlays
-(defvar merlin-lock-zone-highlight-overlay nil
+(defvar-local merlin-lock-zone-highlight-overlay nil
   "Overlay used for the lock zone highlighting.")
-(make-variable-buffer-local 'merlin-lock-zone-highlight-overlay)
 
-(defvar merlin-lock-zone-fringe-overlay nil
+(defvar-local merlin-lock-zone-fringe-overlay nil
   "Overlay used for the fringe indicator of the lock zone.")
-(make-variable-buffer-local 'merlin-lock-zone-fringe-overlay)
 
 ;; Errors related variables
-(defvar merlin-erroneous-buffer nil
+(defvar-local merlin-erroneous-buffer nil
   "Whether the buffer is erroneous or not")
-(make-variable-buffer-local 'merlin-erroneous-buffer)
 
 (defvar merlin-highlight-overlay nil
   "Merlin overlay used for highlights.")
 
 ;; Completion related variables
-(defvar merlin-completion-point nil
+(defvar-local merlin-completion-point nil
   "Stores the point of last completion (beginning of the prefix).")
-(make-variable-buffer-local 'merlin-completion-point)
 
 ; Vars from auto-complete
 (defvar ac-point)
 (defvar ac-prefix)
 (defvar ac-sources)
-(defvar merlin-completion-annotation-table nil
+(defvar-local merlin-completion-annotation-table nil
   "Hold a table mapping completion candidates to their types.")
-(make-variable-buffer-local 'merlin-completion-annotation-table)
-(defvar merlin-ac-cache nil
+(defvar-local merlin-ac-cache nil
   "Hold a table mapping completion cache for auto-complete.")
-(make-variable-buffer-local 'merlin-ac-cache)
 
-(defvar merlin-completion-at-point-cache-query (cons "" 0)
+(defvar-local merlin-completion-at-point-cache-query (cons "" 0)
   "The cache for calls to completion-at-point so that it does not
 trigger useless merlin calls.")
-(make-variable-buffer-local 'merlin-completion-at-point-cache-query)
 
 
 ;; Type related variables
-(defvar merlin-enclosing-types nil
+(defvar-local merlin-enclosing-types nil
   "List containing the enclosing type.")
-(make-variable-buffer-local 'merlin-enclosing-types)
-(defvar merlin-enclosing-offset nil
+(defvar-local merlin-enclosing-offset nil
   "Current offset in `merlin-enclosing-types'.")
-(make-variable-buffer-local 'merlin-enclosing-offset)
 
 ;; Locate
 (defvar merlin-position-stack nil)
 
 ;; Misc
-(defvar merlin--project-cache nil "Cache for merlin--project-get")
-(defvar merlin--project-failures nil
+(defvar-local merlin--project-cache nil "Cache for merlin--project-get")
+(defvar-local merlin--project-failures nil
   "When loading .merlin, list of errors reported. Only update error messages if
   error list changes")
-(make-variable-buffer-local 'merlin--project-cache)
-(make-variable-buffer-local 'merlin--project-failures)
 
 ;;;;;;;;;;;
 ;; UTILS ;;
@@ -1403,13 +1382,11 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;; AUTO-COMPLETE SUPPORT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defvar merlin-ac-prefix ""
+(defvar-local merlin-ac-prefix ""
   "The cache of the prefix for completion")
-(make-variable-buffer-local 'merlin-ac-prefix)
 
-(defvar merlin-ac-ac-prefix ""
+(defvar-local merlin-ac-ac-prefix ""
   "The original value of ac-prefix used when computing merlin-ac-prefix")
-(make-variable-buffer-local 'merlin-ac-ac-prefix)
 
 (defvar merlin-ac-use-summary t
   "Use :summary for the types in AC")
@@ -1547,6 +1524,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-type-expr (exp)
   "Prompt the user for expression EXP, then show its type."
   (interactive "s# ")
+  (merlin--acquire-buffer)
   (merlin-sync-to-point)
   (let ((on-success (lambda (type) (merlin--type-display nil type nil)))
         (on-error   (lambda (err)
