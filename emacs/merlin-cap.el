@@ -72,5 +72,14 @@ trigger useless merlin calls.")
 
 (defalias 'merlin-completion-at-point 'merlin-cap)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Register into completion-at-point ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin-cap--setup ()
+  (add-hook 'completion-at-point-functions #'merlin-completion-at-point nil 'local))
+
+(add-hook 'merlin-mode-hook 'merlin-cap--setup)
+
 (provide 'merlin-cap)
 ;;; merlin-cap.el ends here
