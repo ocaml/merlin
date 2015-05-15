@@ -47,8 +47,6 @@ auto-complete"
 ;; - merlin--completion-full-entry-name
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
-;; - merlin--completion-bounds
-;; - merlin--buffer-substring
 ;; - merlin--locate-pure
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
@@ -93,13 +91,13 @@ auto-complete"
   "Initialize the cache for `auto-complete' completion.
 Called at the beginning of a completion to fill the cache (the
 variable `merlin-ac--cache')."
-  (merlin-sync-to-point ac-point)
+  (merlin/sync-to-point ac-point)
   (setq merlin-ac--point ac-point)
   (merlin-ac--source-refresh-cache))
 
 (defun merlin-ac--prefix ()
   "Retrieve the prefix for completion with merlin."
-  (let* ((bounds (merlin--completion-bounds))
+  (let* ((bounds (merlin/completion-bounds))
          (start  (car-safe bounds))
          (end    (cdr-safe bounds)))
     (unless (and bounds (< (- start end) merlin-ac-prefix-size))
@@ -107,7 +105,7 @@ variable `merlin-ac--cache')."
 
 (defun merlin-ac--fetch-type ()
   "Prints the type of the selected candidate"
-  (let ((candidate (merlin--buffer-substring merlin-ac--point (point))))
+  (let ((candidate (merlin/buffer-substring merlin-ac--point (point))))
     (when merlin-completion-types
       (mapc (lambda (item)
               (when (string-equal candidate item)
@@ -140,7 +138,7 @@ wrong then recompute it."
   "Locate the identifier currently selected in the ac-completion."
   (interactive)
   (when (ac-menu-live-p)
-    (merlin-sync-to-point)
+    (merlin/sync-to-point)
     (when (popup-hidden-p ac-menu)
       (ac-show-menu))
     (let ((merlin-locate-in-new-window 'always))

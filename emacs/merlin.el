@@ -564,7 +564,7 @@ the merlin buffer of the current buffer."
     ; Having knowledge of the buffer content, merlin idle jobs will be able to preload
     ; type information to make upcoming requests much faster.
     (unless merlin--loaded-once
-      (merlin-sync-to-point (point-max) t)
+      (merlin/sync-to-end)
       (setq merlin--loaded-once t))))
 
 (defun merlin--check-project-file ()
@@ -768,11 +768,11 @@ the error message otherwise print a generic error message."
   (merlin-error-reset))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; BUFFER SYNCHRONIZATION ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;
+;; SYNCHRONIZATION ;;
+;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin--buffer-substring (start end)
+(defun merlin/buffer-substring (start end)
    "Return content of buffer between two points or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
 
@@ -790,7 +790,7 @@ the error message otherwise print a generic error message."
       (forward-line lines)
       (unless (> lines 1000) (setq lines (* lines 2)))
       (setq point (merlin--tell-source
-		   (merlin--buffer-substring point (point)))))
+		   (merlin/buffer-substring point (point)))))
     (when point
       (merlin-send-cursor-command '(tell eof)))))
 
@@ -803,25 +803,25 @@ may be nil, in that case the current cursor of merlin is used."
                        `(tell start at ,(merlin-unmake-point start))))))
     (setq merlin--dirty-point point)
     (save-excursion
-      (merlin--tell-source (merlin--buffer-substring start point))
+      (merlin--tell-source (merlin/buffer-substring start point))
       (goto-char point)
       (merlin--tell-rest))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; POINT SYNCHRONIZATION ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun merlin--sync-edit (start end length)
   "Retract merlin--dirty-point, used when the buffer is edited."
   (when (and merlin-mode (< (1- start) merlin--dirty-point))
     (setq merlin--dirty-point (1- start))))
 
-(defun merlin-sync-to-point (&optional point skip-marker)
+(defun merlin/sync-to-point (&optional point skip-marker)
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
   (merlin--acquire-buffer)
   (unless point (setq point (point)))
   (merlin--tell-to-point point)
   (unless skip-marker (merlin-send-cursor-command '(seek marker))))
+
+(defun merlin/sync-to-end ()
+  "Behaves like merlin/sync-to-point if the point was point-max"
+  (merlin/sync-to-point (point-max) t))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
@@ -1057,7 +1057,7 @@ The timer fires every 10 seconds of idle time."
         overlay))))
 
 (defun merlin--error-check-async ()
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (merlin-send-command-async 'errors
     (lambda (errors)
       (merlin-error-reset)
@@ -1077,7 +1077,7 @@ The timer fires every 10 seconds of idle time."
 Return t if there were not any or nil if there were.  Moreover, it displays the
 errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (let* ((errors (merlin-send-command 'errors))
          (no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
     (setq errors (remove-if-not (lambda (e) (assoc 'start e)) errors))
@@ -1193,7 +1193,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                     (cdr (assoc 'info entry))))
             entries)))
 
-(defun merlin--completion-bounds ()
+(defun merlin/completion-bounds ()
   "Returns a pair (start . end) of the content to complete"
   (let ((bounds (bounds-of-thing-at-point 'ocaml-atom)))
     (cons (if bounds (car bounds) (point))
@@ -1246,7 +1246,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin--type-region ()
   "Show the type of the region."
   (lexical-let*
-    ((substring (merlin--buffer-substring (region-beginning) (region-end)))
+    ((substring  (merlin/buffer-substring (region-beginning) (region-end)))
      (on-success (lambda (type) (merlin--type-display nil type nil)))
      (on-error   (lambda (err)
                    (let ((msg (assoc 'message err))
@@ -1262,7 +1262,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Prompt the user for expression EXP, then show its type."
   (interactive "s# ")
   (merlin--acquire-buffer)
-  (merlin-sync-to-point)
+  (merlin/sync-to-point)
   (let ((on-success (lambda (type) (merlin--type-display nil type nil)))
         (on-error   (lambda (err)
                       (let ((msg (assoc 'message err)))
@@ -1358,7 +1358,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin-type-enclosing ()
   "Print the type of the expression under point (or of the region, if it exists)."
   (interactive)
-  (merlin-sync-to-point)
+  (merlin/sync-to-point)
   (if (region-active-p)
       (merlin--type-region)
     (if (merlin--type-enclosing-query)
@@ -1383,7 +1383,7 @@ strictly within, or nil if there is no such element."
   "Select the construct enclosing point (or the region, if it
 is active)."
   (interactive)
-  (merlin-sync-to-point)
+  (merlin/sync-to-point)
   (let* ((enclosing-extents
 	  (merlin-send-command
 	   `(enclosing ,(merlin-unmake-point (point)))))
@@ -1431,7 +1431,7 @@ is active)."
 (defun merlin-destruct ()
   "Case analyse the current enclosing"
   (interactive)
-  (merlin-sync-to-point)
+  (merlin/sync-to-point)
   (if (not merlin-enclosing-types)
     (if (merlin--type-enclosing-query)
       (merlin--destruct-enclosing)
@@ -1521,7 +1521,7 @@ loading"
 (defun merlin-locate-ident (ident)
   "Locate the inputed identifier"
   (interactive "s> ")
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (merlin--locate-pure ident)
   (if merlin-type-after-locate
       (merlin-type-enclosing)))
@@ -1529,7 +1529,7 @@ loading"
 (defun merlin-locate ()
   "Locate the identifier under point"
   (interactive)
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (merlin--locate-pure)
   (if merlin-type-after-locate
       (merlin-type-enclosing)))
@@ -1564,7 +1564,7 @@ loading"
 (defun merlin-document ()
   "Document the identifier under point"
   (interactive)
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (merlin--document-pure))
 
 ;;;;;;;;;;;;;;;;;
@@ -1675,7 +1675,7 @@ loading"
 (defun merlin-occurrences ()
   "List all occurrences of identifier under cursor in buffer."
   (interactive)
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (let* ((r (merlin-send-command
              (list 'occurrences 'ident 'at
                    (merlin-unmake-point (point))))))
@@ -1700,13 +1700,13 @@ Returns the position."
 (defun merlin-phrase-next ()
   "Go to the beginning of the next phrase."
   (interactive)
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (merlin--phrase-goto 'next))
 
 (defun merlin-phrase-prev ()
   "Go to the beginning of the previous phrase."
   (interactive)
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (merlin--phrase-goto 'prev))
 
 (defun merlin-error-check ()

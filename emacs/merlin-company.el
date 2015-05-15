@@ -29,8 +29,6 @@
 ;; - merlin--completion-format-entry
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
-;; - merlin--completion-bounds
-;; - merlin--buffer-substring
 ;; - merlin--locate-pos
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
@@ -99,8 +97,8 @@
       (case command
         (interactive (company-begin-backend 'company-my-backend))
         (prefix
-         (let* ((bounds (merlin--completion-bounds))
-                (result (merlin--buffer-substring (car bounds) (cdr bounds))))
+         (let* ((bounds (merlin/completion-bounds))
+                (result (merlin/buffer-substring (car bounds) (cdr bounds))))
            (when (and (boundp 'company-candidates-cache) (string-match "\\.$" result))
              ;; for some reason, company doesn't always clear its cache
              (setq company-candidates-cache nil))
@@ -116,7 +114,7 @@
                    (linum (cdr (assoc 'line (assoc 'pos data)))))
                (cons filename linum)))))
         (candidates
-         (merlin-sync-to-point)
+         (merlin/sync-to-point)
          (let ((prefix (merlin--completion-prefix arg)))
            (mapcar #'(lambda (x)
                        (propertize (merlin--completion-full-entry-name prefix x)
