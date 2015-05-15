@@ -47,7 +47,6 @@ auto-complete"
 ;; - merlin--completion-full-entry-name
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
-;; - merlin--completion-bounds
 ;; - merlin--locate-pure
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
@@ -98,7 +97,7 @@ variable `merlin-ac--cache')."
 
 (defun merlin-ac--prefix ()
   "Retrieve the prefix for completion with merlin."
-  (let* ((bounds (merlin--completion-bounds))
+  (let* ((bounds (merlin/completion-bounds))
          (start  (car-safe bounds))
          (end    (cdr-safe bounds)))
     (unless (and bounds (< (- start end) merlin-ac-prefix-size))

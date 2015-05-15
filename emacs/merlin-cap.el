@@ -21,7 +21,6 @@
 ;; - merlin--completion-full-entry-name
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
-;; - merlin--completion-bounds
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
 ;; to be used by other modules.
@@ -51,7 +50,7 @@ trigger useless merlin calls.")
 (defun merlin-cap ()
   "Perform completion at point with merlin."
   (lexical-let*
-      ((bounds       (merlin--completion-bounds))
+      ((bounds       (merlin/completion-bounds))
        (start        (car bounds))
        (end          (cdr bounds))
        (prefix       (merlin/buffer-substring start end))

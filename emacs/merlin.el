@@ -1148,7 +1148,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                     (cdr (assoc 'info entry))))
             entries)))
 
-(defun merlin--completion-bounds ()
+(defun merlin/completion-bounds ()
   "Returns a pair (start . end) of the content to complete"
   (let ((bounds (bounds-of-thing-at-point 'ocaml-atom)))
     (cons (if bounds (car bounds) (point))
