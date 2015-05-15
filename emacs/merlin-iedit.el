@@ -11,11 +11,11 @@
 
 (require 'iedit)
 
-(defun merlin-iedit-printable ()
+(defun merlin-iedit--printable ()
   "Stub substituting `iedit-printable' during merlin-iedit-occurrences"
   "merlin-iedit-occurrences")
 
-(defun merlin-iedit-make-occurrences-overlays (occurrences)
+(defun merlin-iedit--make-occurrences-overlays (occurrences)
   "Stub substituting `iedit-make-occurrences-overlays' during merlin-iedit-occurrences"
   (setq iedit-aborting nil)
   (setq iedit-occurrences-overlays nil)
@@ -39,16 +39,17 @@
 (defun merlin-iedit-occurrences ()
   "Edit occurrences of identifier under cursor using `iedit'"
   (interactive)
-  (merlin-sync-to-point (point-max) t)
+  (merlin/sync-to-end)
   (let* ((pos (merlin-unmake-point (point)))
          (r (merlin-send-command `(occurrences ident at ,pos))))
     (when r
       (if (listp r)
           (flet ((iedit-printable (a)
-                   (merlin-iedit-printable))
+                   (merlin-iedit--printable))
                  (iedit-make-occurrences-overlays (a b c)
-                   (merlin-iedit-make-occurrences-overlays a)))
+                   (merlin-iedit--make-occurrences-overlays a)))
             (iedit-start r (point-min) (point-max)))
         (message r)))))
 
 (provide 'merlin-iedit)
+;;; merlin.el ends here

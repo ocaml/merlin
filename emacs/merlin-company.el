@@ -116,7 +116,7 @@
                    (linum (cdr (assoc 'line (assoc 'pos data)))))
                (cons filename linum)))))
         (candidates
-         (merlin-sync-to-point)
+         (merlin/sync-to-point)
          (let ((prefix (merlin--completion-prefix arg)))
            (mapcar #'(lambda (x)
                        (propertize (merlin--completion-full-entry-name prefix x)

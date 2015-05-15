@@ -60,7 +60,7 @@ trigger useless merlin calls.")
     (when (or (not merlin-cap--cache)
               (not (equal (cons prefix start) merlin-cap--cache)))
       (setq merlin-cap--cache (cons prefix start))
-      (merlin-sync-to-point (point-max) t)
+      (merlin/sync-to-point)
       (setq merlin-cap--table
             (mapcar
               (lambda (a)
