@@ -330,13 +330,11 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
 
 (defun merlin-highlight (bounds face)
   "Create an overlay on BOUNDS (of the form (START . END)) and give it FACE."
-  (when merlin-highlight-overlay
-    (delete-overlay merlin-highlight-overlay))
-  (setq merlin-highlight-overlay (make-overlay (car bounds) (cdr bounds)))
-  (overlay-put merlin-highlight-overlay 'face face)
-  (unwind-protect (sit-for 60)
-    (delete-overlay merlin-highlight-overlay)
-    (setq merlin-highlight-overlay nil)))
+  (remove-overlays nil nil 'merlin-kind 'highlight)
+  (lexical-let ((overlay (make-overlay (car bounds) (cdr bounds))))
+    (overlay-put overlay 'face face)
+    (overlay-put overlay 'merlin-kind 'highlight)
+    (unwind-protect (sit-for 60) (delete-overlay overlay))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESS MANAGEMENT ;;
@@ -485,7 +483,7 @@ return DEFAULT or the value associated to KEY."
   (setq merlin-error-after-save (not (merlin-error-after-save)))
   (if (merlin-error-after-save)
       (progn
-        (merlin-after-save)
+        (merlin--after-save)
         (message "Errors are now reported. Use %s to stop reporting them."
                  (substitute-command-keys "\\[merlin-toggle-view-errors]")))
     (progn
@@ -674,13 +672,6 @@ the error message otherwise print a generic error message."
 
 ;; SPECIAL CASE OF COMMANDS
 
-(defun merlin-refresh ()
-  "Refresh changed merlin cmis."
-  (interactive)
-  (merlin--acquire-buffer)
-  (merlin-send-command 'refresh)
-  (merlin-after-save))
-
 (defun merlin-parse-position (result)
   "Returns a pair whose first member is a point set at merlin cursor position
   and second member is the state of the marker"
@@ -827,67 +818,7 @@ may be nil, in that case the current cursor of merlin is used."
 ;; ERROR REPORT ;;
 ;;;;;;;;;;;;;;;;;;
 
-(defun merlin-find-error-for-line (line errors)
-  "Return the first error mentioning line number LINE among ERRORS.
-Return nil if there is no error on this line."
-  (let* ((found nil))
-    (while (and (not found) errors)
-      (let* ((err (car errors))
-             (start-line (cdr (assoc 'line (cdr (assoc 'start err)))))
-             (end-line (cdr (assoc 'line (cdr (assoc 'end err))))))
-        (if (and (>= line start-line) (<= line end-line))
-            (setq found err)
-          (setq errors (cdr errors)))))
-    found))
-
-(defvar merlin-error-timer nil
-  "Timer to show the error at point in the echo area.")
-
-(defun merlin-error-start-timer ()
-  "Start the error timer as an idle timer.
-When it expires, the current Merlin error is shown in the echo
-area."
-  (merlin-error-cancel-timer)
-  (setq merlin-error-timer
-        (run-with-idle-timer 0.1 'repeat 'merlin-show-error-on-current-line))
-  (merlin-error-start-gc-timer))
-
-(defun merlin-error-cancel-timer ()
-  "Cancel the error display timer."
-  (when merlin-error-timer
-    (cancel-timer merlin-error-timer)
-    (setq merlin-error-timer nil)))
-
-(defvar merlin-error-gc-timer nil
-  "Timer to collect unused Merlin timers.
-This triggers `merlin-error-gc' to check whether there are any
-buffers left using Merlin.  If not, we can cancel this timer and
-`merlin-error-timer'.")
-
-(defun merlin-error-gc ()
-  "Check whether there are still buffers using Merlin.
-Clean up Merlin timers if there are none."
-  (when (not (member t
-                     (mapcar
-                      (lambda (buf) (buffer-local-value 'merlin-mode buf))
-                      (buffer-list))))
-    ;; No buffer uses Merlin anymore. Kill all hu^H^Htimers.
-    (merlin-error-cancel-timer)
-    (merlin-error-cancel-gc-timer)))
-
-(defun merlin-error-start-gc-timer ()
-  "Start the Merlin GC timer (see `merlin-error-gc-timer').
-The timer fires every 10 seconds of idle time."
-  (merlin-error-cancel-gc-timer)
-  (setq merlin-error-gc-timer (run-at-time 10 10 'merlin-error-gc)))
-
-(defun merlin-error-cancel-gc-timer ()
-  "Cancel the Merlin GC timer (see `merlin-error-gc-timer')."
-  (when merlin-error-gc-timer
-    (cancel-timer merlin-error-gc-timer)
-    (setq merlin-error-gc-timer nil)))
-
-(defun merlin-chomp (str)
+(defun merlin--chomp (str)
   "Remove whitespace at the beginning and end of STR."
   (replace-regexp-in-string "^[[:space:]\n]\+\\|[[:space:]\n]\+$" "" str))
 
@@ -953,6 +884,9 @@ The timer fires every 10 seconds of idle time."
     (setq err (merlin--error-at-position point errors))
     (if err (cons point err) nil)))
 
+(defun merlin--after-save ()
+  (when (merlin-error-after-save) (merlin-error-check)))
+
 (defun merlin-error-prev ()
   "Jump back to previous error."
   (interactive)
@@ -987,11 +921,7 @@ The timer fires every 10 seconds of idle time."
       (message "%s" (cdr (assoc 'message (cdr err))))
       (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
-(defun merlin-error-delete-overlays ()
-  "Remove error overlays."
-  (remove-overlays nil nil 'merlin-kind 'error))
-
-(defun merlin-error-warning-p (msg)
+(defun merlin--error-warning-p (msg)
   "Tell if the message MSG is a warning."
   (string-match "^Warning" msg))
 
@@ -999,7 +929,7 @@ The timer fires every 10 seconds of idle time."
   "Clear error list."
   (interactive)
   (setq merlin-erroneous-buffer nil)
-  (merlin-error-delete-overlays))
+  (remove-overlays nil nil 'merlin-kind 'error))
 
 (defun merlin--overlay (overlay)
   "Returns non-nil if OVERLAY is managed by merlin."
@@ -1009,17 +939,13 @@ The timer fires every 10 seconds of idle time."
   "Returns non-nil if OVERLAY is about a pending error."
   (if overlay (overlay-get overlay 'merlin-pending-error) nil))
 
-(defun merlin--kill-error-if-edited (overlay
-				     is-after
-				     beg
-				     end
-				     &optional length)
+(defun merlin--kill-error-if-edited (overlay is-after beg end &optional length)
   "Remove an error from the pending error lists if it is edited by the user."
   (when is-after (delete-overlay overlay)))
 
 (defun merlin-transform-display-errors (errors)
-  "Populate the error list with ERRORS, transformed into an
-  emacs-friendly form. Do display of error list."
+  "Populate the error list with ERRORS, transformed into an emacs-friendly
+form. Do display of error list."
   (let* ((err-point
           (lambda (err)
             (let ((bounds (merlin-make-bounds err)))
@@ -1045,7 +971,7 @@ The timer fires every 10 seconds of idle time."
         (push #'merlin--kill-error-if-edited
               (overlay-get overlay 'modification-hooks))
         (when merlin-error-in-fringe
-          (if (merlin-error-warning-p (cdr (assoc 'message err)))
+          (if (merlin--error-warning-p (cdr (assoc 'message err)))
               (merlin-add-display-properties overlay
                                              'question-mark
                                              "?"
@@ -1065,7 +991,7 @@ The timer fires every 10 seconds of idle time."
         (setq errors (remove-if-not (lambda (e) (assoc 'start e)) errors))
         (unless merlin-report-warnings
           (setq errors (remove-if (lambda (e)
-                                    (merlin-error-warning-p (cdr (assoc 'message e))))
+                                    (merlin--error-warning-p (cdr (assoc 'message e))))
                                   errors)))
         (setq merlin-erroneous-buffer (or errors no-loc))
         (dolist (e no-loc)
@@ -1083,7 +1009,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (setq errors (remove-if-not (lambda (e) (assoc 'start e)) errors))
     (unless merlin-report-warnings
       (setq errors (remove-if (lambda (e)
-                                (merlin-error-warning-p (cdr (assoc 'message e))))
+                                (merlin--error-warning-p (cdr (assoc 'message e))))
                               errors)))
     (setq merlin-erroneous-buffer (or errors no-loc))
     (dolist (e no-loc)
@@ -1838,7 +1764,8 @@ Returns the position."
     ; if there is not yet a merlin process
     (when (merlin-process-dead-p instance)
       (merlin-start-process merlin-default-flags conf))
-    (add-to-list 'after-change-functions 'merlin--sync-edit)))
+    (add-to-list 'after-change-functions 'merlin--sync-edit)
+    (add-hook 'after-save-hook 'merlin--after-save nil 'local)))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
@@ -1876,26 +1803,21 @@ Runs a merlin process in the background and perform queries on it.
 
 Short cuts:
 \\{merlin-mode-map}"
-  nil :lighter (:eval (merlin-lighter))
+  nil
+  :lighter (:eval (merlin-lighter))
   :keymap merlin-mode-map
   (if merlin-mode
-      (if (merlin-can-handle-buffer)
-          (merlin-setup)
-        (merlin-mode -1))
+    ;; When enabling merlin
     (progn
-      (merlin-error-gc)
+      (if (not (merlin-can-handle-buffer))
+        (merlin-mode -1)
+        (merlin-setup)))
+    ;; When disabling merlin
+    (progn
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
-      (merlin-error-delete-overlays))))
-
-(defun merlin-after-save ()
-  (when (merlin-error-after-save) (merlin-error-check)))
-
-(add-hook 'merlin-mode-hook
-          (lambda ()
-            (add-hook 'after-save-hook 'merlin-after-save
-                      nil 'make-it-local)
-            (merlin-error-start-timer)))
+      (remove-overlays nil nil 'merlin-kind 'highlight)
+      (remove-overlays nil nil 'merlin-kind 'error))))
 
 (provide 'merlin)
 ;;; merlin.el ends here
