@@ -154,15 +154,18 @@ wrong then recompute it."
                            (action . merlin-ac--fetch-type)
                            (prefix . merlin-ac--prefix)))
 
+(ac-define-source "merlin" merlin-ac-source)
+(define-key ac-complete-mode-map (kbd "C-c C-l") 'ac-merlin-locate)
+
 (defun merlin-ac--setup ()
   (when merlin-ac-setup
     (if (equal merlin-ac-setup 'easy)
         (merlin-ac-setup-easy)
       (auto-complete-mode t))
     (add-to-list 'ac-sources 'merlin-ac-source)))
+
 (add-hook 'merlin-mode-hook 'merlin-ac--setup)
-(ac-define-source "merlin" merlin-ac-source)
-(define-key ac-complete-mode-map (kbd "C-c C-l") 'ac-merlin-locate)
+(when merlin-mode (merlin-ac--setup))
 
 (provide 'merlin-ac)
 ;;; merlin-ac.el ends here

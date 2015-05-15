@@ -36,6 +36,15 @@ trigger useless merlin calls.")
 
 ;; Internal functions
 
+(defun merlin-cap--lookup (string state)
+  "Lookup the entry STRING inside the completion table."
+  (let ((ret (assoc string merlin-cap--table)))
+    (if ret (message "%s%s" (car ret) (cdr ret)))))
+
+(defun merlin-cap--annotate (candidate)
+  "Retrieve the annotation for candidate CANDIDATE in `merlin-completion-annotate-table'."
+  (cdr (assoc candidate merlin-cap--table)))
+
 (defun merlin-cap--table (string pred action)
   "Implement completion for merlin using `completion-at-point' API."
   (if (eq 'metadata action)
@@ -79,6 +88,7 @@ trigger useless merlin calls.")
   (add-hook 'completion-at-point-functions #'merlin-completion-at-point nil 'local))
 
 (add-hook 'merlin-mode-hook 'merlin-cap--setup)
+(when merlin-mode (merlin-cap--setup))
 
 (provide 'merlin-cap)
 ;;; merlin-cap.el ends here
