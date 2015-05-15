@@ -233,7 +233,7 @@ field logfile (see `merlin-start-process')"
 (defvar-local merlin--project-cache nil "Cache for merlin--project-get")
 (defvar-local merlin--project-failures nil
   "When loading .merlin, list of errors reported. Only update error messages if
-  error list changes")
+error list changes")
 
 ;;;;;;;;;;;
 ;; UTILS ;;
@@ -839,8 +839,7 @@ may be nil, in that case the current cursor of merlin is used."
           (setq d d-) (setq err err-))))))
 
 (defun merlin-show-error-on-current-line ()
-  "Show the error of the current line in the echo area.
-  If there is no error, do nothing."
+  "Show the error of the current line in the echo area.  If there is no error, do nothing."
   (when (and merlin-mode (not (current-message)))
     (let* ((errors (overlays-in (line-beginning-position) (line-end-position)))
            (err nil))
@@ -1022,9 +1021,24 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                    (substitute-command-keys "\\[merlin-error-next]"))
         (message "No errors")))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; COMPLETION-AT-POINT SUPPORT ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ACTION WHEN IDLING ACTION ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin--idle-action ()
+  (merlin-show-error-on-current-line))
+
+(defvar merlin--idle-timer nil)
+
+;; Timer is started when merlin-mode is enabled for the first time.
+(defun merlin--idle-timer ()
+  (unless merlin--idle-timer
+    (setq merlin--idle-timer
+          (run-with-idle-timer 0.1 t 'merlin--idle-action))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; COMPLETION HELPERS ;;
+;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun merlin--completion-format-entry (entry)
   "Format the completion entry ENTRY."
@@ -1765,7 +1779,8 @@ Returns the position."
     (when (merlin-process-dead-p instance)
       (merlin-start-process merlin-default-flags conf))
     (add-to-list 'after-change-functions 'merlin--sync-edit)
-    (add-hook 'after-save-hook 'merlin--after-save nil 'local)))
+    (add-hook 'after-save-hook 'merlin--after-save nil 'local)
+    (merlin--idle-timer)))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
