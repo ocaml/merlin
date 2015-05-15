@@ -30,8 +30,6 @@
 ;; tq and cl are mandatory
 (require 'tq)
 (require 'cl)
-;; auto-complete is not
-(require 'auto-complete nil 'noerror)
 ;; caml-types for highlighting (https://github.com/the-lambda-church/merlin/issues/331)
 (require 'caml-types nil 'noerror)
 
@@ -40,7 +38,7 @@
 
 (defgroup merlin nil
   "merlin binding mode allowing completion and typing in OCaml files."
-  :group 'languages)
+  :group 'languages :prefix "merlin-")
 
 ;;
 ;; Faces
@@ -80,9 +78,7 @@
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-grouping-function 'merlin-one-group
-  "The function to know how to group buffers. This function takes
-no argument and should return the configuration (see
-`merlin-start-process') for the current buffer."
+  "The function to know how to group buffers. This function takes no argument and should return the configuration (see `merlin-start-process') for the current buffer."
   :group 'merlin :type 'symbol)
 
 (defcustom merlin-quiet-startup nil
@@ -103,7 +99,7 @@ no argument and should return the configuration (see
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-completion-types t
-  "If non-nil, print the types of the variables during completion with `auto-complete'."
+  "If non-nil, print the types of the variables during completion."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-completion-arg-type t
@@ -130,8 +126,8 @@ no argument and should return the configuration (see
   "The OCaml mode to use for the *merlin-types* buffer."
   :group 'merlin :type 'symbol)
 
-; If user did not specify its merlin-favourite-caml-mode, try to guess it from
-; the buffer being edited
+;; If user did not specify its merlin-favourite-caml-mode, try to guess it from
+;; the buffer being edited
 (defvar merlin-guessed-favorite-caml-mode nil)
 
 (defcustom merlin-error-after-save '("ml" "mli")
@@ -164,16 +160,6 @@ In particular you can specify nil, meaning that the locked zone is not represent
 (defcustom merlin-default-flags nil
   "The flags to give to ocamlmerlin."
   :group 'merlin :type '(repeat string))
-
-(defcustom merlin-use-auto-complete-mode nil
-  "If non nil, use `auto-complete-mode' in any buffer."
-  :group 'merlin :type '(choice (const :tag "Integrate with auto-complete" t)
-                                (const :tag "Don't integrate with auto-complete" nil)
-                                (const :tag "Integrate with auto-complete, use sane default options" easy)))
-
-(defcustom merlin-ac-prefix-size nil
-  "If non-nil, specify the minimum number of characters to wait before allowing auto-complete"
-  :group 'merlin :type 'boolean)
 
 (defcustom merlin-occurrences-show-buffer 'other
   "Determine how to display the occurrences list after a call to `merlin-occurrences'."
@@ -212,10 +198,10 @@ field logfile (see `merlin-start-process')"
   "If non-nil, use type-enclosing after locate."
   :group 'merlin :type 'boolean)
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 ;; Process / Reception related variables
 (defvar-local merlin-process nil
@@ -233,19 +219,16 @@ field logfile (see `merlin-start-process')"
 (defvar-local merlin-process-data nil
   "The process data (as returned by the grouping function) (only valid in a process buffer).")
 
-(defvar-local merlin-grouping nil
+(defvar-local merlin--grouping nil
   "Configuration returned by merlin-grouping-function.")
 
-(defvar-local merlin-process-owner nil
+(defvar-local merlin--process-owner nil
   "Name of the buffer owning the local process (only valid in a process buffer).")
 
-(defvar-local merlin-buffer nil
-  "Buffer for merlin input.")
-
-(defvar-local merlin-dirty-point 0
+(defvar-local merlin--dirty-point 0
   "Position after which buffer content may differ.")
 
-(defvar-local merlin-loaded-once nil
+(defvar-local merlin--loaded-once nil
   "Set to nil if buffer has not been loaded at least once in merlin.")
 
 ;; Overlays
@@ -261,24 +244,6 @@ field logfile (see `merlin-start-process')"
 
 (defvar merlin-highlight-overlay nil
   "Merlin overlay used for highlights.")
-
-;; Completion related variables
-(defvar-local merlin-completion-point nil
-  "Stores the point of last completion (beginning of the prefix).")
-
-; Vars from auto-complete
-(defvar ac-point)
-(defvar ac-prefix)
-(defvar ac-sources)
-(defvar-local merlin-completion-annotation-table nil
-  "Hold a table mapping completion candidates to their types.")
-(defvar-local merlin-ac-cache nil
-  "Hold a table mapping completion cache for auto-complete.")
-
-(defvar-local merlin-completion-at-point-cache-query (cons "" 0)
-  "The cache for calls to completion-at-point so that it does not
-trigger useless merlin calls.")
-
 
 ;; Type related variables
 (defvar-local merlin-enclosing-types nil
@@ -424,9 +389,9 @@ return DEFAULT or the value associated to KEY."
   (and (merlin-process-buffer instance-name)
        (buffer-local-value 'merlin-process (merlin-process-buffer instance-name))))
 
-(defun merlin-process-owner (&optional instance-name)
+(defun merlin--process-owner (&optional instance-name)
   "Return the last user of the process of the current buffer."
-  (buffer-local-value 'merlin-process-owner (merlin-process-buffer instance-name)))
+  (buffer-local-value 'merlin--process-owner (merlin-process-buffer instance-name)))
 
 (defun merlin--process-busy (&optional instance-name)
   (buffer-local-value 'merlin--process-busy (merlin-process-buffer instance-name)))
@@ -555,9 +520,9 @@ return DEFAULT or the value associated to KEY."
 
 (defun merlin--grouping-function ()
   "Wrapper to call merlin-grouping-function and update internal variable."
-  (setq merlin-grouping (merlin--sexp-remove-string-properties
+  (setq merlin--grouping (merlin--sexp-remove-string-properties
                           (funcall merlin-grouping-function)))
-  merlin-grouping)
+  merlin--grouping)
 
 (defun merlin-restart-process ()
   "Restart the merlin toplevel for this buffer, taking into account new flags."
@@ -586,7 +551,7 @@ return DEFAULT or the value associated to KEY."
 
 (defun merlin--acquired-buffer ()
   "Return whether the current buffer was the current user of the merlin process."
-  (equal (merlin-process-owner) (buffer-name)))
+  (equal (merlin--process-owner) (buffer-name)))
 
 (defun merlin-process-started-p (&optional name)
   "Return non-nil if the merlin process for the instance NAME is already started."
@@ -609,8 +574,8 @@ the merlin buffer of the current buffer."
 (defun merlin--reset ()
   "Rewind the knowledge of merlin of the current buffer to zero."
   (let* ((name (or buffer-file-name "toplevel"))
-         (dot-merlin (lookup-default 'dot-merlin merlin-grouping nil))
-         (dot-merlins (lookup-default 'dot-merlins merlin-grouping nil)))
+         (dot-merlin (lookup-default 'dot-merlin merlin--grouping nil))
+         (dot-merlins (lookup-default 'dot-merlins merlin--grouping nil)))
     (setq dot-merlins
           (append (if (stringp dot-merlin)  (list dot-merlin)  dot-merlin)
                   (if (stringp dot-merlins) (list dot-merlins) dot-merlins)))
@@ -618,14 +583,14 @@ the merlin buffer of the current buffer."
                            (list 'reset 'dot_merlin dot-merlins 'auto name)
                            (list 'reset 'auto name)))
     (merlin-error-reset)
-    (setq merlin-dirty-point (point-min))
+    (setq merlin--dirty-point (point-min))
     ; Synchronizing will only do parsing and no typing.
     ; That should be fast enough that the user don't realize.
     ; Having knowledge of the buffer content, merlin idle jobs will be able to preload
     ; type information to make upcoming requests much faster.
-    (unless merlin-loaded-once
+    (unless merlin--loaded-once
       (merlin-sync-to-point (point-max) t)
-      (setq merlin-loaded-once t))))
+      (setq merlin--loaded-once t))))
 
 (defun merlin--check-project-file ()
   "Check if .merlin file loaded successfully."
@@ -640,7 +605,7 @@ the merlin buffer of the current buffer."
   (unless (and (merlin--acquired-buffer) (not force))
     (let ((name (buffer-name)))
       (with-current-buffer (merlin-process-buffer)
-        (setq merlin-process-owner name)))
+        (setq merlin--process-owner name)))
     (merlin--reset)
     (merlin--check-project-file)))
 
@@ -858,10 +823,10 @@ the error message otherwise print a generic error message."
   "Tell to merlin part of the buffer between START and END. START
 may be nil, in that case the current cursor of merlin is used."
   (let* ((point (if point point (point)))
-         (start (min point merlin-dirty-point))
+         (start (min point merlin--dirty-point))
          (start (car (merlin-send-cursor-command
                        `(tell start at ,(merlin-unmake-point start))))))
-    (setq merlin-dirty-point point)
+    (setq merlin--dirty-point point)
     (save-excursion
       (merlin--tell-source (merlin--buffer-substring start point))
       (goto-char point)
@@ -876,7 +841,7 @@ may be nil, in that case the current cursor of merlin is used."
   (if merlin-lock-zone-fringe-overlay
       (delete-overlay merlin-lock-zone-fringe-overlay))
   (save-excursion
-    (goto-char merlin-dirty-point)
+    (goto-char merlin--dirty-point)
     (setq merlin-lock-zone-fringe-overlay (make-overlay (point) (point)))
     (merlin-add-display-properties
      merlin-lock-zone-fringe-overlay
@@ -887,7 +852,7 @@ may be nil, in that case the current cursor of merlin is used."
   "Mark the position of the lock zone by highlighting the zone."
     (if merlin-lock-zone-highlight-overlay
       (delete-overlay merlin-lock-zone-highlight-overlay))
-  (setq merlin-lock-zone-highlight-overlay (make-overlay (point-min) merlin-dirty-point))
+  (setq merlin-lock-zone-highlight-overlay (make-overlay (point-min) merlin--dirty-point))
   (overlay-put merlin-lock-zone-highlight-overlay 'face 'merlin-locked-face))
 
 (defun merlin-sync-lock-zone-display ()
@@ -901,8 +866,8 @@ iterates through it and call each method."
 (defun merlin-sync-edit (start end length)
   "Retract the locked zone after an edit.
 Called when an edit is made by the user."
-  (if (and merlin-mode (< start merlin-dirty-point))
-      (progn (setq merlin-dirty-point (1- start))
+  (if (and merlin-mode (< start merlin--dirty-point))
+      (progn (setq merlin--dirty-point (1- start))
              (merlin-sync-lock-zone-display))))
 
 (defun merlin-sync-to-point (&optional point skip-marker)
@@ -1257,22 +1222,22 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
          ;; labels
          (labels (and application (cdr (assoc 'labels application)))))
     (setq labels (merlin--completion-prepare-labels labels suffix))
-    ; DWIM completion
+    ;; DWIM completion
     (when (and merlin-completion-dwim (not labels) (not entries))
       (setq data (merlin-send-command `(expand prefix ,ident at ,pos)))
       (setq entries (cdr (assoc 'entries data)))
       (setq-local merlin--dwimed t)
       (setq prefix ""))
-    ; Concat results
+    ;; Concat results
     (let ((result (append labels entries)))
       (if expected-ty
         (mapcar (lambda (x) (append x `((argument_type . ,expected-ty))))
                 result)
         result))))
 
-; Here for backward compatibility: this function is called by external code, the
-; format of merlin--completion-data changed, this function translates it back to
-; the old format.
+;; Here for backward compatibility: this function is called by external code, the
+;; format of merlin--completion-data changed, this function translates it back to
+;; the old format.
 (defun merlin-completion-data (ident)
   "Backward compatible version of merlin--completion-data"
   (let ((entries (merlin--completion-data ident))
@@ -1284,228 +1249,11 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                     (cdr (assoc 'info entry))))
             entries)))
 
-(defun merlin--completion-lookup (string state)
-  "Lookup the entry STRING inside the completion table."
-  (let ((ret (assoc string merlin-completion-annotation-table)))
-    (if ret (message "%s%s" (car ret) (cdr ret)))))
-
-(defun merlin--completion-annotate (candidate)
-  "Retrieve the annotation for candidate CANDIDATE in `merlin-completion-annotate-table'."
-  (cdr (assoc candidate merlin-completion-annotation-table)))
-
-(defun merlin--completion-table (string pred action)
-  "Implement completion for merlin using `completion-at-point' API."
-  (if (eq 'metadata action)
-      (when merlin-completion-types
-        '(metadata ((annotation-function . merlin--completion-annotate)
-                    (exit-function . merlin--completion-lookup))))
-    (complete-with-action action merlin-completion-annotation-table string pred)))
-
 (defun merlin--completion-bounds ()
   "Returns a pair (start . end) of the content to complete"
   (let ((bounds (bounds-of-thing-at-point 'ocaml-atom)))
     (cons (if bounds (car bounds) (point))
           (point))))
-
-(defun merlin-completion-at-point ()
-  "Perform completion at point with merlin."
-  (lexical-let*
-      ((bounds       (merlin--completion-bounds))
-       (start        (car bounds))
-       (end          (cdr bounds))
-       (prefix       (merlin--buffer-substring start end))
-       (compl-prefix (merlin--completion-prefix prefix)))
-    (when (or (not merlin-completion-at-point-cache-query)
-              (not (equal (cons prefix start)  merlin-completion-at-point-cache-query)))
-      (setq merlin-completion-at-point-cache-query (cons prefix start))
-      (merlin-sync-to-point (point-max) t)
-      (setq merlin-completion-annotation-table
-            (mapcar
-              (lambda (a)
-                (cons (merlin--completion-full-entry-name compl-prefix a)
-                      (concat ": " (merlin--completion-format-entry a))))
-              (merlin--completion-data prefix))))
-    (list start end #'merlin--completion-table
-          . (:exit-function #'merlin--completion-lookup
-             :annotation-function #'merlin--completion-annotate))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; COMPANY MODE SUPPORT ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun merlin--company-get-candidate-type (candidate)
-  (get-text-property 0 'merlin-compl-type candidate))
-
-(defun merlin--company-get-candidate-doc (candidate)
-  (get-text-property 0 'merlin-compl-doc candidate))
-
-(defun merlin--company-is-module (candidate)
-  (string-equal (merlin--company-get-candidate-type candidate) " <module>"))
-
-(defun merlin--company-has-doc (candidate)
-  (not (or (string-equal (merlin--company-get-candidate-doc candidate) "")
-           (merlin--company-is-module candidate))))
-
-(defun merlin--company-doc-buffer (candidate)
-  "Computes the /doc/ of CANDIDATE and returns the buffer where it printed it"
-  (cond
-    ((merlin--company-has-doc candidate)
-     (let* ((doc (merlin--company-get-candidate-doc candidate))
-            ; We add (** and *) around documentation so we can reuse the type buffer
-            ; without getting some weird highlighting.
-            (doc (concat
-                   "val " candidate " : "
-                   (merlin--company-get-candidate-type candidate)
-                   "\n\n(** " doc " *)")))
-       (merlin--type-display-in-buffer doc)))
-
-    ((merlin--company-is-module candidate)
-     (let* ((expr (substring-no-properties candidate))
-            (loc  (merlin-unmake-point (point)))
-            (cmd  (list 'type 'expression expr 'at loc))
-            (res  (merlin-send-command cmd)))
-       (merlin--type-display-in-buffer res)))
-
-    (t (merlin--type-display-in-buffer
-         (merlin--company-get-candidate-type candidate))))
-  (get-buffer merlin-type-buffer-name))
-
-(defun merlin--company-meta (candidate)
-  "Computes the information to display in the minibuffer for CANDIDATE"
-  (let* ((arg-type (get-text-property 0 'merlin-arg-type candidate))
-         (entry-ty (merlin--company-get-candidate-type candidate))
-         (default  (if (and merlin-completion-arg-type arg-type)
-                     (concat "Expected argument type: " arg-type)
-                     entry-ty)))
-    (cond
-      ((merlin--company-has-doc candidate)
-       (concat default " (press F1 to display documentation of " candidate ")"))
-      ((merlin--company-is-module candidate)
-       (concat "Press F1 to display the signature of module " candidate
-               " (successive calls will expand aliases)"))
-      (t default))))
-
-(defun merlin-company-backend (command &optional arg &rest ignored)
-    (interactive (list 'interactive))
-    (when merlin-mode
-      (case command
-        (interactive (company-begin-backend 'company-my-backend))
-        (prefix
-         (let* ((bounds (merlin--completion-bounds))
-                (result (merlin--buffer-substring (car bounds) (cdr bounds))))
-           (when (and (boundp 'company-candidates-cache) (string-match "\\.$" result))
-             ;; for some reason, company doesn't always clear its cache
-             (setq company-candidates-cache nil))
-           result))
-        (no-cache t)
-        (sorted t)
-        (init t)
-        (doc-buffer (merlin--company-doc-buffer arg))
-        (location
-         (let ((data (merlin--locate-pos arg)))
-           (when (listp data)
-             (let ((filename (lookup-default 'file data buffer-file-name))
-                   (linum (cdr (assoc 'line (assoc 'pos data)))))
-               (cons filename linum)))))
-        (candidates
-         (merlin-sync-to-point)
-         (let ((prefix (merlin--completion-prefix arg)))
-           (mapcar #'(lambda (x)
-                       (propertize (merlin--completion-full-entry-name prefix x)
-                                   'merlin-compl-type (merlin--completion-format-entry x)
-                                   'merlin-arg-type (cdr (assoc 'argument_type x))
-                                   'merlin-compl-doc (cdr (assoc 'info x))))
-                   (merlin--completion-data arg))))
-        (post-completion
-         (let ((minibuffer-message-timeout nil))
-           (minibuffer-message "%s : %s" arg (merlin--company-get-candidate-type arg))))
-        (meta (merlin--company-meta arg))
-        (annotation
-         (concat " : " (merlin--company-get-candidate-type arg))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; AUTO-COMPLETE SUPPORT ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defvar-local merlin-ac-prefix ""
-  "The cache of the prefix for completion")
-
-(defvar-local merlin-ac-ac-prefix ""
-  "The original value of ac-prefix used when computing merlin-ac-prefix")
-
-(defvar merlin-ac-use-summary t
-  "Use :summary for the types in AC")
-
-(defvar merlin-ac-use-document nil
-  "Use :document for the types in AC")
-
-(defun merlin-ac-make-popup-item (data)
-  "Create a popup item from data DATA."
-  (let ((typ (merlin--completion-format-entry data)))
-    (popup-make-item
-      ; Note: ac refuses to display an item if merlin-ac-ac-prefix is not a
-      ; prefix the item. So "dwim" completion won't work with ac.
-      (merlin--completion-full-entry-name merlin-ac-prefix data)
-      :summary (when (and merlin-completion-types merlin-ac-use-summary) typ)
-      :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
-      :document (if (and merlin-completion-types merlin-ac-use-document) typ))))
-
-(defun merlin-ac-source-refresh-cache()
-  "Refresh the cache of completion."
-  (setq merlin-ac-prefix (merlin--completion-prefix ac-prefix))
-  (setq merlin-ac-ac-prefix ac-prefix)
-  (setq merlin-ac-cache (mapcar #'merlin-ac-make-popup-item
-                                (merlin--completion-data merlin-ac-prefix))))
-
-
-(defun merlin-ac-source-init ()
-  "Initialize the cache for `auto-complete' completion.
-Called at the beginning of a completion to fill the cache (the
-variable `merlin-ac-cache')."
-  (merlin-sync-to-point ac-point)
-  (setq merlin-completion-point ac-point)
-  (merlin-ac-source-refresh-cache))
-
-(defun merlin-try-completion ()
-  "Try completing after having synchronized the point."
-  (interactive)
-  (auto-complete '(merlin-ac-source)))
-
-(defun merlin-ac-prefix ()
-  "Retrieve the prefix for completion with merlin."
-  (let* ((bounds (merlin--completion-bounds))
-         (start  (car-safe bounds))
-         (end    (cdr-safe bounds)))
-    (if (and bounds merlin-ac-prefix-size
-             (< (- start end) merlin-ac-prefix-size))
-        nil
-      start)))
-
-(defun merlin-ac-fetch-type ()
-  "Prints the type of the selected candidate"
-  (let ((candidate (merlin--buffer-substring merlin-completion-point  (point))))
-    (when merlin-completion-types
-      (mapc (lambda (item)
-              (when (string-equal candidate item)
-                (message "%s: %s" candidate (popup-item-summary item))))
-            merlin-ac-cache))))
-
-(defun merlin-auto-complete-candidates ()
-  "Return the candidates for auto-completion with
-  auto-complete. If the cache is wrong then recompute it."
-  (if (not (and (equal (merlin--completion-prefix ac-prefix) merlin-ac-prefix)
-                (string-prefix-p merlin-ac-ac-prefix ac-prefix)))
-      (merlin-ac-source-refresh-cache))
-  merlin-ac-cache)
-
-(defvar merlin-ac-source
-  '((init . merlin-ac-source-init)
-    (candidates . merlin-auto-complete-candidates)
-    (action . merlin-ac-fetch-type)
-    (prefix . merlin-ac-prefix)))
-
-(when (featurep 'auto-complete)
-  (eval '(ac-define-source "merlin" merlin-ac-source)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; EXPRESSION TYPING ;;
@@ -1842,19 +1590,6 @@ loading"
   (if merlin-type-after-locate
       (merlin-type-enclosing)))
 
-;; I don't like it beginning by "ac" but it is the only way I found to get it
-;; working (otherwise the completion menu just closes itself)
-(defun ac-merlin-locate ()
-  "Locate the identifier currently selected in the ac-completion."
-  (interactive)
-  (when (ac-menu-live-p)
-    (merlin-sync-to-point)
-    (when (popup-hidden-p ac-menu)
-      (ac-show-menu))
-    (let ((merlin-locate-in-new-window 'always))
-      (merlin--locate-pure (ac-selected-candidate)))
-    (ac-show-menu)))
-
 (defun merlin-pop-stack ()
   "Go back to the last position where the user did a locate."
   (interactive)
@@ -2092,12 +1827,9 @@ Returns the position."
         (merlin-show-type-map (make-sparse-keymap)))
     (define-key merlin-map (kbd "C-c C-x") 'merlin-error-next)
     (define-key merlin-map (kbd "C-c C-l") 'merlin-locate)
-    (when (featurep 'auto-complete)
-      (define-key ac-complete-mode-map (kbd "C-c C-l") 'ac-merlin-locate))
     (define-key merlin-map (kbd "C-c &") 'merlin-pop-stack)
     (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
     (define-key merlin-map (kbd "C-c C-r") 'merlin-error-check)
-    (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
     (define-key merlin-map (kbd "C-c C-d") 'merlin-destruct)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-phrase-next)
@@ -2162,15 +1894,7 @@ Returns the position."
     ; if there is not yet a merlin process
     (when (merlin-process-dead-p instance)
       (merlin-start-process merlin-default-flags conf))
-    (when (and (fboundp 'auto-complete-mode)
-               merlin-use-auto-complete-mode)
-      (if (equal merlin-use-auto-complete-mode 'easy)
-          (merlin-setup-auto-complete)
-        (auto-complete-mode t))
-      (add-to-list 'ac-sources 'merlin-ac-source))
-    (add-hook 'completion-at-point-functions
-              #'merlin-completion-at-point nil 'local)
-    (add-to-list 'after-change-functions 'merlin-sync-edit)))
+    (add-to-list 'after-change-functions 'merlin--sync-edit)))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
@@ -2233,17 +1957,6 @@ Short cuts:
             (add-hook 'after-save-hook 'merlin-after-save
                       nil 'make-it-local)
             (merlin-error-start-timer)))
-
-(defun merlin-setup-auto-complete ()
-  "Integrate merlin to auto-complete with sane defaults"
-  (require 'auto-complete)
-  (auto-complete-mode t)
-  (set (make-local-variable 'ac-auto-show-menu) t)
-  (set (make-local-variable 'ac-auto-start) nil)
-  (set (make-local-variable 'ac-delay) 0.0)
-  (set (make-local-variable 'ac-expand-on-auto-complete) nil)
-  (set (make-local-variable 'ac-ignore-case) nil)
-  (set (make-local-variable 'ac-trigger-commands) nil))
 
 (provide 'merlin)
 ;;; merlin.el ends here
