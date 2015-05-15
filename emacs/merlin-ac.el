@@ -48,7 +48,6 @@ auto-complete"
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
 ;; - merlin--completion-bounds
-;; - merlin--buffer-substring
 ;; - merlin--locate-pure
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
@@ -107,7 +106,7 @@ variable `merlin-ac--cache')."
 
 (defun merlin-ac--fetch-type ()
   "Prints the type of the selected candidate"
-  (let ((candidate (merlin--buffer-substring merlin-ac--point (point))))
+  (let ((candidate (merlin/buffer-substring merlin-ac--point (point))))
     (when merlin-completion-types
       (mapc (lambda (item)
               (when (string-equal candidate item)

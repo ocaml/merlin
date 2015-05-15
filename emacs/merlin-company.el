@@ -30,7 +30,6 @@
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
 ;; - merlin--completion-bounds
-;; - merlin--buffer-substring
 ;; - merlin--locate-pos
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
@@ -100,7 +99,7 @@
         (interactive (company-begin-backend 'company-my-backend))
         (prefix
          (let* ((bounds (merlin--completion-bounds))
-                (result (merlin--buffer-substring (car bounds) (cdr bounds))))
+                (result (merlin/buffer-substring (car bounds) (cdr bounds))))
            (when (and (boundp 'company-candidates-cache) (string-match "\\.$" result))
              ;; for some reason, company doesn't always clear its cache
              (setq company-candidates-cache nil))

@@ -720,11 +720,11 @@ the error message otherwise print a generic error message."
   (merlin-error-reset))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; BUFFER SYNCHRONIZATION ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;
+;; SYNCHRONIZATION ;;
+;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin--buffer-substring (start end)
+(defun merlin/buffer-substring (start end)
    "Return content of buffer between two points or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
 
@@ -742,7 +742,7 @@ the error message otherwise print a generic error message."
       (forward-line lines)
       (unless (> lines 1000) (setq lines (* lines 2)))
       (setq point (merlin--tell-source
-		   (merlin--buffer-substring point (point)))))
+		   (merlin/buffer-substring point (point)))))
     (when point
       (merlin-send-cursor-command '(tell eof)))))
 
@@ -755,13 +755,9 @@ may be nil, in that case the current cursor of merlin is used."
                        `(tell start at ,(merlin-unmake-point start))))))
     (setq merlin--dirty-point point)
     (save-excursion
-      (merlin--tell-source (merlin--buffer-substring start point))
+      (merlin--tell-source (merlin/buffer-substring start point))
       (goto-char point)
       (merlin--tell-rest))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; POINT SYNCHRONIZATION ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun merlin--sync-edit (start end length)
   "Retract merlin--dirty-point, used when the buffer is edited."
@@ -1214,7 +1210,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin--type-region ()
   "Show the type of the region."
   (lexical-let*
-    ((substring (merlin--buffer-substring (region-beginning) (region-end)))
+    ((substring  (merlin/buffer-substring (region-beginning) (region-end)))
      (on-success (lambda (type) (merlin--type-display nil type nil)))
      (on-error   (lambda (err)
                    (let ((msg (assoc 'message err))
