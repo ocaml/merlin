@@ -44,12 +44,6 @@
 ;; Faces
 ;;
 
-(defface merlin-locked-face
-  '((((background dark)) :background "#222278")
-    (t :background "#eaf8ff"))
-  "Face for a region that merlin knows of."
-  :group 'merlin)
-
 (defface merlin-type-face
   '((t :inherit caml-types-expr-face))
   "Face for highlighting a typed expr."
@@ -145,18 +139,6 @@ If a string list, check only if the extension of the buffer-file-name is in the 
   "Only highlight first line of multi-line error messages"
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-display-lock-zone nil
-  "How to display the locked zone.
-It is a list of methods among:
-   - `highlight': highlight the current locked zone (like proofgeneral)
-   - `fringe': put a symbol in the fringe of the line where the
-     zone ends.
-
-In particular you can specify nil, meaning that the locked zone is not represented on the screen."
-  :group 'merlin :type '(repeat
-                         (choice (const :tag "Highlight the locked zone" highlight)
-                                 (const :tag "Display a marker in the left fringe at the end of the locked zone" fringe))))
-
 (defcustom merlin-default-flags nil
   "The flags to give to ocamlmerlin."
   :group 'merlin :type '(repeat string))
@@ -230,13 +212,6 @@ field logfile (see `merlin-start-process')"
 
 (defvar-local merlin--loaded-once nil
   "Set to nil if buffer has not been loaded at least once in merlin.")
-
-;; Overlays
-(defvar-local merlin-lock-zone-highlight-overlay nil
-  "Overlay used for the lock zone highlighting.")
-
-(defvar-local merlin-lock-zone-fringe-overlay nil
-  "Overlay used for the fringe indicator of the lock zone.")
 
 ;; Errors related variables
 (defvar-local merlin-erroneous-buffer nil
@@ -836,48 +811,17 @@ may be nil, in that case the current cursor of merlin is used."
 ;; POINT SYNCHRONIZATION ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin-sync-fringe-lock-zone ()
-  "Display the position of the lock zone by a marker in the fringe."
-  (if merlin-lock-zone-fringe-overlay
-      (delete-overlay merlin-lock-zone-fringe-overlay))
-  (save-excursion
-    (goto-char merlin--dirty-point)
-    (setq merlin-lock-zone-fringe-overlay (make-overlay (point) (point)))
-    (merlin-add-display-properties
-     merlin-lock-zone-fringe-overlay
-     'horizontal-bar
-     "-")))
-
-(defun merlin-sync-highlight-lock-zone ()
-  "Mark the position of the lock zone by highlighting the zone."
-    (if merlin-lock-zone-highlight-overlay
-      (delete-overlay merlin-lock-zone-highlight-overlay))
-  (setq merlin-lock-zone-highlight-overlay (make-overlay (point-min) merlin--dirty-point))
-  (overlay-put merlin-lock-zone-highlight-overlay 'face 'merlin-locked-face))
-
-(defun merlin-sync-lock-zone-display ()
-  "Update the locked zone display, according to `merlin-display-lock-zone', ie.
-iterates through it and call each method."
-  (dolist (x merlin-display-lock-zone)
-    (case x
-      (fringe (merlin-sync-fringe-lock-zone))
-      (highlight (merlin-sync-highlight-lock-zone)))))
-
-(defun merlin-sync-edit (start end length)
-  "Retract the locked zone after an edit.
-Called when an edit is made by the user."
-  (if (and merlin-mode (< start merlin--dirty-point))
-      (progn (setq merlin--dirty-point (1- start))
-             (merlin-sync-lock-zone-display))))
+(defun merlin--sync-edit (start end length)
+  "Retract merlin--dirty-point, used when the buffer is edited."
+  (when (and merlin-mode (< (1- start) merlin--dirty-point))
+    (setq merlin--dirty-point (1- start))))
 
 (defun merlin-sync-to-point (&optional point skip-marker)
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
   (merlin--acquire-buffer)
   (unless point (setq point (point)))
   (merlin--tell-to-point point)
-  (unless skip-marker
-    (merlin-send-cursor-command '(seek marker)))
-  (merlin-sync-lock-zone-display))
+  (unless skip-marker (merlin-send-cursor-command '(seek marker))))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
@@ -1940,14 +1884,9 @@ Short cuts:
         (merlin-mode -1))
     (progn
       (merlin-error-gc)
-      (when merlin-lock-zone-highlight-overlay
-        (delete-overlay merlin-lock-zone-highlight-overlay))
-      (when merlin-lock-zone-fringe-overlay
-        (delete-overlay merlin-lock-zone-fringe-overlay))
       (when merlin-highlight-overlay
         (delete-overlay merlin-highlight-overlay))
-      (merlin-error-delete-overlays)
-      )))
+      (merlin-error-delete-overlays))))
 
 (defun merlin-after-save ()
   (when (merlin-error-after-save) (merlin-error-check)))
