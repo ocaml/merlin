@@ -530,6 +530,8 @@ module Lexing = struct
 
   let column pos = pos.pos_cnum - pos.pos_bol
 
+  let set_column pos col = {pos with pos_cnum = pos.pos_bol + col}
+
   let split_pos pos = (pos.pos_lnum, column pos)
 
   let compare_pos p1 p2 =
