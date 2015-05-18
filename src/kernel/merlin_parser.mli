@@ -52,8 +52,8 @@ val feed : Lexing.position * Raw_parser.token * Lexing.position
 
 (* Location of top frame in stack *)
 (* for recovery: approximate position of last correct construction *)
+val get_guide : pop:int -> t -> int
 val get_location : ?pop:int -> t -> Location.t
-val get_guide : ?pop:int -> t -> Lexing.position
 val get_lr0_state : t -> int
 val get_lr1_state : t -> int
 val get_lr0_states : t -> int List.Lazy.t

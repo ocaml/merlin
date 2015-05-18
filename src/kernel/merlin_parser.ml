@@ -91,17 +91,24 @@ let pop p =
   | None -> None
   | Some env -> Some {p with P.env = env}
 
-let get_location ?pop t =
-  let pop =
-    match pop with
-    | None -> Merlin_recovery_strategy.parser_pos (get_lr0_state t)
-    | Some pop -> pop
-  in
-  Frame.location ~pop (stack t)
+let rec get_guide col pop t =
+  let col = min col (Lexing.column (Frame.location ~pop t).Location.loc_start) in
+  if pop <= 0 then
+    col
+  else
+    get_guide col (pop - 1) t
 
-let get_guide ?pop t =
-  let loc = get_location ?pop t in
-  loc.Location.loc_start
+let get_guide ~pop t =
+  get_guide max_int pop (stack t)
+
+let get_location ?pop t =
+  match pop with
+  | None ->
+    let pop = Merlin_recovery_strategy.parser_pos (get_lr0_state t) in
+    let col = get_guide pop t in
+    let loc = Frame.location ~pop (stack t) in
+    {loc with Location.loc_start = Lexing.set_column loc.Location.loc_start col}
+  | Some pop -> Frame.location ~pop (stack t)
 
 let rec of_step s =
   match P.step s with
