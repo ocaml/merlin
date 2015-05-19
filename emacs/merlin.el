@@ -1199,10 +1199,10 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   ; Remove non-matching entry, adjusting optional labels if needed
   (setq labels (delete-if-not (lambda (x)
                                 (let ((name (cdr (assoc 'name x))))
-                                  (or (string-prefix-p suffix name)
+                                  (or (string-prefix-p suffix name)
                                       (when (equal (aref name 0) ??)
                                         (aset name 0 ?~)
-                                        (string-prefix-p suffix name)))))
+                                        (string-prefix-p suffix name)))))
                               labels))
   (mapcar (lambda (x) (append x '((kind . "Label") (info . nil)))) labels))
 
