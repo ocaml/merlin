@@ -7,6 +7,8 @@ cmd()
   for arg in "$@"; do
     if [[ "$arg" =~ ^[A-Za-z] ]]; then
       printf ',"%s"' "$arg"
+    elif [ -z "$arg" ]; then
+      printf ',""'
     else
       printf ',%s' "$arg"
     fi

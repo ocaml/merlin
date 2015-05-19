@@ -1,0 +1,11 @@
+#!/bin/bash
+. functions.sh || exit 1
+
+reset completion_02.ml
+tell <<END
+let f = function
+  | \`A -> ()
+  | \`B -> ()
+let 0 = f 
+END
+cmd complete prefix '' at `pos 4 12`

@@ -8,18 +8,23 @@ else
 fi 
 
 if test -n "$1" ; then
+    # Use more appropriate jsondiff if available
+    if [ -n "$DIFF" ]; then
+      :
+    elif which jsondiff >& /dev/null; then
+      DIFF="jsondiff -color"
+    else
+      DIFF="diff -u"
+    fi
+
     out=`mktemp`
     while test -n "$1"; do
       (cd tests && bash $1.in) | ./ocamlmerlin > $out
-      # Use more appropriate jsondiff if available
-      if [ -n "$DIFF" ]; then
-        :
-      elif which jsondiff >& /dev/null; then
-        DIFF="jsondiff -color"
+      if [ -r ./tests/$1.out ]; then
+        $DIFF ./tests/$1.out $out
       else
-        DIFF="diff -u"
+        less $out
       fi
-      $DIFF ./tests/$1.out $out
       shift 1
     done
     rm $out

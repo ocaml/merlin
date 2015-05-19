@@ -1,0 +1,9 @@
+#!/bin/bash
+. functions.sh || exit 1
+
+reset completion_01.ml
+tell <<END
+let x = match None with
+  | 
+END
+cmd complete prefix '' at `pos 2 4`
