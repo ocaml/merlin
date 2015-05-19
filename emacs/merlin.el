@@ -1027,7 +1027,7 @@ The timer fires every 10 seconds of idle time."
            (err nil))
       (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
       (setq err (merlin--error-at-position (point) errors))
-      (when err (message "%s" (merlin-chomp (cdr (assoc 'message err))))))))
+      (when err (message "%s" (cdr (assoc 'message err)))))))
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
@@ -1078,7 +1078,7 @@ The timer fires every 10 seconds of idle time."
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
-      (message "%s" (merlin-chomp (cdr (assoc 'message (cdr err)))))
+      (message "%s" (cdr (assoc 'message (cdr err))))
       (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin-error-next ()
@@ -1096,7 +1096,7 @@ The timer fires every 10 seconds of idle time."
       (merlin--error-check-async))
     (when err
       (goto-char (car err))
-      (message "%s" (merlin-chomp (cdr (assoc 'message (cdr err)))))
+      (message "%s" (cdr (assoc 'message (cdr err))))
       (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin-error-delete-overlays ()
