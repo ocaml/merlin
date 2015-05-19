@@ -334,7 +334,8 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (lexical-let ((overlay (make-overlay (car bounds) (cdr bounds))))
     (overlay-put overlay 'face face)
     (overlay-put overlay 'merlin-kind 'highlight)
-    (unwind-protect (sit-for 60) (delete-overlay overlay))))
+    (run-with-idle-timer 0.5 nil
+                         (lambda () (delete-overlay overlay)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESS MANAGEMENT ;;
@@ -838,39 +839,41 @@ may be nil, in that case the current cursor of merlin is used."
 (defun merlin--after-save ()
   (when (merlin-error-after-save) (merlin-error-check)))
 
-(defun merlin-error-prev ()
+(defun merlin-error-prev (&optional no-async)
   "Jump back to previous error."
   (interactive)
   (let ((err (merlin--error-prev-cycle)))
-    ;; (prin1 err)
     (unless err
       (merlin--acquire-buffer)
-      ;; (prin1 "ERROR CHECK")
       (merlin--error-check nil)
       (setq err (merlin--error-prev-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
       (message "%s" (cdr (assoc 'message (cdr err))))
-      (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
+      (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))
+    (when (and err (not no-async)
+               (tq-queue-empty
+                (buffer-local-value 'merlin-process-queue (merlin-process-buffer))))
+      (merlin--error-check-async err 'merlin-error-prev))))
 
-(defun merlin-error-next ()
+(defun merlin-error-next (&optional no-async)
   "Jump to next error."
   (interactive)
   (let ((err (merlin--error-next-cycle)))
     (unless err
       (merlin--acquire-buffer)
-      ;; (prin1 "ERROR CHECK")
       (merlin--error-check nil)
       (setq err (merlin--error-next-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
-    (when (and err (tq-queue-empty
-                     (buffer-local-value 'merlin-process-queue (merlin-process-buffer))))
-      (merlin--error-check-async))
     (when err
       (goto-char (car err))
       (message "%s" (cdr (assoc 'message (cdr err))))
-      (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
+      (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))
+    (when (and err (not no-async)
+               (tq-queue-empty
+                (buffer-local-value 'merlin-process-queue (merlin-process-buffer))))
+      (merlin--error-check-async err 'merlin-error-next))))
 
 (defun merlin--error-warning-p (msg)
   "Tell if the message MSG is a warning."
@@ -897,59 +900,65 @@ may be nil, in that case the current cursor of merlin is used."
 (defun merlin-transform-display-errors (errors)
   "Populate the error list with ERRORS, transformed into an emacs-friendly
 form. Do display of error list."
-  (let* ((err-point
-          (lambda (err)
-            (let ((bounds (merlin-make-bounds err)))
-              (when merlin-error-on-single-line
-                (setq bounds (cons (car bounds)
-                                   (min (cdr bounds)
-                                        (save-excursion
-                                          (goto-char (car bounds))
-                                          (line-end-position))))))
-              (when (= (car bounds) (cdr bounds))
-                (setq bounds (if (> (car bounds) (point-min))
-                               (cons (1- (car bounds)) (cdr bounds))
-                               (cons (car bounds) (1+ (cdr bounds))))))
-              (setq bounds (cons (copy-marker (car bounds))
-                                 (copy-marker (cdr bounds))))
-              (acons 'bounds bounds err))))
-         (errors (mapcar err-point errors)))
-    (dolist (err errors)
-      (let* ((bounds (cdr (assoc 'bounds err)))
-             (overlay (make-overlay (car bounds) (cdr bounds))))
-        (overlay-put overlay 'merlin-kind 'error)
-        (overlay-put overlay 'merlin-pending-error err)
-        (push #'merlin--kill-error-if-edited
-              (overlay-get overlay 'modification-hooks))
-        (when merlin-error-in-fringe
-          (if (merlin--error-warning-p (cdr (assoc 'message err)))
-              (merlin-add-display-properties overlay
-                                             'question-mark
-                                             "?"
-                                             'merlin-compilation-warning-face)
+  (setq errors (mapcar (lambda (err)
+                         (let ((bounds (merlin-make-bounds err)))
+                           (when merlin-error-on-single-line
+                             (setq bounds (cons (car bounds)
+                                                (min (cdr bounds)
+                                                     (save-excursion
+                                                       (goto-char (car bounds))
+                                                       (line-end-position))))))
+                           (when (= (car bounds) (cdr bounds))
+                             (setq bounds (if (> (car bounds) (point-min))
+                                              (cons (1- (car bounds)) (cdr bounds))
+                                            (cons (car bounds) (1+ (cdr bounds))))))
+                           (setq bounds (cons (copy-marker (car bounds))
+                                              (copy-marker (cdr bounds))))
+                           (acons 'bounds bounds err)))
+                       errors))
+  (dolist (err errors)
+    (let* ((bounds (cdr (assoc 'bounds err)))
+           (overlay (make-overlay (car bounds) (cdr bounds))))
+      (overlay-put overlay 'merlin-kind 'error)
+      (overlay-put overlay 'merlin-pending-error err)
+      (push #'merlin--kill-error-if-edited
+            (overlay-get overlay 'modification-hooks))
+      (when merlin-error-in-fringe
+        (if (merlin--error-warning-p (cdr (assoc 'message err)))
             (merlin-add-display-properties overlay
-                                           'exclamation-mark
-                                           "!"
-                                           'merlin-compilation-error-face)))
-        overlay))))
+                                           'question-mark
+                                           "?"
+                                           'merlin-compilation-warning-face)
+          (merlin-add-display-properties overlay
+                                         'exclamation-mark
+                                         "!"
+                                         'merlin-compilation-error-face)))
+      overlay))
+  errors)
 
-(defun merlin--error-check-async ()
+(defun merlin--error-check-async (&optional previous-err err-cmd)
   (merlin/sync-to-end)
-  (merlin-send-command-async 'errors
-    (lambda (errors)
-      (merlin-error-reset)
-      (let ((no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
-        (setq errors (remove-if (lambda (e) (not (assoc 'start e))) errors))
-        (unless merlin-report-warnings
-          (setq errors (remove-if (lambda (e)
-                                    (merlin--error-warning-p (cdr (assoc 'message e))))
-                                  errors)))
-        (when (or errors no-loc)
-          (setq merlin-erroneous-buffer t)
-          (when no-loc
-            (mapcar (lambda (e) (message "%s" (cdr (assoc 'message e)))) no-loc))
-          (when errors
-            (merlin-transform-display-errors errors)))))))
+  (lexical-let ((previous-err previous-err)
+                (err-cmd err-cmd))
+    (merlin-send-command-async
+     'errors
+     (lambda (errors)
+       (merlin-error-reset)
+       (let ((no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
+         (setq errors (remove-if (lambda (e) (not (assoc 'start e))) errors))
+         (unless merlin-report-warnings
+           (setq errors (remove-if (lambda (e)
+                                     (merlin--error-warning-p (cdr (assoc 'message e))))
+                                   errors)))
+         (when (or errors no-loc)
+           (setq merlin-erroneous-buffer t)
+           (when no-loc
+             (mapcar (lambda (e) (message "%s" (cdr (assoc 'message e)))) no-loc))
+           (when errors
+             (merlin-transform-display-errors errors))
+           (when (and err-cmd previous-err (eq (point) (car previous-err))
+                      (not (remove nil (mapcar 'merlin--overlay-pending-error (overlays-at (point))))))
+             (funcall err-cmd t))))))))
 
 (defun merlin--error-check (view-errors-p)
   "Check for errors.
@@ -989,7 +998,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin--idle-timer ()
   (unless merlin--idle-timer
     (setq merlin--idle-timer
-          (run-with-idle-timer 0.1 t 'merlin--idle-action))))
+          (run-with-idle-timer 0.5 t 'merlin--idle-action))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPLETION HELPERS ;;
