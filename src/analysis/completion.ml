@@ -327,9 +327,10 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
 
       | `Modules ->
         Env.fold_modules (fun name path v candidates ->
-          let v, attrs = Raw_compat.extract_module_declaration v in
+          let attrs = v.Types.md_attributes in
+          let v = v.Types.md_type in
           if not @@ validate `Uident `Mod name then candidates else
-          make_weighted_candidate ~exact:(name = prefix) name ~path (`Mod v) ~attrs
+            make_weighted_candidate ~exact:(name = prefix) name ~path (`Mod v) ~attrs
           :: candidates
         ) path env []
 
@@ -342,8 +343,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
         ) path env []
 
       | `Labels ->
-        Raw_compat.fold_labels (fun l candidates ->
-          let {Types.lbl_name = name} = l in
+        Env.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
           if not (validate `Lident `Label name) then candidates else
             make_weighted_candidate ~exact:(name = prefix) name (`Label l)
               ~attrs:(Raw_compat.lbl_attributes l)
@@ -417,7 +417,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
       in
       List.fold_left ~f:add_completions order ~init:[]
     else
-      Raw_compat.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
+      Env.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
         if not (valid `Label name) then candidates else
           make_candidate ?get_doc ~exact:(name = prefix) name (`Label l) ~attrs:[]
           :: candidates
@@ -434,7 +434,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
           let default = { name; kind = `Module; desc = ""; info = "" } in
           if name = prefix && uniq (`Mod, name) then
             try
-              let path, (md, attrs) = Raw_compat.lookup_module (Longident.Lident name) env in
+              let path, md, attrs = Raw_compat.lookup_module (Longident.Lident name) env in
               make_candidate ?get_doc ~exact:true name ~path (`Mod md) ~attrs
               :: candidates
             with Not_found ->
