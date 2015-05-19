@@ -91,7 +91,7 @@ let rec tag_path ~namespace = function
   | [] -> invalid_arg "Typedtrie.tag_path"
   | [ x ] -> [ x, namespace ]
   | x :: xs -> (x, `Mod) :: tag_path ~namespace xs
-                              
+
 let rec build ?(local_buffer=false) ~trie browses =
   let rec node_for_direct_mod namespace = function
     | `Alias path ->
@@ -130,7 +130,7 @@ let rec build ?(local_buffer=false) ~trie browses =
     let aux trie t =
       match t.t_node with
       (* Traverse expressions (there are no "match" nodes, only cases). *)
-      | Case _ 
+      | Case _
       | Expression _
       (* Traverse [let .. in], no need to create node for these, if we were
          looking for a local binding, its location would have been in the
@@ -348,15 +348,15 @@ let rec dump fmt trie =
   let dump_node (loc, namespace, node) =
     dump_namespace fmt namespace;
     match node with
-    | Leaf -> Location.print_loc' fmt loc
+    | Leaf -> Location.print_loc fmt loc
     | Included path ->
-      Format.fprintf fmt "%a <%s>" Location.print_loc' loc
+      Format.fprintf fmt "%a <%s>" Location.print_loc loc
         (path_to_string path)
     | Alias path ->
-      Format.fprintf fmt "%a = %s" Location.print_loc' loc
+      Format.fprintf fmt "%a = %s" Location.print_loc loc
         (path_to_string path)
     | Internal t ->
-      Format.fprintf fmt "%a = %a" Location.print_loc' loc dump t
+      Format.fprintf fmt "%a = %a" Location.print_loc loc dump t
   in
   Format.pp_print_string fmt "{\n" ;
   Trie.iter trie ~f:(fun ~key ~data:nodes ->

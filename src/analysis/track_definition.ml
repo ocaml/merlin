@@ -68,7 +68,7 @@ module Fallback = struct
   let set loc =
     Logger.debugf section (fun fmt loc ->
       Format.fprintf fmt "Fallback.set: " ;
-      Location.print_loc' fmt loc
+      Location.print_loc fmt loc
     ) loc ;
     fallback := Some loc
 
@@ -651,42 +651,18 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
   Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
   Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
   Fluid.let' last_location Location.none @@ fun () ->
-  let store, location =
-    let is_cached (namespace,path,_) =
-      let ident = Path.head path in
-      try
-        if not (Ident.persistent ident) then
-          raise Not_found;
-        let filename = Utils.find_file ~with_fallback:true
-            (File.CMTI (Ident.name ident)) in
-        let cmt = Cmt_cache.read filename in
-        let key = (namespace,List.tl (Path.to_string_list path)) in
-        match Hashtbl.find cmt.Cmt_cache.doc_table key with
-        | store -> `Some store
-        | exception Not_found ->
-          let store = ref None in
-          Hashtbl.add cmt.Cmt_cache.doc_table key store;
-          `None store
-      with _ -> `None (ref None)
-    in
+  match
     match path with
-    | `Completion_entry entry ->
-      begin match is_cached entry with
-        | `Some cache -> cache, `Cached !cache
-        | `None store -> store, from_completion_entry ~pos ~lazy_trie entry
-      end
+    | `Completion_entry entry -> from_completion_entry ~pos ~lazy_trie entry
     | `User_input path ->
       let lid    = Longident.parse path in
       begin match inspect_context browse path pos with
-        | None -> ref None, `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
-        | Some ctxt ->
-          info_log "looking for the doc of '%s'" path ;
-          ref None, from_longident ~pos ~env ~lazy_trie ctxt `MLI lid
+      | None -> `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
+      | Some ctxt ->
+        info_log "looking for the doc of '%s'" path ;
+        from_longident ~pos ~env ~lazy_trie ctxt `MLI lid
       end
-  in
-  match location with
-  | `Cached (Some doc) -> `Found doc
-  | `Cached None -> `No_documentation
+  with
   | `Found loc ->
     let comments =
       match File_switching.where_am_i () with
@@ -695,11 +671,11 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
         let {Cmt_cache. cmt_infos} = Cmt_cache.read cmt_path in
         cmt_infos.Cmt_format.cmt_comments
     in
-    let doc, _ = Ocamldoc.associate_comment comments loc (Fluid.get last_location) in
-    store := doc;
-    begin match doc with
-      | None     -> `No_documentation
-      | Some doc -> `Found doc
+    begin match
+      Ocamldoc.associate_comment comments loc (Fluid.get last_location)
+    with
+    | None, _     -> `No_documentation
+    | Some doc, _ -> `Found doc
     end
   | `File_not_found _
   | `Not_found _

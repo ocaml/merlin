@@ -234,7 +234,7 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 ;;
 
-let print_loc' ppf loc =
+let print_loc ppf loc =
   let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
   fprintf ppf "%s%a%s%i" msg_file print_filename file msg_line line;
@@ -242,13 +242,13 @@ let print_loc' ppf loc =
     fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar
 ;;
 
-let print_loc ppf loc = ()
-;;
 
-let print ppf loc =
+let print' ppf loc =
   if loc.loc_start.pos_fname = "//toplevel//"
   && highlight_locations ppf [loc] then ()
   else fprintf ppf "%a%s@." print_loc loc msg_colon
+
+let print ppf loc = ()
 ;;
 
 let print_error ppf loc =

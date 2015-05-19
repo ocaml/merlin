@@ -797,7 +797,7 @@ may be nil, in that case the current cursor of merlin is used."
            (err nil))
       (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
       (setq err (merlin--error-at-position (point) errors))
-      (when err (message "%s" (merlin--chomp (cdr (assoc 'message err))))))))
+      (when err (message "%s" (cdr (assoc 'message err)))))))
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
@@ -851,7 +851,7 @@ may be nil, in that case the current cursor of merlin is used."
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
-      (message "%s" (merlin--chomp (cdr (assoc 'message (cdr err)))))
+      (message "%s" (cdr (assoc 'message (cdr err))))
       (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin-error-next ()
@@ -869,7 +869,7 @@ may be nil, in that case the current cursor of merlin is used."
       (merlin--error-check-async))
     (when err
       (goto-char (car err))
-      (message "%s" (merlin--chomp (cdr (assoc 'message (cdr err)))))
+      (message "%s" (cdr (assoc 'message (cdr err))))
       (merlin-highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
 (defun merlin--error-warning-p (msg)
