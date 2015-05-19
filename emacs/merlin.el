@@ -367,11 +367,18 @@ return DEFAULT or the value associated to KEY."
   (buffer-local-value 'merlin--process-owner (merlin-process-buffer instance-name)))
 
 (defun merlin--process-busy (&optional instance-name)
+  "Nil if no synchronous work is being done, sexp representation of
+synchronous command being processed by merlin otherwise."
   (buffer-local-value 'merlin--process-busy (merlin-process-buffer instance-name)))
 
 (put 'merlin-cancelled
      'error-conditions
      '(merlin-cancelled))
+
+(defun merlin--process-idle ()
+  "Non-nil iff nothing (synchronous nor asynchronous) is being done by merlin"
+  (tq-queue-empty
+    (buffer-local-value 'merlin-process-queue (merlin-process-buffer))))
 
 (defun merlin--process-busy-set (value &optional instance-name)
   (with-current-buffer (merlin-process-buffer instance-name)
@@ -889,13 +896,11 @@ may be nil, in that case the current cursor of merlin is used."
 (defun merlin-error-prev ()
   "Jump back to previous error."
   (interactive)
+  (if (= merlin--dirty-point (point-max))
+      (when (merlin--process-idle)
+        (merlin--error-check-async))
+    (merlin--error-check nil))
   (let ((err (merlin--error-prev-cycle)))
-    ;; (prin1 err)
-    (unless err
-      (merlin--acquire-buffer)
-      ;; (prin1 "ERROR CHECK")
-      (merlin--error-check nil)
-      (setq err (merlin--error-prev-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
@@ -905,16 +910,12 @@ may be nil, in that case the current cursor of merlin is used."
 (defun merlin-error-next ()
   "Jump to next error."
   (interactive)
+  (if (= merlin--dirty-point (point-max))
+      (when (merlin--process-idle)
+        (merlin--error-check-async))
+    (merlin--error-check nil))
   (let ((err (merlin--error-next-cycle)))
-    (unless err
-      (merlin--acquire-buffer)
-      ;; (prin1 "ERROR CHECK")
-      (merlin--error-check nil)
-      (setq err (merlin--error-next-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
-    (when (and err (tq-queue-empty
-                     (buffer-local-value 'merlin-process-queue (merlin-process-buffer))))
-      (merlin--error-check-async))
     (when err
       (goto-char (car err))
       (message "%s" (cdr (assoc 'message (cdr err))))
@@ -945,45 +946,46 @@ may be nil, in that case the current cursor of merlin is used."
 (defun merlin-transform-display-errors (errors)
   "Populate the error list with ERRORS, transformed into an emacs-friendly
 form. Do display of error list."
-  (let* ((err-point
-          (lambda (err)
-            (let ((bounds (merlin-make-bounds err)))
-              (when merlin-error-on-single-line
-                (setq bounds (cons (car bounds)
-                                   (min (cdr bounds)
-                                        (save-excursion
-                                          (goto-char (car bounds))
-                                          (line-end-position))))))
-              (when (= (car bounds) (cdr bounds))
-                (setq bounds (if (> (car bounds) (point-min))
-                               (cons (1- (car bounds)) (cdr bounds))
-                               (cons (car bounds) (1+ (cdr bounds))))))
-              (setq bounds (cons (copy-marker (car bounds))
-                                 (copy-marker (cdr bounds))))
-              (acons 'bounds bounds err))))
-         (errors (mapcar err-point errors)))
-    (dolist (err errors)
-      (let* ((bounds (cdr (assoc 'bounds err)))
-             (overlay (make-overlay (car bounds) (cdr bounds))))
-        (overlay-put overlay 'merlin-kind 'error)
-        (overlay-put overlay 'merlin-pending-error err)
-        (push #'merlin--kill-error-if-edited
-              (overlay-get overlay 'modification-hooks))
-        (when merlin-error-in-fringe
-          (if (merlin--error-warning-p (cdr (assoc 'message err)))
-              (merlin-add-display-properties overlay
-                                             'question-mark
-                                             "?"
-                                             'merlin-compilation-warning-face)
+  (setq errors (mapcar (lambda (err)
+                         (let ((bounds (merlin-make-bounds err)))
+                           (when merlin-error-on-single-line
+                             (setq bounds (cons (car bounds)
+                                                (min (cdr bounds)
+                                                     (save-excursion
+                                                       (goto-char (car bounds))
+                                                       (line-end-position))))))
+                           (when (= (car bounds) (cdr bounds))
+                             (setq bounds (if (> (car bounds) (point-min))
+                                              (cons (1- (car bounds)) (cdr bounds))
+                                            (cons (car bounds) (1+ (cdr bounds))))))
+                           (setq bounds (cons (copy-marker (car bounds))
+                                              (copy-marker (cdr bounds))))
+                           (acons 'bounds bounds err)))
+                       errors))
+  (dolist (err errors)
+    (let* ((bounds (cdr (assoc 'bounds err)))
+           (overlay (make-overlay (car bounds) (cdr bounds))))
+      (overlay-put overlay 'merlin-kind 'error)
+      (overlay-put overlay 'merlin-pending-error err)
+      (push #'merlin--kill-error-if-edited
+            (overlay-get overlay 'modification-hooks))
+      (when merlin-error-in-fringe
+        (if (merlin--error-warning-p (cdr (assoc 'message err)))
             (merlin-add-display-properties overlay
-                                           'exclamation-mark
-                                           "!"
-                                           'merlin-compilation-error-face)))
-        overlay))))
+                                           'question-mark
+                                           "?"
+                                           'merlin-compilation-warning-face)
+          (merlin-add-display-properties overlay
+                                         'exclamation-mark
+                                         "!"
+                                         'merlin-compilation-error-face)))
+      overlay))
+  errors)
 
 (defun merlin--error-check-async ()
   (merlin/sync-to-end)
-  (merlin-send-command-async 'errors
+  (merlin-send-command-async
+    'errors
     (lambda (errors)
       (merlin-error-reset)
       (let ((no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
@@ -1034,7 +1036,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin--idle-timer ()
   (unless merlin--idle-timer
     (setq merlin--idle-timer
-          (run-with-idle-timer 0.1 t 'merlin--idle-action))))
+          (run-with-idle-timer 0.5 t 'merlin--idle-action))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPLETION HELPERS ;;
