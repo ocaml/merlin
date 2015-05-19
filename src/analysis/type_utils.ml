@@ -57,7 +57,7 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
 
 let lookup_module_or_modtype name env =
   try
-    let path, (mty, _) = Raw_compat.lookup_module name env in
+    let path, mty, _ = Raw_compat.lookup_module name env in
     path, Some mty
   with Not_found ->
     Raw_compat.lookup_modtype name env
@@ -105,7 +105,7 @@ module Printtyp = struct
     | Some m -> {ty with Types.type_manifest = Some (expand_type env m)}
     | None -> ty
 
-  let expand_sig = Raw_compat.full_scrape
+  let expand_sig = Env.scrape_alias
 
   let verbose_type_scheme env ppf t =
     Printtyp.type_scheme ppf (expand_type env t)
@@ -156,19 +156,19 @@ let rec mod_smallerthan n m =
         | None, _ -> None
         | Some n', _ when n' > n -> None
         | Some n1, Sig_modtype (_,m) ->
-            begin match Raw_compat.extract_modtype_declaration m with
+            begin match m.Types.mtd_type with
               | Some m -> sub n1 m
               | None -> None
             end
         | Some n1, Sig_module (_,m,_) ->
-          sub n1 (fst (Raw_compat.extract_module_declaration m))
+          sub n1 m.Types.md_type
 
         | Some n', _ -> Some (succ n')
       end
     end
   | Mty_functor (_,m1,m2) ->
     begin
-      match Raw_compat.extract_functor_arg m1 with
+      match m1 with
       | None -> None
       | Some m1 ->
       match mod_smallerthan n m1 with
@@ -268,7 +268,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         with _ ->
           try
             let cstr_desc =
-              Raw_compat.lookup_constructor longident.Asttypes.txt env
+              Env.lookup_constructor longident.Asttypes.txt env
             in
                   (*
                      Format.pp_print_string ppf name;

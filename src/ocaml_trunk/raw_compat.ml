@@ -42,74 +42,6 @@ let arg_label_to_str = function
   | Asttypes.Optional str -> "?" ^ str
   | Asttypes.Labelled str -> str
 
-(* Taken from Leo White's doc-ock,
-   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
- *)
-let read_doc_attributes attrs =
-  let read_payload =
-    let open Location in
-    let open Parsetree in
-    function
-    | PStr[{ pstr_desc =
-               Pstr_eval({ pexp_desc =
-                             Pexp_constant(Asttypes.Const_string(str, _));
-                           pexp_loc = loc;
-                         }, _)
-           }] -> Some(str, loc)
-    | _ -> None
-  in
-  let rec loop = function
-    | ({Location.txt =
-          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
-      read_payload payload
-    | _ :: rest -> loop rest
-    | [] -> None
-  in
-  loop attrs
-
-
-module Parsetree = struct
-  open Parsetree
-
-  let arg_label_of_str = function
-    | "" -> Asttypes.Nolabel
-    | str ->
-      if str.[0] = '?' then
-        (* FIXME: drop the '?'? *)
-        Asttypes.Optional str
-      else
-        Asttypes.Labelled str
-
-  let format_params ~f params =
-    let format_param (param,_variance) =
-      match param.ptyp_desc with
-      | Ptyp_any -> f "_"
-      | Ptyp_var v -> f v
-      | _ -> assert false (*TODO*)
-    in
-    List.map format_param params
-
-  let extract_specific_parsing_info = function
-    | { pexp_desc = Pexp_ident longident } -> `Ident longident
-    | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
-    | _ -> `Other
-
-  let core_args = function
-    | Pcstr_tuple lst -> lst
-    | Pcstr_record lst -> List.map lst ~f:(fun lbl -> lbl.pld_type)
-
-  let map_constructors ~f lst =
-    List.map lst ~f:(fun { pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } ->
-      let pcd_args = core_args pcd_args in
-      f pcd_name.Location.txt pcd_args pcd_res pcd_loc
-    )
-
-  let args_of_constructor c = core_args c.pcd_args
-
-  let inspect_label { pld_name ; pld_mutable ; pld_type ; pld_loc ; _ } =
-    pld_name, pld_mutable, pld_type, pld_loc
-end
-
 let sig_item_idns =
   let open Types in function
   | Sig_value (id, _) -> id, `Vals
@@ -122,9 +54,6 @@ let sig_item_idns =
 
 let include_idents l = List.map sig_item_idns l
 
-let lookup_constructor = Env.lookup_constructor
-let lookup_label       = Env.lookup_label
-
 let fold_types f id env acc =
   Env.fold_types (fun s p (decl,descr) acc -> f s p decl acc) id env acc
 
@@ -132,21 +61,11 @@ let fold_constructors f id env acc =
   Env.fold_constructors
     (fun constr acc -> f constr.Types.cstr_name constr acc)
     id env acc
-let fold_labels = Env.fold_labels
-
-let exp_open_env = function
-  | Typedtree.Texp_open (_,_,_,env) -> env
-  | _ -> assert false
-
-let extract_functor_arg m = m
-
-let extract_modtype_declaration m = m.Types.mtd_type
-let extract_module_declaration m = m.Types.md_type, m.Types.md_attributes
 
 let lookup_module name env =
   let path = Env.lookup_module ~load:true name env in
   let md = Env.find_module path env in
-  path, extract_module_declaration md
+  path, md.Types.md_type, md.Types.md_attributes
 
 let lookup_modtype name env =
   let path, mdtype = Env.lookup_modtype name env in
@@ -202,8 +121,6 @@ let rec last_ident =
   | Env_empty -> raise Not_found
   | Env_open (s,_) -> last_ident s
 
-let id_of_constr_decl c = c.Types.cd_id
-
 let add_hidden_signature env sign =
   let add_item env comp =
     match comp with
@@ -237,7 +154,7 @@ let rec signature_loc =
   let rec mod_loc = function
     | Mty_ident _ -> None
     | Mty_functor (_,m1,m2) ->
-      begin match extract_functor_arg m1 with
+      begin match m1 with
       | Some m1 -> union_loc_opt (mod_loc m1) (mod_loc m2)
       | None -> mod_loc m2
       end
@@ -256,9 +173,9 @@ let rec signature_loc =
   | Sig_value (_,v)    -> Some v.val_loc
   | Sig_type (_,t,_)   -> Some t.type_loc
   | Sig_typext (_,e,_) -> Some e.ext_loc
-  | Sig_module (_,m,_) -> mod_loc (fst (extract_module_declaration m))
+  | Sig_module (_,m,_) -> mod_loc m.Types.md_type
   | Sig_modtype (_,m) ->
-    begin match extract_modtype_declaration m with
+    begin match m.Types.mtd_type with
     | Some m -> mod_loc m
     | None -> None
     end
@@ -339,8 +256,6 @@ let dest_tstr_eval str =
   match str.str_items with
   | [ { str_desc = Tstr_eval (exp,_) }] -> exp
   | _ -> failwith "unhandled expression"
-
-let full_scrape = Env.scrape_alias
 
 let rec subst_patt initial ~by patt =
   let f = subst_patt initial ~by in
@@ -488,6 +403,7 @@ let val_attributes v = v.Types.val_attributes
 let type_attributes t = t.Types.type_attributes
 let lbl_attributes l = l.Types.lbl_attributes
 let mtd_attributes t = t.Types.mtd_attributes
+let md_attributes t = t.Types.md_attributes
 
 let remove_merlin_loc_attr e =
   let open Typedtree in
@@ -505,3 +421,69 @@ let get_class_field_desc_infos = function
   | _ -> None
 
 let no_label = Asttypes.Nolabel
+
+(* Taken from Leo White's doc-ock,
+   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
+ *)
+let read_doc_attributes attrs =
+  let read_payload =
+    let open Location in let open Parsetree in
+    function
+    | PStr[{ pstr_desc =
+               Pstr_eval({ pexp_desc =
+                             Pexp_constant(Asttypes.Const_string(str, _));
+                           pexp_loc = loc;
+                         }, _)
+           }] -> Some(str, loc)
+    | _ -> None
+  in
+  let rec loop = function
+    | ({Location.txt =
+          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
+      read_payload payload
+    | _ :: rest -> loop rest
+    | [] -> None
+  in
+  loop attrs
+
+module Parsetree = struct
+  open Parsetree
+
+  let arg_label_of_str = function
+    | "" -> Asttypes.Nolabel
+    | str ->
+      if str.[0] = '?' then
+        (* FIXME: drop the '?'? *)
+        Asttypes.Optional str
+      else
+        Asttypes.Labelled str
+
+  let format_params ~f params =
+    let format_param (param,_variance) =
+      match param.ptyp_desc with
+      | Ptyp_any -> f "_"
+      | Ptyp_var v -> f v
+      | _ -> assert false (*TODO*)
+    in
+    List.map format_param params
+
+  let extract_specific_parsing_info = function
+    | { pexp_desc = Pexp_ident longident } -> `Ident longident
+    | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
+    | _ -> `Other
+
+  let core_args = function
+    | Pcstr_tuple lst -> lst
+    | Pcstr_record lst -> List.map lst ~f:(fun lbl -> lbl.pld_type)
+
+  let map_constructors ~f lst =
+    List.map lst ~f:(fun { pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } ->
+      let pcd_args = core_args pcd_args in
+      f pcd_name.Location.txt pcd_args pcd_res pcd_loc
+    )
+
+  let args_of_constructor c = core_args c.pcd_args
+
+  let inspect_label { pld_name ; pld_mutable ; pld_type ; pld_loc ; _ } =
+    pld_name, pld_mutable, pld_type, pld_loc
+end
