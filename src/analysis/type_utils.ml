@@ -183,8 +183,11 @@ let print_type_with_decl ~verbosity env ppf typ =
       in
       Format.pp_print_newline ppf ();
       Format.pp_print_newline ppf ();
-      Printtyp.type_declaration env ident ppf
-        (Env.find_type path env)
+      let decl = Env.find_type path env in
+      begin match decl.Types.type_kind with
+        | Types.Type_abstract -> ()
+        | _ -> Printtyp.type_declaration env ident ppf decl
+      end
     | _ -> Printtyp.type_scheme env ppf typ
   else
     Printtyp.type_scheme env ppf typ
