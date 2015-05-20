@@ -1800,7 +1800,8 @@ Returns the position."
       (merlin-start-process merlin-default-flags conf))
     (add-to-list 'after-change-functions 'merlin--sync-edit)
     (add-hook 'after-save-hook 'merlin--after-save nil 'local)
-    (merlin--idle-timer)))
+    (merlin--idle-timer)
+    (merlin--acquire-buffer)))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
