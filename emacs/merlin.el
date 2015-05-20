@@ -385,6 +385,31 @@ synchronous command being processed by merlin otherwise."
              merlin--process-busy value)
      (setq merlin--process-busy value)))
 
+(defun merlin--find-default-directory (directory)
+  "`start-(file-)process' behaves bad when default-directory doesn't exist.
+Try to find a satisfying default directory."
+  (if (file-exists-p directory)
+      (file-name-as-directory directory)
+    (let* ((parent (file-name-directory (directory-file-name directory))))
+      (if (equal parent directory)
+          default-directory
+        (merlin--find-default-directory parent)))))
+
+(defun merlin--start-process (args)
+  "Collection of workarounds for starting processes"
+  (let* (;; issue #321, start-file-process not always defined
+         (start-file-process
+          (if (boundp 'start-file-process)
+              #'start-file-process
+            #'start-process))
+         ;; issue #341, emacs-pty broken with lines >=1024 chars on OSX
+         (process-connection-type nil)
+         ;; if default-directory doesn't exist, start-file-process will fail
+         (default-directory (or (ignore-errors (merlin--find-default-directory default-directory))
+                                default-directory)))
+    (message "selected directory: %S" default-directory)
+    (apply start-file-process args)))
+
 (defun merlin-start-process (flags &optional configuration)
   "Start the merlin process by fetching the information inside CONFIGURATION. FLAGS contains the list of flags to give merlin.
    CONFIGURATION is an association list with the following keys:
@@ -419,19 +444,13 @@ synchronous command being processed by merlin otherwise."
     (when (merlin-process-dead-p name)
       (let* ((buffer (get-buffer-create buffer-name))
              (process-environment (append
-                                    (if logfile
-                                      (list (format "MERLIN_LOG=%s" (expand-file-name logfile))))
-                                    environment
-                                    process-environment))
-             ;; issue #321, start-file-process not always defined
-             (start-file-process
-               (if (boundp 'start-file-process)
-                 #'start-file-process
-                 #'start-process))
-             ;; issue #341, emacs-pty broken with lines >=1024 chars on OSX
-             (process-connection-type nil)
-             (p (apply start-file-process "merlin" buffer-name
-                       command `("-protocol" "sexp" . ,(append extra-flags flags)))))
+                                   (if logfile
+                                       (list (format "MERLIN_LOG=%s" (expand-file-name logfile))))
+                                   environment
+                                   process-environment))
+             (p (merlin--start-process
+                 `("merlin" ,buffer-name ,command
+                   "-protocol" "sexp" . ,(append extra-flags flags)))))
         (with-current-buffer buffer
           (set-process-query-on-exit-flag p nil)
           (setq merlin-process p)
@@ -471,7 +490,9 @@ synchronous command being processed by merlin otherwise."
 (defun merlin--grouping-function ()
   "Wrapper to call merlin-grouping-function and update internal variable."
   (setq merlin--grouping (merlin--sexp-remove-string-properties
-                          (funcall merlin-grouping-function)))
+                          (condition-case-unless-debug err
+                              (funcall merlin-grouping-function)
+                            (error (message "Error in merlin-grouping-function: %S" err) nil))))
   merlin--grouping)
 
 (defun merlin-restart-process ()
