@@ -298,14 +298,17 @@ let rec path_size n ofun afun = function
 let path_size ofun afun p =
   let (n, _) as result = path_size 0 ofun afun p in
   if debug then
-    dprintf "SIZE %s = %d\n%!" (String.concat "." (Path.to_string_list p)) n;
+    dprintf "PATH_SIZE %s = %d\n%!" (String.concat "." (Path.to_string_list p)) n;
   result
 
-let module_path_size ofun afun p =
-  if ofun p then 0, 0
-  else match afun p with
-    | None -> path_size ofun afun p
-    | Some (_,n) -> n, 0
+and module_path_size ofun afun p =
+  let (n, _) as result =
+    if ofun p then 0, 0
+    else path_size 0 ofun afun p
+  in
+  if debug then
+    dprintf "MODULE_PATH_SIZE %s = %d\n%!" (String.concat "." (Path.to_string_list p)) n;
+  result
 
 let register_short_type map env p (p', decl) =
   let (p1, s1) = normalize_type_path env p' ~cache:true in
@@ -438,18 +441,19 @@ let rec shorten_path' opened aliased = function
   | Pdot (p, s, _) when opened p ->
     Pident (Ident.hide (Ident.create_persistent s))
   | Pdot (p, s, i) as p0 ->
-    let p' = match aliased p with
+    begin match aliased p with
       | Some (p',_) when opened p' ->
         Pident (Ident.hide (Ident.create_persistent s))
-      | Some (p',_) -> p'
+      | Some (p',_) when p == p' -> p0
+      | Some (p',_) -> Pdot (p', s, i)
       | None ->
-        let p = shorten_path' opened aliased p in
-        match aliased p with
-        | Some (p,_) -> p
-        | None -> p
-    in
-    if p == p' then p0
-    else Pdot (p', s, i)
+        let p' = shorten_path' opened aliased p in
+        let p' = match aliased p' with
+          | Some (p',_) -> p'
+          | None -> p'
+        in
+        if p == p' then p0 else Pdot (p', s, i)
+    end
   | Papply (p1, p2) as p0 ->
     let p1' = shorten_path' opened aliased p1 in
     let p2' = shorten_path' opened aliased p2 in
@@ -494,10 +498,10 @@ let set_printing_env env =
              PathMap.iter dbg module_alias0;
              PathMap.iter dbg module_alias1);
           let rec select_alias path paths =
-            let best_module_path = best_path opened aliased in
+            let best_module_path = best_module_path opened aliased in
             let path, (n, _) =
               List.fold_left best_module_path
-                (path, path_size opened aliased path)
+                (path, module_path_size opened aliased path)
                 paths
             in
             let path = shorten_path' opened aliased path in
@@ -516,11 +520,11 @@ let set_printing_env env =
                 match l0 @ l1 with
                 | [] ->
                   if debug then
-                    dprintf "\tNO\n%!";
+                    dprintf "%s ALIASED? NO\n%!" (to_str p);
                   None
                 | aliases ->
                   if debug then
-                    dprintf "\tYES\n%!";
+                    dprintf "%s ALIASED? YES\n%!" (to_str p);
                   let selected = select_alias p' aliases in
                   (*let size', _ = path_size (fun _ -> false) no_aliases p in
                     let result =
@@ -530,7 +534,7 @@ let set_printing_env env =
                       result
                     in*)
                   if debug then
-                    dprintf "\tALIASING TO %s\n%!" (to_str (fst selected));
+                    dprintf "%s ALIASING TO %s\n%!" (to_str p) (to_str (fst selected));
                   Some selected
               in
               module_alias_store := PathMap.add p' result !module_alias_store;
@@ -553,6 +557,8 @@ let set_printing_env env =
                     (try PathMap.find path type_alias1 with Not_found -> [])
                 in
                 let path' = shorten_path' opened aliased path' in
+                if debug then
+                  dprintf "%s -> %s\n" (to_str path) (to_str path');
                 final := PathMap.add path path' !final;
                 path'
           in
