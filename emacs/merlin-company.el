@@ -29,7 +29,6 @@
 ;; - merlin--completion-format-entry
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
-;; - merlin--locate-pos
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
 ;; to be used by other modules.
@@ -108,7 +107,7 @@
         (init t)
         (doc-buffer (merlin-company--doc-buffer arg))
         (location
-         (let ((data (merlin--locate-pos arg)))
+         (let ((data (merlin/locate arg)))
            (when (listp data)
              (let ((filename (lookup-default 'file data buffer-file-name))
                    (linum (cdr (assoc 'line (assoc 'pos data)))))
