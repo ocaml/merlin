@@ -27,10 +27,10 @@
 
 )* }}} *)
 
-val node : max_depth:int -> loc:Location.t -> env:Env.t -> BrowseT.t list ->
+val node : max_depth:int -> loc:Location.t -> BrowseT.t list ->
   BrowseT.t -> Location.t * string list
 (** [node ~loc ~env parents current_node] returns a location indicating which
     portion of the buffer must be replaced and the string to replace it with. *)
 
-val apply : max_depth:int -> loc:Location.t -> env:Env.t -> BrowseT.t list ->
+val apply : max_depth:int -> loc:Location.t -> BrowseT.t list ->
   BrowseT.t -> Location.t * string list

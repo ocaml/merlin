@@ -690,18 +690,18 @@ let string_of_expr ~parens e =
 let string_of_module m =
   string_of_format ~parens:false Pprintast.default#module_expr m
 
-let node ~max_depth:d ~loc ~env parents node =
+let node ~max_depth:d ~loc parents node =
   max_depth := d ;
   match node.t_node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
     let strs =
-      gen_expr ~many:true env ty >>= fun (e, _) ->
+      gen_expr ~many:true expr.Typedtree.exp_env ty >>= fun (e, _) ->
       [ string_of_expr ~parens:(needs_parentheses e) e ] in
     loc, strs
   | Module_expr expr ->
     let ty = expr.Typedtree.mod_type in
-    let result = gen_module env ty in
+    let result = gen_module expr.Typedtree.mod_env ty in
     loc, [ string_of_module result ]
   | node ->
     raise (Not_allowed (BrowseT.string_of_node node))
@@ -738,17 +738,16 @@ let rec functor_argument_types env mod_type =
     | None -> []
   with Not_found -> []
 
-let apply ~max_depth:d ~loc ~env parents node =
+let apply ~max_depth:d ~loc parents node =
   max_depth := d - 1 ;
   let loc = { loc with Location.loc_start = loc.Location.loc_end } in
   match node.t_node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
-    let args = argument_types env ty in
+    let args = argument_types expr.Typedtree.exp_env ty in
     let labels, types = List.split args in
-    let it = Untypeast.untype_expression expr in
     let strs =
-      gen_product ~many:true env types >>= fun (exprs, _) ->
+      gen_product ~many:true expr.Typedtree.exp_env types >>= fun (exprs, _) ->
       let args = List.combine labels exprs in
       let result = A.Exp.apply (A.Exp.ident (mk_id "_")) args in
       let str = string_of_expr ~parens:false result in
@@ -756,7 +755,7 @@ let apply ~max_depth:d ~loc ~env parents node =
     loc, strs
   | Module_expr expr ->
     let ty = expr.Typedtree.mod_type in
-    let args = functor_argument_types env ty in
+    let args = functor_argument_types expr.Typedtree.mod_env ty in
     let ids, modtypes = List.split args in
     let modules =
       List.map2 ids modtypes ~f:(fun id mty ->
@@ -765,7 +764,7 @@ let apply ~max_depth:d ~loc ~env parents node =
             A.Mod.ident (mk_id id.Ident.name)
           | Some modtype ->
             if !max_depth > 0
-            then gen_module env modtype
+            then gen_module expr.Typedtree.mod_env modtype
             else A.Mod.constraint_ (* module type hole *)
                    (A.Mod.unpack (A.Exp.ident (mk_id ("_" ^ id.Ident.name))))
                    (gen_modtype modtype)) in
