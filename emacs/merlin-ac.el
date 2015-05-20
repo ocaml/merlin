@@ -47,7 +47,6 @@ auto-complete"
 ;; - merlin--completion-full-entry-name
 ;; - merlin--completion-prefix
 ;; - merlin--completion-data
-;; - merlin--locate-pure
 ;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
 ;; to be used by other modules.
@@ -142,7 +141,7 @@ wrong then recompute it."
     (when (popup-hidden-p ac-menu)
       (ac-show-menu))
     (let ((merlin-locate-in-new-window 'always))
-      (merlin--locate-pure (ac-selected-candidate)))
+      (merlin/locate (ac-selected-candidate)))
     (ac-show-menu)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
