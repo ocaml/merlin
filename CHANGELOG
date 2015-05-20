@@ -1,5 +1,6 @@
-merlin HEAD
-===========
+merlin 2.2
+==========
+Wed May 20 09:44:55 EDT 2015
 
   backend:
     - completion
@@ -10,8 +11,8 @@ merlin HEAD
         + optionally associates ocamldoc comments to candidates
         + adds field completion inside records ( #296 )
     - locate:
-        + partially rewritten, introduces a cache (so potentially noticeably
-          bigger memory consumption)
+        + partially rewritten, introduces a new kind of cache
+          (so potentially noticeably bigger memory consumption)
         + better handling of functors
         + handle local modules
         + fix occasional "inconsistent assumptions"
@@ -38,6 +39,8 @@ merlin HEAD
       (upstream >= 4.02.2)
     - parser: improve marking heuristic in presence of ;; or toplevel
       directives.
+    - typeof: during verbose expansion, also print the type declaration if we
+      have a type constructor
 
   emacs:
     - fix bindings of every completion backend
@@ -47,9 +50,10 @@ merlin HEAD
     - locate error messages were silently ignored, they are now printed
     - drop text properties from commands sent to merlin (pull request #383 by
       milanst)
-    - Tell merlin the content of the buffer.
+    - Tell merlin the content of the buffer when opening a new buffer.
       This allows merlin idle-job to preload content if nothing else is
       requested.
+    - remove call to merlin from the lighter
 
   vim:
     - fix ctrlp binding for locate
@@ -57,7 +61,7 @@ merlin HEAD
     - while completing, candidates documentation can be displayed in the
       "preview" window
     - prefix every command name by "Merlin" ( #379 )
-    - Tell merlin the content of the buffer.
+    - Tell merlin the content of the buffer when opening a new buffer.
       This allows merlin idle-job to preload content if nothing else is
       requested.
 
