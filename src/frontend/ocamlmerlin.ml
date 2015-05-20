@@ -110,10 +110,11 @@ let rec on_read state ~timeout fd =
       else
         on_read state ~timeout:(-1.0) fd
     | _, _, _ -> ()
-  with Unix.Unix_error (Unix.EINTR, _, _) ->
+  with
+  | Unix.Unix_error (Unix.EINTR, _, _) ->
     on_read state ~timeout fd
-     | exn -> Logger.error section
-                ~title:"on_read" (Printexc.to_string exn)
+  | exn -> Logger.error section
+             ~title:"on_read" (Printexc.to_string exn)
 
 let main_loop () =
   let state = Command.new_state () in
