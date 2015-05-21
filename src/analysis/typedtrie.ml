@@ -188,10 +188,10 @@ let rec build ?(local_buffer=false) ~trie browses =
             f (Included p)
           | `Mod_type _
           | `Mod_expr _ as packed -> helper packed
-          | `Unpack
           | `Functor _ ->
             (* You can't include a functor, you can only include "structures". *)
             assert false
+          | `Unpack
           | `Apply _ -> f Leaf
           | `Str _
           | `Sg  _ as s -> build ~local_buffer ~trie (Browse.of_typer_contents [(s, [])])

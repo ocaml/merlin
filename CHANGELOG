@@ -1,3 +1,9 @@
+merlin HEAD
+===========
+
+  backend:
+    - locate: fix assert failure on first class modules inclusion
+
 merlin 2.2
 ==========
 Wed May 20 09:44:55 EDT 2015
