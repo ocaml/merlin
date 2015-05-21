@@ -1853,7 +1853,7 @@ and type_relax ?in_function env sexp ty_expected =
       exp_extra = [];
       exp_type = ty_expected;
       exp_env = env;
-      exp_attributes = [];
+      exp_attributes = [merlin_incorrect_attribute];
     }
   in
   let snap = Btype.snapshot () in
