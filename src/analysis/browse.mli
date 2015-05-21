@@ -85,3 +85,7 @@ val annotate_tail_calls : t list -> (t * Protocol.is_tail_position) list
 (** Same function, but operating from leaves to root *)
 val annotate_tail_calls_from_leaf
   : t list -> (t * Protocol.is_tail_position) list
+
+(** Identify nodes introduced by recovery *)
+val is_recovered_expression : Typedtree.expression -> bool
+val is_recovered : BrowseT.t -> bool
