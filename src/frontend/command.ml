@@ -829,7 +829,7 @@ let dispatch (state : state) =
     let ident_occurrence () =
       let paths = BrowseT.node_paths node.BrowseT.t_node in
       let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
-      Logger.infojf (Logger.section "occurences") ~title:"Occurrences paths"
+      Logger.infojf (Logger.section "occurrences") ~title:"Occurrences paths"
         (fun paths ->
           let dump_path ({Location.txt; loc} as p) =
             let ppf, to_string = Format.to_string () in
@@ -871,4 +871,41 @@ let dispatch (state : state) =
   | (Idle_job : a request) ->
     Buffer.idle_job state.buffer
 
+  | (Refactor_open (mode, pos)) ->
+    with_typer state @@ fun typer ->
+    let node, ancestors = Browse.node_at typer pos in
+    let in_scope = match ancestors with
+      | [] -> []
+      | [{BrowseT.t_children = lazy [_];
+          t_node = BrowseT.Structure _ | BrowseT.Signature _}] ->
+        Browse.of_typer_contents (Typer.contents typer)
+      | {BrowseT.t_children = lazy children} :: _ ->
+        children
+    in
+    let in_scope =
+      List.filter ~f:(fun node' ->
+          Parsing_aux.compare_pos pos node'.BrowseT.t_loc <= 0 &&
+          node' != node) in_scope
+    in
+    begin match node.BrowseT.t_node with
+      | BrowseT.Structure_item {Typedtree.str_desc = Typedtree.Tstr_open op}
+      | BrowseT.Signature_item {Typedtree.sig_desc = Typedtree.Tsig_open op} ->
+        let path = op.Typedtree.open_path in
+        let occurrences = List.bind ~f:(Browse.all_occurrences_of_prefix path) in_scope in
+        let rec path_to_string acc = function
+          | Path.Pident ident ->
+            String.concat ~sep:"." (Ident.name ident :: acc)
+          | Path.Pdot (path', s, _) when mode = `Open && Path.same path path' ->
+            String.concat ~sep:"." (s :: acc)
+          | Path.Pdot (path', s, _) ->
+            path_to_string (s :: acc) path'
+          | _ -> raise Not_found
+        in
+        List.bind occurrences ~f:(fun (_, paths) ->
+            List.filter_map paths ~f:(fun {Location. txt = path; loc} ->
+                try Some (path_to_string [] path, loc)
+                with Not_found -> None)
+          )
+      | _ -> []
+    end
   : a)

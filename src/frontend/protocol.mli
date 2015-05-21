@@ -165,6 +165,9 @@ type _ request =
   | Occurrences
     : [`Ident_at of position]
     -> Location.t list request
+  | Refactor_open
+    :  [`Open|`Unopen] * position
+    -> (string * Location.t) list request
   | Idle_job
     : bool request
   | Version

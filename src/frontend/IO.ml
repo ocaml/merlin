@@ -410,6 +410,10 @@ module Protocol_io = struct
       Request (Project_get)
     | [`String "version"] ->
       Request (Version)
+    | [`String "refactor"; `String "open"; jpos] ->
+      Request (Refactor_open (`Open, pos_of_json jpos))
+    | [`String "refactor"; `String "unopen"; jpos] ->
+      Request (Refactor_open (`Unopen, pos_of_json jpos))
     | _ -> invalid_arguments ()
 
   let json_of_response = function
@@ -511,6 +515,9 @@ module Protocol_io = struct
           `List (List.map locations
                    ~f:(fun loc -> with_location loc []))
         | Idle_job, b -> `Bool b
+        | Refactor_open _, locations ->
+          `List (List.map locations
+                   ~f:(fun (name,loc) -> with_location loc ["content",`String name]))
         | Version, version ->
           `String version
       end]

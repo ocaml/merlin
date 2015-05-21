@@ -188,6 +188,8 @@ module List = struct
       let acc, xs' = fold_n_map ~f ~init:acc xs in
       acc, (x' :: xs')
 
+  let bind l ~f = flatten (map ~f l)
+
   module Lazy = struct
     type 'a t =
       | Nil

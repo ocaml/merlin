@@ -402,6 +402,14 @@ function! merlin#OccurrencesRename(text)
   py merlin.vim_occurrences_replace(vim.eval("a:text"))
 endfunction
 
+function! merlin#RefactorOpen()
+  py merlin.vim_refactor_open("open")
+endfunction
+
+function! merlin#RefactorUnopen()
+  py merlin.vim_refactor_open("unopen")
+endfunction
+
 function! merlin#ErrorLocList()
   let l:errors = []
   if !exists('b:merlin_error_check') || b:merlin_error_check == 1
@@ -551,6 +559,10 @@ function! merlin#Register()
     exe "omap <silent><buffer> i" . l:k ":<C-U>call merlin_visual#ShrinkInside('o')<return>"
     exe "omap <silent><buffer> a" . l:k ":<C-U>call merlin_visual#ShrinkAround('o')<return>"
   endif
+
+  " Open / Unopen
+  command! -buffer -nargs=0 MerlinOpen call merlin#RefactorOpen()
+  command! -buffer -nargs=0 MerlinUnopen call merlin#RefactorUnopen()
 
   """ Path management  ---------------------------------------------------------
   command! -buffer -nargs=? -complete=dir MerlinSourcePath call merlin#Path("source", <q-args>)

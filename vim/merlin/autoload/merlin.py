@@ -509,6 +509,18 @@ def vim_occurrences_replace(content):
       query = ":%s/{0}.\\{{{1}\\}}/{2}/".format(matcher,mlen,content)
       vim.command(query)
 
+def vim_refactor_open(mode):
+  sync_full_buffer()
+  line, col = vim.current.window.cursor
+  lst = command("refactor",mode,{'line':line, 'col':col})
+  lst.reverse()
+  for pos in lst:
+    if pos['start']['line'] == pos['end']['line']:
+      mlen = pos['end']['col'] - pos['start']['col']
+      matcher = make_matcher(pos['start'], pos['end'])
+      query = ":%s/{0}.\\{{{1}\\}}/{2}/".format(matcher,mlen,pos['content'])
+      vim.command(query)
+
 # Expression typing
 def vim_type(expr):
   to_line, to_col = vim.current.window.cursor

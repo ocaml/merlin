@@ -105,6 +105,25 @@ let all_occurrences path =
   in
   aux []
 
+let all_occurrences_of_prefix path =
+  let rec path_prefix ~prefix path =
+    Path.same prefix path ||
+    match path with
+    | Path.Pdot (p,_,_) -> path_prefix ~prefix p
+    | _ -> false
+  in
+  let rec aux acc t =
+    let acc =
+      let paths = node_paths t.t_node in
+      let has_prefix l = path_prefix ~prefix:path l.Location.txt in
+      match List.filter ~f:has_prefix paths with
+      | [] -> acc
+      | paths -> (t, paths) :: acc
+    in
+    List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
+  in
+  aux []
+
 let rec fix_loc env t =
   let t_children = t.t_children in
   let t_env =
