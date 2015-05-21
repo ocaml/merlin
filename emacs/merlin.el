@@ -210,9 +210,6 @@ field logfile (see `merlin-start-process')"
 (defvar-local merlin--dirty-point 0
   "Position after which buffer content may differ.")
 
-(defvar-local merlin--loaded-once nil
-  "Set to nil if buffer has not been loaded at least once in merlin.")
-
 ;; Errors related variables
 (defvar-local merlin-erroneous-buffer nil
   "Whether the buffer is erroneous or not")
@@ -551,14 +548,7 @@ the merlin buffer of the current buffer."
                            (list 'reset 'dot_merlin dot-merlins 'auto name)
                            (list 'reset 'auto name)))
     (merlin-error-reset)
-    (setq merlin--dirty-point (point-min))
-    ; Synchronizing will only do parsing and no typing.
-    ; That should be fast enough that the user don't realize.
-    ; Having knowledge of the buffer content, merlin idle jobs will be able to preload
-    ; type information to make upcoming requests much faster.
-    (unless merlin--loaded-once
-      (merlin/sync-to-end)
-      (setq merlin--loaded-once t))))
+    (setq merlin--dirty-point (point-min))))
 
 (defun merlin--check-project-file ()
   "Check if .merlin file loaded successfully."
@@ -1747,13 +1737,18 @@ Returns the position."
   (let* ((conf (merlin--grouping-function))
          (instance (lookup-default 'name conf "default")))
     (setq merlin-instance instance)
-    ; if there is not yet a merlin process
+    ;; if there is not yet a merlin process
     (when (merlin-process-dead-p instance)
       (merlin-start-process merlin-default-flags conf))
     (add-to-list 'after-change-functions 'merlin--sync-edit)
     (add-hook 'after-save-hook 'merlin--after-save nil 'local)
     (merlin--idle-timer)
-    (merlin--acquire-buffer)))
+    ;; Synchronizing will only do parsing and no typing.
+    ;; That should be fast enough that the user don't realize.
+    ;; Having knowledge of the buffer content, merlin idle jobs will be able to preload
+    ;; type information to make upcoming requests much faster.
+    (merlin--acquire-buffer)
+    (merlin/sync-to-end)))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
