@@ -506,8 +506,11 @@ let labels_of_application ~env ~prefix f args =
   let is_application_of label (label',expr,_) =
     let label' = Raw_compat.arg_label_to_str label' in
     match expr with
-    | Some { exp_loc } ->
-      label = label' && label <> prefix && not exp_loc.Location.loc_ghost
+    | Some {exp_loc = {Location. loc_ghost; loc_start; loc_end}} ->
+      label = label'
+      && label <> prefix
+      && not loc_ghost
+      && not (loc_start = loc_end)
     | None -> false
   in
   let unapplied_label (label,_) =
