@@ -30,7 +30,19 @@ open Std
 open BrowseT
 open Typedtree
 
+let tail_operator = function
+  | {exp_desc = Texp_ident
+         (_,_, {Types.val_kind = Types.Val_prim
+                    {Primitive.prim_name = "%sequand"|"%sequor"}})}
+    -> true
+  | _ -> false
+
 let expr_tail_positions = function
+  | Texp_apply (callee, args) when tail_operator callee ->
+    begin match List.last args with
+      | None | Some (_, None, _)-> []
+      | Some (_, Some expr, _) -> [Expression expr]
+    end
   | Texp_instvar _ | Texp_setinstvar _ | Texp_override _
   | Texp_assert _ | Texp_assertfalse
   | Texp_lazy _ | Texp_object _ | Texp_pack _
