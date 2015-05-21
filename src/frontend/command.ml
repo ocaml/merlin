@@ -323,7 +323,7 @@ let dispatch (state : state) =
     List.map (fun t -> t.BrowseT.t_loc) path
 
   | (Complete_prefix (prefix, pos, with_doc) : a request) ->
-    let complete typer =
+    let complete ~no_labels typer =
       let node, ancestors = Browse.node_at ~skip_recovered:true typer pos in
       let target_type, context =
         Completion.application_context ~verbosity ~prefix node ancestors
@@ -341,6 +341,10 @@ let dispatch (state : state) =
       in
       let entries =
         Completion.node_complete ?get_doc ?target_type state.buffer node prefix
+      and context = match context with
+        | `Application context when no_labels ->
+          `Application {context with Protocol.Compl.labels = []}
+        | context -> context
       in
       {Compl. entries = List.rev entries; context }
     in
@@ -355,21 +359,29 @@ let dispatch (state : state) =
         (fun (_,item) -> Lexing.compare_pos (Lexer.item_end item) pos <= 0)
         lexer
     in
-    let need_token =
+    let need_token, no_labels =
       let open Raw_parser in
       let exns, item = History.focused lexer in
       let loc = Lexer.item_location item in
-      if Parsing_aux.compare_pos pos loc = 0 &&
-         (match item with
-          | Lexer.Valid (_, (LIDENT _ | UIDENT _), _) -> true
-          | _ -> false)
-      then
-        None
-      else
-        Some (exns, Lexer.Valid (pos, LIDENT "", pos))
+      let need_token =
+        if Parsing_aux.compare_pos pos loc = 0 &&
+           (match item with
+            | Lexer.Valid (_, (LIDENT _ | UIDENT _), _) -> true
+            | _ -> false)
+        then
+          None
+        else
+          Some (exns, Lexer.Valid (pos, LIDENT "", pos))
+      and no_labels =
+        (* Cursor is already over a label, don't suggest another one *)
+        match item with
+        | Lexer.Valid (_, (LABEL _ | OPTLABEL _), _) -> true
+        | _ -> false
+      in
+      need_token, no_labels
     in
     begin match need_token with
-    | None -> with_typer state complete
+    | None -> with_typer state (complete ~no_labels)
     | Some token ->
       (* Setup fake AST *)
       let lexer' = History.fake_insert token lexer in
@@ -377,7 +389,7 @@ let dispatch (state : state) =
       ignore (Buffer.update state.buffer lexer' : [> ]);
       try_finally
         (* Complete on adjusted buffer *)
-        (fun () -> with_typer state complete)
+        (fun () -> with_typer state (complete ~no_labels))
         (* Restore original buffer *)
         (fun () -> ignore (Buffer.update state.buffer lexer0 : [> ]))
     end
