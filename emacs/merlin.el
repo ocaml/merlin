@@ -693,12 +693,12 @@ the error message otherwise print a generic error message."
 
 (defun merlin-switch-to-ml (name)
   "Switch to the ML file corresponding to the module NAME (fallback to MLI if no ML is provided)."
-  (interactive (list (completing-read "Module: " (merlin-switch-list-by-ext '(".ml" ".mli")))))
+  (interactive (list (ido-completing-read "Module: " (merlin-switch-list-by-ext '(".ml" ".mli")))))
   (merlin-switch-to name '(".ml" ".mli")))
 
 (defun merlin-switch-to-mli (name)
   "Switch to the MLI file corresponding to the module NAME (fallback to ML if no MLI is provided)."
-  (interactive (list (completing-read "Module: " (merlin-switch-list-by-ext '(".mli" ".ml")))))
+  (interactive (list (ido-completing-read "Module: " (merlin-switch-list-by-ext '(".mli" ".ml")))))
   (merlin-switch-to name '(".mli" ".ml")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
