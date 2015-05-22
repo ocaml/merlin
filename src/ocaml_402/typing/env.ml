@@ -1438,7 +1438,7 @@ and check_usage loc id warn tbl =
     let key = (name, loc) in
     if Hashtbl.mem tbl key then ()
     else let used = ref false in
-    Hashtbl.add tbl key (fun () -> used := true);
+    Hashtbl.add tbl key (fun () -> backtracking_set used true);
     if not (name = "" || name.[0] = '_' || name.[0] = '#')
     then
       !add_delayed_check_forward
