@@ -188,7 +188,7 @@ val backtrack: snapshot -> unit
 val is_valid: snapshot -> bool
 
 (** merlin: also register changes to arbitrary references *)
-val backtracking_set: 'a ref -> 'a -> unit
+val on_backtrack: (unit -> unit) -> unit
 
 (* Functions to use when modifying a type (only Ctype?) *)
 val link_type: type_expr -> type_expr -> unit

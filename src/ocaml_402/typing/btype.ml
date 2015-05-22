@@ -578,7 +578,7 @@ type change =
   | Ccommu of commutable ref * commutable
   | Cuniv of type_expr option ref * type_expr option
   | Ctypeset of TypeSet.t ref * TypeSet.t
-  | Cref : 'a ref * 'a -> change
+  | Cfun of (unit -> unit)
 
 let undo_change = function
     Ctype  (ty, desc) -> ty.desc <- desc
@@ -589,7 +589,7 @@ let undo_change = function
   | Ccommu (r, v) -> r := v
   | Cuniv  (r, v) -> r := v
   | Ctypeset (r, v) -> r := v
-  | Cref (r, v) -> r := v
+  | Cfun f -> f ()
 
 type changes =
     Change of change * changes ref
@@ -653,8 +653,9 @@ let set_commu rc c =
   log_change (Ccommu (rc, !rc)); rc := c
 let set_typeset rs s =
   log_change (Ctypeset (rs, !rs)); rs := s
-let backtracking_set rs s =
-  log_change (Cref (rs, !rs)); rs := s
+
+let on_backtrack f =
+  log_change (Cfun f)
 
 let snapshot () =
   let old = !cache.last_snapshot in

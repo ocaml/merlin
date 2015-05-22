@@ -31,9 +31,30 @@ type constructor_usages =
      mutable cu_privatize: bool;
     }
 let add_constructor_usage cu = function
-  | Positive -> cu.cu_positive <- true
-  | Pattern -> cu.cu_pattern <- true
-  | Privatize -> cu.cu_privatize <- true
+  | Positive ->
+    if not cu.cu_positive then
+      begin
+        on_backtrack (fun () -> cu.cu_positive <- false);
+        cu.cu_positive <- true
+      end
+  | Pattern ->
+    if not cu.cu_pattern then
+      begin
+        on_backtrack (fun () -> cu.cu_pattern <- false);
+      cu.cu_pattern <- true
+      end
+  | Privatize ->
+    if not cu.cu_privatize then
+      begin
+        on_backtrack (fun () -> cu.cu_privatize <- false);
+        cu.cu_privatize <- true
+      end
+
+let remove_on_backtrack tbl key =
+  on_backtrack (fun () -> Hashtbl.remove tbl key)
+let backtracking_add tbl key value =
+  remove_on_backtrack tbl key;
+  Hashtbl.add tbl key value
 
 let constructor_usages () =
   {cu_positive = false; cu_pattern = false; cu_privatize = false}
@@ -888,7 +909,7 @@ let set_value_used_callback name vd callback =
          where the two declarations have the same location
          (e.g. resulting from Camlp4 expansion of grammar entries) *)
   with Not_found ->
-    Hashtbl.add !cache.value_declarations key callback
+    backtracking_add !cache.value_declarations key callback
 
 let set_type_used_callback name td callback =
   let loc = td.type_loc in
@@ -1438,7 +1459,12 @@ and check_usage loc id warn tbl =
     let key = (name, loc) in
     if Hashtbl.mem tbl key then ()
     else let used = ref false in
-    Hashtbl.add tbl key (fun () -> backtracking_set used true);
+      backtracking_add tbl key (fun () ->
+          if not !used then
+            begin
+              on_backtrack (fun () -> used := false);
+              used := true
+            end);
     if not (name = "" || name.[0] = '_' || name.[0] = '#')
     then
       !add_delayed_check_forward
@@ -1482,7 +1508,7 @@ and store_type ~check slot id path info env renv =
         let k = (ty, loc, c) in
         if not (Hashtbl.mem !cache.used_constructors k) then
           let used = constructor_usages () in
-          Hashtbl.add !cache.used_constructors k (add_constructor_usage used);
+          backtracking_add !cache.used_constructors k (add_constructor_usage used);
           if not (ty = "" || ty.[0] = '_')
           then !add_delayed_check_forward
               (fun () ->
@@ -1531,7 +1557,7 @@ and store_extension ~check slot id path ext env renv =
     let k = (ty, loc, n) in
     if not (Hashtbl.mem !cache.used_constructors k) then begin
       let used = constructor_usages () in
-      Hashtbl.add !cache.used_constructors k (add_constructor_usage used);
+      backtracking_add !cache.used_constructors k (add_constructor_usage used);
       !add_delayed_check_forward
         (fun () ->
           if not (is_in_signature env) && not used.cu_positive then
