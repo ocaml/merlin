@@ -52,9 +52,15 @@ let add_constructor_usage cu = function
 
 let remove_on_backtrack tbl key =
   on_backtrack (fun () -> Hashtbl.remove tbl key)
+
 let backtracking_add tbl key value =
   remove_on_backtrack tbl key;
   Hashtbl.add tbl key value
+
+let backtracking_set r v =
+  let v' = !r in
+  on_backtrack (fun () -> r := v');
+  r := v
 
 let constructor_usages () =
   {cu_positive = false; cu_pattern = false; cu_privatize = false}
@@ -1462,8 +1468,7 @@ and check_usage loc id warn tbl =
       backtracking_add tbl key (fun () ->
           if not !used then
             begin
-              on_backtrack (fun () -> used := false);
-              used := true
+              backtracking_set used true
             end);
     if not (name = "" || name.[0] = '_' || name.[0] = '#')
     then
@@ -1758,7 +1763,7 @@ let open_signature ?(loc = Location.none) ?(toplevel = false) ovf root sg env =
     let shadowed = ref [] in
     let slot kind s b =
       if b && not (List.mem (kind, s) !shadowed) then begin
-        shadowed := (kind, s) :: !shadowed;
+        backtracking_set shadowed ((kind, s) :: !shadowed);
         let w =
           match kind with
           | "label" | "constructor" ->
@@ -1767,7 +1772,7 @@ let open_signature ?(loc = Location.none) ?(toplevel = false) ovf root sg env =
         in
         Location.prerr_warning loc w
       end;
-      used := true
+      backtracking_set used true
     in
     open_signature (Some slot) root sg env
   end
