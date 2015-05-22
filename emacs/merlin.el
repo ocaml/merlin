@@ -907,7 +907,8 @@ may be nil, in that case the current cursor of merlin is used."
 (defun merlin-error-prev ()
   "Jump back to previous error."
   (interactive)
-  (if (= merlin--dirty-point (point-max))
+  (if (and (= merlin--dirty-point (point-max))
+           (merlin--acquired-buffer))
       (when (merlin--process-idle)
         (merlin--error-check-async))
     (merlin--error-check nil))
@@ -921,7 +922,8 @@ may be nil, in that case the current cursor of merlin is used."
 (defun merlin-error-next ()
   "Jump to next error."
   (interactive)
-  (if (= merlin--dirty-point (point-max))
+  (if (and (= merlin--dirty-point (point-max))
+           (merlin--acquired-buffer))
       (when (merlin--process-idle)
         (merlin--error-check-async))
     (merlin--error-check nil))
