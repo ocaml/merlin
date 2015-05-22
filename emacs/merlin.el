@@ -883,10 +883,13 @@ may be nil, in that case the current cursor of merlin is used."
   "Returns previous error, cycling when reaching beginning of buffer"
   (let ((point (point)) (errors nil) (err nil))
     (setq point (merlin--overlay-previous-property-set point 'merlin-pending-error))
-    (when (eq point (point-min))
-      (setq point (merlin--overlay-previous-property-set (point-max) 'merlin-pending-error (point))))
-    (setq errors (overlays-at point))
-    (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+    (unless (eq point (point))
+      (setq errors (overlays-at point))
+      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors))))
+    (unless errors
+      (setq point (merlin--overlay-previous-property-set (point-max) 'merlin-pending-error (point)))
+      (setq errors (overlays-at point))
+      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors))))
     (setq err (merlin--error-at-position point errors))
     (if err (cons point err) nil)))
 
@@ -895,9 +898,14 @@ may be nil, in that case the current cursor of merlin is used."
   (let ((point (point)) (errors nil) (err nil))
     (setq point (merlin--overlay-next-property-set point 'merlin-pending-error))
     (when (eq point (point-max))
-      (setq point (merlin--overlay-next-property-set (point-min) 'merlin-pending-error (point))))
-    (setq errors (overlays-at point))
-    (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+      (setq point (point-min))
+      (setq errors (overlays-at point))
+      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+      (unless errors
+        (setq point (merlin--overlay-next-property-set (point-min) 'merlin-pending-error (point)))))
+    (unless errors
+      (setq errors (overlays-at point))
+      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors))))
     (setq err (merlin--error-at-position point errors))
     (if err (cons point err) nil)))
 
