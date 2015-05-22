@@ -282,7 +282,7 @@ containing fields file, line and col."
                    (substitute-command-keys "\\[merlin-pop-stack]")))
       (save-excursion (save-selected-window (funcall do-open))))))
 
-(defun merlin--make-point (data)
+(defun merlin/make-point (data)
   "Transform DATA (a remote merlin position) into a point."
   (save-excursion
     (merlin--goto-point data)
@@ -292,10 +292,10 @@ containing fields file, line and col."
   "From a remote merlin object DATA {\"start\": LOC1; \"end\": LOC2},
 return (LOC1 . LOC2)."
   (cons
-   (merlin--make-point (cdr (assoc 'start data)))
-   (merlin--make-point (cdr (assoc 'end data)))))
+   (merlin/make-point (cdr (assoc 'start data)))
+   (merlin/make-point (cdr (assoc 'end data)))))
 
-(defun merlin--unmake-point (point)
+(defun merlin/unmake-point (point)
   "Destruct POINT to line / col."
   (save-excursion (goto-char point)
                   (list (cons 'assoc nil)
@@ -690,35 +690,35 @@ the error message otherwise print a generic error message."
 
 ;; SPECIAL CASE OF COMMANDS
 
-(defun merlin-parse-position (result)
+(defun merlin--parse-position (result)
   "Returns a pair whose first member is a point set at merlin cursor position
   and second member is the state of the marker"
-  (cons (merlin--make-point (lookup-default 'cursor result nil))
+  (cons (merlin/make-point (lookup-default 'cursor result nil))
         (when (equal (lookup-default 'marker result nil) 'true) t)))
 
-(defun merlin-send-cursor-command (command &optional callback-if-exn)
+(defun merlin--send-cursor-command (command &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result parsed
   as a position."
-  (merlin-parse-position (merlin/send-command command callback-if-exn)))
+  (merlin--parse-position (merlin/send-command command callback-if-exn)))
 
 
 (defun merlin-get-position ()
   "Get the current position of merlin."
-  (car (merlin-send-cursor-command '(seek position))))
+  (car (merlin--send-cursor-command '(seek position))))
 
 (defun merlin-seek-before (point)
   "Move merlin's point to the valid definition before POINT."
-  (merlin-send-cursor-command
-    `(seek before ,(merlin--unmake-point point))))
+  (merlin--send-cursor-command
+    `(seek before ,(merlin/unmake-point point))))
 
 (defun merlin-seek-exact (point)
   "Move merlin's point to the definition containing POINT."
-  (merlin-send-cursor-command
-    `(seek exact ,(merlin--unmake-point point))))
+  (merlin--send-cursor-command
+    `(seek exact ,(merlin/unmake-point point))))
 
 (defun merlin-seek-end ()
   "Move merlin's point to the end of its own view of the buffer."
-  (merlin-send-cursor-command '(seek end)))
+  (merlin--send-cursor-command '(seek end)))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
@@ -787,12 +787,12 @@ the error message otherwise print a generic error message."
 
 (defun merlin--tell-source (code)
   "Tell CODE to merlin and returns whether the position if marker is still active."
-  (let ((result (merlin-send-cursor-command `(tell source ,code))))
+  (let ((result (merlin--send-cursor-command `(tell source ,code))))
      (when (cdr result) (car result))))
 
 (defun merlin--tell-rest ()
   "Put a marker and tell merlin until marker is satisfied."
-  (let* ((marker (cdr (merlin-send-cursor-command '(tell marker))))
+  (let* ((marker (cdr (merlin--send-cursor-command '(tell marker))))
          (point (when marker (point)))
          (lines 20))
     (while (and point (not (= point (point-max))))
@@ -801,15 +801,15 @@ the error message otherwise print a generic error message."
       (setq point (merlin--tell-source
 		   (merlin/buffer-substring point (point)))))
     (when point
-      (merlin-send-cursor-command '(tell eof)))))
+      (merlin--send-cursor-command '(tell eof)))))
 
 (defun merlin--tell-to-point (&optional point)
   "Tell to merlin part of the buffer between START and END. START
 may be nil, in that case the current cursor of merlin is used."
   (let* ((point (if point point (point)))
          (start (min point merlin--dirty-point))
-         (start (car (merlin-send-cursor-command
-                       `(tell start at ,(merlin--unmake-point start))))))
+         (start (car (merlin--send-cursor-command
+                       `(tell start at ,(merlin/unmake-point start))))))
     (setq merlin--dirty-point point)
     (save-excursion
       (merlin--tell-source (merlin/buffer-substring start point))
@@ -826,7 +826,7 @@ may be nil, in that case the current cursor of merlin is used."
   (merlin--acquire-buffer)
   (unless point (setq point (point)))
   (merlin--tell-to-point point)
-  (unless skip-marker (merlin-send-cursor-command '(seek marker))))
+  (unless skip-marker (merlin--send-cursor-command '(seek marker))))
 
 (defun merlin/sync-to-end ()
   "Behaves like merlin/sync-to-point if the point was point-max"
@@ -1099,7 +1099,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (let* ((ident- (merlin--completion-split-ident ident))
          (suffix (cdr ident-))
          (prefix (car ident-))
-         (pos    (merlin--unmake-point (point)))
+         (pos    (merlin/unmake-point (point)))
          (data   (merlin/send-command
                    (if merlin-completion-with-doc
                      `(complete prefix ,ident at ,pos with doc)
@@ -1160,7 +1160,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   "Get the type of EXP inside the local context."
   (when exp (merlin/send-command-async
              (list 'type 'expression (substring-no-properties exp)
-                   'at (merlin--unmake-point (point)))
+                   'at (merlin/unmake-point (point)))
              callback-if-success callback-if-exn)))
 
 (defun merlin--type-display-in-buffer (text)
@@ -1240,7 +1240,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin--type-enclosing-query ()
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
   (merlin--type-enclosing-reset)
-  (let ((types (merlin/send-command (list 'type 'enclosing 'at (merlin--unmake-point (point)))
+  (let ((types (merlin/send-command (list 'type 'enclosing 'at (merlin/unmake-point (point)))
                                     (lambda (exn) nil))))
     (when types
       (setq merlin-enclosing-types
@@ -1339,7 +1339,7 @@ is active)."
   (merlin/sync-to-point)
   (let* ((enclosing-extents
 	  (merlin/send-command
-	   `(enclosing ,(merlin--unmake-point (point)))))
+	   `(enclosing ,(merlin/unmake-point (point)))))
 	 (extents (if (use-region-p)
 		      (merlin--find-extents enclosing-extents
 					    (region-beginning)
@@ -1364,8 +1364,8 @@ is active)."
 (defun merlin--destruct-enclosing ()
   (interactive)
   (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
-	 (start  (merlin--unmake-point (car bounds)))
-	 (stop   (merlin--unmake-point (cdr bounds)))
+	 (start  (merlin/unmake-point (car bounds)))
+	 (stop   (merlin/unmake-point (cdr bounds)))
 	 (result
 	  (merlin/send-command
 	   (list 'case 'analysis 'from start 'to stop)
@@ -1460,7 +1460,7 @@ loading"
   "Locate the identifier IDENT at point."
   (let ((result (merlin/send-command
                  (list 'locate (if ident (substring-no-properties ident) 'null)
-                       merlin-locate-preference 'at (merlin--unmake-point (point))))))
+                       merlin-locate-preference 'at (merlin/unmake-point (point))))))
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
     (unless (listp result)
@@ -1504,7 +1504,7 @@ loading"
   "Document the identifier IDENT at point and return the result."
   (merlin/send-command
    (list 'document (if ident (substring-no-properties ident) 'null)
-         'at (merlin--unmake-point (point)))))
+         'at (merlin/unmake-point (point)))))
 
 (defun merlin--document-pure (&optional ident)
   "Document the identifier IDENT at point."
@@ -1628,7 +1628,7 @@ loading"
   (merlin/sync-to-end)
   (let* ((r (merlin/send-command
              (list 'occurrences 'ident 'at
-                   (merlin--unmake-point (point))))))
+                   (merlin/unmake-point (point))))))
     (when r
       (if (listp r)
           (merlin-occurrences-list r)
@@ -1642,7 +1642,7 @@ loading"
   "Go to the phrase indicated by COMMAND.
 Returns the position."
   (let ((r (merlin/send-command
-             (list 'boundary command 'at (merlin--unmake-point (point))))))
+             (list 'boundary command 'at (merlin/unmake-point (point))))))
     (unless (equal r 'null)
       (merlin--goto-point (car r))
       (point))))
