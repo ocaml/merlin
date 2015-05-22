@@ -187,6 +187,9 @@ val backtrack: snapshot -> unit
 (** merlin: check if a snapshot has been invalidated *)
 val is_valid: snapshot -> bool
 
+(** merlin: also register changes to arbitrary references *)
+val backtracking_set: 'a ref -> 'a -> unit
+
 (* Functions to use when modifying a type (only Ctype?) *)
 val link_type: type_expr -> type_expr -> unit
         (* Set the desc field of [t1] to [Tlink t2], logging the old
