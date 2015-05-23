@@ -442,7 +442,17 @@ let find_source loc =
           List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
             let tmp = compare j i in
             if tmp <> 0 then tmp else
-            compare s t
+            match compare s t with
+            | 0 -> 0
+            | n ->
+              (* Check if we are referring to the same files.
+                 Especially useful on OSX case-insensitive FS.
+                 FIXME: May be able handle symlinks and non-existing files,
+                 CHECK *)
+              match Misc.file_id s, Misc.file_id t with
+              | s', t' when Misc.file_id_check s' t' ->
+                0
+              | _ -> n
           ) lst
         in
         match lst with
