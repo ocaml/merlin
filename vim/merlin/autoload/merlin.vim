@@ -51,6 +51,10 @@ if !exists("g:merlin_completion_with_doc")
     let g:merlin_completion_with_doc = "false"
 endif
 
+if !exists("g:merlin_construct_max_depth")
+  let g:merlin_construct_max_depth = 1
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -434,6 +438,35 @@ function! merlin#Destruct()
   py merlin.vim_case_analysis()
 endfunction
 
+function! merlin#ConstructComplete(findstart, base)
+  if a:findstart
+    let start = col('.') - 1
+    return start
+  endif
+  return b:constr_result
+endfunction
+
+function! merlin#Construct(kind, count)
+  let l:count = a:count
+  if l:count == 0
+     let l:count = g:merlin_construct_max_depth
+  endif
+  py merlin.sync_buffer()
+  py merlin.vim_construct_cursor(vim.eval("a:kind"), vim.eval("l:count"), "b:constr_result")
+
+  setlocal omnifunc=merlin#ConstructComplete
+
+  augroup MerlinConstruct
+    au!
+    autocmd CompleteDone <buffer> call merlin#ConstructDone()
+  augroup END
+endfunction
+
+function! merlin#ConstructDone()
+  execute "normal :s/\<c-v>\<c-@>/\<c-v>\<c-m>/ge\<cr>"
+  setlocal omnifunc=merlin#Complete
+endfunction
+
 function! merlin#Restart()
   py merlin.vim_restart()
 endfunction
@@ -503,6 +536,10 @@ function! merlin#Register()
 
   """ Destruct  ----------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDestruct call merlin#Destruct()
+
+  """ Construct  ----------------------------------------------------------------
+  nmap <buffer> <Plug>(MerlinConstruct) :<c-u>call merlin#Construct("node",v:count)<cr>a<c-x><c-o>
+  nmap <buffer> <Plug>(MerlinConstructApply) :<c-u>call merlin#Construct("apply",v:count)<cr>a<c-x><c-o>
 
   """ Locate  ------------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)

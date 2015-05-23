@@ -124,6 +124,40 @@ environment which name matches the user input.
 
 Hitting enter will move you to the definition of the selected element.
 
+Construct                                                          *Construct*
+
+Build an ocaml value of the expected type in place of the current expression.
+For example: >
+  let x : a_record = __a_free_variable__ (* with the cursor on this hole *)
+<expands to: >
+  let x : a_record = { M.field = _a ; other_field = _b ; ... }
+<A free variable (unbound and unused) is a convenient way to specify a
+location to be constructed. To construct a module, the equivalent type-hole
+is written: >
+  module M = (val _a_free_variable_ : Signature)
+<You can manually select the expression boundaries with the |:TypeOf| and
+|:GrowEnclosing| commands to control where and what type is going to be
+constructed.
+
+The ConstructApply variant builds the expected arguments: >
+  let x = List.fold_left
+  module M = Map.Make
+<with the cursor on the unapplied function or functor, will expand to: >
+  let x = List.fold_left (fun a b -> _a) _b []
+  module M = Map.Make (struct type t let compare a b = 0 end)
+<
+Add these bindings to access Construct: >
+  nmap <LocalLeader>c  <Plug>(MerlinConstruct)
+  nmap <LocalLeader>C  <Plug>(MerlinConstrutApply)
+<
+The command count specifies the search depth: >
+  type z = Zero and 'a s = Succ of 'a
+  let x : z s s s = _a
+  let x : z s s s = Succ _a                   (* after 1<LocalLeader>c *)
+  let x : z s s s = Succ (Succ (Succ Zero))   (* after 5<LocalLeader>c *)
+<When constructing a GADT, a large search depth can eliminate more invalid
+candidates. See |merlin_construct_max_depth|.
+
 ==============================================================================
 OPTIONS                                                       *merlin-options*
 
@@ -187,6 +221,14 @@ The maximum number of type lines to print in the statusbar before opening the
 type history window.  If set to a very large number, merlin will never open
 the type history window automatically. >
   let g:merlin_type_history_auto_open = 9999
+<
+                                                 *'merlin_construct_max_depth'*
+
+Default: 1.
+The maximum search depth used for constructing values with |Construct| when no
+count is specified. If set to a very large number, the search will stop on the
+first ambiguity or when the value is entirely constructed: >
+  let g:merlin_construct_max_depth = 9999
 <
 
                                                      *'merlin_textobject_grow'*

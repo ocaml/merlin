@@ -107,6 +107,10 @@ type _ request =
        ] request
   | Case_analysis
     : Location.t -> (Location.t * string) request
+  | Construct
+    : int * Location.t -> (Location.t * string list) request
+  | Construct_apply
+    : int * Location.t -> (Location.t * string list) request
   | Outline
     :  outline request
   | Drop

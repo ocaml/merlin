@@ -132,6 +132,11 @@ module Protocol_io = struct
       end
     | _ -> failwith "Incorrect position"
 
+  let loc_of_json start end_ =
+    let loc_start = pos_of_json start in
+    let loc_end = pos_of_json end_ in
+    { Location. loc_start ; loc_end ; loc_ghost = true }
+
   let with_location loc assoc =
     `Assoc (("start", Lexing.json_of_position loc.Location.loc_start) ::
             ("end",   Lexing.json_of_position loc.Location.loc_end) ::
@@ -293,10 +298,15 @@ module Protocol_io = struct
     | [`String "type"; `String "enclosing"; `String "at"; jpos] ->
       Request (Type_enclosing (None, pos_of_json jpos))
     | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ] ->
-      let loc_start = pos_of_json x in
-      let loc_end = pos_of_json y in
-      let loc_ghost = true in
-      Request (Case_analysis ({ Location. loc_start ; loc_end ; loc_ghost }))
+      Request (Case_analysis (loc_of_json x y))
+    | [ `String "construct"; `String "node" ;
+                             `String "maxdepth"; `Int d;
+                             `String "from"; x; `String "to"; y ] ->
+      Request (Construct (d, loc_of_json x y))
+    | [ `String "construct"; `String "apply" ;
+                             `String "maxdepth"; `Int d;
+                             `String "from"; x; `String "to"; y ] ->
+      Request (Construct_apply (d, loc_of_json x y))
     | [`String "enclosing"; jpos] ->
       Request (Enclosing (pos_of_json jpos))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
@@ -468,14 +478,14 @@ module Protocol_io = struct
           | `Found (Some file,pos) ->
             `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
           end
-        | Case_analysis _, ({ Location. loc_start ; loc_end }, str) ->
-          let assoc =
-            `Assoc [
-              "start", Lexing.json_of_position loc_start  ;
-              "end", Lexing.json_of_position loc_end ;
-            ]
-          in
-          `List [ assoc ; `String str ]
+        | Case_analysis _, (loc, str) ->
+          `List [ with_location loc [] ; `String str ]
+        | Construct _, (loc, strs) ->
+          `List [ with_location loc []
+                ; `List (List.map (fun str -> `String str) strs) ]
+        | Construct_apply _, (loc, strs) ->
+          `List [ with_location loc []
+                ; `List (List.map (fun str -> `String str) strs) ]
         | Outline, outlines ->
           `List (json_of_outline outlines)
         | Drop, cursor ->

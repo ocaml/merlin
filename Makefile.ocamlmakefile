@@ -196,6 +196,8 @@ SOURCES = \
 	$(TYPER)/tast_helper.ml           \
 	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \
+	src/analysis/construct.mli        \
+	src/analysis/construct.ml         \
 	src/frontend/IO_sexp.ml           \
 	src/frontend/command.mli          \
 	src/frontend/command.ml           \

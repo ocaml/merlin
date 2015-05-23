@@ -71,3 +71,6 @@ exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
 val report_error: Env.t -> formatter -> error -> unit
+
+val modtype_of_package: Env.t -> Location.t -> Path.t -> Longident.t list ->
+  Types.type_expr list -> Types.module_type

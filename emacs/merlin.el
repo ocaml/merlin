@@ -212,6 +212,10 @@ field logfile (see `merlin-start-process')"
   "If non-nil, use type-enclosing after locate."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-construct-max-depth 1
+  "Maximum search depth for construct."
+  :group 'merlin :type 'integer)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1619,6 +1623,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (define-key keymap (kbd "C-<up>") 'merlin-type-enclosing-go-up)
     (define-key keymap (kbd "C-<down>") 'merlin-type-enclosing-go-down)
     (define-key keymap (kbd "C-d") 'merlin--destruct-enclosing)
+    (define-key keymap (kbd "C-k") #'(lambda () (interactive)
+                                       (merlin--construct-enclosing-kind 'node)))
+    (define-key keymap (kbd "k") #'(lambda () (interactive)
+                                     (merlin--construct-enclosing-kind 'apply)))
     (define-key keymap (kbd "C-w") #'(lambda ()
                                      (interactive)
                                      (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
@@ -1721,6 +1729,106 @@ is active)."
       (merlin--destruct-enclosing)
       (error "merlin: no result"))
     (merlin--destruct-enclosing)))
+
+
+;; Construct
+(defvar merlin-construct-edit-zone nil
+  "Hold the location of the latest constructed zone.")
+(make-variable-buffer-local 'merlin-construct-edit-zone)
+
+(defun merlin--construct-set-edit-zone (start stop)
+  (let ((start (merlin-point-of-pos start))
+        (stop  (merlin-point-of-pos stop)))
+    (setq merlin-construct-edit-zone (cons start stop))))
+
+(defun merlin--construct-replace-edit-zone (txt)
+  (let ((start (car merlin-construct-edit-zone))
+        (stop  (cdr merlin-construct-edit-zone)))
+    (save-excursion
+      (delete-region start stop)
+      (goto-char start)
+      (insert txt)
+      (indent-region start (point))
+      (setq merlin-construct-edit-zone (cons start (point))))))
+
+(defvar merlin-construct-cache nil
+  "Hold a table mapping construct cache.")
+(make-variable-buffer-local 'merlin-construct-cache)
+
+(defvar merlin-construct-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap (kbd "k")   'merlin--construct-next)
+    (define-key keymap (kbd "C-k") 'merlin--construct-prev)
+    keymap)
+  "The local map to navigate constructs.")
+
+(defun merlin--construct-enclosing-kind (kind)
+  (interactive)
+  (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
+	       (start  (merlin-unmake-point (car bounds)))
+	       (stop   (merlin-unmake-point (cdr bounds)))
+         (depth  (if (integerp current-prefix-arg)
+                   current-prefix-arg
+                   merlin-construct-max-depth))
+	       (result
+	        (merlin-send-command
+	         (list 'construct kind 'maxdepth depth 'from start 'to stop)
+	         (lambda (errinfo)
+	           (let ((msg (cdr (assoc 'message errinfo))))
+	             (if msg
+                 (message "%s" msg)
+                 (message "bug in merlin: failed to constructure error")))))))
+    (let ((start  (assoc 'start (car result)))
+          (stop   (assoc 'end   (car result))))
+      (merlin--construct-set-edit-zone start stop))
+    (setq merlin-construct-cache (cadr result))
+    (when (< 1 (length merlin-construct-cache))
+       (setq merlin-construct-cache
+             (cons (car (last merlin-construct-cache))
+                   (butlast merlin-construct-cache)))
+       (set-temporary-overlay-map merlin-construct-map t))
+    (merlin--type-enclosing-reset)
+    (merlin--construct-next)))
+
+(defun merlin--construct-next ()
+  (interactive)
+  (setq merlin-construct-cache
+        (append (cdr merlin-construct-cache)
+                (list (car merlin-construct-cache))))
+  (let ((result (car merlin-construct-cache)))
+    (when result
+      (merlin--construct-replace-edit-zone result)
+      (if (< 1 (length merlin-construct-cache))
+          (merlin-highlight merlin-construct-edit-zone 'merlin-type-face)))))
+
+(defun merlin--construct-prev ()
+  (interactive)
+  (let ((result (car (last merlin-construct-cache))))
+    (when result
+      (setq merlin-construct-cache
+            (cons (car (last merlin-construct-cache))
+                  (butlast merlin-construct-cache)))
+      (merlin--construct-replace-edit-zone result)
+      (if (< 1 (length merlin-construct-cache))
+          (merlin-highlight merlin-construct-edit-zone 'merlin-type-face)))))
+
+(defun merlin-construct-kind (kind)
+  (interactive)
+  (merlin-sync-to-point)
+  (if (not merlin-enclosing-types)
+    (if (merlin--type-enclosing-query)
+      (merlin--construct-enclosing-kind kind)
+      (error "merlin: no result"))
+    (merlin--construct-enclosing-kind kind)))
+
+(defun merlin-construct ()
+  "Construct a value in place of the current enclosing"
+  (interactive)
+  (merlin-construct-kind 'node))
+(defun merlin-construct-apply ()
+  "Construct the arguments for the current enclosing"
+  (interactive)
+  (merlin-construct-kind 'apply))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -2073,6 +2181,8 @@ Returns the position."
     (define-key merlin-map (kbd "C-c TAB") 'merlin-try-completion)
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
     (define-key merlin-map (kbd "C-c C-d") 'merlin-destruct)
+    (define-key merlin-map (kbd "C-c C-k") 'merlin-construct)
+    (define-key merlin-map (kbd "C-c k")   'merlin-construct-apply)
     (define-key merlin-map (kbd "C-c C-n") 'merlin-phrase-next)
     (define-key merlin-map (kbd "C-c C-p") 'merlin-phrase-prev)
     (define-key merlin-menu-map [customize]
