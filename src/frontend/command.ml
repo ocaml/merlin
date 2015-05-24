@@ -729,6 +729,16 @@ let dispatch (state : state) =
     with_typer state @@ fun _typer ->
     Warnings.dump ()
 
+  | (Dump `Exn : a request) ->
+    with_typer state @@ fun typer ->
+    let exns =
+      Typer.exns typer
+      @ Buffer.lexer_errors state.buffer
+      @ Buffer.parser_errors state.buffer
+    in
+    `List (List.map ~f:(fun x -> `String (Printexc.to_string x)) exns)
+
+
   | (Dump _ : a request) ->
     failwith "TODO"
 

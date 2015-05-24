@@ -582,6 +582,7 @@ module Fluid : sig
   val from_ref : 'a ref -> 'a t
   val let' : 'a t -> 'a -> (unit -> 'b) -> 'b
   val get : 'a t -> 'a
+  val set : 'a t -> 'a -> unit
 end = struct
   type 'a t = 'a ref
   let from x = ref x
@@ -595,6 +596,7 @@ end = struct
       d := p; raise exn
 
   let get x = !x
+  let set x v = x := v
 end
 
 type 'a fluid = 'a Fluid.t
