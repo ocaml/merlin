@@ -615,6 +615,7 @@ let default_mapper =
          | PStr x -> PStr (this.structure this x)
          | PTyp x -> PTyp (this.typ this x)
          | PPat (x, g) -> PPat (this.pat this x, map_opt (this.expr this) g)
+         | PCustom _ as payload -> payload
       );
   }
 

@@ -10,6 +10,7 @@
 (*                                                                     *)
 (***********************************************************************)
 
+open Std
 open Cmi_format
 open Typedtree
 
@@ -184,20 +185,54 @@ let read_cmi filename =
         raise (Cmi_format.Error (Cmi_format.Not_an_interface filename))
     | Some cmi, _ -> cmi
 
-let saved_types = ref []
-let value_deps = ref []
 
-let clear () =
-  saved_types := [];
-  value_deps := []
+let clear () = ()
 
-let add_saved_type b = saved_types := b :: !saved_types
-let get_saved_types () = !saved_types
-let set_saved_types l = saved_types := l
+let saved_types = Fluid.from None
 
-let record_value_dependency vd1 vd2 =
-  if vd1.Types.val_loc <> vd2.Types.val_loc then
-    value_deps := (vd1, vd2) :: !value_deps
+let add_saved_type b =
+  match Fluid.get saved_types with
+  | None -> ()
+  | Some l -> l := b :: !l
+
+let add_saved_types b =
+  match Fluid.get saved_types with
+  | None -> ()
+  | Some l -> l := b @ !l
+
+let save_types ?save f =
+  let saved_types' = ref [] in
+  try
+    let result = Fluid.let' saved_types (Some saved_types') f in
+    begin match save with
+      None -> ()
+    | Some save -> add_saved_types (save result);
+    end;
+    result
+  with exn ->
+    add_saved_types !saved_types';
+    raise exn
+
+exception Saved_types of binary_part list
+
+let saved_types_attribute =
+  Location.mknoloc "merlin.saved-types"
+
+let saved_types () =
+  match Fluid.get saved_types with
+  | None -> []
+  | Some parts ->
+    [saved_types_attribute,
+     Parsetree.PCustom (Saved_types !parts)]
+
+let rec saved_types_from_attributes = function
+  | [] -> []
+  | (attr, Parsetree.PCustom (Saved_types parts)) :: tl
+    when attr = saved_types_attribute ->
+    parts
+  | _ :: tl -> saved_types_from_attributes tl
+
+let record_value_dependency _vd1 _vd2 = ()
 
 let save_cmt filename modname binary_annots sourcefile initial_env sg =
   if Clflags.binary_annotations () && not (Clflags.print_types ()) then begin
@@ -220,7 +255,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env sg =
     let cmt = {
       cmt_modname = modname;
       cmt_annots = clear_env binary_annots;
-      cmt_value_dependencies = !value_deps;
+      cmt_value_dependencies = []; (*!value_deps;*)
       cmt_comments = []; (*Lexer.comments ();*)
       cmt_args = Sys.argv;
       cmt_sourcefile = sourcefile;
