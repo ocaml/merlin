@@ -222,7 +222,7 @@ let ppx_spec t =
 
 (* Dummy values *)
 let annotations         () = false
-let binary_annotations  () = false
+let binary_annotations  () = true
 let print_types         () = false
 let native_code         () = false
 let error_size          () = 500

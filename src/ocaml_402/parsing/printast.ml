@@ -401,7 +401,7 @@ and payload i ppf = function
     pattern i ppf x;
     line i ppf "<when>\n";
     expression (i + 1) ppf g
-
+  | PCustom _ -> line i ppf "<custom>\n"
 
 and type_kind i ppf x =
   match x with

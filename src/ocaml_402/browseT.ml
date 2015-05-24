@@ -152,6 +152,33 @@ let rec of_node t_node =
   let t_loc = Option.value ~default:default_loc t_loc in
   let t_env = Option.value ~default:default_env t_env in
   let children () =
+    let attrs =
+      match t_node with
+      | Pattern { pat_attributes } -> pat_attributes
+      | Expression { exp_attributes } -> exp_attributes
+      | Class_expr { cl_attributes } -> cl_attributes
+      | Class_field { cf_attributes } -> cf_attributes
+      | Module_expr { mod_attributes } -> mod_attributes
+      | Module_binding { mb_attributes } -> mb_attributes
+      | Value_binding { vb_attributes } -> vb_attributes
+      | Module_type { mty_attributes } -> mty_attributes
+      | Module_declaration { md_attributes } -> md_attributes
+      | Module_type_declaration { mtd_attributes } -> mtd_attributes
+      | Core_type { ctyp_attributes } -> ctyp_attributes
+      | Value_description { val_attributes } -> val_attributes
+      | Type_declaration { typ_attributes } -> typ_attributes
+      | Label_declaration { ld_attributes } -> ld_attributes
+      | Constructor_declaration { cd_attributes } -> cd_attributes
+      | Type_extension { tyext_attributes } -> tyext_attributes
+      | Extension_constructor { ext_attributes } -> ext_attributes
+      | Class_type { cltyp_attributes } -> cltyp_attributes
+      | Class_type_field { ctf_attributes } -> ctf_attributes
+      | Class_declaration { ci_attributes }
+      | Class_description { ci_attributes }
+      | Class_type_declaration { ci_attributes } -> ci_attributes
+      | _ -> []
+    in
+    of_attributes attrs @
     match t_node with
     | Pattern { pat_desc; pat_loc; pat_extra } ->
       of_pattern_desc pat_desc (List.fold_right ~f:of_pat_extra pat_extra ~init:[])
@@ -518,6 +545,23 @@ and of_class_type_field_desc desc acc = match desc with
     of_core_type ct1 :: of_core_type ct2 :: acc
   | Tctf_attribute _ ->
     acc
+
+and of_attributes attributes =
+  let open Cmt_format in
+  let parts = saved_types_from_attributes attributes in
+  List.map ~f:(fun item ->
+      let item = match item with
+        | Partial_structure x -> Structure x
+        | Partial_structure_item x -> Structure_item x
+        | Partial_expression x -> Expression x
+        | Partial_pattern x -> Pattern x
+        | Partial_class_expr x -> Class_expr x
+        | Partial_signature x -> Signature x
+        | Partial_signature_item x -> Signature_item x
+        | Partial_module_type x -> Module_type x
+      in
+      of_node item)
+    parts
 
 let rec annot loc env t =
   let t_loc = if t.t_loc == default_loc then loc else t.t_loc in
