@@ -422,7 +422,7 @@ def vim_loclist(vimvar, ignore_warnings):
         lnum = error['start']['line']
         lcol = error['start']['col'] + 1
     vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
-        (bufnr, lnum, lcol, nr, error['message'].replace("'", "''").replace("\n", " "), ty))
+        (bufnr, lnum, lcol, nr, re.sub(re_wspaces, " ", error['message']).replace("'", "''"), ty))
     nr = nr + 1
     vim.command("call add(%s, l:tmp)" % vimvar)
 
