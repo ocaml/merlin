@@ -28,3 +28,9 @@ val name: ?paren:(string -> bool) -> t -> string
 val head: t -> Ident.t
 
 val last: t -> string
+
+(* Added for merlin. *)
+val to_string_list : t -> string list
+
+module PathMap: Mymap.S with type key = t
+module PathSet: Set.S with type elt = t

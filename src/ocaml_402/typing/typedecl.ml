@@ -305,11 +305,12 @@ let transl_declaration env sdecl id =
     begin match decl.type_manifest with None -> ()
       | Some ty ->
         if Ctype.cyclic_abbrev env id ty then
-          raise(Error(sdecl.ptype_loc, Recursive_abbrev sdecl.ptype_name.txt));
+          raise(Error(sdecl.ptype_loc,
+                      Recursive_abbrev (Fake.Nonrec.drop sdecl.ptype_name.txt)));
     end;
     {
       typ_id = id;
-      typ_name = sdecl.ptype_name;
+      typ_name = Fake.Nonrec.drop_loc sdecl.ptype_name;
       typ_params = tparams;
       typ_type = decl;
       typ_cstrs = cstrs;
@@ -503,7 +504,7 @@ let check_well_founded env loc path to_check ty =
     with
     | Ctype.Cannot_expand ->
         let nodes =
-          if !Clflags.recursive_types && Ctype.is_contractive env ty
+          if Clflags.recursive_types () && Ctype.is_contractive env ty
           || match ty.desc with Tobject _ | Tvariant _ -> true | _ -> false
           then TypeSet.empty
           else exp_nodes in
@@ -936,9 +937,10 @@ let check_duplicates sdecl_list =
               Location.prerr_warning pcd.pcd_loc
                 (Warnings.Duplicate_definitions
                    ("constructor", pcd.pcd_name.txt, name',
-                    sdecl.ptype_name.txt))
+                    Fake.Nonrec.drop sdecl.ptype_name.txt))
             with Not_found ->
-              Hashtbl.add constrs pcd.pcd_name.txt sdecl.ptype_name.txt)
+              Hashtbl.add constrs pcd.pcd_name.txt
+                (Fake.Nonrec.drop sdecl.ptype_name.txt))
           cl
     | Ptype_record fl ->
         List.iter
@@ -947,8 +949,10 @@ let check_duplicates sdecl_list =
               let name' = Hashtbl.find labels cname.txt in
               Location.prerr_warning loc
                 (Warnings.Duplicate_definitions
-                   ("label", cname.txt, name', sdecl.ptype_name.txt))
-            with Not_found -> Hashtbl.add labels cname.txt sdecl.ptype_name.txt)
+                   ("label", cname.txt, name',
+                   (Fake.Nonrec.drop  sdecl.ptype_name.txt)))
+            with Not_found -> Hashtbl.add labels cname.txt
+                                (Fake.Nonrec.drop sdecl.ptype_name.txt))
           fl
     | Ptype_abstract -> ()
     | Ptype_open -> ())
@@ -1327,7 +1331,7 @@ let transl_value_decl env loc valdecl =
       let prim = Primitive.parse_declaration arity decl in
       if arity = 0 && prim.prim_name.[0] <> '%' then
         raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));
-      if !Clflags.native_code
+      if Clflags.native_code ()
       && prim.prim_arity > 5
       && prim.prim_native_name = ""
       then raise(Error(valdecl.pval_type.ptyp_loc, Missing_native_external));
@@ -1419,7 +1423,7 @@ let transl_with_constraint env id row_path orig_decl sdecl =
   generalize_decl decl;
   {
     typ_id = id;
-    typ_name = sdecl.ptype_name;
+    typ_name = Fake.Nonrec.drop_loc sdecl.ptype_name;
     typ_params = tparams;
     typ_type = decl;
     typ_cstrs = constraints;
@@ -1454,7 +1458,7 @@ let abstract_type_decl arity =
 let approx_type_decl env sdecl_list =
   List.map
     (fun sdecl ->
-      (Ident.create sdecl.ptype_name.txt,
+      (Ident.create (Fake.Nonrec.drop sdecl.ptype_name.txt),
        abstract_type_decl (List.length sdecl.ptype_params)))
     sdecl_list
 
