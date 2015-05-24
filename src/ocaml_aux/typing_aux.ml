@@ -34,7 +34,9 @@ let relax_typer = fluid false
 let errors : (exn list ref * (int,unit) Hashtbl.t) option fluid = fluid None
 let raise_error exn =
   match ~!errors with
-  | Some (l,h) -> l := (*if ~!relax_typer then Weak_error exn else exn*) exn :: !l
+  | Some (l,h) ->
+    let exn = if ~!relax_typer then Weak_error exn else exn in
+    l := exn :: !l
   | None -> raise exn
 
 let weak_raise exn =

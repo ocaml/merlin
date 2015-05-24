@@ -131,6 +131,17 @@ SOURCES = \
 	$(TYPER)/typing/includecore.ml    \
 	src/kernel/fake.mli               \
 	src/kernel/fake.ml                \
+	$(TYPER)/raw_parser.mli           \
+	$(TYPER)/raw_parser.ml            \
+	$(TYPER)/raw_parser_values.mli    \
+	$(TYPER)/raw_parser_values.ml     \
+	src/kernel/merlin_recovery_strategy.ml \
+	src/kernel/merlin_parser.mli      \
+	src/kernel/merlin_parser.ml       \
+	src/kernel/merlin_recovery_explain.ml \
+	src/kernel/error_classifier.ml    \
+	src/ocaml_aux/error_report.mli    \
+	src/ocaml_aux/error_report.ml     \
 	$(TYPER)/typing/includemod.mli    \
 	$(TYPER)/typing/includemod.ml     \
 	$(TYPER)/typing/parmatch.mli      \
@@ -147,15 +158,6 @@ SOURCES = \
 	$(TYPER)/typing/typeclass.ml      \
 	$(TYPER)/typing/typemod.mli       \
 	$(TYPER)/typing/typemod.ml        \
-	$(TYPER)/raw_parser.mli           \
-	$(TYPER)/raw_parser.ml            \
-	$(TYPER)/raw_parser_values.mli    \
-	$(TYPER)/raw_parser_values.ml     \
-	src/kernel/merlin_recovery_strategy.ml \
-	src/kernel/merlin_parser.mli      \
-	src/kernel/merlin_parser.ml       \
-	src/kernel/merlin_recovery_explain.ml \
-	src/kernel/error_classifier.ml    \
 	src/kernel/raw_lexer.mli          \
 	src/kernel/raw_lexer.ml           \
 	src/kernel/extension.mli          \
@@ -177,8 +179,6 @@ SOURCES = \
 	src/frontend/main_args.mli        \
 	src/frontend/main_args.ml         \
 	src/kernel/merlin_lib.ml          \
-	src/ocaml_aux/error_report.mli    \
-	src/ocaml_aux/error_report.ml     \
 	src/frontend/protocol.mli         \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \

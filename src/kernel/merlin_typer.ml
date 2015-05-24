@@ -130,6 +130,7 @@ let fake_env node =
 let append catch loc step item =
   try
     Typecore.delayed_checks := [];
+    Fluid.set Typing_aux.relax_typer false;
     let env, contents =
       match item with
       | `str str ->
@@ -251,6 +252,7 @@ let protect_typer t f =
   let caught = ref [] in
   Parsing_aux.catch_warnings caught @@ fun () ->
   Typing_aux.catch_errors caught    @@ fun () ->
+  Fluid.let' Typing_aux.relax_typer false @@ fun () ->
   f caught
 
 let dump ppf t =
