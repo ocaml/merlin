@@ -735,13 +735,13 @@ and transl_signature env sg =
         | Psig_extension (ext, _attrs) ->
             raise (Error_forward (Typetexp.error_of_extension ext))
   in
-  let previous_saved_types = Cmt_format.get_saved_types () in
+  Cmt_format.save_types
+    ~save:(fun sg -> [Cmt_format.Partial_signature sg])
+  @@ fun () ->
   Typetexp.warning_enter_scope ();
   let (trem, rem, final_env) = transl_sig (Env.in_signature env) sg in
   let sg = { sig_items = trem; sig_type =  rem; sig_final_env = final_env } in
   Typetexp.warning_leave_scope ();
-  Cmt_format.set_saved_types
-    ((Cmt_format.Partial_signature sg) :: previous_saved_types);
   sg
 
 and transl_modtype_decl modtype_names env loc
@@ -1485,24 +1485,27 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
     match sstr with
     | [] -> ([], [], env)
     | pstr :: srem ->
-        let previous_saved_types = Cmt_format.get_saved_types () in
+      let str, sg, new_env =
+        Cmt_format.save_types
+          ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure_item str])
+        @@ fun () ->
         let desc, sg, new_env = type_str_item env srem pstr in
-        let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
-        Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
-                                    :: previous_saved_types);
-        let (str_rem, sig_rem, final_env) = type_struct new_env srem in
-        (str :: str_rem, sg @ sig_rem, final_env)
+        { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env },
+        sg, new_env
+      in
+      let (str_rem, sig_rem, final_env) = type_struct new_env srem in
+      (str :: str_rem, sg @ sig_rem, final_env)
   in
   if Clflags.annotations () then
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
-  let previous_saved_types = Cmt_format.get_saved_types () in
+  Cmt_format.save_types
+    ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure str])
+  @@ fun () ->
   Typetexp.warning_enter_scope ();
   let (items, sg, final_env) = type_struct env sstr in
   let str = { str_items = items; str_type = sg; str_final_env = final_env } in
   Typetexp.warning_leave_scope ();
-  Cmt_format.set_saved_types
-    (Cmt_format.Partial_structure str :: previous_saved_types);
   str, sg, final_env
 
 let type_toplevel_phrase env s =
@@ -1608,8 +1611,6 @@ let () =
 (* Typecheck an implementation file *)
 
 let type_implementation sourcefile outputprefix modulename initial_env ast =
-  Cmt_format.clear ();
-  try
   Typecore.reset_delayed_checks ();
   Env.reset_required_globals ();
   begin
@@ -1649,7 +1650,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       normalize_signature finalenv simple_sg;
       let coercion =
         Includemod.compunit initial_env sourcefile sg
-                            "(inferred signature)" simple_sg in
+          "(inferred signature)" simple_sg in
       Typecore.force_delayed_checks ();
       (* See comment above. Here the target signature contains all
          the value being exported. We can still capture unused
@@ -1664,13 +1665,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
       end;
       (str, coercion)
     end
-    end
-  with e ->
-    Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-      (Cmt_format.Partial_implementation
-         (Array.of_list (Cmt_format.get_saved_types ())))
-      (Some sourcefile) initial_env None;
-    raise e
+  end
 
 
 let save_signature modname tsg outputprefix source_file initial_env cmi =
