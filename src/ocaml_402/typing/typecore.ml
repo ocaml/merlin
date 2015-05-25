@@ -3575,6 +3575,7 @@ and type_statement env sexp =
 and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
   (* FIXME: find a way to port type_cases recovery to new scheme *)
   (* ty_arg is _fully_ generalized *)
+  let has_pattern_error = Typing_aux.monitor_errors () in
   let patterns = List.map (fun {pc_lhs=p} -> p) caselist in
   let erase_either =
     List.exists contains_polymorphic_variant patterns
@@ -3636,10 +3637,17 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
       caselist in
   (* Unify cases (delayed to keep it order-free) *)
   let patl = List.map fst pat_env_list in
-  List.iter (fun pat -> unify_pat env pat ty_arg') patl;
+  List.iter (fun pat ->
+      try unify_pat env pat ty_arg'
+      with exn ->
+        (* Report only first wrong pattern *)
+        if not !has_pattern_error then Typing_aux.raise_error exn
+    ) patl;
   (* Check for polymorphic variants to close *)
   if List.exists has_variants patl then begin
-    Parmatch.pressure_variants env patl;
+    (* Not sure if appropriate... Keep things simple after errors *)
+    if not !has_pattern_error then
+      Parmatch.pressure_variants env patl;
     List.iter (iter_pattern finalize_variant) patl
   end;
   (* `Contaminating' unifications start here *)
@@ -3651,13 +3659,16 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
   end_def ();
   List.iter (iter_pattern (fun {pat_type=t} -> generalize t)) patl;
   (* type bodies *)
+  let has_body_error = Typing_aux.monitor_errors () in
   let in_function = if List.length caselist = 1 then in_function else None in
   let cases =
     List.map2
       (fun (pat, (ext_env, unpacks)) {pc_lhs; pc_guard; pc_rhs} ->
         let sexp = wrap_unpacks pc_rhs unpacks in
         let ty_res' =
-          if Clflags.principal () then begin
+          if !has_body_error then
+            newvar ()
+          else if Clflags.principal () then begin
             begin_def ();
             let ty = instance ~partial:true env ty_res in
             end_def ();
@@ -3689,7 +3700,8 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
     List.iter (fun c -> unify_exp env c.c_rhs ty_res') cases
   end;
   let partial =
-    if partial_flag then
+    (* Skip checks if patterns are wrong *)
+    if partial_flag && not !has_pattern_error then
       check_partial ~lev env ty_arg loc cases
     else
       Partial
@@ -3699,7 +3711,9 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
   then
     add_delayed_check (fun () ->
       List.iter (fun (p, (env, _)) -> check_absent_variant env p) pat_env_list;
-      Parmatch.check_unused env cases
+      (* Skip checks if patterns are wrong *)
+      if not !has_pattern_error then
+        Parmatch.check_unused env cases
     );
   if has_gadts then begin
     end_def ();
