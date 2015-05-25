@@ -32,7 +32,15 @@ exception Weak_error of exn
 let relax_typer = fluid false
 
 let errors : (exn list ref * (int,unit) Hashtbl.t) option fluid = fluid None
+
+let monitor_errors' = ref (ref false)
+let monitor_errors () =
+  if !(!monitor_errors') then
+    monitor_errors' := (ref false);
+  !monitor_errors'
+
 let raise_error exn =
+  !monitor_errors' := true;
   match ~!errors with
   | Some (l,h) ->
     let exn = if ~!relax_typer then Weak_error exn else exn in
