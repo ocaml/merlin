@@ -123,6 +123,8 @@ module Preferences : sig
 
   val cmt : string -> File.t
   val ml  : string -> File.t
+
+  val is_preferred : string -> bool
 end = struct
   let prioritize_impl = ref true
 
@@ -136,6 +138,14 @@ end = struct
 
   let cmt file = if !prioritize_impl then CMT file else CMTI file
   let ml file = if !prioritize_impl then ML file else MLI file
+
+  let is_preferred filename =
+    if !prioritize_impl then
+      Filename.check_suffix filename "ml" ||
+      Filename.check_suffix filename "ML"
+    else
+      Filename.check_suffix filename "mli" ||
+      Filename.check_suffix filename "MLI"
 end
 
 module File_switching : sig
@@ -433,7 +443,12 @@ let find_source loc =
         let lst =
           List.map files ~f:(fun path ->
             let path' = String.reverse path in
-            String.common_prefix_len rev path', path
+            let priority = (String.common_prefix_len rev path') * 2 +
+                           if Preferences.is_preferred path
+                           then 1
+                           else 0
+            in
+            priority, path
           )
         in
         let lst =
