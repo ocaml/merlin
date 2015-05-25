@@ -39,13 +39,24 @@ let mkoptloc opt x =
   | Some l -> Location.mkloc x l
 
 let app a b =
-  let loc = { b.pexp_loc with Location.loc_ghost = true } in
+  let loc =
+    if a.pexp_loc.Location.loc_ghost
+    then {b.pexp_loc with Location.loc_ghost = true}
+    else b.pexp_loc
+  in
   Ast_helper.Exp.apply ~loc a [Raw_compat.Parsetree.arg_label_of_str "", b]
 
 let pat_app f (pat,expr) = pat, app f expr
 
 let prim_ident prim = Longident.parse ("_." ^ prim)
-let prim prim = Ast_helper.Exp.ident (Location.mknoloc (prim_ident prim))
+let prim ?(ghost=true) prim =
+  let open Location in
+  let ident = mknoloc (prim_ident prim) in
+  let ident = if ghost
+    then ident
+    else {ident with loc = {ident.loc with loc_ghost = false}}
+  in
+  Ast_helper.Exp.ident ~loc:ident.loc ident
 
 let any_val' = prim "Any.val'"
 
@@ -170,10 +181,10 @@ end
 
 (* Js extension *)
 module Js = struct
-  let un_js     = prim "Js.un_js"
-  let un_meth   = prim "Js.un_meth"
-  let un_constr = prim "Js.un_constr"
-  let un_prop   = prim "Js.un_prop"
+  let un_js     = prim ~ghost:false "Js.un_js"
+  let un_meth   = prim ~ghost:false "Js.un_meth"
+  let un_constr = prim ~ghost:false "Js.un_constr"
+  let un_prop   = prim ~ghost:false "Js.un_prop"
 end
 
 (* OUnit extension *)
