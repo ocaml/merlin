@@ -487,6 +487,7 @@ return DEFAULT or the value associated to KEY."
         (environment (lookup-default 'env configuration nil))
         (logfile (lookup-default 'logfile configuration nil))
         (buffer-name (merlin-instance-buffer-name name)))
+    (when buffer-name (kill-buffer buffer-name))
     (when (not merlin-quiet-startup)
       (message "Starting merlin instance: %s (binary=%s)."
 	       name command))
