@@ -34,8 +34,11 @@ let local_near pos nodes =
   let best_of ({ t_loc = l1 } as t1) ({ t_loc = l2 } as t2) =
     match cmp l1, cmp l2 with
     | 0, 0 ->
-      (* Cursor is inside locations: select larger one... not sure why :-) *)
-      if Location.(Lexing.compare_pos l1.loc_end l2.loc_end) < 0
+      (* Cursor is inside locations: non ghost and select largest one... not
+         sure why :-) *)
+      let g1 = l1.Location.loc_ghost and g2 = l2.Location.loc_ghost in
+      if (g1 = g2 && Location.(Lexing.compare_pos l1.loc_end l2.loc_end) < 0)
+         || not g2
       then t2
       else t1
       (* Cursor inside one location, prefer it *)
