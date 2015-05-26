@@ -25,7 +25,7 @@ reset()
 json_escape()
 {
   printf '"'
-  while read INPUT; do
+  while IFS= read INPUT; do
     INPUT=${INPUT//\\/\\\\}
     INPUT=${INPUT//\//\\\/}
     #INPUT=${INPUT//\'/\\\'}

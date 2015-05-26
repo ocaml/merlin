@@ -6,5 +6,5 @@ tell <<END
 type t = int * string
 let x : t = 5, "lol"
 END
-cmd type enclosing '{"expr":"x","offset":0}' `pos 2 4`
-cmd type enclosing '{"expr":"x","offset":0}' `pos 2 4`
+cmd type enclosing '{"expr":"x","offset":0}' `pos 2 5`
+cmd type enclosing '{"expr":"x","offset":0}' `pos 2 5`

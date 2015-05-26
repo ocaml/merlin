@@ -1,0 +1,26 @@
+#!/bin/bash
+. functions.sh || exit 1
+
+reset jsoo_01.ml
+cmd extension enable '["js"]'
+package js_of_ocaml
+# Test report of type errors in jsoo code
+tell <<END
+let (x : unit) =
+  let date = jsnew Js.date_now () in
+  date##getTime()
+END
+cmd errors
+# Test completion on js objects
+cmd complete prefix '' at `pos 3 8`
+
+# Test completion on js objects with prefix
+cmd seek exact `pos 3 0`
+tell-more <<END
+ in
+  date##get
+END
+cmd tell marker
+cmd tell eof
+cmd seek marker
+cmd complete prefix 'get' at `pos 3 11`

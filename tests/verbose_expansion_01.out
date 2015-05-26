@@ -3,4 +3,4 @@
 ["return",{"cursor":{"line":3,"col":0},"marker":false}]
 ["return",{"cursor":{"line":3,"col":0},"marker":false}]
 ["return",[{"start":{"line":2,"col":4},"end":{"line":2,"col":5},"type":"t","tail":"no"}]]
-["return",[{"start":{"line":2,"col":4},"end":{"line":2,"col":5},"type":"int * string","tail":"no"}]]
+["return",[{"start":{"line":2,"col":4},"end":{"line":2,"col":5},"type":"\n\n","tail":"no"}]]
