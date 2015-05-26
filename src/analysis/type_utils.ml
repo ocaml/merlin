@@ -173,21 +173,32 @@ let print_type_with_decl ~verbosity env ppf typ =
   if verbosity > 0 then
     match (Ctype.repr typ).Types.desc with
     | Types.Tconstr (path, params, _) ->
-      (* Print expression only if it is parameterized *)
-      if params <> [] then
-        Printtyp.type_scheme env ppf typ;
-      let ident = match path with
-        | Path.Papply _ -> assert false
-        | Path.Pdot (_,name,_) -> Ident.create_persistent name
-        | Path.Pident ident -> ident
-      in
-      Format.pp_print_newline ppf ();
-      Format.pp_print_newline ppf ();
       let decl = Env.find_type path env in
-      begin match decl.Types.type_kind with
-        | Types.Type_abstract -> ()
-        | _ -> Printtyp.type_declaration env ident ppf decl
-      end
+      let is_abstract =
+        match decl.Types.type_kind with
+        | Types.Type_abstract -> true
+        | _ -> false
+      in
+      (* Print expression only if it is parameterized or abstract *)
+      let print_expr = is_abstract || params <> [] in
+      if print_expr then
+        Printtyp.type_scheme env ppf typ;
+      (* If not abstract, also print the declaration *)
+      if not is_abstract then
+        begin
+          (* Separator if expression was printed *)
+          if print_expr then
+            begin
+              Format.pp_print_newline ppf ();
+              Format.pp_print_newline ppf ();
+            end;
+          let ident = match path with
+            | Path.Papply _ -> assert false
+            | Path.Pdot (_,name,_) -> Ident.create_persistent name
+            | Path.Pident ident -> ident
+          in
+          Printtyp.type_declaration env ident ppf decl
+        end
     | _ -> Printtyp.type_scheme env ppf typ
   else
     Printtyp.type_scheme env ppf typ
