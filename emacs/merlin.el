@@ -2007,7 +2007,6 @@ Returns the position."
 (defun merlin-error-check ()
   "Update merlin to the end-of-file, reporting errors."
   (interactive)
-  (merlin--acquire-buffer)
   (when merlin-mode (merlin--error-check t)))
 
 (defun merlin-project-check ()
