@@ -98,20 +98,24 @@
         (prefix
          (let* ((bounds (merlin/completion-bounds))
                 (result (merlin/buffer-substring (car bounds) (cdr bounds))))
-           (when (and (boundp 'company-candidates-cache) (string-match "\\.$" result))
+           (when (and (boundp 'company-candidates-cache)
+                      (or (string-match "\\.$" result)
+                          (member '("" "") company-candidates-cache)))
              ;; for some reason, company doesn't always clear its cache
              (setq company-candidates-cache nil))
            result))
         (no-cache t)
         (sorted t)
         (init t)
+        (require-match 'never)
         (doc-buffer (merlin-company--doc-buffer arg))
         (location
-         (let ((data (merlin/locate arg)))
-           (when (listp data)
-             (let ((filename (lookup-default 'file data buffer-file-name))
-                   (linum (cdr (assoc 'line (assoc 'pos data)))))
-               (cons filename linum)))))
+         (ignore-errors
+           (let ((data (merlin/locate arg)))
+             (when (listp data)
+               (let ((filename (lookup-default 'file data buffer-file-name))
+                     (linum (cdr (assoc 'line (assoc 'pos data)))))
+                 (cons filename linum))))))
         (candidates
          (merlin/sync-to-point)
          (let ((prefix (merlin--completion-prefix arg)))
