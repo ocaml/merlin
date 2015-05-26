@@ -552,10 +552,13 @@ return DEFAULT or the value associated to KEY."
 (defun merlin-restart-process ()
   "Restart the merlin toplevel for this buffer, taking into account new flags."
   (interactive)
-  (when (get-buffer (merlin-process-buffer))
-    (ignore-errors (merlin-kill-process)))
-  (merlin-start-process merlin-default-flags (merlin--grouping-function))
-  (setq merlin-erroneous-buffer nil))
+  (unless merlin-mode (message "Buffer is not managed by merlin."))
+  (when merlin-mode
+    (message "%S" (merlin--process-owner))
+    (when (get-buffer (merlin-process-buffer))
+      (ignore-errors (merlin-kill-process)))
+    (setq merlin-erroneous-buffer nil)
+    (merlin-setup)))
 
 (defun merlin-list-instances ()
   "Return the list of instances currently started."
