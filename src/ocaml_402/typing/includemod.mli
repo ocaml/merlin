@@ -44,6 +44,7 @@ type symptom =
   | Unbound_modtype_path of Path.t
   | Unbound_module_path of Path.t
   | Invalid_module_alias of Path.t
+val symptom_location : symptom -> Location.t option
 
 type pos =
     Module of Ident.t | Modtype of Ident.t | Arg of Ident.t | Body of Ident.t
