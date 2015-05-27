@@ -1619,18 +1619,19 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (setq merlin-enclosing-offset (1- merlin-enclosing-offset))
     (merlin--type-enclosing-go)))
 
+(defun merlin--copy-enclosing ()
+  (interactive)
+  (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
+    (when (cddr data)
+      (message "Copied %s to kill-ring" (car data))
+      (kill-new (car data)))))
+
 (defvar merlin-type-enclosing-map
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap (kbd "C-<up>") 'merlin-type-enclosing-go-up)
     (define-key keymap (kbd "C-<down>") 'merlin-type-enclosing-go-down)
     (define-key keymap (kbd "C-d") 'merlin--destruct-enclosing)
-    (define-key keymap (kbd "C-w") #'(lambda ()
-                                     (interactive)
-                                     (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
-                                       (when (cddr data)
-                                           (message "Copied %s to kill-ring" (car data))
-                                           (kill-new (car data))))))
-
+    (define-key keymap (kbd "C-w") 'merlin--copy-enclosing)
     keymap)
   "The local map to navigate type enclosing.")
 
