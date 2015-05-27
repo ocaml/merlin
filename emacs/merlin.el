@@ -1773,6 +1773,7 @@ loading"
 (defun merlin-flags-clear ()
   "Clear flags for the current project"
   (interactive)
+  (merlin--acquire-buffer)
   (let* ((r (merlin-send-command '(flags clear)))
          (failed (assoc 'failures r)))
     (when failed (message "%s" (cdr failed))))
@@ -1781,6 +1782,7 @@ loading"
 (defun merlin-flags-add (flag-string)
   "Set FLAG for the current project"
   (interactive "sFlag to add: ")
+  (merlin--acquire-buffer)
   (let* ((flag-list (split-string flag-string))
          (r (merlin-send-command (list 'flags 'add flag-list)))
          (failed (assoc 'failures r)))
@@ -2041,7 +2043,9 @@ Returns the position."
              (version (shell-command-to-string command))
              (version (replace-regexp-in-string "\n$" "" version)))
         (message "%s (from shell)" version))
-    (message "%s" (merlin-send-command '(version)))))
+    (progn
+      (merlin--acquire-buffer)
+      (message "%s" (merlin/send-command '(version))))))
 
 (defun merlin-command ()
   "Return path of ocamlmerlin binary selected by configuration"
