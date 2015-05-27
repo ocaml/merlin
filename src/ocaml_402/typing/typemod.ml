@@ -45,6 +45,16 @@ exception Error_forward of Location.error
 
 let raise_error = Typing_aux.raise_error
 
+let not_included loc env msg =
+  let rec extract_loc = function
+    | [] -> loc
+    | (_,_,symp) :: sympts ->
+      match Includemod.symptom_location symp with
+      | Some loc -> loc
+      | None -> extract_loc sympts
+  in
+  Error (extract_loc msg, env, Not_included msg)
+
 open Typedtree
 
 let fst3 (x,_,_) = x
@@ -992,7 +1002,7 @@ let check_recmodule_inclusion env bindings =
           try
             Includemod.modtypes env mty_actual' mty_decl'
           with Includemod.Error msg ->
-            raise_error (Error (modl.mod_loc, env, Not_included msg));
+            raise_error (not_included modl.mod_loc env msg);
             Tcoerce_none
         in
         let modl' =
@@ -1078,7 +1088,7 @@ let wrap_constraint env arg mty explicit =
     try
       Includemod.modtypes env arg.mod_type mty
     with Includemod.Error msg ->
-      raise_error (Error (arg.mod_loc, env, Not_included msg));
+      raise_error (not_included arg.mod_loc env msg);
       Tcoerce_none
   in
   { mod_desc = Tmod_constraint(arg, mty, explicit, coercion);
@@ -1174,7 +1184,7 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
             try
               arg, Includemod.modtypes env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise_error (Error(sarg.pmod_loc, env, Not_included msg));
+              raise_error (not_included sarg.pmod_loc env msg);
               {arg with mod_type= Subst.modtype Subst.identity mty_param},
               Tcoerce_none
           in
