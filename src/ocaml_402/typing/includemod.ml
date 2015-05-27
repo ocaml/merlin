@@ -42,6 +42,22 @@ type pos =
     Module of Ident.t | Modtype of Ident.t | Arg of Ident.t | Body of Ident.t
 type error = pos list * Env.t * symptom
 
+let symptom_location = function
+  | Missing_field (_,loc,_) -> Some loc
+  | Value_descriptions (_,v1,_) -> Some v1.val_loc
+  | Type_declarations (_,t1,_,_) -> Some t1.type_loc
+  | Extension_constructors (_,e1,_) -> Some e1.ext_loc
+  | Modtype_infos (_,m1,_) -> Some m1.mtd_loc
+  | Class_type_declarations (_,c1,_,_) -> Some c1.clty_loc
+  | Class_declarations (_,c1,_,_) -> Some c1.cty_loc
+  | Module_types _
+  | Interface_mismatch _
+  | Modtype_permutation
+  | Unbound_modtype_path _
+  | Unbound_module_path _
+  | Invalid_module_alias _
+    -> None
+
 exception Error of error list
 
 (* All functions "blah env x1 x2" check that x1 is included in x2,
