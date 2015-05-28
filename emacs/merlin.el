@@ -1131,17 +1131,15 @@ The timer fires every 10 seconds of idle time."
     (lambda (errors)
       (merlin-error-reset)
       (let ((no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
-        (setq errors (remove-if (lambda (e) (not (assoc 'start e))) errors))
+        (setq errors (remove-if-not (lambda (e) (assoc 'start e)) errors))
         (unless merlin-report-warnings
           (setq errors (remove-if (lambda (e)
                                     (merlin-error-warning-p (cdr (assoc 'message e))))
                                   errors)))
-        (when (or errors no-loc)
-          (setq merlin-erroneous-buffer t)
-          (when no-loc
-            (mapcar (lambda (e) (message "%s" (cdr (assoc 'message e)))) no-loc))
-          (when errors
-            (merlin-transform-display-errors errors)))))))
+        (setq merlin-erroneous-buffer (or errors no-loc))
+        (dolist (e no-loc)
+          (message "%s" (cdr (assoc 'message e))))
+        (merlin-transform-display-errors errors)))))
 
 (defun merlin--error-check (view-errors-p)
   "Check for errors.
@@ -1150,23 +1148,22 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   (merlin-error-reset)
   (merlin-sync-to-point (point-max) t)
   (let* ((errors (merlin-send-command 'errors))
-         (no-loc (remove-if (lambda (e) (assoc 'start e)) errors))
-         (errors (remove-if (lambda (e) (not (assoc 'start e))) errors))
-         (errors (if merlin-report-warnings errors
-                   (remove-if (lambda (e) (merlin-error-warning-p (cdr (assoc 'message e))))
-                              errors))))
-    (if (not (or errors no-loc))
-        (when view-errors-p (message "No errors"))
-      (progn
-        (setq merlin-erroneous-buffer t)
-        (when no-loc
-          (mapcar (lambda (e) (message "%s" (cdr (assoc 'message e)))) no-loc))
-        (when errors
-          (merlin-transform-display-errors errors)
-          (when view-errors-p
-            (message "(%d pending errors, use %s to jump)"
-                     (length errors)
-                     (substitute-command-keys "\\[merlin-error-next]"))))))))
+         (no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
+    (setq errors (remove-if-not (lambda (e) (assoc 'start e)) errors))
+    (unless merlin-report-warnings
+      (setq errors (remove-if (lambda (e)
+                                (merlin-error-warning-p (cdr (assoc 'message e))))
+                              errors)))
+    (setq merlin-erroneous-buffer (or errors no-loc))
+    (dolist (e no-loc)
+      (message "%s" (cdr (assoc 'message e))))
+    (merlin-transform-display-errors errors)
+    (when view-errors-p
+      (if merlin-erroneous-buffer
+          (message "No errors")
+        (message "(%d pending errors, use %s to jump)"
+                 (length errors)
+                 (substitute-command-keys "\\[merlin-error-next]"))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; COMPLETION-AT-POINT SUPPORT ;;
@@ -1193,12 +1190,12 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
   "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the prefix of `bar' is `'."
   (car (merlin--completion-split-ident ident)))
 
-(defvar-local dwimed nil
+(defvar-local merlin--dwimed nil
   "Remember if we used dwim for the current completion or not")
 
 (defun merlin--completion-full-entry-name (compl-prefix entry)
   (let ((entry-name (cdr (assoc 'name entry))))
-    (if dwimed entry-name (concat compl-prefix entry-name))))
+    (if merlin--dwimed entry-name (concat compl-prefix entry-name))))
 
 (defun merlin--completion-prepare-labels (labels suffix)
   ; Remove non-matching entry, adjusting optional labels if needed
@@ -1214,7 +1211,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 (defun merlin--completion-data (ident)
   "Return the data for completion of IDENT, i.e. a list of lists of the form
   '(NAME TYPE KIND INFO)."
-  (setq-local dwimed nil)
+  (setq-local merlin--dwimed nil)
   (let* ((ident- (merlin--completion-split-ident ident))
          (suffix (cdr ident-))
          (prefix (car ident-))
@@ -1242,7 +1239,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
     (when (and merlin-completion-dwim (not labels) (not entries))
       (setq data (merlin-send-command `(expand prefix ,ident at ,pos)))
       (setq entries (cdr (assoc 'entries data)))
-      (setq-local dwimed t)
+      (setq-local merlin--dwimed t)
       (setq prefix ""))
     ; Concat results
     (let ((result (append labels entries)))
