@@ -556,7 +556,7 @@ return DEFAULT or the value associated to KEY."
   (interactive)
   (unless merlin-mode (message "Buffer is not managed by merlin."))
   (when merlin-mode
-    (message "%S" (merlin--process-owner))
+    (message "%S" (merlin-process-owner))
     (when (get-buffer (merlin-process-buffer))
       (ignore-errors (merlin-kill-process)))
     (setq merlin-erroneous-buffer nil)
@@ -2045,7 +2045,7 @@ Returns the position."
         (message "%s (from shell)" version))
     (progn
       (merlin--acquire-buffer)
-      (message "%s" (merlin/send-command '(version))))))
+      (message "%s" (merlin--send-command '(version))))))
 
 (defun merlin-command ()
   "Return path of ocamlmerlin binary selected by configuration"
