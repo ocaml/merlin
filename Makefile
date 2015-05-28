@@ -4,7 +4,11 @@
 TARGET = ocamlmerlin
 
 ifdef ENABLE_COMPILED_EMACS_MODE
-    TARGET_EMACS = emacs/merlin.elc
+    TARGET_EMACS = emacs/merlin.elc \
+									 emacs/merlin-iedit.elc \
+									 emacs/merlin-ac.elc \
+									 emacs/merlin-cap.elc \
+									 emacs/merlin-company.elc
 endif
 
 EMACS = emacs
@@ -98,6 +102,13 @@ install-share: $(TARGET_EMACS)
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
 	test -f emacs/merlin.elc && install -m 644 emacs/merlin.elc $(SHARE_DIR)/emacs/site-lisp/merlin.elc || true
 	install -m 644 emacs/merlin-iedit.el $(SHARE_DIR)/emacs/site-lisp/merlin-iedit.el
+	-install -m 644 emacs/merlin-iedit.elc $(SHARE_DIR)/emacs/site-lisp/merlin-iedit.elc
+	install -m 644 emacs/merlin-ac.el $(SHARE_DIR)/emacs/site-lisp/merlin-ac.el
+	-install -m 644 emacs/merlin-ac.elc $(SHARE_DIR)/emacs/site-lisp/merlin-ac.elc
+	install -m 644 emacs/merlin-cap.el $(SHARE_DIR)/emacs/site-lisp/merlin-cap.el
+	-install -m 644 emacs/merlin-cap.elc $(SHARE_DIR)/emacs/site-lisp/merlin-cap.elc
+	install -m 644 emacs/merlin-company.el $(SHARE_DIR)/emacs/site-lisp/merlin-company.el
+	-install -m 644 emacs/merlin-company.elc $(SHARE_DIR)/emacs/site-lisp/merlin-company.elc
 
 install-vim:
 	install -d $(VIM_DIR)

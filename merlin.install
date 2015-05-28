@@ -22,7 +22,14 @@ share: [
   "vim/merlin/syntax/merlin.vim" { "vim/syntax/merlin.vim" }
   "vim/vimbufsync/autoload/vimbufsync.py" { "vim/autoload/vimbufsync.py" }
   "vim/vimbufsync/autoload/vimbufsync.vim" { "vim/autoload/vimbufsync.vim" }
+  "emacs/merlin-ac.el" {"../emacs/site-lisp/merlin-ac.el"}
+  "?emacs/merlin-ac.elc" {"../emacs/site-lisp/merlin-ac.elc"}
+  "emacs/merlin-cap.el" {"../emacs/site-lisp/merlin-cap.el"}
+  "?emacs/merlin-cap.elc" {"../emacs/site-lisp/merlin-cap.elc"}
+  "emacs/merlin-company.el" {"../emacs/site-lisp/merlin-company.el"}
+  "?emacs/merlin-company.elc" {"../emacs/site-lisp/merlin-company.elc"}
   "emacs/merlin.el" {"../emacs/site-lisp/merlin.el"}
   "?emacs/merlin.elc" {"../emacs/site-lisp/merlin.elc"}
   "emacs/merlin-iedit.el" {"../emacs/site-lisp/merlin-iedit.el"}
+  "?emacs/merlin-iedit.elc" {"../emacs/site-lisp/merlin-iedit.elc"}
 ]
