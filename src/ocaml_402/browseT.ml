@@ -608,6 +608,8 @@ let expression_paths { Typedtree. exp_desc; exp_extra } =
   | Texp_override (_,ps) ->
     List.map (fun (path,loc,_) -> reloc path loc) ps
   | Texp_letmodule (id,loc,_,_) -> [reloc (Path.Pident id) loc]
+  | Texp_for (id,{Parsetree.ppat_loc = loc},_,_,_,_) ->
+    [mkloc (Path.Pident id) loc]
   | _ -> []
 
 let core_type_paths { Typedtree. ctyp_desc } =
