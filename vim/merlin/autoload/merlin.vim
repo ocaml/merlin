@@ -173,11 +173,11 @@ function! merlin#SetFlags(...)
 endfunction
 
 function! s:ShowTypeEnclosing(type)
+  call s:StopHighlight()
   if empty(a:type)
     return
   endif
 
-  call s:StopHighlight()
   let w:enclosing_zone = matchadd('EnclosingExpr', a:type['matcher'])
   augroup MerlinHighlighting
     au!
