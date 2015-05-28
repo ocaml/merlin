@@ -2042,7 +2042,7 @@ Returns the position."
         (message "%s (from shell)" version))
     (progn
       (merlin--acquire-buffer)
-      (message "%s" (merlin--send-command '(version))))))
+      (message "%s" (merlin-send-command '(version))))))
 
 (defun merlin-command ()
   "Return path of ocamlmerlin binary selected by configuration"
