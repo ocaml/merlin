@@ -879,40 +879,58 @@ may be nil, in that case the current cursor of merlin is used."
     (setq point (previous-single-char-property-change point prop nil limit)))
   point)
 
-(defun merlin--error-prev-cycle ()
+;; group is dynamically scoped
+(defun merlin--error-group-pred (err)
+  (eq (overlay-get err 'merlin-error-group) group))
+
+(defun merlin--error-group-next (point group &optional limit)
+  (let ((point (merlin--overlay-next-property-set point 'merlin-pending-error limit)))
+    (when group
+      (while (not (or (eq point (point-max))
+                      (find-if 'merlin--error-group-pred (overlays-at point))))
+        (setq point (merlin--overlay-next-property-set point 'merlin-pending-error limit))))
+    point))
+
+(defun merlin--error-group-prev (point group &optional limit)
+  (let ((point (merlin--overlay-previous-property-set point 'merlin-pending-error limit)))
+    (when group
+      (while (not (or (eq point (point-min))
+                      (find-if 'merlin--error-group-pred (overlays-at point))))
+        (setq point (merlin--overlay-next-property-set point 'merlin-pending-error limit))))
+    point))
+
+(defun merlin--errors-at-position (point)
+  (remove nil (mapcar 'merlin--overlay-pending-error (overlays-at point))))
+
+(defun merlin--error-prev-cycle (group)
   "Returns previous error, cycling when reaching beginning of buffer"
   (let ((point (point)) (errors nil) (err nil))
-    (setq point (merlin--overlay-previous-property-set point 'merlin-pending-error))
-    (unless (eq point (point))
-      (setq errors (overlays-at point))
-      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors))))
+    (setq point (merlin--error-group-prev point group))
+    (unless (eq point (point)) (setq errors (merlin--errors-at-position point))
     (unless errors
-      (setq point (merlin--overlay-previous-property-set (point-max) 'merlin-pending-error (point)))
-      (setq errors (overlays-at point))
-      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors))))
+      (setq point (merlin--error-group-prev (point-max) group (point)))
+      (setq errors (merlin--errors-at-position point)))
     (setq err (merlin--error-at-position point errors))
-    (if err (cons point err) nil)))
+    (if err (cons point err) nil))))
 
-(defun merlin--error-next-cycle ()
+(defun merlin--error-next-cycle (group)
   "Returns next error, cycling when reaching end of buffer"
   (let ((point (point)) (errors nil) (err nil))
-    (setq point (merlin--overlay-next-property-set point 'merlin-pending-error))
+    (setq point (merlin--error-group-next point group))
     (when (eq point (point-max))
       (setq point (point-min))
-      (setq errors (overlays-at point))
-      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+      (setq errors (merlin--errors-at-position point))
       (unless errors
-        (setq point (merlin--overlay-next-property-set (point-min) 'merlin-pending-error (point)))))
+        (setq point (merlin--error-group-next (point-min) group (point)))))
     (unless errors
-      (setq errors (overlays-at point))
-      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors))))
+      (setq errors (merlin--errors-at-position point)))
     (setq err (merlin--error-at-position point errors))
     (if err (cons point err) nil)))
 
 (defun merlin--after-save ()
   (when (merlin-error-after-save) (merlin-error-check)))
 
-(defun merlin-error-prev ()
+(defun merlin-error-prev (&optional group)
   "Jump back to previous error."
   (interactive)
   (if (and (= merlin--dirty-point (point-max))
@@ -920,14 +938,15 @@ may be nil, in that case the current cursor of merlin is used."
       (when (merlin--process-idle)
         (merlin--error-check-async))
     (merlin--error-check nil))
-  (let ((err (merlin--error-prev-cycle)))
+  (let ((err (merlin--error-prev-cycle group)))
+    (when (and group (not err)) (setq err (merlin--error-prev-cycle nil)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
       (message "%s" (cdr (assoc 'message (cdr err))))
       (merlin--highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
 
-(defun merlin-error-next ()
+(defun merlin-error-next (&optional group)
   "Jump to next error."
   (interactive)
   (if (and (= merlin--dirty-point (point-max))
@@ -935,12 +954,27 @@ may be nil, in that case the current cursor of merlin is used."
       (when (merlin--process-idle)
         (merlin--error-check-async))
     (merlin--error-check nil))
-  (let ((err (merlin--error-next-cycle)))
+  (let ((err (merlin--error-next-cycle group)))
+    (when (and group (not err)) (setq err (merlin--error-next-cycle nil)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
       (goto-char (car err))
       (message "%s" (cdr (assoc 'message (cdr err))))
       (merlin--highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
+
+(defun merlin-error-next-in-group ()
+  "Jump to next error in same group, if any, next error otherwise."
+  (interactive)
+  (let ((err (merlin--error-at-position (point)
+                                            (merlin--errors-at-position (point)))))
+    (merlin-error-next (when err (overlay-get err 'merlin-error-group)))))
+
+(defun merlin-error-prev-in-group ()
+  "Jump to previous error in same group, if any, previous error otherwise."
+  (interactive)
+  (let ((err (merlin--error-at-position (point)
+                                        (merlin--errors-at-position (point)))))
+    (merlin-error-prev (when err (overlay-get err 'merlin-error-group)))))
 
 (defun merlin--error-warning-p (msg)
   "Tell if the message MSG is a warning."
@@ -964,43 +998,49 @@ may be nil, in that case the current cursor of merlin is used."
   "Remove an error from the pending error lists if it is edited by the user."
   (when is-after (delete-overlay overlay)))
 
+(defun merlin--transform-add-error-bounds (err)
+  (let ((bounds (merlin--make-bounds err))
+        (subs (cdr-safe (assoc 'sub err))))
+    (when merlin-error-on-single-line
+      (setq bounds (cons (car bounds)
+                         (min (cdr bounds)
+                              (save-excursion
+                                (goto-char (car bounds))
+                                (line-end-position))))))
+    (when (= (car bounds) (cdr bounds))
+      (setq bounds (if (> (car bounds) (point-min))
+                       (cons (1- (car bounds)) (cdr bounds))
+                     (cons (car bounds) (1+ (cdr bounds))))))
+    (setq bounds (cons (copy-marker (car bounds))
+                       (copy-marker (cdr bounds))))
+    (acons 'sub (mapcar 'merlin--transform-add-error-bounds subs)
+           (acons 'bounds bounds err))))
+
 (defun merlin-transform-display-errors (errors)
   "Populate the error list with ERRORS, transformed into an emacs-friendly
 form. Do display of error list."
-  (setq errors (mapcar (lambda (err)
-                         (let ((bounds (merlin--make-bounds err)))
-                           (when merlin-error-on-single-line
-                             (setq bounds (cons (car bounds)
-                                                (min (cdr bounds)
-                                                     (save-excursion
-                                                       (goto-char (car bounds))
-                                                       (line-end-position))))))
-                           (when (= (car bounds) (cdr bounds))
-                             (setq bounds (if (> (car bounds) (point-min))
-                                              (cons (1- (car bounds)) (cdr bounds))
-                                            (cons (car bounds) (1+ (cdr bounds))))))
-                           (setq bounds (cons (copy-marker (car bounds))
-                                              (copy-marker (cdr bounds))))
-                           (acons 'bounds bounds err)))
-                       errors))
-  (dolist (err errors)
-    (let* ((bounds (cdr (assoc 'bounds err)))
-           (overlay (make-overlay (car bounds) (cdr bounds))))
-      (overlay-put overlay 'merlin-kind 'error)
-      (overlay-put overlay 'merlin-pending-error err)
-      (push #'merlin--kill-error-if-edited
-            (overlay-get overlay 'modification-hooks))
-      (when merlin-error-in-fringe
-        (if (merlin--error-warning-p (cdr (assoc 'message err)))
+  (setq errors (mapcar 'merlin--transform-add-error-bounds errors))
+  (dolist (main errors)
+    (let ((subs (cdr-safe (assoc 'sub main))))
+      (dolist (err (cons main subs))
+        (let* ((bounds (cdr (assoc 'bounds err)))
+               (overlay (make-overlay (car bounds) (cdr bounds))))
+        (overlay-put overlay 'merlin-kind 'error)
+        (overlay-put overlay 'merlin-pending-error err)
+        (overlay-put overlay 'merlin-error-group main)
+        (push #'merlin--kill-error-if-edited
+              (overlay-get overlay 'modification-hooks))
+        (when (and merlin-error-in-fringe
+                   (not (and (eq err main) subs)))
+          (if (merlin--error-warning-p (cdr (assoc 'message err)))
+              (merlin-add-display-properties overlay
+                                             'question-mark
+                                             "?"
+                                             'merlin-compilation-warning-face)
             (merlin-add-display-properties overlay
-                                           'question-mark
-                                           "?"
-                                           'merlin-compilation-warning-face)
-          (merlin-add-display-properties overlay
-                                         'exclamation-mark
-                                         "!"
-                                         'merlin-compilation-error-face)))
-      overlay))
+                                           'exclamation-mark
+                                           "!"
+                                           'merlin-compilation-error-face)))))))
   errors)
 
 (defun merlin--error-check-async ()

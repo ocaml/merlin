@@ -372,6 +372,12 @@ let error_of_printer loc print x =
   let msg = Buffer.contents buf in
   errorf ~loc "%s" msg
 
+let suberrors_of_printer loc print x =
+  let subs = ref [] in
+  let sub err = subs := err :: !subs in
+  let error = error_of_printer loc (print ~sub) x in
+  {error with sub = List.rev !subs}
+
 let error_of_printer_file print x =
   error_of_printer (in_file !input_name) print x
 

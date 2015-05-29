@@ -38,7 +38,7 @@
   *   {message: ''Printexc.to_string'', valid:false}
   *)
 
-type t = {valid: bool; loc: Location.t; text: string; where:string}
+type t = {valid: bool; loc: Location.t; text: string; sub: (string * Location.t) list; where:string}
 
 (* Ignore unknown exceptions *)
 val strict_of_exn  : exn -> (Location.t * t) option

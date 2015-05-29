@@ -104,16 +104,23 @@ module Protocol_io = struct
   exception Failure' = Failure
   open Protocol
 
-  let json_of_error {Error_report. valid; text; where; loc} =
-    let content = ["valid", `Bool valid; "message", `String text] in
-    let content =
-      if loc = Location.none then content else
-      ("start", Lexing.json_of_position loc.Location.loc_start) ::
-      ("end"  , Lexing.json_of_position loc.Location.loc_end) ::
-      content
-    in
-    let content = ("type", `String where) :: content in
-    `Assoc content
+  let with_location ?(skip_none=false) loc assoc =
+    if skip_none && loc = Location.none then
+      `Assoc assoc
+    else
+      `Assoc (("start", Lexing.json_of_position loc.Location.loc_start) ::
+              ("end",   Lexing.json_of_position loc.Location.loc_end) ::
+              assoc)
+
+  let json_of_error {Error_report. valid; text; where; sub; loc} =
+    let of_sub (msg,loc) = with_location ~skip_none:true loc ["message", `String msg] in
+    let content = [
+      "type"    , `String where;
+      "sub"     , `List (List.map ~f:of_sub sub);
+      "valid"   , `Bool valid;
+      "message" , `String text;
+    ] in
+    with_location ~skip_none:true loc content
 
   let error_catcher exn =
     match Error_report.error_catcher exn with
@@ -131,11 +138,6 @@ module Protocol_io = struct
       with Not_found -> failwith "Incorrect position"
       end
     | _ -> failwith "Incorrect position"
-
-  let with_location loc assoc =
-    `Assoc (("start", Lexing.json_of_position loc.Location.loc_start) ::
-            ("end",   Lexing.json_of_position loc.Location.loc_end) ::
-            assoc)
 
   let optional_position = function
     | [`String "at"; jpos] -> Some (pos_of_json jpos)

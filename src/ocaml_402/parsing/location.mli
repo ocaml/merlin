@@ -112,6 +112,8 @@ val raise_errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string
 
 val error_of_printer: t -> (formatter -> 'a -> unit) -> 'a -> error
 
+val suberrors_of_printer: t -> (sub:(error -> unit) -> formatter -> 'a -> unit) -> 'a -> error
+
 val error_of_printer_file: (formatter -> 'a -> unit) -> 'a -> error
 
 val error_of_exn: exn -> error option
