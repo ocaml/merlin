@@ -28,20 +28,21 @@
 
 open Std
 
-type t = {valid: bool; loc: Location.t; text: string; where:string}
+type t = {valid: bool; loc: Location.t; text: string; sub: (string * Location.t) list; where:string}
 
-let format ~valid ~where ?(loc=Location.none) text =
-  loc, {valid; loc; text; where}
+let format ~valid ~where ?(loc=Location.none) ?(sub=[]) text =
+  loc, {valid; loc; text; sub; where}
 
+let of_suberror {Location. err_loc; msg} = (msg, err_loc)
 
 let strict_of_exn exn =
   let valid = true in
   match Location.error_of_exn exn with
-  | Some {Location. err_loc = loc; msg} ->
+  | Some {Location. err_loc = loc; sub; msg} ->
     let where = match exn with
       | Syntaxerr.Escape_error _ | Syntaxerr.Error _ -> "parser"
       | _ -> "type" in
-    Some (format ~valid ~where ~loc msg)
+    Some (format ~valid ~where ~loc ~sub:(List.map ~f:of_suberror sub) msg)
   | None ->
     match exn with
     | Parsing_aux.Warning (loc, msg) ->
