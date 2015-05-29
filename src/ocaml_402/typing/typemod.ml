@@ -45,16 +45,6 @@ exception Error_forward of Location.error
 
 let raise_error = Typing_aux.raise_error
 
-let not_included loc env msg =
-  let rec extract_loc = function
-    | [] -> loc
-    | (_,_,symp) :: sympts ->
-      match Includemod.symptom_location symp with
-      | Some loc -> loc
-      | None -> extract_loc sympts
-  in
-  Error (extract_loc msg, env, Not_included msg)
-
 open Typedtree
 
 let fst3 (x,_,_) = x
@@ -1002,7 +992,7 @@ let check_recmodule_inclusion env bindings =
           try
             Includemod.modtypes env mty_actual' mty_decl'
           with Includemod.Error msg ->
-            raise_error (not_included modl.mod_loc env msg);
+            raise_error (Error (modl.mod_loc, env, Not_included msg));
             Tcoerce_none
         in
         let modl' =
@@ -1088,7 +1078,7 @@ let wrap_constraint env arg mty explicit =
     try
       Includemod.modtypes env arg.mod_type mty
     with Includemod.Error msg ->
-      raise_error (not_included arg.mod_loc env msg);
+      raise_error (Error (arg.mod_loc, env, Not_included msg));
       Tcoerce_none
   in
   { mod_desc = Tmod_constraint(arg, mty, explicit, coercion);
@@ -1184,7 +1174,7 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
             try
               arg, Includemod.modtypes env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise_error (not_included sarg.pmod_loc env msg);
+              raise_error (Error(sarg.pmod_loc, env, Not_included msg));
               {arg with mod_type= Subst.modtype Subst.identity mty_param},
               Tcoerce_none
           in
@@ -1765,13 +1755,30 @@ let package_units initial_env objfiles cmifile modulename =
 
 open Printtyp
 
-let report_error ppf = function
+let rec extract_suberrors extracted rest = function
+  | [] -> List.rev extracted, List.rev rest
+  | err :: errs ->
+    match Includemod.error_locs err with
+    | [] -> extract_suberrors extracted (err :: rest) errs
+    | locs -> extract_suberrors ((locs, err) :: extracted) rest errs
+
+
+let report_error ~sub ppf = function
     Cannot_apply mty ->
       fprintf ppf
         "@[This module is not a functor; it has type@ %a@]" modtype mty
   | Not_included errs ->
-      fprintf ppf
-        "@[<v>Signature mismatch:@ %a@]" Includemod.report_error errs
+    let suberrors, errs = extract_suberrors [] [] errs in
+    List.iter (fun (locs,err) ->
+        List.iter (fun loc ->
+            sub (Location.error_of_printer loc Includemod.report_error [err]))
+          locs)
+      suberrors;
+    if errs = [] then
+      fprintf ppf "@[<v>Signature mismatch.@]"
+    else
+      fprintf ppf "@[<v>Signature mismatch:@ %a@]" Includemod.report_error errs
+
   | Cannot_eliminate_dependency mty ->
       fprintf ppf
         "@[This functor has type@ %a@ \
@@ -1844,14 +1851,14 @@ let report_error ppf = function
   | Apply_generative ->
       fprintf ppf "This is a generative functor. It can only be applied to ()"
 
-let report_error env ppf err =
-  Printtyp.wrap_printing_env env (fun () -> report_error ppf err)
+let report_error env ~sub ppf err =
+  Printtyp.wrap_printing_env env (fun () -> report_error ~sub ppf err)
 
 let () =
   Location.register_error_of_exn
     (function
       | Error (loc, env, err) ->
-        Some (Location.error_of_printer loc (report_error env) err)
+        Some (Location.suberrors_of_printer loc (report_error env) err)
       | Error_forward err ->
         Some err
       | _ ->

@@ -51,4 +51,4 @@ val select_frontend : string -> unit
 
 (* Misc *)
 val invalid_arguments : unit -> 'a
-val with_location : Location.t -> (string * Json.json) list -> Json.json
+val with_location : ?skip_none:bool -> Location.t -> (string * Json.json) list -> Json.json
