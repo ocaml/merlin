@@ -62,7 +62,7 @@ type outline = item list
 and item = {
   outline_name : string ;
   outline_kind : [`Value|`Constructor|`Label|`Module|`Modtype|`Type|`Exn] ;
-  pos  : position ;
+  location : Location.t ;
   children : outline ;
 }
 

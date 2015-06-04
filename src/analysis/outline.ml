@@ -39,42 +39,41 @@ let id_of_patt = function
   | { pat_desc = Tpat_var (id, _) ; _ } -> Some id
   | _ -> None
 
-let mk ?(children=[]) ~pos outline_kind id =
-  { Protocol. outline_name = Ident.name id; outline_kind; pos; children }
+let mk ?(children=[]) ~location outline_kind id =
+  { Protocol. outline_name = Ident.name id; outline_kind; location; children }
 
 let rec summarize node =
-  let pos = node.t_loc.Location.loc_start in
+  let location = node.t_loc in
   match node.t_node with
-  | Value_binding vb      -> id_of_patt vb.vb_pat >>| mk `Value ~pos
-  | Value_description vd  -> Some (mk `Value ~pos vd.val_id)
+  | Value_binding vb      -> id_of_patt vb.vb_pat >>| mk `Value ~location
+  | Value_description vd  -> Some (mk `Value ~location vd.val_id)
 
   | Module_declaration md ->
     let children = get_mod_children node in
-    Some (mk ~children ~pos `Module md.md_id)
+    Some (mk ~children ~location `Module md.md_id)
   | Module_binding mb     ->
     let children = get_mod_children node in
-    Some (mk ~children ~pos `Module mb.mb_id)
+    Some (mk ~children ~location `Module mb.mb_id)
 
   | Module_type_declaration mtd ->
     let children = get_mod_children node in
-    Some (mk ~children ~pos `Modtype mtd.mtd_id)
+    Some (mk ~children ~location `Modtype mtd.mtd_id)
 
   | Type_declaration td ->
-    let children = 
-      let helper kind id loc = mk kind id ~pos:loc.Location.loc_start in
+    let children =
       List.concat_map (Lazy.force node.t_children) ~f:(fun child ->
         match child.t_node with
         | Type_kind _ ->
           List.map (Lazy.force child.t_children) ~f:(fun x ->
             match x.t_node with
-            | Constructor_declaration c -> helper `Constructor c.cd_id c.cd_loc
-            | Label_declaration ld      -> helper `Label ld.ld_id ld.ld_loc
+            | Constructor_declaration c -> mk `Constructor c.cd_id ~location:c.cd_loc
+            | Label_declaration ld      -> mk `Label ld.ld_id ~location:ld.ld_loc
             | _ -> assert false (* ! *)
           )
         | _ -> []
       )
     in
-    Some (mk ~children ~pos `Type td.typ_id)
+    Some (mk ~children ~location `Type td.typ_id)
 
   | Type_extension te ->
     let name = String.concat ~sep:"." (Path.to_string_list te.tyext_path) in
@@ -83,10 +82,10 @@ let rec summarize node =
         summarize x >>| fun x -> { x with Protocol.outline_kind = `Constructor }
       )
     in
-    Some { Protocol. outline_name = name; outline_kind = `Type; pos; children }
+    Some { Protocol. outline_name = name; outline_kind = `Type; location; children }
 
   | Extension_constructor ec ->
-    Some (mk ~pos `Exn ec.ext_id )
+    Some (mk ~location `Exn ec.ext_id )
 
   (* TODO: classes *)
   | _ -> None

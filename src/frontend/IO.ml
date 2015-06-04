@@ -197,11 +197,10 @@ module Protocol_io = struct
     ]
 
   let rec json_of_outline outline =
-    let json_of_item { outline_name ; outline_kind ; pos ; children } =
-      `Assoc [
+    let json_of_item { outline_name ; outline_kind ; location ; children } =
+      with_location location [
         "name", `String outline_name;
         "kind", `String (string_of_kind outline_kind);
-        "pos", Lexing.json_of_position pos;
         "children", `List (json_of_outline children);
       ]
     in
