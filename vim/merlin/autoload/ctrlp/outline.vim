@@ -24,7 +24,7 @@ outlines = []
 def linearize(prefix, lst):
   for x in lst:
     name = "%s%s" % (prefix, x['name'])
-    outlines.append({'name': name, 'pos': x['pos'], 'kind': x['kind']})
+    outlines.append({'name': name, 'pos': x['start'], 'kind': x['kind']})
     linearize(name + ".", x['children'])
 
 def get_outlines():
@@ -57,8 +57,8 @@ idx = int(vim.eval("a:str").strip().split(' ')[0])
 
 try:
   x = outlines[idx]
-  l = x['pos']['line']
-  c = x['pos']['col']
+  l = x['start']['line']
+  c = x['start']['col']
   vim.current.window.cursor = (l, c)
 except KeyError, e:
   print(str(e))
