@@ -135,8 +135,8 @@ let mkstrexp e attrs =
 
 let mkexp_constraint startpos endpos e (t1, t2) =
   match t1, t2 with
-  | Some t, None -> ghexp startpos endpos (Pexp_constraint(e, t))
-  | _, Some t -> ghexp startpos endpos (Pexp_coerce(e, t1, t))
+  | Some t, None -> mkexp startpos endpos (Pexp_constraint(e, t))
+  | _, Some t -> mkexp startpos endpos (Pexp_coerce(e, t1, t))
   | None, None -> e
 
 let array_function startpos endpos str name =
