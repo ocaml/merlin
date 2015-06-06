@@ -390,8 +390,8 @@ return (LOC1 . LOC2)."
   "Return the start and end points of an ocaml atom near point.
 An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (save-excursion
-    (skip-chars-backward "[a-z_0-9A-Z'.]")
-    (skip-chars-backward "[~?`]" (1- (point)))
+    (skip-chars-backward "a-z0-9A-Z_'.")
+    (skip-chars-backward "~?`" (1- (point)))
     (if (or (looking-at "[~?`]?['a-z_0-9A-Z.]*['a-z_A-Z0-9]")
             (looking-at "[~?`]"))
         (cons (point) (match-end 0)) ; returns the bounds
