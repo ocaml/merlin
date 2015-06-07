@@ -452,13 +452,42 @@ return DEFAULT or the value associated to KEY."
 (defun merlin--process-busy (&optional instance-name)
   (buffer-local-value 'merlin--process-busy (merlin-process-buffer instance-name)))
 
+(put 'merlin-cancelled
+     'error-conditions
+     '(merlin-cancelled))
+
 (defun merlin--process-busy-set (value &optional instance-name)
   (with-current-buffer (merlin-process-buffer instance-name)
-     (assert (not (and merlin--process-busy value))
-             nil
-             "Merlin was already processing %S while %S was attempted"
-             merlin--process-busy value)
-     (setq merlin--process-busy value)))
+    (let ((command-priority (and (boundp 'merlin-command-priority)
+                                 merlin-command-priority)))
+      (setq merlin--process-busy
+            ;; entering new command
+            (cond ((and value (not merlin--process-busy))
+                   (cons command-priority value))
+                  ;; exiting old command
+                  ((and (not value) merlin--process-busy) nil)
+                  ;; our command was removed :(
+                  ((and (not value) (not merlin--process-busy))
+                   (signal 'merlin-cancelled
+                           "This message should not appear, please report the error"))
+                  ;; two commands are competing:
+                  ;; - none can handle cancellation, just fail
+                  ((and (not command-priority) (not (car merlin--process-busy)))
+                   (error "Merlin was already processing %S while %S was attempted"
+                          merlin--process-busy value))
+                  ;; - previous one has lower priority, accept request
+                  ((or (not command-priority)
+                       (<= (car merlin--process-busy) command-priority))
+                   (cons command-priority value))
+                  ;; - previous one has higher priority, cancel request
+                  ((or (not (car merlin--process-busy)
+                            (<= command-priority (car merlin--process-busy))))
+                   ;; if we get there, caller knows how to handle the error
+                   (assert command-priority)
+                   (signal 'merlin-cancelled
+                           "This message should not appear, please report the error"))
+                  (t (error "Unhandled case in merlin--process-busy-set %S => %S"
+                            merlin--process-busy value)))))))
 
 (defun merlin-start-process (flags &optional configuration)
   "Start the merlin process by fetching the information inside CONFIGURATION. FLAGS contains the list of flags to give merlin.
@@ -698,13 +727,27 @@ the error message otherwise print a generic error message."
                     closure #'merlin-send-command-async-handler)
         promise))))
 
+(defvar merlin-command-priority nil
+ "Keep track of command-priority. If non-nil, competing command with lower
+  priority might be cancelled.  This is signaled with 'merlin-cancelled
+  symbol.
+  This is used to handle the case where two synchronous commands happen to be
+  nested, for instance when flycheck or lighter are updated while the user
+  starts a completion.
+  The solution is to make completion have 'nil' priority, meaning it can't be
+  cancelled, and the background process have some integer priority.
+  If two syncronous commands with nil priority are executed, an error is
+  reported. If they have the same integer priority, one is executed.
+  Otherwise the one with the lowest integer is cancelled.")
+
 (defun merlin-send-command (command &optional callback-if-exn)
   "Send COMMAND (with arguments ARGS) to merlin and returns the result."
   (let ((promise (merlin-send-command-async
                             command (lambda (data) data) callback-if-exn)))
     (when promise
       (merlin--process-busy-set (list command))
-      (let ((w32-pipe-read-delay 0)) ;; fix 50ms latency of emacs on win32
+      (let ((w32-pipe-read-delay 0)        ; fix 50ms latency of emacs on win32
+            (merlin-command-priority nil)) ; reset priority to default
         (while (not (car promise))
                (accept-process-output (merlin-process) 1.0)))
       (merlin--process-busy-set nil)
