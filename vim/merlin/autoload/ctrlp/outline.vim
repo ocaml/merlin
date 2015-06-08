@@ -57,8 +57,8 @@ idx = int(vim.eval("a:str").strip().split(' ')[0])
 
 try:
   x = outlines[idx]
-  l = x['start']['line']
-  c = x['start']['col']
+  l = x['pos']['line']
+  c = x['pos']['col']
   vim.current.window.cursor = (l, c)
 except KeyError, e:
   print(str(e))
