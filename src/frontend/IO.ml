@@ -208,6 +208,11 @@ module Protocol_io = struct
     in
     List.map json_of_item outline
 
+  let rec json_of_shape { shape_loc; shape_sub } =
+    with_location shape_loc [
+      "children", `List (List.map ~f:json_of_shape shape_sub);
+    ]
+
   let json_of_cursor_state {cursor; marker} =
     `Assoc [
       "cursor", Lexing.json_of_position cursor;
@@ -317,6 +322,8 @@ module Protocol_io = struct
       Request (Locate (Some path, ml_or_mli choice, mandatory_position pos))
     | [`String "outline"] ->
       Request Outline
+    | [`String "shape"; pos] ->
+      Request (Shape (pos_of_json pos))
     | [`String "drop"] ->
       Request Drop
     | [`String "seek"; `String "position"] ->
@@ -479,6 +486,8 @@ module Protocol_io = struct
           `List [ assoc ; `String str ]
         | Outline, outlines ->
           `List (json_of_outline outlines)
+        | Shape _, shapes ->
+          `List (List.map ~f:json_of_shape shapes)
         | Drop, cursor ->
           json_of_cursor_state cursor
         | Boundary _, Some {Location. loc_start; loc_end} ->

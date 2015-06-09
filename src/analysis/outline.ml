@@ -109,3 +109,35 @@ and remove_top_indir t =
   | _ -> []
 
 let get = List.concat_map ~f:remove_top_indir
+
+let shape cursor nodes =
+  let rec aux node =
+    (* A node is selected if:
+       - part of the module language
+       - or under the cursor *)
+    let selected = match node.t_node with
+      | Module_expr _
+      | Module_type_constraint _
+      | Structure _
+      | Structure_item _
+      | Module_binding _
+      | Module_type _
+      | Signature _
+      | Signature_item _
+      | Module_declaration _
+      | Module_type_declaration _
+      | Module_binding_name _
+      | Module_declaration_name _
+      | Module_type_declaration_name _ -> not node.t_loc.Location.loc_ghost
+      | _ -> Parsing_aux.compare_pos cursor node.t_loc = 0 &&
+             Lexing.compare_pos node.t_loc.Location.loc_start cursor <> 0 &&
+             Lexing.compare_pos node.t_loc.Location.loc_end cursor <> 0
+    in
+    if selected then [{
+        Protocol.
+        shape_loc = node.t_loc;
+        shape_sub = List.concat_map ~f:aux (Lazy.force node.t_children)
+      }]
+    else []
+  in
+  List.concat_map ~f:aux nodes

@@ -484,6 +484,11 @@ let dispatch (state : state) =
     let typed_tree = Typer.contents typer in
     Outline.get (Browse.of_typer_contents typed_tree)
 
+  | (Shape cursor : a request) ->
+    with_typer state @@ fun typer ->
+    let typed_tree = Typer.contents typer in
+    Outline.shape cursor (Browse.of_typer_contents typed_tree)
+
   | (Drop : a request) ->
     let lexer = Buffer.lexer state.buffer in
     buffer_freeze state (History.drop_tail lexer);
