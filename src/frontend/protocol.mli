@@ -76,6 +76,11 @@ and item = {
   children : outline ;
 }
 
+type shape = {
+  shape_loc : Location.t;
+  shape_sub : shape list;
+}
+
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type context = [`ML | `MLI | `Auto ] * string option * string list option
@@ -131,6 +136,8 @@ type _ request =
     : Location.t -> (Location.t * string) request
   | Outline
     :  outline request
+  | Shape
+    :  Lexing.position -> shape list request
   | Drop
     :  cursor_state request
   | Seek
