@@ -1679,26 +1679,46 @@ loading"
 ;; SEMANTIC MOVEMENT ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin--phrase-goto (command)
+(defun merlin--traverse-update (point cell pos)
+  (let ((set-l (and pos (< pos point)
+                    (or (not (car cell)) (<= (car cell) pos))))
+        (set-r (and pos (> pos (1+ point))
+                    (or (not (cdr cell)) (>= (cdr cell) pos)))))
+    (when set-l (setcar cell pos))
+    (when set-r (setcdr cell pos))
+    (or set-l set-r)))
+
+
+(defun merlin--traverse-shape (point cell shape)
+  (let* ((bounds (merlin--make-bounds shape))
+         (set-l (when (car bounds)
+                  (merlin--traverse-update point cell (car bounds))))
+         (set-r (when (cdr bounds)
+                  (merlin--traverse-update point cell (cdr bounds)))))
+    (when (or set-l set-r)
+      (dolist (child (cdr (assoc 'children shape)))
+        (merlin--traverse-shape point cell child)))))
+
+(defun merlin--phrase-goto ()
   "Go to the phrase indicated by COMMAND.
 Returns the position."
-  (let ((r (merlin/send-command
-             (list 'boundary command 'at (merlin/unmake-point (point))))))
-    (unless (equal r 'null)
-      (merlin--goto-point (car r))
-      (point))))
+  (let ((cell (cons nil nil)))
+    (merlin/sync-to-end)
+    (dolist (shape (merlin/send-command (list 'shape (merlin/unmake-point (point)))))
+      (merlin--traverse-shape (point) cell shape))
+    cell))
 
 (defun merlin-phrase-next ()
   "Go to the beginning of the next phrase."
   (interactive)
-  (merlin/sync-to-end)
-  (merlin--phrase-goto 'next))
+  (let ((cell (merlin--phrase-goto)))
+    (when (cdr cell) (goto-char (cdr cell)))))
 
 (defun merlin-phrase-prev ()
   "Go to the beginning of the previous phrase."
   (interactive)
-  (merlin/sync-to-end)
-  (merlin--phrase-goto 'prev))
+  (let ((cell (merlin--phrase-goto)))
+    (when (car cell) (goto-char (car cell)))))
 
 (defun merlin-error-check ()
   "Update merlin to the end-of-file, reporting errors."
