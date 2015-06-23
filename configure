@@ -14,9 +14,15 @@ fi
 
 EXIT=0
 
-COL_CLEAR=$(tput sgr0)
-COL_RED=$(tput setf 4)
-COL_GREEN=$(tput setf 2)
+if which tput > /dev/null 2>&1 ; then
+  COL_CLEAR=$(tput sgr0)
+  COL_RED=$(tput setf 4)
+  COL_GREEN=$(tput setf 2)
+else
+  COL_CLEAR=
+  COL_RED=
+  COL_GREEN=
+fi
 
 check_package()
 {
