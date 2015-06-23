@@ -90,7 +90,7 @@ distclean: clean
 
 install-binary: $(TARGET)
 	install -d $(BIN_DIR)
-	install $(TARGET) $(BIN_DIR)/ocamlmerlin
+	install $(TARGET)$(EXE) $(BIN_DIR)/ocamlmerlin$(EXE)
 
 install-share: $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
