@@ -167,8 +167,17 @@ To customize directories, use:
 For more informations rerun with --help.
 END
 
-rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
-  ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+SYSTEM=$(ocamlfind c -config | grep system|cut -d' ' -f2)
+case "$SYSTEM" in
+  mingw*|win*)
+    rm -rf "$PWD/src/ocaml" 2>&1 >/dev/null &&
+      cp -R "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+    ;;
+  *)
+    rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
+      ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+    ;;
+esac
 
 mkdir -p "$PWD/src/config"
 
