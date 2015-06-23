@@ -4,6 +4,7 @@ import vim
 import re
 import os
 import sys
+from sys import platform
 
 import vimbufsync
 vimbufsync.check_version("0.1.0",who="merlin")
@@ -91,13 +92,29 @@ class MerlinProcess:
                 env = self.env
             else:
                 env = os.environ
-            self.mainpipe = subprocess.Popen(
-                    cmd,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=None,
-                    env=env
-                    )
+            # As for OCaml, 64-bit Python still has sys.platform == win32
+            # Note that owing to a long-standing bug in Python, stderr must be given
+            # (see https://bugs.python.org/issue3905)
+            if platform == "win32":
+                info = subprocess.STARTUPINFO()
+                info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                info.wShowWindow = subprocess.SW_HIDE
+                self.mainpipe = subprocess.Popen(
+                        cmd,
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        startupinfo=info,
+                        env=env
+                        )
+            else:
+                self.mainpipe = subprocess.Popen(
+                        cmd,
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=None,
+                        env=env
+                        )
         except OSError as e:
             print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
                     is executable.")
