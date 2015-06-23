@@ -8,6 +8,7 @@ emacs/merlin.elc
 *.cm?
 *.cm??
 ocamlmerlin
+ocamlmerlin.exe
 ._d
 ._ncdi
 
