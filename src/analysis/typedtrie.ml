@@ -91,7 +91,7 @@ let rec tag_path ~namespace = function
   | [] -> invalid_arg "Typedtrie.tag_path"
   | [ x ] -> [ x, namespace ]
   | x :: xs -> (x, `Mod) :: tag_path ~namespace xs
-                              
+
 let rec build ?(local_buffer=false) ~trie browses =
   let rec node_for_direct_mod namespace = function
     | `Alias path ->
@@ -295,8 +295,10 @@ let rec follow ?before trie = function
       | (l, _, Internal t) :: _ ->
         if xs = [] then Found l else
           match follow ?before t xs with
+          | Resolves_to (p, None) when p = xs -> Found l (* questionable *)
           | Resolves_to (p, x) as checkpoint ->
             begin match follow ~before:l.Location.loc_start trie p with
+            (* This feels wrong *)
             | Resolves_to (_, None) -> checkpoint
             | otherwise -> otherwise
             end
