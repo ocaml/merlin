@@ -590,7 +590,9 @@ let dispatch (state : state) =
         let cmp (l1,_) (l2,_) =
           Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
         let err exns =
-          List.filter ~f:(fun (l,_) -> not l.Location.loc_ghost) @@
+          List.filter ~f:(fun (l,err) ->
+            not l.Location.loc_ghost || err.Error_report.where <> "warning"
+          ) @@
           List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns)
         in
         let err_lexer  = err (Buffer.lexer_errors state.buffer) in
