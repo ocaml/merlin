@@ -36,7 +36,7 @@ let add_modtype id ty s = { s with modtypes = Tbl.add id ty s.modtypes }
 let for_saving s = { s with for_saving = true }
 
 let loc s x =
-  if s.for_saving && not !Clflags.keep_locs then Location.none else x
+  if s.for_saving && not (Clflags.keep_locs ()) then Location.none else x
 
 let remove_loc =
   let open Ast_mapper in
@@ -51,11 +51,11 @@ let is_not_doc = function
 
 let attrs s x =
   let x =
-    if s.for_saving && not !Clflags.keep_docs then
-      List.filter is_not_doc x
+    if s.for_saving && not (Clflags.keep_docs ())
+    then List.filter is_not_doc x
     else x
   in
-    if s.for_saving && not !Clflags.keep_locs
+    if s.for_saving && not (Clflags.keep_locs ())
     then remove_loc.Ast_mapper.attributes remove_loc x
     else x
 
@@ -363,7 +363,7 @@ let rec modtype s = function
           fatal_error "Subst.modtype"
       end
   | Mty_signature sg ->
-      Mty_signature(signature s sg)
+      Mty_signature (lazy (signature s (Lazy.force sg)))
   | Mty_functor(id, arg, res) ->
       let id' = Ident.rename id in
       Mty_functor(id', may_map (modtype s) arg,
