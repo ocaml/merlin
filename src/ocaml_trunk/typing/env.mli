@@ -37,25 +37,13 @@ type type_descriptions =
     constructor_description list * label_description list
 
 (* For short-paths *)
-val iter_types_and_aliases:
+type iter_cont
+val iter_types:
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
-    (Path.t -> Path.t -> unit) ->
-    t -> unit
-
-val iter_module_types_and_aliases:
-    (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
-    (Path.t -> Path.t -> unit) ->
-    Ident.t -> t -> unit
-
-type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
-val diff_env_types: t -> t -> type_diff list
-
+    t -> iter_cont
+val run_iter_cont: iter_cont list -> (Path.t * iter_cont) list
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t
-
-val find_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t
-val set_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t -> unit
-
 val find_shadowed_types: Path.t -> t -> Path.t list
 
 (* Lookup by paths *)
@@ -158,9 +146,6 @@ val reset_cache: unit -> unit
 (* To be called before each toplevel phrase. *)
 val reset_cache_toplevel: unit -> unit
 
-(* merlin: Check cache consistency *)
-val check_cache_consistency: unit -> bool
-
 (* Remember the name of the current compilation unit. *)
 val set_unit_name: string -> unit
 val get_unit_name: unit -> string
@@ -187,8 +172,8 @@ val imports: unit -> (string * Digest.t option) list
 
 (* Direct access to the table of imported compilation units with their CRC *)
 
-(* val crc_units: Consistbl.t *)
-(* val imported_units: string list ref *)
+val crc_units: Consistbl.t
+val add_import: string -> unit
 
 (* Summaries -- compact representation of an environment, to be
    exported in debugging information. *)
@@ -280,11 +265,3 @@ val fold_cltypes:
 (** Utilities *)
 val scrape_alias: t -> module_type -> module_type
 val check_value_name: string -> Location.t -> unit
-
-
-(** merlin: manage all internal state *)
-
-type cache
-
-val new_cache : unit_name:string -> cache
-val cache : cache ref

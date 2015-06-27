@@ -250,14 +250,18 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 ;;
 
-let print_loc' ppf loc =
+let print_loc ppf loc =
   let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
-  if startchar >= 0 then
-    fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar
-;;
-
-let print_loc _ppf loc = ()
+  if file = "//toplevel//" then begin
+    if highlight_locations ppf [loc] then () else
+      fprintf ppf "Characters %i-%i"
+              loc.loc_start.pos_cnum loc.loc_end.pos_cnum
+  end else begin
+    fprintf ppf "%s%a%s%i" msg_file print_filename file msg_line line;
+    if startchar >= 0 then
+      fprintf ppf "%s%i%s%i" msg_chars startchar msg_to endchar
+  end
 ;;
 
 let print ppf loc =
@@ -286,8 +290,8 @@ let print_warning loc ppf w =
   print_updating_num_loc_lines ppf (!warning_printer loc) w
 ;;
 
-let prerr_warning_ref = ref (fun loc w -> print_warning loc err_formatter w);;
-let prerr_warning loc w = !prerr_warning_ref loc w;;
+let formatter_for_warnings = ref err_formatter;;
+let prerr_warning loc w = print_warning loc !formatter_for_warnings w;;
 
 let echo_eof () =
   print_newline ();
@@ -304,17 +308,17 @@ let mknoloc txt = mkloc txt none
 
 type error =
   {
-    err_loc: t;
+    loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
   }
 
 let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
-  Printf.ksprintf (fun msg -> {err_loc = loc; msg; sub; if_highlight})
+  Printf.ksprintf (fun msg -> {loc; msg; sub; if_highlight})
 
 let error ?(loc = none) ?(sub = []) ?(if_highlight = "") msg =
-  {err_loc = loc; msg; sub; if_highlight}
+  {loc; msg; sub; if_highlight}
 
 let error_of_exn : (exn -> error option) list ref = ref []
 
@@ -330,11 +334,11 @@ let error_of_exn exn =
   in
   loop !error_of_exn
 
-let rec default_error_reporter ppf ({err_loc; msg; sub; if_highlight} as err) =
+let rec default_error_reporter ppf ({loc; msg; sub; if_highlight} as err) =
   let highlighted =
     if if_highlight <> "" then
-      let rec collect_locs locs {err_loc; sub; if_highlight; _} =
-        List.fold_left collect_locs (err_loc :: locs) sub
+      let rec collect_locs locs {loc; sub; if_highlight; _} =
+        List.fold_left collect_locs (loc :: locs) sub
       in
       let locs = collect_locs [] err in
       highlight_locations ppf locs
@@ -344,7 +348,7 @@ let rec default_error_reporter ppf ({err_loc; msg; sub; if_highlight} as err) =
   if highlighted then
     Format.pp_print_string ppf if_highlight
   else begin
-    print ppf err_loc;
+    print ppf loc;
     Format.pp_print_string ppf msg;
     List.iter (fun err -> Format.fprintf ppf "@\n@[<2>%a@]" default_error_reporter err)
               sub
@@ -404,5 +408,4 @@ let () =
     )
 
 let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
-  Printf.ksprintf
-    (fun msg -> raise (Error ({err_loc = loc; msg; sub; if_highlight})))
+  Printf.ksprintf (fun msg -> raise (Error ({loc; msg; sub; if_highlight})))
