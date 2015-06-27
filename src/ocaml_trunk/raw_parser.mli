@@ -298,6 +298,7 @@ and _ nonterminal_class =
   | N_virtual_flag : (Asttypes.virtual_flag) nonterminal_class
   | N_value_type : (string * Asttypes.mutable_flag * Asttypes.virtual_flag *
   Parsetree.core_type) nonterminal_class
+  | N_value_description : (Parsetree.value_description) nonterminal_class
   | N_value : (string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal_class
   | N_val_longident : (Longident.t) nonterminal_class
   | N_val_ident : (string) nonterminal_class
@@ -309,8 +310,8 @@ and _ nonterminal_class =
   | N_type_parameter : (Parsetree.core_type * Asttypes.variance) nonterminal_class
   | N_type_longident : (Longident.t) nonterminal_class
   | N_type_kind : (Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal_class
-  | N_type_declarations : (Parsetree.type_declaration list) nonterminal_class
-  | N_type_declaration : (Parsetree.type_declaration) nonterminal_class
+  | N_type_declarations : (Asttypes.rec_flag * Parsetree.type_declaration list) nonterminal_class
+  | N_type_declaration : (Asttypes.rec_flag * Parsetree.type_declaration) nonterminal_class
   | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal_class
   | N_toplevel_directives : (unit) nonterminal_class
   | N_tag_field : (Parsetree.row_field) nonterminal_class
@@ -321,6 +322,7 @@ and _ nonterminal_class =
   | N_structure : (Parsetree.structure) nonterminal_class
   | N_strict_binding : (Parsetree.expression) nonterminal_class
   | N_str_type_extension : (Parsetree.type_extension) nonterminal_class
+  | N_str_include_statement : (Parsetree.include_declaration) nonterminal_class
   | N_str_extension_constructors : (Parsetree.extension_constructor list) nonterminal_class
   | N_str_exception_declaration : (Parsetree.extension_constructor) nonterminal_class
   | N_single_attr_id : (string) nonterminal_class
@@ -337,6 +339,7 @@ and _ nonterminal_class =
   | N_signature_item : (Parsetree.signature_item list) nonterminal_class
   | N_signature : (Parsetree.signature) nonterminal_class
   | N_sig_type_extension : (Parsetree.type_extension) nonterminal_class
+  | N_sig_include_statement : (Parsetree.include_description) nonterminal_class
   | N_sig_extension_constructors : (Parsetree.extension_constructor list) nonterminal_class
   | N_sig_exception_declaration : (Parsetree.extension_constructor) nonterminal_class
   | N_seq_expr : (Parsetree.expression) nonterminal_class
@@ -344,10 +347,15 @@ and _ nonterminal_class =
   | N_row_field : (Parsetree.row_field) nonterminal_class
   | N_record_expr : (Parsetree.expression option *
   (Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal_class
+  | N_rec_module_declarations : (Parsetree.module_declaration list) nonterminal_class
+  | N_rec_module_declaration : (Parsetree.module_declaration) nonterminal_class
+  | N_rec_module_bindings : (Parsetree.module_binding list) nonterminal_class
+  | N_rec_module_binding : (Parsetree.module_binding) nonterminal_class
   | N_rec_flag : (Asttypes.rec_flag) nonterminal_class
   | N_private_virtual_flags : (Asttypes.private_flag * Asttypes.virtual_flag) nonterminal_class
   | N_private_flag : (Asttypes.private_flag) nonterminal_class
-  | N_primitive_declaration : (string list) nonterminal_class
+  | N_primitive_declaration_body : (string list) nonterminal_class
+  | N_primitive_declaration : (Parsetree.value_description) nonterminal_class
   | N_post_item_attributes : (Ast_helper.attrs) nonterminal_class
   | N_post_item_attribute : (Parsetree.attribute) nonterminal_class
   | N_poly_type_no_attr : (Parsetree.core_type) nonterminal_class
@@ -381,14 +389,15 @@ and _ nonterminal_class =
   | N_name_tag : (Asttypes.label) nonterminal_class
   | N_mutable_flag : (Asttypes.mutable_flag) nonterminal_class
   | N_mty_longident : (Longident.t) nonterminal_class
+  | N_module_type_declaration_body : (Parsetree.module_type option) nonterminal_class
+  | N_module_type_declaration : (Parsetree.module_type_declaration) nonterminal_class
   | N_module_type : (Parsetree.module_type) nonterminal_class
-  | N_module_rec_declarations : (Parsetree.module_declaration list) nonterminal_class
-  | N_module_rec_declaration : (Parsetree.module_declaration) nonterminal_class
   | N_module_expr : (Parsetree.module_expr) nonterminal_class
-  | N_module_declaration : (Parsetree.module_type) nonterminal_class
-  | N_module_bindings : (Parsetree.module_binding list) nonterminal_class
+  | N_module_declaration_body : (Parsetree.module_type) nonterminal_class
+  | N_module_declaration : (Parsetree.module_declaration) nonterminal_class
   | N_module_binding_body : (Parsetree.module_expr) nonterminal_class
   | N_module_binding : (Parsetree.module_binding) nonterminal_class
+  | N_module_alias : (Parsetree.module_declaration) nonterminal_class
   | N_mod_longident : (Longident.t) nonterminal_class
   | N_mod_ext_longident : (Longident.t) nonterminal_class
   | N_method_ : (string Asttypes.loc * Asttypes.private_flag * Parsetree.class_field_kind) nonterminal_class
@@ -396,12 +405,13 @@ and _ nonterminal_class =
   Asttypes.closed_flag) nonterminal_class
   | N_match_cases : (Parsetree.case list) nonterminal_class
   | N_match_case : (Parsetree.case) nonterminal_class
+  | N_lwt_bindings : (Parsing_aux.let_bindings) nonterminal_class
+  | N_lwt_binding : (Parsing_aux.let_bindings) nonterminal_class
   | N_lident_list : (string list) nonterminal_class
   | N_let_pattern : (Parsetree.pattern) nonterminal_class
-  | N_let_bindings_no_attrs : (Parsetree.value_binding list) nonterminal_class
-  | N_let_bindings : (Parsetree.value_binding list) nonterminal_class
-  | N_let_binding_ : (Parsetree.pattern * Parsetree.expression) nonterminal_class
-  | N_let_binding : (Parsetree.value_binding) nonterminal_class
+  | N_let_bindings : (Parsing_aux.let_bindings) nonterminal_class
+  | N_let_binding_body : (Parsetree.pattern * Parsetree.expression) nonterminal_class
+  | N_let_binding : (Parsing_aux.let_bindings) nonterminal_class
   | N_lbl_pattern_list : ((Longident.t Asttypes.loc * Parsetree.pattern) list * Asttypes.closed_flag) nonterminal_class
   | N_lbl_pattern : (Longident.t Asttypes.loc * Parsetree.pattern) nonterminal_class
   | N_lbl_expr_list : ((Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal_class
@@ -414,6 +424,7 @@ and _ nonterminal_class =
   | N_label_ident : (string * Parsetree.expression) nonterminal_class
   | N_label_expr : (Asttypes.arg_label * Parsetree.expression) nonterminal_class
   | N_label_declarations : (Parsetree.label_declaration list) nonterminal_class
+  | N_label_declaration_semi : (Parsetree.label_declaration) nonterminal_class
   | N_label_declaration : (Parsetree.label_declaration) nonterminal_class
   | N_label : (string) nonterminal_class
   | N_item_extension : (Parsetree.extension) nonterminal_class
@@ -462,7 +473,7 @@ and _ nonterminal_class =
   | N_clty_longident : (Longident.t) nonterminal_class
   | N_class_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal_class
   | N_class_type_declarations : (Parsetree.class_type_declaration list) nonterminal_class
-  | N_class_type_declaration : (Parsetree.class_type_declaration list) nonterminal_class
+  | N_class_type_declaration : (Parsetree.class_type_declaration) nonterminal_class
   | N_class_type : (Parsetree.class_type) nonterminal_class
   | N_class_structure : (Parsetree.class_structure) nonterminal_class
   | N_class_simple_expr : (Parsetree.class_expr) nonterminal_class
@@ -479,12 +490,23 @@ and _ nonterminal_class =
   | N_class_field : (Parsetree.class_field list) nonterminal_class
   | N_class_expr : (Parsetree.class_expr) nonterminal_class
   | N_class_descriptions : (Parsetree.class_description list) nonterminal_class
-  | N_class_description : (Parsetree.class_description list) nonterminal_class
+  | N_class_description : (Parsetree.class_description) nonterminal_class
   | N_class_declarations : (Parsetree.class_declaration list) nonterminal_class
-  | N_class_declaration : (Parsetree.class_declaration list) nonterminal_class
+  | N_class_declaration : (Parsetree.class_declaration) nonterminal_class
+  | N_bar_extension_constructor_rebind : (Parsetree.extension_constructor) nonterminal_class
+  | N_bar_extension_constructor_declaration : (Parsetree.extension_constructor) nonterminal_class
+  | N_bar_constructor_declaration : (Parsetree.constructor_declaration) nonterminal_class
   | N_attributes : (Parsetree.attributes) nonterminal_class
   | N_attribute : (Parsetree.attribute) nonterminal_class
   | N_attr_id : (string Asttypes.loc) nonterminal_class
+  | N_and_type_declaration : (Parsetree.type_declaration) nonterminal_class
+  | N_and_module_declaration : (Parsetree.module_declaration) nonterminal_class
+  | N_and_module_binding : (Parsetree.module_binding) nonterminal_class
+  | N_and_lwt_binding : (Parsing_aux.let_binding) nonterminal_class
+  | N_and_let_binding : (Parsing_aux.let_binding) nonterminal_class
+  | N_and_class_type_declaration : (Parsetree.class_type_declaration) nonterminal_class
+  | N_and_class_description : (Parsetree.class_description) nonterminal_class
+  | N_and_class_declaration : (Parsetree.class_declaration) nonterminal_class
   | N_amper_type_list : (Parsetree.core_type list) nonterminal_class
   | N_additive : (string) nonterminal_class
 

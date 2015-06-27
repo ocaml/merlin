@@ -42,3 +42,19 @@ val location_union : Location.t -> Location.t -> Location.t
 
 (** Like location_union, but keep loc_ghost'ness of first argument *)
 val location_extend : Location.t -> Location.t -> Location.t
+
+open Parsetree
+
+type let_binding =
+  { lb_pattern: pattern;
+    lb_expression: expression;
+    lb_attributes: attributes;
+    lb_loc: Location.t; }
+
+type let_bindings =
+  { lbs_bindings: let_binding list;
+    lbs_rec: Asttypes.rec_flag;
+    lbs_extension: string Asttypes.loc option;
+    lbs_attributes: attributes;
+    lbs_loc: Location.t;
+  }

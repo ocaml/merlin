@@ -338,7 +338,7 @@ let find_marker t =
       | P.N_ (P.N_class_fields, _) -> frame
       | P.N_ (P.N_class_declarations, _) -> frame
       | P.N_ (P.N_class_descriptions, _) -> frame
-      | P.N_ (P.N_module_rec_declarations, _) -> frame
+      (*| P.N_ (P.N_module_rec_declarations, _) -> frame FIXXXXME*)
       | _ -> acc
     in
     let rec find_rec acc = function
