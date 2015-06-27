@@ -3665,6 +3665,7 @@ and type_statement env sexp =
 (* Typing of match cases *)
 
 and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
+  (* FIXME: find a way to port type_cases recovery to new scheme *)
   (* ty_arg is _fully_ generalized *)
   let patterns = List.map (fun {pc_lhs=p} -> p) caselist in
   let erase_either =
@@ -3785,11 +3786,13 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
     else
       Partial
   in
-  add_delayed_check
-    (fun () ->
-      List.iter (fun (pat, (env, _)) -> check_absent_variant env pat)
-        pat_env_list;
-      Parmatch.check_unused env cases);
+  if not (Typing_aux.erroneous_type_check ty_arg) &&
+     not (List.exists (fun c -> Typing_aux.erroneous_patt_check c.c_lhs) cases)
+  then
+    add_delayed_check (fun () ->
+        List.iter (fun (p, (env, _)) -> check_absent_variant env p) pat_env_list;
+        Parmatch.check_unused env cases
+      );
   if has_gadts then begin
     end_def ();
     (* Ensure that existential types do not escape *)
