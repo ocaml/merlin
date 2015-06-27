@@ -30,6 +30,10 @@ val with_default_loc: loc -> (unit -> 'a) -> 'a
     (** Set the [default_loc] within the scope of the execution
         of the provided function. *)
 
+val rtag : ?attrs:attrs -> label -> bool -> core_type list -> row_field
+
+val const_string : string -> constant
+
 (** {2 Core language} *)
 
 (** Type expressions *)
@@ -390,3 +394,8 @@ module Cstr:
   sig
     val mk: pattern -> class_field list -> class_structure
   end
+
+(** merlin addition *)
+val rtag : ?attrs:attrs -> label -> bool -> core_type list -> row_field
+
+val const_string : string -> constant

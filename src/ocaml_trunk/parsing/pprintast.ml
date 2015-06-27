@@ -332,7 +332,7 @@ class printer  ()= object(self:'self)
     | Ppat_alias (p, s) -> pp f "@[<2>%a@;as@;%a@]"
           self#pattern p protect_ident s.txt (* RA*)
     | Ppat_or (p1, p2) -> (* *)
-        pp f "@[<hov0>%a@]" (self#list ~sep:"@,|" self#pattern)
+        pp f "@[<hov0>%a@]" (self#list ~sep:"@\n,|@ " self#pattern)
            (list_of_pattern [] x)
     | _ -> self#pattern1 f x
   method pattern1 (f:Format.formatter) (x:pattern) :unit =
@@ -342,7 +342,7 @@ class printer  ()= object(self:'self)
            ({ txt = Lident("::") ;_},
             Some ({ppat_desc = Ppat_tuple([pat1; pat2]);_})); _}
             ->
-              pp f "%a::%a"  self#simple_pattern  pat1  pattern_list_helper pat2 (*RA*)
+              pp f "%a :: %a"  self#simple_pattern  pat1  pattern_list_helper pat2 (*RA*)
       | p -> self#pattern1 f p in
     if x.ppat_attributes <> [] then self#pattern f x
     else match x.ppat_desc with
@@ -386,6 +386,7 @@ class printer  ()= object(self:'self)
     | Ppat_tuple l -> pp f "@[<1>(%a)@]" (self#list  ~sep:"," self#pattern1)  l (* level1*)
     | Ppat_constant (c) -> pp f "%a" self#constant c
     | Ppat_interval (c1, c2) -> pp f "%a..%a" self#constant c1 self#constant c2
+    | Ppat_construct (li, None) -> pp f "%a" self#longident_loc li
     | Ppat_variant (l,None) ->  pp f "`%s" l
     | Ppat_constraint (p, ct) ->
         pp f "@[<2>(%a@;:@;%a)@]" self#pattern1 p self#core_type ct
@@ -1044,6 +1045,7 @@ class printer  ()= object(self:'self)
     | PPat (x, Some e) ->
       pp f "?"; self#pattern f x;
       pp f " when "; self#expression f e
+    | PCustom _ -> ()
 
   (* transform [f = fun g h -> ..] to [f g h = ... ] could be improved *)
   method binding f {pvb_pat=p; pvb_expr=x; _} =
@@ -1344,7 +1346,7 @@ class printer  ()= object(self:'self)
 
   method case_list f l : unit =
     let aux f {pc_lhs; pc_guard; pc_rhs} =
-      pp f "@;| @[<2>%a%a@;->@;%a@]"
+      pp f "@\n| @[<2>%a%a@;->@;%a@]"
         self#pattern pc_lhs (self#option self#expression ~first:"@;when@;") pc_guard self#under_pipe#expression pc_rhs in
     self#list aux f l ~sep:""
   method label_x_expression_param f (l,e) =
@@ -1421,3 +1423,5 @@ let core_type=default#core_type
 let pattern=default#pattern
 let signature=default#signature
 let structure=default#structure
+
+let case_list = default#case_list

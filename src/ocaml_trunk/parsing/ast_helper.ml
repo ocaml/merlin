@@ -481,3 +481,7 @@ module Cstr = struct
     }
 end
 
+(** merlin addition *)
+let rtag ?(attrs=[]) label bool lst = Rtag (label, attrs, bool, lst)
+
+let const_string s = Const_string (s, None)
