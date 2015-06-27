@@ -73,7 +73,7 @@ let step_nt (type a) is_rec (nt : a nonterminal_class) (v : a) =
   | N_labeled_simple_expr, (_,e)  -> default, [Eval e]
   | N_label_ident, (_,e)          -> default, [Eval e]
   | N_label_expr, (_,e)           -> default, [Eval e]
-  | N_let_bindings, e             -> default, [Bindings (is_rec,e)]
+  (*FIXME| N_let_bindings, e             -> default, [Bindings (is_rec,e)]*)
   | N_expr_semi_list, el          -> default, List.map (fun e -> Eval e) el
   | N_expr_comma_list, el         -> default, List.map (fun e -> Eval e) el
   | N_interface, sg               -> default, [Signature sg]

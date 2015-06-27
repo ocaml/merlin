@@ -203,60 +203,67 @@ let string_of_token : type a. a token_class -> string = function
 let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_with_type_binder                  -> "with_type_binder"
   | N_with_extensions                   -> "with_extensions"
-  | N_with_constraints                  -> "with_constraints"
   | N_with_constraint                   -> "with_constraint"
+  | N_with_constraints                  -> "with_constraints"
   | N_virtual_flag                      -> "virtual_flag"
-  | N_value_type                        -> "value_type"
   | N_value                             -> "value"
+  | N_value_type                        -> "value_type"
+  | N_value_description                 -> "value_description"
   | N_val_longident                     -> "val_longident"
   | N_val_ident                         -> "val_ident"
   | N_typevar_list                      -> "typevar_list"
   | N_type_variance                     -> "type_variance"
   | N_type_variable                     -> "type_variable"
+  | N_type_parameter                    -> "type_parameter"
   | N_type_parameters                   -> "type_parameters"
   | N_type_parameter_list               -> "type_parameter_list"
-  | N_type_parameter                    -> "type_parameter"
   | N_type_longident                    -> "type_longident"
   | N_type_kind                         -> "type_kind"
-  | N_type_declarations                 -> "type_declarations"
   | N_type_declaration                  -> "type_declaration"
+  | N_type_declarations                 -> "type_declarations"
   | N_type_constraint                   -> "type_constraint"
   | N_toplevel_directives               -> "toplevel_directives"
   | N_tag_field                         -> "tag_field"
   | N_subtractive                       -> "subtractive"
-  | N_structure_head                    -> "structure_head"
   | N_structure_tail                    -> "structure_tail"
-  | N_structure_item                    -> "structure_item"
   | N_structure                         -> "structure"
-  | N_strict_binding                    -> "strict_binding"
+  | N_structure_item                    -> "structure_item"
+  | N_structure_head                    -> "structure_head"
   | N_str_type_extension                -> "str_type_extension"
+  | N_str_include_statement             -> "str_include_statement"
+  | N_strict_binding                    -> "strict_binding"
   | N_str_extension_constructors        -> "str_extension_constructors"
   | N_str_exception_declaration         -> "str_exception_declaration"
   | N_single_attr_id                    -> "single_attr_id"
-  | N_simple_pattern_not_ident          -> "simple_pattern_not_ident"
   | N_simple_pattern                    -> "simple_pattern"
+  | N_simple_pattern_not_ident          -> "simple_pattern_not_ident"
   | N_simple_labeled_expr_list          -> "simple_labeled_expr_list"
   | N_simple_expr                       -> "simple_expr"
-  | N_simple_core_type_or_tuple_no_attr -> "simple_core_type_or_tuple_no_attr"
+  | N_simple_core_type                  -> "simple_core_type"
   | N_simple_core_type_or_tuple         -> "simple_core_type_or_tuple"
+  | N_simple_core_type_or_tuple_no_attr -> "simple_core_type_or_tuple_no_attr"
   | N_simple_core_type_no_attr          -> "simple_core_type_no_attr"
   | N_simple_core_type2                 -> "simple_core_type2"
-  | N_simple_core_type                  -> "simple_core_type"
-  | N_signed_constant                   -> "signed_constant"
-  | N_signature_item                    -> "signature_item"
-  | N_signature                         -> "signature"
   | N_sig_type_extension                -> "sig_type_extension"
+  | N_signed_constant                   -> "signed_constant"
+  | N_signature                         -> "signature"
+  | N_signature_item                    -> "signature_item"
+  | N_sig_include_statement             -> "sig_include_statement"
   | N_sig_extension_constructors        -> "sig_extension_constructors"
   | N_sig_exception_declaration         -> "sig_exception_declaration"
   | N_seq_expr                          -> "seq_expr"
-  | N_row_field_list                    -> "row_field_list"
   | N_row_field                         -> "row_field"
+  | N_row_field_list                    -> "row_field_list"
   | N_record_expr                       -> "record_expr"
+  | N_rec_module_declarations           -> "rec_module_declarations"
+  | N_rec_module_declaration            -> "rec_module_declaration"
+  | N_rec_module_bindings               -> "rec_module_bindings"
+  | N_rec_module_binding                -> "rec_module_binding"
   | N_rec_flag                          -> "rec_flag"
-  | N_nonrec_flag                       -> "nonrec_flag"
   | N_private_virtual_flags             -> "private_virtual_flags"
   | N_private_flag                      -> "private_flag"
   | N_primitive_declaration             -> "primitive_declaration"
+  | N_primitive_declaration_body        -> "primitive_declaration_body"
   | N_post_item_attributes              -> "post_item_attributes"
   | N_post_item_attribute               -> "post_item_attribute"
   | N_poly_type                         -> "poly_type"
@@ -264,106 +271,110 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_payload                           -> "payload"
   | N_pattern_var                       -> "pattern_var"
   | N_pattern_semi_list                 -> "pattern_semi_list"
-  | N_pattern_comma_list                -> "pattern_comma_list"
   | N_pattern                           -> "pattern"
+  | N_pattern_comma_list                -> "pattern_comma_list"
   | N_parse_expression                  -> "parse_expression"
   | N_parent_binder                     -> "parent_binder"
+  | N_package_type                      -> "package_type"
   | N_package_type_cstrs                -> "package_type_cstrs"
   | N_package_type_cstr                 -> "package_type_cstr"
-  | N_package_type                      -> "package_type"
   | N_override_flag                     -> "override_flag"
+  | N_opt_semi                          -> "opt_semi"
+  | N_option_STRING_                    -> "option_STRING_"
   | N_optional_type_variable            -> "optional_type_variable"
   | N_optional_type_parameters          -> "optional_type_parameters"
-  | N_optional_type_parameter_list      -> "optional_type_parameter_list"
   | N_optional_type_parameter           -> "optional_type_parameter"
-  | N_option_STRING_                    -> "option_STRING_"
-  | N_opt_semi                          -> "opt_semi"
+  | N_optional_type_parameter_list      -> "optional_type_parameter_list"
   | N_opt_default                       -> "opt_default"
   | N_opt_bar                           -> "opt_bar"
   | N_opt_assign_arrow                  -> "opt_assign_arrow"
   | N_opt_ampersand                     -> "opt_ampersand"
   | N_operator                          -> "operator"
   | N_open_statement                    -> "open_statement"
+  | N_nonrec_flag                       -> "nonrec_flag"
   | N_newtype                           -> "newtype"
-  | N_name_tag_list                     -> "name_tag_list"
   | N_name_tag                          -> "name_tag"
+  | N_name_tag_list                     -> "name_tag_list"
   | N_mutable_flag                      -> "mutable_flag"
   | N_mty_longident                     -> "mty_longident"
   | N_module_type                       -> "module_type"
-  | N_module_rec_declarations           -> "module_rec_declarations"
-  | N_module_rec_declaration            -> "module_rec_declaration"
+  | N_module_type_declaration           -> "module_type_declaration"
+  | N_module_type_declaration_body      -> "module_type_declaration_body"
   | N_module_expr                       -> "module_expr"
   | N_module_declaration                -> "module_declaration"
-  | N_module_bindings                   -> "module_bindings"
-  | N_module_binding_body               -> "module_binding_body"
+  | N_module_declaration_body           -> "module_declaration_body"
   | N_module_binding                    -> "module_binding"
+  | N_module_binding_body               -> "module_binding_body"
+  | N_module_alias                      -> "module_alias"
   | N_mod_longident                     -> "mod_longident"
   | N_mod_ext_longident                 -> "mod_ext_longident"
   | N_method_                           -> "method_"
   | N_meth_list                         -> "meth_list"
   | N_match_cases                       -> "match_cases"
   | N_match_case                        -> "match_case"
+  | N_lwt_bindings                      -> "lwt_bindings"
+  | N_lwt_binding                       -> "lwt_binding"
   | N_lident_list                       -> "lident_list"
   | N_let_pattern                       -> "let_pattern"
   | N_let_bindings                      -> "let_bindings"
-  | N_let_binding_                      -> "let_binding_"
   | N_let_binding                       -> "let_binding"
-  | N_let_bindings_no_attrs             -> "let_bindings_no_attrs"
+  | N_let_binding_body                  -> "let_binding_body"
   | N_lbl_pattern_list                  -> "lbl_pattern_list"
   | N_lbl_pattern                       -> "lbl_pattern"
   | N_lbl_expr_list                     -> "lbl_expr_list"
   | N_lbl_expr                          -> "lbl_expr"
-  | N_labeled_simple_pattern            -> "labeled_simple_pattern"
-  | N_labeled_simple_expr               -> "labeled_simple_expr"
   | N_label_var                         -> "label_var"
   | N_label_longident                   -> "label_longident"
   | N_label_let_pattern                 -> "label_let_pattern"
+  | N_label                             -> "label"
   | N_label_ident                       -> "label_ident"
   | N_label_expr                        -> "label_expr"
+  | N_labeled_simple_pattern            -> "labeled_simple_pattern"
+  | N_labeled_simple_expr               -> "labeled_simple_expr"
   | N_label_declarations                -> "label_declarations"
+  | N_label_declaration_semi            -> "label_declaration_semi"
   | N_label_declaration                 -> "label_declaration"
-  | N_label                             -> "label"
   | N_item_extension                    -> "item_extension"
   | N_interface                         -> "interface"
-  | N_index_operator_core               -> "index_operator_core"
   | N_index_operator                    -> "index_operator"
+  | N_index_operator_core               -> "index_operator_core"
   | N_implementation                    -> "implementation"
   | N_ident                             -> "ident"
   | N_generalized_constructor_arguments -> "generalized_constructor_arguments"
+  | N_fun_def                           -> "fun_def"
   | N_functor_args                      -> "functor_args"
   | N_functor_arg_name                  -> "functor_arg_name"
   | N_functor_arg                       -> "functor_arg"
-  | N_fun_def                           -> "fun_def"
   | N_fun_binding                       -> "fun_binding"
   | N_floating_attribute                -> "floating_attribute"
+  | N_field                             -> "field"
   | N_field_expr_list                   -> "field_expr_list"
   | N_field_expr                        -> "field_expr"
-  | N_field                             -> "field"
+  | N_extension                         -> "extension"
   | N_extension_constructor_rebind      -> "extension_constructor_rebind"
   | N_extension_constructor_declaration -> "extension_constructor_declaration"
-  | N_extension                         -> "extension"
   | N_ext_attributes                    -> "ext_attributes"
   | N_expr_semi_list                    -> "expr_semi_list"
   | N_expr_open                         -> "expr_open"
-  | N_expr_comma_list                   -> "expr_comma_list"
-  | N_expr_comma_opt_list               -> "expr_comma_opt_list"
   | N_expr                              -> "expr"
+  | N_expr_comma_opt_list               -> "expr_comma_opt_list"
+  | N_expr_comma_list                   -> "expr_comma_list"
   | N_dummy                             -> "dummy"
   | N_direction_flag                    -> "direction_flag"
+  | N_core_type_no_attr                 -> "core_type_no_attr"
   | N_core_type_list_no_attr            -> "core_type_list_no_attr"
   | N_core_type_list                    -> "core_type_list"
+  | N_core_type                         -> "core_type"
   | N_core_type_comma_list              -> "core_type_comma_list"
   | N_core_type2                        -> "core_type2"
-  | N_core_type                         -> "core_type"
-  | N_core_type_no_attr                 -> "core_type_no_attr"
   | N_constructor_declarations          -> "constructor_declarations"
   | N_constructor_declaration           -> "constructor_declaration"
   | N_constructor_arguments             -> "constructor_arguments"
+  | N_constr_longident                  -> "constr_longident"
+  | N_constr_ident                      -> "constr_ident"
   | N_constraints                       -> "constraints"
   | N_constrain_field                   -> "constrain_field"
   | N_constrain                         -> "constrain"
-  | N_constr_longident                  -> "constr_longident"
-  | N_constr_ident                      -> "constr_ident"
   | N_constant                          -> "constant"
   | N_clty_longident                    -> "clty_longident"
   | N_class_type_parameters             -> "class_type_parameters"
@@ -388,9 +399,20 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_class_description                 -> "class_description"
   | N_class_declarations                -> "class_declarations"
   | N_class_declaration                 -> "class_declaration"
+  | N_bar_extension_constructor_rebind  -> "bar_extension_constructor_rebind"
+  | N_bar_extension_constructor_declaration -> "bar_extension_constructor_declaration"
+  | N_bar_constructor_declaration       -> "bar_constructor_declaration"
+  | N_attr_id                           -> "attr_id"
   | N_attributes                        -> "attributes"
   | N_attribute                         -> "attribute"
-  | N_attr_id                           -> "attr_id"
+  | N_and_type_declaration              -> "and_type_declaration"
+  | N_and_module_declaration            -> "and_module_declaration"
+  | N_and_module_binding                -> "and_module_binding"
+  | N_and_lwt_binding                   -> "and_lwt_binding"
+  | N_and_let_binding                   -> "and_let_binding"
+  | N_and_class_type_declaration        -> "and_class_type_declaration"
+  | N_and_class_description             -> "and_class_description"
+  | N_and_class_declaration             -> "and_class_declaration"
   | N_amper_type_list                   -> "amper_type_list"
   | N_additive                          -> "additive"
 
@@ -844,6 +866,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_virtual_flag                      -> 1, Asttypes.Concrete
   | N_value_type                        ->
     raise Not_found (*(string * Asttypes.mutable_flag * Asttypes.virtual_flag * Parsetree.core_type) nonterminal_class*)
+  | N_value_description -> raise Not_found
   | N_value                             ->
     raise Not_found (*(string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal_class*)
   | N_val_longident                     -> 1, default_longident
@@ -858,7 +881,9 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     raise Not_found (*(Longident.t) nonterminal_class*)
   | N_type_kind                         ->
     raise Not_found (*(Parsetree.type_kind * Asttypes.private_flag * Parsetree.core_type option) nonterminal_class*)
-  | N_type_declarations                 -> 0, []
+(*  | N_type_declarations                 -> 0, []*)
+  | N_type_declarations                 ->
+    raise Not_found
   | N_type_declaration                  ->
     raise Not_found (*(Parsetree.type_declaration) nonterminal_class*)
   | N_type_constraint                   -> 1, (None, None)
@@ -873,6 +898,8 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_strict_binding                    -> 1, default_expr
   | N_str_type_extension                ->
     raise Not_found (*(Parsetree.type_extension) nonterminal_class*)
+  | N_str_include_statement             ->
+    raise Not_found
   | N_str_extension_constructors        -> 0, []
   | N_str_exception_declaration         ->
     raise Not_found (*(Parsetree.extension_constructor) nonterminal_class*)
@@ -891,6 +918,8 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_signature                         -> 0, []
   | N_sig_type_extension                ->
     raise Not_found (*(Parsetree.type_extension) nonterminal_class*)
+  | N_sig_include_statement             ->
+    raise Not_found
   | N_sig_extension_constructors        -> 0, []
   | N_sig_exception_declaration         ->
     raise Not_found (*(Parsetree.extension_constructor) nonterminal_class*)
@@ -904,7 +933,8 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_private_virtual_flags             ->
     raise Not_found (*(Asttypes.private_flag * Asttypes.virtual_flag) nonterminal_class*)
   | N_private_flag                      -> 1, Asttypes.Public
-  | N_primitive_declaration             -> 0, []
+  | N_primitive_declaration_body        -> raise Not_found
+  | N_primitive_declaration             -> raise Not_found
   | N_post_item_attributes              -> 0, []
   | N_post_item_attribute               -> 1, (Location.mknoloc "", default_payload)
   | N_poly_type                         -> 1, default_type
@@ -939,13 +969,18 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_mutable_flag                      -> 1, Asttypes.Immutable
   | N_mty_longident                     -> 2, default_longident
   | N_module_type                       -> 1, default_module_type
-  | N_module_rec_declarations           -> 0, []
-  | N_module_rec_declaration            -> 1, default_module_decl
+  | N_module_type_declaration_body      -> raise Not_found
+  | N_module_type_declaration           -> raise Not_found
+  | N_rec_module_declarations           -> 0, []
+  | N_rec_module_declaration            -> 1, default_module_decl
   | N_module_expr                       -> 1, default_module_expr
-  | N_module_declaration                -> 1, default_module_type
-  | N_module_bindings                   -> 0, []
+  | N_module_declaration_body           -> raise Not_found
+  | N_module_declaration                -> raise Not_found
+  | N_rec_module_binding                -> 0, default_module_bind
+  | N_rec_module_bindings               -> 0, []
   | N_module_binding_body               -> 1, default_module_expr
   | N_module_binding                    -> 1, default_module_bind
+  | N_module_alias                      -> raise Not_found
   | N_mod_longident                     -> 2, default_longident
   | N_mod_ext_longident                 -> 2, default_longident
   | N_method_                           ->
@@ -957,11 +992,16 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     1, Ast_helper.Exp.case default_pattern default_expr
   | N_lident_list                       -> 0, []
   | N_let_pattern                       -> 0, default_pattern
-  | N_let_bindings                      -> 0, []
-  | N_let_bindings_no_attrs             -> 0, []
-  | N_let_binding_                      -> 1, (default_pattern, default_expr)
-  | N_let_binding                       ->
-    1, Ast_helper.Vb.mk default_pattern default_expr
+(*  | N_let_bindings                      -> 0, []*)
+(*  | N_let_bindings_no_attrs             -> 0, []*)
+(*  | N_let_binding_                      -> 1, (default_pattern, default_expr)*)
+(*  | N_let_binding                       ->*)
+(*    1, Ast_helper.Vb.mk default_pattern default_expr*)
+  | N_lwt_bindings                      -> raise Not_found
+  | N_lwt_binding                       -> raise Not_found
+  | N_let_bindings                      -> raise Not_found
+  | N_let_binding_body                  -> raise Not_found
+  | N_let_binding                       -> raise Not_found
   | N_lbl_pattern_list                  -> 1, ([], Asttypes.Closed)
   | N_lbl_pattern                       -> 2, (default_longident_loc, default_pattern)
   | N_lbl_expr_list                     -> 0, []
@@ -974,11 +1014,10 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_label_ident                       -> 2, ("", default_expr)
   | N_label_expr                        -> 1, (Asttypes.Nolabel, default_expr)
   | N_label_declarations                -> 0, []
-  | N_label_declaration                 ->
-    raise Not_found (*(Parsetree.label_declaration) nonterminal_class*)
+  | N_label_declaration_semi            -> raise Not_found
+  | N_label_declaration                 -> raise Not_found
   | N_label                             -> 1, ""
-  | N_item_extension                    ->
-    raise Not_found (*(Parsetree.extension) nonterminal_class*)
+  | N_item_extension                    -> raise Not_found
   | N_interface                         -> 0, []
   | N_index_operator_core               -> 0, ".()"
   | N_index_operator                    -> 0, ".()"
@@ -1029,7 +1068,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_clty_longident                    -> 2, default_longident
   | N_class_type_parameters             -> 0, []
   | N_class_type_declarations           -> 0, []
-  | N_class_type_declaration            -> 0, []
+  | N_class_type_declaration            -> raise Not_found
   | N_class_type                        ->
     raise Not_found (*(Parsetree.class_type) nonterminal_class*)
   | N_class_structure                   ->
@@ -1058,13 +1097,24 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_class_expr                        ->
     raise Not_found (*(Parsetree.class_expr) nonterminal_class*)
   | N_class_descriptions                -> 0, []
-  | N_class_description                 -> 0, []
+  | N_class_description                 -> raise Not_found
   | N_class_declarations                -> 0, []
-  | N_class_declaration                 -> 0, []
+  | N_class_declaration                 -> raise Not_found
+  | N_bar_extension_constructor_rebind  -> raise Not_found
+  | N_bar_extension_constructor_declaration -> raise Not_found
+  | N_bar_constructor_declaration       -> raise Not_found
   | N_attributes                        -> 0, []
   | N_attribute                         -> 1, default_attribute
   | N_attr_id                           ->
     raise Not_found (*(string Asttypes.loc) nonterminal_class*)
+  | N_and_type_declaration              -> raise Not_found
+  | N_and_module_declaration            -> raise Not_found
+  | N_and_module_binding                -> raise Not_found
+  | N_and_lwt_binding                   -> raise Not_found
+  | N_and_let_binding                   -> raise Not_found
+  | N_and_class_type_declaration        -> raise Not_found
+  | N_and_class_description             -> raise Not_found
+  | N_and_class_declaration             -> raise Not_found
   | N_amper_type_list                   -> 0, []
   | N_additive                          -> 1, "+"
 
@@ -1264,6 +1314,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_with_constraint                   -> Some "constraint"
   | N_virtual_flag                      -> None
   | N_value_type                        -> Some "value definition"
+  | N_value_description                 -> Some "value definition"
   | N_value                             -> Some "object value"
   | N_val_longident                     -> None
   | N_val_ident                         -> None
@@ -1289,6 +1340,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_str_type_extension                -> None
   | N_str_extension_constructors        -> None
   | N_str_exception_declaration         -> None
+  | N_str_include_statement             -> None
   | N_single_attr_id                    -> None
   | N_simple_pattern_not_ident          -> Some "pattern"
   | N_simple_pattern                    -> Some "pattern"
@@ -1303,16 +1355,22 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_signature_item                    -> Some "any declaration"
   | N_signature                         -> Some "signature"
   | N_sig_type_extension                -> None
+  | N_sig_include_statement             -> None
   | N_sig_extension_constructors        -> None
   | N_sig_exception_declaration         -> None
   | N_seq_expr                          -> Some "expression"
   | N_row_field_list                    -> None
   | N_row_field                         -> Some "row field"
   | N_record_expr                       -> None
+  | N_rec_module_declarations           -> None
+  | N_rec_module_declaration            -> None
+  | N_rec_module_bindings               -> None
+  | N_rec_module_binding                -> None
   | N_rec_flag                          -> None
   | N_nonrec_flag                       -> None
   | N_private_virtual_flags             -> None
   | N_private_flag                      -> None
+  | N_primitive_declaration_body        -> Some "primitive declaration"
   | N_primitive_declaration             -> Some "primitive declaration"
   | N_post_item_attributes              -> None
   | N_post_item_attribute               -> None
@@ -1347,13 +1405,14 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_mutable_flag                      -> None
   | N_mty_longident                     -> None
   | N_module_type                       -> Some "module type"
-  | N_module_rec_declarations           -> None
-  | N_module_rec_declaration            -> Some "module declaration"
+  | N_module_type_declaration           -> Some "module type declaration"
+  | N_module_type_declaration_body      -> Some "module type declaration"
   | N_module_expr                       -> Some "module expression"
   | N_module_declaration                -> Some "module declaration"
-  | N_module_bindings                   -> None
+  | N_module_declaration_body           -> Some "module declaration"
   | N_module_binding_body               -> None
   | N_module_binding                    -> Some "module binding"
+  | N_module_alias                      -> Some "module alias"
   | N_mod_longident                     -> None
   | N_mod_ext_longident                 -> None
   | N_method_                           -> None
@@ -1361,11 +1420,12 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_match_cases                       -> None
   | N_match_case                        -> Some "match case"
   | N_lident_list                       -> None
+  | N_lwt_bindings                      -> None
+  | N_lwt_binding                       -> Some "binding"
   | N_let_pattern                       -> None
   | N_let_bindings                      -> None
-  | N_let_binding_                      -> None
   | N_let_binding                       -> Some "binding"
-  | N_let_bindings_no_attrs             -> None
+  | N_let_binding_body                  -> Some "binding"
   | N_lbl_pattern_list                  -> None
   | N_lbl_pattern                       -> Some "labeled pattern"
   | N_lbl_expr_list                     -> Some "field list"
@@ -1379,6 +1439,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_label_expr                        -> Some "labelled expression"
   | N_label_declarations                -> None
   | N_label_declaration                 -> Some "label declaration"
+  | N_label_declaration_semi            -> Some "label declaration"
   | N_label                             -> Some "label"
   | N_item_extension                    -> None
   | N_interface                         -> None
@@ -1445,12 +1506,22 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_class_description                 -> Some "class description"
   | N_class_declarations                -> None
   | N_class_declaration                 -> Some "class declaration"
+  | N_bar_extension_constructor_rebind  -> None
+  | N_bar_extension_constructor_declaration -> None
+  | N_bar_constructor_declaration       -> None
   | N_attributes                        -> None
   | N_attribute                         -> None
   | N_attr_id                           -> None
+  | N_and_type_declaration              -> Some "type declaration"
+  | N_and_module_declaration            -> Some "module declaration"
+  | N_and_module_binding                -> Some "module binding"
+  | N_and_lwt_binding                   -> Some "binding"
+  | N_and_let_binding                   -> Some "binding"
+  | N_and_class_type_declaration        -> Some "class type declaration"
+  | N_and_class_description             -> Some "class description"
+  | N_and_class_declaration             -> Some "class declaration"
   | N_amper_type_list                   -> None
   | N_additive                          -> None
-
 
 let friendly_name = function
   | CT_ (t,_) -> friendly_name_of_token t

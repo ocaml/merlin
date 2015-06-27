@@ -106,3 +106,18 @@ let location_union a b =
     in
     { loc_start ; loc_end ; loc_ghost = a.loc_ghost && b.loc_ghost }
 
+open Parsetree
+
+type let_binding =
+  { lb_pattern: pattern;
+    lb_expression: expression;
+    lb_attributes: attributes;
+    lb_loc: Location.t; }
+
+type let_bindings =
+  { lbs_bindings: let_binding list;
+    lbs_rec: Asttypes.rec_flag;
+    lbs_extension: string Asttypes.loc option;
+    lbs_attributes: attributes;
+    lbs_loc: Location.t;
+  }
