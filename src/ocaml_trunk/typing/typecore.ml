@@ -1215,6 +1215,8 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
         pat_attributes = sp.ppat_attributes;
         pat_env = !env }
   | Ppat_record(lid_sp_list, closed) ->
+    let label_list_for_recovery = ref [] in
+    begin try
       if lid_sp_list = [] then
         Syntaxerr.ill_formed_ast loc "Records cannot be empty.";
       let opath, record_ty =
@@ -1251,6 +1253,7 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
           (type_label_a_list ?labels loc false !env type_label_pat opath)
           lid_sp_list
       in
+      label_list_for_recovery := lbl_pat_list;
       check_recordpat_labels loc lbl_pat_list closed;
       unify_pat_types loc !env record_ty expected_ty;
       rp {
@@ -1259,6 +1262,17 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
         pat_type = expected_ty;
         pat_attributes = sp.ppat_attributes;
         pat_env = !env }
+      with exn when can_recover exn ->
+        (* FIXME: We don't respect the Cmt_format.save_types logic but we still
+                  keep all patterns, so nothing should have been lost. *)
+        rp {
+          pat_desc = Tpat_record (!label_list_for_recovery, closed);
+          pat_loc = loc; pat_extra=[];
+          pat_type = expected_ty;
+          pat_attributes = merlin_incorrect_attribute :: sp.ppat_attributes;
+          (* FIXME: do we want [!env] here or a copy of the initial env? *)
+          pat_env = !env }
+    end
   | Ppat_array spl ->
       let ty_elt = newvar() in
       unify_pat_types
@@ -2165,6 +2179,9 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
           exp_env = env }
       end
   | Pexp_record(lid_sexp_list, opt_sexp) ->
+    let opt_exp_for_recovery = ref None in
+    let label_list_for_recovery = ref [] in
+    begin try
       if lid_sexp_list = [] then
         Syntaxerr.ill_formed_ast loc "Records cannot be empty.";
       let opt_exp =
@@ -2213,6 +2230,7 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
              opath)
           lid_sexp_list
       in
+      label_list_for_recovery := lbl_exp_list;
       unify_exp_types loc env ty_record (instance env ty_expected);
 
       (* type_label_a_list returns a list of labels sorted by lbl_pos *)
@@ -2225,7 +2243,6 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
             check_duplicates rem
         | [] -> ()
       in
-      check_duplicates lbl_exp_list;
       let opt_exp =
         match opt_exp, lbl_exp_list with
           None, _ -> None
@@ -2247,6 +2264,8 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
             Some {exp with exp_type = ty_exp}
         | _ -> assert false
       in
+      opt_exp_for_recovery := opt_exp;
+      check_duplicates lbl_exp_list;
       let num_fields =
         match lbl_exp_list with [] -> assert false
         | (_, lbl,_)::_ -> Array.length lbl.lbl_all in
@@ -2271,6 +2290,19 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
         exp_type = instance env ty_expected;
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
+      with exn ->
+      (* FIXME: We don't respect the Cmt_format.save_types logic but we still
+                  keep all patterns, so nothing should have been lost. *)
+      Typing_aux.erroneous_type_register ty_expected;
+      Typing_aux.raise_error exn;
+      re {
+        exp_desc = Texp_record(!label_list_for_recovery, !opt_exp_for_recovery);
+        exp_loc = loc; exp_extra = [];
+        exp_type = instance env ty_expected;
+        exp_attributes = merlin_incorrect_attribute :: sexp.pexp_attributes;
+        exp_env = env
+      }
+    end
   | Pexp_field(srecord, lid) ->
       let (record, label, _) = type_label_access env loc srecord lid in
       let (_, ty_arg, ty_res) = instance_label false label in
@@ -2590,8 +2622,17 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
                 Some (List.fold_left collect_fields [] fields)
              | _ -> None
         in
-        raise(Error(e.pexp_loc, env,
-                    undefined_method obj.exp_type met valid_methods))
+        Typing_aux.erroneous_type_register ty_expected;
+        Typing_aux.raise_error
+          (Error(e.pexp_loc, env,
+                 undefined_method obj.exp_type met valid_methods));
+        rue {
+          exp_desc = Texp_send(obj, Tmeth_name met, None);
+          exp_loc = loc; exp_extra = [];
+          exp_type = ty_expected;
+          exp_attributes = merlin_recovery_attributes sexp.pexp_attributes;
+          exp_env = env;
+        }
       end
   | Pexp_new cl ->
       let (cl_path, cl_decl) = Typetexp.find_class env loc cl.txt in
@@ -3346,7 +3387,8 @@ and type_application env funct sargs =
            (List.rev args),
          instance env (result_type omitted ty_fun))
     | (l1, sarg1) :: sargl ->
-        let (ty1, ty2) =
+      let (ty1, ty2) =
+        try
           let ty_fun = expand_head env ty_fun in
           match ty_fun.desc with
             Tvar _ ->
@@ -3357,7 +3399,8 @@ and type_application env funct sargs =
                     false
                 | _ -> true
               in
-              if ty_fun.level >= t1.level && not_identity funct.exp_desc then
+              if ty_fun.level >= t1.level && not_identity funct.exp_desc
+                 && not (Typing_aux.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
@@ -3368,16 +3411,19 @@ and type_application env funct sargs =
               let ty_fun =
                 match td with Tarrow _ -> newty td | _ -> ty_fun in
               let ty_res = result_type (omitted @ !ignored) ty_fun in
+              Typing_aux.weak_raise  @@
               match ty_res.desc with
-                Tarrow _ ->
-                  if (Clflags.classic () || not (has_label l1 ty_fun)) then
-                    raise (Error(sarg1.pexp_loc, env,
-                                 apply_wrong_label l1 ty_res))
-                  else
-                    raise (Error(funct.exp_loc, env, Incoherent_label_order))
+              | Tarrow _ ->
+                if (Clflags.classic () || not (has_label l1 ty_fun)) then
+                  Error (sarg1.pexp_loc, env,
+                         apply_wrong_label l1 ty_res)
+                else
+                  Error (funct.exp_loc, env, Incoherent_label_order)
               | _ ->
-                  raise(Error(funct.exp_loc, env, apply_non_function
-                                (expand_head env funct.exp_type)))
+                Error (funct.exp_loc, env, apply_non_function
+                         (expand_head env funct.exp_type))
+        with Typing_aux.Weak_error _ ->
+          newvar(), ty_fun
         in
         let optional = if is_optional l1 then Optional else Required in
         let arg1 () =
