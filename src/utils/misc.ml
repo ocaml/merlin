@@ -102,7 +102,7 @@ let rec expand_glob ~filter acc root = function
         then append (filename :: acc) filename
         else acc
       in
-      Array.fold_left process acc items
+      Array.fold_left process (root :: acc) items
     in
     append acc root
   | [Glob.Exact component] :: tl ->
