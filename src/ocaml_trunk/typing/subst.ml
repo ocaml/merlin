@@ -36,17 +36,28 @@ let add_modtype id ty s = { s with modtypes = Tbl.add id ty s.modtypes }
 let for_saving s = { s with for_saving = true }
 
 let loc s x =
-  if s.for_saving && not (Clflags.keep_locs ()) then Location.none else x
+  if s.for_saving && not !Clflags.keep_locs then Location.none else x
 
 let remove_loc =
   let open Ast_mapper in
   {default_mapper with location = (fun _this _loc -> Location.none)}
 
-let attrs s x =
-  if s.for_saving && not (Clflags.keep_locs ())
-  then remove_loc.Ast_mapper.attributes remove_loc x
-  else x
+let is_not_doc = function
+  | ({Location.txt = "ocaml.doc"}, _) -> false
+  | ({Location.txt = "ocaml.text"}, _) -> false
+  | ({Location.txt = "doc"}, _) -> false
+  | ({Location.txt = "text"}, _) -> false
+  | _ -> true
 
+let attrs s x =
+  let x =
+    if s.for_saving && not !Clflags.keep_docs then
+      List.filter is_not_doc x
+    else x
+  in
+    if s.for_saving && not !Clflags.keep_locs
+    then remove_loc.Ast_mapper.attributes remove_loc x
+    else x
 
 let rec module_path s = function
     Pident id as p ->
@@ -315,7 +326,7 @@ let extension_constructor s ext =
       ext_args = constructor_arguments s ext.ext_args;
       ext_ret_type = may_map (typexp s) ext.ext_ret_type;
       ext_private = ext.ext_private;
-      ext_attributes = ext.ext_attributes;
+      ext_attributes = attrs s ext.ext_attributes;
       ext_loc = if s.for_saving then Location.none else ext.ext_loc; }
   in
     cleanup_types ();
@@ -352,7 +363,7 @@ let rec modtype s = function
           fatal_error "Subst.modtype"
       end
   | Mty_signature sg ->
-      Mty_signature (lazy (signature s (Lazy.force sg)))
+      Mty_signature(signature s sg)
   | Mty_functor(id, arg, res) ->
       let id' = Ident.rename id in
       Mty_functor(id', may_map (modtype s) arg,

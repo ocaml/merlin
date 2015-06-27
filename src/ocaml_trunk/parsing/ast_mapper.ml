@@ -179,6 +179,7 @@ module CT = struct
   let map sub {pcty_loc = loc; pcty_desc = desc; pcty_attributes = attrs} =
     let open Cty in
     let loc = sub.location sub loc in
+    let attrs = sub.attributes sub attrs in
     match desc with
     | Pcty_constr (lid, tys) ->
         constr ~loc ~attrs (map_loc sub lid) (List.map (sub.typ sub) tys)
@@ -191,6 +192,7 @@ module CT = struct
     =
     let open Ctf in
     let loc = sub.location sub loc in
+    let attrs = sub.attributes sub attrs in
     match desc with
     | Pctf_inherit ct -> inherit_ ~loc ~attrs (sub.class_type sub ct)
     | Pctf_val (s, m, v, t) -> val_ ~loc ~attrs s m v (sub.typ sub t)
@@ -415,6 +417,7 @@ module CE = struct
   let map sub {pcl_loc = loc; pcl_desc = desc; pcl_attributes = attrs} =
     let open Cl in
     let loc = sub.location sub loc in
+    let attrs = sub.attributes sub attrs in
     match desc with
     | Pcl_constr (lid, tys) ->
         constr ~loc ~attrs (map_loc sub lid) (List.map (sub.typ sub) tys)
@@ -442,6 +445,7 @@ module CE = struct
   let map_field sub {pcf_desc = desc; pcf_loc = loc; pcf_attributes = attrs} =
     let open Cf in
     let loc = sub.location sub loc in
+    let attrs = sub.attributes sub attrs in
     match desc with
     | Pcf_inherit (o, ce, s) -> inherit_ ~loc ~attrs o (sub.class_expr sub ce) s
     | Pcf_val (s, m, k) -> val_ ~loc ~attrs (map_loc sub s) m (map_kind sub k)
@@ -619,7 +623,7 @@ let default_mapper =
       );
   }
 
-let rec extension_of_error {err_loc = loc; msg; if_highlight; sub} =
+let rec extension_of_error {loc; msg; if_highlight; sub} =
   { loc; txt = "ocaml.error" },
   PStr ([Str.eval (Exp.constant (Const_string (msg, None)));
          Str.eval (Exp.constant (Const_string (if_highlight, None)))] @
@@ -690,11 +694,11 @@ module PpxContext = struct
     let fields =
       [
         lid "tool_name",    make_string tool_name;
-        lid "include_dirs", make_list make_string (Clflags.include_dirs ());
-        lid "load_path",    make_list make_string (Misc.Path_list.to_strict_list !Config.load_path);
-        lid "open_modules", make_list make_string (Clflags.open_modules ());
-        lid "for_package",  make_option make_string (Clflags.for_package ());
-        lid "debug",        make_bool (Clflags.debug ());
+        lid "include_dirs", make_list make_string !Clflags.include_dirs;
+        lid "load_path",    make_list make_string !Config.load_path;
+        lid "open_modules", make_list make_string !Clflags.open_modules;
+        lid "for_package",  make_option make_string !Clflags.for_package;
+        lid "debug",        make_bool !Clflags.debug;
         get_cookies ()
       ]
     in
@@ -715,7 +719,7 @@ module PpxContext = struct
             raise_errorf
               "Internal error: invalid [@@@ocaml.ppx.context { %s }] string syntax"
               name
-      (*and get_bool pexp =
+      and get_bool pexp =
         match pexp with
         | {pexp_desc = Pexp_construct ({txt = Longident.Lident "true"}, None)} ->
             true
@@ -724,7 +728,7 @@ module PpxContext = struct
         | _ ->
             raise_errorf
               "Internal error: invalid [@@@ocaml.ppx.context { %s }] bool syntax"
-              name*)
+              name
       and get_list elem = function
         | {pexp_desc =
              Pexp_construct ({txt = Longident.Lident "::"},
@@ -744,7 +748,7 @@ module PpxContext = struct
             raise_errorf
               "Internal error: invalid [@@@ocaml.ppx.context { %s }] pair syntax"
               name
-      (*and get_option elem = function
+      and get_option elem = function
         | { pexp_desc =
               Pexp_construct ({ txt = Longident.Lident "Some" }, Some exp) } ->
             Some (elem exp)
@@ -754,12 +758,12 @@ module PpxContext = struct
         | _ ->
             raise_errorf
               "Internal error: invalid [@@@ocaml.ppx.context { %s }] option syntax"
-              name*)
+              name
       in
       match name with
       | "tool_name" ->
           tool_name_ref := get_string payload
-      (*| "include_dirs" ->
+      | "include_dirs" ->
           Clflags.include_dirs := get_list get_string payload
       | "load_path" ->
           Config.load_path := get_list get_string payload
@@ -768,7 +772,7 @@ module PpxContext = struct
       | "for_package" ->
           Clflags.for_package := get_option get_string payload
       | "debug" ->
-          Clflags.debug := get_bool payload*)
+          Clflags.debug := get_bool payload
       | "cookies" ->
           let l = get_list (get_pair get_string (fun x -> x)) payload in
           cookies :=
@@ -910,10 +914,3 @@ let run_main mapper =
 
 let register_function = ref (fun _name f -> run_main f)
 let register name f = !register_function name f
-
-(** merlin: manage all internal state *)
-
-type cache = Parsetree.expression StringMap.t
-
-let new_cache () = StringMap.empty
-let cache = cookies

@@ -53,7 +53,6 @@ val complete_constrs :
     pattern -> constructor_tag list -> constructor_description  list
 
 val pressure_variants: Env.t -> pattern list -> unit
-val check_partial: Location.t -> case list -> partial
 val check_partial_gadt:
     ((string, constructor_description) Hashtbl.t ->
      (string, label_description) Hashtbl.t ->
@@ -64,11 +63,3 @@ val check_unused: Env.t -> case list -> unit
 (* Irrefutability tests *)
 val irrefutable : pattern -> bool
 val fluid : pattern -> bool
-
-(*******************)
-(* Merlin specific *)
-(*******************)
-
-val complete_partial : pattern list list -> pattern option
-val return_unused: pattern list ->
-  [ `Unused of pattern | `Unused_subs of pattern * pattern list ] list

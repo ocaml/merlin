@@ -41,6 +41,9 @@ val type_self_pattern:
         (Ident.t * Asttypes.mutable_flag * Asttypes.virtual_flag * type_expr)
             Vars.t ref *
         Env.t * Env.t * Env.t
+val check_partial:
+        ?lev:int -> Env.t -> type_expr ->
+	Location.t -> Typedtree.case list -> Typedtree.partial
 val type_expect:
         ?in_function:(Location.t * type_expr) ->
         Env.t -> Parsetree.expression -> type_expr -> Typedtree.expression
@@ -57,9 +60,6 @@ val option_none: type_expr -> Location.t -> Typedtree.expression
 val extract_option_type: Env.t -> type_expr -> type_expr
 val iter_pattern: (Typedtree.pattern -> unit) -> Typedtree.pattern -> unit
 val generalizable: int -> type_expr -> bool
-
-type delayed_check
-val delayed_checks: delayed_check list ref
 val reset_delayed_checks: unit -> unit
 val force_delayed_checks: unit -> unit
 

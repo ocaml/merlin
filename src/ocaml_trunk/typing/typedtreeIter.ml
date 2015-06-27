@@ -81,6 +81,7 @@ module type IteratorArgument = sig
     val enter_type_declaration : type_declaration -> unit
     val leave_type_declaration : type_declaration -> unit
     val leave_type_declarations : rec_flag -> unit
+
       end
 
 module MakeIterator(Iter : IteratorArgument) : sig

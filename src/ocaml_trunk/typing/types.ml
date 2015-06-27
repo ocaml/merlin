@@ -234,7 +234,7 @@ type class_type_declaration =
 
 type module_type =
     Mty_ident of Path.t
-  | Mty_signature of signature Lazy.t
+  | Mty_signature of signature
   | Mty_functor of Ident.t * module_type option * module_type
   | Mty_alias of Path.t
 
@@ -266,7 +266,7 @@ and modtype_declaration =
 and rec_status =
     Trec_not                            (* first in a nonrecursive group *)
   | Trec_first                          (* first in a recursive group *)
-  | Trec_next                           (* not first in a recursive/recursive group *)
+  | Trec_next                           (* not first in a recursive/nonrecursive group *)
 
 and ext_status =
     Text_first                     (* first constructor of an extension *)

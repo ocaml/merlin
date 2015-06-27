@@ -267,6 +267,7 @@ and primitive_coercion =
     pc_desc: Primitive.description;
     pc_type: type_expr;
     pc_env: Env.t;
+    pc_loc : Location.t;
   }
 
 and signature = {
@@ -525,5 +526,3 @@ val mknoloc: 'a -> 'a Asttypes.loc
 val mkloc: 'a -> Location.t -> 'a Asttypes.loc
 
 val pat_bound_idents: pattern -> (Ident.t * string Asttypes.loc) list
-
-module Override : sig end

@@ -193,10 +193,12 @@ class printer  ()= object(self:'self)
     | Virtual -> pp f "virtual@;"
 
   (* trailing space added *)
-  method rec_flag f = function
+  method rec_flag f rf =
+    match rf with
     | Nonrecursive -> ()
     | Recursive -> pp f "rec "
-  method nonrec_flag f = function
+  method nonrec_flag f rf =
+    match rf with
     | Nonrecursive -> pp f "nonrec "
     | Recursive -> ()
   method direction_flag f = function
@@ -1264,7 +1266,8 @@ class printer  ()= object(self:'self)
     in
     let constructor_declaration f pcd =
       pp f "|@;";
-      self#constructor_declaration f (pcd.pcd_name.txt, pcd.pcd_args, pcd.pcd_res, pcd.pcd_attributes)
+      self#constructor_declaration f (pcd.pcd_name.txt, pcd.pcd_args,
+                                      pcd.pcd_res, pcd.pcd_attributes)
     in
     let repr f =
       let intro f =
@@ -1296,7 +1299,9 @@ class printer  ()= object(self:'self)
       pp f "@[<2>type %a%a +=%a@]%a"
          (fun f -> function
                 | [] -> ()
-                | l ->  pp f "%a@;" (self#list self#type_param ~first:"(" ~last:")" ~sep:",") l)
+                | l ->  pp f "%a@;" (self#list self#type_param ~first:"("
+                                               ~last:")" ~sep:",")
+                                    l)
          x.ptyext_params
          self#longident_loc x.ptyext_path
          (self#list ~sep:"" extension_constructor)
@@ -1315,7 +1320,7 @@ class printer  ()= object(self:'self)
           ) args
           self#attributes attrs
     | Some r ->
-      pp f "%s:@;%a@;%a" name
+        pp f "%s:@;%a@;%a" name
           (fun f -> function
              | Pcstr_tuple [] -> self#core_type1 f r
              | Pcstr_tuple l -> pp f "%a@;->@;%a"
@@ -1416,5 +1421,3 @@ let core_type=default#core_type
 let pattern=default#pattern
 let signature=default#signature
 let structure=default#structure
-
-let case_list = default#case_list

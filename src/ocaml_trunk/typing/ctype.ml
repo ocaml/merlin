@@ -171,7 +171,7 @@ let wrap_trace_gadt_instances env f x =
 let simple_abbrevs = ref Mnil
 
 let proper_abbrevs path tl abbrev =
-  if tl <> [] || !trace_gadt_instances || Clflags.principal () ||
+  if tl <> [] || !trace_gadt_instances || !Clflags.principal ||
      is_object_type path
   then abbrev
   else simple_abbrevs
@@ -453,38 +453,6 @@ let rec filter_row_fields erase = function
                     (*  Check genericity of type schemes  *)
                     (**************************************)
 
-
-exception Non_closed0
-
-let rec closed_schema_rec ty =
-  let ty = repr ty in
-  if ty.level >= lowest_level then begin
-    let level = ty.level in
-    ty.level <- pivot_level - level;
-    match ty.desc with
-      Tvar _ when level <> generic_level ->
-        raise Non_closed0
-    | Tfield(_, kind, t1, t2) ->
-        if field_kind_repr kind = Fpresent then
-          closed_schema_rec t1;
-        closed_schema_rec t2
-    | Tvariant row ->
-        let row = row_repr row in
-        iter_row closed_schema_rec row;
-        if not (static_row row) then closed_schema_rec row.row_more
-    | _ ->
-        iter_type_expr closed_schema_rec ty
-  end
-
-(* Return whether all variables of type [ty] are generic. *)
-let closed_schema ty =
-  try
-    closed_schema_rec ty;
-    unmark_type ty;
-    true
-  with Non_closed0 ->
-    unmark_type ty;
-    false
 
 exception Non_closed of type_expr * bool
 
@@ -810,7 +778,7 @@ let rec update_level env level ty =
 (* Generalize and lower levels of contravariant branches simultaneously *)
 
 let generalize_contravariant env =
-  if Clflags.principal () then generalize_structure else update_level env
+  if !Clflags.principal then generalize_structure else update_level env
 
 let rec generalize_expansive env var_level ty =
   let ty = repr ty in
@@ -1122,6 +1090,13 @@ let instance ?partial env sch =
 let instance_def sch =
   let ty = copy sch in
   cleanup_types ();
+  ty
+
+let generic_instance ?partial env sch =
+  let old = !current_level in
+  current_level := generic_level;
+  let ty = instance env sch in
+  current_level := old;
   ty
 
 let instance_list env schl =
@@ -1465,8 +1440,8 @@ let expand_abbrev_gen kind find_type_expansion env ty =
       assert false
 
 (* Expand respecting privacy *)
-let expand_abbrev ty =
-  expand_abbrev_gen Public Env.find_type_expansion ty
+let expand_abbrev env ty =
+  expand_abbrev_gen Public Env.find_type_expansion env ty
 
 (* Expand once the head of a type *)
 let expand_head_once env ty =
@@ -1637,7 +1612,7 @@ let rec non_recursive_abbrev env ty0 ty =
         begin try
           non_recursive_abbrev env ty0 (try_expand_once_opt env ty)
         with Cannot_expand ->
-          if Clflags.recursive_types () &&
+          if !Clflags.recursive_types &&
             (in_pervasives p ||
              try is_datatype (Env.find_type p env) with Not_found -> false)
           then ()
@@ -1646,7 +1621,7 @@ let rec non_recursive_abbrev env ty0 ty =
     | Tobject _ | Tvariant _ ->
         ()
     | _ ->
-        if Clflags.recursive_types () then () else
+        if !Clflags.recursive_types then () else
         iter_type_expr (non_recursive_abbrev env ty0) ty
   end
 
@@ -1676,10 +1651,11 @@ exception Occur
 
 let rec occur_rec env visited ty0 ty =
   if ty == ty0  then raise Occur;
+  let occur_ok = !Clflags.recursive_types && is_contractive env ty in
   match ty.desc with
     Tconstr(p, tl, abbrev) ->
       begin try
-        if List.memq ty visited || Clflags.recursive_types () then raise Occur;
+        if occur_ok || List.memq ty visited then raise Occur;
         iter_type_expr (occur_rec env (ty::visited) ty0) ty
       with Occur -> try
         let ty' = try_expand_head try_expand_once env ty in
@@ -1690,15 +1666,15 @@ let rec occur_rec env visited ty0 ty =
         match ty'.desc with
           Tobject _ | Tvariant _ -> ()
         | _ ->
-            if not (Clflags.recursive_types ()) then
+            if not (!Clflags.recursive_types && is_contractive env ty') then
               iter_type_expr (occur_rec env (ty'::visited) ty0) ty'
       with Cannot_expand ->
-        if not (Clflags.recursive_types ()) then raise Occur
+        if not occur_ok then raise Occur
       end
   | Tobject _ | Tvariant _ ->
       ()
   | _ ->
-      if not (Clflags.recursive_types ()) then
+      if not occur_ok then
         iter_type_expr (occur_rec env visited ty0) ty
 
 let type_changed = ref false (* trace possible changes to the studied type *)
@@ -2415,7 +2391,7 @@ and unify2 env t1 t2 =
     if lv2 > lv1 then Env.add_gadt_instance_chain !env lv2 t1
   end;
   let t1, t2 =
-    if Clflags.principal ()
+    if !Clflags.principal
     && (find_lowest_level t1' < lv || find_lowest_level t2' < lv) then
       (* Expand abbreviations hiding a lower level *)
       (* Should also do it for parameterized types, after unification... *)
@@ -2460,7 +2436,7 @@ and unify3 env t1 t1' t2 t2' =
     try
       begin match (d1, d2) with
         (Tarrow (l1, t1, u1, c1), Tarrow (l2, t2, u2, c2)) when l1 = l2 ||
-        Clflags.classic () && not (is_optional l1 || is_optional l2) ->
+        !Clflags.classic && not (is_optional l1 || is_optional l2) ->
           unify  env t1 t2; unify env  u1 u2;
           begin match commu_repr c1, commu_repr c2 with
             Clink r, c2 -> set_commu r c2
@@ -2872,7 +2848,7 @@ let filter_arrow env t l =
       link_type t t';
       (t1, t2)
   | Tarrow(l', t1, t2, _)
-    when l = l' || Clflags.classic () && l = Nolabel && not (is_optional l') ->
+    when l = l' || !Clflags.classic && l = Nolabel && not (is_optional l') ->
       (t1, t2)
   | _ ->
       raise (Unify [])
@@ -2995,7 +2971,7 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
               moregen_occur env t1'.level t2;
               link_type t1' t2
           | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _)) when l1 = l2
-            || Clflags.classic () && not (is_optional l1 || is_optional l2) ->
+            || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
               moregen inst_nongen type_pairs env t1 t2;
               moregen inst_nongen type_pairs env u1 u2
           | (Ttuple tl1, Ttuple tl2) ->
@@ -3266,7 +3242,7 @@ let rec eqtype rename type_pairs subst env t1 t2 =
                 subst := (t1', t2') :: !subst
               end
           | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _)) when l1 = l2
-            || Clflags.classic () && not (is_optional l1 || is_optional l2) ->
+            || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
               eqtype rename type_pairs subst env t1 t2;
               eqtype rename type_pairs subst env u1 u2;
           | (Ttuple tl1, Ttuple tl2) ->
@@ -3960,7 +3936,7 @@ let rec subtype_rec env trace t1 t2 cstrs =
       (Tvar _, _) | (_, Tvar _) ->
         (trace, t1, t2, !univar_pairs)::cstrs
     | (Tarrow(l1, t1, u1, _), Tarrow(l2, t2, u2, _)) when l1 = l2
-      || Clflags.classic () && not (is_optional l1 || is_optional l2) ->
+      || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
         let cstrs = subtype_rec env ((t2, t1)::trace) t2 t1 cstrs in
         subtype_rec env ((u1, u2)::trace) u1 u2 cstrs
     | (Ttuple tl1, Ttuple tl2) ->
@@ -4197,6 +4173,40 @@ let cyclic_abbrev env id ty =
     | _ ->
         false
   in check_cycle [] ty
+
+(* Check for non-generalizable type variables *)
+exception Non_closed0
+let visited = ref TypeSet.empty
+
+let rec closed_schema_rec env ty =
+  let ty = expand_head env ty in
+  if TypeSet.mem ty !visited then () else begin
+    visited := TypeSet.add ty !visited;
+    match ty.desc with
+      Tvar _ when ty.level <> generic_level ->
+        raise Non_closed0
+    | Tfield(_, kind, t1, t2) ->
+        if field_kind_repr kind = Fpresent then
+          closed_schema_rec env t1;
+        closed_schema_rec env t2
+    | Tvariant row ->
+        let row = row_repr row in
+        iter_row (closed_schema_rec env) row;
+        if not (static_row row) then closed_schema_rec env row.row_more
+    | _ ->
+        iter_type_expr (closed_schema_rec env) ty
+  end
+
+(* Return whether all variables of type [ty] are generic. *)
+let closed_schema env ty =
+  visited := TypeSet.empty;
+  try
+    closed_schema_rec env ty;
+    visited := TypeSet.empty;
+    true
+  with Non_closed0 ->
+    visited := TypeSet.empty;
+    false
 
 (* Normalize a type before printing, saving... *)
 (* Cannot use mark_type because deep_occur uses it too *)

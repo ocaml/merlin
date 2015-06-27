@@ -153,23 +153,26 @@ let rec abbreviate_class_type path params cty =
   | Cty_arrow (l, ty, cty) ->
       Cty_arrow (l, ty, abbreviate_class_type path params cty)
 
+(* Check that all type variables are generalizable *)
+(* Use Env.empty to prevent expansion of recursively defined object types;
+   cf. typing-poly/poly.ml *)
 let rec closed_class_type =
   function
     Cty_constr (_, params, _) ->
-      List.for_all Ctype.closed_schema params
+      List.for_all (Ctype.closed_schema Env.empty) params
   | Cty_signature sign ->
-      Ctype.closed_schema sign.csig_self
+      Ctype.closed_schema Env.empty sign.csig_self
         &&
-      Vars.fold (fun _ (_, _, ty) cc -> Ctype.closed_schema ty && cc)
+      Vars.fold (fun _ (_, _, ty) cc -> Ctype.closed_schema Env.empty ty && cc)
         sign.csig_vars
         true
   | Cty_arrow (_, ty, cty) ->
-      Ctype.closed_schema ty
+      Ctype.closed_schema Env.empty ty
         &&
       closed_class_type cty
 
 let closed_class cty =
-  List.for_all Ctype.closed_schema cty.cty_params
+  List.for_all (Ctype.closed_schema Env.empty) cty.cty_params
     &&
   closed_class_type cty.cty_type
 
@@ -571,10 +574,10 @@ let rec class_field self_loc cl_num self_type meths vars
        concr_meths, warn_vals, inher, local_meths, local_vals)
 
   | Pcf_val (lab, mut, Cfk_virtual styp) ->
-      if Clflags.principal () then Ctype.begin_def ();
+      if !Clflags.principal then Ctype.begin_def ();
       let cty = Typetexp.transl_simple_type val_env false styp in
       let ty = cty.ctyp_type in
-      if Clflags.principal () then begin
+      if !Clflags.principal then begin
         Ctype.end_def ();
         Ctype.generalize_structure ty
       end;
@@ -600,12 +603,12 @@ let rec class_field self_loc cl_num self_type meths vars
           raise(Error(loc, val_env,
                       No_overriding ("instance variable", lab.txt)))
       end;
-      if Clflags.principal () then Ctype.begin_def ();
+      if !Clflags.principal then Ctype.begin_def ();
       let exp =
         try type_exp val_env sexp with Ctype.Unify [(ty, _)] ->
           raise(Error(loc, val_env, Make_nongen_seltype ty))
       in
-      if Clflags.principal () then begin
+      if !Clflags.principal then begin
         Ctype.end_def ();
         Ctype.generalize_structure exp.exp_type
        end;
@@ -676,6 +679,8 @@ let rec class_field self_loc cl_num self_type meths vars
 
       let field =
         lazy begin
+          (* Read the generalized type *)
+          let (_, ty) = Meths.find lab.txt !meths in
           let meth_type =
             Btype.newgenty (Tarrow(Nolabel, self_type, ty, Cok)) in
           Ctype.raise_nongen_level ();
@@ -815,12 +820,16 @@ and class_structure cl_num final val_env met_env loc
   end;
 
   (* Typing of method bodies *)
-  if Clflags.principal () then
-    List.iter (fun (_,_,ty) -> Ctype.generalize_spine ty) methods;
+  (* if !Clflags.principal then *) begin
+    let ms = !meths in
+    (* Generalize the spine of methods accessed through self *)
+    Meths.iter (fun _ (_,ty) -> Ctype.generalize_spine ty) ms;
+    meths :=
+      Meths.map (fun (id,ty) -> (id, Ctype.generic_instance val_env ty)) ms;
+    (* But keep levels correct on the type of self *)
+    Meths.iter (fun _ (_,ty) -> Ctype.unify val_env ty (Ctype.newvar ())) ms
+  end;
   let fields = List.map Lazy.force (List.rev fields) in
-  if Clflags.principal () then
-    List.iter (fun (_,_,ty) -> Ctype.unify val_env ty (Ctype.newvar ()))
-      methods;
   let meths = Meths.map (function (id, ty) -> id) !meths in
 
   (* Check for private methods made public *)
@@ -919,11 +928,11 @@ and class_expr cl_num val_env met_env scl =
       in
       class_expr cl_num val_env met_env sfun
   | Pcl_fun (l, None, spat, scl') ->
-      if Clflags.principal () then Ctype.begin_def ();
+      if !Clflags.principal then Ctype.begin_def ();
       let (pat, pv, val_env', met_env) =
         Typecore.type_class_arg_pattern cl_num val_env met_env l spat
       in
-      if Clflags.principal () then begin
+      if !Clflags.principal then begin
         Ctype.end_def ();
         iter_pattern (fun {pat_type=ty} -> Ctype.generalize_structure ty) pat
       end;
@@ -948,7 +957,7 @@ and class_expr cl_num val_env met_env scl =
         | _ -> true
       in
       let partial =
-        Parmatch.check_partial pat.pat_loc
+        Typecore.check_partial val_env pat.pat_type pat.pat_loc
           [{c_lhs=pat;
             c_guard=None;
             c_rhs = (* Dummy expression *)
@@ -975,9 +984,9 @@ and class_expr cl_num val_env met_env scl =
       if sargs = [] then
         Syntaxerr.ill_formed_ast scl.pcl_loc
           "Function application with no argument.";
-      if Clflags.principal () then Ctype.begin_def ();
+      if !Clflags.principal then Ctype.begin_def ();
       let cl = class_expr cl_num val_env met_env scl' in
-      if Clflags.principal () then begin
+      if !Clflags.principal then begin
         Ctype.end_def ();
         generalize_class_type false cl.cl_type;
       end;
@@ -989,13 +998,17 @@ and class_expr cl_num val_env met_env scl =
         | _    -> ls
       in
       let ignore_labels =
-        Clflags.classic () ||
+        !Clflags.classic ||
         let labels = nonopt_labels [] cl.cl_type in
         List.length labels = List.length sargs &&
         List.for_all (fun (l,_) -> l = Nolabel) sargs &&
         List.exists (fun l -> l <> Nolabel) labels &&
         begin
-          Location.prerr_warning cl.cl_loc Warnings.Labels_omitted;
+          Location.prerr_warning
+	    cl.cl_loc
+	    (Warnings.Labels_omitted
+	       (List.map Printtyp.string_of_label
+			 (List.filter ((<>) Nolabel) labels)));
           true
         end
       in
@@ -1217,7 +1230,7 @@ let initial_env define_class approx
 
   (* Temporary type for the class constructor *)
   let constr_type = approx cl.pci_expr in
-  if Clflags.principal () then Ctype.generalize_spine constr_type;
+  if !Clflags.principal then Ctype.generalize_spine constr_type;
   let dummy_cty =
     Cty_signature
       { csig_self = Ctype.newvar ();
