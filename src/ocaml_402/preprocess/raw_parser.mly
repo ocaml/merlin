@@ -832,7 +832,7 @@ signature_item:
                              ~loc:(rloc $startpos $endpos)
                           )) }
 | MODULE REC @{`Item "recursive module"}
-  module_rec_declarations
+  rec_module_declarations
     { mksig $startpos $endpos (Psig_recmodule (List.rev $3)) }
 | MODULE TYPE @{`Item "module type"}
   ident post_item_attributes
@@ -874,10 +874,10 @@ module_declaration:
 | LPAREN RPAREN module_declaration
     { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos($1) $endpos($1) "*", None, $3)) }
 
-module_rec_declarations:
+rec_module_declarations:
 | module_rec_declaration
     { [$1] }
-| module_rec_declarations AND module_rec_declaration
+| rec_module_declarations AND module_rec_declaration
     { $3 :: $1 }
 
 module_rec_declaration:

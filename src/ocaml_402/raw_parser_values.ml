@@ -293,7 +293,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_mutable_flag                      -> "mutable_flag"
   | N_mty_longident                     -> "mty_longident"
   | N_module_type                       -> "module_type"
-  | N_module_rec_declarations           -> "module_rec_declarations"
+  | N_rec_module_declarations           -> "rec_module_declarations"
   | N_module_rec_declaration            -> "module_rec_declaration"
   | N_module_expr                       -> "module_expr"
   | N_module_declaration                -> "module_declaration"
@@ -952,7 +952,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_mutable_flag                      -> 1, Asttypes.Immutable
   | N_mty_longident                     -> 2, default_longident
   | N_module_type                       -> 1, default_module_type
-  | N_module_rec_declarations           -> 0, []
+  | N_rec_module_declarations           -> 0, []
   | N_module_rec_declaration            -> 1, default_module_decl
   | N_module_expr                       -> 1, default_module_expr
   | N_module_declaration                -> 1, default_module_type
@@ -1360,7 +1360,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_mutable_flag                      -> None
   | N_mty_longident                     -> None
   | N_module_type                       -> Some "module type"
-  | N_module_rec_declarations           -> None
+  | N_rec_module_declarations           -> None
   | N_module_rec_declaration            -> Some "module declaration"
   | N_module_expr                       -> Some "module expression"
   | N_module_declaration                -> Some "module declaration"
