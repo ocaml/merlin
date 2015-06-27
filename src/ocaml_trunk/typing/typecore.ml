@@ -29,6 +29,8 @@ let merlin_recovery_attributes attrs =
   | [] -> attrs'
   | attrs -> attrs' @ attrs
 
+let raise_error = Typing_aux.raise_error
+
 type error =
     Polymorphic_label of Longident.t
   | Constructor_arity_mismatch of Longident.t * int * int
@@ -394,9 +396,9 @@ let unify_pat_types loc env ty ty' =
     unify env ty ty'
   with
     Unify trace ->
-      raise(Error(loc, env, pattern_type_clash trace))
+      raise_error(Error(loc, env, pattern_type_clash trace))
   | Tags(l1,l2) ->
-      raise(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
+      raise_error(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
 (* unification inside type_exp and type_expect *)
 let unify_exp_types loc env ty expected_ty =
@@ -406,9 +408,9 @@ let unify_exp_types loc env ty expected_ty =
     unify env ty expected_ty
   with
     Unify trace ->
-      raise(Error(loc, env, expr_type_clash trace))
+      raise_error(Error(loc, env, expr_type_clash trace))
   | Tags(l1,l2) ->
-      raise(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
+      raise_error(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
 (* level at which to create the local type declarations *)
 let newtype_level = ref None
@@ -427,11 +429,11 @@ let unify_pat_types_gadt loc env ty ty' =
     unify_gadt ~newtype_level env ty ty'
   with
     Unify trace ->
-      raise(Error(loc, !env, pattern_type_clash trace))
+      raise_error(Error(loc, !env, pattern_type_clash trace))
   | Tags(l1,l2) ->
-      raise(Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
+      raise_error(Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
   | Unification_recursive_abbrev trace ->
-      raise(Error(loc, !env, recursive_local_constraint trace))
+      raise_error(Error(loc, !env, recursive_local_constraint trace))
 
 
 (* Creating new conjunctive types is not allowed when typing patterns *)
@@ -1006,7 +1008,7 @@ let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
     type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty
   with exn ->
     Typing_aux.erroneous_type_register expected_ty;
-    Typing_aux.raise_error exn;
+    raise_error exn;
     { pat_desc = Tpat_any;
       pat_loc = sp.ppat_loc;
       pat_type = expected_ty;
@@ -1887,7 +1889,7 @@ and type_expect ?in_function ?recarg env sexp ty_expected =
     exp
   with exn ->
     Typing_aux.erroneous_type_register ty_expected;
-    Typing_aux.raise_error exn;
+    raise_error exn;
     let loc = sexp.pexp_loc in
     {
       exp_desc = Texp_ident
@@ -2294,7 +2296,7 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
       (* FIXME: We don't respect the Cmt_format.save_types logic but we still
                   keep all patterns, so nothing should have been lost. *)
       Typing_aux.erroneous_type_register ty_expected;
-      Typing_aux.raise_error exn;
+      raise_error exn;
       re {
         exp_desc = Texp_record(!label_list_for_recovery, !opt_exp_for_recovery);
         exp_loc = loc; exp_extra = [];
@@ -2623,9 +2625,8 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
              | _ -> None
         in
         Typing_aux.erroneous_type_register ty_expected;
-        Typing_aux.raise_error
-          (Error(e.pexp_loc, env,
-                 undefined_method obj.exp_type met valid_methods));
+        raise_error (Error(e.pexp_loc, env,
+                           undefined_method obj.exp_type met valid_methods));
         rue {
           exp_desc = Texp_send(obj, Tmeth_name met, None);
           exp_loc = loc; exp_extra = [];
@@ -3733,7 +3734,7 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
       try unify_pat env pat ty_arg'
       with exn ->
         (* Report only first wrong pattern *)
-        if not !has_pattern_error then Typing_aux.raise_error exn
+        if not !has_pattern_error then raise_error exn
     ) patl;
   (* Check for polymorphic variants to close *)
   if List.exists has_variants patl then begin
