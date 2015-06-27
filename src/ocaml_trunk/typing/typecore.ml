@@ -990,6 +990,26 @@ type type_pat_mode =
    constructors and labels.
    Unification may update the typing environment. *)
 let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
+  Cmt_format.save_types
+    ~save:(fun pat -> [Cmt_format.Partial_pattern pat])
+  @@ fun () ->
+  let env' = !env in
+  try
+    type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty
+  with exn ->
+    Typing_aux.erroneous_type_register expected_ty;
+    Typing_aux.raise_error exn;
+    { pat_desc = Tpat_any;
+      pat_loc = sp.ppat_loc;
+      pat_type = expected_ty;
+      pat_attributes =
+        merlin_incorrect_attribute
+        :: Cmt_format.saved_types ();
+      pat_extra = [];
+      pat_env = env';
+    }
+
+and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
   let type_pat ?(mode=mode) ?(env=env) =
     type_pat ~constrs ~labels ~no_existentials ~mode ~env in
   let loc = sp.ppat_loc in
