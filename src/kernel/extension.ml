@@ -161,8 +161,23 @@ let ext_custom_printf = {
   packages = ["custom_printf"];
 }
 
+let ext_meta = {
+  name = "meta";
+  private_def = [
+    "module Meta : sig
+      val code : 'a -> 'a code
+      val uncode : 'a code -> 'a
+    end"
+  ];
+  public_def = [];
+  keywords = [
+    ">.", GREATERDOT;
+  ];
+  packages = [];
+}
+
 (* Known extensions *)
-let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec;ext_custom_printf]
+let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_nonrec;ext_custom_printf;ext_meta]
 let registry =
   List.fold_left registry ~init:String.Map.empty
     ~f:(fun map ext -> String.Map.add map ~key:ext.name ~data:ext)

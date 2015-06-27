@@ -188,6 +188,11 @@ let cvt_nativeint_literal s =
   Nativeint.neg (Nativeint.of_string ("-" ^ String.sub s 0
                                                        (String.length s - 1)))
 
+let keyword_or state s default =
+  try Hashtbl.find state.keywords s
+  with Not_found -> try Hashtbl.find keyword_table s
+  with Not_found -> default
+
 (* Remove underscores from float literals *)
 
 let remove_underscores s =
@@ -279,6 +284,8 @@ let identchar_latin1 =
   ['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']
 let symbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
+let symbolcharnodot =
+  ['!' '$' '%' '&' '*' '+' '-'     '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let decimal_literal =
   ['0'-'9'] ['0'-'9' '_']*
 let hex_literal =
@@ -313,6 +320,12 @@ rule token state = parse
       }
   | blank +
       { token state lexbuf }
+  | ".<"
+      { return DOTLESS }
+  | ">."
+      { return (keyword_or state (Lexing.lexeme lexbuf) (INFIXOP0 ">.")) }
+  | ".~"
+      { return (keyword_or state (Lexing.lexeme lexbuf) DOTTILDE) }
   | "_"
       { return UNDERSCORE }
   | "~"
@@ -488,7 +501,9 @@ rule token state = parse
             { return (PREFIXOP(Lexing.lexeme lexbuf)) }
   | ['~' '?'] symbolchar +
             { return (PREFIXOP(Lexing.lexeme lexbuf)) }
-  | ['=' '<' '>' '|' '&' '$'] symbolchar *
+  | ['=' '<' '|' '&' '$'] symbolchar *
+            { return (INFIXOP0(Lexing.lexeme lexbuf)) }
+  | ['>'] symbolcharnodot symbolchar *
             { return (INFIXOP0(Lexing.lexeme lexbuf)) }
   | ['@' '^'] symbolchar *
             { return (INFIXOP1(Lexing.lexeme lexbuf)) }
@@ -501,6 +516,8 @@ rule token state = parse
             { return (INFIXOP3(Lexing.lexeme lexbuf)) }
   | '#' symbolchar (symbolchar | '#') *
             { return (SHARPOP(Lexing.lexeme lexbuf)) }
+  | "let" symbolchar *
+            { return (LETOP(Lexing.lexeme lexbuf)) }
   | eof { return EOF }
 
   | "<:" identchar* ("@" identchar*)? "<"

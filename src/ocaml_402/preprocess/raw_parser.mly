@@ -289,6 +289,21 @@ let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
 let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
 let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
+let let_operator startpos endpos op bindings cont =
+  let pat, expr =
+    match bindings with
+    | []   -> assert false
+    | [x]  -> (x.pvb_pat,x.pvb_expr)
+    | l    ->
+      let pats, exprs =
+        List.fold_right
+          (fun {pvb_pat=p;pvb_expr=e} (ps,es) -> (p::ps,e::es)) l ([],[]) in
+      ghpat startpos endpos (Ppat_tuple pats),
+      ghexp startpos endpos (Pexp_tuple exprs)
+  in
+  let f = ghexp startpos endpos (Pexp_fun("", None, pat, cont)) in
+  mkexp startpos endpos (Pexp_apply(op, [("", expr); ("", f)]))
+
 %}
 
 (**
@@ -454,6 +469,11 @@ let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 %token OUNIT_BENCH_MODULE
 %token NONREC
 
+%token DOTLESS
+%token DOTTILDE
+%token GREATERDOT
+%token <string> LETOP
+
 %token ENTRYPOINT EXITPOINT
 
 (* Precedences and associativities.
@@ -483,6 +503,7 @@ The precedences must be listed from low to high.
 %nonassoc below_SEMI
 %nonassoc SEMI                          (* below EQUAL ({lbl=...; lbl=...}) *)
 %nonassoc LET LET_LWT                   (* above SEMI ( ...; let ... in ...) *)
+%nonassoc LETOP
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH                 (* below BAR  (match ... with ...) *)
 %nonassoc FINALLY_LWT
@@ -511,6 +532,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_unary_minus prec_unary_plus (* unary - *)
 %nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
+%left     prec_escape
 %nonassoc below_SHARP
 %nonassoc SHARP                         (* simple_expr/toplevel_directive *)
 %left     SHARPOP
@@ -523,6 +545,7 @@ The precedences must be listed from low to high.
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
           P4_QUOTATION JSNEW CUSTOM_BANG
+          DOTLESS DOTTILDE GREATERDOT
 
 (* Entry points *)
 
@@ -1157,6 +1180,9 @@ expr:
 | LET @{`Item "let"} ext_attributes rec_flag let_bindings_no_attrs _in = IN @{`Shift 2} expr = seq_expr
     { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
       mkexp_attrs $startpos $endpos (Pexp_let($3, List.rev $4, expr)) $2 }
+| let_operator @{`Item "meta-let"} ext_attributes let_bindings IN seq_expr
+    { wrap_exp_attrs $startpos $endpos
+      (let_operator $startpos $endpos $1 $3 $5) $2 }
 | LET MODULE @{`Item "let module"}
   ext_attributes UIDENT module_binding_body _in = IN @{`Shift 2} expr = seq_expr
     { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
@@ -1288,6 +1314,10 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_variant($1, None)) }
 | LPAREN @{`Unclosed "("} seq_expr RPAREN @{`Close}
     { reloc_exp $startpos $endpos $2 }
+| DOTLESS expr GREATERDOT
+    { Fake.Meta.code $startpos $endpos $2 }
+| DOTTILDE simple_expr %prec prec_escape
+    { Fake.Meta.uncode $startpos $endpos $2 }
 | BEGIN ext_attributes seq_expr END
     { wrap_exp_attrs $startpos $endpos (reloc_exp $startpos $endpos $3) $2 (* check location *) }
 | BEGIN @{`Unclosed "begin"} ext_attributes END @{`Close}
@@ -2141,6 +2171,8 @@ operator:
     { $1 }
 | INFIXOP4
     { $1 }
+| LETOP
+    { $1 }
 | BANG
     { "!" }
 | PLUS
@@ -2708,13 +2740,6 @@ simple_expr:
          constr (List.rev $4))
     }
 
-label_declaration:
-  mutable_flag label attributes COLON poly_type WITH expr
-    {
-      Type.field (mkrhs $startpos($2) $endpos($2) $2) $5 ~mut:$1 ~attrs:$3 ~loc:(rloc $startpos $endpos)
-    }
-;
-
 expr_comma_opt_list:
     expr_comma_opt_list COMMA expr              { $3 :: $1 }
   | expr %prec COMMA                            { [$1] }
@@ -2734,6 +2759,15 @@ operator:
 override_flag:
 | CUSTOM_BANG
     { Override }
+
+(* Meta OCaml *)
+let_operator:
+| LETOP
+  { mkexp $startpos $endpos
+    (Pexp_ident(mkloc (Lident $1) (rloc $startpos $endpos))) }
+| mod_longident DOT LETOP
+  { mkexp $startpos $endpos
+    (Pexp_ident(mkloc (Ldot ($1,$3)) (rloc $startpos $endpos))) }
 
 (* Toplevel directives *)
 toplevel_directives:

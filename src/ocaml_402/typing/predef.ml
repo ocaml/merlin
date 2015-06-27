@@ -120,6 +120,11 @@ and ident_nil = ident_create "[]"
 and ident_cons = ident_create "::"
 and ident_none = ident_create "None"
 and ident_some = ident_create "Some"
+
+let ident_code = ident_create "code"
+let path_code = Pident ident_code
+let type_code t = newgenty (Tconstr (path_code, [t], ref Mnil))
+
 let common_initial_env add_type add_extension empty_env =
   let decl_bool =
     {decl_abstr with
@@ -157,6 +162,12 @@ let common_initial_env add_type add_extension empty_env =
      type_params = [tvar];
      type_arity = 1;
      type_variance = [Variance.covariant]}
+  and decl_code =
+    let tvar = newgenvar() in
+    {decl_abstr with
+     type_params = [tvar];
+     type_arity = 1;
+     type_variance = [Variance.covariant]}
   in
 
   let add_extension id l =
@@ -170,35 +181,36 @@ let common_initial_env add_type add_extension empty_env =
         ext_attributes = [] }
   in
   add_extension ident_match_failure
-                         [newgenty (Ttuple[type_string; type_int; type_int])] (
-  add_extension ident_out_of_memory [] (
-  add_extension ident_stack_overflow [] (
-  add_extension ident_invalid_argument [type_string] (
-  add_extension ident_failure [type_string] (
-  add_extension ident_not_found [] (
-  add_extension ident_sys_blocked_io [] (
-  add_extension ident_sys_error [type_string] (
-  add_extension ident_end_of_file [] (
-  add_extension ident_division_by_zero [] (
-  add_extension ident_assert_failure
-                         [newgenty (Ttuple[type_string; type_int; type_int])] (
-  add_extension ident_undefined_recursive_module
-                         [newgenty (Ttuple[type_string; type_int; type_int])] (
-  add_type ident_int64 decl_abstr (
-  add_type ident_int32 decl_abstr (
-  add_type ident_nativeint decl_abstr (
-  add_type ident_lazy_t decl_lazy_t (
-  add_type ident_option decl_option (
-  add_type ident_list decl_list (
-  add_type ident_array decl_array (
-  add_type ident_exn decl_exn (
-  add_type ident_unit decl_unit (
-  add_type ident_bool decl_bool (
-  add_type ident_float decl_abstr (
-  add_type ident_string decl_abstr (
-  add_type ident_char decl_abstr (
-  add_type ident_int decl_abstr (
-    empty_env))))))))))))))))))))))))))
+    [newgenty (Ttuple[type_string; type_int; type_int])]
+  @@ add_extension ident_out_of_memory []
+  @@ add_extension ident_stack_overflow []
+  @@ add_extension ident_invalid_argument [type_string]
+  @@ add_extension ident_failure [type_string]
+  @@ add_extension ident_not_found []
+  @@ add_extension ident_sys_blocked_io []
+  @@ add_extension ident_sys_error [type_string]
+  @@ add_extension ident_end_of_file []
+  @@ add_extension ident_division_by_zero []
+  @@ add_extension ident_assert_failure
+    [newgenty (Ttuple[type_string; type_int; type_int])]
+  @@ add_extension ident_undefined_recursive_module
+    [newgenty (Ttuple[type_string; type_int; type_int])]
+  @@ add_type ident_code decl_code
+  @@ add_type ident_int64 decl_abstr
+  @@ add_type ident_int32 decl_abstr
+  @@ add_type ident_nativeint decl_abstr
+  @@ add_type ident_lazy_t decl_lazy_t
+  @@ add_type ident_option decl_option
+  @@ add_type ident_list decl_list
+  @@ add_type ident_array decl_array
+  @@ add_type ident_exn decl_exn
+  @@ add_type ident_unit decl_unit
+  @@ add_type ident_bool decl_bool
+  @@ add_type ident_float decl_abstr
+  @@ add_type ident_string decl_abstr
+  @@ add_type ident_char decl_abstr
+  @@ add_type ident_int decl_abstr
+    empty_env
 
 let build_initial_env add_type add_exception empty_env =
   let common = common_initial_env add_type add_exception empty_env in

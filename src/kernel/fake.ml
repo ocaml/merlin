@@ -872,3 +872,18 @@ module Custom_printf = struct
               (Ast_helper.Typ.any ~loc ()))
     | _ -> None
 end
+
+
+(* MetaOCaml support *)
+module Meta = struct
+  let prim_code = prim "Meta.code"
+  let prim_uncode = prim "Meta.uncode"
+
+  let code loc_start loc_end expr =
+    let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
+    Ast_helper.Exp.apply ~loc prim_code ["", expr]
+
+  let uncode loc_start loc_end expr =
+    let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
+    Ast_helper.Exp.apply ~loc prim_uncode ["", expr]
+end

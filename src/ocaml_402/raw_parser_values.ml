@@ -123,6 +123,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_LPAREN               -> "LPAREN"
   | T_LIDENT               -> "LIDENT"
   | T_LET_LWT              -> "LET_LWT"
+  | T_LETOP                -> "LETOP"
   | T_LET                  -> "LET"
   | T_LESSMINUS            -> "LESSMINUS"
   | T_LESS                 -> "LESS"
@@ -155,6 +156,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_IF                   -> "IF"
   | T_GREATERRBRACKET      -> "GREATERRBRACKET"
   | T_GREATERRBRACE        -> "GREATERRBRACE"
+  | T_GREATERDOT           -> "GREATERDOT"
   | T_GREATER              -> "GREATER"
   | T_FUNCTOR              -> "FUNCTOR"
   | T_FUNCTION             -> "FUNCTION"
@@ -174,6 +176,8 @@ let string_of_token : type a. a token_class -> string = function
   | T_END                  -> "END"
   | T_ELSE                 -> "ELSE"
   | T_DOWNTO               -> "DOWNTO"
+  | T_DOTTILDE             -> "DOTTILDE"
+  | T_DOTLESS              -> "DOTLESS"
   | T_DOTDOT               -> "DOTDOT"
   | T_DOT                  -> "DOT"
   | T_DONE                 -> "DONE"
@@ -303,6 +307,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_match_case                        -> "match_case"
   | N_lident_list                       -> "lident_list"
   | N_let_pattern                       -> "let_pattern"
+  | N_let_operator                      -> "let_operator"
   | N_let_bindings                      -> "let_bindings"
   | N_let_binding_                      -> "let_binding_"
   | N_let_binding                       -> "let_binding"
@@ -455,6 +460,7 @@ let symbol_of_token = function
   | LPAREN                       -> T_ (T_LPAREN, ())
   | LIDENT v                     -> T_ (T_LIDENT, v)
   | LET_LWT                      -> T_ (T_LET_LWT, ())
+  | LETOP v                      -> T_ (T_LETOP, v)
   | LET                          -> T_ (T_LET, ())
   | LESSMINUS                    -> T_ (T_LESSMINUS, ())
   | LESS                         -> T_ (T_LESS, ())
@@ -487,6 +493,7 @@ let symbol_of_token = function
   | IF                           -> T_ (T_IF, ())
   | GREATERRBRACKET              -> T_ (T_GREATERRBRACKET, ())
   | GREATERRBRACE                -> T_ (T_GREATERRBRACE, ())
+  | GREATERDOT                   -> T_ (T_GREATERDOT, ())
   | GREATER                      -> T_ (T_GREATER, ())
   | FUNCTOR                      -> T_ (T_FUNCTOR, ())
   | FUNCTION                     -> T_ (T_FUNCTION, ())
@@ -506,6 +513,8 @@ let symbol_of_token = function
   | END                          -> T_ (T_END, ())
   | ELSE                         -> T_ (T_ELSE, ())
   | DOWNTO                       -> T_ (T_DOWNTO, ())
+  | DOTTILDE                     -> T_ (T_DOTTILDE, ())
+  | DOTLESS                      -> T_ (T_DOTLESS, ())
   | DOTDOT                       -> T_ (T_DOTDOT, ())
   | DOT                          -> T_ (T_DOT, ())
   | DONE                         -> T_ (T_DONE, ())
@@ -596,6 +605,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_LPAREN                 -> LPAREN
   | T_LIDENT                 -> LIDENT v
   | T_LET_LWT                -> LET_LWT
+  | T_LETOP                  -> LETOP v
   | T_LET                    -> LET
   | T_LESSMINUS              -> LESSMINUS
   | T_LESS                   -> LESS
@@ -628,6 +638,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_IF                     -> IF
   | T_GREATERRBRACKET        -> GREATERRBRACKET
   | T_GREATERRBRACE          -> GREATERRBRACE
+  | T_GREATERDOT             -> GREATERDOT
   | T_GREATER                -> GREATER
   | T_FUNCTOR                -> FUNCTOR
   | T_FUNCTION               -> FUNCTION
@@ -647,6 +658,8 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_END                    -> END
   | T_ELSE                   -> ELSE
   | T_DOWNTO                 -> DOWNTO
+  | T_DOTTILDE               -> DOTTILDE
+  | T_DOTLESS                -> DOTLESS
   | T_DOTDOT                 -> DOTDOT
   | T_DOT                    -> DOT
   | T_DONE                   -> DONE
@@ -724,6 +737,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_MATCH                   -> 0, ()
   | T_LPAREN                  -> 0, ()
   | T_LET_LWT                 -> 0, ()
+  | T_LETOP                   -> 1, ""
   | T_LET                     -> 0, ()
   | T_LESSMINUS               -> 0, ()
   | T_LESS                    -> 0, ()
@@ -746,6 +760,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_IF                      -> 0, ()
   | T_GREATERRBRACKET         -> 0, ()
   | T_GREATERRBRACE           -> 0, ()
+  | T_GREATERDOT              -> 0, ()
   | T_GREATER                 -> 0, ()
   | T_FUNCTOR                 -> 0, ()
   | T_FUNCTION                -> 0, ()
@@ -764,6 +779,8 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_END                     -> 0, ()
   | T_ELSE                    -> 0, ()
   | T_DOWNTO                  -> 0, ()
+  | T_DOTTILDE                -> 0, ()
+  | T_DOTLESS                 -> 0, ()
   | T_DOTDOT                  -> 0, ()
   | T_DOT                     -> 0, ()
   | T_DONE                    -> 0, ()
@@ -949,6 +966,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
     1, Ast_helper.Exp.case default_pattern default_expr
   | N_lident_list                       -> 0, []
   | N_let_pattern                       -> 0, default_pattern
+  | N_let_operator                      -> 2, default_expr
   | N_let_bindings                      -> 0, []
   | N_let_bindings_no_attrs             -> 0, []
   | N_let_binding_                      -> 1, (default_pattern, default_expr)
@@ -1168,6 +1186,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_LPAREN               -> Some "("
   | T_LIDENT               -> Some "identifier"
   | T_LET_LWT              -> Some "let_lwt"
+  | T_LETOP                -> Some "let<>"
   | T_LET                  -> Some "let"
   | T_LESSMINUS            -> Some "<-"
   | T_LESS                 -> Some "<"
@@ -1200,6 +1219,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_IF                   -> Some "if"
   | T_GREATERRBRACKET      -> Some ">]"
   | T_GREATERRBRACE        -> Some ">}"
+  | T_GREATERDOT           -> Some ">."
   | T_GREATER              -> Some ">"
   | T_FUNCTOR              -> None
   | T_FUNCTION             -> None
@@ -1219,6 +1239,8 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_END                  -> Some "end"
   | T_ELSE                 -> Some "else"
   | T_DOWNTO               -> Some "downto"
+  | T_DOTTILDE             -> Some ".~"
+  | T_DOTLESS              -> Some ".<"
   | T_DOTDOT               -> Some ".."
   | T_DOT                  -> Some "."
   | T_DONE                 -> Some "done"
@@ -1348,6 +1370,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_match_case                        -> Some "match case"
   | N_lident_list                       -> None
   | N_let_pattern                       -> None
+  | N_let_operator                      -> None
   | N_let_bindings                      -> None
   | N_let_binding_                      -> None
   | N_let_binding                       -> Some "binding"

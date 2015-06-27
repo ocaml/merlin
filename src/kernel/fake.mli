@@ -94,3 +94,11 @@ module Custom_printf : sig
   val bang : Lexing.position -> Lexing.position ->
     Parsetree.expression -> Parsetree.expression option
 end
+
+(* MetaOCaml support *)
+module Meta : sig
+  val code : Lexing.position -> Lexing.position ->
+    Parsetree.expression -> Parsetree.expression
+  val uncode : Lexing.position -> Lexing.position ->
+    Parsetree.expression -> Parsetree.expression
+end
