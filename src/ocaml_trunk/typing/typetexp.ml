@@ -876,8 +876,8 @@ let transl_type_scheme env styp =
 open Format
 open Printtyp
 
-let spellcheck ppf fold env lid =
-  let choices ~path name =
+let spellcheck ppf fold env lid = ()
+  (*let choices ~path name =
     let env = fold (fun x xs -> x::xs) path env [] in
     Misc.spellcheck env name in
   match lid with
@@ -885,7 +885,7 @@ let spellcheck ppf fold env lid =
     | Longident.Lident s ->
        Misc.did_you_mean ppf (fun () -> choices ~path:None s)
     | Longident.Ldot (r, s) ->
-       Misc.did_you_mean ppf (fun () -> choices ~path:(Some r) s)
+       Misc.did_you_mean ppf (fun () -> choices ~path:(Some r) s)*)
 
 let fold_descr fold get_name f = fold (fun descr acc -> f (get_name descr) acc)
 let fold_simple fold4 f = fold4 (fun name _path _descr acc -> f name acc)

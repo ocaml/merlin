@@ -1838,14 +1838,38 @@ let rec type_exp ?recarg env sexp =
  *)
 
 and type_expect ?in_function ?recarg env sexp ty_expected =
-  let previous_saved_types = Cmt_format.get_saved_types () in
-  Typetexp.warning_enter_scope ();
-  Typetexp.warning_attribute sexp.pexp_attributes;
-  let exp = type_expect_ ?in_function ?recarg env sexp ty_expected in
-  Typetexp.warning_leave_scope ();
-  Cmt_format.set_saved_types
-    (Cmt_format.Partial_expression exp :: previous_saved_types);
-  exp
+  Cmt_format.save_types
+    ~save:(fun exp -> [Cmt_format.Partial_expression exp])
+  @@ fun () ->
+  try
+    Typetexp.warning_enter_scope ();
+    Typetexp.warning_attribute sexp.pexp_attributes;
+    let exp = type_expect_ ?in_function env sexp ty_expected in
+    Typetexp.warning_leave_scope ();
+    exp
+  with exn ->
+    Typing_aux.erroneous_type_register ty_expected;
+    Typing_aux.raise_error exn;
+    let loc = sexp.pexp_loc in
+    {
+      exp_desc = Texp_ident
+          (Path.Pident (Ident.create "*type-error*"),
+           Location.mkloc (Longident.Lident "*type-error*") loc,
+           { Types.
+             val_type = ty_expected;
+             val_kind = Val_reg;
+             val_loc = loc;
+             val_attributes = [];
+           });
+      exp_loc = loc;
+      exp_extra = [];
+      exp_type = ty_expected;
+      exp_env = env;
+      exp_attributes =
+        merlin_incorrect_attribute
+        :: Cmt_format.saved_types ();
+    }
+
 
 and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
   let loc = sexp.pexp_loc in
