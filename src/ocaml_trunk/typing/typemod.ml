@@ -43,6 +43,8 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
+let raise_error = Typing_aux.raise_error
+
 open Typedtree
 
 let fst3 (x,_,_) = x
@@ -968,7 +970,9 @@ let check_recmodule_inclusion env bindings =
           try
             Includemod.modtypes env mty_actual' mty_decl'
           with Includemod.Error msg ->
-            raise(Error(modl.mod_loc, env, Not_included msg)) in
+            raise_error (Error(modl.mod_loc, env, Not_included msg));
+            Tcoerce_none
+        in
         let modl' =
             { mod_desc = Tmod_constraint(modl, mty_decl.mty_type,
                 Tmodtype_explicit mty_decl, coercion);
@@ -1052,7 +1056,9 @@ let wrap_constraint env arg mty explicit =
     try
       Includemod.modtypes env arg.mod_type mty
     with Includemod.Error msg ->
-      raise(Error(arg.mod_loc, env, Not_included msg)) in
+      raise_error (Error(arg.mod_loc, env, Not_included msg));
+      Tcoerce_none
+  in
   { mod_desc = Tmod_constraint(arg, mty, explicit, coercion);
     mod_type = mty;
     mod_env = env;
@@ -1142,11 +1148,14 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
             if funct_body && Mtype.contains_type env funct.mod_type then
               raise (Error (smod.pmod_loc, env, Not_allowed_in_functor_body));
           end;
-          let coercion =
+          let arg, coercion =
             try
-              Includemod.modtypes env arg.mod_type mty_param
+              arg, Includemod.modtypes env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise(Error(sarg.pmod_loc, env, Not_included msg)) in
+              raise_error (Error(sarg.pmod_loc, env, Not_included msg));
+              {arg with mod_type= Subst.modtype Subst.identity mty_param},
+              Tcoerce_none
+          in
           let mty_appl =
             match path with
               Some path ->
