@@ -24,7 +24,7 @@ type error =
   | Ill_formed_ast of Location.t * string
 
 exception Error of error
-exception Escape_error
+exception Escape_error of Location.t
 
 val report_error: formatter -> error -> unit
  (* Deprecated.  Use Location.{error_of_exn, report_error}. *)

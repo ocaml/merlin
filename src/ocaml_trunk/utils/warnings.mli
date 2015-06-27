@@ -66,7 +66,8 @@ type t =
   | Expect_tailcall                         (* 51 *)
 ;;
 
-val parse_options : bool -> string -> unit;;
+type state
+val parse_options : ?state:state -> bool -> string -> unit;;
 
 val is_active : t -> bool;;
 val is_error : t -> bool;;
@@ -82,6 +83,18 @@ val check_fatal : unit -> unit;;
 
 val help_warnings: unit -> unit
 
-type state
 val backup: unit -> state
 val restore: state -> unit
+
+(* merlin extension *)
+val initial : state
+
+(* Current state *)
+val current : state ref
+
+(* Compute arguments specification *)
+val arg_spec : state -> (string * Arg.spec * string) list
+(* Parsing arguments is effectful, you might want to copy state before *)
+val copy : state -> state
+
+val dump : unit -> Yojson.Basic.json
