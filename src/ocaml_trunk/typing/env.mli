@@ -14,6 +14,14 @@
 
 open Types
 
+type aliasmap = {
+  am_typ: Path.t list Path.PathMap.t;
+  am_mod: Path.t list Path.PathMap.t;
+  am_open: Path.PathSet.t;
+}
+
+val aliasmap_empty: aliasmap
+
 type summary =
     Env_empty
   | Env_value of summary * Ident.t * value_description
@@ -25,6 +33,7 @@ type summary =
   | Env_cltype of summary * Ident.t * class_type_declaration
   | Env_open of summary * Path.t
   | Env_functor_arg of summary * Ident.t
+  | Env_aliasmap of summary * aliasmap ref
 
 type t
 
@@ -37,14 +46,27 @@ type type_descriptions =
     constructor_description list * label_description list
 
 (* For short-paths *)
-type iter_cont
-val iter_types:
+val iter_types_and_aliases:
+    ?only_val:bool ->
     (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
-    t -> iter_cont
-val run_iter_cont: iter_cont list -> (Path.t * iter_cont) list
+    (Path.t -> Path.t -> unit) ->
+    t -> unit
+
+val iter_module_types_and_aliases:
+    ?only_val:bool ->
+    (Path.t -> Path.t * (type_declaration * type_descriptions) -> unit) ->
+    (Path.t -> Path.t -> unit) ->
+    Ident.t -> t -> unit
+
+type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
+val get_aliasmap: t -> (aliasmap -> type_diff list -> aliasmap) -> aliasmap
+
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t
 val find_shadowed_types: Path.t -> t -> Path.t list
+
+val find_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t
+val set_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t -> unit
 
 (* Lookup by paths *)
 
@@ -146,6 +168,9 @@ val reset_cache: unit -> unit
 (* To be called before each toplevel phrase. *)
 val reset_cache_toplevel: unit -> unit
 
+(* merlin: Check cache consistency *)
+val check_cache_consistency: unit -> bool
+
 (* Remember the name of the current compilation unit. *)
 val set_unit_name: string -> unit
 val get_unit_name: unit -> string
@@ -172,8 +197,8 @@ val imports: unit -> (string * Digest.t option) list
 
 (* Direct access to the table of imported compilation units with their CRC *)
 
-val crc_units: Consistbl.t
-val add_import: string -> unit
+(* val crc_units: Consistbl.t *)
+(* val add_import: string -> unit *)
 
 (* Summaries -- compact representation of an environment, to be
    exported in debugging information. *)
@@ -265,3 +290,10 @@ val fold_cltypes:
 (** Utilities *)
 val scrape_alias: t -> module_type -> module_type
 val check_value_name: string -> Location.t -> unit
+
+(** merlin: manage all internal state *)
+
+type cache
+
+val new_cache : unit_name:string -> cache
+val cache : cache ref
