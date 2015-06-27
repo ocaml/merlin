@@ -37,3 +37,9 @@ type typath =
 
 val constructor_typath: t -> typath
 val is_constructor_typath: t -> bool
+
+(* Added for merlin. *)
+val to_string_list : t -> string list
+
+module PathMap: Mymap.S with type key = t
+module PathSet: Set.S with type elt = t

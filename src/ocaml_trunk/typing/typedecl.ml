@@ -524,7 +524,7 @@ let check_well_founded env loc path to_check ty =
     with
     | Ctype.Cannot_expand ->
         let nodes =
-          if !Clflags.recursive_types && Ctype.is_contractive env ty
+          if Clflags.recursive_types () && Ctype.is_contractive env ty
           || match ty.desc with Tobject _ | Tvariant _ -> true | _ -> false
           then TypeSet.empty
           else exp_nodes in
@@ -1444,7 +1444,7 @@ let transl_value_decl env loc valdecl =
       if prim.prim_arity = 0 &&
          (prim.prim_name = "" || prim.prim_name.[0] <> '%') then
         raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));
-      if !Clflags.native_code
+      if Clflags.native_code ()
       && prim.prim_arity > 5
       && prim.prim_native_name = ""
       then raise(Error(valdecl.pval_type.ptyp_loc, Missing_native_external));
