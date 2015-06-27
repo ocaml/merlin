@@ -23,6 +23,12 @@ open Ctype
 let merlin_incorrect_attribute =
   Location.mknoloc "merlin.incorrect", Parsetree.PStr []
 
+let merlin_recovery_attributes attrs =
+  let attrs' = merlin_incorrect_attribute :: Cmt_format.saved_types () in
+  match attrs with
+  | [] -> attrs'
+  | attrs -> attrs' @ attrs
+
 type error =
     Polymorphic_label of Longident.t
   | Constructor_arity_mismatch of Longident.t * int * int
@@ -1004,9 +1010,7 @@ let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
     { pat_desc = Tpat_any;
       pat_loc = sp.ppat_loc;
       pat_type = expected_ty;
-      pat_attributes =
-        merlin_incorrect_attribute
-        :: Cmt_format.saved_types ();
+      pat_attributes = merlin_recovery_attributes [];
       pat_extra = [];
       pat_env = env';
     }
@@ -1885,9 +1889,7 @@ and type_expect ?in_function ?recarg env sexp ty_expected =
       exp_extra = [];
       exp_type = ty_expected;
       exp_env = env;
-      exp_attributes =
-        merlin_incorrect_attribute
-        :: Cmt_format.saved_types ();
+      exp_attributes = merlin_recovery_attributes [];
     }
 
 
