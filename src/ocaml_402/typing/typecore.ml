@@ -3159,10 +3159,9 @@ and type_format loc str env =
           mk_constr "Ignored_param" [ mk_ignored ign; mk_fmt rest ]
         | End_of_format ->
           mk_constr "End_of_format" []
-        | Custom _ ->
+        | Custom _ -> assert false
           (* Custom formatters have no syntax so they will never appear
              in formats parsed from strings. *)
-          assert false
       in
       let legacy_behavior = not (Clflags.strict_formats ()) in
       let Fmt_EBB fmt = fmt_ebb_of_string ~legacy_behavior str in

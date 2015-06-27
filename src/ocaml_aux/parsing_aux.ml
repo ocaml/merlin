@@ -114,6 +114,9 @@ type let_binding =
     lb_attributes: attributes;
     lb_loc: Location.t; }
 
+let value_binding_of_let_binding lb =
+  Ast_helper.Vb.mk ~loc:lb.lb_loc lb.lb_pattern lb.lb_expression
+
 type let_bindings =
   { lbs_bindings: let_binding list;
     lbs_rec: Asttypes.rec_flag;
@@ -121,3 +124,7 @@ type let_bindings =
     lbs_attributes: attributes;
     lbs_loc: Location.t;
   }
+
+let value_bindings_of_let_bindings lbs =
+  lbs.lbs_rec,
+  List.map ~f:value_binding_of_let_binding lbs.lbs_bindings
