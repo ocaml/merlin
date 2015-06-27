@@ -380,7 +380,7 @@ and _ nonterminal_class =
   | N_mutable_flag : (Asttypes.mutable_flag) nonterminal_class
   | N_mty_longident : (Longident.t) nonterminal_class
   | N_module_type : (Parsetree.module_type) nonterminal_class
-  | N_module_rec_declarations : (Parsetree.module_declaration list) nonterminal_class
+  | N_rec_module_declarations : (Parsetree.module_declaration list) nonterminal_class
   | N_module_rec_declaration : (Parsetree.module_declaration) nonterminal_class
   | N_module_expr : (Parsetree.module_expr) nonterminal_class
   | N_module_declaration : (Parsetree.module_type) nonterminal_class
@@ -13091,7 +13091,7 @@ module MenhirInterpreterTable = struct
         let _v : (Parsetree.module_declaration list) =     ( [_1] ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
-          MenhirLib.EngineTypes.semv = N_ (N_module_rec_declarations, _v);
+          MenhirLib.EngineTypes.semv = N_ (N_rec_module_declarations, _v);
           MenhirLib.EngineTypes.startp = _startpos;
           MenhirLib.EngineTypes.endp = _endpos;
           MenhirLib.EngineTypes.next = _menhir_stack;
@@ -13120,7 +13120,7 @@ module MenhirInterpreterTable = struct
         | _ ->
             assert false in
         let _1 = match _1 with
-        | N_ (N_module_rec_declarations, (_1 : (Parsetree.module_declaration list))) ->
+        | N_ (N_rec_module_declarations, (_1 : (Parsetree.module_declaration list))) ->
             _1
         | _ ->
             assert false in
@@ -13129,7 +13129,7 @@ module MenhirInterpreterTable = struct
         let _v : (Parsetree.module_declaration list) =     ( _3 :: _1 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
-          MenhirLib.EngineTypes.semv = N_ (N_module_rec_declarations, _v);
+          MenhirLib.EngineTypes.semv = N_ (N_rec_module_declarations, _v);
           MenhirLib.EngineTypes.startp = _startpos;
           MenhirLib.EngineTypes.endp = _endpos;
           MenhirLib.EngineTypes.next = _menhir_stack;
@@ -16958,7 +16958,7 @@ module MenhirInterpreterTable = struct
             };
           } = _menhir_stack in
         let _3 = match _3 with
-        | N_ (N_module_rec_declarations, (_3 : (Parsetree.module_declaration list))) ->
+        | N_ (N_rec_module_declarations, (_3 : (Parsetree.module_declaration list))) ->
             _3
         | _ ->
             assert false in
@@ -35268,15 +35268,15 @@ module MenhirInterpreterTable = struct
           ]);
         ], (Some 326, [
         ]));
-      (Some (CN_ (N_module_rec_declarations, [
+      (Some (CN_ (N_rec_module_declarations, [
         ])), [
         CN_ (N_module_rec_declaration, [
           ]);
         ], (Some 327, [
         ]));
-      (Some (CN_ (N_module_rec_declarations, [
+      (Some (CN_ (N_rec_module_declarations, [
         ])), [
-        CN_ (N_module_rec_declarations, [
+        CN_ (N_rec_module_declarations, [
           ]);
         CT_ (T_AND, [
           ]);
@@ -36356,7 +36356,7 @@ module MenhirInterpreterTable = struct
         CT_ (T_REC, [
                         (`Item "recursive module");
           ]);
-        CN_ (N_module_rec_declarations, [
+        CN_ (N_rec_module_declarations, [
           ]);
         ], (Some 465, [
         ]));

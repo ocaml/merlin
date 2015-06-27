@@ -58,3 +58,11 @@ type let_bindings =
     lbs_attributes: attributes;
     lbs_loc: Location.t;
   }
+
+val value_binding_of_let_binding
+  :  let_binding
+  -> Parsetree.value_binding
+
+val value_bindings_of_let_bindings
+  :  let_bindings
+  -> Asttypes.rec_flag * Parsetree.value_binding list
