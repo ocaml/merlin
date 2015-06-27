@@ -101,6 +101,8 @@ SOURCES = \
 	$(TYPER)/browse_node.ml           \
 	$(TYPER)/typing/typedtreeMap.mli  \
 	$(TYPER)/typing/typedtreeMap.ml   \
+	$(TYPER)/typing/tast_mapper.mli   \
+	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
 	$(TYPER)/browseT.mli              \
@@ -113,8 +115,6 @@ SOURCES = \
 	src/kernel/dot_merlin.ml          \
 	$(TYPER)/parsing/syntaxerr.mli    \
 	$(TYPER)/parsing/syntaxerr.ml     \
-	$(TYPER)/typing/tast_mapper.mli   \
-	$(TYPER)/typing/tast_mapper.ml    \
 	src/ocaml_aux/cmt_cache.ml        \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \
