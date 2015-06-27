@@ -1277,12 +1277,12 @@ expr:
 | simple_expr _ops = DOT _ope = LPAREN seq_expr RPAREN LESSMINUS expr
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
-                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".()" false)),
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".()" true)),
                          [Nolabel,$1; Nolabel,$4; Nolabel,$7])) }
 | simple_expr _ops = DOT _ope = LBRACKET seq_expr RBRACKET LESSMINUS expr
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
-                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".[]" false)),
+                 (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) ".[]" true)),
                          [Nolabel,$1; Nolabel,$4; Nolabel,$7])) }
 | simple_expr _ops = DOT _ope = LBRACE expr RBRACE LESSMINUS expr
     { bigarray_set ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) $1 $4 $7 }
@@ -1792,8 +1792,8 @@ generalized_constructor_arguments:
     { (Pcstr_tuple [],Some $2) }
 
 constructor_arguments:
-| core_type_list { Pcstr_tuple (List.rev $1) }
-| LBRACE label_declarations opt_semi RBRACE { Pcstr_record (List.rev $2) }
+| core_type_list_no_attr { Pcstr_tuple (List.rev $1) }
+| LBRACE label_declarations RBRACE { Pcstr_record (List.rev $2) }
 
 label_declarations:
 | label_declaration
