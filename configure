@@ -120,10 +120,10 @@ while [ -n "$1" ]; do
   shift 1
 done
 
-OCAML_VERSION="ocaml_400"
-OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.00.1"
+OCAML_VERSION="ocaml_402"
+OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.02"
 OCAML_VERSION_VAL='`OCaml_4_00_1'
-OCAML_VERSION_TYP='[ `OCaml_4_00_1 | `OCaml_4_01_0 | `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_03_trunk ]'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_03_trunk ]'
 
 cat <<END
 Merlin configuration
@@ -136,11 +136,6 @@ MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number | cut -d' ' -f2)
 FULL_VERSION=$(ocamlfind c -version)
 
 case "$MAGIC_VERSION" in
-  "Caml1999I015")
-    OCAML_VERSION="ocaml_401"
-    OCAML_VERSION_MESSAGE="OCaml 4.01.0"
-    OCAML_VERSION_VAL='`OCaml_4_01_0'
-    ;;
   "Caml1999I017")
     OCAML_VERSION="ocaml_402"
     if [ "x$FULL_VERSION" = "x4.02.0" ]; then
