@@ -480,3 +480,8 @@ module Cstr = struct
      pcstr_fields = fields;
     }
 end
+
+(** merlin addition *)
+let rtag ?(attrs=[]) label bool lst = Rtag (label, attrs, bool, lst)
+
+let const_string s = Const_string (s, None)

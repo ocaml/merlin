@@ -620,11 +620,12 @@ let default_mapper =
          | PStr x -> PStr (this.structure this x)
          | PTyp x -> PTyp (this.typ this x)
          | PPat (x, g) -> PPat (this.pat this x, map_opt (this.expr this) g)
+         | PCustom _ as payload -> payload
       );
   }
 
-let rec extension_of_error {loc; msg; if_highlight; sub} =
-  { loc; txt = "ocaml.error" },
+let rec extension_of_error {err_loc; msg; if_highlight; sub} =
+  { loc = err_loc; txt = "ocaml.error" },
   PStr ([Str.eval (Exp.constant (Const_string (msg, None)));
          Str.eval (Exp.constant (Const_string (if_highlight, None)))] @
         (List.map (fun ext -> Str.extension (extension_of_error ext)) sub))
@@ -755,7 +756,7 @@ module PpxContext = struct
       match name with
       | "tool_name" ->
           tool_name_ref := get_string payload
-      | "include_dirs" ->
+      (*| "include_dirs" ->
           Clflags.include_dirs := get_list get_string payload
       | "load_path" ->
           Config.load_path := get_list get_string payload
@@ -764,7 +765,7 @@ module PpxContext = struct
       | "for_package" ->
           Clflags.for_package := get_option get_string payload
       | "debug" ->
-          Clflags.debug := get_bool payload
+          Clflags.debug := get_bool payload *)
       | "cookies" ->
           let l = get_list (get_pair get_string (fun x -> x)) payload in
           cookies :=
@@ -906,3 +907,10 @@ let run_main mapper =
 
 let register_function = ref (fun _name f -> run_main f)
 let register name f = !register_function name f
+
+(** merlin: manage all internal state *)
+
+type cache = Parsetree.expression StringMap.t
+
+let new_cache () = StringMap.empty
+let cache = cookies

@@ -332,7 +332,7 @@ class printer  ()= object(self:'self)
     | Ppat_alias (p, s) -> pp f "@[<2>%a@;as@;%a@]"
           self#pattern p protect_ident s.txt (* RA*)
     | Ppat_or (p1, p2) -> (* *)
-        pp f "@[<hov0>%a@]" (self#list ~sep:"@,|" self#pattern)
+        pp f "@[<hov0>%a@]" (self#list ~sep:"@\n,|@ " self#pattern)
            (list_of_pattern [] x)
     | _ -> self#pattern1 f x
   method pattern1 (f:Format.formatter) (x:pattern) :unit =
@@ -388,6 +388,7 @@ class printer  ()= object(self:'self)
                       (* level1*)
     | Ppat_constant (c) -> pp f "%a" self#constant c
     | Ppat_interval (c1, c2) -> pp f "%a..%a" self#constant c1 self#constant c2
+    | Ppat_construct (li, None) -> pp f "%a" self#longident_loc li
     | Ppat_variant (l,None) ->  pp f "`%s" l
     | Ppat_constraint (p, ct) ->
         pp f "@[<2>(%a@;:@;%a)@]" self#pattern1 p self#core_type ct
@@ -1069,6 +1070,7 @@ class printer  ()= object(self:'self)
     | PPat (x, Some e) ->
       pp f "?"; self#pattern f x;
       pp f " when "; self#expression f e
+    | PCustom _ -> ()
 
   (* transform [f = fun g h -> ..] to [f g h = ... ] could be improved *)
   method binding f {pvb_pat=p; pvb_expr=x; _} =
@@ -1450,3 +1452,5 @@ let core_type=default#core_type
 let pattern=default#pattern
 let signature=default#signature
 let structure=default#structure
+
+let case_list = default#case_list

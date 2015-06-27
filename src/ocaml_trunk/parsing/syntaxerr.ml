@@ -22,7 +22,7 @@ type error =
   | Ill_formed_ast of Location.t * string
 
 exception Error of error
-exception Escape_error
+exception Escape_error of Location.t
 
 let prepare_error = function
   | Unclosed(opening_loc, opening, closing_loc, closing) ->
@@ -59,6 +59,7 @@ let () =
   Location.register_error_of_exn
     (function
       | Error err -> Some (prepare_error err)
+      | Escape_error loc -> Some (prepare_error (Other loc))
       | _ -> None
     )
 
