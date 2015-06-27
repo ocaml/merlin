@@ -2,5 +2,3 @@ language: c
 script: bash -ex .travis-ci.sh
 env:
   - OCAML_VERSION=4.02 OPAM_VERSION=1.2
-  - OCAML_VERSION=4.01 OPAM_VERSION=1.2
-  - OCAML_VERSION=4.00 OPAM_VERSION=1.2
