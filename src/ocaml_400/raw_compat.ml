@@ -90,9 +90,9 @@ let extract_modtype_declaration = function
   | Types.Modtype_abstract -> None
   | Types.Modtype_manifest mt -> Some mt
 
-let extract_module_declaration m = m
+let extract_module_declaration m = m, []
 
-let lookup_module = Env.lookup_module
+let lookup_module name env = Env.lookup_module name env, []
 
 let lookup_modtype name env =
   match Env.lookup_modtype name env with
@@ -411,3 +411,9 @@ let optional_label_sugar = function
   | _ -> None
 
 let pat_attributes _ = []
+
+let cstr_attributes _ = []
+let val_attributes  _ = []
+let type_attributes _ = []
+let lbl_attributes  _ = []
+let mtd_attributes  _ = []

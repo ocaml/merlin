@@ -99,7 +99,32 @@ let classify_node = function
 
 open Protocol.Compl
 
-let make_candidate ?get_doc ~exact name ?loc ?path ty =
+(* Taken from Leo White's doc-ock,
+   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
+ *)
+let read_doc_attributes attrs =
+  let read_payload =
+    let open Location in
+    let open Parsetree in function
+      | PStr[{ pstr_desc =
+                 Pstr_eval({ pexp_desc =
+                               Pexp_constant(Asttypes.Const_string(str, _));
+                             pexp_loc = loc;
+                           }, _)
+             }] -> Some(str, loc)
+      | _ -> None
+
+  in
+  let rec loop = function
+    | ({Location.txt =
+          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
+      read_payload payload
+    | _ :: rest -> loop rest
+    | [] -> None
+  in
+  loop attrs
+
+let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
   let ident = match path with
     | Some path -> Ident.create (Path.last path)
     | None -> Extension.ident
@@ -156,11 +181,11 @@ let make_candidate ?get_doc ~exact name ?loc ?path ty =
     | `Module | `Modtype -> ""
     | _ -> to_string ()
   in
-  let info =
-    match get_doc, kind with
-    | _, (`Module | `Modtype) -> to_string ()
-    | None, _ -> ""
-    | Some get_doc, kind ->
+  let info = match read_doc_attributes attrs, get_doc, kind with
+    | Some (str, _), _, _ -> str
+    | None, _, (`Module | `Modtype) -> to_string ()
+    | None, None, _ -> ""
+    | None, Some get_doc, kind ->
       match path, loc with
       | Some p, Some loc ->
         let namespace = (* FIXME: that's just terrible *)
@@ -170,8 +195,8 @@ let make_candidate ?get_doc ~exact name ?loc ?path ty =
           | _ -> assert false
         in
         begin match get_doc (`Completion_entry (namespace, p, loc)) with
-        | `Found str -> str
-        | _ -> ""
+          | `Found str -> str
+          | _ -> ""
         end
       | _, _ -> ""
   in
@@ -219,7 +244,7 @@ let fold_variant_constructors ~env ~init ~f =
   aux init
 
 let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
-  let make_weighted_candidate ?(priority=0) ~exact name ?loc ?path ty =
+  let make_weighted_candidate ?(priority=0) ~attrs ~exact name ?loc ?path ty =
     (* Just like [make_candidate] but associates some metadata to the candidate.
        The candidates are later sorted using these metadata.
 
@@ -234,7 +259,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
       try Ident.binding_time (Path.head (Option.get path))
       with _ -> 0
     in
-    let item = make_candidate ?get_doc ~exact name ?loc ?path ty in
+    let item = make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty in
     (- priority, - time, name), item
   in
   let is_internal name = name = "" || name.[0] = '_' in
@@ -287,7 +312,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
         | Some t ->
           fold_variant_constructors t ~init:[] ~f:(fun name param candidates ->
             if not @@ validate `Variant `Variant name then candidates else
-            make_weighted_candidate name ~exact:false ~priority:2
+            make_weighted_candidate name ~exact:false ~priority:2 ~attrs:[]
                 (`Variant (name, param))
             :: candidates
           ) ~env
@@ -299,6 +324,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
           if not (validate `Lident `Value name) then candidates else
           let priority = if is_internal name then 0 else type_check v in
           make_weighted_candidate ~exact:(name = prefix) name ~priority ~path
+            ~attrs:(Raw_compat.val_attributes v)
             (`Value v) ~loc:v.Types.val_loc
           :: candidates
         ) path env []
@@ -309,6 +335,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
           if not @@ validate `Lident `Cons name then candidates else
           let priority = if is_internal name then 0 else type_check v in
           make_weighted_candidate ~exact:(name=prefix) name (`Cons v) ~priority
+            ~attrs:(Raw_compat.cstr_attributes v)
           :: candidates
         ) path env []
 
@@ -316,15 +343,15 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
         Raw_compat.fold_types (fun name path decl candidates ->
           if not @@ validate `Lident `Typ name then candidates else
           make_weighted_candidate ~exact:(name = prefix) name ~path (`Typ decl)
-            ~loc:decl.Types.type_loc
+            ~loc:decl.Types.type_loc ~attrs:(Raw_compat.type_attributes decl)
           :: candidates
         ) path env []
 
       | `Modules ->
         Env.fold_modules (fun name path v candidates ->
-          let v = Raw_compat.extract_module_declaration v in
+          let v, attrs = Raw_compat.extract_module_declaration v in
           if not @@ validate `Uident `Mod name then candidates else
-          make_weighted_candidate ~exact:(name = prefix) name ~path (`Mod v)
+          make_weighted_candidate ~exact:(name = prefix) name ~path (`Mod v) ~attrs
           :: candidates
         ) path env []
 
@@ -332,13 +359,16 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
         Env.fold_modtypes (fun name path v candidates ->
           if not @@ validate `Uident `Mod name then candidates else
             make_weighted_candidate ~exact:(name=prefix) name ~path (`ModType v)
+              ~attrs:(Raw_compat.mtd_attributes v)
             :: candidates
         ) path env []
 
       | `Labels ->
-        Raw_compat.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
+        Raw_compat.fold_labels (fun l candidates ->
+          let {Types.lbl_name = name} = l in
           if not (validate `Lident `Label name) then candidates else
             make_weighted_candidate ~exact:(name = prefix) name (`Label l)
+              ~attrs:(Raw_compat.lbl_attributes l)
             :: candidates
         ) path env []
 
@@ -411,7 +441,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
     else
       Raw_compat.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
         if not (valid `Label name) then candidates else
-          make_candidate ?get_doc ~exact:(name = prefix) name (`Label l)
+          make_candidate ?get_doc ~exact:(name = prefix) name (`Label l) ~attrs:[]
           :: candidates
       ) path env []
   in
@@ -426,8 +456,8 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
           let default = { name; kind = `Module; desc = ""; info = "" } in
           if name = prefix && uniq (`Mod, name) then
             try
-              let path, md = Raw_compat.lookup_module (Longident.Lident name) env in
-              make_candidate ?get_doc ~exact:true name ~path (`Mod md)
+              let path, (md, attrs) = Raw_compat.lookup_module (Longident.Lident name) env in
+              make_candidate ?get_doc ~exact:true name ~path (`Mod md) ~attrs
               :: candidates
             with Not_found ->
               default :: candidates

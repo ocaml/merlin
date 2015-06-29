@@ -96,7 +96,7 @@ let exp_open_env = function
 let extract_functor_arg m = m
 
 let extract_modtype_declaration m = m.Types.mtd_type
-let extract_module_declaration m = m.Types.md_type
+let extract_module_declaration m = m.Types.md_type, m.Types.md_attributes
 
 let lookup_module name env =
   let path = Env.lookup_module ~load:true name env in
@@ -212,7 +212,7 @@ let rec signature_loc =
   | Sig_value (_,v)    -> Some v.val_loc
   | Sig_type (_,t,_)   -> Some t.type_loc
   | Sig_typext (_,e,_) -> Some e.ext_loc
-  | Sig_module (_,m,_) -> mod_loc (extract_module_declaration m)
+  | Sig_module (_,m,_) -> mod_loc (fst (extract_module_declaration m))
   | Sig_modtype (_,m) ->
     begin match extract_modtype_declaration m with
     | Some m -> mod_loc m
@@ -428,3 +428,9 @@ let optional_label_sugar = function
   | _ -> None
 
 let pat_attributes p = p.Typedtree.pat_attributes
+
+let cstr_attributes c = c.Types.cstr_attributes
+let val_attributes v = v.Types.val_attributes
+let type_attributes t = t.Types.type_attributes
+let lbl_attributes l = l.Types.lbl_attributes
+let mtd_attributes t = t.Types.mtd_attributes

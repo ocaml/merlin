@@ -53,7 +53,7 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
 
 let lookup_module_or_modtype name env =
   try
-    let path, mty = Raw_compat.lookup_module name env in
+    let path, (mty, _) = Raw_compat.lookup_module name env in
     path, Some mty
   with Not_found ->
     Raw_compat.lookup_modtype name env
@@ -150,7 +150,7 @@ let rec mod_smallerthan n m =
               | None -> None
             end
         | Some n1, Sig_module (_,m,_) ->
-          sub n1 (Raw_compat.extract_module_declaration m)
+          sub n1 (fst (Raw_compat.extract_module_declaration m))
 
         | Some n', _ -> Some (succ n')
       end
