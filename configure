@@ -115,6 +115,8 @@ done
 
 OCAML_VERSION="ocaml_400"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.00.1"
+OCAML_VERSION_VAL='`OCaml_4_00_1'
+OCAML_VERSION_TYP='[ `OCaml_4_00_1 | `OCaml_4_01_0 | `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_03_trunk ]'
 
 cat <<END
 Merlin configuration
@@ -130,6 +132,7 @@ case "$MAGIC_VERSION" in
   "Caml1999I015")
     OCAML_VERSION="ocaml_401"
     OCAML_VERSION_MESSAGE="OCaml 4.01.0"
+    OCAML_VERSION_VAL='`OCaml_4_01_0'
     ;;
   "Caml1999I017")
     OCAML_VERSION="ocaml_402"
@@ -137,17 +140,21 @@ case "$MAGIC_VERSION" in
       OCAML_VERSION_MESSAGE="OCaml 4.02.0"
       sed_file '/\(S\|Ignored_s\)can_next_char\|Any_ty\|| Custom/d' \
         src/ocaml_402/typing/typecore.ml
+      OCAML_VERSION_VAL='`OCaml_4_02_0'
     elif [ "x$FULL_VERSION" = "x4.02.1" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.1"
       sed_file '/Any_ty\|| Custom/d' \
         src/ocaml_402/typing/typecore.ml
+      OCAML_VERSION_VAL='`OCaml_4_02_1'
     else
       OCAML_VERSION_MESSAGE="OCaml 4.02.2"
+      OCAML_VERSION_VAL='`OCaml_4_02_2'
     fi
     ;;
   "Caml1999I019")
     OCAML_VERSION="ocaml_trunk"
     OCAML_VERSION_MESSAGE="OCaml 4.03 (trunk)"
+    OCAML_VERSION_VAL='`OCaml_4_03_trunk'
     ;;
 esac
 
@@ -205,7 +212,10 @@ END
     VERSION_STRING="unknown"
   fi
 
-  echo >src/config/my_config.ml "let version = \"$VERSION_STRING\";;"
+  cat >src/config/my_config.ml <<END
+let version = "$VERSION_STRING";;
+let ocamlversion : $OCAML_VERSION_TYP = $OCAML_VERSION_VAL;;
+END
 
   if [ "$EXIT" -eq 0 ]; then
     echo "Now, type 'make' to compile then 'make install'."
