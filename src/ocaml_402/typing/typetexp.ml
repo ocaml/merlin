@@ -240,6 +240,7 @@ let find_class env loc lid =
   r
 
 let find_value env loc lid =
+  Env.check_value_name (Longident.last lid) loc;
   let (path, decl) as r =
     find_component Env.lookup_value (fun lid -> Unbound_value lid) env loc lid
   in
@@ -858,8 +859,6 @@ let transl_type_scheme env styp =
 open Format
 open Printtyp
 
-(* TODO: remove that and use the version of spellcheck from [Misc].
-   See src/ocaml_trunk/typing/typetexp.ml for the merge. *)
 let spellcheck ppf fold env lid = ()
   (*let cutoff =
     match String.length (Longident.last lid) with

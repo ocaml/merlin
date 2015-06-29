@@ -228,6 +228,7 @@ let native_code         () = false
 let error_size          () = 500
 let dont_write_files    () = true
 let keep_locs           () = true
+let keep_docs           () = false
 let transparent_modules () = true
 let for_package         () = None
 let debug               () = false

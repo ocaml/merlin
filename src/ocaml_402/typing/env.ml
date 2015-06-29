@@ -43,6 +43,7 @@ type error =
   | Inconsistent_import of string * string * string
   | Need_recursive_types of string * string
   | Missing_module of Location.t * Path.t * Path.t
+  | Illegal_value_name of Location.t * string
 
 exception Error of error
 
@@ -59,6 +60,7 @@ module EnvLazy : sig
   val force : ('a -> 'b) -> ('a,'b) t -> 'b
   val create : 'a -> ('a,'b) t
   val is_val : ('a,'b) t -> bool
+  val get_arg : ('a,'b) t -> 'a option
 
   val view : ('a,'b) t ->  ('a,'b) view
 
@@ -86,6 +88,9 @@ end  = struct
 
   let is_val x =
     match !x with Done _ -> true | _ -> false
+
+  let get_arg x =
+    match !x with Thunk a -> Some a | _ -> None
 
   let create x =
     let x = ref (Thunk x) in
@@ -289,9 +294,6 @@ let empty = {
   functor_args = Ident.empty;
  }
 
-let add_import s =
-  !cache.imported_units <- StringSet.add s !cache.imported_units
-
 let in_signature env =
   {env with flags = env.flags lor in_signature_flag}
 let implicit_coercion env =
@@ -350,6 +352,9 @@ let md md_type =
 
 (* Consistency between persistent structures *)
 
+let add_import s =
+  !cache.imported_units <- StringSet.add s !cache.imported_units
+
 let clear_imports () =
   Consistbl.clear !cache.crc_units;
   !cache.imported_units <- StringSet.empty
@@ -371,6 +376,12 @@ let check_consistency ps =
     error (Inconsistent_import(name, auth, source))
 
 (* Reading persistent structures from .cmi files *)
+
+let save_pers_struct crc ps =
+  let modname = ps.ps_name in
+  Hashtbl.add !cache.persistent_structures modname (Some ps);
+  Consistbl.set !cache.crc_units modname crc ps.ps_filename;
+  add_import modname
 
 exception Cmi_cache_store of module_components * pers_typemap ref
 
@@ -419,6 +430,10 @@ let find_pers_struct ?(check=true) name =
     | Some sg -> sg
     | None -> raise Not_found
     | exception Not_found ->
+       (* PR#6843: record the weak dependency ([add_import]) even if
+          the [find_in_path_uncap] call below fails to find the .cmi,
+          to help make builds more deterministic. *)
+        add_import name;
       match find_in_path_uncap !load_path (name ^ ".cmi") with
       | filename -> read_pers_struct name filename
       | exception Not_found ->
@@ -471,6 +486,9 @@ let check_cache_consistency () =
 
 let set_unit_name name =
   !cache.current_unit <- name
+
+let get_unit_name () =
+  !cache.current_unit
 
 (* Lookup by identifier *)
 
@@ -1427,7 +1445,20 @@ and check_usage loc id warn tbl =
         (fun () -> if not !used then Location.prerr_warning loc (warn name))
   end;
 
+and check_value_name name loc =
+  (* Note: we could also check here general validity of the
+     identifier, to protect against bad identifiers forged by -pp or
+     -ppx preprocessors. *)
+
+  if String.length name > 0 && (name.[0] = '#') then
+    for i = 1 to String.length name - 1 do
+      if name.[i] = '#' then
+        raise (Error(Illegal_value_name(loc, name)))
+    done
+
+
 and store_value ?check slot id path decl env renv =
+  check_value_name (Ident.name id) decl.val_loc;
   may (fun f -> check_usage decl.val_loc id f !cache.value_declarations) check;
   { env with
     values = EnvTbl.add "value" slot id (path, decl) env.values renv.values;
@@ -1775,9 +1806,7 @@ let save_signature_with_imports sg modname filename imports =
         ps_crcs_checked = false;
         ps_typemap = ref None;
       } in
-    Hashtbl.add !cache.persistent_structures modname (Some ps);
-    Consistbl.set !cache.crc_units modname crc filename;
-    add_import modname;
+    save_pers_struct crc ps;
     sg
   with exn ->
     close_out oc;
@@ -1940,11 +1969,16 @@ let report_error ppf = function
       fprintf ppf "@]@ @[%s@ %s@ %s.@]@]"
         "The compiled interface for module" (Ident.name (Path.head path2))
         "was not found"
+  | Illegal_value_name(_loc, name) ->
+      fprintf ppf "'%s' is not a valid value identifier."
+        name
 
 let () =
   Location.register_error_of_exn
     (function
-      | Error (Missing_module (loc, _, _) as err) when loc <> Location.none ->
+      | Error (Missing_module (loc, _, _)
+              | Illegal_value_name (loc, _)
+               as err) when loc <> Location.none ->
           Some (Location.error_of_printer loc report_error err)
       | Error err -> Some (Location.error_of_printer_file report_error err)
       | _ -> None

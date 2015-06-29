@@ -1393,15 +1393,17 @@ let rec tree_of_modtype = function
       Omty_alias (tree_of_path p)
 
 and tree_of_signature sg =
-  wrap_env (fun env -> env) (tree_of_signature_rec !printing_state.printenv) sg
+  wrap_env (fun env -> env) (tree_of_signature_rec !printing_state.printenv false) sg
 
-and tree_of_signature_rec env' = function
+and tree_of_signature_rec env' in_type_group = function
     [] -> []
   | item :: rem ->
-      (*begin match item with
-        Sig_type (_, _, rs) when rs <> Trec_next -> ()
-      | _ -> set_printing_env env'
-      end;*)
+      (*let in_type_group =
+        match in_type_group, item with
+          true, Sig_type (_, _, Trec_next) -> true
+        | _, Sig_type (_, _, (Trec_not | Trec_first)) -> set_printing_env env'; true
+        | _ -> set_printing_env env'; false
+      in*)
       let (sg, rem) = filter_rem_sig item rem in
       let trees =
         match item with
@@ -1425,7 +1427,7 @@ and tree_of_signature_rec env' = function
             [tree_of_cltype_declaration id decl rs]
       in
       let env' = Env.add_signature (item :: sg) env' in
-      trees @ tree_of_signature_rec env' rem
+      trees @ tree_of_signature_rec env' in_type_group rem
 
 and tree_of_modtype_declaration id decl =
   let mty =
@@ -1673,8 +1675,7 @@ let unification_error unif tr txt1 ppf txt2 =
 
 let report_unification_error ppf env ?(unif=true)
     tr txt1 txt2 =
-  wrap_printing_env env
-    (fun () -> unification_error unif tr txt1 ppf txt2)
+  wrap_printing_env env (fun () -> unification_error unif tr txt1 ppf txt2)
 ;;
 
 let trace fst keep_last txt ppf tr =
@@ -1691,38 +1692,36 @@ let trace fst keep_last txt ppf tr =
     raise exn
 
 let report_subtyping_error ppf env tr1 txt1 tr2 =
-  wrap_printing_env env
-    (fun () ->
-       reset ();
-       let tr1 = List.map prepare_expansion tr1
-       and tr2 = List.map prepare_expansion tr2 in
-       fprintf ppf "@[<v>%a" (trace true (tr2 = []) txt1) tr1;
-       if tr2 = [] then fprintf ppf "@]" else
-         let mis = mismatch true tr2 in
-         fprintf ppf "%a%t@]"
-           (trace false (mis = None) "is not compatible with type") tr2
-           (explanation true mis))
+  wrap_printing_env env (fun () ->
+    reset ();
+    let tr1 = List.map prepare_expansion tr1
+    and tr2 = List.map prepare_expansion tr2 in
+    fprintf ppf "@[<v>%a" (trace true (tr2 = []) txt1) tr1;
+    if tr2 = [] then fprintf ppf "@]" else
+    let mis = mismatch true tr2 in
+    fprintf ppf "%a%t@]"
+      (trace false (mis = None) "is not compatible with type") tr2
+      (explanation true mis))
 
 let report_ambiguous_type_error ppf env (tp0, tp0') tpl txt1 txt2 txt3 =
-  wrap_printing_env env
-    (fun () ->
-       reset ();
-       List.iter
-         (fun (tp, tp') -> path_same_name tp0 tp; path_same_name tp0' tp')
-         tpl;
-       match tpl with
-         [] -> assert false
-       | [tp, tp'] ->
-         fprintf ppf
-           "@[%t@;<1 2>%a@ \
-            %t@;<1 2>%a\
-            @]"
-           txt1 (type_path_expansion tp) tp'
-           txt3 (type_path_expansion tp0) tp0'
-       | _ ->
-         fprintf ppf
-           "@[%t@;<1 2>@[<hv>%a@]\
-            @ %t@;<1 2>%a\
-            @]"
-           txt2 type_path_list tpl
-           txt3 (type_path_expansion tp0) tp0')
+  wrap_printing_env env (fun () ->
+    reset ();
+    List.iter
+      (fun (tp, tp') -> path_same_name tp0 tp; path_same_name tp0' tp')
+      tpl;
+    match tpl with
+      [] -> assert false
+    | [tp, tp'] ->
+        fprintf ppf
+          "@[%t@;<1 2>%a@ \
+             %t@;<1 2>%a\
+           @]"
+          txt1 (type_path_expansion tp) tp'
+          txt3 (type_path_expansion tp0) tp0'
+    | _ ->
+        fprintf ppf
+          "@[%t@;<1 2>@[<hv>%a@]\
+             @ %t@;<1 2>%a\
+           @]"
+          txt2 type_path_list tpl
+          txt3 (type_path_expansion tp0) tp0')

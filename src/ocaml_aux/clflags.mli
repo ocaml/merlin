@@ -68,6 +68,7 @@ val native_code          : unit -> bool
 val dont_write_files     : unit -> bool
 val error_size           : unit -> int (* max size of module related errors *)
 val keep_locs            : unit -> bool
+val keep_docs            : unit -> bool
 val transparent_modules  : unit -> bool
 val for_package          : unit -> string option
 val debug                : unit -> bool
