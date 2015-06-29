@@ -61,6 +61,15 @@ The options available for better control are as follow:
 END
 }
 
+sed_file()
+{
+  EXPR="$1"
+  FILE="$2"
+  mv "$FILE" "$FILE".org
+  sed -e "$EXPR" < "$FILE".org > "$FILE"
+  rm "$FILE".org
+}
+
 while [ -n "$1" ]; do
   case "$1" in
     --prefix)
@@ -126,12 +135,14 @@ case "$MAGIC_VERSION" in
     OCAML_VERSION="ocaml_402"
     if [ "x$FULL_VERSION" = "x4.02.0" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.0"
-      mv src/ocaml_402/typing/typecore.ml src/ocaml_402/typing/typecore.ml.org
-      sed -E '/(S|Ignored_s)can_next_char/d' \
-        <src/ocaml_402/typing/typecore.ml.org >src/ocaml_402/typing/typecore.ml
-      rm src/ocaml_402/typing/typecore.ml.org
-    else
+      sed_file '/\(S\|Ignored_s\)can_next_char\|Any_ty\|| Custom/d' \
+        src/ocaml_402/typing/typecore.ml
+    elif [ "x$FULL_VERSION" = "x4.02.1" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.1"
+      sed_file '/Any_ty\|| Custom/d' \
+        src/ocaml_402/typing/typecore.ml
+    else
+      OCAML_VERSION_MESSAGE="OCaml 4.02.2"
     fi
     ;;
   "Caml1999I019")
