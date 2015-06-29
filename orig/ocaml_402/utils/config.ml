@@ -23,7 +23,7 @@
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 
-let standard_library_default = "/home/def/Local/tmp/lib/ocaml"
+let standard_library_default = ""
 
 let standard_library =
   try
@@ -34,11 +34,11 @@ let standard_library =
   with Not_found ->
     standard_library_default
 
-let standard_runtime = "/home/def/Local/tmp/bin/ocamlrun"
+let standard_runtime = ""
 let ccomp_type = "cc"
-let bytecomp_c_compiler = "gcc -fno-defer-pop -Wall -D_FILE_OFFSET_BITS=64 -D_REENTRANT -fPIC"
+let bytecomp_c_compiler = "gcc -O -fno-defer-pop -Wall -D_FILE_OFFSET_BITS=64 -D_REENTRANT -O -fPIC"
 let bytecomp_c_libraries = "-lm  -ldl -lcurses -lpthread"
-let native_c_compiler = "gcc -Wall -D_FILE_OFFSET_BITS=64 -D_REENTRANT"
+let native_c_compiler = "gcc -O -Wall -D_FILE_OFFSET_BITS=64 -D_REENTRANT"
 let native_c_libraries = "-lm  -ldl"
 let native_pack_linker = "ld -r  -o "
 let ranlib = "ranlib"
