@@ -14,9 +14,15 @@ fi
 
 EXIT=0
 
-COL_CLEAR=$(tput sgr0)
-COL_RED=$(tput setf 4)
-COL_GREEN=$(tput setf 2)
+if which tput > /dev/null 2>&1 ; then
+  COL_CLEAR=$(tput sgr0)
+  COL_RED=$(tput setf 4)
+  COL_GREEN=$(tput setf 2)
+else
+  COL_CLEAR=
+  COL_RED=
+  COL_GREEN=
+fi
 
 check_package()
 {
@@ -185,10 +191,31 @@ To customize directories, use:
 For more informations rerun with --help.
 END
 
-rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
-  ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+SYSTEM=$(ocamlfind c -config | grep system|cut -d' ' -f2)
+case "$SYSTEM" in
+  mingw*|win*)
+    rm -rf "$PWD/src/ocaml" 2>&1 >/dev/null &&
+      cp -R "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+    ;;
+  *)
+    rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
+      ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+    ;;
+esac
 
 mkdir -p "$PWD/src/config"
+
+OS_TYPE=$(ocamlfind c -config | grep os_type|cut -d' ' -f2)
+
+# 64-bit Windows also has OS_TYPE = Win32
+case "$OS_TYPE" in
+  Win32)
+    EXE=.exe
+    ;;
+  *)
+    EXE=
+    ;;
+esac
 
 if [ -d "$BIN_DIR" ]; then
 
@@ -200,6 +227,7 @@ NATIVE=$NATIVE
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
+EXE=$EXE
 END
 
   if [ -n "$VERSION_STRING" ]; then

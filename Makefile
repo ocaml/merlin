@@ -90,13 +90,13 @@ distclean: clean
 
 install-binary: $(TARGET)
 	install -d $(BIN_DIR)
-	install $(TARGET) $(BIN_DIR)/ocamlmerlin
+	install $(TARGET)$(EXE) $(BIN_DIR)/ocamlmerlin$(EXE)
 
 install-share: $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
 	install -d $(SHARE_DIR)/emacs/site-lisp
 	install -m 644 emacs/merlin.el $(SHARE_DIR)/emacs/site-lisp/merlin.el
-	-install -m 644 emacs/merlin.elc $(SHARE_DIR)/emacs/site-lisp/merlin.elc
+	test -f emacs/merlin.elc && install -m 644 emacs/merlin.elc $(SHARE_DIR)/emacs/site-lisp/merlin.elc || true
 	install -m 644 emacs/merlin-iedit.el $(SHARE_DIR)/emacs/site-lisp/merlin-iedit.el
 
 install-vim:
