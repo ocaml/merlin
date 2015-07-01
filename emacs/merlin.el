@@ -169,7 +169,7 @@ In particular you can specify nil, meaning that the locked zone is not represent
   "If non nil, use `auto-complete-mode' in any buffer."
   :group 'merlin :type '(choice (const :tag "Integrate with auto-complete" t)
                                 (const :tag "Don't integrate with auto-complete" nil)
-                                (const :tag "Integrate with auto-complet, use sane default options" easy)))
+                                (const :tag "Integrate with auto-complete, use sane default options" easy)))
 
 (defcustom merlin-ac-prefix-size nil
   "If non-nil, specify the minimum number of characters to wait before allowing auto-complete"
