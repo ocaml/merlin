@@ -863,7 +863,11 @@ let disambiguate_lid_a_list wrap_kind wrap_ty loc closed env opath lid_a_list =
   in
   let process_label (lid,a) =
     try Some (lid, process_label lid, a)
-    with exn ->
+    with
+    | Failure "hd" ->
+      (* The list hd above failed, if label was unbound but recovered *)
+      None
+    | exn ->
       raise_error (wrap_disambiguate_exn wrap_kind wrap_ty exn);
       None
   in
@@ -2203,29 +2207,29 @@ and type_expect_ ?in_function env sexp ty_expected =
         in
         let closed = (opt_sexp = None) in
         let lbl_exp_list = type_label_a_list
-          "This record expression is expected to have" ty_record
-          loc closed env
-          (type_label_exp true env loc ty_record)
-          opath
-          lid_sexp_list
-      in
-      label_list_for_recovery := lbl_exp_list;
-      unify_exp_types loc env ty_record (instance env ty_expected);
+            "This record expression is expected to have" ty_record
+            loc closed env
+            (type_label_exp true env loc ty_record)
+            opath
+            lid_sexp_list
+        in
+        label_list_for_recovery := lbl_exp_list;
+        unify_exp_types loc env ty_record (instance env ty_expected);
 
-      (* type_label_a_list returns a list of labels sorted by lbl_pos *)
-      (* note: check_duplicates would better be implemented in
-         type_label_a_list directly *)
-      let rec check_duplicates = function
-        | (_, lbl1, _) :: (_, lbl2, _) :: _ when lbl1.lbl_pos = lbl2.lbl_pos ->
-          raise_error (Error(loc, env, Label_multiply_defined lbl1.lbl_name))
-        | _ :: rem ->
+        (* type_label_a_list returns a list of labels sorted by lbl_pos *)
+        (* note: check_duplicates would better be implemented in
+           type_label_a_list directly *)
+        let rec check_duplicates = function
+          | (_, lbl1, _) :: (_, lbl2, _) :: _ when lbl1.lbl_pos = lbl2.lbl_pos ->
+            raise_error (Error(loc, env, Label_multiply_defined lbl1.lbl_name))
+          | _ :: rem ->
             check_duplicates rem
-        | [] -> ()
-      in
-      let opt_exp =
-        match opt_exp, lbl_exp_list with
-          None, _ -> None
-        | Some exp, (lid, lbl, lbl_exp) :: _ ->
+          | [] -> ()
+        in
+        let opt_exp =
+          match opt_exp, lbl_exp_list with
+            None, _ -> None
+          | Some exp, (lid, lbl, lbl_exp) :: _ ->
             let ty_exp = instance env exp.exp_type in
             let unify_kept lbl =
               (* do not connect overridden labels *)
@@ -2241,46 +2245,48 @@ and type_expect_ ?in_function env sexp ty_expected =
               end in
             Array.iter unify_kept lbl.lbl_all;
             Some {exp with exp_type = ty_exp}
-        | _ -> assert false
-      in
-      opt_exp_for_recovery := opt_exp;
-      check_duplicates lbl_exp_list;
-      let num_fields =
-        match lbl_exp_list with [] -> assert false
-        | (_, lbl,_)::_ -> Array.length lbl.lbl_all in
-      if opt_sexp = None && List.length lid_sexp_list <> num_fields then begin
-        let present_indices =
-          List.map (fun (_, lbl, _) -> lbl.lbl_pos) lbl_exp_list in
-        let label_names = extract_label_names sexp env ty_expected in
-        let rec missing_labels n = function
-            [] -> []
-          | lbl :: rem ->
+          | _ -> assert false
+        in
+        opt_exp_for_recovery := opt_exp;
+        check_duplicates lbl_exp_list;
+        let num_fields =
+          match lbl_exp_list with [] -> raise Not_found
+                                | (_, lbl,_)::_ -> Array.length lbl.lbl_all in
+        if opt_sexp = None && List.length lid_sexp_list <> num_fields then begin
+          let present_indices =
+            List.map (fun (_, lbl, _) -> lbl.lbl_pos) lbl_exp_list in
+          let label_names = extract_label_names sexp env ty_expected in
+          let rec missing_labels n = function
+              [] -> []
+            | lbl :: rem ->
               if List.mem n present_indices then missing_labels (n + 1) rem
               else lbl :: missing_labels (n + 1) rem
-        in
-        let missing = missing_labels 0 label_names in
-        raise_error (Error(loc, env, Label_missing missing))
-      end
-      else if opt_sexp <> None && List.length lid_sexp_list = num_fields then
-        Location.prerr_warning loc Warnings.Useless_record_with;
-      re {
-        exp_desc = Texp_record(lbl_exp_list, opt_exp);
-        exp_loc = loc; exp_extra = [];
-        exp_type = instance env ty_expected;
-        exp_attributes = sexp.pexp_attributes;
-        exp_env = env }
-    with exn when false ->
-      (* FIXME: We don't respect the Cmt_format.save_types logic but we still
-                  keep all patterns, so nothing should have been lost. *)
-      Typing_aux.erroneous_type_register ty_expected;
-      raise_error exn;
-      re {
-        exp_desc = Texp_record(!label_list_for_recovery, !opt_exp_for_recovery);
-        exp_loc = loc; exp_extra = [];
-        exp_type = instance env ty_expected;
-        exp_attributes = merlin_incorrect_attribute :: sexp.pexp_attributes;
-        exp_env = env
-      }
+          in
+          let missing = missing_labels 0 label_names in
+          raise_error (Error(loc, env, Label_missing missing))
+        end
+        else if opt_sexp <> None && List.length lid_sexp_list = num_fields then
+          Location.prerr_warning loc Warnings.Useless_record_with;
+        re {
+          exp_desc = Texp_record(lbl_exp_list, opt_exp);
+          exp_loc = loc; exp_extra = [];
+          exp_type = instance env ty_expected;
+          exp_attributes = sexp.pexp_attributes;
+          exp_env = env }
+      with exn ->
+        (* FIXME: We don't respect the Cmt_format.save_types logic but we still
+                    keep all patterns, so nothing should have been lost. *)
+        Typing_aux.erroneous_type_register ty_expected;
+        begin match exn with Not_found -> ()
+                           | exn -> raise_error exn
+        end;
+        re {
+          exp_desc = Texp_record(!label_list_for_recovery, !opt_exp_for_recovery);
+          exp_loc = loc; exp_extra = [];
+          exp_type = instance env ty_expected;
+          exp_attributes = merlin_incorrect_attribute :: sexp.pexp_attributes;
+          exp_env = env
+        }
     end
   | Pexp_field(srecord, lid) ->
       let (record, label, _) = type_label_access env loc srecord lid in
