@@ -99,31 +99,6 @@ let classify_node = function
 
 open Protocol.Compl
 
-(* Taken from Leo White's doc-ock,
-   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
- *)
-let read_doc_attributes attrs =
-  let read_payload =
-    let open Location in
-    let open Parsetree in function
-      | PStr[{ pstr_desc =
-                 Pstr_eval({ pexp_desc =
-                               Pexp_constant(Asttypes.Const_string(str, _));
-                             pexp_loc = loc;
-                           }, _)
-             }] -> Some(str, loc)
-      | _ -> None
-
-  in
-  let rec loop = function
-    | ({Location.txt =
-          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
-      read_payload payload
-    | _ :: rest -> loop rest
-    | [] -> None
-  in
-  loop attrs
-
 let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
   let ident = match path with
     | Some path -> Ident.create (Path.last path)
@@ -181,7 +156,7 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
     | `Module | `Modtype -> ""
     | _ -> to_string ()
   in
-  let info = match read_doc_attributes attrs, get_doc, kind with
+  let info = match Raw_compat.read_doc_attributes attrs, get_doc, kind with
     | Some (str, _), _, _ -> str
     | None, _, (`Module | `Modtype) -> to_string ()
     | None, None, _ -> ""

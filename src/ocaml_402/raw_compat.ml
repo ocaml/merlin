@@ -35,36 +35,6 @@ let extract_const_string = function
 
 let arg_label_to_str s = s
 
-module Parsetree = struct
-  open Parsetree
-
-  let arg_label_of_str x = x
-
-  let format_params ~f params =
-    let format_param (param,_variance) =
-      match param.ptyp_desc with
-      | Ptyp_any -> f "_"
-      | Ptyp_var v -> f v
-      | _ -> assert false (*TODO*)
-    in
-    List.map format_param params
-
-  let extract_specific_parsing_info = function
-    | { pexp_desc = Pexp_ident longident } -> `Ident longident
-    | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
-    | _ -> `Other
-
-  let map_constructors ~f lst =
-    List.map lst ~f:(fun { pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } ->
-      f pcd_name.Location.txt pcd_args pcd_res pcd_loc
-    )
-
-  let args_of_constructor c = c.pcd_args
-
-  let inspect_label { pld_name ; pld_mutable ; pld_type ; pld_loc ; _ } =
-    pld_name, pld_mutable, pld_type, pld_loc
-end
-
 let sig_item_idns =
   let open Types in function
   | Sig_value (id, _) -> id, `Vals
@@ -434,3 +404,57 @@ let val_attributes v = v.Types.val_attributes
 let type_attributes t = t.Types.type_attributes
 let lbl_attributes l = l.Types.lbl_attributes
 let mtd_attributes t = t.Types.mtd_attributes
+
+(* Taken from Leo White's doc-ock,
+   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
+ *)
+let read_doc_attributes attrs =
+  let read_payload =
+    let open Location in let open Parsetree in
+    function
+    | PStr[{ pstr_desc =
+               Pstr_eval({ pexp_desc =
+                             Pexp_constant(Asttypes.Const_string(str, _));
+                           pexp_loc = loc;
+                         }, _)
+           }] -> Some(str, loc)
+    | _ -> None
+  in
+  let rec loop = function
+    | ({Location.txt =
+          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
+      read_payload payload
+    | _ :: rest -> loop rest
+    | [] -> None
+  in
+  loop attrs
+
+module Parsetree = struct
+  open Parsetree
+
+  let arg_label_of_str x = x
+
+  let format_params ~f params =
+    let format_param (param,_variance) =
+      match param.ptyp_desc with
+      | Ptyp_any -> f "_"
+      | Ptyp_var v -> f v
+      | _ -> assert false (*TODO*)
+    in
+    List.map format_param params
+
+  let extract_specific_parsing_info = function
+    | { pexp_desc = Pexp_ident longident } -> `Ident longident
+    | { pexp_desc = Pexp_construct (longident, _) } -> `Constr longident
+    | _ -> `Other
+
+  let map_constructors ~f lst =
+    List.map lst ~f:(fun { pcd_name ; pcd_args ; pcd_res ; pcd_loc ; _ } ->
+      f pcd_name.Location.txt pcd_args pcd_res pcd_loc
+    )
+
+  let args_of_constructor c = c.pcd_args
+
+  let inspect_label { pld_name ; pld_mutable ; pld_type ; pld_loc ; _ } =
+    pld_name, pld_mutable, pld_type, pld_loc
+end

@@ -92,7 +92,9 @@ let extract_modtype_declaration = function
 
 let extract_module_declaration m = m, []
 
-let lookup_module name env = Env.lookup_module name env, []
+let lookup_module name env =
+  let path, md = Env.lookup_module name env in
+  path, (md, [])
 
 let lookup_modtype name env =
   match Env.lookup_modtype name env with
@@ -417,3 +419,5 @@ let val_attributes  _ = []
 let type_attributes _ = []
 let lbl_attributes  _ = []
 let mtd_attributes  _ = []
+
+let read_doc_attributes _ = None
