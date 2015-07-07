@@ -976,9 +976,9 @@ let name_recursion sdecl id decl =
 (* Translate a set of type declarations, mutually recursive or not *)
 let transl_type_decl env rec_flag sdecl_list =
   let rec_flag = 
-    if List.exists (fun sdecl -> Fake.Nonrec.is sdecl.ptype_name.txt)
+    if List.for_all (fun sdecl -> Fake.Nonrec.is sdecl.ptype_name.txt)
          sdecl_list
-    then Recursive
+    then Nonrecursive
 	else rec_flag
   in
   let sdecl_list = List.map (fun sdecl ->
