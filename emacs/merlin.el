@@ -527,7 +527,7 @@ Try to find a satisfying default directory."
   (interactive)
   (unless merlin-mode (message "Buffer is not managed by merlin."))
   (when merlin-mode
-    (message "%S" (merlin-process-owner))
+    (message "%S" (merlin--process-owner))
     (when (merlin-process-buffer)
       (ignore-errors (merlin-kill-process)))
     (setq merlin-erroneous-buffer nil)
