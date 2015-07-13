@@ -586,7 +586,7 @@ return DEFAULT or the value associated to KEY."
   (unless merlin-mode (message "Buffer is not managed by merlin."))
   (when merlin-mode
     (message "%S" (merlin-process-owner))
-    (when (get-buffer (merlin-process-buffer))
+    (when (merlin-process-buffer)
       (ignore-errors (merlin-kill-process)))
     (setq merlin-erroneous-buffer nil)
     (merlin-setup)))
