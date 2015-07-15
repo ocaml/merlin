@@ -3,7 +3,7 @@ OCAMLLEX ?= ocamllex
 
 TYPER  ?= src/ocaml$(MERLIN_OCAML_VERSION)
 
-preprocess: parser lexer
+preprocess: lexer parser
 
 parser:
 	$(MENHIR) --ocamlc 'ocamlfind ocamlc -package yojson,unix,findlib -I $(TYPER)/preprocess -I $(TYPER)_aux -I src/utils -I src/frontend -I $(TYPER) -I src/analysis -I src/kernel -I src/config -I $(TYPER)/typing -I $(TYPER)/utils -I $(TYPER)/parsing' --table --typed-values --stepwise --infer $(TYPER)/preprocess/raw_parser.mly

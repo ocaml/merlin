@@ -522,6 +522,11 @@ rule token state = parse
                       with Not_found -> SHARPOP s) }
   | "let" symbolcharnopercent symbolchar *
             { return (LETOP(Lexing.lexeme lexbuf)) }
+  (* Old style js_of_ocaml support is implemented by generating a custom token *)
+  | '#' (symbolchar | '#') +
+            { let s = Lexing.lexeme lexbuf in
+              return (try Hashtbl.find state.keywords s
+                      with Not_found -> SHARPOP s) }
   | eof { return EOF }
 
   | "<:" identchar* ("@" identchar*)? "<"

@@ -344,6 +344,7 @@ and _ nonterminal_class =
   | N_row_field : (Parsetree.row_field) nonterminal_class
   | N_record_expr : (Parsetree.expression option *
   (Longident.t Asttypes.loc * Parsetree.expression) list) nonterminal_class
+  | N_rec_module_declarations : (Parsetree.module_declaration list) nonterminal_class
   | N_rec_flag : (Asttypes.rec_flag) nonterminal_class
   | N_private_virtual_flags : (Asttypes.private_flag * Asttypes.virtual_flag) nonterminal_class
   | N_private_flag : (Asttypes.private_flag) nonterminal_class
@@ -380,7 +381,6 @@ and _ nonterminal_class =
   | N_mutable_flag : (Asttypes.mutable_flag) nonterminal_class
   | N_mty_longident : (Longident.t) nonterminal_class
   | N_module_type : (Parsetree.module_type) nonterminal_class
-  | N_rec_module_declarations : (Parsetree.module_declaration list) nonterminal_class
   | N_module_rec_declaration : (Parsetree.module_declaration) nonterminal_class
   | N_module_expr : (Parsetree.module_expr) nonterminal_class
   | N_module_declaration : (Parsetree.module_type) nonterminal_class
