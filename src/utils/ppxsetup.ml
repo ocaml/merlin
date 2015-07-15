@@ -29,6 +29,7 @@ let add_ppxopts ppx opts t =
   match opts with
   | [] -> t
   | opts ->
+    let ppx = Filename.basename ppx in
     let opts' =
       try StringMap.find ppx t.ppxopts
       with Not_found -> StringListSet.empty
