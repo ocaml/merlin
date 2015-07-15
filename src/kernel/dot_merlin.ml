@@ -148,9 +148,9 @@ type config =
 let flg_regexp = Str.regexp "\\([^ \t\r\n']\\|'[^']*'\\)+"
 let rev_split_flags str =
   let rec aux acc str i =
-    match Str.search_forward flg_regexp str i with
-    | exception Not_found -> acc
-    | first_match ->
+    match try Some (Str.search_forward flg_regexp str i) with Not_found -> None with
+    | None -> acc
+    | Some first_match ->
       let flag = Str.matched_string str in
       let to_skip = String.length flag in
       let flag =
