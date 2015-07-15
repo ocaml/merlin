@@ -2177,6 +2177,8 @@ operator:
     { $1 }
 | LETOP
     { $1 }
+| SHARPOP
+    { $1 }
 | BANG
     { "!" }
 | PLUS
@@ -2699,6 +2701,15 @@ expr:
       let setter = mkexp $startpos $endpos($3) (Pexp_send(prop,"set")) in
       reloc_exp $startpos $endpos
       Fake.(app setter $5)
+    }
+
+| simple_expr SHARPSHARP LESSMINUS expr
+    { let inst = Fake.(app Js.un_js $1) in
+      let field = mkexp $startpos $startpos($4) (Pexp_send(inst, "")) in
+      let prop = Fake.(app Js.un_prop field) in
+      let setter = mkexp $startpos $startpos($4) (Pexp_send(prop,"set")) in
+      reloc_exp $startpos $endpos
+      Fake.(app setter $4)
     }
 ;
 
