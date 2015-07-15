@@ -432,7 +432,7 @@ let __ocaml_lex_tables = {
     \000\000\000\000\000\000\170\000\000\000\208\000\000\000\058\000\
     \209\000\000\000\190\000\000\000\000\000\057\000\000\000\000\000\
     \000\000\065\000\000\000\006\000\000\000\006\000\093\000\091\000\
-    \000\000\000\000\091\000\091\000\091\000\000\000\000\000\000\000\
+    \000\000\091\000\091\000\091\000\091\000\000\000\000\000\000\000\
     \091\000\091\000\000\000\091\000\091\000\091\000\092\000\092\000\
     \092\000\092\000\092\000\092\000\092\000\092\000\092\000\092\000\
     \091\000\000\000\091\000\091\000\091\000\091\000\091\000\211\000\
@@ -987,7 +987,7 @@ let __ocaml_lex_tables = {
     \255\255\255\255\255\255\168\000\255\255\205\000\255\255\058\000\
     \205\000\255\255\187\000\255\255\255\255\058\000\255\255\255\255\
     \255\255\065\000\255\255\023\000\255\255\023\000\024\000\024\000\
-    \255\255\255\255\024\000\024\000\024\000\255\255\255\255\255\255\
+    \255\255\024\000\024\000\024\000\024\000\255\255\255\255\255\255\
     \024\000\024\000\255\255\024\000\024\000\024\000\024\000\024\000\
     \024\000\024\000\024\000\024\000\024\000\024\000\024\000\024\000\
     \024\000\255\255\024\000\024\000\024\000\024\000\024\000\205\000\
@@ -2143,30 +2143,32 @@ and
 # 2144 "src/kernel/preprocess/raw_lexer.ml"
 
   | 85 ->
-# 503 "src/kernel/preprocess/raw_lexer.mll"
-            ( return (SHARPOP(Lexing.lexeme lexbuf)) )
-# 2149 "src/kernel/preprocess/raw_lexer.ml"
+# 504 "src/kernel/preprocess/raw_lexer.mll"
+            ( let s = Lexing.lexeme lexbuf in
+              return (try Hashtbl.find state.keywords s
+                      with Not_found -> SHARPOP s) )
+# 2151 "src/kernel/preprocess/raw_lexer.ml"
 
   | 86 ->
-# 504 "src/kernel/preprocess/raw_lexer.mll"
+# 507 "src/kernel/preprocess/raw_lexer.mll"
         ( return EOF )
-# 2154 "src/kernel/preprocess/raw_lexer.ml"
+# 2156 "src/kernel/preprocess/raw_lexer.ml"
 
   | 87 ->
-# 509 "src/kernel/preprocess/raw_lexer.mll"
+# 512 "src/kernel/preprocess/raw_lexer.mll"
     ( let start = lexbuf.lex_start_p in
       p4_quotation lexbuf >>= fun () ->
       lexbuf.lex_start_p <- start;
       return P4_QUOTATION
     )
-# 2163 "src/kernel/preprocess/raw_lexer.ml"
+# 2165 "src/kernel/preprocess/raw_lexer.ml"
 
   | 88 ->
-# 516 "src/kernel/preprocess/raw_lexer.mll"
+# 519 "src/kernel/preprocess/raw_lexer.mll"
       ( fail (Illegal_character (Lexing.lexeme_char lexbuf 0))
               (Location.curr lexbuf)
       )
-# 2170 "src/kernel/preprocess/raw_lexer.ml"
+# 2172 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2177,15 +2179,15 @@ and comment state lexbuf =
 and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 522 "src/kernel/preprocess/raw_lexer.mll"
+# 525 "src/kernel/preprocess/raw_lexer.mll"
       ( state.comment_start_loc <- (Location.curr lexbuf) :: state.comment_start_loc;
       Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
       comment state lexbuf
     )
-# 2186 "src/kernel/preprocess/raw_lexer.ml"
+# 2188 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
-# 527 "src/kernel/preprocess/raw_lexer.mll"
+# 530 "src/kernel/preprocess/raw_lexer.mll"
       ( match state.comment_start_loc with
         | [] -> assert false
         | [_] -> state.comment_start_loc <- []; return (Location.curr lexbuf)
@@ -2193,10 +2195,10 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
                   Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
                   comment state lexbuf
        )
-# 2197 "src/kernel/preprocess/raw_lexer.ml"
+# 2199 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
-# 535 "src/kernel/preprocess/raw_lexer.mll"
+# 538 "src/kernel/preprocess/raw_lexer.mll"
       (
         state.string_start_loc <- Location.curr lexbuf;
         Buffer.add_char state.buffer '"';
@@ -2215,10 +2217,10 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
       state.string_start_loc <- Location.none;
       Buffer.add_char state.buffer '"';
       comment state lexbuf )
-# 2219 "src/kernel/preprocess/raw_lexer.ml"
+# 2221 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
-# 554 "src/kernel/preprocess/raw_lexer.mll"
+# 557 "src/kernel/preprocess/raw_lexer.mll"
       (
         let delim = Lexing.lexeme lexbuf in
         let delim = String.sub delim 1 (String.length delim - 2) in
@@ -2241,43 +2243,43 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
         Buffer.add_string state.buffer delim;
         Buffer.add_char state.buffer '}';
         comment state lexbuf )
-# 2245 "src/kernel/preprocess/raw_lexer.ml"
+# 2247 "src/kernel/preprocess/raw_lexer.ml"
 
   | 4 ->
-# 578 "src/kernel/preprocess/raw_lexer.mll"
+# 581 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2250 "src/kernel/preprocess/raw_lexer.ml"
+# 2252 "src/kernel/preprocess/raw_lexer.ml"
 
   | 5 ->
-# 580 "src/kernel/preprocess/raw_lexer.mll"
+# 583 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false 1;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         comment state lexbuf
       )
-# 2258 "src/kernel/preprocess/raw_lexer.ml"
+# 2260 "src/kernel/preprocess/raw_lexer.ml"
 
   | 6 ->
-# 585 "src/kernel/preprocess/raw_lexer.mll"
+# 588 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2263 "src/kernel/preprocess/raw_lexer.ml"
+# 2265 "src/kernel/preprocess/raw_lexer.ml"
 
   | 7 ->
-# 587 "src/kernel/preprocess/raw_lexer.mll"
+# 590 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2268 "src/kernel/preprocess/raw_lexer.ml"
+# 2270 "src/kernel/preprocess/raw_lexer.ml"
 
   | 8 ->
-# 589 "src/kernel/preprocess/raw_lexer.mll"
+# 592 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2273 "src/kernel/preprocess/raw_lexer.ml"
+# 2275 "src/kernel/preprocess/raw_lexer.ml"
 
   | 9 ->
-# 591 "src/kernel/preprocess/raw_lexer.mll"
+# 594 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2278 "src/kernel/preprocess/raw_lexer.ml"
+# 2280 "src/kernel/preprocess/raw_lexer.ml"
 
   | 10 ->
-# 593 "src/kernel/preprocess/raw_lexer.mll"
+# 596 "src/kernel/preprocess/raw_lexer.mll"
       ( match state.comment_start_loc with
         | [] -> assert false
         | loc :: _ ->
@@ -2285,20 +2287,20 @@ and __ocaml_lex_comment_rec state lexbuf __ocaml_lex_state =
           state.comment_start_loc <- [];
           fail (Unterminated_comment start) loc
       )
-# 2289 "src/kernel/preprocess/raw_lexer.ml"
+# 2291 "src/kernel/preprocess/raw_lexer.ml"
 
   | 11 ->
-# 601 "src/kernel/preprocess/raw_lexer.mll"
+# 604 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false 0;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         comment state lexbuf
       )
-# 2297 "src/kernel/preprocess/raw_lexer.ml"
+# 2299 "src/kernel/preprocess/raw_lexer.ml"
 
   | 12 ->
-# 606 "src/kernel/preprocess/raw_lexer.mll"
+# 609 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf )
-# 2302 "src/kernel/preprocess/raw_lexer.ml"
+# 2304 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2309,44 +2311,44 @@ and string state lexbuf =
 and __ocaml_lex_string_rec state lexbuf __ocaml_lex_state =
   match Lexing.new_engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 610 "src/kernel/preprocess/raw_lexer.mll"
+# 613 "src/kernel/preprocess/raw_lexer.mll"
       ( return () )
-# 2315 "src/kernel/preprocess/raw_lexer.ml"
+# 2317 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
 let
-# 611 "src/kernel/preprocess/raw_lexer.mll"
+# 614 "src/kernel/preprocess/raw_lexer.mll"
                                   space
-# 2321 "src/kernel/preprocess/raw_lexer.ml"
+# 2323 "src/kernel/preprocess/raw_lexer.ml"
 = Lexing.sub_lexeme lexbuf lexbuf.Lexing.lex_mem.(0) lexbuf.Lexing.lex_curr_pos in
-# 612 "src/kernel/preprocess/raw_lexer.mll"
+# 615 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false (String.length space);
         string state lexbuf
       )
-# 2327 "src/kernel/preprocess/raw_lexer.ml"
+# 2329 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
-# 616 "src/kernel/preprocess/raw_lexer.mll"
+# 619 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer
           (char_for_backslash (Lexing.lexeme_char lexbuf 1));
         string state lexbuf )
-# 2334 "src/kernel/preprocess/raw_lexer.ml"
+# 2336 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
-# 620 "src/kernel/preprocess/raw_lexer.mll"
+# 623 "src/kernel/preprocess/raw_lexer.mll"
       ( char_for_decimal_code state lexbuf 1 >>= fun c ->
         Buffer.add_char state.buffer c;
         string state lexbuf )
-# 2341 "src/kernel/preprocess/raw_lexer.ml"
+# 2343 "src/kernel/preprocess/raw_lexer.ml"
 
   | 4 ->
-# 624 "src/kernel/preprocess/raw_lexer.mll"
+# 627 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer (char_for_hexadecimal_code lexbuf 2);
         string state lexbuf )
-# 2347 "src/kernel/preprocess/raw_lexer.ml"
+# 2349 "src/kernel/preprocess/raw_lexer.ml"
 
   | 5 ->
-# 627 "src/kernel/preprocess/raw_lexer.mll"
+# 630 "src/kernel/preprocess/raw_lexer.mll"
       ( if in_comment state
         then string state lexbuf
         else begin
@@ -2361,30 +2363,30 @@ let
           string state lexbuf
         end
       )
-# 2365 "src/kernel/preprocess/raw_lexer.ml"
+# 2367 "src/kernel/preprocess/raw_lexer.ml"
 
   | 6 ->
-# 642 "src/kernel/preprocess/raw_lexer.mll"
+# 645 "src/kernel/preprocess/raw_lexer.mll"
       ( if not (in_comment state) then
           Location.prerr_warning (Location.curr lexbuf) Warnings.Eol_in_string;
         update_loc lexbuf None 1 false 0;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         string state lexbuf
       )
-# 2375 "src/kernel/preprocess/raw_lexer.ml"
+# 2377 "src/kernel/preprocess/raw_lexer.ml"
 
   | 7 ->
-# 649 "src/kernel/preprocess/raw_lexer.mll"
+# 652 "src/kernel/preprocess/raw_lexer.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
         fail Unterminated_string loc )
-# 2382 "src/kernel/preprocess/raw_lexer.ml"
+# 2384 "src/kernel/preprocess/raw_lexer.ml"
 
   | 8 ->
-# 653 "src/kernel/preprocess/raw_lexer.mll"
+# 656 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         string state lexbuf )
-# 2388 "src/kernel/preprocess/raw_lexer.ml"
+# 2390 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2395,22 +2397,22 @@ and quoted_string state delim lexbuf =
 and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 658 "src/kernel/preprocess/raw_lexer.mll"
+# 661 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false 0;
         Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
         quoted_string state delim lexbuf
       )
-# 2404 "src/kernel/preprocess/raw_lexer.ml"
+# 2406 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
-# 663 "src/kernel/preprocess/raw_lexer.mll"
+# 666 "src/kernel/preprocess/raw_lexer.mll"
       ( let loc = state.string_start_loc in
         state.string_start_loc <- Location.none;
         fail Unterminated_string loc )
-# 2411 "src/kernel/preprocess/raw_lexer.ml"
+# 2413 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
-# 667 "src/kernel/preprocess/raw_lexer.mll"
+# 670 "src/kernel/preprocess/raw_lexer.mll"
       (
         let edelim = Lexing.lexeme lexbuf in
         let edelim = String.sub edelim 1 (String.length edelim - 2) in
@@ -2418,13 +2420,13 @@ and __ocaml_lex_quoted_string_rec state delim lexbuf __ocaml_lex_state =
         else (Buffer.add_string state.buffer (Lexing.lexeme lexbuf);
               quoted_string state delim lexbuf)
       )
-# 2422 "src/kernel/preprocess/raw_lexer.ml"
+# 2424 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
-# 675 "src/kernel/preprocess/raw_lexer.mll"
+# 678 "src/kernel/preprocess/raw_lexer.mll"
       ( Buffer.add_char state.buffer (Lexing.lexeme_char lexbuf 0);
         quoted_string state delim lexbuf )
-# 2428 "src/kernel/preprocess/raw_lexer.ml"
+# 2430 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2435,19 +2437,19 @@ and skip_sharp_bang state lexbuf =
 and __ocaml_lex_skip_sharp_bang_rec state lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 680 "src/kernel/preprocess/raw_lexer.mll"
+# 683 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 3 false 0; token state lexbuf )
-# 2441 "src/kernel/preprocess/raw_lexer.ml"
+# 2443 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
-# 682 "src/kernel/preprocess/raw_lexer.mll"
+# 685 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false 0; token state lexbuf )
-# 2446 "src/kernel/preprocess/raw_lexer.ml"
+# 2448 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
-# 683 "src/kernel/preprocess/raw_lexer.mll"
+# 686 "src/kernel/preprocess/raw_lexer.mll"
        ( token state lexbuf )
-# 2451 "src/kernel/preprocess/raw_lexer.ml"
+# 2453 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2458,30 +2460,30 @@ and p4_quotation lexbuf =
 and __ocaml_lex_p4_quotation_rec lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
-# 687 "src/kernel/preprocess/raw_lexer.mll"
+# 690 "src/kernel/preprocess/raw_lexer.mll"
       ( p4_quotation lexbuf )
-# 2464 "src/kernel/preprocess/raw_lexer.ml"
+# 2466 "src/kernel/preprocess/raw_lexer.ml"
 
   | 1 ->
-# 690 "src/kernel/preprocess/raw_lexer.mll"
+# 693 "src/kernel/preprocess/raw_lexer.mll"
       ( return () )
-# 2469 "src/kernel/preprocess/raw_lexer.ml"
+# 2471 "src/kernel/preprocess/raw_lexer.ml"
 
   | 2 ->
-# 692 "src/kernel/preprocess/raw_lexer.mll"
+# 695 "src/kernel/preprocess/raw_lexer.mll"
       ( update_loc lexbuf None 1 false 0;
         p4_quotation lexbuf )
-# 2475 "src/kernel/preprocess/raw_lexer.ml"
+# 2477 "src/kernel/preprocess/raw_lexer.ml"
 
   | 3 ->
-# 695 "src/kernel/preprocess/raw_lexer.mll"
+# 698 "src/kernel/preprocess/raw_lexer.mll"
       ( fail Unterminated_string (Location.curr lexbuf) )
-# 2480 "src/kernel/preprocess/raw_lexer.ml"
+# 2482 "src/kernel/preprocess/raw_lexer.ml"
 
   | 4 ->
-# 697 "src/kernel/preprocess/raw_lexer.mll"
+# 700 "src/kernel/preprocess/raw_lexer.mll"
       ( p4_quotation lexbuf )
-# 2485 "src/kernel/preprocess/raw_lexer.ml"
+# 2487 "src/kernel/preprocess/raw_lexer.ml"
 
   | __ocaml_lex_state -> __ocaml_lex_refill 
       (fun lexbuf -> lexbuf.Lexing.refill_buff lexbuf; 
@@ -2489,7 +2491,7 @@ and __ocaml_lex_p4_quotation_rec lexbuf __ocaml_lex_state =
 
 ;;
 
-# 699 "src/kernel/preprocess/raw_lexer.mll"
+# 702 "src/kernel/preprocess/raw_lexer.mll"
  
   type comment = string * Location.t
 
@@ -2502,4 +2504,4 @@ and __ocaml_lex_p4_quotation_rec lexbuf __ocaml_lex_state =
       token_without_comments state lexbuf
     | tok -> return tok
 
-# 2506 "src/kernel/preprocess/raw_lexer.ml"
+# 2508 "src/kernel/preprocess/raw_lexer.ml"

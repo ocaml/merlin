@@ -21,6 +21,7 @@ type token =
   | STAR
   | SIG
   | SHARPOP of (string)
+  | SHARPSHARP
   | SHARP
   | SEMISEMI
   | SEMI
