@@ -145,7 +145,7 @@ type config =
     extensions  : string list;
   }
 
-let flg_regexp = Str.regexp "\\([^ \t\r\n']\\|'[^']*'\\)+"
+let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
 let rev_split_flags str =
   let rec aux acc str i =
     match try Some (Str.search_forward flg_regexp str i) with Not_found -> None with
