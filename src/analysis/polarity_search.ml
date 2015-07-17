@@ -1,0 +1,114 @@
+open Std
+
+type t = Trie of (string * Longident.t * t list lazy_t)
+
+type query = { positive: Path.PathSet.t ; negative: Path.PathSet.t;
+               pos_fun: int; neg_fun: int;
+             }
+
+let remove cost set path =
+  if Path.PathSet.mem path !set then
+    (decr cost; set := Path.PathSet.remove path !set)
+
+let rec normalize_path env path =
+  let decl = Env.find_type path env in
+  match decl.Types.type_manifest with
+  | Some body when decl.Types.type_private = Asttypes.Public
+                   || decl.Types.type_kind <> Types.Type_abstract ->
+    begin match (Ctype.repr body).Types.desc with
+      | Types.Tconstr (path, _, _) -> normalize_path env path
+      | _ -> path
+    end
+  | _ -> path
+
+let match_query env query t =
+  let cost = ref 0 in
+  let rec traverse neg neg_fun pos pos_fun t =
+    incr cost;
+    incr cost;
+    match (Ctype.repr t).Types.desc with
+    | Types.Tconstr (path, params, _) ->
+      remove cost pos (try normalize_path env path
+                       with Not_found -> path);
+      begin try
+      List.iter2 (Env.find_type path env).Types.type_variance params
+        ~f:(fun var arg ->
+            if Types.Variance.mem Types.Variance.Inj var then
+              begin
+                if Types.Variance.mem Types.Variance.Pos var then
+                  traverse neg neg_fun pos pos_fun arg;
+                if Types.Variance.mem Types.Variance.Neg var then
+                  traverse pos pos_fun neg neg_fun arg
+              end
+          )
+        with Not_found -> ()
+      end
+    | Types.Tarrow (_, t1, t2, _) ->
+      decr pos_fun;
+      traverse neg neg_fun pos pos_fun t2;
+      traverse pos pos_fun neg neg_fun t1
+
+    | Types.Ttuple ts ->
+      List.iter ~f:(traverse neg neg_fun pos pos_fun) ts
+
+    | Types.Tvar _ | Types.Tunivar _ ->
+      decr cost (* Favor polymorphic defs *)
+
+    | _ -> ()
+
+  in
+  let neg = ref query.negative and pos = ref query.positive in
+  let neg_fun = ref query.neg_fun and pos_fun = ref query.pos_fun in
+  traverse neg neg_fun pos pos_fun t;
+  if Path.PathSet.is_empty !pos
+     && Path.PathSet.is_empty !neg
+     && !neg_fun <= 0
+     && !pos_fun <= 0 then
+    Some !cost
+  else
+    None
+
+let rec execute_query query env =
+  Env.fold_values
+
+let build_query ~positive ~negative env =
+  let prepare l = normalize_path env (fst (Env.lookup_type l env)) in
+  let count_fun r l = if l = Longident.Lident "fun" then (incr r; false) else true in
+  let pos_fun = ref 0 and neg_fun = ref 0 in
+  let positive = positive |> List.filter ~f:(count_fun pos_fun) |> List.map ~f:prepare in
+  let negative = negative |> List.filter ~f:(count_fun neg_fun) |> List.map ~f:prepare in
+  {
+    positive = Path.PathSet.of_list positive;
+    negative = Path.PathSet.of_list negative;
+    neg_fun = !neg_fun; pos_fun = !pos_fun;
+  }
+
+let directories env =
+  let rec explore lident env =
+    let add_module name _ md l =
+      match md.Types.md_type with
+      | Types.Mty_alias _ -> l
+      | _ ->
+        let lident = Longident.Ldot (lident, name) in
+        Trie (name, lident, lazy (explore lident env)) :: l
+    in
+    Env.fold_modules add_module (Some lident) env []
+  in
+  Env.fold_modules
+    (fun name _ _ l ->
+       let lident = Longident.Lident name in
+       Trie (name, lident, lazy (explore lident env)) :: l)
+    None env []
+
+let execute_query query env dirs =
+  let direct dir acc =
+    Env.fold_values (fun _ path desc acc ->
+        match match_query env query desc.Types.val_type with
+        | Some cost -> (cost, path, desc) :: acc
+        | None -> acc)
+      dir env acc
+  in
+  let rec recurse acc (Trie (_, dir, lazy children)) =
+    List.fold_left ~f:recurse ~init:(direct (Some dir) acc) children
+  in
+  List.fold_left dirs ~init:(direct None []) ~f:recurse

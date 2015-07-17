@@ -312,6 +312,8 @@ module Protocol_io = struct
       Request (Complete_prefix (prefix, pos_of_json jpos, true))
     | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
       Request (Expand_prefix (prefix, pos_of_json jpos))
+    | [`String "polarity"; `String "search"; `String query; `String "at"; jpos] ->
+      Request (Polarity_search (query, pos_of_json jpos))
     | (`String "document" :: (`String "" | `Null) :: pos) ->
       Request (Document (None, mandatory_position pos))
     | (`String "document" :: `String path :: pos) ->
@@ -443,6 +445,8 @@ module Protocol_io = struct
         | Complete_prefix _, compl ->
           json_of_completions compl
         | Expand_prefix _, compl ->
+          json_of_completions compl
+        | Polarity_search _, compl ->
           json_of_completions compl
         | Document _, resp ->
           begin match resp with

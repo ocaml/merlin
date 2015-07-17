@@ -92,6 +92,9 @@ type _ request =
   | Expand_prefix
     :  string * position
     -> completions request
+  | Polarity_search
+    :  string * position
+    -> completions request
   | Document
     : string option * position
     -> [ `Found of string

@@ -97,6 +97,7 @@ let track_verbosity =
     | Enclosing _ -> obj
     | Complete_prefix _ -> obj
     | Expand_prefix _ -> obj
+    | Polarity_search _ -> obj
     | _ -> None in
   fun (type a) (request : a request) ->
     match classify request with
@@ -403,6 +404,49 @@ let dispatch (state : state) =
     let global_modules = Buffer.global_modules state.buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
     { Compl. entries ; context = `Unknown }
+
+  | (Polarity_search (query, pos) : a request) ->
+    with_typer state @@ fun typer ->
+    let env =
+      let node, _ = Browse.node_at typer pos in
+      node.BrowseT.t_env
+    in
+    Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
+    let re = Str.regexp "[ |\t]+" in
+    let pos, neg =
+      Str.split re query |>
+      List.partition ~f:(fun s -> s.[0] <> '-')
+    in
+    let prepare s =
+      Longident.parse @@
+      if s.[0] = '-' || s.[0] = '+'
+      then String.sub s ~pos:1 ~len:(String.length s - 1)
+      else s
+    in
+    let pos = List.map pos ~f:prepare and neg = List.map neg ~f:prepare in
+    let query = Polarity_search.build_query ~positive:pos ~negative:neg env in
+    let dirs = Polarity_search.directories env in
+    let oc = open_out "/home/fbour/results.log" in
+    let ppf = Format.formatter_of_out_channel oc in
+    let results = List.sort ~cmp:compare
+        (Polarity_search.execute_query query env dirs) in
+    for i = 0 to 10 do
+      prerr_endline (
+        match Clflags.real_paths () with
+        | `Opened -> "opened"
+        | `Real -> "Real"
+        | `Short -> "Short"
+      )
+    done;
+    List.iter results
+      ~f:(fun (cost, path, v) ->
+          Format.fprintf ppf "(%d)%a : @[%a@]@.\n"
+            cost
+            Printtyp.path path
+            (Printtyp.type_scheme env) v.Types.val_type
+        );
+    close_out_noerr oc;
+    { Compl. entries = [] ; context = `Unknown }
 
   | (Document (patho, pos) : a request) ->
     with_typer state @@ fun typer ->
