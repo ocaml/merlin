@@ -2245,7 +2245,7 @@ and type_expect_ ?in_function env sexp ty_expected =
               end in
             Array.iter unify_kept lbl.lbl_all;
             Some {exp with exp_type = ty_exp}
-          | _ -> assert false
+          | Some exp, [] -> Some exp (*assert false / recovered *)
         in
         opt_exp_for_recovery := opt_exp;
         check_duplicates lbl_exp_list;
@@ -3667,12 +3667,13 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
         if not !has_pattern_error then raise_error exn
     ) patl;
   (* Check for polymorphic variants to close *)
-  if List.exists has_variants patl then begin
+  if List.exists has_variants patl then
     (* Not sure if appropriate... Keep things simple after errors *)
     if not !has_pattern_error then
-      Parmatch.pressure_variants env patl;
-    List.iter (iter_pattern finalize_variant) patl
-  end;
+      begin
+        Parmatch.pressure_variants env patl;
+        List.iter (iter_pattern finalize_variant) patl
+      end;
   (* `Contaminating' unifications start here *)
   List.iter (fun f -> f()) !pattern_force;
   (* Post-processing and generalization *)
