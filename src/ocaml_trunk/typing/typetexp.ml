@@ -399,6 +399,19 @@ let rec swap_list = function
 type policy = Fixed | Extensible | Univars
 
 let rec transl_type env policy styp =
+  try transl_type' env policy styp
+  with exn ->
+    Typing_aux.raise_error exn;
+    let loc = styp.ptyp_loc in
+    let ctyp ctyp_desc ctyp_type =
+      { ctyp_desc; ctyp_type; ctyp_env = env;
+        ctyp_loc = loc; ctyp_attributes = styp.ptyp_attributes }
+    in
+    ctyp
+      (Ttyp_constr (Predef.path_unit, Location.mknoloc (Longident.Lident "unit"), []))
+      (newconstr Predef.path_unit [])
+
+and transl_type' env policy styp =
   let loc = styp.ptyp_loc in
   let ctyp ctyp_desc ctyp_type =
     { ctyp_desc; ctyp_type; ctyp_env = env;
