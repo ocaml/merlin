@@ -189,7 +189,9 @@ field logfile (see `merlin-start-process')"
   "When user attention is required, merlin will use `sit-for' only if `merlin-allow-sit-for' is `t'."
   :group 'merlin :type 'boolean)
 
-
+(defalias 'merlin-find-file 'find-file-other-window
+  "The function called when merlin try to open a file (doesn't apply to
+merlin-locate, see `merlin-locate-in-new-window').")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
@@ -713,7 +715,7 @@ the error message otherwise print a generic error message."
          (names (mapcar (lambda (ext) (concat name ext)) exts))
          (file (merlin/send-command `(which path ,names)
                  #'(lambda (err) (message "No such file (message: %s)" err)))))
-    (when file (find-file-other-window file))))
+    (when file (merlin-find-file file))))
 
 (defun merlin-switch-to-ml (name)
   "Switch to the ML file corresponding to the module NAME (fallback to MLI if no ML is provided)."
@@ -1419,7 +1421,7 @@ loading"
   (let* ((dot_merlins (car (merlin--project-get)))
          (file (if (listp dot_merlins) (car dot_merlins) nil)))
     (if file
-        (find-file-other-window file)
+        (merlin-find-file file)
       (message "No project file for the current buffer."))))
 
 (defun merlin-flags-clear ()
@@ -1824,7 +1826,7 @@ Returns the position."
   "Jump to the log file of merlin."
   (interactive)
   (let ((file (lookup-default 'logfile (merlin-process-data) nil)))
-    (if file (find-file-other-window file)
+    (if file (merlin-find-file file)
       (message "No log file for this instance."))))
 
 (defun merlin-lighter ()
