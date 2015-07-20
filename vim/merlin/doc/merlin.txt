@@ -33,6 +33,8 @@ under the cursor.
 When called with one argument tries to jump at the definition of the given
 identifier, using the environment available at the cursor position.
 
+Bound to gd by default in normal mode.
+
 :ML[I]                                                                   *:ML*
 
 Quick switch to a source (resp. interface) file.
@@ -60,12 +62,16 @@ Bound to <LocalLeader>t by default in visual mode.
 When |:MerlinTypeOf| has been called, select the smallest expression
 containing the previously highlighted expression.
 
+Bound to <LocalLeader>n by default in normal mode.
+
 :MerlinShrinkEnclosing             *:MerlinShrinkEnclosing* *:ShrinkEnclosing*
 
 When |:MerlinGrowEnclosing| has been called, revert to the previously selected
 expression. (i.e. the largest expression, centered around the position where
 |:MerlinTypeOf| was called, which is contained in the currently highlighted
 expression).
+
+Bound to <LocalLeader>p by default in normal mode.
 
 ["r] :MerlinYankLatestType           *:MerlinYankLatestType* *:YankLatestType*
 
@@ -123,6 +129,12 @@ It expects some input from the user, and then will list things in the
 environment which name matches the user input.
 
 Hitting enter will move you to the definition of the selected element.
+
+:MerlinPhrase                                                *:MerlinPhrase*
+Selects the current phrase.
+
+
+Bound to <TAB> by default in visual mode.
 
 ==============================================================================
 OPTIONS                                                       *merlin-options*
@@ -254,7 +266,13 @@ Specifies whether you'd prefer |:MerlinLocate| and |:MerlinILocate| to take you
 to .ml or .mli files. >
     let g:merlin_locate_preference = 'mli'
 <
-
+                                                   *'merlin_disable_default_keybindings'*
+Default: false.
+Specifies whether merlin should skip setting default keybindings.
+>
+    let g:merlin_disable_default_keybindings = 1
+<
+ 
 ==============================================================================
 EXTRAS                                                         *merlin-extras*
 
