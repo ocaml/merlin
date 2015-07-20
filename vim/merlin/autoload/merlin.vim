@@ -51,6 +51,10 @@ if !exists("g:merlin_completion_with_doc")
     let g:merlin_completion_with_doc = "false"
 endif
 
+if !exists("g:merlin_disable_default_keybindings")
+  let g:merlin_disable_default_keybindings = 0
+endif
+
 let s:current_dir=expand("<sfile>:p:h")
 py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
@@ -496,10 +500,12 @@ function! merlin#Register()
   command! -buffer -nargs=0 MerlinYankLatestType    call merlin#YankLatestType()
   command! -buffer -nargs=0 MerlinToggleTypeHistory call merlin_type#ToggleTypeHistory()
 
-  map  <buffer> <LocalLeader>t :MerlinTypeOf<return>
-  map  <buffer> <LocalLeader>n :MerlinGrowEnclosing<return>
-  map  <buffer> <LocalLeader>p :MerlinShrinkEnclosing<return>
-  vmap <buffer> <LocalLeader>t :MerlinTypeOfSel<return>
+  if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
+    map  <buffer> <LocalLeader>t :MerlinTypeOf<return>
+    map  <buffer> <LocalLeader>n :MerlinGrowEnclosing<return>
+    map  <buffer> <LocalLeader>p :MerlinShrinkEnclosing<return>
+    vmap <buffer> <LocalLeader>t :MerlinTypeOfSel<return>
+  endif
 
   """ Destruct  ----------------------------------------------------------------
   command! -buffer -nargs=0 MerlinDestruct call merlin#Destruct()
@@ -508,7 +514,10 @@ function! merlin#Register()
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinLocate call merlin#Locate(<q-args>)
   command! -buffer -nargs=0 MerlinILocate call merlin#InteractiveLocate()
 
-  nmap <silent><buffer> gd  :MerlinLocate<return>
+
+  if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
+    nmap <silent><buffer> gd  :MerlinLocate<return>
+  endif
 
   """ Document  ----------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinDocument call merlin#Document(<q-args>)
@@ -576,7 +585,11 @@ function! merlin#Register()
 
   """ 'semantic movement'  -----------------------------------------------------
   " TODO: bind (,),{,} ?
-  vmap <buffer> <TAB>          :call merlin#Phrase()<return>
+  command! -buffer -nargs=0 MerlinPhrase call merlin#Phrase()
+
+  if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
+    vmap <silent><buffer> <TAB>         :<C-u>MerlinPhrase<return>
+  endif
 
   call merlin#LoadProject()
 endfunction
