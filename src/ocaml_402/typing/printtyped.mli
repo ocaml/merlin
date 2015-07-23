@@ -18,6 +18,3 @@ val implementation : formatter -> structure -> unit;;
 
 val implementation_with_coercion :
     formatter -> (structure * module_coercion) -> unit;;
-
-(* Added by merlin for debugging purposes *)
-val pattern : int -> formatter -> pattern -> unit

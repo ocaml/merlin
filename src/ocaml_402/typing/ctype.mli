@@ -16,7 +16,6 @@ open Asttypes
 open Types
 
 exception Unify of (type_expr * type_expr) list
-
 exception Tags of label * label
 exception Subtype of
         (type_expr * type_expr) list * (type_expr * type_expr) list
@@ -272,8 +271,6 @@ val collapse_conj_params: Env.t -> type_expr list -> unit
 
 val get_current_level: unit -> int
 val wrap_trace_gadt_instances: Env.t -> ('a -> 'b) -> 'a -> 'b
-
-val simple_copy: type_expr -> type_expr
 
 (* Stubs *)
 val package_subtype :
