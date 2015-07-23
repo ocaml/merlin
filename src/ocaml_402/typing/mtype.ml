@@ -15,7 +15,6 @@
 open Asttypes
 open Path
 open Types
-open Misc
 
 
 let rec scrape env mty =
@@ -33,10 +32,10 @@ let freshen mty =
 
 let rec strengthen env mty p =
   match scrape env mty with
-    Mty_signature (lazy sg) ->
-      Mty_signature ~:(strengthen_sig env sg p)
+    Mty_signature sg ->
+      Mty_signature(strengthen_sig env sg p)
   | Mty_functor(param, arg, res)
-    when Clflags.applicative_functors () && Ident.name param <> "*" ->
+    when !Clflags.applicative_functors && Ident.name param <> "*" ->
       Mty_functor(param, arg, strengthen env res (Papply(p, Pident param)))
   | mty ->
       mty
@@ -107,8 +106,8 @@ let nondep_supertype env mid mty =
         if Path.isfree mid p then
           nondep_mty env va (Env.find_module p env).md_type
         else mty
-    | Mty_signature (lazy sg) ->
-        Mty_signature ~:(nondep_sig env va sg)
+    | Mty_signature sg ->
+        Mty_signature(nondep_sig env va sg)
     | Mty_functor(param, arg, res) ->
         let var_inv =
           match va with Co -> Contra | Contra -> Co | Strict -> Strict in
@@ -172,8 +171,8 @@ let enrich_typedecl env p decl =
 
 let rec enrich_modtype env p mty =
   match mty with
-    Mty_signature (lazy sg) ->
-      Mty_signature ~:(List.map (enrich_item env p) sg)
+    Mty_signature sg ->
+      Mty_signature(List.map (enrich_item env p) sg)
   | _ ->
       mty
 
@@ -193,7 +192,7 @@ let rec type_paths env p mty =
   match scrape env mty with
     Mty_ident p -> []
   | Mty_alias p -> []
-  | Mty_signature (lazy sg) -> type_paths_sig env p 0 sg
+  | Mty_signature sg -> type_paths_sig env p 0 sg
   | Mty_functor(param, arg, res) -> []
 
 and type_paths_sig env p pos sg =
@@ -217,7 +216,7 @@ and type_paths_sig env p pos sg =
 let rec no_code_needed env mty =
   match scrape env mty with
     Mty_ident p -> false
-  | Mty_signature (lazy sg) -> no_code_needed_sig env sg
+  | Mty_signature sg -> no_code_needed_sig env sg
   | Mty_functor(_, _, _) -> false
   | Mty_alias p -> true
 
@@ -247,7 +246,7 @@ let rec contains_type env = function
       | Some mty -> contains_type env mty
       with Not_found -> raise Exit
       end
-  | Mty_signature (lazy sg) ->
+  | Mty_signature sg ->
       contains_type_sig env sg
   | Mty_functor (_, _, body) ->
       contains_type env body
@@ -331,7 +330,7 @@ let collect_arg_paths mty =
     match si with
       Sig_module (id, {md_type=Mty_alias p}, _) ->
         bindings := Ident.add id p !bindings
-    | Sig_module (id, {md_type=Mty_signature (lazy sg)}, _) ->
+    | Sig_module (id, {md_type=Mty_signature sg}, _) ->
         List.iter
           (function Sig_module (id', _, _) ->
               subst :=
@@ -348,8 +347,8 @@ let collect_arg_paths mty =
 
 let rec remove_aliases env excl mty =
   match mty with
-    Mty_signature (lazy sg) ->
-      Mty_signature (Lazy.from_val (remove_aliases_sig env excl sg))
+    Mty_signature sg ->
+      Mty_signature (remove_aliases_sig env excl sg)
   | Mty_alias _ ->
       let mty' = Env.scrape_alias env mty in
       if mty' = mty then mty else

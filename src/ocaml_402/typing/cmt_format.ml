@@ -191,16 +191,16 @@ let clear () =
   saved_types := [];
   value_deps := []
 
-let add_saved_type b = () (*saved_types := b :: !saved_types*)
+let add_saved_type b = saved_types := b :: !saved_types
 let get_saved_types () = !saved_types
-let set_saved_types l = () (*saved_types := l*)
+let set_saved_types l = saved_types := l
 
 let record_value_dependency vd1 vd2 =
   if vd1.Types.val_loc <> vd2.Types.val_loc then
     value_deps := (vd1, vd2) :: !value_deps
 
 let save_cmt filename modname binary_annots sourcefile initial_env sg =
-  if Clflags.binary_annotations () && not (Clflags.print_types ()) then begin
+  if !Clflags.binary_annotations && not !Clflags.print_types then begin
     let imports = Env.imports () in
     let oc = open_out_bin filename in
     let this_crc =
@@ -211,7 +211,7 @@ let save_cmt filename modname binary_annots sourcefile initial_env sg =
             cmi_name = modname;
             cmi_sign = sg;
             cmi_flags =
-            if Clflags.recursive_types () then [Cmi_format.Rectypes] else [];
+            if !Clflags.recursive_types then [Cmi_format.Rectypes] else [];
             cmi_crcs = imports;
           } in
           Some (output_cmi filename oc cmi)
@@ -221,11 +221,11 @@ let save_cmt filename modname binary_annots sourcefile initial_env sg =
       cmt_modname = modname;
       cmt_annots = clear_env binary_annots;
       cmt_value_dependencies = !value_deps;
-      cmt_comments = []; (*Lexer.comments ();*)
+      cmt_comments = Lexer.comments ();
       cmt_args = Sys.argv;
       cmt_sourcefile = sourcefile;
       cmt_builddir =  Sys.getcwd ();
-      cmt_loadpath = []; (*!Config.load_path;*)
+      cmt_loadpath = !Config.load_path;
       cmt_source_digest = source_digest;
       cmt_initial_env = if need_to_clear_env then
           keep_only_summary initial_env else initial_env;

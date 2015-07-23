@@ -369,6 +369,7 @@ module Cf:
 
     val virtual_: core_type -> class_field_kind
     val concrete: override_flag -> expression -> class_field_kind
+
   end
 
 (** Classes *)
