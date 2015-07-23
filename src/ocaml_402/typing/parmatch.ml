@@ -716,7 +716,7 @@ let complete_tags nconsts nconstrs tags =
 (* build a pattern from a constructor list *)
 let pat_of_constr ex_pat cstr =
  {ex_pat with pat_desc =
-  Tpat_construct (mknoloc (Longident.Lident cstr.cstr_name),
+  Tpat_construct (mknoloc (Longident.Lident "?pat_of_constr?"),
                   cstr,omegas cstr.cstr_arity)}
 
 let rec pat_of_constrs ex_pat = function
@@ -2028,65 +2028,3 @@ let check_partial_gadt pred loc casel =
         match casel with [] -> [] | a :: l -> a :: l @ [a] in *)
       check_partial_param (do_check_partial_gadt pred)
         do_check_fragile_gadt loc casel
-
-(*******************)
-(* Merlin specific *)
-(*******************)
-
-let do_complete_partial ?pred exhaust pss =
-  (* c/p of [do_check_partial] without the parts concerning the generation of
-     the error message or the warning emiting. *)
-  match pss with
-  | [] -> None
-  | ps :: _  ->
-    begin match exhaust None pss (List.length ps) with
-    | Rnone -> None
-    | Rsome [u] ->
-      let v =
-        match pred with
-        | Some pred ->
-          let (patterns,constrs,labels) = Conv.conv u in
-          get_first (pred constrs labels) patterns
-        | None -> Some u
-      in
-      begin match v with
-      | None -> None
-      | Some v ->
-        match v.pat_desc with
-        | Tpat_construct (_, {cstr_name="*extension*"}, _) ->
-          (* Matching over values of open types must include a wild card pattern
-            in order to be exhaustive. *)
-          Some omega
-        | _ -> Some v
-      end
-    | _ ->
-      (* FIXME: Are we sure we'll never get [Rsome lst]? This would be better
-         for us. *)
-      fatal_error "Parmatch.check_partial"
-    end
-
-let complete_partial pss =
-  let pss = get_mins le_pats pss in
-  do_complete_partial exhaust pss
-
-let return_unused casel =
-  let rec do_rec acc pref = function
-    | [] -> acc
-    | q :: rem ->
-      let qs = [q] in
-      let acc =
-        try
-          let pss = get_mins le_pats (List.filter (compats qs) pref) in
-          let r = every_satisfiables (make_rows pss) (make_row qs) in
-          match r with
-          | Unused -> `Unused q :: acc
-          | Upartial ps -> `Unused_subs (q, ps) :: acc
-          | Used -> acc
-        with Empty | Not_found | NoGuard -> assert false
-      in
-      (* FIXME: we need to know whether there is a guard here, because if there
-         is, we dont want to add [[q]] to [pref]. *)
-      do_rec acc ([q]::pref) rem
-  in
-  do_rec [] [] casel
-

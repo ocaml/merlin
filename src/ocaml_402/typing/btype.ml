@@ -59,7 +59,7 @@ let is_Tunivar = function {desc=Tunivar _} -> true | _ -> false
 let dummy_method = "*dummy method*"
 let default_mty = function
     Some mty -> mty
-  | None -> Mty_signature (lazy [])
+  | None -> Mty_signature []
 
 (**** Representative of a type ****)
 
@@ -291,7 +291,7 @@ let type_iterators =
   and it_module_type it = function
       Mty_ident p
     | Mty_alias p -> it.it_path p
-    | Mty_signature (lazy sg) -> it.it_signature it sg
+    | Mty_signature sg -> it.it_signature it sg
     | Mty_functor (_, mto, mt) ->
         may (it.it_module_type it) mto;
         it.it_module_type it mt
@@ -578,7 +578,6 @@ type change =
   | Ccommu of commutable ref * commutable
   | Cuniv of type_expr option ref * type_expr option
   | Ctypeset of TypeSet.t ref * TypeSet.t
-  | Cfun of (unit -> unit)
 
 let undo_change = function
     Ctype  (ty, desc) -> ty.desc <- desc
@@ -589,7 +588,6 @@ let undo_change = function
   | Ccommu (r, v) -> r := v
   | Cuniv  (r, v) -> r := v
   | Ctypeset (r, v) -> r := v
-  | Cfun f -> f ()
 
 type changes =
     Change of change * changes ref
@@ -598,28 +596,18 @@ type changes =
 
 type snapshot = changes ref * int
 
-(** merlin: manage all internal state *)
-
-type cache = {
-  trail: changes ref Weak.t;
-  mutable last_snapshot: int;
-}
-
-let new_cache () = {
-  trail = Weak.create 1;
-  last_snapshot = 0;
-}
-let cache = ref (new_cache ())
+let trail = Weak.create 1
+let last_snapshot = ref 0
 
 let log_change ch =
-  match Weak.get !cache.trail 0 with None -> ()
+  match Weak.get trail 0 with None -> ()
   | Some r ->
       let r' = ref Unchanged in
       r := Change (ch, r');
-      Weak.set !cache.trail 0 (Some r')
+      Weak.set trail 0 (Some r')
 
 let log_type ty =
-  if ty.id <= !cache.last_snapshot then log_change (Ctype (ty, ty.desc))
+  if ty.id <= !last_snapshot then log_change (Ctype (ty, ty.desc))
 let link_type ty ty' =
   log_type ty;
   let desc = ty.desc in
@@ -639,7 +627,7 @@ let link_type ty ty' =
   (* ; assert (check_memorized_abbrevs ()) *)
   (*  ; check_expans [] ty' *)
 let set_level ty level =
-  if ty.id <= !cache.last_snapshot then log_change (Clevel (ty, ty.level));
+  if ty.id <= !last_snapshot then log_change (Clevel (ty, ty.level));
   ty.level <- level
 let set_univar rty ty =
   log_change (Cuniv (rty, !rty)); rty := Some ty
@@ -654,22 +642,14 @@ let set_commu rc c =
 let set_typeset rs s =
   log_change (Ctypeset (rs, !rs)); rs := s
 
-let on_backtrack f =
-  log_change (Cfun f)
-
 let snapshot () =
-  let old = !cache.last_snapshot in
-  !cache.last_snapshot <- !new_id;
-  match Weak.get !cache.trail 0 with Some r -> (r, old)
+  let old = !last_snapshot in
+  last_snapshot := !new_id;
+  match Weak.get trail 0 with Some r -> (r, old)
   | None ->
       let r = ref Unchanged in
-      Weak.set !cache.trail 0 (Some r);
+      Weak.set trail 0 (Some r);
       (r, old)
-
-let is_valid (changes, _old) =
-  match !changes with
-  | Invalid -> false
-  | _ -> true
 
 let rec rev_log accu = function
     Unchanged -> accu
@@ -681,12 +661,12 @@ let rec rev_log accu = function
 
 let backtrack (changes, old) =
   match !changes with
-    Unchanged -> !cache.last_snapshot <- old
+    Unchanged -> last_snapshot := old
   | Invalid -> failwith "Btype.backtrack"
   | Change _ as change ->
       cleanup_abbrev ();
       let backlog = rev_log [] change in
       List.iter undo_change backlog;
       changes := Unchanged;
-      !cache.last_snapshot <- old;
-      Weak.set !cache.trail 0 (Some changes)
+      last_snapshot := old;
+      Weak.set trail 0 (Some changes)

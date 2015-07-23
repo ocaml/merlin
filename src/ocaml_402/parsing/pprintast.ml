@@ -1274,11 +1274,11 @@ class printer  ()= object(self:'self)
       match pcd.pcd_args, pcd.pcd_res with
       | _, None ->
           pp f "|@;%s%a%a" pcd.pcd_name.txt
-             self#attributes pcd.pcd_attributes
              (fun f -> function
               | [] -> ()
               | l -> pp f "@;of@;%a" (self#list self#core_type1 ~sep:"*@;") l)
              pcd.pcd_args
+             self#attributes pcd.pcd_attributes
       | [], Some x ->
           pp f "|@;%s:@;%a%a" pcd.pcd_name.txt
              self#core_type1 x

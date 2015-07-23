@@ -563,7 +563,7 @@ let rec transl_type env policy styp =
           end;
           ty
         with Not_found ->
-          if Clflags.principal () then begin_def ();
+          if !Clflags.principal then begin_def ();
           let t = newvar () in
           used_variables := Tbl.add alias (t, styp.ptyp_loc) !used_variables;
           let ty = transl_type env policy st in
@@ -571,7 +571,7 @@ let rec transl_type env policy styp =
             let trace = swap_list trace in
             raise(Error(styp.ptyp_loc, env, Alias_type_mismatch trace))
           end;
-          if Clflags.principal () then begin
+          if !Clflags.principal then begin
             end_def ();
             generalize_structure t;
           end;
@@ -859,8 +859,8 @@ let transl_type_scheme env styp =
 open Format
 open Printtyp
 
-let spellcheck ppf fold env lid = ()
-  (*let cutoff =
+let spellcheck ppf fold env lid =
+  let cutoff =
     match String.length (Longident.last lid) with
       | 1 | 2 -> 0
       | 3 | 4 -> 1
@@ -898,7 +898,7 @@ let spellcheck ppf fold env lid = ()
     | Longident.Lident s ->
       handle (fold (compare s) None env init)
     | Longident.Ldot (r, s) ->
-      handle (fold (compare s) (Some r) env init)*)
+      handle (fold (compare s) (Some r) env init)
 
 let spellcheck_simple ppf fold extr =
   spellcheck ppf (fun f -> fold (fun decl x -> f (extr decl) x))
