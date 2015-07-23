@@ -331,7 +331,7 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (lexical-let ((overlay (make-overlay (car bounds) (cdr bounds))))
     (overlay-put overlay 'face face)
     (overlay-put overlay 'merlin-kind 'highlight)
-    (unwind-protect (sit-for 60) (delete-overlay overlay))))
+    (run-at-time 0.5 nil (lambda () (delete-overlay overlay)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESS MANAGEMENT ;;
