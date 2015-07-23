@@ -23,16 +23,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME Some internal functions from merlin are used in this file:
-;; - merlin--type-display-in-buffer
-;; - merlin--completion-full-entry-name
-;; - merlin--completion-format-entry
-;; - merlin--completion-prefix
-;; - merlin--completion-data
-;;
 ;; It would be nice to define a proper (somewhat stable) interface in merlin.el
 ;; to be used by other modules.
-
 
 ;; Internal functions
 
@@ -60,16 +52,16 @@
                    "val " candidate " : "
                    (merlin-company--get-candidate-type candidate)
                    "\n\n(** " doc " *)")))
-       (merlin--type-display-in-buffer doc)))
+       (merlin/display-in-type-buffer doc)))
 
     ((merlin-company--is-module candidate)
      (let* ((expr (substring-no-properties candidate))
             (loc  (merlin-unmake-point (point)))
             (cmd  (list 'type 'expression expr 'at loc))
             (res  (merlin-send-command cmd)))
-       (merlin--type-display-in-buffer res)))
+       (merlin/display-in-type-buffer res)))
 
-    (t (merlin--type-display-in-buffer
+    (t (merlin/display-in-type-buffer
          (merlin-company--get-candidate-type candidate))))
   (get-buffer merlin-type-buffer-name))
 
@@ -118,13 +110,14 @@
                  (cons filename linum))))))
         (candidates
          (merlin/sync-to-point)
-         (let ((prefix (merlin--completion-prefix arg)))
+         (let ((prefix (merlin/completion-prefix arg)))
            (mapcar #'(lambda (x)
-                       (propertize (merlin--completion-full-entry-name prefix x)
-                                   'merlin-compl-type (merlin--completion-format-entry x)
+                       (propertize (merlin/completion-entry-text prefix x)
+                                   'merlin-compl-type
+                                    (merlin/completion-entry-short-description x)
                                    'merlin-arg-type (cdr (assoc 'argument_type x))
                                    'merlin-compl-doc (cdr (assoc 'info x))))
-                   (merlin--completion-data arg))))
+                   (merlin/complete arg))))
         (post-completion
          (let ((minibuffer-message-timeout nil))
            (minibuffer-message "%s : %s" arg (merlin-company--get-candidate-type arg))))

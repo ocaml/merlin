@@ -42,16 +42,6 @@ auto-complete"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME Some internal functions from merlin are used in this file:
-;; - merlin--completion-format-entry
-;; - merlin--completion-full-entry-name
-;; - merlin--completion-prefix
-;; - merlin--completion-data
-;;
-;; It would be nice to define a proper (somewhat stable) interface in merlin.el
-;; to be used by other modules.
-
-
 ;; Internal variables
 
 (defvar-local merlin-ac--point nil
@@ -70,21 +60,21 @@ auto-complete"
 
 (defun merlin-ac--make-popup-item (data)
   "Create a popup item from data DATA."
-  (let ((typ (merlin--completion-format-entry data)))
+  (let ((desc (merlin/completion-entry-short-description data)))
     (popup-make-item
      ;; Note: ac refuses to display an item if merlin-ac--ac-prefix is not a
      ;; prefix the item. So "dwim" completion won't work with ac.
-     (merlin--completion-full-entry-name merlin-ac--prefix data)
-     :summary (when (and merlin-completion-types merlin-ac-use-summary) typ)
+     (merlin/completion-entry-text merlin-ac--prefix data)
+     :summary (when (and merlin-completion-types merlin-ac-use-summary) desc)
      :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
-     :document (if (and merlin-completion-types merlin-ac-use-document) typ))))
+     :document (if (and merlin-completion-types merlin-ac-use-document) desc))))
 
 (defun merlin-ac--source-refresh-cache ()
   "Refresh the cache of completion."
-  (setq merlin-ac--prefix (merlin--completion-prefix ac-prefix))
+  (setq merlin-ac--prefix (merlin/completion-prefix ac-prefix))
   (setq merlin-ac--ac-prefix ac-prefix)
   (setq merlin-ac--cache (mapcar #'merlin-ac--make-popup-item
-                                 (merlin--completion-data merlin-ac--prefix))))
+                                 (merlin/complete merlin-ac--prefix))))
 
 (defun merlin-ac--source-init ()
   "Initialize the cache for `auto-complete' completion.
@@ -114,7 +104,7 @@ variable `merlin-ac--cache')."
 (defun merlin-ac--candidates ()
   "Return the candidates for auto-completion with auto-complete. If the cache is
 wrong then recompute it."
-  (unless (and (equal (merlin--completion-prefix ac-prefix) merlin-ac--prefix)
+  (unless (and (equal (merlin/completion-prefix ac-prefix) merlin-ac--prefix)
                (string-prefix-p merlin-ac--ac-prefix ac-prefix))
     (merlin-ac--source-refresh-cache))
   merlin-ac--cache)

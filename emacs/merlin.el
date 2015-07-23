@@ -1063,8 +1063,9 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
 ;; COMPLETION HELPERS ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun merlin--completion-format-entry (entry)
-  "Format the completion entry ENTRY."
+(defun merlin/completion-entry-short-description (entry)
+  "Return a short string describing the content a completion entry (e.g kind of
+identifier, type of a value, etc)."
   (let* ((kind (cdr (assoc 'kind entry)))
          (desc (or  (cdr (assoc 'desc entry)) (cdr (assoc 'type entry))))
          (type (cond ((member kind '("Module" "module")) " <module>")
@@ -1072,24 +1073,28 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                      (t desc))))
     (replace-regexp-in-string "[\n ]+" " " type)))
 
-(defun merlin--completion-split-ident (ident)
-  "Split IDENT into a (cons prefix suffix). See merlin--completion-prefix."
+(defun merlin/completion-entry-text (compl-prefix entry)
+  "Return the text that should replace COMPL-PREFIX in the buffer if the user
+chooses this completion entry.
+COMPL-PREFIX is the prefix that was used to start completion."
+  (let ((entry-name (cdr (assoc 'name entry))))
+    (if merlin--dwimed entry-name (concat compl-prefix entry-name))))
+
+(defun merlin/completion-prefix (ident)
+  "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the
+prefix of `bar' is `'."
+  (car (merlin/completion-split-ident ident)))
+
+(defun merlin/completion-split-ident (ident)
+  "Split IDENT into a (cons prefix suffix). See merlin/completion-prefix."
   (let* ((l (split-string ident "\\."))
          (s (mapconcat 'identity (butlast l) "."))
          (suffix (if l (car (last l)) ident))
          (prefix (if (string-equal s "") s (concat s "."))))
     (cons prefix suffix)))
 
-(defun merlin--completion-prefix (ident)
-  "Compute the prefix of IDENT.  The prefix of `Foo.bar' is `Foo.' and the prefix of `bar' is `'."
-  (car (merlin--completion-split-ident ident)))
-
 (defvar-local merlin--dwimed nil
   "Remember if we used dwim for the current completion or not")
-
-(defun merlin--completion-full-entry-name (compl-prefix entry)
-  (let ((entry-name (cdr (assoc 'name entry))))
-    (if merlin--dwimed entry-name (concat compl-prefix entry-name))))
 
 (defun merlin--completion-prepare-labels (labels suffix)
   ; Remove non-matching entry, adjusting optional labels if needed
@@ -1102,11 +1107,11 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                               labels))
   (mapcar (lambda (x) (append x '((kind . "Label") (info . nil)))) labels))
 
-(defun merlin--completion-data (ident)
+(defun merlin/complete (ident)
   "Return the data for completion of IDENT, i.e. a list of lists of the form
   '(NAME TYPE KIND INFO)."
   (setq-local merlin--dwimed nil)
-  (let* ((ident- (merlin--completion-split-ident ident))
+  (let* ((ident- (merlin/completion-split-ident ident))
          (suffix (cdr ident-))
          (prefix (car ident-))
          (pos    (merlin/unmake-point (point)))
@@ -1142,20 +1147,6 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                 result)
         result))))
 
-;; Here for backward compatibility: this function is called by external code, the
-;; format of merlin--completion-data changed, this function translates it back to
-;; the old format.
-(defun merlin-completion-data (ident)
-  "Backward compatible version of merlin--completion-data"
-  (let ((entries (merlin--completion-data ident))
-        (prefix  (merlin--completion-prefix ident)))
-    (mapcar (lambda (entry)
-              (list (concat prefix (cdr (assoc 'name entry)))
-                    (merlin--completion-format-entry entry)
-                    (cdr (assoc 'kind entry))
-                    (cdr (assoc 'info entry))))
-            entries)))
-
 (defun merlin/completion-bounds ()
   "Returns a pair (start . end) of the content to complete"
   (let ((bounds (bounds-of-thing-at-point 'ocaml-atom)))
@@ -1173,7 +1164,7 @@ errors in the fringe.  If VIEW-ERRORS-P is non-nil, display a count of them."
                    'at (merlin/unmake-point (point)))
              callback-if-success callback-if-exn)))
 
-(defun merlin--type-display-in-buffer (text)
+(defun merlin/display-in-type-buffer (text)
   "Change content of type-buffer."
   (with-current-buffer (get-buffer-create merlin-type-buffer-name)
      (when (member major-mode '(nil fundamental-mode))
@@ -1192,7 +1183,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (unless quiet (message "<no information>"))
     (let ((count 0)
           (pos   0))
-      (merlin--type-display-in-buffer type)
+      (merlin/display-in-type-buffer type)
       (while (and (<= count 8)
                   (string-match "\n" type pos))
         (setq pos (match-end 0))
@@ -1731,8 +1722,7 @@ Returns the position."
         (merlin-show-type-map (make-sparse-keymap)))
     (define-key merlin-map (kbd "C-c C-x") 'merlin-error-next)
     (define-key merlin-map (kbd "C-c C-l") 'merlin-locate)
-    (define-key merlin-map (kbd "C-c &") 'merlin-pop-stack)
-    (define-key merlin-map (kbd "C-c C-u") 'merlin-refresh)
+    (define-key merlin-map (kbd "C-c &"  ) 'merlin-pop-stack)
     (define-key merlin-map (kbd "C-c C-r") 'merlin-error-check)
     (define-key merlin-map (kbd "C-c C-t") 'merlin-type-enclosing)
     (define-key merlin-map (kbd "C-c C-d") 'merlin-destruct)
@@ -1753,9 +1743,6 @@ Returns the position."
     (define-key merlin-menu-map [use]
       '(menu-item "Use a package" merlin-use
                   :help "Use a findlib package."))
-    (define-key merlin-menu-map [refresh]
-      '(menu-item "Refresh" merlin-refresh
-                  :help "Refresh the cache of merlin (cmis in particular).  Useful after a recompilation."))
     (define-key merlin-menu-map [error]
       '(menu-item "Error check" merlin-error-check
                   :help "Check current buffer for any error."))
