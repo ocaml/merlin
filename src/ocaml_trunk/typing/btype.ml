@@ -622,13 +622,17 @@ type snapshot = changes ref * int
 type cache = {
   trail: changes ref Weak.t;
   mutable last_snapshot: int;
+  mutable linked_variables: int;
 }
 
 let new_cache () = {
   trail = Weak.create 1;
   last_snapshot = 0;
+  linked_variables = 0;
 }
 let cache = ref (new_cache ())
+
+let linked_variables () = !cache.linked_variables
 
 let log_change ch =
   match Weak.get !cache.trail 0 with None -> ()
@@ -642,6 +646,9 @@ let log_type ty =
 let link_type ty ty' =
   log_type ty;
   let desc = ty.desc in
+  (match desc with
+   | Tvar _ -> !cache.linked_variables <- !cache.linked_variables + 1
+   | _ -> ());
   ty.desc <- Tlink ty';
   (* Name is a user-supplied name for this unification variable (obtained
    * through a type annotation for instance). *)
