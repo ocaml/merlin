@@ -225,6 +225,7 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
 
        The ordering works as follow:
        - first we compare the priority of the candidates
+       - we compare the cost of unification for both (using Btype.total_changes)
        - if they are equal, then we compare their "binding time": things
          introduced more recently will come before older bindings (i.e. we
          prioritize the local context)
@@ -253,32 +254,38 @@ let get_candidates ?get_doc ?target_type prefix path kind ~validate env =
     in
     let type_check =
       (* Defines the priority of a candidate.
-         Given the type of a candidate it will return:
-         - 2 if the type can be unified with the expected one
-         - 1 if a value of that type applied to some parameters returns a value
-             of the expected type, i.e. if
-                 target_type =                    a -> b -> c
-                 type        = p1 -> ... -> pN -> a -> b -> c
-         - 0 otherwise
-
-         Note that if no type is expected (i.e. if we're not in an application),
-         then 1 will be returned. *)
+         Priority is 1000 - cost - head_arrows, where:
+         - cost is the number unification variables instantiated to make the types unify
+         - head_arrows is 0 if types unified, or the number of arrows which
+           have been skipped to make them unify (i.e types would unify if the
+           user apply the function to head_arrows arguments).
+         Note that if no type is expected (context was not inferred), 0 will be
+         returned. *)
       match target_type with
-      | None -> fun scheme -> 1
+      | None -> fun scheme -> 0
       | Some ty ->
         let arity = arrow_arity 0 ty in
         fun scheme ->
-        let result =
-          try Ctype.unify_var env ty (Ctype.instance env scheme); 2
+        let cost =
+          let c = Btype.linked_variables in
+          try
+            let c' = c () in
+            Ctype.unify_var env ty (Ctype.instance env scheme);
+            c () - c'
           with _ ->
-            let ty' = Ctype.instance env scheme in
-            let arity = arrow_arity (-arity) ty' in
-            let ty' = nth_arrow arity ty' in
-            try Ctype.unify_var env ty ty'; 1
-            with _ -> 0
+            let arity = arrow_arity (-arity) scheme in
+            if arity > 0 then begin
+              let c' = c () in
+              Btype.backtrack snap;
+              let ty' = Ctype.instance env scheme in
+              let ty' = nth_arrow arity ty' in
+              try Ctype.unify_var env ty ty'; arity + c () - c'
+              with _ -> 1000
+            end
+            else 1000
         in
         Btype.backtrack snap;
-        result
+        1000 - cost
     in
     let rec of_kind = function
       | `Variants ->
