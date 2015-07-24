@@ -1848,4 +1848,14 @@ Short cuts:
       (remove-overlays nil nil 'merlin-kind 'error))))
 
 (provide 'merlin)
+
+;; Load these after (provide 'merlin) because they (require 'merlin)
+(eval-after-load 'company '(require 'merlin-company))
+(eval-after-load 'auto-complete '(require 'merlin-ac))
+(eval-after-load 'iedit '(require 'merlin-iedit))
+(require 'merlin-cap)
+
+;; Deprecated, remove at some point
+(require 'merlin-compat)
+
 ;;; merlin.el ends here
