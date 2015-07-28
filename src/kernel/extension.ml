@@ -201,12 +201,11 @@ let from ~extensions ~packages =
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-let default = [ext_any;ext_sexp_option] @
-              match My_config.ocamlversion with
-              | `OCaml_4_02_2 | `OCaml_4_03_trunk -> [ext_nonrec]
-              | _ -> []
-
-let default_kw = List.concat_map ~f:(fun ext -> ext.keywords) default
+let default =
+  [ext_any;ext_sexp_option] @
+  match My_config.ocamlversion with
+  | `OCaml_4_02_0 | `OCaml_4_02_1 -> []
+  | `OCaml_4_02_2 | `OCaml_4_03_trunk -> [ext_nonrec]
 
 (* Lexer keywords needed by extensions *)
 let keywords set =
