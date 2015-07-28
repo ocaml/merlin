@@ -831,36 +831,6 @@ module TypeWith = struct
     List.map (sig_of_top_lvl ?ghost_loc) bindings
 end
 
-module Nonrec = struct
-  let type_nonrec_prefix = "\x00nonrec" (*"__nonrec_"*)
-  let type_nonrec_prefix_l = String.length type_nonrec_prefix
-  let add id =
-    { id with Location.txt = type_nonrec_prefix ^ id.Location.txt }
-
-  let is t =
-    let l = String.length t in
-    (l > type_nonrec_prefix_l) &&
-    try
-      for i = 0 to type_nonrec_prefix_l - 1 do
-        if t.[i] <> type_nonrec_prefix.[i] then raise Not_found;
-      done;
-      true
-    with Not_found -> false
-
-  let drop t =
-    if is t
-    then
-      let l = String.length t in
-      String.sub t type_nonrec_prefix_l (l - type_nonrec_prefix_l)
-    else t
-
-  let drop_loc t =
-    if is t.Location.txt then
-      {t with Location.txt = drop t.Location.txt}
-    else
-      t
-end
-
 (* Custom printf extension *)
 module Custom_printf = struct
 

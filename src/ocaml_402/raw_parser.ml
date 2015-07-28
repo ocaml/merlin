@@ -787,7 +787,11 @@ let mkexp_attrs startpos endpos d attrs =
 
 let fake_tydecl tydecl = tydecl.ptype_name, tydecl
 let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
-let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
+
+let nonrec_attr = ({ txt = "nonrec"; loc = Location.none }, PStr [])
+let tag_nonrec (id, a) =
+  fake_untydecl(id, {a with ptype_attributes = nonrec_attr :: a.ptype_attributes})
+
 let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
 let let_operator startpos endpos op bindings cont =

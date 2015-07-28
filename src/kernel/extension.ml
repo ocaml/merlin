@@ -124,16 +124,6 @@ let ext_ounit = {
   packages = ["oUnit";"pa_ounit.syntax"];
 }
 
-let ext_nonrec = {
-  name = "nonrec";
-  private_def = [];
-  public_def = [];
-  keywords = [
-    "nonrec", NONREC;
-  ];
-  packages = [];
-}
-
 let ext_here = {
   name = "here";
   private_def = [];
@@ -201,11 +191,7 @@ let from ~extensions ~packages =
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-let default =
-  [ext_any;ext_sexp_option] @
-  match My_config.ocamlversion with
-  | `OCaml_4_02_0 | `OCaml_4_02_1 -> []
-  | `OCaml_4_02_2 | `OCaml_4_03_trunk -> [ext_nonrec]
+let default = [ext_any;ext_sexp_option]
 
 (* Lexer keywords needed by extensions *)
 let keywords set =

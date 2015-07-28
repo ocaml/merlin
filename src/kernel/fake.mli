@@ -82,13 +82,6 @@ module TypeWith : sig
     generator list -> Parsetree.signature_item list
 end
 
-module Nonrec : sig
-  val add  : string Location.loc -> string Location.loc
-  val is   : string -> bool
-  val drop : string -> string
-  val drop_loc : string Location.loc -> string Location.loc
-end
-
 (* Custom printf extension *)
 module Custom_printf : sig
   val bang : Lexing.position -> Lexing.position ->
