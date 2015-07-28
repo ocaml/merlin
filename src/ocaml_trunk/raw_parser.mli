@@ -162,6 +162,7 @@ and _ token_class =
   | T_STAR : unit token_class
   | T_SIG : unit token_class
   | T_SHARPOP : (string) token_class
+  | T_SHARPSHARP : unit token_class
   | T_SHARP : unit token_class
   | T_SEMISEMI : unit token_class
   | T_SEMI : unit token_class

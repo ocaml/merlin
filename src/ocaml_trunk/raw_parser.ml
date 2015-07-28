@@ -162,6 +162,7 @@ and _ token_class =
   | T_STAR : unit token_class
   | T_SIG : unit token_class
   | T_SHARPOP : (string) token_class
+  | T_SHARPSHARP : unit token_class
   | T_SHARP : unit token_class
   | T_SEMISEMI : unit token_class
   | T_SEMI : unit token_class
@@ -1192,6 +1193,8 @@ module MenhirInterpreterTable = struct
           2
       | WITH ->
           1
+      | SHARPSHARP ->
+          assert false
 
   let error_terminal =
     0
@@ -1442,6 +1445,8 @@ module MenhirInterpreterTable = struct
           T_ (T_SEMI, ())
       | SEMISEMI ->
           T_ (T_SEMISEMI, ())
+      | SHARPSHARP ->
+          T_ (T_SHARPSHARP, ())
       | SHARP ->
           T_ (T_SHARP, ())
       | SHARPOP _v ->
