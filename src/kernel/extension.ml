@@ -185,7 +185,12 @@ let from_packages pkgs =
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-let default = [ext_any;ext_sexp_option]
+let default = [ext_any;ext_sexp_option] @
+              match My_config.ocamlversion with
+              | `OCaml_4_02_2 | `OCaml_4_03_trunk -> [ext_nonrec]
+              | _ -> []
+
+let default_kw = List.concat_map ~f:(fun ext -> ext.keywords) default
 
 (* Lexer keywords needed by extensions *)
 let keywords set =
@@ -194,7 +199,7 @@ let keywords set =
     | None -> kws
     | Some def -> def.keywords @ kws
   in
-  let all = String.Set.fold set ~init:[] ~f:add_kw in
+  let all = String.Set.fold set ~init:default_kw ~f:add_kw in
   Raw_lexer.keywords all
 
 (* Register extensions in typing environment *)

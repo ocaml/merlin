@@ -371,7 +371,7 @@ end = struct
             flags.Clflags.std_include;
           ];
         global_modules = None;
-        keywords_cache = Raw_lexer.keywords [], String.Set.empty;
+        keywords_cache = Extension.keywords Extension.empty, Extension.empty;
         validity_stamp = ref true;
       }
     in
