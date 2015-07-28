@@ -28,20 +28,37 @@ let regex_of_path_prefix pattern =
   let buf = Buffer.create 16 in
   let tmp = String.create 1 in
   Buffer.add_char buf '^';
+  let add_escaped_char buf c =
+    tmp.[0] <- c;
+    let tmp = Str.quote tmp in
+    Buffer.add_string buf tmp;
+    Buffer.add_string buf "\\)\\(";
+    Buffer.add_string buf tmp;
+    Buffer.add_string buf "\\|";
+  in
+  let open_char buf = Buffer.add_string buf "\\(" in
+  let close_char buf = Buffer.add_string buf "\\)" in
+  open_char buf;
+  Buffer.add_string buf "\\|";
   for i = 0 to String.length pattern - 1 do
     match pattern.[i] with
-    | '*' -> Buffer.add_string buf ".*"
-    | '_' -> Buffer.add_string buf ".*_"
+    | '*' ->
+      close_char buf;
+      Buffer.add_string buf ".*";
+      open_char buf
+    | '_' ->
+      close_char buf;
+      Buffer.add_string buf ".*_";
+      open_char buf
     | c when Char.is_strictly_uppercase c && i > 0 &&
              Char.is_strictly_uppercase pattern.[i-1] ->
+      close_char buf;
       Buffer.add_string buf ".*";
-      Buffer.add_char buf c
-    | c when Char.is_strictly_uppercase c || Char.is_strictly_lowercase c ->
-      Buffer.add_char buf c
-    | c ->
-      tmp.[0] <- c;
-      Buffer.add_string buf (Str.quote tmp)
+      open_char buf;
+      add_escaped_char buf c
+    | c -> add_escaped_char buf c
   done;
+  close_char buf;
   Buffer.contents buf
 
 (*let regex_of_path_pattern pattern =
