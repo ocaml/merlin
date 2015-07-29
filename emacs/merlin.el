@@ -180,6 +180,11 @@ field logfile (see `merlin-start-process')"
   "If non-nil, use type-enclosing after locate."
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-allow-sit-for t
+  "When user attention is required, merlin will use `sit-for' only if `merlin-allow-sit-for' is `t'."
+  :group 'merlin :type 'boolean)
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Internal variables ;;
@@ -331,7 +336,10 @@ An ocaml atom is any string containing [a-z_0-9A-Z`.]."
   (lexical-let ((overlay (make-overlay (car bounds) (cdr bounds))))
     (overlay-put overlay 'face face)
     (overlay-put overlay 'merlin-kind 'highlight)
-    (unwind-protect (sit-for 60) (delete-overlay overlay))))
+    (if merlin-allow-sit-for
+        (unwind-protect (sit-for 60) (delete-overlay overlay)))
+      (run-with-idle-timer 0.5 nil
+        (lambda () (delete-overlay overlay)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESS MANAGEMENT ;;
