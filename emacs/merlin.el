@@ -709,25 +709,6 @@ the error message otherwise print a generic error message."
   as a position."
   (merlin--parse-position (merlin/send-command command callback-if-exn)))
 
-
-(defun merlin-get-position ()
-  "Get the current position of merlin."
-  (car (merlin--send-cursor-command '(seek position))))
-
-(defun merlin-seek-before (point)
-  "Move merlin's point to the valid definition before POINT."
-  (merlin--send-cursor-command
-    `(seek before ,(merlin/unmake-point point))))
-
-(defun merlin-seek-exact (point)
-  "Move merlin's point to the definition containing POINT."
-  (merlin--send-cursor-command
-    `(seek exact ,(merlin/unmake-point point))))
-
-(defun merlin-seek-end ()
-  "Move merlin's point to the end of its own view of the buffer."
-  (merlin--send-cursor-command '(seek end)))
-
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
 ;;;;;;;;;;;;;;;;;;;;
