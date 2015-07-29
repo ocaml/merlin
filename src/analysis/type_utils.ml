@@ -76,15 +76,22 @@ module Printtyp = struct
       let rec iter d ty0 =
         let ty' = Ctype.repr ty0 in
         if mark ty' then
+          let open Types in
           let ty'' = Ctype.full_expand env ty' in
-          if ty''.Types.desc == ty'.Types.desc then
+          if ty''.desc == ty'.desc then
             Btype.iter_type_expr (iter d) ty0
-          else
-            begin
-              ty0.Types.desc <- ty''.Types.desc;
-              if d > 0 then
-                Btype.iter_type_expr (iter (pred d)) ty0
-            end
+          else begin
+            let desc = match ty''.desc with
+              | Tvariant row ->
+                Tvariant {row with row_name = None}
+              | Tobject (ty, name) ->
+                Tobject (ty, ref None)
+              | desc -> desc
+            in
+            ty0.desc <- desc;
+            if d > 0 then
+              Btype.iter_type_expr (iter (pred d)) ty0
+          end
       in
       iter (Fluid.get verbosity) ty;
       ty
