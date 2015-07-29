@@ -275,6 +275,13 @@ module Protocol_io = struct
       in
       ("failures", `List (packages @ flags @ extensions)) :: assoc
 
+  let context_of_json = function
+    | (`String "dot_merlin" :: `List dot_merlins :: `String kind :: opt_name) ->
+      auto_ml_or_mli kind, optional_string opt_name, Some (string_list dot_merlins)
+    | (`String kind :: opt_name) ->
+      auto_ml_or_mli kind, optional_string opt_name, None
+    | _ -> invalid_arguments ()
+
   let request_of_json = function
     | (`String "tell" :: `String "start" :: opt_pos) ->
       Request (Tell (`Start (optional_position opt_pos)))
@@ -338,10 +345,8 @@ module Protocol_io = struct
     | (`String "boundary" :: `String "current" :: opt_pos)
     | (`String "boundary" :: opt_pos) ->
       Request (Boundary (`Current, mandatory_position opt_pos))
-    | (`String ("reset"|"checkout") :: `String "dot_merlin" :: `List dot_merlins :: `String kind :: opt_name) ->
-      Request (Checkout (auto_ml_or_mli kind, optional_string opt_name, Some (string_list dot_merlins)))
-    | (`String ("reset"|"checkout") :: `String kind :: opt_name) ->
-      Request (Checkout (auto_ml_or_mli kind, optional_string opt_name, None))
+    | (`String ("reset"|"checkout") :: context) ->
+      Request (Checkout (context_of_json context))
     | [`String "refresh"] ->
       Request Refresh
     | [`String "errors"] ->
@@ -517,6 +522,14 @@ module Protocol_io = struct
       end]
 
   let request_of_json = function
+    | `Assoc _ as json ->
+      let open Json.Util in
+      let ctx = member "context" json |> to_list in
+      let query = member "query" json |> to_list in
+      begin match request_of_json query with
+        | Request request -> Context_request (context_of_json ctx, request)
+        | _ -> assert false
+      end
     | `List jsons -> request_of_json jsons
     | _ -> invalid_arguments ()
 end

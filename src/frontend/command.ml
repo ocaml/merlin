@@ -878,15 +878,19 @@ let dispatch_sync (state : state) =
 
   : a)
 
+let normalize_context (ft,path,dot_merlins : Protocol.context) =
+  let ft = match ft, path with
+    | (`ML | `MLI as ft), _  -> ft
+    | `Auto, Some path when Filename.check_suffix path ".mli" -> `MLI
+    | `Auto, _ -> `ML
+  in
+  ft, path, dot_merlins
+
 let dispatch_reset (state : state) =
   fun (type a) (request : a request) ->
   (match request with
-  | (Checkout (ft,path,dot_merlins) : a request) ->
-    let ft = match ft, path with
-      | (`ML | `MLI as ft), _  -> ft
-      | `Auto, Some path when Filename.check_suffix path ".mli" -> `MLI
-      | `Auto, _ -> `ML
-    in
+  | (Checkout context : a request) ->
+    let ft, path, dot_merlins = normalize_context context in
     let buffer = checkout_buffer ?dot_merlins ?path ft in
     state.lexer <- None;
     state.buffer <- buffer;
@@ -905,3 +909,22 @@ let dispatch state req =
       try dispatch_query ~verbosity state.buffer req
       with Unhandled_command ->
         failwith "Unhandled command"
+
+let contexts : (Protocol.context, state) Hashtbl.t = Hashtbl.create 7
+
+let context_dispatch context req =
+  let context = normalize_context context in
+  let state =
+    try Hashtbl.find contexts context
+    with Not_found ->
+      let state = new_state () in
+      ignore (dispatch state (Checkout context) : cursor_state);
+      Hashtbl.add contexts context state;
+      state
+  in
+  let verbosity = track_verbosity state req in
+  try dispatch_sync state req
+  with Unhandled_command ->
+    try dispatch_query ~verbosity state.buffer req
+    with Unhandled_command ->
+      failwith "Unhandled command"
