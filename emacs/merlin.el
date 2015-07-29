@@ -528,11 +528,10 @@ Try to find a satisfying default directory."
   (interactive)
   (unless merlin-mode (message "Buffer is not managed by merlin."))
   (when merlin-mode
-    (message "%S" (merlin--process-owner))
-    (when (merlin-process-buffer)
-      (ignore-errors (merlin-kill-process)))
+    (when (merlin-process-buffer) (ignore-errors (merlin-kill-process)))
     (setq merlin-erroneous-buffer nil)
-    (merlin-setup)))
+    (merlin-setup)
+    (message "Restarted merlin %S" merlin-instance)))
 
 (defun merlin-list-instances ()
   "Return the list of instances currently started."
