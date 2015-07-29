@@ -187,8 +187,10 @@ def uniq(seq):
     seen_add = seen.add
     return [ x for x in seq if not (x in seen or seen_add(x))]
 
-def vim_is_set(name):
-    return not (vim.eval('exists("%s") && %s' % (name,name)) in ["", "0"])
+def vim_is_set(name, default=False):
+    if not vim.eval('exists("%s")' % name):
+        return default
+    return not (vim.eval(name) in ["", "0", "false"])
 
 ######## BASIC COMMANDS
 
@@ -227,11 +229,11 @@ def command_seek(mtd,line,col):
     return parse_position(command("seek", mtd, {'line' : line, 'col': col}))
 
 def command_complete_cursor(base,line,col):
-    with_doc = vim.eval('g:merlin_completion_with_doc')
-    if with_doc == "false":
-        return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
-    else:
+    with_doc = vim_is_set('g:merlin_completion_with_doc', default=True)
+    if with_doc:
         return command("complete", "prefix", base, "at", {'line' : line, 'col': col}, "with", "doc")
+    else:
+        return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
 
 def command_document(path, line, col):
     try:
