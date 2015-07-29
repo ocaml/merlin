@@ -33,3 +33,5 @@ type state
 val new_state : unit -> state
 
 val dispatch : state -> 'a Protocol.request -> 'a
+
+val context_dispatch : Protocol.context -> 'a Protocol.request -> 'a

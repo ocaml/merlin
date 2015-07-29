@@ -123,19 +123,17 @@ let main_loop () =
                 ~input:Unix.stdin ~output:Unix.stdout)) in
   try
     while true do
-      let state, answer =
-        let state' = ref state in
-        try
-          let Protocol.Request request =
-            (*refresh_state_on_signal state' (fun () ->*) Stream.next input (* ) *)
-          in
-          (*let state = State.validate_parser !state' in*)
-          let response = Command.dispatch state request in
-          state,
-          Protocol.Return (request, response)
+      let answer =
+        try match Stream.next input with
+          | Protocol.Request request ->
+            Protocol.Return
+              (request, Command.dispatch state request)
+          | Protocol.Context_request (ctx, request) ->
+            Protocol.Return
+              (request, Command.context_dispatch ctx request)
         with
         | Stream.Failure as exn -> raise exn
-        | exn -> !state', Protocol.Exception exn
+        | exn -> Protocol.Exception exn
       in
       try output answer
        with exn -> output (Protocol.Exception exn);
