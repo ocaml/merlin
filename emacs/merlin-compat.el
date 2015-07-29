@@ -12,6 +12,7 @@
 (defalias 'merlin--completion-bounds      'merlin/completion-bounds)
 (defalias 'merlin--buffer-substring       'merlin/buffer-substring)
 (defalias 'merlin-sync-to-point           'merlin/sync-to-point)
+(defalias 'merlin-send-command-async      'merlin/send-command-async)
 (defalias 'merlin--completion-split-ident 'merlin/completion-split-ident)
 (defalias 'merlin--completion-data        'merlin/complete)
 (defalias 'merlin--completion-prefix      'merlin/completion-prefix)
