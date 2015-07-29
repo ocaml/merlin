@@ -275,15 +275,10 @@ let print_error ppf loc =
 let print_error_cur_file ppf = print_error ppf (in_file !input_name);;
 
 let default_warning_printer loc ppf w =
-  ()
-  (*if Warnings.is_active w then begin
-    let printw ppf w =
-      let n = Warnings.print ppf w in
-      num_loc_lines := !num_loc_lines + n
-    in
+  if Warnings.is_active w then begin
     print ppf loc;
     fprintf ppf "Warning %a@." Warnings.print w
-  end*)
+  end
 ;;
 
 let warning_printer = ref default_warning_printer ;;
