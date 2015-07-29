@@ -1515,7 +1515,7 @@ let type_toplevel_phrase env s =
   Env.reset_required_globals ();
   type_structure ~toplevel:true false None env s Location.none
 (*let type_module_alias = type_module ~alias:true true false None*)
-let type_module = type_module true false None
+let type_module ?alias = type_module ?alias true false None
 let type_structure = type_structure false None
 
 (* Normalize types in a signature *)

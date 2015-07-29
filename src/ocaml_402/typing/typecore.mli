@@ -123,7 +123,8 @@ val report_error: Env.t -> formatter -> error -> unit
  (* Deprecated.  Use Location.{error_of_exn, report_error}. *)
 
 (* Forward declaration, to be filled in by Typemod.type_module *)
-val type_module: (Env.t -> Parsetree.module_expr -> Typedtree.module_expr) ref
+val type_module:
+    (?alias:bool -> Env.t -> Parsetree.module_expr -> Typedtree.module_expr) ref
 (* Forward declaration, to be filled in by Typemod.type_open *)
 val type_open:
     (override_flag -> Env.t -> Location.t -> Longident.t loc -> Path.t * Env.t)
