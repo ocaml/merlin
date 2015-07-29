@@ -1,0 +1,5 @@
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"cursor":{"line":2,"col":0},"marker":false}]
+["return",{"cursor":{"line":2,"col":0},"marker":false}]
+["return",[{"type":"warning","start":{"line":1,"col":8},"end":{"line":1,"col":22},"valid":true,"message":"Warning 8: this pattern-matching is not exhaustive.\nHere is an example of a value that is not matched:\nSome _\n"}]]

@@ -25,6 +25,9 @@ if test -n "$1" ; then
       else
         less $out
       fi
+      if [ "$UPDATE" = 1 ]; then
+        cp $out ./tests/$1.out
+      fi
       shift 1
     done
     rm $out
