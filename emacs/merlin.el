@@ -854,10 +854,7 @@ the error message otherwise print a generic error message."
 (defun merlin-error-prev ()
   "Jump back to previous error."
   (interactive)
-  (if (= merlin--dirty-point (point-max))
-      (when (merlin--process-idle)
-        (merlin--error-check-async))
-    (merlin--error-check nil))
+  (merlin--error-check nil)
   (let ((err (merlin--error-prev-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
@@ -868,10 +865,7 @@ the error message otherwise print a generic error message."
 (defun merlin-error-next ()
   "Jump to next error."
   (interactive)
-  (if (= merlin--dirty-point (point-max))
-      (when (merlin--process-idle)
-        (merlin--error-check-async))
-    (merlin--error-check nil))
+  (merlin--error-check nil)
   (let ((err (merlin--error-next-cycle)))
     (unless (or err merlin-erroneous-buffer) (message "No errors"))
     (when err
@@ -939,23 +933,6 @@ form. Do display of error list."
                                          'merlin-compilation-error-face)))
       overlay))
   errors)
-
-(defun merlin--error-check-async ()
-  (merlin/sync)
-  (merlin/send-command-async
-    'errors
-    (lambda (errors)
-      (merlin-error-reset)
-      (let ((no-loc (remove-if (lambda (e) (assoc 'start e)) errors)))
-        (setq errors (remove-if-not (lambda (e) (assoc 'start e)) errors))
-        (unless merlin-report-warnings
-          (setq errors (remove-if (lambda (e)
-                                    (merlin--error-warning-p (cdr (assoc 'message e))))
-                                  errors)))
-        (setq merlin-erroneous-buffer (or errors no-loc))
-        (dolist (e no-loc)
-          (message "%s" (cdr (assoc 'message e))))
-        (merlin-transform-display-errors errors)))))
 
 (defun merlin--error-check (view-errors-p)
   "Check for errors.
