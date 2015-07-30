@@ -603,20 +603,30 @@ end = struct
                                              (fun _ -> true) b.lexer)))
     end
     else begin
-      let pos_pred = match pos with
-        | None -> (fun _ -> false)
-        | Some pos ->
-          let line, _ = Lexing.split_pos pos in
-          (fun cur -> let line', _ = Lexing.split_pos cur in line <= line')
-      in
-      let item_pred = function
+      let item_pred pos_pred = function
         | _, Lexer.Valid (cur,_,_) when pos_pred cur -> true
         | _, Lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
         | _, Lexer.Error _ -> true
         | _ -> false
       in
       let lexer = b.lexer in
-      let lexer = History.seek_backward item_pred lexer in
+      let lexer = match pos with
+        | None -> lexer
+        | Some pos ->
+          let line, _ = Lexing.split_pos pos in
+          let pos_pred cur =
+            let line', _ = Lexing.split_pos cur in
+            line > line'
+          in
+          History.seek_forward (item_pred pos_pred) lexer
+      in
+      let pos_pred = match pos with
+        | None -> (fun _ -> false)
+        | Some pos ->
+          let line, _ = Lexing.split_pos pos in
+          (fun cur -> let line', _ = Lexing.split_pos cur in line <= line')
+      in
+      let lexer = History.seek_backward (item_pred pos_pred) lexer in
       let lexer = History.move (-1) lexer in
       ignore (update b lexer)
     end;
