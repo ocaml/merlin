@@ -109,7 +109,7 @@
                      (linum (cdr (assoc 'line (assoc 'pos data)))))
                  (cons filename linum))))))
         (candidates
-         (merlin/sync-to-point)
+         (merlin/sync)
          (let ((prefix (merlin/completion-prefix arg)))
            (mapcar #'(lambda (x)
                        (propertize (merlin/completion-entry-text prefix x)

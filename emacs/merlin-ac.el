@@ -80,7 +80,7 @@ auto-complete"
   "Initialize the cache for `auto-complete' completion.
 Called at the beginning of a completion to fill the cache (the
 variable `merlin-ac--cache')."
-  (merlin/sync-to-point ac-point)
+  (merlin/sync)
   (setq merlin-ac--point ac-point)
   (merlin-ac--source-refresh-cache))
 
@@ -127,7 +127,7 @@ wrong then recompute it."
   "Locate the identifier currently selected in the ac-completion."
   (interactive)
   (when (ac-menu-live-p)
-    (merlin/sync-to-point)
+    (merlin/sync)
     (when (popup-hidden-p ac-menu)
       (ac-show-menu))
     (let ((merlin-locate-in-new-window 'always))
