@@ -40,36 +40,50 @@ type state = {
   mutable verbosity : int;
 }
 
-let new_state () =
-  let buffer = Buffer.create Parser.implementation in
+let normalize_context (ft,path,dot_merlins : Protocol.context) =
+  let ft = match ft, path with
+    | (`ML | `MLI as ft), _  -> ft
+    | `Auto, Some path when Filename.check_suffix path ".mli" -> `MLI
+    | `Auto, _ -> `ML
+  in
+  ft, path, dot_merlins
+
+let new_buffer context =
+  let ft, path, dot_merlins = normalize_context context in
+  let parser = match ft with
+    | `ML -> Raw_parser.implementation_state
+    | `MLI ->  Raw_parser.interface_state
+  in
+  let buffer = Buffer.create ?dot_merlins ?path parser in
+  begin match path with
+    | Some path when Filename.check_suffix path "myocamlbuild.ml" ->
+      let project = Buffer.project buffer in
+      (* Failure is not an issue. *)
+      ignore @@ Project.User.load_packages project ["ocamlbuild"]
+    | _ -> ()
+  end;
+  buffer
+
+let new_state ?context () =
+  let buffer = match context with
+    | None -> Buffer.create Parser.implementation
+    | Some context -> new_buffer context
+  in
   {buffer; lexer = None; verbosity_last = None; verbosity = 0}
 
 let checkout_buffer_cache = ref []
 let checkout_buffer =
   let cache_size = 8 in
-  fun ?dot_merlins ?path ft ->
-    try
-      match path with
-      | None -> raise Not_found
-      | Some path -> List.assoc (ft,path,dot_merlins) !checkout_buffer_cache
+  fun context ->
+    let context = normalize_context context in
+    try List.assoc context !checkout_buffer_cache
     with Not_found ->
-      let parser = match ft with
-        | `ML -> Raw_parser.implementation_state
-        | `MLI ->  Raw_parser.interface_state
-      in
-      let buffer = Buffer.create ?dot_merlins ?path parser in
-      begin match path with
-        | Some path ->
-          checkout_buffer_cache := ((ft,path,dot_merlins), buffer) ::
-                                   List.take_n cache_size !checkout_buffer_cache
-        | None -> ()
-      end;
-      begin match path with
-        | Some path when Filename.check_suffix path "myocamlbuild.ml" ->
-          let project = Buffer.project buffer in
-          (* Failure is not an issue. *)
-          ignore @@ Project.User.load_packages project ["ocamlbuild"]
-        | _ -> ()
+      let buffer = new_buffer context in
+      begin match context with
+        | _, Some path, _ ->
+          checkout_buffer_cache :=
+            (context, buffer) :: List.take_n cache_size !checkout_buffer_cache
+        | _, None, _ -> ()
       end;
       buffer
 
@@ -117,6 +131,37 @@ let buffer_update state items =
 let buffer_freeze state items =
   buffer_update state items;
   state.lexer <- None
+
+let normalize_parser_around state pos =
+  (* true while i is before pos *)
+  let until_after pos (i,_) =
+    Lexing.compare_pos (Lexer.item_start i) pos < 0 in
+  (* true while i is after pos *)
+  let until_before pos (i,_) =
+    Lexing.compare_pos (Lexer.item_end i) pos > 0 in
+  let seek_item recoveries =
+    let item, _ = History.focused recoveries in
+    fun (_,i) -> i != item
+  in
+  let recoveries = Buffer.recover_history state.buffer in
+  let items = Buffer.lexer state.buffer in
+  let recoveries = History.seek_forward (until_after pos) recoveries in
+  let items = History.seek_forward (seek_item recoveries) items in
+  let recoveries = History.seek_backward (until_before pos) recoveries in
+  let items = History.seek_backward (seek_item recoveries) items in
+  match History.focused recoveries |> snd |> Recover.parser |> Parser.find_marker with
+  | None -> ()
+  | Some mark ->
+    let diff = ref None in
+    let check_item (_,recovery) =
+      let parser = Recover.parser recovery in
+      let result = Parser.has_marker ?diff:!diff parser mark in
+      diff := Some (parser,result);
+      result
+    in
+    let recoveries = History.seek_forward check_item recoveries in
+    let items = History.seek_forward (seek_item recoveries) items in
+    buffer_freeze state items
 
 module Printtyp = Type_utils.Printtyp
 
@@ -726,6 +771,26 @@ let dispatch_query ~verbosity buffer =
 
   : a)
 
+let dispatch_query ~verbosity state =
+  fun (type a) (request : a request) ->
+    let pos = match request with
+    | (Type_expr (_, Some pos) : a request) -> Some pos
+    | (Type_enclosing (_, pos) : a request) -> Some pos
+    | (Enclosing pos : a request)           -> Some pos
+    | (Complete_prefix (_, pos, _) : a request) -> Some pos
+    | (Expand_prefix (_, pos) : a request)  -> Some pos
+    | (Document (_, pos) : a request)       -> Some pos
+    | (Locate (_, _, pos) : a request)      -> Some pos
+    | (Case_analysis loc : a request)       -> Some loc.Location.loc_start
+    | (Boundary (_,pos) : a request)        -> Some pos
+    | (Occurrences (`Ident_at pos) : a request) -> Some pos
+    | (Errors : a request)                  -> Some (Lexing.make_pos (max_int, max_int))
+    | _ -> None
+    in
+    Option.iter pos ~f:(normalize_parser_around state);
+    dispatch_query ~verbosity state.buffer request
+
+
 let dispatch_sync (state : state) =
   fun (type a) (request : a request) ->
   (match request with
@@ -878,20 +943,11 @@ let dispatch_sync (state : state) =
 
   : a)
 
-let normalize_context (ft,path,dot_merlins : Protocol.context) =
-  let ft = match ft, path with
-    | (`ML | `MLI as ft), _  -> ft
-    | `Auto, Some path when Filename.check_suffix path ".mli" -> `MLI
-    | `Auto, _ -> `ML
-  in
-  ft, path, dot_merlins
-
 let dispatch_reset (state : state) =
   fun (type a) (request : a request) ->
   (match request with
   | (Checkout context : a request) ->
-    let ft, path, dot_merlins = normalize_context context in
-    let buffer = checkout_buffer ?dot_merlins ?path ft in
+    let buffer = checkout_buffer context in
     state.lexer <- None;
     state.buffer <- buffer;
     cursor_state state
@@ -899,16 +955,13 @@ let dispatch_reset (state : state) =
   | _ -> raise Unhandled_command
   : a)
 
-
 let dispatch state req =
   let verbosity = track_verbosity state req in
   try dispatch_reset state req
   with Unhandled_command ->
     try dispatch_sync state req
     with Unhandled_command ->
-      try dispatch_query ~verbosity state.buffer req
-      with Unhandled_command ->
-        failwith "Unhandled command"
+      dispatch_query ~verbosity state req
 
 let contexts : (Protocol.context, state) Hashtbl.t = Hashtbl.create 7
 
@@ -917,14 +970,11 @@ let context_dispatch context req =
   let state =
     try Hashtbl.find contexts context
     with Not_found ->
-      let state = new_state () in
-      ignore (dispatch state (Checkout context) : cursor_state);
+      let state = new_state ~context () in
       Hashtbl.add contexts context state;
       state
   in
   let verbosity = track_verbosity state req in
   try dispatch_sync state req
   with Unhandled_command ->
-    try dispatch_query ~verbosity state.buffer req
-    with Unhandled_command ->
-      failwith "Unhandled command"
+    dispatch_query ~verbosity state req
