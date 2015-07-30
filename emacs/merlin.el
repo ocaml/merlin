@@ -745,37 +745,6 @@ the error message otherwise print a generic error message."
    "Return content of buffer between two points or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
 
-(defun merlin--tell-source (code)
-  "Tell CODE to merlin and returns whether the position if marker is still active."
-  (let ((result (merlin--send-cursor-command `(tell source ,code))))
-     (when (cdr result) (car result))))
-
-(defun merlin--tell-rest ()
-  "Put a marker and tell merlin until marker is satisfied."
-  (let* ((marker (cdr (merlin--send-cursor-command '(tell marker))))
-         (point (when marker (point)))
-         (lines 20))
-    (while (and point (not (= point (point-max))))
-      (forward-line lines)
-      (unless (> lines 1000) (setq lines (* lines 2)))
-      (setq point (merlin--tell-source
-		   (merlin/buffer-substring point (point)))))
-    (when point
-      (merlin--send-cursor-command '(tell eof)))))
-
-(defun merlin--tell-to-point (&optional point)
-  "Tell to merlin part of the buffer between START and END. START
-may be nil, in that case the current cursor of merlin is used."
-  (let* ((point (if point point (point)))
-         (start (min point merlin--dirty-point))
-         (start (car (merlin--send-cursor-command
-                       `(tell start at ,(merlin/unmake-point start))))))
-    (setq merlin--dirty-point point)
-    (save-excursion
-      (merlin--tell-source (merlin/buffer-substring start point))
-      (goto-char point)
-      (merlin--tell-rest))))
-
 (defvar-local merlin--last-edit nil
    "Coordinates (start . end) of last edition or nil, to prevent error messages from flickering when cursor is around edition.")
 
@@ -787,8 +756,13 @@ may be nil, in that case the current cursor of merlin is used."
       (setq merlin--dirty-point (1- start)))))
 
 (defun merlin/sync ()
-  "Behaves like merlin/sync if the point was point-max"
-  (merlin--tell-to-point (point-max)))
+  (let ((point (merlin/unmake-point merlin--dirty-point)))
+    (setq point (car (merlin--send-cursor-command
+                       (list 'tell 'start 'at point))))
+    (setq merlin--dirty-point (point-max))
+    (merlin--send-cursor-command
+      (list 'tell 'source (merlin/buffer-substring point (point-max))))
+    (merlin--send-cursor-command '(tell eof))))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
