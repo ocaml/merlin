@@ -17,15 +17,17 @@ let remove cost set path =
   )
 
 let rec normalize_path env path =
-  let decl = Env.find_type path env in
-  match decl.Types.type_manifest with
-  | Some body when decl.Types.type_private = Asttypes.Public
-                || decl.Types.type_kind <> Types.Type_abstract ->
-    begin match (Ctype.repr body).Types.desc with
-    | Types.Tconstr (path, _, _) -> normalize_path env path
+  match Env.find_type path env with
+  | exception Not_found -> path
+  | decl ->
+    match decl.Types.type_manifest with
+    | Some body when decl.Types.type_private = Asttypes.Public
+                  || decl.Types.type_kind <> Types.Type_abstract ->
+      begin match (Ctype.repr body).Types.desc with
+      | Types.Tconstr (path, _, _) -> normalize_path env path
+      | _ -> path
+      end
     | _ -> path
-    end
-  | _ -> path
 
 let match_query env query t =
   let cost = ref 0 in
@@ -34,9 +36,10 @@ let match_query env query t =
     incr cost;
     match (Ctype.repr t).Types.desc with
     | Types.Tconstr (path, params, _) ->
-      remove cost pos (try normalize_path env path with Not_found -> path);
-      let { Types.type_variance } = Env.find_type path env in
-      begin try
+      remove cost pos (normalize_path env path);
+      begin match Env.find_type path env with
+      | exception Not_found -> ()
+      | { Types.type_variance } ->
         List.iter2 type_variance params ~f:(fun var arg ->
           if Types.Variance.mem Types.Variance.Inj var then (
             if Types.Variance.mem Types.Variance.Pos var then
@@ -45,7 +48,6 @@ let match_query env query t =
               traverse pos pos_fun neg neg_fun arg
           )
         )
-      with Not_found -> ()
       end
 
     | Types.Tarrow (_, t1, t2, _) ->
