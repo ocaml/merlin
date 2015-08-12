@@ -426,7 +426,7 @@ let dispatch (state : state) =
     let pos = List.map pos ~f:prepare and neg = List.map neg ~f:prepare in
     let query = Polarity_search.build_query ~positive:pos ~negative:neg env in
     let dirs = Polarity_search.directories env in
-    let oc = open_out "/home/fbour/results.log" in
+    let oc = open_out "/tmp/merlin_results.log" in
     let ppf = Format.formatter_of_out_channel oc in
     let results = List.sort ~cmp:compare
         (Polarity_search.execute_query query env dirs) in

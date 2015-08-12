@@ -717,6 +717,10 @@ def vim_prev_enclosing():
             return vim_current_enclosing()
     return '{}'
 
+def vim_polarity(string):
+    line, col = vim.current.window.cursor
+    return command("polarity", "search", string, "at", {'line' : line, 'col': col})
+
 # Finding files
 def vim_which(name,ext):
     acquire_buffer()
