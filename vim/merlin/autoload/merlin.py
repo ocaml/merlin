@@ -221,8 +221,13 @@ def command_find_use(*packages):
     return display_load_failures(result)
 
 def command_reset(kind="auto",name=None):
-    if name: r = command("reset",kind,name)
-    else:    r = command("reset",kind)
+    if name:
+      if vim.eval("exists('b:merlin_dot_merlins')") == '1':
+        r = command("reset","dot_merlin",vim.eval("b:merlin_dot_merlins"),kind,name)
+      else:
+        r = command("reset",kind,name)
+    else:
+      r = command("reset",kind)
     return r
 
 def command_seek(mtd,line,col):
