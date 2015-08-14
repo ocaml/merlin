@@ -42,10 +42,14 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
   and parse = function
     | `Step p -> lex p (Raw_lexer.token_without_comments state lexbuf)
     | `Accept (Raw_parser.N_ (Raw_parser.N_parse_expression, e)) ->
-      (e : Parsetree.expression)
+      Either.R (e : Parsetree.expression)
     | `Reject p ->
-      let fake_token = (Lexing.dummy_pos,Raw_parser.BANG,Lexing.dummy_pos) in
-      raise (Error_classifier.from p fake_token (* because why not *))
+      let loc =
+        {Location. loc_start = Lexing.dummy_pos; loc_end = Lexing.dummy_pos;
+         loc_ghost = true }
+      in
+      let explanation = Merlin_recovery_explain.explain p in
+      Either.L ({ Error_classifier. loc ; explanation })
     | `Accept _ -> assert false
   in
   parse (`Step (Merlin_parser.from Raw_parser.parse_expression_state
@@ -223,11 +227,11 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Typing_aux.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
-  | exception (Error_classifier.Error e) ->
+  | Either.L e ->
     Format.pp_print_string ppf (Error_classifier.classify e);
     false
 
-  | e ->
+  | Either.R e ->
     match Raw_compat.Parsetree.extract_specific_parsing_info e with
     | `Ident longident ->
       begin try
