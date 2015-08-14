@@ -38,17 +38,17 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
     | Raw_lexer.Refill f ->
       lex parser (f ())
     | Raw_lexer.Return token ->
-      parse (`Step (Raw_parser.feed parser
-                      (Lexing.dummy_pos,token,Lexing.dummy_pos)))
+      parse (Merlin_parser.feed (Lexing.dummy_pos,token,Lexing.dummy_pos) parser)
   and parse = function
-    | `Step s -> parse (Raw_parser.step s)
-    | `Feed p -> lex p (Raw_lexer.token_without_comments state lexbuf)
+    | `Step p -> lex p (Raw_lexer.token_without_comments state lexbuf)
     | `Accept (Raw_parser.N_ (Raw_parser.N_parse_expression, e)) ->
-      Some (e : Parsetree.expression)
-    | `Reject _ -> None
+      (e : Parsetree.expression)
+    | `Reject p ->
+      let fake_token = (Lexing.dummy_pos,Raw_parser.BANG,Lexing.dummy_pos) in
+      raise (Error_classifier.from p fake_token (* because why not *))
     | `Accept _ -> assert false
   in
-  parse (`Step (Raw_parser.initial Raw_parser.parse_expression_state
+  parse (`Step (Merlin_parser.from Raw_parser.parse_expression_state
                   (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))
 
 let lookup_module_or_modtype name env =
@@ -223,11 +223,11 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
   Typing_aux.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
-  | None ->
-    Format.pp_print_string ppf "Syntax error";
+  | exception (Error_classifier.Error e) ->
+    Format.pp_print_string ppf (Error_classifier.classify e);
     false
 
-  | Some e ->
+  | e ->
     match Raw_compat.Parsetree.extract_specific_parsing_info e with
     | `Ident longident ->
       begin try
