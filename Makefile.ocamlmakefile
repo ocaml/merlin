@@ -195,6 +195,8 @@ SOURCES = \
 	src/analysis/completion.ml        \
 	src/analysis/outline.mli          \
 	src/analysis/outline.ml           \
+	src/analysis/jump.mli             \
+	src/analysis/jump.ml              \
 	$(TYPER)/tast_helper.ml           \
 	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \

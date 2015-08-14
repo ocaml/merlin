@@ -463,6 +463,11 @@ let dispatch (state : state) =
     | otherwise -> otherwise
     end
 
+  | (Jump (target, pos) : a request) ->
+    with_typer state @@ fun typer ->
+    let typed_tree = Typer.contents typer in
+    Jump.get typed_tree pos target
+
   | (Case_analysis ({ Location. loc_start ; loc_end } as loc) : a request) ->
     with_typer state @@ fun typer ->
     let env = Typer.env typer in

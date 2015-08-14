@@ -315,6 +315,8 @@ module Protocol_io = struct
       Request (Locate (None, ml_or_mli choice, mandatory_position pos))
     | (`String "locate" :: `String path :: `String choice :: pos) ->
       Request (Locate (Some path, ml_or_mli choice, mandatory_position pos))
+    | (`String "jump" :: `String target :: pos) ->
+      Request (Jump (target, mandatory_position pos))
     | [`String "outline"] ->
       Request Outline
     | [`String "drop"] ->
@@ -468,6 +470,13 @@ module Protocol_io = struct
             `Assoc ["pos", Lexing.json_of_position pos]
           | `Found (Some file,pos) ->
             `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
+          end
+        | Jump _, resp ->
+          begin match resp with
+          | `Error str ->
+            `String str
+          | `Found pos ->
+            `Assoc ["pos", Lexing.json_of_position pos]
           end
         | Case_analysis _, ({ Location. loc_start ; loc_end }, str) ->
           let assoc =

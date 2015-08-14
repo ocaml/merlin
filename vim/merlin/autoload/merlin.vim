@@ -346,6 +346,16 @@ function! merlin#Locate(...)
   endif
 endfunction
 
+function! merlin#Jump(...)
+  if (a:0 > 1)
+    echoerr "Jump: too many arguments (expected 0 or 1)"
+  elseif (a:0 == 0) || (a:1 == "")
+    py merlin.vim_jump_default()
+  else
+    py merlin.vim_jump_to(vim.eval("a:1"))
+  endif
+endfunction
+
 function! merlin#Document(...)
   if (a:0 > 1)
     echoerr "Document: to many arguments (expected 0 or 1)"
@@ -518,6 +528,9 @@ function! merlin#Register()
   if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
     nmap <silent><buffer> gd  :MerlinLocate<return>
   endif
+
+  """ Jump  ------------------------------------------------------------------
+  command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinJump call merlin#Jump(<q-args>)
 
   """ Document  ----------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinDocument call merlin#Document(<q-args>)
