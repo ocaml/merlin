@@ -120,6 +120,11 @@ type _ request =
        | `Not_found of string * string option
        | `At_origin
        ] request
+  | Jump
+    : string * position
+    -> [ `Found of Lexing.position
+       | `Error of string
+       ] request
   | Case_analysis
     : Location.t -> (Location.t * string) request
   | Outline

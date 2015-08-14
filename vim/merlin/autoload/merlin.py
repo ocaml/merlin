@@ -288,6 +288,21 @@ def command_locate(path, line, col):
     except MerlinExc as e:
         try_print_error(e)
 
+def command_jump(target, line, col):
+    try:
+        pos_or_err = command("jump", target, "at", {'line': line, 'col': col})
+        if not isinstance(pos_or_err, dict):
+            print(pos_or_err)
+        else:
+            l = pos_or_err['pos']['line']
+            c = pos_or_err['pos']['col']
+            # save the current position in the jump list
+            vim.command("normal! m'")
+            # TODO: move the cursor using vimscript, so we can :keepjumps?
+            vim.current.window.cursor = (l, c)
+    except MerlinExc as e:
+        try_print_error(e)
+
 def command_occurrences(line, col):
     try:
         lst_or_err = command("occurrences", "ident", "at", {'line':line, 'col':col})
@@ -468,6 +483,15 @@ def vim_locate_at_cursor(path):
 
 def vim_locate_under_cursor():
     vim_locate_at_cursor(None)
+
+# Jump
+def vim_jump_to(target):
+    line, col = vim.current.window.cursor
+    sync_full_buffer()
+    command_jump(target, line, col)
+
+def vim_jump_default():
+  vim_jump_to("fun let module match")
 
 # Document
 def vim_document_at_cursor(path):

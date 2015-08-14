@@ -1467,6 +1467,33 @@ loading"
            (select-window (display-buffer (car r)))))
     (when r (goto-char (cdr r)))))
 
+;;;;;;;;;;
+;; JUMP ;;
+;;;;;;;;;;
+
+(defun merlin/jump (&optional target)
+  "Jump to the TARGET"
+  (let ((result (merlin/send-command
+                  (list 'jump (if (equal target "") "fun,let,module,match" target)
+                        'at (merlin/unmake-point (point))))))
+    (unless result
+      (error "Not found. (Check *Messages* for potential errors)"))
+    (unless (listp result)
+      (error result))
+    result))
+
+(defun merlin-jump (&optional target)
+  "Jump to enclosing fun, let, module or match.
+
+Any combination of the above may be entered, separated by spaces, ex.:
+
+fun let or module or module fun match
+
+Empty string defaults to jumping to all these."
+  (interactive "sfun, let, module or match > ")
+  (merlin/sync-to-end)
+  (merlin--goto-file-and-point (merlin/jump target)))
+
 ;;;;;;;;;;;;;;
 ;; DOCUMENT ;;
 ;;;;;;;;;;;;;;
