@@ -87,8 +87,42 @@ let rec summarize node =
   | Extension_constructor ec ->
     Some (mk ~location `Exn ec.ext_id )
 
-  (* TODO: classes *)
+  | Class_declaration cd ->
+    let children =
+      List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
+    in
+    Some (mk ~children ~location `Class cd.ci_id_class_type)
+
   | _ -> None
+
+and get_class_elements node =
+  match node.t_node with
+  | Class_expr _ ->
+    List.concat_map (Lazy.force node.t_children) ~f:get_class_elements
+  | Class_structure cs ->
+    List.filter_map (Lazy.force node.t_children) ~f:(fun child ->
+      match child.t_node with
+      | Class_field cf ->
+        begin match cf.cf_desc with
+        | Tcf_val (str_loc,_,_,_,_) ->
+          Some { Protocol.
+            outline_name = str_loc.Location.txt;
+            outline_kind = `Value;
+            location = str_loc.Location.loc;
+            children = []
+          }
+        | Tcf_method (str_loc,_,_) ->
+          Some { Protocol.
+            outline_name = str_loc.Location.txt;
+            outline_kind = `Method;
+            location = str_loc.Location.loc;
+            children = []
+          }
+        | _ -> None
+        end
+      | _ -> None
+    )
+  | _ -> []
 
 and get_mod_children node =
   List.concat_map (Lazy.force node.t_children) ~f:remove_mod_indir

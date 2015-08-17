@@ -174,8 +174,10 @@ module Protocol_io = struct
     | `Module      -> "Module"
     | `Modtype     -> "Signature"
     | `Type        -> "Type"
+    | `Method      -> "Method"
     | `MethodCall  -> "#"
     | `Exn         -> "Exn"
+    | `Class       -> "Class"
 
   let json_of_completion {Compl. name; kind; desc; info} =
     `Assoc ["name", `String name;

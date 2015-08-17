@@ -61,7 +61,17 @@ type completions = Compl.t
 type outline = item list
 and item = {
   outline_name : string ;
-  outline_kind : [`Value|`Constructor|`Label|`Module|`Modtype|`Type|`Exn] ;
+  outline_kind : [
+    | `Value
+    | `Constructor
+    | `Label
+    | `Module
+    | `Modtype
+    | `Type
+    | `Exn
+    | `Class
+    | `Method
+  ];
   location : Location.t ;
   children : outline ;
 }
