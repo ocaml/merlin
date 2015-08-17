@@ -307,6 +307,10 @@ module Option = struct
     | None -> ()
     | Some x -> f x
 
+  let cons o xs = match o with
+    | None -> xs
+    | Some x -> x :: xs
+
   module Infix = struct
     let return x  = Some x
     let (>>=) x f = bind x ~f

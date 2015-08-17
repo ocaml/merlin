@@ -40,10 +40,10 @@ let caught catch =
   catch := [];
   caught
 
+type 'a result = [ `Ok of 'a | `Fail of Env.t * Location.t ]
 type content =
-  [ `Str of Typedtree.structure
-  | `Sg of Typedtree.signature
-  | `Fail of Env.t * Location.t
+  [ `Str of Parsetree.structure * Typedtree.structure result
+  | `Sg of Parsetree.signature * Typedtree.signature result
   ]
 
 (* Intermediate, resumable type checking state *)
@@ -135,23 +135,23 @@ let append catch loc step item =
     let env, contents =
       match item with
       | `str str ->
-        let structure,t,env = Typemod.type_structure step.env str loc in
+        let str',t,env = Typemod.type_structure step.env str loc in
         env,
-        (`Str structure, !Typecore.delayed_checks) :: step.contents
+        (`Str (str, `Ok str'), !Typecore.delayed_checks) :: step.contents
       | `sg sg ->
-        let sg = Typemod.transl_signature step.env sg in
-        sg.Typedtree.sig_final_env,
-        (`Sg sg, !Typecore.delayed_checks) :: step.contents
+        let sg' = Typemod.transl_signature step.env sg in
+        sg'.Typedtree.sig_final_env,
+        (`Sg (sg, `Ok sg'), !Typecore.delayed_checks) :: step.contents
       | `fake str ->
-        let structure,_,_ =
+        let str',_,_ =
           Parsing_aux.catch_warnings (ref [])
             (fun () -> Typemod.type_structure step.env str loc)
         in
         let browse =
-          BrowseT.of_node ~loc ~env:step.env (BrowseT.Structure structure)
+          BrowseT.of_node ~loc ~env:step.env (BrowseT.Structure str')
         in
         (last_env browse).BrowseT.t_env,
-        (`Str structure, !Typecore.delayed_checks) :: step.contents
+        (`Str (str, `Ok str'), !Typecore.delayed_checks) :: step.contents
       | `none -> step.env, step.contents
     in
     let snapshot = Btype.snapshot () in
@@ -161,10 +161,15 @@ let append catch loc step item =
      exns = caught catch @ step.exns}
   with exn ->
     let snapshot = Btype.snapshot () in
+    let failed = `Fail (step.env, loc) in
+    let content = match item with
+      | `str str | `fake str -> Some (`Str (str, failed), [])
+      | `sg sg -> Some (`Sg (sg, failed), [])
+      | `none -> None
+    in
     {step with snapshot;
                exns = exn :: caught catch @ step.exns;
-               contents = (`Fail (step.env, loc), []) :: step.contents}
-
+               contents = Option.cons content step.contents}
 (* Incremental synchronization *)
 
 type sync_step = (Parser.frame * step)
@@ -282,17 +287,17 @@ let delayed_checks t =
   let checks =
     List.fold_left ~f:(fun acc (content,checks) ->
         try match content with
-          | `Str str ->
+          | `Str (_, `Ok str) ->
             ignore (Includemod.signatures st.env
                       str.Typedtree.str_type
                       str.Typedtree.str_type : Typedtree.module_coercion);
             checks @ acc
-          | `Sg sg ->
+          | `Sg (_, `Ok sg) ->
             ignore (Includemod.signatures st.env
                       sg.Typedtree.sig_type
                       sg.Typedtree.sig_type : Typedtree.module_coercion);
             checks @ acc
-          | `Fail _ -> acc
+          | `Str (_, `Fail _) | `Sg (_, `Fail _) -> acc
         with exn ->
           exns := exn :: !exns;
           acc

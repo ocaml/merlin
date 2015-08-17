@@ -131,18 +131,18 @@ let rec fix_loc env t =
   else
     {t with t_env; t_children = lazy (List.map (fix_loc t_env) (Lazy.force t_children))}
 
+let of_structure str =
+  fix_loc str.str_final_env (BrowseT.of_node (BrowseT.Structure str))
+
+let of_signature sg =
+  fix_loc sg.sig_final_env (BrowseT.of_node (BrowseT.Signature sg))
+
 let of_typer_contents contents =
   let of_content (content,_) = match content with
-    | `Fail (env, loc) ->
+    | `Str (_, `Ok str) -> of_structure str
+    | `Sg (_, `Ok sg) -> of_signature sg
+    | `Str (_, `Fail (env, loc)) | `Sg (_, `Fail (env, loc)) ->
       BrowseT.of_node ~loc ~env BrowseT.Dummy
-    | (`Str _ | `Sg _) as item ->
-      let node, env = match item with
-        | `Str str -> BrowseT.Structure str, str.str_final_env
-        | `Sg sg -> BrowseT.Signature sg, sg.sig_final_env
-      in
-      let browse = BrowseT.of_node node in
-      let browse = fix_loc env browse in
-      browse
   in
   List.map ~f:of_content contents
 

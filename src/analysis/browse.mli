@@ -71,6 +71,8 @@ val enclosing : Lexing.position -> t list -> t list
 
 val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
 
+val of_structure : Typedtree.structure -> t
+val of_signature : Typedtree.signature -> t
 val of_typer_contents : (Merlin_typer.content * _) list -> t list
 
 val all_constructor_occurrences :

@@ -583,9 +583,9 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let ppf, to_string = Format.to_string () in
     List.iter (fun (content,_) -> match content with
-        | `Sg sg -> Printtyped.interface ppf sg
-        | `Str str -> Printtyped.implementation ppf str
-        | `Fail (_,loc) ->
+        | `Sg (_, `Ok sg) -> Printtyped.interface ppf sg
+        | `Str (_, `Ok str) -> Printtyped.implementation ppf str
+        | `Sg (_, `Fail (_,loc)) | `Str (_, `Fail (_,loc)) ->
           Format.fprintf ppf "<failed to type at %a>\n"
             Location.print loc
       ) (Typer.contents typer);
