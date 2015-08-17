@@ -34,12 +34,13 @@ open Std
    name *)
 type directive = [
   | `B   of string
+  | `S   of string
   | `CMI of string
   | `CMT of string
   | `EXT of string list
   | `FLG of string
   | `PKG of string list
-  | `S   of string
+  | `STDLIB of string
 ]
 type file = {
   project    : string option;
@@ -57,6 +58,7 @@ type config = {
   packages    : string list;
   flags       : string list list;
   extensions  : string list;
+  stdlib      : string;
 }
 
 (* Find path of the dot-merlin file *)

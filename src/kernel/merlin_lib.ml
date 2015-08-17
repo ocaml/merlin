@@ -107,6 +107,7 @@ end = struct
     cfg_path_cmi    : string list ref;
     cfg_path_cmt    : string list ref;
     cfg_path_pkg    : string list ref;
+    mutable cfg_stdlib : string;
   }
 
   let empty_config () = {
@@ -118,6 +119,7 @@ end = struct
     cfg_path_cmi    = ref [];
     cfg_path_cmt    = ref [];
     cfg_path_pkg    = ref [];
+    cfg_stdlib = Config.standard_library;
   }
 
   let reset_config cfg =
@@ -333,6 +335,12 @@ end = struct
     let local_path = ref [] in
     let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
     let flags = Clflags.copy Clflags.initial in
+    let std_include = Path_list.of_fun @@ fun () ->
+      if flags.Clflags.std_include then
+        [Path_list.of_string_list [dot_config.cfg_stdlib]]
+      else
+        []
+    in
     let project =
       { dot_merlins_path = [];
         dot_merlins = [];
@@ -348,7 +356,7 @@ end = struct
             user_config.cfg_path_pkg;
             dot_config.cfg_path_pkg;
           ];
-        build_path = prepare [
+        build_path = Path_list.of_list [prepare [
             user_config.cfg_path_cmi;
             user_config.cfg_path_build;
             local_path;
@@ -357,9 +365,10 @@ end = struct
             user_config.cfg_path_pkg;
             dot_config.cfg_path_pkg;
             flags.Clflags.include_dirs;
-            flags.Clflags.std_include;
           ];
-        cmt_path = prepare [
+           std_include;
+          ];
+        cmt_path = Path_list.of_list [prepare [
             user_config.cfg_path_cmt;
             user_config.cfg_path_build;
             local_path;
@@ -368,7 +377,8 @@ end = struct
             user_config.cfg_path_pkg;
             dot_config.cfg_path_pkg;
             flags.Clflags.include_dirs;
-            flags.Clflags.std_include;
+          ];
+           std_include;
           ];
         global_modules = None;
         keywords_cache = Extension.keywords Extension.empty, Extension.empty;

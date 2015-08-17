@@ -19,7 +19,7 @@ module StringMap : Map.S with type key = string
 
 type set = {
   include_dirs                 : string list ref;
-  std_include                  : string list ref;
+  mutable std_include          : bool;
   mutable fast                 : bool;
   mutable classic              : bool;
   mutable principal            : bool;

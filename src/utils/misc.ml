@@ -129,16 +129,22 @@ let expand_glob ?(filter=fun _ -> true) path acc =
 
 module Path_list = struct
   type t =
-    | StringList of string list ref
+    | StringListRef of string list ref
+    | StringList of string list
+    | Fun of (unit -> t list)
     | List of t list
 
   let of_list l = List l
 
-  let of_string_list_ref l = StringList l
+  let of_string_list_ref l = StringListRef l
+  let of_string_list l = StringList l
+  let of_fun f = Fun f
 
   let rec to_list k = function
     | List l -> from_list k l
-    | StringList l -> from_string_list k !l
+    | Fun f -> from_list k (f ())
+    | StringList s -> from_string_list k s
+    | StringListRef l -> from_string_list k !l
 
   and from_list k = function
     | t :: l -> to_list (lazy (from_list k l)) t
