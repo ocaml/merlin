@@ -569,6 +569,12 @@ module Lexing = struct
   let json_of_position pos =
     let line, col = split_pos pos in
     `Assoc ["line", `Int line; "col", `Int col]
+
+  let min_pos p1 p2 =
+    if compare_pos p1 p2 <= 0 then p1 else p2
+
+  let max_pos p1 p2 =
+    if compare_pos p1 p2 >= 0 then p1 else p2
 end
 
 module Stream = struct
