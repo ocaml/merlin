@@ -39,6 +39,7 @@ type directive = [
   | `PKG of string list
   | `EXT of string list
   | `FLG of string
+  | `STDLIB of string
 ]
 
 type file = {
@@ -81,9 +82,10 @@ let parse_dot_merlin_file path : bool * file =
         proj := Some ""
       else if String.is_prefixed ~by:"#" line then
         ()
-      else (* Ignore STDLIB directive for now, it will used by next version of merlin *)
-      if String.is_prefixed ~by:"STDLIB " line then
-        ()
+      else if String.is_prefixed ~by:"STDLIB " line then
+        tell (`STDLIB (String.drop 7 line))
+      else if String.is_prefixed ~by:"STDLIB " line then
+        tell (`STDLIB (String.drop 9 line))
       else
         Logger.info Logger.Section.project_load ~title:".merlin"
           (sprintf "unexpected directive \"%s\"" line) ;
@@ -146,6 +148,7 @@ type config =
     packages    : string list;
     flags       : string list list;
     extensions  : string list;
+    stdlib      : string;
   }
 
 let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
@@ -168,28 +171,30 @@ let rev_split_flags str =
 
 let parse_dot_merlin {path; directives} config =
   let cwd = Filename.dirname path in
-  let expand path acc =
+  let expand config path acc =
     let filter name =
       try Sys.is_directory name
       with _ -> false
     in
-    let path = expand_directory Config.standard_library path in
+    let path = expand_directory config.stdlib path in
     let path = canonicalize_filename ~cwd path in
     expand_glob ~filter path acc
   in
   List.fold_left ~init:{config with dot_merlins = path :: config.dot_merlins}
   ~f:(fun config ->
     function
-    | `B path -> {config with build_path = expand path config.build_path}
-    | `S path -> {config with source_path = expand path config.source_path}
-    | `CMI path -> {config with cmi_path = expand path config.cmi_path}
-    | `CMT path -> {config with cmt_path = expand path config.cmt_path}
+    | `B path -> {config with build_path = expand config path config.build_path}
+    | `S path -> {config with source_path = expand config path config.source_path}
+    | `CMI path -> {config with cmi_path = expand config path config.cmi_path}
+    | `CMT path -> {config with cmt_path = expand config path config.cmt_path}
     | `PKG pkgs -> {config with packages = pkgs @ config.packages}
     | `EXT exts ->
       {config with extensions = exts @ config.extensions}
     | `FLG flags ->
       let flags = List.rev (rev_split_flags flags) in
       {config with flags = flags :: config.flags}
+    | `STDLIB path ->
+      {config with stdlib = canonicalize_filename path}
   ) directives
 
 let empty_config = {
@@ -201,6 +206,7 @@ let empty_config = {
   dot_merlins = [];
   extensions  = [];
   flags       = [];
+  stdlib      = Config.standard_library
 }
 
 let rec parse ?(config=empty_config) =
@@ -217,6 +223,7 @@ let rec parse ?(config=empty_config) =
       packages    = List.rev (List.filter_dup config.packages);
       extensions  = List.rev (List.filter_dup config.extensions);
       flags       = List.rev (List.filter_dup config.flags);
+      stdlib      = config.stdlib
     }
 
 let ppx_of_package ?(predicates=[]) setup pkg =

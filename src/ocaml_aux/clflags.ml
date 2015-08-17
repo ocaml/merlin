@@ -19,7 +19,7 @@ module StringMap = Map.Make(String)
 
 type set = {
   include_dirs                 : string list ref;
-  std_include                  : string list ref;
+  mutable std_include          : bool;
   mutable fast                 : bool;
   mutable classic              : bool;
   mutable principal            : bool;
@@ -38,7 +38,7 @@ type set = {
 let fresh () =
   {
     include_dirs         = ref [];    (* -I *)
-    std_include          = ref [Config.standard_library]; (* -nostdlib *)
+    std_include          = true; (* -nostdlib *)
     fast                 = false; (* -unsafe *)
     classic              = false; (* -nolabels *)
     principal            = false; (* -principal *)
@@ -54,10 +54,7 @@ let fresh () =
     ppx                  = Ppxsetup.empty;    (* -ppx *)
   }
 
-let copy t = {t with
-              include_dirs = ref !(t.include_dirs);
-              std_include = ref !(t.std_include);
-             }
+let copy t = {t with include_dirs = ref !(t.include_dirs)}
 
 let initial = fresh ()
 let set = ref initial
@@ -109,10 +106,10 @@ let include_dirs_spec t =
   Arg.String (fun s -> t.include_dirs := s :: !(t.include_dirs)),
   "<dir> Add <dir> to the list of include directories"
 
-let no_std_include () = !(!set.std_include) = []
+let no_std_include () = not !set.std_include
 let no_std_include_spec t =
   "-nostdlib",
-  Arg.Unit (fun () -> t.std_include := []),
+  Arg.Unit (fun () -> t.std_include <- false),
   " Do not add default directory to the list of include directories"
 
 let fast () = !set.fast
