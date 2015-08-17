@@ -308,8 +308,11 @@ and browse_cmts ~root modules =
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
         Some loc
       | _ ->
-        let browses = Browse.of_typer_contents [(typedtree, [])] in
-        let trie = Typedtrie.of_browses browses in
+        let browse = match typedtree with
+          | `Str str -> Browse.of_structure str
+          | `Sg sg -> Browse.of_signature sg
+        in
+        let trie = Typedtrie.of_browses [browse] in
         cached.Cmt_cache.location_trie <- trie ;
         locate modules trie
       end

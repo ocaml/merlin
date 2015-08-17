@@ -97,9 +97,10 @@ let rec build ?(local_buffer=false) ~trie browses =
     | `Alias path ->
       let p = Path.to_string_list path in
       Alias (tag_path ~namespace p)
-    | `Str _
-    | `Sg  _ as s ->
-      Internal (build ~local_buffer ~trie:Trie.empty (Browse.of_typer_contents [(s, [])]))
+    | `Str s ->
+      Internal (build ~local_buffer ~trie:Trie.empty [Browse.of_structure s])
+    | `Sg s ->
+      Internal (build ~local_buffer ~trie:Trie.empty [Browse.of_signature s])
     | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
     | `Functor (located_name, pack_loc, packed) when local_buffer ->
@@ -193,8 +194,8 @@ let rec build ?(local_buffer=false) ~trie browses =
             assert false
           | `Unpack
           | `Apply _ -> f Leaf
-          | `Str _
-          | `Sg  _ as s -> build ~local_buffer ~trie (Browse.of_typer_contents [(s, [])])
+          | `Str str -> build ~local_buffer ~trie [Browse.of_structure str]
+          | `Sg  sg -> build ~local_buffer ~trie [Browse.of_signature sg]
         in
         helper packed
       end
