@@ -103,22 +103,15 @@ and get_class_elements node =
     List.filter_map (Lazy.force node.t_children) ~f:(fun child ->
       match child.t_node with
       | Class_field cf ->
-        begin match cf.cf_desc with
-        | Tcf_val (str_loc,_,_,_,_) ->
+        begin match Raw_compat.get_class_field_desc_infos cf.cf_desc with
+        | Some (str_loc, outline_kind) ->
           Some { Protocol.
             outline_name = str_loc.Location.txt;
             outline_kind = `Value;
             location = str_loc.Location.loc;
             children = []
           }
-        | Tcf_method (str_loc,_,_) ->
-          Some { Protocol.
-            outline_name = str_loc.Location.txt;
-            outline_kind = `Method;
-            location = str_loc.Location.loc;
-            children = []
-          }
-        | _ -> None
+        | None -> None
         end
       | _ -> None
     )
