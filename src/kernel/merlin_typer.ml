@@ -107,7 +107,7 @@ let rewrite_ppx = function
   | `sg sg -> `sg (Pparse.apply_rewriters_sig ~tool_name:"merlin" sg)
   | `fake str -> `fake (Pparse.apply_rewriters_str ~tool_name:"merlin" str)
 
-let rewrite loc raw = rewrite_ppx (rewrite_raw loc raw)
+let rewrite loc raw = Raw_typer.rewrite_loc (rewrite_ppx (rewrite_raw loc raw))
 
 (* Produce a new step by processing one frame from the parser *)
 
