@@ -594,21 +594,22 @@ the merlin buffer of the current buffer."
         (buffer        (elt closure 4)))
     (setcar promise t)
     (with-current-buffer buffer
-      (when merlin-debug (merlin-debug (format "<%s" answer)))
-      (setq answer (car (read-from-string answer)))
-      (cond ((not answer)
-             (message "Invalid answer received from merlin."))
-            ((string-equal (elt answer 0) "return")
-             (setcdr promise (funcall cb-if-success (elt answer 1))))
-            ((string-equal (elt answer 0) "exception")
-             (message "Merlin failed with exception: %s" (elt answer 1))
-             (when (functionp cb-if-exn)
-               (setcdr promise (funcall cb-if-exn (elt answer 1)))))
-            ((and (string-equal (elt answer 0) "error")
-                  (assoc 'message (elt answer 1)))
-             (message "Merlin failed with error: \"%s\""
-                      (cdr (assoc 'message (elt answer 1)))))
-            (t (error "Command %s failed with error %s" command (elt answer 1)))))))
+      (with-demoted-errors "Error in merlin/send-command-async callback: %S"
+        (when merlin-debug (merlin-debug (format "<%s" answer)))
+        (setq answer (car (read-from-string answer)))
+        (cond ((not answer)
+               (message "Invalid answer received from merlin."))
+              ((string-equal (elt answer 0) "return")
+               (setcdr promise (funcall cb-if-success (elt answer 1))))
+              ((string-equal (elt answer 0) "exception")
+               (message "Merlin failed with exception: %s" (elt answer 1))
+               (when (functionp cb-if-exn)
+                 (setcdr promise (funcall cb-if-exn (elt answer 1)))))
+              ((and (string-equal (elt answer 0) "error")
+                    (assoc 'message (elt answer 1)))
+               (message "Merlin failed with error: \"%s\""
+                        (cdr (assoc 'message (elt answer 1)))))
+              (t (error "Command %s failed with error %s" command (elt answer 1))))))))
 
 (defun merlin--sexp-remove-string-properties (sexp)
   "Workaround retarded emacs objects printing API.
@@ -756,13 +757,31 @@ the error message otherwise print a generic error message."
       (setq merlin--dirty-point (1- start)))))
 
 (defun merlin/sync ()
-  (let ((point (merlin/unmake-point merlin--dirty-point)))
-    (setq point (car (merlin--send-cursor-command
-                       (list 'tell 'start 'at point))))
-    (setq merlin--dirty-point (point-max))
-    (merlin--send-cursor-command
-      (list 'tell 'source (merlin/buffer-substring point (point-max))))
-    (merlin--send-cursor-command '(tell eof))))
+  "Synchronize buffer with merlin"
+  (unless (eq merlin--dirty-point (point-max))
+    (let ((point (merlin/unmake-point merlin--dirty-point)))
+      (setq point (car (merlin--send-cursor-command
+                         (list 'tell 'start 'at point))))
+      (setq merlin--dirty-point (point-max))
+      (merlin--send-cursor-command
+        (list 'tell 'source-eof (merlin/buffer-substring point (point-max)))))))
+
+(defun merlin/sync-async (k &optional kerr)
+  "Asynchronous synchronization of buffer with merlin"
+  (if (eq merlin--dirty-point (point-max)) (funcall k)
+    (lexical-let ((k k) (kerr kerr))
+      (merlin/send-command-async
+        (list 'tell 'start 'at (merlin/unmake-point merlin--dirty-point))
+        (lambda (answer)
+          (let* ((point (car (merlin--parse-position answer)))
+                 (source (merlin/buffer-substring point (point-max))))
+            (merlin/send-command-async
+              (list 'tell 'source-eof source)
+              (lambda (answer)
+                (setq merlin--dirty-point (point-max))
+                (funcall k))
+              kerr)))
+        kerr))))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;
