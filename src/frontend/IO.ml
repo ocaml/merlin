@@ -287,8 +287,12 @@ module Protocol_io = struct
       Request (Tell (`Start (optional_position opt_pos)))
     | [`String "tell"; `String "source"; `String source] ->
       Request (Tell (`Source source))
+    | [`String "tell"; `String "source-eof"; `String source] ->
+      Request (Tell (`Source_eof source))
     | [`String "tell"; `String "file"; `String path] ->
       Request (Tell (`File path))
+    | [`String "tell"; `String "file-eof"; `String path] ->
+      Request (Tell (`File_eof path))
     | [`String "tell"; `String "eof"] ->
       Request (Tell `Eof)
     | [`String "tell"; `String "marker"] ->

@@ -82,7 +82,10 @@ type context = [`ML | `MLI | `Auto ] * string option * string list option
 
 type _ request =
   | Tell
-    : [ `Start of position option | `Source of string | `File of string | `Eof | `Marker]
+    : [ `Start of position option
+      | `Source of string | `File of string
+      | `Source_eof of string | `File_eof of string
+      | `Eof | `Marker]
     -> cursor_state request
   | Type_expr
     :  string * position option
