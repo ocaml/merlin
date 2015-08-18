@@ -800,15 +800,22 @@ let dispatch_sync (state : state) =
     buffer_update state (Lexer.history lexer);
     cursor_state state
 
-  | (Tell (`File _ | `Source _ | `Eof as source) : a request) ->
-    let source = match source with
-      | `Eof -> Some ""
-      | `Source "" -> None
-      | `Source source -> Some source
+  | (Tell (`File _ | `Source _ | `File_eof _ | `Source_eof _ | `Eof as source) : a request) ->
+    let source, then_eof = match source with
+      | `Eof -> Some "", false
+      | `Source "" -> None, false
+      | `Source source -> Some source, false
       | `File path ->
-        match Misc.file_contents path with
+        begin match Misc.file_contents path with
         | "" -> None
         | source -> Some source
+        end, false
+      | `Source_eof source -> Some source, true
+      | `File_eof path ->
+        begin match Misc.file_contents path with
+        | "" -> None
+        | source -> Some source
+        end, true
     in
     begin match source with
       | None -> cursor_state state
@@ -821,6 +828,7 @@ let dispatch_sync (state : state) =
             let lexer = Buffer.start_lexing state.buffer in
             state.lexer <- Some lexer; lexer in
         assert (Lexer.feed lexer source);
+        if then_eof then assert (Lexer.feed lexer "");
         buffer_update state (Lexer.history lexer);
         (* Stop lexer on EOF *)
         if Lexer.eof lexer then state.lexer <- None;
