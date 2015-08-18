@@ -522,7 +522,7 @@ The precedences must be listed from low to high.
 %left     INFIXOP0 EQUAL LESS GREATER   (* expr (e OP e OP e) *)
 %right    INFIXOP1                      (* expr (e OP e OP e) *)
 %right    COLONCOLON                    (* expr (e :: e :: e) *)
-%left     INFIXOP2 PLUS PLUSDOT MINUS MINUSDOT  (* expr (e OP e OP e) *)
+%left     INFIXOP2 PLUS PLUSDOT MINUS MINUSDOT PLUSEQ (* expr (e OP e OP e) *)
 %left     PERCENT INFIXOP3 STAR                 (* expr (e OP e OP e) *)
 %right    INFIXOP4                      (* expr (e OP e OP e) *)
 %nonassoc prec_unary_minus prec_unary_plus (* unary - *)
@@ -1155,6 +1155,8 @@ expr:
       { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "+" $3 }
   | expr PLUSDOT expr
       { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "+." $3 }
+  | expr PLUSEQ expr
+      { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "+=" $3 }
   | expr MINUS expr
       { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) "-" $3 }
   | expr MINUSDOT expr
@@ -1912,6 +1914,7 @@ operator:
   | AMPERSAND                                   { "&" }
   | AMPERAMPER                                  { "&&" }
   | COLONEQUAL                                  { ":=" }
+  | PLUSEQ                                      { "+=" }
 ;
 
 constr_ident:
