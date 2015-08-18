@@ -1817,7 +1817,7 @@ Returns the position."
 
 (defun merlin-lighter ()
   "Return the lighter for merlin which indicates the status of merlin process."
-  (if (merlin-process-dead-p) " merlin (DEAD)"
+  (if (merlin-process-dead-p) " Merlin (DEAD)"
     (progn
       (let ((messages nil))
         (when merlin-report-errors-in-lighter
@@ -1828,8 +1828,8 @@ Returns the position."
           (add-to-list 'messages "errors in buffer"))
         (when merlin-show-instance-in-lighter
           (add-to-list 'messages merlin-instance))
-        (if messages (concat " merlin (" (mapconcat 'identity messages ",") ")")
-          " merlin")))))
+        (if messages (concat " Merlin (" (mapconcat 'identity messages ",") ")")
+          " Merlin")))))
 
 ;;;###autoload
 
