@@ -3,6 +3,15 @@ merlin HEAD
 
   backend:
     - locate: fix assert failure on first class modules inclusion
+    - outline: add support for classes and object types
+    - nonrec: enable by default for OCaml >= 4.02.2
+    - error reporting: less aggressive filtering on ghost locs
+
+  emacs:
+    FIXME
+
+  vim:
+    - expose custom .merlin loading through buffer variable
 
 merlin 2.2
 ==========
