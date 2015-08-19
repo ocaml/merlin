@@ -1769,7 +1769,7 @@ Returns the position."
     (define-key merlin-menu-map [versionmerlin]
       '(menu-item "Version" merlin-version
                   :help "Print the version of the merlin binary."))
-    (define-key merlin-map [menu-bar merlin] (cons "merlin" merlin-menu-map))
+    (define-key merlin-map [menu-bar merlin] (cons "Merlin" merlin-menu-map))
     merlin-map
     ))
 
