@@ -29,11 +29,14 @@ type t = {
 
 val none : t
 (** An arbitrary value of type [t]; describes an empty ghost range. *)
-val in_file : string -> t;;
+
+val in_file : string -> t
 (** Return an empty ghost range located in a given file. *)
+
 val init : Lexing.lexbuf -> string -> unit
 (** Set the file name and line number of the [lexbuf] to be the start
     of the named file. *)
+
 val curr : Lexing.lexbuf -> t
 (** Get the location of the current token from the [lexbuf]. *)
 
@@ -80,7 +83,6 @@ val show_filename: string -> string
 
 val absname: bool ref
 
-
 (* Support for located errors *)
 
 type error =
@@ -116,6 +118,12 @@ val register_error_of_exn: (exn -> error option) -> unit
      being located as well). *)
 
 val report_error: formatter -> error -> unit
+
+val error_reporter : (formatter -> error -> unit) ref
+(** Hook for intercepting error reports. *)
+
+val default_error_reporter : formatter -> error -> unit
+(** srcinal error reporter for use in hooks. *)
 
 val report_exception: formatter -> exn -> unit
   (* Reraise the exception if it is unknown. *)

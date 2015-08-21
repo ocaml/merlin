@@ -370,6 +370,12 @@ let check_consistency ps =
 
 exception Cmi_cache_store of module_components * pers_typemap ref
 
+let save_pers_struct crc ps =
+  let modname = ps.ps_name in
+  Hashtbl.add !cache.persistent_structures modname (Some ps);
+  Consistbl.set !cache.crc_units modname crc ps.ps_filename;
+  add_import modname
+
 let read_pers_struct modname filename =
   let {Cmi_cache. cmi_infos = cmi; cmi_env_store} = Cmi_cache.read filename in
   let name = cmi.cmi_name in
@@ -419,6 +425,10 @@ let find_pers_struct ?(check=true) name =
     | Some None -> raise Not_found
     | Some (Some sg) -> sg
     | None ->
+       (* PR#6843: record the weak dependency ([add_import]) even if
+          the [find_in_path_uncap] call below fails to find the .cmi,
+          to help make builds more deterministic. *)
+        add_import name;
         let filename =
           try find_in_path_uncap !load_path (name ^ ".cmi")
           with Not_found ->
@@ -486,6 +496,9 @@ let check_cache_consistency () =
 let set_unit_name name =
   !cache.current_unit <- name
 
+let get_unit_name () =
+  !cache.current_unit
+
 (* Lookup by identifier *)
 
 let rec find_module_descr path env =
@@ -495,7 +508,7 @@ let rec find_module_descr path env =
         let (p, desc) = EnvTbl.find_same id env.components
         in desc
       with Not_found ->
-        if Ident.persistent id
+        if Ident.persistent id && not (Ident.name id = !cache.current_unit)
         then (find_pers_struct (Ident.name id)).ps_comps
         else raise Not_found
       end
@@ -604,7 +617,7 @@ let find_module ~alias path env =
         let (p, data) = EnvTbl.find_same id env.modules
         in data
       with Not_found ->
-        if Ident.persistent id then
+        if Ident.persistent id && not (Ident.name id = !cache.current_unit) then
           let ps = find_pers_struct (Ident.name id) in
           md (Mty_signature ps.ps_sig)
         else raise Not_found
@@ -827,22 +840,6 @@ let lookup proj1 proj2 lid env =
   | Lapply(l1, l2) ->
       raise Not_found
 
-let lookup_simple proj1 proj2 lid env =
-  match lid with
-    Lident s ->
-      EnvTbl.find_name s (proj1 env)
-  | Ldot(l, s) ->
-      let (p, desc) = lookup_module_descr l env in
-      begin match EnvLazy.force !components_of_module_maker' desc with
-        Structure_comps c ->
-          let (data, pos) = Tbl.find s (proj2 c) in
-          data
-      | Functor_comps f ->
-          raise Not_found
-      end
-  | Lapply(l1, l2) ->
-      raise Not_found
-
 let lookup_all_simple proj1 proj2 shadow lid env =
   match lid with
     Lident s ->
@@ -1046,7 +1043,7 @@ let lookup_cltype lid env =
 let rec scrape_alias_safe env mty =
   match mty with
   | Mty_alias (Pident id) when Ident.persistent id -> false
-  | Mty_alias path ->
+  | Mty_alias path -> (* PR#6600: find_module may raise Not_found *)
       scrape_alias_safe env (find_module path env).md_type
   | _ -> true
 

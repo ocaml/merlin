@@ -42,6 +42,32 @@ let arg_label_to_str = function
   | Asttypes.Optional str -> "?" ^ str
   | Asttypes.Labelled str -> str
 
+(* Taken from Leo White's doc-ock,
+   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
+ *)
+let read_doc_attributes attrs =
+  let read_payload =
+    let open Location in
+    let open Parsetree in
+    function
+    | PStr[{ pstr_desc =
+               Pstr_eval({ pexp_desc =
+                             Pexp_constant(Asttypes.Const_string(str, _));
+                           pexp_loc = loc;
+                         }, _)
+           }] -> Some(str, loc)
+    | _ -> None
+  in
+  let rec loop = function
+    | ({Location.txt =
+          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
+      read_payload payload
+    | _ :: rest -> loop rest
+    | [] -> None
+  in
+  loop attrs
+
+
 module Parsetree = struct
   open Parsetree
 
@@ -115,7 +141,7 @@ let exp_open_env = function
 let extract_functor_arg m = m
 
 let extract_modtype_declaration m = m.Types.mtd_type
-let extract_module_declaration m = m.Types.md_type
+let extract_module_declaration m = m.Types.md_type, m.Types.md_attributes
 
 let lookup_module name env =
   let path = Env.lookup_module ~load:true name env in
@@ -230,7 +256,7 @@ let rec signature_loc =
   | Sig_value (_,v)    -> Some v.val_loc
   | Sig_type (_,t,_)   -> Some t.type_loc
   | Sig_typext (_,e,_) -> Some e.ext_loc
-  | Sig_module (_,m,_) -> mod_loc (extract_module_declaration m)
+  | Sig_module (_,m,_) -> mod_loc (fst (extract_module_declaration m))
   | Sig_modtype (_,m) ->
     begin match extract_modtype_declaration m with
     | Some m -> mod_loc m
@@ -458,3 +484,14 @@ let optional_label_sugar = function
   | _ -> None
 
 let pat_attributes p = p.Typedtree.pat_attributes
+
+let cstr_attributes c = c.Types.cstr_attributes
+let val_attributes v = v.Types.val_attributes
+let type_attributes t = t.Types.type_attributes
+let lbl_attributes l = l.Types.lbl_attributes
+let mtd_attributes t = t.Types.mtd_attributes
+
+let get_class_field_desc_infos = function
+  | Typedtree.Tcf_val (str_loc,_,_,_,_) -> Some (str_loc, `Value)
+  | Typedtree.Tcf_method (str_loc,_,_)  -> Some (str_loc, `Method)
+  | _ -> None

@@ -18,6 +18,7 @@ open Asttypes
 open Longident
 open Parsetree
 open Ast_helper
+open Docstrings
 
 let mktyp d = Typ.mk ~loc:(symbol_rloc()) d
 let mkpat d = Pat.mk ~loc:(symbol_rloc()) d
@@ -28,8 +29,10 @@ let mkmod d = Mod.mk ~loc:(symbol_rloc()) d
 let mkstr d = Str.mk ~loc:(symbol_rloc()) d
 let mkclass d = Cl.mk ~loc:(symbol_rloc()) d
 let mkcty d = Cty.mk ~loc:(symbol_rloc()) d
-let mkctf d = Ctf.mk ~loc:(symbol_rloc()) d
-let mkcf d = Cf.mk ~loc:(symbol_rloc()) d
+let mkctf ?attrs ?docs d =
+  Ctf.mk ~loc:(symbol_rloc()) ?attrs ?docs d
+let mkcf ?attrs ?docs d =
+  Cf.mk ~loc:(symbol_rloc()) ?attrs ?docs d
 
 let mkrhs rhs pos = mkloc rhs (rhs_loc pos)
 
@@ -271,12 +274,13 @@ let varify_constructors var_names t =
   in
   loop t
 
+let mk_newtypes newtypes exp =
+  List.fold_right (fun newtype exp -> mkexp (Pexp_newtype (newtype, exp)))
+    newtypes exp
+
 let wrap_type_annotation newtypes core_type body =
   let exp = mkexp(Pexp_constraint(body,core_type)) in
-  let exp =
-    List.fold_right (fun newtype exp -> mkexp (Pexp_newtype (newtype, exp)))
-      newtypes exp
-  in
+  let exp = mk_newtypes newtypes exp in
   (exp, ghtyp(Ptyp_poly(newtypes,varify_constructors newtypes core_type)))
 
 let wrap_exp_attrs body (ext, attrs) =
@@ -289,11 +293,108 @@ let wrap_exp_attrs body (ext, attrs) =
 let mkexp_attrs d attrs =
   wrap_exp_attrs (mkexp d) attrs
 
-let mkcf_attrs d attrs =
-  Cf.mk ~loc:(symbol_rloc()) ~attrs d
+let text_str pos = Str.text (rhs_text pos)
+let text_sig pos = Sig.text (rhs_text pos)
+let text_cstr pos = Cf.text (rhs_text pos)
+let text_csig pos = Ctf.text (rhs_text pos)
+let text_def pos = [Ptop_def (Str.text (rhs_text pos))]
 
-let mkctf_attrs d attrs =
-  Ctf.mk ~loc:(symbol_rloc()) ~attrs d
+let extra_text text pos items =
+  let pre_extras = rhs_pre_extra_text pos in
+  let post_extras = rhs_post_extra_text pos in
+    text pre_extras @ items @ text post_extras
+
+let extra_str pos items = extra_text Str.text pos items
+let extra_sig pos items = extra_text Sig.text pos items
+let extra_cstr pos items = extra_text Cf.text pos items
+let extra_csig pos items = extra_text Ctf.text pos items
+let extra_def pos items =
+  extra_text (fun txt -> [Ptop_def (Str.text txt)]) pos items
+
+type let_binding =
+  { lb_pattern: pattern;
+    lb_expression: expression;
+    lb_attributes: attributes;
+    lb_docs: docs Lazy.t;
+    lb_text: text Lazy.t;
+    lb_loc: Location.t; }
+
+type let_bindings =
+  { lbs_bindings: let_binding list;
+    lbs_rec: rec_flag;
+    lbs_extension: string Asttypes.loc option;
+    lbs_attributes: attributes;
+    lbs_loc: Location.t }
+
+let mklb (p, e) attrs =
+  { lb_pattern = p;
+    lb_expression = e;
+    lb_attributes = attrs;
+    lb_docs = symbol_docs_lazy ();
+    lb_text = symbol_text_lazy ();
+    lb_loc = symbol_rloc (); }
+
+let mklbs (ext, attrs) rf lb =
+  { lbs_bindings = [lb];
+    lbs_rec = rf;
+    lbs_extension = ext ;
+    lbs_attributes = attrs;
+    lbs_loc = symbol_rloc (); }
+
+let addlb lbs lb =
+  { lbs with lbs_bindings = lb :: lbs.lbs_bindings }
+
+let val_of_let_bindings lbs =
+  let str =
+    match lbs.lbs_bindings with
+    | [ {lb_pattern = { ppat_desc = Ppat_any; ppat_loc = _ }; _} as lb ] ->
+        let exp = wrap_exp_attrs lb.lb_expression
+                    (None, lbs.lbs_attributes) in
+        mkstr (Pstr_eval (exp, lb.lb_attributes))
+    | bindings ->
+        if lbs.lbs_attributes <> [] then
+          raise Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "attributes")));
+        let bindings =
+          List.map
+            (fun lb ->
+               Vb.mk ~loc:lb.lb_loc ~attrs:lb.lb_attributes
+                 ~docs:(Lazy.force lb.lb_docs)
+                 ~text:(Lazy.force lb.lb_text)
+                 lb.lb_pattern lb.lb_expression)
+            bindings
+        in
+        mkstr(Pstr_value(lbs.lbs_rec, List.rev bindings))
+  in
+  match lbs.lbs_extension with
+  | None -> str
+  | Some id -> ghstr (Pstr_extension((id, PStr [str]), []))
+
+let expr_of_let_bindings lbs body =
+  let bindings =
+    List.map
+      (fun lb ->
+         if lb.lb_attributes <> [] then
+           raise Syntaxerr.(Error(Not_expecting(lb.lb_loc, "item attribute")));
+         Vb.mk ~loc:lb.lb_loc lb.lb_pattern lb.lb_expression)
+      lbs.lbs_bindings
+  in
+    mkexp_attrs (Pexp_let(lbs.lbs_rec, List.rev bindings, body))
+      (lbs.lbs_extension, lbs.lbs_attributes)
+
+let class_of_let_bindings lbs body =
+  let bindings =
+    List.map
+      (fun lb ->
+         if lb.lb_attributes <> [] then
+           raise Syntaxerr.(Error(Not_expecting(lb.lb_loc, "item attribute")));
+         Vb.mk ~loc:lb.lb_loc lb.lb_pattern lb.lb_expression)
+      lbs.lbs_bindings
+  in
+    if lbs.lbs_extension <> None then
+      raise Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "extension")));
+    if lbs.lbs_attributes <> [] then
+      raise Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "attributes")));
+    mkclass(Pcl_let (lbs.lbs_rec, List.rev bindings, body))
 
 %}
 
@@ -417,6 +518,7 @@ let mkctf_attrs d attrs =
 %token WHILE
 %token WITH
 %token <string * Location.t> COMMENT
+%token <Docstrings.docstring> DOCSTRING
 
 %token EOL
 
@@ -506,38 +608,52 @@ The precedences must be listed from low to high.
 /* Entry points */
 
 implementation:
-    structure EOF                        { $1 }
+    structure EOF                        { extra_str 1 $1 }
 ;
 interface:
-    signature EOF                        { $1 }
+    signature EOF                        { extra_sig 1 $1 }
 ;
 toplevel_phrase:
-    top_structure SEMISEMI               { Ptop_def $1 }
+    top_structure SEMISEMI               { Ptop_def (extra_str 1 $1) }
   | toplevel_directive SEMISEMI          { $1 }
   | EOF                                  { raise End_of_file }
 ;
 top_structure:
-    seq_expr post_item_attributes { [mkstrexp $1 $2] }
-  | top_structure_tail            { $1 }
+    seq_expr post_item_attributes
+      { (text_str 1) @ [mkstrexp $1 $2] }
+  | top_structure_tail
+      { $1 }
 ;
 top_structure_tail:
     /* empty */                          { [] }
-  | structure_item top_structure_tail    { $1 :: $2 }
+  | structure_item top_structure_tail    { (text_str 1) @ $1 :: $2 }
 ;
 use_file:
+    use_file_body                        { extra_def 1 $1 }
+;
+use_file_body:
     use_file_tail                        { $1 }
   | seq_expr post_item_attributes use_file_tail
-                                         { Ptop_def[mkstrexp $1 $2] :: $3 }
+      { (text_def 1) @ Ptop_def[mkstrexp $1 $2] :: $3 }
 ;
 use_file_tail:
-    EOF                                       { [] }
-  | SEMISEMI EOF                              { [] }
+    EOF
+      { [] }
+  | SEMISEMI EOF
+      { text_def 1 }
   | SEMISEMI seq_expr post_item_attributes use_file_tail
-                                              { Ptop_def[mkstrexp $2 $3] :: $4 }
-  | SEMISEMI structure_item use_file_tail     { Ptop_def[$2] :: $3 }
-  | SEMISEMI toplevel_directive use_file_tail { $2 :: $3 }
-  | structure_item use_file_tail              { Ptop_def[$1] :: $2 }
-  | toplevel_directive use_file_tail          { $1 :: $2 }
+      {  mark_rhs_docs 2 3;
+        (text_def 1) @ (text_def 2) @ Ptop_def[mkstrexp $2 $3] :: $4 }
+  | SEMISEMI structure_item use_file_tail
+      { (text_def 1) @ (text_def 2) @ Ptop_def[$2] :: $3 }
+  | SEMISEMI toplevel_directive use_file_tail
+      {  mark_rhs_docs 2 3;
+        (text_def 1) @ (text_def 2) @ $2 :: $3 }
+  | structure_item use_file_tail
+      { (text_def 1) @ Ptop_def[$1] :: $2 }
+  | toplevel_directive use_file_tail
+      { mark_rhs_docs 1 1;
+        (text_def 1) @ $1 :: $2 }
 ;
 parse_core_type:
     core_type EOF { $1 }
@@ -574,7 +690,7 @@ module_expr:
     mod_longident
       { mkmod(Pmod_ident (mkrhs $1 1)) }
   | STRUCT structure END
-      { mkmod(Pmod_structure($2)) }
+      { mkmod(Pmod_structure(extra_str 2 $2)) }
   | STRUCT structure error
       { unclosed "struct" 1 "end" 3 }
   | FUNCTOR functor_args MINUSGREATER module_expr
@@ -688,13 +804,24 @@ module_binding_body:
   | functor_arg module_binding_body
       { mkmod(Pmod_functor(fst $1, snd $1, $2)) }
 ;
-module_bindings:
-    module_binding                        { [$1] }
-  | module_bindings AND module_binding    { $3 :: $1 }
-;
 module_binding:
-    UIDENT module_binding_body post_item_attributes
-    { Mb.mk (mkrhs $1 1) $2 ~attrs:$3 ~loc:(symbol_rloc ()) }
+    MODULE UIDENT module_binding_body post_item_attributes
+      { Mb.mk (mkrhs $2 2) $3 ~attrs:$4
+              ~loc:(symbol_rloc ()) ~docs:(symbol_docs ()) }
+;
+rec_module_bindings:
+    rec_module_binding                            { [$1] }
+  | rec_module_bindings and_module_binding        { $2 :: $1 }
+;
+rec_module_binding:
+    MODULE REC UIDENT module_binding_body post_item_attributes
+      { Mb.mk (mkrhs $3 3) $4 ~attrs:$5
+              ~loc:(symbol_rloc ()) ~docs:(symbol_docs ()) }
+;
+and_module_binding:
+    AND UIDENT module_binding_body post_item_attributes
+      { Mb.mk (mkrhs $2 2) $3 ~attrs:$4 ~loc:(symbol_rloc ())
+               ~text:(symbol_text ()) ~docs:(symbol_docs ()) }
 ;
 
 /* Module types */
@@ -703,7 +830,7 @@ module_type:
     mty_longident
       { mkmty(Pmty_ident (mkrhs $1 1)) }
   | SIG signature END
-      { mkmty(Pmty_signature $2) }
+      { mkmty(Pmty_signature (extra_sig 2 $2)) }
   | SIG signature error
       { unclosed "sig" 1 "end" 3 }
   | FUNCTOR functor_args MINUSGREATER module_type
@@ -837,8 +964,8 @@ class_expr:
       { $2 }
   | class_simple_expr simple_labeled_expr_list
       { mkclass(Pcl_apply($1, List.rev $2)) }
-  | LET rec_flag let_bindings_no_attrs IN class_expr
-      { mkclass(Pcl_let ($2, List.rev $3, $5)) }
+  | let_bindings IN class_expr
+      { class_of_let_bindings $1 $3 }
   | class_expr attribute
       { Cl.attr $1 $2 }
   | extension
@@ -850,7 +977,7 @@ class_simple_expr:
   | class_longident
       { mkclass(Pcl_constr(mkrhs $1 1, [])) }
   | OBJECT class_structure END
-      { mkclass(Pcl_structure($2)) }
+      { mkclass(Pcl_structure $2) }
   | OBJECT class_structure error
       { unclosed "object" 1 "end" 3 }
   | LPAREN class_expr COLON class_type RPAREN
@@ -863,8 +990,8 @@ class_simple_expr:
       { unclosed "(" 1 ")" 3 }
 ;
 class_structure:
-    class_self_pattern class_fields
-      { Cstr.mk $1 (List.rev $2) }
+  |  class_self_pattern class_fields
+       { Cstr.mk $1 (extra_cstr 2 (List.rev $2)) }
 ;
 class_self_pattern:
     LPAREN pattern RPAREN
@@ -878,23 +1005,24 @@ class_fields:
     /* empty */
       { [] }
   | class_fields class_field
-      { $2 :: $1 }
+      { $2 :: (text_cstr 2) @ $1 }
 ;
 class_field:
   | INHERIT override_flag class_expr parent_binder post_item_attributes
-      { mkcf_attrs (Pcf_inherit ($2, $3, $4)) $5 }
+      { mkcf (Pcf_inherit ($2, $3, $4)) ~attrs:$5 ~docs:(symbol_docs ()) }
   | VAL value post_item_attributes
-      { mkcf_attrs (Pcf_val $2) $3 }
+      { mkcf (Pcf_val $2) ~attrs:$3 ~docs:(symbol_docs ()) }
   | METHOD method_ post_item_attributes
-      { mkcf_attrs (Pcf_method $2) $3 }
+      { mkcf (Pcf_method $2) ~attrs:$3 ~docs:(symbol_docs ()) }
   | CONSTRAINT constrain_field post_item_attributes
-      { mkcf_attrs (Pcf_constraint $2) $3 }
+      { mkcf (Pcf_constraint $2) ~attrs:$3 ~docs:(symbol_docs ()) }
   | INITIALIZER seq_expr post_item_attributes
-      { mkcf_attrs (Pcf_initializer $2) $3 }
+      { mkcf (Pcf_initializer $2) ~attrs:$3 ~docs:(symbol_docs ()) }
   | item_extension post_item_attributes
-      { mkcf_attrs (Pcf_extension $1) $2 }
+      { mkcf (Pcf_extension $1) ~attrs:$2 ~docs:(symbol_docs ()) }
   | floating_attribute
-      { mkcf (Pcf_attribute $1) }
+      { mark_symbol_docs ();
+        mkcf (Pcf_attribute $1) }
 ;
 parent_binder:
     AS LIDENT
@@ -943,14 +1071,14 @@ method_:
 class_type:
     class_signature
       { $1 }
-  | QUESTION LIDENT COLON simple_core_type_or_tuple_no_attr MINUSGREATER
+  | QUESTION LIDENT COLON simple_core_type_or_tuple MINUSGREATER
     class_type
       { mkcty(Pcty_arrow(Optional $2 , $4, $6)) }
-  | OPTLABEL simple_core_type_or_tuple_no_attr MINUSGREATER class_type
+  | OPTLABEL simple_core_type_or_tuple MINUSGREATER class_type
       { mkcty(Pcty_arrow(Optional $1, $2, $4)) }
-  | LIDENT COLON simple_core_type_or_tuple_no_attr MINUSGREATER class_type
+  | LIDENT COLON simple_core_type_or_tuple MINUSGREATER class_type
       { mkcty(Pcty_arrow(Labelled $1, $3, $5)) }
-  | simple_core_type_or_tuple_no_attr MINUSGREATER class_type
+  | simple_core_type_or_tuple MINUSGREATER class_type
       { mkcty(Pcty_arrow(Nolabel, $1, $3)) }
  ;
 class_signature:
@@ -969,7 +1097,7 @@ class_signature:
 ;
 class_sig_body:
     class_self_type class_sig_fields
-    { Csig.mk $1 (List.rev $2) }
+      { Csig.mk $1 (extra_csig 2 (List.rev $2)) }
 ;
 class_self_type:
     LPAREN core_type RPAREN
@@ -979,24 +1107,25 @@ class_self_type:
 ;
 class_sig_fields:
     /* empty */                                 { [] }
-| class_sig_fields class_sig_field     { $2 :: $1 }
+| class_sig_fields class_sig_field     { $2 :: (text_csig 2) @ $1 }
 ;
 class_sig_field:
     INHERIT class_signature post_item_attributes
-      { mkctf_attrs (Pctf_inherit $2) $3 }
+      { mkctf (Pctf_inherit $2) ~attrs:$3 ~docs:(symbol_docs ()) }
   | VAL value_type post_item_attributes
-      { mkctf_attrs (Pctf_val $2) $3 }
+      { mkctf (Pctf_val $2) ~attrs:$3 ~docs:(symbol_docs ()) }
   | METHOD private_virtual_flags label COLON poly_type post_item_attributes
       {
        let (p, v) = $2 in
-       mkctf_attrs (Pctf_method ($3, p, v, $5)) $6
+       mkctf (Pctf_method ($3, p, v, $5)) ~attrs:$6 ~docs:(symbol_docs ())
       }
   | CONSTRAINT constrain_field post_item_attributes
-      { mkctf_attrs (Pctf_constraint $2) $3 }
+      { mkctf (Pctf_constraint $2) ~attrs:$3 ~docs:(symbol_docs ()) }
   | item_extension post_item_attributes
-      { mkctf_attrs (Pctf_extension $1) $2 }
+      { mkctf (Pctf_extension $1) ~attrs:$2 ~docs:(symbol_docs ()) }
   | floating_attribute
-      { mkctf(Pctf_attribute $1) }
+      { mark_symbol_docs ();
+        mkctf(Pctf_attribute $1) }
 ;
 value_type:
     VIRTUAL mutable_flag label COLON core_type
@@ -1013,30 +1142,38 @@ constrain_field:
         core_type EQUAL core_type          { $1, $3 }
 ;
 class_descriptions:
-    class_descriptions AND class_description    { $3 :: $1 }
-  | class_description                           { [$1] }
+    class_description                           { [$1] }
+  | class_descriptions and_class_description    { $2 :: $1 }
 ;
 class_description:
-    virtual_flag class_type_parameters LIDENT COLON class_type
+    CLASS virtual_flag class_type_parameters LIDENT COLON class_type
     post_item_attributes
-      {
-       Ci.mk (mkrhs $3 3) $5
-         ~virt:$1 ~params:$2
-         ~attrs:$6 ~loc:(symbol_rloc ())
-      }
+      { Ci.mk (mkrhs $4 4) $6 ~virt:$2 ~params:$3 ~attrs:$7
+              ~loc:(symbol_rloc ()) ~docs:(symbol_docs ()) }
+;
+and_class_description:
+    AND virtual_flag class_type_parameters LIDENT COLON class_type
+    post_item_attributes
+      { Ci.mk (mkrhs $4 4) $6 ~virt:$2 ~params:$3
+              ~attrs:$7 ~loc:(symbol_rloc ())
+              ~text:(symbol_text ()) ~docs:(symbol_docs ()) }
 ;
 class_type_declarations:
-    class_type_declarations AND class_type_declaration  { $3 :: $1 }
-  | class_type_declaration                              { [$1] }
+    class_type_declaration                              { [$1] }
+  | class_type_declarations and_class_type_declaration  { $2 :: $1 }
 ;
 class_type_declaration:
-    virtual_flag class_type_parameters LIDENT EQUAL class_signature
-    post_item_attributes
-      {
-       Ci.mk (mkrhs $3 3) $5
-         ~virt:$1 ~params:$2
-         ~attrs:$6 ~loc:(symbol_rloc ())
-      }
+    CLASS TYPE virtual_flag class_type_parameters LIDENT EQUAL
+    class_signature post_item_attributes
+      { Ci.mk (mkrhs $5 5) $7 ~virt:$3 ~params:$4 ~attrs:$8
+              ~loc:(symbol_rloc ()) ~docs:(symbol_docs ()) }
+;
+and_class_type_declaration:
+    AND virtual_flag class_type_parameters LIDENT EQUAL
+    class_signature post_item_attributes
+      { Ci.mk (mkrhs $4 4) $6 ~virt:$2 ~params:$3
+         ~attrs:$7 ~loc:(symbol_rloc ())
+         ~text:(symbol_text ()) ~docs:(symbol_docs ()) }
 ;
 
 /* Core expressions */
@@ -1092,8 +1229,8 @@ expr:
       { $1 }
   | simple_expr simple_labeled_expr_list
       { mkexp(Pexp_apply($1, List.rev $2)) }
-  | LET ext_attributes rec_flag let_bindings_no_attrs IN seq_expr
-      { mkexp_attrs (Pexp_let($3, List.rev $4, $6)) $2 }
+  | let_bindings IN seq_expr
+      { expr_of_let_bindings $1 $3 }
   | LET MODULE ext_attributes UIDENT module_binding_body IN seq_expr
       { mkexp_attrs (Pexp_letmodule(mkrhs $4 4, $5, $7)) $3 }
   | LET OPEN override_flag ext_attributes mod_longident IN seq_expr
@@ -1103,8 +1240,8 @@ expr:
   | FUN ext_attributes labeled_simple_pattern fun_def
       { let (l,o,p) = $3 in
         mkexp_attrs (Pexp_fun(l, o, p, $4)) $2 }
-  | FUN ext_attributes LPAREN TYPE LIDENT RPAREN fun_def
-      { mkexp_attrs (Pexp_newtype($5, $7)) $2 }
+  | FUN ext_attributes LPAREN TYPE lident_list RPAREN fun_def
+      { mkexp_attrs (mk_newtypes $5 $7).pexp_desc $2 }
   | MATCH ext_attributes seq_expr WITH opt_bar match_cases
       { mkexp_attrs (Pexp_match($3, List.rev $6)) $2 }
   | TRY ext_attributes seq_expr WITH opt_bar match_cases
@@ -1223,6 +1360,9 @@ simple_expr:
       { mkexp(Pexp_field($1, mkrhs $3 3)) }
   | mod_longident DOT LPAREN seq_expr RPAREN
       { mkexp(Pexp_open(Fresh, mkrhs $1 1, $4)) }
+  | mod_longident DOT LPAREN RPAREN
+      { mkexp(Pexp_open(Fresh, mkrhs $1 1,
+			mkexp(Pexp_construct(mkrhs (Lident "()") 1, None)))) }
   | mod_longident DOT LPAREN seq_expr error
       { unclosed "(" 3 ")" 5 }
   | simple_expr DOT LPAREN seq_expr RPAREN
@@ -1257,6 +1397,8 @@ simple_expr:
       { mkexp (Pexp_array []) }
   | mod_longident DOT LBRACKETBAR expr_semi_list opt_semi BARRBRACKET
       { mkexp(Pexp_open(Fresh, mkrhs $1 1, mkexp(Pexp_array(List.rev $4)))) }
+  | mod_longident DOT LBRACKETBAR BARRBRACKET
+      { mkexp(Pexp_open(Fresh, mkrhs $1 1, mkexp(Pexp_array []))) }
   | mod_longident DOT LBRACKETBAR expr_semi_list opt_semi error
       { unclosed "[|" 3 "|]" 6 }
   | LBRACKET expr_semi_list opt_semi RBRACKET
@@ -1266,6 +1408,9 @@ simple_expr:
   | mod_longident DOT LBRACKET expr_semi_list opt_semi RBRACKET
       { let list_exp = reloc_exp (mktailexp (rhs_loc 6) (List.rev $4)) in
         mkexp(Pexp_open(Fresh, mkrhs $1 1, list_exp)) }
+  | mod_longident DOT LBRACKET RBRACKET
+      { mkexp(Pexp_open(Fresh, mkrhs $1 1,
+                        mkexp(Pexp_construct(mkrhs (Lident "[]") 1, None)))) }
   | mod_longident DOT LBRACKET expr_semi_list opt_semi error
       { unclosed "[" 3 "]" 6 }
   | PREFIXOP simple_expr
@@ -1282,6 +1427,8 @@ simple_expr:
       { mkexp (Pexp_override [])}
   | mod_longident DOT LBRACELESS field_expr_list GREATERRBRACE
       { mkexp(Pexp_open(Fresh, mkrhs $1 1, mkexp (Pexp_override $4)))}
+  | mod_longident DOT LBRACELESS GREATERRBRACE
+      { mkexp(Pexp_open(Fresh, mkrhs $1 1, mkexp (Pexp_override [])))}
   | mod_longident DOT LBRACELESS field_expr_list error
       { unclosed "{<" 3 ">}" 6 }
   | simple_expr SHARP label
@@ -1327,32 +1474,11 @@ label_expr:
 label_ident:
     LIDENT   { ($1, mkexp(Pexp_ident(mkrhs (Lident $1) 1))) }
 ;
-let_bindings:
-    let_binding                                 { [$1] }
-  | let_bindings AND let_binding                { $3 :: $1 }
-;
-let_bindings_no_attrs:
-   let_bindings {
-     let l = $1 in
-     List.iter
-       (fun vb ->
-          if vb.pvb_attributes <> [] then
-            raise Syntaxerr.(Error(Not_expecting(vb.pvb_loc,"item attribute")))
-       )
-       l;
-     l
-   }
-
 lident_list:
     LIDENT                            { [$1] }
   | LIDENT lident_list                { $1 :: $2 }
 ;
-let_binding:
-    let_binding_ post_item_attributes {
-      let (p, e) = $1 in Vb.mk ~loc:(symbol_rloc()) ~attrs:$2 p e
-    }
-;
-let_binding_:
+let_binding_body:
     val_ident fun_binding
       { (mkpatvar $1 1, $2) }
   | val_ident COLON typevar_list DOT core_type EQUAL seq_expr
@@ -1367,6 +1493,18 @@ let_binding_:
   | simple_pattern_not_ident COLON core_type EQUAL seq_expr
       { (ghpat(Ppat_constraint($1, $3)), $5) }
 ;
+let_bindings:
+    let_binding                                 { $1 }
+  | let_bindings and_let_binding                { addlb $1 $2 }
+;
+let_binding:
+    LET ext_attributes rec_flag let_binding_body post_item_attributes
+      { mklbs $2 $3 (mklb $4 $5) }
+;
+and_let_binding:
+    AND let_binding_body post_item_attributes
+      { mklb $2 $3 }
+;
 fun_binding:
     strict_binding
       { $1 }
@@ -1378,8 +1516,8 @@ strict_binding:
       { $2 }
   | labeled_simple_pattern fun_binding
       { let (l, o, p) = $1 in ghexp(Pexp_fun(l, o, p, $2)) }
-  | LPAREN TYPE LIDENT RPAREN fun_binding
-      { mkexp(Pexp_newtype($3, $5)) }
+  | LPAREN TYPE lident_list RPAREN fun_binding
+      { mk_newtypes $3 $5 }
 ;
 match_cases:
     match_case { [$1] }
@@ -1399,8 +1537,8 @@ fun_def:
        let (l,o,p) = $1 in
        ghexp(Pexp_fun(l, o, p, $2))
       }
-  | LPAREN TYPE LIDENT RPAREN fun_def
-      { mkexp(Pexp_newtype($3, $5)) }
+  | LPAREN TYPE lident_list RPAREN fun_def
+      { mk_newtypes $3 $5 }
 ;
 expr_comma_list:
     expr_comma_list COMMA expr                  { $3 :: $1 }
@@ -1553,27 +1691,54 @@ lbl_pattern:
       { (mkrhs $1 1, pat_of_label $1 1) }
 ;
 
+/* Value descriptions */
+
+value_description:
+    VAL val_ident COLON core_type post_item_attributes
+      { Val.mk (mkrhs $2 2) $4 ~attrs:$5
+               ~loc:(symbol_rloc()) ~docs:(symbol_docs ()) }
+;
+
 /* Primitive declarations */
 
-primitive_declaration:
+primitive_declaration_body:
     STRING                                      { [fst $1] }
-  | STRING primitive_declaration                { fst $1 :: $2 }
+  | STRING primitive_declaration_body           { fst $1 :: $2 }
+;
+primitive_declaration:
+    EXTERNAL val_ident COLON core_type EQUAL primitive_declaration_body
+    post_item_attributes
+      { Val.mk (mkrhs $2 2) $4 ~prim:$6 ~attrs:$7
+               ~loc:(symbol_rloc ()) ~docs:(symbol_docs ()) }
 ;
 
 /* Type declarations */
 
 type_declarations:
-    type_declaration                            { [$1] }
-  | type_declarations AND type_declaration      { $3 :: $1 }
+    type_declaration
+      { let (nonrec_flag, ty) = $1 in (nonrec_flag, [ty]) }
+  | type_declarations and_type_declaration
+      { let (nonrec_flag, tys) = $1 in (nonrec_flag, $2 :: tys) }
 ;
 
 type_declaration:
-    optional_type_parameters LIDENT type_kind constraints post_item_attributes
-      { let (kind, priv, manifest) = $3 in
-        Type.mk (mkrhs $2 2)
-          ~params:$1 ~cstrs:(List.rev $4)
-          ~kind ~priv ?manifest ~attrs:$5 ~loc:(symbol_rloc())
-       }
+    TYPE nonrec_flag optional_type_parameters LIDENT type_kind constraints
+    post_item_attributes
+      { let (kind, priv, manifest) = $5 in
+        let ty =
+          Type.mk (mkrhs $4 4) ~params:$3 ~cstrs:(List.rev $6) ~kind
+            ~priv ?manifest ~attrs:$7
+            ~loc:(symbol_rloc ()) ~docs:(symbol_docs ())
+        in
+          ($2, ty) }
+;
+and_type_declaration:
+    AND optional_type_parameters LIDENT type_kind constraints
+    post_item_attributes
+      { let (kind, priv, manifest) = $4 in
+          Type.mk (mkrhs $3 3) ~params:$2 ~cstrs:(List.rev $5)
+            ~kind ~priv ?manifest ~attrs:$6 ~loc:(symbol_rloc ())
+            ~text:(symbol_text ()) ~docs:(symbol_docs ()) }
 ;
 constraints:
         constraints CONSTRAINT constrain        { $3 :: $1 }
@@ -1590,18 +1755,16 @@ type_kind:
       { (Ptype_variant(List.rev $2), Public, None) }
   | EQUAL PRIVATE constructor_declarations
       { (Ptype_variant(List.rev $3), Private, None) }
-  | EQUAL private_flag BAR constructor_declarations
-      { (Ptype_variant(List.rev $4), $2, None) }
   | EQUAL DOTDOT
       { (Ptype_open, Public, None) }
-  | EQUAL private_flag LBRACE label_declarations opt_semi RBRACE
-      { (Ptype_record(List.rev $4), $2, None) }
-  | EQUAL core_type EQUAL private_flag opt_bar constructor_declarations
-      { (Ptype_variant(List.rev $6), $4, Some $2) }
+  | EQUAL private_flag LBRACE label_declarations RBRACE
+      { (Ptype_record $4, $2, None) }
+  | EQUAL core_type EQUAL private_flag constructor_declarations
+      { (Ptype_variant(List.rev $5), $4, Some $2) }
   | EQUAL core_type EQUAL DOTDOT
       { (Ptype_open, Public, Some $2) }
-  | EQUAL core_type EQUAL private_flag LBRACE label_declarations opt_semi RBRACE
-      { (Ptype_record(List.rev $6), $4, Some $2) }
+  | EQUAL core_type EQUAL private_flag LBRACE label_declarations RBRACE
+      { (Ptype_record $6, $4, Some $2) }
 ;
 optional_type_parameters:
     /*empty*/                                   { [] }
@@ -1809,13 +1972,6 @@ simple_core_type:
       { Typ.attr $1 $2 }
 ;
 
-simple_core_type_no_attr:
-    simple_core_type2  %prec below_SHARP
-      { $1 }
-  | LPAREN core_type_comma_list RPAREN %prec below_SHARP
-      { match $2 with [sty] -> sty | _ -> raise Parse_error }
-;
-
 simple_core_type2:
     QUOTE ident
       { mktyp(Ptyp_var $2) }
@@ -1898,14 +2054,8 @@ name_tag_list:
   | name_tag_list name_tag                      { $2 :: $1 }
 ;
 simple_core_type_or_tuple:
-    simple_core_type %prec below_LBRACKETAT  { $1 }
+    simple_core_type { $1 }
   | simple_core_type STAR core_type_list
-      { mktyp(Ptyp_tuple($1 :: List.rev $3)) }
-;
-simple_core_type_or_tuple_no_attr:
-    simple_core_type_no_attr
-      { $1 }
-  | simple_core_type_no_attr STAR core_type_list_no_attr
       { mktyp(Ptyp_tuple($1 :: List.rev $3)) }
 ;
 core_type_comma_list:
@@ -1913,12 +2063,8 @@ core_type_comma_list:
   | core_type_comma_list COMMA core_type        { $3 :: $1 }
 ;
 core_type_list:
-    simple_core_type %prec below_LBRACKETAT  { [$1] }
+    simple_core_type                            { [$1] }
   | core_type_list STAR simple_core_type        { $3 :: $1 }
-;
-core_type_list_no_attr:
-    simple_core_type_no_attr                     { [$1] }
-  | core_type_list STAR simple_core_type_no_attr { $3 :: $1 }
 ;
 meth_list:
     field SEMI meth_list                     { let (f, c) = $3 in ($1 :: f, c) }
@@ -2163,6 +2309,7 @@ single_attr_id:
   | MODULE { "module" }
   | MUTABLE { "mutable" }
   | NEW { "new" }
+  | NONREC { "nonrec" }
   | OBJECT { "object" }
   | OF { "of" }
   | OPEN { "open" }
