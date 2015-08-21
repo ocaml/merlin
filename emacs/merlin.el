@@ -918,7 +918,11 @@ may be nil, in that case the current cursor of merlin is used."
     (if err (cons point err) nil)))
 
 (defun merlin--after-save ()
-  (when (merlin-error-after-save) (merlin-error-check)))
+  (when (and merlin-mode merlin-error-after-save) (merlin-error-check)))
+
+(defadvice basic-save-buffer (after merlin--after-save activate)
+  "The save hook is called only if buffer was modified, but user might want fresh errors anyway"
+  (merlin--after-save))
 
 (defun merlin-error-prev ()
   "Jump back to previous error."
@@ -1794,7 +1798,6 @@ Returns the position."
     (when (merlin-process-dead-p instance)
       (merlin-start-process merlin-default-flags conf))
     (add-to-list 'after-change-functions 'merlin--sync-edit)
-    (add-hook 'after-save-hook 'merlin--after-save nil 'local)
     (merlin--idle-timer)
     ;; Synchronizing will only do parsing and no typing.
     ;; That should be fast enough that the user don't realize.
