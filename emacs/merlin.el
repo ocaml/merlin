@@ -815,9 +815,9 @@ the error message otherwise print a generic error message."
       (when (or (not merlin--last-edit)
                 (not (or (= (point) (car merlin--last-edit))
                          (= (point) (cdr merlin--last-edit)))))
-      (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
-      (setq err (merlin--error-at-position (point) errors))
-      (when err (message "%s" (cdr (assoc 'message err))))))))
+        (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
+        (setq err (merlin--error-at-position (point) errors))
+        (when err (message "%s" (cdr (assoc 'message err))))))))
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
