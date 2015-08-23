@@ -79,10 +79,21 @@ let read_ast magic fn =
     Misc.remove_file fn;
     raise exn
 
+let rewrite_cache
+  : (string list * string * Obj.t, Obj.t)Hashtbl.t
+  = Hashtbl.create 7
+
 let rewrite magic ast ppxs =
-  read_ast magic
-    (List.fold_left (apply_rewriter magic) (write_ast magic ast)
-       (List.rev ppxs))
+  let key = (ppxs, magic, Obj.repr ast) in
+  try Obj.obj (Hashtbl.find rewrite_cache key)
+  with Not_found ->
+    let result =
+      read_ast magic
+        (List.fold_left (apply_rewriter magic) (write_ast magic ast)
+           (List.rev ppxs))
+    in
+    Hashtbl.add rewrite_cache key (Obj.repr result);
+    result
 
 let apply_rewriters_str ?(restore = true) ~tool_name ast =
   match Clflags.ppx () with
