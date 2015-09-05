@@ -7,25 +7,25 @@
 ==============================================================================
 COMMANDS                                                     *merlin-commands*
 
-:MerlinSourcePath [dir]                      *:MerlinSourcePath* *:SourcePath*
+:MerlinSourcePath [dir]                                    *:MerlinSourcePath*
 
 When dir is given adds, for the current session, the directory to the list of
 directories where merlin looks for ml[i] files.
 
 If no argument is given, it will list those directories.
 
-:MerlinBuildPath [dir]                         *:MerlinBuildPath* *:BuildPath*
+:MerlinBuildPath [dir]                                      *:MerlinBuildPath*
 
 Same as |:SourcePath| but for cmi files.
 
-:MerlinUse package [, package]*                            *:MerlinUse* *:Use*
+:MerlinUse package [, package]*                                   *:MerlinUse*
 
 Loads findlib packages (with completion) by adjusting buildpath to find files
 from packages.
 
 Tab completion on packages name is provided.
 
-:MerlinLocate                                        *:MerlinLocate* *:Locate*
+:MerlinLocate                                                  *:MerlinLocate*
 
 When called with no arguments tries to jump at the definition of the identifier
 under the cursor.
@@ -43,7 +43,7 @@ For instance, given moduleA.ml and moduleB.mli in source path, use: >
     :MLI ModuleB
 <
 
-:MerlinTypeOf [expr]                                 *:MerlinTypeOf* *:TypeOf*
+:MerlinTypeOf [expr]                                           *:MerlinTypeOf*
 
 If given an expression, returns its type.
 Otherwise, highlights the expression under the cursor and prints its type.
@@ -51,20 +51,20 @@ Use in conjunction with |:MerlinGrowEnclosing| and |:MerlinShrinkEnclosing|.
 
 Bound to <LocalLeader>t by default in normal mode.
 
-:MerlinTypeOfSel                               *:MerlinTypeOfSel* *:TypeOfSel*
+:MerlinTypeOfSel                                            *:MerlinTypeOfSel*
 
 In visual mode, returns the type of the selected expression.
 
 Bound to <LocalLeader>t by default in visual mode.
 
-:MerlinGrowEnclosing                   *:MerlinGrowEnclosing* *:GrowEnclosing*
+:MerlinGrowEnclosing                                    *:MerlinGrowEnclosing*
 
 When |:MerlinTypeOf| has been called, select the smallest expression
 containing the previously highlighted expression.
 
 Bound to <LocalLeader>n by default in normal mode.
 
-:MerlinShrinkEnclosing             *:MerlinShrinkEnclosing* *:ShrinkEnclosing*
+:MerlinShrinkEnclosing                                *:MerlinShrinkEnclosing*
 
 When |:MerlinGrowEnclosing| has been called, revert to the previously selected
 expression. (i.e. the largest expression, centered around the position where
@@ -73,16 +73,16 @@ expression).
 
 Bound to <LocalLeader>p by default in normal mode.
 
-["r] :MerlinYankLatestType           *:MerlinYankLatestType* *:YankLatestType*
+["r] :MerlinYankLatestType                             *:MerlinYankLatestType*
 
 Copy the latest shown type into register `"r`, or `""` if unspecified.
 
-:MerlinToggleTypeHistory       *:MerlinToggleTypeHistory* *:ToggleTypeHistory*
+:MerlinToggleTypeHistory                            *:MerlinToggleTypeHistory*
 
 Reveals or hides a buffer containing a trace of all computed types.
 See |merlin_type_history_height| and |merlin_type_history_auto_open|.
 
-:MerlinOccurrences                          *:MerlinOccurences* *:Occurrences*
+:MerlinOccurrences                                         *:MerlinOccurences*
 
 List all occurrences of identifier under cursor in current buffer.
 See |merlin_display_occurrence_list|.
@@ -91,7 +91,7 @@ Add these bindings to integrate the results into vim search (see |star|) >
   nmap <LocalLeader>#  <Plug>(MerlinSearchOccurrencesBackward)
 <
 
-:MerlinRename <ident>                                *:MerlinRename* *:Rename*
+:MerlinRename <ident>                                          *:MerlinRename*
 
 Rename all occurrences of identifier under cursor to <ident>.
 Add these bindings to rename interactively: >
@@ -99,7 +99,7 @@ Add these bindings to rename interactively: >
   nmap <LocalLeader>R  <Plug>(MerlinRenameAppend)
 <
 
-:MerlinDestruct                                  *:MerlinDestruct* *:Destruct*
+:MerlinDestruct                                              *:MerlinDestruct*
 
 "destructs" the thing under the cursor, i.e.
 - if the thing under the cursor is an expression, generates a pattern matching
@@ -111,7 +111,7 @@ Add these bindings to rename interactively: >
 
 See http://the-lambda-church.github.io/merlin/destruct.ogv
 
-:MerlinOutline                                     *:MerlinOutline* *:Outline*
+:MerlinOutline                                                *:MerlinOutline*
 
 Gives an "outline" of the current buffer, i.e. lists all the "definitions"
 made in the buffer along with their kind (type definition, value definition,
