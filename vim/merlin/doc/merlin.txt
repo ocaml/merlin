@@ -136,6 +136,11 @@ Selects the current phrase.
 
 Bound to <TAB> by default in visual mode.
 
+:MerlinErrorCheck                                            *:MerlinErrorCheck*
+
+Perform a fast type check of the current file, displaying the error
+messages in a new quickfix window.
+
 ==============================================================================
 OPTIONS                                                       *merlin-options*
 
@@ -174,7 +179,7 @@ separate window after a :Occurrences command. >
 
 Default: true.
 If set to true, merlin automatically displays the list of errors in a
-separate window after a :ErrorCheck command. >
+separate window after a :MerlinErrorCheck command. >
   let g:merlin_display_error_list = 0
 <
 
@@ -182,7 +187,7 @@ separate window after a :ErrorCheck command. >
 
 Default: true.
 If set to true, merlin automatically closes the list of errors if no error
-was found after a :ErrorCheck command. >
+was found after a :MerlinErrorCheck command. >
   let g:merlin_close_error_list = 0
 <
                                                  *'merlin_type_history_height'*
