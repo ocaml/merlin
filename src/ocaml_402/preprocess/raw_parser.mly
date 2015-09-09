@@ -1730,10 +1730,10 @@ constructor_declarations:
     { $3 :: $1 }
 
 constructor_declaration:
-| constr_ident attributes generalized_constructor_arguments
+| constr_ident generalized_constructor_arguments attributes
     {
-      let args,res = $3 in
-      Type.constructor (mkrhs $startpos($1) $endpos($1) $1) ~args ?res ~loc:(rloc $startpos $endpos) ~attrs:$2
+      let args,res = $2 in
+      Type.constructor (mkrhs $startpos($1) $endpos($1) $1) ~args ?res ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
 str_exception_declaration:
@@ -1758,11 +1758,11 @@ sig_exception_declaration:
 generalized_constructor_arguments:
 | (* empty *)
     { ([],None) }
-| OF core_type_list
+| OF core_type_list_no_attr
     { (List.rev $2,None) }
-| COLON core_type_list MINUSGREATER simple_core_type
+| COLON core_type_list_no_attr MINUSGREATER simple_core_type_no_attr
     { (List.rev $2,Some $4) }
-| COLON simple_core_type
+| COLON simple_core_type_no_attr
     { ([],Some $2) }
 
 label_declarations:
@@ -1772,9 +1772,9 @@ label_declarations:
     { $3 :: $1 }
 
 label_declaration:
-| mutable_flag label attributes COLON poly_type
+| mutable_flag label COLON poly_type_no_attr attributes
   {
-    Type.field (mkrhs $startpos($2) $endpos($2) $2) $5 ~mut:$1 ~attrs:$3 ~loc:(rloc $startpos $endpos)
+    Type.field (mkrhs $startpos($2) $endpos($2) $2) $4 ~mut:$1 ~attrs:$5 ~loc:(rloc $startpos $endpos)
   }
 
 (* Type extensions *)
@@ -1810,17 +1810,17 @@ sig_extension_constructors:
     { $3 :: $1 }
 
 extension_constructor_declaration:
-| constr_ident attributes generalized_constructor_arguments
-    { let args, res = $3 in
+| constr_ident generalized_constructor_arguments attributes
+    { let args, res = $2 in
       Te.decl (mkrhs $startpos($1) $endpos($1) $1) ~args ?res
-              ~loc:(rloc $startpos $endpos) ~attrs:$2
+              ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
 extension_constructor_rebind:
-| constr_ident attributes EQUAL constr_longident
+| constr_ident EQUAL constr_longident attributes
     { Te.rebind (mkrhs $startpos($1) $endpos($1) $1)
-                (mkrhs $startpos($4) $endpos($4) $4)
-                ~loc:(rloc $startpos $endpos) ~attrs:$2
+                (mkrhs $startpos($3) $endpos($3) $3)
+                ~loc:(rloc $startpos $endpos) ~attrs:$4
     }
 
 (* "with" constraints (additional type equations over signature components) *)
@@ -1832,7 +1832,7 @@ with_constraints:
     { $3 @ $1 }
 
 with_constraint:
-| TYPE type_parameters label_longident with_type_binder core_type constraints
+| TYPE type_parameters label_longident with_type_binder core_type_no_attr constraints
     { [Pwith_type
           (mkrhs $startpos($3) $endpos($3) $3,
            (Type.mk (mkrhs $startpos($3) $endpos($3) (Longident.last $3))
@@ -1841,7 +1841,7 @@ with_constraint:
               ~manifest:$5
               ~priv:$4
               ~loc:(rloc $startpos $endpos)))] }
-| TYPE type_parameters label COLONEQUAL core_type
+| TYPE type_parameters label COLONEQUAL core_type_no_attr
     { [Pwith_typesubst
           (Type.mk (mkrhs $startpos($3) $endpos($3) $3)
              ~params:$2
@@ -1872,9 +1872,23 @@ poly_type:
 | typevar_list DOT core_type
     { mktyp $startpos $endpos (Ptyp_poly(List.rev $1, $3)) }
 
+poly_type_no_attr:
+| core_type_no_attr
+    { $1 }
+| typevar_list DOT core_type_no_attr
+    { mktyp $startpos $endpos (Ptyp_poly(List.rev $1, $3)) }
+
 (* Core types *)
 
 core_type:
+| core_type_no_attr
+    { $1 }
+/*
+| core_type attribute
+    { Typ.attr $1 $2 }
+*/
+
+core_type_no_attr:
 | core_type2
     { $1 }
 | core_type2 AS QUOTE ident
@@ -1901,8 +1915,6 @@ simple_core_type:
                     syntax_error $startpos $endpos;
                     mktyp $startpos $endpos (Ptyp_any)
     }
-| simple_core_type attribute
-    { Typ.attr $1 $2 }
 
 simple_core_type_no_attr:
 | simple_core_type2 %prec below_SHARP
@@ -1987,8 +1999,8 @@ row_field:
     { Rinherit $1 }
 
 tag_field:
-| name_tag attributes OF opt_ampersand amper_type_list
-    { Rtag ($1, $2, $4, List.rev $5) }
+| name_tag OF opt_ampersand amper_type_list attributes
+    { Rtag ($1, $5, $3, List.rev $4) }
 | name_tag attributes
     { Rtag ($1, $2, true, []) }
 
@@ -1999,9 +2011,9 @@ opt_ampersand:
     { false }
 
 amper_type_list:
-| core_type
+| core_type_no_attr
     { [$1] }
-| amper_type_list AMPERSAND core_type
+| amper_type_list AMPERSAND core_type_no_attr
     { $3 :: $1 }
 
 name_tag_list:
@@ -2049,8 +2061,8 @@ meth_list:
     { [], Open }
 
 field:
-| label attributes COLON poly_type
-    { ($1, $2, $4) }
+| label COLON poly_type_no_attr attributes
+    { ($1, $4, $3) }
 
 label:
 | LIDENT

@@ -259,6 +259,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_post_item_attributes              -> "post_item_attributes"
   | N_post_item_attribute               -> "post_item_attribute"
   | N_poly_type                         -> "poly_type"
+  | N_poly_type_no_attr                 -> "poly_type_no_attr"
   | N_payload                           -> "payload"
   | N_pattern_var                       -> "pattern_var"
   | N_pattern_semi_list                 -> "pattern_semi_list"
@@ -349,6 +350,7 @@ let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_core_type_comma_list              -> "core_type_comma_list"
   | N_core_type2                        -> "core_type2"
   | N_core_type                         -> "core_type"
+  | N_core_type_no_attr                 -> "core_type_no_attr"
   | N_constructor_declarations          -> "constructor_declarations"
   | N_constructor_declaration           -> "constructor_declaration"
   | N_constraints                       -> "constraints"
@@ -899,6 +901,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_post_item_attributes              -> 0, []
   | N_post_item_attribute               -> 1, (Location.mknoloc "", default_payload)
   | N_poly_type                         -> 1, default_type
+  | N_poly_type_no_attr                 -> 1, default_type
   | N_payload                           -> 1, default_payload
   | N_pattern_var                       -> 0, default_pattern
   | N_pattern_semi_list                 -> 0, []
@@ -1001,6 +1004,7 @@ let default_nonterminal (type a) (n : a nonterminal_class) : int * a =
   | N_core_type_comma_list              -> 0, []
   | N_core_type2                        -> 1, default_type
   | N_core_type                         -> 1, default_type
+  | N_core_type_no_attr                 -> 1, default_type
   | N_constructor_declarations          -> 0, []
   | N_constructor_declaration           ->
     raise Not_found (*(Parsetree.constructor_declaration) nonterminal_class*)
@@ -1300,6 +1304,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_post_item_attributes              -> None
   | N_post_item_attribute               -> None
   | N_poly_type                         -> None
+  | N_poly_type_no_attr                 -> None
   | N_payload                           -> None
   | N_pattern_var                       -> None
   | N_pattern_semi_list                 -> None
@@ -1390,6 +1395,7 @@ let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option 
   | N_core_type_comma_list              -> None
   | N_core_type2                        -> Some "type expression"
   | N_core_type                         -> Some "type expression"
+  | N_core_type_no_attr                 -> Some "type expression"
   | N_constructor_declarations          -> None
   | N_constructor_declaration           -> Some "constructor declaration"
   | N_constraints                       -> None
