@@ -1496,6 +1496,15 @@ loading"
     (when failed (message "%s" (cdr failed))))
   (merlin-error-reset))
 
+;;;;;;;;;;;;;;;;;;;;;
+;; POLARITY SEARCH ;;
+;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin-polarity (str)
+  (interactive "sSearch pattern: ")
+  (merlin/send-command
+    (list 'polarity 'search str 'at (merlin/unmake-point (point)))))
+
 ;;;;;;;;;;;;
 ;; LOCATE ;;
 ;;;;;;;;;;;;
