@@ -97,3 +97,6 @@ let dump ppf t =
   List.iter (dump_item ppf) (observe t)
 
 let fresh_env () = Env.initial
+
+(* No PPX: trust locations *)
+let rewrite_loc t = t
