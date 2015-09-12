@@ -72,9 +72,9 @@ module Project : sig
   end
 
   (* Path configuration *)
-  val source_path : t -> Path_list.t
-  val build_path  : t -> Path_list.t
-  val cmt_path    : t -> Path_list.t
+  val source_path : t -> string list
+  val build_path  : t -> string list
+  val cmt_path    : t -> string list
 
   (* List all top modules of current project *)
   val global_modules : t -> string list
@@ -102,11 +102,11 @@ end = struct
     mutable cfg_extensions : Extension.set;
     mutable cfg_flags      : string list list;
     mutable cfg_ppxs       : Ppxsetup.t;
-    cfg_path_build  : string list ref;
-    cfg_path_source : string list ref;
-    cfg_path_cmi    : string list ref;
-    cfg_path_cmt    : string list ref;
-    cfg_path_pkg    : string list ref;
+    mutable cfg_path_build  : string list;
+    mutable cfg_path_source : string list;
+    mutable cfg_path_cmi    : string list;
+    mutable cfg_path_cmt    : string list;
+    mutable cfg_path_pkg    : string list;
     mutable cfg_stdlib : string;
   }
 
@@ -114,20 +114,20 @@ end = struct
     cfg_extensions = String.Set.empty;
     cfg_flags = [];
     cfg_ppxs  = Ppxsetup.empty;
-    cfg_path_build  = ref [];
-    cfg_path_source = ref [];
-    cfg_path_cmi    = ref [];
-    cfg_path_cmt    = ref [];
-    cfg_path_pkg    = ref [];
+    cfg_path_build  = [];
+    cfg_path_source = [];
+    cfg_path_cmi    = [];
+    cfg_path_cmt    = [];
+    cfg_path_pkg    = [];
     cfg_stdlib = Config.standard_library;
   }
 
   let reset_config cfg =
-    cfg.cfg_path_build := [];
-    cfg.cfg_path_source := [];
-    cfg.cfg_path_cmi := [];
-    cfg.cfg_path_cmt := [];
-    cfg.cfg_path_pkg := []
+    cfg.cfg_path_build <- [];
+    cfg.cfg_path_source <- [];
+    cfg.cfg_path_cmi <- [];
+    cfg.cfg_path_cmt <- [];
+    cfg.cfg_path_pkg <- []
 
   type t = {
     mutable dot_merlins_path : (string * Misc.file_id) list;
@@ -140,11 +140,11 @@ end = struct
     mutable flags : Clflags.set;
     mutable warnings : Warnings.state;
 
-    local_path : string list ref;
+    mutable local_path : string list;
 
-    source_path : Path_list.t;
-    build_path  : Path_list.t;
-    cmt_path    : Path_list.t;
+    mutable source_path : string list;
+    mutable build_path  : string list;
+    mutable cmt_path    : string list;
 
     mutable global_modules: string list option;
     mutable keywords_cache: Lexer.keywords * Extension.set;
@@ -158,10 +158,7 @@ end = struct
     match project.global_modules with
     | Some lst -> lst
     | None ->
-      let lst =
-        Misc.modules_in_path ~ext:".cmi"
-          (Misc.Path_list.to_strict_list project.build_path)
-      in
+      let lst = Misc.modules_in_path ~ext:".cmi" project.build_path in
       project.global_modules <- Some lst;
       lst
 
@@ -170,8 +167,8 @@ end = struct
   let cmt_path    p = p.cmt_path
 
   let set_local_path project path =
-    if path != !(project.local_path) then begin
-      project.local_path := path;
+    if path != project.local_path then begin
+      project.local_path <- path;
       flush_global_modules project
     end
 
@@ -333,7 +330,7 @@ end = struct
     let dot_config = empty_config () in
     let user_config = empty_config () in
     let local_path = ref [] in
-    let prepare l = Path_list.(of_list (List.map ~f:of_string_list_ref l)) in
+    let prepare l = List.concat_map ~f:(!) l in
     let flags = Clflags.copy Clflags.initial in
     let std_include = Path_list.of_fun @@ fun () ->
       if flags.Clflags.std_include then

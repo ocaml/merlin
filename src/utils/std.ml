@@ -85,6 +85,13 @@ module List = struct
       | None -> filter_map ~f xs
       | Some x -> x :: filter_map ~f xs
 
+  let rec find_map ~f = function
+    | [] -> raise Not_found
+    | x :: xs ->
+      match f x with
+      | None -> find_map ~f xs
+      | Some x' -> x'
+
   let rec map_end ~f l1 l2 =
     match l1 with
     | [] -> l2
