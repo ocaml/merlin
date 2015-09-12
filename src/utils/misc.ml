@@ -127,53 +127,17 @@ let expand_glob ?(filter=fun _ -> true) path acc =
     let patterns = List.map ~f:Glob.compile_pattern subs in
     expand_glob ~filter acc root patterns
 
-module Path_list = struct
-  type t =
-    | StringListRef of string list ref
-    | StringList of string list
-    | Fun of (unit -> t list)
-    | List of t list
-
-  let of_list l = List l
-
-  let of_string_list_ref l = StringListRef l
-  let of_string_list l = StringList l
-  let of_fun f = Fun f
-
-  let rec to_list k = function
-    | List l -> from_list k l
-    | Fun f -> from_list k (f ())
-    | StringList s -> from_string_list k s
-    | StringListRef l -> from_string_list k !l
-
-  and from_list k = function
-    | t :: l -> to_list (lazy (from_list k l)) t
-    | []     -> Lazy.force k
-
-  and from_string_list k = function
-    | s :: l -> List.Lazy.Cons (s, lazy (from_string_list k l))
-    | [] -> Lazy.force k
-
-  let to_list t = to_list (lazy List.Lazy.Nil) t
-
-  let to_strict_list t = List.Lazy.to_strict (to_list t)
-end
-
 let find_in_path path name =
   canonicalize_filename
   begin
     if not (Filename.is_implicit name) then
       if Sys.file_exists name then name else raise Not_found
-    else begin
-      let rec try_dir = function
-        | List.Lazy.Nil -> raise Not_found
-        | List.Lazy.Cons (dir, rem) ->
-          let fullname = Filename.concat dir name in
+    else List.find_map path ~f:(fun dir ->
+         let fullname = Filename.concat dir name in
           if Sys.file_exists fullname
-          then fullname
-          else try_dir (Lazy.force rem)
-      in try_dir (Path_list.to_list path)
-    end
+          then Some fullname
+          else None
+      )
   end
 
 let find_in_path_uncap ?(fallback="") path name =
@@ -182,18 +146,16 @@ let find_in_path_uncap ?(fallback="") path name =
   begin
     let uname = String.uncapitalize name in
     let ufbck = String.uncapitalize fallback in
-    let rec try_dir = function
-      | List.Lazy.Nil -> raise Not_found
-      | List.Lazy.Cons (dir, rem) ->
-          let fullname = Filename.concat dir name in
-          let ufullname = Filename.concat dir uname in
-          let ufallback = Filename.concat dir ufbck in
-          if Sys.file_exists ufullname then ufullname
-          else if Sys.file_exists fullname then fullname
-          else if has_fallback && Sys.file_exists ufallback then ufallback
-          else if has_fallback && Sys.file_exists fallback then fallback
-          else try_dir (Lazy.force rem)
-    in try_dir (Path_list.to_list path)
+    List.find_map path ~f:(fun dir ->
+        let fullname = Filename.concat dir name in
+        let ufullname = Filename.concat dir uname in
+        let ufallback = Filename.concat dir ufbck in
+        if Sys.file_exists ufullname then Some ufullname
+        else if Sys.file_exists fullname then Some fullname
+        else if has_fallback && Sys.file_exists ufallback then Some ufallback
+        else if has_fallback && Sys.file_exists fallback then Some fallback
+        else None
+      )
   end
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
@@ -487,12 +449,12 @@ let spellcheck env name =
   in
   let compare target acc head =
     match edit_distance target head cutoff with
-      | None -> acc
-      | Some dist ->
-	 let (best_choice, best_dist) = acc in
-	 if dist < best_dist then ([head], dist)
-	 else if dist = best_dist then (head :: best_choice, dist)
-	 else acc
+    | None -> acc
+    | Some dist ->
+      let (best_choice, best_dist) = acc in
+      if dist < best_dist then ([head], dist)
+      else if dist = best_dist then (head :: best_choice, dist)
+      else acc
   in
   fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
 
@@ -547,4 +509,3 @@ let file_id_check a b =
     a.st_ino = b.st_ino &&
     a.st_dev = b.st_dev
   | Some _, None | None, Some _ -> false
-

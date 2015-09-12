@@ -690,7 +690,7 @@ module PpxContext = struct
       [
         lid "tool_name",    make_string tool_name;
         lid "include_dirs", make_list make_string (Clflags.include_dirs ());
-        lid "load_path",    make_list make_string (Misc.Path_list.to_strict_list !Config.load_path);
+        lid "load_path",    make_list make_string !Config.load_path;
         lid "open_modules", make_list make_string (Clflags.open_modules ());
         lid "for_package",  make_option make_string (Clflags.for_package ());
         lid "debug",        make_bool (Clflags.debug ());

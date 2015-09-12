@@ -41,7 +41,9 @@ type directive = [
   | `FLG of string
   | `PKG of string list
   | `STDLIB of string
+  | `FINDLIB of string
 ]
+
 type file = {
   project    : string option;
   path       : string;

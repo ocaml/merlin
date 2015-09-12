@@ -52,7 +52,7 @@ and ast_intf_magic_number = "Caml1999N015"
 and cmxs_magic_number = "Caml2007D002"
 and cmt_magic_number = "Caml2012T004"
 
-let load_path = ref (Misc.Path_list.of_list [])
+let load_path = ref []
 
 let interface_suffix = ref ".mli"
 

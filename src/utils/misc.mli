@@ -43,21 +43,9 @@ val samelist: ('a -> 'a -> bool) -> 'a list -> 'a list -> bool
 val may: ('a -> unit) -> 'a option -> unit
 val may_map: ('a -> 'b) -> 'a option -> 'b option
 
-module Path_list : sig
-  type t
-
-  val of_fun : (unit -> t list) -> t
-  val of_list : t list -> t
-  val of_string_list_ref : string list ref -> t
-  val of_string_list : string list -> t
-
-  val to_list : t -> string List.Lazy.t
-  val to_strict_list : t -> string list
-end
-
-val find_in_path: Path_list.t -> string -> string
+val find_in_path: string list -> string -> string
         (* Search a file in a list of directories. *)
-val find_in_path_uncap: ?fallback:string -> Path_list.t -> string -> string
+val find_in_path_uncap: ?fallback:string -> string list -> string -> string
         (* Same, but search also for uncapitalized name, i.e.
            if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
            to match. *)
