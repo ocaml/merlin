@@ -58,8 +58,10 @@ let new_buffer context =
   begin match path with
     | Some path when Filename.check_suffix path "myocamlbuild.ml" ->
       let project = Buffer.project buffer in
-      (* Failure is not an issue. *)
-      ignore @@ Project.User.load_packages project ["ocamlbuild"]
+      let config = Project.get_user_config project in
+      Project.set_user_config project
+        {config with
+         Dot_merlin.packages = "ocamlbuild" :: config.Dot_merlin.packages}
     | _ -> ()
   end;
   buffer
@@ -102,6 +104,11 @@ let cursor_state state =
       Buffer.has_mark state.buffer (Lexer.get_mark lexer)
   in
   { cursor; marker }
+
+let user_failures project =
+  match Project.get_user_config_failures project with
+  | [] -> `Ok
+  | xs -> `Failures xs
 
 let track_verbosity =
   let classify (type a) (request : a request) =
@@ -677,17 +684,16 @@ let dispatch_query ~verbosity buffer =
 
   | (Which_with_ext exts : a request) ->
     let project = Buffer.project buffer in
-    let path = Path_list.to_strict_list (Project.source_path project) in
-    let with_ext ext = modules_in_path ~ext path in
+    let with_ext ext = modules_in_path ~ext (Project.source_path project) in
     List.concat_map ~f:with_ext exts
 
   | (Flags_get : a request) ->
     let project = Buffer.project buffer in
-    Merlin_lib.Project.User.get_flags project
+    (Merlin_lib.Project.get_user_config project).Dot_merlin.flags
 
   | (Project_get : a request) ->
     let project = Buffer.project buffer in
-    (List.map ~f:fst (Project.get_dot_merlins project),
+    (Project.get_dot_merlins project,
      match Project.get_dot_merlins_failure project with
      | [] -> `Ok
      | failures -> `Failures failures)
@@ -707,11 +713,11 @@ let dispatch_query ~verbosity buffer =
 
   | (Path_list `Build : a request) ->
     let project = Buffer.project buffer in
-    Path_list.to_strict_list (Project.build_path project)
+    Project.build_path project
 
   | (Path_list `Source : a request) ->
     let project = Buffer.project buffer in
-    Path_list.to_strict_list (Project.source_path project)
+    Project.source_path project
 
   | (Occurrences (`Ident_at pos) : a request) ->
     with_typer buffer @@ fun typer ->
@@ -912,40 +918,61 @@ let dispatch_sync (state : state) =
 
   | (Refresh : a request) ->
     checkout_buffer_cache := [];
-    Project.invalidate ~flush:true (Buffer.project state.buffer)
+    Cmi_cache.flush ();
+    Project.check_dot_merlin (Buffer.project state.buffer)
 
   | (Flags (`Add flags) : a request) ->
     let project = Buffer.project state.buffer in
-    Merlin_lib.Project.User.add_flags project flags
+    let config = Project.get_user_config project in
+    Project.set_user_config project
+      {config with
+       Dot_merlin.flags = flags :: config.Dot_merlin.flags};
+    user_failures project
 
   | (Flags `Clear : a request) ->
     let project = Buffer.project state.buffer in
-    Merlin_lib.Project.User.clear_flags project
+    let config = Project.get_user_config project in
+    Project.set_user_config project
+      {config with Dot_merlin.flags = []};
+    user_failures project
 
   | (Findlib_use packages : a request) ->
     let project = Buffer.project state.buffer in
-    Project.User.load_packages project packages
+    let config = Project.get_user_config project in
+    Project.set_user_config project
+      {config with
+       Dot_merlin.packages = packages @ config.Dot_merlin.packages};
+    user_failures project
 
   | (Extension_set (action,exts) : a request) ->
-    let enabled = match action with
-      | `Enabled  -> true
-      | `Disabled -> false
+    let f l = match action with
+      | `Enabled  -> List.filter_dup (exts @ l)
+      | `Disabled -> List.filter l ~f:(fun x -> not (List.mem x ~set:exts))
     in
     let project = Buffer.project state.buffer in
-    begin match
-      List.filter_map exts ~f:(Project.User.set_extension project ~enabled)
-    with
-    | [] -> `Ok
-    | lst -> `Failures lst
-    end
+    let config = Project.get_user_config project in
+    Project.set_user_config project
+      {config with Dot_merlin.extensions = f config.Dot_merlin.extensions};
+    user_failures project
 
   | (Path (var,action,paths) : a request) ->
     let project = Buffer.project state.buffer in
-    List.iter paths ~f:(Project.User.path project ~action ~var ?cwd:None)
+    let config = Project.get_user_config project in
+    let f l = match action with
+      | `Add -> List.filter_dup (paths @ l)
+      | `Rem -> List.filter l ~f:(fun x -> not (List.mem x ~set:paths))
+    in
+    let config = match var with
+      | `Build -> {config with Dot_merlin.build_path = f config.Dot_merlin.build_path}
+      | `Source -> {config with Dot_merlin.source_path = f config.Dot_merlin.source_path}
+    in
+    Project.set_user_config project config
 
   | (Path_reset : a request) ->
     let project = Buffer.project state.buffer in
-    Project.User.reset project
+    let config = Project.get_user_config project in
+    Project.set_user_config project
+      {config with Dot_merlin.build_path = []; source_path = []}
 
   | _ -> raise Unhandled_command
 

@@ -22,7 +22,7 @@ val version: string
 val standard_library: string
         (* The directory containing the standard libraries *)
 
-val load_path: Path_list.t ref
+val load_path: string list ref
         (* Directories in the search path for .cmi and .cmo files *)
 
 val interface_suffix: string ref

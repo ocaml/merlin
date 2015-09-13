@@ -34,9 +34,9 @@ let section = Logger.section "locate"
 let info_log  x = Printf.ksprintf (Logger.info  section)  x
 let debug_log x = Printf.ksprintf (Logger.debug section)  x
 
-let sources_path = Fluid.from (Misc.Path_list.of_list [])
-let cfg_cmt_path = Fluid.from (Misc.Path_list.of_list [])
-let loadpath     = Fluid.from (Misc.Path_list.of_list [])
+let sources_path = Fluid.from []
+let cfg_cmt_path = Fluid.from []
+let loadpath     = Fluid.from []
 
 let last_location = Fluid.from Location.none
 
@@ -53,8 +53,7 @@ let erase_loadpath ~cwd ~new_path k =
         x
     )
   in
-  let pl = Misc.Path_list.of_string_list_ref (ref str_path_list) in
-  Fluid.let' loadpath pl k
+  Fluid.let' loadpath str_path_list k
 
 let restore_loadpath k =
   Logger.debug section ~title:"loadpath" "Restored load path" ;
@@ -204,22 +203,20 @@ module Utils = struct
       let acc = ref [] in
       let uname = String.uncapitalize name in
       let ufbck = String.uncapitalize fallback in
-      let rec try_dir = function
-        | List.Lazy.Nil -> !acc
-        | List.Lazy.Cons (dir, rem) ->
-          let fullname = Filename.concat dir name in
-          let fallback = Filename.concat dir fallback in
-          let ufullname = Filename.concat dir uname in
-          let ufallback = Filename.concat dir ufbck in
-          if Sys.file_exists ufullname then acc := ufullname :: !acc ;
-          if Sys.file_exists fullname then acc := fullname :: !acc ;
-          if has_fallback && Sys.file_exists ufallback then
-            acc := ufallback :: !acc ;
-          if has_fallback && Sys.file_exists fallback then
-            acc := fallback :: !acc ;
-          try_dir (Lazy.force rem)
+      let try_dir dir =
+        let fullname = Filename.concat dir name in
+        let fallback = Filename.concat dir fallback in
+        let ufullname = Filename.concat dir uname in
+        let ufallback = Filename.concat dir ufbck in
+        if Sys.file_exists ufullname then acc := ufullname :: !acc ;
+        if Sys.file_exists fullname then acc := fullname :: !acc ;
+        if has_fallback && Sys.file_exists ufallback then
+          acc := ufallback :: !acc ;
+        if has_fallback && Sys.file_exists fallback then
+          acc := fallback :: !acc ;
       in
-      try_dir (Misc.Path_list.to_list path)
+      List.iter try_dir path;
+      !acc
     in
     List.map files ~f:Misc.canonicalize_filename
 
@@ -417,10 +414,7 @@ let find_source loc =
       debug_log "failed to find \"%s\" in source path (fallback = %b)"
           filename with_fallback ;
       debug_log "looking in '%s'" dir ;
-      Some (
-        Utils.find_file_with_path ~with_fallback file @@
-          Misc.Path_list.of_string_list_ref (ref [ dir ])
-      )
+      Some (Utils.find_file_with_path ~with_fallback file [dir])
     | [ x ] -> Some x
     | files ->
       info_log "multiple files named %s exist in the source path..." filename;

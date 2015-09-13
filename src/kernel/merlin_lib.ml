@@ -51,25 +51,14 @@ module Project : sig
   val set_local_path : t -> string list -> unit
 
   (* Project-wide configuration *)
-  val autoreload_dot_merlin : t -> unit
+  val check_dot_merlin : t -> unit
   val get_dot_merlins_failure : t -> (string * exn) list
 
-  (* paths of dot_merlins with mtime at time of load *)
-  val get_dot_merlins : t -> (string * Misc.file_id) list
+  (* paths of dot_merlins *)
+  val get_dot_merlins : t -> string list
 
   (* Dump all the flags given to merlin. *)
   val get_flags : t -> (string * string list list) list
-
-  (* Config override by user *)
-  module User : sig
-    val reset : t -> unit
-    val path : t -> action:[`Add|`Rem] -> var:[`Build|`Source] -> ?cwd:string -> string -> unit
-    val load_packages : t -> string list -> [`Ok | `Failures of (string * exn) list]
-    val set_extension : t -> enabled:bool -> string -> (string * exn) option
-    val add_flags : t -> string list -> [`Ok | `Failures of (string * exn) list]
-    val get_flags : t -> string list list
-    val clear_flags : t -> [`Ok | `Failures of (string * exn) list]
-  end
 
   (* Path configuration *)
   val source_path : t -> string list
@@ -78,9 +67,6 @@ module Project : sig
 
   (* List all top modules of current project *)
   val global_modules : t -> string list
-
-  (* Force recomputation of top modules *)
-  val flush_global_modules : t -> unit
 
   (* Enabled extensions *)
   val extensions: t -> Extension.set
@@ -91,101 +77,54 @@ module Project : sig
   (* Make global state point to current project *)
   val setup : t -> unit
 
+  (* User config override *)
+  val get_user_config : t -> Dot_merlin.config
+  val set_user_config : t -> Dot_merlin.config -> unit
+  val get_user_config_failures : t -> (string * exn) list
+
   (* Invalidate cache *)
   val validity_stamp: t -> bool ref
-  val invalidate: ?flush:bool -> t -> unit
-  val flush_cache: t -> unit
-
 end = struct
 
-  type config = {
-    mutable cfg_extensions : Extension.set;
-    mutable cfg_flags      : string list list;
-    mutable cfg_ppxs       : Ppxsetup.t;
-    mutable cfg_path_build  : string list;
-    mutable cfg_path_source : string list;
-    mutable cfg_path_cmi    : string list;
-    mutable cfg_path_cmt    : string list;
-    mutable cfg_path_pkg    : string list;
-    mutable cfg_stdlib : string;
-  }
+  module C = struct (* work around labels without disambiguation *)
+    type config = {
+      dot_config     : Dot_merlin.config;
+      flags          : Clflags.set;
+      warnings       : Warnings.state;
+      keywords       : Lexer.keywords;
+      extensions     : Extension.set;
+      validity_stamp : bool ref;
+      ppxsetup       : Ppxsetup.t;
 
-  let empty_config () = {
-    cfg_extensions = String.Set.empty;
-    cfg_flags = [];
-    cfg_ppxs  = Ppxsetup.empty;
-    cfg_path_build  = [];
-    cfg_path_source = [];
-    cfg_path_cmi    = [];
-    cfg_path_cmt    = [];
-    cfg_path_pkg    = [];
-    cfg_stdlib = Config.standard_library;
-  }
+      source_path    : string list;
+      cmt_path       : string list;
+      build_path     : string list;
 
-  let reset_config cfg =
-    cfg.cfg_path_build <- [];
-    cfg.cfg_path_source <- [];
-    cfg.cfg_path_cmi <- [];
-    cfg.cfg_path_cmt <- [];
-    cfg.cfg_path_pkg <- []
+      dot_failures  : (string * exn) list;
+      user_failures : (string * exn) list;
+    }
+  end
+  open C
 
   type t = {
-    mutable dot_merlins_path : (string * Misc.file_id) list;
-    mutable dot_merlins : (string * Misc.file_id) list;
-    mutable dot_merlins_failures : (string * exn) list;
-
-    dot_config : config;
-    user_config : config;
-
-    mutable flags : Clflags.set;
-    mutable warnings : Warnings.state;
-
-    mutable local_path : string list;
-
-    mutable source_path : string list;
-    mutable build_path  : string list;
-    mutable cmt_path    : string list;
-
-    mutable global_modules: string list option;
-    mutable keywords_cache: Lexer.keywords * Extension.set;
-    mutable validity_stamp: bool ref
+    dot_merlin          : Dot_merlin.t;
+    mutable user_config : Dot_merlin.config;
+    mutable local_path  : string list;
+    mutable config        : config option;
   }
 
-  let flush_global_modules project =
-    project.global_modules <- None
-
-  let global_modules project =
-    match project.global_modules with
-    | Some lst -> lst
-    | None ->
-      let lst = Misc.modules_in_path ~ext:".cmi" project.build_path in
-      project.global_modules <- Some lst;
-      lst
-
-  let source_path p = p.source_path
-  let build_path  p = p.build_path
-  let cmt_path    p = p.cmt_path
-
-  let set_local_path project path =
-    if path != project.local_path then begin
-      project.local_path <- path;
-      flush_global_modules project
-    end
-
-  let update_ppxs prj =
-    let ppxs = Ppxsetup.union
-        prj.user_config.cfg_ppxs
-        prj.dot_config.cfg_ppxs in
-    prj.flags.Clflags.ppx <-
-      Ppxsetup.union prj.flags.Clflags.ppx ppxs
-
-  let update_flags prj =
-    prj.flags <- Clflags.copy Clflags.initial;
-    prj.warnings <- Warnings.copy Warnings.initial;
-    let spec =
-      Clflags.arg_spec prj.flags @
-      Warnings.arg_spec prj.warnings
+  let compute_packages prj =
+    let `Failures dfails, dpaths, dppxs =
+      Dot_merlin.path_of_packages (Dot_merlin.config prj.dot_merlin)
+    and `Failures ufails, upaths, uppxs =
+      Dot_merlin.path_of_packages prj.user_config
     in
+    dfails, ufails, upaths @ dpaths, Ppxsetup.union uppxs dppxs
+
+  let compute_flags prj =
+    let flags = Clflags.copy Clflags.initial in
+    let warnings = Warnings.copy Warnings.initial in
+    let spec = Clflags.arg_spec flags @ Warnings.arg_spec warnings in
     let process_flags spec flags =
       let failures = ref [] in
       let rec loop ?(current=(ref 0)) flags =
@@ -201,189 +140,106 @@ end = struct
       loop flags ;
       !failures
     in
-    let process_flags_list lst ~init =
-      List.fold_left lst ~init ~f:(fun acc lst ->
+    let process_flags_list lst =
+      List.fold_left lst ~init:[] ~f:(fun acc lst ->
         let flags = Array.of_list ("merlin" :: lst) in
         List.rev_append (process_flags spec flags) acc
       )
     in
-    let failures = process_flags_list prj.dot_config.cfg_flags ~init:[] in
-    let failures = List.rev_append (process_flags (Main_args.flags @ spec) Sys.argv) failures in
-    let failures = process_flags_list prj.user_config.cfg_flags ~init:failures in
-    update_ppxs prj;
-    failures
+    let dfails = process_flags_list (Dot_merlin.config prj.dot_merlin).Dot_merlin.flags in
+    let dfails = List.rev_append (process_flags (Main_args.flags @ spec) Sys.argv) dfails in
+    let ufails = process_flags_list prj.user_config.Dot_merlin.flags in
+    dfails, ufails, flags, warnings
+
+  let config prj =
+    let dot_config = Dot_merlin.config prj.dot_merlin in
+    match prj.config with
+    | Some config when Dot_merlin.same config.dot_config dot_config -> config
+    | None | Some _ ->
+      begin match prj.config with
+        | None -> ()
+        | Some config -> config.validity_stamp := false
+      end;
+      let dfails0, ufails0, pkgpaths, ppxsetup = compute_packages prj in
+      let dfails1, ufails1, flags, warnings = compute_flags prj in
+      let open Dot_merlin in
+      let user_config = prj.user_config in
+      let stdlib =
+          if flags.Clflags.std_include then
+            [if user_config.stdlib =
+                empty_config.stdlib
+             then dot_config.stdlib
+             else user_config.stdlib]
+          else []
+      in
+      let source_path =
+          user_config.source_path @
+          dot_config.source_path @
+          pkgpaths
+      and build_path =
+          user_config.cmi_path @
+          user_config.build_path @
+          dot_config.cmi_path @
+          dot_config.build_path @
+          pkgpaths @
+          !(flags.Clflags.include_dirs) @
+          stdlib
+      and cmt_path =
+          user_config.cmt_path @
+          user_config.Dot_merlin.build_path @
+          dot_config.cmt_path @
+          dot_config.build_path @
+          pkgpaths @
+          !(flags.Clflags.include_dirs) @
+          stdlib
+      in
+      let extensions = Extension.from
+          ~extensions:(user_config.extensions @ dot_config.extensions)
+          ~packages:(user_config.packages @ dot_config.packages)
+      in
+      let keywords = Extension.keywords extensions in
+      let config = C.({
+          dot_config;
+          warnings; flags;
+          extensions; keywords; ppxsetup;
+          source_path; cmt_path; build_path;
+          dot_failures = dfails0 @ dfails1;
+          user_failures = ufails0 @ ufails1;
+          validity_stamp = ref true;
+        })
+      in
+      prj.config <- Some config;
+      config
+
+  let source_path p = p.local_path @ (config p).source_path
+  let build_path  p = p.local_path @ (config p).build_path
+  let cmt_path    p = p.local_path @ (config p).cmt_path
+
+  let global_modules p =
+    Misc.modules_in_path ~ext:".cmi" (config p).build_path
+
+  let set_local_path project path =
+    project.local_path <- path
 
   let get_flags project = [
-    "user", project.user_config.cfg_flags;
+    "user", project.user_config.Dot_merlin.flags;
     "cmd line", [ List.tl @@ Array.to_list Sys.argv ];
-    ".merlin", project.dot_config.cfg_flags;
+    ".merlin", (Dot_merlin.config project.dot_merlin).Dot_merlin.flags;
   ]
 
-  let invalidate ?(flush=true) project =
-    if flush then Cmi_cache.flush ();
-    project.validity_stamp := false;
-    project.validity_stamp <- ref true
+  let get_user_config t = t.user_config
+  let set_user_config t user_config =
+    t.user_config <- user_config;
+    t.config <- None
 
-  (* Config override by user *)
-  module User = struct
-    let reset project =
-      let cfg = project.user_config in
-      cfg.cfg_path_build := [];
-      cfg.cfg_path_source := [];
-      cfg.cfg_path_cmi := [];
-      cfg.cfg_path_cmt := [];
-      cfg.cfg_flags <- [];
-      cfg.cfg_extensions <- String.Set.empty
+  let get_user_config_failures t = (config t).user_failures
 
-    let path project ~action ~var ?cwd path =
-      let cfg = project.user_config in
-      let r = match var with
-        | `Source -> cfg.cfg_path_source
-        | `Build  -> cfg.cfg_path_build
-      in
-      let d = canonicalize_filename ?cwd
-                (expand_directory Config.standard_library path)
-      in
-      r := List.filter ~f:((<>) d) !r;
-      begin match action with
-      | `Add -> r := d :: !r
-      | `Rem -> ()
-      end;
-      flush_global_modules project
-
-    let load_packages project pkgs =
-      let result, path, ppxs = Dot_merlin.path_of_packages pkgs in
-      let cfg = project.user_config in
-      let rpath = cfg.cfg_path_pkg in
-      rpath := List.filter_dup (path @ !rpath);
-      cfg.cfg_ppxs <- Ppxsetup.union ppxs cfg.cfg_ppxs;
-      update_ppxs project;
-      result
-
-    let add_flags project flags =
-      project.user_config.cfg_flags <- flags :: project.user_config.cfg_flags ;
-      invalidate ~flush:false project ;
-      match update_flags project with
-      | [] -> `Ok
-      | lst -> `Failures lst
-
-    let get_flags project =
-      project.user_config.cfg_flags
-
-    let clear_flags project =
-      project.user_config.cfg_flags <- [] ;
-      invalidate ~flush:false project ;
-      match update_flags project with
-      | [] -> `Ok
-      | lst -> `Failures lst
-
-    let set_extension project ~enabled path =
-      let cfg = project.user_config in
-      if String.Set.mem path Extension.all then
-        let f  = String.Set.(if enabled then add else remove) in
-        let () = cfg.cfg_extensions <- f path cfg.cfg_extensions in
-        None
-      else begin
-        Logger.info Logger.Section.project_load ~title:"EXT"
-          (sprintf "unknown extensions: \"%s\"" path) ;
-        Some (path, Extension.Unknown)
-      end
-  end
-
-  let set_dot_merlin project paths =
-    project.dot_merlins_path <- List.map (fun p -> p, Misc.file_id p) paths;
-    let module Dm = Dot_merlin in
-    let rec aux = function
-      | [] -> List.Lazy.Nil
-      | x :: xs -> Dm.read ~tail:(lazy (aux xs)) x
-    in
-    let dm = Dm.parse (aux paths) in
-    let cfg = project.dot_config in
-    let result, path_pkg, ppxs = Dot_merlin.path_of_packages dm.Dm.packages in
-    project.dot_merlins <- List.map dm.Dm.dot_merlins
-        ~f:(fun file -> file, Misc.file_id file);
-    cfg.cfg_path_pkg := List.filter_dup path_pkg;
-    cfg.cfg_path_build := dm.Dm.build_path;
-    cfg.cfg_path_source := dm.Dm.source_path;
-    cfg.cfg_path_cmi := dm.Dm.cmi_path;
-    cfg.cfg_path_cmt := dm.Dm.cmt_path;
-    cfg.cfg_flags <- dm.Dm.flags;
-    cfg.cfg_ppxs <- ppxs;
-    let known_extensions, unknown_extensions =
-      List.partition dm.Dm.extensions ~f:(fun ext ->
-        String.Set.mem ext Extension.all
-      )
-    in
-    List.iter unknown_extensions ~f:(fun ext ->
-      Logger.info Logger.Section.project_load ~title:"EXT"
-        (sprintf "unknown extensions: \"%s\"" ext)
-    ) ;
-    cfg.cfg_extensions <- String.Set.of_list known_extensions;
-    flush_global_modules project;
-    project.dot_merlins_failures <-
-      (match result  with `Ok -> [] | `Failures l -> l) @
-      (List.map unknown_extensions ~f:(fun e -> e, Extension.Unknown)) @
-      update_flags project;
-    invalidate project
-
-  let create dot_merlins =
-    let dot_config = empty_config () in
-    let user_config = empty_config () in
-    let local_path = ref [] in
-    let prepare l = List.concat_map ~f:(!) l in
-    let flags = Clflags.copy Clflags.initial in
-    let std_include = Path_list.of_fun @@ fun () ->
-      if flags.Clflags.std_include then
-        [Path_list.of_string_list [dot_config.cfg_stdlib]]
-      else
-        []
-    in
-    let project =
-      { dot_merlins_path = [];
-        dot_merlins = [];
-        dot_merlins_failures = [];
-        dot_config; user_config; flags;
-        warnings = Warnings.initial;
-        local_path;
-        source_path = prepare [
-            user_config.cfg_path_source;
-            local_path;
-            dot_config.cfg_path_source;
-            (* Experimental: used by locate *)
-            user_config.cfg_path_pkg;
-            dot_config.cfg_path_pkg;
-          ];
-        build_path = Path_list.of_list [prepare [
-            user_config.cfg_path_cmi;
-            user_config.cfg_path_build;
-            local_path;
-            dot_config.cfg_path_cmi;
-            dot_config.cfg_path_build;
-            user_config.cfg_path_pkg;
-            dot_config.cfg_path_pkg;
-            flags.Clflags.include_dirs;
-          ];
-           std_include;
-          ];
-        cmt_path = Path_list.of_list [prepare [
-            user_config.cfg_path_cmt;
-            user_config.cfg_path_build;
-            local_path;
-            dot_config.cfg_path_cmt;
-            dot_config.cfg_path_build;
-            user_config.cfg_path_pkg;
-            dot_config.cfg_path_pkg;
-            flags.Clflags.include_dirs;
-          ];
-           std_include;
-          ];
-        global_modules = None;
-        keywords_cache = Extension.keywords Extension.empty, Extension.empty;
-        validity_stamp = ref true;
-      }
-    in
-    set_dot_merlin project dot_merlins;
-    project
+  let create dot_merlins = {
+    dot_merlin = Dot_merlin.load dot_merlins;
+    user_config = Dot_merlin.empty_config;
+    local_path = [];
+    config = None;
+  }
 
   let store : (string list, t) Hashtbl.t = Hashtbl.create 3
   let get path =
@@ -393,52 +249,31 @@ end = struct
       Hashtbl.replace store path project;
       project, `Fresh
 
-  let autoreload_dot_merlin project =
-    let out_of_date (path, fid) =
-      not (Misc.file_id_check (Misc.file_id path) fid)
-    in
-    if List.exists ~f:out_of_date project.dot_merlins ||
-       List.exists ~f:out_of_date project.dot_merlins_path
-    then
-      try
-        set_dot_merlin project (List.map fst project.dot_merlins_path);
-      with exn ->
-        project.dot_merlins_failures <- ["reloading", exn]
+  let check_dot_merlin project =
+    Dot_merlin.update project.dot_merlin
 
   let get_dot_merlins project =
-    project.dot_merlins
+    (Dot_merlin.config project.dot_merlin).Dot_merlin.dot_merlins
 
-  let get_dot_merlins_failure project =
-    project.dot_merlins_failures
+  let get_dot_merlins_failure t =
+    (config t).dot_failures
 
   (* Make global state point to current project *)
-  let setup project =
-    Clflags.set := project.flags;
-    Warnings.current := project.warnings;
-    Config.load_path := project.build_path
+  let setup t =
+    let c = config t in
+    Clflags.set := c.flags;
+    Warnings.current := c.warnings;
+    Config.load_path := c.build_path
 
   (* Enabled extensions *)
-  let extensions project =
-    String.Set.union
-      project.dot_config.cfg_extensions
-      project.user_config.cfg_extensions
+  let extensions t = (config t).extensions
 
   (* Lexer keywords for current config *)
-  let keywords project =
-    let set = extensions project in
-    match project.keywords_cache with
-    | kw, set' when String.Set.equal set set' -> kw
-    | _ ->
-      let kw = Extension.keywords set in
-      project.keywords_cache <- kw, set;
-      kw
+  let keywords t = (config t).keywords
 
-  let validity_stamp p =
-    assert !(p.validity_stamp);
-    p.validity_stamp
-
-  let flush_cache project =
-    Cmi_cache.flush ();
+  let validity_stamp t =
+    let r = (config t).validity_stamp in
+    assert !r; r
 end
 
 module Buffer : sig
@@ -500,17 +335,14 @@ end = struct
     in
     (token, Recover.fresh (Parser.from kind input))
 
-  let find_dot_merlins dot_merlins =
-    List.filter_map ~f:Dot_merlin.find dot_merlins
-
   let autoreload_dot_merlin buffer =
     let project' = buffer.project in
-    let project, status = Project.get (find_dot_merlins buffer.dot_merlins) in
+    let project, status = Project.get buffer.dot_merlins in
     buffer.project <- project;
     match status with
     | `Fresh -> invalidate buffer
     | `Cached ->
-      Project.autoreload_dot_merlin project;
+      Project.check_dot_merlin project;
       if project' != project then
         invalidate buffer
 
@@ -531,10 +363,10 @@ end = struct
     let unit_name = String.capitalize unit_name in
     let lexer = Lexer.empty ~filename in
     let project =
-      match Project.get (find_dot_merlins dot_merlins) with
+      match Project.get dot_merlins with
       | project, `Fresh -> project
       | project, `Cached ->
-        ignore (Project.autoreload_dot_merlin project);
+        Project.check_dot_merlin project;
         project
     in
     let stamp = ref true in
