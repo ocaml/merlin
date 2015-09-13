@@ -68,7 +68,7 @@ val lookup : string -> t option
 
 (* Compute set of extensions from package names (used to enable support for
   "lwt" if "lwt.syntax" package is loaded by user. *)
-val from_packages : string list -> set
+val from : extensions:string list -> packages:string list -> set
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)

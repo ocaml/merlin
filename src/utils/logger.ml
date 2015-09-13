@@ -126,7 +126,7 @@ let format level section ?title content =
   ]
 
 let output level section ?title j oc =
-  Json.to_channel oc (format level section ?title j);
+  Yojson.Basic.to_channel oc (format level section ?title j);
   output_char oc '\n';
   flush oc
 
@@ -202,3 +202,14 @@ let shutdown () =
   Hashtbl.reset opened_files;
   Hashtbl.iter (fun _ section -> section.destination <- None)
     Section.sections
+
+(** Messages targeted to the editor *)
+let editor_messages : string list ref option fluid = fluid None
+
+let tell_editor msg =
+  match Fluid.get editor_messages with
+  | None -> ()
+  | Some r -> r := msg :: !r
+
+let with_editor r f =
+  Fluid.let' editor_messages (Some r) f

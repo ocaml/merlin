@@ -191,12 +191,13 @@ let empty = String.Set.empty
 
 (* Compute set of extensions from package names (used to enable support for
   "lwt" if "lwt.syntax" is loaded by user. *)
-let from_packages pkgs =
+let from ~extensions ~packages =
   String.Map.fold registry ~init:empty ~f:(fun ~key:name ~data:ext set ->
-    if List.exists ~f:(List.mem ~set:ext.packages) pkgs
-    then String.Set.add name set
-    else set
-  )
+      if List.mem name ~set:extensions ||
+         List.exists ~f:(List.mem ~set:ext.packages) packages
+      then String.Set.add name set
+      else set
+    )
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)

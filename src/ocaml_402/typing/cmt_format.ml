@@ -224,8 +224,8 @@ let save_cmt filename modname binary_annots sourcefile initial_env sg =
       cmt_comments = []; (*Lexer.comments ();*)
       cmt_args = Sys.argv;
       cmt_sourcefile = sourcefile;
-      cmt_builddir =  Sys.getcwd ();
-      cmt_loadpath = []; (*!Config.load_path;*)
+      cmt_builddir = Sys.getcwd ();
+      cmt_loadpath = !Config.load_path;
       cmt_source_digest = source_digest;
       cmt_initial_env = if need_to_clear_env then
           keep_only_summary initial_env else initial_env;

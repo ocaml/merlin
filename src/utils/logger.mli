@@ -80,30 +80,34 @@ val forget : section -> unit
 
 val log : level -> section -> ?title:string -> string -> unit
 val logf : level -> section -> ?title:string ->(Format.formatter -> 'a -> unit) -> 'a -> unit
-val logj : level -> section -> ?title:string ->Std.json -> unit
-val logjf : level -> section -> ?title:string ->('a -> Std.json) -> 'a -> unit
+val logj : level -> section -> ?title:string -> Json.json -> unit
+val logjf : level -> section -> ?title:string ->('a -> Json.json) -> 'a -> unit
 
 val error : section -> ?title:string -> string -> unit
 val errorf : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
-val errorj : section -> ?title:string -> Std.json -> unit
-val errorjf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
+val errorj : section -> ?title:string -> Json.json -> unit
+val errorjf : section -> ?title:string -> ('a -> Json.json) -> 'a -> unit
 (** [error section msg] behaves as [log] if [section] is being monitored, but
     prints to the default_destination (if it is set) otherwise. *)
 
 val info : section -> ?title:string -> string -> unit
 val infof : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
-val infoj : section -> ?title:string -> Std.json -> unit
-val infojf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
+val infoj : section -> ?title:string -> Json.json -> unit
+val infojf : section -> ?title:string -> ('a -> Json.json) -> 'a -> unit
 (** [info section msg] will output [msg] on the channel dedicated to [section],
     if it is being monitored. *)
 
 val debug : section -> ?title:string -> string -> unit
 val debugf : section -> ?title:string -> (Format.formatter -> 'a -> unit) -> 'a -> unit
-val debugj : section -> ?title:string -> Std.json -> unit
-val debugjf : section -> ?title:string -> ('a -> Std.json) -> 'a -> unit
+val debugj : section -> ?title:string -> Json.json -> unit
+val debugjf : section -> ?title:string -> ('a -> Json.json) -> 'a -> unit
 (** Use [debug section msg] for mostly unimportant messages, those will be
     displayed only if verbose. *)
 
 val shutdown : unit -> unit
 (** Closes all the open channels, unsets the default destination and stops all
     monitoring. *)
+
+(** Messages targeted to the editor *)
+val tell_editor : string -> unit
+val with_editor : string list ref -> (unit -> 'a) -> 'a
