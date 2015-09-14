@@ -157,7 +157,7 @@ case "$MAGIC_VERSION" in
       OCAML_VERSION_VAL='`OCaml_4_02_2'
     fi
     ;;
-  "Caml1999I019")
+  "Caml1999I020")
     OCAML_VERSION="ocaml_trunk"
     OCAML_VERSION_MESSAGE="OCaml 4.03 (trunk)"
     OCAML_VERSION_VAL='`OCaml_4_03_trunk'
