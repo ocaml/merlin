@@ -18,11 +18,13 @@
 
 (defun merlin-sync-to-point (&rest ignored)
   (merlin/sync))
+(defun merlin/sync-to-end ()
+  (merlin/sync))
 
 (defun merlin-refresh ()
   "Deprecated. Was used to reload cmis, this is handled automatically by merlin now."
   (interactive))
-(make-obsolete 'merlin-refresh nil)
+(make-obsolete 'merlin-refresh nil "merlin 2.0")
 
 (provide 'merlin-compat)
 ;;; merlin-compat.el ends here
