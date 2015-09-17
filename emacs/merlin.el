@@ -672,11 +672,12 @@ the error message otherwise print a generic error message."
                             command (lambda (data) data) callback-if-exn)))
     (when promise
       (merlin--process-busy-set (list command))
-      (let ((w32-pipe-read-delay 0)        ; fix 50ms latency of emacs on win32
-            (merlin-command-priority nil)) ; reset priority to default
-        (while (not (car promise))
-               (accept-process-output (merlin-process) 1.0)))
-      (merlin--process-busy-set nil)
+      (unwind-protect
+          (let ((w32-pipe-read-delay 0)        ; fix 50ms latency of emacs on win32
+                (merlin-command-priority nil)) ; reset priority to default
+            (while (not (car promise))
+              (accept-process-output (merlin-process) 1.0)))
+        (merlin--process-busy-set nil))
       (cdr promise))))
 
 ;; SPECIAL CASE OF COMMANDS
