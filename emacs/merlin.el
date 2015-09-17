@@ -233,6 +233,9 @@ field logfile (see `merlin-start-process')"
 (defvar-local merlin--project-failures nil
   "When loading .merlin, list of errors reported. Only update error messages if
 error list changes")
+(defvar-local merlin--dwimed nil
+  "Remember if we used dwim for the current completion or not")
+
 
 ;;;;;;;;;;;
 ;; UTILS ;;
@@ -1026,9 +1029,6 @@ prefix of `bar' is `'."
          (prefix (if (string-equal s "") s (concat s "."))))
     (cons prefix suffix)))
 
-(defvar-local merlin--dwimed nil
-  "Remember if we used dwim for the current completion or not")
-
 (defun merlin--completion-prepare-labels (labels suffix)
   ; Remove non-matching entry, adjusting optional labels if needed
   (setq labels (delete-if-not (lambda (x)
@@ -1157,6 +1157,15 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (merlin--type-expression exp on-success on-error)))
 
 ;; TYPE ENCLOSING
+(defvar merlin-type-enclosing-map
+  (let ((keymap (make-sparse-keymap)))
+    (define-key keymap (kbd "C-<up>") 'merlin-type-enclosing-go-up)
+    (define-key keymap (kbd "C-<down>") 'merlin-type-enclosing-go-down)
+    (define-key keymap (kbd "C-d") 'merlin--destruct-enclosing)
+    (define-key keymap (kbd "C-w") 'merlin--copy-enclosing)
+    keymap)
+  "The local map to navigate type enclosing.")
+
 (defun merlin--type-enclosing-reset ()
   "Clear enclosing information, necessary for destruct"
   (setq merlin-enclosing-types nil)
@@ -1221,15 +1230,6 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (when (cddr data)
       (message "Copied %s to kill-ring" (car data))
       (kill-new (car data)))))
-
-(defvar merlin-type-enclosing-map
-  (let ((keymap (make-sparse-keymap)))
-    (define-key keymap (kbd "C-<up>") 'merlin-type-enclosing-go-up)
-    (define-key keymap (kbd "C-<down>") 'merlin-type-enclosing-go-down)
-    (define-key keymap (kbd "C-d") 'merlin--destruct-enclosing)
-    (define-key keymap (kbd "C-w") 'merlin--copy-enclosing)
-    keymap)
-  "The local map to navigate type enclosing.")
 
 (defun merlin--type-enclosing-after ()
   (when (and (fboundp 'set-temporary-overlay-map)
