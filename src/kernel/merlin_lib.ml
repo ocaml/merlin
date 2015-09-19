@@ -216,7 +216,7 @@ end = struct
   let cmt_path    p = p.local_path @ (config p).cmt_path
 
   let global_modules p =
-    Misc.modules_in_path ~ext:".cmi" (config p).build_path
+    Misc.modules_in_path ~ext:".cmi" (build_path p)
 
   let set_local_path project path =
     project.local_path <- path
@@ -263,7 +263,7 @@ end = struct
     let c = config t in
     Clflags.set := c.flags;
     Warnings.current := c.warnings;
-    Config.load_path := c.build_path
+    Config.load_path := build_path t
 
   (* Enabled extensions *)
   let extensions t = (config t).extensions
