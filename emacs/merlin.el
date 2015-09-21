@@ -409,8 +409,8 @@ synchronous command being processed by merlin otherwise."
                        (<= (car merlin--process-busy) command-priority))
                    (cons command-priority value))
                   ;; - previous one has higher priority, cancel request
-                  ((or (not (car merlin--process-busy)
-                            (<= command-priority (car merlin--process-busy))))
+                  ((or (not (car merlin--process-busy))
+                       (<= command-priority (car merlin--process-busy)))
                    ;; if we get there, caller knows how to handle the error
                    (assert command-priority)
                    (signal 'merlin-cancelled
