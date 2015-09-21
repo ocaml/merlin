@@ -132,7 +132,7 @@ module Rewrite_loc = struct
     else if l2 = none then l1
     else
       {loc_start = Lexing.min_pos l1.loc_start l2.loc_start;
-       loc_end   = Lexing.min_pos l1.loc_end l2.loc_end;
+       loc_end   = Lexing.max_pos l1.loc_end l2.loc_end;
        loc_ghost = l1.loc_ghost && l2.loc_ghost;
       }
 
