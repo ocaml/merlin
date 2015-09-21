@@ -41,9 +41,10 @@ function! merlin_type#ShowTypeHistory()
 endfunction
 
 function! merlin_type#ToggleTypeHistory()
+  let l:exists = exists("g:merlin_type_history") && bufexists(g:merlin_type_history)
   call s:CreateTypeHistory()
   let l:win = bufwinnr(g:merlin_type_history)
-  if l:win < 0
+  if l:win < 0 || !l:exists
     call merlin_type#ShowTypeHistory()
   else
     call merlin_type#HideTypeHistory(1)
