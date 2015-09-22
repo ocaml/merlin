@@ -40,8 +40,8 @@ SOURCES = \
 	src/utils/menhirUtils.ml          \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
-	src/utils/mymap.mli            		\
-	src/utils/mymap.ml             		\
+	src/utils/mymap.mli               \
+	src/utils/mymap.ml                \
 	$(TYPER)/utils/warnings.mli       \
 	$(TYPER)/utils/warnings.ml        \
 	$(TYPER)/utils/config.mli         \

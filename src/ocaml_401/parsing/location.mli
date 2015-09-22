@@ -111,3 +111,7 @@ val report_error: formatter -> error -> unit
 
 val report_exception: formatter -> exn -> unit
   (* Reraise the exception if it is unknown. *)
+
+(** Like location_union, but keep loc_ghost'ness of first argument *)
+val pack_fake_location: fake:t -> t -> t
+val unpack_fake_location: t -> t

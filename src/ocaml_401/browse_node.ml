@@ -75,18 +75,27 @@ type t =
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
 
-let update_env env0 loc0 = function
-  | Pattern        {pat_loc = loc; pat_env = env}
-  | Expression     {exp_loc = loc; exp_env = env}
-  | Method_call    ({exp_loc = loc; exp_env = env}, _)
-  | Class_expr     {cl_loc = loc; cl_env = env}
-  | Module_expr    {mod_loc = loc; mod_env = env}
-  | Structure_item {str_loc = loc; str_env = env}
-  | Signature_item {sig_env = env; sig_loc = loc}
-  | Module_type    {mty_env = env; mty_loc = loc}
-  | Core_type      {ctyp_env = env; ctyp_loc = loc}
-  | Class_type     {cltyp_env = env; cltyp_loc = loc}
-    -> env, loc
+let node_update_env env0 = function
+  | Pattern        {pat_env = env}  | Expression     {exp_env = env}
+  | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _)
+  | Structure_item {str_env = env}  | Signature_item {sig_env = env}
+  | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
+  | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
+  | Structure      {str_final_env = env} | Signature {sig_final_env = env}
+    -> env
+  | _ -> env0
+
+let node_real_loc loc0 = function
+  | Pattern        {pat_loc = loc}
+  | Expression     {exp_loc = loc}
+  | Method_call    ({exp_loc = loc}, _)
+  | Class_expr     {cl_loc = loc}
+  | Module_expr    {mod_loc = loc}
+  | Structure_item {str_loc = loc}
+  | Signature_item {sig_loc = loc}
+  | Module_type    {mty_loc = loc}
+  | Core_type      {ctyp_loc = loc}
+  | Class_type     {cltyp_loc = loc}
   | Class_field             {cf_loc = loc}
   | Module_binding          {mb_loc = loc}
   | Module_declaration      {md_loc = loc}
@@ -101,22 +110,20 @@ let update_env env0 loc0 = function
   | Class_description       {ci_loc = loc}
   | Class_type_declaration  {ci_loc = loc}
   | Extension_constructor   {ext_loc = loc}
-    -> env0, loc
+    -> loc
   | Module_binding_name          {mb_name = loc}
   | Module_declaration_name      {md_name = loc}
   | Module_type_declaration_name {mtd_name = loc}
-    -> env0, loc.Location.loc
-  | Structure {str_final_env = env} | Signature {sig_final_env = env}
-    -> env, loc0
-  | Case _ | Class_structure _ | Type_extension _
-  | Class_field_kind _ | Module_type_constraint _ | With_constraint _
-  | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
-  | Dummy
-    -> env0, loc0
+    -> loc.Location.loc
+  | _ -> loc0
 
-let app node env0 loc0 f acc =
-  let env, loc = update_env env0 loc0 node in
-  f env loc node acc
+let node_merlin_loc loc node =
+  Location.unpack_fake_location (node_real_loc loc node)
+
+let app node env loc f acc =
+  f (node_update_env env node)
+    (node_merlin_loc loc node)
+    node acc
 
 type 'a f0 = Env.t -> Location.t -> t -> 'a -> 'a
 type ('b,'a) f1 = 'b -> Env.t -> Location.t -> 'a f0 -> 'a -> 'a

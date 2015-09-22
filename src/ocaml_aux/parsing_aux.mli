@@ -3,7 +3,7 @@
   This file is part of Merlin, an helper for ocaml editors
 
   Copyright (C) 2013 - 2014  Frédéric Bour  <frederic.bour(_)lakaban.net>
-                             Thomas Refis  <refis.thomas(_)gmail.com>
+                           Thomas Refis  <refis.thomas(_)gmail.com>
                              Simon Castellan  <simon.castellan(_)iuwt.fr>
 
   Permission is hereby granted, free of charge, to any person obtaining a
@@ -34,11 +34,11 @@ val raise_warning: exn -> unit
 val prerr_warning: Location.t -> Warnings.t -> unit
 val catch_warnings: exn list ref -> (unit -> 'a) -> 'a
 
-val location_union : Location.t -> Location.t -> Location.t
 val compare_pos: Lexing.position -> Location.t -> int
 
-val with_bag_of_holding: Location.t -> exn -> Location.t
-val bag_of_holding: Location.t -> exn
+(** Return the smallest location covered by both arguments,
+    ghost if both are ghosts *)
+val location_union : Location.t -> Location.t -> Location.t
 
-val pack_fake_location: fake:Location.t -> Location.t -> Location.t
-val unpack_fake_location: Location.t -> Location.t
+(** Like location_union, but keep loc_ghost'ness of first argument *)
+val location_extend : Location.t -> Location.t -> Location.t

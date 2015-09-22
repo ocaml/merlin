@@ -100,8 +100,13 @@ let node_update_env env0 = function
     -> env0
 
 let node_update_loc loc0 = function
+  | Expression              {exp_loc = loc; exp_attributes} ->
+    begin try
+        let s, _ = List.find exp_attributes ~f:(fun (s,_) -> s.Location.txt = "merlin.loc") in
+        s.Location.loc
+      with Not_found -> loc
+    end
   | Pattern                 {pat_loc = loc}
-  | Expression              {exp_loc = loc}
   | Method_call             ({exp_loc = loc}, _)
   | Class_expr              {cl_loc = loc}
   | Module_expr             {mod_loc = loc}
@@ -396,27 +401,27 @@ and of_class_type_field_desc = function
 
 let of_node = function
   | Dummy -> id_fold
-  | Pattern { pat_desc; pat_loc; pat_extra } ->
+  | Pattern { pat_desc; pat_extra } ->
     of_pattern_desc pat_desc **
     list_fold of_pat_extra pat_extra
-  | Expression { exp_desc; exp_loc; exp_extra } ->
+  | Expression { exp_desc; exp_extra } ->
     of_expression_desc exp_desc **
     list_fold of_exp_extra exp_extra
   | Case { c_lhs; c_guard; c_rhs } ->
     of_pattern c_lhs ** of_expression c_rhs **
     option_fold of_expression c_guard
-  | Class_expr { cl_desc; cl_loc } ->
+  | Class_expr { cl_desc } ->
     of_class_expr_desc cl_desc
   | Class_structure { cstr_self; cstr_fields } ->
     of_pattern cstr_self **
     list_fold (fun f -> app (Class_field f)) cstr_fields
-  | Class_field { cf_desc; cf_loc } ->
+  | Class_field { cf_desc } ->
     of_class_field_desc cf_desc
   | Class_field_kind (Tcfk_virtual ct) ->
     of_core_type ct
   | Class_field_kind (Tcfk_concrete (_,e)) ->
     of_expression e
-  | Module_expr { mod_desc; mod_loc } ->
+  | Module_expr { mod_desc } ->
     of_module_expr_desc mod_desc
   | Module_type_constraint Tmodtype_implicit ->
     id_fold
@@ -424,7 +429,7 @@ let of_node = function
     of_module_type mt
   | Structure { str_items } ->
     list_fold (fun item -> app (Structure_item item)) str_items
-  | Structure_item { str_desc; str_loc; str_env } ->
+  | Structure_item { str_desc } ->
     of_structure_item_desc str_desc
   | Module_binding mb ->
     app (Module_expr mb.mb_expr) **
@@ -432,11 +437,11 @@ let of_node = function
   | Value_binding { vb_pat; vb_expr } ->
     of_pattern vb_pat **
     of_expression vb_expr
-  | Module_type { mty_desc; mty_env; mty_loc } ->
+  | Module_type { mty_desc } ->
     of_module_type_desc mty_desc
-  | Signature { sig_items; sig_final_env } ->
+  | Signature { sig_items } ->
     list_fold (fun item -> app (Signature_item item)) sig_items
-  | Signature_item { sig_desc; sig_env; sig_loc } ->
+  | Signature_item { sig_desc } ->
     of_signature_item_desc sig_desc
   | Module_declaration md ->
     of_module_type md.md_type **
@@ -448,7 +453,7 @@ let of_node = function
     app (Type_declaration td)
   | With_constraint (Twith_module _ | Twith_modsubst _) ->
     id_fold
-  | Core_type { ctyp_desc; ctyp_env; ctyp_loc } ->
+  | Core_type { ctyp_desc } ->
     of_core_type_desc ctyp_desc
   | Package_type { pack_fields } ->
     list_fold (fun (_,ct) -> of_core_type ct) pack_fields
