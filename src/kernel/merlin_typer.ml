@@ -27,6 +27,8 @@
 )* }}} *)
 
 open Std
+open Browse_node
+
 module Parser = Merlin_parser
 
 (* All exceptions are added to an [exn list ref] referred to as "caught" in the
@@ -148,7 +150,7 @@ let append catch loc step item =
             (fun () -> Typemod.type_structure step.env str loc)
         in
         let browse =
-          BrowseT.of_node ~loc ~env:step.env (BrowseT.Structure str')
+          BrowseT.of_node ~loc ~env:step.env (Structure str')
         in
         (last_env browse).BrowseT.t_env,
         (`Str (str, `Ok str'), !Typecore.delayed_checks) :: step.contents

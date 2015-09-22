@@ -190,7 +190,7 @@ let dispatch_query ~verbosity buffer =
     to_string ()
 
   | (Type_enclosing (expro, pos) : a request) ->
-    let open BrowseT in
+    let open Browse_node in
     let open Typedtree in
     let open Override in
     with_typer buffer @@ fun typer ->
@@ -199,7 +199,7 @@ let dispatch_query ~verbosity buffer =
     let path = Browse.enclosing pos structures in
     let path = Browse.annotate_tail_calls_from_leaf path in
     let aux (t,tail) =
-      let { t_loc ; t_env ; t_node ; _ } = t in
+      let {BrowseT. t_loc ; t_env ; t_node ; _ } = t in
       match t_node with
       | Expression {exp_type = t}
       | Pattern {pat_type = t}
@@ -286,16 +286,16 @@ let dispatch_query ~verbosity buffer =
       let node, _ = Browse.node_at typer pos in
       let env = node.BrowseT.t_env in
       let include_lident = match node.BrowseT.t_node with
-        | BrowseT.Pattern _ -> false
+        | Pattern _ -> false
         | _ -> true
       in
       let include_uident = match node.BrowseT.t_node with
-        | BrowseT.Module_binding _
-        | BrowseT.Module_binding_name _
-        | BrowseT.Module_declaration _
-        | BrowseT.Module_declaration_name _
-        | BrowseT.Module_type_declaration _
-        | BrowseT.Module_type_declaration_name _
+        | Module_binding _
+        | Module_binding_name _
+        | Module_declaration _
+        | Module_declaration_name _
+        | Module_type_declaration _
+        | Module_type_declaration_name _
           -> false
         | _ -> true
       in
@@ -502,8 +502,8 @@ let dispatch_query ~verbosity buffer =
       match
         List.drop_while enclosings ~f:(fun t ->
           match t.BrowseT.t_node with
-          | BrowseT.Structure_item _
-          | BrowseT.Signature_item _ -> false
+          | Browse_node.Structure_item _
+          | Browse_node.Signature_item _ -> false
           | _ -> true
         )
       with
@@ -723,13 +723,13 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let str = Typer.contents typer in
     let str = Browse.of_typer_contents str in
-    let node = match Browse.enclosing pos str with
-      | node :: _ -> node
+    let tnode = match Browse.enclosing pos str with
+      | tnode :: _ -> tnode
       | [] -> BrowseT.dummy
     in
     let get_loc {Location.txt = _; loc} = loc in
     let ident_occurrence () =
-      let paths = BrowseT.node_paths node.BrowseT.t_node in
+      let paths = Browse_node.node_paths tnode.BrowseT.t_node in
       let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
       Logger.infojf (Logger.section "occurences") ~title:"Occurrences paths"
         (fun paths ->
@@ -755,11 +755,11 @@ let dispatch_query ~verbosity buffer =
 
     and constructor_occurrence d =
       let ts = List.concat_map str
-          ~f:(Browse.all_constructor_occurrences (node,d)) in
+          ~f:(Browse.all_constructor_occurrences (tnode,d)) in
       List.map ~f:get_loc ts
 
     in
-    let locs = match BrowseT.is_constructor node with
+    let locs = match Browse_node.node_is_constructor tnode.BrowseT.t_node with
       | Some d -> constructor_occurrence d.Location.txt
       | None -> ident_occurrence ()
     in

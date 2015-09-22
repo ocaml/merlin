@@ -31,6 +31,7 @@ open Std
 open Merlin_lib
 
 open BrowseT
+open Browse_node
 
 (* List methods of an object.
    Code taken from [uTop](https://github.com/diml/utop

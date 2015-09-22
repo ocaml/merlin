@@ -97,8 +97,10 @@ SOURCES = \
 	$(TYPER)/typing/printtyped.ml     \
 	$(TYPER)/tools/untypeast.mli      \
 	$(TYPER)/tools/untypeast.ml       \
-	$(TYPER)/browseT.mli              \
-	$(TYPER)/browseT.ml               \
+	$(TYPER)/browse_node.mli          \
+	$(TYPER)/browse_node.ml           \
+	src/analysis/browseT.mli          \
+	src/analysis/browseT.ml           \
 	$(TYPER)/tail_analysis.mli        \
 	$(TYPER)/tail_analysis.ml         \
 	src/ocaml_aux/parsing_aux.mli     \
