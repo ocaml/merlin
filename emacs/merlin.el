@@ -538,6 +538,7 @@ Try to find a satisfying default directory."
   (when merlin-mode
     (when (merlin-process-buffer) (ignore-errors (merlin-kill-process)))
     (setq merlin-erroneous-buffer nil)
+    (setq merlin--dirty-point 0)
     (merlin-setup)
     (message "Restarted merlin %S" merlin-instance)))
 
