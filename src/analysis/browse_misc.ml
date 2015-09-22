@@ -72,10 +72,12 @@ let signature_of_env ?(ignore_extensions=true) env =
 
 let rec dump_ts ts =
   let dump_t { t_loc ; t_node ; t_children = lazy children } =
-    IO.with_location t_loc
-    [
+    `Assoc [
+      "start", Lexing.json_of_position t_loc.Location.loc_start;
+      "end",   Lexing.json_of_position t_loc.Location.loc_end;
+      "ghost", `Bool t_loc.Location.loc_ghost;
       "kind", `String (string_of_node t_node);
-      "children", dump_ts children
+      "children", dump_ts children;
     ]
   in
   let cmp_start { t_loc = l1 } { t_loc = l2 } =
