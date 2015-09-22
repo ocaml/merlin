@@ -26,25 +26,28 @@
 
 )* }}} *)
 
-(** [BrowseT] offers a uniform interface to traverse constructions from
+(** [Browse_node] offers a uniform interface to traverse constructions from
   * [TypedTree].
   *
   * Mutually recursive types from [TypedTree] are wrapped into different
-  * constructors of the type [node].
-  * Then type [t] allows to build a tree of [node]s.
+  * constructors of the type [t].
+  * Then the [fold] function traverses one-level of sub-nodes.
   *
-  * Finally the function [of_node] turns a [node] into a [t] tree, which
-  * structure mimics the recursive structure of the [TypedTree] node.
+  * In the meantime, the most specific environment and location are threaded
+  * (FIXME: should these two be managed separately?).
   *
-  * [t] also tries to capture the location and environment of node and defaults
-  * to [default_loc] and [default_env] otherwise.
+  * Finally [BrowseT] module a node into a tree which structure mimics
+  * the recursive structure of the [TypedTree] node.
   *
   *)
 
+(* Compatibility with previous versions of OCaml *)
+type constructor_declaration = Typedtree.constructor_declaration
 
 open Typedtree
+open Override
 
-type node =
+type t =
   | Dummy
   | Pattern                  of pattern
   | Expression               of expression
@@ -68,8 +71,8 @@ type node =
   | Core_type                of core_type
   | Package_type             of package_type
   | Row_field                of row_field
-  | Value_description        of Override.value_description
-  | Type_declaration         of Override.type_declaration
+  | Value_description        of value_description
+  | Type_declaration         of type_declaration
   | Type_kind                of type_kind
   | Type_extension           of type_extension
   | Extension_constructor    of extension_constructor
@@ -87,37 +90,14 @@ type node =
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
 
-
-type t = {
-  t_node     : node;
-  t_loc      : Location.t;
-  t_env      : Env.t;
-  t_children : t list lazy_t;
-}
-
-val default_loc : Location.t
-val default_env : Env.t
-
-(** Dummy value, used as fallback when there is nothing to analyze (e.g
-   incorrect input) *)
-val dummy : t
-
-(** [of_node ?loc ?env node] produces a tree from [node], using [loc] and [env]
-  * as default annotation when nothing can be inferred from the [node].
-  * [loc] and [env] default to [default_loc] and [default_env].
-  *)
-val of_node : ?loc:Location.t -> ?env:Env.t -> node -> t
-
-(** [annot loc env t] replace [default_loc] and [default_env] in [t] by [loc]
-  * and [env]. *)
-val annot : Location.t -> Env.t -> t -> t
+val fold_node : (Env.t -> Location.t -> t -> 'a -> 'a) -> Env.t -> Location.t -> t -> 'a -> 'a
 
 (** Accessors for information specific to a node *)
 
-val string_of_node : node -> string
+val string_of_node : t -> string
 
-val node_paths : node -> Path.t Location.loc list
+val node_paths : t -> Path.t Location.loc list
 
-val is_constructor : t ->
+val node_is_constructor : t ->
   [ `Description of Types.constructor_description
-  | `Declaration of constructor_declaration ] Location.loc option
+  | `Declaration of Typedtree.constructor_declaration ] Location.loc option
