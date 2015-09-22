@@ -611,8 +611,8 @@ let inspect_context browse path pos =
     ) pos ;
     Some Unknown
   | node :: _ ->
-    let open BrowseT in
-    match node.t_node with
+    let open Browse_node in
+    match node.BrowseT.t_node with
     | Pattern p ->
       Logger.debugf section (fun fmt p ->
         Format.pp_print_string fmt "current node is: " ;
@@ -623,8 +623,8 @@ let inspect_context browse path pos =
     | Type_declaration _
     | Extension_constructor _
     | Module_binding_name _
-    | Module_declaration_name _ ->
-      debug_log "current node is : %s" @@ BrowseT.string_of_node node.t_node ;
+    | Module_declaration_name _ as node ->
+      debug_log "current node is : %s" @@ string_of_node node;
       None
     | Core_type _ -> Some Type
     | Expression _ -> Some Expr

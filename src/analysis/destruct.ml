@@ -28,6 +28,7 @@
 
 open Std
 open BrowseT
+open Browse_node
 
 let section = Logger.Section.of_string "destruct"
 
@@ -340,4 +341,4 @@ let node ~loc parents node =
       end
     end
   | node ->
-    raise (Not_allowed (BrowseT.string_of_node node))
+    raise (Not_allowed (string_of_node node))

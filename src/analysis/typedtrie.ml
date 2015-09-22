@@ -28,6 +28,7 @@
 
 open Std
 open BrowseT
+open Browse_node
 
 open Cmt_cache
 module Trie = struct
@@ -244,7 +245,7 @@ let rec build ?(local_buffer=false) ~trie browses =
       Trie.add_multiple (Path.last te.tyext_path) (t.t_loc, `Type, Leaf) trie
     | ignored_node ->
       Logger.debugf section (fun fmt node ->
-        Format.fprintf fmt "IGNORED: %s" @@ BrowseT.string_of_node node
+        Format.fprintf fmt "IGNORED: %s" @@ string_of_node node
       ) ignored_node ;
       trie
   )

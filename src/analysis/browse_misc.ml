@@ -76,7 +76,7 @@ let rec dump_ts ts =
       "start", Lexing.json_of_position t_loc.Location.loc_start;
       "end",   Lexing.json_of_position t_loc.Location.loc_end;
       "ghost", `Bool t_loc.Location.loc_ghost;
-      "kind", `String (string_of_node t_node);
+      "kind", `String (Browse_node.string_of_node t_node);
       "children", dump_ts children;
     ]
   in

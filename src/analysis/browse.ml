@@ -28,6 +28,7 @@
 open Std
 open Typedtree
 open BrowseT
+open Browse_node
 
 let local_near pos nodes =
   let cmp = Parsing_aux.compare_pos pos in
@@ -132,19 +133,19 @@ let rec fix_loc env t =
     {t with t_env; t_children = lazy (List.map (fix_loc t_env) (Lazy.force t_children))}
 
 let of_structure str =
-  fix_loc str.str_final_env (BrowseT.of_node (BrowseT.Structure str))
+  fix_loc str.str_final_env (BrowseT.of_node (Structure str))
 
 let of_signature sg =
-  fix_loc sg.sig_final_env (BrowseT.of_node (BrowseT.Signature sg))
+  fix_loc sg.sig_final_env (BrowseT.of_node (Signature sg))
 
 let of_typer_contents contents =
   let of_content (content,_) = match content with
-    | `Str (_, `Ok str) -> of_structure str
-    | `Sg (_, `Ok sg) -> of_signature sg
+    | `Str (_, `Ok str) -> Some (of_structure str)
+    | `Sg (_, `Ok sg) -> Some (of_signature sg)
     | `Str (_, `Fail (env, loc)) | `Sg (_, `Fail (env, loc)) ->
-      BrowseT.of_node ~loc ~env BrowseT.Dummy
+      None
   in
-  List.map ~f:of_content contents
+  List.filter_map ~f:of_content contents
 
 let rec normalize_type_expr env = function
   | {Types.desc = Types.Tconstr (path,_,_)} ->
@@ -181,7 +182,7 @@ let same_constructor env a b =
 let all_constructor_occurrences ({t_env = env},d) t =
   let rec aux acc t =
     let acc =
-      match is_constructor t with
+      match node_is_constructor t.t_node with
       | Some d' when same_constructor env d d'.Location.txt ->
         {d' with Location.txt = t} :: acc
       | _ -> acc
@@ -190,7 +191,7 @@ let all_constructor_occurrences ({t_env = env},d) t =
   in
   aux [] t
 
-let annotate_tail_calls ts : (t * Protocol.is_tail_position) list =
+let annotate_tail_calls ts : (BrowseT.t * Protocol.is_tail_position) list =
   let open BrowseT in
   let is_one_of candidates t = List.mem t.t_node ~set:candidates in
   let find_entry_points candidates t =
@@ -237,7 +238,7 @@ and is_recovered_Texp_construct cstr =
   | _ -> false
 
 let is_recovered = function
-  | {BrowseT.t_node = BrowseT.Expression e } -> is_recovered_expression e
+  | {t_node = Expression e } -> is_recovered_expression e
   | _ -> false
 
 (** Heuristic to find suitable environment to complete / type at given position.

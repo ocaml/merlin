@@ -33,6 +33,7 @@ open Option.Infix
 open Typedtree
 open Typedtree.Override
 
+open Browse_node
 open BrowseT
 
 let id_of_patt = function
