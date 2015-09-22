@@ -27,7 +27,7 @@
 )* }}} *)
 
 open Std
-open BrowseT
+open Browse_node
 open Typedtree
 
 let tail_operator = function
