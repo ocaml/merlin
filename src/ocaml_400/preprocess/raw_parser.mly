@@ -69,7 +69,7 @@ let reloc_pat startpos endpos x = { x with ppat_loc = symbol_rloc startpos endpo
 let reloc_exp startpos endpos x = { x with pexp_loc = symbol_rloc startpos endpos  };;
 let reloc_exp_fake startpos endpos x =
   { x with pexp_loc =
-      Parsing_aux.pack_fake_location x.pexp_loc ~fake:(symbol_rloc startpos endpos) }
+      Location.pack_fake_location x.pexp_loc ~fake:(symbol_rloc startpos endpos) }
 
 let mkoperator startpos endpos name =
   let loc = symbol_rloc startpos endpos in

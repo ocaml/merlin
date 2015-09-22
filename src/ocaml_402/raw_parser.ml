@@ -534,8 +534,8 @@ let mkoption d =
 let reloc_pat startpos endpos x= { x with ppat_loc = rloc startpos endpos };;
 let reloc_exp startpos endpos x= { x with pexp_loc = rloc startpos endpos };;
 let reloc_exp_fake startpos endpos x =
-  { x with pexp_loc =
-      Parsing_aux.pack_fake_location x.pexp_loc ~fake:(rloc startpos endpos) }
+  let str = mkloc "merlin.loc" (rloc startpos endpos) in
+  { x with pexp_attributes = (str , PStr []) :: x.pexp_attributes }
 
 let mkoperator startpos endpos name =
   let loc = rloc startpos endpos in
@@ -6463,8 +6463,8 @@ module MenhirInterpreterTable = struct
             assert false in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_expr_ in
-        let _v : (Parsetree.expression) =     ( let expr = reloc_exp_fake _endpos__in_ _endpos expr in
-      let (flag,id,ext) = _3 in
+        let _v : (Parsetree.expression) =    ( let expr = reloc_exp_fake _endpos__in_ _endpos expr in
+     let (flag,id,ext) = _3 in
       mkexp_attrs _startpos _endpos (Pexp_open(flag, id, expr)) ext ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;

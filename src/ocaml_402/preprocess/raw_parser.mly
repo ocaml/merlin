@@ -33,8 +33,8 @@ let mkoption d =
 let reloc_pat startpos endpos x= { x with ppat_loc = rloc startpos endpos };;
 let reloc_exp startpos endpos x= { x with pexp_loc = rloc startpos endpos };;
 let reloc_exp_fake startpos endpos x =
-  { x with pexp_loc =
-      Parsing_aux.pack_fake_location x.pexp_loc ~fake:(rloc startpos endpos) }
+  let str = mkloc "merlin.loc" (rloc startpos endpos) in
+  { x with pexp_attributes = (str , PStr []) :: x.pexp_attributes }
 
 let mkoperator startpos endpos name =
   let loc = rloc startpos endpos in
@@ -1190,8 +1190,8 @@ expr:
       mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos($4) $endpos($4) $4, $5, expr)) $3 }
 | LET OPEN @{`Item "let open"}
   expr_open _in = IN @{`Shift 2} expr = seq_expr
-    { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
-      let (flag,id,ext) = $3 in
+   { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
+     let (flag,id,ext) = $3 in
       mkexp_attrs $startpos $endpos (Pexp_open(flag, id, expr)) ext }
 | FUNCTION @{`Item "function"}
   ext_attributes opt_bar match_cases
