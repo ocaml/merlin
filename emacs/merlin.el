@@ -1118,14 +1118,16 @@ prefix of `bar' is `'."
 (defun merlin/display-in-type-buffer (text)
   "Change content of type-buffer."
   (with-current-buffer (get-buffer-create merlin-type-buffer-name)
-     (when (member major-mode '(nil fundamental-mode))
-       ; Guess value for merlin-favourite-caml-mode
-       (let ((caml-mode (or merlin-favourite-caml-mode
-                            merlin-guessed-favorite-caml-mode)))
-         (when caml-mode (funcall caml-mode))))
-     (erase-buffer)
-     (insert text)
-     (goto-char (point-min))))
+    (when (member major-mode '(nil fundamental-mode))
+                                        ; Guess value for merlin-favourite-caml-mode
+      (let ((caml-mode (or merlin-favourite-caml-mode
+                           merlin-guessed-favorite-caml-mode)))
+        (when caml-mode
+          (with-demoted-errors "Error when setting up merlin type-buffer: %S"
+            (funcall caml-mode)))))
+    (erase-buffer)
+    (insert text)
+    (goto-char (point-min))))
 
 (defun merlin--type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
