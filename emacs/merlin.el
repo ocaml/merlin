@@ -139,6 +139,11 @@ If a string list, check only if the extension of the buffer-file-name is in the 
   "Only highlight first line of multi-line error messages"
   :group 'merlin :type 'boolean)
 
+(defcustom merlin-error-check-then-move t
+  "If t, merlin-error-next and merlin-error-prev first update the errors then move the cursor.
+If nil, they both update and move at the same time."
+  :group 'merlin :type 'boolean)
+
 (defcustom merlin-default-flags nil
   "The flags to give to ocamlmerlin."
   :group 'merlin :type '(repeat string))
@@ -877,24 +882,36 @@ the error message otherwise print a generic error message."
 (defun merlin-error-prev ()
   "Jump back to previous error."
   (interactive)
-  (merlin--error-check nil)
-  (let ((err (merlin--error-prev-cycle)))
-    (unless (or err merlin-erroneous-buffer) (message "No errors"))
-    (when err
-      (goto-char (car err))
-      (message "%s" (cdr (assoc 'message (cdr err))))
-      (merlin--highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
+  (let ((old-errors merlin-erroneous-buffer))
+    (merlin--error-check nil)
+    (let ((err (merlin--error-prev-cycle)))
+      (unless (or err merlin-erroneous-buffer) (message "No errors"))
+      (when err
+        (if (and merlin-error-check-then-move
+                 (not (equal old-errors merlin-erroneous-buffer)))
+            (message "(%d pending errors, use %s to jump)"
+                     (length merlin-erroneous-buffer)
+                     (substitute-command-keys "\\[merlin-error-prev]"))
+          (goto-char (car err))
+          (message "%s" (cdr (assoc 'message (cdr err))))
+          (merlin--highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))))
 
 (defun merlin-error-next ()
   "Jump to next error."
   (interactive)
-  (merlin--error-check nil)
-  (let ((err (merlin--error-next-cycle)))
-    (unless (or err merlin-erroneous-buffer) (message "No errors"))
-    (when err
-      (goto-char (car err))
-      (message "%s" (cdr (assoc 'message (cdr err))))
-      (merlin--highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))
+  (let ((old-errors merlin-erroneous-buffer))
+    (merlin--error-check nil)
+    (let ((err (merlin--error-next-cycle)))
+      (unless (or err merlin-erroneous-buffer) (message "No errors"))
+      (when err
+        (if (and merlin-error-check-then-move
+                 (not (equal old-errors merlin-erroneous-buffer)))
+            (message "(%d pending errors, use %s to jump)"
+                     (length merlin-erroneous-buffer)
+                     (substitute-command-keys "\\[merlin-error-next]"))
+          (goto-char (car err))
+          (message "%s" (cdr (assoc 'message (cdr err))))
+          (merlin--highlight (cdr (assoc 'bounds (cdr err))) 'next-error))))))
 
 (defun merlin--error-warning-p (msg)
   "Tell if the message MSG is a warning."
