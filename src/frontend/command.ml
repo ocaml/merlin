@@ -182,8 +182,8 @@ let dispatch_query ~verbosity buffer =
     let env = match pos with
       | None -> Typer.env typer
       | Some pos ->
-        let node, _ancestors = Browse.node_at typer pos in
-        node.BrowseT.t_env
+        let env, _, _ = Browse.node_at typer pos in
+        env
     in
     let ppf, to_string = Format.to_string () in
     ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
@@ -196,25 +196,26 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let structures = Typer.contents typer in
     let structures = Browse.of_typer_contents structures in
-    let path = Browse.enclosing pos structures in
-    let path = Browse.annotate_tail_calls_from_leaf path in
-    let aux (t,tail) =
-      let {BrowseT. t_loc ; t_env ; t_node ; _ } = t in
-      match t_node with
+    let env, path = match Browse.enclosing pos structures with
+      | None -> Typer.env typer, []
+      | Some (env,_,path) -> env, Browse.annotate_tail_calls_from_leaf path
+    in
+    let aux (node,tail) =
+      match node with
       | Expression {exp_type = t}
       | Pattern {pat_type = t}
       | Core_type {ctyp_type = t}
       | Value_description { val_desc = { ctyp_type = t } } ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env ~verbosity
-          (fun () -> Type_utils.print_type_with_decl ~verbosity t_env ppf t);
-        Some (t_loc, to_string (), tail)
+        Printtyp.wrap_printing_env env ~verbosity
+          (fun () -> Type_utils.print_type_with_decl ~verbosity env ppf t);
+        Some (Browse.fix_loc node, to_string (), tail)
 
       | Type_declaration { typ_id = id; typ_type = t} ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env ~verbosity
-          (fun () -> Printtyp.type_declaration t_env id ppf t);
-        Some (t_loc, to_string (), tail)
+        Printtyp.wrap_printing_env env ~verbosity
+          (fun () -> Printtyp.type_declaration env id ppf t);
+        Some (Browse.fix_loc node, to_string (), tail)
 
       | Module_expr {mod_type = m}
       | Module_type {mty_type = m}
@@ -225,9 +226,9 @@ let dispatch_query ~verbosity buffer =
       | Module_declaration_name {md_type = {mty_type = m}}
       | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
         let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env t_env ~verbosity
-          (fun () -> Printtyp.modtype t_env ppf m);
-        Some (t_loc, to_string (), tail)
+        Printtyp.wrap_printing_env env ~verbosity
+          (fun () -> Printtyp.modtype env ppf m);
+        Some (Browse.fix_loc node, to_string (), tail)
 
       | _ -> None
     in
@@ -283,13 +284,13 @@ let dispatch_query ~verbosity buffer =
         aux [] offset
     in
     let small_enclosings =
-      let node, _ = Browse.node_at typer pos in
-      let env = node.BrowseT.t_env in
-      let include_lident = match node.BrowseT.t_node with
+      let env, _, node = Browse.node_at typer pos in
+      let node = List.Non_empty.hd node in
+      let include_lident = match node with
         | Pattern _ -> false
         | _ -> true
       in
-      let include_uident = match node.BrowseT.t_node with
+      let include_uident = match node with
         | Module_binding _
         | Module_binding_name _
         | Module_declaration _
@@ -331,15 +332,17 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let structures = Typer.contents typer in
     let structures = Browse.of_typer_contents structures in
-    let path = Browse.enclosing pos structures in
-    List.map (fun t -> t.BrowseT.t_loc) path
+    let path = match Browse.enclosing pos structures with
+      | None -> []
+      | Some (_, _, path) -> List.Non_empty.to_list path
+    in
+    List.map Browse.fix_loc path
 
   | (Complete_prefix (prefix, pos, with_doc) : a request) ->
     let complete ~no_labels typer =
-      let node, ancestors = Browse.node_at ~skip_recovered:true typer pos in
+      let (env, loc, path) = Browse.node_at ~skip_recovered:true typer pos in
       let target_type, context =
-        Completion.application_context ~verbosity ~prefix node ancestors
-      in
+        Completion.application_context ~verbosity ~prefix path in
       let get_doc =
         if not with_doc then None else
         let project    = Buffer.project buffer in
@@ -347,12 +350,12 @@ let dispatch_query ~verbosity buffer =
         let source     = Buffer.unit_name buffer in
         let local_defs = Typer.contents typer in
         Some (
-          Track_definition.get_doc ~project ~env:node.BrowseT.t_env ~local_defs
+          Track_definition.get_doc ~project ~env ~local_defs
             ~comments ~pos source
         )
       in
-      let entries =
-        Completion.node_complete ?get_doc ?target_type buffer node prefix
+      let entries = Completion.node_complete ?get_doc ?target_type buffer
+                      env (List.Non_empty.hd path) prefix
       and context = match context with
         | `Application context when no_labels ->
           `Application {context with Protocol.Compl.labels = []}
@@ -408,10 +411,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Expand_prefix (prefix, pos) : a request) ->
     with_typer buffer @@ fun typer ->
-    let env =
-      let node, _ = Browse.node_at typer pos in
-      node.BrowseT.t_env
-    in
+    let env, _, _ = Browse.node_at typer pos in
     let global_modules = Buffer.global_modules buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
     { Compl. entries ; context = `Unknown }
@@ -419,10 +419,8 @@ let dispatch_query ~verbosity buffer =
   | (Document (patho, pos) : a request) ->
     with_typer buffer @@ fun typer ->
     let comments = Buffer.comments buffer in
-    let env, local_defs =
-      let node, _ = Browse.node_at typer pos in
-      node.BrowseT.t_env, Typer.contents typer
-    in
+    let env, _, _ = Browse.node_at typer pos in
+    let local_defs = Typer.contents typer in
     let path =
       match patho with
       | Some p -> p
@@ -445,10 +443,8 @@ let dispatch_query ~verbosity buffer =
 
   | (Locate (patho, ml_or_mli, pos) : a request) ->
     with_typer buffer @@ fun typer ->
-    let env, local_defs =
-      let node, _ = Browse.node_at typer pos in
-      node.BrowseT.t_env, Typer.contents typer
-    in
+    let env, _, _ = Browse.node_at typer pos in
+    let local_defs = Typer.contents typer in
     let path =
       match patho with
       | Some p -> p
@@ -481,42 +477,46 @@ let dispatch_query ~verbosity buffer =
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
     let structures = Typer.contents typer in
     let structures = Browse.of_typer_contents structures in
-    let enclosings = Browse.enclosing loc_start structures in
+    let enclosings = match Browse.enclosing loc_start structures with
+      | None -> []
+      | Some (_,_,path) -> List.Non_empty.to_list path
+    in
     begin match
         List.drop_while enclosings ~f:(fun t ->
-            Lexing.compare_pos t.BrowseT.t_loc.Location.loc_end loc_end < 0
+            Lexing.compare_pos (Browse.fix_loc t).Location.loc_end loc_end < 0
           )
       with
       | [] -> failwith "No node at given range"
-      | node :: parents -> Destruct.node ~loc parents node
+      | node :: parents -> Destruct.node ~loc node parents
     end
 
   | (Outline : a request) ->
     with_typer buffer @@ fun typer ->
     let typed_tree = Typer.contents typer in
-    Outline.get (Browse.of_typer_contents typed_tree)
+    assert false (*FIXME TODO*)
+  (*Outline.get (Browse.of_typer_contents typed_tree)*)
 
   | (Boundary (dir,pos) : a request) ->
     let get_enclosing_str_item pos browses =
-      let enclosings = Browse.enclosing pos browses in
-      match
-        List.drop_while enclosings ~f:(fun t ->
-          match t.BrowseT.t_node with
-          | Browse_node.Structure_item _
-          | Browse_node.Signature_item _ -> false
-          | _ -> true
-        )
-      with
+      match Browse.enclosing pos browses with
+      | None -> None
+      | Some (_,_,path) ->
+          match List.drop_while (List.Non_empty.to_list path) ~f:(function
+            | Browse_node.Structure_item _
+            | Browse_node.Signature_item _ -> false
+            | _ -> true
+          ) with
       | [] -> None
       | item :: _ -> Some item
     in
     with_typer buffer @@ fun typer ->
     let browses  = Browse.of_typer_contents (Typer.contents typer) in
     Option.bind (get_enclosing_str_item pos browses) ~f:(fun item ->
-        match dir with
-        | `Current -> Some item.BrowseT.t_loc
+      None
+        (*match dir with
+        | `Current -> Some (Browse.fix_loc item)
         | `Prev ->
-          let pos = item.BrowseT.t_loc.Location.loc_start in
+          let pos = (Browse.fix_loc item).t_loc.Location.loc_start in
           let pos = Lexing.({ pos with pos_cnum = pos.pos_cnum - 1 }) in
           let item= get_enclosing_str_item pos browses in
           Option.map item ~f:(fun i -> i.BrowseT.t_loc)
@@ -524,7 +524,7 @@ let dispatch_query ~verbosity buffer =
           let pos = item.BrowseT.t_loc.Location.loc_end in
           let pos = Lexing.({ pos with pos_cnum = pos.pos_cnum + 1 }) in
           let item= get_enclosing_str_item pos browses in
-          Option.map item ~f:(fun i -> i.BrowseT.t_loc)
+          Option.map item ~f:(fun i -> i.BrowseT.t_loc)*)
       )
 
   | (Errors : a request) ->
@@ -606,8 +606,8 @@ let dispatch_query ~verbosity buffer =
     let env = match pos with
       | None -> Typer.env typer
       | Some pos ->
-        let node, _ = Browse.node_at typer pos in
-        node.BrowseT.t_env
+        let env, _, _ = Browse.node_at typer pos in
+        env
     in
     let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
     let aux item =
@@ -628,7 +628,7 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let structures = Typer.contents typer in
     let structures = Browse.of_typer_contents structures in
-    Browse_misc.dump_ts structures
+    Browse_misc.dump_ts (List.map ~f:(fun (_,_,p) -> BrowseT.of_node (List.Non_empty.hd p)) structures)
 
   | (Dump `Tokens : a request) ->
     let tokens = Buffer.lexer buffer in
@@ -723,10 +723,12 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let str = Typer.contents typer in
     let str = Browse.of_typer_contents str in
+    let to_t (env,loc,path) = BrowseT.of_node ~env ~loc (List.Non_empty.hd path) in
     let tnode = match Browse.enclosing pos str with
-      | tnode :: _ -> tnode
-      | [] -> BrowseT.dummy
+      | Some t -> to_t t
+      | None -> BrowseT.dummy
     in
+    let str = List.map ~f:to_t str in
     let get_loc {Location.txt = _; loc} = loc in
     let ident_occurrence () =
       let paths = Browse_node.node_paths tnode.BrowseT.t_node in

@@ -75,7 +75,7 @@ type t =
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
 
-let update_env env0 loc0 = function
+let node_update_env env0 loc0 = function
   | Pattern        {pat_loc = loc; pat_env = env}
   | Expression     {exp_loc = loc; exp_env = env}
   | Method_call    ({exp_loc = loc; exp_env = env}, _)
@@ -115,7 +115,7 @@ let update_env env0 loc0 = function
     -> env0, loc0
 
 let app node env0 loc0 f acc =
-  let env, loc = update_env env0 loc0 node in
+  let env, loc = node_update_env env0 loc0 node in
   f env loc node acc
 
 type 'a f0 = Env.t -> Location.t -> t -> 'a -> 'a

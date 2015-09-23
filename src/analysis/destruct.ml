@@ -175,7 +175,7 @@ and from_type_decl env path texpr =
 let rec needs_parentheses = function
   | [] -> false
   | t :: ts ->
-    match t.t_node with
+    match t with
     | Structure _
     | Structure_item _
     | Value_binding _ -> false
@@ -198,7 +198,7 @@ let rec needs_parentheses = function
 let rec get_every_pattern = function
   | [] -> assert false
   | parent :: parents ->
-    match parent.t_node with
+    match parent with
     | Case _
     | Pattern _ ->
       (* We are still in the same branch, going up. *)
@@ -206,28 +206,27 @@ let rec get_every_pattern = function
     | Expression e ->
       (* We are on the right node *)
       let patterns =
-        List.concat_map (Lazy.force parent.t_children) ~f:(fun c ->
-          match c.t_node with
+        Browse_node.fold_node (fun env loc node acc ->
+          match node with
           | Pattern _ -> (* Not expected here *) assert false
           | Case _ ->
-            List.filter_map (Lazy.force c.t_children) ~f:(fun patt ->
-              match patt.t_node with
-              | Pattern p -> Some p
-              | _ -> None
-            )
-          | _ -> []
-        )
+              Browse_node.fold_node (fun _env _loc node acc ->
+                match node with
+              | Pattern p -> p :: acc
+              | _ -> acc
+              ) env loc node acc
+          | _ -> acc
+        ) BrowseT.default_env BrowseT.default_loc parent []
       in
       let loc =
-        let open Location in
-        let init = none in
-        List.fold_left (Lazy.force parent.t_children) ~init ~f:(fun l t ->
-          if Lexing.compare_pos t.t_loc.loc_end l.loc_end > 0 then t.t_loc else l
-        )
+        Browse_node.fold_node (fun env loc node acc ->
+          let open Location in
+          if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
+        ) BrowseT.default_env (Browse.fix_loc parent) parent Location.none
       in
       loc, patterns
     | _ ->
-      let j = Browse_misc.dump_ts [ parent ] in
+      let j = Browse_misc.dump_ts [ BrowseT.of_node parent ] in
       let s = Json.to_string j in
       invalid_arg (sprintf "get_every_pattern: %s" s)(* Something went wrong. *)
 
@@ -243,8 +242,8 @@ let is_package ty =
   | Types.Tpackage _ -> true
   | _ -> false
 
-let node ~loc parents node =
-  match node.t_node with
+let node ~loc node parents =
+  match node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
     let pexp = Untypeast.untype_expression expr in
