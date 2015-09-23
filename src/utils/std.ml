@@ -252,6 +252,10 @@ module List = struct
     let rec map ~f = function
       | One x -> One (f x)
       | More (x,tl) -> More (f x, map ~f tl)
+
+    let rec to_list = function
+      | One x -> [x]
+      | More (x, xs) -> x :: to_list xs
   end
 
   let rec last = function

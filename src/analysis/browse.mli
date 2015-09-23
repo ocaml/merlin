@@ -26,7 +26,9 @@
 
 )* }}} *)
 
-open BrowseT
+open Std
+
+type t = Env.t * Location.t * Browse_node.t List.Non_empty.t
 (* Navigate through tree *)
 
 (** The deepest context inside or before the node, for instance, navigating
@@ -34,7 +36,7 @@ open BrowseT
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail".
  * Returns the matching node and all its ancestors or the empty list. *)
-val deepest_before : Lexing.position -> t list -> t list
+val deepest_before : Lexing.position -> t list -> t option
 
 (** Heuristic to find suitable environment to complete / type at given position.
  *  1. Try to find environment near given cursor.
@@ -51,7 +53,7 @@ val deepest_before : Lexing.position -> t list -> t list
  *      inside x definition.
  *)
 val node_at : ?skip_recovered:bool -> Merlin_lib.Typer.t -> Lexing.position ->
-  BrowseT.t * BrowseT.t list
+  t
 
 (** The nearest context inside or before the node, though stopping after
  * leaving enclosing subtree. For instance, navigating
@@ -61,33 +63,33 @@ val node_at : ?skip_recovered:bool -> Merlin_lib.Typer.t -> Lexing.position ->
  * application, since none of the arguments or the function expression will
  * get us closer to cursor.
  * Returns the matching node and all its ancestors or the empty list. *)
-val nearest_before : Lexing.position -> t list -> t list
+val nearest_before : Lexing.position -> t list -> t option
+val enclosing : Lexing.position -> t list -> t option
 
-(** Return the path of nodes enclosing expression at cursor.
- * For instance, navigating through:
- *    f (g x<cursor>))
- * will return the contexts of "x", "g x" then "f (g x)". *)
-val enclosing : Lexing.position -> t list -> t list
-
-val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
+val all_occurrences : Path.t -> BrowseT.t -> (BrowseT.t * Path.t Location.loc list) list
 
 val of_structure : Typedtree.structure -> t
 val of_signature : Typedtree.signature -> t
 val of_typer_contents : (Merlin_typer.content * _) list -> t list
 
 val all_constructor_occurrences :
-  t * [ `Description of Types.constructor_description
+  BrowseT.t * [ `Description of Types.constructor_description
       | `Declaration of Typedtree.constructor_declaration ]
-  -> t -> t Location.loc list
+  -> BrowseT.t -> BrowseT.t Location.loc list
 
 (** From a chain of nodes, going from the root to the leaf, returns a list in
  *  the same ordering about what is known about tail positions *)
-val annotate_tail_calls : t list -> (t * Protocol.is_tail_position) list
+val annotate_tail_calls
+  :  Browse_node.t list
+  -> (Browse_node.t * Protocol.is_tail_position) list
 
 (** Same function, but operating from leaves to root *)
 val annotate_tail_calls_from_leaf
-  : t list -> (t * Protocol.is_tail_position) list
+  :  Browse_node.t List.non_empty
+  -> (Browse_node.t * Protocol.is_tail_position) list
 
 (** Identify nodes introduced by recovery *)
 val is_recovered_expression : Typedtree.expression -> bool
-val is_recovered : BrowseT.t -> bool
+val is_recovered : Browse_node.t -> bool
+
+val fix_loc : Browse_node.t -> Location.t

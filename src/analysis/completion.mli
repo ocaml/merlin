@@ -27,13 +27,14 @@
 )* }}} *)
 
 (* TODO: document all the following functions *)
+open Std
 
 val node_complete
   : Merlin_lib.Buffer.t
   -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
                -> [> `Found of string ])
   -> ?target_type:Types.type_expr
-  -> BrowseT.t
+  -> Env.t -> Browse_node.t
   -> string
   -> Protocol.Compl.entry list
 
@@ -42,7 +43,6 @@ val expand_prefix : global_modules:string list -> Env.t -> string
 
 val application_context : verbosity:int
   -> prefix:Asttypes.label
-  -> BrowseT.t
-  -> BrowseT.t list
+  -> Browse_node.t List.non_empty
   -> Types.type_expr option *
      [> `Application of Protocol.Compl.application_context | `Unknown ]

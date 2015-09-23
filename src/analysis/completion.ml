@@ -408,7 +408,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
       && valid tag name
     in
     if not is_label then
-      let kind = classify_node node.t_node in
+      let kind = classify_node node in
       let order = completion_order kind in
       let add_completions acc kind =
         get_candidates ?get_doc ?target_type prefix path kind ~validate env @ acc
@@ -446,10 +446,9 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
   with Not_found -> []
 
 (* Propose completion from a particular node *)
-let node_complete buffer ?get_doc ?target_type node prefix =
-  let env = node.t_env in
+let node_complete buffer ?get_doc ?target_type env node prefix =
   Printtyp.wrap_printing_env env @@ fun () ->
-  match node.t_node with
+  match node with
   | Method_call (obj,_) -> complete_methods ~env ~prefix obj
   | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; _ }
   | Expression { Typedtree.exp_desc = Typedtree.Texp_record (_, _) ; _ } ->
@@ -539,20 +538,21 @@ let labels_of_application ?(prefix="") node =
   | Texp_apply (f, args) -> labels_of_application ~prefix ~env:node.exp_env f args
   | _ -> []
 
-let application_context ~verbosity ~prefix node ancestors =
+let application_context ~verbosity ~prefix path =
   let module Printtyp = Type_utils.Printtyp in
   let target_type = ref (
-    match node with
-    | { t_node = Expression { exp_type = ty } }
-    | { t_node = Pattern { pat_type = ty } } -> Some ty
+    match List.Non_empty.hd path with
+    | Expression { exp_type = ty }
+    | Pattern { pat_type = ty } -> Some ty
     | _ -> None
   )
   in
-  let context =
-    match node, ancestors with
-    | { t_node = Expression earg },
-      { t_node = Expression ({ exp_desc = Texp_apply (efun, _);
-                               exp_type = app_type; exp_env } as app) } :: _
+  let context = match path with
+    | List.More (Expression earg, (
+        List.More ( Expression ({ exp_desc = Texp_apply (efun, _);
+                                  exp_type = app_type; exp_env } as app), _)
+        | List.One (Expression ({ exp_desc = Texp_apply (efun, _);
+                                      exp_type = app_type; exp_env } as app))))
       when earg != efun ->
       Printtyp.wrap_printing_env exp_env ~verbosity @@ fun () ->
       (* Type variables shared accross arguments should all be

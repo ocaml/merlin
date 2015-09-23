@@ -127,30 +127,21 @@ let fresh_env () =
 
 
 module Rewrite_loc = struct
-  let concat l1 l2 =
-    if l1 = none then l2
-    else if l2 = none then l1
-    else
-      {loc_start = Lexing.min_pos l1.loc_start l2.loc_start;
-       loc_end   = Lexing.max_pos l1.loc_end l2.loc_end;
-       loc_ghost = l1.loc_ghost && l2.loc_ghost;
-      }
-
   let queue = ref []
 
   let update l =
     if l <> none then
       match !queue with
       | [] -> assert false
-      | l' :: ls -> queue := concat l l' :: ls
+      | l' :: ls -> queue := Parsing_aux.location_union l l' :: ls
 
   let enter () = queue := Location.none :: !queue
   let leave l0 = match !queue with
     | [] -> assert false
-    | [l] -> queue := []; concat l0 l
+    | [l] -> queue := []; Parsing_aux.location_extend l0 l
     | l :: l' :: ls ->
-      let l = concat l0 l in
-      queue := concat l l' :: ls;
+      let l = Parsing_aux.location_extend l0 l in
+      queue := Parsing_aux.location_union l l' :: ls;
       l
 
   let start () = assert (!queue = []); enter ()

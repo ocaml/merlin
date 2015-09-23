@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Std
+
 (** Destruct at the moment works in two contexts:
 
       - an expression context:
@@ -68,6 +70,6 @@
 
 *)
 
-val node : loc:Location.t -> BrowseT.t list -> BrowseT.t -> Location.t * string
+val node : loc:Location.t -> Browse_node.t -> Browse_node.t list -> Location.t * string
 (** [node ~loc ~env parents current_node] returns a location indicating which
     portion of the buffer must be replaced and the string to replace it with. *)

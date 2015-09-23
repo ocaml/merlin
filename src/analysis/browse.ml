@@ -30,71 +30,88 @@ open Typedtree
 open BrowseT
 open Browse_node
 
-let local_near pos nodes =
-  let cmp = Parsing_aux.compare_pos pos in
-  let best_of ({ t_loc = l1 } as t1) ({ t_loc = l2 } as t2) =
-    match cmp l1, cmp l2 with
-    | 0, 0 ->
-      (* Cursor is inside locations: non ghost and select largest one... not
-         sure why :-) *)
-      let g1 = l1.Location.loc_ghost and g2 = l2.Location.loc_ghost in
-      if (g1 = g2 && Location.(Lexing.compare_pos l1.loc_end l2.loc_end) < 0)
-         || not g2
-      then t2
-      else t1
-      (* Cursor inside one location, prefer it *)
-    | 0, _ -> t1
-    | _, 0 -> t2
-    | _, _ ->
-      (* Cursor outside locations, select the rightmost one *)
-      if Location.(Lexing.compare_pos l1.loc_end l2.loc_end) < 0
-      then t2
-      else t1
-  in
-  List.fold_left nodes ~init:None ~f:(fun best t ->
-    match cmp t.t_loc, best with
-    | n, _ when n < 0 -> best
-    | _, None -> Some t
-    | _, Some t' -> Some (best_of t t')
-  )
+type t = Env.t * Location.t * Browse_node.t List.Non_empty.t
 
-let is_enclosing pos { t_loc } =
-  (Parsing_aux.compare_pos pos t_loc = 0)
-
-let traverse_branch pos tree =
-  let rec traverse { t_children = lazy children } acc =
-    match local_near pos children with
-    | Some t' -> traverse t' (t' :: acc)
-    | None -> acc
-  in
-  traverse tree [tree]
-
-let deepest_before pos envs =
-  match local_near pos envs with
-  | None -> []
-  | Some t -> traverse_branch pos t
-
-let nearest_before pos envs =
-  match local_near pos envs with
-  | None -> []
-  | Some t ->
-    let branch = traverse_branch pos t in
-    let rec aux l = match l with
-      | a :: b :: _ when is_enclosing pos b -> l
-      (* No node matched: fallback to deepest before behavior *)
-      | [_] -> branch
-      | [] -> []
-      | _ :: tail -> aux tail
+let select_leafs pos env loc node =
+  let rec aux acc env loc path =
+    let select env loc node' acc =
+      if Parsing_aux.compare_pos pos loc = 0
+      then aux acc env loc (List.More (node', path))
+      else acc
     in
-    aux branch
+    let acc' = Browse_node.fold_node select env loc (List.Non_empty.hd path) acc in
+    if acc == acc'
+    then (env, loc, path) :: acc
+    else acc'
+  in
+  aux [] env loc node
 
-let enclosing pos envs =
-  let not_enclosing l = not (is_enclosing pos l) in
-  match local_near pos envs with
-  | None -> []
-  | Some t ->
-    let results = traverse_branch pos t in
-    List.drop_while ~f:not_enclosing results
+let t2_first = 1
+let t1_first = -1
+
+let compare_locations pos l1 l2 =
+  match
+    Parsing_aux.compare_pos pos l1,
+    Parsing_aux.compare_pos pos l2
+  with
+  | 0, 0 ->
+    (* Cursor inside both locations: favor non ghost and closer to the end *)
+    let g1 = l1.Location.loc_ghost and g2 = l2.Location.loc_ghost in
+    if g1 && not g2 then
+      t2_first
+    else if g2 && not g1 then
+      t1_first
+    else
+      Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
+  (* Cursor inside one location: it has priority *)
+  | 0, _ -> t1_first
+  | _, 0 -> t2_first
+  (* Cursor outside locations: favor after *)
+  | n, m when n > 0 && m < 0 -> t1_first
+  | n, m when m > 0 && n < 0 -> t2_first
+  (* Cursor is after both, select the closest one *)
+  | _, _ ->
+      Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end
+
+let best_node pos = function
+  | [] -> None
+  | init :: xs ->
+    let prj (_env,loc,_node) = loc in
+    let f acc x =
+      if compare_locations pos (prj acc) (prj x) <= 0
+      then acc
+      else x
+    in
+    Some (List.fold_left ~f ~init xs)
+
+let deepest_before pos roots =
+  Option.map (best_node pos roots) ~f:(fun (env,loc,path) ->
+      let rec aux env0 loc0 path =
+        let candidate = Browse_node.fold_node
+            (fun env loc node acc ->
+               match acc with
+               | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
+               | Some _ | None -> Some (env,loc,node)
+            )
+            env0 loc0 (List.Non_empty.hd path) None
+        in
+        match candidate with
+        | None -> (env0,loc0,path)
+        | Some (env,loc,node) ->
+          aux env loc (List.More (node,path))
+      in
+      aux env loc path
+    )
+
+let nearest_before pos roots =
+  Option.bind (best_node pos roots) ~f:(fun (env,loc,node) ->
+      best_node pos (select_leafs pos env loc node)
+    )
+
+let enclosing pos roots =
+  Option.bind (best_node pos roots) ~f:(fun (env,loc,node) ->
+      best_node pos (select_leafs pos env loc node)
+    )
 
 let all_occurrences path =
   let rec aux acc t =
@@ -109,34 +126,28 @@ let all_occurrences path =
   in
   aux []
 
-let rec fix_loc env t =
-  let t_children = t.t_children in
-  let t_env =
-    if t.t_env == BrowseT.default_env
-    then env
-    else t.t_env
+let fix_loc node =
+  let _, loc = Browse_node.node_update_env
+    BrowseT.default_env Location.none node in
+  if loc != Location.none then loc else
+    let rec aux env loc node acc =
+      if loc != Location.none then
+        Parsing_aux.location_union loc acc
+  else Browse_node.fold_node aux env loc node acc
   in
-  if t.t_loc == BrowseT.default_loc then
-    let t_children = List.map (fix_loc t_env) (Lazy.force t_children) in
-    {t with
-     t_env;
-     t_loc = List.fold_left ~init:BrowseT.default_loc t_children
-         ~f:(fun l t ->
-             if t.t_loc == BrowseT.default_loc then
-               l
-             else if l == BrowseT.default_loc then
-               t.t_loc
-             else
-               Parsing_aux.location_union t.t_loc l);
-     t_children = lazy t_children}
-  else
-    {t with t_env; t_children = lazy (List.map (fix_loc t_env) (Lazy.force t_children))}
+  aux BrowseT.default_env Location.none node Location.none
 
 let of_structure str =
-  fix_loc str.str_final_env (BrowseT.of_node (Structure str))
+  let env  = str.str_final_env in
+  let node = Browse_node.Structure str in
+  let loc  = fix_loc node in
+  (env, loc, List.One node)
 
 let of_signature sg =
-  fix_loc sg.sig_final_env (BrowseT.of_node (Signature sg))
+  let env  = sg.sig_final_env in
+  let node = Browse_node.Signature sg in
+  let loc  = fix_loc node in
+  (env, loc, List.One node)
 
 let of_typer_contents contents =
   let of_content (content,_) = match content with
@@ -191,31 +202,31 @@ let all_constructor_occurrences ({t_env = env},d) t =
   in
   aux [] t
 
-let annotate_tail_calls ts : (BrowseT.t * Protocol.is_tail_position) list =
-  let open BrowseT in
-  let is_one_of candidates t = List.mem t.t_node ~set:candidates in
-  let find_entry_points candidates t =
-    Tail_analysis.entry_points t.t_node,
-    (t, is_one_of candidates t) in
+let annotate_tail_calls ts : (Browse_node.t * Protocol.is_tail_position) list =
+  let is_one_of candidates node = List.mem node ~set:candidates in
+  let find_entry_points candidates node =
+    Tail_analysis.entry_points node,
+    (node, is_one_of candidates node) in
   let _, entry_points = List.fold_n_map ts ~f:find_entry_points ~init:[] in
-  let propagate candidates (t,entry) =
-    let is_in_tail = entry || is_one_of candidates t in
+  let propagate candidates (node,entry) =
+    let is_in_tail = entry || is_one_of candidates node in
     (if is_in_tail
-     then Tail_analysis.tail_positions t.t_node
+     then Tail_analysis.tail_positions node
      else []),
-    (t, is_in_tail) in
+    (node, is_in_tail) in
   let _, tail_positions = List.fold_n_map entry_points ~f:propagate ~init:[] in
-  List.map ~f:(fun (t,tail) ->
-      t,
+  List.map ~f:(fun (node,tail) ->
+      node,
       if not tail then
         `No
-      else if Tail_analysis.is_call t.t_node then
+      else if Tail_analysis.is_call node then
         `Tail_call
       else
         `Tail_position)
     tail_positions
 
 let annotate_tail_calls_from_leaf ts =
+  let ts = List.Non_empty.to_list ts in
   List.rev (annotate_tail_calls (List.rev ts))
 
 let rec is_recovered_expression = function
@@ -238,7 +249,7 @@ and is_recovered_Texp_construct cstr =
   | _ -> false
 
 let is_recovered = function
-  | {t_node = Expression e } -> is_recovered_expression e
+  | Expression e -> is_recovered_expression e
   | _ -> false
 
 (** Heuristic to find suitable environment to complete / type at given position.
@@ -262,9 +273,10 @@ let node_at ?(skip_recovered=false) typer pos_cursor =
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node
        is introduced, so the node to check for recovery is the second one. *)
-    | node :: (node' :: _ as ancestors)
+    | List.More (node, (List.More (node', _) as ancestors))
       when skip_recovered && is_recovered node' -> select ancestors
-    | node :: ancestors -> node, ancestors
-    | [] -> {BrowseT.dummy with BrowseT.t_env = Typer.env typer}, []
+    | l -> l
   in
-  select (deepest_before pos_cursor structures)
+  match deepest_before pos_cursor structures with
+  | Some (env, loc, path) -> (env, loc, select path)
+  | None -> (Typer.env typer , Location.none, List.One Browse_node.Dummy)

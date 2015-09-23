@@ -88,6 +88,14 @@ let rec remove_top_indir =
     | _ -> [ bt ]
   )
 
+let of_structure s =
+  let env, loc, node = Browse.of_structure s in
+  BrowseT.of_node ~env ~loc (List.Non_empty.hd node)
+
+let of_signature s =
+  let env, loc, node = Browse.of_signature s in
+  BrowseT.of_node ~env ~loc (List.Non_empty.hd node)
+
 let rec tag_path ~namespace = function
   | [] -> invalid_arg "Typedtrie.tag_path"
   | [ x ] -> [ x, namespace ]
@@ -99,9 +107,9 @@ let rec build ?(local_buffer=false) ~trie browses =
       let p = Path.to_string_list path in
       Alias (tag_path ~namespace p)
     | `Str s ->
-      Internal (build ~local_buffer ~trie:Trie.empty [Browse.of_structure s])
+      Internal (build ~local_buffer ~trie:Trie.empty [of_structure s])
     | `Sg s ->
-      Internal (build ~local_buffer ~trie:Trie.empty [Browse.of_signature s])
+      Internal (build ~local_buffer ~trie:Trie.empty [of_signature s])
     | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
     | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
     | `Functor (located_name, pack_loc, packed) when local_buffer ->
@@ -195,8 +203,8 @@ let rec build ?(local_buffer=false) ~trie browses =
             assert false
           | `Unpack
           | `Apply _ -> f Leaf
-          | `Str str -> build ~local_buffer ~trie [Browse.of_structure str]
-          | `Sg  sg -> build ~local_buffer ~trie [Browse.of_signature sg]
+          | `Str str -> build ~local_buffer ~trie [of_structure str]
+          | `Sg  sg -> build ~local_buffer ~trie [of_signature sg]
         in
         helper packed
       end
