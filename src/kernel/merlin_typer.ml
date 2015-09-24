@@ -75,21 +75,25 @@ let empty extensions catch  =
    - internal, to turn partial ASTs into valid OCaml AST chunks
    - external by applying ppx preprocessors
 *)
+let fake_loc =
+  let pos = {Lexing.dummy_pos with Lexing.pos_fname = "fake"} in
+  let open Location in
+  {loc_ghost = true; loc_start = pos; loc_end = pos}
+
+let fake_expr = Ast_helper.Exp.constant ~loc:fake_loc (Asttypes.Const_int 0)
+let fake_str = Ast_helper.Mod.structure ~loc:fake_loc []
 
 let rewrite_raw loc = function
   | Raw_typer.Functor_argument (id,mty) ->
-    let mexpr = Ast_helper.Mod.structure ~loc [] in
-    let mexpr = Ast_helper.Mod.functor_ ~loc id mty mexpr in
+    let mexpr = Ast_helper.Mod.functor_ ~loc id mty fake_str in
     let mb = Ast_helper.Mb.mk (Location.mknoloc "") mexpr in
     `fake [Ast_helper.Str.module_ ~loc mb]
   | Raw_typer.Pattern (l,o,p) ->
-    let expr = Ast_helper.Exp.constant ~loc (Asttypes.Const_int 0) in
-    let expr = Ast_helper.Exp.fun_ ~loc l o p expr in
+    let expr = Ast_helper.Exp.fun_ ~loc l o p fake_expr in
     `fake [Ast_helper.Str.eval ~loc expr]
   | Raw_typer.Newtype s ->
-    let expr = Ast_helper.Exp.constant (Asttypes.Const_int 0) in
     let patt = Ast_helper.Pat.any () in
-    let expr = Ast_helper.Exp.fun_ (mk_arg_lbl "") None patt expr in
+    let expr = Ast_helper.Exp.fun_ (mk_arg_lbl "") None patt fake_expr in
     let expr = Ast_helper.Exp.newtype ~loc s expr in
     `fake [Ast_helper.Str.eval ~loc expr]
   | Raw_typer.Bindings (rec_,e) ->
@@ -105,31 +109,21 @@ let rewrite_raw loc = function
     `sg sg
 
 let rewrite_ppx = function
-  | `str str -> `str (Pparse.apply_rewriters_str ~tool_name:"merlin" str)
-  | `sg sg -> `sg (Pparse.apply_rewriters_sig ~tool_name:"merlin" sg)
+  | `str str  -> `str  (Pparse.apply_rewriters_str ~tool_name:"merlin" str)
+  | `sg sg    -> `sg   (Pparse.apply_rewriters_sig ~tool_name:"merlin" sg)
   | `fake str -> `fake (Pparse.apply_rewriters_str ~tool_name:"merlin" str)
 
 let rewrite loc raw = Raw_typer.rewrite_loc (rewrite_ppx (rewrite_raw loc raw))
 
 (* Produce a new step by processing one frame from the parser *)
 
-let rec last_env t =
-  let rec last candidate = function
-    | [] -> candidate
-    | x :: xs ->
-      last (if Lexing.compare_pos
-               x.BrowseT.t_loc.Location.loc_start
-               candidate.BrowseT.t_loc.Location.loc_start
-               > 0
-            then x
-            else candidate)
-        xs
+let fake_env node =
+  let rec select env loc node acc =
+    let acc = if loc == fake_loc then env else acc in
+    Browse_node.fold_node select env loc node acc
   in
-  let t' = last t (Lazy.force t.BrowseT.t_children) in
-  if t == t' then
-    t'
-  else
-    last_env t'
+  let env = Browse_node.node_update_env Env.empty node in
+  select env Location.none node env
 
 let append catch loc step item =
   try
@@ -149,10 +143,7 @@ let append catch loc step item =
           Parsing_aux.catch_warnings (ref [])
             (fun () -> Typemod.type_structure step.env str loc)
         in
-        let browse =
-          BrowseT.of_node ~loc ~env:step.env (Structure str')
-        in
-        (last_env browse).BrowseT.t_env,
+        fake_env (Browse_node.Structure str'),
         (`Str (str, `Ok str'), !Typecore.delayed_checks) :: step.contents
       | `none -> step.env, step.contents
     in

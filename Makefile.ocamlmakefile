@@ -99,8 +99,6 @@ SOURCES = \
 	$(TYPER)/tools/untypeast.ml       \
 	$(TYPER)/browse_node.mli          \
 	$(TYPER)/browse_node.ml           \
-	src/analysis/browseT.mli          \
-	src/analysis/browseT.ml           \
 	$(TYPER)/tail_analysis.mli        \
 	$(TYPER)/tail_analysis.ml         \
 	src/ocaml_aux/parsing_aux.mli     \
@@ -184,6 +182,8 @@ SOURCES = \
 	src/frontend/IO.ml                \
 	src/analysis/browse.mli           \
 	src/analysis/browse.ml            \
+	src/analysis/browseT.mli          \
+	src/analysis/browseT.ml           \
 	src/analysis/browse_misc.ml       \
 	src/analysis/type_utils.mli       \
 	src/analysis/type_utils.ml        \

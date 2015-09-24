@@ -1,4 +1,4 @@
-(* {{{ COPYING *(
+(* {{{ Copying *(
 
   This file is part of Merlin, an helper for ocaml editors
 
@@ -75,18 +75,41 @@ type t =
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
 
-let node_update_env env0 loc0 = function
-  | Pattern        {pat_loc = loc; pat_env = env}
-  | Expression     {exp_loc = loc; exp_env = env}
-  | Method_call    ({exp_loc = loc; exp_env = env}, _)
-  | Class_expr     {cl_loc = loc; cl_env = env}
-  | Module_expr    {mod_loc = loc; mod_env = env}
-  | Structure_item {str_loc = loc; str_env = env}
-  | Signature_item {sig_env = env; sig_loc = loc}
-  | Module_type    {mty_env = env; mty_loc = loc}
-  | Core_type      {ctyp_env = env; ctyp_loc = loc}
-  | Class_type     {cltyp_env = env; cltyp_loc = loc}
-    -> env, loc
+let node_update_env env0 = function
+  | Pattern        {pat_env = env}  | Expression     {exp_env = env}
+  | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _)
+  | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
+  | Structure_item {str_env = env}  | Signature_item {sig_env = env}
+  | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
+  | Structure {str_final_env = env} | Signature {sig_final_env = env}
+    -> env
+  | Dummy                     | Case                    _
+  | Class_structure         _ | Class_signature         _
+  | Class_field             _ | Class_field_kind        _
+  | Type_extension          _ | Extension_constructor   _
+  | Package_type            _ | Row_field               _
+  | Type_declaration        _ | Type_kind               _
+  | Module_binding          _ | Module_declaration      _
+  | Module_binding_name     _ | Module_declaration_name _
+  | Module_type_declaration _ | Module_type_constraint  _
+  | Module_type_declaration_name _ | With_constraint    _
+  | Value_description       _ | Value_binding           _
+  | Constructor_declaration _ | Label_declaration       _
+  | Class_declaration       _ | Class_description       _
+  | Class_type_declaration  _ | Class_type_field        _
+    -> env0
+
+let node_update_loc loc0 = function
+  | Pattern                 {pat_loc = loc}
+  | Expression              {exp_loc = loc}
+  | Method_call             ({exp_loc = loc}, _)
+  | Class_expr              {cl_loc = loc}
+  | Module_expr             {mod_loc = loc}
+  | Structure_item          {str_loc = loc}
+  | Signature_item          {sig_loc = loc}
+  | Module_type             {mty_loc = loc}
+  | Core_type               {ctyp_loc = loc}
+  | Class_type              {cltyp_loc = loc}
   | Class_field             {cf_loc = loc}
   | Module_binding          {mb_loc = loc}
   | Module_declaration      {md_loc = loc}
@@ -101,22 +124,21 @@ let node_update_env env0 loc0 = function
   | Class_description       {ci_loc = loc}
   | Class_type_declaration  {ci_loc = loc}
   | Extension_constructor   {ext_loc = loc}
-    -> env0, loc
+    -> loc
   | Module_binding_name          {mb_name = loc}
   | Module_declaration_name      {md_name = loc}
   | Module_type_declaration_name {mtd_name = loc}
-    -> env0, loc.Location.loc
-  | Structure {str_final_env = env} | Signature {sig_final_env = env}
-    -> env, loc0
-  | Case _ | Class_structure _ | Type_extension _
+    -> loc.Location.loc
+  | Structure _ | Signature _ | Case _ | Class_structure _ | Type_extension _
   | Class_field_kind _ | Module_type_constraint _ | With_constraint _
   | Row_field _ | Type_kind _ | Class_signature _ | Package_type _
   | Dummy
-    -> env0, loc0
+    -> loc0
 
-let app node env0 loc0 f acc =
-  let env, loc = node_update_env env0 loc0 node in
-  f env loc node acc
+let app node env loc f acc =
+  f (node_update_env env node)
+    (node_update_loc loc node)
+    node acc
 
 type 'a f0 = Env.t -> Location.t -> t -> 'a -> 'a
 type ('b,'a) f1 = 'b -> Env.t -> Location.t -> 'a f0 -> 'a -> 'a

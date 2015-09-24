@@ -42,6 +42,13 @@ val default_env : Env.t
   * as default annotation when nothing can be inferred from the [node].
   * If they are not specified, annotations from child are used for approximation.
   *)
-val of_node : ?loc:Location.t -> ?env:Env.t -> node -> t
+val of_node : ?env:Env.t -> node -> t
+val of_browse : Browse.t -> t
 
 val dummy : t
+
+val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
+val all_constructor_occurrences :
+  t * [ `Description of Types.constructor_description
+      | `Declaration of Typedtree.constructor_declaration ]
+  -> t -> t Location.loc list

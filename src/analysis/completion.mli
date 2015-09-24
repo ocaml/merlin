@@ -38,11 +38,9 @@ val node_complete
   -> string
   -> Protocol.Compl.entry list
 
-val expand_prefix : global_modules:string list -> Env.t -> string
-  -> Protocol.Compl.entry list
+val expand_prefix : global_modules:string list -> Env.t -> string ->
+  Protocol.Compl.entry list
 
-val application_context : verbosity:int
-  -> prefix:Asttypes.label
-  -> Browse_node.t List.non_empty
-  -> Types.type_expr option *
-     [> `Application of Protocol.Compl.application_context | `Unknown ]
+val application_context : verbosity:int -> prefix:Asttypes.label -> Browse.t ->
+  Types.type_expr option *
+  [> `Application of Protocol.Compl.application_context | `Unknown ]

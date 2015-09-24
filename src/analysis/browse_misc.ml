@@ -70,18 +70,45 @@ let signature_of_env ?(ignore_extensions=true) env =
   aux (Env.summary env);
   Typemod.simplify_signature (!sg)
 
-let rec dump_ts ts =
-  let dump_t { t_loc ; t_node ; t_children = lazy children } =
+let dump_ts ts =
+  let rec append env loc node acc =
     `Assoc [
-      "start", Lexing.json_of_position t_loc.Location.loc_start;
-      "end",   Lexing.json_of_position t_loc.Location.loc_end;
-      "ghost", `Bool t_loc.Location.loc_ghost;
-      "kind", `String (Browse_node.string_of_node t_node);
-      "children", dump_ts children;
-    ]
+      "start", Lexing.json_of_position loc.Location.loc_start;
+      "end",   Lexing.json_of_position loc.Location.loc_end;
+      "ghost", `Bool loc.Location.loc_ghost;
+      "kind", `String (Browse_node.string_of_node node);
+      "children", dump_list env loc node
+    ] :: acc
+  and dump_list env loc node =
+    `List (List.sort ~cmp:compare @@
+           Browse_node.fold_node append env loc node [])
   in
-  let cmp_start { t_loc = l1 } { t_loc = l2 } =
-    Lexing.compare_pos l1.Location.loc_start l2.Location.loc_end
-  in
-  let ts = List.sort cmp_start ts in
-  `List (List.map dump_t ts)
+  `List (List.fold_left ts ~init:[] ~f:(fun acc node ->
+      append Env.empty (Browse.node_loc node) node acc))
+
+let annotate_tail_calls (ts : Browse_node.t list) : (Browse_node.t * Protocol.is_tail_position) list =
+  let is_one_of candidates node = List.mem node ~set:candidates in
+  let find_entry_points candidates node =
+    Tail_analysis.entry_points node,
+    (node, is_one_of candidates node) in
+  let _, entry_points = List.fold_n_map ts ~f:find_entry_points ~init:[] in
+  let propagate candidates (node,entry) =
+    let is_in_tail = entry || is_one_of candidates node in
+    (if is_in_tail
+     then Tail_analysis.tail_positions node
+     else []),
+    (node, is_in_tail) in
+  let _, tail_positions = List.fold_n_map entry_points ~f:propagate ~init:[] in
+  List.map ~f:(fun (node,tail) ->
+      node,
+      if not tail then
+        `No
+      else if Tail_analysis.is_call node then
+        `Tail_call
+      else
+        `Tail_position)
+    tail_positions
+
+let annotate_tail_calls_from_leaf ts =
+  let ts = List.map ~f:snd @@ List.Non_empty.to_list ts in
+  List.rev (annotate_tail_calls (List.rev ts))

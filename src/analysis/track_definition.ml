@@ -305,12 +305,14 @@ and browse_cmts ~root modules =
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
         Some loc
       | _ ->
-        let env, loc, node = match typedtree with
+        let env, node =
+          Browse.leaf_node @@
+          match typedtree with
           | `Str str -> Browse.of_structure str
           | `Sg sg -> Browse.of_signature sg
         in
         let trie = Typedtrie.of_browses
-          [BrowseT.of_node ~env ~loc (List.Non_empty.hd node)] in
+          [BrowseT.of_node ~env node] in
         cached.Cmt_cache.location_trie <- trie ;
         locate modules trie
       end
@@ -611,9 +613,9 @@ let inspect_context browse path pos =
       Lexing.print_position fmt pos
     ) pos ;
     Some Unknown
-  | Some (env, loc, node) ->
+  | Some enclosings ->
     let open Browse_node in
-    let node = BrowseT.of_node ~env ~loc (List.Non_empty.hd node) in
+    let node = BrowseT.of_browse enclosings in
     match node.BrowseT.t_node with
     | Pattern p ->
       Logger.debugf section (fun fmt p ->
@@ -635,10 +637,8 @@ let inspect_context browse path pos =
 
 let from_string ~project ~env ~local_defs ~pos switch path =
   let browse = Browse.of_typer_contents local_defs in
-  let browse' = List.map browse
-    ~f:(fun (env,loc,node) -> BrowseT.of_node ~env ~loc (List.Non_empty.hd node))
-  in
-  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true browse') in
+  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true @@
+                          List.map browse ~f:BrowseT.of_browse) in
   let lid = Longident.parse path in
   match inspect_context browse path pos with
   | None ->
@@ -672,10 +672,8 @@ let from_string ~project ~env ~local_defs ~pos switch path =
 
 let get_doc ~project ~env ~local_defs ~comments ~pos source =
   let browse = Browse.of_typer_contents local_defs in
-  let browse' = List.map browse
-    ~f:(fun (env,loc,node) -> BrowseT.of_node ~env ~loc (List.Non_empty.hd node))
-  in
-  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true browse') in
+  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true @@
+                          List.map browse ~f:BrowseT.of_browse) in
   fun path ->
   Fluid.let' sources_path (Project.source_path project) @@ fun () ->
   Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
