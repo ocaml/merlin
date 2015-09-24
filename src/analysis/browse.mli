@@ -28,7 +28,12 @@
 
 open Std
 
-type t = Env.t * Location.t * Browse_node.t List.Non_empty.t
+type node = Env.t * Browse_node.t
+type t = node List.Non_empty.t
+
+val node_loc : Browse_node.t -> Location.t
+val leaf_node : t -> node
+
 (* Navigate through tree *)
 
 (** The deepest context inside or before the node, for instance, navigating
@@ -66,30 +71,10 @@ val node_at : ?skip_recovered:bool -> Merlin_lib.Typer.t -> Lexing.position ->
 val nearest_before : Lexing.position -> t list -> t option
 val enclosing : Lexing.position -> t list -> t option
 
-val all_occurrences : Path.t -> BrowseT.t -> (BrowseT.t * Path.t Location.loc list) list
-
 val of_structure : Typedtree.structure -> t
 val of_signature : Typedtree.signature -> t
 val of_typer_contents : (Merlin_typer.content * _) list -> t list
 
-val all_constructor_occurrences :
-  BrowseT.t * [ `Description of Types.constructor_description
-      | `Declaration of Typedtree.constructor_declaration ]
-  -> BrowseT.t -> BrowseT.t Location.loc list
-
-(** From a chain of nodes, going from the root to the leaf, returns a list in
- *  the same ordering about what is known about tail positions *)
-val annotate_tail_calls
-  :  Browse_node.t list
-  -> (Browse_node.t * Protocol.is_tail_position) list
-
-(** Same function, but operating from leaves to root *)
-val annotate_tail_calls_from_leaf
-  :  Browse_node.t List.non_empty
-  -> (Browse_node.t * Protocol.is_tail_position) list
-
 (** Identify nodes introduced by recovery *)
 val is_recovered_expression : Typedtree.expression -> bool
 val is_recovered : Browse_node.t -> bool
-
-val fix_loc : Browse_node.t -> Location.t

@@ -89,12 +89,12 @@ let rec remove_top_indir =
   )
 
 let of_structure s =
-  let env, loc, node = Browse.of_structure s in
-  BrowseT.of_node ~env ~loc (List.Non_empty.hd node)
+  let env, node = Browse.leaf_node (Browse.of_structure s) in
+  BrowseT.of_node ~env node
 
 let of_signature s =
-  let env, loc, node = Browse.of_signature s in
-  BrowseT.of_node ~env ~loc (List.Non_empty.hd node)
+  let env, node = Browse.leaf_node (Browse.of_signature s) in
+  BrowseT.of_node ~env node
 
 let rec tag_path ~namespace = function
   | [] -> invalid_arg "Typedtrie.tag_path"

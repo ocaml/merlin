@@ -40,7 +40,7 @@ type t = {
   t_children: t list lazy_t;
 }
 
-let of_node ?(loc=default_loc) ?(env=default_env) node =
+let of_node ?(env=default_env) node =
   let rec one t_env t_loc t_node =
     let rec t = {t_node; t_env; t_loc; t_children = lazy (aux t)} in
     t
@@ -48,7 +48,11 @@ let of_node ?(loc=default_loc) ?(env=default_env) node =
     Browse_node.fold_node (fun env loc node acc -> one env loc node :: acc)
       t.t_env t.t_loc t.t_node []
   in
-  one env loc node
+  one env (Browse.node_loc node) node
+
+let of_browse b =
+  let env, node = Browse.leaf_node b in
+  of_node ~env node
 
 let dummy = {
   t_node = Browse_node.Dummy;
@@ -56,3 +60,60 @@ let dummy = {
   t_env = default_env;
   t_children = lazy []
 }
+
+let rec normalize_type_expr env = function
+  | {Types.desc = Types.Tconstr (path,_,_)} ->
+    normalize_type_decl env (Env.find_type path env)
+  | _ -> raise Not_found
+
+and normalize_type_decl env decl = match decl.Types.type_manifest with
+  | Some expr -> normalize_type_expr env expr
+  | None -> decl
+
+let same_constructor env a b =
+  let name = function
+    | `Description d -> d.Types.cstr_name
+    | `Declaration d -> Ident.name d.Typedtree.cd_id
+  in
+  if name a <> name b then false
+  else begin
+    let get_decls = function
+      | `Description d ->
+        let ty = normalize_type_expr env d.Types.cstr_res in
+        begin match ty.Types.type_kind with
+        | Types.Type_variant decls ->
+          List.map decls ~f:Raw_compat.id_of_constr_decl
+        | _ -> assert false
+        end
+      | `Declaration d ->
+        [d.Typedtree.cd_id]
+    in
+    let a = get_decls a in
+    let b = get_decls b in
+    List.exists a ~f:(fun id -> List.exists b ~f:(Ident.same id))
+  end
+
+let all_occurrences path =
+  let rec aux acc t =
+    let acc =
+      let paths = Browse_node.node_paths t.t_node in
+      let same l = Path.same path l.Location.txt in
+      match List.filter ~f:same paths with
+      | [] -> acc
+      | paths -> (t, paths) :: acc
+    in
+    List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
+  in
+  aux []
+
+let all_constructor_occurrences ({t_env = env},d) t =
+  let rec aux acc t =
+    let acc =
+      match Browse_node.node_is_constructor t.t_node with
+      | Some d' when same_constructor env d d'.Location.txt ->
+        {d' with Location.txt = t} :: acc
+      | _ -> acc
+    in
+    List.fold_left ~f:aux ~init:acc (Lazy.force t.t_children)
+  in
+  aux [] t

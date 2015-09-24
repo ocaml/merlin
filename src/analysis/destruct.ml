@@ -222,11 +222,11 @@ let rec get_every_pattern = function
         Browse_node.fold_node (fun env loc node acc ->
           let open Location in
           if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
-        ) BrowseT.default_env (Browse.fix_loc parent) parent Location.none
+        ) Env.empty (Browse.node_loc parent) parent Location.none
       in
       loc, patterns
     | _ ->
-      let j = Browse_misc.dump_ts [ BrowseT.of_node parent ] in
+      let j = Browse_misc.dump_ts [ parent ] in
       let s = Json.to_string j in
       invalid_arg (sprintf "get_every_pattern: %s" s)(* Something went wrong. *)
 
