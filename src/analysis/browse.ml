@@ -33,7 +33,7 @@ type node = Env.t * Browse_node.t
 type t = node List.Non_empty.t
 
 let node_loc node =
-  let loc = Browse_node.node_update_loc Location.none node in
+  let loc = Browse_node.node_real_loc Location.none node in
   if loc != Location.none then
     loc
   else

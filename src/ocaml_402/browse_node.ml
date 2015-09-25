@@ -99,13 +99,8 @@ let node_update_env env0 = function
   | Class_type_declaration  _ | Class_type_field        _
     -> env0
 
-let node_update_loc loc0 = function
-  | Expression              {exp_loc = loc; exp_attributes} ->
-    begin try
-        let s, _ = List.find exp_attributes ~f:(fun (s,_) -> s.Location.txt = "merlin.loc") in
-        s.Location.loc
-      with Not_found -> loc
-    end
+let node_real_loc loc0 = function
+  | Expression              {exp_loc = loc}
   | Pattern                 {pat_loc = loc}
   | Method_call             ({exp_loc = loc}, _)
   | Class_expr              {cl_loc = loc}
@@ -140,9 +135,18 @@ let node_update_loc loc0 = function
   | Dummy
     -> loc0
 
+let node_merlin_loc loc0 = function
+  | Expression {exp_loc = loc; exp_attributes} ->
+    begin try
+        let s, _ = List.find exp_attributes ~f:(fun (s,_) -> s.Location.txt = "merlin.loc") in
+        s.Location.loc
+      with Not_found -> loc
+    end
+  | node -> node_real_loc loc0 node
+
 let app node env loc f acc =
   f (node_update_env env node)
-    (node_update_loc loc node)
+    (node_merlin_loc loc node)
     node acc
 
 type 'a f0 = Env.t -> Location.t -> t -> 'a -> 'a

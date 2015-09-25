@@ -94,7 +94,8 @@ val fold_node : (Env.t -> Location.t -> t -> 'a -> 'a) -> Env.t -> Location.t ->
 (** Accessors for information specific to a node *)
 
 val node_update_env : Env.t -> t -> Env.t
-val node_update_loc : Location.t -> t -> Location.t
+val node_real_loc : Location.t -> t -> Location.t
+val node_merlin_loc : Location.t -> t -> Location.t
 
 val string_of_node : t -> string
 
