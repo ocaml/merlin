@@ -220,14 +220,14 @@ def command_find_use(*packages):
     result = catch_and_print(lambda: command('find', 'use', packages))
     return display_load_failures(result)
 
-def command_reset(kind="auto",name=None):
+def command_checkout(kind="auto",name=None):
     if name:
       if vim.eval("exists('b:merlin_dot_merlins')") == '1':
-        r = command("reset","dot_merlin",vim.eval("b:merlin_dot_merlins"),kind,name)
+        r = command("checkout","dot_merlin",vim.eval("b:merlin_dot_merlins"),kind,name)
       else:
-        r = command("reset",kind,name)
+        r = command("checkout",kind,name)
     else:
-      r = command("reset",kind)
+      r = command("checkout",kind)
     return r
 
 def command_seek(mtd,line,col):
@@ -310,7 +310,7 @@ def acquire_buffer(force=False):
 
     if not (saved_sync and (curr_sync.bufnr() == saved_sync.bufnr())):
         process.saved_sync = None
-        command_reset(name=vim.eval("expand('%:p')"))
+        command_checkout(name=vim.eval("expand('%:p')"))
 
     return process.saved_sync
 
