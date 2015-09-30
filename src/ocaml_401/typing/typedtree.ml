@@ -557,6 +557,25 @@ module Override = struct
     typ_variance: (bool * bool) list;
     typ_loc: Location.t
   }
+
+  type open_description = {
+    open_path: Path.t;
+    open_txt: Longident.t loc;
+    open_override: override_flag;
+    open_loc: Location.t;
+    open_attributes: unit list;
+  }
+
+  type 'a include_infos = {
+    incl_mod: 'a;
+    incl_type: Types.signature;
+    incl_loc: Location.t;
+    incl_attributes: unit list;
+  }
+
+  and include_description = module_type include_infos
+
+  and include_declaration = module_expr include_infos
 end
 
 let make_case (pat, expr) =

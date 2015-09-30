@@ -70,6 +70,10 @@ type t =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
+  | Include_description      of Override.include_description
+  | Include_declaration      of Override.include_declaration
+  | Open_description         of Override.open_description
+
   | Method_call              of expression * meth
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
@@ -606,6 +610,9 @@ let string_of_node = function
   | Module_binding_name     _ -> "module_binding_name"
   | Module_declaration_name _ -> "module_declaration_name"
   | Module_type_declaration_name _ -> "module_type_declaration_name"
+  | Open_description        _ -> "open_description"
+  | Include_description     _ -> "include_description"
+  | Include_declaration     _ -> "include_declaration"
 
 let mkloc = Location.mkloc
 let reloc txt loc = {loc with Location. txt}

@@ -85,6 +85,10 @@ type t =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
+  | Include_description      of include_description
+  | Include_declaration      of include_declaration
+  | Open_description         of open_description
+
   | Method_call              of expression * meth
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
