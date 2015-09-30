@@ -338,10 +338,10 @@ module Protocol_io = struct
     | (`String "boundary" :: `String "current" :: opt_pos)
     | (`String "boundary" :: opt_pos) ->
       Request (Boundary (`Current, mandatory_position opt_pos))
-    | (`String "reset" :: `String "dot_merlin" :: `List dot_merlins :: `String kind :: opt_name) ->
-      Request (Reset (auto_ml_or_mli kind, optional_string opt_name, Some (string_list dot_merlins)))
-    | (`String "reset" :: `String kind :: opt_name) ->
-      Request (Reset (auto_ml_or_mli kind, optional_string opt_name, None))
+    | (`String ("reset"|"checkout") :: `String "dot_merlin" :: `List dot_merlins :: `String kind :: opt_name) ->
+      Request (Checkout (auto_ml_or_mli kind, optional_string opt_name, Some (string_list dot_merlins)))
+    | (`String ("reset"|"checkout") :: `String kind :: opt_name) ->
+      Request (Checkout (auto_ml_or_mli kind, optional_string opt_name, None))
     | [`String "refresh"] ->
       Request Refresh
     | [`String "errors"] ->
@@ -485,7 +485,7 @@ module Protocol_io = struct
           `List (List.map Lexing.json_of_position [loc_start; loc_end])
         | Boundary _, None ->
           `Null
-        | Reset _, cursor ->
+        | Checkout _, cursor ->
           json_of_cursor_state cursor
         | Refresh, () -> `Bool true
         | Errors, errors ->

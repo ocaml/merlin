@@ -127,7 +127,7 @@ type _ request =
   | Boundary
     :  [`Prev|`Next|`Current] * position
     -> Location.t option request
-  | Reset
+  | Checkout
     :  [`ML | `MLI | `Auto ] * string option * string list option
     -> cursor_state request
   | Refresh

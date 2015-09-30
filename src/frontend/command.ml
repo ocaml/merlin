@@ -578,7 +578,7 @@ let dispatch (state : state) =
           Option.map item ~f:(fun i -> i.BrowseT.t_loc)
       )
 
-  | (Reset (ft,path,dot_merlins) : a request) ->
+  | (Checkout (ft,path,dot_merlins) : a request) ->
     let ft = match ft, path with
       | (`ML | `MLI as ft), _  -> ft
       | `Auto, Some path when Filename.check_suffix path ".mli" -> `MLI
