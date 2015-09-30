@@ -96,7 +96,9 @@ let classify_node = function
   | Module_binding_name      _ -> `Module
   | Module_declaration_name  _ -> `Module
   | Module_type_declaration_name _ -> `Module_type
-
+  | Open_description _ -> `Module
+  | Include_declaration _ -> `Module
+  | Include_description _ -> `Module
 
 open Protocol.Compl
 

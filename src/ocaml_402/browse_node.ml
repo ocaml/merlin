@@ -70,6 +70,10 @@ type t =
   | Class_description        of class_description
   | Class_type_declaration   of class_type_declaration
 
+  | Include_description      of include_description
+  | Include_declaration      of include_declaration
+  | Open_description         of open_description
+
   | Method_call              of expression * meth
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
@@ -97,6 +101,8 @@ let node_update_env env0 = function
   | Constructor_declaration _ | Label_declaration       _
   | Class_declaration       _ | Class_description       _
   | Class_type_declaration  _ | Class_type_field        _
+  | Include_description     _ | Include_declaration     _
+  | Open_description        _
     -> env0
 
 let node_real_loc loc0 = function
@@ -124,6 +130,9 @@ let node_real_loc loc0 = function
   | Class_description       {ci_loc = loc}
   | Class_type_declaration  {ci_loc = loc}
   | Extension_constructor   {ext_loc = loc}
+  | Include_description     {incl_loc = loc}
+  | Include_declaration     {incl_loc = loc}
+  | Open_description        {open_loc = loc}
     -> loc
   | Module_binding_name          {mb_name = loc}
   | Module_declaration_name      {md_name = loc}
@@ -328,9 +337,11 @@ and of_structure_item_desc = function
     list_fold (fun (cd,_,_) -> app (Class_declaration cd)) cds
   | Tstr_class_type ctds ->
     list_fold (fun (_,_,ctd) -> app (Class_type_declaration ctd)) ctds
-  | Tstr_include { incl_mod = me } ->
-    of_module_expr me
-  | Tstr_open _ | Tstr_attribute _ ->
+  | Tstr_include i ->
+    app (Include_declaration i)
+  | Tstr_open d ->
+    app (Open_description d)
+  | Tstr_attribute _ ->
     id_fold
 
 and of_module_type_desc = function
@@ -347,8 +358,10 @@ and of_module_type_desc = function
     of_module_expr me
 
 and of_signature_item_desc = function
-  | Tsig_open _ | Tsig_attribute _ ->
+  | Tsig_attribute _ ->
     id_fold
+  | Tsig_open d ->
+    app (Open_description d)
   | Tsig_value vd ->
     app (Value_description vd)
   | Tsig_type tds ->
@@ -363,8 +376,8 @@ and of_signature_item_desc = function
     list_fold (fun md -> app (Module_declaration md)) mds
   | Tsig_modtype mtd ->
     app (Module_type_declaration mtd)
-  | Tsig_include { incl_mod = mt } ->
-    of_module_type mt
+  | Tsig_include i ->
+    app (Include_description i)
   | Tsig_class cds ->
     list_fold (fun cd -> app (Class_description cd)) cds
   | Tsig_class_type ctds ->
@@ -511,6 +524,11 @@ let of_node = function
   | Module_binding_name _ -> id_fold
   | Module_declaration_name _ -> id_fold
   | Module_type_declaration_name _ -> id_fold
+  | Open_description _ -> id_fold
+  | Include_declaration i ->
+    of_module_expr i.incl_mod
+  | Include_description i ->
+    of_module_type i.incl_mod
 
 let fold_node f env loc node acc =
   of_node node env loc f acc
@@ -561,6 +579,9 @@ let string_of_node = function
   | Module_binding_name     _ -> "module_binding_name"
   | Module_declaration_name _ -> "module_declaration_name"
   | Module_type_declaration_name _ -> "module_type_declaration_name"
+  | Open_description        _ -> "open_description"
+  | Include_description     _ -> "include_description"
+  | Include_declaration     _ -> "include_declaration"
 
 let mkloc = Location.mkloc
 let reloc txt loc = {loc with Location. txt}
