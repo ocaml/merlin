@@ -56,9 +56,9 @@
 
     ((merlin-company--is-module candidate)
      (let* ((expr (substring-no-properties candidate))
-            (loc  (merlin-unmake-point (point)))
+            (loc  (merlin/unmake-point (point)))
             (cmd  (list 'type 'expression expr 'at loc))
-            (res  (merlin-send-command cmd)))
+            (res  (merlin/send-command cmd)))
        (merlin/display-in-type-buffer res)))
 
     (t (merlin/display-in-type-buffer
