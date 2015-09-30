@@ -712,3 +712,36 @@ let node_is_constructor = function
   | Pattern {pat_desc = Tpat_construct (loc, desc, _)} ->
     Some {loc with Location.txt = `Description desc}
   | _ -> None
+
+let node_attributes = function
+  | Expression exp        -> exp.exp_attributes
+  | Pattern pat           -> pat.pat_attributes
+  | Class_expr cl         -> cl.cl_attributes
+  | Class_field cf        -> cf.cf_attributes
+  | Module_expr me        -> me.mod_attributes
+  | Structure_item {str_desc = Tstr_eval (_,attr)} -> attr
+  | Structure_item {str_desc = Tstr_attribute a} -> [a]
+  | Signature_item {sig_desc = Tsig_attribute a} -> [a]
+  | Module_binding mb     -> mb.mb_attributes
+  | Value_binding vb      -> vb.vb_attributes
+  | Module_type mt        -> mt.mty_attributes
+  | Module_declaration md -> md.md_attributes
+  | Module_type_declaration mtd -> mtd.mtd_attributes
+  | Open_description o    -> o.open_attributes
+  | Include_declaration i -> i.incl_attributes
+  | Include_description i -> i.incl_attributes
+  | Core_type ct          -> ct.ctyp_attributes
+  (* FIXME: core type object attributes are ignored *)
+  | Row_field (Ttag (_,attr,_,_)) -> attr
+  | Value_description vd  -> vd.val_attributes
+  | Type_declaration td   -> td.typ_attributes
+  | Label_declaration ld  -> ld.ld_attributes
+  | Constructor_declaration cd -> cd.cd_attributes
+  | Type_extension te     -> te.tyext_attributes
+  | Extension_constructor ec -> ec.ext_attributes
+  | Class_type ct         -> ct.cltyp_attributes
+  | Class_type_field ctf  -> ctf.ctf_attributes
+  | Class_declaration ci -> ci.ci_attributes
+  | Class_description ci -> ci.ci_attributes
+  | Class_type_declaration ci -> ci.ci_attributes
+  | _ -> []

@@ -743,3 +743,5 @@ let node_is_constructor = function
   | Pattern {pat_desc = Tpat_construct (_, loc, desc, _, _)} ->
     Some {loc with Location.txt = `Description desc}
   | _ -> None
+
+let node_attributes _ = []
