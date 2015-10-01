@@ -114,6 +114,9 @@ let node_real_loc loc0 = function
   | Class_description       {ci_loc = loc}
   | Class_type_declaration  {ci_loc = loc}
   | Extension_constructor   {ext_loc = loc}
+  | Include_description     {Override. incl_loc = loc}
+  | Include_declaration     {Override. incl_loc = loc}
+  | Open_description        {Override. open_loc = loc}
     -> loc
   | Module_binding_name          {mb_name = loc}
   | Module_declaration_name      {md_name = loc}
@@ -196,6 +199,13 @@ let of_method_call obj meth arg =
   app (Method_call (obj,meth)) env
     {Location. loc_ghost = true; loc_start; loc_end}
     f acc
+
+let include_infos incl_mod incl_type incl_loc =
+  {Override. incl_mod; incl_type; incl_loc; incl_attributes = []}
+
+let open_description open_path open_txt open_loc =
+  {Override. open_path; open_override = Asttypes.Override;
+             open_loc; open_attributes = []; open_txt}
 
 let of_expression_desc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
@@ -301,7 +311,7 @@ and of_module_expr_desc = function
   | Tmod_unpack (e,_) ->
     of_expression e
 
-and of_structure_item_desc = function
+and of_structure_item_desc str_loc = function
   | Tstr_eval e ->
     of_expression e
   | Tstr_value (_,vbs) ->
@@ -342,9 +352,14 @@ and of_structure_item_desc = function
   | Tstr_class_type ctds ->
     list_fold (fun (_,_,ctd) -> app (Class_type_declaration ctd)) ctds
   | Tstr_include (me,_) ->
-    of_module_expr me
-  | Tstr_open _ ->
-    id_fold
+    let sg = match me.mod_type with
+      | Types.Mty_functor _
+      | Types.Mty_ident _ -> []
+      | Types.Mty_signature (lazy sg) -> sg
+    in
+    app (Include_declaration (include_infos me sg str_loc))
+  | Tstr_open (path,txt) ->
+    app (Open_description (open_description path txt str_loc))
 
 and of_module_type_desc = function
   | Tmty_ident _ -> id_fold
@@ -359,9 +374,9 @@ and of_module_type_desc = function
   | Tmty_typeof me ->
     of_module_expr me
 
-and of_signature_item_desc = function
-  | Tsig_open _ ->
-    id_fold
+and of_signature_item_desc sig_loc = function
+  | Tsig_open (path,txt) ->
+    app (Open_description (open_description path txt sig_loc))
   | Tsig_value (val_id,val_name,vd) ->
     app (Value_description {Override.
            val_id ;
@@ -401,7 +416,12 @@ and of_signature_item_desc = function
     in
     app (Module_type_declaration mtd)
   | Tsig_include (mt,_) ->
-    of_module_type mt
+    let sg = match mt.mty_type with
+      | Types.Mty_functor _
+      | Types.Mty_ident _ -> []
+      | Types.Mty_signature (lazy sg) -> sg
+    in
+    app (Include_description (include_infos mt sg sig_loc))
   | Tsig_class cds ->
     list_fold (fun cd -> app (Class_description cd)) cds
   | Tsig_class_type ctds ->
@@ -471,8 +491,8 @@ let of_node = function
     of_module_type mt
   | Structure { str_items } ->
     list_fold (fun item -> app (Structure_item item)) str_items
-  | Structure_item { str_desc; str_loc; str_env } ->
-    of_structure_item_desc str_desc
+  | Structure_item { str_desc; str_loc } ->
+    of_structure_item_desc str_loc str_desc
   | Module_binding mb ->
     app (Module_expr mb.mb_expr) **
     app (Module_binding_name mb)
@@ -483,8 +503,8 @@ let of_node = function
     of_module_type_desc mty_desc
   | Signature { sig_items; sig_final_env } ->
     list_fold (fun item -> app (Signature_item item)) sig_items
-  | Signature_item { sig_desc; sig_env; sig_loc } ->
-    of_signature_item_desc sig_desc
+  | Signature_item { sig_desc; sig_loc } ->
+    of_signature_item_desc sig_loc sig_desc
   | Module_declaration md ->
     of_module_type md.md_type **
     app (Module_declaration_name md)
@@ -560,6 +580,12 @@ let of_node = function
   | Module_binding_name _ -> id_fold
   | Module_declaration_name _ -> id_fold
   | Module_type_declaration_name _ -> id_fold
+  | Open_description _ -> id_fold
+  | Include_declaration i ->
+    of_module_expr i.Override.incl_mod
+  | Include_description i ->
+    of_module_type i.Override.incl_mod
+
 
 let fold_node f env loc node acc =
   of_node node env loc f acc
