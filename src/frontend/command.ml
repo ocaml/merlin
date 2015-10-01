@@ -495,8 +495,8 @@ let dispatch_query ~verbosity buffer =
   | (Outline : a request) ->
     with_typer buffer @@ fun typer ->
     let typed_tree = Typer.contents typer in
-    assert false (*FIXME TODO*)
-  (*Outline.get (Browse.of_typer_contents typed_tree)*)
+    Outline.get (List.map BrowseT.of_browse
+                  (Browse.of_typer_contents typed_tree))
 
   | (Boundary (dir,pos) : a request) ->
     let get_enclosing_str_item pos browses =
