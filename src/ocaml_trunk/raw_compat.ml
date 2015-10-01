@@ -483,8 +483,6 @@ let optional_label_sugar = function
     Some e
   | _ -> None
 
-let pat_attributes p = p.Typedtree.pat_attributes
-
 let cstr_attributes c = c.Types.cstr_attributes
 let val_attributes v = v.Types.val_attributes
 let type_attributes t = t.Types.type_attributes
