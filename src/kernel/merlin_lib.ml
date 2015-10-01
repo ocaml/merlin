@@ -94,7 +94,6 @@ end = struct
       keywords       : Lexer.keywords;
       extensions     : Extension.set;
       validity_stamp : bool ref;
-      ppxsetup       : Ppxsetup.t;
 
       source_path    : string list;
       cmt_path       : string list;
@@ -121,7 +120,7 @@ end = struct
     in
     dfails, ufails, upaths @ dpaths, Ppxsetup.union uppxs dppxs
 
-  let compute_flags prj =
+  let compute_flags ppxsetup prj =
     let flags = Clflags.copy Clflags.initial in
     let warnings = Warnings.copy Warnings.initial in
     let spec = Clflags.arg_spec flags @ Warnings.arg_spec warnings in
@@ -149,6 +148,7 @@ end = struct
     let dfails = process_flags_list (Dot_merlin.config prj.dot_merlin).Dot_merlin.flags in
     let dfails = List.rev_append (process_flags (Main_args.flags @ spec) Sys.argv) dfails in
     let ufails = process_flags_list prj.user_config.Dot_merlin.flags in
+    flags.Clflags.ppx <- Ppxsetup.union flags.Clflags.ppx ppxsetup;
     dfails, ufails, flags, warnings
 
   let config prj =
@@ -161,7 +161,7 @@ end = struct
         | Some config -> config.validity_stamp := false
       end;
       let dfails0, ufails0, pkgpaths, ppxsetup = compute_packages prj in
-      let dfails1, ufails1, flags, warnings = compute_flags prj in
+      let dfails1, ufails1, flags, warnings = compute_flags ppxsetup prj in
       let open Dot_merlin in
       let user_config = prj.user_config in
       let stdlib =
@@ -201,7 +201,7 @@ end = struct
       let config = C.({
           dot_config;
           warnings; flags;
-          extensions; keywords; ppxsetup;
+          extensions; keywords;
           source_path; cmt_path; build_path;
           dot_failures = dfails0 @ dfails1;
           user_failures = ufails0 @ ufails1;
@@ -227,10 +227,17 @@ end = struct
     ".merlin", (Dot_merlin.config project.dot_merlin).Dot_merlin.flags;
   ]
 
+  let invalidate t =
+    match t.config with
+    | None -> ()
+    | Some config ->
+        config.validity_stamp := false;
+        t.config <- None
+
   let get_user_config t = t.user_config
   let set_user_config t user_config =
     t.user_config <- user_config;
-    t.config <- None
+    invalidate t
 
   let get_user_config_failures t = (config t).user_failures
 
@@ -430,7 +437,7 @@ end = struct
     let strong_fold (_,token) (_,recover) = token, Recover.fold token recover in
     let weak_update (_,token) (_,recover) = (token,recover) in
     let recover', updated = History.sync t.lexer (Some t.recover)
-        ~init ~strong_check ~strong_fold ~weak_check ~weak_update; in
+        ~init ~strong_check ~strong_fold ~weak_check ~weak_update in
     t.recover <- recover';
     updated
 
