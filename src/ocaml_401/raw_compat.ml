@@ -412,8 +412,6 @@ let optional_label_sugar = function
     Some e
   | _ -> None
 
-let pat_attributes _ = []
-
 let cstr_attributes _ = []
 let val_attributes  _ = []
 let type_attributes _ = []
