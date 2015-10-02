@@ -824,10 +824,15 @@ may be nil, in that case the current cursor of merlin is used."
       (goto-char point)
       (merlin--tell-rest))))
 
+(defvar-local merlin--last-edit nil
+   "Coordinates (start . end) of last edition or nil, to prevent error messages from flickering when cursor is around edition.")
+
 (defun merlin--sync-edit (start end length)
   "Retract merlin--dirty-point, used when the buffer is edited."
-  (when (and merlin-mode (< (1- start) merlin--dirty-point))
-    (setq merlin--dirty-point (1- start))))
+  (when merlin-mode
+    (setq merlin--last-edit (cons start end))
+    (when (< (1- start) merlin--dirty-point)
+      (setq merlin--dirty-point (1- start)))))
 
 (defun merlin/sync-to-point (&optional point skip-marker)
   "Makes sure the buffer is synchronized on merlin-side and centered around (point)."
@@ -869,9 +874,12 @@ may be nil, in that case the current cursor of merlin is used."
   (when (and merlin-mode (not (current-message)))
     (let* ((errors (overlays-in (line-beginning-position) (line-end-position)))
            (err nil))
+      (when (or (not merlin--last-edit)
+                (not (or (= (point) (car merlin--last-edit))
+                         (= (point) (cdr merlin--last-edit)))))
       (setq errors (remove nil (mapcar 'merlin--overlay-pending-error errors)))
       (setq err (merlin--error-at-position (point) errors))
-      (when err (message "%s" (cdr (assoc 'message err)))))))
+      (when err (message "%s" (cdr (assoc 'message err))))))))
 
 (defun merlin--overlay-next-property-set (point prop &optional limit)
   "Find next point where PROP is set (like next-single-char-property-change but ensure that prop is not-nil)."
