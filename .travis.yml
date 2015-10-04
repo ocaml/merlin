@@ -1,6 +1,20 @@
 language: c
-script: bash -ex .travis-ci.sh
+sudo: false
+addons:
+  apt:
+    sources:
+    - avsm
+    packages:
+    - ocaml
+    - opam
+    - ocaml-native-compilers
+install: sh -ex .travis-install.sh
+cache:
+  directories:
+  - ${HOME}/.local
+  - ${HOME}/.opam
+script: sh -ex .travis-ci.sh
 env:
-  - OCAML_VERSION=4.02 OPAM_VERSION=1.2
-  - OCAML_VERSION=4.01 OPAM_VERSION=1.2
-  - OCAML_VERSION=4.00 OPAM_VERSION=1.2
+  - OCAML_VERSION=4.02.3
+  - OCAML_VERSION=4.01.0
+  - OCAML_VERSION=4.00.1
