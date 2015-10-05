@@ -123,7 +123,7 @@ val error_reporter : (formatter -> error -> unit) ref
 (** Hook for intercepting error reports. *)
 
 val default_error_reporter : formatter -> error -> unit
-(** srcinal error reporter for use in hooks. *)
+(** Original error reporter for use in hooks. *)
 
 val report_exception: formatter -> exn -> unit
   (* Reraise the exception if it is unknown. *)

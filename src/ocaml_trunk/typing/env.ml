@@ -1227,7 +1227,7 @@ let rec scrape_alias env ?path mty =
         scrape_alias env (find_module path env).md_type ~path
       with Not_found ->
         (*Location.prerr_warning Location.none
-	  (Warnings.No_cmi_file (Path.name path));*)
+          (Warnings.No_cmi_file (Path.name path));*)
         mty
       end
   | mty, Some path ->
@@ -1437,8 +1437,8 @@ and components_of_module_maker (env, sub, path, mty) =
   | Mty_functor(param, ty_arg, ty_res) ->
         Functor_comps {
           fcomp_param = param;
-          (* fcomp_arg and fcomp_res must be prefixed eagerly, because they are interpreted
-             in the outer environment *)
+          (* fcomp_arg and fcomp_res must be prefixed eagerly, because
+             they are interpreted in the outer environment *)
           fcomp_arg = may_map (Subst.modtype sub) ty_arg;
           fcomp_res = Subst.modtype sub ty_res;
           fcomp_cache = Hashtbl.create 17;
@@ -1829,9 +1829,7 @@ let save_signature_with_imports sg modname filename imports =
         ps_crcs_checked = false;
         ps_typemap = ref None;
       } in
-    Hashtbl.add !cache.persistent_structures modname (Some ps);
-    Consistbl.set !cache.crc_units modname crc filename;
-    add_import modname;
+    save_pers_struct crc ps;
     sg
   with exn ->
     close_out oc;
