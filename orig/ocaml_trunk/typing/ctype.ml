@@ -1106,6 +1106,8 @@ let instance_list env schl =
   tyl
 
 let reified_var_counter = ref Vars.empty
+let reset_reified_var_counter () =
+  reified_var_counter := Vars.empty
 
 (* names given to new type constructors.
    Used for existential types and
@@ -1115,7 +1117,8 @@ let get_new_abstract_name s =
     try Vars.find s !reified_var_counter + 1
     with Not_found -> 0 in
   reified_var_counter := Vars.add s index !reified_var_counter;
-  Printf.sprintf "%s#%d" s index
+  if index = 0 && s <> "" && s.[String.length s - 1] <> '$' then s else
+  Printf.sprintf "%s%d" s index
 
 let new_declaration newtype manifest =
   {
@@ -1138,8 +1141,8 @@ let instance_constructor ?in_pattern cstr =
         let decl = new_declaration (Some (newtype_lev, newtype_lev)) None in
         let name =
           match repr existential with
-            {desc = Tvar (Some name)} -> name
-          | _ -> "ex"
+            {desc = Tvar (Some name)} -> "$" ^ cstr.cstr_name ^ "_'" ^ name
+          | _ -> "$" ^ cstr.cstr_name
         in
         let (id, new_env) =
           Env.enter_type (get_new_abstract_name name) decl !env in
@@ -1591,11 +1594,12 @@ let generic_private_abbrev env path =
   with Not_found -> false
 
 let is_contractive env ty =
-  match (repr ty).desc with
+  try match (repr ty).desc with
     Tconstr (p, _, _) ->
-      in_pervasives p ||
-      (try is_datatype (Env.find_type p env) with Not_found -> false)
+      let decl = Env.find_type p env in
+      in_pervasives p && decl.type_manifest = None || is_datatype decl
   | _ -> true
+  with Not_found -> false
 
 (* Code moved to Typedecl
 
@@ -1649,13 +1653,16 @@ let correct_abbrev env path params ty =
 
 exception Occur
 
+let allow_recursive env ty =
+  (!Clflags.recursive_types || !umode = Pattern) && is_contractive env ty
+
 let rec occur_rec env visited ty0 ty =
   if ty == ty0  then raise Occur;
-  let occur_ok = !Clflags.recursive_types && is_contractive env ty in
+  if allow_recursive env ty then () else
   match ty.desc with
     Tconstr(p, tl, abbrev) ->
       begin try
-        if occur_ok || List.memq ty visited then raise Occur;
+        if List.memq ty visited then raise Occur;
         iter_type_expr (occur_rec env (ty::visited) ty0) ty
       with Occur -> try
         let ty' = try_expand_head try_expand_once env ty in
@@ -1666,16 +1673,15 @@ let rec occur_rec env visited ty0 ty =
         match ty'.desc with
           Tobject _ | Tvariant _ -> ()
         | _ ->
-            if not (!Clflags.recursive_types && is_contractive env ty') then
-              iter_type_expr (occur_rec env (ty'::visited) ty0) ty'
+            if allow_recursive env ty' then () else
+            iter_type_expr (occur_rec env (ty'::visited) ty0) ty'
       with Cannot_expand ->
-        if not occur_ok then raise Occur
+        raise Occur
       end
   | Tobject _ | Tvariant _ ->
       ()
   | _ ->
-      if not occur_ok then
-        iter_type_expr (occur_rec env visited ty0) ty
+      iter_type_expr (occur_rec env visited ty0) ty
 
 let type_changed = ref false (* trace possible changes to the studied type *)
 
@@ -1696,24 +1702,30 @@ let occur_in env ty0 t =
 
 (* Check that a local constraint is well-founded *)
 (* PR#6405: not needed since we allow recursion and work on normalized types *)
-(*
+(* PR#6992: we actually need it for contractiveness *)
+(* This is a simplified version of occur, only for the rectypes case *)
 let rec local_non_recursive_abbrev visited env p ty =
   let ty = repr ty in
-  if not (List.memq ty !visited) then begin
-    visited := ty :: !visited;
+  if not (List.memq ty visited) then begin
     match ty.desc with
       Tconstr(p', args, abbrev) ->
-        if Path.same p p' then raise Recursive_abbrev;
+        if Path.same p p' then raise Occur;
+        if is_contractive env ty then () else
+        let visited = ty :: visited in
         begin try
-          local_non_recursive_abbrev visited env p (try_expand_once_opt env ty)
-        with Cannot_expand -> ()
+          List.iter (local_non_recursive_abbrev visited env p) args
+        with Occur -> try
+          local_non_recursive_abbrev visited env p
+            (try_expand_head try_expand_once env ty)
+        with Cannot_expand ->
+          raise Occur
         end
     | _ -> ()
   end
 
-let local_non_recursive_abbrev env p =
-  local_non_recursive_abbrev (ref []) env p
-*)
+let local_non_recursive_abbrev env p ty =
+  try local_non_recursive_abbrev [] env p ty with Occur -> raise (Unify [])
+
 
                    (*****************************)
                    (*  Polymorphic Unification  *)
@@ -1940,6 +1952,7 @@ let reify env t =
   let newtype_level = get_newtype_level () in
   let create_fresh_constr lev name =
     let decl = new_declaration (Some (newtype_level, newtype_level)) None in
+    let name = match name with Some s -> "$'"^s | _ -> "$" in
     let name = get_new_abstract_name name in
     let (id, new_env) = Env.enter_type name decl !env in
     let t = newty2 lev (Tconstr (Path.Pident id,[],ref Mnil))  in
@@ -1953,8 +1966,7 @@ let reify env t =
       visited := TypeSet.add ty !visited;
       match ty.desc with
         Tvar o ->
-          let name = match o with Some s -> s | _ -> "ex" in
-          let t = create_fresh_constr ty.level name in
+          let t = create_fresh_constr ty.level o in
           link_type ty t
       | Tvariant r ->
           let r = row_repr r in
@@ -1963,8 +1975,7 @@ let reify env t =
             let m = r.row_more in
             match m.desc with
               Tvar o ->
-                let name = match o with Some s -> s | _ -> "ex" in
-                let t = create_fresh_constr m.level name in
+                let t = create_fresh_constr m.level o in
                 let row =
                   {r with row_fields=[]; row_fixed=true; row_more = t} in
                 link_type m (newty2 m.level (Tvariant row))
@@ -2217,6 +2228,7 @@ let find_newtype_level env path =
   with Not_found -> assert false
 
 let add_gadt_equation env source destination =
+  local_non_recursive_abbrev !env (Path.Pident source) destination;
   let destination = duplicate_type destination in
   let source_lev = find_newtype_level !env (Path.Pident source) in
   let decl = new_declaration (Some source_lev) (Some destination) in
@@ -2475,20 +2487,19 @@ and unify3 env t1 t1' t2 t2' =
          Tconstr ((Path.Pident p') as path',[],_))
         when is_newtype !env path && is_newtype !env path'
         && !generate_equations ->
-          let source,destination =
+          let source, destination =
             if find_newtype_level !env path > find_newtype_level !env path'
             then  p,t2'
             else  p',t1'
-          in add_gadt_equation env source destination
+          in
+          add_gadt_equation env source destination
       | (Tconstr ((Path.Pident p) as path,[],_), _)
         when is_newtype !env path && !generate_equations ->
           reify env t2';
-          (* local_non_recursive_abbrev !env (Path.Pident p) t2'; *)
           add_gadt_equation env p t2'
       | (_, Tconstr ((Path.Pident p) as path,[],_))
         when is_newtype !env path && !generate_equations ->
-          reify env t1' ;
-          (* local_non_recursive_abbrev !env (Path.Pident p) t1'; *)
+          reify env t1';
           add_gadt_equation env p t1'
       | (Tconstr (_,_,_), _) | (_, Tconstr (_,_,_)) when !umode = Pattern ->
           reify env t1';
