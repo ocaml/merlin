@@ -805,7 +805,8 @@ let reset_and_mark_loops_list tyl =
 (* Disabled in classic mode when printing an unification error *)
 let print_labels = ref true
 let print_label ppf l =
-  if !print_labels && l <> Nolabel || is_optional l then fprintf ppf "%s:" (string_of_label l)
+  if !print_labels && l <> Nolabel || is_optional l
+  then fprintf ppf "%s:" (string_of_label l)
 
 let rec tree_of_typexp sch ty =
   let ty = repr ty in
@@ -1220,16 +1221,31 @@ let extension_constructor id ppf ext =
 
 (* Print a value declaration *)
 
+let rec add_native_repr_attributes ty attrs =
+  match ty, attrs with
+  | Otyp_arrow (label, a, b), attr_opt :: rest ->
+      let b = add_native_repr_attributes b rest in
+      let a =
+        match attr_opt with
+        | None -> a
+        | Some attr -> Otyp_attribute (a, attr)
+      in
+      Otyp_arrow (label, a, b)
+  | _, [Some attr] -> Otyp_attribute (ty, attr)
+  | _ ->
+      assert (List.for_all (fun x -> x = None) attrs);
+      ty
+
 let tree_of_value_description id decl =
   (* Format.eprintf "@[%a@]@." raw_type_expr decl.val_type; *)
   let id = Ident.name id in
   let ty = tree_of_type_scheme decl.val_type in
-  let prims =
+  let prims, native_repr_attributes =
     match decl.val_kind with
-    | Val_prim p -> Primitive.description_list p
-    | _ -> []
+    | Val_prim p -> Primitive.description_list_and_attributes p
+    | _ -> ([], [])
   in
-  Osig_value (id, ty, prims)
+  Osig_value (id, add_native_repr_attributes ty native_repr_attributes, prims)
 
 let value_description id ppf decl =
   !Oprint.out_sig_item ppf (tree_of_value_description id decl)
@@ -1323,7 +1339,9 @@ let rec tree_of_class_type sch params =
       in
       Octy_signature (self_ty, List.rev csil)
   | Cty_arrow (l, ty, cty) ->
-      let lab = if !print_labels || is_optional l then string_of_label l else "" in
+      let lab =
+        if !print_labels || is_optional l then string_of_label l else ""
+      in
       let ty =
        if is_optional l then
          match (repr ty).desc with
@@ -1450,15 +1468,18 @@ let hide_rec_items = function
 let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_ident p ->
       Omty_ident (tree_of_path p)
-  | Mty_signature (lazy sg) ->
-      Omty_signature (if ellipsis then [Osig_ellipsis] else tree_of_signature sg)
+  | Mty_signature sg ->
+      Omty_signature (if ellipsis then [Osig_ellipsis]
+                      else tree_of_signature sg)
   | Mty_functor(param, ty_arg, ty_res) ->
       let res =
         match ty_arg with None -> tree_of_modtype ~ellipsis ty_res
         | Some mty ->
-            wrap_env (Env.add_module ~arg:true param mty) (tree_of_modtype ~ellipsis) ty_res
+            wrap_env (Env.add_module ~arg:true param mty)
+                     (tree_of_modtype ~ellipsis) ty_res
       in
-      Omty_functor (Ident.name param, may_map (tree_of_modtype ~ellipsis:false) ty_arg, res)
+      Omty_functor (Ident.name param,
+                    may_map (tree_of_modtype ~ellipsis:false) ty_arg, res)
   | Mty_alias p ->
       Omty_alias (tree_of_path p)
 
@@ -1475,7 +1496,8 @@ and tree_of_signature_rec env' in_type_group = function
       let in_type_group =
         match in_type_group, item with
           true, Sig_type (_, _, Trec_next) -> true
-        | _, Sig_type (_, _, (Trec_not | Trec_first)) -> set_printing_env env'; true
+        | _, Sig_type (_, _, (Trec_not | Trec_first)) ->
+            set_printing_env env'; true
         | _ -> set_printing_env env'; false
       in
     *)
@@ -1491,12 +1513,15 @@ and trees_of_sigitem = function
   | Sig_type(id, _, _) when is_row_name (Ident.name id) ->
       []
   | Sig_type(id, decl, rs) ->
-      [Osig_type(tree_of_type_decl id decl, tree_of_rec rs)]
+      [tree_of_type_declaration id decl rs]
   | Sig_typext(id, ext, es) ->
       [tree_of_extension_constructor id ext es]
   | Sig_module(id, md, rs) ->
-      [Osig_module (Ident.name id, tree_of_modtype md.md_type,
-                    tree_of_rec rs)]
+      let ellipsis =
+        List.exists (function ({txt="..."}, Parsetree.PStr []) -> true
+                            | _ -> false)
+          md.md_attributes in
+      [tree_of_module id md.md_type rs ~ellipsis]
   | Sig_modtype(id, decl) ->
       [tree_of_modtype_declaration id decl]
   | Sig_class(id, decl, rs) ->
@@ -1778,38 +1803,36 @@ let trace fst keep_last txt ppf tr =
     raise exn
 
 let report_subtyping_error ppf env tr1 txt1 tr2 =
-  wrap_printing_env env
-    (fun () ->
-       reset ();
-       let tr1 = List.map prepare_expansion tr1
-       and tr2 = List.map prepare_expansion tr2 in
-       fprintf ppf "@[<v>%a" (trace true (tr2 = []) txt1) tr1;
-       if tr2 = [] then fprintf ppf "@]" else
-         let mis = mismatch true tr2 in
-         fprintf ppf "%a%t@]"
-           (trace false (mis = None) "is not compatible with type") tr2
-           (explanation true mis))
+  wrap_printing_env env (fun () ->
+    reset ();
+    let tr1 = List.map prepare_expansion tr1
+    and tr2 = List.map prepare_expansion tr2 in
+    fprintf ppf "@[<v>%a" (trace true (tr2 = []) txt1) tr1;
+    if tr2 = [] then fprintf ppf "@]" else
+    let mis = mismatch true tr2 in
+    fprintf ppf "%a%t@]"
+      (trace false (mis = None) "is not compatible with type") tr2
+      (explanation true mis))
 
 let report_ambiguous_type_error ppf env (tp0, tp0') tpl txt1 txt2 txt3 =
-  wrap_printing_env env
-    (fun () ->
-       reset ();
-       List.iter
-         (fun (tp, tp') -> path_same_name tp0 tp; path_same_name tp0' tp')
-         tpl;
-       match tpl with
-         [] -> assert false
-       | [tp, tp'] ->
-         fprintf ppf
-           "@[%t@;<1 2>%a@ \
-            %t@;<1 2>%a\
-            @]"
-           txt1 (type_path_expansion tp) tp'
-           txt3 (type_path_expansion tp0) tp0'
-       | _ ->
-         fprintf ppf
-           "@[%t@;<1 2>@[<hv>%a@]\
-            @ %t@;<1 2>%a\
-            @]"
-           txt2 type_path_list tpl
-           txt3 (type_path_expansion tp0) tp0')
+  wrap_printing_env env (fun () ->
+    reset ();
+    List.iter
+      (fun (tp, tp') -> path_same_name tp0 tp; path_same_name tp0' tp')
+      tpl;
+    match tpl with
+      [] -> assert false
+    | [tp, tp'] ->
+        fprintf ppf
+          "@[%t@;<1 2>%a@ \
+             %t@;<1 2>%a\
+           @]"
+          txt1 (type_path_expansion tp) tp'
+          txt3 (type_path_expansion tp0) tp0'
+    | _ ->
+        fprintf ppf
+          "@[%t@;<1 2>@[<hv>%a@]\
+             @ %t@;<1 2>%a\
+           @]"
+          txt2 type_path_list tpl
+          txt3 (type_path_expansion tp0) tp0')
