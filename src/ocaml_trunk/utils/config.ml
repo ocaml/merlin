@@ -42,17 +42,17 @@ let windows =
 let sf = Printf.sprintf
 
 let exec_magic_number = "Caml1999X011"
-and cmi_magic_number = "Caml1999I019"
-and cmo_magic_number = "Caml1999O010"
-and cma_magic_number = "Caml1999A011"
-and cmx_magic_number = "Caml1999Y014"
-and cmxa_magic_number = "Caml1999Z013"
-and ast_impl_magic_number = "Caml1999M018"
-and ast_intf_magic_number = "Caml1999N017"
+and cmi_magic_number = "Caml1999I020"
+and cmo_magic_number = "Caml1999O011"
+and cma_magic_number = "Caml1999A012"
+and cmx_magic_number = "Caml1999Y015"
+and cmxa_magic_number = "Caml1999Z014"
+and ast_impl_magic_number = "Caml1999M019"
+and ast_intf_magic_number = "Caml1999N018"
 and cmxs_magic_number = "Caml2007D002"
 and cmt_magic_number = "Caml2012T006"
 
-let load_path = ref (Misc.Path_list.of_list [])
+let load_path = ref []
 
 let interface_suffix = ref ".mli"
 

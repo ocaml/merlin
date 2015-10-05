@@ -1468,7 +1468,7 @@ let hide_rec_items = function
 let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_ident p ->
       Omty_ident (tree_of_path p)
-  | Mty_signature sg ->
+  | Mty_signature (lazy sg) ->
       Omty_signature (if ellipsis then [Osig_ellipsis]
                       else tree_of_signature sg)
   | Mty_functor(param, ty_arg, ty_res) ->
