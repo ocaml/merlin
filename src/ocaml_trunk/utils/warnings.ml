@@ -210,7 +210,7 @@ let parse_opt error active flags s =
     if i >= String.length s then () else
     match s.[i] with
     | 'A' .. 'Z' ->
-       List.iter set (letter (Char.lowercase_ascii s.[i]));
+       List.iter set (letter (Char.lowercase s.[i]));
        loop (i+1)
     | 'a' .. 'z' ->
        List.iter clear (letter s.[i]);
@@ -227,7 +227,7 @@ let parse_opt error active flags s =
         for n = n1 to min n2 last_warning_number do myset n done;
         loop i
     | 'A' .. 'Z' ->
-       List.iter myset (letter (Char.lowercase_ascii s.[i]));
+       List.iter myset (letter (Char.lowercase s.[i]));
        loop (i+1)
     | 'a' .. 'z' ->
        List.iter myset (letter s.[i]);
@@ -500,10 +500,10 @@ let help_warnings () =
     match letter c with
     | [] -> ()
     | [n] ->
-        Printf.printf "  %c Alias for warning %i.\n" (Char.uppercase_ascii c) n
+        Printf.printf "  %c Alias for warning %i.\n" (Char.uppercase c) n
     | l ->
         Printf.printf "  %c warnings %s.\n"
-          (Char.uppercase_ascii c)
+          (Char.uppercase c)
           (String.concat ", " (List.map string_of_int l))
   done;
   exit 0

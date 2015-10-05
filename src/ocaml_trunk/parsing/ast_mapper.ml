@@ -623,7 +623,7 @@ let default_mapper =
       );
   }
 
-let rec extension_of_error {loc; msg; if_highlight; sub} =
+let rec extension_of_error {err_loc = loc; msg; if_highlight; sub} =
   { loc; txt = "ocaml.error" },
   PStr ([Str.eval (Exp.constant (Const_string (msg, None)));
          Str.eval (Exp.constant (Const_string (if_highlight, None)))] @
@@ -694,11 +694,11 @@ module PpxContext = struct
     let fields =
       [
         lid "tool_name",    make_string tool_name;
-        lid "include_dirs", make_list make_string !Clflags.include_dirs;
+        lid "include_dirs", make_list make_string @@ Clflags.include_dirs ();
         lid "load_path",    make_list make_string !Config.load_path;
-        lid "open_modules", make_list make_string !Clflags.open_modules;
-        lid "for_package",  make_option make_string !Clflags.for_package;
-        lid "debug",        make_bool !Clflags.debug;
+        lid "open_modules", make_list make_string @@ Clflags.open_modules ();
+        lid "for_package",  make_option make_string @@ Clflags.for_package ();
+        lid "debug",        make_bool @@ Clflags.debug ();
         get_cookies ()
       ]
     in
@@ -717,7 +717,7 @@ module PpxContext = struct
         | { pexp_desc = Pexp_constant (Const_string (str, None)) } -> str
         | _ -> raise_errorf "Internal error: invalid [@@@ocaml.ppx.context \
                              { %s }] string syntax" name
-      and get_bool pexp =
+      (*and get_bool pexp =
         match pexp with
         | {pexp_desc = Pexp_construct ({txt = Longident.Lident "true"},
                                        None)} ->
@@ -726,7 +726,7 @@ module PpxContext = struct
                                        None)} ->
             false
         | _ -> raise_errorf "Internal error: invalid [@@@ocaml.ppx.context \
-                             { %s }] bool syntax" name
+                             { %s }] bool syntax" name*)
       and get_list elem = function
         | {pexp_desc =
              Pexp_construct ({txt = Longident.Lident "::"},
@@ -742,7 +742,7 @@ module PpxContext = struct
             (f1 e1, f2 e2)
         | _ -> raise_errorf "Internal error: invalid [@@@ocaml.ppx.context \
                              { %s }] pair syntax" name
-      and get_option elem = function
+      (*and get_option elem = function
         | { pexp_desc =
               Pexp_construct ({ txt = Longident.Lident "Some" }, Some exp) } ->
             Some (elem exp)
@@ -750,7 +750,7 @@ module PpxContext = struct
               Pexp_construct ({ txt = Longident.Lident "None" }, None) } ->
             None
         | _ -> raise_errorf "Internal error: invalid [@@@ocaml.ppx.context \
-                             { %s }] option syntax" name
+                             { %s }] option syntax" name*)
       in
       match name with
       | "tool_name" ->

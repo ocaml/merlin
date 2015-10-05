@@ -1654,7 +1654,7 @@ let correct_abbrev env path params ty =
 exception Occur
 
 let allow_recursive env ty =
-  (!Clflags.recursive_types || !umode = Pattern) && is_contractive env ty
+  (Clflags.recursive_types () || !umode = Pattern) && is_contractive env ty
 
 let rec occur_rec env visited ty0 ty =
   if ty == ty0  then raise Occur;
