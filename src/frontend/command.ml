@@ -491,14 +491,13 @@ let dispatch_query ~verbosity buffer =
 
   | (Outline : a request) ->
     with_typer buffer @@ fun typer ->
-    let typed_tree = Typer.contents typer in
-    Outline.get (List.map BrowseT.of_browse
-                  (Typer.to_browse typed_tree))
+    let browse = Typer.to_browse (Typer.contents typer) in
+    Outline.get (List.map BrowseT.of_browse browse)
 
   | (Shape cursor : a request) ->
-    with_typer state @@ fun typer ->
-    let typed_tree = Typer.contents typer in
-    Outline.shape cursor (Browse.of_typer_contents typed_tree)
+    with_typer buffer @@ fun typer ->
+    let browse = Typer.to_browse (Typer.contents typer) in
+    Outline.shape cursor (List.map BrowseT.of_browse browse)
 
   | (Boundary (dir,pos) : a request) ->
     let get_enclosing_str_item pos browses =
@@ -665,11 +664,11 @@ let dispatch_query ~verbosity buffer =
     Warnings.dump ()
 
   | (Dump `Exn : a request) ->
-    with_typer state @@ fun typer ->
+    with_typer buffer @@ fun typer ->
     let exns =
       Typer.exns typer
-      @ Buffer.lexer_errors state.buffer
-      @ Buffer.parser_errors state.buffer
+      @ Buffer.lexer_errors buffer
+      @ Buffer.parser_errors buffer
     in
     `List (List.map ~f:(fun x -> `String (Printexc.to_string x)) exns)
 

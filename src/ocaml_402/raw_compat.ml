@@ -387,6 +387,8 @@ let lbl_attributes l = l.Types.lbl_attributes
 let mtd_attributes t = t.Types.mtd_attributes
 let md_attributes t = t.Types.md_attributes
 
+let id_of_constr_decl c = c.Types.cd_id
+
 (* Taken from Leo White's doc-ock,
    https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
  *)
