@@ -63,6 +63,7 @@ type token =
   | LPAREN
   | LIDENT of (string)
   | LET_LWT
+  | LETOP of (string)
   | LET
   | LESSMINUS
   | LESS
@@ -95,6 +96,7 @@ type token =
   | IF
   | GREATERRBRACKET
   | GREATERRBRACE
+  | GREATERDOT
   | GREATER
   | FUNCTOR
   | FUNCTION
@@ -114,6 +116,8 @@ type token =
   | END
   | ELSE
   | DOWNTO
+  | DOTTILDE
+  | DOTLESS
   | DOTDOT
   | DOT
   | DONE
@@ -203,6 +207,7 @@ and _ token_class =
   | T_LPAREN : unit token_class
   | T_LIDENT : (string) token_class
   | T_LET_LWT : unit token_class
+  | T_LETOP : (string) token_class
   | T_LET : unit token_class
   | T_LESSMINUS : unit token_class
   | T_LESS : unit token_class
@@ -235,6 +240,7 @@ and _ token_class =
   | T_IF : unit token_class
   | T_GREATERRBRACKET : unit token_class
   | T_GREATERRBRACE : unit token_class
+  | T_GREATERDOT : unit token_class
   | T_GREATER : unit token_class
   | T_FUNCTOR : unit token_class
   | T_FUNCTION : unit token_class
@@ -254,6 +260,8 @@ and _ token_class =
   | T_END : unit token_class
   | T_ELSE : unit token_class
   | T_DOWNTO : unit token_class
+  | T_DOTTILDE : unit token_class
+  | T_DOTLESS : unit token_class
   | T_DOTDOT : unit token_class
   | T_DOT : unit token_class
   | T_DONE : unit token_class

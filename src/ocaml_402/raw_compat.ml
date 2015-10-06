@@ -463,3 +463,5 @@ let get_class_field_desc_infos = function
   | Typedtree.Tcf_val (str_loc,_,_,_,_) -> Some (str_loc, `Value)
   | Typedtree.Tcf_method (str_loc,_,_)  -> Some (str_loc, `Method)
   | _ -> None
+
+let no_label = ""

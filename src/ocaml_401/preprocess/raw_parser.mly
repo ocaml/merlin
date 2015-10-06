@@ -477,6 +477,11 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %token ENTRYPOINT EXITPOINT
 %token PERCENT
 
+%token DOTLESS
+%token DOTTILDE
+%token GREATERDOT
+%token <string> LETOP
+
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved

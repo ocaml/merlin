@@ -881,9 +881,9 @@ module Meta = struct
 
   let code loc_start loc_end expr =
     let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
-    Ast_helper.Exp.apply ~loc prim_code ["", expr]
+    Ast_helper.Exp.apply ~loc prim_code [Raw_compat.no_label, expr]
 
   let uncode loc_start loc_end expr =
     let loc = {expr.pexp_loc with Location. loc_start; loc_end} in
-    Ast_helper.Exp.apply ~loc prim_uncode ["", expr]
+    Ast_helper.Exp.apply ~loc prim_uncode [Raw_compat.no_label, expr]
 end

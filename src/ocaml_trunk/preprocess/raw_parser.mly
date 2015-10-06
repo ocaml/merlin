@@ -463,6 +463,13 @@ let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
 %token ENTRYPOINT EXITPOINT
 
+(* Unused tokens, for compatibility with MetaOCaml builds *)
+
+%token DOTLESS
+%token DOTTILDE
+%token GREATERDOT
+%token <string> LETOP
+
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved
@@ -2732,13 +2739,6 @@ simple_expr:
            (Fake.app constr arg))
          constr (List.rev $4))
     }
-
-label_declaration:
-  mutable_flag label attributes COLON poly_type WITH expr
-    {
-      Type.field (mkrhs $startpos($2) $endpos($2) $2) $5 ~mut:$1 ~attrs:$3 ~loc:(rloc $startpos $endpos)
-    }
-;
 
 expr_comma_opt_list:
     expr_comma_opt_list COMMA expr              { $3 :: $1 }
