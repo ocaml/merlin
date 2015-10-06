@@ -205,6 +205,11 @@ let string_of_token : type a. a token_class -> string = function
   | T_AMPERSAND            -> "AMPERSAND"
   | T_AMPERAMPER           -> "AMPERAMPER"
 
+  | T_LETOP      -> "LETOP"
+  | T_GREATERDOT -> "GREATERDOT"
+  | T_DOTTILDE   -> "DOTTILDE"
+  | T_DOTLESS    -> "DOTLESS"
+
 let string_of_nonterminal : type a. a nonterminal_class -> string = function
   | N_with_type_binder                  -> "with_type_binder"
   | N_with_extensions                   -> "with_extensions"
@@ -548,6 +553,11 @@ let symbol_of_token = function
   | AMPERSAND                    -> T_ (T_AMPERSAND, ())
   | AMPERAMPER                   -> T_ (T_AMPERAMPER, ())
 
+  | LETOP v    -> T_ (T_LETOP, v)
+  | GREATERDOT -> T_ (T_GREATERDOT, ())
+  | DOTTILDE   -> T_ (T_DOTTILDE, ())
+  | DOTLESS    -> T_ (T_DOTLESS, ())
+
 let token_of_symbol (type a) (t : a token_class) (v : a) =
   match t with
   | T_WITH                   -> WITH
@@ -693,6 +703,11 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_AND                    -> AND
   | T_AMPERSAND              -> AMPERSAND
   | T_AMPERAMPER             -> AMPERAMPER
+
+  | T_LETOP      -> LETOP v
+  | T_GREATERDOT -> GREATERDOT
+  | T_DOTTILDE   -> DOTTILDE
+  | T_DOTLESS    -> DOTLESS
 
 let default_token (type a) (t : a token_class) : int * a =
   match t with
@@ -840,6 +855,11 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_FLOAT     -> 2, "0."
   | T_COMMENT   -> 2, ("", Location.none)
   | T_CHAR      -> 2, '_'
+
+  | T_LETOP      -> 2, ""
+  | T_GREATERDOT -> 2, ()
+  | T_DOTTILDE   -> 2, ()
+  | T_DOTLESS    -> 2, ()
 
 let default_expr = Fake.any_val'
 let default_type = Ast_helper.Typ.any ()
@@ -1281,6 +1301,11 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_AND                  -> Some "and"
   | T_AMPERSAND            -> Some "&"
   | T_AMPERAMPER           -> Some "&&"
+
+  | T_LETOP      -> None
+  | T_GREATERDOT -> None
+  | T_DOTTILDE   -> None
+  | T_DOTLESS    -> None
 
 let friendly_name_of_nonterminal : type a. a nonterminal_class -> string option = function
   | N_with_type_binder                  -> None
