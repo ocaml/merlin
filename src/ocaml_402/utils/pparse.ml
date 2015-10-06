@@ -28,11 +28,15 @@ let write_ast magic ast =
   close_out oc;
   fn
 
+let null = match Sys.os_type with "Win32" -> " NUL" | _ -> "/dev/null"
+
 let apply_rewriter magic fn_in ppx =
   let fn_out = Filename.temp_file "camlppx" "" in
   let comm =
-    Printf.sprintf "%s %s %s &> /dev/null"
-      ppx (Filename.quote fn_in) (Filename.quote fn_out)
+    Printf.sprintf "%s %s %s 1>%s 2>%s"
+      ppx
+      (Filename.quote fn_in) (Filename.quote fn_out)
+      null null
   in
   let ok = Sys.command comm = 0 in
   Misc.remove_file fn_in;
