@@ -423,6 +423,8 @@ let get_class_field_desc_infos = function
 
 let no_label = Asttypes.Nolabel
 
+let id_of_constr_decl c = c.Types.cd_id
+
 (* Taken from Leo White's doc-ock,
    https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
  *)
