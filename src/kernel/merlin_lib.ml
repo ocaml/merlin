@@ -544,7 +544,12 @@ end = struct
   let setup buffer =
     autoreload_dot_merlin buffer;
     begin match buffer.path with
-      | Some path -> Project.set_local_path buffer.project [path]
+      | Some path ->
+          Project.set_local_path buffer.project [path];
+          begin try
+            Sys.chdir path
+          with _ -> ()
+          end
       | None -> ()
     end;
     Project.setup buffer.project
