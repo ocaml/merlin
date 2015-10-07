@@ -122,7 +122,7 @@ done
 OCAML_VERSION="ocaml_402"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.02"
 OCAML_VERSION_VAL='`OCaml_4_00_1'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_03_trunk ]'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_trunk ]'
 
 cat <<END
 Merlin configuration
@@ -147,9 +147,12 @@ case "$MAGIC_VERSION" in
       sed_file '/Any_ty\|| Custom/d' \
         src/ocaml_402/typing/typecore.ml
       OCAML_VERSION_VAL='`OCaml_4_02_1'
-    else
+    elif [ "x$FULL_VERSION" = "x4.02.2" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.2"
       OCAML_VERSION_VAL='`OCaml_4_02_2'
+    else
+      OCAML_VERSION_MESSAGE="OCaml 4.02.3"
+      OCAML_VERSION_VAL='`OCaml_4_02_3'
     fi
     ;;
   "Caml1999I020")
