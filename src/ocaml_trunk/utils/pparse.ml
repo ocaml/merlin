@@ -79,27 +79,100 @@ let read_ast magic fn =
     Misc.remove_file fn;
     raise exn
 
+let rewrite_cache
+  : (string * string list * string * Obj.t, Obj.t) Hashtbl.t
+  = Hashtbl.create 7
+
+let cache_size = 200
+
 let rewrite magic ast ppxs =
-  read_ast magic
-    (List.fold_left (apply_rewriter magic) (write_ast magic ast)
-       (List.rev ppxs))
+  let key = (Sys.getcwd (), ppxs, magic, Obj.repr ast) in
+  try Obj.obj (Hashtbl.find rewrite_cache key)
+  with Not_found ->
+    if Hashtbl.length rewrite_cache > cache_size then begin
+      (* Cache eviction policy de qualitay, depuis 1870 *)
+      let counter = ref (Random.int 3) in
+      let to_remove =
+        Hashtbl.fold (fun k v acc ->
+            if !counter > 0 then
+              (decr counter; k :: acc)
+            else
+              (counter := 2; acc)
+          ) rewrite_cache []
+      in
+      List.iter (Hashtbl.remove rewrite_cache) to_remove;
+    end;
+    let result =
+      read_ast magic
+        (List.fold_left (apply_rewriter magic) (write_ast magic ast)
+           (List.rev ppxs))
+    in
+    Hashtbl.add rewrite_cache key (Obj.repr result);
+    result
+
+let normalize_sig, normalize_str, restore_sig, restore_str =
+  let module M = struct
+    open Lexing
+    open Location
+
+    let line = ref 0
+
+    let position_mapper pos =
+      {pos_fname = pos.pos_fname;
+       pos_bol = 0;
+       pos_cnum = pos.pos_cnum - pos.pos_bol;
+       pos_lnum = pos.pos_lnum - !line;
+      }
+
+    let location_mapper mapper loc =
+      if !line = 0 then
+        line := loc.loc_start.pos_lnum;
+      {loc_ghost = loc.loc_ghost;
+       loc_start = position_mapper loc.loc_start;
+       loc_end   = position_mapper loc.loc_end;
+      }
+
+    open Ast_mapper
+    let mapper = {default_mapper with location = location_mapper}
+
+    let normalize_sig sg =
+      line := 0;
+      let sg = mapper.signature mapper sg in
+      sg, !line
+
+    let normalize_str str =
+      line := 0;
+      let str = mapper.structure mapper str in
+      str, !line
+
+    let restore_sig line' sg =
+      if line' = 0 then sg
+      else (line := -line'; mapper.signature mapper sg)
+
+    let restore_str line' str =
+      if line' = 0 then str
+      else (line := -line'; mapper.structure mapper str)
+  end
+  in
+  M.(normalize_sig, normalize_str, restore_sig, restore_str)
 
 let apply_rewriters_str ?(restore = true) ~tool_name ast =
   match Clflags.ppx () with
   | [] -> ast
   | ppxs ->
+      let ast, line = normalize_str ast in
       let ast = Ast_mapper.add_ppx_context_str ~tool_name ast in
       let ast = rewrite Config.ast_impl_magic_number ast ppxs in
-      Ast_mapper.drop_ppx_context_str ~restore ast
+      restore_str line (Ast_mapper.drop_ppx_context_str ~restore ast)
 
 let apply_rewriters_sig ?(restore = true) ~tool_name ast =
   match Clflags.ppx () with
   | [] -> ast
   | ppxs ->
+      let ast, line = normalize_sig ast in
       let ast = Ast_mapper.add_ppx_context_sig ~tool_name ast in
       let ast = rewrite Config.ast_intf_magic_number ast ppxs in
-      Ast_mapper.drop_ppx_context_sig ~restore ast
-
+      restore_sig line (Ast_mapper.drop_ppx_context_sig ~restore ast)
 
 let report_error ppf = function
   | CannotRun cmd ->
