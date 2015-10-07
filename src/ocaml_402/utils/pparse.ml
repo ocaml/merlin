@@ -80,13 +80,28 @@ let read_ast magic fn =
     raise exn
 
 let rewrite_cache
-  : (string list * string * Obj.t, Obj.t) Hashtbl.t
+  : (string * string list * string * Obj.t, Obj.t) Hashtbl.t
   = Hashtbl.create 7
 
+let cache_size = 200
+
 let rewrite magic ast ppxs =
-  let key = (ppxs, magic, Obj.repr ast) in
+  let key = (Sys.getcwd (), ppxs, magic, Obj.repr ast) in
   try Obj.obj (Hashtbl.find rewrite_cache key)
   with Not_found ->
+    if Hashtbl.length rewrite_cache > cache_size then begin
+      (* Cache eviction policy de qualitay, depuis 1870 *)
+      let counter = ref (Random.int 3) in
+      let to_remove =
+        Hashtbl.fold (fun k v acc ->
+            if !counter > 0 then
+              (decr counter; k :: acc)
+            else
+              (counter := 2; acc)
+          ) rewrite_cache []
+      in
+      List.iter (Hashtbl.remove rewrite_cache) to_remove;
+    end;
     let result =
       read_ast magic
         (List.fold_left (apply_rewriter magic) (write_ast magic ast)
