@@ -155,10 +155,10 @@ let normalize_parser_around state pos =
   in
   let recoveries = Buffer.recover_history state.buffer in
   let items = Buffer.lexer state.buffer in
-  let recoveries = History.seek_forward (until_after pos) recoveries in
-  let items = History.seek_forward (seek_item recoveries) items in
   let recoveries = History.seek_backward (until_before pos) recoveries in
   let items = History.seek_backward (seek_item recoveries) items in
+  let recoveries = History.seek_forward (until_after pos) recoveries in
+  let items = History.seek_forward (seek_item recoveries) items in
   match Parser.find_marker (Recover.parser (snd (History.focused recoveries))) with
   | None -> ()
   | Some mark ->
