@@ -82,9 +82,9 @@ let compare_locations pos l1 l2 =
   (* Cursor inside one location: it has priority *)
   | 0, _ -> t1_first
   | _, 0 -> t2_first
-  (* Cursor outside locations: favor after *)
-  | n, m when n > 0 && m < 0 -> t1_first
-  | n, m when m > 0 && n < 0 -> t2_first
+  (* Cursor outside locations: favor before *)
+  | n, m when n > 0 && m < 0 -> t2_first
+  | n, m when m > 0 && n < 0 -> t1_first
   (* Cursor is after both, select the closest one *)
   | _, _ ->
       Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end
@@ -99,35 +99,41 @@ let best_node pos = function
     in
     Some (List.fold_left ~f ~init xs)
 
+let enclosing pos roots =
+  Option.bind (best_node pos roots)
+    ~f:(fun root -> best_node pos (select_leafs pos root))
+
 let deepest_before pos roots =
-  Option.map (best_node pos roots) ~f:(fun root ->
-      let rec aux loc0 path =
-        let env0, node0 = leaf_node path in
-        let candidate = Browse_node.fold_node
-            (fun env loc node acc -> match acc with
+  match enclosing pos roots with
+  | None -> None
+  | Some root ->
+    let rec aux loc0 path =
+      let env0, node0 = leaf_node path in
+      let candidate = Browse_node.fold_node
+          (fun env loc node acc -> match acc with
              | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
              | Some _ | None -> Some (env,loc,node)
-            )
-            env0 loc0 node0 None
-        in
-        match candidate with
-        | None -> path
-        | Some (env,loc,node) ->
-          aux loc (List.More ((env,node),path))
+          )
+          env0 loc0 node0 None
       in
-      aux (leaf_loc root) root
-    )
+      match candidate with
+      | None -> path
+      | Some (env,loc,node) ->
+        aux loc (List.More ((env,node),path))
+    in
+    Some (aux (leaf_loc root) root)
 
 let nearest_before pos roots =
-  (* FIXME: wrong :) *)
-  Option.bind (best_node pos roots) ~f:(fun root ->
-      best_node pos (select_leafs pos root)
-    )
-
-let enclosing pos roots =
-  Option.bind (best_node pos roots) ~f:(fun root ->
-      best_node pos (select_leafs pos root)
-    )
+  match enclosing pos roots with
+  | None -> None
+  | Some root ->
+    let rec aux prev = function
+      | List.More ((_, node), next) as prev
+        when Parsing_aux.compare_pos pos (node_loc node) = 0
+        -> aux prev next
+      | _ -> prev
+    in
+    Some (aux root root)
 
 let of_structure str =
   List.One (str.str_final_env, Browse_node.Structure str)
