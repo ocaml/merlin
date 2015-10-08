@@ -105,8 +105,6 @@ SOURCES = \
 	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
-	$(TYPER)/browseT.mli              \
-	$(TYPER)/browseT.ml               \
 	$(TYPER)/tail_analysis.mli        \
 	$(TYPER)/tail_analysis.ml         \
 	src/ocaml_aux/parsing_aux.mli     \
