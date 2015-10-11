@@ -89,7 +89,7 @@ variable `merlin-ac--cache')."
   (let* ((bounds (merlin/completion-bounds))
          (start  (car-safe bounds))
          (end    (cdr-safe bounds)))
-    (unless (and bounds (< (- start end) merlin-ac-prefix-size))
+    (unless (and bounds (< (- end start) merlin-ac-prefix-size))
       start)))
 
 (defun merlin-ac--fetch-type ()
