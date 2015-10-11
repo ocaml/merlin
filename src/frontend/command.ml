@@ -718,7 +718,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Flags_get : a request) ->
     let project = Buffer.project buffer in
-    (Merlin_lib.Project.get_user_config project).Dot_merlin.flags
+    List.concat (Merlin_lib.Project.get_user_config project).Dot_merlin.flags
 
   | (Project_get : a request) ->
     let project = Buffer.project buffer in
@@ -950,19 +950,10 @@ let dispatch_sync (state : state) =
     Cmi_cache.flush ();
     Project.check_dot_merlin (Buffer.project state.buffer)
 
-  | (Flags (`Add flags) : a request) ->
+  | (Flags_set flags : a request) ->
     let project = Buffer.project state.buffer in
     let config = Project.get_user_config project in
-    Project.set_user_config project
-      {config with
-       Dot_merlin.flags = flags :: config.Dot_merlin.flags};
-    user_failures project
-
-  | (Flags `Clear : a request) ->
-    let project = Buffer.project state.buffer in
-    let config = Project.get_user_config project in
-    Project.set_user_config project
-      {config with Dot_merlin.flags = []};
+    Project.set_user_config project {config with Dot_merlin.flags = [flags]};
     user_failures project
 
   | (Findlib_use packages : a request) ->

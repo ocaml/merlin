@@ -784,20 +784,15 @@ def vim_ext_list(vimvar,enabled=None):
         vim.command("call add(%s, '%s')" % (vimvar, ext))
 
 # Custom flag selection
-def vim_clear_flags():
+def vim_set_flags(*flags):
     acquire_buffer()
-    result = catch_and_print(lambda: command('flags', 'clear'))
-    return display_load_failures(result)
-
-def vim_add_flags(*flags):
-    acquire_buffer()
-    result = catch_and_print(lambda: command('flags', 'add', flags))
+    result = catch_and_print(lambda: command('flags', 'set', flags))
     return display_load_failures(result)
 
 def vim_get_flags(var):
     acquire_buffer()
     result = catch_and_print(lambda: command('flags', 'get'))
-    result = " ".join(map(" ".join, result))
+    result = " ".join(result)
     vim.command('let %s = "%s"' % (var, result.replace('"','\\"')))
 
 # Boundaries

@@ -153,11 +153,11 @@ type _ request =
   | Which_with_ext
     :  string list
     -> string list request
-  | Flags
-    : [ `Add of string list | `Clear ]
+  | Flags_set
+    :  string list
     -> [ `Ok | `Failures of (string * exn) list ] request
   | Flags_get
-    :  string list list request
+    :  string list request
   | Findlib_use
     :  string list
     -> [`Ok | `Failures of (string * exn) list] request

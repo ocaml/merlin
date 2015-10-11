@@ -168,17 +168,8 @@ function! merlin#CompleteFlags(ArgLead, CmdLine, CursorPos)
   return l:flags . "\n" . merlin#RelevantFlags(a:ArgLead, a:CmdLine, a:CursorPos)
 endfunction
 
-function! merlin#ClearFlags()
-  py merlin.vim_clear_flags()
-endfunction
-
-function! merlin#AddFlags(...)
-  py merlin.vim_add_flags(*vim.eval("a:000"))
-endfunction
-
 function! merlin#SetFlags(...)
-  py merlin.vim_clear_flags()
-  py merlin.vim_add_flags(*vim.eval("a:000"))
+  py merlin.vim_set_flags(*vim.eval("a:000"))
 endfunction
 
 function! s:ShowTypeEnclosing(type)
@@ -582,9 +573,7 @@ function! merlin#Register()
   command! -buffer -complete=custom,merlin#PackageList   -nargs=* MerlinUse        call merlin#Use(<f-args>)
 
   """ Flags management  --------------------------------------------------------
-  command! -buffer -complete=custom,merlin#RelevantFlags -nargs=* MerlinAddFlags   call merlin#AddFlags(<f-args>)
   command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* MerlinSetFlags   call merlin#SetFlags(<f-args>)
-  command! -buffer -nargs=0                                       MerlinClearFlags call merlin#ClearFlags()
 
   """ Extensions  --------------------------------------------------------------
   command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* MerlinExtEnable  call merlin#ExtEnable(<f-args>)

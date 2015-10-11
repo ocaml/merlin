@@ -367,10 +367,8 @@ module Protocol_io = struct
       Request (Which_with_ext [ext])
     | [`String "which"; `String "with_ext"; `List exts] ->
       Request (Which_with_ext (string_list exts))
-    | [`String "flags" ; `String "add" ; `List flags ] ->
-      Request (Flags (`Add (string_list flags)))
-    | [`String "flags" ; `String "clear" ] ->
-      Request (Flags `Clear)
+    | [`String "flags" ; `String "set" ; `List flags ] ->
+      Request (Flags_set (string_list flags))
     | [`String "flags" ; `String "get" ] ->
       Request (Flags_get)
     | [`String "find"; `String "use"; `List packages]
@@ -489,10 +487,10 @@ module Protocol_io = struct
         | Dump _, json -> json
         | Which_path _, str -> `String str
         | Which_with_ext _, strs -> json_of_string_list strs
-        | Flags _, failures ->
+        | Flags_set _, failures ->
           `Assoc (with_failures ["result", `Bool true] failures)
         | Flags_get, flags ->
-          `List (List.map json_of_string_list flags)
+          json_of_string_list flags
         | Findlib_use _, failures ->
           `Assoc (with_failures ["result", `Bool true] failures)
         | Findlib_list, strs -> json_of_string_list strs
