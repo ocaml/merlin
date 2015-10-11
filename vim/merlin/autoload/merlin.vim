@@ -79,7 +79,7 @@ endfunction
 function! merlin#FindFile(ext,file)
   py <<EOF
 fname = merlin.catch_and_print(lambda: merlin.vim_which(vim.eval("a:file"), vim.eval("a:ext")))
-if fname != None: vim.command("e "+ fname)
+if fname != None: vim.command("e "+ fname.replace(' ','\\ '))
 EOF
 endfunction
 
