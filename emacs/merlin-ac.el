@@ -34,10 +34,6 @@ auto-complete"
   "Display types in :summary"
   :group 'merlin-ac :type 'boolean)
 
-(defcustom merlin-ac-use-document nil
-  "Display types in :document"
-  :group 'merlin-ac :type 'boolean)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -67,7 +63,8 @@ auto-complete"
      (merlin/completion-entry-text merlin-ac--prefix data)
      :summary (when (and merlin-completion-types merlin-ac-use-summary) desc)
      :symbol (format "%c" (elt (cdr (assoc 'kind data)) 0))
-     :document (if (and merlin-completion-types merlin-ac-use-document) desc))))
+     :document (let ((doc (cdr-safe (assoc 'info data))))
+                 (unless (equal doc "") doc)))))
 
 (defun merlin-ac--source-refresh-cache ()
   "Refresh the cache of completion."
