@@ -288,8 +288,8 @@ and browse_cmts ~root modules =
   else
     match
       match cached.Cmt_cache.cmt_infos.cmt_annots with
-      | Interface intf      -> `Sg intf
-      | Implementation impl -> `Str impl
+      | Interface intf      -> `Browse (Browse_node.Signature intf)
+      | Implementation impl -> `Browse (Browse_node.Structure impl)
       | Packed (_, files)   -> `Pack files
       | _ ->
         (* We could try to work with partial cmt files, but it'd probably fail
@@ -297,7 +297,7 @@ and browse_cmts ~root modules =
         `Not_found
     with
     | `Not_found -> None
-    | (`Str _ | `Sg _ as typedtree) ->
+    | `Browse node ->
       begin match modules with
       | [] ->
         (* we were looking for a module, we found the right file, we're happy *)
@@ -305,14 +305,7 @@ and browse_cmts ~root modules =
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
         Some loc
       | _ ->
-        let env, node =
-          Browse.leaf_node @@
-          match typedtree with
-          | `Str str -> Browse.of_structure str
-          | `Sg sg -> Browse.of_signature sg
-        in
-        let trie = Typedtrie.of_browses
-          [BrowseT.of_node ~env node] in
+        let trie = Typedtrie.of_browses [BrowseT.of_node node] in
         cached.Cmt_cache.location_trie <- trie ;
         locate modules trie
       end

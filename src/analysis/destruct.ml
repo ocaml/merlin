@@ -27,6 +27,7 @@
 )* }}} *)
 
 open Std
+open Merlin_lib
 open BrowseT
 open Browse_node
 

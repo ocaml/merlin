@@ -26,10 +26,10 @@
 
 )* }}} *)
 
-type node = Browse_node.t
+open Merlin_lib
 
 type t = {
-  t_node     : node;
+  t_node     : Browse.node;
   t_loc      : Location.t;
   t_env      : Env.t;
   t_children : t list lazy_t;
@@ -42,7 +42,7 @@ val default_env : Env.t
   * as default annotation when nothing can be inferred from the [node].
   * If they are not specified, annotations from child are used for approximation.
   *)
-val of_node : ?env:Env.t -> node -> t
+val of_node : ?env:Env.t -> Browse.node -> t
 val of_browse : Browse.t -> t
 
 val dummy : t

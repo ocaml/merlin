@@ -28,6 +28,7 @@
 
 (* TODO: document all the following functions *)
 open Std
+open Merlin_lib
 
 val node_complete
   : Merlin_lib.Buffer.t
