@@ -145,15 +145,6 @@ let of_structure str =
 let of_signature sg =
   List.One (sg.sig_final_env, Browse_node.Signature sg)
 
-let of_typer_contents contents =
-  let of_content (content,_) = match content with
-    | `Str (_, `Ok str) -> Some (of_structure str)
-    | `Sg (_, `Ok sg) -> Some (of_signature sg)
-    | `Str (_, `Fail (env, loc)) | `Sg (_, `Fail (env, loc)) ->
-      None
-  in
-  List.filter_map ~f:of_content contents
-
 let rec is_recovered_expression = function
   | (* Recovery on arbitrary expressions *)
     { Typedtree.exp_desc = Typedtree.Texp_tuple [_] } ->
@@ -176,33 +167,3 @@ and is_recovered_Texp_construct cstr =
 let is_recovered = function
   | Expression e -> is_recovered_expression e
   | _ -> false
-
-(** Heuristic to find suitable environment to complete / type at given position.
-    1. Try to find environment near given cursor.
-    2. Check if there is an invalid construct between found env and cursor :
-      Case a.
-        > let x = valid_expr ||
-        The env found is the right most env from valid_expr, it's a correct
-        answer.
-      Case b.
-        > let x = valid_expr
-        > let y = invalid_construction||
-        In this case, the env found is the same as in case a, however it is
-        preferable to use env from enclosing module rather than an env from
-        inside x definition.
- *)
-let node_at ?(skip_recovered=false) typer pos_cursor =
-  let open Merlin_lib in
-  let structures = Typer.contents typer in
-  let structures = of_typer_contents structures in
-  let rec select = function
-    (* If recovery happens, the incorrect node is kept and a recovery node
-       is introduced, so the node to check for recovery is the second one. *)
-    | List.More ((_,node), (List.More ((_,node'), _) as ancestors))
-      when is_recovered node' -> select ancestors
-    | l -> l
-  in
-  match deepest_before pos_cursor structures with
-  | Some path when skip_recovered -> select path
-  | Some path -> path
-  | None -> List.One (Typer.env typer, Browse_node.Dummy)
