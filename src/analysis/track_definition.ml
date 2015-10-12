@@ -636,7 +636,7 @@ let inspect_context browse path pos =
       Some Unknown
 
 let from_string ~project ~env ~local_defs ~pos switch path =
-  let browse = Browse.of_typer_contents local_defs in
+  let browse = Merlin_typer.to_browse local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true @@
                           List.map browse ~f:BrowseT.of_browse) in
   let lid = Longident.parse path in
@@ -671,7 +671,7 @@ let from_string ~project ~env ~local_defs ~pos switch path =
 
 
 let get_doc ~project ~env ~local_defs ~comments ~pos source =
-  let browse = Browse.of_typer_contents local_defs in
+  let browse = Merlin_typer.to_browse local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true @@
                           List.map browse ~f:BrowseT.of_browse) in
   fun path ->

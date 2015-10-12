@@ -170,6 +170,8 @@ SOURCES = \
 	$(TYPER)/utils/pparse.ml          \
 	$(TYPER)/raw_typer.mli            \
 	$(TYPER)/raw_typer.ml             \
+	src/kernel/browse.mli             \
+	src/kernel/browse.ml              \
 	src/kernel/merlin_typer.mli       \
 	src/kernel/merlin_typer.ml        \
 	src/frontend/main_args.mli        \
@@ -180,8 +182,6 @@ SOURCES = \
 	src/frontend/protocol.mli         \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
-	src/analysis/browse.mli           \
-	src/analysis/browse.ml            \
 	src/analysis/browseT.mli          \
 	src/analysis/browseT.ml           \
 	src/analysis/browse_misc.ml       \

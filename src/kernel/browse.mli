@@ -43,23 +43,6 @@ val leaf_node : t -> node
  * Returns the matching node and all its ancestors or the empty list. *)
 val deepest_before : Lexing.position -> t list -> t option
 
-(** Heuristic to find suitable environment to complete / type at given position.
- *  1. Try to find environment near given cursor.
- *  2. Check if there is an invalid construct between found env and cursor :
- *    Case a.
- *      > let x = valid_expr ||
- *      The env found is the right most env from valid_expr, it's a correct
- *      answer.
- *    Case b.
- *      > let x = valid_expr
- *      > let y = invalid_construction||
- *      In this case, the env found is the same as in case a, however it is
- *      preferable to use env from enclosing module rather than an env from
- *      inside x definition.
- *)
-val node_at : ?skip_recovered:bool -> Merlin_lib.Typer.t -> Lexing.position ->
-  t
-
 (** The nearest context inside or before the node, though stopping after
  * leaving enclosing subtree. For instance, navigating
  * through:
@@ -73,7 +56,6 @@ val enclosing : Lexing.position -> t list -> t option
 
 val of_structure : Typedtree.structure -> t
 val of_signature : Typedtree.signature -> t
-val of_typer_contents : (Merlin_typer.content * _) list -> t list
 
 (** Identify nodes introduced by recovery *)
 val is_recovered_expression : Typedtree.expression -> bool

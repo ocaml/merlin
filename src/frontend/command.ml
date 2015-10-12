@@ -184,7 +184,7 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let env = match pos with
       | None -> Typer.env typer
-      | Some pos -> fst (Browse.leaf_node (Browse.node_at typer pos))
+      | Some pos -> fst (Browse.leaf_node (Typer.node_at typer pos))
     in
     let ppf, to_string = Format.to_string () in
     ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
@@ -195,8 +195,7 @@ let dispatch_query ~verbosity buffer =
     let open Typedtree in
     let open Override in
     with_typer buffer @@ fun typer ->
-    let structures = Typer.contents typer in
-    let structures = Browse.of_typer_contents structures in
+    let structures = Typer.to_browse (Typer.contents typer) in
     let env, path = match Browse.enclosing pos structures with
       | None -> Typer.env typer, []
       | Some browse ->
@@ -287,7 +286,7 @@ let dispatch_query ~verbosity buffer =
         aux [] offset
     in
     let small_enclosings =
-      let env, node = Browse.leaf_node (Browse.node_at typer pos) in
+      let env, node = Browse.leaf_node (Typer.node_at typer pos) in
       let include_lident = match node with
         | Pattern _ -> false
         | _ -> true
@@ -332,8 +331,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Enclosing pos : a request) ->
     with_typer buffer @@ fun typer ->
-    let structures = Typer.contents typer in
-    let structures = Browse.of_typer_contents structures in
+    let structures = Typer.to_browse (Typer.contents typer) in
     let path = match Browse.enclosing pos structures with
       | None -> []
       | Some path -> node_list path
@@ -342,7 +340,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Complete_prefix (prefix, pos, with_doc) : a request) ->
     let complete ~no_labels typer =
-      let path = Browse.node_at ~skip_recovered:true typer pos in
+      let path = Typer.node_at ~skip_recovered:true typer pos in
       let env, node = Browse.leaf_node path in
       let target_type, context =
         Completion.application_context ~verbosity ~prefix path in
@@ -414,7 +412,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Expand_prefix (prefix, pos) : a request) ->
     with_typer buffer @@ fun typer ->
-    let env, _ = Browse.leaf_node (Browse.node_at typer pos) in
+    let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let global_modules = Buffer.global_modules buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
     { Compl. entries ; context = `Unknown }
@@ -422,7 +420,7 @@ let dispatch_query ~verbosity buffer =
   | (Document (patho, pos) : a request) ->
     with_typer buffer @@ fun typer ->
     let comments = Buffer.comments buffer in
-    let env, _ = Browse.leaf_node (Browse.node_at typer pos) in
+    let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let local_defs = Typer.contents typer in
     let path =
       match patho with
@@ -446,7 +444,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Locate (patho, ml_or_mli, pos) : a request) ->
     with_typer buffer @@ fun typer ->
-    let env, _ = Browse.leaf_node (Browse.node_at typer pos) in
+    let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let local_defs = Typer.contents typer in
     let path =
       match patho with
@@ -478,8 +476,7 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let env = Typer.env typer in
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-    let structures = Typer.contents typer in
-    let structures = Browse.of_typer_contents structures in
+    let structures = Typer.to_browse (Typer.contents typer) in
     let enclosings = match Browse.enclosing loc_start structures with
       | None -> []
       | Some path -> node_list path
@@ -496,7 +493,7 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let typed_tree = Typer.contents typer in
     Outline.get (List.map BrowseT.of_browse
-                  (Browse.of_typer_contents typed_tree))
+                  (Typer.to_browse typed_tree))
 
   | (Boundary (dir,pos) : a request) ->
     let get_enclosing_str_item pos browses =
@@ -512,7 +509,7 @@ let dispatch_query ~verbosity buffer =
         | item :: _ -> Some item
     in
     with_typer buffer @@ fun typer ->
-    let browses  = Browse.of_typer_contents (Typer.contents typer) in
+    let browses  = Typer.to_browse (Typer.contents typer) in
     Option.bind (get_enclosing_str_item pos browses) ~f:(fun item ->
       None
         (*match dir with
@@ -607,7 +604,7 @@ let dispatch_query ~verbosity buffer =
     with_typer buffer @@ fun typer ->
     let env = match pos with
       | None -> Typer.env typer
-      | Some pos -> fst (Browse.leaf_node (Browse.node_at typer pos))
+      | Some pos -> fst (Browse.leaf_node (Typer.node_at typer pos))
     in
     let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
     let aux item =
@@ -626,8 +623,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Dump `Browse : a request) ->
     with_typer buffer @@ fun typer ->
-    let structures = Typer.contents typer in
-    let structures = Browse.of_typer_contents structures in
+    let structures = Typer.to_browse (Typer.contents typer) in
     Browse_misc.dump_ts (List.map ~f:snd @@ List.map ~f:Browse.leaf_node structures)
 
   | (Dump `Tokens : a request) ->
@@ -721,8 +717,7 @@ let dispatch_query ~verbosity buffer =
 
   | (Occurrences (`Ident_at pos) : a request) ->
     with_typer buffer @@ fun typer ->
-    let str = Typer.contents typer in
-    let str = Browse.of_typer_contents str in
+    let str = Typer.to_browse (Typer.contents typer) in
     let tnode = match Browse.enclosing pos str with
       | Some t -> BrowseT.of_browse t
       | None -> BrowseT.dummy
