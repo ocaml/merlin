@@ -32,18 +32,23 @@ open Browse_node
 type node = Browse_node.t
 type t = (Env.t * node) List.Non_empty.t
 
-let node_loc node =
-  let loc = Browse_node.node_real_loc Location.none node in
-  if loc != Location.none then
-    loc
-  else
+let approximate_loc get_loc node =
+  let loc = get_loc Location.none node in
+  if loc == Location.none then
     let rec aux env node acc =
-      let loc = Browse_node.node_real_loc Location.none node in
+      let loc = get_loc Location.none node in
       if loc != Location.none then
         Parsing_aux.location_union loc acc
       else Browse_node.fold_node aux env node acc
     in
     aux Env.empty node Location.none
+  else
+    loc
+
+let node_loc node = approximate_loc Browse_node.node_real_loc node
+
+(* Fuzzy locations, more likely to locate the appropriate node *)
+let node_merlin_loc node = approximate_loc Browse_node.node_merlin_loc node
 
 let leaf_node = List.Non_empty.hd
 let leaf_loc t = node_loc (snd (leaf_node t))
@@ -51,7 +56,7 @@ let leaf_loc t = node_loc (snd (leaf_node t))
 let select_leafs pos root =
   let rec aux acc path =
     let select env node acc =
-      let loc = node_loc node in
+      let loc = node_merlin_loc node in
       if Parsing_aux.compare_pos pos loc = 0
       then aux acc (List.More ((env, node), path))
       else acc
@@ -113,7 +118,7 @@ let deepest_before pos roots =
       let env0, node0 = leaf_node path in
       let candidate = Browse_node.fold_node
           (fun env node acc ->
-             let loc = node_loc node in
+             let loc = node_merlin_loc node in
              match acc with
              | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
              | Some _ | None -> Some (env,loc,node)
@@ -133,7 +138,7 @@ let nearest_before pos roots =
   | Some root ->
     let rec aux prev = function
       | List.More ((_, node), next) as prev
-        when Parsing_aux.compare_pos pos (node_loc node) = 0
+        when Parsing_aux.compare_pos pos (node_merlin_loc node) = 0
         -> aux prev next
       | _ -> prev
     in
