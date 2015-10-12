@@ -37,30 +37,32 @@ let node_loc node =
   if loc != Location.none then
     loc
   else
-    let rec aux env loc node acc =
+    let rec aux env node acc =
+      let loc = Browse_node.node_real_loc Location.none node in
       if loc != Location.none then
         Parsing_aux.location_union loc acc
-      else Browse_node.fold_node aux env loc node acc
+      else Browse_node.fold_node aux env node acc
     in
-    aux Env.empty Location.none node Location.none
+    aux Env.empty node Location.none
 
 let leaf_node = List.Non_empty.hd
 let leaf_loc t = node_loc (snd (leaf_node t))
 
 let select_leafs pos root =
-  let rec aux acc loc path =
-    let select env loc node' acc =
+  let rec aux acc path =
+    let select env node acc =
+      let loc = node_loc node in
       if Parsing_aux.compare_pos pos loc = 0
-      then aux acc loc (List.More ((env, node'), path))
+      then aux acc (List.More ((env, node), path))
       else acc
     in
     let env, node = leaf_node path in
-    let acc' = Browse_node.fold_node select env loc node acc in
+    let acc' = Browse_node.fold_node select env node acc in
     if acc == acc'
     then path :: acc
     else acc'
   in
-  aux [] (leaf_loc root) root
+  aux [] root
 
 let t2_first = 1
 let t1_first = -1
@@ -110,11 +112,13 @@ let deepest_before pos roots =
     let rec aux loc0 path =
       let env0, node0 = leaf_node path in
       let candidate = Browse_node.fold_node
-          (fun env loc node acc -> match acc with
+          (fun env node acc ->
+             let loc = node_loc node in
+             match acc with
              | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
              | Some _ | None -> Some (env,loc,node)
           )
-          env0 loc0 node0 None
+          env0 node0 None
       in
       match candidate with
       | None -> path

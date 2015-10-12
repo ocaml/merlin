@@ -118,12 +118,15 @@ let rewrite loc raw = Raw_typer.rewrite_loc (rewrite_ppx (rewrite_raw loc raw))
 (* Produce a new step by processing one frame from the parser *)
 
 let fake_env node =
-  let rec select env loc node acc =
-    let acc = if loc == fake_loc then env else acc in
-    Browse_node.fold_node select env loc node acc
+  let rec select env node acc =
+    Browse_node.fold_node select env node @@
+    if Browse_node.node_real_loc Location.none node == fake_loc then
+      env
+    else
+      acc
   in
   let env = Browse_node.node_update_env Env.empty node in
-  select env Location.none node env
+  select env node env
 
 let append catch loc step item =
   try

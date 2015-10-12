@@ -74,14 +74,14 @@ type t =
   | Include_declaration      of Override.include_declaration
   | Open_description         of Override.open_description
 
-  | Method_call              of expression * meth
+  | Method_call              of expression * meth * Location.t
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
 
 let node_update_env env0 = function
   | Pattern        {pat_env = env}  | Expression     {exp_env = env}
-  | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _)
+  | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _, _)
   | Structure_item {str_env = env}  | Signature_item {sig_env = env}
   | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
   | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
@@ -92,7 +92,7 @@ let node_update_env env0 = function
 let node_real_loc loc0 = function
   | Pattern        {pat_loc = loc}
   | Expression     {exp_loc = loc}
-  | Method_call    ({exp_loc = loc}, _)
+  | Method_call    (_, _, loc)
   | Class_expr     {cl_loc = loc}
   | Module_expr    {mod_loc = loc}
   | Structure_item {str_loc = loc}
@@ -127,26 +127,24 @@ let node_real_loc loc0 = function
 let node_merlin_loc loc node =
   Location.unpack_fake_location (node_real_loc loc node)
 
-let app node env loc f acc =
-  f (node_update_env env node)
-    (node_merlin_loc loc node)
-    node acc
+let app node env f acc =
+  f (node_update_env env node) node acc
 
-type 'a f0 = Env.t -> Location.t -> t -> 'a -> 'a
-type ('b,'a) f1 = 'b -> Env.t -> Location.t -> 'a f0 -> 'a -> 'a
+type 'a f0 = Env.t -> t -> 'a -> 'a
+type ('b,'a) f1 = 'b -> Env.t -> 'a f0 -> 'a -> 'a
 
-let id_fold _env _loc (_f : _ f0) acc = acc
+let id_fold _env (_f : _ f0) acc = acc
 
-let ( ** ) f1 f2 env loc (f : _ f0) acc =
-  f2 env loc f (f1 env loc f acc)
+let ( ** ) f1 f2 env (f : _ f0) acc =
+  f2 env f (f1 env f acc)
 
-let rec list_fold (f' : (_,_) f1) xs env loc f acc = match xs with
-  | x :: xs -> list_fold f' xs env loc f (f' x env loc f acc)
+let rec list_fold (f' : (_,_) f1) xs env f acc = match xs with
+  | x :: xs -> list_fold f' xs env f (f' x env f acc)
   | [] -> acc
 
-let option_fold f' o env loc (f : _ f0) acc = match o with
+let option_fold f' o env (f : _ f0) acc = match o with
   | None -> acc
-  | Some x -> f' x env loc f acc
+  | Some x -> f' x env f acc
 
 let concat_loc l1 l2 =
   let open Location in
@@ -189,16 +187,15 @@ let of_pattern_desc = function
   | Tpat_or (p1,p2,_) ->
     of_pattern p1 ** of_pattern p2
 
-let of_method_call obj meth arg =
-  fun env loc (f : _ f0) acc ->
+let of_method_call obj meth arg loc =
+  fun env (f : _ f0) acc ->
   let loc_start = obj.exp_loc.Location.loc_end in
   let loc_end = match arg with
     | None -> loc.Location.loc_end
     | Some e -> e.exp_loc.Location.loc_start
   in
-  app (Method_call (obj,meth)) env
-    {Location. loc_ghost = true; loc_start; loc_end}
-    f acc
+  let loc = {Location. loc_ghost = true; loc_start; loc_end} in
+  app (Method_call (obj,meth,loc)) env f acc
 
 let include_infos incl_mod incl_type incl_loc =
   {Override. incl_mod; incl_type; incl_loc; incl_attributes = []}
@@ -207,7 +204,7 @@ let open_description open_override open_path open_txt open_loc =
   {Override. open_path; open_override; open_loc; open_attributes = [];
              open_txt}
 
-let of_expression_desc = function
+let of_expression_desc loc = function
   | Texp_ident _ | Texp_constant _ | Texp_instvar _
   | Texp_variant (_,None) | Texp_new _ -> id_fold
   | Texp_let (_,vbs,e) ->
@@ -240,7 +237,9 @@ let of_expression_desc = function
   | Texp_ifthenelse (e1,e2,Some e3) | Texp_for (_,_,e1,e2,_,e3) ->
     of_expression e1 ** of_expression e2 ** of_expression e3
   | Texp_send (e,meth,eo) ->
-    of_expression e ** of_method_call e meth eo ** option_fold of_expression eo
+    of_expression e **
+    of_method_call e meth eo loc **
+    option_fold of_expression eo
   | Texp_override (_,ls) ->
     list_fold (fun (_,_,e) -> of_expression e) ls
   | Texp_letmodule (mb_id, mb_name, mb_expr, e) ->
@@ -457,7 +456,7 @@ let of_node = function
     of_pattern_desc pat_desc **
     list_fold of_pat_extra pat_extra
   | Expression { exp_desc; exp_loc; exp_extra } ->
-    of_expression_desc exp_desc **
+    of_expression_desc exp_loc exp_desc **
     list_fold of_exp_extra exp_extra
   | Case { c_lhs; c_guard; c_rhs } ->
     of_pattern c_lhs ** of_expression c_rhs **
@@ -577,8 +576,8 @@ let of_node = function
     of_module_type i.Override.incl_mod
 
 
-let fold_node f env loc node acc =
-  of_node node env loc f acc
+let fold_node f env node acc =
+  of_node node env f acc
 
 (** Accessors for information specific to a node *)
 
