@@ -206,23 +206,24 @@ let rec get_every_pattern = function
     | Expression e ->
       (* We are on the right node *)
       let patterns =
-        Browse_node.fold_node (fun env loc node acc ->
+        Browse_node.fold_node (fun env node acc ->
           match node with
           | Pattern _ -> (* Not expected here *) assert false
           | Case _ ->
-              Browse_node.fold_node (fun _env _loc node acc ->
+              Browse_node.fold_node (fun _env node acc ->
                 match node with
               | Pattern p -> p :: acc
               | _ -> acc
-              ) env loc node acc
+              ) env node acc
           | _ -> acc
-        ) BrowseT.default_env BrowseT.default_loc parent []
+        ) Env.empty parent []
       in
       let loc =
-        Browse_node.fold_node (fun env loc node acc ->
+        Browse_node.fold_node (fun env node acc ->
           let open Location in
+          let loc = Browse.node_loc node in
           if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
-        ) Env.empty (Browse.node_loc parent) parent Location.none
+        ) Env.empty parent Location.none
       in
       loc, patterns
     | _ ->

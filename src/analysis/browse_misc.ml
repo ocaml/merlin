@@ -71,20 +71,21 @@ let signature_of_env ?(ignore_extensions=true) env =
   Typemod.simplify_signature (!sg)
 
 let dump_ts ts =
-  let rec append env loc node acc =
+  let rec append env node acc =
+    let loc = Browse.node_loc node in
     `Assoc [
       "start", Lexing.json_of_position loc.Location.loc_start;
       "end",   Lexing.json_of_position loc.Location.loc_end;
       "ghost", `Bool loc.Location.loc_ghost;
       "kind", `String (Browse_node.string_of_node node);
-      "children", dump_list env loc node
+      "children", dump_list env node
     ] :: acc
-  and dump_list env loc node =
+  and dump_list env node =
     `List (List.sort ~cmp:compare @@
-           Browse_node.fold_node append env loc node [])
+           Browse_node.fold_node append env node [])
   in
   `List (List.fold_left ts ~init:[] ~f:(fun acc node ->
-      append Env.empty (Browse.node_loc node) node acc))
+      append Env.empty node acc))
 
 let annotate_tail_calls (ts : Browse_node.t list) : (Browse_node.t * Protocol.is_tail_position) list =
   let is_one_of candidates node = List.mem node ~set:candidates in

@@ -88,12 +88,12 @@ type t =
   | Include_declaration      of include_declaration
   | Open_description         of open_description
 
-  | Method_call              of expression * meth
+  | Method_call              of expression * meth * Location.t
   | Module_binding_name      of module_binding
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
 
-val fold_node : (Env.t -> Location.t -> t -> 'a -> 'a) -> Env.t -> Location.t -> t -> 'a -> 'a
+val fold_node : (Env.t -> t -> 'a -> 'a) -> Env.t -> t -> 'a -> 'a
 
 (** Accessors for information specific to a node *)
 

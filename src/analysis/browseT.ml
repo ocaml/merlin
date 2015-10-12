@@ -41,14 +41,15 @@ type t = {
 }
 
 let of_node ?(env=default_env) node =
-  let rec one t_env t_loc t_node =
+  let rec one t_env t_node =
+    let t_loc = Browse.node_loc t_node in
     let rec t = {t_node; t_env; t_loc; t_children = lazy (aux t)} in
     t
   and aux t =
-    Browse_node.fold_node (fun env loc node acc -> one env loc node :: acc)
-      t.t_env t.t_loc t.t_node []
+    Browse_node.fold_node (fun env node acc -> one env node :: acc)
+      t.t_env t.t_node []
   in
-  one env (Browse.node_loc node) node
+  one env node
 
 let of_browse b =
   let env, node = Browse.leaf_node b in
