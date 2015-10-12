@@ -588,12 +588,12 @@ let dispatch_query ~verbosity buffer =
   | (Dump (`Typer `Output) : a request) ->
     with_typer buffer @@ fun typer ->
     let ppf, to_string = Format.to_string () in
-    List.iter (fun (content,_) -> match content with
-        | `Sg (_, `Ok sg) -> Printtyped.interface ppf sg
-        | `Str (_, `Ok str) -> Printtyped.implementation ppf str
-        | `Sg (_, `Fail (_,loc)) | `Str (_, `Fail (_,loc)) ->
-          Format.fprintf ppf "<failed to type at %a>\n"
-            Location.print loc
+    List.iter (fun (_,typed,_) ->
+        match typed with
+        | `Fail (_,loc) ->
+          Format.fprintf ppf "<failed to type at %a>\n" Location.print loc
+        | `Sg sg -> Printtyped.interface ppf sg
+        |`Str str -> Printtyped.implementation ppf str
       ) (Typer.contents typer);
     `String (to_string ())
 

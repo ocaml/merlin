@@ -37,6 +37,7 @@ open Misc
 *)
 module Lexer  = Merlin_lexer
 module Parser = Merlin_parser
+module Browse = Merlin_browse
 module Typer  = Merlin_typer
 module Recover = Merlin_recover
 

@@ -35,13 +35,12 @@ val update : Merlin_parser.t -> t -> t
 
 val env : t -> Env.t
 
-type 'a result = [ `Ok of 'a | `Fail of Env.t * Location.t ]
-type content =
-  [ `Str of Parsetree.structure * Typedtree.structure result
-  | `Sg of Parsetree.signature * Typedtree.signature result
-  ]
+type parsed = [ `Str of Parsetree.structure | `Sg of Parsetree.signature ]
+type typed  = [ `Str of Typedtree.structure | `Sg of Typedtree.signature
+              | `Fail of Env.t * Location.t ]
+type checks = Typecore.delayed_check list
 
-val contents : t -> (content * Typecore.delayed_check list) list
+val contents : t -> (parsed * typed * checks) list
 val exns : t -> exn list
 val delayed_checks : t -> exn list
 val extensions : t -> Extension.set
@@ -64,6 +63,6 @@ val with_typer : t -> (unit -> 'a) -> 'a
  *      preferable to use env from enclosing module rather than an env from
  *      inside x definition.
  *)
-val node_at : ?skip_recovered:bool -> t -> Lexing.position -> Browse.t
+val node_at : ?skip_recovered:bool -> t -> Lexing.position -> Merlin_browse.t
 
-val to_browse : (content * _) list -> Browse.t list
+val to_browse : (_ * typed * _) list -> Merlin_browse.t list

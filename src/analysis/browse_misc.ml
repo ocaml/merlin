@@ -28,6 +28,7 @@
 
 open Std
 open Option.Infix
+open Merlin_lib
 open BrowseT
 
 let print_constructor ppf c =

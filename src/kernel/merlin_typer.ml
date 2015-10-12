@@ -42,11 +42,10 @@ let caught catch =
   catch := [];
   caught
 
-type 'a result = [ `Ok of 'a | `Fail of Env.t * Location.t ]
-type content =
-  [ `Str of Parsetree.structure * Typedtree.structure result
-  | `Sg of Parsetree.signature * Typedtree.signature result
-  ]
+type parsed = [ `Str of Parsetree.structure | `Sg of Parsetree.signature ]
+type typed  = [ `Str of Typedtree.structure | `Sg of Typedtree.signature
+              | `Fail of Env.t * Location.t ]
+type checks = Typecore.delayed_check list
 
 (* Intermediate, resumable type checking state *)
 
@@ -55,7 +54,7 @@ type step = {
   ppx_cookie : Ast_mapper.cache;
   snapshot   : Btype.snapshot;
   env        : Env.t;
-  contents   : (content * Typecore.delayed_check list) list;
+  contents   : (parsed * typed * checks) list;
   exns       : exn list;
 }
 
@@ -136,18 +135,20 @@ let append catch loc step item =
       | `str str ->
         let str',t,env = Typemod.type_structure step.env str loc in
         env,
-        (`Str (str, `Ok str'), !Typecore.delayed_checks) :: step.contents
+        (`Str str, `Str str', !Typecore.delayed_checks) :: step.contents
       | `sg sg ->
         let sg' = Typemod.transl_signature step.env sg in
-        sg'.Typedtree.sig_final_env,
-        (`Sg (sg, `Ok sg'), !Typecore.delayed_checks) :: step.contents
+        let env = sg'.Typedtree.sig_final_env in
+        env,
+        (`Sg sg, `Sg sg', !Typecore.delayed_checks) :: step.contents
       | `fake str ->
         let str',_,_ =
           Parsing_aux.catch_warnings (ref [])
             (fun () -> Typemod.type_structure step.env str loc)
         in
-        fake_env (Browse_node.Structure str'),
-        (`Str (str, `Ok str'), !Typecore.delayed_checks) :: step.contents
+        let env = fake_env (Browse_node.Structure str') in
+        env,
+        (`Str str, `Str str', !Typecore.delayed_checks) :: step.contents
       | `none -> step.env, step.contents
     in
     let snapshot = Btype.snapshot () in
@@ -159,8 +160,8 @@ let append catch loc step item =
     let snapshot = Btype.snapshot () in
     let failed = `Fail (step.env, loc) in
     let content = match item with
-      | `str str | `fake str -> Some (`Str (str, failed), [])
-      | `sg sg -> Some (`Sg (sg, failed), [])
+      | `str str | `fake str -> Some (`Str str, failed, [])
+      | `sg sg -> Some (`Sg sg, failed, [])
       | `none -> None
     in
     {step with snapshot;
@@ -281,19 +282,19 @@ let delayed_checks t =
   protect_typer t @@ fun exns ->
   let st = get_value t in
   let checks =
-    List.fold_left ~f:(fun acc (content,checks) ->
-        try match content with
-          | `Str (_, `Ok str) ->
+    List.fold_left ~f:(fun acc (_,typed,checks) ->
+        try match typed with
+          | `Fail _ -> acc
+          | `Str str ->
             ignore (Includemod.signatures st.env
                       str.Typedtree.str_type
                       str.Typedtree.str_type : Typedtree.module_coercion);
             checks @ acc
-          | `Sg (_, `Ok sg) ->
+          | `Sg sg ->
             ignore (Includemod.signatures st.env
                       sg.Typedtree.sig_type
                       sg.Typedtree.sig_type : Typedtree.module_coercion);
             checks @ acc
-          | `Str (_, `Fail _) | `Sg (_, `Fail _) -> acc
         with exn ->
           exns := exn :: !exns;
           acc
@@ -314,11 +315,13 @@ let is_valid t =
 let last_ident env = Raw_compat.last_ident (Env.summary env)
 
 let to_browse contents =
-  let of_content (content,_) = match content with
-    | `Str (_, `Ok str) -> Some (Browse.of_structure str)
-    | `Sg (_, `Ok sg) -> Some (Browse.of_signature sg)
-    | `Str (_, `Fail (env, loc)) | `Sg (_, `Fail (env, loc)) ->
-      None
+  let with_env node =
+    List.One (Browse_node.node_update_env Env.empty node, node)
+  in
+  let of_content (_,typed,_) = match typed with
+    | `Fail _ -> None
+    | `Sg sg -> Some (with_env (Browse_node.Signature sg))
+    | `Str str -> Some (with_env (Browse_node.Structure str))
   in
   List.filter_map ~f:of_content contents
 
@@ -342,10 +345,10 @@ let node_at ?(skip_recovered=false) typer pos_cursor =
     (* If recovery happens, the incorrect node is kept and a recovery node
        is introduced, so the node to check for recovery is the second one. *)
     | List.More ((_,node), (List.More ((_,node'), _) as ancestors))
-      when Browse.is_recovered node' -> select ancestors
+      when Merlin_browse.is_recovered node' -> select ancestors
     | l -> l
   in
-  match Browse.deepest_before pos_cursor structures with
+  match Merlin_browse.deepest_before pos_cursor structures with
   | Some path when skip_recovered -> select path
   | Some path -> path
   | None -> List.One (env typer, Browse_node.Dummy)

@@ -29,8 +29,8 @@ open Std
 open Typedtree
 open Browse_node
 
-type node = Env.t * Browse_node.t
-type t = node List.Non_empty.t
+type node = Browse_node.t
+type t = (Env.t * node) List.Non_empty.t
 
 let node_loc node =
   let loc = Browse_node.node_real_loc Location.none node in

@@ -27,14 +27,13 @@
 )* }}} *)
 
 open Std
-
-type node = Browse_node.t
+open Merlin_lib
 
 let default_loc = Location.none
 let default_env = Env.empty
 
 type t = {
-  t_node: node;
+  t_node: Browse.node;
   t_loc : Location.t;
   t_env : Env.t;
   t_children: t list lazy_t;
@@ -49,7 +48,7 @@ let of_node ?(env=default_env) node =
     Browse_node.fold_node (fun env node acc -> one env node :: acc)
       t.t_env t.t_node []
   in
-  one env node
+  one (Browse_node.node_update_env env node) node
 
 let of_browse b =
   let env, node = Browse.leaf_node b in

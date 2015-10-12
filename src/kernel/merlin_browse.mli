@@ -28,11 +28,11 @@
 
 open Std
 
-type node = Env.t * Browse_node.t
-type t = node List.Non_empty.t
+type node = Browse_node.t
+type t = (Env.t * node) List.Non_empty.t
 
 val node_loc : Browse_node.t -> Location.t
-val leaf_node : t -> node
+val leaf_node : t -> Env.t * node
 
 (* Navigate through tree *)
 
