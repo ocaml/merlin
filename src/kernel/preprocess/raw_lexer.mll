@@ -284,6 +284,8 @@ let identchar_latin1 =
   ['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '\'' '0'-'9']
 let symbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
+let symbolcharnopercent =
+  ['!' '$' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let symbolcharnodot =
   ['!' '$' '%' '&' '*' '+' '-'     '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let decimal_literal =
@@ -516,7 +518,7 @@ rule token state = parse
             { return (INFIXOP3(Lexing.lexeme lexbuf)) }
   | '#' symbolchar (symbolchar | '#') *
             { return (SHARPOP(Lexing.lexeme lexbuf)) }
-  | "let" symbolchar *
+  | "let" symbolcharnopercent symbolchar *
             { return (LETOP(Lexing.lexeme lexbuf)) }
   | eof { return EOF }
 
