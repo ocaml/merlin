@@ -403,76 +403,76 @@ let find_source loc =
     if Filename.check_suffix fname "i" then File.MLI mod_name else File.ML mod_name
   in
   let filename = File.name file in
-  match File_switching.where_am_i () with
-  | None ->
-    (* Tentative fix for #446 *)
-    Some fname
-  | Some s ->
-    let dir = Filename.dirname s in
-    match Utils.find_all_matches ~with_fallback file with
-    | [] ->
-      debug_log "failed to find \"%s\" in source path (fallback = %b)"
-          filename with_fallback ;
-      debug_log "(for reference: fname = %S)" fname;
-      debug_log "looking in '%s'" dir ;
-      Some (Utils.find_file_with_path ~with_fallback file [dir])
-    | [ x ] -> Some x
-    | files ->
-      info_log "multiple files named %s exist in the source path..." filename;
-      try
-        match File_switching.source_digest () with
-        | None ->
-          info_log "... no source digest available to select the right one" ;
-          raise Not_found
-        | Some digest ->
-          info_log "... trying to use source digest to find the right one" ;
-          debug_log "Source digest: %s" (Digest.to_hex digest) ;
-          Some (
-            List.find files ~f:(fun f ->
-              let fdigest = Digest.file f in
-              debug_log "  %s (%s)" f (Digest.to_hex fdigest) ;
-              fdigest = digest
-            )
+  let initial_path =
+    match File_switching.where_am_i () with
+    | None -> fname
+    | Some s -> s
+  in
+  let dir = Filename.dirname initial_path in
+  match Utils.find_all_matches ~with_fallback file with
+  | [] ->
+    debug_log "failed to find \"%s\" in source path (fallback = %b)"
+        filename with_fallback ;
+    debug_log "(for reference: fname = %S)" fname;
+    debug_log "looking in '%s'" dir ;
+    Some (Utils.find_file_with_path ~with_fallback file [dir])
+  | [ x ] -> Some x
+  | files ->
+    info_log "multiple files named %s exist in the source path..." filename;
+    try
+      match File_switching.source_digest () with
+      | None ->
+        info_log "... no source digest available to select the right one" ;
+        raise Not_found
+      | Some digest ->
+        info_log "... trying to use source digest to find the right one" ;
+        debug_log "Source digest: %s" (Digest.to_hex digest) ;
+        Some (
+          List.find files ~f:(fun f ->
+            let fdigest = Digest.file f in
+            debug_log "  %s (%s)" f (Digest.to_hex fdigest) ;
+            fdigest = digest
           )
-      with Not_found ->
-        info_log "... using heuristic to select the right one" ;
-        debug_log "we are looking for files in %s" dir ;
-        let rev = String.reverse (Filename.concat dir fname) in
-        let lst =
-          List.map files ~f:(fun path ->
-            let path' = String.reverse path in
-            let priority = (String.common_prefix_len rev path') * 2 +
-                           if Preferences.is_preferred path
-                           then 1
-                           else 0
-            in
-            priority, path
-          )
-        in
-        let lst =
-          (* TODO: remove duplicates in [source_path] instead of using
-            [sort_uniq] here. *)
-          List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
-            let tmp = compare j i in
-            if tmp <> 0 then tmp else
-            match compare s t with
-            | 0 -> 0
-            | n ->
-              (* Check if we are referring to the same files.
-                 Especially useful on OSX case-insensitive FS.
-                 FIXME: May be able handle symlinks and non-existing files,
-                 CHECK *)
-              match Misc.file_id s, Misc.file_id t with
-              | s', t' when Misc.file_id_check s' t' ->
-                0
-              | _ -> n
-          ) lst
-        in
-        match lst with
-        | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
-          raise (Multiple_matches files)
-        | (_, s) :: _ -> Some s
-        | _ -> assert false
+        )
+    with Not_found ->
+      info_log "... using heuristic to select the right one" ;
+      debug_log "we are looking for files in %s" dir ;
+      let rev = String.reverse (Filename.concat dir fname) in
+      let lst =
+        List.map files ~f:(fun path ->
+          let path' = String.reverse path in
+          let priority = (String.common_prefix_len rev path') * 2 +
+                          if Preferences.is_preferred path
+                          then 1
+                          else 0
+          in
+          priority, path
+        )
+      in
+      let lst =
+        (* TODO: remove duplicates in [source_path] instead of using
+          [sort_uniq] here. *)
+        List.sort_uniq ~cmp:(fun ((i:int),s) ((j:int),t) ->
+          let tmp = compare j i in
+          if tmp <> 0 then tmp else
+          match compare s t with
+          | 0 -> 0
+          | n ->
+            (* Check if we are referring to the same files.
+                Especially useful on OSX case-insensitive FS.
+                FIXME: May be able handle symlinks and non-existing files,
+                CHECK *)
+            match Misc.file_id s, Misc.file_id t with
+            | s', t' when Misc.file_id_check s' t' ->
+              0
+            | _ -> n
+        ) lst
+      in
+      match lst with
+      | (i1, s1) :: (i2, s2) :: _ when i1 = i2 ->
+        raise (Multiple_matches files)
+      | (_, s) :: _ -> Some s
+      | _ -> assert false
 
 (* Well, that's just another hack.
    [find_source] doesn't like the "-o" option of the compiler. This hack handles
