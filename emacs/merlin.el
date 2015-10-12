@@ -270,13 +270,16 @@ position POS."
     (merlin--goto-point pos)
     (point)))
 
+(defun merlin--differs-from-current-file (path)
+  (not (string-equal path buffer-file-name)))
+
 (defun merlin--goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
 containing fields file, line and col."
   (let* ((file (assoc 'file data))
          (open-window (cond ((equal merlin-locate-in-new-window 'never) nil)
                             ((equal merlin-locate-in-new-window 'always))
-                            (file)))
+                            (file (merlin--differs-from-current-file (cdr file)))))
          (filename (if file (cdr file) (buffer-file-name (buffer-base-buffer))))
          (focus-window (or (not open-window) merlin-locate-focus-new-window))
          (do-open (lambda ()
