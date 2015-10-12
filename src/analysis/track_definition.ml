@@ -404,7 +404,9 @@ let find_source loc =
   in
   let filename = File.name file in
   match File_switching.where_am_i () with
-  | None -> (* We have not moved, we don't want to return a filename *) None
+  | None ->
+    (* Tentative fix for #446 *)
+    Some fname
   | Some s ->
     let dir = Filename.dirname s in
     match Utils.find_all_matches ~with_fallback file with
