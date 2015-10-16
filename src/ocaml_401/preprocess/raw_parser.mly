@@ -435,6 +435,7 @@ let tag_nonrec (id,a) = (Fake.Nonrec.add id, a)
 %token SEMI
 %token SEMISEMI
 %token SHARP
+%token SHARPSHARP
 %token <string> SHARPOP
 %token SIG
 %token STAR
@@ -534,7 +535,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_unary_minus prec_unary_plus (* unary - *)
 %nonassoc prec_constant_constructor     (* cf. simple_expr (C versus C x) *)
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
-%nonassoc SHARP                         (* simple_expr/toplevel_directive *)
+%nonassoc SHARP SHARPSHARP              (* simple_expr/toplevel_directive *)
 %left     SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
@@ -1952,35 +1953,35 @@ expr:
     DO @{`Item "for_lwt body"} seq_expr DONE
       { mkexp $startpos $endpos
           (Pexp_let (Nonrecursive, [$2,Fake.(app Lwt.un_stream $4)], Fake.(app Lwt.unit_lwt $6))) }
-  | simple_expr SHARP SHARP label LESSMINUS expr
+  | simple_expr SHARPSHARP label LESSMINUS expr
     { let inst = Fake.(app Js.un_js $1) in
-      let field = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+      let field = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
       let prop = Fake.(app Js.un_prop field) in
-      let setter = mkexp $startpos $endpos($4) (Pexp_send(prop,"set")) in
+      let setter = mkexp $startpos $endpos($3) (Pexp_send(prop,"set")) in
       reloc_exp $startpos $endpos
-        Fake.(app setter $6)
+        Fake.(app setter $5)
       }
-  | simple_expr SHARP SHARP @{`Shift_token (1,LIDENT "")} label
+  | simple_expr SHARPSHARP @{`Shift_token (1,LIDENT "")} label
       { let inst = Fake.(app Js.un_js $1) in
-        let field = mkexp $startpos $endpos (Pexp_send(inst, $4)) in
+        let field = mkexp $startpos $endpos (Pexp_send(inst, $3)) in
         let prop = Fake.(app Js.un_prop field) in
         mkexp $startpos $endpos (Pexp_send(prop,"get"))
       }
-  | simple_expr SHARP SHARP label LPAREN RPAREN
+  | simple_expr SHARPSHARP label LPAREN RPAREN
       { let inst = Fake.(app Js.un_js $1) in
-        let jsmeth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let jsmeth = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
         Fake.(app Js.un_meth jsmeth)
       }
-  | simple_expr SHARP SHARP label LPAREN expr_comma_opt_list RPAREN
+  | simple_expr SHARPSHARP label LPAREN expr_comma_opt_list RPAREN
       { let inst = Fake.(app Js.un_js $1) in
-        let meth = mkexp $startpos $endpos($4) (Pexp_send(inst, $4)) in
+        let meth = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
         let jsmeth =
           List.fold_left
             (fun meth arg ->
               reloc_exp meth.pexp_loc.Location.loc_start
                         arg.pexp_loc.Location.loc_end
               (Fake.app meth arg))
-            meth (List.rev $6)
+            meth (List.rev $5)
         in
         Fake.(app Js.un_meth jsmeth)
       }

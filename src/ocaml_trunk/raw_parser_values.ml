@@ -81,6 +81,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_STAR                 -> "STAR"
   | T_SIG                  -> "SIG"
   | T_SHARP                -> "SHARP"
+  | T_SHARPSHARP           -> "SHARPSHARP"
   | T_SHARPOP              -> "SHARPOP"
   | T_SEMISEMI             -> "SEMISEMI"
   | T_SEMI                 -> "SEMI"
@@ -123,6 +124,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_LPAREN               -> "LPAREN"
   | T_LIDENT               -> "LIDENT"
   | T_LET_LWT              -> "LET_LWT"
+  | T_LETOP                -> "LETOP"
   | T_LET                  -> "LET"
   | T_LESSMINUS            -> "LESSMINUS"
   | T_LESS                 -> "LESS"
@@ -155,6 +157,7 @@ let string_of_token : type a. a token_class -> string = function
   | T_IF                   -> "IF"
   | T_GREATERRBRACKET      -> "GREATERRBRACKET"
   | T_GREATERRBRACE        -> "GREATERRBRACE"
+  | T_GREATERDOT           -> "GREATERDOT"
   | T_GREATER              -> "GREATER"
   | T_FUNCTOR              -> "FUNCTOR"
   | T_FUNCTION             -> "FUNCTION"
@@ -174,6 +177,8 @@ let string_of_token : type a. a token_class -> string = function
   | T_END                  -> "END"
   | T_ELSE                 -> "ELSE"
   | T_DOWNTO               -> "DOWNTO"
+  | T_DOTTILDE             -> "DOTTILDE"
+  | T_DOTLESS              -> "DOTLESS"
   | T_DOTDOT               -> "DOTDOT"
   | T_DOT                  -> "DOT"
   | T_DONE                 -> "DONE"
@@ -419,6 +424,7 @@ let symbol_of_token = function
   | STAR                         -> T_ (T_STAR, ())
   | SIG                          -> T_ (T_SIG, ())
   | SHARP                        -> T_ (T_SHARP, ())
+  | SHARPSHARP                   -> T_ (T_SHARPSHARP, ())
   | SHARPOP v                    -> T_ (T_SHARPOP, v)
   | SEMISEMI                     -> T_ (T_SEMISEMI, ())
   | SEMI                         -> T_ (T_SEMI, ())
@@ -461,6 +467,7 @@ let symbol_of_token = function
   | LPAREN                       -> T_ (T_LPAREN, ())
   | LIDENT v                     -> T_ (T_LIDENT, v)
   | LET_LWT                      -> T_ (T_LET_LWT, ())
+  | LETOP v                      -> T_ (T_LETOP, v)
   | LET                          -> T_ (T_LET, ())
   | LESSMINUS                    -> T_ (T_LESSMINUS, ())
   | LESS                         -> T_ (T_LESS, ())
@@ -493,6 +500,7 @@ let symbol_of_token = function
   | IF                           -> T_ (T_IF, ())
   | GREATERRBRACKET              -> T_ (T_GREATERRBRACKET, ())
   | GREATERRBRACE                -> T_ (T_GREATERRBRACE, ())
+  | GREATERDOT                   -> T_ (T_GREATERDOT, ())
   | GREATER                      -> T_ (T_GREATER, ())
   | FUNCTOR                      -> T_ (T_FUNCTOR, ())
   | FUNCTION                     -> T_ (T_FUNCTION, ())
@@ -512,6 +520,8 @@ let symbol_of_token = function
   | END                          -> T_ (T_END, ())
   | ELSE                         -> T_ (T_ELSE, ())
   | DOWNTO                       -> T_ (T_DOWNTO, ())
+  | DOTTILDE                     -> T_ (T_DOTTILDE, ())
+  | DOTLESS                      -> T_ (T_DOTLESS, ())
   | DOTDOT                       -> T_ (T_DOTDOT, ())
   | DOT                          -> T_ (T_DOT, ())
   | DONE                         -> T_ (T_DONE, ())
@@ -560,6 +570,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_STAR                   -> STAR
   | T_SIG                    -> SIG
   | T_SHARP                  -> SHARP
+  | T_SHARPSHARP             -> SHARPSHARP
   | T_SHARPOP                -> SHARPOP v
   | T_SEMISEMI               -> SEMISEMI
   | T_SEMI                   -> SEMI
@@ -602,6 +613,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_LPAREN                 -> LPAREN
   | T_LIDENT                 -> LIDENT v
   | T_LET_LWT                -> LET_LWT
+  | T_LETOP                  -> LETOP v
   | T_LET                    -> LET
   | T_LESSMINUS              -> LESSMINUS
   | T_LESS                   -> LESS
@@ -634,6 +646,7 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_IF                     -> IF
   | T_GREATERRBRACKET        -> GREATERRBRACKET
   | T_GREATERRBRACE          -> GREATERRBRACE
+  | T_GREATERDOT             -> GREATERDOT
   | T_GREATER                -> GREATER
   | T_FUNCTOR                -> FUNCTOR
   | T_FUNCTION               -> FUNCTION
@@ -653,6 +666,8 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
   | T_END                    -> END
   | T_ELSE                   -> ELSE
   | T_DOWNTO                 -> DOWNTO
+  | T_DOTTILDE               -> DOTTILDE
+  | T_DOTLESS                -> DOTLESS
   | T_DOTDOT                 -> DOTDOT
   | T_DOT                    -> DOT
   | T_DONE                   -> DONE
@@ -682,14 +697,14 @@ let token_of_symbol (type a) (t : a token_class) (v : a) =
 let default_token (type a) (t : a token_class) : int * a =
   match t with
   | T_WITH                    -> 0, ()
-  | T_WHILE_LWT               -> 0, ()
+  | T_WHILE_LWT               -> 1, ()
   | T_WHILE                   -> 0, ()
   | T_WHEN                    -> 0, ()
   | T_VIRTUAL                 -> 0, ()
   | T_VAL                     -> 0, ()
   | T_UNDERSCORE              -> 0, ()
   | T_TYPE                    -> 0, ()
-  | T_TRY_LWT                 -> 0, ()
+  | T_TRY_LWT                 -> 1, ()
   | T_TRY                     -> 0, ()
   | T_TRUE                    -> 0, ()
   | T_TO                      -> 0, ()
@@ -699,6 +714,7 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_STAR                    -> 0, ()
   | T_SIG                     -> 0, ()
   | T_SHARP                   -> 0, ()
+  | T_SHARPSHARP              -> 1, ()
   | T_SHARPOP                 -> 2, "_"
   | T_SEMISEMI                -> 0, ()
   | T_SEMI                    -> 0, ()
@@ -726,10 +742,11 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_MINUSDOT                -> 0, ()
   | T_MINUS                   -> 0, ()
   | T_METHOD                  -> 0, ()
-  | T_MATCH_LWT               -> 0, ()
+  | T_MATCH_LWT               -> 1, ()
   | T_MATCH                   -> 0, ()
   | T_LPAREN                  -> 0, ()
-  | T_LET_LWT                 -> 0, ()
+  | T_LET_LWT                 -> 1, ()
+  | T_LETOP                   -> 1, ""
   | T_LET                     -> 0, ()
   | T_LESSMINUS               -> 0, ()
   | T_LESS                    -> 0, ()
@@ -752,13 +769,14 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_IF                      -> 0, ()
   | T_GREATERRBRACKET         -> 0, ()
   | T_GREATERRBRACE           -> 0, ()
+  | T_GREATERDOT              -> 1, ()
   | T_GREATER                 -> 0, ()
   | T_FUNCTOR                 -> 0, ()
   | T_FUNCTION                -> 0, ()
   | T_FUN                     -> 0, ()
-  | T_FOR_LWT                 -> 0, ()
+  | T_FOR_LWT                 -> 1, ()
   | T_FOR                     -> 0, ()
-  | T_FINALLY_LWT             -> 0, ()
+  | T_FINALLY_LWT             -> 1, ()
   | T_FALSE                   -> 0, ()
   | T_EXTERNAL                -> 0, ()
   | T_EXCEPTION               -> 0, ()
@@ -770,6 +788,8 @@ let default_token (type a) (t : a token_class) : int * a =
   | T_END                     -> 0, ()
   | T_ELSE                    -> 0, ()
   | T_DOWNTO                  -> 0, ()
+  | T_DOTTILDE                -> 1, ()
+  | T_DOTLESS                 -> 1, ()
   | T_DOTDOT                  -> 0, ()
   | T_DOT                     -> 0, ()
   | T_DONE                    -> 0, ()
@@ -1138,6 +1158,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_STAR                 -> Some "*"
   | T_SIG                  -> Some "sig"
   | T_SHARP                -> Some "#"
+  | T_SHARPSHARP           -> Some "##"
   | T_SHARPOP              -> Some "#_"
   | T_SEMISEMI             -> Some ";;"
   | T_SEMI                 -> Some ";"
@@ -1180,6 +1201,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_LPAREN               -> Some "("
   | T_LIDENT               -> Some "identifier"
   | T_LET_LWT              -> Some "let_lwt"
+  | T_LETOP                -> Some "let<>"
   | T_LET                  -> Some "let"
   | T_LESSMINUS            -> Some "<-"
   | T_LESS                 -> Some "<"
@@ -1212,6 +1234,7 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_IF                   -> Some "if"
   | T_GREATERRBRACKET      -> Some ">]"
   | T_GREATERRBRACE        -> Some ">}"
+  | T_GREATERDOT           -> Some ">."
   | T_GREATER              -> Some ">"
   | T_FUNCTOR              -> None
   | T_FUNCTION             -> None
@@ -1231,6 +1254,8 @@ let friendly_name_of_token : type a. a token_class -> string option = function
   | T_END                  -> Some "end"
   | T_ELSE                 -> Some "else"
   | T_DOWNTO               -> Some "downto"
+  | T_DOTTILDE             -> Some ".~"
+  | T_DOTLESS              -> Some ".<"
   | T_DOTDOT               -> Some ".."
   | T_DOT                  -> Some "."
   | T_DONE                 -> Some "done"

@@ -97,7 +97,7 @@ let ext_js = {
     end"
   ];
   public_def = [];
-  keywords = ["jsnew", JSNEW];
+  keywords = ["jsnew", JSNEW; "##", SHARPSHARP];
   packages = ["js_of_ocaml.syntax"];
 }
 

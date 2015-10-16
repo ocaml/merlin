@@ -516,8 +516,10 @@ rule token state = parse
   | '%'     { return PERCENT }
   | ['*' '/' '%'] symbolchar *
             { return (INFIXOP3(Lexing.lexeme lexbuf)) }
-  | '#' symbolchar (symbolchar | '#') *
-            { return (SHARPOP(Lexing.lexeme lexbuf)) }
+  | '#' (symbolchar | '#') +
+            { let s = Lexing.lexeme lexbuf in
+              return (try Hashtbl.find state.keywords s
+                      with Not_found -> SHARPOP s) }
   | "let" symbolcharnopercent symbolchar *
             { return (LETOP(Lexing.lexeme lexbuf)) }
   | eof { return EOF }
