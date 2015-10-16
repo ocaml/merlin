@@ -20,6 +20,7 @@ type token =
   | STRING of (string * string option)
   | STAR
   | SIG
+  | SHARPSHARP
   | SHARPOP of (string)
   | SHARP
   | SEMISEMI
@@ -164,6 +165,7 @@ and _ token_class =
   | T_STRING : (string * string option) token_class
   | T_STAR : unit token_class
   | T_SIG : unit token_class
+  | T_SHARPSHARP : unit token_class
   | T_SHARPOP : (string) token_class
   | T_SHARP : unit token_class
   | T_SEMISEMI : unit token_class
