@@ -53,6 +53,11 @@ let node_merlin_loc node = approximate_loc Browse_node.node_merlin_loc node
 let leaf_node = List.Non_empty.hd
 let leaf_loc t = node_loc (snd (leaf_node t))
 
+exception Merlin_only of t list
+
+let has_attr attr attrs =
+ List.exists ~f:(fun (str,_) -> str.Location.txt = attr) attrs
+
 let select_leafs pos root =
   let rec aux acc path =
     let select env node acc =
@@ -62,12 +67,20 @@ let select_leafs pos root =
       else acc
     in
     let env, node = leaf_node path in
-    let acc' = Browse_node.fold_node select env node acc in
-    if acc == acc'
-    then path :: acc
-    else acc'
+    let attrs = Browse_node.node_attributes node in
+    if has_attr "merlin.ignore" attrs then
+      acc
+    else if has_attr "merlin.teresting" attrs then
+      let acc' = Browse_node.fold_node select env node [] in
+      raise (Merlin_only (if [] == acc' then [path] else acc'))
+    else
+      let acc' = Browse_node.fold_node select env node acc in
+      if acc == acc'
+      then path :: acc
+      else acc'
   in
-  aux [] root
+  try aux [] root
+  with Merlin_only t -> t
 
 let t2_first = 1
 let t1_first = -1
