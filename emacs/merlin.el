@@ -576,7 +576,7 @@ the merlin buffer of the current buffer."
 
 (defun merlin--context ()
   "Rewind the knowledge of merlin of the current buffer to zero."
-  (let* ((name (or buffer-file-name "toplevel"))
+  (let* ((name (or (buffer-file-name (buffer-base-buffer)) "toplevel"))
          (dot-merlin (lookup-default 'dot-merlin merlin--grouping nil))
          (dot-merlins (lookup-default 'dot-merlins merlin--grouping nil)))
     (setq dot-merlins
@@ -1760,7 +1760,7 @@ Returns the position."
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
   (cond ((equal (buffer-name) merlin-type-buffer-name) nil)
-        (buffer-file-name)))
+        ((buffer-file-name (buffer-base-buffer)) t)))
 
 (defun merlin-view-log ()
   "Jump to the log file of merlin."
