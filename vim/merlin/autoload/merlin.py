@@ -121,7 +121,7 @@ class MerlinProcess:
             raise e
 
     def command(self, *cmd):
-        if self.mainpipe == None or self.mainpipe.returncode != None:
+        if self.mainpipe == None or self.mainpipe.poll() != None:
             self.restart()
         json.dump(cmd, self.mainpipe.stdin)
         line = self.mainpipe.stdout.readline()
