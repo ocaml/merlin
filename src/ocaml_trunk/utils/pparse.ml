@@ -39,7 +39,14 @@ let apply_rewriter magic fn_in ppx =
       null null
   in
   let ok = Sys.command comm = 0 in
-  Misc.remove_file fn_in;
+  if ok then
+    Misc.remove_file fn_in
+  else begin
+    try
+      Sys.rename fn_in
+        (Filename.concat (Filename.get_temp_dir_name ()) "camlppx.lastfail")
+    with _ -> ()
+  end;
   if not ok then begin
     Misc.remove_file fn_out;
     raise (Error (CannotRun comm));
