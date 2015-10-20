@@ -207,7 +207,7 @@ let of_method_call obj meth arg loc =
     | None -> loc.Location.loc_end
     | Some e -> e.exp_loc.Location.loc_start
   in
-  let loc = {Location. loc_ghost = true; loc_start; loc_end} in
+  let loc = {loc with Location. loc_start; loc_end} in
   app (Method_call (obj,meth,loc)) env f acc
 
 let of_expression_desc loc = function
@@ -749,4 +749,5 @@ let node_attributes = function
   | Class_declaration ci -> ci.ci_attributes
   | Class_description ci -> ci.ci_attributes
   | Class_type_declaration ci -> ci.ci_attributes
+  | Method_call (obj,_,_) -> obj.exp_attributes
   | _ -> []
