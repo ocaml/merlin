@@ -1402,15 +1402,6 @@ loading"
   (merlin-error-reset))
 
 (defun merlin-flags-set (flag-string)
-  "Set FLAG for the current project"
-  (interactive "sFlag to add: ")
-  (let* ((flag-list (split-string flag-string))
-         (r (merlin/send-command (list 'flags 'add flag-list)))
-         (failed (assoc 'failures r)))
-    (when failed (message "%s" (cdr failed))))
-  (merlin-error-reset))
-
-(defun merlin-flags-set (flag-string)
   "Set user flags for current project."
   (interactive (let ((flags (merlin/send-command '(flags get)))
                      (flatten (lambda (l) (mapconcat 'identity l " "))))
