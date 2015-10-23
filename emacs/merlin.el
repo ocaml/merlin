@@ -277,7 +277,7 @@ containing fields file, line and col."
          (open-window (cond ((equal merlin-locate-in-new-window 'never) nil)
                             ((equal merlin-locate-in-new-window 'always))
                             (file)))
-         (filename (if file (cdr file) buffer-file-name))
+         (filename (if file (cdr file) (buffer-file-name (buffer-base-buffer))))
          (focus-window (or (not open-window) merlin-locate-focus-new-window))
          (do-open (lambda ()
                     (if open-window
@@ -505,8 +505,8 @@ Try to find a satisfying default directory."
     ((equal merlin-error-after-save t) t)
     ((equal merlin-error-after-save nil) nil)
     ((and (listp merlin-error-after-save)
-          buffer-file-name)
-     (member (file-name-extension buffer-file-name)
+          (buffer-file-name (buffer-base-buffer)))
+     (member (file-name-extension (buffer-file-name (buffer-base-buffer)))
              merlin-error-after-save))))
 
 (defun merlin-toggle-view-errors ()
@@ -1756,7 +1756,7 @@ Returns the position."
 (defun merlin-dir-group ()
   "Group buffers by directory" ()
   (list
-    (cons 'name (file-name-directory (expand-file-name buffer-file-name)))))
+    (cons 'name (file-name-directory (expand-file-name (buffer-file-name (buffer-base-buffer)))))))
 
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
