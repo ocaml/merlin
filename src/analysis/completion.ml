@@ -93,6 +93,7 @@ let classify_node = function
   | Class_description        _ -> `Type
   | Class_type_declaration   _ -> `Type
   | Method_call              _ -> `Expression
+  | Record_field             _ -> `Expression
   | Module_binding_name      _ -> `Module
   | Module_declaration_name  _ -> `Module
   | Module_type_declaration_name _ -> `Module_type
@@ -120,6 +121,13 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
       let desc =
         Types.(Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
                        label_descr.lbl_res, label_descr.lbl_arg, Cok))
+      in
+      Printtyp.type_scheme ppf (Btype.newgenty desc);
+      `Label
+    | `Label_decl (ty,label_decl) ->
+      let desc =
+        Types.(Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
+                       ty, label_decl.ld_type, Cok))
       in
       Printtyp.type_scheme ppf (Btype.newgenty desc);
       `Label
@@ -394,6 +402,10 @@ let complete_methods ~env ~prefix obj =
     { name; kind = `MethodCall; desc = to_string (); info }
   )
 
+type is_label = [ `No | `Maybe
+                | `Description of Types.label_description list
+                | `Declaration of Types.type_expr * Types.label_declaration list ]
+
 let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
@@ -416,19 +428,33 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
        else name <> "_")
       && valid tag name
     in
-    if not is_label then
+    let add_label_description ({Types.lbl_name = name} as l) candidates =
+      if not (valid `Label name) then candidates else
+        make_candidate ?get_doc ~exact:(name = prefix) name
+          (`Label l) ~attrs:[]
+        :: candidates
+    in
+    match (is_label : is_label) with
+    | `No ->
       let kind = classify_node node in
       let order = completion_order kind in
       let add_completions acc kind =
         get_candidates ?get_doc ?target_type prefix path kind ~validate env @ acc
       in
       List.fold_left ~f:add_completions order ~init:[]
-    else
-      Env.fold_labels (fun ({Types.lbl_name = name} as l) candidates ->
+    | `Maybe ->
+      Env.fold_labels add_label_description path env []
+    | `Description lbls ->
+      List.fold_right ~f:add_label_description lbls ~init:[]
+    | `Declaration (ty,decls) ->
+      let add_label_declaration ({Types.ld_id = name} as l) candidates =
+        let name = Ident.name name in
         if not (valid `Label name) then candidates else
-          make_candidate ?get_doc ~exact:(name = prefix) name (`Label l) ~attrs:[]
+          make_candidate ?get_doc ~exact:(name = prefix) name
+            (`Label_decl (ty,l)) ~attrs:[]
           :: candidates
-      ) path env []
+      in
+      List.fold_right ~f:add_label_declaration decls ~init:[]
   in
   try
     match prefix with
@@ -462,10 +488,27 @@ let node_complete buffer ?get_doc ?target_type env node prefix =
   | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; _ }
   | Expression { Typedtree.exp_desc = Typedtree.Texp_record (_, _) ; _ } ->
     let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
-    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label:true buffer node
+    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label:`Maybe buffer node
+  | Record_field (e, lbl, loc) ->
+    let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
+    let is_label = match lbl.Types.lbl_all with
+      | [||] ->
+        begin try
+            let ty = e.Typedtree.exp_type in
+            let _, _, lbls = Typecore.extract_concrete_record env ty in
+            if lbls = [] then raise Not_found;
+            `Declaration (ty, lbls)
+          with _ ->
+            `Maybe
+        end
+      | lbls ->
+        `Description (Array.to_list lbls)
+    in
+    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node
   | x ->
     let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
-    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node
+    complete_prefix ?get_doc ?target_type ~env ~prefix buffer node
+      ~is_label:(if is_label then `Maybe else `No)
 
 let expand_prefix ~global_modules env prefix =
   let lidents, last =

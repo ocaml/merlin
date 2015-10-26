@@ -213,5 +213,5 @@ and is_recovered_Texp_construct cstr =
   | _ -> false
 
 let is_recovered = function
-  | Expression e -> is_recovered_expression e
+  | Expression e -> false
   | _ -> false
