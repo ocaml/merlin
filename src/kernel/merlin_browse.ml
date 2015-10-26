@@ -58,6 +58,36 @@ exception Merlin_only of t list
 let has_attr attr attrs =
  List.exists ~f:(fun (str,_) -> str.Location.txt = attr) attrs
 
+let node_of_part = function
+  | Cmt_format.Partial_structure v ->
+    Browse_node.Structure v
+  | Cmt_format.Partial_structure_item v ->
+    Browse_node.Structure_item v
+  | Cmt_format.Partial_expression v ->
+    Browse_node.Expression v
+  | Cmt_format.Partial_pattern v ->
+    Browse_node.Pattern v
+  | Cmt_format.Partial_class_expr v ->
+    Browse_node.Class_expr v
+  | Cmt_format.Partial_signature v ->
+    Browse_node.Signature v
+  | Cmt_format.Partial_signature_item v ->
+    Browse_node.Signature_item v
+  | Cmt_format.Partial_module_type v ->
+    Browse_node.Module_type v
+
+
+
+let fold_node_with_recovery f e node acc =
+  let attrs = Browse_node.node_attributes node in
+  let acc = match Cmt_format.saved_types_from_attributes attrs with
+    | [] -> acc
+    | parts ->
+      List.fold_left ~f:(fun acc part -> f e (node_of_part part) acc)
+        ~init:acc parts
+  in
+  Browse_node.fold_node f e node acc
+
 let select_leafs pos root =
   let rec aux acc path =
     let select env node acc =
@@ -71,10 +101,10 @@ let select_leafs pos root =
     if has_attr "merlin.ignore" attrs then
       acc
     else if has_attr "merlin.teresting" attrs then
-      let acc' = Browse_node.fold_node select env node [] in
+      let acc' = fold_node_with_recovery select env node [] in
       raise (Merlin_only (if [] == acc' then [path] else acc'))
     else
-      let acc' = Browse_node.fold_node select env node acc in
+      let acc' = fold_node_with_recovery select env node acc in
       if acc == acc'
       then path :: acc
       else acc'
@@ -129,7 +159,7 @@ let deepest_before pos roots =
   | Some root ->
     let rec aux loc0 path =
       let env0, node0 = leaf_node path in
-      let candidate = Browse_node.fold_node
+      let candidate = fold_node_with_recovery
           (fun env node acc ->
              let loc = node_merlin_loc node in
              match acc with

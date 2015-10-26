@@ -44,8 +44,8 @@ let of_node ?(env=default_env) node =
     let t_loc = Browse.node_loc t_node in
     let rec t = {t_node; t_env; t_loc; t_children = lazy (aux t)} in
     t
-  and aux t =
-    Browse_node.fold_node (fun env node acc -> one env node :: acc)
+  and aux t = Browse.fold_node_with_recovery
+      (fun env node acc -> one env node :: acc)
       t.t_env t.t_node []
   in
   one (Browse_node.node_update_env env node) node

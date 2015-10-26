@@ -88,7 +88,7 @@ let dump_ts ts =
     ] :: acc
   and dump_list env node =
     `List (List.sort ~cmp:compare @@
-           Browse_node.fold_node append env node [])
+           Browse.fold_node_with_recovery append env node [])
   in
   `List (List.fold_left ts ~init:[] ~f:(fun acc node ->
       append Env.empty node acc))

@@ -33,6 +33,8 @@ type t = (Env.t * node) List.Non_empty.t
 
 val node_loc : Browse_node.t -> Location.t
 val leaf_node : t -> Env.t * node
+val fold_node_with_recovery :
+  (Env.t -> Browse_node.t -> 'a -> 'a) -> Env.t -> Browse_node.t -> 'a -> 'a
 
 (* Navigate through tree *)
 
