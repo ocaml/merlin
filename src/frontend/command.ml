@@ -178,6 +178,20 @@ module Printtyp = Type_utils.Printtyp
 exception Unhandled_command
 
 let dump buffer = function
+  | [`String "parsetree"] ->
+    with_typer buffer @@ fun typer ->
+    let ppf, to_string = Format.to_string () in
+    List.iter (List.rev (Typer.contents typer))
+      ~f:(fun (parsed, _ , _) ->
+          begin match parsed with
+          | `Sg p -> Pprintast.signature ppf p
+          | `Str p -> Pprintast.structure ppf p
+          end;
+          Format.pp_print_newline ppf ();
+          Format.pp_force_newline ppf ()
+          );
+    `String (to_string ())
+
   | [`String "parser"] ->
     Merlin_recover.dump (Buffer.recover buffer)
 
