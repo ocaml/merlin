@@ -145,8 +145,7 @@ type _ request =
   | Errors
     :  Error_report.t list request
   | Dump
-    :  [`Env of [`Normal|`Full] * position option | `Flags | `Warnings
-       |`Sig|`Parser|`Exn|`Browse|`Recover|`Typer of [`Input|`Output] | `Tokens]
+    :  Json.json list
     -> Json.json request
   | Which_path
     :  string list

@@ -52,3 +52,8 @@ val select_frontend : string -> unit
 (* Misc *)
 val invalid_arguments : unit -> 'a
 val with_location : Location.t -> (string * Json.json) list -> Json.json
+
+module Protocol_io : sig
+  val optional_position : Json.json list -> Std.Lexing.position option
+  val mandatory_position : Json.json list -> Std.Lexing.position
+end

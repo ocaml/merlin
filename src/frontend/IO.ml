@@ -357,30 +357,8 @@ module Protocol_io = struct
       Request Refresh
     | [`String "errors"] ->
       Request Errors
-    | (`String "dump" :: `String "env" :: opt_pos) ->
-      Request (Dump (`Env (`Normal, optional_position opt_pos)))
-    | (`String "dump" :: `String "full_env" :: opt_pos) ->
-      Request (Dump (`Env (`Full, optional_position opt_pos)))
-    | [`String "dump"; `String "sig"] ->
-      Request (Dump `Sig)
-    | [`String "dump"; `String "parser"] ->
-      Request (Dump `Parser)
-    | [`String "dump"; `String "recover"] ->
-      Request (Dump `Recover)
-    | [`String "dump"; `String "exn"] ->
-      Request (Dump `Exn)
-    | [`String "dump"; `String "browse"] ->
-      Request (Dump `Browse)
-    | [`String "dump"; `String "typer"; `String "input"] ->
-      Request (Dump (`Typer `Input))
-    | [`String "dump"; `String "typer"; `String "output"] ->
-      Request (Dump (`Typer `Output))
-    | [`String "dump"; `String "tokens"] ->
-      Request (Dump `Tokens)
-    | [`String "dump"; `String "flags"] ->
-      Request (Dump `Flags)
-    | [`String "dump"; `String "warnings"] ->
-      Request (Dump `Warnings)
+    | (`String "dump" :: args) ->
+      Request (Dump args)
     | [`String "which"; `String "path"; `String name] ->
       Request (Which_path [name])
     | [`String "which"; `String "path"; `List names] ->

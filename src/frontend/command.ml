@@ -177,6 +177,103 @@ module Printtyp = Type_utils.Printtyp
 
 exception Unhandled_command
 
+let dump buffer = function
+  | [`String "parser"] ->
+    Merlin_recover.dump (Buffer.recover buffer)
+
+  | [`String "typer"; `String "input"] ->
+    with_typer buffer @@ fun typer ->
+    let ppf, to_string = Format.to_string () in
+    Typer.dump ppf typer;
+    `String (to_string ())
+
+  | [`String "typer"; `String "output"] ->
+    with_typer buffer @@ fun typer ->
+    let ppf, to_string = Format.to_string () in
+    List.iter (fun (_,typed,_) ->
+        match typed with
+        | `Fail (_,loc) ->
+          Format.fprintf ppf "<failed to type at %a>\n" Location.print loc
+        | `Sg sg -> Printtyped.interface ppf sg
+        |`Str str -> Printtyped.implementation ppf str
+      ) (Typer.contents typer);
+    `String (to_string ())
+
+  | [`String "recover"] ->
+    Merlin_recover.dump_recoverable (Buffer.recover buffer);
+
+  | (`String ("env" | "fullenv" as kind) :: opt_pos) ->
+    with_typer buffer @@ fun typer ->
+    let kind = if kind = "env" then `Normal else `Full in
+    let pos = IO.Protocol_io.optional_position opt_pos in
+    let env = match pos with
+      | None -> Typer.env typer
+      | Some pos -> fst (Browse.leaf_node (Typer.node_at typer pos))
+    in
+    let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
+    let aux item =
+      let ppf, to_string = Format.to_string () in
+      Printtyp.signature ppf [item];
+      let content = to_string () in
+      let ppf, to_string = Format.to_string () in
+      match Raw_compat.signature_loc item with
+      | Some loc ->
+        Location.print_loc ppf loc;
+        let loc = to_string () in
+        `List [`String loc ; `String content]
+      | None -> `String content
+    in
+    `List (List.map ~f:aux sg)
+
+  | [`String "browse"] ->
+    with_typer buffer @@ fun typer ->
+    let structures = Typer.to_browse (Typer.contents typer) in
+    Browse_misc.dump_ts (List.map ~f:snd @@ List.map ~f:Browse.leaf_node structures)
+
+  | [`String "tokens"] ->
+    let tokens = Buffer.lexer buffer in
+    let tokens = History.seek_backward (fun _ -> true) tokens in
+    let tokens = History.tail tokens in
+    `List (List.filter_map tokens
+             ~f:(fun (_exns,item) -> match item with
+             | Lexer.Error _ -> None
+             | Lexer.Valid (s,t,e) ->
+               let t = Raw_parser_values.symbol_of_token t in
+               let t = Raw_parser_values.class_of_symbol t in
+               let t = Raw_parser_values.string_of_class t in
+               Some (`Assoc [
+                   "start", Lexing.json_of_position s;
+                   "end", Lexing.json_of_position e;
+                   "token", `String t;
+                 ])
+             )
+          )
+
+  | [`String "flags"] ->
+    let flags = Project.get_flags (Buffer.project buffer) in
+    let assoc =
+      List.map flags ~f:(fun (src, flag_lists) ->
+        let l = List.concat_map flag_lists ~f:(List.map ~f:(fun s -> `String s)) in
+        src, `List l
+      )
+    in
+    `Assoc assoc
+
+  | [`String "warnings"] ->
+    with_typer buffer @@ fun _typer ->
+    Warnings.dump ()
+
+  | [`String "exn"] ->
+    with_typer buffer @@ fun typer ->
+    let exns =
+      Typer.exns typer
+      @ Buffer.lexer_errors buffer
+      @ Buffer.parser_errors buffer
+    in
+    `List (List.map ~f:(fun x -> `String (Printexc.to_string x)) exns)
+
+  | _ -> IO.invalid_arguments ()
+
 let dispatch_query ~verbosity buffer =
   fun (type a) (request : a request) ->
   (match request with
@@ -581,91 +678,8 @@ let dispatch_query ~verbosity buffer =
         | Some (_loc, err) -> [err]
     end
 
-  | (Dump `Parser : a request) ->
-    Merlin_recover.dump (Buffer.recover buffer);
-
-  | (Dump (`Typer `Input) : a request) ->
-    with_typer buffer @@ fun typer ->
-    let ppf, to_string = Format.to_string () in
-    Typer.dump ppf typer;
-    `String (to_string ())
-
-  | (Dump (`Typer `Output) : a request) ->
-    with_typer buffer @@ fun typer ->
-    let ppf, to_string = Format.to_string () in
-    List.iter (fun (_,typed,_) ->
-        match typed with
-        | `Fail (_,loc) ->
-          Format.fprintf ppf "<failed to type at %a>\n" Location.print loc
-        | `Sg sg -> Printtyped.interface ppf sg
-        |`Str str -> Printtyped.implementation ppf str
-      ) (Typer.contents typer);
-    `String (to_string ())
-
-  | (Dump `Recover : a request) ->
-    Merlin_recover.dump_recoverable (Buffer.recover buffer);
-
-  | (Dump (`Env (kind, pos)) : a request) ->
-    with_typer buffer @@ fun typer ->
-    let env = match pos with
-      | None -> Typer.env typer
-      | Some pos -> fst (Browse.leaf_node (Typer.node_at typer pos))
-    in
-    let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
-    let aux item =
-      let ppf, to_string = Format.to_string () in
-      Printtyp.signature ppf [item];
-      let content = to_string () in
-      let ppf, to_string = Format.to_string () in
-      match Raw_compat.signature_loc item with
-      | Some loc ->
-        Location.print_loc ppf loc;
-        let loc = to_string () in
-        `List [`String loc ; `String content]
-      | None -> `String content
-    in
-    `List (List.map ~f:aux sg)
-
-  | (Dump `Browse : a request) ->
-    with_typer buffer @@ fun typer ->
-    let structures = Typer.to_browse (Typer.contents typer) in
-    Browse_misc.dump_ts (List.map ~f:snd @@ List.map ~f:Browse.leaf_node structures)
-
-  | (Dump `Tokens : a request) ->
-    let tokens = Buffer.lexer buffer in
-    let tokens = History.seek_backward (fun _ -> true) tokens in
-    let tokens = History.tail tokens in
-    `List (List.filter_map tokens
-             ~f:(fun (_exns,item) -> match item with
-             | Lexer.Error _ -> None
-             | Lexer.Valid (s,t,e) ->
-               let t = Raw_parser_values.symbol_of_token t in
-               let t = Raw_parser_values.class_of_symbol t in
-               let t = Raw_parser_values.string_of_class t in
-               Some (`Assoc [
-                   "start", Lexing.json_of_position s;
-                   "end", Lexing.json_of_position e;
-                   "token", `String t;
-                 ])
-             )
-          )
-
-  | (Dump `Flags : a request) ->
-    let flags = Project.get_flags (Buffer.project buffer) in
-    let assoc =
-      List.map flags ~f:(fun (src, flag_lists) ->
-        let l = List.concat_map flag_lists ~f:(List.map ~f:(fun s -> `String s)) in
-        src, `List l
-      )
-    in
-    `Assoc assoc
-
-  | (Dump `Warnings : a request) ->
-    with_typer buffer @@ fun _typer ->
-    Warnings.dump ()
-
-  | (Dump _ : a request) ->
-    failwith "TODO"
+  | (Dump args : a request) ->
+    dump buffer args
 
   | (Which_path xs : a request) ->
     begin
