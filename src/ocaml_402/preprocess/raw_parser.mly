@@ -286,7 +286,10 @@ let mkexp_attrs startpos endpos d attrs =
 
 let fake_tydecl tydecl = tydecl.ptype_name, tydecl
 let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
-let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
+let tag_nonrec loc (id, a) =
+  let attr = ({ txt = "nonrec"; loc }, PStr []) in
+  {a with ptype_attributes = attr :: a.ptype_attributes}
+
 let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
 let let_operator startpos endpos op bindings cont =
@@ -2557,7 +2560,8 @@ structure_item:
     }
 | TYPE NONREC @{`Item "type nonrec"} decls = type_declarations
     { let ty = List.map fake_tydecl decls in
-      mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec ty)) }
+      let loc = rloc $startpos($2) $endpos($2) in
+      mkstr $startpos $endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) }
 | TYPE @{`Item "type"} type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
@@ -2570,7 +2574,8 @@ structure_item:
       let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
       let ty = List.map fake_tydecl $3 in
       let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $5 in
-      mkstr $startpos $endpos (Pstr_type(List.rev_map tag_nonrec ty)) @ ast
+      let loc = rloc $startpos($2) $endpos($2) in
+      mkstr $startpos $endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) @ ast
     }
 | EXCEPTION @{`Item "exception"}
   str_exception_declaration WITH with_extensions
@@ -2616,7 +2621,8 @@ structure_item:
 signature_item:
 | TYPE NONREC @{`Item "type nonrec"} decls = type_declarations
     { let ty = List.map fake_tydecl decls in
-      mksig $startpos $endpos (Psig_type (List.rev_map tag_nonrec ty)) }
+      let loc = rloc $startpos($2) $endpos($2) in
+      mksig $startpos $endpos (Psig_type (List.rev_map (tag_nonrec loc) ty)) }
 | TYPE @{`Item "type"} type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
@@ -2629,7 +2635,8 @@ signature_item:
       let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
       let ty = List.map fake_tydecl $3 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $5 in
-      mksig $startpos $endpos (Psig_type(List.rev_map tag_nonrec ty)) @ decls
+      let loc = rloc $startpos($2) $endpos($2) in
+      mksig $startpos $endpos (Psig_type(List.rev_map (tag_nonrec loc) ty)) @ decls
     }
 | EXCEPTION @{`Item "exception"}
   sig_exception_declaration WITH with_extensions

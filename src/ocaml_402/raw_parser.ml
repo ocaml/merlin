@@ -787,7 +787,10 @@ let mkexp_attrs startpos endpos d attrs =
 
 let fake_tydecl tydecl = tydecl.ptype_name, tydecl
 let fake_untydecl (ptype_name,tydecl) = {tydecl with ptype_name}
-let tag_nonrec (id, a) = fake_untydecl(Fake.Nonrec.add id, a)
+let tag_nonrec loc (id, a) =
+  let attr = ({ txt = "nonrec"; loc }, PStr []) in
+  {a with ptype_attributes = attr :: a.ptype_attributes}
+
 let fake_vb_app f vb = {vb with pvb_expr = Fake.app f vb.pvb_expr}
 
 let let_operator startpos endpos op bindings cont =
@@ -16488,7 +16491,8 @@ module MenhirInterpreterTable = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_decls_ in
         let _v : (Parsetree.signature_item list) =     ( let ty = List.map fake_tydecl decls in
-      mksig _startpos _endpos (Psig_type (List.rev_map tag_nonrec ty)) ) in
+      let loc = rloc _startpos__2_ _endpos__2_ in
+      mksig _startpos _endpos (Psig_type (List.rev_map (tag_nonrec loc) ty)) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_signature_item, _v);
@@ -16585,7 +16589,8 @@ module MenhirInterpreterTable = struct
       let ghost_loc = Some (gloc _startpos__5_ _endpos__5_) in
       let ty = List.map fake_tydecl _3 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc _5 in
-      mksig _startpos _endpos (Psig_type(List.rev_map tag_nonrec ty)) @ decls
+      let loc = rloc _startpos__2_ _endpos__2_ in
+      mksig _startpos _endpos (Psig_type(List.rev_map (tag_nonrec loc) ty)) @ decls
     ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -22128,7 +22133,8 @@ module MenhirInterpreterTable = struct
         let _startpos = _startpos__1_ in
         let _endpos = _endpos_decls_ in
         let _v : (Parsetree.structure_item list) =     ( let ty = List.map fake_tydecl decls in
-      mkstr _startpos _endpos (Pstr_type(List.rev_map tag_nonrec ty)) ) in
+      let loc = rloc _startpos__2_ _endpos__2_ in
+      mkstr _startpos _endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = N_ (N_structure_item, _v);
@@ -22225,7 +22231,8 @@ module MenhirInterpreterTable = struct
       let ghost_loc = Some (gloc _startpos__5_ _endpos__5_) in
       let ty = List.map fake_tydecl _3 in
       let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc _5 in
-      mkstr _startpos _endpos (Pstr_type(List.rev_map tag_nonrec ty)) @ ast
+      let loc = rloc _startpos__2_ _endpos__2_ in
+      mkstr _startpos _endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) @ ast
     ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;

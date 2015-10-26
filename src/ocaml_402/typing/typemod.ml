@@ -582,7 +582,7 @@ and transl_signature env sg =
             let rec_flag = rec_flag_of_ptype_declarations sdecls in
             List.iter
               (fun decl ->
-                check_name "type" type_names (Fake.Nonrec.drop_loc decl.ptype_name))
+                check_name "type" type_names decl.ptype_name)
               sdecls;
             let (decls, newenv) = Typedecl.transl_type_decl env rec_flag sdecls in
             let (trem, rem, final_env) = transl_sig newenv srem in
@@ -1278,8 +1278,8 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
         Tstr_primitive desc, [Sig_value(desc.val_id, desc.val_val)], newenv
     | Pstr_type sdecls ->
         let rec_flag = rec_flag_of_ptype_declarations sdecls in
-        List.iter (fun decl -> check_name "type" type_names
-                      (Fake.Nonrec.drop_loc decl.ptype_name))
+        List.iter
+          (fun decl -> check_name "type" type_names decl.ptype_name)
           sdecls;
         let (decls, newenv) = Typedecl.transl_type_decl env rec_flag sdecls in
         Tstr_type decls,
