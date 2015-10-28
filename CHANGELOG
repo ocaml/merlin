@@ -30,7 +30,7 @@ Wed Oct 28 14:32:48 CET 2015
     - make use of contextual-commands, non backward compatible protocol change
     - new merlin-set-flags command
     - split into multiple files
-    - cleanup symbol namespaces: 
+    - cleanup symbol namespaces:
         + merlin- for user targeted definitions
         + merlin-- for internal definitions,
         + merlin/ for API definitions
