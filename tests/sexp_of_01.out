@@ -4,4 +4,4 @@
 ["return",{"cursor":{"line":2,"col":0},"marker":false}]
 ["return",{"cursor":{"line":2,"col":0},"marker":false}]
 ["return",[]]
-["return",[["","type t = int"],["","val sexp_of_t : t -> Sexplib.Sexp.t"]]]
+["return",[["File \"sexp_of_01.ml\", line 1, characters 5-13","type nonrec t = int"],["File \"sexp_of_01.ml\", line 1, characters 18-25","val sexp_of_t : t -> Sexplib.Sexp.t"]]]

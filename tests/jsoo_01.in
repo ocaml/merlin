@@ -2,7 +2,7 @@
 . functions.sh || exit 1
 
 reset jsoo_01.ml
-cmd extension enable '["js"]'
+extension js
 package js_of_ocaml
 # Test report of type errors in jsoo code
 tell <<END

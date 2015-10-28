@@ -8,5 +8,4 @@ module Test_binprot = struct
   type 'a t = { x : int ; y : 'a } with bin_io
 end
 END
-echo >&2 WARNING: fix command dump env 
 cmd dump env

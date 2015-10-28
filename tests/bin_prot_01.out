@@ -3,4 +3,4 @@
 ["return",{"cursor":{"line":1,"col":0},"marker":false}]
 ["return",{"cursor":{"line":4,"col":0},"marker":false}]
 ["return",{"cursor":{"line":4,"col":0},"marker":false}]
-["return",[["","module Test_binprot :\n  sig\n    type t = T\n    val bin_size_t : t -> int\n    val bin_write_t : t Bin_prot.Write.writer\n    val bin_writer_t : t Bin_prot.Type_class.writer\n    val bin_read_t : t Bin_prot.Read.reader\n    val __bin_read_t__ : (int -> t) Bin_prot.Read.reader\n    val bin_reader_t : t Bin_prot.Type_class.reader\n    val bin_t : t Bin_prot.Type_class.t\n  end"]]]
+["return",[["File \"bin_prot_01.ml\", line 2, characters 7-24","module Test_binprot :\n  sig\n    type t = T\n    val bin_size_t : t -> int\n    val bin_write_t : t Bin_prot.Write.writer\n    val bin_writer_t : t Bin_prot.Type_class.writer\n    val bin_read_t : t Bin_prot.Read.reader\n    val __bin_read_t__ : (int -> t) Bin_prot.Read.reader\n    val bin_reader_t : t Bin_prot.Type_class.reader\n    val bin_t : t Bin_prot.Type_class.t\n  end"]]]

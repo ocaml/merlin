@@ -53,6 +53,11 @@ package()
   cmd find use "$@"
 }
 
+extension()
+{
+  cmd extension enable "[\"$1\"]"
+}
+
 pos()
 {
   printf '{"line":%d,"col":%d}' "$1" "$2"
