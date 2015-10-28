@@ -286,8 +286,6 @@ let symbolchar =
   ['!' '$' '%' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let symbolcharnopercent =
   ['!' '$' '&' '*' '+' '-' '.' '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
-let symbolcharnodot =
-  ['!' '$' '%' '&' '*' '+' '-'     '/' ':' '<' '=' '>' '?' '@' '^' '|' '~']
 let decimal_literal =
   ['0'-'9'] ['0'-'9' '_']*
 let hex_literal =
@@ -503,10 +501,9 @@ rule token state = parse
             { return (PREFIXOP(Lexing.lexeme lexbuf)) }
   | ['~' '?'] symbolchar +
             { return (PREFIXOP(Lexing.lexeme lexbuf)) }
-  | ['=' '<' '|' '&' '$'] symbolchar *
-            { return (INFIXOP0(Lexing.lexeme lexbuf)) }
-  | ['>'] symbolcharnodot symbolchar *
-            { return (INFIXOP0(Lexing.lexeme lexbuf)) }
+  | ['=' '<' '|' '&' '$' '>'] symbolchar *
+            { return (keyword_or state (Lexing.lexeme lexbuf)
+                       (INFIXOP0(Lexing.lexeme lexbuf))) }
   | ['@' '^'] symbolchar *
             { return (INFIXOP1(Lexing.lexeme lexbuf)) }
   | ['+' '-'] symbolchar *
