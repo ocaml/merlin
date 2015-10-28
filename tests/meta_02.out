@@ -1,0 +1,6 @@
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"cursor":{"line":4,"col":0},"marker":false}]
+["return",{"cursor":{"line":4,"col":0},"marker":false}]
+["return",[]]
+["return",[["File \"meta_02.ml\", line 1, characters 4-10","val ( >. ) : float -> float -> bool"]]]

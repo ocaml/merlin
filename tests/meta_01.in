@@ -1,0 +1,16 @@
+#!/bin/bash
+. functions.sh || exit 1
+reset meta_01.ml
+
+extension meta
+tell <<END
+let square x = x * x
+
+let rec spower n x =
+  if n = 0 then .<1>.
+  else if n mod 2 = 0 then .<square .~(spower (n/2) x)>.
+  else .<.~x * .~(spower (n-1) x)>.
+END
+
+cmd errors
+cmd dump env

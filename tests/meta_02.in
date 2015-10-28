@@ -1,0 +1,13 @@
+#!/bin/bash
+. functions.sh || exit 1
+reset meta_02.ml
+
+# Without meta, ( >. ) is a valid operator
+tell <<END
+let ( >. ) : float -> float -> bool = ( > );;
+
+1.0 >. 0.0;;
+END
+
+cmd errors
+cmd dump env

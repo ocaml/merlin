@@ -1,0 +1,7 @@
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"result":true}]
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"cursor":{"line":7,"col":0},"marker":false}]
+["return",{"cursor":{"line":7,"col":0},"marker":false}]
+["return",[]]
+["return",[["File \"meta_01.ml\", line 1, characters 4-10","val square : int -> int"],["File \"meta_01.ml\", line 3, characters 8-14","val spower : int -> int code -> int code"]]]
