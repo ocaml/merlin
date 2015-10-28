@@ -10,7 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* $Id$ *)
 open Std
 
 (* Miscellaneous useful types and functions *)

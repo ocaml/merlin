@@ -2,9 +2,10 @@
 
   This file is part of Merlin, an helper for ocaml editors
 
-  Copyright (C) 2013 - 2014  Frédéric Bour  <frederic.bour(_)lakaban.net>
+  Copyright (C) 2013 - 2015  Frédéric Bour  <frederic.bour(_)lakaban.net>
                              Thomas Refis  <refis.thomas(_)gmail.com>
                              Simon Castellan  <simon.castellan(_)iuwt.fr>
+                             Tomasz Kołodziejski  <tkolodziejski(_)gmail.com>
 
   Permission is hereby granted, free of charge, to any person obtaining a
   copy of this software and associated documentation files (the "Software"),
