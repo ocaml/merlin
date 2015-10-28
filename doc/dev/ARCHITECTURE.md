@@ -37,6 +37,7 @@ Buffer tracks knowledge of a specific buffer/file: tokens, syntax and type trees
 `merlin_recovery_explain.ml`: extract information from a parser explaining the context of syntax errors
 `merlin_recovery_strategy.ml`: various analyses on LR-parser to help recover from incomplete parses
 
+`merlin_browse.ml`: help navigation in typedtree, mainly answering "what is around this position?"
 `merlin_typer.ml`: wrap OCaml typechecker
 
 Summary:
@@ -49,9 +50,8 @@ Summary:
 Analysis offers different tools to work on the result of typechecking (produced by the kernel).
 These are independent of an OCaml version, each typechecker comes with modules abstracting the differences.
 
-`browse.ml`: help navigation in typedtree, mainly answering "what is around this position?"
 `browseT.ml`: uniform traversal of typedtree, wrapping `Browse_node`
-`browse_misc.ml`: tools too small to deserver their own module (tail calls annotations, printing ...)
+`browse_misc.ml`: tools too small to deserve their own module (tail calls annotations, printing ...)
 `ocamldoc.ml`: get documentation associated to a definition
 `typedtrie.ml`: quick lookup of OCaml paths
 `type_utils.ml`: light wrapper over some functions of OCaml typer
