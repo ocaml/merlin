@@ -1,17 +1,49 @@
-merlin HEAD
+merlin 2.3
 ===========
+Wed Oct 28 14:32:48 CET 2015
 
   backend:
     - locate: fix assert failure on first class modules inclusion
     - outline: add support for classes and object types
     - nonrec: enable by default for OCaml >= 4.02.2
     - error reporting: less aggressive filtering on ghost locs
+    - finer-grained tracking of usage (values, opened modules, etc)
+    - significant improvement in the handling of PPX extensions:
+        + fix shell commandline and working directory
+        + normalize parsetree locations
+        + implement caching of intermediate rewriting
+    - merged support for MetaOCaml
+    - path to the standard library can now be specified with STDLIB command
+      in .merlin
+    - BrowseT: split into Browse_node (OCaml version specific) and
+      Merlin_browse, extract recursion scheme
+    - add Jump command, contributed by Tomasz Kołodziejski
+    - contextual-commands: optionnally specify the context (file, project)
+      in which each command is interpreted
+    - better support for trunk
+    - many bugfixes
+
+  documentation:
+    - update ARCHITECTURE and PROTOCOL documentations
 
   emacs:
-    FIXME
+    - make use of contextual-commands, non backward compatible protocol change
+    - new merlin-set-flags command
+    - split into multiple files
+    - cleanup symbol namespaces: 
+        + merlin- for user targeted definitions
+        + merlin-- for internal definitions,
+        + merlin/ for API definitions
+    - usability tweaks, notably on error display and navigation
+    - general cleanup and bugfixes
 
   vim:
     - expose custom .merlin loading through buffer variable
+    - cleanup and bugfixes, notably process liveness check and restart
+
+This release also contains contributions from: Rudi Grinberg, Fourchaux,
+Christopher Reichert, David Allsopp, Nick Borden, Mario Rodas, @Twinside,
+Pierre Chambart, Philipp Haselwarter, Tomasz Kołodziejski and Syohei Yoshida.
 
 merlin 2.2
 ==========
