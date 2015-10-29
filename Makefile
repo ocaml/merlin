@@ -65,6 +65,7 @@ all_versions:
 
 wine:
 	$(MAKE) -f Makefile.wine
+	$(MAKE) -f Makefile.wine installer
 
 preprocess:
 	$(MAKE) -f Makefile.preprocess

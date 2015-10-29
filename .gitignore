@@ -9,6 +9,7 @@ emacs/merlin.elc
 *.cm??
 ocamlmerlin
 ocamlmerlin.exe
+config.iss
 ._d
 ._ncdi
 
