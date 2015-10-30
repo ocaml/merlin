@@ -22,14 +22,6 @@ available: [ocaml-version >= "4.00.0"]
 post-messages: [
   "merlin installed.
 
- ========================
- /!\\ BREAKING CHANGES /!\\
- ========================
-
-Every vim command defined by merlin has been prefixed with \"Merlin\" to avoid
-conflict with other vim plugins using the same command names.
-
-
 Quick setup for VIM
 -------------------
 Append this to your .vimrc to add merlin to vim's runtime-path:
