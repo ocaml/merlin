@@ -191,7 +191,7 @@ System config:
 Will install:
   ocamlmerlin binary in: $BIN_DIR
   vim mode in: $VIM_DIR
-  
+
 To customize directories, use:
   ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--vimdir <vimdir>] [--with-vimbufsync | --without-vimbufsync]
 
@@ -199,16 +199,24 @@ For more informations rerun with --help.
 END
 
 SYSTEM=$(ocamlfind c -config | grep system|cut -d' ' -f2)
-case "$SYSTEM" in
-  mingw*|win*)
-    rm -rf "$PWD/src/ocaml" 2>&1 >/dev/null &&
-      cp -R "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
-    ;;
-  *)
-    rm -f "$PWD/src/ocaml" 2>&1 >/dev/null &&
-      ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
-    ;;
-esac
+
+if [ -z ${COMSPEC+x} ]; then
+
+  # Non windows-like system, use symlinks
+
+  MERLIN_OCAML_VERSION=
+  rm -f "$PWD/src/ocaml" 2>&1 >/dev/null
+  ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+
+else
+
+  # Assume windows-like system
+  # Avoid symlinks, find right version through environment variable
+
+  touch "$PWD/src/ocaml"
+  MERLIN_OCAML_VERSION="export MERLIN_OCAML_VERSION=${OCAML_VERSION/ocaml/}"
+
+fi
 
 mkdir -p "$PWD/src/config"
 
@@ -235,6 +243,7 @@ WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 EXE=$EXE
+$MERLIN_OCAML_VERSION
 END
 
   if [ -n "$VERSION_STRING" ]; then
@@ -251,8 +260,8 @@ END
 let version = "$VERSION_STRING";;
 let ocamlversion : $OCAML_VERSION_TYP = $OCAML_VERSION_VAL;;
 END
-  
-  cat >config.iss <<END
+
+  cat >src/config/config.iss <<END
 #define OCAML_VERSION "$OCAML_VERSION_MESSAGE"
 END
   if [ "$EXIT" -eq 0 ]; then
