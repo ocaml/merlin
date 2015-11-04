@@ -67,12 +67,13 @@ The options available for better control are as follow:
 END
 }
 
-sed_file()
+filter_file()
 {
-  EXPR="$1"
-  FILE="$2"
+  FILE="$1"
+  shift 1
+
   mv "$FILE" "$FILE".org
-  sed -e "$EXPR" < "$FILE".org > "$FILE"
+  "$@" < "$FILE".org > "$FILE"
   rm "$FILE".org
 }
 
@@ -144,13 +145,19 @@ case "$MAGIC_VERSION" in
     OCAML_VERSION="ocaml_402"
     if [ "x$FULL_VERSION" = "x4.02.0" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.0"
-      sed_file '/\(S\|Ignored_s\)can_next_char\|Any_ty\|| Custom/d' \
-        src/ocaml_402/typing/typecore.ml
+      filter_file src/ocaml_402/typing/typecore.ml \
+        grep -v -F '
+| Scan_next_char 
+| Ignored_scan_next_char 
+| Any_ty 
+| Custom '
       OCAML_VERSION_VAL='`OCaml_4_02_0'
     elif [ "x$FULL_VERSION" = "x4.02.1" ]; then
       OCAML_VERSION_MESSAGE="OCaml 4.02.1"
-      sed_file '/Any_ty\|| Custom/d' \
-        src/ocaml_402/typing/typecore.ml
+      filter_file src/ocaml_402/typing/typecore.ml \
+        grep -v -F '
+| Any_ty 
+| Custom '
       OCAML_VERSION_VAL='`OCaml_4_02_1'
     else
       OCAML_VERSION_MESSAGE="OCaml 4.02.2"
@@ -167,8 +174,8 @@ esac
 # Findlib version check
 if [ "x1.5.1" = "x$(ocamlfind query findlib -format '%v')" ]; then
   printf "\nOld version of findlib detected (1.5.1), patching\n"
-  sed_file 's/Findlib\.resolve_path ~base:d ~explicit:true/Findlib.resolve_path ~base:d/' \
-    src/kernel/dot_merlin.ml
+  filter_file src/kernel/dot_merlin.ml \
+     sed -e 's/Findlib\.resolve_path ~base:d ~explicit:true/Findlib.resolve_path ~base:d/'
 fi
 
 if [ -e "src/${OCAML_VERSION}.git/.git" ]; then
