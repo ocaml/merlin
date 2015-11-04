@@ -1049,7 +1049,10 @@ let rec iter_env_components only_val env proj path path' mcomps ft fma =
                | Types.Mty_alias alias ->
                  let path = Pdot (path, s, n) in
                  let alias =
-                   if Ident.persistent (Path.head alias) then
+                   let pid = Path.head alias in
+                   if Ident.persistent pid
+                   && not (Hashtbl.mem !cache.persistent_structures (Ident.name pid))
+                   then
                      alias
                    else
                      normalize_path None env path
