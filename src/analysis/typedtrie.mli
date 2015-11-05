@@ -49,7 +49,7 @@ val tag_path : namespace:namespace -> string list -> path
 val path_to_string : path -> string
 
 type result =
-  | Found of Location.t
+  | Found of Location.t * string option
     (** Found at location *)
   | Alias_of of Location.t * path
     (** Alias of [path], introduced at [Location.t] *)

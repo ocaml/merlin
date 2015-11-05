@@ -40,7 +40,7 @@ type namespace = [
 ]
 type path = (string * namespace) list
 
-type trie = (Location.t * namespace * node) list String.Map.t
+type trie = (Location.t * string option * namespace * node) list String.Map.t
  and node =
    | Leaf
    | Internal of trie

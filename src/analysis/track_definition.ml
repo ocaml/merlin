@@ -260,7 +260,7 @@ exception Context_mismatch
 
 let rec locate ?pos path trie =
   match Typedtrie.find ?before:pos trie path with
-  | Typedtrie.Found loc -> Some loc
+  | Typedtrie.Found (loc, doc_opt) -> Some (loc, doc_opt)
   | Typedtrie.Resolves_to (new_path, fallback) ->
     begin match new_path with
     | (_, `Mod) :: _ ->
@@ -271,12 +271,12 @@ let rec locate ?pos path trie =
       debug_log "new path (%s) is not a real path. fallbacking..."
         (Typedtrie.path_to_string new_path) ;
       Logger.debugf section Typedtrie.dump trie ;
-      fallback
+      Option.map fallback ~f:(fun x -> x, None)
     end
   | Typedtrie.Alias_of (loc, new_path) ->
     debug_log "alias of %s" (Typedtrie.path_to_string new_path) ;
     (* TODO: optionally follow module aliases *)
-    Some loc
+    Some (loc, None)
 
 and browse_cmts ~root modules =
   let open Cmt_format in
@@ -304,7 +304,8 @@ and browse_cmts ~root modules =
         (* we were looking for a module, we found the right file, we're happy *)
         let pos = Lexing.make_pos ~pos_fname:root (1, 0) in
         let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=false } in
-        Some loc
+        (* TODO: retrieve "ocaml.text" floating attributes? *)
+        Some (loc, None)
       | _ ->
         let trie = Typedtrie.of_browses [BrowseT.of_node node] in
         cached.Cmt_cache.location_trie <- trie ;
@@ -343,7 +344,7 @@ and from_path path =
       File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
       let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
       let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
-      Some loc
+      Some (loc, None)
     in
     begin try
       let cmt_file = Utils.find_file ~with_fallback:true (Preferences.cmt fname) in
@@ -362,7 +363,7 @@ and from_path path =
           let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
           let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
           File_switching.move_to loc.Location.loc_start.Lexing.pos_fname ;
-          Some loc
+          Some (loc, None)
       )
     end
   | (fname, `Mod) :: modules ->
@@ -473,7 +474,7 @@ let find_source loc =
 let recover ident =
   match Fallback.get () with
   | None -> assert false
-  | Some loc -> `Found loc
+  | Some loc -> `Found (loc, None)
 
 let namespaces = function
   | Type        -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
@@ -529,7 +530,7 @@ let locate ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   Fallback.reset ();
   Preferences.set ml_or_mli;
   try
-    if not (Utils.is_ghost_loc loc) then `Found loc else
+    if not (Utils.is_ghost_loc loc) then `Found (loc, None) else
       let () =
         debug_log "present in the environment, but ghost lock.\n\
                    walking up the typedtree looking for '%s'"
@@ -539,7 +540,7 @@ let locate ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
       match locate ~pos path trie with
       | None when Fallback.is_set () -> recover str_ident
       | None -> `Not_found (str_ident, File_switching.where_am_i ())
-      | Some loc -> `Found loc
+      | Some (loc, doc) -> `Found (loc, doc)
   with
   | _ when Fallback.is_set () -> recover str_ident
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
@@ -648,7 +649,7 @@ let from_string ~project ~env ~local_defs ~pos switch path =
       from_longident ~pos ~env ~lazy_trie ctxt switch lid
     with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as error -> error
-    | `Found loc ->
+    | `Found (loc, _) ->
       try
         match find_source loc with
         | None     -> `Found (None, loc.Location.loc_start)
@@ -679,13 +680,16 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
     | `User_input path ->
       let lid    = Longident.parse path in
       begin match inspect_context browse path pos with
-      | None -> `Found { Location. loc_start=pos; loc_end=pos ; loc_ghost=true }
+      | None ->
+        `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
       | Some ctxt ->
         info_log "looking for the doc of '%s'" path ;
         from_longident ~pos ~env ~lazy_trie ctxt `MLI lid
       end
   with
-  | `Found loc ->
+  | `Found (loc, Some doc) ->
+    `Found doc
+  | `Found (loc, None) ->
     let comments =
       match File_switching.where_am_i () with
       | None -> List.rev comments
@@ -693,6 +697,17 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
         let {Cmt_cache. cmt_infos} = Cmt_cache.read cmt_path in
         cmt_infos.Cmt_format.cmt_comments
     in
+    Logger.infof section (fun fmt () ->
+      Format.pp_print_string fmt "looking around ";
+      Location.print_loc fmt (Fluid.get last_location);
+      Format.pp_print_string fmt " inside: [\n";
+      List.iter comments ~f:(fun (c, l) ->
+        Format.fprintf fmt "  (%S, " c;
+        Location.print_loc fmt l;
+        Format.pp_print_string fmt ");\n"
+      );
+      Format.pp_print_string fmt "]\n"
+    ) ();
     begin match
       Ocamldoc.associate_comment comments loc (Fluid.get last_location)
     with
