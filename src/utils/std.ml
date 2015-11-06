@@ -399,6 +399,15 @@ module String = struct
   let mem c s =
     try ignore (String.index s c : int); true
     with Not_found -> false
+
+  let no_double_underscore s =
+    try
+      for i = 0 to String.length s - 2 do
+        if s.[i] = '_' && s.[i + 1] = '_' then
+          raise Exit
+      done;
+      true
+    with Exit -> false
 end
 
 let sprintf = Printf.sprintf

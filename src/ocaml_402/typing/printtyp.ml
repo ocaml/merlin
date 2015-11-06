@@ -265,14 +265,8 @@ let rec normalize_type_path ?(cache=false) env p =
 
 let penality id =
   if id <> "" && id.[0] = '_' then 10
-  else
-    try
-      for i = 0 to String.length id - 2 do
-        if id.[i] = '_' && id.[i + 1] = '_' then
-          raise Not_found
-      done;
-      1
-    with Not_found -> 10
+  else if not (Std.String.no_double_underscore id) then 10
+  else 1
 
 let dprintf = Printf.eprintf
 let debug = try Sys.getenv "PRINTDBG" = "1" with Not_found -> false

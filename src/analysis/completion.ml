@@ -402,10 +402,12 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
       with Not_found ->
         String.is_prefixed ~by:prefix name && uniq (tag,name)
     in
-    (* Hack to prevent extensions namespace to leak *)
+    (* Hack to prevent extensions namespace to leak
+       + another to hide the "Library_name__Module" present at Jane Street *)
     let validate ident tag name =
       (if ident = `Uident
        then name <> "" && name.[0] <> '_'
+            && (String.no_double_underscore name || tag <> `Mod)
        else name <> "_")
       && valid tag name
     in
@@ -431,6 +433,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
       (* Add modules on path but not loaded *)
       List.fold_left (Buffer.global_modules buffer) ~init:compl ~f:(
         fun candidates name ->
+          if not (String.no_double_underscore name) then candidates else
           let default = { name; kind = `Module; desc = ""; info = "" } in
           if name = prefix && uniq (`Mod, name) then
             try
