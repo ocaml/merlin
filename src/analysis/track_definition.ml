@@ -275,8 +275,9 @@ let rec locate ?pos path trie =
     end
   | Typedtrie.Alias_of (loc, new_path) ->
     debug_log "alias of %s" (Typedtrie.path_to_string new_path) ;
-    (* TODO: optionally follow module aliases *)
-    Some (loc, None)
+    (* TODO: maybe give the option to NOT follow module aliases? *)
+    Fallback.set loc;
+    from_path new_path
 
 and browse_cmts ~root modules =
   let open Cmt_format in
@@ -411,6 +412,7 @@ let find_source loc =
     | [] ->
       debug_log "failed to find \"%s\" in source path (fallback = %b)"
           filename with_fallback ;
+      debug_log "(for reference: fname = %S)" fname;
       debug_log "looking in '%s'" dir ;
       Some (Utils.find_file_with_path ~with_fallback file [dir])
     | [ x ] -> Some x
@@ -470,6 +472,25 @@ let find_source loc =
           raise (Multiple_matches files)
         | (_, s) :: _ -> Some s
         | _ -> assert false
+
+(* Well, that's just another hack.
+   [find_source] doesn't like the "-o" option of the compiler. This hack handles
+   Jane Street specific use case where "-o" is used to prefix a unit name by the
+   name of the library which contains it. *)
+let find_source loc =
+  try find_source loc
+  with exn ->
+    let fname = loc.Location.loc_start.Lexing.pos_fname in
+    try
+      let i = String.first_double_underscore_end fname in
+      let pos = i + 1 in
+      let fname = String.sub fname ~pos ~len:(String.length fname - pos) in
+      let loc =
+        let lstart = { loc.Location.loc_start with Lexing.pos_fname = fname } in
+        { loc with Location.loc_start = lstart }
+      in
+      find_source loc
+    with _ -> raise exn
 
 let recover ident =
   match Fallback.get () with

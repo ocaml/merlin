@@ -400,14 +400,18 @@ module String = struct
     try ignore (String.index s c : int); true
     with Not_found -> false
 
+  let first_double_underscore_end s =
+    let len = String.length s in
+    let rec aux i =
+      if i > len - 2 then raise Not_found else
+      if s.[i] = '_' && s.[i + 1] = '_' then i + 1
+      else aux (i + 1)
+    in
+    aux 0
+
   let no_double_underscore s =
-    try
-      for i = 0 to String.length s - 2 do
-        if s.[i] = '_' && s.[i + 1] = '_' then
-          raise Exit
-      done;
-      true
-    with Exit -> false
+    try ignore (first_double_underscore_end s); false
+    with Not_found -> true
 end
 
 let sprintf = Printf.sprintf
