@@ -1105,16 +1105,18 @@ prefix of `bar' is `'."
     (cons (if bounds (car bounds) (point))
           (point))))
 
-;;;;;;;;;;;;;;;;;;;;;;;
-;; EXPRESSION TYPING ;;
-;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;
+;; TYPE BUFFER ;;
+;;;;;;;;;;;;;;;;;
 
-(defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
-  "Get the type of EXP inside the local context."
-  (when exp (merlin/send-command-async
-             (list 'type 'expression (substring-no-properties exp)
-                   'at (merlin/unmake-point (point)))
-             callback-if-success callback-if-exn)))
+(defun merlin--count-lines (text)
+  (let ((count 0)
+        (pos   0))
+    (while (and (<= count 8)
+                (string-match "\n" text pos))
+           (setq pos (match-end 0))
+           (setq count (1+ count)))
+    count))
 
 (defun merlin/display-in-type-buffer (text)
   "Change content of type-buffer."
@@ -1130,18 +1132,25 @@ prefix of `bar' is `'."
     (insert text)
     (goto-char (point-min))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; EXPRESSION TYPING ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
+  "Get the type of EXP inside the local context."
+  (when exp (merlin/send-command-async
+             (list 'type 'expression (substring-no-properties exp)
+                   'at (merlin/unmake-point (point)))
+             callback-if-success callback-if-exn)))
+
 (defun merlin--type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
 If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
       (unless quiet (message "<no information>"))
-    (let ((count 0)
-          (pos   0))
+    (let ((count (merlin--count-lines type)))
       (merlin/display-in-type-buffer type)
-      (while (and (<= count 8)
-                  (string-match "\n" type pos))
-        (setq pos (match-end 0))
-        (setq count (1+ count)))
       (if (> count 8)
           (display-buffer merlin-type-buffer-name)
         (message "%s"
@@ -1490,8 +1499,16 @@ Empty string defaults to jumping to all these."
 
 (defun merlin--document-pure (&optional ident)
   "Document the identifier IDENT at point."
-  (let ((r (merlin--document-pos ident)))
-    (message "%s" r)))
+  (let* ((raw-doc  (merlin--document-pos ident))
+         (doc      (concat "(*" raw-doc "*)"))
+         (nb-lines (merlin--count-lines doc)))
+    (merlin/display-in-type-buffer doc)
+    (if (> nb-lines 8)
+        (display-buffer merlin-type-buffer-name)
+      (message "%s"
+        (with-current-buffer merlin-type-buffer-name
+          (font-lock-fontify-region (point-min) (point-max))
+          (buffer-string))))))
 
 (defun merlin-document ()
   "Document the identifier under point"
