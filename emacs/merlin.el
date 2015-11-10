@@ -1827,6 +1827,9 @@ Returns the position."
   (list
     (cons 'name (file-name-directory (expand-file-name (buffer-file-name (buffer-base-buffer)))))))
 
+(defconst merlin-protocol-version 2
+  "Version of the protocol spoken by this version of the emacs mode.")
+
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
   (interactive)
@@ -1837,6 +1840,19 @@ Returns the position."
     (when (merlin-process-dead-p instance)
       (merlin-start-process merlin-default-flags conf))
     (add-to-list 'after-change-functions 'merlin--sync-edit)
+    (merlin/send-command-async
+      `(protocol version ,merlin-protocol-version)
+      (lambda (v)
+        (let ((selected (cdr-safe (assoc 'selected v)))
+              (latest   (cdr-safe (assoc 'latest   v))))
+         (if (not (eq selected merlin-protocol-version))
+           (message
+            "Unsupported version of Merlin binary, please update (protocol version %S, expected %S)"
+            selected merlin-protocol-version)
+           (if (not (eq latest merlin-protocol-version))
+             (message "Merlin version is more recent than the emacs mode, consider updating")))))
+      (lambda (exn)
+        (message "Unsupported version of Merlin binary, please update (%S)" exn)))
     (merlin--idle-timer)
     ;; Synchronizing will only do parsing and no typing.
     ;; That should be fast enough that the user don't realize.
