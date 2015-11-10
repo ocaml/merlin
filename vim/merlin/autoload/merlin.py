@@ -14,6 +14,8 @@ current_enclosing = -1
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
 re_wspaces = re.compile("[\n ]+")
 
+protocol_version = 2
+
 ######## ERROR MANAGEMENT
 
 class MerlinExc(Exception):
@@ -115,9 +117,22 @@ class MerlinProcess:
                         stderr=None,
                         env=env
                         )
+
+            # Protocol version negotiation
+            json.dump(["protocol","version",protocol_version], self.mainpipe.stdin)
+            answer = json.loads(self.mainpipe.stdout.readline())
+            if len(answer) == 2 and answer[0] == "return":
+                if answer[1]['selected'] != protocol_version:
+                    print("Unsupported version of Merlin protocol, please update (plugin is %d, ocamlmerlin binary is %d)."
+                            % (protocol_version, answer[1]['selected']))
+                elif answer[1]['latest'] != protocol_version:
+                    print("Merlin plugin is outdated, consider updating (plugin is %d, latest is %d)."
+                            % (protocol_version, answer[1]['latest']))
+            else:
+                print("Unsupported version of Merlin binary, please update (%s)." % answer)
+
         except OSError as e:
-            print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary\
-                    is executable.")
+            print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
             raise e
 
     def command(self, *cmd):
