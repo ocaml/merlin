@@ -113,26 +113,26 @@ let user_failures project =
 let node_list path =
   List.map ~f:snd (List.Non_empty.to_list path)
 
-let track_verbosity =
-  let classify (type a) (request : a request) =
-    let obj = Some (Obj.repr request) in
-    match request with
-    | Type_expr _ -> obj
-    | Type_enclosing _ -> obj
-    | Enclosing _ -> obj
-    | Complete_prefix _ -> obj
-    | Expand_prefix _ -> obj
-    | _ -> None in
-  fun state (type a) (request : a request) ->
-    match classify request with
-    | None -> 0
-    | value when state.verbosity_last = value ->
-      state.verbosity <- state.verbosity + 1;
-      state.verbosity
-    | value ->
-      state.verbosity_last <- value;
-      state.verbosity <- 0;
-      0
+let track_verbosity (type a) state (command : a command) =
+  let tracked =
+    let obj = Some (Obj.repr command) in
+    match command with
+    | Query (Type_expr _) -> obj
+    | Query (Type_enclosing _) -> obj
+    | Query (Enclosing _) -> obj
+    | Query (Complete_prefix _) -> obj
+    | Query (Expand_prefix _) -> obj
+    | _ -> None
+  in
+  match tracked with
+  | None -> 0
+  | value when state.verbosity_last = value ->
+    state.verbosity <- state.verbosity + 1;
+    state.verbosity
+  | value ->
+    state.verbosity_last <- value;
+    state.verbosity <- 0;
+    0
 
 let buffer_update state items =
   if Buffer.update state.buffer items = `Updated then
@@ -174,8 +174,6 @@ let normalize_parser_around state pos =
     buffer_freeze state items
 
 module Printtyp = Type_utils.Printtyp
-
-exception Unhandled_command
 
 let dump buffer = function
   | [`String "parsetree"] ->
@@ -292,10 +290,8 @@ let dump buffer = function
 
   | _ -> IO.invalid_arguments ()
 
-let dispatch_query ~verbosity buffer =
-  fun (type a) (request : a request) ->
-  (match request with
-  | (Type_expr (source, pos) : a request) ->
+let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
+  | Type_expr (source, pos) ->
     with_typer buffer @@ fun typer ->
     let env = match pos with
       | None -> Typer.env typer
@@ -305,7 +301,7 @@ let dispatch_query ~verbosity buffer =
     ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
     to_string ()
 
-  | (Type_enclosing (expro, pos) : a request) ->
+  | Type_enclosing (expro, pos) ->
     let open Browse_node in
     let open Typedtree in
     let open Override in
@@ -444,7 +440,7 @@ let dispatch_query ~verbosity buffer =
           if normalize a = normalize b then Some b else None)
       (small_enclosings @ result)
 
-  | (Enclosing pos : a request) ->
+  | Enclosing pos ->
     with_typer buffer @@ fun typer ->
     let structures = Typer.to_browse (Typer.contents typer) in
     let path = match Browse.enclosing pos structures with
@@ -453,7 +449,7 @@ let dispatch_query ~verbosity buffer =
     in
     List.map ~f:Browse.node_loc path
 
-  | (Complete_prefix (prefix, pos, with_doc) : a request) ->
+  | Complete_prefix (prefix, pos, with_doc) ->
     let complete ~no_labels typer =
       let path = Typer.node_at ~skip_recovered:true typer pos in
       let env, node = Browse.leaf_node path in
@@ -525,14 +521,14 @@ let dispatch_query ~verbosity buffer =
         (fun () -> ignore (Buffer.update buffer lexer0 : [> ]))
     end
 
-  | (Expand_prefix (prefix, pos) : a request) ->
+  | Expand_prefix (prefix, pos) ->
     with_typer buffer @@ fun typer ->
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let global_modules = Buffer.global_modules buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
     { Compl. entries ; context = `Unknown }
 
-  | (Document (patho, pos) : a request) ->
+  | Document (patho, pos) ->
     with_typer buffer @@ fun typer ->
     let comments = Buffer.comments buffer in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
@@ -557,7 +553,7 @@ let dispatch_query ~verbosity buffer =
     Track_definition.get_doc ~project ~env ~local_defs ~comments ~pos source
       (`User_input path)
 
-  | (Locate (patho, ml_or_mli, pos) : a request) ->
+  | Locate (patho, ml_or_mli, pos) ->
     with_typer buffer @@ fun typer ->
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let local_defs = Typer.contents typer in
@@ -587,12 +583,12 @@ let dispatch_query ~verbosity buffer =
     | otherwise -> otherwise
     end
 
-  | (Jump (target, pos) : a request) ->
+  | Jump (target, pos) ->
     with_typer buffer @@ fun typer ->
     let typed_tree = Typer.contents typer in
     Jump.get typed_tree pos target
 
-  | (Case_analysis ({ Location. loc_start ; loc_end } as loc) : a request) ->
+  | Case_analysis ({ Location. loc_start ; loc_end } as loc) ->
     with_typer buffer @@ fun typer ->
     let env = Typer.env typer in
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
@@ -609,48 +605,17 @@ let dispatch_query ~verbosity buffer =
       | node :: parents -> Destruct.node ~loc node parents
     end
 
-  | (Outline : a request) ->
+  | Outline ->
     with_typer buffer @@ fun typer ->
     let browse = Typer.to_browse (Typer.contents typer) in
     Outline.get (List.map BrowseT.of_browse browse)
 
-  | (Shape cursor : a request) ->
+  | Shape cursor ->
     with_typer buffer @@ fun typer ->
     let browse = Typer.to_browse (Typer.contents typer) in
     Outline.shape cursor (List.map BrowseT.of_browse browse)
 
-  | (Boundary (dir,pos) : a request) ->
-    let get_enclosing_str_item pos browses =
-      match Browse.enclosing pos browses with
-      | None -> None
-      | Some path ->
-        match List.drop_while (List.Non_empty.to_list path) ~f:(function
-            | _, Browse_node.Structure_item _
-            | _, Browse_node.Signature_item _ -> false
-            | _ -> true
-          ) with
-        | [] -> None
-        | item :: _ -> Some item
-    in
-    with_typer buffer @@ fun typer ->
-    let browses  = Typer.to_browse (Typer.contents typer) in
-    Option.bind (get_enclosing_str_item pos browses) ~f:(fun item ->
-      None
-        (*match dir with
-        | `Current -> Some (Browse.node_loc item)
-        | `Prev ->
-          let pos = (Browse.node_loc item).t_loc.Location.loc_start in
-          let pos = Lexing.({ pos with pos_cnum = pos.pos_cnum - 1 }) in
-          let item= get_enclosing_str_item pos browses in
-          Option.map item ~f:(fun i -> i.BrowseT.t_loc)
-        | `Next ->
-          let pos = item.BrowseT.t_loc.Location.loc_end in
-          let pos = Lexing.({ pos with pos_cnum = pos.pos_cnum + 1 }) in
-          let item= get_enclosing_str_item pos browses in
-          Option.map item ~f:(fun i -> i.BrowseT.t_loc)*)
-      )
-
-  | (Errors : a request) ->
+  | Errors ->
     begin
       with_typer buffer @@ fun typer ->
       Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
@@ -700,10 +665,10 @@ let dispatch_query ~verbosity buffer =
         | Some (_loc, err) -> [err]
     end
 
-  | (Dump args : a request) ->
+  | Dump args ->
     dump buffer args
 
-  | (Which_path xs : a request) ->
+  | Which_path xs ->
     begin
       let project = Buffer.project buffer in
       let rec aux = function
@@ -719,26 +684,26 @@ let dispatch_query ~verbosity buffer =
       aux xs
     end
 
-  | (Which_with_ext exts : a request) ->
+  | Which_with_ext exts ->
     let project = Buffer.project buffer in
     let with_ext ext = modules_in_path ~ext (Project.source_path project) in
     List.concat_map ~f:with_ext exts
 
-  | (Flags_get : a request) ->
+  | Flags_get ->
     let project = Buffer.project buffer in
     List.concat (Merlin_lib.Project.get_user_config project).Dot_merlin.flags
 
-  | (Project_get : a request) ->
+  | Project_get ->
     let project = Buffer.project buffer in
     (Project.get_dot_merlins project,
      match Project.get_dot_merlins_failure project with
      | [] -> `Ok
      | failures -> `Failures failures)
 
-  | (Findlib_list : a request) ->
+  | Findlib_list ->
     Fl_package_base.list_packages ()
 
-  | (Extension_list kind : a request) ->
+  | Extension_list kind ->
     let project = Buffer.project buffer in
     let enabled = Project.extensions project in
     let set = match kind with
@@ -748,15 +713,15 @@ let dispatch_query ~verbosity buffer =
     in
     String.Set.to_list set
 
-  | (Path_list `Build : a request) ->
+  | Path_list `Build ->
     let project = Buffer.project buffer in
     Project.build_path project
 
-  | (Path_list `Source : a request) ->
+  | Path_list `Source ->
     let project = Buffer.project buffer in
     Project.source_path project
 
-  | (Occurrences (`Ident_at pos) : a request) ->
+  | Occurrences (`Ident_at pos) ->
     with_typer buffer @@ fun typer ->
     let str = Typer.to_browse (Typer.contents typer) in
     let tnode = match Browse.enclosing pos str with
@@ -804,46 +769,38 @@ let dispatch_query ~verbosity buffer =
     let cmp l1 l2 = Lexing.compare_pos (loc_start l1) (loc_start l2) in
     List.sort ~cmp locs
 
-  | (Version : a request) ->
+  | Version ->
     Main_args.version_spec
 
-  | (Idle_job : a request) ->
+  | Idle_job ->
     Buffer.idle_job buffer
 
-  | _ -> raise Unhandled_command
-
-  : a)
-
-let dispatch_query ~verbosity state =
-  fun (type a) (request : a request) ->
-    let pos = match request with
-    | (Type_expr (_, Some pos) : a request) -> Some pos
-    | (Type_enclosing (_, pos) : a request) -> Some pos
-    | (Enclosing pos : a request)           -> Some pos
-    | (Complete_prefix (_, pos, _) : a request) -> Some pos
-    | (Expand_prefix (_, pos) : a request)  -> Some pos
-    | (Document (_, pos) : a request)       -> Some pos
-    | (Locate (_, _, pos) : a request)      -> Some pos
-    | (Case_analysis loc : a request)       -> Some loc.Location.loc_start
-    | (Boundary (_,pos) : a request)        -> Some pos
-    | (Occurrences (`Ident_at pos) : a request) -> Some pos
-    | (Errors : a request)                  -> Some (Lexing.make_pos (max_int, max_int))
+let dispatch_query ~verbosity state (type a) (command : a query_command) =
+  let pos = match command with
+    | Type_expr (_, Some pos) -> Some pos
+    | Type_enclosing (_, pos) -> Some pos
+    | Enclosing pos           -> Some pos
+    | Complete_prefix (_, pos, _) -> Some pos
+    | Expand_prefix (_, pos)  -> Some pos
+    | Document (_, pos)       -> Some pos
+    | Locate (_, _, pos)      -> Some pos
+    | Case_analysis loc       -> Some loc.Location.loc_start
+    | Occurrences (`Ident_at pos) -> Some pos
+    | Errors                  -> Some (Lexing.make_pos (max_int, max_int))
     | _ -> None
-    in
-    Option.iter pos ~f:(normalize_parser_around state);
-    dispatch_query ~verbosity state.buffer request
+  in
+  Option.iter pos ~f:(normalize_parser_around state);
+  dispatch_query ~verbosity state.buffer command
 
 
-let dispatch_sync (state : state) =
-  fun (type a) (request : a request) ->
-  (match request with
-  | (Tell (`Start pos) : a request) ->
+let dispatch_sync state (type a) : a sync_command -> a = function
+  | Tell (`Start pos) ->
     let lexer = Buffer.start_lexing ?pos state.buffer in
     state.lexer <- Some lexer;
     buffer_update state (Lexer.history lexer);
     cursor_state state
 
-  | (Tell (`File _ | `Source _ | `File_eof _ | `Source_eof _ | `Eof as source) : a request) ->
+  | Tell (`File _ | `Source _ | `File_eof _ | `Source_eof _ | `Eof as source) ->
     let source, then_eof = match source with
       | `Eof -> Some "", false
       | `Source "" -> None, false
@@ -878,7 +835,7 @@ let dispatch_sync (state : state) =
         cursor_state state
     end
 
-  | (Tell `Marker : a request) ->
+  | Tell `Marker ->
     let lexer = match state.lexer with
       | Some lexer ->
         assert (not (Lexer.eof lexer));
@@ -890,15 +847,15 @@ let dispatch_sync (state : state) =
     Lexer.put_mark lexer (Buffer.get_mark state.buffer);
     cursor_state state
 
-  | (Drop : a request) ->
+  | Drop ->
     let lexer = Buffer.lexer state.buffer in
     buffer_freeze state (History.drop_tail lexer);
     cursor_state state
 
-  | (Seek `Position : a request) ->
+  | Seek `Position ->
     cursor_state state
 
-  | (Seek (`Before pos) : a request) ->
+  | Seek (`Before pos) ->
     let items = Buffer.lexer state.buffer in
     (* true while i is before pos *)
     let until_after pos (_,i) =
@@ -911,7 +868,7 @@ let dispatch_sync (state : state) =
     buffer_freeze state items;
     cursor_state state
 
-  | (Seek (`Exact pos) : a request) ->
+  | Seek (`Exact pos) ->
     let items = Buffer.lexer state.buffer in
     (* true while i is before pos *)
     let until_after pos (_,i) =
@@ -924,13 +881,13 @@ let dispatch_sync (state : state) =
     buffer_freeze state items;
     cursor_state state
 
-  | (Seek `End : a request) ->
+  | Seek `End ->
     let items = Buffer.lexer state.buffer in
     let items = History.seek_forward (fun _ -> true) items in
     buffer_freeze state items;
     cursor_state state
 
-  | (Seek `Marker : a request) ->
+  | Seek `Marker ->
     begin match Option.bind state.lexer ~f:Lexer.get_mark with
     | None -> ()
     | Some mark ->
@@ -953,18 +910,18 @@ let dispatch_sync (state : state) =
     end;
     cursor_state state
 
-  | (Refresh : a request) ->
+  | Refresh ->
     checkout_buffer_cache := [];
     Cmi_cache.flush ();
     Project.check_dot_merlin (Buffer.project state.buffer)
 
-  | (Flags_set flags : a request) ->
+  | Flags_set flags ->
     let project = Buffer.project state.buffer in
     let config = Project.get_user_config project in
     Project.set_user_config project {config with Dot_merlin.flags = [flags]};
     user_failures project
 
-  | (Findlib_use packages : a request) ->
+  | Findlib_use packages ->
     let project = Buffer.project state.buffer in
     let config = Project.get_user_config project in
     Project.set_user_config project
@@ -972,7 +929,7 @@ let dispatch_sync (state : state) =
        Dot_merlin.packages = packages @ config.Dot_merlin.packages};
     user_failures project
 
-  | (Extension_set (action,exts) : a request) ->
+  | Extension_set (action,exts) ->
     let f l = match action with
       | `Enabled  -> List.filter_dup (exts @ l)
       | `Disabled -> List.filter l ~f:(fun x -> not (List.mem x ~set:exts))
@@ -983,7 +940,7 @@ let dispatch_sync (state : state) =
       {config with Dot_merlin.extensions = f config.Dot_merlin.extensions};
     user_failures project
 
-  | (Path (var,action,paths) : a request) ->
+  | Path (var,action,paths) ->
     let project = Buffer.project state.buffer in
     let config = Project.get_user_config project in
     let f l = match action with
@@ -996,39 +953,33 @@ let dispatch_sync (state : state) =
     in
     Project.set_user_config project config
 
-  | (Path_reset : a request) ->
+  | Path_reset ->
     let project = Buffer.project state.buffer in
     let config = Project.get_user_config project in
     Project.set_user_config project
       {config with Dot_merlin.build_path = []; source_path = []}
 
-  | _ -> raise Unhandled_command
+  | Protocol_version _ ->
+    (`Selected !IO.current_version,
+     `Latest IO.latest_version,
+     Main_args.version_spec)
 
-  : a)
+  | Checkout _ -> IO.invalid_arguments ()
 
-let dispatch_reset (state : state) =
-  fun (type a) (request : a request) ->
-  (match request with
-  | (Checkout context : a request) ->
+let dispatch state (type a) (cmd : a command) =
+  let verbosity = track_verbosity state cmd in
+  match cmd with
+  | Query q -> dispatch_query ~verbosity state q
+  | Sync (Checkout context) ->
     let buffer = checkout_buffer context in
     state.lexer <- None;
     state.buffer <- buffer;
     cursor_state state
-
-  | _ -> raise Unhandled_command
-  : a)
-
-let dispatch state req =
-  let verbosity = track_verbosity state req in
-  try dispatch_reset state req
-  with Unhandled_command ->
-    try dispatch_sync state req
-    with Unhandled_command ->
-      dispatch_query ~verbosity state req
+  | Sync s -> dispatch_sync state s
 
 let contexts : (Protocol.context, state) Hashtbl.t = Hashtbl.create 7
 
-let context_dispatch context req =
+let context_dispatch context cmd =
   let context = normalize_context context in
   let state =
     try Hashtbl.find contexts context
@@ -1037,7 +988,7 @@ let context_dispatch context req =
       Hashtbl.add contexts context state;
       state
   in
-  let verbosity = track_verbosity state req in
-  try dispatch_sync state req
-  with Unhandled_command ->
-    dispatch_query ~verbosity state req
+  let verbosity = track_verbosity state cmd in
+  match cmd with
+  | Query q -> dispatch_query ~verbosity state q
+  | Sync s -> dispatch_sync state s

@@ -30,6 +30,7 @@ open Std
 open Merlin_lib
 
 type position = Lexing.position
+
 type cursor_state = {
   cursor: position;
   marker: bool;
@@ -56,6 +57,9 @@ module Compl : sig
              ]
   }
 end
+
+type protocol_version = [ `V2 ]
+
 type completions = Compl.t
 
 type outline = item list
@@ -85,28 +89,22 @@ type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type context = [`ML | `MLI | `Auto ] * string option * string list option
 
-type _ request =
-  | Tell
-    : [ `Start of position option
-      | `Source of string | `File of string
-      | `Source_eof of string | `File_eof of string
-      | `Eof | `Marker]
-    -> cursor_state request
+type _ query_command =
   | Type_expr
     :  string * position option
-    -> string request
+    -> string query_command
   | Type_enclosing
     :  (string * int) option * position
-    -> (Location.t * string * is_tail_position) list request
+    -> (Location.t * string * is_tail_position) list query_command
   | Enclosing
     :  position
-    -> Location.t list request
+    -> Location.t list query_command
   | Complete_prefix
     :  string * position * bool
-    -> completions request
+    -> completions query_command
   | Expand_prefix
     :  string * position
-    -> completions request
+    -> completions query_command
   | Document
     : string option * position
     -> [ `Found of string
@@ -116,7 +114,7 @@ type _ request =
        | `File_not_found of string
        | `Not_found of string * string option
        | `No_documentation
-       ] request
+       ] query_command
   | Locate
     : string option * [ `ML | `MLI ] * position
     -> [ `Found of string option * Lexing.position
@@ -126,83 +124,98 @@ type _ request =
        | `File_not_found of string
        | `Not_found of string * string option
        | `At_origin
-       ] request
+       ] query_command
   | Jump
     : string * position
     -> [ `Found of Lexing.position
        | `Error of string
-       ] request
+       ] query_command
   | Case_analysis
-    : Location.t -> (Location.t * string) request
+    : Location.t -> (Location.t * string) query_command
   | Outline
-    :  outline request
+    :  outline query_command
   | Shape
-    :  Lexing.position -> shape list request
-  | Drop
-    :  cursor_state request
-  | Seek
-    :  [`Marker|`Position|`End|`Before of position|`Exact of position]
-    -> cursor_state request
-  | Boundary
-    :  [`Prev|`Next|`Current] * position
-    -> Location.t option request
-  | Checkout
-    :  context
-    -> cursor_state request
-  | Refresh
-    :  unit request
+    :  Lexing.position -> shape list query_command
   | Errors
-    :  Error_report.t list request
+    :  Error_report.t list query_command
   | Dump
     :  Json.json list
-    -> Json.json request
+    -> Json.json query_command
   | Which_path
     :  string list
-    -> string request
+    -> string query_command
   | Which_with_ext
     :  string list
-    -> string list request
-  | Flags_set
-    :  string list
-    -> [ `Ok | `Failures of (string * exn) list ] request
+    -> string list query_command
   | Flags_get
-    :  string list request
-  | Findlib_use
-    :  string list
-    -> [`Ok | `Failures of (string * exn) list] request
+    :  string list query_command
   | Findlib_list
-    :  string list request
+    :  string list query_command
   | Extension_list
     :  [`All|`Enabled|`Disabled]
-    -> string list request
+    -> string list query_command
+  | Path_list
+    :  [`Build|`Source]
+    -> string list query_command
+  | Project_get
+    :  (string list * [`Ok | `Failures of (string * exn) list]) query_command
+  | Occurrences
+    : [`Ident_at of position]
+    -> Location.t list query_command
+  | Version
+    : string query_command
+  | Idle_job
+    : bool query_command
+
+type _ sync_command =
+  | Tell
+    : [ `Start of position option
+      | `Source of string | `File of string
+      | `Source_eof of string | `File_eof of string
+      | `Eof | `Marker]
+    -> cursor_state sync_command
+  | Drop
+    :  cursor_state sync_command
+  | Seek
+    :  [`Marker|`Position|`End|`Before of position|`Exact of position]
+    -> cursor_state sync_command
+  | Refresh
+    :  unit sync_command
+  | Flags_set
+    :  string list
+    -> [ `Ok | `Failures of (string * exn) list ] sync_command
+  | Findlib_use
+    :  string list
+    -> [`Ok | `Failures of (string * exn) list] sync_command
   | Extension_set
     :  [`Enabled|`Disabled] * string list
-    -> [`Ok | `Failures of (string * exn) list] request
+    -> [`Ok | `Failures of (string * exn) list] sync_command
   | Path
     :  [`Build|`Source]
      * [`Add|`Rem]
      * string list
-    -> unit request
+    -> unit sync_command
   | Path_reset
-    :  unit request
-  | Path_list
-    :  [`Build|`Source]
-    -> string list request
-  | Project_get
-    :  (string list * [`Ok | `Failures of (string * exn) list]) request
-  | Occurrences
-    : [`Ident_at of position]
-    -> Location.t list request
-  | Idle_job
-    : bool request
-  | Version
-    : string request
+    :  unit sync_command
+  | Protocol_version
+    : int option
+    -> ([`Selected of protocol_version] *
+        [`Latest of protocol_version] *
+        string) sync_command
+  | Checkout
+    : context
+    -> cursor_state sync_command
 
-type a_request = Request : 'a request -> a_request
-               | Context_request : context * 'a request -> a_request
+type 'a command =
+  | Query of 'a query_command
+  | Sync  of 'a sync_command
+
+type request =
+  | Request          : 'a command -> request
+  | Context_request  : context * 'a command -> request
 
 type response =
-  | Return    : 'a request * 'a -> response
+  | Return    : 'a command * 'a -> response
   | Failure   : string -> response
   | Error     : Json.json -> response
   | Exception : exn -> response

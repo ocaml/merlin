@@ -28,11 +28,14 @@
 
 open Std
 
+val latest_version : Protocol.protocol_version
+val current_version : Protocol.protocol_version ref
+
 (* A protocol read & write a stream of Json-like objects *)
     (* Untyped stream *)
 type low_io = Json.json Stream.t * (Json.json -> unit)
     (* Protocol-typed stream *)
-type io = Protocol.a_request Stream.t * (Protocol.response -> unit)
+type io = Protocol.request Stream.t * (Protocol.response -> unit)
 
 (* Select between different serialization protocols *)
 type io_maker =

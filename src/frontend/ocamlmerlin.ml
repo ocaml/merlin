@@ -105,7 +105,7 @@ let section = Logger.section "main"
 let rec on_read state ~timeout fd =
   try match Unix.select [fd] [] [] timeout with
     | [], [], [] ->
-      if Command.dispatch state Protocol.Idle_job then
+      if Command.dispatch state Protocol.(Query Idle_job) then
         on_read state ~timeout:0.0 fd
       else
         on_read state ~timeout:(-1.0) fd
