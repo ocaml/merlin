@@ -130,8 +130,7 @@ end = struct
       let rec loop ?(current=(ref 0)) flags =
         try Arg.parse_argv ~current flags spec (fun flg -> raise (Arg.Bad flg)) "" with
         | Arg.Bad _ ->
-          Logger.info Logger.Section.project_load ~title:"flags"
-            (sprintf "unknown flag: %s" flags.(!current));
+          Logger.notify "project flags" "unknown flag: %s" flags.(!current);
           failures := (flags.(!current), Arg.Bad flags.(!current)) :: !failures ;
           loop ~current flags
         | Arg.Help _ -> (* ignore *)

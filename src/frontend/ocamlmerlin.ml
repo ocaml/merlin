@@ -100,8 +100,6 @@ let signal behavior =
   in
   Misc.try_finally f (fun () -> ignore (signal previous))*)
 
-let section = Logger.section "main"
-
 let rec on_read state ~timeout fd =
   try match Unix.select [fd] [] [] timeout with
     | [], [], [] ->
@@ -113,8 +111,7 @@ let rec on_read state ~timeout fd =
   with
   | Unix.Unix_error (Unix.EINTR, _, _) ->
     on_read state ~timeout fd
-  | exn -> Logger.error section
-             ~title:"on_read" (Printexc.to_string exn)
+  | exn -> Logger.log "main" "on_read" (Printexc.to_string exn)
 
 let main_loop () =
   let state = Command.new_state () in
@@ -141,15 +138,6 @@ let main_loop () =
   with Stream.Failure -> ()
 
 let () =
-  (* Setup logging *)
-  begin try
-    let dest = Sys.getenv "MERLIN_LOG" in
-    Logger.set_default_destination dest ;
-    Logger.monitor ~dest (Logger.section "protocol") `info;
-  with _ ->
-    ()
-  end;
-  at_exit Logger.shutdown;
   (* Setup signals *)
   ignore (signal Sys.Signal_ignore);
   (* Select frontend *)

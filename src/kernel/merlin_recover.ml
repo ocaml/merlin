@@ -29,8 +29,6 @@
 open Std
 open Raw_parser
 
-let section = Logger.section "recover"
-
 let candidate_pos (_,{Location.txt = _; loc}) =
   Lexing.split_pos loc.Location.loc_start
 
@@ -128,20 +126,19 @@ let dump_candidate (priority,{Location. txt = parser; loc}) =
   ]
 
 let rec feed_normal ~record_comment (s,tok,e as input) parser =
-  let dump_token token = `Assoc [
-      "token", `String (token_to_string token)
-    ]
+  let dump_token () =
+    `Assoc ["token", `String (token_to_string tok)]
   in
   match Merlin_parser.feed ~record_comment input parser with
   | `Accept _ ->
-    Logger.debugjf section ~title:"feed_normal accepted" dump_token tok;
+    Logger.logj "recovery" "feed_normal accepted" dump_token;
     assert (tok = EOF);
     feed_normal ~record_comment (s,SEMISEMI,e) parser
   | (`Reject _ as result) ->
-    Logger.debugjf section ~title:"feed_normal rejected" dump_token tok;
+    Logger.logj "recovery" "feed_normal rejected" dump_token;
     result
   | (`Step parser as result) ->
-    Logger.debugjf section ~title:"feed_normal step" dump_token tok;
+    Logger.logj "recovery" "feed_normal step" dump_token;
     result
 
 let closing_token = function
@@ -179,13 +176,11 @@ let feed_recover ~record_comment original (s,tok,e as input) zipper =
   let candidates = Zipper.select_forward more_indented zipper in
   (*let candidates = Zipper.select_backward less_indented zipper in*)
   let candidates = prepare_candidates ref_col candidates in
-  Logger.infojf section ~title:"feed_recover candidates"
-    (fun (pos,candidates) ->
+  Logger.logj "recovery" "feed_recover candidates" (fun () ->
       `Assoc [
-        "position", Lexing.json_of_position pos;
+        "position", Lexing.json_of_position s;
         "candidates", `List (List.map ~f:dump_candidate candidates)
-      ])
-    (s,candidates);
+      ]);
   let rec aux_feed n = function
     | [] -> Either.L zipper
     | candidate :: candidates ->
@@ -194,22 +189,19 @@ let feed_recover ~record_comment original (s,tok,e as input) zipper =
 
   and aux_dispatch candidates n candidate = function
     | `Step parser ->
-      Logger.infojf section ~title:"feed_recover selected"
-        (fun (n,parser) ->
-          `Assoc ["number", `Int n;
-                  "parser", Merlin_parser.dump parser])
-        (n,parser);
+      Logger.logj "recovery" "feed_recover selected" (fun () ->
+          `Assoc ["number", `Int n; "parser", Merlin_parser.dump parser]);
       Either.R parser
     | `Accept _ ->
-      Logger.debugjf section ~title:"feed_recover accepted"
-        (fun n -> `Assoc ["number", `Int n]) n;
+      Logger.logj "recovery" "feed_recover accepted"
+        (fun () -> `Assoc ["number", `Int n]);
       assert (tok = EOF);
       aux_dispatch candidates n candidate
         (Merlin_parser.feed ~record_comment (s,SEMISEMI,e)
            (snd candidate).Location.txt)
     | `Reject _ ->
-      Logger.debugjf section ~title:"feed_recover rejected"
-        (fun n -> `Assoc ["number", `Int n]) n;
+      Logger.logj "recovery" "feed_recover rejected"
+        (fun () -> `Assoc ["number", `Int n]);
       aux_feed (n + 1) candidates
 
   in
@@ -249,8 +241,8 @@ let fold warnings token t =
       begin match feed_normal ~record_comment (s,tok,e) t.parser with
         | `Reject invalid_parser ->
           let recovery = rollbacks e t.parser in
-          Logger.infojf section ~title:"entering recovery"
-            dump_recovering (Some recovery);
+          Logger.logj "recovery" "entering"
+            (fun () -> dump_recovering (Some recovery));
           let error = Error_classifier.from invalid_parser (s,tok,e) in
           recover_from
             {t with errors = error :: (pop warnings) @ t.errors}
@@ -264,4 +256,3 @@ let fold ?record_comment token t =
   let warnings = ref [] in
   Parsing_aux.catch_warnings warnings
     (fun () -> fold warnings token t)
-

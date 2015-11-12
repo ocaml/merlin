@@ -78,8 +78,6 @@ let extract_doc (attrs : Parsetree.attributes) =
     )
   )
 
-let section = Logger.section "typedtrie"
-
 type t = trie
 
 (* See mli for documentation. *)
@@ -271,9 +269,8 @@ let rec build ?(local_buffer=false) ~trie browses =
          Because why the hell not. *)
       Trie.add_multiple (Path.last te.tyext_path) (t.t_loc, doc, `Type, Leaf) trie
     | ignored_node ->
-      Logger.debugf section (fun fmt node ->
-        Format.fprintf fmt "IGNORED: %s" @@ string_of_node node
-      ) ignored_node ;
+      Logger.log "typedtrie" "ignored node"
+        (string_of_node ignored_node);
       trie
   )
 
@@ -370,7 +367,7 @@ let rec find ~before trie path =
     | otherwise -> otherwise
     end
   | Some (name, loc, _docopt, _namespace, _) ->
-    Logger.debug (Logger.section "locate")
+    Logger.log "locate" "Typedtrie.find"
       "cursor is in a leaf, so we look only before the leaf" ;
     follow ~before:loc.Location.loc_start trie path
   | _ -> follow ~before trie path

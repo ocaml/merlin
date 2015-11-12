@@ -39,25 +39,16 @@ type io_maker =
   output:Unix.file_descr ->
   low_io
 
-let section = Logger.section "protocol"
-
 let invalid_arguments () = failwith "invalid arguments"
 
-let last_time = ref (Sys.time ())
-let log_time fields =
-  let old_time = !last_time in
-  let new_time = Sys.time () in
-  last_time := new_time;
-  ("delta", `Int (int_of_float ((new_time -. old_time) *. 1000.))) ::
-  fields
-
 let json_log (input,output) =
-  let wrap json = `Assoc (log_time ["body", json]) in
   let log_input json =
-    Logger.infojf section ~title:"input" wrap json; json
+    Logger.logj "frontend" "input" (fun () -> json);
+    json
   in
   let log_output json =
-    Logger.infojf section ~title:"output" wrap json; json
+    Logger.logj "frontend" "output" (fun () -> json);
+    json
   in
   let input' = Stream.map ~f:log_input input in
   let output' json = output (log_output json) in
@@ -88,8 +79,7 @@ let register_protocol ~name ~desc inst =
 
 let make' = ref json_make
 let make ~on_read ~input ~output =
-  let io = !make' ~on_read ~input ~output in
-  if Logger.is_monitored section then json_log io else io
+  json_log (!make' ~on_read ~input ~output)
 
 let select_frontend name =
   try make' := snd (List.assoc name !makers)

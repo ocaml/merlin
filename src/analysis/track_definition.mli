@@ -28,8 +28,6 @@
 
 open Merlin_lib
 
-val section: Logger.section
-
 val from_string
   : project:Project.t
   -> env:Env.t

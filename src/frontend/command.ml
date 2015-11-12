@@ -577,7 +577,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       Track_definition.from_string ~project ~env ~local_defs ~pos ml_or_mli path
     with
     | `Found (file, pos) ->
-      Logger.info (Track_definition.section)
+      Logger.log "track_definition" "Locate"
         (Option.value ~default:"<local buffer>" file);
       `Found (file, pos)
     | otherwise -> otherwise
@@ -733,8 +733,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let ident_occurrence () =
       let paths = Browse_node.node_paths tnode.BrowseT.t_node in
       let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
-      Logger.infojf (Logger.section "occurences") ~title:"Occurrences paths"
-        (fun paths ->
+      Logger.logj "occurrences" "Occurrences paths" (fun () ->
           let dump_path ({Location.txt; loc} as p) =
             let ppf, to_string = Format.to_string () in
             Printtyp.path ppf txt;
@@ -745,8 +744,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
               "path", `String (to_string ())
             ]
           in
-          `List (List.map ~f:dump_path paths)
-        ) paths;
+          `List (List.map ~f:dump_path paths));
       match List.filter paths ~f:under_cursor with
       | [] -> []
       | (path :: _) ->

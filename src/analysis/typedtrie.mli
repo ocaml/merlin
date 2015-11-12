@@ -25,7 +25,6 @@
   in the Software.
 
 )* }}} *)
-val section : Logger.Section.t
 
 open Cmt_cache
 

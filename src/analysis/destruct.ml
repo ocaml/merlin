@@ -31,8 +31,6 @@ open Merlin_lib
 open BrowseT
 open Browse_node
 
-let section = Logger.Section.of_string "destruct"
-
 exception Not_allowed of string
 exception Useless_refine
 exception Nothing_to_do
@@ -136,11 +134,10 @@ let rec gen_patterns ?(recurse=true) env type_expr =
         if cstr_descr.cstr_generalized &&
            not (are_types_unifiable cstr_descr.cstr_res)
         then (
-          Logger.debugf section (fun fmt name ->
-            Format.fprintf fmt "Eliminating '%s' branch, its return type is not\
-                               compatible with the expected type (%a)"
-              name Printtyp.type_expr type_expr
-          ) cstr_descr.cstr_name ;
+          Logger.logfmt "destruct" "gen_pattersn" (fun fmt ->
+              Format.fprintf fmt "Eliminating '%s' branch, its return type is not\
+                                  compatible with the expected type (%a)"
+                cstr_descr.cstr_name Printtyp.type_expr type_expr);
           None
         ) else
           let args =
@@ -278,7 +275,8 @@ let node ~loc node parents =
     let last_case_loc, patterns = get_every_pattern parents in
     List.iter patterns ~f:(fun p ->
       let p = Untypeast.untype_pattern p in
-      Logger.infof section ~title:"EXISTING" Pprintast.pattern p
+      Logger.logfmt "destruct" "EXISTING"
+        (fun fmt -> Pprintast.pattern fmt p)
     ) ;
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with

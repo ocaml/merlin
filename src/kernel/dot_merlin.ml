@@ -29,8 +29,6 @@
 open Std
 open Misc
 
-let section = Logger.section "dot_merlin"
-
 type directive = [
   | `B of string
   | `S of string
@@ -85,7 +83,7 @@ module Cache = File_cache.Make (struct
           else if String.is_prefixed ~by:"#" line then
             ()
           else
-            Logger.tell_editor (sprintf "%s: unexpected directive \"%s\"" path line);
+            Logger.notify ".merlin" "%s: unexpected directive \"%s\"" path line;
           aux ()
         in
         aux ()
@@ -314,14 +312,17 @@ let ppx_of_package ?(predicates=[]) setup pkg =
   in
   begin match ppx with
     | None -> ()
-    | Some ppx -> Logger.info section ~title:"ppx" ppx
+    | Some ppx ->
+      Logger.log ".merlin" "ppx" ppx
   end;
   begin match ppxopts with
     | [] -> ()
-    | lst -> Logger.infojf section ~title:"ppxopts"
-               (fun lst -> `List (List.map (fun (ppx,opts) ->
-                    `List [`String ppx; `List (List.map (fun s -> `String s)
-                                                 opts)]) lst)) lst
+    | lst ->
+      Logger.logj ".merlin" "ppx options" @@ fun () ->
+      let f (ppx,opts) =
+        `List [`String ppx; `List (List.map (fun s -> `String s) opts)]
+      in
+      `List (List.map ~f lst)
   end;
   let setup = match ppx with
     | None -> setup
@@ -335,9 +336,7 @@ let path_of_packages config =
   let f pkg =
     try Either.R (Findlib.package_deep_ancestors [] [pkg])
     with exn ->
-      Logger.infof Logger.Section.project_load ~title:"findlib"
-        (fun fmt (exn, pkg) -> Format.fprintf fmt "%s: %s" pkg (Printexc.to_string exn))
-        (exn, pkg) ;
+      Logger.notify "findlib" "%s: %s" pkg (Printexc.to_string exn);
       Either.L (pkg, exn)
   in
   let packages = List.map ~f packages in

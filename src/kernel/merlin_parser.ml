@@ -33,8 +33,6 @@ module Values = Raw_parser_values
 module P = Raw_parser
 module E = MenhirLib.EngineTypes
 
-let section = Logger.section "parser"
-
 type state = Raw_parser.state
 
 type t = P.feed P.parser
@@ -207,8 +205,8 @@ let dump_strategies (lr0,strategies) =
 let find_strategies p =
   let lr0 = get_lr0_state p in
   let strategies = Merlin_recovery_strategy.reduction_strategy lr0 in
-  Logger.infojf section ~title:"find_strategies" dump_strategies
-    (lr0,strategies);
+  Logger.logj "parser" "find_strategies"
+    (fun () -> dump_strategies (lr0,strategies));
   strategies
 
 let last_token raw_parser =

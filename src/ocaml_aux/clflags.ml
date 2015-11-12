@@ -59,6 +59,7 @@ let copy t = {t with include_dirs = ref !(t.include_dirs)}
 let initial = fresh ()
 let set = ref initial
 
+(* FIXME
 let debug_spec () =
   let f section =
     let split = Misc.rev_string_split in
@@ -93,6 +94,7 @@ let debug_spec () =
   \                              - error\n\
   \                              - info (default)\n\
   \                              - debug"
+*)
 
 let timed_logs () = !set.timed_logs
 let timed_logs_spec t =
@@ -232,7 +234,7 @@ let debug               () = false
 
 let arg_spec t =
   [
-    debug_spec ();
+    (*debug_spec ();*)
     applicative_functors_spec t;
     fast_spec t;
     include_dirs_spec t;
@@ -255,4 +257,3 @@ let arg_spec t =
     open_modules_spec t;
     ppx_spec t;
   ]
-
