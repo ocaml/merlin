@@ -1,0 +1,127 @@
+(* Merlin representation of a textual source code *)
+
+type t = {
+  name: string;
+  text: string;
+}
+
+let empty ~name = {name; text = ""}
+
+(* Position management *)
+
+type position = [
+  | `Offset of int
+  | `Logical of int * int
+]
+
+exception Found of int
+
+let find_line line {name; text} =
+  assert (line > 0);
+  if line = 1 then 0 else
+    let line' = ref line in
+    try
+      for i = 0 to String.length text - 1 do
+        if text.[i] = '\n' then begin
+          decr line';
+          if !line' = 1 then
+            raise (Found i);
+        end
+      done;
+      Logger.logf "source" "find_line"
+        "line %d of %S ouf of bounds" line name;
+      String.length text
+    with Found n ->
+      n + 1
+
+let find_offset ({name; text} as t) line col =
+  assert (col >= 0);
+  let offset = find_line line t in
+  if col = 0 then offset else
+    try
+      for i = offset to min (offset + col) (String.length text) - 1 do
+        if text.[i] = '\n' then begin
+          Logger.logf "source" "find_offset"
+            "%d:%d of %S out of line bounds, line %d only has %d columns"
+            line col name line (i - offset);
+          raise (Found i)
+        end
+      done;
+      if (offset + col) > (String.length text) then begin
+        Logger.logf "source" "find_offset"
+          "%d:%d of %S out of file bounds"
+          line col name
+      end;
+      offset + col
+    with Found off -> off
+
+let get_offset t = function
+  | `Offset x ->
+    assert (x >= 0);
+    if x <= String.length t.text then
+      (`Offset x)
+    else begin
+      Logger.logf "source" "get_offset"
+        "offset %d in %S out of bounds (size is %d)"
+        x t.name (String.length t.text);
+      (`Offset (String.length t.text))
+    end
+  | `End ->
+    `Offset (String.length t.text)
+  | `Logical (line, col) ->
+    `Offset (find_offset t line col)
+
+let get_logical {name; text} = function
+  | `Logical _ as p -> p
+  | `Offset _ | `End as r ->
+    let len = String.length text in
+    let offset = match r with
+      | `Offset x when x > len ->
+        Logger.logf "source" "get_logical"
+          "offset %d in %S out of bounds (size is %d)"
+          x name len;
+        len
+      | `Offset x ->
+        assert (x > 0);
+        x
+      | `End -> len
+    in
+    let line = ref 1 in
+    let cnum = ref 0 in
+    for i = 0 to offset - 1 do
+      if text.[i] = '\n' then begin
+        incr line;
+        cnum := i + 1;
+      end;
+    done;
+    `Logical (!line, offset - !cnum)
+
+(* Accessing content *)
+
+let name t = t.name
+let text t = t.text
+
+let substitute t starting ending text =
+  let len = String.length t.text in
+  let `Offset starting = get_offset t starting in
+  let `Offset ending = match ending with
+    | `End -> `Offset len
+    | `Length l ->
+      if starting + l <= len then
+        `Offset (starting + l)
+      else begin
+        Logger.logf "source" "substitute"
+          "offset %d + length %d in %S out of bounds (size is %d)"
+          starting l t.name len;
+        `Offset len
+      end
+    | #position as p -> get_offset t p
+  in
+  if ending < starting then
+    invalid_arg "Source.substitute: ending < starting";
+  let text =
+    String.sub t.text 0 starting ^
+    text ^
+    String.sub t.text ending (len - ending)
+  in
+  {t with text}
