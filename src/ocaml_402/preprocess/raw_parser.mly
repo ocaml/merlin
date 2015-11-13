@@ -309,6 +309,23 @@ let let_operator startpos endpos op bindings cont =
 
 %}
 
+%[@recovery.header
+
+  let default_expr = Fake.any_val'
+  let default_type = Ast_helper.Typ.any ()
+  let default_pattern = Ast_helper.Pat.any ()
+  let default_longident = Longident.Lident "_"
+  let default_longident_loc = Location.mknoloc (Longident.Lident "_")
+
+  let default_payload = Parsetree.PStr []
+  let default_attribute = Location.mknoloc "", default_payload
+
+  let default_module_expr = Ast_helper.Mod.structure []
+  let default_module_type = Ast_helper.Mty.signature []
+  let default_module_decl = Ast_helper.Md.mk (Location.mknoloc "_") default_module_type
+  let default_module_bind = Ast_helper.Mb.mk (Location.mknoloc "_") default_module_expr
+]
+
 (**
  * `Shift n             : when at the left of the annotated symbol, it is a
  *                        valid recovery to shift it, and this strategy has
@@ -325,11 +342,11 @@ let let_operator startpos endpos op bindings cont =
  *                        `Unclosed
  * `Item kind           : this symbol begins the definition of an [kind] item,
  *                        where kind is let, type, ...
+ * %annot <[ `Shift of int | `Shift_token of int * token | `Cost of int
+ *         | `Indent of int
+ *         | `Unclosed of string | `Close
+ *         | `Item of string ]>
  **)
-%annot <[ `Shift of int | `Shift_token of int * token | `Cost of int
-        | `Indent of int
-        | `Unclosed of string | `Close
-        | `Item of string ]>
 
 (* Tokens *)
 
@@ -344,7 +361,7 @@ let let_operator startpos endpos op bindings cont =
 %token BARBAR
 %token BARRBRACKET
 %token BEGIN
-%token <char> CHAR
+%token <char> CHAR [@cost 2] [@recovery '_']
 %token CLASS
 %token COLON
 %token COLONCOLON
@@ -364,7 +381,7 @@ let let_operator startpos endpos op bindings cont =
 %token EXCEPTION
 %token EXTERNAL
 %token FALSE
-%token <string> FLOAT
+%token <string> FLOAT [@cost 2] [@recovery "0."]
 %token FOR
 %token FUN
 %token FUNCTION
@@ -375,17 +392,17 @@ let let_operator startpos endpos op bindings cont =
 %token IF
 %token IN
 %token INCLUDE
-%token <string> INFIXOP0
-%token <string> INFIXOP1
-%token <string> INFIXOP2
-%token <string> INFIXOP3
-%token <string> INFIXOP4
+%token <string> INFIXOP0 [@cost 2] [@recovery "_"]
+%token <string> INFIXOP1 [@cost 2] [@recovery "_"]
+%token <string> INFIXOP2 [@cost 2] [@recovery "_"]
+%token <string> INFIXOP3 [@cost 2] [@recovery "_"]
+%token <string> INFIXOP4 [@cost 2] [@recovery "_"]
 %token INHERIT
 %token INITIALIZER
-%token <int> INT
-%token <int32> INT32
-%token <int64> INT64
-%token <string> LABEL
+%token <int> INT [@cost 1] [@recovery 0]
+%token <int32> INT32 [@cost 1] [@recovery 0l]
+%token <int64> INT64 [@cost 1] [@recovery 0L]
+%token <string> LABEL [@cost 2] [@recovery "_"]
 %token LAZY
 %token LBRACE
 %token LBRACELESS
@@ -401,7 +418,7 @@ let let_operator startpos endpos op bindings cont =
 %token LESS
 %token LESSMINUS
 %token LET
-%token <string> LIDENT
+%token <string> LIDENT [@cost 2] [@recovery "_"]
 %token LPAREN
 %token MATCH
 %token METHOD
@@ -410,18 +427,18 @@ let let_operator startpos endpos op bindings cont =
 %token MINUSGREATER
 %token MODULE
 %token MUTABLE
-%token <nativeint> NATIVEINT
+%token <nativeint> NATIVEINT [@cost 1] [@recovery 0n]
 %token NEW
 %token OBJECT
 %token OF
 %token OPEN
-%token <string> OPTLABEL
+%token <string> OPTLABEL [@cost 2] [@recovery "_"]
 %token OR
 %token PERCENT
 %token PLUS
 %token PLUSDOT
 %token PLUSEQ
-%token <string> PREFIXOP
+%token <string> PREFIXOP [@cost 2] [@recovery "!"]
 %token PRIVATE
 %token QUESTION
 %token QUOTE
@@ -432,10 +449,10 @@ let let_operator startpos endpos op bindings cont =
 %token SEMI
 %token SEMISEMI
 %token SHARP
-%token <string> SHARPOP
+%token <string> SHARPOP [@cost 2] [@recovery ""]
 %token SIG
 %token STAR
-%token <string * string option> STRING
+%token <string * string option> STRING [@cost 1] [@recovery ""]
 %token STRUCT
 %token THEN
 %token TILDE
@@ -443,42 +460,42 @@ let let_operator startpos endpos op bindings cont =
 %token TRUE
 %token TRY
 %token TYPE
-%token <string> UIDENT
+%token <string> UIDENT [@cost 2][@recovery "_"]
 %token UNDERSCORE
 %token VAL
 %token VIRTUAL
 %token WHEN
 %token WHILE
 %token WITH
-%token <string * Location.t> COMMENT
+%token <string * Location.t> COMMENT [@cost 2][@recovery ("", Location.none)]
 
 %token EOL
 
-%token LET_LWT
-%token TRY_LWT
-%token MATCH_LWT
-%token FINALLY_LWT
-%token FOR_LWT
-%token WHILE_LWT
-%token JSNEW
-%token P4_QUOTATION
-%token CUSTOM_BANG
-%token OUNIT_TEST
-%token OUNIT_TEST_UNIT
-%token OUNIT_TEST_MODULE
-%token OUNIT_BENCH
-%token OUNIT_BENCH_FUN
-%token OUNIT_BENCH_INDEXED
-%token OUNIT_BENCH_MODULE
-%token NONREC
-%token SHARPSHARP
+%token LET_LWT [@cost 1]
+%token TRY_LWT [@cost 1]
+%token MATCH_LWT [@cost 1]
+%token FINALLY_LWT [@cost 1]
+%token FOR_LWT [@cost 1]
+%token WHILE_LWT [@cost 1]
+%token JSNEW [@cost 1]
+%token P4_QUOTATION [@cost 1]
+%token CUSTOM_BANG [@cost 1]
+%token OUNIT_TEST [@cost 1]
+%token OUNIT_TEST_UNIT [@cost 1]
+%token OUNIT_TEST_MODULE [@cost 1]
+%token OUNIT_BENCH [@cost 1]
+%token OUNIT_BENCH_FUN [@cost 1]
+%token OUNIT_BENCH_INDEXED [@cost 1]
+%token OUNIT_BENCH_MODULE [@cost 1]
+%token NONREC [@cost 1]
+%token SHARPSHARP [@cost 1]
 
-%token DOTLESS
-%token DOTTILDE
-%token GREATERDOT
-%token <string> LETOP
+%token DOTLESS [@cost 1]
+%token DOTTILDE [@cost 1]
+%token GREATERDOT [@cost 1]
+%token <string> LETOP [@cost 1] [@recovery ""]
 
-%token ENTRYPOINT EXITPOINT
+%token ENTRYPOINT EXITPOINT [@cost 10]
 
 (* Precedences and associativities.
 
@@ -623,17 +640,16 @@ functor_arg_name:
 | UNDERSCORE
     { "_" }
 
-functor_args:
+functor_args [@recovery []]:
 | functor_args functor_arg
     { $2 :: $1 }
 | functor_arg
     { [ $1 ] }
 
-module_expr:
+module_expr [@recovery default_module_expr]:
 | mod_longident
     { mkmod $startpos $endpos (Pmod_ident (mkrhs $startpos($1) $endpos($1) $1)) }
-| STRUCT @{`Unclosed "struct"}
-  structure END @{`Close}
+| STRUCT [@unclosed "struct"] structure END [@close]
     { mkmod $startpos $endpos (Pmod_structure($2)) }
 | FUNCTOR functor_args MINUSGREATER module_expr
     { List.fold_left (fun acc (n, t) -> mkmod $startpos $endpos (Pmod_functor(n, t, acc))) $4 $2 }
@@ -641,25 +657,20 @@ module_expr:
     { mkmod $startpos $endpos (Pmod_apply($1, $3)) }
 | module_expr LPAREN RPAREN
     { mkmod $startpos $endpos (Pmod_apply($1, mkmod $startpos $endpos (Pmod_structure []))) }
-| LPAREN @{`Unclosed "("}
-  module_expr COLON module_type RPAREN @{`Close}
+| LPAREN [@nclosed "("] module_expr COLON module_type RPAREN [@close]
     { mkmod $startpos $endpos (Pmod_constraint($2, $4)) }
-| LPAREN @{`Unclosed "("} module_expr RPAREN @{`Close}
+| LPAREN [@unclosed "("] module_expr RPAREN [@close]
     { $2 }
-| LPAREN @{`Unclosed "("}
-  VAL expr RPAREN @{`Close}
+| LPAREN [@unclosed "("] VAL expr RPAREN [@close]
     { mkmod $startpos $endpos (Pmod_unpack $3) }
-| LPAREN @{`Unclosed "("}
-  VAL expr COLON package_type RPAREN @{`Close}
+| LPAREN [@unclosed "("] VAL expr COLON package_type RPAREN [@close]
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_constraint($3, ghtyp $startpos $endpos (Ptyp_package $5))))) }
-| LPAREN @{`Unclosed "("}
-  VAL expr COLON package_type COLONGREATER package_type RPAREN @{`Close}
+| LPAREN [@unclosed "("] VAL expr COLON package_type COLONGREATER package_type RPAREN [@close]
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_coerce($3, Some(ghtyp $startpos $endpos (Ptyp_package $5)),
                                     ghtyp $startpos $endpos (Ptyp_package $7))))) }
-| LPAREN @{`Unclosed "("}
-  VAL expr COLONGREATER package_type RPAREN @{`Close}
+| LPAREN [@unclosed "("] VAL expr COLONGREATER package_type RPAREN [@close]
     { mkmod $startpos $endpos (Pmod_unpack(
               ghexp $startpos $endpos (Pexp_coerce($3, None, ghtyp $startpos $endpos (Ptyp_package $5))))) }
 | module_expr attribute
@@ -667,32 +678,27 @@ module_expr:
 | extension
     { mkmod $startpos $endpos (Pmod_extension $1) }
 
-structure:
+structure [@recovery []]:
 | v = structure_head
 | v = structure_head EXITPOINT
   { v }
 
-structure_head:
-| toplevel_directives seq_expr post_item_attributes structure_tail
-  @{`Shift_token (1,EXITPOINT)}
+structure_head [@recovery []]:
+| toplevel_directives seq_expr post_item_attributes structure_tail [@shift_token (1,EXITPOINT)]
     { mkstrexp $2 $3 :: $4 }
-| toplevel_directives structure_tail
-  @{`Shift_token (1,EXITPOINT)}
+| toplevel_directives structure_tail [@shift_token (1,EXITPOINT)]
     { $2 }
 
-structure_tail:
+structure_tail [@recovery []]:
 | (* empty *)
     { [] }
-| SEMISEMI structure_head
-  @{`Shift_token (1,EXITPOINT)}
+| SEMISEMI structure_head [@shift_token (1,EXITPOINT)]
     { $2 }
-| structure_item structure_tail
-  @{`Shift_token (1,EXITPOINT)}
+| structure_item structure_tail [@shift_token (1,EXITPOINT)]
     { $1 @ $2 }
 
 structure_item:
-| LET @{`Item "let"}
-  ext_attributes rec_flag let_bindings
+| LET [@item "let"] ext_attributes rec_flag let_bindings
     {
       match $4 with
         [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
@@ -707,45 +713,34 @@ structure_item:
         | None -> str
         | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr str), []))
     }
-| EXTERNAL @{`Item "external"}
-  val_ident COLON core_type EQUAL primitive_declaration
+| EXTERNAL [@item "external"] val_ident COLON core_type EQUAL primitive_declaration
   post_item_attributes
     { mkstr $startpos $endpos
         (Pstr_primitive (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4
                            ~prim:$6 ~attrs:$7 ~loc:(rloc $startpos $endpos))) }
-| TYPE @{`Item "type"}
-  decls = type_declarations
+| TYPE [@item "type"] decls = type_declarations
     { mkstr $startpos $endpos (Pstr_type (List.rev decls) ) }
-| TYPE  @{`Item "type"}
-  str_type_extension
+| TYPE [@item "type"] str_type_extension
     { mkstr $startpos $endpos (Pstr_typext $2) }
-| EXCEPTION @{`Item "exception"}
-  str_exception_declaration
+| EXCEPTION [@item "exception"] str_exception_declaration
     { mkstr $startpos $endpos (Pstr_exception $2) }
-| MODULE @{`Item "module"}
-  module_binding
+| MODULE [@item "module"] module_binding
     { mkstr $startpos $endpos (Pstr_module $2) }
-| MODULE REC @{`Item "recursive module"}
-  module_bindings
+| MODULE REC [@item "recursive module"] module_bindings
     { mkstr $startpos $endpos (Pstr_recmodule(List.rev $3)) }
-| MODULE TYPE @{`Item "module type"}
-  ident post_item_attributes
+| MODULE TYPE [@item "module type"] ident post_item_attributes
     { mkstr $startpos $endpos (Pstr_modtype (Mtd.mk (mkrhs $startpos($3) $endpos($3) $3)
                               ~attrs:$4 ~loc:(rloc $startpos $endpos))) }
-| MODULE TYPE @{`Item "module type"}
-  ident EQUAL module_type post_item_attributes
+| MODULE TYPE [@item "module type"] ident EQUAL module_type post_item_attributes
     { mkstr $startpos $endpos (Pstr_modtype (Mtd.mk (mkrhs $startpos($3) $endpos($3) $3)
                               ~typ:$5 ~attrs:$6 ~loc:(rloc $startpos $endpos))) }
 | open_statement
     { mkstr $startpos $endpos (Pstr_open $1) }
-| CLASS @{`Item "class"}
-  class_declarations
+| CLASS [@item "class"] class_declarations
     { mkstr $startpos $endpos (Pstr_class (List.rev $2)) }
-| CLASS TYPE @{`Item "class type"}
-  class_type_declarations
+| CLASS TYPE [@item "class type"] class_type_declarations
     { mkstr $startpos $endpos (Pstr_class_type (List.rev $3)) }
-| INCLUDE @{`Item "include"}
-  module_expr post_item_attributes
+| INCLUDE [@item "include"] module_expr post_item_attributes
     { mkstr $startpos $endpos (Pstr_include (Incl.mk $2 ~attrs:$3
                                              ~loc:(rloc $startpos $endpos))) }
 | item_extension post_item_attributes
@@ -753,7 +748,7 @@ structure_item:
 | floating_attribute
     { mkstr $startpos $endpos (Pstr_attribute $1) }
 
-module_binding_body:
+module_binding_body [@recovery default_module_expr]:
 | EQUAL module_expr
     { $2 }
 | COLON module_type EQUAL module_expr
@@ -761,22 +756,22 @@ module_binding_body:
 | functor_arg module_binding_body
     { mkmod $startpos $endpos (Pmod_functor(fst $1, snd $1, $2)) }
 
-module_bindings:
+module_bindings [@recovery []]:
 | module_binding
     { [$1] }
 | module_bindings AND module_binding
     { $3 :: $1 }
 
-module_binding:
+module_binding [@recovery default_module_bind]:
 | UIDENT module_binding_body post_item_attributes
     { Mb.mk (mkrhs $startpos($1) $endpos($1) $1) $2 ~attrs:$3 ~loc:(rloc $startpos $endpos) }
 
 (* Module types *)
 
-module_type:
+module_type [@recovery default_module_type]:
 | mty_longident
     { mkmty $startpos $endpos (Pmty_ident (mkrhs $startpos($1) $endpos($1) $1)) }
-| SIG @{`Unclosed "sig"} signature END @{`Close}
+| SIG [@unclosed "sig"] signature END [@close]
     { mkmty $startpos $endpos (Pmty_signature $2) }
 | FUNCTOR functor_args MINUSGREATER module_type %prec below_WITH
     { List.fold_left (fun acc (n, t) -> mkmty $startpos $endpos (Pmty_functor(n, t, acc))) $4 $2 }
@@ -784,16 +779,16 @@ module_type:
     { mkmty $startpos $endpos (Pmty_with($1, List.rev $3)) }
 | MODULE TYPE OF module_expr %prec below_LBRACKETAT
     { mkmty $startpos $endpos (Pmty_typeof $4) }
-(*| LPAREN @{`Unclosed "("} MODULE mod_longident RPAREN @{`Close}
+(*| LPAREN [@unclosed "("] MODULE mod_longident RPAREN [@close]
     { mkmty $startpos $endpos  (Pmty_alias (mkrhs $startpos($3) $endpos($3) $3)) }*)
-| LPAREN @{`Unclosed "("} module_type RPAREN @{`Close}
+| LPAREN [@unclosed "("] module_type RPAREN [@close]
     { $2 }
 | extension
     { mkmty $startpos $endpos (Pmty_extension $1) }
 | module_type attribute
     { Mty.attr $1 $2 }
 
-signature:
+signature [@recovery []]:
 | (* empty *)
     { [] }
 | SEMISEMI signature
@@ -802,57 +797,46 @@ signature:
     { $1 @ $2 }
 
 signature_item:
-| VAL @{`Item "val"}
-  val_ident COLON core_type post_item_attributes
+| VAL [@item "val"] val_ident COLON core_type post_item_attributes
     { mksig $startpos $endpos (Psig_value
                 (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4 ~attrs:$5 ~loc:(rloc $startpos $endpos))) }
-| EXTERNAL @{`Item "external"}
+| EXTERNAL [@item "external"]
   val_ident COLON core_type EQUAL primitive_declaration post_item_attributes
     { mksig $startpos $endpos (Psig_value
                 (Val.mk (mkrhs $startpos($2) $endpos($2) $2) $4 ~prim:$6 ~attrs:$7
                    ~loc:(rloc $startpos $endpos))) }
-| TYPE @{`Item "type"}
-  type_declarations
+| TYPE [@item "type"] type_declarations
     { mksig $startpos $endpos (Psig_type (List.rev $2)) }
-| TYPE @{`Item "type"}
-  sig_type_extension
+| TYPE [@item "type"] sig_type_extension
     { mksig $startpos $endpos (Psig_typext $2) }
-| EXCEPTION @{`Item "exception"}
-  sig_exception_declaration
+| EXCEPTION [@item "exception"] sig_exception_declaration
     { mksig $startpos $endpos (Psig_exception $2) }
-| MODULE @{`Item "module"}
-  UIDENT module_declaration post_item_attributes
+| MODULE [@item "module"] UIDENT module_declaration post_item_attributes
     { mksig $startpos $endpos (Psig_module (Md.mk (mkrhs $startpos($2) $endpos($2) $2)
                              $3 ~attrs:$4 ~loc:(rloc $startpos $endpos))) }
-| MODULE @{`Item "module"}
-  UIDENT EQUAL mod_longident post_item_attributes
+| MODULE [@item "module"] UIDENT EQUAL mod_longident post_item_attributes
     { mksig $startpos $endpos (Psig_module (Md.mk (mkrhs $startpos($2) $endpos($2) $2)
                              (Mty.alias ~loc:(rloc $startpos($4) $endpos($4)) (mkrhs $startpos($4) $endpos($4) $4))
                              ~attrs:$5
                              ~loc:(rloc $startpos $endpos)
                           )) }
-| MODULE REC @{`Item "recursive module"}
-  rec_module_declarations
+| MODULE REC [@item "recursive module"] rec_module_declarations
     { mksig $startpos $endpos (Psig_recmodule (List.rev $3)) }
-| MODULE TYPE @{`Item "module type"}
-  ident post_item_attributes
+| MODULE TYPE [@item "module type"] ident post_item_attributes
     { mksig $startpos $endpos (Psig_modtype (Mtd.mk (mkrhs $startpos($3) $endpos($3) $3)
                               ~attrs:$4 ~loc:(rloc $startpos $endpos))) }
-| MODULE TYPE @{`Item "module type"}
-  ident EQUAL module_type post_item_attributes
+| MODULE TYPE [@item "module type"] ident EQUAL module_type post_item_attributes
     { mksig $startpos $endpos (Psig_modtype (Mtd.mk (mkrhs $startpos($3) $endpos($3) $3) ~typ:$5
                               ~loc:(rloc $startpos $endpos)
                               ~attrs:$6)) }
 | open_statement
     { mksig $startpos $endpos (Psig_open $1) }
-| INCLUDE @{`Item "include"}
-  module_type post_item_attributes %prec below_WITH
+| INCLUDE [@item "include"] module_type post_item_attributes %prec below_WITH
     { mksig $startpos $endpos (Psig_include (Incl.mk $2 ~attrs:$3
                                              ~loc:(rloc $startpos $endpos))) }
-| CLASS @{`Item "class"}
-  class_descriptions
+| CLASS [@item "class"] class_descriptions
     { mksig $startpos $endpos (Psig_class (List.rev $2)) }
-| CLASS TYPE @{`Item "class type"}
+| CLASS TYPE [@item "class type"]
   class_type_declarations
     { mksig $startpos $endpos (Psig_class_type (List.rev $3)) }
 | item_extension post_item_attributes
@@ -861,12 +845,12 @@ signature_item:
     { mksig $startpos $endpos (Psig_attribute $1) }
 
 open_statement:
-| OPEN @{`Item "open"}
+| OPEN [@item "open"]
   override_flag mod_longident post_item_attributes
     { Opn.mk (mkrhs $startpos($3) $endpos($3) $3) ~override:$2 ~attrs:$4
         ~loc:(rloc $startpos $endpos) }
 
-module_declaration:
+module_declaration [@recovery default_module_type]:
 | COLON module_type
     { $2 }
 | LPAREN UIDENT COLON module_type RPAREN module_declaration
@@ -874,7 +858,7 @@ module_declaration:
 | LPAREN RPAREN module_declaration
     { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos($1) $endpos($1) "*", None, $3)) }
 
-rec_module_declarations:
+rec_module_declarations [@recovery default_module_decl]:
 | module_rec_declaration
     { [$1] }
 | rec_module_declarations AND module_rec_declaration
@@ -886,13 +870,13 @@ module_rec_declaration:
 
 (* Class expressions *)
 
-class_declarations:
+class_declarations [@recovery []]:
 | class_declarations AND class_declaration
     { $3 @ $1 }
 | class_declaration
     { $1 }
 
-class_declaration:
+class_declaration [@recovery []]:
 | virtual_flag class_type_parameters LIDENT class_fun_binding
   post_item_attributes
     {
@@ -901,7 +885,7 @@ class_declaration:
          ~attrs:$5 ~loc:(rloc $startpos $endpos)]
     }
 
-class_fun_binding:
+class_fun_binding [@cost 100][@recovery raise Not_found]:
 | EQUAL class_expr
     { $2 }
 | COLON class_type EQUAL class_expr
@@ -909,26 +893,26 @@ class_fun_binding:
 | labeled_simple_pattern class_fun_binding
     { let (l,o,p) = $1 in mkclass $startpos $endpos (Pcl_fun(l, o, p, $2)) }
 
-class_type_parameters:
+class_type_parameters [@recovery []]:
 | (* empty *)
     { [] }
 | LBRACKET type_parameter_list RBRACKET
     { List.rev $2 }
 
-class_fun_def:
+class_fun_def [@cost 100][@recovery raise Not_found]:
 | labeled_simple_pattern MINUSGREATER class_expr
     { let (l,o,p) = $1 in mkclass $startpos $endpos (Pcl_fun(l, o, p, $3)) }
 | labeled_simple_pattern class_fun_def
     { let (l,o,p) = $1 in mkclass $startpos $endpos (Pcl_fun(l, o, p, $2)) }
 
-class_expr:
+class_expr [@cost 100][@recovery raise Not_found]:
 | class_simple_expr
     { $1 }
 | FUN class_fun_def
     { $2 }
 | class_simple_expr simple_labeled_expr_list
     { mkclass $startpos $endpos (Pcl_apply($1, List.rev $2)) }
-| LET rec_flag let_bindings_no_attrs IN @{`Shift 2} class_expr
+| LET rec_flag let_bindings_no_attrs IN [@shift 2] class_expr
     { mkclass $startpos $endpos (Pcl_let ($2, List.rev $3, $5)) }
 | class_expr attribute
     { Cl.attr $1 $2 }
@@ -940,14 +924,14 @@ class_simple_expr:
     { mkclass $startpos $endpos (Pcl_constr(mkloc $4 (rloc $startpos($4) $endpos($4)), List.rev $2)) }
 | class_longident
     { mkclass $startpos $endpos (Pcl_constr(mkrhs $startpos($1) $endpos($1) $1, [])) }
-| OBJECT @{`Unclosed "object"} @{`Item "object"} class_structure END @{`Close}
+| OBJECT [@unclosed "object"] [@item "object"] class_structure END [@close]
     { mkclass $startpos $endpos (Pcl_structure($2)) }
-| LPAREN @{`Unclosed "("} class_expr COLON class_type RPAREN @{`Close}
+| LPAREN [@unclosed "("] class_expr COLON class_type RPAREN [@close]
     { mkclass $startpos $endpos (Pcl_constraint($2, $4)) }
-| LPAREN @{`Unclosed "("} class_expr RPAREN @{`Close}
+| LPAREN [@unclosed "("] class_expr RPAREN [@close]
     { $2 }
 
-class_structure:
+class_structure [@cost 100][@recovery raise Not_found]:
 | class_self_pattern class_fields
     { Cstr.mk $1 (List.rev $2) }
 
@@ -959,13 +943,13 @@ class_self_pattern:
 | (* empty *)
     { ghpat $startpos $endpos (Ppat_any) }
 
-class_fields:
+class_fields [@recovery []]:
 | (* empty *)
     { [] }
 | class_fields class_field
     { $2 @ $1 }
 
-class_field:
+class_field [@recovery []]:
 | INHERIT override_flag class_expr parent_binder attrs = post_item_attributes
     { mkcf $startpos $endpos (Pcf_inherit ($2, $3, $4)) ~attrs }
 | VAL value attrs = post_item_attributes
@@ -987,7 +971,7 @@ parent_binder:
 | (* empty *)
     { None }
 
-value:
+value [@cost 100][@recovery raise Not_found]:
 (* TODO: factorize these rules (also with method): *)
 | override_flag MUTABLE VIRTUAL label COLON core_type
     { if $1 = Override then syntax_error $startpos $endpos;
@@ -1019,7 +1003,7 @@ method_:
         mkloc $3 (rloc $startpos($3) $endpos($3)), $2, Cfk_concrete ($1, ghexp $startpos $endpos (Pexp_poly(exp, Some poly))) }
 
 (* Class types *)
-class_type:
+class_type [@cost 100][@recovery raise Not_found]:
 | class_signature
     { $1 }
 | QUESTION LIDENT COLON simple_core_type_or_tuple_no_attr MINUSGREATER class_type
@@ -1031,12 +1015,12 @@ class_type:
 | simple_core_type_or_tuple_no_attr MINUSGREATER class_type
     { mkcty $startpos $endpos (Pcty_arrow("", $1, $3)) }
 
-class_signature:
+class_signature[@cost 100][@recovery raise Not_found]:
 | LBRACKET core_type_comma_list RBRACKET clty_longident
     { mkcty $startpos $endpos (Pcty_constr (mkloc $4 (rloc $startpos($4) $endpos($4)), List.rev $2)) }
 | clty_longident
     { mkcty $startpos $endpos (Pcty_constr (mkrhs $startpos($1) $endpos($1) $1, [])) }
-| OBJECT @{`Unclosed "object"} @{`Item "object"} class_sig_body END @{`Close}
+| OBJECT [@unclosed "object"] [@item "object"] class_sig_body END [@close]
     { mkcty $startpos $endpos (Pcty_signature $2) }
 | class_signature attribute
     { Cty.attr $1 $2 }
@@ -1092,13 +1076,13 @@ constrain_field:
 | core_type EQUAL core_type
     { $1, $3 }
 
-class_descriptions:
+class_descriptions [@recovery []]:
 | class_descriptions AND class_description
     { $3 @ $1 }
 | class_description
     { $1 }
 
-class_description:
+class_description [@recovery []]:
 | virtual_flag class_type_parameters LIDENT COLON class_type post_item_attributes
     {
       [Ci.mk (mkrhs $startpos($3) $endpos($3) $3) $5
@@ -1106,13 +1090,13 @@ class_description:
          ~attrs:$6 ~loc:(rloc $startpos $endpos)]
     }
 
-class_type_declarations:
+class_type_declarations [@recovery []]:
 | class_type_declarations AND class_type_declaration
     { $3 @ $1 }
 | class_type_declaration
     { $1 }
 
-class_type_declaration:
+class_type_declaration [@recovery []]:
 | virtual_flag class_type_parameters LIDENT EQUAL class_signature post_item_attributes
     {
       [Ci.mk (mkrhs $startpos($3) $endpos($3) $3) $5
@@ -1122,12 +1106,12 @@ class_type_declaration:
 
 (* Core expressions *)
 
-seq_expr:
+seq_expr [@recovery default_expr]:
 | expr %prec below_SEMI
     { $1 }
 | expr SEMI
     { reloc_exp $startpos $endpos $1 }
-| expr SEMI @{`Shift 1} seq_expr
+| expr SEMI [@shift 1] seq_expr
     { mkexp $startpos $endpos (Pexp_sequence($1, $3)) }
 
 labeled_simple_pattern:
@@ -1160,56 +1144,56 @@ opt_default:
 | EQUAL seq_expr
     { Some $2 }
 
-label_let_pattern:
+label_let_pattern [@recovery "", default_pattern]:
 | label_var
     { $1 }
 | label_var COLON core_type
     { let (lab, pat) = $1 in (lab, mkpat $startpos $endpos (Ppat_constraint(pat, $3))) }
 
-label_var:
+label_var [@recovery "", default_pattern]:
 | LIDENT
     { ($1, mkpat $startpos $endpos (Ppat_var (mkrhs $startpos($1) $endpos($1) $1))) }
 
-let_pattern:
+let_pattern [@recovery default_pattern]:
 | pattern
     { $1 }
 | pattern COLON core_type
     { mkpat $startpos $endpos (Ppat_constraint($1, $3)) }
 
-expr:
+expr [@recovery default_expr]:
 | simple_expr %prec below_SHARP
     { $1 }
 | simple_expr simple_labeled_expr_list
     { mkexp $startpos $endpos (Pexp_apply($1, List.rev $2)) }
-| LET @{`Item "let"} ext_attributes rec_flag let_bindings_no_attrs _in = IN @{`Shift 2} expr = seq_expr
+| LET [@item "let"] ext_attributes rec_flag let_bindings_no_attrs _in = IN [@shift 2] expr = seq_expr
     { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
       mkexp_attrs $startpos $endpos (Pexp_let($3, List.rev $4, expr)) $2 }
-| let_operator @{`Item "meta-let"} ext_attributes let_bindings IN seq_expr
+| let_operator [@item "meta-let"] ext_attributes let_bindings IN seq_expr
     { wrap_exp_attrs $startpos $endpos
       (let_operator $startpos $endpos $1 $3 $5) $2 }
-| LET MODULE @{`Item "let module"}
-  ext_attributes UIDENT module_binding_body _in = IN @{`Shift 2} expr = seq_expr
+| LET MODULE [@item "let module"]
+  ext_attributes UIDENT module_binding_body _in = IN [@shift 2] expr = seq_expr
     { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
       mkexp_attrs $startpos $endpos (Pexp_letmodule(mkrhs $startpos($4) $endpos($4) $4, $5, expr)) $3 }
-| LET OPEN @{`Item "let open"}
-  expr_open _in = IN @{`Shift 2} expr = seq_expr
+| LET OPEN [@item "let open"]
+  expr_open _in = IN [@shift 2] expr = seq_expr
    { let expr = reloc_exp_fake $endpos(_in) $endpos expr in
      let (flag,id,ext) = $3 in
       mkexp_attrs $startpos $endpos (Pexp_open(flag, id, expr)) ext }
-| FUNCTION @{`Item "function"}
+| FUNCTION [@item "function"]
   ext_attributes opt_bar match_cases
     { mkexp_attrs $startpos $endpos (Pexp_function(List.rev $4)) $2 }
-| FUN @{`Item "fun"}
+| FUN [@item "fun"]
   ext_attributes labeled_simple_pattern fun_def
     { let (l,o,p) = $3 in
         mkexp_attrs $startpos $endpos (Pexp_fun(l, o, p, $4)) $2 }
-| FUN @{`Item "fun"}
+| FUN [@item "fun"]
   ext_attributes newtype fun_def
     { mkexp_attrs $startpos $endpos (Pexp_newtype($3, $4)) $2 }
-| MATCH @{`Item "match"}
+| MATCH [@item "match"]
   ext_attributes seq_expr WITH opt_bar match_cases
     { mkexp_attrs $startpos $endpos (Pexp_match($3, List.rev $6)) $2 }
-| TRY @{`Item "try"}
+| TRY [@item "try"]
   ext_attributes seq_expr WITH opt_bar match_cases
     { mkexp_attrs $startpos $endpos (Pexp_try($3, List.rev $6)) $2 }
 | expr_comma_list %prec below_COMMA
@@ -1218,21 +1202,21 @@ expr:
     { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, Some $2)) }
 | name_tag simple_expr %prec below_SHARP
     { mkexp $startpos $endpos (Pexp_variant($1, Some $2)) }
-| IF @{`Item "if"}
+| IF [@item "if"]
   ext_attributes seq_expr
-  THEN @{`Item "then clause"} expr
-  ELSE @{`Item "else clause"} expr
+  THEN [@item "then clause"] expr
+  ELSE [@item "else clause"] expr
     { mkexp_attrs $startpos $endpos (Pexp_ifthenelse($3, $5, Some $7)) $2 }
-| IF @{`Item "if"}
+| IF [@item "if"]
   ext_attributes seq_expr
-  THEN @{`Item "then clause"} expr
+  THEN [@item "then clause"] expr
     { mkexp_attrs $startpos $endpos (Pexp_ifthenelse($3, $5, None)) $2 }
-| WHILE @{`Item "while"}
-  ext_attributes seq_expr DO @{`Item "while body"} seq_expr DONE
+| WHILE [@item "while"]
+  ext_attributes seq_expr DO [@item "while body"] seq_expr DONE
     { mkexp_attrs $startpos $endpos (Pexp_while($3, $5)) $2 }
-| FOR @{`Item "for"}
+| FOR [@item "for"]
   ext_attributes pattern EQUAL seq_expr direction_flag seq_expr
-  DO @{`Item "for body"} seq_expr DONE
+  DO [@item "for body"] seq_expr DONE
     { mkexp_attrs $startpos $endpos (Pexp_for($3, $5, $7, $6, $9)) $2 }
 | expr COLONCOLON expr
     { mkexp_cons (rloc $startpos($2) $endpos($2)) (ghexp $startpos $endpos (Pexp_tuple[$1;$3])) (rloc $startpos $endpos) }
@@ -1302,12 +1286,12 @@ expr:
     { mkexp_attrs $startpos $endpos (Pexp_assert $3) $2 }
 | LAZY ext_attributes simple_expr %prec below_SHARP
     { mkexp_attrs $startpos $endpos (Pexp_lazy $3) $2 }
-| OBJECT @{`Unclosed "object"} @{`Item "object"} ext_attributes class_structure END @{`Close}
+| OBJECT [@unclosed "object"] [@item "object"] ext_attributes class_structure END [@close]
     { mkexp_attrs $startpos $endpos (Pexp_object $3) $2 }
 | expr attribute
     { Exp.attr $1 $2 }
 
-simple_expr:
+simple_expr [@recovery default_expr]:
 | val_longident
     { mkexp $startpos $endpos (Pexp_ident (mkrhs $startpos($1) $endpos($1) $1)) }
 | constant
@@ -1316,7 +1300,7 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_construct(mkrhs $startpos($1) $endpos($1) $1, None)) }
 | name_tag %prec prec_constant_constructor
     { mkexp $startpos $endpos (Pexp_variant($1, None)) }
-| LPAREN @{`Unclosed "("} seq_expr RPAREN @{`Close}
+| LPAREN [@unclosed "("] seq_expr RPAREN [@close]
     { reloc_exp $startpos $endpos $2 }
 | DOTLESS expr GREATERDOT
     { Fake.Meta.code $startpos $endpos $2 }
@@ -1324,42 +1308,42 @@ simple_expr:
     { Fake.Meta.uncode $startpos $endpos $2 }
 | BEGIN ext_attributes seq_expr END
     { wrap_exp_attrs $startpos $endpos (reloc_exp $startpos $endpos $3) $2 (* check location *) }
-| BEGIN @{`Unclosed "begin"} ext_attributes END @{`Close}
+| BEGIN [@unclosed "begin"] ext_attributes END [@close]
     { mkexp_attrs $startpos $endpos (Pexp_construct (mkloc (Lident "()") (rloc $startpos $endpos),
                                None)) $2 }
 | LPAREN seq_expr type_constraint RPAREN
     { mkexp_constraint $startpos $endpos $2 $3 }
 | simple_expr DOT label_longident
     { mkexp $startpos $endpos (Pexp_field($1, mkrhs $startpos($3) $endpos($3) $3)) }
-| mod_longident DOT LPAREN @{`Unclosed "("} seq_expr RPAREN @{`Close}
+| mod_longident DOT LPAREN [@unclosed "("] seq_expr RPAREN [@close]
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, $4)) }
-| simple_expr _ops = DOT _ope = LPAREN @{`Unclosed "("} seq_expr RPAREN @{`Close}
+| simple_expr _ops = DOT _ope = LPAREN [@unclosed "("] seq_expr RPAREN [@close]
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
                  (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "Array" "get")),
                          ["",$1; "",$4])) }
-| simple_expr _ops = DOT _ope = LBRACKET @{`Unclosed "["} seq_expr RBRACKET @{`Close}
+| simple_expr _ops = DOT _ope = LBRACKET [@unclosed "["] seq_expr RBRACKET [@close]
     { mkexp $startpos $endpos
           (Pexp_apply(ghexp $startpos(_ops) $endpos(_ope)
                  (Pexp_ident(array_function $startpos(_ops) $endpos(_ope) "String" "get")),
                          ["",$1; "",$4])) }
-| simple_expr _ops = DOT _ope = LBRACE @{`Unclosed "{"} expr RBRACE @{`Close}
+| simple_expr _ops = DOT _ope = LBRACE [@unclosed "{"] expr RBRACE [@close]
     { bigarray_get ($startpos,$endpos) ($startpos(_ops),$endpos(_ope)) $1 $4 }
-| LBRACE @{`Unclosed "{"} record_expr RBRACE @{`Close}
+| LBRACE [@unclosed "{"] record_expr RBRACE [@close]
     { let (exten, fields) = $2 in mkexp $startpos $endpos (Pexp_record(fields, exten)) }
-| mod_longident DOT LBRACE @{`Unclosed "{"}  record_expr RBRACE @{`Close}
+| mod_longident DOT LBRACE [@unclosed "{"]  record_expr RBRACE [@close]
     { let (exten, fields) = $4 in
         let rec_exp = mkexp $startpos $endpos (Pexp_record(fields, exten)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, rec_exp)) }
-| LBRACKETBAR @{`Unclosed "[|"} expr_semi_list opt_semi BARRBRACKET @{`Close}
+| LBRACKETBAR [@unclosed "[|"] expr_semi_list opt_semi BARRBRACKET [@close]
     { mkexp $startpos $endpos  (Pexp_array(List.rev $2)) }
 | LBRACKETBAR BARRBRACKET
     { mkexp $startpos $endpos  (Pexp_array []) }
-| mod_longident DOT LBRACKETBAR @{`Unclosed "[|"} expr_semi_list opt_semi BARRBRACKET @{`Close}
+| mod_longident DOT LBRACKETBAR [@unclosed "[|"] expr_semi_list opt_semi BARRBRACKET [@close]
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_array(List.rev $4)))) }
-| LBRACKET @{`Unclosed "["} expr_semi_list opt_semi RBRACKET @{`Close}
+| LBRACKET [@unclosed "["] expr_semi_list opt_semi RBRACKET [@close]
     { reloc_exp $startpos $endpos (mktailexp $startpos($4) $endpos($4) (List.rev $2)) }
-| mod_longident DOT LBRACKET @{`Unclosed "["} expr_semi_list opt_semi RBRACKET @{`Close}
+| mod_longident DOT LBRACKET [@unclosed "["] expr_semi_list opt_semi RBRACKET [@close]
     { let list_exp = reloc_exp $startpos $endpos (mktailexp $startpos($6) $endpos($6) (List.rev $4)) in
         mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, list_exp)) }
 | PREFIXOP simple_expr
@@ -1368,22 +1352,22 @@ simple_expr:
     { mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) "!", ["",$2])) }
 | NEW ext_attributes class_longident
     { mkexp_attrs $startpos $endpos (Pexp_new(mkrhs $startpos($3) $endpos($3) $3)) $2 }
-| LBRACELESS @{`Unclosed "{<"} field_expr_list opt_semi GREATERRBRACE
+| LBRACELESS [@unclosed "{<"] field_expr_list opt_semi GREATERRBRACE
     { mkexp $startpos $endpos  (Pexp_override(List.rev $2)) }
 | LBRACELESS GREATERRBRACE
     { mkexp $startpos $endpos  (Pexp_override [])}
-| mod_longident DOT LBRACELESS @{`Unclosed "{<"} field_expr_list opt_semi GREATERRBRACE @{`Close}
+| mod_longident DOT LBRACELESS [@unclosed "{<"] field_expr_list opt_semi GREATERRBRACE [@close]
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1, mkexp $startpos($4) $endpos($4) (Pexp_override(List.rev $4)))) }
-| simple_expr SHARP @{`Shift_token (1,LIDENT "")} label
+| simple_expr SHARP [@shift_token (1,LIDENT "")] label
     { mkexp $startpos $endpos (Pexp_send($1, $3)) }
-| simple_expr SHARPOP @{`Shift_token (1,LIDENT "")} simple_expr
+| simple_expr SHARPOP [@shift_token (1,LIDENT "")] simple_expr
     { mkinfix $startpos $endpos $1 $startpos($2) $endpos($2) $2 $3 }
-| LPAREN @{`Unclosed "("} MODULE module_expr RPAREN @{`Close}
+| LPAREN [@unclosed "("] MODULE module_expr RPAREN [@close]
     { mkexp $startpos $endpos  (Pexp_pack $3) }
-| LPAREN @{`Unclosed "("} MODULE module_expr COLON package_type RPAREN @{`Close}
+| LPAREN [@unclosed "("] MODULE module_expr COLON package_type RPAREN [@close]
     { mkexp $startpos $endpos  (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack $3),
                                 ghtyp $startpos $endpos (Ptyp_package $5))) }
-| mod_longident DOT LPAREN @{`Unclosed "("} MODULE module_expr COLON package_type RPAREN @{`Close}
+| mod_longident DOT LPAREN [@unclosed "("] MODULE module_expr COLON package_type RPAREN [@close]
     { mkexp $startpos $endpos (Pexp_open(Fresh, mkrhs $startpos($1) $endpos($1) $1,
         mkexp $startpos $endpos (Pexp_constraint (ghexp $startpos $endpos (Pexp_pack $5),
                                 ghtyp $startpos $endpos (Ptyp_package $7))))) }
@@ -1412,17 +1396,17 @@ label_expr:
 | OPTLABEL simple_expr %prec below_SHARP
     { ("?" ^ $1, $2) }
 
-label_ident:
+label_ident [@recovery "", default_expr]:
 | LIDENT
     { ($1, mkexp $startpos $endpos (Pexp_ident(mkrhs $startpos($1) $endpos($1) (Lident $1)))) }
 
-let_bindings:
+let_bindings [@recovery []]:
 | let_binding
     { [$1] }
 | let_bindings AND let_binding
     { $3 :: $1 }
 
-let_bindings_no_attrs:
+let_bindings_no_attrs [@recovery []]:
 | l = let_bindings
     { List.iter (fun vb -> if vb.pvb_attributes <> [] then
         Parsing_aux.raise_warning
@@ -1430,7 +1414,7 @@ let_bindings_no_attrs:
         l;
       l }
 
-lident_list:
+lident_list [@recovery []]:
 | LIDENT
     { [$1] }
 | LIDENT lident_list
@@ -1469,22 +1453,22 @@ strict_binding:
 | LPAREN TYPE LIDENT RPAREN fun_binding
     { mkexp $startpos $endpos (Pexp_newtype($3, $5)) }
 
-match_cases:
+match_cases [@recovery []]:
 | match_case
     { [$1] }
-| match_cases @{`Indent (-2)} BAR match_case
+| match_cases [@indent (-2)] BAR match_case
     { $3 :: $1 }
 
 match_case:
-| @{`Item "pattern"} pattern
-  MINUSGREATER @{`Item "match action"} expr = seq_expr
+| pattern [@item "pattern"]
+  MINUSGREATER [@item "match action"] expr = seq_expr
     { Exp.case $1 (reloc_exp_fake $endpos($2) $endpos expr) }
-| @{`Item "pattern"} pattern
-  WHEN @{`Item "when guard"} seq_expr
-  MINUSGREATER @{`Item "match action"} expr = seq_expr
+| pattern [@item "pattern"]
+  WHEN [@item "when guard"] seq_expr
+  MINUSGREATER [@item "match action"] expr = seq_expr
     { Exp.case $1 ~guard:$3 (reloc_exp_fake $endpos($4) $endpos expr) }
 
-fun_def:
+fun_def [@recovery default_expr]:
 | MINUSGREATER seq_expr
 (* Cf #5939: we used to accept (fun p when e0 -> e) *)
     { $2 }
@@ -1502,13 +1486,13 @@ expr_comma_list:
 | expr COMMA expr
     { [$3; $1] }
 
-record_expr:
+record_expr [@recovery None, []]:
 | simple_expr WITH lbl_expr_list
     { (Some $1, $3) }
 | lbl_expr_list
     { (None, $1) }
 
-lbl_expr_list:
+lbl_expr_list [@recovery []]:
 | lbl_expr
     { [$1] }
 | lbl_expr SEMI lbl_expr_list
@@ -1522,32 +1506,32 @@ lbl_expr:
 | label_longident
     { (mkrhs $startpos($1) $endpos($1) $1, exp_of_label $startpos($1) $endpos($1) $1) }
 
-field_expr_list:
+field_expr_list [@recovery []]:
 | label EQUAL expr
     { [mkrhs $startpos($1) $endpos($1) $1,$3] }
 | field_expr_list SEMI label EQUAL expr
     { (mkrhs $startpos($3) $endpos($3) $3, $5) :: $1 }
 
-expr_semi_list:
+expr_semi_list [@recovery []]:
 | expr
     { [$1] }
 | expr_semi_list SEMI expr
     { $3 :: $1 }
 
 type_constraint:
-| COLON @{`Item "type constraint"}
+| COLON [@item "type constraint"]
   core_type
     { (Some $2, None) }
-| COLON @{`Item "type constraint"}
+| COLON [@item "type constraint"]
   core_type COLONGREATER core_type
     { (Some $2, Some $4) }
-| COLONGREATER @{`Item "type constraint"}
+| COLONGREATER [@item "type constraint"]
   core_type
     { (None, Some $2) }
 
 (* Patterns *)
 
-pattern:
+pattern [@recovery default_pattern]:
 | simple_pattern
     { $1 }
 | pattern AS val_ident
@@ -1577,7 +1561,7 @@ pattern:
 | pattern attribute
     { Pat.attr $1 $2 }
 
-simple_pattern:
+simple_pattern [@recovery default_pattern]:
 | val_ident %prec below_EQUAL
     { mkpat $startpos $endpos (Ppat_var (mkrhs $startpos($1) $endpos($1) $1)) }
 | simple_pattern_not_ident
@@ -1596,26 +1580,26 @@ simple_pattern_not_ident:
     { mkpat $startpos $endpos (Ppat_variant($1, None)) }
 | SHARP type_longident
     { mkpat $startpos $endpos (Ppat_type (mkrhs $startpos($2) $endpos($2) $2)) }
-| LBRACE @{`Unclosed "{"}
-  lbl_pattern_list RBRACE @{`Close}
+| LBRACE [@unclosed "{"]
+  lbl_pattern_list RBRACE [@close]
     { let (fields, closed) = $2 in mkpat $startpos $endpos (Ppat_record(fields, closed)) }
-| LBRACKET @{`Unclosed "["}
-  pattern_semi_list opt_semi RBRACKET @{`Close}
+| LBRACKET [@unclosed "["]
+  pattern_semi_list opt_semi RBRACKET [@close]
     { reloc_pat $startpos $endpos (mktailpat $startpos($4) $endpos($4) (List.rev $2)) }
-| LBRACKETBAR @{`Unclosed "[|"}
-  pattern_semi_list opt_semi BARRBRACKET @{`Close}
+| LBRACKETBAR [@unclosed "[|"]
+  pattern_semi_list opt_semi BARRBRACKET [@close]
     { mkpat $startpos $endpos (Ppat_array(List.rev $2)) }
 | LBRACKETBAR BARRBRACKET
     { mkpat $startpos $endpos (Ppat_array []) }
-| LPAREN @{`Unclosed "("} pattern RPAREN @{`Close}
+| LPAREN [@unclosed "("] pattern RPAREN [@close]
     { reloc_pat $startpos $endpos $2 }
-| LPAREN @{`Unclosed "("} pattern COLON core_type RPAREN @{`Close}
+| LPAREN [@unclosed "("] pattern COLON core_type RPAREN [@close]
     { mkpat $startpos $endpos (Ppat_constraint($2, $4)) }
 (*| LPAREN pattern COLON error
     { expecting $startpos($4) $endpos($4) "type" }*)
-| LPAREN MODULE @{`Unclosed "("} UIDENT RPAREN @{`Close}
+| LPAREN MODULE [@unclosed "("] UIDENT RPAREN [@close]
     { mkpat $startpos $endpos (Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)) }
-| LPAREN MODULE @{`Unclosed "("} UIDENT COLON package_type RPAREN @{`Close}
+| LPAREN MODULE [@unclosed "("] UIDENT COLON package_type RPAREN [@close]
     { mkpat $startpos $endpos (Ppat_constraint(mkpat $startpos $endpos(Ppat_unpack (mkrhs $startpos($3) $endpos($3) $3)),
                               ghtyp $startpos $endpos (Ptyp_package $5))) }
 | extension
@@ -1629,13 +1613,13 @@ pattern_comma_list:
 (*| pattern COMMA error
     { expecting $startpos($3) $endpos($3) "pattern" }*)
 
-pattern_semi_list:
+pattern_semi_list [@recovery []]:
 | pattern
     { [$1] }
 | pattern_semi_list SEMI pattern
     { $3 :: $1 }
 
-lbl_pattern_list:
+lbl_pattern_list [@recovery [], Closed]:
 | lbl_pattern
     { [$1], Closed }
 | lbl_pattern SEMI
@@ -1653,7 +1637,7 @@ lbl_pattern:
 
 (* Primitive declarations *)
 
-primitive_declaration:
+primitive_declaration [@recovery []]:
 | STRING
     { [fst $1] }
 | STRING primitive_declaration
@@ -1661,13 +1645,13 @@ primitive_declaration:
 
 (* Type declarations *)
 
-type_declarations:
+type_declarations [@recovery []]:
 | type_declaration
     { [$1] }
 | type_declarations AND type_declaration
     { $3 :: $1 }
 
-type_declaration:
+type_declaration [@cost 100][@recovery raise Not_found]:
 | optional_type_parameters LIDENT type_kind constraints post_item_attributes
     { let (kind, priv, manifest) = $3 in
         Type.mk (mkrhs $startpos($2) $endpos($2) $2)
@@ -1705,7 +1689,7 @@ type_kind:
 | EQUAL core_type EQUAL DOTDOT
     { (Ptype_open, Public, Some $2) }
 
-optional_type_parameters:
+optional_type_parameters [@recovery []]:
 | (* empty *)
     { [] }
 | optional_type_parameter
@@ -1713,23 +1697,23 @@ optional_type_parameters:
 | LPAREN optional_type_parameter_list RPAREN
     { List.rev $2 }
 
-optional_type_parameter:
+optional_type_parameter [@recovery Invariant, Location.mknoloc Ptyp_any]:
 | type_variance optional_type_variable
     { $2, $1 }
 
-optional_type_parameter_list:
+optional_type_parameter_list [@recovery []]:
 | optional_type_parameter
     { [$1] }
 | optional_type_parameter_list COMMA optional_type_parameter
     { $3 :: $1 }
 
-optional_type_variable:
+optional_type_variable [@recovery Location.mknoloc Ptyp_any]:
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 | UNDERSCORE
     { mktyp $startpos $endpos (Ptyp_any) }
 
-type_parameters:
+type_parameters [@recovery []]:
 | (* empty *)
     { [] }
 | type_parameter
@@ -1753,19 +1737,19 @@ type_variable:
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 
-type_parameter_list:
+type_parameter_list [@recovery []]:
 | type_parameter
     { [$1] }
 | type_parameter_list COMMA type_parameter
     { $3 :: $1 }
 
-constructor_declarations:
+constructor_declarations [@recovery []]:
 | constructor_declaration
     { [$1] }
-| constructor_declarations @{`Indent (-2)} BAR constructor_declaration
+| constructor_declarations [@indent (-2)] BAR constructor_declaration
     { $3 :: $1 }
 
-constructor_declaration:
+constructor_declaration [@cost 100][@recovery raise Not_found]:
 | constr_ident generalized_constructor_arguments attributes
     {
       let args,res = $2 in
@@ -1791,7 +1775,7 @@ sig_exception_declaration:
       {ext with pext_attributes = ext.pext_attributes @ $2}
     }
 
-generalized_constructor_arguments:
+generalized_constructor_arguments [@recovery ([],None)]:
 | (* empty *)
     { ([],None) }
 | OF core_type_list_no_attr
@@ -1801,13 +1785,13 @@ generalized_constructor_arguments:
 | COLON simple_core_type_no_attr
     { ([],Some $2) }
 
-label_declarations:
+label_declarations [@recovery []]:
 | label_declaration
     { [$1] }
 | label_declarations SEMI label_declaration
     { $3 :: $1 }
 
-label_declaration:
+label_declaration [@cost 100][@recovery raise Not_found]:
 | mutable_flag label COLON poly_type_no_attr attributes
   {
     Type.field (mkrhs $startpos($2) $endpos($2) $2) $4 ~mut:$1 ~attrs:$5 ~loc:(rloc $startpos $endpos)
@@ -1861,7 +1845,7 @@ extension_constructor_rebind:
 
 (* "with" constraints (additional type equations over signature components) *)
 
-with_constraints:
+with_constraints [@recovery []]:
 | with_constraint
     { $1 }
 | with_constraints AND with_constraint
@@ -1896,19 +1880,19 @@ with_type_binder:
 
 (* Polymorphic types *)
 
-typevar_list:
+typevar_list [@recovery []]:
 | QUOTE ident
     { [$2] }
 | typevar_list QUOTE ident
     { $3 :: $1 }
 
-poly_type:
+poly_type [@recovery default_type]:
 | core_type
     { $1 }
 | typevar_list DOT core_type
     { mktyp $startpos $endpos (Ptyp_poly(List.rev $1, $3)) }
 
-poly_type_no_attr:
+poly_type_no_attr [@recovery default_type]:
 | core_type_no_attr
     { $1 }
 | typevar_list DOT core_type_no_attr
@@ -1916,19 +1900,19 @@ poly_type_no_attr:
 
 (* Core types *)
 
-core_type:
+core_type [@recovery default_type]:
 | core_type_no_attr
     { $1 }
 | core_type attribute
     { Typ.attr $1 $2 }
 
-core_type_no_attr:
+core_type_no_attr [@recovery default_type]:
 | core_type2
     { $1 }
 | core_type2 AS QUOTE ident
     { mktyp $startpos $endpos (Ptyp_alias($1, $4)) }
 
-core_type2:
+core_type2 [@recovery default_type]:
 | simple_core_type_or_tuple
     { $1 }
 | QUESTION LIDENT COLON core_type2 MINUSGREATER core_type2
@@ -1940,7 +1924,7 @@ core_type2:
 | core_type2 MINUSGREATER core_type2
     { mktyp $startpos $endpos (Ptyp_arrow("", $1, $3)) }
 
-simple_core_type:
+simple_core_type [@recovery default_type]:
 | simple_core_type2 %prec below_SHARP
     { $1 }
 | LPAREN core_type_comma_list RPAREN %prec below_SHARP
@@ -1950,7 +1934,7 @@ simple_core_type:
                     mktyp $startpos $endpos (Ptyp_any)
     }
 
-simple_core_type_no_attr:
+simple_core_type_no_attr [@recovery default_type]:
 | simple_core_type2 %prec below_SHARP
     { $1 }
 | LPAREN core_type_comma_list RPAREN %prec below_SHARP
@@ -1960,7 +1944,7 @@ simple_core_type_no_attr:
                     mktyp $startpos $endpos (Ptyp_any)
     }
 
-simple_core_type2:
+simple_core_type2 [@recovery default_type]:
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 | UNDERSCORE
@@ -2004,7 +1988,7 @@ simple_core_type2:
 | extension
     { mktyp $startpos $endpos  (Ptyp_extension $1) }
 
-package_type:
+package_type [@recovery default_longident, []]:
 | mty_longident
     { (mkrhs $startpos($1) $endpos($1) $1, []) }
 | mty_longident WITH package_type_cstrs
@@ -2014,13 +1998,13 @@ package_type_cstr:
 | TYPE label_longident EQUAL core_type
     { (mkrhs $startpos($2) $endpos($2) $2, $4) }
 
-package_type_cstrs:
+package_type_cstrs [@recovery []]:
 | package_type_cstr
     { [$1] }
 | package_type_cstr AND package_type_cstrs
     { $1::$3 }
 
-row_field_list:
+row_field_list [@recovery []]:
 | row_field
     { [$1] }
 | row_field_list BAR row_field
@@ -2044,49 +2028,49 @@ opt_ampersand:
 | (* empty *)
     { false }
 
-amper_type_list:
+amper_type_list [@recovery []]:
 | core_type_no_attr
     { [$1] }
 | amper_type_list AMPERSAND core_type_no_attr
     { $3 :: $1 }
 
-name_tag_list:
+name_tag_list [@recovery []]:
 | name_tag
     { [$1] }
 | name_tag_list name_tag
     { $2 :: $1 }
 
-simple_core_type_or_tuple:
+simple_core_type_or_tuple [@recovery default_type]:
 | simple_core_type %prec below_LBRACKETAT
     { $1 }
 | simple_core_type STAR core_type_list
     { mktyp $startpos $endpos (Ptyp_tuple($1 :: List.rev $3)) }
 
-simple_core_type_or_tuple_no_attr:
+simple_core_type_or_tuple_no_attr [@recovery default_type]:
 | simple_core_type_no_attr
     { $1 }
 | simple_core_type_no_attr STAR core_type_list_no_attr
     { mktyp $startpos $endpos (Ptyp_tuple($1 :: List.rev $3)) }
 
-core_type_comma_list:
+core_type_comma_list [@recovery []]:
 | core_type
     { [$1] }
 | core_type_comma_list COMMA core_type
     { $3 :: $1 }
 
-core_type_list:
+core_type_list [@recovery []]:
 | simple_core_type %prec below_LBRACKETAT
     { [$1] }
 | core_type_list STAR simple_core_type
     { $3 :: $1 }
 
-core_type_list_no_attr:
+core_type_list_no_attr [@recovery []]:
 | simple_core_type_no_attr
     { [$1] }
 | core_type_list STAR simple_core_type_no_attr
     { $3 :: $1 }
 
-meth_list:
+meth_list [@recovery [], Open]:
 | field SEMI meth_list
     { let (f, c) = $3 in ($1 :: f, c) }
 | field opt_semi
@@ -2098,7 +2082,7 @@ field:
 | label COLON poly_type_no_attr attributes
     { ($1, $4, $3) }
 
-label:
+label [@recovery ""]:
 | LIDENT
     { $1 }
 
@@ -2146,23 +2130,23 @@ signed_constant:
 
 (* Identifiers and long identifiers *)
 
-ident:
+ident [@recovery ""]:
 | UIDENT
     { $1 }
 | LIDENT
     { $1 }
 
-val_ident:
+val_ident [@recovery ""]:
 | LIDENT
     { $1 }
-| LPAREN @{`Unclosed "("} operator RPAREN @{`Close}
+| LPAREN [@unclosed "("] operator RPAREN [@close]
     { $2 }
 (*| LPAREN $2 =error
     { expecting $startpos($2) $endpos($2) "operator" }*)
 (*| LPAREN MODULE error
     { expecting $startpos($3) $endpos($3) "module-expr" }*)
 
-operator:
+operator [@recovery ""]:
 | PREFIXOP
     { $1 }
 | INFIXOP0
@@ -2226,13 +2210,13 @@ constr_ident:
 | TRUE
     { "true" }
 
-val_longident:
+val_longident [@recovery default_longident]:
 | val_ident
     { Lident $1 }
 | mod_longident DOT val_ident
     { Ldot($1, $3) }
 
-constr_longident:
+constr_longident [@recovery default_longident]:
 | mod_longident %prec below_DOT
     { $1 }
 | LBRACKET RBRACKET
@@ -2244,25 +2228,25 @@ constr_longident:
 | TRUE
     { Lident "true" }
 
-label_longident:
+label_longident [@recovery default_longident]:
 | LIDENT
     { Lident $1 }
 | mod_longident DOT LIDENT
     { Ldot($1, $3) }
 
-type_longident:
+type_longident [@recovery default_longident]:
 | LIDENT
     { Lident $1 }
 | mod_ext_longident DOT LIDENT
     { Ldot($1, $3) }
 
-mod_longident:
+mod_longident [@recovery default_longident]:
 | UIDENT
     { Lident $1 }
 | mod_longident DOT UIDENT
     { Ldot($1, $3) }
 
-mod_ext_longident:
+mod_ext_longident [@recovery default_longident]:
 | UIDENT
     { Lident $1 }
 | mod_ext_longident DOT UIDENT
@@ -2270,37 +2254,37 @@ mod_ext_longident:
 | mod_ext_longident LPAREN mod_ext_longident RPAREN
     { lapply $startpos $endpos $1 $3 }
 
-mty_longident:
+mty_longident [@recovery default_longident]:
 | ident
     { Lident $1 }
 | mod_ext_longident DOT ident
     { Ldot($1, $3) }
 
-clty_longident:
+clty_longident [@recovery default_longident]:
 | LIDENT
     { Lident $1 }
 | mod_ext_longident DOT LIDENT
     { Ldot($1, $3) }
 
-class_longident:
+class_longident [@recovery default_longident]:
 | LIDENT
     { Lident $1 }
 | mod_longident DOT LIDENT
     { Ldot($1, $3) }
 
-(* Miscellaneous *)
+(* Miscell [@recovery []]aneous *)
 
 name_tag:
 | BACKQUOTE ident
     { $2 }
 
-rec_flag:
+rec_flag [@recovery Nonrecursive]:
 | (* empty *)
     { Nonrecursive }
 | REC
     { Recursive }
 
-direction_flag:
+direction_flag [@recovery TO]:
 | TO
     { Upto }
 | DOWNTO
@@ -2472,7 +2456,7 @@ single_attr_id:
     { "with" }
 (* mod/land/lor/lxor/lsl/lsr/asr are not supported for now *)
 
-attr_id:
+attr_id [@recovery Location.mknoloc ""]:
 | single_attr_id
     { mkloc $1 (rloc $startpos $endpos) }
 | single_attr_id DOT attr_id
@@ -2487,23 +2471,23 @@ post_item_attribute:
     { ($2, $3) }
 
 floating_attribute:
-| LBRACKETATATAT @{`Item "attribute"}
+| LBRACKETATATAT [@item "attribute"]
   attr_id payload RBRACKET
     { ($2, $3) }
 
-post_item_attributes:
+post_item_attributes [@recovery []]:
 | (* empty *)
     { [] }
 | post_item_attribute post_item_attributes
     { $1 :: $2 }
 
-attributes:
+attributes [@recovery []]:
 | (* empty *)
     { [] }
 | attribute attributes
     { $1 :: $2 }
 
-ext_attributes:
+ext_attributes [@cost 1][@recovery (None, [])]:
 | (* empty *)
     { None, [] }
 | attribute attributes
@@ -2516,11 +2500,11 @@ extension:
     { ($2, $3) }
 
 item_extension:
-| LBRACKETPERCENTPERCENT @{`Item "extension"}
+| LBRACKETPERCENTPERCENT [@item "extension"]
   attr_id payload RBRACKET
     { ($2, $3) }
 
-payload:
+payload [@recovery Parsetree.PStr []]:
 | structure
     { PStr $1 }
 | COLON core_type
@@ -2532,17 +2516,17 @@ payload:
 
 (* Merlin refactoring *)
 
-newtype:
+newtype [@recovery ""]:
 | LPAREN TYPE LIDENT RPAREN
     { $3 }
 
-expr_open:
+expr_open [@recovery Fresh, Location.mknoloc (None, []), default_longident]:
 | override_flag ext_attributes mod_longident
     { $1, mkrhs $startpos($3) $endpos($3) $3, $2 }
 
 (* Caml p4 extensions *)
 structure_item:
-| LET_LWT @{`Item "lwt"} ext_attributes rec_flag let_bindings
+| LET_LWT [@item "lwt"] ext_attributes rec_flag let_bindings
     { match $4 with
     | [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
          pvb_expr = exp; pvb_attributes = attrs} ] ->
@@ -2558,18 +2542,18 @@ structure_item:
       | None -> str
       | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr str), []))
     }
-| TYPE NONREC @{`Item "type nonrec"} decls = type_declarations
+| TYPE NONREC [@item "type nonrec"] decls = type_declarations
     { let ty = List.map fake_tydecl decls in
       let loc = rloc $startpos($2) $endpos($2) in
       mkstr $startpos $endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) }
-| TYPE @{`Item "type"} type_declarations WITH with_extensions
+| TYPE [@item "type"] type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
       let ty = List.map fake_tydecl $2 in
       let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $4 in
       mkstr $startpos $endpos (Pstr_type(List.rev $2)) @ ast
     }
-| TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
+| TYPE NONREC [@item "type nonrec"] type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
       let ty = List.map fake_tydecl $3 in
@@ -2577,7 +2561,7 @@ structure_item:
       let loc = rloc $startpos($2) $endpos($2) in
       mkstr $startpos $endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) @ ast
     }
-| EXCEPTION @{`Item "exception"}
+| EXCEPTION [@item "exception"]
   str_exception_declaration WITH with_extensions
     { mkstr $startpos $endpos (Pstr_exception $2) }
 | OUNIT_TEST option(STRING) EQUAL seq_expr
@@ -2619,18 +2603,18 @@ structure_item:
 ;
 
 signature_item:
-| TYPE NONREC @{`Item "type nonrec"} decls = type_declarations
+| TYPE NONREC [@item "type nonrec"] decls = type_declarations
     { let ty = List.map fake_tydecl decls in
       let loc = rloc $startpos($2) $endpos($2) in
       mksig $startpos $endpos (Psig_type (List.rev_map (tag_nonrec loc) ty)) }
-| TYPE @{`Item "type"} type_declarations WITH with_extensions
+| TYPE [@item "type"] type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
       let ty = List.map fake_tydecl $2 in
       let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $4 in
       mksig $startpos $endpos (Psig_type(List.rev $2)) @ decls
     }
-| TYPE NONREC @{`Item "type nonrec"} type_declarations WITH with_extensions
+| TYPE NONREC [@item "type nonrec"] type_declarations WITH with_extensions
     {
       let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
       let ty = List.map fake_tydecl $3 in
@@ -2638,54 +2622,54 @@ signature_item:
       let loc = rloc $startpos($2) $endpos($2) in
       mksig $startpos $endpos (Psig_type(List.rev_map (tag_nonrec loc) ty)) @ decls
     }
-| EXCEPTION @{`Item "exception"}
+| EXCEPTION [@item "exception"]
   sig_exception_declaration WITH with_extensions
     { mksig $startpos $endpos (Psig_exception $2) }
 
-with_extensions:
+with_extensions [@recovery []]:
 | LIDENT COMMA with_extensions { $1 :: $3 }
 | LIDENT { [$1] }
 
 
-expr:
-| LET_LWT @{`Item "lwt"}
-  ext_attributes rec_flag let_bindings IN @{`Shift 2} seq_expr
+expr [@recovery default_expr]:
+| LET_LWT [@item "lwt"]
+  ext_attributes rec_flag let_bindings IN [@shift 2] seq_expr
     { let expr = reloc_exp_fake $endpos($5) $endpos $6 in
       let expr = Pexp_let($3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) $4, expr) in
       Fake.app Fake.Lwt.in_lwt (mkexp_attrs $startpos $endpos expr $2) }
-| MATCH_LWT @{`Item "match_lwt"}
+| MATCH_LWT [@item "match_lwt"]
   ext_attributes seq_expr WITH opt_bar match_cases
     { let expr = mkexp_attrs $startpos $endpos
           (Pexp_match(Fake.app Fake.Lwt.un_lwt $3, List.rev $6)) $2 in
       Fake.app Fake.Lwt.in_lwt expr }
-| TRY_LWT @{`Item "try_lwt"}
+| TRY_LWT [@item "try_lwt"]
   ext_attributes seq_expr %prec below_WITH
     { reloc_exp $startpos $endpos (Fake.app Fake.Lwt.in_lwt $3) }
-| TRY_LWT @{`Item "try_lwt"}
+| TRY_LWT [@item "try_lwt"]
   ext_attributes seq_expr WITH opt_bar match_cases
     { mkexp_attrs $startpos $endpos
         (Pexp_try(Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 }
-| TRY_LWT @{`Item "try_lwt"}
+| TRY_LWT [@item "try_lwt"]
   ext_attributes seq_expr FINALLY_LWT seq_expr
     { Fake.app (Fake.app Fake.Lwt.finally' $3) $5 }
-| TRY_LWT @{`Item "try_lwt"}
+| TRY_LWT [@item "try_lwt"]
   ext_attributes seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
     { let expr = mkexp_attrs $startpos $endpos
         (Pexp_try (Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 in
       Fake.app (Fake.app Fake.Lwt.finally' expr) $8 }
-| WHILE_LWT @{`Item "while_lwt"}
+| WHILE_LWT [@item "while_lwt"]
   ext_attributes seq_expr
-  DO @{`Item "while_lwt body"} seq_expr DONE
+  DO [@item "while_lwt body"] seq_expr DONE
   { let expr = Pexp_while ($3, Fake.(app Lwt.un_lwt $5)) in
     Fake.(app Lwt.to_lwt (mkexp_attrs $startpos $endpos expr $2)) }
-| FOR_LWT @{`Item "for_lwt"}
+| FOR_LWT [@item "for_lwt"]
   ext_attributes pattern EQUAL seq_expr direction_flag seq_expr
-  DO @{`Item "for body"} seq_expr DONE
+  DO [@item "for body"] seq_expr DONE
     { let expr = Pexp_for ($3, $5, $7, $6, Fake.(app Lwt.un_lwt $9)) in
       Fake.(app Lwt.to_lwt (mkexp_attrs $startpos $endpos expr $2)) }
-| FOR_LWT @{`Item "for_lwt"}
+| FOR_LWT [@item "for_lwt"]
   ext_attributes pattern IN seq_expr
-  DO @{`Item "for body"} seq_expr DONE
+  DO [@item "for body"] seq_expr DONE
     { mkexp_attrs $startpos $endpos
           (Pexp_let (Nonrecursive, [Vb.mk $3 (Fake.(app Lwt.un_stream $5))],
              Fake.(app Lwt.unit_lwt $7)))
@@ -2693,7 +2677,7 @@ expr:
     }
 ;
 
-expr:
+expr [@recovery default_expr]:
 | simple_expr SHARPSHARP label LESSMINUS expr
     { let inst = Fake.(app Js.un_js $1) in
       let field = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
@@ -2714,7 +2698,7 @@ expr:
 ;
 
 simple_expr:
-| simple_expr SHARPSHARP @{`Shift_token (1,LIDENT "")} label
+| simple_expr SHARPSHARP [@shift_token (1,LIDENT "")] label
     { let inst = Fake.(app Js.un_js $1) in
       let field = mkexp $startpos $endpos (Pexp_send(inst, $3)) in
       let prop = Fake.(app Js.un_prop field) in

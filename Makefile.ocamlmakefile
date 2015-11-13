@@ -176,6 +176,10 @@ SOURCES = \
 	src/kernel/merlin_typer.ml        \
 	src/frontend/main_args.mli        \
 	src/frontend/main_args.ml         \
+	src/kernel/merlin_project.ml      \
+	src/kernel/merlin_project.mli     \
+	src/kernel/merlin_buffer.ml       \
+	src/kernel/merlin_buffer.mli      \
 	src/kernel/merlin_lib.ml          \
 	src/ocaml_aux/error_report.mli    \
 	src/ocaml_aux/error_report.ml     \

@@ -26,214 +26,183 @@
 
 )* }}} *)
 
-module Buffer : sig
-  type t
-  val create: ?dot_merlins:string list -> ?path:string -> Parser.state -> t
+open Std
 
-  val unit_name : t -> string
-  val project: t -> Project.t
+type t = {
+  kind: Merlin_parser.state;
+  path: string option;
+  dot_merlins: string list;
+  unit_name : string;
+  mutable project : Merlin_project.t;
+  mutable stamp : bool ref;
+  mutable keywords: Merlin_lexer.keywords;
+  mutable lexer: (exn list * Merlin_lexer.item) History.t;
+  mutable recover: (Merlin_lexer.item * Merlin_recover.t) History.t;
+  mutable typer: Merlin_typer.t;
+}
 
-  val lexer: t -> (exn list * Lexer.item) History.t
-  val update: t -> (exn list * Lexer.item) History.t -> [`Nothing_done | `Updated]
-  val start_lexing: ?pos:Lexing.position -> t -> Lexer.t
-  val lexer_errors: t -> exn list
+let invalidate t =
+  t.stamp := false;
+  t.stamp <- ref true
 
-  val comments: t -> (string * Location.t) list
+let is_implementation { kind ; _ } = kind = Merlin_parser.implementation
 
-  val parser: t -> Parser.t
-  val parser_errors: t -> exn list
+let initial_step kind (_,token) =
+  let input = match token with
+    | Merlin_lexer.Valid (s,t,e) -> s,t,e
+    | _ -> assert false
+  in
+  (token, Merlin_recover.fresh (Merlin_parser.from kind input))
 
-  val recover: t -> Recover.t
-  val recover_history : t -> (Lexer.item * Recover.t) History.t
+let autoreload_dot_merlin buffer =
+  let project' = buffer.project in
+  let project, status = Merlin_project.get buffer.dot_merlins in
+  buffer.project <- project;
+  match status with
+  | `Fresh -> invalidate buffer
+  | `Cached ->
+    Merlin_project.check_dot_merlin project;
+    if project' != project then
+      invalidate buffer
 
-  val typer: t -> Typer.t
-
-  val get_mark: t -> Parser.frame option
-  val has_mark: t -> Parser.frame option -> bool
-
-  val is_implementation : t -> bool
-
-  (* All top modules of current project, with current module removed *)
-  val global_modules: t -> string list
-
-  (* Try to do a background job, return false if nothing has to be done *)
-  val idle_job : t -> bool
-end = struct
-  type t = {
-    kind: Parser.state;
-    path: string option;
-    dot_merlins: string list;
-    unit_name : string;
-    mutable project : Project.t;
-    mutable stamp : bool ref;
-    mutable keywords: Lexer.keywords;
-    mutable lexer: (exn list * Lexer.item) History.t;
-    mutable recover: (Lexer.item * Recover.t) History.t;
-    mutable typer: Typer.t;
+let create ?(dot_merlins=[]) ?path kind =
+  let path, filename = match path with
+    | None -> None, "*buffer*"
+    | Some path -> Some (Filename.dirname path), Filename.basename path
+  in
+  let dot_merlins = match dot_merlins, path with
+    | [], Some path -> [path]
+    | [], None -> []
+    | xs, cwd -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
+  in
+  let unit_name =
+    try String.sub filename ~pos:0 ~len:(String.index filename '.')
+    with Not_found -> filename
+  in
+  let unit_name = String.capitalize unit_name in
+  let lexer = Merlin_lexer.empty ~filename in
+  let project =
+    match Merlin_project.get dot_merlins with
+    | project, `Fresh -> project
+    | project, `Cached ->
+      Merlin_project.check_dot_merlin project;
+      project
+  in
+  let stamp = ref true in
+  Merlin_project.setup project;
+  {
+    dot_merlins; path; project; lexer; kind; unit_name; stamp;
+    keywords = Merlin_project.keywords project;
+    recover = History.initial (initial_step kind (History.focused lexer));
+    typer = Merlin_typer.fresh
+        ~unit_name ~stamp:[Merlin_project.validity_stamp project; stamp]
+        (Merlin_project.extensions project);
   }
 
-  let invalidate t =
-    t.stamp := false;
-    t.stamp <- ref true
+let setup buffer =
+  autoreload_dot_merlin buffer;
+  begin match buffer.path with
+    | Some path ->
+      Merlin_project.set_local_path buffer.project [path];
+      begin try
+          Sys.chdir path
+        with _ -> ()
+      end
+    | None -> ()
+  end;
+  Merlin_project.setup buffer.project
 
-  let is_implementation { kind ; _ } = kind = Parser.implementation
+let unit_name t = t.unit_name
 
-  let initial_step kind (_,token) =
-    let input = match token with
-      | Lexer.Valid (s,t,e) -> s,t,e
-      | _ -> assert false
+let project t = t.project
+
+let lexer b = b.lexer
+let lexer_errors b = fst (History.focused b.lexer)
+
+let recover_history b = b.recover
+let recover b = snd (History.focused b.recover)
+
+let comments b = Merlin_recover.comments (recover b)
+
+let parser b = Merlin_recover.parser (recover b)
+let parser_errors b = Merlin_recover.exns (recover b)
+
+let typer b =
+  setup b;
+  let valid = Merlin_typer.is_valid b.typer &&
+              String.Set.equal
+                (Merlin_typer.extensions b.typer)
+                (Merlin_project.extensions b.project) in
+  if not valid then
+    b.typer <- Merlin_typer.fresh
+        ~unit_name:b.unit_name
+        ~stamp:[Merlin_project.validity_stamp b.project; b.stamp]
+        (Merlin_project.extensions b.project);
+  b.typer <- Merlin_typer.update (parser b) b.typer;
+  b.typer
+
+let update t l =
+  t.lexer <- l;
+  let strong_check (_,token) (token',_) = token == token' in
+  let weak_check (_,token) (token',_) = Merlin_lexer.equal token token' in
+  let init token = initial_step t.kind token in
+  let strong_fold (_,token) (_,recover) = token, Merlin_recover.fold token recover in
+  let weak_update (_,token) (_,recover) = (token,recover) in
+  let recover', updated = History.sync t.lexer (Some t.recover)
+      ~init ~strong_check ~strong_fold ~weak_check ~weak_update in
+  t.recover <- recover';
+  updated
+
+let start_lexing ?pos b =
+  let kw = Merlin_project.keywords b.project in
+  if kw != b.keywords then begin
+    b.keywords <- kw;
+    ignore (update b (History.drop_tail (History.seek_backward
+                                           (fun _ -> true) b.lexer)))
+  end
+  else begin
+    let item_pred pos_pred = function
+      | _, Merlin_lexer.Valid (cur,_,_) when pos_pred cur -> true
+      | _, Merlin_lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
+      | _, Merlin_lexer.Error _ -> true
+      | _ -> false
     in
-    (token, Recover.fresh (Parser.from kind input))
-
-  let autoreload_dot_merlin buffer =
-    let project' = buffer.project in
-    let project, status = Project.get buffer.dot_merlins in
-    buffer.project <- project;
-    match status with
-    | `Fresh -> invalidate buffer
-    | `Cached ->
-      Project.check_dot_merlin project;
-      if project' != project then
-        invalidate buffer
-
-  let create ?(dot_merlins=[]) ?path kind =
-    let path, filename = match path with
-      | None -> None, "*buffer*"
-      | Some path -> Some (Filename.dirname path), Filename.basename path
+    let lexer = b.lexer in
+    let lexer = match pos with
+      | None -> lexer
+      | Some pos ->
+        let line, _ = Lexing.split_pos pos in
+        let pos_pred cur =
+          let line', _ = Lexing.split_pos cur in
+          line > line'
+        in
+        History.seek_forward (item_pred pos_pred) lexer
     in
-    let dot_merlins = match dot_merlins, path with
-      | [], Some path -> [path]
-      | [], None -> []
-      | xs, cwd -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
+    let pos_pred = match pos with
+      | None -> (fun _ -> false)
+      | Some pos ->
+        let line, _ = Lexing.split_pos pos in
+        (fun cur -> let line', _ = Lexing.split_pos cur in line <= line')
     in
-    let unit_name =
-      try String.sub filename ~pos:0 ~len:(String.index filename '.')
-      with Not_found -> filename
-    in
-    let unit_name = String.capitalize unit_name in
-    let lexer = Lexer.empty ~filename in
-    let project =
-      match Project.get dot_merlins with
-      | project, `Fresh -> project
-      | project, `Cached ->
-        Project.check_dot_merlin project;
-        project
-    in
-    let stamp = ref true in
-    Project.setup project;
-    {
-      dot_merlins; path; project; lexer; kind; unit_name; stamp;
-      keywords = Project.keywords project;
-      recover = History.initial (initial_step kind (History.focused lexer));
-      typer = Typer.fresh
-          ~unit_name ~stamp:[Project.validity_stamp project; stamp]
-          (Project.extensions project);
-    }
+    let lexer = History.seek_backward (item_pred pos_pred) lexer in
+    let lexer = History.move (-1) lexer in
+    ignore (update b lexer)
+  end;
+  Merlin_lexer.start kw b.lexer
 
-  let setup buffer =
-    autoreload_dot_merlin buffer;
-    begin match buffer.path with
-      | Some path ->
-          Project.set_local_path buffer.project [path];
-          begin try
-            Sys.chdir path
-          with _ -> ()
-          end
-      | None -> ()
-    end;
-    Project.setup buffer.project
+let get_mark t = Merlin_parser.find_marker (parser t)
 
-  let unit_name t = t.unit_name
+let has_mark t = function
+  | None -> false
+  | Some frame -> Merlin_parser.has_marker (parser t) frame
 
-  let project t = t.project
+let global_modules t =
+  setup t;
+  List.remove t.unit_name (Merlin_project.global_modules t.project)
 
-  let lexer b = b.lexer
-  let lexer_errors b = fst (History.focused b.lexer)
-
-  let recover_history b = b.recover
-  let recover b = snd (History.focused b.recover)
-
-  let comments b = Recover.comments (recover b)
-
-  let parser b = Recover.parser (recover b)
-  let parser_errors b = Recover.exns (recover b)
-
-  let typer b =
-    setup b;
-    let valid = Typer.is_valid b.typer &&
-                String.Set.equal
-                  (Typer.extensions b.typer)
-                  (Project.extensions b.project) in
-    if not valid then
-        b.typer <- Typer.fresh
-            ~unit_name:b.unit_name
-            ~stamp:[Project.validity_stamp b.project; b.stamp]
-            (Project.extensions b.project);
-    b.typer <- Typer.update (parser b) b.typer;
-    b.typer
-
-  let update t l =
-    t.lexer <- l;
-    let strong_check (_,token) (token',_) = token == token' in
-    let weak_check (_,token) (token',_) = Lexer.equal token token' in
-    let init token = initial_step t.kind token in
-    let strong_fold (_,token) (_,recover) = token, Recover.fold token recover in
-    let weak_update (_,token) (_,recover) = (token,recover) in
-    let recover', updated = History.sync t.lexer (Some t.recover)
-        ~init ~strong_check ~strong_fold ~weak_check ~weak_update in
-    t.recover <- recover';
-    updated
-
-  let start_lexing ?pos b =
-    let kw = Project.keywords b.project in
-    if kw != b.keywords then begin
-      b.keywords <- kw;
-      ignore (update b (History.drop_tail (History.seek_backward
-                                             (fun _ -> true) b.lexer)))
-    end
-    else begin
-      let item_pred pos_pred = function
-        | _, Lexer.Valid (cur,_,_) when pos_pred cur -> true
-        | _, Lexer.Valid (p,_,_) when p = Lexing.dummy_pos -> true
-        | _, Lexer.Error _ -> true
-        | _ -> false
-      in
-      let lexer = b.lexer in
-      let lexer = match pos with
-        | None -> lexer
-        | Some pos ->
-          let line, _ = Lexing.split_pos pos in
-          let pos_pred cur =
-            let line', _ = Lexing.split_pos cur in
-            line > line'
-          in
-          History.seek_forward (item_pred pos_pred) lexer
-      in
-      let pos_pred = match pos with
-        | None -> (fun _ -> false)
-        | Some pos ->
-          let line, _ = Lexing.split_pos pos in
-          (fun cur -> let line', _ = Lexing.split_pos cur in line <= line')
-      in
-      let lexer = History.seek_backward (item_pred pos_pred) lexer in
-      let lexer = History.move (-1) lexer in
-      ignore (update b lexer)
-    end;
-    Lexer.start kw b.lexer
-
-  let get_mark t = Parser.find_marker (parser t)
-
-  let has_mark t = function
-    | None -> false
-    | Some frame -> Parser.has_marker (parser t) frame
-
-  let global_modules t =
-    setup t;
-    List.remove t.unit_name (Project.global_modules t.project)
-
-  exception Break
-  let idle_job t =
-    Typer.with_typer (typer t) @@ fun () ->
-    Clflags.real_paths () <> `Real &&
-    let concr = Env.used_persistent () in
-    Types.Concr.exists Printtyp.compute_map_for_pers concr
+exception Break
+let idle_job t =
+  Merlin_typer.with_typer (typer t) @@ fun () ->
+  Clflags.real_paths () <> `Real &&
+  let concr = Env.used_persistent () in
+  Types.Concr.exists Printtyp.compute_map_for_pers concr
