@@ -275,23 +275,26 @@ let looping_valid_reductions =
     let transition n = SymbolMap.find (N n) transitions in
     (* First minimize costs *)
     let costs =
-      let is_reachable map state =
-        successors state
-        |> List.map (fun nt -> find_cost map (transition nt))
-        |> List.exists (fun cost -> cost <> max_int)
+      let minimize map state cost =
+        if cost <> max_int then cost
+        else
+          let cost =
+            state
+            |> successors
+            |> List.map (fun nt -> find_cost map (transition nt))
+            |> List.fold_left min max_int
+          in
+          if cost <> max_int
+          then cost + 1
+          else max_int
       in
-      let rec fix map todo step =
-        let now_reachable, todo = List.partition (is_reachable map) todo in
-        if now_reachable = [] then map else
-          let register map state = StateMap.add state step map in
-          let map = List.fold_left register map now_reachable in
-          fix map todo (step + 1)
+      let rec fix map =
+        match StateMap.mapi (minimize map) map with
+        | map' when StateMap.equal ((=) : int -> int -> bool) map map' ->
+          map' (* fixpoint reached *)
+        | map' -> fix map'
       in
-      let todo = StateMap.fold
-          (fun x cost xs -> if cost <> max_int then xs else x :: xs)
-          cost0 []
-      in
-      fix cost0 todo 1
+      fix cost0
     in
     (* Then reconstruct paths minimizing costs *)
     let paths =
