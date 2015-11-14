@@ -181,7 +181,7 @@ function! merlin_type#ShowLines(start, end)
     let g:merlin_previous_cmdheight = &cmdheight
     augroup MerlinCleanupCommandHeight
       au!
-      autocmd * * call s:RestoreCmdHeight()
+      autocmd CursorMoved * call s:RestoreCmdHeight()
     augroup END
     let &cmdheight = show
   endif
@@ -232,6 +232,7 @@ endfunction
 
 function! s:RestoreCmdHeight()
   let &cmdheight = g:merlin_previous_cmdheight
+  echo ""
   augroup MerlinCleanupCommandHeight
     au!
   augroup END
