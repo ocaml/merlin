@@ -165,13 +165,22 @@ let cost_of_rhs =
   in
   table_production measure
 
-let cost_of_item (p,pos) =
+let cost_of_first_item =
+  Array.make (Array.length g.g_productions) infinity
+
+let cost_of_item ?first (p,pos) =
   (* An item at position 0 has no incoming symbol.
      It is only possible for initial states, and those should never
      be observed by recovery engine *)
   assert (pos > 0);
   if p.p_kind = `START then infinity
   else
+    let first = match first with
+      | None when pos = 1 -> cost_of_first_item.(p.p_index)
+      | None -> 0.0
+      | Some first -> first
+    in
+    first +.
     let tbl = cost_of_rhs p in
     if pos = Array.length tbl then 0.
     else tbl.(pos)
@@ -239,24 +248,15 @@ let starting_states, final_states, regular_states =
     list := lr0 :: !list
   in
   Array.iter store_state g.g_lr0_states;
-  let cost_of_lr0 lr0 =
-    Array.fold_left min infinity (Array.map cost_of_item lr0.lr0_items)
-  in
-  let annot_list f l = List.map (fun x -> f x, x) l in
-
-  !starting_states,
-
-  !final_states,
-
-  List.sort (fun (c0,_) (c1,_) -> compare c1 c0) @@
-  annot_list cost_of_lr0 !regular_states
+  List.rev !starting_states,
+  List.rev !final_states,
+  List.rev !regular_states
 
 let looping_valid_reductions =
   let successors =
-    let register map (_,lr0) =
+    let register map lr0 =
       let syms =
-        lr0.lr0_items
-        |> Array.to_list
+        Array.to_list lr0.lr0_items
         |> List.filter (fun (_,pos) -> pos = 1)
         |> List.map (fun (p,_) -> p.p_lhs)
         |> List.sort_uniq (fun n1 n2 -> compare n1.n_index n2.n_index)
@@ -321,17 +321,36 @@ let looping_valid_reductions =
     let register dst map src =
       map_update map src dst max_int
     in
-    let register_src map (_,dst) =
+    let register_src map dst =
       List.fold_left (register dst) map (lr0_predecessors dst)
     in
     List.fold_left register_src StateMap.empty regular_states
   in
   let paths = StateMap.mapi resolve cost0 in
+
+  (* Update first costs approximation *)
+  begin
+    StateMap.iter @@ fun predecessor ->
+    StateMap.iter @@ fun state (cost, nts) ->
+    Array.iter begin fun (prod,p) ->
+      if p = 1 && List.mem prod.p_lhs nts then
+        cost_of_first_item.(prod.p_index) <-
+          min (float cost) cost_of_first_item.(prod.p_index)
+    end state.lr0_items
+  end paths;
+
   fun ~predecessor lr0 ->
     try StateMap.find lr0 (StateMap.find predecessor paths)
     with Not_found ->
       (* Should be queried only for valid (predecessor / looping pairs) *)
       assert false
+
+let regular_states =
+  let annot_list f l = List.map (fun x -> f x, x) l in
+  let cost_of_lr0 lr0 =
+    Array.fold_left min infinity (Array.map cost_of_item lr0.lr0_items)
+  in
+  annot_list cost_of_lr0 regular_states
 
 (** Reporting *)
 
@@ -461,47 +480,53 @@ let report_loop_analysis () =
           report "- %d -> %d\n"
             parent.lr0_index lr0.lr0_index;
           match looping_valid_reductions ~predecessor:parent lr0 with
-          | []  -> report "  WRONG: no terminating reduction sequence, empty language?!"
-          | seq -> report "  valid reductions: %s\n"
-                     (String.concat ", " (List.map (fun n -> n.n_name) seq))
+          | _, []  -> report "  WRONG: no terminating reduction sequence, empty language?!"
+          | _, seq -> report "  valid reductions: %s\n"
+                        (String.concat ", " (List.map (fun n -> n.n_name) seq))
         ) predecessors;
       report "\n"
     end
   in
   List.iter report_loop regular_states
 
-type reduction = (production * int) * float
-type decision =
-  | Reduction of reduction
-  | Look_at_predecessor of
+type reduction = (production * int)
+type decision = [
+  | `Impossible
+  | `Reduction of reduction
+  | `Look_at_predecessor of
       (lr0_state * [`Reduction of reduction | `Impossible]) list
+]
 
 let decision lr0 =
-  let order a b = compare (cost_of_item a) (cost_of_item b) in
-  let select_item items =
-    let item = List.hd (List.sort order items) in
-    (item, cost_of_item item)
-  in
-  let filter_irregular items =
-    List.filter (fun (_,p) -> p <> 1) (Array.to_list items)
-  in
+  let order ?first a b =
+    compare (cost_of_item ?first a) (cost_of_item ?first b) in
+  let order_items ?first items = List.sort (order ?first) items in
   match classify_state lr0 with
-  | `Looping ->
-    Look_at_predecessor (List.map (fun predecessor ->
-        let possibilities =
-          looping_valid_reductions ~predecessor lr0 in
-        predecessor,
-        match
-          List.filter (fun (p,pos) ->
-              assert (pos = 1);
-              List.mem p.p_lhs possibilities)
-            (Array.to_list lr0.lr0_items)
-        with
-        | [] -> `Impossible
-        | items -> `Reduction (select_item items)
-      ) (lr0_predecessors lr0))
   | `Regular ->
-    Reduction (select_item (filter_irregular lr0.lr0_items))
+    let items = order_items (Array.to_list lr0.lr0_items) in
+    let ((prod, pos) as item) = List.hd items in
+    if pos <> 1 then `Reduction item else
+      let selections =
+        List.map (fun predecessor ->
+            let cost, possibilities = looping_valid_reductions ~predecessor lr0 in
+            let items =
+              List.filter
+                (fun (p,pos) -> pos <> 1 || List.mem p.p_lhs possibilities)
+                items
+            in
+            let items = order_items ~first:(float cost) items in
+            let item =
+              match items with
+              | [] -> `Impossible
+              | item :: items -> `Reduction item
+            in
+            predecessor, item
+          ) (lr0_predecessors lr0)
+      in
+      if List.for_all ((=) (List.hd selections)) selections then
+        snd (List.hd selections)
+      else
+        `Look_at_predecessor selections
   | `Starting | `Final -> assert false
 
 let report_final_decision () =
@@ -512,25 +537,31 @@ let report_final_decision () =
   in
   let is_wrong = function
     | _, `Impossible -> true
-    | _, `Reduction (_, cost) -> cost = infinity
+    | _, `Reduction item -> cost_of_item item = infinity
   in
   let is_wrong = function
-    | Reduction (_, cost) -> cost = infinity
-    | Look_at_predecessor x -> List.exists is_wrong x
+    | `Impossible -> true
+    | `Reduction item -> cost_of_item item = infinity
+    | `Look_at_predecessor x -> List.exists is_wrong x
   in
   let report_decision state decision =
     let verbose' = !verbose in
     if is_wrong decision then
       verbose := true;
     begin match decision with
-    | Reduction (item, cost) ->
+    | `Impossible ->
+      report "state %d: no terminating sequence found (empty language or bug?!)\n"
+        state.lr0_index
+    | `Reduction item ->
+      let cost = cost_of_item item in
       report "state %d, at cost %.02f reduce:%s\n"
         state.lr0_index cost (check_cost cost);
       report_table ~prefix:"  " (items_table [item])
-    | Look_at_predecessor predecessors ->
+    | `Look_at_predecessor predecessors ->
       report "state %d, looking at:\n" state.lr0_index;
       List.iter (function
-          | (predecessor, `Reduction (item, cost)) ->
+          | (predecessor, `Reduction item) ->
+            let cost = cost_of_item item in
             report "- predecessor %d, at cost %.02f reduce:%s\n"
               predecessor.lr0_index cost (check_cost cost);
             report_table ~prefix:"    " (items_table [item]);
@@ -635,7 +666,7 @@ let print_decisions () =
     String.concat " | "
       (List.map (fun lr0 -> string_of_int lr0.lr0_index) ks)
   in
-  let string_of_reduction ((prod,pos), _) =
+  let string_of_reduction (prod,pos) =
     if pos = Array.length prod.p_rhs then
       sprintf "Reduce %d" prod.p_index
     else
@@ -650,8 +681,9 @@ let print_decisions () =
     | `Starting | `Final   -> None
     | `Regular ->
       match decision lr0 with
-      | Reduction red -> Some (string_of_reduction red)
-      | Look_at_predecessor cases ->
+      | `Impossible -> None
+      | `Reduction red -> Some (string_of_reduction red)
+      | `Look_at_predecessor cases ->
         let cases =
           cases |>
           filter_map_assoc (function
