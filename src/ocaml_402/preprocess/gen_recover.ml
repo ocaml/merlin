@@ -176,10 +176,6 @@ let cost_of_item (p,pos) =
     if pos = Array.length tbl then 0.
     else tbl.(pos)
 
-let cost_of_regular_item (p,pos) =
-  if pos = 1 then infinity else cost_of_item (p,pos)
-
-
 (** State analysis *)
 
 let lr0_predecessors, lr1_predecessors =
@@ -224,29 +220,27 @@ let classify_state =
           | [| {p_rhs = [||]; p_lhs}, 1 |] ->
             assert (p_lhs.n_kind = `START);
             `Final
-          | _ -> `Looping
+          | _ -> `Regular
         end
       | _ -> `Regular
     )
 
-let starting_states, final_states, regular_states, looping_states =
+let starting_states, final_states, regular_states =
   let starting_states = ref [] in
   let final_states = ref [] in
-  let looping_states = ref [] in
   let regular_states = ref [] in
   let store_state lr0 =
     let list = match classify_state lr0 with
       | `Starting -> starting_states
       | `Final    -> final_states
-      | `Looping  -> looping_states
       | `Regular  -> regular_states
     in
     assert ((list == starting_states) = (lr0.lr0_incoming = None));
     list := lr0 :: !list
   in
   Array.iter store_state g.g_lr0_states;
-  let cost_of_lr0 measure lr0 =
-    Array.fold_left min infinity (Array.map measure lr0.lr0_items)
+  let cost_of_lr0 lr0 =
+    Array.fold_left min infinity (Array.map cost_of_item lr0.lr0_items)
   in
   let annot_list f l = List.map (fun x -> f x, x) l in
 
@@ -255,10 +249,7 @@ let starting_states, final_states, regular_states, looping_states =
   !final_states,
 
   List.sort (fun (c0,_) (c1,_) -> compare c1 c0) @@
-  annot_list (cost_of_lr0 cost_of_regular_item) !regular_states,
-
-  List.sort (fun (c0,_) (c1,_) -> compare c1 c0) @@
-  annot_list (cost_of_lr0 cost_of_item) !looping_states
+  annot_list cost_of_lr0 !regular_states
 
 let looping_valid_reductions =
   let successors =
@@ -272,7 +263,7 @@ let looping_valid_reductions =
       in
       StateMap.add lr0 syms map
     in
-    let map = List.fold_left register StateMap.empty looping_states in
+    let map = List.fold_left register StateMap.empty regular_states in
     fun state -> StateMap.find state map
   in
   let find_cost map dst =
@@ -336,7 +327,7 @@ let looping_valid_reductions =
     let register_src map (_,dst) =
       List.fold_left (register dst) map (lr0_predecessors dst)
     in
-    List.fold_left register_src StateMap.empty looping_states
+    List.fold_left register_src StateMap.empty regular_states
   in
   let paths = StateMap.mapi resolve cost0 in
   fun ~predecessor lr0 ->
@@ -426,16 +417,19 @@ let report_states () =
     report "\n";
   in
 
-  if looping_states <> [] then
+  if regular_states <> [] then
     begin
       report "## states with potentially looping recovery\n\n";
-      List.iter report_state looping_states
+      List.iter report_state regular_states;
     end;
 
   if unrecovered_states <> [] then
     begin
+      let verbose' = !verbose in
+      verbose := true;
       report "## states without recovery strategy\n\n";
-      List.iter report_state unrecovered_states
+      List.iter report_state unrecovered_states;
+      verbose := verbose'
     end;
 
   if regular_states <> [] then
@@ -450,33 +444,34 @@ let report_states () =
 let report_loop_analysis () =
   report "# Analysing looping states\n\n";
   let report_loop (_cost,lr0) =
-    report "## loops at #%d\n\n" lr0.lr0_index;
-    report "Coming from %s.\n"
-      (match lr0.lr0_incoming with
-       | None -> assert false
-       | Some s -> name_of_symbol s);
     let syms =
-      Array.to_list @@
-      Array.map (fun (prod,pos) ->
-          assert (pos = 1);
-          prod.p_lhs)
-        lr0.lr0_items
+      lr0.lr0_items
+      |> Array.to_list
+      |> List.filter (fun (_,pos) -> pos = 1)
+      |> List.map (fun (prod,_) -> prod.p_lhs)
     in
-    report "Possible reductions to: %s\n"
-      (String.concat ", " (List.map (fun n -> n.n_name) syms));
-    report "Predecessors:\n";
-    let predecessors = lr0_predecessors lr0 in
-    List.iter (fun parent ->
-        report "- %d -> %d\n"
-          parent.lr0_index lr0.lr0_index;
-        match looping_valid_reductions ~predecessor:parent lr0 with
-        | []  -> report "  WRONG: no terminating reduction sequence, empty language?!"
-        | seq -> report "  valid reductions: %s\n"
-                   (String.concat ", " (List.map (fun n -> n.n_name) seq))
-      ) predecessors;
-    report "\n"
+    if syms <> [] then begin
+      report "## loops at #%d\n\n" lr0.lr0_index;
+      report "Coming from %s.\n"
+        (match lr0.lr0_incoming with
+         | None -> assert false
+         | Some s -> name_of_symbol s);
+      report "Possible reductions to: %s\n"
+        (String.concat ", " (List.map (fun n -> n.n_name) syms));
+      report "Predecessors:\n";
+      let predecessors = lr0_predecessors lr0 in
+      List.iter (fun parent ->
+          report "- %d -> %d\n"
+            parent.lr0_index lr0.lr0_index;
+          match looping_valid_reductions ~predecessor:parent lr0 with
+          | []  -> report "  WRONG: no terminating reduction sequence, empty language?!"
+          | seq -> report "  valid reductions: %s\n"
+                     (String.concat ", " (List.map (fun n -> n.n_name) seq))
+        ) predecessors;
+      report "\n"
+    end
   in
-  List.iter report_loop looping_states
+  List.iter report_loop regular_states
 
 type reduction = (production * int) * float
 type decision =
@@ -553,8 +548,7 @@ let report_final_decision () =
   report "# Final decision\n\n";
   Array.iter (fun lr0 ->
       match classify_state lr0 with
-      | `Regular | `Looping ->
-        report_decision lr0 (decision lr0)
+      | `Regular -> report_decision lr0 (decision lr0)
       | `Starting | `Final -> ()
     ) g.g_lr0_states
 
@@ -657,7 +651,7 @@ let print_decisions () =
   let string_of_decision lr0 =
     match classify_state lr0 with
     | `Starting | `Final   -> None
-    | `Regular  | `Looping ->
+    | `Regular ->
       match decision lr0 with
       | Reduction red -> Some (string_of_reduction red)
       | Look_at_predecessor cases ->
