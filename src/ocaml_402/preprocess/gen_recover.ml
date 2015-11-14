@@ -304,7 +304,7 @@ let looping_valid_reductions =
             (successors state)
         in
         assert (result <> [] || cost = max_int);
-        result
+        cost, result
       in
       StateMap.mapi construct_path costs
     in
@@ -509,14 +509,20 @@ let decision lr0 =
       let selections =
         List.map (fun predecessor ->
             let cost, possibilities = looping_valid_reductions ~predecessor lr0 in
-            let items =
+            let items' =
               List.filter
                 (fun (p,pos) -> pos <> 1 || List.mem p.p_lhs possibilities)
                 items
             in
-            let items = order_items ~first:(float cost) items in
+            let items' = order_items ~first:(float cost) items' in
+            Printf.eprintf "state:%d pred:%d possibilities:%d items:%d/%d items':%d\n"
+              lr0.lr0_index predecessor.lr0_index
+              (List.length possibilities)
+              (List.length items)
+              (Array.length lr0.lr0_items)
+              (List.length items');
             let item =
-              match items with
+              match items' with
               | [] -> `Impossible
               | item :: items -> `Reduction item
             in
