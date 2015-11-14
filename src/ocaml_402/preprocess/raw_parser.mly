@@ -2631,7 +2631,7 @@ with_extensions [@recovery []]:
 | LIDENT { [$1] }
 
 
-expr [@recovery default_expr]:
+expr:
 | LET_LWT [@item "lwt"]
   ext_attributes rec_flag let_bindings IN [@shift 2] seq_expr
     { let expr = reloc_exp_fake $endpos($5) $endpos $6 in
@@ -2677,7 +2677,7 @@ expr [@recovery default_expr]:
     }
 ;
 
-expr [@recovery default_expr]:
+expr:
 | simple_expr SHARPSHARP label LESSMINUS expr
     { let inst = Fake.(app Js.un_js $1) in
       let field = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
