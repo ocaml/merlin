@@ -15,10 +15,10 @@ raw_printer.ml: gen_printer raw_parser.cmly
 	./gen_printer raw_parser.cmly > raw_printer.ml
 
 gen_recover: gen_recover.ml
-	ocamlfind opt -o $@ -package menhirSdk -linkpkg $^
+	ocamlfind opt -g -o $@ -package menhirSdk -linkpkg $^
 
 gen_printer: gen_printer.ml
-	ocamlfind opt -o $@ -package menhirSdk -linkpkg $^
+	ocamlfind opt -g -o $@ -package menhirSdk -linkpkg $^
 
 clean:
 	rm -f *.cm* *.o gen_recover gen_printer

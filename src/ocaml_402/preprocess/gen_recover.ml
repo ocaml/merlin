@@ -168,22 +168,72 @@ let cost_of_rhs =
 let cost_of_first_item =
   Array.make (Array.length g.g_productions) infinity
 
-let cost_of_item ?first (p,pos) =
+let cost_of_first_items, minimize_cost_of_first_item =
+  let table = Hashtbl.create 7 in
+  (fun predecessor prod ->
+    let k = (predecessor.lr0_index, prod.p_index) in
+    try Hashtbl.find table k
+    with Not_found ->
+      let r = ref infinity in
+      Hashtbl.add table k r;
+      r),
+  (fun () ->
+     Hashtbl.iter (fun (_,index) r ->
+         cost_of_first_item.(index) <-
+           min cost_of_first_item.(index) !r
+       ) table)
+
+let cost_of_raw_item (p,pos) =
   (* An item at position 0 has no incoming symbol.
      It is only possible for initial states, and those should never
      be observed by recovery engine *)
   assert (pos > 0);
   if p.p_kind = `START then infinity
   else
-    let first = match first with
-      | None when pos = 1 -> cost_of_first_item.(p.p_index)
-      | None -> 0.0
-      | Some first -> first
-    in
-    first +.
     let tbl = cost_of_rhs p in
     if pos = Array.length tbl then 0.
     else tbl.(pos)
+
+let cost_of_item ?predecessor (p,pos) =
+  let first =
+    if pos = 1 then
+      match predecessor with
+      | Some predecessor -> !(cost_of_first_items predecessor p)
+      | None -> cost_of_first_item.(p.p_index)
+    else 0.0
+  in
+  first +. cost_of_raw_item (p,pos)
+
+let items_table items =
+  let last_lhs = ref (-1) in
+  let prepare (p,pos) =
+    let rhs = Array.map (fun (sym, id, _) ->
+        if id <> "" && id.[0] <> '_' then
+          "(" ^ id ^ " = " ^ name_of_symbol sym ^ ")"
+        else name_of_symbol sym)
+        p.p_rhs
+    and costs = Array.map string_of_float (cost_of_rhs p) in
+    if pos >= 0 && pos < Array.length rhs then
+      rhs.(pos) <- ". " ^ rhs.(pos)
+    else if pos = Array.length rhs then
+      rhs.(pos - 1) <- rhs.(pos - 1) ^ " .";
+    let rhs = Array.to_list rhs and costs = Array.to_list costs in
+    let rhs =
+      if !last_lhs = p.p_lhs.n_index then
+        "" :: "  |" :: rhs
+      else
+        (last_lhs := p.p_lhs.n_index;
+         p.p_lhs.n_name :: "::=" :: rhs)
+    and costs =
+      "" :: "" :: costs
+    in
+    [rhs; costs]
+  in
+  align_tabular (List.concat (List.map prepare items))
+
+let report_table ?(prefix="") ?(sep=" ") table =
+  List.iter (fun line -> report "%s%s\n" prefix (String.concat sep line))
+    table
 
 (** State analysis *)
 
@@ -252,101 +302,52 @@ let starting_states, final_states, regular_states =
   List.rev !final_states,
   List.rev !regular_states
 
-let looping_valid_reductions =
-  let successors =
-    let register map lr0 =
-      let syms =
-        Array.to_list lr0.lr0_items
-        |> List.filter (fun (_,pos) -> pos = 1)
-        |> List.map (fun (p,_) -> p.p_lhs)
-        |> List.sort_uniq (fun n1 n2 -> compare n1.n_index n2.n_index)
-      in
-      StateMap.add lr0 syms map
+let () =
+  (* Compute minimal cost per predecessor *)
+  let transition_cost predecessor successor =
+    let costs = Array.map (cost_of_item ~predecessor) successor.lr0_items in
+    Array.fold_left min infinity costs
+  in
+  let minimize_firsts predecessor successor minimized =
+    let transition_cost n =
+      try
+        transition_cost predecessor (SymbolMap.find (N n)
+                                       (lr0_successors predecessor))
+      with Not_found ->
+        report "PREDECESSOR:\n";
+        report_table (items_table (Array.to_list predecessor.lr0_items));
+        report "STATE:\n";
+        report_table (items_table (Array.to_list successor.lr0_items));
+        report "SYMBOL: %S\n" n.n_name;
+        raise Not_found
     in
-    let map = List.fold_left register StateMap.empty regular_states in
-    fun state -> StateMap.find state map
-  in
-  let find_cost map dst =
-    try StateMap.find dst map
-    with Not_found -> 0
-  in
-  let resolve predecessor cost0 =
-    let transitions = lr0_successors predecessor in
-    let transition n = SymbolMap.find (N n) transitions in
-    (* First minimize costs *)
-    let costs =
-      let minimize map state cost =
-        if cost <> max_int then cost
+    let minimize_item minimized (prod,p) =
+      if p = 1 then
+        let cost = cost_of_first_items predecessor prod in
+        let cost' = transition_cost prod.p_lhs in
+        if cost' < !cost then
+          (cost := cost'; true)
         else
-          let cost =
-            state
-            |> successors
-            |> List.map (fun nt -> find_cost map (transition nt))
-            |> List.fold_left min max_int
-          in
-          if cost <> max_int
-          then cost + 1
-          else max_int
-      in
-      let rec fix map =
-        match StateMap.mapi (minimize map) map with
-        | map' when StateMap.equal ((=) : int -> int -> bool) map map' ->
-          map' (* fixpoint reached *)
-        | map' -> fix map'
-      in
-      fix cost0
+          minimized
+      else minimized
     in
-    (* Then reconstruct paths minimizing costs *)
-    let paths =
-      let transitions = lr0_successors predecessor in
-      let transition n = SymbolMap.find (N n) transitions in
-      let construct_path state cost =
-        assert (cost > 0);
-        let result =
-          List.filter (fun sym -> find_cost costs (transition sym) = cost - 1)
-            (successors state)
-        in
-        assert (result <> [] || cost = max_int);
-        cost, result
-      in
-      StateMap.mapi construct_path costs
-    in
-    paths
+    Array.fold_left minimize_item minimized successor.lr0_items
   in
-  let cost0 =
-    let map_update map src dst cost =
-      let cell =
-        try StateMap.add dst cost (StateMap.find src map)
-        with Not_found -> StateMap.singleton dst cost
-      in
-      StateMap.add src cell map
-    in
-    let register dst map src =
-      map_update map src dst max_int
-    in
-    let register_src map dst =
-      List.fold_left (register dst) map (lr0_predecessors dst)
-    in
-    List.fold_left register_src StateMap.empty regular_states
+  let minimize minimized predecessor =
+    if predecessor.lr0_incoming = None then
+      minimized
+    else
+      SymbolMap.fold
+        (fun _ successor minimized ->
+           minimize_firsts predecessor successor minimized)
+        (lr0_successors predecessor) minimized
   in
-  let paths = StateMap.mapi resolve cost0 in
-
-  (* Update first costs approximation *)
-  begin
-    StateMap.iter @@ fun predecessor ->
-    StateMap.iter @@ fun state (cost, nts) ->
-    Array.iter begin fun (prod,p) ->
-      if p = 1 && List.mem prod.p_lhs nts then
-        cost_of_first_item.(prod.p_index) <-
-          min (float cost) cost_of_first_item.(prod.p_index)
-    end state.lr0_items
-  end paths;
-
-  fun ~predecessor lr0 ->
-    try StateMap.find lr0 (StateMap.find predecessor paths)
-    with Not_found ->
-      (* Should be queried only for valid (predecessor / looping pairs) *)
-      assert false
+  let rec fix () =
+    if Array.fold_left minimize false g.g_lr0_states then
+      fix ()
+  in
+  fix ();
+  minimize_cost_of_first_item ()
 
 let regular_states =
   let annot_list f l = List.map (fun x -> f x, x) l in
@@ -356,37 +357,6 @@ let regular_states =
   annot_list cost_of_lr0 regular_states
 
 (** Reporting *)
-
-let items_table items =
-  let last_lhs = ref (-1) in
-  let prepare (p,pos) =
-    let rhs = Array.map (fun (sym, id, _) ->
-        if id <> "" && id.[0] <> '_' then
-          "(" ^ id ^ " = " ^ name_of_symbol sym ^ ")"
-        else name_of_symbol sym)
-        p.p_rhs
-    and costs = Array.map string_of_float (cost_of_rhs p) in
-    if pos >= 0 && pos < Array.length rhs then
-      rhs.(pos) <- ". " ^ rhs.(pos)
-    else if pos = Array.length rhs then
-      rhs.(pos - 1) <- rhs.(pos - 1) ^ " .";
-    let rhs = Array.to_list rhs and costs = Array.to_list costs in
-    let rhs =
-      if !last_lhs = p.p_lhs.n_index then
-        "" :: "  |" :: rhs
-      else
-        (last_lhs := p.p_lhs.n_index;
-         p.p_lhs.n_name :: "::=" :: rhs)
-    and costs =
-      "" :: "" :: costs
-    in
-    [rhs; costs]
-  in
-  align_tabular (List.concat (List.map prepare items))
-
-let report_table ?(prefix="") ?(sep=" ") table =
-  List.iter (fun line -> report "%s%s\n" prefix (String.concat sep line))
-    table
 
 let report_productions () =
   report "# Summary of production recovery cost\n\n";
@@ -460,38 +430,6 @@ let report_states () =
       List.iter report_state regular_states
     end
 
-let report_loop_analysis () =
-  report "# Analysing looping states\n\n";
-  let report_loop (_cost,lr0) =
-    let syms =
-      lr0.lr0_items
-      |> Array.to_list
-      |> List.filter (fun (_,pos) -> pos = 1)
-      |> List.map (fun (prod,_) -> prod.p_lhs)
-    in
-    if syms <> [] then begin
-      report "## loops at #%d\n\n" lr0.lr0_index;
-      report "Coming from %s.\n"
-        (match lr0.lr0_incoming with
-         | None -> assert false
-         | Some s -> name_of_symbol s);
-      report "Possible reductions to: %s\n"
-        (String.concat ", " (List.map (fun n -> n.n_name) syms));
-      report "Predecessors:\n";
-      let predecessors = lr0_predecessors lr0 in
-      List.iter (fun parent ->
-          report "- %d -> %d\n"
-            parent.lr0_index lr0.lr0_index;
-          match looping_valid_reductions ~predecessor:parent lr0 with
-          | _, []  -> report "  WRONG: no terminating reduction sequence, empty language?!"
-          | _, seq -> report "  valid reductions: %s\n"
-                        (String.concat ", " (List.map (fun n -> n.n_name) seq))
-        ) predecessors;
-      report "\n"
-    end
-  in
-  List.iter report_loop regular_states
-
 type reduction = (production * int)
 type decision = [
   | `Impossible
@@ -501,9 +439,9 @@ type decision = [
 ]
 
 let decision lr0 =
-  let order ?first a b =
-    compare (cost_of_item ?first a) (cost_of_item ?first b) in
-  let order_items ?first items = List.sort (order ?first) items in
+  let order ?predecessor a b =
+    compare (cost_of_item ?predecessor a) (cost_of_item ?predecessor b) in
+  let order_items ?predecessor items = List.sort (order ?predecessor) items in
   match classify_state lr0 with
   | `Regular ->
     let items = order_items (Array.to_list lr0.lr0_items) in
@@ -511,19 +449,12 @@ let decision lr0 =
     if pos <> 1 then `Reduction item else
       let selections =
         List.map (fun predecessor ->
-            let cost, possibilities = looping_valid_reductions ~predecessor lr0 in
-            let items' =
-              List.filter
-                (fun (p,pos) -> pos <> 1 || List.mem p.p_lhs possibilities)
-                items
-            in
-            let items' = order_items ~first:(float cost) items' in
-            Printf.eprintf "state:%d pred:%d possibilities:%d items:%d/%d items':%d\n"
+            let items' = order_items ~predecessor items in
+            (*Printf.eprintf "state:%d pred:%d items:%d/%d items':%d\n"
               lr0.lr0_index predecessor.lr0_index
-              (List.length possibilities)
               (List.length items)
               (Array.length lr0.lr0_items)
-              (List.length items');
+              (List.length items');*)
             let item =
               match items' with
               | [] -> `Impossible
@@ -593,8 +524,6 @@ let report () =
   report_productions ();
   report "\n";
   report_states ();
-  report "\n";
-  report_loop_analysis ();
   report "\n";
   report_final_decision ();
   report "\n"
