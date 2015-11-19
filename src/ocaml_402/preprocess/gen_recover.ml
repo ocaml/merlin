@@ -166,17 +166,21 @@ let cost_of_rhs =
   table_production measure
 
 let cost_of_first_item =
-  Array.make (Array.length g.g_productions) infinity
+  let cost p = infinity in
+  Array.map cost g.g_productions
 
 let cost_of_first_items, minimize_cost_of_first_item =
   let table = Hashtbl.create 7 in
   (fun predecessor prod ->
-    let k = (predecessor.lr0_index, prod.p_index) in
-    try Hashtbl.find table k
-    with Not_found ->
-      let r = ref infinity in
-      Hashtbl.add table k r;
-      r),
+    if predecessor.lr0_incoming = None then
+      ref 0.0
+    else
+      let k = (predecessor.lr0_index, prod.p_index) in
+      try Hashtbl.find table k
+      with Not_found ->
+        let r = ref cost_of_first_item.(prod.p_index) in
+        Hashtbl.add table k r;
+        r),
   (fun () ->
      Hashtbl.iter (fun (_,index) r ->
          cost_of_first_item.(index) <-
@@ -268,7 +272,6 @@ let lr0_successors =
     (fun lr1 -> Array.iter (core_transition lr1) lr1.lr1_transitions)
     g.g_lr1_states;
   (fun lr0 -> tbl0.(lr0.lr0_index))
-
 
 let classify_state =
   table_lr0 (fun lr0 ->
@@ -463,10 +466,7 @@ let decision lr0 =
             predecessor, item
           ) (lr0_predecessors lr0)
       in
-      if List.for_all ((=) (List.hd selections)) selections then
-        snd (List.hd selections)
-      else
-        `Look_at_predecessor selections
+      `Look_at_predecessor selections
   | `Starting | `Final -> assert false
 
 let report_final_decision () =
@@ -477,7 +477,7 @@ let report_final_decision () =
   in
   let is_wrong = function
     | _, `Impossible -> true
-    | _, `Reduction item -> cost_of_item item = infinity
+    | predecessor, `Reduction item -> cost_of_item ~predecessor item = infinity
   in
   let is_wrong = function
     | `Impossible -> true
@@ -501,7 +501,7 @@ let report_final_decision () =
       report "state %d, looking at:\n" state.lr0_index;
       List.iter (function
           | (predecessor, `Reduction item) ->
-            let cost = cost_of_item item in
+            let cost = cost_of_item ~predecessor item in
             report "- predecessor %d, at cost %.02f reduce:%s\n"
               predecessor.lr0_index cost (check_cost cost);
             report_table ~prefix:"    " (items_table [item]);
@@ -615,20 +615,23 @@ let print_decisions () =
       sprintf "Shift (%s, default_value (%s))" symbol symbol
   in
   let string_of_decision lr0 =
+    let simple_decide = function
+      | `Reduction red ->
+        Some (string_of_reduction red)
+      | `Impossible -> None
+    in
     match classify_state lr0 with
     | `Starting | `Final   -> None
     | `Regular ->
       match decision lr0 with
-      | `Impossible -> None
-      | `Reduction red -> Some (string_of_reduction red)
+      | `Impossible | `Reduction _ as x -> simple_decide x
+      | `Look_at_predecessor ((predecessor, x) :: xs)
+          when List.for_all (fun (_,x') -> x = x') xs ->
+        simple_decide x
       | `Look_at_predecessor cases ->
         let cases =
           cases |>
-          filter_map_assoc (function
-            | `Reduction red ->
-              Some (string_of_reduction red)
-            | `Impossible -> None
-          ) |>
+          filter_map_assoc simple_decide |>
           group_assoc |>
           List.map (fun (ks,v) ->
               sprintf "     | %s -> %s" (string_of_states ks) v)
