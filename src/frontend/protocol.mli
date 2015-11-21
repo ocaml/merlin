@@ -29,12 +29,6 @@
 open Std
 open Merlin_lib
 
-type position = Lexing.position
-
-type cursor_state = {
-  cursor: position;
-}
-
 module Compl : sig
   type entry = {
     name: string;
@@ -90,22 +84,22 @@ type context = [`ML | `MLI | `Auto ] * string option * string list option
 
 type _ query_command =
   | Type_expr
-    :  string * position option
+    :  string * Source.position
     -> string query_command
   | Type_enclosing
-    :  (string * int) option * position
+    :  (string * int) option * Source.position
     -> (Location.t * string * is_tail_position) list query_command
   | Enclosing
-    :  position
+    :  Source.position
     -> Location.t list query_command
   | Complete_prefix
-    :  string * position * bool
+    :  string * Source.position * bool
     -> completions query_command
   | Expand_prefix
-    :  string * position
+    :  string * Source.position
     -> completions query_command
   | Document
-    : string option * position
+    : string option * Source.position
     -> [ `Found of string
        | `Invalid_context
        | `Builtin of string
@@ -115,7 +109,7 @@ type _ query_command =
        | `No_documentation
        ] query_command
   | Locate
-    : string option * [ `ML | `MLI ] * position
+    : string option * [ `ML | `MLI ] * Source.position
     -> [ `Found of string option * Lexing.position
        | `Invalid_context
        | `Builtin of string
@@ -125,16 +119,17 @@ type _ query_command =
        | `At_origin
        ] query_command
   | Jump
-    : string * position
+    : string * Source.position
     -> [ `Found of Lexing.position
        | `Error of string
        ] query_command
   | Case_analysis
-    : Location.t -> (Location.t * string) query_command
+    : Source.position * Source.position -> (Location.t * string) query_command
   | Outline
     :  outline query_command
   | Shape
-    :  Lexing.position -> shape list query_command
+    :  Source.position
+    -> shape list query_command
   | Errors
     :  Error_report.t list query_command
   | Dump
@@ -159,7 +154,7 @@ type _ query_command =
   | Project_get
     :  (string list * [`Ok | `Failures of (string * exn) list]) query_command
   | Occurrences
-    : [`Ident_at of position]
+    : [`Ident_at of Source.position]
     -> Location.t list query_command
   | Version
     : string query_command
@@ -168,16 +163,8 @@ type _ query_command =
 
 type _ sync_command =
   | Tell
-    : [ `Start of position option
-      | `Source of string | `File of string
-      | `Source_eof of string | `File_eof of string
-      | `Eof | `Marker]
-    -> cursor_state sync_command
-  | Drop
-    :  cursor_state sync_command
-  | Seek
-    :  [`Marker|`Position|`End|`Before of position|`Exact of position]
-    -> cursor_state sync_command
+    : Source.position * Source.position * string
+    -> unit sync_command
   | Refresh
     :  unit sync_command
   | Flags_set
@@ -203,7 +190,7 @@ type _ sync_command =
         string) sync_command
   | Checkout
     : context
-    -> cursor_state sync_command
+    -> unit sync_command
 
 type 'a command =
   | Query of 'a query_command

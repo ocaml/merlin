@@ -10,8 +10,10 @@ let empty ~name = {name; text = ""}
 (* Position management *)
 
 type position = [
+  | `Start
   | `Offset of int
   | `Logical of int * int
+  | `End
 ]
 
 exception Found of int
@@ -56,6 +58,7 @@ let find_offset ({name; text} as t) line col =
     with Found off -> off
 
 let get_offset t = function
+  | `Start -> `Offset 0
   | `Offset x ->
     assert (x >= 0);
     if x <= String.length t.text then
@@ -72,6 +75,7 @@ let get_offset t = function
     `Offset (find_offset t line col)
 
 let get_logical {name; text} = function
+  | `Start -> `Logical (1, 0)
   | `Logical _ as p -> p
   | `Offset _ | `End as r ->
     let len = String.length text in

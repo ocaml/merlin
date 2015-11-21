@@ -57,6 +57,6 @@ val invalid_arguments : unit -> 'a
 val with_location : ?skip_none:bool -> Location.t -> (string * Json.json) list -> Json.json
 
 module Protocol_io : sig
-  val optional_position : Json.json list -> Std.Lexing.position option
-  val mandatory_position : Json.json list -> Std.Lexing.position
+  val optional_position : Json.json list -> Merlin_source.position option
+  val mandatory_position : Json.json list -> Merlin_source.position
 end

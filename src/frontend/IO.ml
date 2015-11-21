@@ -120,13 +120,13 @@ module Protocol_io = struct
     | None -> None
     | Some (loc,t) -> Some (loc, json_of_error t)
 
-  let make_pos (pos_lnum, pos_cnum) =
-    Lexing.({ pos_fname = "" ; pos_lnum ; pos_cnum ; pos_bol = 0 })
-
   let pos_of_json = function
+    | `String "start" -> `Start
+    | `String "end" -> `End
+    | `Int offset -> `Offset offset
     | `Assoc props ->
       begin try match List.assoc "line" props, List.assoc "col" props with
-        | `Int line, `Int col -> make_pos (line,col)
+        | `Int line, `Int col -> `Logical (line,col)
         | _ -> failwith "Incorrect position"
       with Not_found -> failwith "Incorrect position"
       end
@@ -208,9 +208,6 @@ module Protocol_io = struct
       "children", `List (List.map ~f:json_of_shape shape_sub);
     ]
 
-  let json_of_cursor_state {cursor} =
-    `Assoc [ "cursor", Lexing.json_of_position cursor ]
-
   let source_or_build = function
     | "source" -> `Source
     | "build"  -> `Build
@@ -280,30 +277,17 @@ module Protocol_io = struct
     | _ -> invalid_arguments ()
 
   let request_of_json = function
-    | (`String "tell" :: `String "start" :: opt_pos) ->
-      Request (Sync (Tell (`Start (optional_position opt_pos))))
-    | [`String "tell"; `String "source"; `String source] ->
-      Request (Sync (Tell (`Source source)))
-    | [`String "tell"; `String "source-eof"; `String source] ->
-      Request (Sync (Tell (`Source_eof source)))
-    | [`String "tell"; `String "file"; `String path] ->
-      Request (Sync (Tell (`File path)))
-    | [`String "tell"; `String "file-eof"; `String path] ->
-      Request (Sync (Tell (`File_eof path)))
-    | [`String "tell"; `String "eof"] ->
-      Request (Sync (Tell `Eof))
+    | `String "tell" :: _ ->
+      assert false (*FIXME*)
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
-      Request (Query (Type_expr (expr, optional_position opt_pos)))
+      Request (Query (Type_expr (expr, mandatory_position opt_pos)))
     | [`String "type"; `String "enclosing";
         `Assoc [ "expr", `String expr ; "offset", `Int offset] ; jpos] ->
       Request (Query (Type_enclosing (Some (expr, offset), pos_of_json jpos)))
     | [`String "type"; `String "enclosing"; `String "at"; jpos] ->
       Request (Query (Type_enclosing (None, pos_of_json jpos)))
     | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ] ->
-      let loc_start = pos_of_json x in
-      let loc_end = pos_of_json y in
-      let loc_ghost = true in
-      Request (Query (Case_analysis ({ Location. loc_start ; loc_end ; loc_ghost })))
+      Request (Query (Case_analysis (pos_of_json x, pos_of_json y)))
     | [`String "enclosing"; jpos] ->
       Request (Query (Enclosing (pos_of_json jpos)))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
@@ -327,18 +311,8 @@ module Protocol_io = struct
       Request (Query Outline)
     | [`String "shape"; pos] ->
       Request (Query (Shape (pos_of_json pos)))
-    | [`String "drop"] ->
-      Request (Sync Drop)
-    | [`String "seek"; `String "position"] ->
-      Request (Sync (Seek `Position))
     | [`String "occurrences"; `String "ident"; `String "at"; jpos] ->
       Request (Query (Occurrences (`Ident_at (pos_of_json jpos))))
-    | [`String "seek"; `String "before"; jpos] ->
-      Request (Sync (Seek (`Before (pos_of_json jpos))))
-    | [`String "seek"; `String "exact"; jpos] ->
-      Request (Sync (Seek (`Exact (pos_of_json jpos))))
-    | [`String "seek"; `String "end"] ->
-      Request (Sync (Seek `End))
     | (`String ("reset"|"checkout") :: context) ->
       Request (Sync (Checkout (context_of_json context)))
     | [`String "refresh"] ->
@@ -478,14 +452,8 @@ module Protocol_io = struct
 
   let json_of_sync_command (type a) (command : a sync_command) (response : a) : json =
     match command, response with
-    | Tell _, cursor ->
-      json_of_cursor_state cursor
-    | Seek _, cursor ->
-      json_of_cursor_state cursor
-    | Drop, cursor ->
-      json_of_cursor_state cursor
-    | Checkout _, cursor ->
-      json_of_cursor_state cursor
+    | Tell _, () -> `Bool true
+    | Checkout _, () -> `Bool true
     | Refresh, () -> `Bool true
     | Flags_set _, failures ->
       `Assoc (with_failures ["result", `Bool true] failures)

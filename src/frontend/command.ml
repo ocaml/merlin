@@ -88,9 +88,6 @@ let with_typer buffer f =
   let typer = Buffer.typer buffer in
   Typer.with_typer typer (fun () -> f typer)
 
-let cursor_state state =
-  { cursor = Source.get_lexing_pos (Buffer.source state.buffer) `End }
-
 let user_failures project =
   match Project.get_user_config_failures project with
   | [] -> `Ok
@@ -249,10 +246,8 @@ let dump buffer = function
 let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Type_expr (source, pos) ->
     with_typer buffer @@ fun typer ->
-    let env = match pos with
-      | None -> Typer.env typer
-      | Some pos -> fst (Browse.leaf_node (Typer.node_at typer pos))
-    in
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
+    let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let ppf, to_string = Format.to_string () in
     ignore (Type_utils.type_in_env ~verbosity env ppf source : bool);
     to_string ()
@@ -262,6 +257,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let open Typedtree in
     let open Override in
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let structures = Typer.to_browse (Typer.result typer) in
     let env, path = match Browse.enclosing pos [structures] with
       | None -> Typer.env typer, []
@@ -400,6 +396,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Enclosing pos ->
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let structures = Typer.to_browse (Typer.result typer) in
     let path = match Browse.enclosing pos [structures] with
       | None -> []
@@ -408,6 +405,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     List.map ~f:Browse.node_loc path
 
   | Complete_prefix (prefix, pos, with_doc) ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let complete ~no_labels typer =
       let path = Typer.node_at ~skip_recovered:true typer pos in
       let env, node = Browse.leaf_node path in
@@ -483,6 +481,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Expand_prefix (prefix, pos) ->
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let global_modules = Buffer.global_modules buffer in
     let entries = Completion.expand_prefix env ~global_modules prefix in
@@ -490,6 +489,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Document (patho, pos) ->
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let comments = Lexer.comments (Buffer.lexer buffer) in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let local_defs = Typer.result typer in
@@ -515,6 +515,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Locate (patho, ml_or_mli, pos) ->
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let local_defs = Typer.result typer in
     let path =
@@ -545,11 +546,15 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Jump (target, pos) ->
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let typed_tree = Typer.result typer in
     Jump.get typed_tree pos target
 
-  | Case_analysis ({ Location. loc_start ; loc_end } as loc) ->
+  | Case_analysis (pos_start, pos_end) ->
     with_typer buffer @@ fun typer ->
+    let loc_start = Source.get_lexing_pos (Buffer.source buffer) pos_start in
+    let loc_end   = Source.get_lexing_pos (Buffer.source buffer) pos_end in
+    let loc = {Location. loc_start; loc_end; loc_ghost = false} in
     let env = Typer.env typer in
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
     let structures = Typer.to_browse (Typer.result typer) in
@@ -570,10 +575,11 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let browse = Typer.to_browse (Typer.result typer) in
     Outline.get [BrowseT.of_browse browse]
 
-  | Shape cursor ->
+  | Shape pos ->
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let browse = Typer.to_browse (Typer.result typer) in
-    Outline.shape cursor [BrowseT.of_browse browse]
+    Outline.shape pos [BrowseT.of_browse browse]
 
   | Errors ->
     begin
@@ -683,6 +689,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Occurrences (`Ident_at pos) ->
     with_typer buffer @@ fun typer ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let str = Typer.to_browse (Typer.result typer) in
     let tnode = match Browse.enclosing pos [str] with
       | Some t -> BrowseT.of_browse t
@@ -775,8 +782,6 @@ let dispatch_sync state (type a) : a sync_command -> a = function
     end *)
 
   | Tell _ -> assert false
-  | Drop   -> assert false
-  | Seek _ -> assert false
 
   | Refresh ->
     checkout_buffer_cache := [];
@@ -840,8 +845,7 @@ let dispatch state (type a) (cmd : a command) =
   | Query q -> dispatch_query ~verbosity state.buffer q
   | Sync (Checkout context) ->
     let buffer = checkout_buffer context in
-    state.buffer <- buffer;
-    cursor_state state
+    state.buffer <- buffer
   | Sync s -> dispatch_sync state s
 
 let contexts : (Parser.kind * string option * string list option,
