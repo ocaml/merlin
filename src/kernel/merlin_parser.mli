@@ -28,13 +28,21 @@
 
 open Std
 
-module Values : module type of Raw_parser_values
+type kind =
+  | ML
+  | MLI
+  (*| MLL | MLY*)
 
 type t
 
-(** Initialization *)
+val make : Merlin_lexer.t -> kind -> t
+val update : Merlin_lexer.t -> t -> t
 
-type state = Raw_parser.state
+type tree = [
+  | `Signature of Parsetree.signature
+  | `Structure of Parsetree.structure
+]
 
-val implementation : state
-val interface : state
+val result : t -> tree
+
+val errors : t -> (exn * Location.t) list

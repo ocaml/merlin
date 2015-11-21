@@ -151,21 +151,18 @@ SOURCES = \
 	$(TYPER)/raw_parser.ml            \
 	$(TYPER)/raw_parser_values.mli    \
 	$(TYPER)/raw_parser_values.ml     \
-	src/kernel/merlin_recovery_strategy.ml \
-	src/kernel/merlin_parser.mli      \
-	src/kernel/merlin_parser.ml       \
-	src/kernel/merlin_recovery_explain.ml \
-	src/kernel/error_classifier.ml    \
 	src/kernel/raw_lexer.mli          \
 	src/kernel/raw_lexer.ml           \
 	src/kernel/extension.mli          \
 	src/kernel/extension.ml           \
 	src/utils/history.mli             \
 	src/utils/history.ml              \
+	src/kernel/merlin_source.ml       \
+	src/kernel/merlin_source.mli      \
 	src/kernel/merlin_lexer.mli       \
 	src/kernel/merlin_lexer.ml        \
-	src/kernel/merlin_recover.mli     \
-	src/kernel/merlin_recover.ml      \
+	src/kernel/merlin_parser.mli      \
+	src/kernel/merlin_parser.ml       \
 	$(TYPER)/utils/pparse.mli         \
 	$(TYPER)/utils/pparse.ml          \
 	$(TYPER)/raw_typer.mli            \

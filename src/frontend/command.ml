@@ -34,7 +34,6 @@ open Merlin_lib
 
 type state = {
   mutable buffer : Buffer.t;
-  mutable lexer : Lexer.t option;
 
   mutable verbosity_last : Obj.t option;
   mutable verbosity : int;
@@ -42,19 +41,15 @@ type state = {
 
 let normalize_context (ft,path,dot_merlins : Protocol.context) =
   let ft = match ft, path with
-    | (`ML | `MLI as ft), _  -> ft
-    | `Auto, Some path when Filename.check_suffix path ".mli" -> `MLI
-    | `Auto, _ -> `ML
+    | `ML   , _  -> Parser.ML
+    | `MLI  , _  -> Parser.MLI
+    | `Auto , Some path when Filename.check_suffix path ".mli" -> Parser.MLI
+    | `Auto , _ -> Parser.ML
   in
   ft, path, dot_merlins
 
-let new_buffer context =
-  let ft, path, dot_merlins = normalize_context context in
-  let parser = match ft with
-    | `ML -> Raw_parser.implementation_state
-    | `MLI ->  Raw_parser.interface_state
-  in
-  let buffer = Buffer.create ?dot_merlins ?path parser in
+let new_buffer (ft, path, dot_merlins) =
+  let buffer = Buffer.create ?dot_merlins ?path ft in
   begin match path with
     | Some path when Filename.check_suffix path "myocamlbuild.ml" ->
       let project = Buffer.project buffer in
@@ -68,10 +63,10 @@ let new_buffer context =
 
 let new_state ?context () =
   let buffer = match context with
-    | None -> Buffer.create Parser.implementation
+    | None -> Buffer.create Parser.ML
     | Some context -> new_buffer context
   in
-  {buffer; lexer = None; verbosity_last = None; verbosity = 0}
+  {buffer; verbosity_last = None; verbosity = 0}
 
 let checkout_buffer_cache = ref []
 let checkout_buffer =
@@ -94,16 +89,7 @@ let with_typer buffer f =
   Typer.with_typer typer (fun () -> f typer)
 
 let cursor_state state =
-  let cursor, marker =
-    match state.lexer with
-    | None ->
-      Lexer.item_end (snd (History.focused (Buffer.lexer state.buffer))),
-      false
-    | Some lexer ->
-      Lexer.position lexer,
-      Buffer.has_mark state.buffer (Lexer.get_mark lexer)
-  in
-  { cursor; marker }
+  { cursor = Source.get_lexing_pos (Buffer.source state.buffer) `End }
 
 let user_failures project =
   match Project.get_user_config_failures project with
@@ -135,48 +121,16 @@ let track_verbosity (type a) state (command : a command) =
     0
 
 let buffer_update state items =
-  if Buffer.update state.buffer items = `Updated then
-    state.verbosity_last <- None
+  Buffer.update state.buffer items;
+  state.verbosity_last <- None
 
 let buffer_freeze state items =
-  buffer_update state items;
-  state.lexer <- None
-
-let normalize_parser_around state pos =
-  (* true while i is before pos *)
-  let until_after pos (i,_) =
-    Lexing.compare_pos (Lexer.item_start i) pos < 0 in
-  (* true while i is after pos *)
-  let until_before pos (i,_) =
-    Lexing.compare_pos (Lexer.item_end i) pos > 0 in
-  let seek_item recoveries =
-    let item, _ = History.focused recoveries in
-    fun (_,i) -> i != item
-  in
-  let recoveries = Buffer.recover_history state.buffer in
-  let items = Buffer.lexer state.buffer in
-  let recoveries = History.seek_backward (until_before pos) recoveries in
-  let items = History.seek_backward (seek_item recoveries) items in
-  let recoveries = History.seek_forward (until_after pos) recoveries in
-  let items = History.seek_forward (seek_item recoveries) items in
-  match Parser.find_marker (Recover.parser (snd (History.focused recoveries))) with
-  | None -> ()
-  | Some mark ->
-    let diff = ref None in
-    let check_item (_,recovery) =
-      let parser = Recover.parser recovery in
-      let result = Parser.has_marker ?diff:!diff parser mark in
-      diff := Some (parser,result);
-      result
-    in
-    let recoveries = History.seek_forward check_item recoveries in
-    let items = History.seek_forward (seek_item recoveries) items in
-    buffer_freeze state items
+  buffer_update state items
 
 module Printtyp = Type_utils.Printtyp
 
 let dump buffer = function
-  | [`String "parsetree"] ->
+  (*| [`String "parsetree"] ->
     with_typer buffer @@ fun typer ->
     let ppf, to_string = Format.to_string () in
     List.iter (List.rev (Typer.contents typer))
@@ -283,6 +237,8 @@ let dump buffer = function
       @ Buffer.parser_errors buffer
     in
     `List (List.map ~f:(fun x -> `String (Printexc.to_string x)) exns)
+    FIXME
+    *)
 
   | [`String "paths"] ->
     let paths = Project.build_path (Buffer.project buffer) in
@@ -306,8 +262,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let open Typedtree in
     let open Override in
     with_typer buffer @@ fun typer ->
-    let structures = Typer.to_browse (Typer.contents typer) in
-    let env, path = match Browse.enclosing pos structures with
+    let structures = Typer.to_browse (Typer.result typer) in
+    let env, path = match Browse.enclosing pos [structures] with
       | None -> Typer.env typer, []
       | Some browse ->
          fst (Browse.leaf_node browse),
@@ -350,7 +306,9 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let exprs =
       match expro with
       | None ->
-        let lexer = Buffer.lexer buffer in
+        assert false
+        (* FIXME
+           let lexer = Buffer.lexer buffer in
         let lexer =
           History.seek_backward
             (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) < 0)
@@ -367,7 +325,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
             Location.mkloc txt loc
           in
           [ List.fold_left tail ~init:base ~f ]
-        end
+        end*)
       | Some (expr, offset) ->
         let loc_start =
           let l, c = Lexing.split_pos pos in
@@ -442,8 +400,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Enclosing pos ->
     with_typer buffer @@ fun typer ->
-    let structures = Typer.to_browse (Typer.contents typer) in
-    let path = match Browse.enclosing pos structures with
+    let structures = Typer.to_browse (Typer.result typer) in
+    let path = match Browse.enclosing pos [structures] with
       | None -> []
       | Some path -> node_list path
     in
@@ -458,9 +416,9 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       let get_doc =
         if not with_doc then None else
         let project    = Buffer.project buffer in
-        let comments   = Buffer.comments buffer in
+        let comments   = Lexer.comments (Buffer.lexer buffer) in
         let source     = Buffer.unit_name buffer in
-        let local_defs = Typer.contents typer in
+        let local_defs = Typer.result typer in
         Some (
           Track_definition.get_doc ~project ~env ~local_defs
             ~comments ~pos source
@@ -476,7 +434,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       {Compl. entries = List.rev entries; context }
     in
     let lexer0 = Buffer.lexer buffer in
-    let lexer =
+    (*let lexer =
       History.seek_backward
         (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) <= 0)
         lexer0
@@ -520,6 +478,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         (* Restore original buffer *)
         (fun () -> ignore (Buffer.update buffer lexer0 : [> ]))
     end
+      *)
+    with_typer buffer (complete ~no_labels:true)
 
   | Expand_prefix (prefix, pos) ->
     with_typer buffer @@ fun typer ->
@@ -530,14 +490,14 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Document (patho, pos) ->
     with_typer buffer @@ fun typer ->
-    let comments = Buffer.comments buffer in
+    let comments = Lexer.comments (Buffer.lexer buffer) in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
-    let local_defs = Typer.contents typer in
+    let local_defs = Typer.result typer in
     let path =
       match patho with
       | Some p -> p
-      | None ->
-        let lexer = Buffer.lexer buffer in
+      | None -> assert false
+        (*let lexer = Buffer.lexer buffer in
         let lexer =
           History.seek_backward (fun (_,item) ->
             Lexing.compare_pos pos (Lexer.item_start item) < 0) lexer
@@ -545,7 +505,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         let path = Lexer.reconstruct_identifier ~for_locate:true lexer in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
-        String.concat ~sep:"." path
+        String.concat ~sep:"." path*)
     in
     if path = "" then `Invalid_context else
     let source  = Buffer.unit_name buffer in
@@ -556,12 +516,12 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Locate (patho, ml_or_mli, pos) ->
     with_typer buffer @@ fun typer ->
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
-    let local_defs = Typer.contents typer in
+    let local_defs = Typer.result typer in
     let path =
       match patho with
       | Some p -> p
-      | None ->
-        let lexer = Buffer.lexer buffer in
+      | None -> assert false
+        (*let lexer = Buffer.lexer buffer in
         let lexer =
           History.seek_backward (fun (_,item) ->
             Lexing.compare_pos pos (Lexer.item_start item) < 0) lexer
@@ -569,7 +529,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         let path = Lexer.reconstruct_identifier ~for_locate:true lexer in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
-        String.concat ~sep:"." path
+        String.concat ~sep:"." path*)
     in
     if path = "" then `Invalid_context else
     let project = Buffer.project buffer in
@@ -585,15 +545,15 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Jump (target, pos) ->
     with_typer buffer @@ fun typer ->
-    let typed_tree = Typer.contents typer in
+    let typed_tree = Typer.result typer in
     Jump.get typed_tree pos target
 
   | Case_analysis ({ Location. loc_start ; loc_end } as loc) ->
     with_typer buffer @@ fun typer ->
     let env = Typer.env typer in
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-    let structures = Typer.to_browse (Typer.contents typer) in
-    let enclosings = match Browse.enclosing loc_start structures with
+    let structures = Typer.to_browse (Typer.result typer) in
+    let enclosings = match Browse.enclosing loc_start [structures] with
       | None -> []
       | Some path -> node_list path
     in
@@ -607,13 +567,13 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Outline ->
     with_typer buffer @@ fun typer ->
-    let browse = Typer.to_browse (Typer.contents typer) in
-    Outline.get (List.map BrowseT.of_browse browse)
+    let browse = Typer.to_browse (Typer.result typer) in
+    Outline.get [BrowseT.of_browse browse]
 
   | Shape cursor ->
     with_typer buffer @@ fun typer ->
-    let browse = Typer.to_browse (Typer.contents typer) in
-    Outline.shape cursor (List.map BrowseT.of_browse browse)
+    let browse = Typer.to_browse (Typer.result typer) in
+    Outline.shape cursor [BrowseT.of_browse browse]
 
   | Errors ->
     begin
@@ -629,12 +589,12 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
           ) @@
           List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns)
         in
-        let err_lexer  = err (Buffer.lexer_errors buffer) in
-        let err_parser = err (Buffer.parser_errors buffer) in
+        let err_lexer  = [] in (*FIXME err @@ Lexer.errors  @@ Buffer.lexer buffer in*)
+        let err_parser = [] in (*FIXME err @@ Parser.errors @@ Buffer.parser buffer in*)
         let err_typer  =
           (* When there is a cmi error, we will have a lot of meaningless errors,
            * there is no need to report them. *)
-          let exns = Typer.exns typer @ Typer.delayed_checks typer in
+          let exns = Typer.errors typer @ Typer.checks typer in
           let exns =
             let cmi_error = function Cmi_format.Error _ -> true | _ -> false in
             try [ List.find exns ~f:cmi_error ]
@@ -723,12 +683,12 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Occurrences (`Ident_at pos) ->
     with_typer buffer @@ fun typer ->
-    let str = Typer.to_browse (Typer.contents typer) in
-    let tnode = match Browse.enclosing pos str with
+    let str = Typer.to_browse (Typer.result typer) in
+    let tnode = match Browse.enclosing pos [str] with
       | Some t -> BrowseT.of_browse t
       | None -> BrowseT.dummy
     in
-    let str = List.map ~f:BrowseT.of_browse str in
+    let str = BrowseT.of_browse str in
     let get_loc {Location.txt = _; loc} = loc in
     let ident_occurrence () =
       let paths = Browse_node.node_paths tnode.BrowseT.t_node in
@@ -749,13 +709,12 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       | [] -> []
       | (path :: _) ->
         let path = path.Location.txt in
-        let ts = List.concat_map ~f:(BrowseT.all_occurrences path) str in
+        let ts = BrowseT.all_occurrences path str in
         let loc (_t,paths) = List.map ~f:get_loc paths in
         List.concat_map ~f:loc ts
 
     and constructor_occurrence d =
-      let ts = List.concat_map str
-          ~f:(BrowseT.all_constructor_occurrences (tnode,d)) in
+      let ts = BrowseT.all_constructor_occurrences (tnode,d) str in
       List.map ~f:get_loc ts
 
     in
@@ -773,26 +732,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Idle_job ->
     Buffer.idle_job buffer
 
-let dispatch_query ~verbosity state (type a) (command : a query_command) =
-  let pos = match command with
-    | Type_expr (_, Some pos) -> Some pos
-    | Type_enclosing (_, pos) -> Some pos
-    | Enclosing pos           -> Some pos
-    | Complete_prefix (_, pos, _) -> Some pos
-    | Expand_prefix (_, pos)  -> Some pos
-    | Document (_, pos)       -> Some pos
-    | Locate (_, _, pos)      -> Some pos
-    | Case_analysis loc       -> Some loc.Location.loc_start
-    | Occurrences (`Ident_at pos) -> Some pos
-    | Errors                  -> Some (Lexing.make_pos (max_int, max_int))
-    | _ -> None
-  in
-  Option.iter pos ~f:(normalize_parser_around state);
-  dispatch_query ~verbosity state.buffer command
-
-
 let dispatch_sync state (type a) : a sync_command -> a = function
-  | Tell (`Start pos) ->
+  (*| Tell (`Start pos) ->
     let lexer = Buffer.start_lexing ?pos state.buffer in
     state.lexer <- Some lexer;
     buffer_update state (Lexer.history lexer);
@@ -831,82 +772,11 @@ let dispatch_sync state (type a) : a sync_command -> a = function
         (* Stop lexer on EOF *)
         if Lexer.eof lexer then state.lexer <- None;
         cursor_state state
-    end
+    end *)
 
-  | Tell `Marker ->
-    let lexer = match state.lexer with
-      | Some lexer ->
-        assert (not (Lexer.eof lexer));
-        lexer
-      | None ->
-        let lexer = Buffer.start_lexing state.buffer in
-        state.lexer <- Some lexer; lexer
-    in
-    Lexer.put_mark lexer (Buffer.get_mark state.buffer);
-    cursor_state state
-
-  | Drop ->
-    let lexer = Buffer.lexer state.buffer in
-    buffer_freeze state (History.drop_tail lexer);
-    cursor_state state
-
-  | Seek `Position ->
-    cursor_state state
-
-  | Seek (`Before pos) ->
-    let items = Buffer.lexer state.buffer in
-    (* true while i is before pos *)
-    let until_after pos (_,i) =
-      Lexing.compare_pos (Lexer.item_start i) pos < 0 in
-    (* true while i is after pos *)
-    let until_before pos (_,i) =
-      Lexing.compare_pos (Lexer.item_start i) pos >= 0 in
-    let items = History.seek_forward (until_after pos) items in
-    let items = History.seek_backward (until_before pos) items in
-    buffer_freeze state items;
-    cursor_state state
-
-  | Seek (`Exact pos) ->
-    let items = Buffer.lexer state.buffer in
-    (* true while i is before pos *)
-    let until_after pos (_,i) =
-      Lexing.compare_pos (Lexer.item_start i) pos < 0 in
-    (* true while i is after pos *)
-    let until_before pos (_,i) =
-      Lexing.compare_pos (Lexer.item_end i) pos > 0 in
-    let items = History.seek_forward (until_after pos) items in
-    let items = History.seek_backward (until_before pos) items in
-    buffer_freeze state items;
-    cursor_state state
-
-  | Seek `End ->
-    let items = Buffer.lexer state.buffer in
-    let items = History.seek_forward (fun _ -> true) items in
-    buffer_freeze state items;
-    cursor_state state
-
-  | Seek `Marker ->
-    begin match Option.bind state.lexer ~f:Lexer.get_mark with
-    | None -> ()
-    | Some mark ->
-      let recoveries = Buffer.recover_history state.buffer in
-      let diff = ref None in
-      let check_item (lex_item,recovery) =
-        let parser = Recover.parser recovery in
-        let result = Parser.has_marker ?diff:!diff parser mark in
-        diff := Some (parser,result);
-        not result
-      in
-      if check_item (History.focused recoveries) then
-        let recoveries = History.move (-1) recoveries in
-        let recoveries = History.seek_backward check_item recoveries in
-        let recoveries = History.move 1 recoveries in
-        let item, _ = History.focused recoveries in
-        let items = Buffer.lexer state.buffer in
-        let items = History.seek_backward (fun (_,i) -> i != item) items in
-        buffer_freeze state items;
-    end;
-    cursor_state state
+  | Tell _ -> assert false
+  | Drop   -> assert false
+  | Seek _ -> assert false
 
   | Refresh ->
     checkout_buffer_cache := [];
@@ -967,15 +837,15 @@ let dispatch_sync state (type a) : a sync_command -> a = function
 let dispatch state (type a) (cmd : a command) =
   let verbosity = track_verbosity state cmd in
   match cmd with
-  | Query q -> dispatch_query ~verbosity state q
+  | Query q -> dispatch_query ~verbosity state.buffer q
   | Sync (Checkout context) ->
     let buffer = checkout_buffer context in
-    state.lexer <- None;
     state.buffer <- buffer;
     cursor_state state
   | Sync s -> dispatch_sync state s
 
-let contexts : (Protocol.context, state) Hashtbl.t = Hashtbl.create 7
+let contexts : (Parser.kind * string option * string list option,
+                state) Hashtbl.t = Hashtbl.create 7
 
 let context_dispatch context cmd =
   let context = normalize_context context in
@@ -988,5 +858,7 @@ let context_dispatch context cmd =
   in
   let verbosity = track_verbosity state cmd in
   match cmd with
-  | Query q -> dispatch_query ~verbosity state q
+  | Query q -> dispatch_query ~verbosity state.buffer q
   | Sync s -> dispatch_sync state s
+
+let new_state () = new_state ()

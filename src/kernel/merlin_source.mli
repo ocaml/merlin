@@ -11,8 +11,9 @@ type position = [
   | `Logical of int * int
 ]
 
-val get_offset       : t -> [< position | `End] -> [> `Offset of int]
-val get_logical      : t -> [< position | `End] -> [> `Logical of int * int]
+val get_offset     : t -> [< position | `End] -> [> `Offset of int]
+val get_logical    : t -> [< position | `End] -> [> `Logical of int * int]
+val get_lexing_pos : t -> [< position | `End] -> Lexing.position
 
 (* Accessing content *)
 

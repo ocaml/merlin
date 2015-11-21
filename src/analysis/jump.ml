@@ -131,7 +131,7 @@ let rec skip_non_moving pos = function
 let get typed_tree pos target =
   let roots = Merlin_typer.to_browse typed_tree in
   let enclosings =
-    match Merlin_browse.enclosing pos roots with
+    match Merlin_browse.enclosing pos [roots] with
     | None -> []
     | Some l -> List.map ~f:snd (List.Non_empty.to_list l)
   in

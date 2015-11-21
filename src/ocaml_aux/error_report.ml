@@ -52,10 +52,10 @@ let strict_of_exn exn =
     | Findlib.No_such_package (pkg,msg) ->
       Some (format ~valid:true ~where:"env"
               (Printf.sprintf "Package not found %S (%s)" pkg msg))
-    | Error_classifier.Error c ->
-      let loc = Error_classifier.loc c in
-      let msg = Error_classifier.classify c in
-      Some (format ~valid:true ~where:"parser" ~loc msg)
+    (*| Error_classifier.Error c -> *)
+    (*  let loc = Error_classifier.loc c in *)
+    (*  let msg = Error_classifier.classify c in *)
+    (*  Some (format ~valid:true ~where:"parser" ~loc msg) *)
     | Env.Error error ->
        let ppf, to_string = Format.to_string () in
        Env.report_error ppf error;

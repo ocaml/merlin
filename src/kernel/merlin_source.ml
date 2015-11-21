@@ -96,6 +96,16 @@ let get_logical {name; text} = function
     done;
     `Logical (!line, offset - !cnum)
 
+let get_lexing_pos t pos =
+  let `Offset o = get_offset t pos in
+  let `Logical (line, col) = get_logical t pos in
+  { Lexing.
+    pos_fname = t.name;
+    pos_lnum = line;
+    pos_bol  = o - col;
+    pos_cnum = o;
+  }
+
 (* Accessing content *)
 
 let name t = t.name

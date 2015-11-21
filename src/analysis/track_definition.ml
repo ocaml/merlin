@@ -695,10 +695,10 @@ let inspect_context browse path pos =
 
 let from_string ~project ~env ~local_defs ~pos switch path =
   let browse = Merlin_typer.to_browse local_defs in
-  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true @@
-                          List.map browse ~f:BrowseT.of_browse) in
+  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
+                          [BrowseT.of_browse browse]) in
   let lid = Longident.parse path in
-  match inspect_context browse path pos with
+  match inspect_context [browse] path pos with
   | None ->
     Logger.log "track_definition" "from_string"
       "already at origin, doing nothing" ;
@@ -733,8 +733,8 @@ let from_string ~project ~env ~local_defs ~pos switch path =
 
 let get_doc ~project ~env ~local_defs ~comments ~pos source =
   let browse = Merlin_typer.to_browse local_defs in
-  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true @@
-                          List.map browse ~f:BrowseT.of_browse) in
+  let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
+                          [BrowseT.of_browse browse]) in
   fun path ->
   Fluid.let' sources_path (Project.source_path project) @@ fun () ->
   Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
@@ -745,7 +745,7 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
     | `Completion_entry entry -> from_completion_entry ~pos ~lazy_trie entry
     | `User_input path ->
       let lid    = Longident.parse path in
-      begin match inspect_context browse path pos with
+      begin match inspect_context [browse] path pos with
       | None ->
         `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
       | Some ctxt ->

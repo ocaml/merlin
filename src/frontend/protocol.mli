@@ -33,7 +33,6 @@ type position = Lexing.position
 
 type cursor_state = {
   cursor: position;
-  marker: bool;
 }
 
 module Compl : sig

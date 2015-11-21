@@ -28,30 +28,16 @@
 
 type t
 
-val create: ?dot_merlins:string list -> ?path:string -> Merlin_parser.state -> t
-
+val create: ?dot_merlins:string list -> ?path:string -> Merlin_parser.kind -> t
 val unit_name : t -> string
-val project: t -> Merlin_project.t
+val project : t -> Merlin_project.t
 
-val lexer: t -> (exn list * Merlin_lexer.item) History.t
-val update: t -> (exn list * Merlin_lexer.item) History.t -> [`Nothing_done | `Updated]
-val start_lexing: ?pos:Lexing.position -> t -> Merlin_lexer.t
-val lexer_errors: t -> exn list
+val update  : t -> Merlin_source.t -> unit
+val source  : t -> Merlin_source.t
 
-val comments: t -> (string * Location.t) list
-
-val parser: t -> Merlin_parser.t
-val parser_errors: t -> exn list
-
-val recover: t -> Merlin_recover.t
-val recover_history : t -> (Merlin_lexer.item * Merlin_recover.t) History.t
-
-val typer: t -> Merlin_typer.t
-
-val get_mark: t -> Merlin_parser.frame option
-val has_mark: t -> Merlin_parser.frame option -> bool
-
-val is_implementation : t -> bool
+val lexer   : t -> Merlin_lexer.t
+val parser  : t -> Merlin_parser.t
+val typer   : t -> Merlin_typer.t
 
 (* All top modules of current project, with current module removed *)
 val global_modules: t -> string list

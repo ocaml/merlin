@@ -208,11 +208,8 @@ module Protocol_io = struct
       "children", `List (List.map ~f:json_of_shape shape_sub);
     ]
 
-  let json_of_cursor_state {cursor; marker} =
-    `Assoc [
-      "cursor", Lexing.json_of_position cursor;
-      "marker", `Bool marker;
-    ]
+  let json_of_cursor_state {cursor} =
+    `Assoc [ "cursor", Lexing.json_of_position cursor ]
 
   let source_or_build = function
     | "source" -> `Source
@@ -295,8 +292,6 @@ module Protocol_io = struct
       Request (Sync (Tell (`File_eof path)))
     | [`String "tell"; `String "eof"] ->
       Request (Sync (Tell `Eof))
-    | [`String "tell"; `String "marker"] ->
-      Request (Sync (Tell `Marker))
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
       Request (Query (Type_expr (expr, optional_position opt_pos)))
     | [`String "type"; `String "enclosing";
@@ -336,8 +331,6 @@ module Protocol_io = struct
       Request (Sync Drop)
     | [`String "seek"; `String "position"] ->
       Request (Sync (Seek `Position))
-    | [`String "seek"; `String "marker"] ->
-      Request (Sync (Seek `Marker))
     | [`String "occurrences"; `String "ident"; `String "at"; jpos] ->
       Request (Query (Occurrences (`Ident_at (pos_of_json jpos))))
     | [`String "seek"; `String "before"; jpos] ->

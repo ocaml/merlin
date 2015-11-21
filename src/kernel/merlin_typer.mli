@@ -30,22 +30,19 @@ type t
 
 val is_valid : t -> bool
 
-val fresh : unit_name:string -> stamp:bool ref list -> Extension.set -> t
+val make : Merlin_parser.t -> Extension.set -> t
 val update : Merlin_parser.t -> t -> t
 
-val env : t -> Env.t
+type tree = [
+  | `Signature of Typedtree.signature
+  | `Structure of Typedtree.structure
+]
 
-type parsed = [ `Str of Parsetree.structure | `Sg of Parsetree.signature ]
-type typed  = [ `Str of Typedtree.structure | `Sg of Typedtree.signature
-              | `Fail of Env.t * Location.t ]
-type checks = Typecore.delayed_check list
+val result : t -> tree
 
-val contents : t -> (parsed * typed * checks) list
-val exns : t -> exn list
-val delayed_checks : t -> exn list
+val errors : t -> exn list
+val checks : t -> exn list
 val extensions : t -> Extension.set
-
-val dump : Format.formatter -> t -> unit
 
 val with_typer : t -> (unit -> 'a) -> 'a
 
@@ -65,4 +62,6 @@ val with_typer : t -> (unit -> 'a) -> 'a
  *)
 val node_at : ?skip_recovered:bool -> t -> Lexing.position -> Merlin_browse.t
 
-val to_browse : (_ * typed * _) list -> Merlin_browse.t list
+val to_browse : tree -> Merlin_browse.t
+
+val env : t -> Env.t

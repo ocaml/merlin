@@ -30,7 +30,8 @@ open Std
 open Merlin_lib
 
 let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
-  let lexbuf = Lexing.from_string expr in
+  assert false (*FIXME*)
+  (*let lexbuf = Lexing.from_string expr in
   let state = Raw_lexer.make keywords in
   let rec lex parser = function
     | Raw_lexer.Fail (e,l) ->
@@ -53,7 +54,7 @@ let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
     | `Accept _ -> assert false
   in
   parse (`Step (Merlin_parser.from Raw_parser.parse_expression_state
-                  (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))
+                  (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))*)
 
 let lookup_module_or_modtype name env =
   try
@@ -228,7 +229,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   Typing_aux.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
   | Either.L e ->
-    Format.pp_print_string ppf (Error_classifier.classify e);
+    (*Format.pp_print_string ppf (Error_classifier.classify e); FIXME*)
     false
 
   | Either.R e ->

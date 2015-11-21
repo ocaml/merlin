@@ -30,7 +30,7 @@ type keywords = Raw_lexer.keywords
 
 type t
 
-val make : Merlin_source.t -> keywords -> t
+val make : keywords -> Merlin_source.t -> t
 val update : Merlin_source.t -> t -> t
 
 val tokens   : t -> (Lexing.position * Raw_parser.token * Lexing.position) list

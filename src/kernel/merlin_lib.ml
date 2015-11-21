@@ -26,10 +26,12 @@
 
 )* }}} *)
 
+module Project = Merlin_project
+
+module Source  = Merlin_source
 module Lexer   = Merlin_lexer
 module Parser  = Merlin_parser
 module Browse  = Merlin_browse
 module Typer   = Merlin_typer
-module Recover = Merlin_recover
-module Project = Merlin_project
+
 module Buffer  = Merlin_buffer

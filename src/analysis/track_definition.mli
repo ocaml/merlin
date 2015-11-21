@@ -31,7 +31,7 @@ open Merlin_lib
 val from_string
   : project:Project.t
   -> env:Env.t
-  -> local_defs:(_ * Typer.typed * _) list
+  -> local_defs:Typer.tree
   -> pos:Lexing.position
   -> [ `ML | `MLI ]
   -> string
@@ -45,7 +45,7 @@ val from_string
 val get_doc
   : project:Merlin_lib.Project.t
   -> env:Env.t
-  -> local_defs:(_ * Typer.typed * _) list
+  -> local_defs:Typer.tree
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
   -> string
