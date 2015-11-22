@@ -184,7 +184,7 @@ let cost_of_first_items, minimize_cost_of_first_item =
   (fun () ->
      Hashtbl.iter (fun (_,index) r ->
          cost_of_first_item.(index) <-
-           min cost_of_first_item.(index) !r
+           max cost_of_first_item.(index) !r
        ) table)
 
 let cost_of_raw_item (p,pos) =
@@ -493,21 +493,21 @@ let report_final_decision () =
       " (MISSING VALUES, CANNOT RECOVER)"
     else ""
   in
-  let is_wrong = function
+  let is_wrong' = function
     | _, `Impossible -> true
-    | _, `Pop -> true
-    | predecessor, `Reduction item -> cost_of_item ~predecessor item = infinity
+    | _, `Pop -> false
+    | predecessor, `Reduction item ->
+      cost_of_item ~predecessor item = infinity
   in
   let is_wrong = function
     | `Impossible -> true
-    | `Pop -> true
+    | `Pop -> false
     | `Reduction item -> cost_of_item item = infinity
-    | `Look_at_predecessor x -> List.exists is_wrong x
+    | `Look_at_predecessor x -> List.exists is_wrong' x
   in
   let report_decision state decision =
     let verbose' = !verbose in
-    if is_wrong decision then
-      verbose := true;
+    verbose := verbose' || is_wrong decision;
     begin match decision with
     | `Impossible ->
       report "state %d: no terminating sequence found (empty language or bug?!)\n"
@@ -525,13 +525,24 @@ let report_final_decision () =
         ) (lr0_predecessors state)
     | `Look_at_predecessor predecessors ->
       report "state %d, looking at:\n" state.lr0_index;
-      List.iter (function
+      List.iter (fun decision ->
+          verbose := verbose' || is_wrong' decision;
+          match decision with
           | (predecessor, `Reduction item) ->
             let cost = cost_of_item ~predecessor item in
             report "- predecessor %d, at cost %.02f reduce:%s\n"
               predecessor.lr0_index cost (check_cost cost);
             report_table ~prefix:"    " (items_table [item]);
-            verbose := verbose'
+            if cost = infinity && cost_of_raw_item item < infinity then
+              begin
+                let successor =
+                  SymbolMap.find (N (fst item).p_lhs)
+                    (lr0_successors predecessor) in
+                report "  wrong because successor will be state %d:\n"
+                  successor.lr0_index;
+                report_table ~prefix:"      "
+                  (items_table (Array.to_list successor.lr0_items));
+              end
           | (predecessor, `Impossible) ->
             report "- predecessor %d, no terminating sequence found (empty language or bug?!)\n"
               predecessor.lr0_index

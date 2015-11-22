@@ -588,15 +588,9 @@ The precedences must be listed from low to high.
 %type <unit> dummy
 
 %attribute
-  class_fun_binding class_fun_def class_expr class_structure
-  class_type class_signature class_sig_body
-  value type_declaration constructor_declaration label_declaration
-  str_exception_declaration sig_exception_declaration
-  str_type_extension sig_type_extension
+  class_fun_binding class_expr class_type class_signature class_structure
   str_extension_constructors sig_extension_constructors
-  extension_constructor_declaration extension_constructor_rebind
   [@cost 100] [@recovery raise Not_found]
-
 %%
 
 (* Entry points *)
@@ -896,7 +890,7 @@ class_declaration [@recovery []]:
          ~attrs:$5 ~loc:(rloc $startpos $endpos)]
     }
 
-class_fun_binding [@cost 100][@recovery raise Not_found]:
+class_fun_binding:
 | EQUAL class_expr
     { $2 }
 | COLON class_type EQUAL class_expr
@@ -910,13 +904,13 @@ class_type_parameters [@recovery []]:
 | LBRACKET type_parameter_list RBRACKET
     { List.rev $2 }
 
-class_fun_def [@cost 100][@recovery raise Not_found]:
+class_fun_def:
 | labeled_simple_pattern MINUSGREATER class_expr
     { let (l,o,p) = $1 in mkclass $startpos $endpos (Pcl_fun(l, o, p, $3)) }
 | labeled_simple_pattern class_fun_def
     { let (l,o,p) = $1 in mkclass $startpos $endpos (Pcl_fun(l, o, p, $2)) }
 
-class_expr [@cost 100][@recovery raise Not_found]:
+class_expr:
 | class_simple_expr
     { $1 }
 | FUN class_fun_def
@@ -942,7 +936,7 @@ class_simple_expr:
 | LPAREN [@unclosed "("] class_expr RPAREN [@close]
     { $2 }
 
-class_structure [@cost 100][@recovery raise Not_found]:
+class_structure:
 | class_self_pattern class_fields
     { Cstr.mk $1 (List.rev $2) }
 
@@ -982,7 +976,7 @@ parent_binder:
 | (* empty *)
     { None }
 
-value [@cost 100][@recovery raise Not_found]:
+value:
 (* TODO: factorize these rules (also with method): *)
 | override_flag MUTABLE VIRTUAL label COLON core_type
     { if $1 = Override then syntax_error $startpos $endpos;
@@ -1014,7 +1008,7 @@ method_:
         mkloc $3 (rloc $startpos($3) $endpos($3)), $2, Cfk_concrete ($1, ghexp $startpos $endpos (Pexp_poly(exp, Some poly))) }
 
 (* Class types *)
-class_type [@cost 100][@recovery raise Not_found]:
+class_type:
 | class_signature
     { $1 }
 | QUESTION LIDENT COLON simple_core_type_or_tuple_no_attr MINUSGREATER class_type
@@ -1026,7 +1020,7 @@ class_type [@cost 100][@recovery raise Not_found]:
 | simple_core_type_or_tuple_no_attr MINUSGREATER class_type
     { mkcty $startpos $endpos (Pcty_arrow("", $1, $3)) }
 
-class_signature[@cost 100][@recovery raise Not_found]:
+class_signature:
 | LBRACKET core_type_comma_list RBRACKET clty_longident
     { mkcty $startpos $endpos (Pcty_constr (mkloc $4 (rloc $startpos($4) $endpos($4)), List.rev $2)) }
 | clty_longident
@@ -1662,7 +1656,7 @@ type_declarations [@recovery []]:
 | type_declarations AND type_declaration
     { $3 :: $1 }
 
-type_declaration [@cost 100][@recovery raise Not_found]:
+type_declaration:
 | optional_type_parameters LIDENT type_kind constraints post_item_attributes
     { let (kind, priv, manifest) = $3 in
         Type.mk (mkrhs $startpos($2) $endpos($2) $2)
@@ -1760,14 +1754,14 @@ constructor_declarations [@recovery []]:
 | constructor_declarations [@indent (-2)] BAR constructor_declaration
     { $3 :: $1 }
 
-constructor_declaration [@cost 100][@recovery raise Not_found]:
+constructor_declaration:
 | constr_ident generalized_constructor_arguments attributes
     {
       let args,res = $2 in
       Type.constructor (mkrhs $startpos($1) $endpos($1) $1) ~args ?res ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
-str_exception_declaration [@recovery raise Not_found]:
+str_exception_declaration:
 | extension_constructor_declaration post_item_attributes
     {
       let ext = $1 in
@@ -1779,7 +1773,7 @@ str_exception_declaration [@recovery raise Not_found]:
       {ext with pext_attributes = ext.pext_attributes @ $2}
     }
 
-sig_exception_declaration [@recovery raise Not_found]:
+sig_exception_declaration:
 | extension_constructor_declaration post_item_attributes
     {
       let ext = $1 in
@@ -1802,7 +1796,7 @@ label_declarations [@recovery []]:
 | label_declarations SEMI label_declaration
     { $3 :: $1 }
 
-label_declaration [@cost 100][@recovery raise Not_found]:
+label_declaration:
 | mutable_flag label COLON poly_type_no_attr attributes
   {
     Type.field (mkrhs $startpos($2) $endpos($2) $2) $4 ~mut:$1 ~attrs:$5 ~loc:(rloc $startpos $endpos)
@@ -1810,21 +1804,21 @@ label_declaration [@cost 100][@recovery raise Not_found]:
 
 (* Type extensions *)
 
-str_type_extension [@recovery raise Not_found]:
+str_type_extension:
 | optional_type_parameters type_longident
   PLUSEQ private_flag opt_bar str_extension_constructors
   post_item_attributes
     { Te.mk (mkrhs $startpos($2) $endpos($2) $2) (List.rev $6)
         ~params:$1 ~priv:$4 ~attrs:$7 }
 
-sig_type_extension [@recovery raise Not_found]:
+sig_type_extension:
 | optional_type_parameters type_longident
   PLUSEQ private_flag opt_bar sig_extension_constructors
   post_item_attributes
     { Te.mk (mkrhs $startpos($2) $endpos($2) $2) (List.rev $6)
         ~params:$1 ~priv:$4 ~attrs:$7 }
 
-str_extension_constructors [@recovery raise Not_found]:
+str_extension_constructors:
 | extension_constructor_declaration
     { [$1] }
 | extension_constructor_rebind
@@ -1834,20 +1828,20 @@ str_extension_constructors [@recovery raise Not_found]:
 | str_extension_constructors BAR extension_constructor_rebind
     { $3 :: $1 }
 
-sig_extension_constructors [@recovery raise Not_found]:
+sig_extension_constructors:
 | extension_constructor_declaration
     { [$1] }
 | sig_extension_constructors BAR extension_constructor_declaration
     { $3 :: $1 }
 
-extension_constructor_declaration [@recovery raise Not_found]:
+extension_constructor_declaration:
 | constr_ident generalized_constructor_arguments attributes
     { let args, res = $2 in
       Te.decl (mkrhs $startpos($1) $endpos($1) $1) ~args ?res
               ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
-extension_constructor_rebind [@recovery raise Not_found]:
+extension_constructor_rebind:
 | constr_ident EQUAL constr_longident attributes
     { Te.rebind (mkrhs $startpos($1) $endpos($1) $1)
                 (mkrhs $startpos($3) $endpos($3) $3)
