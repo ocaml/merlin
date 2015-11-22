@@ -142,5 +142,15 @@ let () =
   ignore (signal Sys.Signal_ignore);
   (* Select frontend *)
   Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
+  (* Run monitor in parallel *)
+  Thread.create
+    Sturgeon.Recipes.(fun () ->
+        let server = text_server "merlin" Command.monitor in
+        let rec aux () =
+          try main_loop server
+          with _ -> aux ()
+        in
+        aux ())
+    ();
   (* Run! *)
   main_loop ()

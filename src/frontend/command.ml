@@ -828,3 +828,69 @@ let context_dispatch context cmd =
   | Sync s -> dispatch_sync state s
 
 let new_state () = new_state ()
+
+module Monitor = struct
+  open Sturgeon
+  open Ui_print
+
+  let name_of_key (kind, name, dots) =
+    Printf.sprintf "[%s] %s (%s)"
+      (match kind with
+       | Parser.ML -> "ML"
+       | Parser.MLI -> "MLI")
+      (match name with
+       | None -> "<default>"
+       | Some name -> name)
+      (match dots with
+       | None -> "<default project>"
+       | Some [] -> "<no project>"
+       | Some names -> String.concat ~sep:", " names)
+
+  let view_source buffer nav ~title:_ ~body =
+    text body (Source.text (Buffer.source buffer))
+
+  let view_tokens buffer nav ~title:_ ~body =
+    let print_token line' (pos,t,_) =
+      let t = Raw_parser_values.symbol_of_token t in
+      let t = Raw_parser_values.class_of_symbol t in
+      let t = Raw_parser_values.string_of_class t in
+      let line, col = Lexing.split_pos pos in
+      let prefix = if line <> line'
+        then "\n" ^ String.make col ' '
+        else " "
+      in
+      printf body "%s%s" prefix t;
+      line
+    in
+    let _line : int =
+      List.fold_left ~f:print_token ~init:(-1)
+        (Lexer.tokens (Buffer.lexer buffer))
+    in
+    ()
+
+  let monitor_context key state nav ~title:_ ~body =
+    printf body "Verbosity: %d\n" state.verbosity;
+    let buffer = state.buffer in
+    printf body "Unit name: %s\n" (Buffer.unit_name buffer);
+    link body "View source" (fun _ ->
+        Ui_nav.modal nav ("Source of " ^ Buffer.unit_name buffer)
+          (view_source buffer));
+    text body "\n";
+    link body "View tokens" (fun _ ->
+        Ui_nav.modal nav ("Tokens of " ^ Buffer.unit_name buffer)
+          (view_tokens buffer));
+    text body "\n"
+
+  let main ~args ~set_title k =
+    set_title "merlin-monitor";
+    Ui_nav.make k "Merlin monitor" @@ fun nav ~title:_ ~body ->
+    text body "Buffers\n\n";
+    let print_context key state =
+      link body (name_of_key key) (fun _ ->
+          Ui_nav.modal nav (name_of_key key) (monitor_context key state));
+      text body "\n"
+    in
+    Hashtbl.iter print_context contexts
+end
+
+let monitor = Monitor.main

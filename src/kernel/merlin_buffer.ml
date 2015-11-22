@@ -68,7 +68,12 @@ let create ?dot_merlins ?path kind =
 let unit_name t = Merlin_source.name t.source
 let project t = assert false
 
-let update t source = t.source <- source
+let update t source =
+  t.source <- source;
+  t.lexer <- Merlin_lexer.update source t.lexer;
+  t.parser <- Merlin_parser.update t.lexer t.parser;
+  t.typer <- Merlin_typer.update t.parser t.typer
+
 let source t = t.source
 
 let lexer  t = t.lexer

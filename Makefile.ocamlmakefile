@@ -21,6 +21,7 @@ endif
 
 RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
 TYPER  = src/ocaml$(MERLIN_OCAML_VERSION)
+THREADS = 1
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 
@@ -208,7 +209,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = str findlib yojson unix
+PACKS = str findlib yojson unix sturgeon
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code
