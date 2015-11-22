@@ -324,6 +324,7 @@ let let_operator startpos endpos op bindings cont =
   let default_module_type = Ast_helper.Mty.signature []
   let default_module_decl = Ast_helper.Md.mk (Location.mknoloc "_") default_module_type
   let default_module_bind = Ast_helper.Mb.mk (Location.mknoloc "_") default_module_expr
+  let default_value_bind = Ast_helper.Vb.mk default_pattern default_expr
 ]
 
 (**
@@ -585,6 +586,16 @@ The precedences must be listed from low to high.
 (* Prevent some warnings... *)
 %start dummy
 %type <unit> dummy
+
+%attribute
+  class_fun_binding class_fun_def class_expr class_structure
+  class_type class_signature class_sig_body
+  value type_declaration constructor_declaration label_declaration
+  str_exception_declaration sig_exception_declaration
+  str_type_extension sig_type_extension
+  str_extension_constructors sig_extension_constructors
+  extension_constructor_declaration extension_constructor_rebind
+  [@cost 100] [@recovery raise Not_found]
 
 %%
 
@@ -1420,7 +1431,7 @@ lident_list [@recovery []]:
 | LIDENT lident_list
     { $1 :: $2 }
 
-let_binding:
+let_binding [@recovery default_value_bind]:
 | let_binding_ post_item_attributes
     { let (p, e) = $1 in Vb.mk ~loc:(rloc $startpos $endpos) ~attrs:$2 p e }
 
@@ -1721,11 +1732,11 @@ type_parameters [@recovery []]:
 | LPAREN type_parameter_list RPAREN
     { List.rev $2 }
 
-type_parameter:
+type_parameter [@recovery Invariant, default_type]:
 | type_variance type_variable
     { $2, $1 }
 
-type_variance:
+type_variance [@recovery Invariant]:
 | (* empty *)
     { Invariant }
 | PLUS
@@ -1733,7 +1744,7 @@ type_variance:
 | MINUS
     { Contravariant }
 
-type_variable:
+type_variable [@recovery default_type]:
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 
@@ -1872,7 +1883,7 @@ with_constraint:
 | MODULE UIDENT COLONEQUAL mod_ext_longident
     { [Pwith_modsubst (mkrhs $startpos($2) $endpos($2) $2, mkrhs $startpos($4) $endpos($4) $4)] }
 
-with_type_binder:
+with_type_binder [@recovery Public]:
 | EQUAL
     { Public }
 | EQUAL PRIVATE
@@ -2088,7 +2099,7 @@ label [@recovery ""]:
 
 (* Constants *)
 
-constant:
+constant [@recovery Const_int 0]:
 | INT
     { Const_int $1 }
 | CHAR
@@ -2104,7 +2115,7 @@ constant:
 | NATIVEINT
     { Const_nativeint $1 }
 
-signed_constant:
+signed_constant [@recovery Const_int 0]:
 | constant
     { $1 }
 | MINUS INT
