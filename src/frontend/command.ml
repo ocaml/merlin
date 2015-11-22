@@ -740,48 +740,10 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     Buffer.idle_job buffer
 
 let dispatch_sync state (type a) : a sync_command -> a = function
-  (*| Tell (`Start pos) ->
-    let lexer = Buffer.start_lexing ?pos state.buffer in
-    state.lexer <- Some lexer;
-    buffer_update state (Lexer.history lexer);
-    cursor_state state
-
-  | Tell (`File _ | `Source _ | `File_eof _ | `Source_eof _ | `Eof as source) ->
-    let source, then_eof = match source with
-      | `Eof -> Some "", false
-      | `Source "" -> None, false
-      | `Source source -> Some source, false
-      | `File path ->
-        begin match Misc.file_contents path with
-        | "" -> None
-        | source -> Some source
-        end, false
-      | `Source_eof source -> Some source, true
-      | `File_eof path ->
-        begin match Misc.file_contents path with
-        | "" -> None
-        | source -> Some source
-        end, true
-    in
-    begin match source with
-      | None -> cursor_state state
-      | Some source ->
-        let lexer = match state.lexer with
-          | Some lexer ->
-            assert (not (Lexer.eof lexer));
-            lexer
-          | None ->
-            let lexer = Buffer.start_lexing state.buffer in
-            state.lexer <- Some lexer; lexer in
-        assert (Lexer.feed lexer source);
-        if then_eof then assert (Lexer.feed lexer "");
-        buffer_update state (Lexer.history lexer);
-        (* Stop lexer on EOF *)
-        if Lexer.eof lexer then state.lexer <- None;
-        cursor_state state
-    end *)
-
-  | Tell _ -> assert false
+  | Tell (pos_start, pos_end, text) ->
+    let source = Buffer.source state.buffer in
+    let source = Source.substitute source pos_start pos_end text in
+    Buffer.update state.buffer source
 
   | Refresh ->
     checkout_buffer_cache := [];

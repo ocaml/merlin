@@ -691,19 +691,6 @@ the error message otherwise print a generic error message."
         (merlin--process-busy-set nil))
       (cdr promise))))
 
-;; SPECIAL CASE OF COMMANDS
-
-(defun merlin--parse-position (result)
-  "Returns a pair whose first member is a point set at merlin cursor position
-  and second member is the state of the marker"
-  (cons (merlin/make-point (lookup-default 'cursor result nil))
-        (when (equal (lookup-default 'marker result nil) 'true) t)))
-
-(defun merlin--send-cursor-command (command &optional callback-if-exn)
-  "Send COMMAND (with arguments ARGS) to merlin and returns the result parsed
-  as a position."
-  (merlin--parse-position (merlin/send-command command callback-if-exn)))
-
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
 ;;;;;;;;;;;;;;;;;;;;
@@ -773,30 +760,26 @@ the error message otherwise print a generic error message."
 
 (defun merlin/sync ()
   "Synchronize buffer with merlin"
-  (unless (eq merlin--dirty-point (point-max))
-    (let ((point (merlin/unmake-point merlin--dirty-point)))
-      (setq point (car (merlin--send-cursor-command
-                         (list 'tell 'start 'at point))))
-      (setq merlin--dirty-point (point-max))
-      (merlin--send-cursor-command
-        (list 'tell 'source-eof (merlin/buffer-substring point (point-max)))))))
+  (merlin/send-command
+   `(tell start end ,(merlin/buffer-substring (point-min) (point-max)))))
+  ;; (if (>= merlin--dirty-point (point-max))
+  ;;     (merlin/send-command 
+  ;;   (merlin/send-command
+  ;;    `(tell
+  ;;      ,merlin--dirty-point end
+  ;;      ,(merlin/buffer-substring merlin--dirty-point (point-max))))
+  ;;   (setq merlin--dirty-point (point-max))))
 
 (defun merlin/sync-async (k &optional kerr)
   "Asynchronous synchronization of buffer with merlin"
   (if (eq merlin--dirty-point (point-max)) (funcall k)
     (lexical-let ((k k) (kerr kerr))
       (merlin/send-command-async
-        (list 'tell 'start 'at (merlin/unmake-point merlin--dirty-point))
-        (lambda (answer)
-          (let* ((point (car (merlin--parse-position answer)))
-                 (source (merlin/buffer-substring point (point-max))))
-            (merlin/send-command-async
-              (list 'tell 'source-eof source)
-              (lambda (answer)
-                (setq merlin--dirty-point (point-max))
-                (funcall k))
-              kerr)))
-        kerr))))
+       `(tell ,point end ,(merlin/buffer-substring point (point-max)))
+       (lambda (answer)
+         (setq merlin--dirty-point (point-max))
+         (funcall k))
+       kerr))))
 
 ;;;;;;;;;;;;;;;;;;
 ;; ERROR REPORT ;;

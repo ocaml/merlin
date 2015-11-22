@@ -28,21 +28,57 @@
 
 open Std
 
-type t = T
+type t = {
+  kind: Merlin_parser.kind;
+  mutable project: Merlin_project.t;
+  mutable source: Merlin_source.t;
+  mutable lexer: Merlin_lexer.t;
+  mutable parser: Merlin_parser.t;
+  mutable typer: Merlin_typer.t;
+}
 
-let create ?dot_merlins ?path _ = T
-let unit_name T = ""
-let project T = assert false
+let compute_unit_name filename =
+  let unit_name =
+    try String.sub filename ~pos:0 ~len:(String.index filename '.')
+    with Not_found -> filename
+  in
+  String.capitalize unit_name
 
-let update  T _ = ()
-let source  T = assert false
+let compute_context ?(dot_merlins=[]) ?path () =
+  let path, filename = match path with
+    | None -> None, "*buffer*"
+    | Some path -> Some (Filename.dirname path), Filename.basename path
+  in
+  let dot_merlins = match dot_merlins, path with
+    | [], Some path -> [path]
+    | [], None -> []
+    | xs, cwd -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
+  in
+  (dot_merlins, compute_unit_name filename)
 
-let lexer   T = assert false
-let parser  T = assert false
-let typer   T = assert false
+let create ?dot_merlins ?path kind =
+  let dot_merlins, name = compute_context ?dot_merlins ?path () in
+  let project, _ = Merlin_project.get dot_merlins in
+  let source = Merlin_source.empty ~name in
+  let lexer  = Merlin_lexer.make (Raw_lexer.keywords []) source in
+  let parser = Merlin_parser.make lexer kind in
+  let typer  = Merlin_typer.make parser String.Set.empty in
+  { kind; project; source; lexer; parser; typer }
+
+let unit_name t = Merlin_source.name t.source
+let project t = assert false
+
+let update t source = t.source <- source
+let source t = t.source
+
+let lexer  t = t.lexer
+let parser t = t.parser
+let typer  t =
+  Merlin_project.setup t.project;
+  t.typer
 
 (* All top modules of current project, with current module removed *)
-let global_modules _ = []
+let global_modules t = []
 
 (* Try to do a background job, return false if nothing has to be done *)
-let idle_job _ = false
+let idle_job t = false

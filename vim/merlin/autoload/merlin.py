@@ -6,9 +6,6 @@ import os
 import sys
 from sys import platform
 
-import vimbufsync
-vimbufsync.check_version("0.1.0",who="merlin")
-
 enclosing_types = [] # nothing to see here
 current_enclosing = -1
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
@@ -70,7 +67,6 @@ def catch_and_print(f, msg=None):
 class MerlinProcess:
     def __init__(self, path=None, env=None):
         self.mainpipe = None
-        self.saved_sync = None
         self.path = path
         self.env = env
 
@@ -335,72 +331,6 @@ def command_occurrences(line, col):
 
 ######## BUFFER SYNCHRONIZATION
 
-def acquire_buffer(force=False):
-    if not force and vim.eval('exists("b:dotmerlin")') == '0':
-        return False
-
-    process = merlin_process()
-    saved_sync = process.saved_sync
-    curr_sync = vimbufsync.sync()
-
-    if not (saved_sync and (curr_sync.bufnr() == saved_sync.bufnr())):
-        process.saved_sync = None
-        command_checkout(name=vim.eval("expand('%:p')"))
-
-    return process.saved_sync
-
-def sync_buffer_to_(to_line, to_col, skip_marker=False):
-    process = merlin_process()
-
-    cb = vim.current.buffer
-    max_line = len(cb)
-    end_line = min(to_line, max_line)
-
-    saved_sync = acquire_buffer(force=True)
-    if saved_sync:
-        line, col = min(saved_sync.pos(), (to_line, to_col))
-    else:
-        line, col = 1, 0
-    col = 0
-    command_seek("exact", line, col)
-
-    line, col, _ = parse_position(command("tell", "start"))
-
-    # Send prefix content
-    if line <= end_line:
-        rest     = cb[line-1][col:]
-        content  = cb[line:end_line]
-        content.insert(0, rest)
-        encoding = vim_encoding()
-        content  = map(lambda str: str.decode(encoding), content)
-        command_tell(content)
-
-    # put marker
-    _, _, marker = parse_position(command("tell","marker"))
-
-    # satisfy marker
-    while marker and (end_line < max_line):
-        next_end = min(max_line,end_line + 50)
-        _, _, marker = command_tell(cb[end_line:next_end])
-        end_line = next_end
-
-    # put eof if marker still on stack at max_line
-    if marker: command("tell","eof")
-    if not skip_marker: command("seek","marker")
-
-    # save synchronisation point
-    process.saved_sync = vimbufsync.sync()
-
-def sync_buffer_to(to_line, to_col, skip_marker=False):
-    return catch_and_print(lambda: sync_buffer_to_(to_line, to_col, skip_marker=skip_marker))
-
-def sync_buffer():
-    to_line, to_col = vim.current.window.cursor
-    sync_buffer_to(to_line, to_col)
-
-def sync_full_buffer():
-    sync_buffer_to(len(vim.current.buffer),0,skip_marker=True)
-
 ######## VIM FRONTEND
 
 # Spawn a fresh new process
@@ -449,7 +379,6 @@ def vim_complete_cursor(base, suffix, vimvar):
         return False
 
 def vim_expand_prefix(base, vimvar):
-    sync_buffer()
     vim.command("let %s = []" % vimvar)
     line, col = vim.current.window.cursor
     try:
@@ -498,7 +427,6 @@ def vim_findlib_use(*args):
 # Locate
 def vim_locate_at_cursor(path):
     line, col = vim.current.window.cursor
-    sync_full_buffer()
     command_locate(path, line, col)
 
 def vim_locate_under_cursor():
@@ -507,7 +435,6 @@ def vim_locate_under_cursor():
 # Jump
 def vim_jump_to(target):
     line, col = vim.current.window.cursor
-    sync_full_buffer()
     command_jump(target, line, col)
 
 def vim_jump_default():
@@ -516,7 +443,6 @@ def vim_jump_default():
 # Document
 def vim_document_at_cursor(path):
     line, col = vim.current.window.cursor
-    sync_full_buffer()
     command_document(path, line, col)
 
 def vim_document_under_cursor():
@@ -526,7 +452,6 @@ def vim_document_under_cursor():
 def vim_occurrences(vimvar):
     vim.command("let %s = []" % vimvar)
     line, col = vim.current.window.cursor
-    sync_full_buffer()
     lst = command_occurrences(line, col)
     lst = map(lambda x: x['start'], lst)
     bufnr = vim.current.buffer.number
@@ -546,7 +471,6 @@ def vim_occurrences(vimvar):
 
 def vim_occurrences_search():
     line, col = vim.current.window.cursor
-    sync_full_buffer()
     lst = command_occurrences(line, col)
     result = ""
     over = ""
@@ -566,7 +490,6 @@ def vim_occurrences_search():
     return "[%s, '%s', '%s']" % (start_col, over, result)
 
 def vim_occurrences_replace(content):
-    sync_full_buffer()
     line, col = vim.current.window.cursor
     lst = command_occurrences(line, col)
     lst.reverse()
@@ -581,7 +504,6 @@ def vim_occurrences_replace(content):
 def vim_type(expr):
     to_line, to_col = vim.current.window.cursor
     cmd_at = ["at", {'line':to_line,'col':to_col}]
-    sync_buffer_to(to_line,to_col)
     cmd_expr = ["expression", expr]
     try:
         cmd = ["type"] + cmd_expr + cmd_at
@@ -648,7 +570,6 @@ def vim_case_analysis():
     global current_enclosing
 
     if enclosing_types == []:
-        sync_buffer()
         to_line, to_col = vim.current.window.cursor
         pos = {'line':to_line, 'col':to_col}
         try:
@@ -678,7 +599,6 @@ def vim_type_enclosing():
     global enclosing_types
     global current_enclosing
     vim_type_reset()
-    sync_buffer()
     to_line, to_col = vim.current.window.cursor
     pos = {'line':to_line, 'col':to_col}
     # deprecated, leave merlin compute the correct identifier
@@ -839,7 +759,6 @@ def vim_selectphrase(l1,c1,l2,c2):
     vc1 = min(bound,int(vim.eval(c1)))
     vl2 = min(bound,int(vim.eval(l2)))
     vc2 = min(bound,int(vim.eval(c2)))
-    sync_buffer_to(vl2,vc2)
     loc2 = command("boundary","at",{"line":vl2,"col":vc2})
     if vl2 != vl1 or vc2 != vc1:
         loc1 = command("boundary","at",{"line":vl1,"col":vc1})
@@ -866,7 +785,6 @@ def setup_merlin():
     vim.command('let b:dotmerlin=[]')
     # Tell merlin the content of the buffer.
     # This allows merlin idle-job to preload content if nothing else is requested.
-    sync_full_buffer()
     if failures != None:
         fnames = display_load_failures(failures)
         if isinstance(fnames, list):

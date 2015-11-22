@@ -277,8 +277,6 @@ module Protocol_io = struct
     | _ -> invalid_arguments ()
 
   let request_of_json = function
-    | `String "tell" :: _ ->
-      assert false (*FIXME*)
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
       Request (Query (Type_expr (expr, mandatory_position opt_pos)))
     | [`String "type"; `String "enclosing";
@@ -356,6 +354,8 @@ module Protocol_io = struct
     | (`String "path" :: `String ("add"|"remove" as action) ::
          `String ("source"|"build" as var) :: ((`List pathes :: []) | pathes)) ->
       Request (Sync (Path (source_or_build var, add_or_remove action, string_list pathes)))
+    | [`String "tell"; pos_start; pos_end; `String content] ->
+      Request (Sync (Tell (pos_of_json pos_start, pos_of_json pos_end, content)))
     | [`String "project"; `String "get"] ->
       Request (Query Project_get)
     | [`String "version"] ->
