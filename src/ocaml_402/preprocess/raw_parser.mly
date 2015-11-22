@@ -1439,7 +1439,7 @@ let_binding_:
 | simple_pattern_not_ident COLON core_type EQUAL seq_expr
     { (ghpat $startpos $endpos (Ppat_constraint($1, $3)), $5) }
 
-fun_binding:
+fun_binding [@recovery default_expr]:
 | strict_binding
     { $1 }
 | type_constraint EQUAL seq_expr
@@ -1756,7 +1756,7 @@ constructor_declaration [@cost 100][@recovery raise Not_found]:
       Type.constructor (mkrhs $startpos($1) $endpos($1) $1) ~args ?res ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
-str_exception_declaration:
+str_exception_declaration [@recovery raise Not_found]:
 | extension_constructor_declaration post_item_attributes
     {
       let ext = $1 in
@@ -1768,7 +1768,7 @@ str_exception_declaration:
       {ext with pext_attributes = ext.pext_attributes @ $2}
     }
 
-sig_exception_declaration:
+sig_exception_declaration [@recovery raise Not_found]:
 | extension_constructor_declaration post_item_attributes
     {
       let ext = $1 in
@@ -1799,21 +1799,21 @@ label_declaration [@cost 100][@recovery raise Not_found]:
 
 (* Type extensions *)
 
-str_type_extension:
+str_type_extension [@recovery raise Not_found]:
 | optional_type_parameters type_longident
   PLUSEQ private_flag opt_bar str_extension_constructors
   post_item_attributes
     { Te.mk (mkrhs $startpos($2) $endpos($2) $2) (List.rev $6)
         ~params:$1 ~priv:$4 ~attrs:$7 }
 
-sig_type_extension:
+sig_type_extension [@recovery raise Not_found]:
 | optional_type_parameters type_longident
   PLUSEQ private_flag opt_bar sig_extension_constructors
   post_item_attributes
     { Te.mk (mkrhs $startpos($2) $endpos($2) $2) (List.rev $6)
         ~params:$1 ~priv:$4 ~attrs:$7 }
 
-str_extension_constructors:
+str_extension_constructors [@recovery raise Not_found]:
 | extension_constructor_declaration
     { [$1] }
 | extension_constructor_rebind
@@ -1823,20 +1823,20 @@ str_extension_constructors:
 | str_extension_constructors BAR extension_constructor_rebind
     { $3 :: $1 }
 
-sig_extension_constructors:
+sig_extension_constructors [@recovery raise Not_found]:
 | extension_constructor_declaration
     { [$1] }
 | sig_extension_constructors BAR extension_constructor_declaration
     { $3 :: $1 }
 
-extension_constructor_declaration:
+extension_constructor_declaration [@recovery raise Not_found]:
 | constr_ident generalized_constructor_arguments attributes
     { let args, res = $2 in
       Te.decl (mkrhs $startpos($1) $endpos($1) $1) ~args ?res
               ~loc:(rloc $startpos $endpos) ~attrs:$3
     }
 
-extension_constructor_rebind:
+extension_constructor_rebind [@recovery raise Not_found]:
 | constr_ident EQUAL constr_longident attributes
     { Te.rebind (mkrhs $startpos($1) $endpos($1) $1)
                 (mkrhs $startpos($3) $endpos($3) $3)
