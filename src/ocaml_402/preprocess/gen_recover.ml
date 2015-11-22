@@ -434,14 +434,25 @@ let report_states () =
     end
 
 type reduction = (production * int)
-type decision = [
+
+type local_decision = [
   | `Impossible
+  | `Pop
   | `Reduction of reduction
-  | `Look_at_predecessor of
-      (lr0_state * [`Reduction of reduction | `Impossible]) list
 ]
 
-let decision lr0 =
+type decision = [
+  | local_decision
+  | `Look_at_predecessor of (lr0_state * local_decision) list
+]
+
+let should_pop ?predecessor lr0 item =
+  cost_of_item ?predecessor item = infinity &&
+  match lr0.lr0_incoming with
+  | Some (T t) when t.t_type = None -> true
+  | _ -> false
+
+let decision lr0 : decision =
   let order ?predecessor a b =
     compare (cost_of_item ?predecessor a) (cost_of_item ?predecessor b) in
   let order_items ?predecessor items = List.sort (order ?predecessor) items in
@@ -449,7 +460,11 @@ let decision lr0 =
   | `Regular ->
     let items = order_items (Array.to_list lr0.lr0_items) in
     let ((prod, pos) as item) = List.hd items in
-    if pos <> 1 then `Reduction item else
+    if pos <> 1 then
+      if should_pop lr0 item
+      then `Pop
+      else `Reduction item
+    else
       let selections =
         List.map (fun predecessor ->
             let items' = order_items ~predecessor items in
@@ -461,7 +476,10 @@ let decision lr0 =
             let item =
               match items' with
               | [] -> `Impossible
-              | item :: items -> `Reduction item
+              | item :: items ->
+                if should_pop ~predecessor lr0 item
+                then `Pop
+                else `Reduction item
             in
             predecessor, item
           ) (lr0_predecessors lr0)
@@ -477,10 +495,12 @@ let report_final_decision () =
   in
   let is_wrong = function
     | _, `Impossible -> true
+    | _, `Pop -> true
     | predecessor, `Reduction item -> cost_of_item ~predecessor item = infinity
   in
   let is_wrong = function
     | `Impossible -> true
+    | `Pop -> true
     | `Reduction item -> cost_of_item item = infinity
     | `Look_at_predecessor x -> List.exists is_wrong x
   in
@@ -497,6 +517,12 @@ let report_final_decision () =
       report "state %d, at cost %.02f reduce:%s\n"
         state.lr0_index cost (check_cost cost);
       report_table ~prefix:"  " (items_table [item])
+    | `Pop ->
+      report "state %d, ok to pop to:\n" state.lr0_index;
+      List.iter (fun lr0 ->
+          report "- predecessor %d\n" lr0.lr0_index;
+          report_table ~prefix:"  " (items_table (Array.to_list lr0.lr0_items))
+        ) (lr0_predecessors state)
     | `Look_at_predecessor predecessors ->
       report "state %d, looking at:\n" state.lr0_index;
       List.iter (function
@@ -509,6 +535,11 @@ let report_final_decision () =
           | (predecessor, `Impossible) ->
             report "- predecessor %d, no terminating sequence found (empty language or bug?!)\n"
               predecessor.lr0_index
+          | (predecessor, `Pop) ->
+            report "- predecessor %d, pop to:\n"
+              predecessor.lr0_index;
+            report_table ~prefix:"  "
+              (items_table (Array.to_list predecessor.lr0_items))
         ) predecessors
     end;
     verbose := verbose'
@@ -596,9 +627,10 @@ let rec filter_map_assoc f = function
 
 let print_decisions () =
   printf "type decision =\n\
-         \  | Shift   : 'a %s.symbol * 'a -> decision\n\
-         \  | Reduce  : int -> decision\n\
-         \  | Parent  : (int -> decision) -> decision\n\n"
+         \  | Shift  : 'a %s.symbol * 'a -> decision\n\
+         \  | Reduce : int -> decision\n\
+         \  | Parent : (int -> decision) -> decision\n\
+         \  | Pop    : decision\n\n"
     menhir;
   let string_of_states ks =
     String.concat " | "
@@ -618,13 +650,14 @@ let print_decisions () =
     let simple_decide = function
       | `Reduction red ->
         Some (string_of_reduction red)
+      | `Pop -> Some "Pop"
       | `Impossible -> None
     in
     match classify_state lr0 with
     | `Starting | `Final   -> None
     | `Regular ->
       match decision lr0 with
-      | `Impossible | `Reduction _ as x -> simple_decide x
+      | #local_decision as x -> simple_decide x
       | `Look_at_predecessor ((predecessor, x) :: xs)
           when List.for_all (fun (_,x') -> x = x') xs ->
         simple_decide x
