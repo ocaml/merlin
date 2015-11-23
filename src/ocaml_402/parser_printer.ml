@@ -807,3 +807,149 @@ let print_token = function
   | AND -> print_value (MenhirInterpreter.T MenhirInterpreter.T_AND) ()
   | AMPERSAND -> print_value (MenhirInterpreter.T MenhirInterpreter.T_AMPERSAND) ()
   | AMPERAMPER -> print_value (MenhirInterpreter.T MenhirInterpreter.T_AMPERAMPER) ()
+
+let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : token =
+  match t with
+  | MenhirInterpreter.T_error -> assert false
+  | MenhirInterpreter.T_WITH -> WITH
+  | MenhirInterpreter.T_WHILE_LWT -> WHILE_LWT
+  | MenhirInterpreter.T_WHILE -> WHILE
+  | MenhirInterpreter.T_WHEN -> WHEN
+  | MenhirInterpreter.T_VIRTUAL -> VIRTUAL
+  | MenhirInterpreter.T_VAL -> VAL
+  | MenhirInterpreter.T_UNDERSCORE -> UNDERSCORE
+  | MenhirInterpreter.T_UIDENT -> UIDENT v
+  | MenhirInterpreter.T_TYPE -> TYPE
+  | MenhirInterpreter.T_TRY_LWT -> TRY_LWT
+  | MenhirInterpreter.T_TRY -> TRY
+  | MenhirInterpreter.T_TRUE -> TRUE
+  | MenhirInterpreter.T_TO -> TO
+  | MenhirInterpreter.T_TILDE -> TILDE
+  | MenhirInterpreter.T_THEN -> THEN
+  | MenhirInterpreter.T_STRUCT -> STRUCT
+  | MenhirInterpreter.T_STRING -> STRING v
+  | MenhirInterpreter.T_STAR -> STAR
+  | MenhirInterpreter.T_SIG -> SIG
+  | MenhirInterpreter.T_SHARPSHARP -> SHARPSHARP
+  | MenhirInterpreter.T_SHARPOP -> SHARPOP v
+  | MenhirInterpreter.T_SHARP -> SHARP
+  | MenhirInterpreter.T_SEMISEMI -> SEMISEMI
+  | MenhirInterpreter.T_SEMI -> SEMI
+  | MenhirInterpreter.T_RPAREN -> RPAREN
+  | MenhirInterpreter.T_REC -> REC
+  | MenhirInterpreter.T_RBRACKET -> RBRACKET
+  | MenhirInterpreter.T_RBRACE -> RBRACE
+  | MenhirInterpreter.T_QUOTE -> QUOTE
+  | MenhirInterpreter.T_QUESTION -> QUESTION
+  | MenhirInterpreter.T_PRIVATE -> PRIVATE
+  | MenhirInterpreter.T_PREFIXOP -> PREFIXOP v
+  | MenhirInterpreter.T_PLUSEQ -> PLUSEQ
+  | MenhirInterpreter.T_PLUSDOT -> PLUSDOT
+  | MenhirInterpreter.T_PLUS -> PLUS
+  | MenhirInterpreter.T_PERCENT -> PERCENT
+  | MenhirInterpreter.T_P4_QUOTATION -> P4_QUOTATION
+  | MenhirInterpreter.T_OUNIT_TEST_UNIT -> OUNIT_TEST_UNIT
+  | MenhirInterpreter.T_OUNIT_TEST_MODULE -> OUNIT_TEST_MODULE
+  | MenhirInterpreter.T_OUNIT_TEST -> OUNIT_TEST
+  | MenhirInterpreter.T_OUNIT_BENCH_MODULE -> OUNIT_BENCH_MODULE
+  | MenhirInterpreter.T_OUNIT_BENCH_INDEXED -> OUNIT_BENCH_INDEXED
+  | MenhirInterpreter.T_OUNIT_BENCH_FUN -> OUNIT_BENCH_FUN
+  | MenhirInterpreter.T_OUNIT_BENCH -> OUNIT_BENCH
+  | MenhirInterpreter.T_OR -> OR
+  | MenhirInterpreter.T_OPTLABEL -> OPTLABEL v
+  | MenhirInterpreter.T_OPEN -> OPEN
+  | MenhirInterpreter.T_OF -> OF
+  | MenhirInterpreter.T_OBJECT -> OBJECT
+  | MenhirInterpreter.T_NONREC -> NONREC
+  | MenhirInterpreter.T_NEW -> NEW
+  | MenhirInterpreter.T_NATIVEINT -> NATIVEINT v
+  | MenhirInterpreter.T_MUTABLE -> MUTABLE
+  | MenhirInterpreter.T_MODULE -> MODULE
+  | MenhirInterpreter.T_MINUSGREATER -> MINUSGREATER
+  | MenhirInterpreter.T_MINUSDOT -> MINUSDOT
+  | MenhirInterpreter.T_MINUS -> MINUS
+  | MenhirInterpreter.T_METHOD -> METHOD
+  | MenhirInterpreter.T_MATCH_LWT -> MATCH_LWT
+  | MenhirInterpreter.T_MATCH -> MATCH
+  | MenhirInterpreter.T_LPAREN -> LPAREN
+  | MenhirInterpreter.T_LIDENT -> LIDENT v
+  | MenhirInterpreter.T_LET_LWT -> LET_LWT
+  | MenhirInterpreter.T_LETOP -> LETOP v
+  | MenhirInterpreter.T_LET -> LET
+  | MenhirInterpreter.T_LESSMINUS -> LESSMINUS
+  | MenhirInterpreter.T_LESS -> LESS
+  | MenhirInterpreter.T_LBRACKETPERCENTPERCENT -> LBRACKETPERCENTPERCENT
+  | MenhirInterpreter.T_LBRACKETPERCENT -> LBRACKETPERCENT
+  | MenhirInterpreter.T_LBRACKETLESS -> LBRACKETLESS
+  | MenhirInterpreter.T_LBRACKETGREATER -> LBRACKETGREATER
+  | MenhirInterpreter.T_LBRACKETBAR -> LBRACKETBAR
+  | MenhirInterpreter.T_LBRACKETATATAT -> LBRACKETATATAT
+  | MenhirInterpreter.T_LBRACKETATAT -> LBRACKETATAT
+  | MenhirInterpreter.T_LBRACKETAT -> LBRACKETAT
+  | MenhirInterpreter.T_LBRACKET -> LBRACKET
+  | MenhirInterpreter.T_LBRACELESS -> LBRACELESS
+  | MenhirInterpreter.T_LBRACE -> LBRACE
+  | MenhirInterpreter.T_LAZY -> LAZY
+  | MenhirInterpreter.T_LABEL -> LABEL v
+  | MenhirInterpreter.T_JSNEW -> JSNEW
+  | MenhirInterpreter.T_INT64 -> INT64 v
+  | MenhirInterpreter.T_INT32 -> INT32 v
+  | MenhirInterpreter.T_INT -> INT v
+  | MenhirInterpreter.T_INITIALIZER -> INITIALIZER
+  | MenhirInterpreter.T_INHERIT -> INHERIT
+  | MenhirInterpreter.T_INFIXOP4 -> INFIXOP4 v
+  | MenhirInterpreter.T_INFIXOP3 -> INFIXOP3 v
+  | MenhirInterpreter.T_INFIXOP2 -> INFIXOP2 v
+  | MenhirInterpreter.T_INFIXOP1 -> INFIXOP1 v
+  | MenhirInterpreter.T_INFIXOP0 -> INFIXOP0 v
+  | MenhirInterpreter.T_INCLUDE -> INCLUDE
+  | MenhirInterpreter.T_IN -> IN
+  | MenhirInterpreter.T_IF -> IF
+  | MenhirInterpreter.T_GREATERRBRACKET -> GREATERRBRACKET
+  | MenhirInterpreter.T_GREATERRBRACE -> GREATERRBRACE
+  | MenhirInterpreter.T_GREATERDOT -> GREATERDOT
+  | MenhirInterpreter.T_GREATER -> GREATER
+  | MenhirInterpreter.T_FUNCTOR -> FUNCTOR
+  | MenhirInterpreter.T_FUNCTION -> FUNCTION
+  | MenhirInterpreter.T_FUN -> FUN
+  | MenhirInterpreter.T_FOR_LWT -> FOR_LWT
+  | MenhirInterpreter.T_FOR -> FOR
+  | MenhirInterpreter.T_FLOAT -> FLOAT v
+  | MenhirInterpreter.T_FINALLY_LWT -> FINALLY_LWT
+  | MenhirInterpreter.T_FALSE -> FALSE
+  | MenhirInterpreter.T_EXTERNAL -> EXTERNAL
+  | MenhirInterpreter.T_EXITPOINT -> EXITPOINT
+  | MenhirInterpreter.T_EXCEPTION -> EXCEPTION
+  | MenhirInterpreter.T_EQUAL -> EQUAL
+  | MenhirInterpreter.T_EOL -> EOL
+  | MenhirInterpreter.T_EOF -> EOF
+  | MenhirInterpreter.T_END -> END
+  | MenhirInterpreter.T_ELSE -> ELSE
+  | MenhirInterpreter.T_DOWNTO -> DOWNTO
+  | MenhirInterpreter.T_DOTTILDE -> DOTTILDE
+  | MenhirInterpreter.T_DOTLESS -> DOTLESS
+  | MenhirInterpreter.T_DOTDOT -> DOTDOT
+  | MenhirInterpreter.T_DOT -> DOT
+  | MenhirInterpreter.T_DONE -> DONE
+  | MenhirInterpreter.T_DO -> DO
+  | MenhirInterpreter.T_CUSTOM_BANG -> CUSTOM_BANG
+  | MenhirInterpreter.T_CONSTRAINT -> CONSTRAINT
+  | MenhirInterpreter.T_COMMENT -> COMMENT v
+  | MenhirInterpreter.T_COMMA -> COMMA
+  | MenhirInterpreter.T_COLONGREATER -> COLONGREATER
+  | MenhirInterpreter.T_COLONEQUAL -> COLONEQUAL
+  | MenhirInterpreter.T_COLONCOLON -> COLONCOLON
+  | MenhirInterpreter.T_COLON -> COLON
+  | MenhirInterpreter.T_CLASS -> CLASS
+  | MenhirInterpreter.T_CHAR -> CHAR v
+  | MenhirInterpreter.T_BEGIN -> BEGIN
+  | MenhirInterpreter.T_BARRBRACKET -> BARRBRACKET
+  | MenhirInterpreter.T_BARBAR -> BARBAR
+  | MenhirInterpreter.T_BAR -> BAR
+  | MenhirInterpreter.T_BANG -> BANG
+  | MenhirInterpreter.T_BACKQUOTE -> BACKQUOTE
+  | MenhirInterpreter.T_ASSERT -> ASSERT
+  | MenhirInterpreter.T_AS -> AS
+  | MenhirInterpreter.T_AND -> AND
+  | MenhirInterpreter.T_AMPERSAND -> AMPERSAND
+  | MenhirInterpreter.T_AMPERAMPER -> AMPERAMPER

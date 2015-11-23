@@ -28,6 +28,9 @@
 
 open Std
 
+module I = Parser_raw.MenhirInterpreter
+module R = Parser_recover
+
 type kind =
   | ML
   | MLI
@@ -49,23 +52,146 @@ let default = function
   | ML  -> `Structure []
   | MLI -> `Signature []
 
-let run_parser lexer lexbuf = function
-  | ML  -> `Structure (Parser_raw.implementation lexer lexbuf)
-  | MLI -> `Signature (Parser_raw.interface lexer lexbuf)
+let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
+
+let feed_token token env =
+  let module T = struct
+    open I
+    type 'a checkpoint =
+      | InputNeeded of env
+      | Shifting of env * env * bool
+      | AboutToReduce of env * production
+      | HandlingError of env
+      | Accepted of 'a
+      | Rejected
+    external inj : 'a checkpoint -> 'a I.checkpoint = "%identity"
+  end in
+  let rec aux = function
+    | I.HandlingError _ | I.Rejected -> `Fail
+    | I.Accepted v -> `Accept v
+    | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
+      aux (I.resume checkpoint)
+    | I.InputNeeded env as checkpoint -> `Recovered (checkpoint, env)
+  in
+  aux (I.offer (T.inj (T.InputNeeded env)) token)
+
+let order_recoveries envs =
+  let column env =
+    match I.stack env with
+    | None -> 0
+    | Some stack ->
+      let I.Element (_, _, startp, _) = I.stack_element stack in
+      snd (Lexing.split_pos startp)
+  in
+  let cmp (c0, _) (c1, _) = compare (c1 : int) (c0 : int) in
+  let envs = List.map ~f:(fun env -> column env, env) envs in
+  List.stable_sort ~cmp envs
+
+let attempt_recovery recoveries token =
+  let _, startp, _ = token in
+  let _, col = Lexing.split_pos startp in
+  let more_indented (col', _) = col' > col + 1 in
+  let recoveries = List.drop_while ~f:more_indented recoveries in
+  let col = match recoveries with
+    | (col', _) :: _ when col' < col -> col'
+    | _ -> col
+  in
+  let same_indented (col', _) = col' >= col - 1 in
+  let recoveries = List.take_while ~f:same_indented recoveries in
+  let rec aux = function
+    | [] -> `Fail
+    | (_, x) :: xs -> match feed_token token x with
+      | `Fail -> aux xs
+      | `Recovered (checkpoint, _) -> `Ok checkpoint
+      | `Accept v ->
+        begin match aux xs with
+          | `Fail -> `Accept v
+          | x -> x
+        end
+  in
+  aux recoveries
+
+let rec recoveries env =
+  match I.stack env with
+  | None -> []
+  | Some stack ->
+    let I.Element (state, v, startp, endp) = I.stack_element stack in
+    let decision =
+      match R.decision (I.number state) with
+      | R.Parent decide ->
+        begin match I.stack_next stack with
+          | None -> R.Pop
+          | Some stack' ->
+            let I.Element (state', _, _, _) =
+              I.stack_element stack' in
+            decide (I.number state')
+        end
+      | decision -> decision
+    in
+    let env =
+      match decision with
+      | R.Parent _ -> assert false
+      | R.Pop -> I.pop env
+      | R.Reduce prod ->
+        Some (I.force_reduction (I.find_production prod) env)
+      | R.Shift (I.N sym, v) ->
+        Some (I.feed_nonterminal sym endp v endp env)
+      | R.Shift (I.T sym, v) ->
+        let token = Parser_printer.token_of_terminal sym v in
+        match feed_token (token, endp, endp) env with
+        | `Fail -> assert false
+        | `Accept _ -> None
+        | `Recovered (_,env) -> Some env
+    in
+    match env with
+    | None -> []
+    | Some env -> env :: recoveries env
+
+
+let rec normal tokens checkpoint =
+  match checkpoint with
+  | I.InputNeeded env ->
+    let token, tokens = match tokens with
+      | token :: tokens -> token, tokens
+      | [] -> eof_token, []
+    in
+    check_for_error token tokens env (I.offer checkpoint token)
+
+  | I.Shifting _ | I.AboutToReduce _ ->
+    normal tokens (I.resume checkpoint)
+
+  | I.Accepted v -> v
+
+  | I.Rejected | I.HandlingError _ ->
+      assert false
+
+and check_for_error token tokens env = function
+  | I.HandlingError _ ->
+    recover (order_recoveries (env :: recoveries env)) (token :: tokens)
+
+  | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
+    check_for_error token tokens env (I.resume checkpoint)
+
+  | checkpoint ->
+    normal tokens checkpoint
+
+and recover recoveries tokens =
+  let token, tokens = match tokens with
+    | token :: tokens -> token, tokens
+    | [] -> eof_token, []
+  in
+  match attempt_recovery recoveries token with
+  | `Fail -> recover recoveries tokens
+  | `Accept v -> v
+  | `Ok checkpoint ->
+    normal tokens checkpoint
+
+let run_parser tokens = function
+  | ML  -> `Structure (normal tokens (Parser_raw.Incremental.implementation ()))
+  | MLI -> `Signature (normal tokens (Parser_raw.Incremental.interface ()))
 
 let run_parser lexer kind =
-  let tokens = ref (Merlin_lexer.tokens lexer) in
-  let lexer lexbuf =
-    match !tokens with
-    | [] -> Parser_raw.EOF
-    | (startp, tok, endp) :: xs ->
-      tokens := xs;
-      lexbuf.Lexing.lex_start_p <- startp;
-      lexbuf.Lexing.lex_curr_p <- endp;
-      tok
-  in
-  let lexbuf = Lexing.from_string "" in
-  try (run_parser lexer lexbuf kind), []
+  try (run_parser (Merlin_lexer.tokens lexer) kind), []
   with exn -> (default kind), [exn]
 
 let make lexer kind =

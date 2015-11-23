@@ -32,7 +32,7 @@ type keywords = Lexer_raw.keywords
 
 type t = {
   keywords: keywords;
-  tokens: (Lexing.position * Parser_raw.token * Lexing.position) list;
+  tokens: (Parser_raw.token * Lexing.position * Lexing.position) list;
   errors: exn list;
   comments: (string * Location.t) list
 }
@@ -54,7 +54,7 @@ let get_tokens keywords source =
       continue items errors (comment :: comments)
     | Lexer_raw.Refill k -> aux items errors comments (k ())
     | Lexer_raw.Return t ->
-      let item = (lexbuf.Lexing.lex_start_p, t, lexbuf.Lexing.lex_curr_p) in
+      let item = (t, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
       continue (item :: items) errors comments
     | Lexer_raw.Fail (err, loc) ->
       continue items (Lexer_raw.Error (err, loc) :: errors) comments

@@ -701,12 +701,26 @@ let print_decisions () =
     ) cases;
   printf "  | _ -> raise Not_found\n"
 
+let print_lr1_to_lr0 () =
+  printf "let lr1_to_lr0 =\n  [|";
+  Array.iter (fun state -> printf "%d;" state.lr1_lr0.lr0_index)
+    g.g_lr1_states;
+  printf "\n|]\n"
+
+let print_remap_decisions () =
+  printf "let decision i = decision lr1_to_lr0.(i)\n"
+
 let print () =
   print_header ();
   print_newline ();
   print_default_value ();
   print_newline ();
-  print_decisions ()
+  print_decisions ();
+  print_newline ();
+  print_lr1_to_lr0 ();
+  print_newline ();
+  print_remap_decisions ()
+
 
 let () =
   report ();

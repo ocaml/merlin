@@ -96,6 +96,24 @@ let print_token () =
   printf "let print_token = function\n";
   Array.iter case g.g_terminals
 
+let print_token_of_terminal () =
+  let case t =
+    match t.t_kind with
+    | `REGULAR | `EOF ->
+      printf "  | %s.T_%s -> %s%s\n"
+        menhir t.t_name
+        t.t_name (if t.t_type <> None then " v" else "")
+    | `ERROR ->
+      printf "  | %s.T_%s -> assert false\n"
+        menhir t.t_name
+    | `PSEUDO -> ()
+  in
+  printf
+    "let token_of_terminal (type a) (t : a %s.terminal) (v : a) : token =\n\
+    \  match t with\n"
+    menhir;
+  Array.iter case g.g_terminals
+
 let () =
   print_header ();
   print_newline ();
@@ -103,7 +121,6 @@ let () =
   print_newline ();
   print_value ();
   print_newline ();
-  print_token ()
-
-
-
+  print_token ();
+  print_newline ();
+  print_token_of_terminal ()

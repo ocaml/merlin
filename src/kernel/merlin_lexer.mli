@@ -33,6 +33,6 @@ type t
 val make : keywords -> Merlin_source.t -> t
 val update : Merlin_source.t -> t -> t
 
-val tokens   : t -> (Lexing.position * Parser_raw.token * Lexing.position) list
+val tokens   : t -> (Parser_raw.token * Lexing.position * Lexing.position) list
 val errors   : t -> exn list
 val comments : t -> (string * Location.t) list

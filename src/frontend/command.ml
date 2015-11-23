@@ -169,7 +169,7 @@ let dump buffer = function
 
   | [`String "tokens"] ->
     let tokens = Lexer.tokens (Buffer.lexer buffer) in
-    let to_json (s,t,e) =
+    let to_json (t,s,e) =
         let t = Parser_printer.print_token t in
         `Assoc [
           "start", Lexing.json_of_position s;
@@ -813,7 +813,7 @@ module Monitor = struct
     text body (Source.text (Buffer.source buffer))
 
   let view_tokens buffer nav body =
-    let print_token line' (pos,t,_) =
+    let print_token line' (t,pos,_) =
       let line, col = Lexing.split_pos pos in
       let prefix = if line <> line'
         then "\n" ^ String.make col ' '
