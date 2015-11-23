@@ -577,13 +577,12 @@ let report () =
 let print_header () =
   let name = Filename.chop_extension (Filename.basename Sys.argv.(1)) in
   printf "open %s\n" (String.capitalize name);
-  List.iter
-    (fun (_, stretch) -> printf "%s\n" (string_of_stretch stretch))
-    (List.filter
-       (fun a ->
-         is_attribute "header" a ||
-         is_attribute "recovery.header" a
-       ) g.g_attributes)
+  List.iter (fun a ->
+      if is_attribute "header" a || is_attribute "recovery.header" a then
+        printf "%s\n" (string_of_stretch (snd a))
+      else
+        Printf.eprintf "SKIPPED %S\n" (Positions.value (fst a))
+    ) g.g_attributes
 
 (** Default value for a symbol *)
 
@@ -595,7 +594,7 @@ let default_printer ?(fallback="raise Not_found") attrs =
 let print_default_value () =
   let case_t t =
     match t.t_kind with
-    | `REGULAR | `ERROR ->
+    | `REGULAR | `ERROR | `EOF ->
       let fallback = match t.t_type with
         | None -> Some "()"
         | Some _ -> None
@@ -603,7 +602,7 @@ let print_default_value () =
       printf "  | %s.T %s.T_%s -> %s\n"
         menhir menhir t.t_name
         (default_printer ?fallback t.t_attributes)
-    | `PSEUDO | `EOF -> ()
+    | `PSEUDO -> ()
   and case_n n =
     if n.n_kind = `REGULAR then
       printf "  | %s.N %s.N_%s -> %s\n"

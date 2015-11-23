@@ -38,12 +38,12 @@ let symbol_printer default attribs =
 let print_symbol () =
   let case_t t =
     match t.t_kind with
-    | `REGULAR | `ERROR ->
+    | `REGULAR | `ERROR | `EOF ->
       printf "  | %s.X (%s.T %s.T_%s) -> %s\n"
         menhir menhir menhir
         t.t_name
         (symbol_printer t.t_name t.t_attributes)
-    | `PSEUDO | `EOF -> ()
+    | `PSEUDO -> ()
   and case_n n =
     if n.n_kind = `REGULAR then
       printf "  | %s.X (%s.N %s.N_%s) -> %s\n"
@@ -65,11 +65,11 @@ let value_printer default attribs =
 let print_value () =
   let case_t t =
     match t.t_kind with
-    | `REGULAR | `ERROR ->
+    | `REGULAR | `ERROR | `EOF->
       printf "  | %s.T %s.T_%s -> %s\n"
         menhir menhir
         t.t_name (value_printer t.t_name t.t_attributes)
-    | `PSEUDO | `EOF -> ()
+    | `PSEUDO -> ()
   and case_n n =
     if n.n_kind = `REGULAR then
       printf "  | %s.N %s.N_%s -> %s\n"
@@ -83,13 +83,15 @@ let print_value () =
 
 let print_token () =
   let case t =
-    if t.t_kind = `REGULAR then
-    printf "  | %s%s -> print_value (%s.T %s.T_%s) %s\n"
-      t.t_name
-      (match t.t_type with | None -> "" | Some typ -> " v")
-      menhir menhir
-      t.t_name
-      (match t.t_type with | None -> "()" | Some typ -> "v")
+    match t.t_kind with
+    | `REGULAR | `EOF ->
+      printf "  | %s%s -> print_value (%s.T %s.T_%s) %s\n"
+        t.t_name
+        (match t.t_type with | None -> "" | Some typ -> " v")
+        menhir menhir
+        t.t_name
+        (match t.t_type with | None -> "()" | Some typ -> "v")
+    | `PSEUDO | `ERROR -> ()
   in
   printf "let print_token = function\n";
   Array.iter case g.g_terminals

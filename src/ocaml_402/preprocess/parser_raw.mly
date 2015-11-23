@@ -310,6 +310,7 @@ let let_operator startpos endpos op bindings cont =
 %}
 
 %[@recovery.header
+  open Asttypes
 
   let default_expr = Fake.any_val'
   let default_type = Ast_helper.Typ.any ()
@@ -453,7 +454,7 @@ let let_operator startpos endpos op bindings cont =
 %token <string> SHARPOP [@cost 2] [@recovery ""]
 %token SIG
 %token STAR
-%token <string * string option> STRING [@cost 1] [@recovery ""]
+%token <string * string option> STRING [@cost 1] [@recovery ("", None)]
 %token STRUCT
 %token THEN
 %token TILDE
@@ -591,6 +592,7 @@ The precedences must be listed from low to high.
   class_fun_binding class_expr class_type class_signature class_structure
   str_extension_constructors sig_extension_constructors
   [@cost 100] [@recovery raise Not_found]
+
 %%
 
 (* Entry points *)
@@ -863,7 +865,7 @@ module_declaration [@recovery default_module_type]:
 | LPAREN RPAREN module_declaration
     { mkmty $startpos $endpos (Pmty_functor(mkrhs $startpos($1) $endpos($1) "*", None, $3)) }
 
-rec_module_declarations [@recovery default_module_decl]:
+rec_module_declarations:
 | module_rec_declaration
     { [$1] }
 | rec_module_declarations AND module_rec_declaration
@@ -1702,7 +1704,7 @@ optional_type_parameters [@recovery []]:
 | LPAREN optional_type_parameter_list RPAREN
     { List.rev $2 }
 
-optional_type_parameter [@recovery Invariant, Location.mknoloc Ptyp_any]:
+optional_type_parameter [@recovery default_type, Invariant]:
 | type_variance optional_type_variable
     { $2, $1 }
 
@@ -1712,7 +1714,7 @@ optional_type_parameter_list [@recovery []]:
 | optional_type_parameter_list COMMA optional_type_parameter
     { $3 :: $1 }
 
-optional_type_variable [@recovery Location.mknoloc Ptyp_any]:
+optional_type_variable [@recovery default_type]:
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 | UNDERSCORE
@@ -1726,7 +1728,7 @@ type_parameters [@recovery []]:
 | LPAREN type_parameter_list RPAREN
     { List.rev $2 }
 
-type_parameter [@recovery Invariant, default_type]:
+type_parameter [@recovery default_type, Invariant]:
 | type_variance type_variable
     { $2, $1 }
 
@@ -1993,7 +1995,7 @@ simple_core_type2 [@recovery default_type]:
 | extension
     { mktyp $startpos $endpos  (Ptyp_extension $1) }
 
-package_type [@recovery default_longident, []]:
+package_type [@recovery default_longident_loc, []]:
 | mty_longident
     { (mkrhs $startpos($1) $endpos($1) $1, []) }
 | mty_longident WITH package_type_cstrs
@@ -2289,7 +2291,7 @@ rec_flag [@recovery Nonrecursive]:
 | REC
     { Recursive }
 
-direction_flag [@recovery TO]:
+direction_flag [@recovery Upto]:
 | TO
     { Upto }
 | DOWNTO
@@ -2525,7 +2527,7 @@ newtype [@recovery ""]:
 | LPAREN TYPE LIDENT RPAREN
     { $3 }
 
-expr_open [@recovery Fresh, Location.mknoloc (None, []), default_longident]:
+expr_open [@recovery Fresh, default_longident_loc, (None, [])]:
 | override_flag ext_attributes mod_longident
     { $1, mkrhs $startpos($3) $endpos($3) $3, $2 }
 

@@ -1,18 +1,18 @@
 MENHIR_FLAGS = --infer --inspection --table --cmly \
 	--ocamlc 'ocamlc.opt -I ../parsing -I ../../ocaml_aux -I ../../kernel'
 
-.PHONY: raw_recover.ml
+.PHONY: parser_recover.ml
 
-all: raw_recover.ml
+all: parser_recover.ml parser_printer.ml
 
-raw_parser.mli raw_parser.cmly raw_parser.ml: raw_parser.mly
-	menhir $(MENHIR_FLAGS) raw_parser.mly
+parser_raw.mli parser_raw.cmly parser_raw.ml: parser_raw.mly
+	menhir $(MENHIR_FLAGS) parser_raw.mly
 
-raw_recover.ml: gen_recover raw_parser.cmly
-	./gen_recover raw_parser.cmly > raw_recover.ml
+parser_recover.ml: gen_recover parser_raw.cmly
+	./gen_recover parser_raw.cmly > ../parser_recover.ml
 
-raw_printer.ml: gen_printer raw_parser.cmly
-	./gen_printer raw_parser.cmly > raw_printer.ml
+parser_printer.ml: gen_printer parser_raw.cmly
+	./gen_printer parser_raw.cmly > ../parser_printer.ml
 
 gen_recover: gen_recover.ml
 	ocamlfind opt -g -o $@ -package menhirSdk -linkpkg $^

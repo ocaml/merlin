@@ -36,9 +36,6 @@ SOURCES = \
 	src/utils/file_cache.ml           \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
-	src/utils/menhirLib.ml            \
-	src/utils/menhirUtils.mli         \
-	src/utils/menhirUtils.ml          \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
 	src/utils/mymap.mli               \
@@ -148,10 +145,12 @@ SOURCES = \
 	$(TYPER)/typing/typeclass.ml      \
 	$(TYPER)/typing/typemod.mli       \
 	$(TYPER)/typing/typemod.ml        \
-	$(TYPER)/raw_parser.mli           \
-	$(TYPER)/raw_parser.ml            \
-	$(TYPER)/raw_parser_values.mli    \
-	$(TYPER)/raw_parser_values.ml     \
+	$(TYPER)/parser_raw.mli           \
+	$(TYPER)/parser_raw.ml            \
+	$(TYPER)/parser_printer.mli    		\
+	$(TYPER)/parser_printer.ml     		\
+	$(TYPER)/parser_recover.mli    		\
+	$(TYPER)/parser_recover.ml     		\
 	src/kernel/raw_lexer.mli          \
 	src/kernel/raw_lexer.ml           \
 	src/kernel/extension.mli          \
@@ -209,7 +208,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = str findlib yojson unix sturgeon
+PACKS = str findlib yojson unix sturgeon menhirLib
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code
