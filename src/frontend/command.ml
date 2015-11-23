@@ -831,7 +831,7 @@ let new_state () = new_state ()
 
 module Monitor = struct
   open Sturgeon
-  open Ui_print
+  open Tui
 
   let name_of_key (kind, name, dots) =
     Printf.sprintf "[%s] %s (%s)"
@@ -846,10 +846,10 @@ module Monitor = struct
        | Some [] -> "<no project>"
        | Some names -> String.concat ~sep:", " names)
 
-  let view_source buffer nav ~title:_ ~body =
+  let view_source buffer nav body =
     text body (Source.text (Buffer.source buffer))
 
-  let view_tokens buffer nav ~title:_ ~body =
+  let view_tokens buffer nav body =
     let print_token line' (pos,t,_) =
       let t = Raw_parser_values.symbol_of_token t in
       let t = Raw_parser_values.class_of_symbol t in
@@ -868,26 +868,26 @@ module Monitor = struct
     in
     ()
 
-  let monitor_context key state nav ~title:_ ~body =
+  let monitor_context key state nav body =
     printf body "Verbosity: %d\n" state.verbosity;
     let buffer = state.buffer in
     printf body "Unit name: %s\n" (Buffer.unit_name buffer);
     link body "View source" (fun _ ->
-        Ui_nav.modal nav ("Source of " ^ Buffer.unit_name buffer)
+        Nav.modal nav ("Source of " ^ Buffer.unit_name buffer)
           (view_source buffer));
     text body "\n";
     link body "View tokens" (fun _ ->
-        Ui_nav.modal nav ("Tokens of " ^ Buffer.unit_name buffer)
+        Nav.modal nav ("Tokens of " ^ Buffer.unit_name buffer)
           (view_tokens buffer));
     text body "\n"
 
   let main ~args ~set_title k =
     set_title "merlin-monitor";
-    Ui_nav.make k "Merlin monitor" @@ fun nav ~title:_ ~body ->
+    Nav.make k "Merlin monitor" @@ fun nav body ->
     text body "Buffers\n\n";
     let print_context key state =
       link body (name_of_key key) (fun _ ->
-          Ui_nav.modal nav (name_of_key key) (monitor_context key state));
+          Nav.modal nav (name_of_key key) (monitor_context key state));
       text body "\n"
     in
     Hashtbl.iter print_context contexts

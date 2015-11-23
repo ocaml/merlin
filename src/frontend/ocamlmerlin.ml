@@ -86,19 +86,9 @@ open Std
 module My_config = My_config
 module IO_sexp = IO_sexp
 
-let signal behavior =
-  try Sys.signal Sys.sigusr1 behavior
-  with Invalid_argument "Sys.signal: unavailable signal" ->
-    Sys.Signal_default
-
-(*let refresh_state_on_signal state f =
-  let previous =
-    signal (Sys.Signal_handle (fun _ ->
-        try state := fst (State.quick_refresh_modules !state)
-        with _ -> ()
-      ))
-  in
-  Misc.try_finally f (fun () -> ignore (signal previous))*)
+let signal sg behavior =
+  try ignore (Sys.signal sg behavior)
+  with Invalid_argument "Sys.signal: unavailable signal" -> ()
 
 let rec on_read state ~timeout fd =
   try match Unix.select [fd] [] [] timeout with
@@ -138,19 +128,18 @@ let main_loop () =
   with Stream.Failure -> ()
 
 let () =
-  (* Setup signals *)
-  ignore (signal Sys.Signal_ignore);
+  (* Setup signals, unix is a disaster *)
+  signal Sys.sigusr1 Sys.Signal_ignore;
+  signal Sys.sigpipe Sys.Signal_ignore;
+  signal Sys.sighup  Sys.Signal_ignore;
   (* Select frontend *)
   Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
+  let open Sturgeon in
   (* Run monitor in parallel *)
-  Thread.create
-    Sturgeon.Recipes.(fun () ->
-        let server = text_server "merlin" Command.monitor in
-        let rec aux () =
-          try main_loop server
-          with _ -> aux ()
-        in
-        aux ())
-    ();
+  let server = Recipes.text_server "merlin" Command.monitor in
+  let monitor = Thread.create Recipes.main_loop server in
   (* Run! *)
-  main_loop ()
+  main_loop ();
+  (* Close server *)
+  Recipes.stop_server server;
+  Thread.join monitor
