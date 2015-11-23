@@ -45,4 +45,4 @@ type tree = [
 
 val result : t -> tree
 
-val errors : t -> (exn * Location.t) list
+val errors : t -> exn list

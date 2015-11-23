@@ -38,16 +38,22 @@
   *   {message: ''Printexc.to_string'', valid:false}
   *)
 
-type t = {valid: bool; loc: Location.t; text: string; sub: (string * Location.t) list; where:string}
+type t = {
+  valid : bool;
+  loc   : Location.t;
+  text  : string;
+  sub   : (string * Location.t) list;
+  where : string;
+}
 
 (* Ignore unknown exceptions *)
-val strict_of_exn  : exn -> (Location.t * t) option
+val strict_of_exn  : exn -> t option
 
 (* Generic handling of unknown exceptions *)
-val of_exn : exn -> Location.t * t
-
-val error_catcher : exn -> (Location.t * t) option
+val of_exn : exn -> t
 
 val flood_barrier : ?threshold:int -> t list -> t list
 (** Filters the input such that any error in the list is present at most
     [?threshold] (default = 10) times. *)
+
+val compare : t -> t -> int

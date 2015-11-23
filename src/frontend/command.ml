@@ -127,43 +127,15 @@ let buffer_freeze state items =
 module Printtyp = Type_utils.Printtyp
 
 let dump buffer = function
-  (*| [`String "parsetree"] ->
-    with_typer buffer @@ fun typer ->
+  | [`String "parsetree"] ->
     let ppf, to_string = Format.to_string () in
-    List.iter (List.rev (Typer.contents typer))
-      ~f:(fun (parsed, _ , _) ->
-          begin match parsed with
-          | `Sg p -> Pprintast.signature ppf p
-          | `Str p -> Pprintast.structure ppf p
-          end;
-          Format.pp_print_newline ppf ();
-          Format.pp_force_newline ppf ()
-          );
+    begin match Parser.result (Buffer.parser buffer) with
+      | `Signature s -> Pprintast.signature ppf s
+      | `Structure s -> Pprintast.structure ppf s
+    end;
+    Format.pp_print_newline ppf ();
+    Format.pp_force_newline ppf ();
     `String (to_string ())
-
-  | [`String "parser"] ->
-    Merlin_recover.dump (Buffer.recover buffer)
-
-  | [`String "typer"; `String "input"] ->
-    with_typer buffer @@ fun typer ->
-    let ppf, to_string = Format.to_string () in
-    Typer.dump ppf typer;
-    `String (to_string ())
-
-  | [`String "typer"; `String "output"] ->
-    with_typer buffer @@ fun typer ->
-    let ppf, to_string = Format.to_string () in
-    List.iter (fun (_,typed,_) ->
-        match typed with
-        | `Fail (_,loc) ->
-          Format.fprintf ppf "<failed to type at %a>\n" Location.print loc
-        | `Sg sg -> Printtyped.interface ppf sg
-        |`Str str -> Printtyped.implementation ppf str
-      ) (Typer.contents typer);
-    `String (to_string ())
-
-  | [`String "recover"] ->
-    Merlin_recover.dump_recoverable (Buffer.recover buffer);
 
   | (`String ("env" | "fullenv" as kind) :: opt_pos) ->
     with_typer buffer @@ fun typer ->
@@ -171,7 +143,9 @@ let dump buffer = function
     let pos = IO.Protocol_io.optional_position opt_pos in
     let env = match pos with
       | None -> Typer.env typer
-      | Some pos -> fst (Browse.leaf_node (Typer.node_at typer pos))
+      | Some pos ->
+        let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
+        fst (Browse.leaf_node (Typer.node_at typer pos))
     in
     let sg = Browse_misc.signature_of_env ~ignore_extensions:(kind = `Normal) env in
     let aux item =
@@ -190,27 +164,20 @@ let dump buffer = function
 
   | [`String "browse"] ->
     with_typer buffer @@ fun typer ->
-    let structures = Typer.to_browse (Typer.contents typer) in
-    Browse_misc.dump_ts (List.map ~f:snd @@ List.map ~f:Browse.leaf_node structures)
+    let structure = Typer.to_browse (Typer.result typer) in
+    Browse_misc.dump_browse (snd (Browse.leaf_node structure))
 
   | [`String "tokens"] ->
-    let tokens = Buffer.lexer buffer in
-    let tokens = History.seek_backward (fun _ -> true) tokens in
-    let tokens = History.tail tokens in
-    `List (List.filter_map tokens
-             ~f:(fun (_exns,item) -> match item with
-             | Lexer.Error _ -> None
-             | Lexer.Valid (s,t,e) ->
-               let t = Raw_parser_values.symbol_of_token t in
-               let t = Raw_parser_values.class_of_symbol t in
-               let t = Raw_parser_values.string_of_class t in
-               Some (`Assoc [
-                   "start", Lexing.json_of_position s;
-                   "end", Lexing.json_of_position e;
-                   "token", `String t;
-                 ])
-             )
-          )
+    let tokens = Lexer.tokens (Buffer.lexer buffer) in
+    let to_json (s,t,e) =
+        let t = Parser_printer.print_token t in
+        `Assoc [
+          "start", Lexing.json_of_position s;
+          "end",   Lexing.json_of_position e;
+          "token", `String t;
+        ]
+    in
+    `List (List.map ~f:to_json tokens)
 
   | [`String "flags"] ->
     let flags = Project.get_flags (Buffer.project buffer) in
@@ -229,13 +196,11 @@ let dump buffer = function
   | [`String "exn"] ->
     with_typer buffer @@ fun typer ->
     let exns =
-      Typer.exns typer
-      @ Buffer.lexer_errors buffer
-      @ Buffer.parser_errors buffer
+      Typer.errors typer
+      @ Lexer.errors  (Buffer.lexer buffer)
+      @ Parser.errors (Buffer.parser buffer)
     in
     `List (List.map ~f:(fun x -> `String (Printexc.to_string x)) exns)
-    FIXME
-    *)
 
   | [`String "paths"] ->
     let paths = Project.build_path (Buffer.project buffer) in
@@ -301,8 +266,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     (* enclosings of cursor in given expression *)
     let exprs =
       match expro with
-      | None ->
-        assert false
+      | None -> []
         (* FIXME
            let lexer = Buffer.lexer buffer in
         let lexer =
@@ -587,16 +551,15 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
       try
         let typer = Buffer.typer buffer in
-        let cmp (l1,_) (l2,_) =
-          Lexing.compare_pos l1.Location.loc_start l2.Location.loc_start in
+        let cmp = Error_report.compare in
         let err exns =
-          List.filter ~f:(fun (l,err) ->
-            not l.Location.loc_ghost || err.Error_report.where <> "warning"
-          ) @@
-          List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns)
+          List.filter
+            ~f:(fun {Error_report. loc; where} ->
+                not loc.Location.loc_ghost || where <> "warning")
+            (List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns))
         in
-        let err_lexer  = [] in (*FIXME err @@ Lexer.errors  @@ Buffer.lexer buffer in*)
-        let err_parser = [] in (*FIXME err @@ Parser.errors @@ Buffer.parser buffer in*)
+        let err_lexer  = err (Lexer.errors (Buffer.lexer buffer)) in
+        let err_parser = err (Parser.errors (Buffer.parser buffer)) in
         let err_typer  =
           (* When there is a cmi error, we will have a lot of meaningless errors,
            * there is no need to report them. *)
@@ -611,24 +574,24 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         (* Return parsing warnings & first parsing error,
            or type errors if no parsing errors *)
         let rec extract_warnings acc = function
-          | (_,{Error_report. where = "warning"; _ }) as err :: errs ->
+          | {Error_report. where = "warning"; _ } as err :: errs ->
             extract_warnings (err :: acc) errs
           | err :: _ ->
             List.rev (err :: acc),
-            List.take_while ~f:(fun err' -> cmp err' err < 0) err_typer
+            List.take_while err_typer ~f:(fun err' -> cmp err' err < 0)
           | [] ->
-            List.rev acc, err_typer in
+            List.rev acc, err_typer
+        in
         (* Filter duplicate error messages *)
         let err_parser, err_typer = extract_warnings [] err_parser in
         let errors =
-          List.map ~f:snd @@
           List.merge ~cmp err_lexer @@
           List.merge ~cmp err_parser err_typer
         in
         Error_report.flood_barrier errors
       with exn -> match Error_report.strict_of_exn exn with
         | None -> raise exn
-        | Some (_loc, err) -> [err]
+        | Some err -> [err]
     end
 
   | Dump args ->

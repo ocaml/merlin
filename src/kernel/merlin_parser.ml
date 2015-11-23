@@ -42,7 +42,7 @@ type tree = [
 type t = {
   kind: kind;
   tree: tree;
-  errors: (exn * Location.t) list;
+  errors: exn list;
 }
 
 let default = function
@@ -66,8 +66,7 @@ let run_parser lexer kind =
   in
   let lexbuf = Lexing.from_string "" in
   try (run_parser lexer lexbuf kind), []
-  with exn ->
-    (default kind), [exn, Location.curr lexbuf]
+  with exn -> (default kind), [exn]
 
 let make lexer kind =
   let tree, errors = run_parser lexer kind in

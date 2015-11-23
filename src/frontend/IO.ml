@@ -116,9 +116,9 @@ module Protocol_io = struct
     with_location ~skip_none:true loc content
 
   let error_catcher exn =
-    match Error_report.error_catcher exn with
+    match Error_report.strict_of_exn exn with
     | None -> None
-    | Some (loc,t) -> Some (loc, json_of_error t)
+    | Some t -> Some (json_of_error t)
 
   let pos_of_json = function
     | `String "start" -> `Start
@@ -474,7 +474,7 @@ module Protocol_io = struct
     | Error error -> `List [`String "error"; error]
     | Exception exn ->
       begin match error_catcher exn with
-      | Some (_,error) -> `List [`String "error"; error]
+      | Some error -> `List [`String "error"; error]
       | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
       end
     | Return (Query cmd, response) ->

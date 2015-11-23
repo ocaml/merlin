@@ -135,8 +135,9 @@ let rec gen_patterns ?(recurse=true) env type_expr =
            not (are_types_unifiable cstr_descr.cstr_res)
         then (
           Logger.logfmt "destruct" "gen_pattersn" (fun fmt ->
-              Format.fprintf fmt "Eliminating '%s' branch, its return type is not\
-                                  compatible with the expected type (%a)"
+              Format.fprintf fmt
+                "Eliminating '%s' branch, its return type is not\
+                \ compatible with the expected type (%a)"
                 cstr_descr.cstr_name Printtyp.type_expr type_expr);
           None
         ) else
@@ -225,8 +226,7 @@ let rec get_every_pattern = function
       in
       loc, patterns
     | _ ->
-      let j = Browse_misc.dump_ts [ parent ] in
-      let s = Json.to_string j in
+      let s = Json.to_string (Browse_misc.dump_browse parent) in
       invalid_arg (sprintf "get_every_pattern: %s" s)(* Something went wrong. *)
 
 let rec destructible patt =

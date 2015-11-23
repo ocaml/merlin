@@ -71,7 +71,7 @@ let signature_of_env ?(ignore_extensions=true) env =
   aux (Env.summary env);
   Typemod.simplify_signature (!sg)
 
-let dump_ts ts =
+let dump_browse node =
   let attr (name,payload) =
     `String (name.Location.txt ^
              if payload = Parsetree.PStr [] then "" else " _")
@@ -90,8 +90,7 @@ let dump_ts ts =
     `List (List.sort ~cmp:compare @@
            Browse_node.fold_node append env node [])
   in
-  `List (List.fold_left ts ~init:[] ~f:(fun acc node ->
-      append Env.empty node acc))
+  `List (append Env.empty node [])
 
 let annotate_tail_calls (ts : Browse_node.t list) : (Browse_node.t * Protocol.is_tail_position) list =
   let is_one_of candidates node = List.mem node ~set:candidates in

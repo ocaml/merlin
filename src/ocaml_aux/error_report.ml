@@ -28,10 +28,16 @@
 
 open Std
 
-type t = {valid: bool; loc: Location.t; text: string; sub: (string * Location.t) list; where:string}
+type t = {
+  valid : bool;
+  loc   : Location.t;
+  text  : string;
+  sub   : (string * Location.t) list;
+  where : string;
+}
 
 let format ~valid ~where ?(loc=Location.none) ?(sub=[]) text =
-  loc, {valid; loc; text; sub; where}
+  {valid; loc; text; sub; where}
 
 let of_suberror {Location. err_loc; msg} = (msg, err_loc)
 
@@ -63,15 +69,13 @@ let strict_of_exn exn =
     | _ -> None
 
 let null_loc =
-  let z = {Lexing. pos_fname = ""; pos_bol = 0; pos_lnum = 1; pos_cnum = 0} in
+  let z = {Lexing. pos_fname = ""; pos_lnum = 1; pos_bol = 0; pos_cnum = 0} in
   {Location. loc_start = z; loc_end = z; loc_ghost = true}
 
 let of_exn exn = match strict_of_exn exn with
   | Some j -> j
   | None -> format ~valid:false ~where:"unknown" ~loc:null_loc
               (Printexc.to_string exn)
-
-let error_catcher = strict_of_exn
 
 let flood_barrier ?(threshold=10) errors =
   let dam = Hashtbl.create 17 in
@@ -89,3 +93,7 @@ let flood_barrier ?(threshold=10) errors =
       error :: reported
   in
   List.(rev @@ fold_left ~f ~init:[] errors)
+
+let compare t1 t2 =
+  Lexing.compare_pos
+    t1.loc.Location.loc_start t2.loc.Location.loc_start
