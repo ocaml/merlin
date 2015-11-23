@@ -26,13 +26,13 @@
 
 )* }}} *)
 
-type keywords = Raw_lexer.keywords
+type keywords = Lexer_raw.keywords
 
 type t
 
 val make : keywords -> Merlin_source.t -> t
 val update : Merlin_source.t -> t -> t
 
-val tokens   : t -> (Lexing.position * Raw_parser.token * Lexing.position) list
-val errors   : t -> (Raw_lexer.error * Location.t) list
+val tokens   : t -> (Lexing.position * Parser_raw.token * Lexing.position) list
+val errors   : t -> (Lexer_raw.error * Location.t) list
 val comments : t -> (string * Location.t) list

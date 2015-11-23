@@ -47,7 +47,7 @@ let strict_of_exn exn =
     match exn with
     | Parsing_aux.Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
-    | Raw_parser.Error ->
+    | Parser_raw.Error ->
       Some (format ~valid:false ~where:"parser" "Parse error")
     | Findlib.No_such_package (pkg,msg) ->
       Some (format ~valid:true ~where:"env"

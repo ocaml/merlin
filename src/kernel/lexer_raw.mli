@@ -27,7 +27,7 @@ val report_error : formatter -> error -> unit
 
 (* Keywords, manipulated by extensions *)
 type keywords
-val keywords: (string * Raw_parser.token) list -> keywords
+val keywords: (string * Parser_raw.token) list -> keywords
 
 (* Monad in which the lexer evaluates *)
 type 'a result =
@@ -35,7 +35,7 @@ type 'a result =
   | Refill of (unit -> 'a result)
   | Fail of error * Location.t
 
-type preprocessor = (Lexing.lexbuf -> Raw_parser.token) -> Lexing.lexbuf -> Raw_parser.token
+type preprocessor = (Lexing.lexbuf -> Parser_raw.token) -> Lexing.lexbuf -> Parser_raw.token
 
 type state = {
   keywords: keywords;
@@ -49,8 +49,8 @@ val make: ?preprocessor:preprocessor -> keywords -> state
 
 (* The lexical analyzer *)
 
-val skip_sharp_bang: state -> Lexing.lexbuf -> Raw_parser.token result
-val token: state -> Lexing.lexbuf -> Raw_parser.token result
+val skip_sharp_bang: state -> Lexing.lexbuf -> Parser_raw.token result
+val token: state -> Lexing.lexbuf -> Parser_raw.token result
 
 (* Comments are filtered out from the token rule and stored in a global
    variable. *)
@@ -58,4 +58,4 @@ type comment = string * Location.t
 
 (* If you want to get the raw output, including comments, from the lexer, use
    the [token_with_comments] entry point. *)
-val token_without_comments : state -> Lexing.lexbuf -> Raw_parser.token result
+val token_without_comments : state -> Lexing.lexbuf -> Parser_raw.token result

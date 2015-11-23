@@ -60,7 +60,7 @@ let create ?dot_merlins ?path kind =
   let dot_merlins, name = compute_context ?dot_merlins ?path () in
   let project, _ = Merlin_project.get dot_merlins in
   let source = Merlin_source.empty ~name in
-  let lexer  = Merlin_lexer.make (Raw_lexer.keywords []) source in
+  let lexer  = Merlin_lexer.make (Lexer_raw.keywords []) source in
   let parser = Merlin_parser.make lexer kind in
   let typer  = Merlin_typer.make parser String.Set.empty in
   { kind; project; source; lexer; parser; typer }

@@ -151,8 +151,8 @@ SOURCES = \
 	$(TYPER)/parser_printer.ml     		\
 	$(TYPER)/parser_recover.mli    		\
 	$(TYPER)/parser_recover.ml     		\
-	src/kernel/raw_lexer.mli          \
-	src/kernel/raw_lexer.ml           \
+	src/kernel/lexer_raw.mli          \
+	src/kernel/lexer_raw.ml           \
 	src/kernel/extension.mli          \
 	src/kernel/extension.ml           \
 	src/utils/history.mli             \

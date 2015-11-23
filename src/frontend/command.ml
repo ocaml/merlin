@@ -851,15 +851,12 @@ module Monitor = struct
 
   let view_tokens buffer nav body =
     let print_token line' (pos,t,_) =
-      let t = Raw_parser_values.symbol_of_token t in
-      let t = Raw_parser_values.class_of_symbol t in
-      let t = Raw_parser_values.string_of_class t in
       let line, col = Lexing.split_pos pos in
       let prefix = if line <> line'
         then "\n" ^ String.make col ' '
         else " "
       in
-      printf body "%s%s" prefix t;
+      printf body "%s%s" prefix (Parser_printer.print_token t);
       line
     in
     let _line : int =

@@ -16,9 +16,9 @@
 open Std
 open Misc
 open Lexing
-open Raw_parser
+open Parser_raw
 
-type keywords = (string, Raw_parser.token) Hashtbl.t
+type keywords = (string, Parser_raw.token) Hashtbl.t
 
 type error =
   | Illegal_character of char
@@ -48,7 +48,7 @@ let rec (>>=) (m : 'a result) (f : 'a -> 'b result) : 'b result =
     Refill (fun () -> u () >>= f)
   | Fail _ as e -> e
 
-type preprocessor = (Lexing.lexbuf -> Raw_parser.token) -> Lexing.lexbuf -> Raw_parser.token
+type preprocessor = (Lexing.lexbuf -> Parser_raw.token) -> Lexing.lexbuf -> Parser_raw.token
 
 type state = {
   keywords: keywords;

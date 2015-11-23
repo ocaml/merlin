@@ -46,7 +46,7 @@ type t = {
   private_def : string list;
   public_def : string list;
   packages : string list;
-  keywords : (string * Raw_parser.token) list;
+  keywords : (string * Parser_raw.token) list;
 }
 
 (* Private definitions are put in a fake module named "_" with the following
@@ -57,7 +57,7 @@ val ident : Ident.t
 type set = String.Set.t
 
 (* Lexer keywords needed by extensions *)
-val keywords : set -> Raw_lexer.keywords
+val keywords : set -> Lexer_raw.keywords
 (* Register extensions in typing environment *)
 val register : set -> Env.t -> Env.t
 

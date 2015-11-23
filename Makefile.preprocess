@@ -6,11 +6,11 @@ TYPER  ?= src/ocaml$(MERLIN_OCAML_VERSION)
 preprocess: lexer parser
 
 parser:
-	$(MENHIR) --ocamlc 'ocamlfind ocamlc -package yojson,unix,findlib -I $(TYPER)/preprocess -I $(TYPER)_aux -I src/utils -I src/frontend -I $(TYPER) -I src/analysis -I src/kernel -I src/config -I $(TYPER)/typing -I $(TYPER)/utils -I $(TYPER)/parsing' --table --typed-values --stepwise --infer $(TYPER)/preprocess/raw_parser.mly
-	mv $(TYPER)/preprocess/raw_parser.ml $(TYPER)/preprocess/raw_parser.mli $(TYPER)
+	$(MENHIR) --ocamlc 'ocamlfind ocamlc -package yojson,unix,findlib -I $(TYPER)/preprocess -I $(TYPER)_aux -I src/utils -I src/frontend -I $(TYPER) -I src/analysis -I src/kernel -I src/config -I $(TYPER)/typing -I $(TYPER)/utils -I $(TYPER)/parsing' --table --typed-values --stepwise --infer $(TYPER)/preprocess/parser_raw.mly
+	mv $(TYPER)/preprocess/parser_raw.ml $(TYPER)/preprocess/parser_raw.mli $(TYPER)
 
 lexer:
-	$(OCAMLLEX) -q src/kernel/preprocess/raw_lexer.mll
-	mv src/kernel/preprocess/raw_lexer.ml src/kernel/raw_lexer.ml
+	$(OCAMLLEX) -q src/kernel/preprocess/lexer_raw.mll
+	mv src/kernel/preprocess/lexer_raw.ml src/kernel/lexer_raw.ml
 
 .PHONY: preprocess parser lexer

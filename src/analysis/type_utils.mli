@@ -49,7 +49,7 @@ val mod_smallerthan : int -> Types.module_type -> int option
     otherwise (module is bigger than threshold).
     Used to skip printing big modules in completion. *)
 
-val type_in_env : ?verbosity:int -> ?keywords:Raw_lexer.keywords ->
+val type_in_env : ?verbosity:int -> ?keywords:Lexer_raw.keywords ->
   Env.t -> Format.formatter -> string -> bool
 (** [type_in_env env ppf input] parses [input] and prints its type on [ppf].
     Returning true if it printed a type, false otherwise. *)

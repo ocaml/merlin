@@ -29,32 +29,18 @@
 open Std
 open Merlin_lib
 
-let parse_expr ?(keywords=Raw_lexer.keywords []) expr =
-  assert false (*FIXME*)
-  (*let lexbuf = Lexing.from_string expr in
-  let state = Raw_lexer.make keywords in
-  let rec lex parser = function
-    | Raw_lexer.Fail (e,l) ->
-      assert false
-    | Raw_lexer.Refill f ->
-      lex parser (f ())
-    | Raw_lexer.Return token ->
-      parse (Merlin_parser.feed (Lexing.dummy_pos,token,Lexing.dummy_pos) parser)
-  and parse = function
-    | `Step p -> lex p (Raw_lexer.token_without_comments state lexbuf)
-    | `Accept (Raw_parser.N_ (Raw_parser.N_parse_expression, e)) ->
-      Either.R (e : Parsetree.expression)
-    | `Reject p ->
-      let loc =
-        {Location. loc_start = Lexing.dummy_pos; loc_end = Lexing.dummy_pos;
-         loc_ghost = true }
-      in
-      let explanation = Merlin_recovery_explain.explain p in
-      Either.L ({ Error_classifier. loc ; explanation })
-    | `Accept _ -> assert false
+let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
+  let lexbuf = Lexing.from_string expr in
+  let state = Lexer_raw.make keywords in
+  let rec lexer = function
+    | Lexer_raw.Fail (e,l) -> raise (Lexer_raw.Error (e,l))
+    | Lexer_raw.Return token -> token
+    | Lexer_raw.Refill k -> lexer (k ())
   in
-  parse (`Step (Merlin_parser.from Raw_parser.parse_expression_state
-                  (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))*)
+  let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
+  match Parser_raw.parse_expression lexer lexbuf with
+  | e -> Either.R (e : Parsetree.expression)
+  | exception exn -> Either.L exn
 
 let lookup_module_or_modtype name env =
   try

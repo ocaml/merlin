@@ -28,17 +28,17 @@
 
 open Std
 
-type keywords = Raw_lexer.keywords
+type keywords = Lexer_raw.keywords
 
 type t = {
   keywords: keywords;
-  tokens: (Lexing.position * Raw_parser.token * Lexing.position) list;
-  errors: (Raw_lexer.error * Location.t) list;
+  tokens: (Lexing.position * Parser_raw.token * Lexing.position) list;
+  errors: (Lexer_raw.error * Location.t) list;
   comments: (string * Location.t) list
 }
 
 let get_tokens keywords source =
-  let state = Raw_lexer.make keywords in
+  let state = Lexer_raw.make keywords in
   let lexbuf = Lexing.from_string (Merlin_source.text source) in
   Lexing.move lexbuf
     { Lexing.
@@ -48,19 +48,19 @@ let get_tokens keywords source =
       pos_cnum = 0;
     };
   let rec aux items errors comments = function
-    | Raw_lexer.Return Raw_parser.EOF ->
+    | Lexer_raw.Return Parser_raw.EOF ->
       List.rev items, List.rev errors, List.rev comments
-    | Raw_lexer.Return (Raw_parser.COMMENT comment) ->
+    | Lexer_raw.Return (Parser_raw.COMMENT comment) ->
       continue items errors (comment :: comments)
-    | Raw_lexer.Refill k -> aux items errors comments (k ())
-    | Raw_lexer.Return t ->
+    | Lexer_raw.Refill k -> aux items errors comments (k ())
+    | Lexer_raw.Return t ->
       let item = (lexbuf.Lexing.lex_start_p, t, lexbuf.Lexing.lex_curr_p) in
       continue (item :: items) errors comments
-    | Raw_lexer.Fail (err, loc) ->
+    | Lexer_raw.Fail (err, loc) ->
       continue items ((err, loc) :: errors) comments
 
   and continue items errors comments =
-    aux items errors comments (Raw_lexer.token state lexbuf)
+    aux items errors comments (Lexer_raw.token state lexbuf)
 
   in
   continue [] [] []

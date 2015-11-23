@@ -27,7 +27,7 @@
 )* }}} *)
 
 open Std
-open Raw_parser
+open Parser_raw
 
 exception Unknown
 
@@ -36,7 +36,7 @@ type t = {
   private_def : string list;
   public_def : string list;
   packages : string list;
-  keywords : (string * Raw_parser.token) list;
+  keywords : (string * Parser_raw.token) list;
 }
 
 type set = String.Set.t
@@ -216,29 +216,20 @@ let keywords set =
     | Some def -> def.keywords @ kws
   in
   let all = String.Set.fold set ~init:default_kw ~f:add_kw in
-  Raw_lexer.keywords all
+  Lexer_raw.keywords all
 
 (* Register extensions in typing environment *)
 let parse_sig =
-  let keywords = Raw_lexer.keywords [] in fun str ->
-  let buf = Lexing.from_string str in
-  let state = Raw_lexer.make keywords in
-  let rec lex parser = function
-    | Raw_lexer.Fail (e,l) ->
-      assert false
-    | Raw_lexer.Refill f ->
-      lex parser (f ())
-    | Raw_lexer.Return token ->
-      parse (`Step (Raw_parser.feed parser
-                      (Lexing.dummy_pos,token,Lexing.dummy_pos)))
-  and parse = function
-    | `Step s -> parse (Raw_parser.step s)
-    | `Feed p -> lex p (Raw_lexer.token_without_comments state buf)
-    | `Accept (Raw_parser.N_ (Raw_parser.N_interface, sg)) -> (sg : Parsetree.signature)
-    | `Reject _ | `Accept _ -> assert false
+  let keywords = Lexer_raw.keywords [] in fun str ->
+  let lexbuf = Lexing.from_string str in
+  let state = Lexer_raw.make keywords in
+  let rec lexer = function
+    | Lexer_raw.Fail _ -> assert false
+    | Lexer_raw.Return x -> x
+    | Lexer_raw.Refill k -> lexer (k ())
   in
-  parse (`Step (Raw_parser.initial Raw_parser.interface_state
-                  (Lexing.dummy_pos,Raw_parser.ENTRYPOINT,Lexing.dummy_pos)))
+  let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
+  (Parser_raw.interface lexer lexbuf : Parsetree.signature)
 
 let type_sig env sg =
   let sg = Typemod.transl_signature env sg in
