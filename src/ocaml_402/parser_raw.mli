@@ -114,7 +114,6 @@ type token =
   | EQUAL
   | EOL
   | EOF
-  | ENTRYPOINT
   | END
   | ELSE
   | DOWNTO
@@ -283,7 +282,6 @@ module MenhirInterpreter : sig
     | T_EQUAL : unit terminal
     | T_EOL : unit terminal
     | T_EOF : unit terminal
-    | T_ENTRYPOINT : unit terminal
     | T_END : unit terminal
     | T_ELSE : unit terminal
     | T_DOWNTO : unit terminal

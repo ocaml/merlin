@@ -497,7 +497,7 @@ let let_operator startpos endpos op bindings cont =
 %token GREATERDOT [@cost 1]
 %token <string> LETOP [@cost 1] [@recovery ""]
 
-%token ENTRYPOINT EXITPOINT [@cost 10]
+%token EXITPOINT [@cost 10]
 
 (* Precedences and associativities.
 
@@ -598,16 +598,16 @@ The precedences must be listed from low to high.
 (* Entry points *)
 
 implementation:
-| ENTRYPOINT structure EOF
-    { $2 }
+| structure EOF
+    { $1 }
 
 interface:
-| ENTRYPOINT signature EOF
-    { $2 }
+| signature EOF
+    { $1 }
 
 parse_expression:
-| ENTRYPOINT seq_expr EOF
-    { $2 }
+| seq_expr EOF
+    { $1 }
 
 dummy:
 | SHARPOP
@@ -615,7 +615,6 @@ dummy:
 | NONREC
 | COMMENT
 | GREATERRBRACKET
-| ENTRYPOINT
 | LET_LWT
 | TRY_LWT
 | MATCH_LWT

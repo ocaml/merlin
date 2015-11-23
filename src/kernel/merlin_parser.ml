@@ -34,16 +34,49 @@ type kind =
   (*| MLL | MLY*)
 
 
-type t = T
-
-let make _ _ = T
-let update _ T = T
-
 type tree = [
   | `Signature of Parsetree.signature
   | `Structure of Parsetree.structure
 ]
 
-let result T = `Structure []
+type t = {
+  kind: kind;
+  tree: tree;
+  errors: (exn * Location.t) list;
+}
 
-let errors T = []
+let default = function
+  | ML  -> `Structure []
+  | MLI -> `Signature []
+
+let run_parser lexer lexbuf = function
+  | ML  -> `Structure (Parser_raw.implementation lexer lexbuf)
+  | MLI -> `Signature (Parser_raw.interface lexer lexbuf)
+
+let run_parser lexer kind =
+  let tokens = ref (Merlin_lexer.tokens lexer) in
+  let lexer lexbuf =
+    match !tokens with
+    | [] -> Parser_raw.EOF
+    | (startp, tok, endp) :: xs ->
+      tokens := xs;
+      lexbuf.Lexing.lex_start_p <- startp;
+      lexbuf.Lexing.lex_curr_p <- endp;
+      tok
+  in
+  let lexbuf = Lexing.from_string "" in
+  try (run_parser lexer lexbuf kind), []
+  with exn ->
+    (default kind), [exn, Location.curr lexbuf]
+
+let make lexer kind =
+  let tree, errors = run_parser lexer kind in
+  {kind; tree; errors}
+
+let update lexer t =
+  let tree, errors = run_parser lexer t.kind in
+  {t with tree; errors}
+
+let result t = t.tree
+
+let errors t = t.errors

@@ -114,7 +114,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EQUAL) -> "EQUAL"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EOL) -> "EOL"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EOF) -> "EOF"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_ENTRYPOINT) -> "ENTRYPOINT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_END) -> "END"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_ELSE) -> "ELSE"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOWNTO) -> "DOWNTO"
@@ -447,7 +446,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_EQUAL -> (fun _ -> "EQUAL")
   | MenhirInterpreter.T MenhirInterpreter.T_EOL -> (fun _ -> "EOL")
   | MenhirInterpreter.T MenhirInterpreter.T_EOF -> (fun _ -> "EOF")
-  | MenhirInterpreter.T MenhirInterpreter.T_ENTRYPOINT -> (fun _ -> "ENTRYPOINT")
   | MenhirInterpreter.T MenhirInterpreter.T_END -> (fun _ -> "END")
   | MenhirInterpreter.T MenhirInterpreter.T_ELSE -> (fun _ -> "ELSE")
   | MenhirInterpreter.T MenhirInterpreter.T_DOWNTO -> (fun _ -> "DOWNTO")
@@ -779,7 +777,6 @@ let print_token = function
   | EQUAL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EQUAL) ()
   | EOL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EOL) ()
   | EOF -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EOF) ()
-  | ENTRYPOINT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_ENTRYPOINT) ()
   | END -> print_value (MenhirInterpreter.T MenhirInterpreter.T_END) ()
   | ELSE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_ELSE) ()
   | DOWNTO -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOWNTO) ()

@@ -865,18 +865,54 @@ module Monitor = struct
     in
     ()
 
+  let view_printast buffer nav body =
+    let ppf, to_string = Format.to_string () in
+    begin match Parser.result (Buffer.parser buffer) with
+      | `Signature s -> Printast.interface ppf s
+      | `Structure s -> Printast.implementation ppf s
+    end;
+    text body (to_string ())
+
+  let view_pprintast buffer nav body =
+    let ppf, to_string = Format.to_string () in
+    begin match Parser.result (Buffer.parser buffer) with
+      | `Signature s -> Pprintast.signature ppf s
+      | `Structure s -> Pprintast.structure ppf s
+    end;
+    text body (to_string ())
+
+  let view_signature buffer nav body =
+    let ppf, to_string = Format.to_string () in
+    begin match Typer.result (Buffer.typer buffer) with
+      | `Signature s -> Printtyp.signature ppf s.Typedtree.sig_type
+      | `Structure s -> Printtyp.signature ppf s.Typedtree.str_type
+    end;
+    text body (to_string ())
+
+  let view_typedtree buffer nav body =
+    let ppf, to_string = Format.to_string () in
+    begin match Typer.result (Buffer.typer buffer) with
+      | `Signature s -> Printtyped.interface ppf s
+      | `Structure s -> Printtyped.implementation ppf s
+    end;
+    text body (to_string ())
+
   let monitor_context key state nav body =
-    printf body "Verbosity: %d\n" state.verbosity;
     let buffer = state.buffer in
-    printf body "Unit name: %s\n" (Buffer.unit_name buffer);
-    link body "View source" (fun _ ->
-        Nav.modal nav ("Source of " ^ Buffer.unit_name buffer)
-          (view_source buffer));
-    text body "\n";
-    link body "View tokens" (fun _ ->
-        Nav.modal nav ("Tokens of " ^ Buffer.unit_name buffer)
-          (view_tokens buffer));
-    text body "\n"
+    let unit = Buffer.unit_name buffer in
+    printf body "Verbosity: %d\n" state.verbosity;
+    printf body "Unit name: %s\n" unit;
+    let viewer name f =
+      link body ("View " ^ name) (fun _ ->
+          Nav.modal nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer));
+      text body "\n"
+    in
+    viewer "source" view_source;
+    viewer "tokens" view_tokens;
+    viewer "parsetree (raw)" view_printast;
+    viewer "parsetree (pretty)" view_pprintast;
+    viewer "signature" view_signature;
+    viewer "typedtree" view_typedtree
 
   let main ~args ~set_title k =
     set_title "merlin-monitor";

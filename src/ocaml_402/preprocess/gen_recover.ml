@@ -219,7 +219,7 @@ let items_table items =
     and costs = Array.map string_of_float (cost_of_rhs p) in
     if pos >= 0 && pos < Array.length rhs then
       rhs.(pos) <- ". " ^ rhs.(pos)
-    else if pos = Array.length rhs then
+    else if pos > 0 && pos = Array.length rhs then
       rhs.(pos - 1) <- rhs.(pos - 1) ^ " .";
     let rhs = Array.to_list rhs and costs = Array.to_list costs in
     let rhs =
