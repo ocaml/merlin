@@ -27,6 +27,7 @@
 )* }}} *)
 
 open Std
+open Sturgeon.Tui
 
 module I = Parser_raw.MenhirInterpreter
 module R = Parser_recover
@@ -53,6 +54,55 @@ let default = function
   | MLI -> `Signature []
 
 let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
+
+module Printing = struct
+
+  let print_position pos =
+    let l1, c1 = Lexing.split_pos pos in
+    Printf.sprintf "%d:%d" l1 c1
+
+
+  let print_item k (prod, pos) =
+    if not (is_closed k) then (
+      let lhs = Parser_printer.print_symbol (I.lhs prod) in
+      let rec insert_dot pos = function
+        | [] -> ["."]
+        | xs when pos = 0 -> "." :: xs
+        | x :: xs -> x :: insert_dot (pos - 1) xs
+      in
+      let rhs =
+        I.rhs prod
+        |> List.map ~f:Parser_printer.print_symbol
+        |> insert_dot pos
+        |> String.concat ~sep:" "
+      in
+      printf k "%s ::= %s\n" lhs rhs
+    )
+
+  let print_state k state =
+    if not (is_closed k) then (
+      let items = I.items state in
+      printf k "LR(1) state %d:\n" (I.number state);
+      List.iter (print_item k) items
+    )
+
+  let print_element k (I.Element (state, _, startp, endp)) =
+    if not (is_closed k) then (
+      printf k "From %s to %s, "
+        (print_position startp)
+        (print_position endp);
+      print_state k state
+    )
+
+  let print_env_summary k env =
+    match I.stack env with
+    | None ->
+      text k "Initial state."
+    | Some stack ->
+      print_element k (I.stack_element stack)
+
+end
+
 
 let feed_token token env =
   let module T = struct
@@ -83,26 +133,23 @@ let order_recoveries envs =
       let I.Element (_, _, startp, _) = I.stack_element stack in
       snd (Lexing.split_pos startp)
   in
-  let cmp (c0, _) (c1, _) = compare (c1 : int) (c0 : int) in
+  List.map ~f:(fun env -> column env, env) envs
+  (*let cmp (c0, _) (c1, _) = compare (c1 : int) (c0 : int) in
   let envs = List.map ~f:(fun env -> column env, env) envs in
-  List.stable_sort ~cmp envs
+  List.stable_sort ~cmp envs*)
 
 let attempt_recovery recoveries token =
   let _, startp, _ = token in
   let _, col = Lexing.split_pos startp in
-  let more_indented (col', _) = col' > col + 1 in
+  let more_indented (col', _) = col' > col in
   let recoveries = List.drop_while ~f:more_indented recoveries in
-  let col = match recoveries with
-    | (col', _) :: _ when col' < col -> col'
-    | _ -> col
-  in
-  let same_indented (col', _) = col' >= col - 1 in
+  let same_indented (col', _) = abs (col' - col) <= 1 in
   let recoveries = List.take_while ~f:same_indented recoveries in
   let rec aux = function
     | [] -> `Fail
     | (_, x) :: xs -> match feed_token token x with
       | `Fail -> aux xs
-      | `Recovered (checkpoint, _) -> `Ok checkpoint
+      | `Recovered (checkpoint, env) -> `Ok (checkpoint, env, x)
       | `Accept v ->
         begin match aux xs with
           | `Fail -> `Accept v
@@ -111,11 +158,12 @@ let attempt_recovery recoveries token =
   in
   aux recoveries
 
-let rec recoveries env =
+let rec recoveries k env =
   match I.stack env with
   | None -> []
   | Some stack ->
-    let I.Element (state, v, startp, endp) = I.stack_element stack in
+    let I.Element (state, v, startp, endp) as elt = I.stack_element stack in
+    Printing.print_element k elt;
     let decision =
       match R.decision (I.number state) with
       | R.Parent decide ->
@@ -145,62 +193,99 @@ let rec recoveries env =
     in
     match env with
     | None -> []
-    | Some env -> env :: recoveries env
+    | Some env -> env :: recoveries k env
 
+let show_recoveries nav (t,s,e as token) tokens env =
+  let body = Nav.body nav in
+  if not (is_closed body) then (
+    printf body "Unexpected %S at %s, "
+      (Parser_printer.print_token t)
+      (Printing.print_position s);
+    link body "see recoveries"
+      (fun _ -> Nav.modal nav "Recoveries" @@ fun nav ->
+        let body = Nav.body nav in
+        let r = env :: recoveries body env in
+        let r = order_recoveries r in
+        let rec aux = function
+          | [] -> ()
+          | token :: tokens ->
+            match attempt_recovery r token with
+            | `Fail -> aux tokens
+            | `Accept v ->
+              text body "\nCouldn't resume, generated final AST.\n"
+            | `Ok (checkpoint, _, recovered_from) ->
+              printf body "\nResumed with %S from:\n"
+                (Parser_printer.print_token @@
+                 let (t,_,_) = token in t);
+              Printing.print_env_summary body recovered_from
+        in
+        aux (token :: tokens)
+      );
+    text body ".\n";
+    Printing.print_env_summary body env;
+    text body "\n"
+  )
 
-let rec normal tokens checkpoint =
-  match checkpoint with
-  | I.InputNeeded env ->
+let parse nav =
+  let rec normal tokens checkpoint =
+    match checkpoint with
+    | I.InputNeeded env ->
+      let token, tokens = match tokens with
+        | token :: tokens -> token, tokens
+        | [] -> eof_token, []
+      in
+      check_for_error token tokens env (I.offer checkpoint token)
+
+    | I.Shifting _ | I.AboutToReduce _ ->
+      normal tokens (I.resume checkpoint)
+
+    | I.Accepted v -> v
+
+    | I.Rejected | I.HandlingError _ ->
+      assert false
+
+  and check_for_error token tokens env = function
+    | I.HandlingError _ ->
+      show_recoveries nav token tokens env;
+      recover (order_recoveries (env :: recoveries null_cursor env)) (token :: tokens)
+
+    | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
+      check_for_error token tokens env (I.resume checkpoint)
+
+    | checkpoint ->
+      normal tokens checkpoint
+
+  and recover recoveries tokens =
     let token, tokens = match tokens with
       | token :: tokens -> token, tokens
       | [] -> eof_token, []
     in
-    check_for_error token tokens env (I.offer checkpoint token)
-
-  | I.Shifting _ | I.AboutToReduce _ ->
-    normal tokens (I.resume checkpoint)
-
-  | I.Accepted v -> v
-
-  | I.Rejected | I.HandlingError _ ->
-      assert false
-
-and check_for_error token tokens env = function
-  | I.HandlingError _ ->
-    recover (order_recoveries (env :: recoveries env)) (token :: tokens)
-
-  | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
-    check_for_error token tokens env (I.resume checkpoint)
-
-  | checkpoint ->
-    normal tokens checkpoint
-
-and recover recoveries tokens =
-  let token, tokens = match tokens with
-    | token :: tokens -> token, tokens
-    | [] -> eof_token, []
+    match attempt_recovery recoveries token with
+    | `Fail -> recover recoveries tokens
+    | `Accept v -> v
+    | `Ok (checkpoint, _, _) ->
+      normal tokens checkpoint
   in
-  match attempt_recovery recoveries token with
-  | `Fail -> recover recoveries tokens
-  | `Accept v -> v
-  | `Ok checkpoint ->
-    normal tokens checkpoint
+  normal
 
-let run_parser tokens = function
-  | ML  -> `Structure (normal tokens (Parser_raw.Incremental.implementation ()))
-  | MLI -> `Signature (normal tokens (Parser_raw.Incremental.interface ()))
+let run_parser k tokens = function
+  | ML  -> `Structure (parse k tokens (Parser_raw.Incremental.implementation ()))
+  | MLI -> `Signature (parse k tokens (Parser_raw.Incremental.interface ()))
 
-let run_parser lexer kind =
-  try (run_parser (Merlin_lexer.tokens lexer) kind), []
+let run_parser k lexer kind =
+  try (run_parser k (Merlin_lexer.tokens lexer) kind), []
   with exn -> (default kind), [exn]
 
 let make lexer kind =
-  let tree, errors = run_parser lexer kind in
+  let tree, errors = run_parser Nav.null lexer kind in
   {kind; tree; errors}
 
 let update lexer t =
-  let tree, errors = run_parser lexer t.kind in
+  let tree, errors = run_parser Nav.null lexer t.kind in
   {t with tree; errors}
+
+let trace nav lexer t =
+  ignore (run_parser nav lexer t.kind)
 
 let result t = t.tree
 

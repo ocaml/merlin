@@ -93,15 +93,15 @@ module SymbolMap = Map.Make (struct
 
 let table_terminal f =
   let table = Array.map f g.g_terminals in
-  function t -> table.(t.t_index)
+  fun t -> table.(t.t_index)
 
 let table_nonterminal f =
   let table = Array.map f g.g_nonterminals in
-  function n -> table.(n.n_index)
+  fun n -> table.(n.n_index)
 
 let table_production f =
   let table = Array.map f g.g_productions in
-  function p -> table.(p.p_index)
+  fun p -> table.(p.p_index)
 
 let table_symbol f =
   let ft = table_terminal (fun t -> f (T t)) in
@@ -130,7 +130,7 @@ let null_reducible =
       if p.p_kind = `REGULAR && p.p_rhs = [||] then
         table.(p.p_lhs.n_index) <- Some p
     ) g.g_productions;
-  function n -> table.(n.n_index)
+  fun n -> table.(n.n_index)
 
 let cost_of_symbol =
   let measure ~default attrs =

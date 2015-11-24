@@ -1,4 +1,4 @@
-MENHIR_FLAGS = --infer --inspection --incremental --table --cmly \
+MENHIR_FLAGS = --infer --inspection --table --cmly \
 	--ocamlc 'ocamlc.opt -I ../parsing -I ../../ocaml_aux -I ../../kernel'
 
 .PHONY: parser_recover.ml

@@ -809,17 +809,17 @@ module Monitor = struct
        | Some [] -> "<no project>"
        | Some names -> String.concat ~sep:", " names)
 
-  let view_source buffer nav body =
-    text body (Source.text (Buffer.source buffer))
+  let view_source buffer nav =
+    text (Nav.body nav) (Source.text (Buffer.source buffer))
 
-  let view_tokens buffer nav body =
+  let view_tokens buffer nav =
     let print_token line' (t,pos,_) =
       let line, col = Lexing.split_pos pos in
       let prefix = if line <> line'
         then "\n" ^ String.make col ' '
         else " "
       in
-      printf body "%s%s" prefix (Parser_printer.print_token t);
+      printf (Nav.body nav) "%s%s" prefix (Parser_printer.print_token t);
       line
     in
     let _line : int =
@@ -828,41 +828,45 @@ module Monitor = struct
     in
     ()
 
-  let view_printast buffer nav body =
+  let view_printast buffer nav =
     let ppf, to_string = Format.to_string () in
     begin match Parser.result (Buffer.parser buffer) with
       | `Signature s -> Printast.interface ppf s
       | `Structure s -> Printast.implementation ppf s
     end;
-    text body (to_string ())
+    text (Nav.body nav) (to_string ())
 
-  let view_pprintast buffer nav body =
+  let view_pprintast buffer nav =
     let ppf, to_string = Format.to_string () in
     begin match Parser.result (Buffer.parser buffer) with
       | `Signature s -> Pprintast.signature ppf s
       | `Structure s -> Pprintast.structure ppf s
     end;
-    text body (to_string ())
+    text (Nav.body nav) (to_string ())
 
-  let view_signature buffer nav body =
+  let view_recoveries buffer nav =
+    Parser.trace nav (Buffer.lexer buffer) (Buffer.parser buffer)
+
+  let view_signature buffer nav =
     let ppf, to_string = Format.to_string () in
     begin match Typer.result (Buffer.typer buffer) with
       | `Signature s -> Printtyp.signature ppf s.Typedtree.sig_type
       | `Structure s -> Printtyp.signature ppf s.Typedtree.str_type
     end;
-    text body (to_string ())
+    text (Nav.body nav) (to_string ())
 
-  let view_typedtree buffer nav body =
+  let view_typedtree buffer nav =
     let ppf, to_string = Format.to_string () in
     begin match Typer.result (Buffer.typer buffer) with
       | `Signature s -> Printtyped.interface ppf s
       | `Structure s -> Printtyped.implementation ppf s
     end;
-    text body (to_string ())
+    text (Nav.body nav) (to_string ())
 
-  let monitor_context key state nav body =
+  let monitor_context key state nav =
     let buffer = state.buffer in
     let unit = Buffer.unit_name buffer in
+    let body = Nav.body nav in
     printf body "Verbosity: %d\n" state.verbosity;
     printf body "Unit name: %s\n" unit;
     let viewer name f =
@@ -874,12 +878,14 @@ module Monitor = struct
     viewer "tokens" view_tokens;
     viewer "parsetree (raw)" view_printast;
     viewer "parsetree (pretty)" view_pprintast;
+    viewer "recoveries" view_recoveries;
     viewer "signature" view_signature;
     viewer "typedtree" view_typedtree
 
   let main ~args ~set_title k =
     set_title "merlin-monitor";
-    Nav.make k "Merlin monitor" @@ fun nav body ->
+    Nav.make k "Merlin monitor" @@ fun nav ->
+    let body = Nav.body nav in
     text body "Buffers\n\n";
     let print_context key state =
       link body (name_of_key key) (fun _ ->
