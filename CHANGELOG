@@ -1,5 +1,19 @@
+merlin 2.3.1
+============
+Wed Nov 25 15:01:47 CET 2015
+
+Bug fix release, fix builds under Mac OS X and Windows.
+
+  backend:
+    - improve support for module aliases in completion, locate and short-path
+    - change management of flags
+    - Cuillère ou Dorade
+    - fix grammar for 4.02.3, support attributes on core_types
+
+  emacs & vim: minor fixes
+
 merlin 2.3
-===========
+==========
 Wed Oct 28 14:32:48 CET 2015
 
   backend:
