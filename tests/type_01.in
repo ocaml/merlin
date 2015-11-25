@@ -1,0 +1,15 @@
+#!/bin/bash
+. functions.sh || exit 1
+
+reset type_01.ml
+package sexplib
+tell <<END
+(* Pourquoi je fais ca, c'est meme pas pour avoir bonne conscience ... *)
+type t1 = int [@@attribute]
+type t2 = {
+  i : int [@attribute]
+}
+type t3 = int [@attribute]
+END
+cmd errors
+cmd dump env

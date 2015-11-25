@@ -1,0 +1,7 @@
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"result":true}]
+["return",{"cursor":{"line":1,"col":0},"marker":false}]
+["return",{"cursor":{"line":7,"col":0},"marker":false}]
+["return",{"cursor":{"line":7,"col":0},"marker":false}]
+["return",[]]
+["return",[["File \"type_01.ml\", line 2, characters 5-28","type nonrec t1 = int"],["File \"type_01.ml\", line 3, characters 5-37","type nonrec t2 = { i : int; }"],["File \"type_01.ml\", line 6, characters 5-27","type nonrec t3 = int"]]]
