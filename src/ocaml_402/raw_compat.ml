@@ -251,7 +251,7 @@ let path_and_loc_of_cstr desc env =
 let dest_tstr_eval str =
   let open Typedtree in
   match str.str_items with
-  | [ { str_desc = Tstr_eval (exp,[]) }] -> exp
+  | [ { str_desc = Tstr_eval (exp,_) }] -> exp
   | _ -> failwith "unhandled expression"
 
 let full_scrape = Env.scrape_alias

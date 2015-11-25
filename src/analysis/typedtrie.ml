@@ -71,23 +71,12 @@ let path_to_string (p : path) =
   in
   String.concat ~sep:"." p
 
-let extract_doc (attrs : Typedtree.attributes) =
-  List.filter_map attrs ~f:(fun (name, payload) ->
-    if name.Location.txt = "doc" || name.Location.txt = "ocaml.doc" then
-      let open Parsetree in
-      (* assassin de la police *)
-      match payload with
-      | PStr [
-        { pstr_desc = Pstr_eval (
-            { pexp_desc = Pexp_constant (Asttypes.Const_string (doc, _)) },
-            _
-          ) } ] ->
-        Some doc
-      | _ -> assert false
-    else
-      None
+let extract_doc (attrs : Parsetree.attributes) =
+  String.concat ~sep:"\n" (
+    List.filter_map attrs ~f:(fun attr ->
+      Option.map ~f:fst (Raw_compat.read_doc_attributes [attr])
+    )
   )
-  |> String.concat ~sep:"\n"
 
 let section = Logger.section "typedtrie"
 
