@@ -1467,7 +1467,7 @@ loading"
 (defun merlin/jump (&optional target)
   "Jump to the TARGET"
   (let ((result (merlin/send-command
-                  (list 'jump (if (equal target "") "fun,let,module,match" target)
+                  (list 'jump (if (equal target "") "fun let module match" target)
                         'at (merlin/unmake-point (point))))))
     (unless result
       (error "Not found. (Check *Messages* for potential errors)"))
