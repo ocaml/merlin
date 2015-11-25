@@ -142,7 +142,7 @@ let get typed_tree pos target =
     "module", module_pred;
     "match", match_pred;
   ] in
-  let targets = Str.split (Str.regexp " ") target in
+  let targets = Str.split (Str.regexp "[, ]") target in
   try
     let preds =
       List.map targets ~f:(fun target ->
