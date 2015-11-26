@@ -61,7 +61,6 @@ module Printing = struct
     let l1, c1 = Lexing.split_pos pos in
     Printf.sprintf "%d:%d" l1 c1
 
-
   let print_item k (prod, pos) =
     if not (is_closed k) then (
       let lhs = Parser_printer.print_symbol (I.lhs prod) in
@@ -93,6 +92,13 @@ module Printing = struct
         (print_position endp);
       print_state k state
     )
+
+  let env_state env =
+    match I.stack env with
+    | None -> -1
+    | Some stack ->
+      let I.Element (state, _, _, _) = I.stack_element stack in
+      I.number state
 
   let print_env_summary k env =
     match I.stack env with
@@ -139,17 +145,23 @@ let order_recoveries envs =
   let envs = List.map ~f:(fun env -> column env, env) envs in
   List.stable_sort ~cmp envs*)
 
-let attempt_recovery recoveries token =
+let attempt_recovery k recoveries token =
   let _, startp, _ = token in
   let line, col = Lexing.split_pos startp in
-  let more_indented ((line', col'), _) = line = line' || col' > col in
+  let more_indented ((line', col'), _) = line <> line' && col' > col in
   let recoveries = List.drop_while ~f:more_indented recoveries in
   let same_indented ((line', col'), _) = line = line' || abs (col' - col) <= 1 in
   let recoveries = List.take_while ~f:same_indented recoveries in
   let rec aux = function
     | [] -> `Fail
     | (_, x) :: xs -> match feed_token ~allow_reduction:false token x with
-      | `Fail -> aux xs
+      | `Fail ->
+        if not (is_closed k) then
+          printf k "Couldn't resume %d with %S.\n"
+            (Printing.env_state x)
+            (Parser_printer.print_token @@
+             let (t,_,_) = token in t);
+        aux xs
       | `Recovered (checkpoint, env) -> `Ok (checkpoint, env, x)
       | `Accept v ->
         begin match aux xs with
@@ -237,7 +249,7 @@ let show_recoveries nav (t,s,e as token) tokens env =
         let rec aux = function
           | [] -> ()
           | token :: tokens ->
-            match attempt_recovery r token with
+            match attempt_recovery body r token with
             | `Fail -> aux tokens
             | `Accept v ->
               text body "\nCouldn't resume, generated final AST.\n"
@@ -288,7 +300,7 @@ let parse nav =
       | token :: tokens -> token, tokens
       | [] -> eof_token, []
     in
-    match attempt_recovery recoveries token with
+    match attempt_recovery null_cursor recoveries token with
     | `Fail -> recover recoveries tokens
     | `Accept v -> v
     | `Ok (checkpoint, _, _) ->
