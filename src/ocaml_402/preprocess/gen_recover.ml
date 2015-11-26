@@ -132,7 +132,7 @@ let null_reducible =
     ) g.g_productions;
   fun n -> table.(n.n_index)
 
-let cost_of_symbol =
+let cost_of_raw_symbol =
   let measure ~default attrs =
     if List.exists (is_attribute "recovery") attrs then
       cost_of_attributes attrs
@@ -149,79 +149,79 @@ let cost_of_symbol =
         measure ~default:infinity n.n_attributes
     )
 
-module Generate_N = struct
+let derive_nonterminal =
+  let module M = struct
+    let initial_items =
+      let tbl = Array.make (Array.length g.g_nonterminals) [] in
+      Array.iter (fun p ->
+          let index = p.p_lhs.n_index in
+          tbl.(index) <- (p, 0, 0.0) :: tbl.(index)
+        ) g.g_productions;
+      (fun n -> tbl.(n.n_index))
 
-  let initial_items =
-    let tbl = Array.make (Array.length g.g_nonterminals) [] in
-    Array.iter (fun p ->
-        let index = p.p_lhs.n_index in
-        tbl.(index) <- (p, 0, 0.0) :: tbl.(index)
-      ) g.g_productions;
-    (fun n -> tbl.(n.n_index))
+    let solution =
+      Array.make (Array.length g.g_nonterminals) None
 
-  let solution =
-    Array.make (Array.length g.g_nonterminals) None
+    let is_done (prod, pos, _) =
+      Array.length prod.p_rhs = pos
 
-  let is_done (prod, pos, _) =
-    Array.length prod.p_rhs = pos
+    let cheaper (_, _, cost0) (_, _, cost1) =
+      cost0 < cost1
 
-  let cheaper (_, _, cost0) (_, _, cost1) =
-    cost0 < cost1
+    let merge_final acc (_, _, cost as final) =
+      match acc with
+      | None -> Some final
+      | Some final' when cheaper final final' -> Some final
+      | acc -> acc
 
-  let merge_final acc (_, _, cost as final) =
-    match acc with
-    | None -> Some final
-    | Some final' when cheaper final final' -> Some final
-    | acc -> acc
+    let rec solve forbidden n =
+      match solution.(n.n_index) with
+      | Some result -> result
+      | None ->
+        let items = initial_items n in
+        let result = steps (n :: forbidden) None items in
+        if forbidden = [] then
+          solution.(n.n_index) <- Some result;
+        result
 
-  let rec solve forbidden n =
-    match solution.(n.n_index) with
-    | Some result -> result
-    | None ->
-      let items = initial_items n in
-      let result = steps (n :: forbidden) None items in
-      if forbidden = [] then
-        solution.(n.n_index) <- Some result;
-      result
+    and steps forbidden final items =
+      let finals, intermediates = List.partition is_done items in
+      match List.fold_left merge_final final finals with
+      | Some result when List.for_all (cheaper result) intermediates ->
+        let (prod, _, cost) = result in
+        prod, cost
+      | final ->
+        steps forbidden final (List.map (step forbidden) intermediates)
 
-  and steps forbidden final items =
-    let finals, intermediates = List.partition is_done items in
-    match List.fold_left merge_final final finals with
-    | Some result when List.for_all (cheaper result) intermediates ->
-      let (prod, _, cost) = result in
-      prod, cost
-    | final ->
-      steps forbidden final (List.map (step forbidden) intermediates)
+    and step forbidden (p,pos,cost) =
+      let sym, _, _ = p.p_rhs.(pos) in
+      match sym with
+      | sym when cost_of_raw_symbol sym < infinity ->
+        (p, pos + 1, cost +. 1. +. cost_of_raw_symbol sym)
+      | T _ ->
+        (p, pos + 1, infinity)
+      | N n when List.mem n forbidden ->
+        (p, pos + 1, infinity)
+      | N n ->
+        let _, cost' = solve forbidden n in
+        (p, pos + 1, cost +. 1. +. cost')
 
-  and step forbidden (p,pos,cost) =
-    let sym, _, _ = p.p_rhs.(pos) in
-    match sym with
-    | sym when cost_of_symbol sym < infinity ->
-      (p, pos + 1, cost +. 1. +. cost_of_symbol sym)
-    | T _ ->
-      (p, pos + 1, infinity)
-    | N n when List.mem n forbidden ->
-      (p, pos + 1, infinity)
-    | N n ->
-      let _, cost' = solve forbidden n in
-      (p, pos + 1, cost +. 1. +. cost')
+    let () =
+      Array.iteri
+        (fun i n -> solution.(i) <- Some (solve [] n))
+        g.g_nonterminals
+  end
+  in
+  fun n ->
+  match M.solution.(n.n_index) with
+  | None -> assert false
+  | Some result -> result
 
-  let () =
-    Array.iteri
-      (fun i n -> solution.(i) <- Some (solve [] n))
-      g.g_nonterminals
-
-  let solution n =
-    match solution.(n.n_index) with
-    | None -> assert false
-    | Some result -> result
-
-  let _ =
-    Array.iter (fun n ->
-        let _, cost = solution n in
-        Printf.eprintf "cost(%s): %f\n" n.n_name cost
-      ) g.g_nonterminals
-end
+let cost_of_symbol sym =
+  match sym, cost_of_raw_symbol sym with
+  | N n, c when c = infinity ->
+    snd (derive_nonterminal n)
+  | _, c -> c
 
 let cost_of_rhs =
   let measure p =
@@ -435,6 +435,18 @@ let regular_states =
 
 (** Reporting *)
 
+let report_derivation () =
+  report "# Non-terminal derivation\n\n";
+  Array.iter (fun n ->
+      let cost = cost_of_raw_symbol (N n) in
+      if cost < infinity then
+        report "%s: cost %.f, direct\n" n.n_name cost
+      else
+        let prod, cost = derive_nonterminal n in
+        report "%s: cost %.f, derive by reducing\n" n.n_name cost;
+        report_table (items_table [prod, Array.length prod.p_rhs]);
+    ) g.g_nonterminals
+
 let report_productions () =
   report "# Summary of production recovery cost\n\n";
   let last_lhs = ref (-1) in
@@ -637,6 +649,8 @@ let report_final_decision () =
     ) g.g_lr0_states
 
 let report () =
+  report_derivation ();
+  report "\n";
   report_productions ();
   report "\n";
   report_states ();
