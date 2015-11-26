@@ -104,7 +104,7 @@ module Printing = struct
 end
 
 
-let feed_token token env =
+let feed_token ?(allow_reduction=true) token env =
   let module T = struct
     open I
     type 'a checkpoint =
@@ -116,14 +116,15 @@ let feed_token token env =
       | Rejected
     external inj : 'a checkpoint -> 'a I.checkpoint = "%identity"
   end in
-  let rec aux = function
+  let rec aux allow_reduction = function
     | I.HandlingError _ | I.Rejected -> `Fail
+    | I.AboutToReduce _ when not allow_reduction -> `Fail
     | I.Accepted v -> `Accept v
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
-      aux (I.resume checkpoint)
+      aux true (I.resume checkpoint)
     | I.InputNeeded env as checkpoint -> `Recovered (checkpoint, env)
   in
-  aux (I.offer (T.inj (T.InputNeeded env)) token)
+  aux allow_reduction (I.offer (T.inj (T.InputNeeded env)) token)
 
 let order_recoveries envs =
   let pos env =
@@ -147,7 +148,7 @@ let attempt_recovery recoveries token =
   let recoveries = List.take_while ~f:same_indented recoveries in
   let rec aux = function
     | [] -> `Fail
-    | (_, x) :: xs -> match feed_token token x with
+    | (_, x) :: xs -> match feed_token ~allow_reduction:false token x with
       | `Fail -> aux xs
       | `Recovered (checkpoint, env) -> `Ok (checkpoint, env, x)
       | `Accept v ->
