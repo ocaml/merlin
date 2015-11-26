@@ -532,46 +532,96 @@ type decision = [
   | `Look_at_predecessor of (lr0_state * local_decision) list
 ]
 
-let should_pop ?predecessor lr0 item =
-  cost_of_item ?predecessor item = infinity &&
-  match lr0.lr0_incoming with
-  | Some (T t) when t.t_type = None -> true
-  | _ -> false
+let decisions =
+  let decide lr0 : decision =
+    let order ?predecessor a b =
+      compare (cost_of_item ?predecessor a) (cost_of_item ?predecessor b) in
+    let order_items ?predecessor items = List.sort (order ?predecessor) items in
+    match classify_state lr0 with
+    | `Regular ->
+      let items = order_items (Array.to_list lr0.lr0_items) in
+      let ((prod, pos) as item) = List.hd items in
+      if pos <> 1 then `Reduction item else
+        let selections =
+          List.map (fun predecessor ->
+              let items' = order_items ~predecessor items in
+              (*Printf.eprintf "state:%d pred:%d items:%d/%d items':%d\n"
+                lr0.lr0_index predecessor.lr0_index
+                (List.length items)
+                (Array.length lr0.lr0_items)
+                (List.length items');*)
+              let item =
+                match items' with
+                | [] -> `Impossible
+                | item :: items -> `Reduction item
+              in
+              predecessor, item
+            ) (lr0_predecessors lr0)
+        in
+        `Look_at_predecessor selections
+    | `Starting | `Final -> `Impossible
+  in
+  Array.map decide g.g_lr0_states
 
-let decision lr0 : decision =
-  let order ?predecessor a b =
-    compare (cost_of_item ?predecessor a) (cost_of_item ?predecessor b) in
-  let order_items ?predecessor items = List.sort (order ?predecessor) items in
-  match classify_state lr0 with
-  | `Regular ->
-    let items = order_items (Array.to_list lr0.lr0_items) in
-    let ((prod, pos) as item) = List.hd items in
-    if pos <> 1 then
-      if should_pop lr0 item
-      then `Pop
-      else `Reduction item
-    else
-      let selections =
-        List.map (fun predecessor ->
-            let items' = order_items ~predecessor items in
-            (*Printf.eprintf "state:%d pred:%d items:%d/%d items':%d\n"
-              lr0.lr0_index predecessor.lr0_index
-              (List.length items)
-              (Array.length lr0.lr0_items)
-              (List.length items');*)
-            let item =
-              match items' with
-              | [] -> `Impossible
-              | item :: items ->
-                if should_pop ~predecessor lr0 item
-                then `Pop
-                else `Reduction item
-            in
-            predecessor, item
-          ) (lr0_predecessors lr0)
-      in
-      `Look_at_predecessor selections
-  | `Starting | `Final -> assert false
+let decision lr0 = decisions.(lr0.lr0_index)
+
+(* Try to insert "POP" when appropriate *)
+
+let () =
+  let updated = Array.map
+      (fun lr0 ->
+         match lr0.lr0_incoming with
+         | Some (T t) when t.t_type = None -> `No
+         | _ -> `Yes)
+      g.g_lr0_states
+  in
+  let decision' predecessor ~lr0 =
+    match decision lr0 with
+    | `Look_at_predecessor x -> List.assoc predecessor x
+    | (`Reduction _ | `Impossible | `Pop) as r -> r
+  in
+  let rec update lr0 =
+    match updated.(lr0.lr0_index) with
+    | `Yes -> ()
+    | `Ongoing -> ()
+    | `No ->
+      updated.(lr0.lr0_index) <- `Ongoing;
+      let predecessors = lr0_predecessors lr0 in
+      let pops = List.map (should_pop ~lr0) predecessors in
+      begin
+        if List.for_all ((=) true) pops then
+          decisions.(lr0.lr0_index) <- `Pop
+        else if List.for_all ((=) false) pops then
+          ()
+        else
+          decisions.(lr0.lr0_index) <-
+            `Look_at_predecessor (List.map2
+                                    (fun predecessor should_pop ->
+                                       predecessor,
+                                       (if should_pop then `Pop
+                                        else decision' predecessor ~lr0))
+                                  predecessors pops)
+      end;
+      updated.(lr0.lr0_index) <- `Yes
+
+  and should_pop predecessor ~lr0 =
+    update predecessor;
+    let no_prod prod = function
+      | _, `Reduction (prod', _) -> prod <> prod'
+      | _, `Pop | _, `Impossible -> true
+    in
+    let no_prod prod = function
+      | `Reduction (prod', _) -> prod <> prod'
+      | `Look_at_predecessor xs -> List.for_all (no_prod prod) xs
+      | `Pop | `Impossible -> true
+    in
+    match decision' predecessor ~lr0 with
+    | `Reduction (prod, _) ->
+      no_prod prod (decision predecessor)
+    | _ -> true
+
+  in
+  Array.iter update g.g_lr0_states
 
 let report_final_decision () =
   let check_cost c =
@@ -581,7 +631,7 @@ let report_final_decision () =
   in
   let is_wrong' = function
     | _, `Impossible -> true
-    | _, `Pop -> false
+    | _, `Pop -> true
     | predecessor, `Reduction item ->
       cost_of_item ~predecessor item = infinity
   in
@@ -723,13 +773,38 @@ let rec filter_map_assoc f = function
     end
   | [] -> []
 
+let print_declarations () =
+  printf "open %s\n
+          type action =\n\
+         \  | Shift  : 'a symbol -> action\n\
+         \  | Reduce : int -> action\n\
+         \  | Sub    : action list -> action\n\
+         \  | Pop    : action\n\n\
+          type decision =\n\
+         \  | Action : action -> decision\n\
+         \  | Parent : (int -> action) -> decision\n\n"
+    menhir
+
+let print_derivations () =
+  let first = ref true in
+  let sep () = if !first then (first := false; "let rec") else "and" in
+  Array.iter (fun n ->
+      printf "%s derive_%s = " (sep ()) n.n_name;
+      if cost_of_raw_symbol (N n) < infinity then
+        printf " Shift (N N_%s)\n" n.n_name
+      else
+        let prod, _ = derive_nonterminal n in
+        let sym = function
+          | (T t, _, _) -> sprintf "Shift (T T_%s)" t.t_name
+          | (N n, _, _) -> sprintf "derive_%s" n.n_name
+        in
+        let items = List.map sym (Array.to_list prod.p_rhs) in
+        let items = items @ [sprintf "Reduce %d" prod.p_index] in
+        printf "\n  Sub [%s]\n" (String.concat "; " items)
+
+    ) g.g_nonterminals
+
 let print_decisions () =
-  printf "type decision =\n\
-         \  | Shift  : 'a %s.symbol * 'a -> decision\n\
-         \  | Reduce : int -> decision\n\
-         \  | Parent : (int -> decision) -> decision\n\
-         \  | Pop    : decision\n\n"
-    menhir;
   let string_of_states ks =
     String.concat " | "
       (List.map (fun lr0 -> string_of_int lr0.lr0_index) ks)
@@ -737,32 +812,33 @@ let print_decisions () =
   let string_of_reduction (prod,pos) =
     if pos = Array.length prod.p_rhs then
       sprintf "Reduce %d" prod.p_index
-    else
-      let symbol = match prod.p_rhs.(pos) with
-        | (T t, _, _) -> sprintf "T T_%s" t.t_name
-        | (N n, _, _) -> sprintf "N N_%s" n.n_name
-      in
-      sprintf "Shift (%s, default_value (%s))" symbol symbol
+    else match prod.p_rhs.(pos) with
+      | (T t, _, _) -> sprintf "Shift (T T_%s)" t.t_name
+      | (N n, _, _) -> sprintf "derive_%s" n.n_name
   in
   let string_of_decision lr0 =
-    let simple_decide = function
+    let action = function
       | `Reduction red ->
         Some (string_of_reduction red)
       | `Pop -> Some "Pop"
       | `Impossible -> None
     in
+    let simple_action x = match action x with
+      | None -> None
+      | Some s -> Some ("Action (" ^ s ^ ")")
+    in
     match classify_state lr0 with
-    | `Starting | `Final   -> None
+    | `Starting | `Final -> None
     | `Regular ->
       match decision lr0 with
-      | #local_decision as x -> simple_decide x
+      | #local_decision as x -> simple_action x
       | `Look_at_predecessor ((predecessor, x) :: xs)
           when List.for_all (fun (_,x') -> x = x') xs ->
-        simple_decide x
+        simple_action x
       | `Look_at_predecessor cases ->
         let cases =
           cases |>
-          filter_map_assoc simple_decide |>
+          filter_map_assoc action |>
           group_assoc |>
           List.map (fun (ks,v) ->
               sprintf "     | %s -> %s" (string_of_states ks) v)
@@ -773,8 +849,7 @@ let print_decisions () =
           ["     | _ -> raise Not_found)"]
         ))
   in
-  printf "let decision =\n\
-         \  let open %s in function\n" menhir;
+  printf "let decision = function\n";
   let cases =
     g.g_lr0_states |>
     Array.to_list |>
@@ -800,15 +875,14 @@ let print_remap_decisions () =
 
 let print () =
   print_header ();
-  print_newline ();
-  print_default_value ();
-  print_newline ();
-  print_decisions ();
-  print_newline ();
-  print_lr1_to_lr0 ();
-  print_newline ();
-  print_remap_decisions ()
-
+  List.iter (fun f -> print_newline (); f ()) [
+    print_default_value;
+    print_declarations;
+    print_derivations;
+    print_decisions;
+    print_lr1_to_lr0;
+    print_remap_decisions;
+  ]
 
 let () =
   report ();

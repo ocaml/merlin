@@ -65,7 +65,7 @@ module List = struct
   let rec rev_scan_left acc ~f l ~init = match l with
     | [] -> acc
     | x :: xs ->
-      let init = f x init in
+      let init = f init x in
       rev_scan_left (init :: acc) ~f xs ~init
 
   let scan_left ~f l ~init =

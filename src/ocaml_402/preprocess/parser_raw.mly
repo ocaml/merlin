@@ -588,10 +588,11 @@ The precedences must be listed from low to high.
 %start dummy
 %type <unit> dummy
 
-%attribute
+(*%attribute
   class_fun_binding class_expr class_type class_signature class_structure
   str_extension_constructors sig_extension_constructors
   [@cost 100] [@recovery raise Not_found]
+*)
 
 %%
 
@@ -1474,7 +1475,7 @@ match_case:
   MINUSGREATER [@item "match action"] expr = seq_expr
     { Exp.case $1 ~guard:$3 (reloc_exp_fake $endpos($4) $endpos expr) }
 
-fun_def [@recovery default_expr]:
+fun_def:
 | MINUSGREATER seq_expr
 (* Cf #5939: we used to accept (fun p when e0 -> e) *)
     { $2 }

@@ -126,24 +126,24 @@ let feed_token token env =
   aux (I.offer (T.inj (T.InputNeeded env)) token)
 
 let order_recoveries envs =
-  let column env =
+  let pos env =
     match I.stack env with
-    | None -> 0
+    | None -> 1, 0
     | Some stack ->
       let I.Element (_, _, startp, _) = I.stack_element stack in
-      snd (Lexing.split_pos startp)
+      Lexing.split_pos startp
   in
-  List.map ~f:(fun env -> column env, env) envs
+  List.map ~f:(fun env -> pos env, env) envs
   (*let cmp (c0, _) (c1, _) = compare (c1 : int) (c0 : int) in
   let envs = List.map ~f:(fun env -> column env, env) envs in
   List.stable_sort ~cmp envs*)
 
 let attempt_recovery recoveries token =
   let _, startp, _ = token in
-  let _, col = Lexing.split_pos startp in
-  let more_indented (col', _) = col' > col in
+  let line, col = Lexing.split_pos startp in
+  let more_indented ((line', col'), _) = line = line' || col' > col in
   let recoveries = List.drop_while ~f:more_indented recoveries in
-  let same_indented (col', _) = abs (col' - col) <= 1 in
+  let same_indented ((line', col'), _) = line = line' || abs (col' - col) <= 1 in
   let recoveries = List.take_while ~f:same_indented recoveries in
   let rec aux = function
     | [] -> `Fail
@@ -158,42 +158,69 @@ let attempt_recovery recoveries token =
   in
   aux recoveries
 
-let rec recoveries k env =
+let rec recoveries k acc env =
   match I.stack env with
-  | None -> []
+  | None -> acc
   | Some stack ->
     let I.Element (state, v, startp, endp) as elt = I.stack_element stack in
     Printing.print_element k elt;
-    let decision =
+    let action =
       match R.decision (I.number state) with
-      | R.Parent decide ->
+      | R.Parent select_action ->
         begin match I.stack_next stack with
           | None -> R.Pop
           | Some stack' ->
             let I.Element (state', _, _, _) =
               I.stack_element stack' in
-            decide (I.number state')
+            select_action (I.number state')
         end
-      | decision -> decision
+      | R.Action action -> action
     in
-    let env =
-      match decision with
-      | R.Parent _ -> assert false
-      | R.Pop -> I.pop env
+    let rec eval env = function
+      | R.Pop ->
+        (match I.pop env with
+         | None -> raise Not_found
+         | Some env -> env)
       | R.Reduce prod ->
-        Some (I.force_reduction (I.find_production prod) env)
-      | R.Shift (I.N sym, v) ->
-        Some (I.feed_nonterminal sym endp v endp env)
-      | R.Shift (I.T sym, v) ->
-        let token = Parser_printer.token_of_terminal sym v in
-        match feed_token (token, endp, endp) env with
-        | `Fail -> assert false
-        | `Accept _ -> None
-        | `Recovered (_,env) -> Some env
+        begin try
+            I.force_reduction (I.find_production prod) env
+          with exn ->
+            printf k "Error %S in force_reduction, reducing:\n"
+              (Printexc.to_string exn);
+            Printing.print_item k (Obj.magic prod, -1);
+            printf k "In environment:\n";
+            Printing.print_env_summary k env;
+            raise exn
+        end
+      | R.Shift (I.N n as sym) ->
+        let v = Parser_recover.default_value sym in
+        I.feed_nonterminal n endp v endp env
+      | R.Shift (I.T t as sym) ->
+        let v = Parser_recover.default_value sym in
+        let token = Parser_printer.token_of_terminal t v in
+        (match feed_token (token, endp, endp) env with
+         | `Fail -> assert false
+         | `Accept _ -> raise Not_found
+         | `Recovered (_,env) -> env)
+      | R.Sub actions ->
+        List.fold_left ~f:eval ~init:env actions
     in
-    match env with
-    | None -> []
-    | Some env -> env :: recoveries k env
+    let top_eval env = function
+      | R.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
+      | action -> [eval env action]
+    in
+    match top_eval env action with
+    | exception Not_found -> acc | [] -> acc
+    | (env :: _) as envs -> recoveries k (envs @ acc) env
+
+let recoveries k env =
+  List.rev_filter ~f:(fun env ->
+      match I.stack env with
+      | None -> false
+      | Some stack ->
+        let I.Element (state, _, startp, endp) = I.stack_element stack in
+        I.default_reduction state = None)
+    (recoveries k [] env)
 
 let show_recoveries nav (t,s,e as token) tokens env =
   let body = Nav.body nav in

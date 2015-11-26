@@ -291,7 +291,7 @@ let default_value (type a) : a MenhirInterpreter.symbol -> a = function
   | MenhirInterpreter.N MenhirInterpreter.N_functor_args -> []
   | MenhirInterpreter.N MenhirInterpreter.N_functor_arg_name -> raise Not_found
   | MenhirInterpreter.N MenhirInterpreter.N_functor_arg -> raise Not_found
-  | MenhirInterpreter.N MenhirInterpreter.N_fun_def -> default_expr
+  | MenhirInterpreter.N MenhirInterpreter.N_fun_def -> raise Not_found
   | MenhirInterpreter.N MenhirInterpreter.N_fun_binding -> default_expr
   | MenhirInterpreter.N MenhirInterpreter.N_floating_attribute -> raise Not_found
   | MenhirInterpreter.N MenhirInterpreter.N_field_expr_list -> []
@@ -350,865 +350,1163 @@ let default_value (type a) : a MenhirInterpreter.symbol -> a = function
   | MenhirInterpreter.N MenhirInterpreter.N_amper_type_list -> []
   | MenhirInterpreter.N MenhirInterpreter.N_additive -> raise Not_found
 
-type decision =
-  | Shift  : 'a MenhirInterpreter.symbol * 'a -> decision
-  | Reduce : int -> decision
-  | Parent : (int -> decision) -> decision
-  | Pop    : decision
+open MenhirInterpreter
 
-let decision =
-  let open MenhirInterpreter in function
-  | 1374 | 1288 | 1284 | 1060 -> Shift (T T_WITH, default_value (T T_WITH))
-  | 1303 | 1297 | 431 -> Shift (T T_VIRTUAL, default_value (T T_VIRTUAL))
-  | 1192 | 870 | 350 | 144 | 135 | 122 | 95 -> Shift (T T_UIDENT, default_value (T T_UIDENT))
-  | 705 | 700 -> Shift (T T_TYPE, default_value (T T_TYPE))
-  | 1164 -> Shift (T T_THEN, default_value (T T_THEN))
-  | 1464 | 1460 | 1454 | 1450 -> Shift (T T_STRING, default_value (T T_STRING))
-  | 624 -> Shift (T T_STAR, default_value (T T_STAR))
-  | 1419 | 1355 | 1352 | 1282 | 1280 | 1273 | 1271 | 1268 | 1266 | 1263 | 1261 | 1258 | 1255 | 1252 | 1217 | 1215 | 1212 | 1179 | 1177 | 1147 | 1145 | 1120 | 1111 | 1088 | 959 | 948 | 941 | 828 | 763 | 761 | 729 | 711 | 709 | 702 | 632 | 619 | 614 | 587 | 565 | 539 | 518 | 516 | 512 | 466 | 445 | 407 | 404 | 396 | 374 | 358 | 355 | 343 | 302 | 263 | 156 | 128 | 123 | 93 -> Shift (T T_RPAREN, default_value (T T_RPAREN))
-  | 1420 | 1391 | 1337 | 1188 | 1114 | 1093 | 1049 | 867 | 821 | 796 | 792 | 481 | 425 | 367 | 288 | 246 | 237 | 234 | 232 | 230 | 226 | 195 | 181 -> Shift (T T_RBRACKET, default_value (T T_RBRACKET))
-  | 1181 | 1117 | 1098 | 1069 | 662 | 650 | 291 -> Shift (T T_RBRACE, default_value (T T_RBRACE))
-  | 215 -> Shift (T T_QUOTE, default_value (T T_QUOTE))
-  | 1409 | 683 -> Shift (T T_PLUSEQ, default_value (T T_PLUSEQ))
-  | 474 -> Shift (T T_OPEN, default_value (T T_OPEN))
-  | 706 -> Shift (T T_OF, default_value (T T_OF))
-  | 106 | 99 -> Shift (T T_NATIVEINT, default_value (T T_NATIVEINT))
-  | 1341 | 1155 | 943 | 912 | 908 | 904 | 901 | 718 | 629 | 501 | 274 | 271 | 260 -> Shift (T T_MINUSGREATER, default_value (T T_MINUSGREATER))
-  | 1274 | 1176 | 505 | 375 -> Shift (T T_LPAREN, default_value (T T_LPAREN))
-  | 1514 | 1408 | 1358 | 1216 | 1146 | 918 | 898 | 895 | 823 | 681 | 600 | 517 | 150 | 97 -> Shift (T T_LIDENT, default_value (T T_LIDENT))
-  | 972 -> Shift (T T_LESSMINUS, default_value (T T_LESSMINUS))
-  | 1334 | 1249 | 1207 | 1200 | 1033 | 527 | 479 -> Shift (T T_IN, default_value (T T_IN))
-  | 1185 | 1057 | 482 -> Shift (T T_GREATERRBRACE, default_value (T T_GREATERRBRACE))
-  | 1173 -> Shift (T T_GREATERDOT, default_value (T T_GREATERDOT))
-  | 169 | 165 -> Shift (T T_GREATER, default_value (T T_GREATER))
-  | 1519 | 1498 | 1465 | 1461 | 1457 | 1451 | 1447 | 1443 | 1439 | 1317 | 1314 | 1293 | 1245 | 1240 | 1227 | 1197 | 1054 | 1030 | 969 | 879 | 824 | 804 | 750 | 670 | 531 | 484 | 437 | 138 -> Shift (T T_EQUAL, default_value (T T_EQUAL))
-  | 1556 | 1552 | 1548 -> Shift (T T_EOF, default_value (T T_EOF))
-  | 1329 | 1170 | 939 | 830 | 495 | 450 | 409 -> Shift (T T_END, default_value (T T_END))
-  | 656 | 602 -> Shift (T T_DOTDOT, default_value (T T_DOTDOT))
-  | 1433 | 1312 | 1243 | 1238 | 917 | 869 | 858 | 248 | 158 | 143 | 134 | 91 -> Shift (T T_DOT, default_value (T T_DOT))
-  | 1397 | 1388 | 1142 | 1135 | 1131 -> Shift (T T_DONE, default_value (T T_DONE))
-  | 1395 | 1386 | 1140 | 1133 | 1129 -> Shift (T T_DO, default_value (T T_DO))
-  | 1276 | 377 -> Shift (T T_COMMA, default_value (T T_COMMA))
-  | 747 | 742 -> Shift (T T_COLONEQUAL, default_value (T T_COLONEQUAL))
-  | 1496 | 1309 | 1305 | 1300 | 946 | 899 | 896 | 856 | 847 | 842 | 837 | 802 | 782 | 703 | 643 | 573 | 569 | 433 | 417 | 171 | 151 -> Shift (T T_COLON, default_value (T T_COLON))
-  | 1371 | 1044 | 398 | 372 | 287 -> Shift (T T_BARRBRACKET, default_value (T T_BARRBRACKET))
-  | 640 | 228 | 184 -> Shift (T T_BAR, default_value (T T_BAR))
-  | 736 -> Shift (N N_with_type_binder, default_value (N N_with_type_binder))
-  | 1504 | 1405 | 1402 | 812 | 678 | 595 | 593 -> Shift (N N_with_extensions, default_value (N N_with_extensions))
-  | 722 -> Shift (N N_with_constraints, default_value (N N_with_constraints))
-  | 840 -> Shift (N N_virtual_flag, default_value (N N_virtual_flag))
-  | 1495 | 1455 | 1434 | 1072 | 962 | 801 | 572 | 561 | 332 -> Shift (N N_val_ident, default_value (N N_val_ident))
-  | 1234 -> Shift (N N_typevar_list, default_value (N N_typevar_list))
-  | 725 -> Shift (N N_type_variable, default_value (N N_type_variable))
-  | 723 -> Shift (N N_type_parameters, default_value (N N_type_parameters))
-  | 820 | 724 -> Shift (N N_type_parameter_list, default_value (N N_type_parameter_list))
-  | 731 -> Shift (N N_type_parameter, default_value (N N_type_parameter))
-  | 87 -> Shift (N N_type_longident, default_value (N N_type_longident))
-  | 682 | 601 -> Shift (N N_type_kind, default_value (N N_type_kind))
-  | 1400 | 1399 | 579 | 577 -> Shift (N N_type_declarations, default_value (N N_type_declarations))
-  | 1546 | 1531 | 23 -> Shift (N N_structure_tail, default_value (N N_structure_tail))
-  | 1435 -> Shift (N N_structure_head, default_value (N N_structure_head))
-  | 449 -> Shift (N N_structure, default_value (N N_structure))
-  | 1412 -> Shift (N N_str_extension_constructors, default_value (N N_str_extension_constructors))
-  | 520 | 301 -> Shift (N N_simple_pattern, default_value (N N_simple_pattern))
-  | 1456 | 1084 | 1082 | 544 | 542 | 533 | 493 | 492 | 489 | 488 | 389 -> Shift (N N_simple_expr, default_value (N N_simple_expr))
-  | 907 | 903 | 900 -> Shift (N N_simple_core_type_or_tuple_no_attr, default_value (N N_simple_core_type_or_tuple_no_attr))
-  | 630 | 627 | 625 -> Shift (N N_simple_core_type_no_attr, default_value (N N_simple_core_type_no_attr))
-  | 209 -> Shift (N N_simple_core_type, default_value (N N_simple_core_type))
-  | 320 -> Shift (N N_signed_constant, default_value (N N_signed_constant))
-  | 932 | 695 | 571 -> Shift (N N_signature, default_value (N N_signature))
-  | 686 -> Shift (N N_sig_extension_constructors, default_value (N N_sig_extension_constructors))
-  | 1466 | 1462 | 1458 | 1448 | 1440 | 1396 | 1394 | 1387 | 1384 | 1382 | 1323 | 1318 | 1315 | 1294 | 1250 | 1246 | 1241 | 1228 | 1219 | 1208 | 1201 | 1158 | 1156 | 1141 | 1139 | 1137 | 1134 | 1130 | 1128 | 1113 | 1092 | 1087 | 1034 | 1031 | 970 | 562 | 549 | 532 | 528 | 524 | 502 | 497 | 480 | 472 | 444 | 442 | 438 | 388 | 386 | 384 | 382 -> Shift (N N_seq_expr, default_value (N N_seq_expr))
-  | 229 | 185 | 183 | 180 -> Shift (N N_row_field_list, default_value (N N_row_field_list))
-  | 1059 | 486 -> Shift (N N_record_expr, default_value (N N_record_expr))
-  | 1537 | 1533 | 1489 | 1485 | 1332 | 1205 | 456 -> Shift (N N_rec_flag, default_value (N N_rec_flag))
-  | 850 -> Shift (N N_private_virtual_flags, default_value (N N_private_virtual_flags))
-  | 1410 | 1298 | 684 -> Shift (N N_private_flag, default_value (N N_private_flag))
-  | 1499 | 805 -> Shift (N N_primitive_declaration, default_value (N N_primitive_declaration))
-  | 1545 | 1542 | 1524 | 1508 | 1506 | 1500 | 1493 | 1475 | 1473 | 1470 | 1413 | 1365 | 1363 | 1360 | 1324 | 1321 | 1037 | 935 | 926 | 888 | 884 | 882 | 875 | 861 | 845 | 814 | 808 | 799 | 784 | 778 | 776 | 773 | 771 | 698 | 687 | 668 | 575 | 428 | 422 -> Shift (N N_post_item_attributes, default_value (N N_post_item_attributes))
-  | 644 | 172 -> Shift (N N_poly_type_no_attr, default_value (N N_poly_type_no_attr))
-  | 1310 | 1306 | 1301 | 857 -> Shift (N N_poly_type, default_value (N N_poly_type))
-  | 795 | 791 | 424 | 176 | 81 -> Shift (N N_payload, default_value (N N_payload))
-  | 530 | 526 | 403 | 378 | 376 | 365 | 330 | 328 | 326 | 324 | 314 | 300 | 82 -> Shift (N N_pattern, default_value (N N_pattern))
-  | 1357 -> Shift (N N_parent_binder, default_value (N N_parent_binder))
-  | 280 | 131 -> Shift (N N_package_type_cstrs, default_value (N N_package_type_cstrs))
-  | 1270 | 1260 | 1257 | 1254 | 947 | 155 | 125 -> Shift (N N_package_type, default_value (N N_package_type))
-  | 1326 | 696 -> Shift (N N_override_flag, default_value (N N_override_flag))
-  | 582 -> Shift (N N_optional_type_variable, default_value (N N_optional_type_variable))
-  | 581 -> Shift (N N_optional_type_parameter_list, default_value (N N_optional_type_parameter_list))
-  | 589 -> Shift (N N_optional_type_parameter, default_value (N N_optional_type_parameter))
-  | 1446 | 1442 | 1437 -> Shift (N N_option_STRING_, default_value (N N_option_STRING_))
-  | 1370 | 1187 | 1184 | 1052 | 1048 | 1041 | 661 | 647 | 371 | 364 | 295 | 256 -> Shift (N N_opt_semi, default_value (N N_opt_semi))
-  | 511 | 471 -> Shift (N N_opt_default, default_value (N N_opt_default))
-  | 1411 | 1379 | 1375 | 1289 | 1285 | 685 | 659 | 499 | 178 -> Shift (N N_opt_bar, default_value (N N_opt_bar))
-  | 200 -> Shift (N N_opt_ampersand, default_value (N N_opt_ampersand))
-  | 333 -> Shift (N N_operator, default_value (N N_operator))
-  | 504 -> Shift (N N_newtype, default_value (N N_newtype))
-  | 236 -> Shift (N N_name_tag_list, default_value (N N_name_tag_list))
-  | 835 | 430 | 414 -> Shift (N N_mutable_flag, default_value (N N_mutable_flag))
-  | 1474 | 1265 | 1196 | 798 | 783 | 777 | 765 | 719 | 716 | 704 | 570 -> Shift (N N_module_type, default_value (N N_module_type))
-  | 1492 | 1452 | 1444 | 1198 | 1194 | 944 | 707 | 563 | 452 | 448 -> Shift (N N_module_expr, default_value (N N_module_expr))
-  | 768 | 764 | 701 -> Shift (N N_module_declaration, default_value (N N_module_declaration))
-  | 1478 -> Shift (N N_module_bindings, default_value (N N_module_bindings))
-  | 1469 | 1203 | 1193 -> Shift (N N_module_binding_body, default_value (N N_module_binding_body))
-  | 1480 | 1468 -> Shift (N N_module_binding, default_value (N N_module_binding))
-  | 770 | 746 | 697 | 477 -> Shift (N N_mod_longident, default_value (N N_mod_longident))
-  | 751 | 748 | 92 -> Shift (N N_mod_ext_longident, default_value (N N_mod_ext_longident))
-  | 257 -> Shift (N N_meth_list, default_value (N N_meth_list))
-  | 1380 | 1376 | 1290 | 1286 | 500 -> Shift (N N_match_cases, default_value (N N_match_cases))
-  | 1311 | 1235 -> Shift (N N_lident_list, default_value (N N_lident_list))
-  | 507 -> Shift (N N_let_pattern, default_value (N N_let_pattern))
-  | 1333 | 1206 -> Shift (N N_let_bindings_no_attrs, default_value (N N_let_bindings_no_attrs))
-  | 1538 | 1534 | 1490 | 1486 | 966 | 458 -> Shift (N N_let_bindings, default_value (N N_let_bindings))
-  | 1036 -> Shift (N N_let_binding, default_value (N N_let_binding))
-  | 290 -> Shift (N N_lbl_pattern_list, default_value (N N_lbl_pattern_list))
-  | 1061 -> Shift (N N_lbl_expr_list, default_value (N N_lbl_expr_list))
-  | 469 | 460 -> Shift (N N_label_var, default_value (N N_label_var))
-  | 1086 | 548 | 132 -> Shift (N N_label_longident, default_value (N N_label_longident))
-  | 470 | 461 -> Shift (N N_label_let_pattern, default_value (N N_label_let_pattern))
-  | 1080 | 552 -> Shift (N N_label_ident, default_value (N N_label_ident))
-  | 660 | 641 -> Shift (N N_label_declarations, default_value (N N_label_declarations))
-  | 1308 | 1304 | 1299 | 1053 | 855 | 841 | 836 | 734 | 642 | 555 | 546 | 537 | 436 | 432 | 416 -> Shift (N N_label, default_value (N N_label))
-  | 1472 | 1426 | 775 | 726 | 584 | 249 | 216 | 186 | 173 | 159 | 147 -> Shift (N N_ident, default_value (N N_ident))
-  | 1417 | 690 | 616 -> Shift (N N_generalized_constructor_arguments, default_value (N N_generalized_constructor_arguments))
-  | 717 | 564 -> Shift (N N_functor_args, default_value (N N_functor_args))
-  | 1153 | 1149 | 1148 | 523 -> Shift (N N_fun_def, default_value (N N_fun_def))
-  | 1231 | 1218 | 459 -> Shift (N N_fun_binding, default_value (N N_fun_binding))
-  | 1051 -> Shift (N N_field_expr_list, default_value (N N_field_expr_list))
-  | 1536 | 1532 | 1488 | 1484 | 1191 | 965 | 541 | 529 | 525 | 503 | 498 | 496 | 494 | 491 | 476 | 455 | 443 | 441 | 401 | 391 | 387 | 385 | 383 | 24 -> Shift (N N_ext_attributes, default_value (N N_ext_attributes))
-  | 1047 | 964 -> Shift (N N_expr_semi_list, default_value (N N_expr_semi_list))
-  | 475 -> Shift (N N_expr_open, default_value (N N_expr_open))
-  | 1277 | 1275 | 1167 | 1165 | 1122 | 1116 | 1103 | 1100 | 1097 | 1095 | 1090 | 1078 | 1067 | 1055 | 1042 | 1024 | 1019 | 1017 | 1015 | 1013 | 1011 | 1009 | 1007 | 1005 | 1003 | 1001 | 999 | 997 | 995 | 993 | 991 | 989 | 987 | 985 | 983 | 981 | 979 | 977 | 975 | 973 | 556 | 550 | 490 | 485 | 453 -> Shift (N N_expr, default_value (N N_expr))
-  | 1138 | 1125 -> Shift (N N_direction_flag, default_value (N N_direction_flag))
-  | 743 | 739 | 251 | 219 -> Shift (N N_core_type_no_attr, default_value (N N_core_type_no_attr))
-  | 915 | 617 -> Shift (N N_core_type_list_no_attr, default_value (N N_core_type_list_no_attr))
-  | 205 -> Shift (N N_core_type_list, default_value (N N_core_type_list))
-  | 1336 | 910 | 866 | 631 | 618 | 606 | 154 -> Shift (N N_core_type_comma_list, default_value (N N_core_type_comma_list))
-  | 275 | 272 | 261 | 213 | 164 | 153 | 152 -> Shift (N N_core_type2, default_value (N N_core_type2))
-  | 1497 | 1313 | 1244 | 1239 | 1225 | 1223 | 1221 | 968 | 880 | 859 | 848 | 843 | 838 | 827 | 803 | 671 | 574 | 509 | 464 | 434 | 418 | 406 | 357 | 268 | 177 | 139 -> Shift (N N_core_type, default_value (N N_core_type))
-  | 664 | 653 | 605 -> Shift (N N_constructor_declarations, default_value (N N_constructor_declarations))
-  | 740 | 667 -> Shift (N N_constraints, default_value (N N_constraints))
-  | 1418 -> Shift (N N_constr_longident, default_value (N N_constr_longident))
-  | 868 -> Shift (N N_clty_longident, default_value (N N_clty_longident))
-  | 1513 | 894 | 819 -> Shift (N N_class_type_parameters, default_value (N N_class_type_parameters))
-  | 1511 | 818 -> Shift (N N_class_type_declarations, default_value (N N_class_type_declarations))
-  | 891 -> Shift (N N_class_type_declaration, default_value (N N_class_type_declaration))
-  | 1518 | 1354 | 913 | 909 | 905 | 902 | 897 -> Shift (N N_class_type, default_value (N N_class_type))
-  | 1328 | 402 -> Shift (N N_class_structure, default_value (N N_class_structure))
-  | 864 | 825 -> Shift (N N_class_signature, default_value (N N_class_signature))
-  | 832 -> Shift (N N_class_sig_fields, default_value (N N_class_sig_fields))
-  | 1338 | 392 | 265 | 191 | 141 -> Shift (N N_class_longident, default_value (N N_class_longident))
-  | 1522 | 1515 -> Shift (N N_class_fun_binding, default_value (N N_class_fun_binding))
-  | 411 -> Shift (N N_class_fields, default_value (N N_class_fields))
-  | 1520 | 1516 | 1342 | 1335 | 1331 | 1327 -> Shift (N N_class_expr, default_value (N N_class_expr))
-  | 816 -> Shift (N N_class_descriptions, default_value (N N_class_descriptions))
-  | 929 -> Shift (N N_class_description, default_value (N N_class_description))
-  | 1510 -> Shift (N N_class_declarations, default_value (N N_class_declarations))
-  | 1527 -> Shift (N N_class_declaration, default_value (N N_class_declaration))
-  | 1421 | 691 | 645 | 636 | 394 | 253 | 222 | 218 | 199 | 79 -> Shift (N N_attributes, default_value (N N_attributes))
-  | 794 | 790 | 423 | 175 | 80 | 77 | 25 -> Shift (N N_attr_id, default_value (N N_attr_id))
-  | 202 -> Shift (N N_amper_type_list, default_value (N N_amper_type_list))
-  | 637 -> Reduce 99
-  | 673 -> Reduce 97
-  | 881 -> Reduce 96
-  | 672 -> Reduce 95
-  | 85 -> Reduce 94
-  | 313 -> Reduce 93
-  | 115 -> Reduce 92
-  | 289 -> Reduce 91
-  | 1071 | 961 | 560 | 349 -> Reduce 90
-  | 78 -> Reduce 9
-  | 604 -> Reduce 89
-  | 608 -> Reduce 88
-  | 609 -> Reduce 87
-  | 607 -> Reduce 86
-  | 613 | 603 -> Reduce 85
-  | 105 -> Reduce 84
-  | 303 -> Reduce 83
-  | 304 -> Reduce 82
-  | 312 -> Reduce 81
-  | 86 -> Reduce 80
-  | 76 -> Reduce 8
-  | 315 -> Reduce 79
-  | 305 -> Reduce 78
-  | 871 -> Reduce 77
-  | 906 | 865 -> Reduce 76
-  | 822 -> Reduce 75
-  | 738 -> Reduce 731
-  | 737 -> Reduce 730
-  | 893 -> Reduce 73
-  | 594 -> Reduce 729
-  | 596 -> Reduce 728
-  | 755 -> Reduce 727
-  | 756 -> Reduce 726
-  | 749 -> Reduce 725
-  | 752 -> Reduce 724
-  | 744 -> Reduce 723
-  | 741 -> Reduce 722
-  | 817 -> Reduce 721
-  | 892 -> Reduce 72
-  | 849 -> Reduce 719
-  | 844 -> Reduce 718
-  | 839 -> Reduce 717
-  | 1295 -> Reduce 716
-  | 1292 -> Reduce 715
-  | 419 -> Reduce 714
-  | 435 -> Reduce 713
-  | 1074 -> Reduce 712
-  | 535 -> Reduce 711
-  | 344 -> Reduce 710
-  | 889 -> Reduce 71
-  | 454 | 284 -> Reduce 709
-  | 250 -> Reduce 708
-  | 174 -> Reduce 707
-  | 580 -> Reduce 706
-  | 578 -> Reduce 705
-  | 727 -> Reduce 703
-  | 730 -> Reduce 702
-  | 745 -> Reduce 701
-  | 921 -> Reduce 70
-  | 220 -> Reduce 7
-  | 732 -> Reduce 699
-  | 733 -> Reduce 698
-  | 728 -> Reduce 697
-  | 919 | 98 -> Reduce 696
-  | 163 | 89 -> Reduce 695
-  | 658 -> Reduce 694
-  | 639 -> Reduce 693
-  | 663 -> Reduce 692
-  | 665 -> Reduce 691
-  | 651 -> Reduce 690
-  | 923 -> Reduce 69
-  | 654 -> Reduce 689
-  | 611 -> Reduce 688
-  | 666 -> Reduce 687
-  | 610 -> Reduce 686
-  | 655 -> Reduce 685
-  | 599 -> Reduce 683
-  | 676 -> Reduce 682
-  | 674 -> Reduce 681
-  | 1222 -> Reduce 680
-  | 924 -> Reduce 68
-  | 1226 -> Reduce 679
-  | 1224 -> Reduce 678
-  | 1428 -> Reduce 677
-  | 1431 -> Reduce 676
-  | 1432 -> Reduce 675
-  | 1430 -> Reduce 674
-  | 1429 -> Reduce 673
-  | 1427 -> Reduce 672
-  | 224 -> Reduce 670
-  | 925 -> Reduce 67
-  | 221 -> Reduce 669
-  | 439 -> Reduce 668
-  | 440 -> Reduce 667
-  | 1540 -> Reduce 666
-  | 1436 -> Reduce 665
-  | 1544 -> Reduce 663
-  | 1543 -> Reduce 662
-  | 1494 -> Reduce 661
-  | 1512 -> Reduce 660
-  | 922 -> Reduce 66
-  | 1526 -> Reduce 659
-  | 1541 -> Reduce 658
-  | 1476 -> Reduce 657
-  | 1477 -> Reduce 656
-  | 1479 -> Reduce 655
-  | 1483 -> Reduce 654
-  | 1503 -> Reduce 653
-  | 1407 -> Reduce 652
-  | 1404 -> Reduce 651
-  | 1501 -> Reduce 650
-  | 412 -> Reduce 65
-  | 1539 | 1491 -> Reduce 649
-  | 1453 -> Reduce 648
-  | 1459 -> Reduce 647
-  | 1463 -> Reduce 646
-  | 1467 -> Reduce 645
-  | 1445 -> Reduce 644
-  | 1441 -> Reduce 643
-  | 1449 -> Reduce 642
-  | 1505 -> Reduce 641
-  | 1403 -> Reduce 640
-  | 1353 -> Reduce 64
-  | 1406 -> Reduce 639
-  | 1401 -> Reduce 638
-  | 1535 | 1487 -> Reduce 637
-  | 1530 -> Reduce 636
-  | 1547 -> Reduce 635
-  | 244 -> Reduce 634
-  | 243 -> Reduce 633
-  | 1233 -> Reduce 632
-  | 1232 -> Reduce 631
-  | 1220 -> Reduce 630
-  | 1356 -> Reduce 63
-  | 1423 -> Reduce 629
-  | 1415 -> Reduce 628
-  | 1416 -> Reduce 627
-  | 1424 -> Reduce 626
-  | 1425 -> Reduce 625
-  | 1507 -> Reduce 624
-  | 1509 -> Reduce 623
-  | 26 -> Reduce 622
-  | 27 -> Reduce 621
-  | 28 -> Reduce 620
-  | 1330 -> Reduce 62
-  | 29 -> Reduce 619
-  | 30 -> Reduce 618
-  | 32 -> Reduce 617
-  | 33 -> Reduce 616
-  | 34 -> Reduce 615
-  | 35 -> Reduce 614
-  | 36 -> Reduce 613
-  | 37 -> Reduce 612
-  | 38 -> Reduce 611
-  | 39 -> Reduce 610
-  | 1346 -> Reduce 61
-  | 40 -> Reduce 609
-  | 41 -> Reduce 608
-  | 42 -> Reduce 607
-  | 43 -> Reduce 606
-  | 44 -> Reduce 605
-  | 45 -> Reduce 604
-  | 46 -> Reduce 603
-  | 47 -> Reduce 602
-  | 48 -> Reduce 601
-  | 49 -> Reduce 600
-  | 1339 -> Reduce 60
-  | 211 -> Reduce 6
-  | 51 -> Reduce 599
-  | 52 -> Reduce 598
-  | 53 -> Reduce 597
-  | 54 -> Reduce 596
-  | 55 -> Reduce 595
-  | 56 -> Reduce 594
-  | 57 -> Reduce 593
-  | 58 -> Reduce 592
-  | 59 -> Reduce 591
-  | 60 -> Reduce 590
-  | 920 | 873 -> Reduce 59
-  | 61 -> Reduce 589
-  | 62 -> Reduce 588
-  | 63 -> Reduce 587
-  | 64 -> Reduce 586
-  | 65 -> Reduce 585
-  | 66 -> Reduce 584
-  | 67 -> Reduce 583
-  | 68 -> Reduce 582
-  | 69 -> Reduce 581
-  | 70 -> Reduce 580
-  | 877 -> Reduce 58
-  | 71 -> Reduce 579
-  | 72 -> Reduce 578
-  | 73 -> Reduce 577
-  | 74 -> Reduce 576
-  | 75 -> Reduce 575
-  | 31 -> Reduce 574
-  | 50 -> Reduce 573
-  | 351 -> Reduce 572
-  | 129 -> Reduce 571
-  | 124 -> Reduce 570
-  | 831 -> Reduce 57
-  | 359 -> Reduce 569
-  | 356 -> Reduce 568
-  | 370 -> Reduce 567
-  | 373 -> Reduce 566
-  | 368 -> Reduce 565
-  | 292 -> Reduce 564
-  | 90 -> Reduce 563
-  | 361 | 347 -> Reduce 562
-  | 362 | 352 -> Reduce 561
-  | 321 -> Reduce 560
-  | 874 -> Reduce 56
-  | 319 -> Reduce 559
-  | 83 -> Reduce 558
-  | 967 | 317 -> Reduce 557
-  | 316 -> Reduce 556
-  | 1107 -> Reduce 555
-  | 1109 -> Reduce 554
-  | 955 -> Reduce 553
-  | 949 -> Reduce 552
-  | 1272 -> Reduce 551
-  | 1269 -> Reduce 550
-  | 872 -> Reduce 55
-  | 545 -> Reduce 549
-  | 547 -> Reduce 548
-  | 1058 -> Reduce 547
-  | 483 -> Reduce 546
-  | 1186 -> Reduce 545
-  | 393 -> Reduce 544
-  | 536 -> Reduce 543
-  | 1373 -> Reduce 542
-  | 1050 -> Reduce 541
-  | 1189 -> Reduce 540
-  | 887 -> Reduce 54
-  | 1045 -> Reduce 539
-  | 1369 -> Reduce 538
-  | 1372 -> Reduce 537
-  | 1070 -> Reduce 536
-  | 1182 -> Reduce 535
-  | 1118 | 1099 -> Reduce 534
-  | 1115 | 1094 -> Reduce 533
-  | 1112 | 1089 -> Reduce 532
-  | 960 -> Reduce 531
-  | 1119 | 1102 -> Reduce 530
-  | 1283 -> Reduce 529
-  | 1169 -> Reduce 528
-  | 1171 -> Reduce 527
-  | 1175 -> Reduce 526
-  | 1174 -> Reduce 525
-  | 1281 -> Reduce 524
-  | 559 | 557 -> Reduce 523
-  | 1022 | 956 -> Reduce 522
-  | 957 -> Reduce 521
-  | 534 -> Reduce 520
-  | 886 -> Reduce 52
-  | 1121 -> Reduce 519
-  | 540 -> Reduce 518
-  | 1077 | 538 -> Reduce 517
-  | 1180 -> Reduce 516
-  | 1178 -> Reduce 515
-  | 390 -> Reduce 514
-  | 954 -> Reduce 513
-  | 916 -> Reduce 512
-  | 914 -> Reduce 511
-  | 208 -> Reduce 510
-  | 885 -> Reduce 51
-  | 911 | 204 -> Reduce 509
-  | 633 | 620 -> Reduce 508
-  | 635 | 622 -> Reduce 507
-  | 207 -> Reduce 506
-  | 157 -> Reduce 505
-  | 238 -> Reduce 504
-  | 235 -> Reduce 503
-  | 182 -> Reduce 502
-  | 233 -> Reduce 501
-  | 231 -> Reduce 500
-  | 883 -> Reduce 50
-  | 399 -> Reduce 5
-  | 196 -> Reduce 499
-  | 227 -> Reduce 498
-  | 266 -> Reduce 497
-  | 192 -> Reduce 496
-  | 146 -> Reduce 495
-  | 167 -> Reduce 494
-  | 170 -> Reduce 493
-  | 267 -> Reduce 492
-  | 193 -> Reduce 491
-  | 188 -> Reduce 490
-  | 862 -> Reduce 49
-  | 140 -> Reduce 489
-  | 149 -> Reduce 488
-  | 264 -> Reduce 487
-  | 190 -> Reduce 486
-  | 100 -> Reduce 485
-  | 101 -> Reduce 484
-  | 102 -> Reduce 483
-  | 104 -> Reduce 482
-  | 103 -> Reduce 481
-  | 107 -> Reduce 480
-  | 846 -> Reduce 48
-  | 108 -> Reduce 479
-  | 109 -> Reduce 478
-  | 111 -> Reduce 477
-  | 110 -> Reduce 476
-  | 322 -> Reduce 475
-  | 937 -> Reduce 474
-  | 936 -> Reduce 473
-  | 890 -> Reduce 472
-  | 928 -> Reduce 471
-  | 800 -> Reduce 470
-  | 876 -> Reduce 47
-  | 934 -> Reduce 469
-  | 779 -> Reduce 468
-  | 780 -> Reduce 467
-  | 786 -> Reduce 466
-  | 772 -> Reduce 465
-  | 774 -> Reduce 464
-  | 811 -> Reduce 463
-  | 680 -> Reduce 462
-  | 677 -> Reduce 461
-  | 809 -> Reduce 460
-  | 833 -> Reduce 46
-  | 576 -> Reduce 459
-  | 813 -> Reduce 458
-  | 597 -> Reduce 457
-  | 679 -> Reduce 456
-  | 592 -> Reduce 455
-  | 933 -> Reduce 454
-  | 938 -> Reduce 453
-  | 693 -> Reduce 451
-  | 689 -> Reduce 450
-  | 694 -> Reduce 449
-  | 815 -> Reduce 448
-  | 1029 -> Reduce 447
-  | 1028 -> Reduce 446
-  | 1027 -> Reduce 445
-  | 198 -> Reduce 444
-  | 225 -> Reduce 443
-  | 194 -> Reduce 442
-  | 189 -> Reduce 441
-  | 1075 -> Reduce 440
-  | 829 -> Reduce 44
-  | 1062 -> Reduce 439
-  | 788 -> Reduce 438
-  | 789 -> Reduce 437
-  | 457 -> Reduce 436
-  | 852 -> Reduce 434
-  | 854 -> Reduce 433
-  | 851 -> Reduce 432
-  | 853 -> Reduce 431
-  | 657 -> Reduce 429
-  | 807 -> Reduce 427
-  | 806 -> Reduce 426
-  | 429 -> Reduce 425
-  | 426 -> Reduce 423
-  | 252 -> Reduce 422
-  | 255 -> Reduce 421
-  | 860 -> Reduce 420
-  | 408 -> Reduce 42
-  | 863 -> Reduce 419
-  | 1390 -> Reduce 418
-  | 381 -> Reduce 417
-  | 242 -> Reduce 416
-  | 245 -> Reduce 415
-  | 506 -> Reduce 414
-  | 514 -> Reduce 413
-  | 366 -> Reduce 412
-  | 369 -> Reduce 411
-  | 379 | 327 -> Reduce 410
-  | 405 -> Reduce 41
-  | 325 -> Reduce 409
-  | 346 -> Reduce 408
-  | 354 -> Reduce 407
-  | 360 -> Reduce 406
-  | 331 -> Reduce 405
-  | 380 -> Reduce 404
-  | 329 -> Reduce 403
-  | 348 -> Reduce 402
-  | 353 -> Reduce 401
-  | 323 -> Reduce 400
-  | 145 -> Reduce 40
-  | 400 -> Reduce 4
-  | 345 -> Reduce 399
-  | 318 -> Reduce 398
-  | 1557 -> Reduce 397
-  | 1359 -> Reduce 395
-  | 281 -> Reduce 394
-  | 279 -> Reduce 393
-  | 277 -> Reduce 392
-  | 278 -> Reduce 391
-  | 130 -> Reduce 390
-  | 142 -> Reduce 39
-  | 421 -> Reduce 389
-  | 420 -> Reduce 387
-  | 583 -> Reduce 386
-  | 585 -> Reduce 385
-  | 588 -> Reduce 384
-  | 675 -> Reduce 383
-  | 590 -> Reduce 381
-  | 591 -> Reduce 380
-  | 1349 -> Reduce 38
-  | 586 -> Reduce 379
-  | 1438 -> Reduce 378
-  | 648 | 296 -> Reduce 376
-  | 1211 -> Reduce 374
-  | 179 -> Reduce 372
-  | 1347 -> Reduce 37
-  | 201 -> Reduce 369
-  | 120 -> Reduce 368
-  | 117 -> Reduce 367
-  | 338 -> Reduce 366
-  | 342 -> Reduce 365
-  | 341 -> Reduce 364
-  | 339 -> Reduce 363
-  | 121 -> Reduce 362
-  | 311 -> Reduce 361
-  | 286 -> Reduce 360
-  | 1523 -> Reduce 36
-  | 336 -> Reduce 359
-  | 113 -> Reduce 358
-  | 950 | 282 -> Reduce 357
-  | 951 | 335 | 283 -> Reduce 356
-  | 446 | 118 -> Reduce 355
-  | 447 | 334 | 119 -> Reduce 354
-  | 958 | 340 -> Reduce 353
-  | 114 -> Reduce 352
-  | 952 | 285 -> Reduce 351
-  | 306 -> Reduce 350
-  | 1521 -> Reduce 35
-  | 307 -> Reduce 349
-  | 308 -> Reduce 348
-  | 309 -> Reduce 347
-  | 310 -> Reduce 346
-  | 397 | 116 -> Reduce 345
-  | 953 | 337 -> Reduce 344
-  | 699 -> Reduce 343
-  | 519 -> Reduce 342
-  | 239 -> Reduce 341
-  | 240 -> Reduce 340
-  | 1517 -> Reduce 34
-  | 187 -> Reduce 339
-  | 415 -> Reduce 338
-  | 161 -> Reduce 336
-  | 162 -> Reduce 335
-  | 757 -> Reduce 334
-  | 758 -> Reduce 333
-  | 762 -> Reduce 332
-  | 708 -> Reduce 331
-  | 753 -> Reduce 330
-  | 1368 -> Reduce 33
-  | 721 -> Reduce 329
-  | 940 -> Reduce 328
-  | 720 -> Reduce 327
-  | 785 -> Reduce 326
-  | 715 -> Reduce 325
-  | 713 -> Reduce 324
-  | 1256 -> Reduce 323
-  | 1262 -> Reduce 322
-  | 1259 -> Reduce 321
-  | 1253 -> Reduce 320
-  | 1264 -> Reduce 319
-  | 1267 -> Reduce 318
-  | 710 -> Reduce 317
-  | 712 -> Reduce 316
-  | 945 -> Reduce 315
-  | 451 -> Reduce 314
-  | 714 -> Reduce 313
-  | 769 -> Reduce 312
-  | 767 -> Reduce 311
-  | 766 -> Reduce 310
-  | 1367 -> Reduce 31
-  | 1481 -> Reduce 309
-  | 1482 -> Reduce 308
-  | 1204 -> Reduce 307
-  | 1199 -> Reduce 306
-  | 1195 -> Reduce 305
-  | 1471 -> Reduce 304
-  | 136 -> Reduce 303
-  | 84 -> Reduce 302
-  | 94 -> Reduce 301
-  | 160 | 96 -> Reduce 300
-  | 1366 -> Reduce 30
-  | 88 -> Reduce 299
-  | 1316 -> Reduce 298
-  | 1319 -> Reduce 297
-  | 1320 -> Reduce 296
-  | 1302 -> Reduce 295
-  | 1307 -> Reduce 294
-  | 168 -> Reduce 293
-  | 259 -> Reduce 292
-  | 258 -> Reduce 291
-  | 1162 -> Reduce 290
-  | 1325 -> Reduce 29
-  | 1163 -> Reduce 289
-  | 1157 -> Reduce 288
-  | 1159 -> Reduce 287
-  | 1237 -> Reduce 286
-  | 1236 -> Reduce 285
-  | 510 -> Reduce 284
-  | 508 -> Reduce 283
-  | 963 -> Reduce 282
-  | 473 -> Reduce 281
-  | 1210 -> Reduce 280
-  | 1364 -> Reduce 28
-  | 1039 -> Reduce 279
-  | 1040 -> Reduce 278
-  | 971 -> Reduce 277
-  | 1032 -> Reduce 276
-  | 1242 -> Reduce 275
-  | 1247 -> Reduce 274
-  | 1248 -> Reduce 273
-  | 1038 -> Reduce 272
-  | 298 -> Reduce 271
-  | 297 -> Reduce 270
-  | 1322 -> Reduce 27
-  | 294 -> Reduce 269
-  | 293 -> Reduce 268
-  | 299 -> Reduce 267
-  | 363 -> Reduce 266
-  | 1064 -> Reduce 265
-  | 1065 -> Reduce 264
-  | 1063 -> Reduce 263
-  | 1066 -> Reduce 262
-  | 1068 -> Reduce 261
-  | 522 -> Reduce 260
-  | 427 -> Reduce 26
-  | 521 -> Reduce 259
-  | 468 -> Reduce 258
-  | 467 -> Reduce 257
-  | 515 -> Reduce 256
-  | 513 -> Reduce 255
-  | 1214 -> Reduce 254
-  | 1213 -> Reduce 253
-  | 1108 -> Reduce 252
-  | 1106 -> Reduce 251
-  | 462 -> Reduce 250
-  | 1361 -> Reduce 25
-  | 1073 | 137 -> Reduce 249
-  | 487 | 133 -> Reduce 248
-  | 465 -> Reduce 247
-  | 463 -> Reduce 246
-  | 553 -> Reduce 245
-  | 1083 -> Reduce 244
-  | 1081 -> Reduce 243
-  | 554 -> Reduce 242
-  | 1085 -> Reduce 241
-  | 649 -> Reduce 240
-  | 1343 -> Reduce 24
-  | 652 -> Reduce 239
-  | 646 -> Reduce 238
-  | 735 | 166 -> Reduce 237
-  | 793 -> Reduce 236
-  | 1553 -> Reduce 235
-  | 1549 -> Reduce 234
-  | 127 -> Reduce 233
-  | 148 | 126 -> Reduce 232
-  | 628 -> Reduce 231
-  | 634 -> Reduce 230
-  | 1348 -> Reduce 23
-  | 623 -> Reduce 229
-  | 760 -> Reduce 227
-  | 759 -> Reduce 226
-  | 566 -> Reduce 225
-  | 567 -> Reduce 224
-  | 942 -> Reduce 223
-  | 568 -> Reduce 222
-  | 1151 -> Reduce 221
-  | 1150 -> Reduce 220
-  | 1351 -> Reduce 22
-  | 1144 -> Reduce 219
-  | 1229 -> Reduce 218
-  | 1230 -> Reduce 217
-  | 797 -> Reduce 216
-  | 1056 -> Reduce 215
-  | 1183 -> Reduce 214
-  | 254 -> Reduce 213
-  | 1422 -> Reduce 212
-  | 692 -> Reduce 211
-  | 247 -> Reduce 210
-  | 1345 -> Reduce 21
-  | 1393 -> Reduce 209
-  | 395 -> Reduce 208
-  | 1043 -> Reduce 206
-  | 1046 -> Reduce 205
-  | 478 -> Reduce 204
-  | 1124 -> Reduce 203
-  | 1123 -> Reduce 202
-  | 1278 | 1010 -> Reduce 201
-  | 976 -> Reduce 200
-  | 1350 -> Reduce 20
-  | 1021 -> Reduce 199
-  | 410 -> Reduce 198
-  | 1172 -> Reduce 197
-  | 543 -> Reduce 196
-  | 1026 -> Reduce 195
-  | 1101 -> Reduce 194
-  | 1096 -> Reduce 193
-  | 1091 -> Reduce 192
-  | 1104 -> Reduce 191
-  | 1025 -> Reduce 190
-  | 1344 -> Reduce 19
-  | 1110 -> Reduce 189
-  | 1012 -> Reduce 188
-  | 1020 -> Reduce 187
-  | 1018 -> Reduce 186
-  | 1016 -> Reduce 185
-  | 988 -> Reduce 184
-  | 1006 -> Reduce 183
-  | 994 -> Reduce 182
-  | 1008 -> Reduce 181
-  | 986 -> Reduce 180
-  | 931 -> Reduce 18
-  | 978 -> Reduce 179
-  | 990 -> Reduce 178
-  | 992 -> Reduce 177
-  | 980 -> Reduce 176
-  | 982 -> Reduce 175
-  | 984 -> Reduce 174
-  | 996 -> Reduce 173
-  | 998 -> Reduce 172
-  | 1000 -> Reduce 171
-  | 1002 -> Reduce 170
-  | 930 -> Reduce 17
-  | 1004 -> Reduce 169
-  | 1279 -> Reduce 168
-  | 1014 -> Reduce 167
-  | 1132 -> Reduce 166
-  | 1389 -> Reduce 165
-  | 1166 -> Reduce 164
-  | 1168 -> Reduce 163
-  | 558 -> Reduce 162
-  | 1023 -> Reduce 161
-  | 974 -> Reduce 160
-  | 927 -> Reduce 16
-  | 1377 -> Reduce 159
-  | 1287 -> Reduce 158
-  | 1152 -> Reduce 157
-  | 1154 -> Reduce 156
-  | 1160 -> Reduce 155
-  | 1190 -> Reduce 154
-  | 1202 -> Reduce 153
-  | 1035 -> Reduce 152
-  | 1209 -> Reduce 151
-  | 1105 -> Reduce 150
-  | 1529 -> Reduce 15
-  | 551 -> Reduce 149
-  | 1136 -> Reduce 148
-  | 1143 -> Reduce 147
-  | 1398 -> Reduce 146
-  | 1383 -> Reduce 145
-  | 1385 -> Reduce 144
-  | 1381 -> Reduce 143
-  | 1378 -> Reduce 142
-  | 1291 -> Reduce 141
-  | 1251 -> Reduce 140
-  | 1528 -> Reduce 14
-  | 1076 -> Reduce 139
-  | 1079 -> Reduce 138
-  | 8 -> Reduce 137
-  | 9 -> Reduce 136
-  | 10 -> Reduce 135
-  | 11 -> Reduce 134
-  | 6 -> Reduce 133
-  | 5 -> Reduce 132
-  | 7 -> Reduce 131
-  | 4 -> Reduce 130
-  | 1525 -> Reduce 13
-  | 15 -> Reduce 129
-  | 1 -> Reduce 128
-  | 17 -> Reduce 127
-  | 18 -> Reduce 126
-  | 13 -> Reduce 125
-  | 2 -> Reduce 124
-  | 14 -> Reduce 123
-  | 16 -> Reduce 122
-  | 20 -> Reduce 121
-  | 12 -> Reduce 120
-  | 223 -> Reduce 12
-  | 19 -> Reduce 119
-  | 3 -> Reduce 118
-  | 1127 -> Reduce 117
-  | 1126 -> Reduce 116
-  | 217 -> Reduce 115
-  | 212 -> Reduce 114
-  | 626 -> Reduce 113
-  | 621 -> Reduce 112
-  | 210 -> Reduce 111
-  | 206 -> Reduce 110
-  | 269 -> Reduce 109
-  | 270 -> Reduce 108
-  | 276 | 273 | 262 | 214 -> Reduce 107
-  | 203 -> Reduce 103
-  | 241 -> Reduce 102
-  | 615 -> Reduce 101
-  | 638 -> Reduce 100
-  | 1392 -> Reduce 10
-  | 1502 | 1414 | 1362 | 1340 | 1296 | 1161 | 878 | 834 | 826 | 810 | 787 | 781 | 754 | 688 | 669 | 612 | 598 | 413 | 197 -> Pop
-  | 112 -> Parent (function
-     | 82 | 112 | 287 | 288 | 300 | 302 | 314 | 324 | 328 | 347 | 352 | 326 | 330 | 365 | 376 | 378 | 403 | 500 | 507 | 516 | 526 | 530 | 1145 | 1161 | 1215 | 1286 | 1290 | 1376 | 1380 -> Shift (T T_RPAREN, default_value (T T_RPAREN))
-     | 458 | 966 | 1036 | 1206 | 1333 | 1486 | 1490 | 1534 | 1538 -> Shift (N N_operator, default_value (N N_operator))
+type action =
+  | Shift  : 'a symbol -> action
+  | Reduce : int -> action
+  | Sub    : action list -> action
+  | Pop    : action
+
+type decision =
+  | Action : action -> decision
+  | Parent : (int -> action) -> decision
+
+
+let rec derive_parse_expression' = 
+  Sub [Reduce 3]
+and derive_interface' = 
+  Sub [Reduce 2]
+and derive_implementation' = 
+  Sub [Reduce 1]
+and derive_dummy' = 
+  Sub [Reduce 0]
+and derive_with_type_binder =  Shift (N N_with_type_binder)
+and derive_with_extensions =  Shift (N N_with_extensions)
+and derive_with_constraints =  Shift (N N_with_constraints)
+and derive_with_constraint = 
+  Sub [Shift (T T_MODULE); derive_mod_longident; Shift (T T_EQUAL); derive_mod_ext_longident; Reduce 724]
+and derive_virtual_flag = 
+  Sub [Reduce 720]
+and derive_value_type = 
+  Sub [derive_label; Shift (T T_COLON); derive_core_type; Reduce 719]
+and derive_value = 
+  Sub [derive_override_flag; derive_mutable_flag; derive_label; Shift (T T_EQUAL); derive_seq_expr; Reduce 715]
+and derive_val_longident =  Shift (N N_val_longident)
+and derive_val_ident =  Shift (N N_val_ident)
+and derive_typevar_list =  Shift (N N_typevar_list)
+and derive_type_variance =  Shift (N N_type_variance)
+and derive_type_variable =  Shift (N N_type_variable)
+and derive_type_parameters =  Shift (N N_type_parameters)
+and derive_type_parameter_list =  Shift (N N_type_parameter_list)
+and derive_type_parameter =  Shift (N N_type_parameter)
+and derive_type_longident =  Shift (N N_type_longident)
+and derive_type_kind = 
+  Sub [Reduce 684]
+and derive_type_declarations =  Shift (N N_type_declarations)
+and derive_type_declaration = 
+  Sub [derive_optional_type_parameters; Shift (T T_LIDENT); derive_type_kind; derive_constraints; derive_post_item_attributes; Reduce 681]
+and derive_type_constraint = 
+  Sub [Shift (T T_COLONGREATER); derive_core_type; Reduce 680]
+and derive_toplevel_directives = 
+  Sub [Reduce 671]
+and derive_tag_field = 
+  Sub [derive_name_tag; derive_attributes; Reduce 670]
+and derive_subtractive = 
+  Sub [Shift (T T_MINUSDOT); Reduce 668]
+and derive_structure_tail =  Shift (N N_structure_tail)
+and derive_structure_item = 
+  Sub [Shift (T T_CLASS); derive_class_declarations; Reduce 659]
+and derive_structure_head =  Shift (N N_structure_head)
+and derive_structure =  Shift (N N_structure)
+and derive_strict_binding = 
+  Sub [Shift (T T_EQUAL); derive_seq_expr; Reduce 630]
+and derive_str_type_extension = 
+  Sub [derive_optional_type_parameters; derive_type_longident; Shift (T T_PLUSEQ); derive_private_flag; derive_opt_bar; derive_str_extension_constructors; derive_post_item_attributes; Reduce 629]
+and derive_str_extension_constructors = 
+  Sub [derive_extension_constructor_declaration; Reduce 625]
+and derive_str_exception_declaration = 
+  Sub [derive_extension_constructor_declaration; derive_post_item_attributes; Reduce 623]
+and derive_single_attr_id = 
+  Sub [Shift (T T_WITH); Reduce 622]
+and derive_simple_pattern_not_ident = 
+  Sub [derive_constr_longident; Reduce 561]
+and derive_simple_pattern =  Shift (N N_simple_pattern)
+and derive_simple_labeled_expr_list = 
+  Sub [derive_labeled_simple_expr; Reduce 554]
+and derive_simple_expr =  Shift (N N_simple_expr)
+and derive_simple_core_type_or_tuple_no_attr =  Shift (N N_simple_core_type_or_tuple_no_attr)
+and derive_simple_core_type_or_tuple =  Shift (N N_simple_core_type_or_tuple)
+and derive_simple_core_type_no_attr =  Shift (N N_simple_core_type_no_attr)
+and derive_simple_core_type2 =  Shift (N N_simple_core_type2)
+and derive_simple_core_type =  Shift (N N_simple_core_type)
+and derive_signed_constant =  Shift (N N_signed_constant)
+and derive_signature_item = 
+  Sub [Shift (T T_CLASS); derive_class_descriptions; Reduce 471]
+and derive_signature =  Shift (N N_signature)
+and derive_sig_type_extension = 
+  Sub [derive_optional_type_parameters; derive_type_longident; Shift (T T_PLUSEQ); derive_private_flag; derive_opt_bar; derive_sig_extension_constructors; derive_post_item_attributes; Reduce 451]
+and derive_sig_extension_constructors = 
+  Sub [derive_extension_constructor_declaration; Reduce 449]
+and derive_sig_exception_declaration = 
+  Sub [derive_extension_constructor_declaration; derive_post_item_attributes; Reduce 448]
+and derive_seq_expr =  Shift (N N_seq_expr)
+and derive_row_field_list =  Shift (N N_row_field_list)
+and derive_row_field = 
+  Sub [derive_simple_core_type; Reduce 442]
+and derive_record_expr =  Shift (N N_record_expr)
+and derive_rec_module_declarations = 
+  Sub [derive_module_rec_declaration; Reduce 437]
+and derive_rec_flag =  Shift (N N_rec_flag)
+and derive_private_virtual_flags = 
+  Sub [Reduce 430]
+and derive_private_flag = 
+  Sub [Reduce 428]
+and derive_primitive_declaration =  Shift (N N_primitive_declaration)
+and derive_post_item_attributes =  Shift (N N_post_item_attributes)
+and derive_post_item_attribute = 
+  Sub [Shift (T T_LBRACKETATAT); derive_attr_id; derive_payload; Shift (T T_RBRACKET); Reduce 423]
+and derive_poly_type_no_attr =  Shift (N N_poly_type_no_attr)
+and derive_poly_type =  Shift (N N_poly_type)
+and derive_payload =  Shift (N N_payload)
+and derive_pattern_var = 
+  Sub [Shift (T T_UNDERSCORE); Reduce 414]
+and derive_pattern_semi_list =  Shift (N N_pattern_semi_list)
+and derive_pattern_comma_list = 
+  Sub [derive_pattern; Shift (T T_COMMA); derive_pattern; Reduce 410]
+and derive_pattern =  Shift (N N_pattern)
+and derive_parse_expression = 
+  Sub [derive_seq_expr; Shift (T T_EOF); Reduce 397]
+and derive_parent_binder = 
+  Sub [Reduce 396]
+and derive_package_type_cstrs =  Shift (N N_package_type_cstrs)
+and derive_package_type_cstr = 
+  Sub [Shift (T T_TYPE); derive_label_longident; Shift (T T_EQUAL); derive_core_type; Reduce 392]
+and derive_package_type =  Shift (N N_package_type)
+and derive_override_flag = 
+  Sub [Reduce 388]
+and derive_optional_type_variable =  Shift (N N_optional_type_variable)
+and derive_optional_type_parameters =  Shift (N N_optional_type_parameters)
+and derive_optional_type_parameter_list =  Shift (N N_optional_type_parameter_list)
+and derive_optional_type_parameter =  Shift (N N_optional_type_parameter)
+and derive_option_STRING_ = 
+  Sub [Reduce 377]
+and derive_opt_semi = 
+  Sub [Reduce 375]
+and derive_opt_default = 
+  Sub [Reduce 373]
+and derive_opt_bar = 
+  Sub [Reduce 371]
+and derive_opt_ampersand = 
+  Sub [Reduce 370]
+and derive_operator =  Shift (N N_operator)
+and derive_open_statement = 
+  Sub [Shift (T T_OPEN); derive_override_flag; derive_mod_longident; derive_post_item_attributes; Reduce 343]
+and derive_newtype =  Shift (N N_newtype)
+and derive_name_tag_list =  Shift (N N_name_tag_list)
+and derive_name_tag = 
+  Sub [Shift (T T_BACKQUOTE); derive_ident; Reduce 339]
+and derive_mutable_flag = 
+  Sub [Reduce 337]
+and derive_mty_longident =  Shift (N N_mty_longident)
+and derive_module_type =  Shift (N N_module_type)
+and derive_module_rec_declaration = 
+  Sub [Shift (T T_UIDENT); Shift (T T_COLON); derive_module_type; derive_post_item_attributes; Reduce 326]
+and derive_module_expr =  Shift (N N_module_expr)
+and derive_module_declaration =  Shift (N N_module_declaration)
+and derive_module_bindings =  Shift (N N_module_bindings)
+and derive_module_binding_body =  Shift (N N_module_binding_body)
+and derive_module_binding =  Shift (N N_module_binding)
+and derive_mod_longident =  Shift (N N_mod_longident)
+and derive_mod_ext_longident =  Shift (N N_mod_ext_longident)
+and derive_method_ = 
+  Sub [derive_override_flag; derive_private_flag; derive_label; derive_strict_binding; Reduce 296]
+and derive_meth_list =  Shift (N N_meth_list)
+and derive_match_cases =  Shift (N N_match_cases)
+and derive_match_case = 
+  Sub [derive_pattern; Shift (T T_MINUSGREATER); derive_seq_expr; Reduce 287]
+and derive_lident_list =  Shift (N N_lident_list)
+and derive_let_pattern =  Shift (N N_let_pattern)
+and derive_let_operator = 
+  Sub [Shift (T T_LETOP); Reduce 281]
+and derive_let_bindings_no_attrs =  Shift (N N_let_bindings_no_attrs)
+and derive_let_bindings =  Shift (N N_let_bindings)
+and derive_let_binding_ = 
+  Sub [derive_val_ident; derive_fun_binding; Reduce 273]
+and derive_let_binding =  Shift (N N_let_binding)
+and derive_lbl_pattern_list =  Shift (N N_lbl_pattern_list)
+and derive_lbl_pattern = 
+  Sub [derive_label_longident; Reduce 267]
+and derive_lbl_expr_list =  Shift (N N_lbl_expr_list)
+and derive_lbl_expr = 
+  Sub [derive_label_longident; Reduce 262]
+and derive_labeled_simple_pattern = 
+  Sub [derive_simple_pattern; Reduce 260]
+and derive_labeled_simple_expr = 
+  Sub [derive_simple_expr; Reduce 251]
+and derive_label_var =  Shift (N N_label_var)
+and derive_label_longident =  Shift (N N_label_longident)
+and derive_label_let_pattern =  Shift (N N_label_let_pattern)
+and derive_label_ident =  Shift (N N_label_ident)
+and derive_label_expr = 
+  Sub [Shift (T T_QUESTION); derive_label_ident; Reduce 243]
+and derive_label_declarations =  Shift (N N_label_declarations)
+and derive_label_declaration = 
+  Sub [derive_mutable_flag; derive_label; Shift (T T_COLON); derive_poly_type_no_attr; derive_attributes; Reduce 238]
+and derive_label =  Shift (N N_label)
+and derive_item_extension = 
+  Sub [Shift (T T_LBRACKETPERCENTPERCENT); derive_attr_id; derive_payload; Shift (T T_RBRACKET); Reduce 236]
+and derive_interface = 
+  Sub [derive_signature; Shift (T T_EOF); Reduce 235]
+and derive_implementation = 
+  Sub [derive_structure; Shift (T T_EOF); Reduce 234]
+and derive_ident =  Shift (N N_ident)
+and derive_generalized_constructor_arguments =  Shift (N N_generalized_constructor_arguments)
+and derive_functor_args =  Shift (N N_functor_args)
+and derive_functor_arg_name = 
+  Sub [Shift (T T_UNDERSCORE); Reduce 225]
+and derive_functor_arg = 
+  Sub [Shift (T T_LPAREN); Shift (T T_RPAREN); Reduce 222]
+and derive_fun_def = 
+  Sub [Shift (T T_MINUSGREATER); derive_seq_expr; Reduce 219]
+and derive_fun_binding =  Shift (N N_fun_binding)
+and derive_floating_attribute = 
+  Sub [Shift (T T_LBRACKETATATAT); derive_attr_id; derive_payload; Shift (T T_RBRACKET); Reduce 216]
+and derive_field_expr_list =  Shift (N N_field_expr_list)
+and derive_field = 
+  Sub [derive_label; Shift (T T_COLON); derive_poly_type_no_attr; derive_attributes; Reduce 213]
+and derive_extension_constructor_rebind = 
+  Sub [derive_constr_ident; Shift (T T_EQUAL); derive_constr_longident; derive_attributes; Reduce 212]
+and derive_extension_constructor_declaration = 
+  Sub [derive_constr_ident; derive_generalized_constructor_arguments; derive_attributes; Reduce 211]
+and derive_extension = 
+  Sub [Shift (T T_LBRACKETPERCENT); derive_attr_id; derive_payload; Shift (T T_RBRACKET); Reduce 210]
+and derive_ext_attributes =  Shift (N N_ext_attributes)
+and derive_expr_semi_list =  Shift (N N_expr_semi_list)
+and derive_expr_open =  Shift (N N_expr_open)
+and derive_expr_comma_opt_list = 
+  Sub [derive_expr; Reduce 203]
+and derive_expr_comma_list = 
+  Sub [derive_expr; Shift (T T_COMMA); derive_expr; Reduce 201]
+and derive_expr =  Shift (N N_expr)
+and derive_dummy = 
+  Sub [Shift (T T_OUNIT_BENCH_MODULE); Reduce 137]
+and derive_direction_flag =  Shift (N N_direction_flag)
+and derive_core_type_no_attr =  Shift (N N_core_type_no_attr)
+and derive_core_type_list_no_attr =  Shift (N N_core_type_list_no_attr)
+and derive_core_type_list =  Shift (N N_core_type_list)
+and derive_core_type_comma_list =  Shift (N N_core_type_comma_list)
+and derive_core_type2 =  Shift (N N_core_type2)
+and derive_core_type =  Shift (N N_core_type)
+and derive_constructor_declarations =  Shift (N N_constructor_declarations)
+and derive_constructor_declaration = 
+  Sub [derive_constr_ident; derive_generalized_constructor_arguments; derive_attributes; Reduce 99]
+and derive_constraints = 
+  Sub [Reduce 98]
+and derive_constrain_field = 
+  Sub [derive_core_type; Shift (T T_EQUAL); derive_core_type; Reduce 96]
+and derive_constrain = 
+  Sub [derive_core_type; Shift (T T_EQUAL); derive_core_type; Reduce 95]
+and derive_constr_longident =  Shift (N N_constr_longident)
+and derive_constr_ident = 
+  Sub [Shift (T T_TRUE); Reduce 89]
+and derive_constant =  Shift (N N_constant)
+and derive_clty_longident =  Shift (N N_clty_longident)
+and derive_class_type_parameters =  Shift (N N_class_type_parameters)
+and derive_class_type_declarations =  Shift (N N_class_type_declarations)
+and derive_class_type_declaration =  Shift (N N_class_type_declaration)
+and derive_class_type = 
+  Sub [derive_class_signature; Reduce 66]
+and derive_class_structure = 
+  Sub [derive_class_self_pattern; derive_class_fields; Reduce 65]
+and derive_class_simple_expr = 
+  Sub [derive_class_longident; Reduce 61]
+and derive_class_signature = 
+  Sub [derive_clty_longident; Reduce 56]
+and derive_class_sig_fields = 
+  Sub [Reduce 53]
+and derive_class_sig_field = 
+  Sub [Shift (T T_INHERIT); derive_class_signature; derive_post_item_attributes; Reduce 47]
+and derive_class_sig_body = 
+  Sub [derive_class_self_type; derive_class_sig_fields; Reduce 46]
+and derive_class_self_type = 
+  Sub [Reduce 45]
+and derive_class_self_pattern = 
+  Sub [Reduce 43]
+and derive_class_longident =  Shift (N N_class_longident)
+and derive_class_fun_def = 
+  Sub [derive_labeled_simple_pattern; Shift (T T_MINUSGREATER); derive_class_expr; Reduce 37]
+and derive_class_fun_binding = 
+  Sub [Shift (T T_EQUAL); derive_class_expr; Reduce 34]
+and derive_class_fields =  Shift (N N_class_fields)
+and derive_class_field =  Shift (N N_class_field)
+and derive_class_expr = 
+  Sub [derive_class_simple_expr; Reduce 19]
+and derive_class_descriptions =  Shift (N N_class_descriptions)
+and derive_class_description =  Shift (N N_class_description)
+and derive_class_declarations =  Shift (N N_class_declarations)
+and derive_class_declaration =  Shift (N N_class_declaration)
+and derive_attributes =  Shift (N N_attributes)
+and derive_attribute = 
+  Sub [Shift (T T_LBRACKETAT); derive_attr_id; derive_payload; Shift (T T_RBRACKET); Reduce 10]
+and derive_attr_id =  Shift (N N_attr_id)
+and derive_amper_type_list =  Shift (N N_amper_type_list)
+and derive_additive = 
+  Sub [Shift (T T_PLUSDOT); Reduce 5]
+
+let decision = function
+  | 987 -> Parent (function
+     | 988 -> derive_expr
+     | 976 | 1016 | 1026 | 1010 | 1012 | 1027 | 1043 | 1046 | 1056 | 1068 | 1117 | 1076 | 1079 | 1091 | 1096 | 1098 | 1101 | 1104 | 1123 | 1124 | 1166 | 1168 | 1173 | 1183 | 1252 | 1276 | 1278 -> Pop
      | _ -> raise Not_found)
+  | 564 -> Parent (function
+     | 944 -> derive_functor_args
+     | 448 | 452 | 563 | 707 | 709 | 1194 | 1198 | 1444 | 1452 | 1492 -> Pop
+     | _ -> raise Not_found)
+  | 92 -> Parent (function
+     | 93 -> derive_mod_ext_longident
+     | 91 | 158 | 749 | 752 | 869 | 917 -> Pop
+     | _ -> raise Not_found)
+  | 898 -> Parent (function
+     | 902 -> Shift (T T_LIDENT)
+     | 897 | 905 | 909 | 913 | 1354 | 1518 -> Pop
+     | _ -> raise Not_found)
+  | 702 -> Parent (function
+     | 768 -> Shift (T T_RPAREN)
+     | 701 | 764 -> Pop
+     | _ -> raise Not_found)
+  | 717 -> Parent (function
+     | 719 -> derive_functor_args
+     | 570 | 704 | 716 | 765 | 777 | 783 | 798 | 1196 | 1265 | 1474 -> Pop
+     | _ -> raise Not_found)
+  | 716 -> Parent (function
+     | 716 -> derive_module_type
+     | 570 | 704 | 719 | 765 | 777 | 783 | 798 | 1196 | 1265 | 1474 -> Pop
+     | _ -> raise Not_found)
+  | 695 -> Parent (function
+     | 695 -> derive_signature
+     | 571 | 932 | 1551 -> Pop
+     | _ -> raise Not_found)
+  | 533 -> Parent (function
+     | 533 -> derive_simple_expr
+     | 23 | 382 | 384 | 386 | 388 | 389 | 397 | 398 | 438 | 442 | 444 | 453 | 472 | 480 | 481 | 485 | 486 | 488 | 489 | 490 | 492 | 493 | 495 | 497 | 502 | 524 | 528 | 532 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 529 -> Parent (function
+     | 532 | 1128 | 1130 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 525 -> Parent (function
+     | 528 | 1134 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 496 -> Parent (function
+     | 497 | 1165 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 494 -> Parent (function
+     | 495 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 388 | 389 | 396 | 397 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 486 | 488 | 489 | 490 | 492 | 493 | 497 | 502 | 524 | 528 | 532 | 533 | 562 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 493 -> Parent (function
+     | 493 -> derive_simple_expr
+     | 23 | 382 | 384 | 386 | 388 | 389 | 397 | 398 | 438 | 442 | 444 | 453 | 472 | 480 | 481 | 485 | 486 | 488 | 489 | 490 | 492 | 495 | 497 | 502 | 524 | 528 | 532 | 533 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 490 -> Parent (function
+     | 490 -> derive_expr
+     | 23 | 382 | 384 | 386 | 388 | 389 | 396 | 397 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 486 | 488 | 489 | 492 | 493 | 495 | 497 | 502 | 524 | 528 | 532 | 533 | 562 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 489 -> Parent (function
+     | 489 -> derive_simple_expr
+     | 23 | 382 | 384 | 386 | 388 | 389 | 396 | 397 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 486 | 488 | 490 | 492 | 493 | 495 | 497 | 502 | 524 | 528 | 532 | 533 | 562 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 488 -> Parent (function
+     | 488 | 1177 -> derive_simple_expr
+     | 23 | 382 | 384 | 386 | 388 | 389 | 396 | 397 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 486 | 489 | 490 | 492 | 493 | 495 | 497 | 502 | 524 | 528 | 532 | 533 | 562 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 486 -> Parent (function
+     | 486 -> derive_record_expr
+     | 23 | 382 | 384 | 386 | 388 | 389 | 396 | 397 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 488 | 489 | 490 | 492 | 493 | 495 | 497 | 502 | 524 | 528 | 532 | 533 | 562 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 481 -> Parent (function
+     | 481 -> Shift (T T_RBRACKET)
+     | 23 | 382 | 384 | 386 | 388 | 389 | 396 | 397 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 485 | 486 | 488 | 489 | 490 | 492 | 493 | 495 | 497 | 502 | 524 | 528 | 532 | 533 | 562 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 474 -> Parent (function
+     | 480 -> Shift (T T_OPEN)
+     | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 475 -> Parent (function
+     | 474 -> derive_expr_open
+     | 1488 -> Pop
+     | _ -> raise Not_found)
+  | 452 -> Parent (function
+     | 452 -> derive_module_expr
+     | 448 | 563 | 707 | 709 | 944 | 1194 | 1198 | 1444 | 1452 | 1492 -> Pop
+     | _ -> raise Not_found)
+  | 445 -> Parent (function
+     | 445 -> Shift (T T_RPAREN)
+     | 23 | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 443 -> Parent (function
+     | 444 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 441 -> Parent (function
+     | 442 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 398 -> Parent (function
+     | 398 -> Shift (T T_BARRBRACKET)
+     | 23 | 382 | 384 | 386 | 388 | 389 | 396 | 397 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 486 | 488 | 489 | 490 | 492 | 493 | 495 | 497 | 502 | 524 | 528 | 532 | 533 | 562 | 953 | 958 | 542 | 539 | 550 | 551 | 556 | 557 | 544 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1022 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1059 | 1067 | 1113 | 1116 | 1078 | 1082 | 1084 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1105 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1344 | 1345 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1456 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 387 -> Parent (function
+     | 388 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 385 -> Parent (function
+     | 386 -> derive_ext_attributes
+     | 23 | 382 | 384 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 383 -> Parent (function
+     | 384 | 1387 -> derive_ext_attributes
+     | 23 | 382 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 328 -> Parent (function
+     | 329 -> derive_pattern
+     | 325 | 355 | 327 | 331 | 363 | 366 | 369 | 377 | 379 | 381 | 404 | 501 | 508 | 527 | 531 | 1030 -> Pop
+     | _ -> raise Not_found)
+  | 314 -> Parent (function
+     | 314 -> derive_pattern
+     | 82 | 112 | 287 | 288 | 300 | 302 | 324 | 328 | 347 | 352 | 326 | 330 | 365 | 376 | 378 | 403 | 458 | 500 | 507 | 516 | 526 | 530 | 966 | 1036 | 1145 | 1161 | 1206 | 1215 | 1286 | 1290 | 1333 | 1376 | 1380 | 1486 | 1490 | 1534 | 1538 -> Pop
+     | _ -> raise Not_found)
+  | 289 -> Parent (function
+     | 288 | 481 -> Reduce 91
+     | 1420 -> Pop
+     | _ -> raise Not_found)
+  | 288 -> Parent (function
+     | 288 -> Shift (T T_RBRACKET)
+     | 82 | 112 | 287 | 300 | 301 | 302 | 314 | 324 | 328 | 347 | 352 | 326 | 330 | 365 | 376 | 378 | 403 | 458 | 459 | 500 | 504 | 507 | 516 | 520 | 523 | 526 | 530 | 966 | 1036 | 1145 | 1148 | 1149 | 1153 | 1161 | 1206 | 1215 | 1218 | 1231 | 1286 | 1290 | 1309 | 1333 | 1340 | 1341 | 1376 | 1380 | 1486 | 1490 | 1515 | 1522 | 1534 | 1538 -> Pop
+     | _ -> raise Not_found)
+  | 287 -> Parent (function
+     | 287 -> Shift (T T_BARRBRACKET)
+     | 82 | 112 | 288 | 300 | 301 | 302 | 314 | 324 | 328 | 347 | 352 | 326 | 330 | 365 | 376 | 378 | 403 | 458 | 459 | 500 | 504 | 507 | 516 | 520 | 523 | 526 | 530 | 966 | 1036 | 1145 | 1148 | 1149 | 1153 | 1161 | 1206 | 1215 | 1218 | 1231 | 1286 | 1290 | 1309 | 1333 | 1340 | 1341 | 1376 | 1380 | 1486 | 1490 | 1515 | 1522 | 1534 | 1538 -> Pop
+     | _ -> raise Not_found)
+  | 213 -> Parent (function
+     | 214 | 262 | 273 | 276 -> derive_core_type2
+     | 212 -> Pop
+     | _ -> raise Not_found)
+  | 184 -> Parent (function
+     | 184 | 185 -> Shift (T T_BAR)
+     | 139 | 152 | 153 | 154 | 164 | 172 | 177 | 180 | 183 | 197 | 202 | 205 | 209 | 213 | 219 | 229 | 251 | 261 | 268 | 272 | 275 | 357 | 406 | 418 | 434 | 464 | 509 | 574 | 602 | 605 | 606 | 617 | 618 | 625 | 627 | 630 | 631 | 644 | 669 | 671 | 739 | 743 | 803 | 827 | 838 | 843 | 848 | 857 | 859 | 866 | 878 | 880 | 900 | 903 | 907 | 910 | 915 | 968 | 1221 | 1223 | 1225 | 1234 | 1239 | 1244 | 1301 | 1306 | 1310 | 1313 | 1336 | 1362 | 1497 -> Pop
+     | _ -> raise Not_found)
+  | 185 -> Parent (function
+     | 184 -> derive_row_field_list
+     | 910 -> Pop
+     | _ -> raise Not_found)
+  | 178 -> Parent (function
+     | 180 -> derive_opt_bar
+     | 139 | 152 | 153 | 154 | 164 | 172 | 177 | 183 | 184 | 185 | 197 | 202 | 205 | 209 | 213 | 219 | 229 | 251 | 261 | 268 | 272 | 275 | 357 | 406 | 418 | 434 | 464 | 509 | 574 | 602 | 605 | 606 | 617 | 618 | 625 | 627 | 630 | 631 | 644 | 669 | 671 | 739 | 743 | 803 | 827 | 838 | 843 | 848 | 857 | 859 | 866 | 878 | 880 | 897 | 900 | 902 | 903 | 905 | 907 | 909 | 910 | 913 | 915 | 968 | 1221 | 1223 | 1225 | 1234 | 1239 | 1244 | 1301 | 1306 | 1310 | 1313 | 1336 | 1354 | 1362 | 1497 | 1518 -> Pop
+     | _ -> raise Not_found)
+  | 154 -> Parent (function
+     | 154 -> derive_core_type_comma_list
+     | 139 | 152 | 153 | 164 | 172 | 177 | 180 | 183 | 184 | 185 | 197 | 202 | 205 | 209 | 213 | 219 | 229 | 251 | 261 | 268 | 272 | 275 | 357 | 406 | 418 | 434 | 464 | 509 | 574 | 606 | 618 | 631 | 644 | 669 | 671 | 739 | 743 | 803 | 827 | 838 | 843 | 848 | 857 | 859 | 866 | 878 | 880 | 910 | 968 | 1221 | 1223 | 1225 | 1234 | 1239 | 1244 | 1301 | 1306 | 1310 | 1313 | 1336 | 1362 | 1497 -> Pop
+     | _ -> raise Not_found)
+  | 150 -> Parent (function
+     | 152 -> Shift (T T_LIDENT)
+     | 139 | 153 | 154 | 164 | 172 | 177 | 202 | 213 | 219 | 251 | 261 | 268 | 272 | 275 | 357 | 406 | 418 | 434 | 464 | 509 | 574 | 602 | 605 | 606 | 618 | 631 | 644 | 669 | 671 | 739 | 743 | 803 | 827 | 838 | 843 | 848 | 857 | 859 | 866 | 878 | 880 | 910 | 968 | 1221 | 1223 | 1225 | 1234 | 1239 | 1244 | 1301 | 1306 | 1310 | 1313 | 1336 | 1362 | 1497 -> Pop
+     | _ -> raise Not_found)
+  | 24 -> Parent (function
+     | 1394 | 1396 -> derive_ext_attributes
+     | 23 | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1250 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 1332 -> Parent (function
+     | 1335 -> derive_rec_flag
+     | 1327 | 1331 | 1342 | 1516 | 1520 -> Pop
+     | _ -> raise Not_found)
+  | 1331 -> Parent (function
+     | 1331 -> derive_class_expr
+     | 1327 | 1335 | 1342 | 1516 | 1520 -> Pop
+     | _ -> raise Not_found)
+  | 455 -> Parent (function
+     | 1250 -> derive_ext_attributes
+     | 382 | 384 | 386 | 388 | 396 | 398 | 438 | 442 | 444 | 445 | 453 | 472 | 480 | 481 | 485 | 490 | 495 | 497 | 502 | 524 | 528 | 532 | 562 | 539 | 550 | 556 | 549 | 964 | 970 | 973 | 975 | 977 | 995 | 1024 | 979 | 985 | 997 | 981 | 983 | 987 | 989 | 991 | 993 | 999 | 1001 | 1013 | 1003 | 1005 | 1007 | 1015 | 1017 | 1019 | 1009 | 1011 | 1028 | 1031 | 1034 | 1042 | 1047 | 1055 | 1067 | 1113 | 1116 | 1078 | 1087 | 1090 | 1092 | 1095 | 1097 | 1100 | 1103 | 1122 | 1128 | 1130 | 1134 | 1137 | 1139 | 1141 | 1156 | 1158 | 1165 | 1167 | 1177 | 1201 | 1208 | 1219 | 1228 | 1241 | 1246 | 1275 | 1277 | 1294 | 1315 | 1318 | 1323 | 1382 | 1384 | 1387 | 1394 | 1396 | 1440 | 1448 | 1458 | 1462 | 1466 | 1555 -> Pop
+     | _ -> raise Not_found)
+  | 1250 -> Parent (function
+     | 1249 -> derive_seq_expr
+     | 1487 -> Pop
+     | _ -> raise Not_found)
+  | 115 -> Parent (function
+     | 112 | 445 -> Reduce 92
+     | 302 | 396 | 516 | 1145 | 1215 | 1419 -> Pop
+     | _ -> raise Not_found)
+  | 112 -> Parent (function
+     | 112 -> Shift (T T_RPAREN)
+     | 82 | 287 | 288 | 300 | 302 | 314 | 324 | 328 | 347 | 352 | 326 | 330 | 365 | 376 | 378 | 403 | 458 | 500 | 507 | 516 | 526 | 530 | 966 | 1036 | 1145 | 1161 | 1206 | 1215 | 1286 | 1290 | 1333 | 1376 | 1380 | 1486 | 1490 | 1534 | 1538 -> Pop
+     | _ -> raise Not_found)
+  | 1019 -> Parent (function
+     | 1020 -> derive_expr
+     | 976 | 988 | 1016 | 1018 | 1026 | 1010 | 1012 | 1027 | 1043 | 1046 | 1056 | 1068 | 1117 | 1076 | 1079 | 1091 | 1096 | 1098 | 1101 | 1104 | 1123 | 1124 | 1166 | 1168 | 1173 | 1183 | 1252 | 1276 | 1278 -> Pop
+     | _ -> raise Not_found)
+  | 1017 -> Parent (function
+     | 1018 -> derive_expr
+     | 976 | 988 | 1016 | 1020 | 1026 | 1010 | 1012 | 1027 | 1043 | 1046 | 1056 | 1068 | 1117 | 1076 | 1079 | 1091 | 1096 | 1098 | 1101 | 1104 | 1123 | 1124 | 1166 | 1168 | 1173 | 1183 | 1252 | 1276 | 1278 -> Pop
+     | _ -> raise Not_found)
+  | 1015 -> Parent (function
+     | 1016 -> derive_expr
+     | 976 | 988 | 1026 | 1010 | 1012 | 1027 | 1043 | 1046 | 1056 | 1068 | 1117 | 1076 | 1079 | 1091 | 1096 | 1098 | 1101 | 1104 | 1123 | 1124 | 1166 | 1168 | 1173 | 1183 | 1252 | 1276 | 1278 -> Pop
+     | _ -> raise Not_found)
+  | 1013 -> Parent (function
+     | 1014 -> derive_expr
+     | 976 | 988 | 994 | 1002 | 1004 | 1006 | 1008 | 1016 | 1018 | 1020 | 1026 | 1010 | 1012 | 1027 | 1043 | 1046 | 1056 | 1068 | 1117 | 1076 | 1079 | 1091 | 1096 | 1098 | 1101 | 1104 | 1123 | 1124 | 1166 | 1168 | 1173 | 1183 | 1252 | 1276 | 1278 -> Pop
+     | _ -> raise Not_found)
+  | 1011 -> Parent (function
+     | 1012 -> derive_expr
+     | 1026 | 1027 | 1043 | 1046 | 1056 | 1068 | 1117 | 1076 | 1079 | 1091 | 1096 | 1098 | 1101 | 1104 | 1123 | 1124 | 1166 | 1168 | 1173 | 1183 | 1252 | 1276 -> Pop
+     | _ -> raise Not_found)
+  | 736 -> Action (derive_with_type_binder)
+  | 1455 | 1434 -> Action (derive_val_ident)
+  | 725 -> Action (derive_type_variable)
+  | 682 | 601 -> Action (derive_type_kind)
+  | 1546 | 1531 | 23 -> Action (derive_structure_tail)
+  | 1309 -> Action (derive_strict_binding)
+  | 1412 -> Action (derive_str_extension_constructors)
+  | 520 -> Action (derive_simple_pattern)
+  | 1456 | 1084 | 1082 | 544 | 542 | 492 | 389 -> Action (derive_simple_expr)
+  | 903 | 900 -> Action (derive_simple_core_type_or_tuple_no_attr)
+  | 630 | 625 -> Action (derive_simple_core_type_no_attr)
+  | 932 -> Action (derive_signature)
+  | 686 -> Action (derive_sig_extension_constructors)
+  | 1466 | 1462 | 1458 | 1448 | 1440 | 1396 | 1394 | 1387 | 1318 | 1315 | 1294 | 1246 | 1241 | 1228 | 1208 | 1201 | 1158 | 1156 | 1141 | 1139 | 1134 | 1130 | 1128 | 1034 | 1031 | 970 | 532 | 528 | 497 | 480 | 444 | 442 | 438 | 388 | 386 | 384 -> Action (derive_seq_expr)
+  | 229 | 183 | 180 -> Action (derive_row_field_list)
+  | 1537 | 1533 | 1489 | 1485 | 1205 | 456 -> Action (derive_rec_flag)
+  | 1410 | 1297 | 684 -> Action (derive_private_flag)
+  | 1499 | 805 -> Action (derive_primitive_declaration)
+  | 1545 | 1542 | 1524 | 1508 | 1506 | 1500 | 1493 | 1475 | 1473 | 1470 | 1413 | 1365 | 1363 | 1360 | 1324 | 1321 | 1037 | 935 | 926 | 888 | 884 | 882 | 875 | 861 | 845 | 814 | 808 | 799 | 784 | 778 | 776 | 773 | 771 | 698 | 687 | 668 | 575 | 428 | 422 -> Action (derive_post_item_attributes)
+  | 644 | 172 -> Action (derive_poly_type_no_attr)
+  | 1306 | 1301 | 857 -> Action (derive_poly_type)
+  | 795 | 791 | 424 | 176 | 81 -> Action (derive_payload)
+  | 505 -> Action (derive_pattern_var)
+  | 530 | 526 -> Action (derive_pattern)
+  | 1357 -> Action (derive_parent_binder)
+  | 947 -> Action (derive_package_type)
+  | 582 -> Action (derive_optional_type_variable)
+  | 1370 | 1187 | 1184 | 1052 | 1048 | 1041 | 661 | 647 | 371 | 364 | 256 -> Action (derive_opt_semi)
+  | 511 | 471 -> Action (derive_opt_default)
+  | 1411 | 1375 | 1289 | 1285 | 685 | 659 | 499 -> Action (derive_opt_bar)
+  | 504 -> Action (derive_newtype)
+  | 430 -> Action (derive_mutable_flag)
+  | 783 | 719 | 704 | 570 -> Action (derive_module_type)
+  | 1452 | 1444 | 1198 | 944 -> Action (derive_module_expr)
+  | 768 | 764 | 701 -> Action (derive_module_declaration)
+  | 1469 | 1203 | 1193 -> Action (derive_module_binding_body)
+  | 697 | 477 -> Action (derive_mod_longident)
+  | 751 | 748 -> Action (derive_mod_ext_longident)
+  | 1380 | 1376 | 1290 | 1286 | 500 -> Action (derive_match_cases)
+  | 1333 | 1206 -> Action (derive_let_bindings_no_attrs)
+  | 1538 | 1534 | 1490 | 1486 | 966 | 458 -> Action (derive_let_bindings)
+  | 1061 -> Action (derive_lbl_expr_list)
+  | 1308 | 1299 | 855 | 841 | 836 | 734 | 642 | 436 | 416 -> Action (derive_label)
+  | 159 -> Action (derive_ident)
+  | 1417 | 690 | 616 -> Action (derive_generalized_constructor_arguments)
+  | 1153 | 1149 | 1148 | 523 -> Action (derive_fun_def)
+  | 1231 | 1218 | 459 -> Action (derive_fun_binding)
+  | 965 | 476 -> Action (derive_ext_attributes)
+  | 1165 | 1055 | 1024 | 1003 | 1001 | 999 | 997 | 995 | 973 | 550 | 485 -> Action (derive_expr)
+  | 1138 | 1125 -> Action (derive_direction_flag)
+  | 743 | 739 | 251 -> Action (derive_core_type_no_attr)
+  | 153 | 152 -> Action (derive_core_type2)
+  | 1497 | 1313 | 1244 | 1239 | 880 | 859 | 848 | 843 | 838 | 803 | 671 | 574 | 434 | 418 | 139 -> Action (derive_core_type)
+  | 664 | 653 -> Action (derive_constructor_declarations)
+  | 740 | 667 -> Action (derive_constraints)
+  | 868 -> Action (derive_clty_longident)
+  | 1513 | 894 | 819 -> Action (derive_class_type_parameters)
+  | 913 | 909 | 905 | 902 | 897 -> Action (derive_class_type)
+  | 402 -> Action (derive_class_structure)
+  | 825 -> Action (derive_class_signature)
+  | 832 -> Action (derive_class_sig_fields)
+  | 1338 | 392 -> Action (derive_class_longident)
+  | 1522 | 1515 -> Action (derive_class_fun_binding)
+  | 411 -> Action (derive_class_fields)
+  | 1520 | 1342 | 1335 | 1327 -> Action (derive_class_expr)
+  | 1421 | 691 | 645 | 636 | 394 | 253 | 222 | 218 | 199 | 79 -> Action (derive_attributes)
+  | 202 -> Action (derive_amper_type_list)
+  | 1374 | 1288 | 1284 | 1060 -> Action (Shift (T T_WITH))
+  | 1192 -> Action (Shift (T T_UIDENT))
+  | 1164 -> Action (Shift (T T_THEN))
+  | 624 -> Action (Shift (T T_STAR))
+  | 1355 | 1352 | 1282 | 1280 | 1271 | 1268 | 1266 | 1263 | 1261 | 1258 | 1255 | 1252 | 1217 | 1212 | 1179 | 1177 | 1147 | 1120 | 1111 | 1088 | 959 | 948 | 941 | 828 | 763 | 761 | 729 | 711 | 632 | 619 | 587 | 518 | 512 | 466 | 407 | 404 | 358 | 355 | 343 | 263 | 156 | 128 | 123 | 93 -> Action (Shift (T T_RPAREN))
+  | 1391 | 1337 | 1188 | 1114 | 1093 | 1049 | 867 | 821 | 796 | 792 | 425 | 367 | 246 | 237 | 234 | 232 | 230 | 226 | 195 -> Action (Shift (T T_RBRACKET))
+  | 1181 | 1117 | 1098 | 1069 | 662 | 650 | 291 -> Action (Shift (T T_RBRACE))
+  | 1409 | 683 -> Action (Shift (T T_PLUSEQ))
+  | 1341 | 1155 | 943 | 912 | 908 | 904 | 901 | 718 | 629 | 501 | 274 | 271 | 260 -> Action (Shift (T T_MINUSGREATER))
+  | 1176 -> Action (Shift (T T_LPAREN))
+  | 1514 | 1408 | 895 | 823 | 681 | 600 | 97 -> Action (Shift (T T_LIDENT))
+  | 972 -> Action (Shift (T T_LESSMINUS))
+  | 1334 | 1249 | 1207 | 1200 | 1033 | 527 | 479 -> Action (Shift (T T_IN))
+  | 1185 | 1057 -> Action (Shift (T T_GREATERRBRACE))
+  | 1173 -> Action (Shift (T T_GREATERDOT))
+  | 169 -> Action (Shift (T T_GREATER))
+  | 1519 | 1498 | 1465 | 1461 | 1457 | 1451 | 1447 | 1443 | 1439 | 1317 | 1314 | 1293 | 1245 | 1240 | 1227 | 1197 | 1054 | 1030 | 969 | 879 | 824 | 804 | 750 | 670 | 531 | 484 | 437 | 138 -> Action (Shift (T T_EQUAL))
+  | 1556 | 1552 | 1548 -> Action (Shift (T T_EOF))
+  | 1329 | 1170 | 939 | 830 | 495 | 450 | 409 -> Action (Shift (T T_END))
+  | 1433 | 1312 | 1243 | 1238 | 917 | 869 | 858 | 248 | 158 | 143 | 134 | 91 -> Action (Shift (T T_DOT))
+  | 1397 | 1388 | 1142 | 1135 | 1131 -> Action (Shift (T T_DONE))
+  | 1395 | 1386 | 1140 | 1133 | 1129 -> Action (Shift (T T_DO))
+  | 1276 | 377 -> Action (Shift (T T_COMMA))
+  | 747 | 742 -> Action (Shift (T T_COLONEQUAL))
+  | 1496 | 1305 | 1300 | 946 | 899 | 896 | 856 | 847 | 842 | 837 | 802 | 782 | 703 | 643 | 573 | 569 | 433 | 417 | 171 | 151 -> Action (Shift (T T_COLON))
+  | 1371 | 1044 | 372 -> Action (Shift (T T_BARRBRACKET))
+  | 640 | 228 -> Action (Shift (T T_BAR))
+  | 637 -> Action (Reduce 99)
+  | 673 -> Action (Reduce 97)
+  | 881 -> Action (Reduce 96)
+  | 672 -> Action (Reduce 95)
+  | 1071 | 961 | 560 | 349 -> Action (Reduce 90)
+  | 78 -> Action (Reduce 9)
+  | 613 | 603 -> Action (Reduce 85)
+  | 105 -> Action (Reduce 84)
+  | 303 -> Action (Reduce 83)
+  | 304 -> Action (Reduce 82)
+  | 312 -> Action (Reduce 81)
+  | 86 -> Action (Reduce 80)
+  | 76 -> Action (Reduce 8)
+  | 315 -> Action (Reduce 79)
+  | 305 -> Action (Reduce 78)
+  | 871 -> Action (Reduce 77)
+  | 906 | 865 -> Action (Reduce 76)
+  | 822 -> Action (Reduce 75)
+  | 893 -> Action (Reduce 73)
+  | 594 -> Action (Reduce 729)
+  | 596 -> Action (Reduce 728)
+  | 755 -> Action (Reduce 727)
+  | 756 -> Action (Reduce 726)
+  | 749 -> Action (Reduce 725)
+  | 752 -> Action (Reduce 724)
+  | 744 -> Action (Reduce 723)
+  | 741 -> Action (Reduce 722)
+  | 892 -> Action (Reduce 72)
+  | 849 -> Action (Reduce 719)
+  | 844 -> Action (Reduce 718)
+  | 839 -> Action (Reduce 717)
+  | 1295 -> Action (Reduce 716)
+  | 1292 -> Action (Reduce 715)
+  | 419 -> Action (Reduce 714)
+  | 435 -> Action (Reduce 713)
+  | 1074 -> Action (Reduce 712)
+  | 535 -> Action (Reduce 711)
+  | 344 -> Action (Reduce 710)
+  | 889 -> Action (Reduce 71)
+  | 454 | 284 -> Action (Reduce 709)
+  | 250 -> Action (Reduce 708)
+  | 174 -> Action (Reduce 707)
+  | 727 -> Action (Reduce 703)
+  | 730 -> Action (Reduce 702)
+  | 745 -> Action (Reduce 701)
+  | 921 -> Action (Reduce 70)
+  | 220 -> Action (Reduce 7)
+  | 732 -> Action (Reduce 699)
+  | 733 -> Action (Reduce 698)
+  | 728 -> Action (Reduce 697)
+  | 919 | 98 -> Action (Reduce 696)
+  | 163 | 89 -> Action (Reduce 695)
+  | 663 -> Action (Reduce 692)
+  | 665 -> Action (Reduce 691)
+  | 651 -> Action (Reduce 690)
+  | 923 -> Action (Reduce 69)
+  | 654 -> Action (Reduce 689)
+  | 611 -> Action (Reduce 688)
+  | 666 -> Action (Reduce 687)
+  | 610 -> Action (Reduce 686)
+  | 655 -> Action (Reduce 685)
+  | 599 -> Action (Reduce 683)
+  | 676 -> Action (Reduce 682)
+  | 674 -> Action (Reduce 681)
+  | 1222 -> Action (Reduce 680)
+  | 924 -> Action (Reduce 68)
+  | 1226 -> Action (Reduce 679)
+  | 1224 -> Action (Reduce 678)
+  | 1432 -> Action (Reduce 675)
+  | 1430 -> Action (Reduce 674)
+  | 1429 -> Action (Reduce 673)
+  | 1427 -> Action (Reduce 672)
+  | 224 -> Action (Reduce 670)
+  | 925 -> Action (Reduce 67)
+  | 221 -> Action (Reduce 669)
+  | 1540 -> Action (Reduce 666)
+  | 1436 -> Action (Reduce 665)
+  | 1544 -> Action (Reduce 663)
+  | 1543 -> Action (Reduce 662)
+  | 1494 -> Action (Reduce 661)
+  | 1512 -> Action (Reduce 660)
+  | 922 -> Action (Reduce 66)
+  | 1526 -> Action (Reduce 659)
+  | 1541 -> Action (Reduce 658)
+  | 1476 -> Action (Reduce 657)
+  | 1477 -> Action (Reduce 656)
+  | 1479 -> Action (Reduce 655)
+  | 1483 -> Action (Reduce 654)
+  | 1503 -> Action (Reduce 653)
+  | 1407 -> Action (Reduce 652)
+  | 1404 -> Action (Reduce 651)
+  | 1501 -> Action (Reduce 650)
+  | 412 -> Action (Reduce 65)
+  | 1539 | 1491 -> Action (Reduce 649)
+  | 1453 -> Action (Reduce 648)
+  | 1459 -> Action (Reduce 647)
+  | 1463 -> Action (Reduce 646)
+  | 1467 -> Action (Reduce 645)
+  | 1445 -> Action (Reduce 644)
+  | 1441 -> Action (Reduce 643)
+  | 1449 -> Action (Reduce 642)
+  | 1505 -> Action (Reduce 641)
+  | 1403 -> Action (Reduce 640)
+  | 1353 -> Action (Reduce 64)
+  | 1406 -> Action (Reduce 639)
+  | 1401 -> Action (Reduce 638)
+  | 1535 | 1487 -> Action (Reduce 637)
+  | 1530 -> Action (Reduce 636)
+  | 1547 -> Action (Reduce 635)
+  | 243 -> Action (Reduce 633)
+  | 1233 -> Action (Reduce 632)
+  | 1232 -> Action (Reduce 631)
+  | 1220 -> Action (Reduce 630)
+  | 1356 -> Action (Reduce 63)
+  | 1423 -> Action (Reduce 629)
+  | 1415 -> Action (Reduce 628)
+  | 1416 -> Action (Reduce 627)
+  | 1424 -> Action (Reduce 626)
+  | 1425 -> Action (Reduce 625)
+  | 1507 -> Action (Reduce 624)
+  | 1509 -> Action (Reduce 623)
+  | 1330 -> Action (Reduce 62)
+  | 1346 -> Action (Reduce 61)
+  | 1339 -> Action (Reduce 60)
+  | 211 -> Action (Reduce 6)
+  | 920 | 873 -> Action (Reduce 59)
+  | 877 -> Action (Reduce 58)
+  | 31 -> Action (Reduce 574)
+  | 50 -> Action (Reduce 573)
+  | 351 -> Action (Reduce 572)
+  | 129 -> Action (Reduce 571)
+  | 124 -> Action (Reduce 570)
+  | 831 -> Action (Reduce 57)
+  | 359 -> Action (Reduce 569)
+  | 356 -> Action (Reduce 568)
+  | 370 -> Action (Reduce 567)
+  | 373 -> Action (Reduce 566)
+  | 368 -> Action (Reduce 565)
+  | 292 -> Action (Reduce 564)
+  | 90 -> Action (Reduce 563)
+  | 361 | 347 -> Action (Reduce 562)
+  | 362 | 352 -> Action (Reduce 561)
+  | 321 -> Action (Reduce 560)
+  | 874 -> Action (Reduce 56)
+  | 319 -> Action (Reduce 559)
+  | 967 | 317 -> Action (Reduce 557)
+  | 316 -> Action (Reduce 556)
+  | 1107 -> Action (Reduce 555)
+  | 1109 -> Action (Reduce 554)
+  | 955 -> Action (Reduce 553)
+  | 949 -> Action (Reduce 552)
+  | 1272 -> Action (Reduce 551)
+  | 1269 -> Action (Reduce 550)
+  | 872 -> Action (Reduce 55)
+  | 545 -> Action (Reduce 549)
+  | 547 -> Action (Reduce 548)
+  | 1058 -> Action (Reduce 547)
+  | 1186 -> Action (Reduce 545)
+  | 393 -> Action (Reduce 544)
+  | 536 -> Action (Reduce 543)
+  | 1373 -> Action (Reduce 542)
+  | 1050 -> Action (Reduce 541)
+  | 1189 -> Action (Reduce 540)
+  | 887 -> Action (Reduce 54)
+  | 1045 -> Action (Reduce 539)
+  | 1369 -> Action (Reduce 538)
+  | 1372 -> Action (Reduce 537)
+  | 1070 -> Action (Reduce 536)
+  | 1182 -> Action (Reduce 535)
+  | 1118 | 1099 -> Action (Reduce 534)
+  | 1115 | 1094 -> Action (Reduce 533)
+  | 1112 | 1089 -> Action (Reduce 532)
+  | 960 -> Action (Reduce 531)
+  | 1119 | 1102 -> Action (Reduce 530)
+  | 1283 -> Action (Reduce 529)
+  | 1169 -> Action (Reduce 528)
+  | 1171 -> Action (Reduce 527)
+  | 1175 -> Action (Reduce 526)
+  | 1174 -> Action (Reduce 525)
+  | 1281 -> Action (Reduce 524)
+  | 559 | 557 -> Action (Reduce 523)
+  | 1022 | 956 -> Action (Reduce 522)
+  | 957 -> Action (Reduce 521)
+  | 534 -> Action (Reduce 520)
+  | 886 -> Action (Reduce 52)
+  | 1121 -> Action (Reduce 519)
+  | 1077 | 538 -> Action (Reduce 517)
+  | 1180 -> Action (Reduce 516)
+  | 1178 -> Action (Reduce 515)
+  | 954 -> Action (Reduce 513)
+  | 916 -> Action (Reduce 512)
+  | 914 -> Action (Reduce 511)
+  | 208 -> Action (Reduce 510)
+  | 885 -> Action (Reduce 51)
+  | 911 | 204 -> Action (Reduce 509)
+  | 633 | 620 -> Action (Reduce 508)
+  | 635 | 622 -> Action (Reduce 507)
+  | 207 -> Action (Reduce 506)
+  | 157 -> Action (Reduce 505)
+  | 238 -> Action (Reduce 504)
+  | 235 -> Action (Reduce 503)
+  | 233 -> Action (Reduce 501)
+  | 231 -> Action (Reduce 500)
+  | 883 -> Action (Reduce 50)
+  | 196 -> Action (Reduce 499)
+  | 227 -> Action (Reduce 498)
+  | 266 -> Action (Reduce 497)
+  | 192 -> Action (Reduce 496)
+  | 146 -> Action (Reduce 495)
+  | 170 -> Action (Reduce 493)
+  | 267 -> Action (Reduce 492)
+  | 193 -> Action (Reduce 491)
+  | 188 -> Action (Reduce 490)
+  | 862 -> Action (Reduce 49)
+  | 149 -> Action (Reduce 488)
+  | 264 -> Action (Reduce 487)
+  | 190 -> Action (Reduce 486)
+  | 100 -> Action (Reduce 485)
+  | 101 -> Action (Reduce 484)
+  | 102 -> Action (Reduce 483)
+  | 104 -> Action (Reduce 482)
+  | 103 -> Action (Reduce 481)
+  | 107 -> Action (Reduce 480)
+  | 846 -> Action (Reduce 48)
+  | 108 -> Action (Reduce 479)
+  | 109 -> Action (Reduce 478)
+  | 111 -> Action (Reduce 477)
+  | 110 -> Action (Reduce 476)
+  | 322 -> Action (Reduce 475)
+  | 937 -> Action (Reduce 474)
+  | 936 -> Action (Reduce 473)
+  | 890 -> Action (Reduce 472)
+  | 928 -> Action (Reduce 471)
+  | 800 -> Action (Reduce 470)
+  | 876 -> Action (Reduce 47)
+  | 934 -> Action (Reduce 469)
+  | 779 -> Action (Reduce 468)
+  | 780 -> Action (Reduce 467)
+  | 786 -> Action (Reduce 466)
+  | 772 -> Action (Reduce 465)
+  | 774 -> Action (Reduce 464)
+  | 811 -> Action (Reduce 463)
+  | 680 -> Action (Reduce 462)
+  | 677 -> Action (Reduce 461)
+  | 809 -> Action (Reduce 460)
+  | 833 -> Action (Reduce 46)
+  | 576 -> Action (Reduce 459)
+  | 813 -> Action (Reduce 458)
+  | 597 -> Action (Reduce 457)
+  | 679 -> Action (Reduce 456)
+  | 592 -> Action (Reduce 455)
+  | 933 -> Action (Reduce 454)
+  | 938 -> Action (Reduce 453)
+  | 693 -> Action (Reduce 451)
+  | 689 -> Action (Reduce 450)
+  | 694 -> Action (Reduce 449)
+  | 815 -> Action (Reduce 448)
+  | 1029 -> Action (Reduce 447)
+  | 1027 -> Action (Reduce 445)
+  | 198 -> Action (Reduce 444)
+  | 225 -> Action (Reduce 443)
+  | 194 -> Action (Reduce 442)
+  | 189 -> Action (Reduce 441)
+  | 1075 -> Action (Reduce 440)
+  | 829 -> Action (Reduce 44)
+  | 1062 -> Action (Reduce 439)
+  | 788 -> Action (Reduce 438)
+  | 789 -> Action (Reduce 437)
+  | 807 -> Action (Reduce 427)
+  | 806 -> Action (Reduce 426)
+  | 429 -> Action (Reduce 425)
+  | 426 -> Action (Reduce 423)
+  | 252 -> Action (Reduce 422)
+  | 255 -> Action (Reduce 421)
+  | 860 -> Action (Reduce 420)
+  | 408 -> Action (Reduce 42)
+  | 863 -> Action (Reduce 419)
+  | 1390 -> Action (Reduce 418)
+  | 381 -> Action (Reduce 417)
+  | 242 -> Action (Reduce 416)
+  | 245 -> Action (Reduce 415)
+  | 514 -> Action (Reduce 413)
+  | 366 -> Action (Reduce 412)
+  | 369 -> Action (Reduce 411)
+  | 379 | 327 -> Action (Reduce 410)
+  | 405 -> Action (Reduce 41)
+  | 325 -> Action (Reduce 409)
+  | 346 -> Action (Reduce 408)
+  | 354 -> Action (Reduce 407)
+  | 360 -> Action (Reduce 406)
+  | 331 -> Action (Reduce 405)
+  | 329 -> Action (Reduce 403)
+  | 348 -> Action (Reduce 402)
+  | 353 -> Action (Reduce 401)
+  | 323 -> Action (Reduce 400)
+  | 145 -> Action (Reduce 40)
+  | 345 -> Action (Reduce 399)
+  | 318 -> Action (Reduce 398)
+  | 1557 -> Action (Reduce 397)
+  | 1359 -> Action (Reduce 395)
+  | 281 -> Action (Reduce 394)
+  | 279 -> Action (Reduce 393)
+  | 277 -> Action (Reduce 392)
+  | 278 -> Action (Reduce 391)
+  | 130 -> Action (Reduce 390)
+  | 142 -> Action (Reduce 39)
+  | 585 -> Action (Reduce 385)
+  | 588 -> Action (Reduce 384)
+  | 675 -> Action (Reduce 383)
+  | 590 -> Action (Reduce 381)
+  | 591 -> Action (Reduce 380)
+  | 1349 -> Action (Reduce 38)
+  | 586 -> Action (Reduce 379)
+  | 1438 -> Action (Reduce 378)
+  | 1211 -> Action (Reduce 374)
+  | 1347 -> Action (Reduce 37)
+  | 1523 -> Action (Reduce 36)
+  | 114 -> Action (Reduce 352)
+  | 952 | 285 -> Action (Reduce 351)
+  | 306 -> Action (Reduce 350)
+  | 1521 -> Action (Reduce 35)
+  | 307 -> Action (Reduce 349)
+  | 308 -> Action (Reduce 348)
+  | 309 -> Action (Reduce 347)
+  | 310 -> Action (Reduce 346)
+  | 397 | 116 -> Action (Reduce 345)
+  | 699 -> Action (Reduce 343)
+  | 519 -> Action (Reduce 342)
+  | 239 -> Action (Reduce 341)
+  | 240 -> Action (Reduce 340)
+  | 1517 -> Action (Reduce 34)
+  | 187 -> Action (Reduce 339)
+  | 161 -> Action (Reduce 336)
+  | 162 -> Action (Reduce 335)
+  | 757 -> Action (Reduce 334)
+  | 758 -> Action (Reduce 333)
+  | 762 -> Action (Reduce 332)
+  | 708 -> Action (Reduce 331)
+  | 753 -> Action (Reduce 330)
+  | 1368 -> Action (Reduce 33)
+  | 721 -> Action (Reduce 329)
+  | 940 -> Action (Reduce 328)
+  | 720 -> Action (Reduce 327)
+  | 785 -> Action (Reduce 326)
+  | 715 -> Action (Reduce 325)
+  | 713 -> Action (Reduce 324)
+  | 1256 -> Action (Reduce 323)
+  | 1262 -> Action (Reduce 322)
+  | 1259 -> Action (Reduce 321)
+  | 1253 -> Action (Reduce 320)
+  | 1264 -> Action (Reduce 319)
+  | 1267 -> Action (Reduce 318)
+  | 712 -> Action (Reduce 316)
+  | 945 -> Action (Reduce 315)
+  | 451 -> Action (Reduce 314)
+  | 714 -> Action (Reduce 313)
+  | 769 -> Action (Reduce 312)
+  | 767 -> Action (Reduce 311)
+  | 766 -> Action (Reduce 310)
+  | 1367 -> Action (Reduce 31)
+  | 1481 -> Action (Reduce 309)
+  | 1482 -> Action (Reduce 308)
+  | 1204 -> Action (Reduce 307)
+  | 1199 -> Action (Reduce 306)
+  | 1195 -> Action (Reduce 305)
+  | 1471 -> Action (Reduce 304)
+  | 136 -> Action (Reduce 303)
+  | 84 -> Action (Reduce 302)
+  | 94 -> Action (Reduce 301)
+  | 160 | 96 -> Action (Reduce 300)
+  | 1366 -> Action (Reduce 30)
+  | 88 -> Action (Reduce 299)
+  | 1316 -> Action (Reduce 298)
+  | 1319 -> Action (Reduce 297)
+  | 1320 -> Action (Reduce 296)
+  | 1302 -> Action (Reduce 295)
+  | 1307 -> Action (Reduce 294)
+  | 259 -> Action (Reduce 292)
+  | 258 -> Action (Reduce 291)
+  | 1162 -> Action (Reduce 290)
+  | 1325 -> Action (Reduce 29)
+  | 1163 -> Action (Reduce 289)
+  | 1157 -> Action (Reduce 288)
+  | 1159 -> Action (Reduce 287)
+  | 1237 -> Action (Reduce 286)
+  | 1236 -> Action (Reduce 285)
+  | 510 -> Action (Reduce 284)
+  | 508 -> Action (Reduce 283)
+  | 963 -> Action (Reduce 282)
+  | 473 -> Action (Reduce 281)
+  | 1210 -> Action (Reduce 280)
+  | 1364 -> Action (Reduce 28)
+  | 1039 -> Action (Reduce 279)
+  | 1040 -> Action (Reduce 278)
+  | 971 -> Action (Reduce 277)
+  | 1032 -> Action (Reduce 276)
+  | 1242 -> Action (Reduce 275)
+  | 1247 -> Action (Reduce 274)
+  | 1248 -> Action (Reduce 273)
+  | 1038 -> Action (Reduce 272)
+  | 298 -> Action (Reduce 271)
+  | 297 -> Action (Reduce 270)
+  | 1322 -> Action (Reduce 27)
+  | 293 -> Action (Reduce 268)
+  | 299 -> Action (Reduce 267)
+  | 363 -> Action (Reduce 266)
+  | 1065 -> Action (Reduce 264)
+  | 1063 -> Action (Reduce 263)
+  | 1066 -> Action (Reduce 262)
+  | 1068 -> Action (Reduce 261)
+  | 522 -> Action (Reduce 260)
+  | 427 -> Action (Reduce 26)
+  | 521 -> Action (Reduce 259)
+  | 468 -> Action (Reduce 258)
+  | 467 -> Action (Reduce 257)
+  | 515 -> Action (Reduce 256)
+  | 513 -> Action (Reduce 255)
+  | 1214 -> Action (Reduce 254)
+  | 1213 -> Action (Reduce 253)
+  | 1108 -> Action (Reduce 252)
+  | 1106 -> Action (Reduce 251)
+  | 462 -> Action (Reduce 250)
+  | 1361 -> Action (Reduce 25)
+  | 1073 | 137 -> Action (Reduce 249)
+  | 487 | 133 -> Action (Reduce 248)
+  | 465 -> Action (Reduce 247)
+  | 463 -> Action (Reduce 246)
+  | 553 -> Action (Reduce 245)
+  | 1083 -> Action (Reduce 244)
+  | 1081 -> Action (Reduce 243)
+  | 554 -> Action (Reduce 242)
+  | 1085 -> Action (Reduce 241)
+  | 649 -> Action (Reduce 240)
+  | 1343 -> Action (Reduce 24)
+  | 652 -> Action (Reduce 239)
+  | 646 -> Action (Reduce 238)
+  | 735 | 166 -> Action (Reduce 237)
+  | 793 -> Action (Reduce 236)
+  | 1553 -> Action (Reduce 235)
+  | 1549 -> Action (Reduce 234)
+  | 127 -> Action (Reduce 233)
+  | 148 | 126 -> Action (Reduce 232)
+  | 628 -> Action (Reduce 231)
+  | 634 -> Action (Reduce 230)
+  | 1348 -> Action (Reduce 23)
+  | 623 -> Action (Reduce 229)
+  | 760 -> Action (Reduce 227)
+  | 759 -> Action (Reduce 226)
+  | 567 -> Action (Reduce 224)
+  | 942 -> Action (Reduce 223)
+  | 1151 -> Action (Reduce 221)
+  | 1150 -> Action (Reduce 220)
+  | 1351 -> Action (Reduce 22)
+  | 1144 -> Action (Reduce 219)
+  | 1229 -> Action (Reduce 218)
+  | 1230 -> Action (Reduce 217)
+  | 797 -> Action (Reduce 216)
+  | 1056 -> Action (Reduce 215)
+  | 1183 -> Action (Reduce 214)
+  | 254 -> Action (Reduce 213)
+  | 1422 -> Action (Reduce 212)
+  | 692 -> Action (Reduce 211)
+  | 247 -> Action (Reduce 210)
+  | 1345 -> Action (Reduce 21)
+  | 1393 -> Action (Reduce 209)
+  | 395 -> Action (Reduce 208)
+  | 1043 -> Action (Reduce 206)
+  | 1046 -> Action (Reduce 205)
+  | 478 -> Action (Reduce 204)
+  | 1124 -> Action (Reduce 203)
+  | 1123 -> Action (Reduce 202)
+  | 1278 | 1010 -> Action (Reduce 201)
+  | 976 -> Action (Reduce 200)
+  | 1350 -> Action (Reduce 20)
+  | 1021 -> Action (Reduce 199)
+  | 410 -> Action (Reduce 198)
+  | 1172 -> Action (Reduce 197)
+  | 543 -> Action (Reduce 196)
+  | 1026 -> Action (Reduce 195)
+  | 1101 -> Action (Reduce 194)
+  | 1096 -> Action (Reduce 193)
+  | 1091 -> Action (Reduce 192)
+  | 1104 -> Action (Reduce 191)
+  | 1025 -> Action (Reduce 190)
+  | 1344 -> Action (Reduce 19)
+  | 1110 -> Action (Reduce 189)
+  | 1012 -> Action (Reduce 188)
+  | 1020 -> Action (Reduce 187)
+  | 1018 -> Action (Reduce 186)
+  | 1016 -> Action (Reduce 185)
+  | 988 -> Action (Reduce 184)
+  | 1006 -> Action (Reduce 183)
+  | 994 -> Action (Reduce 182)
+  | 1008 -> Action (Reduce 181)
+  | 986 -> Action (Reduce 180)
+  | 931 -> Action (Reduce 18)
+  | 978 -> Action (Reduce 179)
+  | 990 -> Action (Reduce 178)
+  | 992 -> Action (Reduce 177)
+  | 980 -> Action (Reduce 176)
+  | 982 -> Action (Reduce 175)
+  | 984 -> Action (Reduce 174)
+  | 996 -> Action (Reduce 173)
+  | 998 -> Action (Reduce 172)
+  | 1000 -> Action (Reduce 171)
+  | 1002 -> Action (Reduce 170)
+  | 930 -> Action (Reduce 17)
+  | 1004 -> Action (Reduce 169)
+  | 1014 -> Action (Reduce 167)
+  | 1132 -> Action (Reduce 166)
+  | 1389 -> Action (Reduce 165)
+  | 1166 -> Action (Reduce 164)
+  | 1168 -> Action (Reduce 163)
+  | 558 -> Action (Reduce 162)
+  | 1023 -> Action (Reduce 161)
+  | 974 -> Action (Reduce 160)
+  | 927 -> Action (Reduce 16)
+  | 1377 -> Action (Reduce 159)
+  | 1287 -> Action (Reduce 158)
+  | 1152 -> Action (Reduce 157)
+  | 1154 -> Action (Reduce 156)
+  | 1160 -> Action (Reduce 155)
+  | 1190 -> Action (Reduce 154)
+  | 1202 -> Action (Reduce 153)
+  | 1035 -> Action (Reduce 152)
+  | 1209 -> Action (Reduce 151)
+  | 1105 -> Action (Reduce 150)
+  | 1529 -> Action (Reduce 15)
+  | 551 -> Action (Reduce 149)
+  | 1136 -> Action (Reduce 148)
+  | 1143 -> Action (Reduce 147)
+  | 1398 -> Action (Reduce 146)
+  | 1383 -> Action (Reduce 145)
+  | 1385 -> Action (Reduce 144)
+  | 1381 -> Action (Reduce 143)
+  | 1378 -> Action (Reduce 142)
+  | 1291 -> Action (Reduce 141)
+  | 1251 -> Action (Reduce 140)
+  | 1528 -> Action (Reduce 14)
+  | 1076 -> Action (Reduce 139)
+  | 1079 -> Action (Reduce 138)
+  | 1525 -> Action (Reduce 13)
+  | 20 -> Action (Reduce 121)
+  | 223 -> Action (Reduce 12)
+  | 3 -> Action (Reduce 118)
+  | 217 -> Action (Reduce 115)
+  | 212 -> Action (Reduce 114)
+  | 626 -> Action (Reduce 113)
+  | 621 -> Action (Reduce 112)
+  | 210 -> Action (Reduce 111)
+  | 206 -> Action (Reduce 110)
+  | 269 -> Action (Reduce 109)
+  | 270 -> Action (Reduce 108)
+  | 276 | 273 | 262 | 214 -> Action (Reduce 107)
+  | 203 -> Action (Reduce 103)
+  | 241 -> Action (Reduce 102)
+  | 615 -> Action (Reduce 101)
+  | 638 -> Action (Reduce 100)
+  | 1392 -> Action (Reduce 10)
+  | 1536 | 1532 | 1527 | 1518 | 1516 | 1511 | 1510 | 1504 | 1502 | 1495 | 1492 | 1488 | 1484 | 1480 | 1478 | 1474 | 1472 | 1468 | 1464 | 1460 | 1454 | 1450 | 1446 | 1442 | 1437 | 1435 | 1431 | 1428 | 1426 | 1420 | 1419 | 1418 | 1414 | 1405 | 1402 | 1400 | 1399 | 1384 | 1382 | 1379 | 1362 | 1358 | 1354 | 1340 | 1336 | 1328 | 1326 | 1323 | 1311 | 1310 | 1304 | 1303 | 1298 | 1296 | 1279 | 1277 | 1275 | 1274 | 1273 | 1270 | 1265 | 1260 | 1257 | 1254 | 1235 | 1234 | 1225 | 1223 | 1221 | 1219 | 1216 | 1215 | 1196 | 1194 | 1191 | 1167 | 1161 | 1146 | 1145 | 1137 | 1127 | 1126 | 1122 | 1116 | 1113 | 1103 | 1100 | 1097 | 1095 | 1092 | 1090 | 1087 | 1086 | 1080 | 1078 | 1072 | 1067 | 1064 | 1059 | 1053 | 1051 | 1047 | 1042 | 1036 | 1028 | 1009 | 1007 | 1005 | 993 | 991 | 989 | 985 | 983 | 981 | 979 | 977 | 975 | 968 | 964 | 962 | 958 | 953 | 951 | 950 | 929 | 918 | 915 | 910 | 907 | 891 | 878 | 870 | 866 | 864 | 854 | 853 | 852 | 851 | 850 | 840 | 835 | 834 | 827 | 826 | 820 | 818 | 817 | 816 | 812 | 810 | 801 | 798 | 794 | 790 | 787 | 781 | 777 | 775 | 770 | 765 | 754 | 746 | 738 | 737 | 731 | 726 | 724 | 723 | 722 | 710 | 709 | 707 | 706 | 705 | 700 | 696 | 688 | 678 | 669 | 660 | 658 | 657 | 656 | 648 | 641 | 639 | 631 | 627 | 618 | 617 | 614 | 612 | 609 | 608 | 607 | 606 | 605 | 604 | 602 | 598 | 595 | 593 | 589 | 584 | 583 | 581 | 580 | 579 | 578 | 577 | 572 | 571 | 568 | 566 | 565 | 563 | 562 | 561 | 556 | 555 | 552 | 549 | 548 | 546 | 541 | 540 | 539 | 537 | 524 | 517 | 516 | 509 | 507 | 506 | 503 | 502 | 498 | 491 | 483 | 482 | 472 | 470 | 469 | 464 | 461 | 460 | 457 | 453 | 449 | 448 | 447 | 446 | 440 | 439 | 432 | 431 | 423 | 421 | 420 | 415 | 414 | 413 | 406 | 403 | 401 | 400 | 399 | 396 | 391 | 390 | 382 | 380 | 378 | 376 | 375 | 374 | 365 | 357 | 350 | 342 | 341 | 340 | 339 | 338 | 337 | 336 | 335 | 334 | 333 | 332 | 330 | 326 | 324 | 320 | 313 | 311 | 302 | 301 | 300 | 296 | 295 | 294 | 290 | 286 | 283 | 282 | 280 | 275 | 272 | 268 | 265 | 261 | 257 | 249 | 244 | 236 | 219 | 216 | 215 | 209 | 205 | 201 | 200 | 197 | 191 | 186 | 182 | 181 | 179 | 177 | 175 | 173 | 168 | 167 | 165 | 164 | 155 | 147 | 144 | 141 | 140 | 135 | 132 | 131 | 125 | 122 | 121 | 120 | 119 | 118 | 117 | 113 | 106 | 99 | 95 | 87 | 85 | 83 | 82 | 80 | 77 | 75 | 74 | 73 | 72 | 71 | 70 | 69 | 68 | 67 | 66 | 65 | 64 | 63 | 62 | 61 | 60 | 59 | 58 | 57 | 56 | 55 | 54 | 53 | 52 | 51 | 49 | 48 | 47 | 46 | 45 | 44 | 43 | 42 | 41 | 40 | 39 | 38 | 37 | 36 | 35 | 34 | 33 | 32 | 30 | 29 | 28 | 27 | 26 | 25 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 2 | 1 -> Action (Pop)
   | _ -> raise Not_found
 
 let lr1_to_lr0 =
