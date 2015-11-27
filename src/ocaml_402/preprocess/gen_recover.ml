@@ -143,8 +143,6 @@ let cost_of_raw_symbol =
         measure ~default:0.0 t.t_attributes
       | T t ->
         measure ~default:infinity t.t_attributes
-      (*| N n when null_reducible n <> None ->
-        measure ~default:0.0 n.n_attributes*)
       | N n ->
         measure ~default:infinity n.n_attributes
     )
@@ -781,8 +779,8 @@ let print_declarations () =
          \  | Sub    : action list -> action\n\
          \  | Pop    : action\n\n\
           type decision =\n\
-         \  | Action : action -> decision\n\
-         \  | Parent : (int -> action) -> decision\n\n"
+         \  | Action of int * action\n\
+         \  | Parent of (int -> int * action)\n\n"
     menhir
 
 let print_derivations () =
@@ -811,16 +809,16 @@ let print_decisions () =
   in
   let string_of_reduction (prod,pos) =
     if pos = Array.length prod.p_rhs then
-      sprintf "Reduce %d" prod.p_index
+      sprintf "%d, Reduce %d" pos prod.p_index
     else match prod.p_rhs.(pos) with
-      | (T t, _, _) -> sprintf "Shift (T T_%s)" t.t_name
-      | (N n, _, _) -> sprintf "derive_%s" n.n_name
+      | (T t, _, _) -> sprintf "%d, Shift (T T_%s)" pos t.t_name
+      | (N n, _, _) -> sprintf "%d, derive_%s" pos n.n_name
   in
   let string_of_decision lr0 =
     let action = function
       | `Reduction red ->
         Some (string_of_reduction red)
-      | `Pop -> Some "Pop"
+      | `Pop -> Some "0, Pop"
       | `Impossible -> None
     in
     let simple_action x = match action x with

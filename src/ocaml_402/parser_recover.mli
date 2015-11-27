@@ -9,7 +9,7 @@ type action =
   | Pop    : action
 
 type decision =
-  | Action : action -> decision
-  | Parent : (int -> action) -> decision
+  | Action of int * action
+  | Parent of (int -> int * action)
 
 val decision : int -> decision

@@ -132,25 +132,47 @@ let feed_token ?(allow_reduction=true) token env =
   in
   aux allow_reduction (I.offer (T.inj (T.InputNeeded env)) token)
 
-let order_recoveries envs =
-  let pos env =
-    match I.stack env with
-    | None -> 1, 0
-    | Some stack ->
-      let I.Element (_, _, startp, _) = I.stack_element stack in
-      Lexing.split_pos startp
-  in
-  List.map ~f:(fun env -> pos env, env) envs
-  (*let cmp (c0, _) (c1, _) = compare (c1 : int) (c0 : int) in
-  let envs = List.map ~f:(fun env -> column env, env) envs in
-  List.stable_sort ~cmp envs*)
+let guide_symbol (type a) : a I.symbol -> bool = function
+  | I.T I.T_BEGIN -> true
+  | _ -> false
+
+let get_pos depth env =
+  match I.stack env with
+  | None -> 1, 0, 0
+  | Some stack ->
+    let I.Element (_, _, startp, _) = I.stack_element stack in
+    let line, col = Lexing.split_pos startp in
+    if depth = 0 then
+      line, col, col
+    else
+      let rec follow_guide col = function
+        | None -> col
+        | Some stack ->
+          let I.Element (state, _, startp, _) = I.stack_element stack in
+          if guide_symbol (I.incoming_symbol state) then
+            follow_guide (snd (Lexing.split_pos startp)) (I.stack_next stack)
+          else
+            col
+      in
+      let rec aux depth = function
+        | None -> max_int
+        | Some stack when depth = 0 ->
+          let I.Element (_, _, startp, _) = I.stack_element stack in
+          follow_guide (snd (Lexing.split_pos startp)) (I.stack_next stack)
+        | Some stack ->
+          aux (depth - 1) (I.stack_next stack)
+      in
+      let col' = aux (depth - 1) (I.stack_next stack) in
+      line, min col col', max col col'
 
 let attempt_recovery k recoveries token =
   let _, startp, _ = token in
   let line, col = Lexing.split_pos startp in
-  let more_indented ((line', col'), _) = line <> line' && col' > col in
+  let more_indented ((line', col0, col1), _) =
+    line <> line' && col0 > col in
   let recoveries = List.drop_while ~f:more_indented recoveries in
-  let same_indented ((line', col'), _) = line = line' || abs (col' - col) <= 1 in
+  let same_indented ((line', col0, col1), _) =
+    line = line' || (col0 <= col && col <= col1) in
   let recoveries = List.take_while ~f:same_indented recoveries in
   let rec aux = function
     | [] -> `Fail
@@ -177,18 +199,19 @@ let rec recoveries k acc env =
   | Some stack ->
     let I.Element (state, v, startp, endp) as elt = I.stack_element stack in
     Printing.print_element k elt;
-    let action =
+    let depth, action =
       match R.decision (I.number state) with
       | R.Parent select_action ->
         begin match I.stack_next stack with
-          | None -> R.Pop
+          | None -> 0, R.Pop
           | Some stack' ->
             let I.Element (state', _, _, _) =
               I.stack_element stack' in
             select_action (I.number state')
         end
-      | R.Action action -> action
+      | R.Action (depth, action) -> depth, action
     in
+    let pos = get_pos depth env in
     let rec eval env = function
       | R.Pop ->
         (match I.pop env with
@@ -218,20 +241,22 @@ let rec recoveries k acc env =
       | R.Sub actions ->
         List.fold_left ~f:eval ~init:env actions
     in
-    let top_eval env = function
-      | R.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
-      | action -> [eval env action]
-    in
-    match top_eval env action with
+    match begin
+      let envs = match action with
+        | R.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
+        | action -> [eval env action]
+      in
+      List.map ~f:(fun env -> pos, env) envs
+    end with
     | exception Not_found -> acc | [] -> acc
-    | (env :: _) as envs -> recoveries k (envs @ acc) env
+    | ((_, env) :: _) as envs -> recoveries k (envs @ acc) env
 
 let recoveries k env =
-  List.rev_filter ~f:(fun env ->
+  List.rev_filter ~f:(fun (_,env) ->
       match I.stack env with
       | None -> false
       | Some stack ->
-        let I.Element (state, _, startp, endp) = I.stack_element stack in
+        let I.Element (state, _, _, _) = I.stack_element stack in
         I.default_reduction state = None)
     (recoveries k [] env)
 
@@ -244,8 +269,7 @@ let show_recoveries nav (t,s,e as token) tokens env =
     link body "see recoveries"
       (fun _ -> Nav.modal nav "Recoveries" @@ fun nav ->
         let body = Nav.body nav in
-        let r = env :: recoveries body env in
-        let r = order_recoveries r in
+        let r = (get_pos 0 env, env) :: recoveries body env in
         let rec aux = function
           | [] -> ()
           | token :: tokens ->
@@ -287,7 +311,7 @@ let parse nav =
   and check_for_error token tokens env = function
     | I.HandlingError _ ->
       show_recoveries nav token tokens env;
-      recover (order_recoveries (env :: recoveries null_cursor env)) (token :: tokens)
+      recover ((get_pos 0 env, env) :: recoveries null_cursor env) (token :: tokens)
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
       check_for_error token tokens env (I.resume checkpoint)
