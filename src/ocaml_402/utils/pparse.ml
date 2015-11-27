@@ -32,6 +32,11 @@ let null = match Sys.os_type with "Win32" -> " NUL" | _ -> "/dev/null"
 
 let apply_rewriter magic fn_in ppx =
   let fn_out = Filename.temp_file "camlppx" "" in
+  (* TODO: someday, we should try to:
+       - read the output, instead of piping it to /dev/null, the output is
+         actually useful when things go wrong.
+       - don't let vim display a disgusting backtrace, instead plug it into
+         merlin's error system. *)
   let comm =
     Printf.sprintf "%s %s %s 1>%s 2>%s"
       ppx
