@@ -16,7 +16,7 @@ If no argument is given, it will list those directories.
 
 :MerlinBuildPath [dir]                                      *:MerlinBuildPath*
 
-Same as |:SourcePath| but for cmi files.
+Same as |:MerlinSourcePath| but for cmi files.
 
 :MerlinUse package [, package]*                                   *:MerlinUse*
 
@@ -171,7 +171,7 @@ buffer to the root of the ".merlin" file. >
 
 Default: true.
 If set to true, merlin automatically displays the list of occurrences in a
-separate window after a :Occurrences command. >
+separate window after a :MerlinOccurrences command. >
   let g:merlin_display_occurrence_list = 0
 <
 
