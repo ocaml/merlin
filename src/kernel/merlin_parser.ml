@@ -193,72 +193,84 @@ let attempt_recovery k recoveries token =
   in
   aux recoveries
 
-let rec recoveries k acc env =
-  match I.stack env with
-  | None -> acc
-  | Some stack ->
-    let I.Element (state, v, startp, endp) as elt = I.stack_element stack in
-    Printing.print_element k elt;
-    let depth, action =
-      match R.decision (I.number state) with
-      | R.Parent select_action ->
-        begin match I.stack_next stack with
-          | None -> 0, R.Pop
-          | Some stack' ->
-            let I.Element (state', _, _, _) =
-              I.stack_element stack' in
-            select_action (I.number state')
-        end
-      | R.Action (depth, action) -> depth, action
-    in
-    let pos = get_pos depth env in
-    let rec eval env = function
-      | R.Pop ->
-        (match I.pop env with
-         | None -> raise Not_found
-         | Some env -> env)
-      | R.Reduce prod ->
-        begin try
-            I.force_reduction (I.find_production prod) env
-          with exn ->
-            printf k "Error %S in force_reduction, reducing:\n"
-              (Printexc.to_string exn);
-            Printing.print_item k (Obj.magic prod, -1);
-            printf k "In environment:\n";
-            Printing.print_env_summary k env;
-            raise exn
-        end
-      | R.Shift (I.N n as sym) ->
-        let v = Parser_recover.default_value sym in
-        I.feed_nonterminal n endp v endp env
-      | R.Shift (I.T t as sym) ->
-        let v = Parser_recover.default_value sym in
-        let token = Parser_printer.token_of_terminal t v in
-        (match feed_token (token, endp, endp) env with
-         | `Fail -> assert false
-         | `Accept _ -> raise Not_found
-         | `Recovered (_,env) -> env)
-      | R.Sub actions ->
-        List.fold_left ~f:eval ~init:env actions
-    in
-    match begin
-      let envs = match action with
-        | R.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
-        | action -> [eval env action]
+let generate_recoveries k env =
+  let module E = struct
+    exception Result of Obj.t
+  end in
+  let rec aux acc env =
+    match I.stack env with
+    | None -> None, acc
+    | Some stack ->
+      let I.Element (state, v, startp, endp) as elt = I.stack_element stack in
+      Printing.print_element k elt;
+      let depth, action =
+        match R.decision (I.number state) with
+        | R.Parent select_action ->
+          begin match I.stack_next stack with
+            | None -> 0, R.Pop
+            | Some stack' ->
+              let I.Element (state', _, _, _) =
+                I.stack_element stack' in
+              select_action (I.number state')
+          end
+        | R.Action (depth, action) -> depth, action
       in
-      List.map ~f:(fun env -> pos, env) envs
-    end with
-    | exception Not_found -> acc | [] -> acc
-    | ((_, env) :: _) as envs -> recoveries k (envs @ acc) env
+      let pos = get_pos depth env in
+      let rec eval env = function
+        | R.Pop ->
+          (match I.pop env with
+           | None -> raise Not_found
+           | Some env -> env)
+        | R.Reduce prod ->
+          begin try
+              I.force_reduction (I.find_production prod) env
+            with exn ->
+              printf k "Error %S in force_reduction, reducing:\n"
+                (Printexc.to_string exn);
+              Printing.print_item k (Obj.magic prod, -1);
+              printf k "In environment:\n";
+              Printing.print_env_summary k env;
+              raise exn
+          end
+        | R.Shift (I.N n as sym) ->
+          let v = Parser_recover.default_value sym in
+          I.feed_nonterminal n endp v endp env
+        | R.Shift (I.T t as sym) ->
+          let v = Parser_recover.default_value sym in
+          let token = Parser_printer.token_of_terminal t v in
+          (match feed_token (token, endp, endp) env with
+           | `Fail -> assert false
+           | `Accept v -> raise (E.Result v)
+           | `Recovered (_,env) -> env)
+        | R.Sub actions ->
+          List.fold_left ~f:eval ~init:env actions
+      in
+      match begin
+        let envs = match action with
+          | R.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
+          | action -> [eval env action]
+        in
+        List.map ~f:(fun env -> pos, env) envs
+      end with
+      | exception Not_found -> None, acc
+      | exception (E.Result v) -> Some v, acc
+      | [] -> None, acc
+      | ((_, env) :: _) as envs -> aux (envs @ acc) env
+  in
+  aux [] env
 
 let recoveries k env =
-  List.rev_filter ~f:(fun (_,env) ->
-      match I.stack env with
-      | None -> false
-      | Some stack ->
-        let I.Element (state, _, _, _) = I.stack_element stack in
-        I.default_reduction state = None)
-    (recoveries k [] env)
+  let final, recoveries = generate_recoveries k env in
+  let recoveries =
+    List.rev_filter ~f:(fun (_,env) ->
+        match I.stack env with
+        | None -> false
+        | Some stack ->
+          let I.Element (state, _, _, _) = I.stack_element stack in
+          I.default_reduction state = None)
+      recoveries
+  in
+  final, (get_pos 0 env, env) :: recoveries
 
 let show_recoveries nav (t,s,e as token) tokens env =
   let body = Nav.body nav in
@@ -269,7 +281,7 @@ let show_recoveries nav (t,s,e as token) tokens env =
     link body "see recoveries"
       (fun _ -> Nav.modal nav "Recoveries" @@ fun nav ->
         let body = Nav.body nav in
-        let r = (get_pos 0 env, env) :: recoveries body env in
+        let _final, r = recoveries body env in
         let rec aux = function
           | [] -> ()
           | token :: tokens ->
@@ -311,7 +323,7 @@ let parse nav =
   and check_for_error token tokens env = function
     | I.HandlingError _ ->
       show_recoveries nav token tokens env;
-      recover ((get_pos 0 env, env) :: recoveries null_cursor env) (token :: tokens)
+      recover (recoveries null_cursor env) (token :: tokens)
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
       check_for_error token tokens env (I.resume checkpoint)
@@ -324,8 +336,14 @@ let parse nav =
       | token :: tokens -> token, tokens
       | [] -> eof_token, []
     in
-    match attempt_recovery null_cursor recoveries token with
-    | `Fail -> recover recoveries tokens
+    match attempt_recovery null_cursor (snd recoveries) token with
+    | `Fail ->
+      if tokens = [] then
+        match fst recoveries with
+        | None -> failwith "Empty file"
+        | Some v -> Obj.magic v
+      else
+        recover recoveries tokens
     | `Accept v -> v
     | `Ok (checkpoint, _, _) ->
       normal tokens checkpoint
