@@ -114,10 +114,10 @@ let feed_token ?(allow_reduction=true) token env =
   let module T = struct
     open I
     type 'a checkpoint =
-      | InputNeeded of env
-      | Shifting of env * env * bool
-      | AboutToReduce of env * production
-      | HandlingError of env
+      | InputNeeded of 'a env
+      | Shifting of 'a env * 'a env * bool
+      | AboutToReduce of 'a env * production
+      | HandlingError of 'a env
       | Accepted of 'a
       | Rejected
     external inj : 'a checkpoint -> 'a I.checkpoint = "%identity"
@@ -193,9 +193,9 @@ let attempt_recovery k recoveries token =
   in
   aux recoveries
 
-let generate_recoveries k env =
+let generate_recoveries k (type a) (env : a I.env) =
   let module E = struct
-    exception Result of Obj.t
+    exception Result of a
   end in
   let rec aux acc env =
     match I.stack env with
@@ -216,18 +216,19 @@ let generate_recoveries k env =
         | R.Action (depth, action) -> depth, action
       in
       let pos = get_pos depth env in
-      let rec eval env = function
+      let rec eval (env : a I.env) : R.action -> a I.env = function
         | R.Pop ->
           (match I.pop env with
            | None -> raise Not_found
            | Some env -> env)
         | R.Reduce prod ->
+          let prod = I.find_production prod in
           begin try
-              I.force_reduction (I.find_production prod) env
+              I.force_reduction prod env
             with exn ->
               printf k "Error %S in force_reduction, reducing:\n"
                 (Printexc.to_string exn);
-              Printing.print_item k (Obj.magic prod, -1);
+              Printing.print_item k (prod, -1);
               printf k "In environment:\n";
               Printing.print_env_summary k env;
               raise exn
@@ -341,7 +342,7 @@ let parse nav =
       if tokens = [] then
         match fst recoveries with
         | None -> failwith "Empty file"
-        | Some v -> Obj.magic v
+        | Some v -> v
       else
         recover recoveries tokens
     | `Accept v -> v

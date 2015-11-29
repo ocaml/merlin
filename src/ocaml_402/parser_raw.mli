@@ -511,7 +511,7 @@ module MenhirInterpreter : sig
   (* The inspection API. *)
   
   include MenhirLib.IncrementalEngine.INSPECT_AND_DEBUG
-    with type env := env
+    with type 'a env := 'a env
     with type production := production
     with type 'a lr1state := 'a lr1state
     with type 'a terminal := 'a terminal
