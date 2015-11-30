@@ -36,301 +36,8 @@ type kind =
   | MLI
   (*| MLL | MLY*)
 
-
-type tree = [
-  | `Signature of Parsetree.signature
-  | `Structure of Parsetree.structure
-]
-
-type t = {
-  kind: kind;
-  tree: tree;
-  errors: exn list;
-  lexer: Merlin_lexer.t;
-}
-
-let default = function
-  | ML  -> `Structure []
-  | MLI -> `Signature []
-
-let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
-
-module Recover
-    (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
-    (Recovery : sig
-       val default_value : 'a Parser.symbol -> 'a
-
-       type action =
-         | Shift  : 'a Parser.symbol -> action
-         | Reduce : int -> action
-         | Sub    : action list -> action
-         | Pop    : action
-
-       type decision =
-         | Action of int * action
-         | Parent of (int -> int * action)
-
-       val decision : int -> decision
-
-       val guide : 'a Parser.symbol -> bool
-
-       val token_of_terminal : 'a Parser.terminal -> 'a -> Parser.token
-     end)
-    (Dump : sig
-       val token   : Parser.token -> string
-       val element : cursor -> Parser.element -> unit
-       val item    : cursor -> Parser.item -> unit
-       val env     : cursor -> _ Parser.env -> unit
-     end) : sig
-
-  type 'a candidate = {
-    line: int;
-    min_col: int;
-    max_col: int;
-    env: 'a Parser.env;
-  }
-
-  type 'a candidates = {
-    final: 'a option;
-    candidates: 'a candidate list;
-  }
-
-  val attempt :
-    cursor -> 'a candidates ->
-    Parser.token * Lexing.position * Lexing.position ->
-    [> `Accept of 'a
-    | `Fail
-    | `Ok of 'a Parser.checkpoint * 'a Parser.env ]
-
-  val generate :
-    cursor -> 'a Parser.env -> 'a candidates
-
-  val dump :
-    Nav.t ->
-    wrong:(Parser.token * Lexing.position * Lexing.position) ->
-    rest:(Parser.token * Lexing.position * Lexing.position) list ->
-    'a Parser.env -> unit
-
-end = struct
-
-  type 'a candidate = {
-    line: int;
-    min_col: int;
-    max_col: int;
-    env: 'a Parser.env;
-  }
-
-  type 'a candidates = {
-    final: 'a option;
-    candidates: 'a candidate list;
-  }
-
-  module T = struct
-    type 'a checkpoint =
-      | InputNeeded of 'a Parser.env
-      | Shifting of 'a Parser.env * 'a Parser.env * bool
-      | AboutToReduce of 'a Parser.env * Parser.production
-      | HandlingError of 'a Parser.env
-      | Accepted of 'a
-      | Rejected
-    external inj : 'a checkpoint -> 'a Parser.checkpoint = "%identity"
-  end
-
-  let env_state env =
-    match Parser.stack env with
-    | None -> -1
-    | Some stack ->
-      let Parser.Element (state, _, _, _) = Parser.stack_element stack in
-      Parser.number state
-
-  let feed_token ~allow_reduction token env =
-    let rec aux allow_reduction = function
-      | Parser.HandlingError _ | Parser.Rejected -> `Fail
-      | Parser.AboutToReduce _ when not allow_reduction -> `Fail
-      | Parser.Accepted v -> `Accept v
-      | Parser.Shifting _ | Parser.AboutToReduce _ as checkpoint ->
-        aux true (Parser.resume checkpoint)
-      | Parser.InputNeeded env as checkpoint -> `Recovered (checkpoint, env)
-    in
-    aux allow_reduction (Parser.offer (T.inj (T.InputNeeded env)) token)
-
-  let rec follow_guide col = function
-    | None -> col
-    | Some stack ->
-      let Parser.Element (state, _, pos, _) =
-        Parser.stack_element stack in
-      if Recovery.guide (Parser.incoming_symbol state) then
-        follow_guide
-          (snd (Lexing.split_pos pos)) (Parser.stack_next stack)
-      else
-        col
-
-  let candidate depth env =
-    let line, min_col, max_col =
-      match Parser.stack env with
-      | None -> 1, 0, 0
-      | Some stack ->
-        let Parser.Element (_, _, pos, _) = Parser.stack_element stack in
-        let line, col = Lexing.split_pos pos in
-        if depth = 0 then
-          line, col, col
-        else
-          let rec aux depth = function
-            | None -> max_int
-            | Some stack when depth = 0 ->
-              let Parser.Element (_, _, pos, _) = Parser.stack_element stack in
-              follow_guide
-                (snd (Lexing.split_pos pos)) (Parser.stack_next stack)
-            | Some stack ->
-              aux (depth - 1) (Parser.stack_next stack)
-          in
-          let col' = aux (depth - 1) (Parser.stack_next stack) in
-          line, min col col', max col col'
-    in
-    { line; min_col; max_col; env }
-
-  let attempt k r token =
-    let _, startp, _ = token in
-    let line, col = Lexing.split_pos startp in
-    let more_indented candidate =
-      line <> candidate.line && candidate.min_col > col in
-    let recoveries = List.drop_while ~f:more_indented r.candidates in
-    let same_indented candidate =
-      line = candidate.line ||
-      (candidate.min_col <= col && col <= candidate.max_col)
-    in
-    let recoveries = List.take_while ~f:same_indented recoveries in
-    let rec aux = function
-      | [] -> `Fail
-      | x :: xs -> match feed_token ~allow_reduction:false token x.env with
-        | `Fail ->
-          if not (is_closed k) then
-            printf k "Couldn't resume %d with %S.\n"
-              (env_state x.env) (let (t,_,_) = token in Dump.token t);
-          aux xs
-        | `Recovered (checkpoint, _) -> `Ok (checkpoint, x.env)
-        | `Accept v ->
-          begin match aux xs with
-            | `Fail -> `Accept v
-            | x -> x
-          end
-    in
-    aux recoveries
-
-  let generate k (type a) (env : a Parser.env) =
-    let module E = struct
-      exception Result of a
-    end in
-    let rec aux acc env =
-      match Parser.stack env with
-      | None -> None, acc
-      | Some stack ->
-        let elt = Parser.stack_element stack in
-        let Parser.Element (state, v, startp, endp) = elt in
-        Dump.element k elt;
-        let depth, action =
-          match Recovery.decision (Parser.number state) with
-          | Recovery.Parent select_action ->
-            begin match Parser.stack_next stack with
-              | None -> 0, Recovery.Pop
-              | Some stack' ->
-                let Parser.Element (state', _, _, _) =
-                  Parser.stack_element stack' in
-                select_action (Parser.number state')
-            end
-          | Recovery.Action (depth, action) -> depth, action
-        in
-        let candidate0 = candidate depth env in
-        let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env = function
-          | Recovery.Pop ->
-            (match Parser.pop env with
-             | None -> raise Not_found
-             | Some env -> env)
-          | Recovery.Reduce prod ->
-            let prod = Parser.find_production prod in
-            begin try
-                Parser.force_reduction prod env
-              with exn ->
-                printf k "Error %S in force_reduction, reducing:\n"
-                  (Printexc.to_string exn);
-                Dump.item k (prod, -1);
-                printf k "In environment:\n";
-                Dump.env k env;
-                raise exn
-            end
-          | Recovery.Shift (Parser.N n as sym) ->
-            let v = Recovery.default_value sym in
-            Parser.feed_nonterminal n endp v endp env
-          | Recovery.Shift (Parser.T t as sym) ->
-            let v = Recovery.default_value sym in
-            let token = (Recovery.token_of_terminal t v, endp, endp) in
-            begin match feed_token ~allow_reduction:true token env with
-              | `Fail -> assert false
-              | `Accept v -> raise (E.Result v)
-              | `Recovered (_,env) -> env
-            end
-          | Recovery.Sub actions ->
-            List.fold_left ~f:eval ~init:env actions
-        in
-        match begin
-          let envs = match action with
-            | Recovery.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
-            | action -> [eval env action]
-          in
-          List.map ~f:(fun env -> {candidate0 with env}) envs
-        end with
-        | exception Not_found -> None, acc
-        | exception (E.Result v) -> Some v, acc
-        | [] -> None, acc
-        | (candidate :: _) as candidates ->
-          aux (candidates @ acc) candidate.env
-    in
-    aux [] env
-
-  let generate k env =
-    let final, candidates = generate k env in
-    let candidates =
-      List.rev_filter ~f:(fun { env } ->
-          match Parser.stack env with
-          | None -> false
-          | Some stack ->
-            let Parser.Element (state, _, _, _) =
-              Parser.stack_element stack in
-            Parser.default_reduction state = None)
-        candidates
-    in
-    { final; candidates = (candidate 0 env) :: candidates }
-
-  let dump nav ~wrong:(t,s,e as token) ~rest:tokens env =
-    let body = Nav.body nav in
-    if not (is_closed body) then (
-      let l, c = Lexing.split_pos s in
-      printf body "Unexpected %S at %d:%d, " (Dump.token t) l c;
-      link body "see recoveries"
-        (fun _ -> Nav.modal nav "Recoveries" @@ fun nav ->
-          let body = Nav.body nav in
-          let r = generate body env in
-          let rec aux = function
-            | [] -> ()
-            | token :: tokens ->
-              match attempt body r token with
-              | `Fail -> aux tokens
-              | `Accept v ->
-                text body "\nCouldn't resume, generated final AST.\n"
-              | `Ok (checkpoint, recovered_from) ->
-                printf body "\nResumed with %S from:\n"
-                  (let (t,_,_) = token in Dump.token t);
-                Dump.env body recovered_from
-          in
-          aux (token :: tokens)
-        );
-      text body ".\n";
-      Dump.env body env;
-      text body "\n"
-    )
-end
-
-module R = Recover (I)
+module R = Merlin_recover.Make
+    (I)
     (struct
       include Parser_recover
 
@@ -385,65 +92,126 @@ module R = Recover (I)
           element k (I.stack_element stack)
     end)
 
-let parse nav =
-  let rec normal tokens checkpoint =
-    match checkpoint with
-    | I.InputNeeded env ->
+type 'a step =
+  | Correct of 'a I.checkpoint
+  | Recovering of 'a R.candidates
+
+type tree = [
+  | `Signature of Parsetree.signature
+  | `Structure of Parsetree.structure
+]
+
+type steps =[
+  | `Signature of (Parsetree.signature step * Merlin_lexer.triple) list
+  | `Structure of (Parsetree.structure step * Merlin_lexer.triple) list
+]
+
+type t = {
+  kind: kind;
+  tree: tree;
+  steps: steps;
+  errors: exn list;
+  lexer: Merlin_lexer.t;
+}
+
+let default = function
+  | ML  -> `Structure []
+  | MLI -> `Signature []
+
+let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
+
+let resume_parse nav =
+  let rec normal acc tokens = function
+    | I.InputNeeded env as checkpoint ->
       let token, tokens = match tokens with
         | token :: tokens -> token, tokens
         | [] -> eof_token, []
       in
-      check_for_error token tokens env (I.offer checkpoint token)
+      check_for_error acc token tokens env (I.offer checkpoint token)
 
-    | I.Shifting _ | I.AboutToReduce _ ->
-      normal tokens (I.resume checkpoint)
+    | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
+      normal acc tokens (I.resume checkpoint)
 
-    | I.Accepted v -> v
+    | I.Accepted v -> acc, v
 
     | I.Rejected | I.HandlingError _ ->
       assert false
 
-  and check_for_error token tokens env = function
+  and check_for_error acc token tokens env = function
     | I.HandlingError _ ->
       R.dump nav ~wrong:token ~rest:tokens env;
-      recover (R.generate null_cursor env) (token :: tokens)
+      recover acc (token :: tokens) (R.generate null_cursor env)
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
-      check_for_error token tokens env (I.resume checkpoint)
+      check_for_error acc token tokens env (I.resume checkpoint)
 
     | checkpoint ->
-      normal tokens checkpoint
+      normal ((Correct checkpoint, token) :: acc) tokens checkpoint
 
-  and recover recoveries tokens =
+  and recover acc tokens candidates =
     let token, tokens = match tokens with
       | token :: tokens -> token, tokens
       | [] -> eof_token, []
     in
-    match R.attempt null_cursor recoveries token with
+    let acc' = ((Recovering candidates, token) :: acc) in
+    match R.attempt null_cursor candidates token with
     | `Fail ->
       if tokens = [] then
-        match recoveries.R.final with
+        match candidates.R.final with
         | None -> failwith "Empty file"
-        | Some v -> v
+        | Some v -> acc', v
       else
-        recover recoveries tokens
-    | `Accept v -> v
+        recover acc tokens candidates
+    | `Accept v -> acc', v
     | `Ok (checkpoint, _) ->
-      normal tokens checkpoint
+      normal ((Correct checkpoint, token) :: acc) tokens checkpoint
   in
-  normal
+  fun acc tokens -> function
+  | Correct checkpoint -> normal acc tokens checkpoint
+  | Recovering candidates -> recover acc tokens candidates
 
-let run_parser k tokens = function
-  | ML  -> `Structure (parse k tokens (Parser_raw.Incremental.implementation ()))
-  | MLI -> `Signature (parse k tokens (Parser_raw.Incremental.interface ()))
+let seek_step steps tokens =
+  let rec aux acc = function
+    | (step :: steps), (token :: tokens) when snd step = token ->
+      aux (step :: acc) (steps, tokens)
+    | _, tokens -> acc, tokens
+  in
+  aux [] (steps, tokens)
 
-let run_parser k lexer kind =
-  try (run_parser k (Merlin_lexer.tokens lexer) kind), []
-  with exn -> (default kind), [exn]
+let parse initial nav steps tokens =
+  let acc, tokens = seek_step steps tokens in
+  let step =
+    match acc with
+    | (step, _) :: _ -> step
+    | [] -> Correct (initial ())
+  in
+  let acc, result = resume_parse nav acc tokens step in
+  List.rev acc, result
+
+
+let run_parser nav lexer previous kind =
+  let tokens = Merlin_lexer.tokens lexer in
+  match kind with
+  | ML  ->
+    let steps = match previous with
+      | `Structure steps -> steps
+      | _ -> []
+    in
+    let steps, result =
+      parse Parser_raw.Incremental.implementation nav steps tokens in
+    `Structure steps, `Structure result
+  | MLI ->
+    let steps = match previous with
+      | `Signature steps -> steps
+      | _ -> []
+    in
+    let steps, result =
+      parse Parser_raw.Incremental.interface nav steps tokens in
+    `Signature steps, `Signature result
 
 let make lexer kind =
-  let tree, errors = run_parser Nav.null lexer kind in
-  {kind; tree; errors; lexer}
+  let steps, tree = run_parser Nav.null lexer `None kind in
+  {kind; steps; tree; errors = []; lexer}
 
 let update lexer t =
   if t.lexer == lexer then
@@ -451,11 +219,11 @@ let update lexer t =
   else if Merlin_lexer.compare lexer t.lexer = 0 then
     {t with lexer}
   else
-    let tree, errors = run_parser Nav.null lexer t.kind in
-    {t with tree; errors; lexer}
+    let steps, tree = run_parser Nav.null lexer t.steps t.kind in
+    {t with tree; steps; errors = []; lexer}
 
 let trace nav lexer t =
-  ignore (run_parser nav lexer t.kind)
+  ignore (run_parser nav lexer `None t.kind)
 
 let result t = t.tree
 

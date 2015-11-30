@@ -30,9 +30,11 @@ open Std
 
 type keywords = Lexer_raw.keywords
 
+type triple = Parser_raw.token * Lexing.position * Lexing.position
+
 type t = {
   keywords: keywords;
-  tokens: (Parser_raw.token * Lexing.position * Lexing.position) list;
+  tokens: triple list;
   errors: exn list;
   comments: (string * Location.t) list;
   source: Merlin_source.t;
