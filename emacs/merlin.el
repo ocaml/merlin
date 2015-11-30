@@ -216,7 +216,7 @@ merlin-locate, see `merlin-locate-in-new-window').")
 (defvar-local merlin--grouping nil
   "Configuration returned by merlin-grouping-function.")
 
-(defvar-local merlin--dirty-point 0
+(defvar-local merlin--dirty-point 1
   "Position after which buffer content may differ.")
 
 ;; Errors related variables
@@ -543,7 +543,7 @@ Try to find a satisfying default directory."
   (when merlin-mode
     (when (merlin-process-buffer) (ignore-errors (merlin-kill-process)))
     (setq merlin-erroneous-buffer nil)
-    (setq merlin--dirty-point 0)
+    (setq merlin--dirty-point 1)
     (merlin-setup)
     (message "Restarted merlin %S" merlin-instance)))
 
@@ -755,22 +755,15 @@ the error message otherwise print a generic error message."
   "Retract merlin--dirty-point, used when the buffer is edited."
   (when merlin-mode
     (setq merlin--last-edit (cons start end))
-    (when (< (1- start) merlin--dirty-point)
-      (setq merlin--dirty-point (1- start)))))
+    (when (< start merlin--dirty-point)
+      (setq merlin--dirty-point start))))
 
 (defun merlin/sync ()
   "Synchronize buffer with merlin"
   (merlin/send-command
-   `(tell ,merlin--dirty-point
-          end ,(merlin/buffer-substring (1+ merlin--dirty-point) (point-max))))
+   `(tell ,(1- (position-bytes merlin--dirty-point))
+          end ,(merlin/buffer-substring merlin--dirty-point (point-max))))
   (setq merlin--dirty-point (point-max)))
-  ;; (if (>= merlin--dirty-point (point-max))
-  ;;     (merlin/send-command
-  ;;   (merlin/send-command
-  ;;    `(tell
-  ;;      ,merlin--dirty-point end
-  ;;      ,(merlin/buffer-substring merlin--dirty-point (point-max))))
-  ;;   (setq merlin--dirty-point (point-max))))
 
 (defun merlin/sync-async (k &optional kerr)
   "Asynchronous synchronization of buffer with merlin"

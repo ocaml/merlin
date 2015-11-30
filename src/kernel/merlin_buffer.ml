@@ -88,7 +88,15 @@ let typer t =
   t.typer
 
 (* All top modules of current project, with current module removed *)
-let global_modules t = []
+let global_modules t =
+  List.remove (Merlin_source.name (source t))
+    (Merlin_project.global_modules t.project)
 
 (* Try to do a background job, return false if nothing has to be done *)
-let idle_job t = false
+let idle_job t =
+  let typer = typer t in
+  Merlin_typer.with_typer typer @@ fun () ->
+  ignore (Merlin_typer.result typer);
+  Clflags.real_paths () <> `Real &&
+  let concr = Env.used_persistent () in
+  Types.Concr.exists Printtyp.compute_map_for_pers concr
