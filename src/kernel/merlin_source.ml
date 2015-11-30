@@ -86,7 +86,7 @@ let get_logical {name; text} = function
           x name len;
         len
       | `Offset x ->
-        assert (x > 0);
+        assert (x >= 0);
         x
       | `End -> len
     in

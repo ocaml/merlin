@@ -32,57 +32,113 @@ type keywords = Lexer_raw.keywords
 
 type triple = Parser_raw.token * Lexing.position * Lexing.position
 
+type item =
+  | Triple of triple
+  | Comment of (string * Location.t)
+  | Error of Lexer_raw.error * Location.t
+
 type t = {
   keywords: keywords;
-  tokens: triple list;
-  errors: exn list;
-  comments: (string * Location.t) list;
   source: Merlin_source.t;
+  items: item list;
 }
 
-let get_tokens keywords source =
+let get_tokens keywords pos text =
   let state = Lexer_raw.make keywords in
-  let lexbuf = Lexing.from_string (Merlin_source.text source) in
-  Lexing.move lexbuf
+  let lexbuf = Lexing.from_string text in
+  Lexing.move lexbuf pos;
+  let rec aux items = function
+    | Lexer_raw.Return Parser_raw.EOF -> items
+    | Lexer_raw.Return (Parser_raw.COMMENT comment) ->
+      continue (Comment comment :: items)
+    | Lexer_raw.Refill k -> aux items (k ())
+    | Lexer_raw.Return t ->
+      let triple = (t, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
+      continue (Triple triple :: items)
+    | Lexer_raw.Fail (err, loc) ->
+      continue (Error (err, loc) :: items)
+
+  and continue items =
+    aux items (Lexer_raw.token state lexbuf)
+
+  in
+  continue
+
+let make keywords source =
+  let items =
+    get_tokens keywords
     { Lexing.
       pos_fname = (Merlin_source.name source);
       pos_lnum = 1;
       pos_bol = 0;
       pos_cnum = 0;
-    };
-  let rec aux items errors comments = function
-    | Lexer_raw.Return Parser_raw.EOF ->
-      List.rev items, List.rev errors, List.rev comments
-    | Lexer_raw.Return (Parser_raw.COMMENT comment) ->
-      continue items errors (comment :: comments)
-    | Lexer_raw.Refill k -> aux items errors comments (k ())
-    | Lexer_raw.Return t ->
-      let item = (t, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
-      continue (item :: items) errors comments
-    | Lexer_raw.Fail (err, loc) ->
-      continue items (Lexer_raw.Error (err, loc) :: errors) comments
-
-  and continue items errors comments =
-    aux items errors comments (Lexer_raw.token state lexbuf)
-
+    }
+    (Merlin_source.text source)
+    []
   in
-  continue [] [] []
+  { keywords; items; source }
 
-let make keywords source =
-  let tokens, errors, comments = get_tokens keywords source in
-  { keywords; tokens; errors; comments; source }
+let text_diff source0 source1 =
+  let r = ref (min (String.length source0) (String.length source1)) in
+  begin try
+    for i = 0 to !r - 1 do
+      if source0.[i] <> source1.[i] then
+        (r := i; raise Exit);
+    done;
+    with Exit -> ()
+  end;
+  !r
+
+let item_start = function
+  | Triple (_,s,_) -> s
+  | Comment (_, l) | Error (_, l) ->
+    l.Location.loc_start
+
+let item_end = function
+  | Triple (_,e,_) -> e
+  | Comment (_, l) | Error (_, l) ->
+    l.Location.loc_end
+
+let diff items source0 source1 =
+  if (Merlin_source.name source0 <> Merlin_source.name source1) then
+    []
+  else
+    let offset =
+      text_diff (Merlin_source.text source0) (Merlin_source.text source1) in
+    let `Logical (line, _) =
+      Merlin_source.get_logical source1 (`Offset offset) in
+    List.drop_while items
+      ~f:(fun i -> (item_end i).Lexing.pos_lnum  >= line)
 
 let update source t =
   if source == t.source then
     t
   else if Merlin_source.compare source t.source = 0 then
     {t with source}
-  else
-    make t.keywords source
+  else match diff t.items t.source source with
+    | [] -> make t.keywords source
+    | (item :: _) as items ->
+      let pos = item_end item in
+      let pos = {pos with Lexing.pos_cnum = pos.Lexing.pos_cnum + 1} in
+      let offset = pos.Lexing.pos_cnum in
+      let text = Merlin_source.text source in
+      let text =
+          String.sub text ~pos:offset ~len:(String.length text - offset) in
+      let items = get_tokens t.keywords pos text items in
+      { t with items; source }
 
-let tokens t = t.tokens
-let errors t = t.errors
-let comments t = t.comments
+let tokens t =
+  List.rev_filter_map t.items
+    ~f:(function Triple t -> Some t | _ -> None)
+
+let errors t =
+  List.rev_filter_map t.items
+    ~f:(function Error (err, loc) -> Some (Lexer_raw.Error (err, loc))
+               | _ -> None)
+
+let comments t =
+  List.rev_filter_map t.items
+    ~f:(function Comment t -> Some t | _ -> None)
 
 let compare t1 t2 =
   if t1.keywords == t2.keywords then
