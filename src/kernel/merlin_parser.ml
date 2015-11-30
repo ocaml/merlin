@@ -30,7 +30,6 @@ open Std
 open Sturgeon.Tui
 
 module I = Parser_raw.MenhirInterpreter
-module R = Parser_recover
 
 type kind =
   | ML
@@ -55,253 +54,335 @@ let default = function
 
 let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
 
-module Printing = struct
+module Recover
+    (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
+    (Recovery : sig
+       val default_value : 'a Parser.symbol -> 'a
 
-  let print_position pos =
-    let l1, c1 = Lexing.split_pos pos in
-    Printf.sprintf "%d:%d" l1 c1
+       type action =
+         | Shift  : 'a Parser.symbol -> action
+         | Reduce : int -> action
+         | Sub    : action list -> action
+         | Pop    : action
 
-  let print_item k (prod, pos) =
-    if not (is_closed k) then (
-      let lhs = Parser_printer.print_symbol (I.lhs prod) in
-      let rec insert_dot pos = function
-        | [] -> ["."]
-        | xs when pos = 0 -> "." :: xs
-        | x :: xs -> x :: insert_dot (pos - 1) xs
-      in
-      let rhs =
-        I.rhs prod
-        |> List.map ~f:Parser_printer.print_symbol
-        |> insert_dot pos
-        |> String.concat ~sep:" "
-      in
-      printf k "%s ::= %s\n" lhs rhs
-    )
+       type decision =
+         | Action of int * action
+         | Parent of (int -> int * action)
 
-  let print_state k state =
-    if not (is_closed k) then (
-      let items = I.items state in
-      printf k "LR(1) state %d:\n" (I.number state);
-      List.iter (print_item k) items
-    )
+       val decision : int -> decision
 
-  let print_element k (I.Element (state, _, startp, endp)) =
-    if not (is_closed k) then (
-      printf k "From %s to %s, "
-        (print_position startp)
-        (print_position endp);
-      print_state k state
-    )
+       val guide : 'a Parser.symbol -> bool
 
-  let env_state env =
-    match I.stack env with
-    | None -> -1
-    | Some stack ->
-      let I.Element (state, _, _, _) = I.stack_element stack in
-      I.number state
+       val token_of_terminal : 'a Parser.terminal -> 'a -> Parser.token
+     end)
+    (Dump : sig
+       val token   : Parser.token -> string
+       val element : cursor -> Parser.element -> unit
+       val item    : cursor -> Parser.item -> unit
+       val env     : cursor -> _ Parser.env -> unit
+     end) : sig
 
-  let print_env_summary k env =
-    match I.stack env with
-    | None ->
-      text k "Initial state."
-    | Some stack ->
-      print_element k (I.stack_element stack)
+  type 'a candidate = {
+    line: int;
+    min_col: int;
+    max_col: int;
+    env: 'a Parser.env;
+  }
 
-end
+  type 'a candidates = {
+    final: 'a option;
+    candidates: 'a candidate list;
+  }
 
+  val attempt :
+    cursor -> 'a candidates ->
+    Parser.token * Lexing.position * Lexing.position ->
+    [> `Accept of 'a
+    | `Fail
+    | `Ok of 'a Parser.checkpoint * 'a Parser.env ]
 
-let feed_token ?(allow_reduction=true) token env =
-  let module T = struct
-    open I
+  val generate :
+    cursor -> 'a Parser.env -> 'a candidates
+
+  val dump :
+    Nav.t ->
+    wrong:(Parser.token * Lexing.position * Lexing.position) ->
+    rest:(Parser.token * Lexing.position * Lexing.position) list ->
+    'a Parser.env -> unit
+
+end = struct
+
+  type 'a candidate = {
+    line: int;
+    min_col: int;
+    max_col: int;
+    env: 'a Parser.env;
+  }
+
+  type 'a candidates = {
+    final: 'a option;
+    candidates: 'a candidate list;
+  }
+
+  module T = struct
     type 'a checkpoint =
-      | InputNeeded of 'a env
-      | Shifting of 'a env * 'a env * bool
-      | AboutToReduce of 'a env * production
-      | HandlingError of 'a env
+      | InputNeeded of 'a Parser.env
+      | Shifting of 'a Parser.env * 'a Parser.env * bool
+      | AboutToReduce of 'a Parser.env * Parser.production
+      | HandlingError of 'a Parser.env
       | Accepted of 'a
       | Rejected
-    external inj : 'a checkpoint -> 'a I.checkpoint = "%identity"
-  end in
-  let rec aux allow_reduction = function
-    | I.HandlingError _ | I.Rejected -> `Fail
-    | I.AboutToReduce _ when not allow_reduction -> `Fail
-    | I.Accepted v -> `Accept v
-    | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
-      aux true (I.resume checkpoint)
-    | I.InputNeeded env as checkpoint -> `Recovered (checkpoint, env)
-  in
-  aux allow_reduction (I.offer (T.inj (T.InputNeeded env)) token)
+    external inj : 'a checkpoint -> 'a Parser.checkpoint = "%identity"
+  end
 
-let guide_symbol (type a) : a I.symbol -> bool = function
-  | I.T I.T_BEGIN -> true
-  | _ -> false
-
-let get_pos depth env =
-  match I.stack env with
-  | None -> 1, 0, 0
-  | Some stack ->
-    let I.Element (_, _, startp, _) = I.stack_element stack in
-    let line, col = Lexing.split_pos startp in
-    if depth = 0 then
-      line, col, col
-    else
-      let rec follow_guide col = function
-        | None -> col
-        | Some stack ->
-          let I.Element (state, _, startp, _) = I.stack_element stack in
-          if guide_symbol (I.incoming_symbol state) then
-            follow_guide (snd (Lexing.split_pos startp)) (I.stack_next stack)
-          else
-            col
-      in
-      let rec aux depth = function
-        | None -> max_int
-        | Some stack when depth = 0 ->
-          let I.Element (_, _, startp, _) = I.stack_element stack in
-          follow_guide (snd (Lexing.split_pos startp)) (I.stack_next stack)
-        | Some stack ->
-          aux (depth - 1) (I.stack_next stack)
-      in
-      let col' = aux (depth - 1) (I.stack_next stack) in
-      line, min col col', max col col'
-
-let attempt_recovery k recoveries token =
-  let _, startp, _ = token in
-  let line, col = Lexing.split_pos startp in
-  let more_indented ((line', col0, col1), _) =
-    line <> line' && col0 > col in
-  let recoveries = List.drop_while ~f:more_indented recoveries in
-  let same_indented ((line', col0, col1), _) =
-    line = line' || (col0 <= col && col <= col1) in
-  let recoveries = List.take_while ~f:same_indented recoveries in
-  let rec aux = function
-    | [] -> `Fail
-    | (_, x) :: xs -> match feed_token ~allow_reduction:false token x with
-      | `Fail ->
-        if not (is_closed k) then
-          printf k "Couldn't resume %d with %S.\n"
-            (Printing.env_state x)
-            (Parser_printer.print_token @@
-             let (t,_,_) = token in t);
-        aux xs
-      | `Recovered (checkpoint, env) -> `Ok (checkpoint, env, x)
-      | `Accept v ->
-        begin match aux xs with
-          | `Fail -> `Accept v
-          | x -> x
-        end
-  in
-  aux recoveries
-
-let generate_recoveries k (type a) (env : a I.env) =
-  let module E = struct
-    exception Result of a
-  end in
-  let rec aux acc env =
-    match I.stack env with
-    | None -> None, acc
+  let env_state env =
+    match Parser.stack env with
+    | None -> -1
     | Some stack ->
-      let I.Element (state, v, startp, endp) as elt = I.stack_element stack in
-      Printing.print_element k elt;
-      let depth, action =
-        match R.decision (I.number state) with
-        | R.Parent select_action ->
-          begin match I.stack_next stack with
-            | None -> 0, R.Pop
-            | Some stack' ->
-              let I.Element (state', _, _, _) =
-                I.stack_element stack' in
-              select_action (I.number state')
-          end
-        | R.Action (depth, action) -> depth, action
-      in
-      let pos = get_pos depth env in
-      let rec eval (env : a I.env) : R.action -> a I.env = function
-        | R.Pop ->
-          (match I.pop env with
-           | None -> raise Not_found
-           | Some env -> env)
-        | R.Reduce prod ->
-          let prod = I.find_production prod in
-          begin try
-              I.force_reduction prod env
-            with exn ->
-              printf k "Error %S in force_reduction, reducing:\n"
-                (Printexc.to_string exn);
-              Printing.print_item k (prod, -1);
-              printf k "In environment:\n";
-              Printing.print_env_summary k env;
-              raise exn
-          end
-        | R.Shift (I.N n as sym) ->
-          let v = Parser_recover.default_value sym in
-          I.feed_nonterminal n endp v endp env
-        | R.Shift (I.T t as sym) ->
-          let v = Parser_recover.default_value sym in
-          let token = Parser_printer.token_of_terminal t v in
-          (match feed_token (token, endp, endp) env with
-           | `Fail -> assert false
-           | `Accept v -> raise (E.Result v)
-           | `Recovered (_,env) -> env)
-        | R.Sub actions ->
-          List.fold_left ~f:eval ~init:env actions
-      in
-      match begin
-        let envs = match action with
-          | R.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
-          | action -> [eval env action]
-        in
-        List.map ~f:(fun env -> pos, env) envs
-      end with
-      | exception Not_found -> None, acc
-      | exception (E.Result v) -> Some v, acc
-      | [] -> None, acc
-      | ((_, env) :: _) as envs -> aux (envs @ acc) env
-  in
-  aux [] env
+      let Parser.Element (state, _, _, _) = Parser.stack_element stack in
+      Parser.number state
 
-let recoveries k env =
-  let final, recoveries = generate_recoveries k env in
-  let recoveries =
-    List.rev_filter ~f:(fun (_,env) ->
+  let feed_token ~allow_reduction token env =
+    let rec aux allow_reduction = function
+      | Parser.HandlingError _ | Parser.Rejected -> `Fail
+      | Parser.AboutToReduce _ when not allow_reduction -> `Fail
+      | Parser.Accepted v -> `Accept v
+      | Parser.Shifting _ | Parser.AboutToReduce _ as checkpoint ->
+        aux true (Parser.resume checkpoint)
+      | Parser.InputNeeded env as checkpoint -> `Recovered (checkpoint, env)
+    in
+    aux allow_reduction (Parser.offer (T.inj (T.InputNeeded env)) token)
+
+  let rec follow_guide col = function
+    | None -> col
+    | Some stack ->
+      let Parser.Element (state, _, pos, _) =
+        Parser.stack_element stack in
+      if Recovery.guide (Parser.incoming_symbol state) then
+        follow_guide
+          (snd (Lexing.split_pos pos)) (Parser.stack_next stack)
+      else
+        col
+
+  let candidate depth env =
+    let line, min_col, max_col =
+      match Parser.stack env with
+      | None -> 1, 0, 0
+      | Some stack ->
+        let Parser.Element (_, _, pos, _) = Parser.stack_element stack in
+        let line, col = Lexing.split_pos pos in
+        if depth = 0 then
+          line, col, col
+        else
+          let rec aux depth = function
+            | None -> max_int
+            | Some stack when depth = 0 ->
+              let Parser.Element (_, _, pos, _) = Parser.stack_element stack in
+              follow_guide
+                (snd (Lexing.split_pos pos)) (Parser.stack_next stack)
+            | Some stack ->
+              aux (depth - 1) (Parser.stack_next stack)
+          in
+          let col' = aux (depth - 1) (Parser.stack_next stack) in
+          line, min col col', max col col'
+    in
+    { line; min_col; max_col; env }
+
+  let attempt k r token =
+    let _, startp, _ = token in
+    let line, col = Lexing.split_pos startp in
+    let more_indented candidate =
+      line <> candidate.line && candidate.min_col > col in
+    let recoveries = List.drop_while ~f:more_indented r.candidates in
+    let same_indented candidate =
+      line = candidate.line ||
+      (candidate.min_col <= col && col <= candidate.max_col)
+    in
+    let recoveries = List.take_while ~f:same_indented recoveries in
+    let rec aux = function
+      | [] -> `Fail
+      | x :: xs -> match feed_token ~allow_reduction:false token x.env with
+        | `Fail ->
+          if not (is_closed k) then
+            printf k "Couldn't resume %d with %S.\n"
+              (env_state x.env) (let (t,_,_) = token in Dump.token t);
+          aux xs
+        | `Recovered (checkpoint, _) -> `Ok (checkpoint, x.env)
+        | `Accept v ->
+          begin match aux xs with
+            | `Fail -> `Accept v
+            | x -> x
+          end
+    in
+    aux recoveries
+
+  let generate k (type a) (env : a Parser.env) =
+    let module E = struct
+      exception Result of a
+    end in
+    let rec aux acc env =
+      match Parser.stack env with
+      | None -> None, acc
+      | Some stack ->
+        let elt = Parser.stack_element stack in
+        let Parser.Element (state, v, startp, endp) = elt in
+        Dump.element k elt;
+        let depth, action =
+          match Recovery.decision (Parser.number state) with
+          | Recovery.Parent select_action ->
+            begin match Parser.stack_next stack with
+              | None -> 0, Recovery.Pop
+              | Some stack' ->
+                let Parser.Element (state', _, _, _) =
+                  Parser.stack_element stack' in
+                select_action (Parser.number state')
+            end
+          | Recovery.Action (depth, action) -> depth, action
+        in
+        let candidate0 = candidate depth env in
+        let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env = function
+          | Recovery.Pop ->
+            (match Parser.pop env with
+             | None -> raise Not_found
+             | Some env -> env)
+          | Recovery.Reduce prod ->
+            let prod = Parser.find_production prod in
+            begin try
+                Parser.force_reduction prod env
+              with exn ->
+                printf k "Error %S in force_reduction, reducing:\n"
+                  (Printexc.to_string exn);
+                Dump.item k (prod, -1);
+                printf k "In environment:\n";
+                Dump.env k env;
+                raise exn
+            end
+          | Recovery.Shift (Parser.N n as sym) ->
+            let v = Recovery.default_value sym in
+            Parser.feed_nonterminal n endp v endp env
+          | Recovery.Shift (Parser.T t as sym) ->
+            let v = Recovery.default_value sym in
+            let token = (Recovery.token_of_terminal t v, endp, endp) in
+            begin match feed_token ~allow_reduction:true token env with
+              | `Fail -> assert false
+              | `Accept v -> raise (E.Result v)
+              | `Recovered (_,env) -> env
+            end
+          | Recovery.Sub actions ->
+            List.fold_left ~f:eval ~init:env actions
+        in
+        match begin
+          let envs = match action with
+            | Recovery.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
+            | action -> [eval env action]
+          in
+          List.map ~f:(fun env -> {candidate0 with env}) envs
+        end with
+        | exception Not_found -> None, acc
+        | exception (E.Result v) -> Some v, acc
+        | [] -> None, acc
+        | (candidate :: _) as candidates ->
+          aux (candidates @ acc) candidate.env
+    in
+    aux [] env
+
+  let generate k env =
+    let final, candidates = generate k env in
+    let candidates =
+      List.rev_filter ~f:(fun { env } ->
+          match Parser.stack env with
+          | None -> false
+          | Some stack ->
+            let Parser.Element (state, _, _, _) =
+              Parser.stack_element stack in
+            Parser.default_reduction state = None)
+        candidates
+    in
+    { final; candidates = (candidate 0 env) :: candidates }
+
+  let dump nav ~wrong:(t,s,e as token) ~rest:tokens env =
+    let body = Nav.body nav in
+    if not (is_closed body) then (
+      let l, c = Lexing.split_pos s in
+      printf body "Unexpected %S at %d:%d, " (Dump.token t) l c;
+      link body "see recoveries"
+        (fun _ -> Nav.modal nav "Recoveries" @@ fun nav ->
+          let body = Nav.body nav in
+          let r = generate body env in
+          let rec aux = function
+            | [] -> ()
+            | token :: tokens ->
+              match attempt body r token with
+              | `Fail -> aux tokens
+              | `Accept v ->
+                text body "\nCouldn't resume, generated final AST.\n"
+              | `Ok (checkpoint, recovered_from) ->
+                printf body "\nResumed with %S from:\n"
+                  (let (t,_,_) = token in Dump.token t);
+                Dump.env body recovered_from
+          in
+          aux (token :: tokens)
+        );
+      text body ".\n";
+      Dump.env body env;
+      text body "\n"
+    )
+end
+
+module R = Recover (I)
+    (struct
+      include Parser_recover
+
+      let guide (type a) : a I.symbol -> bool = function
+        | I.T I.T_BEGIN -> true
+        | _ -> false
+
+      let token_of_terminal = Parser_printer.token_of_terminal
+    end)
+    (struct
+      let token = Parser_printer.print_token
+
+      let position pos =
+        let l1, c1 = Lexing.split_pos pos in
+        Printf.sprintf "%d:%d" l1 c1
+
+      let item k (prod, pos) =
+        if not (is_closed k) then (
+          let lhs = Parser_printer.print_symbol (I.lhs prod) in
+          let rec insert_dot pos = function
+            | [] -> ["."]
+            | xs when pos = 0 -> "." :: xs
+            | x :: xs -> x :: insert_dot (pos - 1) xs
+          in
+          let rhs =
+            I.rhs prod
+            |> List.map ~f:Parser_printer.print_symbol
+            |> insert_dot pos
+            |> String.concat ~sep:" "
+          in
+          printf k "%s ::= %s\n" lhs rhs
+        )
+
+      let print_state k state =
+        if not (is_closed k) then (
+          let items = I.items state in
+          printf k "LR(1) state %d:\n" (I.number state);
+          List.iter (item k) items
+        )
+
+      let element k (I.Element (state, _, startp, endp)) =
+        if not (is_closed k) then (
+          printf k "From %s to %s, " (position startp) (position endp);
+          print_state k state
+        )
+
+      let env k env =
         match I.stack env with
-        | None -> false
+        | None ->
+          text k "Initial state."
         | Some stack ->
-          let I.Element (state, _, _, _) = I.stack_element stack in
-          I.default_reduction state = None)
-      recoveries
-  in
-  final, (get_pos 0 env, env) :: recoveries
-
-let show_recoveries nav (t,s,e as token) tokens env =
-  let body = Nav.body nav in
-  if not (is_closed body) then (
-    printf body "Unexpected %S at %s, "
-      (Parser_printer.print_token t)
-      (Printing.print_position s);
-    link body "see recoveries"
-      (fun _ -> Nav.modal nav "Recoveries" @@ fun nav ->
-        let body = Nav.body nav in
-        let _final, r = recoveries body env in
-        let rec aux = function
-          | [] -> ()
-          | token :: tokens ->
-            match attempt_recovery body r token with
-            | `Fail -> aux tokens
-            | `Accept v ->
-              text body "\nCouldn't resume, generated final AST.\n"
-            | `Ok (checkpoint, _, recovered_from) ->
-              printf body "\nResumed with %S from:\n"
-                (Parser_printer.print_token @@
-                 let (t,_,_) = token in t);
-              Printing.print_env_summary body recovered_from
-        in
-        aux (token :: tokens)
-      );
-    text body ".\n";
-    Printing.print_env_summary body env;
-    text body "\n"
-  )
+          element k (I.stack_element stack)
+    end)
 
 let parse nav =
   let rec normal tokens checkpoint =
@@ -323,8 +404,8 @@ let parse nav =
 
   and check_for_error token tokens env = function
     | I.HandlingError _ ->
-      show_recoveries nav token tokens env;
-      recover (recoveries null_cursor env) (token :: tokens)
+      R.dump nav ~wrong:token ~rest:tokens env;
+      recover (R.generate null_cursor env) (token :: tokens)
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
       check_for_error token tokens env (I.resume checkpoint)
@@ -337,16 +418,16 @@ let parse nav =
       | token :: tokens -> token, tokens
       | [] -> eof_token, []
     in
-    match attempt_recovery null_cursor (snd recoveries) token with
+    match R.attempt null_cursor recoveries token with
     | `Fail ->
       if tokens = [] then
-        match fst recoveries with
+        match recoveries.R.final with
         | None -> failwith "Empty file"
         | Some v -> v
       else
         recover recoveries tokens
     | `Accept v -> v
-    | `Ok (checkpoint, _, _) ->
+    | `Ok (checkpoint, _) ->
       normal tokens checkpoint
   in
   normal
