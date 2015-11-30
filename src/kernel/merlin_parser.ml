@@ -36,6 +36,61 @@ type kind =
   | MLI
   (*| MLL | MLY*)
 
+module Dump = struct
+  let token = Parser_printer.print_token
+
+  let position pos =
+    let l1, c1 = Lexing.split_pos pos in
+    Printf.sprintf "%d:%d" l1 c1
+
+  let item k (prod, pos) =
+    if not (is_closed k) then (
+      let lhs = Parser_printer.print_symbol (I.lhs prod) in
+      let rec insert_dot pos = function
+        | [] -> ["."]
+        | xs when pos = 0 -> "." :: xs
+        | x :: xs -> x :: insert_dot (pos - 1) xs
+      in
+      let rhs =
+        I.rhs prod
+        |> List.map ~f:Parser_printer.print_symbol
+        |> insert_dot pos
+        |> String.concat ~sep:" "
+      in
+      printf k "%s ::= %s\n" lhs rhs
+    )
+
+  let print_state k state =
+    if not (is_closed k) then (
+      let items = I.items state in
+      printf k "LR(1) state %d:\n" (I.number state);
+      List.iter (item k) items
+    )
+
+  let element k (I.Element (state, _, startp, endp)) =
+    if not (is_closed k) then (
+      printf k "From %s to %s, " (position startp) (position endp);
+      print_state k state
+    )
+
+  let env k env =
+    match I.stack env with
+    | None ->
+      text k "Initial state."
+    | Some stack ->
+      element k (I.stack_element stack)
+
+  let stack k env =
+    let rec aux = function
+    | None ->
+      text k "Initial state."
+    | Some stack ->
+      element k (I.stack_element stack);
+      aux (I.stack_next stack)
+    in
+    aux (I.stack env)
+end
+
 module R = Merlin_recover.Make
     (I)
     (struct
@@ -47,50 +102,7 @@ module R = Merlin_recover.Make
 
       let token_of_terminal = Parser_printer.token_of_terminal
     end)
-    (struct
-      let token = Parser_printer.print_token
-
-      let position pos =
-        let l1, c1 = Lexing.split_pos pos in
-        Printf.sprintf "%d:%d" l1 c1
-
-      let item k (prod, pos) =
-        if not (is_closed k) then (
-          let lhs = Parser_printer.print_symbol (I.lhs prod) in
-          let rec insert_dot pos = function
-            | [] -> ["."]
-            | xs when pos = 0 -> "." :: xs
-            | x :: xs -> x :: insert_dot (pos - 1) xs
-          in
-          let rhs =
-            I.rhs prod
-            |> List.map ~f:Parser_printer.print_symbol
-            |> insert_dot pos
-            |> String.concat ~sep:" "
-          in
-          printf k "%s ::= %s\n" lhs rhs
-        )
-
-      let print_state k state =
-        if not (is_closed k) then (
-          let items = I.items state in
-          printf k "LR(1) state %d:\n" (I.number state);
-          List.iter (item k) items
-        )
-
-      let element k (I.Element (state, _, startp, endp)) =
-        if not (is_closed k) then (
-          printf k "From %s to %s, " (position startp) (position endp);
-          print_state k state
-        )
-
-      let env k env =
-        match I.stack env with
-        | None ->
-          text k "Initial state."
-        | Some stack ->
-          element k (I.stack_element stack)
-    end)
+   (Dump)
 
 type 'a step =
   | Correct of 'a I.checkpoint
@@ -236,3 +248,23 @@ let compare t1 t2 =
     Merlin_lexer.compare t1.lexer t2.lexer
   else
     compare t1 t2
+
+let dump_stack t k tok =
+  let find l =
+    match List.find ~f:(fun (_, tok') -> tok = tok') l with
+    | exception Not_found -> text k "No parser"
+    | Correct (I.InputNeeded env), _ ->
+      text k "Ready for next token:\n";
+      Dump.stack k env
+    | Correct (I.Accepted _), _ -> text k "Accepted"
+    | Recovering candidates, _ ->
+      text k "Recovering from:\n";
+      begin match candidates.R.candidates with
+        | [] -> text k "Nothing"
+        | c :: _ -> Dump.stack k c.R.env
+      end
+    | _ -> assert false
+  in
+  match t.steps with
+  | `Signature l -> find l
+  | `Structure l -> find l

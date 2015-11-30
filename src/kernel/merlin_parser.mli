@@ -51,3 +51,5 @@ val errors : t -> exn list
 
 val lexer : t -> Merlin_lexer.t
 val compare : t -> t -> int
+
+val dump_stack : t -> Sturgeon.Tui.cursor -> Merlin_lexer.triple -> unit

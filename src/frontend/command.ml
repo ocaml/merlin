@@ -815,13 +815,23 @@ module Monitor = struct
     match Reader.find_lexer (Buffer.reader buffer) with
     | None -> text body "Current reader has no OCaml lexer\n"
     | Some lexer ->
-      let print_token line' (t,pos,_) =
+      let action = match Reader.is_normal (Buffer.reader buffer) with
+        | None -> (fun (t,_,_) -> text body (Parser_printer.print_token t))
+        | Some parser -> (fun (t,_,_ as token) ->
+          link body (Parser_printer.print_token t) (fun _ ->
+              Nav.modal nav ("Details of " ^ Parser_printer.print_token t)
+              @@ fun nav ->
+              Parser.dump_stack parser (Nav.body nav) token
+            ))
+      in
+      let print_token line' (t,pos,_ as token) =
         let line, col = Lexing.split_pos pos in
         let prefix = if line <> line'
           then "\n" ^ String.make col ' '
           else " "
         in
-        printf body "%s%s" prefix (Parser_printer.print_token t);
+        text body prefix;
+        action token;
         line
       in
       let _line : int =

@@ -383,7 +383,7 @@ let let_operator startpos endpos op bindings cont =
 %token EXCEPTION
 %token EXTERNAL
 %token FALSE
-%token <string> FLOAT [@cost 2] [@recovery "0."]
+%token <string> FLOAT [@cost 2] [@recovery "0."] [@printer Printf.sprintf "FLOAT(%S)"]
 %token FOR
 %token FUN
 %token FUNCTION
@@ -394,17 +394,17 @@ let let_operator startpos endpos op bindings cont =
 %token IF
 %token IN
 %token INCLUDE
-%token <string> INFIXOP0 [@cost 2] [@recovery "_"]
-%token <string> INFIXOP1 [@cost 2] [@recovery "_"]
-%token <string> INFIXOP2 [@cost 2] [@recovery "_"]
-%token <string> INFIXOP3 [@cost 2] [@recovery "_"]
-%token <string> INFIXOP4 [@cost 2] [@recovery "_"]
+%token <string> INFIXOP0 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP0(%S)"]
+%token <string> INFIXOP1 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP1(%S)"]
+%token <string> INFIXOP2 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP2(%S)"]
+%token <string> INFIXOP3 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP3(%S)"]
+%token <string> INFIXOP4 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP4(%S)"]
 %token INHERIT
 %token INITIALIZER
-%token <int> INT [@cost 1] [@recovery 0]
-%token <int32> INT32 [@cost 1] [@recovery 0l]
-%token <int64> INT64 [@cost 1] [@recovery 0L]
-%token <string> LABEL [@cost 2] [@recovery "_"]
+%token <int> INT [@cost 1] [@recovery 0][@printer Printf.sprintf "INT(%d)"]
+%token <int32> INT32 [@cost 1] [@recovery 0l][@printer Printf.sprintf "INT(%ld)"]
+%token <int64> INT64 [@cost 1] [@recovery 0L][@printer Printf.sprintf "INT64(%Ld)"]
+%token <string> LABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "LABEL(%S)"]
 %token LAZY
 %token LBRACE
 %token LBRACELESS
@@ -420,7 +420,7 @@ let let_operator startpos endpos op bindings cont =
 %token LESS
 %token LESSMINUS
 %token LET
-%token <string> LIDENT [@cost 2] [@recovery "_"]
+%token <string> LIDENT [@cost 2] [@recovery "_"][@printer Printf.sprintf "LIDENT(%S)"]
 %token LPAREN
 %token MATCH
 %token METHOD
@@ -429,18 +429,18 @@ let let_operator startpos endpos op bindings cont =
 %token MINUSGREATER
 %token MODULE
 %token MUTABLE
-%token <nativeint> NATIVEINT [@cost 1] [@recovery 0n]
+%token <nativeint> NATIVEINT [@cost 1] [@recovery 0n][@printer Printf.sprintf "NATIVEINT(%nd)"]
 %token NEW
 %token OBJECT
 %token OF
 %token OPEN
-%token <string> OPTLABEL [@cost 2] [@recovery "_"]
+%token <string> OPTLABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "OPTLABEL(%S)"]
 %token OR
 %token PERCENT
 %token PLUS
 %token PLUSDOT
 %token PLUSEQ
-%token <string> PREFIXOP [@cost 2] [@recovery "!"]
+%token <string> PREFIXOP [@cost 2] [@recovery "!"][@printer Printf.sprintf "PREFIXOP(%S)"]
 %token PRIVATE
 %token QUESTION
 %token QUOTE
@@ -451,10 +451,13 @@ let let_operator startpos endpos op bindings cont =
 %token SEMI
 %token SEMISEMI
 %token SHARP
-%token <string> SHARPOP [@cost 2] [@recovery ""]
+%token <string> SHARPOP [@cost 2] [@recovery ""][@printer Printf.sprintf "SHARPOP(%S)"]
 %token SIG
 %token STAR
-%token <string * string option> STRING [@cost 1] [@recovery ("", None)]
+%token <string * string option> STRING [@cost 1] [@recovery ("", None)][@printer
+   (fun (s,s') -> match s' with
+   | Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
+   | None -> Printf.sprintf "STRING(%S)" s) ]
 %token STRUCT
 %token THEN
 %token TILDE
@@ -462,7 +465,7 @@ let let_operator startpos endpos op bindings cont =
 %token TRUE
 %token TRY
 %token TYPE
-%token <string> UIDENT [@cost 2][@recovery "_"]
+%token <string> UIDENT [@cost 2][@recovery "_"][@printer Printf.sprintf "UIDENT(%S)"]
 %token UNDERSCORE
 %token VAL
 %token VIRTUAL
@@ -495,7 +498,7 @@ let let_operator startpos endpos op bindings cont =
 %token DOTLESS [@cost 1]
 %token DOTTILDE [@cost 1]
 %token GREATERDOT [@cost 1]
-%token <string> LETOP [@cost 1] [@recovery ""]
+%token <string> LETOP [@cost 1] [@recovery ""] [@printer Printf.sprintf "LETOP(%S)"]
 
 %token EXITPOINT [@cost 10]
 
