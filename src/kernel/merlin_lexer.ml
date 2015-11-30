@@ -48,13 +48,15 @@ let get_tokens keywords pos text =
   let lexbuf = Lexing.from_string text in
   Lexing.move lexbuf pos;
   let rec aux items = function
-    | Lexer_raw.Return Parser_raw.EOF -> items
     | Lexer_raw.Return (Parser_raw.COMMENT comment) ->
       continue (Comment comment :: items)
     | Lexer_raw.Refill k -> aux items (k ())
     | Lexer_raw.Return t ->
       let triple = (t, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
-      continue (Triple triple :: items)
+      let items = Triple triple :: items in
+      if t = Parser_raw.EOF
+      then items
+      else continue items
     | Lexer_raw.Fail (err, loc) ->
       continue (Error (err, loc) :: items)
 
