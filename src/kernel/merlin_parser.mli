@@ -48,3 +48,6 @@ type tree = [
 val result : t -> tree
 
 val errors : t -> exn list
+
+val lexer : t -> Merlin_lexer.t
+val compare : t -> t -> int

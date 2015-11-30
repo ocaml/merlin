@@ -46,6 +46,7 @@ type t = {
   kind: kind;
   tree: tree;
   errors: exn list;
+  lexer: Merlin_lexer.t;
 }
 
 let default = function
@@ -442,11 +443,16 @@ let run_parser k lexer kind =
 
 let make lexer kind =
   let tree, errors = run_parser Nav.null lexer kind in
-  {kind; tree; errors}
+  {kind; tree; errors; lexer}
 
 let update lexer t =
-  let tree, errors = run_parser Nav.null lexer t.kind in
-  {t with tree; errors}
+  if t.lexer == lexer then
+    t
+  else if Merlin_lexer.compare lexer t.lexer = 0 then
+    {t with lexer}
+  else
+    let tree, errors = run_parser Nav.null lexer t.kind in
+    {t with tree; errors; lexer}
 
 let trace nav lexer t =
   ignore (run_parser nav lexer t.kind)
@@ -454,3 +460,11 @@ let trace nav lexer t =
 let result t = t.tree
 
 let errors t = t.errors
+
+let lexer t = t.lexer
+
+let compare t1 t2 =
+  if t1.kind = t2.kind then
+    Merlin_lexer.compare t1.lexer t2.lexer
+  else
+    compare t1 t2

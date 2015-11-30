@@ -65,3 +65,5 @@ val node_at : ?skip_recovered:bool -> t -> Lexing.position -> Merlin_browse.t
 val to_browse : tree -> Merlin_browse.t
 
 val env : t -> Env.t
+
+val parser : t -> Merlin_parser.t

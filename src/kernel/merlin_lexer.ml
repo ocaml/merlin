@@ -34,7 +34,8 @@ type t = {
   keywords: keywords;
   tokens: (Parser_raw.token * Lexing.position * Lexing.position) list;
   errors: exn list;
-  comments: (string * Location.t) list
+  comments: (string * Location.t) list;
+  source: Merlin_source.t;
 }
 
 let get_tokens keywords source =
@@ -67,11 +68,24 @@ let get_tokens keywords source =
 
 let make keywords source =
   let tokens, errors, comments = get_tokens keywords source in
-  { keywords; tokens; errors; comments }
+  { keywords; tokens; errors; comments; source }
 
 let update source t =
-  make t.keywords source
+  if source == t.source then
+    t
+  else if Merlin_source.compare source t.source = 0 then
+    {t with source}
+  else
+    make t.keywords source
 
 let tokens t = t.tokens
 let errors t = t.errors
 let comments t = t.comments
+
+let compare t1 t2 =
+  if t1.keywords == t2.keywords then
+    Merlin_source.compare t1.source t2.source
+  else
+    compare t1 t2
+
+let source t = t.source

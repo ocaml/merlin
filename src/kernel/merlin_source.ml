@@ -139,3 +139,6 @@ let substitute t starting ending text =
     String.sub t.text ending (len - ending)
   in
   {t with text}
+
+let compare t1 t2 =
+  compare t1 t2

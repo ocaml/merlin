@@ -36,3 +36,6 @@ val update : Merlin_source.t -> t -> t
 val tokens   : t -> (Parser_raw.token * Lexing.position * Lexing.position) list
 val errors   : t -> exn list
 val comments : t -> (string * Location.t) list
+
+val source : t -> Merlin_source.t
+val compare : t -> t -> int

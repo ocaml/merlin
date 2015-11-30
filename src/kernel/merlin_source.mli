@@ -22,3 +22,5 @@ val get_lexing_pos : t -> [< position] -> Lexing.position
 val name : t -> string
 val text : t -> string
 val substitute : t -> [< position] -> [< position | `Length of int] -> string -> t
+
+val compare : t -> t -> int

@@ -69,17 +69,22 @@ let unit_name t = Merlin_source.name t.source
 let project t = assert false
 
 let update t source =
-  t.source <- source;
-  t.lexer <- Merlin_lexer.update source t.lexer;
-  t.parser <- Merlin_parser.update t.lexer t.parser;
-  t.typer <- Merlin_typer.update t.parser t.typer
+  t.source <- source
 
-let source t = t.source
+let source t =
+  t.source
 
-let lexer  t = t.lexer
-let parser t = t.parser
-let typer  t =
+let lexer t =
+  t.lexer <- Merlin_lexer.update (source t) t.lexer;
+  t.lexer
+
+let parser t =
+  t.parser <- Merlin_parser.update (lexer t) t.parser;
+  t.parser
+
+let typer t =
   Merlin_project.setup t.project;
+  t.typer <- Merlin_typer.update (parser t) t.typer;
   t.typer
 
 (* All top modules of current project, with current module removed *)

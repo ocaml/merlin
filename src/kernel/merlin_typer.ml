@@ -85,7 +85,14 @@ let make parser extensions =
     data = data extensions btype_cache env_cache parser; }
 
 let update parser t =
-  { t with parser; data = data t.extensions t.btype_cache t.env_cache parser; }
+  if not (is_valid t) then
+    make parser t.extensions
+  else if t.parser == parser then
+    t
+  else if Merlin_parser.compare parser t.parser = 0 then
+    {t with parser}
+  else
+    {t with parser; data = data t.extensions t.btype_cache t.env_cache parser}
 
 let data t = Lazy.force t.data
 
@@ -125,3 +132,5 @@ let node_at ?(skip_recovered=false) typer pos_cursor =
   | Some path when skip_recovered -> select path
   | Some path -> path
   | None -> List.One (env typer, Browse_node.Dummy)
+
+let parser t = t.parser
