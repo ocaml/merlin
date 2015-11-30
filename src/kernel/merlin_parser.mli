@@ -38,7 +38,7 @@ type t
 val make : Merlin_lexer.t -> kind -> t
 val update : Merlin_lexer.t -> t -> t
 
-val trace : Sturgeon.Tui.Nav.t -> Merlin_lexer.t -> t -> unit
+val trace : t -> Sturgeon.Tui.Nav.t -> unit
 
 type tree = [
   | `Signature of Parsetree.signature

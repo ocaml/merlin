@@ -31,7 +31,7 @@ let find_line line {name; text} =
         end
       done;
       Logger.logf "source" "find_line"
-        "line %d of %S ouf of bounds" line name;
+        "line %d of %S out of bounds (max = %d)" line name (line - !line');
       String.length text
     with Found n ->
       n + 1

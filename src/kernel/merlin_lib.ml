@@ -31,7 +31,8 @@ module Project = Merlin_project
 module Source  = Merlin_source
 module Lexer   = Merlin_lexer
 module Parser  = Merlin_parser
-module Browse  = Merlin_browse
+module Reader  = Merlin_reader
 module Typer   = Merlin_typer
 
 module Buffer  = Merlin_buffer
+module Browse  = Merlin_browse

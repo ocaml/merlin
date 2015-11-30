@@ -32,8 +32,7 @@ type t = {
   kind: Merlin_parser.kind;
   mutable project: Merlin_project.t;
   mutable source: Merlin_source.t;
-  mutable lexer: Merlin_lexer.t;
-  mutable parser: Merlin_parser.t;
+  mutable reader: Merlin_reader.t;
   mutable typer: Merlin_typer.t;
 }
 
@@ -60,10 +59,11 @@ let create ?dot_merlins ?path kind =
   let dot_merlins, name = compute_context ?dot_merlins ?path () in
   let project, _ = Merlin_project.get dot_merlins in
   let source = Merlin_source.empty ~name in
-  let lexer  = Merlin_lexer.make (Lexer_raw.keywords []) source in
-  let parser = Merlin_parser.make lexer kind in
-  let typer  = Merlin_typer.make parser String.Set.empty in
-  { kind; project; source; lexer; parser; typer }
+  let reader = Merlin_reader.make
+      (Merlin_reader.Normal (Merlin_project.extensions project, kind))
+      source in
+  let typer  = Merlin_typer.make reader String.Set.empty in
+  { kind; project; source; reader; typer }
 
 let unit_name t = Merlin_source.name t.source
 let project t = assert false
@@ -74,17 +74,13 @@ let update t source =
 let source t =
   t.source
 
-let lexer t =
-  t.lexer <- Merlin_lexer.update (source t) t.lexer;
-  t.lexer
-
-let parser t =
-  t.parser <- Merlin_parser.update (lexer t) t.parser;
-  t.parser
+let reader t =
+  t.reader <- Merlin_reader.update (source t) t.reader;
+  t.reader
 
 let typer t =
   Merlin_project.setup t.project;
-  t.typer <- Merlin_typer.update (parser t) t.typer;
+  t.typer <- Merlin_typer.update (reader t) t.typer;
   t.typer
 
 (* All top modules of current project, with current module removed *)

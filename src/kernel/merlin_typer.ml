@@ -52,7 +52,7 @@ type tree = [
 ]
 
 type t = {
-  parser: Merlin_parser.t;
+  reader: Merlin_reader.t;
   mutable steps: steps;
   extensions: String.Set.t;
   btype_cache: Btype.cache;
@@ -114,24 +114,22 @@ let update_steps steps = function
 
 let is_valid _ = true
 
-let make parser extensions =
+let make reader extensions =
   let btype_cache = Btype.new_cache () in
   let env_cache = Env.new_cache
-      ~unit_name:(Merlin_parser.lexer parser
-                  |> Merlin_lexer.source |> Merlin_source.name)
-  in
-  { parser; extensions; btype_cache; env_cache;
-    steps = update_steps `None (Merlin_parser.result parser) }
+      ~unit_name:(Merlin_source.name (Merlin_reader.source reader)) in
+  { reader; extensions; btype_cache; env_cache;
+    steps = update_steps `None (Merlin_reader.result reader) }
 
-let update parser t =
+let update reader t =
   if not (is_valid t) then
-    make parser t.extensions
-  else if t.parser == parser then
+    make reader t.extensions
+  else if t.reader == reader then
     t
-  else if Merlin_parser.compare parser t.parser = 0 then
-    {t with parser}
+  else if Merlin_reader.compare reader t.reader = 0 then
+    {t with reader}
   else
-    {t with parser; steps = update_steps t.steps (Merlin_parser.result parser)}
+    {t with reader; steps = update_steps t.steps (Merlin_reader.result reader)}
 
 let with_typer t f =
   let open Fluid in
@@ -163,7 +161,7 @@ let resume_steps t steps =
 
 let force_steps ?(pos=`End) t =
   let `Offset offset = Merlin_source.get_offset
-      (Merlin_lexer.source (Merlin_parser.lexer t.parser)) pos in
+      (Merlin_reader.source t.reader) pos in
   with_typer t @@ fun () ->
   let steps =
     match t.steps with
@@ -254,4 +252,4 @@ let node_at ?(skip_recovered=false) typer pos_cursor =
   | Some path -> path
   | None -> List.One (env typer, Browse_node.Dummy)
 
-let parser t = t.parser
+let reader t = t.reader

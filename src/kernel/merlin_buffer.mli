@@ -35,8 +35,7 @@ val project : t -> Merlin_project.t
 val update  : t -> Merlin_source.t -> unit
 val source  : t -> Merlin_source.t
 
-val lexer   : t -> Merlin_lexer.t
-val parser  : t -> Merlin_parser.t
+val reader  : t -> Merlin_reader.t
 val typer   : t -> Merlin_typer.t
 
 (* All top modules of current project, with current module removed *)

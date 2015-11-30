@@ -222,8 +222,8 @@ let update lexer t =
     let steps, tree = run_parser Nav.null lexer t.steps t.kind in
     {t with tree; steps; errors = []; lexer}
 
-let trace nav lexer t =
-  ignore (run_parser nav lexer `None t.kind)
+let trace t nav =
+  ignore (run_parser nav t.lexer `None t.kind)
 
 let result t = t.tree
 

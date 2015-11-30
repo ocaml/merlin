@@ -26,44 +26,50 @@
 
 )* }}} *)
 
-type t
+type spec = Normal of Extension.set * Merlin_parser.kind
 
-val is_valid : t -> bool
+type t =
+  | Is_normal of Merlin_parser.t
 
-val make : Merlin_reader.t -> Extension.set -> t
-val update : Merlin_reader.t -> t -> t
+let make spec src = match spec with
+  | Normal (ext, kind) ->
+    let lexer = Merlin_lexer.make (Extension.keywords ext) src in
+    let parser = Merlin_parser.make lexer kind in
+    Is_normal parser
 
-type tree = [
-  | `Signature of Typedtree.signature
-  | `Structure of Typedtree.structure
-]
+let update src = function
+  | Is_normal parser as t ->
+    let lexer = Merlin_parser.lexer parser in
+    let lexer = Merlin_lexer.update src lexer in
+    let parser' = Merlin_parser.update lexer parser in
+    if parser == parser' then t
+    else Is_normal parser'
 
-val result : ?pos:Merlin_source.position -> t -> tree
+let result = function
+  | Is_normal parser -> Merlin_parser.result parser
 
-val errors : ?pos:Merlin_source.position -> t -> exn list
-val checks : ?pos:Merlin_source.position -> t -> exn list
-val extensions : t -> Extension.set
+let source = function
+  | Is_normal parser -> Merlin_lexer.source (Merlin_parser.lexer parser)
 
-val with_typer : t -> (unit -> 'a) -> 'a
+let compare a b = match a, b with
+  | Is_normal a, Is_normal b ->
+    Merlin_parser.compare a b
 
-(** Heuristic to find suitable environment to complete / type at given position.
- *  1. Try to find environment near given cursor.
- *  2. Check if there is an invalid construct between found env and cursor :
- *    Case a.
- *      > let x = valid_expr ||
- *      The env found is the right most env from valid_expr, it's a correct
- *      answer.
- *    Case b.
- *      > let x = valid_expr
- *      > let y = invalid_construction||
- *      In this case, the env found is the same as in case a, however it is
- *      preferable to use env from enclosing module rather than an env from
- *      inside x definition.
- *)
-val node_at : ?skip_recovered:bool -> t -> Lexing.position -> Merlin_browse.t
+let is_normal = function
+  | Is_normal p -> Some p
 
-val to_browse : tree -> Merlin_browse.t
+let find_lexer = function
+  | Is_normal p -> Some (Merlin_parser.lexer p)
 
-val env : ?pos:Merlin_source.position -> t -> Env.t
+let errors = function
+  | Is_normal p ->
+    Merlin_lexer.errors (Merlin_parser.lexer p) @
+    Merlin_parser.errors p
 
-val reader : t -> Merlin_reader.t
+let comments = function
+  | Is_normal p ->
+    Merlin_lexer.comments (Merlin_parser.lexer p)
+
+let trace t nav = match t with
+  | Is_normal p ->
+    Merlin_parser.trace p nav

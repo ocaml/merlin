@@ -129,7 +129,7 @@ module Printtyp = Type_utils.Printtyp
 let dump buffer = function
   | [`String "parsetree"] ->
     let ppf, to_string = Format.to_string () in
-    begin match Parser.result (Buffer.parser buffer) with
+    begin match Reader.result (Buffer.reader buffer) with
       | `Signature s -> Pprintast.signature ppf s
       | `Structure s -> Pprintast.structure ppf s
     end;
@@ -168,16 +168,20 @@ let dump buffer = function
     Browse_misc.dump_browse (snd (Browse.leaf_node structure))
 
   | [`String "tokens"] ->
-    let tokens = Lexer.tokens (Buffer.lexer buffer) in
-    let to_json (t,s,e) =
-        let t = Parser_printer.print_token t in
-        `Assoc [
-          "start", Lexing.json_of_position s;
-          "end",   Lexing.json_of_position e;
-          "token", `String t;
-        ]
-    in
-    `List (List.map ~f:to_json tokens)
+    begin match Reader.find_lexer (Buffer.reader buffer) with
+      | None -> `String "Current reader has no OCaml lexer"
+      | Some lexer ->
+        let tokens = Lexer.tokens lexer in
+        let to_json (t,s,e) =
+          let t = Parser_printer.print_token t in
+          `Assoc [
+            "start", Lexing.json_of_position s;
+            "end",   Lexing.json_of_position e;
+            "token", `String t;
+          ]
+        in
+        `List (List.map ~f:to_json tokens)
+    end
 
   | [`String "flags"] ->
     let flags = Project.get_flags (Buffer.project buffer) in
@@ -196,9 +200,7 @@ let dump buffer = function
   | [`String "exn"] ->
     with_typer buffer @@ fun typer ->
     let exns =
-      Typer.errors typer
-      @ Lexer.errors  (Buffer.lexer buffer)
-      @ Parser.errors (Buffer.parser buffer)
+      Typer.errors typer @ Reader.errors (Buffer.reader buffer)
     in
     `List (List.map ~f:(fun x -> `String (Printexc.to_string x)) exns)
 
@@ -378,7 +380,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       let get_doc =
         if not with_doc then None else
         let project    = Buffer.project buffer in
-        let comments   = Lexer.comments (Buffer.lexer buffer) in
+        let comments   = Reader.comments (Buffer.reader buffer) in
         let source     = Buffer.unit_name buffer in
         let local_defs = Typer.result ~pos:pos0 typer in
         Some (
@@ -395,7 +397,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       in
       {Compl. entries = List.rev entries; context }
     in
-    let lexer0 = Buffer.lexer buffer in
+    (*let lexer0 = Buffer.lexer buffer in*)
     (*let lexer =
       History.seek_backward
         (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) <= 0)
@@ -455,7 +457,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     with_typer buffer @@ fun typer ->
     let local_defs = Typer.result ~pos typer in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
-    let comments = Lexer.comments (Buffer.lexer buffer) in
+    let comments = Reader.comments (Buffer.reader buffer) in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let path =
       match patho with
@@ -558,8 +560,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
                 not loc.Location.loc_ghost || where <> "warning")
             (List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns))
         in
-        let err_lexer  = err (Lexer.errors (Buffer.lexer buffer)) in
-        let err_parser = err (Parser.errors (Buffer.parser buffer)) in
+        let err_reader = err (Reader.errors (Buffer.reader buffer)) in
         let err_typer  =
           (* When there is a cmi error, we will have a lot of meaningless errors,
            * there is no need to report them. *)
@@ -583,11 +584,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
             List.rev acc, err_typer
         in
         (* Filter duplicate error messages *)
-        let err_parser, err_typer = extract_warnings [] err_parser in
-        let errors =
-          List.merge ~cmp err_lexer @@
-          List.merge ~cmp err_parser err_typer
-        in
+        let err_parser, err_typer = extract_warnings [] err_reader in
+        let errors = List.merge ~cmp err_reader err_typer in
         Error_report.flood_barrier errors
       with exn -> match Error_report.strict_of_exn exn with
         | None -> raise exn
@@ -813,24 +811,26 @@ module Monitor = struct
     text (Nav.body nav) (Source.text (Buffer.source buffer))
 
   let view_tokens buffer nav =
-    let print_token line' (t,pos,_) =
-      let line, col = Lexing.split_pos pos in
-      let prefix = if line <> line'
-        then "\n" ^ String.make col ' '
-        else " "
+    let body = Nav.body nav in
+    match Reader.find_lexer (Buffer.reader buffer) with
+    | None -> text body "Current reader has no OCaml lexer\n"
+    | Some lexer ->
+      let print_token line' (t,pos,_) =
+        let line, col = Lexing.split_pos pos in
+        let prefix = if line <> line'
+          then "\n" ^ String.make col ' '
+          else " "
+        in
+        printf body "%s%s" prefix (Parser_printer.print_token t);
+        line
       in
-      printf (Nav.body nav) "%s%s" prefix (Parser_printer.print_token t);
-      line
-    in
-    let _line : int =
-      List.fold_left ~f:print_token ~init:(-1)
-        (Lexer.tokens (Buffer.lexer buffer))
-    in
-    ()
+      let _line : int =
+        List.fold_left ~f:print_token ~init:(-1) (Lexer.tokens lexer) in
+      ()
 
   let view_printast buffer nav =
     let ppf, to_string = Format.to_string () in
-    begin match Parser.result (Buffer.parser buffer) with
+    begin match Reader.result (Buffer.reader buffer) with
       | `Signature s -> Printast.interface ppf s
       | `Structure s -> Printast.implementation ppf s
     end;
@@ -838,14 +838,14 @@ module Monitor = struct
 
   let view_pprintast buffer nav =
     let ppf, to_string = Format.to_string () in
-    begin match Parser.result (Buffer.parser buffer) with
+    begin match Reader.result (Buffer.reader buffer) with
       | `Signature s -> Pprintast.signature ppf s
       | `Structure s -> Pprintast.structure ppf s
     end;
     text (Nav.body nav) (to_string ())
 
   let view_recoveries buffer nav =
-    Parser.trace nav (Buffer.lexer buffer) (Buffer.parser buffer)
+    Reader.trace (Buffer.reader buffer) nav
 
   let view_signature buffer nav =
     let ppf, to_string = Format.to_string () in

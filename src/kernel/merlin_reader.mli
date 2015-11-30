@@ -26,44 +26,23 @@
 
 )* }}} *)
 
+type spec =
+  | Normal of Extension.set * Merlin_parser.kind
+
 type t
 
-val is_valid : t -> bool
+val make : spec -> Merlin_source.t -> t
+val update : Merlin_source.t -> t -> t
 
-val make : Merlin_reader.t -> Extension.set -> t
-val update : Merlin_reader.t -> t -> t
+val result : t -> Merlin_parser.tree
 
-type tree = [
-  | `Signature of Typedtree.signature
-  | `Structure of Typedtree.structure
-]
+val source : t -> Merlin_source.t
+val compare : t -> t -> int
 
-val result : ?pos:Merlin_source.position -> t -> tree
+val is_normal  : t -> Merlin_parser.t option
+val find_lexer : t -> Merlin_lexer.t option
 
-val errors : ?pos:Merlin_source.position -> t -> exn list
-val checks : ?pos:Merlin_source.position -> t -> exn list
-val extensions : t -> Extension.set
+val comments : t -> (string * Location.t) list
+val errors : t -> exn list
 
-val with_typer : t -> (unit -> 'a) -> 'a
-
-(** Heuristic to find suitable environment to complete / type at given position.
- *  1. Try to find environment near given cursor.
- *  2. Check if there is an invalid construct between found env and cursor :
- *    Case a.
- *      > let x = valid_expr ||
- *      The env found is the right most env from valid_expr, it's a correct
- *      answer.
- *    Case b.
- *      > let x = valid_expr
- *      > let y = invalid_construction||
- *      In this case, the env found is the same as in case a, however it is
- *      preferable to use env from enclosing module rather than an env from
- *      inside x definition.
- *)
-val node_at : ?skip_recovered:bool -> t -> Lexing.position -> Merlin_browse.t
-
-val to_browse : tree -> Merlin_browse.t
-
-val env : ?pos:Merlin_source.position -> t -> Env.t
-
-val reader : t -> Merlin_reader.t
+val trace : t -> Sturgeon.Tui.Nav.t -> unit

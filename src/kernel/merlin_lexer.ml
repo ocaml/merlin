@@ -123,6 +123,7 @@ let update source t =
       let pos = item_end item in
       let pos = {pos with Lexing.pos_cnum = pos.Lexing.pos_cnum + 1} in
       let offset = pos.Lexing.pos_cnum in
+      Logger.logf "Merlin_lexer" "update" "resume from %d" offset;
       let text = Merlin_source.text source in
       let text =
           String.sub text ~pos:offset ~len:(String.length text - offset) in

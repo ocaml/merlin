@@ -165,6 +165,8 @@ SOURCES = \
 	src/kernel/merlin_recover.ml      \
 	src/kernel/merlin_parser.mli      \
 	src/kernel/merlin_parser.ml       \
+	src/kernel/merlin_reader.mli      \
+	src/kernel/merlin_reader.ml       \
 	$(TYPER)/utils/pparse.mli         \
 	$(TYPER)/utils/pparse.ml          \
 	$(TYPER)/raw_typer.mli            \
