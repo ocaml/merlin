@@ -761,9 +761,11 @@ the error message otherwise print a generic error message."
 (defun merlin/sync ()
   "Synchronize buffer with merlin"
   (merlin/send-command
-   `(tell start end ,(merlin/buffer-substring (point-min) (point-max)))))
+   `(tell ,merlin--dirty-point
+          end ,(merlin/buffer-substring (1+ merlin--dirty-point) (point-max))))
+  (setq merlin--dirty-point (point-max)))
   ;; (if (>= merlin--dirty-point (point-max))
-  ;;     (merlin/send-command 
+  ;;     (merlin/send-command
   ;;   (merlin/send-command
   ;;    `(tell
   ;;      ,merlin--dirty-point end

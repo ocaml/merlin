@@ -28,61 +28,100 @@
 
 open Std
 
+type ('item, 'ast) step = {
+  ast: 'ast;
+  env: Env.t;
+  result: 'item * Types.signature;
+  delayed_checks: Typecore.delayed_check list;
+  errors: exn list;
+  snapshot: Btype.snapshot;
+}
+
+type steps = [
+  | `Signature of
+      (Typedtree.signature_item list, Parsetree.signature_item) step list *
+      Parsetree.signature_item list
+  | `Structure of
+      (Typedtree.structure_item list, Parsetree.structure_item) step list *
+      Parsetree.structure_item list
+]
+
 type tree = [
   | `Signature of Typedtree.signature
   | `Structure of Typedtree.structure
 ]
 
-type data = {
-  env: Env.t;
-  result: tree;
-  delayed_checks: Typecore.delayed_check list;
-  errors: exn list;
-}
-
 type t = {
   parser: Merlin_parser.t;
-  data: data lazy_t;
+  mutable steps: steps;
   extensions: String.Set.t;
   btype_cache: Btype.cache;
   env_cache: Env.cache;
 }
 
-let is_valid _ = true
+let type_signature env sg =
+  let sg = Typemod.transl_signature env [sg] in
+  (sg.Typedtree.sig_items,
+   sg.Typedtree.sig_type),
+  sg.Typedtree.sig_final_env
 
-let with_typer btype' env' f =
-  let open Fluid in
-  let' (from_ref Btype.cache) btype' @@ fun () ->
-  let' (from_ref Env.cache)   env' f
+let type_structure env str =
+  let str, _, env = Typemod.type_structure env [str] Location.none in
+  (str.Typedtree.str_items,
+   str.Typedtree.str_type),
+  env
 
-let data extensions btype_cache env_cache parser = lazy begin
+let type_steps type_fun items env =
   let caught = ref [] in
-  with_typer btype_cache env_cache @@ fun () ->
   Parsing_aux.catch_warnings caught @@ fun () ->
   Typing_aux.catch_errors caught    @@ fun () ->
-  let env = Raw_typer.fresh_env () in
-  let env = Env.open_pers_signature "Pervasives" env in
-  let env = Extension.register extensions env in
   Typecore.delayed_checks := [];
-  let result, env =
-    match Merlin_parser.result parser with
-    | `Signature sg ->
-      let sg = Typemod.transl_signature env sg in
-      `Signature sg, sg.Typedtree.sig_final_env
-    | `Structure str ->
-      let str, _, env = Typemod.type_structure env str Location.none in
-      `Structure str, env
-  in {
-    env; result; errors = !caught;
-    delayed_checks = !Typecore.delayed_checks;
-  }
-end
+  let renv = ref env in
+  let type_item ast =
+    let result, env = type_fun !renv ast in
+    let item = {
+      ast; result; env;
+      delayed_checks = !Typecore.delayed_checks;
+      errors = !caught;
+      snapshot = Btype.snapshot ();
+    } in
+    renv := env;
+    caught := [];
+    Typecore.delayed_checks := [];
+    item
+  in
+  List.map ~f:type_item items
+
+let rec update_steps acc = function
+  | step :: steps, item :: items
+    when Btype.is_valid step.snapshot && step.ast = item ->
+    update_steps (step :: acc) (steps, items)
+  | _, items -> List.rev acc, items
+
+let update_steps steps = function
+  | `Structure items ->
+    let steps = match steps with
+      | `Structure (steps, _) -> steps
+      | _ -> []
+    in
+    `Structure (update_steps [] (steps, items))
+  | `Signature items ->
+    let steps = match steps with
+      | `Signature (steps, _) -> steps
+      | _ -> []
+    in
+    `Signature (update_steps [] (steps, items))
+
+let is_valid _ = true
 
 let make parser extensions =
   let btype_cache = Btype.new_cache () in
-  let env_cache = Env.new_cache ~unit_name:"cul" in
+  let env_cache = Env.new_cache
+      ~unit_name:(Merlin_parser.lexer parser
+                  |> Merlin_lexer.source |> Merlin_source.name)
+  in
   { parser; extensions; btype_cache; env_cache;
-    data = data extensions btype_cache env_cache parser; }
+    steps = update_steps `None (Merlin_parser.result parser) }
 
 let update parser t =
   if not (is_valid t) then
@@ -92,26 +131,107 @@ let update parser t =
   else if Merlin_parser.compare parser t.parser = 0 then
     {t with parser}
   else
-    {t with parser; data = data t.extensions t.btype_cache t.env_cache parser}
+    {t with parser; steps = update_steps t.steps (Merlin_parser.result parser)}
 
-let data t = Lazy.force t.data
+let with_typer t f =
+  let open Fluid in
+  let' (from_ref Btype.cache) t.btype_cache @@ fun () ->
+  let' (from_ref Env.cache)   t.env_cache f
+
+let sig_loc item = item.Parsetree.psig_loc
+let str_loc item = item.Parsetree.pstr_loc
+
+let select_items loc_fun offset =
+  let rec aux acc = function
+    | item :: items
+      when (loc_fun item).Location.loc_start.Lexing.pos_cnum <= offset ->
+      aux (item :: acc) items
+    | rest -> List.rev acc, rest
+  in
+  aux []
+
+let resume_steps t steps =
+  match List.last steps with
+  | Some step ->
+    Btype.backtrack step.snapshot;
+    step.env
+  | None ->
+    Raw_typer.fresh_env ()
+    |> Env.open_pers_signature "Pervasives"
+    |> Extension.register t.extensions
+
+
+let force_steps ?(pos=`End) t =
+  let `Offset offset = Merlin_source.get_offset
+      (Merlin_lexer.source (Merlin_parser.lexer t.parser)) pos in
+  with_typer t @@ fun () ->
+  let steps =
+    match t.steps with
+    | `Structure (steps, items) ->
+      let env = resume_steps t steps in
+      let items, rest = select_items str_loc offset items in
+      let steps' = type_steps type_structure items env in
+      `Structure (steps @ steps', rest)
+    | `Signature (steps, items) ->
+      let env = resume_steps t steps in
+      let items, rest = select_items sig_loc offset items in
+      let steps' = type_steps type_signature items env in
+      `Signature (steps @ steps', rest)
+  in
+  t.steps <- steps;
+  steps
 
 (* Public API *)
 
-let with_typer t f =
-  with_typer t.btype_cache t.env_cache f
+let result ?pos t =
+  let prepare steps =
+    let results = List.map ~f:(fun x -> x.result) steps in
+    let items, types = List.split results in
+    List.concat items, List.concat types
+  in
+  match force_steps ?pos t with
+  | `Structure (steps, _) ->
+    let env = resume_steps t steps in
+    let items, types = prepare steps in
+    `Structure {
+      Typedtree.
+      str_items = items;
+      str_type = types;
+      str_final_env = env;
+    }
+  | `Signature (steps, _) ->
+    let env = resume_steps t steps in
+    let items, types = prepare steps in
+    `Signature {
+      Typedtree.
+      sig_items = items;
+      sig_type = types;
+      sig_final_env = env;
+    }
 
-let result t = (data t).result
-let errors t = (data t).errors
+let errors ?pos t =
+  let prepare steps = List.concat_map ~f:(fun x -> x.errors) steps in
+  match force_steps ?pos t with
+  | `Structure (steps, _) -> prepare steps
+  | `Signature (steps, _) -> prepare steps
 
-let checks t =
-  Typecore.delayed_checks := (data t).delayed_checks;
+let checks ?pos t =
+  let prepare steps = List.concat_map ~f:(fun x -> x.delayed_checks) steps in
+  let checks = match force_steps ?pos t with
+    | `Structure (steps, _) -> prepare steps
+    | `Signature (steps, _) -> prepare steps
+  in
+  Typecore.delayed_checks := checks;
   let caught = ref [] in
-  Parsing_aux.catch_warnings caught (fun () ->
-      Typing_aux.catch_errors caught Typecore.force_delayed_checks);
+  Parsing_aux.catch_warnings caught
+    (fun () -> Typing_aux.catch_errors caught Typecore.force_delayed_checks);
+  Typecore.delayed_checks := [];
   !caught
 
-let env t = (data t).env
+let env ?pos t =
+  match force_steps ?pos t with
+  | `Structure (steps, _) -> resume_steps t steps
+  | `Signature (steps, _) -> resume_steps t steps
 
 let extensions t = t.extensions
 
@@ -120,7 +240,8 @@ let to_browse = function
   | `Structure s -> Merlin_browse.of_structure s
 
 let node_at ?(skip_recovered=false) typer pos_cursor =
-  let structures = to_browse (result typer) in
+  let structures =
+    to_browse (result ~pos:(`Logical (Lexing.split_pos pos_cursor)) typer) in
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node
        is introduced, so the node to check for recovery is the second one. *)

@@ -38,10 +38,10 @@ type tree = [
   | `Structure of Typedtree.structure
 ]
 
-val result : t -> tree
+val result : ?pos:Merlin_source.position -> t -> tree
 
-val errors : t -> exn list
-val checks : t -> exn list
+val errors : ?pos:Merlin_source.position -> t -> exn list
+val checks : ?pos:Merlin_source.position -> t -> exn list
 val extensions : t -> Extension.set
 
 val with_typer : t -> (unit -> 'a) -> 'a
@@ -64,6 +64,6 @@ val node_at : ?skip_recovered:bool -> t -> Lexing.position -> Merlin_browse.t
 
 val to_browse : tree -> Merlin_browse.t
 
-val env : t -> Env.t
+val env : ?pos:Merlin_source.position -> t -> Env.t
 
 val parser : t -> Merlin_parser.t

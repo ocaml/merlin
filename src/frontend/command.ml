@@ -222,8 +222,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let open Typedtree in
     let open Override in
     with_typer buffer @@ fun typer ->
+    let structures = Typer.to_browse (Typer.result ~pos typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
-    let structures = Typer.to_browse (Typer.result typer) in
     let env, path = match Browse.enclosing pos [structures] with
       | None -> Typer.env typer, []
       | Some browse ->
@@ -360,16 +360,16 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Enclosing pos ->
     with_typer buffer @@ fun typer ->
+    let structures = Typer.to_browse (Typer.result ~pos typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
-    let structures = Typer.to_browse (Typer.result typer) in
     let path = match Browse.enclosing pos [structures] with
       | None -> []
       | Some path -> node_list path
     in
     List.map ~f:Browse.node_loc path
 
-  | Complete_prefix (prefix, pos, with_doc) ->
-    let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
+  | Complete_prefix (prefix, pos0, with_doc) ->
+    let pos = Source.get_lexing_pos (Buffer.source buffer) pos0 in
     let complete ~no_labels typer =
       let path = Typer.node_at ~skip_recovered:true typer pos in
       let env, node = Browse.leaf_node path in
@@ -380,7 +380,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         let project    = Buffer.project buffer in
         let comments   = Lexer.comments (Buffer.lexer buffer) in
         let source     = Buffer.unit_name buffer in
-        let local_defs = Typer.result typer in
+        let local_defs = Typer.result ~pos:pos0 typer in
         Some (
           Track_definition.get_doc ~project ~env ~local_defs
             ~comments ~pos source
@@ -453,10 +453,10 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Document (patho, pos) ->
     with_typer buffer @@ fun typer ->
+    let local_defs = Typer.result ~pos typer in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let comments = Lexer.comments (Buffer.lexer buffer) in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
-    let local_defs = Typer.result typer in
     let path =
       match patho with
       | Some p -> p
@@ -479,9 +479,9 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Locate (patho, ml_or_mli, pos) ->
     with_typer buffer @@ fun typer ->
+    let local_defs = Typer.result ~pos typer in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
-    let local_defs = Typer.result typer in
     let path =
       match patho with
       | Some p -> p
@@ -510,8 +510,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Jump (target, pos) ->
     with_typer buffer @@ fun typer ->
+    let typed_tree = Typer.result ~pos typer in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
-    let typed_tree = Typer.result typer in
     Jump.get typed_tree pos target
 
   | Case_analysis (pos_start, pos_end) ->
@@ -521,7 +521,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let loc = {Location. loc_start; loc_end; loc_ghost = false} in
     let env = Typer.env typer in
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-    let structures = Typer.to_browse (Typer.result typer) in
+    let structures = Typer.to_browse (Typer.result ~pos:pos_end typer) in
     let enclosings = match Browse.enclosing loc_start [structures] with
       | None -> []
       | Some path -> node_list path
@@ -541,8 +541,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Shape pos ->
     with_typer buffer @@ fun typer ->
+    let browse = Typer.to_browse (Typer.result ~pos typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
-    let browse = Typer.to_browse (Typer.result typer) in
     Outline.shape pos [BrowseT.of_browse browse]
 
   | Errors ->
@@ -652,8 +652,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Occurrences (`Ident_at pos) ->
     with_typer buffer @@ fun typer ->
+    let str = Typer.to_browse (Typer.result ~pos typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
-    let str = Typer.to_browse (Typer.result typer) in
     let tnode = match Browse.enclosing pos [str] with
       | Some t -> BrowseT.of_browse t
       | None -> BrowseT.dummy
