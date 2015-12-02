@@ -1403,19 +1403,6 @@ loading"
     (when failed (message "%s" (cdr failed))))
   (merlin-error-reset))
 
-(defun merlin-flags-set (flag-string)
-  "Set user flags for current project."
-  (interactive (let ((flags (merlin/send-command '(flags get)))
-                     (flatten (lambda (l) (mapconcat 'identity l " "))))
-                 (list (read-string "Flags: " (mapconcat flatten flags " ")))))
-  (let* ((flag-list (split-string flag-string))
-         (r (progn
-              (merlin/send-command '(flags clear))
-              (merlin/send-command (list 'flags 'add flag-list))))
-         (failed (assoc 'failures r)))
-    (when failed (message "%s" (cdr failed))))
-  (merlin-error-reset))
-
 ;;;;;;;;;;;;
 ;; LOCATE ;;
 ;;;;;;;;;;;;
