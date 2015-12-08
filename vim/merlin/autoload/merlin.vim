@@ -60,7 +60,6 @@ py import sys, vim
 py if not vim.eval("s:current_dir") in sys.path:
 \    sys.path.append(vim.eval("s:current_dir"))
 
-call vimbufsync#init()
 py import merlin
 
 function! s:get_visual_selection()
@@ -255,7 +254,7 @@ function! merlin#Complete(findstart,base)
   if a:findstart
     " Synchronize merlin before completion, since vim modify the buffer
     " (prefix is removed)
-    py merlin.sync_buffer()
+    py merlin.sync()
     " Locate the start of the item, including ".", "->" and "[...]".
     let line = getline('.')
     let start = col('.') - 1
@@ -368,7 +367,7 @@ function! merlin#InteractiveLocate()
         let l:match_fun = {}
     endif
 
-    py merlin.sync_buffer()
+    py merlin.sync()
     call ctrlp#locate#update_cursor_pos()
 
     let g:ctrlp_match_func = { 'match': 'ctrlp#locate#filter' }
@@ -382,7 +381,6 @@ function! merlin#Outline()
     echo "This function requires the CtrlP plugin to work"
     " ctrl doesn't exist? Exiting.
   else
-    py merlin.sync_full_buffer()
     call ctrlp#init(ctrlp#outline#id())
   endif
 endfunction
@@ -412,7 +410,6 @@ function! merlin#ErrorLocList()
   if !exists('b:merlin_error_check') || b:merlin_error_check == 1
     py <<EOF
 try:
-  merlin.sync_full_buffer()
   merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
 except merlin.MerlinException as e:
   merlin.try_print_error(e)

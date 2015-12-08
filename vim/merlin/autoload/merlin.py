@@ -71,6 +71,7 @@ class MerlinProcess:
         self.env = env
 
     def restart(self):
+        vim.command("let b:merlin_tick = 0")
         if self.mainpipe:
             try:
                 try:
@@ -131,7 +132,7 @@ class MerlinProcess:
             print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
             raise e
 
-    def command(self, *cmd):
+    def command(self, cmd):
         if self.mainpipe == None or self.mainpipe.poll() != None:
             self.restart()
         json.dump(cmd, self.mainpipe.stdin)
@@ -150,7 +151,6 @@ class MerlinProcess:
         elif result[0] == "exception":
             raise MerlinException(content)
 
-# MULTI-PROCESS
 merlin_processes = {}
 def merlin_process():
     global merlin_processes
@@ -169,16 +169,28 @@ def merlin_process():
         merlin_processes[instance] = MerlinProcess(path=path, env=env)
     return merlin_processes[instance]
 
-# MONO-PROCESS
-#merlin_processes = None
-#def merlin_process():
-#    global merlin_processes
-#    if not merlin_processes:
-#        merlin_processes = MerlinProcess()
-#    return merlin_processes
+def context(cmd):
+    kind = "auto"
+    if vim.eval("exists('b:merlin_kind')") == '1':
+        kind = vim.eval("b:merlin_kind")
+    name = vim.eval("expand('%:p')")
+    dot_merlin = []
+    if vim.eval("exists('b:merlin_dot_merlins')") == '1':
+        dot_merlin = ["dot_merlin", vim.eval("b:merlin_dot_merlins")]
+    return { 'context' : dot_merlin + [kind, name], 'query' : cmd }
 
 def command(*cmd):
-    return merlin_process().command(*cmd)
+    return merlin_process().command(context(cmd))
+
+def sync():
+    if vim.eval('exists("b:merlin_tick") && b:merlin_tick == b:changedtick') == '0':
+        vim.command('let b:merlin_tick = b:changedtick')
+        content = "\n".join(vim.current.buffer) + "\n"
+        command("tell", "start", "end", content)
+
+def query(*cmd):
+    sync()
+    return command(*cmd)
 
 def dump(*cmd):
     print(json.dumps(command('dump', *cmd)))
@@ -187,11 +199,6 @@ def dump_to_file(path, *cmd):
     f = open(path, 'w')
     j = command('dump', *cmd)
     f.write(json.dumps(j, indent=4, separators=(',', ': ')))
-
-def dump_at_cursor(*cmd):
-    line, col = vim.current.window.cursor
-    command_seek("exact", line, col)
-    dump(*cmd)
 
 def uniq(seq):
     seen = set()
@@ -207,15 +214,10 @@ def vim_is_set(name, default=False):
 
 def command_version():
     try:
-        str = command("version")
+        str = merlin_process().command("version")
         print(str)
     except MerlinExc as e:
         try_print_error(e)
-
-def parse_position(pos):
-    position = pos['cursor']
-    marker = pos['marker']
-    return (position['line'], position['col'], marker)
 
 def display_load_failures(result):
     if 'failures' in result:
@@ -223,40 +225,23 @@ def display_load_failures(result):
             print(failure)
     return result['result']
 
-def command_tell(content):
-    content = "\n".join(content) + "\n"
-    return parse_position(command("tell", "source", content))
-
 def command_find_use(*packages):
     result = catch_and_print(lambda: command('find', 'use', packages))
     return display_load_failures(result)
 
-def command_checkout(kind="auto",name=None):
-    if name:
-      if vim.eval("exists('b:merlin_dot_merlins')") == '1':
-        r = command("checkout","dot_merlin",vim.eval("b:merlin_dot_merlins"),kind,name)
-      else:
-        r = command("checkout",kind,name)
-    else:
-      r = command("checkout",kind)
-    return r
-
-def command_seek(mtd,line,col):
-    return parse_position(command("seek", mtd, {'line' : line, 'col': col}))
-
 def command_complete_cursor(base,line,col):
     with_doc = vim_is_set('g:merlin_completion_with_doc', default=True)
+    cmd = ["complete", "prefix", base, "at", {'line' : line, 'col': col}]
     if with_doc:
-        return command("complete", "prefix", base, "at", {'line' : line, 'col': col}, "with", "doc")
-    else:
-        return command("complete", "prefix", base, "at", {'line' : line, 'col': col})
+        cmd += ["with", "doc"]
+    return command(*cmd)
 
 def command_document(path, line, col):
     try:
-        if line is None or col is None:
-            print(command("document", path))
-        else:
-            print(command("document", path, "at", {'line': line, 'col': col}))
+        cmd = ["document", path]
+        if not (line is None or col is None):
+            cmd += ["at", {'line': line, 'col': col}]
+        print(query(*cmd))
     except MerlinExc as e:
         try_print_error(e)
 
@@ -269,9 +254,9 @@ def command_locate(path, line, col):
     try:
         choice = vim.eval('g:merlin_locate_preference')
         if line is None or col is None:
-            return command("locate", path, choice)
+            return query("locate", path, choice)
         else:
-            pos_or_err = command("locate", path, choice, "at", {'line': line, 'col': col})
+            pos_or_err = query("locate", path, choice, "at", {'line': line, 'col': col})
         if not isinstance(pos_or_err, dict):
             print(pos_or_err)
         else:
@@ -306,7 +291,7 @@ def command_locate(path, line, col):
 
 def command_jump(target, line, col):
     try:
-        pos_or_err = command("jump", target, "at", {'line': line, 'col': col})
+        pos_or_err = query("jump", target, "at", {'line': line, 'col': col})
         if not isinstance(pos_or_err, dict):
             print(pos_or_err)
         else:
@@ -321,15 +306,13 @@ def command_jump(target, line, col):
 
 def command_occurrences(line, col):
     try:
-        lst_or_err = command("occurrences", "ident", "at", {'line':line, 'col':col})
+        lst_or_err = query("occurrences", "ident", "at", {'line':line, 'col':col})
         if not isinstance(lst_or_err, list):
             print(lst_or_err)
         else:
             return lst_or_err
     except MerlinExc as e:
         try_print_error(e)
-
-######## BUFFER SYNCHRONIZATION
 
 ######## VIM FRONTEND
 
@@ -341,7 +324,7 @@ def vim_restart():
 
 # Reload changed cmi files then retype all definitions
 def vim_reload():
-    return command("refresh")
+    return query("refresh")
 
 # Complete
 def vim_complete_cursor(base, suffix, vimvar):
@@ -395,7 +378,7 @@ def vim_expand_prefix(base, vimvar):
 # Error listing
 def vim_loclist(vimvar, ignore_warnings):
     vim.command("let %s = []" % vimvar)
-    errors = command("errors")
+    errors = query("errors")
     bufnr = vim.current.buffer.number
     nr = 0
     for error in errors:
@@ -503,11 +486,10 @@ def vim_occurrences_replace(content):
 # Expression typing
 def vim_type(expr):
     to_line, to_col = vim.current.window.cursor
-    cmd_at = ["at", {'line':to_line,'col':to_col}]
-    cmd_expr = ["expression", expr]
+    pos = {'line': to_line, 'col': to_col}
+    cmd = ["type", "expression", expr, "at", pos]
     try:
-        cmd = ["type"] + cmd_expr + cmd_at
-        ty = command(*cmd)
+        ty = query(*cmd)
         res = {'type': str(ty), 'matcher': '', 'tail_info':''}
         return json.dumps(res)
     except MerlinExc as e:
@@ -573,7 +555,7 @@ def vim_case_analysis():
         to_line, to_col = vim.current.window.cursor
         pos = {'line':to_line, 'col':to_col}
         try:
-            enclosing_types = command("type", "enclosing", "at", pos)
+            enclosing_types = query("type", "enclosing", "at", pos)
             if enclosing_types != []:
                 current_enclosing = 0
             else:
@@ -586,7 +568,7 @@ def vim_case_analysis():
 
     tmp = enclosing_types[current_enclosing]
     try:
-        result = command("case", "analysis", "from", tmp['start'], "to", tmp['end'])
+        result = query("case", "analysis", "from", tmp['start'], "to", tmp['end'])
         tmp = result[0]
         txt = result[1]
         replace_buffer_portion(tmp['start'], tmp['end'], txt)
@@ -607,7 +589,7 @@ def vim_type_enclosing():
     # arg = {'expr':atom, 'offset':offset}
     # enclosing_types = command("type", "enclosing", arg, pos)
     try:
-        enclosing_types = command("type", "enclosing", "at", pos)
+        enclosing_types = query("type", "enclosing", "at", pos)
         if enclosing_types != []:
             return vim_next_enclosing()
         else:
@@ -690,7 +672,6 @@ def vim_prev_enclosing():
 
 # Finding files
 def vim_which(name,ext):
-    acquire_buffer()
     if isinstance(ext, list):
         name = map(lambda ext: name + "." + ext, ext)
     elif ext:
@@ -698,7 +679,6 @@ def vim_which(name,ext):
     return command('which','path',name)
 
 def vim_which_ext(ext,vimvar):
-    acquire_buffer()
     files = command('which', 'with_ext', ext)
     vim.command("let %s = []" % vimvar)
     for f in sorted(set(files)):
@@ -706,13 +686,11 @@ def vim_which_ext(ext,vimvar):
 
 # Extension management
 def vim_ext(enable, exts):
-    acquire_buffer()
     state = enable and 'enable' or 'disable'
     result = catch_and_print(lambda: command('extension', state, exts))
     return display_load_failures(result)
 
 def vim_ext_list(vimvar,enabled=None):
-    acquire_buffer()
     if enabled == None:
         exts = command('extension','list')
     elif enabled:
@@ -724,63 +702,19 @@ def vim_ext_list(vimvar,enabled=None):
         vim.command("call add(%s, '%s')" % (vimvar, ext))
 
 # Custom flag selection
+
 def vim_set_flags(*flags):
-    acquire_buffer()
     result = catch_and_print(lambda: command('flags', 'set', flags))
     return display_load_failures(result)
 
 def vim_get_flags(var):
-    acquire_buffer()
     result = catch_and_print(lambda: command('flags', 'get'))
     result = " ".join(result)
     vim.command('let %s = "%s"' % (var, result.replace('"','\\"')))
 
-# Boundaries
-
-def min_pos(p1, p2):
-    if p1['line'] < p2['line']:
-        return p1
-    elif p1['line'] > p2['line']:
-        return p2
-    elif p1['col'] <= p2['col']:
-        return p1
-    else:
-        return p2
-
-def max_pos(p1, p2):
-    m = min_pos(p1, p2)
-    return p1 if p2 == m else p2
-
-def vim_selectphrase(l1,c1,l2,c2):
-    # In some context, vim set column of '> to 2147483647 (2^31 - 1)
-    # This cause the merlin json parser on 32 bit platforms to overflow
-    bound = 2147483647 - 1
-    vl1 = min(bound,int(vim.eval(l1)))
-    vc1 = min(bound,int(vim.eval(c1)))
-    vl2 = min(bound,int(vim.eval(l2)))
-    vc2 = min(bound,int(vim.eval(c2)))
-    loc2 = command("boundary","at",{"line":vl2,"col":vc2})
-    if vl2 != vl1 or vc2 != vc1:
-        loc1 = command("boundary","at",{"line":vl1,"col":vc1})
-    else:
-        loc1 = None
-
-    if loc2 == None:
-        return
-
-    fst = loc2[0]
-    snd = loc2[1]
-
-    if loc1 != None:
-        fst = min_pos(loc1[0], loc2[0])
-        snd = max_pos(loc1[1], loc2[1])
-    for (var,val) in [(l1,fst['line']),(l2,snd['line']),(c1,fst['col']),(c2,snd['col'])]:
-        vim.command("let %s = %d" % (var,val))
-
 # Stuff
 
 def setup_merlin():
-    acquire_buffer(force=True)
     failures = command("project","get")
     vim.command('let b:dotmerlin=[]')
     # Tell merlin the content of the buffer.
