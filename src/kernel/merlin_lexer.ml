@@ -110,7 +110,7 @@ let diff items source0 source1 =
     let `Logical (line, _) =
       Merlin_source.get_logical source1 (`Offset offset) in
     List.drop_while items
-      ~f:(fun i -> (item_end i).Lexing.pos_lnum  >= line)
+      ~f:(fun i -> (item_end i).Lexing.pos_lnum >= line)
 
 let update source t =
   if source == t.source then
@@ -121,7 +121,6 @@ let update source t =
     | [] -> make t.keywords source
     | (item :: _) as items ->
       let pos = item_end item in
-      let pos = {pos with Lexing.pos_cnum = pos.Lexing.pos_cnum + 1} in
       let offset = pos.Lexing.pos_cnum in
       Logger.logf "Merlin_lexer" "update" "resume from %d" offset;
       let text = Merlin_source.text source in
