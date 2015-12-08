@@ -97,7 +97,7 @@ let item_start = function
     l.Location.loc_start
 
 let item_end = function
-  | Triple (_,e,_) -> e
+  | Triple (_,_,e) -> e
   | Comment (_, l) | Error (_, l) ->
     l.Location.loc_end
 

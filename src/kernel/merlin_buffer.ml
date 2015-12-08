@@ -66,7 +66,7 @@ let create ?dot_merlins ?path kind =
   { kind; project; source; reader; typer }
 
 let unit_name t = Merlin_source.name t.source
-let project t = assert false
+let project t = t.project
 
 let update t source =
   t.source <- source
