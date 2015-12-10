@@ -112,7 +112,13 @@ let update_steps steps = function
     in
     `Signature (update_steps [] (steps, items))
 
-let is_valid _ = true
+let with_typer t f =
+  let open Fluid in
+  let' (from_ref Btype.cache) t.btype_cache @@ fun () ->
+  let' (from_ref Env.cache)   t.env_cache f
+
+let is_valid t =
+  with_typer t Env.check_cache_consistency
 
 let make reader extensions =
   let btype_cache = Btype.new_cache () in
@@ -130,11 +136,6 @@ let update reader t =
     {t with reader}
   else
     {t with reader; steps = update_steps t.steps (Merlin_reader.result reader)}
-
-let with_typer t f =
-  let open Fluid in
-  let' (from_ref Btype.cache) t.btype_cache @@ fun () ->
-  let' (from_ref Env.cache)   t.env_cache f
 
 let sig_loc item = item.Parsetree.psig_loc
 let str_loc item = item.Parsetree.pstr_loc
