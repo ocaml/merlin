@@ -145,6 +145,7 @@ struct
         let elt = Parser.stack_element stack in
         let Parser.Element (state, v, startp, endp) = elt in
         Dump.element k elt;
+        Logger.log "recover" "decide state" (string_of_int (Parser.number state));
         let depth, action =
           match Recovery.decision (Parser.number state) with
           | Recovery.Parent select_action ->
@@ -160,10 +161,12 @@ struct
         let candidate0 = candidate depth env in
         let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env = function
           | Recovery.Pop ->
+            Logger.log "recover" "eval Pop" "";
             (match Parser.pop env with
              | None -> raise Not_found
              | Some env -> env)
           | Recovery.Reduce prod ->
+            Logger.log "recover" "eval Reduce" "";
             let prod = Parser.find_production prod in
             begin try
                 Parser.force_reduction prod env
@@ -176,9 +179,11 @@ struct
                 raise exn
             end
           | Recovery.Shift (Parser.N n as sym) ->
+            Logger.log "recover" "eval Shift N" "";
             let v = Recovery.default_value sym in
             Parser.feed_nonterminal n endp v endp env
           | Recovery.Shift (Parser.T t as sym) ->
+            Logger.log "recover" "eval Shift T" "";
             let v = Recovery.default_value sym in
             let token = (Recovery.token_of_terminal t v, endp, endp) in
             begin match feed_token ~allow_reduction:true token env with
@@ -187,7 +192,10 @@ struct
               | `Recovered (_,env) -> env
             end
           | Recovery.Sub actions ->
-            List.fold_left ~f:eval ~init:env actions
+            Logger.log "recover" "enter Sub" "";
+            let env = List.fold_left ~f:eval ~init:env actions in
+            Logger.log "recover" "leave Sub" "";
+            env
         in
         match begin
           let envs = match action with
