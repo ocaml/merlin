@@ -255,8 +255,11 @@ let cost_of_first_items, minimize_cost_of_first_item =
         r),
   (fun () ->
      Hashtbl.iter (fun (_,index) r ->
-         cost_of_first_item.(index) <-
-           max cost_of_first_item.(index) !r
+         if cost_of_first_item.(index) = infinity then
+           cost_of_first_item.(index) <- !r
+         else
+           cost_of_first_item.(index) <-
+             max cost_of_first_item.(index) !r
        ) table)
 
 let cost_of_raw_item (p,pos) =
@@ -381,7 +384,7 @@ let () =
   (* Compute minimal cost per predecessor *)
   let transition_cost predecessor successor =
     let costs = Array.map (cost_of_item ~predecessor) successor.lr0_items in
-    Array.fold_left min infinity costs
+    1.0 +. Array.fold_left min infinity costs
   in
   let minimize_firsts predecessor successor minimized =
     let transition_cost n =
@@ -432,6 +435,14 @@ let regular_states =
   annot_list cost_of_lr0 regular_states
 
 (** Reporting *)
+
+let report_cost_of_first_item () =
+  report "# Cost of first reduction\n\n";
+  Array.iter (fun prod ->
+      report "production %d, cost %f\n"
+        prod.p_index cost_of_first_item.(prod.p_index);
+      report_table (items_table [prod, 1]);
+    ) g.g_productions
 
 let report_derivation () =
   report "# Non-terminal derivation\n\n";
@@ -533,7 +544,12 @@ type decision = [
 let decisions =
   let decide lr0 : decision =
     let order ?predecessor a b =
-      compare (cost_of_item ?predecessor a) (cost_of_item ?predecessor b) in
+      match compare
+              (cost_of_item ?predecessor a) (cost_of_item ?predecessor b)
+      with
+      | 0 -> - compare (snd a) (snd b)
+      | n -> n
+    in
     let order_items ?predecessor items = List.sort (order ?predecessor) items in
     match classify_state lr0 with
     | `Regular ->
@@ -603,21 +619,26 @@ let () =
       updated.(lr0.lr0_index) <- `Yes
 
   and should_pop predecessor ~lr0 =
-    update predecessor;
-    let no_prod prod = function
-      | _, `Reduction (prod', _) -> prod <> prod'
-      | _, `Pop | _, `Impossible -> true
-    in
-    let no_prod prod = function
-      | `Reduction (prod', _) -> prod <> prod'
-      | `Look_at_predecessor xs -> List.for_all (no_prod prod) xs
+    match lr0.lr0_incoming with
+    | None -> false (* Initial state, ignore *)
+    | Some sym ->
+      update predecessor;
+      (* It is valid to pop only if recovery from predecessor will not trigger
+         a transition on the current incoming symbol
+         (entering a push-pop-push-... cycle) *)
+      let valid_item (prod, pos) =
+        pos >= Array.length prod.p_rhs ||
+        let sym', _, _ = prod.p_rhs.(pos) in
+        sym <> sym'
+      in
+      let valid_decision = function
+        | _, `Reduction item -> valid_item item
+        | _, `Pop | _, `Impossible -> true
+      in
+      match decision predecessor with
+      | `Reduction item -> valid_item item
+      | `Look_at_predecessor xs -> List.for_all valid_decision xs
       | `Pop | `Impossible -> true
-    in
-    match decision' predecessor ~lr0 with
-    | `Reduction (prod, _) ->
-      no_prod prod (decision predecessor)
-    | _ -> true
-
   in
   Array.iter update g.g_lr0_states
 
@@ -697,6 +718,8 @@ let report_final_decision () =
     ) g.g_lr0_states
 
 let report () =
+  report_cost_of_first_item ();
+  report "\n";
   report_derivation ();
   report "\n";
   report_productions ();
@@ -802,6 +825,12 @@ let print_derivations () =
 
     ) g.g_nonterminals
 
+let print_lr1_to_lr0 () =
+  printf "let lr1_to_lr0 =\n  [|";
+  Array.iter (fun state -> printf "%d;" state.lr1_lr0.lr0_index)
+    g.g_lr1_states;
+  printf "\n|]\n"
+
 let print_decisions () =
   let string_of_states ks =
     String.concat " | "
@@ -842,12 +871,12 @@ let print_decisions () =
               sprintf "     | %s -> %s" (string_of_states ks) v)
         in
         Some (String.concat "\n" (
-          ["Parent (function"] @
+          ["Parent (fun x -> match lr1_to_lr0.(x) with"] @
           cases @
           ["     | _ -> raise Not_found)"]
         ))
   in
-  printf "let decision = function\n";
+  printf "let decision x = match lr1_to_lr0.(x) with\n";
   let cases =
     g.g_lr0_states |>
     Array.to_list |>
@@ -862,24 +891,14 @@ let print_decisions () =
     ) cases;
   printf "  | _ -> raise Not_found\n"
 
-let print_lr1_to_lr0 () =
-  printf "let lr1_to_lr0 =\n  [|";
-  Array.iter (fun state -> printf "%d;" state.lr1_lr0.lr0_index)
-    g.g_lr1_states;
-  printf "\n|]\n"
-
-let print_remap_decisions () =
-  printf "let decision i = decision lr1_to_lr0.(i)\n"
-
 let print () =
   print_header ();
   List.iter (fun f -> print_newline (); f ()) [
     print_default_value;
     print_declarations;
     print_derivations;
-    print_decisions;
     print_lr1_to_lr0;
-    print_remap_decisions;
+    print_decisions;
   ]
 
 let () =
