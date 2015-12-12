@@ -31,7 +31,7 @@ val extensions: t -> Extension.set
 val keywords: t -> Merlin_lexer.keywords
 
 (* Make global state point to current project *)
-val setup : t -> unit
+val setup : t -> string list -> unit
 
 (* User config override *)
 val get_user_config : t -> Dot_merlin.config

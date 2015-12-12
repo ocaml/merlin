@@ -204,11 +204,11 @@ let get_dot_merlins_failure t =
   (config t).dot_failures
 
 (* Make global state point to current project *)
-let setup t =
+let setup t path =
   let c = config t in
   Clflags.set := c.flags;
   Warnings.current := c.warnings;
-  Config.load_path := build_path t
+  Config.load_path := path @ build_path t
 
 (* Enabled extensions *)
 let extensions t = (config t).extensions

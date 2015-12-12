@@ -29,6 +29,7 @@
 open Std
 
 type t = {
+  path: string list;
   kind: Merlin_parser.kind;
   mutable project: Merlin_project.t;
   mutable source: Merlin_source.t;
@@ -53,17 +54,18 @@ let compute_context ?(dot_merlins=[]) ?path () =
     | [], None -> []
     | xs, cwd -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
   in
-  (dot_merlins, compute_unit_name filename)
+  (dot_merlins, path, compute_unit_name filename)
 
 let create ?dot_merlins ?path kind =
-  let dot_merlins, name = compute_context ?dot_merlins ?path () in
+  let dot_merlins, path, name = compute_context ?dot_merlins ?path () in
   let project, _ = Merlin_project.get dot_merlins in
   let source = Merlin_source.empty ~name in
   let reader = Merlin_reader.make
       (Merlin_reader.Normal (Merlin_project.extensions project, kind))
       source in
-  let typer  = Merlin_typer.make reader String.Set.empty in
-  { kind; project; source; reader; typer }
+  let typer = Merlin_typer.make reader String.Set.empty in
+  let path = Option.to_list path in
+  { kind; project; source; reader; typer; path }
 
 let unit_name t = Merlin_source.name t.source
 let project t = t.project
@@ -79,7 +81,7 @@ let reader t =
   t.reader
 
 let typer t =
-  Merlin_project.setup t.project;
+  Merlin_project.setup t.project t.path;
   t.typer <- Merlin_typer.update (reader t) t.typer;
   t.typer
 
