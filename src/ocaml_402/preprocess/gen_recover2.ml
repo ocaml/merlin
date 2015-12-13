@@ -23,6 +23,20 @@ let () =
 
 let g = Cmly_io.read_file !name
 
+let reductions =
+  let cmp_prod p1 p2 =
+    compare p1.p_index p2.p_index
+  in
+  let table = Array.map (fun state ->
+      state.lr1_reductions |>
+      Array.to_list |>
+      List.map snd |>
+      List.concat |>
+      List.sort_uniq cmp_prod
+    ) g.g_lr1_states
+  in
+  fun state -> table.(state.lr1_index)
+
 (** Misc routines *)
 
 let is_attribute name (name', stretch : attribute) =
@@ -106,8 +120,6 @@ let report_table ?(prefix="") ?(sep=" ") table =
   List.iter (fun line -> report "%s%s\n" prefix (String.concat sep line))
     table
 
-(** Predecessors *)
-
 module Lr1s = CompressedBitSet.Make (struct
     type t = lr1_state
     let of_int i = g.g_lr1_states.(i)
@@ -116,46 +128,6 @@ module Lr1s = CompressedBitSet.Make (struct
 
 let lr1s_bind t f =
   Lr1s.fold (fun state states -> Lr1s.union (f state) states) t Lr1s.empty
-
-module Pred = struct
-  let imm =
-    let tbl1 = Array.make (Array.length g.g_lr1_states) Lr1s.empty in
-    let revert_transition s1 (sym,s2) =
-      assert (match s2.lr1_lr0.lr0_incoming with
-          | None -> false
-          | Some sym' -> sym = sym');
-      tbl1.(s2.lr1_index) <- Lr1s.add s1 tbl1.(s2.lr1_index)
-    in
-    Array.iter
-      (fun lr1 -> Array.iter (revert_transition lr1) lr1.lr1_transitions)
-      g.g_lr1_states;
-    (fun lr1 -> tbl1.(lr1.lr1_index))
-
-  let nth nth n st = match n with
-    | 0 -> Lr1s.singleton st
-    | n ->
-      assert (n > 0);
-      lr1s_bind (nth (n - 1) st) imm
-
-  let nth =
-    let table = Hashtbl.create 119 in
-    let rec fix n st =
-      let key = (n, st.lr1_index) in
-      try Hashtbl.find table key
-      with Not_found ->
-        let result = nth fix n st in
-        Hashtbl.add table key result;
-        result
-    in
-    fix
-
-  let list n st =
-    let preds = ref [] in
-    for i = 0 to n do
-      preds := nth i st :: !preds
-    done;
-    !preds
-end
 
 exception Found of int
 let array_exists arr f =
@@ -438,11 +410,10 @@ module Synthesis = struct
            | Some thread -> add_stack thread threads)
         threads state.lr1_transitions
     in
-    let results, threads = Array.fold_left
-        (fun acc (_, prods) ->
-           let prod = List.hd prods in
+    let results, threads = List.fold_left
+        (fun acc prod ->
            apply_step acc (reduce thread prod (Array.length prod.p_rhs)))
-        (results, threads) state.lr1_reductions
+        (results, threads) (reductions state)
     in
     (results, threads)
 
@@ -496,12 +467,80 @@ module Synthesis = struct
     loop (ResultMap.empty, StackMap.singleton stack { actions = []; cost = 0.0; value = stack})
 
   let solutions = Array.map (solve ~stopset:Lr1s.empty) g.g_lr1_states
+
+  let () = Array.iteri (fun index results ->
+      report "state: %d, solutions: [%s]\n"
+        index (String.concat ", "
+                 (List.map (fun (_,r) -> string_of_float r.cost)
+                    (ResultMap.bindings results)))
+    ) solutions
+
+  let rec expand acc thread =
+    let state, _ = List.hd thread.value in
+    let acc = match reductions state with
+      | [] -> acc
+      | reds ->
+        report "thread:";
+        List.iter (fun (st,_)-> report " %d" st.lr1_index) thread.value;
+        report "\n%!";
+        thread :: acc
+    in
+    Array.fold_left
+        (fun acc transition ->
+           match shift thread transition with
+           | None -> acc
+           | Some thread ->
+             expand acc thread)
+        acc state.lr1_transitions
+
+  let expand st =
+    expand [] {cost = 0.0; value = [st, Lr1s.singleton st]; actions = []}
+
+  let () = Array.iter (fun state ->
+      report "state: %d, expansions: %d\n%!"
+        state.lr1_index (List.length (expand state))
+    ) g.g_lr1_states
+
 end
 
-let () = Array.iteri (fun index results ->
-    report "state: %d, solutions: [%s]\n"
-      index (String.concat ", "
-               (List.map (fun (_,r) -> string_of_float r.Synthesis.cost)
-                  (Synthesis.ResultMap.bindings results)))
-  ) Synthesis.solutions
+(** Predecessors *)
 
+module Pred = struct
+  let imm =
+    let tbl1 = Array.make (Array.length g.g_lr1_states) Lr1s.empty in
+    let revert_transition s1 (sym,s2) =
+      assert (match s2.lr1_lr0.lr0_incoming with
+          | None -> false
+          | Some sym' -> sym = sym');
+      tbl1.(s2.lr1_index) <- Lr1s.add s1 tbl1.(s2.lr1_index)
+    in
+    Array.iter
+      (fun lr1 -> Array.iter (revert_transition lr1) lr1.lr1_transitions)
+      g.g_lr1_states;
+    (fun lr1 -> tbl1.(lr1.lr1_index))
+
+  let nth nth n st = match n with
+    | 0 -> Lr1s.singleton st
+    | n ->
+      assert (n > 0);
+      lr1s_bind (nth (n - 1) st) imm
+
+  let nth =
+    let table = Hashtbl.create 119 in
+    let rec fix n st =
+      let key = (n, st.lr1_index) in
+      try Hashtbl.find table key
+      with Not_found ->
+        let result = nth fix n st in
+        Hashtbl.add table key result;
+        result
+    in
+    fix
+
+  let list n st =
+    let preds = ref [] in
+    for i = 0 to n do
+      preds := nth i st :: !preds
+    done;
+    !preds
+end
