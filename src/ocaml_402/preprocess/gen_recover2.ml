@@ -195,12 +195,9 @@ module Pred = struct
 end
 
 module Synthesis = struct
-  type variable =
-    | Shift of lr1_state * production * int
-    | Synthesize of lr1_state * nonterminal
 
   module Solver = Fix.Make (struct
-      type key = variable
+      type key = lr1_state * production * int
       type 'a t = (key, 'a) Hashtbl.t
       let create () = Hashtbl.create 7
       let find k tbl = Hashtbl.find tbl k
@@ -222,76 +219,62 @@ module Synthesis = struct
     | T _ -> 1.0
     | N _ -> infinity
 
-  let produce_nt st nt =
-    Array.fold_left (fun acc (sym,st') ->
-        match sym with
-        | N _ -> acc
-        | T t ->
-          let cost = cost_of_symbol sym in
-          if cost = infinity then acc else
-            Array.fold_left (fun acc (prod,pos) ->
-                if pos <> 1 || prod.p_lhs <> nt then acc else
-                  (fun v -> cost +. v (st',prod,pos)) :: acc)
-              acc st'.lr1_lr0.lr0_items)
-      [] st.lr1_transitions
+  let const c = fun _ -> c
 
-  let eval = function
-    | Shift (st, prod, n) when n = Array.length prod.p_rhs ->
-      (fun _ -> cost_of_prod prod)
-    | var -> (fun v -> v var)
+  let var (st, prod, pos as var) =
+    if pos < Array.length prod.p_rhs then
+      (fun v -> v var)
+    else
+      let cost = cost_of_prod prod in
+      (fun _ -> cost)
 
-  let produce st (prod, pos) =
+  let eval (st, prod, pos) =
     let penalty = penalty_of_item (prod, pos) in
-    if penalty = infinity then (fun _ -> infinity)
-    else begin
-      let sym, _, _ = prod.p_rhs.(pos) in
-      let cost = penalty +. cost_of_symbol sym in
-      match sym with
-      | T _ -> (fun _ -> cost)
-      | N _ when cost < infinity -> (fun _ -> cost)
-      | N n ->
-        let f = eval (Synthesize (st, n)) in
-        (fun v -> penalty +. f v)
-    end
-
-  let eval = function
-    | Synthesize (st, nt) ->
-      let acc = [] in
-      let acc = Array.fold_left
-          (fun acc (sym, st') ->
-             Array.fold_left (fun acc (prod, pos) ->
-                 if pos = 1 && prod.p_lhs = nt then
-                   let f0 = produce st (prod, 0) in
-                   let f1 = eval (Shift (st', prod, 1)) in
-                   (fun v -> f0 v +. f1 v) :: acc
-                 else acc
-               ) acc st'.lr1_lr0.lr0_items
-          ) acc st.lr1_transitions
+    if penalty = infinity then
+      const infinity
+    else
+    if pos >= Array.length prod.p_rhs then
+      const (cost_of_prod prod)
+    else
+      let head =
+        let sym, _, _ = prod.p_rhs.(pos) in
+        let cost = cost_of_symbol sym in
+        if cost < infinity then Some (const cost)
+        else match sym with
+        | T _ -> None
+        | N n ->
+          let acc = Array.fold_left
+              (fun acc (sym, st') ->
+                 Array.fold_left (fun acc (prod, pos) ->
+                     if pos = 1 && prod.p_lhs = n then
+                       var (st, prod, 0) :: acc
+                     else acc
+                   ) acc st'.lr1_lr0.lr0_items
+              ) [] st.lr1_transitions
+          in
+          let cost = Array.fold_left
+              (fun acc (_, prods) ->
+                 List.fold_left (fun acc prod ->
+                     if prod.p_rhs = [||] && prod.p_lhs = n then
+                       min (cost_of_prod prod) acc
+                     else acc
+                   ) acc prods
+              ) infinity st.lr1_reductions
+          in
+          if cost < infinity || acc <> [] then
+            Some (fun v -> List.fold_left (fun cost f -> min cost (f v)) cost acc)
+          else None
       in
-      let acc = Array.fold_left
-          (fun acc (_, prods) ->
-             List.fold_left (fun acc prod ->
-                 if prod.p_rhs = [||] && prod.p_lhs = nt then
-                   (fun _ -> cost_of_prod prod) :: acc
-                 else acc
-               ) acc prods
-          ) acc st.lr1_reductions
-      in
-      (fun v -> List.fold_left (fun cost f -> min cost (f v)) infinity acc)
-
-    | Shift (st, prod, pos) ->
-      let produce = produce st (prod, pos) in
       let tail =
         match array_assoc st.lr1_transitions (fst3 prod.p_rhs.(pos)) with
-        | st' -> eval (Shift (st', prod, pos + 1))
-        | exception Not_found -> (fun _ -> infinity)
+        | st' -> Some (var (st', prod, pos + 1))
+        | exception Not_found ->
+          report "no transition: #%d (%d,%d)\n" st.lr1_index prod.p_index pos;
+          None
       in
-      (fun v -> produce v +. tail v)
-
-  let eval = function
-    | Shift (st, prod, n) when n >= Array.length prod.p_rhs ->
-      (fun _ -> cost_of_prod prod)
-    | var -> eval var
+      match head, tail with
+      | None, _ | _, None -> const infinity
+      | Some h, Some t -> (fun v -> h v +. t v)
 
   let () =
     let solution = Solver.lfp eval in
@@ -300,7 +283,7 @@ module Synthesis = struct
         Array.iter (fun (prod,pos) ->
             report_table (items_table [(prod,pos)] []);
             report "cost:%!";
-            report " %f\n\n%!" (solution (Shift (st,prod,pos)))
+            report " %f\n\n%!" (solution (st, prod, pos))
           ) st.lr1_lr0.lr0_items;
       ) g.g_lr1_states
 end
