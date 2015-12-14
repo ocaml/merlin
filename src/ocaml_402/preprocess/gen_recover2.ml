@@ -196,8 +196,12 @@ end
 
 module Synthesis = struct
 
+  type variable =
+    | Head of lr1_state * nonterminal
+    | Tail of lr1_state * production * int
+
   module Solver = Fix.Make (struct
-      type key = lr1_state * production * int
+      type key = variable
       type 'a t = (key, 'a) Hashtbl.t
       let create () = Hashtbl.create 7
       let find k tbl = Hashtbl.find tbl k
@@ -220,61 +224,65 @@ module Synthesis = struct
     | N _ -> infinity
 
   let const c = fun _ -> c
+  let app var v = v var
 
-  let var (st, prod, pos as var) =
-    if pos < Array.length prod.p_rhs then
-      (fun v -> v var)
-    else
-      let cost = cost_of_prod prod in
-      (fun _ -> cost)
+  let var var = match var with
+    | Head _ -> app var
+    | Tail (_,prod,pos) ->
+      if pos < Array.length prod.p_rhs then
+        app var
+      else
+        let cost = cost_of_prod prod in
+        const cost
 
-  let eval (st, prod, pos) =
-    let penalty = penalty_of_item (prod, pos) in
-    if penalty = infinity then
-      const infinity
-    else
-    if pos >= Array.length prod.p_rhs then
-      const (cost_of_prod prod)
-    else
-      let head =
-        let sym, _, _ = prod.p_rhs.(pos) in
-        let cost = cost_of_symbol sym in
-        if cost < infinity then Some (const cost)
-        else match sym with
-        | T _ -> None
-        | N n ->
-          let acc = Array.fold_left
-              (fun acc (sym, st') ->
-                 Array.fold_left (fun acc (prod, pos) ->
-                     if pos = 1 && prod.p_lhs = n then
-                       var (st, prod, 0) :: acc
-                     else acc
-                   ) acc st'.lr1_lr0.lr0_items
-              ) [] st.lr1_transitions
-          in
-          let cost = Array.fold_left
-              (fun acc (_, prods) ->
-                 List.fold_left (fun acc prod ->
-                     if prod.p_rhs = [||] && prod.p_lhs = n then
-                       min (cost_of_prod prod) acc
-                     else acc
-                   ) acc prods
-              ) infinity st.lr1_reductions
-          in
-          if cost < infinity || acc <> [] then
-            Some (fun v -> List.fold_left (fun cost f -> min cost (f v)) cost acc)
-          else None
+  let eval = function
+    | Head (st, n) ->
+      let acc = Array.fold_left
+          (fun acc (sym, st') ->
+             Array.fold_left (fun acc (prod, pos) ->
+                 if pos = 1 && prod.p_lhs = n then
+                   var (Tail (st, prod, 0)) :: acc
+                 else acc
+               ) acc st'.lr1_lr0.lr0_items
+          ) [] st.lr1_transitions
       in
-      let tail =
-        match array_assoc st.lr1_transitions (fst3 prod.p_rhs.(pos)) with
-        | st' -> Some (var (st', prod, pos + 1))
-        | exception Not_found ->
-          report "no transition: #%d (%d,%d)\n" st.lr1_index prod.p_index pos;
-          None
+      let cost = Array.fold_left
+          (fun acc (_, prods) ->
+             List.fold_left (fun acc prod ->
+                 if prod.p_rhs = [||] && prod.p_lhs = n then
+                   min (cost_of_prod prod) acc
+                 else acc
+               ) acc prods
+          ) infinity st.lr1_reductions
       in
-      match head, tail with
-      | None, _ | _, None -> const infinity
-      | Some h, Some t -> (fun v -> h v +. t v)
+      if cost < infinity || acc <> [] then
+        (fun v -> List.fold_left (fun cost f -> min cost (f v)) cost acc)
+      else const infinity
+
+    | Tail (st, prod, pos) ->
+      let penalty = penalty_of_item (prod, pos) in
+      if penalty = infinity then
+        const infinity
+      else
+      if pos >= Array.length prod.p_rhs then
+        const (cost_of_prod prod)
+      else
+        let head =
+          let sym, _, _ = prod.p_rhs.(pos) in
+          let cost = cost_of_symbol sym in
+          if cost < infinity then const cost
+          else match sym with
+            | T _ -> const infinity
+            | N n -> var (Head (st, n))
+        in
+        let tail =
+          match array_assoc st.lr1_transitions (fst3 prod.p_rhs.(pos)) with
+          | st' -> var (Tail (st', prod, pos + 1))
+          | exception Not_found ->
+            report "no transition: #%d (%d,%d)\n" st.lr1_index prod.p_index pos;
+            const infinity
+        in
+        (fun v -> head v +. tail v)
 
   let () =
     let solution = Solver.lfp eval in
@@ -283,7 +291,7 @@ module Synthesis = struct
         Array.iter (fun (prod,pos) ->
             report_table (items_table [(prod,pos)] []);
             report "cost:%!";
-            report " %f\n\n%!" (solution (st, prod, pos))
+            report " %f\n\n%!" (solution (Tail (st, prod, pos)))
           ) st.lr1_lr0.lr0_items;
       ) g.g_lr1_states
 end
