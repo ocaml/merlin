@@ -23,12 +23,12 @@ gen_printer: gen_printer.ml
 clean:
 	rm -f *.cm* *.o gen_recover gen_printer
 
-compressedBitSet.cmi: compressedBitSet.mli
-	ocamlopt -c compressedBitSet.mli
+makeBitSet.cmi: makeBitSet.mli
+	ocamlfind opt -g -package menhirSdk -c makeBitSet.mli
 
-compressedBitSet.cmx: compressedBitSet.ml compressedBitSet.cmi
-	ocamlopt -c compressedBitSet.ml
+makeBitSet.cmx: makeBitSet.ml makeBitSet.cmi
+	ocamlfind opt -g -package menhirSdk -c makeBitSet.ml
 
-gen_recover2: compressedBitSet.cmx gen_recover2.ml
-	ocamlfind opt -g -package menhirSdk -linkpkg compressedBitSet.cmx \
+gen_recover2: makeBitSet.cmx gen_recover2.ml
+	ocamlfind opt -g -package menhirSdk -linkpkg makeBitSet.cmx \
 		gen_recover2.ml -o gen_recover2
