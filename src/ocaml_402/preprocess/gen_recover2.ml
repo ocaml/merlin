@@ -284,14 +284,39 @@ module Synthesis = struct
         in
         (fun v -> head v +. tail v)
 
+  let group_assoc l =
+    let cons k v acc = (k, List.rev v) :: acc in
+    let rec aux k v acc = function
+      | [] -> List.rev (cons k v acc)
+      | (k', v') :: xs when compare k k' = 0 ->
+        aux k (v' :: v) acc xs
+      | (k', v') :: xs ->
+        aux k' [v'] (cons k v acc) xs
+    in
+    match List.sort compare l with
+    | [] -> []
+    | (k, v) :: xs -> aux k [v] [] xs
+
   let () =
     let solution = Solver.lfp eval in
-    Array.iter (fun st ->
-        report "# State %d\n%!" st.lr1_index;
-        Array.iter (fun (prod,pos) ->
-            report_table (items_table [(prod,pos)] []);
-            report "cost:%!";
-            report " %f\n\n%!" (solution (Tail (st, prod, pos)))
-          ) st.lr1_lr0.lr0_items;
-      ) g.g_lr1_states
+    let solutions =
+      Array.fold_left (fun acc st ->
+          match Array.fold_left (fun (item, cost) (prod, pos) ->
+              let cost' = solution (Tail (st, prod, pos)) in
+              if cost' < cost then (Some (prod, pos), cost') else (item, cost)
+            ) (None, infinity) st.lr1_lr0.lr0_items
+          with
+          | None, _ -> report "no synthesis from %d\n" st.lr1_index; acc
+          | Some item, cost -> (item, (cost, st.lr1_index)) :: acc
+        ) [] g.g_lr1_states
+    in
+    List.iter (fun (item, states) ->
+        report "# Item (%d,%d)\n" (fst item).p_index (snd item);
+        report_table (items_table [item] []);
+        List.iter (fun (cost, states) ->
+            report "at cost %f from states %s\n\n"
+              cost (String.concat ", " (List.map string_of_int states))
+          ) (group_assoc states);
+      ) (group_assoc solutions)
+
 end
