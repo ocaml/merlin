@@ -396,29 +396,13 @@ module Recovery = struct
     let rec aux = function
       | [] -> []
       | ((nt, cost) :: x) :: xs when not (List.mem nt !seen) ->
-        (*report "trying to follow %s from %d\n" nt.n_name st.lr1_index;*)
         seen := nt :: !seen;
         let st' = array_assoc st.lr1_transitions (N nt) in
         aux (List.tl (synthesize cost st' ([] :: x :: xs)))
       | (_ :: x) :: xs -> aux (x :: xs)
       | [] :: xs -> xs
     in
-    (*report "before closure:\n";
-    List.iteri (fun depth nts ->
-        report "\n  at depth %d:\n" depth;
-        List.iter (fun (nt, cost) ->
-            report "    shift %s at %f\n" nt.n_name cost
-          ) nts;
-      ) ntss;*)
-    let ntss = aux ntss in
-    (*report "after closure:\n";
-    List.iteri (fun depth nts ->
-        report "\n  at depth %d:\n" depth;
-        List.iter (fun (nt, cost) ->
-            report "    shift %s at %f\n" nt.n_name cost
-          ) nts;
-      ) ntss;*)
-    ntss
+    aux ntss
 
   let eval stack = match stack with
     | [] -> assert false
@@ -428,19 +412,16 @@ module Recovery = struct
     | st :: sts ->
       fun var -> close st (var sts)
 
-  let solve = Solver.lfp eval
-
   let total = ref 0
 
   let recover st =
+    let solve = Solver.lfp eval in
     let prod, pos = Array.fold_left (fun (prod, pos) (prod', pos') ->
         if pos >= pos' then (prod, pos) else (prod', pos'))
         st.lr1_lr0.lr0_items.(0) st.lr1_lr0.lr0_items
     in
     let stacks = Pred.stacks pos st in
     total := !total + List.length stacks;
-    (*let stacks' = List.map (fun l -> "" :: List.map (fun st -> string_of_int st.lr1_index) l) stacks in
-    report_table (items_table (Array.to_list st.lr1_lr0.lr0_items) [] @ stacks');*)
     let solutions = List.map solve stacks in
     [ List.fold_left min infinity
         (List.map snd (List.flatten (List.flatten solutions))) ]
