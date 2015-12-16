@@ -116,11 +116,20 @@ let items_table items annots =
     [rhs; annot]
   in
   let annots = annots @ Array.to_list (Array.make (List.length items - List.length annots) []) in
-  align_tabular (List.concat (List.map2 prepare items annots))
+  List.concat (List.map2 prepare items annots)
 
 let report_table ?(prefix="") ?(sep=" ") table =
+  let table = align_tabular table in
   List.iter (fun line -> report "%s%s\n" prefix (String.concat sep line))
     table
+
+(* Dump all states for debugging *)
+
+let () =
+  Array.iter (fun st ->
+      report "# #%d\n" st.lr1_index;
+      report_table (items_table (Array.to_list st.lr1_lr0.lr0_items) [])
+    ) g.g_lr1_states
 
 module Lr1s = MakeBitSet.Make (struct
     type t = lr1_state
@@ -156,42 +165,30 @@ let array_assoc arr x =
 
 module Pred = struct
   let imm =
-    let tbl1 = Array.make (Array.length g.g_lr1_states) Lr1s.empty in
+    let tbl1 = Array.make (Array.length g.g_lr1_states) [] in
     let revert_transition s1 (sym,s2) =
       assert (match s2.lr1_lr0.lr0_incoming with
           | None -> false
           | Some sym' -> sym = sym');
-      tbl1.(s2.lr1_index) <- Lr1s.add s1 tbl1.(s2.lr1_index)
+      tbl1.(s2.lr1_index) <- s1 :: tbl1.(s2.lr1_index)
     in
     Array.iter
       (fun lr1 -> Array.iter (revert_transition lr1) lr1.lr1_transitions)
       g.g_lr1_states;
     (fun lr1 -> tbl1.(lr1.lr1_index))
 
-  let nth nth n st = match n with
-    | 0 -> Lr1s.singleton st
-    | n ->
-      assert (n > 0);
-      lr1s_bind (nth (n - 1) st) imm
+  let step acc = function
+    | [] -> assert false
+    | (st :: _) as stack ->
+      List.fold_left (fun acc st' -> (st' :: stack) :: acc) acc (imm st)
 
-  let nth =
-    let table = Hashtbl.create 119 in
-    let rec fix n st =
-      let key = (n, st.lr1_index) in
-      try Hashtbl.find table key
-      with Not_found ->
-        let result = nth fix n st in
-        Hashtbl.add table key result;
-        result
-    in
-    fix
-
-  let list n st =
-    let preds = ref [] in
+  let stacks n st =
+    let stacks = ref [[st]] in
     for i = 0 to n do
-      preds := nth i st :: !preds
+      stacks := List.fold_left step [] !stacks
     done;
-    !preds
+    !stacks
+
 end
 
 module Synthesis = struct
@@ -297,12 +294,13 @@ module Synthesis = struct
     | [] -> []
     | (k, v) :: xs -> aux k [v] [] xs
 
+  let solve = Solver.lfp eval
+
   let () =
-    let solution = Solver.lfp eval in
     let solutions =
       Array.fold_left (fun acc st ->
           match Array.fold_left (fun (item, cost) (prod, pos) ->
-              let cost' = solution (Tail (st, prod, pos)) in
+              let cost' = solve (Tail (st, prod, pos)) in
               if cost' < cost then (Some (prod, pos), cost') else (item, cost)
             ) (None, infinity) st.lr1_lr0.lr0_items
           with
@@ -319,4 +317,141 @@ module Synthesis = struct
           ) (group_assoc states);
       ) (group_assoc solutions)
 
+end
+
+module Recovery = struct
+
+  let rec add_nt cost nt = function
+    | [] -> [(nt, cost)]
+    | x :: xs ->
+      let c = compare nt.n_index (fst x).n_index in
+      if c = 0 then (nt, min cost (snd x)) :: xs
+      else if c < 0 then
+        (nt, cost) :: xs
+      else
+        x :: add_nt cost nt xs
+
+  let add_item cost prod pos stack =
+    if cost = infinity then stack
+    else
+      let stack_hd = function
+        | [] -> []
+        | x :: _ -> x
+      and stack_tl = function
+        | [] -> []
+        | _ :: xs -> xs
+      in
+      let rec aux stack = function
+        | 0 -> add_nt cost prod.p_lhs (stack_hd stack) :: stack_tl stack
+        | n -> stack_hd stack :: aux (stack_tl stack) (n - 1)
+      in
+      aux stack pos
+
+  let rec merge_nts l1 l2 = match l1, l2 with
+    | [], l | l, [] -> l
+    | (x1 :: xs1), (x2 :: xs2) ->
+      let (nt1, c1) = x1 and (nt2, c2) = x2 in
+      match compare nt1.n_index nt2.n_index with
+      | 0 ->
+        let x = (nt1, min c1 c2) in
+        x :: merge_nts xs1 xs2
+      | n when n > 0 -> x2 :: merge_nts l1 xs2
+      | _ -> x1 :: merge_nts xs1 l2
+
+  let rec merge l1 l2 = match l1, l2 with
+    | [], l | l, [] -> l
+    | (x1 :: l1), (x2 :: l2) ->
+      let x' = merge_nts x1 x2 in
+      x' :: merge l1 l2
+
+  module Solver = Fix.Make (struct
+      type key = lr1_state list (* Stacks *)
+      type 'a t = (key, 'a) Hashtbl.t
+      let create () = Hashtbl.create 7
+      let find k tbl = Hashtbl.find tbl k
+      let add k v tbl = Hashtbl.add tbl k v
+      let iter f tbl = Hashtbl.iter f tbl
+      let clear = Hashtbl.clear
+    end) (struct
+      type property = (nonterminal * float) list list
+      let bottom = []
+      let equal l1 l2 = compare l1 l2 = 0
+      let is_maximal _ = false
+    end)
+
+  let synthesize cost st actions =
+    Array.fold_left (fun acc (prod, pos) ->
+        if prod.p_kind = `START then
+          ((*report "skipping %s at depth %d\n" prod.p_lhs.n_name pos;*) acc)
+        else (
+          (*report "adding %s at depth %d\n" prod.p_lhs.n_name pos;*)
+          add_item (Synthesis.solve (Synthesis.Tail (st, prod, pos)) +. cost)
+            prod pos acc
+        )
+      )
+      actions st.lr1_lr0.lr0_items
+
+  let close st ntss =
+    let seen = ref [] in
+    let rec aux = function
+      | [] -> []
+      | ((nt, cost) :: x) :: xs when not (List.mem nt !seen) ->
+        (*report "trying to follow %s from %d\n" nt.n_name st.lr1_index;*)
+        seen := nt :: !seen;
+        let st' = array_assoc st.lr1_transitions (N nt) in
+        aux (List.tl (synthesize cost st' ([] :: x :: xs)))
+      | (_ :: x) :: xs -> aux (x :: xs)
+      | [] :: xs -> xs
+    in
+    (*report "before closure:\n";
+    List.iteri (fun depth nts ->
+        report "\n  at depth %d:\n" depth;
+        List.iter (fun (nt, cost) ->
+            report "    shift %s at %f\n" nt.n_name cost
+          ) nts;
+      ) ntss;*)
+    let ntss = aux ntss in
+    (*report "after closure:\n";
+    List.iteri (fun depth nts ->
+        report "\n  at depth %d:\n" depth;
+        List.iter (fun (nt, cost) ->
+            report "    shift %s at %f\n" nt.n_name cost
+          ) nts;
+      ) ntss;*)
+    ntss
+
+  let eval stack = match stack with
+    | [] -> assert false
+    | [st] ->
+      let result = close st (synthesize 0.0 st []) in
+      (fun _ -> result)
+    | st :: sts ->
+      fun var -> close st (var sts)
+
+  let solve = Solver.lfp eval
+
+  let total = ref 0
+
+  let recover st =
+    let prod, pos = Array.fold_left (fun (prod, pos) (prod', pos') ->
+        if pos >= pos' then (prod, pos) else (prod', pos'))
+        st.lr1_lr0.lr0_items.(0) st.lr1_lr0.lr0_items
+    in
+    let stacks = Pred.stacks pos st in
+    total := !total + List.length stacks;
+    (*let stacks' = List.map (fun l -> "" :: List.map (fun st -> string_of_int st.lr1_index) l) stacks in
+    report_table (items_table (Array.to_list st.lr1_lr0.lr0_items) [] @ stacks');*)
+    let solutions = List.map solve stacks in
+    [ List.fold_left min infinity
+        (List.map snd (List.flatten (List.flatten solutions))) ]
+
+  let () =
+    report "# Recovery cost\n\n";
+    Array.iter (fun st ->
+        report "Recover #%d\n" st.lr1_index;
+        let costs = List.sort_uniq compare (recover st) in
+        report "%s\n%!"
+          (String.concat ", " (List.map string_of_float costs))
+      ) g.g_lr1_states;
+    report "Explored %d\n" !total
 end
