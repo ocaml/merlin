@@ -321,108 +321,103 @@ end
 
 module Recovery = struct
 
-  let rec add_nt cost nt = function
-    | [] -> [(nt, cost)]
-    | x :: xs ->
-      let c = compare nt.n_index (fst x).n_index in
-      if c = 0 then (nt, min cost (snd x)) :: xs
-      else if c < 0 then
-        (nt, cost) :: xs
-      else
-        x :: add_nt cost nt xs
-
-  let add_item cost prod pos stack =
-    if cost = infinity then stack
-    else
-      let stack_hd = function
-        | [] -> []
-        | x :: _ -> x
-      and stack_tl = function
-        | [] -> []
-        | _ :: xs -> xs
-      in
-      let rec aux stack = function
-        | 0 -> add_nt cost prod.p_lhs (stack_hd stack) :: stack_tl stack
-        | n -> stack_hd stack :: aux (stack_tl stack) (n - 1)
-      in
-      aux stack pos
-
-  let rec merge_nts l1 l2 = match l1, l2 with
-    | [], l | l, [] -> l
-    | (x1 :: xs1), (x2 :: xs2) ->
-      let (nt1, c1) = x1 and (nt2, c2) = x2 in
+  let rec merge_nts offset l1 l2 = match l1, l2 with
+    | [], l -> l
+    | l, [] -> List.map (fun (nt, c) -> (nt, c +. offset)) l
+    | ((nt1, c1) :: xs1), (x2 :: xs2) ->
+      let (nt2, c2) = x2 in
       match compare nt1.n_index nt2.n_index with
       | 0 ->
-        let x = (nt1, min c1 c2) in
-        x :: merge_nts xs1 xs2
-      | n when n > 0 -> x2 :: merge_nts l1 xs2
-      | _ -> x1 :: merge_nts xs1 l2
+        let x = (nt1, min (c1 +. offset) c2) in
+        x :: merge_nts offset xs1 xs2
+      | n when n > 0 -> x2 :: merge_nts offset l1 xs2
+      | _ -> (nt1, c1 +. offset) :: merge_nts offset xs1 l2
 
-  let rec merge l1 l2 = match l1, l2 with
-    | [], l | l, [] -> l
+  let rec merge offset l1 l2 = match l1, l2 with
+    | [], l -> l
+    | l, [] -> List.map (List.map (fun (nt, c) -> (nt, c +. offset))) l
     | (x1 :: l1), (x2 :: l2) ->
-      let x' = merge_nts x1 x2 in
-      x' :: merge l1 l2
+      let x' = merge_nts offset x1 x2 in
+      x' :: merge offset l1 l2
 
-  module Solver = Fix.Make (struct
-      type key = lr1_state list (* Stacks *)
-      type 'a t = (key, 'a) Hashtbl.t
-      let create () = Hashtbl.create 7
-      let find k tbl = Hashtbl.find tbl k
-      let add k v tbl = Hashtbl.add tbl k v
-      let iter f tbl = Hashtbl.iter f tbl
-      let clear = Hashtbl.clear
-    end) (struct
-      type property = (nonterminal * float) list list
-      let bottom = []
-      let equal l1 l2 = compare l1 l2 = 0
-      let is_maximal _ = false
-    end)
+  let synthesize =
+    let rec add_nt cost nt = function
+      | [] -> [(nt, cost)]
+      | x :: xs ->
+        let c = compare nt.n_index (fst x).n_index in
+        if c = 0 then (nt, min cost (snd x)) :: xs
+        else if c < 0 then
+          (nt, cost) :: xs
+        else
+          x :: add_nt cost nt xs
+    in
+    let add_item cost prod pos stack =
+      if cost = infinity then stack
+      else
+        let stack_hd = function
+          | [] -> []
+          | x :: _ -> x
+        and stack_tl = function
+          | [] -> []
+          | _ :: xs -> xs
+        in
+        let rec aux stack = function
+          | 0 -> add_nt cost prod.p_lhs (stack_hd stack) :: stack_tl stack
+          | n -> stack_hd stack :: aux (stack_tl stack) (n - 1)
+        in
+        aux stack pos
+    in
+    let table = Array.map (fun st ->
+        Array.fold_left (fun acc (prod, pos) ->
+            if prod.p_kind = `START then
+              ((*report "skipping %s at depth %d\n" prod.p_lhs.n_name pos;*) acc)
+            else (
+              (*report "adding %s at depth %d\n" prod.p_lhs.n_name pos;*)
+              add_item (Synthesis.solve (Synthesis.Tail (st, prod, pos)))
+                prod pos acc
+            )
+          )
+          [] st.lr1_lr0.lr0_items
+      ) g.g_lr1_states
+    in
+    fun st -> table.(st.lr1_index)
 
-  let synthesize cost st actions =
-    Array.fold_left (fun acc (prod, pos) ->
-        if prod.p_kind = `START then
-          ((*report "skipping %s at depth %d\n" prod.p_lhs.n_name pos;*) acc)
-        else (
-          (*report "adding %s at depth %d\n" prod.p_lhs.n_name pos;*)
-          add_item (Synthesis.solve (Synthesis.Tail (st, prod, pos)) +. cost)
-            prod pos acc
-        )
-      )
-      actions st.lr1_lr0.lr0_items
-
-  let close st ntss =
-    let seen = ref [] in
+  let step st ntss =
+    let seen = ref CompressedBitSet.empty in
     let rec aux = function
       | [] -> []
-      | ((nt, cost) :: x) :: xs when not (List.mem nt !seen) ->
-        seen := nt :: !seen;
+      | ((nt, cost) :: x) :: xs when not (CompressedBitSet.mem nt.n_index !seen) ->
+        seen := CompressedBitSet.add nt.n_index !seen;
         let st' = array_assoc st.lr1_transitions (N nt) in
-        aux (List.tl (synthesize cost st' ([] :: x :: xs)))
+        let xs' = match (synthesize st') with
+          | [] -> []
+          | _ :: xs -> xs
+        in
+        aux (merge cost xs' (x :: xs))
       | (_ :: x) :: xs -> aux (x :: xs)
       | [] :: xs -> xs
     in
     aux ntss
 
-  let eval stack = match stack with
-    | [] -> assert false
-    | [st] ->
-      let result = close st (synthesize 0.0 st []) in
-      (fun _ -> result)
-    | st :: sts ->
-      fun var -> close st (var sts)
-
   let total = ref 0
 
+  let init st =
+    step st (synthesize st)
+
+  let expand (st, nts) =
+    List.map (fun st' -> (st', step st' nts)) (Pred.imm st)
+
   let recover st =
-    let solve = Solver.lfp eval in
     let prod, pos = Array.fold_left (fun (prod, pos) (prod', pos') ->
         if pos >= pos' then (prod, pos) else (prod', pos'))
         st.lr1_lr0.lr0_items.(0) st.lr1_lr0.lr0_items
     in
-    let stacks = Pred.stacks pos st in
-    total := !total + List.length stacks;
-    let solutions = List.map solve stacks in
+    let results = ref [(st, init st)] in
+    for i = 0 to pos do
+      results := List.concat (List.map expand !results)
+    done;
+    total := !total + List.length !results;
+    let solutions = List.map snd !results in
     [ List.fold_left min infinity
         (List.map snd (List.flatten (List.flatten solutions))) ]
 
