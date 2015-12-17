@@ -321,24 +321,24 @@ end
 
 module Recovery = struct
 
-  let rec merge_nts offset l1 l2 = match l1, l2 with
+  let rec merge_nts l1 l2 = match l1, l2 with
     | [], l -> l
-    | l, [] -> List.map (fun (nt, c) -> (nt, c +. offset)) l
+    | l, [] -> l
     | ((nt1, c1) :: xs1), (x2 :: xs2) ->
       let (nt2, c2) = x2 in
       match compare nt1.n_index nt2.n_index with
       | 0 ->
-        let x = (nt1, min (c1 +. offset) c2) in
-        x :: merge_nts offset xs1 xs2
-      | n when n > 0 -> x2 :: merge_nts offset l1 xs2
-      | _ -> (nt1, c1 +. offset) :: merge_nts offset xs1 l2
+        let x = (nt1, min c1 c2) in
+        x :: merge_nts xs1 xs2
+      | n when n > 0 -> x2 :: merge_nts l1 xs2
+      | _ -> (nt1, c1) :: merge_nts xs1 l2
 
-  let rec merge offset l1 l2 = match l1, l2 with
+  let rec merge l1 l2 = match l1, l2 with
     | [], l -> l
-    | l, [] -> List.map (List.map (fun (nt, c) -> (nt, c +. offset))) l
+    | l, [] -> l
     | (x1 :: l1), (x2 :: l2) ->
-      let x' = merge_nts offset x1 x2 in
-      x' :: merge offset l1 l2
+      let x' = merge_nts x1 x2 in
+      x' :: merge l1 l2
 
   let synthesize =
     let rec add_nt cost nt = function
@@ -389,11 +389,13 @@ module Recovery = struct
       | ((nt, cost) :: x) :: xs when not (CompressedBitSet.mem nt.n_index !seen) ->
         seen := CompressedBitSet.add nt.n_index !seen;
         let st' = array_assoc st.lr1_transitions (N nt) in
-        let xs' = match (synthesize st') with
+        let xs' = synthesize st' in
+        let xs' = match xs' with
           | [] -> []
           | _ :: xs -> xs
         in
-        aux (merge cost xs' (x :: xs))
+        let xs' = List.map (List.map (fun (nt,c) -> (nt, c +. cost))) xs' in
+        aux (merge xs' (x :: xs))
       | (_ :: x) :: xs -> aux (x :: xs)
       | [] :: xs -> xs
     in
@@ -401,8 +403,7 @@ module Recovery = struct
 
   let total = ref 0
 
-  let init st =
-    step st (synthesize st)
+  let init st = (st, step st (synthesize st))
 
   let expand (st, nts) =
     List.map (fun st' -> (st', step st' nts)) (Pred.imm st)
@@ -412,7 +413,7 @@ module Recovery = struct
         if pos >= pos' then (prod, pos) else (prod', pos'))
         st.lr1_lr0.lr0_items.(0) st.lr1_lr0.lr0_items
     in
-    let results = ref [(st, init st)] in
+    let results = ref [init st] in
     for i = 0 to pos do
       results := List.concat (List.map expand !results)
     done;
