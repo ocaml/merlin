@@ -78,7 +78,13 @@ let type_steps type_fun items env =
   Typecore.delayed_checks := [];
   let renv = ref env in
   let type_item ast =
-    let result, env = type_fun !renv ast in
+    let env = !renv in
+    let result, env =
+      try type_fun env ast
+      with exn ->
+        caught := exn :: !caught;
+        ([], []), env
+    in
     let item = {
       ast; result; env;
       delayed_checks = !Typecore.delayed_checks;
