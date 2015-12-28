@@ -126,12 +126,20 @@ let with_typer t f =
 let is_valid t =
   with_typer t Env.check_cache_consistency
 
+let processed_ast reader =
+  Ast_mapper.cache := Ast_mapper.new_cache ();
+  match Merlin_reader.result reader with
+  | `Signature sigs ->
+    `Signature (Pparse.apply_rewriters_sig ~tool_name:"merlin" sigs)
+  | `Structure strs ->
+    `Structure (Pparse.apply_rewriters_str ~tool_name:"merlin" strs)
+
 let make reader extensions =
   let btype_cache = Btype.new_cache () in
   let env_cache = Env.new_cache
       ~unit_name:(Merlin_source.name (Merlin_reader.source reader)) in
   { reader; extensions; btype_cache; env_cache;
-    steps = update_steps `None (Merlin_reader.result reader) }
+    steps = update_steps `None (processed_ast reader) }
 
 let update reader t =
   if not (is_valid t) then
@@ -141,7 +149,8 @@ let update reader t =
   else if Merlin_reader.compare reader t.reader = 0 then
     {t with reader}
   else
-    {t with reader; steps = update_steps t.steps (Merlin_reader.result reader)}
+    let steps = update_steps t.steps (processed_ast reader) in
+    {t with reader; steps}
 
 let sig_loc item = item.Parsetree.psig_loc
 let str_loc item = item.Parsetree.pstr_loc
