@@ -81,7 +81,7 @@
       (t default))))
 
 ;; Public functions
-
+;;;###autoload
 (defun merlin-company-backend (command &optional arg &rest ignored)
     (interactive (list 'interactive))
     (when merlin-mode
@@ -129,7 +129,9 @@
 ;; Register into company-mode ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(add-to-list 'company-backends 'merlin-company-backend)
+;;;###autoload
+(eval-after-load 'company
+  '(add-to-list 'company-backends 'merlin-company-backend))
 
 (provide 'merlin-company)
 ;;; merlin-company.el ends here
