@@ -27,6 +27,7 @@ CONFIG_FILES = src/config/my_config.ml src/ocaml
 
 SOURCES = \
 	src/config/my_config.ml           \
+	src/utils/menhirLib.ml            \
 	src/utils/terminfo.mli            \
 	src/utils/terminfo.ml             \
 	src/utils/std.ml                  \
@@ -212,7 +213,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = str findlib yojson unix sturgeon menhirLib
+PACKS = str findlib yojson unix sturgeon
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code
