@@ -59,6 +59,7 @@ val nopervasives         : unit -> bool
 val strict_formats       : unit -> bool
 val open_modules         : unit -> string list
 val ppx                  : unit -> string list
+val pp                   : unit -> string
 
 (* Dummy values *)
 val annotations          : unit -> bool

@@ -33,6 +33,7 @@ type set = {
   mutable strict_formats       : bool;
   mutable open_modules         : string list;
   mutable ppx                  : Ppxsetup.t;
+  mutable pp                   : string;
 }
 
 let fresh () =
@@ -52,6 +53,7 @@ let fresh () =
     strict_formats       = false; (* -strict-formats *)
     open_modules         = [];
     ppx                  = Ppxsetup.empty;    (* -ppx *)
+    pp                   = "";
   }
 
 let copy t = {t with include_dirs = ref !(t.include_dirs)}
@@ -219,6 +221,13 @@ let ppx_spec t =
   Arg.String (fun s -> t.ppx <- Ppxsetup.add_ppx s t.ppx),
   "<command> Pipe abstract syntax trees through preprocessor <command>"
 
+let pp () = !set.pp
+
+let pp_spec t =
+  "-pp",
+  Arg.String (fun s -> t.pp <- s),
+  "<command>  Pipe sources through preprocessor <command>"
+
 (* Dummy values *)
 let annotations         () = false
 let binary_annotations  () = true
@@ -256,4 +265,5 @@ let arg_spec t =
     strict_formats_spec t;
     open_modules_spec t;
     ppx_spec t;
+    pp_spec t;
   ]
