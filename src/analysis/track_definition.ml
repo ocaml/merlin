@@ -178,6 +178,13 @@ end
 
 
 module Utils = struct
+  let is_builtin_path = function
+    | Path.Pident id ->
+      let f (_, i) = Ident.same i id in
+      List.exists Predef.builtin_idents ~f
+      || List.exists Predef.builtin_values ~f
+    | _ -> false
+
   let is_ghost_loc { Location. loc_ghost } = loc_ghost
 
   let longident_is_qualified = function
@@ -503,7 +510,7 @@ let namespaces = function
   | Expr | Patt _ -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
 
-exception Found of (Cmt_cache.path * Location.t)
+exception Found of (Path.t * Cmt_cache.path * Location.t)
 
 let tag namespace p = Typedtrie.tag_path ~namespace (Path.to_string_list p)
 
@@ -529,30 +536,30 @@ let rec lookup ctxt ident env =
           info_log "lookup in constructor namespace" ;
           let cstr_desc = Raw_compat.lookup_constructor ident env in
           let path, loc = Raw_compat.path_and_loc_of_cstr cstr_desc env in
-          let path = tag `Type path in (* TODO: Use [`Constr] here *)
-          raise (Found (path, loc))
+          (* TODO: Use [`Constr] here instead of [`Type] *)
+          raise (Found (path, tag `Type path, loc))
         | `Mod ->
           info_log "lookup in module namespace" ;
           let path, _ = Raw_compat.lookup_module ident env in
-          raise (Found (tag `Mod path, Location.symbol_gloc ()))
+          raise (Found (path, tag `Mod path, Location.symbol_gloc ()))
         | `Modtype ->
           info_log "lookup in module type namespace" ;
           let path, _ = Raw_compat.lookup_modtype ident env in
-          raise (Found (tag `Modtype path, Location.symbol_gloc ()))
+          raise (Found (path, tag `Modtype path, Location.symbol_gloc ()))
         | `Type ->
           info_log "lookup in type namespace" ;
           let path, typ_decl = Env.lookup_type ident env in
-          raise (Found (tag `Type path, typ_decl.Types.type_loc))
+          raise (Found (path, tag `Type path, typ_decl.Types.type_loc))
         | `Vals ->
           info_log "lookup in value namespace" ;
           let path, val_desc = Env.lookup_value ident env in
-          raise (Found (tag `Vals path, val_desc.Types.val_loc))
+          raise (Found (path, tag `Vals path, val_desc.Types.val_loc))
         | `Labels ->
           info_log "lookup in label namespace" ;
           let label_desc = Raw_compat.lookup_label ident env in
           let path, loc = path_and_loc_from_label label_desc env in
-          let path = tag `Type path in (* TODO: Use [`Labels] here *)
-          raise (Found (path, loc))
+          (* TODO: Use [`Labels] here instead of [`Type] *)
+          raise (Found (path, tag `Type path, loc))
       with Not_found -> ()
     ) ;
     info_log "   ... not in the environment" ;
@@ -594,14 +601,15 @@ let from_longident ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   let ident, is_label = Longident.keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
-    let tagged_path, loc =
+    let path, tagged_path, loc =
       if not is_label then lookup ctxt ident env else
       (* If we know it is a record field, we only look for that. *)
       let label_desc = Raw_compat.lookup_label ident env in
       let path, loc = path_and_loc_from_label label_desc env in
       (* TODO: Use [`Labels] here *)
-      tag `Type path, loc
+      path, tag `Type path, loc
     in
+    if Utils.is_builtin_path path then `Builtin else
     locate ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
   with
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
@@ -690,7 +698,8 @@ let from_string ~project ~env ~local_defs ~pos switch path =
     match
       from_longident ~pos ~env ~lazy_trie ctxt switch lid
     with
-    | `File_not_found _ | `Not_found _ | `Not_in_env _ as error -> error
+    | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
+    | `Builtin -> `Builtin path
     | `Found (loc, _) ->
       try
         match find_source loc with
@@ -755,6 +764,13 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
     with
     | None, _     -> `No_documentation
     | Some doc, _ -> `Found doc
+    end
+  | `Builtin ->
+    begin match path with
+    | `User_input path -> `Builtin path
+    | `Completion_entry (_, path, _) ->
+      let str = String.concat ~sep:"." (Path.to_string_list path) in
+      `Builtin str
     end
   | `File_not_found _
   | `Not_found _

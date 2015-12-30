@@ -106,6 +106,7 @@ type _ request =
     : string option * position
     -> [ `Found of string
        | `Invalid_context
+       | `Builtin of string
        | `Not_in_env of string
        | `File_not_found of string
        | `Not_found of string * string option
@@ -115,6 +116,7 @@ type _ request =
     : string option * [ `ML | `MLI ] * position
     -> [ `Found of string option * Lexing.position
        | `Invalid_context
+       | `Builtin of string
        | `Not_in_env of string
        | `File_not_found of string
        | `Not_found of string * string option

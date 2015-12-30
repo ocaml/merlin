@@ -428,6 +428,8 @@ module Protocol_io = struct
           begin match resp with
           | `No_documentation -> `String "No documentation available"
           | `Invalid_context -> `String "Not a valid identifier"
+          | `Builtin s ->
+            `String (sprintf "%S is a builtin, no documentation is available" s)
           | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
           | `Not_found (i, Some f) ->
             `String
@@ -443,6 +445,9 @@ module Protocol_io = struct
           begin match resp with
           | `At_origin -> `String "Already at definition point"
           | `Invalid_context -> `String "Not a valid identifier"
+          | `Builtin s ->
+            `String (sprintf "%S is a builtin, and it is therefore impossible \
+                              to jump to its definition" s)
           | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
           | `Not_found (i, Some f) ->
             `String

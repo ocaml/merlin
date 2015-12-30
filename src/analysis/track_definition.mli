@@ -39,6 +39,7 @@ val from_string
   -> string
   -> [> `File_not_found of string
       | `Found of string option * Lexing.position
+      | `Builtin of string
       | `Not_found of string * string option
       | `Not_in_env of string
       | `At_origin ]
@@ -53,6 +54,7 @@ val get_doc
   -> [ `User_input of string | `Completion_entry of (Cmt_cache.namespace * Path.t * Location.t) ]
   -> [> `File_not_found of string
       | `Found of string
+      | `Builtin of string
       | `Not_found of string * string option
       | `Not_in_env of string
       | `No_documentation ]
