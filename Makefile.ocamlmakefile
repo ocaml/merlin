@@ -152,6 +152,8 @@ SOURCES = \
 	$(TYPER)/parser_printer.ml     		\
 	$(TYPER)/parser_recover.mli    		\
 	$(TYPER)/parser_recover.ml     		\
+	$(TYPER)/utils/pparse.mli         \
+	$(TYPER)/utils/pparse.ml          \
 	src/kernel/lexer_raw.mli          \
 	src/kernel/lexer_raw.ml           \
 	src/kernel/extension.mli          \
@@ -168,8 +170,6 @@ SOURCES = \
 	src/kernel/merlin_parser.ml       \
 	src/kernel/merlin_reader.mli      \
 	src/kernel/merlin_reader.ml       \
-	$(TYPER)/utils/pparse.mli         \
-	$(TYPER)/utils/pparse.ml          \
 	$(TYPER)/raw_typer.mli            \
 	$(TYPER)/raw_typer.ml             \
 	src/kernel/merlin_browse.mli      \

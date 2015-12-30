@@ -33,6 +33,7 @@ type set = {
   mutable strict_formats       : bool;
   mutable open_modules         : string list;
   mutable ppx                  : Ppxsetup.t;
+  mutable pp                   : string;
 }
 
 (* Manage set of flag *)

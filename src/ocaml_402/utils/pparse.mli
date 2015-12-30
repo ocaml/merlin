@@ -25,3 +25,6 @@ val apply_rewriters_str: ?restore:bool -> tool_name:string -> Parsetree.structur
 val apply_rewriters_sig: ?restore:bool -> tool_name:string -> Parsetree.signature -> Parsetree.signature
 
 val report_error : formatter -> error -> unit
+
+val apply_pp : filename:string -> source:string -> pp:string ->
+  [> `Signature of Parsetree.signature | `Structure of Parsetree.structure ]

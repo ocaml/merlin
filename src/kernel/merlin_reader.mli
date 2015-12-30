@@ -28,6 +28,7 @@
 
 type spec =
   | Normal of Extension.set * Merlin_parser.kind
+  | External of string * Merlin_parser.kind
 
 type t
 
