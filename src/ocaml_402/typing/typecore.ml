@@ -3579,6 +3579,7 @@ and type_statement env sexp =
     unify_exp env exp expected_ty;
     exp else
   let ty = expand_head env exp.exp_type and tv = newvar() in
+  if not (List.mem merlin_incorrect_attribute exp.exp_attributes) then
   begin match ty.desc with
   | Tarrow _ ->
       Location.prerr_warning loc Warnings.Partial_application
