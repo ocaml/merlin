@@ -5,7 +5,7 @@ let name = ref ""
 let verbose = ref false
 
 let usage () =
-  Printf.eprintf "Usage: %s [-v] file.cmly"
+  Printf.eprintf "Usage: %s [-v] file.cmly\n"
     Sys.argv.(0);
   exit 1
 
@@ -344,12 +344,12 @@ module Recovery = struct
     let rec add_nt cost nt = function
       | [] -> [(nt, cost)]
       | x :: xs ->
-        let c = compare nt.n_index (fst x).n_index in
-        if c = 0 then (nt, min cost (snd x)) :: xs
-        else if c < 0 then
-          (nt, cost) :: xs
-        else
-          x :: add_nt cost nt xs
+          let c = compare nt.n_index (fst x).n_index in
+          if c = 0 then (nt, min cost (snd x)) :: xs
+          else if c < 0 then
+            (nt, cost) :: xs
+          else
+            x :: add_nt cost nt xs
     in
     let add_item cost prod pos stack =
       if cost = infinity then stack
@@ -387,15 +387,15 @@ module Recovery = struct
     let rec aux = function
       | [] -> []
       | ((nt, cost) :: x) :: xs when not (CompressedBitSet.mem nt.n_index !seen) ->
-        seen := CompressedBitSet.add nt.n_index !seen;
-        let st' = array_assoc st.lr1_transitions (N nt) in
-        let xs' = synthesize st' in
-        let xs' = match xs' with
-          | [] -> []
-          | _ :: xs -> xs
-        in
-        let xs' = List.map (List.map (fun (nt,c) -> (nt, c +. cost))) xs' in
-        aux (merge xs' (x :: xs))
+          seen := CompressedBitSet.add nt.n_index !seen;
+          let st' = array_assoc st.lr1_transitions (N nt) in
+          let xs' = synthesize st' in
+          let xs' = match xs' with
+            | [] -> []
+            | _ :: xs -> xs
+          in
+          let xs' = List.map (List.map (fun (nt,c) -> (nt, c +. cost))) xs' in
+          aux (merge xs' (x :: xs))
       | (_ :: x) :: xs -> aux (x :: xs)
       | [] :: xs -> xs
     in
@@ -409,9 +409,8 @@ module Recovery = struct
     List.map (fun st' -> (st', step st' nts)) (Pred.imm st)
 
   let recover st =
-    let prod, pos = Array.fold_left (fun (prod, pos) (prod', pos') ->
-        if pos >= pos' then (prod, pos) else (prod', pos'))
-        st.lr1_lr0.lr0_items.(0) st.lr1_lr0.lr0_items
+    let pos = Array.fold_left (fun pos (_, pos') -> max pos pos')
+        (snd st.lr1_lr0.lr0_items.(0)) st.lr1_lr0.lr0_items
     in
     let results = ref [init st] in
     for i = 0 to pos do
