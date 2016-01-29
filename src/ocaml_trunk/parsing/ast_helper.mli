@@ -12,9 +12,9 @@
 
 (** Helpers to produce Parsetree fragments *)
 
-open Parsetree
 open Asttypes
 open Docstrings
+open Parsetree
 
 type lid = Longident.t loc
 type str = string loc
@@ -30,9 +30,18 @@ val with_default_loc: loc -> (unit -> 'a) -> 'a
     (** Set the [default_loc] within the scope of the execution
         of the provided function. *)
 
-val rtag : ?attrs:attrs -> label -> bool -> core_type list -> row_field
+(** {2 Constants} *)
 
-val const_string : string -> constant
+module Const : sig
+  val char : char -> constant
+  val string : ?quotation_delimiter:string -> string -> constant
+  val integer : ?suffix:char -> string -> constant
+  val int : ?suffix:char -> int -> constant
+  val int32 : ?suffix:char -> int32 -> constant
+  val int64 : ?suffix:char -> int64 -> constant
+  val nativeint : ?suffix:char -> nativeint -> constant
+  val float : ?suffix:char -> string -> constant
+end
 
 (** {2 Core language} *)
 
@@ -147,6 +156,7 @@ module Exp:
     val open_: ?loc:loc -> ?attrs:attrs -> override_flag -> lid -> expression
                -> expression
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> expression
+    val unreachable: ?loc:loc -> ?attrs:attrs -> unit -> expression
 
     val case: pattern -> ?guard:expression -> expression -> case
   end
@@ -357,26 +367,32 @@ module Cl:
 
     val constr: ?loc:loc -> ?attrs:attrs -> lid -> core_type list -> class_expr
     val structure: ?loc:loc -> ?attrs:attrs -> class_structure -> class_expr
-    val fun_: ?loc:loc -> ?attrs:attrs -> arg_label -> expression option -> pattern ->
-              class_expr -> class_expr
-    val apply:
-        ?loc:loc -> ?attrs:attrs -> class_expr -> (arg_label * expression) list -> class_expr
-    val let_:
-        ?loc:loc -> ?attrs:attrs -> rec_flag -> value_binding list -> class_expr -> class_expr
-    val constraint_: ?loc:loc -> ?attrs:attrs -> class_expr -> class_type -> class_expr
+    val fun_: ?loc:loc -> ?attrs:attrs -> arg_label -> expression option ->
+      pattern -> class_expr -> class_expr
+    val apply: ?loc:loc -> ?attrs:attrs -> class_expr ->
+      (arg_label * expression) list -> class_expr
+    val let_: ?loc:loc -> ?attrs:attrs -> rec_flag -> value_binding list ->
+      class_expr -> class_expr
+    val constraint_: ?loc:loc -> ?attrs:attrs -> class_expr -> class_type ->
+      class_expr
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> class_expr
   end
 
 (** Class fields *)
 module Cf:
   sig
-    val mk: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> class_field_desc -> class_field
+    val mk: ?loc:loc -> ?attrs:attrs -> ?docs:docs -> class_field_desc ->
+      class_field
     val attr: class_field -> attribute -> class_field
 
-    val inherit_: ?loc:loc -> ?attrs:attrs -> override_flag -> class_expr -> string option -> class_field
-    val val_: ?loc:loc -> ?attrs:attrs -> str -> mutable_flag -> class_field_kind -> class_field
-    val method_: ?loc:loc -> ?attrs:attrs -> str -> private_flag -> class_field_kind -> class_field
-    val constraint_: ?loc:loc -> ?attrs:attrs -> core_type -> core_type -> class_field
+    val inherit_: ?loc:loc -> ?attrs:attrs -> override_flag -> class_expr ->
+      string option -> class_field
+    val val_: ?loc:loc -> ?attrs:attrs -> str -> mutable_flag ->
+      class_field_kind -> class_field
+    val method_: ?loc:loc -> ?attrs:attrs -> str -> private_flag ->
+      class_field_kind -> class_field
+    val constraint_: ?loc:loc -> ?attrs:attrs -> core_type -> core_type ->
+      class_field
     val initializer_: ?loc:loc -> ?attrs:attrs -> expression -> class_field
     val extension: ?loc:loc -> ?attrs:attrs -> extension -> class_field
     val attribute: ?loc:loc -> attribute -> class_field

@@ -26,7 +26,6 @@
     files which returns an option for each of the three parts: cmi
     info, cmt info, source info. *)
 
-open Std
 open Typedtree
 
 type binary_annots =

@@ -48,6 +48,8 @@ SOURCES = \
 	src/ocaml_aux/clflags.mli         \
 	src/ocaml_aux/clflags.ml          \
 	$(TYPER)/parsing/asttypes.mli     \
+	$(TYPER)/parsing/attr_helper.mli  \
+	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
 	$(TYPER)/parsing/location.mli     \
 	$(TYPER)/parsing/location.ml      \

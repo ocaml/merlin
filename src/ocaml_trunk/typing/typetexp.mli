@@ -64,6 +64,8 @@ type error =
   | Ill_typed_functor_application of Longident.t
   | Illegal_reference_to_recursive_module
   | Access_functor_as_structure of Longident.t
+  | Apply_structure_as_functor of Longident.t
+  | Cannot_scrape_alias of Longident.t * Path.t
 
 exception Error of Location.t * Env.t * error
 
@@ -106,14 +108,3 @@ val find_class_type:
 
 val unbound_constructor_error: Env.t -> Longident.t Location.loc -> 'a
 val unbound_label_error: Env.t -> Longident.t Location.loc -> 'a
-
-val check_deprecated: Location.t -> Parsetree.attributes -> string -> unit
-
-val warning_enter_scope: unit -> unit
-val warning_leave_scope: unit -> unit
-val warning_attribute: Parsetree.attributes -> unit
-val with_warning_attribute: Parsetree.attributes -> (unit -> 'a) -> 'a
-
-val error_of_extension: Parsetree.extension -> Location.error
-
-val emit_external_warnings: Ast_mapper.mapper

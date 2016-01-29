@@ -235,3 +235,8 @@ val file_id_check: file_id -> file_id -> bool
 
 val file_id: string -> file_id
 (** [file_id filename] computes an id for the current contents of [filename] *)
+
+val normalise_eol: string -> string
+(** [normalise_eol s] returns a fresh copy of [s] with any '\r' characters
+   removed. Intended for pre-processing text which will subsequently be printed
+   on a channel which performs EOL transformations (i.e. Windows) *)

@@ -10,7 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-open Misc
 (* System configuration *)
 
 val version: string
