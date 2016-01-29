@@ -41,25 +41,26 @@ let rec fmt_longident_aux f x =
 
 let fmt_longident f x = fprintf f "\"%a\"" fmt_longident_aux x;;
 
-let fmt_longident_loc f x =
+let fmt_longident_loc f (x : Longident.t loc) =
   fprintf f "\"%a\" %a" fmt_longident_aux x.txt fmt_location x.loc;
 ;;
 
-let fmt_string_loc f x =
+let fmt_string_loc f (x : string loc) =
   fprintf f "\"%s\" %a" x.txt fmt_location x.loc;
 ;;
 
+let fmt_char_option f = function
+  | None -> fprintf f "None"
+  | Some c -> fprintf f "Some %c" c
+
 let fmt_constant f x =
   match x with
-  | Const_int (i) -> fprintf f "Const_int %d" i;
-  | Const_char (c) -> fprintf f "Const_char %02x" (Char.code c);
-  | Const_string (s, None) -> fprintf f "Const_string(%S,None)" s;
-  | Const_string (s, Some delim) ->
-      fprintf f "Const_string (%S,Some %S)" s delim;
-  | Const_float (s) -> fprintf f "Const_float %s" s;
-  | Const_int32 (i) -> fprintf f "Const_int32 %ld" i;
-  | Const_int64 (i) -> fprintf f "Const_int64 %Ld" i;
-  | Const_nativeint (i) -> fprintf f "Const_nativeint %nd" i;
+  | Pconst_integer (i,m) -> fprintf f "PConst_int (%s,%a)" i fmt_char_option m;
+  | Pconst_char (c) -> fprintf f "PConst_char %02x" (Char.code c);
+  | Pconst_string (s, None) -> fprintf f "PConst_string(%S,None)" s;
+  | Pconst_string (s, Some delim) ->
+      fprintf f "PConst_string (%S,Some %S)" s delim;
+  | Pconst_float (s,m) -> fprintf f "PConst_float (%s,%a)" s fmt_char_option m;
 ;;
 
 let fmt_mutable_flag f x =
@@ -128,8 +129,6 @@ let option i f ppf x =
 let longident_loc i ppf li = line i ppf "%a\n" fmt_longident_loc li;;
 let string i ppf s = line i ppf "\"%s\"\n" s;;
 let string_loc i ppf s = line i ppf "%a\n" fmt_string_loc s;;
-let bool i ppf x = line i ppf "%s\n" (string_of_bool x);;
-let label i ppf x = line i ppf "label=\"%s\"\n" x;;
 let arg_label i ppf = function
   | Nolabel -> line i ppf "Nolabel\n"
   | Optional s -> line i ppf "Optional \"%s\"\n" s
@@ -365,6 +364,8 @@ and expression i ppf x =
   | Pexp_extension (s, arg) ->
       line i ppf "Pexp_extension \"%s\"\n" s.txt;
       payload i ppf arg
+  | Pexp_unreachable ->
+      line i ppf "Pexp_unreachable"
 
 and value_description i ppf x =
   line i ppf "value_description %a %a\n" fmt_string_loc
@@ -401,13 +402,13 @@ and attributes i ppf l =
 
 and payload i ppf = function
   | PStr x -> structure i ppf x
+  | PSig x -> signature i ppf x
   | PTyp x -> core_type i ppf x
   | PPat (x, None) -> pattern i ppf x
   | PPat (x, Some g) ->
     pattern i ppf x;
     line i ppf "<when>\n";
     expression (i + 1) ppf g
-  | PCustom _ -> line i ppf "<custom>\n"
 
 
 and type_kind i ppf x =
@@ -888,7 +889,8 @@ and directive_argument i ppf x =
   match x with
   | Pdir_none -> line i ppf "Pdir_none\n"
   | Pdir_string (s) -> line i ppf "Pdir_string \"%s\"\n" s;
-  | Pdir_int (n) -> line i ppf "Pdir_int %d\n" n;
+  | Pdir_int (n, None) -> line i ppf "Pdir_int %s\n" n;
+  | Pdir_int (n, Some m) -> line i ppf "Pdir_int %s%c\n" n m;
   | Pdir_ident (li) -> line i ppf "Pdir_ident %a\n" fmt_longident li;
   | Pdir_bool (b) -> line i ppf "Pdir_bool %s\n" (string_of_bool b);
 ;;

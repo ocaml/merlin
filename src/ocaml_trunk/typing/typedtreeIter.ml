@@ -270,7 +270,7 @@ module MakeIterator(Iter : IteratorArgument) : sig
             iter_cases cases
         | Texp_apply (exp, list) ->
             iter_expression exp;
-            List.iter (fun (label, expo, _) ->
+            List.iter (fun (label, expo) ->
                 match expo with
                   None -> ()
                 | Some exp -> iter_expression exp
@@ -345,6 +345,10 @@ module MakeIterator(Iter : IteratorArgument) : sig
             iter_class_structure cl
         | Texp_pack (mexpr) ->
             iter_module_expr mexpr
+        | Texp_unreachable ->
+            ()
+        | Texp_extension_constructor _ ->
+            ()
       end;
       Iter.leave_expression exp;
 
@@ -480,7 +484,7 @@ module MakeIterator(Iter : IteratorArgument) : sig
 
         | Tcl_apply (cl, args) ->
             iter_class_expr cl;
-            List.iter (fun (label, expo, _) ->
+            List.iter (fun (label, expo) ->
                 match expo with
                   None -> ()
                 | Some exp -> iter_expression exp
@@ -621,7 +625,6 @@ module DefaultIteratorArgument = struct
       let enter_class_type _ = ()
       let enter_class_type_field _ = ()
       let enter_core_type _ = ()
-      let enter_core_field_type _ = ()
       let enter_class_structure _ = ()
     let enter_class_field _ = ()
     let enter_structure_item _ = ()
@@ -648,7 +651,6 @@ module DefaultIteratorArgument = struct
       let leave_class_type _ = ()
       let leave_class_type_field _ = ()
       let leave_core_type _ = ()
-      let leave_core_field_type _ = ()
       let leave_class_structure _ = ()
     let leave_class_field _ = ()
     let leave_structure_item _ = ()

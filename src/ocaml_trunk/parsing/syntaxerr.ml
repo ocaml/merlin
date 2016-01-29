@@ -20,15 +20,16 @@ type error =
   | Variable_in_scope of Location.t * string
   | Other of Location.t
   | Ill_formed_ast of Location.t * string
+  | Invalid_package_type of Location.t * string
 
 exception Error of error
 exception Escape_error of Location.t
 
 let prepare_error = function
   | Unclosed(opening_loc, opening, closing_loc, closing) ->
-      Location.errorf ~loc:closing_loc
+      Location.errorf_prefixed ~loc:closing_loc
         ~sub:[
-          Location.errorf ~loc:opening_loc
+          Location.errorf_prefixed ~loc:opening_loc
             "This '%s' might be unmatched" opening
         ]
         ~if_highlight:
@@ -38,22 +39,24 @@ let prepare_error = function
         "Syntax error: '%s' expected" closing
 
   | Expecting (loc, nonterm) ->
-      Location.errorf ~loc "Syntax error: %s expected." nonterm
+      Location.errorf_prefixed ~loc "Syntax error: %s expected." nonterm
   | Not_expecting (loc, nonterm) ->
-      Location.errorf ~loc "Syntax error: %s not expected." nonterm
+      Location.errorf_prefixed ~loc "Syntax error: %s not expected." nonterm
   | Applicative_path loc ->
-      Location.errorf ~loc
+      Location.errorf_prefixed ~loc
         "Syntax error: applicative paths of the form F(X).t \
          are not supported when the option -no-app-func is set."
   | Variable_in_scope (loc, var) ->
-      Location.errorf ~loc
+      Location.errorf_prefixed ~loc
         "In this scoped type, variable '%s \
          is reserved for the local type %s."
          var var
   | Other loc ->
-      Location.errorf ~loc "Syntax error"
+      Location.errorf_prefixed ~loc "Syntax error"
   | Ill_formed_ast (loc, s) ->
-      Location.errorf ~loc "broken invariant in parsetree: %s" s
+      Location.errorf_prefixed ~loc "broken invariant in parsetree: %s" s
+  | Invalid_package_type (loc, s) ->
+      Location.errorf_prefixed ~loc "invalid package type: %s" s
 
 let () =
   Location.register_error_of_exn
@@ -74,6 +77,7 @@ let location_of_error = function
   | Other l
   | Not_expecting (l, _)
   | Ill_formed_ast (l, _)
+  | Invalid_package_type (l, _)
   | Expecting (l, _) -> l
 
 

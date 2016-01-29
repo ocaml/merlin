@@ -231,7 +231,7 @@ let expr sub x =
     | Texp_apply (exp, list) ->
         Texp_apply (
           sub.expr sub exp,
-          List.map (tuple3 id (opt (sub.expr sub)) id) list
+          List.map (tuple2 id (opt (sub.expr sub))) list
         )
     | Texp_match (exp, cases, exn_cases, p) ->
         Texp_match (
@@ -328,6 +328,10 @@ let expr sub x =
         Texp_object (sub.class_structure sub cl, sl)
     | Texp_pack mexpr ->
         Texp_pack (sub.module_expr sub mexpr)
+    | Texp_unreachable ->
+        Texp_unreachable
+    | Texp_extension_constructor _ as e ->
+        e
   in
   {x with exp_extra; exp_desc; exp_env}
 
@@ -459,7 +463,7 @@ let module_expr sub x =
   {x with mod_desc; mod_env}
 
 let module_binding sub x =
-  let mb_expr = module_expr sub x.mb_expr in
+  let mb_expr = sub.module_expr sub x.mb_expr in
   {x with mb_expr}
 
 let class_expr sub x =
@@ -487,7 +491,7 @@ let class_expr sub x =
     | Tcl_apply (cl, args) ->
         Tcl_apply (
           sub.class_expr sub cl,
-          List.map (tuple3 id (opt (sub.expr sub)) id) args
+          List.map (tuple2 id (opt (sub.expr sub))) args
         )
     | Tcl_let (rec_flag, value_bindings, ivars, cl) ->
         let (rec_flag, value_bindings) =

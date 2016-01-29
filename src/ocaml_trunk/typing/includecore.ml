@@ -27,8 +27,8 @@ let value_descriptions env vd1 vd2 =
         (Val_prim p1, Val_prim p2) ->
           if p1 = p2 then Tcoerce_none else raise Dont_match
       | (Val_prim p, _) ->
-          let pc = {pc_desc = p; pc_type = vd2.val_type;
-                  pc_env = env; pc_loc = vd1.val_loc; } in
+          let pc = {pc_desc = p; pc_type = vd2.Types.val_type;
+                  pc_env = env; pc_loc = vd1.Types.val_loc; } in
           Tcoerce_primitive pc
       | (_, Val_prim p) -> raise Dont_match
       | (_, _) -> Tcoerce_none
@@ -195,8 +195,8 @@ and compare_variants env params1 params2 n cstrs1 cstrs2 =
 and compare_records env params1 params2 n labels1 labels2 =
   match labels1, labels2 with
     [], []           -> []
-  | [], l::_ -> [Field_missing (true, l.ld_id)]
-  | l::_, [] -> [Field_missing (false, l.ld_id)]
+  | [], l::_ -> [Field_missing (true, l.Types.ld_id)]
+  | l::_, [] -> [Field_missing (false, l.Types.ld_id)]
   | {Types.ld_id=lab1; ld_mutable=mut1; ld_type=arg1}::rem1,
     {Types.ld_id=lab2; ld_mutable=mut2; ld_type=arg2}::rem2 ->
       if Ident.name lab1 <> Ident.name lab2
@@ -210,6 +210,24 @@ and compare_records env params1 params2 n labels1 labels2 =
 let type_declarations ?(equality = false) env name decl1 id decl2 =
   if decl1.type_arity <> decl2.type_arity then [Arity] else
   if not (private_flags decl1 decl2) then [Privacy] else
+  let err = match (decl1.type_manifest, decl2.type_manifest) with
+      (_, None) ->
+        if Ctype.equal env true decl1.type_params decl2.type_params
+        then [] else [Constraint]
+    | (Some ty1, Some ty2) ->
+        if type_manifest env ty1 decl1.type_params ty2 decl2.type_params
+            decl2.type_private
+        then [] else [Manifest]
+    | (None, Some ty2) ->
+        let ty1 =
+          Btype.newgenty (Tconstr(Pident id, decl2.type_params, ref Mnil))
+        in
+        if Ctype.equal env true decl1.type_params decl2.type_params then
+          if Ctype.equal env false [ty1] [ty2] then []
+          else [Manifest]
+        else [Constraint]
+  in
+  if err <> [] then err else
   let err = match (decl1.type_kind, decl2.type_kind) with
       (_, Type_abstract) -> []
     | (Type_variant cstrs1, Type_variant cstrs2) ->
@@ -234,24 +252,6 @@ let type_declarations ?(equality = false) env name decl1 id decl2 =
         [Record_representation (rep2 = Record_float)]
     | (Type_open, Type_open) -> []
     | (_, _) -> [Kind]
-  in
-  if err <> [] then err else
-  let err = match (decl1.type_manifest, decl2.type_manifest) with
-      (_, None) ->
-        if Ctype.equal env true decl1.type_params decl2.type_params
-        then [] else [Constraint]
-    | (Some ty1, Some ty2) ->
-        if type_manifest env ty1 decl1.type_params ty2 decl2.type_params
-            decl2.type_private
-        then [] else [Manifest]
-    | (None, Some ty2) ->
-        let ty1 =
-          Btype.newgenty (Tconstr(Pident id, decl2.type_params, ref Mnil))
-        in
-        if Ctype.equal env true decl1.type_params decl2.type_params then
-          if Ctype.equal env false [ty1] [ty2] then []
-          else [Manifest]
-        else [Constraint]
   in
   if err <> [] then err else
   let abstr =
@@ -304,33 +304,3 @@ let extension_constructors env id ext1 ext2 =
       else false
     else false
   else false
-
-(* Inclusion between class types *)
-let encode_val (mut, ty) rem =
-  begin match mut with
-    Asttypes.Mutable   -> Predef.type_unit
-  | Asttypes.Immutable -> Btype.newgenvar ()
-  end
-  ::ty::rem
-
-let meths meths1 meths2 =
-  Meths.fold
-    (fun nam t2 (ml1, ml2) ->
-       (begin try
-          Meths.find nam meths1 :: ml1
-        with Not_found ->
-          ml1
-        end,
-        t2 :: ml2))
-    meths2 ([], [])
-
-let vars vars1 vars2 =
-  Vars.fold
-    (fun lab v2 (vl1, vl2) ->
-       (begin try
-          encode_val (Vars.find lab vars1) vl1
-        with Not_found ->
-          vl1
-        end,
-        encode_val v2 vl2))
-    vars2 ([], [])

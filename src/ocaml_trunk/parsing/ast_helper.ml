@@ -29,6 +29,17 @@ let with_default_loc l f =
   try let r = f () in default_loc := old; r
   with exn -> default_loc := old; raise exn
 
+module Const = struct
+  let integer ?suffix i = Pconst_integer (i, suffix)
+  let int ?suffix i = integer ?suffix (string_of_int i)
+  let int32 ?(suffix='l') i = integer ~suffix (Int32.to_string i)
+  let int64 ?(suffix='L') i = integer ~suffix (Int64.to_string i)
+  let nativeint ?(suffix='n') i = integer ~suffix (Nativeint.to_string i)
+  let float ?suffix f = Pconst_float (f, suffix)
+  let char c = Pconst_char c
+  let string ?quotation_delimiter s = Pconst_string (s, quotation_delimiter)
+end
+
 module Typ = struct
   let mk ?(loc = !default_loc) ?(attrs = []) d =
     {ptyp_desc = d; ptyp_loc = loc; ptyp_attributes = attrs}
@@ -116,6 +127,7 @@ module Exp = struct
   let pack ?loc ?attrs a = mk ?loc ?attrs (Pexp_pack a)
   let open_ ?loc ?attrs a b c = mk ?loc ?attrs (Pexp_open (a, b, c))
   let extension ?loc ?attrs a = mk ?loc ?attrs (Pexp_extension a)
+  let unreachable ?loc ?attrs () = mk ?loc ?attrs Pexp_unreachable
 
   let case lhs ?guard rhs =
     {
@@ -480,8 +492,3 @@ module Cstr = struct
      pcstr_fields = fields;
     }
 end
-
-(** merlin addition *)
-let rtag ?(attrs=[]) label bool lst = Rtag (label, attrs, bool, lst)
-
-let const_string s = Const_string (s, None)

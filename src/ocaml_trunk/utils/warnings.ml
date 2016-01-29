@@ -42,7 +42,7 @@ type t =
   | Preprocessor of string                  (* 22 *)
   | Useless_record_with                     (* 23 *)
   | Bad_module_name of string               (* 24 *)
-  | All_clauses_guarded                     (* 25 *)
+  | All_clauses_guarded                     (* 8, used to be 25 *)
   | Unused_var of string                    (* 26 *)
   | Unused_var_strict of string             (* 27 *)
   | Wildcard_arg_to_constant_constr         (* 28 *)
@@ -66,9 +66,17 @@ type t =
   | Bad_env_variable of string * string     (* 46 *)
   | Attribute_payload of string * string    (* 47 *)
   | Eliminated_optional_arguments of string list (* 48 *)
-  | No_cmi_file of string                   (* 49 *)
+  | No_cmi_file of string * string option   (* 49 *)
   | Bad_docstring of bool                   (* 50 *)
   | Expect_tailcall                         (* 51 *)
+  | Fragile_literal_pattern                 (* 52 *)
+  | Misplaced_attribute of string           (* 53 *)
+  | Duplicated_attribute of string          (* 54 *)
+  | Inlining_impossible of string           (* 55 *)
+  | Unreachable_case                        (* 56 *)
+  | Ambiguous_pattern of string list        (* 57 *)
+  | No_cmx_file of string                   (* 58 *)
+  | Assignment_to_non_mutable_value         (* 59 *)
 ;;
 
 (* If you remove a warning, leave a hole in the numbering.  NEVER change
@@ -102,7 +110,7 @@ let number = function
   | Preprocessor _ -> 22
   | Useless_record_with -> 23
   | Bad_module_name _ -> 24
-  | All_clauses_guarded -> 25
+  | All_clauses_guarded -> 8 (* used to be 25 *)
   | Unused_var _ -> 26
   | Unused_var_strict _ -> 27
   | Wildcard_arg_to_constant_constr -> 28
@@ -129,9 +137,19 @@ let number = function
   | No_cmi_file _ -> 49
   | Bad_docstring _ -> 50
   | Expect_tailcall -> 51
+  | Fragile_literal_pattern -> 52
+  | Misplaced_attribute _ -> 53
+  | Duplicated_attribute _ -> 54
+  | Inlining_impossible _ -> 55
+  | Unreachable_case -> 56
+  | Ambiguous_pattern _ -> 57
+  | No_cmx_file _ -> 58
+  | Assignment_to_non_mutable_value -> 59
 ;;
 
-let last_warning_number = 51
+let last_warning_number = 59
+;;
+
 (* Must be the max number returned by the [number] function. *)
 
 let letter = function
@@ -160,7 +178,7 @@ let letter = function
   | 'u' -> [11; 12]
   | 'v' -> [13]
   | 'w' -> []
-  | 'x' -> [14; 15; 16; 17; 18; 19; 20; 21; 22; 23; 24; 25; 30]
+  | 'x' -> [14; 15; 16; 17; 18; 19; 20; 21; 22; 23; 24; 30]
   | 'y' -> [26]
   | 'z' -> [27]
   | _ -> assert false
@@ -210,7 +228,7 @@ let parse_opt error active flags s =
     if i >= String.length s then () else
     match s.[i] with
     | 'A' .. 'Z' ->
-       List.iter set (letter (Char.lowercase s.[i]));
+       List.iter set (letter (Char.lowercase_ascii s.[i]));
        loop (i+1)
     | 'a' .. 'z' ->
        List.iter clear (letter s.[i]);
@@ -227,7 +245,7 @@ let parse_opt error active flags s =
         for n = n1 to min n2 last_warning_number do myset n done;
         loop i
     | 'A' .. 'Z' ->
-       List.iter myset (letter (Char.lowercase s.[i]));
+       List.iter myset (letter (Char.lowercase_ascii s.[i]));
        loop (i+1)
     | 'a' .. 'z' ->
        List.iter myset (letter s.[i]);
@@ -250,7 +268,7 @@ let parse_options ?state errflag s =
 
 (* If you change these, don't forget to change them in man/ocamlc.m *)
 let defaults_w = "+a-4-6-7-9-27-29-32..39-41..42-44-45-48-50";;
-let defaults_warn_error = "-a";;
+let defaults_warn_error = "-a+31";;
 
 let initial = !current
 let () = parse_options ~state:initial false defaults_w;;
@@ -259,7 +277,14 @@ let () = parse_options ~state:initial true defaults_warn_error;;
 let message = function
   | Comment_start -> "this is the start of a comment."
   | Comment_not_end -> "this is not the end of a comment."
-  | Deprecated s -> "deprecated: " ^ s
+  | Deprecated s ->
+      (* Reduce \r\n to \n:
+           - Prevents any \r characters being printed on Unix when processing
+             Windows sources
+           - Prevents \r\r\n being generated on Windows, which affects the
+             testsuite
+       *)
+       "deprecated: " ^ Misc.normalise_eol s
   | Fragile_match "" ->
       "this pattern-matching is fragile."
   | Fragile_match s ->
@@ -319,7 +344,8 @@ let message = function
   | Bad_module_name (modname) ->
       "bad source file name: \"" ^ modname ^ "\" is not a valid module name."
   | All_clauses_guarded ->
-      "bad style, all clauses in this pattern-matching are guarded."
+      "this pattern-matching is not exhaustive.\n\
+       All clauses in this pattern-matching are guarded."
   | Unused_var v | Unused_var_strict v -> "unused variable " ^ v ^ "."
   | Wildcard_arg_to_constant_constr ->
      "wildcard pattern given as argument to a constant constructor"
@@ -396,13 +422,46 @@ let message = function
       Printf.sprintf "implicit elimination of optional argument%s %s"
         (if List.length sl = 1 then "" else "s")
         (String.concat ", " sl)
-  | No_cmi_file s ->
-      "no cmi file was found in path for module " ^ s
+  | No_cmi_file(name, None) ->
+      "no cmi file was found in path for module " ^ name
+  | No_cmi_file(name, Some msg) ->
+      Printf.sprintf
+        "no valid cmi file was found in path for module %s. %s"
+        name msg
   | Bad_docstring unattached ->
       if unattached then "unattached documentation comment (ignored)"
       else "ambiguous documentation comment"
   | Expect_tailcall ->
       Printf.sprintf "expected tailcall"
+  | Fragile_literal_pattern ->
+      Printf.sprintf
+        "the argument of this constructor should not be matched against a\n\
+         constant pattern; the actual value of the argument could change\n\
+         in the future"
+  | Unreachable_case ->
+      "this match case is unreachable.\n\
+       Consider replacing it with a refutation case '<pat> -> .'"
+  | Misplaced_attribute attr_name ->
+      Printf.sprintf "the %S attribute cannot appear in this context" attr_name
+  | Duplicated_attribute attr_name ->
+      Printf.sprintf "the %S attribute is used more than once on this expression" attr_name
+  | Inlining_impossible reason ->
+      Printf.sprintf "Inlining impossible in this context: %s" reason
+  | Ambiguous_pattern vars ->
+      let msg =
+        let vars = List.sort String.compare vars in
+        match vars with
+        | [] -> assert false
+        | [x] -> "variable " ^ x
+        | _::_ ->
+            "variables " ^ String.concat "," vars in
+      Printf.sprintf
+        "Ambiguous guarded pattern, %s may match different or-pattern arguments" msg
+  | No_cmx_file name ->
+      Printf.sprintf
+        "no cmx file was found in path for module %s, \
+         and its interface was not compiled with -opaque" name
+  | Assignment_to_non_mutable_value -> "Assignment to non-mutable value"
 ;;
 
 let nerrors = ref 0;;
@@ -416,6 +475,9 @@ let print ppf w =
 ;;
 
 exception Errors of int;;
+
+let reset_fatal () =
+  nerrors := 0
 
 let check_fatal () =
   if !nerrors > 0 then begin
@@ -456,8 +518,8 @@ let descriptions =
    23, "Useless record \"with\" clause.";
    24, "Bad module name: the source file name is not a valid OCaml module \
         name.";
-   25, "Pattern-matching with all clauses guarded.  Exhaustiveness cannot be\n\
-   \    checked.";
+   (* 25, "Pattern-matching with all clauses guarded.  Exhaustiveness cannot be\n\
+   \    checked.";  (* Now part of warning 8 *) *)
    26, "Suspicious unused variable: unused variable that is bound\n\
    \    with \"let\" or \"as\", and doesn't start with an underscore (\"_\")\n\
    \    character.";
@@ -486,9 +548,17 @@ let descriptions =
    46, "Error in environment variable.";
    47, "Illegal attribute payload.";
    48, "Implicit elimination of optional arguments.";
-   49, "Missing cmi file when looking up module alias.";
+   49, "Absent cmi file when looking up module alias.";
    50, "Unexpected documentation comment.";
-   51, "Warning on non-tail calls if @tailcall present";
+   51, "Warning on non-tail calls if @tailcall present.";
+   52, "Fragile constant pattern.";
+   53, "Attribute cannot appear in this context";
+   54, "Attribute used more than once on an expression";
+   55, "Inlining impossible";
+   56, "Unreachable case in a pattern-matching (based on type information).";
+   57, "Ambiguous binding by pattern.";
+   58, "Missing cmx file";
+   59, "Assignment to non-mutable value";
   ]
 ;;
 
