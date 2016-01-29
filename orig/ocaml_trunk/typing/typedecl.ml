@@ -21,10 +21,6 @@ open Typetexp
 
 type native_repr_kind = Unboxed | Untagged
 
-let string_of_native_repr_kind = function
-  | Unboxed -> "unboxed"
-  | Untagged -> "untagged"
-
 type error =
     Repeated_parameter
   | Duplicate_constructor of string
@@ -52,9 +48,9 @@ type error =
   | Unbound_type_var_ext of type_expr * extension_constructor
   | Varying_anonymous
   | Val_in_structure
-  | Invalid_native_repr_attribute_payload of native_repr_kind
   | Multiple_native_repr_attributes
   | Cannot_unbox_or_untag_type of native_repr_kind
+  | Deep_unbox_or_untag_attribute of native_repr_kind
 
 open Typedtree
 
@@ -157,8 +153,7 @@ let make_params env params =
     List.map make_param params
 
 let transl_labels loc env closed lbls =
-  if lbls = [] then
-    Syntaxerr.ill_formed_ast loc "Records cannot be empty.";
+  assert (lbls <> []);
   let all_labels = ref StringSet.empty in
   List.iter
     (fun {pld_name = {txt=name; loc}} ->
@@ -242,9 +237,7 @@ let transl_declaration env sdecl id =
     match sdecl.ptype_kind with
         Ptype_abstract -> Ttype_abstract, Type_abstract
       | Ptype_variant scstrs ->
-        if scstrs = [] then
-          Syntaxerr.ill_formed_ast sdecl.ptype_loc
-            "Variant types cannot be empty.";
+        assert (scstrs <> []);
         let all_constrs = ref StringSet.empty in
         List.iter
           (fun {pcd_name = {txt = name}} ->
@@ -523,11 +516,15 @@ let check_well_founded env loc path to_check ty =
       | _ -> raise Ctype.Cannot_expand
     with
     | Ctype.Cannot_expand ->
+        let rec_ok =
+          match ty.desc with
+            Tconstr(p,_,_) ->
+              !Clflags.recursive_types && Ctype.is_contractive env p
+          | Tobject _ | Tvariant _ -> true
+          | _ -> !Clflags.recursive_types
+        in
         let nodes =
-          if !Clflags.recursive_types && Ctype.is_contractive env ty
-          || match ty.desc with Tobject _ | Tvariant _ -> true | _ -> false
-          then TypeSet.empty
-          else exp_nodes in
+          if rec_ok then TypeSet.empty else exp_nodes in
         Btype.iter_type_expr (check ty0 nodes) ty
     | Ctype.Unify _ ->
         (* Will be detected by check_recursion *)
@@ -1365,27 +1362,19 @@ type native_repr_attribute =
   | Native_repr_attr_absent
   | Native_repr_attr_present of native_repr_kind
 
-let get_native_repr_attribute core_type =
+let get_native_repr_attribute attrs ~global_repr =
   match
-    List.filter
-      (fun (n, _) ->
-         match n.Location.txt with
-         | "unboxed" | "untagged" -> true
-         | _ -> false)
-      core_type.ptyp_attributes
+    Attr_helper.get_no_payload_attribute ["unboxed"; "ocaml.unboxed"]  attrs,
+    Attr_helper.get_no_payload_attribute ["untagged"; "ocaml.untagged"] attrs,
+    global_repr
   with
-  | [] ->
-    Native_repr_attr_absent
-  | _ :: (n, _) :: _ ->
-    raise (Error (n.Location.loc, Multiple_native_repr_attributes))
-  | [(n, payload)] ->
-    let kind = if n.txt = "unboxed" then Unboxed else Untagged in
-    match payload with
-    | PStr [] ->
-      Native_repr_attr_present kind
-    | _ ->
-      raise (Error (n.Location.loc,
-                    Invalid_native_repr_attribute_payload kind))
+  | None, None, None -> Native_repr_attr_absent
+  | None, None, Some repr -> Native_repr_attr_present repr
+  | Some _, None, None -> Native_repr_attr_present Unboxed
+  | None, Some _, None -> Native_repr_attr_present Untagged
+  | Some { Location.loc }, _, _
+  | _, Some { Location.loc }, _ ->
+    raise (Error (loc, Multiple_native_repr_attributes))
 
 let native_repr_of_type env kind ty =
   match kind, (Ctype.expand_head_opt env ty).desc with
@@ -1402,9 +1391,29 @@ let native_repr_of_type env kind ty =
   | _ ->
     None
 
-let make_native_repr env core_type ty =
-  match get_native_repr_attribute core_type with
-  | Native_repr_attr_absent -> Same_as_ocaml_repr
+(* Raises an error when [core_type] contains an [@unboxed] or [@untagged]
+   attribute in a strict sub-term. *)
+let error_if_has_deep_native_repr_attributes core_type =
+  let open Ast_iterator in
+  let this_iterator =
+    { default_iterator with typ = fun iterator core_type ->
+      begin
+        match
+          get_native_repr_attribute core_type.ptyp_attributes ~global_repr:None
+        with
+        | Native_repr_attr_present kind ->
+           raise (Error (core_type.ptyp_loc, Deep_unbox_or_untag_attribute kind))
+        | Native_repr_attr_absent -> ()
+      end;
+      default_iterator.typ iterator core_type }
+  in
+  default_iterator.typ this_iterator core_type
+
+let make_native_repr env core_type ty ~global_repr =
+  error_if_has_deep_native_repr_attributes core_type;
+  match get_native_repr_attribute core_type.ptyp_attributes ~global_repr with
+  | Native_repr_attr_absent ->
+    Same_as_ocaml_repr
   | Native_repr_attr_present kind ->
     begin match native_repr_of_type env kind ty with
     | None ->
@@ -1412,14 +1421,20 @@ let make_native_repr env core_type ty =
     | Some repr -> repr
     end
 
-let rec parse_native_repr_attributes env core_type ty =
-  match core_type.ptyp_desc, (Ctype.repr ty).desc with
-  | Ptyp_arrow (_, ct1, ct2), Tarrow (_, t1, t2, _) ->
-    let repr_arg = make_native_repr env ct1 t1 in
-    let repr_args, repr_res = parse_native_repr_attributes env ct2 t2 in
+let rec parse_native_repr_attributes env core_type ty ~global_repr =
+  match core_type.ptyp_desc, (Ctype.repr ty).desc,
+    get_native_repr_attribute core_type.ptyp_attributes ~global_repr:None
+  with
+  | Ptyp_arrow _, Tarrow _, Native_repr_attr_present kind  ->
+    raise (Error (core_type.ptyp_loc, Cannot_unbox_or_untag_type kind))
+  | Ptyp_arrow (_, ct1, ct2), Tarrow (_, t1, t2, _), _ ->
+    let repr_arg = make_native_repr env ct1 t1 ~global_repr in
+    let repr_args, repr_res =
+      parse_native_repr_attributes env ct2 t2 ~global_repr
+    in
     (repr_arg :: repr_args, repr_res)
-  | Ptyp_arrow _, _ | _, Tarrow _ -> assert false
-  | _ -> ([], make_native_repr env core_type ty)
+  | Ptyp_arrow _, _, _ | _, Tarrow _, _ -> assert false
+  | _ -> ([], make_native_repr env core_type ty ~global_repr)
 
 (* Translate a value declaration *)
 let transl_value_decl env loc valdecl =
@@ -1433,8 +1448,15 @@ let transl_value_decl env loc valdecl =
   | [] ->
       raise (Error(valdecl.pval_loc, Val_in_structure))
   | _ ->
+      let global_repr =
+        match
+          get_native_repr_attribute valdecl.pval_attributes ~global_repr:None
+        with
+        | Native_repr_attr_present repr -> Some repr
+        | Native_repr_attr_absent -> None
+      in
       let native_repr_args, native_repr_res =
-        parse_native_repr_attributes env valdecl.pval_type ty
+        parse_native_repr_attributes env valdecl.pval_type ty ~global_repr
       in
       let prim =
         Primitive.parse_declaration valdecl
@@ -1691,13 +1713,13 @@ let report_error ppf = function
       begin match decl.type_kind, decl.type_manifest with
       | Type_variant tl, _ ->
           explain_unbound_gen ppf ty tl (fun c ->
-              let tl = tys_of_constr_args c.cd_args in
+              let tl = tys_of_constr_args c.Types.cd_args in
               Btype.newgenty (Ttuple tl)
             )
             "case" (fun ppf c ->
                 fprintf ppf
                   "%s of %a" (Ident.name c.Types.cd_id)
-                  Printtyp.constructor_arguments c.cd_args)
+                  Printtyp.constructor_arguments c.Types.cd_args)
       | Type_record (tl, _), _ ->
           explain_unbound ppf ty tl (fun l -> l.Types.ld_type)
             "field" (fun l -> Ident.name l.Types.ld_id ^ ": ")
@@ -1791,9 +1813,6 @@ let report_error ppf = function
         "cannot be checked"
   | Val_in_structure ->
       fprintf ppf "Value declarations are only allowed in signatures"
-  | Invalid_native_repr_attribute_payload kind ->
-      fprintf ppf "[@@%s] attribute does not accept a payload"
-        (string_of_native_repr_kind kind)
   | Multiple_native_repr_attributes ->
       fprintf ppf "Too many [@@unboxed]/[@@untagged] attributes"
   | Cannot_unbox_or_untag_type Unboxed ->
@@ -1802,6 +1821,11 @@ let report_error ppf = function
   | Cannot_unbox_or_untag_type Untagged ->
       fprintf ppf "Don't know how to untag this type. Only int \
                    can be untagged"
+  | Deep_unbox_or_untag_attribute kind ->
+      fprintf ppf
+        "The attribute '%s' should be attached to a direct argument or \
+         result of the primitive, it should not occur deeply into its type"
+        (match kind with Unboxed -> "@unboxed" | Untagged -> "@untagged")
 
 let () =
   Location.register_error_of_exn

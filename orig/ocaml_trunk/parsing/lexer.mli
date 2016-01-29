@@ -23,7 +23,6 @@ type error =
   | Unterminated_string
   | Unterminated_string_in_comment of Location.t * Location.t
   | Keyword_as_label of string
-  | Literal_overflow of string
   | Invalid_literal of string
 ;;
 
@@ -39,6 +38,7 @@ val in_string : unit -> bool;;
 
 
 val print_warnings : bool ref
+val handle_docstrings: bool ref
 val comments : unit -> (string * Location.t) list
 val token_with_comments : Lexing.lexbuf -> Parser.token
 

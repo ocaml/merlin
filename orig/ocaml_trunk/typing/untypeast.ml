@@ -112,6 +112,15 @@ let fresh_name s env =
 
 (** Mapping functions. *)
 
+let constant = function
+  | Const_char c -> Pconst_char c
+  | Const_string (s,d) -> Pconst_string (s,d)
+  | Const_int i -> Pconst_integer (string_of_int i, None)
+  | Const_int32 i -> Pconst_integer (Int32.to_string i, Some 'l')
+  | Const_int64 i -> Pconst_integer (Int64.to_string i, Some 'L')
+  | Const_nativeint i -> Pconst_integer (Nativeint.to_string i, Some 'n')
+  | Const_float f -> Pconst_float (f,None)
+
 let attribute sub (s, p) = (map_loc sub s, p)
 let attributes sub l = List.map (sub.attribute sub) l
 
@@ -280,7 +289,7 @@ let pattern sub pat =
 
     | Tpat_alias (pat, _id, name) ->
         Ppat_alias (sub.pat sub pat, name)
-    | Tpat_constant cst -> Ppat_constant cst
+    | Tpat_constant cst -> Ppat_constant (constant cst)
     | Tpat_tuple list ->
         Ppat_tuple (List.map (sub.pat sub) list)
     | Tpat_construct (lid, _, args) ->
@@ -345,7 +354,7 @@ let expression sub exp =
   let desc =
     match exp.exp_desc with
       Texp_ident (_path, lid, _) -> Pexp_ident (map_loc sub lid)
-    | Texp_constant cst -> Pexp_constant cst
+    | Texp_constant cst -> Pexp_constant (constant cst)
     | Texp_let (rec_flag, list, exp) ->
         Pexp_let (rec_flag,
           List.map (sub.value_binding sub) list,
@@ -366,7 +375,7 @@ let expression sub exp =
                           (sub.cases sub cases))
     | Texp_apply (exp, list) ->
         Pexp_apply (sub.expr sub exp,
-          List.fold_right (fun (label, expo, _) list ->
+          List.fold_right (fun (label, expo) list ->
               match expo with
                 None -> list
               | Some exp -> (label, sub.expr sub exp) :: list
@@ -444,6 +453,13 @@ let expression sub exp =
         Pexp_object (sub.class_structure sub cl)
     | Texp_pack (mexpr) ->
         Pexp_pack (sub.module_expr sub mexpr)
+    | Texp_unreachable ->
+        Pexp_unreachable
+    | Texp_extension_constructor (lid, _) ->
+        Pexp_extension ({ txt = "ocaml.extension_constructor"; loc },
+                        PStr [ Str.eval ~loc
+                                 (Exp.construct ~loc (map_loc sub lid) None)
+                             ])
   in
   List.fold_right (exp_extra sub) exp.exp_extra
     (Exp.mk ~loc ~attrs desc)
@@ -594,7 +610,7 @@ let class_expr sub cexpr =
 
     | Tcl_apply (cl, args) ->
         Pcl_apply (sub.class_expr sub cl,
-          List.fold_right (fun (label, expo, _) list ->
+          List.fold_right (fun (label, expo) list ->
               match expo with
                 None -> list
               | Some exp -> (label, sub.expr sub exp) :: list

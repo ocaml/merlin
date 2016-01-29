@@ -113,8 +113,14 @@ open Cmx_format
 let print_cmx_infos (ui, crc) =
   print_general_infos
     ui.ui_name crc ui.ui_defines ui.ui_imports_cmi ui.ui_imports_cmx;
-  printf "Approximation:\n";
-  Format.fprintf Format.std_formatter "  %a@." Printclambda.approx ui.ui_approx;
+  begin match ui.ui_export_info with
+  | Clambda approx ->
+    printf "Approximation:\n";
+    Format.fprintf Format.std_formatter "  %a@." Printclambda.approx approx
+  | Flambda _ -> ()
+  (* CR mshinwell: This should print the flambda export info.
+     Unfortunately this needs some surgery in the Makefiles. *)
+  end;
   let pr_funs _ fns =
     List.iter (fun arity -> printf " %d" arity) fns in
   printf "Currying functions:%a\n" pr_funs ui.ui_curry_fun;
@@ -199,13 +205,13 @@ let read_dyn_header filename ic =
                                 (Filename.quote filename)
                                 tempfile) in
         if rc <> 0 then failwith "cannot read";
-        let tc = open_in tempfile in
+        let tc = Scanf.Scanning.from_file tempfile in
         try_finally
           (fun () ->
-            let ofs = Scanf.fscanf tc "%Ld" (fun x -> x) in
+            let ofs = Scanf.bscanf tc "%Ld" (fun x -> x) in
             LargeFile.seek_in ic ofs;
             Some(input_value ic : dynheader))
-          (fun () -> close_in tc))
+          (fun () -> Scanf.Scanning.close_in tc))
       (fun () -> remove_file tempfile)
   with Failure _ | Sys_error _ -> None
 

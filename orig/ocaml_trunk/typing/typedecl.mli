@@ -85,9 +85,9 @@ type error =
   | Unbound_type_var_ext of type_expr * extension_constructor
   | Varying_anonymous
   | Val_in_structure
-  | Invalid_native_repr_attribute_payload of native_repr_kind
   | Multiple_native_repr_attributes
   | Cannot_unbox_or_untag_type of native_repr_kind
+  | Deep_unbox_or_untag_attribute of native_repr_kind
 
 exception Error of Location.t * error
 

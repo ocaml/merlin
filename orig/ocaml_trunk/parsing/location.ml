@@ -285,6 +285,17 @@ let print_error_prefix ppf () =
   ()
 ;;
 
+let print_compact ppf loc =
+  if loc.loc_start.pos_fname = "//toplevel//"
+  && highlight_locations ppf [loc] then ()
+  else begin
+    let (file, line, startchar) = get_pos_info loc.loc_start in
+    let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
+    fprintf ppf "%a:%i" print_filename file line;
+    if startchar >= 0 then fprintf ppf ",%i--%i" startchar endchar
+  end
+;;
+
 let print_error ppf loc =
   print ppf loc;
   print_error_prefix ppf ()
@@ -294,8 +305,9 @@ let print_error_cur_file ppf () = print_error ppf (in_file !input_name);;
 
 let default_warning_printer loc ppf w =
   if Warnings.is_active w then begin
+    setup_colors ();
     print ppf loc;
-    fprintf ppf "Warning %a@." Warnings.print w
+    fprintf ppf "@{<warning>%s@} %a@." warning_prefix Warnings.print w
   end
 ;;
 
@@ -418,11 +430,13 @@ let () =
     )
 
 
+external reraise : exn -> 'a = "%reraise"
+
 let rec report_exception_rec n ppf exn =
   try match error_of_exn exn with
   | Some err ->
       fprintf ppf "@[%a@]@." report_error err
-  | None -> raise exn
+  | None -> reraise exn
   with exn when n > 0 ->
     report_exception_rec (n-1) ppf exn
 

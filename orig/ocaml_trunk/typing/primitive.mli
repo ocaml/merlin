@@ -30,10 +30,20 @@ type description = private
     prim_native_repr_args: native_repr list;
     prim_native_repr_res: native_repr }
 
+(* Invariant [List.length d.prim_native_repr_args = d.prim_arity] *)
+
 val simple
   :  name:string
   -> arity:int
   -> alloc:bool
+  -> description
+
+val make
+  :  name:string
+  -> alloc:bool
+  -> native_name:string
+  -> native_repr_args: native_repr list
+  -> native_repr_res: native_repr
   -> description
 
 val parse_declaration
@@ -42,13 +52,17 @@ val parse_declaration
   -> native_repr_res:native_repr
   -> description
 
-val description_list_and_attributes
-  : description -> string list * string option list
+val print
+  :  description
+  -> Outcometree.out_val_decl
+  -> Outcometree.out_val_decl
 
 val native_name: description -> string
 val byte_name: description -> string
 
 type error =
-  | Float_with_native_repr_attribute
+  | Old_style_float_with_native_repr_attribute
+  | Old_style_noalloc_with_noalloc_attribute
+  | No_native_primitive_with_repr_attribute
 
 exception Error of Location.t * error

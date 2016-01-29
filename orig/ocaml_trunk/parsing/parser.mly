@@ -69,40 +69,28 @@ let ghtyp d = Typ.mk ~loc:(symbol_gloc ()) d
 let ghloc d = { txt = d; loc = symbol_gloc () }
 let ghstr d = Str.mk ~loc:(symbol_gloc()) d
 
-let ghunit () =
-  ghexp (Pexp_construct (mknoloc (Lident "()"), None))
-
 let mkinfix arg1 name arg2 =
   mkexp(Pexp_apply(mkoperator name 2, [Nolabel, arg1; Nolabel, arg2]))
 
-let neg_float_string f =
+let neg_string f =
   if String.length f > 0 && f.[0] = '-'
   then String.sub f 1 (String.length f - 1)
   else "-" ^ f
 
 let mkuminus name arg =
   match name, arg.pexp_desc with
-  | "-", Pexp_constant(Const_int n) ->
-      mkexp(Pexp_constant(Const_int(-n)))
-  | "-", Pexp_constant(Const_int32 n) ->
-      mkexp(Pexp_constant(Const_int32(Int32.neg n)))
-  | "-", Pexp_constant(Const_int64 n) ->
-      mkexp(Pexp_constant(Const_int64(Int64.neg n)))
-  | "-", Pexp_constant(Const_nativeint n) ->
-      mkexp(Pexp_constant(Const_nativeint(Nativeint.neg n)))
-  | ("-" | "-."), Pexp_constant(Const_float f) ->
-      mkexp(Pexp_constant(Const_float(neg_float_string f)))
+  | "-", Pexp_constant(Pconst_integer (n,m)) ->
+      mkexp(Pexp_constant(Pconst_integer(neg_string n,m)))
+  | ("-" | "-."), Pexp_constant(Pconst_float (f, m)) ->
+      mkexp(Pexp_constant(Pconst_float(neg_string f, m)))
   | _ ->
       mkexp(Pexp_apply(mkoperator ("~" ^ name) 1, [Nolabel, arg]))
 
 let mkuplus name arg =
   let desc = arg.pexp_desc in
   match name, desc with
-  | "+", Pexp_constant(Const_int _)
-  | "+", Pexp_constant(Const_int32 _)
-  | "+", Pexp_constant(Const_int64 _)
-  | "+", Pexp_constant(Const_nativeint _)
-  | ("+" | "+."), Pexp_constant(Const_float _) -> mkexp desc
+  | "+", Pexp_constant(Pconst_integer _)
+  | ("+" | "+."), Pexp_constant(Pconst_float _) -> mkexp desc
   | _ ->
       mkexp(Pexp_apply(mkoperator ("~" ^ name) 1, [Nolabel, arg]))
 
@@ -149,9 +137,16 @@ let mkexp_constraint e (t1, t2) =
   | _, Some t -> ghexp(Pexp_coerce(e, t1, t))
   | None, None -> assert false
 
-let array_function par assign=
-  let op = if assign then par^"<-" else par in
-  ghloc ( Lident op )
+let mkexp_opt_constraint e = function
+  | None -> e
+  | Some constraint_ -> mkexp_constraint e constraint_
+
+let mkpat_opt_constraint p = function
+  | None -> p
+  | Some typ -> mkpat (Ppat_constraint(p, typ))
+
+let array_function str name =
+  ghloc (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name)))
 
 let syntax_error () =
   raise Syntaxerr.Escape_error
@@ -166,53 +161,45 @@ let expecting pos nonterm =
 let not_expecting pos nonterm =
     raise Syntaxerr.(Error(Not_expecting(rhs_loc pos, nonterm)))
 
-let bigarray_function order assign =
-  let op =
-    match order with
-      | 1 -> ".{}"
-      | 2 -> ".{,}"
-      | 3 -> ".{,,}"
-      | _ -> ".{,..,}"
-  in
-  let op= if assign then op^"<-" else op in
-  ghloc ( Lident op )
+let bigarray_function str name =
+  ghloc (Ldot(Ldot(Lident "Bigarray", str), name))
 
 let bigarray_untuplify = function
     { pexp_desc = Pexp_tuple explist; pexp_loc = _ } -> explist
   | exp -> [exp]
 
 let bigarray_get arr arg =
-  let get order = bigarray_function order false in
+  let get = if !Clflags.fast then "unsafe_get" else "get" in
   match bigarray_untuplify arg with
     [c1] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(get 1)),
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array1" get)),
                        [Nolabel, arr; Nolabel, c1]))
   | [c1;c2] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(get 2)),
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array2" get)),
                        [Nolabel, arr; Nolabel, c1; Nolabel, c2]))
   | [c1;c2;c3] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(get 3)),
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array3" get)),
                        [Nolabel, arr; Nolabel, c1; Nolabel, c2; Nolabel, c3]))
   | coords ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(get 0)),
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Genarray" "get")),
                        [Nolabel, arr; Nolabel, ghexp(Pexp_array coords)]))
 
 let bigarray_set arr arg newval =
-  let set order = bigarray_function order true in
+  let set = if !Clflags.fast then "unsafe_set" else "set" in
   match bigarray_untuplify arg with
     [c1] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(set 1)),
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array1" set)),
                        [Nolabel, arr; Nolabel, c1; Nolabel, newval]))
   | [c1;c2] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(set 2)),
-                       [Nolabel, arr; Nolabel, c1; Nolabel, c2;
-                        Nolabel, newval]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array2" set)),
+                       [Nolabel, arr; Nolabel, c1;
+                        Nolabel, c2; Nolabel, newval]))
   | [c1;c2;c3] ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(set 3)),
-                       [Nolabel, arr; Nolabel, c1; Nolabel, c2; Nolabel, c3;
-                        Nolabel, newval]))
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Array3" set)),
+                       [Nolabel, arr; Nolabel, c1;
+                        Nolabel, c2; Nolabel, c3; Nolabel, newval]))
   | coords ->
-      mkexp(Pexp_apply(ghexp(Pexp_ident(set 0)),
+      mkexp(Pexp_apply(ghexp(Pexp_ident(bigarray_function "Genarray" "set")),
                        [Nolabel, arr;
                         Nolabel, ghexp(Pexp_array coords);
                         Nolabel, newval]))
@@ -347,26 +334,18 @@ let addlb lbs lb =
   { lbs with lbs_bindings = lb :: lbs.lbs_bindings }
 
 let val_of_let_bindings lbs =
-  let str =
-    match lbs.lbs_bindings with
-    | [ {lb_pattern = { ppat_desc = Ppat_any; ppat_loc = _ }; _} as lb ] ->
-        let exp = wrap_exp_attrs lb.lb_expression
-                    (None, lbs.lbs_attributes) in
-        mkstr (Pstr_eval (exp, lb.lb_attributes))
-    | bindings ->
-        if lbs.lbs_attributes <> [] then
-          raise Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "attributes")));
-        let bindings =
-          List.map
-            (fun lb ->
-               Vb.mk ~loc:lb.lb_loc ~attrs:lb.lb_attributes
-                 ~docs:(Lazy.force lb.lb_docs)
-                 ~text:(Lazy.force lb.lb_text)
-                 lb.lb_pattern lb.lb_expression)
-            bindings
-        in
-        mkstr(Pstr_value(lbs.lbs_rec, List.rev bindings))
+  if lbs.lbs_attributes <> [] then
+    raise Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "attributes")));
+  let bindings =
+    List.map
+      (fun lb ->
+         Vb.mk ~loc:lb.lb_loc ~attrs:lb.lb_attributes
+           ~docs:(Lazy.force lb.lb_docs)
+           ~text:(Lazy.force lb.lb_text)
+           lb.lb_pattern lb.lb_expression)
+      lbs.lbs_bindings
   in
+  let str = mkstr(Pstr_value(lbs.lbs_rec, List.rev bindings)) in
   match lbs.lbs_extension with
   | None -> str
   | Some id -> ghstr (Pstr_extension((id, PStr [str]), []))
@@ -397,6 +376,45 @@ let class_of_let_bindings lbs body =
     if lbs.lbs_attributes <> [] then
       raise Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "attributes")));
     mkclass(Pcl_let (lbs.lbs_rec, List.rev bindings, body))
+
+
+(* Alternatively, we could keep the generic module type in the Parsetree
+   and extract the package type during type-checking. In that case,
+   the assertions below should be turned into explicit checks. *)
+let package_type_of_module_type pmty =
+  let err loc s =
+    raise (Syntaxerr.Error (Syntaxerr.Invalid_package_type (loc, s)))
+  in
+  let map_cstr = function
+    | Pwith_type (lid, ptyp) ->
+        let loc = ptyp.ptype_loc in
+        if ptyp.ptype_params <> [] then
+          err loc "parametrized types are not supported";
+        if ptyp.ptype_cstrs <> [] then
+          err loc "constrained types are not supported";
+        if ptyp.ptype_private <> Public then
+          err loc "private types are not supported";
+
+        (* restrictions below are checked by the 'with_constraint' rule *)
+        assert (ptyp.ptype_kind = Ptype_abstract);
+        assert (ptyp.ptype_attributes = []);
+        let ty =
+          match ptyp.ptype_manifest with
+          | Some ty -> ty
+          | None -> assert false
+        in
+        (lid, ty)
+    | _ ->
+        err pmty.pmty_loc "only 'with type t =' constraints are supported"
+  in
+  match pmty with
+  | {pmty_desc = Pmty_ident lid} -> (lid, [])
+  | {pmty_desc = Pmty_with({pmty_desc = Pmty_ident lid}, cstrs)} ->
+      (lid, List.map map_cstr cstrs)
+  | _ ->
+      err pmty.pmty_loc
+        "only module type identifier and 'with type' constraints are supported"
+
 
 %}
 
@@ -433,7 +451,7 @@ let class_of_let_bindings lbs body =
 %token EXCEPTION
 %token EXTERNAL
 %token FALSE
-%token <string> FLOAT
+%token <string * char option> FLOAT
 %token FOR
 %token FUN
 %token FUNCTION
@@ -451,9 +469,7 @@ let class_of_let_bindings lbs body =
 %token <string> INFIXOP4
 %token INHERIT
 %token INITIALIZER
-%token <int> INT
-%token <int32> INT32
-%token <int64> INT64
+%token <string * char option> INT
 %token <string> LABEL
 %token LAZY
 %token LBRACE
@@ -479,7 +495,6 @@ let class_of_let_bindings lbs body =
 %token MINUSGREATER
 %token MODULE
 %token MUTABLE
-%token <nativeint> NATIVEINT
 %token NEW
 %token NONREC
 %token OBJECT
@@ -586,9 +601,9 @@ The precedences must be listed from low to high.
 %nonassoc below_DOT
 %nonassoc DOT
 /* Finally, the first tokens of simple_expr are above everything else. */
-%nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT INT32 INT64
+%nonassoc BACKQUOTE BANG BEGIN CHAR FALSE FLOAT INT
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
-          NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
+          NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
 
 
@@ -826,8 +841,13 @@ module_type:
       { unclosed "sig" 1 "end" 3 }
   | FUNCTOR functor_args MINUSGREATER module_type
       %prec below_WITH
-      { List.fold_left (fun acc (n, t) -> mkmty(Pmty_functor(n, t, acc)))
-                       $4 $2 }
+      { List.fold_left
+          (fun acc (n, t) ->
+           mkmty(Pmty_functor(n, t, acc)))
+        $4 $2 }
+  | module_type MINUSGREATER module_type
+      %prec below_WITH
+      { mkmty(Pmty_functor(mknoloc "_", Some $1, $3)) }
   | module_type WITH with_constraints
       { mkmty(Pmty_with($1, List.rev $3)) }
   | MODULE TYPE OF module_expr %prec below_LBRACKETAT
@@ -1327,10 +1347,10 @@ expr:
   | simple_expr DOT label_longident LESSMINUS expr
       { mkexp(Pexp_setfield($1, mkrhs $3 3, $5)) }
   | simple_expr DOT LPAREN seq_expr RPAREN LESSMINUS expr
-      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function ".()" true)),
+      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function "Array" "set")),
                          [Nolabel,$1; Nolabel,$4; Nolabel,$7])) }
   | simple_expr DOT LBRACKET seq_expr RBRACKET LESSMINUS expr
-      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function ".[]" true)),
+      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function "String" "set")),
                          [Nolabel,$1; Nolabel,$4; Nolabel,$7])) }
   | simple_expr DOT LBRACE expr RBRACE LESSMINUS expr
       { bigarray_set $1 $4 $7 }
@@ -1346,6 +1366,8 @@ expr:
       { unclosed "object" 1 "end" 4 }
   | expr attribute
       { Exp.attr $1 $2 }
+  | UNDERSCORE
+     { not_expecting 1 "wildcard \"_\"" }
 ;
 simple_expr:
     val_longident
@@ -1379,12 +1401,12 @@ simple_expr:
   | mod_longident DOT LPAREN seq_expr error
       { unclosed "(" 3 ")" 5 }
   | simple_expr DOT LPAREN seq_expr RPAREN
-      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function ".()" false)),
+      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function "Array" "get")),
                          [Nolabel,$1; Nolabel,$4])) }
   | simple_expr DOT LPAREN seq_expr error
       { unclosed "(" 3 ")" 5 }
   | simple_expr DOT LBRACKET seq_expr RBRACKET
-      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function ".[]" false)),
+      { mkexp(Pexp_apply(ghexp(Pexp_ident(array_function "String" "get")),
                          [Nolabel,$1; Nolabel,$4])) }
   | simple_expr DOT LBRACKET seq_expr error
       { unclosed "[" 3 "]" 5 }
@@ -1543,9 +1565,12 @@ match_case:
       { Exp.case $1 $3 }
   | pattern WHEN seq_expr MINUSGREATER seq_expr
       { Exp.case $1 ~guard:$3 $5 }
+  | pattern MINUSGREATER DOT
+      { Exp.case $1 (Exp.unreachable ~loc:(rhs_loc 3) ())}
 ;
 fun_def:
-    MINUSGREATER seq_expr                       { $2 }
+    MINUSGREATER seq_expr                        { $2 }
+  | COLON simple_core_type MINUSGREATER seq_expr { mkexp (Pexp_constraint ($4, $2)) }
 /* Cf #5939: we used to accept (fun p when e0 -> e) */
   | labeled_simple_pattern fun_def
       {
@@ -1569,10 +1594,10 @@ lbl_expr_list:
   |  lbl_expr SEMI { [$1] }
 ;
 lbl_expr:
-    label_longident EQUAL expr
-      { (mkrhs $1 1,$3) }
-  | label_longident
-      { (mkrhs $1 1, exp_of_label $1 1) }
+    label_longident opt_type_constraint EQUAL expr
+      { (mkrhs $1 1, mkexp_opt_constraint $4 $2) }
+  | label_longident opt_type_constraint
+      { (mkrhs $1 1, mkexp_opt_constraint (exp_of_label $1 1) $2) }
 ;
 field_expr_list:
     field_expr opt_semi { [$1] }
@@ -1594,6 +1619,10 @@ type_constraint:
   | COLONGREATER core_type                      { (None, Some $2) }
   | COLON error                                 { syntax_error() }
   | COLONGREATER error                          { syntax_error() }
+;
+opt_type_constraint:
+    type_constraint { Some $1 }
+  | /* empty */ { None }
 ;
 
 /* Patterns */
@@ -1700,10 +1729,14 @@ lbl_pattern_list:
       { let (fields, closed) = $3 in $1 :: fields, closed }
 ;
 lbl_pattern:
-    label_longident EQUAL pattern
-      { (mkrhs $1 1,$3) }
-  | label_longident
-      { (mkrhs $1 1, pat_of_label $1 1) }
+    label_longident opt_pattern_type_constraint EQUAL pattern
+     { (mkrhs $1 1, mkpat_opt_constraint $4 $2) }
+  | label_longident opt_pattern_type_constraint
+     { (mkrhs $1 1, mkpat_opt_constraint (pat_of_label $1 1) $2) }
+;
+opt_pattern_type_constraint:
+    COLON core_type { Some $2 }
+  | /* empty */ { None }
 ;
 
 /* Value descriptions */
@@ -2010,7 +2043,7 @@ core_type:
       { Typ.attr $1 $2 }
 ;
 core_type_no_attr:
-    core_type2
+    core_type2 %prec MINUSGREATER
       { $1 }
   | core_type2 AS QUOTE ident
       { mktyp(Ptyp_alias($1, $4)) }
@@ -2080,15 +2113,7 @@ simple_core_type2:
       { mktyp (Ptyp_extension $1) }
 ;
 package_type:
-    mty_longident { (mkrhs $1 1, []) }
-  | mty_longident WITH package_type_cstrs { (mkrhs $1 1, $3) }
-;
-package_type_cstr:
-    TYPE label_longident EQUAL core_type { (mkrhs $2 2, $4) }
-;
-package_type_cstrs:
-    package_type_cstr { [$1] }
-  | package_type_cstr AND package_type_cstrs { $1::$3 }
+    module_type { package_type_of_module_type $1 }
 ;
 row_field_list:
     row_field                                   { [$1] }
@@ -2144,26 +2169,17 @@ label:
 /* Constants */
 
 constant:
-    INT                               { Const_int $1 }
-  | CHAR                              { Const_char $1 }
-  | STRING                            { let (s, d) = $1 in Const_string (s, d) }
-  | FLOAT                             { Const_float $1 }
-  | INT32                             { Const_int32 $1 }
-  | INT64                             { Const_int64 $1 }
-  | NATIVEINT                         { Const_nativeint $1 }
+  | INT                               { let (n, m) = $1 in Pconst_integer (n, m) }
+  | CHAR                              { Pconst_char $1 }
+  | STRING                            { let (s, d) = $1 in Pconst_string (s, d) }
+  | FLOAT                             { let (f, m) = $1 in Pconst_float (f, m) }
 ;
 signed_constant:
     constant                               { $1 }
-  | MINUS INT                              { Const_int(- $2) }
-  | MINUS FLOAT                            { Const_float("-" ^ $2) }
-  | MINUS INT32                            { Const_int32(Int32.neg $2) }
-  | MINUS INT64                            { Const_int64(Int64.neg $2) }
-  | MINUS NATIVEINT                        { Const_nativeint(Nativeint.neg $2) }
-  | PLUS INT                               { Const_int $2 }
-  | PLUS FLOAT                             { Const_float $2 }
-  | PLUS INT32                             { Const_int32 $2 }
-  | PLUS INT64                             { Const_int64 $2 }
-  | PLUS NATIVEINT                         { Const_nativeint $2 }
+  | MINUS INT                              { let (n, m) = $2 in Pconst_integer("-" ^ n, m) }
+  | MINUS FLOAT                            { let (f, m) = $2 in Pconst_float("-" ^ f, m) }
+  | PLUS INT                               { let (n, m) = $2 in Pconst_integer (n, m) }
+  | PLUS FLOAT                             { let (f, m) = $2 in Pconst_float(f, m) }
 ;
 
 /* Identifiers and long identifiers */
@@ -2203,25 +2219,7 @@ operator:
   | COLONEQUAL                                  { ":=" }
   | PLUSEQ                                      { "+=" }
   | PERCENT                                     { "%" }
-  | index_operator                              { $1 }
 ;
-index_operator:
-    DOT index_operator_core opt_assign_arrow { $2^$3 }
-;
-index_operator_core:
-  | LPAREN RPAREN                               { ".()" }
-  | LBRACKET RBRACKET                           { ".[]" }
-  | LBRACE RBRACE                               { ".{}" }
-  | LBRACE COMMA  RBRACE                        { ".{,}" }
-  | LBRACE COMMA COMMA RBRACE                   { ".{,,}" }
-  | LBRACE COMMA DOTDOT COMMA RBRACE            { ".{,..,}"}
-;
-
-opt_assign_arrow:
-                                                { "" }
-  | LESSMINUS                                   { "<-" }
-;
-
 constr_ident:
     UIDENT                                      { $1 }
 /*  | LBRACKET RBRACKET                           { "[]" } */
@@ -2278,7 +2276,7 @@ class_longident:
 toplevel_directive:
     SHARP ident                 { Ptop_dir($2, Pdir_none) }
   | SHARP ident STRING          { Ptop_dir($2, Pdir_string (fst $3)) }
-  | SHARP ident INT             { Ptop_dir($2, Pdir_int $3) }
+  | SHARP ident INT             { let (n, m) = $3 in Ptop_dir($2, Pdir_int (n ,m)) }
   | SHARP ident val_longident   { Ptop_dir($2, Pdir_ident $3) }
   | SHARP ident mod_longident   { Ptop_dir($2, Pdir_ident $3) }
   | SHARP ident FALSE           { Ptop_dir($2, Pdir_bool false) }
@@ -2433,6 +2431,7 @@ item_extension:
 ;
 payload:
     structure { PStr $1 }
+  | COLON signature { PSig $2 }
   | COLON core_type { PTyp $2 }
   | QUESTION pattern { PPat ($2, None) }
   | QUESTION pattern WHEN seq_expr { PPat ($2, Some $4) }

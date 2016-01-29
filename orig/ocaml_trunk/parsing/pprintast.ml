@@ -25,11 +25,6 @@ open Parsetree
 let prefix_symbols  = [ '!'; '?'; '~' ] ;;
 let infix_symbols = [ '='; '<'; '>'; '@'; '^'; '|'; '&'; '+'; '-'; '*'; '/';
                       '$'; '%' ]
-let operator_chars = [ '!'; '$'; '%'; '&'; '*'; '+'; '-'; '.'; '/';
-                       ':'; '<'; '='; '>'; '?'; '@'; '^'; '|'; '~' ]
-let numeric_chars  = [ '0'; '1'; '2'; '3'; '4'; '5'; '6'; '7'; '8'; '9' ]
-
-(* type fixity = Infix| Prefix  *)
 
 let special_infix_strings =
   ["asr"; "land"; "lor"; "lsl"; "lsr"; "lxor"; "mod"; "or"; ":="; "!=" ]
@@ -137,9 +132,9 @@ class printer  ()= object(self:'self)
     ?last:space_formatter -> (Format.formatter -> 'a -> unit) ->
     Format.formatter -> 'a list -> unit
         = fun  ?sep ?first  ?last fu f xs ->
-          let first = match first with Some x -> x |None -> ""
-          and last = match last with Some x -> x |None -> ""
-          and sep = match sep with Some x -> x |None -> "@ " in
+          let first = match first with Some x -> x |None -> ("" : _ format6)
+          and last = match last with Some x -> x |None -> ("" : _ format6)
+          and sep = match sep with Some x -> x |None -> ("@ " : _ format6) in
           let aux f = function
             | [] -> ()
             | [x] -> fu f x
@@ -154,14 +149,14 @@ class printer  ()= object(self:'self)
   method option : 'a. ?first:space_formatter -> ?last:space_formatter ->
     (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a option -> unit =
       fun  ?first  ?last fu f a ->
-        let first = match first with Some x -> x | None -> ""
-        and last = match last with Some x -> x | None -> "" in
+        let first = match first with Some x -> x | None -> ("" : _ format6)
+        and last = match last with Some x -> x | None -> ("" : _ format6) in
         match a with
         | None -> ()
         | Some x -> pp f first; fu f x; pp f last;
   method paren: 'a . ?first:space_formatter -> ?last:space_formatter ->
     bool -> (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a -> unit =
-    fun  ?(first="") ?(last="") b fu f x ->
+    fun  ?(first=("" : _ format6)) ?(last=("" : _ format6)) b fu f x ->
       if b then (pp f "("; pp f first; fu f x; pp f last; pp f ")")
       else fu f x
 
@@ -173,16 +168,13 @@ class printer  ()= object(self:'self)
         pp f "%a(%a)" self#longident y self#longident s
   method longident_loc f x = pp f "%a" self#longident x.txt
   method constant f  = function
-    | Const_char i -> pp f "%C"  i
-    | Const_string (i, None) -> pp f "%S" i
-    | Const_string (i, Some delim) -> pp f "{%s|%s|%s}" delim i delim
-    | Const_int i -> self#paren (i<0) (fun f -> pp f "%d") f i
-    | Const_float  i -> self#paren (i.[0]='-') (fun f -> pp f "%s") f i
-    | Const_int32 i -> self#paren (i<0l) (fun f -> pp f "%ldl") f i
-    | Const_int64 i -> self#paren (i<0L) (fun f -> pp f "%LdL") f i
-                                         (* pp f "%LdL" i *)
-    | Const_nativeint i -> self#paren (i<0n) (fun f -> pp f "%ndn") f i
-                                             (* pp f "%ndn" i *)
+    | Pconst_char i -> pp f "%C"  i
+    | Pconst_string (i, None) -> pp f "%S" i
+    | Pconst_string (i, Some delim) -> pp f "{%s|%s|%s}" delim i delim
+    | Pconst_integer (i,None) -> self#paren (i.[0]='-') (fun f -> pp f "%s") f i
+    | Pconst_integer (i,Some m) -> self#paren (i.[0]='-') (fun f (i,m) -> pp f "%s%c" i m) f (i,m)
+    | Pconst_float (i,None) -> self#paren (i.[0]='-') (fun f -> pp f "%s") f i
+    | Pconst_float (i, Some m) -> self#paren (i.[0]='-') (fun f (i,m) -> pp f "%s%c" i m) f (i,m)
 
   (* trailing space*)
   method mutable_flag f   = function
@@ -422,96 +414,52 @@ class printer  ()= object(self:'self)
         | _ ->  pp f "~%s:%a@;" l self#simple_pattern p )
   method sugar_expr f e =
     if e.pexp_attributes <> [] then false
-      (* should also check attributes underneath *)
     else match e.pexp_desc with
-    | Pexp_apply
-        ({pexp_desc=
-          Pexp_ident
-            {txt= Ldot (Lident (("Array"|"String") as s),"get");_};_},
-         [(_,e1);(_,e2)]) -> begin
-              let fmt:(_,_,_)format =
-                if s= "Array" then "@[%a.(%a)@]" else "@[%a.[%a]@]" in
-              pp f fmt   self#simple_expr e1 self#expression e2;
-              true
-            end
-    |Pexp_apply
-        ({pexp_desc=
-          Pexp_ident
-            {txt= Ldot (Lident (("Array"|"String") as s),
-                        "set");_};_},[(_,e1);(_,e2);(_,e3)])
-      ->
-        let fmt :(_,_,_) format=
-          if s= "Array" then
-            "@[%a.(%a)@ <-@;%a@]"
-          else
-            "@[%a.[%a]@ <-@;%a@]" in  (* @;< gives error here *)
-        pp f fmt self#simple_expr e1  self#expression e2  self#expression e3;
-        true
-    | Pexp_apply ({pexp_desc=Pexp_ident {txt=Lident "!";_};_}, [(_,e)]) -> begin
-        pp f "@[<hov>!%a@]" self#simple_expr e;
-        true
-    end
-    | Pexp_apply
-        ({pexp_desc=Pexp_ident
-                     {txt= Ldot (Ldot (Lident "Bigarray", array),
-                                 ("get"|"set" as gs)) ;_};_},
-         label_exprs) ->
-           begin match array, gs, label_exprs with
-           | "Genarray", "get",
-             [(_,a);(_,{pexp_desc=Pexp_array ls;_})] ->
-               pp f "@[%a.{%a}@]" self#simple_expr a
-                 (self#list ~sep:"," self#simple_expr ) ls;
-               true
-           | "Genarray", "set",
-             [(_,a);(_,{pexp_desc=Pexp_array ls;_});(_,c)] ->
-               pp f "@[%a.{%a}@ <-@ %a@]" self#simple_expr a
-                 (self#list ~sep:"," self#simple_expr ) ls self#simple_expr c;
-               true
-           | "Array1", "set", [(_,a);(_,i);(_,v)] ->
-               pp f "@[%a.{%a}@ <-@ %a@]"
+    | Pexp_apply ({ pexp_desc = Pexp_ident { txt = id; _ };
+                    pexp_attributes=[]; _ }, args)
+      when List.for_all (fun (lab, _) -> lab = Nolabel) args -> begin
+        match id, List.map snd args with
+        | Lident "!", [e] ->
+          pp f "@[<hov>!%a@]" self#simple_expr e;
+          true
+        | Ldot (path, ("get"|"set" as func)), a :: other_args -> begin
+            let print left right print_index indexes rem_args =
+              match func, rem_args with
+              | "get", [] ->
+                pp f "@[%a.%s%a%s@]"
                   self#simple_expr a
-                  self#simple_expr i
+                  left (self#list ~sep:"," print_index) indexes right;
+                true
+              | "set", [v] ->
+                pp f "@[%a.%s%a%s@ <-@;<1 2>%a@]"
+                  self#simple_expr a
+                  left (self#list ~sep:"," print_index) indexes right
                   self#simple_expr v;
-               true
-           | "Array2", "set", [(_,a);(_,i1);(_,i2);(_,v)] ->
-               pp f "@[%a.{%a,%a}@ <-@ %a@]"
-                  self#simple_expr a
-                  self#simple_expr i1
-                  self#simple_expr i2
-                  self#simple_expr v;
-               true
-           | "Array3", "set", [(_,a);(_,i1);(_,i2);(_,i3);(_,v)] ->
-               pp f "@[%a.{%a,%a,%a}@ <-@ %a@]"
-                  self#simple_expr a
-                  self#simple_expr i1
-                  self#simple_expr i2
-                  self#simple_expr i3
-                  self#simple_expr v;
-               true
-           | "Array1", "get", [(_,a);(_,i)] ->
-               pp f "@[%a.{%a}@]"
-                  self#simple_expr a
-                  self#simple_expr i;
-               true
-           | "Array2", "get", [(_,a);(_,i1);(_,i2)] ->
-               pp f "@[%a.{%a,%a}@]"
-                  self#simple_expr a
-                  self#simple_expr i1
-                  self#simple_expr i2;
-               true
-           | "Array3", "get", [(_,a);(_,i1);(_,i2);(_,i3)] ->
-               pp f "@[%a.{%a,%a,%a}@]"
-                  self#simple_expr a
-                  self#simple_expr i1
-                  self#simple_expr i2
-                  self#simple_expr i3;
-               true
-           | _ -> false
-           end
+                true
+              | _ -> false
+            in
+            match path, other_args with
+            | Lident "Array", i :: rest ->
+              print "(" ")" self#expression [i] rest
+            | Lident "String", i :: rest ->
+              print "[" "]" self#expression [i] rest
+            | Ldot (Lident "Bigarray", "Array1"), i1 :: rest ->
+              print "{" "}" self#simple_expr [i1] rest
+            | Ldot (Lident "Bigarray", "Array2"), i1 :: i2 :: rest ->
+              print "{" "}" self#simple_expr [i1; i2] rest
+            | Ldot (Lident "Bigarray", "Array3"), i1 :: i2 :: i3 :: rest ->
+              print "{" "}" self#simple_expr [i1; i2; i3] rest
+            | Ldot (Lident "Bigarray", "Genarray"),
+              {pexp_desc = Pexp_array indexes; pexp_attributes = []} :: rest ->
+              print "{" "}" self#simple_expr indexes rest
+            | _ -> false
+          end
+        | _ -> false
+      end
     | _ -> false
   method expression f x =
     if x.pexp_attributes <> [] then begin
-      pp f "((%a)%a)" self#expression {x with pexp_attributes=[]}
+      pp f "((%a)@,%a)" self#expression {x with pexp_attributes=[]}
         self#attributes x.pexp_attributes
     end
     else match x.pexp_desc with
@@ -631,6 +579,8 @@ class printer  ()= object(self:'self)
     | Pexp_variant (l,Some eo) ->
         pp f "@[<2>`%s@;%a@]" l  self#simple_expr eo
     | Pexp_extension e -> self#extension f e
+    | Pexp_unreachable ->
+        pp f "."
     | _ -> self#expression1 f x
   method expression1 f x =
     if x.pexp_attributes <> [] then self#expression f x
@@ -918,8 +868,12 @@ class printer  ()= object(self:'self)
     | Pmty_functor (_, None, mt2) ->
         pp f "@[<hov2>functor () ->@ %a@]" self#module_type mt2
     | Pmty_functor (s, Some mt1, mt2) ->
-        pp f "@[<hov2>functor@ (%s@ :@ %a)@ ->@ %a@]" s.txt
-          self#module_type mt1  self#module_type mt2
+        if s.txt = "_" then
+          pp f "@[<hov2>%a@ ->@ %a@]"
+             self#module_type mt1  self#module_type mt2
+        else
+          pp f "@[<hov2>functor@ (%s@ :@ %a)@ ->@ %a@]" s.txt
+             self#module_type mt1  self#module_type mt2
     | Pmty_with (mt, l) ->
         let with_constraint f = function
           | Pwith_type (li, ({ptype_params= ls ;_} as td)) ->
@@ -1065,6 +1019,7 @@ class printer  ()= object(self:'self)
           self#item_attributes attrs
     | PStr x -> self#structure f x
     | PTyp x -> pp f ":"; self#core_type f x
+    | PSig x -> pp f ":"; self#signature f x
     | PPat (x, None) -> pp f "?"; self#pattern f x
     | PPat (x, Some e) ->
       pp f "?"; self#pattern f x;
@@ -1104,7 +1059,7 @@ class printer  ()= object(self:'self)
   (* [in] is not printed *)
   method bindings f (rf,l) =
     let binding kwd rf f x =
-      pp f "@[<2>%s %a%a@]%a" kwd self#rec_flag rf
+      pp f "@[<2>%s %a%a@]@ %a" kwd self#rec_flag rf
          self#binding x self#item_attributes x.pvb_attributes
     in
     begin match l with
@@ -1119,7 +1074,7 @@ class printer  ()= object(self:'self)
   method structure_item f x = begin
     match x.pstr_desc with
     | Pstr_eval (e, attrs) ->
-        pp f "@[<hov2>let@ _ =@ %a@]%a"
+        pp f "@[<hov2>;;%a@]%a"
           self#expression e
           self#item_attributes attrs
     | Pstr_type (_, []) -> assert false
@@ -1397,7 +1352,8 @@ class printer  ()= object(self:'self)
     (match x with
     | Pdir_none -> ()
     | Pdir_string (s) -> pp f "@ %S" s
-    | Pdir_int (i) -> pp f "@ %d" i
+    | Pdir_int (n,None) -> pp f "@ %s" n
+    | Pdir_int (n,Some m) -> pp f "@ %s%c" n m
     | Pdir_ident (li) -> pp f "@ %a" self#longident li
     | Pdir_bool (b) -> pp f "@ %s" (string_of_bool b))
 

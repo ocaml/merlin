@@ -83,10 +83,9 @@ let empty_docs = { docs_pre = None; docs_post = None }
 let doc_loc = {txt = "ocaml.doc"; loc = Location.none}
 
 let docs_attr ds =
-  let open Asttypes in
   let open Parsetree in
   let exp =
-    { pexp_desc = Pexp_constant (Const_string(ds.ds_body, None));
+    { pexp_desc = Pexp_constant (Pconst_string(ds.ds_body, None));
       pexp_loc = ds.ds_loc;
       pexp_attributes = []; }
   in
@@ -117,12 +116,9 @@ let empty_info = None
 let info_attr = docs_attr
 
 let add_info_attrs info attrs =
-  let attrs =
-    match info with
-    | None -> attrs
-    | Some ds -> attrs @ [info_attr ds]
-  in
-  attrs
+  match info with
+  | None -> attrs
+  | Some ds -> attrs @ [info_attr ds]
 
 (* Docstrings not attached to a specifc item *)
 
@@ -133,10 +129,9 @@ let empty_text = []
 let text_loc = {txt = "ocaml.text"; loc = Location.none}
 
 let text_attr ds =
-  let open Asttypes in
   let open Parsetree in
   let exp =
-    { pexp_desc = Pexp_constant (Const_string(ds.ds_body, None));
+    { pexp_desc = Pexp_constant (Pconst_string(ds.ds_body, None));
       pexp_loc = ds.ds_loc;
       pexp_attributes = []; }
   in

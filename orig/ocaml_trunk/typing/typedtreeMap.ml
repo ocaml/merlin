@@ -76,12 +76,6 @@ end
 
 module MakeMap(Map : MapArgument) = struct
 
-  let may_map f v =
-    match v with
-        None -> v
-      | Some x -> Some (f x)
-
-
   open Misc
 
   let rec map_structure str =
@@ -278,13 +272,13 @@ module MakeMap(Map : MapArgument) = struct
           Texp_function (label, map_cases cases, partial)
         | Texp_apply (exp, list) ->
           Texp_apply (map_expression exp,
-                      List.map (fun (label, expo, optional) ->
+                      List.map (fun (label, expo) ->
                         let expo =
                           match expo with
                               None -> expo
                             | Some exp -> Some (map_expression exp)
                         in
-                        (label, expo, optional)
+                        (label, expo)
                       ) list )
         | Texp_match (exp, list1, list2, partial) ->
           Texp_match (
@@ -380,6 +374,10 @@ module MakeMap(Map : MapArgument) = struct
           Texp_object (map_class_structure cl, string_list)
         | Texp_pack (mexpr) ->
           Texp_pack (map_module_expr mexpr)
+        | Texp_unreachable ->
+          Texp_unreachable
+        | Texp_extension_constructor _ as e ->
+          e
     in
     let exp_extra = List.map map_exp_extra exp.exp_extra in
     Map.leave_expression {
@@ -543,9 +541,8 @@ module MakeMap(Map : MapArgument) = struct
 
         | Tcl_apply (cl, args) ->
           Tcl_apply (map_class_expr cl,
-                     List.map (fun (label, expo, optional) ->
-                       (label, may_map map_expression expo,
-                        optional)
+                     List.map (fun (label, expo) ->
+                       (label, may_map map_expression expo)
                      ) args)
         | Tcl_let (rec_flat, bindings, ivars, cl) ->
           Tcl_let (rec_flat, map_bindings rec_flat bindings,
