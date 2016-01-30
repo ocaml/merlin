@@ -208,6 +208,10 @@ let compare_float a b = - compare (-.a) (-.b)
 let min_float a b =
   if compare_float a b > 0 then b else a
 
+let arg_min_float f a b =
+  if compare_float (f a) (f b) <= 0 then a else b
+
+
 module Synthesis = struct
 
   type variable =
@@ -313,11 +317,80 @@ module Synthesis = struct
 
   let cost_of = Solver.lfp eval
 
+  type action =
+    | Abort
+    | Reduce of production
+    | Shift of symbol
+    | Var of variable
+
+  let cost_of_action = function
+    | Abort -> infinity
+    | Reduce p -> cost_of_prod p
+    | Shift s -> cost_of_symbol s
+    | Var v -> cost_of v
+
+  let select var1 var2 =
+    arg_min_float cost_of_action var1 var2
+
+  let solution = function
+    | Head (st, n) ->
+        let acc = Abort in
+        let acc =
+          Array.fold_left
+            (fun acc (sym, st') ->
+               Array.fold_left (fun acc (prod, pos) ->
+                   if pos = 1 && prod.p_lhs = n then
+                     select (Var (Tail (st, prod, 0))) acc
+                   else acc
+                 ) acc st'.lr1_lr0.lr0_items
+            ) acc st.lr1_transitions
+        in
+        let acc =
+          Array.fold_left
+            (fun acc (_, prods) ->
+               List.fold_left (fun acc prod ->
+                   if prod.p_rhs = [||] && prod.p_lhs = n then
+                     select (Reduce prod) acc
+                   else acc
+                 ) acc prods
+            ) acc st.lr1_reductions
+        in
+        [acc]
+
+    | Tail (st, prod, pos) when pos = Array.length prod.p_rhs ->
+        [Reduce prod]
+
+    | Tail (st, prod, pos) ->
+      let penalty = penalty_of_item (prod, pos) in
+      if penalty = infinity then
+        [Abort]
+      else
+        let head =
+          let sym, _, _ = prod.p_rhs.(pos) in
+          let cost = cost_of_symbol sym in
+          if cost < infinity then
+            Shift sym
+          else match sym with
+            | T _ -> Abort
+            | N n -> Var (Head (st, n))
+        in
+        let tail =
+          match array_assoc st.lr1_transitions (fst3 prod.p_rhs.(pos)) with
+          | st' -> Var (Tail (st', prod, pos + 1))
+          | exception Not_found ->
+              Abort
+        in
+        [head; tail]
+
+  let cost_of_actions actions =
+    List.fold_left (fun cost act -> cost +. cost_of_action act) 0.0 actions
+
   let () =
     let solutions =
       Array.fold_left (fun acc st ->
           match Array.fold_left (fun (item, cost) (prod, pos) ->
               let cost' = cost_of (Tail (st, prod, pos)) in
+              assert (cost' = cost_of_actions (solution (Tail (st, prod, pos))));
               if cost' < cost then (Some (prod, pos), cost') else (item, cost)
             ) (None, infinity) st.lr1_lr0.lr0_items
           with
@@ -346,7 +419,28 @@ module Recovery = struct
         | (lr1, prod, pos) :: _ ->
             Hashtbl.hash (lr1.lr1_index, prod.p_index, pos)
         | [] -> 0
-      let equal a b = compare a b = 0
+      let rec equal a b = match a, b with
+        | a, b when a == b -> true
+        | (l1, p1, x1) :: xs, (l2, p2, x2) :: ys when
+            l1 == l2 && p1 == p2 && x1 == x2 ->
+            equal xs ys
+        | [], [] -> true
+        | _ -> false
+    end)
+
+  module SynthH = Hashtbl.Make(struct
+      type t = Synthesis.variable
+      let hash = function
+        | Synthesis.Head (lr1, nt) ->
+            Hashtbl.hash (lr1.lr1_index,nt.n_index)
+        | Synthesis.Tail (lr1, prod, pos) ->
+            Hashtbl.hash (lr1.lr1_index, prod.p_index, pos)
+      let equal a b = match a,b with
+        | Synthesis.Head (l1, n1), Synthesis.Head (l2, n2) ->
+            l1 == l2 && n1 == n2
+        | Synthesis.Tail (l1, p1, x1), Synthesis.Tail (l2, p2, x2) ->
+            l1 == l2 && p1 == p2 && x1 == x2
+        | _ -> false
     end)
 
   type trace = Trace of float * item list
@@ -465,6 +559,38 @@ module Recovery = struct
   let expand ((st, sts), nts) =
     List.map (fun st' -> ((st', st'.lr1_index :: sts), step st' nts)) (Pred.imm st)
 
+  let synthesize_def = ref []
+
+  let emit_synthesis =
+    let name = function
+      | Synthesis.Head (st, nt) ->
+          sprintf "sol_hd_%d_%S" st.lr1_index nt.n_name
+      | Synthesis.Tail (st, p, pos) ->
+          sprintf "sol_tl_%d_%d_%d" st.lr1_index p.p_index pos
+    in
+    let table = SynthH.create 113 in
+    let emit emit var =
+      let action = function
+        | Synthesis.Abort -> "Abort"
+        | Synthesis.Reduce p -> "Reduce " ^ string_of_int p.p_index
+        | Synthesis.Shift (N n) -> "Shift (N N_" ^ n.n_name ^ ")"
+        | Synthesis.Shift (T t) -> "Shift (T T_" ^ t.t_name ^ ")"
+        | Synthesis.Var v -> emit v
+      in
+      match Synthesis.solution var with
+      | [x] -> action x
+      | xs -> "Sub " ^ list_fmt action xs
+    in
+    let rec memo var =
+      try SynthH.find table var
+      with Not_found ->
+        let solution = emit memo var in
+        let name = name var in
+        synthesize_def := (name, solution) :: !synthesize_def;
+        name
+    in
+    memo
+
   let recover st =
     let pos = Array.fold_left (fun pos (_, pos') -> max pos pos')
         (snd st.lr1_lr0.lr0_items.(0)) st.lr1_lr0.lr0_items
@@ -487,19 +613,18 @@ module Recovery = struct
         | (lr1, prod, pos) :: xs ->
             let xs = if xs = [] then "[]" else emit xs in
             let sym = sym () in
-            shared_defs := (sym, sprintf "(%d, %d, %d) :: %s"
-                              lr1.lr1_index prod.p_index pos xs) ::
+            shared_defs := (sym, sprintf "%s :: %s"
+                              (emit_synthesis (Synthesis.Tail (lr1, prod, pos))) xs) ::
                            !shared_defs;
             sym
       in
       let table = ItemsH.create 113 in
       let rec memo tr =
-        match ItemsH.find table tr with
-        | v -> v
-        | exception Not_found ->
-            let v = emit memo tr in
-            ItemsH.add table tr v;
-            v
+        try ItemsH.find table tr
+        with Not_found ->
+          let v = emit memo tr in
+          ItemsH.add table tr v;
+          v
       in
       memo
     in
@@ -559,5 +684,7 @@ module Recovery = struct
         report "%s\n%!"
           (String.concat ", " (List.map string_of_float costs))
       ) g.g_lr1_states;
+    List.iter (fun (name,body) -> printf "let %s = %s\n" name body)
+      (List.rev !synthesize_def);
     report "Explored %d\n" !total
 end
