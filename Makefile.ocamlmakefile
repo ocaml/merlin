@@ -41,6 +41,8 @@ SOURCES = \
 	src/utils/ppxsetup.ml             \
 	src/utils/mymap.mli               \
 	src/utils/mymap.ml                \
+	src/utils/identifiable.mli        \
+	src/utils/identifiable.ml         \
 	$(TYPER)/utils/warnings.mli       \
 	$(TYPER)/utils/warnings.ml        \
 	$(TYPER)/utils/config.mli         \
@@ -51,6 +53,10 @@ SOURCES = \
 	$(TYPER)/parsing/attr_helper.mli  \
 	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
+	$(TYPER)/parsing/builtin_attributes.ml \
+	$(TYPER)/parsing/builtin_attributes.mli \
+	$(TYPER)/parsing/ast_iterator.ml \
+	$(TYPER)/parsing/ast_iterator.mli \
 	$(TYPER)/parsing/location.mli     \
 	$(TYPER)/parsing/location.ml      \
 	$(TYPER)/parsing/longident.mli    \
@@ -94,6 +100,8 @@ SOURCES = \
 	$(TYPER)/typing/env.ml            \
 	$(TYPER)/typing/typedtree.mli     \
 	$(TYPER)/typing/typedtree.ml      \
+	$(TYPER)/typing/typedtreeIter.mli \
+	$(TYPER)/typing/typedtreeIter.ml  \
 	$(TYPER)/typing/printtyped.mli    \
 	$(TYPER)/typing/printtyped.ml     \
 	$(TYPER)/tools/untypeast.mli      \

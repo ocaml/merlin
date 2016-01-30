@@ -250,11 +250,7 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 ;;
 
-let setup_colors () =
-  Misc.Color.setup !Clflags.color
-
 let print_loc ppf loc =
-  setup_colors ();
   let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
   if file = "//toplevel//" then begin
@@ -270,7 +266,6 @@ let print_loc ppf loc =
 ;;
 
 let print ppf loc =
-  setup_colors ();
   if loc.loc_start.pos_fname = "//toplevel//"
   && highlight_locations ppf [loc] then ()
   else fprintf ppf "@{<loc>%a@}%s@." print_loc loc msg_colon
@@ -280,7 +275,6 @@ let error_prefix = "Error"
 let warning_prefix = "Warning"
 
 let print_error_prefix ppf () =
-  setup_colors ();
   fprintf ppf "@{<error>%s@}:" error_prefix;
   ()
 ;;
@@ -305,7 +299,6 @@ let print_error_cur_file ppf () = print_error ppf (in_file !input_name);;
 
 let default_warning_printer loc ppf w =
   if Warnings.is_active w then begin
-    setup_colors ();
     print ppf loc;
     fprintf ppf "@{<warning>%s@} %a@." warning_prefix Warnings.print w
   end
@@ -344,7 +337,6 @@ type error =
 let pp_ksprintf ?before k fmt =
   let buf = Buffer.create 64 in
   let ppf = Format.formatter_of_buffer buf in
-  Misc.Color.set_color_tag_handling ppf;
   begin match before with
     | None -> ()
     | Some f -> f ppf
@@ -358,13 +350,13 @@ let pp_ksprintf ?before k fmt =
 
 let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") fmt =
   pp_ksprintf
-    (fun msg -> {loc; msg; sub; if_highlight})
+    (fun msg -> {err_loc = loc; msg; sub; if_highlight})
     fmt
 
 let errorf_prefixed ?(loc=none) ?(sub=[]) ?(if_highlight="") fmt =
   pp_ksprintf
     ~before:(fun ppf -> fprintf ppf "%a " print_error_prefix ())
-    (fun msg -> {loc; msg; sub; if_highlight})
+    (fun msg -> {err_loc = loc; msg; sub; if_highlight})
     fmt
 
 let error ?(loc = none) ?(sub = []) ?(if_highlight = "") msg =
@@ -453,4 +445,4 @@ let () =
     )
 
 let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
-  pp_ksprintf (fun msg -> raise (Error ({loc; msg; sub; if_highlight})))
+  pp_ksprintf (fun msg -> raise (Error ({err_loc = loc; msg; sub; if_highlight})))
