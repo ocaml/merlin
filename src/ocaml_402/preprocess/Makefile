@@ -32,3 +32,6 @@ makeBitSet.cmx: makeBitSet.ml makeBitSet.cmi
 gen_recover2: makeBitSet.cmx gen_recover2.ml
 	ocamlfind opt -g -package menhirSdk -linkpkg makeBitSet.cmx \
 		gen_recover2.ml -o gen_recover2
+
+recover: gen_recover2
+	./gen_recover2 -v parser_raw.cmly

@@ -23,21 +23,10 @@ let () =
 
 let g = Cmly_io.read_file !name
 
-let reductions =
-  let cmp_prod p1 p2 =
-    compare p1.p_index p2.p_index
-  in
-  let table = Array.map (fun state ->
-      state.lr1_reductions |>
-      Array.to_list |>
-      List.map snd |>
-      List.concat |>
-      List.sort_uniq cmp_prod
-    ) g.g_lr1_states
-  in
-  fun state -> table.(state.lr1_index)
-
 (** Misc routines *)
+
+let list_fmt f l =
+  "["^String.concat "; " (List.map f l)^"]"
 
 let fst3 (x,_,_) = x
 
@@ -123,12 +112,34 @@ let report_table ?(prefix="") ?(sep=" ") table =
   List.iter (fun line -> report "%s%s\n" prefix (String.concat sep line))
     table
 
-(* Dump all states for debugging *)
+(* Dump all productions and states for debugging *)
+
+let () =
+  Array.iter (fun p ->
+      report
+        "# p%d (%s)\n"
+        p.p_index
+        (if p.p_kind = `START then "start" else "regular");
+      report_table (items_table [(p,-1)] [])
+    ) g.g_productions
 
 let () =
   Array.iter (fun st ->
       report "# #%d\n" st.lr1_index;
-      report_table (items_table (Array.to_list st.lr1_lr0.lr0_items) [])
+
+      report "transitions:\n";
+      Array.iter
+        (fun (sym, st') -> report " %s -> %d\n" (name_of_symbol sym) st'.lr1_index)
+        st.lr1_transitions;
+
+      report "reductions:\n";
+      Array.iter
+        (fun (t, prods) -> report " %s -> %s\n" t.t_name
+            (list_fmt (fun p -> "p"^string_of_int p.p_index) prods))
+        st.lr1_reductions;
+
+      report "items:\n";
+      report_table (items_table (Array.to_list st.lr1_lr0.lr0_items) []);
     ) g.g_lr1_states
 
 module Lr1s = MakeBitSet.Make (struct
@@ -191,6 +202,12 @@ module Pred = struct
 
 end
 
+(* negation to put nan as the max *)
+let compare_float a b = - compare (-.a) (-.b)
+
+let min_float a b =
+  if compare_float a b > 0 then b else a
+
 module Synthesis = struct
 
   type variable =
@@ -247,13 +264,13 @@ module Synthesis = struct
           (fun acc (_, prods) ->
              List.fold_left (fun acc prod ->
                  if prod.p_rhs = [||] && prod.p_lhs = n then
-                   min (cost_of_prod prod) acc
+                   min_float (cost_of_prod prod) acc
                  else acc
                ) acc prods
           ) infinity st.lr1_reductions
       in
       if cost < infinity || acc <> [] then
-        (fun v -> List.fold_left (fun cost f -> min cost (f v)) cost acc)
+        (fun v -> List.fold_left (fun cost f -> min_float cost (f v)) cost acc)
       else const infinity
 
     | Tail (st, prod, pos) ->
@@ -294,13 +311,13 @@ module Synthesis = struct
     | [] -> []
     | (k, v) :: xs -> aux k [v] [] xs
 
-  let solve = Solver.lfp eval
+  let cost_of = Solver.lfp eval
 
   let () =
     let solutions =
       Array.fold_left (fun acc st ->
           match Array.fold_left (fun (item, cost) (prod, pos) ->
-              let cost' = solve (Tail (st, prod, pos)) in
+              let cost' = cost_of (Tail (st, prod, pos)) in
               if cost' < cost then (Some (prod, pos), cost') else (item, cost)
             ) (None, infinity) st.lr1_lr0.lr0_items
           with
@@ -321,6 +338,25 @@ end
 
 module Recovery = struct
 
+  type item = lr1_state * production * int
+
+  module ItemsH = Hashtbl.Make(struct
+      type t = item list
+      let hash = function
+        | (lr1, prod, pos) :: _ ->
+            Hashtbl.hash (lr1.lr1_index, prod.p_index, pos)
+        | [] -> 0
+      let equal a b = compare a b = 0
+    end)
+
+  type trace = Trace of float * item list
+
+  let min_trace (Trace (c1, _) as tr1) (Trace (c2, _) as tr2) =
+    if c2 < c1 then tr2 else tr1
+
+  let cat_trace (Trace (c1, tr1)) (Trace (c2, tr2)) =
+    Trace (c1 +. c2, tr1 @ tr2)
+
   let rec merge_nts l1 l2 = match l1, l2 with
     | [], l -> l
     | l, [] -> l
@@ -328,7 +364,7 @@ module Recovery = struct
       let (nt2, c2) = x2 in
       match compare nt1.n_index nt2.n_index with
       | 0 ->
-        let x = (nt1, min c1 c2) in
+        let x = (nt1, min_trace c1 c2) in
         x :: merge_nts xs1 xs2
       | n when n > 0 -> x2 :: merge_nts l1 xs2
       | _ -> (nt1, c1) :: merge_nts xs1 l2
@@ -345,13 +381,14 @@ module Recovery = struct
       | [] -> [(nt, cost)]
       | x :: xs ->
           let c = compare nt.n_index (fst x).n_index in
-          if c = 0 then (nt, min cost (snd x)) :: xs
+          if c = 0 then (nt, min_trace cost (snd x)) :: xs
           else if c < 0 then
             (nt, cost) :: xs
           else
             x :: add_nt cost nt xs
     in
-    let add_item cost prod pos stack =
+    let add_item cost item stack =
+      let (_, prod, pos) = item in
       if cost = infinity then stack
       else
         let stack_hd = function
@@ -362,19 +399,23 @@ module Recovery = struct
           | _ :: xs -> xs
         in
         let rec aux stack = function
-          | 0 -> add_nt cost prod.p_lhs (stack_hd stack) :: stack_tl stack
+          | 0 -> add_nt (Trace (cost, [item])) prod.p_lhs (stack_hd stack) :: stack_tl stack
           | n -> stack_hd stack :: aux (stack_tl stack) (n - 1)
         in
         aux stack pos
     in
     let table = Array.map (fun st ->
         Array.fold_left (fun acc (prod, pos) ->
-            if prod.p_kind = `START then
-              ((*report "skipping %s at depth %d\n" prod.p_lhs.n_name pos;*) acc)
-            else (
+            if pos = 0 then (
+            (*if prod.p_kind = `START then ( *)
+              (* pos = 0 means we are on an initial state *)
+              (*report "skipping %s at depth %d\n" prod.p_lhs.n_name pos;*)
+              acc
+            ) else (
               (*report "adding %s at depth %d\n" prod.p_lhs.n_name pos;*)
-              add_item (Synthesis.solve (Synthesis.Tail (st, prod, pos)))
-                prod pos acc
+              add_item
+                (Synthesis.cost_of (Synthesis.Tail (st, prod, pos)))
+                (st, prod, pos) acc
             )
           )
           [] st.lr1_lr0.lr0_items
@@ -382,19 +423,32 @@ module Recovery = struct
     in
     fun st -> table.(st.lr1_index)
 
+  let print_interp_state ((st, sts), traces) =
+    let print_trace (nt, Trace (cost, items)) =
+      sprintf "%S, Trace (%f, [%s])"
+        nt.n_name cost (list_fmt
+                          (fun (st,prod,pos) -> sprintf "(#%d, p%d, %d)" st.lr1_index prod.p_index pos)
+                          items)
+    in
+    sprintf "(#%d, [%s], [%s])"
+      st.lr1_index (list_fmt string_of_int sts) (list_fmt (list_fmt print_trace) traces)
+
   let step st ntss =
     let seen = ref CompressedBitSet.empty in
     let rec aux = function
       | [] -> []
-      | ((nt, cost) :: x) :: xs when not (CompressedBitSet.mem nt.n_index !seen) ->
+      | ((nt, cost) :: x) :: xs
+        when not (CompressedBitSet.mem nt.n_index !seen) && not (nt.n_kind = `START) ->
           seen := CompressedBitSet.add nt.n_index !seen;
           let st' = array_assoc st.lr1_transitions (N nt) in
+          (*Printf.eprintf "synthesize #%d " st'.lr1_index;*)
           let xs' = synthesize st' in
+          (*Printf.eprintf "= %s\n" (print_interp_state ((st', [st'.lr1_index]), xs'));*)
           let xs' = match xs' with
             | [] -> []
             | _ :: xs -> xs
           in
-          let xs' = List.map (List.map (fun (nt,c) -> (nt, c +. cost))) xs' in
+          let xs' = List.map (List.map (fun (nt,c) -> (nt, cat_trace c cost))) xs' in
           aux (merge xs' (x :: xs))
       | (_ :: x) :: xs -> aux (x :: xs)
       | [] :: xs -> xs
@@ -403,28 +457,104 @@ module Recovery = struct
 
   let total = ref 0
 
-  let init st = (st, step st (synthesize st))
+  let init st =
+    let r = ((st, [st.lr1_index]), step st (synthesize st)) in
+    (*Printf.eprintf "init #%d = %s\n" st.lr1_index (print_interp_state r);*)
+    r
 
-  let expand (st, nts) =
-    List.map (fun st' -> (st', step st' nts)) (Pred.imm st)
+  let expand ((st, sts), nts) =
+    List.map (fun st' -> ((st', st'.lr1_index :: sts), step st' nts)) (Pred.imm st)
 
   let recover st =
     let pos = Array.fold_left (fun pos (_, pos') -> max pos pos')
         (snd st.lr1_lr0.lr0_items.(0)) st.lr1_lr0.lr0_items
     in
-    let results = ref [init st] in
-    for i = 0 to pos do
-      results := List.concat (List.map expand !results)
-    done;
-    total := !total + List.length !results;
-    let solutions = List.map snd !results in
-    [ List.fold_left min infinity
-        (List.map snd (List.flatten (List.flatten solutions))) ]
+    (* Walk the known part of the stack *)
+    let traces =
+      let acc = ref [init st] in
+      for i = 1 to pos - 1 do
+        acc := List.concat (List.map expand !acc)
+      done;
+      !acc
+    in
+    (* Code emission, with sharing of solutions *)
+    let shared_defs = ref [] in
+    let emit_traces =
+      let sym_counter = ref 0 in
+      let sym () = incr sym_counter; "sym" ^ string_of_int !sym_counter in
+      let emit emit = function
+        | [] -> assert false
+        | (lr1, prod, pos) :: xs ->
+            let xs = if xs = [] then "[]" else emit xs in
+            let sym = sym () in
+            shared_defs := (sym, sprintf "(%d, %d, %d) :: %s"
+                              lr1.lr1_index prod.p_index pos xs) ::
+                           !shared_defs;
+            sym
+      in
+      let table = ItemsH.create 113 in
+      let rec memo tr =
+        match ItemsH.find table tr with
+        | v -> v
+        | exception Not_found ->
+            let v = emit memo tr in
+            ItemsH.add table tr v;
+            v
+      in
+      memo
+    in
+    (* Last step *)
+    let select_trace traces =
+      (* Pick a trace with minimal cost, somehow arbitrary *)
+      match List.flatten traces with
+      | [] -> assert false
+      | (_, trace) :: alternatives ->
+          List.fold_left
+            (fun (Trace (c1, _) as tr1) (_, (Trace (c2, _) as tr2)) ->
+               if compare_float c1 c2 <= 0 then tr1 else tr2)
+            trace alternatives
+    in
+    let process_trace trace =
+      match expand trace with
+      | [] -> (* Initial state *)
+          assert (snd trace = []);
+          []
+      | states ->
+          let select_expansion ((st, sts), trace') =
+            if trace' = [] then
+              (* Emptied the stack *)
+              (None, select_trace (snd trace))
+            else
+              (Some st, select_trace trace')
+          in
+          List.map select_expansion states
+    in
+    let results =
+      List.flatten @@
+      List.map (fun trace ->
+          List.map
+            (fun (st, Trace (_, reductions)) ->
+               (match st with None -> "-1"
+                            | Some st -> string_of_int st.lr1_index) ,
+               emit_traces reductions)
+            (process_trace trace)
+        ) traces
+    in
+    total := !total + (List.length !shared_defs);
+    printf "let recover_%d =\n" st.lr1_index;
+    List.iter (fun (sym, v) -> printf "  let %s = %s in\n" sym v) (List.rev !shared_defs);
+    printf "  %d, function\n" pos;
+    List.iter (fun (st, v) -> printf "  | %s -> %s\n" st v) results;
+    printf "  | _ -> raise Not_found\n";
+    []
+    (*[ List.fold_left min infinity
+        (List.map (fun (_, Trace (cost, _)) -> cost)
+           (List.flatten (List.flatten solutions))) ]*)
 
   let () =
     report "# Recovery cost\n\n";
     Array.iter (fun st ->
-        report "Recover #%d\n" st.lr1_index;
+        report "Recover #%d\n%!" st.lr1_index;
         let costs = List.sort_uniq compare (recover st) in
         report "%s\n%!"
           (String.concat ", " (List.map string_of_float costs))
