@@ -79,6 +79,8 @@ let deep_copy () =
     let ty = repr ty in
     try TypeHash.find table ty
     with Not_found ->
+      let ty' = {ty with desc = Tnil} in
+      TypeHash.add table ty ty';
       let desc =
         match ty.desc with
         | Tvar _ | Tnil | Tunivar _ as desc -> desc
@@ -97,8 +99,7 @@ let deep_copy () =
         | Tpackage (p,l,tl) -> Tpackage (p,l,List.map copy tl)
         | Tlink _ | Tsubst _ -> assert false
       in
-      let ty' = {ty with desc} in
-      TypeHash.add table ty ty';
+      ty'.desc <- desc;
       ty'
   in
   copy
