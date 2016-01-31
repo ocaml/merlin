@@ -136,8 +136,11 @@ let () =
   Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
   let open Sturgeon in
   (* Run monitor in parallel *)
-  (*let server = Recipes.text_server "merlin" Command.monitor in
-    let monitor = Thread.create Recipes.main_loop server in*)
+  let server = Recipes.text_server "merlin" Command.monitor in
+  let rec client () =
+    Lwt.bind (Recipes.accept server) client
+  in
+  Thread.create (fun () -> Lwt_main.run (client ())) ();
   (* Run! *)
   main_loop ()
   (*Thread.join monitor*)

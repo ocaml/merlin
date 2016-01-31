@@ -5,17 +5,13 @@ module Make
     (Recovery : sig
        val default_value : 'a Parser.symbol -> 'a
 
-       type action =
-         | Shift  : 'a Parser.symbol -> action
-         | Reduce : int -> action
-         | Sub    : action list -> action
-         | Pop    : action
+       type t =
+         | Abort
+         | Reduce of int
+         | Shift : 'a Parser.symbol -> t
+         | Sub of t list
 
-       type decision =
-         | Action of int * action
-         | Parent of (int -> int * action)
-
-       val decision : int -> decision
+       val recover : int -> int * (int -> t list)
 
        val guide : 'a Parser.symbol -> bool
 
@@ -26,6 +22,7 @@ module Make
        val element : cursor -> Parser.element -> unit
        val item    : cursor -> Parser.item -> unit
        val env     : cursor -> _ Parser.env -> unit
+       val symbol  : Parser.xsymbol -> string
      end) :
 sig
 

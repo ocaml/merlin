@@ -6,17 +6,13 @@ module Make
     (Recovery : sig
        val default_value : 'a Parser.symbol -> 'a
 
-       type action =
-         | Shift  : 'a Parser.symbol -> action
-         | Reduce : int -> action
-         | Sub    : action list -> action
-         | Pop    : action
+       type t =
+         | Abort
+         | Reduce of int
+         | Shift : 'a Parser.symbol -> t
+         | Sub of t list
 
-       type decision =
-         | Action of int * action
-         | Parent of (int -> int * action)
-
-       val decision : int -> decision
+       val recover : int -> int * (int -> t list)
 
        val guide : 'a Parser.symbol -> bool
 
@@ -24,6 +20,7 @@ module Make
      end)
     (Dump : sig
        val token   : Parser.token -> string
+       val symbol  : Parser.xsymbol -> string
        val element : cursor -> Parser.element -> unit
        val item    : cursor -> Parser.item -> unit
        val env     : cursor -> _ Parser.env -> unit
@@ -82,12 +79,13 @@ struct
       else
         col
 
-  let candidate depth env =
+  let candidate env =
     let line, min_col, max_col =
       match Parser.stack env with
       | None -> 1, 0, 0
       | Some stack ->
-        let Parser.Element (_, _, pos, _) = Parser.stack_element stack in
+        let Parser.Element (state, _, pos, _) = Parser.stack_element stack in
+        let depth, _ = Recovery.recover (Parser.number state) in
         let line, col = Lexing.split_pos pos in
         if depth = 0 then
           line, col, col
@@ -116,10 +114,29 @@ struct
       line = candidate.line ||
       (candidate.min_col <= col && col <= candidate.max_col)
     in
+    let print_candidates xs =
+      printf k "{ ";
+      let p x =
+        printf k "%d@%d:%d-%d" (env_state x.env) x.line x.min_col x.max_col in
+      begin match xs with
+      | [] -> ()
+      | x :: xs ->
+          p x; List.iter (fun x -> printf k ", "; p x) xs;
+      end;
+      printf k "}"
+    in
+    printf k "Recovery from %s @ %d:%d\n"
+      (let (t,_,_) = token in Dump.token t) line col;
+    printf k "Candidates = ";
+    print_candidates recoveries;
+    printf k "\n";
     let recoveries = List.take_while ~f:same_indented recoveries in
+    printf k "Selected = ";
+    print_candidates recoveries;
+    printf k "\n";
     let rec aux = function
       | [] -> `Fail
-      | x :: xs -> match feed_token ~allow_reduction:false token x.env with
+      | x :: xs -> match feed_token ~allow_reduction:true token x.env with
         | `Fail ->
           if not (is_closed k) then
             printf k "Couldn't resume %d with %S.\n"
@@ -134,6 +151,20 @@ struct
     in
     aux recoveries
 
+  let decide stack =
+    let rec nth_state stack n =
+      if n = 0 then
+        let Parser.Element (state, _, _, _) = Parser.stack_element stack in
+        Parser.number state
+      else
+        match Parser.stack_next stack with
+        | None -> assert (n = 1); -1
+        | Some stack -> nth_state stack (n - 1)
+    in
+    let depth, decide = Recovery.recover (nth_state stack 0) in
+    let decision = decide (nth_state stack depth) in
+    List.rev decision
+
   let generate k (type a) (env : a Parser.env) =
     let module E = struct
       exception Result of a
@@ -146,25 +177,12 @@ struct
         let Parser.Element (state, v, startp, endp) = elt in
         Dump.element k elt;
         Logger.log "recover" "decide state" (string_of_int (Parser.number state));
-        let depth, action =
-          match Recovery.decision (Parser.number state) with
-          | Recovery.Parent select_action ->
-            begin match Parser.stack_next stack with
-              | None -> 0, Recovery.Pop
-              | Some stack' ->
-                let Parser.Element (state', _, _, _) =
-                  Parser.stack_element stack' in
-                select_action (Parser.number state')
-            end
-          | Recovery.Action (depth, action) -> depth, action
-        in
-        let candidate0 = candidate depth env in
-        let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env = function
-          | Recovery.Pop ->
-            Logger.log "recover" "eval Pop" "";
-            (match Parser.pop env with
-             | None -> raise Not_found
-             | Some env -> env)
+        let actions = decide stack in
+        let candidate0 = candidate env in
+        let rec eval (env : a Parser.env) : Recovery.t -> a Parser.env = function
+          | Recovery.Abort ->
+            Logger.log "recover" "eval Abort" "";
+            raise Not_found
           | Recovery.Reduce prod ->
             Logger.log "recover" "eval Reduce" "";
             let prod = Parser.find_production prod in
@@ -179,11 +197,11 @@ struct
                 raise exn
             end
           | Recovery.Shift (Parser.N n as sym) ->
-            Logger.log "recover" "eval Shift N" "";
+            Logger.log "recover" "eval Shift N" (Dump.symbol (Parser.X sym));
             let v = Recovery.default_value sym in
             Parser.feed_nonterminal n endp v endp env
           | Recovery.Shift (Parser.T t as sym) ->
-            Logger.log "recover" "eval Shift T" "";
+            Logger.log "recover" "eval Shift T" (Dump.symbol (Parser.X sym));
             let v = Recovery.default_value sym in
             let token = (Recovery.token_of_terminal t v, endp, endp) in
             begin match feed_token ~allow_reduction:true token env with
@@ -197,13 +215,10 @@ struct
             Logger.log "recover" "leave Sub" "";
             env
         in
-        match begin
-          let envs = match action with
-            | Recovery.Sub actions -> List.rev_scan_left [] ~f:eval ~init:env actions
-            | action -> [eval env action]
-          in
-          List.map ~f:(fun env -> {candidate0 with env}) envs
-        end with
+        match
+          List.rev_scan_left [] ~f:eval ~init:env actions
+          |> List.map ~f:(fun env -> {candidate0 with env})
+        with
         | exception Not_found -> None, acc
         | exception (E.Result v) -> Some v, acc
         | [] -> None, acc
@@ -224,7 +239,7 @@ struct
             Parser.default_reduction state = None)
         candidates
     in
-    { final; candidates = (candidate 0 env) :: candidates }
+    { final; candidates = (candidate env) :: candidates }
 
   let dump nav ~wrong:(t,s,e as token) ~rest:tokens env =
     let body = Nav.body nav in

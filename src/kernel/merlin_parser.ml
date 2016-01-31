@@ -39,6 +39,8 @@ type kind =
 module Dump = struct
   let token = Parser_printer.print_token
 
+  let symbol = Parser_printer.print_symbol
+
   let position pos =
     let l1, c1 = Lexing.split_pos pos in
     Printf.sprintf "%d:%d" l1 c1
