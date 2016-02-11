@@ -44,7 +44,7 @@ let normalize_context (ft,path,dot_merlins : Protocol.context) =
     | `ML   , _  -> Parser.ML
     | `MLI  , _  -> Parser.MLI
     | `Auto , Some path when Filename.check_suffix path ".mli" -> Parser.MLI
-    | `Auto , _ -> Parser.ML
+    | `Auto , _  -> Parser.ML
   in
   ft, path, dot_merlins
 

@@ -7,6 +7,7 @@ module Make
 
        type t =
          | Abort
+         | Pop
          | Reduce of int
          | Shift : 'a Parser.symbol -> t
          | Sub of t list

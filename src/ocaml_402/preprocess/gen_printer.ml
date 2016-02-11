@@ -48,8 +48,8 @@ let print_symbol () =
     if n.n_kind = `REGULAR then
       printf "  | %s.X (%s.N %s.N_%s) -> %s\n"
         menhir menhir menhir
-        n.n_name
-        (symbol_printer n.n_name n.n_attributes)
+        n.n_mangled_name
+        (symbol_printer n.n_mangled_name n.n_attributes)
   in
   printf "let print_symbol = function\n";
   Array.iter case_t g.g_terminals;
@@ -74,7 +74,7 @@ let print_value () =
     if n.n_kind = `REGULAR then
       printf "  | %s.N %s.N_%s -> %s\n"
         menhir menhir
-        n.n_name (value_printer n.n_name n.n_attributes)
+        n.n_mangled_name (value_printer n.n_mangled_name n.n_attributes)
   in
   printf "let print_value (type a) : a %s.symbol -> a -> string = function\n"
     menhir;

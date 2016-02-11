@@ -8,6 +8,7 @@ module Make
 
        type t =
          | Abort
+         | Pop
          | Reduce of int
          | Shift : 'a Parser.symbol -> t
          | Sub of t list
@@ -180,6 +181,11 @@ struct
         let actions = decide stack in
         let candidate0 = candidate env in
         let rec eval (env : a Parser.env) : Recovery.t -> a Parser.env = function
+          | Recovery.Pop ->
+              Logger.log "recover" "eval Pop" "";
+              (match Parser.pop env with
+               | None -> raise Not_found
+               | Some env -> env)
           | Recovery.Abort ->
             Logger.log "recover" "eval Abort" "";
             raise Not_found
