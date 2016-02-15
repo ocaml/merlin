@@ -254,7 +254,7 @@ module Utils = struct
         | File.CMT _ | File.CMTI _ -> Fluid.get loadpath
 end
 
-type context = Type | Expr | Patt | Unknown
+type context = Type | Expr | Patt of Types.type_expr | Unknown
 exception Context_mismatch
 
 let rec locate ?pos path trie =
@@ -497,15 +497,28 @@ let recover ident =
   | Some loc -> `Found (loc, None)
 
 let namespaces = function
-  | Type        -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
-  | Expr | Patt -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
-  | Unknown     -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
+  | Type          -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
+  | Expr | Patt _ -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
+  | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
 
 exception Found of (Cmt_cache.path * Location.t)
 
 let tag namespace p = Typedtrie.tag_path ~namespace (Path.to_string_list p)
 
-let lookup ctxt ident env =
+let get_type_name ctxt =
+  match ctxt with
+  | Patt t ->
+    begin match t.Types.desc with
+    | Types.Tvar _ | Types.Tarrow _ | Types.Ttuple _ | Types.Tobject _
+    | Types.Tfield _ | Types.Tnil | Types.Tlink _ | Types.Tsubst _
+    | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
+      raise Not_found
+    | Types.Tconstr (path,_,_) ->
+      Longident.parse (String.concat ~sep:"." (Path.to_string_list path))
+    end
+  | _ -> raise Not_found
+
+let rec lookup ctxt ident env =
   try
     List.iter (namespaces ctxt) ~f:(fun namespace ->
       try
@@ -541,7 +554,8 @@ let lookup ctxt ident env =
       with Not_found -> ()
     ) ;
     info_log "   ... not in the environment" ;
-    raise Not_in_env
+    let id = try get_type_name ctxt with _ -> raise Not_in_env in
+    lookup Type id env
   with Found x ->
     x
 
@@ -618,7 +632,13 @@ let inspect_pattern is_path_capitalized p =
         (where [ ] represents the cursor.)
         So err... TODO? *)
     None
-  | _ -> Some Patt
+  | _ ->
+    (* We attach the type here so in the case of disambiguated constructors (or
+       record fields) we can fallback on looking up the type (cf. #486).
+       Of course that won't take care of constructors (resp. record fields)
+       disambiguated in expressions...
+       Oh well. *)
+    Some (Patt p.pat_type)
 
 let inspect_context browse path pos =
   match Browse.enclosing pos browse with
