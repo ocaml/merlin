@@ -5,14 +5,21 @@ module Make
     (Recovery : sig
        val default_value : 'a Parser.symbol -> 'a
 
-       type t =
+       type action =
          | Abort
          | Pop
-         | Reduce of int
-         | Shift : 'a Parser.symbol -> t
-         | Sub of t list
+         | R of int
+         | S : 'a Parser.symbol -> action
+         | Sub of action list
 
-       val recover : int -> int * (int -> t list)
+       type decision =
+         | Nothing
+         | One of action list
+         | Select of (int -> action list)
+
+       val depth : int array
+
+       val recover : int -> decision
 
        val guide : 'a Parser.symbol -> bool
 

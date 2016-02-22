@@ -6,14 +6,21 @@ module Make
     (Recovery : sig
        val default_value : 'a Parser.symbol -> 'a
 
-       type t =
+       type action =
          | Abort
          | Pop
-         | Reduce of int
-         | Shift : 'a Parser.symbol -> t
-         | Sub of t list
+         | R of int
+         | S : 'a Parser.symbol -> action
+         | Sub of action list
 
-       val recover : int -> int * (int -> t list)
+       type decision =
+         | Nothing
+         | One of action list
+         | Select of (int -> action list)
+
+       val depth : int array
+
+       val recover : int -> decision
 
        val guide : 'a Parser.symbol -> bool
 
@@ -86,7 +93,7 @@ struct
       | None -> 1, 0, 0
       | Some stack ->
         let Parser.Element (state, _, pos, _) = Parser.stack_element stack in
-        let depth, _ = Recovery.recover (Parser.number state) in
+        let depth = Recovery.depth.(Parser.number state) in
         let line, col = Lexing.split_pos pos in
         if depth = 0 then
           line, col, col
@@ -162,9 +169,11 @@ struct
         | None -> assert (n = 1); -1
         | Some stack -> nth_state stack (n - 1)
     in
-    let depth, decide = Recovery.recover (nth_state stack 0) in
-    let decision = decide (nth_state stack depth) in
-    List.rev decision
+    let st = nth_state stack 0 in
+    match Recovery.recover st with
+    | Recovery.Nothing -> []
+    | Recovery.One actions -> actions
+    | Recovery.Select f -> f (nth_state stack Recovery.depth.(st))
 
   let generate k (type a) (env : a Parser.env) =
     let module E = struct
@@ -180,7 +189,7 @@ struct
         Logger.log "recover" "decide state" (string_of_int (Parser.number state));
         let actions = decide stack in
         let candidate0 = candidate env in
-        let rec eval (env : a Parser.env) : Recovery.t -> a Parser.env = function
+        let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env = function
           | Recovery.Pop ->
               Logger.log "recover" "eval Pop" "";
               (match Parser.pop env with
@@ -189,7 +198,7 @@ struct
           | Recovery.Abort ->
             Logger.log "recover" "eval Abort" "";
             raise Not_found
-          | Recovery.Reduce prod ->
+          | Recovery.R prod ->
             Logger.log "recover" "eval Reduce" "";
             let prod = Parser.find_production prod in
             begin try
@@ -202,11 +211,11 @@ struct
                 Dump.env k env;
                 raise exn
             end
-          | Recovery.Shift (Parser.N n as sym) ->
+          | Recovery.S (Parser.N n as sym) ->
             Logger.log "recover" "eval Shift N" (Dump.symbol (Parser.X sym));
             let v = Recovery.default_value sym in
             Parser.feed_nonterminal n endp v endp env
-          | Recovery.Shift (Parser.T t as sym) ->
+          | Recovery.S (Parser.T t as sym) ->
             Logger.log "recover" "eval Shift T" (Dump.symbol (Parser.X sym));
             let v = Recovery.default_value sym in
             let token = (Recovery.token_of_terminal t v, endp, endp) in
