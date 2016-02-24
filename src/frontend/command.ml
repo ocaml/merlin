@@ -286,6 +286,10 @@ let dump buffer = function
     in
     `List (List.map ~f:(fun x -> `String (Printexc.to_string x)) exns)
 
+  | [`String "paths"] ->
+    let paths = Project.build_path (Buffer.project buffer) in
+    `List (List.map paths ~f:(fun s -> `String s))
+
   | _ -> IO.invalid_arguments ()
 
 let dispatch_query ~verbosity buffer =
