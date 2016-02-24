@@ -420,6 +420,8 @@ let mtd_attributes  _ = []
 
 let read_doc_attributes _ = None
 
+let remove_merlin_loc_attr e = e
+
 let get_class_field_desc_infos = function
   | Typedtree.Tcf_val (_,str_loc,_,_,_,_) -> Some (str_loc, `Value)
   | Typedtree.Tcf_meth (_,str_loc,_,_,_)     -> Some (str_loc, `Method)

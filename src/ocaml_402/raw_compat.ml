@@ -403,6 +403,15 @@ let type_attributes t = t.Types.type_attributes
 let lbl_attributes l = l.Types.lbl_attributes
 let mtd_attributes t = t.Types.mtd_attributes
 
+let remove_merlin_loc_attr e =
+  let open Typedtree in
+  { e with
+    exp_attributes =
+      List.filter e.exp_attributes ~f:(fun (str_loc, _) ->
+        str_loc.Location.txt <> "merlin.loc"
+      )
+  }
+
 (* Taken from Leo White's doc-ock,
    https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml
  *)

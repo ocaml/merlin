@@ -248,7 +248,9 @@ let node ~loc node parents =
   match node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
-    let pexp = Untypeast.untype_expression expr in
+    let pexp =
+      Untypeast.untype_expression (Raw_compat.remove_merlin_loc_attr expr)
+    in
     let needs_parentheses, result =
       if is_package ty then (
         let name = Location.mknoloc "M" in
@@ -266,6 +268,8 @@ let node ~loc node parents =
       )
     in
     let fmt, to_string = Format.to_string () in
+    (* FIXME: don't pretty print the input, insert a [match] before and the rest
+       after. *)
     Pprintast.expression fmt result ;
     let str = to_string () in
     let str = if needs_parentheses then "(" ^ str ^ ")" else str in
