@@ -49,7 +49,8 @@ let log_time fields =
   fields
 
 let json_log (input,output) =
-  let wrap json = `Assoc (log_time ["body", json]) in
+  let _wrap json = `Assoc (log_time ["body", json]) in
+  let wrap j = j in
   let log_input json =
     Logger.infojf section ~title:"input" wrap json; json
   in

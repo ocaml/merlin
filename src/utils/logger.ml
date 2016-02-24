@@ -126,7 +126,15 @@ let format level section ?title content =
   ]
 
 let output level section ?title j oc =
-  Yojson.Basic.to_channel oc (format level section ?title j);
+  begin match title with
+  | Some s ->
+    if s = "input" then output_string oc "> " else
+    if s = "output" then output_string oc "< " else
+    output_string oc (s ^ "| ")
+  | None ->
+    output_string oc "# "
+  end;
+  Yojson.Basic.to_channel oc j(*format level section ?title j*);
   output_char oc '\n';
   flush oc
 

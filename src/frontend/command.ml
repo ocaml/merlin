@@ -927,9 +927,15 @@ let dispatch_sync (state : state) =
     cursor_state state
 
   | (Seek `Marker : a request) ->
+    Logger.infoj Logger.general ~title:"input" (dump state.buffer [`String "parsetree"]);
     begin match Option.bind state.lexer ~f:Lexer.get_mark with
-    | None -> ()
+    | None ->
+      Logger.info Logger.general ~title:"output"
+        "====================================================================";
+      ()
     | Some mark ->
+      Logger.info Logger.general ~title:"output"
+        "____________________________________________________________________";
       let recoveries = Buffer.recover_history state.buffer in
       let diff = ref None in
       let check_item (lex_item,recovery) =
@@ -947,7 +953,9 @@ let dispatch_sync (state : state) =
         let items = History.seek_backward (fun (_,i) -> i != item) items in
         buffer_freeze state items;
     end;
-    cursor_state state
+    let res = cursor_state state in
+    Logger.infoj Logger.general ~title:"output" (dump state.buffer [`String "parsetree"]);
+    res
 
   | (Refresh : a request) ->
     checkout_buffer_cache := [];
