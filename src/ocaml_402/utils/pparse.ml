@@ -28,16 +28,19 @@ let write_ast magic ast =
   close_out oc;
   fn
 
+let null = match Sys.os_type with "Win32" -> " NUL" | _ -> "/dev/null"
+
+let ppx_commandline cmd fn_in fn_out =
+  Printf.sprintf "%s %s %s 1>%s"
+    cmd (Filename.quote fn_in) (Filename.quote fn_out) null
+
 let pp_commandline cmd fn_in fn_out =
-  let null = match Sys.os_type with "Win32" -> " NUL" | _ -> "/dev/null" in
-  Printf.sprintf "%s %s %s 1>%s 2>%s"
-    cmd
-    (Filename.quote fn_in) (Filename.quote fn_out)
-    null null
+  Printf.sprintf "%s %s 1>%s"
+    cmd (Filename.quote fn_in) (Filename.quote fn_out)
 
 let apply_rewriter magic fn_in ppx =
   let fn_out = Filename.temp_file "camlppx" "" in
-  let comm = pp_commandline ppx fn_in fn_out in
+  let comm = ppx_commandline ppx fn_in fn_out in
   let ok = Sys.command comm = 0 in
   if ok then
     Misc.remove_file fn_in
@@ -135,11 +138,12 @@ let apply_pp ~filename ~source ~pp =
   let ic = open_in_bin fn_out in
   let buffer = really_input_string ic
       (String.length Config.ast_impl_magic_number) in
+  close_in ic;
   if buffer = Config.ast_impl_magic_number then
-    `Structure (read_ast Config.ast_impl_magic_number filename
+    `Structure (read_ast Config.ast_impl_magic_number fn_out
                 : Parsetree.structure)
   else if buffer = Config.ast_intf_magic_number then
-    `Signature (read_ast Config.ast_intf_magic_number filename
+    `Signature (read_ast Config.ast_intf_magic_number fn_out
                 : Parsetree.signature)
   else
     Misc.fatal_error "OCaml and preprocessor have incompatible versions"
