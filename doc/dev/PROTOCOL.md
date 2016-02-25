@@ -1,10 +1,8 @@
-During a Merlin session, the editor launches an ocamlmerlin process
-and communicates with it by writing queries on stdin and reading
-responses on stdout.
+This document describes Merlin protocol version 2.
 
-Merlin processes queries synchronously, reading them one by one and
-writing a response for each query, in the same order.  It will wait
-for more queries until stdin reaches end-of-file.
+During a Merlin session, the editor launches an ocamlmerlin process and communicates with it by writing queries on stdin and reading responses on stdout.
+
+Merlin processes queries synchronously, reading them one by one and writing a response for each query, in the same order.  It will wait for more queries until stdin reaches end-of-file.
 
 The complete set of commands is defined in `src/frontend/protocol.ml`.
 
@@ -12,176 +10,84 @@ Queries and responses can be serialized in two different formats:
 - JSON, defined in `src/frontend/IO.ml`;
 - SEXP, defined in `src/frontend/IO_sexp.ml`.
 
-JSON is the default, SEXP can be selected by passing `-protocol sexp`
-to merlin process.
+JSON is the default, SEXP can be selected by passing `-protocol sexp` to Merlin process.
 
-The rest of the document will describe sample sessions and commands
-using JSON format.  The SEXP format is mechanically derived from JSON,
-flow is the same.
+The rest of the document will describe sample sessions and commands using JSON format.  The SEXP format is mechanically derived from JSON, flow is the same.
 
 # Merlin commands
 
 Commands can be classified in three categories:
 - _synchronization_, to share and update the content of the editor
   buffer;
-- _query_, to ask merlin for information (type, completion, documentation);
+- _query_, to ask Merlin for information (type, completion, documentation);
 - _context_, to describe the file being worked on and how it is
   related to the environment (dependencies, include paths, ...).
 
-The basic workflow for an editor is to synchronize then run a query
-each time merlin is invoked.
+The basic workflow for an editor is to synchronize then run a query each time Merlin is invoked.
 
-When working on a project with multiple files, context becomes useful
-to switch between buffers.
+When working on a project with multiple files, context becomes useful to switch between buffers.
 
-A simple session (user-commands prefixed by >, merlin responses by <):
+A simple session (user-commands prefixed by >, Merlin responses by <):
 
 ```javascript
-> ["tell","source","let f x = x;;"]
-< ["return",{"cursor":{"line":1,"col":13},"marker":false}]
-> ["type","expression","f"]
+> ["tell","start","end","let f x = x let () = ()"]
+< ["return",true]
+> ["type","expression","f","at","end"]
 < ["return","'a -> 'a"]
 ```
 
 
 ## Responses
 
-Responses are always of the form `[kind,payload]` where `payload`
-depends on the value of `kind`, which can be:
+Responses are always of the form `[kind,payload]` where `payload` depends on the value of `kind`, which can be:
 
-`"return"` when the command succeeded, `payload` depends on the
-command being responded to.
+`"return"` when the command succeeded, `payload` depends on the command being responded to.
 
-`"failure"` when merlin was used in an incorrect way (e.g command was
-malformed or unknown), `payload` is a string describing the failure.
-Editor mode should be fixed.
+`"failure"` when Merlin was used in an incorrect way (e.g command was malformed or unknown), `payload` is a string describing the failure.  Editor mode should be fixed.
 
-`"error"` when something wrong prevented merlin from answering:
-invalid files (for instance wrong OCaml version), missing packages,
-etc.  `payload` is a string describing the error, user should be
-notified to fix the environment.
+`"error"` when something wrong prevented Merlin from answering: invalid files (for instance wrong OCaml version), missing packages, etc.  `payload` is a string describing the error, user should be notified to fix the environment.
 
-`"exception"` when something unexpected happened.  Merlin should be
-fixed, please report the error.  `payload` is an arbitraty json value.
+`"exception"` when something unexpected happened.  Merlin should be fixed, please report the error.  `payload` is an arbitraty json value.
 
     
 ## Synchronization
 
-Merlin maintains a "virtual cursor", similar to the cursor that allows
-to enter text in a text editor.
+Merlin maintains a copy of the buffer from your editor.
+Synchronization is done by replacing chunks of text from this copy by fresh content.
 
-Sharing the content of the buffer to merlin is done by moving the
-cursor to the desired position then sending text.
+### Position
 
-Two differences with the text cursor you are familiar with:
-- text always replace what comes after the cursor, sending something clears previous contents,
-- the cursor cannot be freely moved, merlin may align it with entities which it finds meaningful (usually a token).
+Most commands need to refer to a position in the buffer.  All positions are interpreted on the copy of the buffer, make sure Merlin is synchronized with the editor when you need to share a position.  
+A position is a JSON value that can be one of :
 
-Thus, after a move, merlin will always return the actual position of
-the cursor.
-
-Positions are represented as a pair of a line and a
-column, `{"line":1,"col":0}` in JSON.
-The first line has number 1.
-
+```javascript
+"start" // first position of the buffer
+"end"   // last position of the buffer
+1234    // An integer is an offset, in bytes, from the beginning of the buffer
+{"line":12, "col":34} // Alternatively, you can specify a position as a line (first line is 1) and a column (indexed from 0).
+```
 
 ### Tell
 
 All telling commands return a cursor state.
 
 ```javascript
-["tell","start"]
-["tell","start","at",{"line":int, "col":int}]
+["tell",start_pos,end_pos,"source"]
 ```
 
-Prepare merlin for receiving text. If a position is specified, the cursor will be moved there.
-Merlin will return the actual position where text will be inserted as a cursor state object `{"cursor":position, "marker":bool}`, so the editor should be prepared to send more text.
-Don't bother about the `"marker"` field yet.
+Replace the content between the two positions by `"source"`.
 
-
-```javascript
-["tell","source",string]
-["tell","file",string]
-```
-
-`"source"` appends the string argument to buffer contents (at the cursor position). Returns the updated cursor state.
-
-`"file"` appends the contents of the file specified as argument.
-Like calling `["tell","source",...]` with the contents of the file as argument.
-
-Be careful that EOF is not set, see the next commands.
-
-```javascript
-["tell","eof"]
-["tell","source-eof",string]
-["tell","file-eof",string]
-```
-
-Signal EOF at the current cursor position, or after appending some text.
-Merlin behaves slightly differently when EOF is not set, for instance by not reporting errors about unterminated statements.
-You shouln't usually bother about that: unless you know you are working with unfinished contents (e.g REPL input), always set EOF at the end of the buffer.
-
-
-```javascript
-["tell","marker"]
-```
-
-Set the marker at the current position. Useful only in advanced use-cases, see the marker section for more information.
-
-
-```javascript
-["drop"]
-```
-
-This command makes merlin forget everything after the cursor.
-
-### Seek
-
-These commands move the cursor without affecting the content of the buffer. They also return a cursor state.
-
-Moving the cursor is useful to control the prefix of the buffer that must be considered by merlin when processing queries.
-Practical for debugging but doesn't matter for basic usecases.
-
-
-```javascript
-["seek","position"]
-```
-
-Returns the current position of the cursor without doing anything else.
-
-
-```javascript
-["seek","before",position]
-["seek","exact",position]
-```
-
-Move the cursor to the requested position. If this position happens to be in the middle of a token, `"exact"` will set the cursor at this token while `"before"` will move to the preceding one.
-
-
-```javascript
-["seek","end"]
-```
-
-Move the cursor to the last position known to merlin.
-
-
-```javascript
-["seek","marker"]
-```
-
-Move the cursor to the last state where the marker was on stack. For advanced uses, see marker section.
+The simplest way to synchronize your editor is to use `["tell","start","end","... full content of the buffer"]`.  It will update the whole buffer every time.
 
 ### Configuration
 
 #### Flags
 
 ```javascript
-["flags","add",["-rectypes", "-safe-string", ...]]
-["flags","clear"]
+["flags","set",["-rectypes", "-safe-string", ...]]
 ```
 
-Pass the same flags as you would pass to the OCaml compiler. Run `ocamlmerlin -help` to get a list of known flags.
-`"add"` appends to the list of flags, `"clear"` resets to the empty flag list.
+Set the flags you would pass to the OCaml compiler. Run `ocamlmerlin -help` to get a list of known flags.
 
 Returns `{"result":true}` if everything went well or `{"failures":string list, "result":true}` in case of error.
 
@@ -190,7 +96,7 @@ Returns `{"result":true}` if everything went well or `{"failures":string list, "
 ["flags","get"]
 ```
 
-Returns a `string list list` (eg `[["-rectypes"],["-safe-string"]]`) resulting from the previous invocations of `["flags",("clear"/"add")]`.
+Returns the `string list` (eg `["-rectypes","-safe-string"]`) that was set by previous invocation of `["flags","set",[...]]`.
 
 #### Findlib packages
 
@@ -258,16 +164,15 @@ Reset path variables to default value (by default just the standard library and 
 #### Type-checking
 
 ```javascript
-["type","expression",string]
-["type","expression",string,"at",{"line":int,"col":int}]
+["type","expression",string,"at",position]
 ```
 
-Returns the type of the expression when typechecked in the environment at cursor or around the specified position.
+Returns the type of the expression when typechecked in the environment around the specified position.
 
 
 ```javascript
-["type","enclosing","at",{"line":int,"col":int}]
-["type","enclosing",{"expr":string,"offset":int},{"line":int,"col":int}]
+["type","enclosing","at",position]
+["type","enclosing",{"expr":string,"offset":int},position]
 ```
 
 Returns a list of type information for all expressions at given position, sorted by increasing size.
@@ -405,7 +310,7 @@ The value is a list where each item as the shape:
 }
 ```
 
-`start` and `end` are omitted if error has no location (e.g. wrong file format), otherwise the editor should probably hightlight / mark this range.
+`start` and `end` are omitted if error has no location (e.g. wrong file format), otherwise the editor should probably highlight / mark this range.
 `type` is an attempt to classify the error.
 `valid` is here mostly for informative purpose. It reflects whether Merlin was expecting such an error to be possible or not, and is useful for debugging purposes.
 `message` is the error description to be shown to the user.
@@ -431,7 +336,7 @@ It returns a `cursor state` object describind the state of the checked out buffe
 ```
 
 Switch to "default" buffer for "ml", "mli".
-It will be in the state you left it last time it was used, unless merlin decided to garbage collect because of memory pressure (any buffer left in background is either untouched or resetted because of collection).
+It will be in the state you left it last time it was used, unless Merlin decided to garbage collect because of memory pressure (any buffer left in background is either untouched or resetted because of collection).
 
 
 ```javascript
@@ -455,7 +360,7 @@ Same as `["checkout", _, string]`, but rather than inferring the _.merlin_ from 
 #### Contextual commands
 
 An important variant of this scheme are the _contextual commands_.
-All merlin commands except `"checkout"` can be wrapped in a dictionary looking like:
+All Merlin commands except `"checkout"` can be wrapped in a dictionary looking like:
 
 ```javascript
 {
@@ -464,7 +369,7 @@ All merlin commands except `"checkout"` can be wrapped in a dictionary looking l
 }
 ```
 
-Where `command` is a merlin command and context would be the list of arguments passed to `"checkout"`.
+Where `command` is a Merlin command and context would be the list of arguments passed to `"checkout"`.
 
 This has the same effect as executing:
 
@@ -475,26 +380,32 @@ This has the same effect as executing:
 
 This is useful to prevent race conditions resulting from concurrent manipulations of different buffers in the editor, by making sure each command is interpreted in the appropriate context.
 
-### Misc
+### Versioning
+
+```javascript
+["protocol","version",n]
+```
+
+This command notifies Merlin that the editor wants to communicate with protocol version `n`, where `n` is an integer.
+
+Merlin will answer with a triple `{"selected": n0, "latest": n1, "merlin": "Version string"}`, where: 
+- `n0` is the version that will be used for the rest of this session, 
+- `n1` is the most recent version the local distribution of Merlin is able to use, 
+- "Version string" is a human readable string describing the local installation of Merlin.
+
+```javascript
+["protocol","version"]
+```
+
+This command will return the same answer as the previous one, but won't try to select a protocol version.
 
 ```javascript
 ["version"]
 ```
 
-Returns a string describing merlin version.
+Returns a string describing Merlin version.
 
-
-```javascript
-["boundary","next","at",position]
-["boundary","prev","at",position]
-["boundary","current","at",position]
-["boundary","at",position]
-```
-
-DEPRECATED. The boundary command returns the location of the construction under or near the cursor.
-Originally intended to implement features such as moving by phrase, alternative are being explored.
-
-#### Debugging Merlin
+### Debugging Merlin
 
 Dump command allow to observe internal structures of Merlin.
 Result is an arbitratry json object, targeted toward human readers.
@@ -547,158 +458,5 @@ List of the flags and warnings set for current buffers.
 
 # TODO
 
-Marker management.
 Logging infrastructure.
 Explain responses verbosity.
-Cleanup list of type below.
-
-# OLD
-
-# Basic types
-
-## Position
-
-A json-object of the form: 
-
-    position = {"line":int, "col":int}
-
-## Cusor state
-
-A json-object of the form: 
-
-    cursor = {"cursor":position, "marker":bool}
-
-## Location
-
-A json-object having at least the fields: 
-
-    location <= {"start":position,"end":position}
-
-## Filenames
-
-Strings addressing file system objects:
-
-    path = string, points any file or directory
-    directory = string, expected to name a directory
-    filename = string, expected to name a regular file
-
-# Wizardry
-
-## type
-
-Returns the type of an expression as a string.
-['type','expression','... ml expression'] tries to type expression in global env.
-['type','at',{'line':l,'col':c}] returns the type of the expression at given position(BUGGY)
-
-### ["type","expression",string]
-### ["type","expression",string,"at",position]
-### ["type","at",position]
-### ["type","enclosing",position]
-
-## complete
-
-['complete','prefix','...identifier path...'] or
-['complete','prefix','...identifier path...', 'at', {'line':l,'col':c}]
-returns possible completions in global environement or in environment
-surrounding given position for given prefix/path (path of the form: Module.ident)
-
-### ["complete","prefix",string]
-### ["complete","prefix",string,"at",position]
-
-## locate
-
-['locate', ident] returns the position where this identifier is introduced.
-
-Answers are of this shape :
-
-- "Not found" (string)
-- ["file": string , "pos": { "line" : int , "col": int }]
-
-## boundary
-
-### ["boundary", "prev|current|next"]
-Return the boundary of the phrase before, at, or after the cursor.
-
-### ["boundary", "prev|current|next", "at", pos]
-
-Return the boundary of the phrase before, at, or after the given position.
-
-## errors
-
-### ["errors"]
-
-# Path management
-
-## find
-
-### ["find","use",string list]
-### ["find","list"]
-
-## which
-
-### ["which","path",string]
-### ["which","with\_ext",string]
-
-## cd
-
-### ["cd",directory]
-
-## path
-
-    var = string
-
-### ["path","list"]
-
-List known path variables. As of today (07/2013), there is "build" and
-"source".
-
-### ["path","list",var]
-
-List content of variable.
-
-### ["path","add",var,directory]
-
-Add a path to a variable.
-
-### ["path","remove",var,directory]
-
-Remove a path from a variable.
-
-### ["path","reset"]
-
-Reset all variables to default content (usually, ocaml std lib path).
-
-### ["path","reset",var]
-
-Reset specified variable to its default value.
-
-## Project file
-
-Loading of ".merlin" files.
-
-### ["project","load",filename]
-
-Parse and load given filename as a ".merlin".
-Returns the list of files that have been loaded (as a ".merlin" can depend on
-another one that will be loaded recursively).
-
-### ["project","find",path]
-
-Try to find a file named ".merlin" in any directory from given path to "/",
-then behave as ["project","load"].with this file.
-
-# Debug
-
-## dump
-
-### ["dump","env"]
-### ["dump","env","at",position]
-### ["dump","sig"]
-### ["dump","chunks"]
-### ["dump","tree"]
-
-## help
-
-## ["help"]
-
-List known commands
