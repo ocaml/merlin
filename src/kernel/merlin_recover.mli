@@ -7,7 +7,6 @@ module Make
 
        type action =
          | Abort
-         | Pop
          | R of int
          | S : 'a Parser.symbol -> action
          | Sub of action list
@@ -18,6 +17,8 @@ module Make
          | Select of (int -> action list)
 
        val depth : int array
+
+       val can_pop : 'a Parser.terminal -> bool
 
        val recover : int -> decision
 
@@ -53,8 +54,7 @@ sig
     | `Fail
     | `Ok of 'a Parser.checkpoint * 'a Parser.env ]
 
-  val generate :
-    cursor -> 'a Parser.env -> 'a candidates
+  val generate : cursor -> 'a Parser.env -> 'a candidates
 
   val dump :
     Nav.t ->

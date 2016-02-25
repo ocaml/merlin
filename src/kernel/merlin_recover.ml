@@ -8,7 +8,6 @@ module Make
 
        type action =
          | Abort
-         | Pop
          | R of int
          | S : 'a Parser.symbol -> action
          | Sub of action list
@@ -19,6 +18,8 @@ module Make
          | Select of (int -> action list)
 
        val depth : int array
+
+       val can_pop : 'a Parser.terminal -> bool
 
        val recover : int -> decision
 
@@ -190,11 +191,6 @@ struct
         let actions = decide stack in
         let candidate0 = candidate env in
         let rec eval (env : a Parser.env) : Recovery.action -> a Parser.env = function
-          | Recovery.Pop ->
-              Logger.log "recover" "eval Pop" "";
-              (match Parser.pop env with
-               | None -> raise Not_found
-               | Some env -> env)
           | Recovery.Abort ->
             Logger.log "recover" "eval Abort" "";
             raise Not_found
@@ -240,7 +236,31 @@ struct
         | (candidate :: _) as candidates ->
           aux (candidates @ acc) candidate.env
     in
-    aux [] env
+    let should_pop stack =
+      let Parser.Element (state, _, _, _) = Parser.stack_element stack in
+      match Parser.incoming_symbol state with
+      | (Parser.T term) as t1 when Recovery.can_pop term ->
+        begin match Parser.stack_next stack with
+          | None -> false
+          | Some stack' ->
+            match decide stack' with
+            | Recovery.S (Parser.T term' as t2) :: _
+              when Parser.X t1 = Parser.X t2 -> false
+            | _ -> true
+        end
+      | _ -> false
+    in
+    let rec pop_first env =
+      match Parser.stack env with
+      | Some stack when should_pop stack ->
+        Logger.log "recover" "pre-eval Pop" "";
+        begin match Parser.pop env with
+          | None -> assert false
+          | Some env' -> pop_first env'
+        end
+      | _ -> env
+    in
+    aux [] (pop_first env)
 
   let generate k env =
     let final, candidates = generate k env in

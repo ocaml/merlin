@@ -68,12 +68,7 @@ wine:
 	$(MAKE) -f Makefile.wine installer
 
 preprocess:
-	$(MAKE) -f Makefile.preprocess
-
-preprocess_all_versions:
-	for i in $(OCAML_VERSIONS); do \
-		$(MAKE) -f Makefile.preprocess MERLIN_OCAML_VERSION=_$$i; \
-	done
+	$(MAKE) -C preprocessors
 
 debug: assert_configured
 	+$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITH_DEBUG=1 $(TARGET)
@@ -84,6 +79,7 @@ debug: assert_configured
 clean:
 	@rm -f src/config/my_config.ml src/my_config.ml src/myocamlbuild_config.ml
 	@rm -f emacs/merlin.elc
+	$(MAKE) -C preprocessors clean
 	+$(OCAMLMAKEFILE) clean
 
 check: $(TARGET)
