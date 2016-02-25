@@ -136,7 +136,7 @@ and remove_top_indir t =
   | Structure_item _ -> List.filter_map (Lazy.force t.t_children) ~f:summarize
   | _ -> []
 
-let get = List.concat_map ~f:remove_top_indir
+let get browses = List.concat @@ List.rev_map ~f:remove_top_indir browses
 
 let shape cursor nodes =
   let rec aux node =

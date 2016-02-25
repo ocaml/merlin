@@ -140,7 +140,7 @@ let () =
   let rec client () =
     Lwt.bind (Recipes.accept server) client
   in
-  Thread.create (fun () -> Lwt_main.run (client ())) ();
+  let monitor = Thread.create (fun () -> Lwt_main.run (client ())) () in
   (* Run! *)
-  main_loop ()
-  (*Thread.join monitor*)
+  main_loop ();
+  Thread.join monitor
