@@ -20,8 +20,6 @@ share: [
   "vim/merlin/syntax_checkers/ocaml/merlin.vim" { "vim/syntax_checkers/ocaml/merlin.vim" }
   "vim/merlin/syntax_checkers/omlet/merlin.vim" { "vim/syntax_checkers/omlet/merlin.vim" }
   "vim/merlin/syntax/merlin.vim" { "vim/syntax/merlin.vim" }
-  "vim/vimbufsync/autoload/vimbufsync.py" { "vim/autoload/vimbufsync.py" }
-  "vim/vimbufsync/autoload/vimbufsync.vim" { "vim/autoload/vimbufsync.vim" }
   "emacs/merlin-ac.el" {"../emacs/site-lisp/merlin-ac.el"}
   "?emacs/merlin-ac.elc" {"../emacs/site-lisp/merlin-ac.elc"}
   "emacs/merlin-cap.el" {"../emacs/site-lisp/merlin-cap.el"}
