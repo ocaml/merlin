@@ -126,7 +126,7 @@ let comments = function
   | Is_external pp ->
     PP.comments pp
 
-let trace t nav = match t with
+(*let trace t nav = match t with
   | Is_normal p ->
     Merlin_parser.trace p nav
-  | Is_external _ -> ()
+  | Is_external _ -> ()*)

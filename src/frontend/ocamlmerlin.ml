@@ -134,13 +134,14 @@ let () =
   signal Sys.sighup  Sys.Signal_ignore;
   (* Select frontend *)
   Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
-  let open Sturgeon in
+  (*let open Sturgeon in
   (* Run monitor in parallel *)
   let server = Recipes.text_server "merlin" Command.monitor in
   let rec client () =
     Lwt.bind (Recipes.accept server) client
   in
-  let monitor = Thread.create (fun () -> Lwt_main.run (client ())) () in
+  let monitor = Thread.create (fun () -> Lwt_main.run (client ())) () in*)
   (* Run! *)
   main_loop ();
-  Thread.join monitor
+  (*Thread.join monitor;*)
+  ()

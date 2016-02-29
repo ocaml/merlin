@@ -223,7 +223,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = str findlib yojson unix sturgeon
+PACKS = str findlib yojson unix
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code

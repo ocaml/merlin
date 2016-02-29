@@ -36,5 +36,5 @@ val dispatch : state -> 'a Protocol.command -> 'a
 
 val context_dispatch : Protocol.context -> 'a Protocol.command -> 'a
 
-val monitor : args:_ -> set_title:(string -> unit) ->
-  Sturgeon.Tui.cursor -> unit
+(*val monitor : args:_ -> set_title:(string -> unit) ->
+  Sturgeon.Tui.cursor -> unit*)

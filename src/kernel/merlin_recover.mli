@@ -1,4 +1,6 @@
-open Sturgeon.Tui
+(*open Sturgeon.Tui*)
+
+type cursor = unit
 
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
@@ -56,10 +58,10 @@ sig
 
   val generate : cursor -> 'a Parser.env -> 'a candidates
 
-  val dump :
+  (*val dump :
     Nav.t ->
     wrong:(Parser.token * Lexing.position * Lexing.position) ->
     rest:(Parser.token * Lexing.position * Lexing.position) list ->
-    'a Parser.env -> unit
+    'a Parser.env -> unit*)
 
 end

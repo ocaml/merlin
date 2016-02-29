@@ -790,7 +790,7 @@ let context_dispatch context cmd =
 
 let new_state () = new_state ()
 
-module Monitor = struct
+(*module Monitor = struct
   open Sturgeon
   open Tui
 
@@ -905,4 +905,4 @@ module Monitor = struct
     Hashtbl.iter print_context contexts
 end
 
-let monitor = Monitor.main
+let monitor = Monitor.main*)

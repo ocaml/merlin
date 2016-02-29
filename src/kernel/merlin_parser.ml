@@ -27,7 +27,12 @@
 )* }}} *)
 
 open Std
-open Sturgeon.Tui
+(*open Sturgeon.Tui*)
+
+let null_cursor = ()
+let text () _ = ()
+let printf () fmt = Printf.ksprintf ignore fmt
+let is_closed () = true
 
 module I = Parser_raw.MenhirInterpreter
 
@@ -153,7 +158,7 @@ let resume_parse nav =
 
   and check_for_error acc token tokens env = function
     | I.HandlingError _ ->
-      R.dump nav ~wrong:token ~rest:tokens env;
+      (*R.dump nav ~wrong:token ~rest:tokens env;*)
       recover acc (token :: tokens) (R.generate null_cursor env)
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
@@ -224,7 +229,7 @@ let run_parser nav lexer previous kind =
     `Signature steps, `Signature result
 
 let make lexer kind =
-  let steps, tree = run_parser Nav.null lexer `None kind in
+  let steps, tree = run_parser () lexer `None kind in
   {kind; steps; tree; errors = []; lexer}
 
 let update lexer t =
@@ -233,11 +238,11 @@ let update lexer t =
   else if Merlin_lexer.compare lexer t.lexer = 0 then
     {t with lexer}
   else
-    let steps, tree = run_parser Nav.null lexer t.steps t.kind in
+    let steps, tree = run_parser () lexer t.steps t.kind in
     {t with tree; steps; errors = []; lexer}
 
-let trace t nav =
-  ignore (run_parser nav t.lexer `None t.kind)
+(*let trace t nav =
+  ignore (run_parser nav t.lexer `None t.kind)*)
 
 let result t = t.tree
 

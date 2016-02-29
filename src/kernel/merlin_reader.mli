@@ -46,4 +46,4 @@ val find_lexer : t -> Merlin_lexer.t option
 val comments : t -> (string * Location.t) list
 val errors : t -> exn list
 
-val trace : t -> Sturgeon.Tui.Nav.t -> unit
+(*val trace : t -> Sturgeon.Tui.Nav.t -> unit*)

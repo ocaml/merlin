@@ -1,5 +1,7 @@
 open Std
-open Sturgeon.Tui
+(*open Sturgeon.Tui*)
+
+type cursor = unit
 
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
@@ -112,6 +114,11 @@ struct
           line, min col col', max col col'
     in
     { line; min_col; max_col; env }
+
+  let printf () fmt =
+    Printf.ksprintf ignore fmt
+
+  let is_closed () = true
 
   let attempt k r token =
     let _, startp, _ = token in
@@ -276,7 +283,7 @@ struct
     in
     { final; candidates = (candidate env) :: candidates }
 
-  let dump nav ~wrong:(t,s,e as token) ~rest:tokens env =
+  (*let dump nav ~wrong:(t,s,e as token) ~rest:tokens env =
     let body = Nav.body nav in
     if not (is_closed body) then (
       let l, c = Lexing.split_pos s in
@@ -302,5 +309,5 @@ struct
       text body ".\n";
       Dump.env body env;
       text body "\n"
-    )
+    )*)
 end
