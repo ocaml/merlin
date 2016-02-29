@@ -1123,17 +1123,26 @@ prefix of `bar' is `'."
 
 (defun merlin/display-in-type-buffer (text)
   "Change content of type-buffer."
-  (with-current-buffer (get-buffer-create merlin-type-buffer-name)
-    (when (member major-mode '(nil fundamental-mode))
-                                        ; Guess value for merlin-favourite-caml-mode
-      (let ((caml-mode (or merlin-favourite-caml-mode
-                           merlin-guessed-favorite-caml-mode)))
-        (when caml-mode
-          (with-demoted-errors "Error when setting up merlin type-buffer: %S"
-            (funcall caml-mode)))))
-    (erase-buffer)
-    (insert text)
-    (goto-char (point-min))))
+  (let ((curr-dir default-directory))
+    (with-current-buffer (get-buffer-create merlin-type-buffer-name)
+      (when (member major-mode '(nil fundamental-mode))
+                                          ; Guess value for merlin-favourite-caml-mode
+        (let ((caml-mode (or merlin-favourite-caml-mode
+                             merlin-guessed-favorite-caml-mode)))
+          (when caml-mode
+            (with-demoted-errors "Error when setting up merlin type-buffer: %S"
+              (funcall caml-mode)))))
+      (erase-buffer)
+      (insert text)
+      (goto-char (point-min))
+      ; finally make sure that the type buffer directory is the same as the last
+      ; (ml) buffer we were in.
+      ; Indeed if people move to that buffer and start looking for a file we
+      ; want them to be in the directory they were in when they last requested a
+      ; type, not in the directory they were in when they first requested a
+      ; type (for long lived emacs sessions that directory might not even exist
+      ; anymore).
+      (setq default-directory curr-dir))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;
