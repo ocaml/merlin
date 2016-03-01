@@ -328,28 +328,6 @@ let let_operator startpos endpos op bindings cont =
   let default_value_bind = Ast_helper.Vb.mk default_pattern default_expr
 ]
 
-(**
- * `Shift n             : when at the left of the annotated symbol, it is a
- *                        valid recovery to shift it, and this strategy has
- *                        priority [n]
- * `Shift_token (n,tok) : when at the right of the annotated symbol shifting
- *                        [tok] is a strategy with priority [n]
- * `Cost n              : the annotated symbol cost is adjusted by [n]
- * `Indent n            : the annotated symbol column should be adjusted by
- *                        [n] before computing recovery guide
- * `Unclosed name       : the current symbol is the opening a pair that should
- *                        closed. [name] will be reported to the user in case
- *                        of syntax error.
- * `Close               : this symbol close the pair opened by an earlier
- *                        `Unclosed
- * `Item kind           : this symbol begins the definition of an [kind] item,
- *                        where kind is let, type, ...
- * %annot <[ `Shift of int | `Shift_token of int * token | `Cost of int
- *         | `Indent of int
- *         | `Unclosed of string | `Close
- *         | `Item of string ]>
- **)
-
 (* Tokens *)
 
 %token AMPERAMPER
@@ -2473,16 +2451,15 @@ attr_id [@recovery Location.mknoloc ""]:
     { mkloc ($1 ^ "." ^ $3.txt) (rloc $startpos $endpos)}
 
 attribute:
-| LBRACKETAT attr_id payload RBRACKET
+| LBRACKETAT [@item "attribute"] attr_id payload RBRACKET
     { ($2, $3) }
 
 post_item_attribute:
-| LBRACKETATAT attr_id payload RBRACKET
+| LBRACKETATAT [@item "attribute"] attr_id payload RBRACKET
     { ($2, $3) }
 
 floating_attribute:
-| LBRACKETATATAT [@item "attribute"]
-  attr_id payload RBRACKET
+| LBRACKETATATAT [@item "attribute"] attr_id payload RBRACKET
     { ($2, $3) }
 
 post_item_attributes [@recovery []]:
@@ -2506,12 +2483,11 @@ ext_attributes [@cost 1][@recovery (None, [])]:
     { Some $2, $3 }
 
 extension:
-| LBRACKETPERCENT attr_id payload RBRACKET
+| LBRACKETPERCENT [@item "extension"] attr_id payload RBRACKET
     { ($2, $3) }
 
 item_extension:
-| LBRACKETPERCENTPERCENT [@item "extension"]
-  attr_id payload RBRACKET
+| LBRACKETPERCENTPERCENT [@item "extension"] attr_id payload RBRACKET
     { ($2, $3) }
 
 payload [@recovery Parsetree.PStr []]:

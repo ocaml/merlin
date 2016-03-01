@@ -190,7 +190,7 @@ end = struct
     (fun f -> Lr1.iter (fun st -> List.iter f (all_instrs st)))
 
   let emit_can_pop ppf =
-    Format.fprintf ppf "let can_pop (type a) : a terminal -> bool = function\n  ";
+    Format.fprintf ppf "let can_pop (type a) : a terminal -> bool = function\n";
     G.Terminal.iter (fun t ->
         if G.Terminal.kind t = `REGULAR && G.Terminal.typ t = None then
           Format.fprintf ppf "  | T_%s -> true\n" (G.Terminal.name t));

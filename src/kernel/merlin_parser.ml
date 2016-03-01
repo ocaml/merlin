@@ -139,6 +139,8 @@ let default = function
 
 let eof_token = (Parser_raw.EOF, Lexing.dummy_pos, Lexing.dummy_pos)
 
+let errors_ref = ref []
+
 let resume_parse nav =
   let rec normal acc tokens = function
     | I.InputNeeded env as checkpoint ->
@@ -159,6 +161,8 @@ let resume_parse nav =
   and check_for_error acc token tokens env = function
     | I.HandlingError _ ->
       (*R.dump nav ~wrong:token ~rest:tokens env;*)
+      let explanation = Merlin_explain.explain env token in
+      errors_ref := Merlin_explain.Syntax_explanation explanation :: !errors_ref;
       recover acc (token :: tokens) (R.generate null_cursor env)
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
@@ -229,17 +233,24 @@ let run_parser nav lexer previous kind =
     `Signature steps, `Signature result
 
 let make lexer kind =
+  errors_ref := [];
   let steps, tree = run_parser () lexer `None kind in
-  {kind; steps; tree; errors = []; lexer}
+  let errors = !errors_ref in
+  errors_ref := [];
+  {kind; steps; tree; errors; lexer}
 
 let update lexer t =
   if t.lexer == lexer then
     t
   else if Merlin_lexer.compare lexer t.lexer = 0 then
     {t with lexer}
-  else
+  else begin
+    errors_ref := [];
     let steps, tree = run_parser () lexer t.steps t.kind in
-    {t with tree; steps; errors = []; lexer}
+    let errors = !errors_ref in
+    errors_ref := [];
+    {t with tree; steps; errors; lexer}
+  end
 
 (*let trace t nav =
   ignore (run_parser nav t.lexer `None t.kind)*)

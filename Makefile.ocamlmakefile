@@ -162,6 +162,7 @@ SOURCES = \
 	$(TYPER)/parser_printer.ml     		\
 	$(TYPER)/parser_recover.mli    		\
 	$(TYPER)/parser_recover.ml     		\
+	$(TYPER)/parser_explain.ml     		\
 	$(TYPER)/utils/pparse.mli         \
 	$(TYPER)/utils/pparse.ml          \
 	src/kernel/lexer_raw.mli          \
@@ -176,6 +177,7 @@ SOURCES = \
 	src/kernel/merlin_lexer.ml        \
 	src/kernel/merlin_recover.mli     \
 	src/kernel/merlin_recover.ml      \
+	src/kernel/merlin_explain.ml      \
 	src/kernel/merlin_parser.mli      \
 	src/kernel/merlin_parser.ml       \
 	src/kernel/merlin_reader.mli      \
