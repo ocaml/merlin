@@ -46,6 +46,8 @@ struct
   }
 
   type 'a candidates = {
+    popped: Parser.xsymbol list;
+    shifted: Parser.xsymbol option;
     final: 'a option;
     candidates: 'a candidate list;
   }
@@ -187,6 +189,7 @@ struct
     let module E = struct
       exception Result of a
     end in
+    let shifted = ref None in
     let rec aux acc env =
       match Parser.stack env with
       | None -> None, acc
@@ -215,11 +218,15 @@ struct
                 raise exn
             end
           | Recovery.S (Parser.N n as sym) ->
-            Logger.log "recover" "eval Shift N" (Dump.symbol (Parser.X sym));
+            let xsym = Parser.X sym in
+            if !shifted = None then shifted := Some xsym;
+            Logger.log "recover" "eval Shift N" (Dump.symbol xsym);
             let v = Recovery.default_value sym in
             Parser.feed_nonterminal n endp v endp env
           | Recovery.S (Parser.T t as sym) ->
-            Logger.log "recover" "eval Shift T" (Dump.symbol (Parser.X sym));
+            let xsym = Parser.X sym in
+            if !shifted = None then shifted := Some xsym;
+            Logger.log "recover" "eval Shift T" (Dump.symbol xsym);
             let v = Recovery.default_value sym in
             let token = (Recovery.token_of_terminal t v, endp, endp) in
             begin match feed_token ~allow_reduction:true token env with
@@ -243,6 +250,7 @@ struct
         | (candidate :: _) as candidates ->
           aux (candidates @ acc) candidate.env
     in
+    let popped = ref [] in
     let should_pop stack =
       let Parser.Element (state, _, _, _) = Parser.stack_element stack in
       match Parser.incoming_symbol state with
@@ -253,24 +261,28 @@ struct
             match decide stack' with
             | Recovery.S (Parser.T term' as t2) :: _
               when Parser.X t1 = Parser.X t2 -> false
-            | _ -> true
+            | _ ->
+              popped := Parser.X t1 :: !popped;
+              true
         end
       | _ -> false
     in
     let rec pop_first env =
       match Parser.stack env with
       | Some stack when should_pop stack ->
-        Logger.log "recover" "pre-eval Pop" "";
         begin match Parser.pop env with
           | None -> assert false
-          | Some env' -> pop_first env'
+          | Some env' ->
+            Logger.log "recover" "pre-eval Pop" "";
+            pop_first env'
         end
       | _ -> env
     in
-    aux [] (pop_first env)
+    let final, candidates = aux [] (pop_first env) in
+    (List.rev !popped, !shifted, final, candidates)
 
   let generate k env =
-    let final, candidates = generate k env in
+    let popped, shifted, final, candidates = generate k env in
     let candidates =
       List.rev_filter ~f:(fun { env } ->
           match Parser.stack env with
@@ -281,7 +293,7 @@ struct
             Parser.default_reduction state = None)
         candidates
     in
-    { final; candidates = (candidate env) :: candidates }
+    { popped; shifted; final; candidates = (candidate env) :: candidates }
 
   (*let dump nav ~wrong:(t,s,e as token) ~rest:tokens env =
     let body = Nav.body nav in

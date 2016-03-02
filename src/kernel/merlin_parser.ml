@@ -161,9 +161,13 @@ let resume_parse nav =
   and check_for_error acc token tokens env = function
     | I.HandlingError _ ->
       (*R.dump nav ~wrong:token ~rest:tokens env;*)
-      let explanation = Merlin_explain.explain env token in
+      let candidates = R.generate null_cursor env in
+      let explanation =
+        Merlin_explain.explain env token
+          candidates.R.popped candidates.R.shifted
+      in
       errors_ref := Merlin_explain.Syntax_explanation explanation :: !errors_ref;
-      recover acc (token :: tokens) (R.generate null_cursor env)
+      recover acc (token :: tokens) candidates
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
       check_for_error acc token tokens env (I.resume checkpoint)

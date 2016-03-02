@@ -38,19 +38,19 @@ type explanation = {
   item: (string * Location.t) option;
   unclosed: (string * Location.t) option;
   location: Location.t;
-  expected: MenhirInterpreter.xsymbol option;
+  popped: MenhirInterpreter.xsymbol list;
+  shifted: MenhirInterpreter.xsymbol option;
   unexpected: MenhirInterpreter.token;
 }
 
-let explain env (unexpected, startp, endp) =
+let explain env (unexpected, startp, endp) popped shifted =
   let mkloc s e = {Location. loc_start = s; loc_end = e; loc_ghost = false} in
   let open MenhirInterpreter in
   let location = mkloc startp endp in
   let closed = ref 0 in
   let unclosed = ref None in
-  let expected = ref None in
   let return item =
-    { item; unclosed = !unclosed; location; expected = !expected; unexpected }
+    { item; unclosed = !unclosed; location; popped; shifted; unexpected }
   in
   let rec process = function
     | None -> return None
@@ -72,16 +72,10 @@ let explain env (unexpected, startp, endp) =
   in
   match stack env with
   | Some stack ->
-    let Element (st, _, _, _) = stack_element stack in
-    begin match Parser_recover.recover (number st) with
-      | Parser_recover.One (Parser_recover.S sym :: _) ->
-        expected := Some (X sym);
-      | _ -> ()
-    end;
     process (Some stack)
   | None -> return None
 
-let to_error { item; unclosed; location; expected; unexpected } =
+let to_error { item; unclosed; location; popped; shifted; unexpected } =
   let inside = match item with
     | None -> ""
     | Some (name, _) -> " inside `" ^ name ^ "'" in
@@ -92,9 +86,12 @@ let to_error { item; unclosed; location; expected; unexpected } =
     | X (T _) -> "`" ^ Parser_printer.print_symbol sym ^ "'"
     | X (N _) -> Parser_printer.print_symbol sym
   in
-  let expecting = match expected with
-    | None -> ""
-    | Some sym -> ", expecting " ^ (friendly_name sym)
+  let popped = String.concat " " (List.rev_map friendly_name popped) in
+  let expecting = match shifted with
+    | None -> if popped = "" then "" else ", maybe remove " ^ popped
+    | Some sym ->
+      if popped = "" then ", expecting " ^ (friendly_name sym)
+      else ", maybe replace " ^ popped ^ " by " ^ (friendly_name sym)
   in
   let msg = Printf.sprintf "Syntax error%s%s%s" inside after expecting in
   { Location. err_loc = location; sub = []; msg; if_highlight = msg }

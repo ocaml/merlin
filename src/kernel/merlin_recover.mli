@@ -45,6 +45,8 @@ sig
   }
 
   type 'a candidates = {
+    popped: Parser.xsymbol list;
+    shifted: Parser.xsymbol option;
     final: 'a option;
     candidates: 'a candidate list;
   }
