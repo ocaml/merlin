@@ -27,6 +27,8 @@ module Make
        val guide : 'a Parser.symbol -> bool
 
        val token_of_terminal : 'a Parser.terminal -> 'a -> Parser.token
+
+       val nullable : 'a Parser.nonterminal -> bool
      end)
     (Dump : sig
        val token   : Parser.token -> string

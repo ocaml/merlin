@@ -108,6 +108,8 @@ module R = Merlin_recover.Make
         | _ -> false
 
       let token_of_terminal = Parser_printer.token_of_terminal
+
+      let nullable = Parser_explain.nullable
     end)
    (Dump)
 

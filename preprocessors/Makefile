@@ -34,13 +34,13 @@ GEN_PRINTER = printer/gen_printer
 GEN_RECOVER = recover/gen_recover
 GEN_EXPLAIN = explain/gen_explain
 
-$(GEN_PRINTER):
-	$(MAKE) -C printer
-
 $(GEN_RECOVER):
 	$(MAKE) -C recover
 
-$(GEN_EXPLAIN):
+$(GEN_PRINTER): $(GEN_PRINTER).ml
+	$(MAKE) -C printer
+
+$(GEN_EXPLAIN): $(GEN_EXPLAIN).ml
 	$(MAKE) -C explain
 
 ### Parser

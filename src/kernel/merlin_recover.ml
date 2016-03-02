@@ -28,6 +28,8 @@ module Make
        val guide : 'a Parser.symbol -> bool
 
        val token_of_terminal : 'a Parser.terminal -> 'a -> Parser.token
+
+       val nullable : 'a Parser.nonterminal -> bool
      end)
     (Dump : sig
        val token   : Parser.token -> string
@@ -219,7 +221,8 @@ struct
             end
           | Recovery.S (Parser.N n as sym) ->
             let xsym = Parser.X sym in
-            if !shifted = None then shifted := Some xsym;
+            if !shifted = None && not (Recovery.nullable n) then
+              shifted := Some xsym;
             Logger.log "recover" "eval Shift N" (Dump.symbol xsym);
             let v = Recovery.default_value sym in
             Parser.feed_nonterminal n endp v endp env

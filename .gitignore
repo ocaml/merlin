@@ -1,6 +1,7 @@
 Makefile.config
 src/config/my_config.ml
 src/ocaml
+src/sturgeon
 emacs/merlin.elc
 *.tar.gz
 *.pyc
