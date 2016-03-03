@@ -82,7 +82,7 @@ debug: assert_configured
 	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
 clean:
-	@rm -f src/my_config.ml src/myocamlbuild_config.ml
+	@rm -f src/config/my_config.ml src/my_config.ml src/myocamlbuild_config.ml
 	@rm -f emacs/merlin.elc
 	+$(OCAMLMAKEFILE) clean
 
