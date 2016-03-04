@@ -320,7 +320,12 @@ let rec follow ?before trie = function
           | otherwise -> otherwise
           end
         end
-      | (l, _, _, Included p) :: _ -> Resolves_to (p @ path, Some l)
+      | (loc, _, _, Included p) :: _ ->
+        let new_path = p @ path in
+          begin match follow ~before:loc.Location.loc_start trie new_path with
+          | Resolves_to (p, None) -> Resolves_to (p, Some loc)
+          | otherwise -> otherwise
+          end
       | (l, doc, _, Internal t) :: _ ->
         if xs = [] then Found (l, doc) else
           match follow ?before t xs with
