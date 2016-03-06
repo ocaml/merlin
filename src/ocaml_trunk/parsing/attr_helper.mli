@@ -2,9 +2,9 @@
 (*                                                                        *)
 (*                                 OCaml                                  *)
 (*                                                                        *)
-(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                  Jeremie Dimino, Jane Street Europe                    *)
 (*                                                                        *)
-(*   Copyright 1997 Institut National de Recherche en Informatique et     *)
+(*   Copyright 2015 Institut National de Recherche en Informatique et     *)
 (*     en Automatique.                                                    *)
 (*                                                                        *)
 (*   All rights reserved.  This file is distributed under the terms of    *)
@@ -13,25 +13,24 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Auxiliary type for reporting syntax errors *)
+(** Helpers for attributes *)
 
-open Format
+open Asttypes
+open Parsetree
 
 type error =
-    Unclosed of Location.t * string * Location.t * string
-  | Expecting of Location.t * string
-  | Not_expecting of Location.t * string
-  | Applicative_path of Location.t
-  | Variable_in_scope of Location.t * string
-  | Other of Location.t
-  | Ill_formed_ast of Location.t * string
-  | Invalid_package_type of Location.t * string
+  | Multiple_attributes of string
+  | No_payload_expected of string
 
-exception Error of error
-exception Escape_error of Location.t
+(** The [string list] argument of the following functions is a list of
+    alternative names for the attribute we are looking for. For instance:
 
-val report_error: formatter -> error -> unit
- (* Deprecated.  Use Location.{error_of_exn, report_error}. *)
+    {[
+      ["foo"; "ocaml.foo"]
+    ]} *)
+val get_no_payload_attribute : string list -> attributes -> string loc option
+val has_no_payload_attribute : string list -> attributes -> bool
 
-val location_of_error: error -> Location.t
-val ill_formed_ast: Location.t -> string -> 'a
+exception Error of Location.t * error
+
+val report_error: Format.formatter -> error -> unit
