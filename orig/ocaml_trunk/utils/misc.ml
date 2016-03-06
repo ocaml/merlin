@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Errors *)
 
@@ -26,6 +29,17 @@ let try_finally work cleanup =
   cleanup ();
   result
 ;;
+
+type ref_and_value = R : 'a ref * 'a -> ref_and_value
+
+let protect_refs =
+  let set_refs l = List.iter (fun (R (r, v)) -> r := v) l in
+  fun refs f ->
+    let backup = List.map (fun (R (r, _)) -> R (r, !r)) refs in
+    set_refs refs;
+    match f () with
+    | x           -> set_refs backup; x
+    | exception e -> set_refs backup; raise e
 
 (* List functions *)
 
@@ -597,7 +611,10 @@ module Color = struct
       mark_close_tag=(mark_close_tag ~or_else:functions.mark_close_tag);
     } in
     pp_set_mark_tags ppf true; (* enable tags *)
-    pp_set_formatter_tag_functions ppf functions'
+    pp_set_formatter_tag_functions ppf functions';
+    (* also setup margins *)
+    pp_set_margin ppf (pp_get_margin std_formatter());
+    ()
 
   external isatty : out_channel -> bool = "caml_sys_isatty"
 
@@ -635,3 +652,35 @@ let normalise_eol s =
       if s.[i] <> '\r' then Buffer.add_char b s.[i]
     done;
     Buffer.contents b
+
+let delete_eol_spaces src =
+  let len_src = String.length src in
+  let dst = Bytes.create len_src in
+  let rec loop i_src i_dst =
+    if i_src = len_src then
+      i_dst
+    else
+      match src.[i_src] with
+      | ' ' | '\t' ->
+        loop_spaces 1 (i_src + 1) i_dst
+      | c ->
+        Bytes.set dst i_dst c;
+        loop (i_src + 1) (i_dst + 1)
+  and loop_spaces spaces i_src i_dst =
+    if i_src = len_src then
+      i_dst
+    else
+      match src.[i_src] with
+      | ' ' | '\t' ->
+        loop_spaces (spaces + 1) (i_src + 1) i_dst
+      | '\n' ->
+        Bytes.set dst i_dst '\n';
+        loop (i_src + 1) (i_dst + 1)
+      | c ->
+        for n = 0 to spaces do
+          Bytes.set dst (i_dst + n) src.[i_src - spaces + n]
+        done;
+        loop (i_src + 1) (i_dst + spaces + 1)
+  in
+  let stop = loop 0 0 in
+  Bytes.sub_string dst 0 stop

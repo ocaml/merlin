@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Inclusion checks for the core language *)
 
@@ -124,6 +127,7 @@ type type_mismatch =
   | Field_names of int * Ident.t * Ident.t
   | Field_missing of bool * Ident.t
   | Record_representation of bool
+  | Immediate
 
 let report_type_mismatch0 first second decl ppf err =
   let pr fmt = Format.fprintf ppf fmt in
@@ -150,6 +154,7 @@ let report_type_mismatch0 first second decl ppf err =
       pr "Their internal representations differ:@ %s %s %s"
         (if b then second else first) decl
         "uses unboxed float representation"
+  | Immediate -> pr "%s is not an immediate type" first
 
 let report_type_mismatch first second decl ppf =
   List.iter
@@ -178,18 +183,21 @@ and compare_variants env params1 params2 n cstrs1 cstrs2 =
     {Types.cd_id=cstr2; cd_args=arg2; cd_res=ret2}::rem2 ->
       if Ident.name cstr1 <> Ident.name cstr2 then
         [Field_names (n, cstr1, cstr2)]
-      else match ret1, ret2 with
-      | Some r1, Some r2 when not (Ctype.equal env true [r1] [r2]) ->
-          [Field_type cstr1]
-      | Some _, None | None, Some _ ->
-          [Field_type cstr1]
-      | _ ->
-          let r =
-            compare_constructor_arguments env cstr1
-              params1 params2 arg1 arg2
-          in
-          if r <> [] then r
-          else compare_variants env params1 params2 (n+1) rem1 rem2
+      else
+        let r =
+          match ret1, ret2 with
+          | Some r1, Some r2 ->
+              if Ctype.equal env true [r1] [r2] then
+                compare_constructor_arguments env cstr1 [r1] [r2] arg1 arg2
+              else [Field_type cstr1]
+          | Some _, None | None, Some _ ->
+              [Field_type cstr1]
+          | _ ->
+              compare_constructor_arguments env cstr1
+                params1 params2 arg1 arg2
+        in
+        if r <> [] then r
+        else compare_variants env params1 params2 (n+1) rem1 rem2
 
 
 and compare_records env params1 params2 n labels1 labels2 =
@@ -254,9 +262,18 @@ let type_declarations ?(equality = false) env name decl1 id decl2 =
     | (_, _) -> [Kind]
   in
   if err <> [] then err else
-  let abstr =
-    decl2.type_private = Private ||
-    decl2.type_kind = Type_abstract && decl2.type_manifest = None in
+  let abstr = decl2.type_kind = Type_abstract && decl2.type_manifest = None in
+  (* If attempt to assign a non-immediate type (e.g. string) to a type that
+   * must be immediate, then we error *)
+  let err =
+    if abstr &&
+       not decl1.type_immediate &&
+       decl2.type_immediate then
+      [Immediate]
+    else []
+  in
+  if err <> [] then err else
+  let abstr = abstr || decl2.type_private = Private in
   let opn = decl2.type_kind = Type_open && decl2.type_manifest = None in
   let constrained ty = not (Btype.(is_Tvar (repr ty))) in
   if List.for_all2

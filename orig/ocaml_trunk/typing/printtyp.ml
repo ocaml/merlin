@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(* Xavier Leroy and Jerome Vouillon, projet Cristal, INRIA Rocquencourt*)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*  Xavier Leroy and Jerome Vouillon, projet Cristal, INRIA Rocquencourt  *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Printing functions *)
 
@@ -864,10 +867,14 @@ let rec tree_of_type_decl id decl =
         tree_of_manifest Otyp_open,
         Public
   in
+  let immediate =
+    List.exists (fun (loc, _) -> loc.txt = "immediate") decl.type_attributes
+  in
     { otype_name = name;
       otype_params = args;
       otype_type = ty;
       otype_private = priv;
+      otype_immediate = immediate;
       otype_cstrs = constraints }
 
 and tree_of_constructor_arguments = function
@@ -1161,6 +1168,7 @@ let dummy =
     type_private = Public; type_manifest = None; type_variance = [];
     type_newtype_level = None; type_loc = Location.none;
     type_attributes = [];
+    type_immediate = false;
   }
 
 let hide_rec_items = function
@@ -1446,7 +1454,8 @@ let warn_on_missing_def env ppf t =
         ignore(Env.find_type p env : Types.type_declaration)
       with Not_found ->
         fprintf ppf
-          "@,@[%a is abstract because no corresponding cmi file was found in path.@]" path p
+          "@,@[%a is abstract because no corresponding cmi file was found \
+           in path.@]" path p
     end
   | _ -> ()
 
