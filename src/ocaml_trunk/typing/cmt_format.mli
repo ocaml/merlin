@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*                  Fabrice Le Fessant, INRIA Saclay                   *)
-(*                                                                     *)
-(*  Copyright 2012 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*                   Fabrice Le Fessant, INRIA Saclay                     *)
+(*                                                                        *)
+(*   Copyright 2012 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (** cmt and cmti files format. *)
 
@@ -99,13 +102,12 @@ val read_magic_number : in_channel -> string
 val clear: unit -> unit
 
 val add_saved_type : binary_part -> unit
-val save_types : ?save:('a -> binary_part list) -> (unit -> 'a) -> 'a
+val get_saved_types : unit -> binary_part list
+val set_saved_types : binary_part list -> unit
 
 val record_value_dependency:
   Types.value_description -> Types.value_description -> unit
 
-val saved_types : unit -> attributes
-val saved_types_from_attributes : attributes -> binary_part list
 
 (*
 

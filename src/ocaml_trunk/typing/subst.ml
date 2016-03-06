@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Substitutions *)
 
@@ -36,7 +39,7 @@ let add_modtype id ty s = { s with modtypes = Tbl.add id ty s.modtypes }
 let for_saving s = { s with for_saving = true }
 
 let loc s x =
-  if s.for_saving && not (Clflags.keep_locs ()) then Location.none else x
+  if s.for_saving && not !Clflags.keep_locs then Location.none else x
 
 let remove_loc =
   let open Ast_mapper in
@@ -51,11 +54,11 @@ let is_not_doc = function
 
 let attrs s x =
   let x =
-    if s.for_saving && not (Clflags.keep_docs ()) then
+    if s.for_saving && not !Clflags.keep_docs then
       List.filter is_not_doc x
     else x
   in
-    if s.for_saving && not (Clflags.keep_locs ())
+    if s.for_saving && not !Clflags.keep_locs
     then remove_loc.Ast_mapper.attributes remove_loc x
     else x
 
@@ -250,6 +253,7 @@ let type_declaration s decl =
       type_newtype_level = None;
       type_loc = loc s decl.type_loc;
       type_attributes = attrs s decl.type_attributes;
+      type_immediate = decl.type_immediate;
     }
   in
   cleanup_types ();
@@ -363,7 +367,7 @@ let rec modtype s = function
           fatal_error "Subst.modtype"
       end
   | Mty_signature sg ->
-      Mty_signature (lazy (signature s (Lazy.force sg)))
+      Mty_signature(signature s sg)
   | Mty_functor(id, arg, res) ->
       let id' = Ident.rename id in
       Mty_functor(id', may_map (modtype s) arg,

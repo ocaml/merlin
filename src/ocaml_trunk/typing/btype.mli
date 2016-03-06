@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Basic operations on core types *)
 
@@ -188,12 +191,6 @@ val undo_compress: snapshot -> unit
            not already backtracked to a previous snapshot.
            Does not call [cleanup_abbrev] *)
 
-(** merlin: check if a snapshot has been invalidated *)
-val is_valid: snapshot -> bool
-
-(** merlin: also register changes to arbitrary references *)
-val on_backtrack: (unit -> unit) -> unit
-
 (* Functions to use when modifying a type (only Ctype?) *)
 val link_type: type_expr -> type_expr -> unit
         (* Set the desc field of [t1] to [Tlink t2], logging the old
@@ -211,10 +208,6 @@ val set_typeset: TypeSet.t ref -> TypeSet.t -> unit
 val log_type: type_expr -> unit
         (* Log the old value of a type, before modifying it by hand *)
 
-(* merlin: Number of unification variables that have been linked so far.
-   Used to estimate the "cost" of unification. *)
-val linked_variables: unit -> int
-
 (**** Forward declarations ****)
 val print_raw: (Format.formatter -> type_expr -> unit) ref
 
@@ -224,11 +217,3 @@ val iter_type_expr_cstr_args: (type_expr -> unit) ->
   (constructor_arguments -> unit)
 val map_type_expr_cstr_args: (type_expr -> type_expr) ->
   (constructor_arguments -> constructor_arguments)
-
-
-(** merlin: manage all internal state *)
-
-type cache
-
-val new_cache : unit -> cache
-val cache : cache ref

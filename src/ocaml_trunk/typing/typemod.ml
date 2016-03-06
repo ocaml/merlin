@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 open Misc
 open Longident
@@ -43,8 +46,6 @@ type error =
 
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
-
-let raise_error = Typing_aux.raise_error
 
 open Typedtree
 
@@ -179,6 +180,7 @@ let merge_constraint initial_env loc sg constr =
             type_loc = sdecl.ptype_loc;
             type_newtype_level = None;
             type_attributes = [];
+            type_immediate = false;
           }
         and id_row = Ident.create (s^"#row") in
         let initial_env =
@@ -235,8 +237,7 @@ let merge_constraint initial_env loc sg constr =
         let ((path, path_loc, tcstr), newsg) =
           merge env (extract_sig env loc md.md_type) namelist None in
         (path_concat id path, lid, tcstr),
-        let md' = {md with md_type=Mty_signature (lazy newsg)} in
-        Sig_module(id, md', rs) :: rem
+        Sig_module(id, {md with md_type=Mty_signature newsg}, rs) :: rem
     | (item :: rem, _, _) ->
         let (cstr, items) = merge (Env.add_item item env) rem namelist row_id
         in
@@ -332,7 +333,7 @@ let rec approx_modtype env smty =
       let path = Typetexp.lookup_module env smty.pmty_loc lid.txt in
       Mty_alias path
   | Pmty_signature ssg ->
-      Mty_signature (Lazy.from_val (approx_sig env ssg))
+      Mty_signature(approx_sig env ssg)
   | Pmty_functor(param, sarg, sres) ->
       let arg = may_map (approx_modtype env) sarg in
       let (id, newenv) =
@@ -534,8 +535,7 @@ let rec transl_modtype env smty =
         smty.pmty_attributes
   | Pmty_signature ssg ->
       let sg = transl_signature env ssg in
-      let lsg = Lazy.from_val sg.sig_type in
-      mkmty (Tmty_signature sg) (Mty_signature lsg) env loc
+      mkmty (Tmty_signature sg) (Mty_signature sg.sig_type) env loc
         smty.pmty_attributes
   | Pmty_functor(param, sarg, sres) ->
       let arg = Misc.may_map (transl_modtype env) sarg in
@@ -738,14 +738,14 @@ and transl_signature env sg =
         | Psig_extension (ext, _attrs) ->
             raise (Error_forward (Builtin_attributes.error_of_extension ext))
   in
-  Cmt_format.save_types
-    ~save:(fun sg -> [Cmt_format.Partial_signature sg])
-  @@ fun () ->
+  let previous_saved_types = Cmt_format.get_saved_types () in
   Builtin_attributes.warning_enter_scope ();
   let (trem, rem, final_env) = transl_sig (Env.in_signature true env) sg in
   let rem = simplify_signature rem in
   let sg = { sig_items = trem; sig_type =  rem; sig_final_env = final_env } in
   Builtin_attributes.warning_leave_scope ();
+  Cmt_format.set_saved_types
+    ((Cmt_format.Partial_signature sg) :: previous_saved_types);
   sg
 
 and transl_modtype_decl names env loc
@@ -841,7 +841,7 @@ exception Not_a_path
 let rec path_of_module mexp =
   match mexp.mod_desc with
     Tmod_ident (p,_) -> p
-  | Tmod_apply(funct, arg, coercion) when Clflags.applicative_functors () ->
+  | Tmod_apply(funct, arg, coercion) when !Clflags.applicative_functors ->
       Papply(path_of_module funct, path_of_module arg)
   | Tmod_constraint (mexp, _, _, _) ->
       path_of_module mexp
@@ -855,7 +855,7 @@ let path_of_module mexp =
 let rec closed_modtype env = function
     Mty_ident p -> true
   | Mty_alias p -> true
-  | Mty_signature (lazy sg) ->
+  | Mty_signature sg ->
       let env = Env.add_signature sg env in
       List.for_all (closed_signature_item env) sg
   | Mty_functor(id, param, body) ->
@@ -970,9 +970,7 @@ let check_recmodule_inclusion env bindings =
           try
             Includemod.modtypes env mty_actual' mty_decl'
           with Includemod.Error msg ->
-            raise_error (Error(modl.mod_loc, env, Not_included msg));
-            Tcoerce_none
-        in
+            raise(Error(modl.mod_loc, env, Not_included msg)) in
         let modl' =
             { mod_desc = Tmod_constraint(modl, mty_decl.mty_type,
                 Tmodtype_explicit mty_decl, coercion);
@@ -1022,7 +1020,7 @@ let rec package_constraints env loc mty constrs =
       )
       sg
   in
-  Mty_signature (lazy sg')
+  Mty_signature sg'
 
 let modtype_of_package env loc p nl tl =
   try match (Env.find_modtype p env).mtd_type with
@@ -1056,9 +1054,7 @@ let wrap_constraint env arg mty explicit =
     try
       Includemod.modtypes env arg.mod_type mty
     with Includemod.Error msg ->
-      raise_error (Error(arg.mod_loc, env, Not_included msg));
-      Tcoerce_none
-  in
+      raise(Error(arg.mod_loc, env, Not_included msg)) in
   { mod_desc = Tmod_constraint(arg, mty, explicit, coercion);
     mod_type = mty;
     mod_env = env;
@@ -1067,21 +1063,7 @@ let wrap_constraint env arg mty explicit =
 
 (* Type a module value expression *)
 
-let rec type_module ?alias sttn funct_body anchor env smod =
-  try type_module_ ?alias sttn funct_body anchor env smod
-  with exn ->
-    Typing_aux.raise_error exn;
-    { mod_desc = Tmod_structure {
-         str_items = [];
-         str_type = [];
-         str_final_env = env;
-       };
-      mod_type = Mty_signature (lazy []);
-      mod_env = env;
-      mod_attributes = smod.pmod_attributes;
-      mod_loc = smod.pmod_loc }
-
-and type_module_ ?(alias=false) sttn funct_body anchor env smod =
+let rec type_module ?(alias=false) sttn funct_body anchor env smod =
   match smod.pmod_desc with
     Pmod_ident lid ->
       let path =
@@ -1112,14 +1094,14 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
         type_structure funct_body anchor env sstr smod.pmod_loc in
       let md =
         rm { mod_desc = Tmod_structure str;
-             mod_type = Mty_signature (lazy sg);
+             mod_type = Mty_signature sg;
              mod_env = env;
              mod_attributes = smod.pmod_attributes;
              mod_loc = smod.pmod_loc }
       in
       let sg' = simplify_signature sg in
       if List.length sg' = List.length sg then md else
-      wrap_constraint (Env.implicit_coercion env) md (Mty_signature (lazy sg'))
+      wrap_constraint (Env.implicit_coercion env) md (Mty_signature sg')
         Tmodtype_implicit
   | Pmod_functor(name, smty, sbody) ->
       let mty = may_map (transl_modtype env) smty in
@@ -1149,14 +1131,11 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
             if funct_body && Mtype.contains_type env funct.mod_type then
               raise (Error (smod.pmod_loc, env, Not_allowed_in_functor_body));
           end;
-          let arg, coercion =
+          let coercion =
             try
-              arg, Includemod.modtypes env arg.mod_type mty_param
+              Includemod.modtypes env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise_error (Error(sarg.pmod_loc, env, Not_included msg));
-              {arg with mod_type= Subst.modtype Subst.identity mty_param},
-              Tcoerce_none
-          in
+              raise(Error(sarg.pmod_loc, env, Not_included msg)) in
           let mty_appl =
             match path with
               Some path ->
@@ -1191,9 +1170,9 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
          }
 
   | Pmod_unpack sexp ->
-      if Clflags.principal () then Ctype.begin_def ();
+      if !Clflags.principal then Ctype.begin_def ();
       let exp = Typecore.type_exp env sexp in
-      if Clflags.principal () then begin
+      if !Clflags.principal then begin
         Ctype.end_def ();
         Ctype.generalize_structure exp.exp_type
       end;
@@ -1203,7 +1182,7 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
             if List.exists (fun t -> Ctype.free_variables t <> []) tl then
               raise (Error (smod.pmod_loc, env,
                             Incomplete_packed_module exp.exp_type));
-            if Clflags.principal () &&
+            if !Clflags.principal &&
               not (Typecore.generalizable (Btype.generic_level-1) exp.exp_type)
             then
               Location.prerr_warning smod.pmod_loc
@@ -1467,27 +1446,24 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
     match sstr with
     | [] -> ([], [], env)
     | pstr :: srem ->
-      let str, sg, new_env =
-        Cmt_format.save_types
-          ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure_item str])
-        @@ fun () ->
+        let previous_saved_types = Cmt_format.get_saved_types () in
         let desc, sg, new_env = type_str_item env srem pstr in
-                { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env },
-        sg, new_env
-      in
-      let (str_rem, sig_rem, final_env) = type_struct new_env srem in
-      (str :: str_rem, sg @ sig_rem, final_env)
+        let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
+        Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
+                                    :: previous_saved_types);
+        let (str_rem, sig_rem, final_env) = type_struct new_env srem in
+        (str :: str_rem, sg @ sig_rem, final_env)
   in
-  if Clflags.annotations () then
+  if !Clflags.annotations then
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
-  Cmt_format.save_types
-    ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure str])
-  @@ fun () ->
+  let previous_saved_types = Cmt_format.get_saved_types () in
   if not toplevel then Builtin_attributes.warning_enter_scope ();
   let (items, sg, final_env) = type_struct env sstr in
   let str = { str_items = items; str_type = sg; str_final_env = final_env } in
   if not toplevel then Builtin_attributes.warning_leave_scope ();
+  Cmt_format.set_saved_types
+    (Cmt_format.Partial_structure str :: previous_saved_types);
   str, sg, final_env
 
 let type_toplevel_phrase env s =
@@ -1506,7 +1482,7 @@ let type_structure = type_structure false None
 let rec normalize_modtype env = function
     Mty_ident p -> ()
   | Mty_alias p -> ()
-  | Mty_signature (lazy sg) -> normalize_signature env sg
+  | Mty_signature sg -> normalize_signature env sg
   | Mty_functor(id, param, body) -> normalize_modtype env body
 
 and normalize_signature env = List.iter (normalize_signature_item env)
@@ -1605,7 +1581,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
   let (str, sg, finalenv) =
     type_structure initial_env ast (Location.in_file sourcefile) in
   let simple_sg = simplify_signature sg in
-  if Clflags.print_types () then begin
+  if !Clflags.print_types then begin
     Printtyp.wrap_printing_env initial_env
       (fun () -> fprintf std_formatter "%a@." Printtyp.signature simple_sg);
     (str, Tcoerce_none)   (* result is ignored by Compile.implementation *)
@@ -1640,7 +1616,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
          the value being exported. We can still capture unused
          declarations like "let x = true;; let x = 1;;", because in this
          case, the inferred signature contains only the last declaration. *)
-      if not (Clflags.dont_write_files ()) then begin
+      if not !Clflags.dont_write_files then begin
         let deprecated = Builtin_attributes.deprecated_of_str ast in
         let sg =
           Env.save_signature ~deprecated
@@ -1681,7 +1657,7 @@ let rec package_signatures subst = function
       let sg' = Subst.signature subst sg in
       let oldid = Ident.create_persistent name
       and newid = Ident.create name in
-      Sig_module(newid, {md_type=Mty_signature (lazy sg');
+      Sig_module(newid, {md_type=Mty_signature sg';
                          md_attributes=[];
                          md_loc=Location.none;
                         },
@@ -1725,7 +1701,7 @@ let package_units initial_env objfiles cmifile modulename =
         (fun (name, crc) -> not (List.mem name unit_names))
         (Env.imports()) in
     (* Write packaged signature *)
-    if not (Clflags.dont_write_files ()) then begin
+    if not !Clflags.dont_write_files then begin
       let sg =
         Env.save_signature_with_imports ~deprecated:None
           sg modulename

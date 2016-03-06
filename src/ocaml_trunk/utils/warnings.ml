@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Pierre Weis && Damien Doligez, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1998 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Pierre Weis && Damien Doligez, INRIA Rocquencourt          *)
+(*                                                                        *)
+(*   Copyright 1998 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* When you change this, you need to update the documentation:
    - man/ocamlc.m   in ocaml
@@ -255,14 +258,9 @@ let parse_opt error active flags s =
   loop 0
 ;;
 
-let copy {active; error} =
-  {active = Array.copy active; error = Array.copy error}
-
-let parse_options ?state errflag s =
-  let {error; active} = match state with
-    | None -> copy !current
-    | Some set -> set
-  in
+let parse_options errflag s =
+  let error = Array.copy (!current).error in
+  let active = Array.copy (!current).active in
   parse_opt error active (if errflag then error else active) s;
   current := {error; active}
 
@@ -270,9 +268,8 @@ let parse_options ?state errflag s =
 let defaults_w = "+a-4-6-7-9-27-29-32..39-41..42-44-45-48-50";;
 let defaults_warn_error = "-a+31";;
 
-let initial = !current
-let () = parse_options ~state:initial false defaults_w;;
-let () = parse_options ~state:initial true defaults_warn_error;;
+let () = parse_options false defaults_w;;
+let () = parse_options true defaults_warn_error;;
 
 let message = function
   | Comment_start -> "this is the start of a comment."
@@ -444,9 +441,11 @@ let message = function
   | Misplaced_attribute attr_name ->
       Printf.sprintf "the %S attribute cannot appear in this context" attr_name
   | Duplicated_attribute attr_name ->
-      Printf.sprintf "the %S attribute is used more than once on this expression" attr_name
+      Printf.sprintf "the %S attribute is used more than once on this \
+          expression"
+        attr_name
   | Inlining_impossible reason ->
-      Printf.sprintf "Inlining impossible in this context: %s" reason
+      Printf.sprintf "Cannot inline: %s" reason
   | Ambiguous_pattern vars ->
       let msg =
         let vars = List.sort String.compare vars in
@@ -456,12 +455,17 @@ let message = function
         | _::_ ->
             "variables " ^ String.concat "," vars in
       Printf.sprintf
-        "Ambiguous guarded pattern, %s may match different or-pattern arguments" msg
+        "Ambiguous guarded pattern, %s may match different or-pattern \
+          arguments"
+        msg
   | No_cmx_file name ->
       Printf.sprintf
         "no cmx file was found in path for module %s, \
          and its interface was not compiled with -opaque" name
-  | Assignment_to_non_mutable_value -> "Assignment to non-mutable value"
+  | Assignment_to_non_mutable_value ->
+      "A potential assignment to a non-mutable value was detected \n\
+        in this source file.  Such assignments may generate incorrect code \n\
+        when using Flambda."
 ;;
 
 let nerrors = ref 0;;
@@ -501,7 +505,8 @@ let descriptions =
     7, "Method overridden.";
     8, "Partial match: missing cases in pattern-matching.";
     9, "Missing fields in a record pattern.";
-   10, "Expression on the left-hand side of a sequence that doesn't have type\n\
+   10, "Expression on the left-hand side of a sequence that doesn't have \
+      type\n\
    \    \"unit\" (and that is not a function, see warning number 5).";
    11, "Redundant case in a pattern matching (unused match case).";
    12, "Redundant sub-pattern in a pattern-matching.";
@@ -518,7 +523,8 @@ let descriptions =
    23, "Useless record \"with\" clause.";
    24, "Bad module name: the source file name is not a valid OCaml module \
         name.";
-   (* 25, "Pattern-matching with all clauses guarded.  Exhaustiveness cannot be\n\
+   (* 25, "Pattern-matching with all clauses guarded.  Exhaustiveness cannot \
+      be\n\
    \    checked.";  (* Now part of warning 8 *) *)
    26, "Suspicious unused variable: unused variable that is bound\n\
    \    with \"let\" or \"as\", and doesn't start with an underscore (\"_\")\n\
@@ -570,60 +576,11 @@ let help_warnings () =
     match letter c with
     | [] -> ()
     | [n] ->
-        Printf.printf "  %c Alias for warning %i.\n" (Char.uppercase c) n
+        Printf.printf "  %c Alias for warning %i.\n" (Char.uppercase_ascii c) n
     | l ->
         Printf.printf "  %c warnings %s.\n"
-          (Char.uppercase c)
+          (Char.uppercase_ascii c)
           (String.concat ", " (List.map string_of_int l))
   done;
   exit 0
 ;;
-
-let w_spec state =
-  "-w",
-  Arg.String (parse_options ~state false),
-  Printf.sprintf
-    "<list>  Enable or disable warnings according to <list>:\n\
-    \        +<spec>   enable warnings in <spec>\n\
-    \        -<spec>   disable warnings in <spec>\n\
-    \        @<spec>   enable warnings in <spec> and treat them as errors\n\
-    \     <spec> can be:\n\
-    \        <num>             a single warning number\n\
-    \        <num1>..<num2>    a range of consecutive warning numbers\n\
-    \        <letter>          a predefined set\n\
-    \     default setting is %S"
-    defaults_w
-
-let warn_error_spec state =
-  "-warn-error",
-  Arg.String (parse_options ~state true),
-  Printf.sprintf
-    "<list> Enable or disable error status for warnings according\n\
-    \     to <list>.  See option -w for the syntax of <list>.\n\
-    \     Default setting is %S"
-    defaults_warn_error
-
-let arg_spec state =
-  [
-    w_spec state;
-    warn_error_spec state;
-  ]
-
-open Std
-
-let dump () =
-  let actives arr =
-    Array.mapi (fun i b ->
-      let i = i + 1 in
-      if b && i <= last_warning_number then
-        string_of_int i ^ ": " ^ List.assoc i descriptions
-      else
-        ""
-    ) arr
-    |> Array.to_list
-    |> List.filter_map ~f:(function "" -> None | s -> Some (`String s))
-  in
-  `Assoc [
-    "actives", `List (actives !current.active);
-    "warn_error", `List (actives !current.error);
-  ]

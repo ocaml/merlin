@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* typetexp.ml,v 1.34.4.9 2002/01/07 08:39:16 garrigue Exp *)
 
@@ -289,19 +292,6 @@ let rec swap_list = function
 type policy = Fixed | Extensible | Univars
 
 let rec transl_type env policy styp =
-  try transl_type' env policy styp
-  with exn ->
-    Typing_aux.raise_error exn;
-    let loc = styp.ptyp_loc in
-    let ctyp ctyp_desc ctyp_type =
-      { ctyp_desc; ctyp_type; ctyp_env = env;
-        ctyp_loc = loc; ctyp_attributes = styp.ptyp_attributes }
-    in
-    ctyp
-      (Ttyp_constr (Predef.path_unit, Location.mknoloc (Longident.Lident "unit"), []))
-      (newconstr Predef.path_unit [])
-
-and transl_type' env policy styp =
   let loc = styp.ptyp_loc in
   let ctyp ctyp_desc ctyp_type =
     { ctyp_desc; ctyp_type; ctyp_env = env;
@@ -481,7 +471,7 @@ and transl_type' env policy styp =
           end;
           ty
         with Not_found ->
-          if Clflags.principal () then begin_def ();
+          if !Clflags.principal then begin_def ();
           let t = newvar () in
           used_variables := Tbl.add alias (t, styp.ptyp_loc) !used_variables;
           let ty = transl_type env policy st in
@@ -489,7 +479,7 @@ and transl_type' env policy styp =
             let trace = swap_list trace in
             raise(Error(styp.ptyp_loc, env, Alias_type_mismatch trace))
           end;
-          if Clflags.principal () then begin
+          if !Clflags.principal then begin
             end_def ();
             generalize_structure t;
           end;
@@ -777,8 +767,8 @@ let transl_type_scheme env styp =
 open Format
 open Printtyp
 
-let spellcheck ppf fold env lid = ()
-  (*let choices ~path name =
+let spellcheck ppf fold env lid =
+  let choices ~path name =
     let env = fold (fun x xs -> x::xs) path env [] in
     Misc.spellcheck env name in
   match lid with
@@ -786,7 +776,7 @@ let spellcheck ppf fold env lid = ()
     | Longident.Lident s ->
        Misc.did_you_mean ppf (fun () -> choices ~path:None s)
     | Longident.Ldot (r, s) ->
-       Misc.did_you_mean ppf (fun () -> choices ~path:(Some r) s)*)
+       Misc.did_you_mean ppf (fun () -> choices ~path:(Some r) s)
 
 let fold_descr fold get_name f = fold (fun descr acc -> f (get_name descr) acc)
 let fold_simple fold4 f = fold4 (fun name _path _descr acc -> f name acc)

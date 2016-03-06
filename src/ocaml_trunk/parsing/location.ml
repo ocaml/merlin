@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 open Lexing
 
@@ -250,7 +253,11 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 ;;
 
+let setup_colors () =
+  Misc.Color.setup !Clflags.color
+
 let print_loc ppf loc =
+  setup_colors ();
   let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
   if file = "//toplevel//" then begin
@@ -266,6 +273,7 @@ let print_loc ppf loc =
 ;;
 
 let print ppf loc =
+  setup_colors ();
   if loc.loc_start.pos_fname = "//toplevel//"
   && highlight_locations ppf [loc] then ()
   else fprintf ppf "@{<loc>%a@}%s@." print_loc loc msg_colon
@@ -275,6 +283,7 @@ let error_prefix = "Error"
 let warning_prefix = "Warning"
 
 let print_error_prefix ppf () =
+  setup_colors ();
   fprintf ppf "@{<error>%s@}:" error_prefix;
   ()
 ;;
@@ -299,6 +308,7 @@ let print_error_cur_file ppf () = print_error ppf (in_file !input_name);;
 
 let default_warning_printer loc ppf w =
   if Warnings.is_active w then begin
+    setup_colors ();
     print ppf loc;
     fprintf ppf "@{<warning>%s@} %a@." warning_prefix Warnings.print w
   end
@@ -328,7 +338,7 @@ let mknoloc txt = mkloc txt none
 
 type error =
   {
-    err_loc: t;
+    loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
@@ -337,6 +347,7 @@ type error =
 let pp_ksprintf ?before k fmt =
   let buf = Buffer.create 64 in
   let ppf = Format.formatter_of_buffer buf in
+  Misc.Color.set_color_tag_handling ppf;
   begin match before with
     | None -> ()
     | Some f -> f ppf
@@ -350,17 +361,17 @@ let pp_ksprintf ?before k fmt =
 
 let errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") fmt =
   pp_ksprintf
-    (fun msg -> {err_loc = loc; msg; sub; if_highlight})
+    (fun msg -> {loc; msg; sub; if_highlight})
     fmt
 
 let errorf_prefixed ?(loc=none) ?(sub=[]) ?(if_highlight="") fmt =
   pp_ksprintf
     ~before:(fun ppf -> fprintf ppf "%a " print_error_prefix ())
-    (fun msg -> {err_loc = loc; msg; sub; if_highlight})
+    (fun msg -> {loc; msg; sub; if_highlight})
     fmt
 
 let error ?(loc = none) ?(sub = []) ?(if_highlight = "") msg =
-  {err_loc = loc; msg; sub; if_highlight}
+  {loc; msg; sub; if_highlight}
 
 let error_of_exn : (exn -> error option) list ref = ref []
 
@@ -376,11 +387,11 @@ let error_of_exn exn =
   in
   loop !error_of_exn
 
-let rec default_error_reporter ppf ({err_loc; msg; sub; if_highlight} as err) =
+let rec default_error_reporter ppf ({loc; msg; sub; if_highlight} as err) =
   let highlighted =
     if if_highlight <> "" then
-      let rec collect_locs locs {err_loc; sub; if_highlight; _} =
-        List.fold_left collect_locs (err_loc :: locs) sub
+      let rec collect_locs locs {loc; sub; if_highlight; _} =
+        List.fold_left collect_locs (loc :: locs) sub
       in
       let locs = collect_locs [] err in
       highlight_locations ppf locs
@@ -390,7 +401,7 @@ let rec default_error_reporter ppf ({err_loc; msg; sub; if_highlight} as err) =
   if highlighted then
     Format.pp_print_string ppf if_highlight
   else begin
-    print ppf err_loc;
+    print ppf loc;
     Format.pp_print_string ppf msg;
     List.iter (Format.fprintf ppf "@\n@[<2>%a@]" default_error_reporter) sub
   end
@@ -445,4 +456,4 @@ let () =
     )
 
 let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
-  pp_ksprintf (fun msg -> raise (Error ({err_loc = loc; msg; sub; if_highlight})))
+  pp_ksprintf (fun msg -> raise (Error ({loc; msg; sub; if_highlight})))

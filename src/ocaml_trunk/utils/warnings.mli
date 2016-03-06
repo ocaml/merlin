@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Pierre Weis && Damien Doligez, INRIA Rocquencourt        *)
-(*                                                                     *)
-(*  Copyright 1998 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Pierre Weis && Damien Doligez, INRIA Rocquencourt          *)
+(*                                                                        *)
+(*   Copyright 1998 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 open Format
 
@@ -74,8 +77,7 @@ type t =
   | Assignment_to_non_mutable_value         (* 59 *)
 ;;
 
-type state
-val parse_options : ?state:state -> bool -> string -> unit;;
+val parse_options : bool -> string -> unit;;
 
 val is_active : t -> bool;;
 val is_error : t -> bool;;
@@ -92,18 +94,6 @@ val reset_fatal: unit -> unit
 
 val help_warnings: unit -> unit
 
+type state
 val backup: unit -> state
 val restore: state -> unit
-
-(* merlin extension *)
-val initial : state
-
-(* Current state *)
-val current : state ref
-
-(* Compute arguments specification *)
-val arg_spec : state -> (string * Arg.spec * string) list
-(* Parsing arguments is effectful, you might want to copy state before *)
-val copy : state -> state
-
-val dump : unit -> Yojson.Basic.json

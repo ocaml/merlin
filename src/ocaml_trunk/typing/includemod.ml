@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Inclusion checks for the module language *)
 
@@ -244,7 +247,7 @@ and try_modtypes env cxt subst mty1 mty2 =
       try_modtypes env cxt subst (expand_module_path env cxt p1) mty2
   | (_, Mty_ident p2) ->
       try_modtypes2 env cxt mty1 (Subst.modtype subst mty2)
-  | (Mty_signature (lazy sig1), Mty_signature (lazy sig2)) ->
+  | (Mty_signature sig1, Mty_signature sig2) ->
       signatures env cxt subst sig1 sig2
   | (Mty_functor(param1, None, res1), Mty_functor(param2, None, res2)) ->
       begin match modtypes env (Body param1::cxt) subst res1 res2 with
@@ -471,11 +474,10 @@ let modtypes env m1 m2 =
 open Format
 open Printtyp
 
-let show_loc msg ppf loc = () (*
+let show_loc msg ppf loc =
   let pos = loc.Location.loc_start in
   if List.mem pos.Lexing.pos_fname [""; "_none_"; "//toplevel//"] then ()
   else fprintf ppf "@\n@[<2>%a:@ %s@]" Location.print_loc loc msg
-*)
 
 let show_locs ppf (loc1, loc2) =
   show_loc "Expected declaration" ppf loc2;
@@ -592,7 +594,7 @@ let include_err ppf (cxt, env, err) =
 
 let buffer = ref Bytes.empty
 let is_big obj =
-  let size = Clflags.error_size () in
+  let size = !Clflags.error_size in
   size > 0 &&
   begin
     if Bytes.length !buffer < size then buffer := Bytes.create size;
@@ -602,8 +604,7 @@ let is_big obj =
 
 let report_error ppf errs =
   if errs = [] then () else
-  let (_errs , err) = split_last errs in
-  (*
+  let (errs , err) = split_last errs in
   let pe = ref true in
   let include_err' ppf (_,_,obj as err) =
     if not (is_big obj) then fprintf ppf "%a@ " include_err err
@@ -611,8 +612,6 @@ let report_error ppf errs =
   in
   let print_errs ppf = List.iter (include_err' ppf) in
   fprintf ppf "@[<v>%a%a@]" print_errs errs include_err err
-  *)
-  fprintf ppf "@[<v>%a@]" include_err err
 
 
 (* We could do a better job to split the individual error items

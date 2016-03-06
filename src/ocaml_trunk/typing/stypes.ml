@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*          Damien Doligez, projet Moscova, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 2003 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*           Damien Doligez, projet Moscova, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 2003 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Recording and dumping (partial) type information *)
 
@@ -49,12 +52,12 @@ let annotations = ref ([] : annotation list);;
 let phrases = ref ([] : Location.t list);;
 
 let record ti =
-  if Clflags.annotations () && not (get_location ti).Location.loc_ghost then
+  if !Clflags.annotations && not (get_location ti).Location.loc_ghost then
     annotations := ti :: !annotations
 ;;
 
 let record_phrase loc =
-  if Clflags.annotations () then phrases := loc :: !phrases;
+  if !Clflags.annotations then phrases := loc :: !phrases;
 ;;
 
 (* comparison order:
@@ -190,7 +193,7 @@ let get_info () =
 ;;
 
 let dump filename =
-  if Clflags.annotations () then begin
+  if !Clflags.annotations then begin
     let info = get_info () in
     let pp =
       match filename with

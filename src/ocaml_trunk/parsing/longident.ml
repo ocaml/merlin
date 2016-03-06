@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 type t =
     Lident of string
@@ -39,28 +42,3 @@ let parse s =
     [] -> Lident ""  (* should not happen, but don't put assert false
                         so as not to crash the toplevel (see Genprintval) *)
   | hd :: tl -> List.fold_left (fun p s -> Ldot(p, s)) (Lident hd) tl
-
-let keep_suffix =
-  let rec aux = function
-    | Lident str ->
-      if String.lowercase str <> str then
-        Some (Lident str, false)
-      else
-        None
-    | Ldot (t, str) ->
-      if String.lowercase str <> str then
-        match aux t with
-        | None -> Some (Lident str, true)
-        | Some (t, is_label) -> Some (Ldot (t, str), is_label)
-      else
-        None
-    | t -> Some (t, false) (* Can be improved... *)
-  in
-  function
-  | Lident s -> Lident s, false
-  | Ldot (t, s) ->
-    begin match aux t with
-    | None -> Lident s, true
-    | Some (t, is_label) -> Ldot (t, s), is_label
-    end
-  | otherwise -> otherwise, false
