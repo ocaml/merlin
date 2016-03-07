@@ -238,11 +238,9 @@ let parse_opt error active flags s =
 let copy {active; error} =
   {active = Array.copy active; error = Array.copy error}
 
-let parse_options ?state errflag s =
-  let {error; active} = match state with
-    | None -> copy !current
-    | Some set -> set
-  in
+let parse_options errflag s =
+  let error = Array.copy (!current).error in
+  let active = Array.copy (!current).active in
   parse_opt error active (if errflag then error else active) s;
   current := {error; active}
 
@@ -251,8 +249,8 @@ let defaults_w = "+a-4-6-7-9-27-29-32..39-41..42-44-45-48-50";;
 let defaults_warn_error = "-a";;
 
 let initial = !current
-let () = parse_options ~state:initial false defaults_w;;
-let () = parse_options ~state:initial true defaults_warn_error;;
+let () = parse_options false defaults_w;;
+let () = parse_options true defaults_warn_error;;
 
 let message = function
   | Comment_start -> "this is the start of a comment."
@@ -500,9 +498,9 @@ let help_warnings () =
   exit 0
 ;;
 
-let w_spec state =
+let w_spec =
   "-w",
-  Arg.String (parse_options ~state false),
+  Arg.String (parse_options false),
   Printf.sprintf
     "<list>  Enable or disable warnings according to <list>:\n\
     \        +<spec>   enable warnings in <spec>\n\
@@ -515,19 +513,19 @@ let w_spec state =
     \     default setting is %S"
     defaults_w
 
-let warn_error_spec state =
+let warn_error_spec =
   "-warn-error",
-  Arg.String (parse_options ~state true),
+  Arg.String (parse_options true),
   Printf.sprintf
     "<list> Enable or disable error status for warnings according\n\
     \     to <list>.  See option -w for the syntax of <list>.\n\
     \     Default setting is %S"
     defaults_warn_error
 
-let arg_spec state =
+let arg_spec =
   [
-    w_spec state;
-    warn_error_spec state;
+    w_spec;
+    warn_error_spec;
   ]
 
 open Std

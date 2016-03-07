@@ -74,4 +74,4 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-val report_error: Env.t -> sub:(Location.error -> unit) -> formatter -> error -> unit
+val report_error: Env.t -> formatter -> error -> unit

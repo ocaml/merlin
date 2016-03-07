@@ -14,66 +14,42 @@
 
 type path_printing_mode = [`Real | `Short | `Opened ]
 
-module StringSet : Set.S with type elt = string
-module StringMap : Map.S with type key = string
-
-type set = {
-  include_dirs                 : string list ref;
-  mutable std_include          : bool;
-  mutable fast                 : bool;
-  mutable classic              : bool;
-  mutable principal            : bool;
-  mutable real_paths           : path_printing_mode;
-  mutable timed_logs           : bool;
-  mutable recursive_types      : bool;
-  mutable strict_sequence      : bool;
-  mutable applicative_functors : bool;
-  mutable unsafe_string        : bool;
-  mutable nopervasives         : bool;
-  mutable strict_formats       : bool;
-  mutable open_modules         : string list;
-  mutable ppx                  : Ppxsetup.t;
-  mutable pp                   : string;
-}
+type config
 
 (* Manage set of flag *)
-val initial : set
+val save : unit -> config
+val load : config -> unit
 
-val fresh : unit -> set
-val copy : set -> set
-
-(* Current state *)
-val set : set ref
-
-val include_dirs         : unit -> string list
-val no_std_include       : unit -> bool
-val fast                 : unit -> bool
-val classic              : unit -> bool
-val principal            : unit -> bool
-val real_paths           : unit -> path_printing_mode
-val timed_logs           : unit -> bool
-val recursive_types      : unit -> bool
-val strict_sequence      : unit -> bool
-val applicative_functors : unit -> bool
-val unsafe_string        : unit -> bool
-val nopervasives         : unit -> bool
-val strict_formats       : unit -> bool
-val open_modules         : unit -> string list
-val ppx                  : unit -> string list
-val pp                   : unit -> string
+val include_dirs         : string list ref
+val no_std_include       : bool ref
+val fast                 : bool ref
+val classic              : bool ref
+val principal            : bool ref
+val real_paths           : path_printing_mode ref
+val timed_logs           : bool ref
+val recursive_types      : bool ref
+val strict_sequence      : bool ref
+val applicative_functors : bool ref
+val unsafe_string        : bool ref
+val nopervasives         : bool ref
+val strict_formats       : bool ref
+val open_modules         : string list ref
+val ppx                  : Ppxsetup.t ref
+val pp                   : string ref
 
 (* Dummy values *)
-val annotations          : unit -> bool
-val binary_annotations   : unit -> bool
-val print_types          : unit -> bool
-val native_code          : unit -> bool
-val dont_write_files     : unit -> bool
-val error_size           : unit -> int (* max size of module related errors *)
-val keep_locs            : unit -> bool
-val keep_docs            : unit -> bool
-val transparent_modules  : unit -> bool
-val for_package          : unit -> string option
-val debug                : unit -> bool
+val annotations          : bool ref
+val binary_annotations   : bool ref
+val print_types          : bool ref
+val native_code          : bool ref
+val dont_write_files     : bool ref
+val error_size           : int ref (* max size of module related errors *)
+val keep_locs            : bool ref
+val keep_docs            : bool ref
+val transparent_modules  : bool ref
+val for_package          : string option ref
+val debug                : bool ref
+val opaque               : bool ref
 
-(* Compute arguments specification *)
-val arg_spec : set -> (string * Arg.spec * string) list
+(* Argument specification *)
+val arg_spec : (string * Arg.spec * string) list

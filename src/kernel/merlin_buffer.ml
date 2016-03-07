@@ -61,7 +61,7 @@ let create ?dot_merlins ?path kind =
   let project, _ = Merlin_project.get dot_merlins in
   let source = Merlin_source.empty ~name in
   let spec =
-    match Clflags.pp () with
+    match !Clflags.pp with
     | "" -> Merlin_reader.Normal (Merlin_project.extensions project, kind)
     | pp -> Merlin_reader.External (pp, kind)
   in
@@ -98,6 +98,6 @@ let idle_job t =
   let typer = typer t in
   Merlin_typer.with_typer typer @@ fun () ->
   ignore (Merlin_typer.result typer);
-  Clflags.real_paths () <> `Real &&
+  !Clflags.real_paths <> `Real &&
   let concr = Env.used_persistent () in
   Types.Concr.exists Printtyp.compute_map_for_pers concr

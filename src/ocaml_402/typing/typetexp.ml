@@ -569,7 +569,7 @@ and transl_type' env policy styp =
           end;
           ty
         with Not_found ->
-          if Clflags.principal () then begin_def ();
+          if !Clflags.principal then begin_def ();
           let t = newvar () in
           used_variables := Tbl.add alias (t, styp.ptyp_loc) !used_variables;
           let ty = transl_type env policy st in
@@ -577,7 +577,7 @@ and transl_type' env policy styp =
             let trace = swap_list trace in
             raise(Error(styp.ptyp_loc, env, Alias_type_mismatch trace))
           end;
-          if Clflags.principal () then begin
+          if !Clflags.principal then begin
             end_def ();
             generalize_structure t;
           end;

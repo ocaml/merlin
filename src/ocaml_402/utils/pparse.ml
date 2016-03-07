@@ -88,7 +88,7 @@ let rewrite magic ast ppxs =
        (List.rev ppxs))
 
 let apply_rewriters_str ?(restore = true) ~tool_name ast =
-  match Clflags.ppx () with
+  match Ppxsetup.command_line !Clflags.ppx with
   | [] -> ast
   | ppxs ->
       let ast = Ast_mapper.add_ppx_context_str ~tool_name ast in
@@ -96,7 +96,7 @@ let apply_rewriters_str ?(restore = true) ~tool_name ast =
       Ast_mapper.drop_ppx_context_str ~restore ast
 
 let apply_rewriters_sig ?(restore = true) ~tool_name ast =
-  match Clflags.ppx () with
+  match Ppxsetup.command_line !Clflags.ppx with
   | [] -> ast
   | ppxs ->
       let ast = Ast_mapper.add_ppx_context_sig ~tool_name ast in

@@ -39,17 +39,17 @@ let open_implicit_module m env =
 let fresh_env () =
   (*Ident.reinit();*)
   let initial =
-    if Clflags.unsafe_string () then
+    if !Clflags.unsafe_string then
       Env.initial_unsafe_string
     else
       Env.initial_safe_string in
   let env =
-    if Clflags.nopervasives () then
+    if !Clflags.nopervasives then
       initial
     else
       open_implicit_module "Pervasives" initial in
   List.fold_right ~f:open_implicit_module
-    (Clflags.open_modules ()) ~init:env
+    !Clflags.open_modules ~init:env
 
 
 module Rewrite_loc = struct
@@ -79,7 +79,7 @@ module Rewrite_loc = struct
     | None -> None
     | Some x -> Some (f x)
 
-  let u_loc loc =
+  let u_loc (loc : _ Location.loc) =
     update loc.loc; loc
 
   let rec u_attribute (loc, payload) =

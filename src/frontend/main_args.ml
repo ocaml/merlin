@@ -66,10 +66,7 @@ let flags =
 
 let () =
   (* Parse arguments on commandline *)
-  let cl = Clflags.arg_spec Clflags.initial in
-  let w  = Warnings.arg_spec Warnings.initial in
-  Arg.parse
-    (flags @ w @ cl)
+  Arg.parse Clflags.arg_spec
     unexpected_argument
     "Usage: ocamlmerlin [options]\noptions are:"
 

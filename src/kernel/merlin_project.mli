@@ -1,5 +1,8 @@
 type t
 
+(* Copy global state after initialization *)
+val initialized : unit -> unit
+
 (* A global store mapping (.merlin-)path to projects *)
 val get : string list -> t * [`Fresh | `Cached]
 

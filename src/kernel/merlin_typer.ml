@@ -55,8 +55,8 @@ type t = {
   reader: Merlin_reader.t;
   mutable steps: steps;
   extensions: String.Set.t;
-  btype_cache: Btype.cache;
-  env_cache: Env.cache;
+  btype_state: Btype.state;
+  env_state: Env.state;
 }
 
 let type_signature env sg =
@@ -120,14 +120,14 @@ let update_steps steps = function
 
 let with_typer t f =
   let open Fluid in
-  let' (from_ref Btype.cache) t.btype_cache @@ fun () ->
-  let' (from_ref Env.cache)   t.env_cache f
+  let' (from_ref Btype.state) t.btype_state @@ fun () ->
+  let' (from_ref Env.state)   t.env_state f
 
 let is_valid t =
-  with_typer t Env.check_cache_consistency
+  with_typer t Env.check_state_consistency
 
 let processed_ast reader =
-  Ast_mapper.cache := Ast_mapper.new_cache ();
+  Ast_mapper.state := Ast_mapper.new_state ();
   match Merlin_reader.result reader with
   | `Signature sigs ->
     `Signature (Pparse.apply_rewriters_sig ~tool_name:"merlin" sigs)
@@ -135,10 +135,10 @@ let processed_ast reader =
     `Structure (Pparse.apply_rewriters_str ~tool_name:"merlin" strs)
 
 let make reader extensions =
-  let btype_cache = Btype.new_cache () in
-  let env_cache = Env.new_cache
+  let btype_state = Btype.new_state () in
+  let env_state = Env.new_state
       ~unit_name:(Merlin_source.name (Merlin_reader.source reader)) in
-  { reader; extensions; btype_cache; env_cache;
+  { reader; extensions; btype_state; env_state;
     steps = update_steps `None (processed_ast reader) }
 
 let update reader t =

@@ -28,9 +28,17 @@
 
 open Std
 
+(* Copy global state after initialization *)
+let initial_warnings = ref (Warnings.backup ())
+let initial_clflags = ref (Clflags.save ())
+
+let initialized () =
+  initial_warnings := Warnings.backup ();
+  initial_clflags := Clflags.save ()
+
 type config = {
   dot_config     : Dot_merlin.config;
-  flags          : Clflags.set;
+  flags          : Clflags.config;
   warnings       : Warnings.state;
   keywords       : Merlin_lexer.keywords;
   extensions     : Extension.set;
@@ -60,9 +68,8 @@ let compute_packages prj =
   dfails, ufails, upaths @ dpaths, Ppxsetup.union uppxs dppxs
 
 let compute_flags ppxsetup prj =
-  let flags = Clflags.copy Clflags.initial in
-  let warnings = Warnings.copy Warnings.initial in
-  let spec = Clflags.arg_spec flags @ Warnings.arg_spec warnings in
+  Clflags.load !initial_clflags;
+  Warnings.restore !initial_warnings;
   let process_flags spec flags =
     let failures = ref [] in
     let rec loop ?(current=(ref 0)) flags =
@@ -80,14 +87,14 @@ let compute_flags ppxsetup prj =
   let process_flags_list lst =
     List.fold_left lst ~init:[] ~f:(fun acc lst ->
         let flags = Array.of_list ("merlin" :: lst) in
-        List.rev_append (process_flags spec flags) acc
+        List.rev_append (process_flags Clflags.arg_spec flags) acc
       )
   in
   let dfails = process_flags_list (Dot_merlin.config prj.dot_merlin).Dot_merlin.flags in
-  let dfails = List.rev_append (process_flags (Main_args.flags @ spec) Sys.argv) dfails in
+  let dfails = List.rev_append (process_flags (Main_args.flags @ Clflags.arg_spec) Sys.argv) dfails in
   let ufails = process_flags_list prj.user_config.Dot_merlin.flags in
-  flags.Clflags.ppx <- Ppxsetup.union flags.Clflags.ppx ppxsetup;
-  dfails, ufails, flags, warnings
+  Clflags.ppx := Ppxsetup.union !Clflags.ppx ppxsetup;
+  dfails, ufails, Clflags.save (), Warnings.backup ()
 
 let config prj =
   let dot_config = Dot_merlin.config prj.dot_merlin in
@@ -103,12 +110,12 @@ let config prj =
     let open Dot_merlin in
     let user_config = prj.user_config in
     let stdlib =
-      if flags.Clflags.std_include then
+      if !Clflags.no_std_include then []
+      else
         [if user_config.stdlib =
             empty_config.stdlib
          then dot_config.stdlib
          else user_config.stdlib]
-      else []
     in
     let source_path =
       user_config.source_path @
@@ -120,7 +127,7 @@ let config prj =
       dot_config.cmi_path @
       dot_config.build_path @
       pkgpaths @
-      !(flags.Clflags.include_dirs) @
+      !Clflags.include_dirs @
       stdlib
     and cmt_path =
       user_config.cmt_path @
@@ -128,7 +135,7 @@ let config prj =
       dot_config.cmt_path @
       dot_config.build_path @
       pkgpaths @
-      !(flags.Clflags.include_dirs) @
+      !Clflags.include_dirs @
       stdlib
     in
     let extensions = Extension.from
@@ -206,8 +213,8 @@ let get_dot_merlins_failure t =
 (* Make global state point to current project *)
 let setup t path =
   let c = config t in
-  Clflags.set := c.flags;
-  Warnings.current := c.warnings;
+  Clflags.load c.flags;
+  Warnings.restore c.warnings;
   Config.load_path := path @ build_path t
 
 (* Enabled extensions *)

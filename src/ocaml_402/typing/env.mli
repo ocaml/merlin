@@ -168,8 +168,8 @@ val reset_cache: unit -> unit
 (* To be called before each toplevel phrase. *)
 val reset_cache_toplevel: unit -> unit
 
-(* merlin: Check cache consistency *)
-val check_cache_consistency: unit -> bool
+(* merlin: Check state consistency *)
+val check_state_consistency: unit -> bool
 
 (* Remember the name of the current compilation unit. *)
 val set_unit_name: string -> unit
@@ -291,7 +291,7 @@ val check_value_name: string -> Location.t -> unit
 
 (** merlin: manage all internal state *)
 
-type cache
+type state
 
-val new_cache : unit_name:string -> cache
-val cache : cache ref
+val new_state : unit_name:string -> state
+val state : state ref

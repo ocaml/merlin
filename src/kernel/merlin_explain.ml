@@ -94,7 +94,7 @@ let to_error { item; unclosed; location; popped; shifted; unexpected } =
       else ", maybe replace " ^ popped ^ " by " ^ (friendly_name sym)
   in
   let msg = Printf.sprintf "Syntax error%s%s%s" inside after expecting in
-  { Location. err_loc = location; sub = []; msg; if_highlight = msg }
+  { Location. loc = location; sub = []; msg; if_highlight = msg }
 
 exception Syntax_explanation of explanation
 

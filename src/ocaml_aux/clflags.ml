@@ -14,53 +14,6 @@
 
 type path_printing_mode = [`Real | `Short | `Opened ]
 
-module StringSet = Set.Make(String)
-module StringMap = Map.Make(String)
-
-type set = {
-  include_dirs                 : string list ref;
-  mutable std_include          : bool;
-  mutable fast                 : bool;
-  mutable classic              : bool;
-  mutable principal            : bool;
-  mutable real_paths           : path_printing_mode;
-  mutable timed_logs           : bool;
-  mutable recursive_types      : bool;
-  mutable strict_sequence      : bool;
-  mutable applicative_functors : bool;
-  mutable unsafe_string        : bool;
-  mutable nopervasives         : bool;
-  mutable strict_formats       : bool;
-  mutable open_modules         : string list;
-  mutable ppx                  : Ppxsetup.t;
-  mutable pp                   : string;
-}
-
-let fresh () =
-  {
-    include_dirs         = ref [];    (* -I *)
-    std_include          = true; (* -nostdlib *)
-    fast                 = false; (* -unsafe *)
-    classic              = false; (* -nolabels *)
-    principal            = false; (* -principal *)
-    real_paths           = `Real;  (* -real-paths / ! -short-paths *)
-    timed_logs           = false; (* -timed-logs *)
-    recursive_types      = false; (* -rectypes *)
-    strict_sequence      = false; (* -strict-sequence *)
-    applicative_functors = true;  (* -no-app-funct *)
-    unsafe_string        = true;  (* -safe-string / -unsafe-string *)
-    nopervasives         = false; (* -nopervasives *)
-    strict_formats       = false; (* -strict-formats *)
-    open_modules         = [];
-    ppx                  = Ppxsetup.empty;    (* -ppx *)
-    pp                   = "";
-  }
-
-let copy t = {t with include_dirs = ref !(t.include_dirs)}
-
-let initial = fresh ()
-let set = ref initial
-
 (* FIXME
 let debug_spec () =
   let f section =
@@ -98,172 +51,202 @@ let debug_spec () =
   \                              - debug"
 *)
 
-let timed_logs () = !set.timed_logs
-let timed_logs_spec t =
+let timed_logs = ref false
+let timed_logs_spec =
   "-timed-logs",
-  Arg.Unit (fun () -> t.timed_logs <- true),
+  Arg.Set timed_logs,
   " Add time information in the log file when enabled"
 
-let include_dirs () = !(!set.include_dirs)
-let include_dirs_spec t =
+let include_dirs = ref []
+let include_dirs_spec =
   "-I",
-  Arg.String (fun s -> t.include_dirs := s :: !(t.include_dirs)),
+  Arg.String (fun s -> include_dirs := s :: !include_dirs),
   "<dir> Add <dir> to the list of include directories"
 
-let no_std_include () = not !set.std_include
-let no_std_include_spec t =
+let no_std_include = ref false
+let no_std_include_spec =
   "-nostdlib",
-  Arg.Unit (fun () -> t.std_include <- false),
+  Arg.Set no_std_include,
   " Do not add default directory to the list of include directories"
 
-let fast () = !set.fast
-let fast_spec t =
+let fast = ref false
+let fast_spec =
   "-unsafe",
-  Arg.Unit (fun () -> t.fast <- true),
+  Arg.Set fast,
   " Do not compile bounds checking on array and string access"
 
-let classic () = !set.classic
-let labels_spec t =
+let classic = ref false
+let labels_spec =
   "-labels",
-  Arg.Unit (fun () -> t.classic <- false),
+  Arg.Clear classic,
   " Use commuting label mode"
-let nolabels_spec t =
+let nolabels_spec =
   "-nolabels",
-  Arg.Unit (fun () -> t.classic <- true),
+  Arg.Set classic,
   " Ignore non-optional labels in types"
 
-let principal () = !set.principal
-let principal_spec t =
+let principal = ref false
+let principal_spec =
   "-principal",
-  Arg.Unit (fun () -> t.principal <- true),
+  Arg.Set principal,
   " Check principality of type inference"
 
-let real_paths () = !set.real_paths
-let real_paths_spec t =
+let real_paths : path_printing_mode ref = ref `Real
+let real_paths_spec =
   "-real-paths",
-  Arg.Unit (fun () -> t.real_paths <- `Real),
+  Arg.Unit (fun () -> real_paths := `Real),
   " Display real paths in types rather than short ones"
-let short_paths_spec t =
+
+let short_paths_spec =
   "-short-paths",
-  Arg.Unit (fun () -> t.real_paths <- `Short),
+  Arg.Unit (fun () -> real_paths := `Short),
   " Shorten paths in types"
-let opened_paths_spec t =
+
+let opened_paths_spec =
   "-opened-paths",
-  Arg.Unit (fun () -> t.real_paths <- `Opened),
+  Arg.Unit (fun () -> real_paths := `Opened),
   " Remove opened prefix from displayed types"
 
-let recursive_types () = !set.recursive_types
-let recursive_types_spec t =
+let recursive_types = ref false
+let recursive_types_spec =
   "-rectypes",
-  Arg.Unit (fun () -> t.recursive_types <- true),
+  Arg.Set recursive_types,
   " Allow arbitrary recursive types"
 
-let strict_sequence () = !set.strict_sequence
-let strict_sequence_spec t =
+let strict_sequence = ref false
+let strict_sequence_spec =
   "-strict-sequence",
-  Arg.Unit (fun () -> t.strict_sequence <- true),
+  Arg.Set strict_sequence,
   " Left-hand part of a sequence must have type unit"
 
-let applicative_functors () = !set.applicative_functors
-let applicative_functors_spec t =
+let applicative_functors = ref true
+let applicative_functors_spec =
   "-no-app-funct",
-  Arg.Unit (fun () -> t.applicative_functors <- false),
+  Arg.Clear applicative_functors,
   " Deactivate applicative functors"
 
-let threads_spec t =
+let threads_spec =
   "-thread",
-  Arg.Unit (fun () -> t.include_dirs := "+threads" :: !(t.include_dirs)),
+  Arg.Unit (fun () -> include_dirs := "+threads" :: !include_dirs),
   " Add support for system threads library"
 
-let vmthreads_spec t =
+let vmthreads_spec =
   "-vmthread",
-  Arg.Unit (fun () -> t.include_dirs := "+vmthreads" :: !(t.include_dirs)),
+  Arg.Unit (fun () -> include_dirs := "+vmthreads" :: !include_dirs),
   " Add support for VM-scheduled threads library"
 
-let unsafe_string () = !set.unsafe_string
-let unsafe_string_spec t =
+let unsafe_string = ref true
+let unsafe_string_spec =
   "-unsafe-string",
-  Arg.Unit (fun () -> t.unsafe_string <- true),
+  Arg.Set unsafe_string,
   " Make strings mutable (default)"
-let safe_string_spec t =
+let safe_string_spec =
   "-safe-string",
-  Arg.Unit (fun () -> t.unsafe_string <- false),
+  Arg.Clear unsafe_string,
   " Make strings immutable"
 
-let nopervasives () = !set.nopervasives
-let nopervasives_spec t =
+let nopervasives = ref false
+let nopervasives_spec =
   "-nopervasives",
-  Arg.Unit (fun () -> t.nopervasives <- true),
+  Arg.Set nopervasives,
   " Don't open Pervasives module (advanced)"
 
-let strict_formats () = !set.strict_formats
-let strict_formats_spec t =
+let strict_formats = ref false
+let strict_formats_spec =
   "-strict-formats",
-  Arg.Unit (fun () -> t.strict_formats <- true),
+  Arg.Set strict_formats,
   " Reject invalid formats accepted by legacy implementations"
 
-let open_modules () = !set.open_modules
-let open_modules_spec t =
+let open_modules = ref []
+let open_modules_spec =
   "-open",
-  Arg.String (fun md -> t.open_modules <- md :: t.open_modules),
+  Arg.String (fun md -> open_modules := md :: !open_modules),
   "<module>  Opens the module <module> before typing"
 
-let open_modules () = !set.open_modules
-let open_modules_spec t =
-  "-open",
-  Arg.String (fun md -> t.open_modules <- md :: t.open_modules),
-  "<module>  Opens the module <module> before typing"
+let ppx = ref Ppxsetup.empty
 
-let ppx () = Ppxsetup.command_line !set.ppx
-
-let ppx_spec t =
+let ppx_spec =
   "-ppx",
-  Arg.String (fun s -> t.ppx <- Ppxsetup.add_ppx s t.ppx),
+  Arg.String (fun s -> ppx := Ppxsetup.add_ppx s !ppx),
   "<command> Pipe abstract syntax trees through preprocessor <command>"
 
-let pp () = !set.pp
+let pp = ref ""
 
-let pp_spec t =
+let pp_spec =
   "-pp",
-  Arg.String (fun s -> t.pp <- s),
-  "<command>  Pipe sources through preprocessor <command>"
+  Arg.Set_string pp,
+  "<command> Pipe sources through preprocessor <command>"
 
 (* Dummy values *)
-let annotations         () = false
-let binary_annotations  () = true
-let print_types         () = false
-let native_code         () = false
-let error_size          () = 500
-let dont_write_files    () = true
-let keep_locs           () = true
-let keep_docs           () = false
-let transparent_modules () = true
-let for_package         () = None
-let debug               () = false
+let annotations         = ref false
+let binary_annotations  = ref true
+let print_types         = ref false
+let native_code         = ref false
+let error_size          = ref 500
+let dont_write_files    = ref true
+let keep_locs           = ref true
+let keep_docs           = ref false
+let transparent_modules = ref true
+let for_package         = ref None
+let debug               = ref false
+let opaque              = ref false
 
-let arg_spec t =
+let arg_spec =
   [
     (*debug_spec ();*)
-    applicative_functors_spec t;
-    fast_spec t;
-    include_dirs_spec t;
-    labels_spec t;
-    nolabels_spec t;
-    no_std_include_spec t;
-    principal_spec t;
-    real_paths_spec t;
-    short_paths_spec t;
-    opened_paths_spec t;
-    timed_logs_spec t;
-    recursive_types_spec t;
-    strict_sequence_spec t;
-    threads_spec t;
-    vmthreads_spec t;
-    safe_string_spec t;
-    unsafe_string_spec t;
-    nopervasives_spec t;
-    strict_formats_spec t;
-    open_modules_spec t;
-    ppx_spec t;
-    pp_spec t;
-  ]
+    applicative_functors_spec;
+    fast_spec;
+    include_dirs_spec;
+    labels_spec;
+    nolabels_spec;
+    no_std_include_spec;
+    principal_spec;
+    real_paths_spec;
+    short_paths_spec;
+    opened_paths_spec;
+    timed_logs_spec;
+    recursive_types_spec;
+    strict_sequence_spec;
+    threads_spec;
+    vmthreads_spec;
+    safe_string_spec;
+    unsafe_string_spec;
+    nopervasives_spec;
+    strict_formats_spec;
+    open_modules_spec;
+    ppx_spec;
+    pp_spec;
+  ] @
+  Warnings.arg_spec
+
+type config =
+  | Nil
+  | Set : 'a ref * 'a * config -> config
+
+let save_one r c =
+  Set (r, !r, c)
+
+let save () =
+  save_one include_dirs         @@
+  save_one no_std_include       @@
+  save_one fast                 @@
+  save_one classic              @@
+  save_one principal            @@
+  save_one real_paths           @@
+  save_one timed_logs           @@
+  save_one recursive_types      @@
+  save_one strict_sequence      @@
+  save_one applicative_functors @@
+  save_one unsafe_string        @@
+  save_one nopervasives         @@
+  save_one strict_formats       @@
+  save_one open_modules         @@
+  save_one ppx                  @@
+  save_one pp                   @@
+  Nil
+
+let rec load = function
+  | Nil -> ()
+  | Set (r, x, c) ->
+    r := x;
+    load c

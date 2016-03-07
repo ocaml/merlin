@@ -94,7 +94,7 @@ val absname: bool ref
 
 type error =
   {
-    err_loc: t;
+    loc: t;
     msg: string;
     sub: error list;
     if_highlight: string; (* alternative message if locations are highlighted *)
@@ -111,8 +111,6 @@ val raise_errorf: ?loc:t -> ?sub:error list -> ?if_highlight:string
             -> ('a, unit, string, 'b) format4 -> 'a
 
 val error_of_printer: t -> (formatter -> 'a -> unit) -> 'a -> error
-
-val suberrors_of_printer: t -> (sub:(error -> unit) -> formatter -> 'a -> unit) -> 'a -> error
 
 val error_of_printer_file: (formatter -> 'a -> unit) -> 'a -> error
 

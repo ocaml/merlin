@@ -296,7 +296,7 @@ let mkexp_constraint startpos endpos e (t1, t2) =
 
 let array_function startpos endpos str name =
   ghloc startpos endpos
-    (Ldot(Lident str, (if Clflags.fast () then "unsafe_" ^ name else name)))
+    (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name)))
 
 let syntax_error startpos endpos =
   Parsing_aux.raise_warning (Syntaxerr.Escape_error (rloc startpos endpos))
@@ -322,7 +322,7 @@ let bigarray_untuplify = function
   | exp -> [exp]
 
 let bigarray_get (startpos,endpos) (startop,endop) arr arg =
-  let get = if Clflags.fast () then "unsafe_get" else "get" in
+  let get = if !Clflags.fast then "unsafe_get" else "get" in
   let ghexp = ghexp startop endop in
   let mkexp = mkexp startpos endpos in
   let bigarray_function = bigarray_function startop endop in
@@ -341,7 +341,7 @@ let bigarray_get (startpos,endpos) (startop,endop) arr arg =
                        ["", arr; "", ghexp(Pexp_array coords)]))
 
 let bigarray_set (startpos,endpos) (startop,endop) arr arg newval =
-  let set = if Clflags.fast () then "unsafe_set" else "set" in
+  let set = if !Clflags.fast then "unsafe_set" else "set" in
   let ghexp = ghexp startop endop in
   let mkexp = mkexp startpos endpos in
   let bigarray_function = bigarray_function startop endop in
@@ -362,7 +362,7 @@ let bigarray_set (startpos,endpos) (startop,endop) arr arg newval =
                         "", newval]))
 
 let lapply startpos endpos p1 p2 =
-  if Clflags.applicative_functors ()
+  if !Clflags.applicative_functors
   then Lapply(p1, p2)
   else raise (Syntaxerr.Error(Syntaxerr.Applicative_path (rloc startpos endpos)))
 

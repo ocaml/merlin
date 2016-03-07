@@ -619,7 +619,7 @@ let default_mapper =
       );
   }
 
-let rec extension_of_error {err_loc = loc; msg; if_highlight; sub} =
+let rec extension_of_error {loc; msg; if_highlight; sub} =
   { loc; txt = "ocaml.error" },
   PStr ([Str.eval (Exp.constant (Const_string (msg, None)));
          Str.eval (Exp.constant (Const_string (if_highlight, None)))] @
@@ -690,11 +690,11 @@ module PpxContext = struct
     let fields =
       [
         lid "tool_name",    make_string tool_name;
-        lid "include_dirs", make_list make_string (Clflags.include_dirs ());
+        lid "include_dirs", make_list make_string !Clflags.include_dirs;
         lid "load_path",    make_list make_string !Config.load_path;
-        lid "open_modules", make_list make_string (Clflags.open_modules ());
-        lid "for_package",  make_option make_string (Clflags.for_package ());
-        lid "debug",        make_bool (Clflags.debug ());
+        lid "open_modules", make_list make_string !Clflags.open_modules;
+        lid "for_package",  make_option make_string !Clflags.for_package;
+        lid "debug",        make_bool !Clflags.debug;
         get_cookies ()
       ]
     in
@@ -908,7 +908,7 @@ let register name f = !register_function name f
 
 (** merlin: manage all internal state *)
 
-type cache = Parsetree.expression StringMap.t
+type state = Parsetree.expression StringMap.t
 
-let new_cache () = StringMap.empty
-let cache = cookies
+let new_state () = StringMap.empty
+let state = cookies

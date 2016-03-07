@@ -872,7 +872,7 @@ exception Not_a_path
 let rec path_of_module mexp =
   match mexp.mod_desc with
     Tmod_ident (p,_) -> p
-  | Tmod_apply(funct, arg, coercion) when Clflags.applicative_functors () ->
+  | Tmod_apply(funct, arg, coercion) when !Clflags.applicative_functors ->
       Papply(path_of_module funct, path_of_module arg)
   | Tmod_constraint (mexp, _, _, _) ->
       path_of_module mexp
@@ -1216,9 +1216,9 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
          }
 
   | Pmod_unpack sexp ->
-      if Clflags.principal () then Ctype.begin_def ();
+      if !Clflags.principal then Ctype.begin_def ();
       let exp = Typecore.type_exp env sexp in
-      if Clflags.principal () then begin
+      if !Clflags.principal then begin
         Ctype.end_def ();
         Ctype.generalize_structure exp.exp_type
       end;
@@ -1228,7 +1228,7 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
             if List.exists (fun t -> Ctype.free_variables t <> []) tl then
               raise (Error (smod.pmod_loc, env,
                             Incomplete_packed_module exp.exp_type));
-            if Clflags.principal () &&
+            if !Clflags.principal &&
               not (Typecore.generalizable (Btype.generic_level-1) exp.exp_type)
             then
               Location.prerr_warning smod.pmod_loc
@@ -1511,7 +1511,7 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
       let (str_rem, sig_rem, final_env) = type_struct new_env srem in
       (str :: str_rem, sg @ sig_rem, final_env)
   in
-  if Clflags.annotations () then
+  if !Clflags.annotations then
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
   Cmt_format.save_types
@@ -1636,7 +1636,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
   let (str, sg, finalenv) =
     type_structure initial_env ast (Location.in_file sourcefile) in
   let simple_sg = simplify_signature sg in
-  if Clflags.print_types () then begin
+  if !Clflags.print_types then begin
     Printtyp.wrap_printing_env initial_env
       (fun () -> fprintf std_formatter "%a@." Printtyp.signature simple_sg);
     (str, Tcoerce_none)   (* result is ignored by Compile.implementation *)
@@ -1671,7 +1671,7 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
          the value being exported. We can still capture unused
          declarations like "let x = true;; let x = 1;;", because in this
          case, the inferred signature contains only the last declaration. *)
-      if not (Clflags.dont_write_files ()) then begin
+      if not !Clflags.dont_write_files then begin
         let sg =
           Env.save_signature simple_sg modulename (outputprefix ^ ".cmi") in
         Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
@@ -1747,7 +1747,7 @@ let package_units initial_env objfiles cmifile modulename =
         (fun (name, crc) -> not (List.mem name unit_names))
         (Env.imports()) in
     (* Write packaged signature *)
-    if not (Clflags.dont_write_files ()) then begin
+    if not !Clflags.dont_write_files then begin
       let sg =
         Env.save_signature_with_imports sg modulename
           (prefix ^ ".cmi") imports in
@@ -1761,20 +1761,20 @@ let package_units initial_env objfiles cmifile modulename =
 
 open Printtyp
 
-let rec extract_suberrors extracted rest = function
+(*let rec extract_suberrors extracted rest = function
   | [] -> List.rev extracted, List.rev rest
   | err :: errs ->
     match Includemod.error_locs err with
     | [] -> extract_suberrors extracted (err :: rest) errs
-    | locs -> extract_suberrors ((locs, err) :: extracted) rest errs
+    | locs -> extract_suberrors ((locs, err) :: extracted) rest errs*)
 
 
-let report_error ~sub ppf = function
+let report_error ppf = function
     Cannot_apply mty ->
       fprintf ppf
         "@[This module is not a functor; it has type@ %a@]" modtype mty
   | Not_included errs ->
-    let suberrors, errs = extract_suberrors [] [] errs in
+    (*let suberrors, errs = extract_suberrors [] [] errs in
     List.iter (fun (locs,err) ->
         List.iter (fun loc ->
             sub (Location.error_of_printer loc Includemod.report_error [err]))
@@ -1782,7 +1782,7 @@ let report_error ~sub ppf = function
       suberrors;
     if errs = [] then
       fprintf ppf "@[<v>Signature mismatch.@]"
-    else
+    else*)
       fprintf ppf "@[<v>Signature mismatch:@ %a@]" Includemod.report_error errs
 
   | Cannot_eliminate_dependency mty ->
@@ -1857,14 +1857,14 @@ let report_error ~sub ppf = function
   | Apply_generative ->
       fprintf ppf "This is a generative functor. It can only be applied to ()"
 
-let report_error env ~sub ppf err =
-  Printtyp.wrap_printing_env env (fun () -> report_error ~sub ppf err)
+let report_error env ppf err =
+  Printtyp.wrap_printing_env env (fun () -> report_error ppf err)
 
 let () =
   Location.register_error_of_exn
     (function
       | Error (loc, env, err) ->
-        Some (Location.suberrors_of_printer loc (report_error env) err)
+        Some (Location.error_of_printer loc (report_error env) err)
       | Error_forward err ->
         Some err
       | _ ->

@@ -472,14 +472,14 @@ let shorten_path ?env p =
   shorten_path' (fun p -> PathSet.mem p opened) no_aliases p
 
 let set_printing_env env =
-  if Clflags.real_paths () = `Real then
+  if !Clflags.real_paths = `Real then
     printing_state := printing_empty
   else
     let am = aliasmap env in
     if !printing_state.aliasmap == am then ()
     else
       (* printf "Reset printing_map@."; *)
-      let pathmap = match Clflags.real_paths () with
+      let pathmap = match !Clflags.real_paths with
         | `Short -> lazy begin
           (* printf "Recompute printing_map.@."; *)
           let opened =
@@ -575,7 +575,7 @@ let curr_printing_env () = !printing_state.printenv
 
 let best_type_path p =
   if !printing_state == printing_empty then (p, Id)
-  else match Clflags.real_paths () with
+  else match !Clflags.real_paths with
     | `Real  -> (p, Id)
     | _  ->
       let (p', s) = normalize_type_path !printing_state.printenv p in
@@ -1663,7 +1663,7 @@ let unification_error unif tr txt1 ppf txt2 =
       let tr = filter_trace (mis = None) tr in
       let t1, t1' = may_prepare_expansion (tr = []) t1
       and t2, t2' = may_prepare_expansion (tr = []) t2 in
-      print_labels := not (Clflags.classic ());
+      print_labels := not !Clflags.classic;
       let tr = List.map prepare_expansion tr in
       fprintf ppf
         "@[<v>\
@@ -1687,7 +1687,7 @@ let report_unification_error ppf env ?(unif=true)
 ;;
 
 let trace fst keep_last txt ppf tr =
-  print_labels := not (Clflags.classic ());
+  print_labels := not !Clflags.classic;
   trace_same_names tr;
   try match tr with
     t1 :: t2 :: tr' ->

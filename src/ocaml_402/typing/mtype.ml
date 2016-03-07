@@ -36,7 +36,7 @@ let rec strengthen env mty p =
     Mty_signature (lazy sg) ->
       Mty_signature ~:(strengthen_sig env sg p)
   | Mty_functor(param, arg, res)
-    when Clflags.applicative_functors () && Ident.name param <> "*" ->
+    when !Clflags.applicative_functors && Ident.name param <> "*" ->
       Mty_functor(param, arg, strengthen env res (Papply(p, Pident param)))
   | mty ->
       mty

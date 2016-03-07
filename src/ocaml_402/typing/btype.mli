@@ -217,7 +217,7 @@ val print_raw: (Format.formatter -> type_expr -> unit) ref
 
 (** merlin: manage all internal state *)
 
-type cache
+type state
 
-val new_cache : unit -> cache
-val cache : cache ref
+val new_state : unit -> state
+val state : state ref

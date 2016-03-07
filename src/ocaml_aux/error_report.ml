@@ -39,12 +39,12 @@ type t = {
 let format ~valid ~where ?(loc=Location.none) ?(sub=[]) text =
   {valid; loc; text; sub; where}
 
-let of_suberror {Location. err_loc; msg} = (msg, err_loc)
+let of_suberror {Location. loc; msg} = (msg, loc)
 
 let strict_of_exn exn =
   let valid = true in
   match Location.error_of_exn exn with
-  | Some {Location. err_loc = loc; sub; msg} ->
+  | Some {Location. loc = loc; sub; msg} ->
     let where = match exn with
       | Syntaxerr.Escape_error _ | Syntaxerr.Error _ -> "parser"
       | _ -> "type" in
