@@ -66,15 +66,18 @@ let get_tokens keywords pos text =
   in
   continue
 
+let initial_position source =
+  { Lexing.
+    pos_fname = (Merlin_source.name source);
+    pos_lnum = 1;
+    pos_bol = 0;
+    pos_cnum = 0;
+  }
+
 let make keywords source =
   let items =
     get_tokens keywords
-    { Lexing.
-      pos_fname = (Merlin_source.name source);
-      pos_lnum = 1;
-      pos_bol = 0;
-      pos_cnum = 0;
-    }
+    (initial_position source)
     (Merlin_source.text source)
     []
   in
@@ -128,6 +131,9 @@ let update source t =
           String.sub text ~pos:offset ~len:(String.length text - offset) in
       let items = get_tokens t.keywords pos text items in
       { t with items; source }
+
+let initial_position t =
+  initial_position t.source
 
 let tokens t =
   List.rev_filter_map t.items

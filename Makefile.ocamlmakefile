@@ -27,6 +27,7 @@ CONFIG_FILES = src/config/my_config.ml src/ocaml
 
 SOURCES = \
 	src/config/my_config.ml           \
+	src/utils/menhirLib.mli           \
 	src/utils/menhirLib.ml            \
 	src/utils/terminfo.mli            \
 	src/utils/terminfo.ml             \

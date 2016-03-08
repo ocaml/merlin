@@ -207,19 +207,19 @@ let seek_step steps tokens =
   in
   aux [] (steps, tokens)
 
-let parse initial nav steps tokens =
+let parse initial nav steps lexer =
+  let tokens = Merlin_lexer.tokens lexer in
   let acc, tokens = seek_step steps tokens in
   let step =
     match acc with
     | (step, _) :: _ -> step
-    | [] -> Correct (initial ())
+    | [] -> Correct (initial (Merlin_lexer.initial_position lexer))
   in
   let acc, result = resume_parse nav acc tokens step in
   List.rev acc, result
 
 
 let run_parser nav lexer previous kind =
-  let tokens = Merlin_lexer.tokens lexer in
   match kind with
   | ML  ->
     let steps = match previous with
@@ -227,7 +227,7 @@ let run_parser nav lexer previous kind =
       | _ -> []
     in
     let steps, result =
-      parse Parser_raw.Incremental.implementation nav steps tokens in
+      parse Parser_raw.Incremental.implementation nav steps lexer in
     `Structure steps, `Structure result
   | MLI ->
     let steps = match previous with
@@ -235,7 +235,7 @@ let run_parser nav lexer previous kind =
       | _ -> []
     in
     let steps, result =
-      parse Parser_raw.Incremental.interface nav steps tokens in
+      parse Parser_raw.Incremental.interface nav steps lexer in
     `Signature steps, `Signature result
 
 let make lexer kind =

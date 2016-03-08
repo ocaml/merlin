@@ -523,12 +523,12 @@ end
 
 module Incremental : sig
   
-  val parse_expression: unit -> (Parsetree.expression) MenhirInterpreter.checkpoint
+  val parse_expression: Lexing.position -> (Parsetree.expression) MenhirInterpreter.checkpoint
   
-  val interface: unit -> (Parsetree.signature) MenhirInterpreter.checkpoint
+  val interface: Lexing.position -> (Parsetree.signature) MenhirInterpreter.checkpoint
   
-  val implementation: unit -> (Parsetree.structure) MenhirInterpreter.checkpoint
+  val implementation: Lexing.position -> (Parsetree.structure) MenhirInterpreter.checkpoint
   
-  val dummy: unit -> (unit) MenhirInterpreter.checkpoint
+  val dummy: Lexing.position -> (unit) MenhirInterpreter.checkpoint
   
 end
