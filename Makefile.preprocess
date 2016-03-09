@@ -13,8 +13,8 @@ PARSER_O = $(TYPER)/parser_raw.ml \
 
 ### Lexer
 
-LEXER_I = $(KERNEL)/preprocess/lexer_raw.mll
-LEXER_O = $(KERNEL)/lexer_raw.ml
+LEXER_I = $(TYPER)/preprocess/lexer_raw.mll
+LEXER_O = $(TYPER)/lexer_raw.ml
 
 ### Derived files
 
