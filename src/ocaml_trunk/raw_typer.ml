@@ -93,6 +93,7 @@ module Rewrite_loc = struct
 
   and u_payload = function
     | PStr str -> PStr (u_structure str)
+    | PSig sg -> PSig (u_signature sg)
     | PTyp ct  -> PTyp (u_core_type ct)
     | PPat (p, eo) -> PPat (u_pattern p, u_option u_expression eo)
     | PCustom _ as pl -> pl
@@ -199,6 +200,7 @@ module Rewrite_loc = struct
     | Pexp_pack me -> Pexp_pack (u_module_expr me)
     | Pexp_open (flag, loc, e) -> Pexp_open (flag, u_loc loc, u_expression e)
     | Pexp_extension ext -> Pexp_extension (u_extension ext)
+    | Pexp_unreachable -> Pexp_unreachable
 
   and u_case {pc_lhs; pc_guard; pc_rhs} = {
     pc_lhs = u_pattern pc_lhs;

@@ -58,7 +58,7 @@ $(PARSER_O): $(PARSER_I)
 ### Lexer
 
 $(LEXER_O): $(LEXER_I)
-	cd ..; ocamllex -o $(subst ../,,$@) $(subst ../,,$<)
+	ocamllex -o $(subst ../,,$@) $(subst ../,,$<)
 
 ### Derivation
 

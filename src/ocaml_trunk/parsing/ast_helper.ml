@@ -26,6 +26,8 @@ type attrs = attribute list
 
 let rtag ?(attrs=[]) label bool lst = Rtag (label, attrs, bool, lst)
 
+let const_string s = Pconst_string (s, None)
+
 let default_loc = ref Location.none
 
 let with_default_loc l f =

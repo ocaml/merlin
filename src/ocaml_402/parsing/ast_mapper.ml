@@ -906,7 +906,7 @@ let run_main mapper =
 let register_function = ref (fun _name f -> run_main f)
 let register name f = !register_function name f
 
-(** merlin: manage all internal state *)
+(** merlin: manage internal state *)
 
 type state = Parsetree.expression StringMap.t
 

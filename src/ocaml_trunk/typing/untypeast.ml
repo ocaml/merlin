@@ -798,3 +798,10 @@ let untype_structure ?(mapper=default_mapper) structure =
 
 let untype_signature ?(mapper=default_mapper) signature =
   mapper.signature mapper signature
+
+(* Merlin *)
+let untype_pattern pat =
+  default_mapper.pat default_mapper pat
+
+let untype_expression exp =
+  default_mapper.expr default_mapper exp

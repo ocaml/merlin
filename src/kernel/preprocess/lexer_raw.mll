@@ -27,7 +27,7 @@ type error =
   | Unterminated_string
   | Unterminated_string_in_comment of Location.t * Location.t
   | Keyword_as_label of string
-  | Literal_overflow of string
+  | Invalid_literal of string
 
 exception Error of error * Location.t
 
@@ -129,10 +129,10 @@ let keyword_table : keywords =
     "while", WHILE;
     "with", WITH;
 
+    "lor", INFIXOP3("lor"); (* Should be INFIXOP2 *)
+    "lxor", INFIXOP3("lxor"); (* Should be INFIXOP2 *)
     "mod", INFIXOP3("mod");
     "land", INFIXOP3("land");
-    "lor", INFIXOP3("lor");
-    "lxor", INFIXOP3("lxor");
     "lsl", INFIXOP4("lsl");
     "lsr", INFIXOP4("lsr");
     "asr", INFIXOP4("asr");
@@ -143,6 +143,12 @@ let keywords l = create_hashtable 11 l
 (* To store the position of the beginning of a string and comment *)
 let in_comment state = state.comment_start_loc <> []
 let in_string state = state.string_start_loc != Location.none
+
+(* Escaped chars are interpreted in strings unless they are in comments. *)
+let store_escaped_char state lexbuf c =
+    if in_comment state
+    then Buffer.add_string state.buffer (Lexing.lexeme lexbuf)
+    else Buffer.add_char state.buffer c
 
 (* To translate escape sequences *)
 
@@ -164,6 +170,12 @@ let char_for_decimal_code state lexbuf i =
                (Location.curr lexbuf)
   else return (Char.chr c)
 
+let char_for_octal_code lexbuf i =
+  let c = 64 * (Char.code(Lexing.lexeme_char lexbuf i) - 48) +
+           8 * (Char.code(Lexing.lexeme_char lexbuf (i+1)) - 48) +
+               (Char.code(Lexing.lexeme_char lexbuf (i+2)) - 48) in
+  Char.chr c
+
 let char_for_hexadecimal_code lexbuf i =
   let d1 = Char.code (Lexing.lexeme_char lexbuf i) in
   let val1 = if d1 >= 97 then d1 - 87
@@ -177,35 +189,10 @@ let char_for_hexadecimal_code lexbuf i =
   in
   Char.chr (val1 * 16 + val2)
 
-(* To convert integer literals, allowing max_int + 1 (PR#4210) *)
-
-let cvt_int_literal s =
-  - int_of_string ("-" ^ s)
-let cvt_int32_literal s =
-  Int32.neg (Int32.of_string ("-" ^ String.sub s 0 (String.length s - 1)))
-let cvt_int64_literal s =
-  Int64.neg (Int64.of_string ("-" ^ String.sub s 0 (String.length s - 1)))
-let cvt_nativeint_literal s =
-  Nativeint.neg (Nativeint.of_string ("-" ^ String.sub s 0
-                                                       (String.length s - 1)))
-
 let keyword_or state s default =
   try Hashtbl.find state.keywords s
-  with Not_found -> try Hashtbl.find keyword_table s
+      with Not_found -> try Hashtbl.find keyword_table s
   with Not_found -> default
-
-(* Remove underscores from float literals *)
-
-let remove_underscores s =
-  let l = String.length s in
-  let rec remove src dst =
-    if src >= l then
-      if dst >= l then s else String.sub s 0 dst
-    else
-      match s.[src] with
-        '_' -> remove (src + 1) dst
-      |  c  -> s.[dst] <- c; remove (src + 1) (dst + 1)
-  in remove 0 0
 
 (* recover the name from a LABEL or OPTLABEL token *)
 
@@ -259,9 +246,8 @@ let report_error ppf = function
               Location.print_error loc
   | Keyword_as_label kwd ->
       fprintf ppf "`%s' is a keyword, it cannot be used as label name" kwd
-  | Literal_overflow ty ->
-      fprintf ppf "Integer literal exceeds the range of representable \
-                   integers of type %s" ty
+  | Invalid_literal s ->
+      fprintf ppf "Invalid literal %s" s
 
 let () =
   Location.register_error_of_exn
@@ -300,7 +286,14 @@ let int_literal =
 let float_literal =
   ['0'-'9'] ['0'-'9' '_']*
   ('.' ['0'-'9' '_']* )?
-  (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*)?
+  (['e' 'E'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']*) ?
+let hex_float_literal =
+  '0' ['x' 'X']
+  ['0'-'9' 'A'-'F' 'a'-'f'] ['0'-'9' 'A'-'F' 'a'-'f' '_']*
+  ('.' ['0'-'9' 'A'-'F' 'a'-'f' '_']* )?
+  (['p' 'P'] ['+' '-']? ['0'-'9'] ['0'-'9' '_']* )?
+let literal_modifier = ['G'-'Z' 'g'-'z']
+
 
 refill {fun k lexbuf -> Refill (fun () -> k lexbuf)}
 
@@ -358,29 +351,17 @@ rule token state = parse
               try Hashtbl.find keyword_table s
               with Not_found ->
                 UIDENT s) }
-  | int_literal
-      { try
-          return (INT (cvt_int_literal (Lexing.lexeme lexbuf)))
-        with Failure _ ->
-          fail (Literal_overflow "int") (Location.curr lexbuf)
-      }
-  | float_literal
-      { return (FLOAT (remove_underscores(Lexing.lexeme lexbuf))) }
-  | int_literal "l"
-      { try
-          return (INT32 (cvt_int32_literal (Lexing.lexeme lexbuf)))
-        with Failure _ ->
-          fail (Literal_overflow "int32") (Location.curr lexbuf) }
-  | int_literal "L"
-      { try
-          return (INT64 (cvt_int64_literal (Lexing.lexeme lexbuf)))
-        with Failure _ ->
-          fail (Literal_overflow "int64") (Location.curr lexbuf) }
-  | int_literal "n"
-      { try
-          return (NATIVEINT (cvt_nativeint_literal (Lexing.lexeme lexbuf)))
-        with Failure _ ->
-          fail (Literal_overflow "nativeint") (Location.curr lexbuf) }
+  | uppercase_latin1 identchar_latin1 *
+    { warn_latin1 lexbuf; return (UIDENT (Lexing.lexeme lexbuf)) }
+  | int_literal { return (INT (Lexing.lexeme lexbuf, None)) }
+  | (int_literal as lit) (literal_modifier as modif)
+    { return (INT (lit, Some modif)) }
+  | float_literal | hex_float_literal
+    { return (FLOAT (Lexing.lexeme lexbuf, None)) }
+  | ((float_literal | hex_float_literal) as lit) (literal_modifier as modif)
+    { return (FLOAT (lit, Some modif)) }
+  | (float_literal | hex_float_literal | int_literal) identchar+
+     { fail (Invalid_literal (Lexing.lexeme lexbuf)) (Location.curr lexbuf) }
   | "\""
       { Buffer.reset state.buffer;
         state.string_start_loc <- Location.curr lexbuf;
@@ -398,18 +379,20 @@ rule token state = parse
         lexbuf.lex_start_p <- state.string_start_loc.Location.loc_start;
         state.string_start_loc <- Location.none;
         return (STRING (Buffer.contents state.buffer, Some delim)) }
-  | "'" newline "'"
+  | "\'" newline "\'"
     { update_loc lexbuf None 1 false 1;
       return (CHAR (Lexing.lexeme_char lexbuf 1)) }
-  | "'" [^ '\\' '\'' '\010' '\013'] "'"
+  | "\'" [^ '\\' '\'' '\010' '\013'] "\'"
     { return (CHAR (Lexing.lexeme_char lexbuf 1)) }
-  | "'\\" ['\\' '\'' '"' 'n' 't' 'b' 'r' ' '] "'"
+  | "\'\\" ['\\' '\'' '\"' 'n' 't' 'b' 'r' ' '] "\'"
     { return (CHAR (char_for_backslash (Lexing.lexeme_char lexbuf 2))) }
-  | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
+  | "\'\\" 'o' ['0'-'3'] ['0'-'7'] ['0'-'7'] "\'"
+    { return (CHAR(char_for_octal_code lexbuf 3)) }
+  | "\'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "\'"
     { char_for_decimal_code state lexbuf 2 >>= fun c -> return (CHAR c) }
-  | "'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "'"
+  | "\'\\" 'x' ['0'-'9' 'a'-'f' 'A'-'F'] ['0'-'9' 'a'-'f' 'A'-'F'] "\'"
     { return (CHAR (char_for_hexadecimal_code lexbuf 3)) }
-  | "'\\" _
+  | "\'\\" _
       { let l = Lexing.lexeme lexbuf in
         let esc = String.sub l 1 (String.length l - 1) in
         fail (Illegal_escape esc) (Location.curr lexbuf)
@@ -443,7 +426,7 @@ rule token state = parse
         return STAR
       }
   | "#" [' ' '\t']* (['0'-'9']+ as num) [' ' '\t']*
-        ("\"" ([^ '\010' '\013' '"' ] * as name) "\"")?
+        ("\"" ([^ '\010' '\013' '\"' ] * as name) "\"")?
         [^ '\010' '\013'] * newline
       { update_loc lexbuf name (int_of_string num) true 0;
         token state lexbuf
@@ -452,7 +435,7 @@ rule token state = parse
   | "&"  { return AMPERSAND }
   | "&&" { return AMPERAMPER }
   | "`"  { return BACKQUOTE }
-  | "'"  { return QUOTE }
+  | "\'" { return QUOTE }
   | "("  { return LPAREN }
   | ")"  { return RPAREN }
   | "*"  { return STAR }
@@ -484,10 +467,10 @@ rule token state = parse
   | "}"  { return RBRACE }
   | ">}" { return GREATERRBRACE }
   | "[@" { return LBRACKETAT }
+  | "[@@"  { return LBRACKETATAT }
+  | "[@@@" { return LBRACKETATATAT }
   | "[%" { return LBRACKETPERCENT }
   | "[%%" { return LBRACKETPERCENTPERCENT }
-  | "[@@" { return LBRACKETATAT }
-  | "[@@@" { return LBRACKETATATAT }
   (* Custom-printf is implemented by generating a custom BANG token *)
   | "!"  { return (try Hashtbl.find state.keywords "!"
                    with Not_found -> BANG) }
@@ -558,7 +541,7 @@ and comment state = parse
   | "\""
       {
         state.string_start_loc <- Location.curr lexbuf;
-        Buffer.add_char state.buffer '"';
+        Buffer.add_char state.buffer '\"';
         (catch (string state lexbuf) (fun e l -> match e with
              | Unterminated_string ->
                begin match state.comment_start_loc with
@@ -572,7 +555,7 @@ and comment state = parse
            )
         ) >>= fun () ->
       state.string_start_loc <- Location.none;
-      Buffer.add_char state.buffer '"';
+      Buffer.add_char state.buffer '\"';
       comment state lexbuf }
   | "{" lowercase* "|"
       {
@@ -607,7 +590,7 @@ and comment state = parse
       }
   | "'" [^ '\\' '\'' '\010' '\013' ] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
-  | "'\\" ['\\' '"' '\'' 'n' 't' 'b' 'r' ' '] "'"
+  | "'\\" ['\\' '\"' '\'' 'n' 't' 'b' 'r' ' '] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
   | "'\\" ['0'-'9'] ['0'-'9'] ['0'-'9'] "'"
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
@@ -630,13 +613,13 @@ and comment state = parse
       { Buffer.add_string state.buffer (Lexing.lexeme lexbuf); comment state lexbuf }
 
 and string state = parse
-    '"'
+    '\"'
       { return () }
   | '\\' newline ([' ' '\t'] * as space)
       { update_loc lexbuf None 1 false (String.length space);
         string state lexbuf
       }
-  | '\\' ['\\' '\'' '"' 'n' 't' 'b' 'r' ' ']
+  | '\\' ['\\' '\'' '\"' 'n' 't' 'b' 'r' ' ']
       { Buffer.add_char state.buffer
           (char_for_backslash (Lexing.lexeme_char lexbuf 1));
         string state lexbuf }

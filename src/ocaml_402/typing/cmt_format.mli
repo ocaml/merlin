@@ -102,11 +102,11 @@ val clear: unit -> unit
 val add_saved_type : binary_part -> unit
 val save_types : ?save:('a -> binary_part list) -> (unit -> 'a) -> 'a
 
-val record_value_dependency:
-  Types.value_description -> Types.value_description -> unit
-
 val saved_types : unit -> attributes
 val saved_types_from_attributes : attributes -> binary_part list
+
+val record_value_dependency:
+  Types.value_description -> Types.value_description -> unit
 
 (*
 

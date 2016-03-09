@@ -591,7 +591,7 @@ let reset_cache_toplevel () =
   Hashtbl.clear !state.used_constructors;
   Hashtbl.clear !state.prefixed_sg
 
-let check_cache_consistency () =
+let check_state_consistency () =
   try
     Hashtbl.iter (fun name ps ->
         let filename =

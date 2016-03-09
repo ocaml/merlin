@@ -23,6 +23,17 @@ open Typedtree
 open Btype
 open Ctype
 
+let merlin_incorrect_attribute =
+  Location.mknoloc "merlin.incorrect", Parsetree.PStr []
+
+let merlin_recovery_attributes attrs =
+  let attrs' = merlin_incorrect_attribute :: Cmt_format.saved_types () in
+  match attrs with
+  | [] -> attrs'
+  | attrs -> attrs' @ attrs
+
+let raise_error = Typing_aux.raise_error
+
 type error =
     Polymorphic_label of Longident.t
   | Constructor_arity_mismatch of Longident.t * int * int
@@ -1516,6 +1527,8 @@ let type_self_pattern cl_num privty val_env met_env par_env spat =
   in
   (pat, meths, vars, val_env, met_env, par_env)
 
+type delayed_check = (unit -> unit) * Warnings.state
+
 let delayed_checks = ref []
 let reset_delayed_checks () = delayed_checks := []
 let add_delayed_check f =
@@ -1907,14 +1920,35 @@ let rec type_exp ?recarg env sexp =
  *)
 
 and type_expect ?in_function ?recarg env sexp ty_expected =
-  let previous_saved_types = Cmt_format.get_saved_types () in
-  Builtin_attributes.warning_enter_scope ();
-  Builtin_attributes.warning_attribute sexp.pexp_attributes;
-  let exp = type_expect_ ?in_function ?recarg env sexp ty_expected in
-  Builtin_attributes.warning_leave_scope ();
-  Cmt_format.set_saved_types
-    (Cmt_format.Partial_expression exp :: previous_saved_types);
-  exp
+  Cmt_format.save_types
+    ~save:(fun exp -> [Cmt_format.Partial_expression exp])
+  @@ fun () ->
+  try
+    Builtin_attributes.warning_enter_scope ();
+    Builtin_attributes.warning_attribute sexp.pexp_attributes;
+    let exp = type_expect_ ?in_function env sexp ty_expected in
+    Builtin_attributes.warning_leave_scope ();
+    exp
+  with exn ->
+    Typing_aux.erroneous_type_register ty_expected;
+    raise_error exn;
+    let loc = sexp.pexp_loc in
+    {
+      exp_desc = Texp_ident
+          (Path.Pident (Ident.create "*type-error*"),
+           Location.mkloc (Longident.Lident "*type-error*") loc,
+           { Types.
+             val_type = ty_expected;
+             val_kind = Val_reg;
+             val_loc = loc;
+             val_attributes = [];
+           });
+      exp_loc = loc;
+      exp_extra = [];
+      exp_type = ty_expected;
+      exp_env = env;
+      exp_attributes = merlin_recovery_attributes [];
+    }
 
 and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
   let loc = sexp.pexp_loc in

@@ -198,3 +198,10 @@ val drop_ppx_context_sig:
 
 val set_cookie: string -> Parsetree.expression -> unit
 val get_cookie: string -> Parsetree.expression option
+
+(** merlin: manage internal state *)
+
+type state
+
+val new_state : unit -> state
+val state : state ref

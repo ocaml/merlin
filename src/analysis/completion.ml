@@ -501,55 +501,6 @@ let expand_prefix ~global_modules env prefix =
 
 open Typedtree
 
-let labels_of_application ~env ~prefix f args =
-  let rec labels t =
-    let t = Ctype.repr t in
-    match t.Types.desc with
-    | Types.Tarrow (label, lhs, rhs, _) ->
-      (Raw_compat.arg_label_to_str label, lhs) :: labels rhs
-    | _ ->
-      let t' = Ctype.full_expand env t in
-      if Types.TypeOps.equal t t' then
-        []
-      else
-        labels t'
-  in
-  let labels = labels f.exp_type in
-  let is_application_of label (label',expr,_) =
-    let label' = Raw_compat.arg_label_to_str label' in
-    match expr with
-    | Some {exp_loc = {Location. loc_ghost; loc_start; loc_end}} ->
-      label = label'
-      && label <> prefix
-      && not loc_ghost
-      && not (loc_start = loc_end)
-    | None -> false
-  in
-  let unapplied_label (label,_) =
-    label <> "" && not (List.exists (is_application_of label) args)
-  in
-  List.map (List.filter labels ~f:unapplied_label) ~f:(fun (label, ty) ->
-    if label.[0] <> '?' then
-      "~" ^ label, ty
-    else
-      match (Ctype.repr ty).Types.desc with
-      | Types.Tconstr (path, [ty], _) when Path.same path Predef.path_option ->
-        label, ty
-      | _ -> label, ty
-  )
-
-
-let labels_of_application ?(prefix="") node =
-  let prefix =
-    if prefix <> "" && prefix.[0] = '~' then
-      String.sub prefix ~pos:1 ~len:(String.length prefix - 1)
-    else
-      prefix
-  in
-  match node.exp_desc with
-  | Texp_apply (f, args) -> labels_of_application ~prefix ~env:node.exp_env f args
-  | _ -> []
-
 let application_context ~verbosity ~prefix path =
   let module Printtyp = Type_utils.Printtyp in
   let target_type = ref (
@@ -589,7 +540,7 @@ let application_context ~verbosity ~prefix path =
           target_type := Some earg.exp_type;
           earg
       in
-      let labels = labels_of_application ~prefix app in
+      let labels = Raw_compat.labels_of_application ~prefix app in
       `Application { Protocol.Compl.
                      argument_type = pr earg.exp_type;
                      labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;

@@ -192,8 +192,7 @@ val drop_ppx_context_sig: restore:bool -> Parsetree.signature -> Parsetree.signa
 val set_cookie: string -> Parsetree.expression -> unit
 val get_cookie: string -> Parsetree.expression option
 
-
-(** merlin: manage all internal state *)
+(** merlin: manage internal state *)
 
 type state
 

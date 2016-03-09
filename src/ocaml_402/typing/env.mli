@@ -61,11 +61,11 @@ val iter_module_types_and_aliases:
 type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
 val get_aliasmap: t -> (aliasmap -> type_diff list -> aliasmap) -> aliasmap
 
-val same_types: t -> t -> bool
-val used_persistent: unit -> Concr.t
-
 val find_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t
 val set_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t -> unit
+
+val same_types: t -> t -> bool
+val used_persistent: unit -> Concr.t
 
 val find_shadowed_types: Path.t -> t -> Path.t list
 
@@ -167,9 +167,6 @@ val reset_cache: unit -> unit
 
 (* To be called before each toplevel phrase. *)
 val reset_cache_toplevel: unit -> unit
-
-(* merlin: Check state consistency *)
-val check_state_consistency: unit -> bool
 
 (* Remember the name of the current compilation unit. *)
 val set_unit_name: string -> unit
@@ -288,10 +285,11 @@ val fold_cltypes:
 val scrape_alias: t -> module_type -> module_type
 val check_value_name: string -> Location.t -> unit
 
-
-(** merlin: manage all internal state *)
+(** merlin: manage internal state *)
 
 type state
 
 val new_state : unit_name:string -> state
 val state : state ref
+
+val check_state_consistency: unit -> bool

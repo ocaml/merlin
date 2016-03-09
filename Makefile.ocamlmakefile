@@ -51,15 +51,15 @@ SOURCES = \
 	src/ocaml_aux/clflags.mli         \
 	src/ocaml_aux/clflags.ml          \
 	$(TYPER)/parsing/asttypes.mli     \
+	$(TYPER)/parsing/location.mli     \
+	$(TYPER)/parsing/location.ml      \
 	$(TYPER)/parsing/attr_helper.mli  \
 	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
-	$(TYPER)/parsing/builtin_attributes.mli \
-	$(TYPER)/parsing/builtin_attributes.ml \
 	$(TYPER)/parsing/ast_iterator.mli \
 	$(TYPER)/parsing/ast_iterator.ml \
-	$(TYPER)/parsing/location.mli     \
-	$(TYPER)/parsing/location.ml      \
+	$(TYPER)/parsing/builtin_attributes.mli \
+	$(TYPER)/parsing/builtin_attributes.ml \
 	$(TYPER)/parsing/longident.mli    \
 	$(TYPER)/parsing/longident.ml     \
 	$(TYPER)/parsing/docstrings.mli   \
