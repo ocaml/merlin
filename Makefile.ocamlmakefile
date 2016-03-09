@@ -164,8 +164,8 @@ SOURCES = \
 	$(TYPER)/parser_recover.mli    		\
 	$(TYPER)/parser_recover.ml     		\
 	$(TYPER)/parser_explain.ml     		\
-	$(TYPER)/utils/pparse.mli         \
-	$(TYPER)/utils/pparse.ml          \
+	src/ocaml_aux/pparse.mli         \
+	src/ocaml_aux/pparse.ml          \
 	src/kernel/lexer_raw.mli          \
 	src/kernel/lexer_raw.ml           \
 	src/kernel/extension.mli          \

@@ -161,7 +161,10 @@ module Make (G : Cmly_io.GRAMMAR)
     let select_trace traces =
       (* Pick a trace with minimal cost, somewhat arbitrary *)
       match List.flatten traces with
-      | [] -> assert false
+      | [] ->
+        (* FIXME: for release, empty list means recovery not possible
+           (not enough annotations) *)
+        assert false
       | (_, trace) :: alternatives ->
           List.fold_left
             (fun tr1 (_,tr2) -> Trace.min tr1 tr2)

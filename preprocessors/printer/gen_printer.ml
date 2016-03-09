@@ -3,8 +3,8 @@ open Cmly_format
 
 let g = Cmly_io.read_file Sys.argv.(1)
 
-let is_attribute name (name', stretch : attribute) =
-  name = Positions.value name'
+let is_attribute names (name', stretch : attribute) =
+  List.mem (Positions.value name') names
 
 let string_of_stretch s =
   s.Stretch.stretch_raw_content
@@ -25,12 +25,12 @@ let print_header () =
   printf "open %s\n" (String.capitalize name);
   List.iter
     (fun (_, stretch) -> printf "%s\n" (string_of_stretch stretch))
-    (List.filter (is_attribute "header") g.g_attributes)
+    (List.filter (is_attribute ["header"; "printer.header"]) g.g_attributes)
 
 (** Printer from attributes *)
 
 let symbol_printer default attribs =
-  match List.find (is_attribute "name") attribs with
+  match List.find (is_attribute ["name"]) attribs with
   | _, stretch -> (string_of_stretch stretch)
   | exception Not_found ->
     sprintf "%S" default
@@ -56,7 +56,7 @@ let print_symbol () =
   Array.iter case_n g.g_nonterminals
 
 let value_printer default attribs =
-  match List.find (is_attribute "printer") attribs with
+  match List.find (is_attribute ["printer"]) attribs with
   | _, stretch ->
     sprintf "(%s)" (string_of_stretch stretch)
   | exception Not_found ->

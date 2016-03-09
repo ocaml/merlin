@@ -434,7 +434,7 @@ let read_doc_attributes attrs =
     function
     | PStr[{ pstr_desc =
                Pstr_eval({ pexp_desc =
-                             Pexp_constant(Asttypes.Const_string(str, _));
+                             Pexp_constant(Pconst_string(str, _));
                            pexp_loc = loc;
                          }, _)
            }] -> Some(str, loc)

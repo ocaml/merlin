@@ -1,4 +1,4 @@
-SRC = ../src
+SRC = src
 TYPER = $(SRC)/ocaml
 KERNEL = $(SRC)/kernel
 
@@ -30,23 +30,26 @@ all: $(TARGETS)
 
 ### Preprocessors
 
-GEN_PRINTER = printer/gen_printer
-GEN_RECOVER = recover/gen_recover
-GEN_EXPLAIN = explain/gen_explain
+GEN_PRINTER = preprocessors/printer/gen_printer
+GEN_RECOVER = preprocessors/recover/gen_recover
+GEN_EXPLAIN = preprocessors/explain/gen_explain
 
 $(GEN_RECOVER):
-	$(MAKE) -C recover
+	$(MAKE) -C preprocessors/recover
 
 $(GEN_PRINTER): $(GEN_PRINTER).ml
-	$(MAKE) -C printer
+	$(MAKE) -C preprocessors/printer
 
 $(GEN_EXPLAIN): $(GEN_EXPLAIN).ml
-	$(MAKE) -C explain
+	$(MAKE) -C preprocessors/explain
 
 ### Parser
 
 MENHIR_FLAGS = --infer --inspection --table --cmly \
        --ocamlc 'ocamlc.opt -I $(TYPER)/parsing -I $(SRC)/ocaml_aux -I $(KERNEL)'
+
+$(PARSER_I): $(PARSER_I)p
+	cpp -P $^ > $@
 
 $(PARSER_O): $(PARSER_I)
 	menhir $(MENHIR_FLAGS) $(PARSER_I)
@@ -71,9 +74,9 @@ $(TYPER)/parser_explain.ml: $(TYPER)/parser_raw.cmly $(GEN_EXPLAIN)
 ### Clean
 
 clean:
-	$(MAKE) -C printer clean
-	$(MAKE) -C recover clean
-	$(MAKE) -C explain clean
+	$(MAKE) -C preprocessors/printer clean
+	$(MAKE) -C preprocessors/recover clean
+	$(MAKE) -C preprocessors/explain clean
 
 clear:
 	rm -f $(TARGETS)

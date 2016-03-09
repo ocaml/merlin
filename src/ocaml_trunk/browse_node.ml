@@ -220,8 +220,8 @@ let of_expression_desc loc = function
   | Texp_apply (e,ls) ->
     of_expression e **
     list_fold (function
-        | (_,None,_) -> id_fold
-        | (_,Some e,_) -> of_expression e)
+        | (_,None) -> id_fold
+        | (_,Some e) -> of_expression e)
       ls
   | Texp_match (e,cs1,cs2,_) ->
     of_expression e **
@@ -256,6 +256,8 @@ let of_expression_desc loc = function
     app (Class_structure cs)
   | Texp_pack me ->
     of_module_expr me
+  | Texp_unreachable | Texp_extension_constructor _ ->
+    id_fold
 
 and of_exp_extra (exp,_,_) = match exp with
   | Texp_constraint ct ->
@@ -278,8 +280,8 @@ and of_class_expr_desc = function
     app (Class_expr ce)
   | Tcl_apply (ce,es) ->
     list_fold (function
-        | (_,None,_) -> id_fold
-        | (_,Some e,_) -> of_expression e)
+        | (_,None) -> id_fold
+        | (_,Some e) -> of_expression e)
       es **
     app (Class_expr ce)
   | Tcl_let (_,vbs,es,ce) ->
