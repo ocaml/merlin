@@ -109,7 +109,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_FINALLY_LWT) -> "FINALLY_LWT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_FALSE) -> "FALSE"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EXTERNAL) -> "EXTERNAL"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EXITPOINT) -> "EXITPOINT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EXCEPTION) -> "EXCEPTION"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EQUAL) -> "EQUAL"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_EOL) -> "EOL"
@@ -287,7 +286,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr_comma_opt_list) -> "expr_comma_opt_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr_comma_list) -> "expr_comma_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr) -> "expr"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_dummy) -> "dummy"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_direction_flag) -> "direction_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_core_type_no_attr) -> "core_type_no_attr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_core_type_list_no_attr) -> "core_type_list_no_attr"
@@ -444,7 +442,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_FINALLY_LWT -> (fun _ -> "FINALLY_LWT")
   | MenhirInterpreter.T MenhirInterpreter.T_FALSE -> (fun _ -> "FALSE")
   | MenhirInterpreter.T MenhirInterpreter.T_EXTERNAL -> (fun _ -> "EXTERNAL")
-  | MenhirInterpreter.T MenhirInterpreter.T_EXITPOINT -> (fun _ -> "EXITPOINT")
   | MenhirInterpreter.T MenhirInterpreter.T_EXCEPTION -> (fun _ -> "EXCEPTION")
   | MenhirInterpreter.T MenhirInterpreter.T_EQUAL -> (fun _ -> "EQUAL")
   | MenhirInterpreter.T MenhirInterpreter.T_EOL -> (fun _ -> "EOL")
@@ -622,7 +619,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_expr_comma_opt_list -> (fun _ -> "expr_comma_opt_list")
   | MenhirInterpreter.N MenhirInterpreter.N_expr_comma_list -> (fun _ -> "expr_comma_list")
   | MenhirInterpreter.N MenhirInterpreter.N_expr -> (fun _ -> "expr")
-  | MenhirInterpreter.N MenhirInterpreter.N_dummy -> (fun _ -> "dummy")
   | MenhirInterpreter.N MenhirInterpreter.N_direction_flag -> (fun _ -> "direction_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_core_type_no_attr -> (fun _ -> "core_type_no_attr")
   | MenhirInterpreter.N MenhirInterpreter.N_core_type_list_no_attr -> (fun _ -> "core_type_list_no_attr")
@@ -775,7 +771,6 @@ let print_token = function
   | FINALLY_LWT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_FINALLY_LWT) ()
   | FALSE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_FALSE) ()
   | EXTERNAL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EXTERNAL) ()
-  | EXITPOINT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EXITPOINT) ()
   | EXCEPTION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EXCEPTION) ()
   | EQUAL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EQUAL) ()
   | EOL -> print_value (MenhirInterpreter.T MenhirInterpreter.T_EOL) ()
@@ -921,7 +916,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_FINALLY_LWT -> FINALLY_LWT
   | MenhirInterpreter.T_FALSE -> FALSE
   | MenhirInterpreter.T_EXTERNAL -> EXTERNAL
-  | MenhirInterpreter.T_EXITPOINT -> EXITPOINT
   | MenhirInterpreter.T_EXCEPTION -> EXCEPTION
   | MenhirInterpreter.T_EQUAL -> EQUAL
   | MenhirInterpreter.T_EOL -> EOL

@@ -109,7 +109,6 @@ type token =
   | FINALLY_LWT
   | FALSE
   | EXTERNAL
-  | EXITPOINT
   | EXCEPTION
   | EQUAL
   | EOL
@@ -156,8 +155,6 @@ val parse_expression: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.ex
 val interface: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.signature)
 
 val implementation: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.structure)
-
-val dummy: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (unit)
 
 module MenhirInterpreter : sig
   
@@ -277,7 +274,6 @@ module MenhirInterpreter : sig
     | T_FINALLY_LWT : unit terminal
     | T_FALSE : unit terminal
     | T_EXTERNAL : unit terminal
-    | T_EXITPOINT : unit terminal
     | T_EXCEPTION : unit terminal
     | T_EQUAL : unit terminal
     | T_EOL : unit terminal
@@ -463,7 +459,6 @@ module MenhirInterpreter : sig
     | N_expr_comma_opt_list : (Parsetree.expression list) nonterminal
     | N_expr_comma_list : (Parsetree.expression list) nonterminal
     | N_expr : (Parsetree.expression) nonterminal
-    | N_dummy : (unit) nonterminal
     | N_direction_flag : (Asttypes.direction_flag) nonterminal
     | N_core_type_no_attr : (Parsetree.core_type) nonterminal
     | N_core_type_list_no_attr : (Parsetree.core_type list) nonterminal
@@ -528,7 +523,5 @@ module Incremental : sig
   val interface: Lexing.position -> (Parsetree.signature) MenhirInterpreter.checkpoint
   
   val implementation: Lexing.position -> (Parsetree.structure) MenhirInterpreter.checkpoint
-  
-  val dummy: Lexing.position -> (unit) MenhirInterpreter.checkpoint
   
 end

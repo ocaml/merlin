@@ -19,7 +19,7 @@ LEXER_O = $(TYPER)/lexer_raw.ml
 ### Derived files
 
 TARGETS =                    \
-  $(PARSER_O) $(LEXER_O)     \
+  $(LEXER_O) $(PARSER_O)     \
   $(TYPER)/parser_printer.ml \
   $(TYPER)/parser_recover.ml \
   $(TYPER)/parser_explain.ml
