@@ -834,13 +834,14 @@ end
 (* Custom printf extension *)
 module Custom_printf = struct
 
-  let bang loc_start loc_end expr = match expr with
-    | { pexp_desc = Pexp_constant (Asttypes.Const_string _ as cs) } ->
-      let _str = Raw_compat.extract_const_string cs in
+  let bang loc_start loc_end expr =
+    match Raw_compat.extract_const_string expr with
+    | Some _str ->
       let loc = {any_val'.pexp_loc with Location. loc_start; loc_end} in
       Some (Ast_helper.Exp.constraint_ ~loc {any_val' with pexp_loc = loc}
               (Ast_helper.Typ.any ~loc ()))
-    | _ -> None
+    | None -> None
+
 end
 
 

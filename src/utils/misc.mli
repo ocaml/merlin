@@ -240,3 +240,11 @@ val normalise_eol: string -> string
 (** [normalise_eol s] returns a fresh copy of [s] with any '\r' characters
    removed. Intended for pre-processing text which will subsequently be printed
    on a channel which performs EOL transformations (i.e. Windows) *)
+
+module Int_literal_converter : sig
+  val int : string -> int
+  val int32 : string -> int32
+  val int64 : string -> int64
+  val nativeint : string -> nativeint
+end
+

@@ -587,5 +587,6 @@ let default_iterator =
          | PSig x -> this.signature this x
          | PTyp x -> this.typ this x
          | PPat (x, g) -> this.pat this x; iter_opt (this.expr this) g
+         | PCustom _ -> ()
       );
   }

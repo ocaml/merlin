@@ -3,6 +3,7 @@
 
 type token = 
   | WITH
+  | WHILE_LWT
   | WHILE
   | WHEN
   | VIRTUAL
@@ -10,6 +11,7 @@ type token =
   | UNDERSCORE
   | UIDENT of (string)
   | TYPE
+  | TRY_LWT
   | TRY
   | TRUE
   | TO
@@ -19,6 +21,7 @@ type token =
   | STRING of (string * string option)
   | STAR
   | SIG
+  | SHARPSHARP
   | SHARPOP of (string)
   | SHARP
   | SEMISEMI
@@ -35,6 +38,14 @@ type token =
   | PLUSDOT
   | PLUS
   | PERCENT
+  | P4_QUOTATION
+  | OUNIT_TEST_UNIT
+  | OUNIT_TEST_MODULE
+  | OUNIT_TEST
+  | OUNIT_BENCH_MODULE
+  | OUNIT_BENCH_INDEXED
+  | OUNIT_BENCH_FUN
+  | OUNIT_BENCH
   | OR
   | OPTLABEL of (string)
   | OPEN
@@ -48,9 +59,12 @@ type token =
   | MINUSDOT
   | MINUS
   | METHOD
+  | MATCH_LWT
   | MATCH
   | LPAREN
   | LIDENT of (string)
+  | LET_LWT
+  | LETOP of (string)
   | LET
   | LESSMINUS
   | LESS
@@ -67,6 +81,7 @@ type token =
   | LBRACE
   | LAZY
   | LABEL of (string)
+  | JSNEW
   | INT of (string * char option)
   | INITIALIZER
   | INHERIT
@@ -80,12 +95,15 @@ type token =
   | IF
   | GREATERRBRACKET
   | GREATERRBRACE
+  | GREATERDOT
   | GREATER
   | FUNCTOR
   | FUNCTION
   | FUN
+  | FOR_LWT
   | FOR
   | FLOAT of (string * char option)
+  | FINALLY_LWT
   | FALSE
   | EXTERNAL
   | EXCEPTION
@@ -95,11 +113,14 @@ type token =
   | END
   | ELSE
   | DOWNTO
+  | DOTTILDE
+  | DOTLESS
   | DOTDOT
   | DOT
   | DONE
   | DOCSTRING of (Docstrings.docstring)
   | DO
+  | CUSTOM_BANG
   | CONSTRAINT
   | COMMENT of (string * Location.t)
   | COMMA
@@ -127,15 +148,7 @@ exception Error
 
 (* The monolithic API. *)
 
-val use_file: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.toplevel_phrase list)
-
-val toplevel_phrase: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.toplevel_phrase)
-
-val parse_pattern: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.pattern)
-
 val parse_expression: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.expression)
-
-val parse_core_type: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.core_type)
 
 val interface: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (Parsetree.signature)
 
@@ -153,6 +166,7 @@ module MenhirInterpreter : sig
   type _ terminal = 
     | T_error : unit terminal
     | T_WITH : unit terminal
+    | T_WHILE_LWT : unit terminal
     | T_WHILE : unit terminal
     | T_WHEN : unit terminal
     | T_VIRTUAL : unit terminal
@@ -160,6 +174,7 @@ module MenhirInterpreter : sig
     | T_UNDERSCORE : unit terminal
     | T_UIDENT : (string) terminal
     | T_TYPE : unit terminal
+    | T_TRY_LWT : unit terminal
     | T_TRY : unit terminal
     | T_TRUE : unit terminal
     | T_TO : unit terminal
@@ -169,6 +184,7 @@ module MenhirInterpreter : sig
     | T_STRING : (string * string option) terminal
     | T_STAR : unit terminal
     | T_SIG : unit terminal
+    | T_SHARPSHARP : unit terminal
     | T_SHARPOP : (string) terminal
     | T_SHARP : unit terminal
     | T_SEMISEMI : unit terminal
@@ -185,6 +201,14 @@ module MenhirInterpreter : sig
     | T_PLUSDOT : unit terminal
     | T_PLUS : unit terminal
     | T_PERCENT : unit terminal
+    | T_P4_QUOTATION : unit terminal
+    | T_OUNIT_TEST_UNIT : unit terminal
+    | T_OUNIT_TEST_MODULE : unit terminal
+    | T_OUNIT_TEST : unit terminal
+    | T_OUNIT_BENCH_MODULE : unit terminal
+    | T_OUNIT_BENCH_INDEXED : unit terminal
+    | T_OUNIT_BENCH_FUN : unit terminal
+    | T_OUNIT_BENCH : unit terminal
     | T_OR : unit terminal
     | T_OPTLABEL : (string) terminal
     | T_OPEN : unit terminal
@@ -198,9 +222,12 @@ module MenhirInterpreter : sig
     | T_MINUSDOT : unit terminal
     | T_MINUS : unit terminal
     | T_METHOD : unit terminal
+    | T_MATCH_LWT : unit terminal
     | T_MATCH : unit terminal
     | T_LPAREN : unit terminal
     | T_LIDENT : (string) terminal
+    | T_LET_LWT : unit terminal
+    | T_LETOP : (string) terminal
     | T_LET : unit terminal
     | T_LESSMINUS : unit terminal
     | T_LESS : unit terminal
@@ -217,6 +244,7 @@ module MenhirInterpreter : sig
     | T_LBRACE : unit terminal
     | T_LAZY : unit terminal
     | T_LABEL : (string) terminal
+    | T_JSNEW : unit terminal
     | T_INT : (string * char option) terminal
     | T_INITIALIZER : unit terminal
     | T_INHERIT : unit terminal
@@ -230,12 +258,15 @@ module MenhirInterpreter : sig
     | T_IF : unit terminal
     | T_GREATERRBRACKET : unit terminal
     | T_GREATERRBRACE : unit terminal
+    | T_GREATERDOT : unit terminal
     | T_GREATER : unit terminal
     | T_FUNCTOR : unit terminal
     | T_FUNCTION : unit terminal
     | T_FUN : unit terminal
+    | T_FOR_LWT : unit terminal
     | T_FOR : unit terminal
     | T_FLOAT : (string * char option) terminal
+    | T_FINALLY_LWT : unit terminal
     | T_FALSE : unit terminal
     | T_EXTERNAL : unit terminal
     | T_EXCEPTION : unit terminal
@@ -245,11 +276,14 @@ module MenhirInterpreter : sig
     | T_END : unit terminal
     | T_ELSE : unit terminal
     | T_DOWNTO : unit terminal
+    | T_DOTTILDE : unit terminal
+    | T_DOTLESS : unit terminal
     | T_DOTDOT : unit terminal
     | T_DOT : unit terminal
     | T_DONE : unit terminal
     | T_DOCSTRING : (Docstrings.docstring) terminal
     | T_DO : unit terminal
+    | T_CUSTOM_BANG : unit terminal
     | T_CONSTRAINT : unit terminal
     | T_COMMENT : (string * Location.t) terminal
     | T_COMMA : unit terminal
@@ -284,9 +318,6 @@ module MenhirInterpreter : sig
     | N_value : (string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal
     | N_val_longident : (Longident.t) nonterminal
     | N_val_ident : (string) nonterminal
-    | N_use_file_tail : (Parsetree.toplevel_phrase list) nonterminal
-    | N_use_file_body : (Parsetree.toplevel_phrase list) nonterminal
-    | N_use_file : (Parsetree.toplevel_phrase list) nonterminal
     | N_typevar_list : (Asttypes.label list) nonterminal
     | N_type_variance : (Asttypes.variance) nonterminal
     | N_type_variable : (Parsetree.core_type) nonterminal
@@ -299,10 +330,7 @@ module MenhirInterpreter : sig
   string Asttypes.loc option) nonterminal
     | N_type_declaration : (Asttypes.rec_flag * Parsetree.type_declaration * string Asttypes.loc option) nonterminal
     | N_type_constraint : (Parsetree.core_type option * Parsetree.core_type option) nonterminal
-    | N_toplevel_phrase : (Parsetree.toplevel_phrase) nonterminal
     | N_toplevel_directive : (Parsetree.toplevel_phrase) nonterminal
-    | N_top_structure_tail : (Parsetree.structure_item list) nonterminal
-    | N_top_structure : (Parsetree.structure_item list) nonterminal
     | N_tag_field : (Parsetree.row_field) nonterminal
     | N_subtractive : (string) nonterminal
     | N_structure_tail : (Parsetree.structure) nonterminal
@@ -351,9 +379,7 @@ module MenhirInterpreter : sig
     | N_pattern_semi_list : (Parsetree.pattern list) nonterminal
     | N_pattern_comma_list : (Parsetree.pattern list) nonterminal
     | N_pattern : (Parsetree.pattern) nonterminal
-    | N_parse_pattern : (Parsetree.pattern) nonterminal
     | N_parse_expression : (Parsetree.expression) nonterminal
-    | N_parse_core_type : (Parsetree.core_type) nonterminal
     | N_parent_binder : (string option) nonterminal
     | N_package_type_cstrs : ((Longident.t Asttypes.loc * Parsetree.core_type) list) nonterminal
     | N_package_type_cstr : (Longident.t Asttypes.loc * Parsetree.core_type) nonterminal
@@ -505,15 +531,7 @@ end
 
 module Incremental : sig
   
-  val use_file: Lexing.position -> (Parsetree.toplevel_phrase list) MenhirInterpreter.checkpoint
-  
-  val toplevel_phrase: Lexing.position -> (Parsetree.toplevel_phrase) MenhirInterpreter.checkpoint
-  
-  val parse_pattern: Lexing.position -> (Parsetree.pattern) MenhirInterpreter.checkpoint
-  
   val parse_expression: Lexing.position -> (Parsetree.expression) MenhirInterpreter.checkpoint
-  
-  val parse_core_type: Lexing.position -> (Parsetree.core_type) MenhirInterpreter.checkpoint
   
   val interface: Lexing.position -> (Parsetree.signature) MenhirInterpreter.checkpoint
   

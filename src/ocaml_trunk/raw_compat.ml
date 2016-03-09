@@ -29,9 +29,10 @@
 open Std
 open Misc
 
-let extract_const_string = function
-  | Asttypes.Const_string (str, _) -> str
-  | _ -> assert false
+let extract_const_string =
+  let open Parsetree in function
+  | { pexp_desc = Pexp_constant (Pconst_string (str, _)) } -> Some str
+  | _ -> None
 
 (* FIXME: This is ugly and should not be used. It would be better to do the
    conversion the other way around. (arg_label_of_str doesn't do the trick here,

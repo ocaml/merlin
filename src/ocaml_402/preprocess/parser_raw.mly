@@ -478,8 +478,6 @@ let let_operator startpos endpos op bindings cont =
 %token GREATERDOT [@cost 1]
 %token <string> LETOP [@cost 1] [@recovery ""] [@printer Printf.sprintf "LETOP(%S)"]
 
-%token EXITPOINT [@cost 10]
-
 (* Precedences and associativities.
 
 Tokens and rules have precedences.  A reduce/reduce conflict is resolved
@@ -565,15 +563,6 @@ The precedences must be listed from low to high.
 %start parse_expression
 %type <Parsetree.expression> parse_expression
 
-(* Prevent some warnings... *)
-%start dummy
-%type <unit> dummy
-
-(*%attribute
-  class_fun_binding class_expr class_type class_signature class_structure
-  str_extension_constructors sig_extension_constructors
-  [@cost 100] [@recovery raise Not_found]
-*)
 
 %%
 
@@ -590,29 +579,6 @@ interface:
 parse_expression:
 | seq_expr EOF
     { $1 }
-
-dummy:
-| SHARPOP
-| EOL
-| NONREC
-| COMMENT
-| GREATERRBRACKET
-| LET_LWT
-| TRY_LWT
-| MATCH_LWT
-| FINALLY_LWT
-| FOR_LWT
-| WHILE_LWT
-| JSNEW
-| P4_QUOTATION
-| OUNIT_TEST
-| OUNIT_TEST_UNIT
-| OUNIT_TEST_MODULE
-| OUNIT_BENCH
-| OUNIT_BENCH_FUN
-| OUNIT_BENCH_INDEXED
-| OUNIT_BENCH_MODULE
-    { () }
 
 (* Module expressions *)
 
@@ -668,21 +634,20 @@ module_expr [@recovery default_module_expr]:
 
 structure [@recovery []]:
 | v = structure_head
-| v = structure_head EXITPOINT
   { v }
 
 structure_head [@recovery []]:
-| toplevel_directives seq_expr post_item_attributes structure_tail [@shift_token (1,EXITPOINT)]
+| toplevel_directives seq_expr post_item_attributes structure_tail
     { mkstrexp $2 $3 :: $4 }
-| toplevel_directives structure_tail [@shift_token (1,EXITPOINT)]
+| toplevel_directives structure_tail
     { $2 }
 
 structure_tail [@recovery []]:
 | (* empty *)
     { [] }
-| SEMISEMI structure_head [@shift_token (1,EXITPOINT)]
+| SEMISEMI structure_head
     { $2 }
-| structure_item structure_tail [@shift_token (1,EXITPOINT)]
+| structure_item structure_tail
     { $1 @ $2 }
 
 structure_item:

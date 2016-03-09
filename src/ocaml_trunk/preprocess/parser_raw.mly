@@ -449,7 +449,7 @@ let make_loc startpos endpos = {
 %token EXCEPTION
 %token EXTERNAL
 %token FALSE
-%token <string * char option> FLOAT [@cost 2] [@recovery "0."]
+%token <string * char option> FLOAT [@cost 2] [@recovery ("0.",None)]
                                     [@printer string_of_FLOAT]
 %token FOR
 %token FUN
@@ -538,12 +538,35 @@ let make_loc startpos endpos = {
 %token <string * Location.t> COMMENT [@cost 2][@recovery ("", Location.none)]
 %token <Docstrings.docstring> DOCSTRING
 %token EOL
+%token LET_LWT [@cost 1]
+%token TRY_LWT [@cost 1]
+%token MATCH_LWT [@cost 1]
+%token FINALLY_LWT [@cost 1]
+%token FOR_LWT [@cost 1]
+%token WHILE_LWT [@cost 1]
+%token JSNEW [@cost 1]
+%token P4_QUOTATION [@cost 1]
+%token CUSTOM_BANG [@cost 1]
+%token OUNIT_TEST [@cost 1]
+%token OUNIT_TEST_UNIT [@cost 1]
+%token OUNIT_TEST_MODULE [@cost 1]
+%token OUNIT_BENCH [@cost 1]
+%token OUNIT_BENCH_FUN [@cost 1]
+%token OUNIT_BENCH_INDEXED [@cost 1]
+%token OUNIT_BENCH_MODULE [@cost 1]
+%token SHARPSHARP [@cost 1]
+%token DOTLESS [@cost 1]
+%token DOTTILDE [@cost 1]
+%token GREATERDOT [@cost 1]
+%token <string> LETOP [@cost 1] [@recovery ""] [@printer Printf.sprintf "LETOP(%S)"]
 %nonassoc IN
 %nonassoc below_SEMI
 %nonassoc SEMI
-%nonassoc LET
+%nonassoc LET LET_LWT
+%nonassoc LETOP
 %nonassoc below_WITH
 %nonassoc FUNCTION WITH
+%nonassoc FINALLY_LWT
 %nonassoc AND
 %nonassoc THEN
 %nonassoc ELSE
@@ -569,8 +592,9 @@ let make_loc startpos endpos = {
 %nonassoc prec_unary_minus prec_unary_plus
 %nonassoc prec_constant_constructor
 %nonassoc prec_constr_appl
+%left prec_escape
 %nonassoc below_SHARP
-%nonassoc SHARP
+%nonassoc SHARP SHARPSHARP
 %left SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
@@ -578,20 +602,14 @@ let make_loc startpos endpos = {
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
+          P4_QUOTATION JSNEW CUSTOM_BANG
+          DOTLESS DOTTILDE GREATERDOT
 %start implementation
 %type <Parsetree.structure> implementation
 %start interface
 %type <Parsetree.signature> interface
-%start toplevel_phrase
-%type <Parsetree.toplevel_phrase> toplevel_phrase
-%start use_file
-%type <Parsetree.toplevel_phrase list> use_file
-%start parse_core_type
-%type <Parsetree.core_type> parse_core_type
 %start parse_expression
 %type <Parsetree.expression> parse_expression
-%start parse_pattern
-%type <Parsetree.pattern> parse_pattern
 %%
 %inline extra_str(symb): symb { extra_str $startpos $endpos $1 };
 %inline extra_sig(symb): symb { extra_sig $startpos $endpos $1 };
@@ -615,48 +633,6 @@ implementation:
 interface:
     extra_sig(signature) EOF { $1 }
 ;
-toplevel_phrase:
-    extra_str(top_structure) SEMISEMI { Ptop_def $1 }
-  | toplevel_directive SEMISEMI { $1 }
-  | EOF { raise End_of_file }
-;
-top_structure:
-    seq_expr post_item_attributes
-      { ((text_str $startpos($1))) @ [mkstrexp $1 $2] }
-  | top_structure_tail
-      { $1 }
-;
-top_structure_tail:
-                                         { [] }
-  | structure_item top_structure_tail { ((text_str $startpos($1))) @ $1 :: $2 }
-;
-use_file:
-    extra_def(use_file_body) { $1 }
-;
-use_file_body:
-    use_file_tail { $1 }
-  | seq_expr post_item_attributes use_file_tail
-      { ((text_def $startpos($1))) @ Ptop_def[mkstrexp $1 $2] :: $3 }
-;
-use_file_tail:
-    EOF
-      { [] }
-  | SEMISEMI EOF
-      { (text_def $startpos($1)) }
-  | SEMISEMI seq_expr post_item_attributes use_file_tail
-      { (mark_rhs_docs $startpos($2) $endpos($3));
-        ((text_def $startpos($1))) @ ((text_def $startpos($2))) @ Ptop_def[mkstrexp $2 $3] :: $4 }
-  | SEMISEMI structure_item use_file_tail
-      { ((text_def $startpos($1))) @ ((text_def $startpos($2))) @ Ptop_def[$2] :: $3 }
-  | SEMISEMI toplevel_directive use_file_tail
-      { (mark_rhs_docs $startpos($2) $endpos($3));
-        ((text_def $startpos($1))) @ ((text_def $startpos($2))) @ $2 :: $3 }
-  | structure_item use_file_tail
-      { ((text_def $startpos($1))) @ Ptop_def[$1] :: $2 }
-  | toplevel_directive use_file_tail
-      { (mark_rhs_docs $startpos($1) $endpos($1));
-        ((text_def $startpos($1))) @ $1 :: $2 }
-;
 parse_core_type:
     core_type EOF { $1 }
 ;
@@ -676,13 +652,13 @@ functor_arg_name:
     UIDENT { $1 }
   | UNDERSCORE { "_" }
 ;
-functor_args:
+functor_args [@recovery []]:
     functor_args functor_arg
       { $2 :: $1 }
   | functor_arg
       { [ $1 ] }
 ;
-module_expr:
+module_expr [@recovery default_module_expr]:
     mkrhs(mod_longident)
       { (mkmod ~loc:(make_loc $symbolstartpos $endpos))(Pmod_ident $1) }
   | STRUCT attributes extra_str(structure) END
@@ -732,13 +708,14 @@ module_expr:
   | extension
       { (mkmod ~loc:(make_loc $symbolstartpos $endpos))(Pmod_extension $1) }
 ;
-structure:
+structure [@recovery []]:
     seq_expr post_item_attributes structure_tail
       { (mark_rhs_docs $startpos($1) $endpos($2));
         ((text_str $startpos($1))) @ mkstrexp $1 $2 :: $3 }
+  | toplevel_directive structure { $2 }
   | structure_tail { $1 }
 ;
-structure_tail:
+structure_tail [@recovery []]:
                          { [] }
   | SEMISEMI structure { ((text_str $startpos($1))) @ $2 }
   | structure_item structure_tail { ((text_str $startpos($1))) @ $1 :: $2 }
@@ -816,7 +793,7 @@ and_module_binding:
       { Mb.mk $3 $4 ~attrs:($2 @ $5) ~loc:(((make_loc $symbolstartpos $endpos)))
                ~text:((symbol_text $startpos)) ~docs:((symbol_docs $symbolstartpos $endpos)) }
 ;
-module_type:
+module_type [@recovery default_module_type]:
     mkrhs(mty_longident)
       { (mkmty ~loc:(make_loc $symbolstartpos $endpos))(Pmty_ident $1) }
   | SIG attributes extra_sig(signature) END
@@ -1247,13 +1224,13 @@ label_let_pattern:
 label_var:
     mkrhs(LIDENT) { ($1.Location.txt, (mkpat ~loc:(make_loc $symbolstartpos $endpos))(Ppat_var $1)) }
 ;
-let_pattern:
+let_pattern [@recovery default_pattern]:
     pattern
       { $1 }
   | pattern COLON core_type
       { (mkpat ~loc:(make_loc $symbolstartpos $endpos))(Ppat_constraint($1, $3)) }
 ;
-expr:
+expr [@recovery default_expr]:
     simple_expr %prec below_SHARP
       { $1 }
   | simple_expr simple_labeled_expr_list
@@ -1553,7 +1530,7 @@ strict_binding:
   | LPAREN TYPE lident_list RPAREN fun_binding
       { (mk_newtypes ~loc:(make_loc $symbolstartpos $endpos)) $3 $5 }
 ;
-match_cases:
+match_cases [@recovery []]:
     match_case { [$1] }
   | match_cases BAR match_case { $3 :: $1 }
 ;
@@ -1616,7 +1593,7 @@ type_constraint:
   (*| COLON error { (syntax_error (make_loc $startpos($) $endpos($))) }*)
   (*| COLONGREATER error { (syntax_error (make_loc $startpos($) $endpos($))) }*)
 ;
-pattern:
+pattern [@recovery default_pattern]:
     simple_pattern
       { $1 }
   | pattern AS mkrhs(val_ident)
@@ -2269,7 +2246,7 @@ toplevel_directive:
     SHARP ident { Ptop_dir($2, Pdir_none) }
   | SHARP ident STRING { Ptop_dir($2, Pdir_string (fst $3)) }
   | SHARP ident INT { let (n, m) = $3 in
-                                  Ptop_dir($2, Pdir_int (n, m)) }
+                                Ptop_dir($2, Pdir_int (n, m)) }
   | SHARP ident val_longident { Ptop_dir($2, Pdir_ident $3) }
   | SHARP ident mod_longident { Ptop_dir($2, Pdir_ident $3) }
   | SHARP ident FALSE { Ptop_dir($2, Pdir_bool false) }

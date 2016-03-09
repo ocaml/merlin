@@ -29,9 +29,11 @@
 open Std
 open Misc
 
-let extract_const_string = function
-  | Asttypes.Const_string (str, _) -> str
-  | _ -> assert false
+let extract_const_string =
+  let open Parsetree in function
+  | { pexp_desc = Pexp_constant (Asttypes.Const_string (str, _)) } ->
+    Some str
+  | _ -> None
 
 let arg_label_to_str s = s
 

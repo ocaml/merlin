@@ -368,6 +368,9 @@ let compute_map_for_pers name =
     ignore (pers_map name : _ * _);
     true
 
+let pathmap_append ta tb =
+  PathMap.union (fun _ a b -> a @ b) ta tb
+
 let pers_maps =
   (* Loading persistent map can trigger loading of other maps.
      Repeat until reaching a fix point *)
@@ -1364,11 +1367,9 @@ let cltype_declaration id ppf cl =
 (* Print a module type *)
 
 let wrap_env fenv ftree arg =
-  let env = !printing_env in
-  set_printing_env (fenv env);
-  let tree = ftree arg in
-  set_printing_env env;
-  tree
+  let env = !printing_state.printenv in
+  wrap_printing_env (fenv env)
+    (fun () -> ftree arg)
 
 let filter_rem_sig item rem =
   match item, rem with
@@ -1388,7 +1389,7 @@ let dummy =
   }
 
 let hide_rec_items = function
-  | Sig_type(id, decl, rs) ::rem
+  (*| Sig_type(id, decl, rs) ::rem
     when rs = Trec_first && not !Clflags.real_paths ->
       let rec get_ids = function
           Sig_type (id, _, Trec_next) :: rem ->
@@ -1399,13 +1400,13 @@ let hide_rec_items = function
       set_printing_env
         (List.fold_right
            (fun id -> Env.add_type ~check:false (Ident.rename id) dummy)
-           ids !printing_env)
+           ids !printing_env)*)
   | _ -> ()
 
 let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_ident p ->
       Omty_ident (tree_of_path p)
-  | Mty_signature sg ->
+  | Mty_signature (lazy sg) ->
       Omty_signature (if ellipsis then [Osig_ellipsis]
                       else tree_of_signature sg)
   | Mty_functor(param, ty_arg, ty_res) ->
@@ -1421,7 +1422,7 @@ let rec tree_of_modtype ?(ellipsis=false) = function
       Omty_alias (tree_of_path p)
 
 and tree_of_signature sg =
-  wrap_env (fun env -> env) (tree_of_signature_rec !printing_env false) sg
+  wrap_env (fun env -> env) (tree_of_signature_rec !printing_state.printenv false) sg
 
 and tree_of_signature_rec env' in_type_group = function
     [] -> []

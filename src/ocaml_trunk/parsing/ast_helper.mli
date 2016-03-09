@@ -24,6 +24,8 @@ type str = string loc
 type loc = Location.t
 type attrs = attribute list
 
+val rtag : ?attrs:attrs -> label -> bool -> core_type list -> row_field
+
 (** {2 Default locations} *)
 
 val default_loc: loc ref
