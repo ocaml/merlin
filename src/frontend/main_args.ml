@@ -62,11 +62,11 @@ let flags =
     print_version_num_spec;
     warn_help_spec;
     protocol_spec;
-  ]
+  ] @ Clflags.arg_spec
 
 let () =
   (* Parse arguments on commandline *)
-  Arg.parse Clflags.arg_spec
+  Arg.parse flags
     unexpected_argument
     "Usage: ocamlmerlin [options]\noptions are:"
 
