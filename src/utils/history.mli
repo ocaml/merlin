@@ -36,6 +36,7 @@ type 'a t
 
 (* New history *)
 val initial : 'a -> 'a t
+val of_list : 'a list -> 'a t
 
 (** Element to the left of the cursor
   * (if last operation was an insertion, the inserted value is returned)

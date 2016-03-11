@@ -37,6 +37,10 @@ type 'a t = {head: 'a List.non_empty; position: int; tail: 'a list}
 (* New history *)
 let initial x = {head = List.One x; position = 0; tail = []}
 
+let of_list = function
+  | x :: xs -> {head = List.One x; position = 0; tail = xs}
+  | [] -> invalid_arg "History.of_list"
+
 let head x = x.head
 let tail x = x.tail
 let position x = x.position

@@ -46,4 +46,6 @@ val find_lexer : t -> Merlin_lexer.t option
 val comments : t -> (string * Location.t) list
 val errors : t -> exn list
 
+val reconstruct_identifier: ?for_locate:bool -> t -> Lexing.position -> string Location.loc list
+
 (*val trace : t -> Sturgeon.Tui.Nav.t -> unit*)

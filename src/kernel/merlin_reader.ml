@@ -126,6 +126,13 @@ let comments = function
   | Is_external pp ->
     PP.comments pp
 
+let reconstruct_identifier ?for_locate t pos =
+  match t with
+  | Is_normal p ->
+    Merlin_lexer.reconstruct_identifier ?for_locate (Merlin_parser.lexer p) pos
+  | Is_external _ ->
+    []
+
 (*let trace t nav = match t with
   | Is_normal p ->
     Merlin_parser.trace p nav

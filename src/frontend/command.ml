@@ -268,26 +268,19 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     (* enclosings of cursor in given expression *)
     let exprs =
       match expro with
-      | None -> []
-        (* FIXME
-           let lexer = Buffer.lexer buffer in
-        let lexer =
-          History.seek_backward
-            (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) < 0)
-            lexer
-        in
-        let path = Lexer.reconstruct_identifier lexer in
+      | None ->
+        let path = Reader.reconstruct_identifier (Buffer.reader buffer) pos in
         let path = Lexer.identifier_suffix path in
         begin match path with
-        | [] -> []
-        | base :: tail ->
-          let f {Location. txt=base; loc=bl} {Location. txt=dot; loc=dl} =
-            let loc = Parsing_aux.location_union bl dl in
-            let txt = base ^ "." ^ dot in
-            Location.mkloc txt loc
-          in
-          [ List.fold_left tail ~init:base ~f ]
-        end*)
+          | [] -> []
+          | base :: tail ->
+            let f {Location. txt=base; loc=bl} {Location. txt=dot; loc=dl} =
+              let loc = Parsing_aux.location_union bl dl in
+              let txt = base ^ "." ^ dot in
+              Location.mkloc txt loc
+            in
+            [ List.fold_left tail ~init:base ~f ]
+        end
       | Some (expr, offset) ->
         let loc_start =
           let l, c = Lexing.split_pos pos in
@@ -462,16 +455,12 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let path =
       match patho with
       | Some p -> p
-      | None -> assert false
-        (*let lexer = Buffer.lexer buffer in
-        let lexer =
-          History.seek_backward (fun (_,item) ->
-            Lexing.compare_pos pos (Lexer.item_start item) < 0) lexer
-        in
-        let path = Lexer.reconstruct_identifier ~for_locate:true lexer in
+      | None ->
+        let path = Reader.reconstruct_identifier ~for_locate:true
+            (Buffer.reader buffer) pos in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
-        String.concat ~sep:"." path*)
+        String.concat ~sep:"." path
     in
     if path = "" then `Invalid_context else
     let source  = Buffer.unit_name buffer in
@@ -487,16 +476,12 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let path =
       match patho with
       | Some p -> p
-      | None -> assert false
-        (*let lexer = Buffer.lexer buffer in
-        let lexer =
-          History.seek_backward (fun (_,item) ->
-            Lexing.compare_pos pos (Lexer.item_start item) < 0) lexer
-        in
-        let path = Lexer.reconstruct_identifier ~for_locate:true lexer in
+      | None ->
+        let path = Reader.reconstruct_identifier ~for_locate:true
+            (Buffer.reader buffer) pos in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
-        String.concat ~sep:"." path*)
+        String.concat ~sep:"." path
     in
     if path = "" then `Invalid_context else
     let project = Buffer.project buffer in
