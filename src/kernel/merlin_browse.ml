@@ -83,10 +83,9 @@ let select_leafs pos root =
   try aux [] root
   with Merlin_only t -> t
 
-let t2_first = 1
-let t1_first = -1
-
 let compare_locations pos l1 l2 =
+  let t2_first = +1 in
+  let t1_first = -1 in
   match
     Parsing_aux.compare_pos pos l1,
     Parsing_aux.compare_pos pos l2

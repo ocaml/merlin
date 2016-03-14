@@ -251,15 +251,27 @@ struct
       let Parser.Element (state, _, _, _) = Parser.stack_element stack in
       match Parser.incoming_symbol state with
       | (Parser.T term) as t1 when Recovery.can_pop term ->
+        Logger.logf "recover" "Pop" "pop %s"
+          (Dump.symbol (Parser.X t1));
         begin match Parser.stack_next stack with
           | None -> false
           | Some stack' ->
-            match decide stack' with
-            | Recovery.S (Parser.T term' as t2) :: _
-              when Parser.X t1 = Parser.X t2 -> false
-            | _ ->
-              popped := Parser.X t1 :: !popped;
-              true
+            let rec check_next = function
+              | Recovery.S (Parser.T term' as t2) :: _
+                when Parser.X t1 = Parser.X t2 ->
+                false
+              | Recovery.S sym :: _ ->
+                Logger.logf "recover" "Pop" "then push %s"
+                  (Dump.symbol (Parser.X sym));
+                popped := Parser.X t1 :: !popped;
+                true
+              | Recovery.Sub xs :: _ ->
+                check_next xs
+              | _ ->
+                popped := Parser.X t1 :: !popped;
+                true
+            in
+            check_next (decide stack')
         end
       | _ -> false
     in

@@ -600,7 +600,7 @@ functor_args [@recovery []]:
 | functor_arg
     { [ $1 ] }
 
-module_expr [@recovery default_module_expr]:
+module_expr  [@recovery default_module_expr]:
 | mod_longident
     { mkmod $startpos $endpos (Pmod_ident (mkrhs $startpos($1) $endpos($1) $1)) }
 | STRUCT [@unclosed "struct"] structure END [@close]
@@ -636,13 +636,13 @@ structure [@recovery []]:
 | v = structure_head
   { v }
 
-structure_head [@recovery []]:
+structure_head :
 | toplevel_directives seq_expr post_item_attributes structure_tail
     { mkstrexp $2 $3 :: $4 }
 | toplevel_directives structure_tail
     { $2 }
 
-structure_tail [@recovery []]:
+structure_tail:
 | (* empty *)
     { [] }
 | SEMISEMI structure_head
@@ -701,7 +701,7 @@ structure_item:
 | floating_attribute
     { mkstr $startpos $endpos (Pstr_attribute $1) }
 
-module_binding_body [@recovery default_module_expr]:
+module_binding_body :
 | EQUAL module_expr
     { $2 }
 | COLON module_type EQUAL module_expr
@@ -709,13 +709,13 @@ module_binding_body [@recovery default_module_expr]:
 | functor_arg module_binding_body
     { mkmod $startpos $endpos (Pmod_functor(fst $1, snd $1, $2)) }
 
-module_bindings [@recovery []]:
+module_bindings :
 | module_binding
     { [$1] }
 | module_bindings AND module_binding
     { $3 :: $1 }
 
-module_binding [@recovery default_module_bind]:
+module_binding :
 | UIDENT module_binding_body post_item_attributes
     { Mb.mk (mkrhs $startpos($1) $endpos($1) $1) $2 ~attrs:$3 ~loc:(rloc $startpos $endpos) }
 
@@ -741,7 +741,7 @@ module_type [@recovery default_module_type]:
 | module_type attribute
     { Mty.attr $1 $2 }
 
-signature [@recovery []]:
+signature :
 | (* empty *)
     { [] }
 | SEMISEMI signature
@@ -803,7 +803,7 @@ open_statement:
     { Opn.mk (mkrhs $startpos($3) $endpos($3) $3) ~override:$2 ~attrs:$4
         ~loc:(rloc $startpos $endpos) }
 
-module_declaration [@recovery default_module_type]:
+module_declaration :
 | COLON module_type
     { $2 }
 | LPAREN UIDENT COLON module_type RPAREN module_declaration
@@ -823,13 +823,13 @@ module_rec_declaration:
 
 (* Class expressions *)
 
-class_declarations [@recovery []]:
+class_declarations :
 | class_declarations AND class_declaration
     { $3 @ $1 }
 | class_declaration
     { $1 }
 
-class_declaration [@recovery []]:
+class_declaration :
 | virtual_flag class_type_parameters LIDENT class_fun_binding
   post_item_attributes
     {
@@ -846,7 +846,7 @@ class_fun_binding:
 | labeled_simple_pattern class_fun_binding
     { let (l,o,p) = $1 in mkclass $startpos $endpos (Pcl_fun(l, o, p, $2)) }
 
-class_type_parameters [@recovery []]:
+class_type_parameters :
 | (* empty *)
     { [] }
 | LBRACKET type_parameter_list RBRACKET
@@ -896,13 +896,13 @@ class_self_pattern:
 | (* empty *)
     { ghpat $startpos $endpos (Ppat_any) }
 
-class_fields [@recovery []]:
+class_fields :
 | (* empty *)
     { [] }
 | class_fields class_field
     { $2 @ $1 }
 
-class_field [@recovery []]:
+class_field :
 | INHERIT override_flag class_expr parent_binder attrs = post_item_attributes
     { mkcf $startpos $endpos (Pcf_inherit ($2, $3, $4)) ~attrs }
 | VAL value attrs = post_item_attributes
@@ -1029,13 +1029,13 @@ constrain_field:
 | core_type EQUAL core_type
     { $1, $3 }
 
-class_descriptions [@recovery []]:
+class_descriptions :
 | class_descriptions AND class_description
     { $3 @ $1 }
 | class_description
     { $1 }
 
-class_description [@recovery []]:
+class_description :
 | virtual_flag class_type_parameters LIDENT COLON class_type post_item_attributes
     {
       [Ci.mk (mkrhs $startpos($3) $endpos($3) $3) $5
@@ -1043,13 +1043,13 @@ class_description [@recovery []]:
          ~attrs:$6 ~loc:(rloc $startpos $endpos)]
     }
 
-class_type_declarations [@recovery []]:
+class_type_declarations :
 | class_type_declarations AND class_type_declaration
     { $3 @ $1 }
 | class_type_declaration
     { $1 }
 
-class_type_declaration [@recovery []]:
+class_type_declaration :
 | virtual_flag class_type_parameters LIDENT EQUAL class_signature post_item_attributes
     {
       [Ci.mk (mkrhs $startpos($3) $endpos($3) $3) $5
@@ -1059,7 +1059,7 @@ class_type_declaration [@recovery []]:
 
 (* Core expressions *)
 
-seq_expr [@recovery default_expr]:
+seq_expr :
 | expr %prec below_SEMI
     { $1 }
 | expr SEMI
@@ -1097,13 +1097,13 @@ opt_default:
 | EQUAL seq_expr
     { Some $2 }
 
-label_let_pattern [@recovery "", default_pattern]:
+label_let_pattern :
 | label_var
     { $1 }
 | label_var COLON core_type
     { let (lab, pat) = $1 in (lab, mkpat $startpos $endpos (Ppat_constraint(pat, $3))) }
 
-label_var [@recovery "", default_pattern]:
+label_var :
 | LIDENT
     { ($1, mkpat $startpos $endpos (Ppat_var (mkrhs $startpos($1) $endpos($1) $1))) }
 
@@ -1244,7 +1244,7 @@ expr [@recovery default_expr]:
 | expr attribute
     { Exp.attr $1 $2 }
 
-simple_expr [@recovery default_expr]:
+simple_expr :
 | val_longident
     { mkexp $startpos $endpos (Pexp_ident (mkrhs $startpos($1) $endpos($1) $1)) }
 | constant
@@ -1349,17 +1349,17 @@ label_expr:
 | OPTLABEL simple_expr %prec below_SHARP
     { ("?" ^ $1, $2) }
 
-label_ident [@recovery "", default_expr]:
+label_ident :
 | LIDENT
     { ($1, mkexp $startpos $endpos (Pexp_ident(mkrhs $startpos($1) $endpos($1) (Lident $1)))) }
 
-let_bindings [@recovery []]:
+let_bindings :
 | let_binding
     { [$1] }
 | let_bindings AND let_binding
     { $3 :: $1 }
 
-let_bindings_no_attrs [@recovery []]:
+let_bindings_no_attrs :
 | l = let_bindings
     { List.iter (fun vb -> if vb.pvb_attributes <> [] then
         Parsing_aux.raise_warning
@@ -1367,13 +1367,13 @@ let_bindings_no_attrs [@recovery []]:
         l;
       l }
 
-lident_list [@recovery []]:
+lident_list :
 | LIDENT
     { [$1] }
 | LIDENT lident_list
     { $1 :: $2 }
 
-let_binding [@recovery default_value_bind]:
+let_binding :
 | let_binding_ post_item_attributes
     { let (p, e) = $1 in Vb.mk ~loc:(rloc $startpos $endpos) ~attrs:$2 p e }
 
@@ -1392,7 +1392,7 @@ let_binding_:
 | simple_pattern_not_ident COLON core_type EQUAL seq_expr
     { (ghpat $startpos $endpos (Ppat_constraint($1, $3)), $5) }
 
-fun_binding [@recovery default_expr]:
+fun_binding :
 | strict_binding
     { $1 }
 | type_constraint EQUAL seq_expr
@@ -1439,13 +1439,13 @@ expr_comma_list:
 | expr COMMA expr
     { [$3; $1] }
 
-record_expr [@recovery None, []]:
+record_expr :
 | simple_expr WITH lbl_expr_list
     { (Some $1, $3) }
 | lbl_expr_list
     { (None, $1) }
 
-lbl_expr_list [@recovery []]:
+lbl_expr_list :
 | lbl_expr
     { [$1] }
 | lbl_expr SEMI lbl_expr_list
@@ -1459,13 +1459,13 @@ lbl_expr:
 | label_longident
     { (mkrhs $startpos($1) $endpos($1) $1, exp_of_label $startpos($1) $endpos($1) $1) }
 
-field_expr_list [@recovery []]:
+field_expr_list :
 | label EQUAL expr
     { [mkrhs $startpos($1) $endpos($1) $1,$3] }
 | field_expr_list SEMI label EQUAL expr
     { (mkrhs $startpos($3) $endpos($3) $3, $5) :: $1 }
 
-expr_semi_list [@recovery []]:
+expr_semi_list :
 | expr
     { [$1] }
 | expr_semi_list SEMI expr
@@ -1514,7 +1514,7 @@ pattern [@recovery default_pattern]:
 | pattern attribute
     { Pat.attr $1 $2 }
 
-simple_pattern [@recovery default_pattern]:
+simple_pattern :
 | val_ident %prec below_EQUAL
     { mkpat $startpos $endpos (Ppat_var (mkrhs $startpos($1) $endpos($1) $1)) }
 | simple_pattern_not_ident
@@ -1566,13 +1566,13 @@ pattern_comma_list:
 (*| pattern COMMA error
     { expecting $startpos($3) $endpos($3) "pattern" }*)
 
-pattern_semi_list [@recovery []]:
+pattern_semi_list :
 | pattern
     { [$1] }
 | pattern_semi_list SEMI pattern
     { $3 :: $1 }
 
-lbl_pattern_list [@recovery [], Closed]:
+lbl_pattern_list :
 | lbl_pattern
     { [$1], Closed }
 | lbl_pattern SEMI
@@ -1590,7 +1590,7 @@ lbl_pattern:
 
 (* Primitive declarations *)
 
-primitive_declaration [@recovery []]:
+primitive_declaration :
 | STRING
     { [fst $1] }
 | STRING primitive_declaration
@@ -1598,7 +1598,7 @@ primitive_declaration [@recovery []]:
 
 (* Type declarations *)
 
-type_declarations [@recovery []]:
+type_declarations :
 | type_declaration
     { [$1] }
 | type_declarations AND type_declaration
@@ -1642,7 +1642,7 @@ type_kind:
 | EQUAL core_type EQUAL DOTDOT
     { (Ptype_open, Public, Some $2) }
 
-optional_type_parameters [@recovery []]:
+optional_type_parameters :
 | (* empty *)
     { [] }
 | optional_type_parameter
@@ -1650,23 +1650,23 @@ optional_type_parameters [@recovery []]:
 | LPAREN optional_type_parameter_list RPAREN
     { List.rev $2 }
 
-optional_type_parameter [@recovery default_type, Invariant]:
+optional_type_parameter :
 | type_variance optional_type_variable
     { $2, $1 }
 
-optional_type_parameter_list [@recovery []]:
+optional_type_parameter_list :
 | optional_type_parameter
     { [$1] }
 | optional_type_parameter_list COMMA optional_type_parameter
     { $3 :: $1 }
 
-optional_type_variable [@recovery default_type]:
+optional_type_variable :
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 | UNDERSCORE
     { mktyp $startpos $endpos (Ptyp_any) }
 
-type_parameters [@recovery []]:
+type_parameters :
 | (* empty *)
     { [] }
 | type_parameter
@@ -1674,11 +1674,11 @@ type_parameters [@recovery []]:
 | LPAREN type_parameter_list RPAREN
     { List.rev $2 }
 
-type_parameter [@recovery default_type, Invariant]:
+type_parameter :
 | type_variance type_variable
     { $2, $1 }
 
-type_variance [@recovery Invariant]:
+type_variance :
 | (* empty *)
     { Invariant }
 | PLUS
@@ -1686,17 +1686,17 @@ type_variance [@recovery Invariant]:
 | MINUS
     { Contravariant }
 
-type_variable [@recovery default_type]:
+type_variable :
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 
-type_parameter_list [@recovery []]:
+type_parameter_list :
 | type_parameter
     { [$1] }
 | type_parameter_list COMMA type_parameter
     { $3 :: $1 }
 
-constructor_declarations [@recovery []]:
+constructor_declarations :
 | constructor_declaration
     { [$1] }
 | constructor_declarations [@indent (-2)] BAR constructor_declaration
@@ -1728,7 +1728,7 @@ sig_exception_declaration:
       {ext with pext_attributes = ext.pext_attributes @ $2}
     }
 
-generalized_constructor_arguments [@recovery ([],None)]:
+generalized_constructor_arguments :
 | (* empty *)
     { ([],None) }
 | OF core_type_list_no_attr
@@ -1738,7 +1738,7 @@ generalized_constructor_arguments [@recovery ([],None)]:
 | COLON simple_core_type_no_attr
     { ([],Some $2) }
 
-label_declarations [@recovery []]:
+label_declarations :
 | label_declaration
     { [$1] }
 | label_declarations SEMI label_declaration
@@ -1798,7 +1798,7 @@ extension_constructor_rebind:
 
 (* "with" constraints (additional type equations over signature components) *)
 
-with_constraints [@recovery []]:
+with_constraints :
 | with_constraint
     { $1 }
 | with_constraints AND with_constraint
@@ -1825,7 +1825,7 @@ with_constraint:
 | MODULE UIDENT COLONEQUAL mod_ext_longident
     { [Pwith_modsubst (mkrhs $startpos($2) $endpos($2) $2, mkrhs $startpos($4) $endpos($4) $4)] }
 
-with_type_binder [@recovery Public]:
+with_type_binder :
 | EQUAL
     { Public }
 | EQUAL PRIVATE
@@ -1833,19 +1833,19 @@ with_type_binder [@recovery Public]:
 
 (* Polymorphic types *)
 
-typevar_list [@recovery []]:
+typevar_list :
 | QUOTE ident
     { [$2] }
 | typevar_list QUOTE ident
     { $3 :: $1 }
 
-poly_type [@recovery default_type]:
+poly_type :
 | core_type
     { $1 }
 | typevar_list DOT core_type
     { mktyp $startpos $endpos (Ptyp_poly(List.rev $1, $3)) }
 
-poly_type_no_attr [@recovery default_type]:
+poly_type_no_attr :
 | core_type_no_attr
     { $1 }
 | typevar_list DOT core_type_no_attr
@@ -1853,19 +1853,19 @@ poly_type_no_attr [@recovery default_type]:
 
 (* Core types *)
 
-core_type [@recovery default_type]:
+core_type :
 | core_type_no_attr
     { $1 }
 | core_type attribute
     { Typ.attr $1 $2 }
 
-core_type_no_attr [@recovery default_type]:
+core_type_no_attr :
 | core_type2
     { $1 }
 | core_type2 AS QUOTE ident
     { mktyp $startpos $endpos (Ptyp_alias($1, $4)) }
 
-core_type2 [@recovery default_type]:
+core_type2 :
 | simple_core_type_or_tuple
     { $1 }
 | QUESTION LIDENT COLON core_type2 MINUSGREATER core_type2
@@ -1877,7 +1877,7 @@ core_type2 [@recovery default_type]:
 | core_type2 MINUSGREATER core_type2
     { mktyp $startpos $endpos (Ptyp_arrow("", $1, $3)) }
 
-simple_core_type [@recovery default_type]:
+simple_core_type :
 | simple_core_type2 %prec below_SHARP
     { $1 }
 | LPAREN core_type_comma_list RPAREN %prec below_SHARP
@@ -1887,7 +1887,7 @@ simple_core_type [@recovery default_type]:
                     mktyp $startpos $endpos (Ptyp_any)
     }
 
-simple_core_type_no_attr [@recovery default_type]:
+simple_core_type_no_attr :
 | simple_core_type2 %prec below_SHARP
     { $1 }
 | LPAREN core_type_comma_list RPAREN %prec below_SHARP
@@ -1897,7 +1897,7 @@ simple_core_type_no_attr [@recovery default_type]:
                     mktyp $startpos $endpos (Ptyp_any)
     }
 
-simple_core_type2 [@recovery default_type]:
+simple_core_type2 :
 | QUOTE ident
     { mktyp $startpos $endpos (Ptyp_var $2) }
 | UNDERSCORE
@@ -1941,7 +1941,7 @@ simple_core_type2 [@recovery default_type]:
 | extension
     { mktyp $startpos $endpos  (Ptyp_extension $1) }
 
-package_type [@recovery default_longident_loc, []]:
+package_type :
 | mty_longident
     { (mkrhs $startpos($1) $endpos($1) $1, []) }
 | mty_longident WITH package_type_cstrs
@@ -1951,13 +1951,13 @@ package_type_cstr:
 | TYPE label_longident EQUAL core_type
     { (mkrhs $startpos($2) $endpos($2) $2, $4) }
 
-package_type_cstrs [@recovery []]:
+package_type_cstrs :
 | package_type_cstr
     { [$1] }
 | package_type_cstr AND package_type_cstrs
     { $1::$3 }
 
-row_field_list [@recovery []]:
+row_field_list :
 | row_field
     { [$1] }
 | row_field_list BAR row_field
@@ -1981,49 +1981,49 @@ opt_ampersand:
 | (* empty *)
     { false }
 
-amper_type_list [@recovery []]:
+amper_type_list :
 | core_type_no_attr
     { [$1] }
 | amper_type_list AMPERSAND core_type_no_attr
     { $3 :: $1 }
 
-name_tag_list [@recovery []]:
+name_tag_list :
 | name_tag
     { [$1] }
 | name_tag_list name_tag
     { $2 :: $1 }
 
-simple_core_type_or_tuple [@recovery default_type]:
+simple_core_type_or_tuple :
 | simple_core_type %prec below_LBRACKETAT
     { $1 }
 | simple_core_type STAR core_type_list
     { mktyp $startpos $endpos (Ptyp_tuple($1 :: List.rev $3)) }
 
-simple_core_type_or_tuple_no_attr [@recovery default_type]:
+simple_core_type_or_tuple_no_attr :
 | simple_core_type_no_attr
     { $1 }
 | simple_core_type_no_attr STAR core_type_list_no_attr
     { mktyp $startpos $endpos (Ptyp_tuple($1 :: List.rev $3)) }
 
-core_type_comma_list [@recovery []]:
+core_type_comma_list :
 | core_type
     { [$1] }
 | core_type_comma_list COMMA core_type
     { $3 :: $1 }
 
-core_type_list [@recovery []]:
+core_type_list :
 | simple_core_type %prec below_LBRACKETAT
     { [$1] }
 | core_type_list STAR simple_core_type
     { $3 :: $1 }
 
-core_type_list_no_attr [@recovery []]:
+core_type_list_no_attr :
 | simple_core_type_no_attr
     { [$1] }
 | core_type_list STAR simple_core_type_no_attr
     { $3 :: $1 }
 
-meth_list [@recovery [], Open]:
+meth_list :
 | field SEMI meth_list
     { let (f, c) = $3 in ($1 :: f, c) }
 | field opt_semi
@@ -2035,13 +2035,13 @@ field:
 | label COLON poly_type_no_attr attributes
     { ($1, $4, $3) }
 
-label [@recovery ""]:
+label :
 | LIDENT
     { $1 }
 
 (* Constants *)
 
-constant [@recovery Const_int 0]:
+constant :
 | INT
     { Const_int $1 }
 | CHAR
@@ -2057,7 +2057,7 @@ constant [@recovery Const_int 0]:
 | NATIVEINT
     { Const_nativeint $1 }
 
-signed_constant [@recovery Const_int 0]:
+signed_constant :
 | constant
     { $1 }
 | MINUS INT
@@ -2083,13 +2083,13 @@ signed_constant [@recovery Const_int 0]:
 
 (* Identifiers and long identifiers *)
 
-ident [@recovery ""]:
+ident :
 | UIDENT
     { $1 }
 | LIDENT
     { $1 }
 
-val_ident [@recovery ""]:
+val_ident :
 | LIDENT
     { $1 }
 | LPAREN [@unclosed "("] operator RPAREN [@close]
@@ -2099,7 +2099,7 @@ val_ident [@recovery ""]:
 (*| LPAREN MODULE error
     { expecting $startpos($3) $endpos($3) "module-expr" }*)
 
-operator [@recovery ""]:
+operator :
 | PREFIXOP
     { $1 }
 | INFIXOP0
@@ -2163,13 +2163,13 @@ constr_ident:
 | TRUE
     { "true" }
 
-val_longident [@recovery default_longident]:
+val_longident :
 | val_ident
     { Lident $1 }
 | mod_longident DOT val_ident
     { Ldot($1, $3) }
 
-constr_longident [@recovery default_longident]:
+constr_longident :
 | mod_longident %prec below_DOT
     { $1 }
 | LBRACKET RBRACKET
@@ -2181,25 +2181,25 @@ constr_longident [@recovery default_longident]:
 | TRUE
     { Lident "true" }
 
-label_longident [@recovery default_longident]:
+label_longident :
 | LIDENT
     { Lident $1 }
 | mod_longident DOT LIDENT
     { Ldot($1, $3) }
 
-type_longident [@recovery default_longident]:
+type_longident :
 | LIDENT
     { Lident $1 }
 | mod_ext_longident DOT LIDENT
     { Ldot($1, $3) }
 
-mod_longident [@recovery default_longident]:
+mod_longident :
 | UIDENT
     { Lident $1 }
 | mod_longident DOT UIDENT
     { Ldot($1, $3) }
 
-mod_ext_longident [@recovery default_longident]:
+mod_ext_longident :
 | UIDENT
     { Lident $1 }
 | mod_ext_longident DOT UIDENT
@@ -2207,37 +2207,37 @@ mod_ext_longident [@recovery default_longident]:
 | mod_ext_longident LPAREN mod_ext_longident RPAREN
     { lapply $startpos $endpos $1 $3 }
 
-mty_longident [@recovery default_longident]:
+mty_longident :
 | ident
     { Lident $1 }
 | mod_ext_longident DOT ident
     { Ldot($1, $3) }
 
-clty_longident [@recovery default_longident]:
+clty_longident :
 | LIDENT
     { Lident $1 }
 | mod_ext_longident DOT LIDENT
     { Ldot($1, $3) }
 
-class_longident [@recovery default_longident]:
+class_longident :
 | LIDENT
     { Lident $1 }
 | mod_longident DOT LIDENT
     { Ldot($1, $3) }
 
-(* Miscell [@recovery []]aneous *)
+(* Miscell aneous *)
 
 name_tag:
 | BACKQUOTE ident
     { $2 }
 
-rec_flag [@recovery Nonrecursive]:
+rec_flag :
 | (* empty *)
     { Nonrecursive }
 | REC
     { Recursive }
 
-direction_flag [@recovery Upto]:
+direction_flag :
 | TO
     { Upto }
 | DOWNTO
@@ -2409,7 +2409,7 @@ single_attr_id:
     { "with" }
 (* mod/land/lor/lxor/lsl/lsr/asr are not supported for now *)
 
-attr_id [@recovery Location.mknoloc ""]:
+attr_id :
 | single_attr_id
     { mkloc $1 (rloc $startpos $endpos) }
 | single_attr_id DOT attr_id
@@ -2427,19 +2427,19 @@ floating_attribute:
 | LBRACKETATATAT [@item "attribute"] attr_id payload RBRACKET
     { ($2, $3) }
 
-post_item_attributes [@recovery []]:
+post_item_attributes :
 | (* empty *)
     { [] }
 | post_item_attribute post_item_attributes
     { $1 :: $2 }
 
-attributes [@recovery []]:
+attributes :
 | (* empty *)
     { [] }
 | attribute attributes
     { $1 :: $2 }
 
-ext_attributes [@cost 1][@recovery (None, [])]:
+ext_attributes [@cost 1]:
 | (* empty *)
     { None, [] }
 | attribute attributes
@@ -2455,7 +2455,7 @@ item_extension:
 | LBRACKETPERCENTPERCENT [@item "extension"] attr_id payload RBRACKET
     { ($2, $3) }
 
-payload [@recovery Parsetree.PStr []]:
+payload :
 | structure
     { PStr $1 }
 | COLON core_type
@@ -2467,11 +2467,11 @@ payload [@recovery Parsetree.PStr []]:
 
 (* Merlin refactoring *)
 
-newtype [@recovery ""]:
+newtype :
 | LPAREN TYPE LIDENT RPAREN
     { $3 }
 
-expr_open [@recovery Fresh, default_longident_loc, (None, [])]:
+expr_open :
 | override_flag ext_attributes mod_longident
     { $1, mkrhs $startpos($3) $endpos($3) $3, $2 }
 
@@ -2577,7 +2577,7 @@ signature_item:
   sig_exception_declaration WITH with_extensions
     { mksig $startpos $endpos (Psig_exception $2) }
 
-with_extensions [@recovery []]:
+with_extensions :
 | LIDENT COMMA with_extensions { $1 :: $3 }
 | LIDENT { [$1] }
 

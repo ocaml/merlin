@@ -944,7 +944,7 @@ structure [@recovery []]:
   | toplevel_directive structure { $2 }
   | structure_tail { $1 }
 ;
-structure_tail [@recovery []]:
+structure_tail:
     /* empty */          { [] }
   | SEMISEMI structure   { (text_str(1)) @ $2 }
   | structure_item structure_tail { (text_str(1)) @ $1 :: $2 }
