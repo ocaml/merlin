@@ -124,7 +124,12 @@ let with_typer t f =
   let' (from_ref Env.state)   t.env_state f
 
 let is_valid t =
-  with_typer t Env.check_state_consistency
+  with_typer t @@ fun () ->
+  Env.check_state_consistency () &&
+  match t.steps with
+  | `Signature ([], _) | `Structure ([], _) -> true
+  | `Signature (x :: _, _) -> Btype.is_valid x.snapshot
+  | `Structure (x :: _, _) -> Btype.is_valid x.snapshot
 
 let processed_ast reader =
   Ast_mapper.state := Ast_mapper.new_state ();

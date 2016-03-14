@@ -27,6 +27,7 @@
 )* }}} *)
 
 open Merlin_lib
+open Inuit_stub
 
 type state
 
@@ -36,4 +37,4 @@ val dispatch : state -> 'a Protocol.command -> 'a
 
 val context_dispatch : Protocol.context -> 'a Protocol.command -> 'a
 
-val monitor : set_title:(string -> unit) -> _ Inuit_stub.cursor -> unit
+val monitor : set_title:(string -> unit) -> flags cursor -> unit

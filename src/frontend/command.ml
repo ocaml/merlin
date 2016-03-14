@@ -26,9 +26,9 @@
 
 )* }}} *)
 
+open Inuit_stub
 open Std
 open Misc
-
 open Protocol
 open Merlin_lib
 
@@ -67,6 +67,9 @@ let new_state ?context () =
     | Some context -> new_buffer context
   in
   {buffer; verbosity_last = None; verbosity = 0}
+
+let logging_frame =
+  ref {Nav. body = null_cursor; title = null_cursor; nav = Nav.make "" ignore}
 
 let checkout_buffer_cache = ref []
 let checkout_buffer =
@@ -391,6 +394,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       {Compl. entries = List.rev entries; context }
     in
     let `No_labels no_labels, buffer = Buffer.for_completion buffer pos in
+    Merlin_reader.trace (Buffer.reader buffer) !logging_frame;
     with_typer buffer (complete ~no_labels)
 
   | Expand_prefix (prefix, pos) ->
@@ -731,7 +735,6 @@ let context_dispatch context cmd =
 let new_state () = new_state ()
 
 module Monitor = struct
-  open Inuit_stub
 
   let name_of_key (kind, name, dots) =
     Printf.sprintf "[%s] %s (%s)"
@@ -842,7 +845,11 @@ module Monitor = struct
       in
       Hashtbl.iter print_context contexts
     in
-    Nav.render nav k
+    Nav.render nav k;
+    printf k "\nMessage log\n";
+    let body = sub k in
+    logging_frame := {Nav. nav; body; title = null_cursor}
+
 end
 
 let monitor = Monitor.main
