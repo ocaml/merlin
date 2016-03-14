@@ -1,7 +1,5 @@
 open Std
-(*open Sturgeon.Tui*)
-
-type cursor = unit
+open Inuit_stub
 
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
@@ -34,9 +32,9 @@ module Make
     (Dump : sig
        val token   : Parser.token -> string
        val symbol  : Parser.xsymbol -> string
-       val element : cursor -> Parser.element -> unit
-       val item    : cursor -> Parser.item -> unit
-       val env     : cursor -> _ Parser.env -> unit
+       val element : _ cursor -> Parser.element -> unit
+       val item    : _ cursor -> Parser.item -> unit
+       val env     : _ cursor -> _ Parser.env -> unit
      end) =
 struct
 
@@ -118,11 +116,6 @@ struct
           line, min col col', max col col'
     in
     { line; min_col; max_col; env }
-
-  let printf () fmt =
-    Printf.ksprintf ignore fmt
-
-  let is_closed () = true
 
   let attempt k r token =
     let _, startp, _ = token in
@@ -298,14 +291,13 @@ struct
     in
     { popped; shifted; final; candidates = (candidate env) :: candidates }
 
-  (*let dump nav ~wrong:(t,s,e as token) ~rest:tokens env =
-    let body = Nav.body nav in
+  let dump {Nav. nav; body} ~wrong:(t,s,e as token) ~rest:tokens env =
+    let open Inuit_stub in
     if not (is_closed body) then (
       let l, c = Lexing.split_pos s in
       printf body "Unexpected %S at %d:%d, " (Dump.token t) l c;
       link body "see recoveries"
-        (fun _ -> Nav.modal nav "Recoveries" @@ fun nav ->
-          let body = Nav.body nav in
+        (fun _ -> Nav.push nav "Recoveries" @@ fun {Nav. body} ->
           let r = generate body env in
           let rec aux = function
             | [] -> ()
@@ -324,5 +316,5 @@ struct
       text body ".\n";
       Dump.env body env;
       text body "\n"
-    )*)
+    )
 end

@@ -142,7 +142,7 @@ let for_completion t pos =
   | Is_external _ ->
     `No_labels false, t
 
-(*let trace t nav = match t with
+let trace t nav = match t with
   | Is_normal p ->
     Merlin_parser.trace p nav
-  | Is_external _ -> ()*)
+  | Is_external _ -> ()

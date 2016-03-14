@@ -1,6 +1,4 @@
-(*open Sturgeon.Tui*)
-
-type cursor = unit
+open Inuit_stub
 
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
@@ -32,9 +30,9 @@ module Make
      end)
     (Dump : sig
        val token   : Parser.token -> string
-       val element : cursor -> Parser.element -> unit
-       val item    : cursor -> Parser.item -> unit
-       val env     : cursor -> _ Parser.env -> unit
+       val element : _ cursor -> Parser.element -> unit
+       val item    : _ cursor -> Parser.item -> unit
+       val env     : _ cursor -> _ Parser.env -> unit
        val symbol  : Parser.xsymbol -> string
      end) :
 sig
@@ -54,18 +52,18 @@ sig
   }
 
   val attempt :
-    cursor -> 'a candidates ->
+    _ cursor -> 'a candidates ->
     Parser.token * Lexing.position * Lexing.position ->
     [> `Accept of 'a
     | `Fail
     | `Ok of 'a Parser.checkpoint * 'a Parser.env ]
 
-  val generate : cursor -> 'a Parser.env -> 'a candidates
+  val generate : _ cursor -> 'a Parser.env -> 'a candidates
 
-  (*val dump :
-    Nav.t ->
+  val dump :
+    _ cursor Nav.frame ->
     wrong:(Parser.token * Lexing.position * Lexing.position) ->
     rest:(Parser.token * Lexing.position * Lexing.position) list ->
-    'a Parser.env -> unit*)
+    'a Parser.env -> unit
 
 end

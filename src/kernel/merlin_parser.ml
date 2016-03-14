@@ -27,12 +27,7 @@
 )* }}} *)
 
 open Std
-(*open Sturgeon.Tui*)
-
-let null_cursor = ()
-let text () _ = ()
-let printf () fmt = Printf.ksprintf ignore fmt
-let is_closed () = true
+open Inuit_stub
 
 module I = Parser_raw.MenhirInterpreter
 
@@ -162,7 +157,7 @@ let resume_parse nav =
 
   and check_for_error acc token tokens env = function
     | I.HandlingError _ ->
-      (*R.dump nav ~wrong:token ~rest:tokens env;*)
+      R.dump nav ~wrong:token ~rest:tokens env;
       let candidates = R.generate null_cursor env in
       let explanation =
         Merlin_explain.explain env token
@@ -238,9 +233,12 @@ let run_parser nav lexer previous kind =
       parse Parser_raw.Incremental.interface nav steps lexer in
     `Signature steps, `Signature result
 
+let null_frame =
+  {Nav. body = null_cursor; title = null_cursor; nav = Nav.make "" ignore}
+
 let make lexer kind =
   errors_ref := [];
-  let steps, tree = run_parser () lexer `None kind in
+  let steps, tree = run_parser null_frame lexer `None kind in
   let errors = !errors_ref in
   errors_ref := [];
   {kind; steps; tree; errors; lexer}
@@ -252,14 +250,14 @@ let update lexer t =
     {t with lexer}
   else begin
     errors_ref := [];
-    let steps, tree = run_parser () lexer t.steps t.kind in
+    let steps, tree = run_parser null_frame lexer t.steps t.kind in
     let errors = !errors_ref in
     errors_ref := [];
     {t with tree; steps; errors; lexer}
   end
 
-(*let trace t nav =
-  ignore (run_parser nav t.lexer `None t.kind)*)
+let trace t nav =
+  ignore (run_parser nav t.lexer `None t.kind)
 
 let result t = t.tree
 

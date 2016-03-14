@@ -26,6 +26,8 @@
 
 )* }}} *)
 
+open Inuit_stub
+
 type spec =
   | Normal of Extension.set * Merlin_parser.kind
   | External of string * Merlin_parser.kind
@@ -48,5 +50,5 @@ val errors : t -> exn list
 
 val reconstruct_identifier: ?for_locate:bool -> t -> Lexing.position -> string Location.loc list
 
-(*val trace : t -> Sturgeon.Tui.Nav.t -> unit*)
+val trace : t -> _ cursor Nav.frame -> unit
 val for_completion: t -> Lexing.position -> [`No_labels of bool] * t
