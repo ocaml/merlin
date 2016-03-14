@@ -390,53 +390,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       in
       {Compl. entries = List.rev entries; context }
     in
-    (*let lexer0 = Buffer.lexer buffer in*)
-    (*let lexer =
-      History.seek_backward
-        (fun (_,item) -> Lexing.compare_pos pos (Lexer.item_start item) <= 0)
-        lexer0
-    in
-    let lexer =
-      History.seek_forward ~last:true
-        (fun (_,item) -> Lexing.compare_pos (Lexer.item_end item) pos <= 0)
-        lexer
-    in
-    let need_token, no_labels =
-      let open Raw_parser in
-      let exns, item = History.focused lexer in
-      let loc = Lexer.item_location item in
-      let need_token =
-        if Parsing_aux.compare_pos pos loc = 0 &&
-           (match item with
-            | Lexer.Valid (_, (LIDENT _ | UIDENT _), _) -> true
-            | _ -> false)
-        then
-          None
-        else
-          Some (exns, Lexer.Valid (pos, LIDENT "", pos))
-      and no_labels =
-        (* Cursor is already over a label, don't suggest another one *)
-        match item with
-        | Lexer.Valid (_, (LABEL _ | OPTLABEL _), _) -> true
-        | _ -> false
-      in
-      need_token, no_labels
-    in
-    begin match need_token with
-    | None -> with_typer buffer (complete ~no_labels)
-    | Some token ->
-      (* Setup fake AST *)
-      let lexer' = History.fake_insert token lexer in
-      let lexer' = History.seek (History.position lexer0 + 1) lexer' in
-      ignore (Buffer.update buffer lexer' : [> ]);
-      try_finally
-        (* Complete on adjusted buffer *)
-        (fun () -> with_typer buffer (complete ~no_labels))
-        (* Restore original buffer *)
-        (fun () -> ignore (Buffer.update buffer lexer0 : [> ]))
-    end
-      *)
-    with_typer buffer (complete ~no_labels:true)
+    let `No_labels no_labels, buffer = Buffer.for_completion buffer pos in
+    with_typer buffer (complete ~no_labels)
 
   | Expand_prefix (prefix, pos) ->
     with_typer buffer @@ fun typer ->

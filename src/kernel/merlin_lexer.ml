@@ -208,6 +208,17 @@ let extract_ident = function
     Location.mkloc t {Location. loc_start = s; loc_end = e; loc_ghost = false}
   | _ -> assert false
 
+(* FIXME: not the best intermediate repr, skip history in the future *)
+let as_history t pos =
+  if t.items = [] then None
+  else
+    let h = History.of_list t.items in
+    let h = History.seek_forward (function
+        | Triple (_,_,e) -> Lexing.compare_pos pos e > 0
+        | _ -> true
+      ) h in
+    Some h
+
 (* [reconstruct_identifier] is impossible to read at the moment, here is a
    pseudo code version of the function:
    (many thanks to Gabriel for this contribution)
@@ -282,13 +293,9 @@ let extract_ident = function
 *)
 
 let reconstruct_identifier ?(for_locate=false) t pos =
-  if t.items = [] then []
-  else
-    let h = History.of_list t.items in
-    let h = History.seek_forward (function
-        | Triple (_,_,e) -> Lexing.compare_pos pos e > 0
-        | _ -> true
-      ) h in
+  match as_history t pos with
+  | None -> []
+  | Some h ->
     let h = match History.focused h with
       | Triple (DOT,_,_) -> History.move 1 h
       | _ -> h
@@ -351,3 +358,33 @@ let identifier_suffix ident =
   match List.last ident with
   | Some x when is_uppercase x -> drop_lowercase [] ident
   | _ -> ident
+
+let for_completion t pos =
+  match as_history t pos with
+  | None -> (`No_labels false, t)
+  | Some h ->
+    let need_token, no_labels =
+      let open Parser_raw in
+      let item = History.focused h in
+      let need_token =
+        match item with
+        | Triple ((LIDENT _ | UIDENT _), loc_start, loc_end)
+          when Lexing.compare_pos pos loc_start >= 0
+            && Lexing.compare_pos pos loc_end <= 0 -> None
+        | _ -> Some (Triple (LIDENT "", pos, pos))
+      and no_labels =
+        (* Cursor is already over a label, don't suggest another one *)
+        match item with
+        | Triple ((LABEL _ | OPTLABEL _), _, _) -> true
+        | _ -> false
+      in
+      need_token, no_labels
+    in
+    let t =
+      match need_token with
+      | None -> t
+      | Some token ->
+        let h' = History.fake_insert token h in
+        {t with items = History.to_list h'}
+    in
+    (`No_labels no_labels, t)

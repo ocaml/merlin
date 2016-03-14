@@ -133,6 +133,15 @@ let reconstruct_identifier ?for_locate t pos =
   | Is_external _ ->
     []
 
+let for_completion t pos =
+  match t with
+  | Is_normal p ->
+    let lexer = Merlin_parser.lexer p in
+    let no_labels, lexer = Merlin_lexer.for_completion lexer pos in
+    no_labels, Is_normal (Merlin_parser.update lexer p)
+  | Is_external _ ->
+    `No_labels false, t
+
 (*let trace t nav = match t with
   | Is_normal p ->
     Merlin_parser.trace p nav

@@ -41,6 +41,13 @@ let of_list = function
   | x :: xs -> {head = List.One x; position = 0; tail = xs}
   | [] -> invalid_arg "History.of_list"
 
+let to_list t =
+  let rec rev acc = function
+    | List.One x -> x :: acc
+    | List.More (x, xs) -> rev (x :: acc) xs
+  in
+  rev t.tail t.head
+
 let head x = x.head
 let tail x = x.tail
 let position x = x.position

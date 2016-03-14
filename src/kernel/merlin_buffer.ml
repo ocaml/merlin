@@ -88,6 +88,10 @@ let typer t =
   t.typer <- Merlin_typer.update (reader t) t.typer;
   t.typer
 
+let for_completion t pos =
+  let no_labels, reader = Merlin_reader.for_completion (reader t) pos in
+  no_labels, {t with reader}
+
 (* All top modules of current project, with current module removed *)
 let global_modules t =
   List.remove (Merlin_source.name (source t))

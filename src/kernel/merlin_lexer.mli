@@ -46,3 +46,4 @@ val compare : t -> t -> int
 
 val reconstruct_identifier: ?for_locate:bool -> t -> Lexing.position -> string Location.loc list
 val identifier_suffix: string Location.loc list -> string Location.loc list
+val for_completion: t -> Lexing.position -> [`No_labels of bool] * t

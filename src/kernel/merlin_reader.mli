@@ -49,3 +49,4 @@ val errors : t -> exn list
 val reconstruct_identifier: ?for_locate:bool -> t -> Lexing.position -> string Location.loc list
 
 (*val trace : t -> Sturgeon.Tui.Nav.t -> unit*)
+val for_completion: t -> Lexing.position -> [`No_labels of bool] * t

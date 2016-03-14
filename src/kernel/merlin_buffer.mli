@@ -38,6 +38,8 @@ val source  : t -> Merlin_source.t
 val reader  : t -> Merlin_reader.t
 val typer   : t -> Merlin_typer.t
 
+val for_completion: t -> Lexing.position -> [`No_labels of bool] * t
+
 (* All top modules of current project, with current module removed *)
 val global_modules: t -> string list
 
