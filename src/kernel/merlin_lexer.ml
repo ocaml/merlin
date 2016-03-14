@@ -213,8 +213,8 @@ let as_history t pos =
   if t.items = [] then None
   else
     let h = History.of_list t.items in
-    let h = History.seek_forward (function
-        | Triple (_,_,e) -> Lexing.compare_pos pos e > 0
+    let h = History.seek_forward ~last:true (function
+        | Triple (_,_,e) -> Lexing.compare_pos pos e <= 0
         | _ -> true
       ) h in
     Some h

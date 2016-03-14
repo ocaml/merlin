@@ -21,6 +21,7 @@ B src/ocaml/utils
 B src/ocaml/tools
 B src/ocaml_aux
 B src/utils
+B +threads
 PKG findlib
 PKG yojson
 PKG sturgeon

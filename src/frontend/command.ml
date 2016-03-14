@@ -730,9 +730,8 @@ let context_dispatch context cmd =
 
 let new_state () = new_state ()
 
-(*module Monitor = struct
-  open Sturgeon
-  open Tui
+module Monitor = struct
+  open Inuit_stub
 
   let name_of_key (kind, name, dots) =
     Printf.sprintf "[%s] %s (%s)"
@@ -747,21 +746,21 @@ let new_state () = new_state ()
        | Some [] -> "<no project>"
        | Some names -> String.concat ~sep:", " names)
 
-  let view_source buffer nav =
-    text (Nav.body nav) (Source.text (Buffer.source buffer))
+  let view_source buffer {Nav. body} =
+    text body (Source.text (Buffer.source buffer))
 
-  let view_tokens buffer nav =
-    let body = Nav.body nav in
+  let view_tokens buffer {Nav. body; nav} =
     match Reader.find_lexer (Buffer.reader buffer) with
     | None -> text body "Current reader has no OCaml lexer\n"
     | Some lexer ->
       let action = match Reader.is_normal (Buffer.reader buffer) with
         | None -> (fun (t,_,_) -> text body (Parser_printer.print_token t))
-        | Some parser -> (fun (t,_,_ as token) ->
+        | Some parser -> (fun (t,_,_ as _token) ->
           link body (Parser_printer.print_token t) (fun _ ->
-              Nav.modal nav ("Details of " ^ Parser_printer.print_token t)
-              @@ fun nav ->
-              Parser.dump_stack parser (Nav.body nav) token
+              Nav.push nav ("Details of " ^ Parser_printer.print_token t)
+              @@ fun {Nav. body} ->
+              ()
+              (*FIXME Parser.dump_stack parser body token*)
             ))
       in
       let print_token line' (t,pos,_ as token) =
@@ -778,50 +777,50 @@ let new_state () = new_state ()
         List.fold_left ~f:print_token ~init:(-1) (Lexer.tokens lexer) in
       ()
 
-  let view_printast buffer nav =
+  let view_printast buffer {Nav. body} =
     let ppf, to_string = Format.to_string () in
     begin match Reader.result (Buffer.reader buffer) with
       | `Signature s -> Printast.interface ppf s
       | `Structure s -> Printast.implementation ppf s
     end;
-    text (Nav.body nav) (to_string ())
+    text body (to_string ())
 
-  let view_pprintast buffer nav =
+  let view_pprintast buffer {Nav. body} =
     let ppf, to_string = Format.to_string () in
     begin match Reader.result (Buffer.reader buffer) with
       | `Signature s -> Pprintast.signature ppf s
       | `Structure s -> Pprintast.structure ppf s
     end;
-    text (Nav.body nav) (to_string ())
+    text body (to_string ())
 
   let view_recoveries buffer nav =
-    Reader.trace (Buffer.reader buffer) nav
+    ()
+    (*FIXME Reader.trace (Buffer.reader buffer) nav*)
 
-  let view_signature buffer nav =
+  let view_signature buffer {Nav. body} =
     let ppf, to_string = Format.to_string () in
     begin match Typer.result (Buffer.typer buffer) with
       | `Signature s -> Printtyp.signature ppf s.Typedtree.sig_type
       | `Structure s -> Printtyp.signature ppf s.Typedtree.str_type
     end;
-    text (Nav.body nav) (to_string ())
+    text body (to_string ())
 
-  let view_typedtree buffer nav =
+  let view_typedtree buffer {Nav. body} =
     let ppf, to_string = Format.to_string () in
     begin match Typer.result (Buffer.typer buffer) with
       | `Signature s -> Printtyped.interface ppf s
       | `Structure s -> Printtyped.implementation ppf s
     end;
-    text (Nav.body nav) (to_string ())
+    text body (to_string ())
 
-  let monitor_context key state nav =
+  let monitor_context key state {Nav. body; nav} =
     let buffer = state.buffer in
     let unit = Buffer.unit_name buffer in
-    let body = Nav.body nav in
     printf body "Verbosity: %d\n" state.verbosity;
     printf body "Unit name: %s\n" unit;
     let viewer name f =
       link body ("View " ^ name) (fun _ ->
-          Nav.modal nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer));
+          Nav.push nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer));
       text body "\n"
     in
     viewer "source" view_source;
@@ -832,17 +831,18 @@ let new_state () = new_state ()
     viewer "signature" view_signature;
     viewer "typedtree" view_typedtree
 
-  let main ~args ~set_title k =
+  let main ~set_title k =
     set_title "merlin-monitor";
-    Nav.make k "Merlin monitor" @@ fun nav ->
-    let body = Nav.body nav in
-    text body "Buffers\n\n";
-    let print_context key state =
-      link body (name_of_key key) (fun _ ->
-          Nav.modal nav (name_of_key key) (monitor_context key state));
-      text body "\n"
+    let nav = Nav.make "Merlin monitor" @@ fun {Nav. body; nav} ->
+      text body "Buffers\n\n";
+      let print_context key state =
+        link body (name_of_key key) (fun _ ->
+            Nav.push nav (name_of_key key) (monitor_context key state));
+        text body "\n"
+      in
+      Hashtbl.iter print_context contexts
     in
-    Hashtbl.iter print_context contexts
+    Nav.render nav k
 end
 
-let monitor = Monitor.main*)
+let monitor = Monitor.main

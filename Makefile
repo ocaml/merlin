@@ -79,6 +79,7 @@ debug: assert_configured
 clean:
 	@rm -f src/config/my_config.ml src/my_config.ml src/myocamlbuild_config.ml
 	@rm -f emacs/merlin.elc
+	@rm -f src/ocaml_*/*.cmly
 	$(MAKE) -f Makefile.preprocess clean
 	+$(OCAMLMAKEFILE) clean
 

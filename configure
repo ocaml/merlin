@@ -185,11 +185,28 @@ else
   NATIVE=false
 fi
 
+# Sturgeon version check
+if ocamlfind query sturgeon >/dev/null 2>/dev/null; then
+  STURGEON_VERSION="sturgeon_stub"
+  STURGEON_VERSION_MESSAGE="stub (enabled, using 'sturgeon' package)"
+  STURGEON_PACKAGE=sturgeon
+  NEED_THREADS=1
+  NEED_THREADS_MESSAGE=yes
+else
+  STURGEON_VERSION="sturgeon_null"
+  STURGEON_VERSION_MESSAGE="null (disabled)"
+  STURGEON_PACKAGE=
+  NEED_THREADS=0
+  NEED_THREADS_MESSAGE=no
+fi
+
 cat <<END
 
 System config:
   OCaml ABI version: $OCAML_VERSION_MESSAGE
   Native code: $NATIVE
+  Sturgeon version: $STURGEON_VERSION_MESSAGE
+  Need threads: $NEED_THREADS_MESSAGE
 
 Will install:
   ocamlmerlin binary in: $BIN_DIR
@@ -203,13 +220,19 @@ END
 
 SYSTEM=$(ocamlfind c -config | grep system|cut -d' ' -f2)
 
+MERLIN_CONFIG_ENV="
+export MERLIN_NEED_THREADS=${NEED_THREADS} 
+export MERLIN_STURGEON_PACKAGE=${STURGEON_PACKAGE}
+"
+
 if [ -z ${COMSPEC+x} ]; then
 
   # Non windows-like system, use symlinks
 
-  MERLIN_OCAML_VERSION=
   rm -f "$PWD/src/ocaml" 2>&1 >/dev/null
   ln -sf "$PWD/src/$OCAML_VERSION" "$PWD/src/ocaml"
+  rm -f "$PWD/src/sturgeon" 2>&1 >/dev/null
+  ln -sf "$PWD/src/$STURGEON_VERSION" "$PWD/src/sturgeon"
 
 else
 
@@ -217,8 +240,10 @@ else
   # Avoid symlinks, find right version through environment variable
 
   touch "$PWD/src/ocaml"
-  MERLIN_OCAML_VERSION="export MERLIN_OCAML_VERSION=${OCAML_VERSION/ocaml/}"
-
+  MERLIN_CONFIG_ENV="$MERLIN_CONFIG_ENV
+export MERLIN_OCAML_VERSION=${OCAML_VERSION/ocaml/}
+export MERLIN_STURGEON_VERSION=${STURGEON_VERSION/sturgeon/}
+"
 fi
 
 mkdir -p "$PWD/src/config"
@@ -246,7 +271,7 @@ WITH_BIN_ANNOT=$WITH_BIN_ANNOT
 WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 EXE=$EXE
-$MERLIN_OCAML_VERSION
+$MERLIN_CONFIG_ENV
 END
 
   if [ -n "$VERSION_STRING" ]; then

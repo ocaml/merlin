@@ -19,14 +19,18 @@ ifdef WITH_DEBUG
 	OCAMLLDFLAGS += -g
 endif
 
-RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
-TYPER  = src/ocaml$(MERLIN_OCAML_VERSION)
-THREADS = 1
+RESULT   = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
+TYPER    = src/ocaml$(MERLIN_OCAML_VERSION)
+STURGEON = src/sturgeon$(MERLIN_STURGEON_VERSION)
+THREADS  = $(MERLIN_NEED_THREADS)
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 
 SOURCES = \
 	src/config/my_config.ml           \
+	src/utils/inuit_stub.mli          \
+	src/utils/inuit_stub.ml           \
+	$(STURGEON)/sturgeon_stub.ml      \
 	src/utils/menhirLib.mli           \
 	src/utils/menhirLib.ml            \
 	src/utils/terminfo.mli            \
@@ -226,7 +230,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = str findlib yojson unix
+PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code
