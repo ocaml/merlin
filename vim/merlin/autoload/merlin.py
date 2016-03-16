@@ -86,7 +86,7 @@ class MerlinProcess:
                 path = self.path
             else:
                 path = vim.eval("merlin#FindBinary()")
-            cmd = [path,"-ignore-sigint"]
+            cmd = [path,"-ignore-sigint"] + vim.eval('g:merlin_binary_flags')
             if self.env:
                 env = self.env
             else:
