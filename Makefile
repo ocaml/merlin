@@ -30,10 +30,6 @@ ifndef VERBOSE
 	OCAMLMAKEFILE += REALLY_QUIET=1
 endif
 
-#### Leftovers from previous buildsystem
-
-OCAMLBUILD_LEFTOVERS = _build _tags src/config/myocamlbuild_config.ml ocamlmerlin.native
-
 #### Default rule
 
 all: $(TARGET) $(TARGET_EMACS)
@@ -77,10 +73,11 @@ debug: assert_configured
 	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
 clean:
-	@rm -f src/config/my_config.ml src/my_config.ml src/myocamlbuild_config.ml
+	@rm -f Makefile.config $(CONFIG_FILES)
 	@rm -f emacs/merlin.elc
 	@rm -f src/ocaml_*/*.cmly
 	$(MAKE) -f Makefile.preprocess clean
+	@find src/ -name '*.cm*' -delete
 	+$(OCAMLMAKEFILE) clean
 
 check: $(TARGET)
@@ -88,8 +85,7 @@ check: $(TARGET)
 
 distclean: clean
 	@echo
-	rm -rf $(OCAMLBUILD_LEFTOVERS)
-	rm -f Makefile.config $(CONFIG_FILES) $(TARGET)
+	rm -f $(TARGET)
 
 install-binary: $(TARGET)
 	install -d $(BIN_DIR)

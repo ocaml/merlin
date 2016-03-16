@@ -14,11 +14,5 @@ config.iss
 ._d
 ._ncdi
 
-# Ignore any stale ocamlbuild stuff
-_tags
-_build/
-src/config/myocamlbuild_config.ml
-ocamlmerlin.native
-
 # Ignore garbage files from editors
 *.un~
