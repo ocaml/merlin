@@ -73,6 +73,7 @@ let logfmt section title f =
     output_section oc section title;
     let ppf = Format.formatter_of_out_channel oc in
     f ppf;
+    Format.pp_print_flush ppf ();
     output_char oc '\n'
 
 let logj section title f =

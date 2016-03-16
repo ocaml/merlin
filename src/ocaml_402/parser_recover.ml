@@ -3,18 +3,12 @@ open Parser_raw
 module Default = struct
 
   open Asttypes
-  let default_expr = Fake.any_val'
-  let default_type = Ast_helper.Typ.any ()
-  let default_pattern = Ast_helper.Pat.any ()
-  let default_longident = Longident.Lident "_"
-  let default_longident_loc = Location.mknoloc (Longident.Lident "_")
-  let default_payload = Parsetree.PStr []
-  let default_attribute = Location.mknoloc "", default_payload
-  let default_module_expr = Ast_helper.Mod.structure []
-  let default_module_type = Ast_helper.Mty.signature []
-  let default_module_decl = Ast_helper.Md.mk (Location.mknoloc "_") default_module_type
-  let default_module_bind = Ast_helper.Mb.mk (Location.mknoloc "_") default_module_expr
-  let default_value_bind = Ast_helper.Vb.mk default_pattern default_expr
+  open Parsetree
+  let default_loc = ref Location.none
+  let default_expr () = {Fake.any_val' with pexp_loc = !default_loc}
+  let default_pattern () = Ast_helper.Pat.any ~loc:!default_loc ()
+  let default_module_expr () = Ast_helper.Mod.structure ~loc:!default_loc[]
+  let default_module_type () = Ast_helper.Mty.signature ~loc:!default_loc[]
 
   let value (type a) : a MenhirInterpreter.symbol -> a = function
     | MenhirInterpreter.T MenhirInterpreter.T_error -> ()
@@ -223,7 +217,7 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_pattern_var -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_pattern_semi_list -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_pattern_comma_list -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_pattern -> default_pattern
+    | MenhirInterpreter.N MenhirInterpreter.N_pattern -> default_pattern ()
     | MenhirInterpreter.N MenhirInterpreter.N_parse_expression -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_parent_binder -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_package_type_cstrs -> raise Not_found
@@ -246,9 +240,9 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_name_tag -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_mutable_flag -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_mty_longident -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_module_type -> default_module_type
+    | MenhirInterpreter.N MenhirInterpreter.N_module_type -> default_module_type ()
     | MenhirInterpreter.N MenhirInterpreter.N_module_rec_declaration -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_module_expr -> default_module_expr
+    | MenhirInterpreter.N MenhirInterpreter.N_module_expr -> default_module_expr ()
     | MenhirInterpreter.N MenhirInterpreter.N_module_declaration -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_module_bindings -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_module_binding_body -> raise Not_found
@@ -260,7 +254,7 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_match_cases -> []
     | MenhirInterpreter.N MenhirInterpreter.N_match_case -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_lident_list -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_let_pattern -> default_pattern
+    | MenhirInterpreter.N MenhirInterpreter.N_let_pattern -> default_pattern ()
     | MenhirInterpreter.N MenhirInterpreter.N_let_operator -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_let_bindings_no_attrs -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_let_bindings -> raise Not_found
@@ -301,7 +295,7 @@ module Default = struct
     | MenhirInterpreter.N MenhirInterpreter.N_expr_open -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_expr_comma_opt_list -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_expr_comma_list -> raise Not_found
-    | MenhirInterpreter.N MenhirInterpreter.N_expr -> default_expr
+    | MenhirInterpreter.N MenhirInterpreter.N_expr -> default_expr ()
     | MenhirInterpreter.N MenhirInterpreter.N_direction_flag -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_core_type_no_attr -> raise Not_found
     | MenhirInterpreter.N MenhirInterpreter.N_core_type_list_no_attr -> raise Not_found

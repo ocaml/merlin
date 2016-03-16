@@ -311,21 +311,15 @@ let let_operator startpos endpos op bindings cont =
 
 %[@recovery.header
   open Asttypes
+  open Parsetree
 
-  let default_expr = Fake.any_val'
-  let default_type = Ast_helper.Typ.any ()
-  let default_pattern = Ast_helper.Pat.any ()
-  let default_longident = Longident.Lident "_"
-  let default_longident_loc = Location.mknoloc (Longident.Lident "_")
+  let default_loc = ref Location.none
 
-  let default_payload = Parsetree.PStr []
-  let default_attribute = Location.mknoloc "", default_payload
+  let default_expr () = {Fake.any_val' with pexp_loc = !default_loc}
+  let default_pattern () = Ast_helper.Pat.any ~loc:!default_loc ()
 
-  let default_module_expr = Ast_helper.Mod.structure []
-  let default_module_type = Ast_helper.Mty.signature []
-  let default_module_decl = Ast_helper.Md.mk (Location.mknoloc "_") default_module_type
-  let default_module_bind = Ast_helper.Mb.mk (Location.mknoloc "_") default_module_expr
-  let default_value_bind = Ast_helper.Vb.mk default_pattern default_expr
+  let default_module_expr () = Ast_helper.Mod.structure ~loc:!default_loc[]
+  let default_module_type () = Ast_helper.Mty.signature ~loc:!default_loc[]
 ]
 
 (* Tokens *)
@@ -600,7 +594,7 @@ functor_args [@recovery []]:
 | functor_arg
     { [ $1 ] }
 
-module_expr  [@recovery default_module_expr]:
+module_expr  [@recovery default_module_expr ()]:
 | mod_longident
     { mkmod $startpos $endpos (Pmod_ident (mkrhs $startpos($1) $endpos($1) $1)) }
 | STRUCT [@unclosed "struct"] structure END [@close]
@@ -721,7 +715,7 @@ module_binding :
 
 (* Module types *)
 
-module_type [@recovery default_module_type]:
+module_type [@recovery default_module_type ()]:
 | mty_longident
     { mkmty $startpos $endpos (Pmty_ident (mkrhs $startpos($1) $endpos($1) $1)) }
 | SIG [@unclosed "sig"] signature END [@close]
@@ -1107,13 +1101,13 @@ label_var :
 | LIDENT
     { ($1, mkpat $startpos $endpos (Ppat_var (mkrhs $startpos($1) $endpos($1) $1))) }
 
-let_pattern [@recovery default_pattern]:
+let_pattern [@recovery default_pattern ()]:
 | pattern
     { $1 }
 | pattern COLON core_type
     { mkpat $startpos $endpos (Ppat_constraint($1, $3)) }
 
-expr [@recovery default_expr]:
+expr [@recovery default_expr ()]:
 | simple_expr %prec below_SHARP
     { $1 }
 | simple_expr simple_labeled_expr_list
@@ -1484,7 +1478,7 @@ type_constraint:
 
 (* Patterns *)
 
-pattern [@recovery default_pattern]:
+pattern [@recovery default_pattern ()]:
 | simple_pattern
     { $1 }
 | pattern AS val_ident

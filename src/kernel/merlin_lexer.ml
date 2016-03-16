@@ -150,7 +150,9 @@ let comments t =
 
 let compare t1 t2 =
   if t1.keywords == t2.keywords then
-    Merlin_source.compare t1.source t2.source
+    match compare t1.items t2.items with
+    | 0 -> Merlin_source.compare t1.source t2.source
+    | n -> n
   else
     compare t1 t2
 

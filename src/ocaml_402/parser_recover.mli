@@ -1,5 +1,9 @@
 open Parser_raw
 
+module Default : sig
+  val default_loc : Location.t ref
+end
+
 val default_value : 'a MenhirInterpreter.symbol -> 'a
 
 type action =

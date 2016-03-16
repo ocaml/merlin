@@ -91,20 +91,14 @@ let compare_locations pos l1 l2 =
     Parsing_aux.compare_pos pos l2
   with
   | 0, 0 ->
-    (* Cursor inside both locations: favor non ghost and closer to the end *)
-    let g1 = l1.Location.loc_ghost and g2 = l2.Location.loc_ghost in
-    if g1 && not g2 then
-      t2_first
-    else if g2 && not g1 then
-      t1_first
-    else
-      Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
+    (* Cursor inside both locations: favor closer to the end *)
+    Lexing.compare_pos l1.Location.loc_end l2.Location.loc_end
   (* Cursor inside one location: it has priority *)
   | 0, _ -> t1_first
   | _, 0 -> t2_first
   (* Cursor outside locations: favor before *)
-  | n, m when n > 0 && m < 0 -> t2_first
-  | n, m when m > 0 && n < 0 -> t1_first
+  | n, m when n > 0 && m < 0 -> t1_first
+  | n, m when m > 0 && n < 0 -> t2_first
   (* Cursor is after both, select the closest one *)
   | _, _ ->
       Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end

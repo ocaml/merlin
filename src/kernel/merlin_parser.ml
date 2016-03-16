@@ -98,6 +98,10 @@ module R = Merlin_recover.Make
     (struct
       include Parser_recover
 
+      let default_value loc x =
+        Default.default_loc := loc;
+        default_value x
+
       let guide (type a) : a I.symbol -> bool = function
         | I.T I.T_BEGIN -> true
         | _ -> false

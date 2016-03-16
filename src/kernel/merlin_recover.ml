@@ -4,7 +4,7 @@ open Inuit_stub
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
     (Recovery : sig
-       val default_value : 'a Parser.symbol -> 'a
+       val default_value : Location.t -> 'a Parser.symbol -> 'a
 
        type action =
          | Abort
@@ -217,13 +217,15 @@ struct
             if !shifted = None && not (Recovery.nullable n) then
               shifted := Some xsym;
             Logger.log "recover" "eval Shift N" (Dump.symbol xsym);
-            let v = Recovery.default_value sym in
+            let loc = {Location. loc_start = endp; loc_end = endp; loc_ghost = true} in
+            let v = Recovery.default_value loc sym in
             Parser.feed_nonterminal n endp v endp env
           | Recovery.S (Parser.T t as sym) ->
             let xsym = Parser.X sym in
             if !shifted = None then shifted := Some xsym;
             Logger.log "recover" "eval Shift T" (Dump.symbol xsym);
-            let v = Recovery.default_value sym in
+            let loc = {Location. loc_start = endp; loc_end = endp; loc_ghost = true} in
+            let v = Recovery.default_value loc sym in
             let token = (Recovery.token_of_terminal t v, endp, endp) in
             begin match feed_token ~allow_reduction:true token env with
               | `Fail -> assert false
