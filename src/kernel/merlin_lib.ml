@@ -72,6 +72,9 @@ module Project : sig
   (* Enabled extensions *)
   val extensions: t -> Extension.set
 
+  (* Suffixes to search for located files with. *)
+  val suffixes : t -> (string * string) list
+
   (* Lexer keywords for current config *)
   val keywords: t -> Lexer.keywords
 
@@ -94,6 +97,7 @@ end = struct
       warnings       : Warnings.state;
       keywords       : Lexer.keywords;
       extensions     : Extension.set;
+      suffixes       : (string * string) list;
       validity_stamp : bool ref;
 
       source_path    : string list;
@@ -173,7 +177,10 @@ end = struct
              else user_config.stdlib]
           else []
       in
-      let source_path =
+      let clean list = List.rev (List.filter_dup list) in
+      let suffixes =
+        clean (user_config.suffixes @ dot_config.suffixes)
+      and source_path =
           user_config.source_path @
           dot_config.source_path @
           pkgpaths
@@ -202,7 +209,7 @@ end = struct
       let config = C.({
           dot_config;
           warnings; flags;
-          extensions; keywords;
+          extensions; suffixes; keywords;
           source_path; cmt_path; build_path;
           dot_failures = dfails0 @ dfails1;
           user_failures = ufails0 @ ufails1;
@@ -275,6 +282,8 @@ end = struct
 
   (* Enabled extensions *)
   let extensions t = (config t).extensions
+
+  let suffixes t = (config t).suffixes
 
   (* Lexer keywords for current config *)
   let keywords t = (config t).keywords
