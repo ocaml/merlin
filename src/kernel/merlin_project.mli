@@ -30,6 +30,9 @@ val global_modules : t -> string list
 (* Enabled extensions *)
 val extensions: t -> Extension.set
 
+(* Suffixes to search for located files with. *)
+val suffixes:  t -> (string * string) list
+
 (* Lexer keywords for current config *)
 val keywords: t -> Merlin_lexer.keywords
 

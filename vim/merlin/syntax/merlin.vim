@@ -3,7 +3,7 @@ if exists("b:current_syntax")
   finish
 endif
 
-syn keyword merlinKeyword S B PKG REC EXT PRJ FLG CMI CMT
+syn keyword merlinKeyword S B SUFFIX PKG REC EXT PRJ FLG CMI CMT
 syn match merlinComment "\v#.*$"
 
 hi link merlinKeyword Keyword

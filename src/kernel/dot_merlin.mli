@@ -39,6 +39,7 @@ type config = {
   packages    : string list;
   flags       : string list list;
   extensions  : string list;
+  suffixes    : (string * string) list;
   stdlib      : string;
   findlib     : string option;
 }
