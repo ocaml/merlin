@@ -192,15 +192,13 @@ module Utils = struct
     | _ -> true
 
   let split_extension file =
-    let dirname = Filename.dirname file in
     (* First grab basename to guard against directories with dots *)
     let basename = Filename.basename file in
     try
       let last_dot_pos = String.rindex basename '.' in
       let ext_name = String.sub basename last_dot_pos (String.length basename - last_dot_pos) in
       let base_without_ext = String.sub basename 0 last_dot_pos in
-      let without_ext = Filename.concat dirname base_without_ext in
-      (without_ext, Some ext_name)
+      (base_without_ext, Some ext_name)
     with Not_found -> (file, None)
 
 
@@ -490,6 +488,8 @@ let find_source ~project loc =
             let fdigest = Digest.file f in
             debug_log "  %s (%s)" f (Digest.to_hex fdigest) ;
             fdigest = digest
+          )
+        )
     with Not_found ->
       info_log "... using heuristic to select the right one" ;
       debug_log "we are looking for files in %s" dir ;
