@@ -182,45 +182,6 @@ let is_operator = function
   | COLONEQUAL -> Some ":=" | PLUSEQ -> Some "+="
   | _ -> None
 
-let is_ident = function
-  | UIDENT s | LIDENT s -> Some s
-  | _ -> None
-
-let is_uident = function
-  | UIDENT s -> Some s
-  | _ -> None
-
-let token is = function
-  | Triple (op,_,_) -> (is op <> None)
-  | _ -> false
-
-let extract_op for_locate = function
-  | Triple (t,s,e) ->
-    let t = Option.get (is_operator t) in
-    let t = if for_locate then t else "(" ^ t ^ ")" in
-    Location.mkloc t {Location. loc_start = s; loc_end = e; loc_ghost = false}
-  | _ -> assert false
-
-let extract_ident = function
-  | Triple (t,s,e) ->
-    let t = match is_ident t with
-      | Some t -> t
-      | None -> "( " ^ Option.get (is_operator t) ^ " )"
-    in
-    Location.mkloc t {Location. loc_start = s; loc_end = e; loc_ghost = false}
-  | _ -> assert false
-
-(* FIXME: not the best intermediate repr, skip history in the future *)
-let as_history t pos =
-  if t.items = [] then None
-  else
-    let h = History.of_list t.items in
-    let h = History.seek_forward ~last:true (function
-        | Triple (_,_,e) -> Lexing.compare_pos pos e <= 0
-        | _ -> true
-      ) h in
-    Some h
-
 (* [reconstruct_identifier] is impossible to read at the moment, here is a
    pseudo code version of the function:
    (many thanks to Gabriel for this contribution)
@@ -295,57 +256,86 @@ let as_history t pos =
 *)
 
 let reconstruct_identifier ?(for_locate=false) t pos =
-  match as_history t pos with
-  | None -> []
-  | Some h ->
-    let h = match History.focused h with
-      | Triple (DOT,_,_) -> History.move 1 h
-      | _ -> h
+  let rec look_for_component acc = function
+
+    (* Skip 'a and `A *)
+    | Triple ((LIDENT _ | UIDENT _), _, _) ::
+      Triple ((BACKQUOTE | QUOTE), _, _) :: items ->
+      check acc items
+
+    (* UIDENT is a regular a component *)
+    | Triple (UIDENT _, _, _) as item :: items ->
+      look_for_dot (item :: acc) items
+
+    (* LIDENT always begin a new identifier *)
+    | Triple (LIDENT _, _, _) as item :: items ->
+      if acc = []
+      then look_for_dot [item] items
+      else check acc (item :: items)
+
+    (* Reified operators behave like LIDENT *)
+    | Triple (RPAREN, _, _) ::
+      (Triple (token, _, _) as item) ::
+      Triple (LPAREN, _, _) :: items
+      when is_operator token <> None && acc = [] ->
+      look_for_dot [item] items
+
+    (* An operator alone is an identifier on its own *)
+    | (Triple (token, _, _) as item) :: items
+      when is_operator token <> None && acc = [] ->
+      check [item] items
+
+    (* Otherwise, check current accumulator and scan the rest of the input *)
+    | _ :: items ->
+      check acc items
+
+    | [] -> raise Not_found
+
+  and look_for_dot acc = function
+    | Triple (DOT,_,_) :: items -> look_for_component acc items
+    | (Comment _ | Error _) :: items -> look_for_dot acc items
+    | items -> check acc items
+
+  and check acc items =
+    if acc <> [] &&
+       (let startp = match acc with
+           | Triple (_, startp, _) :: _ -> startp
+           | _ -> assert false in
+        Lexing.compare_pos startp pos <= 0) &&
+       (let endp = match List.last acc with
+           | Some (Triple (_, _, endp)) -> endp
+           | _ -> assert false in
+        Lexing.compare_pos pos endp <= 0)
+    then acc
+    else match items with
+      | [] -> raise Not_found
+      | item :: _ when Lexing.compare_pos (item_end item) pos < 0 ->
+        raise Not_found
+      | _ -> look_for_component [] items
+
+  in
+  match look_for_component [] t.items with
+  | exception Not_found -> []
+  | acc ->
+    let fmt = function
+      | Triple (token, loc_start, loc_end) ->
+        let id =
+          match token with
+          | UIDENT s | LIDENT s -> s
+          | _ -> match is_operator token with
+            | Some t when for_locate -> t
+            | Some t -> "(" ^ t ^ ")"
+            | None -> assert false
+        in
+        Location.mkloc id {Location. loc_start; loc_end; loc_ghost = false}
+      | _ -> assert false
     in
-    match History.head h with
-    | List.One op when token is_operator op ->
-      [ extract_op for_locate op ]
-    | List.More (op, (List.More (rest, _) | List.One rest))
-      when token is_operator op
-        && not (token is_lparen rest) ->
-      [ extract_op for_locate op ]
-    | List.More (id, ( List.More (quote, _)
-                     | List.One quote))
-      when token is_ident id
-        && token is_quote quote ->
-      []
-    | _ ->
-      let acc, h = match History.head h, History.tail h with
-        | (List.More(ident, _) | List.One ident), _
-          when token is_ident ident -> [ident], h
-        | ( List.More (Triple (LPAREN,_,_), _)
-          | List.One (Triple (LPAREN,_,_))),
-          op :: (Triple (RPAREN,_,_)) :: _
-          when token is_operator op -> [op], h
-        | List.More (op,
-                     ( List.More (Triple (LPAREN,_,_), _)
-                     | List.One (Triple (LPAREN,_,_)))),
-          Triple (RPAREN,_,_) :: _
-          when token is_operator op -> [op], History.move (-1) h
-        | List.More (Triple (RPAREN,_,_),
-                     List.More (op,
-                                ( List.More (Triple (LPAREN,_,_), _)
-                                | List.One (Triple (LPAREN,_,_))))),
-          _
-          when token is_operator op -> [op], History.move (-2) h
-        | _ -> [], h
-      in
-      let h = History.move (-1) h in
-      let rec head acc = function
-        | List.More (Triple (DOT,_,_),
-                     List.More (ident, tl))
-          when token is_ident ident -> head (ident :: acc) tl
-        | List.More (Triple (DOT,_,_),
-                     List.One ident)
-          when token is_ident ident -> (ident :: acc)
-        | _ -> acc
-      in
-      List.map ~f:extract_ident (head acc (History.head h))
+    let before_pos = function
+      | Triple (_, s, _) ->
+        Lexing.compare_pos s pos <= 0
+      | _ -> assert false
+    in
+    List.map ~f:fmt (List.filter ~f:before_pos acc)
 
 let is_uppercase {Location. txt = x} =
   x <> "" && Char.is_uppercase x.[0]
@@ -362,31 +352,38 @@ let identifier_suffix ident =
   | _ -> ident
 
 let for_completion t pos =
-  match as_history t pos with
-  | None -> (`No_labels false, t)
-  | Some h ->
-    let need_token, no_labels =
-      let open Parser_raw in
-      let item = History.focused h in
-      let need_token =
-        match item with
-        | Triple ((LIDENT _ | UIDENT _), loc_start, loc_end)
-          when Lexing.compare_pos pos loc_start >= 0
-            && Lexing.compare_pos pos loc_end <= 0 -> None
-        | _ -> Some (Triple (LIDENT "", pos, pos))
-      and no_labels =
-        (* Cursor is already over a label, don't suggest another one *)
-        match item with
-        | Triple ((LABEL _ | OPTLABEL _), _, _) -> true
-        | _ -> false
-      in
-      need_token, no_labels
-    in
-    let t =
-      match need_token with
-      | None -> t
-      | Some token ->
-        let h' = History.fake_insert token h in
-        {t with items = History.to_list h'}
-    in
-    (`No_labels no_labels, t)
+  let no_labels = ref false in
+  let check_label = function
+    | Triple ((LABEL _ | OPTLABEL _), _, _) -> no_labels := true
+    | _ -> ()
+  in
+  let rec aux acc = function
+    (* Cursor is before item: continue *)
+    | item :: items when Lexing.compare_pos (item_start item) pos >= 0 ->
+      aux (item :: acc) items
+
+    (* Cursor is in the middle of item: stop *)
+    | item :: _ when Lexing.compare_pos (item_end item) pos > 0 ->
+      check_label item;
+      raise Exit
+
+    (* Cursor is at the end *)
+    | ((Triple (token, _, loc_end) as item) :: _) as items
+      when Lexing.compare_pos pos loc_end = 0 ->
+      check_label item;
+      begin match token with
+        (* Already on identifier, no need to introduce *)
+        | UIDENT _ | LIDENT _ -> raise Exit
+        | _ -> acc, items
+      end
+
+    | items -> acc, items
+  in
+  let t =
+    match aux [] t.items with
+    | exception Exit -> t
+    | acc, items ->
+      {t with items =
+                List.rev_append acc (Triple (LIDENT "", pos, pos) :: items)}
+  in
+  (`No_labels !no_labels, t)
