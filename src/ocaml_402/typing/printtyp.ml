@@ -278,7 +278,7 @@ let rec path_size n ofun afun = function
     Pident id ->
     n + penality (Ident.name id), -Ident.binding_time id
   | Pdot (p, dot, _) when ofun p ->
-    if debug then dprintf "OPENED %s, cost 0\n%!" (to_str p);
+    if debug then dprintf "PATH_SIZE %s = 0, OPENED\n%!" (to_str p);
     n + penality dot, 0
   | Pdot (p, dot, _) ->
     begin match afun p with
@@ -565,6 +565,7 @@ let set_printing_env env =
         end
         | `Opened | `Real -> lazy (fun p -> p)
       in
+      PathSet.iter (fun p -> dprintf "OPENED %s\n" (to_str p)) am.Env.am_open;
       printing_state := { aliasmap = am; pathmap; printenv = env }
 
 let wrap_printing_env env f =
