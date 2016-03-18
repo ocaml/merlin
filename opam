@@ -42,10 +42,6 @@ Add opam emacs directory to your load-path by appending this to your .emacs:
   ;; Start merlin on ocaml files
   (add-hook 'tuareg-mode-hook 'merlin-mode t)
   (add-hook 'caml-mode-hook 'merlin-mode t)
-  ;; Enable auto-complete
-  (setq merlin-use-auto-complete-mode 'easy)
-  ;; Use opam switch to lookup ocamlmerlin binary
-  (setq merlin-command 'opam)
 
 Take a look at https://github.com/the-lambda-church/merlin for more information
 "

@@ -79,9 +79,9 @@
   "If non-nil, suppress process startup message."
   :group 'merlin :type 'boolean)
 
-(defcustom merlin-command "ocamlmerlin"
+(defcustom merlin-command 'opam
   "The path to merlin in your installation."
-  :group 'merlin :type '(choice (file :tag "Filename")
+  :group 'merlin :type '(choice (file :tag "Filename (default binary is \"ocamlmerlin\")")
                                 (const :tag "Use current opam switch" opam)))
 
 (defcustom merlin-completion-with-doc nil
@@ -1731,9 +1731,11 @@ Returns the position."
 (defun merlin-command ()
   "Return path of ocamlmerlin binary selected by configuration"
   (if (equal merlin-command 'opam)
-    (concat (replace-regexp-in-string "\n$" ""
-              (shell-command-to-string "opam config var bin"))
-       "/ocamlmerlin")
+      (with-temp-buffer
+        (if (eq (call-process "opam" nil (current-buffer) nil "config" "var" "bin") 0)
+            (concat (replace-regexp-in-string "\n$" "" (buffer-string)) "/ocamlmerlin")
+          (message "merlin-command: opam config failed, falling back to 'ocamlmerlin' (message: %S)" (buffer-string))
+          "ocamlmerlin"))
     merlin-command))
 
 ;;;;;;;;;;;;;;;
