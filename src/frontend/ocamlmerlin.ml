@@ -88,7 +88,7 @@ module IO_sexp = IO_sexp
 
 let signal sg behavior =
   try ignore (Sys.signal sg behavior)
-  with Invalid_argument "Sys.signal: unavailable signal" -> ()
+  with Invalid_argument _ (*Sys.signal: unavailable signal*) -> ()
 
 let rec on_read state ~timeout fd =
   try match Unix.select [fd] [] [] timeout with
