@@ -185,6 +185,7 @@ function! s:ShowTypeEnclosing(type)
   augroup MerlinHighlighting
     au!
     autocmd InsertEnter <buffer> call merlin#StopHighlight()
+    autocmd BufWinLeave <buffer> call merlin#StopHighlight()
   augroup END
 
   if ! has_key(a:type, 'type')
