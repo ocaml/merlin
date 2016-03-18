@@ -33,6 +33,7 @@ let merlin_recovery_attributes attrs =
   | attrs -> attrs' @ attrs
 
 let raise_error = Typing_aux.raise_error
+let weak_raise = Typing_aux.weak_raise
 
 type error =
     Polymorphic_label of Longident.t
@@ -3522,6 +3523,7 @@ and type_application loc env funct sargs ty_expected =
         (List.map force (List.rev args), result_type)
     | (l1, sarg1) :: sargl ->
         let (ty1, ty2) =
+        try
           let ty_fun = expand_head env ty_fun in
           match ty_fun.desc with
             Tvar _ ->
@@ -3532,7 +3534,8 @@ and type_application loc env funct sargs ty_expected =
                     false
                 | _ -> true
               in
-              if ty_fun.level >= t1.level && not_identity funct.exp_desc then
+              if ty_fun.level >= t1.level && not_identity funct.exp_desc
+                && not (Typing_aux.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
@@ -3546,13 +3549,15 @@ and type_application loc env funct sargs ty_expected =
               match ty_res.desc with
                 Tarrow _ ->
                   if (!Clflags.classic || not (has_label l1 ty_fun)) then
-                    raise (Error(sarg1.pexp_loc, env,
+                    Typing_aux.weak_raise (error(sarg1.pexp_loc, env,
                                  Apply_wrong_label(l1, ty_res)))
                   else
-                    raise (Error(funct.exp_loc, env, Incoherent_label_order))
+                    Typing_aux.weak_raise (error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
-                  raise(Error(funct.exp_loc, env, Apply_non_function
-                                (expand_head env funct.exp_type)))
+                  Typing_aux.weak_raise(error(funct.exp_loc, env, Apply_non_function
+                                    (expand_head env funct.exp_type)))
+        with Typing_aux.Weak_error _ ->
+          newvar(), ty_fun
         in
         let optional = is_optional l1 in
         let arg1 () =
