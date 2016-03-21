@@ -247,9 +247,11 @@ let rec normalize_type_path ?(cache=false) env p =
     Not_found -> (p, Id)
 
 (* Short-path debugging *)
-                   
-let dprintf = Printf.eprintf
+
 let debug = try Sys.getenv "PRINTDBG" = "1" with Not_found -> false
+
+let dprintf =
+  if debug then Printf.eprintf else (fun fmt -> Printf.ikfprintf ignore stderr fmt)
 
 let to_str path = String.concat "." (Path.to_string_list path) ^ "/" ^
                   (string_of_int (try Ident.binding_time (Path.head path) with _ -> -1))
@@ -303,16 +305,16 @@ let aliasmap env =
     List.iter register_type_diff idents;
     let typ_ = PathMap.map (!) !typ_ in
     let mod_ = PathMap.map (!) !mod_ in
-    {Env.
+    { Env.
       am_mod = pathmap_append mod_ am.Env.am_mod;
       am_typ = pathmap_append typ_ am.Env.am_typ;
       am_open = !open_;
     }
   in
-  Env.get_aliasmap env update 
+  Env.get_aliasmap env update
 
 (* Persistent alias maps *)
-                   
+
 let pers_map name =
   try Env.find_pers_map name
   with Not_found ->
@@ -379,7 +381,7 @@ let fold_aliases am1 =
   type_aliases, modules_aliases
 
 (* Shortest module alias computation *)
-        
+
 let penalty id =
   if id <> "" && id.[0] = '_' then 10
   else if not (Std.String.no_double_underscore id) then 10
@@ -391,6 +393,37 @@ let min_cost (n1, _ as r1) (n2, _ as r2) =
 let add_component p name pos = match p with
   | Some p' -> Pdot (p', name, pos)
   | None -> Pident (Ident.create_persistent name)
+
+let indent = ref ""
+
+let enter fmt1 =
+  if debug then
+    let indent' = !indent in
+    let restore () = indent := indent' in
+    indent := indent' ^ "  ";
+    Printf.fprintf stderr "%s--> " !indent;
+    Printf.kfprintf (fun _oc f fmt2 ->
+        Printf.fprintf stderr "\n";
+        let r = try_finally f restore in
+        Printf.fprintf stderr "%s  <-- " !indent;
+        Printf.kfprintf (fun _oc p -> Printf.fprintf stderr " = %a\n" p r; r) stderr fmt2
+      )
+      stderr fmt1
+  else
+    Printf.ikfprintf (fun _oc f fmt2 ->
+        let r = f () in
+        Printf.ikfprintf (fun _oc p -> r) stderr fmt2
+      ) stderr fmt1
+
+let message fmt =
+  if debug then
+    (Printf.fprintf stderr "%s### " !indent;
+     Printf.kfprintf (fun _oc p r -> Printf.fprintf stderr "= %a\n" p r; r) stderr fmt)
+  else
+    Printf.ikfprintf (fun _oc _p r -> r) stderr fmt
+
+let dump_path oc path =
+  output_string oc (string_of_path path)
 
 let shortest_module_alias am (_, fold) fixed path =
   if PathSet.mem path am.Env.am_open then (0, None) else begin
@@ -404,7 +437,7 @@ let shortest_module_alias am (_, fold) fixed path =
              (cost + penalty n, Some (add_component p' n pos))
         in
         min_cost r r'
-    end 
+    end
 
 let shortest_type_alias (fold, _) mod_alias fixed path =
   let r = fold path (fun acc path' -> min_cost acc (fixed path')) (max_int, path) in
@@ -420,22 +453,48 @@ let shortest_type_alias (fold, _) mod_alias fixed path =
 let shortest_type_alias am =
   let fold_aliases = fold_aliases am in
   let modtbl = PathTbl.create 7 in
+  let dump_cost oc c =
+    if c = max_int
+    then Printf.fprintf oc "cycle"
+    else Printf.fprintf oc "cost:%d" c
+  in
   let rec mod_alias path =
-    try PathTbl.find modtbl path
-    with Not_found ->
-      PathTbl.add modtbl path (max_int, Some path);
-      let r = shortest_module_alias am fold_aliases mod_alias path in
-      PathTbl.replace modtbl path r;
-      r
+    let dump_result oc (n, po) = match po with
+      | None -> Printf.fprintf oc "(%a, opened)" dump_cost n
+      | Some path -> Printf.fprintf oc "(%a, %a)" dump_cost n dump_path path
+    in
+    match PathTbl.find modtbl path with
+    | v -> message "module_alias(%a)" dump_path path dump_result v
+    | exception Not_found ->
+      enter
+        "module_alias(%a)" dump_path path
+        begin fun () ->
+          PathTbl.add modtbl path (max_int, Some path);
+          let r = shortest_module_alias am fold_aliases mod_alias path in
+          PathTbl.replace modtbl path r;
+          r
+        end
+        "module_alias(%a)" dump_path path
+        dump_result
   in
   let typtbl = PathTbl.create 7 in
   let rec typ_alias path =
-    try PathTbl.find typtbl path
-    with Not_found ->
-      PathTbl.add typtbl path (max_int, path);
-      let r = shortest_type_alias fold_aliases mod_alias typ_alias path in
-      PathTbl.replace typtbl path r;
-      r
+    let dump_result oc (n, p) =
+      Printf.fprintf oc "(%a, %a)" dump_cost n dump_path p
+    in
+    match PathTbl.find typtbl path with
+    | v -> message "typ_alias(%a)" dump_path path dump_result v
+    | exception Not_found ->
+      enter
+        "typ_alias(%a)" dump_path path
+        begin fun () ->
+          PathTbl.add typtbl path (max_int, path);
+          let r = shortest_type_alias fold_aliases mod_alias typ_alias path in
+          PathTbl.replace typtbl path r;
+          r
+        end
+        "typ_alias(%a)" dump_path path
+        dump_result
   in
   fun path -> snd (typ_alias path)
 
@@ -475,9 +534,8 @@ let set_printing_env env =
     let am = aliasmap env in
     if !printing_state.aliasmap == am then ()
     else
-      (* printf "Reset printing_map@."; *)
-      let pathmap = match Clflags.real_paths () with
-        | `Short -> lazy begin
+      let pathmap =
+        lazy begin
           let type_alias = shortest_type_alias am in
           let type_alias = function
             (* Predefined types have binding_time < 1000 (see [Predef]) *)
@@ -487,7 +545,6 @@ let set_printing_env env =
           in
           type_alias
         end
-        | `Opened | `Real -> lazy (fun p -> p)
       in
       PathSet.iter (fun p -> dprintf "OPENED %s\n" (to_str p)) am.Env.am_open;
       printing_state := { aliasmap = am; pathmap; printenv = env }
@@ -501,7 +558,7 @@ let curr_printing_env () = !printing_state.printenv
 
 let shorten_path ?(env=curr_printing_env ()) path =
   shortest_type_alias (aliasmap env) path
-  
+
 
 let best_type_path p =
   if !printing_state == printing_empty then (p, Id)
