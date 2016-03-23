@@ -39,6 +39,7 @@ type directive = [
   | `FLG of string
   | `STDLIB of string
   | `FINDLIB of string
+  | `SUFFIX of string
 ]
 
 type file = {
@@ -80,6 +81,8 @@ module Cache = File_cache.Make (struct
             tell (`STDLIB (String.drop 7 line))
           else if String.is_prefixed ~by:"FINDLIB " line then
             tell (`FINDLIB (String.drop 8 line))
+          else if String.is_prefixed ~by:"SUFFIX " line then
+            tell (`SUFFIX (String.drop 7 line))
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -135,6 +138,7 @@ type config = {
   packages    : string list;
   flags       : string list list;
   extensions  : string list;
+  suffixes    : (string * string) list;
   stdlib      : string;
   findlib     : string option;
 }
@@ -174,6 +178,7 @@ let empty_config = {
   packages    = [];
   dot_merlins = [];
   extensions  = [];
+  suffixes    = [(".ml", ".mli")];
   flags       = [];
   stdlib      = Config.standard_library;
   findlib     = None;
@@ -187,12 +192,29 @@ let merge c1 c2 = {
   packages    = c1.packages @ c2.packages;
   dot_merlins = c1.dot_merlins @ c2.dot_merlins;
   extensions  = c1.extensions @ c2.extensions;
+  suffixes    = c1.suffixes @ c2.suffixes;
   flags       = c1.flags @ c2.flags;
   stdlib      = if c1.stdlib = empty_config.stdlib then c2.stdlib else c1.stdlib;
   findlib     = if c1.findlib = None then c2.findlib else c1.findlib;
 }
 
 let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
+let white_regexp = Str.regexp "[ \t]+"
+
+(* Parses suffixes pairs that were supplied as whitespace separated pairs
+   designating implementation/interface suffixes. These would be supplied in
+   the .merlin file as:
+
+   SUFFIX .sfx .sfxi   *)
+let parse_suffix str =
+  let trimmed = String.trim str in
+  let split_on_white = Str.split white_regexp trimmed in
+  if List.length split_on_white != 2 then []
+  else
+    let (first, second) = (List.nth split_on_white 0, List.nth split_on_white 1) in
+    if String.get first 0 != '.' || String.get second 0 != '.' then []
+    else [(first, second)]
+
 let rev_split_flags str =
   let rec aux acc str i =
     match try Some (Str.search_forward flg_regexp str i) with Not_found -> None with
@@ -231,6 +253,8 @@ let prepend_config {path; directives} config =
     | `PKG pkgs -> {config with packages = pkgs @ config.packages}
     | `EXT exts ->
       {config with extensions = exts @ config.extensions}
+    | `SUFFIX suffix ->
+      {config with suffixes = (parse_suffix suffix) @ config.suffixes}
     | `FLG flags ->
       let flags = List.rev (rev_split_flags flags) in
       {config with flags = flags :: config.flags}
@@ -250,6 +274,7 @@ let postprocess_config config =
     cmt_path    = clean config.cmt_path;
     packages    = clean config.packages;
     extensions  = clean config.extensions;
+    suffixes    = clean config.suffixes;
     flags       = clean config.flags;
     stdlib      = config.stdlib;
     findlib     = config.findlib;

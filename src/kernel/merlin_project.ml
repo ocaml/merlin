@@ -42,6 +42,7 @@ type config = {
   warnings       : Warnings.state;
   keywords       : Merlin_lexer.keywords;
   extensions     : Extension.set;
+  suffixes       : (string * string) list;
   validity_stamp : bool ref;
 
   source_path    : string list;
@@ -117,7 +118,11 @@ let config prj =
          then dot_config.stdlib
          else user_config.stdlib]
     in
-    let source_path =
+    let clean list = List.rev (List.filter_dup list) in
+    let suffixes =
+        clean (user_config.suffixes @
+        dot_config.suffixes)
+    and source_path =
       user_config.source_path @
       dot_config.source_path @
       pkgpaths
@@ -146,7 +151,7 @@ let config prj =
     let config = {
         dot_config;
         warnings; flags;
-        extensions; keywords;
+        extensions; suffixes; keywords;
         source_path; cmt_path; build_path;
         dot_failures = dfails0 @ dfails1;
         user_failures = ufails0 @ ufails1;
@@ -219,6 +224,9 @@ let setup t path =
 
 (* Enabled extensions *)
 let extensions t = (config t).extensions
+
+(* Suffixes to search for located files with. *)
+let suffixes t = (config t).suffixes
 
 (* Lexer keywords for current config *)
 let keywords t = (config t).keywords
