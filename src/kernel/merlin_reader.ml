@@ -51,8 +51,10 @@ module PP = struct
     match t.result with
     | Some r -> r
     | None ->
+      Logger.log "merlin_reader" "pp filename"
+        (Merlin_source.filename t.source);
       Pparse.apply_pp
-        ~filename:(Merlin_source.name t.source)
+        ~filename:(Merlin_source.filename t.source)
         ~source:(Merlin_source.text t.source)
         ~pp:t.command
 

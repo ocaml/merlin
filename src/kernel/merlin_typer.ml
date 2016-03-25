@@ -146,7 +146,7 @@ let processed_ast reader =
 let make reader extensions =
   let btype_state = Btype.new_state () in
   let env_state = Env.new_state
-      ~unit_name:(Merlin_source.name (Merlin_reader.source reader)) in
+      ~unit_name:(Merlin_source.unitname (Merlin_reader.source reader)) in
   { reader; extensions; btype_state; env_state;
     steps = update_steps `None (processed_ast reader) }
 

@@ -1,11 +1,12 @@
 (* Merlin representation of a textual source code *)
+open Std
 
 type t = {
-  name: string;
+  filename: string;
   text: string;
 }
 
-let empty ~name = {name; text = ""}
+let empty ~filename = {filename; text = ""}
 
 (* Position management *)
 
@@ -18,7 +19,7 @@ type position = [
 
 exception Found of int
 
-let find_line line {name; text} =
+let find_line line {filename; text} =
   assert (line > 0);
   if line = 1 then 0 else
     let line' = ref line in
@@ -31,12 +32,12 @@ let find_line line {name; text} =
         end
       done;
       Logger.logf "source" "find_line"
-        "line %d of %S out of bounds (max = %d)" line name (line - !line');
+        "line %d of %S out of bounds (max = %d)" line filename (line - !line');
       String.length text
     with Found n ->
       n + 1
 
-let find_offset ({name; text} as t) line col =
+let find_offset ({filename; text} as t) line col =
   assert (col >= 0);
   let offset = find_line line t in
   if col = 0 then offset else
@@ -45,14 +46,14 @@ let find_offset ({name; text} as t) line col =
         if text.[i] = '\n' then begin
           Logger.logf "source" "find_offset"
             "%d:%d of %S out of line bounds, line %d only has %d columns"
-            line col name line (i - offset);
+            line col filename line (i - offset);
           raise (Found i)
         end
       done;
       if (offset + col) > (String.length text) then begin
         Logger.logf "source" "find_offset"
           "%d:%d of %S out of file bounds"
-          line col name
+          line col filename
       end;
       offset + col
     with Found off -> off
@@ -66,7 +67,7 @@ let get_offset t = function
     else begin
       Logger.logf "source" "get_offset"
         "offset %d in %S out of bounds (size is %d)"
-        x t.name (String.length t.text);
+        x t.filename (String.length t.text);
       (`Offset (String.length t.text))
     end
   | `End ->
@@ -74,7 +75,7 @@ let get_offset t = function
   | `Logical (line, col) ->
     `Offset (find_offset t line col)
 
-let get_logical {name; text} = function
+let get_logical {filename; text} = function
   | `Start -> `Logical (1, 0)
   | `Logical _ as p -> p
   | `Offset _ | `End as r ->
@@ -83,7 +84,7 @@ let get_logical {name; text} = function
       | `Offset x when x > len ->
         Logger.logf "source" "get_logical"
           "offset %d in %S out of bounds (size is %d)"
-          x name len;
+          x filename len;
         len
       | `Offset x ->
         assert (x >= 0);
@@ -104,7 +105,7 @@ let get_lexing_pos t pos =
   let `Offset o = get_offset t pos in
   let `Logical (line, col) = get_logical t pos in
   { Lexing.
-    pos_fname = t.name;
+    pos_fname = t.filename;
     pos_lnum = line;
     pos_bol  = o - col;
     pos_cnum = o;
@@ -112,7 +113,15 @@ let get_lexing_pos t pos =
 
 (* Accessing content *)
 
-let name t = t.name
+let filename t = t.filename
+
+let unitname {filename} =
+  let unitname =
+    try String.sub filename ~pos:0 ~len:(String.index filename '.')
+    with Not_found -> filename
+  in
+  String.capitalize unitname
+
 let text t = t.text
 
 let substitute t starting ending text =
@@ -126,7 +135,7 @@ let substitute t starting ending text =
       else begin
         Logger.logf "source" "substitute"
           "offset %d + length %d in %S out of bounds (size is %d)"
-          starting l t.name len;
+          starting l t.filename len;
         `Offset len
       end
     | #position as p -> get_offset t p

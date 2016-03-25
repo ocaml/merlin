@@ -2,7 +2,9 @@
 
 type t
 
-val empty : name:string -> t
+val empty : filename:string -> t
+
+val compare : t -> t -> int
 
 (* Position management *)
 
@@ -17,10 +19,11 @@ val get_offset     : t -> [< position] -> [> `Offset of int]
 val get_logical    : t -> [< position] -> [> `Logical of int * int]
 val get_lexing_pos : t -> [< position] -> Lexing.position
 
-(* Accessing content *)
-
-val name : t -> string
-val text : t -> string
+(* Updating content *)
 val substitute : t -> [< position] -> [< position | `Length of int] -> string -> t
 
-val compare : t -> t -> int
+(* Accessing content *)
+
+val filename : t -> string
+val unitname : t -> string
+val text : t -> string

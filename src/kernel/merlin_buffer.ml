@@ -37,13 +37,6 @@ type t = {
   mutable typer: Merlin_typer.t;
 }
 
-let compute_unit_name filename =
-  let unit_name =
-    try String.sub filename ~pos:0 ~len:(String.index filename '.')
-    with Not_found -> filename
-  in
-  String.capitalize unit_name
-
 let compute_context ?(dot_merlins=[]) ?path () =
   let path, filename = match path with
     | None -> None, "*buffer*"
@@ -54,12 +47,13 @@ let compute_context ?(dot_merlins=[]) ?path () =
     | [], None -> []
     | xs, cwd -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
   in
-  (dot_merlins, path, compute_unit_name filename)
+  (dot_merlins, path, filename)
 
 let create ?dot_merlins ?path kind =
-  let dot_merlins, path, name = compute_context ?dot_merlins ?path () in
+  let dot_merlins, path, filename =
+    compute_context ?dot_merlins ?path () in
   let project = Merlin_project.get dot_merlins in
-  let source = Merlin_source.empty ~name in
+  let source = Merlin_source.empty ~filename in
   let spec =
     match !Clflags.pp with
     | "" -> Merlin_reader.Normal (Merlin_project.extensions project, kind)
@@ -70,7 +64,7 @@ let create ?dot_merlins ?path kind =
   let path = Option.to_list path in
   { kind; project; source; reader; typer; path }
 
-let unit_name t = Merlin_source.name t.source
+let unit_name t = Merlin_source.unitname t.source
 let project t = t.project
 
 let update t source =
@@ -94,8 +88,7 @@ let for_completion t pos =
 
 (* All top modules of current project, with current module removed *)
 let global_modules t =
-  List.remove (Merlin_source.name (source t))
-    (Merlin_project.global_modules t.project)
+  List.remove (unit_name t) (Merlin_project.global_modules t.project)
 
 (* Try to do a background job, return false if nothing has to be done *)
 let idle_job t =

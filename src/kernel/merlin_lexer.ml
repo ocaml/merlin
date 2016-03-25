@@ -68,7 +68,7 @@ let get_tokens keywords pos text =
 
 let initial_position source =
   { Lexing.
-    pos_fname = (Merlin_source.name source);
+    pos_fname = (Merlin_source.filename source);
     pos_lnum = 1;
     pos_bol = 0;
     pos_cnum = 0;
@@ -105,7 +105,7 @@ let item_end = function
     l.Location.loc_end
 
 let diff items source0 source1 =
-  if (Merlin_source.name source0 <> Merlin_source.name source1) then
+  if (Merlin_source.filename source0 <> Merlin_source.filename source1) then
     []
   else
     let offset =
