@@ -44,12 +44,12 @@ type t =
   | Module_expr              of module_expr
   | Module_type_constraint   of module_type_constraint
   | Structure                of structure
-  | Structure_item           of structure_item
+  | Signature                of signature
+  | Structure_item           of structure_item * Env.t
+  | Signature_item           of signature_item * Env.t
   | Module_binding           of module_binding
   | Value_binding            of value_binding
   | Module_type              of module_type
-  | Signature                of signature
-  | Signature_item           of signature_item
   | Module_declaration       of module_declaration
   | Module_type_declaration  of module_type_declaration
   | With_constraint          of with_constraint
@@ -83,7 +83,7 @@ let node_update_env env0 = function
   | Pattern        {pat_env = env}  | Expression     {exp_env = env}
   | Class_expr     {cl_env = env}   | Method_call    ({exp_env = env}, _, _)
   | Module_expr    {mod_env = env}  | Module_type    {mty_env = env}
-  | Structure_item {str_env = env}  | Signature_item {sig_env = env}
+  | Structure_item (_, env)         | Signature_item (_, env)
   | Core_type      {ctyp_env = env} | Class_type     {cltyp_env = env}
   | Structure {str_final_env = env} | Signature {sig_final_env = env}
     -> env
@@ -111,8 +111,8 @@ let node_real_loc loc0 = function
   | Method_call             (_, _, loc)
   | Class_expr              {cl_loc = loc}
   | Module_expr             {mod_loc = loc}
-  | Structure_item          {str_loc = loc}
-  | Signature_item          {sig_loc = loc}
+  | Structure_item          ({str_loc = loc}, _)
+  | Signature_item          ({sig_loc = loc}, _)
   | Module_type             {mty_loc = loc}
   | Core_type               {ctyp_loc = loc}
   | Class_type              {cltyp_loc = loc}
@@ -167,6 +167,11 @@ let ( ** ) f1 f2 env (f : _ f0) acc =
 
 let rec list_fold (f' : _ f1) xs env f acc = match xs with
   | x :: xs -> list_fold f' xs env f (f' x env f acc)
+  | [] -> acc
+
+let rec list_fold_with_next (f' : _ -> _ f1) xs env f acc = match xs with
+  | x :: (y :: _ as xs) -> list_fold_with_next f' xs env f (f' (Some y) x env f acc)
+  | [x] -> f' None x env f acc
   | [] -> acc
 
 let option_fold f' o env (f : _ f0) acc = match o with
@@ -450,9 +455,13 @@ let of_node = function
     id_fold
   | Module_type_constraint (Tmodtype_explicit mt) ->
     of_module_type mt
-  | Structure { str_items } ->
-    list_fold (fun item -> app (Structure_item item)) str_items
-  | Structure_item { str_desc } ->
+  | Structure { str_items; str_final_env } ->
+    list_fold_with_next (fun next item ->
+        match next with
+        | None -> app (Structure_item (item, str_final_env))
+        | Some item' -> app (Structure_item (item, item'.str_env)))
+      str_items
+  | Structure_item ({ str_desc }, _) ->
     of_structure_item_desc str_desc
   | Module_binding mb ->
     app (Module_expr mb.mb_expr) **
@@ -462,9 +471,13 @@ let of_node = function
     of_expression vb_expr
   | Module_type { mty_desc } ->
     of_module_type_desc mty_desc
-  | Signature { sig_items } ->
-    list_fold (fun item -> app (Signature_item item)) sig_items
-  | Signature_item { sig_desc } ->
+  | Signature { sig_items; sig_final_env } ->
+    list_fold_with_next (fun next item ->
+        match next with
+        | None -> app (Signature_item (item, sig_final_env))
+        | Some item' -> app (Signature_item (item, item'.sig_env)))
+      sig_items
+  | Signature_item ({ sig_desc }, _) ->
     of_signature_item_desc sig_desc
   | Module_declaration md ->
     of_module_type md.md_type **
@@ -680,11 +693,11 @@ let node_paths =
   | Class_expr e -> class_expr_paths e
   | Class_field f -> class_field_paths f
   | Module_expr me -> module_expr_paths me
-  | Structure_item i -> structure_item_paths i
+  | Structure_item (i,_) -> structure_item_paths i
   | Module_binding { mb_id; mb_name } ->
     [reloc (Path.Pident mb_id) mb_name]
   | Module_type mt -> module_type_paths mt
-  | Signature_item i -> signature_item_paths i
+  | Signature_item (i,_) -> signature_item_paths i
   | Module_declaration { md_id; md_name } ->
     [reloc (Path.Pident md_id) md_name]
   | Module_type_declaration { mtd_id; mtd_name } ->
@@ -726,9 +739,9 @@ let node_attributes = function
   | Class_expr cl         -> cl.cl_attributes
   | Class_field cf        -> cf.cf_attributes
   | Module_expr me        -> me.mod_attributes
-  | Structure_item {str_desc = Tstr_eval (_,attr)} -> attr
-  | Structure_item {str_desc = Tstr_attribute a} -> [a]
-  | Signature_item {sig_desc = Tsig_attribute a} -> [a]
+  | Structure_item ({str_desc = Tstr_eval (_,attr)},_) -> attr
+  | Structure_item ({str_desc = Tstr_attribute a},_) -> [a]
+  | Signature_item ({sig_desc = Tsig_attribute a},_) -> [a]
   | Module_binding mb     -> mb.mb_attributes
   | Value_binding vb      -> vb.vb_attributes
   | Module_type mt        -> mt.mty_attributes

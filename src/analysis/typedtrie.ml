@@ -186,8 +186,8 @@ let rec build ?(local_buffer=false) ~trie browses =
     | Structure_item _ ->
       begin match
         match t.t_node with
-        | Signature_item item -> Raw_compat.identify_sig_includes item
-        | Structure_item item -> Raw_compat.identify_str_includes item
+        | Signature_item (item, _) -> Raw_compat.identify_sig_includes item
+        | Structure_item (item, _) -> Raw_compat.identify_str_includes item
         | _ -> assert false
       with
       | `Not_included -> build ~local_buffer ~trie (Lazy.force t.t_children)

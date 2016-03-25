@@ -126,9 +126,13 @@ let deepest_before pos roots =
       let candidate = Browse_node.fold_node
           (fun env node acc ->
              let loc = node_merlin_loc node in
-             match acc with
-             | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
-             | Some _ | None -> Some (env,loc,node)
+             if path == root ||
+                Parsing_aux.compare_pos pos loc = 0 ||
+                Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
+             then match acc with
+               | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
+               | Some _ | None -> Some (env,loc,node)
+             else acc
           )
           env0 node0 None
       in

@@ -1505,7 +1505,7 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
           ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure_item str])
         @@ fun () ->
         let desc, sg, new_env = type_str_item env srem pstr in
-        { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env },
+        { str_desc = desc; str_loc = pstr.pstr_loc; str_env = new_env },
         sg, new_env
       in
       let (str_rem, sig_rem, final_env) = type_struct new_env srem in

@@ -58,12 +58,13 @@ type t =
   | Module_expr              of module_expr
   | Module_type_constraint   of module_type_constraint
   | Structure                of structure
-  | Structure_item           of structure_item
+  | Signature                of signature
+  | (* Items come with their final environment *)
+    Structure_item           of structure_item * Env.t
+  | Signature_item           of signature_item * Env.t
   | Module_binding           of module_binding
   | Value_binding            of value_binding
   | Module_type              of module_type
-  | Signature                of signature
-  | Signature_item           of signature_item
   | Module_declaration       of module_declaration
   | Module_type_declaration  of module_type_declaration
   | With_constraint          of with_constraint
