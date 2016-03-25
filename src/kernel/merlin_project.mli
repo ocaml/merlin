@@ -4,7 +4,7 @@ type t
 val initialized : unit -> unit
 
 (* A global store mapping (.merlin-)path to projects *)
-val get : string list -> t * [`Fresh | `Cached]
+val get : string list -> t
 
 (* Current buffer path *)
 val set_local_path : t -> string list -> unit

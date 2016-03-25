@@ -200,11 +200,11 @@ let create dot_merlins = {
 
 let store : (string list, t) Hashtbl.t = Hashtbl.create 3
 let get path =
-  try Hashtbl.find store path, `Cached
+  try Hashtbl.find store path
   with Not_found ->
     let project = create path in
     Hashtbl.replace store path project;
-    project, `Fresh
+    project
 
 let check_dot_merlin project =
   Dot_merlin.update project.dot_merlin

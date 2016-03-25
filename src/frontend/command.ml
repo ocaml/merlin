@@ -646,6 +646,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
 let dispatch_sync state (type a) : a sync_command -> a = function
   | Tell (pos_start, pos_end, text) ->
+    Project.check_dot_merlin (Buffer.project state.buffer);
     let source = Buffer.source state.buffer in
     let source = Source.substitute source pos_start pos_end text in
     Buffer.update state.buffer source

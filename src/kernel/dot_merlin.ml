@@ -150,6 +150,8 @@ type t = {
 }
 
 let load filenames =
+  Logger.logj "dot_merlin" "load filenames"
+    (fun () -> `List (List.map (fun x -> `String x) filenames));
   let filenames = List.map ~f:canonicalize_filename filenames in
   {
     filenames;
@@ -158,6 +160,8 @@ let load filenames =
   }
 
 let update t =
+  Logger.logj "dot_merlin" "update filenames"
+    (fun () -> `List (List.map (fun x -> `String x) t.filenames));
   let files' = List.map ~f:directives_of_file t.filenames in
   let for_all2 ~f la lb =
     List.length la = List.length lb &&
@@ -166,6 +170,8 @@ let update t =
   let uptodate = for_all2 t.files files'
       ~f:(for_all2 ~f:(fun d d' -> d == d' || d = d'))
   in
+  Logger.logj "dot_merlin" "update files"
+    (fun () -> `List (List.map (fun x -> `String x.path) (List.flatten files')));
   t.files <- files';
   if not uptodate then
     t.config <- None

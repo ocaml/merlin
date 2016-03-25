@@ -58,7 +58,7 @@ let compute_context ?(dot_merlins=[]) ?path () =
 
 let create ?dot_merlins ?path kind =
   let dot_merlins, path, name = compute_context ?dot_merlins ?path () in
-  let project, _ = Merlin_project.get dot_merlins in
+  let project = Merlin_project.get dot_merlins in
   let source = Merlin_source.empty ~name in
   let spec =
     match !Clflags.pp with
