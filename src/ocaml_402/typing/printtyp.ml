@@ -366,32 +366,7 @@ let pers_maps =
       cache := fix Concr.empty concr empty;
     snd !cache
 
-let fold_aliases am1 =
-  let am2 = pers_maps () in
-  let type_aliases path f acc =
-    let acc = List.fold_left f acc (try PathMap.find path am1.Env.am_typ with Not_found -> []) in
-    let acc = List.fold_left f acc (try PathMap.find path am2.Env.am_typ with Not_found -> []) in
-    acc
-  and modules_aliases path f acc =
-    let acc = List.fold_left f acc (try PathMap.find path am1.Env.am_mod with Not_found -> []) in
-    let acc = List.fold_left f acc (try PathMap.find path am2.Env.am_mod with Not_found -> []) in
-    acc
-  in
-  type_aliases, modules_aliases
-
-(* Shortest module alias computation *)
-
-let penalty id =
-  if id <> "" && id.[0] = '_' then 10
-  else if not (Std.String.no_double_underscore id) then 10
-  else 1
-
-let min_cost (n1, _ as r1) (n2, _ as r2) =
-  if n1 < n2 then r1 else r2
-
-let add_component p name pos = match p with
-  | Some p' -> Pdot (p', name, pos)
-  | None -> Pident (Ident.create_persistent name)
+(* Path printf-debugging *)
 
 let indent = ref ""
 
@@ -424,22 +399,64 @@ let message fmt =
 let dump_path oc path =
   output_string oc (string_of_path path)
 
-let shortest_module_alias am (_, fold) fixed path =
-  if PathSet.mem path am.Env.am_open then (0, None) else begin
-      let r = fold path (fun acc path' -> min_cost acc (fixed path')) (max_int, None) in
-      if fst r = 0 then r else
-        let r' = match path with
-          | Papply (_, _) -> assert false (* applicative path not supported *)
-          | Pident id -> (penalty (Ident.name id), Some path)
-          | Pdot (p, n, pos) ->
-             let cost, p' = fixed p in
-             (cost + penalty n, Some (add_component p' n pos))
-        in
-        min_cost r r'
-    end
+(* Fold over aliases *)
 
-let shortest_type_alias (fold, _) mod_alias fixed path =
-  let r = fold path (fun acc path' -> min_cost acc (fixed path')) (max_int, path) in
+type alias_fold = {
+  module_aliases : 'acc. Path.t -> ('acc -> Path.t -> 'acc) -> 'acc -> 'acc;
+  type_aliases : 'acc. Path.t -> ('acc -> Path.t -> 'acc) -> 'acc -> 'acc;
+}
+
+let alias_fold am1 =
+  let am2 = pers_maps () in
+  {
+    type_aliases = begin fun path f acc ->
+      let acc = List.fold_left f acc
+          (try PathMap.find path am1.Env.am_typ with Not_found -> []) in
+      let acc = List.fold_left f acc
+          (try PathMap.find path am2.Env.am_typ with Not_found -> []) in
+      acc
+    end;
+    module_aliases = begin fun path f acc ->
+      let acc = List.fold_left f acc
+          (try PathMap.find path am1.Env.am_mod with Not_found -> []) in
+      let acc = List.fold_left f acc
+          (try PathMap.find path am2.Env.am_mod with Not_found -> []) in
+      acc
+    end;
+  }
+
+(* Shortest module alias computation *)
+
+let penalty id =
+  if id <> "" && id.[0] = '_' then 10
+  else if not (Std.String.no_double_underscore id) then 10
+  else 1
+
+let min_cost (n1, _ as r1) (n2, _ as r2) =
+  if n1 < n2 then r1 else r2
+
+let add_component p name pos = match p with
+  | Some p' -> Pdot (p', name, pos)
+  | None -> Pident (Ident.create_persistent name)
+
+let shortest_module_alias am fold fixed path =
+  if PathSet.mem path am.Env.am_open then (0, None) else begin
+    let r = fold.module_aliases path
+        (fun acc path' -> min_cost acc (fixed path')) (max_int, None) in
+    if fst r = 0 then r else
+      let r' = match path with
+        | Papply (_, _) -> assert false (* applicative path not supported *)
+        | Pident id -> (penalty (Ident.name id), Some path)
+        | Pdot (p, n, pos) ->
+          let cost, p' = fixed p in
+          (cost + penalty n, Some (add_component p' n pos))
+      in
+      min_cost r r'
+  end
+
+let shortest_type_alias fold mod_alias fixed path =
+  let r = fold.type_aliases path
+      (fun acc path' -> min_cost acc (fixed path')) (max_int, path) in
   let r' = match path with
     | Papply (_, _) -> assert false (* type path cannot start with application *)
     | Pident id -> (penalty (Ident.name id), path)
@@ -450,7 +467,7 @@ let shortest_type_alias (fold, _) mod_alias fixed path =
   min_cost r r'
 
 let shortest_type_alias am =
-  let fold_aliases = fold_aliases am in
+  let alias_fold = alias_fold am in
   let modtbl = PathTbl.create 7 in
   let dump_cost oc c =
     if c = max_int
@@ -469,7 +486,7 @@ let shortest_type_alias am =
         "module_alias(%a)" dump_path path
         begin fun () ->
           PathTbl.add modtbl path (max_int, Some path);
-          let r = shortest_module_alias am fold_aliases mod_alias path in
+          let r = shortest_module_alias am alias_fold mod_alias path in
           PathTbl.replace modtbl path r;
           r
         end
@@ -488,7 +505,7 @@ let shortest_type_alias am =
         "typ_alias(%a)" dump_path path
         begin fun () ->
           PathTbl.add typtbl path (max_int, path);
-          let r = shortest_type_alias fold_aliases mod_alias typ_alias path in
+          let r = shortest_type_alias alias_fold mod_alias typ_alias path in
           PathTbl.replace typtbl path r;
           r
         end
