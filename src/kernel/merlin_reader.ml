@@ -126,12 +126,17 @@ let comments = function
   | Is_external pp ->
     PP.comments pp
 
+let default_keywords = Lexer_raw.keywords []
+
 let reconstruct_identifier ?for_locate t pos =
-  match t with
-  | Is_normal p ->
-    Merlin_lexer.reconstruct_identifier ?for_locate (Merlin_parser.lexer p) pos
-  | Is_external _ ->
-    []
+  (* FIXME: external should delegate identifier reconstruction to custom implementation *)
+  let lexer = match t with
+    | Is_normal p -> Merlin_parser.lexer p
+    | Is_external pp ->
+      let source = PP.source pp in
+      Merlin_lexer.make default_keywords source
+  in
+  Merlin_lexer.reconstruct_identifier ?for_locate lexer pos
 
 let for_completion t pos =
   match t with
