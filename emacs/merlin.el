@@ -1745,7 +1745,7 @@ Returns the position."
 (defun merlin-dump (arg)
   (interactive "sWhat to dump: ")
   (let ((res (merlin/send-command (list 'dump arg))))
-    (print res)))
+    (pp res)))
 
 ;;;;;;;;;;;;;;;;
 ;; MODE SETUP ;;
