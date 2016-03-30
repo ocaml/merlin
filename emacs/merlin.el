@@ -761,8 +761,7 @@ the error message otherwise print a generic error message."
 (defun merlin/sync ()
   "Synchronize buffer with merlin"
   (merlin/send-command
-   `(tell ,(1- (position-bytes merlin--dirty-point)) end
-          ,(merlin/buffer-substring merlin--dirty-point (point-max))))
+   `(tell start end ,(merlin/buffer-substring (point-min) (point-max))))
   (setq merlin--dirty-point (point-max)))
 
 (defun merlin/sync-async (k &optional kerr)
@@ -770,8 +769,7 @@ the error message otherwise print a generic error message."
   (if (eq merlin--dirty-point (point-max)) (funcall k)
     (lexical-let ((k k) (kerr kerr))
       (merlin/send-command-async
-       `(tell ,(1- (position-bytes point)) end
-              ,(merlin/buffer-substring point (point-max)))
+       `(tell start end ,(merlin/buffer-substring (point-min) (point-max)))
        (lambda (answer)
          (setq merlin--dirty-point (point-max))
          (funcall k))
