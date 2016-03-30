@@ -432,7 +432,9 @@ let sprintf = Printf.sprintf
 module Format = struct
   include Format
 
-  let to_string ?(width=0) () =
+  let default_width = ref 0
+
+  let to_string ?(width= !default_width) () =
     let b = Buffer.create 32 in
     let ppf = formatter_of_buffer b in
     let contents () =

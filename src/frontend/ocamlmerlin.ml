@@ -90,34 +90,30 @@ let signal sg behavior =
   try ignore (Sys.signal sg behavior)
   with Invalid_argument _ (*Sys.signal: unavailable signal*) -> ()
 
-let rec on_read state ~timeout fd =
+let rec on_read ~timeout fd =
   try match Unix.select [fd] [] [] timeout with
     | [], [], [] ->
-      if Command.dispatch state Protocol.(Query Idle_job) then
-        on_read state ~timeout:0.0 fd
+      if Command.dispatch IO.default_context Protocol.(Query Idle_job) then
+        on_read ~timeout:0.0 fd
       else
-        on_read state ~timeout:(-1.0) fd
+        on_read ~timeout:(-1.0) fd
     | _, _, _ -> ()
   with
   | Unix.Unix_error (Unix.EINTR, _, _) ->
-    on_read state ~timeout fd
+    on_read ~timeout fd
   | exn -> Logger.log "main" "on_read" (Printexc.to_string exn)
 
 let main_loop () =
-  let state = Command.new_state () in
   let input, output as io =
-    IO.(lift (make ~on_read:(on_read state ~timeout:0.050)
+    IO.(lift (make ~on_read:(on_read ~timeout:0.050)
                 ~input:Unix.stdin ~output:Unix.stdout)) in
   try
     while true do
       let answer =
         try match Stream.next input with
-          | Protocol.Request request ->
+          | Protocol.Request (context, request) ->
             Protocol.Return
-              (request, Command.dispatch state request)
-          | Protocol.Context_request (ctx, request) ->
-            Protocol.Return
-              (request, Command.context_dispatch ctx request)
+              (request, Command.dispatch context request)
         with
         | Stream.Failure as exn -> raise exn
         | exn -> Protocol.Exception exn

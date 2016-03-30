@@ -39,6 +39,10 @@ type io_maker =
   output:Unix.file_descr ->
   low_io
 
+let default_context =
+  {Protocol.Context.
+    document = None; printer_width = None; printer_verbosity = None}
+
 let invalid_arguments () = failwith "invalid arguments"
 
 let json_log (input,output) =
@@ -269,101 +273,108 @@ module Protocol_io = struct
       in
       ("failures", `List (packages @ flags @ extensions)) :: assoc
 
-  let context_of_json = function
-    | (`String "dot_merlin" :: `List dot_merlins :: `String kind :: opt_name) ->
-      auto_ml_or_mli kind, optional_string opt_name, Some (string_list dot_merlins)
-    | (`String kind :: opt_name) ->
-      auto_ml_or_mli kind, optional_string opt_name, None
-    | _ -> invalid_arguments ()
+  let document_of_json =
+    let make kind path dot_merlins =
+      {Context.dot_merlins;
+        kind = auto_ml_or_mli kind;
+        path = optional_string path;
+      }
+    in function
+      | (`String "dot_merlin" :: `List dot_merlins :: `String kind :: opt_name) ->
+        make kind opt_name (Some (string_list dot_merlins))
+      | (`String kind :: opt_name) ->
+        make kind opt_name None
+      | _ -> invalid_arguments ()
 
-  let request_of_json = function
+  let request_of_json context =
+    let request x = Request (context, x) in function
     | (`String "type" :: `String "expression" :: `String expr :: opt_pos) ->
-      Request (Query (Type_expr (expr, mandatory_position opt_pos)))
+      request (Query (Type_expr (expr, mandatory_position opt_pos)))
     | [`String "type"; `String "enclosing";
         `Assoc [ "expr", `String expr ; "offset", `Int offset] ; jpos] ->
-      Request (Query (Type_enclosing (Some (expr, offset), pos_of_json jpos)))
+      request (Query (Type_enclosing (Some (expr, offset), pos_of_json jpos)))
     | [`String "type"; `String "enclosing"; `String "at"; jpos] ->
-      Request (Query (Type_enclosing (None, pos_of_json jpos)))
+      request (Query (Type_enclosing (None, pos_of_json jpos)))
     | [ `String "case"; `String "analysis"; `String "from"; x; `String "to"; y ] ->
-      Request (Query (Case_analysis (pos_of_json x, pos_of_json y)))
+      request (Query (Case_analysis (pos_of_json x, pos_of_json y)))
     | [`String "enclosing"; jpos] ->
-      Request (Query (Enclosing (pos_of_json jpos)))
+      request (Query (Enclosing (pos_of_json jpos)))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos] ->
-      Request (Query (Complete_prefix (prefix, pos_of_json jpos, false)))
+      request (Query (Complete_prefix (prefix, pos_of_json jpos, false)))
     | [`String "complete"; `String "prefix"; `String prefix; `String "at"; jpos;
        `String "with"; `String "doc"] ->
-      Request (Query (Complete_prefix (prefix, pos_of_json jpos, true)))
+      request (Query (Complete_prefix (prefix, pos_of_json jpos, true)))
     | [`String "expand"; `String "prefix"; `String prefix; `String "at"; jpos] ->
-      Request (Query (Expand_prefix (prefix, pos_of_json jpos)))
+      request (Query (Expand_prefix (prefix, pos_of_json jpos)))
     | (`String "document" :: (`String "" | `Null) :: pos) ->
-      Request (Query (Document (None, mandatory_position pos)))
+      request (Query (Document (None, mandatory_position pos)))
     | (`String "document" :: `String path :: pos) ->
-      Request (Query (Document (Some path, mandatory_position pos)))
+      request (Query (Document (Some path, mandatory_position pos)))
     | (`String "locate" :: (`String "" | `Null) :: `String choice :: pos) ->
-      Request (Query (Locate (None, ml_or_mli choice, mandatory_position pos)))
+      request (Query (Locate (None, ml_or_mli choice, mandatory_position pos)))
     | (`String "locate" :: `String path :: `String choice :: pos) ->
-      Request (Query (Locate (Some path, ml_or_mli choice, mandatory_position pos)))
+      request (Query (Locate (Some path, ml_or_mli choice, mandatory_position pos)))
     | (`String "jump" :: `String target :: pos) ->
-      Request (Query (Jump (target, mandatory_position pos)))
+      request (Query (Jump (target, mandatory_position pos)))
     | [`String "outline"] ->
-      Request (Query Outline)
+      request (Query Outline)
     | [`String "shape"; pos] ->
-      Request (Query (Shape (pos_of_json pos)))
+      request (Query (Shape (pos_of_json pos)))
     | [`String "occurrences"; `String "ident"; `String "at"; jpos] ->
-      Request (Query (Occurrences (`Ident_at (pos_of_json jpos))))
-    | (`String ("reset"|"checkout") :: context) ->
-      Request (Sync (Checkout (context_of_json context)))
+      request (Query (Occurrences (`Ident_at (pos_of_json jpos))))
+    | (`String ("reset"|"checkout") :: document) ->
+      request (Sync (Checkout (document_of_json document)))
     | [`String "refresh"] ->
-      Request (Sync Refresh)
+      request (Sync Refresh)
     | [`String "errors"] ->
-      Request (Query Errors)
+      request (Query Errors)
     | (`String "dump" :: args) ->
-      Request (Query (Dump args))
+      request (Query (Dump args))
     | [`String "which"; `String "path"; `String name] ->
-      Request (Query (Which_path [name]))
+      request (Query (Which_path [name]))
     | [`String "which"; `String "path"; `List names] ->
-      Request (Query (Which_path (string_list names)))
+      request (Query (Which_path (string_list names)))
     | [`String "which"; `String "with_ext"; `String ext] ->
-      Request (Query (Which_with_ext [ext]))
+      request (Query (Which_with_ext [ext]))
     | [`String "which"; `String "with_ext"; `List exts] ->
-      Request (Query (Which_with_ext (string_list exts)))
+      request (Query (Which_with_ext (string_list exts)))
     | [`String "flags" ; `String "set" ; `List flags ] ->
-      Request (Sync (Flags_set (string_list flags)))
+      request (Sync (Flags_set (string_list flags)))
     | [`String "flags" ; `String "get" ] ->
-      Request (Query (Flags_get))
+      request (Query (Flags_get))
     | [`String "find"; `String "use"; `List packages]
     | (`String "find" :: `String "use" :: packages) ->
-      Request (Sync (Findlib_use (string_list packages)))
+      request (Sync (Findlib_use (string_list packages)))
     | [`String "find"; `String "list"] ->
-      Request (Query Findlib_list)
+      request (Query Findlib_list)
     | [`String "extension"; `String "enable"; `List extensions] ->
-      Request (Sync (Extension_set (`Enabled,string_list extensions)))
+      request (Sync (Extension_set (`Enabled,string_list extensions)))
     | [`String "extension"; `String "disable"; `List extensions] ->
-      Request (Sync (Extension_set (`Disabled,string_list extensions)))
+      request (Sync (Extension_set (`Disabled,string_list extensions)))
     | [`String "extension"; `String "list"] ->
-      Request (Query (Extension_list `All))
+      request (Query (Extension_list `All))
     | [`String "extension"; `String "list"; `String "enabled"] ->
-      Request (Query (Extension_list `Enabled))
+      request (Query (Extension_list `Enabled))
     | [`String "extension"; `String "list"; `String "disabled"] ->
-      Request (Query (Extension_list `Disabled))
+      request (Query (Extension_list `Disabled))
     | [`String "path"; `String "list";
                        `String ("source"|"build" as var)] ->
-      Request (Query (Path_list (source_or_build var)))
+      request (Query (Path_list (source_or_build var)))
     | [`String "path"; `String "reset"] ->
-      Request (Sync Path_reset)
+      request (Sync Path_reset)
     | (`String "path" :: `String ("add"|"remove" as action) ::
          `String ("source"|"build" as var) :: ((`List pathes :: []) | pathes)) ->
-      Request (Sync (Path (source_or_build var, add_or_remove action, string_list pathes)))
+      request (Sync (Path (source_or_build var, add_or_remove action, string_list pathes)))
     | [`String "tell"; pos_start; pos_end; `String content] ->
-      Request (Sync (Tell (pos_of_json pos_start, pos_of_json pos_end, content)))
+      request (Sync (Tell (pos_of_json pos_start, pos_of_json pos_end, content)))
     | [`String "project"; `String "get"] ->
-      Request (Query Project_get)
+      request (Query Project_get)
     | [`String "version"] ->
-      Request (Query Version)
+      request (Query Version)
     | [`String "protocol"; `String "version"] ->
-      Request (Sync (Protocol_version None))
+      request (Sync (Protocol_version None))
     | [`String "protocol"; `String "version"; `Int n] ->
-      Request (Sync (Protocol_version (Some n)))
+      request (Sync (Protocol_version (Some n)))
     | _ -> invalid_arguments ()
 
   let json_of_protocol_version : Protocol.protocol_version -> _ = function
@@ -490,13 +501,23 @@ module Protocol_io = struct
   let request_of_json = function
     | `Assoc _ as json ->
       let open Json.Util in
-      let ctx = member "context" json |> to_list in
+      let document =
+        let value = member "document" json in
+        let value =
+          if value = `Null then
+            member "context" json
+          else value
+        in
+        if value = `Null then
+          None
+        else Some (to_list value |> document_of_json)
+      in
+      let printer_width = member "printer_width" json |> to_int_option in
+      let printer_verbosity = member "printer_verbosity" json |> to_int_option in
+      let context = {Context. document; printer_verbosity; printer_width} in
       let query = member "query" json |> to_list in
-      begin match request_of_json query with
-        | Request request -> Context_request (context_of_json ctx, request)
-        | _ -> assert false
-      end
-    | `List jsons -> request_of_json jsons
+      request_of_json context query
+    | `List jsons -> request_of_json default_context jsons
     | _ -> invalid_arguments ()
 end
 

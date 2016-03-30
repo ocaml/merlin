@@ -32,21 +32,25 @@ open Misc
 open Protocol
 open Merlin_lib
 
+type tracked =
+  | Command : _ command -> tracked
+  | Empty : tracked
+
 type state = {
   mutable buffer : Buffer.t;
 
-  mutable verbosity_last : Obj.t option;
+  mutable verbosity_last : tracked;
   mutable verbosity : int;
 }
 
-let normalize_context (ft,path,dot_merlins : Protocol.context) =
-  let ft = match ft, path with
+let normalize_document doc =
+  let ft = match doc.Context.kind, doc.Context.path with
     | `ML   , _  -> Parser.ML
     | `MLI  , _  -> Parser.MLI
     | `Auto , Some path when Filename.check_suffix path ".mli" -> Parser.MLI
     | `Auto , _  -> Parser.ML
   in
-  ft, path, dot_merlins
+  ft, doc.Context.path, doc.Context.dot_merlins
 
 let new_buffer (ft, path, dot_merlins) =
   let buffer = Buffer.create ?dot_merlins ?path ft in
@@ -61,12 +65,12 @@ let new_buffer (ft, path, dot_merlins) =
   end;
   buffer
 
-let new_state ?context () =
-  let buffer = match context with
+let new_state ?document () =
+  let buffer = match document with
     | None -> Buffer.create Parser.ML
-    | Some context -> new_buffer context
+    | Some document -> new_buffer document
   in
-  {buffer; verbosity_last = None; verbosity = 0}
+  {buffer; verbosity_last = Empty; verbosity = 0}
 
 let logging_frame =
   ref {Nav. body = null_cursor; title = null_cursor; nav = Nav.make "" ignore}
@@ -74,15 +78,15 @@ let logging_frame =
 let checkout_buffer_cache = ref []
 let checkout_buffer =
   let cache_size = 8 in
-  fun context ->
-    let context = normalize_context context in
-    try List.assoc context !checkout_buffer_cache
+  fun document ->
+    let document = normalize_document document in
+    try List.assoc document !checkout_buffer_cache
     with Not_found ->
-      let buffer = new_buffer context in
-      begin match context with
+      let buffer = new_buffer document in
+      begin match document with
         | _, Some path, _ ->
           checkout_buffer_cache :=
-            (context, buffer) :: List.take_n cache_size !checkout_buffer_cache
+            (document, buffer) :: List.take_n cache_size !checkout_buffer_cache
         | _, None, _ -> ()
       end;
       buffer
@@ -101,17 +105,17 @@ let node_list path =
 
 let track_verbosity (type a) state (command : a command) =
   let tracked =
-    let obj = Some (Obj.repr command) in
+    let obj = Command command in
     match command with
     | Query (Type_expr _) -> obj
     | Query (Type_enclosing _) -> obj
     | Query (Enclosing _) -> obj
     | Query (Complete_prefix _) -> obj
     | Query (Expand_prefix _) -> obj
-    | _ -> None
+    | _ -> Empty
   in
   match tracked with
-  | None -> 0
+  | Empty -> 0
   | value when state.verbosity_last = value ->
     state.verbosity <- state.verbosity + 1;
     state.verbosity
@@ -122,7 +126,7 @@ let track_verbosity (type a) state (command : a command) =
 
 let buffer_update state items =
   Buffer.update state.buffer items;
-  state.verbosity_last <- None
+  state.verbosity_last <- Empty
 
 let buffer_freeze state items =
   buffer_update state items
@@ -707,33 +711,37 @@ let dispatch_sync state (type a) : a sync_command -> a = function
 
   | Checkout _ -> IO.invalid_arguments ()
 
-let dispatch state (type a) (cmd : a command) =
+let default_state = lazy (new_state ())
+
+let document_states
+  : (Parser.kind * string option * string list option, state) Hashtbl.t
+  = Hashtbl.create 7
+
+let dispatch (type a) (context : Context.t) (cmd : a command) =
+  let open Context in
+  (* Document selection *)
+  let state = match context.document with
+    | None -> Lazy.force default_state
+    | Some document ->
+      let document = normalize_document document in
+      try Hashtbl.find document_states document
+      with Not_found ->
+        let state = new_state ~document () in
+        Hashtbl.add document_states document state;
+        state
+  in
+  (* Printer verbosity *)
   let verbosity = track_verbosity state cmd in
+  let verbosity = Option.value ~default:verbosity context.printer_verbosity in
+  (* Printer width *)
+  Format.default_width := Option.value ~default:0 context.printer_width;
+  (* Actual dispatch *)
   match cmd with
   | Query q -> dispatch_query ~verbosity state.buffer q
-  | Sync (Checkout context) ->
+  | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer context in
     state.buffer <- buffer
   | Sync s -> dispatch_sync state s
-
-let contexts : (Parser.kind * string option * string list option,
-                state) Hashtbl.t = Hashtbl.create 7
-
-let context_dispatch context cmd =
-  let context = normalize_context context in
-  let state =
-    try Hashtbl.find contexts context
-    with Not_found ->
-      let state = new_state ~context () in
-      Hashtbl.add contexts context state;
-      state
-  in
-  let verbosity = track_verbosity state cmd in
-  match cmd with
-  | Query q -> dispatch_query ~verbosity state.buffer q
-  | Sync s -> dispatch_sync state s
-
-let new_state () = new_state ()
 
 module Monitor = struct
 
@@ -839,12 +847,12 @@ module Monitor = struct
     set_title "merlin-monitor";
     let nav = Nav.make "Merlin monitor" @@ fun {Nav. body; nav} ->
       text body "Buffers\n\n";
-      let print_context key state =
+      let print_state key state =
         link body (name_of_key key) (fun _ ->
             Nav.push nav (name_of_key key) (monitor_context key state));
         text body "\n"
       in
-      Hashtbl.iter print_context contexts
+      Hashtbl.iter print_state document_states
     in
     Nav.render nav k;
     printf k "\nMessage log\n";

@@ -80,7 +80,19 @@ type shape = {
 
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
-type context = [`ML | `MLI | `Auto ] * string option * string list option
+module Context : sig
+  type document = {
+    kind: [`ML | `MLI | `Auto ];
+    path: string option;
+    dot_merlins: string list option;
+  }
+
+  type t = {
+    document: document option;
+    printer_width: int option;
+    printer_verbosity: int option;
+  }
+end
 
 type _ query_command =
   | Type_expr
@@ -189,16 +201,14 @@ type _ sync_command =
         [`Latest of protocol_version] *
         string) sync_command
   | Checkout
-    : context
+    : Context.document
     -> unit sync_command
 
 type 'a command =
   | Query of 'a query_command
   | Sync  of 'a sync_command
 
-type request =
-  | Request          : 'a command -> request
-  | Context_request  : context * 'a command -> request
+type request = Request : Context.t * 'a command -> request
 
 type response =
   | Return    : 'a command * 'a -> response

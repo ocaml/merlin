@@ -644,7 +644,7 @@ the error message otherwise print a generic error message."
   (unless (listp command) (setq command (list command)))
   (setq command (merlin--sexp-remove-string-properties command))
   (setq command (list (cons 'assoc nil)
-                      (cons 'context (merlin--context))
+                      (cons 'document (merlin--context))
                       (cons 'query command)))
   (let* ((string (concat (prin1-to-string command) "\n"))
          (promise (cons nil nil))

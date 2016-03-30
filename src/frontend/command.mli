@@ -29,12 +29,6 @@
 open Merlin_lib
 open Inuit_stub
 
-type state
-
-val new_state : unit -> state
-
-val dispatch : state -> 'a Protocol.command -> 'a
-
-val context_dispatch : Protocol.context -> 'a Protocol.command -> 'a
+val dispatch : Protocol.Context.t -> 'a Protocol.command -> 'a
 
 val monitor : set_title:(string -> unit) -> flags cursor -> unit
