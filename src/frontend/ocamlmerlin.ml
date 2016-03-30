@@ -109,7 +109,9 @@ let main_loop () =
                 ~input:Unix.stdin ~output:Unix.stdout)) in
   try
     while true do
+      let notifications = ref [] in
       let answer =
+        Logger.with_editor notifications @@ fun () ->
         try match Stream.next input with
           | Protocol.Request (context, request) ->
             Protocol.Return
@@ -118,8 +120,9 @@ let main_loop () =
         | Stream.Failure as exn -> raise exn
         | exn -> Protocol.Exception exn
       in
-      try output answer
-       with exn -> output (Protocol.Exception exn);
+      let notifications = List.rev !notifications in
+      try output ~notifications answer
+       with exn -> output ~notifications (Protocol.Exception exn);
     done
   with Stream.Failure -> ()
 

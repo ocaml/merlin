@@ -704,7 +704,13 @@ let dispatch_sync state (type a) : a sync_command -> a = function
     Project.set_user_config project
       {config with Dot_merlin.build_path = []; source_path = []}
 
-  | Protocol_version _ ->
+  | Protocol_version version ->
+    begin match version with
+      | None -> ()
+      | Some 2 -> IO.current_version := `V2
+      | Some 3 -> IO.current_version := `V3
+      | Some _ -> ()
+    end;
     (`Selected !IO.current_version,
      `Latest IO.latest_version,
      Main_args.version_spec)

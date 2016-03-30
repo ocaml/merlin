@@ -35,7 +35,8 @@ val current_version : Protocol.protocol_version ref
     (* Untyped stream *)
 type low_io = Json.json Stream.t * (Json.json -> unit)
     (* Protocol-typed stream *)
-type io = Protocol.request Stream.t * (Protocol.response -> unit)
+type io = Protocol.request Stream.t *
+  (notifications:(Logger.section * string) list -> Protocol.response -> unit)
 
 (* Select between different serialization protocols *)
 type io_maker =

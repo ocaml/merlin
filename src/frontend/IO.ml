@@ -29,10 +29,11 @@
 open Std
 open Logger
 
-let latest_version : Protocol.protocol_version = `V2
-let current_version = ref latest_version
+let latest_version : Protocol.protocol_version = `V3
+let current_version = ref `V2
 
-type io = Protocol.request Stream.t * (Protocol.response -> unit)
+type io = Protocol.request Stream.t *
+  (notifications:(Logger.section * string) list -> Protocol.response -> unit)
 type low_io = Json.json Stream.t * (Json.json -> unit)
 type io_maker =
   on_read:(Unix.file_descr -> unit) -> input:Unix.file_descr ->
@@ -379,6 +380,7 @@ module Protocol_io = struct
 
   let json_of_protocol_version : Protocol.protocol_version -> _ = function
     | `V2 -> `Int 2
+    | `V3 -> `Int 3
 
   let json_of_query_command (type a) (command : a query_command) (response : a) : json =
     match command, response with
@@ -481,22 +483,42 @@ module Protocol_io = struct
     | Path_reset, () -> `Bool true
     | Protocol_version _, (`Selected v, `Latest vm, version) ->
       `Assoc ["selected", json_of_protocol_version v;
-              "latest", json_of_protocol_version v;
+              "latest", json_of_protocol_version vm;
               "merlin",  `String version
              ]
 
-  let json_of_response = function
-    | Failure s | Exception (Failure' s) -> `List [`String "failure"; `String s]
-    | Error error -> `List [`String "error"; error]
+  let classify_response = function
+    | Failure s | Exception (Failure' s) -> ("failure", `String s)
+    | Error error -> ("error", error)
     | Exception exn ->
       begin match error_catcher exn with
-      | Some error -> `List [`String "error"; error]
-      | None -> `List [`String "exception"; `String (Printexc.to_string exn)]
+      | Some error -> ("error", error)
+      | None -> ("exception", `String (Printexc.to_string exn))
       end
     | Return (Query cmd, response) ->
-      `List [`String "return"; json_of_query_command cmd response]
+      ("return", json_of_query_command cmd response)
     | Return (Sync cmd, response) ->
-      `List [`String "return"; json_of_sync_command cmd response]
+      ("return", json_of_sync_command cmd response)
+
+  let json_of_response_v2 response =
+    let class_, value = classify_response response in
+    `List [`String class_; value]
+
+  let json_of_response_v3 ~notifications response =
+    let class_, value = classify_response response in
+    `Assoc [
+       "class", `String class_;
+       "value", value;
+       "notifications",
+       `List (List.map (fun (sec,msg) ->
+           `Assoc ["section", `String sec; "message", `String msg])
+           notifications);
+    ]
+  let json_of_response ~notifications response =
+    match !current_version with
+    | `V2 -> json_of_response_v2 response
+    | `V3 -> json_of_response_v3 ~notifications response
+
 
   let request_of_json = function
     | `Assoc _ as json ->
@@ -526,4 +548,4 @@ let with_location = Protocol_io.with_location
 
 let lift (i,o : low_io) : io =
   (Stream.map ~f:Protocol_io.request_of_json i,
-   (fun x -> o (Protocol_io.json_of_response x)))
+   (fun ~notifications x -> o (Protocol_io.json_of_response ~notifications x)))

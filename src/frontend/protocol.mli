@@ -51,7 +51,10 @@ module Compl : sig
   }
 end
 
-type protocol_version = [ `V2 ]
+type protocol_version = 
+  [ `V2 (* First version to support versioning ! *)
+  | `V3 (* Responses are now assoc {class:string, value:..., notifications:string list} *)
+  ]
 
 type completions = Compl.t
 
