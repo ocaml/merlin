@@ -278,12 +278,19 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       | None ->
         let path = Reader.reconstruct_identifier (Buffer.reader buffer) pos in
         let path = Lexer.identifier_suffix path in
+        let reify dot =
+          if dot = "" ||
+             (dot.[0] >= 'a' && dot.[0] <= 'z') ||
+             (dot.[0] >= 'A' && dot.[0] <= 'Z')
+          then dot
+          else "(" ^ dot ^ ")"
+        in
         begin match path with
           | [] -> []
           | base :: tail ->
             let f {Location. txt=base; loc=bl} {Location. txt=dot; loc=dl} =
               let loc = Parsing_aux.location_union bl dl in
-              let txt = base ^ "." ^ dot in
+              let txt = base ^ "." ^ reify dot in
               Location.mkloc txt loc
             in
             [ List.fold_left tail ~init:base ~f ]
@@ -419,7 +426,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       match patho with
       | Some p -> p
       | None ->
-        let path = Reader.reconstruct_identifier ~for_locate:true
+        let path = Reader.reconstruct_identifier
             (Buffer.reader buffer) pos in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in
@@ -440,7 +447,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       match patho with
       | Some p -> p
       | None ->
-        let path = Reader.reconstruct_identifier ~for_locate:true
+        let path = Reader.reconstruct_identifier
             (Buffer.reader buffer) pos in
         let path = Lexer.identifier_suffix path in
         let path = List.map ~f:(fun {Location. txt} -> txt) path in

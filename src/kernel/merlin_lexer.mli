@@ -44,6 +44,6 @@ val comments : t -> (string * Location.t) list
 val source : t -> Merlin_source.t
 val compare : t -> t -> int
 
-val reconstruct_identifier: ?for_locate:bool -> t -> Lexing.position -> string Location.loc list
+val reconstruct_identifier: t -> Lexing.position -> string Location.loc list
 val identifier_suffix: string Location.loc list -> string Location.loc list
 val for_completion: t -> Lexing.position -> [`No_labels of bool] * t

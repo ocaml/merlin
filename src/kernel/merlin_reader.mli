@@ -31,7 +31,7 @@ open Inuit_stub
 type spec =
   | Normal of Extension.set * Merlin_parser.kind
   | PP of string * Merlin_parser.kind
-  | External of string * string list * Merlin_parser.kind 
+  | External of string * string list * Merlin_parser.kind
 
 type t
 
@@ -49,7 +49,7 @@ val find_lexer : t -> Merlin_lexer.t option
 val comments : t -> (string * Location.t) list
 val errors : t -> exn list
 
-val reconstruct_identifier: ?for_locate:bool -> t -> Lexing.position -> string Location.loc list
+val reconstruct_identifier: t -> Lexing.position -> string Location.loc list
 
 val trace : t -> _ cursor Nav.frame -> unit
 val for_completion: t -> Lexing.position -> [`No_labels of bool] * t

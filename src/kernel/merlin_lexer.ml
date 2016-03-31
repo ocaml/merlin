@@ -255,7 +255,7 @@ let is_operator = function
      »
 *)
 
-let reconstruct_identifier ?(for_locate=false) t pos =
+let reconstruct_identifier t pos =
   let rec look_for_component acc = function
 
     (* Skip 'a and `A *)
@@ -323,8 +323,7 @@ let reconstruct_identifier ?(for_locate=false) t pos =
           match token with
           | UIDENT s | LIDENT s -> s
           | _ -> match is_operator token with
-            | Some t when for_locate -> t
-            | Some t -> "(" ^ t ^ ")"
+            | Some t -> t
             | None -> assert false
         in
         Location.mkloc id {Location. loc_start; loc_end; loc_ghost = false}

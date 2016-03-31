@@ -1,6 +1,7 @@
 S src
 S src/analysis
 S src/config
+S src/extend
 S src/frontend
 S src/kernel
 S src/ocaml
@@ -13,6 +14,7 @@ S src/utils
 B src
 B src/analysis
 B src/config
+B src/extend
 B src/frontend
 B src/kernel
 B src/ocaml
