@@ -11,7 +11,7 @@ current_enclosing = -1
 atom_bound = re.compile('[a-z_0-9A-Z\'`.]')
 re_wspaces = re.compile("[\n ]+")
 
-protocol_version = 2
+protocol_version = 3
 
 ######## ERROR MANAGEMENT
 
@@ -118,13 +118,14 @@ class MerlinProcess:
             # Protocol version negotiation
             json.dump(["protocol","version",protocol_version], self.mainpipe.stdin)
             answer = json.loads(self.mainpipe.stdout.readline())
-            if len(answer) == 2 and answer[0] == "return":
-                if answer[1]['selected'] != protocol_version:
+            if isinstance(answer, dict) and answer['class'] == "return":
+                value = answer['value']
+                if value['selected'] != protocol_version:
                     print("Unsupported version of Merlin protocol, please update (plugin is %d, ocamlmerlin binary is %d)."
-                            % (protocol_version, answer[1]['selected']))
-                elif answer[1]['latest'] != protocol_version:
+                            % (protocol_version, value['selected']))
+                elif value['latest'] != protocol_version:
                     print("Merlin plugin is outdated, consider updating (plugin is %d, latest is %d)."
-                            % (protocol_version, answer[1]['latest']))
+                            % (protocol_version, value['latest']))
             else:
                 print("Unsupported version of Merlin binary, please update (%s)." % answer)
 
@@ -138,18 +139,19 @@ class MerlinProcess:
         json.dump(cmd, self.mainpipe.stdin)
         line = self.mainpipe.stdout.readline()
         result = json.loads(line)
-        content = None
-        if len(result) == 2:
-            content = result[1]
 
-        if result[0] == "return":
-            return content
-        elif result[0] == "failure":
-            raise Failure(content)
-        elif result[0] == "error":
-            raise Error(content)
-        elif result[0] == "exception":
-            raise MerlinException(content)
+        for notification in result['notifications']:
+            print("(merlin) " + notification['section'] + ": " + notification['message'])
+        class_ = result['class']
+        value = result['value']
+        if class_ == "return":
+            return value
+        elif class_ == "failure":
+            raise Failure(value)
+        elif class_ == "error":
+            raise Error(value)
+        elif class_ == "exception":
+            raise MerlinException(value)
 
 merlin_processes = {}
 def merlin_process():

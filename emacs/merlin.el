@@ -602,28 +602,37 @@ the merlin buffer of the current buffer."
 (defun merlin--send-command-async-handler (closure answer)
   "Callback sent by merlin/send-command-async to tq-enqueue."
   (let ((promise       (elt closure 0))
-        (cb-if-success (elt closure 1))
-        (cb-if-exn     (elt closure 2))
-        (command       (elt closure 3))
-        (buffer        (elt closure 4)))
+	(cb-if-success (elt closure 1))
+	(cb-if-exn     (elt closure 2))
+	(command       (elt closure 3))
+	(buffer        (elt closure 4)))
     (setcar promise t)
     (with-current-buffer buffer
       (with-demoted-errors "Error in merlin/send-command-async callback: %S"
-        (when merlin-debug (merlin-debug (format "<%s" answer)))
-        (setq answer (car (read-from-string answer)))
-        (cond ((not answer)
-               (message "Invalid answer received from merlin."))
-              ((string-equal (elt answer 0) "return")
-               (setcdr promise (funcall cb-if-success (elt answer 1))))
-              ((string-equal (elt answer 0) "exception")
-               (message "Merlin failed with exception: %s" (elt answer 1))
-               (when (functionp cb-if-exn)
-                 (setcdr promise (funcall cb-if-exn (elt answer 1)))))
-              ((and (string-equal (elt answer 0) "error")
-                    (assoc 'message (elt answer 1)))
-               (message "Merlin failed with error: \"%s\""
-                        (cdr (assoc 'message (elt answer 1)))))
-              (t (error "Command %s failed with error %s" command (elt answer 1))))))))
+	(when merlin-debug (merlin-debug (format "<%s" answer)))
+	;; Parse answer
+	(setq answer (car (read-from-string answer)))
+	;; Display notifications
+	(dolist (notification (cdr-safe (assoc 'notifications answer)))
+	  (message "(merlin) %s: %s"
+		   (cdr-safe (assoc 'section notification))
+		   (cdr-safe (assoc 'message notification))))
+	;; Dispatch result
+	(let ((class (cdr-safe (assoc 'class answer)))
+	      (value (cdr-safe (assoc 'value answer))))
+	  (cond ((not answer)
+		 (message "Invalid answer received from merlin."))
+		((string-equal class "return")
+		 (setcdr promise (funcall cb-if-success value)))
+		((string-equal class "exception")
+		 (message "Merlin failed with exception: %s" value)
+		 (when (functionp cb-if-exn)
+		   (setcdr promise (funcall cb-if-exn value))))
+		((and (string-equal class "error")
+		      (assoc 'message value))
+		 (message "Merlin failed with error: \"%s\""
+			  (cdr (assoc 'message value))))
+		(t (error "Command %s failed with error %s" command value))))))))
 
 (defun merlin--sexp-remove-string-properties (sexp)
   "Workaround retarded emacs objects printing API.
@@ -1806,7 +1815,7 @@ Returns the position."
   (list
     (cons 'name (file-name-directory (expand-file-name (buffer-file-name (buffer-base-buffer)))))))
 
-(defconst merlin-protocol-version 2
+(defconst merlin-protocol-version 3
   "Version of the protocol spoken by this version of the emacs mode.")
 
 (defun merlin-setup ()
