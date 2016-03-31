@@ -163,15 +163,21 @@ SOURCES = \
 	$(TYPER)/typing/typemod.ml        \
 	$(TYPER)/parser_raw.mli           \
 	$(TYPER)/parser_raw.ml            \
-	$(TYPER)/lexer_raw.mli          	\
-	$(TYPER)/lexer_raw.ml           	\
-	$(TYPER)/parser_printer.mli    		\
-	$(TYPER)/parser_printer.ml     		\
-	$(TYPER)/parser_recover.mli    		\
-	$(TYPER)/parser_recover.ml     		\
-	$(TYPER)/parser_explain.ml     		\
-	src/ocaml_aux/pparse.mli         \
-	src/ocaml_aux/pparse.ml          \
+	$(TYPER)/lexer_raw.mli            \
+	$(TYPER)/lexer_raw.ml             \
+	$(TYPER)/parser_printer.mli       \
+	$(TYPER)/parser_printer.ml        \
+	$(TYPER)/parser_recover.mli       \
+	$(TYPER)/parser_recover.ml        \
+	$(TYPER)/parser_explain.ml        \
+	src/extend/reader_def.mli         \
+	src/extend/protocol_def.ml        \
+	src/extend/reader_helper.ml       \
+	src/extend/reader_helper.mli      \
+	src/extend/extend_main.ml         \
+	src/extend/extend_main.mli        \
+	src/ocaml_aux/pparse.mli          \
+	src/ocaml_aux/pparse.ml           \
 	src/kernel/extension.mli          \
 	src/kernel/extension.ml           \
 	src/utils/history.mli             \
