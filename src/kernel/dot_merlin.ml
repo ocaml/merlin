@@ -40,6 +40,7 @@ type directive = [
   | `STDLIB of string
   | `FINDLIB of string
   | `SUFFIX of string
+  | `READER of string
 ]
 
 type file = {
@@ -141,6 +142,7 @@ type config = {
   suffixes    : (string * string) list;
   stdlib      : string;
   findlib     : string option;
+  reader      : string option;
 }
 
 type t = {
@@ -188,6 +190,7 @@ let empty_config = {
   flags       = [];
   stdlib      = Config.standard_library;
   findlib     = None;
+  reader      = None;
 }
 
 let merge c1 c2 = {
@@ -202,6 +205,7 @@ let merge c1 c2 = {
   flags       = c1.flags @ c2.flags;
   stdlib      = if c1.stdlib = empty_config.stdlib then c2.stdlib else c1.stdlib;
   findlib     = if c1.findlib = None then c2.findlib else c1.findlib;
+  reader      = if c1.reader = None then c2.reader else c1.reader;
 }
 
 let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
@@ -268,6 +272,8 @@ let prepend_config {path; directives} config =
       {config with stdlib = canonicalize_filename path}
     | `FINDLIB path ->
       {config with findlib = Some (canonicalize_filename path)}
+    | `READER r ->
+      {config with reader = Some r}
   ) directives
 
 let postprocess_config config =
@@ -284,6 +290,7 @@ let postprocess_config config =
     flags       = clean config.flags;
     stdlib      = config.stdlib;
     findlib     = config.findlib;
+    reader      = config.reader;
   }
 
 let config t = match t.config with

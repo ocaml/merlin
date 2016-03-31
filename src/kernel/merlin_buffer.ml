@@ -57,7 +57,7 @@ let create ?dot_merlins ?path kind =
   let spec =
     match !Clflags.pp with
     | "" -> Merlin_reader.Normal (Merlin_project.extensions project, kind)
-    | pp -> Merlin_reader.External (pp, kind)
+    | pp -> Merlin_reader.PP (pp, kind)
   in
   let reader = Merlin_reader.make spec source in
   let typer = Merlin_typer.make reader String.Set.empty in

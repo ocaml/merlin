@@ -215,6 +215,9 @@ let get_dot_merlins project =
 let get_dot_merlins_failure t =
   (config t).dot_failures
 
+let reader t =
+  (config t).dot_config.Dot_merlin.reader
+
 (* Make global state point to current project *)
 let setup t path =
   let c = config t in

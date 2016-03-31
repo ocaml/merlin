@@ -62,24 +62,25 @@ module PP = struct
 
   let errors t = [] (* FIXME *)
   let comments t = [] (* FIXME *)
-
 end
 
 type spec =
   | Normal of Extension.set * Merlin_parser.kind
-  | External of string * Merlin_parser.kind
+  | PP of string * Merlin_parser.kind
+  | External of string * string list * Merlin_parser.kind 
 
 type t =
   | Is_normal of Merlin_parser.t
-  | Is_external of PP.t
+  | Is_pp of PP.t
 
 let make spec src = match spec with
   | Normal (ext, kind) ->
     let lexer = Merlin_lexer.make (Extension.keywords ext) src in
     let parser = Merlin_parser.make lexer kind in
     Is_normal parser
-  | External (pp, kind) ->
-    Is_external (PP.make pp kind src)
+  | PP (pp, kind) ->
+    Is_pp (PP.make pp kind src)
+  | External _ -> failwith "TODO"
 
 let update src = function
   | Is_normal parser as t ->
@@ -88,44 +89,44 @@ let update src = function
     let parser' = Merlin_parser.update lexer parser in
     if parser == parser' then t
     else Is_normal parser'
-  | Is_external pp ->
-    Is_external (PP.update src pp)
+  | Is_pp pp ->
+    Is_pp (PP.update src pp)
 
 let result = function
   | Is_normal parser -> Merlin_parser.result parser
-  | Is_external pp -> PP.result pp
+  | Is_pp pp -> PP.result pp
 
 let source = function
   | Is_normal parser -> Merlin_lexer.source (Merlin_parser.lexer parser)
-  | Is_external pp -> PP.source pp
+  | Is_pp pp -> PP.source pp
 
 let compare a b = match a, b with
-  | Is_normal _, Is_external _ -> -1
-  | Is_external _, Is_normal _ -> 1
+  | Is_normal _, Is_pp _ -> -1
+  | Is_pp _, Is_normal _ -> 1
   | Is_normal a, Is_normal b ->
     Merlin_parser.compare a b
-  | Is_external a, Is_external b ->
+  | Is_pp a, Is_pp b ->
     PP.compare a b
 
 let is_normal = function
   | Is_normal p -> Some p
-  | Is_external _ -> None
+  | Is_pp _ -> None
 
 let find_lexer = function
   | Is_normal p -> Some (Merlin_parser.lexer p)
-  | Is_external _ -> None
+  | Is_pp _ -> None
 
 let errors = function
   | Is_normal p ->
     Merlin_lexer.errors (Merlin_parser.lexer p) @
     Merlin_parser.errors p
-  | Is_external pp ->
+  | Is_pp pp ->
     PP.errors pp
 
 let comments = function
   | Is_normal p ->
     Merlin_lexer.comments (Merlin_parser.lexer p)
-  | Is_external pp ->
+  | Is_pp pp ->
     PP.comments pp
 
 let default_keywords = Lexer_raw.keywords []
@@ -134,7 +135,7 @@ let reconstruct_identifier ?for_locate t pos =
   (* FIXME: external should delegate identifier reconstruction to custom implementation *)
   let lexer = match t with
     | Is_normal p -> Merlin_parser.lexer p
-    | Is_external pp ->
+    | Is_pp pp ->
       let source = PP.source pp in
       Merlin_lexer.make default_keywords source
   in
@@ -146,10 +147,10 @@ let for_completion t pos =
     let lexer = Merlin_parser.lexer p in
     let no_labels, lexer = Merlin_lexer.for_completion lexer pos in
     no_labels, Is_normal (Merlin_parser.update lexer p)
-  | Is_external _ ->
+  | Is_pp _ ->
     `No_labels false, t
 
 let trace t nav = match t with
   | Is_normal p ->
     Merlin_parser.trace p nav
-  | Is_external _ -> ()
+  | Is_pp _ -> ()

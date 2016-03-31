@@ -27,6 +27,9 @@ val cmt_path    : t -> string list
 (* List all top modules of current project *)
 val global_modules : t -> string list
 
+(* Reader *)
+val reader: t -> string option
+
 (* Enabled extensions *)
 val extensions: t -> Extension.set
 

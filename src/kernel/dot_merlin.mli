@@ -42,6 +42,7 @@ type config = {
   suffixes    : (string * string) list;
   stdlib      : string;
   findlib     : string option;
+  reader      : string option;
 }
 
 type t (* A config + caching information *)
