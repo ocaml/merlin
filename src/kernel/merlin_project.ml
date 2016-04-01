@@ -57,7 +57,7 @@ type t = {
   dot_merlin          : Dot_merlin.t;
   mutable user_config : Dot_merlin.config;
   mutable local_path  : string list;
-  mutable config        : config option;
+  mutable config      : config option;
 }
 
 let compute_packages prj =

@@ -40,7 +40,7 @@ type directive = [
   | `STDLIB of string
   | `FINDLIB of string
   | `SUFFIX of string
-  | `READER of string
+  | `READER of string list
 ]
 
 type file = {
@@ -84,6 +84,8 @@ module Cache = File_cache.Make (struct
             tell (`FINDLIB (String.drop 8 line))
           else if String.is_prefixed ~by:"SUFFIX " line then
             tell (`SUFFIX (String.drop 7 line))
+          else if String.is_prefixed ~by:"READER " line then
+            tell (`READER (List.rev (rev_split_words (String.drop 7 line))))
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -142,7 +144,7 @@ type config = {
   suffixes    : (string * string) list;
   stdlib      : string;
   findlib     : string option;
-  reader      : string option;
+  reader      : string list;
 }
 
 type t = {
@@ -190,7 +192,7 @@ let empty_config = {
   flags       = [];
   stdlib      = Config.standard_library;
   findlib     = None;
-  reader      = None;
+  reader      = [];
 }
 
 let merge c1 c2 = {
@@ -205,7 +207,7 @@ let merge c1 c2 = {
   flags       = c1.flags @ c2.flags;
   stdlib      = if c1.stdlib = empty_config.stdlib then c2.stdlib else c1.stdlib;
   findlib     = if c1.findlib = None then c2.findlib else c1.findlib;
-  reader      = if c1.reader = None then c2.reader else c1.reader;
+  reader      = if c1.reader = [] then c2.reader else c1.reader;
 }
 
 let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
@@ -272,8 +274,8 @@ let prepend_config {path; directives} config =
       {config with stdlib = canonicalize_filename path}
     | `FINDLIB path ->
       {config with findlib = Some (canonicalize_filename path)}
-    | `READER r ->
-      {config with reader = Some r}
+    | `READER reader ->
+      {config with reader}
   ) directives
 
 let postprocess_config config =

@@ -38,14 +38,14 @@ type t = {
 }
 
 let compute_context ?(dot_merlins=[]) ?path () =
+  let cwd = path in
   let path, filename = match path with
-    | None -> None, "*buffer*"
-    | Some path -> Some (Filename.dirname path), Filename.basename path
+    | None -> [], "*buffer*"
+    | Some path -> [Filename.dirname path], Filename.basename path
   in
-  let dot_merlins = match dot_merlins, path with
-    | [], Some path -> [path]
-    | [], None -> []
-    | xs, cwd -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
+  let dot_merlins = match dot_merlins with
+    | [] -> path
+    | xs -> List.map ~f:(Misc.canonicalize_filename ?cwd) xs
   in
   (dot_merlins, path, filename)
 
@@ -55,13 +55,13 @@ let create ?dot_merlins ?path kind =
   let project = Merlin_project.get dot_merlins in
   let source = Merlin_source.empty ~filename in
   let spec =
-    match !Clflags.pp with
-    | "" -> Merlin_reader.Normal (Merlin_project.extensions project, kind)
-    | pp -> Merlin_reader.PP (pp, kind)
+    match Merlin_project.reader project, !Clflags.pp with
+    | [], "" -> Merlin_reader.Normal (Merlin_project.extensions project, kind)
+    | [], pp -> Merlin_reader.PP (pp, kind)
+    | ext :: args, _ -> Merlin_reader.External (ext, args, kind)
   in
   let reader = Merlin_reader.make spec source in
   let typer = Merlin_typer.make reader String.Set.empty in
-  let path = Option.to_list path in
   { kind; project; source; reader; typer; path }
 
 let unit_name t = Merlin_source.unitname t.source
