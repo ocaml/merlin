@@ -53,6 +53,7 @@ let create ?dot_merlins ?path kind =
   let dot_merlins, path, filename =
     compute_context ?dot_merlins ?path () in
   let project = Merlin_project.get dot_merlins in
+  Merlin_project.setup project path;
   let source = Merlin_source.empty ~filename in
   let spec =
     match Merlin_project.reader project, !Clflags.pp with
