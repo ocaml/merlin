@@ -8,7 +8,7 @@ let syntax_error msg loc : extension =
       pstr_loc = Location.none;
       pstr_desc = Pstr_eval ({
           pexp_loc = Location.none;
-          pexp_desc = Pexp_constant (Asttypes.Const_string (msg, None));
+          pexp_desc = Pexp_constant (Ast_helper.const_string msg);
           pexp_attributes = [];
         }, []);
     }]
@@ -89,13 +89,15 @@ let classify_attribute (id, _ : attribute) : [`Other | `Relaxed_location | `Hide
 let extract_syntax_error (id, payload : extension) : string * Location.t =
   if id.Location.txt <> "merlin.syntax-error" then
     invalid_arg "Merlin_extend.Reader_helper.extract_syntax_error";
+  let invalid_msg =
+    "Warning: extension produced an incorrect syntax-error node" in
   let msg = match payload with
-    | PStr [{
-        pstr_desc = Pstr_eval ({
-            pexp_desc = Pexp_constant (Asttypes.Const_string (msg, _));
-          }, _);
-      }] -> msg
-    | _ -> "Warning: extension produced an incorrect syntax-error node"
+    | PStr [{ pstr_desc = Pstr_eval (exp, _); }] ->
+      begin match Raw_compat.extract_const_string exp with
+        | Some msg -> msg
+        | _ -> invalid_msg
+      end
+    | _ -> invalid_msg
   in
   msg, id.Location.loc
 
