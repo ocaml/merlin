@@ -55,11 +55,19 @@ let create ?dot_merlins ?path kind =
   let project = Merlin_project.get dot_merlins in
   Merlin_project.setup project path;
   let source = Merlin_source.empty ~filename in
+  let extension =
+    match String.rindex filename '.' with
+    | exception Not_found -> ""
+    | pos -> String.sub ~pos ~len:(String.length filename - pos) filename
+  in
   let spec =
-    match Merlin_project.reader project, !Clflags.pp with
-    | [], "" -> Merlin_reader.Normal (Merlin_project.extensions project, kind)
-    | [], pp -> Merlin_reader.PP (pp, kind)
-    | ext :: args, _ -> Merlin_reader.External (ext, args, kind)
+    match Merlin_project.reader project, !Clflags.pp, extension with
+    | [], _, (".re" | ".rei") ->
+      Merlin_reader.External ("reason", [], kind)
+    | (["merlin"] | []), "", _ ->
+      Merlin_reader.Normal (Merlin_project.extensions project, kind)
+    | [], pp, _ -> Merlin_reader.PP (pp, kind)
+    | ext :: args, _, _ -> Merlin_reader.External (ext, args, kind)
   in
   let reader = Merlin_reader.make spec source in
   let typer = Merlin_typer.make reader String.Set.empty in
