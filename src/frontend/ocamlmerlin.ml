@@ -134,7 +134,12 @@ let () =
   (* Select frontend *)
   Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
 
+  (* Setup env for extensions *)
+  Unix.putenv "__MERLIN__EXTENSION__" "1";
+
+  (* Setup sturgeon monitor *)
   let monitor = Sturgeon_stub.start Command.monitor in
+
   (* Run! *)
   main_loop ();
   Sturgeon_stub.stop monitor;

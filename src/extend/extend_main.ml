@@ -86,6 +86,8 @@ module Handshake = struct
     output_string stdout magic_number;
     output_value stdout versions;
     output_value stdout capabilities;
+    flush stdout;
+    Utils.set_ready ();
     match input_value stdin with
     | exception End_of_file -> exit 0
     | P.Start_communication -> ()
@@ -116,6 +118,7 @@ module Handshake = struct
     check_v (fun x -> x.cmi_magic_number) "compiled interface (CMI)";
     check_v (fun x -> x.cmt_magic_number) "typedtree (CMT)";
     output_value o P.Start_communication;
+    flush o;
     let capabilities : Protocol_def.capabilities =
       input_value i
     in
@@ -195,6 +198,7 @@ module Driver = struct
   let reader t ?(notify=ignore) ?(debug=ignore) request =
     if t.closed then invalid_arg "Extend_main.Driver.reader: extension is closed";
     output_value t.stdin (P.Reader_request request);
+    flush t.stdin;
     let rec aux () =
       match input_value t.stdout with
       | P.Notify str -> notify str; aux ()

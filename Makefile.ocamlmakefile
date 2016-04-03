@@ -170,7 +170,7 @@ SOURCES = \
 	$(TYPER)/parser_recover.mli       \
 	$(TYPER)/parser_recover.ml        \
 	$(TYPER)/parser_explain.ml        \
-	src/extend/reader_def.mli         \
+	src/extend/reader_def.ml          \
 	src/extend/protocol_def.ml        \
 	src/extend/reader_helper.ml       \
 	src/extend/reader_helper.mli      \
