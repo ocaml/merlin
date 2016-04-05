@@ -1344,7 +1344,11 @@ let rec get_aliasmap f acc = function
   | Env_open (s, path) ->
     get_aliasmap f (`Open path :: acc) s
   | Env_type (s, id, decl) ->
-    get_aliasmap f (`Type (id, Path.Pident id) :: acc) s
+    let acc = match decl.type_newtype_level with
+      | None -> (`Type (id, Path.Pident id) :: acc)
+      | Some _ -> acc
+    in
+    get_aliasmap f acc s
   | Env_module (s, id, _) ->
     get_aliasmap f (`Module id :: acc) s
   | Env_aliasmap (s, r) ->

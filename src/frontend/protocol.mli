@@ -30,13 +30,15 @@ open Std
 open Merlin_lib
 
 module Compl : sig
-  type entry = {
+  type 'desc raw_entry = {
     name: string;
     kind: [`Value|`Constructor|`Variant|`Label|
            `Module|`Modtype|`Type|`MethodCall];
-    desc: string;
-    info: string;
+    desc: 'desc;
+    info: 'desc;
   }
+
+  type entry = string raw_entry
 
   type application_context = {
     argument_type: string;
@@ -51,7 +53,7 @@ module Compl : sig
   }
 end
 
-type protocol_version = 
+type protocol_version =
   [ `V2 (* First version to support versioning ! *)
   | `V3 (* Responses are now assoc {class:string, value:..., notifications:string list} *)
   ]

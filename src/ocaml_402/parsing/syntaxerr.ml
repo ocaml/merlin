@@ -76,6 +76,5 @@ let location_of_error = function
   | Ill_formed_ast (l, _)
   | Expecting (l, _) -> l
 
-
 let ill_formed_ast loc s =
   raise (Error (Ill_formed_ast (loc, s)))

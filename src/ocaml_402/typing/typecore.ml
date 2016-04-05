@@ -1886,33 +1886,34 @@ and type_expect ?in_function env sexp ty_expected =
   Cmt_format.save_types
     ~save:(fun exp -> [Cmt_format.Partial_expression exp])
   @@ fun () ->
-  try
-    Typetexp.warning_enter_scope ();
-    Typetexp.warning_attribute sexp.pexp_attributes;
-    let exp = type_expect_ ?in_function env sexp ty_expected in
-    Typetexp.warning_leave_scope ();
-    exp
-  with exn ->
-    Typing_aux.erroneous_type_register ty_expected;
-    raise_error exn;
-    let loc = sexp.pexp_loc in
-    {
-      exp_desc = Texp_ident
-          (Path.Pident (Ident.create "*type-error*"),
-           Location.mkloc (Longident.Lident "*type-error*") loc,
-           { Types.
-             val_type = ty_expected;
-             val_kind = Val_reg;
-             val_loc = loc;
-             val_attributes = [];
-           });
-      exp_loc = loc;
-      exp_extra = [];
-      exp_type = ty_expected;
-      exp_env = env;
-      exp_attributes = merlin_recovery_attributes [];
-    }
-
+  Typetexp.warning_enter_scope ();
+  let x = try
+      Typetexp.warning_attribute sexp.pexp_attributes;
+      let exp = type_expect_ ?in_function env sexp ty_expected in
+      exp
+    with exn ->
+      Typing_aux.erroneous_type_register ty_expected;
+      raise_error exn;
+      let loc = sexp.pexp_loc in
+      {
+        exp_desc = Texp_ident
+            (Path.Pident (Ident.create "*type-error*"),
+             Location.mkloc (Longident.Lident "*type-error*") loc,
+             { Types.
+               val_type = ty_expected;
+               val_kind = Val_reg;
+               val_loc = loc;
+               val_attributes = [];
+             });
+        exp_loc = loc;
+        exp_extra = [];
+        exp_type = ty_expected;
+        exp_env = env;
+        exp_attributes = merlin_recovery_attributes [];
+      }
+  in
+  Typetexp.warning_leave_scope ();
+  x
 
 and type_expect_ ?in_function env sexp ty_expected =
   let loc = sexp.pexp_loc in
@@ -2883,7 +2884,7 @@ and type_expect_ ?in_function env sexp ty_expected =
                       exp.exp_extra;
       }
   | Pexp_extension ext ->
-      raise (Error_forward (Typetexp.error_of_extension ext))
+    raise (Error_forward (Typetexp.error_of_extension ext))
 
 and type_function ?in_function loc attrs env ty_expected l caselist =
   let (loc_fun, ty_fun) =

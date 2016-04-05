@@ -145,6 +145,12 @@ SOURCES = \
 	$(TYPER)/typing/includecore.ml    \
 	src/kernel/fake.mli               \
 	src/kernel/fake.ml                \
+	src/extend/reader_def.ml          \
+	src/extend/protocol_def.ml        \
+	src/extend/reader_helper.mli      \
+	src/extend/reader_helper.ml       \
+	src/extend/extend_main.mli        \
+	src/extend/extend_main.ml         \
 	$(TYPER)/typing/includemod.mli    \
 	$(TYPER)/typing/includemod.ml     \
 	$(TYPER)/typing/parmatch.mli      \
@@ -170,12 +176,6 @@ SOURCES = \
 	$(TYPER)/parser_recover.mli       \
 	$(TYPER)/parser_recover.ml        \
 	$(TYPER)/parser_explain.ml        \
-	src/extend/reader_def.ml          \
-	src/extend/protocol_def.ml        \
-	src/extend/reader_helper.ml       \
-	src/extend/reader_helper.mli      \
-	src/extend/extend_main.ml         \
-	src/extend/extend_main.mli        \
 	src/ocaml_aux/pparse.mli          \
 	src/ocaml_aux/pparse.ml           \
 	src/kernel/extension.mli          \
