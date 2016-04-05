@@ -33,6 +33,45 @@ open Merlin_lib
 open BrowseT
 open Browse_node
 
+type raw_info =
+  [ `Constructor of Types.constructor_description
+  | `Modtype of Types.module_type
+  | `Modtype_declaration of Ident.t * Types.modtype_declaration
+  | `None
+  | `String of string
+  | `Type_declaration of Ident.t * Types.type_declaration
+  | `Type_scheme of Types.type_expr
+  | `Variant of string * Types.type_expr option
+  ]
+
+let raw_info_printer (info : raw_info) =
+  let ppf = Format.str_formatter in
+  begin match info with
+    | `Constructor c ->
+      Browse_misc.print_constructor ppf c
+    | `Modtype mt ->
+      Printtyp.modtype ppf mt
+    | `Modtype_declaration (id, mtd) ->
+      Printtyp.modtype_declaration id ppf mtd
+    | `None -> ()
+    | `String s -> Format.pp_print_string ppf s
+    | `Type_declaration (id, tdecl) ->
+      Printtyp.type_declaration id ppf tdecl
+    | `Type_scheme te ->
+      Printtyp.type_scheme ppf te
+    | `Variant (label, arg) ->
+      Format.pp_print_string ppf label;
+      Option.iter ~f:(fun t ->
+          Format.pp_print_string ppf " of ";
+          Printtyp.type_scheme ppf t)
+        arg;
+  end;
+  Format.flush_str_formatter ()
+
+let map_entry f entry =
+  let open Protocol.Compl in
+  {entry with desc = f entry.desc; info = f entry.info}
+
 (* List methods of an object.
    Code taken from [uTop](https://github.com/diml/utop
    with permission from Jeremie Dimino. *)
@@ -107,46 +146,34 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
     | Some path -> Ident.create (Path.last path)
     | None -> Extension.ident
   in
-  let ppf, to_string = Format.to_string () in
-  let kind =
+  let kind, text =
     match ty with
     | `Value v ->
-      Printtyp.type_scheme ppf v.Types.val_type;
-      `Value
-    | `Cons c  ->
-      Browse_misc.print_constructor ppf c;
-      `Constructor
+      (`Value, `Type_scheme v.Types.val_type)
+    | `Cons c  -> (`Constructor, `Constructor c)
     | `Label label_descr ->
       let desc =
         Types.(Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
                        label_descr.lbl_res, label_descr.lbl_arg, Cok))
       in
-      Printtyp.type_scheme ppf (Btype.newgenty desc);
-      `Label
+      (`Label, `Type_scheme (Btype.newgenty desc))
     | `Mod m   ->
-      if exact then
-        begin
+      begin try
+          if not exact then raise Exit;
           let verbosity = Fluid.get Type_utils.verbosity in
-          match Type_utils.mod_smallerthan (1000 * verbosity) m with
-          | None -> ()
-          | Some _ -> Printtyp.modtype ppf m
-        end;
-      `Module
+          if Type_utils.mod_smallerthan (1000 * verbosity) m = None then raise Exit;
+          (`Module, `Modtype m)
+        with Exit -> (`Module, `None)
+      end
     | `ModType m ->
       if exact then
-        Printtyp.modtype_declaration ident ppf ((*verbose_sig env*) m);
-      `Modtype
+        (`Modtype, `Modtype_declaration (ident, (*verbose_sig env*) m))
+      else
+        (`Modtype, `None)
     | `Typ t ->
-      Printtyp.type_declaration ident ppf
-        (*if exact then verbose_type_decl env t else*)( t);
-      `Type
+      (`Type, `Type_declaration (ident, t))
     | `Variant (label,arg) ->
-      Format.pp_print_string ppf label;
-      Option.iter ~f:(fun t ->
-          Format.pp_print_string ppf " of ";
-          Printtyp.type_scheme ppf t)
-        arg;
-      `Variant
+      (`Variant, `Variant (label, arg))
   in
   (* FIXME: When suggesting variants (and constructors) with parameters,
      it could be nice to check precedence and add or not parenthesis.
@@ -156,13 +183,13 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
   in*)
   let desc =
     match kind with
-    | `Module | `Modtype -> ""
-    | _ -> to_string ()
+    | `Module | `Modtype -> `None
+    | _ -> text
   in
   let info = match Raw_compat.read_doc_attributes attrs, get_doc, kind with
-    | Some (str, _), _, _ -> str
-    | None, _, (`Module | `Modtype) -> to_string ()
-    | None, None, _ -> ""
+    | Some (str, _), _, _ -> `String str
+    | None, _, (`Module | `Modtype) -> text
+    | None, None, _ -> `None
     | None, Some get_doc, kind ->
       match path, loc with
       | Some p, Some loc ->
@@ -173,14 +200,14 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
           | _ -> assert false
         in
         begin match get_doc (`Completion_entry (namespace, p, loc)) with
-          | `Found str -> str
-          | _ -> ""
+          | `Found str -> `String str
+          | _ -> `None
         end
-      | _, _ -> ""
+      | _, _ -> `None
   in
   {name; kind; desc; info}
 
-let item_for_global_module name = {name; kind = `Module; desc = ""; info = ""}
+let item_for_global_module name = {name; kind = `Module; desc = `None; info = `None}
 
 let fold_variant_constructors ~env ~init ~f =
   let rec aux acc t =
@@ -388,10 +415,8 @@ let complete_methods ~env ~prefix obj =
   in
   let methods = List.filter has_prefix (methods_of_type env t) in
   List.map methods ~f:(fun (name,ty) ->
-    let info = "" (* TODO: get documentation. *) in
-    let ppf, to_string = Format.to_string () in
-    Printtyp.type_scheme ppf ty;
-    { name; kind = `MethodCall; desc = to_string (); info }
+    let info = `None (* TODO: get documentation. *) in
+    { name; kind = `MethodCall; desc = `Type_scheme ty; info }
   )
 
 let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
@@ -441,7 +466,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
       List.fold_left (Buffer.global_modules buffer) ~init:compl ~f:(
         fun candidates name ->
           if not (String.no_double_underscore name) then candidates else
-          let default = { name; kind = `Module; desc = ""; info = "" } in
+          let default = { name; kind = `Module; desc = `None; info = `None } in
           if name = prefix && uniq (`Mod, name) then
             try
               let path, md, attrs = Raw_compat.lookup_module (Longident.Lident name) env in

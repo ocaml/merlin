@@ -30,6 +30,21 @@
 open Std
 open Merlin_lib
 
+type raw_info =
+  [ `Constructor of Types.constructor_description
+  | `Modtype of Types.module_type
+  | `Modtype_declaration of Ident.t * Types.modtype_declaration
+  | `None
+  | `String of string
+  | `Type_declaration of Ident.t * Types.type_declaration
+  | `Type_scheme of Types.type_expr
+  | `Variant of string * Types.type_expr option
+  ]
+
+val raw_info_printer : raw_info -> string
+
+val map_entry : ('a -> 'b) -> 'a Protocol.Compl.raw_entry -> 'b Protocol.Compl.raw_entry
+
 val node_complete
   : Merlin_lib.Buffer.t
   -> ?get_doc:([> `Completion_entry of [> `Type | `Vals ] * Path.t * Location.t ]
@@ -37,10 +52,10 @@ val node_complete
   -> ?target_type:Types.type_expr
   -> Env.t -> Browse_node.t
   -> string
-  -> Protocol.Compl.entry list
+  -> raw_info Protocol.Compl.raw_entry list
 
 val expand_prefix : global_modules:string list -> Env.t -> string ->
-  Protocol.Compl.entry list
+  raw_info Protocol.Compl.raw_entry list
 
 val application_context : verbosity:int -> prefix:Asttypes.label -> Browse.t ->
   Types.type_expr option *

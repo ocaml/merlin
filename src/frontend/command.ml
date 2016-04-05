@@ -396,6 +396,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         )
       in
       let entries =
+        List.map ~f:(Completion.map_entry Completion.raw_info_printer) @@
         Completion.node_complete ?get_doc ?target_type buffer env node prefix
       and context = match context with
         | `Application context when no_labels ->
@@ -413,7 +414,10 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let global_modules = Buffer.global_modules buffer in
-    let entries = Completion.expand_prefix env ~global_modules prefix in
+    let entries =
+      List.map ~f:(Completion.map_entry Completion.raw_info_printer) @@
+      Completion.expand_prefix env ~global_modules prefix
+    in
     { Compl. entries ; context = `Unknown }
 
   | Document (patho, pos) ->
