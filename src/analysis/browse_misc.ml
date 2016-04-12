@@ -31,16 +31,17 @@ open Option.Infix
 open Merlin_lib
 open BrowseT
 
-let print_constructor ppf c =
+let print_constructor c =
   let open Types in
   match c.cstr_args with
   | [] ->
-    Printtyp.type_scheme ppf ({ level = 0 ; id = 0 ; desc = c.cstr_res.desc })
+    Printtyp.tree_of_type_scheme
+      { level = 0 ; id = 0 ; desc = c.cstr_res.desc }
   | args ->
     let desc = Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
                        { level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok)
     in
-    Printtyp.type_scheme ppf ({ level = 0 ; id = 0 ; desc  })
+    Printtyp.tree_of_type_scheme { level = 0 ; id = 0 ; desc  }
 
 let summary_at pos sum =
   let cmp = Parsing_aux.compare_pos pos in

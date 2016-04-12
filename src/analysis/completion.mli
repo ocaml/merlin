@@ -41,7 +41,11 @@ type raw_info =
   | `Variant of string * Types.type_expr option
   ]
 
-val raw_info_printer : raw_info -> string
+val raw_info_printer : raw_info ->
+  [ `String of string
+  | `Print of Reader_def.outcometree
+  | `Concat of string * Reader_def.outcometree
+  ]
 
 val map_entry : ('a -> 'b) -> 'a Protocol.Compl.raw_entry -> 'b Protocol.Compl.raw_entry
 

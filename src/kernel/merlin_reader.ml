@@ -142,6 +142,16 @@ module Extend = struct
     Extend_main.Driver.stop driver;
     ident
 
+  let print_outcome t ts =
+    let driver, reader = loaded_driver t in
+    let ts = match reader (Protocol_def.Reader.Print_outcome ts) with
+      | Protocol_def.Reader.Ret_printed_outcome ts -> ts
+      | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
+    in
+    Extend_main.Driver.stop driver;
+    ts
+
+
   let source t = t.source
 end
 
@@ -246,3 +256,13 @@ let trace t nav = match t with
   | Is_normal p ->
     Merlin_parser.trace p nav
   | Is_pp _ | Is_extend _ -> ()
+
+let print_outcome t ts = match t with
+  | Is_normal _ | Is_pp _ ->
+    let print t =
+      Reader_helper.print_outcome_using_oprint Format.str_formatter t;
+      Format.flush_str_formatter ()
+    in
+    List.rev (List.rev_map print ts)
+  | Is_extend t ->
+    Extend.print_outcome t ts

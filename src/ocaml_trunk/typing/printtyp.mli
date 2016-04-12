@@ -60,6 +60,7 @@ val tree_of_extension_constructor:
     Ident.t -> extension_constructor -> ext_status -> out_sig_item
 val extension_constructor:
     Ident.t -> formatter -> extension_constructor -> unit
+val tree_of_modtype: ?ellipsis:bool -> module_type -> out_module_type
 val tree_of_module:
     Ident.t -> ?ellipsis:bool -> module_type -> rec_status -> out_sig_item
 val modtype: formatter -> module_type -> unit

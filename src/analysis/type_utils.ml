@@ -261,7 +261,8 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
                      Format.pp_print_string ppf name;
                      Format.pp_print_string ppf " : ";
                   *)
-            Browse_misc.print_constructor ppf cstr_desc;
+            (* FIXME: support Reader printer *)
+            !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc);
             true
           with _ ->
             raise exn

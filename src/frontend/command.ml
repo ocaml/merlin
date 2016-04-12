@@ -217,6 +217,31 @@ let dump buffer = function
 
   | _ -> IO.invalid_arguments ()
 
+let print_completion_entries reader entries =
+  let input_ref = ref [] and output_ref = ref [] in
+  let preprocess entry =
+    match Completion.raw_info_printer entry with
+    | `String s -> `String s
+    | `Print t ->
+      let r = ref "" in
+      input_ref := t :: !input_ref;
+      output_ref := r :: !output_ref;
+      `Print r
+    | `Concat (s,t) ->
+      let r = ref "" in
+      input_ref := t :: !input_ref;
+      output_ref := r :: !output_ref;
+      `Concat (s,r)
+  in
+  let entries = List.map ~f:(Completion.map_entry preprocess) entries in
+  List.iter2 (:=) !output_ref (Reader.print_outcome reader !input_ref);
+  let postprocess = function
+    | `String s -> s
+    | `Print r -> !r
+    | `Concat (s,r) -> s ^ !r
+  in
+  List.rev_map ~f:(Completion.map_entry postprocess) entries
+
 let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Type_expr (source, pos) ->
     with_typer buffer @@ fun typer ->
@@ -396,14 +421,14 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         )
       in
       let entries =
-        List.map ~f:(Completion.map_entry Completion.raw_info_printer) @@
+        print_completion_entries (Buffer.reader buffer) @@
         Completion.node_complete ?get_doc ?target_type buffer env node prefix
       and context = match context with
         | `Application context when no_labels ->
           `Application {context with Protocol.Compl.labels = []}
         | context -> context
       in
-      {Compl. entries = List.rev entries; context }
+      {Compl. entries; context }
     in
     let `No_labels no_labels, buffer = Buffer.for_completion buffer pos in
     Merlin_reader.trace (Buffer.reader buffer) !logging_frame;
@@ -415,7 +440,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let global_modules = Buffer.global_modules buffer in
     let entries =
-      List.map ~f:(Completion.map_entry Completion.raw_info_printer) @@
+      print_completion_entries (Buffer.reader buffer) @@
       Completion.expand_prefix env ~global_modules prefix
     in
     { Compl. entries ; context = `Unknown }

@@ -44,29 +44,28 @@ type raw_info =
   | `Variant of string * Types.type_expr option
   ]
 
-let raw_info_printer (info : raw_info) =
-  let ppf = Format.str_formatter in
-  begin match info with
-    | `Constructor c ->
-      Browse_misc.print_constructor ppf c
-    | `Modtype mt ->
-      Printtyp.modtype ppf mt
-    | `Modtype_declaration (id, mtd) ->
-      Printtyp.modtype_declaration id ppf mtd
-    | `None -> ()
-    | `String s -> Format.pp_print_string ppf s
-    | `Type_declaration (id, tdecl) ->
-      Printtyp.type_declaration id ppf tdecl
-    | `Type_scheme te ->
-      Printtyp.type_scheme ppf te
-    | `Variant (label, arg) ->
-      Format.pp_print_string ppf label;
-      Option.iter ~f:(fun t ->
-          Format.pp_print_string ppf " of ";
-          Printtyp.type_scheme ppf t)
-        arg;
-  end;
-  Format.flush_str_formatter ()
+let raw_info_printer : raw_info -> _ = function
+  | `Constructor c ->
+    `Print (Reader_def.Out_type (Browse_misc.print_constructor c))
+  | `Modtype mt ->
+    `Print (Reader_def.Out_module_type (Printtyp.tree_of_modtype mt))
+  | `Modtype_declaration (id, mtd) ->
+    `Print (Reader_def.Out_sig_item
+              (Printtyp.tree_of_modtype_declaration id mtd))
+  | `None -> `String ""
+  | `String s -> `String s
+  | `Type_declaration (id, tdecl) ->
+    `Print (Reader_def.Out_sig_item
+              (Printtyp.tree_of_type_declaration id tdecl Types.Trec_not))
+  | `Type_scheme te ->
+    `Print (Reader_def.Out_type (Printtyp.tree_of_type_scheme te))
+  | `Variant (label, arg) ->
+    begin match arg with
+      | None -> `String label
+      | Some te ->
+        `Concat (label ^ " of ",
+                 Reader_def.Out_type (Printtyp.tree_of_type_scheme te))
+    end
 
 let map_entry f entry =
   let open Protocol.Compl in
