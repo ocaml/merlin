@@ -25,18 +25,21 @@ module Reader = struct
         buffer := Some (V.load buf);
         Ret_loaded
       | Parse ->
-        Ret_tree (V.tree (get_buffer ()))
+        Ret_ast (V.parse (get_buffer ()))
       | Parse_line (pos, str) ->
-        Ret_tree (V.parse_line (get_buffer ()) pos str)
+        Ret_ast (V.parse_line (get_buffer ()) pos str)
       | Parse_for_completion pos ->
         let info, tree = V.for_completion (get_buffer ()) pos in
-        Ret_tree_for_competion (info, tree)
+        Ret_ast_for_completion (info, tree)
       | Get_ident_at pos ->
         Ret_ident (V.ident_at (get_buffer ()) pos)
-      | Print trees ->
-        let buf = get_buffer () in
-        let trees = List.rev_map (V.print buf) trees in
-        Ret_printed (List.rev trees)
+      | Print_outcome trees ->
+        let print t =
+          V.print_outcome Format.str_formatter t;
+          Format.flush_str_formatter ()
+        in
+        let trees = List.rev_map print trees in
+        Ret_printed_outcome (List.rev trees)
   end
 end
 

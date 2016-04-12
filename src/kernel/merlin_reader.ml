@@ -106,14 +106,13 @@ module Extend = struct
   let parsetree t = function
     | Reader_def.Signature sg -> `Signature sg
     | Reader_def.Structure str -> `Structure str
-    | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
 
   let result t = match t.result with
     | Some r -> r
     | None ->
       let driver, reader = loaded_driver t in
       let parsetree = match reader Protocol_def.Reader.Parse with
-        | Protocol_def.Reader.Ret_tree tree -> parsetree t tree
+        | Protocol_def.Reader.Ret_ast ast -> parsetree t ast
         | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
       in
       Extend_main.Driver.stop driver;
@@ -123,8 +122,8 @@ module Extend = struct
   let for_completion t pos =
     let driver, reader = loaded_driver t in
     let result = match reader (Protocol_def.Reader.Parse_for_completion pos) with
-      | Protocol_def.Reader.Ret_tree_for_competion (info, tree) ->
-        let parsetree = parsetree t tree in
+      | Protocol_def.Reader.Ret_ast_for_completion (info, ast) ->
+        let parsetree = parsetree t ast in
         (`No_labels (not info.Reader_def.complete_labels),
          {t with result = Some parsetree})
       | _ ->

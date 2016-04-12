@@ -16,7 +16,7 @@ type buffer = {
 }
 
 (** ASTs exchanged with Merlin *)
-type tree =
+type ast =
 
   | (** An implementation, usually coming from a .ml file *)
     Structure of Parsetree.structure
@@ -24,9 +24,11 @@ type tree =
   | (** An interface, usually coming from a .mli file *)
     Signature of Parsetree.signature
 
-  | (** A type expression, used for instance when printing errors *)
-    Type of Parsetree.core_type
-    (** FIXME: add more items for completion *)
+type outcometree =
+  | Out_type of Outcometree.out_type
+  | Out_module_type of Outcometree.out_module_type
+  | Out_sig_item of Outcometree.out_sig_item
+
 
 (** Additional information useful for guiding completion *)
 type complete_info = {
@@ -52,7 +54,7 @@ module type V0 = sig
   (** Get the main parsetree from the buffer.
       This should return the AST corresponding to [buffer.source].
   *)
-  val tree : t -> tree
+  val parse : t -> ast
 
   (** Give the opportunity to optimize the parsetree when completing from a
       specific position.
@@ -64,12 +66,12 @@ module type V0 = sig
       But it might be worthwhile to specialize the parsetree for a better
       completion.
   *)
-  val for_completion : t -> Lexing.position -> complete_info * tree
+  val for_completion : t -> Lexing.position -> complete_info * ast
 
   (** Parse a separate user-input in the context of this buffer.
       Used when the user manually enters an expression and ask for its type or location.
   *)
-  val parse_line : t -> Lexing.position -> string -> tree
+  val parse_line : t -> Lexing.position -> string -> ast
 
   (** Given a buffer and a position, return the components of the identifier
       (actually the qualified path) under the cursor.
@@ -85,8 +87,5 @@ module type V0 = sig
       This is used for displaying answers to queries.
       (type errors, signatures of modules in environment, completion candidates, etc).
   *)
-  val print : t -> tree -> string
-
-  (** LATER: print and update physical location in tree *)
-  (*val print_with_location : t -> tree -> string*)
+  val print_outcome : Format.formatter -> outcometree -> unit
 end

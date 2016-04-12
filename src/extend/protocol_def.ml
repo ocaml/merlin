@@ -20,14 +20,14 @@ module Reader = struct
     | Parse_line of Lexing.position * string
     | Parse_for_completion of Lexing.position
     | Get_ident_at of Lexing.position
-    | Print of tree list
+    | Print_outcome of Reader_def.outcometree list
 
   type response =
     | Ret_loaded
-    | Ret_tree of tree
-    | Ret_tree_for_competion of complete_info * tree
+    | Ret_ast of Reader_def.ast
+    | Ret_ast_for_completion of complete_info * Reader_def.ast
     | Ret_ident of string Location.loc list
-    | Ret_printed of string list
+    | Ret_printed_outcome of string list
 
 end
 

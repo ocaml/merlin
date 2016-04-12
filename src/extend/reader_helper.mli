@@ -1,5 +1,9 @@
 open Parsetree
 
+(** Default implementation for [Reader_def.print_outcome] using
+    [Oprint] from compiler-libs *)
+val print_outcome_using_oprint : Format.formatter -> Reader_def.outcometree -> unit
+
 (** Generate an extension node that will be reported as a syntax error by
     Merlin. *)
 val syntax_error : string -> Location.t -> extension
