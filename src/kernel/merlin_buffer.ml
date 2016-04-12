@@ -97,6 +97,7 @@ let for_completion t pos =
 
 (* All top modules of current project, with current module removed *)
 let global_modules t =
+  Merlin_project.set_local_path t.project t.path;
   List.remove (unit_name t) (Merlin_project.global_modules t.project)
 
 (* Try to do a background job, return false if nothing has to be done *)
