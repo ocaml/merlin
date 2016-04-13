@@ -33,6 +33,8 @@ open Merlin_lib
 open BrowseT
 open Browse_node
 
+open Extend_protocol.Reader
+
 type raw_info =
   [ `Constructor of Types.constructor_description
   | `Modtype of Types.module_type
@@ -46,25 +48,25 @@ type raw_info =
 
 let raw_info_printer : raw_info -> _ = function
   | `Constructor c ->
-    `Print (Reader_def.Out_type (Browse_misc.print_constructor c))
+    `Print (Out_type (Browse_misc.print_constructor c))
   | `Modtype mt ->
-    `Print (Reader_def.Out_module_type (Printtyp.tree_of_modtype mt))
+    `Print (Out_module_type (Printtyp.tree_of_modtype mt))
   | `Modtype_declaration (id, mtd) ->
-    `Print (Reader_def.Out_sig_item
+    `Print (Out_sig_item
               (Printtyp.tree_of_modtype_declaration id mtd))
   | `None -> `String ""
   | `String s -> `String s
   | `Type_declaration (id, tdecl) ->
-    `Print (Reader_def.Out_sig_item
+    `Print (Out_sig_item
               (Printtyp.tree_of_type_declaration id tdecl Types.Trec_first))
   | `Type_scheme te ->
-    `Print (Reader_def.Out_type (Printtyp.tree_of_type_scheme te))
+    `Print (Out_type (Printtyp.tree_of_type_scheme te))
   | `Variant (label, arg) ->
     begin match arg with
       | None -> `String label
       | Some te ->
         `Concat (label ^ " of ",
-                 Reader_def.Out_type (Printtyp.tree_of_type_scheme te))
+                 Out_type (Printtyp.tree_of_type_scheme te))
     end
 
 let map_entry f entry =

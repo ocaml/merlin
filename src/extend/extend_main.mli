@@ -1,3 +1,5 @@
+open Extend_protocol
+
 module Description : sig
   type t
   val make_v0 : name:string -> version:string -> t
@@ -10,7 +12,7 @@ end
 
 module Reader : sig
   type t
-  val make_v0 : (module Reader_def.V0) -> t
+  val make_v0 : (module Reader.V0) -> t
 end
 
 module Handshake : sig
@@ -24,7 +26,6 @@ module Handshake : sig
   }
 
   val versions : versions
-
 end
 
 (** The main entry point of an extension. *)
@@ -39,11 +40,11 @@ module Driver : sig
   val run : string -> t
   val stop : t -> unit
 
-  val capabilities : t -> Protocol_def.capabilities
+  val capabilities : t -> capabilities
 
   val reader : t ->
     ?notify:(string -> unit) ->
     ?debug:(string -> unit) ->
-    Protocol_def.Reader.request ->
-    Protocol_def.Reader.response
+    Extend_protocol.Reader.request ->
+    Extend_protocol.Reader.response
 end

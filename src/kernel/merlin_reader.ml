@@ -26,6 +26,8 @@
 
    )* }}} *)
 
+module R = Extend_protocol.Reader
+
 module PP = struct
   type t = {
     command: string;
@@ -62,6 +64,8 @@ module PP = struct
 end
 
 module Extend = struct
+  open Extend_protocol.Reader
+
   type t = {
     name: string;
     args: string list;
@@ -93,30 +97,28 @@ module Extend = struct
     driver, reader
 
   let loaded_driver t =
-    let open Protocol_def.Reader in
     let driver, reader = start_process t.name in
     let buffer = {
-      Reader_def.
       path  = Merlin_source.filename t.source;
       flags = t.args;
       text  = Merlin_source.text t.source;
     } in
-    match reader (Load buffer) with
-    | Ret_loaded -> driver, reader
+    match reader (Req_load buffer) with
+    | Res_loaded -> driver, reader
     | _ ->
       Extend_main.Driver.stop driver;
       failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
 
   let parsetree t = function
-    | Reader_def.Signature sg -> `Signature sg
-    | Reader_def.Structure str -> `Structure str
+    | Signature sg -> `Signature sg
+    | Structure str -> `Structure str
 
   let result t = match t.result with
     | Some r -> r
     | None ->
       let driver, reader = loaded_driver t in
-      let parsetree = match reader Protocol_def.Reader.Parse with
-        | Protocol_def.Reader.Ret_ast ast -> parsetree t ast
+      let parsetree = match reader Req_parse with
+        | Res_parse ast -> parsetree t ast
         | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
       in
       Extend_main.Driver.stop driver;
@@ -125,10 +127,10 @@ module Extend = struct
 
   let for_completion t pos =
     let driver, reader = loaded_driver t in
-    let result = match reader (Protocol_def.Reader.Parse_for_completion pos) with
-      | Protocol_def.Reader.Ret_ast_for_completion (info, ast) ->
+    let result = match reader (Req_parse_for_completion pos) with
+      | Res_parse_for_completion (info, ast) ->
         let parsetree = parsetree t ast in
-        (`No_labels (not info.Reader_def.complete_labels),
+        (`No_labels (not info.complete_labels),
          {t with result = Some parsetree})
       | _ ->
         failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
@@ -138,8 +140,8 @@ module Extend = struct
 
   let reconstruct_identifier t pos =
     let driver, reader = loaded_driver t in
-    let ident = match reader (Protocol_def.Reader.Get_ident_at pos) with
-      | Protocol_def.Reader.Ret_ident ident -> ident
+    let ident = match reader (Req_get_ident_at pos) with
+      | Res_get_ident_at ident -> ident
       | _ ->
         failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
     in
@@ -148,8 +150,8 @@ module Extend = struct
 
   let print_outcome t ts =
     let driver, reader = loaded_driver t in
-    let ts = match reader (Protocol_def.Reader.Print_outcome ts) with
-      | Protocol_def.Reader.Ret_printed_outcome ts -> ts
+    let ts = match reader (Req_print_outcome ts) with
+      | Res_print_outcome ts -> ts
       | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
     in
     Extend_main.Driver.stop driver;
@@ -264,7 +266,7 @@ let trace t nav = match t with
 let print_outcome t ts = match t with
   | Is_normal _ | Is_pp _ ->
     let print t =
-      Reader_helper.print_outcome_using_oprint Format.str_formatter t;
+      Extend_helper.print_outcome_using_oprint Format.str_formatter t;
       Format.flush_str_formatter ()
     in
     List.rev (List.rev_map print ts)
@@ -284,13 +286,13 @@ module Oprint = struct
   let default_out_type_extension = !Oprint.out_type_extension
   let default_out_phrase         = !Oprint.out_phrase
 
-  open Reader_def
+  open Extend_protocol.Reader
 
   let oprint default inj ppf x = match !reader with
     | None -> default ppf x
     | Some (name, reader) ->
-      begin match reader (Protocol_def.Reader.Print_outcome [inj x]) with
-        | Protocol_def.Reader.Ret_printed_outcome [x] ->
+      begin match reader (Req_print_outcome [inj x]) with
+        | Res_print_outcome [x] ->
           Format.pp_print_string ppf x
         | _ ->
           failwith (Printf.sprintf "Extension %S has incorrect behavior" name)

@@ -1,4 +1,6 @@
-module P = Protocol_def
+module P = Extend_protocol
+module R = P.Reader
+
 module Description = struct
   type t = P.description
 
@@ -6,10 +8,10 @@ module Description = struct
 end
 
 module Reader = struct
-  type t = (module Reader_def.V0)
-  let make_v0 (x : (module Reader_def.V0)) : t = x
+  type t = (module R.V0)
+  let make_v0 (x : (module R.V0)) : t = x
 
-  module Make (V : Reader_def.V0) = struct
+  module Make (V : R.V0) = struct
 
     open P.Reader
 
@@ -21,25 +23,25 @@ module Reader = struct
       | Some buffer -> buffer
 
     let exec = function
-      | Load buf ->
+      | Req_load buf ->
         buffer := Some (V.load buf);
-        Ret_loaded
-      | Parse ->
-        Ret_ast (V.parse (get_buffer ()))
-      | Parse_line (pos, str) ->
-        Ret_ast (V.parse_line (get_buffer ()) pos str)
-      | Parse_for_completion pos ->
+        Res_loaded
+      | Req_parse ->
+        Res_parse (V.parse (get_buffer ()))
+      | Req_parse_line (pos, str) ->
+        Res_parse (V.parse_line (get_buffer ()) pos str)
+      | Req_parse_for_completion pos ->
         let info, tree = V.for_completion (get_buffer ()) pos in
-        Ret_ast_for_completion (info, tree)
-      | Get_ident_at pos ->
-        Ret_ident (V.ident_at (get_buffer ()) pos)
-      | Print_outcome trees ->
+        Res_parse_for_completion (info, tree)
+      | Req_get_ident_at pos ->
+        Res_get_ident_at (V.ident_at (get_buffer ()) pos)
+      | Req_print_outcome trees ->
         let print t =
           V.print_outcome Format.str_formatter t;
           Format.flush_str_formatter ()
         in
         let trees = List.rev_map print trees in
-        Ret_printed_outcome (List.rev trees)
+        Res_print_outcome (List.rev trees)
   end
 end
 
@@ -122,7 +124,7 @@ module Handshake = struct
     check_v (fun x -> x.cmt_magic_number) "typedtree (CMT)";
     output_value o P.Start_communication;
     flush o;
-    let capabilities : Protocol_def.capabilities =
+    let capabilities : P.capabilities =
       input_value i
     in
     capabilities
@@ -145,7 +147,7 @@ let extension_main ?reader desc =
   Handshake.negotiate {P. reader = reader <> None};
   let reader = match reader with
     | None -> (fun _ -> failwith "No reader")
-    | Some (module R : Reader_def.V0) ->
+    | Some (module R : R.V0) ->
       let module M = Reader.Make(R) in
       M.exec
   in
@@ -174,7 +176,7 @@ let extension_main ?reader desc =
 module Driver = struct
   type t = {
     name: string;
-    capabilities: Protocol_def.capabilities;
+    capabilities: P.capabilities;
     stdin: out_channel;
     stdout: in_channel;
     mutable closed: bool;

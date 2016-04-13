@@ -94,10 +94,10 @@ let rec error_of_extension ext =
       Location.errorf ~loc "Uninterpreted extension '%s'." txt
 
 let error_of_extension ext =
-  match Reader_helper.classify_extension ext with
+  match Extend_helper.classify_extension ext with
   | `Other -> error_of_extension ext
   | `Syntax_error ->
-    let txt, loc = Reader_helper.extract_syntax_error ext in
+    let txt, loc = Extend_helper.extract_syntax_error ext in
     Location.error ~loc txt
 
 let check_deprecated loc attrs s =

@@ -145,10 +145,9 @@ SOURCES = \
 	$(TYPER)/typing/includecore.ml    \
 	src/kernel/fake.mli               \
 	src/kernel/fake.ml                \
-	src/extend/reader_def.ml          \
-	src/extend/protocol_def.ml        \
-	src/extend/reader_helper.mli      \
-	src/extend/reader_helper.ml       \
+	src/extend/extend_protocol.ml     \
+	src/extend/extend_helper.mli      \
+	src/extend/extend_helper.ml       \
 	src/extend/extend_main.mli        \
 	src/extend/extend_main.ml         \
 	$(TYPER)/typing/includemod.mli    \

@@ -1,8 +1,9 @@
 open Parsetree
+open Extend_protocol
 
 (** Default implementation for [Reader_def.print_outcome] using
     [Oprint] from compiler-libs *)
-val print_outcome_using_oprint : Format.formatter -> Reader_def.outcometree -> unit
+val print_outcome_using_oprint : Format.formatter -> Reader.outcometree -> unit
 
 (** Generate an extension node that will be reported as a syntax error by
     Merlin. *)
