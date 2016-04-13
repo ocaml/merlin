@@ -55,3 +55,4 @@ val trace : t -> _ cursor Nav.frame -> unit
 val for_completion: t -> Lexing.position -> [`No_labels of bool] * t
 
 val print_outcome : t -> Reader_def.outcometree list -> string list
+val oprint_with : t -> (unit -> 'a) -> 'a

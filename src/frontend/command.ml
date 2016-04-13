@@ -534,6 +534,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Errors ->
     begin
       with_typer buffer @@ fun typer ->
+      Reader.oprint_with (Buffer.reader buffer) @@ fun () ->
       Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
       try
         let typer = Buffer.typer buffer in

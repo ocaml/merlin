@@ -25,10 +25,14 @@ type ast =
     Signature of Parsetree.signature
 
 type outcometree =
-  | Out_type of Outcometree.out_type
-  | Out_module_type of Outcometree.out_module_type
-  | Out_sig_item of Outcometree.out_sig_item
-
+  | Out_value          of Outcometree.out_value
+  | Out_type           of Outcometree.out_type
+  | Out_class_type     of Outcometree.out_class_type
+  | Out_module_type    of Outcometree.out_module_type
+  | Out_sig_item       of Outcometree.out_sig_item
+  | Out_signature      of Outcometree.out_sig_item list
+  | Out_type_extension of Outcometree.out_type_extension
+  | Out_phrase         of Outcometree.out_phrase
 
 (** Additional information useful for guiding completion *)
 type complete_info = {
