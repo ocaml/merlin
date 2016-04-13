@@ -56,7 +56,7 @@ let raw_info_printer : raw_info -> _ = function
   | `String s -> `String s
   | `Type_declaration (id, tdecl) ->
     `Print (Reader_def.Out_sig_item
-              (Printtyp.tree_of_type_declaration id tdecl Types.Trec_not))
+              (Printtyp.tree_of_type_declaration id tdecl Types.Trec_first))
   | `Type_scheme te ->
     `Print (Reader_def.Out_type (Printtyp.tree_of_type_scheme te))
   | `Variant (label, arg) ->
