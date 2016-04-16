@@ -328,3 +328,10 @@ module Oprint = struct
 end
 
 let oprint_with = Oprint.with_reader
+
+let has_extend_support name =
+  try
+    let driver, _ = Extend.start_process name in
+    Extend_main.Driver.stop driver;
+    true
+  with _ -> false

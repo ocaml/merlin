@@ -62,7 +62,7 @@ let create ?dot_merlins ?path kind =
   in
   let spec =
     match Merlin_project.reader project, !Clflags.pp, extension with
-    | [], _, (".re" | ".rei") ->
+    | [], _, (".re" | ".rei") when Merlin_reader.has_extend_support "reason" ->
       Merlin_reader.External ("reason", [], kind)
     | (["merlin"] | []), "", _ ->
       Merlin_reader.Normal (Merlin_project.extensions project, kind)

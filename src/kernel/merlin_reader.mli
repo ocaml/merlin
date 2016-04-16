@@ -56,3 +56,5 @@ val for_completion: t -> Lexing.position -> [`No_labels of bool] * t
 
 val print_outcome : t -> Extend_protocol.Reader.outcometree list -> string list
 val oprint_with : t -> (unit -> 'a) -> 'a
+
+val has_extend_support : string -> bool
