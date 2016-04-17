@@ -87,6 +87,8 @@ module Extend = struct
 
   let compare = compare
 
+  let source t = t.source
+
   let start_process name =
     let open Extend_main in
     let section = "(ext)" ^ name in
@@ -244,7 +246,12 @@ let reconstruct_identifier t pos =
     let source = PP.source pp in
     from_lexer (Merlin_lexer.make default_keywords source)
   | Is_extend ext ->
-    Extend.reconstruct_identifier ext pos
+    let result = Extend.reconstruct_identifier ext pos in
+    if result = [] then
+      let source = Extend.source ext in
+      from_lexer (Merlin_lexer.make default_keywords source)
+    else
+      result
 
 let for_completion t pos =
   match t with
