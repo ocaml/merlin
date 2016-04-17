@@ -534,7 +534,6 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Errors ->
     begin
       with_typer buffer @@ fun typer ->
-      Reader.oprint_with (Buffer.reader buffer) @@ fun () ->
       Printtyp.wrap_printing_env (Typer.env typer) ~verbosity @@ fun () ->
       try
         let typer = Buffer.typer buffer in
@@ -780,7 +779,9 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
   Format.default_width := Option.value ~default:0 context.printer_width;
   (* Actual dispatch *)
   match cmd with
-  | Query q -> dispatch_query ~verbosity state.buffer q
+  | Query q ->
+    Reader.oprint_with (Buffer.reader state.buffer) @@ fun () ->
+    dispatch_query ~verbosity state.buffer q
   | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer context in
     state.buffer <- buffer
