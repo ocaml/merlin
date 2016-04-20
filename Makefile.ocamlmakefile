@@ -150,6 +150,8 @@ SOURCES = \
 	src/extend/extend_helper.ml       \
 	src/extend/extend_main.mli        \
 	src/extend/extend_main.ml         \
+	src/extend/extend_driver.mli      \
+	src/extend/extend_driver.ml       \
 	$(TYPER)/typing/includemod.mli    \
 	$(TYPER)/typing/includemod.ml     \
 	$(TYPER)/typing/parmatch.mli      \

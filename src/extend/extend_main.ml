@@ -133,7 +133,7 @@ end
 (** The main entry point of an extension. *)
 let extension_main ?reader desc =
   (* Check if invoked from Merlin *)
-  begin match Sys.getenv "__MERLIN__EXTENSION__" with
+  begin match Sys.getenv "__MERLIN_MASTER_PID" with
   | exception Not_found ->
     Printf.eprintf "This is %s merlin extension, version %s.\n\
                     This binary should be invoked from merlin and \
@@ -171,49 +171,3 @@ let extension_main ?reader desc =
       loop ()
   in
   loop ()
-
-(** Helper for the driver (Merlin) *)
-module Driver = struct
-  type t = {
-    name: string;
-    capabilities: P.capabilities;
-    stdin: out_channel;
-    stdout: in_channel;
-    mutable closed: bool;
-  }
-
-  exception Extension of string * string * string
-
-  let run name =
-    let (stdout, stdin) = Unix.open_process ("ocamlmerlin-" ^ name) in
-    match Handshake.negotiate_driver name stdout stdin with
-    | capabilities -> {name; capabilities; stdin; stdout; closed = false}
-    | exception exn ->
-      close_out_noerr stdin;
-      close_in_noerr stdout;
-      raise exn
-
-  let stop t =
-    close_out_noerr t.stdin;
-    close_in_noerr t.stdout;
-    t.closed <- false
-
-  let capabilities t = t.capabilities
-
-  let reader t ?(notify=ignore) ?(debug=ignore) request =
-    if t.closed then invalid_arg "Extend_main.Driver.reader: extension is closed";
-    output_value t.stdin (P.Reader_request request);
-    flush t.stdin;
-    let rec aux () =
-      match input_value t.stdout with
-      | P.Notify str -> notify str; aux ()
-      | P.Debug str -> debug str; aux ()
-      | P.Exception (kind, msg) ->
-        stop t;
-        raise (Extension (t.name, kind, msg))
-      | P.Reader_response response ->
-        response
-    in
-    aux ()
-
-end

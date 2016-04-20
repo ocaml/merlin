@@ -26,25 +26,9 @@ module Handshake : sig
   }
 
   val versions : versions
+
+  val negotiate_driver : string -> in_channel -> out_channel -> capabilities
 end
 
 (** The main entry point of an extension. *)
 val extension_main : ?reader:Reader.t -> Description.t -> 'a
-
-(** Helper for the driver (Merlin) *)
-module Driver : sig
-  type t
-
-  exception Extension of string * string * string
-
-  val run : string -> t
-  val stop : t -> unit
-
-  val capabilities : t -> capabilities
-
-  val reader : t ->
-    ?notify:(string -> unit) ->
-    ?debug:(string -> unit) ->
-    Extend_protocol.Reader.request ->
-    Extend_protocol.Reader.response
-end

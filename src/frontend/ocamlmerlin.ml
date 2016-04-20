@@ -135,7 +135,7 @@ let () =
   Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
 
   (* Setup env for extensions *)
-  Unix.putenv "__MERLIN__EXTENSION__" "1";
+  Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
 
   (* Setup sturgeon monitor *)
   let monitor = Sturgeon_stub.start Command.monitor in

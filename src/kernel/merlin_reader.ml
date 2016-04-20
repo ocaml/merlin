@@ -90,25 +90,22 @@ module Extend = struct
   let source t = t.source
 
   let start_process name =
-    let open Extend_main in
     let section = "(ext)" ^ name in
     let notify str = Logger.notify section "%s" str in
     let debug str = Logger.log "reader" section str in
-    let driver = Driver.run name in
-    let reader cmd = Driver.reader ~notify ~debug driver cmd in
-    driver, reader
+    Extend_driver.run ~notify ~debug name
 
   let loaded_driver t =
-    let driver, reader = start_process t.name in
+    let driver = start_process t.name in
     let buffer = {
       path  = Merlin_source.filename t.source;
       flags = t.args;
       text  = Merlin_source.text t.source;
     } in
-    match reader (Req_load buffer) with
-    | Res_loaded -> driver, reader
+    match Extend_driver.reader driver (Req_load buffer) with
+    | Res_loaded -> driver
     | _ ->
-      Extend_main.Driver.stop driver;
+      Extend_driver.stop driver;
       failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
 
   let parsetree t = function
@@ -118,18 +115,19 @@ module Extend = struct
   let result t = match t.result with
     | Some r -> r
     | None ->
-      let driver, reader = loaded_driver t in
-      let parsetree = match reader Req_parse with
+      let driver = loaded_driver t in
+      let parsetree = match Extend_driver.reader driver Req_parse with
         | Res_parse ast -> parsetree t ast
         | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
       in
-      Extend_main.Driver.stop driver;
+      Extend_driver.stop driver;
       t.result <- Some parsetree;
       parsetree
 
   let for_completion t pos =
-    let driver, reader = loaded_driver t in
-    let result = match reader (Req_parse_for_completion pos) with
+    let driver = loaded_driver t in
+    let result =
+      match Extend_driver.reader driver (Req_parse_for_completion pos) with
       | Res_parse_for_completion (info, ast) ->
         let parsetree = parsetree t ast in
         (`No_labels (not info.complete_labels),
@@ -137,26 +135,28 @@ module Extend = struct
       | _ ->
         failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
     in
-    Extend_main.Driver.stop driver;
+    Extend_driver.stop driver;
     result
 
   let reconstruct_identifier t pos =
-    let driver, reader = loaded_driver t in
-    let ident = match reader (Req_get_ident_at pos) with
+    let driver = loaded_driver t in
+    let ident =
+      match Extend_driver.reader driver (Req_get_ident_at pos) with
       | Res_get_ident_at ident -> ident
       | _ ->
         failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
     in
-    Extend_main.Driver.stop driver;
+    Extend_driver.stop driver;
     ident
 
   let print_outcome t ts =
-    let driver, reader = loaded_driver t in
-    let ts = match reader (Req_print_outcome ts) with
+    let driver = loaded_driver t in
+    let ts =
+      match Extend_driver.reader driver (Req_print_outcome ts) with
       | Res_print_outcome ts -> ts
       | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
     in
-    Extend_main.Driver.stop driver;
+    Extend_driver.stop driver;
     ts
 
 
@@ -297,8 +297,8 @@ module Oprint = struct
 
   let oprint default inj ppf x = match !reader with
     | None -> default ppf x
-    | Some (name, reader) ->
-      begin match reader (Req_print_outcome [inj x]) with
+    | Some (name, driver) ->
+      begin match Extend_driver.reader driver (Req_print_outcome [inj x]) with
         | Res_print_outcome [x] ->
           Format.pp_print_string ppf x
         | _ ->
@@ -326,19 +326,19 @@ module Oprint = struct
   let with_reader t f = match t with
     | Is_normal _ | Is_pp _ -> f ()
     | Is_extend ext ->
-      let driver, reader' = Extend.loaded_driver ext in
-      reader := Some (ext.Extend.name, reader');
+      let driver = Extend.loaded_driver ext in
+      reader := Some (ext.Extend.name, driver);
       Misc.try_finally f
         (fun () ->
            reader := None;
-           Extend_main.Driver.stop driver)
+           Extend_driver.stop driver)
 end
 
 let oprint_with = Oprint.with_reader
 
 let has_extend_support name =
   try
-    let driver, _ = Extend.start_process name in
-    Extend_main.Driver.stop driver;
+    let driver = Extend.start_process name in
+    Extend_driver.stop driver;
     true
   with _ -> false
