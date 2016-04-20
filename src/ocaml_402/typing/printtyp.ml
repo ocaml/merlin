@@ -269,12 +269,20 @@ let register_short_type map env p (p', decl) =
     map := PathMap.add p1 (ref [p]) !map
 
 let register_short_module map env p p' =
-  (* No need to normalize, [Env.iter_module_types_and_aliases] already did it in
-     a safe way.
-     If we normalize on an alias to a persistent structure here we might get an
-     untimely "Inconsistent assumptions" error.
+  (*
+    (* No need to normalize, [Env.iter_module_types_and_aliases] already did it in
+       a safe way.
+       If we normalize on an alias to a persistent structure here we might get an
+       untimely "Inconsistent assumptions" error.
 
-     See PR#6812. *)
+       See PR#6812. *)
+
+     Still need to normalize, if it was to produce an error we can ignore it
+     for now.
+     A long term fix would be to normalize only what is needed at printing
+     time.
+  *)
+  let p' = Env.normalize_path None env p' in
   if debug then
     dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');
   try
