@@ -80,12 +80,13 @@ let dump_browse node =
   let rec append env node acc =
     let loc = Browse.node_loc node in
     `Assoc [
-      "start", Lexing.json_of_position loc.Location.loc_start;
-      "end",   Lexing.json_of_position loc.Location.loc_end;
-      "ghost", `Bool loc.Location.loc_ghost;
-      "attrs", `List (List.map ~f:attr (Browse_node.node_attributes node));
-      "kind", `String (Browse_node.string_of_node node);
-      "children", dump_list env node
+      "filename" , `String loc.Location.loc_start.Lexing.pos_fname;
+      "start"    , Lexing.json_of_position loc.Location.loc_start;
+      "end"      , Lexing.json_of_position loc.Location.loc_end;
+      "ghost"    , `Bool loc.Location.loc_ghost;
+      "attrs"    , `List (List.map ~f:attr (Browse_node.node_attributes node));
+      "kind"     , `String (Browse_node.string_of_node node);
+      "children" , dump_list env node
     ] :: acc
   and dump_list env node =
     `List (List.sort ~cmp:compare @@

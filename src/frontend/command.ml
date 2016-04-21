@@ -144,6 +144,16 @@ let dump buffer = function
     Format.pp_force_newline ppf ();
     `String (to_string ())
 
+  | [`String "printast"] ->
+    let ppf, to_string = Format.to_string () in
+    begin match Reader.result (Buffer.reader buffer) with
+      | `Signature s -> Printast.interface ppf s
+      | `Structure s -> Printast.implementation ppf s
+    end;
+    Format.pp_print_newline ppf ();
+    Format.pp_force_newline ppf ();
+    `String (to_string ())
+
   | (`String ("env" | "fullenv" as kind) :: opt_pos) ->
     with_typer buffer @@ fun typer ->
     let kind = if kind = "env" then `Normal else `Full in
