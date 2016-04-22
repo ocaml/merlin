@@ -185,6 +185,8 @@ SOURCES = \
 	src/utils/history.ml              \
 	src/kernel/merlin_source.ml       \
 	src/kernel/merlin_source.mli      \
+	src/kernel/lexer_ident.mli        \
+	src/kernel/lexer_ident.ml         \
 	src/kernel/merlin_lexer.mli       \
 	src/kernel/merlin_lexer.ml        \
 	src/kernel/merlin_recover.mli     \

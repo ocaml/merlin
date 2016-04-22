@@ -11,15 +11,20 @@ PARSER_O = $(TYPER)/parser_raw.ml \
 					 $(TYPER)/parser_raw.mli \
 					 $(TYPER)/parser_raw.cmly
 
-### Lexer
+### Normal lexer
 
 LEXER_I = $(TYPER)/preprocess/lexer_raw.mll
 LEXER_O = $(TYPER)/lexer_raw.ml
 
+### Ident Lexer
+
+ILEXER_I = $(KERNEL)/preprocess/lexer_ident.mll
+ILEXER_O = $(KERNEL)/lexer_ident.ml
+
 ### Derived files
 
 TARGETS =                    \
-  $(LEXER_O) $(PARSER_O)     \
+  $(ILEXER_O) $(LEXER_O) $(PARSER_O) \
   $(TYPER)/parser_printer.ml \
   $(TYPER)/parser_recover.ml \
   $(TYPER)/parser_explain.ml
@@ -55,9 +60,12 @@ $(PARSER_O): $(PARSER_I)
 	menhir $(MENHIR_FLAGS) $(PARSER_I)
 	mv $(subst $(TYPER),$(TYPER)/preprocess,$(PARSER_O)) $(TYPER)
 
-### Lexer
+### Lexers
 
 $(LEXER_O): $(LEXER_I)
+	ocamllex -o $(subst ../,,$@) $(subst ../,,$<)
+
+$(ILEXER_O): $(ILEXER_I)
 	ocamllex -o $(subst ../,,$@) $(subst ../,,$<)
 
 ### Derivation

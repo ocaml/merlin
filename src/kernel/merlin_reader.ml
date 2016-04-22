@@ -239,17 +239,18 @@ let comments = function
 let default_keywords = Lexer_raw.keywords []
 
 let reconstruct_identifier t pos =
-  let from_lexer lexer = Merlin_lexer.reconstruct_identifier lexer pos in
   match t with
-  | Is_normal p -> from_lexer (Merlin_parser.lexer p)
+  | Is_normal p ->
+    Merlin_lexer.reconstruct_identifier
+      (Merlin_lexer.source (Merlin_parser.lexer p)) pos
   | Is_pp pp ->
-    let source = PP.source pp in
-    from_lexer (Merlin_lexer.make default_keywords source)
+    Merlin_lexer.reconstruct_identifier
+      (PP.source pp) pos
   | Is_extend ext ->
     let result = Extend.reconstruct_identifier ext pos in
     if result = [] then
-      let source = Extend.source ext in
-      from_lexer (Merlin_lexer.make default_keywords source)
+      Merlin_lexer.reconstruct_identifier
+        (Extend.source ext) pos
     else
       result
 

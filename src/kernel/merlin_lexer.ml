@@ -255,33 +255,31 @@ let is_operator = function
      »
 *)
 
-let reconstruct_identifier t pos =
+let reconstruct_identifier_from_tokens tokens pos =
   let rec look_for_component acc = function
 
     (* Skip 'a and `A *)
-    | Triple ((LIDENT _ | UIDENT _), _, _) ::
-      Triple ((BACKQUOTE | QUOTE), _, _) :: items ->
+    | ((LIDENT _ | UIDENT _), _, _) ::
+      ((BACKQUOTE | QUOTE), _, _) :: items ->
       check acc items
 
     (* UIDENT is a regular a component *)
-    | Triple (UIDENT _, _, _) as item :: items ->
+    | (UIDENT _, _, _) as item :: items ->
       look_for_dot (item :: acc) items
 
     (* LIDENT always begin a new identifier *)
-    | Triple (LIDENT _, _, _) as item :: items ->
+    | (LIDENT _, _, _) as item :: items ->
       if acc = []
       then look_for_dot [item] items
       else check acc (item :: items)
 
     (* Reified operators behave like LIDENT *)
-    | Triple (RPAREN, _, _) ::
-      (Triple (token, _, _) as item) ::
-      Triple (LPAREN, _, _) :: items
+    | (RPAREN, _, _) :: (token, _, _ as item) :: (LPAREN, _, _) :: items
       when is_operator token <> None && acc = [] ->
       look_for_dot [item] items
 
     (* An operator alone is an identifier on its own *)
-    | (Triple (token, _, _) as item) :: items
+    | (token, _, _ as item) :: items
       when is_operator token <> None && acc = [] ->
       check [item] items
 
@@ -292,49 +290,61 @@ let reconstruct_identifier t pos =
     | [] -> raise Not_found
 
   and look_for_dot acc = function
-    | Triple (DOT,_,_) :: items -> look_for_component acc items
-    | (Comment _ | Error _) :: items -> look_for_dot acc items
+    | (DOT,_,_) :: items -> look_for_component acc items
     | items -> check acc items
 
   and check acc items =
     if acc <> [] &&
        (let startp = match acc with
-           | Triple (_, startp, _) :: _ -> startp
+           | (_, startp, _) :: _ -> startp
            | _ -> assert false in
         Lexing.compare_pos startp pos <= 0) &&
        (let endp = match List.last acc with
-           | Some (Triple (_, _, endp)) -> endp
+           | Some ((_, _, endp)) -> endp
            | _ -> assert false in
         Lexing.compare_pos pos endp <= 0)
     then acc
     else match items with
       | [] -> raise Not_found
-      | item :: _ when Lexing.compare_pos (item_end item) pos < 0 ->
+      | (_, _, endp) :: _ when Lexing.compare_pos endp pos < 0 ->
         raise Not_found
       | _ -> look_for_component [] items
 
   in
-  match look_for_component [] t.items with
+  match look_for_component [] tokens with
   | exception Not_found -> []
   | acc ->
-    let fmt = function
-      | Triple (token, loc_start, loc_end) ->
-        let id =
-          match token with
-          | UIDENT s | LIDENT s -> s
-          | _ -> match is_operator token with
-            | Some t -> t
-            | None -> assert false
-        in
-        Location.mkloc id {Location. loc_start; loc_end; loc_ghost = false}
-      | _ -> assert false
+    let fmt (token, loc_start, loc_end) =
+      let id =
+        match token with
+        | UIDENT s | LIDENT s -> s
+        | _ -> match is_operator token with
+          | Some t -> t
+          | None -> assert false
+      in
+      Location.mkloc id {Location. loc_start; loc_end; loc_ghost = false}
     in
     let before_pos = function
-      | Triple (_, s, _) ->
+      | (_, s, _) ->
         Lexing.compare_pos s pos <= 0
-      | _ -> assert false
     in
     List.map ~f:fmt (List.filter ~f:before_pos acc)
+
+let reconstruct_identifier source pos =
+  let rec lex acc lexbuf =
+    let token = Lexer_ident.token lexbuf in
+    let item = (token, lexbuf.Lexing.lex_start_p, lexbuf.Lexing.lex_curr_p) in
+    match token with
+    | EOF -> (item :: acc)
+    | EOL when Lexing.compare_pos lexbuf.Lexing.lex_curr_p pos >= 0 ->
+      (item :: acc)
+    | EOL -> lex [] lexbuf
+    | _ -> lex (item :: acc) lexbuf
+  in
+  let lexbuf = Lexing.from_string (Merlin_source.text source) in
+  Location.init lexbuf (Merlin_source.filename source);
+  let tokens = lex [] lexbuf in
+  reconstruct_identifier_from_tokens tokens pos
 
 let is_uppercase {Location. txt = x} =
   x <> "" && Char.is_uppercase x.[0]
