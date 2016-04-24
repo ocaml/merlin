@@ -22,7 +22,13 @@ import re
 import os
 import sys
 import bisect
-from itertools import groupby, izip
+from itertools import groupby
+try:
+    # Python 2
+    from itertools import izip
+except ImportError:
+    # Python 3
+    izip = zip
 
 version = [0,1,0] # 0.1.0
 

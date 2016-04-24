@@ -105,6 +105,7 @@ class MerlinProcess:
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                         startupinfo=info,
+                        universal_newlines=True,
                         env=env
                         )
             else:
@@ -113,6 +114,7 @@ class MerlinProcess:
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE,
                         stderr=None,
+                        universal_newlines=True,
                         env=env
                         )
         except OSError as e:
@@ -124,6 +126,7 @@ class MerlinProcess:
         if self.mainpipe == None or self.mainpipe.poll() != None:
             self.restart()
         json.dump(cmd, self.mainpipe.stdin)
+        self.mainpipe.stdin.flush()
         line = self.mainpipe.stdout.readline()
         result = json.loads(line)
         content = None
