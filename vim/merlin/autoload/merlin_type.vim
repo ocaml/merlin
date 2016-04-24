@@ -61,7 +61,7 @@ function! s:RecordType(type)
   endif
 
   " vimscript can't append to a buffer without a refresh (?!)
-  py << EOF
+  MerlinPy << EOF
 idx = int(vim.eval("g:merlin_type_history"))
 typ = vim.eval("a:type")
 buf = vim.buffers[idx]

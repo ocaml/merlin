@@ -1,5 +1,5 @@
 function! merlin_find#OccurrencesSearch(mode)
-  py vim.command("let [l:start_col, l:current, l:target] = " + merlin.vim_occurrences_search())
+  MerlinPy vim.command("let [l:start_col, l:current, l:target] = " + merlin.vim_occurrences_search())
   if l:target == ""
     return
   endif
@@ -9,7 +9,7 @@ function! merlin_find#OccurrencesSearch(mode)
 endfunction
 
 function! merlin_find#IncrementalRename()
-  py vim.command("let [w:start_rename_col,w:current_target,w:rename_target] = " + merlin.vim_occurrences_search())
+  MerlinPy vim.command("let [w:start_rename_col,w:current_target,w:rename_target] = " + merlin.vim_occurrences_search())
   if w:rename_target == ""
     echoerr "No occurrences found!"
     return

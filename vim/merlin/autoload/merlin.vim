@@ -1,7 +1,12 @@
 if !exists('g:merlin') | let g:merlin = {} | endif | let s:c = g:merlin
 
-if !has('python')
-  echo "Error: Required vim compiled with +python"
+if 0
+elseif has('python3')
+  command! -nargs=1 MerlinPy python3 <args>
+elseif has('python')
+  command! -nargs=1 MerlinPy python <args>
+else
+  echo "Error: Required vim compiled with +python or +python3"
   finish
 endif
 
@@ -60,11 +65,11 @@ if !exists("g:merlin_disable_default_keybindings")
 endif
 
 let s:current_dir=expand("<sfile>:p:h")
-py import sys, vim
-py if not vim.eval("s:current_dir") in sys.path:
+MerlinPy import sys, vim
+MerlinPy if not vim.eval("s:current_dir") in sys.path:
 \    sys.path.append(vim.eval("s:current_dir"))
 
-py import merlin
+MerlinPy import merlin
 
 function! s:get_visual_selection()
   let [lnum1, col1] = getpos("'<")[1:2]
@@ -80,14 +85,14 @@ function! merlin#WordUnderCursor()
 endfunction
 
 function! merlin#FindFile(ext,file)
-  py <<EOF
+  MerlinPy <<EOF
 fname = merlin.catch_and_print(lambda: merlin.vim_which(vim.eval("a:file"), vim.eval("a:ext")))
 if fname != None: vim.command("e "+ fname.replace(' ','\\ '))
 EOF
 endfunction
 
 function! merlin#Version()
-  py merlin.command_version()
+  MerlinPy merlin.command_version()
 endfunction
 
 function! merlin#Path(var,path)
@@ -97,7 +102,7 @@ function! merlin#Path(var,path)
     let l:raw = (a:path =~ '^\')
     let l:path = l:raw ? substitute(a:path, '^\\\(.*\)$', '\1', '') : fnamemodify(a:path,':p')
   endif
-python <<EOF
+MerlinPy <<EOF
 path = vim.eval("l:path")
 if path == "":
   for path in merlin.command("path","list", vim.eval("a:var")):
@@ -112,53 +117,53 @@ endfunction
 
 function! merlin#PackageList(ArgLead, CmdLine, CursorPos)
   let l:pkgs = []
-  py merlin.vim_findlib_list("l:pkgs")
+  MerlinPy merlin.vim_findlib_list("l:pkgs")
   return join(l:pkgs, "\n")
 endfunction
 
 function! merlin#ExtEnabled(ArgLead, CmdLine, CursorPos)
   let l:exts = []
-  py merlin.vim_ext_list("l:exts", enabled=True)
+  MerlinPy merlin.vim_ext_list("l:exts", enabled=True)
   return join(l:exts, "\n")
 endfunction
 
 function! merlin#ExtDisabled(ArgLead, CmdLine, CursorPos)
   let l:exts = []
-  py merlin.vim_ext_list("l:exts", enabled=False)
+  MerlinPy merlin.vim_ext_list("l:exts", enabled=False)
   return join(l:exts, "\n")
 endfunction
 
 function! merlin#MLList(ArgLead, CmdLine, CursorPos)
   let l:files = []
-  py merlin.vim_which_ext([".ml",".mli"], "l:files")
+  MerlinPy merlin.vim_which_ext([".ml",".mli"], "l:files")
   return join(l:files, "\n")
 endfunction
 
 function! merlin#MLIList(ArgLead, CmdLine, CursorPos)
   let l:files = []
-  py merlin.vim_which_ext([".mli",".ml"], "l:files")
+  MerlinPy merlin.vim_which_ext([".mli",".ml"], "l:files")
   return join(l:files, "\n")
 endfunction
 
 function! merlin#ExpandPrefix(ArgLead, CmdLine, CursorPos)
   let l:compl = []
-  py merlin.vim_expand_prefix(vim.eval("a:ArgLead"), "l:compl")
+  MerlinPy merlin.vim_expand_prefix(vim.eval("a:ArgLead"), "l:compl")
   return l:compl
 endfunction
 
 function! merlin#ExtEnable(...)
-  py merlin.vim_ext(True, vim.eval("a:000"))
-  py merlin.vim_reload()
+  MerlinPy merlin.vim_ext(True, vim.eval("a:000"))
+  MerlinPy merlin.vim_reload()
 endfunction
 
 function! merlin#ExtDisable(...)
-  py merlin.vim_ext(False, vim.eval("a:000"))
-  py merlin.vim_reload()
+  MerlinPy merlin.vim_ext(False, vim.eval("a:000"))
+  MerlinPy merlin.vim_reload()
 endfunction
 
 function! merlin#Use(...)
-  py merlin.vim_findlib_use(*vim.eval("a:000"))
-  py merlin.vim_reload()
+  MerlinPy merlin.vim_findlib_use(*vim.eval("a:000"))
+  MerlinPy merlin.vim_reload()
 endfunction
 
 function! merlin#RelevantFlags(ArgLead, CmdLine, CursorPos)
@@ -167,12 +172,12 @@ function! merlin#RelevantFlags(ArgLead, CmdLine, CursorPos)
 endfunction
 
 function! merlin#CompleteFlags(ArgLead, CmdLine, CursorPos)
-  py merlin.vim_get_flags("l:flags")
+  MerlinPy merlin.vim_get_flags("l:flags")
   return l:flags . "\n" . merlin#RelevantFlags(a:ArgLead, a:CmdLine, a:CursorPos)
 endfunction
 
 function! merlin#SetFlags(...)
-  py merlin.vim_set_flags(*vim.eval("a:000"))
+  MerlinPy merlin.vim_set_flags(*vim.eval("a:000"))
 endfunction
 
 function! s:ShowTypeEnclosing(type)
@@ -218,10 +223,10 @@ function! merlin#TypeOf(...)
     if (a:0 > 1)
         echoerr "TypeOf: too many arguments (expected 0 or 1)"
     elseif (a:0 == 0) || (a:1 == "")
-        py vim.command("let l:type = " + merlin.vim_type_enclosing())
+        MerlinPy vim.command("let l:type = " + merlin.vim_type_enclosing())
         call s:ShowTypeEnclosing(l:type)
     else
-        py vim.command("let l:type = " + merlin.vim_type(vim.eval("a:1")))
+        MerlinPy vim.command("let l:type = " + merlin.vim_type(vim.eval("a:1")))
         call s:ShowTypeEnclosing(l:type)
     endif
 endfunction
@@ -238,7 +243,7 @@ function! s:StopHighlight()
 endfunction
 
 function! merlin#StopHighlight()
-  py merlin.vim_type_reset()
+  MerlinPy merlin.vim_type_reset()
   call s:StopHighlight()
   augroup MerlinHighlighting
     au!
@@ -246,12 +251,12 @@ function! merlin#StopHighlight()
 endfunction
 
 function! merlin#GrowEnclosing()
-  py vim.command("let l:type = " + merlin.vim_next_enclosing())
+  MerlinPy vim.command("let l:type = " + merlin.vim_next_enclosing())
   call s:ShowTypeEnclosing(l:type)
 endfunction
 
 function! merlin#ShrinkEnclosing()
-  py vim.command("let l:type = " + merlin.vim_prev_enclosing())
+  MerlinPy vim.command("let l:type = " + merlin.vim_prev_enclosing())
   call s:ShowTypeEnclosing(l:type)
 endfunction
 
@@ -259,7 +264,7 @@ function! merlin#Complete(findstart,base)
   if a:findstart
     " Synchronize merlin before completion, since vim modify the buffer
     " (prefix is removed)
-    py merlin.sync()
+    MerlinPy merlin.sync()
     " Locate the start of the item, including ".", "->" and "[...]".
     let line = getline('.')
     let start = col('.') - 1
@@ -294,14 +299,14 @@ function! merlin#Complete(findstart,base)
 
     " Query completion
     let s:compl_result = []
-    py vim.command("let l:compl_succeed = %d" %
+    MerlinPy vim.command("let l:compl_succeed = %d" %
 \    merlin.vim_complete_cursor(vim.eval("s:compl_base"),vim.eval("s:compl_suffix"),"s:compl_result"))
-   
+
     " If empty, switch to dwim
     let s:compl_dwim = g:merlin_completion_dwim && !l:compl_succeed
     if s:compl_dwim
       let s:compl_prefix = ''
-      py merlin.vim_expand_prefix(vim.eval("s:compl_base"),"s:compl_result")
+      MerlinPy merlin.vim_expand_prefix(vim.eval("s:compl_base"),"s:compl_result")
     endif
 
     if lastword == -1 || s:compl_dwim
@@ -316,9 +321,9 @@ function! merlin#Complete(findstart,base)
   if base != s:compl_base
     let s:compl_base = base
     if s:compl_dwim
-      py merlin.vim_expand_prefix(vim.eval("base"),"s:compl_result")
+      MerlinPy merlin.vim_expand_prefix(vim.eval("base"),"s:compl_result")
     else
-      py merlin.vim_complete_cursor(vim.eval("base"),vim.eval("s:compl_suffix"),"s:compl_result")
+      MerlinPy merlin.vim_complete_cursor(vim.eval("base"),vim.eval("s:compl_suffix"),"s:compl_result")
     endif
   endif
 
@@ -335,9 +340,9 @@ function! merlin#Locate(...)
   if (a:0 > 1)
     echoerr "Locate: to many arguments (expected 0 or 1)"
   elseif (a:0 == 0) || (a:1 == "")
-    py merlin.vim_locate_under_cursor()
+    MerlinPy merlin.vim_locate_under_cursor()
   else
-    py merlin.vim_locate_at_cursor(vim.eval("a:1"))
+    MerlinPy merlin.vim_locate_at_cursor(vim.eval("a:1"))
   endif
 endfunction
 
@@ -345,9 +350,9 @@ function! merlin#Jump(...)
   if (a:0 > 1)
     echoerr "Jump: too many arguments (expected 0 or 1)"
   elseif (a:0 == 0) || (a:1 == "")
-    py merlin.vim_jump_default()
+    MerlinPy merlin.vim_jump_default()
   else
-    py merlin.vim_jump_to(vim.eval("a:1"))
+    MerlinPy merlin.vim_jump_to(vim.eval("a:1"))
   endif
 endfunction
 
@@ -355,9 +360,9 @@ function! merlin#Document(...)
   if (a:0 > 1)
     echoerr "Document: to many arguments (expected 0 or 1)"
   elseif (a:0 == 0) || (a:1 == "")
-    py merlin.vim_document_under_cursor()
+    MerlinPy merlin.vim_document_under_cursor()
   else
-    py merlin.vim_document_at_cursor(vim.eval("a:1"))
+    MerlinPy merlin.vim_document_at_cursor(vim.eval("a:1"))
   endif
 endfunction
 
@@ -372,7 +377,7 @@ function! merlin#InteractiveLocate()
         let l:match_fun = {}
     endif
 
-    py merlin.sync()
+    MerlinPy merlin.sync()
     call ctrlp#locate#update_cursor_pos()
 
     let g:ctrlp_match_func = { 'match': 'ctrlp#locate#filter' }
@@ -393,7 +398,7 @@ endfunction
 function! merlin#Occurrences()
   let l:occurrences = []
   let l:pos = 0
-  py vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences"))
+  MerlinPy vim.command ("let l:pos = %d" % merlin.vim_occurrences("l:occurrences"))
 
   if l:occurrences == []
     return
@@ -407,13 +412,13 @@ function! merlin#Occurrences()
 endfunction
 
 function! merlin#OccurrencesRename(text)
-  py merlin.vim_occurrences_replace(vim.eval("a:text"))
+  MerlinPy merlin.vim_occurrences_replace(vim.eval("a:text"))
 endfunction
 
 function! merlin#ErrorLocList()
   let l:errors = []
   if !exists('b:merlin_error_check') || b:merlin_error_check == 1
-    py <<EOF
+    MerlinPy <<EOF
 try:
   merlin.vim_loclist("l:errors", "g:merlin_ignore_warnings")
 except merlin.MerlinException as e:
@@ -438,15 +443,15 @@ function! merlin#Errors()
 endfunction
 
 function! merlin#Destruct()
-  py merlin.vim_case_analysis()
+  MerlinPy merlin.vim_case_analysis()
 endfunction
 
 function! merlin#Restart()
-  py merlin.vim_restart()
+  MerlinPy merlin.vim_restart()
 endfunction
 
 function! merlin#Reload()
-  py merlin.vim_reload()
+  MerlinPy merlin.vim_reload()
 endfunction
 
 " Copy-pasted from
@@ -473,7 +478,7 @@ function! merlin#Phrase()
     let [l1, c1] = getpos("'<")[1:2]
     let [l2, c2] = getpos("'>")[1:2]
     let s:phrase_counter = l2 - l1
-    py merlin.vim_selectphrase("l1","c1","l2","c2")
+    MerlinPy merlin.vim_selectphrase("l1","c1","l2","c2")
     call merlin#setVisualSelection([l1,c1],[l2,c2])
   endif
 endfunction
@@ -600,7 +605,7 @@ endfunction
 
 function! merlin#LoadProject()
   if isdirectory(expand('%:p:h'))
-    py merlin.setup_merlin()
+    MerlinPy merlin.setup_merlin()
     if exists("b:dotmerlin") && exists("g:merlin_move_to_project") && g:merlin_move_to_project && len(b:dotmerlin) > 0
       execute ":lchdir " . fnamemodify(b:dotmerlin[0], ":p:h")
     endif

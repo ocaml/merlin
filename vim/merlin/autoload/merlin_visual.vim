@@ -22,7 +22,7 @@ function! merlin_visual#GrowEnclosing(mode)
     if w:l1 == l1 && abs(w:c1 - c1) <= 1 && w:l2 == l2 && abs(w:c2 - c2) <= 1
       let c1 = c1 - 1
     else
-      py merlin.vim_type_reset()
+      MerlinPy merlin.vim_type_reset()
       let init = 1
     endif
   else
@@ -33,7 +33,7 @@ function! merlin_visual#GrowEnclosing(mode)
 
   if init
     let max_count = max_count - 1
-    py vim.command("let w:visual_enclosing = %s" % merlin.vim_type_enclosing())
+    MerlinPy vim.command("let w:visual_enclosing = %s" % merlin.vim_type_enclosing())
     if empty(w:visual_enclosing)
       return
     endif
@@ -57,7 +57,7 @@ function! merlin_visual#GrowEnclosing(mode)
     let prev_l2 = l2
     let prev_c1 = c1
     let prev_c2 = c2
-    py vim.command("let w:visual_enclosing = %s" % merlin.vim_next_enclosing())
+    MerlinPy vim.command("let w:visual_enclosing = %s" % merlin.vim_next_enclosing())
     if empty(w:visual_enclosing)
       break
     endif
@@ -104,7 +104,7 @@ function! merlin_visual#ShrinkEnclosing(mode)
   if a:mode == 'v' && exists('w:l1') && w:l1 != -1
     if w:l1 == l1 && abs(w:c1 - c1) <= 1 && w:l2 == l2 && abs(w:c2 - c2) <= 1
     else
-      py merlin.vim_type_reset()
+      MerlinPy merlin.vim_type_reset()
       let init = 1
     endif
   else
@@ -112,7 +112,7 @@ function! merlin_visual#ShrinkEnclosing(mode)
   endif
 
   if init == 1
-    py vim.command("let w:visual_enclosing = %s" % merlin.vim_type_enclosing())
+    MerlinPy vim.command("let w:visual_enclosing = %s" % merlin.vim_type_enclosing())
     if empty(w:visual_enclosing)
       return
     endif
@@ -121,7 +121,7 @@ function! merlin_visual#ShrinkEnclosing(mode)
 
   while max_count > 0
     let max_count = max_count - 1
-    py vim.command("let w:visual_enclosing = %s" % merlin.vim_prev_enclosing())
+    MerlinPy vim.command("let w:visual_enclosing = %s" % merlin.vim_prev_enclosing())
     if empty(w:visual_enclosing)
       break
     endif

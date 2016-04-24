@@ -18,7 +18,7 @@ cal add(g:ctrlp_ext_vars, {
 
 let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)
 
-python << EOF
+MerlinPy << EOF
 outlines = []
 
 def linearize(prefix, lst):
@@ -38,7 +38,7 @@ EOF
 " Public {{{1
 fu! ctrlp#outline#init()
   let l:modules = []
-  python << EOF
+  MerlinPy << EOF
 get_outlines()
 longest = len(outlines[-1]['name'])
 i = 0
@@ -52,7 +52,7 @@ endf
 
 fu! ctrlp#outline#accept(mode, str)
   call ctrlp#exit()
-  python << EOF
+  MerlinPy << EOF
 idx = int(vim.eval("a:str").strip().split(' ')[0])
 
 try:

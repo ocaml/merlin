@@ -104,6 +104,7 @@ class MerlinProcess:
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
                         startupinfo=info,
+                        universal_newlines=True,
                         env=env
                         )
             else:
@@ -112,11 +113,13 @@ class MerlinProcess:
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE,
                         stderr=None,
+                        universal_newlines=True,
                         env=env
                         )
 
             # Protocol version negotiation
             json.dump(["protocol","version",protocol_version], self.mainpipe.stdin)
+            self.mainpipe.stdin.flush()
             answer = json.loads(self.mainpipe.stdout.readline())
             if isinstance(answer, dict) and answer['class'] == "return":
                 value = answer['value']
@@ -137,6 +140,7 @@ class MerlinProcess:
         if self.mainpipe == None or self.mainpipe.poll() != None:
             self.restart()
         json.dump(cmd, self.mainpipe.stdin)
+        self.mainpipe.stdin.flush()
         line = self.mainpipe.stdout.readline()
         result = json.loads(line)
 

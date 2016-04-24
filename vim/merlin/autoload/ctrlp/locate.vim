@@ -7,10 +7,10 @@ en
 let g:loaded_ctrlp_locate = 1
 
 let s:current_dir=expand("<sfile>:p:h")
-py if not vim.eval("s:current_dir") in sys.path:
+MerlinPy if not vim.eval("s:current_dir") in sys.path:
 \    sys.path.append(vim.eval("s:current_dir"))
 
-py import locate
+MerlinPy import locate
 
 cal add(g:ctrlp_ext_vars, {
 	\ 'init': 'ctrlp#locate#init()',
@@ -27,7 +27,7 @@ let s:init_string = "(* Start typing to get a list of identifiers. *)"
 
 " Public {{{1
 function! ctrlp#locate#update_cursor_pos()
-  py locate.update_cursor_pos()
+  MerlinPy locate.update_cursor_pos()
 endfunction
 
 
@@ -37,7 +37,7 @@ endfunction
 
 function! ctrlp#locate#filter(items, str, limit, mmode, ispath, crfile, regex)
   let l:compl = []
-  py locate.do_expand(vim.eval("a:str"), "l:compl")
+  MerlinPy locate.do_expand(vim.eval("a:str"), "l:compl")
   return l:compl
 endfunction
 
@@ -46,7 +46,7 @@ fu! ctrlp#locate#accept(mode, str)
   if a:str == s:init_string
     " do nothing
   else
-    py merlin.vim_locate_at_cursor(vim.eval("a:str"))
+    MerlinPy merlin.vim_locate_at_cursor(vim.eval("a:str"))
     silent! normal! zvzz
   endif
 endf
