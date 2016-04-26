@@ -53,8 +53,20 @@ def try_print_error(e, msg=None):
                 return None
             print (msg)
 
-def vim_encoding():
-    return vim.eval("&fileencoding") or vim.eval("&encoding") or "ascii"
+def vim_codec():
+    # Vim passed incorrectly encoded strings to python2.
+    # This could be worked around by manually decoding using the buffer
+    # encoding.
+    # However, python3 handling of unicode is a bit better, so "str()"
+    # shouldn't be decoded. So we assume that vim did the right thing before.
+    if sys.version_info >= (3,0):
+        return ((lambda str: str), (lambda str: str))
+    else:
+        encoding = vim.eval("&fileencoding") or \
+                   vim.eval("&encoding") or \
+                   "ascii"
+        return ((lambda str: str.encode(encoding)), \
+                (lambda str: str.decode(encoding)))
 
 def catch_and_print(f, msg=None):
     try:
@@ -395,7 +407,7 @@ def vim_loclist(vimvar, ignore_warnings):
             ty = 'e'
         lnum = 1
         lcol = 1
-        if error.has_key('start'):
+        if 'start' in error:
             lnum = error['start']['line']
             lcol = error['start']['col'] + 1
         vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
@@ -528,7 +540,7 @@ def vim_type_reset():
     current_enclosing = -1
 
 def replace_buffer_portion(start, end, txt):
-    encoding = vim_encoding()
+    (encode,decode) = vim_codec()
 
     start_line = start['line'] - 1
     b = vim.current.buffer
@@ -541,13 +553,13 @@ def replace_buffer_portion(start, end, txt):
 
     del b[start_line:end['line']]
 
-    txt = prefix.decode(encoding) + txt + suffix.decode(encoding)
+    txt = decode(prefix) + txt + decode(suffix)
     lines = txt.split('\n')
     lines.reverse()
     nb_lines = 0
     for line in lines:
         nb_lines += 1
-        b[start_line:0] = [ line.encode(encoding) ]
+        b[start_line:0] = [ encode(line) ]
 
     # Properly reindent the modified lines
     vim.current.window.cursor = (start['line'], 0)
@@ -679,7 +691,7 @@ def vim_prev_enclosing():
 # Finding files
 def vim_which(name,ext):
     if isinstance(ext, list):
-        name = map(lambda ext: name + "." + ext, ext)
+        name = list(map(lambda ext: name + "." + ext, ext))
     elif ext:
         name = name + "." + ext
     return command('which','path',name)
