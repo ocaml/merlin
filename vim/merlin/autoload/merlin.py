@@ -477,7 +477,7 @@ def vim_loclist(vimvar, ignore_warnings):
             ty = 'e'
         lnum = 1
         lcol = 1
-        if error.has_key('start'):
+        if 'start' in error:
             lnum = error['start']['line']
             lcol = error['start']['col'] + 1
         vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
@@ -772,7 +772,7 @@ def vim_prev_enclosing():
 def vim_which(name,ext):
     acquire_buffer()
     if isinstance(ext, list):
-        name = map(lambda ext: name + "." + ext, ext)
+        name = list(map(lambda ext: name + "." + ext, ext))
     elif ext:
         name = name + "." + ext
     return command('which','path',name)
