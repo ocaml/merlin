@@ -36,6 +36,7 @@ def check_version(v,who="a plugin"):
   """Call it with required version number to print error message if needed"""
   global version
   if isinstance(v,str): v = map(int,v.split("."))
+  if not isinstance(v,list): v = list(v)
   if v > version:
     msg = "vimbufsync: current version is %s but %s requires version %s (installed in \"%s\"). Please update."
     sys.stderr.write(msg % (".".join(map(str,version)), who, ".".join(map(str,v)), os.path.abspath(__file__)))
@@ -69,7 +70,7 @@ def extract_changes(nr):
   global changes_pattern
   # compute changes as a list of match objects
   changes = changes_of_buffer(nr)
-  changes = filter(None,map(changes_pattern.match,changes))
+  changes = list(filter(None,map(changes_pattern.match,changes)))
   if len(changes) == 0:
     return None
   # find current position in change list
