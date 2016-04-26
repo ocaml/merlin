@@ -282,7 +282,10 @@ let register_short_module map env p p' =
      A long term fix would be to normalize only what is needed at printing
      time.
   *)
-  let p' = Env.normalize_path None env p' in
+  let p' =
+    try Env.normalize_path None env p'
+    with _ -> p'
+  in
   if debug then
     dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');
   try
