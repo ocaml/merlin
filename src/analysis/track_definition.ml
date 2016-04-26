@@ -462,6 +462,7 @@ let find_source ~project loc =
     | Some s -> s
   in
   let dir = Filename.dirname initial_path in
+  let dir = if dir = "." then Sys.getcwd () else dir in
   match Utils.find_all_matches ~project ~with_fallback file with
   | [] ->
     logf "find_source" "failed to find \"%s\" in source path (fallback = %b)"
