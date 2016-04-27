@@ -436,12 +436,16 @@ let message fmt =
 let dump_path oc path =
   output_string oc (string_of_path path)
 
-let shortest_module_alias am (_, fold) fixed path =
+let rec shortest_module_alias am (_, fold as fold_aliases) fixed path =
   if PathSet.mem path am.Env.am_open then (0, None) else begin
       let r = fold path (fun acc path' -> min_cost acc (fixed path')) (max_int, None) in
       if fst r = 0 then r else
         let r' = match path with
-          | Papply (_, _) -> assert false (* applicative path not supported *)
+          | Papply (p1, p2) ->
+            (* Shitty. *)
+            let (l1, b) = shortest_module_alias am fold_aliases fixed p1 in
+            let (l2, _) = shortest_module_alias am fold_aliases fixed p2 in
+            (l1 + l2, b)
           | Pident id -> (penalty (Ident.name id), Some path)
           | Pdot (p, n, pos) ->
              let cost, p' = fixed p in
