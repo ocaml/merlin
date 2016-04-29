@@ -273,14 +273,17 @@ let register_short_type map env p (p', decl) =
     map := PathMap.add p1 (ref [p]) !map
 
 let register_short_module map env p p' =
-  let p' = Env.normalize_path None env p' in
-  if debug then
-    dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');
-  try
-    let r = PathMap.find p' !map in
-    r := p :: !r
-  with Not_found ->
-    map := PathMap.add p' (ref [p]) !map
+  match Env.normalize_path None env p' with
+  | p' -> (
+      if debug then
+        dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');
+      try
+        let r = PathMap.find p' !map in
+        r := p :: !r
+      with Not_found ->
+        map := PathMap.add p' (ref [p]) !map
+    )
+  | exception exn -> ()
 
 let pathmap_append ta tb =
   PathMap.union (fun _ a b -> a @ b) ta tb
@@ -432,6 +435,14 @@ let penalty id =
   else if not (Std.String.no_double_underscore id) then 10
   else 1
 
+let rec path_penalty = function
+  | Pident id ->
+    penalty (Ident.name id)
+  | Pdot (p', dot, pos) ->
+    path_penalty p' + penalty dot
+  | Papply (p1, p2) ->
+    path_penalty p1 + path_penalty p2
+
 let min_cost (n1, _ as r1) (n2, _ as r2) =
   if n1 < n2 then r1 else r2
 
@@ -445,7 +456,21 @@ let shortest_module_alias am fold fixed path =
         (fun acc path' -> min_cost acc (fixed path')) (max_int, None) in
     if fst r = 0 then r else
       let r' = match path with
-        | Papply (_, _) -> assert false (* applicative path not supported *)
+        | Papply (p1, p2) ->
+          let not_none p =
+            match fixed p with
+            | cost, Some p' -> (cost, p')
+            | _, None ->
+              begin match p with
+                | Pdot (p', name, pos) ->
+                  let cost, p' = fixed p' in
+                  cost + penalty name, add_component p' name pos
+                | p ->
+                  (path_penalty p, p)
+              end
+          in
+          let c1, p1 = not_none p1 and c2, p2 = not_none p2 in
+          (c1 + c2, Some (Papply (p1, p2)))
         | Pident id -> (penalty (Ident.name id), Some path)
         | Pdot (p, n, pos) ->
           let cost, p' = fixed p in
