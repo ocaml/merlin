@@ -173,7 +173,7 @@ let select_items loc_fun offset =
   in
   aux []
 
-let resume_steps t steps =
+let resume_env_at_steps t steps =
   match List.last steps with
   | Some step ->
     Btype.backtrack step.snapshot;
@@ -191,12 +191,12 @@ let force_steps ?(pos=`End) t =
   let steps =
     match t.steps with
     | `Structure (steps, items) ->
-      let env = resume_steps t steps in
+      let env = resume_env_at_steps t steps in
       let items, rest = select_items str_loc offset items in
       let steps' = type_steps type_structure items env in
       `Structure (steps @ steps', rest)
     | `Signature (steps, items) ->
-      let env = resume_steps t steps in
+      let env = resume_env_at_steps t steps in
       let items, rest = select_items sig_loc offset items in
       let steps' = type_steps type_signature items env in
       `Signature (steps @ steps', rest)
@@ -214,7 +214,7 @@ let result ?pos t =
   in
   match force_steps ?pos t with
   | `Structure (steps, _) ->
-    let env = resume_steps t steps in
+    let env = resume_env_at_steps t steps in
     let items, types = prepare steps in
     `Structure {
       Typedtree.
@@ -223,7 +223,7 @@ let result ?pos t =
       str_final_env = env;
     }
   | `Signature (steps, _) ->
-    let env = resume_steps t steps in
+    let env = resume_env_at_steps t steps in
     let items, types = prepare steps in
     `Signature {
       Typedtree.
@@ -239,11 +239,30 @@ let errors ?pos t =
   | `Signature (steps, _) -> prepare steps
 
 let checks ?pos t =
-  let prepare steps = List.concat_map ~f:(fun x -> x.delayed_checks) steps in
-  let checks = match force_steps ?pos t with
+  let prepare steps =
+    let checks =
+      List.concat_map ~f:(fun x -> x.delayed_checks) steps
+    and sign =
+      List.concat_map ~f:(fun x -> snd x.result) steps
+    in
+    let env = resume_env_at_steps t steps in
+    (checks, sign, env)
+  in
+  let checks, sign, env = match force_steps ?pos t with
     | `Structure (steps, _) -> prepare steps
     | `Signature (steps, _) -> prepare steps
   in
+  (* Fake coercion to mark globals as used.
+     Prevent spurious warnings 32, 34, 37, ...
+     FIXME:
+     - handle coercion with external interface if one was provided.
+     - normalize and check_non_gen ?
+  *)
+  let _coercion =
+    Includemod.compunit
+      (resume_env_at_steps t [])
+      (Merlin_source.unitname (Merlin_reader.source t.reader))
+      sign "(inferred signature)" sign in
   Typecore.delayed_checks := checks;
   let caught = ref [] in
   Parsing_aux.catch_warnings caught
@@ -253,8 +272,8 @@ let checks ?pos t =
 
 let env ?pos t =
   match force_steps ?pos t with
-  | `Structure (steps, _) -> resume_steps t steps
-  | `Signature (steps, _) -> resume_steps t steps
+  | `Structure (steps, _) -> resume_env_at_steps t steps
+  | `Signature (steps, _) -> resume_env_at_steps t steps
 
 let extensions t = t.extensions
 
