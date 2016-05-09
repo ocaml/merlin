@@ -6,6 +6,8 @@ if exists('g:loaded_ctrlp_outline') && g:loaded_ctrlp_outline
 en
 let g:loaded_ctrlp_outline = 1
 
+call merlin#init()
+
 cal add(g:ctrlp_ext_vars, {
 	\ 'init': 'ctrlp#outline#init()',
 	\ 'accept': 'ctrlp#outline#accept',

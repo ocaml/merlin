@@ -6,6 +6,8 @@ if exists('g:loaded_ctrlp_locate') && g:loaded_ctrlp_locate
 en
 let g:loaded_ctrlp_locate = 1
 
+call merlin#init()
+
 let s:current_dir=expand("<sfile>:p:h")
 MerlinPy if not vim.eval("s:current_dir") in sys.path:
 \    sys.path.append(vim.eval("s:current_dir"))

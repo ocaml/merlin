@@ -73,6 +73,10 @@ MerlinPy if not vim.eval("s:current_dir") in sys.path:
 call vimbufsync#init()
 MerlinPy import merlin
 
+" Do nothing, just here for autoloading
+function! merlin#init()
+endfunction
+
 function! s:get_visual_selection()
   let [lnum1, col1] = getpos("'<")[1:2]
   let [lnum2, col2] = getpos("'>")[1:2]
