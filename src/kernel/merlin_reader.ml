@@ -149,17 +149,6 @@ module Extend = struct
     Extend_driver.stop driver;
     ident
 
-  let print_outcome t ts =
-    let driver = loaded_driver t in
-    let ts =
-      match Extend_driver.reader driver (Req_print_outcome ts) with
-      | Res_print_outcome ts -> ts
-      | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" t.name)
-    in
-    Extend_driver.stop driver;
-    ts
-
-
   let source t = t.source
 end
 
@@ -271,58 +260,50 @@ let trace t nav = match t with
     Merlin_parser.trace p nav
   | Is_pp _ | Is_extend _ -> ()
 
-let print_outcome t ts = match t with
-  | Is_normal _ | Is_pp _ ->
-    let print t =
-      Extend_helper.print_outcome_using_oprint Format.str_formatter t;
-      Format.flush_str_formatter ()
-    in
-    List.rev (List.rev_map print ts)
-  | Is_extend t ->
-    Extend.print_outcome t ts
-
-module Oprint = struct
-
-  let reader = ref None
-
-  let default_out_value          = !Oprint.out_value
-  let default_out_type           = !Oprint.out_type
-  let default_out_class_type     = !Oprint.out_class_type
-  let default_out_module_type    = !Oprint.out_module_type
-  let default_out_sig_item       = !Oprint.out_sig_item
-  let default_out_signature      = !Oprint.out_signature
-  let default_out_type_extension = !Oprint.out_type_extension
-  let default_out_phrase         = !Oprint.out_phrase
+module With_reader = struct
 
   open Extend_protocol.Reader
 
-  let oprint default inj ppf x = match !reader with
-    | None -> default ppf x
-    | Some (name, driver) ->
-      begin match Extend_driver.reader driver (Req_print_outcome [inj x]) with
-        | Res_print_outcome [x] ->
-          Format.pp_print_string ppf x
-        | _ ->
-          failwith (Printf.sprintf "Extension %S has incorrect behavior" name)
-      end
+  let reader = ref None
 
-  let () =
-    Oprint.out_value :=
-      oprint default_out_value (fun x -> Out_value x);
-    Oprint.out_type :=
-      oprint default_out_type (fun x -> Out_type x);
-    Oprint.out_class_type :=
-      oprint default_out_class_type (fun x -> Out_class_type x);
-    Oprint.out_module_type :=
-      oprint default_out_module_type (fun x -> Out_module_type x);
-    Oprint.out_sig_item :=
-      oprint default_out_sig_item (fun x -> Out_sig_item x);
-    Oprint.out_signature :=
-      oprint default_out_signature (fun x -> Out_signature x);
-    Oprint.out_type_extension :=
-      oprint default_out_type_extension (fun x -> Out_type_extension x);
-    Oprint.out_phrase :=
-      oprint default_out_phrase (fun x -> Out_phrase x)
+  module Oprint = struct
+    let default_out_value          = !Oprint.out_value
+    let default_out_type           = !Oprint.out_type
+    let default_out_class_type     = !Oprint.out_class_type
+    let default_out_module_type    = !Oprint.out_module_type
+    let default_out_sig_item       = !Oprint.out_sig_item
+    let default_out_signature      = !Oprint.out_signature
+    let default_out_type_extension = !Oprint.out_type_extension
+    let default_out_phrase         = !Oprint.out_phrase
+
+    let oprint default inj ppf x = match !reader with
+      | None -> default ppf x
+      | Some (name, driver) ->
+        begin match Extend_driver.reader driver (Req_print_outcome [inj x]) with
+          | Res_print_outcome [x] ->
+            Format.pp_print_string ppf x
+          | _ ->
+            failwith (Printf.sprintf "Extension %S has incorrect behavior" name)
+        end
+
+    let () =
+      Oprint.out_value :=
+        oprint default_out_value (fun x -> Out_value x);
+      Oprint.out_type :=
+        oprint default_out_type (fun x -> Out_type x);
+      Oprint.out_class_type :=
+        oprint default_out_class_type (fun x -> Out_class_type x);
+      Oprint.out_module_type :=
+        oprint default_out_module_type (fun x -> Out_module_type x);
+      Oprint.out_sig_item :=
+        oprint default_out_sig_item (fun x -> Out_sig_item x);
+      Oprint.out_signature :=
+        oprint default_out_signature (fun x -> Out_signature x);
+      Oprint.out_type_extension :=
+        oprint default_out_type_extension (fun x -> Out_type_extension x);
+      Oprint.out_phrase :=
+        oprint default_out_phrase (fun x -> Out_phrase x)
+  end
 
   let with_reader t f = match t with
     | Is_normal _ | Is_pp _ -> f ()
@@ -333,9 +314,47 @@ module Oprint = struct
         (fun () ->
            reader := None;
            Extend_driver.stop driver)
+
+  let pprint t = match !reader with
+    | None ->
+      let ppf, to_string = Std.Format.to_string () in
+      begin match t with
+        | Pretty_case_list       x -> Pprintast.case_list       ppf x
+        | Pretty_core_type       x -> Pprintast.core_type       ppf x
+        | Pretty_expression      x -> Pprintast.expression      ppf x
+        | Pretty_pattern         x -> Pprintast.pattern         ppf x
+        | Pretty_signature       x -> Pprintast.signature       ppf x
+        | Pretty_structure       x -> Pprintast.structure       ppf x
+        | Pretty_toplevel_phrase x -> Pprintast.toplevel_phrase ppf x
+      end;
+      to_string ()
+    | Some (name, driver)->
+      begin match Extend_driver.reader driver (Req_pretty_print t) with
+        | Res_pretty_print str -> str
+        | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" name)
+      end
+
+
+  let oprint_list ts = match !reader with
+    | None ->
+      let print t =
+        Extend_helper.print_outcome_using_oprint Format.str_formatter t;
+        Format.flush_str_formatter ()
+      in
+      List.rev (List.rev_map print ts)
+    | Some (name, driver)->
+      match Extend_driver.reader driver
+              (Extend_protocol.Reader.Req_print_outcome ts) with
+      | Extend_protocol.Reader.Res_print_outcome ts -> ts
+      | _ -> failwith (Printf.sprintf "Extension %S has incorrect behavior" name)
 end
 
-let oprint_with = Oprint.with_reader
+let with_reader =
+  With_reader.with_reader
+let oprint_list =
+  With_reader.oprint_list
+let pprint =
+  With_reader.pprint
 
 let has_extend_support name =
   try

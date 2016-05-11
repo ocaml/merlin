@@ -244,7 +244,11 @@ let print_completion_entries reader entries =
       `Concat (s,r)
   in
   let entries = List.map ~f:(Completion.map_entry preprocess) entries in
-  List.iter2 (:=) !output_ref (Reader.print_outcome reader !input_ref);
+  let outcomes =
+    Reader.with_reader reader @@ fun () ->
+    Reader.oprint_list !input_ref
+  in
+  List.iter2 (:=) !output_ref outcomes;
   let postprocess = function
     | `String s -> s
     | `Print r -> !r
@@ -516,6 +520,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let loc_end   = Source.get_lexing_pos (Buffer.source buffer) pos_end in
     let loc = {Location. loc_start; loc_end; loc_ghost = false} in
     let env = Typer.env typer in
+    Reader.with_reader (Buffer.reader buffer) @@ fun () ->
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
     let structures = Typer.to_browse (Typer.result ~pos:pos_end typer) in
     let enclosings = match Browse.enclosing loc_start [structures] with
@@ -790,7 +795,7 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
   (* Actual dispatch *)
   match cmd with
   | Query q ->
-    Reader.oprint_with (Buffer.reader state.buffer) @@ fun () ->
+    Reader.with_reader (Buffer.reader state.buffer) @@ fun () ->
     dispatch_query ~verbosity state.buffer q
   | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer context in

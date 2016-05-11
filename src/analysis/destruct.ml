@@ -242,6 +242,7 @@ let is_package ty =
   | _ -> false
 
 let node ~loc node parents =
+  let open Extend_protocol.Reader in
   match node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
@@ -264,19 +265,17 @@ let node ~loc node parents =
         needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
       )
     in
-    let fmt, to_string = Format.to_string () in
     (* FIXME: don't pretty print the input, insert a [match] before and the rest
        after. *)
-    Pprintast.expression fmt result ;
-    let str = to_string () in
+    let str = Reader.pprint (Pretty_expression result) in
     let str = if needs_parentheses then "(" ^ str ^ ")" else str in
     loc, str
   | Pattern patt ->
     let last_case_loc, patterns = get_every_pattern parents in
     List.iter patterns ~f:(fun p ->
       let p = Untypeast.untype_pattern p in
-      Logger.logfmt "destruct" "EXISTING"
-        (fun fmt -> Pprintast.pattern fmt p)
+      Logger.logf "destruct" "EXISTING" "%t"
+        (fun () -> Reader.pprint (Pretty_pattern p))
     ) ;
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
@@ -288,9 +287,8 @@ let node ~loc node parents =
         let open Location in
         { last_case_loc with loc_start = last_case_loc.loc_end }
       in
-      let fmt, to_string = Format.to_string () in
-      Pprintast.case_list fmt [ case ] ;
-      loc, to_string ()
+      let str = Reader.pprint (Pretty_case_list [ case ]) in
+      loc, str
     | None ->
       if not (destructible patt) then raise Nothing_to_do else
       let ty = patt.Typedtree.pat_type in
@@ -300,9 +298,8 @@ let node ~loc node parents =
         (* If only one pattern is generated, then we're only refining the
            current pattern, not generating new branches. *)
         let ppat = Untypeast.untype_pattern more_precise in
-        let fmt, to_string = Format.to_string () in
-        Pprintast.pattern fmt ppat ;
-        patt.Typedtree.pat_loc, to_string ()
+        let str = Reader.pprint (Pretty_pattern ppat) in
+        patt.Typedtree.pat_loc, str
       | sub_patterns ->
         let rev_before, after, top_patt =
           Raw_compat.find_branch patterns patt
@@ -338,9 +335,8 @@ let node ~loc node parents =
             )
           in
           let ppat = Untypeast.untype_pattern p in
-          let fmt, to_string = Format.to_string () in
-          Pprintast.pattern fmt ppat ;
-          top_patt.Typedtree.pat_loc, to_string ()
+          let str = Reader.pprint (Pretty_pattern ppat) in
+          top_patt.Typedtree.pat_loc, str
       end
     end
   | node ->

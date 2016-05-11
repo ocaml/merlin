@@ -54,7 +54,8 @@ val reconstruct_identifier: t -> Lexing.position -> string Location.loc list
 val trace : t -> _ cursor Nav.frame -> unit
 val for_completion: t -> Lexing.position -> [`No_labels of bool] * t
 
-val print_outcome : t -> Extend_protocol.Reader.outcometree list -> string list
-val oprint_with : t -> (unit -> 'a) -> 'a
+val with_reader : t -> (unit -> 'a) -> 'a
+val pprint : Extend_protocol.Reader.pretty_parsetree -> string
+val oprint_list : Extend_protocol.Reader.outcometree list -> string list
 
 val has_extend_support : string -> bool
