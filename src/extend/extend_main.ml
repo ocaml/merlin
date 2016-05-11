@@ -42,6 +42,10 @@ module Reader = struct
         in
         let trees = List.rev_map print trees in
         Res_print_outcome (List.rev trees)
+      | Req_pretty_print p ->
+        V.pretty_print Format.str_formatter p;
+        Res_pretty_print (Format.flush_str_formatter ())
+
   end
 end
 
@@ -71,7 +75,7 @@ module Utils = struct
 end
 
 module Handshake = struct
-  let magic_number : string = "MERLINEXTEND001"
+  let magic_number : string = "MERLINEXTEND002"
 
   type versions = {
     ast_impl_magic_number : string;

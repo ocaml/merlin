@@ -36,6 +36,16 @@ module Reader = struct
     | Out_type_extension of Outcometree.out_type_extension
     | Out_phrase         of Outcometree.out_phrase
 
+  (** Printing in case destruction *)
+  type pretty_parsetree =
+    | Pretty_toplevel_phrase of Parsetree.toplevel_phrase
+    | Pretty_expression      of Parsetree.expression
+    | Pretty_core_type       of Parsetree.core_type
+    | Pretty_pattern         of Parsetree.pattern
+    | Pretty_signature       of Parsetree.signature
+    | Pretty_structure       of Parsetree.structure
+    | Pretty_case_list       of Parsetree.case list
+
   (** Additional information useful for guiding completion *)
   type complete_info = {
     (** True if it is appropriate to suggest labels for this completion. *)
@@ -90,10 +100,14 @@ module Reader = struct
     val ident_at : t -> Lexing.position -> string Location.loc list
 
     (** Opposite direction: pretty-print a tree.
-        This is used for displaying answers to queries.
+        This works on outcometree and is used for displaying answers to queries.
         (type errors, signatures of modules in environment, completion candidates, etc).
     *)
     val print_outcome : Format.formatter -> outcometree -> unit
+
+    (* This one works on parsetree and is used for case destruction
+       (merlin-destruct) *)
+    val pretty_print : Format.formatter -> pretty_parsetree -> unit
   end
 
   type request =
@@ -103,6 +117,7 @@ module Reader = struct
     | Req_parse_for_completion of Lexing.position
     | Req_get_ident_at of Lexing.position
     | Req_print_outcome of outcometree list
+    | Req_pretty_print of pretty_parsetree
 
   type response =
     | Res_loaded
@@ -110,6 +125,7 @@ module Reader = struct
     | Res_parse_for_completion of complete_info * parsetree
     | Res_get_ident_at of string Location.loc list
     | Res_print_outcome of string list
+    | Res_pretty_print of string
 
 end
 
