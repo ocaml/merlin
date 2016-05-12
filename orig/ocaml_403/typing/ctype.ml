@@ -1655,7 +1655,8 @@ let rec local_non_recursive_abbrev visited env p ty =
   end
 
 let local_non_recursive_abbrev env p ty =
-  try local_non_recursive_abbrev [] env p ty with Occur -> raise (Unify [])
+  try local_non_recursive_abbrev [] env p ty; true
+  with Occur -> false
 
 
                    (*****************************)
@@ -1898,7 +1899,9 @@ let reify env t =
       match ty.desc with
         Tvar o ->
           let t = create_fresh_constr ty.level o in
-          link_type ty t
+          link_type ty t;
+          if ty.level < newtype_level then
+            raise (Unify [t, newvar2 ty.level])
       | Tvariant r ->
           let r = row_repr r in
           if not (static_row r) then begin
@@ -1909,7 +1912,9 @@ let reify env t =
                 let t = create_fresh_constr m.level o in
                 let row =
                   {r with row_fields=[]; row_fixed=true; row_more = t} in
-                link_type m (newty2 m.level (Tvariant row))
+                link_type m (newty2 m.level (Tvariant row));
+                if m.level < newtype_level then
+                  raise (Unify [t, newvar2 m.level])
             | _ -> assert false
           end;
           iter_row iterator r
@@ -2166,13 +2171,13 @@ let find_newtype_level env path =
   with Not_found -> assert false
 
 let add_gadt_equation env source destination =
-  local_non_recursive_abbrev !env (Path.Pident source) destination;
-  let destination = duplicate_type destination in
-  let source_lev = find_newtype_level !env (Path.Pident source) in
-  let decl = new_declaration (Some source_lev) (Some destination) in
-  let newtype_level = get_newtype_level () in
-  env := Env.add_local_constraint source decl newtype_level !env;
-  cleanup_abbrev ()
+  if local_non_recursive_abbrev !env (Path.Pident source) destination then
+    let destination = duplicate_type destination in
+    let source_lev = find_newtype_level !env (Path.Pident source) in
+    let decl = new_declaration (Some source_lev) (Some destination) in
+    let newtype_level = get_newtype_level () in
+    env := Env.add_local_constraint source decl newtype_level !env;
+    cleanup_abbrev ()
 
 let unify_eq_set = TypePairs.create 11
 
@@ -2237,7 +2242,7 @@ let complete_type_list ?(allow_absent=false) env nl1 lv2 mty2 nl2 tl2 =
 (* raise Not_found rather than Unify if the module types are incompatible *)
 let unify_package env unify_list lv1 p1 n1 tl1 lv2 p2 n2 tl2 =
   let ntl2 = complete_type_list env n1 lv2 (Mty_ident p2) n2 tl2
-  and ntl1 = complete_type_list env n2 lv2 (Mty_ident p1) n1 tl1 in
+  and ntl1 = complete_type_list env n2 lv1 (Mty_ident p1) n1 tl1 in
   unify_list (List.map snd ntl1) (List.map snd ntl2);
   if eq_package_path env p1 p2
   || !package_subtype env p1 n1 tl1 p2 n2 tl2
@@ -2735,10 +2740,9 @@ let unify_gadt ~newtype_level:lev (env:Env.t ref) ty1 ty2 =
     newtype_level := None;
     TypePairs.clear unify_eq_set;
   with e ->
+    newtype_level := None;
     TypePairs.clear unify_eq_set;
-    match e with
-      Unify e -> raise (Unify e)
-    | e -> newtype_level := None; raise e
+    raise e
 
 let unify_var env t1 t2 =
   let t1 = repr t1 and t2 = repr t2 in

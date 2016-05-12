@@ -251,7 +251,7 @@ class printer  ()= object(self:'self)
     else match x.ptyp_desc with
     | Ptyp_any -> pp f "_";
     | Ptyp_var s -> self#tyvar f  s;
-    | Ptyp_tuple l ->  pp f "(%a)" (self#list self#core_type1 ~sep:"@;*@;") l
+    | Ptyp_tuple l ->  pp f "(%a)" (self#list self#core_type1 ~sep:"*@;") l
     | Ptyp_constr (li, l) ->
         pp f (* "%a%a@;" *) "%a%a"
           (fun f l -> match l with
@@ -475,7 +475,7 @@ class printer  ()= object(self:'self)
         self#paren true self#reset#expression f x
     | Pexp_ifthenelse _ | Pexp_sequence _ when ifthenelse ->
         self#paren true self#reset#expression f x
-    | Pexp_let _ | Pexp_letmodule _ when semi ->
+    | Pexp_let _ | Pexp_letmodule _ | Pexp_open _ when semi ->
         self#paren true self#reset#expression f x
     | Pexp_fun (l, e0, p, e) ->
         pp f "@[<2>fun@;%a@;->@;%a@]"
@@ -1053,13 +1053,14 @@ class printer  ()= object(self:'self)
     | ( _ , Ppat_constraint( p ,ty)) -> (* special case for the first*)
         (match ty.ptyp_desc with
         | Ptyp_poly _ ->
-            pp f "%a@;:@;%a=@;%a" self#simple_pattern p
+            pp f "%a@;:@;%a@;=@;%a" self#simple_pattern p
               self#core_type ty self#expression x
         | _ ->
-            pp f "(%a@;:%a)=@;%a" self#simple_pattern p
+            pp f "(%a@;:@;%a)@;=@;%a" self#simple_pattern p
               self#core_type ty self#expression x)
     | Pexp_constraint (e,t1),Ppat_var {txt;_} ->
-        pp f "%a@;:@ %a@;=@;%a" protect_ident txt self#core_type t1 self#expression e
+        pp f "%a@;:@ %a@;=@;%a" protect_ident txt self#core_type t1
+           self#expression e
     | (_, Ppat_var _) ->
         pp f "%a@ %a" self#simple_pattern p pp_print_pexp_function x
     | _ ->
@@ -1308,7 +1309,7 @@ class printer  ()= object(self:'self)
           (fun f -> function
              | Pcstr_tuple [] -> ()
              | Pcstr_tuple l ->
-                 pp f "@;of@;%a" (self#list self#core_type1 ~sep:"@;*@;") l
+                 pp f "@;of@;%a" (self#list self#core_type1 ~sep:"*@;") l
              | Pcstr_record l -> pp f "@;of@;%a" (self#record_declaration) l
           ) args
           self#attributes attrs
@@ -1317,7 +1318,7 @@ class printer  ()= object(self:'self)
           (fun f -> function
              | Pcstr_tuple [] -> self#core_type1 f r
              | Pcstr_tuple l -> pp f "%a@;->@;%a"
-                                  (self#list self#core_type1 ~sep:"@;*@;") l
+                                  (self#list self#core_type1 ~sep:"*@;") l
                                   self#core_type1 r
              | Pcstr_record l ->
                  pp f "%a@;->@;%a" (self#record_declaration) l self#core_type1 r
