@@ -109,9 +109,6 @@ install-share: $(TARGET_EMACS)
 
 install-vim:
 	install -d $(VIM_DIR)
-	if [ -n "$(WITH_VIMBUFSYNC)" ]; then \
-		cp -R vim/vimbufsync/* $(VIM_DIR)/; \
-	fi
 	cp -R vim/merlin/* $(VIM_DIR)
 
 message:

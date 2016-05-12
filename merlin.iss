@@ -36,7 +36,6 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "ocamlmerlin.exe"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: binary; AfterInstall: 
 Source: "emacs\*"; DestDir: "{app}\merlin\emacs"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: emacs
 Source: "vim\merlin\*"; DestDir: "{app}\merlin\vim"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: vim
-Source: "vim\vimbufsync\*"; DestDir: "{app}\merlin\vim"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: vim
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Components]

@@ -3,7 +3,6 @@
 BIN_DIR=/usr/local/bin
 SHARE_DIR=/usr/local/share
 VIM_DIR=/usr/local/share/ocamlmerlin/vim
-WITH_VIMBUFSYNC="1"
 WITH_BIN_ANNOT=""
 VERSION_STRING=""
 
@@ -53,9 +52,6 @@ The options available for better control are as follow:
     --vimdir <path>         when given, vim bindings will be installed to '<path>'
                             default: /usr/local/share/ocamlmerlin/vim
 
-    --with-vimbufsync       install vim vimbufsync plugin [default]
-    --without-vimbufsync    do not install vim vimbufsync plugin
-
     --with-bin-annot        compiles merlin with '--bin-annot', useful if you plan
                             to work on merlin itself.
 
@@ -96,12 +92,6 @@ while [ -n "$1" ]; do
     --vimdir)
       shift 1
       VIM_DIR="$1"
-      ;;
-    --with-vimbufsync)
-      WITH_VIMBUFSYNC="1"
-      ;;
-    --without-vimbufsync)
-      WITH_VIMBUFSYNC=""
       ;;
     --with-bin-annot)
       WITH_BIN_ANNOT="-cflags -bin-annot"
@@ -213,7 +203,7 @@ Will install:
   vim mode in: $VIM_DIR
 
 To customize directories, use:
-  ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--vimdir <vimdir>] [--with-vimbufsync | --without-vimbufsync]
+  ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--vimdir <vimdir>]
 
 For more informations rerun with --help.
 END
@@ -268,7 +258,6 @@ SHARE_DIR=$SHARE_DIR
 VIM_DIR=$VIM_DIR
 NATIVE=$NATIVE
 WITH_BIN_ANNOT=$WITH_BIN_ANNOT
-WITH_VIMBUFSYNC=$WITH_VIMBUFSYNC
 ENABLE_COMPILED_EMACS_MODE=$ENABLE_COMPILED_EMACS_MODE
 EXE=$EXE
 $MERLIN_CONFIG_ENV

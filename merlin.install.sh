@@ -5,7 +5,7 @@
   printf ']\n'
   printf '\n'
   printf 'share: [\n'
-  find vim/merlin vim/vimbufsync -type f -a \
+  find vim/merlin -type f -a \
     \! \( -name '.*' -o -name '*.pyc' -o -name 'README.md' \) |
   sed -e 's%^[^/]*/[^/]*/\(.*\)%  "&" { "vim/\1" }%' | sort -u
   for i in $(cd emacs/ && echo *.el); do

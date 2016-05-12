@@ -65,8 +65,6 @@ Misc: description of plugin's files
     - merlin.vim   -- main vim script
     - merlin.py    -- helper script needed by merlin.vim
                       (has to be in the same directory)
-    - vimbufsync.vim -- library needed by merlin vim mode to keep buffer synchronized
-    - vimbufsync.py  -- see https://github.com/def-lkb/vimbufsync
   - ftdetect/
     - merlin.vim -- sets filetype for .merlin files
   - ftplugin/ -- used to start merlin when encountering an ocaml file
