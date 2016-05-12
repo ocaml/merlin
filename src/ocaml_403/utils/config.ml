@@ -49,14 +49,14 @@ and cmi_magic_number = "Caml1999I020"
 and cmo_magic_number = "Caml1999O011"
 and cma_magic_number = "Caml1999A012"
 and cmx_magic_number =
-  if flambda then
+  (*if flambda then
     "Caml1999Y016"
-  else
+  else*)
     "Caml1999Y015"
 and cmxa_magic_number =
-  if flambda then
+  (*if flambda then
     "Caml1999Z015"
-  else
+  else*)
     "Caml1999Z014"
 and ast_impl_magic_number = "Caml1999M019"
 and ast_intf_magic_number = "Caml1999N018"

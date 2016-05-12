@@ -203,7 +203,7 @@ let from ~extensions ~packages =
    recovery may fail arbitrarily *)
 let default = [ext_any;ext_sexp_option] @
               match My_config.ocamlversion with
-              | `OCaml_4_02_2 | `OCaml_4_03_trunk -> [ext_nonrec]
+              | `OCaml_4_02_2 | `OCaml_4_03_0 -> [ext_nonrec]
               | _ -> []
 
 let default_kw = List.concat_map ~f:(fun ext -> ext.keywords) default

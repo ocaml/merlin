@@ -110,10 +110,10 @@ while [ -n "$1" ]; do
   shift 1
 done
 
-OCAML_VERSION="ocaml_402"
-OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.02"
-OCAML_VERSION_VAL='`OCaml_4_00_1'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_trunk ]'
+OCAML_VERSION="ocaml_403"
+OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
+OCAML_VERSION_VAL='`OCaml_4_03_0'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 ]'
 
 cat <<END
 Merlin configuration
@@ -151,10 +151,15 @@ case "$MAGIC_VERSION" in
     fi
     ;;
   "Caml1999I020")
-    OCAML_VERSION="ocaml_trunk"
-    OCAML_VERSION_MESSAGE="OCaml 4.03 (trunk)"
-    OCAML_VERSION_VAL='`OCaml_4_03_trunk'
+    OCAML_VERSION="ocaml_403"
+    OCAML_VERSION_MESSAGE="OCaml 4.03.0"
+    OCAML_VERSION_VAL='`OCaml_4_03_0'
     ;;
+  #"Caml1999I020")
+  #  OCAML_VERSION="ocaml_trunk"
+  #  OCAML_VERSION_MESSAGE="OCaml 4.03 (trunk)"
+  #  OCAML_VERSION_VAL='`OCaml_4_03_trunk'
+  #  ;;
 esac
 
 # Findlib version check
