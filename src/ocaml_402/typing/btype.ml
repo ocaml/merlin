@@ -59,7 +59,7 @@ let is_Tunivar = function {desc=Tunivar _} -> true | _ -> false
 let dummy_method = "*dummy method*"
 let default_mty = function
     Some mty -> mty
-  | None -> Mty_signature (lazy [])
+  | None -> Mty_signature []
 
 (**** Representative of a type ****)
 
@@ -291,7 +291,7 @@ let type_iterators =
   and it_module_type it = function
       Mty_ident p
     | Mty_alias p -> it.it_path p
-    | Mty_signature (lazy sg) -> it.it_signature it sg
+    | Mty_signature sg -> it.it_signature it sg
     | Mty_functor (_, mto, mt) ->
         may (it.it_module_type it) mto;
         it.it_module_type it mt

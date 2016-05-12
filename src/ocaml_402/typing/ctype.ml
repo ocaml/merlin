@@ -1628,7 +1628,7 @@ let rec non_recursive_abbrev env ty0 ty =
         begin try
           non_recursive_abbrev env ty0 (try_expand_once_opt env ty)
         with Cannot_expand ->
-          if Clflags.recursive_types () &&
+          if !Clflags.recursive_types &&
             (in_pervasives p ||
              try is_datatype (Env.find_type p env) with Not_found -> false)
           then ()
@@ -1637,7 +1637,7 @@ let rec non_recursive_abbrev env ty0 ty =
     | Tobject _ | Tvariant _ ->
         ()
     | _ ->
-        if Clflags.recursive_types () then () else
+        if !Clflags.recursive_types then () else
         iter_type_expr (non_recursive_abbrev env ty0) ty
   end
 

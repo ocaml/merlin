@@ -320,9 +320,6 @@ let empty = {
   functor_args = Ident.empty;
  }
 
-let add_import s =
-  !state.imported_units <- StringSet.add s !state.imported_units
-
 let in_signature env =
   {env with flags = env.flags lor in_signature_flag}
 let implicit_coercion env =
@@ -381,6 +378,9 @@ let md md_type =
 
 (* Consistency between persistent structures *)
 
+let add_import s =
+  !state.imported_units <- StringSet.add s !state.imported_units
+
 let clear_imports () =
   Consistbl.clear !state.crc_units;
   !state.imported_units <- StringSet.empty
@@ -425,7 +425,7 @@ let read_pers_struct modname filename =
       let comps =
         !components_of_module' empty Subst.identity
           (Pident(Ident.create_persistent name))
-          (Mty_signature (Lazy.from_val sign))
+          (Mty_signature sign)
       in
       cmi_env_store := Cmi_cache_store (comps, ps_typemap);
       comps, ps_typemap
@@ -592,7 +592,7 @@ let find_module ~alias path env =
       with Not_found ->
         if Ident.persistent id && not (Ident.name id = !state.current_unit) then
           let ps = find_pers_struct (Ident.name id) in
-          md (Mty_signature ~:(ps.ps_sig))
+          md (Mty_signature(ps.ps_sig))
         else raise Not_found
       end
   | Pdot(p, s, pos) ->
@@ -1370,7 +1370,7 @@ let rec components_of_module env sub path mty =
 
 and components_of_module_maker (env, sub, path, mty) =
   (match scrape_alias env mty with
-    Mty_signature (lazy sg) ->
+    Mty_signature sg ->
       let c =
         { comp_values = Tbl.empty;
           comp_constrs = Tbl.empty;
@@ -1833,7 +1833,7 @@ let save_signature_with_imports sg modname filename imports =
        will also return its crc *)
     let comps =
       components_of_module empty Subst.identity
-        (Pident(Ident.create_persistent modname)) (Mty_signature  ~:sg) in
+        (Pident(Ident.create_persistent modname)) (Mty_signature sg) in
     let ps =
       { ps_name = modname;
         ps_sig = sg;
@@ -1909,7 +1909,7 @@ let fold_modules f lid env acc =
               None -> acc
             | Some ps ->
               f name (Pident(Ident.create_persistent name))
-                     (md (Mty_signature ~:(ps.ps_sig))) acc)
+                     (md (Mty_signature ps.ps_sig)) acc)
         !state.persistent_structures
         acc
     | Some l ->

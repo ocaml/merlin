@@ -2693,7 +2693,7 @@ and type_function ?in_function loc attrs env ty_expected l caselist =
     with Unify _ ->
       match expand_head env ty_expected with
         {desc = Tarrow _} as ty ->
-          raise(Error(loc, env, Abstract_wrong_label(l, ty)))
+          raise(Error(loc, env, Abstract_wrong_label (l, ty)))
       | _ ->
           raise(Error(loc_fun, env,
                       Too_many_arguments (in_function <> None, ty_fun)))

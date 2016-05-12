@@ -1564,7 +1564,7 @@ let add_item comp env =
     Sig_value(id, decl)     -> add_value id decl env
   | Sig_type(id, decl, _)   -> add_type ~check:false id decl env
   | Sig_typext(id, ext, _)  -> add_extension ~check:false id ext env
-  | Sig_module(id, md, _)  -> add_module_declaration id md env
+  | Sig_module(id, md, _)   -> add_module_declaration id md env
   | Sig_modtype(id, decl)   -> add_modtype id decl env
   | Sig_class(id, decl, _)  -> add_class id decl env
   | Sig_class_type(id, decl, _) -> add_cltype id decl env
@@ -1664,7 +1664,7 @@ let crc_of_unit name =
 
 (* Return the list of imported interfaces with their CRCs *)
 
-let imports() =
+let imports () =
   Consistbl.extract (StringSet.elements !imported_units) crc_units
 
 (* Save a signature to a file *)

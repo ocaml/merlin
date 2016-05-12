@@ -26,7 +26,6 @@
     files which returns an option for each of the three parts: cmi
     info, cmt info, source info. *)
 
-open Std
 open Typedtree
 
 type binary_annots =
@@ -107,6 +106,7 @@ val saved_types_from_attributes : attributes -> binary_part list
 
 val record_value_dependency:
   Types.value_description -> Types.value_description -> unit
+
 
 (*
 
