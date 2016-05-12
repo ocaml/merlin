@@ -129,7 +129,7 @@ let rec mod_smallerthan n m =
   let open Types in
   match m with
   | Mty_ident _ -> Some 1
-  | Mty_signature (lazy s) ->
+  | Mty_signature s ->
     begin match List.length_lessthan n s with
     | None -> None
     | Some _ ->
