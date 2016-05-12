@@ -260,7 +260,7 @@ type pers_typemap = (Path.t list Path.PathMap.t
 
 type pers_struct = {
   ps_name: string;
-  ps_sig: signature;
+  ps_sig: signature lazy_t;
   ps_comps: module_components;
   ps_crcs: (string * Digest.t option) list;
   mutable ps_crcs_checked: bool;
@@ -409,7 +409,8 @@ let save_pers_struct crc ps =
   Consistbl.set !state.crc_units modname crc ps.ps_filename;
   add_import modname
 
-exception Cmi_cache_store of module_components * pers_typemap ref
+exception Cmi_cache_store of
+    module_components * pers_typemap ref * signature lazy_t
 
 
 let read_pers_struct modname filename =
@@ -418,8 +419,8 @@ let read_pers_struct modname filename =
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
   let flags = cmi.cmi_flags in
-  let comps, ps_typemap = match !cmi_env_store with
-    | Cmi_cache_store (comps, ps_typemap) -> comps, ps_typemap
+  let comps, ps_typemap, ps_sig = match !cmi_env_store with
+    | Cmi_cache_store (comps, ps_typemap, ps_sig) -> comps, ps_typemap, ps_sig
     | _ ->
       let ps_typemap = ref None in
       let comps =
@@ -427,11 +428,12 @@ let read_pers_struct modname filename =
           (Pident(Ident.create_persistent name))
           (Mty_signature sign)
       in
-      cmi_env_store := Cmi_cache_store (comps, ps_typemap);
-      comps, ps_typemap
+      let ps_sig = lazy (Subst.signature Subst.identity sign) in
+      cmi_env_store := Cmi_cache_store (comps, ps_typemap, ps_sig);
+      comps, ps_typemap, ps_sig
   in
   let ps = { ps_name = name;
-             ps_sig = sign;
+             ps_sig = ps_sig;
              ps_comps = comps;
              ps_crcs = crcs;
              ps_filename = filename;
@@ -503,7 +505,10 @@ let check_state_consistency () =
           match filename, ps with
           | None, None -> false
           | Some filename, Some ps ->
-            ps.ps_sig != Cmi_cache.((read filename).cmi_infos).cmi_sign
+            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_env_store) with
+              | Cmi_cache_store (_, _, ps_sig) -> ps_sig != ps.ps_sig
+              | _ -> true
+            end
           | _, _       -> true
         in
         if invalid then raise Not_found
@@ -592,7 +597,7 @@ let find_module ~alias path env =
       with Not_found ->
         if Ident.persistent id && not (Ident.name id = !state.current_unit) then
           let ps = find_pers_struct (Ident.name id) in
-          md (Mty_signature(ps.ps_sig))
+          md (Mty_signature(Lazy.force ps.ps_sig))
         else raise Not_found
       end
   | Pdot(p, s, pos) ->
@@ -1753,7 +1758,8 @@ let open_signature slot root sg env0 =
 
 let open_pers_signature name env =
   let ps = find_pers_struct name in
-  open_signature None (Pident(Ident.create_persistent name)) ps.ps_sig env
+  open_signature None (Pident(Ident.create_persistent name))
+    (Lazy.force ps.ps_sig) env
 
 let open_signature ?(loc = Location.none) ?(toplevel = false) ovf root sg env =
   if not toplevel && ovf = Asttypes.Fresh && not loc.Location.loc_ghost
@@ -1790,7 +1796,7 @@ let open_signature ?(loc = Location.none) ?(toplevel = false) ovf root sg env =
 let read_signature modname filename =
   let ps = read_pers_struct modname filename in
   check_consistency ps;
-  ps.ps_sig
+  Lazy.force ps.ps_sig
 
 (* Return the CRC of the interface of the given compilation unit *)
 
@@ -1836,7 +1842,7 @@ let save_signature_with_imports sg modname filename imports =
         (Pident(Ident.create_persistent modname)) (Mty_signature sg) in
     let ps =
       { ps_name = modname;
-        ps_sig = sg;
+        ps_sig = lazy (Subst.signature Subst.identity sg);
         ps_comps = comps;
         ps_crcs = (cmi.cmi_name, Some crc) :: imports;
         ps_filename = filename;
@@ -1909,7 +1915,7 @@ let fold_modules f lid env acc =
               None -> acc
             | Some ps ->
               f name (Pident(Ident.create_persistent name))
-                     (md (Mty_signature ps.ps_sig)) acc)
+                     (md (Mty_signature (Lazy.force ps.ps_sig))) acc)
         !state.persistent_structures
         acc
     | Some l ->
