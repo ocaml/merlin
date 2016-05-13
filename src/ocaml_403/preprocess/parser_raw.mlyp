@@ -547,6 +547,8 @@ let make_loc startpos endpos = {
 #define mkctf_attrs (mkctf_attrs ~loc:$loc)
 #define mkcf_attrs (mkcf_attrs ~loc:$loc)
 #define mkexp_constraint (mkexp_constraint ~loc:$loc)
+#define mkexp_opt_constraint (mkexp_opt_constraint ~loc:$loc)
+#define mkpat_opt_constraint (mkpat_opt_constraint ~loc:$loc)
 #define mkoperator(s, p) (mkoperator s $locof(p))
 #define mkuplus (mkuplus ~loc:$loc ~oploc:$locof(1))
 #define mkuminus (mkuminus ~loc:$loc ~oploc:$locof(1))
@@ -1784,7 +1786,7 @@ match_case:
   | pattern WHEN seq_expr MINUSGREATER seq_expr
       { Exp.case $1 ~guard:$3 $5 }
   | pattern MINUSGREATER DOT
-      { Exp.case $1 (Exp.unreachable ~loc:(rhs_loc 3) ())}
+      { Exp.case $1 (Exp.unreachable ~loc:($locof(3)) ())}
 ;
 fun_def:
     MINUSGREATER seq_expr
@@ -1817,7 +1819,7 @@ lbl_expr:
     mkrhs(label_longident) opt_type_constraint EQUAL expr
       { ($1, mkexp_opt_constraint $4 $2) }
   | mkrhs(label_longident) opt_type_constraint
-      { ($1, mkexp_opt_constraint (exp_of_label($1.Location.txt, 1) $2) }
+      { ($1, mkexp_opt_constraint (exp_of_label($1.Location.txt, 1)) $2) }
 ;
 field_expr_list:
     field_expr opt_semi { [$1] }
@@ -2105,7 +2107,7 @@ str_exception_declaration:
   | EXCEPTION ext_attributes mkrhs(constr_ident) EQUAL mkrhs(constr_longident) attributes
     post_item_attributes
       { let (ext, attrs) = $2 in
-        Te.rebind (mkrhs $3 ($locof(3))) (mkrhs $5 ($locof(5))) ~attrs:(attrs @ $6 @ $7)
+        Te.rebind $3 $5 ~attrs:(attrs @ $6 @ $7)
           ~loc:(symbol_rloc()) ~docs:(symbol_docs ())
         , ext }
 ;
@@ -2114,7 +2116,7 @@ sig_exception_declaration:
     attributes post_item_attributes
       { let args, res = $4 in
         let (ext,attrs) = $2 in
-          Te.decl (mkrhs $3 ($locof(3))) ~args ?res ~attrs:(attrs @ $5 @ $6)
+          Te.decl $3 ~args ?res ~attrs:(attrs @ $5 @ $6)
             ~loc:(symbol_rloc()) ~docs:(symbol_docs ())
         , ext }
 ;
