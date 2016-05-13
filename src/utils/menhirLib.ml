@@ -293,7 +293,7 @@ module type INCREMENTAL_ENGINE = sig
 
   val loop_test:
     ('a env -> 'accu -> 'accu) ->
-    'b checkpoint -> 'accu -> 'accu
+    'a checkpoint -> 'accu -> 'accu
 
   (* The function [loop_test] can be used, after an error has been detected, to
      dynamically test which tokens would have been accepted at this point. We
@@ -901,7 +901,7 @@ module Make (T : TABLE) = struct
   include T
 
   type 'a env =
-    (state, semantic_value, token) EngineTypes.env
+      (state, semantic_value, token) EngineTypes.env
 
   (* --------------------------------------------------------------------------- *)
 
@@ -1213,7 +1213,7 @@ module Make (T : TABLE) = struct
     else begin
 
       (* The stack is nonempty. Pop a cell, updating the current state
-     with that found in the popped cell, and try again. *)
+         with that found in the popped cell, and try again. *)
 
       let env = { env with
         stack = next;
@@ -1564,12 +1564,12 @@ module Make (T : TABLE) = struct
            type-checker thinks ['a] is [semantic_value] and considers this code
            well-typed. Outside, we will use magic to provide the user with a way
            of inspecting states and recovering the value of ['a]. *)
-    Element (
-            current,
-            cell.semv,
-            cell.startp,
-            cell.endp
-    )
+        Element (
+                current,
+                cell.semv,
+                cell.startp,
+                cell.endp
+        )
 
   let stack_next (_, cell : stack) =
     stack cell.next cell.state
@@ -1693,13 +1693,13 @@ module Make
     print "Current LR(1) state: ";
     match stack env with
     | None ->
-      print "<some initial state>";
-      print newline
+        print "<some initial state>";
+        print newline
     | Some stack ->
         let Element (current, _, _, _) = stack_element stack in
-      print (string_of_int (Obj.magic current)); (* TEMPORARY safe conversion needed *)
-      print newline;
-      List.iter print_item (items current)
+        print (string_of_int (Obj.magic current)); (* TEMPORARY safe conversion needed *)
+        print newline;
+        List.iter print_item (items current)
 
   let print_env env =
     print_stack (stack env);
@@ -1846,13 +1846,13 @@ let compress
 
     let rec loop (j : int) (rank : int) (row : 'a row) =
       if j < 0 then
-    i, rank, row
+        i, rank, row
       else
-    let x = line.(j) in
-    if insignificant x then
-      loop (j - 1) rank row
-    else
-      loop (j - 1) (1 + rank) ((j, x) :: row)
+        let x = line.(j) in
+        if insignificant x then
+          loop (j - 1) rank row
+        else
+          loop (j - 1) (1 + rank) ((j, x) :: row)
     in
 
     loop (n - 1) 0 []
@@ -1902,31 +1902,31 @@ let compress
 
     let rec loop = function
       | [] ->
-      true
+          true
       | (j, x) :: row ->
 
-      (* [x] is a significant element. *)
+          (* [x] is a significant element. *)
 
-      (* By hypothesis, [k + j] is nonnegative. If it is greater than or
-         equal to the current length of the data array, stop -- the row
-         fits. *)
+          (* By hypothesis, [k + j] is nonnegative. If it is greater than or
+             equal to the current length of the data array, stop -- the row
+             fits. *)
 
-      assert (k + j >= 0);
+          assert (k + j >= 0);
 
-      if k + j >= d then
-        true
+          if k + j >= d then
+            true
 
-      (* We now know that [k + j] is within bounds of the data
-         array. Check whether it is compatible with the element [y] found
-         there. If it is, continue. If it isn't, stop -- the row does not
-         fit. *)
+          (* We now know that [k + j] is within bounds of the data
+             array. Check whether it is compatible with the element [y] found
+             there. If it is, continue. If it isn't, stop -- the row does not
+             fit. *)
 
-      else
-        let y = InfiniteArray.get data (k + j) in
-        if insignificant y || equal x y then
-          loop row
-        else
-          false
+          else
+            let y = InfiniteArray.get data (k + j) in
+            if insignificant y || equal x y then
+              loop row
+            else
+              false
 
     in
     loop row
@@ -1955,19 +1955,19 @@ let compress
   let fit row =
     match row with
     | [] ->
-    0 (* irrelevant *)
+        0 (* irrelevant *)
     | (j, _) :: _ ->
-    fit (-j) row
+        fit (-j) row
   in
 
   (* Write [row] at (compatible) offset [k]. *)
 
   let rec write k = function
     | [] ->
-    ()
+        ()
     | (j, x) :: row ->
-    InfiniteArray.set data (k + j) x;
-    write k row
+        InfiniteArray.set data (k + j) x;
+        write k row
   in
 
   (* Iterate over the sorted array of rows. Fit and write each row at
@@ -2035,9 +2035,9 @@ let magnitude (v : int) =
     let rec check k max = (* [max] equals [2^k] *)
       if (max <= 0) || (v < max) then
         k
-        (* if [max] just overflew, then [v] requires a full ocaml
-           integer, and [k] is the number of bits in an ocaml integer
-           plus one, that is, [Sys.word_size]. *)
+          (* if [max] just overflew, then [v] requires a full ocaml
+             integer, and [k] is the number of bits in an ocaml integer
+             plus one, that is, [Sys.word_size]. *)
       else
         check (2 * k) (max * max)
     in
@@ -2059,8 +2059,8 @@ let pack (a : int array) : t =
 
   let k =
     Array.fold_left (fun k v ->
-        max k (magnitude v)
-      ) 1 a
+      max k (magnitude v)
+    ) 1 a
   in
 
   (* Because access to ocaml strings is performed on an 8-bit basis,
@@ -2080,9 +2080,9 @@ let pack (a : int array) : t =
 
     let n =
       if m mod w = 0 then
-        m / w
+	m / w
       else
-        m / w + 1
+	m / w + 1
     in
 
     let s =
@@ -2096,11 +2096,11 @@ let pack (a : int array) : t =
     let next () =
       let ii = !i in
       if ii = m then
-        0 (* ran off the end, pad with zeroes *)
+	0 (* ran off the end, pad with zeroes *)
       else
-        let v = a.(ii) in
-        i := ii + 1;
-        v
+	let v = a.(ii) in
+	i := ii + 1;
+	v
     in
 
     (* Fill up the string. *)
@@ -2108,7 +2108,7 @@ let pack (a : int array) : t =
     for j = 0 to n - 1 do
       let c = ref 0 in
       for _x = 1 to w do
-        c := (!c lsl k) lor next()
+	c := (!c lsl k) lor next()
       done;
       Bytes.set s j (Char.chr !c)
     done;
@@ -2140,8 +2140,8 @@ let pack (a : int array) : t =
     for i = 0 to m - 1 do
       let v = ref a.(i) in
       for x = 1 to w do
-        Bytes.set s ((i + 1) * w - x) (Char.chr (!v land 255));
-        v := !v lsr 8
+	Bytes.set s ((i + 1) * w - x) (Char.chr (!v land 255));
+	v := !v lsr 8
       done
     done;
 
@@ -2174,26 +2174,26 @@ let get1 (s : string) (i : int) : int =
 let get ((k, s) : t) (i : int) : int =
   match k with
   | 1 ->
-    get1 s i
+      get1 s i
   | 2 ->
-    let c = read s (i lsr 2) in
-    let c = c lsr (2 * ((lnot i) land 0b11)) in
-    let c = c land 0b11 in
-    c
+      let c = read s (i lsr 2) in
+      let c = c lsr (2 * ((lnot i) land 0b11)) in
+      let c = c land 0b11 in
+      c
   | 4 ->
-    let c = read s (i lsr 1) in
-    let c = c lsr (4 * ((lnot i) land 0b1)) in
-    let c = c land 0b1111 in
-    c
+      let c = read s (i lsr 1) in
+      let c = c lsr (4 * ((lnot i) land 0b1)) in
+      let c = c land 0b1111 in
+      c
   | 8 ->
-    read s i
+      read s i
   | 16 ->
-    let j = 2 * i in
-    (read s j) lsl 8 + read s (j + 1)
+      let j = 2 * i in
+      (read s j) lsl 8 + read s (j + 1)
   | _ ->
-    assert (k = 32); (* 64 bits unlikely, not supported *)
-    let j = 4 * i in
-    (((read s j lsl 8) + read s (j + 1)) lsl 8 + read s (j + 2)) lsl 8 + read s (j + 3)
+      assert (k = 32); (* 64 bits unlikely, not supported *)
+      let j = 4 * i in
+      (((read s j lsl 8) + read s (j + 1)) lsl 8 + read s (j + 2)) lsl 8 + read s (j + 3)
 
 (* [unflatten1 (n, data) i j] accesses the two-dimensional bitmap
    represented by [(n, data)] at indices [i] and [j]. The integer
@@ -2202,7 +2202,7 @@ let get ((k, s) : t) (i : int) : int =
    a one-dimensional array. *)
 
 let unflatten1 (n, data) i j =
-  get1 data (n * i + j)
+   get1 data (n * i + j)
 
 (* This auxiliary function helps access a compressed, two-dimensional
    matrix, like the action and goto tables. *)
@@ -2500,10 +2500,10 @@ end
 (* The code functor. *)
 
 module Make
-    (B : TableFormat.TABLES)
-    (T : InspectionTableFormat.TABLES
-     with type 'a lr1state = int)
-    (E : sig type 'a env = (int, Obj.t, B.token) EngineTypes.env end)
+  (B : TableFormat.TABLES)
+  (T : InspectionTableFormat.TABLES
+       with type 'a lr1state = int)
+  (E : sig type 'a env = (int, Obj.t, B.token) EngineTypes.env end)
 = struct
 
   (* Including [T] is an easy way of inheriting the definitions of the types
@@ -2674,8 +2674,6 @@ module Make
     { env with stack; current = code }
 
   let force_reduction prod env : 'a E.env =
-    (*if not (List.exists (fun (p', _) -> prod = p') (items env.current)) then
-      invalid_arg "InspectionTableInterpreter.force_reduction";*)
     let stack = B.semantic_action.(prod - B.start) env in
     let lhs  = PackedIntArray.get B.lhs prod in
     let code = PackedIntArray.unmarshal2 B.goto stack.state lhs - 1 in
@@ -2783,21 +2781,21 @@ module Make (T : TableFormat.TABLES)
   let action state terminal value shift reduce fail env =
     match PackedIntArray.unflatten1 T.error state terminal with
     | 1 ->
-    let action = unmarshal2 T.action state terminal in
-    let opcode = action land 0b11
-    and param = action lsr 2 in
-    if opcode >= 0b10 then
-      (* 0b10 : shift/discard *)
-      (* 0b11 : shift/nodiscard *)
-      let please_discard = (opcode = 0b10) in
-      shift env please_discard terminal value param
-    else
-      (* 0b01 : reduce *)
-      (* 0b00 : cannot happen *)
-      reduce env param
+        let action = unmarshal2 T.action state terminal in
+        let opcode = action land 0b11
+        and param = action lsr 2 in
+        if opcode >= 0b10 then
+          (* 0b10 : shift/discard *)
+          (* 0b11 : shift/nodiscard *)
+          let please_discard = (opcode = 0b10) in
+          shift env please_discard terminal value param
+        else
+          (* 0b01 : reduce *)
+          (* 0b00 : cannot happen *)
+          reduce env param
     | c ->
-    assert (c = 0);
-    fail env
+        assert (c = 0);
+        fail env
 
   let goto state prod =
     let code = unmarshal2 T.goto state (PackedIntArray.get T.lhs prod) in
@@ -2805,7 +2803,7 @@ module Make (T : TableFormat.TABLES)
     code - 1
 
   exception Error =
-    T.Error
+        T.Error
 
   type semantic_action =
       (state, semantic_value, token) EngineTypes.env ->
@@ -2830,21 +2828,21 @@ module Make (T : TableFormat.TABLES)
       | Some _ ->
           fprintf stderr "State %d:\n%!" state
       | None ->
-      ()
+          ()
 
     let shift terminal state =
       match T.trace with
       | Some (terminals, _) ->
           fprintf stderr "Shifting (%s) to state %d\n%!" terminals.(terminal) state
       | None ->
-      ()
+          ()
 
     let reduce_or_accept prod =
       match T.trace with
       | Some (_, productions) ->
           fprintf stderr "%s\n%!" productions.(prod)
       | None ->
-      ()
+          ()
 
     let lookahead_token token startp endp =
       match T.trace with
@@ -2854,28 +2852,28 @@ module Make (T : TableFormat.TABLES)
             startp.Lexing.pos_cnum
             endp.Lexing.pos_cnum
       | None ->
-      ()
+          ()
 
     let initiating_error_handling () =
       match T.trace with
       | Some _ ->
           fprintf stderr "Initiating error handling\n%!"
       | None ->
-      ()
+          ()
 
     let resuming_error_handling () =
       match T.trace with
       | Some _ ->
           fprintf stderr "Resuming error handling\n%!"
       | None ->
-      ()
+          ()
 
     let handling_error state =
       match T.trace with
       | Some _ ->
           fprintf stderr "Handling error in state %d\n%!" state
       | None ->
-      ()
+          ()
 
   end
 

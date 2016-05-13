@@ -36,7 +36,7 @@ module Convert : sig
    inelegant when used with other lexer generators. *)
 
 type ('token, 'semantic_value) traditional =
-  (Lexing.lexbuf -> 'token) -> Lexing.lexbuf -> 'semantic_value
+    (Lexing.lexbuf -> 'token) -> Lexing.lexbuf -> 'semantic_value
 
 (* This revised API is independent of any lexer generator. Here, the
    parser only requires access to the lexer, and the lexer takes no
@@ -44,7 +44,7 @@ type ('token, 'semantic_value) traditional =
    information. *)
 
 type ('token, 'semantic_value) revised =
-  (unit -> 'token) -> 'semantic_value
+    (unit -> 'token) -> 'semantic_value
 
 (* --------------------------------------------------------------------------- *)
 
@@ -232,7 +232,7 @@ module type INCREMENTAL_ENGINE = sig
 
   val loop_test:
     ('a env -> 'accu -> 'accu) ->
-    'b checkpoint -> 'accu -> 'accu
+    'a checkpoint -> 'accu -> 'accu
 
   (* The function [loop_test] can be used, after an error has been detected, to
      dynamically test which tokens would have been accepted at this point. We
@@ -840,65 +840,65 @@ module Printers : sig
 
 module Make
 
-    (I : IncrementalEngine.EVERYTHING)
+  (I : IncrementalEngine.EVERYTHING)
 
-    (User : sig
+  (User : sig
 
-       (* [print s] is supposed to send the string [s] to some output channel. *)
+    (* [print s] is supposed to send the string [s] to some output channel. *)
 
-       val print: string -> unit
+    val print: string -> unit
 
-       (* [print_symbol s] is supposed to print a representation of the symbol [s]. *)
+    (* [print_symbol s] is supposed to print a representation of the symbol [s]. *)
 
-       val print_symbol: I.xsymbol -> unit
+    val print_symbol: I.xsymbol -> unit
 
-       (* [print_element e] is supposed to print a representation of the element [e].
-          This function is optional; if it is not provided, [print_element_as_symbol]
-          (defined below) is used instead. *)
+    (* [print_element e] is supposed to print a representation of the element [e].
+       This function is optional; if it is not provided, [print_element_as_symbol]
+       (defined below) is used instead. *)
 
-       val print_element: (I.element -> unit) option
+    val print_element: (I.element -> unit) option
 
-     end)
+  end)
 
-  : sig
+: sig
 
-    open I
+  open I
 
-    (* Printing a list of symbols. *)
+  (* Printing a list of symbols. *)
 
-    val print_symbols: xsymbol list -> unit
+  val print_symbols: xsymbol list -> unit
 
-    (* Printing an element as a symbol. This prints just the symbol
-       that this element represents; nothing more. *)
+  (* Printing an element as a symbol. This prints just the symbol
+     that this element represents; nothing more. *)
 
-    val print_element_as_symbol: element -> unit
+  val print_element_as_symbol: element -> unit
 
-    (* Printing a stack as a list of elements. This function needs an element
-       printer. It uses [print_element] if provided by the user; otherwise
-       it uses [print_element_as_symbol]. (Ending with a newline.) *)
+  (* Printing a stack as a list of elements. This function needs an element
+     printer. It uses [print_element] if provided by the user; otherwise
+     it uses [print_element_as_symbol]. (Ending with a newline.) *)
 
-    val print_stack: stack option -> unit
+  val print_stack: stack option -> unit
 
-    (* Printing an item. (Ending with a newline.) *)
+  (* Printing an item. (Ending with a newline.) *)
 
-    val print_item: item -> unit
+  val print_item: item -> unit
 
-    (* Printing a production. (Ending with a newline.) *)
+  (* Printing a production. (Ending with a newline.) *)
 
-    val print_production: production -> unit
+  val print_production: production -> unit
 
-    (* Printing the current LR(1) state. The current state is first displayed
-       as a number; then the list of its LR(0) items is printed. (Ending with
-       a newline.) *)
+  (* Printing the current LR(1) state. The current state is first displayed
+     as a number; then the list of its LR(0) items is printed. (Ending with
+     a newline.) *)
 
-    val print_current_state: 'a env -> unit
+  val print_current_state: 'a env -> unit
 
-    (* Printing a summary of the stack and current state. This function just
-       calls [print_stack] and [print_current_state] in succession. *)
+  (* Printing a summary of the stack and current state. This function just
+     calls [print_stack] and [print_current_state] in succession. *)
 
-    val print_env: 'a env -> unit
+  val print_env: 'a env -> unit
 
-  end
+end
 
 end
 module InfiniteArray : sig
@@ -909,7 +909,7 @@ type 'a t
 val make: 'a -> 'a t
 
 (** [get a i] returns the element contained at offset [i] in the array [a].
-    Slots are numbered 0 and up. **)
+   Slots are numbered 0 and up. **)
 val get: 'a t -> int -> 'a
 
 (** [set a i x] sets the element contained at offset [i] in the array
@@ -934,8 +934,8 @@ module RowDisplacement : sig
    displacement array is an array of offsets into the data array. *)
 
 type 'a table =
-  int array * (* displacement *)
-  'a array   (* data *)
+    int array * (* displacement *)
+     'a array   (* data *)
 
 (* [compress equal insignificant dummy m n t] turns the two-dimensional table
    [t] into a compressed table. The parameter [equal] is equality of data
@@ -1034,7 +1034,7 @@ module LinearizedArray : sig
 
 type 'a t =
   (* data: *)   'a array *
-                (* entry: *) int array
+  (* entry: *) int array
 
 (* [make a] turns the array of arrays [a] into a linearized array. *)
 
@@ -1072,20 +1072,20 @@ val read_row: 'a t -> int -> 'a list
 val row_length_via:
   (* get_entry: *) (int -> int) ->
   (* i: *)         int ->
-  int
+                   int
 
 val read_via:
   (* get_data: *)  (int -> 'a) ->
   (* get_entry: *) (int -> int) ->
   (* i: *)         int ->
   (* j: *)         int ->
-  'a
+                   'a
 
 val read_row_via:
   (* get_data: *)  (int -> 'a) ->
   (* get_entry: *) (int -> int) ->
   (* i: *)         int ->
-  'a list
+                   'a list
 
 end
 module TableFormat : sig
@@ -1285,31 +1285,31 @@ module InspectionTableInterpreter : sig
 
 module Symbols (T : sig
 
-    type 'a terminal
-    type 'a nonterminal
+  type 'a terminal
+  type 'a nonterminal
 
-  end)
+end)
 
-  : IncrementalEngine.SYMBOLS
-    with type 'a terminal := 'a T.terminal
-     and type 'a nonterminal := 'a T.nonterminal
+: IncrementalEngine.SYMBOLS
+  with type 'a terminal := 'a T.terminal
+   and type 'a nonterminal := 'a T.nonterminal
 
 (* This functor is invoked inside the generated parser, in [--table] mode. It
    constructs the inspection API on top of the inspection tables described in
    [InspectionTableFormat]. *)
 
 module Make
-    (B : TableFormat.TABLES)
-    (T : InspectionTableFormat.TABLES
-     with type 'a lr1state = int)
-    (E : sig type 'a env = (int, Obj.t, B.token) EngineTypes.env end)
+  (B : TableFormat.TABLES)
+  (T : InspectionTableFormat.TABLES
+       with type 'a lr1state = int)
+  (E : sig type 'a env = (int, Obj.t, B.token) EngineTypes.env end)
+: IncrementalEngine.INSPECT_AND_DEBUG
+  with type 'a terminal := 'a T.terminal
+   and type 'a nonterminal := 'a T.nonterminal
+   and type 'a lr1state := 'a T.lr1state
+   and type production := int
+   and type 'a env := 'a E.env
 
-  : IncrementalEngine.INSPECT_AND_DEBUG
-    with type 'a terminal := 'a T.terminal
-     and type 'a nonterminal := 'a T.nonterminal
-     and type 'a lr1state := 'a T.lr1state
-     and type production := int
-     and type 'a env := 'a E.env
 end
 module TableInterpreter : sig
 (* This module instantiates the generic [Engine] with a thin decoding layer
@@ -1324,11 +1324,11 @@ module TableInterpreter : sig
 
 module Make (T : TableFormat.TABLES)
 
-  : EngineTypes.ENGINE with type state = int
-                        and type token = T.token
-                        and type semantic_value = Obj.t
-                        and type production = int
-                        and type 'a env = (int, Obj.t, T.token) EngineTypes.env
+: EngineTypes.ENGINE with type state = int
+                           and type token = T.token
+                           and type semantic_value = Obj.t
+                           and type production = int
+                           and type 'a env = (int, Obj.t, T.token) EngineTypes.env
 end
 module StaticVersion : sig
 (* This file is overwritten when a package is created. It is supposed
