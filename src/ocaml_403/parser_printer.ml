@@ -222,18 +222,17 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern) -> "pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_expression) -> "parse_expression"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parent_binder) -> "parent_binder"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_package_type_cstrs) -> "package_type_cstrs"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_package_type_cstr) -> "package_type_cstr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_package_type) -> "package_type"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_override_flag) -> "override_flag"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_variable) -> "optional_type_variable"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameters) -> "optional_type_parameters"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter_list) -> "optional_type_parameter_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter) -> "optional_type_parameter"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_type_constraint) -> "opt_type_constraint"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_semi) -> "opt_semi"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_pattern_type_constraint) -> "opt_pattern_type_constraint"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_default) -> "opt_default"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_bar) -> "opt_bar"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_assign_arrow) -> "opt_assign_arrow"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_ampersand) -> "opt_ampersand"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_operator) -> "operator"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_open_statement) -> "open_statement"
@@ -279,8 +278,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_label) -> "label"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_item_extension) -> "item_extension"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_interface) -> "interface"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_index_operator_core) -> "index_operator_core"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_index_operator) -> "index_operator"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_implementation) -> "implementation"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ident) -> "ident"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_generalized_constructor_arguments) -> "generalized_constructor_arguments"
@@ -566,18 +563,17 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_pattern -> (fun _ -> "pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_expression -> (fun _ -> "parse_expression")
   | MenhirInterpreter.N MenhirInterpreter.N_parent_binder -> (fun _ -> "parent_binder")
-  | MenhirInterpreter.N MenhirInterpreter.N_package_type_cstrs -> (fun _ -> "package_type_cstrs")
-  | MenhirInterpreter.N MenhirInterpreter.N_package_type_cstr -> (fun _ -> "package_type_cstr")
   | MenhirInterpreter.N MenhirInterpreter.N_package_type -> (fun _ -> "package_type")
   | MenhirInterpreter.N MenhirInterpreter.N_override_flag -> (fun _ -> "override_flag")
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_variable -> (fun _ -> "optional_type_variable")
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameters -> (fun _ -> "optional_type_parameters")
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter_list -> (fun _ -> "optional_type_parameter_list")
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter -> (fun _ -> "optional_type_parameter")
+  | MenhirInterpreter.N MenhirInterpreter.N_opt_type_constraint -> (fun _ -> "opt_type_constraint")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_semi -> (fun _ -> "opt_semi")
+  | MenhirInterpreter.N MenhirInterpreter.N_opt_pattern_type_constraint -> (fun _ -> "opt_pattern_type_constraint")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_default -> (fun _ -> "opt_default")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_bar -> (fun _ -> "opt_bar")
-  | MenhirInterpreter.N MenhirInterpreter.N_opt_assign_arrow -> (fun _ -> "opt_assign_arrow")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_ampersand -> (fun _ -> "opt_ampersand")
   | MenhirInterpreter.N MenhirInterpreter.N_operator -> (fun _ -> "operator")
   | MenhirInterpreter.N MenhirInterpreter.N_open_statement -> (fun _ -> "open_statement")
@@ -623,8 +619,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_label -> (fun _ -> "label")
   | MenhirInterpreter.N MenhirInterpreter.N_item_extension -> (fun _ -> "item_extension")
   | MenhirInterpreter.N MenhirInterpreter.N_interface -> (fun _ -> "interface")
-  | MenhirInterpreter.N MenhirInterpreter.N_index_operator_core -> (fun _ -> "index_operator_core")
-  | MenhirInterpreter.N MenhirInterpreter.N_index_operator -> (fun _ -> "index_operator")
   | MenhirInterpreter.N MenhirInterpreter.N_implementation -> (fun _ -> "implementation")
   | MenhirInterpreter.N MenhirInterpreter.N_ident -> (fun _ -> "ident")
   | MenhirInterpreter.N MenhirInterpreter.N_generalized_constructor_arguments -> (fun _ -> "generalized_constructor_arguments")

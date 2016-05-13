@@ -315,7 +315,8 @@ module MenhirInterpreter : sig
     | N_value_type : (string * Asttypes.mutable_flag * Asttypes.virtual_flag *
   Parsetree.core_type) nonterminal
     | N_value_description : (Parsetree.value_description * string Asttypes.loc option) nonterminal
-    | N_value : (string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) nonterminal
+    | N_value : ((string Asttypes.loc * Asttypes.mutable_flag * Parsetree.class_field_kind) *
+  Parsetree.attributes) nonterminal
     | N_val_longident : (Longident.t) nonterminal
     | N_val_ident : (string) nonterminal
     | N_typevar_list : (Asttypes.label list) nonterminal
@@ -381,18 +382,17 @@ module MenhirInterpreter : sig
     | N_pattern : (Parsetree.pattern) nonterminal
     | N_parse_expression : (Parsetree.expression) nonterminal
     | N_parent_binder : (string option) nonterminal
-    | N_package_type_cstrs : ((Longident.t Asttypes.loc * Parsetree.core_type) list) nonterminal
-    | N_package_type_cstr : (Longident.t Asttypes.loc * Parsetree.core_type) nonterminal
     | N_package_type : (Parsetree.package_type) nonterminal
     | N_override_flag : (Asttypes.override_flag) nonterminal
     | N_optional_type_variable : (Parsetree.core_type) nonterminal
     | N_optional_type_parameters : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
     | N_optional_type_parameter_list : ((Parsetree.core_type * Asttypes.variance) list) nonterminal
     | N_optional_type_parameter : (Parsetree.core_type * Asttypes.variance) nonterminal
+    | N_opt_type_constraint : ((Parsetree.core_type option * Parsetree.core_type option) option) nonterminal
     | N_opt_semi : (unit) nonterminal
+    | N_opt_pattern_type_constraint : (Parsetree.core_type option) nonterminal
     | N_opt_default : (Parsetree.expression option) nonterminal
     | N_opt_bar : (unit) nonterminal
-    | N_opt_assign_arrow : (string) nonterminal
     | N_opt_ampersand : (bool) nonterminal
     | N_operator : (string) nonterminal
     | N_open_statement : (Parsetree.open_description * string Asttypes.loc option) nonterminal
@@ -440,8 +440,6 @@ module MenhirInterpreter : sig
     | N_label : (string) nonterminal
     | N_item_extension : (Parsetree.extension) nonterminal
     | N_interface : (Parsetree.signature) nonterminal
-    | N_index_operator_core : (string) nonterminal
-    | N_index_operator : (string) nonterminal
     | N_implementation : (Parsetree.structure) nonterminal
     | N_ident : (Asttypes.label) nonterminal
     | N_generalized_constructor_arguments : (Parsetree.constructor_arguments * Parsetree.core_type option) nonterminal
@@ -519,9 +517,9 @@ module MenhirInterpreter : sig
   (* The inspection API. *)
   
   include MenhirLib.IncrementalEngine.INSPECT_AND_DEBUG
-    with type 'a env := 'a env
-    with type production := production
     with type 'a lr1state := 'a lr1state
+    with type production := production
+    with type 'a env := 'a env
     with type 'a terminal := 'a terminal
     with type 'a nonterminal := 'a nonterminal
   

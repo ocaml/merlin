@@ -19,10 +19,11 @@ let nullable (type a) : a MenhirInterpreter.nonterminal -> bool =
   | N_parent_binder -> true
   | N_override_flag -> true
   | N_optional_type_parameters -> true
+  | N_opt_type_constraint -> true
   | N_opt_semi -> true
+  | N_opt_pattern_type_constraint -> true
   | N_opt_default -> true
   | N_opt_bar -> true
-  | N_opt_assign_arrow -> true
   | N_opt_ampersand -> true
   | N_nonrec_flag -> true
   | N_mutable_flag -> true
