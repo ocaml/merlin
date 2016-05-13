@@ -47,6 +47,7 @@ let warn_help_spec =
   " Show description of warning numbers"
 
 let chosen_protocol = ref None
+
 let protocol_spec =
   "-protocol",
   Arg.String (fun p -> chosen_protocol := Some p),
@@ -55,14 +56,51 @@ let protocol_spec =
 let unexpected_argument s =
   failwith ("Unexpected argument: " ^ s)
 
+let ignore_non_parametrized =
+  List.map (fun x -> x, Arg.Unit ignore, " Ignored (ocaml compatility)") [
+    "-a"; "-absname"; "-alias-deps"; "-annot"; "-app-funct"; "-bin-annot";
+    "-c"; "-compact"; "-compat-32"; "-config"; "-custom"; "-dalloc";
+    "-dclambda"; "-dcmm"; "-dcombine"; "-dcse"; "-dflambda";
+    "-dflambda-no-invariants"; "-dflambda-verbose"; "-dinstr"; "-dinterf";
+    "-dlambda"; "-dlinear"; "-dlive"; "-dparsetree"; "-dprefer";
+    "-drawclambda"; "-drawflambda"; "-drawlambda"; "-dreload"; "-dscheduling";
+    "-dsel"; "-dsource"; "-dspill"; "-dsplit"; "-dstartup"; "-dtimings";
+    "-dtypedtree"; "-dtypes"; "-dump-pass"; "-fno-PIC"; "-fPIC"; "-g"; "-i";
+    "-inlining-report"; "-keep-docs"; "-keep-docs"; "-keep-locs"; "-linkall";
+    "-make_runtime"; "-make-runtime"; "-modern"; "-no-alias-deps"; "-noassert";
+    "-noautolink"; "-no-check-prims"; "-nodynlink"; "-no-float-const-prop";
+    "-no-keep-locs"; "-no-principal"; "-no-rectypes"; "-no-strict-formats";
+    "-no-strict-sequence"; "-no-unbox-free-vars-of-clos";
+    "-no-unbox-specialised-args"; "-O2"; "-O3"; "-Oclassic"; "-opaque";
+    "-output-complete-obj"; "-output-obj"; "-p"; "-pack";
+    "-remove-unused-arguments"; "-S"; "-shared"; "-unbox-closures"; "-v";
+    "-verbose"; "-where";
+  ]
+
+let ignore_parametrized =
+  List.map (fun x -> x, Arg.String ignore, " Ignored (ocaml compatility)") [
+    "-cc"; "-cclib"; "-ccopt"; "-color"; "-dflambda-let"; "-dllib"; "-dllpath";
+    "-for-pack"; "-impl"; "-inline-alloc-cost"; "-inline-branch-cost";
+    "-inline-branch-factor"; "-inline-call-cost"; "-inline-indirect-cost";
+    "-inline-lifting-benefit"; "-inline-max-depth"; "-inline-max-unroll";
+    "-inline"; "-inline-prim-cost"; "-inline-toplevel"; "-intf";
+    "-intf_suffix"; "-intf-suffix"; "-o"; "-rounds"; "-runtime-variant";
+    "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
+  ]
+
 let flags =
-  [
-    ignore_sigint_spec;
-    print_version_spec;
-    print_version_num_spec;
-    warn_help_spec;
-    protocol_spec;
-  ] @ Clflags.arg_spec
+  List.concat [
+    [
+      ignore_sigint_spec;
+      print_version_spec;
+      print_version_num_spec;
+      warn_help_spec;
+      protocol_spec;
+    ];
+    ignore_non_parametrized;
+    ignore_parametrized;
+    Clflags.arg_spec;
+  ]
 
 let () =
   (* Parse arguments on commandline *)
