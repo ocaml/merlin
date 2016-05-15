@@ -112,9 +112,9 @@ path = vim.eval("l:path")
 if path == "":
   for path in merlin.command("path","list", vim.eval("a:var")):
     if path != "":
-      print path
+      print(path)
 else:
-  print path
+  print(path)
   merlin.command("path", "add", vim.eval("a:var"), path)
 merlin.vim_reload()
 EOF
