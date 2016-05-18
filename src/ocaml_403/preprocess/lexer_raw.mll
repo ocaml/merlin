@@ -52,7 +52,7 @@ type preprocessor = (Lexing.lexbuf -> Parser_raw.token) -> Lexing.lexbuf -> Pars
 
 type state = {
   keywords: keywords;
-  buffer: Buffer.t;
+  mutable buffer: Buffer.t;
   mutable string_start_loc: Location.t;
   mutable comment_start_loc: Location.t list;
   mutable preprocessor: preprocessor option;
@@ -533,6 +533,8 @@ and comment state = parse
       {
         state.string_start_loc <- Location.curr lexbuf;
         Buffer.add_char state.buffer '\"';
+        let buffer = state.buffer in
+        state.buffer <- Buffer.create 15;
         (catch (string state lexbuf) (fun e l -> match e with
              | Unterminated_string ->
                begin match state.comment_start_loc with
@@ -546,6 +548,8 @@ and comment state = parse
            )
         ) >>= fun () ->
       state.string_start_loc <- Location.none;
+      Buffer.add_string buffer (String.escaped (Buffer.contents state.buffer));
+      state.buffer <- buffer;
       Buffer.add_char state.buffer '\"';
       comment state lexbuf }
   | "{" lowercase* "|"

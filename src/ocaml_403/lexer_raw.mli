@@ -39,7 +39,7 @@ type preprocessor = (Lexing.lexbuf -> Parser_raw.token) -> Lexing.lexbuf -> Pars
 
 type state = {
   keywords: keywords;
-  buffer: Buffer.t;
+  mutable buffer: Buffer.t;
   mutable string_start_loc: Location.t;
   mutable comment_start_loc: Location.t list;
   mutable preprocessor: preprocessor option;
