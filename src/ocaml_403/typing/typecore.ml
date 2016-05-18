@@ -3033,8 +3033,13 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
       | _ ->
           raise (error (loc, env, Invalid_extension_constructor_payload))
       end
-  | Pexp_extension ext ->
-      raise (Error_forward (Builtin_attributes.error_of_extension ext))
+
+  | Pexp_extension ({ txt = "merlin.hole"; _ }, _ as attr) ->
+      re { exp_desc = Texp_unreachable;
+           exp_loc = loc; exp_extra = [];
+           exp_type = instance env ty_expected;
+           exp_attributes = attr :: sexp.pexp_attributes;
+           exp_env = env }
 
   | Pexp_unreachable ->
       re { exp_desc = Texp_unreachable;
@@ -3042,6 +3047,10 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
            exp_type = instance env ty_expected;
            exp_attributes = sexp.pexp_attributes;
            exp_env = env }
+
+  | Pexp_extension ext ->
+      raise (Error_forward (Builtin_attributes.error_of_extension ext))
+
 
 and type_function ?in_function loc attrs env ty_expected l caselist =
   let (loc_fun, ty_fun) =

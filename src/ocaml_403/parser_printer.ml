@@ -42,6 +42,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_RBRACKET) -> "RBRACKET"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_RBRACE) -> "RBRACE"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUOTE) -> "QUOTE"
+  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUESTIONQUESTION) -> "QUESTIONQUESTION"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_QUESTION) -> "QUESTION"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_PRIVATE) -> "PRIVATE"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_PREFIXOP) -> "PREFIXOP"
@@ -383,6 +384,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_RBRACKET -> (fun _ -> "RBRACKET")
   | MenhirInterpreter.T MenhirInterpreter.T_RBRACE -> (fun _ -> "RBRACE")
   | MenhirInterpreter.T MenhirInterpreter.T_QUOTE -> (fun _ -> "QUOTE")
+  | MenhirInterpreter.T MenhirInterpreter.T_QUESTIONQUESTION -> (fun _ -> "QUESTIONQUESTION")
   | MenhirInterpreter.T MenhirInterpreter.T_QUESTION -> (fun _ -> "QUESTION")
   | MenhirInterpreter.T MenhirInterpreter.T_PRIVATE -> (fun _ -> "PRIVATE")
   | MenhirInterpreter.T MenhirInterpreter.T_PREFIXOP -> (Printf.sprintf "PREFIXOP(%S)")
@@ -723,6 +725,7 @@ let print_token = function
   | RBRACKET -> print_value (MenhirInterpreter.T MenhirInterpreter.T_RBRACKET) ()
   | RBRACE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_RBRACE) ()
   | QUOTE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUOTE) ()
+  | QUESTIONQUESTION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUESTIONQUESTION) ()
   | QUESTION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_QUESTION) ()
   | PRIVATE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_PRIVATE) ()
   | PREFIXOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_PREFIXOP) v
@@ -866,6 +869,7 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_RBRACKET -> RBRACKET
   | MenhirInterpreter.T_RBRACE -> RBRACE
   | MenhirInterpreter.T_QUOTE -> QUOTE
+  | MenhirInterpreter.T_QUESTIONQUESTION -> QUESTIONQUESTION
   | MenhirInterpreter.T_QUESTION -> QUESTION
   | MenhirInterpreter.T_PRIVATE -> PRIVATE
   | MenhirInterpreter.T_PREFIXOP -> PREFIXOP v

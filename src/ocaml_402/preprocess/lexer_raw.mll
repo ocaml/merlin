@@ -341,6 +341,8 @@ rule token state = parse
       { oPTLABEL (get_label_name lexbuf) }
   | "?" lowercase_latin1 identchar_latin1 * ':'
       { warn_latin1 lexbuf; oPTLABEL (get_label_name lexbuf) }
+  | "??"
+      { return QUESTIONQUESTION }
   | lowercase identchar *
     { let s = Lexing.lexeme lexbuf in
       return (try Hashtbl.find state.keywords s

@@ -330,6 +330,8 @@ rule token state = parse
       { warn_latin1 lexbuf; lABEL (get_label_name lexbuf) }
   | "?"
       { return QUESTION }
+  | "??"
+      { return QUESTIONQUESTION }
   | "?" lowercase identchar * ':'
       { oPTLABEL (get_label_name lexbuf) }
   | "?" lowercase_latin1 identchar_latin1 * ':'

@@ -684,7 +684,7 @@ let make_loc startpos endpos = {
 %token PLUSEQ
 %token <string> PREFIXOP [@cost 2] [@recovery "!"][@printer Printf.sprintf "PREFIXOP(%S)"]
 %token PRIVATE
-%token QUESTION
+%token QUESTION QUESTIONQUESTION
 %token QUOTE
 %token RBRACE
 %token RBRACKET
@@ -805,7 +805,7 @@ The precedences must be listed from low to high.
           NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
           P4_QUOTATION JSNEW CUSTOM_BANG
-          DOTLESS DOTTILDE GREATERDOT
+          DOTLESS DOTTILDE GREATERDOT QUESTIONQUESTION
 
 
 /* Entry points */
@@ -1704,6 +1704,9 @@ simple_expr:
       { unclosed("(", 3, ")", 8) }*)
   | extension
       { mkexp (Pexp_extension $1) }
+  | QUESTIONQUESTION
+      { let id = mkloc "merlin.hole" ($loc) in
+        mkexp (Pexp_extension (id, PStr [])) }
 ;
 simple_labeled_expr_list:
     labeled_simple_expr

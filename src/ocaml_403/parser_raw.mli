@@ -31,6 +31,7 @@ type token =
   | RBRACKET
   | RBRACE
   | QUOTE
+  | QUESTIONQUESTION
   | QUESTION
   | PRIVATE
   | PREFIXOP of (string)
@@ -194,6 +195,7 @@ module MenhirInterpreter : sig
     | T_RBRACKET : unit terminal
     | T_RBRACE : unit terminal
     | T_QUOTE : unit terminal
+    | T_QUESTIONQUESTION : unit terminal
     | T_QUESTION : unit terminal
     | T_PRIVATE : unit terminal
     | T_PREFIXOP : (string) terminal

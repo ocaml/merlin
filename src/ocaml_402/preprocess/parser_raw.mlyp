@@ -415,6 +415,7 @@ let let_operator startpos endpos op bindings cont =
 %token <string> PREFIXOP [@cost 2] [@recovery "!"][@printer Printf.sprintf "PREFIXOP(%S)"]
 %token PRIVATE
 %token QUESTION
+%token QUESTIONQUESTION
 %token QUOTE
 %token RBRACE
 %token RBRACKET
@@ -541,7 +542,7 @@ The precedences must be listed from low to high.
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
           P4_QUOTATION JSNEW CUSTOM_BANG
-          DOTLESS DOTTILDE GREATERDOT
+          DOTLESS DOTTILDE GREATERDOT QUESTIONQUESTION
 
 (* Entry points *)
 
@@ -1238,7 +1239,7 @@ expr [@recovery default_expr ()]:
 | expr attribute
     { Exp.attr $1 $2 }
 
-simple_expr :
+simple_expr:
 | val_longident
     { mkexp $startpos $endpos (Pexp_ident (mkrhs $startpos($1) $endpos($1) $1)) }
 | constant
@@ -1320,6 +1321,9 @@ simple_expr :
                                 ghtyp $startpos $endpos (Ptyp_package $7))))) }
 | extension
     { mkexp $startpos $endpos  (Pexp_extension $1) }
+| QUESTIONQUESTION
+    { let id = mkloc "merlin.hole" (rloc $startpos $endpos) in
+      mkexp $startpos $endpos (Pexp_extension (id, PStr [])) }
 
 simple_labeled_expr_list:
 | labeled_simple_expr
