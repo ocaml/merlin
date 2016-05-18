@@ -2540,11 +2540,6 @@ expr:
     }
 ;
 
-expr_comma_opt_list:
-    expr_comma_opt_list COMMA expr              { $3 :: $1 }
-  | expr %prec COMMA                            { [$1] }
-;
-
 (* Meta OCaml *)
 let_operator:
 | LETOP

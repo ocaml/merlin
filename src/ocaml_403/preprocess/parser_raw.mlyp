@@ -471,6 +471,33 @@ let make_loc startpos endpos = {
   Location.loc_ghost = false;
 }
 
+let val_of_lwt_bindings ~loc lbs =
+  let bindings =
+    List.map
+      (fun lb ->
+         Vb.mk ~loc:lb.lb_loc ~attrs:lb.lb_attributes
+           ~docs:(Lazy.force lb.lb_docs)
+           ~text:(Lazy.force lb.lb_text)
+           lb.lb_pattern (Fake.app Fake.Lwt.un_lwt lb.lb_expression))
+      lbs.lbs_bindings
+  in
+  let str = mkstr ~loc (Pstr_value(lbs.lbs_rec, List.rev bindings)) in
+  match lbs.lbs_extension with
+  | None -> str
+  | Some id -> ghstr ~loc (Pstr_extension((id, PStr [str]), []))
+
+let expr_of_lwt_bindings ~loc lbs body =
+  let bindings =
+    List.map
+      (fun lb ->
+         Vb.mk ~loc:lb.lb_loc ~attrs:lb.lb_attributes
+           lb.lb_pattern (Fake.app Fake.Lwt.un_lwt lb.lb_expression))
+      lbs.lbs_bindings
+  in
+  Fake.app Fake.Lwt.in_lwt 
+    (mkexp_attrs ~loc (Pexp_let(lbs.lbs_rec, List.rev bindings, body))
+       (lbs.lbs_extension, []))
+
 %}
 
 %[@printer.header
@@ -573,6 +600,8 @@ let make_loc startpos endpos = {
 #define val_of_let_bindings (val_of_let_bindings ~loc:$loc)
 #define expr_of_let_bindings (expr_of_let_bindings ~loc:$loc)
 #define class_of_let_bindings (class_of_let_bindings ~loc:$loc)
+#define val_of_lwt_bindings (val_of_lwt_bindings ~loc:$loc)
+#define expr_of_lwt_bindings (expr_of_lwt_bindings ~loc:$loc)
 
 #define reloc_exp (reloc_exp ~loc:$loc)
 #define reloc_pat (reloc_pat ~loc:$loc)
@@ -787,6 +816,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_unary_minus prec_unary_plus /* unary - */
 %nonassoc prec_constant_constructor     /* cf. simple_expr (C versus C x) */
 %nonassoc prec_constr_appl              /* above AS BAR COLONCOLON COMMA */
+%left     prec_escape
 %nonassoc below_SHARP
 %nonassoc SHARP                         /* simple_expr/toplevel_directive */
 %left     SHARPOP
@@ -2686,4 +2716,69 @@ payload:
   | QUESTION pattern { PPat ($2, None) }
   | QUESTION pattern WHEN seq_expr { PPat ($2, Some $4) }
 ;
+
+simple_expr:
+| DOTLESS expr GREATERDOT
+    { Fake.Meta.code $startpos $endpos $2 }
+| DOTTILDE simple_expr %prec prec_escape
+    { Fake.Meta.uncode $startpos $endpos $2 }
+;
+
+(* Meta OCaml *)
+let_operator:
+| LETOP
+  { mkexp $startpos $endpos
+    (Pexp_ident(mkloc (Lident $1) (rloc $startpos $endpos))) }
+| mod_longident DOT LETOP
+  { mkexp $startpos $endpos
+    (Pexp_ident(mkloc (Ldot ($1,$3)) (rloc $startpos $endpos))) }
+;
+
+(* Lwt *)
+structure_item:
+| lwt_bindings
+    { val_of_lwt_bindings $1 }
+
+lwt_binding:
+    LET_LWT ext_attributes rec_flag let_binding_body post_item_attributes
+      { let (ext, attr) = $2 in
+        mklbs ext $3 (mklb true $4 (attr@$5)) }
+;
+lwt_bindings:
+    lwt_binding                                 { $1 }
+  | lwt_bindings and_let_binding                { addlb $1 $2 }
+;
+
+expr:
+| lwt_bindings IN seq_expr
+    { expr_of_lwt_bindings $1 $3 }
+| MATCH_LWT ext_attributes seq_expr WITH opt_bar match_cases
+    { let expr = mkexp_attrs 
+          (Pexp_match(Fake.app Fake.Lwt.un_lwt $3, List.rev $6)) $2 in
+      Fake.app Fake.Lwt.in_lwt expr }
+| TRY_LWT ext_attributes seq_expr %prec below_WITH
+    { reloc_exp (Fake.app Fake.Lwt.in_lwt $3) }
+| TRY_LWT ext_attributes seq_expr WITH opt_bar match_cases
+    { mkexp_attrs 
+        (Pexp_try(Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 }
+| TRY_LWT ext_attributes seq_expr FINALLY_LWT seq_expr
+    { Fake.app (Fake.app Fake.Lwt.finally_ $3) $5 }
+| TRY_LWT ext_attributes seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
+    { let expr = mkexp_attrs 
+        (Pexp_try (Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 in
+      Fake.app (Fake.app Fake.Lwt.finally_ expr) $8 }
+| WHILE_LWT ext_attributes seq_expr DO seq_expr DONE
+  { let expr = Pexp_while ($3, Fake.(app Lwt.un_lwt $5)) in
+    Fake.(app Lwt.to_lwt (mkexp_attrs expr $2)) }
+| FOR_LWT ext_attributes pattern EQUAL seq_expr direction_flag seq_expr DO seq_expr DONE
+    { let expr = Pexp_for ($3, $5, $7, $6, Fake.(app Lwt.un_lwt $9)) in
+      Fake.(app Lwt.to_lwt (mkexp_attrs expr $2)) }
+| FOR_LWT ext_attributes pattern IN seq_expr DO seq_expr DONE
+    { mkexp_attrs
+          (Pexp_let (Nonrecursive, [Vb.mk $3 (Fake.(app Lwt.un_stream $5))],
+             Fake.(app Lwt.unit_lwt $7)))
+          $2
+    }
+;
+
 %%

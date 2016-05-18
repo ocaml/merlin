@@ -246,6 +246,8 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_meth_list) -> "meth_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_match_cases) -> "match_cases"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_match_case) -> "match_case"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lwt_bindings) -> "lwt_bindings"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lwt_binding) -> "lwt_binding"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lident_list) -> "lident_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_pattern) -> "let_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_bindings) -> "let_bindings"
@@ -577,6 +579,8 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_meth_list -> (fun _ -> "meth_list")
   | MenhirInterpreter.N MenhirInterpreter.N_match_cases -> (fun _ -> "match_cases")
   | MenhirInterpreter.N MenhirInterpreter.N_match_case -> (fun _ -> "match_case")
+  | MenhirInterpreter.N MenhirInterpreter.N_lwt_bindings -> (fun _ -> "lwt_bindings")
+  | MenhirInterpreter.N MenhirInterpreter.N_lwt_binding -> (fun _ -> "lwt_binding")
   | MenhirInterpreter.N MenhirInterpreter.N_lident_list -> (fun _ -> "lident_list")
   | MenhirInterpreter.N MenhirInterpreter.N_let_pattern -> (fun _ -> "let_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_let_bindings -> (fun _ -> "let_bindings")

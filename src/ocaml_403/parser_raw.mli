@@ -398,6 +398,8 @@ module MenhirInterpreter : sig
   Asttypes.closed_flag) nonterminal
     | N_match_cases : (Parsetree.case list) nonterminal
     | N_match_case : (Parsetree.case) nonterminal
+    | N_lwt_bindings : (Ast_helper.let_bindings) nonterminal
+    | N_lwt_binding : (Ast_helper.let_bindings) nonterminal
     | N_lident_list : (string list) nonterminal
     | N_let_pattern : (Parsetree.pattern) nonterminal
     | N_let_bindings : (Ast_helper.let_bindings) nonterminal
