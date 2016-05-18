@@ -109,12 +109,6 @@ rule token = parse
   | "let" symbolcharnopercent symbolchar *
             { LETOP(Lexing.lexeme lexbuf) }
   | eof { EOF }
-  | "#" [' ' '\t']* (['0'-'9']+ as num) [' ' '\t']*
-        ("\"" ([^ '\010' '\013' '"' ] * as name) "\"")?
-        [^ '\010' '\013'] * newline
-      { update_loc lexbuf name (int_of_string num) true 0;
-        token lexbuf
-      }
   | int_literal
   | float_literal
   | int_literal "l"
