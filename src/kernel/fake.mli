@@ -35,10 +35,6 @@ val app : Parsetree.expression ->
 val pat_app : Parsetree.expression ->
   ('a * Parsetree.expression) -> ('a * Parsetree.expression )
 
-(* Bottom value (e.g. forall 'a. 'a) used to substitute
- * syntactically incorrect expressions during error-recovery.  *)
-val any_val' : Parsetree.expression
-
 (* Lwt extension *)
 module Lwt : sig
   val un_lwt     : Parsetree.expression
@@ -46,46 +42,8 @@ module Lwt : sig
   val in_lwt     : Parsetree.expression
   val unit_lwt   : Parsetree.expression
   val un_stream  : Parsetree.expression
-  val finally'   : Parsetree.expression
-  val raise_lwt' : Longident.t
-end
-
-(* Js extension *)
-module Js : sig
-  val un_js     : Parsetree.expression
-  val un_meth   : Parsetree.expression
-  val un_constr : Parsetree.expression
-  val un_prop   : Parsetree.expression
-end
-
-(* OUnit extension *)
-module OUnit : sig
-  val fresh_test_module_ident : unit -> string
-  val force_bool : Parsetree.expression
-  val force_unit : Parsetree.expression
-  val force_unit_arrow_unit : Parsetree.expression
-  val force_indexed : Parsetree.expression
-end
-
-type tydecl = string Location.loc * Parsetree.type_declaration
-
-(* type-conv extension *)
-module TypeWith : sig
-  (* Simulate behavior of type-conv generators. Supported generators are:
-   * - sexp,
-   * - bin_io, bin_read, bin_write.  *)
-  type generator = string
-
-  val generate_definitions : ty:tydecl list -> ?ghost_loc:Location.t ->
-    generator list -> Parsetree.structure_item list
-  val generate_sigs : ty:tydecl list -> ?ghost_loc:Location.t ->
-    generator list -> Parsetree.signature_item list
-end
-
-(* Custom printf extension *)
-module Custom_printf : sig
-  val bang : Lexing.position -> Lexing.position ->
-    Parsetree.expression -> Parsetree.expression option
+  val finally_   : Parsetree.expression
+  val raise_lwt_ : Longident.t
 end
 
 (* MetaOCaml support *)

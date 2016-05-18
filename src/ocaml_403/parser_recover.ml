@@ -4,11 +4,14 @@ module Default = struct
 
   open Asttypes
   open Parsetree
+  open Ast_helper
   let default_loc = ref Location.none
-  let default_expr () = {Fake.any_val' with pexp_loc = !default_loc}
-  let default_pattern () = Ast_helper.Pat.any ~loc:!default_loc ()
-  let default_module_expr () = Ast_helper.Mod.structure ~loc:!default_loc[]
-  let default_module_type () = Ast_helper.Mty.signature ~loc:!default_loc[]
+  let default_expr () =
+    let id = Location.mkloc "merlin.hole" !default_loc in
+    Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
+  let default_pattern () = Pat.any ~loc:!default_loc ()
+  let default_module_expr () = Mod.structure ~loc:!default_loc[]
+  let default_module_type () = Mty.signature ~loc:!default_loc[]
 
   let value (type a) : a MenhirInterpreter.symbol -> a = function
     | MenhirInterpreter.T MenhirInterpreter.T_error -> ()
@@ -31,7 +34,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_STRING -> ("", None)
     | MenhirInterpreter.T MenhirInterpreter.T_STAR -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SIG -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_SHARPSHARP -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SHARPOP -> ""
     | MenhirInterpreter.T MenhirInterpreter.T_SHARP -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> ()
@@ -49,14 +51,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_PLUSDOT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_PLUS -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_PERCENT -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_P4_QUOTATION -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_UNIT -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_MODULE -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_MODULE -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_INDEXED -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_FUN -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_OR -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_OPTLABEL -> "_"
     | MenhirInterpreter.T MenhirInterpreter.T_OPEN -> ()
@@ -92,7 +86,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_LBRACE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LAZY -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LABEL -> raise Not_found
-    | MenhirInterpreter.T MenhirInterpreter.T_JSNEW -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_INT -> ("0",None)
     | MenhirInterpreter.T MenhirInterpreter.T_INITIALIZER -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_INHERIT -> ()
@@ -131,7 +124,6 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_DONE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_DOCSTRING -> raise Not_found
     | MenhirInterpreter.T MenhirInterpreter.T_DO -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_CUSTOM_BANG -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_CONSTRAINT -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_COMMENT -> ("", Location.none)
     | MenhirInterpreter.T MenhirInterpreter.T_COMMA -> ()
@@ -389,7 +381,6 @@ let can_pop (type a) : a terminal -> bool = function
   | T_STRUCT -> true
   | T_STAR -> true
   | T_SIG -> true
-  | T_SHARPSHARP -> true
   | T_SHARP -> true
   | T_SEMISEMI -> true
   | T_SEMI -> true
@@ -405,14 +396,6 @@ let can_pop (type a) : a terminal -> bool = function
   | T_PLUSDOT -> true
   | T_PLUS -> true
   | T_PERCENT -> true
-  | T_P4_QUOTATION -> true
-  | T_OUNIT_TEST_UNIT -> true
-  | T_OUNIT_TEST_MODULE -> true
-  | T_OUNIT_TEST -> true
-  | T_OUNIT_BENCH_MODULE -> true
-  | T_OUNIT_BENCH_INDEXED -> true
-  | T_OUNIT_BENCH_FUN -> true
-  | T_OUNIT_BENCH -> true
   | T_OR -> true
   | T_OPEN -> true
   | T_OF -> true
@@ -444,7 +427,6 @@ let can_pop (type a) : a terminal -> bool = function
   | T_LBRACELESS -> true
   | T_LBRACE -> true
   | T_LAZY -> true
-  | T_JSNEW -> true
   | T_INITIALIZER -> true
   | T_INHERIT -> true
   | T_INCLUDE -> true
@@ -474,7 +456,6 @@ let can_pop (type a) : a terminal -> bool = function
   | T_DOT -> true
   | T_DONE -> true
   | T_DO -> true
-  | T_CUSTOM_BANG -> true
   | T_CONSTRAINT -> true
   | T_COMMA -> true
   | T_COLONGREATER -> true

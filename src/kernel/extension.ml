@@ -74,56 +74,6 @@ let ext_lwt = {
   packages = ["lwt.syntax"];
 }
 
-let ext_any = {
-  name = "any";
-  private_def = [
-    "module Any : sig
-      val val' : 'a
-    end"
-  ];
-  public_def = [];
-  keywords = [];
-  packages = [];
-}
-
-let ext_js = {
-  name = "js";
-  private_def = [
-    "module Js : sig
-      val un_js : 'a Js.t -> 'a
-      val un_meth : 'a Js.meth -> 'a
-      val un_constr : 'a Js.constr -> 'a
-      val un_prop : 'a Js.gen_prop -> 'a
-    end"
-  ];
-  public_def = [];
-  keywords = ["jsnew", JSNEW; "##", SHARPSHARP];
-  packages = ["js_of_ocaml.syntax"];
-}
-
-let ext_ounit = {
-  name = "ounit";
-  private_def = [
-    "module OUnit : sig
-      val force_bool : bool -> unit
-      val force_unit : unit -> unit
-      val force_unit_arrow_unit : (unit -> unit) -> unit
-      val force_indexed : (int -> unit -> unit) -> int list -> unit
-    end"
-  ];
-  public_def = [];
-  keywords = [
-    "TEST", OUNIT_TEST;
-    "TEST_UNIT", OUNIT_TEST_UNIT;
-    "TEST_MODULE", OUNIT_TEST_MODULE;
-    "BENCH", OUNIT_BENCH;
-    "BENCH_FUN", OUNIT_BENCH_FUN;
-    "BENCH_INDEXED", OUNIT_BENCH_INDEXED;
-    "BENCH_MODULE", OUNIT_BENCH_MODULE;
-  ];
-  packages = ["oUnit";"pa_ounit.syntax"];
-}
-
 let ext_nonrec = {
   name = "nonrec";
   private_def = [];
@@ -132,33 +82,6 @@ let ext_nonrec = {
     "nonrec", NONREC;
   ];
   packages = [];
-}
-
-let ext_here = {
-  name = "here";
-  private_def = [];
-  public_def = ["val _here_ : Lexing.position"];
-  keywords = [];
-  packages = [];
-}
-
-let ext_sexp_option = {
-  name = "sexp_option";
-  private_def = [];
-  public_def = ["type 'a sexp_option = 'a option"];
-  keywords = [];
-  packages = [];
-}
-
-let custom_printf = "custom_printf"
-let ext_custom_printf = {
-  name = custom_printf;
-  private_def = [];
-  public_def = [];
-  keywords = [
-    "!", CUSTOM_BANG;
-  ];
-  packages = ["custom_printf"];
 }
 
 let ext_meta = {
@@ -177,7 +100,7 @@ let ext_meta = {
 }
 
 (* Known extensions *)
-let registry = [ext_here;ext_lwt;ext_js;ext_ounit;ext_custom_printf;ext_meta]
+let registry = [ext_lwt;ext_meta]
 let registry =
   List.fold_left registry ~init:String.Map.empty
     ~f:(fun map ext -> String.Map.add map ~key:ext.name ~data:ext)
@@ -201,8 +124,7 @@ let from ~extensions ~packages =
 
 (* Merlin expects a few extensions to be always enabled, otherwise error
    recovery may fail arbitrarily *)
-let default = [ext_any;ext_sexp_option] @
-              match My_config.ocamlversion with
+let default = match My_config.ocamlversion with
               | `OCaml_4_02_2 | `OCaml_4_03_0 -> [ext_nonrec]
               | _ -> []
 

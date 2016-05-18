@@ -21,7 +21,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STRING) -> "STRING"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_STAR) -> "STAR"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SIG) -> "SIG"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SHARPSHARP) -> "SHARPSHARP"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SHARPOP) -> "SHARPOP"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SHARP) -> "SHARP"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) -> "SEMISEMI"
@@ -39,14 +38,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_PLUSDOT) -> "PLUSDOT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_PLUS) -> "PLUS"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_PERCENT) -> "PERCENT"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_P4_QUOTATION) -> "P4_QUOTATION"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_UNIT) -> "OUNIT_TEST_UNIT"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_MODULE) -> "OUNIT_TEST_MODULE"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST) -> "OUNIT_TEST"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_MODULE) -> "OUNIT_BENCH_MODULE"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_INDEXED) -> "OUNIT_BENCH_INDEXED"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_FUN) -> "OUNIT_BENCH_FUN"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH) -> "OUNIT_BENCH"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OR) -> "OR"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OPTLABEL) -> "OPTLABEL"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_OPEN) -> "OPEN"
@@ -83,7 +74,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LBRACE) -> "LBRACE"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LAZY) -> "LAZY"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_LABEL) -> "LABEL"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_JSNEW) -> "JSNEW"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_INT64) -> "INT64"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_INT32) -> "INT32"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_INT) -> "INT"
@@ -123,7 +113,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DOT) -> "DOT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DONE) -> "DONE"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_DO) -> "DO"
-  | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_CUSTOM_BANG) -> "CUSTOM_BANG"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_CONSTRAINT) -> "CONSTRAINT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COMMENT) -> "COMMENT"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_COMMA) -> "COMMA"
@@ -145,7 +134,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_AMPERSAND) -> "AMPERSAND"
   | MenhirInterpreter.X (MenhirInterpreter.T MenhirInterpreter.T_AMPERAMPER) -> "AMPERAMPER"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_with_type_binder) -> "with_type_binder"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_with_extensions) -> "with_extensions"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_with_constraints) -> "with_constraints"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_with_constraint) -> "with_constraint"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_virtual_flag) -> "virtual_flag"
@@ -219,7 +207,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameters) -> "optional_type_parameters"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter_list) -> "optional_type_parameter_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter) -> "optional_type_parameter"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_option_STRING_) -> "option_STRING_"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_semi) -> "opt_semi"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_default) -> "opt_default"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_opt_bar) -> "opt_bar"
@@ -284,7 +271,6 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_ext_attributes) -> "ext_attributes"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr_semi_list) -> "expr_semi_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr_open) -> "expr_open"
-  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr_comma_opt_list) -> "expr_comma_opt_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr_comma_list) -> "expr_comma_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_expr) -> "expr"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_direction_flag) -> "direction_flag"
@@ -355,7 +341,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
    | None -> Printf.sprintf "STRING(%S)" s) )
   | MenhirInterpreter.T MenhirInterpreter.T_STAR -> (fun _ -> "STAR")
   | MenhirInterpreter.T MenhirInterpreter.T_SIG -> (fun _ -> "SIG")
-  | MenhirInterpreter.T MenhirInterpreter.T_SHARPSHARP -> (fun _ -> "SHARPSHARP")
   | MenhirInterpreter.T MenhirInterpreter.T_SHARPOP -> (Printf.sprintf "SHARPOP(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_SHARP -> (fun _ -> "SHARP")
   | MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI -> (fun _ -> "SEMISEMI")
@@ -373,14 +358,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_PLUSDOT -> (fun _ -> "PLUSDOT")
   | MenhirInterpreter.T MenhirInterpreter.T_PLUS -> (fun _ -> "PLUS")
   | MenhirInterpreter.T MenhirInterpreter.T_PERCENT -> (fun _ -> "PERCENT")
-  | MenhirInterpreter.T MenhirInterpreter.T_P4_QUOTATION -> (fun _ -> "P4_QUOTATION")
-  | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_UNIT -> (fun _ -> "OUNIT_TEST_UNIT")
-  | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_MODULE -> (fun _ -> "OUNIT_TEST_MODULE")
-  | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST -> (fun _ -> "OUNIT_TEST")
-  | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_MODULE -> (fun _ -> "OUNIT_BENCH_MODULE")
-  | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_INDEXED -> (fun _ -> "OUNIT_BENCH_INDEXED")
-  | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_FUN -> (fun _ -> "OUNIT_BENCH_FUN")
-  | MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH -> (fun _ -> "OUNIT_BENCH")
   | MenhirInterpreter.T MenhirInterpreter.T_OR -> (fun _ -> "OR")
   | MenhirInterpreter.T MenhirInterpreter.T_OPTLABEL -> (Printf.sprintf "OPTLABEL(%S)")
   | MenhirInterpreter.T MenhirInterpreter.T_OPEN -> (fun _ -> "OPEN")
@@ -417,7 +394,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_LBRACE -> (fun _ -> "LBRACE")
   | MenhirInterpreter.T MenhirInterpreter.T_LAZY -> (fun _ -> "LAZY")
   | MenhirInterpreter.T MenhirInterpreter.T_LABEL -> (Printf.sprintf "LABEL(%S)")
-  | MenhirInterpreter.T MenhirInterpreter.T_JSNEW -> (fun _ -> "JSNEW")
   | MenhirInterpreter.T MenhirInterpreter.T_INT64 -> (Printf.sprintf "INT64(%Ld)")
   | MenhirInterpreter.T MenhirInterpreter.T_INT32 -> (Printf.sprintf "INT(%ld)")
   | MenhirInterpreter.T MenhirInterpreter.T_INT -> (Printf.sprintf "INT(%d)")
@@ -457,7 +433,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_DOT -> (fun _ -> "DOT")
   | MenhirInterpreter.T MenhirInterpreter.T_DONE -> (fun _ -> "DONE")
   | MenhirInterpreter.T MenhirInterpreter.T_DO -> (fun _ -> "DO")
-  | MenhirInterpreter.T MenhirInterpreter.T_CUSTOM_BANG -> (fun _ -> "CUSTOM_BANG")
   | MenhirInterpreter.T MenhirInterpreter.T_CONSTRAINT -> (fun _ -> "CONSTRAINT")
   | MenhirInterpreter.T MenhirInterpreter.T_COMMENT -> (fun _ -> "COMMENT")
   | MenhirInterpreter.T MenhirInterpreter.T_COMMA -> (fun _ -> "COMMA")
@@ -479,7 +454,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.T MenhirInterpreter.T_AMPERSAND -> (fun _ -> "AMPERSAND")
   | MenhirInterpreter.T MenhirInterpreter.T_AMPERAMPER -> (fun _ -> "AMPERAMPER")
   | MenhirInterpreter.N MenhirInterpreter.N_with_type_binder -> (fun _ -> "with_type_binder")
-  | MenhirInterpreter.N MenhirInterpreter.N_with_extensions -> (fun _ -> "with_extensions")
   | MenhirInterpreter.N MenhirInterpreter.N_with_constraints -> (fun _ -> "with_constraints")
   | MenhirInterpreter.N MenhirInterpreter.N_with_constraint -> (fun _ -> "with_constraint")
   | MenhirInterpreter.N MenhirInterpreter.N_virtual_flag -> (fun _ -> "virtual_flag")
@@ -553,7 +527,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameters -> (fun _ -> "optional_type_parameters")
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter_list -> (fun _ -> "optional_type_parameter_list")
   | MenhirInterpreter.N MenhirInterpreter.N_optional_type_parameter -> (fun _ -> "optional_type_parameter")
-  | MenhirInterpreter.N MenhirInterpreter.N_option_STRING_ -> (fun _ -> "option_STRING_")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_semi -> (fun _ -> "opt_semi")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_default -> (fun _ -> "opt_default")
   | MenhirInterpreter.N MenhirInterpreter.N_opt_bar -> (fun _ -> "opt_bar")
@@ -618,7 +591,6 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_ext_attributes -> (fun _ -> "ext_attributes")
   | MenhirInterpreter.N MenhirInterpreter.N_expr_semi_list -> (fun _ -> "expr_semi_list")
   | MenhirInterpreter.N MenhirInterpreter.N_expr_open -> (fun _ -> "expr_open")
-  | MenhirInterpreter.N MenhirInterpreter.N_expr_comma_opt_list -> (fun _ -> "expr_comma_opt_list")
   | MenhirInterpreter.N MenhirInterpreter.N_expr_comma_list -> (fun _ -> "expr_comma_list")
   | MenhirInterpreter.N MenhirInterpreter.N_expr -> (fun _ -> "expr")
   | MenhirInterpreter.N MenhirInterpreter.N_direction_flag -> (fun _ -> "direction_flag")
@@ -685,7 +657,6 @@ let print_token = function
   | STRING v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STRING) v
   | STAR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_STAR) ()
   | SIG -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SIG) ()
-  | SHARPSHARP -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SHARPSHARP) ()
   | SHARPOP v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SHARPOP) v
   | SHARP -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SHARP) ()
   | SEMISEMI -> print_value (MenhirInterpreter.T MenhirInterpreter.T_SEMISEMI) ()
@@ -703,14 +674,6 @@ let print_token = function
   | PLUSDOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_PLUSDOT) ()
   | PLUS -> print_value (MenhirInterpreter.T MenhirInterpreter.T_PLUS) ()
   | PERCENT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_PERCENT) ()
-  | P4_QUOTATION -> print_value (MenhirInterpreter.T MenhirInterpreter.T_P4_QUOTATION) ()
-  | OUNIT_TEST_UNIT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_UNIT) ()
-  | OUNIT_TEST_MODULE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST_MODULE) ()
-  | OUNIT_TEST -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_TEST) ()
-  | OUNIT_BENCH_MODULE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_MODULE) ()
-  | OUNIT_BENCH_INDEXED -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_INDEXED) ()
-  | OUNIT_BENCH_FUN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH_FUN) ()
-  | OUNIT_BENCH -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OUNIT_BENCH) ()
   | OR -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OR) ()
   | OPTLABEL v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OPTLABEL) v
   | OPEN -> print_value (MenhirInterpreter.T MenhirInterpreter.T_OPEN) ()
@@ -747,7 +710,6 @@ let print_token = function
   | LBRACE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LBRACE) ()
   | LAZY -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LAZY) ()
   | LABEL v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_LABEL) v
-  | JSNEW -> print_value (MenhirInterpreter.T MenhirInterpreter.T_JSNEW) ()
   | INT64 v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_INT64) v
   | INT32 v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_INT32) v
   | INT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_INT) v
@@ -787,7 +749,6 @@ let print_token = function
   | DOT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DOT) ()
   | DONE -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DONE) ()
   | DO -> print_value (MenhirInterpreter.T MenhirInterpreter.T_DO) ()
-  | CUSTOM_BANG -> print_value (MenhirInterpreter.T MenhirInterpreter.T_CUSTOM_BANG) ()
   | CONSTRAINT -> print_value (MenhirInterpreter.T MenhirInterpreter.T_CONSTRAINT) ()
   | COMMENT v -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COMMENT) v
   | COMMA -> print_value (MenhirInterpreter.T MenhirInterpreter.T_COMMA) ()
@@ -831,7 +792,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_STRING -> STRING v
   | MenhirInterpreter.T_STAR -> STAR
   | MenhirInterpreter.T_SIG -> SIG
-  | MenhirInterpreter.T_SHARPSHARP -> SHARPSHARP
   | MenhirInterpreter.T_SHARPOP -> SHARPOP v
   | MenhirInterpreter.T_SHARP -> SHARP
   | MenhirInterpreter.T_SEMISEMI -> SEMISEMI
@@ -849,14 +809,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_PLUSDOT -> PLUSDOT
   | MenhirInterpreter.T_PLUS -> PLUS
   | MenhirInterpreter.T_PERCENT -> PERCENT
-  | MenhirInterpreter.T_P4_QUOTATION -> P4_QUOTATION
-  | MenhirInterpreter.T_OUNIT_TEST_UNIT -> OUNIT_TEST_UNIT
-  | MenhirInterpreter.T_OUNIT_TEST_MODULE -> OUNIT_TEST_MODULE
-  | MenhirInterpreter.T_OUNIT_TEST -> OUNIT_TEST
-  | MenhirInterpreter.T_OUNIT_BENCH_MODULE -> OUNIT_BENCH_MODULE
-  | MenhirInterpreter.T_OUNIT_BENCH_INDEXED -> OUNIT_BENCH_INDEXED
-  | MenhirInterpreter.T_OUNIT_BENCH_FUN -> OUNIT_BENCH_FUN
-  | MenhirInterpreter.T_OUNIT_BENCH -> OUNIT_BENCH
   | MenhirInterpreter.T_OR -> OR
   | MenhirInterpreter.T_OPTLABEL -> OPTLABEL v
   | MenhirInterpreter.T_OPEN -> OPEN
@@ -893,7 +845,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_LBRACE -> LBRACE
   | MenhirInterpreter.T_LAZY -> LAZY
   | MenhirInterpreter.T_LABEL -> LABEL v
-  | MenhirInterpreter.T_JSNEW -> JSNEW
   | MenhirInterpreter.T_INT64 -> INT64 v
   | MenhirInterpreter.T_INT32 -> INT32 v
   | MenhirInterpreter.T_INT -> INT v
@@ -933,7 +884,6 @@ let token_of_terminal (type a) (t : a MenhirInterpreter.terminal) (v : a) : toke
   | MenhirInterpreter.T_DOT -> DOT
   | MenhirInterpreter.T_DONE -> DONE
   | MenhirInterpreter.T_DO -> DO
-  | MenhirInterpreter.T_CUSTOM_BANG -> CUSTOM_BANG
   | MenhirInterpreter.T_CONSTRAINT -> CONSTRAINT
   | MenhirInterpreter.T_COMMENT -> COMMENT v
   | MenhirInterpreter.T_COMMA -> COMMA

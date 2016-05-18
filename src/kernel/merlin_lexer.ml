@@ -171,7 +171,7 @@ let is_quote = function
 let is_operator = function
   | PREFIXOP s
   | INFIXOP0 s | INFIXOP1 s | INFIXOP2 s | INFIXOP3 s | INFIXOP4 s -> Some s
-  | BANG -> Some "!"        | CUSTOM_BANG -> Some "!"
+  | BANG -> Some "!"
   | PERCENT -> Some "%"
   | PLUS -> Some "+"        | PLUSDOT -> Some "+."
   | MINUS -> Some "-"       | MINUSDOT -> Some "-."

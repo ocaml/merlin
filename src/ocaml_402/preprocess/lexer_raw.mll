@@ -490,9 +490,7 @@ rule token state = parse
   | "[%%" { return LBRACKETPERCENTPERCENT }
   | "[@@" { return LBRACKETATAT }
   | "[@@@" { return LBRACKETATATAT }
-  (* Custom-printf is implemented by generating a custom BANG token *)
-  | "!"  { return (try Hashtbl.find state.keywords "!"
-                   with Not_found -> BANG) }
+  | "!"  { return BANG }
   | "!=" { return (INFIXOP0 "!=") }
   | "+"  { return PLUS }
   | "+." { return PLUSDOT }
@@ -528,15 +526,6 @@ rule token state = parse
               return (try Hashtbl.find state.keywords s
                       with Not_found -> SHARPOP s) }
   | eof { return EOF }
-
-  | "<:" identchar* ("@" identchar*)? "<"
-  | "<@" identchar* "<"
-  | "<<" identchar
-    { let start = lexbuf.lex_start_p in
-      p4_quotation lexbuf >>= fun () ->
-      lexbuf.lex_start_p <- start;
-      return P4_QUOTATION
-    }
 
   | _
       { fail (Illegal_character (Lexing.lexeme_char lexbuf 0))
@@ -707,20 +696,6 @@ and skip_sharp_bang state = parse
   | "#!" [^ '\n']* '\n'
       { update_loc lexbuf None 1 false 0; token state lexbuf }
   | "" { token state lexbuf }
-
-and p4_quotation = parse
-  | "<" (":" identchar*)? ("@" identchar*)? "<"
-      { p4_quotation lexbuf }
-  (* FIXME: This is fake *)
-  | ">>"
-      { return () }
-  | newline
-      { update_loc lexbuf None 1 false 0;
-        p4_quotation lexbuf }
-  | eof
-      { fail Unterminated_string (Location.curr lexbuf) }
-  | _
-      { p4_quotation lexbuf }
 
 {
   type comment = string * Location.t

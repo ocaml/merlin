@@ -490,14 +490,18 @@ let make_loc startpos endpos = {
 %[@recovery.header
   open Asttypes
   open Parsetree
+  open Ast_helper
 
   let default_loc = ref Location.none
 
-  let default_expr () = {Fake.any_val' with pexp_loc = !default_loc}
-  let default_pattern () = Ast_helper.Pat.any ~loc:!default_loc ()
+  let default_expr () = 
+    let id = Location.mkloc "merlin.hole" !default_loc in
+    Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
 
-  let default_module_expr () = Ast_helper.Mod.structure ~loc:!default_loc[]
-  let default_module_type () = Ast_helper.Mty.signature ~loc:!default_loc[]
+  let default_pattern () = Pat.any ~loc:!default_loc ()
+
+  let default_module_expr () = Mod.structure ~loc:!default_loc[]
+  let default_module_type () = Mty.signature ~loc:!default_loc[]
 ]
 
 #define $loc (make_loc $symbolstartpos $endpos)
@@ -722,17 +726,6 @@ let make_loc startpos endpos = {
 %token FINALLY_LWT [@cost 1]
 %token FOR_LWT [@cost 1]
 %token WHILE_LWT [@cost 1]
-%token JSNEW [@cost 1]
-%token P4_QUOTATION [@cost 1]
-%token CUSTOM_BANG [@cost 1]
-%token OUNIT_TEST [@cost 1]
-%token OUNIT_TEST_UNIT [@cost 1]
-%token OUNIT_TEST_MODULE [@cost 1]
-%token OUNIT_BENCH [@cost 1]
-%token OUNIT_BENCH_FUN [@cost 1]
-%token OUNIT_BENCH_INDEXED [@cost 1]
-%token OUNIT_BENCH_MODULE [@cost 1]
-%token SHARPSHARP [@cost 1]
 
 %token DOTLESS [@cost 1]
 %token DOTTILDE [@cost 1]
@@ -795,7 +788,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_constant_constructor     /* cf. simple_expr (C versus C x) */
 %nonassoc prec_constr_appl              /* above AS BAR COLONCOLON COMMA */
 %nonassoc below_SHARP
-%nonassoc SHARP SHARPSHARP              /* simple_expr/toplevel_directive */
+%nonassoc SHARP                         /* simple_expr/toplevel_directive */
 %left     SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
@@ -804,7 +797,6 @@ The precedences must be listed from low to high.
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
-          P4_QUOTATION JSNEW CUSTOM_BANG
           DOTLESS DOTTILDE GREATERDOT QUESTIONQUESTION
 
 

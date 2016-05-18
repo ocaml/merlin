@@ -229,8 +229,8 @@ let varify_constructors var_names t =
       | Ptyp_var x ->
           check_variable var_names t.ptyp_loc x;
           Ptyp_var x
-      | Ptyp_arrow (label,core_type,core_type') ->
-          Ptyp_arrow(label, loop core_type, loop core_type')
+      | Ptyp_arrow (label,core_type1,core_type2) ->
+          Ptyp_arrow(label, loop core_type1, loop core_type2)
       | Ptyp_tuple lst -> Ptyp_tuple (List.map loop lst)
       | Ptyp_constr( { txt = Lident s }, []) when List.mem s var_names ->
           Ptyp_var s
@@ -312,14 +312,18 @@ let let_operator startpos endpos op bindings cont =
 %[@recovery.header
   open Asttypes
   open Parsetree
+  open Ast_helper
 
   let default_loc = ref Location.none
 
-  let default_expr () = {Fake.any_val' with pexp_loc = !default_loc}
-  let default_pattern () = Ast_helper.Pat.any ~loc:!default_loc ()
+  let default_expr () = 
+    let id = Location.mkloc "merlin.hole" !default_loc in
+    Exp.mk ~loc:!default_loc (Pexp_extension (id, PStr []))
 
-  let default_module_expr () = Ast_helper.Mod.structure ~loc:!default_loc[]
-  let default_module_type () = Ast_helper.Mty.signature ~loc:!default_loc[]
+  let default_pattern () = Pat.any ~loc:!default_loc ()
+
+  let default_module_expr () = Mod.structure ~loc:!default_loc[]
+  let default_module_type () = Mty.signature ~loc:!default_loc[]
 ]
 
 (* Tokens *)
@@ -455,18 +459,7 @@ let let_operator startpos endpos op bindings cont =
 %token FINALLY_LWT [@cost 1]
 %token FOR_LWT [@cost 1]
 %token WHILE_LWT [@cost 1]
-%token JSNEW [@cost 1]
-%token P4_QUOTATION [@cost 1]
-%token CUSTOM_BANG [@cost 1]
-%token OUNIT_TEST [@cost 1]
-%token OUNIT_TEST_UNIT [@cost 1]
-%token OUNIT_TEST_MODULE [@cost 1]
-%token OUNIT_BENCH [@cost 1]
-%token OUNIT_BENCH_FUN [@cost 1]
-%token OUNIT_BENCH_INDEXED [@cost 1]
-%token OUNIT_BENCH_MODULE [@cost 1]
 %token NONREC [@cost 1]
-%token SHARPSHARP [@cost 1]
 
 %token DOTLESS [@cost 1]
 %token DOTTILDE [@cost 1]
@@ -531,7 +524,7 @@ The precedences must be listed from low to high.
 %nonassoc prec_constr_appl              (* above AS BAR COLONCOLON COMMA *)
 %left     prec_escape
 %nonassoc below_SHARP
-%nonassoc SHARP SHARPSHARP              (* simple_expr/toplevel_directive *)
+%nonassoc SHARP                         (* simple_expr/toplevel_directive *)
 %left     SHARPOP
 %nonassoc below_DOT
 %nonassoc DOT
@@ -541,7 +534,6 @@ The precedences must be listed from low to high.
           LBRACE LBRACELESS LBRACKET LBRACKETBAR LIDENT LPAREN
           NEW NATIVEINT PREFIXOP STRING TRUE UIDENT
           LBRACKETPERCENT LBRACKETPERCENTPERCENT
-          P4_QUOTATION JSNEW CUSTOM_BANG
           DOTLESS DOTTILDE GREATERDOT QUESTIONQUESTION
 
 (* Entry points *)
@@ -2495,90 +2487,12 @@ structure_item:
     { let ty = List.map fake_tydecl decls in
       let loc = rloc $startpos($2) $endpos($2) in
       mkstr $startpos $endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) }
-| TYPE [@item "type"] type_declarations WITH with_extensions
-    {
-      let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
-      let ty = List.map fake_tydecl $2 in
-      let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $4 in
-      mkstr $startpos $endpos (Pstr_type(List.rev $2)) @ ast
-    }
-| TYPE NONREC [@item "type nonrec"] type_declarations WITH with_extensions
-    {
-      let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
-      let ty = List.map fake_tydecl $3 in
-      let ast = Fake.TypeWith.generate_definitions ~ty ?ghost_loc $5 in
-      let loc = rloc $startpos($2) $endpos($2) in
-      mkstr $startpos $endpos (Pstr_type(List.rev_map (tag_nonrec loc) ty)) @ ast
-    }
-| EXCEPTION [@item "exception"]
-  str_exception_declaration WITH with_extensions
-    { mkstr $startpos $endpos (Pstr_exception $2) }
-| OUNIT_TEST option(STRING) EQUAL seq_expr
-    { let expr = Fake.app Fake.OUnit.force_bool $4 in
-      mkstr $startpos $endpos (Pstr_eval (expr,[]))
-    }
-| OUNIT_TEST_UNIT option(STRING) EQUAL seq_expr
-    { let expr = Fake.app Fake.OUnit.force_unit $4 in
-      mkstr $startpos $endpos (Pstr_eval (expr,[]))
-    }
-| OUNIT_TEST_MODULE option(STRING) EQUAL module_expr
-    { let name = Fake.OUnit.fresh_test_module_ident () in
-      mkstr $startpos $endpos
-         (Pstr_module(Mb.mk (mkrhs $startpos($1) $endpos($2) name) $4))
-    }
-| OUNIT_BENCH STRING EQUAL seq_expr
-    { let expr = $4 in
-      mkstr $startpos $endpos (Pstr_eval (expr,[]))
-    }
-| OUNIT_BENCH_FUN STRING EQUAL seq_expr
-    { let expr = Fake.app Fake.OUnit.force_unit_arrow_unit $4 in
-      mkstr $startpos $endpos (Pstr_eval (expr,[]))
-    }
-| OUNIT_BENCH_INDEXED STRING val_ident simple_expr EQUAL seq_expr
-    { let f_arg = mkpat $startpos $endpos
-                      (Ppat_var (mkrhs $startpos($3) $endpos($3) $3))
-      in
-      let f_fun = mkexp $startpos $endpos
-          (Pexp_fun("", None, f_arg, $6))
-      in
-      let expr = Fake.(app (app OUnit.force_indexed f_fun) $4) in
-      mkstr $startpos $endpos (Pstr_eval (expr,[]))
-    }
-| OUNIT_BENCH_MODULE STRING EQUAL module_expr
-    { let name = Fake.OUnit.fresh_test_module_ident () in
-      mkstr $startpos $endpos
-         (Pstr_module(Mb.mk (mkrhs $startpos($1) $endpos($2) name) $4))
-    }
-;
 
 signature_item:
 | TYPE NONREC [@item "type nonrec"] decls = type_declarations
     { let ty = List.map fake_tydecl decls in
       let loc = rloc $startpos($2) $endpos($2) in
       mksig $startpos $endpos (Psig_type (List.rev_map (tag_nonrec loc) ty)) }
-| TYPE [@item "type"] type_declarations WITH with_extensions
-    {
-      let ghost_loc = Some (gloc $startpos($4) $endpos($4)) in
-      let ty = List.map fake_tydecl $2 in
-      let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $4 in
-      mksig $startpos $endpos (Psig_type(List.rev $2)) @ decls
-    }
-| TYPE NONREC [@item "type nonrec"] type_declarations WITH with_extensions
-    {
-      let ghost_loc = Some (gloc $startpos($5) $endpos($5)) in
-      let ty = List.map fake_tydecl $3 in
-      let decls = Fake.TypeWith.generate_sigs ~ty ?ghost_loc $5 in
-      let loc = rloc $startpos($2) $endpos($2) in
-      mksig $startpos $endpos (Psig_type(List.rev_map (tag_nonrec loc) ty)) @ decls
-    }
-| EXCEPTION [@item "exception"]
-  sig_exception_declaration WITH with_extensions
-    { mksig $startpos $endpos (Psig_exception $2) }
-
-with_extensions :
-| LIDENT COMMA with_extensions { $1 :: $3 }
-| LIDENT { [$1] }
-
 
 expr:
 | LET_LWT [@item "lwt"]
@@ -2600,12 +2514,12 @@ expr:
         (Pexp_try(Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 }
 | TRY_LWT [@item "try_lwt"]
   ext_attributes seq_expr FINALLY_LWT seq_expr
-    { Fake.app (Fake.app Fake.Lwt.finally' $3) $5 }
+    { Fake.app (Fake.app Fake.Lwt.finally_ $3) $5 }
 | TRY_LWT [@item "try_lwt"]
   ext_attributes seq_expr WITH opt_bar match_cases FINALLY_LWT seq_expr
     { let expr = mkexp_attrs $startpos $endpos
         (Pexp_try (Fake.app Fake.Lwt.in_lwt $3, List.rev $6)) $2 in
-      Fake.app (Fake.app Fake.Lwt.finally' expr) $8 }
+      Fake.app (Fake.app Fake.Lwt.finally_ expr) $8 }
 | WHILE_LWT [@item "while_lwt"]
   ext_attributes seq_expr
   DO [@item "while_lwt body"] seq_expr DONE
@@ -2626,91 +2540,10 @@ expr:
     }
 ;
 
-expr:
-| simple_expr SHARPSHARP label LESSMINUS expr
-    { let inst = Fake.(app Js.un_js $1) in
-      let field = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
-      let prop = Fake.(app Js.un_prop field) in
-      let setter = mkexp $startpos $endpos($3) (Pexp_send(prop,"set")) in
-      reloc_exp $startpos $endpos
-      Fake.(app setter $5)
-    }
-
-| simple_expr SHARPSHARP LESSMINUS expr
-    { let inst = Fake.(app Js.un_js $1) in
-      let field = mkexp $startpos $startpos($4) (Pexp_send(inst, "")) in
-      let prop = Fake.(app Js.un_prop field) in
-      let setter = mkexp $startpos $startpos($4) (Pexp_send(prop,"set")) in
-      reloc_exp $startpos $endpos
-      Fake.(app setter $4)
-    }
-;
-
-simple_expr:
-| simple_expr SHARPSHARP [@shift_token (1,LIDENT "")] label
-    { let inst = Fake.(app Js.un_js $1) in
-      let field = mkexp $startpos $endpos (Pexp_send(inst, $3)) in
-      let prop = Fake.(app Js.un_prop field) in
-      mkexp $startpos $endpos (Pexp_send(prop,"get"))
-    }
-| simple_expr SHARPSHARP label LPAREN RPAREN
-    { let inst = Fake.(app Js.un_js $1) in
-      let jsmeth = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
-      Fake.(app Js.un_meth jsmeth)
-    }
-| simple_expr SHARPSHARP label LPAREN expr_comma_opt_list RPAREN
-    { let inst = Fake.(app Js.un_js $1) in
-      let meth = mkexp $startpos $endpos($3) (Pexp_send(inst, $3)) in
-      let jsmeth =
-        List.fold_left
-          (fun meth arg ->
-            reloc_exp meth.pexp_loc.Location.loc_start
-                      arg.pexp_loc.Location.loc_end
-            (Fake.app meth arg))
-          meth (List.rev $5)
-      in
-      Fake.(app Js.un_meth jsmeth)
-    }
-
-simple_expr:
-| P4_QUOTATION
-    { reloc_exp $startpos $endpos Fake.any_val' }
-(* Js_of_ocaml extension *)
-| JSNEW simple_expr LPAREN RPAREN
-    { reloc_exp $startpos $endpos
-      Fake.(app Js.un_constr $2)
-    }
-| JSNEW simple_expr LPAREN expr_comma_opt_list RPAREN
-    { let jsnew' = reloc_exp $startpos($1) $endpos($1) Fake.Js.un_constr in
-      let constr = reloc_exp $startpos($1) $endpos($2) Fake.(app jsnew' $2) in
-      reloc_exp $startpos $endpos
-      (List.fold_left
-         (fun constr arg ->
-           reloc_exp constr.pexp_loc.Location.loc_start
-                     arg.pexp_loc.Location.loc_end
-           (Fake.app constr arg))
-         constr (List.rev $4))
-    }
-
 expr_comma_opt_list:
     expr_comma_opt_list COMMA expr              { $3 :: $1 }
   | expr %prec COMMA                            { [$1] }
 ;
-
-(* Custom-printf extension *)
-simple_expr:
-| CUSTOM_BANG simple_expr
-    { match Fake.Custom_printf.bang $startpos $endpos $2 with
-      | None -> mkexp $startpos $endpos (Pexp_apply(mkoperator $startpos($1) $endpos($1) "!", ["",$2]))
-      | Some expr -> expr }
-
-operator:
-| CUSTOM_BANG
-    { "!" }
-
-override_flag:
-| CUSTOM_BANG
-    { Override }
 
 (* Meta OCaml *)
 let_operator:

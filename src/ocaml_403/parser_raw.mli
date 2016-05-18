@@ -21,7 +21,6 @@ type token =
   | STRING of (string * string option)
   | STAR
   | SIG
-  | SHARPSHARP
   | SHARPOP of (string)
   | SHARP
   | SEMISEMI
@@ -39,14 +38,6 @@ type token =
   | PLUSDOT
   | PLUS
   | PERCENT
-  | P4_QUOTATION
-  | OUNIT_TEST_UNIT
-  | OUNIT_TEST_MODULE
-  | OUNIT_TEST
-  | OUNIT_BENCH_MODULE
-  | OUNIT_BENCH_INDEXED
-  | OUNIT_BENCH_FUN
-  | OUNIT_BENCH
   | OR
   | OPTLABEL of (string)
   | OPEN
@@ -82,7 +73,6 @@ type token =
   | LBRACE
   | LAZY
   | LABEL of (string)
-  | JSNEW
   | INT of (string * char option)
   | INITIALIZER
   | INHERIT
@@ -121,7 +111,6 @@ type token =
   | DONE
   | DOCSTRING of (Docstrings.docstring)
   | DO
-  | CUSTOM_BANG
   | CONSTRAINT
   | COMMENT of (string * Location.t)
   | COMMA
@@ -185,7 +174,6 @@ module MenhirInterpreter : sig
     | T_STRING : (string * string option) terminal
     | T_STAR : unit terminal
     | T_SIG : unit terminal
-    | T_SHARPSHARP : unit terminal
     | T_SHARPOP : (string) terminal
     | T_SHARP : unit terminal
     | T_SEMISEMI : unit terminal
@@ -203,14 +191,6 @@ module MenhirInterpreter : sig
     | T_PLUSDOT : unit terminal
     | T_PLUS : unit terminal
     | T_PERCENT : unit terminal
-    | T_P4_QUOTATION : unit terminal
-    | T_OUNIT_TEST_UNIT : unit terminal
-    | T_OUNIT_TEST_MODULE : unit terminal
-    | T_OUNIT_TEST : unit terminal
-    | T_OUNIT_BENCH_MODULE : unit terminal
-    | T_OUNIT_BENCH_INDEXED : unit terminal
-    | T_OUNIT_BENCH_FUN : unit terminal
-    | T_OUNIT_BENCH : unit terminal
     | T_OR : unit terminal
     | T_OPTLABEL : (string) terminal
     | T_OPEN : unit terminal
@@ -246,7 +226,6 @@ module MenhirInterpreter : sig
     | T_LBRACE : unit terminal
     | T_LAZY : unit terminal
     | T_LABEL : (string) terminal
-    | T_JSNEW : unit terminal
     | T_INT : (string * char option) terminal
     | T_INITIALIZER : unit terminal
     | T_INHERIT : unit terminal
@@ -285,7 +264,6 @@ module MenhirInterpreter : sig
     | T_DONE : unit terminal
     | T_DOCSTRING : (Docstrings.docstring) terminal
     | T_DO : unit terminal
-    | T_CUSTOM_BANG : unit terminal
     | T_CONSTRAINT : unit terminal
     | T_COMMENT : (string * Location.t) terminal
     | T_COMMA : unit terminal
