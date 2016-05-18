@@ -262,7 +262,7 @@ let checks ?pos t =
     Includemod.compunit
       (resume_env_at_steps t [])
       (Merlin_source.unitname (Merlin_reader.source t.reader))
-      sign "(inferred signature)" sign in
+      sign "(inferred signature)" (Typemod.simplify_signature sign) in
   Typecore.delayed_checks := checks;
   let caught = ref [] in
   Parsing_aux.catch_warnings caught
