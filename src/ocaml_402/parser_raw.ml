@@ -176,7 +176,11 @@ let mkoption d =
   Typ.mk ~loc (Ptyp_constr(mkloc (Ldot (Lident "*predef*", "option")) loc,[d]))
 let reloc_pat startpos endpos x= { x with ppat_loc = rloc startpos endpos };;
 let reloc_exp startpos endpos x= { x with pexp_loc = rloc startpos endpos };;
-let reloc_exp_fake startpos endpos x =
+let merloc startpos ?endpos x =
+  let endpos = match endpos with
+    | None -> x.pexp_loc.Location.loc_end
+    | Some endpos -> endpos
+  in
   let str = mkloc "merlin.loc" (rloc startpos endpos) in
   { x with pexp_attributes = (str , PStr []) :: x.pexp_attributes }
 let mkoperator startpos endpos name =
@@ -4425,8 +4429,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _startpos = _startpos__1_ in
-            ( let expr = reloc_exp_fake _endpos__5_ _endpos _6 in
-      let expr = Pexp_let(_3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) _4, expr) in
+            ( let expr = Pexp_let(_3, List.rev_map (fake_vb_app Fake.Lwt.un_lwt) _4, (merloc _endpos__5_ _6)) in
       Fake.app Fake.Lwt.in_lwt (mkexp_attrs _startpos _endpos expr _2) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
@@ -4945,13 +4948,13 @@ module Tables = struct
       (fun _menhir_env ->
         let _menhir_stack = _menhir_env.MenhirLib.EngineTypes.stack in
         let {
-          MenhirLib.EngineTypes.semv = expr;
-          MenhirLib.EngineTypes.startp = _startpos_expr_;
-          MenhirLib.EngineTypes.endp = _endpos_expr_;
+          MenhirLib.EngineTypes.semv = _6;
+          MenhirLib.EngineTypes.startp = _startpos__6_;
+          MenhirLib.EngineTypes.endp = _endpos__6_;
           MenhirLib.EngineTypes.next = {
-            MenhirLib.EngineTypes.semv = _in;
-            MenhirLib.EngineTypes.startp = _startpos__in_;
-            MenhirLib.EngineTypes.endp = _endpos__in_;
+            MenhirLib.EngineTypes.semv = _5;
+            MenhirLib.EngineTypes.startp = _startpos__5_;
+            MenhirLib.EngineTypes.endp = _endpos__5_;
             MenhirLib.EngineTypes.next = {
               MenhirLib.EngineTypes.semv = _4;
               MenhirLib.EngineTypes.startp = _startpos__4_;
@@ -4976,19 +4979,18 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let expr : (Parsetree.expression) = Obj.magic expr in
-        let _in : unit = Obj.magic _in in
+        let _6 : (Parsetree.expression) = Obj.magic _6 in
+        let _5 : unit = Obj.magic _5 in
         let _4 : (Parsetree.value_binding list) = Obj.magic _4 in
         let _3 : (Asttypes.rec_flag) = Obj.magic _3 in
         let _2 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
-        let _endpos = _endpos_expr_ in
-        let _v : (Parsetree.expression) = let _endpos = _endpos_expr_ in
+        let _endpos = _endpos__6_ in
+        let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _startpos = _startpos__1_ in
-            ( let expr = reloc_exp_fake _endpos__in_ _endpos expr in
-      mkexp_attrs _startpos _endpos (Pexp_let(_3, List.rev _4, expr)) _2 ) in
+            ( mkexp_attrs _startpos _endpos (Pexp_let(_3, List.rev _4, (merloc _endpos__5_ _6))) _2 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -5047,13 +5049,13 @@ module Tables = struct
       (fun _menhir_env ->
         let _menhir_stack = _menhir_env.MenhirLib.EngineTypes.stack in
         let {
-          MenhirLib.EngineTypes.semv = expr;
-          MenhirLib.EngineTypes.startp = _startpos_expr_;
-          MenhirLib.EngineTypes.endp = _endpos_expr_;
+          MenhirLib.EngineTypes.semv = _7;
+          MenhirLib.EngineTypes.startp = _startpos__7_;
+          MenhirLib.EngineTypes.endp = _endpos__7_;
           MenhirLib.EngineTypes.next = {
-            MenhirLib.EngineTypes.semv = _in;
-            MenhirLib.EngineTypes.startp = _startpos__in_;
-            MenhirLib.EngineTypes.endp = _endpos__in_;
+            MenhirLib.EngineTypes.semv = _6;
+            MenhirLib.EngineTypes.startp = _startpos__6_;
+            MenhirLib.EngineTypes.endp = _endpos__6_;
             MenhirLib.EngineTypes.next = {
               MenhirLib.EngineTypes.semv = _5;
               MenhirLib.EngineTypes.startp = _startpos__5_;
@@ -5083,8 +5085,8 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let expr : (Parsetree.expression) = Obj.magic expr in
-        let _in : unit = Obj.magic _in in
+        let _7 : (Parsetree.expression) = Obj.magic _7 in
+        let _6 : unit = Obj.magic _6 in
         let _5 : (Parsetree.module_expr) = Obj.magic _5 in
         let _4 : (string) = Obj.magic _4 in
         let _3 : (string Asttypes.loc option * Parsetree.attributes) = Obj.magic _3 in
@@ -5092,11 +5094,10 @@ module Tables = struct
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
-        let _endpos = _endpos_expr_ in
-        let _v : (Parsetree.expression) = let _endpos = _endpos_expr_ in
+        let _endpos = _endpos__7_ in
+        let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _startpos = _startpos__1_ in
-            ( let expr = reloc_exp_fake _endpos__in_ _endpos expr in
-      mkexp_attrs _startpos _endpos (Pexp_letmodule(mkrhs _startpos__4_ _endpos__4_ _4, _5, expr)) _3 ) in
+            ( mkexp_attrs _startpos _endpos (Pexp_letmodule(mkrhs _startpos__4_ _endpos__4_ _4, _5, (merloc _endpos__6_ _7))) _3 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -5107,13 +5108,13 @@ module Tables = struct
       (fun _menhir_env ->
         let _menhir_stack = _menhir_env.MenhirLib.EngineTypes.stack in
         let {
-          MenhirLib.EngineTypes.semv = expr;
-          MenhirLib.EngineTypes.startp = _startpos_expr_;
-          MenhirLib.EngineTypes.endp = _endpos_expr_;
+          MenhirLib.EngineTypes.semv = _5;
+          MenhirLib.EngineTypes.startp = _startpos__5_;
+          MenhirLib.EngineTypes.endp = _endpos__5_;
           MenhirLib.EngineTypes.next = {
-            MenhirLib.EngineTypes.semv = _in;
-            MenhirLib.EngineTypes.startp = _startpos__in_;
-            MenhirLib.EngineTypes.endp = _endpos__in_;
+            MenhirLib.EngineTypes.semv = _4;
+            MenhirLib.EngineTypes.startp = _startpos__4_;
+            MenhirLib.EngineTypes.endp = _endpos__4_;
             MenhirLib.EngineTypes.next = {
               MenhirLib.EngineTypes.semv = _3;
               MenhirLib.EngineTypes.startp = _startpos__3_;
@@ -5133,20 +5134,19 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let expr : (Parsetree.expression) = Obj.magic expr in
-        let _in : unit = Obj.magic _in in
+        let _5 : (Parsetree.expression) = Obj.magic _5 in
+        let _4 : unit = Obj.magic _4 in
         let _3 : (Asttypes.override_flag * Longident.t Asttypes.loc *
   (string Asttypes.loc option * Parsetree.attributes)) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : unit = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
-        let _endpos = _endpos_expr_ in
-        let _v : (Parsetree.expression) = let _endpos = _endpos_expr_ in
+        let _endpos = _endpos__5_ in
+        let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _startpos = _startpos__1_ in
-           ( let expr = reloc_exp_fake _endpos__in_ _endpos expr in
-     let (flag,id,ext) = _3 in
-      mkexp_attrs _startpos _endpos (Pexp_open(flag, id, expr)) ext ) in
+           ( let (flag,id,ext) = _3 in
+      mkexp_attrs _startpos _endpos (Pexp_open(flag, id, (merloc _endpos__4_ _5))) ext ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -5516,7 +5516,7 @@ module Tables = struct
         let _endpos = _endpos__7_ in
         let _v : (Parsetree.expression) = let _endpos = _endpos__7_ in
         let _startpos = _startpos__1_ in
-            ( mkexp_attrs _startpos _endpos (Pexp_ifthenelse(_3, _5, Some _7)) _2 ) in
+            ( mkexp_attrs _startpos _endpos (Pexp_ifthenelse(_3, (merloc _endpos__4_ _5), Some (merloc _endpos__6_ _7))) _2 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -5563,7 +5563,7 @@ module Tables = struct
         let _endpos = _endpos__5_ in
         let _v : (Parsetree.expression) = let _endpos = _endpos__5_ in
         let _startpos = _startpos__1_ in
-            ( mkexp_attrs _startpos _endpos (Pexp_ifthenelse(_3, _5, None)) _2 ) in
+            ( mkexp_attrs _startpos _endpos (Pexp_ifthenelse(_3, (merloc _endpos__4_ _5), None)) _2 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -5616,7 +5616,7 @@ module Tables = struct
         let _endpos = _endpos__6_ in
         let _v : (Parsetree.expression) = let _endpos = _endpos__6_ in
         let _startpos = _startpos__1_ in
-            ( mkexp_attrs _startpos _endpos (Pexp_while(_3, _5)) _2 ) in
+            ( mkexp_attrs _startpos _endpos (Pexp_while(_3, (merloc _endpos__4_ _5))) _2 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -5693,7 +5693,7 @@ module Tables = struct
         let _endpos = _endpos__10_ in
         let _v : (Parsetree.expression) = let _endpos = _endpos__10_ in
         let _startpos = _startpos__1_ in
-            ( mkexp_attrs _startpos _endpos (Pexp_for(_3, _5, _7, _6, _9)) _2 ) in
+            ( mkexp_attrs _startpos _endpos (Pexp_for(_3, (merloc _endpos__4_ _5), (merloc _endpos__6_ _7), _6, (merloc _endpos__8_ _9))) _2 ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -7542,7 +7542,7 @@ module Tables = struct
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
         let _endpos = _endpos__2_ in
-        let _v : (Parsetree.expression) =     ( _2 ) in
+        let _v : (Parsetree.expression) =     ( (merloc _endpos__1_ _2) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -9539,9 +9539,9 @@ module Tables = struct
       (fun _menhir_env ->
         let _menhir_stack = _menhir_env.MenhirLib.EngineTypes.stack in
         let {
-          MenhirLib.EngineTypes.semv = expr;
-          MenhirLib.EngineTypes.startp = _startpos_expr_;
-          MenhirLib.EngineTypes.endp = _endpos_expr_;
+          MenhirLib.EngineTypes.semv = _3;
+          MenhirLib.EngineTypes.startp = _startpos__3_;
+          MenhirLib.EngineTypes.endp = _endpos__3_;
           MenhirLib.EngineTypes.next = {
             MenhirLib.EngineTypes.semv = _2;
             MenhirLib.EngineTypes.startp = _startpos__2_;
@@ -9555,14 +9555,13 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let expr : (Parsetree.expression) = Obj.magic expr in
+        let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Parsetree.pattern) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
-        let _endpos = _endpos_expr_ in
-        let _v : (Parsetree.case) = let _endpos = _endpos_expr_ in
-            ( Exp.case _1 (reloc_exp_fake _endpos__2_ _endpos expr) ) in
+        let _endpos = _endpos__3_ in
+        let _v : (Parsetree.case) =     ( Exp.case _1 (merloc _endpos__2_ _3) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
@@ -9573,9 +9572,9 @@ module Tables = struct
       (fun _menhir_env ->
         let _menhir_stack = _menhir_env.MenhirLib.EngineTypes.stack in
         let {
-          MenhirLib.EngineTypes.semv = expr;
-          MenhirLib.EngineTypes.startp = _startpos_expr_;
-          MenhirLib.EngineTypes.endp = _endpos_expr_;
+          MenhirLib.EngineTypes.semv = _5;
+          MenhirLib.EngineTypes.startp = _startpos__5_;
+          MenhirLib.EngineTypes.endp = _endpos__5_;
           MenhirLib.EngineTypes.next = {
             MenhirLib.EngineTypes.semv = _4;
             MenhirLib.EngineTypes.startp = _startpos__4_;
@@ -9599,16 +9598,15 @@ module Tables = struct
             };
           };
         } = _menhir_stack in
-        let expr : (Parsetree.expression) = Obj.magic expr in
+        let _5 : (Parsetree.expression) = Obj.magic _5 in
         let _4 : unit = Obj.magic _4 in
         let _3 : (Parsetree.expression) = Obj.magic _3 in
         let _2 : unit = Obj.magic _2 in
         let _1 : (Parsetree.pattern) = Obj.magic _1 in
         let _endpos__0_ = _menhir_stack.MenhirLib.EngineTypes.endp in
         let _startpos = _startpos__1_ in
-        let _endpos = _endpos_expr_ in
-        let _v : (Parsetree.case) = let _endpos = _endpos_expr_ in
-            ( Exp.case _1 ~guard:_3 (reloc_exp_fake _endpos__4_ _endpos expr) ) in
+        let _endpos = _endpos__5_ in
+        let _v : (Parsetree.case) =     ( Exp.case _1 ~guard:(merloc _endpos__2_ _3) (merloc _endpos__4_ _5) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
           MenhirLib.EngineTypes.semv = Obj.repr _v;
