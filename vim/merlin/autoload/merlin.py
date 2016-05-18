@@ -559,7 +559,7 @@ def replace_buffer_portion(start, end, txt):
     nb_lines = 0
     for line in lines:
         nb_lines += 1
-        b[start_line:0] = [ encode(line) ]
+        b[start_line:start_line] = [ encode(line) ]
 
     # Properly reindent the modified lines
     vim.current.window.cursor = (start['line'], 0)
