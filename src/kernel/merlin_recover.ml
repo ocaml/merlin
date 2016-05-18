@@ -249,7 +249,7 @@ struct
           aux (candidates @ acc) candidate.env
     in
     let popped = ref [] in
-    let should_pop stack =
+    (*let should_pop stack =
       let Parser.Element (state, _, _, _) = Parser.stack_element stack in
       match Parser.incoming_symbol state with
       | (Parser.T term) as t1 when Recovery.can_pop term ->
@@ -276,7 +276,8 @@ struct
             check_next (decide stack')
         end
       | _ -> false
-    in
+      in*)
+    let should_pop _ = false in
     let rec pop_first env =
       match Parser.stack env with
       | Some stack when should_pop stack ->
