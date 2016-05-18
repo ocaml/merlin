@@ -35,14 +35,14 @@ open Std
 
           {[
             match e with
-            | p1 -> failwith "TODO"
+            | p1 -> (??)
             | ...
           ]}
 
           This matching will be exhaustive.
 
           If [e] has a "package" type, it will be replaced by
-          [let module M = (val e) in failwith "TODO"]
+          [let module M = (val e) in (??)]
 
       - a pattern context:
           Here two differents behaviors can be observed:

@@ -73,9 +73,7 @@ module Predef_types = struct
 end
 
 let placeholder =
-  let failwith = Ast_helper.Exp.ident (mk_id "failwith") in
-  let todo = Ast_helper.Exp.constant (Ast_helper.const_string "TODO") in
-  Ast_helper.Exp.apply failwith [ Raw_compat.Parsetree.arg_label_of_str "", todo ]
+  Ast_helper.Exp.ident (mk_id "??")
 
 let shorten_path env path =
   Printtyp.shorten_path ~env path
