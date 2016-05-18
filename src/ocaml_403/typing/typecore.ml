@@ -1503,7 +1503,8 @@ let check_unused ?(lev=get_current_level ()) env expected_ty cases =
           env expected_ty constrs labels spat
       with
         Some pat when refute ->
-          raise (error (spat.ppat_loc, env, Unrefuted_pattern pat))
+        raise_error (error (spat.ppat_loc, env, Unrefuted_pattern pat));
+        Some pat
       | r -> r)
     env cases
 
