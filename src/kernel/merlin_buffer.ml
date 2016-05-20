@@ -70,7 +70,8 @@ let create ?dot_merlins ?path kind =
     | ext :: args, _, _ -> Merlin_reader.External (ext, args, kind)
   in
   let reader = Merlin_reader.make spec source in
-  let typer = Merlin_typer.make reader String.Set.empty in
+  let typer = Merlin_typer.make reader String.Set.empty
+      ~stamp:(Merlin_project.version_stamp project) in
   { kind; project; source; reader; typer; path }
 
 let unit_name t = Merlin_source.unitname t.source

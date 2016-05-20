@@ -57,6 +57,7 @@ type t = {
   extensions: String.Set.t;
   btype_state: Btype.state;
   env_state: Env.state;
+  stamp: int * int ref;
 }
 
 let type_signature env sg =
@@ -126,6 +127,7 @@ let with_typer t f =
 let is_valid t =
   with_typer t @@ fun () ->
   Env.check_state_consistency () &&
+  fst t.stamp = !(snd t.stamp) &&
   let rec aux = function
     | [] -> true
     | [x] -> Btype.is_valid x.snapshot
@@ -143,16 +145,16 @@ let processed_ast reader =
   | `Structure strs ->
     `Structure (Pparse.apply_rewriters_str ~tool_name:"merlin" strs)
 
-let make reader extensions =
+let make reader ~stamp extensions =
   let btype_state = Btype.new_state () in
   let env_state = Env.new_state
       ~unit_name:(Merlin_source.unitname (Merlin_reader.source reader)) in
-  { reader; extensions; btype_state; env_state;
+  { reader; extensions; btype_state; env_state; stamp = (!stamp, stamp);
     steps = update_steps `None (processed_ast reader) }
 
 let update reader t =
   if not (is_valid t) then
-    make reader t.extensions
+    make reader ~stamp:(snd t.stamp) t.extensions
   else if t.reader == reader then
     t
   else if Merlin_reader.compare reader t.reader = 0 then

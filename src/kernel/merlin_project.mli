@@ -48,4 +48,4 @@ val set_user_config : t -> Dot_merlin.config -> unit
 val get_user_config_failures : t -> (string * exn) list
 
 (* Invalidate cache *)
-val validity_stamp: t -> bool ref
+val version_stamp: t -> int ref

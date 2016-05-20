@@ -30,7 +30,7 @@ type t
 
 val is_valid : t -> bool
 
-val make : Merlin_reader.t -> Extension.set -> t
+val make : Merlin_reader.t -> stamp:int ref -> Extension.set -> t
 val update : Merlin_reader.t -> t -> t
 
 type tree = [

@@ -37,13 +37,12 @@ let initialized () =
   initial_clflags := Clflags.save ()
 
 type config = {
-  dot_config     : Dot_merlin.config;
-  flags          : Clflags.config;
-  warnings       : Warnings.state;
-  keywords       : Merlin_lexer.keywords;
-  extensions     : Extension.set;
-  suffixes       : (string * string) list;
-  validity_stamp : bool ref;
+  dot_config    : Dot_merlin.config;
+  flags         : Clflags.config;
+  warnings      : Warnings.state;
+  keywords      : Merlin_lexer.keywords;
+  extensions    : Extension.set;
+  suffixes      : (string * string) list;
 
   source_path    : string list;
   cmt_path       : string list;
@@ -55,6 +54,7 @@ type config = {
 
 type t = {
   dot_merlin          : Dot_merlin.t;
+  version_stamp       : int ref;
   mutable user_config : Dot_merlin.config;
   mutable local_path  : string list;
   mutable config      : config option;
@@ -102,10 +102,7 @@ let config prj =
   match prj.config with
   | Some config when Dot_merlin.same config.dot_config dot_config -> config
   | None | Some _ ->
-    begin match prj.config with
-      | None -> ()
-      | Some config -> config.validity_stamp := false
-    end;
+    incr prj.version_stamp;
     let dfails0, ufails0, pkgpaths, ppxsetup = compute_packages prj in
     let dfails1, ufails1, flags, warnings = compute_flags ppxsetup prj in
     let open Dot_merlin in
@@ -155,7 +152,6 @@ let config prj =
         source_path; cmt_path; build_path;
         dot_failures = dfails0 @ dfails1;
         user_failures = ufails0 @ ufails1;
-        validity_stamp = ref true;
       }
     in
     prj.config <- Some config;
@@ -181,7 +177,7 @@ let invalidate t =
   match t.config with
   | None -> ()
   | Some config ->
-    config.validity_stamp := false;
+    incr t.version_stamp;
     t.config <- None
 
 let get_user_config t = t.user_config
@@ -196,6 +192,7 @@ let create dot_merlins = {
   user_config = Dot_merlin.empty_config;
   local_path = [];
   config = None;
+  version_stamp = ref 0;
 }
 
 let store : (string list, t) Hashtbl.t = Hashtbl.create 3
@@ -234,6 +231,6 @@ let suffixes t = (config t).suffixes
 (* Lexer keywords for current config *)
 let keywords t = (config t).keywords
 
-let validity_stamp t =
-  let r = (config t).validity_stamp in
-  assert !r; r
+let version_stamp t =
+  ignore (config t : config);
+  t.version_stamp
