@@ -39,12 +39,21 @@ let monitor_errors () =
     monitor_errors' := (ref false);
   !monitor_errors'
 
-let raise_error exn =
+let raise_error ?(ignore_unify=false) exn =
   !monitor_errors' := true;
   match ~!errors with
   | Some (l,h) ->
-    let exn = if ~!relax_typer then Weak_error exn else exn in
-    l := exn :: !l
+    begin match exn with
+      | Ctype.Unify _ when ignore_unify -> ()
+      | Ctype.Unify _ ->
+        Logger.logfmt "typing_aux" "raise_error (Unify _)" (fun fmt ->
+            Printexc.record_backtrace true;
+            Format.pp_print_string  fmt (Printexc.get_backtrace ())
+          )
+      | exn ->
+        let exn = if ~!relax_typer then Weak_error exn else exn in
+        l := exn :: !l
+    end
   | None -> raise exn
 
 let weak_raise exn =

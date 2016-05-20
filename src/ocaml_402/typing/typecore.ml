@@ -2263,9 +2263,11 @@ and type_expect_ ?in_function env sexp ty_expected =
               then begin
                 let _, ty_arg1, ty_res1 = instance_label false lbl
                 and _, ty_arg2, ty_res2 = instance_label false lbl in
-                unify env ty_arg1 ty_arg2;
-                unify env (instance env ty_expected) ty_res2;
-                unify_exp_types exp.exp_loc env ty_exp ty_res1;
+                try
+                  unify env ty_arg1 ty_arg2;
+                  unify env (instance env ty_expected) ty_res2;
+                  unify_exp_types exp.exp_loc env ty_exp ty_res1;
+                with exn -> raise_error ~ignore_unify:true exn
               end in
             Array.iter unify_kept lbl.lbl_all;
             Some {exp with exp_type = ty_exp}
