@@ -45,10 +45,12 @@ let raise_error ?(ignore_unify=false) exn =
   | Some (l,h) ->
     begin match exn with
       | Ctype.Unify _ when ignore_unify -> ()
-      | Ctype.Unify _ ->
-        Logger.logfmt "typing_aux" "raise_error (Unify _)" (fun fmt ->
-            Printexc.record_backtrace true;
-            Format.pp_print_string  fmt (Printexc.get_backtrace ())
+      | Ctype.Unify _ | Failure _ ->
+        Logger.logfmt "Typing_aux.raise_error"
+          (Printexc.exn_slot_name exn)
+          (fun fmt ->
+             Printexc.record_backtrace true;
+             Format.pp_print_string  fmt (Printexc.get_backtrace ())
           )
       | exn ->
         let exn = if ~!relax_typer then Weak_error exn else exn in
