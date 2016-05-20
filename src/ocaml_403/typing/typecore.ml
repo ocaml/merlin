@@ -3534,12 +3534,24 @@ and type_application loc env funct sargs ty_expected =
     omitted ty_fun = function
       [] ->
         let result_type = instance env (result_type omitted ty_fun) in
-        unify_exp_types loc env result_type (instance env ty_expected);
+        begin try
+            unify_exp_types loc env result_type (instance env ty_expected);
+          with exn -> raise_error exn;
+        end;
+        let fail = ref None in
         let force (l,a) = match a with
           | None -> (l, None)
-          | Some f -> (l, Some (f ()))
+          | Some f ->
+            try (l, Some (f ()))
+            with exn ->
+              if !fail = None then fail := Some exn else raise_error exn;
+              (l, None)
         in
-        (List.map force (List.rev args), result_type)
+        let args = List.map force (List.rev args) in
+        begin match !fail with
+          | None -> (args, result_type)
+          | Some exn -> raise exn
+        end
     | (l1, sarg1) :: sargl ->
         let (ty1, ty2) =
         try
