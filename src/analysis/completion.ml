@@ -203,6 +203,7 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
         begin match get_doc (`Completion_entry (namespace, p, loc)) with
           | `Found str -> `String str
           | _ -> `None
+          | exception _ -> `None
         end
       | _, _ -> `None
   in
