@@ -6,11 +6,32 @@ if exists('g:loaded_ctrlp_locate') && g:loaded_ctrlp_locate
 en
 let g:loaded_ctrlp_locate = 1
 
-let s:current_dir=expand("<sfile>:p:h")
-MerlinPy if not vim.eval("s:current_dir") in sys.path:
-\    sys.path.append(vim.eval("s:current_dir"))
+MerlinPy <<EOF
+import vim
+import merlin
 
-MerlinPy import locate
+merlin_ctrlp_locate_line = 0
+merlin_ctrlp_locate_col = 0
+
+def merlin_ctrlp_locate_update_cursor_pos():
+    global merlin_ctrlp_locate_pos
+    merlin_ctrlp_locate_pos = vim.current.window.cursor
+
+def merlin_ctrlp_locate_do_expand(base, vimvar):
+    try:
+        l = merlin.command("expand", "prefix", base, "at", 
+                           {'line' : merlin_ctrlp_locate_pos[0], 
+                            'col'  : merlin_ctrlp_locate_pos[1]})
+        l = l['entries']
+        l = map(lambda prop: prop['name'], l)
+        l = merlin.uniq(sorted(l))
+        for prop in l:
+          name = prop.replace("'", "''")
+          vim.command("call add(%s, '%s')" % (vimvar, name))
+    except merlin.MerlinExc as e:
+        merlin.try_print_error(e)
+
+EOF
 
 cal add(g:ctrlp_ext_vars, {
 	\ 'init': 'ctrlp#locate#init()',
@@ -27,7 +48,7 @@ let s:init_string = "(* Start typing to get a list of identifiers. *)"
 
 " Public {{{1
 function! ctrlp#locate#update_cursor_pos()
-  MerlinPy locate.update_cursor_pos()
+  MerlinPy merlin_ctrlp_locate_update_cursor_pos()
 endfunction
 
 
@@ -37,7 +58,7 @@ endfunction
 
 function! ctrlp#locate#filter(items, str, limit, mmode, ispath, crfile, regex)
   let l:compl = []
-  MerlinPy locate.do_expand(vim.eval("a:str"), "l:compl")
+  MerlinPy merlin_ctrlp_locate_do_expand(vim.eval("a:str"), "l:compl")
   return l:compl
 endfunction
 

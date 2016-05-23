@@ -2,9 +2,52 @@
 
 " Init {{{1
 if exists('g:loaded_ctrlp_outline') && g:loaded_ctrlp_outline
-	fini
+  fini
 en
 let g:loaded_ctrlp_outline = 1
+
+MerlinPy <<EOF
+
+import vim
+import merlin
+
+merlin_ctrlp_outlines = []
+
+def merlin_ctrlp_linearize(prefix, lst):
+    for x in lst:
+        name = "%s%s" % (prefix, x['name'])
+        merlin_ctrlp_outlines.append(
+          {'name': name, 'pos': x['start'], 'kind': x['kind']})
+        merlin_ctrlp_linearize(name + ".", x['children'])
+
+def merlin_ctrlp_get_outlines():
+    merlin_ctrlp_outlines[:] = []
+    merlin_ctrlp_linearize("", merlin.command("outline"))
+    merlin_ctrlp_outlines.sort(key = lambda x: len(x['name']))
+
+def merlin_ctrlp_outline_init():
+    merlin_ctrlp_get_outlines()
+    if len(merlin_ctrlp_outlines) == 0:
+        return
+    longest = len(merlin_ctrlp_outlines[-1]['name'])
+    i = 0
+    for x in merlin_ctrlp_outlines:
+        name = x['name'].replace("'", "''")
+        vim.command("call add(l:modules, '%4d : %*s\t--\t%s')" %
+                    (i, longest, name, x['kind']))
+        i += 1
+
+def merlin_ctrlp_outline_accept():
+    idx = int(vim.eval("a:str").strip().split(' ')[0])
+    try:
+        x = merlin_ctrlp_outlines[idx]
+        l = x['pos']['line']
+        c = x['pos']['col']
+        vim.current.window.cursor = (l, c)
+    except KeyError as e:
+        print(str(e))
+
+EOF
 
 cal add(g:ctrlp_ext_vars, {
 	\ 'init': 'ctrlp#outline#init()',
@@ -18,52 +61,17 @@ cal add(g:ctrlp_ext_vars, {
 
 let s:id = g:ctrlp_builtins + len(g:ctrlp_ext_vars)
 
-MerlinPy << EOF
-outlines = []
-
-def linearize(prefix, lst):
-  for x in lst:
-    name = "%s%s" % (prefix, x['name'])
-    outlines.append({'name': name, 'pos': x['start'], 'kind': x['kind']})
-    linearize(name + ".", x['children'])
-
-def get_outlines():
-  global outlines
-  outlines = []
-  result = merlin.command("outline")
-  linearize("", result)
-  outlines.sort(key = lambda x: len(x['name']))
-EOF
-
 " Public {{{1
 fu! ctrlp#outline#init()
   let l:modules = []
-  MerlinPy << EOF
-get_outlines()
-longest = len(outlines[-1]['name'])
-i = 0
-for x in outlines:
-  name = x['name'].replace("'", "''")
-  vim.command("call add(l:modules, '%4d : %*s\t--\t%s')" % (i, longest, name, x['kind']))
-  i += 1
-EOF
+  MerlinPy merlin_ctrlp_outline_init() 
   return l:modules
 endf
 
 fu! ctrlp#outline#accept(mode, str)
   call ctrlp#exit()
-  MerlinPy << EOF
-idx = int(vim.eval("a:str").strip().split(' ')[0])
-
-try:
-  x = outlines[idx]
-  l = x['pos']['line']
-  c = x['pos']['col']
-  vim.current.window.cursor = (l, c)
-except KeyError, e:
-  print(str(e))
-EOF
-silent! normal! zvzz
+  MerlinPy merlin_ctrlp_outline_accept()
+  silent! normal! zvzz
 endf
 
 fu! ctrlp#outline#id()
