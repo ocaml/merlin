@@ -232,7 +232,7 @@ def vim_is_set(name, default=False):
 
 def command_version():
     try:
-        str = merlin_process().command("version")
+        str = merlin_process().command(["version"])
         print(str)
     except MerlinExc as e:
         try_print_error(e)
