@@ -396,6 +396,7 @@ function! merlin#Outline()
     echo "This function requires the CtrlP plugin to work"
     " ctrl doesn't exist? Exiting.
   else
+    call ctrlp#outline#preinit()
     call ctrlp#init(ctrlp#outline#id())
   endif
 endfunction
