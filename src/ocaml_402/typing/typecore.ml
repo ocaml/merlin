@@ -407,9 +407,9 @@ let unify_pat_types loc env ty ty' =
     unify env ty ty'
   with
     Unify trace ->
-      raise_error(error(loc, env, Pattern_type_clash trace))
+      raise (error(loc, env, Pattern_type_clash trace))
   | Tags(l1,l2) ->
-      raise_error(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
+      raise (Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
 (* unification inside type_exp and type_expect *)
 let unify_exp_types loc env ty expected_ty =
@@ -419,9 +419,9 @@ let unify_exp_types loc env ty expected_ty =
     unify env ty expected_ty
   with
     Unify trace ->
-      raise_error(error(loc, env, Expr_type_clash trace))
+      raise(error(loc, env, Expr_type_clash trace))
   | Tags(l1,l2) ->
-      raise_error(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
+      raise(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
 (* level at which to create the local type declarations *)
 let newtype_level = ref None
@@ -440,11 +440,11 @@ let unify_pat_types_gadt loc env ty ty' =
     unify_gadt ~newtype_level env ty ty'
   with
     Unify trace ->
-      raise_error(error(loc, !env, Pattern_type_clash(trace)))
+      raise (error(loc, !env, Pattern_type_clash(trace)))
   | Tags(l1,l2) ->
-      raise_error(Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
+      raise (Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
   | Unification_recursive_abbrev trace ->
-      raise_error(error(loc, !env, Recursive_local_constraint trace))
+      raise (error(loc, !env, Recursive_local_constraint trace))
 
 
 (* Creating new conjunctive types is not allowed when typing patterns *)
@@ -1015,26 +1015,30 @@ type type_pat_mode =
   | Normal
   | Inside_or
 
+let recover_pat = ref false
+
 (* type_pat propagates the expected type as well as maps for
    constructors and labels.
    Unification may update the typing environment. *)
 let rec type_pat ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
-  Cmt_format.save_types
-    ~save:(fun pat -> [Cmt_format.Partial_pattern pat])
-  @@ fun () ->
-  let env' = !env in
-  try
+  if !recover_pat then begin
+    Cmt_format.save_types
+      ~save:(fun pat -> [Cmt_format.Partial_pattern pat])
+    @@ fun () ->
+    let env' = !env in
+    try type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty
+    with exn ->
+      Typing_aux.erroneous_type_register expected_ty;
+      raise_error exn;
+      { pat_desc = Tpat_any;
+        pat_loc = sp.ppat_loc;
+        pat_type = expected_ty;
+        pat_attributes = merlin_recovery_attributes [];
+        pat_extra = [];
+        pat_env = env';
+      }
+  end else
     type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty
-  with exn ->
-    Typing_aux.erroneous_type_register expected_ty;
-    raise_error exn;
-    { pat_desc = Tpat_any;
-      pat_loc = sp.ppat_loc;
-      pat_type = expected_ty;
-      pat_attributes = merlin_recovery_attributes [];
-      pat_extra = [];
-      pat_env = env';
-    }
 
 and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
   let type_pat ?(mode=mode) ?(env=env) =
@@ -1392,6 +1396,17 @@ let partial_pred ~lev env expected_ty constrs labels p =
   with _ ->
     backtrack snap;
     None
+
+let type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty =
+  recover_pat := true;
+  try
+    let r =
+      type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty in
+    recover_pat := false;
+    r
+  with exn ->
+    recover_pat := false;
+    raise exn
 
 let check_partial ?(lev=get_current_level ()) env expected_ty =
   Parmatch.check_partial_gadt (partial_pred ~lev env expected_ty)

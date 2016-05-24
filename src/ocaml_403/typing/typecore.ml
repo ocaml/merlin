@@ -1490,6 +1490,23 @@ let partial_pred ~lev ?mode ?explode env expected_ty constrs labels p =
     set_state state env;
     None
 
+let type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty =
+  Cmt_format.save_types
+    ~save:(fun pat -> [Cmt_format.Partial_pattern pat])
+  @@ fun () ->
+  let env' = !env in
+  try type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty
+  with exn ->
+    Typing_aux.erroneous_type_register expected_ty;
+    raise_error exn;
+    { pat_desc = Tpat_any;
+      pat_loc = sp.ppat_loc;
+      pat_type = expected_ty;
+      pat_attributes = merlin_recovery_attributes [];
+      pat_extra = [];
+      pat_env = env';
+    }
+
 let check_partial ?(lev=get_current_level ()) env expected_ty loc cases =
   let explode = match cases with [_] -> 5 | _ -> 0 in
   Parmatch.check_partial_gadt
