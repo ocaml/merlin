@@ -14,7 +14,7 @@ ifdef WITH_BIN_ANNOT
 	OCAMLFLAGS += -bin-annot
 endif
 
-ifdef WITH_DEBUG
+ifndef WITHOUT_DEBUG
 	OCAMLFLAGS += -g
 	OCAMLLDFLAGS += -g
 endif

@@ -24,7 +24,7 @@ OCAML_VERSIONS = 401 402
 #### Invocation of OCamlMakefile
 
 OCAMLMAKEFILE= $(MAKE) -f Makefile.ocamlmakefile \
-							 WITH_BIN_ANNOT="$(WITH_BIN_ANNOT)" WITH_DEBUG="$(WITH_DEBUG)"
+							 WITH_BIN_ANNOT="$(WITH_BIN_ANNOT)" WITHOUT_DEBUG="$(WITHOUT_DEBUG)"
 
 ifndef VERBOSE
 	OCAMLMAKEFILE += REALLY_QUIET=1
@@ -67,7 +67,7 @@ preprocess:
 	$(MAKE) -f Makefile.preprocess
 
 debug: assert_configured
-	+$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITH_DEBUG=1 $(TARGET)
+	+$(OCAMLMAKEFILE) WITH_BIN_ANNOT=1 WITHOUT_DEBUG= $(TARGET)
 
 %.elc : %.el
 	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
