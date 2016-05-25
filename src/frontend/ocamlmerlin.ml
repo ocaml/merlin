@@ -90,49 +90,62 @@ let signal sg behavior =
   try ignore (Sys.signal sg behavior)
   with Invalid_argument _ (*Sys.signal: unavailable signal*) -> ()
 
-let rec on_read ~timeout fd =
-  try match Unix.select [fd] [] [] timeout with
-    | [], [], [] ->
-      if Command.dispatch IO.default_context Protocol.(Query Idle_job) then
-        on_read ~timeout:0.0 fd
-      else
-        on_read ~timeout:(-1.0) fd
-    | _, _, _ -> ()
-  with
-  | Unix.Unix_error (Unix.EINTR, _, _) ->
-    on_read ~timeout fd
-  | exn -> Logger.log "main" "on_read" (Printexc.to_string exn)
+let on_read fd =
+  let rec loop ~timeout =
+    try match Unix.select [fd] [] [] timeout with
+      | [], [], [] ->
+        if Command.dispatch IO.default_context Protocol.(Query Idle_job)
+        then loop ~timeout:0.0
+        else loop ~timeout:(-1.0)
+      | _, _, _ -> ()
+    with
+    | Unix.Unix_error (Unix.EINTR, _, _) -> loop ~timeout
+    | exn -> Logger.log "main" "on_read" (Printexc.to_string exn)
+  in
+  loop ~timeout:0.050
 
 let main_loop () =
-  let input, output as io =
-    IO.(lift (make ~on_read:(on_read ~timeout:0.050)
-                ~input:Unix.stdin ~output:Unix.stdout)) in
+  let make = match Main_args.protocol with
+    | "json" -> IO_json.make
+    | "sexp" -> IO_sexp.make
+    | _ ->
+      prerr_endline "Valid protocols are 'json' and 'sexp'";
+      exit 1
+  in
+  let input, output = make ~on_read ~input:Unix.stdin ~output:Unix.stdout in
+  let input () = match input () with
+    | None -> None
+    | Some json ->
+      Logger.logj "frontend" "input" (fun () -> json);
+      Some (IO.request_of_json json)
+  in
+  let output ~notifications x =
+    let json = IO.json_of_response ~notifications x in
+    Logger.logj "frontend" "output" (fun () -> json);
+    output json
+  in
   try
     while true do
       let notifications = ref [] in
       let answer =
         Logger.with_editor notifications @@ fun () ->
-        try match Stream.next input with
-          | Protocol.Request (context, request) ->
-            Protocol.Return
-              (request, Command.dispatch context request)
-        with
-        | Stream.Failure as exn -> raise exn
-        | exn -> Protocol.Exception exn
+        match input () with
+        | Some (Protocol.Request (context, request)) ->
+                Protocol.Return (request, Command.dispatch context request)
+        | None -> raise End_of_file
+        | exception exn -> Protocol.Exception exn
       in
       let notifications = List.rev !notifications in
       try output ~notifications answer
        with exn -> output ~notifications (Protocol.Exception exn);
     done
-  with Stream.Failure -> ()
+  with End_of_file -> ()
 
 let () =
   (* Setup signals, unix is a disaster *)
   signal Sys.sigusr1 Sys.Signal_ignore;
   signal Sys.sigpipe Sys.Signal_ignore;
   signal Sys.sighup  Sys.Signal_ignore;
-  (* Select frontend *)
-  Option.iter Main_args.chosen_protocol ~f:IO.select_frontend;
 
   (* Setup env for extensions *)
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));

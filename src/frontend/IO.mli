@@ -31,34 +31,14 @@ open Std
 val latest_version : Protocol.protocol_version
 val current_version : Protocol.protocol_version ref
 
-(* A protocol read & write a stream of Json-like objects *)
-    (* Untyped stream *)
-type low_io = Json.json Stream.t * (Json.json -> unit)
-    (* Protocol-typed stream *)
-type io = Protocol.request Stream.t *
-  (notifications:(Logger.section * string) list -> Protocol.response -> unit)
-
-(* Select between different serialization protocols *)
-type io_maker =
-  on_read:(Unix.file_descr -> unit) -> input:Unix.file_descr ->
-  output:Unix.file_descr ->
-  low_io
-
-(* Initialize protocol codec from a input and an output channel *)
-val make : io_maker
-
-(* Add types *)
-val lift : low_io -> io
-
-val register_protocol : name:string -> desc:string -> io_maker -> unit
-val select_frontend : string -> unit
-
 (* Misc *)
 val default_context : Protocol.Context.t
 val invalid_arguments : unit -> 'a
 val with_location : ?skip_none:bool -> Location.t -> (string * Json.json) list -> Json.json
 
-module Protocol_io : sig
-  val optional_position : Json.json list -> Merlin_source.position option
-  val mandatory_position : Json.json list -> Merlin_source.position
-end
+val optional_position : Json.json list -> Merlin_source.position option
+val mandatory_position : Json.json list -> Merlin_source.position
+
+val request_of_json : Json.json -> Protocol.request
+val json_of_response : notifications:(string * string) list ->
+                       Protocol.response -> Json.json

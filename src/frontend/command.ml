@@ -157,7 +157,7 @@ let dump buffer = function
   | (`String ("env" | "fullenv" as kind) :: opt_pos) ->
     with_typer buffer @@ fun typer ->
     let kind = if kind = "env" then `Normal else `Full in
-    let pos = IO.Protocol_io.optional_position opt_pos in
+    let pos = IO.optional_position opt_pos in
     let env = match pos with
       | None -> Typer.env typer
       | Some pos ->

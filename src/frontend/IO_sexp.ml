@@ -264,7 +264,7 @@ let rec json_of_sexp =
   | Cons (hd, tl) -> `List (json_of_sexp hd :: list_items tl)
   | Sym s -> `String s
 
-let sexp_make ~on_read ~input ~output =
+let make ~on_read ~input ~output =
   (* Fix for emacs: emacs start-process doesn't distinguish between stdout and
      stderr.  So we redirect stderr to /dev/null with sexp frontend. *)
   begin match
@@ -284,7 +284,7 @@ let sexp_make ~on_read ~input ~output =
         Unix.close fd
   end;
   let input' = Sexp.of_file_descr ~on_read input in
-  let input' = Stream.from (fun _ -> Option.map json_of_sexp (input' ())) in
+  let input' () = Option.map json_of_sexp (input' ()) in
   let buf = Buffer.create 8192 in
   let output json =
     let sexp = sexp_of_json json in
@@ -302,9 +302,4 @@ let sexp_make ~on_read ~input ~output =
     then Buffer.reset buf
     else Buffer.clear buf
   in
-  (input', output : IO.low_io)
-
-let () = IO.register_protocol
-      ~name:"sexp"
-      ~desc:"Simple encoding of json over sexpr"
-      sexp_make
+  input', output

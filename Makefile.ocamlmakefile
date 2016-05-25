@@ -212,6 +212,10 @@ SOURCES = \
 	src/ocaml_aux/error_report.mli    \
 	src/ocaml_aux/error_report.ml     \
 	src/frontend/protocol.mli         \
+	src/frontend/IO_json.mli          \
+	src/frontend/IO_json.ml           \
+	src/frontend/IO_sexp.mli          \
+	src/frontend/IO_sexp.ml           \
 	src/frontend/IO.mli               \
 	src/frontend/IO.ml                \
 	src/analysis/browseT.mli          \
@@ -234,7 +238,6 @@ SOURCES = \
 	$(TYPER)/tast_helper.ml           \
 	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \
-	src/frontend/IO_sexp.ml           \
 	src/frontend/command.mli          \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml

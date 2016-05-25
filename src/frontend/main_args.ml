@@ -46,12 +46,12 @@ let warn_help_spec =
   Arg.Unit Warnings.help_warnings,
   " Show description of warning numbers"
 
-let chosen_protocol = ref None
+let protocol = ref "json"
 
 let protocol_spec =
   "-protocol",
-  Arg.String (fun p -> chosen_protocol := Some p),
-  " Select frontend protocol (or 'help' to list)"
+  Arg.Set_string protocol,
+  " Select frontend protocol ('json' or 'sexp')"
 
 let unexpected_argument s =
   failwith ("Unexpected argument: " ^ s)
@@ -108,4 +108,4 @@ let () =
     unexpected_argument
     "Usage: ocamlmerlin [options]\noptions are:"
 
-let chosen_protocol = !chosen_protocol
+let protocol = !protocol
