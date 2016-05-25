@@ -28,3 +28,5 @@ B src/utils
 B +threads
 PKG findlib
 PKG yojson
+PKG sturgeon
+PKG inuit

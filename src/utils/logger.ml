@@ -99,3 +99,5 @@ let notify section =
 
 let with_editor r f =
   Fluid.let' editor_messages (Some r) f
+
+let inuit = ref Sturgeon_stub.null

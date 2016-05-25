@@ -27,8 +27,8 @@
 )* }}} *)
 
 open Merlin_lib
-open Inuit_stub
+open Sturgeon_stub
 
 val dispatch : Protocol.Context.t -> 'a Protocol.command -> 'a
 
-val monitor : set_title:(string -> unit) -> flags cursor -> unit
+val monitor : shell -> unit

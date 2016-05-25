@@ -1,5 +1,7 @@
 open Std
-open Inuit_stub
+open Sturgeon_stub
+open Cursor
+open Widget
 
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)
@@ -32,9 +34,9 @@ module Make
     (Dump : sig
        val token   : Parser.token -> string
        val symbol  : Parser.xsymbol -> string
-       val element : _ cursor -> Parser.element -> unit
-       val item    : _ cursor -> Parser.item -> unit
-       val env     : _ cursor -> _ Parser.env -> unit
+       val element : cursor -> Parser.element -> unit
+       val item    : cursor -> Parser.item -> unit
+       val env     : cursor -> _ Parser.env -> unit
      end) =
 struct
 
@@ -307,7 +309,6 @@ struct
     { popped; shifted; final; candidates = (candidate env) :: candidates }
 
   let dump {Nav. nav; body} ~wrong:(t,s,e as token) ~rest:tokens env =
-    let open Inuit_stub in
     if not (is_closed body) then (
       let l, c = Lexing.split_pos s in
       printf body "Unexpected %S at %d:%d, " (Dump.token t) l c;

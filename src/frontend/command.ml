@@ -26,8 +26,8 @@
 
 )* }}} *)
 
-open Inuit_stub
 open Std
+open Sturgeon_stub
 open Misc
 open Protocol
 open Merlin_lib
@@ -73,7 +73,8 @@ let new_state ?document () =
   {buffer; verbosity_last = Empty; verbosity = 0}
 
 let logging_frame =
-  ref {Nav. body = null_cursor; title = null_cursor; nav = Nav.make "" ignore}
+  let open Cursor in
+  ref {Widget.Nav. body = null; title = null; nav = Widget.Nav.make "" ignore}
 
 let checkout_buffer_cache = ref []
 let checkout_buffer =
@@ -802,9 +803,12 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
     state.buffer <- buffer
   | Sync s -> dispatch_sync state s
 
-module Monitor = struct
+module Monitor =
+struct
+  open Cursor
+  open Widget
 
-  let name_of_key (kind, name, dots) =
+  let name_of_key () (kind, name, dots) =
     Printf.sprintf "[%s] %s (%s)"
       (match kind with
        | Parser.ML -> "ML"
@@ -826,13 +830,14 @@ module Monitor = struct
     | Some lexer ->
       let action = match Reader.is_normal (Buffer.reader buffer) with
         | None -> (fun (t,_,_) -> text body (Parser_printer.print_token t))
-        | Some parser -> (fun (t,_,_ as _token) ->
-          link body (Parser_printer.print_token t) (fun _ ->
+        | Some parser -> (fun (t,_,_ as token) ->
+            let on_click _ =
               Nav.push nav ("Details of " ^ Parser_printer.print_token t)
-              @@ fun {Nav. body} ->
-              ()
-              (*FIXME Parser.dump_stack parser body token*)
-            ))
+                (fun {Nav. body} -> Parser.dump_stack parser body token)
+            in
+            link body "%a" on_click
+              (fun () -> Parser_printer.print_token) t
+          )
       in
       let print_token line' (t,pos,_ as token) =
         let line, col = Lexing.split_pos pos in
@@ -865,8 +870,7 @@ module Monitor = struct
     text body (to_string ())
 
   let view_recoveries buffer nav =
-    ()
-    (*FIXME Reader.trace (Buffer.reader buffer) nav*)
+    Reader.trace (Buffer.reader buffer) nav
 
   let view_signature buffer {Nav. body} =
     let ppf, to_string = Format.to_string () in
@@ -890,8 +894,9 @@ module Monitor = struct
     printf body "Verbosity: %d\n" state.verbosity;
     printf body "Unit name: %s\n" unit;
     let viewer name f =
-      link body ("View " ^ name) (fun _ ->
-          Nav.push nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer));
+      link body "View %s" (fun _ ->
+          Nav.push nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer))
+        name;
       text body "\n"
     in
     viewer "source" view_source;
@@ -902,13 +907,15 @@ module Monitor = struct
     viewer "signature" view_signature;
     viewer "typedtree" view_typedtree
 
-  let main ~set_title k =
-    set_title "merlin-monitor";
+  let main shell =
+    let k = Sturgeon_stub.create_cursor shell "merlin-monitor" in
+    Logger.inuit := Sturgeon_stub.create_cursor shell "merlin-log";
     let nav = Nav.make "Merlin monitor" @@ fun {Nav. body; nav} ->
       text body "Buffers\n\n";
       let print_state key state =
-        link body (name_of_key key) (fun _ ->
-            Nav.push nav (name_of_key key) (monitor_context key state));
+        link body "%a" (fun _ ->
+            Nav.push nav (name_of_key () key) (monitor_context key state))
+          name_of_key key;
         text body "\n"
       in
       Hashtbl.iter print_state document_states
@@ -916,7 +923,7 @@ module Monitor = struct
     Nav.render nav k;
     printf k "\nMessage log\n";
     let body = sub k in
-    logging_frame := {Nav. nav; body; title = null_cursor}
+    logging_frame := {Nav. nav; body; title = null}
 
 end
 

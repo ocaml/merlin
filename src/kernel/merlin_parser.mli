@@ -27,7 +27,7 @@
 )* }}} *)
 
 open Std
-open Inuit_stub
+open Sturgeon_stub
 
 type kind =
   | ML
@@ -39,7 +39,7 @@ type t
 val make : Merlin_lexer.t -> kind -> t
 val update : Merlin_lexer.t -> t -> t
 
-val trace : t -> _ cursor Nav.frame -> unit
+val trace : t -> flag Widget.Nav.frame -> unit
 
 type tree = [
   | `Signature of Parsetree.signature
@@ -53,4 +53,4 @@ val errors : t -> exn list
 val lexer : t -> Merlin_lexer.t
 val compare : t -> t -> int
 
-val dump_stack : t -> _ cursor -> Merlin_lexer.triple -> unit
+val dump_stack : t -> cursor -> Merlin_lexer.triple -> unit

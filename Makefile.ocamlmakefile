@@ -28,8 +28,6 @@ CONFIG_FILES = src/config/my_config.ml src/ocaml
 
 SOURCES = \
 	src/config/my_config.ml           \
-	src/utils/inuit_stub.mli          \
-	src/utils/inuit_stub.ml           \
 	$(STURGEON)/sturgeon_stub.ml      \
 	src/utils/menhirLib.mli           \
 	src/utils/menhirLib.ml            \

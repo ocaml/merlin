@@ -27,7 +27,8 @@
 )* }}} *)
 
 open Std
-open Inuit_stub
+open Sturgeon_stub
+open Cursor
 
 module I = Parser_raw.MenhirInterpreter
 
@@ -186,7 +187,7 @@ let resume_parse nav =
 
   and enter_error acc token tokens env =
     R.dump nav ~wrong:token ~rest:tokens env;
-    let candidates = R.generate null_cursor env in
+    let candidates = R.generate null env in
     let explanation =
       Merlin_explain.explain env token
         candidates.R.popped candidates.R.shifted
@@ -200,7 +201,7 @@ let resume_parse nav =
       | [] -> eof_token, []
     in
     let acc' = ((Recovering candidates, token) :: acc) in
-    match R.attempt null_cursor candidates token with
+    match R.attempt null candidates token with
     | `Fail ->
       if tokens = [] then
         match candidates.R.final with
@@ -257,7 +258,7 @@ let run_parser nav lexer previous kind =
     `Signature steps, `Signature result
 
 let null_frame =
-  {Nav. body = null_cursor; title = null_cursor; nav = Nav.make "" ignore}
+  {Widget.Nav. body = null; title = null; nav = Widget.Nav.make "" ignore}
 
 let make lexer kind =
   errors_ref := [];
