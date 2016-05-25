@@ -261,17 +261,21 @@ let checks ?pos t =
   *)
   Typecore.delayed_checks := checks;
   let caught = ref [] in
-  Front_aux.catch_errors caught (fun () ->
-      let simple_sign = Typemod.simplify_signature sign in
-      Typemod.check_nongen_schemes env sign;
-      Typemod.normalize_signature env simple_sign;
-      let _coercion =
-        Includemod.compunit
-          (resume_env_at_steps t [])
-          (Merlin_source.unitname (Merlin_reader.source t.reader))
-          sign "(inferred signature)"  in
-      Typecore.force_delayed_checks ();
-    );
+  begin try
+      Front_aux.catch_errors caught (fun () ->
+          let simple_sign = Typemod.simplify_signature sign in
+          Typemod.check_nongen_schemes env sign;
+          Typemod.normalize_signature env simple_sign;
+          let _coercion =
+            Includemod.compunit
+              (resume_env_at_steps t [])
+              (Merlin_source.unitname (Merlin_reader.source t.reader))
+              sign "(inferred signature)"  in
+          Typecore.force_delayed_checks ();
+        )
+    with exn ->
+      caught := exn :: !caught
+  end;
   Typecore.delayed_checks := [];
   !caught
 
