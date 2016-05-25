@@ -85,7 +85,7 @@ module Default = struct
     | MenhirInterpreter.T MenhirInterpreter.T_LBRACELESS -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LBRACE -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_LAZY -> ()
-    | MenhirInterpreter.T MenhirInterpreter.T_LABEL -> raise Not_found
+    | MenhirInterpreter.T MenhirInterpreter.T_LABEL -> "_"
     | MenhirInterpreter.T MenhirInterpreter.T_INT -> ("0",None)
     | MenhirInterpreter.T MenhirInterpreter.T_INITIALIZER -> ()
     | MenhirInterpreter.T MenhirInterpreter.T_INHERIT -> ()

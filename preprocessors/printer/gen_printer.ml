@@ -30,7 +30,7 @@ let print_header () =
 (** Printer from attributes *)
 
 let symbol_printer default attribs =
-  match List.find (is_attribute ["name"]) attribs with
+  match List.find (is_attribute ["symbol"]) attribs with
   | _, stretch -> (string_of_stretch stretch)
   | exception Not_found ->
     sprintf "%S" default

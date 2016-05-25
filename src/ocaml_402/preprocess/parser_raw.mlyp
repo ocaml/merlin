@@ -315,6 +315,20 @@ let let_operator startpos endpos op bindings cont =
 
 %}
 
+%[@printer.header
+  let string_of_INT = function
+    | (s, None) -> Printf.sprintf "INT(%s)" s
+    | (s, Some c) -> Printf.sprintf "INT(%s%c)" s c
+
+  let string_of_FLOAT = function
+    | (s, None) -> Printf.sprintf "FLOAT(%s)" s
+    | (s, Some c) -> Printf.sprintf "FLOAT(%s%c)" s c
+
+  let string_of_STRING = function
+    | s, Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
+    | s, None -> Printf.sprintf "STRING(%S)" s
+]
+
 %[@recovery.header
   open Asttypes
   open Parsetree
@@ -336,143 +350,140 @@ let let_operator startpos endpos op bindings cont =
 
 (* Tokens *)
 
-%token AMPERAMPER
-%token AMPERSAND
-%token AND
-%token AS
-%token ASSERT
-%token BACKQUOTE
-%token BANG
-%token BAR
-%token BARBAR
-%token BARRBRACKET
-%token BEGIN
+%token AMPERAMPER [@symbol "&&"]
+%token AMPERSAND [@symbol "&"]
+%token AND [@symbol "and"]
+%token AS [@symbol "as"]
+%token ASSERT [@symbol "assert"]
+%token BACKQUOTE [@symbol "`"]
+%token BANG [@symbol "!"]
+%token BAR [@symbol "|"]
+%token BARBAR [@symbol "||"]
+%token BARRBRACKET [@symbol "|]"]
+%token BEGIN [@symbol "begin"]
 %token <char> CHAR [@cost 2] [@recovery '_']
-%token CLASS
-%token COLON
-%token COLONCOLON
-%token COLONEQUAL
-%token COLONGREATER
-%token COMMA
-%token CONSTRAINT
-%token DO
-%token DONE
-%token DOT
-%token DOTDOT
-%token DOWNTO
-%token ELSE
-%token END
+%token CLASS [@symbol "class"]
+%token COLON [@symbol ":"]
+%token COLONCOLON [@symbol "::"]
+%token COLONEQUAL [@symbol ":="]
+%token COLONGREATER [@symbol ":>"]
+%token COMMA [@symbol ","]
+%token CONSTRAINT [@symbol "constraint"]
+%token DO [@symbol "do"]
+%token DONE [@symbol "done"]
+%token DOT [@symbol "."]
+%token DOTDOT [@symbol ".."]
+%token DOWNTO [@symbol "downto"]
+%token ELSE [@symbol "else"]
+%token END [@symbol "end"]
 %token EOF
-%token EQUAL
-%token EXCEPTION
-%token EXTERNAL
-%token FALSE
+%token EQUAL [@symbol "="]
+%token EXCEPTION [@symbol "exception"]
+%token EXTERNAL [@symbol "external"]
+%token FALSE [@symbol "false"]
 %token <string> FLOAT [@cost 2] [@recovery "0."] [@printer Printf.sprintf "FLOAT(%S)"]
-%token FOR
-%token FUN
-%token FUNCTION
-%token FUNCTOR
-%token GREATER
-%token GREATERRBRACE
-%token GREATERRBRACKET
-%token IF
-%token IN
-%token INCLUDE
+%token FOR [@symbol "for"]
+%token FUN [@symbol "fun"]
+%token FUNCTION [@symbol "function"]
+%token FUNCTOR [@symbol "functor"]
+%token GREATER [@symbol ">"]
+%token GREATERRBRACE [@symbol ">}"]
+%token GREATERRBRACKET [@symbol ">]"]
+%token IF [@symbol "if"]
+%token IN [@symbol "in"]
+%token INCLUDE [@symbol "include"]
 %token <string> INFIXOP0 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP0(%S)"]
 %token <string> INFIXOP1 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP1(%S)"]
 %token <string> INFIXOP2 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP2(%S)"]
 %token <string> INFIXOP3 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP3(%S)"]
 %token <string> INFIXOP4 [@cost 2] [@recovery "_"][@printer Printf.sprintf "INFIXOP4(%S)"]
-%token INHERIT
-%token INITIALIZER
+%token INHERIT [@symbol "inherit"]
+%token INITIALIZER [@symbol "initializer"]
 %token <int> INT [@cost 1] [@recovery 0][@printer Printf.sprintf "INT(%d)"]
 %token <int32> INT32 [@cost 1] [@recovery 0l][@printer Printf.sprintf "INT(%ld)"]
 %token <int64> INT64 [@cost 1] [@recovery 0L][@printer Printf.sprintf "INT64(%Ld)"]
-%token <string> LABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "LABEL(%S)"]
-%token LAZY
-%token LBRACE
-%token LBRACELESS
-%token LBRACKET
-%token LBRACKETAT
-%token LBRACKETATAT
-%token LBRACKETATATAT
-%token LBRACKETBAR
-%token LBRACKETGREATER
-%token LBRACKETLESS
-%token LBRACKETPERCENT
-%token LBRACKETPERCENTPERCENT
-%token LESS
-%token LESSMINUS
-%token LET
-%token <string> LIDENT [@cost 2] [@recovery "_"][@printer Printf.sprintf "LIDENT(%S)"]
-%token LPAREN
-%token MATCH
-%token METHOD
-%token MINUS
-%token MINUSDOT
-%token MINUSGREATER
-%token MODULE
-%token MUTABLE
+%token <string> LABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "LABEL(%S)"] [@symbol "label"]
+%token LAZY [@symbol "lazy"]
+%token LBRACE [@symbol "{"]
+%token LBRACELESS [@symbol "{<"]
+%token LBRACKET [@symbol "["]
+%token LBRACKETAT [@symbol "[@"]
+%token LBRACKETATAT [@symbol "[@@"]
+%token LBRACKETATATAT [@symbol "[@@@"]
+%token LBRACKETBAR [@symbol "[|"]
+%token LBRACKETGREATER [@symbol "[>"]
+%token LBRACKETLESS [@symbol "[<"]
+%token LBRACKETPERCENT [@symbol "[%"]
+%token LBRACKETPERCENTPERCENT [@symbol "[%%"]
+%token LESS [@symbol "<"]
+%token LESSMINUS [@symbol "<-"]
+%token LET [@symbol "let"]
+%token <string> LIDENT [@cost 2] [@recovery "_"][@printer Printf.sprintf "LIDENT(%S)"] [@symbol "<ident>"]
+%token LPAREN [@symbol ")"]
+%token MATCH [@symbol "match"]
+%token METHOD [@symbol "method"]
+%token MINUS [@symbol "-"]
+%token MINUSDOT [@symbol "-."]
+%token MINUSGREATER [@symbol "->"]
+%token MODULE [@symbol "module"]
+%token MUTABLE [@symbol "mutable"]
 %token <nativeint> NATIVEINT [@cost 1] [@recovery 0n][@printer Printf.sprintf "NATIVEINT(%nd)"]
-%token NEW
-%token OBJECT
-%token OF
-%token OPEN
-%token <string> OPTLABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "OPTLABEL(%S)"]
-%token OR
-%token PERCENT
-%token PLUS
-%token PLUSDOT
-%token PLUSEQ
-%token <string> PREFIXOP [@cost 2] [@recovery "!"][@printer Printf.sprintf "PREFIXOP(%S)"]
-%token PRIVATE
-%token QUESTION
-%token QUESTIONQUESTION
-%token QUOTE
-%token RBRACE
-%token RBRACKET
-%token REC
-%token RPAREN
-%token SEMI
-%token SEMISEMI
-%token SHARP
-%token <string> SHARPOP [@cost 2] [@recovery ""][@printer Printf.sprintf "SHARPOP(%S)"]
-%token SIG
-%token STAR
-%token <string * string option> STRING [@cost 1] [@recovery ("", None)][@printer
-   (fun (s,s') -> match s' with
-   | Some s' -> Printf.sprintf "STRING(%S,%S)" s s'
-   | None -> Printf.sprintf "STRING(%S)" s) ]
-%token STRUCT
-%token THEN
-%token TILDE
-%token TO
-%token TRUE
-%token TRY
-%token TYPE
-%token <string> UIDENT [@cost 2][@recovery "_"][@printer Printf.sprintf "UIDENT(%S)"]
-%token UNDERSCORE
-%token VAL
-%token VIRTUAL
-%token WHEN
-%token WHILE
-%token WITH
-%token <string * Location.t> COMMENT [@cost 2][@recovery ("", Location.none)]
+%token NEW [@symbol "new"]
+%token OBJECT [@symbol "object"]
+%token OF [@symbol "of"]
+%token OPEN [@symbol "open"]
+%token <string> OPTLABEL [@cost 2] [@recovery "_"][@printer Printf.sprintf "OPTLABEL(%S)"] [@symbol "?<label>"]
+%token OR [@symbol "or"]
+%token PERCENT [@symbol "%"]
+%token PLUS [@symbol "+"]
+%token PLUSDOT [@symbol "+."]
+%token PLUSEQ [@symbol "+="]
+%token <string> PREFIXOP [@cost 2] [@recovery "!"][@printer Printf.sprintf "PREFIXOP(%S)"] [@symbol "!"]
+%token PRIVATE [@symbol "private"]
+%token QUESTION [@symbol "?"]
+%token QUESTIONQUESTION [@symbol "??"]
+%token QUOTE [@symbol "'"]
+%token RBRACE [@symbol "}"]
+%token RBRACKET [@symbol "]"]
+%token REC [@symbol "rec"]
+%token RPAREN [@symbol ")"]
+%token SEMI [@symbol ";"]
+%token SEMISEMI [@symbol ";;"]
+%token SHARP [@symbol "#"]
+%token <string> SHARPOP [@cost 2] [@recovery ""][@printer Printf.sprintf "SHARPOP(%S)"] [@symbol "#."]
+%token SIG [@symbol "sig"]
+%token STAR [@symbol "*"]
+%token <string * string option> STRING [@cost 1] [@recovery ("", None)][@printer string_of_STRING] [@symbol "<string>"]
+%token STRUCT [@symbol "struct"]
+%token THEN [@symbol "then"]
+%token TILDE [@symbol "~"]
+%token TO [@symbol "to"]
+%token TRUE [@symbol "true"]
+%token TRY [@symbol "try"]
+%token TYPE [@symbol "type"]
+%token <string> UIDENT [@cost 2][@recovery "_"][@printer Printf.sprintf "UIDENT(%S)"] [@symbol "<ident>"]
+%token UNDERSCORE [@symbol "_"]
+%token VAL [@symbol "val"]
+%token VIRTUAL [@symbol "virtual"]
+%token WHEN [@symbol "when"]
+%token WHILE [@symbol "while"]
+%token WITH [@symbol "with"]
+%token <string * Location.t> COMMENT [@cost 2][@recovery ("", Location.none)] [@symbol "COMMENT"]
 
-%token EOL
+%token EOL [@symbol "EOL"]
 
-%token LET_LWT [@cost 1]
-%token TRY_LWT [@cost 1]
-%token MATCH_LWT [@cost 1]
-%token FINALLY_LWT [@cost 1]
-%token FOR_LWT [@cost 1]
-%token WHILE_LWT [@cost 1]
-%token NONREC [@cost 1]
+%token LET_LWT [@cost 1] [@symbol "lwt"]
+%token TRY_LWT [@cost 1] [@symbol "try_lwt"]
+%token MATCH_LWT [@cost 1] [@symbol "match_lwt"]
+%token FINALLY_LWT [@cost 1] [@symbol "finally"]
+%token FOR_LWT [@cost 1] [@symbol "for_lwt"]
+%token WHILE_LWT [@cost 1] [@symbol "while_lwt"]
+%token NONREC [@cost 1] [@symbol "nonrec"]
 
-%token DOTLESS [@cost 1]
-%token DOTTILDE [@cost 1]
-%token GREATERDOT [@cost 1]
-%token <string> LETOP [@cost 1] [@recovery ""] [@printer Printf.sprintf "LETOP(%S)"]
+%token DOTLESS [@cost 1] [@symbol ".<"]
+%token DOTTILDE [@cost 1] [@symbol ".~"]
+%token GREATERDOT [@cost 1] [@symbol ">."]
+%token <string> LETOP [@cost 1] [@recovery ""] [@printer Printf.sprintf "LETOP(%S)"] [@symbol "let<op>"]
 
 (* Precedences and associativities.
 
