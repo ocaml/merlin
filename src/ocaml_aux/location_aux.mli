@@ -26,43 +26,11 @@
 
 )* }}} *)
 
-open Std
-exception Warning of Location.t * string
-
-val warnings: exn list ref option fluid
-val raise_warning: exn -> unit
-val prerr_warning: Location.t -> Warnings.t -> unit
-val catch_warnings: exn list ref -> (unit -> 'a) -> 'a
-
 val compare_pos: Lexing.position -> Location.t -> int
 
 (** Return the smallest location covered by both arguments,
     ghost if both are ghosts *)
-val location_union : Location.t -> Location.t -> Location.t
+val union : Location.t -> Location.t -> Location.t
 
 (** Like location_union, but keep loc_ghost'ness of first argument *)
-val location_extend : Location.t -> Location.t -> Location.t
-
-open Parsetree
-
-type let_binding =
-  { lb_pattern: pattern;
-    lb_expression: expression;
-    lb_attributes: attributes;
-    lb_loc: Location.t; }
-
-type let_bindings =
-  { lbs_bindings: let_binding list;
-    lbs_rec: Asttypes.rec_flag;
-    lbs_extension: string Asttypes.loc option;
-    lbs_attributes: attributes;
-    lbs_loc: Location.t;
-  }
-
-val value_binding_of_let_binding
-  :  let_binding
-  -> Parsetree.value_binding
-
-val value_bindings_of_let_bindings
-  :  let_bindings
-  -> Asttypes.rec_flag * Parsetree.value_binding list
+val extend : Location.t -> Location.t -> Location.t

@@ -27,29 +27,6 @@
 )* }}} *)
 
 open Std
-exception Warning of Location.t * string
-
-let warnings : exn list ref option fluid = fluid None
-
-let raise_warning exn =
-  match ~!warnings with
-  | None -> raise exn
-  | Some l -> l := exn :: !l
-
-let prerr_warning loc w =
-  match ~!warnings with
-  | None -> () (*Location.print_warning loc Format.err_formatter w*)
-  | Some l ->
-    let ppf, to_string = Format.to_string () in
-    Location.print_warning loc ppf w;
-    match to_string () with
-      | "" -> ()
-      | s ->  l := Warning (loc,s) :: !l
-
-let () = Location.prerr_warning_ref := prerr_warning
-
-let catch_warnings caught f =
-  Fluid.let' warnings (Some caught) f
 
 let compare_pos pos loc =
   if Lexing.compare_pos pos loc.Location.loc_start < 0 then
@@ -59,7 +36,7 @@ let compare_pos pos loc =
   else
     0
 
-let location_union l1 l2 =
+let union l1 l2 =
   if l1 = Location.none then l2
   else if l2 = Location.none then l1
   else {
@@ -69,7 +46,7 @@ let location_union l1 l2 =
     loc_ghost = l1.Location.loc_ghost && l2.Location.loc_ghost;
   }
 
-let location_extend l1 l2 =
+let extend l1 l2 =
   if l1 = Location.none then l2
   else if l2 = Location.none then l1
   else {
@@ -78,26 +55,3 @@ let location_extend l1 l2 =
     loc_end   = Lexing.max_pos l1.Location.loc_end l2.Location.loc_end;
     loc_ghost = l1.Location.loc_ghost;
   }
-
-open Parsetree
-
-type let_binding =
-  { lb_pattern: pattern;
-    lb_expression: expression;
-    lb_attributes: attributes;
-    lb_loc: Location.t; }
-
-let value_binding_of_let_binding lb =
-  Ast_helper.Vb.mk ~loc:lb.lb_loc lb.lb_pattern lb.lb_expression
-
-type let_bindings =
-  { lbs_bindings: let_binding list;
-    lbs_rec: Asttypes.rec_flag;
-    lbs_extension: string Asttypes.loc option;
-    lbs_attributes: attributes;
-    lbs_loc: Location.t;
-  }
-
-let value_bindings_of_let_bindings lbs =
-  lbs.lbs_rec,
-  List.map ~f:value_binding_of_let_binding lbs.lbs_bindings

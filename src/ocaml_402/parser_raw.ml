@@ -274,17 +274,18 @@ let mkexp_constraint startpos endpos e (t1, t2) =
 let array_function startpos endpos str name =
   ghloc startpos endpos
     (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name)))
+let raise_error = Front_aux.raise_error
 let syntax_error startpos endpos =
-  Parsing_aux.raise_warning (Syntaxerr.Escape_error (rloc startpos endpos))
+  raise_error (Syntaxerr.Escape_error (rloc startpos endpos))
 let unclosed opening_name opstart opend closing_name clstart clend =
-  raise
+  raise_error
     Syntaxerr.(Error (Unclosed (rloc opstart opend, opening_name,
                                 rloc clstart clend, closing_name)))
 let expecting startpos endpos nonterm =
-  raise
+  raise_error
     Syntaxerr.(Error (Expecting (rloc startpos endpos, nonterm)))
 let not_expecting startpos endpos nonterm =
-  Parsing_aux.raise_warning
+  raise_error
     Syntaxerr.(Error (Not_expecting (rloc startpos endpos, nonterm)))
 let bigarray_function startpos endpos str name =
   ghloc startpos endpos (Ldot(Ldot(Lident "Bigarray", str), name))
@@ -330,16 +331,16 @@ let bigarray_set (startpos,endpos) (startop,endop) arr arg newval =
                         "", ghexp(Pexp_array coords);
                         "", newval]))
 let lapply startpos endpos p1 p2 =
-  if !Clflags.applicative_functors
-  then Lapply(p1, p2)
-  else raise (Syntaxerr.Error(Syntaxerr.Applicative_path (rloc startpos endpos)))
+  if not !Clflags.applicative_functors then
+    raise_error Syntaxerr.(Error(Applicative_path(rloc startpos endpos)));
+  Lapply(p1, p2)
 let exp_of_label startpos endpos lbl =
   mkexp startpos endpos (Pexp_ident(mkrhs startpos endpos (Lident(Longident.last lbl))))
 let pat_of_label startpos endpos lbl =
   mkpat startpos endpos (Ppat_var (mkrhs startpos endpos (Longident.last lbl)))
 let check_variable vl loc v =
   if List.mem v vl then
-    Parsing_aux.raise_warning Syntaxerr.(Error(Variable_in_scope(loc,v)))
+    raise_error Syntaxerr.(Error(Variable_in_scope(loc,v)))
 let varify_constructors var_names t =
   let rec loop t =
     let desc =
@@ -9361,8 +9362,8 @@ module Tables = struct
         let _startpos = _startpos_l_ in
         let _endpos = _endpos_l_ in
         let _v : (Parsetree.value_binding list) =     ( List.iter (fun vb -> if vb.pvb_attributes <> [] then
-        Parsing_aux.raise_warning
-          (Syntaxerr.(Error(Not_expecting(vb.pvb_loc,"item attribute")))))
+        raise_error
+          Syntaxerr.(Error(Not_expecting(vb.pvb_loc,"item attribute"))))
         l;
       l ) in
         {

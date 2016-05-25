@@ -328,7 +328,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
           | [] -> []
           | base :: tail ->
             let f {Location. txt=base; loc=bl} {Location. txt=dot; loc=dl} =
-              let loc = Parsing_aux.location_union bl dl in
+              let loc = Location_aux.union bl dl in
               let txt = base ^ "." ^ reify dot in
               Location.mkloc txt loc
             in
@@ -659,7 +659,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let get_loc {Location.txt = _; loc} = loc in
     let ident_occurrence () =
       let paths = Browse_node.node_paths tnode.BrowseT.t_node in
-      let under_cursor p = Parsing_aux.compare_pos pos (get_loc p) = 0 in
+      let under_cursor p = Location_aux.compare_pos pos (get_loc p) = 0 in
       Logger.logj "occurrences" "Occurrences paths" (fun () ->
           let dump_path ({Location.txt; loc} as p) =
             let ppf, to_string = Format.to_string () in

@@ -59,15 +59,15 @@ module Rewrite_loc = struct
     if l <> none then
       match !queue with
       | [] -> assert false
-      | l' :: ls -> queue := Parsing_aux.location_union l l' :: ls
+      | l' :: ls -> queue := Location_aux.union l l' :: ls
 
   let enter () = queue := Location.none :: !queue
   let leave l0 = match !queue with
     | [] -> assert false
-    | [l] -> queue := []; Parsing_aux.location_extend l0 l
+    | [l] -> queue := []; Location_aux.extend l0 l
     | l :: l' :: ls ->
-      let l = Parsing_aux.location_extend l0 l in
-      queue := Parsing_aux.location_union l l' :: ls;
+      let l = Location_aux.extend l0 l in
+      queue := Location_aux.union l l' :: ls;
       l
 
   let start () = assert (!queue = []); enter ()

@@ -151,8 +151,18 @@ let resume_parse nav =
       in
       check_for_error acc token tokens env (I.offer checkpoint token)
 
-    | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
-      normal acc tokens (I.resume checkpoint)
+    | I.Shifting (_,env,_) | I.AboutToReduce (env,_) as checkpoint ->
+      begin match I.resume checkpoint with
+        | checkpoint' -> normal acc tokens checkpoint'
+        | exception exn ->
+          Front_aux.raise_error exn;
+          let token = match acc with
+            | [] -> assert false
+              (* Parser raised error before parsing anything *)
+            | (_, token) :: _ -> token
+          in
+          enter_error acc token tokens env
+      end
 
     | I.Accepted v -> acc, v
 
@@ -161,20 +171,28 @@ let resume_parse nav =
 
   and check_for_error acc token tokens env = function
     | I.HandlingError _ ->
-      R.dump nav ~wrong:token ~rest:tokens env;
-      let candidates = R.generate null_cursor env in
-      let explanation =
-        Merlin_explain.explain env token
-          candidates.R.popped candidates.R.shifted
-      in
-      errors_ref := Merlin_explain.Syntax_explanation explanation :: !errors_ref;
-      recover acc (token :: tokens) candidates
+      enter_error acc token tokens env
 
     | I.Shifting _ | I.AboutToReduce _ as checkpoint ->
-      check_for_error acc token tokens env (I.resume checkpoint)
+      begin match I.resume checkpoint with
+        | checkpoint' -> check_for_error acc token tokens env checkpoint'
+        | exception exn ->
+          Front_aux.raise_error exn;
+          enter_error acc token tokens env
+      end
 
     | checkpoint ->
       normal ((Correct checkpoint, token) :: acc) tokens checkpoint
+
+  and enter_error acc token tokens env =
+    R.dump nav ~wrong:token ~rest:tokens env;
+    let candidates = R.generate null_cursor env in
+    let explanation =
+      Merlin_explain.explain env token
+        candidates.R.popped candidates.R.shifted
+    in
+    errors_ref := Merlin_explain.Syntax_explanation explanation :: !errors_ref;
+    recover acc (token :: tokens) candidates
 
   and recover acc tokens candidates =
     let token, tokens = match tokens with
@@ -219,6 +237,7 @@ let parse initial nav steps lexer =
 
 
 let run_parser nav lexer previous kind =
+  Front_aux.catch_errors errors_ref @@ fun () ->
   match kind with
   | ML  ->
     let steps = match previous with

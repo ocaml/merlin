@@ -51,7 +51,7 @@ let strict_of_exn exn =
     Some (format ~valid ~where ~loc ~sub:(List.map ~f:of_suberror sub) msg)
   | None ->
     match exn with
-    | Parsing_aux.Warning (loc, msg) ->
+    | Front_aux.Warning (loc, msg) ->
       Some (format ~valid:true ~where:"warning" ~loc msg)
     | Parser_raw.Error ->
       Some (format ~valid:false ~where:"parser" "Parse error")

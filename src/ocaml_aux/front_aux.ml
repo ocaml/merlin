@@ -28,10 +28,7 @@
 
 open Std
 
-exception Weak_error of exn
-let relax_typer = fluid false
-
-let errors : (exn list ref * (int,unit) Hashtbl.t) option fluid = fluid None
+let errors : (exn list ref * unit Btype.TypeHash.t) option fluid = fluid None
 
 let monitor_errors' = ref (ref false)
 let monitor_errors () =
@@ -52,30 +49,30 @@ let raise_error ?(ignore_unify=false) exn =
              Printexc.record_backtrace true;
              Format.pp_print_string  fmt (Printexc.get_backtrace ())
           )
-      | exn ->
-        let exn = if ~!relax_typer then Weak_error exn else exn in
-        l := exn :: !l
+      | exn -> l := exn :: !l
     end
   | None -> raise exn
+
+exception Weak_error of exn
 
 let weak_raise exn =
   raise_error exn;
   raise (Weak_error exn)
 
 let catch_errors caught f =
-  Fluid.let' errors (Some (caught,Hashtbl.create 3)) f
+  Fluid.let' errors (Some (caught,Btype.TypeHash.create 3)) f
 
 let uncatch_errors f =
   Fluid.let' errors None f
 
 let erroneous_type_register te =
   match ~!errors with
-  | Some (l,h) -> Hashtbl.replace h te.Types.id ()
+  | Some (l,h) -> Btype.TypeHash.replace h te ()
   | None -> ()
 
 let erroneous_type_check te =
   match ~!errors with
-  | Some (l,h) when Hashtbl.mem h te.Types.id -> true
+  | Some (l,h) -> Btype.TypeHash.mem h te
   | _ -> false
 
 let rec erroneous_expr_check e =
@@ -89,3 +86,17 @@ let rec erroneous_expr_check e =
 let erroneous_patt_check p =
   List.exists Browse_node.(node_attributes (Pattern p))
     ~f:(fun (str_loc, _) -> str_loc.Location.txt = "merlin.incorrect")
+
+exception Warning of Location.t * string
+
+let prerr_warning loc w =
+  match ~!errors with
+  | None -> () (*Location.print_warning loc Format.err_formatter w*)
+  | Some (l, _) ->
+    let ppf, to_string = Format.to_string () in
+    Location.print_warning loc ppf w;
+    match to_string () with
+      | "" -> ()
+      | s ->  l := Warning (loc,s) :: !l
+
+let () = Location.prerr_warning_ref := prerr_warning

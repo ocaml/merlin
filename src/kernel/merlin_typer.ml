@@ -74,8 +74,7 @@ let type_structure env str =
 
 let type_steps type_fun items env =
   let caught = ref [] in
-  Parsing_aux.catch_warnings caught @@ fun () ->
-  Typing_aux.catch_errors caught    @@ fun () ->
+  Front_aux.catch_errors caught @@ fun () ->
   Typecore.delayed_checks := [];
   let renv = ref env in
   let type_item ast =
@@ -267,8 +266,7 @@ let checks ?pos t =
       sign "(inferred signature)" (Typemod.simplify_signature sign) in
   Typecore.delayed_checks := checks;
   let caught = ref [] in
-  Parsing_aux.catch_warnings caught
-    (fun () -> Typing_aux.catch_errors caught Typecore.force_delayed_checks);
+  Front_aux.catch_errors caught Typecore.force_delayed_checks;
   Typecore.delayed_checks := [];
   !caught
 

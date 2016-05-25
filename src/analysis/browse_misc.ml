@@ -44,7 +44,7 @@ let print_constructor c =
     Printtyp.tree_of_type_scheme { level = 0 ; id = 0 ; desc  }
 
 let summary_at pos sum =
-  let cmp = Parsing_aux.compare_pos pos in
+  let cmp = Location_aux.compare_pos pos in
   let rec aux sum =
     let open Raw_compat in
     match signature_of_summary sum >>= signature_loc with

@@ -157,7 +157,7 @@ let shape cursor nodes =
       | Module_binding_name _
       | Module_declaration_name _
       | Module_type_declaration_name _ -> not node.t_loc.Location.loc_ghost
-      | _ -> Parsing_aux.compare_pos cursor node.t_loc = 0 &&
+      | _ -> Location_aux.compare_pos cursor node.t_loc = 0 &&
              Lexing.compare_pos node.t_loc.Location.loc_start cursor <> 0 &&
              Lexing.compare_pos node.t_loc.Location.loc_end cursor <> 0
     in

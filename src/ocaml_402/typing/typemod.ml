@@ -43,7 +43,7 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-let raise_error = Typing_aux.raise_error
+let raise_error = Front_aux.raise_error
 
 open Typedtree
 
@@ -1098,7 +1098,7 @@ let wrap_constraint env arg mty explicit =
 let rec type_module ?alias sttn funct_body anchor env smod =
   try type_module_ ?alias sttn funct_body anchor env smod
   with exn ->
-    Typing_aux.raise_error exn;
+    raise_error exn;
     { mod_desc = Tmod_structure {
          str_items = [];
          str_type = [];

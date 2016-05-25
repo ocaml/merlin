@@ -143,7 +143,7 @@ let signature_ident =
 let union_loc_opt a b = match a,b with
   | None, None -> None
   | (Some _ as l), None | None, (Some _ as l) -> l
-  | Some a, Some b -> Some (Parsing_aux.location_union a b)
+  | Some a, Some b -> Some (Location_aux.union a b)
 
 let rec signature_loc =
   let open Types in

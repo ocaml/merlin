@@ -39,7 +39,7 @@ let approximate_loc get_loc node =
     let rec aux env node acc =
       let loc = get_loc Location.none node in
       if loc != Location.none then
-        Parsing_aux.location_union loc acc
+        Location_aux.union loc acc
       else Browse_node.fold_node aux env node acc
     in
     aux Env.empty node Location.none
@@ -63,7 +63,7 @@ let select_leafs pos root =
   let rec aux acc path =
     let select env node acc =
       let loc = node_merlin_loc node in
-      if Parsing_aux.compare_pos pos loc = 0
+      if Location_aux.compare_pos pos loc = 0
       then aux acc (List.More ((env, node), path))
       else acc
     in
@@ -87,8 +87,8 @@ let compare_locations pos l1 l2 =
   let t2_first = +1 in
   let t1_first = -1 in
   match
-    Parsing_aux.compare_pos pos l1,
-    Parsing_aux.compare_pos pos l2
+    Location_aux.compare_pos pos l1,
+    Location_aux.compare_pos pos l2
   with
   | 0, 0 ->
     (* Cursor inside both locations: favor closer to the end *)
@@ -127,7 +127,7 @@ let deepest_before pos roots =
           (fun env node acc ->
              let loc = node_merlin_loc node in
              if path == root ||
-                Parsing_aux.compare_pos pos loc = 0 ||
+                Location_aux.compare_pos pos loc = 0 ||
                 Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
              then match acc with
                | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
@@ -149,7 +149,7 @@ let nearest_before pos roots =
   | Some root ->
     let rec aux prev = function
       | List.More ((_, node), next) as prev
-        when Parsing_aux.compare_pos pos (node_merlin_loc node) = 0
+        when Location_aux.compare_pos pos (node_merlin_loc node) = 0
         -> aux prev next
       | _ -> prev
     in

@@ -57,6 +57,8 @@ SOURCES = \
 	$(TYPER)/parsing/asttypes.mli     \
 	$(TYPER)/parsing/location.mli     \
 	$(TYPER)/parsing/location.ml      \
+	src/ocaml_aux/location_aux.mli    \
+	src/ocaml_aux/location_aux.ml     \
 	$(TYPER)/parsing/attr_helper.mli  \
 	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
@@ -121,8 +123,6 @@ SOURCES = \
 	$(TYPER)/typing/cmt_format.ml     \
 	$(TYPER)/tail_analysis.mli        \
 	$(TYPER)/tail_analysis.ml         \
-	src/ocaml_aux/parsing_aux.mli     \
-	src/ocaml_aux/parsing_aux.ml      \
 	src/kernel/dot_merlin.mli         \
 	src/kernel/dot_merlin.ml          \
 	$(TYPER)/parsing/syntaxerr.mli    \
@@ -135,8 +135,8 @@ SOURCES = \
 	$(TYPER)/typing/mtype.mli         \
 	$(TYPER)/typing/mtype.ml          \
 	$(TYPER)/raw_compat.ml            \
-	src/ocaml_aux/typing_aux.mli      \
-	src/ocaml_aux/typing_aux.ml       \
+	src/ocaml_aux/front_aux.mli       \
+	src/ocaml_aux/front_aux.ml        \
 	$(TYPER)/typing/printtyp.mli      \
 	$(TYPER)/typing/printtyp.ml       \
 	$(TYPER)/typing/includeclass.mli  \
