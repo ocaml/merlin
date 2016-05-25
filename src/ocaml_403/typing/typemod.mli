@@ -79,3 +79,7 @@ exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
 val report_error: Env.t -> formatter -> error -> unit
+
+(* merlin *)
+
+val normalize_signature : Env.t -> Types.signature -> unit
