@@ -163,13 +163,6 @@ let error (loc, env, err) =
 
 exception Error_forward of Location.error
 
-(* merlin: Test whether we should trigger type recovery or not.
-   Beside signaling errors, type errors are also used in the process of type
-   checking branches impossible because of GADT. *)
-let can_recover = function
-  | Error (loc, _, _) -> loc <> Location.none
-  | _ -> true
-
 (* Forward declaration, to be filled in by Typemod.type_module *)
 
 let type_module =
@@ -406,9 +399,9 @@ let unify_pat_types loc env ty ty' =
     unify env ty ty'
   with
     Unify trace ->
-      raise (error(loc, env, Pattern_type_clash trace))
+      raise(error(loc, env, Pattern_type_clash(trace)))
   | Tags(l1,l2) ->
-      raise (Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
+      raise(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
 (* unification inside type_exp and type_expect *)
 let unify_exp_types loc env ty expected_ty =
@@ -418,7 +411,7 @@ let unify_exp_types loc env ty expected_ty =
     unify env ty expected_ty
   with
     Unify trace ->
-      raise(error(loc, env, Expr_type_clash trace))
+      raise(error(loc, env, Expr_type_clash(trace)))
   | Tags(l1,l2) ->
       raise(Typetexp.Error(loc, env, Typetexp.Variant_tags (l1, l2)))
 
@@ -439,11 +432,11 @@ let unify_pat_types_gadt loc env ty ty' =
     unify_gadt ~newtype_level env ty ty'
   with
     Unify trace ->
-      raise (error(loc, !env, Pattern_type_clash(trace)))
+      raise(error(loc, !env, Pattern_type_clash(trace)))
   | Tags(l1,l2) ->
-      raise (Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
+      raise(Typetexp.Error(loc, !env, Typetexp.Variant_tags (l1, l2)))
   | Unification_recursive_abbrev trace ->
-      raise (error(loc, !env, Recursive_local_constraint trace))
+      raise(error(loc, !env, Recursive_local_constraint trace))
 
 
 (* Creating new conjunctive types is not allowed when typing patterns *)
@@ -546,7 +539,7 @@ let enter_orpat_variables loc env  p1_vs p2_vs =
               unify env t1 t2
             with
             | Unify trace ->
-                raise(error(loc, env, Or_pattern_type_clash (x1, trace)))
+                raise(error(loc, env, Or_pattern_type_clash(x1, trace)))
             end;
           (x2,x1)::unify_vars rem1 rem2
           end
@@ -715,7 +708,7 @@ end) = struct
           List.find (fun nd -> get_name nd = s) descrs
         with Not_found ->
           raise (error (lid.loc, env,
-                        Wrong_name ("", (newvar ()), type_kind, tpath, lid.txt)))
+                        Wrong_name ("", newvar (), type_kind, tpath, lid.txt)))
       end
     | _ -> raise Not_found
 
@@ -1094,9 +1087,13 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
       | _ -> assert false
       end
   | Ppat_alias(sq, name) ->
+      let errored = Front_aux.monitor_errors () in
       let q = type_pat sq expected_ty in
       begin_def ();
-      let ty_var = build_as_type !env q in
+      let ty_var =
+        if !errored then expected_ty else
+          build_as_type !env q
+      in
       end_def ();
       generalize ty_var;
       let id = enter_variable ~is_as_variable:true loc name ty_var in
@@ -1272,7 +1269,7 @@ and type_pat' ~constrs ~labels ~no_existentials ~mode ~env sp expected_ty =
         pat_type = expected_ty;
         pat_attributes = sp.ppat_attributes;
         pat_env = !env }
-      with exn when can_recover exn ->
+      with exn when !recover_pat ->
         raise_error exn;
         (* FIXME: We don't respect the Cmt_format.save_types logic but we still
                   keep all patterns, so nothing should have been lost. *)
@@ -3438,11 +3435,11 @@ and type_application loc env funct sargs ty_expected =
               match ty_res.desc with
                 Tarrow _ ->
                   if (!Clflags.classic || not (has_label l1 ty_fun)) then
-                    Front_aux.weak_raise 
+                    Front_aux.weak_raise
                       (error(sarg1.pexp_loc, env,
                              Apply_wrong_label (l1, ty_res)))
                   else
-                    Front_aux.weak_raise 
+                    Front_aux.weak_raise
                       (error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
                 Front_aux.weak_raise
