@@ -835,8 +835,8 @@ struct
               Nav.push nav ("Details of " ^ Parser_printer.print_token t)
                 (fun {Nav. body} -> Parser.dump_stack parser body token)
             in
-            link body "%a" on_click
-              (fun () -> Parser_printer.print_token) t
+            link body "%a" (fun () -> Parser_printer.print_token) t
+              on_click
           )
       in
       let print_token line' (t,pos,_ as token) =
@@ -894,9 +894,8 @@ struct
     printf body "Verbosity: %d\n" state.verbosity;
     printf body "Unit name: %s\n" unit;
     let viewer name f =
-      link body "View %s" (fun _ ->
-          Nav.push nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer))
-        name;
+      link body "View %s" name
+        (fun _ -> Nav.push nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer));
       text body "\n"
     in
     viewer "source" view_source;
@@ -913,9 +912,8 @@ struct
     let nav = Nav.make "Merlin monitor" @@ fun {Nav. body; nav} ->
       text body "Buffers\n\n";
       let print_state key state =
-        link body "%a" (fun _ ->
-            Nav.push nav (name_of_key () key) (monitor_context key state))
-          name_of_key key;
+        link body "%a" name_of_key key
+          (fun _ -> Nav.push nav (name_of_key () key) (monitor_context key state));
         text body "\n"
       in
       Hashtbl.iter print_state document_states
