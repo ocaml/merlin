@@ -156,7 +156,9 @@ struct
 
   let print_closed fmt =
     let print () f = f null in
-    Printf.ikfprintf print () fmt
+    let open Printf in
+    let open Printf_compat in
+    ikfprintf print () fmt
 
   let enter t fmt result =
     if is_closed t then

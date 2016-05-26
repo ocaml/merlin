@@ -38,6 +38,8 @@ SOURCES = \
 	src/utils/misc.ml                 \
 	src/utils/file_cache.mli          \
 	src/utils/file_cache.ml           \
+	$(TYPER)/printf_compat.mli        \
+	$(TYPER)/printf_compat.ml         \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
 	src/utils/ppxsetup.mli            \
