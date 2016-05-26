@@ -206,6 +206,8 @@ val save_signature_with_imports:
         (* Arguments: signature, module name, file name,
            imported units with their CRCs. *)
 
+val find_signature: string -> signature (* or raise Not_found *)
+
 (* Return the CRC of the interface of the given compilation unit *)
 
 val crc_of_unit: string -> Digest.t

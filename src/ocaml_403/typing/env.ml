@@ -558,6 +558,9 @@ let read_pers_struct modname filename =
 let find_pers_struct name =
   find_pers_struct true name
 
+let find_signature name =
+  Lazy.force (find_pers_struct name).ps_sig
+
 let check_pers_struct name =
   if not (Hashtbl.mem !state.persistent_structures name) then begin
     (* PR#6843: record the weak dependency ([add_import]) regardless of

@@ -472,6 +472,9 @@ let find_pers_struct ?(check=true) name =
   if check then check_consistency ps;
   ps
 
+let find_signature name =
+  Lazy.force (find_pers_struct name).ps_sig
+
 let reset_cache () =
   !state.current_unit <- "";
   Hashtbl.clear !state.persistent_structures;

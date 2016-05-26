@@ -176,6 +176,7 @@ val get_unit_name: unit -> string
 
 val read_signature: string -> string -> signature
         (* Arguments: module name, file name. Results: signature. *)
+val find_signature: string -> signature
 val save_signature: signature -> string -> string -> signature
         (* Arguments: signature, module name, file name. *)
 val save_signature_with_imports:
