@@ -217,6 +217,7 @@ let reader t =
 
 (* Make global state point to current project *)
 let setup t path =
+  set_local_path t path;
   let c = config t in
   Clflags.load c.flags;
   Warnings.restore c.warnings;
