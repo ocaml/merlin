@@ -124,22 +124,26 @@ let main_loop () =
     Logger.logj "frontend" "output" (fun () -> json);
     output json
   in
-  try
-    while true do
-      let notifications = ref [] in
-      let answer =
-        Logger.with_editor notifications @@ fun () ->
-        match input () with
-        | Some (Protocol.Request (context, request)) ->
-                Protocol.Return (request, Command.dispatch context request)
-        | None -> raise End_of_file
-        | exception exn -> Protocol.Exception exn
-      in
-      let notifications = List.rev !notifications in
-      try output ~notifications answer
-       with exn -> output ~notifications (Protocol.Exception exn);
-    done
-  with End_of_file -> ()
+  let rec loop () =
+    let notifications = ref [] in
+    Logger.with_editor notifications @@ fun () ->
+    match
+      match input () with
+      | Some (Protocol.Request (context, request)) ->
+        let answer = Command.dispatch context request in
+        output ~notifications:(List.rev !notifications)
+          (Protocol.Return (request, answer));
+        true
+      | None -> false
+    with
+    | exception exn ->
+      output ~notifications:(List.rev !notifications)
+        (Protocol.Exception exn);
+      loop ()
+    | true -> loop ()
+    | false -> ()
+  in
+  loop ()
 
 let () =
   (* Setup signals, unix is a disaster *)
