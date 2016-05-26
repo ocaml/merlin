@@ -249,9 +249,9 @@ let checks ?pos t =
     let env = resume_env_at_steps t steps in
     (checks, sign, env)
   in
-  let checks, sign, env = match force_steps ?pos t with
-    | `Structure (steps, _) -> prepare steps
-    | `Signature (steps, _) -> prepare steps
+  let is_impl, (checks, sign, env) = match force_steps ?pos t with
+    | `Structure (steps, _) -> true, prepare steps
+    | `Signature (steps, _) -> false, prepare steps
   in
   (* Fake coercion to mark globals as used.
      Prevent spurious warnings 32, 34, 37, ...
@@ -263,38 +263,36 @@ let checks ?pos t =
   let caught = ref [] in
   begin try
       Front_aux.catch_errors caught (fun () ->
-          let modulename =
-            Merlin_source.unitname (Merlin_reader.source t.reader) in
-          let sourceintf =
-            Misc.chop_extension_if_any
-              (Merlin_source.filename (Merlin_reader.source t.reader))
-            ^ ".mli"
-          in
-          match
-            (*if not (Sys.file_exists sourceintf) then raise Not_found;*)
-            Env.find_signature modulename
-          with
-          | target_sign ->
-            (* Rarely useful during development.
-               Typemod.check_nongen_schemes env sign;*)
-            let _coercion =
-              Includemod.compunit
-                (resume_env_at_steps t [])
-                modulename sign sourceintf target_sign in
-            Typecore.force_delayed_checks ();
-          | exception Not_found ->
-            let simple_sign = Typemod.simplify_signature sign in
-            (* Rarely useful during development.
-               Typemod.check_nongen_schemes env sign;*)
-            Typemod.normalize_signature env simple_sign;
-            let _coercion =
-              Includemod.compunit
-                (resume_env_at_steps t [])
-                modulename
-                sign "(inferred signature)"
-                simple_sign
-            in
-            Typecore.force_delayed_checks ();
+          if is_impl then ignore (
+              let modulename =
+                Merlin_source.unitname (Merlin_reader.source t.reader) in
+              let sourceintf =
+                Misc.chop_extension_if_any
+                  (Merlin_source.filename (Merlin_reader.source t.reader))
+                ^ ".mli"
+              in
+              match
+                (*if not (Sys.file_exists sourceintf) then raise Not_found;*)
+                Env.find_signature modulename
+              with
+              | target_sign ->
+                (* Rarely useful during development.
+                   Typemod.check_nongen_schemes env sign;*)
+                Includemod.compunit
+                  (resume_env_at_steps t [])
+                  modulename sign sourceintf target_sign
+              | exception Not_found ->
+                let simple_sign = Typemod.simplify_signature sign in
+                (* Rarely useful during development.
+                   Typemod.check_nongen_schemes env sign;*)
+                Typemod.normalize_signature env simple_sign;
+                Includemod.compunit
+                  (resume_env_at_steps t [])
+                  modulename
+                  sign "(inferred signature)"
+                  simple_sign
+            );
+          Typecore.force_delayed_checks ();
         )
     with exn ->
       caught := exn :: !caught
