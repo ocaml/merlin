@@ -713,7 +713,11 @@ the error message otherwise print a generic error message."
   (let* ((exts (if (listp ext) ext (list ext)))
          (names (mapcar (lambda (ext) (concat name ext)) exts))
          (file (merlin/send-command `(which path ,names)
-                 #'(lambda (err) (message "No such file (message: %s)" err)))))
+                 #'(lambda (err)
+                     (if (equal err "Not_found")
+                         (message "No such file")
+                       (message "No such file (message: %s)" err))
+                     nil))))
     (when file (merlin-find-file file))))
 
 (defun merlin-switch-to-ml (name)
