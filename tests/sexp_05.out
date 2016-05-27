@@ -1,7 +1,0 @@
-["return",{"cursor":{"line":1,"col":0},"marker":false}]
-["return",{"result":true}]
-["return",{"cursor":{"line":1,"col":0},"marker":false}]
-["return",{"cursor":{"line":4,"col":0},"marker":false}]
-["return",{"cursor":{"line":4,"col":0},"marker":false}]
-["return",[]]
-["return",[["File \"sexp_05.ml\", line 2, characters 12-21","module type Test_sexp = sig exception E of int end"]]]

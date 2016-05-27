@@ -1,6 +1,0 @@
-["return",{"cursor":{"line":1,"col":0},"marker":false}]
-["return",{"result":true}]
-["return",{"cursor":{"line":1,"col":0},"marker":false}]
-["return",{"cursor":{"line":4,"col":0},"marker":false}]
-["return",{"cursor":{"line":4,"col":0},"marker":false}]
-["return",[["File \"bin_prot_03.ml\", line 2, characters 7-46","module Test_binprot :\n  sig\n    type 'a t = { x : int; y : 'a; }\n    val bin_size_t : ('a -> int) -> 'a t -> int\n    val bin_write_t : 'a Bin_prot.Write.writer -> 'a t Bin_prot.Write.writer\n    val bin_writer_t :\n      'a Bin_prot.Type_class.writer -> 'a t Bin_prot.Type_class.writer\n    val bin_read_t : 'a Bin_prot.Read.reader -> 'a t Bin_prot.Read.reader\n    val __bin_read_t__ :\n      'a Bin_prot.Read.reader -> (int -> 'a t) Bin_prot.Read.reader\n    val bin_reader_t :\n      'a Bin_prot.Type_class.reader -> 'a t Bin_prot.Type_class.reader\n    val bin_t : 'a Bin_prot.Type_class.t -> 'a t Bin_prot.Type_class.t\n  end"]]]
