@@ -181,8 +181,7 @@ else
 fi
 
 # Sturgeon version check
-#if ocamlfind query sturgeon >/dev/null 2>/dev/null; then
-if false; then
+if ocamlfind query sturgeon >/dev/null 2>/dev/null; then
   STURGEON_VERSION="sturgeon_stub"
   STURGEON_VERSION_MESSAGE="stub (enabled, using 'sturgeon' package)"
   STURGEON_PACKAGE=sturgeon
