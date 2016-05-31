@@ -3020,13 +3020,18 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
         exp_attributes = sexp.pexp_attributes;
         exp_env = env }
   | Pexp_open (ovf, lid, e) ->
-      let (path, newenv) = !type_open ovf env sexp.pexp_loc lid in
+    (match !type_open ovf env sexp.pexp_loc lid with
+     | exception exn ->
+       raise_error exn;
+       type_expect_ ?in_function ~recarg env e ty_expected
+     | (path, newenv) ->
       let exp = type_expect newenv e ty_expected in
       { exp with
         exp_extra = (Texp_open (ovf, path, lid, newenv), loc,
                      sexp.pexp_attributes) ::
                       exp.exp_extra;
       }
+    )
 
   | Pexp_extension ({ txt = ("ocaml.extension_constructor"
                              |"extension_constructor"); _ },
