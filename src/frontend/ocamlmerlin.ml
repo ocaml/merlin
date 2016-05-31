@@ -127,7 +127,11 @@ let main_loop () =
   let rec loop () =
     let notifications = ref [] in
     Logger.with_editor notifications @@ fun () ->
+    let tr = Trace.start ~limit:2 () in
     match
+      Trace.enter tr "Merlin main loop"
+        (fun continue -> "continue = " ^ string_of_bool continue)
+      @@ fun tr ->
       match input () with
       | Some (Protocol.Request (context, request)) ->
         let answer = Command.dispatch context request in

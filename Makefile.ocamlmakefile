@@ -33,13 +33,15 @@ SOURCES = \
 	src/utils/menhirLib.ml            \
 	src/utils/terminfo.mli            \
 	src/utils/terminfo.ml             \
+	$(TYPER)/printf_compat.mli        \
+	$(TYPER)/printf_compat.ml         \
+	src/utils/trace.mli               \
+	src/utils/trace.ml                \
 	src/utils/std.ml                  \
 	src/utils/misc.mli                \
 	src/utils/misc.ml                 \
 	src/utils/file_cache.mli          \
 	src/utils/file_cache.ml           \
-	$(TYPER)/printf_compat.mli        \
-	$(TYPER)/printf_compat.ml         \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
 	src/utils/ppxsetup.mli            \

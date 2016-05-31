@@ -817,4 +817,4 @@ module Obj = struct
       with Not_found -> false
 end
 
-let (@@) f x = f x
+let trace = Trace.enter

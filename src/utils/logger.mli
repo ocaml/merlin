@@ -49,19 +49,3 @@ val notify : section -> ('b, unit, string, unit) format4 -> 'b
 
 val with_editor : (section * string) list ref -> (unit -> 'a) -> 'a
 
-val cursor : Sturgeon_stub.cursor ref
-
-module Trace :
-sig
-  type t
-  val t : ?limit:int -> unit -> t
-  val cursor : t -> Sturgeon_stub.cursor
-  val is_open : t -> bool
-  val is_closed : t -> bool
-
-  val enter : t -> ('a, unit, string, (t -> 'b) -> 'b) format4
-                -> ('b -> string) -> 'a
-
-  val step : t -> ('a, unit, string, (t -> 'b) -> 'b) format4
-               -> ('b -> string) -> 'a
-end
