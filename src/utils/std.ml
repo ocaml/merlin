@@ -31,7 +31,16 @@ module Json = struct
   let string x = `String x
   let int x = `Int x
 end
-type json = Json.json
+
+type json =
+  [ `Assoc of (string * json) list
+  | `Bool of bool
+  | `Float of float
+  | `Int of int
+  | `List of json list
+  | `Null
+  | `String of string ]
+  [@@deriving show]
 
 module Hashtbl = struct
   include Hashtbl
@@ -533,7 +542,16 @@ end
 type 'a zipper = 'a Zipper.t = Zipper of 'a list * int * 'a list
 
 module Lexing = struct
-  include Lexing
+
+  type position = Lexing.position = {
+    pos_fname : string;
+    pos_lnum : int;
+    pos_bol : int;
+    pos_cnum : int;
+  } [@@deriving show]
+
+  include (Lexing : module type of struct include Lexing end
+           with type position := position)
 
   let move buf p =
     buf.lex_abs_pos <- (p.pos_cnum - buf.lex_curr_pos);
@@ -818,3 +836,4 @@ module Obj = struct
 end
 
 let trace = Trace.enter
+let fprintf = Format.fprintf

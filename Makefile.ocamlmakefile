@@ -213,7 +213,7 @@ SOURCES = \
 	src/kernel/merlin_lib.ml          \
 	src/ocaml_aux/error_report.mli    \
 	src/ocaml_aux/error_report.ml     \
-	src/frontend/protocol.mli         \
+	src/frontend/protocol.ml          \
 	src/frontend/IO_json.mli          \
 	src/frontend/IO_json.ml           \
 	src/frontend/IO_sexp.mli          \
@@ -244,7 +244,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
+PACKS = str findlib yojson unix ppx_deriving.show $(MERLIN_STURGEON_PACKAGE)
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code

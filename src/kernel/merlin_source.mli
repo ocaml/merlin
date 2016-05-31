@@ -1,6 +1,6 @@
 (* Merlin representation of a textual source code *)
 
-type t
+type t [@@deriving show]
 
 val empty : filename:string -> t
 
@@ -13,7 +13,7 @@ type position = [
   | `Offset of int
   | `Logical of int * int
   | `End
-]
+] [@@deriving show]
 
 val get_offset     : t -> [< position] -> [> `Offset of int]
 val get_logical    : t -> [< position] -> [> `Logical of int * int]

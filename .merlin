@@ -30,3 +30,4 @@ PKG findlib
 PKG yojson
 PKG sturgeon
 PKG inuit
+PKG ppx_deriving.show

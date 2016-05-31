@@ -28,6 +28,11 @@
 
 open Std
 
+type t
+  = Location.t
+  = { loc_start: Lexing.position; loc_end: Lexing.position; loc_ghost: bool }
+    [@@deriving show]
+
 let compare_pos pos loc =
   if Lexing.compare_pos pos loc.Location.loc_start < 0 then
     -1

@@ -130,7 +130,7 @@ let main_loop () =
     let tr = Trace.start ~limit:2 () in
     match
       Trace.step tr "Merlin main loop"
-        ~return:(fun continue -> "continue = " ^ string_of_bool continue)
+        ~return:(fun pp -> fprintf pp "continue = %b")
       @@ fun tr ->
       match input () with
       | Some (Protocol.Request (context, request)) ->

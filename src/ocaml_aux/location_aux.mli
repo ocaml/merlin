@@ -26,11 +26,16 @@
 
 )* }}} *)
 
-val compare_pos: Lexing.position -> Location.t -> int
+type t
+  = Location.t
+  = { loc_start: Lexing.position; loc_end: Lexing.position; loc_ghost: bool }
+  [@@deriving show]
+
+val compare_pos: Lexing.position -> t -> int
 
 (** Return the smallest location covered by both arguments,
     ghost if both are ghosts *)
-val union : Location.t -> Location.t -> Location.t
+val union : t -> t -> t
 
 (** Like location_union, but keep loc_ghost'ness of first argument *)
-val extend : Location.t -> Location.t -> Location.t
+val extend : t -> t -> t

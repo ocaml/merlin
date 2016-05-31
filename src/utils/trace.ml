@@ -33,28 +33,41 @@ let sub t cursor =
 
 let indent n = String.make n ' '
 
+let format_return offset cursor return f x =
+  match f x with
+  | exception exn ->
+    Cursor.text cursor
+      ("\n" ^ indent offset ^ "RAISE " ^ Printexc.to_string exn);
+    raise exn
+  | v ->
+    let pp =
+      Format.make_formatter
+        (fun str ofs len -> Cursor.text cursor (String.sub str ofs len))
+        ignore
+    in
+    Format.pp_open_box pp offset;
+    Format.pp_force_newline pp ();
+    Format.pp_print_string pp "return ";
+    begin try return pp v
+      with exn -> assert false
+    end;
+    v
+
 let enter_open t fmt return =
   let print str f =
     Cursor.text t.cursor (indent t.indent);
     Cursor.text t.cursor str;
     let opened = ref (t.limit <> 0) in
     let render cursor =
-      Cursor.text cursor (if !opened then " [+]\n" else " [-]\n");
+      Cursor.text cursor (if !opened then " [+]" else " [-]");
       let cursor = Cursor.rem_flag `Clickable cursor in
       let t' = if !opened then sub t cursor else null in
-      match f t' with
-      | exception exn ->
-        Cursor.text cursor (indent (t.indent + 1));
-        Cursor.text cursor ("RAISE " ^ Printexc.to_string exn ^ "\n");
-        raise exn
-      | v ->
-        Cursor.text cursor (indent (t.indent + 1));
-        Cursor.text cursor ("return " ^ return v ^ "\n");
-        v
+      format_return (t.indent + 1) cursor return f t'
     in
     let c' = Cursor.clickable t.cursor
         (fun c' -> opened := not !opened; Cursor.clear c'; ignore (render c'))
     in
+    Cursor.text t.cursor "\n";
     render c'
   in
   Printf.ksprintf print fmt
@@ -73,16 +86,13 @@ let enter t fmt ~return =
 let step_open t fmt return =
   let print str f =
     Cursor.text t.cursor (indent t.indent);
-    Cursor.text t.cursor (str ^ " \n");
-    match f {t with indent = t.indent + 2} with
-    | exception exn ->
-      Cursor.text t.cursor (indent (t.indent + 1));
-      Cursor.text t.cursor ("RAISE " ^ Printexc.to_string exn ^ "\n");
-      raise exn
-    | v ->
-      Cursor.text t.cursor (indent (t.indent + 1));
-      Cursor.text t.cursor ("return " ^ return v ^ "\n");
-      v
+    Cursor.text t.cursor str;
+    let r =
+      format_return (t.indent + 1) t.cursor return f
+        {t with indent = t.indent + 2}
+    in
+    Cursor.text t.cursor "\n";
+    r
   in
   Printf.ksprintf print fmt
 
