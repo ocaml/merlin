@@ -14,6 +14,9 @@ module Cursor = struct
   let is_closed Cursor = true
   let link Cursor = Printf.ksprintf (fun _ _ -> ())
   let sub Cursor = Cursor
+  let clear Cursor = ()
+  let rem_flag _ Cursor = Cursor
+  let clickable Cursor _ = Cursor
 end
 
 module Widget = struct

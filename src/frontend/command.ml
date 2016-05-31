@@ -919,7 +919,7 @@ struct
 
   let main shell =
     let k = Sturgeon_stub.create_cursor shell "merlin-monitor" in
-    Trace.destination := Sturgeon_stub.create_cursor shell "merlin-log";
+    Trace.set_destination (Sturgeon_stub.create_cursor shell "merlin-log");
     let nav = Nav.make "Merlin monitor" @@ fun {Nav. body; nav} ->
       text body "Buffers\n\n";
       let print_state key state =

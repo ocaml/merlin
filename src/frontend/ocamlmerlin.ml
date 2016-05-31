@@ -129,8 +129,8 @@ let main_loop () =
     Logger.with_editor notifications @@ fun () ->
     let tr = Trace.start ~limit:2 () in
     match
-      Trace.enter tr "Merlin main loop"
-        (fun continue -> "continue = " ^ string_of_bool continue)
+      Trace.step tr "Merlin main loop"
+        ~return:(fun continue -> "continue = " ^ string_of_bool continue)
       @@ fun tr ->
       match input () with
       | Some (Protocol.Request (context, request)) ->

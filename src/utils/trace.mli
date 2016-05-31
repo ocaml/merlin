@@ -1,5 +1,5 @@
 
-val destination : Sturgeon_stub.cursor ref
+val set_destination : Sturgeon_stub.cursor -> unit
 
 type t
 
@@ -10,7 +10,7 @@ val is_closed : t -> bool
 val start : ?limit:int -> unit -> t
 
 val enter
-  : t -> ('a, unit, string, (t -> 'b) -> 'b) format4 -> ('b -> string) -> 'a
+  : t -> ('a, unit, string, (t -> 'b) -> 'b) format4 -> return:('b -> string) -> 'a
 
 val step
-  : t -> ('a, unit, string, (t -> 'b) -> 'b) format4 -> ('b -> string) -> 'a
+  : t -> ('a, unit, string, (t -> 'b) -> 'b) format4 -> return:('b -> string) -> 'a

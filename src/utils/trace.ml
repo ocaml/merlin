@@ -2,6 +2,12 @@ open Sturgeon_stub
 
 let destination = ref null
 
+let set_destination cursor =
+  let c = Cursor.sub cursor in
+  Cursor.text cursor "\n";
+  Cursor.link cursor "Clear" (fun _ -> Cursor.clear c);
+  destination := c
+
 type t = {
   cursor: Sturgeon_stub.cursor;
   limit: int;
@@ -22,30 +28,34 @@ let null = {
   indent = 0;
 }
 
-let sub t =
-  let limit = t.limit - 1 in
-  if limit <= 0 then null
-  else
-    let indent = t.indent + 2 in
-    let cursor = Cursor.sub t.cursor in
-    {limit; cursor; indent}
+let sub t cursor =
+  {limit = t.limit - 1; cursor; indent = t.indent + 2}
 
 let indent n = String.make n ' '
 
-let enter_open t fmt result =
+let enter_open t fmt return =
   let print str f =
     Cursor.text t.cursor (indent t.indent);
-    Cursor.text t.cursor (str ^ " \n");
-    let t' = sub t in
-    match f t' with
-    | exception exn ->
-      Cursor.text t.cursor (indent (t.indent + 1));
-      Cursor.text t.cursor ("RAISE " ^ Printexc.to_string exn ^ "\n");
-      raise exn
-    | v ->
-      Cursor.text t.cursor (indent (t.indent + 1));
-      Cursor.text t.cursor ("return " ^ result v ^ "\n");
-      v
+    Cursor.text t.cursor str;
+    let opened = ref (t.limit <> 0) in
+    let render cursor =
+      Cursor.text cursor (if !opened then " [+]\n" else " [-]\n");
+      let cursor = Cursor.rem_flag `Clickable cursor in
+      let t' = if !opened then sub t cursor else null in
+      match f t' with
+      | exception exn ->
+        Cursor.text cursor (indent (t.indent + 1));
+        Cursor.text cursor ("RAISE " ^ Printexc.to_string exn ^ "\n");
+        raise exn
+      | v ->
+        Cursor.text cursor (indent (t.indent + 1));
+        Cursor.text cursor ("return " ^ return v ^ "\n");
+        v
+    in
+    let c' = Cursor.clickable t.cursor
+        (fun c' -> opened := not !opened; Cursor.clear c'; ignore (render c'))
+    in
+    render c'
   in
   Printf.ksprintf print fmt
 
@@ -55,12 +65,12 @@ let print_closed fmt =
   let open Printf_compat in
   ikfprintf print () fmt
 
-let enter t fmt result =
+let enter t fmt ~return =
   if is_closed t then
     print_closed fmt
-  else enter_open t fmt result
+  else enter_open t fmt return
 
-let step_open t fmt result =
+let step_open t fmt return =
   let print str f =
     Cursor.text t.cursor (indent t.indent);
     Cursor.text t.cursor (str ^ " \n");
@@ -71,12 +81,12 @@ let step_open t fmt result =
       raise exn
     | v ->
       Cursor.text t.cursor (indent (t.indent + 1));
-      Cursor.text t.cursor ("return " ^ result v ^ "\n");
+      Cursor.text t.cursor ("return " ^ return v ^ "\n");
       v
   in
   Printf.ksprintf print fmt
 
-let step t fmt result =
+let step t fmt ~return =
   if is_closed t then
     print_closed fmt
-  else step_open t fmt result
+  else step_open t fmt return
