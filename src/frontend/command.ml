@@ -853,17 +853,23 @@ struct
         List.fold_left ~f:print_token ~init:(-1) (Lexer.tokens lexer) in
       ()
 
-  let view_printast buffer {Nav. body} =
+  let reader_ast buffer =
+    Reader.result (Buffer.reader buffer)
+
+  let typer_ast buffer =
+    Typer.processed_ast (Buffer.typer buffer)
+
+  let view_printast prj buffer {Nav. body} =
     let ppf, to_string = Format.to_string () in
-    begin match Reader.result (Buffer.reader buffer) with
+    begin match prj buffer with
       | `Signature s -> Printast.interface ppf s
       | `Structure s -> Printast.implementation ppf s
     end;
     text body (to_string ())
 
-  let view_pprintast buffer {Nav. body} =
+  let view_pprintast prj buffer {Nav. body} =
     let ppf, to_string = Format.to_string () in
-    begin match Reader.result (Buffer.reader buffer) with
+    begin match prj buffer with
       | `Signature s -> Pprintast.signature ppf s
       | `Structure s -> Pprintast.structure ppf s
     end;
@@ -894,15 +900,20 @@ struct
     printf body "Verbosity: %d\n" state.verbosity;
     printf body "Unit name: %s\n" unit;
     let viewer name f =
-      link body "View %s" name
+      link body "- %s" name
         (fun _ -> Nav.push nav ("Viewing " ^ name ^ " of " ^ unit) (f buffer));
       text body "\n"
     in
+    text body "\nLexer\n";
     viewer "source" view_source;
     viewer "tokens" view_tokens;
-    viewer "parsetree (raw)" view_printast;
-    viewer "parsetree (pretty)" view_pprintast;
+    text body "\nParser\n";
+    viewer "parsetree (raw)" (view_printast reader_ast);
+    viewer "parsetree (pretty)" (view_pprintast reader_ast);
     viewer "recoveries" view_recoveries;
+    text body "\nTypechecker\n";
+    viewer "postprocessed parsetree (raw)" (view_printast typer_ast);
+    viewer "postprocessed parsetree (pretty)" (view_pprintast typer_ast);
     viewer "signature" view_signature;
     viewer "typedtree" view_typedtree
 

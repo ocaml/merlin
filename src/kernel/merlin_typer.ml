@@ -207,6 +207,14 @@ let force_steps ?(pos=`End) t =
 
 (* Public API *)
 
+let processed_ast ?pos t =
+  let prepare steps = List.map ~f:(fun x -> x.ast) steps in
+  match force_steps ?pos t with
+  | `Structure (steps, _) ->
+    `Structure (prepare steps)
+  | `Signature (steps, _) ->
+    `Signature (prepare steps)
+
 let result ?pos t =
   let prepare steps =
     let results = List.map ~f:(fun x -> x.result) steps in

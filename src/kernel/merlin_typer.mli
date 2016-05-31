@@ -38,6 +38,10 @@ type tree = [
   | `Structure of Typedtree.structure
 ]
 
+val processed_ast : ?pos:Merlin_source.position -> t ->
+  [ `Signature of Parsetree.signature
+  | `Structure of Parsetree.structure ]
+
 val result : ?pos:Merlin_source.position -> t -> tree
 
 val errors : ?pos:Merlin_source.position -> t -> exn list
