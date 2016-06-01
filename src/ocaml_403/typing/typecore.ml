@@ -2013,14 +2013,14 @@ let rec type_exp ?recarg env sexp =
    In the principal case, [type_expected'] may be at generic_level.
  *)
 
-and type_expect ?in_function ?recarg env sexp ty_expected =
+and type_expect ?in_function ?(recarg=Rejected) env sexp ty_expected =
   Cmt_format.save_types
     ~save:(fun exp -> [Cmt_format.Partial_expression exp])
   @@ fun () ->
   try
     Builtin_attributes.warning_enter_scope ();
     Builtin_attributes.warning_attribute sexp.pexp_attributes;
-    let exp = type_expect_ ?in_function env sexp ty_expected in
+    let exp = type_expect_ ?in_function ~recarg env sexp ty_expected in
     Builtin_attributes.warning_leave_scope ();
     exp
   with exn ->
@@ -2044,7 +2044,7 @@ and type_expect ?in_function ?recarg env sexp ty_expected =
       exp_attributes = merlin_recovery_attributes [];
     }
 
-and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
+and type_expect_ ?in_function ~recarg env sexp ty_expected =
   let loc = sexp.pexp_loc in
   (* Record the expression type before unifying it with the expected type *)
   let rue exp =
