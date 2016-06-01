@@ -1,4 +1,4 @@
-OPAM_DEPENDS="yojson ocamlfind"
+OPAM_DEPENDS="yojson ocamlfind ppx_deriving"
 export OPAMYES=1 OPAMVERBOSE=1
 
 echo System OCaml version
