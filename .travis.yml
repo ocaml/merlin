@@ -16,4 +16,4 @@ cache:
 script: sh -ex .travis-ci.sh
 env:
   - OCAML_VERSION=4.02.3
-  - OCAML_VERSION=4.03.0+trunk
+  - OCAML_VERSION=4.03.0
