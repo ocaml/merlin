@@ -1977,7 +1977,7 @@ simple_pattern_not_ident:
 pattern_comma_list:
     pattern_comma_list COMMA pattern            { $3 :: $1 }
   | pattern COMMA pattern                       { [$3; $1] }
-  | pattern COMMA error                         { expecting(3, "pattern") }
+  (*| pattern COMMA error                         { expecting(3, "pattern") }*)
 ;
 pattern_semi_list:
     pattern                                     { [$1] }
@@ -2483,9 +2483,9 @@ ident:
 val_ident:
     LIDENT                                      { $1 }
   | LPAREN operator RPAREN                      { $2 }
-  | LPAREN operator error                       { unclosed("(", 1, ")", 3) }
-  | LPAREN error                                { expecting(2, "operator") }
-  | LPAREN MODULE error                         { expecting(3, "module-expr") }
+  (*| LPAREN operator error                       { unclosed("(", 1, ")", 3) }*)
+  (*| LPAREN error                                { expecting(2, "operator") }*)
+  (*| LPAREN MODULE error                         { expecting(3, "module-expr") }*)
 ;
 operator:
     PREFIXOP                                    { $1 }
