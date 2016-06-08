@@ -64,7 +64,13 @@ let get_tokens keywords pos text =
     aux items (Lexer_raw.token state lexbuf)
 
   in
-  continue
+  function
+  | [] ->
+    (* First line: skip #! ... *)
+    aux [] (Lexer_raw.skip_sharp_bang state lexbuf)
+  | items ->
+    (* Resume *)
+    continue items
 
 let initial_position source =
   { Lexing.
@@ -121,8 +127,9 @@ let update source t =
   else if Merlin_source.compare source t.source = 0 then
     {t with source}
   else match diff t.items t.source source with
-    | [] -> make t.keywords source
-    | (item :: _) as items ->
+    | _ :: (item :: _ as items) ->
+      (* Skip one token when resuming, as it might be an unterminated
+         string or comment. *)
       let pos = item_end item in
       let offset = pos.Lexing.pos_cnum in
       Logger.logf "Merlin_lexer" "update" "resume from %d" offset;
@@ -131,6 +138,7 @@ let update source t =
           String.sub text ~pos:offset ~len:(String.length text - offset) in
       let items = get_tokens t.keywords pos text items in
       { t with items; source }
+    | [_] | [] -> make t.keywords source
 
 let initial_position t =
   initial_position t.source
