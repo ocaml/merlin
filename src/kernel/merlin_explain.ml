@@ -89,6 +89,7 @@ let to_error { item; unclosed; location; popped; shifted; unexpected } =
   let popped = String.concat " " (List.rev_map friendly_name popped) in
   let expecting = match shifted with
     | None -> if popped = "" then "" else ", maybe remove " ^ popped
+    | Some (X (T T_EOF)) -> ""
     | Some sym ->
       if popped = "" then ", expecting " ^ (friendly_name sym)
       else ", maybe replace " ^ popped ^ " by " ^ (friendly_name sym)
