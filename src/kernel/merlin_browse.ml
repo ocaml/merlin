@@ -33,6 +33,43 @@ open Browse_node
 type node = Browse_node.t
 type t = (Env.t * node) List.Non_empty.t
 
+let node_of_binary_part env part =
+  let open Cmt_format in
+  match part with
+  | Partial_structure x ->
+    Browse_node.Structure x
+  | Partial_structure_item x ->
+    Browse_node.Structure_item (x, env)
+  | Partial_expression x ->
+    Browse_node.Expression x
+  | Partial_pattern x ->
+    Browse_node.Pattern x
+  | Partial_class_expr x ->
+    Browse_node.Class_expr x
+  | Partial_signature x ->
+    Browse_node.Signature x
+  | Partial_signature_item x ->
+    Browse_node.Signature_item (x, env)
+  | Partial_module_type x ->
+    Browse_node.Module_type x
+
+let fold_node f env t acc =
+  let acc = match
+      Cmt_format.saved_types_from_attributes
+        (Browse_node.node_attributes t)
+    with
+    | [] -> acc
+    | parts ->
+      let rec aux acc = function
+        | [] -> acc
+        | part :: parts ->
+          let t = node_of_binary_part env part in
+          aux (f (Browse_node.node_update_env env t) t acc) parts
+      in
+      aux acc parts
+  in
+  Browse_node.fold_node f env t acc
+
 let approximate_loc get_loc node =
   let loc = get_loc Location.none node in
   if loc == Location.none then
@@ -40,7 +77,7 @@ let approximate_loc get_loc node =
       let loc = get_loc Location.none node in
       if loc != Location.none then
         Location_aux.union loc acc
-      else Browse_node.fold_node aux env node acc
+      else fold_node aux env node acc
     in
     aux Env.empty node Location.none
   else
@@ -72,10 +109,10 @@ let select_leafs pos root =
     if has_attr "merlin.ignore" attrs then
       acc
     else if has_attr "merlin.teresting" attrs then
-      let acc' = Browse_node.fold_node select env node [] in
+      let acc' = fold_node select env node [] in
       raise (Merlin_only (if [] == acc' then [path] else acc'))
     else
-      let acc' = Browse_node.fold_node select env node acc in
+      let acc' = fold_node select env node acc in
       if acc == acc'
       then path :: acc
       else acc'
@@ -123,7 +160,7 @@ let deepest_before pos roots =
   | Some root ->
     let rec aux loc0 path =
       let env0, node0 = leaf_node path in
-      let candidate = Browse_node.fold_node
+      let candidate = fold_node
           (fun env node acc ->
              let loc = node_merlin_loc node in
              if path == root ||

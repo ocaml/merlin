@@ -45,7 +45,7 @@ let of_node ?(env=default_env) node =
     let rec t = {t_node; t_env; t_loc; t_children = lazy (aux t)} in
     t
   and aux t =
-    Browse_node.fold_node (fun env node acc -> one env node :: acc)
+    Merlin_browse.fold_node (fun env node acc -> one env node :: acc)
       t.t_env t.t_node []
   in
   one (Browse_node.node_update_env env node) node

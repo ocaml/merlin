@@ -2,6 +2,7 @@ open Std
 open Sturgeon_stub
 open Cursor
 open Widget
+type cursor = Sturgeon_stub.cursor
 
 module Make
     (Parser : MenhirLib.IncrementalEngine.EVERYTHING)

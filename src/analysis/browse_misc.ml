@@ -90,7 +90,7 @@ let dump_browse node =
     ] :: acc
   and dump_list env node =
     `List (List.sort ~cmp:compare @@
-           Browse_node.fold_node append env node [])
+           Merlin_browse.fold_node append env node [])
   in
   `List (append Env.empty node [])
 
