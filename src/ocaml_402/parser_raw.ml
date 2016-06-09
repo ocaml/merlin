@@ -19565,18 +19565,21 @@ module Tables = struct
         let _v : (Parsetree.structure_item list) = let _endpos = _endpos__4_ in
         let _startpos = _startpos__1_ in
             (
-      match _4 with
-        [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
-           pvb_expr = exp; pvb_attributes = attrs}] ->
-          let exp = wrap_exp_attrs _startpos _endpos exp _2 in
-          mkstr _startpos _endpos (Pstr_eval (exp, attrs))
-      | l ->
-        let str = mkstr _startpos _endpos (Pstr_value(_3, List.rev l)) in
-        let (ext, attrs) = _2 in
-        if attrs <> [] then not_expecting _startpos__2_ _endpos__2_ "attribute";
-        match ext with
-        | None -> str
-        | Some id -> ghstr _startpos _endpos (Pstr_extension((id, PStr str), []))
+      let (extensions, attributes) = _2 in
+      let str =
+        match _4 with
+          [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
+            pvb_expr = exp; pvb_attributes = attrs}] ->
+            let exp = wrap_exp_attrs _startpos _endpos exp (None, attributes) in
+            mkstr _startpos _endpos (Pstr_eval (exp, attrs))
+        | l ->
+          if attributes <> [] then
+            not_expecting _startpos__2_ _endpos__2_ "attribute";
+          mkstr _startpos _endpos (Pstr_value(_3, List.rev l))
+      in
+      match extensions with
+      | None -> str
+      | Some id -> ghstr _startpos _endpos (Pstr_extension((id, PStr str), []))
     ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;

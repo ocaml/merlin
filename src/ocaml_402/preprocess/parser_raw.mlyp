@@ -659,18 +659,21 @@ structure_tail:
 structure_item:
 | LET [@item "let"] ext_attributes rec_flag let_bindings
     {
-      match $4 with
-        [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
-           pvb_expr = exp; pvb_attributes = attrs}] ->
-          let exp = wrap_exp_attrs $startpos $endpos exp $2 in
-          mkstr $startpos $endpos (Pstr_eval (exp, attrs))
-      | l ->
-        let str = mkstr $startpos $endpos (Pstr_value($3, List.rev l)) in
-        let (ext, attrs) = $2 in
-        if attrs <> [] then not_expecting $startpos($2) $endpos($2) "attribute";
-        match ext with
-        | None -> str
-        | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr str), []))
+      let (extensions, attributes) = $2 in
+      let str =
+        match $4 with
+          [ {pvb_pat = { ppat_desc = Ppat_any; ppat_loc = _ };
+            pvb_expr = exp; pvb_attributes = attrs}] ->
+            let exp = wrap_exp_attrs $startpos $endpos exp (None, attributes) in
+            mkstr $startpos $endpos (Pstr_eval (exp, attrs))
+        | l ->
+          if attributes <> [] then
+            not_expecting $startpos($2) $endpos($2) "attribute";
+          mkstr $startpos $endpos (Pstr_value($3, List.rev l))
+      in
+      match extensions with
+      | None -> str
+      | Some id -> ghstr $startpos $endpos (Pstr_extension((id, PStr str), []))
     }
 | EXTERNAL [@item "external"] val_ident COLON core_type EQUAL primitive_declaration
   post_item_attributes
