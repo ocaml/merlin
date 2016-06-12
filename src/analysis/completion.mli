@@ -27,7 +27,6 @@
 )* }}} *)
 
 (* TODO: document all the following functions *)
-open Std
 open Merlin_lib
 
 type raw_info =

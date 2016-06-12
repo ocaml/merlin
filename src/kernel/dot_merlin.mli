@@ -26,8 +26,6 @@
 
 )* }}} *)
 
-open Std
-
 (** Load and cache dot-merlin files **)
 
 type config = {

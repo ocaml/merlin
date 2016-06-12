@@ -26,7 +26,6 @@
 
 )* }}} *)
 
-open Merlin_lib
 open Sturgeon_stub
 
 val dispatch : Protocol.Context.t -> 'a Protocol.command -> 'a

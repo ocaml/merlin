@@ -26,7 +26,6 @@
 
 )* }}} *)
 
-open Std
 open Sturgeon_stub
 
 type kind =

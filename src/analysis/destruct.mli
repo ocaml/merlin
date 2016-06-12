@@ -26,8 +26,6 @@
 
 )* }}} *)
 
-open Std
-
 (** Destruct at the moment works in two contexts:
 
       - an expression context:
