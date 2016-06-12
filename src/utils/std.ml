@@ -670,26 +670,6 @@ type 'a fluid = 'a Fluid.t
 let fluid = Fluid.from
 let (~!) = Fluid.get
 
-module Sync : sig
-  type 'a t
-  val none : unit -> 'a t
-  val make : 'a -> 'a t
-  val same : 'a -> 'a t -> bool
-end = struct
-  type 'a t = 'a Weak.t
-  let make x =
-    let t = Weak.create 1 in
-    Weak.set t 0 (Some x);
-    t
-  let same x t =
-    match Weak.get t 0 with
-    | None -> false
-    | Some x' -> x == x'
-
-  let none : exn t = make Not_found
-  let none () : 'a t = Obj.magic none
-end
-
 module Array = struct
   include Array
 
@@ -837,3 +817,9 @@ end
 
 let trace = Trace.enter
 let fprintf = Format.fprintf
+
+let lazy_eq a b =
+  match Lazy.is_val a, Lazy.is_val b with
+  | true, true -> Lazy.force_val a == Lazy.force_val b
+  | false, false -> a == b
+  | _ -> false

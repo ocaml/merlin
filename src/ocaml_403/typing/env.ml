@@ -606,7 +606,8 @@ let check_state_consistency () =
           | None, None -> false
           | Some filename, Some ps ->
             begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_env_store) with
-              | Cmi_cache_store (_, _, ps_sig) -> ps_sig != ps.ps_sig
+              | Cmi_cache_store (_, _, ps_sig) ->
+                not (Std.lazy_eq ps_sig ps.ps_sig)
               | _ -> true
             end
           | _, _ -> true
