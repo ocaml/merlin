@@ -29,7 +29,6 @@
 type t
   = Location.t
   = { loc_start: Lexing.position; loc_end: Lexing.position; loc_ghost: bool }
-  [@@deriving show]
 
 val compare_pos: Lexing.position -> t -> int
 

@@ -40,7 +40,6 @@ type json =
   | `List of json list
   | `Null
   | `String of string ]
-  [@@deriving show]
 
 module Hashtbl = struct
   include Hashtbl
@@ -548,7 +547,7 @@ module Lexing = struct
     pos_lnum : int;
     pos_bol : int;
     pos_cnum : int;
-  } [@@deriving show]
+  }
 
   include (Lexing : module type of struct include Lexing end
            with type position := position)

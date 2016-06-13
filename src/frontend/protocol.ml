@@ -37,31 +37,30 @@ struct
            `Module|`Modtype|`Type|`MethodCall];
     desc: 'desc;
     info: 'desc;
-  } [@@deriving show]
+  }
 
   type entry = string raw_entry
-    [@@deriving show]
 
   type application_context = {
     argument_type: string;
     labels : (string * string) list;
-  } [@@deriving show]
+  }
 
   type t = {
     entries: entry list;
     context: [ `Unknown
              | `Application of application_context
              ]
-  } [@@deriving show]
+  }
 end
 
 type protocol_version =
   [ `V2 (* First version to support versioning ! *)
   | `V3 (* Responses are now assoc {class:string, value:..., notifications:string list} *)
-  ] [@@deriving show]
+  ]
 
 type completions = Compl.t
-  [@@deriving show]
+
 
 type outline = item list
 and item = {
@@ -79,15 +78,15 @@ and item = {
   ];
   location : Location_aux.t ;
   children : outline ;
-} [@@deriving show]
+}
 
 type shape = {
   shape_loc : Location_aux.t;
   shape_sub : shape list;
-} [@@deriving show]
+}
 
 type is_tail_position = [`No | `Tail_position | `Tail_call]
-  [@@deriving show]
+
 
 module Context =
 struct
@@ -95,13 +94,13 @@ struct
     kind: [`ML | `MLI | `Auto ];
     path: string option;
     dot_merlins: string list option;
-  } [@@deriving show]
+  }
 
   type t = {
     document: document option;
     printer_width: int option;
     printer_verbosity: int option;
-  } [@@deriving show]
+  }
 end
 
 type _ query_command =

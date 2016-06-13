@@ -244,7 +244,7 @@ SOURCES = \
 	src/frontend/command.ml           \
 	src/frontend/ocamlmerlin.ml
 
-PACKS = str findlib yojson unix ppx_deriving.show $(MERLIN_STURGEON_PACKAGE)
+PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code

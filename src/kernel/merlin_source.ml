@@ -4,7 +4,7 @@ open Std
 type t = {
   filename: string;
   text: string;
-} [@@deriving show]
+}
 
 let empty ~filename = {filename; text = ""}
 
@@ -15,7 +15,7 @@ type position = [
   | `Offset of int
   | `Logical of int * int
   | `End
-] [@@deriving show]
+]
 
 exception Found of int
 
