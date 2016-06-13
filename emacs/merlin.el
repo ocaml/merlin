@@ -5,9 +5,9 @@
 ;;         Frédéric Bour <frederic.bour(_)lakaban.net>
 ;;         Thomas Refis <thomas.refis(_)gmail.com>
 ;; Created: 18 April 2013
-;; Version: 1.4
+;; Version: 2.5
 ;; Keywords: ocaml languages
-;; URL: http://github.com/the-lambda-church/merlin
+;; URL: https://github.com/the-lambda-church/merlin
 
 ;;; Commentary:
 ;; Description:

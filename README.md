@@ -5,12 +5,12 @@ Building and installing Merlin
 
 This README gives only indications on how to install merlin from source.
 If you want know how to install it from opam, and how to setup your environment
-to use merlin, have a look at [the wiki](https://github.com/def-lkb/merlin/wiki).
+to use merlin, have a look at [the wiki](https://github.com/the-lambda-church/merlin/wiki).
 
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.00.1, ocamlfind, yojson
+Dependencies: ocaml >= 4.02.3, ocamlfind, yojson
 
     $ ./configure
     $ make

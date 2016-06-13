@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name:         "merlin"
-version:      "2.3.1"
+version:      "2.5.0"
 maintainer:   "defree@gmail.com"
 authors:      "The Merlin team"
 homepage:     "https://github.com/the-lambda-church/merlin"
@@ -17,7 +17,7 @@ depends: [
   "yojson"
 ]
 
-available: [ocaml-version >= "4.00.0"]
+available: [ocaml-version >= "4.02.3"]
 
 post-messages: [
   "merlin installed.

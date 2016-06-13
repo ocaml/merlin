@@ -1,3 +1,23 @@
+merlin 2.5.0
+============
+Mon Jun 13 22:26:33 CEST 2016
+
+  frontend:
+  - now all commands can take a context, this reduce the amount of state
+    in the command interpreter. Long term goal is to make protocol stateless
+  - merlin now supports customizable "readers": processes responsible for
+    parsing and pretty-printing. Main use-case is Reason, cppo/optcomp support
+    might be added later
+  backend:
+  - drop support for 4.00 / 4.01
+  - support for 4.03 has been added
+  - new implementation of type recovery, should diverge less from upstream
+  - support for 4.02 was reimplemented to use the same design
+  - menhir's fork has been synchronized with upstream, recovery algorithm 
+    is completely new
+  vim: add support for python3, update to new protocol
+  emacs: update to new protocol, bug fixes
+
 merlin 2.3.1
 ============
 Wed Nov 25 15:01:47 CET 2015
