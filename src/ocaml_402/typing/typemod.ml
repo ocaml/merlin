@@ -59,12 +59,12 @@ let rec path_concat head p =
 
 let extract_sig env loc mty =
   match Env.scrape_alias env mty with
-    Mty_signature sg -> sg
+    Mty_signature (lazy sg) -> sg
   | _ -> raise(Error(loc, env, Signature_expected))
 
 let extract_sig_open env loc mty =
   match Env.scrape_alias env mty with
-    Mty_signature sg -> sg
+    Mty_signature (lazy sg) -> sg
   | _ -> raise(Error(loc, env, Structure_expected mty))
 
 (* Compute the environment after opening a module *)
@@ -232,7 +232,7 @@ let merge_constraint initial_env loc sg constr =
         let ((path, path_loc, tcstr), newsg) =
           merge env (extract_sig env loc md.md_type) namelist None in
         (path_concat id path, lid, tcstr),
-        Sig_module(id, {md with md_type=Mty_signature newsg}, rs) :: rem
+        Sig_module(id, {md with md_type=Mty_signature (lazy newsg)}, rs) :: rem
     | (item :: rem, _, _) ->
         let (cstr, items) = merge (Env.add_item item env) rem namelist row_id
         in
@@ -338,7 +338,7 @@ let rec approx_modtype env smty =
       let path = Typetexp.lookup_module env smty.pmty_loc lid.txt in
       Mty_alias path
   | Pmty_signature ssg ->
-      Mty_signature(approx_sig env ssg)
+      Mty_signature(Lazy.from_val (approx_sig env ssg))
   | Pmty_functor(param, sarg, sres) ->
       let arg = may_map (approx_modtype env) sarg in
       let (id, newenv) =
@@ -528,8 +528,8 @@ let rec transl_modtype env smty =
         smty.pmty_attributes
   | Pmty_signature ssg ->
       let sg = transl_signature env ssg in
-      mkmty (Tmty_signature sg) (Mty_signature sg.sig_type) env loc
-        smty.pmty_attributes
+      mkmty (Tmty_signature sg) (Mty_signature (Lazy.from_val sg.sig_type))
+        env loc smty.pmty_attributes
   | Pmty_functor(param, sarg, sres) ->
       let arg = Misc.may_map (transl_modtype env) sarg in
       let ty_arg = Misc.may_map (fun m -> m.mty_type) arg in
@@ -552,7 +552,7 @@ let rec transl_modtype env smty =
         )
         ([],init_sg) constraints in
       mkmty (Tmty_with ( body, List.rev rev_tcstrs))
-        (Mtype.freshen (Mty_signature final_sg)) env loc
+        (Mtype.freshen (Mty_signature (lazy final_sg))) env loc
         smty.pmty_attributes
   | Pmty_typeof smod ->
       let tmty, mty = !type_module_type_of_fwd env smod in
@@ -886,7 +886,7 @@ let path_of_module mexp =
 let rec closed_modtype = function
     Mty_ident p -> true
   | Mty_alias p -> true
-  | Mty_signature sg -> List.for_all closed_signature_item sg
+  | Mty_signature (lazy sg) -> List.for_all closed_signature_item sg
   | Mty_functor(id, param, body) -> closed_modtype body
 
 and closed_signature_item = function
@@ -1048,7 +1048,7 @@ let rec package_constraints env loc mty constrs =
       )
       sg
   in
-  Mty_signature sg'
+  Mty_signature (lazy sg')
 
 let modtype_of_package env loc p nl tl =
   try match (Env.find_modtype p env).mtd_type with
@@ -1102,7 +1102,7 @@ let rec type_module ?alias sttn funct_body anchor env smod =
          str_type = [];
          str_final_env = env;
        };
-      mod_type = Mty_signature [];
+      mod_type = Mty_signature (lazy []);
       mod_env = env;
       mod_attributes = smod.pmod_attributes;
       mod_loc = smod.pmod_loc }
@@ -1138,14 +1138,14 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
         type_structure funct_body anchor env sstr smod.pmod_loc in
       let md =
         rm { mod_desc = Tmod_structure str;
-             mod_type = Mty_signature sg;
+             mod_type = Mty_signature (lazy sg);
              mod_env = env;
              mod_attributes = smod.pmod_attributes;
              mod_loc = smod.pmod_loc }
       in
       let sg' = simplify_signature sg in
       if List.length sg' = List.length sg then md else
-      wrap_constraint (Env.implicit_coercion env) md (Mty_signature sg')
+      wrap_constraint (Env.implicit_coercion env) md (Mty_signature (lazy sg'))
         Tmodtype_implicit
   | Pmod_functor(name, smty, sbody) ->
       let mty = may_map (transl_modtype env) smty in
@@ -1533,7 +1533,7 @@ let type_structure = type_structure false None
 let rec normalize_modtype env = function
     Mty_ident p -> ()
   | Mty_alias p -> ()
-  | Mty_signature sg -> normalize_signature env sg
+  | Mty_signature (lazy sg) -> normalize_signature env sg
   | Mty_functor(id, param, body) -> normalize_modtype env body
 
 and normalize_signature env = List.iter (normalize_signature_item env)
@@ -1701,7 +1701,7 @@ let rec package_signatures subst = function
       let sg' = Subst.signature subst sg in
       let oldid = Ident.create_persistent name
       and newid = Ident.create name in
-      Sig_module(newid, {md_type=Mty_signature sg';
+      Sig_module(newid, {md_type=Mty_signature (lazy sg');
                          md_attributes=[];
                          md_loc=Location.none;
                         },

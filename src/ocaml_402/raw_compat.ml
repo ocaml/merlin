@@ -154,7 +154,7 @@ let rec signature_loc =
       | Some m1 -> union_loc_opt (mod_loc m1) (mod_loc m2)
       | None -> mod_loc m2
       end
-    | Mty_signature s ->
+    | Mty_signature (lazy s) ->
         let rec find_first = function
           | x :: xs -> (match signature_loc x with
                         | (Some _ as v) -> v

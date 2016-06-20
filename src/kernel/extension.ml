@@ -175,5 +175,5 @@ let register exts env =
   let fakes, tops = List.split (List.map ~f:process_ext exts) in
   let env = Raw_compat.add_hidden_signature env (List.concat tops) in
   let env = Env.add_module ident (Types.Mty_signature
-                                    (List.concat fakes)) env in
+                                    (Lazy.from_val (List.concat fakes))) env in
   env

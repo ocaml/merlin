@@ -243,7 +243,7 @@ and try_modtypes env cxt subst mty1 mty2 =
       try_modtypes env cxt subst (expand_module_path env cxt p1) mty2
   | (_, Mty_ident p2) ->
       try_modtypes2 env cxt mty1 (Subst.modtype subst mty2)
-  | (Mty_signature sig1, Mty_signature sig2) ->
+  | (Mty_signature (lazy sig1), Mty_signature (lazy sig2)) ->
       signatures env cxt subst sig1 sig2
   | (Mty_functor(param1, None, res1), Mty_functor(param2, None, res2)) ->
       begin match modtypes env (Body param1::cxt) subst res1 res2 with

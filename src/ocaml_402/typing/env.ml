@@ -426,7 +426,7 @@ let read_pers_struct modname filename =
       let comps =
         !components_of_module' empty Subst.identity
           (Pident(Ident.create_persistent name))
-          (Mty_signature sign)
+          (Mty_signature (lazy sign))
       in
       let ps_sig = lazy (Subst.signature Subst.identity sign) in
       cmi_env_store := Cmi_cache_store (comps, ps_typemap, ps_sig);
@@ -601,7 +601,7 @@ let find_module ~alias path env =
       with Not_found ->
         if Ident.persistent id && not (Ident.name id = !state.current_unit) then
           let ps = find_pers_struct (Ident.name id) in
-          md (Mty_signature(Lazy.force ps.ps_sig))
+          md (Mty_signature ps.ps_sig)
         else raise Not_found
       end
   | Pdot(p, s, pos) ->
@@ -1379,7 +1379,7 @@ let rec components_of_module env sub path mty =
 
 and components_of_module_maker (env, sub, path, mty) =
   (match scrape_alias env mty with
-    Mty_signature sg ->
+    Mty_signature (lazy sg) ->
       let c =
         { comp_values = Tbl.empty;
           comp_constrs = Tbl.empty;
@@ -1843,7 +1843,7 @@ let save_signature_with_imports sg modname filename imports =
        will also return its crc *)
     let comps =
       components_of_module empty Subst.identity
-        (Pident(Ident.create_persistent modname)) (Mty_signature sg) in
+        (Pident(Ident.create_persistent modname)) (Mty_signature (lazy sg)) in
     let ps =
       { ps_name = modname;
         ps_sig = lazy (Subst.signature Subst.identity sg);
@@ -1919,7 +1919,7 @@ let fold_modules f lid env acc =
               None -> acc
             | Some ps ->
               f name (Pident(Ident.create_persistent name))
-                     (md (Mty_signature (Lazy.force ps.ps_sig))) acc)
+                     (md (Mty_signature ps.ps_sig)) acc)
         !state.persistent_structures
         acc
     | Some l ->
