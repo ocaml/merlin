@@ -38,7 +38,7 @@ type tree = [
   | `Structure of Typedtree.structure
 ]
 
-val processed_ast : ?pos:Merlin_source.position -> t ->
+val processed_ast : t ->
   [ `Signature of Parsetree.signature
   | `Structure of Parsetree.structure ]
 

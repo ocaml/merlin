@@ -28,95 +28,130 @@
 
 open Std
 
-type ('item, 'ast) step = {
-  ast: 'ast;
-  env: Env.t;
-  result: 'item * Types.signature;
-  delayed_checks: Typecore.delayed_check list;
-  errors: exn list;
-  snapshot: Btype.snapshot;
-}
-
-type steps = [
-  | `Signature of
-      (Typedtree.signature_item list, Parsetree.signature_item) step list *
-      Parsetree.signature_item list
-  | `Structure of
-      (Typedtree.structure_item list, Parsetree.structure_item) step list *
-      Parsetree.structure_item list
-]
-
 type tree = [
   | `Signature of Typedtree.signature
   | `Structure of Typedtree.structure
 ]
 
-type t = {
-  reader: Merlin_reader.t;
-  mutable steps: steps;
-  extensions: String.Set.t;
-  btype_state: Btype.state;
-  env_state: Env.state;
-  stamp: int * int ref;
+type ('parsed, 'typed) step = {
+  items: 'typed list;
+  sign: Types.signature;
+  env: Env.t;
+  checks: Typecore.delayed_check list;
+  errors: exn list;
+  snapshot: Btype.snapshot;
+  next: ('parsed * ('parsed, 'typed) step lazy_t) option;
 }
+
+let flatten_rev l =
+  List.fold_left ~f:(fun acc x -> x @ acc) ~init:[] l
+
+let initial_step extensions =
+  let env =
+    Raw_typer.fresh_env ()
+    |> Env.open_pers_signature "Pervasives"
+    |> Extension.register extensions
+  in
+  { items = []; sign = []; env;
+    errors = []; checks = [];
+    snapshot = Btype.snapshot ();
+    next = None
+  }
+
+let rec type_steps type_fun env0 = function
+  | [] -> None
+  | pitem :: pitems ->
+    Some (pitem, lazy begin
+        let caught = ref [] in
+        Front_aux.catch_errors caught @@ fun () ->
+        Typecore.delayed_checks := [];
+        let titem, sign, env =
+          try type_fun env0 pitem
+          with exn ->
+            caught := exn :: !caught;
+            [], [], env0
+        in
+        {
+          items = titem; sign; env;
+          errors = !caught;
+          checks = !Typecore.delayed_checks;
+          snapshot = Btype.snapshot ();
+          next = type_steps type_fun env pitems
+        }
+      end)
 
 let type_signature env sg =
   let sg = Typemod.transl_signature env [sg] in
-  (sg.Typedtree.sig_items,
-   sg.Typedtree.sig_type),
-  sg.Typedtree.sig_final_env
+  (sg.Typedtree.sig_items, sg.Typedtree.sig_type, sg.Typedtree.sig_final_env)
 
 let type_structure env str =
   let str, _, env = Typemod.type_structure env [str] Location.none in
-  (str.Typedtree.str_items,
-   str.Typedtree.str_type),
-  env
+  (str.Typedtree.str_items, str.Typedtree.str_type, env)
 
-let type_steps type_fun items env =
-  let caught = ref [] in
-  Front_aux.catch_errors caught @@ fun () ->
-  Typecore.delayed_checks := [];
-  let renv = ref env in
-  let type_item ast =
-    let env = !renv in
-    let result, env =
-      try type_fun env ast
-      with exn ->
-        caught := exn :: !caught;
-        ([], []), env
-    in
-    let item = {
-      ast; result; env;
-      delayed_checks = !Typecore.delayed_checks;
-      errors = !caught;
-      snapshot = Btype.snapshot ();
-    } in
-    renv := env;
-    caught := [];
-    Typecore.delayed_checks := [];
-    item
+type t = {
+  reader      : Merlin_reader.t;
+  ast         : Merlin_parser.tree;
+  steps       : [
+    | `Signature of (Parsetree.signature_item, Typedtree.signature_item) step lazy_t
+    | `Structure of (Parsetree.structure_item, Typedtree.structure_item) step lazy_t
+  ];
+  extensions  : String.Set.t;
+  btype_state : Btype.state;
+  env_state   : Env.state;
+  stamp       : int * int ref;
+}
+
+let process_ast reader =
+  Ast_mapper.state := Ast_mapper.new_state ();
+  match Merlin_reader.result reader with
+  | `Signature sigs ->
+    `Signature (Pparse.apply_rewriters_sig ~tool_name:"merlin" sigs)
+  | `Structure strs ->
+    `Structure (Pparse.apply_rewriters_str ~tool_name:"merlin" strs)
+
+let common_steps input output =
+  let rec aux input output acc =
+    match input, output with
+    | _, None | [], _ -> (input, acc)
+    | (item :: input'), Some (item', _)
+      when compare item item' <> 0 -> (input, acc)
+    | (item :: input'), Some (_, lazy step)
+      when not (Btype.is_valid step.snapshot) -> (input, acc)
+    | (item :: input'), Some (_, lazy step) ->
+      aux input' step.next ((item, {step with next = None}) :: acc)
   in
-  List.map ~f:type_item items
+  aux input output []
 
-let rec update_steps acc = function
-  | step :: steps, item :: items
-    when Btype.is_valid step.snapshot && step.ast = item ->
-    update_steps (step :: acc) (steps, items)
-  | _, items -> List.rev acc, items
+let update_steps extensions typefun items previous =
+  let items, head = common_steps items previous.next in
+  let step = match head with
+    | ((_, step) :: _) -> step
+    | [] -> previous
+  in
+  Btype.backtrack step.snapshot;
+  let rec build head tail =
+    match head with
+    | [] -> tail
+    | (item, cell) :: head' ->
+      build head' (Some (item, Lazy.from_val {cell with next = tail}))
+  in
+  {previous with
+   next = build head (type_steps typefun step.env items)}
 
-let update_steps steps = function
-  | `Structure items ->
-    let steps = match steps with
-      | `Structure (steps, _) -> steps
-      | _ -> []
-    in
-    `Structure (update_steps [] (steps, items))
+let update_steps extensions ast previous =
+  match ast with
   | `Signature items ->
-    let steps = match steps with
-      | `Signature (steps, _) -> steps
-      | _ -> []
-    in
-    `Signature (update_steps [] (steps, items))
+    let f = update_steps extensions type_signature items in
+    `Signature (match previous with
+        | `Signature previous -> lazy (f (Lazy.force previous))
+        | _ -> lazy (f (initial_step extensions))
+      )
+  | `Structure items ->
+    let f = update_steps extensions type_structure items in
+    `Structure (match previous with
+        | `Structure previous -> lazy (f (Lazy.force previous))
+        | _ -> lazy (f (initial_step extensions))
+      )
 
 let with_typer t f =
   let open Fluid in
@@ -127,29 +162,19 @@ let is_valid t =
   with_typer t @@ fun () ->
   Env.check_state_consistency () &&
   fst t.stamp = !(snd t.stamp) &&
-  let rec aux = function
-    | [] -> true
-    | [x] -> Btype.is_valid x.snapshot
-    | _ :: xs -> aux xs
-  in
-  match t.steps with
-  | `Signature (xs, _) -> aux xs
-  | `Structure (xs, _) -> aux xs
-
-let processed_ast reader =
-  Ast_mapper.state := Ast_mapper.new_state ();
-  match Merlin_reader.result reader with
-  | `Signature sigs ->
-    `Signature (Pparse.apply_rewriters_sig ~tool_name:"merlin" sigs)
-  | `Structure strs ->
-    `Structure (Pparse.apply_rewriters_str ~tool_name:"merlin" strs)
+  true
+  (*FIXME match t.steps with
+  | v when not (Lazy.is_val v) -> true
+  | lazy List.Lazy.Nil -> true
+  | lazy (List.Lazy.Cons (x,_)) -> Btype.is_valid x.snapshot*)
 
 let make reader ~stamp extensions =
   let btype_state = Btype.new_state () in
   let env_state = Env.new_state
       ~unit_name:(Merlin_source.unitname (Merlin_reader.source reader)) in
-  { reader; extensions; btype_state; env_state; stamp = (!stamp, stamp);
-    steps = update_steps `None (processed_ast reader) }
+  let ast = process_ast reader in
+  { reader; extensions; btype_state; env_state; stamp = (!stamp, stamp); ast;
+    steps = update_steps extensions ast `None }
 
 let update reader t =
   if not (is_valid t) then
@@ -159,8 +184,8 @@ let update reader t =
   else if Merlin_reader.compare reader t.reader = 0 then
     {t with reader}
   else
-    let steps = update_steps t.steps (processed_ast reader) in
-    {t with reader; steps}
+    let steps = update_steps t.extensions (process_ast reader) t.steps in
+    {t with reader; steps = steps }
 
 let sig_loc item = item.Parsetree.psig_loc
 let str_loc item = item.Parsetree.pstr_loc
@@ -174,93 +199,84 @@ let select_items loc_fun offset =
   in
   aux []
 
-let resume_env_at_steps t steps =
-  match List.last steps with
-  | Some step ->
-    Btype.backtrack step.snapshot;
-    step.env
-  | None ->
-    Raw_typer.fresh_env ()
-    |> Env.open_pers_signature "Pervasives"
-    |> Extension.register t.extensions
+let first_env t = match t.steps with
+  | `Signature (lazy step) -> step.env
+  | `Structure (lazy step) -> step.env
 
+let structure_item_before pos item =
+  Location_aux.compare_pos pos item.Parsetree.pstr_loc > 0
 
-let force_steps ?(pos=`End) t =
-  let `Offset offset = Merlin_source.get_offset
-      (Merlin_reader.source t.reader) pos in
-  with_typer t @@ fun () ->
-  let steps =
-    match t.steps with
-    | `Structure (steps, items) ->
-      let env = resume_env_at_steps t steps in
-      let items, rest = select_items str_loc offset items in
-      let steps' = type_steps type_structure items env in
-      `Structure (steps @ steps', rest)
-    | `Signature (steps, items) ->
-      let env = resume_env_at_steps t steps in
-      let items, rest = select_items sig_loc offset items in
-      let steps' = type_steps type_signature items env in
-      `Signature (steps @ steps', rest)
+let signature_item_before pos item =
+  Location_aux.compare_pos pos item.Parsetree.psig_loc > 0
+
+let fold_steps t pred pos steps f acc =
+  let pred = match pos with
+    | None -> (fun _ -> true)
+    | Some pos ->
+      let pos =
+        Merlin_source.get_lexing_pos (Merlin_reader.source t.reader) pos in
+      pred pos
   in
-  t.steps <- steps;
-  steps
+  let rec aux acc = function
+    | Some (parse, _) when not (pred parse) -> acc
+    | Some (parse, lazy step) ->
+      aux (f parse step acc) step.next
+    | None ->
+      acc
+  in
+  aux acc (Lazy.force steps).next
 
 (* Public API *)
 
-let processed_ast ?pos t =
-  let prepare steps = List.map ~f:(fun x -> x.ast) steps in
-  match force_steps ?pos t with
-  | `Structure (steps, _) ->
-    `Structure (prepare steps)
-  | `Signature (steps, _) ->
-    `Signature (prepare steps)
+let processed_ast t = t.ast
 
 let result ?pos t =
-  let prepare steps =
-    let results = List.map ~f:(fun x -> x.result) steps in
-    let items, types = List.split results in
-    List.concat items, List.concat types
+  let fold f steps =
+    fold_steps t f pos steps
+      (fun _parse step (itemsacc, sgacc, _) ->
+         (step.items :: itemsacc, step.sign :: sgacc, step.env)
+      ) ([], [], first_env t)
   in
-  match force_steps ?pos t with
-  | `Structure (steps, _) ->
-    let env = resume_env_at_steps t steps in
-    let items, types = prepare steps in
-    `Structure {
-      Typedtree.
-      str_items = items;
-      str_type = types;
-      str_final_env = env;
-    }
-  | `Signature (steps, _) ->
-    let env = resume_env_at_steps t steps in
-    let items, types = prepare steps in
+  match t.steps with
+  | `Signature steps ->
+    let items, types, env = fold signature_item_before steps in
     `Signature {
       Typedtree.
-      sig_items = items;
-      sig_type = types;
+      sig_items = flatten_rev items;
+      sig_type = flatten_rev types;
       sig_final_env = env;
+    }
+  | `Structure steps ->
+    let items, types, env = fold structure_item_before steps in
+    `Structure {
+      Typedtree.
+      str_items = flatten_rev items;
+      str_type = flatten_rev types;
+      str_final_env = env;
     }
 
 let errors ?pos t =
-  let prepare steps = List.concat_map ~f:(fun x -> x.errors) steps in
-  match force_steps ?pos t with
-  | `Structure (steps, _) -> prepare steps
-  | `Signature (steps, _) -> prepare steps
+  let fold f steps =
+    fold_steps t f pos steps (fun _ x acc -> x.errors :: acc) [] in
+  let errors = match t.steps with
+    | `Signature steps -> fold signature_item_before steps
+    | `Structure steps -> fold structure_item_before steps
+  in
+  flatten_rev errors
 
 let checks ?pos t =
-  let prepare steps =
-    let checks =
-      List.concat_map ~f:(fun x -> x.delayed_checks) steps
-    and sign =
-      List.concat_map ~f:(fun x -> snd x.result) steps
-    in
-    let env = resume_env_at_steps t steps in
-    (checks, sign, env)
+  let fold f steps =
+    fold_steps t f pos steps
+      (fun _ x (checks, sign, env) ->
+         (x.checks :: checks, x.sign :: sign, x.env)
+      ) ([], [], first_env t)
   in
-  let is_impl, (checks, sign, env) = match force_steps ?pos t with
-    | `Structure (steps, _) -> true, prepare steps
-    | `Signature (steps, _) -> false, prepare steps
+  let is_impl, (checks, sign, env) =
+    match t.steps with
+    | `Signature steps -> false, fold signature_item_before steps
+    | `Structure steps -> true, fold structure_item_before steps
   in
+  let checks = flatten_rev checks and sign = flatten_rev sign in
   (* Fake coercion to mark globals as used.
      Prevent spurious warnings 32, 34, 37, ...
      FIXME:
@@ -279,7 +295,7 @@ let checks ?pos t =
           Typemod.normalize_signature env simple_sign;
           let _ : Typedtree.module_coercion =
             Includemod.compunit
-              (resume_env_at_steps t [])
+              env
               modulename
               sign "(inferred signature)"
               simple_sign
@@ -322,9 +338,12 @@ let checks ?pos t =
   !caught
 
 let env ?pos t =
-  match force_steps ?pos t with
-  | `Structure (steps, _) -> resume_env_at_steps t steps
-  | `Signature (steps, _) -> resume_env_at_steps t steps
+  let env = first_env t in
+  match t.steps with
+  | `Signature steps ->
+    fold_steps t signature_item_before pos steps (fun _ x _ -> x.env) env
+  | `Structure steps ->
+    fold_steps t structure_item_before pos steps (fun _ x _ -> x.env) env
 
 let extensions t = t.extensions
 
