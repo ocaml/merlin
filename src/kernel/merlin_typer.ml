@@ -204,10 +204,10 @@ let first_env t = match t.steps with
   | `Structure (lazy step) -> step.env
 
 let structure_item_before pos item =
-  Location_aux.compare_pos pos item.Parsetree.pstr_loc > 0
+  Location_aux.compare_pos pos item.Parsetree.pstr_loc >= 0
 
 let signature_item_before pos item =
-  Location_aux.compare_pos pos item.Parsetree.psig_loc > 0
+  Location_aux.compare_pos pos item.Parsetree.psig_loc >= 0
 
 let fold_steps t pred pos steps f acc =
   let pred = match pos with
