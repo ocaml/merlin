@@ -446,7 +446,7 @@ let path_and_loc_from_label desc env =
 exception Not_in_env
 exception Multiple_matches of string list
 
-let find_source ~project loc =
+let find_source ~cwd ~project loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
   let mod_name = Utils.file_path_to_mod_name fname in
@@ -462,7 +462,11 @@ let find_source ~project loc =
     | Some s -> s
   in
   let dir = Filename.dirname initial_path in
-  let dir = if dir = "." then Sys.getcwd () else dir in
+  let dir =
+    match cwd with
+    | None -> dir
+    | Some cwd -> Misc.canonicalize_filename ~cwd dir
+  in
   match Utils.find_all_matches ~project ~with_fallback file with
   | [] ->
     logf "find_source" "failed to find \"%s\" in source path (fallback = %b)"
@@ -493,8 +497,8 @@ let find_source ~project loc =
         )
     with Not_found ->
       logf "find_source" "... using heuristic to select the right one" ;
-      logf "find_source" "we are looking for files in %s" dir ;
-      let rev = String.reverse (Filename.concat dir fname) in
+      logf "find_source" "we are looking for a file named %s in %s" fname dir ;
+      let rev = String.reverse (Misc.canonicalize_filename ~cwd:dir fname) in
       let lst =
         List.map files ~f:(fun path ->
           let path' = String.reverse path in
@@ -535,8 +539,8 @@ let find_source ~project loc =
    [find_source] doesn't like the "-o" option of the compiler. This hack handles
    Jane Street specific use case where "-o" is used to prefix a unit name by the
    name of the library which contains it. *)
-let find_source ~project loc =
-  try find_source ~project loc
+let find_source ~cwd ~project loc =
+  try find_source ~cwd ~project loc
   with exn ->
     let fname = loc.Location.loc_start.Lexing.pos_fname in
     try
@@ -547,7 +551,7 @@ let find_source ~project loc =
         let lstart = { loc.Location.loc_start with Lexing.pos_fname = fname } in
         { loc with Location.loc_start = lstart }
       in
-      find_source ~project loc
+      find_source ~cwd ~project loc
     with _ -> raise exn
 
 let recover ident =
@@ -613,7 +617,7 @@ let rec lookup ctxt ident env =
           raise (Found (path, tag `Type path, loc))
       with Not_found -> ()
     ) ;
-    logf "find_source" "   ... not in the environment" ;
+    logf "lookup" "   ... not in the environment" ;
     let id = try get_type_name ctxt with _ -> raise Not_in_env in
     lookup Type id env
   with Found x ->
@@ -730,7 +734,7 @@ let inspect_context browse path pos =
     | _ ->
       Some Unknown
 
-let from_string ~project ~env ~local_defs ~pos switch path =
+let from_string ~project ~cwd ~env ~local_defs ~pos switch path =
   let browse = Merlin_typer.to_browse local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [BrowseT.of_browse browse]) in
@@ -752,7 +756,7 @@ let from_string ~project ~env ~local_defs ~pos switch path =
     | `Builtin -> `Builtin path
     | `Found (loc, _) ->
       try
-        match find_source ~project loc with
+        match find_source ~cwd ~project loc with
         | None     -> `Found (None, loc.Location.loc_start)
         | Some src -> `Found (Some src, loc.Location.loc_start)
       with

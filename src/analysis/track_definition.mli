@@ -30,6 +30,7 @@ open Merlin_lib
 
 val from_string
   : project:Project.t
+  -> cwd:string option
   -> env:Env.t
   -> local_defs:Typer.tree
   -> pos:Lexing.position

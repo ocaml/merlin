@@ -485,6 +485,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Locate (patho, ml_or_mli, pos) ->
     with_typer buffer @@ fun typer ->
     let local_defs = Typer.result ~pos typer in
+    let cwd = Buffer.cwd buffer in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let env, _ = Browse.leaf_node (Typer.node_at typer pos) in
     let path =
@@ -500,7 +501,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     if path = "" then `Invalid_context else
     let project = Buffer.project buffer in
     begin match
-      Track_definition.from_string ~project ~env ~local_defs ~pos ml_or_mli path
+      Track_definition.from_string ~cwd ~project ~env ~local_defs ~pos ml_or_mli
+        path
     with
     | `Found (file, pos) ->
       Logger.log "track_definition" "Locate"

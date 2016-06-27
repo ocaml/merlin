@@ -31,6 +31,7 @@ type t
 val create: ?dot_merlins:string list -> ?path:string -> Merlin_parser.kind -> t
 val unit_name : t -> string
 val project : t -> Merlin_project.t
+val cwd : t -> string option
 
 val update  : t -> Merlin_source.t -> unit
 val source  : t -> Merlin_source.t
