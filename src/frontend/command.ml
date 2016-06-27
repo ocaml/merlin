@@ -436,6 +436,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         )
       in
       let entries =
+        Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
         print_completion_entries (Buffer.reader buffer) @@
         Completion.node_complete ?get_doc ?target_type buffer env node prefix
       and context = match context with
