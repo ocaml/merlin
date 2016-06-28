@@ -1,0 +1,21 @@
+@let-def: this design document gathers requirements and ideas for the next
+  version of merlin.  The purpose is to consolidate features that were added
+  lately and cleanup legacy crufts.
+
+== TL;DR ==
+
+* simpler & stateless protocol
+* pure implementation for reference
+* performance added on top, memoization & asynchronicity
+* traceability, log all decisions and print internal structures
+* maintenability, minimize change to OCaml codebase
+
+See [[RATIONALE]].
+
+== Implementation ==
+
+Merlin is split in three main components:
+
+* [[Protocol]], communicates with outside world
+* [[Kernel]], wraps the OCaml frontend
+* [[Analysis]], answers specific questions on the codebase
