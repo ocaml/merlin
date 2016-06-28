@@ -1906,11 +1906,8 @@ Short cuts:
 (provide 'merlin)
 
 ;; Load these after (provide 'merlin) because they (require 'merlin)
-;;;###autoload
 (eval-after-load 'company '(require 'merlin-company))
-;;;###autoload
 (eval-after-load 'auto-complete '(require 'merlin-ac))
-;;;###autoload
 (eval-after-load 'iedit '(require 'merlin-iedit))
 (require 'merlin-cap)
 

@@ -129,7 +129,6 @@
 ;; Register into company-mode ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;###autoload
 (eval-after-load 'company
   '(add-to-list 'company-backends 'merlin-company-backend))
 
