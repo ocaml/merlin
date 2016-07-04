@@ -31,8 +31,8 @@ let write_ast magic ast =
 let null = match Sys.os_type with "Win32" -> " NUL" | _ -> "/dev/null"
 
 let ppx_commandline cmd fn_in fn_out =
-  Printf.sprintf "%s %s %s 1>%s"
-    cmd (Filename.quote fn_in) (Filename.quote fn_out) null
+  Printf.sprintf "%s %s %s 1>%s 2>%s"
+    cmd (Filename.quote fn_in) (Filename.quote fn_out) null null
 
 let pp_commandline cmd fn_in fn_out =
   Printf.sprintf "%s %s 1>%s"
