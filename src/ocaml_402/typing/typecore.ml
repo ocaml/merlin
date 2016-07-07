@@ -3645,6 +3645,7 @@ and type_construct env loc lid sarg ty_expected attrs =
 (* Typing of statements (expressions whose values are discarded) *)
 
 and type_statement env sexp =
+  let has_errors = Front_aux.monitor_errors () in
   let loc = (final_subexpression sexp).pexp_loc in
   begin_def();
   let exp = type_exp env sexp in
@@ -3654,7 +3655,8 @@ and type_statement env sexp =
     unify_exp env exp expected_ty;
     exp else
   let ty = expand_head env exp.exp_type and tv = newvar() in
-  if not (List.mem merlin_incorrect_attribute exp.exp_attributes) then
+  if not (!has_errors ||
+          List.mem merlin_incorrect_attribute exp.exp_attributes) then
   begin match ty.desc with
   | Tarrow _ ->
       Location.prerr_warning loc Warnings.Partial_application
