@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 BIN_DIR=/usr/local/bin
 SHARE_DIR=/usr/local/share
