@@ -315,8 +315,40 @@ module With_reader = struct
            reader := None;
            Extend_driver.stop driver)
 
-  let pprint t = match !reader with
-    | None ->
+  let attr_cleaner =
+    {Ast_mapper.default_mapper with
+     Ast_mapper.attributes =
+       (fun _ attrs ->
+          List.filter (fun (name,_) ->
+              not (Std.String.is_prefixed ~by:"merlin." name.Location.txt))
+            attrs);
+     Ast_mapper.extension =
+       (fun _ ext ->
+          match ext with
+          | name, Parsetree.PCustom _ -> name, Parsetree.PStr []
+          | ext -> ext)
+    }
+
+  let pprint t =
+    let t = match t with
+      | Pretty_case_list x ->
+        Pretty_case_list (attr_cleaner.Ast_mapper.cases attr_cleaner x)
+      | Pretty_core_type x ->
+        Pretty_core_type (attr_cleaner.Ast_mapper.typ attr_cleaner x)
+      | Pretty_expression x ->
+        Pretty_expression (attr_cleaner.Ast_mapper.expr attr_cleaner x)
+      | Pretty_pattern x ->
+        Pretty_pattern (attr_cleaner.Ast_mapper.pat attr_cleaner x)
+      | Pretty_signature x ->
+        Pretty_signature (attr_cleaner.Ast_mapper.signature attr_cleaner x)
+      | Pretty_structure x ->
+        Pretty_structure (attr_cleaner.Ast_mapper.structure attr_cleaner x)
+      | Pretty_toplevel_phrase (Parsetree.Ptop_def x) ->
+        let x = attr_cleaner.Ast_mapper.structure attr_cleaner x in
+        Pretty_toplevel_phrase (Parsetree.Ptop_def x)
+      | Pretty_toplevel_phrase (Parsetree.Ptop_dir _) as t -> t
+    in
+    let parse_tree_to_string t =
       let ppf, to_string = Std.Format.to_string () in
       begin match t with
         | Pretty_case_list       x -> Pprintast.case_list       ppf x
@@ -328,6 +360,9 @@ module With_reader = struct
         | Pretty_toplevel_phrase x -> Pprintast.toplevel_phrase ppf x
       end;
       to_string ()
+    in
+    match !reader with
+    | None -> parse_tree_to_string t
     | Some (name, driver)->
       begin match Extend_driver.reader driver (Req_pretty_print t) with
         | Res_pretty_print str -> str
