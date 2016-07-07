@@ -1,15 +1,15 @@
 open Sturgeon
 
-type t = Recipes.server * Thread.t
+type t = Sturgeon_recipes_server.server * Thread.t
 
 let start f =
   (* Run monitor in parallel *)
-  let server = Recipes.text_server "merlin" (fun ~args:_ -> f) in
-  let monitor = Thread.create Recipes.main_loop server in
+  let server = Sturgeon_recipes_server.text_server "merlin" (fun ~args:_ -> f) in
+  let monitor = Thread.create Sturgeon_recipes_server.main_loop server in
   (server, monitor)
 
 let stop (server, monitor) =
-  Recipes.stop_server server;
+  Sturgeon_recipes_server.stop_server server;
   Thread.join monitor
 
 module Inuit = Inuit
