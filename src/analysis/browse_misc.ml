@@ -73,9 +73,12 @@ let signature_of_env ?(ignore_extensions=true) env =
   Typemod.simplify_signature (!sg)
 
 let dump_browse node =
-  let attr (name,payload) =
-    `String (name.Location.txt ^
-             if payload = Parsetree.PStr [] then "" else " _")
+  let attr ({Location . txt; loc},payload) =
+    `Assoc [
+      "start"    , Lexing.json_of_position loc.Location.loc_start;
+      "end"      , Lexing.json_of_position loc.Location.loc_end;
+      "name"     , `String (txt ^ if payload = Parsetree.PStr [] then "" else " _")
+    ]
   in
   let rec append env node acc =
     let loc = Browse.node_loc node in
