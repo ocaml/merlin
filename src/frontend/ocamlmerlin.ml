@@ -141,7 +141,8 @@ let main_loop () =
       | None -> false
     with
     | exception exn ->
-      output ~notifications:(List.rev !notifications)
+      let trace = ("backtrace", Printexc.get_backtrace ()) in
+      output ~notifications:(trace :: List.rev !notifications)
         (Protocol.Exception exn);
       loop ()
     | true -> loop ()
