@@ -53,11 +53,11 @@ let raise_error ?(ignore_unify=false) exn =
     end
   | None -> raise exn
 
-exception Weak_error of exn
+exception Resume
 
-let weak_raise exn =
+let resume_raise exn =
   raise_error exn;
-  raise (Weak_error exn)
+  raise Resume
 
 let catch_errors caught f =
   Fluid.let' errors (Some (caught,Btype.TypeHash.create 3)) f

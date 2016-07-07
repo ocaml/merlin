@@ -3597,17 +3597,17 @@ and type_application loc env funct sargs ty_expected =
               match ty_res.desc with
                 Tarrow _ ->
                   if (!Clflags.classic || not (has_label l1 ty_fun)) then
-                    Front_aux.weak_raise
+                    Front_aux.resume_raise
                       (error(sarg1.pexp_loc, env,
                              Apply_wrong_label(l1, ty_res)))
                   else
-                    Front_aux.weak_raise
+                    Front_aux.resume_raise
                       (error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
-                Front_aux.weak_raise
+                Front_aux.resume_raise
                   (error(funct.exp_loc, env, Apply_non_function
                            (expand_head env funct.exp_type)))
-        with Front_aux.Weak_error _ ->
+        with Front_aux.Resume ->
           newvar(), ty_fun
         in
         let optional = is_optional l1 in

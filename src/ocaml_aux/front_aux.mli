@@ -32,11 +32,11 @@ open Std
     [catch_errors] handler was installed. *)
 val raise_error: ?ignore_unify:bool -> exn -> unit
 
-(** Weak errors: like [raise_error], but if a handler was provided the
-    the exception the exception is wrapped in [Weak_error].
-    This allows to specify a special case when an error is caught. *)
-exception Weak_error of exn
-val weak_raise: exn -> 'a
+(** Resume after error: like [raise_error], but if a handler was provided a
+    Resume exception is raised.  This allows to specify a special case when an
+    error is caught. *)
+exception Resume
+val resume_raise: exn -> 'a
 
 (** Installing (and removing) error handlers. *)
 
