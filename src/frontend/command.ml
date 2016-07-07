@@ -521,20 +521,31 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Case_analysis (pos_start, pos_end) ->
     with_typer buffer @@ fun typer ->
     let loc_start = Source.get_lexing_pos (Buffer.source buffer) pos_start in
-    let loc_end   = Source.get_lexing_pos (Buffer.source buffer) pos_end in
+    let loc_end = Source.get_lexing_pos (Buffer.source buffer) pos_end in
+    let loc_mid = Source.get_lexing_pos (Buffer.source buffer)
+        (`Offset (Lexing.(loc_start.pos_cnum + loc_end.pos_cnum) / 2)) in
     let loc = {Location. loc_start; loc_end; loc_ghost = false} in
     let env = Typer.env typer in
     Reader.with_reader (Buffer.reader buffer) @@ fun () ->
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-    let structures = Typer.to_browse (Typer.result ~pos:pos_end typer) in
-    let enclosings = match Browse.enclosing loc_start [structures] with
-      | None -> []
-      | Some path -> node_list path
+    let nodes =
+      Typer.node_at typer loc_mid
+      |> List.Non_empty.to_list
+      |> List.map ~f:snd
     in
-    begin match
-        List.drop_while enclosings ~f:(fun t ->
-            Lexing.compare_pos (Browse.node_loc t).Location.loc_end loc_end < 0)
-      with
+    Logger.logj "destruct" "nodes before"
+      (fun () -> `List (List.map nodes
+          ~f:(fun node -> `String (Browse_node.string_of_node node))));
+    let nodes =
+      nodes
+      |> List.drop_while ~f:(fun t ->
+          Lexing.compare_pos (Browse.node_loc t).Location.loc_start loc_start > 0 &&
+          Lexing.compare_pos (Browse.node_loc t).Location.loc_end loc_end < 0)
+    in
+    Logger.logj "destruct" "nodes after"
+      (fun () -> `List (List.map nodes
+          ~f:(fun node -> `String (Browse_node.string_of_node node))));
+    begin match nodes with
       | [] -> failwith "No node at given range"
       | node :: parents -> Destruct.node ~loc node parents
     end
