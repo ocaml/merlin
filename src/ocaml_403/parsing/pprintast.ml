@@ -355,7 +355,7 @@ class printer  ()= object(self:'self)
           (match po with
           |Some x ->
               pp f "%a@;%a"  self#longident_loc li self#simple_pattern x
-          | None -> pp f "%a@;"self#longident_loc li )
+          | None -> pp f "%a" self#longident_loc li )
     | _ -> self#simple_pattern f x
   method simple_pattern (f:Format.formatter) (x:pattern) :unit =
     if x.ppat_attributes <> [] then self#pattern f x
