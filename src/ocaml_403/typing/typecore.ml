@@ -3056,7 +3056,15 @@ and type_expect_ ?in_function ~recarg env sexp ty_expected =
       end
 
   | Pexp_extension ({ txt = "merlin.hole"; _ }, _ as attr) ->
-      re { exp_desc = Texp_unreachable;
+      re { exp_desc = Texp_ident
+               (Path.Pident (Ident.create "*type-hole*"),
+                Location.mkloc (Longident.Lident "*type-hole*") loc,
+                { Types.
+                  val_type = ty_expected;
+                  val_kind = Val_reg;
+                  val_loc = loc;
+                  val_attributes = [];
+                });
            exp_loc = loc; exp_extra = [];
            exp_type = instance env ty_expected;
            exp_attributes = attr :: sexp.pexp_attributes;
