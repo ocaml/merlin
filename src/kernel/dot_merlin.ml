@@ -41,6 +41,7 @@ type directive = [
   | `FINDLIB of string
   | `SUFFIX of string
   | `READER of string list
+  | `SEARCH of string
 ]
 
 type file = {
@@ -86,6 +87,8 @@ module Cache = File_cache.Make (struct
             tell (`SUFFIX (String.drop 7 line))
           else if String.is_prefixed ~by:"READER " line then
             tell (`READER (List.rev (rev_split_words (String.drop 7 line))))
+          else if String.is_prefixed ~by:"SEARCH " line then
+            tell (`SEARCH (String.drop 7 line))
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -145,6 +148,7 @@ type config = {
   stdlib      : string;
   findlib     : string option;
   reader      : string list;
+  search      : string list;
 }
 
 type t = {
@@ -193,6 +197,7 @@ let empty_config = {
   stdlib      = Config.standard_library;
   findlib     = None;
   reader      = [];
+  search      = [];
 }
 
 let merge c1 c2 = {
@@ -208,6 +213,7 @@ let merge c1 c2 = {
   stdlib      = if c1.stdlib = empty_config.stdlib then c2.stdlib else c1.stdlib;
   findlib     = if c1.findlib = None then c2.findlib else c1.findlib;
   reader      = if c1.reader = [] then c2.reader else c1.reader;
+  search      = c1.search @ c2.search;
 }
 
 let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
@@ -276,6 +282,9 @@ let prepend_config {path; directives} config =
       {config with findlib = Some (canonicalize_filename path)}
     | `READER reader ->
       {config with reader}
+    | `SEARCH path ->
+      let canon_path = canonicalize_filename path in
+      { config with search = canon_path :: config.search }
   ) directives
 
 let postprocess_config config =
@@ -290,6 +299,7 @@ let postprocess_config config =
     extensions  = clean config.extensions;
     suffixes    = clean config.suffixes;
     flags       = clean config.flags;
+    search      = clean config.search;
     stdlib      = config.stdlib;
     findlib     = config.findlib;
     reader      = config.reader;
@@ -371,7 +381,25 @@ let ppx_of_package ?(predicates=[]) setup pkg =
   List.fold_left ppxopts ~init:setup
     ~f:(fun setup (ppx,opts) -> Ppxsetup.add_ppxopts ppx opts setup)
 
+
+let findlib_search = ref []
+
+let path_separator =
+  match Sys.os_type with
+    | "Cygwin"
+    | "Win32"  -> ";"
+    | _ -> ":"
+
 let path_of_packages config =
+  if config.search <> !findlib_search then begin
+      let env_ocamlpath =
+        if config.search=[] then
+          None
+        else
+          Some(String.concat path_separator config.search) in
+      Findlib.init ?env_ocamlpath ();
+      findlib_search := config.search
+  end;
   let packages = config.packages in
   let f pkg =
     try Either.R (Findlib.package_deep_ancestors [] [pkg])

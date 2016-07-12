@@ -41,6 +41,7 @@ type config = {
   stdlib      : string;
   findlib     : string option;
   reader      : string list;
+  search      : string list;
 }
 
 type t (* A config + caching information *)
