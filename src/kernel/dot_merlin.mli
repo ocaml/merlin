@@ -29,18 +29,19 @@
 (** Load and cache dot-merlin files **)
 
 type config = {
-  dot_merlins : string list;
-  build_path  : string list;
-  source_path : string list;
-  cmi_path    : string list;
-  cmt_path    : string list;
-  packages    : string list;
-  flags       : string list list;
-  extensions  : string list;
-  suffixes    : (string * string) list;
-  stdlib      : string;
-  findlib     : string option;
-  reader      : string list;
+  dot_merlins  : string list;
+  build_path   : string list;
+  source_path  : string list;
+  cmi_path     : string list;
+  cmt_path     : string list;
+  packages     : string list;
+  flags        : string list list;
+  extensions   : string list;
+  suffixes     : (string * string) list;
+  stdlib       : string;
+  findlib      : string option;
+  reader       : string list;
+  findlib_path : string list;
 }
 
 type t (* A config + caching information *)

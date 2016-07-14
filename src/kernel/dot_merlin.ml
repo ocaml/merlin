@@ -41,6 +41,7 @@ type directive = [
   | `FINDLIB of string
   | `SUFFIX of string
   | `READER of string list
+  | `FINDLIB_PATH of string
 ]
 
 type file = {
@@ -86,6 +87,8 @@ module Cache = File_cache.Make (struct
             tell (`SUFFIX (String.drop 7 line))
           else if String.is_prefixed ~by:"READER " line then
             tell (`READER (List.rev (rev_split_words (String.drop 7 line))))
+          else if String.is_prefixed ~by:"FINDLIB_PATH " line then
+            tell (`FINDLIB_PATH (String.drop 13 line))
           else if String.is_prefixed ~by:"#" line then
             ()
           else
@@ -133,18 +136,19 @@ let rec directives_of_file fname =
     else []
 
 type config = {
-  dot_merlins : string list;
-  build_path  : string list;
-  source_path : string list;
-  cmi_path    : string list;
-  cmt_path    : string list;
-  packages    : string list;
-  flags       : string list list;
-  extensions  : string list;
-  suffixes    : (string * string) list;
-  stdlib      : string;
-  findlib     : string option;
-  reader      : string list;
+  dot_merlins  : string list;
+  build_path   : string list;
+  source_path  : string list;
+  cmi_path     : string list;
+  cmt_path     : string list;
+  packages     : string list;
+  flags        : string list list;
+  extensions   : string list;
+  suffixes     : (string * string) list;
+  stdlib       : string;
+  findlib      : string option;
+  reader       : string list;
+  findlib_path : string list;
 }
 
 type t = {
@@ -181,33 +185,35 @@ let update t =
     t.config <- None
 
 let empty_config = {
-  build_path  = [];
-  source_path = [];
-  cmi_path    = [];
-  cmt_path    = [];
-  packages    = [];
-  dot_merlins = [];
-  extensions  = [];
-  suffixes    = [(".ml", ".mli"); (".re", ".rei")];
-  flags       = [];
-  stdlib      = Config.standard_library;
-  findlib     = None;
-  reader      = [];
+  build_path   = [];
+  source_path  = [];
+  cmi_path     = [];
+  cmt_path     = [];
+  packages     = [];
+  dot_merlins  = [];
+  extensions   = [];
+  suffixes     = [(".ml", ".mli"); (".re", ".rei")];
+  flags        = [];
+  stdlib       = Config.standard_library;
+  findlib      = None;
+  reader       = [];
+  findlib_path = [];
 }
 
 let merge c1 c2 = {
-  build_path  = c1.build_path @ c2.build_path;
-  source_path = c1.source_path @ c2.source_path;
-  cmi_path    = c1.cmi_path @ c2.cmi_path;
-  cmt_path    = c1.cmt_path @ c2.cmt_path;
-  packages    = c1.packages @ c2.packages;
-  dot_merlins = c1.dot_merlins @ c2.dot_merlins;
-  extensions  = c1.extensions @ c2.extensions;
-  suffixes    = c1.suffixes @ c2.suffixes;
-  flags       = c1.flags @ c2.flags;
-  stdlib      = if c1.stdlib = empty_config.stdlib then c2.stdlib else c1.stdlib;
-  findlib     = if c1.findlib = None then c2.findlib else c1.findlib;
-  reader      = if c1.reader = [] then c2.reader else c1.reader;
+  build_path   = c1.build_path @ c2.build_path;
+  source_path  = c1.source_path @ c2.source_path;
+  cmi_path     = c1.cmi_path @ c2.cmi_path;
+  cmt_path     = c1.cmt_path @ c2.cmt_path;
+  packages     = c1.packages @ c2.packages;
+  dot_merlins  = c1.dot_merlins @ c2.dot_merlins;
+  extensions   = c1.extensions @ c2.extensions;
+  suffixes     = c1.suffixes @ c2.suffixes;
+  flags        = c1.flags @ c2.flags;
+  stdlib       = if c1.stdlib = empty_config.stdlib then c2.stdlib else c1.stdlib;
+  findlib      = if c1.findlib = None then c2.findlib else c1.findlib;
+  reader       = if c1.reader = [] then c2.reader else c1.reader;
+  findlib_path = c1.findlib_path @ c2.findlib_path;
 }
 
 let flg_regexp = Str.regexp "\\([^ \t\r\n']+\\|'[^']*'\\)"
@@ -276,20 +282,24 @@ let prepend_config {path; directives} config =
       {config with findlib = Some (canonicalize_filename path)}
     | `READER reader ->
       {config with reader}
+    | `FINDLIB_PATH path ->
+      let canon_path = canonicalize_filename path in
+      { config with findlib_path = canon_path :: config.findlib_path }
   ) directives
 
 let postprocess_config config =
   let clean list = List.rev (List.filter_dup list) in
   {
-    dot_merlins = config.dot_merlins;
-    build_path  = clean config.build_path;
-    source_path = clean config.source_path;
-    cmi_path    = clean config.cmi_path;
-    cmt_path    = clean config.cmt_path;
-    packages    = clean config.packages;
-    extensions  = clean config.extensions;
-    suffixes    = clean config.suffixes;
-    flags       = clean config.flags;
+    dot_merlins  = config.dot_merlins;
+    build_path   = clean config.build_path;
+    source_path  = clean config.source_path;
+    cmi_path     = clean config.cmi_path;
+    cmt_path     = clean config.cmt_path;
+    packages     = clean config.packages;
+    extensions   = clean config.extensions;
+    suffixes     = clean config.suffixes;
+    flags        = clean config.flags;
+    findlib_path = clean config.findlib_path;
     stdlib      = config.stdlib;
     findlib     = config.findlib;
     reader      = config.reader;
@@ -371,7 +381,25 @@ let ppx_of_package ?(predicates=[]) setup pkg =
   List.fold_left ppxopts ~init:setup
     ~f:(fun setup (ppx,opts) -> Ppxsetup.add_ppxopts ppx opts setup)
 
+
+let findlib_path = ref []
+
+let path_separator =
+  match Sys.os_type with
+    | "Cygwin"
+    | "Win32"  -> ";"
+    | _ -> ":"
+
 let path_of_packages config =
+  if config.findlib_path <> !findlib_path then begin
+      let env_ocamlpath =
+        if config.findlib_path = [] then
+          None
+        else
+          Some(String.concat path_separator config.findlib_path) in
+      Findlib.init ?env_ocamlpath ();
+      findlib_path := config.findlib_path
+  end;
   let packages = config.packages in
   let f pkg =
     try Either.R (Findlib.package_deep_ancestors [] [pkg])
