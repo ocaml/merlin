@@ -73,8 +73,9 @@
          (outline (merlin/send-command `outline)))
     (when outline
       ;; (message outline)
-      (let ((module-list) (value-list) (type-list) (class-list)
-            (exn-list) (misc-list))
+      (let ((module-list) (value-list) (type-list)
+            (class-list) (exception-list) (constructor-list)
+            (label-list) (misc-list))
         (cl-labels
             ((visit-one (prefix x)
                         (let* ((fstart (nth 1 x))
@@ -84,33 +85,44 @@
                                (start-col (cdr (nth 3 fstart)))
                                (name (cdr fname))
                                (kind (cdr fkind))
-                               (children (nth 5 x)))
-                          (if (null (cdr children))
-                              (let* ((item (merlin-imenu--list-to-string
-                                            (cons name prefix))))
-                                (setq marker (make-marker))
-                                (setq start-pos
-                                      (merlin-imenu--goto-item start-line
-                                                               start-col
-                                                               name))
-                                (set-marker marker start-pos)
-                                (setq fitem (cons item marker))
-                                ;; (message "name %s : kind %s" name kind)
-                                (cond
-                                 ((string= (string-trim kind) "Value")
-                                  (setq value-list (cons fitem value-list)))
-                                 ((string= (string-trim kind) "Type")
-                                  (setq type-list (cons fitem type-list)))
-                                 ((string= (string-trim kind) "Class")
-                                  (setq class-list (cons fitem class-list)))
-                                 ((string= (string-trim kind) "Module")
-                                  (setq module-list (cons fitem module-list)))
-                                 ((string= (string-trim kind) "Exn")
-                                  (setq exn-list (cons fitem exn-list)))
-                                 (t
-                                  (setq misc-list (cons fitem misc-list)))))
-                            (visit-many (cons name prefix) (cdr children))
-                            )))
+                               (children (nth 5 x))
+                               (item (merlin-imenu--list-to-string
+                                      (cons name prefix))))
+                          (progn
+                            (setq marker (make-marker))
+                            (setq start-pos
+                                  (merlin-imenu--goto-item start-line
+                                                           start-col
+                                                           name))
+                            (set-marker marker start-pos)
+                            (setq fitem (cons item marker))
+                            (message "name %s : kind %s" name kind)
+                            (cond
+                             ((string= (string-trim kind) "Value")
+                              (setq value-list
+                                    (cons fitem value-list)))
+                             ((string= (string-trim kind) "Type")
+                              (setq type-list
+                                    (cons fitem type-list)))
+                             ((string= (string-trim kind) "Class")
+                              (setq class-list
+                                    (cons fitem class-list)))
+                             ((string= (string-trim kind) "Module")
+                              (setq module-list
+                                    (cons fitem module-list)))
+                             ((string= (string-trim kind) "Exn")
+                              (setq exception-list
+                                    (cons fitem exception-list)))
+                             ((string= (string-trim kind) "Constructor")
+                              (setq constructor-list
+                                    (cons fitem constructor-list)))
+                             ((string= (string-trim kind) "Label")
+                              (setq label-list
+                                    (cons fitem label-list)))
+                             (t (setq misc-list (cons fitem misc-list))))
+                            (if (not (null (cdr children)))
+                                (visit-many (cons name prefix)
+                                            (cdr children))))))
              (visit-many (prefix xs)
                          (when (not (null xs))
                            (visit-one prefix (car xs))
@@ -118,14 +130,23 @@
           (visit-many '() outline)
           ;; (merlin-imenu--print-all-values value-list)
           (let ((index ()))
-            (when module-list (push (cons "Module" module-list) index))
-            (when type-list (push (cons "Type" type-list) index))
-            (when class-list (push (cons "Class" class-list) index))
-            (when value-list (push (cons "Value" value-list) index))
-            (when exn-list (push (cons "Exn" exn-list) index))
-            (when misc-list (push (cons "Misc" misc-list) index))
-            index)
-          )))))
+            (when module-list
+              (push (cons "Module" module-list) index))
+            (when exception-list
+              (push (cons "Exception" exception-list) index))
+            (when label-list
+              (push (cons "Label" label-list) index))
+            (when constructor-list
+              (push (cons "Constructor" constructor-list) index))
+            (when type-list
+              (push (cons "Type" type-list) index))
+            (when class-list
+              (push (cons "Class" class-list) index))
+            (when value-list
+              (push (cons "Value" value-list) index))
+            (when misc-list
+              (push (cons "Misc" misc-list) index))
+            index))))))
 
 (defun merlin-use-merlin-imenu ()
   "Merlin: use the custom imenu feature from Merlin"
@@ -151,7 +172,7 @@
   ;; (imenu--menubar-select imenu--rescan-item)
   (message "Merlin: tuareg-imenu is selected, rescanning buffer..."))
 
-;; (message "Eval Merlin-IMenu")  ;; for debugging
+(message "Eval Merlin-IMenu")  ;; for debugging
 
 (provide 'merlin-imenu)
 ;;; merlin-imenu.el ends here
