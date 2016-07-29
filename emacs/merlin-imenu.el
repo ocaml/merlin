@@ -1,15 +1,50 @@
 ;;; merlin-imenu.el --- Merlin and imenu integration.   -*- coding: utf-8 -*-
 ;; Licensed under the MIT license.
 
-;; Author: Ta Quang Trung <taquangtrungvn(_)yahoo.com>
+;; Author: Ta Quang Trung <taquangtrungvn(_)gmail.com>
 ;; Created: 10 July 2016
 ;; Version: 0.1
-;; Keywords: ocaml languages
+;; Keywords: ocaml, imenu, merlin
 ;; URL: 
 
 (require 'imenu)
 (require 'tuareg)
 
+;;; enable depth and size threshold for OCaml modules with big size
+(setq max-lisp-eval-depth 10000)
+(setq max-specpdl-size 10000)
+
+;;;
+;;; For debugging purpose
+;;;
+;; (defun merlin-imenu--print-item (item)
+;;   (cl-labels ((visit (xs)
+;;                      (cond ((null xs) "")
+;;                            ((null (cdr xs)) (car (car xs)))
+;;                            (t (concat (visit (cdr xs)) " / " (car (car xs)))))))
+;;     (if (null item) "" (visit item))))
+
+;;;
+;;; For debugging purpose
+;;;
+;; (defun merlin-imenu--print-all-values (items)
+;;   (cl-labels ((visit (xs)
+;;                   (when (not (null xs))
+;;                     (message (concat "Value: " (car (car xs))))
+;;                     (visit (cdr xs))
+;;                     )))
+;;     (visit items)))
+
+;;;
+;;; For debugging purpose
+;;;
+;; (defun merlin-imenu--print-all-modules (items)
+;;   (cl-labels ((visit (xs)
+;;                   (when (not (null xs))
+;;                     (message (concat "Module: " (car (car xs))))
+;;                     (visit (cdr xs))
+;;                     )))
+;;     (visit items)))
 
 (defun merlin-imenu--list-to-string (items)
   (cl-labels ((visit (xs)
@@ -18,32 +53,21 @@
                            (t (concat (visit (cdr xs)) " / " (car xs))))))
     (if (null items) "" (visit items))))
 
-(defun merlin-imenu--print-item (item)
-  (cl-labels ((visit (xs)
-                     (cond ((null xs) "")
-                           ((null (cdr xs)) (car (car xs)))
-                           (t (concat (visit (cdr xs)) " / " (car (car xs)))))))
-    (if (null item) "" (visit item))))
-
-(defun merlin-imenu--print-all-values (items)
-  (cl-labels ((visit (xs)
-                  (when (not (null xs))
-                    (message (concat "Value: " (car (car xs))))
-                    (visit (cdr xs))
-                    )))
-    (visit items)))
-
-(defun merlin-imenu--print-all-modules (items)
-  (cl-labels ((visit (xs)
-                  (when (not (null xs))
-                    (message (concat "Module: " (car (car xs))))
-                    (visit (cdr xs))
-                    )))
-    (visit items)))
+(defun merlin-imenu--goto-item (line col item)
+  (save-excursion
+    ;; go to line
+    (goto-char (point-min))
+    (forward-line (- line 1))
+    ;; go to column
+    (move-to-column col)
+    ;; go to the beginning position of the item 
+    (search-forward item)
+    (search-backward item)
+    ;; return the marker
+    (point)))
 
 (defun merlin-imenu-create-index ()
   "Set imenu function"
-  (interactive)
   (merlin/sync)
   (let* ((pos (merlin/unmake-point (point)))
          (outline (merlin/send-command `outline)))
@@ -53,26 +77,23 @@
         (cl-labels
             ((visit-one (prefix x)
                         (let* ((fstart (nth 1 x))
-                               (fend (nth 2 x))
                                (fname (nth 3 x))
                                (fkind (nth 4 x))
                                (start-line (cdr (nth 2 fstart)))
                                (start-col (cdr (nth 3 fstart)))
-                               (end-line (cdr (nth 2 fend)))
-                               (end-col (cdr (nth 3 fend)))
                                (name (cdr fname))
                                (kind (cdr fkind))
                                (children (nth 5 x)))
-                          (message "start line %d" start-line)
-                          (message "start col %d" start-col)
-                          (message "end line %d" end-line)
-                          (message "end col %d" end-col)
-                          ;; (message (concat "start line -- " (nth 1 fstart)))
                           (if (null (cdr children))
                               (let* ((item (merlin-imenu--list-to-string
-                                            (cons name prefix)))
-                                     (fitem (cons item (point-marker))))
-                                ;; (message (concat "Item: " item))
+                                            (cons name prefix))))
+                                (setq marker (make-marker))
+                                (setq start-pos
+                                      (merlin-imenu--goto-item start-line
+                                                               start-col
+                                                               name))
+                                (set-marker marker start-pos)
+                                (setq fitem (cons item marker))
                                 (cond
                                  ((string= (string-trim kind) "Value")
                                   (setq value-list (cons fitem value-list)))
@@ -91,8 +112,7 @@
                            (visit-one prefix (car xs))
                            (visit-many prefix (cdr xs)))))
           (visit-many '() outline)
-          (merlin-imenu--print-all-values value-list)
-          ;; (merlin-imenu--print-all-modules module-list)
+          ;; (merlin-imenu--print-all-values value-list)
           (let ((index ()))
             (when module-list (push (cons "Module" module-list) index))
             (when type-list   (push (cons "Type" type-list) index))
@@ -112,7 +132,7 @@
   (imenu--cleanup)
   (setq imenu--index-alist nil)
   ;; (imenu--menubar-select imenu--rescan-item)
-  (message "Merlin1: merlin-imenu is selected, rescanning buffer..."))
+  (message "Merlin: merlin-imenu is selected, rescanning buffer..."))
 
 (defun merlin-use-tuarge-imenu ()
   "Merlin: use the default imenu feature from Tuareg"
@@ -124,10 +144,9 @@
   (imenu--cleanup)
   (setq imenu--index-alist nil)
   ;; (imenu--menubar-select imenu--rescan-item)
-  (message "Merlin: tuareg-imenu is selected, rescanning buffer...")
-  )
+  (message "Merlin: tuareg-imenu is selected, rescanning buffer..."))
 
-(message "Eval Merlin-IMenu")
+;; (message "Eval Merlin-IMenu")  ;; for debugging
 
 (provide 'merlin-imenu)
-;;; merlin.el ends here
+;;; merlin-imenu.el ends here
