@@ -96,7 +96,7 @@
                                                            name))
                             (set-marker marker start-pos)
                             (setq fitem (cons item marker))
-                            (message "name %s : kind %s" name kind)
+                            ;; (message "name %s : kind %s" name kind)
                             (cond
                              ((string= (string-trim kind) "Value")
                               (setq value-list
@@ -152,8 +152,16 @@
   "Merlin: use the custom imenu feature from Merlin"
   (interactive)
   ;; change the index function
-  (setq imenu-create-index-function 
-        'merlin-imenu-create-index)
+  (setq imenu-create-index-function 'merlin-imenu-create-index)
+  ;;;;; For testing: comment out the above line and
+  ;;;;; uncomment the below function to print time spent by merlin-imenu
+  ;; (setq imenu-create-index-function
+  ;;       '(lambda ()
+  ;;          (setq time (current-time))
+  ;;          (setq res (merlin-imenu-create-index))
+  ;;          (message "** Time spent by Merlin-Imenu: %0.6fs"
+  ;;                   (float-time (time-since time)))
+  ;;          res))
   ;; clear the index list of imenu to force a rescan
   (imenu--cleanup)
   (setq imenu--index-alist nil)
@@ -164,15 +172,23 @@
   "Merlin: use the default imenu feature from Tuareg"
   (interactive)
   ;; change the index function
-  (setq imenu-create-index-function 
-        'tuareg-imenu-create-index)
+  (setq imenu-create-index-function 'tuareg-imenu-create-index)
+  ;;;;; For testing: comment out the above line and
+  ;;;;; uncomment the below function to print time spent by tuareg-imenu
+  ;; (setq imenu-create-index-function
+  ;;       '(lambda ()
+  ;;          (setq time (current-time))
+  ;;          (setq res (tuareg-imenu-create-index))
+  ;;          (message "** Time spent by Tuareg-Imenu: %0.6fs"
+  ;;                   (float-time (time-since time)))
+  ;;          res))
   ;; clear the index list of imenu to force a rescan
   (imenu--cleanup)
   (setq imenu--index-alist nil)
   ;; (imenu--menubar-select imenu--rescan-item)
   (message "Merlin: tuareg-imenu is selected, rescanning buffer..."))
 
-(message "Eval Merlin-IMenu")  ;; for debugging
+;; (message "Eval Merlin-IMenu")  ;; for debugging
 
 (provide 'merlin-imenu)
 ;;; merlin-imenu.el ends here
