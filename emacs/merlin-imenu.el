@@ -53,6 +53,7 @@
                            (t (concat (visit (cdr xs)) " / " (car xs))))))
     (if (null items) "" (visit items))))
 
+;; go to the location of the item
 (defun merlin-imenu--goto-item (line col item)
   (save-excursion
     ;; go to line
@@ -66,6 +67,7 @@
     ;; return the marker
     (point)))
 
+;; the main indexing function
 (defun merlin-imenu-create-index ()
   "Set imenu function"
   (merlin/sync)
@@ -148,6 +150,7 @@
               (push (cons "Misc" misc-list) index))
             index))))))
 
+;; enable Merlin to use the merlin-imenu module
 (defun merlin-use-merlin-imenu ()
   "Merlin: use the custom imenu feature from Merlin"
   (interactive)
@@ -168,6 +171,7 @@
   ;; (imenu--menubar-select imenu--rescan-item)
   (message "Merlin: merlin-imenu is selected, rescanning buffer..."))
 
+;; enable Merlin to use the default tuareg-imenu module
 (defun merlin-use-tuarge-imenu ()
   "Merlin: use the default imenu feature from Tuareg"
   (interactive)
