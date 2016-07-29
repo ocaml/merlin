@@ -73,7 +73,8 @@
          (outline (merlin/send-command `outline)))
     (when outline
       ;; (message outline)
-      (let ((module-list) (value-list) (type-list) (class-list) (misc-list))
+      (let ((module-list) (value-list) (type-list) (class-list)
+            (exn-list) (misc-list))
         (cl-labels
             ((visit-one (prefix x)
                         (let* ((fstart (nth 1 x))
@@ -94,6 +95,7 @@
                                                                name))
                                 (set-marker marker start-pos)
                                 (setq fitem (cons item marker))
+                                ;; (message "name %s : kind %s" name kind)
                                 (cond
                                  ((string= (string-trim kind) "Value")
                                   (setq value-list (cons fitem value-list)))
@@ -103,6 +105,8 @@
                                   (setq class-list (cons fitem class-list)))
                                  ((string= (string-trim kind) "Module")
                                   (setq module-list (cons fitem module-list)))
+                                 ((string= (string-trim kind) "Exn")
+                                  (setq exn-list (cons fitem exn-list)))
                                  (t
                                   (setq misc-list (cons fitem misc-list)))))
                             (visit-many (cons name prefix) (cdr children))
@@ -115,10 +119,11 @@
           ;; (merlin-imenu--print-all-values value-list)
           (let ((index ()))
             (when module-list (push (cons "Module" module-list) index))
-            (when type-list   (push (cons "Type" type-list) index))
-            (when class-list  (push (cons "Class" class-list) index))
-            (when value-list  (push (cons "Value" value-list) index))
-            (when misc-list   (push (cons "Misc" misc-list) index))
+            (when type-list (push (cons "Type" type-list) index))
+            (when class-list (push (cons "Class" class-list) index))
+            (when value-list (push (cons "Value" value-list) index))
+            (when exn-list (push (cons "Exn" exn-list) index))
+            (when misc-list (push (cons "Misc" misc-list) index))
             index)
           )))))
 
