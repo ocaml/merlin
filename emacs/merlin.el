@@ -470,12 +470,13 @@ Try to find a satisfying default directory."
         (setq merlin-guessed-favorite-caml-mode (car main-caml-mode)))))
 
   ; Really start process
-  (let* ((command (lookup-default 'command configuration (merlin-command)))
-        (extra-flags (lookup-default 'flags configuration nil))
-        (name (lookup-default 'name configuration "default"))
-        (environment (lookup-default 'env configuration nil))
-        (logfile (lookup-default 'logfile configuration nil))
-        (buffer-name (merlin-instance-buffer-name name)))
+  (let* ((command (lookup-default 'command configuration nil))
+         (command (if command command (merlin-command)))
+         (extra-flags (lookup-default 'flags configuration nil))
+         (name (lookup-default 'name configuration "default"))
+         (environment (lookup-default 'env configuration nil))
+         (logfile (lookup-default 'logfile configuration nil))
+         (buffer-name (merlin-instance-buffer-name name)))
     (when (not merlin-quiet-startup)
       (message "Starting merlin instance: %s (binary=%s)."
 	       name command))
