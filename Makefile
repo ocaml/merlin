@@ -19,8 +19,6 @@ BIN_DIR := $(DESTDIR)$(BIN_DIR)
 SHARE_DIR := $(DESTDIR)$(SHARE_DIR)
 VIM_DIR := $(DESTDIR)$(VIM_DIR)
 
-OCAML_VERSIONS = 401 402
-
 #### Invocation of OCamlMakefile
 
 OCAMLMAKEFILE= $(MAKE) -f Makefile.ocamlmakefile \
@@ -34,7 +32,7 @@ endif
 
 all: $(TARGET) $(TARGET_EMACS)
 
-#### Configuration
+#### Check configuration
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 $(CONFIG_FILES):
@@ -43,25 +41,14 @@ $(CONFIG_FILES):
 		"WARNING:\n\tThere are some build leftovers.\n\tConsider doing a 'make clean' before continuing.\n"; fi
 	@false
 
-#### Rules
+assert_configured: $(CONFIG_FILES)
+
+#### Other rules
 
 .PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured message merlin.install
 
-assert_configured: $(CONFIG_FILES)
-
 $(TARGET): assert_configured
 	 +$(OCAMLMAKEFILE) $@
-
-all_versions:
-	for i in $(OCAML_VERSIONS); do \
-	  $(OCAMLMAKEFILE) clean; \
-		echo "# building for ocaml $$i"; \
-		$(OCAMLMAKEFILE) MERLIN_OCAML_VERSION=_$$i; \
-	done
-
-wine:
-	$(MAKE) -f Makefile.wine
-	$(MAKE) -f Makefile.wine installer
 
 preprocess:
 	$(MAKE) -f Makefile.preprocess
@@ -79,9 +66,6 @@ clean:
 	$(MAKE) -f Makefile.preprocess clean
 	@find src/ -name '*.cm*' -delete
 	+$(OCAMLMAKEFILE) clean
-
-check: $(TARGET)
-	./test.sh
 
 distclean: clean
 	@echo

@@ -1,38 +1,34 @@
 #!/bin/sh
 
-BIN_DIR=/usr/local/bin
-SHARE_DIR=/usr/local/share
-VIM_DIR=/usr/local/share/ocamlmerlin/vim
-WITH_BIN_ANNOT=""
-VERSION_STRING=""
+# Useful routines
+# ===============
 
-if ! [ -x $(which ocamlfind) ]; then
-  echo "OCamlfind is missing. Please install it."
-  exit 1
-fi
-
-EXIT=0
-
-if which tput > /dev/null 2>&1 ; then
-  COL_CLEAR=$(tput sgr0)
-  COL_RED=$(tput setf 4)
-  COL_GREEN=$(tput setf 2)
-else
-  COL_CLEAR=
-  COL_RED=
-  COL_GREEN=
-fi
-
+# [check_package $pkg $msg]
+# - succeeds if findlib package $pkg is installed 
+# - or sets EXIT=1 and displays $msg
 check_package()
 {
-  if ocamlfind query "$2" >/dev/null 2>/dev/null; then
-    printf "Found $2\t${COL_GREEN}GOOD${COL_CLEAR}\n"
+  if ocamlfind query "$1" >/dev/null 2>/dev/null; then
+    printf "Found $1\t${COL_GREEN}GOOD${COL_CLEAR}\n"
   else
-    printf "${COL_RED}BAD${COL_CLEAR} $2 is missing\n\t$3\n"
-    eval $1=1
+    printf "${COL_RED}BAD${COL_CLEAR} $1 is missing\n\t$2\n"
+    EXIT=1
   fi
 }
 
+# [filter_file $filename $filter...]
+# filter the contents of $filename through $filter, updating the file
+filter_file()
+{
+  FILE="$1"
+  shift 1
+
+  mv "$FILE" "$FILE".org
+  "$@" < "$FILE".org > "$FILE"
+  rm "$FILE".org
+}
+
+# [usage] displays usage message for the configure script
 usage()
 {
     cat <<END
@@ -63,15 +59,37 @@ The options available for better control are as follow:
 END
 }
 
-filter_file()
-{
-  FILE="$1"
-  shift 1
+# Check prerequisite, setup defaults
+# ==================================
 
-  mv "$FILE" "$FILE".org
-  "$@" < "$FILE".org > "$FILE"
-  rm "$FILE".org
-}
+## Color settings
+if which tput > /dev/null 2>&1 ; then
+  COL_CLEAR=$(tput sgr0)
+  COL_RED=$(tput setf 4)
+  COL_GREEN=$(tput setf 2)
+else
+  COL_CLEAR=
+  COL_RED=
+  COL_GREEN=
+fi
+
+## OCamlfind
+if ! [ -x $(which ocamlfind) ]; then
+  echo "OCamlfind is missing. Please install it."
+  exit 1
+fi
+
+## Default variables
+BIN_DIR=/usr/local/bin
+SHARE_DIR=/usr/local/share
+VIM_DIR=/usr/local/share/ocamlmerlin/vim
+WITH_BIN_ANNOT=""
+VERSION_STRING=""
+EXIT=0
+
+
+# Parse arguments
+# ===============
 
 while [ -n "$1" ]; do
   case "$1" in
@@ -94,7 +112,7 @@ while [ -n "$1" ]; do
       VIM_DIR="$1"
       ;;
     --with-bin-annot)
-      WITH_BIN_ANNOT="-cflags -bin-annot"
+      WITH_BIN_ANNOT=1
       ;;
     --enable-compiled-emacs-mode)
       ENABLE_COMPILED_EMACS_MODE=true
@@ -110,20 +128,33 @@ while [ -n "$1" ]; do
   shift 1
 done
 
-OCAML_VERSION="403"
-OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
-OCAML_VERSION_VAL='`OCaml_4_03_0'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 ]'
+# Validate configuration and system settings
+# ==========================================
 
 cat <<END
 Merlin configuration
 --------------------
 END
 
-check_package EXIT findlib "Install findlib"
-check_package EXIT yojson "Install yojson"
+## Check findlib packages
+## ======================
+
+check_package findlib "Install findlib"
+check_package yojson "Install yojson"
+
+## Check OCaml version
+## ===================
+
+OCAML_VERSION="403"
+OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
+OCAML_VERSION_VAL='`OCaml_4_03_0'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 ]'
+
 MAGIC_VERSION=$(ocamlfind c -config | grep cmi_magic_number | cut -d' ' -f2)
 FULL_VERSION=$(ocamlfind c -version)
+
+### Patch certain versions of the typechecker
+### =========================================
 
 case "$MAGIC_VERSION" in
   "Caml1999I017")
@@ -157,7 +188,9 @@ case "$MAGIC_VERSION" in
     ;;
 esac
 
-# Findlib version check
+## Findlib version check
+## =====================
+
 if [ "x1.5.1" = "x$(ocamlfind query findlib -format '%v')" ]; then
   printf "\nOld version of findlib detected (1.5.1), patching\n"
   filter_file src/kernel/dot_merlin.ml \
@@ -170,7 +203,9 @@ else
   NATIVE=false
 fi
 
-# Sturgeon version check
+## Sturgeon version check
+## ======================
+
 if ocamlfind query sturgeon >/dev/null 2>/dev/null; then
   STURGEON_VERSION="stub"
   STURGEON_VERSION_MESSAGE="stub (enabled, using 'sturgeon' package)"
@@ -185,30 +220,13 @@ else
   NEED_THREADS_MESSAGE=no
 fi
 
-cat <<END
-
-System config:
-  OCaml ABI version: $OCAML_VERSION_MESSAGE
-  Native code: $NATIVE
-  Sturgeon version: $STURGEON_VERSION_MESSAGE
-  Need threads: $NEED_THREADS_MESSAGE
-
-Will install:
-  ocamlmerlin binary in: $BIN_DIR
-  vim mode in: $VIM_DIR
-
-To customize directories, use:
-  ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--vimdir <vimdir>]
-
-For more informations rerun with --help.
-END
-
-SYSTEM=$(ocamlfind c -config | grep system|cut -d' ' -f2)
-
 MERLIN_CONFIG_ENV="
 export MERLIN_NEED_THREADS=${NEED_THREADS} 
 export MERLIN_STURGEON_PACKAGE=${STURGEON_PACKAGE}
 "
+
+## Windows compatibility checks
+## ============================
 
 if [ -z ${COMSPEC+x} ]; then
 
@@ -229,9 +247,8 @@ else
 export MERLIN_OCAML_VERSION=_${OCAML_VERSION}
 export MERLIN_STURGEON_VERSION=_${STURGEON_VERSION}
 "
-fi
 
-mkdir -p "$PWD/src/config"
+fi
 
 OS_TYPE=$(ocamlfind c -config | grep os_type|cut -d' ' -f2)
 
@@ -244,6 +261,32 @@ case "$OS_TYPE" in
     EXE=
     ;;
 esac
+
+# Configuration report
+# ====================
+
+cat <<END
+
+System config:
+  OCaml ABI version: $OCAML_VERSION_MESSAGE
+  Native code: $NATIVE
+  Sturgeon version: $STURGEON_VERSION_MESSAGE
+  Need threads: $NEED_THREADS_MESSAGE
+
+Will install:
+  ocamlmerlin binary in: $BIN_DIR
+  vim mode in: $VIM_DIR
+
+To customize directories, use:
+  ./configure [--prefix <dir>] [--bindir <dir>] [--sharedir <dir>] [--vimdir <vimdir>]
+
+For more informations rerun with --help.
+END
+
+# Execute configuration actions
+# =============================
+
+mkdir -p "$PWD/src/config"
 
 if [ -d "$BIN_DIR" ]; then
 
