@@ -1,8 +1,0 @@
-#!/bin/bash
-. functions.sh || exit 1
-
-reset warnings_01.ml
-tell <<END
-let f = fun None -> ()
-END
-cmd errors
