@@ -316,9 +316,6 @@ let version = "$VERSION_STRING";;
 let ocamlversion : $OCAML_VERSION_TYP = $OCAML_VERSION_VAL;;
 END
 
-  cat >src/config/config.iss <<END
-#define OCAML_VERSION "$OCAML_VERSION_MESSAGE"
-END
   if [ "$EXIT" -eq 0 ]; then
     echo "Now, type 'make' to compile then 'make install'."
   else

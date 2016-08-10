@@ -46,6 +46,4 @@ val logfmt : section -> title -> (Format.formatter -> unit) -> unit
 val logj   : section -> title -> (unit -> Std.json) -> unit
 
 val notify : section -> ('b, unit, string, unit) format4 -> 'b
-
-val with_editor : (section * string) list ref -> (unit -> 'a) -> 'a
-
+val with_notifications : (section * string) list ref -> (unit -> 'a) -> 'a

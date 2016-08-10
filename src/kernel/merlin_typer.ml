@@ -63,7 +63,7 @@ let rec type_steps type_fun env0 = function
   | pitem :: pitems ->
     Some (pitem, lazy begin
         let caught = ref [] in
-        Front_aux.catch_errors caught @@ fun () ->
+        Merlin_support.catch_errors caught @@ fun () ->
         Typecore.delayed_checks := [];
         let titem, sign, env =
           try type_fun env0 pitem
@@ -154,19 +154,14 @@ let update_steps extensions ast previous =
       )
 
 let with_typer t f =
-  let open Fluid in
-  let' (from_ref Btype.state) t.btype_state @@ fun () ->
-  let' (from_ref Env.state)   t.env_state f
+  let_ref Btype.state t.btype_state @@ fun () ->
+  let_ref Env.state t.env_state @@ fun () -> f ()
 
 let is_valid t =
   with_typer t @@ fun () ->
   Env.check_state_consistency () &&
   fst t.stamp = !(snd t.stamp) &&
   true
-  (*FIXME match t.steps with
-  | v when not (Lazy.is_val v) -> true
-  | lazy List.Lazy.Nil -> true
-  | lazy (List.Lazy.Cons (x,_)) -> Btype.is_valid x.snapshot*)
 
 let make reader ~stamp extensions =
   let btype_state = Btype.new_state () in
@@ -286,7 +281,7 @@ let checks ?pos t =
   Typecore.delayed_checks := checks;
   let caught = ref [] in
   begin try
-      Front_aux.catch_errors caught (fun () ->
+      Merlin_support.catch_errors caught (fun () ->
           let modulename =
             Merlin_source.unitname (Merlin_reader.source t.reader) in
           let simple_sign = Typemod.simplify_signature sign in

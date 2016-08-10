@@ -85,18 +85,18 @@ let logj section title f =
     Json.pretty_to_channel oc (f ());
     output_char oc '\n'
 
-let editor_messages
-  : (section * string) list ref option fluid
-  = fluid None
+let notifications
+  : (section * string) list ref option ref
+  = ref None
 
 let notify section =
   let tell msg =
     log section "notify" msg;
-    match Fluid.get editor_messages with
+    match !notifications with
     | None -> ()
     | Some r -> r := (section, msg) :: !r
   in
   Printf.ksprintf tell
 
-let with_editor r f =
-  Fluid.let' editor_messages (Some r) f
+let with_notifications r f =
+  let_ref notifications (Some r) f

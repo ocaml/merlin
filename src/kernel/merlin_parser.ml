@@ -156,7 +156,7 @@ let resume_parse nav =
       begin match I.resume checkpoint with
         | checkpoint' -> normal acc tokens checkpoint'
         | exception exn ->
-          Front_aux.raise_error exn;
+          Merlin_support.raise_error exn;
           let token = match acc with
             | [] -> assert false
               (* Parser raised error before parsing anything *)
@@ -178,7 +178,7 @@ let resume_parse nav =
       begin match I.resume checkpoint with
         | checkpoint' -> check_for_error acc token tokens env checkpoint'
         | exception exn ->
-          Front_aux.raise_error exn;
+          Merlin_support.raise_error exn;
           enter_error acc token tokens env
       end
 
@@ -238,7 +238,7 @@ let parse initial nav steps lexer =
 
 
 let run_parser nav lexer previous kind =
-  Front_aux.catch_errors errors_ref @@ fun () ->
+  Merlin_support.catch_errors errors_ref @@ fun () ->
   match kind with
   | ML  ->
     let steps = match previous with

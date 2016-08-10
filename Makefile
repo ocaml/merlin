@@ -34,7 +34,7 @@ all: $(TARGET) $(TARGET_EMACS)
 
 #### Check configuration
 
-CONFIG_FILES = src/config/my_config.ml src/ocaml
+CONFIG_FILES = src/config/my_config.ml src/ocaml_typer
 $(CONFIG_FILES):
 	@echo "Please run ./configure"
 	@if [ -d ._d ]; then printf \

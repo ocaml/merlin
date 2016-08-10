@@ -8,7 +8,7 @@ S src/ocaml
 S src/ocaml/parsing
 S src/ocaml/typing
 S src/ocaml/utils
-S src/ocaml_aux
+S src/ocaml_support
 S src/sturgeon
 S src/utils
 B src
@@ -22,7 +22,7 @@ B src/ocaml/parsing
 B src/ocaml/typing
 B src/ocaml/utils
 B src/ocaml/tools
-B src/ocaml_aux
+B src/ocaml_support
 B src/sturgeon
 B src/utils
 B +threads

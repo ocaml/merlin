@@ -28,14 +28,6 @@
 
 open Std
 
-(* Copy global state after initialization *)
-let initial_warnings = ref (Warnings.backup ())
-let initial_clflags = ref (Clflags.save ())
-
-let initialized () =
-  initial_warnings := Warnings.backup ();
-  initial_clflags := Clflags.save ()
-
 type config = {
   dot_config    : Dot_merlin.config;
   flags         : Clflags.config;
