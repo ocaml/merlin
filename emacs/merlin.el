@@ -1744,7 +1744,7 @@ Returns the position."
   "Return path of ocamlmerlin binary selected by configuration"
   (if (equal merlin-command 'opam)
       (with-temp-buffer
-        (if (eq (call-process "opam" nil (current-buffer) nil "config" "var" "bin") 0)
+        (if (eq (call-process-shell-command "opam config var bin" nil (current-buffer) nil) 0)
             (concat (replace-regexp-in-string "\n$" "" (buffer-string)) "/ocamlmerlin")
           (message "merlin-command: opam config failed, falling back to 'ocamlmerlin' (message: %S)" (buffer-string))
           "ocamlmerlin"))
