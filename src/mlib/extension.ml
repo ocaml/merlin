@@ -39,7 +39,7 @@ type t = {
   keywords : (string * Parser_raw.token) list;
 }
 
-type set = String.Set.t
+type set = string list
 
 (* Private definitions are put in a fake module named "_" with the following
  * ident. Use it to test or find private definitions. *)
@@ -104,21 +104,22 @@ let registry = [ext_lwt;ext_meta]
 let registry =
   List.fold_left registry ~init:String.Map.empty
     ~f:(fun map ext -> String.Map.add map ~key:ext.name ~data:ext)
-let all = String.Set.of_list (String.Map.keys registry)
+
+let all = String.Map.keys registry
 
 let lookup s =
   try Some (String.Map.find s registry)
   with Not_found -> None
 
-let empty = String.Set.empty
+let empty = []
 
 (* Compute set of extensions from package names (used to enable support for
   "lwt" if "lwt.syntax" is loaded by user. *)
 let from ~extensions ~packages =
-  String.Map.fold registry ~init:empty ~f:(fun ~key:name ~data:ext set ->
+  String.Map.fold registry ~init:[] ~f:(fun ~key:name ~data:ext set ->
       if List.mem name ~set:extensions ||
          List.exists ~f:(List.mem ~set:ext.packages) packages
-      then String.Set.add name set
+      then name :: set
       else set
     )
 
@@ -132,12 +133,12 @@ let default_kw = List.concat_map ~f:(fun ext -> ext.keywords) default
 
 (* Lexer keywords needed by extensions *)
 let keywords set =
-  let add_kw ext kws =
+  let add_kw kws ext =
     match lookup ext with
     | None -> kws
     | Some def -> def.keywords @ kws
   in
-  let all = String.Set.fold set ~init:default_kw ~f:add_kw in
+  let all = List.fold_left set ~init:default_kw ~f:add_kw in
   Lexer_raw.keywords all
 
 (* Register extensions in typing environment *)
@@ -160,12 +161,12 @@ let type_sig env sg =
 let register exts env =
   (* Log errors ? *)
   let try_type sg' = try type_sig env sg' with _exn -> [] in
-  let exts =
-    String.Map.fold registry ~init:default ~f:(fun ~key:name ~data:ext list ->
-      if String.Set.mem name exts
-      then ext :: list
-      else list
-    )
+  let exts = List.filter_dup exts in
+  let exts = List.filter_map ~f:(fun ext ->
+      match String.Map.find ext registry with
+      | ext -> Some ext
+      | exception Not_found -> None
+    ) exts
   in
   let process_ext e =
     let prv = List.concat_map ~f:parse_sig e.private_def in

@@ -233,9 +233,9 @@ if [ -z ${COMSPEC+x} ]; then
   # Non windows-like system, use symlinks
 
   rm -f "$PWD/src/ocaml" 2>&1 >/dev/null
-  ln -sf "$PWD/src/ocaml_$OCAML_VERSION" "$PWD/src/ocaml"
+  #ln -sf "$PWD/src/ocaml_$OCAML_VERSION" "$PWD/src/ocaml"
   rm -f "$PWD/src/sturgeon" 2>&1 >/dev/null
-  ln -sf "$PWD/src/sturgeon_$STURGEON_VERSION" "$PWD/src/sturgeon"
+  #ln -sf "$PWD/src/sturgeon_$STURGEON_VERSION" "$PWD/src/sturgeon"
 
 else
 

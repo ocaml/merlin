@@ -60,7 +60,7 @@ debug: assert_configured
 	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
 clean:
-	@rm -f Makefile.config $(CONFIG_FILES)
+	#@rm -f Makefile.config $(CONFIG_FILES)
 	@rm -f emacs/merlin.elc
 	@rm -f src/ocaml_*/*.cmly
 	$(MAKE) -f Makefile.preprocess clean

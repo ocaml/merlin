@@ -30,6 +30,11 @@ module Json = struct
   include Yojson.Basic
   let string x = `String x
   let int x = `Int x
+  let bool x = `Bool x
+
+  let option f = function
+    | None -> `Null
+    | Some x -> f x
 end
 
 type json =
@@ -729,3 +734,22 @@ let let_ref r v f =
   match f () with
   | result -> r := v'; result
   | exception exn -> r := v'; raise exn
+
+module Shell = struct
+  (* FIXME: Simply split on spaces *)
+  let split_command str =
+    let comps = ref [] in
+    let buf = Buffer.create 16 in
+    let flush () =
+      match Buffer.contents buf with
+      | "" -> ()
+      | str -> comps := str :: !comps
+    in
+    for i = 0 to String.length str do
+      match str.[i] with
+      | ' ' | '\t' | '\n' -> flush ()
+      | x -> Buffer.add_char buf x
+    done;
+    flush ();
+    List.rev !comps
+end

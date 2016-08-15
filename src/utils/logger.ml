@@ -33,16 +33,25 @@ open Misc
 type title = string
 type section = string
 
+let time = ref 0.0
+
+let reset_time () =
+  time := Sys.time ()
+
+let delta_time () =
+  Sys.time () -. !time
+
 let destination = ref None
 
 let set_destination dest =
   begin match !destination with
     | None -> ()
+    | Some oc when oc == stderr -> ()
     | Some oc -> close_out_noerr oc
   end;
   destination :=
     begin match dest with
-      | None -> None
+      | None -> Some stderr
       | Some filename ->
         Some (open_out filename)
     end
@@ -50,11 +59,10 @@ let set_destination dest =
 let () =
   set_destination (try Some (Sys.getenv "MERLIN_LOG")
                    with Not_found -> None);
-  at_exit (fun () -> set_destination None)
+ at_exit (fun () -> set_destination None)
 
 let output_section oc section title =
-  let time = (Unix.times ()).Unix.tms_utime in
-  output_string oc (Printf.sprintf "# %2.2f %s - %s\n" time section title)
+  Printf.fprintf oc "# %2.2f %s - %s\n" (delta_time ()) section title
 
 let log section title msg =
   match !destination with

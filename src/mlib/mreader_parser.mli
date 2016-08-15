@@ -26,36 +26,26 @@
 
 )* }}} *)
 
-open Std
+open Sturgeon_stub
 
-val verbosity : int Fluid.t
+type kind =
+  | ML
+  | MLI
+  (*| MLL | MLY*)
 
-module Printtyp : sig
-  include module type of struct include Printtyp end
+type t
 
-  val type_declaration :
-    Env.t -> Ident.t -> Format.formatter -> Types.type_declaration -> unit
+val make : Mreader_lexer.t -> kind -> t
 
-  val type_scheme : Env.t -> Format.formatter -> Types.type_expr -> unit
+val trace : t -> flag Widget.Nav.frame -> unit
 
-  val modtype : Env.t -> Format.formatter -> Types.module_type -> unit
+type tree = [
+  | `Signature of Parsetree.signature
+  | `Structure of Parsetree.structure
+]
 
-  val wrap_printing_env : Env.t -> verbosity:int -> (unit -> 'a) -> 'a
-end
+val result : t -> tree
 
-val mod_smallerthan : int -> Types.module_type -> int option
-(** Check if module is smaller (= has less definition, counting nested ones)
-    than a particular threshold. Return (Some n) if module has size n, or None
-    otherwise (module is bigger than threshold).
-    Used to skip printing big modules in completion. *)
+val errors : t -> exn list
 
-val type_in_env : ?verbosity:int -> ?keywords:Lexer_raw.keywords ->
-  Env.t -> Format.formatter -> string -> bool
-(** [type_in_env env ppf input] parses [input] and prints its type on [ppf].
-    Returning true if it printed a type, false otherwise. *)
-
-val print_type_with_decl : verbosity:int ->
-  Env.t -> Format.formatter -> Types.type_expr -> unit
-(** [print_type_or_decl] behaves like [Printtyp.type_scheme], it prints the
-    type expression, except if it is a type constructor and verbosity is set then
-    it also prints the type declaration. *)
+val dump_stack : t -> cursor -> Mreader_lexer.triple -> unit

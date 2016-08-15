@@ -54,7 +54,7 @@ type t = {
 val ident : Ident.t
 
 (** Set of extension name *)
-type set = String.Set.t
+type set = string list
 
 (* Lexer keywords needed by extensions *)
 val keywords : set -> Lexer_raw.keywords

@@ -32,8 +32,8 @@ type triple = Parser_raw.token * Lexing.position * Lexing.position
 
 type t
 
-val make : keywords -> Merlin_source.t -> t
-val update : Merlin_source.t -> t -> t
+val make : keywords -> Msource.t -> t
+val update : Msource.t -> t -> t
 
 val initial_position : t -> Lexing.position
 
@@ -41,11 +41,11 @@ val tokens   : t -> triple list
 val errors   : t -> exn list
 val comments : t -> (string * Location.t) list
 
-val source : t -> Merlin_source.t
+val source : t -> Msource.t
 val compare : t -> t -> int
 
 val identifier_suffix: string Location.loc list -> string Location.loc list
 val for_completion: t -> Lexing.position -> [`No_labels of bool] * t
 
 val reconstruct_identifier:
-  Merlin_source.t -> Lexing.position -> string Location.loc list
+  Msource.t -> Lexing.position -> string Location.loc list

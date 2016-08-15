@@ -122,8 +122,6 @@ SOURCES = \
 	$(TYPER)/typing/cmt_format.ml     \
 	$(TYPER)/tail_analysis.mli        \
 	$(TYPER)/tail_analysis.ml         \
-	src/kernel/dot_merlin.mli         \
-	src/kernel/dot_merlin.ml          \
 	$(TYPER)/parsing/syntaxerr.mli    \
 	$(TYPER)/parsing/syntaxerr.ml     \
 	src/ocaml_support/cmt_cache.ml        \
@@ -142,8 +140,6 @@ SOURCES = \
 	$(TYPER)/typing/includeclass.ml   \
 	$(TYPER)/typing/includecore.mli   \
 	$(TYPER)/typing/includecore.ml    \
-	src/kernel/fake.mli               \
-	src/kernel/fake.ml                \
 	src/extend/extend_protocol.ml     \
 	src/extend/extend_helper.mli      \
 	src/extend/extend_helper.ml       \
@@ -167,6 +163,10 @@ SOURCES = \
 	$(TYPER)/typing/typeclass.ml      \
 	$(TYPER)/typing/typemod.mli       \
 	$(TYPER)/typing/typemod.ml        \
+	src/mlib/fake.mli                 \
+	src/mlib/fake.ml                  \
+	src/mlib/lexer_ident.mli          \
+	src/mlib/lexer_ident.ml           \
 	$(TYPER)/parser_raw.mli           \
 	$(TYPER)/parser_raw.ml            \
 	$(TYPER)/lexer_raw.mli            \
@@ -176,56 +176,32 @@ SOURCES = \
 	$(TYPER)/parser_recover.mli       \
 	$(TYPER)/parser_recover.ml        \
 	$(TYPER)/parser_explain.ml        \
+	src/mlib/extension.mli            \
+	src/mlib/extension.ml             \
 	src/ocaml_support/pparse.mli      \
 	src/ocaml_support/pparse.ml       \
-	src/kernel/extension.mli          \
-	src/kernel/extension.ml           \
-	src/kernel/merlin_source.ml       \
-	src/kernel/merlin_source.mli      \
-	src/kernel/lexer_ident.mli        \
-	src/kernel/lexer_ident.ml         \
-	src/kernel/merlin_lexer.mli       \
-	src/kernel/merlin_lexer.ml        \
-	src/kernel/merlin_recover.mli     \
-	src/kernel/merlin_recover.ml      \
-	src/kernel/merlin_explain.ml      \
-	src/kernel/merlin_parser.mli      \
-	src/kernel/merlin_parser.ml       \
-	src/kernel/merlin_reader.mli      \
-	src/kernel/merlin_reader.ml       \
 	$(TYPER)/raw_typer.mli            \
 	$(TYPER)/raw_typer.ml             \
-	src/kernel/merlin_browse.mli      \
-	src/kernel/merlin_browse.ml       \
-	src/kernel/merlin_typer.mli       \
-	src/kernel/merlin_typer.ml        \
-	src/kernel/merlin_project.ml      \
-	src/kernel/merlin_project.mli     \
-	src/kernel/merlin_buffer.ml       \
-	src/kernel/merlin_buffer.mli      \
-	src/kernel/merlin_lib.ml          \
-	src/ocaml_support/error_report.mli \
-	src/ocaml_support/error_report.ml  \
-	src/analysis/browseT.mli          \
-	src/analysis/browseT.ml           \
-	src/analysis/browse_misc.ml       \
-	src/analysis/type_utils.mli       \
-	src/analysis/type_utils.ml        \
-	src/analysis/typedtrie.mli        \
-	src/analysis/typedtrie.ml         \
-	src/analysis/ocamldoc.ml          \
-	src/analysis/track_definition.mli \
-	src/analysis/track_definition.ml  \
-	src/analysis/expansion.ml         \
-	src/analysis/completion.mli       \
-	src/analysis/completion.ml        \
-	src/analysis/outline.mli          \
-	src/analysis/outline.ml           \
-	src/analysis/jump.mli             \
-	src/analysis/jump.ml              \
-	$(TYPER)/tast_helper.ml           \
-	src/analysis/destruct.mli         \
-	src/analysis/destruct.ml       
+	src/mlib/marg.mli                 \
+	src/mlib/marg.ml                  \
+	src/mlib/mconfig.mli              \
+	src/mlib/mconfig.ml               \
+	src/mlib/msource.mli              \
+	src/mlib/msource.ml               \
+	src/mlib/mreader_explain.ml       \
+	src/mlib/mreader_lexer.mli        \
+	src/mlib/mreader_lexer.ml         \
+	src/mlib/mreader_recover.mli      \
+	src/mlib/mreader_recover.ml       \
+	src/mlib/mreader_parser.mli       \
+	src/mlib/mreader_parser.ml        \
+	src/mlib/mreader.mli              \
+	src/mlib/mreader.ml               \
+	src/mlib/mppx.mli                 \
+	src/mlib/mppx.ml                  \
+	src/mlib/mqueries.mli             \
+	src/mlib/mqueries.ml              \
+	src/mlib/reference.ml
 
 PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
 

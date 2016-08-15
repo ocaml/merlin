@@ -26,29 +26,23 @@
 
 )* }}} *)
 
-open Merlin_lib
+type keywords = Lexer_raw.keywords
 
-type t = {
-  t_node     : Browse.node;
-  t_loc      : Location.t;
-  t_env      : Env.t;
-  t_children : t list lazy_t;
-}
+type triple = Parser_raw.token * Lexing.position * Lexing.position
 
-val default_loc : Location.t
-val default_env : Env.t
+type t
 
-(** [of_node ?loc ?env node] produces a tree from [node], using [loc] and [env]
-  * as default annotation when nothing can be inferred from the [node].
-  * If they are not specified, annotations from child are used for approximation.
-  *)
-val of_node : ?env:Env.t -> Browse.node -> t
-val of_browse : Browse.t -> t
+val make :
+  keywords -> Msource.t -> t
 
-val dummy : t
+val for_completion:
+  t -> Lexing.position -> [`No_labels of bool] * t
 
-val all_occurrences : Path.t -> t -> (t * Path.t Location.loc list) list
-val all_constructor_occurrences :
-  t * [ `Description of Types.constructor_description
-      | `Declaration of Typedtree.constructor_declaration ]
-  -> t -> t Location.loc list
+val initial_position : t -> Lexing.position
+
+val tokens   : t -> triple list
+val errors   : t -> exn list
+val comments : t -> (string * Location.t) list
+
+val reconstruct_identifier:
+  Msource.t -> Lexing.position -> string Location.loc list
