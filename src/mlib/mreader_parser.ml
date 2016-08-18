@@ -118,8 +118,8 @@ type 'a step =
   | Recovering of 'a R.candidates
 
 type tree = [
-  | `Signature of Parsetree.signature
-  | `Structure of Parsetree.structure
+  | `Interface of Parsetree.signature
+  | `Implementation of Parsetree.structure
 ]
 
 type steps =[
@@ -225,13 +225,12 @@ let seek_step steps tokens =
   in
   aux [] (steps, tokens)
 
-let parse initial nav steps lexer =
-  let tokens = Mreader_lexer.tokens lexer in
+let parse initial nav steps tokens initial_pos =
   let acc, tokens = seek_step steps tokens in
   let step =
     match acc with
     | (step, _) :: _ -> step
-    | [] -> Correct (initial (Mreader_lexer.initial_position lexer))
+    | [] -> Correct (initial initial_pos)
   in
   let acc, result = resume_parse nav acc tokens step in
   List.rev acc, result
@@ -239,6 +238,8 @@ let parse initial nav steps lexer =
 
 let run_parser nav lexer previous kind =
   Merlin_support.catch_errors errors_ref @@ fun () ->
+  let tokens = Mreader_lexer.tokens lexer in
+  let initial_pos = Mreader_lexer.initial_position lexer in
   match kind with
   | ML  ->
     let steps = match previous with
@@ -246,16 +247,18 @@ let run_parser nav lexer previous kind =
       | _ -> []
     in
     let steps, result =
-      parse Parser_raw.Incremental.implementation nav steps lexer in
-    `Structure steps, `Structure result
+      let state = Parser_raw.Incremental.implementation in
+      parse state nav steps tokens initial_pos in
+    `Structure steps, `Implementation result
   | MLI ->
     let steps = match previous with
       | `Signature steps -> steps
       | _ -> []
     in
     let steps, result =
-      parse Parser_raw.Incremental.interface nav steps lexer in
-    `Signature steps, `Signature result
+      let state = Parser_raw.Incremental.interface in
+      parse state nav steps tokens initial_pos in
+    `Signature steps, `Interface result
 
 let null_frame =
   {Widget.Nav. body = null; title = null; nav = Widget.Nav.make "" ignore}

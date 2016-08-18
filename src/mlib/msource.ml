@@ -111,16 +111,36 @@ let get_lexing_pos t pos =
     pos_cnum = o;
   }
 
+let substitute t starting ending text =
+  let len = String.length t.text in
+  let `Offset starting = get_offset t starting in
+  let `Offset ending = match ending with
+    | `End -> `Offset len
+    | `Length l ->
+      if starting + l <= len then
+        `Offset (starting + l)
+      else begin
+        Logger.logf "source" "substitute"
+          "offset %d + length %d in %S out of bounds (size is %d)"
+          starting l t.filename len;
+        `Offset len
+      end
+    | #position as p -> get_offset t p
+  in
+  if ending < starting then
+    invalid_arg "Source.substitute: ending < starting";
+  let text =
+    String.sub t.text 0 starting ^
+    text ^
+    String.sub t.text ending (len - ending)
+  in
+  {t with text}
+
 (* Accessing content *)
 
 let filename t = t.filename
 
-let unitname {filename} =
-  let unitname =
-    try String.sub filename ~pos:0 ~len:(String.index filename '.')
-    with Not_found -> filename
-  in
-  String.capitalize unitname
+let unitname t = Misc.unitname t.filename
 
 let text t = t.text
 

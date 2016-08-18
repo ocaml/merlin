@@ -92,12 +92,27 @@ let dump_merlin x = `Assoc [
 
 let merlin_flags = []
 
-type t = {
+type query = {
   filename  : string;
   directory : string;
-  ocaml     : ocaml;
-  findlib   : findlib;
-  merlin    : merlin;
+  terminal_width : int;
+  verbosity : int;
+}
+
+let dump_query x = `Assoc [
+    "filename"  , `String x.filename;
+    "directory" , `String x.directory;
+    "terminal_width", `Int x.terminal_width;
+    "verbosity" , `Int x.verbosity;
+  ]
+
+let query_flags = []
+
+type t = {
+  ocaml   : ocaml;
+  findlib : findlib;
+  merlin  : merlin;
+  query   : query;
 }
 
 let ocaml_ignored_flags = [
@@ -244,9 +259,6 @@ let ocaml_flags = [
 (** {1 Main configuration} *)
 
 let initial = {
-  filename = "<buffer>";
-  directory = Sys.getcwd ();
-
   ocaml = {
     include_dirs         = [];
     no_std_include       = false;
@@ -281,12 +293,19 @@ let initial = {
     stdlib      = None;
     reader      = [];
   };
+  query = {
+    filename = "<buffer>";
+    directory = Sys.getcwd ();
+    verbosity = 0;
+    terminal_width = 0;
+  }
 }
 
 let dump x = `Assoc [
     "ocaml"   , dump_ocaml x.ocaml;
     "findlib" , dump_findlib x.findlib;
     "merlin"  , dump_merlin x.merlin;
+    "query"   , dump_query x.query;
   ]
 
 let normalize _trace t = t
@@ -358,3 +377,15 @@ let document_arguments oc =
   output_string oc "Accepted but ineffective compiler flags:\n";
   List.iter (Printf.fprintf oc "  %s\n") ocaml_ignored_flags;
   List.iter (Printf.fprintf oc "  %s _\n") ocaml_ignored_parametrized_flags
+
+let global_modules ?(include_current=false) config =
+  let modules =
+    Misc.modules_in_path ~ext:".cmi"
+      (config.merlin.build_path @ config.ocaml.include_dirs)
+  in
+  if include_current then modules
+  else match config.query.filename with
+    | "" -> modules
+    | filename ->
+      let unitname = Misc.unitname filename in
+      List.remove unitname modules

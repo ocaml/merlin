@@ -20,7 +20,7 @@ ifndef WITHOUT_DEBUG
 endif
 
 RESULT   = ocamlmerlin$(RESULT_SUFFIX)
-TYPER    = src/ocaml_typer$(MERLIN_OCAML_VERSION)
+TYPER    = src/ocaml/typer$(MERLIN_OCAML_VERSION)
 STURGEON = src/sturgeon$(MERLIN_STURGEON_VERSION)
 THREADS  = $(MERLIN_NEED_THREADS)
 
@@ -45,21 +45,21 @@ SOURCES = \
 	src/utils/logger.ml               \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
-	src/ocaml_support/identifiable.mli \
-	src/ocaml_support/identifiable.ml  \
-	src/ocaml_support/tbl.mli          \
-	src/ocaml_support/tbl.ml           \
+	src/ocaml/support/identifiable.mli \
+	src/ocaml/support/identifiable.ml  \
+	src/ocaml/support/tbl.mli          \
+	src/ocaml/support/tbl.ml           \
 	$(TYPER)/utils/warnings.mli       \
 	$(TYPER)/utils/warnings.ml        \
 	$(TYPER)/utils/config.mli         \
 	$(TYPER)/utils/config.ml          \
-	src/ocaml_support/clflags.mli     \
-	src/ocaml_support/clflags.ml      \
+	src/ocaml/support/clflags.mli     \
+	src/ocaml/support/clflags.ml      \
 	$(TYPER)/parsing/asttypes.mli     \
 	$(TYPER)/parsing/location.mli     \
 	$(TYPER)/parsing/location.ml      \
-	src/ocaml_support/location_aux.mli \
-	src/ocaml_support/location_aux.ml  \
+	src/ocaml/support/location_aux.mli \
+	src/ocaml/support/location_aux.ml  \
 	$(TYPER)/parsing/attr_helper.mli  \
 	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
@@ -99,7 +99,7 @@ SOURCES = \
 	$(TYPER)/typing/datarepr.ml       \
 	$(TYPER)/typing/subst.mli         \
 	$(TYPER)/typing/subst.ml          \
-	src/ocaml_support/cmi_cache.ml        \
+	src/ocaml/support/cmi_cache.ml        \
 	$(TYPER)/utils/consistbl.ml       \
 	$(TYPER)/utils/consistbl.mli      \
 	$(TYPER)/typing/env.mli           \
@@ -112,19 +112,15 @@ SOURCES = \
 	$(TYPER)/typing/printtyped.ml     \
 	$(TYPER)/typing/untypeast.mli     \
 	$(TYPER)/typing/untypeast.ml      \
-	$(TYPER)/browse_node.mli          \
-	$(TYPER)/browse_node.ml           \
 	$(TYPER)/typing/typedtreeMap.mli  \
 	$(TYPER)/typing/typedtreeMap.ml   \
 	$(TYPER)/typing/tast_mapper.mli   \
 	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
-	$(TYPER)/tail_analysis.mli        \
-	$(TYPER)/tail_analysis.ml         \
 	$(TYPER)/parsing/syntaxerr.mli    \
 	$(TYPER)/parsing/syntaxerr.ml     \
-	src/ocaml_support/cmt_cache.ml        \
+	src/ocaml/support/cmt_cache.ml    \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \
 	$(TYPER)/typing/oprint.mli        \
@@ -132,8 +128,12 @@ SOURCES = \
 	$(TYPER)/typing/mtype.mli         \
 	$(TYPER)/typing/mtype.ml          \
 	$(TYPER)/raw_compat.ml            \
-	src/ocaml_support/merlin_support.mli \
-	src/ocaml_support/merlin_support.ml  \
+	$(TYPER)/browse_raw.mli           \
+	$(TYPER)/browse_raw.ml            \
+	$(TYPER)/tail_analysis.mli        \
+	$(TYPER)/tail_analysis.ml         \
+	src/ocaml/support/merlin_support.mli \
+	src/ocaml/support/merlin_support.ml  \
 	$(TYPER)/typing/printtyp.mli      \
 	$(TYPER)/typing/printtyp.ml       \
 	$(TYPER)/typing/includeclass.mli  \
@@ -178,14 +178,17 @@ SOURCES = \
 	$(TYPER)/parser_explain.ml        \
 	src/mlib/extension.mli            \
 	src/mlib/extension.ml             \
-	src/ocaml_support/pparse.mli      \
-	src/ocaml_support/pparse.ml       \
-	$(TYPER)/raw_typer.mli            \
-	$(TYPER)/raw_typer.ml             \
-	src/mlib/marg.mli                 \
-	src/mlib/marg.ml                  \
+	src/ocaml/support/pparse.mli      \
+	src/ocaml/support/pparse.ml       \
+	$(TYPER)/typer_raw.mli            \
+	$(TYPER)/typer_raw.ml             \
+	$(TYPER)/tast_helper.ml           \
+	src/utils/marg.mli                \
+	src/utils/marg.ml                 \
 	src/mlib/mconfig.mli              \
 	src/mlib/mconfig.ml               \
+	src/mlib/mocaml.mli               \
+	src/mlib/mocaml.ml                \
 	src/mlib/msource.mli              \
 	src/mlib/msource.ml               \
 	src/mlib/mreader_explain.ml       \
@@ -199,9 +202,45 @@ SOURCES = \
 	src/mlib/mreader.ml               \
 	src/mlib/mppx.mli                 \
 	src/mlib/mppx.ml                  \
-	src/mlib/mqueries.mli             \
-	src/mlib/mqueries.ml              \
-	src/mlib/reference.ml
+	src/mlib/mbrowse.mli              \
+	src/mlib/mbrowse.ml               \
+	src/mlib/mtyper.mli               \
+	src/mlib/mtyper.ml                \
+	src/analysis/browse_tree.mli      \
+	src/analysis/browse_tree.ml       \
+	src/analysis/browse_misc.ml       \
+	src/analysis/type_utils.mli       \
+	src/analysis/type_utils.ml        \
+	src/analysis/typedtrie.mli        \
+	src/analysis/typedtrie.ml         \
+	src/analysis/ocamldoc.ml          \
+	src/analysis/track_definition.mli \
+	src/analysis/track_definition.ml  \
+	src/analysis/expansion.ml         \
+	src/analysis/completion.mli       \
+	src/analysis/completion.ml        \
+	src/analysis/outline.mli          \
+	src/analysis/outline.ml           \
+	src/analysis/jump.mli             \
+	src/analysis/jump.ml              \
+	src/analysis/destruct.mli         \
+	src/analysis/destruct.ml          \
+	src/mlib/mpipeline.mli            \
+	src/mlib/mpipeline.ml             \
+  src/frontend/old/IO_json.mli      \
+	src/frontend/old/IO_json.ml       \
+  src/frontend/old/IO_sexp.mli      \
+	src/frontend/old/IO_sexp.ml       \
+  src/frontend/old/IO.mli           \
+	src/frontend/old/IO.ml            \
+  src/frontend/old/command.mli      \
+	src/frontend/old/command.ml       \
+  src/frontend/old/protocol.ml      \
+	src/frontend/old/ocamlmerlin.ml  
+
+	#src/frontend/reference/rqueries.mli \
+	#src/frontend/reference/rqueries.ml  \
+	#src/frontend/reference/reference.ml 
 
 PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
 

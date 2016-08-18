@@ -34,7 +34,7 @@ all: $(TARGET) $(TARGET_EMACS)
 
 #### Check configuration
 
-CONFIG_FILES = src/config/my_config.ml src/ocaml_typer
+CONFIG_FILES = src/config/my_config.ml src/ocaml/typer
 $(CONFIG_FILES):
 	@echo "Please run ./configure"
 	@if [ -d ._d ]; then printf \
@@ -62,7 +62,7 @@ debug: assert_configured
 clean:
 	#@rm -f Makefile.config $(CONFIG_FILES)
 	@rm -f emacs/merlin.elc
-	@rm -f src/ocaml_*/*.cmly
+	@rm -f src/ocaml/*/*/*.cmly
 	$(MAKE) -f Makefile.preprocess clean
 	@find src/ -name '*.cm*' -delete
 	+$(OCAMLMAKEFILE) clean

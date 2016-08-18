@@ -49,14 +49,22 @@ type merlin = {
 
 val dump_merlin : merlin -> json
 
+(** {1 Some flags affecting queries} *)
+
+type query = {
+  filename  : string;
+  directory : string;
+  terminal_width : int;
+  verbosity : int;
+}
+
 (** {1 Main configuration} *)
 
 type t = {
-  filename  : string;
-  directory : string;
-  ocaml     : ocaml;
-  findlib   : findlib;
-  merlin    : merlin;
+  ocaml   : ocaml;
+  findlib : findlib;
+  merlin  : merlin;
+  query   : query;
 }
 
 val initial : t
@@ -70,3 +78,5 @@ val is_normalized : t -> [ `Yes | `No of string ]
 val arguments_table : t Marg.table
 
 val document_arguments : out_channel -> unit
+
+val global_modules : ?include_current:bool -> t -> string list

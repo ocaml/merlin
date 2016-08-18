@@ -46,3 +46,5 @@ val comments : t -> (string * Location.t) list
 
 val reconstruct_identifier:
   Msource.t -> Lexing.position -> string Location.loc list
+
+val identifier_suffix: string Location.loc list -> string Location.loc list

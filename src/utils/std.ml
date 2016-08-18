@@ -91,19 +91,6 @@ module List = struct
     in
     aux [] lst
 
-  let rev_filter_map ~f lst =
-    let rec aux acc = function
-      | [] -> acc
-      | x :: xs ->
-        let acc =
-          match f x with
-          | Some x' -> x' :: acc
-          | None -> acc
-        in
-        aux acc xs
-    in
-    aux [] lst
-
   let rec filter_map ~f = function
     | [] -> []
     | x :: xs ->

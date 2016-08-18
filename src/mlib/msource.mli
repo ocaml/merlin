@@ -25,6 +25,9 @@ val get_logical    : t -> [< position] -> [> `Logical of int * int]
 
 val get_lexing_pos : t -> [< position] -> Lexing.position
 
+(** Updating content *)
+val substitute : t -> [< position] -> [< position | `Length of int] -> string -> t
+
 (** {1 Accessing contents} *)
 
 (** Raw filename *)

@@ -89,17 +89,6 @@ let make keywords source =
   in
   { keywords; items; source }
 
-let text_diff source0 source1 =
-  let r = ref (min (String.length source0) (String.length source1)) in
-  begin try
-    for i = 0 to !r - 1 do
-      if source0.[i] <> source1.[i] then
-        (r := i; raise Exit);
-    done;
-    with Exit -> ()
-  end;
-  !r
-
 let item_start = function
   | Triple (_,s,_) -> s
   | Comment (_, l) | Error (_, l) ->
@@ -110,31 +99,33 @@ let item_end = function
   | Comment (_, l) | Error (_, l) ->
     l.Location.loc_end
 
-let diff items source0 source1 =
-  if (Msource.filename source0 <> Msource.filename source1) then
-    []
-  else
-    let offset =
-      text_diff (Msource.text source0) (Msource.text source1) in
-    let `Logical (line, _) =
-      Msource.get_logical source1 (`Offset offset) in
-    List.drop_while items
-      ~f:(fun i -> (item_end i).Lexing.pos_lnum >= line)
-
 let initial_position t =
   initial_position t.source
 
+let rev_filter_map ~f lst =
+  let rec aux acc = function
+    | [] -> acc
+    | x :: xs ->
+      let acc =
+        match f x with
+        | Some x' -> x' :: acc
+        | None -> acc
+      in
+      aux acc xs
+  in
+  aux [] lst
+
 let tokens t =
-  List.rev_filter_map t.items
+  rev_filter_map t.items
     ~f:(function Triple t -> Some t | _ -> None)
 
 let errors t =
-  List.rev_filter_map t.items
+  rev_filter_map t.items
     ~f:(function Error (err, loc) -> Some (Lexer_raw.Error (err, loc))
                | _ -> None)
 
 let comments t =
-  List.rev_filter_map t.items
+  rev_filter_map t.items
     ~f:(function Comment t -> Some t | _ -> None)
 
 let source t = t.source
@@ -372,3 +363,9 @@ let for_completion t pos =
                 List.rev_append acc (Triple (LIDENT "", pos, pos) :: items)}
   in
   (`No_labels !no_labels, t)
+
+let identifier_suffix ident =
+  match List.last ident with
+  | Some x when is_uppercase x -> drop_lowercase [] ident
+  | _ -> ident
+

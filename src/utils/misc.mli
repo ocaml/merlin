@@ -245,6 +245,11 @@ val normalise_eol: string -> string
    removed. Intended for pre-processing text which will subsequently be printed
    on a channel which performs EOL transformations (i.e. Windows) *)
 
+val unitname: string -> string
+(** Return the name of the OCaml module matching a basename
+    (filename without directory).
+    Remove the extension and capitalize *)
+
 module Int_literal_converter : sig
   val int : string -> int
   val int32 : string -> int32

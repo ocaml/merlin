@@ -40,8 +40,8 @@ val make : Mreader_lexer.t -> kind -> t
 val trace : t -> flag Widget.Nav.frame -> unit
 
 type tree = [
-  | `Signature of Parsetree.signature
-  | `Structure of Parsetree.structure
+  | `Interface of Parsetree.signature
+  | `Implementation of Parsetree.structure
 ]
 
 val result : t -> tree
