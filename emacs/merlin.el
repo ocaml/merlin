@@ -1191,8 +1191,12 @@ prefix of `bar' is `'."
 If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
       (unless quiet (message "<no information>"))
-    (let ((count (merlin--count-lines type)))
-      (merlin/display-in-type-buffer type)
+    (let* ((count (merlin--count-lines type))
+          (start (car bounds))
+          (end (cdr bounds))
+          (object (buffer-substring-no-properties start end))
+          (type-message (concat object ": " type)))
+      (merlin/display-in-type-buffer type-message)
       (if (> count 8)
           (display-buffer merlin-type-buffer-name)
         (message "%s"
