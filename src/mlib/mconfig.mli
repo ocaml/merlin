@@ -39,12 +39,19 @@ type merlin = {
   source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
-  packages    : string list;
-  flags       : string list list;
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
   reader      : string list;
+
+  flags_to_apply    : string list list;
+  dotmerlin_to_load : string list;
+  packages_to_load  : string list;
+  packages_path     : string list;
+
+  flags_applied    : string list list;
+  dotmerlin_loaded : string list;
+  packages_loaded  : string list;
 }
 
 val dump_merlin : merlin -> json
@@ -73,10 +80,19 @@ val dump : t -> json
 
 val normalize : Trace.t -> t -> t
 
-val is_normalized : t -> [ `Yes | `No of string ]
+val is_normalized : t -> bool
 
 val arguments_table : t Marg.table
 
 val document_arguments : out_channel -> unit
 
+(** {1 Computing project paths} *)
+
+val source_path : t -> string list
+
+val build_path : t -> string list
+
+val cmt_path : t -> string list
+
 val global_modules : ?include_current:bool -> t -> string list
+

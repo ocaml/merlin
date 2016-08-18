@@ -42,22 +42,28 @@ type state = {
 }
 
 let normalize_document doc =
-  let ft = match doc.Context.kind, doc.Context.path with
-    | `ML   , _  -> Mreader_parser.ML
-    | `MLI  , _  -> Mreader_parser.MLI
-    | `Auto , Some path when Filename.check_suffix path ".mli" ->
-      Mreader_parser.MLI
-    | `Auto , _  -> Mreader_parser.ML
-  in
-  ft, doc.Context.path, doc.Context.dot_merlins
+  doc.Context.path, doc.Context.dot_merlins
 
-let new_buffer ~document =
-  { config = Mconfig.initial;
+let new_buffer (path, dot_merlins) =
+  let open Mconfig in
+  let query = match path with
+    | None -> initial.query
+    | Some path -> {
+        initial.query with
+        filename = Filename.basename path;
+        directory = Misc.canonicalize_filename (Filename.dirname path);
+      }
+  and merlin = {
+    initial.merlin with dotmerlin_to_load =
+      (Option.cons (Option.map ~f:Filename.dirname path) (Option.value ~default:[] dot_merlins))
+  }
+  in
+  { config = {initial with query; merlin};
     source = Msource.make ~filename:"<buffer>" ~text:""
   }
 
-let new_state ?document () =
-  { buffer = new_buffer ~document }
+let new_state document =
+  { buffer = new_buffer document }
 
 let checkout_buffer_cache = ref []
 let checkout_buffer =
@@ -66,12 +72,12 @@ let checkout_buffer =
     let document = normalize_document document in
     try List.assoc document !checkout_buffer_cache
     with Not_found ->
-      let buffer = new_buffer ~document in
+      let buffer = new_buffer document in
       begin match document with
-        | _, Some path, _ ->
+        | Some path, _ ->
           checkout_buffer_cache :=
             (document, buffer) :: List.take_n cache_size !checkout_buffer_cache
-        | _, None, _ -> ()
+        | None, _ -> ()
       end;
       buffer
 
@@ -483,7 +489,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     List.concat_map ~f:with_ext exts
 
   | Flags_get ->
-    List.concat Mconfig.(buffer.config.merlin.flags)
+    List.concat Mconfig.(buffer.config.merlin.flags_to_apply)
 
   | Project_get -> ([], `Ok)
   (*TODO
@@ -581,16 +587,18 @@ let dispatch_sync state (type a) : a sync_command -> a = function
 
   | Flags_set flags ->
     let open Mconfig in
-    let flags = [flags] in
+    let flags_to_apply = [flags] in
     let config = state.config in
-    state.config <- {config with merlin = {config.merlin with flags}};
+    state.config <- {config with merlin = {config.merlin with flags_to_apply}};
     `Ok
 
   | Findlib_use packages ->
     let open Mconfig in
     let config = state.config in
-    let packages = List.filter_dup (packages @ config.merlin.packages) in
-    state.config <- {config with merlin = {config.merlin with packages}};
+    let packages_to_load =
+      List.filter_dup (packages @ config.merlin.packages_to_load) in
+    state.config <-
+      {config with merlin = {config.merlin with packages_to_load}};
     `Ok
 
   | Extension_set (action,exts) ->
@@ -638,10 +646,10 @@ let dispatch_sync state (type a) : a sync_command -> a = function
 
   | Checkout _ -> IO.invalid_arguments ()
 
-let default_state = lazy (new_state ())
+let default_state = lazy (new_state (None, None))
 
 let document_states
-  : (Mreader_parser.kind * string option * string list option, state) Hashtbl.t
+  : (string option * string list option, state) Hashtbl.t
   = Hashtbl.create 7
 
 let dispatch (type a) (context : Context.t) (cmd : a command) =
@@ -653,7 +661,7 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
       let document = normalize_document document in
       try Hashtbl.find document_states document
       with Not_found ->
-        let state = new_state ~document () in
+        let state = new_state document in
         Hashtbl.add document_states document state;
         state
   in

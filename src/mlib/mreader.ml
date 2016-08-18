@@ -30,7 +30,7 @@ let run trace config source =
     | ".mli" -> Mreader_parser.MLI
     | _ -> Mreader_parser.ML
   in
-  Mocaml.setup_config config.Mconfig.ocaml;
+  Mocaml.setup_config config;
   let lexer =
     let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
     Mreader_lexer.make keywords source

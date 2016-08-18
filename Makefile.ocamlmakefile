@@ -185,6 +185,8 @@ SOURCES = \
 	$(TYPER)/tast_helper.ml           \
 	src/utils/marg.mli                \
 	src/utils/marg.ml                 \
+	src/mlib/dot_merlin.mli           \
+	src/mlib/dot_merlin.ml            \
 	src/mlib/mconfig.mli              \
 	src/mlib/mconfig.ml               \
 	src/mlib/mocaml.mli               \

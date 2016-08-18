@@ -51,7 +51,7 @@ let set_destination dest =
   end;
   destination :=
     begin match dest with
-      | None -> Some stderr
+      | None -> None
       | Some filename ->
         Some (open_out filename)
     end

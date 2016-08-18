@@ -13,7 +13,7 @@ type result = {
 }
 
 let run config source parsetree =
-  Mocaml.setup_config config.Mconfig.ocaml;
+  Mocaml.setup_config config;
   let state = Mocaml.new_state ~unit_name:(Msource.unitname source) in
   Mocaml.with_state state @@ fun () ->
   let caught = ref [] in

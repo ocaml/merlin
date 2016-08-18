@@ -63,12 +63,19 @@ type merlin = {
   source_path : string list;
   cmi_path    : string list;
   cmt_path    : string list;
-  packages    : string list;
-  flags       : string list list;
   extensions  : string list;
   suffixes    : (string * string) list;
   stdlib      : string option;
   reader      : string list;
+
+  flags_to_apply    : string list list;
+  dotmerlin_to_load : string list;
+  packages_to_load  : string list;
+  packages_path     : string list;
+
+  flags_applied    : string list list;
+  dotmerlin_loaded : string list;
+  packages_loaded  : string list;
 }
 
 let dump_merlin x = `Assoc [
@@ -76,9 +83,8 @@ let dump_merlin x = `Assoc [
     "source_path" , `List (List.map Json.string x.source_path);
     "cmi_path"    , `List (List.map Json.string x.cmi_path);
     "cmt_path"    , `List (List.map Json.string x.cmt_path);
-    "packages"    , `List (List.map Json.string x.packages);
-    "flags"       , `List (List.map (fun l -> `List (List.map Json.string l))
-                             x.flags);
+    "flags_applied", `List (List.map (fun l -> `List (List.map Json.string l))
+                              x.flags_applied);
     "extensions"  , `List (List.map Json.string x.extensions);
     "suffixes"    , `List (
       List.map (fun (impl,intf) -> `Assoc [
@@ -88,6 +94,12 @@ let dump_merlin x = `Assoc [
     );
     "stdlib"      , Json.option Json.string x.stdlib;
     "reader"      , `List (List.map Json.string x.reader);
+
+    "dotmerlin_to_load", `List (List.map Json.string x.dotmerlin_to_load);
+    "packages_to_load" , `List (List.map Json.string x.packages_to_load);
+    "dotmerlin_loaded" , `List (List.map Json.string x.dotmerlin_loaded);
+    "packages_loaded"  , `List (List.map Json.string x.packages_loaded);
+    "packages_path"   , `List (List.map Json.string x.packages_path);
   ]
 
 let merlin_flags = []
@@ -286,12 +298,18 @@ let initial = {
     source_path = [];
     cmi_path    = [];
     cmt_path    = [];
-    packages    = [];
-    flags       = [];
     extensions  = [];
     suffixes    = [];
     stdlib      = None;
     reader      = [];
+
+    flags_to_apply    = [];
+    dotmerlin_to_load = [];
+    packages_to_load  = [];
+    flags_applied     = [];
+    dotmerlin_loaded  = [];
+    packages_loaded   = [];
+    packages_path     = [];
   };
   query = {
     filename = "<buffer>";
@@ -307,10 +325,6 @@ let dump x = `Assoc [
     "merlin"  , dump_merlin x.merlin;
     "query"   , dump_query x.query;
   ]
-
-let normalize _trace t = t
-
-let is_normalized t = `Yes
 
 let arguments_table =
   let table = Hashtbl.create 67 in
@@ -378,14 +392,124 @@ let document_arguments oc =
   List.iter (Printf.fprintf oc "  %s\n") ocaml_ignored_flags;
   List.iter (Printf.fprintf oc "  %s _\n") ocaml_ignored_parametrized_flags
 
-let global_modules ?(include_current=false) config =
-  let modules =
-    Misc.modules_in_path ~ext:".cmi"
-      (config.merlin.build_path @ config.ocaml.include_dirs)
+let source_path config = (
+  config.query.directory ::
+  config.merlin.source_path @
+  config.merlin.packages_path
+)
+
+let build_path config = (
+  let dirs =
+    match config.ocaml.threads with
+    | `None -> config.ocaml.include_dirs
+    | `Threads -> "+threads" :: config.ocaml.include_dirs
+    | `Vmthreads -> "+vmthreads" :: config.ocaml.include_dirs
   in
+  let dirs =
+    config.merlin.cmi_path @
+    config.merlin.build_path @
+    config.merlin.packages_path @
+    dirs
+  in
+  let exp_dirs =
+    List.map (Misc.expand_directory Config.standard_library) dirs
+  in
+  let stdlib =
+    if config.ocaml.no_std_include then []
+    else [Config.standard_library]
+  in
+  config.query.directory :: List.rev_append exp_dirs stdlib
+)
+
+let cmt_path config = (
+  let dirs =
+    match config.ocaml.threads with
+    | `None -> config.ocaml.include_dirs
+    | `Threads -> "+threads" :: config.ocaml.include_dirs
+    | `Vmthreads -> "+vmthreads" :: config.ocaml.include_dirs
+  in
+  let dirs =
+    config.merlin.cmt_path @
+    config.merlin.build_path @
+    config.merlin.packages_path @
+    dirs
+  in
+  let exp_dirs =
+    List.map (Misc.expand_directory Config.standard_library) dirs
+  in
+  let stdlib =
+    if config.ocaml.no_std_include then []
+    else [Config.standard_library]
+  in
+  config.query.directory :: List.rev_append exp_dirs stdlib
+)
+
+let global_modules ?(include_current=false) config = (
+  let modules = Misc.modules_in_path ~ext:".cmi" (build_path config) in
   if include_current then modules
   else match config.query.filename with
     | "" -> modules
-    | filename ->
-      let unitname = Misc.unitname filename in
-      List.remove unitname modules
+    | filename -> List.remove (Misc.unitname filename) modules
+)
+
+
+let normalize_step _trace t =
+  let merlin = t.merlin in
+  if merlin.dotmerlin_to_load <> [] then
+    let dot = Dot_merlin.load merlin.dotmerlin_to_load in
+    let merlin = {
+      merlin with
+      build_path = dot.Dot_merlin.build_path @ merlin.build_path;
+      source_path = dot.Dot_merlin.build_path @ merlin.source_path;
+      cmi_path = dot.Dot_merlin.cmi_path @ merlin.cmi_path;
+      cmt_path = dot.Dot_merlin.cmt_path @ merlin.cmt_path;
+      extensions = dot.Dot_merlin.extensions @ merlin.extensions;
+      suffixes = dot.Dot_merlin.suffixes @ merlin.suffixes;
+      stdlib =
+        if dot.Dot_merlin.stdlib = ""
+        then merlin.stdlib
+        else Some dot.Dot_merlin.stdlib;
+      reader =
+        if dot.Dot_merlin.reader = []
+        then merlin.reader
+        else dot.Dot_merlin.reader;
+      flags_to_apply = dot.Dot_merlin.flags @ merlin.flags_to_apply;
+      dotmerlin_to_load = [];
+      dotmerlin_loaded = dot.Dot_merlin.dot_merlins @ merlin.dotmerlin_loaded;
+      packages_to_load = dot.Dot_merlin.packages @ merlin.packages_to_load;
+    } in
+    { t with merlin }
+  else if merlin.packages_to_load <> [] then
+    (* FIXME Don't ignore ppx *)
+    let _, path, _ppx = Dot_merlin.path_of_packages merlin.packages_to_load in
+    { t with merlin =
+               { merlin with
+                 packages_path = path @ merlin.packages_path;
+                 packages_to_load = [];
+                 packages_loaded = merlin.packages_to_load @ merlin.packages_loaded;
+               }
+    }
+  else if merlin.flags_to_apply <> [] then
+    let flagss = merlin.flags_to_apply in
+    let t = {t with merlin = { merlin with
+                               flags_to_apply = [];
+                               flags_applied = flagss @ merlin.flags_applied;
+                             } }
+    in
+    List.fold_left ~f:(fun t flags ->
+        let warning = ignore in
+        let t, () = Marg.parse_all ~warning arguments_table [] flags t () in
+        t
+      ) ~init:t flagss
+  else
+    t
+
+let is_normalized t =
+  let merlin = t.merlin in
+  merlin.flags_to_apply = [] &&
+  merlin.dotmerlin_to_load = [] &&
+  merlin.packages_to_load = []
+
+let rec normalize trace t =
+  if is_normalized t then t
+  else normalize trace (normalize_step trace t)

@@ -1,7 +1,6 @@
 (** {0 OCaml compiler compatible command-line parameters} *)
 
 let include_dirs        = ref []
-let no_std_include      = ref false
 let fast                = ref false
 let classic             = ref false
 let principal           = ref false

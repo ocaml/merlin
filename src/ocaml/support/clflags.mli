@@ -7,7 +7,6 @@
 (** {1 Relevant settings}
     Parameters from OCaml compiler which affect Merlin behavior. *)
 val include_dirs         : string list ref
-val no_std_include       : bool ref
 val fast                 : bool ref
 val classic              : bool ref
 val principal            : bool ref
