@@ -33,21 +33,18 @@ let reader_parsetree t = (fst (reader t)).Mreader.parsetree
 let reader_comments  t = (fst (reader t)).Mreader.comments
 let reader_lexer_errors  t = (fst (reader t)).Mreader.lexer_errors
 let reader_parser_errors t = (fst (reader t)).Mreader.parser_errors
+let reader_no_labels_for_completion t =
+  (fst (reader t)).Mreader.no_labels_for_completion
 
 let ppx_parsetree t = (ppx t).Ppx.parsetree
-let ppx_config    t = (ppx t).Ppx.config
 let ppx_errors    t = (ppx t).Ppx.errors
+
+let final_config  t = (ppx t).Ppx.config
 
 let typer_result t = (typer t).Typer.result
 let typer_errors t = Lazy.force (typer t).Typer.errors
 
-let make trace config source =
-  let config = Mconfig.normalize trace config in
-  let reader = lazy (
-    let result = Mreader.run trace config source in
-    let config = Mconfig.normalize trace config in
-    result, config
-  ) in
+let process trace config source reader =
   let ppx = lazy (
     let lazy ({Mreader.parsetree}, config) = reader in
     let config, parsetree = Mppx.rewrite trace config parsetree in
@@ -61,3 +58,20 @@ let make trace config source =
   ) in
   { config; source; reader; ppx; typer }
 
+let make trace config source =
+  let config = Mconfig.normalize trace config in
+  let reader = lazy (
+    let result = Mreader.run trace config source in
+    let config = Mconfig.normalize trace config in
+    result, config
+  ) in
+  process trace config source reader
+
+let make_for_completion trace config source position =
+  let config = Mconfig.normalize trace config in
+  let reader = lazy (
+    let result = Mreader.run_for_completion trace config source position in
+    let config = Mconfig.normalize trace config in
+    result, config
+  ) in
+  process trace config source reader

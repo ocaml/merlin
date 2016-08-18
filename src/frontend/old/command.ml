@@ -103,11 +103,15 @@ let print_completion_entries config entries =
   in
   List.rev_map ~f:(Completion.map_entry postprocess) entries
 
-let pipeline buffer =
-  Mpipeline.make (Trace.start ()) buffer.config buffer.source
+let make_pipeline buffer =
+      Mpipeline.make (Trace.start ()) buffer.config buffer.source
 
-let with_typer buffer f =
-  let pipeline = pipeline buffer in
+let with_typer ?for_completion buffer f =
+  let pipeline = match for_completion with
+    | None -> Mpipeline.make (Trace.start ()) buffer.config buffer.source
+    | Some pos -> Mpipeline.make_for_completion
+                    (Trace.start ()) buffer.config buffer.source pos
+  in
   let typer = Mpipeline.typer_result pipeline in
   Mtyper.with_typer typer @@ fun () -> f pipeline typer
 
@@ -273,39 +277,38 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     List.map ~f:Mbrowse.node_loc path
 
   | Complete_prefix (prefix, pos, with_doc) ->
+    with_typer buffer ~for_completion:pos @@ fun pipeline typer ->
+    let config = Mpipeline.final_config pipeline in
+    let no_labels = Mpipeline.reader_no_labels_for_completion pipeline in
     let pos = Msource.get_lexing_pos buffer.source pos in
-    let complete ~no_labels config comments typer =
-      let path = Mtyper.node_at ~skip_recovered:true typer pos in
-      let env, node = Mbrowse.leaf_node path in
-      let target_type, context =
-        Completion.application_context ~verbosity ~prefix path in
-      let get_doc =
-        if not with_doc then None else
+    let path = Mtyper.node_at ~skip_recovered:true typer pos in
+    let env, node = Mbrowse.leaf_node path in
+    let target_type, context =
+      Completion.application_context ~verbosity ~prefix path in
+    let get_doc =
+      if not with_doc then None else
         let local_defs = Mtyper.get_typedtree typer in
         Some (
           Track_definition.get_doc ~config:buffer.config ~env ~local_defs
-            ~comments ~pos
+            ~comments:(Mpipeline.reader_comments pipeline) ~pos
         )
-      in
-      let entries =
-        Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-        print_completion_entries config @@
-        Completion.node_complete config ?get_doc ?target_type env node prefix
-      and context = match context with
-        | `Application context when no_labels ->
-          `Application {context with Protocol.Compl.labels = []}
-        | context -> context
-      in
-      {Compl. entries; context }
     in
-    let `No_labels no_labels, buffer = Buffer.for_completion buffer pos in
-    with_typer buffer (complete ~no_labels)
+    let entries =
+      Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
+      print_completion_entries config @@
+      Completion.node_complete config ?get_doc ?target_type env node prefix
+    and context = match context with
+      | `Application context when no_labels ->
+        `Application {context with Protocol.Compl.labels = []}
+      | context -> context
+    in
+    {Compl. entries; context }
 
   | Expand_prefix (prefix, pos) ->
     with_typer buffer @@ fun pipeline typer ->
     let pos = Msource.get_lexing_pos (Mpipeline.input_source pipeline) pos in
     let env, _ = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
-    let config = Mpipeline.ppx_config pipeline in
+    let config = Mpipeline.final_config pipeline in
     let global_modules = Mconfig.global_modules config in
     let entries = print_completion_entries config @@
       Completion.expand_prefix env ~global_modules prefix
@@ -329,7 +332,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
         String.concat ~sep:"." path
     in
     if path = "" then `Invalid_context else
-      Track_definition.get_doc ~config:(Mpipeline.reader_config pipeline)
+      Track_definition.get_doc ~config:(Mpipeline.final_config pipeline)
         ~env ~local_defs ~comments ~pos (`User_input path)
 
   | Locate (patho, ml_or_mli, pos) ->
@@ -350,7 +353,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     if path = "" then `Invalid_context else
     begin match
         Track_definition.from_string
-          ~config:(Mpipeline.ppx_config pipeline)
+          ~config:(Mpipeline.final_config pipeline)
           ~env ~local_defs ~pos ml_or_mli
     with
     | `Found (file, pos) ->
@@ -397,7 +400,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     begin match nodes with
       | [] -> failwith "No node at given range"
       | node :: parents ->
-        Destruct.node (Mpipeline.ppx_config pipeline) ~loc node parents
+        Destruct.node (Mpipeline.final_config pipeline) ~loc node parents
     end
 
   | Outline ->
@@ -460,23 +463,21 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     failwith "TODO"
 
   | Which_path xs ->
-    begin
-      let config = Mpipeline.reader_config (pipeline buffer) in
-      let rec aux = function
-        | [] -> raise Not_found
-        | x :: xs ->
-          try
-            find_in_path_uncap Mconfig.(config.merlin.source_path) x
-          with Not_found -> try
+    let config = Mpipeline.final_config (make_pipeline buffer) in
+    let rec aux = function
+      | [] -> raise Not_found
+      | x :: xs ->
+        try
+          find_in_path_uncap Mconfig.(config.merlin.source_path) x
+        with Not_found -> try
             find_in_path_uncap Mconfig.(config.merlin.build_path) x
           with Not_found ->
             aux xs
-      in
-      aux xs
-    end
+    in
+    aux xs
 
   | Which_with_ext exts ->
-    let config = Mpipeline.reader_config (pipeline buffer) in
+    let config = Mpipeline.final_config (make_pipeline buffer) in
     let with_ext ext = modules_in_path ~ext
         Mconfig.(config.merlin.source_path) in
     List.concat_map ~f:with_ext exts
@@ -496,8 +497,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     Fl_package_base.list_packages ()
 
   | Extension_list kind ->
-    let pipeline = pipeline buffer in
-    let config = Mpipeline.reader_config pipeline in
+    let pipeline = make_pipeline buffer in
+    let config = Mpipeline.final_config pipeline in
     let enabled = Mconfig.(config.merlin.extensions) in
     begin match kind with
     | `All -> Extension.all
@@ -508,13 +509,13 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     end
 
   | Path_list `Build ->
-    let pipeline = pipeline buffer in
-    let config = Mpipeline.reader_config pipeline in
+    let pipeline = make_pipeline buffer in
+    let config = Mpipeline.final_config pipeline in
     Mconfig.(config.merlin.build_path)
 
   | Path_list `Source ->
-    let pipeline = pipeline buffer in
-    let config = Mpipeline.reader_config pipeline in
+    let pipeline = make_pipeline buffer in
+    let config = Mpipeline.final_config pipeline in
     Mconfig.(config.merlin.source_path)
 
   | Occurrences (`Ident_at pos) ->
