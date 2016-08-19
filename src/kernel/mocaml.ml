@@ -2,30 +2,11 @@ open Std
 
 (* Build settings *)
 
-let init_path config =
-  let open Mconfig in
-  let dirs =
-    match config.ocaml.threads with
-    | `None -> config.ocaml.include_dirs
-    | `Threads -> "+threads" :: config.ocaml.include_dirs
-    | `Vmthreads -> "+vmthreads" :: config.ocaml.include_dirs
-  in
-  let dirs = config.merlin.build_path @ dirs in
-  let exp_dirs =
-    List.map (Misc.expand_directory Config.standard_library) dirs
-  in
-  let stdlib =
-    if config.ocaml.no_std_include then []
-    else [Config.standard_library]
-  in
-  Config.load_path := config.query.directory ::
-      List.rev_append exp_dirs stdlib
-
 let setup_config config = (
   let open Mconfig in
   let open Clflags in
   let ocaml = config.ocaml in
-  init_path config;
+  Config.load_path := Mconfig.build_path config;
   fast                 := ocaml.unsafe ;
   classic              := ocaml.classic ;
   principal            := ocaml.principal ;

@@ -454,34 +454,35 @@ let global_modules ?(include_current=false) config = (
 
 
 let normalize_step _trace t =
+  let open Mconfig_dot in
   let merlin = t.merlin in
   if merlin.dotmerlin_to_load <> [] then
     let dot = Mconfig_dot.load merlin.dotmerlin_to_load in
     let merlin = {
       merlin with
-      build_path = dot.Mconfig_dot.build_path @ merlin.build_path;
-      source_path = dot.Mconfig_dot.build_path @ merlin.source_path;
-      cmi_path = dot.Mconfig_dot.cmi_path @ merlin.cmi_path;
-      cmt_path = dot.Mconfig_dot.cmt_path @ merlin.cmt_path;
-      extensions = dot.Mconfig_dot.extensions @ merlin.extensions;
-      suffixes = dot.Mconfig_dot.suffixes @ merlin.suffixes;
+      build_path = dot.build_path @ merlin.build_path;
+      source_path = dot.build_path @ merlin.source_path;
+      cmi_path = dot.cmi_path @ merlin.cmi_path;
+      cmt_path = dot.cmt_path @ merlin.cmt_path;
+      extensions = dot.extensions @ merlin.extensions;
+      suffixes = dot.suffixes @ merlin.suffixes;
       stdlib =
-        if dot.Mconfig_dot.stdlib = ""
+        if dot.stdlib = ""
         then merlin.stdlib
-        else Some dot.Mconfig_dot.stdlib;
+        else Some dot.stdlib;
       reader =
-        if dot.Mconfig_dot.reader = []
+        if dot.reader = []
         then merlin.reader
-        else dot.Mconfig_dot.reader;
-      flags_to_apply = dot.Mconfig_dot.flags @ merlin.flags_to_apply;
+        else dot.reader;
+      flags_to_apply = dot.flags @ merlin.flags_to_apply;
       dotmerlin_to_load = [];
-      dotmerlin_loaded = dot.Mconfig_dot.dot_merlins @ merlin.dotmerlin_loaded;
-      packages_to_load = dot.Mconfig_dot.packages @ merlin.packages_to_load;
+      dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
+      packages_to_load = dot.packages @ merlin.packages_to_load;
     } in
     { t with merlin }
   else if merlin.packages_to_load <> [] then
     (* FIXME Don't ignore ppx *)
-    let _, path, _ppx = Mconfig_dot.path_of_packages merlin.packages_to_load in
+    let _, path, _ppx = path_of_packages merlin.packages_to_load in
     { t with merlin =
                { merlin with
                  packages_path = path @ merlin.packages_path;
@@ -511,5 +512,6 @@ let is_normalized t =
   merlin.packages_to_load = []
 
 let rec normalize trace t =
-  if is_normalized t then t
+  if is_normalized t then
+    (Logger.logj "Mconfig" "normalize" (fun () -> dump t); t)
   else normalize trace (normalize_step trace t)
