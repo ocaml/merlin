@@ -99,7 +99,7 @@ SOURCES = \
 	$(TYPER)/typing/datarepr.ml       \
 	$(TYPER)/typing/subst.mli         \
 	$(TYPER)/typing/subst.ml          \
-	src/ocaml/support/cmi_cache.ml        \
+	src/ocaml/support/cmi_cache.ml    \
 	$(TYPER)/utils/consistbl.ml       \
 	$(TYPER)/utils/consistbl.mli      \
 	$(TYPER)/typing/env.mli           \
@@ -163,10 +163,10 @@ SOURCES = \
 	$(TYPER)/typing/typeclass.ml      \
 	$(TYPER)/typing/typemod.mli       \
 	$(TYPER)/typing/typemod.ml        \
-	src/mlib/fake.mli                 \
-	src/mlib/fake.ml                  \
-	src/mlib/lexer_ident.mli          \
-	src/mlib/lexer_ident.ml           \
+	src/ocaml/support/fake.mli        \
+	src/ocaml/support/fake.ml         \
+	src/ocaml/support/lexer_ident.mli \
+	src/ocaml/support/lexer_ident.ml  \
 	$(TYPER)/parser_raw.mli           \
 	$(TYPER)/parser_raw.ml            \
 	$(TYPER)/lexer_raw.mli            \
@@ -176,8 +176,8 @@ SOURCES = \
 	$(TYPER)/parser_recover.mli       \
 	$(TYPER)/parser_recover.ml        \
 	$(TYPER)/parser_explain.ml        \
-	src/mlib/extension.mli            \
-	src/mlib/extension.ml             \
+	src/kernel/extension.mli          \
+	src/kernel/extension.ml           \
 	src/ocaml/support/pparse.mli      \
 	src/ocaml/support/pparse.ml       \
 	$(TYPER)/typer_raw.mli            \
@@ -185,29 +185,29 @@ SOURCES = \
 	$(TYPER)/tast_helper.ml           \
 	src/utils/marg.mli                \
 	src/utils/marg.ml                 \
-	src/mlib/dot_merlin.mli           \
-	src/mlib/dot_merlin.ml            \
-	src/mlib/mconfig.mli              \
-	src/mlib/mconfig.ml               \
-	src/mlib/mocaml.mli               \
-	src/mlib/mocaml.ml                \
-	src/mlib/msource.mli              \
-	src/mlib/msource.ml               \
-	src/mlib/mreader_explain.ml       \
-	src/mlib/mreader_lexer.mli        \
-	src/mlib/mreader_lexer.ml         \
-	src/mlib/mreader_recover.mli      \
-	src/mlib/mreader_recover.ml       \
-	src/mlib/mreader_parser.mli       \
-	src/mlib/mreader_parser.ml        \
-	src/mlib/mreader.mli              \
-	src/mlib/mreader.ml               \
-	src/mlib/mppx.mli                 \
-	src/mlib/mppx.ml                  \
-	src/mlib/mbrowse.mli              \
-	src/mlib/mbrowse.ml               \
-	src/mlib/mtyper.mli               \
-	src/mlib/mtyper.ml                \
+	src/kernel/mconfig_dot.mli        \
+	src/kernel/mconfig_dot.ml         \
+	src/kernel/mconfig.mli            \
+	src/kernel/mconfig.ml             \
+	src/kernel/mocaml.mli             \
+	src/kernel/mocaml.ml              \
+	src/kernel/msource.mli            \
+	src/kernel/msource.ml             \
+	src/kernel/mreader_explain.ml     \
+	src/kernel/mreader_lexer.mli      \
+	src/kernel/mreader_lexer.ml       \
+	src/kernel/mreader_recover.mli    \
+	src/kernel/mreader_recover.ml     \
+	src/kernel/mreader_parser.mli     \
+	src/kernel/mreader_parser.ml      \
+	src/kernel/mreader.mli            \
+	src/kernel/mreader.ml             \
+	src/kernel/mppx.mli               \
+	src/kernel/mppx.ml                \
+	src/kernel/mbrowse.mli            \
+	src/kernel/mbrowse.ml             \
+	src/kernel/mtyper.mli             \
+	src/kernel/mtyper.ml              \
 	src/analysis/browse_tree.mli      \
 	src/analysis/browse_tree.ml       \
 	src/analysis/browse_misc.ml       \
@@ -227,8 +227,8 @@ SOURCES = \
 	src/analysis/jump.ml              \
 	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \
-	src/mlib/mpipeline.mli            \
-	src/mlib/mpipeline.ml             \
+	src/kernel/mpipeline.mli          \
+	src/kernel/mpipeline.ml           \
   src/frontend/old/IO_json.mli      \
 	src/frontend/old/IO_json.ml       \
   src/frontend/old/IO_sexp.mli      \

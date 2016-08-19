@@ -1,6 +1,6 @@
 SRC = src
-TYPER = $(SRC)/ocaml
-KERNEL = $(SRC)/kernel
+TYPER = $(SRC)/ocaml/typer
+SUPPORT = $(SRC)/ocaml/support
 
 ## Settings
 
@@ -18,8 +18,8 @@ LEXER_O = $(TYPER)/lexer_raw.ml
 
 ### Ident Lexer
 
-ILEXER_I = $(KERNEL)/preprocess/lexer_ident.mll
-ILEXER_O = $(KERNEL)/lexer_ident.ml
+ILEXER_I = $(SUPPORT)/preprocess/lexer_ident.mll
+ILEXER_O = $(SUPPORT)/lexer_ident.ml
 
 ### Derived files
 
@@ -51,7 +51,7 @@ $(GEN_EXPLAIN): $(GEN_EXPLAIN).ml
 ### Parser
 
 MENHIR_FLAGS = --infer --inspection --table --cmly \
-       --ocamlc 'ocamlc.opt -I $(TYPER)/parsing -I $(SRC)/ocaml_aux -I $(KERNEL)'
+       --ocamlc 'ocamlc.opt -I $(TYPER)/parsing -I $(SRC)/ocaml_aux -I $(SUPPORT)'
 
 $(PARSER_I): $(PARSER_I)p
 	cpp -P $^ > $@
