@@ -423,47 +423,62 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
   | Errors ->
     with_typer buffer @@ fun pipeline typer ->
     Printtyp.wrap_printing_env (Mtyper.get_env typer) ~verbosity @@ fun () ->
-    failwith "TODO"
-    (* FIXME: reintroduce error filtering code
-   begin
-      try
-        let err exns =
-          List.filter
-            ~f:(fun {Error_report. loc; where} ->
-                not loc.Location.loc_ghost || where <> "warning")
-            (List.sort_uniq ~cmp (List.map ~f:Error_report.of_exn exns))
-        in
-        let err_reader = err (Mreader.errors (Buffer.reader buffer)) in
-        let err_typer  =
-          (* When there is a cmi error, we will have a lot of meaningless errors,
-           * there is no need to report them. *)
-          let exns = Mtyper.errors typer @ Mtyper.checks typer in
-          let exns =
-            let cmi_error = function Cmi_format.Error _ -> true | _ -> false in
-            try [ List.find exns ~f:cmi_error ]
-            with Not_found -> exns
-          in
-          err exns
-        in
-        (* Return parsing warnings & first parsing error,
-           or type errors if no parsing errors *)
-        let rec extract_warnings acc = function
-          | {Error_report. where = "warning"; _ } as err :: errs ->
-            extract_warnings (err :: acc) errs
-          | err :: _ ->
-            List.rev (err :: acc),
-            List.take_while err_typer ~f:(fun err' -> cmp err' err < 0)
-          | [] ->
-            List.rev acc, err_typer
-        in
-        (* Filter duplicate error messages *)
-        let err_parser, err_typer = extract_warnings [] err_reader in
-        let errors = List.merge ~cmp err_reader err_typer in
-        Error_report.flood_barrier errors
-      with exn -> match Error_report.strict_of_exn exn with
-        | None -> raise exn
-        | Some err -> [err]
-      end *)
+    let lexer_errors  = Mpipeline.reader_lexer_errors pipeline  in
+    let parser_errors = Mpipeline.reader_parser_errors pipeline in
+    let typer_errors  = Mpipeline.typer_errors pipeline  in
+    (* When there is a cmi error, we will have a lot of meaningless errors,
+       there is no need to report them. *)
+    let typer_errors =
+      let cmi_error = function Cmi_format.Error _ -> true | _ -> false in
+      match List.find typer_errors ~f:cmi_error with
+      | e -> [e]
+      | exception Not_found -> typer_errors
+    in
+    let error_loc (e : Location.error) = e.Location.loc in
+    let error_start e = (error_loc e).Location.loc_start in
+    let error_end e = (error_loc e).Location.loc_end in
+    (* Turn into Location.error, ignore ghost warnings *)
+    let filter_error exn =
+      match Location.error_of_exn exn with
+      | None -> None
+      | Some (err : Location.error) as result ->
+        if Location.(err.loc.loc_ghost) &&
+           (match exn with Merlin_support.Warning _ -> true | _ -> false)
+        then None
+        else result
+    in
+    let lexer_errors  = List.filter_map ~f:filter_error lexer_errors in
+    let typer_errors  = List.filter_map ~f:filter_error typer_errors in
+    (* Track first parsing error *)
+    let first_parser_error = ref Lexing.dummy_pos in
+    let filter_parser_error = function
+      | Merlin_support.Warning _ as exn -> filter_error exn
+      | exn ->
+        let result = filter_error exn in
+        begin match result with
+          | None -> ();
+          | Some err ->
+            if !first_parser_error = Lexing.dummy_pos ||
+               Lexing.compare_pos !first_parser_error (error_start err) > 0
+            then first_parser_error := error_start err;
+        end;
+        result
+    in
+    let parser_errors = List.filter_map ~f:filter_parser_error parser_errors in
+    (* Sort errors *)
+    let cmp e1 e2 =
+      let n = Lexing.compare_pos (error_start e1) (error_start e2) in
+      if n <> 0 then n else
+        Lexing.compare_pos (error_end e1) (error_end e2)
+    in
+    let errors = List.sort_uniq ~cmp
+        (lexer_errors @ parser_errors @ typer_errors) in
+    (* Filter anything after first parse error *)
+    let limit = !first_parser_error in
+    if limit = Lexing.dummy_pos then errors else (
+      List.take_while errors
+        ~f:(fun err -> Lexing.compare_pos (error_start err) limit <= 0)
+    )
 
   | Dump args ->
     failwith "TODO"

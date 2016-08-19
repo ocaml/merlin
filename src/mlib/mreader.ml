@@ -52,5 +52,9 @@ type pretty_parsetree = Extend_protocol.Reader.pretty_parsetree
 type outcometree = Extend_protocol.Reader.outcometree
 
 let print_pretty _ _ = ""
-let print_outcome _ _ = ""
-let print_batch_outcome _ _ = []
+let print_outcome mconfig tree =
+  Mocaml.default_printer Format.str_formatter tree;
+  Format.flush_str_formatter ()
+
+let print_batch_outcome mconfig tree =
+  List.map (print_outcome mconfig) tree
