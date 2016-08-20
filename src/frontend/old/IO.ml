@@ -39,6 +39,7 @@ let default_context =
 let invalid_arguments () = failwith "invalid arguments"
 
 exception Failure' = Failure
+open Query_protocol
 open Protocol
 
 let with_location ?(skip_none=false) loc assoc =
@@ -322,7 +323,7 @@ let json_of_protocol_version : Protocol.protocol_version -> _ = function
   | `V2 -> `Int 2
   | `V3 -> `Int 3
 
-let json_of_query_command (type a) (command : a query_command) (response : a) : json =
+let json_of_query_command (type a) (command : a Query_protocol.t) (response : a) : json =
   match command, response with
   | Type_expr _, str -> `String str
   | Type_enclosing _, results ->
@@ -406,7 +407,6 @@ let json_of_query_command (type a) (command : a query_command) (response : a) : 
              ~f:(fun loc -> with_location loc []))
   | Version, version ->
     `String version
-  | Idle_job, b -> `Bool b
 
 let json_of_sync_command (type a) (command : a sync_command) (response : a) : json =
   match command, response with
@@ -426,6 +426,7 @@ let json_of_sync_command (type a) (command : a sync_command) (response : a) : js
             "latest", json_of_protocol_version vm;
             "merlin",  `String version
            ]
+  | Idle_job, b -> `Bool b
 
 let classify_response = function
   | Failure s | Exception (Failure' s) -> ("failure", `String s)

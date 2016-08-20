@@ -1,3 +1,4 @@
+
 (* {{{ COPYING *(
 
   This file is part of Merlin, an helper for ocaml editors
@@ -26,5 +27,7 @@
 
 )* }}} *)
 
-val get : Browse_tree.t list -> Query_protocol.outline
-val shape : Lexing.position -> Browse_tree.t list -> Query_protocol.shape list
+open Sturgeon_stub
+
+val dispatch : verbosity:int -> (Mconfig.t * Msource.t) ->
+  'a Query_protocol.t -> 'a

@@ -45,7 +45,8 @@ val raw_info_printer : raw_info ->
   | `Concat of string * Extend_protocol.Reader.outcometree
   ]
 
-val map_entry : ('a -> 'b) -> 'a Protocol.Compl.raw_entry -> 'b Protocol.Compl.raw_entry
+val map_entry : ('a -> 'b) ->
+  'a Query_protocol.Compl.raw_entry -> 'b Query_protocol.Compl.raw_entry
 
 val node_complete
   :  Mconfig.t
@@ -54,11 +55,11 @@ val node_complete
   -> ?target_type:Types.type_expr
   -> Env.t -> Browse_raw.node
   -> string
-  -> raw_info Protocol.Compl.raw_entry list
+  -> raw_info Query_protocol.Compl.raw_entry list
 
 val expand_prefix : global_modules:string list -> Env.t -> string ->
-  raw_info Protocol.Compl.raw_entry list
+  raw_info Query_protocol.Compl.raw_entry list
 
 val application_context : verbosity:int -> prefix:Asttypes.label -> Mbrowse.t ->
   Types.type_expr option *
-  [> `Application of Protocol.Compl.application_context | `Unknown ]
+  [> `Application of Query_protocol.Compl.application_context | `Unknown ]

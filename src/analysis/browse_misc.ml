@@ -96,7 +96,8 @@ let dump_browse node =
   in
   `List (append Env.empty node [])
 
-let annotate_tail_calls (ts : Browse_raw.node list) : (Browse_raw.node * Protocol.is_tail_position) list =
+let annotate_tail_calls (ts : Browse_raw.node list) :
+  (Browse_raw.node * Query_protocol.is_tail_position) list =
   let is_one_of candidates node = List.mem node ~set:candidates in
   let find_entry_points candidates node =
     Tail_analysis.entry_points node,

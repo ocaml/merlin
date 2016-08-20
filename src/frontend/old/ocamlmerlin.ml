@@ -94,7 +94,7 @@ let on_read fd =
   let rec loop ~timeout =
     try match Unix.select [fd] [] [] timeout with
       | [], [], [] ->
-        if Command.dispatch IO.default_context Protocol.(Query Idle_job)
+        if Command.dispatch IO.default_context Protocol.(Sync Idle_job)
         then loop ~timeout:0.0
         else loop ~timeout:(-1.0)
       | _, _, _ -> ()

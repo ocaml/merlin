@@ -68,10 +68,6 @@ let raw_info_printer : raw_info -> _ = function
                  Out_type (Printtyp.tree_of_type_scheme te))
     end
 
-let map_entry f entry =
-  let open Protocol.Compl in
-  {entry with desc = f entry.desc; info = f entry.info}
-
 (* List methods of an object.
    Code taken from [uTop](https://github.com/diml/utop
    with permission from Jeremie Dimino. *)
@@ -139,7 +135,10 @@ let classify_node = function
   | Include_declaration _ -> `Module
   | Include_description _ -> `Module
 
-open Protocol.Compl
+open Query_protocol.Compl
+
+let map_entry f entry =
+  {entry with desc = f entry.desc; info = f entry.info}
 
 let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
   let ident = match path with
@@ -567,8 +566,7 @@ let application_context ~verbosity ~prefix path =
           earg
       in
       let labels = Raw_compat.labels_of_application ~prefix app in
-      `Application { Protocol.Compl.
-                     argument_type = pr earg.exp_type;
+      `Application { argument_type = pr earg.exp_type;
                      labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
                    }
     | _ -> `Unknown
