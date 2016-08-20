@@ -58,4 +58,7 @@ end) = struct
         cache []
     in
     List.iter (Hashtbl.remove cache) invalid
+
+  let clear () =
+    Hashtbl.clear cache
 end

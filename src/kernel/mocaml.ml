@@ -89,3 +89,9 @@ let default_printer ppf =
 
 let with_printer printer f =
   let_ref replacement_printer (Some printer) f
+
+(* Cleanup caches *)
+let clear_caches () = (
+  Cmi_cache.clear ();
+  Cmt_cache.clear ()
+)

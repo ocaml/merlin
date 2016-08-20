@@ -15,3 +15,6 @@ val default_printer :
 val with_printer :
   (Format.formatter -> Extend_protocol.Reader.outcometree -> unit) ->
   (unit -> 'a) -> 'a
+
+(* Clear caches *)
+val clear_caches : unit -> unit
