@@ -580,165 +580,230 @@ and transl_signature env sg =
         let loc = item.psig_loc in
         match item.psig_desc with
         | Psig_value sdesc ->
-            let (tdesc, newenv) =
+          begin match
               Builtin_attributes.with_warning_attribute sdesc.pval_attributes
                 (fun () -> Typedecl.transl_value_decl env item.psig_loc sdesc)
-            in
-            let (trem,rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_value tdesc) env loc :: trem,
-            Sig_value(tdesc.val_id, tdesc.val_val) :: rem,
+            with
+            | (tdesc, newenv) ->
+              let (trem,rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_value tdesc) env loc :: trem,
+              Sig_value(tdesc.val_id, tdesc.val_val) :: rem,
               final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_type (rec_flag, sdecls) ->
-            List.iter
-              (fun decl -> check_name check_type names decl.ptype_name)
-              sdecls;
-            let (decls, newenv) =
+          begin match
+              List.iter
+                (fun decl -> check_name check_type names decl.ptype_name)
+                sdecls;
               Typedecl.transl_type_decl env rec_flag sdecls
-            in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_type (rec_flag, decls)) env loc :: trem,
-            map_rec_type_with_row_types ~rec_flag
-              (fun rs td -> Sig_type(td.typ_id, td.typ_type, rs)) decls rem,
-            final_env
+            with
+            | (decls, newenv) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_type (rec_flag, decls)) env loc :: trem,
+              map_rec_type_with_row_types ~rec_flag
+                (fun rs td -> Sig_type(td.typ_id, td.typ_type, rs)) decls rem,
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_typext styext ->
-            List.iter
-              (fun pext -> check_name check_typext names pext.pext_name)
-              styext.ptyext_constructors;
-            let (tyext, newenv) =
+          begin match
+              List.iter
+                (fun pext -> check_name check_typext names pext.pext_name)
+                styext.ptyext_constructors;
               Typedecl.transl_type_extension false env item.psig_loc styext
-            in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            let constructors = tyext.tyext_constructors in
+            with
+            | (tyext, newenv) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              let constructors = tyext.tyext_constructors in
               mksig (Tsig_typext tyext) env loc :: trem,
               map_ext (fun es ext ->
-                Sig_typext(ext.ext_id, ext.ext_type, es)) constructors rem,
+                  Sig_typext(ext.ext_id, ext.ext_type, es)) constructors rem,
               final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_exception sext ->
-            check_name check_typext names sext.pext_name;
-            let (ext, newenv) = Typedecl.transl_exception env sext in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_exception ext) env loc :: trem,
-            Sig_typext(ext.ext_id, ext.ext_type, Text_exception) :: rem,
-            final_env
+          begin match
+              check_name check_typext names sext.pext_name;
+              Typedecl.transl_exception env sext
+            with
+            | (ext, newenv) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_exception ext) env loc :: trem,
+              Sig_typext(ext.ext_id, ext.ext_type, Text_exception) :: rem,
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_module pmd ->
-            check_name check_module names pmd.pmd_name;
-            let id = Ident.create pmd.pmd_name.txt in
-            let tmty =
-              Builtin_attributes.with_warning_attribute pmd.pmd_attributes
+          begin match
+              check_name check_module names pmd.pmd_name;
+              let id = Ident.create pmd.pmd_name.txt in
+              id, Builtin_attributes.with_warning_attribute pmd.pmd_attributes
                 (fun () -> transl_modtype env pmd.pmd_type)
-            in
-            let md = {
-              md_type=tmty.mty_type;
-              md_attributes=pmd.pmd_attributes;
-              md_loc=pmd.pmd_loc;
-            }
-            in
-            let newenv = Env.enter_module_declaration id md env in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_module {md_id=id; md_name=pmd.pmd_name; md_type=tmty;
-                                md_loc=pmd.pmd_loc;
-                                md_attributes=pmd.pmd_attributes})
-              env loc :: trem,
-            Sig_module(id, md, Trec_not) :: rem,
-            final_env
+            with
+            | id, tmty ->
+              let md = {
+                md_type=tmty.mty_type;
+                md_attributes=pmd.pmd_attributes;
+                md_loc=pmd.pmd_loc;
+              }
+              in
+              let newenv = Env.enter_module_declaration id md env in
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_module {md_id=id; md_name=pmd.pmd_name; md_type=tmty;
+                                  md_loc=pmd.pmd_loc;
+                                  md_attributes=pmd.pmd_attributes})
+                env loc :: trem,
+              Sig_module(id, md, Trec_not) :: rem,
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_recmodule sdecls ->
+          begin match
             List.iter
               (fun pmd -> check_name check_module names pmd.pmd_name)
               sdecls;
-            let (decls, newenv) =
-              transl_recmodule_modtypes item.psig_loc env sdecls in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_recmodule decls) env loc :: trem,
-            map_rec (fun rs md ->
-                let d = {Types.md_type = md.md_type.mty_type;
-                         md_attributes = md.md_attributes;
-                         md_loc = md.md_loc;
-                        } in
-                Sig_module(md.md_id, d, rs))
-              decls rem,
-            final_env
+              transl_recmodule_modtypes item.psig_loc env sdecls
+            with
+            | (decls, newenv) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_recmodule decls) env loc :: trem,
+              map_rec (fun rs md ->
+                  let d = {Types.md_type = md.md_type.mty_type;
+                           md_attributes = md.md_attributes;
+                           md_loc = md.md_loc;
+                          } in
+                  Sig_module(md.md_id, d, rs))
+                decls rem,
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_modtype pmtd ->
-            let newenv, mtd, sg =
+          begin match
               Builtin_attributes.with_warning_attribute pmtd.pmtd_attributes
                 (fun () -> transl_modtype_decl names env item.psig_loc pmtd)
-            in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_modtype mtd) env loc :: trem,
-            sg :: rem,
-            final_env
+            with
+            | (newenv, mtd, sg) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_modtype mtd) env loc :: trem,
+              sg :: rem,
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_open sod ->
-            let (path, newenv, od) = type_open env sod in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_open od) env loc :: trem,
-            rem, final_env
+          begin match type_open env sod with
+            | (path, newenv, od) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_open od) env loc :: trem,
+              rem, final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_include sincl ->
-            let smty = sincl.pincl_mod in
-            let tmty =
-              Builtin_attributes.with_warning_attribute sincl.pincl_attributes
-                (fun () -> transl_modtype env smty)
-            in
-            let mty = tmty.mty_type in
-            let sg = Subst.signature Subst.identity
-                       (extract_sig env smty.pmty_loc mty) in
-            List.iter (check_sig_item names item.psig_loc) sg;
-            let newenv = Env.add_signature sg env in
-            let incl =
+          begin match
+              let smty = sincl.pincl_mod in
+              let tmty =
+                Builtin_attributes.with_warning_attribute sincl.pincl_attributes
+                  (fun () -> transl_modtype env smty)
+              in
+              let mty = tmty.mty_type in
+              let sg = Subst.signature Subst.identity
+                  (extract_sig env smty.pmty_loc mty) in
+              List.iter (check_sig_item names item.psig_loc) sg;
               { incl_mod = tmty;
                 incl_type = sg;
                 incl_attributes = sincl.pincl_attributes;
                 incl_loc = sincl.pincl_loc;
-              }
-            in
-            let (trem, rem, final_env) = transl_sig newenv srem  in
-            mksig (Tsig_include incl) env loc :: trem,
-            sg @ rem,
-            final_env
+              }, sg
+            with
+            | incl, sg ->
+              let newenv = Env.add_signature sg env in
+              let (trem, rem, final_env) = transl_sig newenv srem  in
+              mksig (Tsig_include incl) env loc :: trem,
+              sg @ rem,
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_class cl ->
-            List.iter
-              (fun {pci_name} -> check_name check_type names pci_name)
-              cl;
-            let (classes, newenv) = Typeclass.class_descriptions env cl in
-            let (trem, rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_class
-                     (List.map2
-                        (fun pcl tcl ->
-                          let (_, _, _, _, _, _, _, _, _, _, _, tcl) = tcl in
-                          tcl)
-                        cl classes)) env loc
-            :: trem,
-            List.flatten
-              (map_rec
-                 (fun rs (i, _, d, i', d', i'', d'', i''', d''', _, _, _) ->
-                   [Sig_class(i, d, rs);
-                    Sig_class_type(i', d', rs);
-                    Sig_type(i'', d'', rs);
-                    Sig_type(i''', d''', rs)])
-                 classes [rem]),
-            final_env
+          begin match
+              List.iter
+                (fun {pci_name} -> check_name check_type names pci_name)
+                cl;
+              Typeclass.class_descriptions env cl
+            with
+            | (classes, newenv) ->
+              let (trem, rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_class
+                       (List.map2
+                          (fun pcl tcl ->
+                             let (_, _, _, _, _, _, _, _, _, _, _, tcl) = tcl in
+                             tcl)
+                          cl classes)) env loc
+              :: trem,
+              List.flatten
+                (map_rec
+                   (fun rs (i, _, d, i', d', i'', d'', i''', d''', _, _, _) ->
+                      [Sig_class(i, d, rs);
+                       Sig_class_type(i', d', rs);
+                       Sig_type(i'', d'', rs);
+                       Sig_type(i''', d''', rs)])
+                   classes [rem]),
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_class_type cl ->
-            List.iter
-              (fun {pci_name} -> check_name check_type names pci_name)
-              cl;
-            let (classes, newenv) = Typeclass.class_type_declarations env cl in
-            let (trem,rem, final_env) = transl_sig newenv srem in
-            mksig (Tsig_class_type (List.map2 (fun pcl tcl ->
-              let (_, _, _, _, _, _, _, tcl) = tcl in
-              tcl
-            ) cl classes)) env loc :: trem,
-            List.flatten
-              (map_rec
-                 (fun rs (i, _, d, i', d', i'', d'', _) ->
-                   [Sig_class_type(i, d, rs);
-                    Sig_type(i', d', rs);
-                    Sig_type(i'', d'', rs)])
-                 classes [rem]),
-            final_env
+          begin match
+              List.iter
+                (fun {pci_name} -> check_name check_type names pci_name)
+                cl;
+              Typeclass.class_type_declarations env cl
+            with
+            | (classes, newenv) ->
+              let (trem,rem, final_env) = transl_sig newenv srem in
+              mksig (Tsig_class_type (List.map2 (fun pcl tcl ->
+                  let (_, _, _, _, _, _, _, tcl) = tcl in
+                  tcl
+                ) cl classes)) env loc :: trem,
+              List.flatten
+                (map_rec
+                   (fun rs (i, _, d, i', d', i'', d'', _) ->
+                      [Sig_class_type(i, d, rs);
+                       Sig_type(i', d', rs);
+                       Sig_type(i'', d'', rs)])
+                   classes [rem]),
+              final_env
+            | exception exn ->
+              Merlin_support.raise_error exn;
+              transl_sig env srem
+          end
         | Psig_attribute x ->
-            Builtin_attributes.warning_attribute [x];
-            let (trem,rem, final_env) = transl_sig env srem in
-            mksig (Tsig_attribute x) env loc :: trem, rem, final_env
+          Builtin_attributes.warning_attribute [x];
+          let (trem,rem, final_env) = transl_sig env srem in
+          mksig (Tsig_attribute x) env loc :: trem, rem, final_env
         | Psig_extension (ext, _attrs) ->
-            raise (Error_forward (Builtin_attributes.error_of_extension ext))
+          Merlin_support.raise_error
+            (Error_forward (Builtin_attributes.error_of_extension ext));
+          transl_sig env srem
+
   in
   Cmt_format.save_types
     ~save:(fun sg -> [Cmt_format.Partial_signature sg])
