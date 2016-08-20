@@ -1481,11 +1481,11 @@ let transl_value_decl env loc valdecl =
   let ty = cty.ctyp_type in
   let v =
   match valdecl.pval_prim with
-    [] when Env.is_in_signature env ->
-      { val_type = ty; val_kind = Val_reg; Types.val_loc = loc;
-        val_attributes = valdecl.pval_attributes }
-  | [] ->
-      raise (Error(valdecl.pval_loc, Val_in_structure))
+    [] ->
+    if not (Env.is_in_signature env) then
+      Merlin_support.raise_error (Error(valdecl.pval_loc, Val_in_structure));
+    { val_type = ty; val_kind = Val_reg; Types.val_loc = loc;
+      val_attributes = valdecl.pval_attributes }
   | _ ->
       let global_repr =
         match
