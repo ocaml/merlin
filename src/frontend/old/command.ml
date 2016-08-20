@@ -59,7 +59,7 @@ let new_buffer (path, dot_merlins) =
   }
   in
   { config = {initial with query; merlin};
-    source = Msource.make ~filename:"<buffer>" ~text:""
+    source = Msource.make ~filename:query.filename ~text:""
   }
 
 let new_state document =

@@ -26,6 +26,7 @@ let run trace config source =
       | exception Not_found -> ""
       | pos -> String.sub ~pos ~len:(String.length filename - pos) filename
     in
+    Logger.logf "reader" "run" "extension(%S) = %S" filename extension;
     match extension with
     | ".mli" -> Mreader_parser.MLI
     | _ -> Mreader_parser.ML

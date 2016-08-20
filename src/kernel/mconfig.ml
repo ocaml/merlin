@@ -312,7 +312,7 @@ let initial = {
     packages_path     = [];
   };
   query = {
-    filename = "<buffer>";
+    filename = "*buffer*";
     directory = Sys.getcwd ();
     verbosity = 0;
     terminal_width = 0;
