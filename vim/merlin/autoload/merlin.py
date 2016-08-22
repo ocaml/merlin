@@ -403,15 +403,19 @@ def vim_loclist(vimvar, ignore_warnings):
         if error['type'] == 'warning' and vim.eval(ignore_warnings) == 'true':
             continue
         ty = 'w'
-        if error['type'] == 'type' or error['type'] == 'parser':
+        msg = re.sub(re_wspaces, " ", error['message']).replace("'", "''")
+        if msg.startswith("Warning "):
+            msg = msg[8:]
+        elif msg.startswith("Error: "):
             ty = 'e'
+            msg = msg[7:]
         lnum = 1
         lcol = 1
         if 'start' in error:
             lnum = error['start']['line']
             lcol = error['start']['col'] + 1
         vim.command("let l:tmp = {'bufnr':%d,'lnum':%d,'col':%d,'vcol':0,'nr':%d,'pattern':'','text':'%s','type':'%s','valid':1}" %
-                (bufnr, lnum, lcol, nr, re.sub(re_wspaces, " ", error['message']).replace("'", "''"), ty))
+                (bufnr, lnum, lcol, nr, msg, ty))
         nr = nr + 1
         vim.command("call add(%s, l:tmp)" % vimvar)
 
