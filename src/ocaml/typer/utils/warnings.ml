@@ -594,7 +594,8 @@ let dump () =
     Array.mapi (fun i b ->
       let i = i + 1 in
       if b && i <= last_warning_number then
-        string_of_int i ^ ": " ^ List.assoc i descriptions
+        try string_of_int i ^ ": " ^ List.assoc i descriptions
+        with Not_found -> ""
       else
         ""
     ) arr

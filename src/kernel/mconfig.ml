@@ -22,6 +22,12 @@ type ocaml = {
   warnings             : Warnings.state;
 }
 
+let dump_warnings st =
+  let st' = Warnings.backup () in
+  Warnings.restore st;
+  Misc.try_finally Warnings.dump
+    (fun () -> Warnings.restore st')
+
 let dump_ocaml x = `Assoc [
     "include_dirs"         , `List (List.map Json.string x.include_dirs);
     "no_std_include"       , `Bool x.no_std_include;
@@ -41,6 +47,7 @@ let dump_ocaml x = `Assoc [
     "open_modules"         , `List (List.map Json.string x.open_modules);
     "ppx"                  , `List (List.map Json.string x.ppx);
     "pp"                   , `String x.pp;
+    "warnings"             , dump_warnings x.warnings;
   ]
 
 (** {1 Findlib configuration} *)

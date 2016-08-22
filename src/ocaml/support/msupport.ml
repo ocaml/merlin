@@ -106,4 +106,9 @@ let prerr_warning loc w =
       | "" -> ()
       | s ->  l := Warning (loc,s) :: !l
 
+let () = Location.register_error_of_exn (function
+    | Warning (loc, str) -> Some (Location.error ~loc str)
+    | _ -> None
+  )
+
 let () = Location.prerr_warning_ref := prerr_warning
