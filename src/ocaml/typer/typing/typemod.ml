@@ -21,8 +21,6 @@ open Parsetree
 open Types
 open Format
 
-let raise_error = Merlin_support.raise_error
-
 type error =
     Cannot_apply of module_type
   | Not_included of Includemod.error list
@@ -590,7 +588,7 @@ and transl_signature env sg =
               Sig_value(tdesc.val_id, tdesc.val_val) :: rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_type (rec_flag, sdecls) ->
@@ -607,7 +605,7 @@ and transl_signature env sg =
                 (fun rs td -> Sig_type(td.typ_id, td.typ_type, rs)) decls rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_typext styext ->
@@ -625,7 +623,7 @@ and transl_signature env sg =
                   Sig_typext(ext.ext_id, ext.ext_type, es)) constructors rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_exception sext ->
@@ -639,7 +637,7 @@ and transl_signature env sg =
               Sig_typext(ext.ext_id, ext.ext_type, Text_exception) :: rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_module pmd ->
@@ -665,7 +663,7 @@ and transl_signature env sg =
               Sig_module(id, md, Trec_not) :: rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_recmodule sdecls ->
@@ -687,7 +685,7 @@ and transl_signature env sg =
                 decls rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_modtype pmtd ->
@@ -701,7 +699,7 @@ and transl_signature env sg =
               sg :: rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_open sod ->
@@ -711,7 +709,7 @@ and transl_signature env sg =
               mksig (Tsig_open od) env loc :: trem,
               rem, final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_include sincl ->
@@ -738,7 +736,7 @@ and transl_signature env sg =
               sg @ rem,
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_class cl ->
@@ -767,7 +765,7 @@ and transl_signature env sg =
                    classes [rem]),
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_class_type cl ->
@@ -792,7 +790,7 @@ and transl_signature env sg =
                    classes [rem]),
               final_env
             | exception exn ->
-              Merlin_support.raise_error exn;
+              Msupport.raise_error exn;
               transl_sig env srem
           end
         | Psig_attribute x ->
@@ -800,7 +798,7 @@ and transl_signature env sg =
           let (trem,rem, final_env) = transl_sig env srem in
           mksig (Tsig_attribute x) env loc :: trem, rem, final_env
         | Psig_extension (ext, _attrs) ->
-          Merlin_support.raise_error
+          Msupport.raise_error
             (Error_forward (Builtin_attributes.error_of_extension ext));
           transl_sig env srem
 
@@ -1037,7 +1035,7 @@ let check_recmodule_inclusion env bindings =
           try
             Includemod.modtypes env mty_actual' mty_decl'
           with Includemod.Error msg ->
-            raise_error (Error (modl.mod_loc, env, Not_included msg));
+            Msupport.raise_error (Error (modl.mod_loc, env, Not_included msg));
             Tcoerce_none
         in
         let modl' =
@@ -1123,7 +1121,7 @@ let wrap_constraint env arg mty explicit =
     try
       Includemod.modtypes env arg.mod_type mty
     with Includemod.Error msg ->
-      raise_error (Error (arg.mod_loc, env, Not_included msg));
+      Msupport.raise_error (Error (arg.mod_loc, env, Not_included msg));
       Tcoerce_none
   in
   { mod_desc = Tmod_constraint(arg, mty, explicit, coercion);
@@ -1137,7 +1135,7 @@ let wrap_constraint env arg mty explicit =
 let rec type_module ?alias sttn funct_body anchor env smod =
   try type_module_ ?alias sttn funct_body anchor env smod
   with exn ->
-    raise_error exn;
+    Msupport.raise_error exn;
     { mod_desc = Tmod_structure {
          str_items = [];
          str_type = [];
@@ -1220,7 +1218,7 @@ and type_module_ ?(alias=false) sttn funct_body anchor env smod =
             try
               arg, Includemod.modtypes env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise_error (Error(sarg.pmod_loc, env, Not_included msg));
+              Msupport.raise_error (Error(sarg.pmod_loc, env, Not_included msg));
               {arg with mod_type= Subst.modtype Subst.identity mty_param},
               Tcoerce_none
           in

@@ -32,8 +32,6 @@ let merlin_recovery_attributes attrs =
   | [] -> attrs'
   | attrs -> attrs' @ attrs
 
-let raise_error = Merlin_support.raise_error
-
 type error =
     Polymorphic_label of Longident.t
   | Constructor_arity_mismatch of Longident.t * int * int
@@ -1496,8 +1494,8 @@ let type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty =
   let env' = !env in
   try type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty
   with exn ->
-    Merlin_support.erroneous_type_register expected_ty;
-    raise_error exn;
+    Msupport.erroneous_type_register expected_ty;
+    Msupport.raise_error exn;
     { pat_desc = Tpat_any;
       pat_loc = sp.ppat_loc;
       pat_type = expected_ty;
@@ -1519,7 +1517,7 @@ let check_unused ?(lev=get_current_level ()) env expected_ty cases =
           env expected_ty constrs labels spat
       with
         Some pat when refute ->
-        raise_error (error (spat.ppat_loc, env, Unrefuted_pattern pat));
+        Msupport.raise_error (error (spat.ppat_loc, env, Unrefuted_pattern pat));
         Some pat
       | r -> r)
     env cases
@@ -2024,8 +2022,8 @@ and type_expect ?in_function ?(recarg=Rejected) env sexp ty_expected =
     Builtin_attributes.warning_leave_scope ();
     exp
   with exn ->
-    Merlin_support.erroneous_type_register ty_expected;
-    raise_error exn;
+    Msupport.erroneous_type_register ty_expected;
+    Msupport.raise_error exn;
     let loc = sexp.pexp_loc in
     {
       exp_desc = Texp_ident
@@ -3022,7 +3020,7 @@ and type_expect_ ?in_function ~recarg env sexp ty_expected =
   | Pexp_open (ovf, lid, e) ->
     (match !type_open ovf env sexp.pexp_loc lid with
      | exception exn ->
-       raise_error exn;
+       Msupport.raise_error exn;
        type_expect_ ?in_function ~recarg env e ty_expected
      | (path, newenv) ->
       let exp = type_expect newenv e ty_expected in
@@ -3565,14 +3563,14 @@ and type_application loc env funct sargs ty_expected =
         let result_type = instance env (result_type omitted ty_fun) in
         begin try
             unify_exp_types loc env result_type (instance env ty_expected);
-          with exn -> raise_error exn;
+          with exn -> Msupport.raise_error exn;
         end;
         let force (l,a) = match a with
           | None -> (l, None)
           | Some f ->
             try (l, Some (f ()))
             with exn ->
-              raise_error exn;
+              Msupport.raise_error exn;
               (l, None)
         in
         let args = List.map force (List.rev args) in
@@ -3591,7 +3589,7 @@ and type_application loc env funct sargs ty_expected =
                 | _ -> true
               in
               if ty_fun.level >= t1.level && not_identity funct.exp_desc
-                && not (Merlin_support.erroneous_expr_check funct) then
+                && not (Msupport.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
@@ -3605,17 +3603,17 @@ and type_application loc env funct sargs ty_expected =
               match ty_res.desc with
                 Tarrow _ ->
                   if (!Clflags.classic || not (has_label l1 ty_fun)) then
-                    Merlin_support.resume_raise
+                    Msupport.resume_raise
                       (error(sarg1.pexp_loc, env,
                              Apply_wrong_label(l1, ty_res)))
                   else
-                    Merlin_support.resume_raise
+                    Msupport.resume_raise
                       (error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
-                Merlin_support.resume_raise
+                Msupport.resume_raise
                   (error(funct.exp_loc, env, Apply_non_function
                            (expand_head env funct.exp_type)))
-        with Merlin_support.Resume ->
+        with Msupport.Resume ->
           newvar(), ty_fun
         in
         let optional = is_optional l1 in
@@ -3839,7 +3837,7 @@ and type_construct env loc lid sarg ty_expected attrs =
 (* Typing of statements (expressions whose values are discarded) *)
 
 and type_statement env sexp =
-  let has_errors = Merlin_support.monitor_errors () in
+  let has_errors = Msupport.monitor_errors () in
   let loc = (final_subexpression sexp).pexp_loc in
   begin_def();
   let exp = type_exp env sexp in

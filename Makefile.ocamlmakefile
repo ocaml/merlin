@@ -132,8 +132,8 @@ SOURCES = \
 	$(TYPER)/browse_raw.ml            \
 	$(TYPER)/tail_analysis.mli        \
 	$(TYPER)/tail_analysis.ml         \
-	src/ocaml/support/merlin_support.mli \
-	src/ocaml/support/merlin_support.ml  \
+	src/ocaml/support/msupport.mli    \
+	src/ocaml/support/msupport.ml     \
 	$(TYPER)/typing/printtyp.mli      \
 	$(TYPER)/typing/printtyp.ml       \
 	$(TYPER)/typing/includeclass.mli  \

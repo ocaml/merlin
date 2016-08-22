@@ -482,7 +482,7 @@ let dispatch ~verbosity buffer (type a) : a Query_protocol.t -> a = function
       | None -> None
       | Some (err : Location.error) as result ->
         if Location.(err.loc.loc_ghost) &&
-           (match exn with Merlin_support.Warning _ -> true | _ -> false)
+           (match exn with Msupport.Warning _ -> true | _ -> false)
         then None
         else result
     in
@@ -491,7 +491,7 @@ let dispatch ~verbosity buffer (type a) : a Query_protocol.t -> a = function
     (* Track first parsing error *)
     let first_parser_error = ref Lexing.dummy_pos in
     let filter_parser_error = function
-      | Merlin_support.Warning _ as exn -> filter_error exn
+      | Msupport.Warning _ as exn -> filter_error exn
       | exn ->
         let result = filter_error exn in
         begin match result with

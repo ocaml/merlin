@@ -48,7 +48,7 @@ let process trace config source reader =
   let ppx = lazy (
     let lazy ({Mreader.parsetree}, config) = reader in
     let caught = ref [] in
-    Merlin_support.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
+    Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
     let config, parsetree = Mppx.rewrite trace config parsetree in
     { Ppx. config; parsetree; errors = !caught }
   ) in

@@ -211,7 +211,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     print_type_with_decl ~verbosity env ppf exp.exp_type
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-  Merlin_support.uncatch_errors @@ fun () ->
+  Msupport.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
   | Either.L e ->
     (*Format.pp_print_string ppf (Error_classifier.classify e); FIXME*)
