@@ -87,21 +87,27 @@ let rewrite magic ast ppxs =
     (List.fold_left (apply_rewriter magic) (write_ast magic ast)
        (List.rev ppxs))
 
-let apply_rewriters_str ppx ?(restore = true) ~tool_name ast =
-  match Ppxsetup.command_line ppx with
+let apply_rewriters_str ~ppx ?(restore = true) ~tool_name ast =
+  match ppx with
   | [] -> ast
   | ppxs ->
       let ast = Ast_mapper.add_ppx_context_str ~tool_name ast in
       let ast = rewrite Config.ast_impl_magic_number ast ppxs in
       Ast_mapper.drop_ppx_context_str ~restore ast
 
-let apply_rewriters_sig ppx ?(restore = true) ~tool_name ast =
-  match Ppxsetup.command_line ppx with
+let apply_rewriters_sig ~ppx ?(restore = true) ~tool_name ast =
+  match ppx with
   | [] -> ast
   | ppxs ->
       let ast = Ast_mapper.add_ppx_context_sig ~tool_name ast in
       let ast = rewrite Config.ast_intf_magic_number ast ppxs in
       Ast_mapper.drop_ppx_context_sig ~restore ast
+
+let apply_rewriters ~ppx ?restore ~tool_name = function
+  | `Interface ast ->
+    `Interface (apply_rewriters_sig ~ppx ?restore ~tool_name ast)
+  | `Implementation ast ->
+    `Implementation (apply_rewriters_str ~ppx ?restore ~tool_name ast)
 
 let read_ast magic fn =
   let ic = open_in_bin fn in
@@ -140,10 +146,10 @@ let apply_pp ~filename ~source ~pp =
       (String.length Config.ast_impl_magic_number) in
   close_in ic;
   if buffer = Config.ast_impl_magic_number then
-    `Structure (read_ast Config.ast_impl_magic_number fn_out
+    `Implementation (read_ast Config.ast_impl_magic_number fn_out
                 : Parsetree.structure)
   else if buffer = Config.ast_intf_magic_number then
-    `Signature (read_ast Config.ast_intf_magic_number fn_out
+    `Interface (read_ast Config.ast_intf_magic_number fn_out
                 : Parsetree.signature)
   else
     Misc.fatal_error "OCaml and preprocessor have incompatible versions"

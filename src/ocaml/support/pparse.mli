@@ -21,10 +21,12 @@ exception Error of error
 (** If [restore = true] (the default), cookies set by external rewriters will be
     kept for later calls. *)
 
-val apply_rewriters_str: Ppxsetup.t -> ?restore:bool -> tool_name:string -> Parsetree.structure -> Parsetree.structure
-val apply_rewriters_sig: Ppxsetup.t -> ?restore:bool -> tool_name:string -> Parsetree.signature -> Parsetree.signature
+val apply_rewriters_str: ppx:string list -> ?restore:bool -> tool_name:string -> Parsetree.structure -> Parsetree.structure
+val apply_rewriters_sig: ppx:string list -> ?restore:bool -> tool_name:string -> Parsetree.signature -> Parsetree.signature
+
+val apply_rewriters: ppx:string list -> ?restore:bool -> tool_name:string -> Mreader.parsetree -> Mreader.parsetree
 
 val report_error : formatter -> error -> unit
 
 val apply_pp : filename:string -> source:string -> pp:string ->
-  [> `Signature of Parsetree.signature | `Structure of Parsetree.structure ]
+  [> `Interface of Parsetree.signature | `Implementation of Parsetree.structure ]

@@ -47,8 +47,10 @@ let typer_errors t = Lazy.force (typer t).Typer.errors
 let process trace config source reader =
   let ppx = lazy (
     let lazy ({Mreader.parsetree}, config) = reader in
+    let caught = ref [] in
+    Merlin_support.catch_errors caught @@ fun () ->
     let config, parsetree = Mppx.rewrite trace config parsetree in
-    { Ppx. config; parsetree; errors = [] }
+    { Ppx. config; parsetree; errors = !caught }
   ) in
   let typer = lazy (
     let lazy { Ppx. config; parsetree; errors } = ppx in
