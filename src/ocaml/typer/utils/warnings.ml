@@ -14,10 +14,10 @@
 (**************************************************************************)
 
 (* When you change this, you need to update the documentation:
-   - man/ocamlc.m   in ocaml
-   - man/ocamlopt.m in ocaml
-   - manual/cmds/comp.etex   in the doc sources
-   - manual/cmds/native.etex in the doc sources
+   - man/ocamlc.m
+   - man/ocamlopt.m
+   - manual/manual/cmds/comp.etex
+   - manual/manual/cmds/native.etex
 *)
 
 type t =
@@ -306,7 +306,7 @@ let message = function
   | Partial_match "" -> "this pattern-matching is not exhaustive."
   | Partial_match s ->
       "this pattern-matching is not exhaustive.\n\
-       Here is an example of a value that is not matched:\n" ^ s
+       Here is an example of a case that is not matched:\n" ^ s
   | Non_closed_record_pattern s ->
       "the following labels are not bound in this record pattern:\n" ^ s ^
       "\nEither bind these labels explicitly or add '; _' to the pattern."
@@ -395,12 +395,13 @@ let message = function
       s ^ " belongs to several types: " ^ String.concat " " tl ^
       "\nThe first one was selected. Please disambiguate if this is wrong."
   | Ambiguous_name (_, _, false) -> assert false
-  | Ambiguous_name (slist, tl, true) ->
+  | Ambiguous_name (_slist, tl, true) ->
       "these field labels belong to several types: " ^
       String.concat " " tl ^
       "\nThe first one was selected. Please disambiguate if this is wrong."
   | Disambiguated_name s ->
-      "this use of " ^ s ^ " required disambiguation."
+      "this use of " ^ s ^ " relies on type-directed disambiguation,\n\
+       it will not compile with OCaml 4.00 or earlier."
   | Nonoptional_label s ->
       "the label " ^ s ^ " is not optional."
   | Open_shadow_identifier (kind, s) ->
@@ -432,9 +433,9 @@ let message = function
       Printf.sprintf "expected tailcall"
   | Fragile_literal_pattern ->
       Printf.sprintf
-        "the argument of this constructor should not be matched against a\n\
-         constant pattern; the actual value of the argument could change\n\
-         in the future"
+        "Code should not depend on the actual values of\n\
+         this constructor's arguments. They are only for information\n\
+         and may change in future versions. (See manual section 8.5)"
   | Unreachable_case ->
       "this match case is unreachable.\n\
        Consider replacing it with a refutation case '<pat> -> .'"
@@ -455,8 +456,8 @@ let message = function
         | _::_ ->
             "variables " ^ String.concat "," vars in
       Printf.sprintf
-        "Ambiguous guarded pattern, %s may match different or-pattern \
-          arguments"
+        "Ambiguous or-pattern variables under guard;\n\
+         %s may match different arguments. (See manual section 8.5)"
         msg
   | No_cmx_file name ->
       Printf.sprintf
@@ -547,7 +548,7 @@ let descriptions =
    39, "Unused rec flag.";
    40, "Constructor or label name used out of scope.";
    41, "Ambiguous constructor or label name.";
-   42, "Disambiguated constructor or label name.";
+   42, "Disambiguated constructor or label name (compatibility warning).";
    43, "Nonoptional label applied as optional.";
    44, "Open statement shadows an already defined identifier.";
    45, "Open statement shadows an already defined label or constructor.";
@@ -562,7 +563,7 @@ let descriptions =
    54, "Attribute used more than once on an expression";
    55, "Inlining impossible";
    56, "Unreachable case in a pattern-matching (based on type information).";
-   57, "Ambiguous binding by pattern.";
+   57, "Ambiguous or-pattern variables under guard";
    58, "Missing cmx file";
    59, "Assignment to non-mutable value";
   ]
@@ -585,39 +586,10 @@ let help_warnings () =
   exit 0
 ;;
 
-let w_spec =
-  "-w",
-  Arg.String (parse_options false),
-  Printf.sprintf
-    "<list>  Enable or disable warnings according to <list>:\n\
-    \        +<spec>   enable warnings in <spec>\n\
-    \        -<spec>   disable warnings in <spec>\n\
-    \        @<spec>   enable warnings in <spec> and treat them as errors\n\
-    \     <spec> can be:\n\
-    \        <num>             a single warning number\n\
-    \        <num1>..<num2>    a range of consecutive warning numbers\n\
-    \        <letter>          a predefined set\n\
-    \     default setting is %S"
-    defaults_w
-
-let warn_error_spec =
-  "-warn-error",
-  Arg.String (parse_options true),
-  Printf.sprintf
-    "<list> Enable or disable error status for warnings according\n\
-    \     to <list>.  See option -w for the syntax of <list>.\n\
-    \     Default setting is %S"
-    defaults_warn_error
-
-let arg_spec =
-  [
-    w_spec;
-    warn_error_spec;
-  ]
-
-open Std
+(* merlin *)
 
 let dump () =
+  let open Std in
   let actives arr =
     Array.mapi (fun i b ->
       let i = i + 1 in
@@ -633,3 +605,4 @@ let dump () =
     "actives", `List (actives !current.active);
     "warn_error", `List (actives !current.error);
   ]
+;;

@@ -19,6 +19,7 @@ type ocaml = {
   open_modules         : string list;
   ppx                  : string list;
   pp                   : string;
+  warnings             : Warnings.state;
 }
 
 let dump_ocaml x = `Assoc [
@@ -157,6 +158,15 @@ let ocaml_ignored_parametrized_flags = [
   "-unbox-closures-factor"; "-use-prims"; "-use_runtime"; "-use-runtime";
 ]
 
+let ocaml_warnings_spec ~error =
+  Marg.param "warning specification" (fun spec ocaml ->
+      let b' = Warnings.backup () in
+      Warnings.restore ocaml.warnings;
+      Misc.try_finally (fun () ->
+          Warnings.parse_options error spec;
+          { ocaml with warnings = Warnings.backup () })
+        (fun () -> Warnings.restore b'))
+
 let ocaml_flags = [
   (
     "-I",
@@ -265,7 +275,29 @@ let ocaml_flags = [
     "-pp",
     Marg.param "command" (fun pp ocaml -> {ocaml with pp}),
     "<command> Pipe sources through preprocessor <command>"
-  )
+  );
+  ( "-w",
+    ocaml_warnings_spec ~error:false,
+    Printf.sprintf
+      "<list>  Enable or disable warnings according to <list>:\n\
+      \        +<spec>   enable warnings in <spec>\n\
+      \        -<spec>   disable warnings in <spec>\n\
+      \        @<spec>   enable warnings in <spec> and treat them as errors\n\
+      \     <spec> can be:\n\
+      \        <num>             a single warning number\n\
+      \        <num1>..<num2>    a range of consecutive warning numbers\n\
+      \        <letter>          a predefined set\n\
+      \     default setting is %S"
+      Warnings.defaults_w
+  );
+  ( "-warn-error",
+    ocaml_warnings_spec ~error:true,
+    Printf.sprintf
+      "<list> Enable or disable error status for warnings according\n\
+      \     to <list>.  See option -w for the syntax of <list>.\n\
+      \     Default setting is %S"
+      Warnings.defaults_warn_error
+  );
 ]
 
 (** {1 Main configuration} *)
@@ -287,7 +319,8 @@ let initial = {
     strict_formats       = false;
     open_modules         = [];
     ppx                  = [];
-    pp                   = ""
+    pp                   = "";
+    warnings             = Warnings.backup ();
   };
   findlib = {
     conf = None;

@@ -19,6 +19,7 @@ type ocaml = {
   open_modules         : string list;
   ppx                  : string list;
   pp                   : string;
+  warnings             : Warnings.state;
 }
 
 val dump_ocaml : ocaml -> json
