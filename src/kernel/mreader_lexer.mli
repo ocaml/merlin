@@ -32,8 +32,7 @@ type triple = Parser_raw.token * Lexing.position * Lexing.position
 
 type t
 
-val make :
-  keywords -> Msource.t -> t
+val make : Warnings.state -> keywords -> Msource.t -> t
 
 val for_completion: t -> Lexing.position ->
   bool (* complete labels or not *) * t

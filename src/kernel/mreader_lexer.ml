@@ -80,7 +80,8 @@ let initial_position source =
     pos_cnum = 0;
   }
 
-let make keywords source =
+let make warnings keywords source =
+  Merlin_support.catch_errors warnings (ref []) @@ fun () ->
   let items =
     get_tokens keywords
     (initial_position source)

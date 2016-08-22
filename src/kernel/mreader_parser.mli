@@ -35,9 +35,7 @@ type kind =
 
 type t
 
-val make : Mreader_lexer.t -> kind -> t
-
-val trace : t -> flag Widget.Nav.frame -> unit
+val make : Warnings.state -> Mreader_lexer.t -> kind -> t
 
 type tree = [
   | `Interface of Parsetree.signature

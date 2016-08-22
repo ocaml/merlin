@@ -235,9 +235,8 @@ let parse initial nav steps tokens initial_pos =
   let acc, result = resume_parse nav acc tokens step in
   List.rev acc, result
 
-
-let run_parser nav lexer previous kind =
-  Merlin_support.catch_errors errors_ref @@ fun () ->
+let run_parser warnings nav lexer previous kind =
+  Merlin_support.catch_errors warnings errors_ref @@ fun () ->
   let tokens = Mreader_lexer.tokens lexer in
   let initial_pos = Mreader_lexer.initial_position lexer in
   match kind with
@@ -263,15 +262,12 @@ let run_parser nav lexer previous kind =
 let null_frame =
   {Widget.Nav. body = null; title = null; nav = Widget.Nav.make "" ignore}
 
-let make lexer kind =
+let make warnings lexer kind =
   errors_ref := [];
-  let steps, tree = run_parser null_frame lexer `None kind in
+  let steps, tree = run_parser warnings null_frame lexer `None kind in
   let errors = !errors_ref in
   errors_ref := [];
   {kind; steps; tree; errors; lexer}
-
-let trace t nav =
-  ignore (run_parser nav t.lexer `None t.kind)
 
 let result t = t.tree
 

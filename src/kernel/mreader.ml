@@ -34,7 +34,7 @@ let run ?for_completion _trace config source =
   Mocaml.setup_config config;
   let lexer =
     let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
-    Mreader_lexer.make keywords source
+    Mreader_lexer.make Mconfig.(config.ocaml.warnings) keywords source
   in
   let no_labels_for_completion, lexer = match for_completion with
     | None -> false, lexer
@@ -42,7 +42,7 @@ let run ?for_completion _trace config source =
       let pos = Msource.get_lexing_pos source pos in
       Mreader_lexer.for_completion lexer pos
   in
-  let parser = Mreader_parser.make lexer kind in
+  let parser = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer kind in
   let lexer_errors = Mreader_lexer.errors lexer
   and parser_errors = Mreader_parser.errors parser
   and parsetree = Mreader_parser.result parser

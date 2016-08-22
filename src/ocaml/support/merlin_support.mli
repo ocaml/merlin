@@ -41,7 +41,7 @@ val resume_raise: exn -> 'a
 (** Installing (and removing) error handlers. *)
 
 (** Any [raise_error] invoked inside catch_errors will be added to the list. *)
-val catch_errors: exn list ref -> (unit -> 'a) -> 'a
+val catch_errors: Warnings.state -> exn list ref -> (unit -> 'a) -> 'a
 
 (** Temporary disable catching errors *)
 val uncatch_errors: (unit -> 'a) -> 'a

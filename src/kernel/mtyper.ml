@@ -6,6 +6,7 @@ type typedtree = [
 ]
 
 type result = {
+  config    : Mconfig.t;
   state     : Mocaml.typer_state;
   errors    : exn list;
   checks    : Typecore.delayed_check list;
@@ -17,7 +18,8 @@ let run config source parsetree =
   let state = Mocaml.new_state ~unit_name:(Msource.unitname source) in
   Mocaml.with_state state @@ fun () ->
   let caught = ref [] in
-  Merlin_support.catch_errors caught @@ fun () ->
+  Merlin_support.catch_errors
+    Mconfig.(config.ocaml.warnings) caught @@ fun () ->
   Typecore.reset_delayed_checks ();
   let env0 = Typer_raw.fresh_env () in
   let env0 = Env.open_pers_signature "Pervasives" env0 in
@@ -39,7 +41,7 @@ let run config source parsetree =
   let checks = !Typecore.delayed_checks in
   let errors = !caught in
   Typecore.reset_delayed_checks ();
-  { state; typedtree; checks; errors }
+  { config; state; typedtree; checks; errors }
 
 let with_typer t f =
   Mocaml.with_state t.state f
@@ -58,7 +60,9 @@ let get_errors t =
   assert (Mocaml.is_state t.state);
   let caught = ref t.errors in
   Typecore.delayed_checks := t.checks;
-  Merlin_support.catch_errors caught Typecore.force_delayed_checks;
+  Merlin_support.catch_errors
+    Mconfig.(t.config.ocaml.warnings)
+    caught Typecore.force_delayed_checks;
   Typecore.reset_delayed_checks ();
   (!caught)
 
