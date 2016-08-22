@@ -72,7 +72,7 @@ let make trace config source =
 let make_for_completion trace config source position =
   let config = Mconfig.normalize trace config in
   let reader = lazy (
-    let result = Mreader.run_for_completion trace config source position in
+    let result = Mreader.run ~for_completion:position trace config source in
     let config = Mconfig.normalize trace config in
     result, config
   ) in

@@ -18,7 +18,7 @@ type result = {
 
 (* Entry points *)
 
-let run trace config source =
+let run ?for_completion _trace config source =
   let kind =
     let filename = Msource.filename source in
     let extension =
@@ -36,6 +36,12 @@ let run trace config source =
     let keywords = Extension.keywords Mconfig.(config.merlin.extensions) in
     Mreader_lexer.make keywords source
   in
+  let no_labels_for_completion, lexer = match for_completion with
+    | None -> false, lexer
+    | Some pos ->
+      let pos = Msource.get_lexing_pos source pos in
+      Mreader_lexer.for_completion lexer pos
+  in
   let parser = Mreader_parser.make lexer kind in
   let lexer_errors = Mreader_lexer.errors lexer
   and parser_errors = Mreader_parser.errors parser
@@ -43,9 +49,7 @@ let run trace config source =
   and comments = Mreader_lexer.comments lexer
   in
   { config; lexer_errors; parser_errors; comments; parsetree;
-    no_labels_for_completion = false }
-
-let run_for_completion trace config source pos = run trace config source
+    no_labels_for_completion; }
 
 (* Pretty-printing *)
 

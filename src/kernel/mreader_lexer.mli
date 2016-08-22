@@ -35,8 +35,8 @@ type t
 val make :
   keywords -> Msource.t -> t
 
-val for_completion:
-  t -> Lexing.position -> [`No_labels of bool] * t
+val for_completion: t -> Lexing.position ->
+  bool (* complete labels or not *) * t
 
 val initial_position : t -> Lexing.position
 

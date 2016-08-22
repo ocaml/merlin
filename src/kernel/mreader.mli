@@ -16,10 +16,9 @@ type result = {
 
 (* Entry points *)
 
-val run : Trace.t -> Mconfig.t -> Msource.t -> result
-
-val run_for_completion :
-  Trace.t -> Mconfig.t -> Msource.t -> Msource.position -> result
+val run :
+  ?for_completion:Msource.position ->
+  Trace.t -> Mconfig.t -> Msource.t -> result
 
 (* Pretty-printing *)
 

@@ -362,7 +362,7 @@ let for_completion t pos =
       {t with items =
                 List.rev_append acc (Triple (LIDENT "", pos, pos) :: items)}
   in
-  (`No_labels !no_labels, t)
+  (!no_labels, t)
 
 let identifier_suffix ident =
   match List.last ident with
