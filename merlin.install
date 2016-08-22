@@ -1,0 +1,8 @@
+bin: [
+  "ocamlmerlin"
+]
+
+share: [
+]
+share_root: [
+]
