@@ -62,7 +62,21 @@ let dump_findlib x = `Assoc [
     "path", `List (List.map Json.string x.path);
   ]
 
-let findlib_flags = []
+let findlib_flags = [
+  (
+    "-findlib-conf",
+    Marg.param "path" (fun conf findlib ->
+        let conf = if conf = "" then None else Some conf in
+        {findlib with conf}),
+    "<path> Path to findlib.conf to use for resolving packages"
+  );
+  (
+    "-findlib-path",
+    Marg.param "path" (fun path findlib ->
+        {findlib with path = path :: findlib.path}),
+    "<path> Add <path> to the list of paths considered "
+  );
+]
 
 (** {1 Merlin high-level settings} *)
 
@@ -110,7 +124,52 @@ let dump_merlin x = `Assoc [
     "packages_path"   , `List (List.map Json.string x.packages_path);
   ]
 
-let merlin_flags = []
+let merlin_flags = [
+  (
+    "-build-path",
+    Marg.param "directory" (fun dir merlin ->
+        {merlin with build_path = dir :: merlin.build_path}),
+    "<dir> Add <dir> to merlin build path"
+  );
+  (
+    "-source-path",
+    Marg.param "directory" (fun dir merlin ->
+        {merlin with source_path = dir :: merlin.build_path}),
+    "<dir> Add <dir> to merlin source path"
+  );
+  (
+    "-cmi-path",
+    Marg.param "directory" (fun dir merlin ->
+        {merlin with cmi_path = dir :: merlin.cmi_path}),
+    "<dir> Add <dir> to merlin cmi path"
+  );
+  (
+    "-cmt-path",
+    Marg.param "directory" (fun dir merlin ->
+        {merlin with build_path = dir :: merlin.cmt_path}),
+    "<dir> Add <dir> to merlin cmt path"
+  );
+  (
+    "-reader",
+    Marg.param "command" (fun reader merlin ->
+        {merlin with reader = Shell.split_command reader }),
+    "<command> Use <command> as a merlin reader"
+  );
+  (
+    "-dot-merlin",
+    Marg.param "path" (fun dotmerlin merlin ->
+        {merlin with dotmerlin_to_load =
+                       dotmerlin :: merlin.dotmerlin_to_load}),
+    "<path> Load <path> as a .merlin; if it is a directory, \
+     look for .merlin here or in a parent directory"
+  );
+  (
+    "-package",
+    Marg.param "package" (fun pkg merlin ->
+        {merlin with packages_to_load = pkg :: merlin.packages_to_load}),
+    "<package> Load findlib package <package>"
+  );
+]
 
 type query = {
   filename  : string;
@@ -126,7 +185,30 @@ let dump_query x = `Assoc [
     "verbosity" , `Int x.verbosity;
   ]
 
-let query_flags = []
+let query_flags = [
+  (
+    "-filename",
+    Marg.param "path" (fun path query ->
+        let path = Misc.canonicalize_filename path in
+        let filename = Filename.basename path in
+        let directory = Filename.dirname path in
+        {query with filename; directory}),
+    "<path> Path of the buffer; \
+     extension determines the kind of file (interface or implementation), \
+     basename is used as name of the module being definer, \
+     directory is used to resolve other relative paths"
+  );
+  (
+    "-verbosity",
+    Marg.param "integer" (fun verbosity query ->
+        let verbosity =
+          try int_of_string verbosity
+          with _ -> invalid_arg "argument should be an integer"
+        in
+        {query with verbosity}),
+    "<integer> Verbosity determines the number of expansions of aliases in answers"
+  );
+]
 
 type t = {
   ocaml   : ocaml;
