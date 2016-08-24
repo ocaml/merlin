@@ -78,6 +78,17 @@ Configuration (OK)
 			check that various verbosity sensitive queries are affected
 Queries (WIP)
 	Case analysis (destruct)
+		On a pattern
+			If exhaustive
+				Try and split the thing under the cursor (works
+                                on variables and wildcards) into subpatterns
+                        If not-exhaustive
+                                Make it exhaustive
+                On an expression [e]
+                        If it is a module
+                                expand into "let module ..."
+                        If it is a variant or record type
+                                replace by [match e with <cases>]
 	Completion
 		Normal
 			Candidate enumeration
