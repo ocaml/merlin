@@ -160,6 +160,7 @@ Queries (WIP)
 	Shape
 	Type enclosing
 		String argument (expro) is a bit redundant: only position should be provided.
+		↑ Wasn't that used to be able to do things like ":TypeOf FooBar.S"?
 	Type expression
 		Ensure expression is typed in the right environment
 		Explain how verbosity affects results
