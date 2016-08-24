@@ -161,6 +161,9 @@ Queries (WIP)
 	Type enclosing
 		String argument (expro) is a bit redundant: only position should be provided.
 		↑ Wasn't that used to be able to do things like ":TypeOf FooBar.S"?
+		↓ See below, the string argument is used to approximate where the cursor is
+      (in the middle of a path or even a path component), since locations are
+      only stored at the granularity of one path
 	Type expression
 		Ensure expression is typed in the right environment
 		Explain how verbosity affects results
