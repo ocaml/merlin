@@ -41,24 +41,26 @@ type state = {
   mutable buffer : buffer;
 }
 
+let default_config = ref Mconfig.initial
+
 let normalize_document doc =
   doc.Context.path, doc.Context.dot_merlins
 
 let new_buffer (path, dot_merlins) =
   let open Mconfig in
   let query = match path with
-    | None -> initial.query
+    | None -> !default_config.query
     | Some path -> {
-        initial.query with
+        !default_config.query with
         filename = Filename.basename path;
         directory = Misc.canonicalize_filename (Filename.dirname path);
       }
   and merlin = {
-    initial.merlin with dotmerlin_to_load =
+    !default_config.merlin with dotmerlin_to_load =
       (Option.cons (Option.map ~f:Filename.dirname path) (Option.value ~default:[] dot_merlins))
   }
   in
-  { config = {initial with query; merlin};
+  { config = {!default_config with query; merlin};
     source = Msource.make ~filename:query.filename ~text:""
   }
 

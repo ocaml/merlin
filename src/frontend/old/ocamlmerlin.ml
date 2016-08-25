@@ -83,37 +83,76 @@ open Std
   * definition under the cursor changes.
   *)
 
-module My_config = My_config
-module IO_sexp = IO_sexp
+let version_spec =
+  Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s"
+    My_config.version Sys.ocaml_version
+
+let ocamlmerlin_args = [
+  (
+    "-ignore-sigint",
+    " Ignore SIGINT, useful when invoked from editor",
+    Marg.unit (fun acc ->
+        (try ignore (Sys.(signal sigint Signal_ignore))
+         with Invalid_argument _ -> ());
+        acc
+      )
+  );
+  (
+    "-version",
+    " Print version and exit",
+    Marg.unit (fun _ ->
+        print_endline version_spec;
+        exit 0
+      )
+  );
+  (
+    "-vnum",
+    " Print version number and exit",
+    Marg.unit (fun _ ->
+        Printf.printf "%s\n" My_config.version;
+        exit 0
+      )
+  );
+  (
+    "-warn-help",
+    " Show description of warning numbers",
+    Marg.unit (fun _ ->
+        Warnings.help_warnings ();
+        exit 0
+      )
+  );
+  (
+    "-protocol",
+    " Select frontend protocol ('json' or 'sexp')",
+    Marg.param "protocol" (fun arg _ ->
+        match arg with
+        | "json" -> `Json
+        | "sexp" -> `Sexp
+        | _ ->
+          prerr_endline "Valid protocols are 'json' and 'sexp'";
+          exit 1
+      )
+  );
+]
 
 let signal sg behavior =
   try ignore (Sys.signal sg behavior)
   with Invalid_argument _ (*Sys.signal: unavailable signal*) -> ()
 
-let on_read fd =
-  let rec loop ~timeout =
-    try match Unix.select [fd] [] [] timeout with
-      | [], [], [] ->
-        if Command.dispatch IO.default_context Protocol.(Sync Idle_job)
-        then loop ~timeout:0.0
-        else loop ~timeout:(-1.0)
-      | _, _, _ -> ()
-    with
-    | Unix.Unix_error (Unix.EINTR, _, _) -> loop ~timeout
-    | exn -> Logger.log "main" "on_read" (Printexc.to_string exn)
-  in
-  loop ~timeout:0.050
-
 let main_loop () =
-  (*let make = match Main_args.protocol with
-    | "json" -> IO_json.make
-    | "sexp" -> IO_sexp.make
-    | _ ->
-      prerr_endline "Valid protocols are 'json' and 'sexp'";
-      exit 1
-    in*)
-  let make = IO_json.make in
-  let input, output = make ~on_read ~input:Unix.stdin ~output:Unix.stdout in
+  let config, protocol =
+    Marg.parse_all ~warning:prerr_endline
+      Mconfig.arguments_table ocamlmerlin_args
+      (List.tl (Array.to_list Sys.argv))
+      Mconfig.initial `Json
+  in
+  Old_command.default_config := config;
+  let protocol = match protocol with
+    | `Json -> IO_json.make
+    | `Sexp -> IO_sexp.make
+  in
+  let input, output =
+    protocol ~on_read:ignore ~input:Unix.stdin ~output:Unix.stdout in
   let input () = match input () with
     | None -> None
     | Some json ->
@@ -127,7 +166,7 @@ let main_loop () =
   in
   let rec loop () =
     let notifications = ref [] in
-    (*Logger.with_editor notifications @@ fun () ->*)
+    Logger.with_notifications notifications @@ fun () ->
     let tr = Trace.start ~limit:2 () in
     match
       Trace.step tr "Merlin main loop"
@@ -135,7 +174,7 @@ let main_loop () =
       @@ fun tr ->
       match input () with
       | Some (Protocol.Request (context, request)) ->
-        let answer = Command.dispatch context request in
+        let answer = Old_command.dispatch context request in
         output ~notifications:(List.rev !notifications)
           (Protocol.Return (request, answer));
         true
@@ -161,7 +200,7 @@ let () =
   Unix.putenv "__MERLIN_MASTER_PID" (string_of_int (Unix.getpid ()));
 
   (* Setup sturgeon monitor *)
-  (*let monitor = Sturgeon_stub.start Command.monitor in*)
+  (*let monitor = Sturgeon_stub.start Old_command.monitor in*)
 
   (* Run! *)
   main_loop ();

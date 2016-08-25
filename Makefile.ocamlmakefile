@@ -238,8 +238,8 @@ SOURCES = \
   src/frontend/query_protocol.ml    \
   src/frontend/query_commands.mli   \
   src/frontend/query_commands.ml    \
-  src/frontend/old/command.mli      \
-	src/frontend/old/command.ml       \
+  src/frontend/old/old_command.mli  \
+	src/frontend/old/old_command.ml   \
   src/frontend/old/protocol.ml      \
 	src/frontend/old/ocamlmerlin.ml  
 
