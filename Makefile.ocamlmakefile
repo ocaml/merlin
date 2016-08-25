@@ -9,6 +9,7 @@ ifndef OVERRIDE_ENV
 endif
 
 OCAMLFLAGS += -w -3
+REALLY_QUIET ?= 1
 
 ifdef WITH_BIN_ANNOT
 	OCAMLFLAGS += -bin-annot
@@ -19,14 +20,13 @@ ifndef WITHOUT_DEBUG
 	OCAMLLDFLAGS += -g
 endif
 
-RESULT   = ocamlmerlin$(RESULT_SUFFIX)
 TYPER    = src/ocaml/typer$(MERLIN_OCAML_VERSION)
 STURGEON = src/sturgeon$(MERLIN_STURGEON_VERSION)
 THREADS  = $(MERLIN_NEED_THREADS)
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 
-SOURCES = \
+SOURCES_LIB = \
 	src/config/my_config.ml           \
 	src/platform/fs_case.c            \
 	$(STURGEON)/sturgeon_stub.ml      \
@@ -228,26 +228,35 @@ SOURCES = \
 	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \
 	src/kernel/mpipeline.mli          \
-	src/kernel/mpipeline.ml           \
-  src/frontend/old/IO_json.mli      \
-	src/frontend/old/IO_json.ml       \
-  src/frontend/old/IO_sexp.mli      \
-	src/frontend/old/IO_sexp.ml       \
-  src/frontend/old/IO.mli           \
-	src/frontend/old/IO.ml            \
-  src/frontend/query_protocol.ml    \
-  src/frontend/query_commands.mli   \
-  src/frontend/query_commands.ml    \
-  src/frontend/old/old_command.mli  \
-	src/frontend/old/old_command.ml   \
-  src/frontend/old/protocol.ml      \
-	src/frontend/old/ocamlmerlin.ml  
-
-	#src/frontend/reference/rqueries.mli \
-	#src/frontend/reference/rqueries.ml  \
-	#src/frontend/reference/reference.ml 
+	src/kernel/mpipeline.ml
 
 PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
+
+ifeq ($(PROJECT),test)
+	RESULT = ocamlmerlin_test
+	
+	SOURCES = $(SOURCES_LIB) \
+						src/frontend/test/ocamlmerlin_test.ml
+else ifeq ($(PROJECT),newprotocol)
+
+else
+	RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
+	
+	SOURCES = $(SOURCES_LIB)            \
+						src/frontend/old/IO_json.mli      \
+						src/frontend/old/IO_json.ml       \
+						src/frontend/old/IO_sexp.mli      \
+						src/frontend/old/IO_sexp.ml       \
+						src/frontend/old/IO.mli           \
+						src/frontend/old/IO.ml            \
+						src/frontend/query_protocol.ml    \
+						src/frontend/query_commands.mli   \
+						src/frontend/query_commands.ml    \
+						src/frontend/old/old_command.mli  \
+						src/frontend/old/old_command.ml   \
+						src/frontend/old/protocol.ml      \
+						src/frontend/old/ocamlmerlin.ml
+endif
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code
