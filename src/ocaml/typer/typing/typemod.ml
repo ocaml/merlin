@@ -1532,16 +1532,20 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
     match sstr with
     | [] -> ([], [], env)
     | pstr :: srem ->
-      let str, sg, new_env =
+      match
         Cmt_format.save_types
           ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure_item str])
         @@ fun () ->
         let desc, sg, new_env = type_str_item env srem pstr in
         { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env },
         sg, new_env
-      in
-      let (str_rem, sig_rem, final_env) = type_struct new_env srem in
-      (str :: str_rem, sg @ sig_rem, final_env)
+      with
+      | (str, sg, new_env) ->
+        let (str_rem, sig_rem, final_env) = type_struct new_env srem in
+        (str :: str_rem, sg @ sig_rem, final_env)
+      | exception exn ->
+        Msupport.raise_error exn;
+        type_struct env srem
   in
   if !Clflags.annotations then
     (* moved to genannot *)
