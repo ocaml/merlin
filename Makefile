@@ -50,6 +50,10 @@ assert_configured: $(CONFIG_FILES)
 $(TARGET): assert_configured
 	 +$(OCAMLMAKEFILE) $@
 
+test: assert_configured
+	 +$(OCAMLMAKEFILE) PROJECT=test
+	 ./ocamlmerlin_test
+
 preprocess:
 	$(MAKE) -f Makefile.preprocess
 
