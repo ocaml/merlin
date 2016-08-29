@@ -49,8 +49,15 @@ let rec find_command name = function
       command
     else find_command name xs
 
+let run buffer query =
+  Logger.logj "New_commands.run" "query" (fun () -> Query_json.dump query);
+  let result = Query_commands.dispatch buffer query in
+  let json = Query_json.json_of_response query result in
+  Logger.logj "New_commands.run" "result" (fun () -> json);
+  json
+
 let all_commands = [
-(*
+
   command "list-modules"
     ~doc:"list-modules -ext .ml -ext .mli ...\n\
           \tlooks into project source paths for files with an extension \
@@ -63,23 +70,15 @@ let all_commands = [
     ]
     ~default:[]
 
-    begin fun buffer exts ->
-      Logger.logj "query" "list-modules"
-        (fun () -> `Assoc ["extensions", `List (List.map Json.string exts)]);
-      let query = Query_protocol.Which_with_ext exts in
-      Query_commands.dispatch buffer
-      let with_ext ext =
-        let modules = Misc.modules_in_path ~ext config.merlin.source_path in
-        List.map Json.string modules
-      in
-      `List (List.concat_map ~f:with_ext exts)
+    begin fun buffer extensions ->
+      run buffer (Query_protocol.List_modules extensions)
     end
   ;
 
   command "path-of-source"
     ~doc:"path-of-source -file a.mli -file a.ml\n\
-          \tlooks for files with a matching name in the project source and \
-          build paths"
+          \tlooks for first file with a matching name in the project source \
+          and build paths"
     ~spec: [
       ("-file",
        "<filename> filename to look for in project paths",
@@ -88,31 +87,13 @@ let all_commands = [
     ]
     ~default:[]
 
-    begin fun pipeline filenames ->
-      let config = Mpipeline.reader_config pipeline in
-      let rec check_path file = function
-        | [] -> raise Not_found
-        | x :: xs ->
-          try Misc.find_in_path_uncap x file
-          with Not_found -> check_path file xs
-      in
-      let paths = [
-        config.merlin.source_path;
-        config.merlin.build_path;
-        config.ocaml.include_dirs;
-      ] in
-      let rec check_filenames = function
-        | [] -> `Null
-        | x :: xs ->
-          try `String (check_path x paths)
-          with Not_found -> check_filenames xs
-      in
-      check_filenames filenames
+    begin fun buffer filenames ->
+      run buffer (Query_protocol.Path_of_source filenames)
     end
   ;
 
   command "completion"
-    ~doc:"completion -position pos -prefix a.ml [-doc]\n\
+    ~doc:"completion -position pos -prefix a.ml [-doc (y|n)]\n\
           \tTODO"
     ~spec: [
       ("-position",
@@ -129,27 +110,11 @@ let all_commands = [
       );
     ]
     ~default:(false,`None,"")
-    begin fun pipeline filenames ->
-      let config = Mpipeline.reader_config pipeline in
-      let rec check_path file = function
-        | [] -> raise Not_found
-        | x :: xs ->
-          try Misc.find_in_path_uncap x file
-          with Not_found -> check_path file xs
-      in
-      let paths = [
-        config.merlin.source_path;
-        config.merlin.build_path;
-        config.ocaml.include_dirs;
-      ] in
-      let rec check_filenames = function
-        | [] -> `Null
-        | x :: xs ->
-          try `String (check_path x paths)
-          with Not_found -> check_filenames xs
-      in
-      Query_commands.dispatch
-      check_filenames filenames
+    begin fun buffer (doc,pos,prefix) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Complete_prefix (prefix,pos,doc))
     end
-  ; *)
+  ;
 ]
