@@ -28,27 +28,27 @@
 
 open Std
 
-val latest_version : Protocol.protocol_version
-val current_version : Protocol.protocol_version ref
+val latest_version : Old_protocol.protocol_version
+val current_version : Old_protocol.protocol_version ref
 
 (* Misc *)
-val default_context : Protocol.Context.t
+val default_context : Old_protocol.Context.t
 val invalid_arguments : unit -> 'a
 val with_location : ?skip_none:bool -> Location.t -> (string * Json.json) list -> Json.json
 
 val optional_position : Json.json list -> Msource.position option
 val mandatory_position : Json.json list -> Msource.position
 
-val request_of_json : Json.json -> Protocol.request
+val request_of_json : Json.json -> Old_protocol.request
 val json_of_response : notifications:(string * string) list ->
-                       Protocol.response -> Json.json
+                       Old_protocol.response -> Json.json
 
-val make_json : on_read:(Unix.file_descr -> unit) ->
+val make_json : ?on_read:(Unix.file_descr -> unit) ->
                 input:Unix.file_descr ->
                 output:Unix.file_descr ->
-                (unit -> Json.json option) * (Json.json -> unit)
+                unit -> (unit -> Json.json option) * (Json.json -> unit)
 
-val make_sexp : on_read:(Unix.file_descr -> unit) ->
+val make_sexp : ?on_read:(Unix.file_descr -> unit) ->
                 input:Unix.file_descr ->
                 output:Unix.file_descr ->
-                (unit -> Json.json option) * (Json.json -> unit)
+                unit -> (unit -> Json.json option) * (Json.json -> unit)

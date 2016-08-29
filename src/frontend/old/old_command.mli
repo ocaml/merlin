@@ -30,4 +30,4 @@ open Sturgeon_stub
 
 val default_config : Mconfig.t ref
 
-val dispatch : Protocol.Context.t -> 'a Protocol.command -> 'a
+val dispatch : Old_protocol.Context.t -> 'a Old_protocol.command -> 'a

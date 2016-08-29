@@ -245,15 +245,15 @@ else
 	RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
 	
 	SOURCES = $(SOURCES_LIB)            \
-		src/frontend/old/IO.mli           \
-		src/frontend/old/IO.ml            \
 		src/frontend/query_protocol.ml    \
 		src/frontend/query_commands.mli   \
 		src/frontend/query_commands.ml    \
+		src/frontend/old/old_IO.mli       \
+		src/frontend/old/old_IO.ml        \
 		src/frontend/old/old_command.mli  \
 		src/frontend/old/old_command.ml   \
-		src/frontend/old/protocol.ml      \
-		src/frontend/old/ocamlmerlin.ml
+		src/frontend/old/old_protocol.ml  \
+		src/frontend/old/old_merlin.ml
 endif
 
 ifeq "$(NATIVE)" "false"

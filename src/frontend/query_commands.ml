@@ -96,7 +96,24 @@ let dump buffer = function
   | (`String ("env" | "fullenv" as kind) :: opt_pos) ->
     with_typer buffer @@ fun pipeline typer ->
     let kind = if kind = "env" then `Normal else `Full in
-    let pos = IO.optional_position opt_pos in
+    let pos =
+      match opt_pos with
+      |  [`String "at"; jpos] ->
+        Some (match jpos with
+            | `String "start" -> `Start
+            | `String "end" -> `End
+            | `Int offset -> `Offset offset
+            | `Assoc props ->
+              begin match List.assoc "line" props, List.assoc "col" props with
+                | `Int line, `Int col -> `Logical (line,col)
+                | _ -> failwith "Incorrect position"
+                | exception Not_found -> failwith "Incorrect position"
+              end
+            | _ -> failwith "Incorrect position"
+          )
+      | [] -> None
+      | _ -> failwith "incorrect position"
+    in
     let env = match pos with
       | None -> Mtyper.get_env typer
       | Some pos ->
@@ -155,7 +172,9 @@ let dump buffer = function
     let paths = Mconfig.build_path (Mpipeline.final_config pipeline) in
     `List (List.map paths ~f:(fun s -> `String s))
 
-  | _ -> IO.invalid_arguments ()
+  | _ -> failwith "known dump commands: \
+                   paths, exn, warnings, flags, tokens, browse, parsetree, \
+                   printast, env/fullenv (at {col:, line:})"
 
 let dispatch ~verbosity buffer (type a) : a Query_protocol.t -> a = function
   | Type_expr (source, pos) ->

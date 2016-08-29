@@ -29,18 +29,18 @@
 open Std
 open Logger
 
-let latest_version : Protocol.protocol_version = `V3
+let latest_version : Old_protocol.protocol_version = `V3
 let current_version = ref `V2
 
 let default_context =
-  {Protocol.Context.
+  {Old_protocol.Context.
     document = None; printer_width = None; printer_verbosity = None}
 
 let invalid_arguments () = failwith "invalid arguments"
 
 exception Failure' = Failure
 open Query_protocol
-open Protocol
+open Old_protocol
 
 let with_location ?(skip_none=false) loc assoc =
   if skip_none && loc = Location.none then
@@ -319,7 +319,7 @@ let request_of_json context =
       request (Sync (Protocol_version (Some n)))
     | _ -> invalid_arguments ()
 
-let json_of_protocol_version : Protocol.protocol_version -> _ = function
+let json_of_protocol_version : Old_protocol.protocol_version -> _ = function
   | `V2 -> `Int 2
   | `V3 -> `Int 3
 
@@ -483,7 +483,7 @@ let request_of_json = function
   | `List jsons -> request_of_json default_context jsons
   | _ -> invalid_arguments ()
 
-let make_json ~on_read ~input ~output =
+let make_json ?(on_read=ignore) ~input ~output () =
   let rec read buf len =
     on_read input;
     try Unix.read input buf 0 len
@@ -502,7 +502,7 @@ let make_json ~on_read ~input ~output =
   in
   input, output
 
-let make_sexp ~on_read ~input ~output =
+let make_sexp ?on_read ~input ~output () =
   (* Fix for emacs: emacs start-process doesn't distinguish between stdout and
      stderr.  So we redirect stderr to /dev/null with sexp frontend. *)
   begin match
@@ -521,7 +521,7 @@ let make_sexp ~on_read ~input ~output =
         Unix.dup2 fd Unix.stderr;
         Unix.close fd
   end;
-  let input' = Sexp.of_file_descr ~on_read input in
+  let input' = Sexp.of_file_descr ?on_read input in
   let input' () = Option.map Sexp.to_json (input' ()) in
   let buf = Buffer.create 8192 in
   let output json =

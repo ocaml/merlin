@@ -29,7 +29,7 @@
 open Std
 open Sturgeon_stub
 open Misc
-open Protocol
+open Old_protocol
 module Printtyp = Type_utils.Printtyp
 
 type buffer = {
@@ -181,16 +181,16 @@ let dispatch_sync state (type a) : a sync_command -> a = function
   | Protocol_version version ->
     begin match version with
       | None -> ()
-      | Some 2 -> IO.current_version := `V2
-      | Some 3 -> IO.current_version := `V3
+      | Some 2 -> Old_IO.current_version := `V2
+      | Some 3 -> Old_IO.current_version := `V3
       | Some _ -> ()
     end;
-    (`Selected !IO.current_version,
-     `Latest IO.latest_version,
+    (`Selected !Old_IO.current_version,
+     `Latest Old_IO.latest_version,
      Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
        My_config.version Sys.ocaml_version)
 
-  | Checkout _ -> IO.invalid_arguments ()
+  | Checkout _ -> Old_IO.invalid_arguments ()
 
 let default_state = lazy (new_state (None, None))
 
