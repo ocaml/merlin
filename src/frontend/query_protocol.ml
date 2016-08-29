@@ -79,22 +79,22 @@ type shape = {
 type is_tail_position = [`No | `Tail_position | `Tail_call]
 
 type _ t =
-  | Type_expr
+  | Type_expr(* *)
     :  string * Msource.position
     -> string t
-  | Type_enclosing
+  | Type_enclosing(* *)
     :  (string * int) option * Msource.position
     -> (Location.t * string * is_tail_position) list t
-  | Enclosing
+  | Enclosing(* *)
     :  Msource.position
     -> Location.t list t
-  | Complete_prefix
+  | Complete_prefix(* *)
     :  string * Msource.position * bool
     -> completions t
-  | Expand_prefix
+  | Expand_prefix(* *)
     :  string * Msource.position
     -> completions t
-  | Document
+  | Document(* *)
     : string option * Msource.position
     -> [ `Found of string
        | `Invalid_context
@@ -104,7 +104,7 @@ type _ t =
        | `Not_found of string * string option
        | `No_documentation
        ] t
-  | Locate
+  | Locate(* *)
     : string option * [ `ML | `MLI ] * Msource.position
     -> [ `Found of string option * Lexing.position
        | `Invalid_context
@@ -114,27 +114,27 @@ type _ t =
        | `Not_found of string * string option
        | `At_origin
        ] t
-  | Jump
+  | Jump(* *)
     : string * Msource.position
     -> [ `Found of Lexing.position
        | `Error of string
        ] t
-  | Case_analysis
+  | Case_analysis(* *)
     : Msource.position * Msource.position -> (Location.t * string) t
-  | Outline
+  | Outline(* *)
     :  outline t
-  | Shape
+  | Shape(* *)
     :  Msource.position
     -> shape list t
-  | Errors
+  | Errors(* *)
     :  Location.error list t
   | Dump
     :  Std.json list
     -> Std.json t
-  | Path_of_source
+  | Path_of_source(* *)
     :  string list
     -> string t
-  | List_modules
+  | List_modules(* *)
     :  string list
     -> string list t
   | Flags_get
@@ -147,7 +147,7 @@ type _ t =
   | Path_list
     :  [`Build|`Source]
     -> string list t
-  | Occurrences
+  | Occurrences(* *)
     : [`Ident_at of Msource.position]
     -> Location.t list t
   | Version

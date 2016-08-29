@@ -94,8 +94,8 @@ let dump (type a) : a t -> json =
           | Some prefix -> `String prefix
         );
       "look-for", (match look_for with
-          | `ML -> `String "ML"
-          | `MLI -> `String "MLI"
+          | `ML -> `String "implementation"
+          | `MLI -> `String "interface"
         );
       "position", mk_position pos;
     ]
