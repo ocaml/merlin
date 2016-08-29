@@ -190,7 +190,12 @@ let dispatch_sync state (type a) : a sync_command -> a = function
      Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
        My_config.version Sys.ocaml_version)
 
-  | Checkout _ -> Old_IO.invalid_arguments ()
+  | Project_get ->
+    let pipeline = make_pipeline state in
+    let config = Mpipeline.final_config pipeline in
+    (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*)
+
+  | Checkout _ -> failwith "invalid arguments"
 
 let default_state = lazy (new_state (None, None))
 

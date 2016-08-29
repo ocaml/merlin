@@ -539,7 +539,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
 
   | Dump args -> dump buffer args
 
-  | Which_path xs ->
+  | Path_of_source xs ->
     let config = Mpipeline.final_config (make_pipeline buffer) in
     let rec aux = function
       | [] -> raise Not_found
@@ -553,7 +553,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     in
     aux xs
 
-  | Which_with_ext exts ->
+  | List_modules exts ->
     let config = Mpipeline.final_config (make_pipeline buffer) in
     let with_ext ext = modules_in_path ~ext
         Mconfig.(config.merlin.source_path) in
@@ -562,11 +562,6 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
   | Flags_get ->
     let (_, config, _) = buffer in
     List.concat Mconfig.(config.merlin.flags_to_apply)
-
-  | Project_get ->
-    let pipeline = make_pipeline buffer in
-    let config = Mpipeline.final_config pipeline in
-    (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*)
 
   | Findlib_list ->
     Fl_package_base.list_packages ()

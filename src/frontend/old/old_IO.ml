@@ -50,22 +50,6 @@ let with_location ?(skip_none=false) loc assoc =
             ("end",   Lexing.json_of_position loc.Location.loc_end) ::
             assoc)
 
-let json_of_error {Location. msg; sub; loc} =
-  let of_sub {Location. msg; loc} =
-    with_location ~skip_none:true loc ["message", `String msg] in
-  let content = [
-    "type"    , `String "typer";
-    "sub"     , `List (List.map ~f:of_sub sub);
-    "valid"   , `Bool true;
-    "message" , `String msg;
-  ] in
-  with_location ~skip_none:true loc content
-
-let error_catcher exn =
-  match Location.error_of_exn exn with
-  | None -> None
-  | Some t -> Some (json_of_error t)
-
 let pos_of_json = function
   | `String "start" -> `Start
   | `String "end" -> `End
@@ -77,11 +61,6 @@ let pos_of_json = function
       with Not_found -> failwith "Incorrect position"
     end
   | _ -> failwith "Incorrect position"
-
-let optional_position = function
-  | [`String "at"; jpos] -> Some (pos_of_json jpos)
-  | [] -> None
-  | _ -> invalid_arguments ()
 
 let mandatory_position = function
   | [`String "at"; jpos] -> pos_of_json jpos
@@ -149,11 +128,6 @@ let rec json_of_outline outline =
   in
   List.map json_of_item outline
 
-let rec json_of_shape { shape_loc; shape_sub } =
-  with_location shape_loc [
-    "children", `List (List.map ~f:json_of_shape shape_sub);
-  ]
-
 let source_or_build = function
   | "source" -> `Source
   | "build"  -> `Build
@@ -178,7 +152,7 @@ let load_or_find = function
   | "find" -> `Find
   | _ -> invalid_arguments ()
 
-let with_failures assoc = function
+let with_failures failures assoc = match failures with
   | `Ok -> assoc
   | `Failures failures ->
     let packages, flags, extensions =
@@ -273,13 +247,13 @@ let request_of_json context =
     | (`String "dump" :: args) ->
       request (Query (Dump args))
     | [`String "which"; `String "path"; `String name] ->
-      request (Query (Which_path [name]))
+      request (Query (Path_of_source [name]))
     | [`String "which"; `String "path"; `List names] ->
-      request (Query (Which_path (string_list names)))
+      request (Query (Path_of_source (string_list names)))
     | [`String "which"; `String "with_ext"; `String ext] ->
-      request (Query (Which_with_ext [ext]))
+      request (Query (List_modules [ext]))
     | [`String "which"; `String "with_ext"; `List exts] ->
-      request (Query (Which_with_ext (string_list exts)))
+      request (Query (List_modules (string_list exts)))
     | [`String "flags" ; `String "set" ; `List flags ] ->
       request (Sync (Flags_set (string_list flags)))
     | [`String "flags" ; `String "get" ] ->
@@ -310,7 +284,7 @@ let request_of_json context =
     | [`String "tell"; pos_start; pos_end; `String content] ->
       request (Sync (Tell (pos_of_json pos_start, pos_of_json pos_end, content)))
     | [`String "project"; `String "get"] ->
-      request (Query Project_get)
+      request (Sync Project_get)
     | [`String "version"] ->
       request (Query Version)
     | [`String "protocol"; `String "version"] ->
@@ -323,102 +297,17 @@ let json_of_protocol_version : Old_protocol.protocol_version -> _ = function
   | `V2 -> `Int 2
   | `V3 -> `Int 3
 
-let json_of_query_command (type a) (command : a Query_protocol.t) (response : a) : json =
-  match command, response with
-  | Type_expr _, str -> `String str
-  | Type_enclosing _, results ->
-    `List (List.map json_of_type_loc results)
-  | Enclosing _, results ->
-    `List (List.map (fun loc -> with_location loc []) results)
-  | Complete_prefix _, compl ->
-    json_of_completions compl
-  | Expand_prefix _, compl ->
-    json_of_completions compl
-  | Document _, resp ->
-    begin match resp with
-      | `No_documentation -> `String "No documentation available"
-      | `Invalid_context -> `String "Not a valid identifier"
-      | `Builtin s ->
-        `String (sprintf "%S is a builtin, no documentation is available" s)
-      | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
-      | `Not_found (i, Some f) ->
-        `String
-          (sprintf "%s was supposed to be in %s but could not be found" i f)
-      | `Not_in_env str ->
-        `String (Printf.sprintf "Not in environment '%s'" str)
-      | `File_not_found msg ->
-        `String msg
-      | `Found doc ->
-        `String doc
-    end
-  | Locate _, resp ->
-    begin match resp with
-      | `At_origin -> `String "Already at definition point"
-      | `Builtin s ->
-        `String (sprintf "%S is a builtin, and it is therefore impossible \
-                          to jump to its definition" s)
-      | `Invalid_context -> `String "Not a valid identifier"
-      | `Not_found (id, None) -> `String ("didn't manage to find " ^ id)
-      | `Not_found (i, Some f) ->
-        `String
-          (sprintf "%s was supposed to be in %s but could not be found" i f)
-      | `Not_in_env str ->
-        `String (Printf.sprintf "Not in environment '%s'" str)
-      | `File_not_found msg ->
-        `String msg
-      | `Found (None,pos) ->
-        `Assoc ["pos", Lexing.json_of_position pos]
-      | `Found (Some file,pos) ->
-        `Assoc ["file",`String file; "pos", Lexing.json_of_position pos]
-    end
-  | Jump _, resp ->
-    begin match resp with
-      | `Error str ->
-        `String str
-      | `Found pos ->
-        `Assoc ["pos", Lexing.json_of_position pos]
-    end
-  | Case_analysis _, ({ Location. loc_start ; loc_end }, str) ->
-    let assoc =
-      `Assoc [
-        "start", Lexing.json_of_position loc_start  ;
-        "end", Lexing.json_of_position loc_end ;
-      ]
-    in
-    `List [ assoc ; `String str ]
-  | Outline, outlines ->
-    `List (json_of_outline outlines)
-  | Shape _, shapes ->
-    `List (List.map ~f:json_of_shape shapes)
-  | Errors, errors ->
-    `List (List.map ~f:json_of_error errors)
-  | Dump _, json -> json
-  | Which_path _, str -> `String str
-  | Which_with_ext _, strs -> json_of_string_list strs
-  | Flags_get, flags ->
-    json_of_string_list flags
-  | Findlib_list, strs -> json_of_string_list strs
-  | Extension_list _, strs -> json_of_string_list strs
-  | Path_list _, strs -> json_of_string_list strs
-  | Project_get, (strs, failures) ->
-    `Assoc (with_failures ["result", json_of_string_list strs] failures)
-  | Occurrences _, locations ->
-    `List (List.map locations
-             ~f:(fun loc -> with_location loc []))
-  | Version, version ->
-    `String version
-
 let json_of_sync_command (type a) (command : a sync_command) (response : a) : json =
   match command, response with
   | Tell _, () -> `Bool true
   | Checkout _, () -> `Bool true
   | Refresh, () -> `Bool true
   | Flags_set _, failures ->
-    `Assoc (with_failures ["result", `Bool true] failures)
+    `Assoc (with_failures failures ["result", `Bool true])
   | Findlib_use _, failures ->
-    `Assoc (with_failures ["result", `Bool true] failures)
+    `Assoc (with_failures failures ["result", `Bool true])
   | Extension_set _, failures ->
-    `Assoc (with_failures ["result", `Bool true] failures)
+    `Assoc (with_failures failures ["result", `Bool true])
   | Path _, () -> `Bool true
   | Path_reset, () -> `Bool true
   | Protocol_version _, (`Selected v, `Latest vm, version) ->
@@ -426,18 +315,20 @@ let json_of_sync_command (type a) (command : a sync_command) (response : a) : js
             "latest", json_of_protocol_version vm;
             "merlin",  `String version
            ]
+  | Project_get, (strs, fails) ->
+    `Assoc (with_failures fails ["result", `List (List.map Json.string strs)])
   | Idle_job, b -> `Bool b
 
 let classify_response = function
   | Failure s | Exception (Failure' s) -> ("failure", `String s)
   | Error error -> ("error", error)
   | Exception exn ->
-    begin match error_catcher exn with
-      | Some error -> ("error", error)
+    begin match Location.error_of_exn exn with
+      | Some error -> ("error", Query_json.json_of_error error)
       | None -> ("exception", `String (Printexc.to_string exn))
     end
   | Return (Query cmd, response) ->
-    ("return", json_of_query_command cmd response)
+    ("return", Query_json.json_of_response cmd response)
   | Return (Sync cmd, response) ->
     ("return", json_of_sync_command cmd response)
 

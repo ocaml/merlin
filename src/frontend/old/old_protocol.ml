@@ -80,6 +80,8 @@ type _ sync_command =
     -> unit sync_command
   | Idle_job
     : bool sync_command
+  | Project_get
+    :  (string list * [`Ok | `Failures of (string * exn) list]) sync_command
 
 type 'a command =
   | Query of 'a Query_protocol.t

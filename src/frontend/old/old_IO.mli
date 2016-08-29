@@ -33,11 +33,6 @@ val current_version : Old_protocol.protocol_version ref
 
 (* Misc *)
 val default_context : Old_protocol.Context.t
-val invalid_arguments : unit -> 'a
-val with_location : ?skip_none:bool -> Location.t -> (string * Json.json) list -> Json.json
-
-val optional_position : Json.json list -> Msource.position option
-val mandatory_position : Json.json list -> Msource.position
 
 val request_of_json : Json.json -> Old_protocol.request
 val json_of_response : notifications:(string * string) list ->

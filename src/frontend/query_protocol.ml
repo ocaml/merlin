@@ -26,8 +26,6 @@
 
 )* }}} *)
 
-open Std
-
 module Compl =
 struct
   type 'desc raw_entry = {
@@ -131,12 +129,12 @@ type _ t =
   | Errors
     :  Location.error list t
   | Dump
-    :  json list
-    -> json t
-  | Which_path
+    :  Std.json list
+    -> Std.json t
+  | Path_of_source
     :  string list
     -> string t
-  | Which_with_ext
+  | List_modules
     :  string list
     -> string list t
   | Flags_get
@@ -149,8 +147,6 @@ type _ t =
   | Path_list
     :  [`Build|`Source]
     -> string list t
-  | Project_get
-    :  (string list * [`Ok | `Failures of (string * exn) list]) t
   | Occurrences
     : [`Ident_at of Msource.position]
     -> Location.t list t

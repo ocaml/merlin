@@ -232,6 +232,7 @@ SOURCES_LIB = \
 	src/kernel/mpipeline.mli          \
 	src/kernel/mpipeline.ml           \
 	src/frontend/query_protocol.ml    \
+	src/frontend/query_json.ml        \
 	src/frontend/query_commands.mli   \
 	src/frontend/query_commands.ml
 
