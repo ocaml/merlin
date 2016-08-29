@@ -39,6 +39,8 @@ SOURCES_LIB = \
 	src/utils/std.ml                  \
 	src/utils/misc.mli                \
 	src/utils/misc.ml                 \
+	src/utils/sexp.mli                \
+	src/utils/sexp.ml                 \
 	src/utils/file_cache.mli          \
 	src/utils/file_cache.ml           \
 	src/utils/logger.mli              \
@@ -243,19 +245,15 @@ else
 	RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
 	
 	SOURCES = $(SOURCES_LIB)            \
-						src/frontend/old/IO_json.mli      \
-						src/frontend/old/IO_json.ml       \
-						src/frontend/old/IO_sexp.mli      \
-						src/frontend/old/IO_sexp.ml       \
-						src/frontend/old/IO.mli           \
-						src/frontend/old/IO.ml            \
-						src/frontend/query_protocol.ml    \
-						src/frontend/query_commands.mli   \
-						src/frontend/query_commands.ml    \
-						src/frontend/old/old_command.mli  \
-						src/frontend/old/old_command.ml   \
-						src/frontend/old/protocol.ml      \
-						src/frontend/old/ocamlmerlin.ml
+		src/frontend/old/IO.mli           \
+		src/frontend/old/IO.ml            \
+		src/frontend/query_protocol.ml    \
+		src/frontend/query_commands.mli   \
+		src/frontend/query_commands.ml    \
+		src/frontend/old/old_command.mli  \
+		src/frontend/old/old_command.ml   \
+		src/frontend/old/protocol.ml      \
+		src/frontend/old/ocamlmerlin.ml
 endif
 
 ifeq "$(NATIVE)" "false"

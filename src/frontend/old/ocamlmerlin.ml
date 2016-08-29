@@ -148,8 +148,8 @@ let main_loop () =
   in
   Old_command.default_config := config;
   let protocol = match protocol with
-    | `Json -> IO_json.make
-    | `Sexp -> IO_sexp.make
+    | `Json -> IO.make_json
+    | `Sexp -> IO.make_sexp
   in
   let input, output =
     protocol ~on_read:ignore ~input:Unix.stdin ~output:Unix.stdout in

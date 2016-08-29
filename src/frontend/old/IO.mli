@@ -42,3 +42,13 @@ val mandatory_position : Json.json list -> Msource.position
 val request_of_json : Json.json -> Protocol.request
 val json_of_response : notifications:(string * string) list ->
                        Protocol.response -> Json.json
+
+val make_json : on_read:(Unix.file_descr -> unit) ->
+                input:Unix.file_descr ->
+                output:Unix.file_descr ->
+                (unit -> Json.json option) * (Json.json -> unit)
+
+val make_sexp : on_read:(Unix.file_descr -> unit) ->
+                input:Unix.file_descr ->
+                output:Unix.file_descr ->
+                (unit -> Json.json option) * (Json.json -> unit)
