@@ -2,8 +2,8 @@ open Std
 
 type command =
     Command : string * Marg.docstring * 'args Marg.spec list * 'args *
-              (Mpipeline.t -> 'args -> json) -> command
+              (Trace.t * Mconfig.t * Msource.t -> 'args -> json) -> command
 
-val queries : command list
+val all_commands : command list
 
 val find_command : string -> command list -> command

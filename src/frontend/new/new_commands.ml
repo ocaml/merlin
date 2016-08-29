@@ -2,16 +2,55 @@ open Std
 
 type command =
     Command : string * Marg.docstring * 'args Marg.spec list * 'args *
-              (Mpipeline.t -> 'args -> json) ->
-    command
+              (Trace.t * Mconfig.t * Msource.t -> 'args -> json) -> command
 
 let command name ?(doc="") ~spec ~default f =
   Command (name, doc, spec, default, f)
 
 open Mconfig
 
-let queries = [
+let marg_position f = Marg.param "position"
+    (function
+      | "start" -> f `Start
+      | "end" -> f `End
+      | str -> match int_of_string str with
+        | n -> f (`Offset n)
+        | exception _ ->
+          match
+            let offset = String.index str ':' in
+            let line = String.sub str ~pos:0 ~len:offset in
+            let col = String.sub str ~pos:(offset+1)
+                ~len:(String.length str - offset - 1) in
+            `Logical (int_of_string line, int_of_string col)
+          with
+          | pos -> f pos
+          | exception _ ->
+            failwithf "expecting position, got %S. \
+                       position can be start|end|<offset>|<line>:<col>, \
+                       where offset, line and col are numbers, \
+                       lines are indexed from 1."
+              str
+    )
 
+let marg_bool f = Marg.param "bool"
+    (function
+      | "y" | "Y" | "true" | "1" -> f true
+      | "n" | "N" | "false" | "0" -> f false
+      | str ->
+        failwithf "expecting boolean (%s), got %S."
+          "y|Y|true|1 / n|N|false|0"
+          str
+    )
+
+let rec find_command name = function
+  | [] -> raise Not_found
+  | (Command (name', _, _, _, _) as command) :: xs ->
+    if name = name' then
+      command
+    else find_command name xs
+
+let all_commands = [
+(*
   command "list-modules"
     ~doc:"list-modules -ext .ml -ext .mli ...\n\
           \tlooks into project source paths for files with an extension \
@@ -24,10 +63,11 @@ let queries = [
     ]
     ~default:[]
 
-    begin fun pipeline exts ->
-      let config = Mpipeline.reader_config pipeline in
+    begin fun buffer exts ->
       Logger.logj "query" "list-modules"
         (fun () -> `Assoc ["extensions", `List (List.map Json.string exts)]);
+      let query = Query_protocol.Which_with_ext exts in
+      Query_commands.dispatch buffer
       let with_ext ext =
         let modules = Misc.modules_in_path ~ext config.merlin.source_path in
         List.map Json.string modules
@@ -72,17 +112,23 @@ let queries = [
   ;
 
   command "completion"
-    ~doc:"completion -position pos -prefix a.ml\n\
-          \tlooks for files with a matching name in the project source and \
-          build paths"
+    ~doc:"completion -position pos -prefix a.ml [-doc]\n\
+          \tTODO"
     ~spec: [
-      ("-file",
-       "<filename> filename to look for in project paths",
-       Marg.param "filename" (fun file files -> file :: files)
-      )
+      ("-position",
+       "<position> Position to complete",
+       marg_position (fun pos (doc,_pos,prefix) -> (doc,pos,prefix))
+      );
+      ("-doc",
+       "<bool> Add docstring to entries",
+       marg_bool (fun doc (_doc,pos,prefix) -> (doc,pos,prefix))
+      );
+      ("-prefix",
+       "<string> Prefix to complete",
+       Marg.param "string" (fun prefix (doc,pos,_prefix) -> (doc,pos,prefix))
+      );
     ]
-    ~default:[]
-
+    ~default:(false,`None,"")
     begin fun pipeline filenames ->
       let config = Mpipeline.reader_config pipeline in
       let rec check_path file = function
@@ -102,14 +148,8 @@ let queries = [
           try `String (check_path x paths)
           with Not_found -> check_filenames xs
       in
+      Query_commands.dispatch
       check_filenames filenames
     end
-  ;
+  ; *)
 ]
-
-let rec find_command name = function
-  | [] -> raise Not_found
-  | (Command (name', _, _, _, _) as command) :: xs ->
-    if name = name' then
-      command
-    else find_command name xs

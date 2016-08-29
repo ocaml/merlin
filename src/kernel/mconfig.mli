@@ -62,7 +62,7 @@ val dump_merlin : merlin -> json
 type query = {
   filename  : string;
   directory : string;
-  terminal_width : int;
+  printer_width : int;
   verbosity : int;
 }
 

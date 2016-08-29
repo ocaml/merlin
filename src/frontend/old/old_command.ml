@@ -211,16 +211,24 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
         Hashtbl.add document_states document state;
         state
   in
+  let config = state.buffer.config in
   (* Printer verbosity *)
-  let verbosity = Option.value ~default:0 context.printer_verbosity in
+  let config = match context.printer_verbosity with
+    | None -> config
+    | Some verbosity ->
+      Mconfig.({config with query = {config.query with verbosity}})
+  in
+  let config = match context.printer_width with
+    | None -> config
+    | Some printer_width ->
+      Mconfig.({config with query = {config.query with printer_width}})
+  in
   (* Printer width *)
   Format.default_width := Option.value ~default:0 context.printer_width;
   (* Actual dispatch *)
   match cmd with
   | Query q ->
-    (*Mreader.with_reader (Buffer.reader state.buffer) @@ fun () -> TODO*)
-    Query_commands.dispatch ~verbosity
-      (state.buffer.config,state.buffer.source) q
+    Query_commands.dispatch (Trace.start (), config,state.buffer.source) q
   | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer context in
     state.buffer <- buffer

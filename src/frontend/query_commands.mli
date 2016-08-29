@@ -29,5 +29,4 @@
 
 open Sturgeon_stub
 
-val dispatch : verbosity:int -> (Mconfig.t * Msource.t) ->
-  'a Query_protocol.t -> 'a
+val dispatch : (Trace.t * Mconfig.t * Msource.t) -> 'a Query_protocol.t -> 'a

@@ -9,18 +9,12 @@ let usage () =
     \  -warn-help   Show description of warning numbers\n\
     \  -flags-help  Show description of accepted compiler flags\n";
   prerr_endline "Query commands are:";
-  List.iter (fun (Rqueries.Command (name, doc, _, _, _)) ->
+  List.iter (fun (New_commands.Command (name, doc, _, _, _)) ->
       prerr_string ("  " ^ name ^ "\n\t");
       prerr_endline doc
-    ) Rqueries.queries
+    ) New_commands.all_commands
 
-let () =
-  let arguments =
-    match Array.to_list Sys.argv with
-    | [] -> []
-    | _ :: args -> args
-  in
-  match arguments with
+let run = function
   | [] ->
     usage ();
     exit 1
@@ -36,12 +30,12 @@ let () =
   | "-flags-help" :: _ ->
     Mconfig.document_arguments stdout
   | query :: raw_args ->
-    match Rqueries.find_command query Rqueries.queries with
+    match New_commands.find_command query New_commands.all_commands with
     | exception Not_found ->
       prerr_endline ("Unknown command " ^ query ^ ".\n");
       usage ();
       exit 1
-    | Rqueries.Command (_name, doc, spec, command_args, command_action) ->
+    | New_commands.Command (_name, doc, spec, command_args, command_action) ->
       match begin
         let config, command_args =
           Marg.parse_all ~warning:prerr_endline
@@ -49,12 +43,8 @@ let () =
             raw_args Mconfig.initial command_args
         in
         let trace = Trace.start () in
-        let source =
-          let text = Misc.string_of_file stdin in
-          Msource.make ~filename:Mconfig.(config.query.filename) ~text
-        in
-        let pipeline = Mpipeline.make trace config source in
-        let json = command_action pipeline command_args in
+        let source = Msource.make config (Misc.string_of_file stdin) in
+        let json = command_action (trace,config,source) command_args in
         Std.Json.pretty_to_channel stdout json;
         print_newline ()
       end with

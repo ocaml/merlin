@@ -60,12 +60,10 @@ let print_completion_entries config entries =
   in
   List.rev_map ~f:(Completion.map_entry postprocess) entries
 
-let make_pipeline (config,source) =
-  let trace = Trace.start () in
+let make_pipeline (trace,config,source) =
   Mpipeline.make trace config source
 
-let with_typer ?for_completion (config,source) f =
-  let trace = Trace.start () in
+let with_typer ?for_completion (trace,config,source) f =
   let pipeline = Mpipeline.make ?for_completion trace config source in
   let typer = Mpipeline.typer_result pipeline in
   Mtyper.with_typer typer @@ fun () -> f pipeline typer
@@ -176,7 +174,11 @@ let dump buffer = function
                    paths, exn, warnings, flags, tokens, browse, parsetree, \
                    printast, env/fullenv (at {col:, line:})"
 
-let dispatch ~verbosity buffer (type a) : a Query_protocol.t -> a = function
+let verbosity (_,config,_) = Mconfig.(config.query.verbosity)
+
+let dispatch buffer (type a) : a Query_protocol.t -> a =
+  let verbosity = verbosity buffer in
+  function
   | Type_expr (source, pos) ->
     with_typer buffer @@ fun pipeline typer ->
     let pos = Msource.get_lexing_pos (Mpipeline.input_source pipeline) pos in
@@ -558,7 +560,7 @@ let dispatch ~verbosity buffer (type a) : a Query_protocol.t -> a = function
     List.concat_map ~f:with_ext exts
 
   | Flags_get ->
-    let (config, _) = buffer in
+    let (_, config, _) = buffer in
     List.concat Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->

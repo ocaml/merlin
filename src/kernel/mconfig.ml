@@ -174,14 +174,14 @@ let merlin_flags = [
 type query = {
   filename  : string;
   directory : string;
-  terminal_width : int;
+  printer_width : int;
   verbosity : int;
 }
 
 let dump_query x = `Assoc [
     "filename"  , `String x.filename;
     "directory" , `String x.directory;
-    "terminal_width", `Int x.terminal_width;
+    "printer_width", `Int x.printer_width;
     "verbosity" , `Int x.verbosity;
   ]
 
@@ -437,7 +437,7 @@ let initial = {
     filename = "*buffer*";
     directory = Sys.getcwd ();
     verbosity = 0;
-    terminal_width = 0;
+    printer_width = 0;
   }
 }
 
