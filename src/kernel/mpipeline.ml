@@ -60,19 +60,10 @@ let process trace config source reader =
   ) in
   { config; source; reader; ppx; typer }
 
-let make trace config source =
+let make ?for_completion trace config source =
   let config = Mconfig.normalize trace config in
   let reader = lazy (
-    let result = Mreader.run trace config source in
-    let config = Mconfig.normalize trace config in
-    result, config
-  ) in
-  process trace config source reader
-
-let make_for_completion trace config source position =
-  let config = Mconfig.normalize trace config in
-  let reader = lazy (
-    let result = Mreader.run ~for_completion:position trace config source in
+    let result = Mreader.run ?for_completion trace config source in
     let config = Mconfig.normalize trace config in
     result, config
   ) in

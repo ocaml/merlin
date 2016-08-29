@@ -60,9 +60,8 @@ let new_buffer (path, dot_merlins) =
       (Option.cons (Option.map ~f:Filename.dirname path) (Option.value ~default:[] dot_merlins))
   }
   in
-  { config = {!default_config with query; merlin};
-    source = Msource.make ~filename:query.filename ~text:""
-  }
+  let config = {!default_config with query; merlin} in
+  { config; source = Msource.make config "" }
 
 let new_state document =
   { buffer = new_buffer document }
@@ -115,11 +114,9 @@ let make_pipeline buffer =
       Mpipeline.make (Trace.start ()) buffer.config buffer.source
 
 let with_typer ?for_completion buffer f =
-  let pipeline = match for_completion with
-    | None -> Mpipeline.make (Trace.start ()) buffer.config buffer.source
-    | Some pos -> Mpipeline.make_for_completion
-                    (Trace.start ()) buffer.config buffer.source pos
-  in
+  let trace = Trace.start () in
+  let pipeline =
+    Mpipeline.make ?for_completion trace buffer.config buffer.source in
   let typer = Mpipeline.typer_result pipeline in
   Mtyper.with_typer typer @@ fun () -> f pipeline typer
 

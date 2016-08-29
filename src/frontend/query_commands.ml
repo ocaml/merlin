@@ -66,10 +66,7 @@ let make_pipeline (config,source) =
 
 let with_typer ?for_completion (config,source) f =
   let trace = Trace.start () in
-  let pipeline = match for_completion with
-    | None -> Mpipeline.make trace config source
-    | Some pos -> Mpipeline.make_for_completion trace config source pos
-  in
+  let pipeline = Mpipeline.make ?for_completion trace config source in
   let typer = Mpipeline.typer_result pipeline in
   Mtyper.with_typer typer @@ fun () -> f pipeline typer
 

@@ -1,7 +1,7 @@
 type t
 
-val make : Trace.t -> Mconfig.t -> Msource.t -> t
-val make_for_completion : Trace.t -> Mconfig.t -> Msource.t -> Msource.position -> t
+val make :
+  ?for_completion:Msource.position -> Trace.t -> Mconfig.t -> Msource.t -> t
 
 val input_config : t -> Mconfig.t
 val input_source : t -> Msource.t

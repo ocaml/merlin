@@ -6,7 +6,7 @@
 type t
 
 (** Making a content from name and contents. *)
-val make : filename:string -> text:string -> t
+val make : Mconfig.t -> string -> t
 
 val dump : t -> Std.json
 

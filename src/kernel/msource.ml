@@ -6,7 +6,7 @@ type t = {
   text: string;
 }
 
-let make ~filename ~text = {filename; text}
+let make config text = {filename = Mconfig.(config.query.filename); text}
 
 (* Position management *)
 
