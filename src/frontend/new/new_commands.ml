@@ -331,4 +331,14 @@ let all_commands = [
         run buffer (Query_protocol.Occurrences (`Ident_at pos))
     end
   ;
+
+  command "findlib-list"
+    ~doc:"findlib-list\n\t\
+          List all findlib packages"
+    ~spec:[]
+    ~default:()
+    begin fun buffer () ->
+      run buffer (Query_protocol.Findlib_list)
+    end
+  ;
 ]

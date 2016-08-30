@@ -564,7 +564,9 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     List.concat Mconfig.(config.merlin.flags_to_apply)
 
   | Findlib_list ->
-    Fl_package_base.list_packages ()
+    let (_, config, _) = buffer in
+    let {Mconfig. conf; path} = config.Mconfig.findlib in
+    Mconfig_dot.list_packages ?conf ~path ()
 
   | Extension_list kind ->
     let pipeline = make_pipeline buffer in

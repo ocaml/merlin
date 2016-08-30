@@ -44,6 +44,7 @@ type merlin = {
   suffixes    : (string * string) list;
   stdlib      : string option;
   reader      : string list;
+  protocol    : [`Json | `Sexp];
 
   flags_to_apply    : string list list;
   dotmerlin_to_load : string list;

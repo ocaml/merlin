@@ -36,6 +36,8 @@ let run = function
       usage ();
       exit 1
     | New_commands.Command (_name, doc, spec, command_args, command_action) ->
+      let notifications = ref [] in
+      Logger.with_notifications notifications @@ fun () ->
       match begin
         let config, command_args =
           Marg.parse_all ~warning:prerr_endline
@@ -44,8 +46,25 @@ let run = function
         in
         let trace = Trace.start () in
         let source = Msource.make config (Misc.string_of_file stdin) in
-        let json = command_action (trace,config,source) command_args in
-        Std.Json.pretty_to_channel stdout json;
+        let json =
+          let class_, message =
+            match command_action (trace,config,source) command_args with
+            | result ->
+              ("return", result)
+            | exception (Failure str) ->
+              ("failure", `String str)
+            | exception exn ->
+              ("exception", `String (Printexc.to_string exn))
+          in
+          let notify (sec,str) = `String (Printf.sprintf "%s: %s" sec str) in
+          `Assoc ["class", `String class_; "value", message;
+                  "notifications",
+                  `List (List.rev_map notify !notifications)];
+        in
+        begin match Mconfig.(config.merlin.protocol) with
+          | `Sexp -> Sexp.tell_sexp print_string (Sexp.of_json json)
+          | `Json -> Std.Json.to_channel stdout json
+        end;
         print_newline ()
       end with
       | () -> exit 0

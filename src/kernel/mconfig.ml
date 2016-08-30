@@ -89,6 +89,7 @@ type merlin = {
   suffixes    : (string * string) list;
   stdlib      : string option;
   reader      : string list;
+  protocol    : [`Json | `Sexp];
 
   flags_to_apply    : string list list;
   dotmerlin_to_load : string list;
@@ -116,12 +117,15 @@ let dump_merlin x = `Assoc [
     );
     "stdlib"      , Json.option Json.string x.stdlib;
     "reader"      , `List (List.map Json.string x.reader);
-
+    "protocol"    , (match x.protocol with
+        | `Json -> `String "json"
+        | `Sexp -> `String "sexp"
+      );
     "dotmerlin_to_load", `List (List.map Json.string x.dotmerlin_to_load);
     "packages_to_load" , `List (List.map Json.string x.packages_to_load);
     "dotmerlin_loaded" , `List (List.map Json.string x.dotmerlin_loaded);
     "packages_loaded"  , `List (List.map Json.string x.packages_loaded);
-    "packages_path"   , `List (List.map Json.string x.packages_path);
+    "packages_path"    , `List (List.map Json.string x.packages_path);
   ]
 
 let merlin_flags = [
@@ -169,6 +173,16 @@ let merlin_flags = [
         {merlin with packages_to_load = pkg :: merlin.packages_to_load}),
     "<package> Load findlib package <package>"
   );
+  (
+    "-protocol",
+    Marg.param "protocol" (fun prot merlin ->
+        match prot with
+        | "json" -> {merlin with protocol = `Json}
+        | "sexp" -> {merlin with protocol = `Sexp}
+        | _ -> invalid_arg "Valid protocols are 'json' and 'sexp'";
+      ),
+    "<protocol> Select frontend protocol ('json' or 'sexp')"
+  );
 ]
 
 type query = {
@@ -208,6 +222,16 @@ let query_flags = [
         {query with verbosity}),
     "<integer> Verbosity determines the number of expansions of aliases in answers"
   );
+  (
+    "-printer-width",
+    Marg.param "integer" (fun width query ->
+        let printer_width =
+          try int_of_string width
+          with _ -> invalid_arg "argument should be an integer"
+        in
+        {query with printer_width}),
+    "<integer> Optimal width for formatting types, signatures, etc"
+  )
 ]
 
 type t = {
@@ -424,6 +448,7 @@ let initial = {
     suffixes    = [];
     stdlib      = None;
     reader      = [];
+    protocol    = `Json;
 
     flags_to_apply    = [];
     dotmerlin_to_load = [];
@@ -467,6 +492,9 @@ let arguments_table =
   List.iter
     (add (fun x -> x.merlin) (fun x merlin -> {x with merlin}))
     merlin_flags;
+  List.iter
+    (add (fun x -> x.query) (fun x query -> {x with query}))
+    query_flags;
   table
 
 let try_parse_argument ~warning args ocaml =
@@ -576,8 +604,8 @@ let global_modules ?(include_current=false) config = (
 
 
 let normalize_step _trace t =
+  let merlin = t.merlin and findlib = t.findlib in
   let open Mconfig_dot in
-  let merlin = t.merlin in
   if merlin.dotmerlin_to_load <> [] then
     let dot = Mconfig_dot.load merlin.dotmerlin_to_load in
     let merlin = {
@@ -604,7 +632,11 @@ let normalize_step _trace t =
     { t with merlin }
   else if merlin.packages_to_load <> [] then
     (* FIXME Don't ignore ppx *)
-    let _, path, _ppx = path_of_packages merlin.packages_to_load in
+    let _, path, _ppx = path_of_packages
+        ?conf:findlib.conf
+        ~path:findlib.path
+        merlin.packages_to_load
+    in
     { t with merlin =
                { merlin with
                  packages_path = path @ merlin.packages_path;

@@ -330,24 +330,29 @@ let ppx_of_package ?(predicates=[]) setup pkg =
   List.fold_left ppxopts ~init:setup
     ~f:(fun setup (ppx,opts) -> Ppxsetup.add_ppxopts ppx opts setup)
 
-let findlib_path_cache = ref []
-
 let path_separator =
   match Sys.os_type with
     | "Cygwin"
     | "Win32"  -> ";"
     | _ -> ":"
 
-let path_of_packages ?(findlib_path=[]) packages  =
-  if findlib_path <> !findlib_path_cache then begin
-      let env_ocamlpath =
-        if findlib_path = [] then
-          None
-        else
-          Some(String.concat path_separator findlib_path) in
-      Findlib.init ?env_ocamlpath ();
-      findlib_path_cache := findlib_path
-  end;
+let set_findlib_path =
+  let findlib_cache = ref ("",[]) in
+  fun ?(conf="") ?(path=[]) () ->
+    if (conf,path) <> !findlib_cache then begin
+      let env_ocamlpath = match path with
+        | [] -> None
+        | path -> Some (String.concat ~sep:path_separator path)
+      and config = match conf with
+        | "" -> None
+        | s -> Some s
+      in
+      Findlib.init ?env_ocamlpath ?config ();
+      findlib_cache := (conf,path)
+    end
+
+let path_of_packages ?conf ?path packages =
+  set_findlib_path ?conf ?path ();
   let f pkg =
     try Either.R (Findlib.package_deep_ancestors [] [pkg])
     with exn ->
@@ -360,3 +365,7 @@ let path_of_packages ?(findlib_path=[]) packages  =
   let path = List.map ~f:Findlib.package_directory packages in
   let ppxs = List.fold_left ~f:ppx_of_package packages ~init:Ppxsetup.empty in
   `Failures failures, path, ppxs
+
+let list_packages ?conf ?path () =
+  set_findlib_path ?conf ?path ();
+  Fl_package_base.list_packages ()
