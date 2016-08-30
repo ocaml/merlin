@@ -312,10 +312,10 @@ return (LOC1 . LOC2)."
 
 (defun merlin/unmake-point (point)
   "Destruct POINT to line / col."
-  (save-excursion (goto-char point)
-                  (list (cons 'assoc nil)
-                        (cons 'line (line-number-at-pos nil))
-                        (cons 'col (current-column)))))
+  (save-excursion
+    (goto-char point)
+    (beginning-of-line)
+    `((assoc . nil) (line . ,(line-number-at-pos nil)) (col . ,(- point (point))))))
 
 (defun bounds-of-ocaml-atom-at-point ()
   "Return the start and end points of an ocaml atom near point.
