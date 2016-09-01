@@ -162,6 +162,43 @@ let all_commands = [
     end
   ;
 
+  command "type-enclosing"
+    ~doc:"type-enclosing -position pos [-expression expr -cursor n]\n\t\
+          TODO"
+    ~spec: [
+      ("-position",
+       "<position> Position to complete",
+       marg_position (fun pos (expr,cursor,_pos) -> (expr,cursor,pos))
+      );
+      ("-expression",
+       "<string> Expression to type",
+       Marg.param "string" (fun expr (_expr,cursor,pos) -> (expr,cursor,pos))
+      );
+      ("-cursor",
+       "<int> Position of the cursor inside expression",
+       Marg.param "int" (fun cursor (expr,_cursor,pos) ->
+           match int_of_string cursor with
+           | cursor -> (expr,cursor,pos)
+           | exception exn ->
+             failwith "cursor should be an integer"
+         )
+      );
+    ]
+    ~default:("",-1,`None)
+    begin fun buffer (expr,cursor,pos) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        let expr =
+          if expr = "" then None
+          else
+            let cursor = if cursor = -1 then String.length expr else cursor in
+            Some (expr, cursor)
+        in
+        run buffer (Query_protocol.Type_enclosing (expr,pos))
+    end
+  ;
+
   command "enclosing"
     ~doc:"enclosing -position pos\n\t\
           TODO"
@@ -339,6 +376,27 @@ let all_commands = [
     ~default:()
     begin fun buffer () ->
       run buffer (Query_protocol.Findlib_list)
+    end
+  ;
+
+  command "extension-list"
+    ~doc:"extension-list [-status (all|enabled|disabled)]\n\t\
+          List extensions"
+    ~spec: [
+      ("-status",
+       "<all|enabled|disabled> Filter extensions",
+       Marg.param "<all|enabled|disabled>"
+         (fun status _status -> match status with
+            | "all" -> `All
+            | "enabled" -> `Enabled
+            | "disabled" -> `Disabled
+            | _ -> failwith "-status should be one of all, disabled or enabled"
+         )
+      );
+    ]
+    ~default:`All
+    begin fun buffer status ->
+      run buffer (Query_protocol.Extension_list status)
     end
   ;
 ]
