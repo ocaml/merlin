@@ -44,6 +44,15 @@ let run = function
             Mconfig.arguments_table spec
             raw_args Mconfig.initial command_args
         in
+        let config = Mconfig.(match config.query.directory with
+            | "" -> config
+            | dir ->
+              let merlin = config.merlin in
+              let merlin = {merlin with dotmerlin_to_load =
+                                          dir :: merlin.dotmerlin_to_load} in
+              {config with merlin}
+          )
+        in
         let trace = Trace.start () in
         let source = Msource.make config (Misc.string_of_file stdin) in
         let json =
