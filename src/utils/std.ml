@@ -725,19 +725,58 @@ let let_ref r v f =
 let failwithf fmt = Printf.ksprintf failwith fmt
 
 module Shell = struct
-  (* FIXME: Simply split on spaces *)
   let split_command str =
     let comps = ref [] in
-    let buf = Buffer.create 16 in
+    let dirty = ref false in
+    let buf   = Buffer.create 16 in
     let flush () =
-      match Buffer.contents buf with
-      | "" -> ()
-      | str -> comps := str :: !comps
+      if !dirty then (
+        comps := Buffer.contents buf :: !comps;
+        dirty := false;
+        Buffer.clear buf;
+      )
     in
-    for i = 0 to String.length str do
-      match str.[i] with
-      | ' ' | '\t' | '\n' -> flush ()
-      | x -> Buffer.add_char buf x
+    let i = ref 0 and len = String.length str in
+    let unescape = function
+      | 'n' -> '\n'
+      | 'r' -> '\r'
+      | 't' -> '\t'
+      |  x  -> x
+    in
+    while !i < len do
+      let c = str.[!i] in
+      incr i;
+      match c with
+      | ' ' | '\t' | '\n' | '\r' -> flush ()
+      | '\\' ->
+        dirty := true;
+        if !i < len then (
+          Buffer.add_char buf (unescape str.[!i]);
+          incr i
+        )
+      | '\'' ->
+        dirty := true;
+        while !i < len && str.[!i] <> '\'' do
+          Buffer.add_char buf str.[!i];
+          incr i;
+        done;
+        incr i
+      | '"' ->
+        dirty := true;
+        while !i < len && str.[!i] <> '"' do
+          (match str.[!i] with
+           | '\\' ->
+             incr i;
+             if !i < len then
+               Buffer.add_char buf (unescape str.[!i]);
+           | x -> Buffer.add_char buf x
+          );
+          incr i;
+        done;
+        incr i
+      | x ->
+        dirty := true;
+        Buffer.add_char buf x
     done;
     flush ();
     List.rev !comps
