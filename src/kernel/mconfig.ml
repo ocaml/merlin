@@ -91,6 +91,8 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
 
+  failures    : string list;
+
   flags_to_apply    : string list list;
   dotmerlin_to_load : string list;
   packages_to_load  : string list;
@@ -168,10 +170,26 @@ let merlin_flags = [
      look for .merlin here or in a parent directory"
   );
   (
+    "-extension",
+    Marg.param "extension" (fun extension merlin ->
+        match Extension.lookup extension with
+        | None -> invalid_arg "Unknown extension"
+        | Some _ ->
+          {merlin with extensions = extension :: merlin.extensions}),
+    "<extension> Load merlin syntax extension"
+  );
+  (
     "-package",
     Marg.param "package" (fun pkg merlin ->
         {merlin with packages_to_load = pkg :: merlin.packages_to_load}),
-    "<package> Load findlib package <package>"
+    "<package> Load findlib package"
+  );
+  (
+    "-flags",
+    Marg.param "string" (fun flags merlin ->
+        {merlin with flags_to_apply =
+                       Shell.split_command flags :: merlin.flags_to_apply}),
+    "<quoted flags> Unescape argument and interpret it as more flags"
   );
   (
     "-protocol",
@@ -450,6 +468,8 @@ let initial = {
     reader      = [];
     protocol    = `Json;
 
+    failures    = [];
+
     flags_to_apply    = [];
     dotmerlin_to_load = [];
     packages_to_load  = [];
@@ -497,6 +517,13 @@ let arguments_table =
     query_flags;
   table
 
+let flags_for_completion () =
+  List.sort ~cmp:compare (
+    "-dot-merlin" :: "-reader" ::
+    List.map (fun (x,_,_) -> x) findlib_flags @
+    List.map (fun (x,_,_) -> x) ocaml_flags
+  )
+
 let try_parse_argument ~warning args ocaml =
   match args with
   | [] -> None
@@ -538,9 +565,7 @@ let document_arguments oc =
   print_doc ocaml_flags;
   output_string oc "Flags affecting Findlib behavior:\n";
   print_doc findlib_flags;
-  output_string oc "Accepted but ineffective compiler flags:\n";
-  List.iter (Printf.fprintf oc "  %s\n") ocaml_ignored_flags;
-  List.iter (Printf.fprintf oc "  %s _\n") ocaml_ignored_parametrized_flags
+  output_string oc "Flags accepted by ocamlc and ocamlopt but not affecting merlin will be ignored.\n"
 
 let source_path config = (
   config.query.directory ::
@@ -602,7 +627,6 @@ let global_modules ?(include_current=false) config = (
     | filename -> List.remove (Misc.unitname filename) modules
 )
 
-
 let normalize_step _trace t =
   let merlin = t.merlin and findlib = t.findlib in
   let open Mconfig_dot in
@@ -632,7 +656,7 @@ let normalize_step _trace t =
     { t with merlin }
   else if merlin.packages_to_load <> [] then
     (* FIXME Don't ignore ppx *)
-    let _, path, _ppx = path_of_packages
+    let path, _ppx, failures = path_of_packages
         ?conf:findlib.conf
         ~path:findlib.path
         merlin.packages_to_load
@@ -642,6 +666,7 @@ let normalize_step _trace t =
                  packages_path = path @ merlin.packages_path;
                  packages_to_load = [];
                  packages_loaded = merlin.packages_to_load @ merlin.packages_loaded;
+                 failures = failures @ merlin.failures
                }
     }
   else if merlin.flags_to_apply <> [] then
@@ -651,11 +676,13 @@ let normalize_step _trace t =
                                flags_applied = flagss @ merlin.flags_applied;
                              } }
     in
-    List.fold_left ~f:(fun t flags ->
-        let warning = ignore in
-        let t, () = Marg.parse_all ~warning arguments_table [] flags t () in
-        t
+    let failures = ref merlin.failures in
+    let warning failure = failures := failure :: !failures in
+    let t = List.fold_left ~f:(fun t flags ->
+        fst (Marg.parse_all ~warning arguments_table [] flags t ())
       ) ~init:t flagss
+    in
+    {t with merlin = {t.merlin with failures = !failures}}
   else
     t
 

@@ -628,7 +628,8 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
       List.map ~f:get_loc ts
 
     in
-    let locs = match Browse_raw.node_is_constructor tnode.Browse_tree.t_node with
+    let locs =
+      match Browse_raw.node_is_constructor tnode.Browse_tree.t_node with
       | Some d -> constructor_occurrence d.Location.txt
       | None -> ident_occurrence ()
     in

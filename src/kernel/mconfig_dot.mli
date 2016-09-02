@@ -47,9 +47,9 @@ type config = {
 (** Load one or more .merlin file *)
 val load : string list -> config
 
-(* FIXME: Move elsewhere, processing of findlib packages.
-   FIXME: Findlib directive is ignored for the moment. *)
 val path_of_packages : ?conf:string -> ?path:string list -> string list ->
-  [`Failures of (string * exn) list] * string list * Ppxsetup.t
+  (string list (* packages *) *
+   Ppxsetup.t *
+   string list (* failures *))
 
 val list_packages : ?conf:string -> ?path:string list -> unit -> string list

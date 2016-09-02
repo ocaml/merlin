@@ -46,6 +46,8 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
 
+  failures    : string list;
+
   flags_to_apply    : string list list;
   dotmerlin_to_load : string list;
   packages_to_load  : string list;
@@ -85,6 +87,8 @@ val normalize : Trace.t -> t -> t
 val is_normalized : t -> bool
 
 val arguments_table : t Marg.table
+
+val flags_for_completion : unit -> string list
 
 val document_arguments : out_channel -> unit
 

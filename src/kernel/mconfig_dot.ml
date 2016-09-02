@@ -353,18 +353,23 @@ let set_findlib_path =
 
 let path_of_packages ?conf ?path packages =
   set_findlib_path ?conf ?path ();
-  let f pkg =
-    try Either.R (Findlib.package_deep_ancestors [] [pkg])
-    with exn ->
-      Logger.notify "findlib" "%s: %s" pkg (Printexc.to_string exn);
-      Either.L (pkg, exn)
+  let f name (pkgs,failures) =
+    match Findlib.package_deep_ancestors [] [name] with
+    | pkg -> (pkg @ pkgs, failures)
+    | exception (Fl_package_base.No_such_package (name, "")) ->
+      (pkgs, sprintf "Failed to load %S" name :: failures)
+    | exception (Fl_package_base.No_such_package (name, msg)) ->
+      (pkgs, sprintf "Failed to load %S: %s" name msg :: failures)
+    | exception exn ->
+      let failure = sprintf "Failed to load %S: %a" name
+          (fun () -> Printexc.to_string) exn in
+      (pkgs, failure :: failures)
   in
-  let packages = List.map ~f packages in
-  let failures, packages = Either.split packages in
-  let packages = List.filter_dup (List.concat packages) in
+  let packages, failures = List.fold_right ~f ~init:([],[]) packages in
+  let packages = List.filter_dup packages in
   let path = List.map ~f:Findlib.package_directory packages in
   let ppxs = List.fold_left ~f:ppx_of_package packages ~init:Ppxsetup.empty in
-  `Failures failures, path, ppxs
+  path, ppxs, failures
 
 let list_packages ?conf ?path () =
   set_findlib_path ?conf ?path ();

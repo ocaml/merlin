@@ -57,7 +57,7 @@
     ((merlin-company--is-module candidate)
      (merlin/display-in-type-buffer
       (merlin/call "type-expression"
-                   "-position" (point)
+                   "-position" (merlin/unmake-point (point))
                    "-expression" (substring-no-properties candidate))))
 
     (t (merlin/display-in-type-buffer
@@ -104,7 +104,7 @@
          (ignore-errors
            (let ((data (merlin/locate arg)))
              (when (listp data)
-               (let ((filename (lookup-default 'file data buffer-file-name))
+               (let ((filename (merlin-lookup 'file data buffer-file-name))
                      (linum (cdr (assoc 'line (assoc 'pos data)))))
                  (cons filename linum))))))
         (candidates

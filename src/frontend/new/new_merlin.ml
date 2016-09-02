@@ -39,11 +39,15 @@ let run = function
       let notifications = ref [] in
       Logger.with_notifications notifications @@ fun () ->
       match begin
+        let fails = ref [] in
         let config, command_args =
-          Marg.parse_all ~warning:prerr_endline
+          Marg.parse_all ~warning:(fun fail -> fails := fail :: !fails)
             Mconfig.arguments_table spec
             raw_args Mconfig.initial command_args
         in
+        let config =
+          let failures = !fails in
+          Mconfig.({config with merlin = {config.merlin with failures}}) in
         let config = Mconfig.(match config.query.directory with
             | "" -> config
             | dir ->

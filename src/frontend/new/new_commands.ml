@@ -58,37 +58,25 @@ let run buffer query =
 
 let all_commands = [
 
-  command "list-modules"
-    ~doc:"list-modules -ext .ml -ext .mli ...\n\t\
-          looks into project source paths for files with an extension \
-          matching and prints the corresponding module name"
-    ~spec:[
-      ("-ext",
-       "<extension> file extensions to look for",
-       Marg.param "extension" (fun ext exts -> ext :: exts)
-      )
-    ]
-    ~default:[]
-
-    begin fun buffer extensions ->
-      run buffer (Query_protocol.List_modules extensions)
-    end
-  ;
-
-  command "path-of-source"
-    ~doc:"path-of-source -file a.mli -file a.ml\n\
-          \tlooks for first file with a matching name in the project source \
-          and build paths"
+  command "case-analysis"
+    ~doc:"case-analysis -start position -end position\n\t\
+          TODO"
     ~spec: [
-      ("-file",
-       "<filename> filename to look for in project paths",
-       Marg.param "filename" (fun file files -> file :: files)
-      )
+      ("-start",
+       "<position> Where analysis starts",
+       marg_position (fun startp (_startp,endp) -> (startp,endp))
+      );
+      ("-end",
+       "<position> Where analysis ends",
+       marg_position (fun endp (startp,_endp) -> (startp,endp))
+      );
     ]
-    ~default:[]
-
-    begin fun buffer filenames ->
-      run buffer (Query_protocol.Path_of_source filenames)
+    ~default:(`Offset (-1), `Offset (-1))
+    begin fun buffer -> function
+      | (`Offset (-1), _) -> failwith "-start <pos> is mandatory"
+      | (_, `Offset (-1)) -> failwith "-end <pos> is mandatory"
+      | (startp, endp) ->
+        run buffer (Query_protocol.Case_analysis (startp,endp))
     end
   ;
 
@@ -118,6 +106,56 @@ let all_commands = [
     end
   ;
 
+  command "document"
+    ~doc:"document -position pos [-identifier ident]\n\t\
+          TODO"
+    ~spec: [
+      ("-position",
+       "<position> Position to complete",
+       marg_position (fun pos (ident,_pos) -> (ident,pos))
+      );
+      ("-identifier",
+       "<string> Identifier",
+       Marg.param "string" (fun ident (_ident,pos) -> (Some ident,pos))
+      );
+    ]
+    ~default:(None,`None)
+    begin fun buffer (ident,pos) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Document (ident, pos))
+    end
+  ;
+
+  command "enclosing"
+    ~doc:"enclosing -position pos\n\t\
+          TODO"
+    ~spec: [
+      ("-position",
+       "<position> Position to complete",
+       marg_position (fun pos _pos -> pos)
+      );
+    ]
+    ~default:`None
+    begin fun buffer pos ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Enclosing pos)
+    end
+  ;
+
+  command "errors"
+    ~doc:"errors\n\t\
+          TODO"
+    ~spec:[]
+    ~default:()
+    begin fun buffer () ->
+      run buffer (Query_protocol.Errors)
+    end
+  ;
+
   command "expand-prefix"
     ~doc:"expand-prefix -position pos -prefix ident\n\t\
           TODO"
@@ -140,25 +178,176 @@ let all_commands = [
     end
   ;
 
-  command "type-expression"
-    ~doc:"type-expression -position pos -expression expr\n\t\
+  command "extension-list"
+    ~doc:"extension-list [-status (all|enabled|disabled)]\n\t\
+          List extensions"
+    ~spec: [
+      ("-status",
+       "<all|enabled|disabled> Filter extensions",
+       Marg.param "<all|enabled|disabled>"
+         (fun status _status -> match status with
+            | "all" -> `All
+            | "enabled" -> `Enabled
+            | "disabled" -> `Disabled
+            | _ -> failwith "-status should be one of all, disabled or enabled"
+         )
+      );
+    ]
+    ~default:`All
+    begin fun buffer status ->
+      run buffer (Query_protocol.Extension_list status)
+    end
+  ;
+
+  command "findlib-list"
+    ~doc:"findlib-list\n\t\
+          List all findlib packages"
+    ~spec:[]
+    ~default:()
+    begin fun buffer () ->
+      run buffer (Query_protocol.Findlib_list)
+    end
+  ;
+
+  command "flags-list"
+    ~doc:"flags-list\n\t\
+          List flags"
+    ~spec:[]
+    ~default:()
+    begin fun buffer () ->
+      `List (List.map Json.string (Mconfig.flags_for_completion ()))
+    end
+  ;
+
+  command "jump"
+    ~doc:"locate -target target -position pos\n\t\
+          TODO"
+    ~spec: [
+      ("-target",
+       "<string> Entity to jump to",
+       Marg.param "string" (fun target (_,pos) -> (target,pos))
+      );
+      ("-position",
+       "<position> Position to complete",
+       marg_position (fun pos (target,_pos) -> (target,pos))
+      );
+    ]
+    ~default:("",`None)
+    begin fun buffer (target,pos) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Jump (target,pos))
+    end
+  ;
+
+  command "list-modules"
+    ~doc:"list-modules -ext .ml -ext .mli ...\n\t\
+          looks into project source paths for files with an extension \
+          matching and prints the corresponding module name"
+    ~spec:[
+      ("-ext",
+       "<extension> file extensions to look for",
+       Marg.param "extension" (fun ext exts -> ext :: exts)
+      )
+    ]
+    ~default:[]
+
+    begin fun buffer extensions ->
+      run buffer (Query_protocol.List_modules extensions)
+    end
+  ;
+
+  command "locate"
+    ~doc:"locate -prefix prefix -position pos \
+          [-look-for (interface|implementation)]\n\t\
+          TODO"
+    ~spec: [
+      ("-prefix",
+       "<string> Prefix to complete",
+       Marg.param "string" (fun prefix (_,pos,kind) -> (Some prefix,pos,kind))
+      );
+      ("-position",
+       "<position> Position to complete",
+       marg_position (fun pos (prefix,_pos,kind) -> (prefix,pos,kind))
+      );
+      ("-look-for",
+       "<interface|implementation> Prefer opening interface or implementation",
+       Marg.param "<interface|implementation>"
+         (fun kind (prefix,pos,_) -> match kind with
+            | "interface" -> (prefix,pos,`MLI)
+            | "implementation" -> (prefix,pos,`ML)
+            | str ->
+              failwithf "expecting interface or implementation, got %S." str)
+      );
+    ]
+    ~default:(None,`None,`MLI)
+    begin fun buffer (prefix,pos,lookfor) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Locate (prefix,lookfor,pos))
+    end
+  ;
+
+  command "occurrences"
+    ~doc:"occurrences -identifier-at pos\n\t\
+          TODO"
+    ~spec: [
+      ("-identifier-at",
+       "<position> Position to complete",
+       marg_position (fun pos _pos -> (`Ident_at pos))
+      );
+    ]
+    ~default:`None
+    begin fun buffer -> function
+      | `None -> failwith "-identifier-at <pos> is mandatory"
+      | `Ident_at pos ->
+        run buffer (Query_protocol.Occurrences (`Ident_at pos))
+    end
+  ;
+
+  command "outline"
+    ~doc:"outline\n\t\
+          TODO"
+    ~spec:[]
+    ~default:()
+    begin fun buffer () ->
+      run buffer (Query_protocol.Outline)
+    end
+  ;
+
+  command "path-of-source"
+    ~doc:"path-of-source -file a.mli -file a.ml\n\
+          \tlooks for first file with a matching name in the project source \
+          and build paths"
+    ~spec: [
+      ("-file",
+       "<filename> filename to look for in project paths",
+       Marg.param "filename" (fun file files -> file :: files)
+      )
+    ]
+    ~default:[]
+
+    begin fun buffer filenames ->
+      run buffer (Query_protocol.Path_of_source filenames)
+    end
+  ;
+
+  command "shape"
+    ~doc:"shape -position pos\n\t\
           TODO"
     ~spec: [
       ("-position",
        "<position> Position to complete",
-       marg_position (fun pos (expr,_pos) -> (expr,pos))
-      );
-      ("-expression",
-       "<string> Expression to type",
-       Marg.param "string" (fun expr (_expr,pos) -> (expr,pos))
+       marg_position (fun pos _pos -> pos)
       );
     ]
-    ~default:("",`None)
-    begin fun buffer (expr,pos) ->
-      match pos with
+    ~default:`None
+    begin fun buffer -> function
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
-        run buffer (Query_protocol.Type_expr (expr,pos))
+        run buffer (Query_protocol.Shape pos)
     end
   ;
 
@@ -199,204 +388,45 @@ let all_commands = [
     end
   ;
 
-  command "enclosing"
-    ~doc:"enclosing -position pos\n\t\
+  command "type-expression"
+    ~doc:"type-expression -position pos -expression expr\n\t\
           TODO"
     ~spec: [
       ("-position",
        "<position> Position to complete",
-       marg_position (fun pos _pos -> pos)
+       marg_position (fun pos (expr,_pos) -> (expr,pos))
       );
-    ]
-    ~default:`None
-    begin fun buffer pos ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Enclosing pos)
-    end
-  ;
-
-  command "document"
-    ~doc:"document -position pos [-identifier ident]\n\t\
-          TODO"
-    ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (ident,_pos) -> (ident,pos))
-      );
-      ("-identifier",
-       "<string> Identifier",
-       Marg.param "string" (fun ident (_ident,pos) -> (Some ident,pos))
-      );
-    ]
-    ~default:(None,`None)
-    begin fun buffer (ident,pos) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Document (ident, pos))
-    end
-  ;
-
-  command "locate"
-    ~doc:"locate -prefix prefix -position pos \
-          [-look-for (interface|implementation)]\n\t\
-          TODO"
-    ~spec: [
-      ("-prefix",
-       "<string> Prefix to complete",
-       Marg.param "string" (fun prefix (_,pos,kind) -> (Some prefix,pos,kind))
-      );
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (prefix,_pos,kind) -> (prefix,pos,kind))
-      );
-      ("-look-for",
-       "<interface|implementation> Prefer opening interface or implementation",
-       Marg.param "<interface|implementation>"
-         (fun kind (prefix,pos,_) -> match kind with
-            | "interface" -> (prefix,pos,`MLI)
-            | "implementation" -> (prefix,pos,`ML)
-            | str ->
-              failwithf "expecting interface or implementation, got %S." str)
-      );
-    ]
-    ~default:(None,`None,`MLI)
-    begin fun buffer (prefix,pos,lookfor) ->
-      match pos with
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Locate (prefix,lookfor,pos))
-    end
-  ;
-
-  command "jump"
-    ~doc:"locate -target target -position pos\n\t\
-          TODO"
-    ~spec: [
-      ("-target",
-       "<string> Entity to jump to",
-       Marg.param "string" (fun target (_,pos) -> (target,pos))
-      );
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos (target,_pos) -> (target,pos))
+      ("-expression",
+       "<string> Expression to type",
+       Marg.param "string" (fun expr (_expr,pos) -> (expr,pos))
       );
     ]
     ~default:("",`None)
-    begin fun buffer (target,pos) ->
+    begin fun buffer (expr,pos) ->
       match pos with
       | `None -> failwith "-position <pos> is mandatory"
       | #Msource.position as pos ->
-        run buffer (Query_protocol.Jump (target,pos))
+        run buffer (Query_protocol.Type_expr (expr,pos))
     end
   ;
 
-  command "case-analysis"
-    ~doc:"case-analysis -start position -end position\n\t\
-          TODO"
-    ~spec: [
-      ("-start",
-       "<position> Where analysis starts",
-       marg_position (fun startp (_startp,endp) -> (startp,endp))
-      );
-      ("-end",
-       "<position> Where analysis ends",
-       marg_position (fun endp (startp,_endp) -> (startp,endp))
-      );
-    ]
-    ~default:(`Offset (-1), `Offset (-1))
-    begin fun buffer -> function
-      | (`Offset (-1), _) -> failwith "-start <pos> is mandatory"
-      | (_, `Offset (-1)) -> failwith "-end <pos> is mandatory"
-      | (startp, endp) ->
-        run buffer (Query_protocol.Case_analysis (startp,endp))
-    end
-  ;
-
-  command "outline"
-    ~doc:"outline\n\t\
+  (* Implemented without support from Query_protocol.  This command might be
+     refactored if it proves useful for old protocol too.  *)
+  command "check-configuration"
+    ~doc:"check-configuration\n\t\
           TODO"
     ~spec:[]
     ~default:()
-    begin fun buffer () ->
-      run buffer (Query_protocol.Outline)
+    begin fun (trace, config, source) () ->
+      let pipeline = Mpipeline.make trace config source in
+      let config = Mpipeline.final_config pipeline in
+      `Assoc [
+        "dot_merlins", `List (List.rev_map Json.string
+                                Mconfig.(config.merlin.dotmerlin_loaded));
+        "failures", `List (List.map Json.string
+                             Mconfig.(config.merlin.failures));
+      ]
     end
   ;
 
-  command "errors"
-    ~doc:"errors\n\t\
-          TODO"
-    ~spec:[]
-    ~default:()
-    begin fun buffer () ->
-      run buffer (Query_protocol.Errors)
-    end
-  ;
-
-  command "shape"
-    ~doc:"shape -position pos\n\t\
-          TODO"
-    ~spec: [
-      ("-position",
-       "<position> Position to complete",
-       marg_position (fun pos _pos -> pos)
-      );
-    ]
-    ~default:`None
-    begin fun buffer -> function
-      | `None -> failwith "-position <pos> is mandatory"
-      | #Msource.position as pos ->
-        run buffer (Query_protocol.Shape pos)
-    end
-  ;
-
-  command "occurrences"
-    ~doc:"occurrences -identifier-at pos\n\t\
-          TODO"
-    ~spec: [
-      ("-identifier-at",
-       "<position> Position to complete",
-       marg_position (fun pos _pos -> (`Ident_at pos))
-      );
-    ]
-    ~default:`None
-    begin fun buffer -> function
-      | `None -> failwith "-identifier-at <pos> is mandatory"
-      | `Ident_at pos ->
-        run buffer (Query_protocol.Occurrences (`Ident_at pos))
-    end
-  ;
-
-  command "findlib-list"
-    ~doc:"findlib-list\n\t\
-          List all findlib packages"
-    ~spec:[]
-    ~default:()
-    begin fun buffer () ->
-      run buffer (Query_protocol.Findlib_list)
-    end
-  ;
-
-  command "extension-list"
-    ~doc:"extension-list [-status (all|enabled|disabled)]\n\t\
-          List extensions"
-    ~spec: [
-      ("-status",
-       "<all|enabled|disabled> Filter extensions",
-       Marg.param "<all|enabled|disabled>"
-         (fun status _status -> match status with
-            | "all" -> `All
-            | "enabled" -> `Enabled
-            | "disabled" -> `Disabled
-            | _ -> failwith "-status should be one of all, disabled or enabled"
-         )
-      );
-    ]
-    ~default:`All
-    begin fun buffer status ->
-      run buffer (Query_protocol.Extension_list status)
-    end
-  ;
 ]
