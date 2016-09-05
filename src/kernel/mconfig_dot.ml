@@ -293,9 +293,7 @@ let ppx_of_package ?(predicates=[]) setup pkg =
   in
   let resolve_path = Findlib.resolve_path ~base:d ~explicit:true in
   let ppx =
-    try
-      Some(resolve_path
-             (Findlib.package_property predicates pkg "ppx"))
+    try Some(resolve_path (Findlib.package_property predicates pkg "ppx"))
     with Not_found -> None
   and ppxopts =
     try

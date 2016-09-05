@@ -46,16 +46,18 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
 
-  failures    : string list;
-
   flags_to_apply    : string list list;
   dotmerlin_to_load : string list;
   packages_to_load  : string list;
-  packages_path     : string list;
 
   flags_applied    : string list list;
   dotmerlin_loaded : string list;
   packages_loaded  : string list;
+
+  packages_path : string list;
+  packages_ppx  : Ppxsetup.t;
+
+  failures    : string list;
 }
 
 val dump_merlin : merlin -> json

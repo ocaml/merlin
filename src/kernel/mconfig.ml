@@ -91,16 +91,19 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
 
-  failures    : string list;
-
   flags_to_apply    : string list list;
   dotmerlin_to_load : string list;
   packages_to_load  : string list;
-  packages_path     : string list;
 
   flags_applied    : string list list;
   dotmerlin_loaded : string list;
   packages_loaded  : string list;
+
+  packages_path : string list;
+  packages_ppx  : Ppxsetup.t;
+
+  failures    : string list;
+
 }
 
 let dump_merlin x = `Assoc [
@@ -468,15 +471,17 @@ let initial = {
     reader      = [];
     protocol    = `Json;
 
-    failures    = [];
-
     flags_to_apply    = [];
     dotmerlin_to_load = [];
     packages_to_load  = [];
     flags_applied     = [];
     dotmerlin_loaded  = [];
     packages_loaded   = [];
-    packages_path     = [];
+
+    packages_path = [];
+    packages_ppx  = Ppxsetup.empty;
+
+    failures = [];
   };
   query = {
     filename = "*buffer*";
@@ -655,17 +660,17 @@ let normalize_step _trace t =
     } in
     { t with merlin }
   else if merlin.packages_to_load <> [] then
-    (* FIXME Don't ignore ppx *)
-    let path, _ppx, failures = path_of_packages
+    let path, ppx, failures = path_of_packages
         ?conf:findlib.conf
         ~path:findlib.path
         merlin.packages_to_load
     in
     { t with merlin =
                { merlin with
-                 packages_path = path @ merlin.packages_path;
                  packages_to_load = [];
                  packages_loaded = merlin.packages_to_load @ merlin.packages_loaded;
+                 packages_path = path @ merlin.packages_path;
+                 packages_ppx  = Ppxsetup.union ppx merlin.packages_ppx;
                  failures = failures @ merlin.failures
                }
     }
