@@ -378,10 +378,10 @@ return (LOC1 . LOC2)."
       (let ((ob (current-buffer)))
         (with-current-buffer ib
           (apply 'call-process-region (point-min) (point-max) path nil ob nil
-                 "merlin3" (car args) "-protocol" "sexp" (cdr args))))
+                 "single" (car args) "-protocol" "sexp" (cdr args))))
       (buffer-string))))
 
-(defun merlin/call (command &rest args)
+(defun merlin--call-merlin (command &rest args)
   "TODO"
   ; Really start process
   (let* ((binary      (merlin-command))
@@ -402,19 +402,22 @@ return (LOC1 . LOC2)."
                    (cons "-flags" merlin-buffer-flags))
 
                  args))
-    (let* ((result (car (read-from-string
-                          (merlin--call-process binary (cons command args)))))
-           (notifications (cdr-safe (assoc 'notifications result)))
-           (class (cdr-safe (assoc 'class result)))
-           (value (cdr-safe (assoc 'value result))))
-      (dolist (notification notifications)
-        (message "(merlin) %s" notification))
-      (cond ((string-equal class "return") value)
-            ((string-equal class "failure")
-             (error "merlin-mode failure: %S" value))
-            ((string-equal class "error")
-             (error "merlin: %S" value))
-            (t (error "unknown answer: %S:%S" class value))))))
+    (merlin--call-process binary (cons command args))))
+
+(defun merlin/call (command &rest args)
+  "TODO"
+  (let* ((result (car (read-from-string (merlin--call-merlin command args))))
+         (notifications (cdr-safe (assoc 'notifications result)))
+         (class (cdr-safe (assoc 'class result)))
+         (value (cdr-safe (assoc 'value result))))
+    (dolist (notification notifications)
+      (message "(merlin) %s" notification))
+    (cond ((string-equal class "return") value)
+          ((string-equal class "failure")
+           (error "merlin-mode failure: %S" value))
+          ((string-equal class "error")
+           (error "merlin: %S" value))
+          (t (error "unknown answer: %S:%S" class value)))))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
@@ -1431,7 +1434,7 @@ Returns the position."
   "Print the version of the ocamlmerlin binary."
   (interactive)
   (with-demoted-errors "Error invoking merlin: %S"
-    (message "%s (from shell)" (merlin/call "-version"))))
+    (message "%s (from shell)" (merlin--call-merlin "-version"))))
 
 (defun merlin--configuration ()
   (when (or merlin-configuration-function merlin-grouping-function)
