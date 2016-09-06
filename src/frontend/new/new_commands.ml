@@ -49,8 +49,9 @@ let rec find_command name = function
       command
     else find_command name xs
 
-let run buffer query =
+let run (_, config, source as buffer) query =
   Logger.logj "New_commands.run" "query" (fun () -> Query_json.dump query);
+  Mreader.with_ambient_reader config source @@ fun () ->
   let result = Query_commands.dispatch buffer query in
   let json = Query_json.json_of_response query result in
   Logger.logj "New_commands.run" "result" (fun () -> json);

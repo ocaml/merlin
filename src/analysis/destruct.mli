@@ -68,7 +68,7 @@
 
 *)
 
-val node : Mconfig.t -> loc:Location.t ->
+val node : Mconfig.t -> Msource.t -> loc:Location.t ->
            Browse_raw.node -> Browse_raw.node list -> Location.t * string
 (** [node ~loc ~env parents current_node] returns a location indicating which
     portion of the buffer must be replaced and the string to replace it with. *)

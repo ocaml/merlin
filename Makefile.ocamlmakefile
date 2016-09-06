@@ -195,6 +195,8 @@ SOURCES_LIB = \
 	src/kernel/mocaml.ml              \
 	src/kernel/msource.mli            \
 	src/kernel/msource.ml             \
+	src/kernel/mreader_extend.mli     \
+	src/kernel/mreader_extend.ml      \
 	src/kernel/mreader_explain.ml     \
 	src/kernel/mreader_lexer.mli      \
 	src/kernel/mreader_lexer.ml       \

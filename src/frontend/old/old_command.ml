@@ -82,7 +82,7 @@ let checkout_buffer =
       end;
       buffer
 
-let print_completion_entries config entries =
+let print_completion_entries config source entries =
   let input_ref = ref [] and output_ref = ref [] in
   let preprocess entry =
     match Completion.raw_info_printer entry with
@@ -99,9 +99,7 @@ let print_completion_entries config entries =
       `Concat (s,r)
   in
   let entries = List.map ~f:(Completion.map_entry preprocess) entries in
-  let outcomes =
-    Mreader.print_batch_outcome config !input_ref
-  in
+  let outcomes = Mreader.print_batch_outcome config source !input_ref in
   List.iter2 (:=) !output_ref outcomes;
   let postprocess = function
     | `String s -> s
@@ -233,6 +231,7 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
   (* Actual dispatch *)
   match cmd with
   | Query q ->
+    Mreader.with_ambient_reader config state.buffer.source @@ fun () ->
     Query_commands.dispatch (Trace.start (), config,state.buffer.source) q
   | Sync (Checkout context) when state == Lazy.force default_state ->
     let buffer = checkout_buffer context in

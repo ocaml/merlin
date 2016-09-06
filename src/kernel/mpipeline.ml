@@ -24,7 +24,11 @@ type t = {
 let input_config t = t.config
 let input_source t = t.source
 
+let with_reader t f =
+  Mreader.with_ambient_reader t.config t.source f
+
 let reader t = Lazy.force t.reader
+
 let ppx    t = Lazy.force t.ppx
 let typer  t = Lazy.force t.typer
 
@@ -63,7 +67,7 @@ let process trace config source reader =
 let make ?for_completion trace config source =
   let config = Mconfig.normalize trace config in
   let reader = lazy (
-    let result = Mreader.run ?for_completion trace config source in
+    let result = Mreader.parse ?for_completion trace config source in
     let config = Mconfig.normalize trace config in
     result, config
   ) in

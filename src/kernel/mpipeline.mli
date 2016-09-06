@@ -6,6 +6,7 @@ val make :
 val input_config : t -> Mconfig.t
 val input_source : t -> Msource.t
 
+val with_reader : t -> (unit -> 'a) -> 'a
 val reader_config : t -> Mconfig.t
 val reader_comments : t -> (string * Location.t) list
 val reader_parsetree : t -> Mreader.parsetree
