@@ -24,17 +24,43 @@ let process ?with_config ?for_completion filename text =
 (* All tests *)
 
 let assert_errors ?with_config
-    name ?(lexer=false) ?(parser=false) ?(typer=false) source =
-  test name (fun () ->
-      let m = process ?with_config name source in
-      let no b = if not b then "no " else "" in
-      if (M.reader_lexer_errors m <> []) <> lexer then
-        failwith ("expected " ^ no lexer ^ "lexer errors");
-      if (M.reader_parser_errors m <> []) <> parser then
-        failwith ("expected " ^ no parser ^ "parser errors");
-      Mtyper.with_typer (M.typer_result m) @@ fun () ->
-      if (M.typer_errors m <> []) <> typer then
-        failwith ("expected " ^ no typer ^ "typer errors");
+    filename ?(lexer=false) ?(parser=false) ?(typer=false) source =
+  test filename (fun () ->
+      let m = process ?with_config filename source in
+      let lexer_errors  = M.reader_lexer_errors m in
+      let parser_errors = M.reader_parser_errors m in
+      let typer_errors  =
+        Mtyper.with_typer (M.typer_result m) @@ fun () ->
+        M.typer_errors m
+      in
+      let fmt_msg exn =
+        match Location.error_of_exn exn with
+        | None -> Printexc.to_string exn
+        | Some err -> err.Location.msg
+      in
+      let expect_or_not b str =
+        (if b then "expecting " else "unexpected ") ^ str ^ "\n" ^
+        String.concat "\n- " ("Errors: " :: List.map fmt_msg
+                                (lexer_errors @ parser_errors @ typer_errors))
+      in
+      if (lexer_errors <> []) <> lexer then
+        failwith (expect_or_not lexer "lexer errors");
+      if (parser_errors <> []) <> parser then
+        failwith (expect_or_not parser "parser errors");
+      if (typer_errors <> []) <> typer then
+        failwith (expect_or_not typer "typer errors");
+    )
+
+let assertf b fmt =
+  if b then
+    Printf.ikfprintf ignore () fmt
+  else
+    Printf.ksprintf failwith fmt
+
+let validate_output ?with_config filename source command pred =
+  test filename (fun () ->
+      let config, source = from_source ?with_config ~filename source in
+      pred (Query_commands.dispatch (Trace.start (), config, source) command)
     )
 
 let tests = [
@@ -58,7 +84,7 @@ let tests = [
 
       assert_errors "ml_in_mli.mli"
         ~parser:true
-        "let x = 4";
+        "let x = 4 val x : int";
 
       assert_errors "mli_in_ml.ml"
         ~typer:true (* vals are no allowed in ml files and detected
@@ -110,6 +136,19 @@ let tests = [
 
       assert_errors ~flags:["-nolabels"] "classic_ko_1.ml"
         "let f ~x = () in f ~x:(); f ()";
+    ]
+  );
+
+  group "misc" (
+    [
+      assert_errors "relaxed_external.ml"
+        "external test : unit = \"bs\"";
+
+      validate_output "occurrences.ml"
+        "let foo _ = ()\nlet () = foo 4\n"
+        (Query_protocol.Occurrences (`Ident_at (`Offset 5)))
+        (fun locations ->
+           assertf (List.length locations = 2) "expected two locations")
     ]
   );
 
