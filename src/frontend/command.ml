@@ -664,7 +664,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
 
   | Occurrences (`Ident_at pos) ->
     with_typer buffer @@ fun typer ->
-    let str = Typer.to_browse (Typer.result ~pos typer) in
+    let str = Typer.to_browse (Typer.result typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let tnode = match Browse.enclosing pos [str] with
       | Some t -> BrowseT.of_browse t
