@@ -66,7 +66,9 @@ let parse_all ~warning global_spec local_spec =
     match parse_one ~warning global_spec local_spec args global local with
     | Some (args, global, local) -> normal_parsing args global local
     | None -> match args with
-      | _ :: args -> resume_parsing args global local
+      | arg :: args ->
+        warning ("unknown flag " ^ arg);
+        resume_parsing args global local
       | [] -> (global, local)
   and resume_parsing args global local =
     let args = match args with

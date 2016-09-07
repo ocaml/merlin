@@ -33,13 +33,14 @@ let process ?with_config ?for_completion filename text =
 (* All tests *)
 
 let assert_errors ?with_config
-    filename ?(lexer=false) ?(parser=false) ?(typer=false) source =
+    filename ?(lexer=false) ?(parser=false) ?(typer=false) ?(config=false) source =
   test filename (fun () ->
       let m = process ?with_config filename source in
       let lexer_errors  = M.reader_lexer_errors m in
       let parser_errors = M.reader_parser_errors m in
-      let typer_errors  =
+      let failures, typer_errors  =
         Mtyper.with_typer (M.typer_result m) @@ fun () ->
+        Mconfig.((M.final_config m).merlin.failures),
         M.typer_errors m
       in
       let fmt_msg exn =
@@ -49,8 +50,9 @@ let assert_errors ?with_config
       in
       let expect_or_not b str =
         (if b then "expecting " else "unexpected ") ^ str ^ "\n" ^
-        String.concat "\n- " ("Errors: " :: List.map fmt_msg
-                                (lexer_errors @ parser_errors @ typer_errors))
+        String.concat "\n- " ("Errors: " :: List.map_end fmt_msg
+                                (lexer_errors @ parser_errors @ typer_errors)
+                                failures)
       in
       if (lexer_errors <> []) <> lexer then
         failwith (expect_or_not lexer "lexer errors");
@@ -58,6 +60,8 @@ let assert_errors ?with_config
         failwith (expect_or_not parser "parser errors");
       if (typer_errors <> []) <> typer then
         failwith (expect_or_not typer "typer errors");
+      if (failures <> []) <> config then
+        failwith (expect_or_not config "configuration failures");
     )
 
 let assertf b fmt =
@@ -162,6 +166,42 @@ let tests = [
     ]
   );
 
+  group "path-expansion" (
+    let test_ppx_path name flag_list ?cwd item =
+      test name (fun () ->
+          let open Mconfig in
+          let m = process ~with_config:(fun cfg ->
+              let merlin = {cfg.merlin with
+                            flags_to_apply = [{flag_cwd = cwd; flag_list}]} in
+              {cfg with merlin}
+            ) "relative_path.ml" ""
+          in
+          let config = Mpipeline.reader_config m in
+          let dump () cfg = Json.pretty_to_string (Mconfig.dump cfg) in
+          assertf
+            (List.mem item config.ocaml.ppx)
+            "Expecting %s in config.\nConfig:\n%a"
+            item dump config;
+        )
+    in
+    [
+      (* Simple name is not expanded *)
+      test_ppx_path "simple_name" ["-ppx"; "test1"] "test1";
+
+      (* Absolute name is not expanded *)
+      test_ppx_path "absolute_path" ["-ppx"; "/test2"] "/test2";
+
+      (* Relative name is expanded *)
+      test_ppx_path "relative_path" ~cwd:"/tmp"
+        ["-ppx"; "./test3"] "/tmp/test3";
+
+      (* Quoted flags inherit path *)
+      test_ppx_path "quoted_path" ~cwd:"/tmp"
+        ["-flags"; "-ppx ./test4"] "/tmp/test4";
+    ]
+
+  );
+
   group "misc" (
     [
       assert_errors "relaxed_external.ml"
@@ -180,6 +220,17 @@ let tests = [
           | `Found (Some "locate.ml", pos)
             when Lexing.split_pos pos = (1, 4) -> ()
           | _ -> assertf false "Expecting match at position (1, 4)");
+
+      assert_errors "invalid_flag.ml" ~config:true
+        ~with_config:(fun cfg ->
+            let open Mconfig in
+            let flags_to_apply = [{
+                flag_cwd = None;
+                flag_list = ["-lalala"]
+              }] in
+            Mconfig.({cfg with merlin = {cfg.merlin with flags_to_apply}}))
+         ""
+      ;
     ]
   );
 
@@ -206,9 +257,10 @@ and run_test indent = function
       | exception exn ->
         incr failed;
         Printf.printf "KO\n%!";
-        Printf.eprintf "%sTest %s failed with exception:\n%s%s\n%!"
+        Printf.eprintf "%sTest %s failed with error:\n%s%s\n%!"
           indent name
-          indent (Printexc.to_string exn)
+          indent
+          (match exn with Failure str -> str | exn -> Printexc.to_string exn)
     end
   | Group (name, tests) ->
     Printf.printf "%s-> %s\n" indent name;

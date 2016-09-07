@@ -61,7 +61,16 @@ let canonicalize_filename path =
   Misc.canonicalize_filename ?cwd:!cwd path
 
 let marg_path f =
-  Marg.param "path" f
+  Marg.param "path" (fun path acc -> f (canonicalize_filename path) acc)
+
+let marg_exec_path f =
+  Marg.param "path" (fun path acc ->
+      (* Don't canonicalize if relative path can be resolved by looking up
+         PATH. *)
+      if Filename.basename path = path then
+        f path acc
+      else
+        f (canonicalize_filename path) acc)
 
 (** {1 Findlib configuration} *)
 
@@ -159,6 +168,8 @@ let dump_merlin x =
     "dotmerlin_loaded" , `List (List.map Json.string x.dotmerlin_loaded);
     "packages_loaded"  , `List (List.map Json.string x.packages_loaded);
     "packages_path"    , `List (List.map Json.string x.packages_path);
+
+    "failures"         , `List (List.map Json.string x.failures);
   ]
 
 let merlin_flags = [
@@ -429,13 +440,13 @@ let ocaml_flags = [
   );
   (
     "-ppx",
-    marg_path (fun command ocaml ->
+    marg_exec_path (fun command ocaml ->
         {ocaml with ppx = command :: ocaml.ppx}),
     "<command> Pipe abstract syntax trees through preprocessor <command>"
   );
   (
     "-pp",
-    marg_path (fun pp ocaml -> {ocaml with pp}),
+    marg_exec_path (fun pp ocaml -> {ocaml with pp}),
     "<command> Pipe sources through preprocessor <command>"
   );
   ( "-w",
@@ -718,14 +729,14 @@ let normalize_step _trace t =
                                flags_applied = flagss @ merlin.flags_applied;
                              } }
     in
-    let failures = ref merlin.failures in
+    let failures = ref [] in
     let warning failure = failures := failure :: !failures in
     let t = List.fold_left ~f:(fun t {flag_cwd; flag_list} ->
         fst (resolve_relative_path ?cwd:flag_cwd
                (Marg.parse_all ~warning arguments_table [] flag_list t))
       ) ~init:t flagss
     in
-    {t with merlin = {t.merlin with failures = !failures}}
+    {t with merlin = {t.merlin with failures = !failures @ t.merlin.failures}}
   else
     t
 

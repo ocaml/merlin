@@ -81,7 +81,7 @@ type _ sync_command =
   | Idle_job
     : bool sync_command
   | Flags_get
-    :  string list t
+    :  string list sync_command
   | Project_get
     :  (string list * [`Ok | `Failures of (string * exn) list]) sync_command
 

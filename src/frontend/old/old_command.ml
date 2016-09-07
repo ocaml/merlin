@@ -131,7 +131,7 @@ let dispatch_sync state (type a) : a sync_command -> a = function
 
   | Flags_set flags ->
     let open Mconfig in
-    let flags_to_apply = [flags] in
+    let flags_to_apply = [{flag_cwd = None; flag_list = flags}] in
     let config = state.config in
     state.config <- {config with merlin = {config.merlin with flags_to_apply}};
     `Ok
@@ -189,8 +189,10 @@ let dispatch_sync state (type a) : a sync_command -> a = function
        My_config.version Sys.ocaml_version)
 
   | Flags_get ->
-    let (_, config, _) = buffer in
-    List.concat Mconfig.(config.merlin.flags_to_apply)
+    let pipeline = make_pipeline state in
+    let config = Mpipeline.final_config pipeline in
+    List.concat_map ~f:(fun f -> f.Mconfig.flag_list)
+      Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->
     let pipeline = make_pipeline state in

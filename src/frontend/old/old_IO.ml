@@ -257,7 +257,7 @@ let request_of_json context =
     | [`String "flags" ; `String "set" ; `List flags ] ->
       request (Sync (Flags_set (string_list flags)))
     | [`String "flags" ; `String "get" ] ->
-      request (Query (Flags_get))
+      request (Sync (Flags_get))
     | [`String "find"; `String "use"; `List packages]
     | (`String "find" :: `String "use" :: packages) ->
       request (Sync (Findlib_use (string_list packages)))
@@ -302,6 +302,8 @@ let json_of_sync_command (type a) (command : a sync_command) (response : a) : js
   | Tell _, () -> `Bool true
   | Checkout _, () -> `Bool true
   | Refresh, () -> `Bool true
+  | Flags_get, flags ->
+    `List (List.map Json.string flags)
   | Flags_set _, failures ->
     `Assoc (with_failures failures ["result", `Bool true])
   | Findlib_use _, failures ->
