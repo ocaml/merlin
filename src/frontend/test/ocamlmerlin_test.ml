@@ -1,3 +1,5 @@
+open Std
+
 (* Poor man's test framework *)
 type name = string
 
@@ -8,6 +10,13 @@ type test =
 let test name f = Single (name, f)
 
 let group name tests = Group (name, tests)
+
+exception Detail of exn * string
+let () = Printexc.register_printer (function
+    | (Detail (exn, msg)) ->
+      Some (Printexc.to_string exn ^ "\nAdditional information:\n" ^ msg)
+    | _ -> None
+  )
 
 (* Setting up merlin *)
 module M = Mpipeline
@@ -57,10 +66,18 @@ let assertf b fmt =
   else
     Printf.ksprintf failwith fmt
 
-let validate_output ?with_config filename source command pred =
+let validate_output ?with_config filename source query pred =
   test filename (fun () ->
       let config, source = from_source ?with_config ~filename source in
-      pred (Query_commands.dispatch (Trace.start (), config, source) command)
+      let result =
+        Query_commands.dispatch (Trace.start (), config, source) query in
+      try pred result
+      with exn ->
+        let info = `Assoc [
+            "query", Query_json.dump query;
+            "result", Query_json.json_of_response query result;
+          ] in
+        raise (Detail (exn, Json.pretty_to_string info))
     )
 
 let tests = [
@@ -148,7 +165,15 @@ let tests = [
         "let foo _ = ()\nlet () = foo 4\n"
         (Query_protocol.Occurrences (`Ident_at (`Offset 5)))
         (fun locations ->
-           assertf (List.length locations = 2) "expected two locations")
+           assertf (List.length locations = 2) "expected two locations");
+
+      validate_output "locate.ml"
+        "let foo _ = ()\nlet () = foo 4\n"
+        (Query_protocol.Locate (None, `ML, `Offset 26))
+        (function
+          | `Found (Some "locate.ml", pos)
+            when Lexing.split_pos pos = (1, 4) -> ()
+          | _ -> assertf false "Expecting match at position (1, 4)");
     ]
   );
 

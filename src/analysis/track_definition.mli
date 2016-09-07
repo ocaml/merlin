@@ -32,6 +32,7 @@ val from_string
   -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
   -> [ `ML | `MLI ]
+  -> string
   -> [> `File_not_found of string
       | `Found of string option * Lexing.position
       | `Builtin of string

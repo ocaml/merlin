@@ -267,16 +267,19 @@ module Utils = struct
 
   let find_file_with_path ~config ?(with_fallback=false) file path =
     let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
-    let fallback =
-      if not with_fallback then "" else
-      match file with
-      | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
-      | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
-      | File.CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
-      | File.CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
-    in
-    let rec attempt_search synonyms =
-      match synonyms with
+    if Misc.unitname fname = Misc.unitname Mconfig.(config.query.filename) then
+      Mconfig.(config.query.filename)
+    else
+      let fallback =
+        if not with_fallback then "" else
+          match file with
+          | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
+          | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
+          | File.CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
+          | File.CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
+      in
+      let rec attempt_search synonyms =
+        match synonyms with
         | [] -> raise Not_found
         | [synonym_pair] ->
           (* Upon trying the final [synonym_pair], search failure should raise *)
@@ -284,7 +287,7 @@ module Utils = struct
           let fname = synonym_extension fname synonym_pair in
           (
             try Misc.find_in_path_uncap ~fallback path fname with
-                Not_found -> raise (File.Not_found file)
+              Not_found -> raise (File.Not_found file)
           )
         | synonym_pair :: ((rest1 :: rest2) as rest_synonyms) ->
           (* If cannot find match, continue searching through [rest_synonyms] *)
@@ -292,10 +295,10 @@ module Utils = struct
           let fname = synonym_extension fname synonym_pair in
           (
             try Misc.find_in_path_uncap ~fallback path fname with
-                Not_found -> attempt_search rest_synonyms
+              Not_found -> attempt_search rest_synonyms
           )
-    in
-    attempt_search Mconfig.(config.merlin.suffixes)
+      in
+      attempt_search Mconfig.(config.merlin.suffixes)
 
   let find_file ~config ?with_fallback file =
     find_file_with_path ~config ?with_fallback file @@
@@ -732,19 +735,18 @@ let inspect_context browse path pos =
     | _ ->
       Some Unknown
 
-let from_string ~config ~env ~local_defs ~pos switch =
+let from_string ~config ~env ~local_defs ~pos switch path =
   let browse = Mbrowse.of_typedtree local_defs in
-  let unitname = Misc.unitname Mconfig.(config.query.filename) in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [Browse_tree.of_browse browse]) in
-  let lid = Longident.parse unitname in
-  match inspect_context [browse] unitname pos with
+  let lid = Longident.parse path in
+  match inspect_context [browse] path pos with
   | None ->
     log "from_string" "already at origin, doing nothing" ;
     `At_origin
   | Some ctxt ->
     logf "from_string" "looking for the source of '%s' (prioritizing %s files)"
-      unitname (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
+      path (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
     let_ref sources_path Mconfig.(config.merlin.source_path) @@ fun () ->
     let_ref cfg_cmt_path Mconfig.(config.merlin.cmt_path) @@ fun () ->
     let_ref loadpath     Mconfig.(config.merlin.cmt_path) @@ fun () ->
@@ -752,14 +754,14 @@ let from_string ~config ~env ~local_defs ~pos switch =
       from_longident ~config ~pos ~env ~lazy_trie ctxt switch lid
     with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
-    | `Builtin -> `Builtin unitname
+    | `Builtin -> `Builtin path
     | `Found (loc, _) ->
       try
         match find_source ~config loc with
         | None     -> `Found (None, loc.Location.loc_start)
         | Some src -> `Found (Some src, loc.Location.loc_start)
       with
-      | File.Not_found ft -> File.explain_not_found unitname ft
+      | File.Not_found ft -> File.explain_not_found path ft
       | Multiple_matches lst ->
         let matches = String.concat lst ~sep:", " in
         `File_not_found (

@@ -420,7 +420,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     begin match
         Track_definition.from_string
           ~config:(Mpipeline.final_config pipeline)
-          ~env ~local_defs ~pos ml_or_mli
+          ~env ~local_defs ~pos ml_or_mli path
     with
     | `Found (file, pos) ->
       Logger.log "track_definition" "Locate"
