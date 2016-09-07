@@ -35,6 +35,11 @@ val dump_findlib : findlib -> json
 
 (** {1 Merlin high-level settings} *)
 
+type flag_list = {
+  flag_cwd : string option;
+  flag_list : string list;
+}
+
 type merlin = {
   build_path  : string list;
   source_path : string list;
@@ -46,11 +51,11 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
 
-  flags_to_apply    : string list list;
+  flags_to_apply    : flag_list list;
   dotmerlin_to_load : string list;
   packages_to_load  : string list;
 
-  flags_applied    : string list list;
+  flags_applied    : flag_list list;
   dotmerlin_loaded : string list;
   packages_loaded  : string list;
 

@@ -28,9 +28,6 @@ val unit_ignore : 'acc t
 (** Action doing nothing and dropping one argument *)
 val param_ignore : 'acc t
 
-(** Lift an action operating on a sub-state *)
-val lens : ('a -> 'b) -> ('a -> 'b -> 'a) -> 'b t -> 'a t
-
 (** {1 Parsing of argument lists} *)
 
 type docstring = string

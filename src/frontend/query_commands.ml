@@ -143,7 +143,8 @@ let dump buffer = function
   | [`String "flags"] ->
     let pipeline = make_pipeline buffer in
     let prepare_flags flags =
-      `List (List.map Json.string (List.concat flags)) in
+      `List (List.map Json.string (List.concat_map flags
+                                     ~f:(fun f -> f.Mconfig.flag_list))) in
     let user = prepare_flags
         Mconfig.((Mpipeline.input_config pipeline).merlin.flags_to_apply) in
     let applied = prepare_flags
@@ -563,10 +564,6 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     let with_ext ext = modules_in_path ~ext
         Mconfig.(config.merlin.source_path) in
     List.concat_map ~f:with_ext exts
-
-  | Flags_get ->
-    let (_, config, _) = buffer in
-    List.concat Mconfig.(config.merlin.flags_to_apply)
 
   | Findlib_list ->
     let (_, config, _) = buffer in

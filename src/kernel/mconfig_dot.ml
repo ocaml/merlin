@@ -228,13 +228,13 @@ let prepend_config {path; directives} config =
       let flags = List.rev (rev_split_flags flags) in
       {config with flags = flags :: config.flags}
     | `STDLIB path ->
-      {config with stdlib = canonicalize_filename path}
+      {config with stdlib = canonicalize_filename ~cwd path}
     | `FINDLIB path ->
-      {config with findlib = Some (canonicalize_filename path)}
+      {config with findlib = Some (canonicalize_filename ~cwd path)}
     | `READER reader ->
       {config with reader}
     | `FINDLIB_PATH path ->
-      let canon_path = canonicalize_filename path in
+      let canon_path = canonicalize_filename ~cwd path in
       { config with findlib_path = canon_path :: config.findlib_path }
   ) directives
 
@@ -267,8 +267,6 @@ let load filenames =
             ~f:(fun config file -> prepend_config file config))
   in
   postprocess_config config
-
-let same = (==)
 
 (* FIXME: Move elsewhere, processing of findlib packages*)
 

@@ -50,6 +50,19 @@ let dump_ocaml x = `Assoc [
     "warnings"             , dump_warnings x.warnings;
   ]
 
+(** Some paths can be resolved relative to a current working directory *)
+
+let cwd = ref None
+
+let resolve_relative_path ?cwd:path f =
+  let_ref cwd path f
+
+let canonicalize_filename path =
+  Misc.canonicalize_filename ?cwd:!cwd path
+
+let marg_path f =
+  Marg.param "path" f
+
 (** {1 Findlib configuration} *)
 
 type findlib = {
@@ -65,20 +78,28 @@ let dump_findlib x = `Assoc [
 let findlib_flags = [
   (
     "-findlib-conf",
-    Marg.param "path" (fun conf findlib ->
+    marg_path (fun conf findlib ->
         let conf = if conf = "" then None else Some conf in
         {findlib with conf}),
     "<path> Path to findlib.conf to use for resolving packages"
   );
   (
     "-findlib-path",
-    Marg.param "path" (fun path findlib ->
+    marg_path (fun path findlib ->
         {findlib with path = path :: findlib.path}),
     "<path> Add <path> to the list of paths considered "
   );
 ]
 
 (** {1 Merlin high-level settings} *)
+
+type flag_list = {
+  flag_cwd : string option;
+  flag_list : string list;
+}
+
+let flag_list ?(cwd=(!cwd)) flag_list =
+  { flag_cwd = cwd; flag_list }
 
 type merlin = {
   build_path  : string list;
@@ -91,11 +112,11 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
 
-  flags_to_apply    : string list list;
+  flags_to_apply    : flag_list list;
   dotmerlin_to_load : string list;
   packages_to_load  : string list;
 
-  flags_applied    : string list list;
+  flags_applied    : flag_list list;
   dotmerlin_loaded : string list;
   packages_loaded  : string list;
 
@@ -106,26 +127,33 @@ type merlin = {
 
 }
 
-let dump_merlin x = `Assoc [
-    "build_path"  , `List (List.map Json.string x.build_path);
-    "source_path" , `List (List.map Json.string x.source_path);
-    "cmi_path"    , `List (List.map Json.string x.cmi_path);
-    "cmt_path"    , `List (List.map Json.string x.cmt_path);
-    "flags_applied", `List (List.map (fun l -> `List (List.map Json.string l))
-                              x.flags_applied);
-    "extensions"  , `List (List.map Json.string x.extensions);
-    "suffixes"    , `List (
+let dump_merlin x =
+  let dump_flag_list { flag_cwd; flag_list } =
+    `Assoc [
+      "cwd", Json.(option string) flag_cwd;
+      "flags", `List (List.map Json.string flag_list);
+    ]
+  in
+  `Assoc [
+    "build_path"   , `List (List.map Json.string x.build_path);
+    "source_path"  , `List (List.map Json.string x.source_path);
+    "cmi_path"     , `List (List.map Json.string x.cmi_path);
+    "cmt_path"     , `List (List.map Json.string x.cmt_path);
+    "flags_applied", `List (List.map dump_flag_list x.flags_applied);
+    "extensions"   , `List (List.map Json.string x.extensions);
+    "suffixes"     , `List (
       List.map (fun (impl,intf) -> `Assoc [
           "impl", `String impl;
           "intf", `String intf;
         ]) x.suffixes
     );
-    "stdlib"      , Json.option Json.string x.stdlib;
-    "reader"      , `List (List.map Json.string x.reader);
-    "protocol"    , (match x.protocol with
+    "stdlib"       , Json.option Json.string x.stdlib;
+    "reader"       , `List (List.map Json.string x.reader);
+    "protocol"     , (match x.protocol with
         | `Json -> `String "json"
         | `Sexp -> `String "sexp"
       );
+    "flags_to_apply"   , `List (List.map dump_flag_list x.flags_to_apply);
     "dotmerlin_to_load", `List (List.map Json.string x.dotmerlin_to_load);
     "packages_to_load" , `List (List.map Json.string x.packages_to_load);
     "dotmerlin_loaded" , `List (List.map Json.string x.dotmerlin_loaded);
@@ -136,25 +164,25 @@ let dump_merlin x = `Assoc [
 let merlin_flags = [
   (
     "-build-path",
-    Marg.param "directory" (fun dir merlin ->
+    marg_path (fun dir merlin ->
         {merlin with build_path = dir :: merlin.build_path}),
     "<dir> Add <dir> to merlin build path"
   );
   (
     "-source-path",
-    Marg.param "directory" (fun dir merlin ->
+    marg_path (fun dir merlin ->
         {merlin with source_path = dir :: merlin.build_path}),
     "<dir> Add <dir> to merlin source path"
   );
   (
     "-cmi-path",
-    Marg.param "directory" (fun dir merlin ->
+    marg_path (fun dir merlin ->
         {merlin with cmi_path = dir :: merlin.cmi_path}),
     "<dir> Add <dir> to merlin cmi path"
   );
   (
     "-cmt-path",
-    Marg.param "directory" (fun dir merlin ->
+    marg_path (fun dir merlin ->
         {merlin with build_path = dir :: merlin.cmt_path}),
     "<dir> Add <dir> to merlin cmt path"
   );
@@ -166,7 +194,7 @@ let merlin_flags = [
   );
   (
     "-dot-merlin",
-    Marg.param "path" (fun dotmerlin merlin ->
+    marg_path (fun dotmerlin merlin ->
         {merlin with dotmerlin_to_load =
                        dotmerlin :: merlin.dotmerlin_to_load}),
     "<path> Load <path> as a .merlin; if it is a directory, \
@@ -190,8 +218,8 @@ let merlin_flags = [
   (
     "-flags",
     Marg.param "string" (fun flags merlin ->
-        {merlin with flags_to_apply =
-                       Shell.split_command flags :: merlin.flags_to_apply}),
+        {merlin with flags_to_apply = flag_list (Shell.split_command flags) ::
+                                      merlin.flags_to_apply}),
     "<quoted flags> Unescape argument and interpret it as more flags"
   );
   (
@@ -223,7 +251,7 @@ let dump_query x = `Assoc [
 let query_flags = [
   (
     "-filename",
-    Marg.param "path" (fun path query ->
+    marg_path (fun path query ->
         let path = Misc.canonicalize_filename path in
         let filename = Filename.basename path in
         let directory = Filename.dirname path in
@@ -304,7 +332,7 @@ let ocaml_warnings_spec ~error =
 let ocaml_flags = [
   (
     "-I",
-    Marg.param "directory" (fun dir ocaml ->
+    marg_path (fun dir ocaml ->
         {ocaml with include_dirs = dir :: ocaml.include_dirs}),
     "<dir> Add <dir> to the list of include directories"
   );
@@ -401,13 +429,13 @@ let ocaml_flags = [
   );
   (
     "-ppx",
-    Marg.param "command" (fun command ocaml ->
+    marg_path (fun command ocaml ->
         {ocaml with ppx = command :: ocaml.ppx}),
     "<command> Pipe abstract syntax trees through preprocessor <command>"
   );
   (
     "-pp",
-    Marg.param "command" (fun pp ocaml -> {ocaml with pp}),
+    marg_path (fun pp ocaml -> {ocaml with pp}),
     "<command> Pipe sources through preprocessor <command>"
   );
   ( "-w",
@@ -504,9 +532,18 @@ let arguments_table =
     ocaml_ignored_flags;
   List.iter (fun name -> Hashtbl.add table name Marg.param_ignore)
     ocaml_ignored_parametrized_flags;
+  let lens prj upd flag : _ Marg.t = fun args a ->
+    let cwd' = match !cwd with
+      | None when a.query.directory <> "" -> Some a.query.directory
+      | cwd -> cwd
+    in
+    let_ref cwd cwd' @@ fun () ->
+    let args, b = flag args (prj a) in
+    args, (upd a b)
+  in
   let add prj upd (name,flag,_doc) =
     assert (not (Hashtbl.mem table name));
-    Hashtbl.add table name (Marg.lens prj upd flag)
+    Hashtbl.add table name (lens prj upd flag)
   in
   List.iter
     (add (fun x -> x.ocaml) (fun x ocaml -> {x with ocaml}))
@@ -653,7 +690,7 @@ let normalize_step _trace t =
         if dot.reader = []
         then merlin.reader
         else dot.reader;
-      flags_to_apply = dot.flags @ merlin.flags_to_apply;
+      flags_to_apply = List.map flag_list dot.flags @ merlin.flags_to_apply;
       dotmerlin_to_load = [];
       dotmerlin_loaded = dot.dot_merlins @ merlin.dotmerlin_loaded;
       packages_to_load = dot.packages @ merlin.packages_to_load;
@@ -683,8 +720,9 @@ let normalize_step _trace t =
     in
     let failures = ref merlin.failures in
     let warning failure = failures := failure :: !failures in
-    let t = List.fold_left ~f:(fun t flags ->
-        fst (Marg.parse_all ~warning arguments_table [] flags t ())
+    let t = List.fold_left ~f:(fun t {flag_cwd; flag_list} ->
+        fst (resolve_relative_path ?cwd:flag_cwd
+               (Marg.parse_all ~warning arguments_table [] flag_list t))
       ) ~init:t flagss
     in
     {t with merlin = {t.merlin with failures = !failures}}

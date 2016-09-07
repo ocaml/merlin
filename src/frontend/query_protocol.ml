@@ -137,8 +137,6 @@ type _ t =
   | List_modules(* *)
     :  string list
     -> string list t
-  | Flags_get
-    :  string list t
   | Findlib_list
     :  string list t
   | Extension_list

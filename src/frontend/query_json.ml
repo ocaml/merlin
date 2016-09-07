@@ -127,7 +127,6 @@ let dump (type a) : a t -> json =
     mk "list-modules" [
       "extensions", `List (List.map Json.string exts)
     ]
-  | Flags_get -> mk "flags-get" []
   | Findlib_list -> mk "findlib-list" []
   | Extension_list status ->
     mk "extension-list" [
@@ -298,7 +297,6 @@ let json_of_response (type a) (query : a t) (response : a) : json =
   | Dump _, json -> json
   | Path_of_source _, str -> `String str
   | List_modules _, strs -> `List (List.map Json.string strs)
-  | Flags_get, flags -> `List (List.map Json.string flags)
   | Findlib_list, strs -> `List (List.map Json.string strs)
   | Extension_list _, strs -> `List (List.map Json.string strs)
   | Path_list _, strs -> `List (List.map Json.string strs)

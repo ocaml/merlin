@@ -188,6 +188,10 @@ let dispatch_sync state (type a) : a sync_command -> a = function
      Printf.sprintf "The Merlin toolkit version %s, for Ocaml %s\n"
        My_config.version Sys.ocaml_version)
 
+  | Flags_get ->
+    let (_, config, _) = buffer in
+    List.concat Mconfig.(config.merlin.flags_to_apply)
+
   | Project_get ->
     let pipeline = make_pipeline state in
     let config = Mpipeline.final_config pipeline in

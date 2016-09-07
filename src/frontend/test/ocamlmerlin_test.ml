@@ -114,7 +114,13 @@ let tests = [
     let assert_errors ?lexer ?parser ?typer ?(flags=[]) filename source =
       assert_errors ?lexer ?parser ?typer
         ~with_config:(fun config ->
-            Mconfig.({config with merlin = {config.merlin with flags_to_apply = [flags]}}))
+            let flags = {
+              Mconfig.
+              flag_cwd = None;
+              flag_list = flags;
+            } in
+            Mconfig.({config with merlin = {config.merlin with
+                                            flags_to_apply = [flags]}}))
         filename
         source
     in

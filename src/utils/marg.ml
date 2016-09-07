@@ -19,11 +19,6 @@ let unit_ignore : 'a t =
 let param_ignore =
   fun x -> param "string" (fun _ x -> x) x
 
-let lens (prj : 'a -> 'b) (upd : 'a -> 'b -> 'a) (flag : 'b t) : 'a t =
-  fun args a ->
-    let args, b = flag args (prj a) in
-    args, (upd a b)
-
 type docstring = string
 
 type 'a spec = (string * docstring * 'a t)
