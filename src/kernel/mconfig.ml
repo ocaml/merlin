@@ -243,6 +243,11 @@ let merlin_flags = [
       ),
     "<protocol> Select frontend protocol ('json' or 'sexp')"
   );
+  (
+    "-ocamllib-path",
+    marg_path (fun path merlin -> {merlin with stdlib = Some path}),
+    "<path> Change path of ocaml standard library"
+  );
 ]
 
 type query = {
@@ -537,6 +542,22 @@ let dump x = `Assoc [
     "query"   , dump_query x.query;
   ]
 
+let stdlib =
+  let env =
+    try Some (Sys.getenv "OCAMLLIB")
+    with Not_found ->
+    try Some (Sys.getenv "CAMLLIB")
+    with Not_found -> None
+  in
+  fun config ->
+    match config.merlin.stdlib with
+    | Some stdlib -> stdlib
+    | None -> match env with
+      | Some stdlib -> stdlib
+      | None ->
+        Mconfig_dot.standard_library
+          ?conf:config.findlib.conf ~path:config.findlib.path ()
+
 let arguments_table =
   let table = Hashtbl.create 67 in
   List.iter (fun name -> Hashtbl.add table name Marg.unit_ignore)
@@ -639,13 +660,11 @@ let build_path config = (
     config.merlin.packages_path @
     dirs
   in
+  let stdlib = stdlib config in
   let exp_dirs =
-    List.map (Misc.expand_directory Config.standard_library) dirs
+    List.map (Misc.expand_directory stdlib) dirs
   in
-  let stdlib =
-    if config.ocaml.no_std_include then []
-    else [Config.standard_library]
-  in
+  let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
   config.query.directory :: List.rev_append exp_dirs stdlib
 )
 
@@ -662,13 +681,11 @@ let cmt_path config = (
     config.merlin.packages_path @
     dirs
   in
+  let stdlib = stdlib config in
   let exp_dirs =
-    List.map (Misc.expand_directory Config.standard_library) dirs
+    List.map (Misc.expand_directory stdlib) dirs
   in
-  let stdlib =
-    if config.ocaml.no_std_include then []
-    else [Config.standard_library]
-  in
+  let stdlib = if config.ocaml.no_std_include then [] else [stdlib] in
   config.query.directory :: List.rev_append exp_dirs stdlib
 )
 
@@ -684,7 +701,8 @@ let normalize_step _trace t =
   let merlin = t.merlin and findlib = t.findlib in
   let open Mconfig_dot in
   if merlin.dotmerlin_to_load <> [] then
-    let dot = Mconfig_dot.load merlin.dotmerlin_to_load in
+    let stdlib = stdlib t in
+    let dot = Mconfig_dot.load ~stdlib merlin.dotmerlin_to_load in
     let merlin = {
       merlin with
       build_path = dot.build_path @ merlin.build_path;
@@ -693,10 +711,7 @@ let normalize_step _trace t =
       cmt_path = dot.cmt_path @ merlin.cmt_path;
       extensions = dot.extensions @ merlin.extensions;
       suffixes = dot.suffixes @ merlin.suffixes;
-      stdlib =
-        if dot.stdlib = ""
-        then merlin.stdlib
-        else Some dot.stdlib;
+      stdlib = (if dot.stdlib = None then merlin.stdlib else dot.stdlib);
       reader =
         if dot.reader = []
         then merlin.reader

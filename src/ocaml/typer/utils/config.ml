@@ -26,17 +26,6 @@
 (* The main OCaml version string has moved to ../VERSION *)
 let version = Sys.ocaml_version
 
-let standard_library_default = Findlib.ocaml_stdlib ()
-
-let standard_library =
-  try
-    Sys.getenv "OCAMLLIB"
-  with Not_found ->
-  try
-    Sys.getenv "CAMLLIB"
-  with Not_found ->
-    standard_library_default
-
 let windows =
   match Sys.os_type with
   | "Win32" -> true
@@ -68,12 +57,3 @@ let load_path = ref ([] : string list)
 let interface_suffix = ref ".mli"
 
 let max_tag = 245
-
-let print_config oc =
-  let p name valu = Printf.fprintf oc "%s: %s\n" name valu in
-  p "version" version;
-  p "standard_library_default" standard_library_default;
-  p "standard_library" standard_library;
-  p "os_type" Sys.os_type;
-  flush oc;
-;;

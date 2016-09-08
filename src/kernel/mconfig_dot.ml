@@ -145,7 +145,7 @@ type config = {
   flags        : string list list;
   extensions   : string list;
   suffixes     : (string * string) list;
-  stdlib       : string;
+  stdlib       : string option;
   findlib      : string option;
   reader       : string list;
   findlib_path : string list;
@@ -161,7 +161,7 @@ let empty_config = {
   extensions   = [];
   suffixes     = [];
   flags        = [];
-  stdlib       = Config.standard_library;
+  stdlib       = None;
   findlib      = None;
   reader       = [];
   findlib_path = [];
@@ -201,14 +201,15 @@ let rev_split_flags str =
   in
   aux [] str 0
 
-let prepend_config {path; directives} config =
+let prepend_config ~stdlib {path; directives} config =
   let cwd = Filename.dirname path in
   let expand config path acc =
     let filter name =
       try Sys.is_directory name
       with _ -> false
     in
-    let path = expand_directory config.stdlib path in
+    let path =
+      expand_directory (Option.value ~default:stdlib config.stdlib) path in
     let path = canonicalize_filename ~cwd path in
     expand_glob ~filter path acc
   in
@@ -228,7 +229,7 @@ let prepend_config {path; directives} config =
       let flags = List.rev (rev_split_flags flags) in
       {config with flags = flags :: config.flags}
     | `STDLIB path ->
-      {config with stdlib = canonicalize_filename ~cwd path}
+      {config with stdlib = Some (canonicalize_filename ~cwd path)}
     | `FINDLIB path ->
       {config with findlib = Some (canonicalize_filename ~cwd path)}
     | `READER reader ->
@@ -257,14 +258,14 @@ let postprocess_config config =
   }
 
 
-let load filenames =
+let load ~stdlib filenames =
   let filenames = List.map ~f:canonicalize_filename filenames in
   let directives = List.map ~f:directives_of_file filenames in
   let config =
     List.fold_left directives ~init:empty_config
       ~f:(fun config subfiles ->
           List.fold_left subfiles ~init:config
-            ~f:(fun config file -> prepend_config file config))
+            ~f:(fun config file -> prepend_config ~stdlib file config))
   in
   postprocess_config config
 
@@ -346,6 +347,10 @@ let set_findlib_path =
       Findlib.init ?env_ocamlpath ?config ();
       findlib_cache := (conf,path)
     end
+
+let standard_library ?conf ?path () =
+  set_findlib_path ?conf ?path ();
+  Findlib.ocaml_stdlib ()
 
 let path_of_packages ?conf ?path packages =
   set_findlib_path ?conf ?path ();

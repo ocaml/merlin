@@ -15,12 +15,6 @@
 
 (* System configuration *)
 
-val version: string
-        (* The current version number of the system *)
-
-val standard_library: string
-        (* The directory containing the standard libraries *)
-
 val load_path: string list ref
         (* Directories in the search path for .cmi and .cmo files *)
 
@@ -50,5 +44,3 @@ val cmt_magic_number: string
 
 val max_tag: int
         (* Biggest tag that can be stored in the header of a regular block. *)
-
-val print_config : out_channel -> unit;;

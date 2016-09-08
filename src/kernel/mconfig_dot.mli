@@ -38,14 +38,16 @@ type config = {
   flags        : string list list;
   extensions   : string list;
   suffixes     : (string * string) list;
-  stdlib       : string;
+  stdlib       : string option;
   findlib      : string option;
   reader       : string list;
   findlib_path : string list;
 }
 
 (** Load one or more .merlin file *)
-val load : string list -> config
+val load : stdlib:string -> string list -> config
+
+val standard_library : ?conf:string -> ?path:string list -> unit -> string
 
 val path_of_packages : ?conf:string -> ?path:string list -> string list ->
   (string list (* packages *) *

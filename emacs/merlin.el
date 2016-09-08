@@ -21,6 +21,7 @@
 ;;;; Code:
 
 (require 'cl)
+(require 'crm) ;; for completing-read-multiple
 ;; caml-types for highlighting
 ;; (https://github.com/the-lambda-church/merlin/issues/331)
 (require 'caml-types nil 'noerror)
