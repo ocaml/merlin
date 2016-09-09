@@ -551,9 +551,9 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
       | [] -> raise Not_found
       | x :: xs ->
         try
-          find_in_path_uncap Mconfig.(config.merlin.source_path) x
+          find_in_path_uncap (Mconfig.source_path config) x
         with Not_found -> try
-            find_in_path_uncap Mconfig.(config.merlin.build_path) x
+            find_in_path_uncap (Mconfig.build_path config) x
           with Not_found ->
             aux xs
     in
