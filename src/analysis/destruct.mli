@@ -68,6 +68,12 @@
 
 *)
 
+(* TODO: document the following *)
+
+exception Not_allowed of string
+exception Useless_refine
+exception Nothing_to_do
+
 val node : Mconfig.t -> Msource.t -> loc:Location.t ->
            Browse_raw.node -> Browse_raw.node list -> Location.t * string
 (** [node ~loc ~env parents current_node] returns a location indicating which

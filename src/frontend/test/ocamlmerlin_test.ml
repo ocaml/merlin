@@ -84,6 +84,21 @@ let validate_output ?with_config filename source query pred =
         raise (Detail (exn, Json.pretty_to_string info))
     )
 
+(* FIXME: this sucks. improve. *)
+let validate_failure ?with_config filename source query pred =
+  test filename (fun () ->
+      let config, source = from_source ?with_config ~filename source in
+      let for_info, wrapped =
+        match Query_commands.dispatch (Trace.start (), config, source) query with
+        | exception e -> ("failure", `String (Printexc.to_string e)), `Error e
+        | res -> ("result", Query_json.json_of_response query res), `Ok res
+      in
+      try pred wrapped
+      with exn ->
+        let info = `Assoc [ "query", Query_json.dump query; for_info ] in
+        raise (Detail (exn, Json.pretty_to_string info))
+    )
+
 let tests = [
 
   group "no-escape" (
@@ -200,6 +215,57 @@ let tests = [
         ["-flags"; "-ppx ./test4"] "/tmp/test4";
     ]
 
+  );
+
+  group "destruct" (
+    [
+      (* TODO: test all error cases. *)
+
+      validate_failure "nothing_to_do.ml"
+        "let _ = match (None : unit option) with None -> () | Some () -> ()"
+        (Query_protocol.Case_analysis (`Offset 58, `Offset 60))
+        (function
+          | `Error Destruct.Nothing_to_do -> ()
+          | _  -> assertf false "expected Nothing_to_do exception");
+
+      (* TODO: at some point properly check locations as well. *)
+
+      validate_output "make_exhaustive.ml"
+        "let _ = match (None : unit option) with None -> ()"
+        (Query_protocol.Case_analysis (`Offset 40, `Offset 44))
+        (fun (_loc, s) ->
+           let expected = "\n| Some _ -> (??)" in
+           assertf (s = expected) "expected %S" expected);
+
+      validate_output "refine_pattern.ml"
+        "let _ = match (None : unit option) with None -> ()\n| Some _ -> (??)"
+        (Query_protocol.Case_analysis (`Offset 59, `Offset 60))
+        (fun (_loc, s) ->
+           let expected = "()" in
+           assertf (s = expected) "expected %S" expected);
+
+      validate_output "unpack_module.ml"
+        "module type S = sig end\n\nlet g (x : (module S)) =\n  x"
+        (Query_protocol.Case_analysis (`Offset 52, `Offset 53))
+        (fun (_loc, s) ->
+           let expected = "let module M = (val x) in (??)" in
+           assertf (s = expected) "expected %S" expected);
+
+      validate_output "record_exp.ml"
+        "let f (x : int ref) =\n  x"
+        (Query_protocol.Case_analysis (`Offset 24, `Offset 25))
+        (fun (_loc, s) ->
+           let expected = "match x with | { contents } -> (??)" in
+           assertf (s = expected) "expected %S" expected);
+
+      validate_output "variant_exp.ml"
+        "let f (x : int option) =\n  x"
+        (Query_protocol.Case_analysis (`Offset 27, `Offset 28))
+        (fun (_loc, s) ->
+           let expected = "match x with | None -> (??) | Some _ -> (??)" in
+           assertf (s = expected) "expected %S" expected);
+
+    ]
   );
 
   group "misc" (
