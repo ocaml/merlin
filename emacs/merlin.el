@@ -1187,6 +1187,25 @@ prefix of `bar' is `'."
                    'at (merlin/unmake-point (point)))
              callback-if-success callback-if-exn)))
 
+(defun merlin--print-type-buffer ()
+  "Print type buffer to the echo area"
+  (let ((type (with-current-buffer merlin-type-buffer-name
+                (font-lock-fontify-region (point-min) (point-max))
+                (buffer-string))))
+    (message "%s" type)
+    ))
+
+(defun merlin/show-type-buffer ()
+  "Show type buffer to the echo area"
+  (interactive)
+  (merlin--print-type-buffer)
+  (add-hook 'pre-command-hook 'merlin--print-type-buffer nil t))
+
+(defun merlin/hide-type-buffer ()
+  "Hide type buffer from the echo area"
+  (interactive)
+  (remove-hook 'pre-command-hook 'merlin--print-type-buffer t))
+
 (defun merlin--type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
 If QUIET is non nil, then an overlay and the merlin types can be used."
@@ -1194,12 +1213,17 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (unless quiet (message "<no information>"))
     (let ((count (merlin--count-lines type)))
       (merlin/display-in-type-buffer type)
-      (if (> count 8)
-          (display-buffer merlin-type-buffer-name)
-        (message "%s"
-          (with-current-buffer merlin-type-buffer-name
-            (font-lock-fontify-region (point-min) (point-max))
-            (buffer-string))))
+      (merlin--print-type-buffer)
+      (add-hook 'pre-command-hook 'merlin--print-type-buffer nil t)
+      (run-at-time 10 nil (lambda () (remove-hook 'pre-command-hook
+                                                  'merlin--print-type-buffer
+                                                  t)))
+      ;; (if (> count 8)
+      ;;     (display-buffer merlin-type-buffer-name)
+      ;;   (message "%s"
+      ;;     (with-current-buffer merlin-type-buffer-name
+      ;;       (font-lock-fontify-region (point-min) (point-max))
+      ;;       (buffer-string))))
       (if (and (not quiet) bounds)
           (merlin--highlight bounds 'merlin-type-face)))))
 
