@@ -1200,16 +1200,14 @@ prefix of `bar' is `'."
         (display-buffer merlin-type-buffer-name)
       (message "%s" type))))
 
-(defun merlin/show-type-buffer ()
+(defun merlin/toggle-display-type-buffer ()
   "Show type buffer to the echo area."
   (interactive)
-  (merlin--print-type-buffer)
-  (add-hook 'pre-command-hook 'merlin--print-type-buffer nil t))
-
-(defun merlin/hide-type-buffer ()
-  "Hide type buffer from the echo area."
-  (interactive)
-  (remove-hook 'pre-command-hook 'merlin--print-type-buffer t))
+  (if (memq 'merlin--print-type-buffer pre-command-hook)
+      (remove-hook 'pre-command-hook 'merlin--print-type-buffer t)
+    (progn
+      (merlin--print-type-buffer)
+      (add-hook 'pre-command-hook 'merlin--print-type-buffer nil t))))
 
 (defun merlin--type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
