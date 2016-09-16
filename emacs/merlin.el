@@ -1180,6 +1180,9 @@ prefix of `bar' is `'."
 ;; EXPRESSION TYPING ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar merlin-type-display-time 10
+  "Time duration for displaying type information in the echo area.")
+
 (defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
   "Get the type of EXP inside the local context."
   (when exp (merlin/send-command-async
@@ -1217,9 +1220,10 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
       (merlin/display-in-type-buffer type)
       (merlin--print-type-buffer)
       (add-hook 'pre-command-hook 'merlin--print-type-buffer nil t)
-      (run-at-time 10 nil (lambda () (remove-hook 'pre-command-hook
-                                                  'merlin--print-type-buffer
-                                                  t)))
+      (run-at-time merlin-type-display-time nil
+                   (lambda () (remove-hook 'pre-command-hook
+                                           'merlin--print-type-buffer
+                                           t)))
       (if (and (not quiet) bounds)
           (merlin--highlight bounds 'merlin-type-face)))))
 
