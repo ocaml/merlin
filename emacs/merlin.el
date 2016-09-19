@@ -1183,8 +1183,11 @@ prefix of `bar' is `'."
 (defvar merlin-type-display-time 10
   "Time duration for displaying type information in the echo area.")
 
+(defvar merlin--type-display-toggled-state nil
+  "Toggled state that control the display of type information in the echo area.")
+
 (defvar merlin--type-display-timer nil
-  "Timer to control the display of type information to the echo area.")
+  "Timer to clear the type information in the echo area.")
 
 (defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
   "Get the type of EXP inside the local context."
@@ -1204,7 +1207,7 @@ prefix of `bar' is `'."
       (message "%s" type))))
 
 (defun merlin--add-hook-display-type ()
-  "Keep on displaying type information while the cursor moves around."
+  "Keep on displaying the type information while the cursor moves around."
   (add-hook 'pre-command-hook 'merlin--display-type-buffer nil t))
 
 (defun merlin--remove-hook-display-type ()
@@ -1212,13 +1215,14 @@ prefix of `bar' is `'."
   (remove-hook 'pre-command-hook 'merlin--display-type-buffer t))
 
 (defun merlin/toggle-display-type-buffer ()
-  "Show type buffer to the echo area."
+  "Toggle to always show the type information in the echo area."
   (interactive)
-  (if (memq 'merlin--display-type-buffer pre-command-hook)
-      (merlin--remove-hook-display-type)
-    (progn
-      (merlin--display-type-buffer)
-      (merlin--add-hook-display-type))))
+  (if merlin--type-display-toggled-state
+      (progn (merlin--remove-hook-display-type)
+             (setq merlin--type-display-toggled-state nil))
+    (progn (merlin--display-type-buffer)
+           (merlin--add-hook-display-type)
+           (setq merlin--type-display-toggled-state t))))
 
 (defun merlin--type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
@@ -1232,16 +1236,17 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
            (type-info (if (cl-search " " exp) type (concat exp " : " type))))
       (merlin/display-in-type-buffer type-info)
       (merlin--display-type-buffer)
-      ;; keep on displaying type even when the cursor move around
-      (merlin--add-hook-display-type)
-      ;; clear the previous timer to control the display of type information
-      (when merlin--type-display-timer
-        (cancel-timer merlin--type-display-timer)
-        (setq merlin--type-display-timer nil))
-      ;; set up a new timer to control the display of type information
-      (setq merlin--type-display-timer
-            (run-at-time merlin-type-display-time nil
-                         'merlin--remove-hook-display-type))
+      ;; only use a timer and a hook to keep on display type in the echo area
+      ;; the the type display state is not toggled
+      (when (null merlin--type-display-toggled-state)
+        ;; hook to display type in the echo area
+        (merlin--add-hook-display-type)
+        ;; clear the previous timer
+        (when merlin--type-display-timer (cancel-timer merlin--type-display-timer))
+        ;; set up a new timer to finish displaying type
+        (setq merlin--type-display-timer
+              (run-at-time merlin-type-display-time nil
+                           'merlin--remove-hook-display-type)))
       (if (and (not quiet) bounds)
           (merlin--highlight bounds 'merlin-type-face)))))
 
