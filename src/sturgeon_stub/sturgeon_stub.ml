@@ -20,5 +20,5 @@ type flag = Stui.flag
 type cursor = flag Inuit.cursor
 let null = Inuit.Cursor.null
 
-type shell = Stui.buffer_shell
+type shell = Stui.shell
 let create_cursor = Stui.create_cursor
