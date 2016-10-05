@@ -304,10 +304,15 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
       | Module_binding_name {mb_expr = {mod_type = m}}
       | Module_declaration_name {md_type = {mty_type = m}}
       | Module_type_declaration_name {mtd_type = Some {mty_type = m}} ->
-        let ppf, to_string = Format.to_string () in
-        Printtyp.wrap_printing_env env ~verbosity
-          (fun () -> Printtyp.modtype env ppf m);
-        Some (Browse.node_loc node, to_string (), tail)
+        if Type_utils.mod_smallerthan (verbosity * 300) m = None then
+          Some (Browse.node_loc node,
+                "Module signature too big, ask type again to force printing",
+               tail)
+        else
+          let ppf, to_string = Format.to_string () in
+          Printtyp.wrap_printing_env env ~verbosity
+            (fun () -> Printtyp.modtype env ppf m);
+          Some (Browse.node_loc node, to_string (), tail)
 
       | _ -> None
     in
