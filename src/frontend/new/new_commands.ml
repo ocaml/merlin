@@ -255,7 +255,7 @@ let all_commands = [
     ~default:[]
 
     begin fun buffer extensions ->
-      run buffer (Query_protocol.List_modules extensions)
+      run buffer (Query_protocol.List_modules (List.rev extensions))
     end
   ;
 
@@ -331,7 +331,7 @@ let all_commands = [
     ~default:[]
 
     begin fun buffer filenames ->
-      run buffer (Query_protocol.Path_of_source filenames)
+      run buffer (Query_protocol.Path_of_source (List.rev filenames))
     end
   ;
 
