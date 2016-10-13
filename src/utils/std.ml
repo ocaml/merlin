@@ -588,104 +588,53 @@ module Char = struct
 end
 
 module Glob : sig
-  type inst =
+  type pattern =
+    | Wildwild
     | Exact of string
-    | Joker
-    | Skip of int
-  type pattern = inst list
-
+    | Regexp of Str.regexp
   val compile_pattern : string -> pattern
-  val match_pattern : string -> pattern -> bool
+  val match_pattern : pattern -> string -> bool
 end = struct
-  type inst =
+  type pattern =
+    | Wildwild
     | Exact of string
-    | Joker
-    | Skip of int
-  type pattern = inst list
+    | Regexp of Str.regexp
 
   let compile_pattern = function
-    | "**" -> [Joker;Joker]
-    | s ->
-    let l = String.length s in
-    let rec dispatch acc i =
-      if i < l then match s.[i] with
-      | '*' -> joker acc (i + 1)
-      | '?' -> skip acc 1 (i + 1)
-      | c -> string acc i (i + 1)
-      else acc
-    and joker acc i =
-      if i < l && s.[i] = '*'
-      then joker acc (i + 1)
-      else dispatch (Joker :: acc) i
-    and skip acc n i =
-      if i < l && s.[i] = '?'
-      then skip acc (n + 1) (i + 1)
-      else dispatch (Skip n :: acc) (i + 1)
-    and string acc i0 i =
-      let valid = i < l && let c = s.[i] in c <> '*' && c <> '?' in
-      if valid
-      then string acc i0 (i + 1)
-      else dispatch (Exact (String.sub s ~pos:i0 ~len:(i - i0)) :: acc) i
-    in
-    let parts = dispatch [] 0 in
-    let normalize xs x =
-      match x, xs with
-      | Joker, (Joker :: _) | Skip 0, _ | Exact "", _ -> xs
-      | Joker, ((Skip _ as skip) :: xs) -> skip :: Joker :: xs
-      | Skip n, (Skip m :: xs) -> Skip (n + m) :: xs
-      | Exact s, (Exact t :: xs) -> Exact (s ^ t) :: xs
-      | _ -> x :: xs
-    in
-    List.fold_left ~f:normalize ~init:[] parts
-
-  let match_pattern s = function
-    | [Joker] -> true
-    | [Exact s'] -> s = s'
+    | "**" -> Wildwild
     | pattern ->
-      let l = String.length s in
-      let exact_string i s' =
-        i < l &&
-        let l' = String.length s' in
-        i + l' <= l &&
-        let rec aux j = if j < l'
-          then s.[i + j] = s'.[j] && aux (j + 1)
-          else true
-        in
-        aux i
+      let regexp = Buffer.create 15 in
+      let chunk = Buffer.create 15 in
+      let flush () =
+        if Buffer.length chunk > 0 then (
+          Buffer.add_string regexp (Str.quote (Buffer.contents chunk));
+          Buffer.clear chunk;
+        )
       in
-      let rec exact_match i = function
-        | Exact s' :: xs when exact_string i s' ->
-          exact_match (i + String.length s') xs
-        | Skip n :: xs when i + n <= l ->
-          exact_match (i + n) xs
-        | Exact _ :: _ | Skip _ :: _ -> None
-        | (Joker :: _ | []) as xs -> Some (i, xs)
-      in
-      let rec joker i = function
-        | Joker :: xs -> joker i xs
-        | Skip n :: xs when i + n < l -> joker (i + n) xs
-        | Skip _ :: _ -> false
-        | [] -> true
-        | (Exact s' :: _) as xs ->
-          let c = s'.[0] in
-          let rec aux i =
-            match
-              try Some (String.index_from s i c)
-              with Not_found -> None
-            with
-            | None -> false
-            | Some i -> match exact_match i xs with
-              | None -> aux (i + 1)
-              | Some (i, xs) -> joker i xs
-          in
-          aux i
-      in
-      match pattern with
-      | Exact _ :: xs -> begin match exact_match 0 xs with
-        | None -> false
-        | Some (i, xs) -> joker i xs
-        end
-      |  xs -> joker 0 xs
+      let l = String.length pattern in
+      let i = ref 0 in
+      while !i < l do
+        begin match pattern.[!i] with
+          | '\\' -> incr i; if !i  < l then Buffer.add_char chunk pattern.[!i]
+          | '*' -> flush (); Buffer.add_string regexp ".*";
+          | '?' -> flush (); Buffer.add_char regexp '.';
+          | x -> Buffer.add_char chunk x
+        end;
+        incr i
+      done;
+      if Buffer.length regexp = 0 then
+        Exact (Buffer.contents chunk)
+      else (
+        flush ();
+        Buffer.add_char regexp '$';
+        Regexp (Str.regexp (Buffer.contents regexp))
+      )
+
+  let match_pattern re str =
+    match re with
+    | Wildwild -> true
+    | Regexp re -> Str.string_match re str 0
+    | Exact s -> s = str
 end
 
 module Obj = struct

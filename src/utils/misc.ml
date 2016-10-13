@@ -101,7 +101,7 @@ let canonicalize_filename ?cwd path =
 
 let rec expand_glob ~filter acc root = function
   | [] -> root :: acc
-  | [Glob.Joker; Glob.Joker] :: tl ->
+  | Glob.Wildwild :: tl ->
     let rec append acc root =
       let items = try Sys.readdir root with Sys_error _ -> [||] in
       let process acc dir =
@@ -113,13 +113,13 @@ let rec expand_glob ~filter acc root = function
       Array.fold_left process (root :: acc) items
     in
     append acc root
-  | [Glob.Exact component] :: tl ->
+  | Glob.Exact component :: tl ->
     let filename = Filename.concat root component in
     expand_glob ~filter acc filename tl
   | pattern :: tl ->
     let items = try Sys.readdir root with Sys_error _ -> [||] in
     let process acc dir =
-      if Glob.match_pattern dir pattern then
+      if Glob.match_pattern pattern dir then
         let root' = Filename.concat root dir in
         if filter root' then
           expand_glob ~filter acc root' tl
