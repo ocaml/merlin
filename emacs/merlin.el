@@ -33,6 +33,12 @@
   "merlin binding mode allowing completion and typing in OCaml files."
   :group 'languages :prefix "merlin-")
 
+(unless (fboundp 'defvar-local)
+  (defmacro defvar-local (var val &optional docstring)
+    "Compatibility macro setup by Merlin for Emacs < 24.3"
+    `(progn (defvar ,var ,val ,docstring)
+            (make-variable-buffer-local (quote ,var)))))
+
 ;;
 ;; Faces
 ;;
@@ -431,9 +437,9 @@ return (LOC1 . LOC2)."
 
 (defun merlin-switch-to (name &rest exts)
   "Switch to NAME.EXTS."
-  (let* (file (merlin/call "path-of-source"
-                 (merlin--map-flatten
-                   (lambda (ext) (cons "-file" (concat name ext))) exts)))
+  (let* ((file (merlin/call "path-of-source"
+                (merlin--map-flatten
+                  (lambda (ext) (cons "-file" (concat name ext))) exts))))
     (when file (merlin-find-file file))))
 
 (defun merlin-switch-to-ml (name)
@@ -1578,7 +1584,7 @@ Short cuts:
     ;; When disabling merlin
     (progn
       (when merlin-highlight-overlay
-        (delete-overlay merlin-highlight-overlay))
+	(delete-overlay merlin-highlight-overlay))
       (remove-overlays nil nil 'merlin-kind 'highlight)
       (remove-overlays nil nil 'merlin-kind 'error))))
 
