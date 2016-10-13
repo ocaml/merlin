@@ -18,6 +18,9 @@ let () = Printexc.register_printer (function
     | _ -> None
   )
 
+let str_match ~re str =
+  Str.string_match (Str.regexp (re ^ "$")) str 0
+
 (* Setting up merlin *)
 module M = Mpipeline
 
@@ -300,6 +303,86 @@ let tests = [
     ]
   );
 
+  group "type-expr" (
+
+    let test_file =
+      "let x = 5\n\
+       let y = 10\n
+       type t = T\n\
+       module M = List\n\
+       module type MT = module type of List\n\
+       let z = ()"
+    in
+    let unbound_pattern = `Start, "Error: Unbound .*" in
+    let queries = [
+      "lident-value"       , "y"     , [unbound_pattern; `End, "int"];
+      "lident-type"        , "t"     , [unbound_pattern; `End, "type t = T"];
+      "expr"               , "x + y" , [unbound_pattern; `End, "int"];
+      "uident-constructor" , "T"     , [unbound_pattern; `End, "t"];
+      "uident-module"      , "M"     , [unbound_pattern; `End, "(module List)"];
+      "uident-module-type" , "MT"    , [unbound_pattern; `End, "sig\\(.\\|\n\\)*end"];
+      "parse-error"        , "f ("   , [`Start, "FIXME"];
+    ] in
+    let type_expr_match name expr pos re =
+      validate_output name test_file (Query_protocol.Type_expr (expr, pos))
+        (fun str -> assertf (str_match ~re str)
+            "Output didn't match pattern %S: %S" re str)
+    in
+    List.concat_map queries ~f:(fun (name, expr, patterns) ->
+        List.map patterns ~f:(fun (pos, re) ->
+            type_expr_match (name ^ "-" ^ Msource.dump_position pos) expr pos re))
+  );
+
+  group "std" [
+
+    group "glob" (
+      let glob_match ~pattern str =
+        Glob.match_pattern (Glob.compile_pattern pattern) str in
+      let should_match name ~pattern str =
+        test name (fun () -> assertf (glob_match ~pattern str)
+                      "pattern %S should match %S" pattern str)
+      and shouldn't_match name ~pattern str =
+        test name (fun () -> assertf (not (glob_match ~pattern str))
+                      "pattern %S shouldn't match %S" pattern str)
+      in
+      [
+        should_match "empty" ~pattern:"" "";
+        shouldn't_match "not-empty" ~pattern:"" "x";
+        should_match "litteral" ~pattern:"x" "x";
+        shouldn't_match "not-litteral" ~pattern:"x" "y";
+        should_match "skip" ~pattern:"x?z" "xyz";
+        shouldn't_match "not-skip" ~pattern:"x?yz" "xyz";
+        should_match "joker1" ~pattern:"x*" "xyz";
+        shouldn't_match "not-joker1" ~pattern:"y*" "xyz";
+        should_match "joker2" ~pattern:"xy*xy*" "xyzxyz";
+        shouldn't_match "not-joker2" ~pattern:"xy*yz*" "xyzyxz";
+        should_match "joker3" ~pattern:"*bar*" "foobarbaz";
+      ]
+    );
+
+    group "shell" (
+      let string_list = function
+        | [] -> "[]"
+        | comps ->
+          let comps = List.map ~f:String.escaped comps in
+          "[\"" ^ String.concat ~sep:"\";\"" comps ^ "\"]"
+      in
+      let assert_split i (str, expected) =
+        test ("split_command-" ^ string_of_int i) @@ fun () ->
+        let result = Shell.split_command str in
+        assertf (result = expected)
+          "Shell.split_command %S = %s, expecting %s"
+          str (string_list result) (string_list expected)
+      in
+      List.mapi ~f:assert_split [
+        "a b c"     , ["a";"b";"c"];
+        "a'b'c"     , ["abc"];
+        "a 'b c'"   , ["a"; "b c"];
+        "a\"b'c\""  , ["ab'c"];
+        "a\\\"b'c'" , ["a\"bc"];
+      ]
+    );
+  ];
 ]
 
 (* Driver *)

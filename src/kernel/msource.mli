@@ -19,6 +19,8 @@ type position = [
   | `End
 ]
 
+val dump_position  : [< position] -> string
+
 val get_offset     : t -> [< position] -> [> `Offset of int]
 
 val get_logical    : t -> [< position] -> [> `Logical of int * int]

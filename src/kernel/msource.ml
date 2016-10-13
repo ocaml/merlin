@@ -148,3 +148,9 @@ let dump t = `Assoc [
     "filename" , `String t.filename;
     "text"     , `String t.text;
   ]
+
+let dump_position = function
+  | `Start -> "start"
+  | `Offset o -> string_of_int o
+  | `Logical (l,c) -> string_of_int l ^ ":" ^ string_of_int c
+  | `End -> "end"
