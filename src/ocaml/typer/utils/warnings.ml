@@ -588,19 +588,23 @@ let help_warnings () =
 
 (* merlin *)
 
-let dump () =
+let dump ?(verbose=false) () =
   let open Std in
   let actives arr =
     Array.mapi (fun i b ->
-      let i = i + 1 in
-      if b && i <= last_warning_number then
-        try string_of_int i ^ ": " ^ List.assoc i descriptions
-        with Not_found -> ""
-      else
-        ""
-    ) arr
+        if not b then None
+        else
+          let i = i + 1 in
+          Some (
+            try
+              if verbose then
+                `String (string_of_int i ^ ": " ^ List.assoc i descriptions)
+              else `Int i
+            with Not_found -> `Int i
+          )
+      ) arr
     |> Array.to_list
-    |> List.filter_map ~f:(function "" -> None | s -> Some (`String s))
+    |> List.filter_map ~f:(fun x -> x)
   in
   `Assoc [
     "actives", `List (actives !current.active);

@@ -45,6 +45,7 @@ let run = function
             Mconfig.arguments_table spec
             raw_args Mconfig.initial command_args
         in
+        Logger.with_log_file Mconfig.(config.merlin.log_file) @@ fun () ->
         let config =
           let failures = !fails in
           Mconfig.({config with merlin = {config.merlin with failures}}) in

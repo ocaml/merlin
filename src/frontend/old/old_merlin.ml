@@ -145,9 +145,5 @@ let setup_merlin args =
 let run args =
   setup_system ();
   let input, output = setup_merlin args in
-  (* Setup sturgeon monitor *)
-  (*let monitor = Sturgeon_stub.start Old_command.monitor in*)
   merlin_loop input output;
-
-  (*Sturgeon_stub.stop monitor;*)
   exit 0

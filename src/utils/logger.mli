@@ -38,8 +38,6 @@
 type title = string
 type section = string
 
-val set_destination : string option -> unit
-
 val log    : section -> title -> string -> unit
 val logf   : section -> title -> ('b, unit, string, unit) format4 -> 'b
 val logfmt : section -> title -> (Format.formatter -> unit) -> unit
@@ -47,3 +45,4 @@ val logj   : section -> title -> (unit -> Std.json) -> unit
 
 val notify : section -> ('b, unit, string, unit) format4 -> 'b
 val with_notifications : (section * string) list ref -> (unit -> 'a) -> 'a
+val with_log_file : string option -> (unit -> 'a) -> 'a

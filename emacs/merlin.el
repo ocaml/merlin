@@ -92,7 +92,7 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-debug nil
-  "If non-nil, log the data sent and received from merlin."
+  "If non-nil, log the data sent and received from merlin into `merlin-log-buffer-name' buffer."
   :group 'merlin :type 'boolean)
 
 (defcustom merlin-report-warnings t
@@ -105,6 +105,10 @@ buffer, in a form suitable for `merlin-buffer-configuration'."
 
 (defcustom merlin-type-buffer-name "*merlin-types*"
   "The name of the buffer storing module signatures."
+  :group 'merlin :type 'string)
+
+(defcustom merlin-log-buffer-name "*merlin-log*"
+  "The name of the buffer storing log messages and debug information. See `merlin-debug'."
   :group 'merlin :type 'string)
 
 (defcustom merlin-favourite-caml-mode nil
@@ -253,12 +257,24 @@ The association list can contain the following optional keys:
   (define-key map (kbd "SPC") nil)
   map)
 
-(defun merlin-debug (s)
-  "Output S if the variable `merlin-debug' is non-nil on the process buffer
-associated to the current buffer."
-  (with-current-buffer (merlin-process-buffer)
-    (goto-char (point-max))
-    (insert s)))
+(defun merlin-debug (message &rest args)
+  "Output S to `merlin-log-buffer-name' if `merlin-debug' is non-nil in the current buffer."
+  (when merlin-debug
+    (with-current-buffer (get-buffer-create merlin-log-buffer-name)
+      (goto-char (point-max))
+      (if args (insert (apply 'format message args))
+        (insert message)))))
+
+(defun merlin-enable-debug ()
+  "Start recording merlin debug information to `merlin-log-buffer-name'."
+  (interactive)
+  (setq merlin-debug t)
+  (message "merlin: logging to %S buffer" merlin-log-buffer-name))
+
+(defun merlin-disable-debug ()
+  "Stop recording debug information."
+  (interactive)
+  (setq merlin-debug nil))
 
 (defun merlin/buffer-substring (start end)
    "Return content of buffer between two points or empty string if points are not valid"
@@ -378,15 +394,29 @@ return (LOC1 . LOC2)."
 
 (defun merlin--call-process (path args)
   "Some workarounds for piping buffer content to a process"
-  (when merlin-debug
-    (message "calling merlin: %S." (cons path args)))
-  (let ((ib (current-buffer)))
+  (merlin-debug "# calling binary: %S with arguments: %S.\n" path args)
+  (let ((ib  (current-buffer))
+        (tmp (when merlin-debug (make-temp-file "merlin")))
+        result)
     (with-temp-buffer
       (let ((ob (current-buffer)))
         (with-current-buffer ib
-          (apply 'call-process-region (point-min) (point-max) path nil ob nil
-                 "single" (car args) "-protocol" "sexp" (cdr args))))
-      (buffer-string))))
+          (apply 'call-process-region (point-min) (point-max) path nil
+                 (list ob tmp) nil
+                 "single" (car args)
+                 "-protocol" "sexp"
+                 "-log-file" (if merlin-debug "-" "")
+                 (cdr args))))
+      (setq result (buffer-string))
+      (merlin-debug "# stdout\n%s" result)
+      (when tmp
+        (with-demoted-errors "Error when trying to read merlin log: %S"
+          (with-current-buffer merlin-log-buffer-name
+            (goto-char (point-max))
+            (insert "# stderr\n")
+            (insert-file-contents tmp)
+            (delete-file tmp))))
+      result)))
 
 (defun merlin--call-merlin (command &rest args)
   "TODO"
@@ -940,7 +970,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   "Reimplement on-exit logic from set-temporary-overlay-map for emacs pre 24.4"
   (let ((map merlin-type-enclosing-map))
     (unless (or (not (eq map (cadr overriding-terminal-local-map)))
-                (eq this-command (merlin-lookup (this-command-keys-vector))))
+                (eq this-command (lookup-key map (this-command-keys-vector))))
       (merlin--type-enclosing-reset)
       (remove-hook 'pre-command-hook 'merlin--type-enclosing-reset-hooked))))
 
@@ -1232,15 +1262,13 @@ Empty string defaults to jumping to all these."
 (defun merlin--document-pure (&optional ident)
   "Document the identifier IDENT at point."
   (let* ((raw-doc  (merlin--document-pos ident))
-         (doc      (concat "(*" raw-doc "*)"))
-         (nb-lines (merlin--count-lines doc)))
+         (doc      (concat "(*" raw-doc "*)")))
     (merlin/display-in-type-buffer doc)
-    (if (> nb-lines 8)
-        (display-buffer merlin-type-buffer-name)
-      (message "%s"
-        (with-current-buffer merlin-type-buffer-name
-          (font-lock-fontify-region (point-min) (point-max))
-          (buffer-string))))))
+    (with-current-buffer merlin-type-buffer-name
+      (if (> (line-number-at-pos (point-max)) 8)
+          (display-buffer merlin-type-buffer-name)
+        (font-lock-fontify-region (point-min) (point-max))
+        (message "%s" (buffer-string))))))
 
 (defun merlin-document ()
   "Document the identifier under point"
@@ -1386,25 +1414,6 @@ Empty string defaults to jumping to all these."
       (dolist (child (cdr (assoc 'children shape)))
         (merlin--traverse-shape point cell child)))))
 
-(defun merlin--phrase-goto ()
-  "Go to the phrase indicated by COMMAND.
-Returns the position."
-  (let ((cell (cons nil nil)))
-    (dolist (shape (merlin/call "shape"
-                                "-position" (merlin/unmake-point (point))))
-      (merlin--traverse-shape (point) cell shape))
-    cell))
-
-(defun merlin-phrase-next ()
-  "Go to the beginning of the next phrase."
-  (interactive)
-  (merlin--phrase-goto 'next))
-
-(defun merlin-phrase-prev ()
-  "Go to the beginning of the previous phrase."
-  (interactive)
-  (merlin--phrase-goto 'prev))
-
 (defun merlin-error-check ()
   "Update merlin to the end-of-file, reporting errors."
   (interactive)
@@ -1452,8 +1461,8 @@ Returns the position."
 (defun merlin-command ()
   "Return or update path of ocamlmerlin binary selected by configuration"
   (unless merlin-buffer-configuration
-    (setq configuration (merlin--configuration)))
-  (let ((command (merlin-lookup 'command configuration)))
+    (setq merlin-buffer-configuration (merlin--configuration)))
+  (let ((command (merlin-lookup 'command merlin-buffer-configuration)))
     (unless command
       (setq command "ocamlmerlin"))
     (when (equal command 'opam)
@@ -1525,13 +1534,13 @@ Returns the position."
 (defun merlin-setup ()
   "Set up a buffer for use with merlin."
   (interactive)
-  (let* ((configuration (merlin--configuration))
-         (instance (merlin-lookup 'name configuration "default")))
-    (add-to-list 'after-change-functions 'merlin--on-edit)
-    ;; TODO: Sanity check for selected merlin version
-    (unless merlin--idle-timer
-      (setq merlin--idle-timer
-            (run-with-idle-timer 0.5 t 'merlin-show-error-on-current-line)))))
+  (let ((configuration (merlin--configuration)))
+    (when configuration (setq merlin-buffer-configuration configuration)))
+  (add-to-list 'after-change-functions 'merlin--on-edit)
+  ;; TODO: Sanity check for selected merlin version
+  (unless merlin--idle-timer
+    (setq merlin--idle-timer
+          (run-with-idle-timer 0.5 t 'merlin-show-error-on-current-line))))
 
 (defun merlin-can-handle-buffer ()
   "Simple sanity check (used to avoid running merlin on, e.g., completion buffer)."
@@ -1561,7 +1570,7 @@ Returns the position."
 
 ;; No need to synchronize explicitly
 (defun merlin/sync ())
-(make-obsolete 'merlin/sync nil)
+(make-obsolete 'merlin/sync nil "Synchronization happens automatically since Merlin 3.0")
 
 (define-obsolete-function-alias 'merlin-project-check 'merlin-configuration-check)
 

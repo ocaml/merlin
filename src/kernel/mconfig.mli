@@ -50,6 +50,7 @@ type merlin = {
   stdlib      : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
+  log_file    : string option;
 
   flags_to_apply    : flag_list list;
   dotmerlin_to_load : string list;

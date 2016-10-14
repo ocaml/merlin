@@ -100,4 +100,4 @@ val restore: state -> unit
 
 (* merlin *)
 
-val dump : unit -> Std.json
+val dump : ?verbose:bool -> unit -> Std.json

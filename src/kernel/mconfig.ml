@@ -120,6 +120,7 @@ type merlin = {
   stdlib      : string option;
   reader      : string list;
   protocol    : [`Json | `Sexp];
+  log_file    : string option;
 
   flags_to_apply    : flag_list list;
   dotmerlin_to_load : string list;
@@ -162,6 +163,7 @@ let dump_merlin x =
         | `Json -> `String "json"
         | `Sexp -> `String "sexp"
       );
+    "log_file"     , Json.option Json.string x.log_file;
     "flags_to_apply"   , `List (List.map dump_flag_list x.flags_to_apply);
     "dotmerlin_to_load", `List (List.map Json.string x.dotmerlin_to_load);
     "packages_to_load" , `List (List.map Json.string x.packages_to_load);
@@ -242,6 +244,11 @@ let merlin_flags = [
         | _ -> invalid_arg "Valid protocols are 'json' and 'sexp'";
       ),
     "<protocol> Select frontend protocol ('json' or 'sexp')"
+  );
+  (
+    "-log-file",
+    Marg.param "file" (fun file merlin -> {merlin with log_file = Some file}),
+    "<file> Log messages to specified file ('' for disabling, '-' for stderr)"
   );
   (
     "-ocamllib-path",
@@ -514,6 +521,7 @@ let initial = {
     stdlib      = None;
     reader      = [];
     protocol    = `Json;
+    log_file    = None;
 
     flags_to_apply    = [];
     dotmerlin_to_load = [];
