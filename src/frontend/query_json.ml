@@ -182,12 +182,12 @@ let json_of_type_loc (loc,str,tail) =
 
 let json_of_error {Location. msg; sub; loc} =
   let of_sub {Location. msg; loc} =
-    with_location ~skip_none:true loc ["message", `String msg] in
+    with_location ~skip_none:true loc ["message", `String (String.trim msg)] in
   let content = [
     "type"    , `String "typer";
     "sub"     , `List (List.map ~f:of_sub sub);
     "valid"   , `Bool true;
-    "message" , `String msg;
+    "message" , `String (String.trim msg);
   ] in
   with_location ~skip_none:true loc content
 

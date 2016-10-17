@@ -306,10 +306,6 @@ return DEFAULT or the value associated to KEY."
 (defun merlin--map-flatten (f &rest xs)
   (nreverse (merlin--rev-map-flatten f xs)))
 
-(defun merlin--chomp (str)
-  "Remove whitespace at the beginning and end of STR."
-  (replace-regexp-in-string "^[[:space:]\n]\+\\|[[:space:]\n]\+$" "" str))
-
 (defun merlin--goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
 containing fields file, line and col."
