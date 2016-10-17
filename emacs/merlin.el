@@ -793,10 +793,6 @@ the error message otherwise print a generic error message."
 ;; ERROR REPORT ;;
 ;;;;;;;;;;;;;;;;;;
 
-(defun merlin--chomp (str)
-  "Remove whitespace at the beginning and end of STR."
-  (replace-regexp-in-string "^[[:space:]\n]\+\\|[[:space:]\n]\+$" "" str))
-
 (defun merlin--error-position-delta (point err)
   "Distance between point and error."
   (setq err (cdr (assoc 'bounds err)))

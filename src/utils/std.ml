@@ -433,6 +433,19 @@ module String = struct
   let no_double_underscore s =
     try ignore (first_double_underscore_end s); false
     with Not_found -> true
+
+  let trim = function "" -> "" | str ->
+    let l = String.length str in
+    let is_space = function
+      | ' ' | '\n' | '\t' | '\r' -> true
+      | _ -> false
+    in
+    let r0 = ref 0 and rl = ref l in
+    while !r0 < l && is_space str.[!r0] do incr r0 done;
+    let r0 = !r0 in
+    while !rl > r0 && is_space str.[!rl - 1] do decr rl done;
+    let rl = !rl in
+    if r0 = 0 && rl = l then str else sub str ~pos:r0 ~len:(rl - r0)
 end
 
 let sprintf = Printf.sprintf

@@ -50,12 +50,12 @@ let with_location ?(skip_none=false) loc assoc =
             assoc)
 
 let json_of_error {Error_report. valid; text; where; sub; loc} =
-  let of_sub (msg,loc) = with_location ~skip_none:true loc ["message", `String msg] in
+  let of_sub (msg,loc) = with_location ~skip_none:true loc ["message", `String (String.trim msg)] in
   let content = [
     "type"    , `String where;
     "sub"     , `List (List.map ~f:of_sub sub);
     "valid"   , `Bool valid;
-    "message" , `String text;
+    "message" , `String (String.trim text);
   ] in
   with_location ~skip_none:true loc content
 
