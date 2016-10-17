@@ -68,6 +68,16 @@ let rec split_path path acc =
   | dir, _ when dir = path -> dir :: acc
   | dir, base -> split_path dir (base :: acc)
 
+(* Deal with case insensitive FS *)
+
+external fs_exact_case : string -> string = "ml_merlin_fs_exact_case"
+
+let exact_file_exists path =
+  Sys.file_exists path &&
+  let path' = fs_exact_case path in
+  path == path' || Filename.basename path = Filename.basename path'
+
+
 let canonicalize_filename ?cwd path =
   let parts =
     match split_path path [] with
@@ -87,7 +97,7 @@ let canonicalize_filename ?cwd path =
     | [] -> ""
     | root :: subs -> List.fold_left ~f:Filename.concat ~init:root subs
   in
-  filename_concats parts
+  fs_exact_case (filename_concats parts)
 
 let rec expand_glob ~filter acc root = function
   | [] -> root :: acc
@@ -129,10 +139,10 @@ let find_in_path path name =
   canonicalize_filename
   begin
     if not (Filename.is_implicit name) then
-      if Sys.file_exists name then name else raise Not_found
+      if exact_file_exists name then name else raise Not_found
     else List.find_map path ~f:(fun dir ->
          let fullname = Filename.concat dir name in
-          if Sys.file_exists fullname
+          if exact_file_exists fullname
           then Some fullname
           else None
       )
@@ -148,10 +158,10 @@ let find_in_path_uncap ?(fallback="") path name =
         let fullname = Filename.concat dir name in
         let ufullname = Filename.concat dir uname in
         let ufallback = Filename.concat dir ufbck in
-        if Sys.file_exists ufullname then Some ufullname
-        else if Sys.file_exists fullname then Some fullname
-        else if has_fallback && Sys.file_exists ufallback then Some ufallback
-        else if has_fallback && Sys.file_exists fallback then Some fallback
+        if exact_file_exists ufullname then Some ufullname
+        else if exact_file_exists fullname then Some fullname
+        else if has_fallback && exact_file_exists ufallback then Some ufallback
+        else if has_fallback && exact_file_exists fallback then Some fallback
         else None
       )
   end

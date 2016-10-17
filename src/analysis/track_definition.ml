@@ -234,11 +234,11 @@ module Utils = struct
         let fallback = Filename.concat dir fallback in
         let ufullname = Filename.concat dir uname in
         let ufallback = Filename.concat dir ufbck in
-        if Sys.file_exists ufullname then acc := ufullname :: !acc ;
-        if Sys.file_exists fullname then acc := fullname :: !acc ;
-        if has_fallback && Sys.file_exists ufallback then
+        if Misc.exact_file_exists ufullname then acc := ufullname :: !acc ;
+        if Misc.exact_file_exists fullname then acc := fullname :: !acc ;
+        if has_fallback && Misc.exact_file_exists ufallback then
           acc := ufallback :: !acc ;
-        if has_fallback && Sys.file_exists fallback then
+        if has_fallback && Misc.exact_file_exists fallback then
           acc := fallback :: !acc ;
       in
       List.iter try_dir path;

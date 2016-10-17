@@ -28,6 +28,7 @@ CONFIG_FILES = src/config/my_config.ml src/ocaml
 
 SOURCES = \
 	src/config/my_config.ml           \
+	src/platform/fs_case.c            \
 	$(STURGEON)/sturgeon_stub.ml      \
 	src/utils/menhirLib.mli           \
 	src/utils/menhirLib.ml            \

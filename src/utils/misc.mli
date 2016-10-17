@@ -42,6 +42,10 @@ val samelist: ('a -> 'a -> bool) -> 'a list -> 'a list -> bool
 val may: ('a -> unit) -> 'a option -> unit
 val may_map: ('a -> 'b) -> 'a option -> 'b option
 
+val exact_file_exists : string -> bool
+	(* Like [Sys.file_exists], but takes into account case-insensitive file
+	   systems: return true only if the basename (last component of the
+           path) has the correct case. *)
 val find_in_path: string list -> string -> string
         (* Search a file in a list of directories. *)
 val find_in_path_uncap: ?fallback:string -> string list -> string -> string
