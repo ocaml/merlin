@@ -112,39 +112,42 @@ endif
 
 ####################  variables depending on your OCaml-installation
 
-SYSTEM := $(shell ocamlc -config 2>/dev/null | grep system | sed 's/system: //')
+SYSTEM := $(shell $(OCAMLFIND) c -config 2>/dev/null | grep system | sed 's/system: //')
     # This may be
     # - mingw
     # - mingw64
     # - win32
+    # - win64
     # - cygwin
     # - some other string means Unix
     # - empty means ocamlc does not support -config
 
-ifeq ($(SYSTEM),$(filter $(SYSTEM),mingw mingw64))
+ifneq ($(filter $(SYSTEM),mingw mingw64),)
   MINGW=1
 endif
-ifeq ($(SYSTEM),win32)
+ifneq ($(filter $(SYSTEM),win32 win64),)
   MSVC=1
 endif
 
 ifdef MINGW
   export MINGW
   WIN32 := 1
-  # The default value 'cc' makes 'ocamlc -cc "cc"' raises the error 'The
-  # NTVDM CPU has encountered an illegal instruction'.
-  ifndef CC
-    MNO_CYGWIN := $(shell gcc -Wextra -v --help 2>/dev/null | grep -q '\-mno-cygwin'; echo $$?)
-    CC := gcc
-  else
-    MNO_CYGWIN := $(shell $$CC -Wextra -v --help 2>/dev/null | grep -q '\-mno-cygwin'; echo $$?)
-  endif
-  # We are compiling with cygwin tools:
-  ifeq ($(MNO_CYGWIN),0)
-	CFLAGS_WIN32 := -mno-cygwin
-  endif
-  # The OCaml C header files use this flag:
-  CFLAGS += -D__MINGW32__
+  ## The default value 'cc' makes 'ocamlc -cc "cc"' raises the error 'The
+  ## NTVDM CPU has encountered an illegal instruction'.
+  #ifndef CC
+  #  MNO_CYGWIN := $(shell gcc -Wextra -v --help 2>/dev/null | grep -q '\-mno-cygwin'; echo $$?)
+  #  CC := gcc
+  #else
+  #  MNO_CYGWIN := $(shell $$CC -Wextra -v --help 2>/dev/null | grep -q '\-mno-cygwin'; echo $$?)
+  #endif
+  ## We are compiling with cygwin tools:
+  #ifeq ($(MNO_CYGWIN),0)
+	#CFLAGS_WIN32 := -mno-cygwin
+  #endif
+  ## The OCaml C header files use this flag:
+  #CFLAGS += -D__MINGW32__
+  CC:= $(shell $(OCAMLFIND) ocamlc -config | awk '/^bytecomp_c_compiler/ {for(i=2;i<=NF;i++) printf "%s " ,$$i}')
+  AR:= $(shell $(OCAMLFIND) ocamlc -config | awk '/^bytecomp_c_compiler/ {print $$2}' | sed 's|gcc|ar|g')
 endif
 ifdef MSVC
   export MSVC
@@ -387,7 +390,7 @@ export OCAMLMAKEFILE
 
 ifndef OCAMLLIBPATH
   OCAMLLIBPATH := \
-    $(shell $(OCAMLC) 2>/dev/null -where || echo /usr/local/lib/ocaml)
+    $(shell $(OCAMLFIND) ocamlc -where 2>/dev/null || echo /usr/local/lib/ocaml)
 endif
 export OCAMLLIBPATH
 
@@ -993,18 +996,18 @@ $(DLLSONAME):		$(OBJ_LINK)
 				$(OCAMLMKLIB_FLAGS)
 endif
 else
-ifdef MSVC
-$(DLLSONAME):		$(OBJ_LINK)
-			link /NOLOGO /DLL /OUT:$@ $(OBJ_LINK) \
-			 $(wildcard $(foreach dir,$(LIBDIRS),$(CLIBS:%=$(dir)/%.lib))) \
-			 '$(OCAMLLIBPATH)/ocamlrun.lib'
-
-else
+#ifdef MSVC
+#$(DLLSONAME):		$(OBJ_LINK)
+#			link /NOLOGO /DLL /OUT:$@ $(OBJ_LINK) \
+#			 $(wildcard $(foreach dir,$(LIBDIRS),$(CLIBS:%=$(dir)/%.lib))) \
+#			 '$(OCAMLLIBPATH)/ocamlrun.lib'
+#
+#else
 $(DLLSONAME):		$(OBJ_LINK)
 			$(OCAMLMKLIB) $(INCFLAGS) $(CLIBFLAGS) \
 				-o $(CLIB_BASE) $(OBJ_LINK) $(CLIBS:%=-l%) $(CFRAMEWORKS:%=-framework %) \
 				$(OCAMLMKLIB_FLAGS)
-endif
+#endif
 endif
 endif
 
@@ -1129,7 +1132,7 @@ endif
 			$(QUIET)if [ $(NOIDLHEADER) ]; then touch $*.h; fi
 
 %.$(EXT_OBJ):	%.c
-			$(OCAMLC) -c -cc "$(CC)" -ccopt "$(CFLAGS) \
+			$(OCAMLC) -c -ccopt "$(CFLAGS) \
 				$(CPPFLAGS) $(CPPFLAGS_WIN32) \
 				$(CFLAGS_WIN32) $(CINCFLAGS) $(CFLAG_O)$@ " $<
 
