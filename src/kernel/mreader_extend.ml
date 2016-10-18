@@ -76,21 +76,15 @@ let reconstruct_identifier pos t =
     incorrect_behavior "reconstruct_identifier" t;
     None
 
-let attr_cleaner = {
-  Ast_mapper.default_mapper with
-
-  Ast_mapper.attributes =
-    (fun _ attrs ->
-       List.filter (fun (name,_) ->
-           not (Std.String.is_prefixed ~by:"merlin." name.Location.txt))
-         attrs);
-
-  Ast_mapper.extension =
-    (fun _ ext ->
-       match ext with
-       | name, Parsetree.PCustom _ -> name, Parsetree.PStr []
-       | ext -> ext)
-}
+let attr_cleaner =
+  let open Ast_mapper in
+  let attributes mapper attrs =
+    let not_merlin_attribute (name,_) =
+      not (String.is_prefixed ~by:"merlin." name.Location.txt) in
+    let attrs = List.filter ~f:not_merlin_attribute attrs in
+    default_mapper.attributes mapper attrs
+  in
+  { default_mapper with attributes }
 
 let clean_tree =
   let open Ast_mapper in function

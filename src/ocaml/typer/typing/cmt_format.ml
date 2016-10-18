@@ -177,22 +177,98 @@ let save_types ?save f =
     add_saved_types !collected;
     raise exn
 
-exception Saved_types of binary_part list
+(* Generic finalizer based implementation *)
+(*module Saved_parts : sig
+  val attribute : string Location.loc
+  val store : binary_part list -> Parsetree.constant
+  val find : Parsetree.constant -> binary_part list
+end = struct
+  let attribute = Location.mknoloc "merlin.saved-parts"
 
-let saved_types_attribute =
-  Location.mknoloc "merlin.saved-types"
+  let table = Hashtbl.create 7
+
+  let gensym =
+    let counter = ref 0 in
+    fun () -> incr counter; !counter
+
+  let finalize = function
+    | Parsetree.Pconst_integer (id, None) ->
+      Hashtbl.remove table id;
+    | _ -> assert false
+
+  let store parts =
+    let id = string_of_int (gensym ()) in
+    let key = Parsetree.Pconst_integer (id, None) in
+    Gc.finalise finalize key;
+    Hashtbl.add table id parts;
+    key
+
+  let find = function
+    | Parsetree.Pconst_integer (id, None) ->
+      begin
+        try Hashtbl.find table id
+        with Not_found -> []
+      end
+    | _ -> assert false
+end*)
+
+(* Ephemeron based implementation *)
+module Saved_parts : sig
+  val attribute : string Location.loc
+  val store : binary_part list -> Parsetree.constant
+  val find : Parsetree.constant -> binary_part list
+end = struct
+  let attribute = Location.mknoloc "merlin.saved-parts"
+
+  module H = Ephemeron.K1.Make(struct
+      type t = string
+      let hash = Hashtbl.hash
+      let equal (a : t) (b : t) =  a = b
+    end)
+
+  let table = H.create 7
+
+  let gensym =
+    let counter = ref 0 in
+    fun () -> incr counter; !counter
+
+  let store parts =
+    let id = string_of_int (gensym ()) in
+    let key = Parsetree.Pconst_integer (id, None) in
+    H.add table id parts;
+    key
+
+  let find = function
+    | Parsetree.Pconst_integer (id, None) ->
+      begin
+        try H.find table id
+        with Not_found -> []
+      end
+    | _ -> assert false
+end
 
 let saved_types () =
   match !saved_types with
   | None -> []
   | Some parts ->
-    [saved_types_attribute, Parsetree.PCustom (Saved_types !parts)]
+    let open Parsetree in
+    let loc = Location.none in
+    let pexp_desc = Pexp_constant (Saved_parts.store !parts) in
+    let pexp = { pexp_desc; pexp_loc = loc; pexp_attributes = [] } in
+    let pstr_desc = Pstr_eval (pexp, []) in
+    let pstr = { pstr_desc; pstr_loc = loc } in
+    [Saved_parts.attribute, Parsetree.(PStr [pstr])]
 
 let rec saved_types_from_attributes = function
   | [] -> []
-  | (attr, Parsetree.PCustom (Saved_types parts)) :: tl
-    when attr = saved_types_attribute ->
-    parts
+  | (attr, str) :: tl
+    when attr = Saved_parts.attribute ->
+    let open Parsetree in
+    begin match str with
+      | PStr({pstr_desc = Pstr_eval({pexp_desc = Pexp_constant key},_)}::_) ->
+        Saved_parts.find key
+      | _ -> assert false
+    end
   | _ :: tl -> saved_types_from_attributes tl
 
 let record_value_dependency _vd1 _vd2 = ()
