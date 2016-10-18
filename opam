@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name:         "merlin"
-version:      "2.5.0"
+version:      "2.5.1"
 maintainer:   "defree@gmail.com"
 authors:      "The Merlin team"
 homepage:     "https://github.com/the-lambda-church/merlin"

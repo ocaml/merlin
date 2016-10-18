@@ -1,3 +1,17 @@
+merlin 2.5.1
+============
+Tue Oct 18 12:04:19 CEST 2016
+
+Bug fix release before major version.
+
+  - reintroduce lazy substitution to fix performance issue
+  - add "FINDLIB_PATH" directive to .merlin (contributed by Gerd Stolpmann)
+  - relax arity checks on externals (harmless, requested by Hongbo Zang)
+  - handle case insensitivity of OS X (fix longstanding bug)
+  - fix build under Cygwin
+  - minor cleanup, portability and usability improvements in build system and
+    editor modes
+
 merlin 2.5.0
 ============
 Mon Jun 13 22:26:33 CEST 2016
