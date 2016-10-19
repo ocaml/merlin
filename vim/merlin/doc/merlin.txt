@@ -258,7 +258,7 @@ Disable with: >
 Default: "several".
 Whether merlin should print the type of the expected parameter when completing
 in an application context.
-Possible option are:
+Possible options are:
 >
   " always show the expected type
   let g:merlin_completion_arg_type = "always"
@@ -277,13 +277,37 @@ Specifies whether you'd prefer |:MerlinLocate| and |:MerlinILocate| to take you
 to .ml or .mli files. >
     let g:merlin_locate_preference = 'mli'
 <
-                                                   *'merlin_disable_default_keybindings'*
+                                         *'merlin_disable_default_keybindings'*
 Default: false.
 Specifies whether merlin should skip setting default keybindings.
 >
     let g:merlin_disable_default_keybindings = 1
 <
- 
+                                                        *'merlin_split_method'*
+Default: "horizontal".
+Specifies how to the layout should be adusted to display the result of a
+locate query (the target file and line).
+Possible values are:
+>
+  " Layout is never split, target is displayed in current window
+  let g:merlin_split_method = "never"
+
+  " Target is displayed in a new tab
+  let g:merlin_split_method = "tab"
+
+  " Target is displayed in a new horizontal split
+  let g:merlin_split_method = "horizontal"
+
+  " Target is displayed in a new vertical split
+  let g:merlin_split_method = "vertical"
+
+  " If the target is in the same file, the current window is used by default.
+  " You can prepend "always" to force a layout split.
+  let g:merlin_split_method = "always tab"
+  let g:merlin_split_method = "always horizontal"
+  let g:merlin_split_method = "always vertical"
+< 
+
 ==============================================================================
 EXTRAS                                                         *merlin-extras*
 
