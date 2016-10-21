@@ -698,6 +698,10 @@ let inspect_pattern is_path_capitalized p =
         (where [ ] represents the cursor.)
         So err... TODO? *)
     None
+  | Tpat_alias _ ->
+    (* Assumption: if [Browse.enclosing] stopped on this node and not on the
+       subpattern, then it must mean that the cursor is on the alias. *)
+    None
   | _ ->
     (* We attach the type here so in the case of disambiguated constructors (or
        record fields) we can fallback on looking up the type (cf. #486).
