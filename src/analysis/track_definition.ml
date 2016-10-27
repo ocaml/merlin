@@ -395,6 +395,11 @@ and from_path ~project path =
     let save_digest_and_return root =
       let {Cmt_cache. cmt_infos} = Cmt_cache.read root in
       File_switching.move_to ?digest:cmt_infos.Cmt_format.cmt_source_digest root ;
+      let fname =
+        match cmt_infos.Cmt_format.cmt_sourcefile with
+        | None   -> fname
+        | Some f -> f
+      in
       let pos = Lexing.make_pos ~pos_fname:fname (1, 0) in
       let loc = { Location. loc_start=pos ; loc_end=pos ; loc_ghost=true } in
       Some (loc, None)
