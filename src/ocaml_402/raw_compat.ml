@@ -182,6 +182,7 @@ let rec pattern_idlocs pat =
   let open Typedtree in
   match pat.pat_desc with
   | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
+  | Tpat_alias (p, id, _) -> (Ident.name id, pat.pat_loc) :: pattern_idlocs p
   | Tpat_tuple patts
   | Tpat_array patts
   | Tpat_construct (_, _, patts) ->
@@ -511,4 +512,3 @@ let labels_of_application ~prefix node =
   match node.exp_desc with
   | Texp_apply (f, args) -> labels_of_application ~prefix ~env:node.exp_env f args
   | _ -> []
-
