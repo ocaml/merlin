@@ -54,7 +54,7 @@ MENHIR_FLAGS = --infer --inspection --table --cmly \
        --ocamlc 'ocamlc.opt -I $(TYPER)/parsing -I $(SRC)/ocaml_aux -I $(KERNEL)'
 
 $(PARSER_I): $(PARSER_I)p
-	cpp -P $^ > $@
+	gcc -E -x c -P $^ > $@
 
 $(PARSER_O): $(PARSER_I)
 	menhir $(MENHIR_FLAGS) $(PARSER_I)

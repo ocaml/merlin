@@ -20,6 +20,7 @@ open Parsetree
 open Ast_helper
 open Docstrings
 open Docstrings.WithMenhir
+open Front_aux
 
 let mkloc = Location.mkloc
 let mknoloc = Location.mknoloc
@@ -163,17 +164,17 @@ let array_function ~loc str name =
   ghloc ~loc (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name)))
 
 let syntax_error loc =
-  raise(Syntaxerr.Escape_error loc)
+  raise_error (Syntaxerr.Escape_error loc)
 
 let unclosed opening_name opening_num closing_name closing_num =
-  raise(Syntaxerr.Error(Syntaxerr.Unclosed(rhs_loc opening_num, opening_name,
+  raise_error (Syntaxerr.Error(Syntaxerr.Unclosed(rhs_loc opening_num, opening_name,
                                            rhs_loc closing_num, closing_name)))
 
 let expecting pos nonterm =
-    raise Syntaxerr.(Error(Expecting(rhs_loc pos, nonterm)))
+    raise_error  Syntaxerr.(Error(Expecting(rhs_loc pos, nonterm)))
 
 let not_expecting pos nonterm =
-    raise Syntaxerr.(Error(Not_expecting(rhs_loc pos, nonterm)))
+    raise_error  Syntaxerr.(Error(Not_expecting(rhs_loc pos, nonterm)))
 
 let bigarray_function ~loc str name =
   ghloc ~loc (Ldot(Ldot(Lident "Bigarray", str), name))
@@ -223,9 +224,9 @@ let bigarray_set ~loc arr arg newval =
                         Nolabel, newval]))
 
 let lapply p1 p2 =
-  if !Clflags.applicative_functors
-  then Lapply(p1, p2)
-  else raise (Syntaxerr.Error(Syntaxerr.Applicative_path (symbol_rloc())))
+  if not !Clflags.applicative_functors then 
+    raise_error  (Syntaxerr.Error(Syntaxerr.Applicative_path (symbol_rloc())));
+  Lapply(p1, p2)
 
 let exp_of_label ~loc lbl pos =
   mkexp ~loc (Pexp_ident(mkrhs (Lident(Longident.last lbl)) pos))
@@ -235,7 +236,7 @@ let pat_of_label ~loc lbl pos =
 
 let check_variable vl loc v =
   if List.mem v vl then
-    raise Syntaxerr.(Error(Variable_in_scope(loc,v)))
+    raise_error Syntaxerr.(Error(Variable_in_scope(loc,v)))
 
 let varify_constructors var_names t =
   let rec loop t =
@@ -424,7 +425,7 @@ let class_of_let_bindings ~loc lbs body =
       lbs.lbs_bindings
   in
     if lbs.lbs_extension <> None then
-      raise Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "extension")));
+      raise_error Syntaxerr.(Error(Not_expecting(lbs.lbs_loc, "extension")));
     mkclass ~loc (Pcl_let (lbs.lbs_rec, List.rev bindings, body))
 
 
@@ -433,7 +434,7 @@ let class_of_let_bindings ~loc lbs body =
    the assertions below should be turned into explicit checks. *)
 let package_type_of_module_type pmty =
   let err loc s =
-    raise (Syntaxerr.Error (Syntaxerr.Invalid_package_type (loc, s)))
+    raise_error (Syntaxerr.Error (Syntaxerr.Invalid_package_type (loc, s)))
   in
   let map_cstr = function
     | Pwith_type (lid, ptyp) ->
@@ -2344,7 +2345,9 @@ simple_core_type:
     simple_core_type2  %prec below_SHARP
       { $1 }
   | LPAREN core_type_comma_list RPAREN %prec below_SHARP
-      { match $2 with [sty] -> sty | _ -> raise Parsing.Parse_error }
+      { match $2 with [sty] -> sty | _ -> 
+        raise_error Parsing.Parse_error;
+        mktyp(Ptyp_any) }
 ;
 
 simple_core_type2:
