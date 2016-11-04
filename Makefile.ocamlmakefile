@@ -32,8 +32,6 @@ SOURCES = \
 	$(STURGEON)/sturgeon_stub.ml      \
 	src/utils/menhirLib.mli           \
 	src/utils/menhirLib.ml            \
-	src/utils/terminfo.mli            \
-	src/utils/terminfo.ml             \
 	$(TYPER)/printf_compat.mli        \
 	$(TYPER)/printf_compat.ml         \
 	src/utils/trace.mli               \
@@ -47,8 +45,6 @@ SOURCES = \
 	src/utils/logger.ml               \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
-	src/utils/mymap.mli               \
-	src/utils/mymap.ml                \
 	src/utils/identifiable.mli        \
 	src/utils/identifiable.ml         \
 	$(TYPER)/utils/warnings.mli       \

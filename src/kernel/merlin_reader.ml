@@ -322,11 +322,6 @@ module With_reader = struct
           List.filter (fun (name,_) ->
               not (Std.String.is_prefixed ~by:"merlin." name.Location.txt))
             attrs);
-     Ast_mapper.extension =
-       (fun _ ext ->
-          match ext with
-          | name, Parsetree.PCustom _ -> name, Parsetree.PStr []
-          | ext -> ext)
     }
 
   let pprint t =

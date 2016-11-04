@@ -123,6 +123,6 @@ module PathOrd = struct
        Hashtbl.seeded_hash h1 h2
 end
 
-module PathMap = Mymap.Make (PathOrd)
+module PathMap = Map.Make (PathOrd)
 module PathSet = Set.Make (PathOrd)
 module PathTbl = Hashtbl.Make (PathOrd)

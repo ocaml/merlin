@@ -294,7 +294,7 @@ let register_short_module map env p p' =
   | exception exn -> ()
 
 let pathmap_append ta tb =
-  PathMap.union (fun _ a b -> a @ b) ta tb
+  PathMap.union (fun _ a b -> Some (a @ b)) ta tb
 
 let aliasmap env =
   let update am idents =
@@ -1408,7 +1408,7 @@ let hide_rec_items = function
 let rec tree_of_modtype ?(ellipsis=false) = function
   | Mty_ident p ->
       Omty_ident (tree_of_path p)
-  | Mty_signature (lazy sg) ->
+  | Mty_signature sg ->
       Omty_signature (if ellipsis then [Osig_ellipsis]
                       else tree_of_signature sg)
   | Mty_functor(param, ty_arg, ty_res) ->
