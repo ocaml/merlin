@@ -60,3 +60,9 @@ val erroneous_type_register: Types.type_expr -> unit
 val erroneous_type_check: Types.type_expr -> bool
 val erroneous_expr_check: Typedtree.expression -> bool
 val erroneous_patt_check: Typedtree.pattern -> bool
+
+(** Turn saved types from Cmt_format into attributes *)
+val flush_saved_types : unit -> Parsetree.attributes
+
+(** Retrieve saved types that were turned into attributes *)
+val get_saved_types_from_attributes : Parsetree.attributes -> Cmt_format.binary_part list

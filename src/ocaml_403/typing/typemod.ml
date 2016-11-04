@@ -740,14 +740,14 @@ and transl_signature env sg =
         | Psig_extension (ext, _attrs) ->
             raise (Error_forward (Builtin_attributes.error_of_extension ext))
   in
-  Cmt_format.save_types
-    ~save:(fun sg -> [Cmt_format.Partial_signature sg])
-  @@ fun () ->
+  let previous_saved_types = Cmt_format.get_saved_types () in
   Builtin_attributes.warning_enter_scope ();
   let (trem, rem, final_env) = transl_sig (Env.in_signature true env) sg in
   let rem = simplify_signature rem in
   let sg = { sig_items = trem; sig_type =  rem; sig_final_env = final_env } in
   Builtin_attributes.warning_leave_scope ();
+  Cmt_format.set_saved_types
+    ((Cmt_format.Partial_signature sg) :: previous_saved_types);
   sg
 
 and transl_modtype_decl names env loc
@@ -1080,7 +1080,7 @@ let rec type_module ?alias sttn funct_body anchor env smod =
        };
       mod_type = Mty_signature (lazy []);
       mod_env = env;
-      mod_attributes = smod.pmod_attributes;
+      mod_attributes = Front_aux.flush_saved_types () @ smod.pmod_attributes;
       mod_loc = smod.pmod_loc }
 
 and type_module_ ?(alias=false) sttn funct_body anchor env smod =
@@ -1469,27 +1469,24 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
     match sstr with
     | [] -> ([], [], env)
     | pstr :: srem ->
-      let str, sg, new_env =
-        Cmt_format.save_types
-          ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure_item str])
-        @@ fun () ->
+        let previous_saved_types = Cmt_format.get_saved_types () in
         let desc, sg, new_env = type_str_item env srem pstr in
-        { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env },
-        sg, new_env
-      in
-      let (str_rem, sig_rem, final_env) = type_struct new_env srem in
-      (str :: str_rem, sg @ sig_rem, final_env)
+        let str = { str_desc = desc; str_loc = pstr.pstr_loc; str_env = env } in
+        Cmt_format.set_saved_types (Cmt_format.Partial_structure_item str
+                                    :: previous_saved_types);
+        let (str_rem, sig_rem, final_env) = type_struct new_env srem in
+        (str :: str_rem, sg @ sig_rem, final_env)
   in
   if !Clflags.annotations then
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
-  Cmt_format.save_types
-    ~save:(fun (str, _, _) -> [Cmt_format.Partial_structure str])
-  @@ fun () ->
+  let previous_saved_types = Cmt_format.get_saved_types () in
   if not toplevel then Builtin_attributes.warning_enter_scope ();
   let (items, sg, final_env) = type_struct env sstr in
   let str = { str_items = items; str_type = sg; str_final_env = final_env } in
   if not toplevel then Builtin_attributes.warning_leave_scope ();
+  Cmt_format.set_saved_types
+    (Cmt_format.Partial_structure str :: previous_saved_types);
   str, sg, final_env
 
 let type_toplevel_phrase env s =
@@ -1657,8 +1654,8 @@ let type_implementation sourcefile outputprefix modulename initial_env ast =
     end
   with e ->
     Cmt_format.save_cmt  (outputprefix ^ ".cmt") modulename
-      (Cmt_format.Partial_implementation [||]
-         (*(Array.of_list (Cmt_format.get_saved_types ()))*))
+      (Cmt_format.Partial_implementation
+         (Array.of_list (Cmt_format.get_saved_types ())))
       (Some sourcefile) initial_env None;
     raise e
 

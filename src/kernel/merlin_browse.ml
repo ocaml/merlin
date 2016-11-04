@@ -54,9 +54,9 @@ let node_of_binary_part env part =
     Browse_node.Module_type x
 
 let fold_node f env t acc =
-  let acc = match
-      Cmt_format.saved_types_from_attributes
-        (Browse_node.node_attributes t)
+  let acc =
+    match
+      Front_aux.get_saved_types_from_attributes (Browse_node.node_attributes t)
     with
     | [] -> acc
     | parts ->

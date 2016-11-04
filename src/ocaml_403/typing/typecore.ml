@@ -27,7 +27,7 @@ let merlin_incorrect_attribute =
   Location.mknoloc "merlin.incorrect", Parsetree.PStr []
 
 let merlin_recovery_attributes attrs =
-  let attrs' = merlin_incorrect_attribute :: Cmt_format.saved_types () in
+  let attrs' = merlin_incorrect_attribute :: Front_aux.flush_saved_types () in
   match attrs with
   | [] -> attrs'
   | attrs -> attrs' @ attrs
@@ -1490,9 +1490,6 @@ let partial_pred ~lev ?mode ?explode env expected_ty constrs labels p =
     None
 
 let type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty =
-  Cmt_format.save_types
-    ~save:(fun pat -> [Cmt_format.Partial_pattern pat])
-  @@ fun () ->
   let env' = !env in
   try type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty
   with exn ->
@@ -2014,9 +2011,6 @@ let rec type_exp ?recarg env sexp =
  *)
 
 and type_expect ?in_function ?(recarg=Rejected) env sexp ty_expected =
-  Cmt_format.save_types
-    ~save:(fun exp -> [Cmt_format.Partial_expression exp])
-  @@ fun () ->
   try
     Builtin_attributes.warning_enter_scope ();
     Builtin_attributes.warning_attribute sexp.pexp_attributes;

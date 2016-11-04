@@ -99,4 +99,21 @@ let prerr_warning loc w =
       | "" -> ()
       | s ->  l := Warning (loc,s) :: !l
 
+let saved_types_attribute = Location.mknoloc "merlin.saved-types"
+
+exception Saved_types of Cmt_format.binary_part list
+
+let flush_saved_types () =
+  match Cmt_format.get_saved_types () with
+  | [] -> []
+  | parts ->
+    Cmt_format.set_saved_types [];
+    [saved_types_attribute, Parsetree.PCustom (Saved_types parts)]
+
+let rec get_saved_types_from_attributes = function
+  | [] -> []
+  | (attr, Parsetree.PCustom (Saved_types parts)) :: tl
+    when attr = saved_types_attribute -> parts
+  | _ :: tl -> get_saved_types_from_attributes tl
+
 let () = Location.prerr_warning_ref := prerr_warning
