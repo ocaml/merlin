@@ -253,11 +253,7 @@ let get_pos_info pos =
   (pos.pos_fname, pos.pos_lnum, pos.pos_cnum - pos.pos_bol)
 ;;
 
-let setup_colors () =
-  Misc.Color.setup !Clflags.color
-
 let print_loc ppf loc =
-  setup_colors ();
   let (file, line, startchar) = get_pos_info loc.loc_start in
   let endchar = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum + startchar in
   if file = "//toplevel//" then begin
@@ -272,18 +268,20 @@ let print_loc ppf loc =
   end
 ;;
 
-let print ppf loc =
-  setup_colors ();
+let print' ppf loc =
   if loc.loc_start.pos_fname = "//toplevel//"
   && highlight_locations ppf [loc] then ()
   else fprintf ppf "@{<loc>%a@}%s@." print_loc loc msg_colon
+;;
+
+let print ppf loc =
+  ()
 ;;
 
 let error_prefix = "Error"
 let warning_prefix = "Warning"
 
 let print_error_prefix ppf () =
-  setup_colors ();
   fprintf ppf "@{<error>%s@}:" error_prefix;
   ()
 ;;
@@ -308,9 +306,8 @@ let print_error_cur_file ppf () = print_error ppf (in_file !input_name);;
 
 let default_warning_printer loc ppf w =
   if Warnings.is_active w then begin
-    setup_colors ();
     print ppf loc;
-    fprintf ppf "@{<warning>%s@} %a@." warning_prefix Warnings.print w
+    fprintf ppf "@{<warning>%s@} %a" warning_prefix Warnings.print w
   end
 ;;
 
@@ -321,7 +318,9 @@ let print_warning loc ppf w =
 ;;
 
 let formatter_for_warnings = ref err_formatter;;
-let prerr_warning loc w = print_warning loc !formatter_for_warnings w;;
+let prerr_warning_ref = ref (fun loc w -> print_warning loc !formatter_for_warnings w);;
+let prerr_warning loc w = !prerr_warning_ref loc w;;
+
 
 let echo_eof () =
   print_newline ();
@@ -347,7 +346,6 @@ type error =
 let pp_ksprintf ?before k fmt =
   let buf = Buffer.create 64 in
   let ppf = Format.formatter_of_buffer buf in
-  Misc.Color.set_color_tag_handling ppf;
   begin match before with
     | None -> ()
     | Some f -> f ppf
@@ -428,7 +426,7 @@ let () =
             (errorf ~loc:(in_file !input_name)
              "Some fatal warnings were triggered (%d occurrences)" n)
 
-      | Misc.HookExnWrapper {error = e; hook_name;
+      (*| Misc.HookExnWrapper {error = e; hook_name;
                              hook_info={Misc.sourcefile}} ->
           let sub = match error_of_exn e with
             | None -> error (Printexc.to_string e)
@@ -437,7 +435,7 @@ let () =
           Some
             (errorf ~loc:(in_file sourcefile)
                "In hook %S:" hook_name
-               ~sub:[sub])
+               ~sub:[sub])*)
       | _ -> None
     )
 

@@ -629,6 +629,7 @@ let default_mapper =
          | PSig x -> PSig (this.signature this x)
          | PTyp x -> PTyp (this.typ this x)
          | PPat (x, g) -> PPat (this.pat this x, map_opt (this.expr this) g)
+         | PCustom _ as payload -> payload
       );
   }
 
@@ -726,7 +727,7 @@ module PpxContext = struct
         | { pexp_desc = Pexp_constant (Pconst_string (str, None)) } -> str
         | _ -> raise_errorf "Internal error: invalid [@@@ocaml.ppx.context \
                              { %s }] string syntax" name
-      and get_bool pexp =
+    (*and get_bool pexp =
         match pexp with
         | {pexp_desc = Pexp_construct ({txt = Longident.Lident "true"},
                                        None)} ->
@@ -759,12 +760,12 @@ module PpxContext = struct
               Pexp_construct ({ txt = Longident.Lident "None" }, None) } ->
             None
         | _ -> raise_errorf "Internal error: invalid [@@@ocaml.ppx.context \
-                             { %s }] option syntax" name
+                             { %s }] option syntax" name*)
       in
       match name with
       | "tool_name" ->
           tool_name_ref := get_string payload
-      | "include_dirs" ->
+      (*| "include_dirs" ->
           Clflags.include_dirs := get_list get_string payload
       | "load_path" ->
           Config.load_path := get_list get_string payload
@@ -779,7 +780,7 @@ module PpxContext = struct
           cookies :=
             List.fold_left
               (fun s (k, v) -> StringMap.add k v s) StringMap.empty
-              l
+              l*)
       | _ ->
           ()
     in
@@ -918,3 +919,10 @@ let run_main mapper =
 
 let register_function = ref (fun _name f -> run_main f)
 let register name f = !register_function name f
+
+(** merlin: manage internal state *)
+
+type state = Parsetree.expression StringMap.t
+
+let new_state () = StringMap.empty
+let state = cookies
