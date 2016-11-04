@@ -132,8 +132,8 @@ let get typed_tree pos target =
   let roots = Merlin_typer.to_browse typed_tree in
   let enclosings =
     match Merlin_browse.enclosing pos [roots] with
-    | None -> []
-    | Some l -> List.map ~f:snd l
+    | [] -> []
+    | l -> List.map ~f:snd l
   in
 
   let all_preds = [

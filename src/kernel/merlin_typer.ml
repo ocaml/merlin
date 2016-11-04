@@ -362,8 +362,7 @@ let node_at ?(skip_recovered=false) typer pos_cursor =
     | l -> l
   in
   match Merlin_browse.deepest_before pos_cursor [structures] with
-  | Some path when skip_recovered -> select path
-  | Some path -> path
-  | None -> [env typer, Browse_node.Dummy]
+  | [] -> [env typer, Browse_node.Dummy]
+  | path -> if skip_recovered then select path else path
 
 let reader t = t.reader

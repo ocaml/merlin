@@ -721,12 +721,12 @@ let inspect_pattern is_path_capitalized p =
 
 let inspect_context browse path pos =
   match Browse.enclosing pos browse with
-  | None ->
+  | [] ->
     logfmt "inspect_context"
       (fun fmt -> Format.fprintf fmt "no enclosing around: %a"
           Lexing.print_position pos);
     Some Unknown
-  | Some enclosings ->
+  | enclosings ->
     let open Browse_node in
     let node = BrowseT.of_browse enclosings in
     match node.BrowseT.t_node with

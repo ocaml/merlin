@@ -91,34 +91,35 @@ let node_merlin_loc node = approximate_loc Browse_node.node_merlin_loc node
 let leaf_node = List.hd
 let leaf_loc t = node_loc (snd (leaf_node t))
 
-exception Merlin_only of t list
-
 let has_attr attr attrs =
  List.exists ~f:(fun (str,_) -> str.Location.txt = attr) attrs
 
 let select_leafs pos root =
-  let rec aux acc path =
-    let select env node acc =
-      let loc = node_merlin_loc node in
-      if Location_aux.compare_pos pos loc = 0
-      then aux acc ((env, node) :: path)
-      else acc
-    in
-    let env, node = leaf_node path in
-    let attrs = Browse_node.node_attributes node in
-    if has_attr "merlin.ignore" attrs then
-      acc
-    else if has_attr "merlin.teresting" attrs then
-      let acc' = fold_node select env node [] in
-      raise (Merlin_only (if [] == acc' then [path] else acc'))
+  let branches = ref [] in
+  let rec select_child branch env node has_selected =
+    let loc = node_merlin_loc node in
+    if Location_aux.compare_pos pos loc = 0 then
+      (traverse ((env, node) :: branch); true)
     else
-      let acc' = fold_node select env node acc in
-      if acc == acc'
-      then path :: acc
-      else acc'
+      has_selected
+  and traverse branch =
+    let env, node = leaf_node branch in
+    let attrs = Browse_node.node_attributes node in
+    if (has_attr "merlin.focus" attrs) then (
+      branches := [];
+      let has_leaves = fold_node (select_child branch) env node false in
+      if not has_leaves then
+        branches := [branch];
+      raise Exit
+    )
+    else if not (has_attr "merlin.ignore" attrs) then (
+      let has_leaves = fold_node (select_child branch) env node false in
+      if not has_leaves then
+        branches := branch :: !branches
+    )
   in
-  try aux [] root
-  with Merlin_only t -> t
+  (try traverse root with Exit -> ());
+  !branches
 
 let compare_locations pos l1 l2 =
   let t2_first = +1 in
@@ -141,56 +142,43 @@ let compare_locations pos l1 l2 =
       Lexing.compare_pos l2.Location.loc_end l1.Location.loc_end
 
 let best_node pos = function
-  | [] -> None
+  | [] -> []
   | init :: xs ->
     let f acc x =
       if compare_locations pos (leaf_loc acc) (leaf_loc x) <= 0
       then acc
       else x
     in
-    Some (List.fold_left ~f ~init xs)
+    List.fold_left ~f ~init xs
 
 let enclosing pos roots =
-  Option.bind (best_node pos roots)
-    ~f:(fun root -> best_node pos (select_leafs pos root))
+  match best_node pos roots with
+  | [] -> []
+  | root -> best_node pos (select_leafs pos root)
 
 let deepest_before pos roots =
   match enclosing pos roots with
-  | None -> None
-  | Some root ->
-    let rec aux loc0 path =
+  | [] -> []
+  | root ->
+    let rec aux path =
       let env0, node0 = leaf_node path in
-      let candidate = fold_node
-          (fun env node acc ->
-             let loc = node_merlin_loc node in
-             if path == root ||
-                Location_aux.compare_pos pos loc = 0 ||
-                Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
-             then match acc with
-               | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
-               | Some _ | None -> Some (env,loc,node)
-             else acc
-          )
-          env0 node0 None
+      let loc0 = node_merlin_loc node0 in
+      let select_candidate env node acc =
+        let loc = node_merlin_loc node in
+        if path == root ||
+           Location_aux.compare_pos pos loc = 0 ||
+           Lexing.compare_pos loc.Location.loc_end loc0.Location.loc_end = 0
+        then match acc with
+          | Some (_,loc',_) when compare_locations pos loc' loc <= 0 -> acc
+          | Some _ | None -> Some (env,loc,node)
+        else acc
       in
-      match candidate with
+      match fold_node select_candidate env0 node0 None with
       | None -> path
       | Some (env,loc,node) ->
-        aux loc ((env,node) :: path)
+        aux ((env,node) :: path)
     in
-    Some (aux (leaf_loc root) root)
-
-let nearest_before pos roots =
-  match enclosing pos roots with
-  | None -> None
-  | Some root ->
-    let rec aux last = function
-      | ((_, node) :: next) as prev
-        when Location_aux.compare_pos pos (node_merlin_loc node) = 0
-        -> aux prev next
-      | _ -> last
-    in
-    Some (aux root root)
+    (aux root)
 
 let of_structure str =
   [str.str_final_env, Browse_node.Structure str]

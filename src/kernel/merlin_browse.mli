@@ -43,18 +43,9 @@ val leaf_node : t -> Env.t * node
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail".
  * Returns the matching node and all its ancestors or the empty list. *)
-val deepest_before : Lexing.position -> t list -> t option
+val deepest_before : Lexing.position -> t list -> t
 
-(** The nearest context inside or before the node, though stopping after
- * leaving enclosing subtree. For instance, navigating
- * through:
- *    foo bar (baz :: tail) <cursor>
- * asking for node from cursor position will return context of the complete,
- * application, since none of the arguments or the function expression will
- * get us closer to cursor.
- * Returns the matching node and all its ancestors or the empty list. *)
-val nearest_before : Lexing.position -> t list -> t option
-val enclosing : Lexing.position -> t list -> t option
+val enclosing : Lexing.position -> t list -> t
 
 val of_structure : Typedtree.structure -> t
 val of_signature : Typedtree.signature -> t

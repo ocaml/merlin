@@ -274,8 +274,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let structures = Typer.to_browse (Typer.result ~pos typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let env, path = match Browse.enclosing pos [structures] with
-      | None -> Typer.env typer, []
-      | Some browse ->
+      | [] -> Typer.env typer, []
+      | browse ->
          fst (Browse.leaf_node browse),
          Browse_misc.annotate_tail_calls_from_leaf browse
     in
@@ -417,8 +417,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let structures = Typer.to_browse (Typer.result ~pos typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let path = match Browse.enclosing pos [structures] with
-      | None -> []
-      | Some path -> node_list path
+      | [] -> []
+      | path -> node_list path
     in
     List.map ~f:Browse.node_loc path
 
@@ -668,8 +668,8 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let str = Typer.to_browse (Typer.result typer) in
     let pos = Source.get_lexing_pos (Buffer.source buffer) pos in
     let tnode = match Browse.enclosing pos [str] with
-      | Some t -> BrowseT.of_browse t
-      | None -> BrowseT.dummy
+      | [] -> BrowseT.dummy
+      | t -> BrowseT.of_browse t
     in
     let str = BrowseT.of_browse str in
     let get_loc {Location.txt = _; loc} = loc in
