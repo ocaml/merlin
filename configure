@@ -113,7 +113,7 @@ done
 OCAML_VERSION="403"
 OCAML_VERSION_MESSAGE="Unknown, defaulting to 4.03"
 OCAML_VERSION_VAL='`OCaml_4_03_0'
-OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 ]'
+OCAML_VERSION_TYP='[ `OCaml_4_02_0 | `OCaml_4_02_1 | `OCaml_4_02_2 | `OCaml_4_02_3 | `OCaml_4_03_0 | `OCaml_4_04_0 ]'
 
 cat <<END
 Merlin configuration
@@ -154,6 +154,11 @@ case "$MAGIC_VERSION" in
     OCAML_VERSION="403"
     OCAML_VERSION_MESSAGE="OCaml 4.03.0"
     OCAML_VERSION_VAL='`OCaml_4_03_0'
+    ;;
+  "Caml1999I021")
+    OCAML_VERSION="404"
+    OCAML_VERSION_MESSAGE="OCaml 4.04.0"
+    OCAML_VERSION_VAL='`OCaml_4_04_0'
     ;;
 esac
 
