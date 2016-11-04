@@ -121,5 +121,5 @@ let annotate_tail_calls (ts : Browse_node.t list) : (Browse_node.t * Protocol.is
     tail_positions
 
 let annotate_tail_calls_from_leaf ts =
-  let ts = List.map ~f:snd @@ List.Non_empty.to_list ts in
+  let ts = List.map ~f:snd @@ ts in
   List.rev (annotate_tail_calls (List.rev ts))

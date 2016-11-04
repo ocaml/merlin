@@ -357,13 +357,13 @@ let node_at ?(skip_recovered=false) typer pos_cursor =
   let rec select = function
     (* If recovery happens, the incorrect node is kept and a recovery node
        is introduced, so the node to check for recovery is the second one. *)
-    | List.More ((_,node), (List.More ((_,node'), _) as ancestors))
+    | (_,node) :: ((_,node') :: _ as ancestors)
       when Merlin_browse.is_recovered node' -> select ancestors
     | l -> l
   in
   match Merlin_browse.deepest_before pos_cursor [structures] with
   | Some path when skip_recovered -> select path
   | Some path -> path
-  | None -> List.One (env typer, Browse_node.Dummy)
+  | None -> [env typer, Browse_node.Dummy]
 
 let reader t = t.reader

@@ -241,44 +241,6 @@ module List = struct
         | Some a' -> Cons (a', lazy (filter_map f (Lazy.force tl)))
   end
 
-  type 'a non_empty =
-    | One of 'a
-    | More of 'a * 'a non_empty
-
-  module Non_empty = struct
-    type 'a t = 'a non_empty
-
-    let hd = function
-      | One x | More (x,_) -> x
-
-    let rec length n = function
-      | One _ -> n + 1
-      | More (_,tl) -> length (n + 1) tl
-    let length l = length 0 l
-
-    let rec rev acc = function
-      | One x -> More (x, acc)
-      | More (x,tl) -> rev (More (x, acc)) tl
-    let rev = function
-      | One _ as t -> t
-      | More (x,tl) -> rev (One x) tl
-
-    let rec rev_map f acc = function
-      | One x -> More (f x, acc)
-      | More (x,tl) -> rev_map f (More (f x, acc)) tl
-    let rev_map ~f = function
-      | One x -> One (f x)
-      | More (x,tl) -> rev_map f (One (f x)) tl
-
-    let rec map ~f = function
-      | One x -> One (f x)
-      | More (x,tl) -> More (f x, map ~f tl)
-
-    let rec to_list = function
-      | One x -> [x]
-      | More (x, xs) -> x :: to_list xs
-  end
-
   let rec last = function
     | [] -> None
     | [x] -> Some x

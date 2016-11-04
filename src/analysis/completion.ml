@@ -531,18 +531,16 @@ open Typedtree
 let application_context ~verbosity ~prefix path =
   let module Printtyp = Type_utils.Printtyp in
   let target_type = ref (
-    match snd (List.Non_empty.hd path) with
+    match snd (List.hd path) with
     | Expression { exp_type = ty }
     | Pattern { pat_type = ty } -> Some ty
     | _ -> None
   )
   in
   let context = match path with
-    | List.More ((_, Expression earg), (
-        List.More ((_, Expression ({ exp_desc = Texp_apply (efun, _);
-                                     exp_type = app_type; exp_env } as app)), _)
-        | List.One (_, Expression ({ exp_desc = Texp_apply (efun, _);
-                                      exp_type = app_type; exp_env } as app))))
+    | (_, Expression earg) ::
+      (_, Expression ({ exp_desc = Texp_apply (efun, _);
+                        exp_type = app_type; exp_env } as app)) :: _
       when earg != efun ->
       Printtyp.wrap_printing_env exp_env ~verbosity @@ fun () ->
       (* Type variables shared accross arguments should all be

@@ -102,7 +102,7 @@ let user_failures project =
   | xs -> `Failures xs
 
 let node_list path =
-  List.map ~f:snd (List.Non_empty.to_list path)
+  List.map ~f:snd path
 
 let track_verbosity (type a) state (command : a command) =
   let tracked =
@@ -533,11 +533,7 @@ let dispatch_query ~verbosity buffer (type a) : a query_command -> a = function
     let env = Typer.env typer in
     Reader.with_reader (Buffer.reader buffer) @@ fun () ->
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-    let nodes =
-      Typer.node_at typer loc_mid
-      |> List.Non_empty.to_list
-      |> List.map ~f:snd
-    in
+    let nodes = List.map ~f:snd (Typer.node_at typer loc_mid) in
     Logger.logj "destruct" "nodes before"
       (fun () -> `List (List.map nodes
           ~f:(fun node -> `String (Browse_node.string_of_node node))));

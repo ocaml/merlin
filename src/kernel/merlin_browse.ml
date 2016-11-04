@@ -31,7 +31,7 @@ open Typedtree
 open Browse_node
 
 type node = Browse_node.t
-type t = (Env.t * node) List.Non_empty.t
+type t = (Env.t * node) list
 
 let node_of_binary_part env part =
   let open Cmt_format in
@@ -88,7 +88,7 @@ let node_loc node = approximate_loc Browse_node.node_real_loc node
 (* Fuzzy locations, more likely to locate the appropriate node *)
 let node_merlin_loc node = approximate_loc Browse_node.node_merlin_loc node
 
-let leaf_node = List.Non_empty.hd
+let leaf_node = List.hd
 let leaf_loc t = node_loc (snd (leaf_node t))
 
 exception Merlin_only of t list
@@ -101,7 +101,7 @@ let select_leafs pos root =
     let select env node acc =
       let loc = node_merlin_loc node in
       if Location_aux.compare_pos pos loc = 0
-      then aux acc (List.More ((env, node), path))
+      then aux acc ((env, node) :: path)
       else acc
     in
     let env, node = leaf_node path in
@@ -176,7 +176,7 @@ let deepest_before pos roots =
       match candidate with
       | None -> path
       | Some (env,loc,node) ->
-        aux loc (List.More ((env,node),path))
+        aux loc ((env,node) :: path)
     in
     Some (aux (leaf_loc root) root)
 
@@ -184,19 +184,19 @@ let nearest_before pos roots =
   match enclosing pos roots with
   | None -> None
   | Some root ->
-    let rec aux prev = function
-      | List.More ((_, node), next) as prev
+    let rec aux last = function
+      | ((_, node) :: next) as prev
         when Location_aux.compare_pos pos (node_merlin_loc node) = 0
         -> aux prev next
-      | _ -> prev
+      | _ -> last
     in
     Some (aux root root)
 
 let of_structure str =
-  List.One (str.str_final_env, Browse_node.Structure str)
+  [str.str_final_env, Browse_node.Structure str]
 
 let of_signature sg =
-  List.One (sg.sig_final_env, Browse_node.Signature sg)
+  [sg.sig_final_env, Browse_node.Signature sg]
 
 let rec is_recovered_expression = function
   | (* Recovery on arbitrary expressions *)

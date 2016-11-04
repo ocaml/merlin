@@ -29,7 +29,7 @@
 open Std
 
 type node = Browse_node.t
-type t = (Env.t * node) List.Non_empty.t
+type t = (Env.t * node) list
 
 val fold_node : (Env.t -> Browse_node.t -> 'a -> 'a) ->
                  Env.t -> Browse_node.t -> 'a -> 'a
