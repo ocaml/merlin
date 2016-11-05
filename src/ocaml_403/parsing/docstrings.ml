@@ -59,7 +59,7 @@ let warn_bad_docstrings () =
       (List.rev !docstrings)
 end
 
-(* Docstring constructors and descturctors *)
+(* Docstring constructors and destructors *)
 
 let docstring body loc =
   let ds =
@@ -110,7 +110,7 @@ let add_docs_attrs docs attrs =
   in
   attrs
 
-(* Docstrings attached to consturctors or fields *)
+(* Docstrings attached to constructors or fields *)
 
 type info = docstring option
 

@@ -629,7 +629,6 @@ let default_mapper =
          | PSig x -> PSig (this.signature this x)
          | PTyp x -> PTyp (this.typ this x)
          | PPat (x, g) -> PPat (this.pat this x, map_opt (this.expr this) g)
-         | PCustom _ as payload -> payload
       );
   }
 

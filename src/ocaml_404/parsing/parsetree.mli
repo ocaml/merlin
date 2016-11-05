@@ -61,7 +61,6 @@ and payload =
   | PSig of signature (* : SIG *)
   | PTyp of core_type  (* : T *)
   | PPat of pattern * expression option  (* ? P  or  ? P when E *)
-  | PCustom of exn
 
 (** {2 Core language} *)
 

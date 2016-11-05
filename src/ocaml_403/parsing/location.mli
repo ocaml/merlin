@@ -13,7 +13,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* Source code locations (ranges of positions), used in parsetree. *)
+(** Source code locations (ranges of positions), used in parsetree. *)
 
 open Format
 
@@ -23,7 +23,7 @@ type t = {
   loc_ghost: bool;
 }
 
-(* Note on the use of Lexing.position in this module.
+(** Note on the use of Lexing.position in this module.
    If [pos_fname = ""], then use [!input_name] instead.
    If [pos_lnum = -1], then [pos_bol = 0]. Use [pos_cnum] and
      re-parse the file to get the line and character numbers.
@@ -59,8 +59,8 @@ val print_error: formatter -> t -> unit
 val print_error_cur_file: formatter -> unit -> unit
 val print_warning: t -> formatter -> Warnings.t -> unit
 val formatter_for_warnings : formatter ref
-val prerr_warning: t -> Warnings.t -> unit
 val prerr_warning_ref: (t -> Warnings.t -> unit) ref
+val prerr_warning: t -> Warnings.t -> unit
 val echo_eof: unit -> unit
 val reset: unit -> unit
 

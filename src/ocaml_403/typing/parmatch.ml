@@ -718,7 +718,7 @@ let pats_of_type ?(always=false) env ty =
         List.for_all (fun cd -> cd.Types.cd_res <> None) cl ->
           let cstrs = fst (Env.find_type_descrs path env) in
           List.map (pat_of_constr (make_pat Tpat_any ty env)) cstrs
-      | Type_record (ldl, _) ->
+      | Type_record _ ->
           let labels = snd (Env.find_type_descrs path env) in
           let fields =
             List.map (fun ld ->

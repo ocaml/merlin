@@ -46,7 +46,7 @@ let rec strengthen env mty p =
 and strengthen_sig env sg p pos =
   match sg with
     [] -> []
-  | (Sig_value(id, desc) as sigelt) :: rem ->
+  | (Sig_value(_, desc) as sigelt) :: rem ->
       let nextpos = match desc.val_kind with Val_prim _ -> pos | _ -> pos+1 in
       sigelt :: strengthen_sig env rem p nextpos
   | Sig_type(id, {type_kind=Type_abstract}, rs) ::

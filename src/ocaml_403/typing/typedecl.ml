@@ -1684,7 +1684,7 @@ let explain_unbound_single ppf tv ty =
       let row = Btype.row_repr row in
       if row.row_more == tv then trivial ty else
       explain_unbound ppf tv row.row_fields
-        (fun (l,f) -> match Btype.row_field_repr f with
+        (fun (_l,f) -> match Btype.row_field_repr f with
           Rpresent (Some t) -> t
         | Reither (_,[t],_,_) -> t
         | Reither (_,tl,_,_) -> Btype.newgenty (Ttuple tl)

@@ -1063,7 +1063,6 @@ and payload ctxt f = function
   | PPat (x, Some e) ->
       pp f "?"; pattern ctxt f x;
       pp f " when "; expression ctxt f e
-  | PCustom _ -> pp f "<custom>"
 
 (* transform [f = fun g h -> ..] to [f g h = ... ] could be improved *)
 and binding ctxt f {pvb_pat=p; pvb_expr=x; _} =

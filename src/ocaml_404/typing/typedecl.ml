@@ -1640,11 +1640,11 @@ let transl_value_decl env loc valdecl =
   let ty = cty.ctyp_type in
   let v =
   match valdecl.pval_prim with
-    [] when Env.is_in_signature env ->
-      { val_type = ty; val_kind = Val_reg; Types.val_loc = loc;
-        val_attributes = valdecl.pval_attributes }
-  | [] ->
-      raise (Error(valdecl.pval_loc, Val_in_structure))
+    [] ->
+    if not (Env.is_in_signature env) then
+      Front_aux.raise_error (Error(valdecl.pval_loc, Val_in_structure));
+    { val_type = ty; val_kind = Val_reg; Types.val_loc = loc;
+      val_attributes = valdecl.pval_attributes }
   | _ ->
       let global_repr =
         match
@@ -1661,9 +1661,9 @@ let transl_value_decl env loc valdecl =
           ~native_repr_args
           ~native_repr_res
       in
-      if prim.prim_arity = 0 &&
+      (*if prim.prim_arity = 0 &&
          (prim.prim_name = "" || prim.prim_name.[0] <> '%') then
-        raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));
+        raise(Error(valdecl.pval_type.ptyp_loc, Null_arity_external));*)
       if !Clflags.native_code
       && prim.prim_arity > 5
       && prim.prim_native_name = ""

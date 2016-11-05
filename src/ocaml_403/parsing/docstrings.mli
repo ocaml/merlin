@@ -13,6 +13,8 @@
 (*                                                                        *)
 (**************************************************************************)
 
+(** Documentation comments *)
+
 (** (Re)Initialise all docstring state *)
 val init : unit -> unit
 
@@ -150,9 +152,6 @@ val rhs_pre_extra_text : int -> text
 
 (** Fetch additional text following the symbol at the given position *)
 val rhs_post_extra_text : int -> text
-
-
-
 
 module WithMenhir: sig
 (** Fetch the item documentation for the current symbol. This also

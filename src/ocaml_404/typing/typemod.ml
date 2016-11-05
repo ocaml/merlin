@@ -21,6 +21,8 @@ open Parsetree
 open Types
 open Format
 
+let raise_error = Front_aux.raise_error
+
 type error =
     Cannot_apply of module_type
   | Not_included of Includemod.error list
@@ -78,14 +80,18 @@ let extract_sig_open env loc mty =
     Mty_signature sg -> sg
   | Mty_alias(_, path) ->
       raise(Error(loc, env, Cannot_scrape_alias path))
-  | _ -> raise(Error(loc, env, Structure_expected mty))
+  | mty -> raise(Error(loc, env, Structure_expected mty))
 
 (* Compute the environment after opening a module *)
 
 let type_open_ ?toplevel ovf env loc lid =
-  let path, md = Typetexp.find_module env lid.loc lid.txt in
-  let sg = extract_sig_open env lid.loc md.md_type in
-  path, Env.open_signature ~loc ?toplevel ovf path sg env
+  let path = Typetexp.lookup_module ~load:true env lid.loc lid.txt in
+  match Env.open_signature ~loc ?toplevel ovf path env with
+  | Some env -> path, env
+  | None ->
+      let md = Env.find_module path env in
+      ignore (extract_sig_open env lid.loc md.md_type);
+      assert false
 
 let type_open ?toplevel env sod =
   let (path, newenv) =
@@ -970,7 +976,9 @@ let check_recmodule_inclusion env bindings =
           try
             Includemod.modtypes env mty_actual' mty_decl'
           with Includemod.Error msg ->
-            raise(Error(modl.mod_loc, env, Not_included msg)) in
+            raise_error(Error(modl.mod_loc, env, Not_included msg));
+            Tcoerce_none
+        in
         let modl' =
             { mod_desc = Tmod_constraint(modl, mty_decl.mty_type,
                 Tmodtype_explicit mty_decl, coercion);
@@ -1054,7 +1062,9 @@ let wrap_constraint env arg mty explicit =
     try
       Includemod.modtypes env arg.mod_type mty
     with Includemod.Error msg ->
-      raise(Error(arg.mod_loc, env, Not_included msg)) in
+      raise_error(Error(arg.mod_loc, env, Not_included msg));
+      Tcoerce_none
+  in
   { mod_desc = Tmod_constraint(arg, mty, explicit, coercion);
     mod_type = mty;
     mod_env = env;
@@ -1063,7 +1073,21 @@ let wrap_constraint env arg mty explicit =
 
 (* Type a module value expression *)
 
-let rec type_module ?(alias=false) sttn funct_body anchor env smod =
+let rec type_module ?alias sttn funct_body anchor env smod =
+  try type_module_ ?alias sttn funct_body anchor env smod
+  with exn ->
+    raise_error exn;
+    { mod_desc = Tmod_structure {
+         str_items = [];
+         str_type = [];
+         str_final_env = env;
+       };
+      mod_type = Mty_signature [];
+      mod_env = env;
+      mod_attributes = Front_aux.flush_saved_types () @ smod.pmod_attributes;
+      mod_loc = smod.pmod_loc }
+
+and type_module_ ?(alias=false) sttn funct_body anchor env smod =
   match smod.pmod_desc with
     Pmod_ident lid ->
       let path =
@@ -1136,11 +1160,14 @@ let rec type_module ?(alias=false) sttn funct_body anchor env smod =
             if funct_body && Mtype.contains_type env funct.mod_type then
               raise (Error (smod.pmod_loc, env, Not_allowed_in_functor_body));
           end;
-          let coercion =
+          let arg, coercion =
             try
-              Includemod.modtypes env arg.mod_type mty_param
+              arg, Includemod.modtypes env arg.mod_type mty_param
             with Includemod.Error msg ->
-              raise(Error(sarg.pmod_loc, env, Not_included msg)) in
+              raise_error(Error(sarg.pmod_loc, env, Not_included msg));
+              {arg with mod_type= Subst.modtype Subst.identity mty_param},
+              Tcoerce_none
+          in
           let mty_appl =
             match path with
               Some path ->

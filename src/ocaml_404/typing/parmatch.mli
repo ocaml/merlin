@@ -79,3 +79,11 @@ val fluid : pattern -> bool
 
 (* Ambiguous bindings *)
 val check_ambiguous_bindings : case list -> unit
+
+(*******************)
+(* Merlin specific *)
+(*******************)
+
+val complete_partial : pattern list list -> pattern option
+val return_unused: pattern list ->
+  [ `Unused of pattern | `Unused_subs of pattern * pattern list ] list
