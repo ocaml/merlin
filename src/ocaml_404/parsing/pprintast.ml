@@ -1445,4 +1445,4 @@ let pattern = pattern reset_ctxt
 let signature = signature reset_ctxt
 let structure = structure reset_ctxt
 
-let case_list = default#case_list
+let case_list = case_list reset_ctxt

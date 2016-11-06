@@ -1,20 +1,22 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
-
-open Std
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 (* Miscellaneous useful types and functions *)
 
 val fatal_error: string -> 'a
+val fatal_errorf: ('a, Format.formatter, unit, 'b) format4 -> 'a
 exception Fatal_error
 
 val try_finally : (unit -> 'a) -> (unit -> unit) -> 'a;;
@@ -35,12 +37,15 @@ val list_remove: 'a -> 'a list -> 'a list
            element equal to [x] removed. *)
 val split_last: 'a list -> 'a list * 'a
         (* Return the last element and the other elements of the given list. *)
-val samelist: ('a -> 'a -> bool) -> 'a list -> 'a list -> bool
-        (* Like [List.for_all2] but returns [false] if the two
-           lists have different length. *)
-
 val may: ('a -> unit) -> 'a option -> unit
 val may_map: ('a -> 'b) -> 'a option -> 'b option
+
+type ref_and_value = R : 'a ref * 'a -> ref_and_value
+
+val protect_refs : ref_and_value list -> (unit -> 'a) -> 'a
+(** [protect_refs l f] temporarily sets [r] to [v] for each [R (r, v)] in [l]
+    while executing [f]. The previous contents of the references is restored
+    even if [f] raises an exception. *)
 
 val exact_file_exists : string -> bool
 	(* Like [Sys.file_exists], but takes into account case-insensitive file
@@ -48,6 +53,8 @@ val exact_file_exists : string -> bool
            path) has the correct case. *)
 val find_in_path: string list -> string -> string
         (* Search a file in a list of directories. *)
+val find_in_path_rel: string list -> string -> string
+        (* Search a relative file in a list of directories. *)
 val find_in_path_uncap: ?fallback:string -> string list -> string -> string
         (* Same, but search also for uncapitalized name, i.e.
            if name is Foo.ml, allow /path/Foo.ml and /path/foo.ml
@@ -109,6 +116,13 @@ val no_overflow_lsl: int -> int -> bool
         (* [no_overflow_lsl n k] returns [true] if the computation of
            [n lsl k] does not overflow. *)
 
+module Int_literal_converter : sig
+  val int : string -> int
+  val int32 : string -> int32
+  val int64 : string -> int64
+  val nativeint : string -> nativeint
+end
+
 val chop_extension_if_any: string -> string
         (* Like Filename.chop_extension but returns the initial file
            name if it has no extension *)
@@ -127,11 +141,12 @@ val search_substring: string -> string -> int -> int
            does not occur. *)
 
 val replace_substring: before:string -> after:string -> string -> string
-        (* [search_substring ~before ~after str] replaces all occurences
-           of [before] with [after] in [str] and returns the resulting string. *)
+        (* [search_substring ~before ~after str] replaces all
+           occurences of [before] with [after] in [str] and returns
+           the resulting string. *)
 
 val rev_split_words: string -> string list
-        (* [rev_split_words s] splits [s] in blank-separated words, and return
+        (* [rev_split_words s] splits [s] in blank-separated words, and returns
            the list of words in reverse order. *)
 
 val rev_string_split: on:char -> string -> string list
@@ -150,18 +165,7 @@ val thd3: 'a * 'b * 'c -> 'c
 val fst4: 'a * 'b * 'c * 'd -> 'a
 val snd4: 'a * 'b * 'c * 'd -> 'b
 val thd4: 'a * 'b * 'c * 'd -> 'c
-val fth4: 'a * 'b * 'c * 'd -> 'd
-
-        (* [modules_in_path ~ext path] lists ocaml modules corresponding to
-         * filenames with extension [ext] in given [path]es.
-         * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
-         * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
-         * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
-val modules_in_path : ext:string -> string list -> string list
-
-val (~:) : 'a -> 'a Lazy.t
-
-val file_contents : string -> string
+val for4: 'a * 'b * 'c * 'd -> 'd
 
 module LongString :
   sig
@@ -207,13 +211,6 @@ val did_you_mean : Format.formatter -> (unit -> string list) -> unit
     the failure even if producing the hint is slow.
 *)
 
-val split : string -> char -> string list
-(** [String.split string char] splits the string [string] at every char
-    [char], and returns the list of sub-strings between the chars.
-    [String.concat (String.make 1 c) (String.split s c)] is the identity.
-    @since 4.01
- *)
-
 val cut_at : string -> char -> string * string
 (** [String.cut_at s c] returns a pair containing the sub-string before
    the first occurrence of [c] in [s], and the sub-string after the
@@ -224,6 +221,12 @@ val cut_at : string -> char -> string * string
    Raise [Not_found] if the character does not appear in the string
    @since 4.01
 *)
+
+
+module StringSet: Set.S with type elt = string
+module StringMap: Map.S with type key = string
+(* TODO: replace all custom instantiations of StringSet/StringMap in various
+   compiler modules with this one. *)
 
 type file_id
 (** An instance of file_id represents the identity of a file contents.
@@ -245,10 +248,36 @@ val normalise_eol: string -> string
    removed. Intended for pre-processing text which will subsequently be printed
    on a channel which performs EOL transformations (i.e. Windows) *)
 
-module Int_literal_converter : sig
-  val int : string -> int
-  val int32 : string -> int32
-  val int64 : string -> int64
-  val nativeint : string -> nativeint
+(** {2 Hook machinery} *)
+
+(* Hooks machinery:
+   [add_hook name f] will register a function that will be called on the
+    argument of a later call to [apply_hooks]. Hooks are applied in the
+    lexicographical order of their names.
+*)
+
+type hook_info = {
+  sourcefile : string;
+}
+
+exception HookExnWrapper of
+    {
+      error: exn;
+      hook_name: string;
+      hook_info: hook_info;
+    }
+    (** An exception raised by a hook will be wrapped into a
+        [HookExnWrapper] constructor by the hook machinery.  *)
+
+
+val raise_direct_hook_exn: exn -> 'a
+  (** A hook can use [raise_unwrapped_hook_exn] to raise an exception that will
+      not be wrapped into a [HookExnWrapper]. *)
+
+module type HookSig = sig
+  type t
+  val add_hook : string -> (hook_info -> t -> t) -> unit
+  val apply_hooks : hook_info -> t -> t
 end
 
+module MakeHooks : functor (M : sig type t end) -> HookSig with type t = M.t

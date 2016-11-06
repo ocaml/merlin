@@ -161,8 +161,7 @@ let source_path p = p.local_path @ (config p).source_path
 let build_path  p = p.local_path @ (config p).build_path
 let cmt_path    p = p.local_path @ (config p).cmt_path
 
-let global_modules p =
-  Misc.modules_in_path ~ext:".cmi" (build_path p)
+let global_modules p = modules_in_path ~ext:".cmi" (build_path p)
 
 let set_local_path project path =
   project.local_path <- path

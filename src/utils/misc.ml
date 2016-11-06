@@ -1,14 +1,17 @@
-(***********************************************************************)
-(*                                                                     *)
-(*                                OCaml                                *)
-(*                                                                     *)
-(*            Xavier Leroy, projet Cristal, INRIA Rocquencourt         *)
-(*                                                                     *)
-(*  Copyright 1996 Institut National de Recherche en Informatique et   *)
-(*  en Automatique.  All rights reserved.  This file is distributed    *)
-(*  under the terms of the Q Public License version 1.0.               *)
-(*                                                                     *)
-(***********************************************************************)
+(**************************************************************************)
+(*                                                                        *)
+(*                                 OCaml                                  *)
+(*                                                                        *)
+(*             Xavier Leroy, projet Cristal, INRIA Rocquencourt           *)
+(*                                                                        *)
+(*   Copyright 1996 Institut National de Recherche en Informatique et     *)
+(*     en Automatique.                                                    *)
+(*                                                                        *)
+(*   All rights reserved.  This file is distributed under the terms of    *)
+(*   the GNU Lesser General Public License version 2.1, with the          *)
+(*   special exception on linking described in the file LICENSE.          *)
+(*                                                                        *)
+(**************************************************************************)
 
 open Std
 
@@ -21,6 +24,8 @@ exception Fatal_error
 let fatal_error msg =
   prerr_string ">> Fatal error: "; prerr_endline msg; raise Fatal_error
 
+let fatal_errorf fmt = Format.kasprintf fatal_error fmt
+
 (* Exceptions *)
 
 let try_finally work cleanup =
@@ -28,6 +33,17 @@ let try_finally work cleanup =
   cleanup ();
   result
 ;;
+
+type ref_and_value = R : 'a ref * 'a -> ref_and_value
+
+let protect_refs =
+  let set_refs l = List.iter (fun (R (r, v)) -> r := v) l in
+  fun refs f ->
+    let backup = List.map (fun (R (r, _)) -> R (r, !r)) refs in
+    set_refs refs;
+    match f () with
+    | x           -> set_refs backup; x
+    | exception e -> set_refs backup; raise e
 
 (* List functions *)
 
@@ -58,10 +74,6 @@ let may f x = Option.iter ~f x
 let may_map f x = Option.map ~f x
 
 (* File functions *)
-
-let remove_file filename =
-  try  Sys.remove filename
-  with Sys_error _msg -> ()
 
 let rec split_path path acc =
   match Filename.dirname path, Filename.basename path with
@@ -148,6 +160,22 @@ let find_in_path path name =
       )
   end
 
+let find_in_path_rel path name =
+  let rec simplify s =
+    let open Filename in
+    let base = basename s in
+    let dir = dirname s in
+    if dir = s then dir
+    else if base = current_dir_name then simplify dir
+    else concat (simplify dir) base
+  in
+  let rec try_dir = function
+    [] -> raise Not_found
+  | dir::rem ->
+      let fullname = simplify (Filename.concat dir name) in
+      if Sys.file_exists fullname then fullname else try_dir rem
+  in try_dir path
+
 let find_in_path_uncap ?(fallback="") path name =
   let has_fallback = fallback <> "" in
   canonicalize_filename
@@ -165,6 +193,10 @@ let find_in_path_uncap ?(fallback="") path name =
         else None
       )
   end
+
+let remove_file filename =
+  try  Sys.remove filename
+  with Sys_error _msg -> ()
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
@@ -319,7 +351,7 @@ let thd3 (_,_,x) = x
 let fst4 (x,_,_,_) = x
 let snd4 (_,x,_,_) = x
 let thd4 (_,_,x,_) = x
-let fth4 (_,_,_,x) = x
+let for4 (_,_,_,x) = x
 
 
 module LongString = struct
@@ -366,50 +398,6 @@ module LongString = struct
     tbl
 end
 
-
-        (* [modules_in_path ~ext path] lists ocaml modules corresponding to
-         * filenames with extension [ext] in given [path]es.
-         * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
-         * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
-         * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
-let modules_in_path ~ext path =
-  let seen = Hashtbl.create 7 in
-  List.fold_left ~init:[] path
-  ~f:begin fun results dir ->
-    try
-      Array.fold_left
-      begin fun results file ->
-        if Filename.check_suffix file ext
-        then let name = Filename.chop_extension file in
-             (if Hashtbl.mem seen name
-              then results
-              else
-               (Hashtbl.add seen name (); String.capitalize name :: results))
-        else results
-      end results (Sys.readdir dir)
-    with Sys_error _ -> results
-  end
-
-let (~:) = Lazy.from_val
-
-let file_contents filename =
-  let ic = open_in filename in
-  try
-    let str = String.create 1024 in
-    let buf = Buffer.create 1024 in
-    let rec loop () =
-      match input ic str 0 1024 with
-      | 0 -> ()
-      | n ->
-        Buffer.add_substring buf str 0 n;
-        loop ()
-    in
-    loop ();
-    close_in_noerr ic;
-    Buffer.contents buf
-  with exn ->
-    close_in_noerr ic;
-    raise exn
 
 let edit_distance a b cutoff =
   let la, lb = String.length a, String.length b in
@@ -466,12 +454,12 @@ let spellcheck env name =
   in
   let compare target acc head =
     match edit_distance target head cutoff with
-    | None -> acc
-    | Some dist ->
-      let (best_choice, best_dist) = acc in
-      if dist < best_dist then ([head], dist)
-      else if dist = best_dist then (head :: best_choice, dist)
-      else acc
+      | None -> acc
+      | Some dist ->
+         let (best_choice, best_dist) = acc in
+         if dist < best_dist then ([head], dist)
+         else if dist = best_dist then (head :: best_choice, dist)
+         else acc
   in
   fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
 
@@ -510,6 +498,10 @@ let cut_at s c =
   let pos = String.index s c in
   String.sub s 0 pos, String.sub s (pos+1) (String.length s - pos - 1)
 
+
+module StringSet = Set.Make(struct type t = string let compare = compare end)
+module StringMap = Map.Make(struct type t = string let compare = compare end)
+
 type file_id = Unix.stats option
 
 let file_id filename =
@@ -533,3 +525,50 @@ let normalise_eol s =
       if s.[i] <> '\r' then Buffer.add_char b s.[i]
     done;
     Buffer.contents b
+
+type hook_info = {
+  sourcefile : string;
+}
+
+exception HookExnWrapper of
+    {
+      error: exn;
+      hook_name: string;
+      hook_info: hook_info;
+    }
+
+exception HookExn of exn
+
+let raise_direct_hook_exn e = raise (HookExn e)
+
+let fold_hooks list hook_info ast =
+  List.fold_left ~f:(fun ast (hook_name,f) ->
+    try
+      f hook_info ast
+    with
+    | HookExn e -> raise e
+    | error -> raise (HookExnWrapper {error; hook_name; hook_info})
+       (* when explicit reraise with backtrace will be available,
+          it should be used here *)
+
+  ) ~init:ast (List.sort compare list)
+
+module type HookSig = sig
+  type t
+
+  val add_hook : string -> (hook_info -> t -> t) -> unit
+  val apply_hooks : hook_info -> t -> t
+end
+
+module MakeHooks(M: sig
+    type t
+  end) : HookSig with type t = M.t
+= struct
+
+  type t = M.t
+
+  let hooks = ref []
+  let add_hook name f = hooks := (name, f) :: !hooks
+  let apply_hooks sourcefile intf =
+    fold_hooks !hooks sourcefile intf
+end
