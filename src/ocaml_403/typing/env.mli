@@ -123,7 +123,7 @@ val lookup_all_labels:
   ?loc:Location.t ->
   Longident.t -> t -> (label_description * (unit -> unit)) list
 val lookup_type:
-  ?loc:Location.t -> Longident.t -> t -> Path.t * type_declaration
+  ?loc:Location.t -> Longident.t -> t -> Path.t
 val lookup_module:
   load:bool -> ?loc:Location.t -> Longident.t -> t -> Path.t
 val lookup_modtype:

@@ -1062,7 +1062,7 @@ let lookup_value ?loc lid env =
 let lookup_type ?loc lid env =
   let (path, (decl, _)) = lookup_type ?loc lid env in
   mark_type_used env (Longident.last lid) decl;
-  (path, decl)
+  path
 
 let mark_type_path env path =
   try
