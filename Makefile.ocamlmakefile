@@ -37,6 +37,8 @@ SOURCES = \
 	src/utils/trace.mli               \
 	src/utils/trace.ml                \
 	src/utils/std.ml                  \
+	src/utils/local_store.ml          \
+	src/utils/local_store.mli         \
 	src/utils/misc.mli                \
 	src/utils/misc.ml                 \
 	src/utils/file_cache.mli          \

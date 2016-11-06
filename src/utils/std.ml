@@ -840,3 +840,5 @@ let file_contents filename =
   with exn ->
     close_in_noerr ic;
     raise exn
+
+external reraise : exn -> 'a = "%reraise"

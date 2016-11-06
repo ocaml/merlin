@@ -320,9 +320,6 @@ val check_value_name: string -> Location.t -> unit
 
 (** merlin: manage internal state *)
 
-type state
-
-val new_state : unit_name:string -> state
-val state : state ref
+val state : Local_store.bindings
 
 val check_state_consistency: unit -> bool

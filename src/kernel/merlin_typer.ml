@@ -96,8 +96,7 @@ type t = {
     | `Structure of (Parsetree.structure_item, Typedtree.structure_item) step lazy_t
   ];
   extensions  : String.Set.t;
-  btype_state : Btype.state;
-  env_state   : Env.state;
+  local_store : Local_store.scope;
   stamp       : int * int ref;
 }
 
@@ -154,9 +153,7 @@ let update_steps extensions ast previous =
       )
 
 let with_typer t f =
-  let open Fluid in
-  let' (from_ref Btype.state) t.btype_state @@ fun () ->
-  let' (from_ref Env.state)   t.env_state f
+  Local_store.with_scope t.local_store f
 
 let is_valid t =
   with_typer t @@ fun () ->
@@ -169,11 +166,11 @@ let is_valid t =
   | lazy (List.Lazy.Cons (x,_)) -> Btype.is_valid x.snapshot*)
 
 let make reader ~stamp extensions =
-  let btype_state = Btype.new_state () in
-  let env_state = Env.new_state
-      ~unit_name:(Merlin_source.unitname (Merlin_reader.source reader)) in
+  let local_store = Local_store.(merge (fresh Btype.state) (fresh Env.state)) in
+  Local_store.with_scope local_store (fun () ->
+      Env.set_unit_name (Merlin_source.unitname (Merlin_reader.source reader)));
   let ast = process_ast reader in
-  { reader; extensions; btype_state; env_state; stamp = (!stamp, stamp); ast;
+  { reader; extensions; local_store; stamp = (!stamp, stamp); ast;
     steps = update_steps extensions ast `None }
 
 let update reader t =

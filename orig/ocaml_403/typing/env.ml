@@ -329,16 +329,21 @@ let current_unit = ref ""
 
 (* Persistent structure descriptions *)
 
-type pers_struct =
-  { ps_name: string;
-    ps_sig: signature Lazy.t;
-    ps_comps: module_components;
-    ps_crcs: (string * Digest.t option) list;
-    ps_filename: string;
-    ps_flags: pers_flags list }
+type pers_typemap = (Path.t list Path.PathMap.t
+                     * Path.t list Path.PathMap.t) option
 
-let persistent_structures =
-  (Hashtbl.create 17 : (string, pers_struct option) Hashtbl.t)
+type pers_struct = {
+  ps_name: string;
+  ps_sig: signature Lazy.t;
+  ps_comps: module_components;
+  ps_crcs: (string * Digest.t option) list;
+  ps_filename: string;
+  ps_flags: pers_flags list;
+  ps_typemap: pers_typemap ref;
+}
+
+let persistent_structures : (string, pers_struct option) Hashtbl.t =
+  Hashtbl.create 17
 
 (* Consistency between persistent structures *)
 
