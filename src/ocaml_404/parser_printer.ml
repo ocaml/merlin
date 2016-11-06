@@ -180,6 +180,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_pattern) -> "simple_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_labeled_expr_list) -> "simple_labeled_expr_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_expr) -> "simple_expr"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_delimited_pattern) -> "simple_delimited_pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_core_type_or_tuple) -> "simple_core_type_or_tuple"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_core_type2) -> "simple_core_type2"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_simple_core_type) -> "simple_core_type"
@@ -210,6 +211,9 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_payload) -> "payload"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern_var) -> "pattern_var"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern_semi_list) -> "pattern_semi_list"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern_no_exn_comma_list) -> "pattern_no_exn_comma_list"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern_no_exn) -> "pattern_no_exn"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern_gen) -> "pattern_gen"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern_comma_list) -> "pattern_comma_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_pattern) -> "pattern"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_parse_expression) -> "parse_expression"
@@ -252,6 +256,7 @@ let print_symbol = function
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lwt_binding) -> "lwt_binding"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_lident_list) -> "lident_list"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_pattern) -> "let_pattern"
+  | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_exception_declaration) -> "let_exception_declaration"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_bindings) -> "let_bindings"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_binding_body) -> "let_binding_body"
   | MenhirInterpreter.X (MenhirInterpreter.N MenhirInterpreter.N_let_binding) -> "let_binding"
@@ -513,6 +518,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_simple_pattern -> (fun _ -> "simple_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_simple_labeled_expr_list -> (fun _ -> "simple_labeled_expr_list")
   | MenhirInterpreter.N MenhirInterpreter.N_simple_expr -> (fun _ -> "simple_expr")
+  | MenhirInterpreter.N MenhirInterpreter.N_simple_delimited_pattern -> (fun _ -> "simple_delimited_pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_simple_core_type_or_tuple -> (fun _ -> "simple_core_type_or_tuple")
   | MenhirInterpreter.N MenhirInterpreter.N_simple_core_type2 -> (fun _ -> "simple_core_type2")
   | MenhirInterpreter.N MenhirInterpreter.N_simple_core_type -> (fun _ -> "simple_core_type")
@@ -543,6 +549,9 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_payload -> (fun _ -> "payload")
   | MenhirInterpreter.N MenhirInterpreter.N_pattern_var -> (fun _ -> "pattern_var")
   | MenhirInterpreter.N MenhirInterpreter.N_pattern_semi_list -> (fun _ -> "pattern_semi_list")
+  | MenhirInterpreter.N MenhirInterpreter.N_pattern_no_exn_comma_list -> (fun _ -> "pattern_no_exn_comma_list")
+  | MenhirInterpreter.N MenhirInterpreter.N_pattern_no_exn -> (fun _ -> "pattern_no_exn")
+  | MenhirInterpreter.N MenhirInterpreter.N_pattern_gen -> (fun _ -> "pattern_gen")
   | MenhirInterpreter.N MenhirInterpreter.N_pattern_comma_list -> (fun _ -> "pattern_comma_list")
   | MenhirInterpreter.N MenhirInterpreter.N_pattern -> (fun _ -> "pattern")
   | MenhirInterpreter.N MenhirInterpreter.N_parse_expression -> (fun _ -> "parse_expression")
@@ -585,6 +594,7 @@ let print_value (type a) : a MenhirInterpreter.symbol -> a -> string = function
   | MenhirInterpreter.N MenhirInterpreter.N_lwt_binding -> (fun _ -> "lwt_binding")
   | MenhirInterpreter.N MenhirInterpreter.N_lident_list -> (fun _ -> "lident_list")
   | MenhirInterpreter.N MenhirInterpreter.N_let_pattern -> (fun _ -> "let_pattern")
+  | MenhirInterpreter.N MenhirInterpreter.N_let_exception_declaration -> (fun _ -> "let_exception_declaration")
   | MenhirInterpreter.N MenhirInterpreter.N_let_bindings -> (fun _ -> "let_bindings")
   | MenhirInterpreter.N MenhirInterpreter.N_let_binding_body -> (fun _ -> "let_binding_body")
   | MenhirInterpreter.N MenhirInterpreter.N_let_binding -> (fun _ -> "let_binding")

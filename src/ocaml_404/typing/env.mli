@@ -211,7 +211,7 @@ val is_imported_opaque: string -> bool
 
 (* Direct access to the table of imported compilation units with their CRC *)
 
-val crc_units: Consistbl.t
+(*val crc_units: Consistbl.t*)
 val add_import: string -> unit
 
 (* Summaries -- compact representation of an environment, to be
@@ -313,10 +313,17 @@ val check_value_name: string -> Location.t -> unit
 module Persistent_signature : sig
   type t =
     { filename : string; (** Name of the file containing the signature. *)
-      cmi : Cmi_format.cmi_infos }
+      cmi : Cmi_format.cmi_infos;
+      cmi_cache : exn ref; }
 
   (** Function used to load a persistent signature. The default is to look for
       the .cmi file in the load path. This function can be overridden to load
       it from memory, for instance to build a self-contained toplevel. *)
   val load : (unit_name:string -> t option) ref
 end
+
+(** merlin: manage internal state *)
+
+val state : Local_store.bindings
+
+val check_state_consistency: unit -> bool

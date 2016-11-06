@@ -96,7 +96,6 @@ module Rewrite_loc = struct
     | PSig sg -> PSig (u_signature sg)
     | PTyp ct  -> PTyp (u_core_type ct)
     | PPat (p, eo) -> PPat (u_pattern p, u_option u_expression eo)
-    | PCustom _ as pl -> pl
 
   and u_core_type {ptyp_desc; ptyp_attributes; ptyp_loc} =
     enter ();
@@ -150,6 +149,7 @@ module Rewrite_loc = struct
     | Ppat_unpack loc -> Ppat_unpack (u_loc loc)
     | Ppat_exception p -> Ppat_exception (u_pattern p)
     | Ppat_extension ext -> Ppat_extension (u_extension ext)
+    | Ppat_open (l,p) -> Ppat_open (u_loc l, u_pattern p)
 
   and u_expression {pexp_desc; pexp_loc; pexp_attributes} =
     enter ();
@@ -192,6 +192,7 @@ module Rewrite_loc = struct
     | Pexp_setinstvar (s, e) -> Pexp_setinstvar (u_loc s, u_expression e)
     | Pexp_override es -> Pexp_override (List.map (fun (loc,e) -> (u_loc loc, u_expression e)) es)
     | Pexp_letmodule (s, me, e) -> Pexp_letmodule (u_loc s, u_module_expr me, u_expression e)
+    | Pexp_letexception (c, e) -> Pexp_letexception (u_extension_constructor c, u_expression e)
     | Pexp_assert e -> Pexp_assert (u_expression e)
     | Pexp_lazy e -> Pexp_lazy (u_expression e)
     | Pexp_poly (e, cto) -> Pexp_poly (u_expression e, u_option u_core_type cto)

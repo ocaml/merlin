@@ -26,7 +26,7 @@ type error =
   | Invalid_package_type of Location.t * string
 
 exception Error of error
-exception Escape_error
+exception Escape_error of Location.t
 
 let prepare_error = function
   | Unclosed(opening_loc, opening, closing_loc, closing) ->

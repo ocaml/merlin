@@ -226,7 +226,9 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         print_expr e;
         true
       with exn ->
-        try let p, t = Env.lookup_type longident.Asttypes.txt env in
+        try 
+          let p = Env.lookup_type longident.Asttypes.txt env in
+          let t = Env.find_type p env in
           Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;
           true
         with _ ->

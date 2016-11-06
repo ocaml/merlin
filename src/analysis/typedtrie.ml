@@ -110,7 +110,7 @@ let rec tag_path ~namespace = function
 let rec build ?(local_buffer=false) ~trie browses =
   let rec node_for_direct_mod namespace = function
     | `Alias path ->
-      let p = Path.to_string_list path in
+      let p = Path_aux.to_string_list path in
       Alias (tag_path ~namespace p)
     | `Str s ->
       Internal (build ~local_buffer ~trie:Trie.empty [of_structure s])
@@ -210,7 +210,7 @@ let rec build ?(local_buffer=false) ~trie browses =
               | `Mod_expr _ -> `Mod
               | `Mod_type _ -> `Modtype
             in
-            let p = tag_path ~namespace (Path.to_string_list path) in
+            let p = tag_path ~namespace (Path_aux.to_string_list path) in
             f (Included p)
           | `Mod_type _
           | `Mod_expr _ as packed -> helper packed

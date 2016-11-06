@@ -85,30 +85,19 @@ type changes =
   | Unchanged
   | Invalid
 
+let state = Local_store.new_bindings ()
+let sref f = Local_store.ref state f
+let srefk k = Local_store.ref state (fun () -> k)
+
 (** merlin: manage internal state *)
-
-type state = {
-  trail: changes ref Weak.t;
-  mutable last_snapshot: int;
-  mutable linked_variables: int;
-}
-
-let new_state () = {
-  trail = Weak.create 1;
-  last_snapshot = 0;
-  linked_variables = 0;
-}
-
-type snapshot = changes ref * int
-
-let state = ref (new_state ())
+let trail = sref (fun () -> Weak.create 1)
 
 let log_change ch =
-  match Weak.get !state.trail 0 with None -> ()
+  match Weak.get !trail 0 with None -> ()
   | Some r ->
       let r' = ref Unchanged in
       r := Change (ch, r');
-      Weak.set !state.trail 0 (Some r')
+      Weak.set !trail 0 (Some r')
 
 (**** Representative of a type ****)
 
@@ -659,16 +648,17 @@ let undo_change = function
   | Ctypeset (r, v) -> r := v
   | Cfun f -> f ()
 
-
+type snapshot = changes ref * int
+let last_snapshot = srefk 0
+let linked_variables = srefk 0
 
 let log_type ty =
-  if ty.id <= !state.last_snapshot then log_change (Ctype (ty, ty.desc))
-
+  if ty.id <= !last_snapshot then log_change (Ctype (ty, ty.desc))
 let link_type ty ty' =
   log_type ty;
   let desc = ty.desc in
   (match desc with
-   | Tvar _ -> !state.linked_variables <- !state.linked_variables + 1
+   | Tvar _ -> incr linked_variables
    | _ -> ());
   ty.desc <- Tlink ty';
   (* Name is a user-supplied name for this unification variable (obtained
@@ -686,7 +676,7 @@ let link_type ty ty' =
   (* ; assert (check_memorized_abbrevs ()) *)
   (*  ; check_expans [] ty' *)
 let set_level ty level =
-  if ty.id <= !state.last_snapshot then log_change (Clevel (ty, ty.level));
+  if ty.id <= !last_snapshot then log_change (Clevel (ty, ty.level));
   ty.level <- level
 let set_univar rty ty =
   log_change (Cuniv (rty, !rty)); rty := Some ty
@@ -701,22 +691,14 @@ let set_commu rc c =
 let set_typeset rs s =
   log_change (Ctypeset (rs, !rs)); rs := s
 
-let on_backtrack f =
-  log_change (Cfun f)
-
 let snapshot () =
-  let old = !state.last_snapshot in
-  !state.last_snapshot <- !new_id;
-  match Weak.get !state.trail 0 with Some r -> (r, old)
+  let old = !last_snapshot in
+  last_snapshot := !new_id;
+  match Weak.get !trail 0 with Some r -> (r, old)
   | None ->
       let r = ref Unchanged in
-      Weak.set !state.trail 0 (Some r);
+      Weak.set !trail 0 (Some r);
       (r, old)
-
-let is_valid (changes, _old) =
-  match !changes with
-  | Invalid -> false
-  | _ -> true
 
 let rec rev_log accu = function
     Unchanged -> accu
@@ -728,15 +710,15 @@ let rec rev_log accu = function
 
 let backtrack (changes, old) =
   match !changes with
-    Unchanged -> !state.last_snapshot <- old
+    Unchanged -> last_snapshot := old
   | Invalid -> failwith "Btype.backtrack"
   | Change _ as change ->
       cleanup_abbrev ();
       let backlog = rev_log [] change in
       List.iter undo_change backlog;
       changes := Unchanged;
-      !state.last_snapshot <- old;
-      Weak.set !state.trail 0 (Some changes)
+      last_snapshot := old;
+      Weak.set !trail 0 (Some changes)
 
 let rec rev_compress_log log r =
   match !r with
@@ -760,5 +742,13 @@ let undo_compress (changes, _old) =
         | _ -> ())
         log
 
+let is_valid (changes, _old) =
+  match !changes with
+  | Invalid -> false
+  | _ -> true
+
+let on_backtrack f =
+  log_change (Cfun f)
+
 let linked_variables () =
-  !state.linked_variables
+  !linked_variables

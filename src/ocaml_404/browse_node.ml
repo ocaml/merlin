@@ -169,6 +169,13 @@ let rec list_fold (f' : _ f1) xs env f acc = match xs with
   | x :: xs -> list_fold f' xs env f (f' x env f acc)
   | [] -> acc
 
+let array_fold (f' : _ f1) arr env f acc =
+  let acc = ref acc in
+  for i = 0 to Array.length arr - 1 do 
+    acc := f' arr.(i) env f !acc
+  done;
+  !acc
+  
 let rec list_fold_with_next (f' : _ -> _ f1) xs env f acc = match xs with
   | x :: (y :: _ as xs) -> list_fold_with_next f' xs env f (f' (Some y) x env f acc)
   | [x] -> f' None x env f acc
@@ -193,7 +200,7 @@ let of_constructor_arguments = function
 
 let of_pat_extra (pat,_,_) = match pat with
   | Tpat_constraint ct -> of_core_type ct
-  | Tpat_type _ | Tpat_unpack -> id_fold
+  | Tpat_type _ | Tpat_unpack | Tpat_open _ -> id_fold
 
 let of_pattern_desc = function
   | Tpat_any | Tpat_var _ | Tpat_constant _ | Tpat_variant (_,None,_) -> id_fold
@@ -240,9 +247,13 @@ let of_expression_desc loc = function
   | Texp_variant (_,Some e) | Texp_field (e,_,_)
   | Texp_assert e | Texp_lazy e | Texp_setinstvar (_,_,_,e) ->
     of_expression e
-  | Texp_record (ls,e) ->
-    option_fold of_expression e **
-    list_fold (fun (_,_,e) -> of_expression e) ls
+  | Texp_record { fields; extended_expression } ->
+    option_fold of_expression extended_expression **
+    let fold_field = function
+      | (_,Typedtree.Kept _) -> id_fold
+      | (_,Typedtree.Overridden (_,e)) -> of_expression e
+    in
+    array_fold fold_field fields
   | Texp_setfield (e1,_,_,e2) | Texp_ifthenelse (e1,e2,None)
   | Texp_sequence (e1,e2) | Texp_while (e1,e2) ->
     of_expression e1 ** of_expression e2
@@ -257,6 +268,8 @@ let of_expression_desc loc = function
   | Texp_letmodule (mb_id, mb_name, mb_expr, e) ->
     let mb = {mb_id;mb_name;mb_expr;mb_loc=Location.none;mb_attributes=[]} in
     app (Module_binding mb) ** of_expression e
+  | Texp_letexception (ec,e) ->
+    app (Extension_constructor ec) ** of_expression e
   | Texp_object (cs,_) ->
     app (Class_structure cs)
   | Texp_pack me ->

@@ -56,7 +56,7 @@ let expr_tail_positions = function
   | Texp_match (_,cs,[],_)
   | Texp_match (_,_,cs,_) | Texp_try (_,cs)
     -> List.map cs ~f:(fun c -> Case c)
-  | Texp_letmodule (_,_,_,e) | Texp_let (_,_,e)
+  | Texp_letmodule (_,_,_,e) | Texp_letexception (_,e) | Texp_let (_,_,e)
   | Texp_sequence (_,e) | Texp_ifthenelse (_,e,None)
     -> [Expression e]
   | Texp_ifthenelse (_,e1,Some e2)

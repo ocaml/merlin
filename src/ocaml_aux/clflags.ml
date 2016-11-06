@@ -190,6 +190,7 @@ let transparent_modules = ref true
 let for_package         = ref None
 let debug               = ref false
 let opaque              = ref false
+let unboxed_types       = ref false
 
 let arg_spec =
   [

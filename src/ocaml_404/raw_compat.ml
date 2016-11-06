@@ -80,8 +80,8 @@ let summary_prev =
   | Env_type (s,_,_) | Env_extension (s,_,_)
   | Env_module (s,_,_) | Env_modtype (s,_,_)
   | Env_class (s,_,_) | Env_cltype (s,_,_)
-  | Env_functor_arg (s,_)
-  | Env_aliasmap (s,_) ->
+  | Env_functor_arg (s,_) | Env_constraints (s,_) ->
+  (*| Env_aliasmap (s,_) ->*)
     Some s
 
 let summary_open_path = function
@@ -107,7 +107,8 @@ let signature_of_summary =
   | Env_modtype (_,i,m)    -> Some (Sig_modtype (i,m))
   | Env_class (_,i,c)      -> Some (Sig_class (i,c,Trec_not))
   | Env_cltype (_,i,c)     -> Some (Sig_class_type (i,c,Trec_not))
-  | Env_open _ | Env_empty | Env_functor_arg _ | Env_aliasmap _ -> None
+  | Env_open _ | Env_empty | Env_functor_arg _ | Env_constraints _ -> None
+  (*| Env_aliasmap _ -> None*)
 
 let rec last_ident =
   let open Env in
@@ -121,7 +122,8 @@ let rec last_ident =
   | Env_cltype (_,id,_)
   | Env_functor_arg (_,id) -> id
   | Env_empty -> raise Not_found
-  | Env_open (s,_) | Env_aliasmap (s,_) -> last_ident s
+  | Env_open (s,_) | Env_constraints (s,_) -> last_ident s
+  (*| Env_aliasmap (s,_) -> last_ident s*)
 
 let add_hidden_signature env sign =
   let add_item env comp =
@@ -160,7 +162,7 @@ let rec signature_loc =
       | Some m1 -> union_loc_opt (mod_loc m1) (mod_loc m2)
       | None -> mod_loc m2
       end
-    | Mty_signature (lazy s) ->
+    | Mty_signature s ->
         let rec find_first = function
           | x :: xs -> (match signature_loc x with
                         | (Some _ as v) -> v
@@ -360,7 +362,7 @@ let rec qualify_constructors f pat =
           begin match (Btype.repr pat.pat_type).Types.desc with
           | Types.Tconstr (path, _, _) ->
             let path = f pat.pat_env path in
-            begin match Path.to_string_list path with
+            begin match Path_aux.to_string_list path with
             | [] -> assert false
             | p :: ps ->
               let open Longident in

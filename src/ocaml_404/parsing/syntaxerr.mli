@@ -28,7 +28,7 @@ type error =
   | Invalid_package_type of Location.t * string
 
 exception Error of error
-exception Escape_error
+exception Escape_error of Location.t
 
 val report_error: formatter -> error -> unit
  (** @deprecated Use {!Location.error_of_exn}, {!Location.report_error}. *)

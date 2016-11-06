@@ -92,6 +92,9 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
+let error (loc, env, err) =
+  Error (loc, env, err)
+
 (* Forward declaration, to be filled in by Typemod.type_module *)
 
 let type_module =
@@ -1537,6 +1540,8 @@ let type_self_pattern cl_num privty val_env met_env par_env spat =
       pv (val_env, met_env, par_env)
   in
   (pat, meths, vars, val_env, met_env, par_env)
+
+type delayed_check = ((unit -> unit) * Warnings.state)
 
 let delayed_checks = ref []
 let reset_delayed_checks () = delayed_checks := []

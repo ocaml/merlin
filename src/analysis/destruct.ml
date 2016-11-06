@@ -107,7 +107,7 @@ let rec gen_patterns ?(recurse=true) env type_expr =
     | constructors, _ ->
       let prefix =
         let path = shorten_path env path in
-        match Path.to_string_list path with
+        match Path_aux.to_string_list path with
         | [] -> assert false
         | p :: ps ->
           fun name ->

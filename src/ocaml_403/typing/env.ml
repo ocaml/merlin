@@ -57,7 +57,7 @@ let add_constructor_usage cu = function
     if not cu.cu_pattern then
       begin
         on_backtrack (fun () -> cu.cu_pattern <- false);
-      cu.cu_pattern <- true
+        cu.cu_pattern <- true
       end
   | Privatize ->
     if not cu.cu_privatize then
@@ -98,14 +98,14 @@ let error err = raise (Error err)
 module EnvLazy : sig
   type ('a,'b) t
 
+  val force : ('a -> 'b) -> ('a,'b) t -> 'b
+  val create : 'a -> ('a,'b) t
+  val get_arg : ('a,'b) t -> 'a option
+
   type ('a,'b) eval =
       Done of 'b
     | Raise of exn
     | Thunk of 'a
-
-  val force : ('a -> 'b) -> ('a,'b) t -> 'b
-  val create : 'a -> ('a,'b) t
-  val get_arg : ('a,'b) t -> 'a option
 
   val is_val : ('a,'b) t -> bool
   val view : ('a,'b) t ->  ('a,'b) eval
@@ -584,28 +584,6 @@ let reset_cache_toplevel () =
   Hashtbl.clear !used_constructors;
   Hashtbl.clear !prefixed_sg
 
-let check_state_consistency () =
-  try
-    Hashtbl.iter (fun name ps ->
-        let filename =
-          try Some (find_in_path_uncap !load_path (name ^ ".cmi"))
-          with Not_found -> None
-        in
-        let invalid =
-          match filename, ps with
-          | None, None -> false
-          | Some filename, Some ps ->
-            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_env_store) with
-              | Cmi_cache_store (_, _, ps_sig) ->
-                not (Std.lazy_eq ps_sig ps.ps_sig)
-              | _ -> true
-            end
-          | _, _ -> true
-        in
-        if invalid then raise Not_found
-      ) !persistent_structures;
-    true
-  with Not_found -> false
 
 let set_unit_name name =
   current_unit := name
@@ -2165,3 +2143,26 @@ let () =
       | Error err -> Some (Location.error_of_printer_file report_error err)
       | _ -> None
     )
+
+let check_state_consistency () =
+  try
+    Hashtbl.iter (fun name ps ->
+        let filename =
+          try Some (find_in_path_uncap !load_path (name ^ ".cmi"))
+          with Not_found -> None
+        in
+        let invalid =
+          match filename, ps with
+          | None, None -> false
+          | Some filename, Some ps ->
+            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_env_store) with
+              | Cmi_cache_store (_, _, ps_sig) ->
+                not (Std.lazy_eq ps_sig ps.ps_sig)
+              | _ -> true
+            end
+          | _, _ -> true
+        in
+        if invalid then raise Not_found
+      ) !persistent_structures;
+    true
+  with Not_found -> false
