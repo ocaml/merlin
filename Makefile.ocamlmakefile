@@ -137,6 +137,8 @@ SOURCES = \
 	$(TYPER)/typing/mtype.mli         \
 	$(TYPER)/typing/mtype.ml          \
 	$(TYPER)/raw_compat.ml            \
+	$(TYPER)/saved_parts.mli          \
+	$(TYPER)/saved_parts.ml           \
 	src/ocaml_aux/front_aux.mli       \
 	src/ocaml_aux/front_aux.ml        \
 	$(TYPER)/typing/printtyp.mli      \

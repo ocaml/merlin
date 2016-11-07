@@ -1,4 +1,3 @@
-(*pp cppo -V OCAML:`ocamlc -version` *)
 (* {{{ COPYING *(
 
   This file is part of Merlin, an helper for ocaml editors
@@ -101,80 +100,6 @@ let prerr_warning loc w =
       | s ->  l := Warning (loc,s) :: !l
 
 let () = Location.prerr_warning_ref := prerr_warning
-
-#if OCAML_VERSION < (4, 3, 0)
-(* Generic finalizer based implementation *)
-module Saved_parts : sig
-  val attribute : string Location.loc
-  val store : Cmt_format.binary_part list -> Asttypes.constant
-  val find : Asttypes.constant -> Cmt_format.binary_part list
-end = struct
-  let attribute = Location.mknoloc "merlin.saved-parts"
-
-  let table = Hashtbl.create 7
-
-  let gensym =
-    let counter = ref 0 in
-    fun () -> incr counter; !counter
-
-  let finalize = function
-    | Asttypes.Const_int id ->
-      Hashtbl.remove table id;
-    | _ -> assert false
-
-  let store parts =
-    let id = gensym () in
-    let key = Asttypes.Const_int id in
-    Gc.finalise finalize key;
-    Hashtbl.add table id parts;
-    key
-
-  let find = function
-    | Asttypes.Const_int id ->
-      begin
-        try Hashtbl.find table id
-        with Not_found -> []
-      end
-    | _ -> assert false
-end
-
-#else
-(* Ephemeron based implementation *)
-module Saved_parts : sig
-  val attribute : string Location.loc
-  val store : Cmt_format.binary_part list -> Parsetree.constant
-  val find : Parsetree.constant -> Cmt_format.binary_part list
-end = struct
-  let attribute = Location.mknoloc "merlin.saved-parts"
-
-  module H = Ephemeron.K1.Make(struct
-      type t = string
-      let hash = Hashtbl.hash
-      let equal (a : t) (b : t) =  a = b
-    end)
-
-  let table = H.create 7
-
-  let gensym =
-    let counter = ref 0 in
-    fun () -> incr counter; !counter
-
-  let store parts =
-    let id = string_of_int (gensym ()) in
-    let key = Parsetree.Pconst_integer (id, None) in
-    H.add table id parts;
-    key
-
-  let find = function
-    | Parsetree.Pconst_integer (id, None) ->
-      begin
-        try H.find table id
-        with Not_found -> []
-      end
-    | _ -> assert false
-end
-
-#endif
 
 let flush_saved_types () =
   match Cmt_format.get_saved_types () with
