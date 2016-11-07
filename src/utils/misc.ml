@@ -24,8 +24,6 @@ exception Fatal_error
 let fatal_error msg =
   prerr_string ">> Fatal error: "; prerr_endline msg; raise Fatal_error
 
-let fatal_errorf fmt = Format.kasprintf fatal_error fmt
-
 (* Exceptions *)
 
 let try_finally work cleanup =
@@ -530,12 +528,14 @@ type hook_info = {
   sourcefile : string;
 }
 
-exception HookExnWrapper of
-    {
-      error: exn;
-      hook_name: string;
-      hook_info: hook_info;
-    }
+type hook_exn_wrapper = {
+  error: exn;
+  hook_name: string;
+  hook_info: hook_info;
+}
+
+exception HookExnWrapper of hook_exn_wrapper
+
 
 exception HookExn of exn
 

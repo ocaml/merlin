@@ -15,6 +15,7 @@ build: [
 depends: [
   "ocamlfind" {>= "1.5.2"}
   "yojson"
+  "cppo" {build}
 ]
 
 available: [ocaml-version >= "4.02.3"]

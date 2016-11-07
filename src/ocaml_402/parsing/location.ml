@@ -68,8 +68,6 @@ let input_lexbuf = ref (None : lexbuf option)
 
 (* Terminal info *)
 
-let status = ref Terminfo.Uninitialised
-
 let num_loc_lines = ref 0 (* number of lines already printed after input *)
 
 let print_updating_num_loc_lines ppf f arg =
@@ -104,24 +102,16 @@ let highlight_terminfo ppf num_lines lb locs =
   (* If too many lines, give up *)
   if !lines >= num_lines - 2 then raise Exit;
   (* Move cursor up that number of lines *)
-  flush stdout; Terminfo.backup !lines;
+  flush stdout;
   (* Print the input, switching to standout for the location *)
   let bol = ref false in
   print_string "# ";
   for pos = 0 to lb.lex_buffer_len - pos0 - 1 do
     if !bol then (print_string "  "; bol := false);
-    if List.exists (fun loc -> pos = loc.loc_start.pos_cnum) locs then
-      Terminfo.standout true;
-    if List.exists (fun loc -> pos = loc.loc_end.pos_cnum) locs then
-      Terminfo.standout false;
     let c = Bytes.get lb.lex_buffer (pos + pos0) in
     print_char c;
     bol := (c = '\n')
   done;
-  (* Make sure standout mode is over *)
-  Terminfo.standout false;
-  (* Position cursor back to original location *)
-  Terminfo.resume !num_loc_lines;
   flush stdout
 
 (* Highlight the location by printing it again. *)
@@ -192,28 +182,16 @@ let highlight_dumb ppf lb loc =
 
 (* Highlight the location using one of the supported modes. *)
 
-let rec highlight_locations ppf locs =
-  match !status with
-    Terminfo.Uninitialised ->
-      status := Terminfo.setup stdout; highlight_locations ppf locs
-  | Terminfo.Bad_term ->
-      begin match !input_lexbuf with
-        None -> false
-      | Some lb ->
-          let norepeat =
-            try Sys.getenv "TERM" = "norepeat" with Not_found -> false in
-          if norepeat then false else
-            let loc1 = List.hd locs in
-            try highlight_dumb ppf lb loc1; true
-            with Exit -> false
-      end
-  | Terminfo.Good_term num_lines ->
-      begin match !input_lexbuf with
-        None -> false
-      | Some lb ->
-          try highlight_terminfo ppf num_lines lb locs; true
-          with Exit -> false
-      end
+let highlight_locations ppf locs =
+  match !input_lexbuf with
+    None -> false
+  | Some lb ->
+      let norepeat =
+        try Sys.getenv "TERM" = "norepeat" with Not_found -> false in
+      if norepeat then false else
+        let loc1 = List.hd locs in
+        try highlight_dumb ppf lb loc1; true
+        with Exit -> false
 
 (* Print the location in some way or another *)
 

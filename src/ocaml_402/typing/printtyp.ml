@@ -286,7 +286,11 @@ let register_short_module map env p p' =
   | exception exn -> ()
 
 let pathmap_append ta tb =
-  PathMap.union (fun _ a b -> a @ b) ta tb
+  PathMap.merge (fun _ a b -> 
+    match a, b with
+    | Some a, Some b -> Some (a @ b)
+    | Some a, None | None, Some a -> Some a
+    | None, None -> None) ta tb
 
 let aliasmap env =
   let update am idents =
@@ -566,7 +570,7 @@ let is_unambiguous path env =
       (* also allow repeatedly defining and opening (for toplevel) *)
       let id = lid_of_path p in
       List.for_all (fun p -> lid_of_path p = id) rem &&
-      Path.same p (fst (Env.lookup_type id env))
+      Path.same p (Env.lookup_type id env)
 
 let set_printing_env env =
   if !Clflags.real_paths = `Real then
@@ -1413,7 +1417,7 @@ let hide_rec_items = function
 let rec tree_of_modtype = function
   | Mty_ident p ->
       Omty_ident (tree_of_path p)
-  | Mty_signature (lazy sg) ->
+  | Mty_signature sg ->
       Omty_signature (tree_of_signature sg)
   | Mty_functor(param, ty_arg, ty_res) ->
       let res =

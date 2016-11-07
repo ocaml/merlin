@@ -111,7 +111,7 @@ val lookup_all_constructors:
 val lookup_label: Longident.t -> t -> label_description
 val lookup_all_labels:
   Longident.t -> t -> (label_description * (unit -> unit)) list
-val lookup_type: Longident.t -> t -> Path.t * type_declaration
+val lookup_type: Longident.t -> t -> Path.t
 val lookup_module: load:bool -> Longident.t -> t -> Path.t
 val lookup_modtype: Longident.t -> t -> Path.t * modtype_declaration
 val lookup_class: Longident.t -> t -> Path.t * class_declaration
@@ -288,9 +288,5 @@ val check_value_name: string -> Location.t -> unit
 
 (** merlin: manage internal state *)
 
-type state
-
-val new_state : unit_name:string -> state
-val state : state ref
-
+val state : Local_store.bindings
 val check_state_consistency: unit -> bool

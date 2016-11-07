@@ -207,17 +207,14 @@ val set_typeset: TypeSet.t ref -> TypeSet.t -> unit
 val log_type: type_expr -> unit
         (* Log the old value of a type, before modifying it by hand *)
 
+(**** Forward declarations ****)
+val print_raw: (Format.formatter -> type_expr -> unit) ref
+
+(** merlin: manage all internal state *)
+
+val state : Local_store.bindings
+
 (* merlin: Number of unification variables that have been linked so far.
    Used to estimate the "cost" of unification. *)
 val linked_variables: unit -> int
 
-(**** Forward declarations ****)
-val print_raw: (Format.formatter -> type_expr -> unit) ref
-
-
-(** merlin: manage all internal state *)
-
-type state
-
-val new_state : unit -> state
-val state : state ref

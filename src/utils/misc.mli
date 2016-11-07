@@ -16,7 +16,6 @@
 (* Miscellaneous useful types and functions *)
 
 val fatal_error: string -> 'a
-val fatal_errorf: ('a, Format.formatter, unit, 'b) format4 -> 'a
 exception Fatal_error
 
 val try_finally : (unit -> 'a) -> (unit -> unit) -> 'a;;
@@ -260,12 +259,14 @@ type hook_info = {
   sourcefile : string;
 }
 
-exception HookExnWrapper of
-    {
-      error: exn;
-      hook_name: string;
-      hook_info: hook_info;
-    }
+type hook_exn_wrapper = {
+  error: exn;
+  hook_name: string;
+  hook_info: hook_info;
+}
+
+exception HookExnWrapper of hook_exn_wrapper
+
     (** An exception raised by a hook will be wrapped into a
         [HookExnWrapper] constructor by the hook machinery.  *)
 

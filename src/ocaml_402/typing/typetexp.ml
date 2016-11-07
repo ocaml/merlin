@@ -56,15 +56,6 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-let string_of_cst = function
-  | Const_string(s, _) -> Some s
-  | _ -> None
-
-let string_of_payload = function
-  | PStr[{pstr_desc=Pstr_eval({pexp_desc=Pexp_constant c},_)}] ->
-      string_of_cst c
-  | _ -> None
-
 let rec error_of_extension ext =
   match ext with
   | ({txt = ("ocaml.error"|"error") as txt; loc}, p) ->
@@ -104,7 +95,7 @@ let check_deprecated loc attrs s =
   List.iter
     (function
     | ({txt = "ocaml.deprecated"|"deprecated"; _}, p) ->
-      begin match string_of_payload p with
+      begin match Builtin_attributes.string_of_payload p with
       | Some txt ->
           Location.prerr_warning loc (Warnings.Deprecated (s ^ "\n" ^ txt))
       | None ->
@@ -138,43 +129,9 @@ let emit_external_warnings =
       )
   }
 
-
-let warning_scope = ref []
-
-let warning_enter_scope () =
-  warning_scope := (Warnings.backup ()) :: !warning_scope
-let warning_leave_scope () =
-  match !warning_scope with
-  | [] -> assert false
-  | hd :: tl ->
-      Warnings.restore hd;
-      warning_scope := tl
-
-let warning_attribute attrs =
-  let process loc txt errflag payload =
-    match string_of_payload payload with
-    | Some s ->
-        begin try Warnings.parse_options errflag s
-        with Arg.Bad _ ->
-          Location.prerr_warning loc
-            (Warnings.Attribute_payload
-               (txt, "Ill-formed list of warnings"))
-        end
-    | None ->
-        Location.prerr_warning loc
-          (Warnings.Attribute_payload
-             (txt, "A single string literal is expected"))
-  in
-  List.iter
-    (function
-      | ({txt = ("ocaml.warning"|"warning") as txt; loc}, payload) ->
-          process loc txt false payload
-      | ({txt = ("ocaml.warnerror"|"warnerror") as txt; loc}, payload) ->
-          process loc txt true payload
-      | _ ->
-          ()
-    )
-    attrs
+let warning_enter_scope = Builtin_attributes.warning_enter_scope
+let warning_leave_scope = Builtin_attributes.warning_leave_scope
+let warning_attribute = Builtin_attributes.warning_attribute
 
 type variable_context = int * (string, type_expr) Tbl.t
 
@@ -222,12 +179,13 @@ let find_component lookup make_error env loc lid =
     raise (Error (loc, env, Illegal_reference_to_recursive_module))
 
 let find_type env loc lid =
-  let (path, decl) as r =
+  let path =
     find_component Env.lookup_type (fun lid -> Unbound_type_constructor lid)
       env loc lid
   in
+  let decl = Env.find_type path env in
   check_deprecated loc decl.type_attributes (Path.name path);
-  r
+  (path, decl)
 
 let find_constructor =
   find_component Env.lookup_constructor (fun lid -> Unbound_constructor lid)
@@ -480,7 +438,8 @@ let rec transl_type env policy styp =
   | Ptyp_class(lid, stl) ->
       let (path, decl, is_variant) =
         try
-          let (path, decl) = Env.lookup_type lid.txt env in
+          let path = Env.lookup_type lid.txt env in
+          let decl = Env.find_type path env in
           let rec check decl =
             match decl.type_manifest with
               None -> raise Not_found
@@ -501,7 +460,8 @@ let rec transl_type env policy styp =
             | Longident.Ldot(r, s)   -> Longident.Ldot (r, "#" ^ s)
             | Longident.Lapply(_, _) -> fatal_error "Typetexp.transl_type"
           in
-          let (path, decl) = Env.lookup_type lid2 env in
+          let path = Env.lookup_type lid2 env in
+          let decl = Env.find_type path env in
           (path, decl, false)
         with Not_found ->
           ignore (find_class env styp.ptyp_loc lid.txt); assert false

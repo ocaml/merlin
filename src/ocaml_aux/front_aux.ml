@@ -1,3 +1,4 @@
+(*pp cppo -V OCAML:`ocamlc -version` *)
 (* {{{ COPYING *(
 
   This file is part of Merlin, an helper for ocaml editors
@@ -101,11 +102,12 @@ let prerr_warning loc w =
 
 let () = Location.prerr_warning_ref := prerr_warning
 
+#if OCAML_VERSION < (4, 3, 0)
 (* Generic finalizer based implementation *)
-(*module Saved_parts : sig
+module Saved_parts : sig
   val attribute : string Location.loc
-  val store : binary_part list -> Parsetree.constant
-  val find : Parsetree.constant -> binary_part list
+  val store : Cmt_format.binary_part list -> Asttypes.constant
+  val find : Asttypes.constant -> Cmt_format.binary_part list
 end = struct
   let attribute = Location.mknoloc "merlin.saved-parts"
 
@@ -116,26 +118,27 @@ end = struct
     fun () -> incr counter; !counter
 
   let finalize = function
-    | Parsetree.Pconst_integer (id, None) ->
+    | Asttypes.Const_int id ->
       Hashtbl.remove table id;
     | _ -> assert false
 
   let store parts =
-    let id = string_of_int (gensym ()) in
-    let key = Parsetree.Pconst_integer (id, None) in
+    let id = gensym () in
+    let key = Asttypes.Const_int id in
     Gc.finalise finalize key;
     Hashtbl.add table id parts;
     key
 
   let find = function
-    | Parsetree.Pconst_integer (id, None) ->
+    | Asttypes.Const_int id ->
       begin
         try Hashtbl.find table id
         with Not_found -> []
       end
     | _ -> assert false
-end*)
+end
 
+#else
 (* Ephemeron based implementation *)
 module Saved_parts : sig
   val attribute : string Location.loc
@@ -170,6 +173,8 @@ end = struct
       end
     | _ -> assert false
 end
+
+#endif
 
 let flush_saved_types () =
   match Cmt_format.get_saved_types () with

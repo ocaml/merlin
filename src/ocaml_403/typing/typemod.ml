@@ -809,15 +809,12 @@ and transl_signature env sg =
           transl_sig env srem
 
   in
-  let previous_saved_types = Cmt_format.get_saved_types () in
-  Builtin_attributes.warning_enter_scope ();
-  let (trem, rem, final_env) = transl_sig (Env.in_signature true env) sg in
-  let rem = simplify_signature rem in
-  let sg = { sig_items = trem; sig_type =  rem; sig_final_env = final_env } in
-  Builtin_attributes.warning_leave_scope ();
-  Cmt_format.set_saved_types
-    ((Cmt_format.Partial_signature sg) :: previous_saved_types);
-  sg
+  Front_aux.with_saved_types ~warning_attribute:[]
+    ~save_part:(fun sg -> Cmt_format.Partial_signature sg)
+    (fun () ->
+      let (trem, rem, final_env) = transl_sig (Env.in_signature true env) sg in
+      let rem = simplify_signature rem in
+      { sig_items = trem; sig_type =  rem; sig_final_env = final_env }) 
 
 and transl_modtype_decl names env loc
     {pmtd_name; pmtd_type; pmtd_attributes; pmtd_loc} =
