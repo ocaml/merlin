@@ -99,6 +99,8 @@ let prerr_warning loc w =
       | "" -> ()
       | s ->  l := Warning (loc,s) :: !l
 
+let () = Location.prerr_warning_ref := prerr_warning
+
 (* Generic finalizer based implementation *)
 (*module Saved_parts : sig
   val attribute : string Location.loc
@@ -194,4 +196,22 @@ let rec get_saved_types_from_attributes = function
     end
   | _ :: tl -> get_saved_types_from_attributes tl
 
-let () = Location.prerr_warning_ref := prerr_warning
+let with_warning_attribute ?warning_attribute f =
+  match warning_attribute with
+  | None -> f ()
+  | Some attr -> Builtin_attributes.with_warning_attribute attr f
+
+let with_saved_types ?warning_attribute ?save_part f =
+  let saved_types = Cmt_format.get_saved_types () in
+  Cmt_format.set_saved_types [];
+  try
+    let result = with_warning_attribute ?warning_attribute f in
+    begin match save_part with
+      | None -> ()
+      | Some f -> Cmt_format.set_saved_types (f result :: saved_types)
+    end;
+    result
+  with exn ->
+    let saved_types'= Cmt_format.get_saved_types () in
+    Cmt_format.set_saved_types (saved_types' @ saved_types);
+    reraise exn

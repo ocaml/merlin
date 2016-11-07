@@ -2012,12 +2012,11 @@ let rec type_exp ?recarg env sexp =
  *)
 
 and type_expect ?in_function ?(recarg=Rejected) env sexp ty_expected =
+  Front_aux.with_saved_types ~warning_attribute:sexp.pexp_attributes
+    ?save_part:None (*~save_part:(fun e -> Cmt_format.Partial_expression e)*)
+  @@ fun () ->
   try
-    Builtin_attributes.warning_enter_scope ();
-    Builtin_attributes.warning_attribute sexp.pexp_attributes;
-    let exp = type_expect_ ?in_function ~recarg env sexp ty_expected in
-    Builtin_attributes.warning_leave_scope ();
-    exp
+    type_expect_ ?in_function ~recarg env sexp ty_expected
   with exn ->
     Front_aux.erroneous_type_register ty_expected;
     raise_error exn;

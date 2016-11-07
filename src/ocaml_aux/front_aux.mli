@@ -66,3 +66,8 @@ val flush_saved_types : unit -> Parsetree.attributes
 
 (** Retrieve saved types that were turned into attributes *)
 val get_saved_types_from_attributes : Parsetree.attributes -> Cmt_format.binary_part list
+
+val with_saved_types :
+  ?warning_attribute:Parsetree.attributes ->
+  ?save_part:('a -> Cmt_format.binary_part) ->
+  (unit -> 'a) -> 'a
