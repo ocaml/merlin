@@ -2012,31 +2012,31 @@ let rec type_exp ?recarg env sexp =
  *)
 
 and type_expect ?in_function ?(recarg=Rejected) env sexp ty_expected =
-  Front_aux.with_saved_types ~warning_attribute:sexp.pexp_attributes
-    ?save_part:None (*~save_part:(fun e -> Cmt_format.Partial_expression e)*)
-  @@ fun () ->
-  try
-    type_expect_ ?in_function ~recarg env sexp ty_expected
-  with exn ->
-    Front_aux.erroneous_type_register ty_expected;
-    raise_error exn;
-    let loc = sexp.pexp_loc in
-    {
-      exp_desc = Texp_ident
-          (Path.Pident (Ident.create "*type-error*"),
-           Location.mkloc (Longident.Lident "*type-error*") loc,
-           { Types.
-             val_type = ty_expected;
-             val_kind = Val_reg;
-             val_loc = loc;
-             val_attributes = [];
-           });
-      exp_loc = loc;
-      exp_extra = [];
-      exp_type = ty_expected;
-      exp_env = env;
-      exp_attributes = merlin_recovery_attributes [];
-    }
+  Front_aux.with_saved_types
+    ~warning_attribute:sexp.pexp_attributes ?save_part:None
+    (fun () ->
+      try
+        type_expect_ ?in_function ~recarg env sexp ty_expected
+      with exn ->
+        Front_aux.erroneous_type_register ty_expected;
+        raise_error exn;
+        let loc = sexp.pexp_loc in
+        {
+          exp_desc = Texp_ident
+              (Path.Pident (Ident.create "*type-error*"),
+               Location.mkloc (Longident.Lident "*type-error*") loc,
+               { Types.
+                 val_type = ty_expected;
+                 val_kind = Val_reg;
+                 val_loc = loc;
+                 val_attributes = [];
+               });
+          exp_loc = loc;
+          exp_extra = [];
+          exp_type = ty_expected;
+          exp_env = env;
+          exp_attributes = merlin_recovery_attributes [];
+        })
 
 and type_expect_ ?in_function ~recarg env sexp ty_expected =
   let loc = sexp.pexp_loc in
