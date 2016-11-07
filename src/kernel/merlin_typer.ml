@@ -65,6 +65,7 @@ let rec type_steps type_fun env0 = function
         let caught = ref [] in
         Front_aux.catch_errors caught @@ fun () ->
         Typecore.delayed_checks := [];
+        Cmt_format.clear ();
         let titem, sign, env =
           try type_fun env0 pitem
           with exn ->
