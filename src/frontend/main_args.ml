@@ -57,7 +57,7 @@ let unexpected_argument s =
   failwith ("Unexpected argument: " ^ s)
 
 let ignore_non_parametrized =
-  List.map (fun x -> x, Arg.Unit ignore, " Ignored (ocaml compatility)") [
+  List.map (fun x -> x, Arg.Unit ignore, " Ignored (ocaml compatibility)") [
     "-a"; "-absname"; "-alias-deps"; "-annot"; "-app-funct"; "-bin-annot";
     "-c"; "-compact"; "-compat-32"; "-config"; "-custom"; "-dalloc";
     "-dclambda"; "-dcmm"; "-dcombine"; "-dcse"; "-dflambda";
@@ -78,7 +78,7 @@ let ignore_non_parametrized =
   ]
 
 let ignore_parametrized =
-  List.map (fun x -> x, Arg.String ignore, " Ignored (ocaml compatility)") [
+  List.map (fun x -> x, Arg.String ignore, " Ignored (ocaml compatibility)") [
     "-cc"; "-cclib"; "-ccopt"; "-color"; "-dflambda-let"; "-dllib"; "-dllpath";
     "-for-pack"; "-impl"; "-inline-alloc-cost"; "-inline-branch-cost";
     "-inline-branch-factor"; "-inline-call-cost"; "-inline-indirect-cost";
