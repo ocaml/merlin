@@ -164,7 +164,14 @@ let cmt_path    p = p.local_path @ (config p).cmt_path
 let global_modules p = modules_in_path ~ext:".cmi" (build_path p)
 
 let set_local_path project path =
-  project.local_path <- path
+  project.local_path <- path;
+  begin match path with
+  | [] -> ()
+  | dir :: _ ->
+    try Sys.chdir dir
+    with _ -> ()
+  end
+
 
 let get_flags project = [
   "user", project.user_config.Dot_merlin.flags;
