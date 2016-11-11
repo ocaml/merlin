@@ -89,7 +89,6 @@ let state = Local_store.new_bindings ()
 let sref f = Local_store.ref state f
 let srefk k = Local_store.ref state (fun () -> k)
 
-(** merlin: manage internal state *)
 let trail = sref (fun () -> Weak.create 1)
 
 let log_change ch =

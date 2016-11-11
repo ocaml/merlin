@@ -169,10 +169,11 @@ let is_valid t =
 let make reader ~stamp extensions =
   let local_store = Local_store.(merge (fresh Btype.state) (fresh Env.state)) in
   Local_store.with_scope local_store (fun () ->
-      Env.set_unit_name (Merlin_source.unitname (Merlin_reader.source reader)));
-  let ast = process_ast reader in
-  { reader; extensions; local_store; stamp = (!stamp, stamp); ast;
-    steps = update_steps extensions ast `None }
+      Env.set_unit_name (Merlin_source.unitname (Merlin_reader.source reader));
+      let ast = process_ast reader in
+      { reader; extensions; local_store; stamp = (!stamp, stamp); ast;
+        steps = update_steps extensions ast `None }
+    )
 
 let update reader t =
   if not (is_valid t) then

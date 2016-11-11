@@ -391,6 +391,8 @@ let error_of_printer loc print x =
 let error_of_printer_file print x =
   error_of_printer (in_file !input_name) print x
 
+exception Error of error
+
 let () =
   register_error_of_exn
     (function
@@ -412,6 +414,9 @@ let () =
             (errorf ~loc:(in_file sourcefile)
                "In hook %S:" hook_name
                ~sub:[sub])*)
+      | Error e -> Some e
+      | Misc.Fatal_error (msg, bt) ->
+          Some (errorf "Fatal error: %s.\n%s" msg (Printexc.raw_backtrace_to_string bt))
       | _ -> None
     )
 
@@ -426,16 +431,6 @@ let rec report_exception_rec n ppf exn =
     report_exception_rec (n-1) ppf exn
 
 let report_exception ppf exn = report_exception_rec 5 ppf exn
-
-
-exception Error of error
-
-let () =
-  register_error_of_exn
-    (function
-      | Error e -> Some e
-      | _ -> None
-    )
 
 let raise_errorf ?(loc = none) ?(sub = []) ?(if_highlight = "") =
   pp_ksprintf

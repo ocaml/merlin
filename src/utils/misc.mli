@@ -16,7 +16,7 @@
 (* Miscellaneous useful types and functions *)
 
 val fatal_error: string -> 'a
-exception Fatal_error
+exception Fatal_error of string * Printexc.raw_backtrace
 
 val try_finally : (unit -> 'a) -> (unit -> unit) -> 'a;;
 

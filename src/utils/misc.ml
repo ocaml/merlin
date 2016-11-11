@@ -19,10 +19,10 @@ let () = Findlib.init ()
 
 (* Errors *)
 
-exception Fatal_error
+exception Fatal_error of string * Printexc.raw_backtrace
 
 let fatal_error msg =
-  prerr_string ">> Fatal error: "; prerr_endline msg; raise Fatal_error
+  raise (Fatal_error (msg, Printexc.get_callstack 50))
 
 (* Exceptions *)
 

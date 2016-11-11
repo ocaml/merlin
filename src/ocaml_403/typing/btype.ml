@@ -87,6 +87,7 @@ type changes =
 
 let state = Local_store.new_bindings ()
 let sref f = Local_store.ref state f
+let srefk k = Local_store.ref state (fun () -> k)
 
 let trail = sref (fun () -> Weak.create 1)
 
@@ -646,10 +647,9 @@ let undo_change = function
   | Ctypeset (r, v) -> r := v
   | Cfun f -> f ()
 
-
 type snapshot = changes ref * int
-let last_snapshot = sref (fun () -> 0)
-let linked_variables = sref (fun () -> 0)
+let last_snapshot = srefk 0
+let linked_variables = srefk 0
 
 let log_type ty =
   if ty.id <= !last_snapshot then log_change (Ctype (ty, ty.desc))
@@ -690,9 +690,6 @@ let set_commu rc c =
 let set_typeset rs s =
   log_change (Ctypeset (rs, !rs)); rs := s
 
-let on_backtrack f =
-  log_change (Cfun f)
-
 let snapshot () =
   let old = !last_snapshot in
   last_snapshot := !new_id;
@@ -701,11 +698,6 @@ let snapshot () =
       let r = ref Unchanged in
       Weak.set !trail 0 (Some r);
       (r, old)
-
-let is_valid (changes, _old) =
-  match !changes with
-  | Invalid -> false
-  | _ -> true
 
 let rec rev_log accu = function
     Unchanged -> accu
@@ -748,6 +740,14 @@ let undo_compress (changes, _old) =
             ty.desc <- desc; r := !next
         | _ -> ())
         log
+
+let is_valid (changes, _old) =
+  match !changes with
+  | Invalid -> false
+  | _ -> true
+
+let on_backtrack f =
+  log_change (Cfun f)
 
 let linked_variables () =
   !linked_variables

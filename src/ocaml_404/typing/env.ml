@@ -390,9 +390,7 @@ type pers_struct =
     ps_flags: pers_flags list }
 
 let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
-  sref (fun () -> let tbl = Hashtbl.create 17 in Gc.minor ();
-         persistent_action tbl "create" "";
-         tbl)
+  sref (fun () -> Hashtbl.create 17)
 
 (* Consistency between persistent structures *)
 

@@ -26,10 +26,11 @@ open Btype
 
 let state = Local_store.new_bindings ()
 let sref f = Local_store.ref state f
+let srefk k = Local_store.ref state (fun () -> k)
 
 let add_delayed_check_forward = ref (fun _ -> assert false)
 
-let value_declarations : (((string * Location.t), (unit -> unit)) Hashtbl.t) ref =
+let value_declarations : ((string * Location.t), (unit -> unit)) Hashtbl.t ref =
   sref (fun () -> Hashtbl.create 16)
     (* This table is used to usage of value declarations.  A declaration is
        identified with its name and location.  The callback attached to a
@@ -48,23 +49,20 @@ type constructor_usages =
     }
 let add_constructor_usage cu = function
   | Positive ->
-    if not cu.cu_positive then
-      begin
-        on_backtrack (fun () -> cu.cu_positive <- false);
-        cu.cu_positive <- true
-      end
+    if not cu.cu_positive then (
+      on_backtrack (fun () -> cu.cu_positive <- false);
+      cu.cu_positive <- true
+    )
   | Pattern ->
-    if not cu.cu_pattern then
-      begin
-        on_backtrack (fun () -> cu.cu_pattern <- false);
-        cu.cu_pattern <- true
-      end
+    if not cu.cu_pattern then (
+      on_backtrack (fun () -> cu.cu_pattern <- false);
+      cu.cu_pattern <- true
+    )
   | Privatize ->
-    if not cu.cu_privatize then
-      begin
-        on_backtrack (fun () -> cu.cu_privatize <- false);
-        cu.cu_privatize <- true
-      end
+    if not cu.cu_privatize then (
+      on_backtrack (fun () -> cu.cu_privatize <- false);
+      cu.cu_privatize <- true
+    )
 
 let backtracking_add tbl key value =
   on_backtrack (fun () -> Hashtbl.remove tbl key);
@@ -257,7 +255,7 @@ and structure_components = {
   mutable comp_types:
    (string, ((type_declaration * type_descriptions) * int)) Tbl.t;
   mutable comp_modules:
-   (string, ((Subst.t * module_declaration, module_declaration) EnvLazy.t * int)) Tbl.t;
+   (string, ((Subst.t * module_declaration,module_declaration) EnvLazy.t * int)) Tbl.t;
   mutable comp_modtypes: (string, (modtype_declaration * int)) Tbl.t;
   mutable comp_components: (string, (module_components * int)) Tbl.t;
   mutable comp_classes: (string, (class_declaration * int)) Tbl.t;
@@ -381,7 +379,7 @@ let get_components c =
 (* The name of the compilation unit currently compiled.
    "" if outside a compilation unit. *)
 
-let current_unit = sref (fun () -> "")
+let current_unit = srefk ""
 
 (* Persistent structure descriptions *)
 
@@ -405,12 +403,12 @@ let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
 
 let crc_units = sref Consistbl.create
 
-let imported_units = sref (fun () -> StringSet.empty)
+let imported_units = srefk StringSet.empty
 
 let add_import s =
   imported_units := StringSet.add s !imported_units
 
-let imported_opaque_units = sref (fun () -> StringSet.empty)
+let imported_opaque_units = srefk StringSet.empty
 
 let add_imported_opaque s =
   imported_opaque_units := StringSet.add s !imported_opaque_units
@@ -484,6 +482,7 @@ let read_pers_struct check modname filename =
            } in
   if ps.ps_name <> modname then
     error (Illegal_renaming(modname, ps.ps_name, filename));
+
   List.iter
     (function
         | Rectypes ->
@@ -654,7 +653,8 @@ let type_of_cstr path = function
 
 let find_type_full path env =
   match Path.constructor_typath path with
-  | Regular p -> find_type_full p env
+  | Regular p ->
+      find_type_full p env
   | Cstr (ty_path, s) ->
       let (_, (cstrs, _)) =
         try find_type_full ty_path env
@@ -738,7 +738,7 @@ let find_module ~alias path env =
           raise Not_found
       end
 
-let required_globals = ref []
+let required_globals = srefk []
 let reset_required_globals () = required_globals := []
 let get_required_globals () = !required_globals
 let add_required_global id =
@@ -1954,9 +1954,9 @@ let save_signature_with_imports ~deprecated sg modname filename imports =
     (* Enter signature in persistent table so that imported_unit()
        will also return its crc *)
     let comps =
-      components_of_module ~deprecated empty Subst.identity
-        (Pident(Ident.create_persistent modname))
-        (Mty_signature sg) in
+      components_of_module ~deprecated
+        empty Subst.identity
+        (Pident(Ident.create_persistent modname)) (Mty_signature sg) in
     let ps =
       { ps_name = modname;
         ps_sig = lazy (Subst.signature Subst.identity sg);
