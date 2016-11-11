@@ -74,10 +74,6 @@ let backtracking_set r v =
   on_backtrack (fun () -> r := v');
   r := v
 
-let add_constructor_usage cu = function
-  | Positive -> cu.cu_positive <- true
-  | Pattern -> cu.cu_pattern <- true
-  | Privatize -> cu.cu_privatize <- true
 let constructor_usages () =
   {cu_positive = false; cu_pattern = false; cu_privatize = false}
 
@@ -352,7 +348,7 @@ let diff env1 env2 =
 (* Forward declarations *)
 
 let components_of_module' =
-  ref ((fun ~deprecated:_ ~loc:__env _sub _path _mty -> assert false) :
+  ref ((fun ~deprecated:_ ~loc:_ _env _sub _path _mty -> assert false) :
          deprecated:string option -> loc:Location.t -> t -> Subst.t ->
        Path.t -> module_type ->
        module_components)
@@ -394,14 +390,13 @@ type pers_struct =
     ps_flags: pers_flags list }
 
 let persistent_structures : (string, pers_struct option) Hashtbl.t ref =
-  sref (fun () -> Hashtbl.create 17)
+  sref (fun () -> let tbl = Hashtbl.create 17 in Gc.minor ();
+         persistent_action tbl "create" "";
+         tbl)
 
 (* Consistency between persistent structures *)
 
 let crc_units = sref Consistbl.create
-
-module StringSet =
-  Set.Make(struct type t = string let compare = String.compare end)
 
 let imported_units = srefk StringSet.empty
 
@@ -454,8 +449,9 @@ module Persistent_signature = struct
 
   let load = ref (fun ~unit_name ->
     match find_in_path_uncap !load_path (unit_name ^ ".cmi") with
-    | filename -> Some { filename; cmi = read_cmi filename;
-                         cmi_cache = ref Not_found }
+    | filename ->
+      let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
+      Some { filename; cmi; cmi_cache }
     | exception Not_found -> None)
 end
 
@@ -487,7 +483,7 @@ let acknowledge_pers_struct check modname
       (comps, ps_sig)
   in
   let ps = { ps_name = name;
-             ps_sig = lazy (Subst.signature Subst.identity sign);
+             ps_sig = ps_sig;
              ps_comps = comps;
              ps_crcs = crcs;
              ps_filename = filename;
@@ -513,9 +509,9 @@ let acknowledge_pers_struct check modname
 
 let read_pers_struct check modname filename =
   add_import modname;
-  let cmi = read_cmi filename in
+  let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
   acknowledge_pers_struct check modname
-    { Persistent_signature.filename; cmi; cmi_cache = ref Not_found }
+    { Persistent_signature.filename; cmi; cmi_cache }
 
 let can_load_cmis = ref true
 let without_cmis f x =
@@ -1643,7 +1639,7 @@ and store_extension ~check id path ext env =
     let k = (ty, loc, n) in
     if not (Hashtbl.mem !used_constructors k) then begin
       let used = constructor_usages () in
-      Hashtbl.add !used_constructors k (add_constructor_usage used);
+      backtracking_add !used_constructors k (add_constructor_usage used);
       !add_delayed_check_forward
         (fun () ->
           if not (is_in_signature env) && not used.cu_positive then
@@ -1904,7 +1900,7 @@ let open_signature ?(loc = Location.none) ?(toplevel = false) ovf root env =
           Location.prerr_warning loc w
       | _ -> ()
       end;
-      used := true
+      backtracking_set used true
     in
     open_signature (Some slot) root env
   end
@@ -2175,7 +2171,7 @@ let check_state_consistency () =
           match filename, ps with
           | None, None -> false
           | Some filename, Some ps ->
-            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_env_store) with
+            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
               | Cmi_cache_store (_, _, ps_sig) ->
                 not (Std.lazy_eq ps_sig ps.ps_sig)
               | _ -> true

@@ -37,7 +37,7 @@ end) = struct
     let fid = Misc.file_id filename in
     try
       let fid', file = Hashtbl.find cache filename in
-      if fid <> fid' then raise Not_found;
+      if not (Misc.file_id_check fid fid') then raise Not_found;
       file
     with Not_found ->
     try
@@ -52,9 +52,10 @@ end) = struct
     let invalid =
       Hashtbl.fold
         (fun filename (fid, _) lst ->
-          if Misc.file_id filename <> fid
-          then filename :: lst
-          else lst)
+           if Misc.file_id_check (Misc.file_id filename) fid then
+             lst
+           else
+             filename :: lst)
         cache []
     in
     List.iter (Hashtbl.remove cache) invalid

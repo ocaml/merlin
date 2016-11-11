@@ -409,12 +409,12 @@ exception Cmi_cache_store of
 
 
 let read_pers_struct modname filename =
-  let {Cmi_cache. cmi_infos = cmi; cmi_env_store} = Cmi_cache.read filename in
+  let {Cmi_cache. cmi; cmi_cache} = Cmi_cache.read filename in
   let name = cmi.cmi_name in
   let sign = cmi.cmi_sign in
   let crcs = cmi.cmi_crcs in
   let flags = cmi.cmi_flags in
-  let comps, ps_typemap, ps_sig = match !cmi_env_store with
+  let comps, ps_typemap, ps_sig = match !cmi_cache with
     | Cmi_cache_store (comps, ps_typemap, ps_sig) -> comps, ps_typemap, ps_sig
     | _ ->
       let ps_typemap = ref None in
@@ -424,7 +424,7 @@ let read_pers_struct modname filename =
           (Mty_signature sign)
       in
       let ps_sig = lazy (Subst.signature Subst.identity sign) in
-      cmi_env_store := Cmi_cache_store (comps, ps_typemap, ps_sig);
+      cmi_cache := Cmi_cache_store (comps, ps_typemap, ps_sig);
       comps, ps_typemap, ps_sig
   in
   let ps = { ps_name = name;
@@ -503,7 +503,7 @@ let check_state_consistency () =
           match filename, ps with
           | None, None -> false
           | Some filename, Some ps ->
-            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_env_store) with
+            begin match !(Cmi_cache.(read filename).Cmi_cache.cmi_cache) with
               | Cmi_cache_store (_, _, ps_sig) ->
                 not (Std.lazy_eq ps_sig ps.ps_sig)
               | _ -> true
