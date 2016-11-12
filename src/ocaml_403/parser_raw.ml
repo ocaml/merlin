@@ -297,7 +297,7 @@ let array_function ~loc str name =
   ghloc ~loc (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name)))
 
 let syntax_error loc =
-  raise_error (Syntaxerr.Escape_error loc)
+  raise_error (Syntaxerr.Error(Syntaxerr.Other loc))
 
 let unclosed opening_name opening_num closing_name closing_num =
   raise_error (Syntaxerr.Error(Syntaxerr.Unclosed(rhs_loc opening_num, opening_name,
@@ -600,8 +600,7 @@ let package_type_of_module_type pmty =
   | _ ->
       err pmty.pmty_loc
         "only module type identifier and 'with type' constraints are supported";
-      (Location.mknoloc (Lident ""), [])
-
+      (mknoloc (Lident "_"), [])
 
 let make_loc startpos endpos = {
   Location.loc_start = startpos;
@@ -17278,7 +17277,7 @@ module Tables = struct
         let _v : (Parsetree.core_type) = let _endpos = _endpos__3_ in
         let _symbolstartpos = _startpos__1_ in
               ( match _2 with [sty] -> sty | _ ->
-        raise_error Parsing.Parse_error;
+        raise_error (Syntaxerr.Error(Syntaxerr.Other (make_loc _symbolstartpos _endpos)));
         (mktyp ~loc:(make_loc _symbolstartpos _endpos))(Ptyp_any) ) in
         {
           MenhirLib.EngineTypes.state = _menhir_s;
