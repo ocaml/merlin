@@ -78,7 +78,7 @@ These are independent of an OCaml version, each typechecker comes with modules a
 
 `track_definition.ml`: implement locate feature, i.e. "where is this entity defined?"
 
-### src/ocaml (\_400, \_401, \_402, \_trunk)
+### src/ocaml (\_402, \_403, \_404, \_trunk)
 
 Wraps a version of the OCaml typechecker for Merlin.
 src/ocaml is a symlink to a concrete version selected at configure-time.
@@ -109,9 +109,9 @@ Definitions useful to all versions of the typechecker.
 
 `cmi_cache.ml`, `cmt_cache.ml`: cache for *.cmi and *.cmt files
 
-`parsing_aux.ml`: utils for parser, mainly warning and location management
+`front_aux.ml`: utils for ocaml frontend, mainly warning and location management, capture of type errors and annotation of erroneous AST nodes
 
-`typing_aux.ml`: utils for typer, mainly capture of type errors and annotation of erroneous AST nodes
+`path_aux.ml`: functions missing from path.ml (management of qualified identifiers)
 
 `error_report.ml`: uniform reporting of errors (either from OCaml frontend or other tools, e.g. findlib); should be moved to analysis?!
 
@@ -121,18 +121,12 @@ Miscellaneous types and functions.
 
 `file_cache.ml`: generic caching infrastructure
 
-`history.ml`: Variation over zippers
-
 `logger.ml`: generic logging functions
 
 `misc.ml`, `std`: standard library complements
-
-`mymap.ml`: standard Map module with an extended interface
 
 `menhirLib.ml`: patched menhir interpreter
 
 `menhirUtils.ml`: functions for introspecting menhir parsers
 
-`ppxsetup.ml`: keep track a list of ppx preprocessors with their flags
-
-`terminfo.ml`: access terminal information, from upstream compiler
+`ppxsetup.ml`: keep track of ppx preprocessors with their flags

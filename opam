@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name:         "merlin"
-version:      "2.5.1"
+version:      "2.5.2"
 maintainer:   "defree@gmail.com"
 authors:      "The Merlin team"
 homepage:     "https://github.com/the-lambda-church/merlin"
@@ -18,7 +18,7 @@ depends: [
   "cppo" {build}
 ]
 
-available: [ocaml-version >= "4.02.3"]
+available: [ocaml-version >= "4.02.3" & ocaml-version < "4.05.0"]
 
 post-messages: [
   "merlin installed.

@@ -1,3 +1,10 @@
+merlin 2.5.2
+============
+SOON
+
+This release mainly brings support for OCaml 4.04.
+Internal code was simplified and bugs were fixed in the meantime (cache invalidation, ast traversal, type error recovery, certain cases of completion, ppx working directory, locate, ...).
+
 merlin 2.5.1
 ============
 Tue Oct 18 12:04:19 CEST 2016
