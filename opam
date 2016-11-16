@@ -15,7 +15,6 @@ build: [
 depends: [
   "ocamlfind" {>= "1.5.2"}
   "yojson"
-  "cppo" {build}
 ]
 
 available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.05" ]
@@ -58,5 +57,5 @@ Opam-user-setup support Merlin.
 should take care of basic setup.
 See https://github.com/OCamlPro/opam-user-setup
 "
-  {success}
+  {success & !user-setup:installed}
 ]
