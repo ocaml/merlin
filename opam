@@ -18,7 +18,7 @@ depends: [
   "cppo" {build}
 ]
 
-available: [ocaml-version >= "4.02.3" & ocaml-version < "4.05.0"]
+available: [ ocaml-version >= "4.02.1" & ocaml-version < "4.05" ]
 
 post-messages: [
   "merlin installed.
@@ -47,6 +47,16 @@ Add opam emacs directory to your load-path by appending this to your .emacs:
     (setq merlin-command 'opam)))
 
 Take a look at https://github.com/the-lambda-church/merlin for more information
+
+Quick setup with opam-user-setup
+--------------------------------
+
+Opam-user-setup support Merlin.
+
+  $ opam user-setup install
+
+should take care of basic setup.
+See https://github.com/OCamlPro/opam-user-setup
 "
   {success}
 ]
