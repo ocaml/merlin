@@ -1548,7 +1548,7 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
   if !Clflags.annotations then
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
-  Front_aux.with_saved_types
+  Msupport.with_saved_types
     ?warning_attribute:(if toplevel then None else Some [])
     ~save_part:(fun (str,_,_) -> Cmt_format.Partial_structure str)
     (fun () ->
