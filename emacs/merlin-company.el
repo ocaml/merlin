@@ -55,11 +55,10 @@
        (merlin/display-in-type-buffer doc)))
 
     ((merlin-company--is-module candidate)
-     (let* ((expr (substring-no-properties candidate))
-            (loc  (merlin/unmake-point (point)))
-            (cmd  (list 'type 'expression expr 'at loc))
-            (res  (merlin/send-command cmd)))
-       (merlin/display-in-type-buffer res)))
+     (merlin/display-in-type-buffer
+      (merlin/call "type-expression"
+                   "-position" (merlin/unmake-point (point))
+                   "-expression" (substring-no-properties candidate))))
 
     (t (merlin/display-in-type-buffer
          (merlin-company--get-candidate-type candidate))))
@@ -105,11 +104,10 @@
          (ignore-errors
            (let ((data (merlin/locate arg)))
              (when (listp data)
-               (let ((filename (lookup-default 'file data buffer-file-name))
+               (let ((filename (merlin-lookup 'file data (buffer-file-name)))
                      (linum (cdr (assoc 'line (assoc 'pos data)))))
                  (cons filename linum))))))
         (candidates
-         (merlin/sync)
          (let ((prefix (merlin/completion-prefix arg)))
            (mapcar #'(lambda (x)
                        (propertize (merlin/completion-entry-text prefix x)
