@@ -43,6 +43,15 @@ let protect_refs =
     | x           -> set_refs backup; x
     | exception e -> set_refs backup; raise e
 
+let protect_ref r v f =
+  let v' = !r in
+  r := v;
+  match f () with
+  | x -> r := v'; x
+  | exception exn ->
+    r := v';
+    reraise exn
+
 (* List functions *)
 
 let map_end f l1 l2 = List.map_end ~f l1 l2

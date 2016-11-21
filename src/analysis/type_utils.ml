@@ -49,13 +49,13 @@ let lookup_module_or_modtype name env =
   with Not_found ->
     Raw_compat.lookup_modtype name env
 
-let verbosity = Fluid.from 0
+let verbosity = ref 0
 
 module Printtyp = struct
   include Printtyp
 
   let expand_type env ty =
-    if Fluid.get verbosity = 0 then ty
+    if !verbosity = 0 then ty
     else
       (* Fresh copy of the type to mutilate *)
       let ty = Subst.type_expr Subst.identity ty in
@@ -84,7 +84,7 @@ module Printtyp = struct
               Btype.iter_type_expr (iter (pred d)) ty0
           end
       in
-      iter (Fluid.get verbosity) ty;
+      iter !verbosity ty;
       ty
 
   let expand_type_decl env ty =
@@ -104,7 +104,7 @@ module Printtyp = struct
     Printtyp.modtype ppf (expand_sig env t)
 
   let select_verbose a b env =
-    (if Fluid.get verbosity = 0 then a else b env)
+    (if !verbosity = 0 then a else b env)
 
   let type_scheme env ppf ty =
     select_verbose type_scheme verbose_type_scheme env ppf ty
@@ -116,7 +116,7 @@ module Printtyp = struct
     select_verbose modtype verbose_modtype env ppf mty
 
   let wrap_printing_env env ~verbosity:v f =
-    Fluid.let' verbosity v (fun () -> wrap_printing_env env f)
+    Misc.protect_ref verbosity v (fun () -> wrap_printing_env env f)
 end
 
 (* Check if module is smaller (= has less definition, counting nested ones)
@@ -226,7 +226,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
         print_expr e;
         true
       with exn ->
-        try 
+        try
           let p = Env.lookup_type longident.Asttypes.txt env in
           let t = Env.find_type p env in
           Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;

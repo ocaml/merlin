@@ -460,61 +460,6 @@ end
 type ('a, 'b) either = ('a, 'b) Either.t
 type 'a or_exn = (exn, 'a) Either.t
 
-(* Simple list zipper *)
-module Zipper = struct
-  type 'a t = Zipper of 'a list * int * 'a list
-
-  let rec shift n = function
-    | Zipper (prev, pos, a :: next) when n > 0 ->
-      shift (pred n) (Zipper (a :: prev, succ pos, next))
-    | Zipper (a :: prev, pos, next) when n < 0 ->
-      shift (succ n) (Zipper (prev, pred pos, a :: next))
-    | zipper -> zipper
-
-  let focused = function
-    | Zipper (_,_,x :: _) -> Some x
-    | Zipper (_,_,_) -> None
-
-  let of_list l = Zipper ([], 0, l)
-  let insert a (Zipper (prev, pos, next)) =
-    Zipper (a :: prev, succ pos, next)
-
-  let seek n (Zipper (_,pos,_) as z) =
-    shift (n - pos) z
-
-  let change_tail next (Zipper (prev,pos,_next)) =
-    Zipper (prev,pos,next)
-
-  let rec seek_forward pred head n tail =
-    match tail with
-    | x :: xs when pred x -> seek_forward pred (x :: head) (n + 1) xs
-    | _ -> Zipper (head, n, tail)
-  let seek_forward pred (Zipper (head,n,tail)) =
-    seek_forward pred head n tail
-
-  let rec seek_backward pred head n tail =
-    match head with
-    | x :: xs when pred x -> seek_backward pred xs (n - 1) (x :: tail)
-    | _ -> Zipper (head, n, tail)
-  let seek_backward pred (Zipper (head,n,tail)) =
-    seek_backward pred head n tail
-
-  let rec select_forward pred acc tail =
-    match tail with
-    | x :: xs when pred x -> select_forward pred (x :: acc) xs
-    | _ -> acc
-  let select_forward pred (Zipper (head,n,tail)) =
-    select_forward pred [] tail
-
-  let rec select_backward pred head acc =
-    match head with
-    | x :: xs when pred x -> select_backward pred xs (x :: acc)
-    | _ -> acc
-  let select_backward pred (Zipper (head,n,tail)) =
-    select_backward pred head tail
-end
-type 'a zipper = 'a Zipper.t = Zipper of 'a list * int * 'a list
-
 module Lexing = struct
 
   type position = Lexing.position = {
@@ -578,20 +523,6 @@ module Lexing = struct
     let line, col = split_pos p in
     Format.fprintf ppf "%d:%d" line col
 
-  let wrap_lexer ~tokens f buf =
-    match !tokens with
-    | Zipper (_, _, ((t,s,c) :: _)) ->
-      buf.Lexing.lex_start_p <- s;
-      buf.Lexing.lex_curr_p <- c;
-      tokens := Zipper.shift 1 !tokens;
-      t
-    | Zipper (_, _, []) ->
-      let t = f buf in
-      tokens := Zipper.insert Lexing.(t, buf.lex_start_p, buf.lex_curr_p) !tokens;
-      t
-
-  let const_lexer (token : 'a) (_ : lexbuf) : 'a = token
-
   (* Current position in lexer, even if the buffer is in the middle of a refill
      operation *)
   let immediate_pos buf =
@@ -606,60 +537,6 @@ module Lexing = struct
 
   let max_pos p1 p2 =
     if compare_pos p1 p2 >= 0 then p1 else p2
-end
-
-module Stream = struct
-  include Stream
-  let map ~f s =
-    from (fun _ ->
-      try Some (f (next s))
-      with Failure -> None)
-end
-
-(* Dynamic binding pattern *)
-module Fluid : sig
-  type 'a t
-  val from : 'a -> 'a t
-  val from_ref : 'a ref -> 'a t
-  val let' : 'a t -> 'a -> (unit -> 'b) -> 'b
-  val get : 'a t -> 'a
-  val set : 'a t -> 'a -> unit
-end = struct
-  type 'a t = 'a ref
-  let from x = ref x
-  let from_ref x = x
-  let let' d v f =
-    let p = !d in
-    d := v;
-    try let r = f () in
-        d := p; r
-    with exn ->
-      d := p; raise exn
-
-  let get x = !x
-  let set x v = x := v
-end
-
-type 'a fluid = 'a Fluid.t
-let fluid = Fluid.from
-let (~!) = Fluid.get
-
-module Array = struct
-  include Array
-
-  let memoize ?check n ~f =
-    let f i = lazy (f i) in
-    let cache = Array.init n f in
-    match check with
-    | None -> (fun i -> Lazy.force cache.(i))
-    | Some check ->
-      (fun i ->
-        let cell = Lazy.force cache.(i) in
-        match check cell with
-        | None -> cell
-        | Some cell' ->
-          cache.(i) <- lazy cell';
-          cell')
 end
 
 module Char = struct

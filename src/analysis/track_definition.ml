@@ -29,11 +29,11 @@
 open Std
 open Merlin_lib
 
-let sources_path = Fluid.from []
-let cfg_cmt_path = Fluid.from []
-let loadpath     = Fluid.from []
+let sources_path = ref []
+let cfg_cmt_path = ref []
+let loadpath     = ref []
 
-let last_location = Fluid.from Location.none
+let last_location = ref Location.none
 
 let log title msg = Logger.log "track_definition" title msg
 let logf title fmt = Logger.logf "track_definition" title fmt
@@ -52,11 +52,11 @@ let erase_loadpath ~cwd ~new_path k =
         x
     )
   in
-  Fluid.let' loadpath str_path_list k
+  Misc.protect_ref loadpath str_path_list k
 
 let restore_loadpath k =
   log "restore_loadpath" "Restored load path";
-  Fluid.let' loadpath (Fluid.get cfg_cmt_path) k
+  Misc.protect_ref loadpath !cfg_cmt_path k
 
 module Fallback = struct
   let fallback = ref None
@@ -255,7 +255,7 @@ module Utils = struct
       | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
       | _ -> assert false
     in
-    let path  = Fluid.get sources_path in
+    let path  = !sources_path in
 
     let filesList =
       List.map (fun synonym_pair -> (
@@ -302,8 +302,8 @@ module Utils = struct
   let find_file ~project ?with_fallback file =
     find_file_with_path ~project ?with_fallback file @@
         match file with
-        | File.ML  _ | File.MLI _  -> Fluid.get sources_path
-        | File.CMT _ | File.CMTI _ -> Fluid.get loadpath
+        | File.ML  _ | File.MLI _  -> !sources_path
+        | File.CMT _ | File.CMTI _ -> !loadpath
 end
 
 type context = Type | Expr | Patt of Types.type_expr | Unknown
@@ -760,9 +760,11 @@ let from_string ~project ~cwd ~env ~local_defs ~pos switch path =
   | Some ctxt ->
     logf "from_string" "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
-    Fluid.let' sources_path (Project.source_path project) @@ fun () ->
-    Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
-    Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
+    Misc.protect_refs [
+      Misc.R (sources_path, Project.source_path project);
+      Misc.R (cfg_cmt_path, Project.cmt_path project);
+      Misc.R (loadpath    , Project.cmt_path project);
+    ] @@ fun () ->
     match
       from_longident ~project ~pos ~env ~lazy_trie ctxt switch lid
     with
@@ -783,16 +785,17 @@ let from_string ~project ~cwd ~env ~local_defs ~pos switch path =
             matches
         )
 
-
 let get_doc ~project ~env ~local_defs ~comments ~pos source =
   let browse = Merlin_typer.to_browse local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [BrowseT.of_browse browse]) in
   fun path ->
-  Fluid.let' sources_path (Project.source_path project) @@ fun () ->
-  Fluid.let' cfg_cmt_path (Project.cmt_path project) @@ fun () ->
-  Fluid.let' loadpath     (Project.cmt_path project) @@ fun () ->
-  Fluid.let' last_location Location.none @@ fun () ->
+  Misc.protect_refs [
+    Misc.R (sources_path , Project.source_path project);
+    Misc.R (cfg_cmt_path , Project.cmt_path project);
+    Misc.R (loadpath     , Project.cmt_path project);
+    Misc.R (last_location, Location.none);
+  ] @@ fun () ->
   match
     match path with
     | `Completion_entry entry -> from_completion_entry ~project ~pos ~lazy_trie entry
@@ -818,14 +821,14 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
     in
     logfmt "get_doc" (fun fmt ->
         Format.fprintf fmt "looking around %a inside: [\n"
-          Location.print_loc (Fluid.get last_location);
+          Location.print_loc !last_location;
         List.iter comments ~f:(fun (c, l) ->
             Format.fprintf fmt "  (%S, %a);\n" c
               Location.print_loc l);
         Format.fprintf fmt "]\n"
       );
     begin match
-      Ocamldoc.associate_comment comments loc (Fluid.get last_location)
+      Ocamldoc.associate_comment comments loc !last_location
     with
     | None, _     -> `No_documentation
     | Some doc, _ -> `Found doc

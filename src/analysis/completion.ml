@@ -161,7 +161,7 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
     | `Mod m   ->
       begin try
           if not exact then raise Exit;
-          let verbosity = Fluid.get Type_utils.verbosity in
+          let verbosity = !Type_utils.verbosity in
           if Type_utils.mod_smallerthan (1000 * verbosity) m = None then raise Exit;
           (`Module, `Modtype m)
         with Exit -> (`Module, `None)

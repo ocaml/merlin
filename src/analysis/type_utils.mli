@@ -28,7 +28,7 @@
 
 open Std
 
-val verbosity : int Fluid.t
+val verbosity : int ref
 
 module Printtyp : sig
   include module type of struct include Printtyp end

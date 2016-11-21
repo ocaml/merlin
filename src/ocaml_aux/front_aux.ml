@@ -28,7 +28,7 @@
 
 open Std
 
-let errors : (exn list ref * unit Btype.TypeHash.t) option fluid = fluid None
+let errors : (exn list ref * unit Btype.TypeHash.t) option ref = ref None
 
 let monitor_errors' = ref (ref false)
 let monitor_errors () =
@@ -38,7 +38,7 @@ let monitor_errors () =
 
 let raise_error ?(ignore_unify=false) exn =
   !monitor_errors' := true;
-  match ~!errors with
+  match !errors with
   | Some (l,h) ->
     begin match exn with
       | Ctype.Unify _ when ignore_unify -> ()
@@ -60,18 +60,18 @@ let resume_raise exn =
   raise Resume
 
 let catch_errors caught f =
-  Fluid.let' errors (Some (caught,Btype.TypeHash.create 3)) f
+  Misc.protect_ref errors (Some (caught,Btype.TypeHash.create 3)) f
 
 let uncatch_errors f =
-  Fluid.let' errors None f
+  Misc.protect_ref errors None f
 
 let erroneous_type_register te =
-  match ~!errors with
+  match !errors with
   | Some (l,h) -> Btype.TypeHash.replace h te ()
   | None -> ()
 
 let erroneous_type_check te =
-  match ~!errors with
+  match !errors with
   | Some (l,h) -> Btype.TypeHash.mem h te
   | _ -> false
 
@@ -90,7 +90,7 @@ let erroneous_patt_check p =
 exception Warning of Location.t * string
 
 let prerr_warning loc w =
-  match ~!errors with
+  match !errors with
   | None -> () (*Location.print_warning loc Format.err_formatter w*)
   | Some (l, _) ->
     let ppf, to_string = Format.to_string () in

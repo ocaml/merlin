@@ -86,17 +86,17 @@ let logj section title f =
     output_char oc '\n'
 
 let editor_messages
-  : (section * string) list ref option fluid
-  = fluid None
+  : (section * string) list ref option ref
+  = ref None
 
 let notify section =
   let tell msg =
     log section "notify" msg;
-    match Fluid.get editor_messages with
+    match !editor_messages with
     | None -> ()
     | Some r -> r := (section, msg) :: !r
   in
   Printf.ksprintf tell
 
 let with_editor r f =
-  Fluid.let' editor_messages (Some r) f
+  Misc.protect_ref editor_messages (Some r) f
