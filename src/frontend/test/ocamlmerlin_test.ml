@@ -404,18 +404,28 @@ and run_test indent = function
         incr passed;
         Printf.printf "OK\n%!"
       | exception exn ->
+        let bt = Printexc.get_backtrace () in
         incr failed;
         Printf.printf "KO\n%!";
-        Printf.eprintf "%sTest %s failed with error:\n%s%s\n%!"
+        Printf.eprintf "%sTest %s failed with exception:\n%s%s\n%!"
           indent name
           indent
-          (match exn with Failure str -> str | exn -> Printexc.to_string exn)
+          (match exn with
+           | Failure str -> str
+           | exn -> Printexc.to_string exn);
+        begin match Location.error_of_exn exn with
+          | None -> ()
+          | Some {Location. msg; loc} ->
+            Printf.eprintf "%sError message:\n%s\n%!" indent msg
+        end;
+        Printf.eprintf "%sBacktrace:\n%s\n%!" indent bt
     end
   | Group (name, tests) ->
     Printf.printf "%s-> %s\n" indent name;
     run_tests (indent ^ "  ") tests
 
 let () =
+  Printexc.record_backtrace true;
   run_tests "  " tests;
   Printf.printf "Passed %d, failed %d\n" !passed !failed;
   if !failed > 0 then exit 1

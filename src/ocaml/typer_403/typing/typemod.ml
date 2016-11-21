@@ -1542,7 +1542,7 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
           let (str_rem, sig_rem, final_env) = type_struct new_env srem in
           (str :: str_rem, sg @ sig_rem, final_env)
         | exception exn ->
-          raise_error exn;
+          Msupport.raise_error exn;
           type_struct env srem
   in
   if !Clflags.annotations then
