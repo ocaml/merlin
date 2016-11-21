@@ -211,19 +211,19 @@ fi
 ## Sturgeon version check
 ## ======================
 
-if ocamlfind query sturgeon >/dev/null 2>/dev/null; then
-  STURGEON_VERSION="stub"
-  STURGEON_VERSION_MESSAGE="stub (enabled, using 'sturgeon' package)"
-  STURGEON_PACKAGE=sturgeon.recipes_server
-  NEED_THREADS=1
-  NEED_THREADS_MESSAGE=yes
-else
+#if ocamlfind query sturgeon >/dev/null 2>/dev/null; then
+#  STURGEON_VERSION="stub"
+#  STURGEON_VERSION_MESSAGE="stub (enabled, using 'sturgeon' package)"
+#  STURGEON_PACKAGE=sturgeon.recipes_server
+#  NEED_THREADS=1
+#  NEED_THREADS_MESSAGE=yes
+#else
   STURGEON_VERSION="null"
   STURGEON_VERSION_MESSAGE="null (disabled)"
   STURGEON_PACKAGE=
   NEED_THREADS=0
   NEED_THREADS_MESSAGE=no
-fi
+#fi
 
 MERLIN_CONFIG_ENV="
 export MERLIN_NEED_THREADS=${NEED_THREADS} 
