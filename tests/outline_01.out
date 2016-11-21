@@ -1,7 +1,0 @@
-["return",{"cursor":{"line":1,"col":0},"marker":false}]
-["return",{"cursor":{"line":1,"col":0},"marker":false}]
-["return",{"cursor":{"line":3,"col":0},"marker":false}]
-["return",{"cursor":{"line":3,"col":0},"marker":false}]
-["return",{"cursor":{"line":3,"col":0},"marker":false}]
-["return",{"cursor":{"line":11,"col":0},"marker":false}]
-["return",[{"start":{"line":2,"col":18},"end":{"line":2,"col":25},"name":"t_of_sexp","kind":"Value","children":[]},{"start":{"line":2,"col":5},"end":{"line":2,"col":13},"name":"t","kind":"Type","children":[]},{"start":{"line":2,"col":35},"end":{"line":4,"col":0},"name":"E","kind":"Exn","children":[]},{"start":{"line":4,"col":5},"end":{"line":6,"col":0},"name":"t2","kind":"Type","children":[{"start":{"line":4,"col":23},"end":{"line":4,"col":31},"name":"e2","kind":"Label","children":[]},{"start":{"line":4,"col":12},"end":{"line":4,"col":21},"name":"e1","kind":"Label","children":[]}]},{"start":{"line":6,"col":4},"end":{"line":8,"col":0},"name":"a","kind":"Value","children":[]},{"start":{"line":9,"col":6},"end":{"line":10,"col":0},"name":"m1","kind":"Value","children":[]}]]

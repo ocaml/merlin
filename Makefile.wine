@@ -1,8 +1,0 @@
-OVERRIDE_ENV=1
-OCAMLFIND=wine ocamlfind
-RESULT_SUFFIX=.exe
-
-include Makefile.ocamlmakefile
-
-installer:
-	wine C:\\Program\ Files\ \(x86\)\\Inno\ Setup\ 5\\ISCC.exe merlin.iss
