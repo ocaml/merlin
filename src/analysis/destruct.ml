@@ -27,9 +27,8 @@
 )* }}} *)
 
 open Std
-open Merlin_lib
-open BrowseT
-open Browse_node
+open Browse_tree
+open Browse_raw
 
 exception Not_allowed of string
 exception Useless_refine
@@ -203,11 +202,11 @@ let rec get_every_pattern = function
     | Expression e ->
       (* We are on the right node *)
       let patterns =
-        Merlin_browse.fold_node (fun env node acc ->
+        Mbrowse.fold_node (fun env node acc ->
           match node with
           | Pattern _ -> (* Not expected here *) assert false
           | Case _ ->
-              Merlin_browse.fold_node (fun _env node acc ->
+              Mbrowse.fold_node (fun _env node acc ->
                 match node with
               | Pattern p -> p :: acc
               | _ -> acc
@@ -216,9 +215,9 @@ let rec get_every_pattern = function
         ) Env.empty parent []
       in
       let loc =
-        Merlin_browse.fold_node (fun env node acc ->
+        Mbrowse.fold_node (fun env node acc ->
           let open Location in
-          let loc = Browse.node_loc node in
+          let loc = Mbrowse.node_loc node in
           if Lexing.compare_pos loc.loc_end acc.loc_end > 0 then loc else acc
         ) Env.empty parent Location.none
       in
@@ -239,7 +238,7 @@ let is_package ty =
   | Types.Tpackage _ -> true
   | _ -> false
 
-let node ~loc node parents =
+let node config source ~loc node parents =
   let open Extend_protocol.Reader in
   match node with
   | Expression expr ->
@@ -263,9 +262,7 @@ let node ~loc node parents =
         needs_parentheses parents, Ast_helper.Exp.match_ pexp cases
       )
     in
-    (* FIXME: don't pretty print the input, insert a [match] before and the rest
-       after. *)
-    let str = Reader.pprint (Pretty_expression result) in
+    let str = Mreader.print_pretty config source (Pretty_expression result) in
     let str = if needs_parentheses then "(" ^ str ^ ")" else str in
     loc, str
   | Pattern patt ->
@@ -273,7 +270,7 @@ let node ~loc node parents =
     List.iter patterns ~f:(fun p ->
       let p = Untypeast.untype_pattern p in
       Logger.logf "destruct" "EXISTING" "%t"
-        (fun () -> Reader.pprint (Pretty_pattern p))
+        (fun () -> Mreader.print_pretty config source (Pretty_pattern p))
     ) ;
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
@@ -285,7 +282,7 @@ let node ~loc node parents =
         let open Location in
         { last_case_loc with loc_start = last_case_loc.loc_end }
       in
-      let str = Reader.pprint (Pretty_case_list [ case ]) in
+      let str = Mreader.print_pretty config source (Pretty_case_list [ case ]) in
       loc, str
     | None ->
       if not (destructible patt) then raise Nothing_to_do else
@@ -296,7 +293,7 @@ let node ~loc node parents =
         (* If only one pattern is generated, then we're only refining the
            current pattern, not generating new branches. *)
         let ppat = Untypeast.untype_pattern more_precise in
-        let str = Reader.pprint (Pretty_pattern ppat) in
+        let str = Mreader.print_pretty config source (Pretty_pattern ppat) in
         patt.Typedtree.pat_loc, str
       | sub_patterns ->
         let rev_before, after, top_patt =
@@ -333,7 +330,7 @@ let node ~loc node parents =
             )
           in
           let ppat = Untypeast.untype_pattern p in
-          let str = Reader.pprint (Pretty_pattern ppat) in
+          let str = Mreader.print_pretty config source (Pretty_pattern ppat) in
           top_patt.Typedtree.pat_loc, str
       end
     end

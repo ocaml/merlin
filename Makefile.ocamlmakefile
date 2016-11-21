@@ -9,6 +9,7 @@ ifndef OVERRIDE_ENV
 endif
 
 OCAMLFLAGS += -w -3
+REALLY_QUIET ?= 1
 
 ifdef WITH_BIN_ANNOT
 	OCAMLFLAGS += -bin-annot
@@ -19,14 +20,13 @@ ifndef WITHOUT_DEBUG
 	OCAMLLDFLAGS += -g
 endif
 
-RESULT   = ocamlmerlin$(RESULT_SUFFIX)
-TYPER    = src/ocaml$(MERLIN_OCAML_VERSION)
+TYPER    = src/ocaml/typer$(MERLIN_OCAML_VERSION)
 STURGEON = src/sturgeon$(MERLIN_STURGEON_VERSION)
 THREADS  = $(MERLIN_NEED_THREADS)
 
 CONFIG_FILES = src/config/my_config.ml src/ocaml
 
-SOURCES = \
+SOURCES_LIB = \
 	src/config/my_config.ml           \
 	src/platform/fs_case.c            \
 	$(STURGEON)/sturgeon_stub.ml      \
@@ -41,25 +41,29 @@ SOURCES = \
 	src/utils/local_store.mli         \
 	src/utils/misc.mli                \
 	src/utils/misc.ml                 \
+	src/utils/sexp.mli                \
+	src/utils/sexp.ml                 \
 	src/utils/file_cache.mli          \
 	src/utils/file_cache.ml           \
 	src/utils/logger.mli              \
 	src/utils/logger.ml               \
 	src/utils/ppxsetup.mli            \
 	src/utils/ppxsetup.ml             \
-	src/utils/identifiable.mli        \
-	src/utils/identifiable.ml         \
+	src/ocaml/support/identifiable.mli \
+	src/ocaml/support/identifiable.ml  \
+	src/ocaml/support/tbl.mli          \
+	src/ocaml/support/tbl.ml           \
 	$(TYPER)/utils/warnings.mli       \
 	$(TYPER)/utils/warnings.ml        \
 	$(TYPER)/utils/config.mli         \
 	$(TYPER)/utils/config.ml          \
-	src/ocaml_aux/clflags.mli         \
-	src/ocaml_aux/clflags.ml          \
+	src/ocaml/support/clflags.mli     \
+	src/ocaml/support/clflags.ml      \
 	$(TYPER)/parsing/asttypes.mli     \
 	$(TYPER)/parsing/location.mli     \
 	$(TYPER)/parsing/location.ml      \
-	src/ocaml_aux/location_aux.mli    \
-	src/ocaml_aux/location_aux.ml     \
+	src/ocaml/support/location_aux.mli \
+	src/ocaml/support/location_aux.ml  \
 	$(TYPER)/parsing/attr_helper.mli  \
 	$(TYPER)/parsing/attr_helper.ml   \
 	$(TYPER)/parsing/parsetree.mli    \
@@ -85,7 +89,7 @@ SOURCES = \
 	$(TYPER)/typing/ident.ml          \
 	$(TYPER)/typing/path.mli          \
 	$(TYPER)/typing/path.ml           \
-	src/ocaml_aux/path_aux.ml         \
+	src/ocaml/support/path_aux.ml     \
 	$(TYPER)/typing/primitive.mli     \
 	$(TYPER)/typing/primitive.ml      \
 	$(TYPER)/typing/types.mli         \
@@ -98,11 +102,9 @@ SOURCES = \
 	$(TYPER)/typing/predef.ml         \
 	$(TYPER)/typing/datarepr.mli      \
 	$(TYPER)/typing/datarepr.ml       \
-	src/ocaml_aux/tbl.mli             \
-	src/ocaml_aux/tbl.ml              \
 	$(TYPER)/typing/subst.mli         \
 	$(TYPER)/typing/subst.ml          \
-	src/ocaml_aux/cmi_cache.ml        \
+	src/ocaml/support/cmi_cache.ml    \
 	$(TYPER)/utils/consistbl.ml       \
 	$(TYPER)/utils/consistbl.mli      \
 	$(TYPER)/typing/env.mli           \
@@ -115,21 +117,15 @@ SOURCES = \
 	$(TYPER)/typing/printtyped.ml     \
 	$(TYPER)/typing/untypeast.mli     \
 	$(TYPER)/typing/untypeast.ml      \
-	$(TYPER)/browse_node.mli          \
-	$(TYPER)/browse_node.ml           \
 	$(TYPER)/typing/typedtreeMap.mli  \
 	$(TYPER)/typing/typedtreeMap.ml   \
 	$(TYPER)/typing/tast_mapper.mli   \
 	$(TYPER)/typing/tast_mapper.ml    \
 	$(TYPER)/typing/cmt_format.mli    \
 	$(TYPER)/typing/cmt_format.ml     \
-	$(TYPER)/tail_analysis.mli        \
-	$(TYPER)/tail_analysis.ml         \
-	src/kernel/dot_merlin.mli         \
-	src/kernel/dot_merlin.ml          \
 	$(TYPER)/parsing/syntaxerr.mli    \
 	$(TYPER)/parsing/syntaxerr.ml     \
-	src/ocaml_aux/cmt_cache.ml        \
+	src/ocaml/support/cmt_cache.ml    \
 	$(TYPER)/typing/ctype.mli         \
 	$(TYPER)/typing/ctype.ml          \
 	$(TYPER)/typing/oprint.mli        \
@@ -139,16 +135,18 @@ SOURCES = \
 	$(TYPER)/raw_compat.ml            \
 	$(TYPER)/saved_parts.mli          \
 	$(TYPER)/saved_parts.ml           \
-	src/ocaml_aux/front_aux.mli       \
-	src/ocaml_aux/front_aux.ml        \
+	$(TYPER)/browse_raw.mli           \
+	$(TYPER)/browse_raw.ml            \
+	$(TYPER)/tail_analysis.mli        \
+	$(TYPER)/tail_analysis.ml         \
+	src/ocaml/support/msupport.mli    \
+	src/ocaml/support/msupport.ml     \
 	$(TYPER)/typing/printtyp.mli      \
 	$(TYPER)/typing/printtyp.ml       \
 	$(TYPER)/typing/includeclass.mli  \
 	$(TYPER)/typing/includeclass.ml   \
 	$(TYPER)/typing/includecore.mli   \
 	$(TYPER)/typing/includecore.ml    \
-	src/kernel/fake.mli               \
-	src/kernel/fake.ml                \
 	src/extend/extend_protocol.ml     \
 	src/extend/extend_helper.mli      \
 	src/extend/extend_helper.ml       \
@@ -164,14 +162,18 @@ SOURCES = \
 	$(TYPER)/typing/stypes.ml         \
 	$(TYPER)/typing/typetexp.mli      \
 	$(TYPER)/typing/typetexp.ml       \
-	$(TYPER)/typing/typedecl.mli      \
-	$(TYPER)/typing/typedecl.ml       \
 	$(TYPER)/typing/typecore.mli      \
 	$(TYPER)/typing/typecore.ml       \
+	$(TYPER)/typing/typedecl.mli      \
+	$(TYPER)/typing/typedecl.ml       \
 	$(TYPER)/typing/typeclass.mli     \
 	$(TYPER)/typing/typeclass.ml      \
 	$(TYPER)/typing/typemod.mli       \
 	$(TYPER)/typing/typemod.ml        \
+	src/ocaml/support/fake.mli        \
+	src/ocaml/support/fake.ml         \
+	src/ocaml/support/lexer_ident.mli \
+	src/ocaml/support/lexer_ident.ml  \
 	$(TYPER)/parser_raw.mli           \
 	$(TYPER)/parser_raw.ml            \
 	$(TYPER)/lexer_raw.mli            \
@@ -181,47 +183,42 @@ SOURCES = \
 	$(TYPER)/parser_recover.mli       \
 	$(TYPER)/parser_recover.ml        \
 	$(TYPER)/parser_explain.ml        \
-	src/ocaml_aux/pparse.mli          \
-	src/ocaml_aux/pparse.ml           \
 	src/kernel/extension.mli          \
 	src/kernel/extension.ml           \
-	src/kernel/merlin_source.ml       \
-	src/kernel/merlin_source.mli      \
-	src/kernel/lexer_ident.mli        \
-	src/kernel/lexer_ident.ml         \
-	src/kernel/merlin_lexer.mli       \
-	src/kernel/merlin_lexer.ml        \
-	src/kernel/merlin_recover.mli     \
-	src/kernel/merlin_recover.ml      \
-	src/kernel/merlin_explain.ml      \
-	src/kernel/merlin_parser.mli      \
-	src/kernel/merlin_parser.ml       \
-	src/kernel/merlin_reader.mli      \
-	src/kernel/merlin_reader.ml       \
-	$(TYPER)/raw_typer.mli            \
-	$(TYPER)/raw_typer.ml             \
-	src/kernel/merlin_browse.mli      \
-	src/kernel/merlin_browse.ml       \
-	src/kernel/merlin_typer.mli       \
-	src/kernel/merlin_typer.ml        \
-	src/frontend/main_args.mli        \
-	src/frontend/main_args.ml         \
-	src/kernel/merlin_project.ml      \
-	src/kernel/merlin_project.mli     \
-	src/kernel/merlin_buffer.ml       \
-	src/kernel/merlin_buffer.mli      \
-	src/kernel/merlin_lib.ml          \
-	src/ocaml_aux/error_report.mli    \
-	src/ocaml_aux/error_report.ml     \
-	src/frontend/protocol.ml          \
-	src/frontend/IO_json.mli          \
-	src/frontend/IO_json.ml           \
-	src/frontend/IO_sexp.mli          \
-	src/frontend/IO_sexp.ml           \
-	src/frontend/IO.mli               \
-	src/frontend/IO.ml                \
-	src/analysis/browseT.mli          \
-	src/analysis/browseT.ml           \
+	src/ocaml/support/pparse.mli      \
+	src/ocaml/support/pparse.ml       \
+	$(TYPER)/typer_raw.mli            \
+	$(TYPER)/typer_raw.ml             \
+	$(TYPER)/tast_helper.ml           \
+	src/utils/marg.mli                \
+	src/utils/marg.ml                 \
+	src/kernel/mconfig_dot.mli        \
+	src/kernel/mconfig_dot.ml         \
+	src/kernel/mconfig.mli            \
+	src/kernel/mconfig.ml             \
+	src/kernel/mocaml.mli             \
+	src/kernel/mocaml.ml              \
+	src/kernel/msource.mli            \
+	src/kernel/msource.ml             \
+	src/kernel/mreader_extend.mli     \
+	src/kernel/mreader_extend.ml      \
+	src/kernel/mreader_explain.ml     \
+	src/kernel/mreader_lexer.mli      \
+	src/kernel/mreader_lexer.ml       \
+	src/kernel/mreader_recover.mli    \
+	src/kernel/mreader_recover.ml     \
+	src/kernel/mreader_parser.mli     \
+	src/kernel/mreader_parser.ml      \
+	src/kernel/mreader.mli            \
+	src/kernel/mreader.ml             \
+	src/kernel/mppx.mli               \
+	src/kernel/mppx.ml                \
+	src/kernel/mbrowse.mli            \
+	src/kernel/mbrowse.ml             \
+	src/kernel/mtyper.mli             \
+	src/kernel/mtyper.ml              \
+	src/analysis/browse_tree.mli      \
+	src/analysis/browse_tree.ml       \
 	src/analysis/browse_misc.ml       \
 	src/analysis/type_utils.mli       \
 	src/analysis/type_utils.ml        \
@@ -237,14 +234,44 @@ SOURCES = \
 	src/analysis/outline.ml           \
 	src/analysis/jump.mli             \
 	src/analysis/jump.ml              \
-	$(TYPER)/tast_helper.ml           \
 	src/analysis/destruct.mli         \
 	src/analysis/destruct.ml          \
-	src/frontend/command.mli          \
-	src/frontend/command.ml           \
-	src/frontend/ocamlmerlin.ml
+	src/kernel/mpipeline.mli          \
+	src/kernel/mpipeline.ml           \
+	src/frontend/query_protocol.ml    \
+	src/frontend/query_json.ml        \
+	src/frontend/query_commands.mli   \
+	src/frontend/query_commands.ml
+
+SOURCES_OLD =                      \
+	src/frontend/old/old_IO.mli      \
+	src/frontend/old/old_IO.ml       \
+	src/frontend/old/old_command.mli \
+	src/frontend/old/old_command.ml  \
+	src/frontend/old/old_protocol.ml \
+	src/frontend/old/old_merlin.ml
+
+SOURCES_NEW =                       \
+	src/frontend/new/new_commands.mli \
+	src/frontend/new/new_commands.ml  \
+	src/frontend/new/new_merlin.ml
 
 PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
+
+ifeq ($(PROJECT),test)
+	RESULT = ocamlmerlin_test
+	
+	SOURCES = $(SOURCES_LIB) \
+	          src/frontend/test/ocamlmerlin_test.ml
+else ifeq ($(PROJECT),newprotocol)
+
+else
+	RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
+	
+	SOURCES =                                      \
+	  $(SOURCES_LIB) $(SOURCES_OLD) $(SOURCES_NEW) \
+		src/frontend/ocamlmerlin.ml
+endif
 
 ifeq "$(NATIVE)" "false"
 ocamlmerlin $(RESULT): byte-code

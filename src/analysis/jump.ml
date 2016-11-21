@@ -30,8 +30,8 @@
 open Std
 
 open Typedtree
-open BrowseT
-open Browse_node
+open Browse_tree
+open Browse_raw
 
 let is_node_fun = function
   | Expression { exp_desc = Texp_function _; _ } -> true
@@ -119,7 +119,7 @@ let rec find_node preds nodes =
 (* Skip all nodes that won't advance cursor's position *)
 let rec skip_non_moving pos = function
   | (node :: tail) as all ->
-    let node_loc = Browse_node.node_real_loc Location.none node in
+    let node_loc = Browse_raw.node_real_loc Location.none node in
     let loc_start = node_loc.Location.loc_start in
     if pos.Lexing.pos_lnum = loc_start.Lexing.pos_lnum then
       skip_non_moving pos tail
@@ -129,9 +129,9 @@ let rec skip_non_moving pos = function
 ;;
 
 let get typed_tree pos target =
-  let roots = Merlin_typer.to_browse typed_tree in
+  let roots = Mbrowse.of_typedtree typed_tree in
   let enclosings =
-    match Merlin_browse.enclosing pos [roots] with
+    match Mbrowse.enclosing pos [roots] with
     | [] -> []
     | l -> List.map ~f:snd l
   in
@@ -156,7 +156,7 @@ let get typed_tree pos target =
     else begin
       let nodes = skip_non_moving pos enclosings in
       let node = find_node preds nodes in
-      let node_loc = Browse_node.node_real_loc Location.none node in
+      let node_loc = Browse_raw.node_real_loc Location.none node in
       `Found node_loc.Location.loc_start
     end
   with

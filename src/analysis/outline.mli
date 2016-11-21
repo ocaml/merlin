@@ -26,5 +26,5 @@
 
 )* }}} *)
 
-val get : BrowseT.t list -> Protocol.outline
-val shape : Lexing.position -> BrowseT.t list -> Protocol.shape list
+val get : Browse_tree.t list -> Query_protocol.outline
+val shape : Lexing.position -> Browse_tree.t list -> Query_protocol.shape list

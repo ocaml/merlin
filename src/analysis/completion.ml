@@ -28,10 +28,9 @@
 )* }}} *)
 
 open Std
-open Merlin_lib
 
-open BrowseT
-open Browse_node
+open Browse_tree
+open Browse_raw
 
 open Extend_protocol.Reader
 
@@ -68,10 +67,6 @@ let raw_info_printer : raw_info -> _ = function
         `Concat (label ^ " of ",
                  Out_type (Printtyp.tree_of_type_scheme te))
     end
-
-let map_entry f entry =
-  let open Protocol.Compl in
-  {entry with desc = f entry.desc; info = f entry.info}
 
 (* List methods of an object.
    Code taken from [uTop](https://github.com/diml/utop
@@ -140,7 +135,10 @@ let classify_node = function
   | Include_declaration _ -> `Module
   | Include_description _ -> `Module
 
-open Protocol.Compl
+open Query_protocol.Compl
+
+let map_entry f entry =
+  {entry with desc = f entry.desc; info = f entry.info}
 
 let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
   let ident = match path with
@@ -421,7 +419,7 @@ let complete_methods ~env ~prefix obj =
     { name; kind = `MethodCall; desc = `Type_scheme ty; info }
   )
 
-let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
+let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label config node =
   let seen = Hashtbl.create 7 in
   let uniq n = if Hashtbl.mem seen n
     then false
@@ -465,7 +463,7 @@ let complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node =
     | Longident.Lident prefix ->
       let compl = find ~is_label prefix in
       (* Add modules on path but not loaded *)
-      List.fold_left (Buffer.global_modules buffer) ~init:compl ~f:(
+      List.fold_left (Mconfig.global_modules config) ~init:compl ~f:(
         fun candidates name ->
           if not (String.no_double_underscore name) then candidates else
           let default = { name; kind = `Module; desc = `None; info = `None } in
@@ -490,7 +488,7 @@ let node_complete buffer ?get_doc ?target_type env node prefix =
   match node with
   | Method_call (obj,_,_) -> complete_methods ~env ~prefix obj
   | Pattern    { Typedtree.pat_desc = Typedtree.Tpat_record (_, _) ; _ }
-  | Expression { Typedtree.exp_desc = Typedtree.Texp_record _ ; _ } ->
+  | Expression { Typedtree.exp_desc = Typedtree.Texp_record (_, _) ; _ } ->
     let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
     complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label:true buffer node
   | x ->
@@ -566,8 +564,7 @@ let application_context ~verbosity ~prefix path =
           earg
       in
       let labels = Raw_compat.labels_of_application ~prefix app in
-      `Application { Protocol.Compl.
-                     argument_type = pr earg.exp_type;
+      `Application { argument_type = pr earg.exp_type;
                      labels = List.map (fun (lbl,ty) -> lbl, pr ty) labels;
                    }
     | _ -> `Unknown

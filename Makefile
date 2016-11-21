@@ -24,8 +24,8 @@ VIM_DIR := $(DESTDIR)$(VIM_DIR)
 OCAMLMAKEFILE= $(MAKE) -f Makefile.ocamlmakefile \
 							 WITH_BIN_ANNOT="$(WITH_BIN_ANNOT)" WITHOUT_DEBUG="$(WITHOUT_DEBUG)"
 
-ifndef VERBOSE
-	OCAMLMAKEFILE += REALLY_QUIET=1
+ifdef VERBOSE
+	OCAMLMAKEFILE += REALLY_QUIET=0
 endif
 
 #### Default rule
@@ -34,7 +34,7 @@ all: $(TARGET) $(TARGET_EMACS)
 
 #### Check configuration
 
-CONFIG_FILES = src/config/my_config.ml src/ocaml
+CONFIG_FILES = src/config/my_config.ml src/ocaml/typer
 $(CONFIG_FILES):
 	@echo "Please run ./configure"
 	@if [ -d ._d ]; then printf \
@@ -50,6 +50,10 @@ assert_configured: $(CONFIG_FILES)
 $(TARGET): assert_configured
 	 +$(OCAMLMAKEFILE) $@
 
+test: assert_configured
+	 +$(OCAMLMAKEFILE) PROJECT=test
+	 ./ocamlmerlin_test
+
 preprocess:
 	$(MAKE) -f Makefile.preprocess
 
@@ -60,9 +64,9 @@ debug: assert_configured
 	-$(EMACS) --batch --no-init-file -f batch-byte-compile $<
 
 clean:
-	@rm -f Makefile.config $(CONFIG_FILES)
+	#@rm -f Makefile.config $(CONFIG_FILES)
 	@rm -f emacs/merlin.elc
-	@rm -f src/ocaml_*/*.cmly
+	@rm -f src/ocaml/*/*/*.cmly
 	$(MAKE) -f Makefile.preprocess clean
 	@find src/ -name '*.cm*' -delete
 	+$(OCAMLMAKEFILE) clean

@@ -32,4 +32,5 @@ module Make (Input : sig
 end) : sig
   val read  : string -> Input.t
   val flush : unit -> unit
+  val clear : unit -> unit
 end

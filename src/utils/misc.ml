@@ -43,15 +43,6 @@ let protect_refs =
     | x           -> set_refs backup; x
     | exception e -> set_refs backup; raise e
 
-let protect_ref r v f =
-  let v' = !r in
-  r := v;
-  match f () with
-  | x -> r := v'; x
-  | exception exn ->
-    r := v';
-    reraise exn
-
 (* List functions *)
 
 let map_end f l1 l2 = List.map_end ~f l1 l2
@@ -81,6 +72,10 @@ let may f x = Option.iter ~f x
 let may_map f x = Option.map ~f x
 
 (* File functions *)
+
+let remove_file filename =
+  try  Sys.remove filename
+  with Sys_error _msg -> ()
 
 let rec split_path path acc =
   match Filename.dirname path, Filename.basename path with
@@ -120,7 +115,7 @@ let canonicalize_filename ?cwd path =
 
 let rec expand_glob ~filter acc root = function
   | [] -> root :: acc
-  | [Glob.Joker; Glob.Joker] :: tl ->
+  | Glob.Wildwild :: tl ->
     let rec append acc root =
       let items = try Sys.readdir root with Sys_error _ -> [||] in
       let process acc dir =
@@ -132,13 +127,13 @@ let rec expand_glob ~filter acc root = function
       Array.fold_left process (root :: acc) items
     in
     append acc root
-  | [Glob.Exact component] :: tl ->
+  | Glob.Exact component :: tl ->
     let filename = Filename.concat root component in
     expand_glob ~filter acc filename tl
   | pattern :: tl ->
     let items = try Sys.readdir root with Sys_error _ -> [||] in
     let process acc dir =
-      if Glob.match_pattern dir pattern then
+      if Glob.match_pattern pattern dir then
         let root' = Filename.concat root dir in
         if filter root' then
           expand_glob ~filter acc root' tl
@@ -200,10 +195,6 @@ let find_in_path_uncap ?(fallback="") path name =
         else None
       )
   end
-
-let remove_file filename =
-  try  Sys.remove filename
-  with Sys_error _msg -> ()
 
 (* Expand a -I option: if it starts with +, make it relative to the standard
    library directory *)
@@ -358,7 +349,7 @@ let thd3 (_,_,x) = x
 let fst4 (x,_,_,_) = x
 let snd4 (_,x,_,_) = x
 let thd4 (_,_,x,_) = x
-let for4 (_,_,_,x) = x
+let fth4 (_,_,_,x) = x
 
 
 module LongString = struct
@@ -405,6 +396,50 @@ module LongString = struct
     tbl
 end
 
+
+(* [modules_in_path ~ext path] lists ocaml modules corresponding to
+ * filenames with extension [ext] in given [path]es.
+ * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
+ * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
+ * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
+let modules_in_path ~ext path =
+  let seen = Hashtbl.create 7 in
+  List.fold_left ~init:[] path
+  ~f:begin fun results dir ->
+    try
+      Array.fold_left
+      begin fun results file ->
+        if Filename.check_suffix file ext
+        then let name = Filename.chop_extension file in
+             (if Hashtbl.mem seen name
+              then results
+              else
+               (Hashtbl.add seen name (); String.capitalize name :: results))
+        else results
+      end results (Sys.readdir dir)
+    with Sys_error _ -> results
+  end
+
+let (~:) = Lazy.from_val
+
+let file_contents filename =
+  let ic = open_in filename in
+  try
+    let str = String.create 1024 in
+    let buf = Buffer.create 1024 in
+    let rec loop () =
+      match input ic str 0 1024 with
+      | 0 -> ()
+      | n ->
+        Buffer.add_substring buf str 0 n;
+        loop ()
+    in
+    loop ();
+    close_in_noerr ic;
+    Buffer.contents buf
+  with exn ->
+    close_in_noerr ic;
+    raise exn
 
 let edit_distance a b cutoff =
   let la, lb = String.length a, String.length b in
@@ -461,12 +496,12 @@ let spellcheck env name =
   in
   let compare target acc head =
     match edit_distance target head cutoff with
-      | None -> acc
-      | Some dist ->
-         let (best_choice, best_dist) = acc in
-         if dist < best_dist then ([head], dist)
-         else if dist = best_dist then (head :: best_choice, dist)
-         else acc
+    | None -> acc
+    | Some dist ->
+      let (best_choice, best_dist) = acc in
+      if dist < best_dist then ([head], dist)
+      else if dist = best_dist then (head :: best_choice, dist)
+      else acc
   in
   fst (List.fold_left ~f:(compare name) ~init:([], max_int) env)
 
@@ -532,6 +567,37 @@ let normalise_eol s =
       if s.[i] <> '\r' then Buffer.add_char b s.[i]
     done;
     Buffer.contents b
+
+let unitname filename =
+  let unitname =
+    try String.sub filename ~pos:0 ~len:(String.index filename '.')
+    with Not_found -> filename
+  in
+  String.capitalize unitname
+
+(* [modules_in_path ~ext path] lists ocaml modules corresponding to
+                    * filenames with extension [ext] in given [path]es.
+                    * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
+                    * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
+                    * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
+let modules_in_path ~ext path =
+  let seen = Hashtbl.create 7 in
+  List.fold_left ~init:[] path
+    ~f:begin fun results dir ->
+      try
+        Array.fold_left
+          begin fun results file ->
+            if Filename.check_suffix file ext
+            then let name = Filename.chop_extension file in
+              (if Hashtbl.mem seen name
+               then results
+               else
+                 (Hashtbl.add seen name (); String.capitalize name :: results))
+            else results
+          end results (Sys.readdir dir)
+      with Sys_error _ -> results
+    end
+
 
 type hook_info = {
   sourcefile : string;

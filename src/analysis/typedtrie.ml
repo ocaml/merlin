@@ -27,9 +27,8 @@
 )* }}} *)
 
 open Std
-open Merlin_lib
-open BrowseT
-open Browse_node
+open Browse_tree
+open Browse_raw
 
 open Cmt_cache
 module Trie = struct
@@ -95,12 +94,12 @@ let rec remove_top_indir =
   )
 
 let of_structure s =
-  let env, node = Browse.leaf_node (Browse.of_structure s) in
-  BrowseT.of_node ~env node
+  let env, node = Mbrowse.leaf_node (Mbrowse.of_structure s) in
+  Browse_tree.of_node ~env node
 
 let of_signature s =
-  let env, node = Browse.leaf_node (Browse.of_signature s) in
-  BrowseT.of_node ~env node
+  let env, node = Mbrowse.leaf_node (Mbrowse.of_signature s) in
+  Browse_tree.of_node ~env node
 
 let rec tag_path ~namespace = function
   | [] -> invalid_arg "Typedtrie.tag_path"
@@ -145,7 +144,7 @@ let rec build ?(local_buffer=false) ~trie browses =
   let rec collect_local_modules trie nodes =
     let aux trie t =
       let doc =
-        let attrs = Browse_node.node_attributes t.t_node in
+        let attrs = node_attributes t.t_node in
         let doc = extract_doc attrs in
         if doc = "" then None else Some doc
       in
@@ -173,7 +172,7 @@ let rec build ?(local_buffer=false) ~trie browses =
   List.fold_left (remove_top_indir browses) ~init:trie ~f:(fun trie t ->
     let open Typedtree in
     let doc =
-      let attrs = Browse_node.node_attributes t.t_node in
+      let attrs = node_attributes t.t_node in
       let doc = extract_doc attrs in
       if doc = "" then None else Some doc
     in

@@ -28,6 +28,6 @@
 )* }}} *)
 
 val get :
-  Merlin_typer.tree ->
+  Mtyper.typedtree ->
   Std.Lexing.position ->
   string -> [> `Error of string | `Found of Lexing.position ]

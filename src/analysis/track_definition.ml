@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Merlin_lib
 
 let sources_path = ref []
 let cfg_cmt_path = ref []
@@ -52,11 +51,11 @@ let erase_loadpath ~cwd ~new_path k =
         x
     )
   in
-  Misc.protect_ref loadpath str_path_list k
+  let_ref loadpath str_path_list k
 
 let restore_loadpath k =
   log "restore_loadpath" "Restored load path";
-  Misc.protect_ref loadpath !cfg_cmt_path k
+  let_ref loadpath !cfg_cmt_path k
 
 module Fallback = struct
   let fallback = ref None
@@ -246,7 +245,7 @@ module Utils = struct
     in
     List.map files ~f:Misc.canonicalize_filename
 
-  let find_all_matches ~project ?(with_fallback=false) file =
+  let find_all_matches ~config ?(with_fallback=false) file =
     let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
     let fallback =
       if not with_fallback then "" else
@@ -255,30 +254,33 @@ module Utils = struct
       | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
       | _ -> assert false
     in
-    let path  = !sources_path in
+    let path = !sources_path in
 
     let filesList =
       List.map (fun synonym_pair -> (
           let fallback = synonym_extension fallback synonym_pair in
           let fname = synonym_extension fname synonym_pair in
           find_all_in_path_uncap ~fallback path fname
-        )) (Merlin_lib.Project.suffixes project)
+        )) Mconfig.(config.merlin.suffixes)
     in
     let files = List.concat filesList in
     List.uniq files ~cmp:String.compare
 
-  let find_file_with_path ~project ?(with_fallback=false) file path =
+  let find_file_with_path ~config ?(with_fallback=false) file path =
     let fname = Misc.chop_extension_if_any (File.name file) ^ (File.ext file) in
-    let fallback =
-      if not with_fallback then "" else
-      match file with
-      | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
-      | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
-      | File.CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
-      | File.CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
-    in
-    let rec attempt_search synonyms =
-      match synonyms with
+    if Misc.unitname fname = Misc.unitname Mconfig.(config.query.filename) then
+      Mconfig.(config.query.filename)
+    else
+      let fallback =
+        if not with_fallback then "" else
+          match file with
+          | File.ML f   -> Misc.chop_extension_if_any f ^ ".mli"
+          | File.MLI f  -> Misc.chop_extension_if_any f ^ ".ml"
+          | File.CMT f  -> Misc.chop_extension_if_any f ^ ".cmti"
+          | File.CMTI f -> Misc.chop_extension_if_any f ^ ".cmt"
+      in
+      let rec attempt_search synonyms =
+        match synonyms with
         | [] -> raise Not_found
         | [synonym_pair] ->
           (* Upon trying the final [synonym_pair], search failure should raise *)
@@ -286,7 +288,7 @@ module Utils = struct
           let fname = synonym_extension fname synonym_pair in
           (
             try Misc.find_in_path_uncap ~fallback path fname with
-                Not_found -> raise (File.Not_found file)
+              Not_found -> raise (File.Not_found file)
           )
         | synonym_pair :: ((rest1 :: rest2) as rest_synonyms) ->
           (* If cannot find match, continue searching through [rest_synonyms] *)
@@ -294,13 +296,13 @@ module Utils = struct
           let fname = synonym_extension fname synonym_pair in
           (
             try Misc.find_in_path_uncap ~fallback path fname with
-                Not_found -> attempt_search rest_synonyms
+              Not_found -> attempt_search rest_synonyms
           )
-    in
-    attempt_search (Merlin_lib.Project.suffixes project)
+      in
+      attempt_search Mconfig.(config.merlin.suffixes)
 
-  let find_file ~project ?with_fallback file =
-    find_file_with_path ~project ?with_fallback file @@
+  let find_file ~config ?with_fallback file =
+    find_file_with_path ~config ?with_fallback file @@
         match file with
         | File.ML  _ | File.MLI _  -> !sources_path
         | File.CMT _ | File.CMTI _ -> !loadpath
@@ -309,7 +311,7 @@ end
 type context = Type | Expr | Patt of Types.type_expr | Unknown | Label
 exception Context_mismatch
 
-let rec locate ~project ?pos path trie =
+let rec locate ~config ?pos path trie =
   match Typedtrie.find ?before:pos trie path with
   | Typedtrie.Found (loc, doc_opt) -> Some (loc, doc_opt)
   | Typedtrie.Resolves_to (new_path, fallback) ->
@@ -317,7 +319,7 @@ let rec locate ~project ?pos path trie =
     | (_, `Mod) :: _ ->
       logf "locate" "resolves to %s" (Typedtrie.path_to_string new_path);
       Fallback.setopt fallback ;
-      from_path ~project new_path
+      from_path ~config new_path
     | _ ->
       logf "locate" "new path (%s) is not a real path. fallbacking..."
         (Typedtrie.path_to_string new_path);
@@ -328,21 +330,21 @@ let rec locate ~project ?pos path trie =
     logf "locate" "alias of %s" (Typedtrie.path_to_string new_path) ;
     (* TODO: maybe give the option to NOT follow module aliases? *)
     Fallback.set loc;
-    from_path ~project new_path
+    from_path ~config new_path
 
-and browse_cmts ~project ~root modules =
+and browse_cmts ~config ~root modules =
   let open Cmt_format in
   let cached = Cmt_cache.read root in
   logf "browse_cmts" "inspecting %s" root ;
   File_switching.move_to ?digest:cached.Cmt_cache.cmt_infos.cmt_source_digest root ;
   if cached.Cmt_cache.location_trie <> String.Map.empty then begin
     log "browse_cmts" "cmt already cached";
-    locate ~project modules cached.Cmt_cache.location_trie
+    locate ~config modules cached.Cmt_cache.location_trie
   end else
     match
       match cached.Cmt_cache.cmt_infos.cmt_annots with
-      | Interface intf      -> `Browse (Browse_node.Signature intf)
-      | Implementation impl -> `Browse (Browse_node.Structure impl)
+      | Interface intf      -> `Browse (Browse_raw.Signature intf)
+      | Implementation impl -> `Browse (Browse_raw.Structure impl)
       | Packed (_, files)   -> `Pack files
       | _ ->
         (* We could try to work with partial cmt files, but it'd probably fail
@@ -359,9 +361,9 @@ and browse_cmts ~project ~root modules =
         (* TODO: retrieve "ocaml.text" floating attributes? *)
         Some (loc, None)
       | _ ->
-        let trie = Typedtrie.of_browses [BrowseT.of_node node] in
+        let trie = Typedtrie.of_browses [Browse_tree.of_node node] in
         cached.Cmt_cache.location_trie <- trie ;
-        locate ~project modules trie
+        locate ~config modules trie
       end
     | `Pack files ->
       begin match modules with
@@ -371,7 +373,7 @@ and browse_cmts ~project ~root modules =
         log "loadpath" "Saw packed module => erasing loadpath" ;
         let new_path = cached.Cmt_cache.cmt_infos.cmt_loadpath in
         erase_loadpath ~cwd:(Filename.dirname root) ~new_path (fun () ->
-          from_path ~project modules
+          from_path ~config modules
         )
       | _ -> None
       end
@@ -388,7 +390,7 @@ and browse_cmts ~project ~root modules =
       Assuming we are in such a situation, if we do not find something in our
       "erased" loadpath, it could mean that we are looking for a persistent
       unit, and that's why we restore the initial loadpath. *)
-and from_path ~project path =
+and from_path ~config path =
   log "from_path '%s'" (Typedtrie.path_to_string path) ;
   match path with
   | [ fname, `Mod ] ->
@@ -405,12 +407,12 @@ and from_path ~project path =
       Some (loc, None)
     in
     begin try
-      let cmt_file = Utils.find_file ~project ~with_fallback:true (Preferences.cmt fname) in
+      let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
       save_digest_and_return cmt_file
     with File.Not_found (File.CMT fname | File.CMTI fname) ->
       restore_loadpath (fun () ->
         try
-          let cmt_file = Utils.find_file ~project ~with_fallback:true (Preferences.cmt fname) in
+          let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
           save_digest_and_return cmt_file
         with File.Not_found (File.CMT fname | File.CMTI fname) ->
           (* In that special case, we haven't managed to find any cmt. But we
@@ -426,13 +428,13 @@ and from_path ~project path =
     end
   | (fname, `Mod) :: modules ->
     begin try
-      let cmt_file = Utils.find_file ~project ~with_fallback:true (Preferences.cmt fname) in
-      browse_cmts ~project ~root:cmt_file modules
+      let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
+      browse_cmts ~config ~root:cmt_file modules
     with File.Not_found (File.CMT fname | File.CMTI fname) as exn ->
       restore_loadpath (fun () ->
         try
-          let cmt_file = Utils.find_file ~project ~with_fallback:true (Preferences.cmt fname) in
-          browse_cmts ~project ~root:cmt_file modules
+          let cmt_file = Utils.find_file ~config ~with_fallback:true (Preferences.cmt fname) in
+          browse_cmts ~config ~root:cmt_file modules
         with File.Not_found (File.CMT fname | File.CMTI fname) ->
           logf "from_path" "failed to locate the cmt[i] of '%s'" fname;
           raise exn
@@ -451,7 +453,7 @@ let path_and_loc_from_label desc env =
 exception Not_in_env
 exception Multiple_matches of string list
 
-let find_source ~cwd ~project loc =
+let find_source ~config loc =
   let fname = loc.Location.loc_start.Lexing.pos_fname in
   let with_fallback = loc.Location.loc_ghost in
   let mod_name = Utils.file_path_to_mod_name fname in
@@ -468,16 +470,16 @@ let find_source ~cwd ~project loc =
   in
   let dir = Filename.dirname initial_path in
   let dir =
-    match cwd with
-    | None -> dir
-    | Some cwd -> Misc.canonicalize_filename ~cwd dir
+    match Mconfig.(config.query.directory) with
+    | "" -> dir
+    | cwd -> Misc.canonicalize_filename ~cwd dir
   in
-  match Utils.find_all_matches ~project ~with_fallback file with
+  match Utils.find_all_matches ~config ~with_fallback file with
   | [] ->
     logf "find_source" "failed to find %S in source path (fallback = %b)"
-      filename with_fallback ;
+       filename with_fallback ;
     logf "find_source" "looking for %S in %S" (File.name file) dir ;
-    begin try Some (Utils.find_file_with_path ~project ~with_fallback file [dir])
+    begin try Some (Utils.find_file_with_path ~config ~with_fallback file [dir])
     with (File.Not_found _ | Not_found) as exn->
       logf "find_source" "Trying to find %S in %S directly" fname dir;
       try Some (Misc.find_in_path [dir] fname)
@@ -548,8 +550,8 @@ let find_source ~cwd ~project loc =
    [find_source] doesn't like the "-o" option of the compiler. This hack handles
    Jane Street specific use case where "-o" is used to prefix a unit name by the
    name of the library which contains it. *)
-let find_source ~cwd ~project loc =
-  try find_source ~cwd ~project loc
+let find_source ~config loc =
+  try find_source ~config loc
   with exn ->
     let fname = loc.Location.loc_start.Lexing.pos_fname in
     try
@@ -560,7 +562,7 @@ let find_source ~cwd ~project loc =
         let lstart = { loc.Location.loc_start with Lexing.pos_fname = fname } in
         { loc with Location.loc_start = lstart }
       in
-      find_source ~cwd ~project loc
+      find_source ~config loc
     with _ -> raise exn
 
 let recover ident =
@@ -576,7 +578,7 @@ let namespaces = function
 
 exception Found of (Path.t * Cmt_cache.path * Location.t)
 
-let tag namespace p = Typedtrie.tag_path ~namespace (Path_aux.to_string_list p)
+let tag namespace p = Typedtrie.tag_path ~namespace (Path.to_string_list p)
 
 let get_type_name ctxt =
   match ctxt with
@@ -587,7 +589,7 @@ let get_type_name ctxt =
     | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
       raise Not_found
     | Types.Tconstr (path,_,_) ->
-      Longident.parse (String.concat ~sep:"." (Path_aux.to_string_list path))
+      Longident.parse (String.concat ~sep:"." (Path.to_string_list path))
     end
   | _ -> raise Not_found
 
@@ -634,7 +636,7 @@ let rec lookup ctxt ident env =
   with Found x ->
     x
 
-let locate ~project ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
+let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   File_switching.reset ();
   Fallback.reset ();
   Preferences.set ml_or_mli;
@@ -646,7 +648,7 @@ let locate ~project ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
          walking up the typedtree looking for '%s'"
         (Typedtrie.path_to_string path);
       let lazy trie = lazy_trie in
-      match locate ~project ~pos path trie with
+      match locate ~config ~pos path trie with
       | None when Fallback.is_set () -> recover str_ident
       | None -> `Not_found (str_ident, File_switching.where_am_i ())
       | Some (loc, doc) -> `Found (loc, doc)
@@ -657,14 +659,14 @@ let locate ~project ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
   | File.Not_found path -> File.explain_not_found str_ident path
 
 (* Only used to retrieve documentation *)
-let from_completion_entry ~project ~lazy_trie ~pos (namespace, path, loc) =
-  let path_lst  = Path_aux.to_string_list path in
+let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
+  let path_lst  = Path.to_string_list path in
   let str_ident = String.concat ~sep:"." path_lst in
   let tagged_path = tag namespace path in
-  locate ~project ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
+  locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
     ~lazy_trie
 
-let from_longident ~project ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
+let from_longident ~config ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   let ident, is_label = Longident.keep_suffix lid in
   let str_ident = String.concat ~sep:"." (Longident.flatten ident) in
   try
@@ -677,7 +679,7 @@ let from_longident ~project ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
       path, tag `Type path, loc
     in
     if Utils.is_builtin_path path then `Builtin else
-    locate ~project ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
+    locate ~config ~ml_or_mli ~path:tagged_path ~lazy_trie ~pos ~str_ident loc
   with
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
   | Not_in_env -> `Not_in_env str_ident
@@ -718,17 +720,17 @@ let inspect_pattern ~pos ~parent p =
     Some (Patt p.pat_type)
 
 let inspect_context browse path pos =
-  match Browse.enclosing pos browse with
+  match Mbrowse.enclosing pos browse with
   | [] ->
     logfmt "inspect_context"
       (fun fmt -> Format.fprintf fmt "no enclosing around: %a"
           Lexing.print_position pos);
     Some Unknown
   | enclosings ->
-    let open Browse_node in
-    let node = BrowseT.of_browse enclosings in
+    let open Browse_raw in
+    let node = Browse_tree.of_browse enclosings in
     let parent = Option.map (Browse.drop_leaf enclosings) ~f:BrowseT.of_browse in
-    match node.BrowseT.t_node with
+    match node.Browse_tree.t_node with
     | Pattern p ->
       logfmt "inspect_context"
         (fun fmt -> Format.fprintf fmt "current node is: %a"
@@ -750,10 +752,10 @@ let inspect_context browse path pos =
     | _ ->
       Some Unknown
 
-let from_string ~project ~cwd ~env ~local_defs ~pos switch path =
-  let browse = Merlin_typer.to_browse local_defs in
+let from_string ~config ~env ~local_defs ~pos switch path =
+  let browse = Mbrowse.of_typedtree local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
-                          [BrowseT.of_browse browse]) in
+                          [Browse_tree.of_browse browse]) in
   let lid = Longident.parse path in
   match inspect_context [browse] path pos with
   | None ->
@@ -762,19 +764,17 @@ let from_string ~project ~cwd ~env ~local_defs ~pos switch path =
   | Some ctxt ->
     logf "from_string" "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
-    Misc.protect_refs [
-      Misc.R (sources_path, Project.source_path project);
-      Misc.R (cfg_cmt_path, Project.cmt_path project);
-      Misc.R (loadpath    , Project.cmt_path project);
-    ] @@ fun () ->
+    let_ref sources_path Mconfig.(config.merlin.source_path) @@ fun () ->
+    let_ref cfg_cmt_path Mconfig.(config.merlin.cmt_path) @@ fun () ->
+    let_ref loadpath     Mconfig.(config.merlin.cmt_path) @@ fun () ->
     match
-      from_longident ~project ~pos ~env ~lazy_trie ctxt switch lid
+      from_longident ~config ~pos ~env ~lazy_trie ctxt switch lid
     with
     | `File_not_found _ | `Not_found _ | `Not_in_env _ as err -> err
     | `Builtin -> `Builtin path
     | `Found (loc, _) ->
       try
-        match find_source ~cwd ~project loc with
+        match find_source ~config loc with
         | None     -> `Found (None, loc.Location.loc_start)
         | Some src -> `Found (Some src, loc.Location.loc_start)
       with
@@ -787,20 +787,19 @@ let from_string ~project ~cwd ~env ~local_defs ~pos switch path =
             matches
         )
 
-let get_doc ~project ~env ~local_defs ~comments ~pos source =
-  let browse = Merlin_typer.to_browse local_defs in
+
+let get_doc ~config ~env ~local_defs ~comments ~pos =
+  let browse = Mbrowse.of_typedtree local_defs in
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
-                          [BrowseT.of_browse browse]) in
+                          [Browse_tree.of_browse browse]) in
   fun path ->
-  Misc.protect_refs [
-    Misc.R (sources_path , Project.source_path project);
-    Misc.R (cfg_cmt_path , Project.cmt_path project);
-    Misc.R (loadpath     , Project.cmt_path project);
-    Misc.R (last_location, Location.none);
-  ] @@ fun () ->
+  let_ref sources_path Mconfig.(config.merlin.source_path) @@ fun () ->
+  let_ref cfg_cmt_path Mconfig.(config.merlin.cmt_path) @@ fun () ->
+  let_ref loadpath     Mconfig.(config.merlin.cmt_path) @@ fun () ->
+  let_ref last_location Location.none @@ fun () ->
   match
     match path with
-    | `Completion_entry entry -> from_completion_entry ~project ~pos ~lazy_trie entry
+    | `Completion_entry entry -> from_completion_entry ~config ~pos ~lazy_trie entry
     | `User_input path ->
       let lid    = Longident.parse path in
       begin match inspect_context [browse] path pos with
@@ -808,7 +807,7 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
         `Found ({ Location. loc_start=pos; loc_end=pos ; loc_ghost=true }, None)
       | Some ctxt ->
         logf "get_doc" "looking for the doc of '%s'" path ;
-        from_longident ~project ~pos ~env ~lazy_trie ctxt `MLI lid
+        from_longident ~config ~pos ~env ~lazy_trie ctxt `MLI lid
       end
   with
   | `Found (loc, Some doc) ->
@@ -839,7 +838,7 @@ let get_doc ~project ~env ~local_defs ~comments ~pos source =
     begin match path with
     | `User_input path -> `Builtin path
     | `Completion_entry (_, path, _) ->
-      let str = String.concat ~sep:"." (Path_aux.to_string_list path) in
+      let str = String.concat ~sep:"." (Path.to_string_list path) in
       `Builtin str
     end
   | `File_not_found _

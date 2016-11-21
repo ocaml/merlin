@@ -1,0 +1,195 @@
+Configuration (OK)
+	OCaml settings
+		Goal is not to reproduce OCaml testsuite, just that settings are applied correctly and that the few Merlin specific behavior are affected.
+		include_dirs
+		no_std_include
+			check that it is possible to provide an alternative stdlib
+		unsafe
+			check that merlin is subject to the same syntactic quirks as OCaml
+		classic
+			write code that mixes different kind of arguments, check errors
+		principal
+			write non-principal code, check errors
+		threads
+			check that Thread/Mutex/Event libraries are found if the flag is specified
+		recursive_types
+			write dubious code that wouldn't typecheck without it
+		strict_sequence
+			check that 5; () fails
+		applicative_functors
+			check that non-applicative functors are rejected, check quirks in Parser
+		unsafe_string
+			check that environment is setup correctly with and without unsafe string
+			check that Bytes and String deprecation warning are reported appropriately
+		nopervasives
+			figure wtf happens in this case ?!
+		strict_formats
+			check it conforms to OCaml behavior, what is this expected to do?
+		open_modules
+			check environment is initialized as it should
+		ppx
+			check Ast is rewritten as it should
+			ensure graceful degradation if ppx is missing or broken
+			check composition of multiple ppx work as expected
+		pp
+			check frontend/reader is affected as it should
+		warnings
+			check that a few warnings are treated properly
+		reals_paths / Short-path
+	Findlib configuration
+		conf
+			check that it overrides location of findlib.conf
+			check behavior when file is missing or invalid (directory, wrong permission)
+		path
+			check that it actually adds new path to the findlib package directories
+	Merlin settings
+		TODO: define command line flags for each of these settings
+		build_path / source_path / cmi_path / cmt_path
+			specify which behavior are affected by each path variable
+			check that each variable is considered for corresponding lookups
+		extensions
+			check that corresponding extensions are enabled in lexer / parser / typer
+		suffixes
+			specify which behavior should be affected by suffixes
+			check that .ml(i) and .re(i) are correctly handled by default
+		stdlib
+			check that it is possible to use merlin with a different installation of OCaml
+			ensure graceful degradation if stdlib is incorrect
+		reader
+			ensure this setting is not ignored
+		dot_merlin
+			specify the format for good
+			ensure all features are parsed and affects configuration
+			ensure recursive resolution is working properly
+		packages
+			ensure build path is updated correctly
+			ensure graceful degradation when loading unknown or invalid packages
+			ensure that ppxs specified by packages are loaded correctly
+				ppx path should be resolved relative to package directory
+	Query settings
+		directory
+			ensure this setting takes precedence over process working directory
+		filename
+			TODO: remove Msource.filename?
+		terminal_width
+			check that pretty printer / error behavior take this into account :)
+			or completely remove it?
+		verbosity
+			check that various verbosity sensitive queries are affected
+Queries (WIP)
+	Case analysis (destruct)
+		On a pattern
+			If exhaustive
+				Try and split the thing under the cursor (works
+				on variables and wildcards) into subpatterns
+			If not-exhaustive
+				Make it exhaustive
+		On an expression [e]
+			If it is a module
+				expand into "let module ..."
+			If it is a variant or record type
+				replace by [match e with <cases>]
+	Completion
+		Normal
+			Candidate enumeration
+				Polymorphic variants
+				Values
+				Value constructors
+				Type constructors
+				Modules
+					Signature expansion affected by verbosity
+				Module types
+				Record labels
+		Record fields
+			Normal
+			After module path
+		Method completion
+		Sorting
+			By categories
+				Expression
+				Structure
+				Pattern
+				Module
+				Module types
+				Signature 
+				Type
+			By unification cost
+			By number of "arrows"
+		Arguments
+			Type-directed
+			For infix operator
+			Labelled argument
+			Optional argument
+		Expansion / spell checking
+			Path prefixes completion
+			Spell correction
+		Global modules
+		Filtering
+			Hidden namespace '_'
+			Janestreet modules containing '__'
+	Document
+		check external doc comments are reported appropriately
+		check internal doc comments are reported appropriately
+	Dump
+		parsetree
+		printast
+		env / fullenv
+		browse
+		tokens
+		flags
+		warnings
+		exn
+		paths
+	Errors
+		Sources
+			Lexer
+			Parser
+			Typer
+				If a CMI is missing, only report this error (FIXME: these errors?)
+				Filter out type errors after a syntax error, they are likely to be noise
+				Top-level errors shouldn't escape
+		Sort by position
+		TODO: find a way to measure recovery quality
+	Extensions
+		Meta OCaml
+		Lwt
+	Findlib list
+		Check that custom findlib setups are supported
+		Fail gracefully if findlib not available? (JST)
+	Jump
+	Locate
+	Occurrences
+		Look in the appropriate namespace, check correct behavior for each
+			Values
+			Constructors
+			Types
+			Modules
+		What is the behavior when exiting/entering a module
+			Plain identifier when referred to from outside the module?
+			Qualified identifier when referred to from inside the module
+	Outline
+	Shape
+	Type enclosing
+		String argument (expro) is a bit redundant: only position should be provided.
+		↑ Wasn't that used to be able to do things like ":TypeOf FooBar.S"?
+		↓ See below, the string argument is used to approximate where the cursor is
+      (in the middle of a path or even a path component), since locations are
+      only stored at the granularity of one path
+	Type expression
+		Ensure expression is typed in the right environment
+		Explain how verbosity affects results
+	Which (find source files)
+		With ext
+		Path
+Reader (WIP)
+	check behaviors for builtin, -pp and external frontends
+	Lexer
+		Reconstruct identifiers
+		Decompose path components into tokens (TODO)
+		Check comments are reported appropriately
+	Parser
+		check support for ML & MLI
+	Pretty-printer
+		of parsetree (for destruct)
+		of outcometree (for completion & error report)
+		support for external readers

@@ -27,7 +27,6 @@
 )* }}} *)
 
 open Std
-open Merlin_lib
 
 let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   let lexbuf = Lexing.from_string expr in
@@ -38,9 +37,7 @@ let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
     | Lexer_raw.Refill k -> lexer (k ())
   in
   let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
-  match Parser_raw.parse_expression lexer lexbuf with
-  | e -> Either.R (e : Parsetree.expression)
-  | exception exn -> Either.L exn
+  Parser_raw.parse_expression lexer lexbuf
 
 let lookup_module_or_modtype name env =
   try
@@ -116,7 +113,7 @@ module Printtyp = struct
     select_verbose modtype verbose_modtype env ppf mty
 
   let wrap_printing_env env ~verbosity:v f =
-    Misc.protect_ref verbosity v (fun () -> wrap_printing_env env f)
+    let_ref verbosity v (fun () -> wrap_printing_env env f)
 end
 
 (* Check if module is smaller (= has less definition, counting nested ones)
@@ -201,6 +198,13 @@ let print_type_with_decl ~verbosity env ppf typ =
   else
     Printtyp.type_scheme env ppf typ
 
+let print_exn ppf exn =
+  let msg = match Location.error_of_exn exn with
+    | Some {Location. msg} -> msg
+    | None -> Printexc.to_string exn
+  in
+  Format.pp_print_string ppf msg
+
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
@@ -212,13 +216,11 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     print_type_with_decl ~verbosity env ppf exp.exp_type
   in
   Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-  Front_aux.uncatch_errors @@ fun () ->
+  Msupport.uncatch_errors @@ fun () ->
   match parse_expr ?keywords expr with
-  | Either.L e ->
-    (*Format.pp_print_string ppf (Error_classifier.classify e); FIXME*)
-    false
+  | exception exn -> print_exn ppf exn; false
 
-  | Either.R e ->
+  | e ->
     match Raw_compat.Parsetree.extract_specific_parsing_info e with
     | `Ident longident ->
       begin try
@@ -231,8 +233,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
           let t = Env.find_type p env in
           Printtyp.type_declaration env (Ident.create (Path.last p)) ppf t;
           true
-        with _ ->
-          raise exn
+        with _ -> print_exn ppf exn; false
       end
 
     | `Constr longident ->
@@ -266,8 +267,9 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
             (* FIXME: support Reader printer *)
             !Oprint.out_type ppf (Browse_misc.print_constructor cstr_desc);
             true
-          with _ ->
-            raise exn
+          with _ -> print_exn ppf exn; false
       end
 
-    | `Other -> print_expr e; true
+    | `Other ->
+      try print_expr e; true
+      with exn -> print_exn ppf exn; false

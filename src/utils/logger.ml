@@ -33,28 +33,18 @@ open Misc
 type title = string
 type section = string
 
+let time = ref 0.0
+
+let reset_time () =
+  time := Sys.time ()
+
+let delta_time () =
+  Sys.time () -. !time
+
 let destination = ref None
 
-let set_destination dest =
-  begin match !destination with
-    | None -> ()
-    | Some oc -> close_out_noerr oc
-  end;
-  destination :=
-    begin match dest with
-      | None -> None
-      | Some filename ->
-        Some (open_out filename)
-    end
-
-let () =
-  set_destination (try Some (Sys.getenv "MERLIN_LOG")
-                   with Not_found -> None);
-  at_exit (fun () -> set_destination None)
-
 let output_section oc section title =
-  let time = (Unix.times ()).Unix.tms_utime in
-  output_string oc (Printf.sprintf "# %2.2f %s - %s\n" time section title)
+  Printf.fprintf oc "# %2.2f %s - %s\n" (delta_time ()) section title
 
 let log section title msg =
   match !destination with
@@ -85,18 +75,41 @@ let logj section title f =
     Json.pretty_to_channel oc (f ());
     output_char oc '\n'
 
-let editor_messages
+let notifications
   : (section * string) list ref option ref
   = ref None
 
 let notify section =
   let tell msg =
     log section "notify" msg;
-    match !editor_messages with
+    match !notifications with
     | None -> ()
     | Some r -> r := (section, msg) :: !r
   in
   Printf.ksprintf tell
 
-let with_editor r f =
-  Misc.protect_ref editor_messages (Some r) f
+let with_notifications r f =
+  let_ref notifications (Some r) f
+
+let with_log_file file f =
+  match file with
+  | None -> f ()
+  | Some file ->
+    let destination', release = match file with
+      | "" -> (None, ignore)
+      | "-" -> (Some stderr, ignore)
+      | filename ->
+        match open_out filename with
+        | exception exn ->
+          Printf.eprintf "cannot open %S for logging: %s"
+            filename (Printexc.to_string exn);
+          (None, ignore)
+        | oc ->
+          (Some oc, (fun () -> close_out_noerr oc))
+    in
+    let destination0 = !destination in
+    destination := destination';
+    try_finally f
+      (fun () ->
+         destination := destination0;
+         release ())

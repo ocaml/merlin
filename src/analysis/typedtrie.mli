@@ -30,7 +30,7 @@ open Cmt_cache
 
 type t = trie
 
-val of_browses : ?local_buffer:bool -> BrowseT.t list -> t
+val of_browses : ?local_buffer:bool -> Browse_tree.t list -> t
 (** Constructs a trie from a list of [BrowseT.t].
 
     If [?local_buffer] is [false] (the default) functor declaration, functor

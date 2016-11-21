@@ -233,36 +233,28 @@ export MERLIN_STURGEON_PACKAGE=${STURGEON_PACKAGE}
 ## Windows compatibility checks
 ## ============================
 
-if [ -z ${COMSPEC+x} ]; then
-
-  # Non windows-like system, use symlinks
-
-  rm -f "$PWD/src/ocaml" 2>&1 >/dev/null
-  ln -sf "$PWD/src/ocaml_$OCAML_VERSION" "$PWD/src/ocaml"
-  rm -f "$PWD/src/sturgeon" 2>&1 >/dev/null
-  ln -sf "$PWD/src/sturgeon_$STURGEON_VERSION" "$PWD/src/sturgeon"
-
-else
-
-  # Assume windows-like system
-  # Avoid symlinks, find right version through environment variable
-
-  touch "$PWD/src/ocaml"
-  MERLIN_CONFIG_ENV="$MERLIN_CONFIG_ENV
-export MERLIN_OCAML_VERSION=_${OCAML_VERSION}
-export MERLIN_STURGEON_VERSION=_${STURGEON_VERSION}
-"
-
-fi
-
 OS_TYPE=$(ocamlfind c -config | grep os_type|cut -d' ' -f2)
 
 # 64-bit Windows also has OS_TYPE = Win32
 case "$OS_TYPE" in
   Win32)
+    # Assume windows-like system
+    # Avoid symlinks, find right version through environment variable
+    touch "$PWD/src/ocaml"
+    MERLIN_CONFIG_ENV="$MERLIN_CONFIG_ENV
+export MERLIN_OCAML_VERSION=_${OCAML_VERSION}
+export MERLIN_STURGEON_VERSION=_${STURGEON_VERSION}
+"
     EXE=.exe
     ;;
+
   *)
+    # Non windows-like system, use symlinks
+    rm -f "$PWD/src/ocaml/typer" 2>&1 >/dev/null
+    ln -sf "$PWD/src/ocaml/typer_$OCAML_VERSION" "$PWD/src/ocaml/typer"
+    rm -f "$PWD/src/sturgeon" 2>&1 >/dev/null
+    ln -sf "$PWD/src/sturgeon_$STURGEON_VERSION" "$PWD/src/sturgeon"
+
     EXE=
     ;;
 esac
@@ -321,9 +313,6 @@ let version = "$VERSION_STRING";;
 let ocamlversion : $OCAML_VERSION_TYP = $OCAML_VERSION_VAL;;
 END
 
-  cat >src/config/config.iss <<END
-#define OCAML_VERSION "$OCAML_VERSION_MESSAGE"
-END
   if [ "$EXIT" -eq 0 ]; then
     echo "Now, type 'make' to compile then 'make install'."
   else

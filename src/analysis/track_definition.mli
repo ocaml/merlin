@@ -26,13 +26,10 @@
 
 )* }}} *)
 
-open Merlin_lib
-
 val from_string
-  : project:Project.t
-  -> cwd:string option
+  :  config:Mconfig.t
   -> env:Env.t
-  -> local_defs:Typer.tree
+  -> local_defs:Mtyper.typedtree
   -> pos:Lexing.position
   -> [ `ML | `MLI ]
   -> string
@@ -44,12 +41,11 @@ val from_string
       | `At_origin ]
 
 val get_doc
-  : project:Merlin_lib.Project.t
+  :  config:Mconfig.t
   -> env:Env.t
-  -> local_defs:Typer.tree
+  -> local_defs:Mtyper.typedtree
   -> comments:(string * Location.t) list
   -> pos:Lexing.position
-  -> string
   -> [ `User_input of string | `Completion_entry of (Cmt_cache.namespace * Path.t * Location.t) ]
   -> [> `File_not_found of string
       | `Found of string

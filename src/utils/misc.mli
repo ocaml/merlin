@@ -46,8 +46,6 @@ val protect_refs : ref_and_value list -> (unit -> 'a) -> 'a
     while executing [f]. The previous contents of the references is restored
     even if [f] raises an exception. *)
 
-val protect_ref : 'b ref -> 'b -> (unit -> 'a) -> 'a
-
 val exact_file_exists : string -> bool
 	(* Like [Sys.file_exists], but takes into account case-insensitive file
 	   systems: return true only if the basename (last component of the
@@ -166,7 +164,16 @@ val thd3: 'a * 'b * 'c -> 'c
 val fst4: 'a * 'b * 'c * 'd -> 'a
 val snd4: 'a * 'b * 'c * 'd -> 'b
 val thd4: 'a * 'b * 'c * 'd -> 'c
-val for4: 'a * 'b * 'c * 'd -> 'd
+val fth4: 'a * 'b * 'c * 'd -> 'd
+
+(* [modules_in_path ~ext path] lists ocaml modules corresponding to
+ * filenames with extension [ext] in given [path]es.
+ * For instance, if there is file "a.ml","a.mli","b.ml" in ".":
+ * - modules_in_path ~ext:".ml" ["."] returns ["A";"B"],
+ * - modules_in_path ~ext:".mli" ["."] returns ["A"] *)
+val modules_in_path : ext:string -> string list -> string list
+
+val file_contents : string -> string
 
 module LongString :
   sig
@@ -249,12 +256,17 @@ val normalise_eol: string -> string
    removed. Intended for pre-processing text which will subsequently be printed
    on a channel which performs EOL transformations (i.e. Windows) *)
 
+val unitname: string -> string
+(** Return the name of the OCaml module matching a basename
+    (filename without directory).
+    Remove the extension and capitalize *)
+
 (** {2 Hook machinery} *)
 
 (* Hooks machinery:
    [add_hook name f] will register a function that will be called on the
-    argument of a later call to [apply_hooks]. Hooks are applied in the
-    lexicographical order of their names.
+   argument of a later call to [apply_hooks]. Hooks are applied in the
+   lexicographical order of their names.
 *)
 
 type hook_info = {
@@ -269,13 +281,13 @@ type hook_exn_wrapper = {
 
 exception HookExnWrapper of hook_exn_wrapper
 
-    (** An exception raised by a hook will be wrapped into a
-        [HookExnWrapper] constructor by the hook machinery.  *)
+(** An exception raised by a hook will be wrapped into a
+    [HookExnWrapper] constructor by the hook machinery.  *)
 
 
 val raise_direct_hook_exn: exn -> 'a
-  (** A hook can use [raise_unwrapped_hook_exn] to raise an exception that will
-      not be wrapped into a [HookExnWrapper]. *)
+(** A hook can use [raise_unwrapped_hook_exn] to raise an exception that will
+    not be wrapped into a [HookExnWrapper]. *)
 
 module type HookSig = sig
   type t

@@ -28,8 +28,7 @@
 
 open Std
 open Option.Infix
-open Merlin_lib
-open BrowseT
+open Browse_tree
 
 let print_constructor c =
   let open Types in
@@ -81,23 +80,24 @@ let dump_browse node =
     ]
   in
   let rec append env node acc =
-    let loc = Browse.node_loc node in
+    let loc = Mbrowse.node_loc node in
     `Assoc [
       "filename" , `String loc.Location.loc_start.Lexing.pos_fname;
       "start"    , Lexing.json_of_position loc.Location.loc_start;
       "end"      , Lexing.json_of_position loc.Location.loc_end;
       "ghost"    , `Bool loc.Location.loc_ghost;
-      "attrs"    , `List (List.map ~f:attr (Browse_node.node_attributes node));
-      "kind"     , `String (Browse_node.string_of_node node);
+      "attrs"    , `List (List.map ~f:attr (Browse_raw.node_attributes node));
+      "kind"     , `String (Browse_raw.string_of_node node);
       "children" , dump_list env node
     ] :: acc
   and dump_list env node =
     `List (List.sort ~cmp:compare @@
-           Merlin_browse.fold_node append env node [])
+           Mbrowse.fold_node append env node [])
   in
   `List (append Env.empty node [])
 
-let annotate_tail_calls (ts : Browse_node.t list) : (Browse_node.t * Protocol.is_tail_position) list =
+let annotate_tail_calls (ts : Browse_raw.node list) :
+  (Browse_raw.node * Query_protocol.is_tail_position) list =
   let is_one_of candidates node = List.mem node ~set:candidates in
   let find_entry_points candidates node =
     Tail_analysis.entry_points node,
@@ -121,5 +121,5 @@ let annotate_tail_calls (ts : Browse_node.t list) : (Browse_node.t * Protocol.is
     tail_positions
 
 let annotate_tail_calls_from_leaf ts =
-  let ts = List.map ~f:snd @@ ts in
+  let ts = List.map ~f:snd ts in
   List.rev (annotate_tail_calls (List.rev ts))
