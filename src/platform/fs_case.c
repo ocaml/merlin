@@ -1,12 +1,12 @@
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/alloc.h>
-#include <unistd.h>
 
 #ifdef __APPLE__
 
 #include <fcntl.h>
 #include <sys/param.h>
+#include <unistd.h>
 
 value ml_merlin_fs_exact_case(value path)
 {
