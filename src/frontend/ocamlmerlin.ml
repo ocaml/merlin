@@ -1,7 +1,7 @@
 let main () =
   match List.tl (Array.to_list Sys.argv) with
   | "single" :: args -> New_merlin.run args
-  | "daemon" :: _ -> failwith "TODO"
+  | "daemon" :: _ -> Daemon_merlin.start_daemon ()
   | "stop-daemon" :: _ -> failwith "TODO"
   | "old-protocol" :: args -> Old_merlin.run args
   | ("-help" | "--help" | "-h") :: _ ->

@@ -263,6 +263,7 @@ else
 						src/frontend/new/new_commands.mli \
 						src/frontend/new/new_commands.ml  \
 						src/frontend/new/new_merlin.ml    \
+						src/frontend/daemon_merlin.ml     \
 						src/frontend/ocamlmerlin.ml
 endif
 
