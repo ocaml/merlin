@@ -243,19 +243,6 @@ SOURCES_LIB = \
 	src/frontend/query_commands.mli   \
 	src/frontend/query_commands.ml
 
-SOURCES_OLD =                      \
-	src/frontend/old/old_IO.mli      \
-	src/frontend/old/old_IO.ml       \
-	src/frontend/old/old_command.mli \
-	src/frontend/old/old_command.ml  \
-	src/frontend/old/old_protocol.ml \
-	src/frontend/old/old_merlin.ml
-
-SOURCES_NEW =                       \
-	src/frontend/new/new_commands.mli \
-	src/frontend/new/new_commands.ml  \
-	src/frontend/new/new_merlin.ml
-
 PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
 
 ifeq ($(PROJECT),test)
@@ -263,14 +250,20 @@ ifeq ($(PROJECT),test)
 	
 	SOURCES = $(SOURCES_LIB) \
 	          src/frontend/test/ocamlmerlin_test.ml
-else ifeq ($(PROJECT),newprotocol)
-
 else
 	RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
 	
-	SOURCES =                                      \
-	  $(SOURCES_LIB) $(SOURCES_OLD) $(SOURCES_NEW) \
-		src/frontend/ocamlmerlin.ml
+	SOURCES = $(SOURCES_LIB)                    \
+						src/frontend/old/old_IO.mli       \
+						src/frontend/old/old_IO.ml        \
+						src/frontend/old/old_command.mli  \
+						src/frontend/old/old_command.ml   \
+						src/frontend/old/old_protocol.ml  \
+						src/frontend/old/old_merlin.ml    \
+						src/frontend/new/new_commands.mli \
+						src/frontend/new/new_commands.ml  \
+						src/frontend/new/new_merlin.ml    \
+						src/frontend/ocamlmerlin.ml
 endif
 
 ifeq "$(NATIVE)" "false"
