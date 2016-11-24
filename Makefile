@@ -43,6 +43,11 @@ $(CONFIG_FILES):
 
 assert_configured: $(CONFIG_FILES)
 
+#### C client
+
+ocamlmerlin-client: src/frontend/ocamlmerlin_client.c
+	$(CC) -g -o $@ $^
+
 #### Other rules
 
 .PHONY: $(TARGET) all debug clean distclean install uninstall assert_configured message merlin.install
