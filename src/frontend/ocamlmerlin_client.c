@@ -95,7 +95,7 @@ static void ipc_send(int fd, char *buffer, size_t len, int fds[3])
 
 #define byte(x,n) ((unsigned)((x) >> (n * 8)) & 0xFF)
 
-static ssize_t prepare_args(char *buffer, size_t len, int argc, const char **argv)
+static ssize_t prepare_args(char *buffer, size_t len, int argc, char **argv)
 {
   /* Append arguments */
   ssize_t j = 4;
@@ -204,9 +204,8 @@ static int connect_and_serve(const char *socket_path, const char *exec_path)
 
 /* OCaml merlin path */
 
-static void compute_socketpath(char merlin_path[PATH_MAX], char socket_path[PATH_MAX], const char *argv0)
+static void compute_merlinpath(char merlin_path[PATH_MAX], const char *argv0)
 {
-  static char binary_path[PATH_MAX+1];
   realpath(argv0, merlin_path);
 
   size_t strsz = strlen(merlin_path);
@@ -215,12 +214,15 @@ static void compute_socketpath(char merlin_path[PATH_MAX], char socket_path[PATH
     strsz -= 1;
   merlin_path[strsz] = 0;
 
-  // Append ocamlmerlin
-  if (strsz + 12 > PATH_MAX)
+  // Append ocamlmerlin-daemon
+  if (strsz + 19 > PATH_MAX)
     failwith("path is too long");
 
-  strcpy(merlin_path + strsz, "ocamlmerlin");
+  strcpy(merlin_path + strsz, "ocamlmerlin-daemon");
+}
 
+static void compute_socketpath(char socket_path[PATH_MAX], const char merlin_path[PATH_MAX])
+{
   struct stat st;
   if (stat(merlin_path, &st) != 0)
     failwith_perror("stat (cannot find ocamlmerlin binary)");
@@ -247,20 +249,30 @@ static void dumpinfo(void)
       "merlin path: %s\nsocket path: %s\n", merlin_path, socket_path);
 }
 
-int main(int argc, const char **argv)
+int main(int argc, char **argv)
 {
-  compute_socketpath(merlin_path, socket_path, argv[0]);
+  compute_merlinpath(merlin_path, argv[0]);
+  if (argc >= 2 && strcmp(argv[1], "daemon") == 0)
+  {
+    compute_socketpath(socket_path, merlin_path);
 
-  int sock = connect_and_serve(socket_path, merlin_path);
-  ssize_t len = prepare_args(argbuffer, sizeof(argbuffer), argc-1, argv+1);
-  int fds[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
-  ipc_send(sock, argbuffer, len, fds);
+    int sock = connect_and_serve(socket_path, merlin_path);
+    ssize_t len = prepare_args(argbuffer, sizeof(argbuffer), argc-2, argv+2);
+    int fds[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
+    ipc_send(sock, argbuffer, len, fds);
 
-  char result = 0;
-  int err;
-  NO_EINTR(err, read(sock, &result, 1));
-  if (err == 1)
-    exit(result);
+    char result = 0;
+    int err;
+    NO_EINTR(err, read(sock, &result, 1));
+    if (err == 1)
+      exit(result);
 
-  exit(1);
+    exit(1);
+  }
+  else
+  {
+    argv[0] = "ocamlmerlin-daemon";
+    execvp(merlin_path, argv);
+    failwith_perror("execvp(ocamlmerlin-daemon)");
+  }
 }

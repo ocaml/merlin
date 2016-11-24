@@ -248,12 +248,12 @@ SOURCES_LIB = \
 PACKS = str findlib yojson unix $(MERLIN_STURGEON_PACKAGE)
 
 ifeq ($(PROJECT),test)
-	RESULT = ocamlmerlin_test
+	RESULT = ocamlmerlin-test
 	
 	SOURCES = $(SOURCES_LIB) \
 	          src/frontend/test/ocamlmerlin_test.ml
 else
-	RESULT = ocamlmerlin$(MERLIN_OCAML_VERSION)$(RESULT_SUFFIX)
+	RESULT = ocamlmerlin-daemon$(RESULT_SUFFIX)
 	
 	SOURCES = $(SOURCES_LIB)                    \
 						src/frontend/old/old_IO.mli       \

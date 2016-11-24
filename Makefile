@@ -1,7 +1,7 @@
 #### Main Makefile parameters
 
 -include Makefile.config
-TARGET = ocamlmerlin
+TARGET = ocamlmerlin-daemon
 
 ifdef ENABLE_COMPILED_EMACS_MODE
     TARGET_EMACS = emacs/merlin.elc \
@@ -30,7 +30,7 @@ endif
 
 #### Default rule
 
-all: $(TARGET) $(TARGET_EMACS)
+all: $(TARGET) $(TARGET_EMACS) ocamlmerlin
 
 #### Check configuration
 
@@ -43,9 +43,9 @@ $(CONFIG_FILES):
 
 assert_configured: $(CONFIG_FILES)
 
-#### C client
+#### C wrapper
 
-ocamlmerlin-client: src/frontend/ocamlmerlin_client.c
+ocamlmerlin: src/frontend/ocamlmerlin_client.c
 	$(CC) -g -o $@ $^
 
 #### Other rules
@@ -57,7 +57,7 @@ $(TARGET): assert_configured
 
 test: assert_configured
 	 +$(OCAMLMAKEFILE) PROJECT=test
-	 ./ocamlmerlin_test
+	 ./ocamlmerlin-test
 
 preprocess:
 	$(MAKE) -f Makefile.preprocess
