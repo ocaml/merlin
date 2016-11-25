@@ -2,6 +2,7 @@
 (
   printf 'bin: [\n'
   printf '  "ocamlmerlin"\n'
+  printf '  "ocamlmerlin-server"\n'
   printf ']\n'
   printf '\n'
   printf 'share: [\n'

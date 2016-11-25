@@ -1,7 +1,7 @@
 #### Main Makefile parameters
 
 -include Makefile.config
-TARGET = ocamlmerlin-daemon
+TARGET = ocamlmerlin-server
 
 ifdef ENABLE_COMPILED_EMACS_MODE
     TARGET_EMACS = emacs/merlin.elc \
@@ -45,8 +45,8 @@ assert_configured: $(CONFIG_FILES)
 
 #### C wrapper
 
-ocamlmerlin: src/frontend/ocamlmerlin_client.c
-	$(CC) -g -o $@ $^
+ocamlmerlin: src/frontend/ocamlmerlin.c
+	$(CC) -o $@ $^
 
 #### Other rules
 

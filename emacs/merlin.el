@@ -287,9 +287,6 @@ return DEFAULT or the value associated to KEY."
     (if v (cdr v)
       default)))
 
-(defun merlin--get-occ-buff ()
-  (get-buffer-create merlin-occurrences-buffer-name))
-
 (defun merlin--differs-from-current-file (path)
   (not (string-equal path (buffer-file-name))))
 
@@ -401,7 +398,7 @@ return (LOC1 . LOC2)."
           (let ((default-directory wd))
             (apply 'call-process-region (point-min) (point-max) path nil
                    (list ob tmp) nil
-                   "single" (car args)
+                   "server" (car args)
                    "-protocol" "sexp"
                    "-log-file" (if merlin-debug "-" "")
                    (cdr args)))))
@@ -1297,6 +1294,9 @@ Empty string defaults to jumping to all these."
                       'mouse-face '(highlight)
                       'occur-target marker)
           (propertize "\n" 'occur-target marker)))
+
+(defun merlin--get-occ-buff ()
+  (get-buffer-create merlin-occurrences-buffer-name))
 
 (defun merlin-occurrences-populate-buffer (lst)
   (let ((src-buff (buffer-name))

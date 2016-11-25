@@ -1,5 +1,6 @@
 bin: [
   "ocamlmerlin"
+  "ocamlmerlin-server"
 ]
 
 share: [

@@ -17,24 +17,26 @@ let usage () =
 let run = function
   | [] ->
     usage ();
-    exit 1
+    1
   | "-version" :: _ ->
     Printf.printf "The Merlin toolkit version %s, for Ocaml %s\n"
       My_config.version Sys.ocaml_version;
-    exit 0
+    0
   | "-vnum" :: _ ->
     Printf.printf "%s\n" My_config.version;
-    exit 0
+    0
   | "-warn-help" :: _ ->
-    Warnings.help_warnings ()
+    Warnings.help_warnings ();
+    0
   | "-flags-help" :: _ ->
-    Mconfig.document_arguments stdout
+    Mconfig.document_arguments stdout;
+    0
   | query :: raw_args ->
     match New_commands.find_command query New_commands.all_commands with
     | exception Not_found ->
       prerr_endline ("Unknown command " ^ query ^ ".\n");
       usage ();
-      exit 1
+      1
     | New_commands.Command (_name, doc, spec, command_args, command_action) ->
       let notifications = ref [] in
       Logger.with_notifications notifications @@ fun () ->
@@ -81,7 +83,7 @@ let run = function
         end;
         print_newline ()
       end with
-      | () -> exit 0
+      | () -> 0
       | exception exn ->
         prerr_endline ("Exception: " ^ Printexc.to_string exn);
-        exit 1
+        1

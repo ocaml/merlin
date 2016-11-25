@@ -177,9 +177,9 @@ static void start_server(const char *socket_path, const char *exec_path)
 
   if (child == 0)
   {
-    char arg[50];
-    sprintf(arg, "%d", sock);
-    execlp(exec_path, exec_path, "daemon", arg, NULL);
+    char socket_fd[50];
+    sprintf(socket_fd, "%d", sock);
+    execlp(exec_path, exec_path, "server", socket_path, socket_fd, NULL);
     failwith_perror("execlp");
   }
 
@@ -214,11 +214,11 @@ static void compute_merlinpath(char merlin_path[PATH_MAX], const char *argv0)
     strsz -= 1;
   merlin_path[strsz] = 0;
 
-  // Append ocamlmerlin-daemon
+  // Append ocamlmerlin-server
   if (strsz + 19 > PATH_MAX)
     failwith("path is too long");
 
-  strcpy(merlin_path + strsz, "ocamlmerlin-daemon");
+  strcpy(merlin_path + strsz, "ocamlmerlin-server");
 }
 
 static void compute_socketpath(char socket_path[PATH_MAX], const char merlin_path[PATH_MAX])
@@ -252,7 +252,7 @@ static void dumpinfo(void)
 int main(int argc, char **argv)
 {
   compute_merlinpath(merlin_path, argv[0]);
-  if (argc >= 2 && strcmp(argv[1], "daemon") == 0)
+  if (argc >= 2 && strcmp(argv[1], "server") == 0)
   {
     compute_socketpath(socket_path, merlin_path);
 
@@ -271,8 +271,8 @@ int main(int argc, char **argv)
   }
   else
   {
-    argv[0] = "ocamlmerlin-daemon";
+    argv[0] = "ocamlmerlin-server";
     execvp(merlin_path, argv);
-    failwith_perror("execvp(ocamlmerlin-daemon)");
+    failwith_perror("execvp(ocamlmerlin-server)");
   }
 }

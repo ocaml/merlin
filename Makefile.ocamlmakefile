@@ -253,7 +253,7 @@ ifeq ($(PROJECT),test)
 	SOURCES = $(SOURCES_LIB) \
 	          src/frontend/test/ocamlmerlin_test.ml
 else
-	RESULT = ocamlmerlin-daemon$(RESULT_SUFFIX)
+	RESULT = ocamlmerlin-server$(RESULT_SUFFIX)
 	
 	SOURCES = $(SOURCES_LIB)                    \
 						src/frontend/old/old_IO.mli       \
@@ -265,14 +265,13 @@ else
 						src/frontend/new/new_commands.mli \
 						src/frontend/new/new_commands.ml  \
 						src/frontend/new/new_merlin.ml    \
-						src/frontend/daemon_merlin.ml     \
-						src/frontend/ocamlmerlin.ml
+						src/frontend/ocamlmerlin_server.ml
 endif
 
 ifeq "$(NATIVE)" "false"
-ocamlmerlin $(RESULT): byte-code
+$(RESULT): byte-code
 else
-ocamlmerlin $(RESULT): native-code
+$(RESULT): native-code
 endif
 
 -include OCamlMakefile
