@@ -66,7 +66,8 @@ static ssize_t recv_buffer(int fd, int fds[3])
   /* Check malformed packet */
   if (nfds != 3 || recvd != target || buffer[recvd-1] != '\0')
   {
-    for (int i = 0; i < nfds; ++i)
+    int i;
+    for (i = 0; i < nfds; ++i)
       close(fds0[i]);
     return -1;
   }
@@ -98,15 +99,16 @@ value ml_merlin_daemon_connect(value file_descr)
     Store_field(client, 1, Val_int(fds[1]));
     Store_field(client, 2, Val_int(fds[2]));
 
+    ssize_t i, j;
     int argc = 0;
-    for (ssize_t i = 4; i < len; ++i)
+    for (i = 4; i < len; ++i)
       if (buffer[i] == '\0')
         argc += 1;
 
     argv = caml_alloc(argc, 0);
 
     argc = 0;
-    for (ssize_t i = 4, j = 4; i < len; ++i)
+    for (i = 4, j = 4; i < len; ++i)
     {
       if (buffer[i] == '\0')
       {

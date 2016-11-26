@@ -103,8 +103,9 @@ static void ipc_send(int fd, char *buffer, size_t len, int fds[3])
 static ssize_t prepare_args(char *buffer, size_t len, int argc, char **argv)
 {
   /* Append arguments */
+  int i = 0;
   ssize_t j = 4;
-  for (int i = 0; i < argc && j < len; ++i)
+  for (i = 0; i < argc && j < len; ++i)
   {
     const char *p = argv[i];
     while (*p && j < len-1)
