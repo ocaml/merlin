@@ -4,10 +4,15 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/syslimits.h>
 #include <sys/stat.h>
 #include <libgen.h>
 #include <errno.h>
+
+#if defined(__linux)
+#include <linux/limits.h>
+#elif defined(__APPLE__)
+#include <sys/syslimits.h>
+#endif
 
 /** Portability information **/
 
