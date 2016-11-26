@@ -578,7 +578,7 @@ let namespaces = function
 
 exception Found of (Path.t * Cmt_cache.path * Location.t)
 
-let tag namespace p = Typedtrie.tag_path ~namespace (Path.to_string_list p)
+let tag namespace p = Typedtrie.tag_path ~namespace (Path_aux.to_string_list p)
 
 let get_type_name ctxt =
   match ctxt with
@@ -589,7 +589,7 @@ let get_type_name ctxt =
     | Types.Tvariant _ | Types.Tunivar _ | Types.Tpoly _ | Types.Tpackage _ ->
       raise Not_found
     | Types.Tconstr (path,_,_) ->
-      Longident.parse (String.concat ~sep:"." (Path.to_string_list path))
+      Longident.parse (String.concat ~sep:"." (Path_aux.to_string_list path))
     end
   | _ -> raise Not_found
 
@@ -660,7 +660,7 @@ let locate ~config ~ml_or_mli ~path ~lazy_trie ~pos ~str_ident loc =
 
 (* Only used to retrieve documentation *)
 let from_completion_entry ~config ~lazy_trie ~pos (namespace, path, loc) =
-  let path_lst  = Path.to_string_list path in
+  let path_lst  = Path_aux.to_string_list path in
   let str_ident = String.concat ~sep:"." path_lst in
   let tagged_path = tag namespace path in
   locate ~config ~ml_or_mli:`MLI ~path:tagged_path ~pos ~str_ident loc
@@ -690,8 +690,8 @@ let inspect_pattern ~pos ~parent p =
   | Tpat_any -> None
   | Tpat_var _ ->
     Option.bind parent ~f:(fun parent ->
-      match parent.BrowseT.t_node with
-      | Browse_node.Pattern { pat_desc = Tpat_record (l, _); _ } ->
+      match parent.Browse_tree.t_node with
+      | Browse_raw.Pattern { pat_desc = Tpat_record (l, _); _ } ->
         let lid, _, _ = List.find l ~f:(fun (_,_,pat) -> pat == p) in
         let open Location in
         if (Location_aux.compare_pos lid.loc.loc_start p.pat_loc = 0) then
@@ -729,7 +729,7 @@ let inspect_context browse path pos =
   | enclosings ->
     let open Browse_raw in
     let node = Browse_tree.of_browse enclosings in
-    let parent = Option.map (Browse.drop_leaf enclosings) ~f:BrowseT.of_browse in
+    let parent = Option.map (Mbrowse.drop_leaf enclosings) ~f:Browse_tree.of_browse in
     match node.Browse_tree.t_node with
     | Pattern p ->
       logfmt "inspect_context"
@@ -838,7 +838,7 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
     begin match path with
     | `User_input path -> `Builtin path
     | `Completion_entry (_, path, _) ->
-      let str = String.concat ~sep:"." (Path.to_string_list path) in
+      let str = String.concat ~sep:"." (Path_aux.to_string_list path) in
       `Builtin str
     end
   | `File_not_found _

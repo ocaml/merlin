@@ -144,15 +144,15 @@ end  = struct
 end
 
 type aliasmap = {
-  am_typ: Path.t list PathMap.t;
-  am_mod: Path.t list PathMap.t;
-  am_open: PathSet.t;
+  am_typ: Path.t list Path_aux.Map.t;
+  am_mod: Path.t list Path_aux.Map.t;
+  am_open: Path_aux.Set.t;
 }
 
 let aliasmap_empty = {
-  am_typ = PathMap.empty;
-  am_mod = PathMap.empty;
-  am_open = PathSet.empty;
+  am_typ = Path_aux.Map.empty;
+  am_mod = Path_aux.Map.empty;
+  am_open = Path_aux.Set.empty;
 }
 
 type summary =
@@ -350,7 +350,7 @@ let current_unit = srefk ""
 
 (* Persistent structure descriptions *)
 type pers_typemap =
-  (Path.t list Path.PathMap.t * Path.t list Path.PathMap.t) option
+  (Path.t list Path_aux.Map.t * Path.t list Path_aux.Map.t) option
 
 type pers_struct =
   { ps_name: string;

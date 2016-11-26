@@ -100,6 +100,6 @@ type state
 val backup: unit -> state
 val restore: state -> unit
 
-(* merlin extensions *)
-val arg_spec : (string * Arg.spec * string) list
-val dump : unit -> Yojson.Basic.json
+(* merlin *)
+
+val dump : ?verbose:bool -> unit -> Std.json

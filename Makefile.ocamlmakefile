@@ -164,10 +164,10 @@ SOURCES_LIB = \
 	$(TYPER)/typing/stypes.ml         \
 	$(TYPER)/typing/typetexp.mli      \
 	$(TYPER)/typing/typetexp.ml       \
-	$(TYPER)/typing/typecore.mli      \
-	$(TYPER)/typing/typecore.ml       \
 	$(TYPER)/typing/typedecl.mli      \
 	$(TYPER)/typing/typedecl.ml       \
+	$(TYPER)/typing/typecore.mli      \
+	$(TYPER)/typing/typecore.ml       \
 	$(TYPER)/typing/typeclass.mli     \
 	$(TYPER)/typing/typeclass.ml      \
 	$(TYPER)/typing/typemod.mli       \

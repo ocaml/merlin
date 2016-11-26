@@ -43,7 +43,7 @@ type error =
 exception Error of Location.t * Env.t * error
 exception Error_forward of Location.error
 
-let raise_error = Front_aux.raise_error
+let raise_error = Msupport.raise_error
 
 open Typedtree
 
@@ -747,7 +747,7 @@ and transl_signature env sg =
         | Psig_extension (ext, _attrs) ->
             raise (Error_forward (Typetexp.error_of_extension ext))
   in
-  Front_aux.with_saved_types ~warning_attribute:[]
+  Msupport.with_saved_types ~warning_attribute:[]
     ~save_part:(fun sg -> Cmt_format.Partial_signature sg)
     (fun () ->
       let (trem, rem, final_env) = transl_sig (Env.in_signature env) sg in
@@ -1514,7 +1514,7 @@ and type_structure ?(toplevel = false) funct_body anchor env sstr scope =
   if !Clflags.annotations then
     (* moved to genannot *)
     List.iter (function {pstr_loc = l} -> Stypes.record_phrase l) sstr;
-  Front_aux.with_saved_types
+  Msupport.with_saved_types
     ?warning_attribute:(if toplevel then None else Some [])
     ~save_part:(fun (str,_,_) -> Cmt_format.Partial_structure str)
     (fun () ->

@@ -147,7 +147,7 @@ let array_function startpos endpos str name =
   ghloc startpos endpos
     (Ldot(Lident str, (if !Clflags.fast then "unsafe_" ^ name else name)))
 
-let raise_error = Front_aux.raise_error
+let raise_error = Msupport.raise_error
 
 let syntax_error startpos endpos =
   raise_error (Syntaxerr.Escape_error (rloc startpos endpos))

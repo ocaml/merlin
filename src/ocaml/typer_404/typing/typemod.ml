@@ -21,7 +21,7 @@ open Parsetree
 open Types
 open Format
 
-let raise_error = Front_aux.raise_error
+let raise_error = Msupport.raise_error
 
 type error =
     Cannot_apply of module_type
@@ -1084,7 +1084,7 @@ let rec type_module ?alias sttn funct_body anchor env smod =
        };
       mod_type = Mty_signature [];
       mod_env = env;
-      mod_attributes = Front_aux.flush_saved_types () @ smod.pmod_attributes;
+      mod_attributes = Msupport.flush_saved_types () @ smod.pmod_attributes;
       mod_loc = smod.pmod_loc }
 
 and type_module_ ?(alias=false) sttn funct_body anchor env smod =

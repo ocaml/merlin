@@ -32,7 +32,7 @@ type constructor_declaration = Typedtree.constructor_declaration
 
 open Typedtree
 
-type t =
+type node =
   | Dummy
   | Pattern                  of pattern
   | Expression               of expression
@@ -157,7 +157,7 @@ let app node env f acc =
   f (node_update_env env node)
     node acc
 
-type 'a f0 = Env.t -> t -> 'a -> 'a
+type 'a f0 = Env.t -> node -> 'a -> 'a
 type ('b,'a) f1 = 'b -> Env.t -> 'a f0 -> 'a -> 'a
 
 let id_fold _env (_f : _ f0) acc = acc

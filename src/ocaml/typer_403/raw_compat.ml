@@ -360,7 +360,7 @@ let rec qualify_constructors f pat =
           begin match (Btype.repr pat.pat_type).Types.desc with
           | Types.Tconstr (path, _, _) ->
             let path = f pat.pat_env path in
-            begin match Path.to_string_list path with
+            begin match Path_aux.to_string_list path with
             | [] -> assert false
             | p :: ps ->
               let open Longident in

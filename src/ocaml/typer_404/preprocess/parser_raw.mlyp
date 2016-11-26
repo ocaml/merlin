@@ -20,7 +20,7 @@ open Parsetree
 open Ast_helper
 open Docstrings
 open Docstrings.WithMenhir
-open Front_aux
+open Msupport
 
 let mkloc = Location.mkloc
 let mknoloc = Location.mknoloc

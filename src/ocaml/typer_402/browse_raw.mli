@@ -30,7 +30,7 @@
   * [TypedTree].
   *
   * Mutually recursive types from [TypedTree] are wrapped into different
-  * constructors of the type [t].
+  * constructors of the type [node].
   * Then the [fold] function traverses one-level of sub-nodes.
   *
   * In the meantime, the most specific environment and location are threaded
@@ -46,7 +46,7 @@ type constructor_declaration = Typedtree.constructor_declaration
 
 open Typedtree
 
-type t =
+type node =
   | Dummy
   | Pattern                  of pattern
   | Expression               of expression
@@ -94,19 +94,19 @@ type t =
   | Module_declaration_name  of module_declaration
   | Module_type_declaration_name of module_type_declaration
 
-val fold_node : (Env.t -> t -> 'a -> 'a) -> Env.t -> t -> 'a -> 'a
+val fold_node : (Env.t -> node -> 'a -> 'a) -> Env.t -> node -> 'a -> 'a
 
 (** Accessors for information specific to a node *)
 
-val node_update_env : Env.t -> t -> Env.t
-val node_real_loc : Location.t -> t -> Location.t
-val node_merlin_loc : Location.t -> t -> Location.t
-val node_attributes : t -> attributes
+val node_update_env : Env.t -> node -> Env.t
+val node_real_loc : Location.t -> node -> Location.t
+val node_merlin_loc : Location.t -> node -> Location.t
+val node_attributes : node -> attributes
 
-val string_of_node : t -> string
+val string_of_node : node -> string
 
-val node_paths : t -> Path.t Location.loc list
+val node_paths : node -> Path.t Location.loc list
 
-val node_is_constructor : t ->
+val node_is_constructor : node ->
   [ `Description of Types.constructor_description
   | `Declaration of Typedtree.constructor_declaration ] Location.loc option

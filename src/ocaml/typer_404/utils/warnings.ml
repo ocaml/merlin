@@ -603,51 +603,28 @@ let help_warnings () =
   exit 0
 ;;
 
-let w_spec =
-  "-w",
-  Arg.String (parse_options false),
-  Printf.sprintf
-    "<list>  Enable or disable warnings according to <list>:\n\
-    \        +<spec>   enable warnings in <spec>\n\
-    \        -<spec>   disable warnings in <spec>\n\
-    \        @<spec>   enable warnings in <spec> and treat them as errors\n\
-    \     <spec> can be:\n\
-    \        <num>             a single warning number\n\
-    \        <num1>..<num2>    a range of consecutive warning numbers\n\
-    \        <letter>          a predefined set\n\
-    \     default setting is %S"
-    defaults_w
+(* merlin *)
 
-let warn_error_spec =
-  "-warn-error",
-  Arg.String (parse_options true),
-  Printf.sprintf
-    "<list> Enable or disable error status for warnings according\n\
-    \     to <list>.  See option -w for the syntax of <list>.\n\
-    \     Default setting is %S"
-    defaults_warn_error
-
-let arg_spec =
-  [
-    w_spec;
-    warn_error_spec;
-  ]
-
-open Std
-
-let dump () =
+let dump ?(verbose=false) () =
+  let open Std in
   let actives arr =
     Array.mapi (fun i b ->
-      let i = i + 1 in
-      if b && i <= last_warning_number then
-        string_of_int i ^ ": " ^ List.assoc i descriptions
-      else
-        ""
-    ) arr
+        if not b then None
+        else
+          let i = i + 1 in
+          Some (
+            try
+              if verbose then
+                `String (string_of_int i ^ ": " ^ List.assoc i descriptions)
+              else `Int i
+            with Not_found -> `Int i
+          )
+      ) arr
     |> Array.to_list
-    |> List.filter_map ~f:(function "" -> None | s -> Some (`String s))
+    |> List.filter_map ~f:(fun x -> x)
   in
   `Assoc [
     "actives", `List (actives !current.active);
     "warn_error", `List (actives !current.error);
   ]
+;;

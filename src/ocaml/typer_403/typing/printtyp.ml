@@ -265,7 +265,7 @@ let debug = try Sys.getenv "PRINTDBG" = "1" with Not_found -> false
 let dprintf =
   if debug then Printf.eprintf else (fun fmt -> Printf.ikfprintf ignore stderr fmt)
 
-let to_str path = String.concat "." (Path.to_string_list path) ^ "/" ^
+let to_str path = String.concat "." (Path_aux.to_string_list path) ^ "/" ^
                   (string_of_int (try Ident.binding_time (Path.head path) with _ -> -1))
 
 (* Alias map computation *)
@@ -275,10 +275,10 @@ let register_short_type map env p (p', decl) =
   (* Format.eprintf "%a -> %a = %a@." path p path p' path p1 *)
   if s1 = Id then
   try
-    let r = PathMap.find p1 !map in
+    let r = Path_aux.Map.find p1 !map in
     r := p :: !r
   with Not_found ->
-    map := PathMap.add p1 (ref [p]) !map
+    map := Path_aux.Map.add p1 (ref [p]) !map
 
 let register_short_module map env p p' =
   match Env.normalize_path None env p' with
@@ -286,20 +286,20 @@ let register_short_module map env p p' =
       if debug then
         dprintf "ALIAS %s -> %s\n%!" (to_str p) (to_str p');
       try
-        let r = PathMap.find p' !map in
+        let r = Path_aux.Map.find p' !map in
         r := p :: !r
       with Not_found ->
-        map := PathMap.add p' (ref [p]) !map
+        map := Path_aux.Map.add p' (ref [p]) !map
     )
   | exception exn -> ()
 
 let pathmap_append ta tb =
-  PathMap.union (fun _ a b -> Some (a @ b)) ta tb
+  Path_aux.Map.union (fun _ a b -> Some (a @ b)) ta tb
 
 let aliasmap env =
   let update am idents =
-    let typ_ = ref PathMap.empty in
-    let mod_ = ref PathMap.empty in
+    let typ_ = ref Path_aux.Map.empty in
+    let mod_ = ref Path_aux.Map.empty in
     let open_ = ref am.Env.am_open in
     let register_type_diff = function
       | `Type (id, path) ->
@@ -310,11 +310,11 @@ let aliasmap env =
           (register_short_type typ_ env)
           (register_short_module mod_ env)
           id env
-      | `Open path -> open_ := PathSet.add path !open_
+      | `Open path -> open_ := Path_aux.Set.add path !open_
     in
     List.iter register_type_diff idents;
-    let typ_ = PathMap.map (!) !typ_ in
-    let mod_ = PathMap.map (!) !mod_ in
+    let typ_ = Path_aux.Map.map (!) !typ_ in
+    let mod_ = Path_aux.Map.map (!) !mod_ in
     { Env.
       am_mod = pathmap_append mod_ am.Env.am_mod;
       am_typ = pathmap_append typ_ am.Env.am_typ;
@@ -328,15 +328,15 @@ let aliasmap env =
 let pers_map name =
   try Env.find_pers_map name
   with Not_found ->
-    let types = ref PathMap.empty in
-    let modules = ref PathMap.empty in
+    let types = ref Path_aux.Map.empty in
+    let modules = ref Path_aux.Map.empty in
     Env.iter_module_types_and_aliases
       ~only_val:false
       (register_short_type types Env.empty)
       (register_short_module modules Env.empty)
       (Ident.create_persistent name) Env.empty;
-    let types = PathMap.map (!) !types in
-    let modules = PathMap.map (!) !modules in
+    let types = Path_aux.Map.map (!) !types in
+    let modules = Path_aux.Map.map (!) !modules in
     let map = (types, modules) in
     begin try Env.set_pers_map name map
       with Not_found ->
@@ -369,7 +369,7 @@ let pers_maps =
              }
            ) dconcr acc)
   in
-  let empty = {Env. am_typ = PathMap.empty; am_mod = PathMap.empty; am_open = PathSet.empty } in
+  let empty = {Env. am_typ = Path_aux.Map.empty; am_mod = Path_aux.Map.empty; am_open = Path_aux.Set.empty } in
   let cache = ref (Concr.empty, empty) in
   fun () ->
     let concr = Env.used_persistent () in
@@ -380,12 +380,12 @@ let pers_maps =
 let fold_aliases am1 =
   let am2 = pers_maps () in
   let type_aliases path f acc =
-    let acc = List.fold_left f acc (try PathMap.find path am1.Env.am_typ with Not_found -> []) in
-    let acc = List.fold_left f acc (try PathMap.find path am2.Env.am_typ with Not_found -> []) in
+    let acc = List.fold_left f acc (try Path_aux.Map.find path am1.Env.am_typ with Not_found -> []) in
+    let acc = List.fold_left f acc (try Path_aux.Map.find path am2.Env.am_typ with Not_found -> []) in
     acc
   and modules_aliases path f acc =
-    let acc = List.fold_left f acc (try PathMap.find path am1.Env.am_mod with Not_found -> []) in
-    let acc = List.fold_left f acc (try PathMap.find path am2.Env.am_mod with Not_found -> []) in
+    let acc = List.fold_left f acc (try Path_aux.Map.find path am1.Env.am_mod with Not_found -> []) in
+    let acc = List.fold_left f acc (try Path_aux.Map.find path am2.Env.am_mod with Not_found -> []) in
     acc
   in
   type_aliases, modules_aliases
@@ -444,7 +444,7 @@ let dump_path oc path =
   output_string oc (string_of_path path)
 
 let shortest_module_alias am (_, fold) fixed path =
-  if PathSet.mem path am.Env.am_open then (0, None) else begin
+  if Path_aux.Set.mem path am.Env.am_open then (0, None) else begin
     let r = fold path
         (fun acc path' -> min_cost acc (fixed path')) (max_int, None) in
     if fst r = 0 then r else
@@ -485,7 +485,7 @@ let shortest_type_alias (fold, _) mod_alias fixed path =
 
 let shortest_type_alias am =
   let fold_aliases = fold_aliases am in
-  let modtbl = PathTbl.create 7 in
+  let modtbl = Path_aux.Tbl.create 7 in
   let dump_cost oc c =
     if c = max_int
     then Printf.fprintf oc "cycle"
@@ -496,34 +496,34 @@ let shortest_type_alias am =
       | None -> Printf.fprintf oc "(%a, opened)" dump_cost n
       | Some path -> Printf.fprintf oc "(%a, %a)" dump_cost n dump_path path
     in
-    match PathTbl.find modtbl path with
+    match Path_aux.Tbl.find modtbl path with
     | v -> message "module_alias(%a)" dump_path path dump_result v
     | exception Not_found ->
       enter
         "module_alias(%a)" dump_path path
         begin fun () ->
-          PathTbl.add modtbl path (max_int, Some path);
+          Path_aux.Tbl.add modtbl path (max_int, Some path);
           let r = shortest_module_alias am fold_aliases mod_alias path in
-          PathTbl.replace modtbl path r;
+          Path_aux.Tbl.replace modtbl path r;
           r
         end
         "module_alias(%a)" dump_path path
         dump_result
   in
-  let typtbl = PathTbl.create 7 in
+  let typtbl = Path_aux.Tbl.create 7 in
   let rec typ_alias path =
     let dump_result oc (n, p) =
       Printf.fprintf oc "(%a, %a)" dump_cost n dump_path p
     in
-    match PathTbl.find typtbl path with
+    match Path_aux.Tbl.find typtbl path with
     | v -> message "typ_alias(%a)" dump_path path dump_result v
     | exception Not_found ->
       enter
         "typ_alias(%a)" dump_path path
         begin fun () ->
-          PathTbl.add typtbl path (max_int, path);
+          Path_aux.Tbl.add typtbl path (max_int, path);
           let r = shortest_type_alias fold_aliases mod_alias typ_alias path in
-          PathTbl.replace typtbl path r;
+          Path_aux.Tbl.replace typtbl path r;
           r
         end
         "typ_alias(%a)" dump_path path

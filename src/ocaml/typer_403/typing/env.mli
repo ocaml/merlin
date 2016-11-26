@@ -18,9 +18,9 @@
 open Types
 
 type aliasmap = {
-  am_typ: Path.t list Path.PathMap.t;
-  am_mod: Path.t list Path.PathMap.t;
-  am_open: Path.PathSet.t;
+  am_typ: Path.t list Path_aux.Map.t;
+  am_mod: Path.t list Path_aux.Map.t;
+  am_open: Path_aux.Set.t;
 }
 
 val aliasmap_empty: aliasmap
@@ -64,8 +64,8 @@ val iter_module_types_and_aliases:
 type type_diff = [ `Type of Ident.t * Path.t | `Module of Ident.t | `Open of Path.t ]
 val get_aliasmap: t -> (aliasmap -> type_diff list -> aliasmap) -> aliasmap
 
-val find_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t
-val set_pers_map: string -> Path.t list Path.PathMap.t * Path.t list Path.PathMap.t -> unit
+val find_pers_map: string -> Path.t list Path_aux.Map.t * Path.t list Path_aux.Map.t
+val set_pers_map: string -> Path.t list Path_aux.Map.t * Path.t list Path_aux.Map.t -> unit
 
 val same_types: t -> t -> bool
 val used_persistent: unit -> Concr.t

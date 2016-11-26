@@ -24,12 +24,12 @@ let merlin_incorrect_attribute =
   Location.mknoloc "merlin.incorrect", Parsetree.PStr []
 
 let merlin_recovery_attributes attrs =
-  let attrs' = merlin_incorrect_attribute :: Front_aux.flush_saved_types () in
+  let attrs' = merlin_incorrect_attribute :: Msupport.flush_saved_types () in
   match attrs with
   | [] -> attrs'
   | attrs -> attrs' @ attrs
 
-let raise_error = Front_aux.raise_error
+let raise_error = Msupport.raise_error
 
 type error =
     Polymorphic_label of Longident.t
@@ -1334,7 +1334,7 @@ let type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty =
   let env' = !env in
   try type_pat ?allow_existentials ?constrs ?labels ?lev env sp expected_ty
   with exn ->
-    Front_aux.erroneous_type_register expected_ty;
+    Msupport.erroneous_type_register expected_ty;
     raise_error exn;
     { pat_desc = Tpat_any;
       pat_loc = sp.ppat_loc;
@@ -1836,13 +1836,13 @@ let rec type_exp env sexp =
  *)
 
 and type_expect ?in_function env sexp ty_expected =
-  Front_aux.with_saved_types
+  Msupport.with_saved_types
     ~warning_attribute:sexp.pexp_attributes ?save_part:None
     (fun () ->
       try
         type_expect_ ?in_function env sexp ty_expected
       with exn ->
-        Front_aux.erroneous_type_register ty_expected;
+        Msupport.erroneous_type_register ty_expected;
         raise_error exn;
         let loc = sexp.pexp_loc in
         {
@@ -2538,7 +2538,7 @@ and type_expect_ ?in_function env sexp ty_expected =
           exp_attributes = sexp.pexp_attributes;
           exp_env = env }
       with Unify _ ->
-        Front_aux.erroneous_type_register ty_expected;
+        Msupport.erroneous_type_register ty_expected;
         raise_error
           (error(e.pexp_loc, env, Undefined_method (obj.exp_type, met)));
         rue {
@@ -3338,7 +3338,7 @@ and type_application loc env funct sargs ty_expected =
                 | _ -> true
               in
               if ty_fun.level >= t1.level && not_identity funct.exp_desc
-                && not (Front_aux.erroneous_expr_check funct) then
+                && not (Msupport.erroneous_expr_check funct) then
                 Location.prerr_warning sarg1.pexp_loc Warnings.Unused_argument;
               unify env ty_fun (newty (Tarrow(l1,t1,t2,Clink(ref Cunknown))));
               (t1, t2)
@@ -3352,17 +3352,17 @@ and type_application loc env funct sargs ty_expected =
               match ty_res.desc with
                 Tarrow _ ->
                   if (!Clflags.classic || not (has_label l1 ty_fun)) then
-                    Front_aux.resume_raise
+                    Msupport.resume_raise
                       (error(sarg1.pexp_loc, env,
                              Apply_wrong_label (l1, ty_res)))
                   else
-                    Front_aux.resume_raise
+                    Msupport.resume_raise
                       (error(funct.exp_loc, env, Incoherent_label_order))
               | _ ->
-                Front_aux.resume_raise
+                Msupport.resume_raise
                   (error(funct.exp_loc, env, Apply_non_function
                            (expand_head env funct.exp_type)))
-          with Front_aux.Resume ->
+          with Msupport.Resume ->
             newvar(), ty_fun
         in
         let optional = if is_optional l1 then Optional else Required in
@@ -3557,7 +3557,7 @@ and type_construct env loc lid sarg ty_expected attrs =
 (* Typing of statements (expressions whose values are discarded) *)
 
 and type_statement env sexp =
-  let has_errors = Front_aux.monitor_errors () in
+  let has_errors = Msupport.monitor_errors () in
   let loc = (final_subexpression sexp).pexp_loc in
   begin_def();
   let exp = type_exp env sexp in

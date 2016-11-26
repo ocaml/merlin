@@ -32,7 +32,7 @@ type constructor_declaration = Typedtree.constructor_declaration
 
 open Typedtree
 
-type t =
+type node =
   | Dummy
   | Pattern                  of pattern
   | Expression               of expression
@@ -157,7 +157,7 @@ let app node env f acc =
   f (node_update_env env node)
     node acc
 
-type 'a f0 = Env.t -> t -> 'a -> 'a
+type 'a f0 = Env.t -> node -> 'a -> 'a
 type ('b,'a) f1 = 'b -> Env.t -> 'a f0 -> 'a -> 'a
 
 let id_fold _env (_f : _ f0) acc = acc
@@ -171,11 +171,11 @@ let rec list_fold (f' : _ f1) xs env f acc = match xs with
 
 let array_fold (f' : _ f1) arr env f acc =
   let acc = ref acc in
-  for i = 0 to Array.length arr - 1 do 
+  for i = 0 to Array.length arr - 1 do
     acc := f' arr.(i) env f !acc
   done;
   !acc
-  
+
 let rec list_fold_with_next (f' : _ -> _ f1) xs env f acc = match xs with
   | x :: (y :: _ as xs) -> list_fold_with_next f' xs env f (f' (Some y) x env f acc)
   | [x] -> f' None x env f acc
