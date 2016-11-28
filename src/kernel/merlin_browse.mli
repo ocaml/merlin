@@ -35,6 +35,7 @@ val fold_node : (Env.t -> Browse_node.t -> 'a -> 'a) ->
                  Env.t -> Browse_node.t -> 'a -> 'a
 val node_loc : Browse_node.t -> Location.t
 val leaf_node : t -> Env.t * node
+val drop_leaf : t -> t option
 
 (* Navigate through tree *)
 

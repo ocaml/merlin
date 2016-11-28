@@ -24,3 +24,4 @@ val implementation_with_coercion :
 
 (* Added by merlin for debugging purposes *)
 val pattern : int -> formatter -> pattern -> unit
+val expression : int -> formatter -> expression -> unit

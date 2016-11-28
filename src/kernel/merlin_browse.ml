@@ -91,6 +91,11 @@ let node_merlin_loc node = approximate_loc Browse_node.node_merlin_loc node
 let leaf_node = List.hd
 let leaf_loc t = node_loc (snd (leaf_node t))
 
+let drop_leaf t =
+  match t with
+  | [] | [ _ ] -> None
+  | _leaf :: parents -> Some parents
+
 let has_attr attr attrs =
  List.exists ~f:(fun (str,_) -> str.Location.txt = attr) attrs
 

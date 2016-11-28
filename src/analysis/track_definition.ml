@@ -306,7 +306,7 @@ module Utils = struct
         | File.CMT _ | File.CMTI _ -> !loadpath
 end
 
-type context = Type | Expr | Patt of Types.type_expr | Unknown
+type context = Type | Expr | Patt of Types.type_expr | Unknown | Label
 exception Context_mismatch
 
 let rec locate ~project ?pos path trie =
@@ -572,6 +572,7 @@ let namespaces = function
   | Type          -> [ `Type ; `Constr ; `Mod ; `Modtype ; `Labels ; `Vals ]
   | Expr | Patt _ -> [ `Vals ; `Constr ; `Mod ; `Modtype ; `Labels ; `Type ]
   | Unknown       -> [ `Vals ; `Type ; `Constr ; `Mod ; `Modtype ; `Labels ]
+  | Label         -> [ `Labels ]
 
 exception Found of (Path.t * Cmt_cache.path * Location.t)
 
@@ -681,33 +682,29 @@ let from_longident ~project ~env ~lazy_trie ~pos ctxt ml_or_mli lid =
   | Not_found -> `Not_found (str_ident, File_switching.where_am_i ())
   | Not_in_env -> `Not_in_env str_ident
 
-let inspect_pattern is_path_capitalized p =
+let inspect_pattern ~pos ~parent p =
   let open Typedtree in
   match p.pat_desc with
   | Tpat_any -> None
-  | Tpat_var _ when not is_path_capitalized ->
-    (* If the guard is not verified it means the pattern variable we find in
-        the typedtree doesn't match the ident we reconstructed from the token
-        stream.
-        This should only happen in presence of a record pattern, e.g.
-
-            { Location. loc_ghost }
-
-        as is the case at the beginning of this file.
-        However it only catches the cases where the ident we locate is prefixed
-        by a module name, so not everything is handled.
-        Catching everything is harder though, because we need to use the
-        location to distinguish between
-
-            { f[o]o = bar }
-
-        and
-
-            { foo = b[a]r }
-
-        (where [ ] represents the cursor.)
-        So err... TODO? *)
-    None
+  | Tpat_var _ ->
+    Option.bind parent ~f:(fun parent ->
+      match parent.BrowseT.t_node with
+      | Browse_node.Pattern { pat_desc = Tpat_record (l, _); _ } ->
+        let lid, _, _ = List.find l ~f:(fun (_,_,pat) -> pat == p) in
+        let open Location in
+        if (Location_aux.compare_pos lid.loc.loc_start p.pat_loc = 0) then
+          (* { ..; pun[n]ed; ... } *)
+          Some Label
+        else (
+          if Location_aux.compare_pos pos p.pat_loc = 0 then
+            (* { ..; foo = b[a]r; ... } *)
+            None
+          else
+            (* { ..; f[o]o = bar; ... } *)
+            Some Label
+        )
+      | _ -> None
+    )
   | Tpat_alias _ ->
     (* Assumption: if [Browse.enclosing] stopped on this node and not on the
        subpattern, then it must mean that the cursor is on the alias. *)
@@ -730,12 +727,13 @@ let inspect_context browse path pos =
   | enclosings ->
     let open Browse_node in
     let node = BrowseT.of_browse enclosings in
+    let parent = Option.map (Browse.drop_leaf enclosings) ~f:BrowseT.of_browse in
     match node.BrowseT.t_node with
     | Pattern p ->
       logfmt "inspect_context"
         (fun fmt -> Format.fprintf fmt "current node is: %a"
             (Printtyped.pattern 0) p);
-      inspect_pattern (String.capitalize path = path) p
+      inspect_pattern ~pos ~parent p
     | Value_description _
     | Type_declaration _
     | Extension_constructor _
@@ -744,7 +742,11 @@ let inspect_context browse path pos =
       logf "inspect_context" "current node is : %s" (string_of_node node);
       None
     | Core_type _ -> Some Type
-    | Expression _ -> Some Expr
+    | Expression e ->
+      begin match e.Typedtree.exp_desc with
+      | Typedtree.Texp_record _ -> Some Label
+      | _ -> Some Expr
+      end
     | _ ->
       Some Unknown
 
