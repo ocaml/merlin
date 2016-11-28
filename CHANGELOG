@@ -1,3 +1,11 @@
+merlin 2.5.3
+============
+Mon Nov 28 09:54:57 CET 2016
+
+Minor release:
+- fix Windows build with MSVC (#605).
+- fix module level errors escaping
+
 merlin 2.5.2
 ============
 Wed Nov 16 14:44:19 CET 2016
