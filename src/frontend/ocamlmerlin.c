@@ -208,11 +208,65 @@ static int connect_and_serve(const char *socket_path, const char *exec_path)
   return sock;
 }
 
+#define PATHSZ (PATH_MAX+1)
+
 /* OCaml merlin path */
 
-static void compute_merlinpath(char merlin_path[PATH_MAX], const char *argv0)
+static const char *search_in_path(const char *PATH, const char *argv0, char *merlin_path)
 {
-  realpath(argv0, merlin_path);
+  static char binary_path[PATHSZ];
+
+  if (PATH == NULL || argv0 == NULL) return NULL;
+
+  while (*PATH)
+  {
+    int i = 0;
+    // Copy one path from PATH
+    while (i < PATHSZ-1 && *PATH && *PATH != ':')
+    {
+      binary_path[i] = *PATH;
+      i += 1;
+      PATH += 1;
+    }
+
+    // Append filename
+    {
+      binary_path[i] = '/';
+      i += 1;
+
+      const char *file = argv0;
+      while (i < PATHSZ-1 && *file)
+      {
+        binary_path[i] = *file;
+        i += 1;
+        file += 1;
+      }
+
+      binary_path[i] = 0;
+      i += 1;
+    }
+
+    // Check path
+    char *result = realpath(binary_path, merlin_path);
+    if (result != NULL)
+      return result;
+
+    // Seek next path in PATH
+    while (*PATH && *PATH != ':')
+      PATH += 1;
+
+    while (*PATH == ':')
+      PATH += 1;
+  }
+
+  return NULL;
+}
+
+static void compute_merlinpath(char merlin_path[PATHSZ], const char *argv0)
+{
+  if (realpath(argv0, merlin_path) == NULL)
+    if (search_in_path(getenv("PATH"), argv0, merlin_path) == NULL)
+      failwith("cannot resolve path to ocamlmerlin");
 
   size_t strsz = strlen(merlin_path);
   // Self directory
@@ -221,13 +275,13 @@ static void compute_merlinpath(char merlin_path[PATH_MAX], const char *argv0)
   merlin_path[strsz] = 0;
 
   // Append ocamlmerlin-server
-  if (strsz + 19 > PATH_MAX)
+  if (strsz + 19 > PATHSZ)
     failwith("path is too long");
 
   strcpy(merlin_path + strsz, "ocamlmerlin-server");
 }
 
-static void compute_socketpath(char socket_path[PATH_MAX], const char merlin_path[PATH_MAX])
+static void compute_socketpath(char socket_path[PATHSZ], const char merlin_path[PATHSZ])
 {
   struct stat st;
   if (stat(merlin_path, &st) != 0)
@@ -237,7 +291,7 @@ static void compute_socketpath(char socket_path[PATH_MAX], const char merlin_pat
   if (tmpdir == NULL)
     tmpdir = "/tmp/";
 
-  snprintf(socket_path, PATH_MAX+1,
+  snprintf(socket_path, PATHSZ,
       "%s/ocamlmerlin_%llu_%llu.socket", tmpdir,
       (unsigned long long)st.st_dev, (unsigned long long)st.st_ino);
 }
@@ -245,8 +299,8 @@ static void compute_socketpath(char socket_path[PATH_MAX], const char merlin_pat
 /* Main */
 
 static char
-  merlin_path[PATH_MAX] = "<not computed yet>",
-  socket_path[PATH_MAX] = "<not computed yet>",
+  merlin_path[PATHSZ] = "<not computed yet>",
+  socket_path[PATHSZ] = "<not computed yet>",
   argbuffer[65536];
 
 static void dumpinfo(void)
