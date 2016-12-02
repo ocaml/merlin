@@ -1,50 +1,64 @@
 ![merlin completion in vim](https://github.com/the-lambda-church/merlin/wiki/vim_complete.png)
 
-Building and installing Merlin
-==============================
+[Merlin](https://the-lambda-church.github.io/merlin/) is an editor service that provides modern IDE features for OCaml.
 
-This README gives only indications on how to install merlin from source.
-If you want know how to install it from opam, and how to setup your environment
-to use merlin, have a look at [the wiki](https://github.com/the-lambda-church/merlin/wiki).
+Emacs and Vim support is provided out-of-the-box. External contributors added support for Visual Studio Code, Sublime Text and Atom.
+
+Easy installation with Opam
+===========================
+
+If you have a working [Opam](https://opam.ocaml.org/) installation, Merlin is only two commands away:
+
+```shell
+opam install merlin
+opam user-setup install
+```
+
+[opam-user-setup](https://github.com/OCamlPro/opam-user-setup) takes care of configuring Emacs and Vim to make best use of your current install.
+
+You can also [configure the editor](#editor-setup) yourself, if you prefer.
+
+Manually building and installing Merlin
+=======================================
 
 Compilation
 -----------
 
-Dependencies: ocaml >= 4.02.3, ocamlfind, yojson
+Dependencies: ocaml >= 4.02.3, ocamlfind, yojson.
 
-    $ ./configure
-    $ make
+```shell
+./configure
+ make
+```
 
-The configure script will check that all the dependencies are met, and will
-allow you to choose where to install merlin.
+The configure script will check that all the dependencies are met, and will allow you to choose where to install Merlin.
 
 Installation
 ------------
 
-If you haven't encountered any error in the previous step, just run:
+If you haven't encountered any errors in the previous step, just run:
 
     $ make install 
 
+Installation directory is determined by the prefix selected by `configure`. It defaults to `/usr/local`.
 
-Share directory, \<SHARE\_DIR\>
-=============================
+Editor setup
+============
 
-In the rest of the document, \<SHARE\_DIR\> refers to the directory where merlin
-data files are installed.
+To setup Emacs and Vim, you need to instruct them to run the appropriate script when an OCaml file is opened.
 
-It will usually be:
-- "/usr/local/share" if you used manual configuration merlin
-- "\<prefix\>/share" if you explicitly specified a prefix when configuring merlin
+In the rest of the document, \<SHARE\_DIR\> refers to the directory where Merlin data files are installed.
+
+It will usually be:  
+- "/usr/local/share" if you used manual configuration Merlin  
+- "\<prefix\>/share" if you explicitly specified a prefix when configuring Merlin  
 - printed by the command `opam config var share`, if you used opam
 
-
-Setting-up vim
-==============
+### Vim setup
 
 Makes sure that ocamlmerlin binary can be found in PATH.
 
-The only setup needed is to have the following directory in vim runtime path
-(append this to your .vimrc):
+The only setup needed is to have the following directory in vim runtime path (append this to your .vimrc):
 
     :set rtp+=<SHARE_DIR>/merlin/vim
 
@@ -52,121 +66,183 @@ The default configuration can be seen in:
 
     <SHARE_DIR>/merlin/vim/plugin/merlin.vim
 
-After adding merlin to vim runtime path, you will probably want to run
-`:helptags <SHARE_DIR>/merlin/vim/doc` to register merlin documentation
-inside vim.
+After adding merlin to vim runtime path, you will probably want to run `:helptags <SHARE_DIR>/merlin/vim/doc` to register Merlin documentation inside vim.
 
-Misc: description of plugin's files
------------------------------------
+A more comprehensive documentation can be found on the [vim-from-scratch wiki](https://github.com/the-lambda-church/merlin/wiki/vim-from-scratch).
 
-- \<SHARE\_DIR\>/merlin/vim -- main vim plugin directory
-  - plugin/merlin.vim -- sample configuration
-  - autoload/
-    - merlin.vim   -- main vim script
-    - merlin.py    -- helper script needed by merlin.vim
-                      (has to be in the same directory)
-  - ftdetect/
-    - merlin.vim -- sets filetype for .merlin files
-  - ftplugin/ -- used to start merlin when encountering an ocaml file
-    - ocaml.vim
-    - omlet.vim
-  - syntax/
-    - merlin.vim -- define syntax highlighting for .merlin files
-  - syntax\_checkers/
-                      -- integration with syntastic (ocaml or omlet)
-                      -- set g:syntastic_ocaml_checkers = ['merlin']
-                      --  or g:syntastic_omlet_checkers = ['merlin']
+### Emacs setup
 
-
-Emacs interface
-===============
-
-merlin comes with an emacs interface (file: emacs/merlin.el) that implements a
-minor-mode that is supposed to be used on top of tuareg-mode.
+Merlin comes with an emacs library (file: emacs/merlin.el) that implements a minor-mode that is supposed to be used on top of tuareg-mode.
 
 All you need to do is add the following to your .emacs:
 
-    (push "<SHARE_DIR>/emacs/site-lisp" load-path) ; directory containing merlin.el
-    (setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
-    (autoload 'merlin-mode "merlin" "Merlin mode" t)
-    (add-hook 'tuareg-mode-hook 'merlin-mode)
-    (add-hook 'caml-mode-hook 'merlin-mode)
+```emacs
+(push "<SHARE_DIR>/emacs/site-lisp" load-path) ; directory containing merlin.el
+(setq merlin-command "<BIN_DIR>/ocamlmerlin")  ; needed only if ocamlmerlin not already in your PATH
+(autoload 'merlin-mode "merlin" "Merlin mode" t)
+(add-hook 'tuareg-mode-hook 'merlin-mode)
+(add-hook 'caml-mode-hook 'merlin-mode)
+```
 
 `merlin-mode` will make use of `auto-complete-mode` (available by package.el and the MELPA repository) if it is installed.
 
+A more comprehensive documentation can be found on the [emacs-from-scratch wiki](https://github.com/the-lambda-church/merlin/wiki/emacs-from-scratch).
 
-Merlin project
-==============
+### Other editors
 
-When loading a ml file in your editor, merlin will search for a file named
-.merlin in the same directory as the file or in parent directories.
+The wiki also contains pages for:  
+- [Acme](https://github.com/the-lambda-church/merlin/wiki/acme-from-scratch)  
+- [Atom](https://github.com/the-lambda-church/merlin/wiki/atom-from-scratch)  
+- [Spacemacs](https://github.com/the-lambda-church/merlin/wiki/spacemacs-from-scratch)
 
-The ".merlin" allows you to integrate merlin with your project.
-Each line of this file begin with a directive name followed by zero, one or more
-arguments:
-- S \<src-dir\>: add a source directory, used to find \*.ml / \*.mli files
-- B \<build-dir\>: add a build directory, used to find \*.cmi files
-- PKG \<findlib-pkg\>: load a findlib package and its dependencies in merlin
-- FLG \<flag-list\>: activates the given flags, the same effect can be achieved
-  by lauching ocamlmerlin with those flags.
-  For a full list of flags run `ocamlmerlin -help`.
-- REC : inform merlin that it should look for .merlin files in parent
-  directories, and execute the directives it find in those files as well as the
-  ones in the current file.
-- EXT \<extension-list\>: enable one or more syntax extension, separated by spaces.
-  See below for available extension.
+External contributors have implemented modes for more editors:  
+* [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)  
+* [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)  
+* [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)  
+* [nuclide for Atom](https://nuclide.io/) includes Merlin support
 
-Directory are either absolute or relative to the directory containing ".merlin"
-file.
-
-For a more comprehensive guide to the `.merlin` file have a look at [this
-guide](https://github.com/the-lambda-church/merlin/wiki/project-configuration).
-
-thread support
---------------
-
-In Ocaml compiler thread support can be enabled with the ```-thread``` flag.
-
-In Merlin the flag is not supported and you have to add ```B +threads``` directive to achieve the same effect.
-
-Extensions
+Next steps
 ==========
 
-Merlin doesn't support (nor plan to support) Camlp4. However, a few common
-extensions are hardcoded:
+To use Merlin with a multi-file project, it is necessary to have a [.merlin](https://github.com/the-lambda-church/merlin/wiki/project-configuration) file.
 
-Lwt
----
+Read more in the [wiki](https://github.com/the-lambda-church/merlin/wiki) to learn how to make full use of Merlin in your projects.
 
-Support for lwt, match\_lwt, try\_lwt / finally, for\_lwt, while\_lwt,
-if\_lwt and raise\_lwt.
+Development of Merlin
+=====================
+ 
+Most of the development happens through the [github page](https://github.com/the-lambda-church/merlin).
 
-You need to add lwt package (with ":Use lwt" or "PKG lwt" in .merlin) for
-this to work, and it may be necessary to reload buffer for this change to
-take effect.
+The [mailing list](https://lists.forge.ocamlcore.org/cgi-bin/listinfo/merlin-discuss) welcomes general questions and discussions.
 
-type-conv
----------
+Merlin Labels
+-------------
 
-A few syntax extensions based on type-conv are supported as well.
-Namely :
-- sexplib.syntax
-- binprot.syntax
-- fieldslib.syntax
-- comparelib.syntax
+[Area/Emacs](https://github.com/the-lambda-church/merlin/labels/Area%2FEmacs): Related to Emacs
 
-Misc.
------
+[Area/Vim](https://github.com/the-lambda-church/merlin/labels/Area%2FVim): Related to Vim
 
-Other common extensions which are supported :
-- pa\_ounit.syntax as ```ounit```
-- pa\_js.syntax as ```js```
-- ```nonrec``` for declaring non-recursive types
-- custom\_printf.syntax as ```custom_printf```
+[Kind/Bug](https://github.com/the-lambda-church/merlin/labels/Kind%2FBug): This issue describes a problem
 
-The list of extensions available in your version can be directly obtained by running ```echo '["extension","list"]' | ocamlmerlin```.
+[Kind/Docs](https://github.com/the-lambda-church/merlin/labels/Kind%2FDocs): This issue describes a documentation change
 
-Screenshots
-===========
+[Kind/Feature-Request](https://github.com/the-lambda-church/merlin/labels/Kind%2FFeature-request): Solving this issue requires implementing a new feature
 
-- [emacs](http://iso.mor.phis.me/projects/merlin/merlin-emacs.html)
+[Kind/To-discuss](https://github.com/the-lambda-church/merlin/labels/Kind%2FTo-discuss): Discussion needed to converge on a solution; often aesthetic. See mailing list for discussion
+
+[Status/0-More-info-needed](https://github.com/the-lambda-church/merlin/labels/Status%2F0-More-info-needed): More information is needed before this issue can be triaged
+
+[Status/0-Triage](https://github.com/the-lambda-church/merlin/labels/Status%2F0-Triage): This issue needs triaging
+
+[Status/1-Acknowledged](https://github.com/the-lambda-church/merlin/labels/Status%2F1-Acknowledged): This issue has been triaged and is being investigated
+
+[Status/2-Regression](https://github.com/the-lambda-church/merlin/labels/Status%2F2-Regression): Known workaround to be applied and tested
+
+[Status/3-Fixed-need-test](https://github.com/the-lambda-church/merlin/labels/Status%2F3-Fixed-need-test): This issue has been fixed and needs checking
+
+[Status/4-Fixed](https://github.com/the-lambda-church/merlin/labels/Status%2F4-Fixed): This issue has been fixed!
+
+[Status/5-Awaiting-feedback](https://github.com/the-lambda-church/merlin/labels/Status%2F5-Awaiting-feedback): This issue requires feedback on a previous fix
+
+You can see current areas of development in our [Merlin Project Roadmaps](https://github.com/the-lambda-church/merlin/projects) that we keep up to date.
+
+Contributing to Merlin
+----------------------
+
+Merlin needs your help and contributions!
+
+### Reporting Issues
+
+When you encounter an issue, please report it with as much detail as possible. A thorough bug report is always appreciated :)
+
+Check that our issue database doesn't already include that problem/suggestion. You can click "subscribe" on issues to follow their progress and updates.
+
+When reporting issues, please include:  
+- steps to reproduce the problem, if possible with some code triggering the issue,  
+- version of the tools you are using: operating system, editor, OCaml.
+
+Try to be as specific as possible:  
+- avoid generic phrasing such as "doesn't work", explain why it is not working (editor is freezing, you got an error message, the answer is not what was expected, ...)  
+- include the content of error messages.
+
+If it seems relevant, also include information about your development environment:  
+- the Opam version and switch in use,  
+- other toolchains involved (OCaml flavors, cygwin, C compiler, shell, ...),  
+- how the editor was setup.
+
+### Pull Requests
+
+Found a bug and know how to fix it? Or have a feature you can implement directly? We appreciate pull requests to improve Merlin, and any significant fix should start life as an issue first.
+
+### Documentation and wiki
+
+Help is greatly appreciated, the wiki needs love.
+
+If the wiki didn't cover a topic and you found out the answer, updating the page or pointing out the issue will be very useful for future users.
+
+### Discussing with other Merlin users and contributors
+
+Together with commenting on issues with direct feedback and relevant information, we use the [mailing list](https://lists.forge.ocamlcore.org/cgi-bin/listinfo/merlin-discuss) to discuss ideas and current designs/implementations. User input helps us to converge on solutions, especially those for aesthetic and user-oriented topics.
+
+List of Contributors
+--------------------
+
+We would like to thank all people who contributed to Merlin.
+
+Main collaborators:
+* [Frédéric Bour](https://github.com/let-def), main developer
+* [Thomas Refis](https://github.com/trefis), main developer
+* [Gemma Gordon](https://github.com/GemmaG), project manager
+* [Simon Castellan](https://github.com/asmanur), contributed the initial Emacs mode
+
+Contributors:
+* [Andrew Noyes](https://github.com/atn34)
+* [Anil Madhavapeddy](https://github.com/avsm)
+* [Anton Bachin](https://github.com/aantron)
+* [Armaël Guéneau](https://github.com/Armael)
+* [Arthur Wendling](https://github.com/art-w)
+* [Benjamin San Souci](https://github.com/bsansouci)
+* [Chris Konstad](https://github.com/chriskonstad)
+* [Christopher Reichert](https://github.com/creichert)
+* [David Allsopp](https://github.com/dra27)
+* [Fourchaux](https://github.com/Fourchaux)
+* [Gabriel Scherer](https://github.com/gasche)
+* [Geoff Gole](https://github.com/gsg)
+* [Gerd Stolpmann](https://github.com/gerdstolpmann)
+* [Jacques-Pascal Deplaix](https://github.com/jpdeplaix)
+* [Jah Rehders](https://github.com/sheijk)
+* [Jordan Walke](https://github.com/jordwalke)
+* [Madroach](https://github.com/madroach)
+* [Marc Weber](https://github.com/MarcWeber)
+* [Mario Rodas](https://github.com/marsam)
+* [Markus Mottl](https://github.com/mmottl)
+* [Nick Borden](https://github.com/hcwndbyw)
+* [Philipp Haselwarter](https://github.com/haselwarter)
+* [Pierre Chambart](https://github.com/chambart)
+* [Raman Varabets](https://github.com/cyberhuman)
+* [Raphaël Proust](https://github.com/raphael-proust)
+* [Ronan Le Hy](https://github.com/lehy-probayes) [(2)](https://github.com/lehy)
+* [Rudi Grinberg](https://github.com/rgrinberg)
+* [Syohei Yoshida](https://github.com/syohex)
+* [Tomasz Kołodziejski](https://github.com/neojski)
+* [Velichko Vsevolod](https://github.com/torkve)
+* [Vincent / Twinside](https://github.com/Twinside)
+* [Yotam Barnoy](https://github.com/bluddy)
+
+### Sponsoring and donations
+
+We would like to thank [Jane Street](https://www.janestreet.com) for sponsoring and [OCaml Labs](https://github.com/ocamllabs) for providing support and management.
+
+And many thanks to our [Bountysource](https://www.bountysource.com/teams/the-lambda-church/backers) backers.
+
+### Other acknowledgements
+
+Distribution and configuration:
+* [Louis Gesbert](https://github.com/AltGr), [opam-user-setup](https://github.com/OCamlPro/opam-user-setup), out-of-the-box setup for Vim and Emacs
+* [Edgar Aroutinian](https://github.com/fxfactorial), [ocaml-starterkit](https://github.com/fxfactorial/ocaml-starterkit), collection of tools for beginners in OCaml
+
+Support for other editors:
+* [Hackwaly](https://github.com/hackwaly), [Visual Studio Code](https://github.com/hackwaly/vscode-ocaml)
+* [Luc Rocher](https://github.com/cynddl), [Sublime Text 3](https://github.com/cynddl/sublime-text-merlin)
+* [Pieter Goetschalckx](https://github.com/314eter), [ocaml-merlin package for Atom](https://atom.io/packages/ocaml-merlin)
+* various contributors, [nuclide package for Atom](https://nuclide.io/)
