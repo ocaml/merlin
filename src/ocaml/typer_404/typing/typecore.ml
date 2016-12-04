@@ -3123,6 +3123,22 @@ and type_expect_ ?in_function ?(recarg=Rejected) env sexp ty_expected =
       | _ ->
           raise (Error (loc, env, Invalid_extension_constructor_payload))
       end
+
+  | Pexp_extension ({ txt = "merlin.hole"; _ }, _ as attr) ->
+      re { exp_desc = Texp_ident
+               (Path.Pident (Ident.create "*type-hole*"),
+                Location.mkloc (Longident.Lident "*type-hole*") loc,
+                { Types.
+                  val_type = ty_expected;
+                  val_kind = Val_reg;
+                  val_loc = loc;
+                  val_attributes = [];
+                });
+           exp_loc = loc; exp_extra = [];
+           exp_type = instance env ty_expected;
+           exp_attributes = attr :: sexp.pexp_attributes;
+           exp_env = env }
+
   | Pexp_extension ext ->
       raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
