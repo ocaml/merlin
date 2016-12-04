@@ -324,7 +324,7 @@ let tests = [
        module type MT = module type of List\n\
        let z = ()"
     in
-    let unbound_pattern = `Start, "Error: Unbound .*" in
+    let unbound_pattern = `Start, "\\(Error: \\)?Unbound .*" in
     let queries = [
       "lident-value"       , "y"     , [unbound_pattern; `End, "int"];
       "lident-type"        , "t"     , [unbound_pattern; `End, "type t = T"];

@@ -342,7 +342,7 @@ and pattern ctxt f x =
     | Ppat_alias (p, s) ->
         pp f "@[<2>%a@;as@;%a@]" (pattern ctxt) p protect_ident s.txt (* RA*)
     | Ppat_or _ -> (* *)
-        pp f "@[<hov0>%a@]" (list ~sep:"@,|" (pattern ctxt))
+        pp f "@[<hov0>%a@]" (list ~sep:"@\n|@" (pattern ctxt))
           (list_of_pattern [] x)
     | _ -> pattern1 ctxt f x
 
@@ -368,7 +368,7 @@ and pattern1 ctxt (f:Format.formatter) (x:pattern) : unit =
         else
           (match po with
            | Some x -> pp f "%a@;%a"  longident_loc li (simple_pattern ctxt) x
-           | None -> pp f "%a " longident_loc li )
+           | None -> pp f "%a" longident_loc li )
     | _ -> simple_pattern ctxt f x
 
 and simple_pattern ctxt (f:Format.formatter) (x:pattern) : unit =
