@@ -132,6 +132,17 @@ let tests = [
     ]
   );
 
+  group "recovery" [
+    assert_errors "hole_1.ml"
+      ~parser:true (* This incomplete expression should generate only a parser
+                      error. The hole is filled with merlin.hole. *)
+      "let _ =";
+    assert_errors "hole_2.ml"
+      ~parser:true (* A bit trickier: the recovery is tempted to put a ->.
+                      (unreachable), but the penalty should prevent it.  *)
+      "let _ = function _ ->";
+  ];
+
   group "ocaml-flags" (
     let assert_errors ?lexer ?parser ?typer ?(flags=[]) filename source =
       assert_errors ?lexer ?parser ?typer

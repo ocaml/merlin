@@ -1003,8 +1003,8 @@ let recover =
   let r512 = [R 142] in
   let r513 = S (N N_match_cases) :: r512 in
   let r514 = R 366 :: r513 in
-  let r515 = [R 280] in
-  let r516 = S (T T_DOT) :: r515 in
+  let r515 = [R 278] in
+  let r516 = Sub (r1) :: r515 in
   let r517 = S (T T_MINUSGREATER) :: r516 in
   let r518 = [R 279] in
   let r519 = Sub (r1) :: r518 in
@@ -1613,7 +1613,7 @@ let recover =
   | 672 -> One ([R 274])
   | 732 -> One ([R 276])
   | 824 -> One ([R 277])
-  | 942 -> One ([R 278])
+  | 941 -> One ([R 280])
   | 946 -> One ([R 281])
   | 255 -> One ([R 283])
   | 254 -> One ([R 284])
@@ -2514,7 +2514,7 @@ let recover =
   | 943 -> One (r512)
   | 653 -> One (r513)
   | 652 -> One (r514)
-  | 941 -> One (r515)
+  | 942 -> One (r515)
   | 940 -> One (r516)
   | 654 -> One (r517)
   | 939 -> One (r518)

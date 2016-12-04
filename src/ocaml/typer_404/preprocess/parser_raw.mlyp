@@ -1832,7 +1832,7 @@ match_case:
       { Exp.case $1 $merloc(2,3) }
   | pattern WHEN seq_expr MINUSGREATER seq_expr
       { Exp.case $1 ~guard:$merloc(2,3) $merloc(4,5) }
-  | pattern MINUSGREATER DOT
+  | pattern MINUSGREATER DOT [@cost infinity]
       { Exp.case $1 (merloc $endpos($2)
                        (Exp.unreachable ~loc:($locof(3)) ())) }
 ;
