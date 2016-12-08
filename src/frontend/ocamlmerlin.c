@@ -1,12 +1,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <libgen.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #if defined(__linux)
 #include <linux/limits.h>
@@ -47,13 +53,13 @@ static void dumpinfo(void);
 static void failwith_perror(const char *msg)
 {
   perror(msg);
-  exit(1);
+  exit(EXIT_FAILURE);
 }
 
 static void failwith(const char *msg)
 {
   fprintf(stderr, "%s\n", msg);
-  exit(1);
+  exit(EXIT_FAILURE);
 }
 
 /** Deal with UNIX IPC **/
@@ -153,6 +159,38 @@ static int connect_socket(const char *socket_path, int fail)
   return sock;
 }
 
+static void make_daemon(int sock)
+{
+  /* On success: The child process becomes session leader */
+  if (setsid() < 0)
+    failwith_perror("setsid");
+
+  /* Close all open file descriptors */
+  close(0);
+  if (open("/dev/null", O_RDWR, 0) != 0)
+    failwith_perror("open");
+  dup2(0,1);
+  dup2(0,2);
+
+  //int x;
+  //for (x = sysconf(_SC_OPEN_MAX); x>2; x--)
+  //{
+  //  if (x != sock)
+  //    close(x);
+  //}
+
+  pid_t child = fork();
+  signal(SIGHUP, SIG_IGN);
+
+  /* An error occurred */
+  if (child < 0)
+    failwith_perror("fork");
+
+  /* Success: Let the parent terminate */
+  if (child > 0)
+    exit(EXIT_SUCCESS);
+}
+
 static void start_server(const char *socket_path, const char *exec_path)
 {
   struct sockaddr_un address;
@@ -183,13 +221,17 @@ static void start_server(const char *socket_path, const char *exec_path)
 
   if (child == 0)
   {
+    make_daemon(sock);
+
     char socket_fd[50];
     sprintf(socket_fd, "%d", sock);
+    //execlp("nohup", "nohup", exec_path, "server", socket_path, socket_fd, NULL);
     execlp(exec_path, exec_path, "server", socket_path, socket_fd, NULL);
     failwith_perror("execlp");
   }
 
   close(sock);
+  wait(NULL);
 }
 
 static int connect_and_serve(const char *socket_path, const char *exec_path)
@@ -327,7 +369,7 @@ int main(int argc, char **argv)
     if (err == 1)
       exit(result);
 
-    exit(1);
+    exit(EXIT_FAILURE);
   }
   else
   {
