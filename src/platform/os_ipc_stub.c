@@ -32,11 +32,11 @@ static ssize_t recv_buffer(int fd, int fds[3])
   if (recvd < 4)
   {
     ssize_t recvd_;
-    NO_EINTR(recvd_, recv(fd, buffer + recvd, sizeof(buffer) - recvd, 0));
-    while (recvd_ > 0 && recvd < 4) {
-      recvd += recvd_;
+    do {
       NO_EINTR(recvd_, recv(fd, buffer + recvd, sizeof(buffer) - recvd, 0));
-    }
+      if (recvd_ > 0)
+        recvd += recvd_;
+    } while (recvd_ > 0 && recvd < 4);
   }
 
   size_t target = -1;
@@ -50,11 +50,11 @@ static ssize_t recv_buffer(int fd, int fds[3])
     if (recvd < target)
     {
       ssize_t recvd_;
-      NO_EINTR(recvd_, recv(fd, buffer + recvd, sizeof(buffer) - recvd, 0));
-      while (recvd_ > 0 && recvd < target) {
-        recvd += recvd_;
-        recvd_ = recv(fd, buffer + recvd, sizeof(buffer) - recvd, 0);
-      }
+      do {
+        NO_EINTR(recvd_, recv(fd, buffer + recvd, sizeof(buffer) - recvd, 0));
+        if (recvd_ > 0)
+          recvd += recvd_;
+      } while (recvd_ > 0 && recvd < target);
     }
   }
 
