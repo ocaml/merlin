@@ -121,6 +121,14 @@ let tests = [
         ~typer:true
         "val error : unknown_type_constructor";
 
+      assert_errors "two_constr.ml"
+        ~typer:true
+        "type t = A | A\n";
+
+      assert_errors "two_constr.mli"
+        ~typer:true
+        "type t = A | A\n";
+
       assert_errors "ml_in_mli.mli"
         ~parser:true
         "let x = 4 val x : int";
