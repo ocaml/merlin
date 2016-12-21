@@ -173,10 +173,12 @@ let dump buffer = function
                    paths, exn, warnings, flags, tokens, browse, parsetree, \
                    printast, env/fullenv (at {col:, line:})"
 
-let verbosity (_,config,_) = Mconfig.(config.query.verbosity)
 
 let dispatch buffer (type a) : a Query_protocol.t -> a =
-  let verbosity = verbosity buffer in
+  let verbosity =
+    let (_,config,_) = buffer in
+    Mconfig.(config.query.verbosity)
+  in
   function
   | Type_expr (source, pos) ->
     with_typer buffer @@ fun pipeline typer ->
