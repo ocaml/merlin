@@ -173,6 +173,58 @@ let dump buffer = function
                    paths, exn, warnings, flags, tokens, browse, parsetree, \
                    printast, env/fullenv (at {col:, line:})"
 
+let reconstruct_identifier pipeline pos = function
+  | None ->
+    let path = Mreader.reconstruct_identifier
+        (Mpipeline.input_config pipeline)
+        (Mpipeline.input_source pipeline)
+        pos
+    in
+    let path = Mreader_lexer.identifier_suffix path in
+    let reify dot =
+      if dot = "" ||
+         (dot.[0] >= 'a' && dot.[0] <= 'z') ||
+         (dot.[0] >= 'A' && dot.[0] <= 'Z')
+      then dot
+      else "(" ^ dot ^ ")"
+    in
+    begin match path with
+      | [] -> []
+      | base :: tail ->
+        let f {Location. txt=base; loc=bl} {Location. txt=dot; loc=dl} =
+          let loc = Location_aux.union bl dl in
+          let txt = base ^ "." ^ reify dot in
+          Location.mkloc txt loc
+        in
+        [ List.fold_left tail ~init:base ~f ]
+    end
+  | Some (expr, offset) ->
+    let loc_start =
+      let l, c = Lexing.split_pos pos in
+      Lexing.make_pos (l, c - offset)
+    in
+    let shift loc int =
+      let l, c = Lexing.split_pos loc in
+      Lexing.make_pos (l, c + int)
+    in
+    let add_loc source =
+      let loc =
+        { Location.
+          loc_start ;
+          loc_end = shift loc_start (String.length source) ;
+          loc_ghost = false ;
+        } in
+      Location.mkloc source loc
+    in
+    let len = String.length expr in
+    let rec aux acc i =
+      if i >= len then
+        List.rev_map ~f:add_loc (expr :: acc)
+      else if expr.[i] = '.' then
+        aux (String.sub expr ~pos:0 ~len:i :: acc) (succ i)
+      else
+        aux acc (succ i) in
+    aux [] offset
 
 let dispatch buffer (type a) : a Query_protocol.t -> a =
   let verbosity =
@@ -235,61 +287,8 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     in
     let result = List.filter_map ~f:aux path in
     (* enclosings of cursor in given expression *)
-    let exprs =
-      match expro with
-      | None ->
-        let path = Mreader.reconstruct_identifier
-            (Mpipeline.input_config pipeline)
-            (Mpipeline.input_source pipeline)
-            pos
-        in
-        let path = Mreader_lexer.identifier_suffix path in
-        let reify dot =
-          if dot = "" ||
-             (dot.[0] >= 'a' && dot.[0] <= 'z') ||
-             (dot.[0] >= 'A' && dot.[0] <= 'Z')
-          then dot
-          else "(" ^ dot ^ ")"
-        in
-        begin match path with
-          | [] -> []
-          | base :: tail ->
-            let f {Location. txt=base; loc=bl} {Location. txt=dot; loc=dl} =
-              let loc = Location_aux.union bl dl in
-              let txt = base ^ "." ^ reify dot in
-              Location.mkloc txt loc
-            in
-            [ List.fold_left tail ~init:base ~f ]
-        end
-      | Some (expr, offset) ->
-        let loc_start =
-          let l, c = Lexing.split_pos pos in
-          Lexing.make_pos (l, c - offset)
-        in
-        let shift loc int =
-          let l, c = Lexing.split_pos loc in
-          Lexing.make_pos (l, c + int)
-        in
-        let add_loc source =
-          let loc =
-            { Location.
-              loc_start ;
-              loc_end = shift loc_start (String.length source) ;
-              loc_ghost = false ;
-            } in
-          Location.mkloc source loc
-        in
-        let len = String.length expr in
-        let rec aux acc i =
-          if i >= len then
-            List.rev_map ~f:add_loc (expr :: acc)
-          else if expr.[i] = '.' then
-            aux (String.sub expr ~pos:0 ~len:i :: acc) (succ i)
-          else
-            aux acc (succ i) in
-        aux [] offset
-    in
     let small_enclosings =
+      let exprs = reconstruct_identifier pipeline pos expro in
       let env, node = Mbrowse.leaf_node (Mtyper.node_at typer pos) in
       let open Browse_raw in
       let include_lident = match node with
