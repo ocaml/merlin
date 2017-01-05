@@ -109,7 +109,7 @@ Add these bindings to rename interactively: >
 - if the thing under the cursor is a pattern variable or a pattern wildcard,
   refines that pattern (if possible).
 
-See http://the-lambda-church.github.io/merlin/destruct.ogv
+See https://ocaml.github.io/merlin/destruct.ogv
 
 :MerlinOutline                                                *:MerlinOutline*
 
