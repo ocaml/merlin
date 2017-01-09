@@ -3586,6 +3586,7 @@ and type_statement env sexp =
 (* Typing of match cases *)
 
 and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
+  let has_errors = Msupport.monitor_errors () in
   (* ty_arg is _fully_ generalized *)
   let patterns = List.map (fun {pc_lhs=p} -> p) caselist in
   let erase_either =
@@ -3706,11 +3707,12 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
     else
       Partial
   in
-  add_delayed_check
-    (fun () ->
-      List.iter (fun (pat, (env, _)) -> check_absent_variant env pat)
-        pat_env_list;
-      Parmatch.check_unused env cases);
+  if not !has_errors then
+    add_delayed_check
+      (fun () ->
+         List.iter (fun (pat, (env, _)) -> check_absent_variant env pat)
+           pat_env_list;
+         Parmatch.check_unused env cases);
   if has_gadts then begin
     end_def ();
     (* Ensure that existential types do not escape *)

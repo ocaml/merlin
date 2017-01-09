@@ -137,6 +137,12 @@ let tests = [
         ~typer:1 (* vals are no allowed in ml files and detected
                        during semantic analysis *)
         "val x : int";
+
+      assert_errors "unused_case_after_error.ml"
+        ~typer:1 (* The code should raise a single error (for Bb typo),
+                    but shouldn't report the unused case after *)
+        "type t = A | B | C\n\
+         let f = function A -> 1 | Bb -> 1 | C -> 1";
     ]
   );
 

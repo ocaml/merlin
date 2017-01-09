@@ -3927,6 +3927,7 @@ and type_statement env sexp =
 (* Typing of match cases *)
 
 and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
+  let has_errors = Msupport.monitor_errors () in
   (* ty_arg is _fully_ generalized *)
   let patterns = List.map (fun {pc_lhs=p} -> p) caselist in
   let contains_polyvars = List.exists contains_polymorphic_variant patterns in
@@ -4083,10 +4084,12 @@ and type_cases ?in_function env ty_arg ty_res partial_flag loc caselist =
     check_unused ~lev env (instance env ty_arg_check) cases ;
     Parmatch.check_ambiguous_bindings cases
   in
-  if contains_polyvars || do_init then
-    add_delayed_check unused_check
-  else
-    unused_check ();
+  if not !has_errors then (
+    if contains_polyvars || do_init then
+      add_delayed_check unused_check
+    else
+      unused_check ();
+  );
   (* Check for unused cases, do not delay because of gadts *)
   if do_init then begin
     end_def ();
