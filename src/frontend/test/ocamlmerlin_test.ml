@@ -36,7 +36,7 @@ let process ?with_config ?for_completion filename text =
 (* All tests *)
 
 let assert_errors ?with_config
-    filename ?(lexer=false) ?(parser=false) ?(typer=false) ?(config=false) source =
+    filename ?(lexer=0) ?(parser=0) ?(typer=0) ?(config=0) source =
   test filename (fun () ->
       let m = process ?with_config filename source in
       let lexer_errors  = M.reader_lexer_errors m in
@@ -51,20 +51,20 @@ let assert_errors ?with_config
         | None -> Printexc.to_string exn
         | Some err -> err.Location.msg
       in
-      let expect_or_not b str =
-        (if b then "expecting " else "unexpected ") ^ str ^ "\n" ^
-        String.concat "\n- " ("Errors: " :: List.map_end fmt_msg
-                                (lexer_errors @ parser_errors @ typer_errors)
-                                failures)
+      let expect ~count str errors =
+        let count' = List.length errors in
+        if count <> count' then failwith (
+            "expecting " ^ string_of_int count ^ " " ^ str ^ " but got " ^
+            string_of_int count' ^ " errors\n" ^
+            String.concat "\n- " ("Errors: " :: List.map_end fmt_msg
+                                    (lexer_errors @ parser_errors @ typer_errors)
+                                    failures)
+          )
       in
-      if (lexer_errors <> []) <> lexer then
-        failwith (expect_or_not lexer "lexer errors");
-      if (parser_errors <> []) <> parser then
-        failwith (expect_or_not parser "parser errors");
-      if (typer_errors <> []) <> typer then
-        failwith (expect_or_not typer "typer errors");
-      if (failures <> []) <> config then
-        failwith (expect_or_not config "configuration failures");
+      expect ~count:lexer "lexer errors" lexer_errors;
+      expect ~count:parser "parser errors" parser_errors;
+      expect ~count:typer "typer errors" typer_errors;
+      expect ~count:config "configuration failures" failures;
     )
 
 let assertf b fmt =
@@ -110,43 +110,47 @@ let tests = [
          no exception should reach top-level *)
 
       assert_errors "incorrect_gadt.ml"
-        ~parser:true ~typer:true
+        ~parser:1 ~typer:1
         "type p = P : 'a -> 'a -> p";
 
       assert_errors "unkown_constr.ml"
-        ~typer:true
+        ~typer:1
         "let error : unknown_type_constructor = assert false";
 
       assert_errors "unkown_constr.mli"
-        ~typer:true
+        ~typer:1
         "val error : unknown_type_constructor";
 
       assert_errors "two_constr.ml"
-        ~typer:true
+        ~typer:1
         "type t = A | A\n";
 
       assert_errors "two_constr.mli"
-        ~typer:true
+        ~typer:1
         "type t = A | A\n";
 
       assert_errors "ml_in_mli.mli"
-        ~parser:true
+        ~parser:1
         "let x = 4 val x : int";
 
       assert_errors "mli_in_ml.ml"
-        ~typer:true (* vals are no allowed in ml files and detected
+        ~typer:1 (* vals are no allowed in ml files and detected
                        during semantic analysis *)
         "val x : int";
     ]
   );
 
   group "recovery" [
+    assert_errors "hole_0.ml"
+      (* ?? should be parsed as merlin.hole, and merlin.hole shouldn't be
+         treated as a type error. *)
+      "let () = ??";
     assert_errors "hole_1.ml"
-      ~parser:true (* This incomplete expression should generate only a parser
+      ~parser:1 (* This incomplete expression should generate only a parser
                       error. The hole is filled with merlin.hole. *)
       "let _ =";
     assert_errors "hole_2.ml"
-      ~parser:true (* A bit trickier: the recovery is tempted to put a ->.
+      ~parser:1 (* A bit trickier: the recovery is tempted to put a ->.
                       (unreachable), but the penalty should prevent it.  *)
       "let _ = function _ ->";
   ];
@@ -173,7 +177,7 @@ let tests = [
         "let x = [|0|].(0)";
 
       assert_errors "array_bad.ml"
-        ~typer:true
+        ~typer:1
         "module Array = struct end\n\
          let x = [|0|].(0)";
 
@@ -185,7 +189,7 @@ let tests = [
         "let x = [|0|].(0)";
 
       assert_errors ~flags:["-unsafe"] "unsafe_array_bad.ml"
-        ~typer:true
+        ~typer:1
         "module Array = struct end\n\
          let x = [|0|].(0)";
 
@@ -309,7 +313,7 @@ let tests = [
             when Lexing.split_pos pos = (1, 4) -> ()
           | _ -> assertf false "Expecting match at position (1, 4)");
 
-      assert_errors "invalid_flag.ml" ~config:true
+      assert_errors "invalid_flag.ml" ~config:1
         ~with_config:(fun cfg ->
             let open Mconfig in
             let flags_to_apply = [{
