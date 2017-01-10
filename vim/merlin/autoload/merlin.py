@@ -127,7 +127,7 @@ def merlin_exec(*args, input=""):
                     )
         # Send buffer content
         (response, errors) = process.communicate(input=input)
-        print((response, errors))
+        if errors: sys.stderr.write(errors + "\n")
         return response
     except OSError as e:
         print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
@@ -185,7 +185,6 @@ def display_load_failures(result):
     if 'failures' in result:
         for failure in result['failures']:
             print(failure)
-    return result['result']
 
 def command_complete_cursor(base,pos):
     with_doc = vim_is_set('g:merlin_completion_with_doc', default=True)
@@ -646,11 +645,12 @@ def vim_get_flags(var):
 # Stuff
 
 def setup_merlin():
-    failures = command("project","get")
+    result = command("check-configuration")
+    display_load_failures(result)
     vim.command('let b:dotmerlin=[]')
     # Tell merlin the content of the buffer.
     # This allows merlin idle-job to preload content if nothing else is requested.
-    if failures != None:
-        fnames = display_load_failures(failures)
+    if 'dot_merlins' in result:
+        fnames = result['dot_merlins']
         if isinstance(fnames, list):
             vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))

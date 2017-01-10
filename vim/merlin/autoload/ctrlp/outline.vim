@@ -12,7 +12,7 @@ import vim
 import merlin
 
 merlin_ctrlp_outlines = []
-merlin_ctrlp_send_cmd = lambda cmd: None
+merlin_ctrlp_context = None
 
 def merlin_ctrlp_linearize(prefix, lst):
     for x in lst:
@@ -23,7 +23,7 @@ def merlin_ctrlp_linearize(prefix, lst):
 
 def merlin_ctrlp_get_outlines():
     merlin_ctrlp_outlines[:] = []
-    merlin_ctrlp_linearize("", merlin_ctrlp_send_cmd("outline"))
+    merlin_ctrlp_linearize("", merlin.command(context=merlin_ctrlp_context, "outline"))
     merlin_ctrlp_outlines.sort(key = lambda x: len(x['name']))
 
 def merlin_ctrlp_outline_init():
@@ -48,13 +48,8 @@ def merlin_ctrlp_outline_accept():
     except KeyError as e:
         print(str(e))
 
-def merlin_ctrlp_update_and_send(process, ctxt, cmd):
-    ctxt['query'] = cmd
-    return process.command(ctxt)
-
 def merlin_ctrlp_preinit():
-    global merlin_ctrlp_send_cmd
-    merlin_ctrlp_send_cmd = lambda *cmd: merlin_ctrlp_update_and_send(process, context, cmd)
+  merlin_ctrlp_context = merlin.current_context()
 
 EOF
 

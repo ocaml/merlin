@@ -19,9 +19,9 @@ def merlin_ctrlp_locate_update_cursor_pos():
 
 def merlin_ctrlp_locate_do_expand(base, vimvar):
     try:
-        l = merlin.command("expand", "prefix", base, "at", 
-                           {'line' : merlin_ctrlp_locate_pos[0], 
-                            'col'  : merlin_ctrlp_locate_pos[1]})
+        pos = (merlin_ctrlp_locate_pos[0], merlin_ctrlp_locate_pos[1])
+        l = merlin.command("expand-prefix", "-prefix", base, 
+                           "-position", merlin.fmtpos(pos))
         l = l['entries']
         l = map(lambda prop: prop['name'], l)
         l = merlin.uniq(sorted(l))
