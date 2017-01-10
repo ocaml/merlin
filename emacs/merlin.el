@@ -432,7 +432,7 @@ return (LOC1 . LOC2)."
                  extensions
                  (unless (string-equal merlin-buffer-flags "")
                    (cons "-flags" merlin-buffer-flags))
-
+                 "-filename" (buffer-file-name (buffer-base-buffer))
                  args))
     (merlin--call-process binary (cons command args))))
 
