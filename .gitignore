@@ -10,6 +10,8 @@ emacs/merlin.elc
 *.cm??
 ocamlmerlin
 ocamlmerlin.exe
+ocamlmerlin-server
+ocamlmerlin-server.exe
 config.iss
 ._d
 ._ncdi
