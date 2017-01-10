@@ -10,7 +10,8 @@ static char buffer[65536];
 #define NO_EINTR(var, command) \
   do { (var) = command; } while ((var) == -1 && errno == EINTR)
 
-#define unbyte(x,n) ((unsigned)(x) << (n * 8))
+#define unbyte(x,n) (((unsigned char)x) << (n * 8))
+
 static ssize_t recv_buffer(int fd, int fds[3])
 {
   struct iovec iov = { .iov_base = buffer, .iov_len = sizeof(buffer) };

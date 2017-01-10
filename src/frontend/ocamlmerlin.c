@@ -53,12 +53,14 @@ static void dumpinfo(void);
 static void failwith_perror(const char *msg)
 {
   perror(msg);
+  dumpinfo();
   exit(EXIT_FAILURE);
 }
 
 static void failwith(const char *msg)
 {
   fprintf(stderr, "%s\n", msg);
+  dumpinfo();
   exit(EXIT_FAILURE);
 }
 
@@ -66,7 +68,7 @@ static void failwith(const char *msg)
 
 static void ipc_send(int fd, char *buffer, size_t len, int fds[3])
 {
-  struct iovec iov = { .iov_base = buffer, .iov_len = sizeof(buffer) };
+  struct iovec iov = { .iov_base = buffer, .iov_len = len };
   struct msghdr msg = {
     .msg_iov = &iov, .msg_iovlen = 1,
     .msg_controllen = CMSG_SPACE(3 * sizeof(int)),
