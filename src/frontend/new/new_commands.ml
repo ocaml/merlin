@@ -34,8 +34,8 @@ let marg_position f = Marg.param "position"
 
 let marg_bool f = Marg.param "bool"
     (function
-      | "y" | "Y" | "true" | "1" -> f true
-      | "n" | "N" | "false" | "0" -> f false
+      | "y" | "Y" | "true" | "True" | "1" -> f true
+      | "n" | "N" | "false" | "False" | "0" -> f false
       | str ->
         failwithf "expecting boolean (%s), got %S."
           "y|Y|true|1 / n|N|false|0"

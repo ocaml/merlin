@@ -643,6 +643,7 @@ let document_arguments oc =
   in
   output_string oc "Flags affecting Merlin:\n";
   print_doc merlin_flags;
+  print_doc query_flags;
   output_string oc "Flags affecting OCaml frontend:\n";
   print_doc ocaml_flags;
   output_string oc "Flags affecting Findlib behavior:\n";
