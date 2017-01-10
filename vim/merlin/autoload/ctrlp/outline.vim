@@ -54,9 +54,6 @@ def merlin_ctrlp_update_and_send(process, ctxt, cmd):
 
 def merlin_ctrlp_preinit():
     global merlin_ctrlp_send_cmd
-    merlin.sync()
-    process = merlin.merlin_process()
-    context = merlin.context("fake_query")
     merlin_ctrlp_send_cmd = lambda *cmd: merlin_ctrlp_update_and_send(process, context, cmd)
 
 EOF

@@ -269,7 +269,6 @@ function! merlin#Complete(findstart,base)
   if a:findstart
     " Synchronize merlin before completion, since vim modify the buffer
     " (prefix is removed)
-    MerlinPy merlin.sync()
     " Locate the start of the item, including ".", "->" and "[...]".
     let line = getline('.')
     let start = col('.') - 1
@@ -382,7 +381,6 @@ function! merlin#InteractiveLocate()
         let l:match_fun = {}
     endif
 
-    MerlinPy merlin.sync()
     call ctrlp#locate#update_cursor_pos()
 
     let g:ctrlp_match_func = { 'match': 'ctrlp#locate#filter' }

@@ -74,149 +74,81 @@ def catch_and_print(f, msg=None):
     except MerlinExc as e:
         try_print_error(e, msg=msg)
 
+def concat_map(f, args):
+    return [item for arg in args for item in f(arg)]
+
 ######## PROCESS MANAGEMENT
 
-class MerlinProcess:
-    def __init__(self, path=None, env=None):
-        self.mainpipe = None
-        self.path = path
-        self.env = env
+def current_context():
+    filename = vim.eval("expand('%:p')")
+    content = "\n".join(vim.current.buffer) + "\n"
+    return (filename, content)
 
-    def restart(self):
-        vim.command("let b:merlin_tick = 0")
-        if self.mainpipe:
-            try:
-                try:
-                    self.mainpipe.terminate()
-                except OSError:
-                    pass
-                self.mainpipe.communicate()
-            except OSError:
-                pass
-        try:
-            if self.path:
-                path = self.path
-            else:
-                path = vim.eval("merlin#FindBinary()")
-            cmd = [path,"-ignore-sigint"] + vim.eval('g:merlin_binary_flags')
-            if self.env:
-                env = self.env
-            else:
-                env = os.environ
-            # As for OCaml, 64-bit Python still has sys.platform == win32
-            # Note that owing to a long-standing bug in Python, stderr must be given
-            # (see https://bugs.python.org/issue3905)
-            if platform == "win32":
-                info = subprocess.STARTUPINFO()
-                info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                info.wShowWindow = subprocess.SW_HIDE
-                self.mainpipe = subprocess.Popen(
-                        cmd,
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        startupinfo=info,
-                        universal_newlines=True,
-                        env=env
-                        )
-            else:
-                self.mainpipe = subprocess.Popen(
-                        cmd,
-                        stdin=subprocess.PIPE,
-                        stdout=subprocess.PIPE,
-                        stderr=None,
-                        universal_newlines=True,
-                        env=env
-                        )
 
-            # Protocol version negotiation
-            json.dump(["protocol","version",protocol_version], self.mainpipe.stdin)
-            self.mainpipe.stdin.flush()
-            answer = json.loads(self.mainpipe.stdout.readline())
-            if isinstance(answer, dict) and answer['class'] == "return":
-                value = answer['value']
-                if value['selected'] != protocol_version:
-                    print("Unsupported version of Merlin protocol, please update (plugin is %d, ocamlmerlin binary is %d)."
-                            % (protocol_version, value['selected']))
-                elif value['latest'] != protocol_version:
-                    print("Merlin plugin is outdated, consider updating (plugin is %d, latest is %d)."
-                            % (protocol_version, value['latest']))
-            else:
-                print("Unsupported version of Merlin binary, please update (%s)." % answer)
-
-        except OSError as e:
-            print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
-            raise e
-
-    def command(self, cmd):
-        if self.mainpipe == None or self.mainpipe.poll() != None:
-            self.restart()
-        json.dump(cmd, self.mainpipe.stdin)
-        self.mainpipe.stdin.flush()
-        line = self.mainpipe.stdout.readline()
-        result = json.loads(line)
-
-        for notification in result['notifications']:
-            print("(merlin) " + notification['section'] + ": " + notification['message'])
-        class_ = result['class']
-        value = result['value']
-        if class_ == "return":
-            return value
-        elif class_ == "failure":
-            raise Failure(value)
-        elif class_ == "error":
-            raise Error(value)
-        elif class_ == "exception":
-            raise MerlinException(value)
-
-merlin_processes = {}
-def merlin_process():
-    global merlin_processes
-    instance = vim.eval("merlin#SelectBinary()")
-    if not instance in merlin_processes:
+def merlin_exec(*args, input=""):
+    env = os.environ
+    if vim.eval("exists('b:merlin_path')") == '1':
+        path = vim.eval("b:merlin_path")
+    else:
+        path = vim.eval("merlin#FindBinary()")
+    if vim.eval("exists('b:merlin_env')") == '1':
+        env = env.copy()
+        newenv = vim.eval("b:merlin_env")
+        for key in newenv:
+            env[key] = newenv[key]
+    else:
         env = os.environ
-        if vim.eval("exists('b:merlin_path')") == '1':
-            path = vim.eval("b:merlin_path")
+    try:
+        cmd = [path] + list(args)
+        # As for OCaml, 64-bit Python still has sys.platform == win32
+        # Note that owing to a long-standing bug in Python, stderr must be given
+        # (see https://bugs.python.org/issue3905)
+        if platform == "win32":
+            info = subprocess.STARTUPINFO()
+            info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            info.wShowWindow = subprocess.SW_HIDE
+            process = subprocess.Popen(
+                    cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    startupinfo=info,
+                    universal_newlines=True,
+                    env=env
+                    )
         else:
-            path = instance
-        if vim.eval("exists('b:merlin_env')") == '1':
-            env = env.copy()
-            newenv = vim.eval("b:merlin_env")
-            for key in newenv:
-                env[key] = newenv[key]
-        merlin_processes[instance] = MerlinProcess(path=path, env=env)
-    return merlin_processes[instance]
+            process = subprocess.Popen(
+                    cmd,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True,
+                    env=env
+                    )
+        # Send buffer content
+        (response, errors) = process.communicate(input=input)
+        print((response, errors))
+        return response
+    except OSError as e:
+        print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
+        raise e
 
-def context(cmd):
-    kind = "auto"
-    if vim.eval("exists('b:merlin_kind')") == '1':
-        kind = vim.eval("b:merlin_kind")
-    name = vim.eval("expand('%:p')")
-    dot_merlin = []
-    if vim.eval("exists('b:merlin_dot_merlins')") == '1':
-        dot_merlin = ["dot_merlin", vim.eval("b:merlin_dot_merlins")]
-    return { 'context' : dot_merlin + [kind, name], 'query' : cmd }
-
-def command(*cmd):
-    return merlin_process().command(context(cmd))
-
-def sync():
-    if vim.eval('exists("b:merlin_tick") && b:merlin_tick == b:changedtick') == '0':
-        vim.command('let b:merlin_tick = b:changedtick')
-        content = "\n".join(vim.current.buffer) + "\n"
-        command("tell", "start", "end", content)
-
-def query(*cmd):
-    sync()
-    return command(*cmd)
-
-def dump(*cmd):
-    print(json.dumps(command('dump', *cmd)))
-
-def dump_to_file(path, *cmd):
-    f = open(path, 'w')
-    j = command('dump', *cmd)
-    f.write(json.dumps(j, indent=4, separators=(',', ': ')))
+def command(*args, context=None):
+    (filename, content) = context or current_context()
+    cmdline = ["server"] + list(args) + ["--","-filename",filename] + vim.eval('g:merlin_binary_flags')
+    result = json.loads(merlin_exec(input=content,*cmdline))
+    for notification in result['notifications']:
+        print("(merlin) " + notification['section'] + ": " + notification['message'])
+    class_ = result['class']
+    value = result['value']
+    if class_ == "return":
+        return value
+    elif class_ == "failure":
+        raise Failure(value)
+    elif class_ == "error":
+        raise Error(value)
+    elif class_ == "exception":
+        raise MerlinException(value)
 
 def uniq(seq):
     seen = set()
@@ -228,11 +160,23 @@ def vim_is_set(name, default=False):
         return default
     return not (vim.eval(name) in ["", "0", "false"])
 
+def fmtpos(arg):
+    if arg is None:
+        return "end"
+    elif isinstance(arg, dict):
+        line = dict['line']
+        col = dict['col']
+    elif isinstance(arg, tuple) or isinstance(arg, list):
+        (line, col) = arg
+    else:
+        raise ValueError("fmtpos takes None, (line,col) or { 'line' : _, 'col' : _ }")
+    return "{0}:{1}".format(line, col)
+
 ######## BASIC COMMANDS
 
 def command_version():
     try:
-        str = merlin_process().command(["version"])
+        str = merlin_exec("-version")
         print(str)
     except MerlinExc as e:
         try_print_error(e)
@@ -243,23 +187,16 @@ def display_load_failures(result):
             print(failure)
     return result['result']
 
-def command_find_use(*packages):
-    result = catch_and_print(lambda: command('find', 'use', packages))
-    return display_load_failures(result)
-
-def command_complete_cursor(base,line,col):
+def command_complete_cursor(base,pos):
     with_doc = vim_is_set('g:merlin_completion_with_doc', default=True)
-    cmd = ["complete", "prefix", base, "at", {'line' : line, 'col': col}]
-    if with_doc:
-        cmd += ["with", "doc"]
+    cmd = ["complete-prefix", "-position", fmtpos(pos), "-prefix", base,
+           "-doc", (with_doc and "y" or "n")]
     return command(*cmd)
 
-def command_document(path, line, col):
+def command_document(path, pos):
     try:
-        cmd = ["document", path]
-        if not (line is None or col is None):
-            cmd += ["at", {'line': line, 'col': col}]
-        print(query(*cmd))
+        cmd = ["document", "-ident", path, "-position", fmtpos(pos)]
+        print(command(*cmd))
     except MerlinExc as e:
         try_print_error(e)
 
@@ -268,13 +205,13 @@ def differs_from_current_file(path):
     return buf_path != path
 
 
-def command_locate(path, line, col):
+def command_locate(path, pos):
     try:
         choice = vim.eval('g:merlin_locate_preference')
-        if line is None or col is None:
-            return query("locate", path, choice)
+        if pos is None:
+            return command("locate", "-prefix", path, "-look-for", choice)
         else:
-            pos_or_err = query("locate", path, choice, "at", {'line': line, 'col': col})
+            pos_or_err = command("locate", "-prefix", path, "-look-for", choice, "-position", fmtpos(pos))
         if not isinstance(pos_or_err, dict):
             print(pos_or_err)
         else:
@@ -307,9 +244,9 @@ def command_locate(path, line, col):
     except MerlinExc as e:
         try_print_error(e)
 
-def command_jump(target, line, col):
+def command_jump(target, pos):
     try:
-        pos_or_err = query("jump", target, "at", {'line': line, 'col': col})
+        pos_or_err = command("jump", "-target", target, "-position", fmtpos(pos))
         if not isinstance(pos_or_err, dict):
             print(pos_or_err)
         else:
@@ -322,9 +259,9 @@ def command_jump(target, line, col):
     except MerlinExc as e:
         try_print_error(e)
 
-def command_occurrences(line, col):
+def command_occurrences(pos):
     try:
-        lst_or_err = query("occurrences", "ident", "at", {'line':line, 'col':col})
+        lst_or_err = command("occurrences", "-identifier-at", fmtpos(pos))
         if not isinstance(lst_or_err, list):
             print(lst_or_err)
         else:
@@ -334,23 +271,12 @@ def command_occurrences(line, col):
 
 ######## VIM FRONTEND
 
-# Spawn a fresh new process
-def vim_restart():
-    merlin_process().restart()
-    path = vim.eval("expand('%:p')")
-    setup_merlin(path)
-
-# Reload changed cmi files then retype all definitions
-def vim_reload():
-    return query("refresh")
-
 # Complete
 def vim_complete_cursor(base, suffix, vimvar):
     vim.command("let %s = []" % vimvar)
-    line, col = vim.current.window.cursor
     prep = lambda str: re.sub(re_wspaces, " ", str).replace("'", "''")
     try:
-        completions = command_complete_cursor(base,line,col)
+        completions = command_complete_cursor(base,vim.current.window.cursor)
         nb_entries = len(completions['entries'])
         if completions['context'] and completions['context'][0] == 'application':
             app = completions['context'][1]
@@ -381,9 +307,9 @@ def vim_complete_cursor(base, suffix, vimvar):
 
 def vim_expand_prefix(base, vimvar):
     vim.command("let %s = []" % vimvar)
-    line, col = vim.current.window.cursor
     try:
-        l = command("expand", "prefix", base, "at", {'line' : line, 'col': col})
+        l = command("expand-prefix", "-position", fmtpos(vim.current.window.cursor),
+                                     "-prefix", base)
         l = l['entries']
         l = map(lambda prop: prop['name'], l)
         l = uniq(sorted(l))
@@ -396,7 +322,7 @@ def vim_expand_prefix(base, vimvar):
 # Error listing
 def vim_loclist(vimvar, ignore_warnings):
     vim.command("let %s = []" % vimvar)
-    errors = query("errors")
+    errors = command("errors")
     bufnr = vim.current.buffer.number
     nr = 0
     for error in errors:
@@ -421,7 +347,7 @@ def vim_loclist(vimvar, ignore_warnings):
 
 # Findlib Package
 def vim_findlib_list(vimvar):
-    pkgs = command('find', 'list')
+    pkgs = command('findlib-list')
     vim.command("let %s = []" % vimvar)
     for pkg in pkgs:
         vim.command("call add(%s, '%s')" % (vimvar, pkg))
@@ -431,24 +357,21 @@ def vim_findlib_use(*args):
 
 # Locate
 def vim_locate_at_cursor(path):
-    line, col = vim.current.window.cursor
-    command_locate(path, line, col)
+    command_locate(path, line, vim.current.window.cursor)
 
 def vim_locate_under_cursor():
     vim_locate_at_cursor(None)
 
 # Jump
 def vim_jump_to(target):
-    line, col = vim.current.window.cursor
-    command_jump(target, line, col)
+    command_jump(target, vim.current.window.cursor)
 
 def vim_jump_default():
   vim_jump_to("fun let module match")
 
 # Document
 def vim_document_at_cursor(path):
-    line, col = vim.current.window.cursor
-    command_document(path, line, col)
+    command_document(path, vim.current.window.cursor)
 
 def vim_document_under_cursor():
     vim_document_at_cursor(None)
@@ -457,7 +380,7 @@ def vim_document_under_cursor():
 def vim_occurrences(vimvar):
     vim.command("let %s = []" % vimvar)
     line, col = vim.current.window.cursor
-    lst = command_occurrences(line, col)
+    lst = command_occurrences((line, col))
     lst = map(lambda x: x['start'], lst)
     bufnr = vim.current.buffer.number
     nr = 0
@@ -476,7 +399,7 @@ def vim_occurrences(vimvar):
 
 def vim_occurrences_search():
     line, col = vim.current.window.cursor
-    lst = command_occurrences(line, col)
+    lst = command_occurrences((line, col))
     result = ""
     over = ""
     start_col = 0
@@ -495,8 +418,7 @@ def vim_occurrences_search():
     return "[%s, '%s', '%s']" % (start_col, over, result)
 
 def vim_occurrences_replace(content):
-    line, col = vim.current.window.cursor
-    lst = command_occurrences(line, col)
+    lst = command_occurrences(vim.current.window.cursor)
     lst.reverse()
     for pos in lst:
         if pos['start']['line'] == pos['end']['line']:
@@ -507,11 +429,11 @@ def vim_occurrences_replace(content):
 
 # Expression typing
 def vim_type(expr):
-    to_line, to_col = vim.current.window.cursor
-    pos = {'line': to_line, 'col': to_col}
-    cmd = ["type", "expression", expr, "at", pos]
+    cmd = ["type-expression",
+            "-expression", expr,
+            "-position", fmtpos(vim.current.window.cursor)]
     try:
-        ty = query(*cmd)
+        ty = command(*cmd)
         res = {'type': str(ty), 'matcher': '', 'tail_info':''}
         return json.dumps(res)
     except MerlinExc as e:
@@ -575,9 +497,8 @@ def vim_case_analysis():
 
     if enclosing_types == []:
         to_line, to_col = vim.current.window.cursor
-        pos = {'line':to_line, 'col':to_col}
         try:
-            enclosing_types = query("type", "enclosing", "at", pos)
+            enclosing_types = command("type-enclosing", "-position", fmtpos((to_line,to_col)))
             if enclosing_types != []:
                 current_enclosing = 0
             else:
@@ -590,7 +511,8 @@ def vim_case_analysis():
 
     tmp = enclosing_types[current_enclosing]
     try:
-        result = query("case", "analysis", "from", tmp['start'], "to", tmp['end'])
+        tmp['start']
+        result = command("case-analysis", "-start", tmp['start'], "-end", tmp['end'])
         tmp = result[0]
         txt = result[1]
         replace_buffer_portion(tmp['start'], tmp['end'], txt)
@@ -603,15 +525,9 @@ def vim_type_enclosing():
     global enclosing_types
     global current_enclosing
     vim_type_reset()
-    to_line, to_col = vim.current.window.cursor
-    pos = {'line':to_line, 'col':to_col}
-    # deprecated, leave merlin compute the correct identifier
-    # atom, a_start, a_end = bounds_of_ocaml_atom_at_pos(to_line - 1, to_col)
-    # offset = to_col - a_start
-    # arg = {'expr':atom, 'offset':offset}
-    # enclosing_types = command("type", "enclosing", arg, pos)
     try:
-        enclosing_types = query("type", "enclosing", "at", pos)
+        to_line, to_col = vim.current.window.cursor
+        enclosing_types = command("type-enclosing", "-position", fmtpos((to_line,to_col)))
         if enclosing_types != []:
             return vim_next_enclosing()
         else:
@@ -693,25 +609,18 @@ def vim_prev_enclosing():
     return '{}'
 
 # Finding files
-def vim_which(name,ext):
-    if isinstance(ext, list):
-        name = list(map(lambda ext: name + "." + ext, ext))
-    elif ext:
-        name = name + "." + ext
-    return command('which','path',name)
+def vim_which(name,exts):
+    if not isinstance(exts, list): exts = [exts]
+    files = concat_map(lambda ext: ("-file",name+"."+ext), exts)
+    return command('path-of-source', *files)
 
-def vim_which_ext(ext,vimvar):
-    files = command('which', 'with_ext', ext)
+def vim_which_ext(exts,vimvar):
+    files = command('list-modules', *concat_map(lambda ext: ("-ext",ext)))
     vim.command("let %s = []" % vimvar)
     for f in sorted(set(files)):
         vim.command("call add(%s, '%s')" % (vimvar, f))
 
 # Extension management
-def vim_ext(enable, exts):
-    state = enable and 'enable' or 'disable'
-    result = catch_and_print(lambda: command('extension', state, exts))
-    return display_load_failures(result)
-
 def vim_ext_list(vimvar,enabled=None):
     if enabled == None:
         exts = command('extension','list')
