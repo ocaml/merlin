@@ -362,6 +362,47 @@ let tests = [
             type_expr_match (name ^ "-" ^ Msource.dump_position pos) expr pos re))
   );
 
+  group "motion" (
+    let check_position (l1,c1 as p1) pos =
+      let l2,c2 as p2 = Lexing.split_pos pos in
+      assertf (p1=p2) "Expecting to move to %d:%d, moved to %d:%d" l1 c1 l2 c2
+    in
+    let check_jump_position a b = match a, b with
+      | None, `Error _ -> ()
+      | None, `Found pos ->
+        let l, c = Lexing.split_pos pos in
+        assertf false "Expected to fail, moved to %d:%d" l c
+      | Some (l, c), `Error msg ->
+        assertf false
+          "Expected to move to %d:%d, but failed with message %S" l c msg
+      | Some pos1, `Found pos2 -> check_position pos1 pos2
+    in
+    let jump ?with_config ~from ?result feature source id =
+      let name = match result with
+        | Some (l,c) -> sprintf "jump_%d_to_%s_at_%d_%d.ml" id feature l c
+        | None -> sprintf "jump_%d_to_%s_fail.ml" id feature
+      in
+      validate_output ?with_config name source
+        (Query_protocol.Jump (feature, `Logical from))
+        (check_jump_position result)
+    in
+    let phrase ?with_config ~from ~result direction source id =
+      let (l,c) = result in
+      let name = sprintf "phrase_%s_%d_from_%d_%d.ml"
+          (if direction = `Next then "next" else "prev") id l c in
+      validate_output ?with_config name source
+        (Query_protocol.Phrase (direction, `Logical from))
+        (check_position result)
+    in
+    List.mapi ~f:(fun i f -> f i) [
+      jump "let" ~from:(2,2) ~result:(1,0) "let x =\n  5";
+      jump "let" ~from:(1,8) "let x = 5"; (*Same line should fail*)
+      jump "module" ~from:(2,2) "let x = \n 5";
+      phrase `Next ~from:(1,0) "let x = 5\nlet y = 2" ~result:(2,0);
+      phrase `Prev ~from:(2,0) "let x = 5\nlet y = 2" ~result:(1,0);
+    ]
+  );
+
   group "std" [
 
     group "glob" (
