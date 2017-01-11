@@ -647,6 +647,6 @@ def setup_merlin():
     # Tell merlin the content of the buffer.
     # This allows merlin idle-job to preload content if nothing else is requested.
     if 'dot_merlins' in result:
-        fnames = result['dot_merlins']
-        if isinstance(fnames, list):
-            vim.command('let b:dotmerlin=[%s]' % ','.join(map(lambda fname: '"'+fname+'"', fnames)))
+        fnames = ','.join(map(lambda fname: '"'+fname+'"', result['dot_merlins']))
+        print(fnames)
+        vim.command('let b:dotmerlin=[{0}]'.format(fnames))
