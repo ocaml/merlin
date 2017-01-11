@@ -120,24 +120,6 @@ merlin.vim_reload()
 EOF
 endfunction
 
-function! merlin#PackageList(ArgLead, CmdLine, CursorPos)
-  let l:pkgs = []
-  MerlinPy merlin.vim_findlib_list("l:pkgs")
-  return join(l:pkgs, "\n")
-endfunction
-
-function! merlin#ExtEnabled(ArgLead, CmdLine, CursorPos)
-  let l:exts = []
-  MerlinPy merlin.vim_ext_list("l:exts", enabled=True)
-  return join(l:exts, "\n")
-endfunction
-
-function! merlin#ExtDisabled(ArgLead, CmdLine, CursorPos)
-  let l:exts = []
-  MerlinPy merlin.vim_ext_list("l:exts", enabled=False)
-  return join(l:exts, "\n")
-endfunction
-
 function! merlin#MLList(ArgLead, CmdLine, CursorPos)
   let l:files = []
   MerlinPy merlin.vim_which_ext([".ml",".mli"], "l:files")
@@ -156,33 +138,39 @@ function! merlin#ExpandPrefix(ArgLead, CmdLine, CursorPos)
   return l:compl
 endfunction
 
-function! merlin#ExtEnable(...)
-  MerlinPy merlin.vim_ext(True, vim.eval("a:000"))
-  MerlinPy merlin.vim_reload()
+function! s:MakeCompletionList(var, pyfun)
+  let l:all = []
+  execute 'MerlinPy ' . a:pyfun . '("l:all")'
+  if exists(a:var)
+    let l:existing = copy(eval(a:var))
+    let l:all = filter(l:all, "index(l:existing, v:val) == -1")
+    call insert(l:all, join(map(l:existing, "fnameescape(v:val)"), " "))
+  endif
+  return join(l:all, "\n")
 endfunction
 
-function! merlin#ExtDisable(...)
-  MerlinPy merlin.vim_ext(False, vim.eval("a:000"))
-  MerlinPy merlin.vim_reload()
+function! merlin#CompleteExtensions(ArgLead, CmdLine, CursorPos)
+  return s:MakeCompletionList("b:merlin_extensions", "merlin.vim_extension_list")
 endfunction
 
-function! merlin#Use(...)
-  MerlinPy merlin.vim_findlib_use(*vim.eval("a:000"))
-  MerlinPy merlin.vim_reload()
+function! merlin#Extensions(...)
+  let b:merlin_extensions = a:000
 endfunction
 
-function! merlin#RelevantFlags(ArgLead, CmdLine, CursorPos)
-  let l:flags = [ "-rectypes", "-nostdlib", "-absname", "-debug", "-w" ]
-  return join(l:flags, "\n")
+function! merlin#CompletePackages(ArgLead, CmdLine, CursorPos)
+  return s:MakeCompletionList("b:merlin_packages", "merlin.vim_findlib_list")
+endfunction
+
+function! merlin#Packages(...)
+  let b:merlin_packages = a:000
 endfunction
 
 function! merlin#CompleteFlags(ArgLead, CmdLine, CursorPos)
-  MerlinPy merlin.vim_get_flags("l:flags")
-  return l:flags . "\n" . merlin#RelevantFlags(a:ArgLead, a:CmdLine, a:CursorPos)
+  return s:MakeCompletionList("b:merlin_flags", "merlin.vim_flags_list")
 endfunction
 
-function! merlin#SetFlags(...)
-  MerlinPy merlin.vim_set_flags(*vim.eval("a:000"))
+function! merlin#Flags(...)
+  let b:merlin_flags = a:000
 endfunction
 
 function! s:ShowTypeEnclosing(type)
@@ -581,14 +569,19 @@ function! merlin#Register()
   command! -buffer -nargs=? -complete=dir MerlinBuildPath  call merlin#Path("build", <q-args>)
 
   """ Findlib  -----------------------------------------------------------------
-  command! -buffer -complete=custom,merlin#PackageList   -nargs=* MerlinUse        call merlin#Use(<f-args>)
+  command! -buffer -complete=custom,merlin#CompletePackages -nargs=* MerlinPackages call merlin#Packages(<f-args>)
+  " Backward compatibility
+  command! -buffer -complete=custom,merlin#CompletePackages -nargs=* MerlinUse      call merlin#Packages(<f-args>)
 
   """ Flags management  --------------------------------------------------------
-  command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* MerlinSetFlags   call merlin#SetFlags(<f-args>)
+  command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* MerlinFlags    call merlin#Flags(<f-args>)
+  " Backward compatibility
+  command! -buffer -complete=custom,merlin#CompleteFlags -nargs=* MerlinSetFlags call merlin#Flags(<f-args>)
 
   """ Extensions  --------------------------------------------------------------
-  command! -buffer -complete=custom,merlin#ExtDisabled   -nargs=* MerlinExtEnable  call merlin#ExtEnable(<f-args>)
-  command! -buffer -complete=custom,merlin#ExtEnabled    -nargs=* MerlinExtDisable call merlin#ExtDisable(<f-args>)
+  command! -buffer -complete=custom,merlin#CompleteExtensions -nargs=* MerlinExtensions  call merlin#Extensions(<f-args>)
+  " Backward compatibility
+  command! -buffer -complete=custom,merlin#CompleteExtensions -nargs=* MerlinExtEnable   call merlin#Extensions(<f-args>)
 
   """ .merlin  -----------------------------------------------------------------
   command! -buffer -nargs=0 GotoDotMerlin call merlin#GotoDotMerlin()

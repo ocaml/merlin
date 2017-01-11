@@ -84,7 +84,6 @@ def current_context():
     content = "\n".join(vim.current.buffer) + "\n"
     return (filename, content)
 
-
 def merlin_exec(*args, input=""):
     env = os.environ
     if vim.eval("exists('b:merlin_path')") == '1':
@@ -135,7 +134,12 @@ def merlin_exec(*args, input=""):
 
 def command(*args, context=None):
     (filename, content) = context or current_context()
-    cmdline = ["server"] + list(args) + ["--","-filename",filename] + vim.eval('g:merlin_binary_flags')
+    cmdline = ["server"] + list(args) + ["--","-filename",filename] + \
+            concat_map(lambda ext: ("-extension",ext), vim_list_if_set("b:merlin_extensions")) + \
+            concat_map(lambda pkg: ("-package",pkg), vim_list_if_set("b:merlin_packages")) + \
+            vim.eval('g:merlin_binary_flags') + \
+            vim_list_if_set('b:merlin_flags')
+
     result = json.loads(merlin_exec(input=content,*cmdline))
     for notification in result['notifications']:
         print("(merlin) " + notification['section'] + ": " + notification['message'])
@@ -159,6 +163,9 @@ def vim_is_set(name, default=False):
     if not vim.eval('exists("%s")' % name):
         return default
     return not (vim.eval(name) in ["", "0", "false"])
+
+def vim_list_if_set(name):
+    return vim.eval('exists("{0}") ? {0} : []'.format(name))
 
 def fmtpos(arg):
     if arg is None:
@@ -343,16 +350,6 @@ def vim_loclist(vimvar, ignore_warnings):
                 (bufnr, lnum, lcol, nr, msg, ty))
         nr = nr + 1
         vim.command("call add(%s, l:tmp)" % vimvar)
-
-# Findlib Package
-def vim_findlib_list(vimvar):
-    pkgs = command('findlib-list')
-    vim.command("let %s = []" % vimvar)
-    for pkg in pkgs:
-        vim.command("call add(%s, '%s')" % (vimvar, pkg))
-
-def vim_findlib_use(*args):
-    return command_find_use(*args)
 
 # Locate
 def vim_locate_at_cursor(path):
@@ -619,28 +616,17 @@ def vim_which_ext(exts,vimvar):
     for f in sorted(set(files)):
         vim.command("call add(%s, '%s')" % (vimvar, f))
 
-# Extension management
-def vim_ext_list(vimvar,enabled=None):
-    if enabled == None:
-        exts = command('extension','list')
-    elif enabled:
-        exts = command('extension','list','enabled')
-    else:
-        exts = command('extension','list','disabled')
-    vim.command("let %s = []" % vimvar)
-    for ext in exts:
-        vim.command("call add(%s, '%s')" % (vimvar, ext))
+def vim_flags_list(vimvar):
+    for x in command('flags-list'):
+        vim.command("call add(%s, '%s')" % (vimvar, x))
 
-# Custom flag selection
+def vim_extension_list(vimvar):
+    for x in command('extension-list'):
+        vim.command("call add(%s, '%s')" % (vimvar, x))
 
-def vim_set_flags(*flags):
-    result = catch_and_print(lambda: command('flags', 'set', flags))
-    return display_load_failures(result)
-
-def vim_get_flags(var):
-    result = catch_and_print(lambda: command('flags', 'get'))
-    result = " ".join(result)
-    vim.command('let %s = "%s"' % (var, result.replace('"','\\"')))
+def vim_findlib_list(vimvar):
+    for x in command('findlib-list'):
+        vim.command("call add(%s, '%s')" % (vimvar, x))
 
 # Stuff
 
