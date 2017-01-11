@@ -165,3 +165,56 @@ let get typed_tree pos target =
   | No_matching_target ->
     `Error "No matching target"
 
+let phrase typed_tree pos target =
+  let roots = Mbrowse.of_typedtree typed_tree in
+  (* Select nodes around cursor.
+     If the cursor is around a module expression, also search inside it. *)
+  let enclosing = match Mbrowse.enclosing pos [roots] with
+    | (env, (Browse_raw.Module_expr _ as node)) :: enclosing ->
+      Browse_raw.fold_node (fun env node enclosing -> (env,node) :: enclosing)
+        env node enclosing
+    | enclosing -> enclosing
+  in
+  (* Drop environment, they are of no use here *)
+  let enclosing = List.map ~f:snd enclosing in
+  let find_item x xs = match target with
+    | `Prev -> List.rev (List.take_while ~f:((!=)x) xs)
+    | `Next -> match List.drop_while ~f:((!=)x) xs with _::xs -> xs | [] -> []
+  in
+  let find_pos prj xs =
+    match target with
+    | `Prev ->
+      let f x = Location_aux.compare_pos pos (prj x) > 0 in
+      List.rev (List.take_while ~f xs)
+    | `Next ->
+      let f x = Location_aux.compare_pos pos (prj x) >= 0 in
+      List.drop_while ~f xs
+  in
+  let rec seek_item = function
+    | [] -> None
+    | Browse_raw.Signature xs :: tail ->
+      begin match find_pos (fun x -> x.Typedtree.sig_loc) xs.Typedtree.sig_items with
+        | [] -> seek_item tail
+        | y :: _ -> Some y.Typedtree.sig_loc
+      end
+    | Browse_raw.Structure xs :: tail ->
+      begin match find_pos (fun x -> x.Typedtree.str_loc) xs.Typedtree.str_items with
+        | [] -> seek_item tail
+        | y :: _ -> Some y.Typedtree.str_loc
+      end
+    | Browse_raw.Signature_item (x,_) :: Browse_raw.Signature xs :: tail ->
+      begin match find_item x xs.Typedtree.sig_items with
+        | [] -> seek_item tail
+        | y :: _ -> Some y.Typedtree.sig_loc
+      end
+    | Browse_raw.Structure_item (x,_) :: Browse_raw.Structure xs :: tail ->
+      begin match find_item x xs.Typedtree.str_items with
+        | [] -> seek_item tail
+        | y :: _ -> Some y.Typedtree.str_loc
+      end
+    | _ :: xs -> seek_item xs
+  in
+  match seek_item enclosing, target with
+  | Some loc, _ -> `Logical (Lexing.split_pos loc.Location.loc_start)
+  | None, `Prev -> `Start
+  | None, `Next -> `End

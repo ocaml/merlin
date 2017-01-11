@@ -119,6 +119,9 @@ type _ t =
     -> [ `Found of Lexing.position
        | `Error of string
        ] t
+  | Phrase(* *)
+    : [`Next | `Prev] * Msource.position
+    -> Lexing.position t
   | Case_analysis(* *)
     : Msource.position * Msource.position -> (Location.t * string) t
   | Outline(* *)

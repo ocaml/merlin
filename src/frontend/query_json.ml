@@ -104,6 +104,11 @@ let dump (type a) : a t -> json =
       "target", `String target;
       "position", mk_position pos;
     ]
+  | Phrase (target, pos) ->
+    mk "phrase" [
+      "target", `String (match target with `Next -> "next" | `Prev -> "prev");
+      "position", mk_position pos;
+    ]
   | Case_analysis (pos_start,pos_end) ->
     mk "case-analysis" [
       "start", mk_position pos_start;
@@ -280,6 +285,8 @@ let json_of_response (type a) (query : a t) (response : a) : json =
       | `Found pos ->
         `Assoc ["pos", Lexing.json_of_position pos]
     end
+  | Phrase _, pos ->
+    `Assoc ["pos", Lexing.json_of_position pos]
   | Case_analysis _, ({ Location. loc_start ; loc_end }, str) ->
     let assoc =
       `Assoc [

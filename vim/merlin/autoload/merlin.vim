@@ -348,6 +348,14 @@ function! merlin#Jump(...)
   endif
 endfunction
 
+function! merlin#PhrasePrev()
+  MerlinPy merlin.vim_phrase_prev()
+endfunction
+
+function! merlin#PhraseNext()
+  MerlinPy merlin.vim_phrase_next()
+endfunction
+
 function! merlin#Document(...)
   if (a:0 > 1)
     echoerr "Document: to many arguments (expected 0 or 1)"
@@ -519,8 +527,12 @@ function! merlin#Register()
     nmap <silent><buffer> gd  :MerlinLocate<return>
   endif
 
-  """ Jump  ------------------------------------------------------------------
+  """ Jump and Phrase motion ---------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinJump call merlin#Jump(<q-args>)
+  command! -buffer MerlinPhrasePrev call merlin#PhrasePrev()
+  command! -buffer MerlinPhraseNext call merlin#PhraseNext()
+  nmap <silent><buffer> [[ :MerlinPhrasePrev<cr>
+  nmap <silent><buffer> ]] :MerlinPhraseNext<cr>
 
   """ Document  ----------------------------------------------------------------
   command! -buffer -complete=customlist,merlin#ExpandPrefix -nargs=? MerlinDocument call merlin#Document(<q-args>)

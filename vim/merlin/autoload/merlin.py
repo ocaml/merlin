@@ -134,7 +134,7 @@ def merlin_exec(*args, input=""):
 
 def command(*args, context=None):
     (filename, content) = context or current_context()
-    cmdline = ["server"] + list(args) + ["--","-filename",filename] + \
+    cmdline = ["server"] + list(args) + ["-filename",filename] + \
             concat_map(lambda ext: ("-extension",ext), vim_list_if_set("b:merlin_extensions")) + \
             concat_map(lambda pkg: ("-package",pkg), vim_list_if_set("b:merlin_packages")) + \
             vim.eval('g:merlin_binary_flags') + \
@@ -250,9 +250,9 @@ def command_locate(path, pos):
     except MerlinExc as e:
         try_print_error(e)
 
-def command_jump(target, pos):
+def command_motion(cmd, target, pos):
     try:
-        pos_or_err = command("jump", "-target", target, "-position", fmtpos(pos))
+        pos_or_err = command(cmd, "-target", target, "-position", fmtpos(pos))
         if not isinstance(pos_or_err, dict):
             print(pos_or_err)
         else:
@@ -261,7 +261,10 @@ def command_jump(target, pos):
             # save the current position in the jump list
             vim.command("normal! m'")
             # TODO: move the cursor using vimscript, so we can :keepjumps?
-            vim.current.window.cursor = (l, c)
+            try:
+                vim.current.window.cursor = (l, c)
+            except:
+                vim.command("$")
     except MerlinExc as e:
         try_print_error(e)
 
@@ -358,12 +361,18 @@ def vim_locate_at_cursor(path):
 def vim_locate_under_cursor():
     vim_locate_at_cursor(None)
 
-# Jump
+# Jump and Phrase motion
 def vim_jump_to(target):
-    command_jump(target, vim.current.window.cursor)
+    command_motion("jump", target, vim.current.window.cursor)
 
 def vim_jump_default():
   vim_jump_to("fun let module match")
+
+def vim_phrase_prev():
+    command_motion("phrase", "prev", vim.current.window.cursor)
+
+def vim_phrase_next():
+    command_motion("phrase", "next", vim.current.window.cursor)
 
 # Document
 def vim_document_at_cursor(path):
@@ -611,11 +620,12 @@ def vim_which(name,exts):
     return command('path-of-source', *files)
 
 def vim_which_ext(exts,vimvar):
-    files = command('list-modules', *concat_map(lambda ext: ("-ext",ext)))
+    files = command('list-modules', *concat_map(lambda ext: ("-ext",ext), exts))
     vim.command("let %s = []" % vimvar)
     for f in sorted(set(files)):
         vim.command("call add(%s, '%s')" % (vimvar, f))
 
+# Options listing
 def vim_flags_list(vimvar):
     for x in command('flags-list'):
         vim.command("call add(%s, '%s')" % (vimvar, x))

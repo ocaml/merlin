@@ -437,6 +437,13 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     let pos = Msource.get_lexing_pos (Mpipeline.input_source pipeline) pos in
     Jump.get typedtree pos target
 
+  | Phrase (target, pos) ->
+    with_typer buffer @@ fun pipeline typer ->
+    let source = Mpipeline.input_source pipeline in
+    let typedtree = Mtyper.get_typedtree typer in
+    let pos = Msource.get_lexing_pos source pos in
+    Msource.get_lexing_pos source (Jump.phrase typedtree pos target)
+
   | Case_analysis (pos_start, pos_end) ->
     with_typer buffer @@ fun pipeline typer ->
     let source = Mpipeline.input_source pipeline in

@@ -242,6 +242,33 @@ let all_commands = [
     end
   ;
 
+  command "phrase"
+    ~doc:"phrase -target [next|prev] -position pos\n\t\
+          TODO"
+    ~spec: [
+      ("-target",
+       "<next|prev> Entity to jump to",
+       Marg.param "string" (fun target (_,pos) ->
+           match target with
+           | "next" -> (`Next,pos)
+           | "prev" -> (`Prev,pos)
+           | _ -> failwith "-target should be one of 'next' or 'prev'"
+         )
+      );
+      ("-position",
+       "<position> Position to complete",
+       marg_position (fun pos (target,_pos) -> (target,pos))
+      );
+    ]
+    ~default:(`Next,`None)
+    begin fun buffer (target,pos) ->
+      match pos with
+      | `None -> failwith "-position <pos> is mandatory"
+      | #Msource.position as pos ->
+        run buffer (Query_protocol.Phrase (target,pos))
+    end
+  ;
+
   command "list-modules"
     ~doc:"list-modules -ext .ml -ext .mli ...\n\t\
           looks into project source paths for files with an extension \

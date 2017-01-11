@@ -1241,6 +1241,29 @@ Empty string defaults to jumping to all these."
   (interactive "sfun, let, module or match > ")
   (merlin--goto-file-and-point (merlin/jump target)))
 
+(defun merlin/phrase (target)
+  "Move to next phrase (TARGET = 'next) or previous phrase (TARGET = 'prev)"
+  (if (or (not target) (equal target ""))
+    (setq target "fun let module match"))
+  (let ((result (merlin/call "phrase"
+                 "-position" (merlin/unmake-point (point))
+                 "-target" target)))
+    (unless result
+      (error "Not found. (Check *Messages* for potential errors)"))
+    (unless (listp result)
+      (error result))
+    result))
+
+(defun merlin-phrase-next ()
+  "Go to the beginning of the next phrase."
+  (interactive)
+  (merlin--goto-file-and-point (merlin/phrase 'next)))
+
+(defun merlin-phrase-prev ()
+  "Go to the beginning of the previous phrase."
+  (interactive)
+  (merlin--goto-file-and-point (merlin/phrase 'prev)))
+
 ;;;;;;;;;;;;;;
 ;; DOCUMENT ;;
 ;;;;;;;;;;;;;;

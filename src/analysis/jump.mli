@@ -31,3 +31,8 @@ val get :
   Mtyper.typedtree ->
   Std.Lexing.position ->
   string -> [> `Error of string | `Found of Lexing.position ]
+
+val phrase :
+  Mtyper.typedtree ->
+  Std.Lexing.position ->
+  [< `Next | `Prev ] -> [> `End | `Logical of int * int | `Start ]
