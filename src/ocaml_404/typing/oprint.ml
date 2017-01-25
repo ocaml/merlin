@@ -454,6 +454,9 @@ and print_out_sig_item ppf =
           ppf td
   | Osig_value vd ->
       let kwd = if vd.oval_prims = [] then "val" else "external" in
+      let not_bucklescript s =
+        not (String.length s > 3 && s.[0] = 'B' && s.[1] = 'S' && s.[2] = ':')
+      in
       let pr_prims ppf =
         function
           [] -> ()
@@ -462,7 +465,8 @@ and print_out_sig_item ppf =
             List.iter (fun s -> fprintf ppf "@ \"%s\"" s) sl
       in
       fprintf ppf "@[<2>%s %a :@ %a%a%a@]" kwd value_ident vd.oval_name
-        !out_type vd.oval_type pr_prims vd.oval_prims
+        !out_type vd.oval_type pr_prims
+        (List.filter not_bucklescript vd.oval_prims)
         (fun ppf -> List.iter (fun a -> fprintf ppf "@ [@@@@%s]" a.oattr_name))
         vd.oval_attributes
   | Osig_ellipsis ->

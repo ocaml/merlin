@@ -426,6 +426,10 @@ and print_out_sig_item ppf =
           ppf td
   | Osig_value (name, ty, prims) ->
       let kwd = if prims = [] then "val" else "external" in
+      let not_bucklescript s =
+        not (String.length s > 3 && s.[0] = 'B' && s.[1] = 'S' && s.[2] = ':')
+      in
+      let prims = List.filter not_bucklescript prims in
       let pr_prims ppf =
         function
           [] -> ()
