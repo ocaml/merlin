@@ -66,7 +66,7 @@ static void failwith(const char *msg)
 
 /** Deal with UNIX IPC **/
 
-static void ipc_send(int fd, char *buffer, size_t len, int fds[3])
+static void ipc_send(int fd, unsigned char *buffer, size_t len, int fds[3])
 {
   struct iovec iov = { .iov_base = buffer, .iov_len = len };
   struct msghdr msg = {
@@ -108,7 +108,7 @@ static void ipc_send(int fd, char *buffer, size_t len, int fds[3])
 
 #define byte(x,n) ((unsigned)((x) >> (n * 8)) & 0xFF)
 
-static ssize_t prepare_args(char *buffer, size_t len, int argc, char **argv)
+static ssize_t prepare_args(unsigned char *buffer, size_t len, int argc, char **argv)
 {
   /* Append arguments */
   int i = 0;
@@ -344,8 +344,8 @@ static void compute_socketpath(char socket_path[PATHSZ], const char merlin_path[
 
 static char
   merlin_path[PATHSZ] = "<not computed yet>",
-  socket_path[PATHSZ] = "<not computed yet>",
-  argbuffer[65536];
+  socket_path[PATHSZ] = "<not computed yet>";
+static unsigned char argbuffer[65536];
 
 static void dumpinfo(void)
 {

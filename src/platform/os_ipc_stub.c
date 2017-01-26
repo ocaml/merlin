@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
-static char buffer[65536];
+static unsigned char buffer[65536];
 
 #define NO_EINTR(var, command) \
   do { (var) = command; } while ((var) == -1 && errno == EINTR)
