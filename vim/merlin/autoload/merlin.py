@@ -132,9 +132,22 @@ def merlin_exec(*args, input=""):
         print("Failed starting ocamlmerlin. Please ensure that ocamlmerlin binary is executable.")
         raise e
 
-def command(*args, context=None):
+verbosity_counter = (None,None)
+
+def command(*args, context=None, track_verbosity=None):
+    global verbosity_counter
+    if track_verbosity:
+        if track_verbosity is True:
+            track_verbosity = args
+        if verbosity_counter[0] == track_verbosity:
+            verbosity_counter = (track_verbosity,verbosity_counter[1]+1)
+        else:
+            verbosity_counter = (track_verbosity,0)
+        verbosity = ["-verbosity",str(verbosity_counter[1])]
+    else:
+        verbosity = []
     (filename, content) = context or current_context()
-    cmdline = ["server"] + list(args) + ["-filename",filename] + \
+    cmdline = ["server"] + list(args) + ["-filename",filename] + verbosity + \
             concat_map(lambda ext: ("-extension",ext), vim_list_if_set("b:merlin_extensions")) + \
             concat_map(lambda pkg: ("-package",pkg), vim_list_if_set("b:merlin_packages")) + \
             vim.eval('g:merlin_binary_flags') + \
@@ -197,7 +210,7 @@ def command_complete_cursor(base,pos):
     with_doc = vim_is_set('g:merlin_completion_with_doc', default=True)
     cmd = ["complete-prefix", "-position", fmtpos(pos), "-prefix", base,
            "-doc", (with_doc and "y" or "n")]
-    return command(*cmd)
+    return command(*cmd,track_verbosity=True)
 
 def command_document(path, pos):
     try:
@@ -532,7 +545,7 @@ def vim_type_enclosing():
     vim_type_reset()
     try:
         to_line, to_col = vim.current.window.cursor
-        enclosing_types = command("type-enclosing", "-position", fmtpos((to_line,to_col)))
+        enclosing_types = command("type-enclosing", "-position", fmtpos((to_line,to_col)), track_verbosity=True)
         if enclosing_types != []:
             return vim_next_enclosing()
         else:
@@ -648,5 +661,4 @@ def setup_merlin():
     # This allows merlin idle-job to preload content if nothing else is requested.
     if 'dot_merlins' in result:
         fnames = ','.join(map(lambda fname: '"'+fname+'"', result['dot_merlins']))
-        print(fnames)
         vim.command('let b:dotmerlin=[{0}]'.format(fnames))
