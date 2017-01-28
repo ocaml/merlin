@@ -242,7 +242,11 @@ merlin-locate, see `merlin-locate-in-new-window').")
 error list changes")
 (defvar-local merlin--dwimed nil
   "Remember if we used dwim for the current completion or not")
-
+(defconst merlin--default-mode-line mode-line-format
+  "Remember the default mode line to restore later")
+(defvar-local merlin--temporary-mode-line-timeout 20
+  "Timeout that the temporarily changed mode-line will be
+reverted back to default")
 
 ;;;;;;;;;;;
 ;; UTILS ;;
@@ -1176,6 +1180,17 @@ prefix of `bar' is `'."
 ;; EXPRESSION TYPING ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun merlin--display-temporary-mode-line (text time)
+  "Display TEXT in mode line for TIME seconds."
+  (let ((buf (current-buffer)))
+    (setq mode-line-format text)
+    (run-at-time time nil
+                 (lambda (v b)
+                   (with-current-buffer b
+                     (setq mode-line-format v)
+                     (force-mode-line-update)))
+                 merlin--default-mode-line buf)))
+
 (defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
   "Get the type of EXP inside the local context."
   (when exp (merlin/send-command-async
@@ -1188,8 +1203,14 @@ prefix of `bar' is `'."
 If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
       (unless quiet (message "<no information>"))
-    (let ((count (merlin--count-lines type)))
-      (merlin/display-in-type-buffer type)
+    (let* ((count (merlin--count-lines type))
+          (start (car bounds))
+          (end (cdr bounds))
+          (object (buffer-substring-no-properties start end))
+          (type-message (concat object ": " type)))
+      (merlin--display-temporary-mode-line type-message
+                                           merlin--temporary-mode-line-timeout)
+      (merlin/display-in-type-buffer type-message)
       (if (> count 8)
           (display-buffer merlin-type-buffer-name)
         (message "%s"
