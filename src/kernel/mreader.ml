@@ -18,7 +18,7 @@ type result = {
 
 (* Normal entry point *)
 
-let normal_parse ?for_completion _trace config source =
+let normal_parse tr ?for_completion config source =
   let kind =
     let filename = Msource.filename source in
     let extension =
@@ -40,7 +40,7 @@ let normal_parse ?for_completion _trace config source =
   let no_labels_for_completion, lexer = match for_completion with
     | None -> false, lexer
     | Some pos ->
-      let pos = Msource.get_lexing_pos source pos in
+      let pos = Msource.get_lexing_pos tr source pos in
       Mreader_lexer.for_completion lexer pos
   in
   let parser = Mreader_parser.make Mconfig.(config.ocaml.warnings) lexer kind in
@@ -59,40 +59,41 @@ type outcometree = Extend_protocol.Reader.outcometree
 
 let ambient_reader = ref None
 
-let instantiate_reader spec source = match spec with
+let instantiate_reader tr spec source = match spec with
   | [] -> ((lazy None), ignore)
   | name :: args ->
-    let reader = lazy (Mreader_extend.start name args source) in
+    let reader = lazy (Mreader_extend.start tr name args source) in
     (reader, (fun () ->
        if Lazy.is_val reader then
          match Lazy.force reader with
          | None -> ()
-         | Some reader -> Mreader_extend.stop reader))
+         | Some reader -> Mreader_extend.stop tr reader))
 
-let with_ambient_reader config source f =
+let with_ambient_reader tr config source f =
   let ambient_reader' = !ambient_reader in
   let reader_spec = Mconfig.(config.merlin.reader) in
-  let reader, stop = instantiate_reader reader_spec source in
+  let reader, stop = instantiate_reader tr reader_spec source in
   ambient_reader := Some (reader, reader_spec, source);
   Misc.try_finally f
     (fun () -> ambient_reader := ambient_reader'; stop ())
 
-let try_with_reader config source f =
+let try_with_reader tr config source f =
   let reader_spec = Mconfig.(config.merlin.reader) in
   let lazy reader, stop =
     match !ambient_reader with
     | Some (reader, reader_spec', source')
       when compare reader_spec reader_spec' = 0 &&
            compare source source' = 0 -> reader, ignore
-    | _ -> instantiate_reader reader_spec source
+    | _ -> instantiate_reader tr reader_spec source
   in
   match reader with
   | None -> stop (); None
   | Some reader ->
     Misc.try_finally (fun () -> f reader) stop
 
-let print_pretty config source tree =
-  match try_with_reader config source (Mreader_extend.print_pretty tree) with
+let print_pretty tr config source tree =
+  match try_with_reader tr config source
+          (Mreader_extend.print_pretty tr tree) with
   | Some result -> result
   | None ->
     let ppf, to_string = Std.Format.to_string () in
@@ -112,31 +113,34 @@ let default_print_outcome tree =
   Mocaml.default_printer Format.str_formatter tree;
   Format.flush_str_formatter ()
 
-let print_outcome config source tree =
-  match try_with_reader config source (Mreader_extend.print_outcome tree) with
+let print_outcome tr config source tree =
+  match try_with_reader tr config source (Mreader_extend.print_outcome tr tree) with
   | Some result -> result
   | None -> default_print_outcome tree
 
-let print_batch_outcome config source tree =
-  match try_with_reader config source (Mreader_extend.print_outcomes tree) with
+let print_batch_outcome tr config source tree =
+  match try_with_reader tr config source
+          (Mreader_extend.print_outcomes tr tree) with
   | Some result -> result
   | None -> List.map default_print_outcome tree
 
-let reconstruct_identifier config source pos =
+let reconstruct_identifier tr config source pos =
   match
-    try_with_reader config source (Mreader_extend.reconstruct_identifier pos)
+    try_with_reader tr config source
+      (Mreader_extend.reconstruct_identifier tr pos)
   with
   | Some result -> result
   | None -> Mreader_lexer.reconstruct_identifier source pos
 
 (* Entry point *)
 
-let parse ?for_completion _trace config source =
+let parse tr ?for_completion config source =
   match
-    try_with_reader config source (Mreader_extend.parse ?for_completion)
+    try_with_reader tr config source
+      (Mreader_extend.parse tr ?for_completion)
   with
   | Some (`No_labels no_labels_for_completion, parsetree) ->
     let (lexer_errors, parser_errors, comments) = ([], [], []) in
     { config; lexer_errors; parser_errors; comments; parsetree;
       no_labels_for_completion; }
-  | None -> normal_parse ?for_completion _trace config source
+  | None -> normal_parse tr ?for_completion config source

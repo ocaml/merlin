@@ -44,7 +44,7 @@ val drop_leaf : t -> t option
  *    foo bar (baz :: tail) <cursor>
  * asking for node from cursor position will return context of "tail".
  * Returns the matching node and all its ancestors or the empty list. *)
-val deepest_before : Lexing.position -> t list -> t
+val deepest_before : Trace.t -> Lexing.position -> t list -> t
 
 val enclosing : Lexing.position -> t list -> t
 
@@ -59,3 +59,7 @@ val of_typedtree :
 val is_recovered_expression : Typedtree.expression -> bool
 val is_recovered : Browse_raw.node -> bool
 
+(** {1 Dump} *)
+
+val print_node : unit -> node -> string
+val print : unit -> t -> string

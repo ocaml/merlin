@@ -1,81 +1,88 @@
-open Sturgeon_stub
+(*open Sturgeon_stub*)
 
-let destination = ref null
+let ikfprintf =
+  let open Printf in
+  let open Printf_compat in
+  ikfprintf
 
-let set_destination cursor =
+(*let destination = ref null*)
+
+(*let set_destination cursor =
   let c = Cursor.sub cursor in
   Cursor.text cursor "\n";
   Cursor.link cursor "Clear" (fun _ -> Cursor.clear c);
-  destination := c
+  destination := c*)
+
+(*let start ?(limit=max_int) () =
+  { cursor = Sturgeon_stub.Cursor.sub !destination; limit; indent = 0 }*)
+
+(*let cursor t = t.cursor*)
+
+(*let is_open t = not (Sturgeon_stub.Cursor.is_closed t.cursor)*)
+(*let is_closed t = Sturgeon_stub.Cursor.is_closed t.cursor*)
 
 type t = {
-  cursor: Sturgeon_stub.cursor;
+  (*cursor: Sturgeon_stub.cursor;*)
   limit: int;
   indent: int;
 }
 
+let null = { limit = 0; indent = 0 }
+
 let start ?(limit=max_int) () =
-  { cursor = Sturgeon_stub.Cursor.sub !destination; limit; indent = 0 }
+  { limit; indent = 0 }
 
-let cursor t = t.cursor
-
-let is_open t = not (Sturgeon_stub.Cursor.is_closed t.cursor)
-let is_closed t = Sturgeon_stub.Cursor.is_closed t.cursor
+let is_open t = t.limit > 0
+let is_closed t = not (is_open t)
 
 let null = {
-  cursor = null;
+  (*cursor = null;*)
   limit  = 0;
   indent = 0;
 }
 
-let sub t cursor =
-  {limit = t.limit - 1; cursor; indent = t.indent + 2}
+let sub t =
+  {limit = t.limit - 1; indent = t.indent + 2}
 
 let indent n = String.make n ' '
 
-let format_return offset cursor return f x =
+(*let trace_buffer, trace_formatter =
+  let buffer = Buffer.create 4096 in
+  buffer, Format.formatter_of_buffer buffer
+
+let reset_trace_formatter () =
+  Format.pp_flush_formatter trace_formatter;
+  Buffer.reset trace_buffer
+
+let flush_trace_formatter () =
+  Format.pp_flush_formatter trace_formatter;
+  let result = Buffer.contents trace_buffer in
+  Buffer.reset trace_buffer;
+  result*)
+
+let format_return offset return f x =
   match f x with
   | exception exn ->
-    Cursor.text cursor
-      ("\n" ^ indent offset ^ "RAISE " ^ Printexc.to_string exn);
+    prerr_endline (indent offset ^ "RAISE " ^ Printexc.to_string exn);
     raise exn
   | v ->
-    let pp =
-      Format.make_formatter
-        (fun str ofs len -> Cursor.text cursor (String.sub str ofs len))
-        ignore
-    in
-    Format.pp_open_box pp offset;
-    Format.pp_force_newline pp ();
-    Format.pp_print_string pp "return ";
-    begin try return pp v
+    let msg =
+      try return () v
       with exn -> assert false
-    end;
+    in
+    prerr_endline (indent offset ^ "return: " ^ msg);
     v
 
 let enter_open t fmt return =
   let print str f =
-    Cursor.text t.cursor (indent t.indent);
-    Cursor.text t.cursor str;
-    let opened = ref (t.limit <> 0) in
-    let render cursor =
-      Cursor.text cursor (if !opened then " [+]" else " [-]");
-      let cursor = Cursor.rem_flag `Clickable cursor in
-      let t' = if !opened then sub t cursor else null in
-      format_return (t.indent + 1) cursor return f t'
-    in
-    let c' = Cursor.clickable t.cursor
-        (fun c' -> opened := not !opened; Cursor.clear c'; ignore (render c'))
-    in
-    Cursor.text t.cursor "\n";
-    render c'
+    prerr_endline (indent t.indent ^ str);
+    format_return (t.indent + 1) return f
+      {t with indent = t.indent + 2}
   in
   Printf.ksprintf print fmt
 
 let print_closed fmt =
   let print () f = f null in
-  let open Printf in
-  let open Printf_compat in
   ikfprintf print () fmt
 
 let enter t fmt ~return =
@@ -83,20 +90,22 @@ let enter t fmt ~return =
     print_closed fmt
   else enter_open t fmt return
 
-let step_open t fmt return =
+let message t fmt =
+  if is_closed t then
+    ikfprintf ignore () fmt
+  else
+    let print str = prerr_endline (indent t.indent ^ str) in
+    Printf.ksprintf print fmt
+
+(*let step_open t fmt return =
   let print str f =
-    Cursor.text t.cursor (indent t.indent);
-    Cursor.text t.cursor str;
-    let r =
-      format_return (t.indent + 1) t.cursor return f
-        {t with indent = t.indent + 2}
-    in
-    Cursor.text t.cursor "\n";
-    r
+    prerr_endline (indent t.indent ^ str);
+    format_return (t.indent + 1) return f
+      {t with indent = t.indent + 2}
   in
   Printf.ksprintf print fmt
 
 let step t fmt ~return =
   if is_closed t then
     print_closed fmt
-  else step_open t fmt return
+  else step_open t fmt return*)

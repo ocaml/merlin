@@ -722,9 +722,7 @@ let inspect_pattern ~pos ~parent p =
 let inspect_context browse path pos =
   match Mbrowse.enclosing pos browse with
   | [] ->
-    logfmt "inspect_context"
-      (fun fmt -> Format.fprintf fmt "no enclosing around: %a"
-          Lexing.print_position pos);
+    logf "inspect_context" "no enclosing around: %a" Lexing.print_position pos;
     Some Unknown
   | enclosings ->
     let open Browse_raw in

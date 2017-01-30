@@ -14,7 +14,7 @@ type typedtree = [
   | `Implementation of Typedtree.structure
 ]
 
-val run : Mconfig.t -> Msource.t -> Mreader.parsetree -> result
+val run : Trace.t -> Mconfig.t -> Msource.t -> Mreader.parsetree -> result
 
 val with_typer : result -> (unit -> 'a) -> 'a
 
@@ -38,4 +38,5 @@ val get_errors : result -> exn list
  *      preferable to use env from enclosing module rather than an env from
  *      inside x definition.
  *)
-val node_at : ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t
+val node_at : Trace.t ->
+  ?skip_recovered:bool -> result -> Lexing.position -> Mbrowse.t

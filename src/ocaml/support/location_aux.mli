@@ -41,3 +41,8 @@ val extend : t -> t -> t
 
 (** Filter valid errors, log invalid ones *)
 val prepare_errors : exn list -> Location.error list
+
+(** {1 Dump} *)
+
+val print : unit -> t -> string
+val print_loc : (unit -> 'a -> string) -> unit -> 'a Location.loc -> string

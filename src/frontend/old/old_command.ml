@@ -46,7 +46,7 @@ let default_config = ref Mconfig.initial
 let normalize_document doc =
   doc.Context.path, doc.Context.dot_merlins
 
-let new_buffer (path, dot_merlins) =
+let new_buffer tr (path, dot_merlins) =
   let open Mconfig in
   let query = match path with
     | None -> !default_config.query
@@ -61,19 +61,19 @@ let new_buffer (path, dot_merlins) =
   }
   in
   let config = {!default_config with query; merlin} in
-  { config; source = Msource.make config "" }
+  { config; source = Msource.make tr config "" }
 
-let new_state document =
-  { buffer = new_buffer document }
+let new_state tr document =
+  { buffer = new_buffer tr document }
 
 let checkout_buffer_cache = ref []
 let checkout_buffer =
   let cache_size = 8 in
-  fun document ->
+  fun tr document ->
     let document = normalize_document document in
     try List.assoc document !checkout_buffer_cache
     with Not_found ->
-      let buffer = new_buffer document in
+      let buffer = new_buffer tr document in
       begin match document with
         | Some path, _ ->
           checkout_buffer_cache :=
@@ -82,7 +82,7 @@ let checkout_buffer =
       end;
       buffer
 
-let print_completion_entries config source entries =
+let print_completion_entries tr config source entries =
   let input_ref = ref [] and output_ref = ref [] in
   let preprocess entry =
     match Completion.raw_info_printer entry with
@@ -99,7 +99,7 @@ let print_completion_entries config source entries =
       `Concat (s,r)
   in
   let entries = List.map ~f:(Completion.map_entry preprocess) entries in
-  let outcomes = Mreader.print_batch_outcome config source !input_ref in
+  let outcomes = Mreader.print_batch_outcome tr config source !input_ref in
   List.iter2 (:=) !output_ref outcomes;
   let postprocess = function
     | `String s -> s
@@ -118,11 +118,11 @@ let with_typer ?for_completion buffer f =
   let typer = Mpipeline.typer_result pipeline in
   Mtyper.with_typer typer @@ fun () -> f pipeline typer
 
-let dispatch_sync state (type a) : a sync_command -> a = function
+let dispatch_sync tr state (type a) : a sync_command -> a = function
   | Idle_job -> false
 
   | Tell (pos_start, pos_end, text) ->
-    let source = Msource.substitute state.source pos_start pos_end text in
+    let source = Msource.substitute tr state.source pos_start pos_end text in
     state.source <- source
 
   | Refresh ->
@@ -201,13 +201,13 @@ let dispatch_sync state (type a) : a sync_command -> a = function
 
   | Checkout _ -> failwith "invalid arguments"
 
-let default_state = lazy (new_state (None, None))
+let default_state = lazy (new_state Trace.null (None, None))
 
 let document_states
   : (string option * string list option, state) Hashtbl.t
   = Hashtbl.create 7
 
-let dispatch (type a) (context : Context.t) (cmd : a command) =
+let dispatch tr (type a) (context : Context.t) (cmd : a command) =
   let open Context in
   (* Document selection *)
   let state = match context.document with
@@ -216,7 +216,7 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
       let document = normalize_document document in
       try Hashtbl.find document_states document
       with Not_found ->
-        let state = new_state document in
+        let state = new_state tr document in
         Hashtbl.add document_states document state;
         state
   in
@@ -237,9 +237,9 @@ let dispatch (type a) (context : Context.t) (cmd : a command) =
   (* Actual dispatch *)
   match cmd with
   | Query q ->
-    Mreader.with_ambient_reader config state.buffer.source @@ fun () ->
+    Mreader.with_ambient_reader tr config state.buffer.source @@ fun () ->
     Query_commands.dispatch (Trace.start (), config,state.buffer.source) q
   | Sync (Checkout context) when state == Lazy.force default_state ->
-    let buffer = checkout_buffer context in
+    let buffer = checkout_buffer tr context in
     state.buffer <- buffer
-  | Sync s -> dispatch_sync state.buffer s
+  | Sync s -> dispatch_sync tr state.buffer s

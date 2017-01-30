@@ -38,33 +38,39 @@ let run = function
       usage ();
       1
     | New_commands.Command (_name, doc, spec, command_args, command_action) ->
+      (* Setup notifications *)
       let notifications = ref [] in
       Logger.with_notifications notifications @@ fun () ->
+      (* Parse commandline *)
       match begin
-        let fails = ref [] in
         let config, command_args =
-          Marg.parse_all ~warning:(fun fail -> fails := fail :: !fails)
-            Mconfig.arguments_table spec
-            raw_args Mconfig.initial command_args
+          let fails = ref [] in
+          let config, command_args =
+            Marg.parse_all ~warning:(fun fail -> fails := fail :: !fails)
+              Mconfig.arguments_table spec
+              raw_args Mconfig.initial command_args
+          in
+          let config =
+            let failures = !fails in
+            Mconfig.({config with merlin = {config.merlin with failures}}) in
+          let config = Mconfig.(match config.query.directory with
+              | "" -> config
+              | dir ->
+                let merlin = config.merlin in
+                let merlin = {merlin with dotmerlin_to_load =
+                                            dir :: merlin.dotmerlin_to_load} in
+                {config with merlin}
+            )
+          in
+          config, command_args
         in
+        (* Start processing query *)
         Logger.with_log_file Mconfig.(config.merlin.log_file) @@ fun () ->
-        let config =
-          let failures = !fails in
-          Mconfig.({config with merlin = {config.merlin with failures}}) in
-        let config = Mconfig.(match config.query.directory with
-            | "" -> config
-            | dir ->
-              let merlin = config.merlin in
-              let merlin = {merlin with dotmerlin_to_load =
-                                          dir :: merlin.dotmerlin_to_load} in
-              {config with merlin}
-          )
-        in
-        let trace = Trace.start () in
-        let source = Msource.make config (Misc.string_of_file stdin) in
+        let tr = Trace.start () in
+        let source = Msource.make tr config (Misc.string_of_file stdin) in
         let json =
           let class_, message =
-            match command_action (trace,config,source) command_args with
+            match command_action (tr,config,source) command_args with
             | result ->
               ("return", result)
             | exception (Failure str) ->

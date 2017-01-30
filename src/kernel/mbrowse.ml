@@ -161,7 +161,7 @@ let enclosing pos roots =
   | [] -> []
   | root -> best_node pos (select_leafs pos root)
 
-let deepest_before pos roots =
+let deepest_before trace pos roots =
   match enclosing pos roots with
   | [] -> []
   | root ->
@@ -217,3 +217,9 @@ and is_recovered_Texp_construct cstr =
 let is_recovered = function
   | Expression e -> is_recovered_expression e
   | _ -> false
+
+let print_node () node =
+  Browse_raw.string_of_node node
+
+let print () t =
+  List.print (fun () (_,node) -> print_node () node) () t

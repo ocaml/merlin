@@ -35,6 +35,9 @@ module Json = struct
   let option f = function
     | None -> `Null
     | Some x -> f x
+
+  let print f () x =
+    pretty_to_string (f x)
 end
 
 type json =
@@ -265,6 +268,9 @@ module List = struct
 
   let sort_uniq ~cmp l =
     uniq ~cmp (sort ~cmp l)
+
+  let print f () l =
+    "[ " ^ String.concat "; " (List.map (f ()) l) ^ " ]"
 end
 
 module Option = struct
@@ -312,6 +318,10 @@ module Option = struct
   let is_some = function
     | None -> false
     | _ -> true
+
+  let print f () = function
+    | None -> "None"
+    | Some s -> "Some (" ^ f () s ^ ")"
 end
 
 module String = struct
@@ -400,6 +410,8 @@ module String = struct
     while !rl > r0 && is_space str.[!rl - 1] do decr rl done;
     let rl = !rl in
     if r0 = 0 && rl = l then str else sub str ~pos:r0 ~len:(rl - r0)
+
+  let print () s = Printf.sprintf "%S" s
 end
 
 let sprintf = Printf.sprintf
@@ -511,9 +523,9 @@ module Lexing = struct
     | 0 -> compare (column p1) (column p2)
     | n -> n
 
-  let print_position ppf p =
-    let line, col = split_pos p in
-    Format.fprintf ppf "%d:%d" line col
+  let print_position () p =
+    let l1, c1 = split_pos p in
+    sprintf "%d:%d" l1 c1
 
   (* Current position in lexer, even if the buffer is in the middle of a refill
      operation *)

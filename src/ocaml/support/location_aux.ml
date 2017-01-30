@@ -70,3 +70,12 @@ let prepare_errors exns =
             (fun () -> Printexc.to_string) exn;
         err
       )
+
+let print () {Location. loc_start; loc_end; loc_ghost}  =
+  let l1, c1 = Lexing.split_pos loc_start in
+  let l2, c2 = Lexing.split_pos loc_end in
+  sprintf "%d:%d-%d:%d%s"
+    l1 c1 l2 c2 (if loc_ghost then "{ghost}" else "")
+
+let print_loc f () {Location. txt; loc} =
+  sprintf "%a@%a" f txt print loc

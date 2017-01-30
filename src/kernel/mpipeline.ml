@@ -24,8 +24,8 @@ type t = {
 let input_config t = t.config
 let input_source t = t.source
 
-let with_reader t f =
-  Mreader.with_ambient_reader t.config t.source f
+let with_reader tr t f =
+  Mreader.with_ambient_reader tr t.config t.source f
 
 let reader t = Lazy.force t.reader
 
@@ -48,27 +48,27 @@ let final_config  t = (ppx t).Ppx.config
 let typer_result t = (typer t).Typer.result
 let typer_errors t = Lazy.force (typer t).Typer.errors
 
-let process trace config source reader =
+let process tr config source reader =
   let ppx = lazy (
     let lazy ({Mreader.parsetree}, config) = reader in
     let caught = ref [] in
     Msupport.catch_errors Mconfig.(config.ocaml.warnings) caught @@ fun () ->
-    let config, parsetree = Mppx.rewrite trace config parsetree in
+    let config, parsetree = Mppx.rewrite tr config parsetree in
     { Ppx. config; parsetree; errors = !caught }
   ) in
   let typer = lazy (
     let lazy { Ppx. config; parsetree; errors } = ppx in
-    let result = Mtyper.run config source parsetree in
+    let result = Mtyper.run tr config source parsetree in
     let errors = lazy (Mtyper.get_errors result) in
     { Typer. errors; result }
   ) in
   { config; source; reader; ppx; typer }
 
-let make ?for_completion trace config source =
-  let config = Mconfig.normalize trace config in
+let make tr ?for_completion config source =
+  let config = Mconfig.normalize tr config in
   let reader = lazy (
-    let result = Mreader.parse ?for_completion trace config source in
-    let config = Mconfig.normalize trace config in
+    let result = Mreader.parse tr ?for_completion config source in
+    let config = Mconfig.normalize tr config in
     result, config
   ) in
-  process trace config source reader
+  process tr config source reader

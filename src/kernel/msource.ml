@@ -6,7 +6,28 @@ type t = {
   text: string;
 }
 
-let make config text = {filename = Mconfig.(config.query.filename); text}
+let dump t = `Assoc [
+    "filename" , `String t.filename;
+    "text"     , `String t.text;
+  ]
+
+let dump_short t = `Assoc [
+    "filename" , `String t.filename;
+    "text"     , `String "...";
+  ]
+
+let print_position () = function
+  | `Start -> "start"
+  | `Offset o -> string_of_int o
+  | `Logical (l,c) -> string_of_int l ^ ":" ^ string_of_int c
+  | `End -> "end"
+
+let make tr config text =
+  Trace.enter tr "Msource.make %a %S"
+    (Json.print Mconfig.dump) config text
+    ~return:(Json.print dump)
+  @@ fun _tr ->
+  {filename = Mconfig.(config.query.filename); text}
 
 (* Position management *)
 
@@ -111,9 +132,40 @@ let get_lexing_pos t pos =
     pos_cnum = o;
   }
 
-let substitute t starting ending text =
+let get_offset tr t pos =
+  Trace.enter tr "Msource.get_offset %a %a"
+    (Json.print dump_short) t
+    print_position pos
+    ~return:(fun()->function (`Offset o) -> string_of_int o |_->"")
+  @@ fun _tr -> get_offset t pos
+
+let get_logical tr t pos =
+  Trace.enter tr "Msource.get_logical %a %a"
+    (Json.print dump_short) t
+    print_position pos
+    ~return:(fun()->function (`Logical (l,c)) -> sprintf "%d:%d" l c |_->"")
+  @@ fun _tr -> get_logical t pos
+
+let get_lexing_pos tr t pos =
+  Trace.enter tr "Msource.lexing_pos %a %a"
+    (Json.print dump_short) t
+    print_position pos
+    ~return:Lexing.print_position
+  @@ fun _tr -> get_lexing_pos t pos
+
+let substitute tr t starting ending text =
+  Trace.enter tr "Msource.substitute %a %a %a %S"
+    (Json.print dump_short) t
+    print_position starting
+    (fun () -> function
+       | #position as p -> print_position () p
+       | `Length n -> "length " ^ string_of_int n
+    ) ending
+    text
+    ~return:(Json.print dump_short)
+  @@ fun tr ->
   let len = String.length t.text in
-  let `Offset starting = get_offset t starting in
+  let `Offset starting = get_offset tr t starting in
   let `Offset ending = match ending with
     | `End -> `Offset len
     | `Length l ->
@@ -125,7 +177,7 @@ let substitute t starting ending text =
           starting l t.filename len;
         `Offset len
       end
-    | #position as p -> get_offset t p
+    | #position as p -> get_offset tr t p
   in
   if ending < starting then
     invalid_arg "Source.substitute: ending < starting";
@@ -144,13 +196,3 @@ let unitname t = Misc.unitname t.filename
 
 let text t = t.text
 
-let dump t = `Assoc [
-    "filename" , `String t.filename;
-    "text"     , `String t.text;
-  ]
-
-let dump_position = function
-  | `Start -> "start"
-  | `Offset o -> string_of_int o
-  | `Logical (l,c) -> string_of_int l ^ ":" ^ string_of_int c
-  | `End -> "end"

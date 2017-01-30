@@ -6,6 +6,7 @@ type typedtree = [
 ]
 
 type result = {
+  id        : int;
   config    : Mconfig.t;
   state     : Mocaml.typer_state;
   errors    : exn list;
@@ -13,7 +14,21 @@ type result = {
   typedtree : typedtree;
 }
 
-let run config source parsetree =
+let id = let k = ref 0 in fun () -> incr k; !k
+
+let print_result () {id; _} =
+  sprintf "<Mtyper.result%d>" id
+
+let run tr config source parsetree =
+  Trace.enter tr
+    "Mtyper.run %a %a %a"
+    (Json.print Mconfig.dump) config
+    (Json.print Msource.dump) source
+    (fun () -> function `Implementation _ -> "Implementation _"
+                      | `Interface _ -> "Interface _")
+    parsetree
+    ~return:print_result
+  @@ fun tr ->
   Mocaml.setup_config config;
   let state = Mocaml.new_state ~unit_name:(Msource.unitname source) in
   Mocaml.with_state state @@ fun () ->
@@ -25,8 +40,8 @@ let run config source parsetree =
   let env0 = Extension.register Mconfig.(config.merlin.extensions) env0 in
   let location = {
     Location.
-    loc_start = Msource.get_lexing_pos source `Start;
-    loc_end = Msource.get_lexing_pos source `End;
+    loc_start = Msource.get_lexing_pos tr source `Start;
+    loc_end = Msource.get_lexing_pos tr source `End;
     loc_ghost = false;
   } in
   let typedtree = match parsetree with
@@ -40,7 +55,7 @@ let run config source parsetree =
   let checks = !Typecore.delayed_checks in
   let errors = !caught in
   Typecore.reset_delayed_checks ();
-  { config; state; typedtree; checks; errors }
+  { id = id (); config; state; typedtree; checks; errors }
 
 let with_typer t f =
   Mocaml.with_state t.state f
@@ -64,7 +79,11 @@ let get_errors t =
   Typecore.reset_delayed_checks ();
   (!caught)
 
-let node_at ?(skip_recovered=false) t pos_cursor =
+let node_at tr ?(skip_recovered=false) t pos_cursor =
+  Trace.enter tr "Mtyper.node_at %a %a"
+    print_result t Lexing.print_position pos_cursor
+    ~return:Mbrowse.print
+  @@ fun tr ->
   assert (Mocaml.is_state t.state);
   let node = Mbrowse.of_typedtree (get_typedtree t) in
   let rec select = function
@@ -74,7 +93,7 @@ let node_at ?(skip_recovered=false) t pos_cursor =
       when Mbrowse.is_recovered node' -> select ancestors
     | l -> l
   in
-  match Mbrowse.deepest_before pos_cursor [node] with
+  match Mbrowse.deepest_before tr pos_cursor [node] with
   | [] -> [get_env t, Browse_raw.Dummy]
   | path when skip_recovered -> select path
   | path -> path
