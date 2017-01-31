@@ -189,8 +189,8 @@ def fmtpos(arg):
     if arg is None:
         return "end"
     elif isinstance(arg, dict):
-        line = dict['line']
-        col = dict['col']
+        line = arg['line']
+        col = arg['col']
     elif isinstance(arg, tuple) or isinstance(arg, list):
         (line, col) = arg
     else:
@@ -534,8 +534,8 @@ def vim_case_analysis():
 
     tmp = enclosing_types[current_enclosing]
     try:
-        tmp['start']
-        result = command("case-analysis", "-start", tmp['start'], "-end", tmp['end'])
+        result = command("case-analysis", "-start", fmtpos(tmp['start']),
+                                          "-end", fmtpos(tmp['end']))
         tmp = result[0]
         txt = result[1]
         replace_buffer_portion(tmp['start'], tmp['end'], txt)
