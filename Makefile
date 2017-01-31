@@ -82,7 +82,8 @@ distclean: clean
 
 install-binary: $(TARGET)
 	install -d $(BIN_DIR)
-	install $(TARGET)$(EXE) $(BIN_DIR)/ocamlmerlin$(EXE)
+	install $(TARGET)$(EXE) $(BIN_DIR)/ocamlmerlin-server$(EXE)
+	install ocamlmerlin$(EXE) $(BIN_DIR)/ocamlmerlin$(EXE)
 
 install-share: $(TARGET_EMACS)
 	install -d $(SHARE_DIR)
