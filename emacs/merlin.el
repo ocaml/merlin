@@ -1474,7 +1474,7 @@ Empty string defaults to jumping to all these."
   (when (or merlin-configuration-function merlin-grouping-function)
     (with-demoted-errors
       "merlin-command: invalid configuration (%S)"
-      funcall (or merlin-configuration-function merlin-grouping-function))))
+      (funcall (or merlin-configuration-function merlin-grouping-function)))))
 
 (defun merlin-command ()
   "Return or update path of ocamlmerlin binary selected by configuration"
