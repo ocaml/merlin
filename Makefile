@@ -97,8 +97,6 @@ install-share: $(TARGET_EMACS)
 	-install -m 644 emacs/merlin-cap.elc $(SHARE_DIR)/emacs/site-lisp/merlin-cap.elc
 	install -m 644 emacs/merlin-company.el $(SHARE_DIR)/emacs/site-lisp/merlin-company.el
 	-install -m 644 emacs/merlin-company.elc $(SHARE_DIR)/emacs/site-lisp/merlin-company.elc
-	install -m 644 emacs/merlin-compat.el $(SHARE_DIR)/emacs/site-lisp/merlin-compat.el
-	-install -m 644 emacs/merlin-compat.elc $(SHARE_DIR)/emacs/site-lisp/merlin-compat.elc
 
 install-vim:
 	install -d $(VIM_DIR)
