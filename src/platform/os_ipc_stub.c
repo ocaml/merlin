@@ -113,7 +113,7 @@ value ml_merlin_daemon_connect(value file_descr)
     {
       if (buffer[i] == '\0')
       {
-        Store_field(argv, argc, caml_copy_string(&buffer[j]));
+        Store_field(argv, argc, caml_copy_string((const char *)&buffer[j]));
         j = i + 1;
         argc += 1;
       }
