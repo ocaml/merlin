@@ -19,6 +19,16 @@ let unit_ignore : 'a t =
 let param_ignore =
   fun x -> param "string" (fun _ x -> x) x
 
+let bool f = param "bool"
+    (function
+      | "y" | "Y" | "true" | "True" | "1" -> f true
+      | "n" | "N" | "false" | "False" | "0" -> f false
+      | str ->
+        failwithf "expecting boolean (%s), got %S."
+          "y|Y|true|1 / n|N|false|0"
+          str
+    )
+
 type docstring = string
 
 type 'a spec = (string * docstring * 'a t)

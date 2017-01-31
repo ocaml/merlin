@@ -121,6 +121,7 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
+  trace       : bool;
 
   flags_to_apply    : flag_list list;
   dotmerlin_to_load : string list;
@@ -164,6 +165,7 @@ let dump_merlin x =
         | `Sexp -> `String "sexp"
       );
     "log_file"     , Json.option Json.string x.log_file;
+    "trace"        , `Bool x.trace;
     "flags_to_apply"   , `List (List.map dump_flag_list x.flags_to_apply);
     "dotmerlin_to_load", `List (List.map Json.string x.dotmerlin_to_load);
     "packages_to_load" , `List (List.map Json.string x.packages_to_load);
@@ -249,6 +251,11 @@ let merlin_flags = [
     "-log-file",
     Marg.param "file" (fun file merlin -> {merlin with log_file = Some file}),
     "<file> Log messages to specified file ('' for disabling, '-' for stderr)"
+  );
+  (
+    "-trace",
+    Marg.bool (fun trace merlin -> {merlin with trace}),
+    "<bool> Output a trace of the execution on stderr"
   );
   (
     "-ocamllib-path",
@@ -522,6 +529,7 @@ let initial = {
     reader      = [];
     protocol    = `Json;
     log_file    = None;
+    trace       = false;
 
     flags_to_apply    = [];
     dotmerlin_to_load = [];

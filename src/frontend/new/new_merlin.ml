@@ -66,7 +66,8 @@ let run = function
         in
         (* Start processing query *)
         Logger.with_log_file Mconfig.(config.merlin.log_file) @@ fun () ->
-        let tr = Trace.start () in
+        let tr = (if Mconfig.(config.merlin.trace) then
+                    Trace.start () else Trace.null) in
         let source = Msource.make tr config (Misc.string_of_file stdin) in
         let json =
           let class_, message =

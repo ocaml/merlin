@@ -27,11 +27,11 @@ module M = Mpipeline
 let from_source ?(with_config=fun x -> x) ~filename text =
   let config = with_config Mconfig.initial in
   let config = Mconfig.({config with query = {config.query with filename}}) in
-  (config, Msource.make config text)
+  (config, Msource.make Trace.null config text)
 
 let process ?with_config ?for_completion filename text =
   let config, source = from_source ?with_config ~filename text in
-  M.make ?for_completion (Trace.start ()) config source
+  M.make Trace.null ?for_completion config source
 
 (* All tests *)
 
@@ -359,7 +359,7 @@ let tests = [
     in
     List.concat_map queries ~f:(fun (name, expr, patterns) ->
         List.map patterns ~f:(fun (pos, re) ->
-            type_expr_match (name ^ "-" ^ Msource.dump_position pos) expr pos re))
+            type_expr_match (name ^ "-" ^ Msource.print_position () pos) expr pos re))
   );
 
   group "motion" (

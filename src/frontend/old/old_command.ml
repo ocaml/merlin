@@ -108,13 +108,12 @@ let print_completion_entries tr config source entries =
   in
   List.rev_map ~f:(Completion.map_entry postprocess) entries
 
-let make_pipeline buffer =
-      Mpipeline.make (Trace.start ()) buffer.config buffer.source
+let make_pipeline tr buffer =
+      Mpipeline.make tr buffer.config buffer.source
 
-let with_typer ?for_completion buffer f =
-  let trace = Trace.start () in
+let with_typer tr ?for_completion buffer f =
   let pipeline =
-    Mpipeline.make ?for_completion trace buffer.config buffer.source in
+    Mpipeline.make tr ?for_completion buffer.config buffer.source in
   let typer = Mpipeline.typer_result pipeline in
   Mtyper.with_typer typer @@ fun () -> f pipeline typer
 
@@ -189,13 +188,13 @@ let dispatch_sync tr state (type a) : a sync_command -> a = function
        My_config.version Sys.ocaml_version)
 
   | Flags_get ->
-    let pipeline = make_pipeline state in
+    let pipeline = make_pipeline tr state in
     let config = Mpipeline.final_config pipeline in
     List.concat_map ~f:(fun f -> f.Mconfig.flag_list)
       Mconfig.(config.merlin.flags_to_apply)
 
   | Project_get ->
-    let pipeline = make_pipeline state in
+    let pipeline = make_pipeline tr state in
     let config = Mpipeline.final_config pipeline in
     (Mconfig.(config.merlin.dotmerlin_loaded), `Ok) (*TODO*)
 

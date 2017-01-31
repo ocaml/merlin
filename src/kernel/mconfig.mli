@@ -51,6 +51,7 @@ type merlin = {
   reader      : string list;
   protocol    : [`Json | `Sexp];
   log_file    : string option;
+  trace       : bool;
 
   flags_to_apply    : flag_list list;
   dotmerlin_to_load : string list;

@@ -32,16 +32,6 @@ let marg_position f = Marg.param "position"
               str
     )
 
-let marg_bool f = Marg.param "bool"
-    (function
-      | "y" | "Y" | "true" | "True" | "1" -> f true
-      | "n" | "N" | "false" | "False" | "0" -> f false
-      | str ->
-        failwithf "expecting boolean (%s), got %S."
-          "y|Y|true|1 / n|N|false|0"
-          str
-    )
-
 let rec find_command name = function
   | [] -> raise Not_found
   | (Command (name', _, _, _, _) as command) :: xs ->
@@ -91,7 +81,7 @@ let all_commands = [
       );
       ("-doc",
        "<bool> Add docstring to entries",
-       marg_bool (fun doc (prefix,pos,_doc) -> (prefix,pos,doc))
+       Marg.bool (fun doc (prefix,pos,_doc) -> (prefix,pos,doc))
       );
       ("-prefix",
        "<string> Prefix to complete",

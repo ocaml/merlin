@@ -87,7 +87,7 @@ let signal sg behavior =
 let rec merlin_loop input output =
   let notifications = ref [] in
   Logger.with_notifications notifications @@ fun () ->
-  let tr = Trace.start ~limit:2 () in
+  let tr = Trace.null in
   match
     Trace.enter tr "Merlin main loop"
       ~return:(fun () -> sprintf "continue = %b")

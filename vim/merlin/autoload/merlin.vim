@@ -605,6 +605,9 @@ function! merlin#Register()
   " TODO: bind (,),{,} ?
   command! -buffer -nargs=0 MerlinPhrase call merlin#Phrase()
 
+  """ debug --------------------------------------------------------------------
+  command! -buffer -nargs=0 MerlinDebugLastCommands MerlinPy merlin.vim_last_commands()
+
   if !exists('g:merlin_disable_default_keybindings') || !g:merlin_disable_default_keybindings
     vmap <silent><buffer> <TAB>         :<C-u>MerlinPhrase<return>
   endif

@@ -84,7 +84,10 @@ def current_context():
     content = "\n".join(vim.current.buffer) + "\n"
     return (filename, content)
 
+last_commands = []
+
 def merlin_exec(*args, input=""):
+    global last_commands
     env = os.environ
     if vim.eval("exists('b:merlin_path')") == '1':
         path = vim.eval("b:merlin_path")
@@ -99,6 +102,8 @@ def merlin_exec(*args, input=""):
         env = os.environ
     try:
         cmd = [path] + list(args)
+        last_commands.insert(0, cmd)
+        if len(last_commands) > 5: last_commands.pop()
         # As for OCaml, 64-bit Python still has sys.platform == win32
         # Note that owing to a long-standing bug in Python, stderr must be given
         # (see https://bugs.python.org/issue3905)
@@ -662,3 +667,7 @@ def setup_merlin():
     if 'dot_merlins' in result:
         fnames = ','.join(map(lambda fname: '"'+fname+'"', result['dot_merlins']))
         vim.command('let b:dotmerlin=[{0}]'.format(fnames))
+
+def vim_last_commands():
+    global last_commands
+    print("Last merlin commands:\n" + "\n".join(last_commands))
