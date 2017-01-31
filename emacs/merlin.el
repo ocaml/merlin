@@ -1074,8 +1074,8 @@ strictly within, or nil if there is no such element."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun merlin--replace-buff-portion (start stop txt)
-  (let ((start (merlin--point-of-pos start))
-        (stop  (merlin--point-of-pos stop)))
+  (let ((start (1- (merlin--point-of-pos start)))
+        (stop  (1- (merlin--point-of-pos stop))))
     (save-excursion
       (delete-region start stop)
       (goto-char start)
