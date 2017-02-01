@@ -419,6 +419,13 @@ let remove_merlin_loc_attr e =
       )
   }
 
+let remove_merlin_attr e =
+  let open Typedtree in
+  { e with
+    exp_attributes =
+      List.filter e.exp_attributes ~f:(fun (str_loc, _) ->
+          not (String.is_prefixed ~by:"merlin." str_loc.Location.txt))
+  }
 
 let get_class_field_desc_infos = function
   | Typedtree.Tcf_val (str_loc,_,_,_,_) -> Some (str_loc, `Value)

@@ -342,7 +342,7 @@ and pattern ctxt f x =
     | Ppat_alias (p, s) ->
         pp f "@[<2>%a@;as@;%a@]" (pattern ctxt) p protect_ident s.txt (* RA*)
     | Ppat_or _ -> (* *)
-        pp f "@[<hov0>%a@]" (list ~sep:"@\n|@" (pattern ctxt))
+        pp f "@[<hov0>%a@]" (list ~sep:"@ | " (pattern ctxt))
           (list_of_pattern [] x)
     | _ -> pattern1 ctxt f x
 

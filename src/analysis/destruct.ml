@@ -238,14 +238,26 @@ let is_package ty =
   | Types.Tpackage _ -> true
   | _ -> false
 
+let filter_attr =
+  let default = Ast_mapper.default_mapper in
+  let keep ({Location.txt;_},_) = not (String.is_prefixed ~by:"merlin." txt) in
+  let attributes mapper attrs =
+    default.Ast_mapper.attributes mapper (List.filter ~f:keep attrs)
+  in
+  {default with Ast_mapper.attributes}
+
+let filter_expr_attr expr =
+  filter_attr.Ast_mapper.expr filter_attr expr
+
+let filter_pat_attr pat =
+  filter_attr.Ast_mapper.pat filter_attr pat
+
 let node tr config source ~loc node parents =
   let open Extend_protocol.Reader in
   match node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in
-    let pexp =
-      Untypeast.untype_expression (Raw_compat.remove_merlin_loc_attr expr)
-    in
+    let pexp = filter_expr_attr (Untypeast.untype_expression expr) in
     let needs_parentheses, result =
       if is_package ty then (
         let name = Location.mknoloc "M" in
@@ -255,7 +267,7 @@ let node tr config source ~loc node parents =
         let ps = gen_patterns expr.Typedtree.exp_env ty in
         let cases  =
           List.map ps ~f:(fun patt ->
-            let pc_lhs = Untypeast.untype_pattern patt in
+            let pc_lhs = filter_pat_attr (Untypeast.untype_pattern patt) in
             { Parsetree. pc_lhs ; pc_guard = None ; pc_rhs = placeholder }
           )
         in
@@ -269,7 +281,7 @@ let node tr config source ~loc node parents =
   | Pattern patt ->
     let last_case_loc, patterns = get_every_pattern parents in
     List.iter patterns ~f:(fun p ->
-      let p = Untypeast.untype_pattern p in
+      let p = filter_pat_attr (Untypeast.untype_pattern p) in
       Logger.logf "destruct" "EXISTING" "%t"
         (fun () -> Mreader.print_pretty tr
             config source (Pretty_pattern p))
@@ -278,7 +290,7 @@ let node tr config source ~loc node parents =
     begin match Parmatch.complete_partial pss with
     | Some pat ->
       let pat  = Raw_compat.qualify_constructors shorten_path pat in
-      let ppat = Untypeast.untype_pattern pat in
+      let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
       let case = Ast_helper.Exp.case ppat placeholder in
       let loc =
         let open Location in
@@ -295,7 +307,7 @@ let node tr config source ~loc node parents =
       | [ more_precise ] ->
         (* If only one pattern is generated, then we're only refining the
            current pattern, not generating new branches. *)
-        let ppat = Untypeast.untype_pattern more_precise in
+        let ppat = filter_pat_attr (Untypeast.untype_pattern more_precise) in
         let str = Mreader.print_pretty tr
             config source (Pretty_pattern ppat) in
         patt.Typedtree.pat_loc, str
@@ -333,7 +345,7 @@ let node tr config source ~loc node parents =
                 top_patt.Typedtree.pat_type acc p
             )
           in
-          let ppat = Untypeast.untype_pattern p in
+          let ppat = filter_pat_attr (Untypeast.untype_pattern p) in
           let str = Mreader.print_pretty tr
               config source (Pretty_pattern ppat) in
           top_patt.Typedtree.pat_loc, str

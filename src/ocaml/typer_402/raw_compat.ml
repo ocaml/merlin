@@ -399,6 +399,14 @@ let remove_merlin_loc_attr e =
       )
   }
 
+let remove_merlin_attr e =
+  let open Typedtree in
+  { e with
+    exp_attributes =
+      List.filter e.exp_attributes ~f:(fun (str_loc, _) ->
+          not (String.is_prefixed ~by:"merlin." str_loc.Location.txt))
+  }
+
 let id_of_constr_decl c = c.Types.cd_id
 
 (* Taken from Leo White's doc-ock,
