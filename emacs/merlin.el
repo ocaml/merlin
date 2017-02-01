@@ -238,6 +238,14 @@ The association list can contain the following optional keys:
 
 (defvar merlin-position-stack nil)
 
+;; Verbosity
+
+(defconst merlin/verbosity-context nil
+  "If non-nil, a simple key used to determine verbosity")
+
+(defvar-local merlin--verbosity-cache nil
+  "Cache last command to determine verbosity level")
+
 ;; Misc
 
 (defvar-local merlin--project-cache nil
@@ -397,11 +405,7 @@ return (LOC1 . LOC2)."
         (with-current-buffer ib
           (let ((default-directory wd))
             (apply 'call-process-region (point-min) (point-max) path nil
-                   (list ob tmp) nil
-                   "server" (car args)
-                   "-protocol" "sexp"
-                   "-log-file" (if merlin-debug "-" "")
-                   (cdr args)))))
+                   (list ob tmp) nil args))))
       (setq result (buffer-string))
       (merlin-debug "# stdout\n%s" result)
       (when tmp
@@ -414,7 +418,7 @@ return (LOC1 . LOC2)."
       result)))
 
 (defun merlin--call-merlin (command &rest args)
-  "TODO"
+  "Invoke merlin binary with the proper setup to execute the command passed as argument (lookup appropriate binary, setup logging, pass global settings)"
   ; Really start process
   (let ((binary      (merlin-command))
         (flags       (merlin-lookup 'flags merlin-buffer-configuration))
@@ -425,31 +429,45 @@ return (LOC1 . LOC2)."
         (extensions  (merlin--map-flatten (lambda (x) (cons "-extension" x))
                                           merlin-buffer-extensions))
         (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
-                                          merlin-buffer-packages)))
+                                          merlin-buffer-packages))
+        )
+    (when (eq merlin/verbosity-context t)
+        (setq merlin/verbosity-context (cons command args)))
+    (if (not merlin/verbosity-context)
+        (setq merlin--verbosity-cache nil)
+      (if (equal merlin/verbosity-context (car-safe merlin--verbosity-cache))
+          (setcdr merlin--verbosity-cache (1+ (cdr merlin--verbosity-cache)))
+        (setq merlin--verbosity-cache (cons merlin/verbosity-context 0))))
     (setq args (merlin--map-flatten
                  (lambda (x) (if (stringp x) x (prin1-to-string x)))
+                 "server" command "-protocol" "sexp"
+                 ;; Is debug mode enabled
+                 (when merlin-debug '("-log-file" "-"))
+                 ;; If command is repeated, increase verbosity
+                 (when merlin/verbosity-context
+                   (list "-verbosity" (cdr merlin--verbosity-cache)))
                  packages
                  extensions
                  (unless (string-equal merlin-buffer-flags "")
                    (cons "-flags" merlin-buffer-flags))
                  "-filename" (buffer-file-name (buffer-base-buffer))
                  args))
-    (merlin--call-process binary (cons command args))))
+    (merlin--call-process binary args)))
 
 (defun merlin/call (command &rest args)
-  "TODO"
+  "Execute a command and parse output: return an sexp on success or throw an error"
   (let ((result (car (read-from-string (merlin--call-merlin command args)))))
     (let ((notifications (cdr-safe (assoc 'notifications result)))
-	  (class (cdr-safe (assoc 'class result)))
-	  (value (cdr-safe (assoc 'value result))))
+          (class (cdr-safe (assoc 'class result)))
+          (value (cdr-safe (assoc 'value result))))
       (dolist (notification notifications)
-	(message "(merlin) %s" notification))
+        (message "(merlin) %s" notification))
       (cond ((string-equal class "return") value)
-	    ((string-equal class "failure")
-	     (error "merlin-mode failure: %S" value))
-	    ((string-equal class "error")
-	     (error "merlin: %S" value))
-	    (t (error "unknown answer: %S:%S" class value))))))
+            ((string-equal class "failure")
+             (error "merlin-mode failure: %S" value))
+            ((string-equal class "error")
+             (error "merlin: %S" value))
+            (t (error "unknown answer: %S:%S" class value))))))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
@@ -798,7 +816,8 @@ prefix of `bar' is `'."
   "Return the data for completion of IDENT, i.e. a list of tuples of the form
   '(NAME TYPE KIND INFO)."
   (setq-local merlin--dwimed nil)
-  (let* ((ident- (merlin/completion-split-ident ident))
+  (let* ((merlin/verbosity-context t) ; increase verbosity level if necessary
+         (ident- (merlin/completion-split-ident ident))
          (suffix (cdr ident-))
          (prefix (car ident-))
          (data   (merlin/call "complete-prefix"
@@ -972,7 +991,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
 (defun merlin--type-enclosing-query ()
   "Get the enclosings around point from merlin and sets MERLIN-ENCLOSING-TYPES."
   (merlin--type-enclosing-reset)
-  (let ((types (merlin/call "type-enclosing"
+  (let* ((merlin/verbosity-context t) ; increase verbosity level if necessary
+         (types (merlin/call "type-enclosing"
                             "-position" (merlin/unmake-point (point)))))
     (when types
       (setq merlin-enclosing-types
