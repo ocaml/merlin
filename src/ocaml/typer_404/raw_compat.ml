@@ -41,40 +41,6 @@ let extract_const_string = function
     Some str
   | _ -> None
 
-(* For Browse & Completion *)
-
-let optional_label_sugar = function
-  | Typedtree.Texp_construct (id, _, [e])
-    when id.Location.loc.Location.loc_ghost
-         && id.Location.txt = Longident.Lident "Some" ->
-    Some e
-  | _ -> None
-
-(* For Typedtrie & Completion *)
-
-(* Taken from Leo White's doc-ock,
-   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml *)
-let read_doc_attributes attrs =
-  let read_payload =
-    let open Location in let open Parsetree in
-    function
-    | PStr[{ pstr_desc =
-               Pstr_eval({ pexp_desc =
-                             Pexp_constant(Pconst_string(str, _));
-                           pexp_loc = loc;
-                         }, _)
-           }] -> Some(str, loc)
-    | _ -> None
-  in
-  let rec loop = function
-    | ({Location.txt =
-          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
-      read_payload payload
-    | _ :: rest -> loop rest
-    | [] -> None
-  in
-  loop attrs
-
 (* For Browse_misc *)
 
 let signature_of_summary =

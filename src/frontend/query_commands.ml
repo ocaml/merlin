@@ -121,14 +121,7 @@ let dump tr buffer = function
     let aux item =
       let ppf, to_string = Format.to_string () in
       Printtyp.signature ppf [item];
-      let content = to_string () in
-      let ppf, to_string = Format.to_string () in
-      match Raw_compat.signature_loc item with
-      | Some loc ->
-        Location.print_loc ppf loc;
-        let loc = to_string () in
-        `List [`String loc ; `String content]
-      | None -> `String content
+      `String (to_string ())
     in
     `List (List.map ~f:aux sg)
 

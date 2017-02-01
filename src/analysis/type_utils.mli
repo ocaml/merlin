@@ -64,3 +64,6 @@ val lookup_module : Longident.t ->
   Env.t -> Path.t * Types.module_type * Parsetree.attributes
 (** [lookup_module] is a fancier version of [Env.lookup_module] that also
     returns the module type. *)
+
+val read_doc_attributes : Parsetree.attributes -> (string * Location.t) option
+(** [read_doc_attributes] looks for a docstring in an attribute list. *)

@@ -73,7 +73,7 @@ let path_to_string (p : path) =
 let extract_doc (attrs : Parsetree.attributes) =
   String.concat ~sep:"\n" (
     List.filter_map attrs ~f:(fun attr ->
-      Option.map ~f:fst (Raw_compat.read_doc_attributes [attr])
+      Option.map ~f:fst (Type_utils.read_doc_attributes [attr])
     )
   )
 

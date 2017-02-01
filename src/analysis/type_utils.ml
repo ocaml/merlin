@@ -288,3 +288,24 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
     | `Other ->
       try print_expr e; true
       with exn -> print_exn ppf exn; false
+
+(* From doc-ock
+   https://github.com/lpw25/doc-ock/blob/master/src/docOckAttrs.ml *)
+let read_doc_attributes attrs =
+  let read_payload =
+    let open Parsetree in function
+      | PStr[{ pstr_desc = Pstr_eval(expr, _) }] ->
+        begin match Raw_compat.extract_const_string expr with
+          | Some str -> Some(str, expr.pexp_loc)
+          | None -> None
+        end
+      | _ -> None
+  in
+  let rec loop = function
+    | ({Location.txt =
+          ("doc" | "ocaml.doc"); loc}, payload) :: rest ->
+      read_payload payload
+    | _ :: rest -> loop rest
+    | [] -> None
+  in
+  loop attrs

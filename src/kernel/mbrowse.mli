@@ -59,6 +59,14 @@ val of_typedtree :
 val is_recovered_expression : Typedtree.expression -> bool
 val is_recovered : Browse_raw.node -> bool
 
+(** When an optional argument is applied with labelled syntax
+    sugar (~a:v instead of ?a:(Some v)), the frontend will have
+    wrapped it in [Some _].
+    [optional_label_sugar exp] returns [Some exp'] with the sugar
+    removed in that case. *)
+val optional_label_sugar :
+  Typedtree.expression_desc -> Typedtree.expression option
+
 (** {1 Dump} *)
 
 val print_node : unit -> node -> string

@@ -195,6 +195,13 @@ let of_typedtree = function
   | `Implementation str -> of_structure str
   | `Interface sg -> of_signature sg
 
+let optional_label_sugar = function
+  | Typedtree.Texp_construct (id, _, [e])
+    when id.Location.loc.Location.loc_ghost
+      && id.Location.txt = Longident.Lident "Some" ->
+    Some e
+  | _ -> None
+
 let rec is_recovered_expression = function
   | (* Recovery on arbitrary expressions *)
     { Typedtree.exp_desc = Typedtree.Texp_tuple [_] } ->
@@ -210,7 +217,7 @@ let rec is_recovered_expression = function
   | _ -> false
 
 and is_recovered_Texp_construct cstr =
-  match Raw_compat.optional_label_sugar cstr with
+  match optional_label_sugar cstr with
   | Some e -> is_recovered_expression e
   | _ -> false
 

@@ -185,7 +185,7 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
     | `Module | `Modtype -> `None
     | _ -> text
   in
-  let info = match Raw_compat.read_doc_attributes attrs, get_doc, kind with
+  let info = match Type_utils.read_doc_attributes attrs, get_doc, kind with
     | Some (str, _), _, _ -> `String str
     | None, _, (`Module | `Modtype) -> text
     | None, None, _ -> `None
@@ -571,7 +571,7 @@ let application_context ~verbosity ~prefix path =
       (* Special case for optional arguments applied with ~,
          get the argument wrapped inside Some _ *)
       let earg =
-        match Raw_compat.optional_label_sugar earg.exp_desc with
+        match Mbrowse.optional_label_sugar earg.exp_desc with
         | None -> earg
         | Some earg ->
           target_type := Some earg.exp_type;
