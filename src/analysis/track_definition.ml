@@ -762,9 +762,10 @@ let from_string ~config ~env ~local_defs ~pos switch path =
   | Some ctxt ->
     logf "from_string" "looking for the source of '%s' (prioritizing %s files)"
       path (match switch with `ML -> ".ml" | `MLI -> ".mli") ;
-    let_ref sources_path Mconfig.(config.merlin.source_path) @@ fun () ->
-    let_ref cfg_cmt_path Mconfig.(config.merlin.cmt_path) @@ fun () ->
-    let_ref loadpath     Mconfig.(config.merlin.cmt_path) @@ fun () ->
+    let cmt_path = Mconfig.cmt_path config in
+    let_ref sources_path (Mconfig.source_path config) @@ fun () ->
+    let_ref cfg_cmt_path cmt_path @@ fun () ->
+    let_ref loadpath     cmt_path @@ fun () ->
     match
       from_longident ~config ~pos ~env ~lazy_trie ctxt switch lid
     with
@@ -791,9 +792,10 @@ let get_doc ~config ~env ~local_defs ~comments ~pos =
   let lazy_trie = lazy (Typedtrie.of_browses ~local_buffer:true
                           [Browse_tree.of_browse browse]) in
   fun path ->
-  let_ref sources_path Mconfig.(config.merlin.source_path) @@ fun () ->
-  let_ref cfg_cmt_path Mconfig.(config.merlin.cmt_path) @@ fun () ->
-  let_ref loadpath     Mconfig.(config.merlin.cmt_path) @@ fun () ->
+  let cmt_path = Mconfig.cmt_path config in
+  let_ref sources_path (Mconfig.source_path config) @@ fun () ->
+  let_ref cfg_cmt_path cmt_path @@ fun () ->
+  let_ref loadpath     cmt_path @@ fun () ->
   let_ref last_location Location.none @@ fun () ->
   match
     match path with
