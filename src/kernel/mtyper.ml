@@ -135,8 +135,9 @@ let run tr config source parsetree =
   @@ fun tr ->
   Mocaml.setup_config config;
   let cached, state = match !cache with
-    | Some (config',state,cached) when compare config' config = 0 ->
-      (Some cached, state)
+    | Some (config', state, result) when compare config' config = 0 ->
+      (Some (result.initial_env, result.initial_snapshot, result.typedtree),
+       state)
     | Some _ | None ->
       cache := None;
       (None, Mocaml.new_state ~unit_name:(Msource.unitname source))
@@ -158,6 +159,7 @@ let run tr config source parsetree =
         typedtree = `Interface items }
   in
   Typecore.reset_delayed_checks ();
+  cache := Some (config, state, result);
   result
 
 let with_typer t f =
