@@ -101,6 +101,66 @@ let of_signature s =
   let env, node = Mbrowse.leaf_node (Mbrowse.of_signature s) in
   Browse_tree.of_node ~env node
 
+let remove_indir_me me =
+  match me.Typedtree.mod_desc with
+  | Typedtree.Tmod_ident (path, _) -> `Alias path
+  | Typedtree.Tmod_structure str -> `Str str
+  | Typedtree.Tmod_functor (_param_id, param_name, _param_sig, me) ->
+    `Functor (param_name, me.Typedtree.mod_loc, `Mod_expr me)
+  | Typedtree.Tmod_apply (me1, me2, _) -> `Apply (me1, me2)
+  | Typedtree.Tmod_constraint (me, _, _, _) -> `Mod_expr me
+  | Typedtree.Tmod_unpack _ -> `Unpack
+
+let remove_indir_mty mty =
+  match mty.Typedtree.mty_desc with
+  | Typedtree.Tmty_alias (path, _)
+  | Typedtree.Tmty_ident (path, _) -> `Alias path
+  | Typedtree.Tmty_signature sg -> `Sg sg
+  | Typedtree.Tmty_functor (_param_id, param_name, _param_sig, mty) ->
+    `Functor (param_name, mty.Typedtree.mty_loc, `Mod_type mty)
+  | Typedtree.Tmty_with (mty, _) -> `Mod_type mty
+  | Typedtree.Tmty_typeof me -> `Mod_expr me
+
+let sig_item_idns =
+  let open Types in function
+  | Sig_value (id, _) -> id, `Vals
+  | Sig_type (id, _, _) -> id, `Type
+  | Sig_typext (id, _, _) -> id, `Type
+  | Sig_module (id, _, _) -> id, `Mod
+  | Sig_modtype (id, _) -> id, `Modtype
+  | Sig_class (id, _, _) -> id, `Vals (* that's just silly *)
+  | Sig_class_type (id, _, _) -> id, `Type (* :_D *)
+
+let include_idents l = List.map sig_item_idns l
+
+let identify_str_includes item =
+  match item.Typedtree.str_desc with
+  | Typedtree.Tstr_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_expr incl_mod)
+  | _ -> `Not_included
+
+let identify_sig_includes item =
+  match item.Typedtree.sig_desc with
+  | Typedtree.Tsig_include { Typedtree. incl_type ; incl_mod } ->
+    `Included (include_idents incl_type, `Mod_type incl_mod)
+  | _ -> `Not_included
+
+let rec pattern_idlocs pat =
+  let open Typedtree in
+  match pat.pat_desc with
+  | Tpat_var (id, _) -> [ Ident.name id , pat.pat_loc ]
+  | Tpat_alias (p, id, _) -> (Ident.name id, pat.pat_loc) :: pattern_idlocs p
+  | Tpat_tuple patts
+  | Tpat_array patts
+  | Tpat_construct (_, _, patts) ->
+    List.concat_map patts ~f:pattern_idlocs
+  | Tpat_record (lst, _) ->
+    List.map lst ~f:(fun (lid_loc, _, _pattern) ->
+      Longident.last lid_loc.Asttypes.txt, lid_loc.Asttypes.loc
+    ) (* TODO: handle rhs, i.e. [_pattern] *)
+  | Tpat_variant (_, Some pat, _) -> pattern_idlocs pat
+  | _ -> []
+
 let rec tag_path ~namespace = function
   | [] -> invalid_arg "Typedtrie.tag_path"
   | [ x ] -> [ x, namespace ]
@@ -115,8 +175,8 @@ let rec build ?(local_buffer=false) ~trie browses =
       Internal (build ~local_buffer ~trie:Trie.empty [of_structure s])
     | `Sg s ->
       Internal (build ~local_buffer ~trie:Trie.empty [of_signature s])
-    | `Mod_expr me -> node_for_direct_mod `Mod (Raw_compat.remove_indir_me me)
-    | `Mod_type mty -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty mty)
+    | `Mod_expr me -> node_for_direct_mod `Mod (remove_indir_me me)
+    | `Mod_type mty -> node_for_direct_mod `Modtype (remove_indir_mty mty)
     | `Functor (located_name, pack_loc, packed) when local_buffer ->
       (* We don't actually care about the namespace here. But whatever. *)
       let result = [ pack_loc, None, `Functor, node_for_direct_mod `Functor packed ] in
@@ -129,8 +189,8 @@ let rec build ?(local_buffer=false) ~trie browses =
       in
       Internal trie
     | `Apply (me1, me2) ->
-      let node1 = node_for_direct_mod `Mod (Raw_compat.remove_indir_me me1) in
-      let node2 = node_for_direct_mod `Mod (Raw_compat.remove_indir_me me2) in
+      let node1 = node_for_direct_mod `Mod (remove_indir_me me1) in
+      let node2 = node_for_direct_mod `Mod (remove_indir_me me2) in
       let trie  =
         Trie.of_list [
           "1", [ me1.Typedtree.mod_loc, None, `Mod, node1 ];
@@ -160,7 +220,7 @@ let rec build ?(local_buffer=false) ~trie browses =
       | Module_binding mb ->
         let node =
           node_for_direct_mod `Mod
-            (Raw_compat.remove_indir_me mb.Typedtree.mb_expr)
+            (remove_indir_me mb.Typedtree.mb_expr)
         in
         Trie.add_multiple (Ident.name mb.Typedtree.mb_id)
           (t.t_loc, doc, `Mod, node) trie
@@ -185,8 +245,8 @@ let rec build ?(local_buffer=false) ~trie browses =
     | Structure_item _ ->
       begin match
         match t.t_node with
-        | Signature_item (item, _) -> Raw_compat.identify_sig_includes item
-        | Structure_item (item, _) -> Raw_compat.identify_str_includes item
+        | Signature_item (item, _) -> identify_sig_includes item
+        | Structure_item (item, _) -> identify_str_includes item
         | _ -> assert false
       with
       | `Not_included -> build ~local_buffer ~trie (Lazy.force t.t_children)
@@ -200,8 +260,8 @@ let rec build ?(local_buffer=false) ~trie browses =
           in
           match
             match packed with
-            | `Mod_expr me -> Raw_compat.remove_indir_me  me
-            | `Mod_type mt -> Raw_compat.remove_indir_mty mt
+            | `Mod_expr me -> remove_indir_me  me
+            | `Mod_type mt -> remove_indir_mty mt
           with
           | `Alias path ->
             let namespace =
@@ -225,7 +285,7 @@ let rec build ?(local_buffer=false) ~trie browses =
       end
     | Value_binding vb ->
       (* The following doesn't seem quite correct wrt documentation. Oh well. *)
-      let idlocs = Raw_compat.pattern_idlocs vb.vb_pat in
+      let idlocs = pattern_idlocs vb.vb_pat in
       List.fold_left idlocs ~init:trie ~f:(fun trie (id, loc) ->
         if local_buffer then
           let children = collect_local_modules Trie.empty t.t_children in
@@ -242,20 +302,20 @@ let rec build ?(local_buffer=false) ~trie browses =
     | Module_binding mb ->
       let node =
         node_for_direct_mod `Mod
-          (Raw_compat.remove_indir_me mb.mb_expr)
+          (remove_indir_me mb.mb_expr)
       in
       Trie.add_multiple (Ident.name mb.mb_id) (t.t_loc, doc, `Mod, node) trie
     | Module_declaration md ->
       let node =
         node_for_direct_mod `Mod
-          (Raw_compat.remove_indir_mty md.md_type)
+          (remove_indir_mty md.md_type)
       in
       Trie.add_multiple (Ident.name md.md_id) (t.t_loc, doc, `Mod, node) trie
     | Module_type_declaration mtd ->
       let node =
         match mtd.mtd_type with
          None -> Leaf
-        | Some m -> node_for_direct_mod `Modtype (Raw_compat.remove_indir_mty m)
+        | Some m -> node_for_direct_mod `Modtype (remove_indir_mty m)
       in
       Trie.add_multiple (Ident.name mtd.mtd_id) (t.t_loc, doc, `Modtype, node) trie
     | Type_declaration td ->

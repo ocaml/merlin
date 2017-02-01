@@ -252,6 +252,135 @@ let filter_expr_attr expr =
 let filter_pat_attr pat =
   filter_attr.Ast_mapper.pat filter_attr pat
 
+let rec subst_patt initial ~by patt =
+  let f = subst_patt initial ~by in
+  let open Typedtree in
+  if patt == initial then by else
+  match patt.pat_desc with
+  | Tpat_any
+  | Tpat_var _
+  | Tpat_constant _ -> patt
+  | Tpat_alias (p,x,y) ->
+    { patt with pat_desc = Tpat_alias (f p, x, y) }
+  | Tpat_tuple lst ->
+    { patt with pat_desc = Tpat_tuple (List.map lst ~f)}
+  | Tpat_construct (lid, cd, lst) ->
+    { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f) }
+  | Tpat_variant (lbl, pat_opt, row_desc) ->
+    { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
+  | Tpat_record (sub, flg) ->
+    let sub' =
+      List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
+    in
+    { patt with pat_desc = Tpat_record (sub', flg) }
+  | Tpat_array lst ->
+    { patt with pat_desc = Tpat_array (List.map lst ~f)}
+  | Tpat_or (p1, p2, row) ->
+    { patt with pat_desc = Tpat_or (f p1, f p2, row) }
+  | Tpat_lazy p ->
+    { patt with pat_desc = Tpat_lazy (f p) }
+
+let rec rm_sub patt sub =
+  let f p = rm_sub p sub in
+  let open Typedtree in
+  match patt.pat_desc with
+  | Tpat_any
+  | Tpat_var _
+  | Tpat_constant _ -> patt
+  | Tpat_alias (p,x,y) ->
+    { patt with pat_desc = Tpat_alias (f p, x, y) }
+  | Tpat_tuple lst ->
+    { patt with pat_desc = Tpat_tuple (List.map lst ~f)}
+  | Tpat_construct (lid, cd, lst) ->
+    { patt with pat_desc = Tpat_construct (lid, cd, List.map lst ~f) }
+  | Tpat_variant (lbl, pat_opt, row_desc) ->
+    { patt with pat_desc = Tpat_variant (lbl, Option.map pat_opt ~f, row_desc) }
+  | Tpat_record (sub, flg) ->
+    let sub' =
+      List.map sub ~f:(fun (lid, lbl_descr, patt) -> lid, lbl_descr, f patt)
+    in
+    { patt with pat_desc = Tpat_record (sub', flg) }
+  | Tpat_array lst ->
+    { patt with pat_desc = Tpat_array (List.map lst ~f)}
+  | Tpat_or (p1, p2, row) ->
+    if p1 == sub then p2 else if p2 == sub then p1 else
+    { patt with pat_desc = Tpat_or (f p1, f p2, row) }
+  | Tpat_lazy p ->
+    { patt with pat_desc = Tpat_lazy (f p) }
+
+let rec qualify_constructors f pat =
+  let open Typedtree in
+  let pat_desc =
+    match pat.pat_desc with
+    | Tpat_alias (p, id, loc) -> Tpat_alias (qualify_constructors f p, id, loc)
+    | Tpat_tuple ps -> Tpat_tuple (List.map ps ~f:(qualify_constructors f))
+    | Tpat_record (labels, closed) ->
+      let labels =
+        List.map labels
+          ~f:(fun (lid, descr, pat) -> lid, descr, qualify_constructors f pat)
+      in
+      Tpat_record (labels, closed)
+    | Tpat_construct (lid, cstr_desc, ps) ->
+      let lid =
+        match lid.Asttypes.txt with
+        | Longident.Lident name ->
+          begin match (Btype.repr pat.pat_type).Types.desc with
+          | Types.Tconstr (path, _, _) ->
+            let path = f pat.pat_env path in
+            begin match Path_aux.to_string_list path with
+            | [] -> assert false
+            | p :: ps ->
+              let open Longident in
+              match
+                List.fold_left ps ~init:(Lident p)
+                  ~f:(fun lid p -> Ldot (lid, p))
+              with
+              | Lident _ -> { lid with Asttypes.txt = Lident name }
+              | Ldot (path, _) -> { lid with Asttypes.txt = Ldot (path, name) }
+              | _ -> assert false
+            end
+          | _ -> lid
+          end
+        | _ -> lid (* already qualified *)
+      in
+      Tpat_construct (lid, cstr_desc, List.map ps ~f:(qualify_constructors f))
+    | Tpat_array ps -> Tpat_array (List.map ps ~f:(qualify_constructors f))
+    | Tpat_or (p1, p2, row_desc) ->
+      Tpat_or (qualify_constructors f p1, qualify_constructors f p2, row_desc)
+    | Tpat_lazy p -> Tpat_lazy (qualify_constructors f p)
+    | desc -> desc
+  in
+  { pat with pat_desc = pat_desc }
+
+let find_branch patterns sub =
+  let rec is_sub_patt patt ~sub =
+    let open Typedtree in
+    if patt == sub then true else
+      match patt.pat_desc with
+      | Tpat_any
+      | Tpat_var _
+      | Tpat_constant _
+      | Tpat_variant (_, None, _) -> false
+      | Tpat_alias (p,_,_)
+      | Tpat_variant (_, Some p, _)
+      | Tpat_lazy p ->
+        is_sub_patt p ~sub
+      | Tpat_tuple lst
+      | Tpat_construct (_, _, lst)
+      | Tpat_array lst ->
+        List.exists lst ~f:(is_sub_patt ~sub)
+      | Tpat_record (subs, flg) ->
+        List.exists subs ~f:(fun (_, _, p) -> is_sub_patt p ~sub)
+      | Tpat_or (p1, p2, row) ->
+        is_sub_patt p1 ~sub || is_sub_patt p2 ~sub
+  in
+  let rec aux before = function
+    | [] -> raise Not_found
+    | p :: after when is_sub_patt p ~sub -> before, after, p
+    | p :: ps -> aux (p :: before) ps
+  in
+  aux [] patterns
+
 let node tr config source node parents =
   let open Extend_protocol.Reader in
   let loc = Mbrowse.node_loc node in
@@ -290,7 +419,7 @@ let node tr config source node parents =
     let pss = List.map patterns ~f:(fun x -> [ x ]) in
     begin match Parmatch.complete_partial pss with
     | Some pat ->
-      let pat  = Raw_compat.qualify_constructors shorten_path pat in
+      let pat  = qualify_constructors shorten_path pat in
       let ppat = filter_pat_attr (Untypeast.untype_pattern pat) in
       let case = Ast_helper.Exp.case ppat placeholder in
       let loc =
@@ -314,11 +443,11 @@ let node tr config source node parents =
         patt.Typedtree.pat_loc, str
       | sub_patterns ->
         let rev_before, after, top_patt =
-          Raw_compat.find_branch patterns patt
+          find_branch patterns patt
         in
         let new_branches =
           List.map sub_patterns ~f:(fun by ->
-            Raw_compat.subst_patt patt ~by top_patt
+            subst_patt patt ~by top_patt
           )
         in
         let patterns =
@@ -333,7 +462,7 @@ let node tr config source node parents =
             | `Unused_subs (p, lst) ->
               List.map branches ~f:(fun branch ->
                 if branch != p then branch else
-                List.fold_left lst ~init:branch ~f:Raw_compat.rm_sub
+                List.fold_left lst ~init:branch ~f:rm_sub
               )
           )
         in

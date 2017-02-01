@@ -59,3 +59,8 @@ val print_type_with_decl : verbosity:int ->
 (** [print_type_or_decl] behaves like [Printtyp.type_scheme], it prints the
     type expression, except if it is a type constructor and verbosity is set then
     it also prints the type declaration. *)
+
+val lookup_module : Longident.t ->
+  Env.t -> Path.t * Types.module_type * Parsetree.attributes
+(** [lookup_module] is a fancier version of [Env.lookup_module] that also
+    returns the module type. *)

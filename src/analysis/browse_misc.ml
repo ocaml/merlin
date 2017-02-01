@@ -43,9 +43,46 @@ let print_constructor c =
     Printtyp.tree_of_type_scheme { level = 0 ; id = 0 ; desc  }
 
 let summary_at pos sum =
+  let rec signature_loc =
+    let open Types in
+    let union_loc_opt a b = match a,b with
+      | None, None -> None
+      | l, None | None, l -> l
+      | Some a, Some b -> Some (Location_aux.union a b)
+    in
+    let rec mod_loc = function
+      | Mty_ident _ -> None
+      | Mty_functor (_,m1,m2) ->
+        begin match m1 with
+          | Some m1 -> union_loc_opt (mod_loc m1) (mod_loc m2)
+          | None -> mod_loc m2
+        end
+      | Mty_signature s ->
+        let rec find_first = function
+          | x :: xs -> (match signature_loc x with
+              | (Some _ as v) -> v
+              | None -> find_first xs)
+          | [] -> None
+        in
+        let a = find_first s and b = find_first (List.rev s) in
+        union_loc_opt a b
+      | _ -> None
+    in function
+      | Sig_value (_,v)    -> Some v.val_loc
+      | Sig_type (_,t,_)   -> Some t.type_loc
+      | Sig_typext (_,e,_) -> Some e.ext_loc
+      | Sig_module (_,m,_) -> mod_loc m.Types.md_type
+      | Sig_modtype (_,m) ->
+        begin match m.Types.mtd_type with
+          | Some m -> mod_loc m
+          | None -> None
+        end
+      | Sig_class (_,_,_)
+      | Sig_class_type (_,_,_) -> None
+  in
   let cmp = Location_aux.compare_pos pos in
   let rec aux sum =
-    match Raw_compat.signature_of_summary sum >>= Raw_compat.signature_loc with
+    match Raw_compat.signature_of_summary sum >>= signature_loc with
     | None -> Raw_compat.summary_prev sum >>= aux
     | Some loc ->
       match cmp loc with

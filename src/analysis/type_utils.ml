@@ -39,12 +39,21 @@ let parse_expr ?(keywords=Lexer_raw.keywords []) expr =
   let lexer lexbuf = lexer (Lexer_raw.token_without_comments state lexbuf) in
   Parser_raw.parse_expression lexer lexbuf
 
+let lookup_module name env =
+  let path = Env.lookup_module ~load:true name env in
+  let md = Env.find_module path env in
+  path, md.Types.md_type, md.Types.md_attributes
+
+let lookup_modtype name env =
+  let path, mdtype = Env.lookup_modtype name env in
+  path, mdtype.Types.mtd_type
+
 let lookup_module_or_modtype name env =
   try
-    let path, mty, _ = Raw_compat.lookup_module name env in
+    let path, mty, _ = lookup_module name env in
     path, Some mty
   with Not_found ->
-    Raw_compat.lookup_modtype name env
+    lookup_modtype name env
 
 let verbosity = ref 0
 
@@ -221,7 +230,13 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   | exception exn -> print_exn ppf exn; false
 
   | e ->
-    match Raw_compat.extract_specific_parsing_info e with
+    let extract_specific_parsing_info e =
+      match e.Parsetree.pexp_desc with
+      | Parsetree.Pexp_ident longident -> `Ident longident
+      | Parsetree.Pexp_construct (longident, _) -> `Constr longident
+      | _ -> `Other
+    in
+    match extract_specific_parsing_info e with
     | `Ident longident ->
       begin try
         (* Don't catch type errors *)

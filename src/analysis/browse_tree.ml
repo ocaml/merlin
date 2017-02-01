@@ -69,6 +69,8 @@ and normalize_type_decl env decl = match decl.Types.type_manifest with
   | Some expr -> normalize_type_expr env expr
   | None -> decl
 
+let id_of_constr_decl c = c.Types.cd_id
+
 let same_constructor env a b =
   let name = function
     | `Description d -> d.Types.cstr_name
@@ -81,7 +83,7 @@ let same_constructor env a b =
         let ty = normalize_type_expr env d.Types.cstr_res in
         begin match ty.Types.type_kind with
         | Types.Type_variant decls ->
-          List.map decls ~f:Raw_compat.id_of_constr_decl
+          List.map decls ~f:id_of_constr_decl
         | _ -> assert false
         end
       | `Declaration d ->

@@ -44,6 +44,11 @@ let mk ?(children=[]) ~location outline_kind id =
   { Query_protocol.  outline_kind; location; children;
     outline_name = Ident.name id }
 
+let get_class_field_desc_infos = function
+  | Typedtree.Tcf_val (str_loc,_,_,_,_) -> Some (str_loc, `Value)
+  | Typedtree.Tcf_method (str_loc,_,_)  -> Some (str_loc, `Method)
+  | _ -> None
+
 let rec summarize node =
   let location = node.t_loc in
   match node.t_node with
@@ -105,7 +110,7 @@ and get_class_elements node =
     List.filter_map (Lazy.force node.t_children) ~f:(fun child ->
       match child.t_node with
       | Class_field cf ->
-        begin match Raw_compat.get_class_field_desc_infos cf.cf_desc with
+        begin match get_class_field_desc_infos cf.cf_desc with
         | Some (str_loc, outline_kind) ->
           Some { Query_protocol.
             outline_name = str_loc.Location.txt;

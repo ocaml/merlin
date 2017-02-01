@@ -442,6 +442,15 @@ and from_path ~config path =
     end
   | _ -> assert false
 
+let path_and_loc_of_cstr desc env =
+  let open Types in
+  match desc.cstr_tag with
+  | Cstr_extension (path, loc) -> path, desc.cstr_loc
+  | _ ->
+    match desc.cstr_res.desc with
+    | Tconstr (path, _, _) -> path, desc.cstr_loc
+    | _ -> assert false
+
 let path_and_loc_from_label desc env =
   let open Types in
   match desc.lbl_res.desc with
@@ -601,16 +610,16 @@ let rec lookup ctxt ident env =
         | `Constr ->
           log "lookup" "lookup in constructor namespace" ;
           let cstr_desc = Env.lookup_constructor ident env in
-          let path, loc = Raw_compat.path_and_loc_of_cstr cstr_desc env in
+          let path, loc = path_and_loc_of_cstr cstr_desc env in
           (* TODO: Use [`Constr] here instead of [`Type] *)
           raise (Found (path, tag `Type path, loc))
         | `Mod ->
           log "lookup" "lookup in module namespace" ;
-          let path, _, _ = Raw_compat.lookup_module ident env in
+          let path = Env.lookup_module ~load:true ident env in
           raise (Found (path, tag `Mod path, Location.symbol_gloc ()))
         | `Modtype ->
           log "lookup" "lookup in module type namespace" ;
-          let path, _ = Raw_compat.lookup_modtype ident env in
+          let path, _ = Env.lookup_modtype ident env in
           raise (Found (path, tag `Modtype path, Location.symbol_gloc ()))
         | `Type ->
           log "lookup" "lookup in type namespace" ;
