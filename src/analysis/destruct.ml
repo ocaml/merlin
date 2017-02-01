@@ -252,8 +252,9 @@ let filter_expr_attr expr =
 let filter_pat_attr pat =
   filter_attr.Ast_mapper.pat filter_attr pat
 
-let node tr config source ~loc node parents =
+let node tr config source node parents =
   let open Extend_protocol.Reader in
+  let loc = Mbrowse.node_loc node in
   match node with
   | Expression expr ->
     let ty = expr.Typedtree.exp_type in

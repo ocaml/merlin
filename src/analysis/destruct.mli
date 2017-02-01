@@ -75,7 +75,7 @@ exception Useless_refine
 exception Nothing_to_do
 
 val node : Trace.t ->
-  Mconfig.t -> Msource.t -> loc:Location.t -> Browse_raw.node ->
+  Mconfig.t -> Msource.t -> Browse_raw.node ->
   Browse_raw.node list -> Location.t * string
-(** [node ~loc ~env parents current_node] returns a location indicating which
+(** [node ~env parents current_node] returns a location indicating which
     portion of the buffer must be replaced and the string to replace it with. *)

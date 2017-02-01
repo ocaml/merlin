@@ -451,7 +451,6 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
     let loc_end = Msource.get_lexing_pos tr source pos_end in
     let loc_mid = Msource.get_lexing_pos tr source
         (`Offset (Lexing.(loc_start.pos_cnum + loc_end.pos_cnum) / 2)) in
-    let loc = {Location. loc_start; loc_end; loc_ghost = false} in
     let env = Mtyper.get_env typer in
     (*Mreader.with_reader (Buffer.reader buffer) @@ fun () -> FIXME*)
     Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
@@ -473,7 +472,7 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
       | node :: parents ->
         let source = Mpipeline.input_source pipeline in
         let config = Mpipeline.final_config pipeline in
-        Destruct.node tr config source ~loc node parents
+        Destruct.node tr config source node parents
     end
 
   | Outline ->
