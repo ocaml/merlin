@@ -951,8 +951,8 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
   (let ((keymap (make-sparse-keymap)))
     (define-key keymap (kbd "C-<up>") 'merlin-type-enclosing-go-up)
     (define-key keymap (kbd "C-<down>") 'merlin-type-enclosing-go-down)
-    (define-key keymap (kbd "C-d") 'merlin--destruct-enclosing)
-    (define-key keymap (kbd "C-w") 'merlin--copy-enclosing)
+    (define-key keymap (kbd "C-d") 'merlin-destruct-enclosing)
+    (define-key keymap (kbd "C-w") 'merlin-copy-enclosing)
     keymap)
   "The local map to navigate type enclosing.")
 
@@ -1014,7 +1014,7 @@ If QUIET is non nil, then an overlay and the merlin types can be used."
     (setq merlin-enclosing-offset (1- merlin-enclosing-offset))
     (merlin--type-enclosing-go)))
 
-(defun merlin--copy-enclosing ()
+(defun merlin-copy-enclosing ()
   (interactive)
   (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
     (when (cddr data)
@@ -1082,7 +1082,7 @@ strictly within, or nil if there is no such element."
       (insert txt)
       (indent-region start (point)))))
 
-(defun merlin--destruct-enclosing ()
+(defun merlin/destruct-enclosing ()
   (interactive)
   (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
          (result (merlin/call "case-analysis" "-start" (car bounds) "-end" (cdr bounds))))
@@ -1103,8 +1103,8 @@ strictly within, or nil if there is no such element."
   (interactive)
   (if (not merlin-enclosing-types)
     (when (merlin--type-enclosing-query)
-      (merlin--destruct-enclosing))
-    (merlin--destruct-enclosing)))
+      (merlin/destruct-enclosing))
+    (merlin/destruct-enclosing)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
@@ -1590,6 +1590,10 @@ Empty string defaults to jumping to all these."
 (make-obsolete 'merlin/sync nil "Synchronization happens automatically since Merlin 3.0")
 
 (define-obsolete-function-alias 'merlin-project-check 'merlin-configuration-check)
+
+(define-obsolete-function-alias 'merlin--copy-enclosing 'merlin-copy-enclosing)
+(define-obsolete-function-alias 'merlin--destruct-enclosing 'merlin-destruct-enclosing)
+
 
 ;;;###autoload
 (define-minor-mode merlin-mode
