@@ -44,7 +44,7 @@ let app a b =
     then {b.pexp_loc with Location.loc_ghost = true}
     else b.pexp_loc
   in
-  Ast_helper.Exp.apply ~loc a [Raw_compat.Parsetree.arg_label_of_str "", b]
+  Ast_helper.Exp.apply ~loc a [Raw_compat.no_label, b]
 
 let pat_app f (pat,expr) = pat, app f expr
 

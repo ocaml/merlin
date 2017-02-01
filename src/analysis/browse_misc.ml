@@ -37,7 +37,7 @@ let print_constructor c =
     Printtyp.tree_of_type_scheme
       { level = 0 ; id = 0 ; desc = c.cstr_res.desc }
   | args ->
-    let desc = Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
+    let desc = Tarrow (Raw_compat.no_label,
                        { level = 0; id = 0; desc = Ttuple args}, c.cstr_res,Cok)
     in
     Printtyp.tree_of_type_scheme { level = 0 ; id = 0 ; desc  }
@@ -45,14 +45,13 @@ let print_constructor c =
 let summary_at pos sum =
   let cmp = Location_aux.compare_pos pos in
   let rec aux sum =
-    let open Raw_compat in
-    match signature_of_summary sum >>= signature_loc with
-    | None -> summary_prev sum >>= aux
+    match Raw_compat.signature_of_summary sum >>= Raw_compat.signature_loc with
+    | None -> Raw_compat.summary_prev sum >>= aux
     | Some loc ->
       match cmp loc with
       | x when x < 0 -> None
       | 0 -> Some sum
-      | _ -> summary_prev sum >>= aux
+      | _ -> Raw_compat.summary_prev sum >>= aux
   in
   aux sum
 

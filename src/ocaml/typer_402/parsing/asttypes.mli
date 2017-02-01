@@ -47,3 +47,10 @@ type variance =
   | Covariant
   | Contravariant
   | Invariant
+
+(* Compatibility *)
+
+type arg_label =
+    Nolabel
+  | Labelled of string (*  label:T -> ... *)
+  | Optional of string (* ?label:T -> ... *)

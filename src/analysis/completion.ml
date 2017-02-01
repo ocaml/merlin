@@ -152,7 +152,7 @@ let make_candidate ?get_doc ~attrs ~exact name ?loc ?path ty =
     | `Cons c  -> (`Constructor, `Constructor c)
     | `Label label_descr ->
       let desc =
-        Types.(Tarrow (Raw_compat.Parsetree.arg_label_of_str "",
+        Types.(Tarrow (Raw_compat.no_label,
                        label_descr.lbl_res, label_descr.lbl_arg, Cok))
       in
       (`Label, `Type_scheme (Btype.newgenty desc))

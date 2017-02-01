@@ -208,9 +208,9 @@ let print_exn ppf exn =
 let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   let print_expr expression =
     let (str, _sg, _) =
-      Typemod.type_toplevel_phrase env [Ast_helper.Str.eval expression]
+      Typemod.type_toplevel_phrase env
+        [Ast_helper.Str.eval expression]
     in
-    (*let sg' = Typemod.simplify_signature sg in*)
     let open Typedtree in
     let exp = Raw_compat.dest_tstr_eval str in
     print_type_with_decl ~verbosity env ppf exp.exp_type
@@ -221,7 +221,7 @@ let type_in_env ?(verbosity=0) ?keywords env ppf expr =
   | exception exn -> print_exn ppf exn; false
 
   | e ->
-    match Raw_compat.Parsetree.extract_specific_parsing_info e with
+    match Raw_compat.extract_specific_parsing_info e with
     | `Ident longident ->
       begin try
         (* Don't catch type errors *)
