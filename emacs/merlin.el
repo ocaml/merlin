@@ -469,6 +469,15 @@ return (LOC1 . LOC2)."
              (error "merlin: %S" value))
             (t (error "unknown answer: %S:%S" class value))))))
 
+(defun merlin-stop-server ()
+  "Shutdown merlin server."
+  (interactive)
+  (unless merlin-mode (message "Buffer is not managed by merlin."))
+  (when merlin-mode
+    (merlin/call "stop-server")
+    (setq merlin-erroneous-buffer nil)
+    (message "Restarted merlin %S" merlin-instance)))
+
 ;;;;;;;;;;;;;;;;;;;;
 ;; FILE SWITCHING ;;
 ;;;;;;;;;;;;;;;;;;;;
@@ -505,7 +514,7 @@ return (LOC1 . LOC2)."
   "Coordinates (start . end) of last edition or nil, to prevent error messages from flickering when cursor is around edition.")
 
 (defun merlin--on-edit (start end length)
-  "Retract merlin--dirty-point, used when the buffer is edited."
+  "Memorize coordinates of last edition to avoid flickering error messages around the cursor"
   (setq merlin--last-edit (cons start end)))
 
 (defun merlin--error-position-delta (point err)
@@ -1559,8 +1568,8 @@ Empty string defaults to jumping to all these."
       '(menu-item "Syntax extensions" merlin-extensions
                   :help "Enable support for some dialects of OCaml."))
     (define-key merlin-menu-map [restartmerlin]
-      '(menu-item "Restart merlin" merlin-restart-process
-                  :help "Flush merlin state."))
+      '(menu-item "Shutdown merlin server" merlin-stop-server
+                  :help "Stop merlin server."))
     (define-key merlin-menu-map [versionmerlin]
       '(menu-item "Version" merlin-version
                   :help "Print version of the merlin binary."))
@@ -1614,6 +1623,7 @@ Empty string defaults to jumping to all these."
 (define-obsolete-function-alias 'merlin--copy-enclosing 'merlin-copy-enclosing)
 (define-obsolete-function-alias 'merlin--destruct-enclosing 'merlin-destruct-enclosing)
 
+(define-obsolete-function-alias 'merlin-restart-process 'merlin-stop-server)
 
 ;;;###autoload
 (define-minor-mode merlin-mode

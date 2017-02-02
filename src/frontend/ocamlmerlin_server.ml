@@ -5,12 +5,10 @@ module Server = struct
     | exception (Unix.Unix_error(Unix.EINTR, _, _)) -> protect_eintr f
     | result -> result
 
-  let process_request = function
-    | [|"stop-server"|] ->
-      raise Exit
-    | argv ->
-      let args = Array.to_list argv in
-      New_merlin.run args
+  let process_request argv =
+    match Array.to_list argv with
+    | "stop-server" :: _ -> raise Exit
+    | args -> New_merlin.run args
 
   (* Work with triplet (stdin,stdout,stderr) *)
   let io_close (a,b,c) = Unix.(close a; close b; close c)
