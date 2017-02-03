@@ -1,3 +1,7 @@
+let merlin_timeout =
+  try float_of_string (Sys.getenv "MERLIN_TIMEOUT")
+  with _ -> 7200.0
+
 module Server = struct
 
   let rec protect_eintr f =
@@ -36,7 +40,7 @@ module Server = struct
       protect_eintr (fun () -> ignore (Unix.write fd result 0 1))
 
   let rec loop merlinid fd =
-    match protect_eintr (fun () -> Unix.select [fd] [] [] 180.0) with
+    match protect_eintr (fun () -> Unix.select [fd] [] [] merlin_timeout) with
     | [], [], [] -> (* Timeout *)
       ()
     | _ ->
