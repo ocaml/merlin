@@ -1111,7 +1111,7 @@ strictly within, or nil if there is no such element."
       (insert txt)
       (indent-region start (point)))))
 
-(defun merlin/destruct-enclosing ()
+(defun merlin-destruct-enclosing ()
   (interactive)
   (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
          (result (merlin/call "case-analysis" "-start" (car bounds) "-end" (cdr bounds))))
@@ -1132,8 +1132,8 @@ strictly within, or nil if there is no such element."
   (interactive)
   (if (not merlin-enclosing-types)
     (when (merlin--type-enclosing-query)
-      (merlin/destruct-enclosing))
-    (merlin/destruct-enclosing)))
+      (merlin-destruct-enclosing))
+    (merlin-destruct-enclosing)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
