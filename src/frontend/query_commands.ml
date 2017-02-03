@@ -440,32 +440,36 @@ let dispatch buffer (type a) : a Query_protocol.t -> a =
   | Case_analysis (pos_start, pos_end) ->
     with_typer buffer @@ fun pipeline typer ->
     let source = Mpipeline.input_source pipeline in
-    let loc_start = Msource.get_lexing_pos tr source pos_start in
-    let loc_end = Msource.get_lexing_pos tr source pos_end in
-    let loc_mid = Msource.get_lexing_pos tr source
-        (`Offset (Lexing.(loc_start.pos_cnum + loc_end.pos_cnum) / 2)) in
-    let env = Mtyper.get_env typer in
-    (*Mreader.with_reader (Buffer.reader buffer) @@ fun () -> FIXME*)
-    Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
-    let nodes = List.map ~f:snd (Mtyper.node_at tr typer loc_mid) in
-    Logger.logj "destruct" "nodes before"
-      (fun () -> `List (List.map nodes
-          ~f:(fun node -> `String (Browse_raw.string_of_node node))));
+    let pos_start = Msource.get_lexing_pos tr source pos_start in
+    let pos_end = Msource.get_lexing_pos tr source pos_end in
+    let browse = Mbrowse.of_typedtree (Mtyper.get_typedtree typer) in
+    let nodes = Mbrowse.enclosing pos_start [browse] in
+    let dump_node (_,node) =
+      let {Location. loc_start; loc_end; _} =
+        Mbrowse.node_loc node in
+      let l1,c1 = Lexing.split_pos loc_start in
+      let l2,c2 = Lexing.split_pos loc_end in
+      `List [
+         `String (Browse_raw.string_of_node node);
+         `Int l1; `Int c1;
+         `Int l2; `Int c2;
+       ]
+    in 
+    Logger.logj "destruct" "nodes before" (fun () -> `List (List.map nodes ~f:dump_node));
     let nodes =
-      nodes
-      |> List.drop_while ~f:(fun t ->
-          Lexing.compare_pos (Mbrowse.node_loc t).Location.loc_start loc_start > 0 &&
-          Lexing.compare_pos (Mbrowse.node_loc t).Location.loc_end loc_end < 0)
+      List.drop_while nodes
+        ~f:(fun (_,t) ->
+          let {Location. loc_start; loc_end} = Mbrowse.node_loc t in
+          Lexing.compare_pos loc_start pos_start > 0 || Lexing.compare_pos loc_end pos_end < 0)
     in
-    Logger.logj "destruct" "nodes after"
-      (fun () -> `List (List.map nodes
-          ~f:(fun node -> `String (Browse_raw.string_of_node node))));
+    Logger.logj "destruct" "nodes after" (fun () -> `List (List.map nodes ~f:dump_node));
     begin match nodes with
       | [] -> failwith "No node at given range"
-      | node :: parents ->
+      | (env,node) :: parents ->
         let source = Mpipeline.input_source pipeline in
         let config = Mpipeline.final_config pipeline in
-        Destruct.node tr config source node parents
+        Printtyp.wrap_printing_env env ~verbosity @@ fun () ->
+        Destruct.node tr config source node (List.map ~f:snd parents)
     end
 
   | Outline ->

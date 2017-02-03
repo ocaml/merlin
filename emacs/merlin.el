@@ -1147,32 +1147,36 @@ strictly within, or nil if there is no such element."
       (insert txt)
       (indent-region start (point)))))
 
-(defun merlin-destruct-enclosing ()
-  (interactive)
-  (message "merlin-destruct-enclosing")
-  (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
-         (result (merlin/call "case-analysis" "-start"
-			      (merlin/unmake-point (car bounds)) "-end"
-			      (merlin/unmake-point (cdr bounds)))))
-        ;; FIXME   (lambda (errinfo)
-        ;; FIXME     (let ((msg (cdr (assoc 'message errinfo))))
-        ;; FIXME       (if msg
-        ;; FIXME           (message "%s" msg)
-        ;; FIXME         (message "bug in merlin: failed to destructure error")))))))
+(defun merlin--destruct-bounds (bounds)
+  "Execute a case analysis on BOUNDS"
+  (let ((result (merlin/call "case-analysis"
+                            "-start" (merlin/unmake-point (car bounds))
+                            "-end" (merlin/unmake-point (cdr bounds)))))
+    ;; FIXME   (lambda (errinfo)
+    ;; FIXME     (let ((msg (cdr (assoc 'message errinfo))))
+    ;; FIXME       (if msg
+    ;; FIXME           (message "%s" msg)
+    ;; FIXME         (message "bug in merlin: failed to destructure error")))))))
     (when result
-      (let* ((loc (car result))
+      (let* ((loc   (car result))
              (start (cdr (assoc 'start loc)))
-             (stop (cdr (assoc 'end loc))))
+             (stop  (cdr (assoc 'end loc))))
         (merlin--replace-buff-portion start stop (cadr result))))
     (merlin--type-enclosing-reset)))
 
-(defun merlin-destruct ()
-  "Case analyse the current enclosing"
+(defun merlin-destruct-enclosing ()
+  "Case analyse the current type enclosing"
   (interactive)
-  (if (not merlin-enclosing-types)
-    (when (merlin--type-enclosing-query)
-      (merlin-destruct-enclosing))
-    (merlin-destruct-enclosing)))
+  (merlin--destruct-bounds
+    (cdr (elt merlin-enclosing-types merlin-enclosing-offset))))
+
+(defun merlin-destruct ()
+  "Case analyse the current point or region"
+  (interactive)
+  (merlin--destruct-bounds (if (region-active-p)
+                             (cons (region-beginning) (region-end))
+                             (cons (point) (point)))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE, PROJECT AND FLAGS MANAGEMENT ;;
