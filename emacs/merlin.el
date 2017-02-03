@@ -256,6 +256,9 @@ The association list can contain the following optional keys:
 (defvar-local merlin--verbosity-cache nil
   "Cache last command to determine verbosity level")
 
+(defvar-local merlin-debug-last-commands nil
+  "Last merlin commands (for debugging)")
+
 ;; Misc
 
 (defvar-local merlin--project-cache nil
@@ -294,6 +297,18 @@ The association list can contain the following optional keys:
   (interactive)
   (setq merlin-debug nil))
 
+(defun merlin-debug-last-commands ()
+  "Display last commands executed and their result (if any)"
+  (interactive)
+  (let (buf)
+    (dolist (command merlin-debug-last-commands)
+      (push (concat "- result: " (or (cdr command) "failed")) buf)
+      (push (mapconcat 'identity
+                       (merlin--map-flatten-to-string "command: " (car command))
+                       " ") buf))
+    (message "Last commands executed, most recent at the end:\n%s"
+             (mapconcat 'identity buf "\n"))))
+
 (defun merlin/buffer-substring (start end)
    "Return content of buffer between two points or empty string if points are not valid"
    (if (< start end) (buffer-substring-no-properties start end) ""))
@@ -320,6 +335,10 @@ return DEFAULT or the value associated to KEY."
 
 (defun merlin--map-flatten (f &rest xs)
   (nreverse (merlin--rev-map-flatten f xs)))
+
+(defun merlin--map-flatten-to-string (&rest xs)
+  (merlin--map-flatten
+    (lambda (x) (if (stringp x) x (prin1-to-string x))) xs))
 
 (defun merlin--goto-file-and-point (data)
   "Go to the file and position indicated by DATA which is an assoc list
@@ -441,6 +460,13 @@ return (LOC1 . LOC2)."
         (packages    (merlin--map-flatten (lambda (x) (cons "-package" x))
                                           merlin-buffer-packages))
         )
+    ;; Log last commands
+    (setq merlin-debug-last-commands
+          (cons (cons (cons command args) nil) merlin-debug-last-commands))
+    (let ((cdr (nthcdr 5 merlin-debug-last-commands)))
+      (when cdr (setcdr cdr nil)))
+    ;; Compute verbosity
+
     (when (eq merlin/verbosity-context t)
         (setq merlin/verbosity-context (cons command args)))
     (if (not merlin/verbosity-context)
@@ -448,9 +474,8 @@ return (LOC1 . LOC2)."
       (if (equal merlin/verbosity-context (car-safe merlin--verbosity-cache))
           (setcdr merlin--verbosity-cache (1+ (cdr merlin--verbosity-cache)))
         (setq merlin--verbosity-cache (cons merlin/verbosity-context 0))))
-    (setq args (merlin--map-flatten
-                 (lambda (x) (if (stringp x) x (prin1-to-string x)))
-                 "server" command "-protocol" "sexp"
+    (setq args (merlin--map-flatten-to-string
+                 "single" command "-protocol" "sexp"
                  ;; Is debug mode enabled
                  (when merlin-debug '("-log-file" "-"))
                  ;; If command is repeated, increase verbosity
@@ -462,7 +487,8 @@ return (LOC1 . LOC2)."
                    (cons "-flags" merlin-buffer-flags))
                  "-filename" (buffer-file-name (buffer-base-buffer))
                  args))
-    (merlin--call-process binary args)))
+    (setcdr (car merlin-debug-last-commands)
+            (merlin--call-process binary args))))
 
 (defun merlin/call (command &rest args)
   "Execute a command and parse output: return an sexp on success or throw an error"
@@ -1123,8 +1149,11 @@ strictly within, or nil if there is no such element."
 
 (defun merlin-destruct-enclosing ()
   (interactive)
+  (message "merlin-destruct-enclosing")
   (let* ((bounds (cdr (elt merlin-enclosing-types merlin-enclosing-offset)))
-         (result (merlin/call "case-analysis" "-start" (car bounds) "-end" (cdr bounds))))
+         (result (merlin/call "case-analysis" "-start"
+			      (merlin/unmake-point (car bounds)) "-end"
+			      (merlin/unmake-point (cdr bounds)))))
         ;; FIXME   (lambda (errinfo)
         ;; FIXME     (let ((msg (cdr (assoc 'message errinfo))))
         ;; FIXME       (if msg
