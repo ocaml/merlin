@@ -48,6 +48,16 @@
   "Face for highlighting a typed expr."
   :group 'merlin)
 
+(defface merlin-compilation-warning-face
+  '((t :inherit compilation-warning))
+  "Face to use to highlight merlin warnings."
+  :group 'merlin)
+
+(defface merlin-compilation-error-face
+  '((t :inherit compilation-error))
+  "Face to use to highlight merlin errors."
+  :group 'merlin)
+
 ;;
 ;; Customizable vars
 ;;
