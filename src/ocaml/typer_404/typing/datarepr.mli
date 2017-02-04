@@ -42,3 +42,7 @@ val constructor_existentials :
     - the types of the constructor's arguments
     - the existential variables introduced by the constructor
  *)
+
+val label_descrs :
+  type_expr -> label_declaration list -> record_representation ->
+  Asttypes.private_flag -> (Ident.t * label_description) list

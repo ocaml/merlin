@@ -551,23 +551,48 @@ let node_complete buffer ?get_doc ?target_type env node prefix =
       buffer node
   | Record_field (obj, lbl, loc) ->
     let prefix, _is_label = Longident.(keep_suffix @@ parse prefix) in
+    let snap = Btype.snapshot () in
     let is_label = match lbl.Types.lbl_all with
       | [||] ->
-        begin try
+        begin match
             let ty = match obj with
               | `Expression e -> e.Typedtree.exp_type
               | `Pattern p -> p.Typedtree.pat_type
             in
             let _, _, lbls = Typecore.extract_concrete_record env ty in
             if lbls = [] then raise Not_found;
-            `Declaration (ty, lbls)
-          with _ ->
-            `Maybe
+            (ty, lbls)
+          with
+          | exception _ -> `Maybe
+          | (ty, lbls) ->
+            try
+              let lbls = Datarepr.label_descrs ty lbls
+                  Types.Record_regular Asttypes.Public
+              in
+              let labels = List.map lbls ~f:(fun (_,lbl) ->
+                  try
+                    let _, lbl_res, lbl_arg = Ctype.instance_label false lbl in
+                    begin try
+                        Ctype.unify_var env ty lbl_res;
+                      with _ -> ()
+                    end;
+                    (* FIXME: the two subst can lose some sharing between types *)
+                    let lbl_res = Subst.type_expr Subst.identity lbl_res in
+                    let lbl_arg = Subst.type_expr Subst.identity lbl_arg in
+                    {lbl with Types. lbl_res; lbl_arg}
+                  with _ -> lbl
+                ) in
+              `Description labels
+            with _ -> `Declaration (ty, lbls)
         end
       | lbls ->
         `Description (Array.to_list lbls)
     in
-    complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node
+    let result =
+      complete_prefix ?get_doc ?target_type ~env ~prefix ~is_label buffer node
+    in
+    Btype.backtrack snap;
+    result
   | x ->
     let prefix, is_label = Longident.(keep_suffix @@ parse prefix) in
     complete_prefix ?get_doc ?target_type ~env ~prefix
