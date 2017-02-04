@@ -1176,6 +1176,15 @@ prefix of `bar' is `'."
 ;; EXPRESSION TYPING ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
+(defvar merlin-type-display-time 10
+  "Time duration for displaying type information in the echo area.")
+
+(defvar merlin--type-display-toggled-state nil
+  "Toggled state that control the display of type information in the echo area.")
+
+(defvar merlin--type-display-timer nil
+  "Timer to clear the type information in the echo area.")
+
 (defun merlin--type-expression (exp callback-if-success &optional callback-if-exn)
   "Get the type of EXP inside the local context."
   (when exp (merlin/send-command-async
@@ -1183,19 +1192,57 @@ prefix of `bar' is `'."
                    'at (merlin/unmake-point (point)))
              callback-if-success callback-if-exn)))
 
+(defun merlin--display-type-buffer ()
+  "Print type buffer to the echo area."
+  (let* ((type (with-current-buffer merlin-type-buffer-name
+                (font-lock-fontify-region (point-min) (point-max))
+                (buffer-string)))
+         (count (merlin--count-lines type)))
+    (if (> count 8)
+        (display-buffer merlin-type-buffer-name)
+      (message "%s" type))))
+
+(defun merlin--add-hook-display-type ()
+  "Keep on displaying the type information while the cursor moves around."
+  (add-hook 'pre-command-hook 'merlin--display-type-buffer nil t))
+
+(defun merlin--remove-hook-display-type ()
+  "Remove the hook that displays type information."
+  (remove-hook 'pre-command-hook 'merlin--display-type-buffer t))
+
+(defun merlin/toggle-display-type-buffer ()
+  "Toggle to always show the type information in the echo area."
+  (interactive)
+  (if merlin--type-display-toggled-state
+      (progn (merlin--remove-hook-display-type)
+             (setq merlin--type-display-toggled-state nil))
+    (progn (merlin--display-type-buffer)
+           (merlin--add-hook-display-type)
+           (setq merlin--type-display-toggled-state t))))
+
 (defun merlin--type-display (bounds type &optional quiet)
   "Display the type TYPE of the expression occuring at BOUNDS.
 If QUIET is non nil, then an overlay and the merlin types can be used."
   (if (not type)
       (unless quiet (message "<no information>"))
-    (let ((count (merlin--count-lines type)))
-      (merlin/display-in-type-buffer type)
-      (if (> count 8)
-          (display-buffer merlin-type-buffer-name)
-        (message "%s"
-          (with-current-buffer merlin-type-buffer-name
-            (font-lock-fontify-region (point-min) (point-max))
-            (buffer-string))))
+    (let* ((count (merlin--count-lines type))
+           (start (car bounds))
+           (end (cdr bounds))
+           (exp (buffer-substring-no-properties start end))
+           (type-info (if (cl-search " " exp) type (concat exp " : " type))))
+      (merlin/display-in-type-buffer type-info)
+      (merlin--display-type-buffer)
+      ;; only use a timer and a hook to keep on display type in the echo area
+      ;; the the type display state is not toggled
+      (when (null merlin--type-display-toggled-state)
+        ;; hook to display type in the echo area
+        (merlin--add-hook-display-type)
+        ;; clear the previous timer
+        (when merlin--type-display-timer (cancel-timer merlin--type-display-timer))
+        ;; set up a new timer to finish displaying type
+        (setq merlin--type-display-timer
+              (run-at-time merlin-type-display-time nil
+                           'merlin--remove-hook-display-type)))
       (if (and (not quiet) bounds)
           (merlin--highlight bounds 'merlin-type-face)))))
 
